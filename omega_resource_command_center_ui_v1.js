@@ -857,6 +857,7 @@
       return value === undefined || value === null || value === '' ? 'Not recorded' :
         number(value, unit ? ' ' + unit : '');
     }
+
     const stockRows = Object.keys(products).sort().map(function (key) {
       const row = products[key], id = row.id;
       const aggregate = resourceMapValue(inventory, id);
@@ -872,60 +873,93 @@
             ? processedAvailable : undefined));
       const rawResource = canonicalIds[key] === true;
       const stage = row.stage || (rawResource ? 'RAW' : 'NOT CLASSIFIED');
-      const name = row.name || id.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
+      const name = row.name || id.replace(/[_-]+/g, ' ').replace(/\\b\\w/g, function (ch) { return ch.toUpperCase(); });
       const target = primaryByResource[key];
       const targetQuantity = target && target.openingStockQuantity;
       const tradeAvailability = resourceMapValue(r.tradeAvailability || {}, id) ?? row.tradeAvailability;
-      const targetCell = rawResource
-        ? (targetQuantity === null || targetQuantity === undefined ? 'Unknown' : stockCell(targetQuantity, target.unit || unit))
-        : '—';
-      return '<tr data-search-item data-search="' + esc((name + ' ' + id).toLowerCase()) + '">' +
-        '<td><span class="omega-rescc-inventory-resource">' + inventoryIcon(id, name, rawResource) +
-          '<span><strong>' + esc(name) + '</strong><small>' + esc(id) + '</small></span></span></td>' +
-        '<td>' + stockCell(currentStock, unit) + '</td>' +
-        '<td>' + stockCell(rawAvailable, unit) + '</td>' +
-        '<td>' + stockCell(processedAvailable, unit) + '</td>' +
-        '<td>' + stockCell(reserved, unit) + '</td>' +
-        '<td>' + targetCell + '</td>' +
-        '<td>' + stockCell(tradeAvailability, '') + '</td>' +
-        '<td>' + esc(stage) + '</td><td>' + esc(unit) + '</td>' +
-        '<td>' + (rawResource ? actionButton('reserve', 'Request stock-backed SPR transfer', { 'resource-id': id }) : '—') + '</td></tr>';
-    }).join('');
+      const targetCell = targetQuantity === null || targetQuantity === undefined
+        ? 'Unknown' : stockCell(targetQuantity, target.unit || unit);
+      const identity = '<td><span class="omega-rescc-inventory-resource">' + inventoryIcon(id, name, rawResource) +
+        '<span><strong>' + esc(name) + '</strong><small>' + esc(id) + '</small></span></span></td>';
+      if (rawResource) {
+        return {
+          kind:'NATURAL_RESOURCE',
+          html:'<tr data-inventory-kind="NATURAL_RESOURCE" data-search-item data-search="' + esc((name + ' ' + id).toLowerCase()) + '">' +
+            identity + '<td>' + stockCell(currentStock, unit) + '</td>' +
+            '<td>' + stockCell(rawAvailable, unit) + '</td>' +
+            '<td>' + stockCell(reserved, unit) + '</td>' +
+            '<td>' + targetCell + '</td>' +
+            '<td>' + stockCell(tradeAvailability, '') + '</td>' +
+            '<td>' + esc(unit) + '</td>' +
+            '<td>' + actionButton('reserve', 'Request stock-backed SPR transfer', { 'resource-id': id }) + '</td></tr>'
+        };
+      }
+      return {
+        kind:'INDUSTRIAL_PRODUCT',
+        html:'<tr data-inventory-kind="INDUSTRIAL_PRODUCT" data-search-item data-search="' + esc((name + ' ' + id).toLowerCase()) + '">' +
+          identity + '<td>' + stockCell(currentStock, unit) + '</td>' +
+          '<td>' + stockCell(processedAvailable, unit) + '</td>' +
+          '<td>' + esc(stage) + '</td><td>' + esc(unit) + '</td></tr>'
+      };
+    });
+    const naturalStockRows = stockRows.filter(function (row) { return row.kind === 'NATURAL_RESOURCE'; })
+      .map(function (row) { return row.html; }).join('');
+    const industrialStockRows = stockRows.filter(function (row) { return row.kind === 'INDUSTRIAL_PRODUCT'; })
+      .map(function (row) { return row.html; }).join('');
     const batchRows = batches.map(function (batch) {
       const resourceId = String(batch && batch.resourceId || '').trim();
       const key = resourceToken(resourceId);
       const product = products[key] || { id: resourceId };
-      const name = product.name || resourceId.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
+      const name = product.name || resourceId.replace(/[_-]+/g, ' ').replace(/\\b\\w/g, function (ch) { return ch.toUpperCase(); });
       const rawResource = canonicalIds[key] === true;
-      return '<tr data-search-item data-search="' + esc(String(batch.batchId || '') + ' ' + name + ' ' + resourceId) + '">' +
-        '<td>' + esc(batch.batchId || 'Resource batch') + '</td>' +
+      const html = '<tr data-inventory-kind="' + (rawResource ? 'NATURAL_RESOURCE' : 'INDUSTRIAL_PRODUCT') +
+        '" data-search-item data-search="' + esc(String(batch.batchId || '') + ' ' + name + ' ' + resourceId) + '">' +
+        '<td>' + esc(batch.batchId || 'Inventory batch') + '</td>' +
         '<td><span class="omega-rescc-inventory-resource">' + inventoryIcon(resourceId, name, rawResource) +
-          '<span><strong>' + esc(name || 'Unknown resource') + '</strong><small>' + esc(resourceId || 'Not recorded') + '</small></span></span></td>' +
+        '<span><strong>' + esc(name || 'Unknown product') + '</strong><small>' + esc(resourceId || 'Not recorded') + '</small></span></span></td>' +
         '<td>' + stockCell(batch.remainingQuantity !== undefined ? batch.remainingQuantity : batch.quantity, batch.unit) + '</td>' +
         '<td>' + esc(batch.unit || 'Unit not recorded') + '</td>' +
         '<td>' + esc(batch.warehouseId || 'Not recorded') + '</td>' +
         '<td>' + esc(batch.purity === undefined ? '—' : batch.purity) + '</td>' +
         '<td>' + esc(batch.grade || '—') + '</td><td>' + esc(batch.stage || 'Not recorded') + '</td></tr>';
-    }).join('');
-    const stockTable = stockRows
-      ? '<div class="omega-rescc-inventory-table-wrap"><table class="omega-rescc-inventory-table"><thead><tr>' +
-        '<th>Resource</th><th>Current Stock</th><th>Raw warehouse</th><th>Processed warehouse</th>' +
-        '<th>SPR protected</th><th>Opening target · 100 days</th><th>Trade availability</th><th>Stage</th><th>Unit</th><th>Action</th>' +
-        '</tr></thead><tbody>' + stockRows + '</tbody></table></div>'
-      : empty('No inventory products are recorded for this country.');
-    const batchTable = batchRows
-      ? '<div class="omega-rescc-inventory-table-wrap"><table class="omega-rescc-inventory-table"><thead><tr>' +
-        '<th>Batch</th><th>Resource</th><th>Remaining quantity</th><th>Unit</th><th>Warehouse</th><th>Purity</th><th>Grade</th><th>Stage</th>' +
-        '</tr></thead><tbody>' + batchRows + '</tbody></table></div>'
-      : empty('No resource batches are recorded.');
+      return { kind:rawResource ? 'NATURAL_RESOURCE' : 'INDUSTRIAL_PRODUCT', html:html };
+    });
+    const naturalBatchRows = batchRows.filter(function (row) { return row.kind === 'NATURAL_RESOURCE'; })
+      .map(function (row) { return row.html; }).join('');
+    const industrialBatchRows = batchRows.filter(function (row) { return row.kind === 'INDUSTRIAL_PRODUCT'; })
+      .map(function (row) { return row.html; }).join('');
+    const naturalStockTable = naturalStockRows
+      ? '<div class="omega-rescc-inventory-table-wrap"><table class="omega-rescc-inventory-table" data-inventory-table="natural-resources"><thead><tr>' +
+        '<th>Natural resource</th><th>Current Stock</th><th>Raw warehouse</th><th>SPR protected</th>' +
+        '<th>Opening target · 100 days</th><th>Trade availability</th><th>Unit</th><th>Action</th>' +
+        '</tr></thead><tbody>' + naturalStockRows + '</tbody></table></div>'
+      : empty('No canonical natural-resource inventory rows are available for this country.');
+    const industrialStockTable = industrialStockRows
+      ? '<div class="omega-rescc-inventory-table-wrap"><table class="omega-rescc-inventory-table" data-inventory-table="industrial-products"><thead><tr>' +
+        '<th>Industrial product</th><th>Current Stock</th><th>Processed warehouse</th><th>Stage</th><th>Unit</th>' +
+        '</tr></thead><tbody>' + industrialStockRows + '</tbody></table></div>'
+      : empty('No industrial products are recorded for this country.');
+    const naturalBatchTable = naturalBatchRows
+      ? '<div class="omega-rescc-inventory-table-wrap"><table class="omega-rescc-inventory-table" data-batch-table="natural-resources"><thead><tr>' +
+        '<th>Batch</th><th>Natural resource</th><th>Remaining quantity</th><th>Unit</th><th>Warehouse</th><th>Purity</th><th>Grade</th><th>Stage</th>' +
+        '</tr></thead><tbody>' + naturalBatchRows + '</tbody></table></div>'
+      : empty('No natural-resource batches are recorded.');
+    const industrialBatchTable = industrialBatchRows
+      ? '<div class="omega-rescc-inventory-table-wrap"><table class="omega-rescc-inventory-table" data-batch-table="industrial-products"><thead><tr>' +
+        '<th>Batch</th><th>Industrial product</th><th>Remaining quantity</th><th>Unit</th><th>Warehouse</th><th>Grade</th><th>Stage</th>' +
+        '</tr></thead><tbody>' + industrialBatchRows + '</tbody></table></div>'
+      : empty('No industrial-product batches are recorded.');
     return '<div class="omega-rescc-metrics"><div><span>Raw warehouse</span><strong>' + esc(warehouse.warehouseId || 'Not registered') +
       '</strong></div><div><span>Processed warehouse</span><strong>' + esc(processedWarehouse.warehouseId || 'Not registered') +
       '</strong></div><div><span>Current batches</span><strong>' + number(batches.length) + '</strong></div></div>' +
       coverageTargetForm +
-      '<p class="omega-rescc-note">Current stock is shown once from the country inventory ledger. Warehouse balances remain separate and are not added twice. The 100-day column is a simulated opening-stock target, not a geological reserve or delivery record.</p>' +
-      stockTable +
-      '<h3 class="omega-rescc-section-title">Recorded batches</h3>' + batchTable +
+      '<p class="omega-rescc-note">Natural resources and industrial products are presented separately. Current stock is read once from the country inventory ledger; raw and processed warehouse balances remain separate and are not added twice. The 100-day column is a simulated opening-stock target, not a geological reserve or delivery record.</p>' +
+      '<h3 class="omega-rescc-section-title">Natural resource inventory</h3>' + naturalStockTable +
+      '<h3 class="omega-rescc-section-title">Industrial inventory</h3>' + industrialStockTable +
+      '<h3 class="omega-rescc-section-title">Natural resource batches</h3>' + naturalBatchTable +
+      '<h3 class="omega-rescc-section-title">Industrial product batches</h3>' + industrialBatchTable +
       '<h3 class="omega-rescc-section-title">SPR request history</h3>' + statusRows(requests);
+
   }
   function panelLogistics(country){
     const r=resourceBucket(country),log=r.logistics||{},legacyPlans=Array.isArray(log.shipments)?log.shipments:[],allBatches=Array.isArray(r.batches)?r.batches:[],factories=allFactories(country);
