@@ -521,7 +521,8 @@ test('factory type views skip unrelated national inventory and cumulative histor
     assert.equal(result.model.factoryTypeCounts.find(row => row.type === 'STEEL_MILL').count,1);
     assert.equal(result.model.cycles.length,0);
     assert.equal(inventoryReads,0);
-    assert.match(root.innerHTML,/Factory types &amp; country totals/);
+    assert.match(root.innerHTML,/class="fp-type-catalog"/);
+    assert.match(root.innerHTML,/data-omega-v2-factory-type-card/);
   } finally {
     if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
     if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
@@ -696,8 +697,8 @@ test('industry treats starting and newly built factories as one live asset regis
     assert.equal(pagedTypeResult.ok,true);
     const renderedTypeCardCount = () => (pagedTypeRoot.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length;
     assert.equal(renderedTypeCardCount(),3,
-      'the initial Android-friendly Industry route must mount one rich factory-type card');
-    assert.match(pagedTypeRoot.innerHTML,/9 types/);
+      'the initial Android-friendly Industry route must mount exactly three factory-type cards');
+    assert.match(pagedTypeRoot.innerHTML,/Show next 3 factory types · 6 remaining/);
     assert.match(pagedTypeRoot.innerHTML,/data-factory-type-show-more/,
       'the remaining canonical factory types must remain accessible');
     const showMoreTypesButton = {};
