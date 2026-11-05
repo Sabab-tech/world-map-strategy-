@@ -3353,7 +3353,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v94'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v95'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3391,7 +3391,7 @@ test('factory type cards keep three columns and lock every other card until the 
   assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
   assert.match(css,/data-detail-locked="true"/);
   assert.match(css,/touch-action:manipulation/);
-  assert.match(sw,/omega-offline-atlas-shell-v94/);
+  assert.match(sw,/omega-offline-atlas-shell-v95/);
 });
 
 test('Factory cards use horizontal internal layouts and only reserve the landscape detail panel when opened', () => {
@@ -3423,7 +3423,7 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:680px\)/);
   assert.match(css,/grid-template-columns:repeat\(auto-fit,minmax\(245px,1fr\)\)/);
   assert.match(css,/@media \(min-width:1200px\)[\s\S]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
-  assert.match(sw,/omega-offline-atlas-shell-v94/);
+  assert.match(sw,/omega-offline-atlas-shell-v95/);
 });
 
 
@@ -3461,29 +3461,37 @@ test('phone landscape factory cards keep compact aligned columns without stage c
     'live factory cards must leave the fixed container-unit position and use normal document flow');
   assert.match(phoneLandscape, /\.fp-factory-detail-panel \{[^}]*order:2[^}]*width:100%/s,
     'the recipe detail panel must remain below the card workspace on phone landscape');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v94'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v95'),
     'Android offline shell must reload the landscape layout stylesheet');
 });
 
-test('factory type catalog keeps three cards in landscape and readable full-width cards in portrait', () => {
+test('factory card register stays three columns and stacks recipe groups on every orientation', () => {
   const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  const landscapeStart = css.lastIndexOf('@media (max-width:520px) and (orientation:landscape) {');
-  assert.ok(landscapeStart >= 0, 'compact three-card sizing must be restricted to phone landscape');
-  const landscape = css.slice(landscapeStart);
-  assert.match(landscape, /\.fp-type-catalog-grid[\s\S]*?grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,
-    'phone landscape must retain the three-card row');
-  const portraitStart = css.lastIndexOf('@media (max-width:680px) and (orientation:portrait) {');
-  assert.ok(portraitStart > landscapeStart, 'portrait correction must follow the landscape rules in the cascade');
-  const portrait = css.slice(portraitStart);
-  assert.match(portrait, /\.fp-type-catalog-grid,[\s\S]*?grid-template-columns:minmax\(0,1fr\) !important/,
-    'portrait phone cards must use the full available width');
-  assert.match(portrait, /\.fp-card-product-row \.fp-product-identity-copy strong \{[^}]*overflow-wrap:break-word;[^}]*word-break:normal;/s,
-    'product names must wrap at word boundaries instead of breaking into vertical letters');
-  assert.match(portrait, /\.fp-card-recipe \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/s,
-    'Input, By-product and Output remain aligned inside the wider portrait card');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v94'),
-    'offline clients must refresh the corrected factory stylesheet');
+  const redesignStart = css.lastIndexOf('/* OMEGA Factory Cards v2');
+  assert.ok(redesignStart >= 0, 'the full factory-card redesign must be appended after legacy responsive rules');
+  const redesign = css.slice(redesignStart);
+  assert.match(redesign, /\.fp-type-catalog-grid[\s\S]*?grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/,
+    'Factory Type cards must remain three columns on portrait and landscape');
+  assert.match(redesign, /\.fp-assets-workspace \.omega-v2-factory-deck[\s\S]*?grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/,
+    'live Factory cards must use the same three-column register');
+  assert.match(redesign, /\.fp-card-recipe \{[\s\S]*?flex-direction:column !important/,
+    'Input, By-product and Output must stack as full-width groups inside each card');
+  assert.match(redesign, /\.fp-card-product-row \.fp-product-identity-copy strong[\s\S]*?overflow-wrap:break-word !important[\s\S]*?word-break:normal !important/,
+    'product names must wrap at word boundaries rather than split into narrow vertical fragments');
+  assert.match(redesign, /\.fp-card-product-row \.fp-product-icon-frame[\s\S]*?flex:0 0 22px !important/,
+    'product icons must retain a fixed non-shrinking frame');
+  assert.ok(sw.includes('omega-offline-atlas-shell-v95'),
+    'offline clients must refresh the redesigned Factory stylesheet');
   assert.ok(sw.includes('./omega_ui_v2/factory-production-command.css'),
-    'the corrected stylesheet remains part of the offline shell');
+    'the redesigned stylesheet remains part of the offline shell');
+});
+
+test('Factory Type identity header aligns icon, name and owned count in one row', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  assert.match(source, /var count = '<span class="fp-type-card-count"/);
+  assert.match(source, /'<span class="fp-type-card-name"><strong>' \+ esc\(item\.name \|\| type\) \+ '<\\/strong><\\/span>' \+\s*count \+ '<\\/header>'/);
+  assert.match(css, /\.fp-type-card-head \{[\s\S]*?grid-template-columns:30px minmax\(0,1fr\) auto/);
+  assert.match(css, /\.fp-type-card-count \{[\s\S]*?flex-direction:column/);
 });
