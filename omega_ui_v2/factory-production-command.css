@@ -4384,8 +4384,18 @@
   .omega-v2-industry--factory-home .fp-assets-workspace.fp-workspace--detail-open {
     grid-template-columns:minmax(0,1fr);
   }
-  .omega-v2-industry--factory-home .fp-type-catalog-grid,
+  .omega-v2-industry--factory-home .fp-type-catalog-grid {
+    grid-template-columns:minmax(0,1fr);
+  }
   .omega-v2-industry--factory-home .fp-assets-workspace .omega-v2-factory-deck {
+    position:relative;
+    inset:auto;
+    width:100%;
+    height:auto;
+    max-height:none;
+    min-height:0;
+    overflow:visible;
+    padding:0 0 12px;
     grid-template-columns:minmax(0,1fr);
   }
   .omega-v2-industry--factory-home .fp-factory-detail-panel {
