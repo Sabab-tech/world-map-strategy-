@@ -5015,6 +5015,11 @@
   }
   .omega-v2-industry--factory-home .fp-type-card-name strong { font-size:13px; }
   .omega-v2-industry--factory-home .fp-type-card-count { min-height:32px; }
+  .omega-v2-industry--factory-home .fp-card-recipe {
+    display:flex !important;
+    flex-direction:column !important;
+    grid-template-columns:minmax(0,1fr) !important;
+  }
   .omega-v2-industry--factory-home .fp-card-product-section,
   .omega-v2-industry--factory-home .fp-card-input-section {
     grid-template-columns:68px minmax(0,1fr);
