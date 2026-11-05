@@ -94,7 +94,23 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
   if timeout --signal=TERM --kill-after=20s 10m \
       gradle -p android connectedDebugAndroidTest --no-daemon >"$log_file" 2>&1; then
     cat "$log_file"
-    echo "PASS: API 28 offline gameplay instrumentation completed"
+    screenshot_dir="$artifact_dir/screenshots"
+    mkdir -p "$screenshot_dir"
+    remote_screenshot_dir="/sdcard/Android/data/com.omega.globalsupremecommander/files/omega-smoke"
+    if ! timeout 30s adb pull "$remote_screenshot_dir" "$screenshot_dir"; then
+      echo "ERROR: Android Input UI screenshot retrieval failed" >&2
+      exit 1
+    fi
+    for screenshot in factory-input-landscape.png; do
+      local_screenshot="$screenshot_dir/omega-smoke/$screenshot"
+      if [[ ! -s "$local_screenshot" ]]; then
+        echo "ERROR: Required Android Input UI screenshot is missing: $local_screenshot" >&2
+        find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
+        exit 1
+      fi
+      echo "ANDROID_UI_SCREENSHOT=$local_screenshot bytes=$(wc -c <"$local_screenshot")"
+    done
+    echo "PASS: API 28 offline gameplay and Factory Input UI visual instrumentation completed"
     exit 0
   else
     test_exit=$?
