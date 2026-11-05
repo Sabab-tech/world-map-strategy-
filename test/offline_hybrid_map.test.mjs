@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 
-const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOfflineWorkflow, androidGradle, bootPerformanceMonitor, compositionRoot] = await Promise.all([
+const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOfflineWorkflow, androidOfflineScript, androidGradle, bootPerformanceMonitor, compositionRoot] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.js", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.css", import.meta.url), "utf8"),
@@ -12,6 +12,7 @@ const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOffl
   readFile(new URL("../android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java", import.meta.url), "utf8"),
   readFile(new URL("../omega-offline-map-sw.js", import.meta.url), "utf8"),
   readFile(new URL("../.github/workflows/omega-android-gameplay-smoke.yml", import.meta.url), "utf8"),
+  readFile(new URL("../scripts/omega_android9_offline_gameplay_smoke.sh", import.meta.url), "utf8"),
   readFile(new URL("../android/app/build.gradle", import.meta.url), "utf8"),
   readFile(new URL("../omega_boot_performance_monitor_v1.js", import.meta.url), "utf8"),
   readFile(new URL("../omega_enterprise_composition_root_v10.js", import.meta.url), "utf8")
@@ -136,7 +137,7 @@ test("each PR revision preserves its bounded Android emulator smoke and diagnost
   assert.ok(androidOfflineWorkflow.includes(
     "cancel-in-progress: false"
   ));
-  assert.match(androidOfflineWorkflow, /timeout --signal=TERM --kill-after=20s 10m/);
+  assert.match(androidOfflineScript, /timeout --signal=TERM --kill-after=20s 10m/);
   assert.match(androidOfflineWorkflow, /omega-android9-smoke-diagnostics/);
 });
 
