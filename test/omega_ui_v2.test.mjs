@@ -3513,7 +3513,7 @@ test('factory type card redesign preserves the three-column landscape grid while
     'phone landscape must retain three compact cards per row');
   assert.match(redesign, /@media \(max-width:899px\) and \(orientation:portrait\)[\s\S]*?grid-template-columns:minmax\(0,1fr\) !important/,
     'portrait phones keep full-width cards for readable text');
-  const portraitBreakpoint = redesign.match(/@media \\(max-width:(\\d+)px\\) and \\(orientation:portrait\\)/);
+  const portraitBreakpoint = redesign.match(/@media \(max-width:(\d+)px\) and \(orientation:portrait\)/);
   assert.ok(portraitBreakpoint && Number(portraitBreakpoint[1]) >= 709,
     'the portrait rule must include the 709px viewport shown in the reported handset screenshot');
 });
