@@ -713,6 +713,12 @@
     var catalog = safeCatalog() || {};
     var factoryDataRuntime = g.OmegaCountryFactoryStartingBaselineV1 ||
       (g.Omega && g.Omega.CountryFactoryStartingBaselineV1) || null;
+    var privateEnterpriseRuntime = g.OmegaPrivateEnterpriseRegistryV1 ||
+      (g.Omega && g.Omega.PrivateEnterpriseRegistryV1) || null;
+    var privateEnterpriseBaseline = null;
+    if (context.countryId && privateEnterpriseRuntime && typeof privateEnterpriseRuntime.getCountryBaseline === 'function') {
+      try { privateEnterpriseBaseline = privateEnterpriseRuntime.getCountryBaseline(context.countryId); } catch (_) { privateEnterpriseBaseline = null; }
+    }
     var factoryStartingRegistry = null;
     if (context.countryId && factoryDataRuntime && typeof factoryDataRuntime.getCountryFactoryRegistry === 'function') {
       try { factoryStartingRegistry = factoryDataRuntime.getCountryFactoryRegistry(context.countryId); } catch (_) { factoryStartingRegistry = null; }
@@ -931,6 +937,7 @@
       catalogRecipes: recipeCatalog,
       processingRules: processingRules,
       factoryBaselineStatus: factoryStartingRegistry && factoryStartingRegistry.status || 'NOT_READY',
+      privateEnterpriseBaseline: privateEnterpriseBaseline,
       factoryInputCoverageDays: Math.max(1, Math.min(3650, Math.round(num(resource.factoryInputBaselineV1 && resource.factoryInputBaselineV1.targetCoverageDays) || num(resource.factoryInputPolicy && resource.factoryInputPolicy.targetCoverageDays) || 100))),
       factoryInputCoverageSnapshot: resource.factoryInputCoverageSnapshotV1 && typeof resource.factoryInputCoverageSnapshotV1 === 'object' ? resource.factoryInputCoverageSnapshotV1 : null,
       factoryInputCoverageIntervalDays: 10,
@@ -953,7 +960,8 @@
       inventory:'Input',
       'national-inventory':'Stock',
       research:'Research & Technology',
-      projects:'Build Projects'
+      projects:'Build Projects',
+      companies:'Private Companies'
     };
     var accessibleLabel = fullLabels[id] || label;
     return '<button type="button" class="omega-v2-button ' + (active === id ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') +
@@ -3275,6 +3283,14 @@
       (g.Omega && g.Omega.CountryFactoryStartingBaselineV1) || null;
     var network = safeNetwork();
     var waits = [];
+    var privateRuntime = g.OmegaPrivateEnterpriseRegistryV1 ||
+      (g.Omega && g.Omega.PrivateEnterpriseRegistryV1) || null;
+    if (model.privateEnterpriseBaseline && model.privateEnterpriseBaseline.status === 'LOADING' && privateRuntime) {
+      try {
+        var privateReady = privateRuntime.ready;
+        if (privateReady && typeof privateReady.then === 'function') waits.push(privateReady);
+      } catch (_) {}
+    }
     if (model.factoryBaselineStatus === 'LOADING' && runtime) {
       try {
         var ready = runtime.ready;
@@ -3357,6 +3373,48 @@
       }).join('') + '</div>' : '<div class="omega-v2-empty">No tracked production cycles were returned by this country’s industrial state.</div>';
     } else if (active === 'inventory') {
       content = factoryInputPanelMarkup(model);
+    } else if (active === 'companies') {
+      var privateAllocation = model.privateEnterpriseBaseline;
+      if (!privateAllocation || privateAllocation.status === 'LOADING') {
+        content = '<div class="omega-v2-empty">Loading the country private-company opening allocation. No production state is changed.</div>';
+      } else if (privateAllocation.status !== 'READY') {
+        content = '<div class="omega-v2-empty">Private-company baseline unavailable: ' +
+          esc(privateAllocation.reason || privateAllocation.status || 'NOT_READY') + '.</div>';
+      } else {
+        var privateTypeNames = Object.create(null);
+        model.factoryTypeCatalog.forEach(function (row) { privateTypeNames[row.type] = row.name; });
+        var companyCards = privateAllocation.companies.map(function (company) {
+          var companyRows = Object.keys(company.factoryCounts || {}).map(function (type) {
+            return { type:type, name:privateTypeNames[type] || readableIdentifier(type), count:Number(company.factoryCounts[type]) || 0 };
+          }).filter(function (row) { return row.count > 0; }).sort(function (a, b) {
+            return a.name.localeCompare(b.name);
+          });
+          var typeMarkup = companyRows.length
+            ? '<ul class="fp-private-company-types">' + companyRows.map(function (row) {
+                return '<li><span>' + esc(row.name) + '</span><strong>' + fmt(row.count) + '</strong></li>';
+              }).join('') + '</ul>'
+            : '<div class="omega-v2-empty">No private opening allocation in this country.</div>';
+          var companyShare = privateAllocation.totalPrivateFactoryUnits > 0
+            ? company.totalFactoryUnits / privateAllocation.totalPrivateFactoryUnits * 100 : 0;
+          return '<article class="omega-v2-card fp-private-company-card">' +
+            '<div class="fp-private-company-heading"><div><h3 class="omega-v2-card-title">' + esc(company.companyName) +
+            '</h3><div class="omega-v2-card-meta">' + esc(company.companyId) + '</div></div>' +
+            '<span class="omega-v2-status">Opening allocation</span></div>' +
+            '<div class="omega-v2-vehicle-stats"><div><span>Allocated factory units</span><strong>' + fmt(company.totalFactoryUnits) +
+            '</strong></div><div><span>Share of private baseline</span><strong>' + fmt(companyShare, '%') +
+            '</strong></div></div>' + typeMarkup + '</article>';
+        }).join('');
+        content = '<section class="fp-private-companies"><div class="fp-private-company-overview">' +
+          '<div><h3 class="omega-v2-section-title">Private company opening allocation</h3>' +
+          '<p>Modelled additional capacity for this country, allocated across the five global companies.</p></div>' +
+          '<span class="omega-v2-status">NOT COMMISSIONED</span></div>' +
+          '<div class="fp-summary" aria-label="Private company baseline summary">' +
+          '<div class="fp-summary-item"><span>PRIVATE STARTING UNITS</span><strong>' + fmt(privateAllocation.totalPrivateFactoryUnits) + '</strong></div>' +
+          '<div class="fp-summary-item"><span>GOVERNMENT STARTING UNITS</span><strong>' + fmt(privateAllocation.totalGovernmentFactoryUnits) + '</strong></div>' +
+          '<div class="fp-summary-item"><span>PRIVATE / GOVERNMENT</span><strong>' + fmt(privateAllocation.privateToGovernmentBaselinePercent, '%') + '</strong></div>' +
+          '</div><div class="omega-v2-grid">' + companyCards + '</div>' +
+          '<p class="omega-v2-source">Opening allocation only. These units are not yet commissioned production assets and create no stock, shipments, input reservations, output, sales or company cash movements. Zero government categories remain zero for private companies.</p></section>';
+      }
     } else if (active === 'research') {
       var researchRows = model.researchProjects.map(function (item) { return Object.assign({ recordType:'RESEARCH' }, item || {}); })
         .concat(model.technologyTransfers.map(function (item) { return Object.assign({ recordType:'TECHNOLOGY TRANSFER' }, item || {}); }))
@@ -3394,7 +3452,8 @@
       inventory:'Input',
       'national-inventory':'Stock',
       research:'Research & technology',
-      projects:'Industrial projects'
+      projects:'Industrial projects',
+      companies:'Private companies'
     };
     var activeLabel = tabLabels[active] || 'Factory production';
     if (active !== 'factories') root.__omegaV2IndustryNotice = '';
@@ -3403,6 +3462,7 @@
       '<div class="fp-top-identity"><span>OMEGA / INDUSTRIAL SYSTEMS</span><strong>FACTORY PRODUCTION</strong><small>COUNTRY: ' + esc(model.countryId || 'Not recorded') + ' · ' + (model.canOperateSelectedCountry ? 'PLAYER CONTROL' : 'REFERENCE VIEW') + '</small></div>' +
       '<nav class="omega-v2-factory-tabs fp-tabs" aria-label="Industrial panels">' +
       tabButton('factories', 'Factories', active) +
+      tabButton('companies', 'Companies', active) +
       tabButton('production-lines', 'Lines', active) +
       tabButton('inventory', 'Input', active) +
       tabButton('national-inventory', 'Stock', active) +
@@ -3774,6 +3834,7 @@
        'OMEGA_RESOURCE_MINE_CAPACITY_CHANGED','OMEGA_SIMULATION_TURN_COMMITTED',
        'OMEGA_FACTORY_CAPACITY_CHANGED','OMEGA_FACTORY_DECOMMISSIONED',
        'OMEGA_COUNTRY_STARTING_FACTORY_ASSETS_REGISTERED','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_READY','OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_INITIALIZED',
+       'OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY','OMEGA_PRIVATE_ENTERPRISE_BASELINE_FAILED',
        ].forEach(function (eventName) {
         g.addEventListener(eventName, function () {
           if (!root.querySelector || !root.querySelector('.omega-v2-industry-command, .omega-v2-factory-command')) return;

@@ -4511,3 +4511,40 @@
     font-size:8px;
   }
 }
+
+
+/* Private-enterprise opening allocation, shown separately from commissioned assets. */
+.omega-v2-industry--factory-home .fp-private-company-overview {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:12px; flex-wrap:wrap; margin:0 0 12px;
+}
+.omega-v2-industry--factory-home .fp-private-company-overview > div { min-width:0; flex:1 1 260px; }
+.omega-v2-industry--factory-home .fp-private-company-overview p {
+  margin:5px 0 0; color:var(--omega-muted,#94a3b8); font-size:12px; line-height:1.5;
+}
+.omega-v2-industry--factory-home .fp-private-company-card {
+  min-width:0; display:flex; flex-direction:column; gap:10px;
+}
+.omega-v2-industry--factory-home .fp-private-company-heading {
+  display:flex; align-items:flex-start; justify-content:space-between; gap:8px; min-width:0;
+}
+.omega-v2-industry--factory-home .fp-private-company-heading > div { min-width:0; }
+.omega-v2-industry--factory-home .fp-private-company-heading .omega-v2-card-title { overflow-wrap:anywhere; }
+.omega-v2-industry--factory-home .fp-private-company-types {
+  display:grid; grid-template-columns:minmax(0,1fr); gap:5px; margin:0; padding:0; list-style:none;
+}
+.omega-v2-industry--factory-home .fp-private-company-types li {
+  display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+  padding:7px 9px; border:1px solid rgba(111,160,205,.16); border-radius:8px;
+  background:rgba(5,22,40,.35); min-width:0;
+}
+.omega-v2-industry--factory-home .fp-private-company-types li span {
+  min-width:0; overflow-wrap:anywhere; color:var(--omega-text,#e2e8f0); font-size:11px;
+}
+.omega-v2-industry--factory-home .fp-private-company-types li strong {
+  flex:0 0 auto; color:var(--omega-accent,#67e8f9); font-size:12px; font-variant-numeric:tabular-nums;
+}
+@media (max-width:520px) {
+  .omega-v2-industry--factory-home .fp-private-company-heading { flex-wrap:wrap; }
+  .omega-v2-industry--factory-home .fp-private-company-card { padding:10px; gap:8px; }
+}
