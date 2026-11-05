@@ -3474,7 +3474,7 @@ test('factory type catalog keeps three cards in landscape and readable full-widt
   const landscape = css.slice(landscapeStart);
   assert.match(landscape, /\.fp-type-catalog-grid[\s\S]*?grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,
     'phone landscape must retain the three-card row');
-  const portraitStart = css.lastIndexOf('@media (max-width:680px) and (orientation:portrait) {');
+  const portraitStart = css.lastIndexOf('@media (max-width:899px) and (orientation:portrait) {');
   assert.ok(portraitStart > landscapeStart, 'portrait correction must follow the landscape rules in the cascade');
   const portrait = css.slice(portraitStart);
   assert.match(portrait, /\.fp-type-catalog-grid\s*\{[^}]*grid-template-columns:minmax\(0,1fr\) !important/s,
