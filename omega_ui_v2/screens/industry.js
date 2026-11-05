@@ -2970,7 +2970,7 @@
     if (!primaryOutputs.length && outputs.length) primaryOutputs = [outputs[0]];
 
     var visibleInputs = primaryInputs.slice(0, 1);
-    var visibleOutputs = primaryOutputs.slice(0, 1);
+    var visibleOutputs = primaryOutputs.slice(0, 2);
     var visibleByProducts = byProducts.slice(0, 1);
     var hiddenInputs = inputs.filter(function (id) { return visibleInputs.indexOf(id) < 0; });
     var hiddenOutputs = outputs.filter(function (id) {
@@ -2994,7 +2994,9 @@
     if (visibleOutputs.length) {
       html += '<div class="fp-card-product-section fp-card-product-section--output">' +
         '<div class="fp-card-section-label">Output</div>' +
-        factoryRecipeProductRow(route, visibleOutputs[0], 'output', model, asset, 'primary', true) +
+        visibleOutputs.map(function (productId) {
+          return factoryRecipeProductRow(route, productId, 'output', model, asset, 'primary', true);
+        }).join('') +
       '</div>';
     }
 

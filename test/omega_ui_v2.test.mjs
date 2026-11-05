@@ -3024,8 +3024,8 @@ test('factory cards keep a compact recipe preview and progressively disclose ful
     let steel = cardHtml('STEEL_AND_ALLOY_WORKS');
     assert.match(steel,/Output/);
     assert.match(steel,/Steel/);
-    assert.doesNotMatch(steel,/ALLOY STEEL/i,
-      'secondary outputs stay in the detailed panel rather than crowding the normal card');
+    assert.match(steel,/ALLOY STEEL/i,
+      'the compact Output cell keeps both canonical primary outputs visible');
     assert.match(steel,/By-product/);
     assert.match(steel,/BLAST FURNACE SLAG/i);
     assert.match(steel,/Input/);
