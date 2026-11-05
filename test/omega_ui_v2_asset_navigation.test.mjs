@@ -91,7 +91,7 @@ test("More command cards use the uploaded local imagery and every action has a d
   const baseCssIndex = html.indexOf('href="omega_ui_v2/omega-ui-v2.css"');
   const refreshCssIndex = html.indexOf('href="omega_ui_v2/ministry-visual-refresh.css"');
   const polishCssIndex = html.indexOf('href="omega_ui_v2/atlas-command-polish.css"');
-  const factoryCssIndex = html.indexOf('href="omega_ui_v2/factory-production-command.css"');
+  const factoryCssIndex = html.indexOf('href="omega_ui_v2/factory-production-command.css?v=20261106-2"');
   const resourcePremiumCssIndex = html.indexOf('href="omega_ui_v2/resource-ministry-premium.css"');
   assert.ok(baseCssIndex >= 0 && refreshCssIndex > baseCssIndex && polishCssIndex > refreshCssIndex && factoryCssIndex > polishCssIndex && resourcePremiumCssIndex > factoryCssIndex,
     "factory and Resource Ministry overrides must load after the existing UI styles");
