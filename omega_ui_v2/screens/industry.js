@@ -3488,8 +3488,13 @@
     var requestedFactoryView = options.factoryView ||
       (countryChanged ? 'types' : root.__omegaV2IndustryFactoryView ||
         (root.__omegaV2IndustryFactoryViewExplicit ? 'assets' : 'types'));
+    // Construction requirements need the authoritative national inventory
+    // projection for material availability. Use the lightweight catalog read only
+    // while the type overview is collapsed, not while a build sheet is open.
+    var factoryCardStateForRead = root.__omegaV2FactoryCardUiState || {};
+    var buildSheetOpen = active === 'factories' && !!factoryCardStateForRead.buildKey;
     var optimizedFactoryRead = active === 'inventory' ||
-      (active === 'factories' && requestedFactoryView === 'types');
+      (active === 'factories' && requestedFactoryView === 'types' && !buildSheetOpen);
     var model = buildViewModel(optimizedFactoryRead
       ? Object.assign({}, options, { __omegaV2FactoryInputOptimized:true })
       : options);
