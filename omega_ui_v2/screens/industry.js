@@ -62,6 +62,15 @@
   }
   function safeNetwork() { return g.OmegaResourceIndustrialNetwork || (g.Omega && g.Omega.ResourceIndustrialNetwork) || null; }
   function safeCatalog() { return g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData) || null; }
+  function requiresLegacyAndroidPaintProfile() {
+    var userAgent = String(g.navigator && g.navigator.userAgent || '');
+    var android = userAgent.match(/Android\\s+(\\d+)/i);
+    var webViewVersion = userAgent.match(/(?:Chrome|Chromium)\\/(\\d+)/i);
+    // Android 9 devices commonly ship WebView 66. Keep their first factory
+    // paint on a simple compositing path; modern devices retain the full deck.
+    return !!((android && Number(android[1]) <= 9) ||
+      (android && webViewVersion && Number(webViewVersion[1]) <= 70));
+  }
   function normalizeFactoryType(value, catalog) {
     var aliases = (catalog || safeCatalog() || {}).factoryTypeAliases || {};
     var key = String(value == null ? '' : value).trim().toUpperCase(), seen = Object.create(null);
@@ -3657,10 +3666,11 @@
           '<span class="fp-content-country">' + esc(model.countryId || 'Country not selected') + '</span></header>' +
           '<div class="fp-content-body">' + content + '</div>' +
         '</div>';
-    root.innerHTML = '<section class="omega-v2-shell omega-v2-industry omega-v2-industry--factory-home" data-factory-stock-input-ui="v2">' +
+    var legacyAndroidPaintProfile = requiresLegacyAndroidPaintProfile();
+    root.innerHTML = '<section class="omega-v2-shell omega-v2-industry omega-v2-industry--factory-home" data-factory-stock-input-ui="v2" data-omega-v2-render-profile="' + (legacyAndroidPaintProfile ? 'legacy-android' : 'full') + '">' +
       '<div class="omega-v2-factory-command fp-stage" data-glow="hover" data-active-tab="' + esc(active) + '" data-factory-view="' + esc(active === 'factories' ? factoryView : 'assets') + '" aria-label="Factory production control">' +
-      '<img class="omega-v2-factory-backdrop" src="assets/ui-photos/industrial-production-line.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1280" height="720">' +
-      '<a class="omega-v2-factory-photo-credit" href="https://commons.wikimedia.org/wiki/File:Industrial_production_line_operating_in_a_large_modern_factory.jpg" target="_blank" rel="noopener noreferrer" aria-label="Photo credit: Shixart1985. CC BY 2.0 license. Image resized and converted to WebP.">Photo: <span class="omega-v2-factory-photo-author">Shixart1985</span></a><a class="omega-v2-factory-photo-license" href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="license noopener noreferrer" aria-label="Creative Commons Attribution 2.0 license">CC BY 2.0</a><span class="omega-v2-factory-photo-credit__changes">Image resized and converted to WebP.</span>' +
+      (legacyAndroidPaintProfile ? '' : '<img class="omega-v2-factory-backdrop" src="assets/ui-photos/industrial-production-line.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1280" height="720">') +
+      (legacyAndroidPaintProfile ? '' : '<a class="omega-v2-factory-photo-credit" href="https://commons.wikimedia.org/wiki/File:Industrial_production_line_operating_in_a_large_modern_factory.jpg" target="_blank" rel="noopener noreferrer" aria-label="Photo credit: Shixart1985. CC BY 2.0 license. Image resized and converted to WebP.">Photo: <span class="omega-v2-factory-photo-author">Shixart1985</span></a><a class="omega-v2-factory-photo-license" href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="license noopener noreferrer" aria-label="Creative Commons Attribution 2.0 license">CC BY 2.0</a><span class="omega-v2-factory-photo-credit__changes">Image resized and converted to WebP.</span>') +
       (root.__omegaV2IndustryNotice ? '<div class="omega-v2-factory-notice" role="status">' + esc(root.__omegaV2IndustryNotice) + '</div>' : '') +
       compactTabs + summaryMarkup + panelBody + '<div class="fp-deck" aria-hidden="true"></div></div>' +
       (root.__omegaV2IndustryBuildFactoryType ? factoryProjectModal(model, root.__omegaV2IndustryBuildFactoryType) : '') + '</section>';
