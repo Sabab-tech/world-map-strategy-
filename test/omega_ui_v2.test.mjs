@@ -3384,13 +3384,14 @@ test('factory production details use a landscape side panel and local delegated 
 test('factory type cards keep three columns and lock every other card until the active card is tapped closed', () => {
   const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
   assert.match(source,/function syncFactoryCardActionLock\(root, model\)/);
   assert.match(source,/data-detail-locked="true"/);
   assert.match(source,/selectedState\.expandedKey === selectedCardKey \? '' : selectedCardKey/);
   assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
   assert.match(css,/data-detail-locked="true"/);
   assert.match(css,/touch-action:manipulation/);
-  assert.match(css,/omega-offline-atlas-shell-v93|omega-offline-atlas-shell-v93/);
+  assert.match(sw,/omega-offline-atlas-shell-v93/);
 });
 
 test('Factory cards use horizontal internal layouts and only reserve the landscape detail panel when opened', () => {
@@ -3454,8 +3455,8 @@ test('phone landscape factory cards keep compact aligned columns without stage c
   const phoneLandscape = css.slice(breakpointStart);
   assert.match(phoneLandscape, /\.fp-stage \{[^}]*width:100%[^}]*height:auto[^}]*aspect-ratio:auto[^}]*overflow:visible/s,
     'the stage must grow with content instead of clipping the landscape card register');
-  assert.match(phoneLandscape, /\.fp-type-catalog-grid \{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/s,
-    'factory type cards must use two compact columns in phone landscape');
+  assert.match(phoneLandscape, /\.fp-type-catalog-grid \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/s,
+    'factory type cards must keep three compact columns in phone landscape');
   assert.match(phoneLandscape, /\.fp-assets-workspace \.omega-v2-factory-deck \{[^}]*position:relative[^}]*inset:auto[^}]*width:100%[^}]*max-height:none[^}]*grid-template-columns:minmax\(0,1fr\)/s,
     'live factory cards must leave the fixed container-unit position and use normal document flow');
   assert.match(phoneLandscape, /\.fp-factory-detail-panel \{[^}]*order:2[^}]*width:100%/s,
