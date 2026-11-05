@@ -4511,3 +4511,51 @@
     font-size:8px;
   }
 }
+
+
+/* Android 9 / legacy WebView paint profile.
+   Preserve the same factory data, cards, controls and three-card paging while
+   avoiding expensive composited backdrops, gradients, filters and shadows on
+   WebView 66. Modern browsers keep the full visual treatment above. */
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .omega-v2-factory-backdrop {
+  display:none !important;
+  filter:none !important;
+}
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .omega-v2-factory-command {
+  isolation:auto !important;
+  background:#061321 !important;
+  background-image:none !important;
+  box-shadow:inset 0 0 0 1px #29445b !important;
+}
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .omega-v2-factory-command::before,
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .omega-v2-factory-command::after {
+  display:none !important;
+  content:none !important;
+}
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .omega-v2-factory-command *,
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .omega-v2-factory-command *::before,
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .omega-v2-factory-command *::after {
+  filter:none !important;
+  box-shadow:none !important;
+  text-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .fp-type-catalog,
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .fp-factory-catalog-workspace,
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .fp-assets-workspace {
+  background:#091e30 !important;
+  background-image:none !important;
+}
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .omega-v2-factory-type-card,
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .omega-v2-factory-card,
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .fp-factory-detail-panel {
+  background:#102a40 !important;
+  background-image:none !important;
+  border-color:#456982 !important;
+}
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .fp-type-card-art,
+.omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .omega-v2-factory-artwell {
+  background:#0b2237 !important;
+  background-image:none !important;
+}
