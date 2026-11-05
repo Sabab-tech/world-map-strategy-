@@ -21,7 +21,7 @@ Retain the user's three-card-per-row landscape catalog. The problem is not the o
 
 - Landscape: exactly three factory cards per row, including narrow phone landscape.
 - Phone landscape: compact but fixed icon frames, smaller typography with word-boundary wrapping, and the same vertically stacked product preview.
-- Phone portrait: one full-width card per row; recipe sections remain stacked.
+- Portrait viewports up to 899 CSS px wide: one full-width card per row; recipe sections remain stacked. This includes the reported 709px handset viewport.
 - Expanded details, build requirements, selection locking and the existing side-panel behavior retain their current interaction model.
 
 ## Preservation boundary
