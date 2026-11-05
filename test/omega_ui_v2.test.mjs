@@ -3765,3 +3765,22 @@ test('live factory assets remain counted when the registered baseline snapshot i
     else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.factoryBaseline;
   }
 });
+
+
+test('legacy Android factory rendering keeps the same cards while using a lightweight paint profile', () => {
+  const industry = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  const paintCss = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  assert.match(industry, /function requiresLegacyAndroidPaintProfile\(\)/);
+  assert.match(industry, /data-omega-v2-render-profile=/);
+  assert.match(industry, /legacyAndroidPaintProfile \? 'legacy-android' : 'full'/);
+  assert.match(industry, /legacyAndroidPaintProfile \? '' : '<img class="omega-v2-factory-backdrop"/,
+    'legacy WebView must not create the large factory backdrop image');
+  assert.match(paintCss, /data-omega-v2-render-profile="legacy-android"/);
+  assert.match(paintCss, /filter:none !important/);
+  assert.match(paintCss, /box-shadow:none !important/);
+  assert.match(paintCss, /backdrop-filter:none !important/);
+  assert.match(paintCss, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important;/,
+    'the legacy paint profile must preserve the three-card factory grid');
+  assert.match(industry, /Math\.max\(3,/,
+    'factory type cards must remain progressively rendered in batches of three');
+});
