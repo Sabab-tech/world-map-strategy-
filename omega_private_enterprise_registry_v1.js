@@ -63,6 +63,6 @@ function getCountryBaseline(countryId){
 }
 function diagnostics(){return{version:VERSION,status:loaded?'READY':errorText?'BLOCKED':promise?'LOADING':'NOT_READY',reason:errorText,countryCount:loaded?loaded.countryCount:0,factoryTypeCount:loaded?loaded.factoryTypeCount:0,companyCount:loaded?loaded.companyCount:0,totalPrivateFactoryUnits:loaded?loaded.totalPrivateFactoryUnits:0,runtimeMode:'STATIC_BASELINE_ONLY',productionEnabled:false,sourcePath:DATA_PATH};}
 var API=Object.freeze({VERSION:VERSION,init:init,get ready(){return init();},getCountryBaseline:getCountryBaseline,getCompanyRegistry:function(){return loaded?clone(loaded.companies):{status:errorText?'BLOCKED':'LOADING',reason:errorText||null};},diagnostics:diagnostics,getSourceStatus:diagnostics});
-g.OmegaPrivateEnterpriseRegistryV1=API;g.Omega=g.Omega||{};g.Omega.PrivateEnterpriseRegistryV1=API;init();
+g.OmegaPrivateEnterpriseRegistryV1=API;g.Omega=g.Omega||{};g.Omega.PrivateEnterpriseRegistryV1=API;
 if(typeof module!=='undefined'&&module.exports)module.exports=API;
 })(typeof globalThis!=='undefined'?globalThis:window);

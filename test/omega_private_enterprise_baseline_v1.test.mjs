@@ -38,3 +38,12 @@ test('Industry screen exposes private-company opening allocations without activa
  assert.match(industry,/NOT COMMISSIONED/);
  assert.match(industry,/no stock, shipments, input reservations, output, sales or company cash movements/);
 });
+
+test('private enterprise registry defers baseline fetch and JSON parsing until first Industry use',()=>{
+ const registry=fs.readFileSync(new URL('../omega_private_enterprise_registry_v1.js',import.meta.url),'utf8');
+ assert.match(registry,/get ready\s*\(\)\s*\{\s*return init\(\);\s*\}/);
+ assert.doesNotMatch(registry,/g\.Omega\.PrivateEnterpriseRegistryV1=API;init\(\);/);
+ const industry=fs.readFileSync(new URL('../omega_ui_v2/screens/industry.js',import.meta.url),'utf8');
+ assert.match(industry,/privateRuntime\.ready/);
+ assert.match(industry,/privateEnterpriseBaseline\.status === 'LOADING'/);
+});
