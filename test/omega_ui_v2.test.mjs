@@ -3477,8 +3477,8 @@ test('factory type catalog keeps three cards in landscape and readable full-widt
   const portraitStart = css.lastIndexOf('@media (max-width:899px) and (orientation:portrait) {');
   assert.ok(portraitStart > landscapeStart, 'portrait correction must follow the landscape rules in the cascade');
   const portrait = css.slice(portraitStart);
-  assert.match(portrait, /\.fp-type-catalog-grid\s*\{[^}]*grid-template-columns:minmax\(0,1fr\) !important/s,
-    'portrait phone cards must use the full available width');
+  assert.match(portrait, /\.fp-factory-catalog-workspace\.fp-workspace--detail-open \.fp-type-catalog-grid\s*\{[^}]*grid-template-columns:minmax\(0,1fr\) !important/s,
+    'portrait override must match the specificity of the forced global three-column selector');
   assert.match(portrait, /\.fp-card-product-row \.fp-product-identity-copy strong \{[^}]*overflow-wrap:break-word;[^}]*word-break:normal;/s,
     'product names must wrap at word boundaries instead of breaking into vertical letters');
   assert.match(portrait, /\.fp-card-recipe \{[^}]*grid-template-columns:minmax\(0,1fr\)/s,
