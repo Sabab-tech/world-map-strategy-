@@ -388,8 +388,8 @@ test('Resource Ministry inventory separates canonical natural resources from ind
   try {
     ui.open('BGD','inventory');
     const html = elements.get('gsrsk-intelligence-modal').innerHTML;
-    const naturalTable = html.match(/<table[^>]*data-inventory-table="natural-resources"[\\s\\S]*?<\\/table>/);
-    const industrialTable = html.match(/<table[^>]*data-inventory-table="industrial-products"[\\s\\S]*?<\\/table>/);
+    const naturalTable = html.match(/<table[^>]*data-inventory-table="natural-resources"[\s\S]*?<\/table>/);
+    const industrialTable = html.match(/<table[^>]*data-inventory-table="industrial-products"[\s\S]*?<\/table>/);
     assert.ok(naturalTable, 'canonical natural resources must have their own inventory table');
     assert.ok(industrialTable, 'manufactured products must have a separate industrial inventory table');
     assert.match(naturalTable[0],/Iron Ore/);
