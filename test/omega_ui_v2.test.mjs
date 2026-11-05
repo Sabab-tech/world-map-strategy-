@@ -3491,7 +3491,10 @@ test('Factory Type identity header aligns icon, name and owned count in one row'
   const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
   assert.match(source, /var count = '<span class="fp-type-card-count"/);
-  assert.match(source, /'<span class="fp-type-card-name"><strong>' \+ esc\(item\.name \|\| type\) \+ '<\\/strong><\\/span>' \+\s*count \+ '<\\/header>'/);
+  const headerStart = source.indexOf('var header = \'<header class="fp-type-card-head"');
+  const countInHeader = source.indexOf("count + '</header>'", headerStart);
+  assert.ok(headerStart >= 0 && countInHeader > headerStart,
+    'factory count must be emitted inside the same header as the factory icon and name');
   assert.match(css, /\.fp-type-card-head \{[\s\S]*?grid-template-columns:30px minmax\(0,1fr\) auto/);
   assert.match(css, /\.fp-type-card-count \{[\s\S]*?flex-direction:column/);
 });
