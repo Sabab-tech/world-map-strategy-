@@ -4259,9 +4259,9 @@
   display:none !important;
 }
 
-/* Tighten Factory product identity and metadata. Keep the friendly product name
-   beside its canonical code, and prevent grid/flex stretching from separating
-   the coefficient and per-day rate by large empty vertical gaps. */
+/* Keep recipe quantities and per-day rates in one content-sized metadata row.
+   The row wraps only when the available card width requires it; it never stretches
+   to fill the card and leave a large blank space between those two values. */
 .omega-v2-industry--factory-home .fp-factory-input-identity-line {
   display:flex;
   flex-wrap:wrap;
@@ -4313,7 +4313,9 @@
   align-items:start;
   align-self:start;
   gap:2px;
-  height:auto;
+  flex:0 0 auto;
+  width:100%;
+  height:auto !important;
   min-height:0;
   margin:0;
 }
@@ -4324,32 +4326,42 @@
 }
 .omega-v2-industry--factory-home .fp-card-product-meta {
   display:flex;
-  flex-direction:column;
-  align-items:flex-start;
+  flex-direction:row;
+  flex-wrap:wrap;
+  align-items:baseline;
+  align-content:flex-start;
   justify-content:flex-start;
-  gap:2px;
+  gap:2px 8px;
   grid-column:1;
   width:100%;
   min-width:0;
+  height:auto;
+  min-height:0;
+  flex:0 0 auto;
   margin:0;
   padding-left:26px;
 }
 .omega-v2-industry--factory-home .fp-card-product-meta .fp-card-product-quantity {
-  display:block;
+  display:inline-block;
   grid-column:auto;
+  flex:0 1 auto;
   width:auto;
   max-width:100%;
   margin:0;
   padding:0;
   text-align:left;
   line-height:1.2;
+  overflow-wrap:anywhere;
 }
 .omega-v2-industry--factory-home .fp-card-product-meta .fp-card-product-rate,
 .omega-v2-industry--factory-home .fp-card-product-meta .fp-card-product-actual {
   display:block;
   grid-column:auto;
-  align-self:flex-start;
+  flex:0 1 auto;
+  align-self:auto;
+  min-width:0;
   margin:0;
   padding:0;
   line-height:1.25;
+  overflow-wrap:anywhere;
 }
