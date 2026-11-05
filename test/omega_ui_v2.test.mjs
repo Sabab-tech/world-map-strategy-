@@ -3029,7 +3029,7 @@ test('factory cards keep a compact recipe preview and progressively disclose ful
     assert.match(steel,/BLAST FURNACE SLAG/i);
     assert.match(steel,/Input/);
     assert.match(steel,/IRON CONCENTRATE/i);
-    assert.doesNotMatch(steel,/0\\.72 simulation resource unit \/ production unit|0\\.6 simulation resource unit \/ production unit/,
+    assert.doesNotMatch(steel,/0\.72 simulation resource unit \/ production unit|0\.6 simulation resource unit \/ production unit/,
       'quantities belong in the detailed panel, not the normal factory card');
     assert.doesNotMatch(steel,/simulation/i,
       'the normal factory card must not show the prohibited word');
@@ -3335,13 +3335,14 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
     'recipe metadata must wrap naturally rather than stretch vertically');
   assert.match(css,/\.fp-card-product-meta\s*\{[^}]*align-content:flex-start/s,
     'recipe metadata must stay pinned to the product row instead of being distributed through card height');
-  assert.match(css,/\.fp-card-product-row\s*\{[^}]*flex:0 0 auto/s,
+  assert.match(css,/\.fp-card-recipe \.fp-card-product-row\[data-product-role\]\s*\{[^}]*flex:0 0 auto/s,
     'recipe product rows must use their content height');
-  assert.match(css,/\.fp-card-product-row\s*\{[^}]*grid-template-columns:minmax\(0,1fr\)/s,
+  assert.match(css,/\.fp-card-recipe \.fp-card-product-row\[data-product-role\]\s*\{[^}]*grid-template-columns:minmax\(0,1fr\)/s,
     'narrow landscape cards must not squeeze quantity text into a separate narrow column');
   assert.match(css,/fp-workspace--detail-open/);
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:680px\)/);
   assert.match(css,/grid-template-columns:repeat\(auto-fit,minmax\(245px,1fr\)\)/);
+  assert.match(css,/@media \(min-width:1200px\)[\\s\\S]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
   assert.match(sw,/omega-offline-atlas-shell-v92/);
 });
 
