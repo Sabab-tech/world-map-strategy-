@@ -898,8 +898,11 @@
         }).length;
         // The country baseline is the common factory count. Add completed
         // player builds, but never let missing baseline records hide the count.
+        // A registered baseline count can lag the current asset ledger when a
+        // factory is commissioned or restored before the registry refreshes. Never
+        // let that stale snapshot hide a factory that is already in the country state.
         var count = factoryStartingRegistry.runtimeRegistered === true
-          ? liveCount
+          ? Math.max(liveCount, nonBaselineActiveCount)
           : Math.max(0, Number(row.startingCount) || 0) + nonBaselineActiveCount;
         var profile = profiles[typeKey] || {};
         if (!factoryTypeCountsIndex[typeKey]) {
