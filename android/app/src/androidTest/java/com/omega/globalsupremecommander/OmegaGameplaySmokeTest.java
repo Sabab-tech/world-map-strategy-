@@ -326,17 +326,17 @@ public final class OmegaGameplaySmokeTest {
             final String openPrivateCompaniesRoute =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var app = window.OmegaUIV2App;" +
-                    " if (!cabinet || !cabinet.__omegaUIV2State || !app || typeof app.navigate !== 'function') return false;" +
-                    " var state = cabinet.__omegaUIV2State;" +
-                    " state.countryId = 'USA';" +
+                    " var integration = window.OmegaUIV2Integration;" +
+                    " if (!cabinet || !integration || typeof integration.openRoute !== 'function') return false;" +
                     " window.OmegaMinistryViewCountry = 'USA';" +
-                    " if (window.Game) { window.Game.currentActiveCountry = 'USA'; window.Game.playerCountry = 'USA'; }" +
+                    " if (window.Game) { window.Game.currentActiveCountry = 'USA'; window.Game.playerCountry = 'USA';" +
+                    "   if (window.Game.state) window.Game.state.playerCountryId = 'USA'; }" +
                     " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
-                    " return app.navigate(cabinet, 'industry', true) === true;" +
+                    " window.currentActiveCountry = 'USA';" +
+                    " return integration.openRoute('industry') === true;" +
                     "})()";
             assertEquals(
-                    "The existing Industry screen route must open for the selected player country",
+                    "The existing Industry route must mount or navigate through the integration entry point for the selected player country",
                     "true", evaluate(instrumentation, webViewRef.get(), openPrivateCompaniesRoute)
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_COMPANY_ROUTE_OPENED");
