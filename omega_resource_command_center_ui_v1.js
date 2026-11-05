@@ -873,7 +873,7 @@
             ? processedAvailable : undefined));
       const rawResource = canonicalIds[key] === true;
       const stage = row.stage || (rawResource ? 'RAW' : 'NOT CLASSIFIED');
-      const name = row.name || id.replace(/[_-]+/g, ' ').replace(/\\b\\w/g, function (ch) { return ch.toUpperCase(); });
+      const name = row.name || id.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
       const target = primaryByResource[key];
       const targetQuantity = target && target.openingStockQuantity;
       const tradeAvailability = resourceMapValue(r.tradeAvailability || {}, id) ?? row.tradeAvailability;
@@ -910,7 +910,7 @@
       const resourceId = String(batch && batch.resourceId || '').trim();
       const key = resourceToken(resourceId);
       const product = products[key] || { id: resourceId };
-      const name = product.name || resourceId.replace(/[_-]+/g, ' ').replace(/\\b\\w/g, function (ch) { return ch.toUpperCase(); });
+      const name = product.name || resourceId.replace(/[_-]+/g, ' ').replace(/\b\w/g, function (ch) { return ch.toUpperCase(); });
       const rawResource = canonicalIds[key] === true;
       const html = '<tr data-inventory-kind="' + (rawResource ? 'NATURAL_RESOURCE' : 'INDUSTRIAL_PRODUCT') +
         '" data-search-item data-search="' + esc(String(batch.batchId || '') + ' ' + name + ' ' + resourceId) + '">' +
