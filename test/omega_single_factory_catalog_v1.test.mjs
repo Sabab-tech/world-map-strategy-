@@ -22,7 +22,11 @@ test('one canonical 21-type factory catalog supplies cards for every selected co
   const source = readText('omega_ui_v2/screens/industry.js');
   assert.match(source, /Object\.keys\(profiles\)\.map\(function \(rawType\)/);
   assert.match(source, /function factoryTypeCatalogMarkup\(model\)/);
-  assert.match(source, /rows\.map\(function \(item\) \{ return factoryTypeCard\(item, model\); \}\)/);
+  assert.match(source, /visibleRows = rows\.slice\(0, visibleLimit\)/,
+    'the canonical catalog must remain complete while rich cards are paged');
+  assert.match(source, /visibleRows\.map\(function \(item\) \{ return factoryTypeCard\(item, model\); \}\)/);
+  assert.match(source, /data-factory-type-show-more/,
+    'every canonical factory type must remain reachable through progressive disclosure');
   for (const country of ['BGD', 'USA', 'CHN', 'BRA', 'ZAF']) {
     const api = makeScreen('BGD');
     const model = api.buildViewModel({ countryId: country });
