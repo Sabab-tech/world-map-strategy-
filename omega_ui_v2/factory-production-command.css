@@ -4730,6 +4730,9 @@
   letter-spacing:.015em;
   text-transform:none;
 }
+.omega-v2-industry--factory-home .fp-card-product-section--output .fp-card-product-row {
+  grid-column:2;
+}
 .omega-v2-industry--factory-home .fp-card-product-row,
 .omega-v2-industry--factory-home .fp-card-recipe .fp-card-product-row[data-product-role] {
   display:flex !important;
