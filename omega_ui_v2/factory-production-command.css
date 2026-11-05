@@ -4990,7 +4990,7 @@
     height:12px;
   }
 }
-@media (max-width:680px) and (orientation:portrait) {
+@media (max-width:899px) and (orientation:portrait) {
   .omega-v2-industry--factory-home .fp-type-catalog-grid {
     grid-template-columns:minmax(0,1fr) !important;
     gap:9px;
