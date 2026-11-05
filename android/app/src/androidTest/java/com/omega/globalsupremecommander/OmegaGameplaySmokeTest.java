@@ -479,16 +479,14 @@ public final class OmegaGameplaySmokeTest {
                     "   metrics.aggregateHorizontalScroll && metrics.perFactoryHorizontalScroll &&" +
                     "   metrics.aggregateRowVisible && metrics.productNamePresent);" +
                     "})()";
+            String inputLayoutValid = evaluate(instrumentation, webViewRef.get(), inputLayoutAuditScript);
+            String inputLayoutMetrics = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_INPUT_LAYOUT || {});})()");
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "INPUT_UI_LANDSCAPE_LAYOUT=" + inputLayoutMetrics);
             assertEquals(
                     "Android landscape Input layout must visibly render product icons, all table columns and working horizontal scrollers; metrics=" +
-                            evaluate(instrumentation, webViewRef.get(),
-                                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_INPUT_LAYOUT || {});})()"),
-                    "true", evaluate(instrumentation, webViewRef.get(), inputLayoutAuditScript)
-            );
-            android.util.Log.i(
-                    "OMEGA_ANDROID_SMOKE",
-                    "INPUT_UI_LANDSCAPE_LAYOUT=" + evaluate(instrumentation, webViewRef.get(),
-                            "(function(){return JSON.stringify(window.__OMEGA_ANDROID_INPUT_LAYOUT || {});})()")
+                            inputLayoutMetrics,
+                    "true", inputLayoutValid
             );
             SystemClock.sleep(500L);
             captureScreenshot(instrumentation, "factory-input-landscape.png");
