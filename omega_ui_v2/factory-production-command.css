@@ -2772,7 +2772,7 @@
 }
 .omega-v2-industry--factory-home .fp-card-product-row {
   display:grid;
-  grid-template-columns:minmax(0,1fr);
+  grid-template-columns:minmax(0,1fr) auto;
   align-items:center;
   column-gap:7px;
   row-gap:2px;
