@@ -3024,7 +3024,8 @@ test('factory cards keep a compact recipe preview and progressively disclose ful
     let steel = cardHtml('STEEL_AND_ALLOY_WORKS');
     assert.match(steel,/Output/);
     assert.match(steel,/Steel/);
-    assert.match(steel,/ALLOY STEEL/i);
+    assert.doesNotMatch(steel,/ALLOY STEEL/i,
+      'secondary outputs stay in the detailed panel rather than crowding the normal card');
     assert.match(steel,/By-product/);
     assert.match(steel,/BLAST FURNACE SLAG/i);
     assert.match(steel,/Input/);
@@ -3082,6 +3083,7 @@ test('factory cards keep a compact recipe preview and progressively disclose ful
       'expanded recipe details must not increase card height or create a vertical list');
     assert.match(root.innerHTML,/data-factory-detail-panel/);
     assert.match(root.innerHTML,/Complete production formula/);
+    assert.match(root.innerHTML,/ALLOY STEEL/i);
     assert.match(root.innerHTML,/COPPER CONCENTRATE/i);
     assert.match(root.innerHTML,/CEMENT FEED/i);
     assert.match(root.innerHTML,/PROCESSING DUST/i);
@@ -3342,7 +3344,7 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
   assert.match(css,/fp-workspace--detail-open/);
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:680px\)/);
   assert.match(css,/grid-template-columns:repeat\(auto-fit,minmax\(245px,1fr\)\)/);
-  assert.match(css,/@media \(min-width:1200px\)[\\s\\S]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+  assert.match(css,/@media \(min-width:1200px\)[\s\S]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
   assert.match(sw,/omega-offline-atlas-shell-v92/);
 });
 

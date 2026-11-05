@@ -1557,17 +1557,6 @@
     };
   }
 
-  function factoryPlanPresenceMarkup(type, model) {
-    var ownershipCount = model && model.hasCountryState === true ? factoryTypeOwnedCount({ type: type && type.type }, model) : null;
-    var known = ownershipCount !== null;
-    var count = Math.max(0, Math.floor(num(type && type.count) || 0));
-    var state = !known ? 'unknown' : count > 0 ? 'present' : 'absent';
-    var label = state === 'present' ? 'PRESENT · ' + fmt(count) + ' FACTORIES'
-      : state === 'absent' ? 'NOT PRESENT IN THIS COUNTRY · 0 FACTORIES'
-      : 'COUNTRY FACTORY DATA NOT LOADED';
-    return '<span class="fp-factory-data-presence" data-state="' + state + '">' + label + '</span>';
-  }
-
   function factoryPlanUnit(unit) {
     var value = String(unit || '').replace(/_/g, ' ').trim();
     if (!value || /SIMULATION RESOURCE UNIT/i.test(value)) return 'game units';
