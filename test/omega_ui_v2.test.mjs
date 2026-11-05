@@ -3345,13 +3345,13 @@ test('Factory landscape controls keep readable card text, independent detail scr
 test('phone landscape factory cards keep a full-width horizontal layout without stage clipping', () => {
   const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  const phoneLandscape = css.match(/@media \\(orientation:landscape\\) and \\(max-width:899px\\) \\{([\\s\\S]*?)\\n\\}/);
+  const phoneLandscape = css.match(/@media \(orientation:landscape\) and \(max-width:899px\) \{([\s\S]*?)\n\}/);
   assert.ok(phoneLandscape, 'all phone-width landscape viewports need an explicit layout rule');
-  assert.match(phoneLandscape[1], /\\.fp-stage \\{[^}]*width:100%[^}]*height:auto[^}]*aspect-ratio:auto[^}]*overflow:visible/s,
+  assert.match(phoneLandscape[1], /\.fp-stage \{[^}]*width:100%[^}]*height:auto[^}]*aspect-ratio:auto[^}]*overflow:visible/s,
     'the stage must grow with content instead of clipping the landscape card register');
-  assert.match(phoneLandscape[1], /\\.fp-type-catalog-grid,\\s*\\n[^{}]*\\.fp-assets-workspace[^{}]*\\.omega-v2-factory-deck \\{[^}]*grid-template-columns:minmax\\(0,1fr\\)/s,
+  assert.match(phoneLandscape[1], /\.fp-type-catalog-grid,\\s*\n[^{}]*\.fp-assets-workspace[^{}]*\.omega-v2-factory-deck \{[^}]*grid-template-columns:minmax\(0,1fr\)/s,
     'both factory type cards and live factory cards must use the available row width');
-  assert.match(phoneLandscape[1], /\\.fp-factory-detail-panel \\{[^}]*order:2[^}]*width:100%/s,
+  assert.match(phoneLandscape[1], /\.fp-factory-detail-panel \{[^}]*order:2[^}]*width:100%/s,
     'the recipe detail panel must remain below the card workspace on phone landscape');
   assert.ok(sw.includes('omega-offline-atlas-shell-v92'),
     'Android offline shell must reload the landscape layout stylesheet');
