@@ -323,6 +323,95 @@ public final class OmegaGameplaySmokeTest {
                     "true", factoryPanelReady
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_PANEL_READY");
+            final String openPrivateCompaniesRoute =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var app = window.OmegaUIV2App;" +
+                    " if (!cabinet || !cabinet.__omegaUIV2State || !app || typeof app.navigate !== 'function') return false;" +
+                    " var state = cabinet.__omegaUIV2State;" +
+                    " state.countryId = 'USA';" +
+                    " window.OmegaMinistryViewCountry = 'USA';" +
+                    " if (window.Game) { window.Game.currentActiveCountry = 'USA'; window.Game.playerCountry = 'USA'; }" +
+                    " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
+                    " return app.navigate(cabinet, 'industry', true) === true;" +
+                    "})()";
+            assertEquals(
+                    "The existing Industry screen route must open for the selected player country",
+                    "true", evaluate(instrumentation, webViewRef.get(), openPrivateCompaniesRoute)
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_COMPANY_ROUTE_OPENED");
+
+            final String privateCompaniesTabReadyScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                    " var registry = window.OmegaPrivateEnterpriseRegistryV1;" +
+                    " var diagnostics = registry && registry.diagnostics();" +
+                    " var tab = main && main.querySelector('[data-omega-v2-industry-tab=\"companies\"]');" +
+                    " return !!(cabinet && main && cabinet.getAttribute('data-omega-v2-route') === 'industry' &&" +
+                    " tab && diagnostics && diagnostics.status === 'READY' &&" +
+                    " diagnostics.countryCount === 197 && diagnostics.factoryTypeCount === 21 && diagnostics.companyCount === 5);" +
+                    "})()";
+            String privateCompaniesReady = "false";
+            final long privateCompaniesDeadline = SystemClock.elapsedRealtime() + 120000L;
+            while (!"true".equals(privateCompaniesReady) &&
+                    SystemClock.elapsedRealtime() < privateCompaniesDeadline) {
+                privateCompaniesReady = evaluate(instrumentation, webViewRef.get(), privateCompaniesTabReadyScript);
+                if (!"true".equals(privateCompaniesReady)) SystemClock.sleep(350L);
+            }
+            final String privateCompaniesDiagnostics =
+                    evaluate(instrumentation, webViewRef.get(),
+                            "(function(){var r=window.OmegaPrivateEnterpriseRegistryV1;var d=r&&r.diagnostics();var x=r&&r.getCountryBaseline('USA');return JSON.stringify({diagnostics:d,privateStatus:x&&x.status,privateUnits:x&&x.totalPrivateFactoryUnits,companyCount:x&&x.companies&&x.companies.length,route:document.getElementById('cabinet-full-window')&&document.getElementById('cabinet-full-window').getAttribute('data-omega-v2-route')});})()");
+            assertEquals(
+                    "The private baseline registry and country-specific 197 x 21 x 5 allocation must load in Android WebView; diagnostics=" + privateCompaniesDiagnostics,
+                    "true", privateCompaniesReady
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_COMPANY_BASELINE_READY");
+
+            final String openPrivateCompaniesTab =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                    " var tab = main && main.querySelector('[data-omega-v2-industry-tab=\"companies\"]');" +
+                    " if (!tab) return false;" +
+                    " tab.click();" +
+                    " return true;" +
+                    "})()";
+            assertEquals(
+                    "The Companies tab must respond to a real WebView click",
+                    "true", evaluate(instrumentation, webViewRef.get(), openPrivateCompaniesTab)
+            );
+            final String privateCompaniesRenderedScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                    " var view = main && main.querySelector('[data-omega-v2-industry-content][data-active-tab=\"companies\"]');" +
+                    " var cards = view && view.querySelectorAll('.fp-private-company-card');" +
+                    " var text = view ? String(view.textContent || '') : '';" +
+                    " return !!(view && cards && cards.length === 5 &&" +
+                    " text.indexOf('Aurora Industrial Group') >= 0 &&" +
+                    " text.indexOf('Meridian Engineering Group') >= 0 &&" +
+                    " text.indexOf('Nova Consumer Industries') >= 0 &&" +
+                    " text.indexOf('Atlas Technology Corporation') >= 0 &&" +
+                    " text.indexOf('Terra Infrastructure Group') >= 0 &&" +
+                    " text.indexOf('NOT COMMISSIONED') >= 0 &&" +
+                    " text.indexOf('Opening allocation only') >= 0);" +
+                    "})()";
+            String privateCompaniesRendered = "false";
+            final long privateCompaniesRenderDeadline = SystemClock.elapsedRealtime() + 60000L;
+            while (!"true".equals(privateCompaniesRendered) &&
+                    SystemClock.elapsedRealtime() < privateCompaniesRenderDeadline) {
+                privateCompaniesRendered = evaluate(instrumentation, webViewRef.get(), privateCompaniesRenderedScript);
+                if (!"true".equals(privateCompaniesRendered)) SystemClock.sleep(300L);
+            }
+            final String privateCompaniesRenderDiagnostics =
+                    evaluate(instrumentation, webViewRef.get(),
+                            "(function(){var c=document.getElementById('cabinet-full-window');var m=c&&c.querySelector('[data-omega-v2-main]');var v=m&&m.querySelector('[data-omega-v2-industry-content]');return JSON.stringify({route:c&&c.getAttribute('data-omega-v2-route'),tab:v&&v.getAttribute('data-active-tab'),text:v&&String(v.textContent||'').slice(0,1000),cards:v&&v.querySelectorAll('.fp-private-company-card').length,diagnostics:window.OmegaPrivateEnterpriseRegistryV1&&window.OmegaPrivateEnterpriseRegistryV1.diagnostics()});})()");
+            assertEquals(
+                    "The Companies tab must render all five global private companies as non-commissioned opening allocations; diagnostics=" + privateCompaniesRenderDiagnostics,
+                    "true", privateCompaniesRendered
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_COMPANIES_RENDERED");
         } finally {
             if (activity != null) {
                 final MainActivity launchedActivity = activity;
