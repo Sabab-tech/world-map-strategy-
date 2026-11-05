@@ -2951,7 +2951,7 @@
     return true;
   }
 
-  function factoryCardRecipeMarkup(routes, model, cardKey, asset) {
+  function factoryCardRecipeMarkup(routes, model, cardKey, asset, compactPreview) {
     model = model || {};
     routes = Array.isArray(routes) ? routes : [];
     var state = factoryCardUiState(model);
@@ -2982,20 +2982,20 @@
     if (visibleInputs.length) {
       html += '<div class="fp-card-product-section fp-card-product-section--input">' +
         '<div class="fp-card-section-label">Input</div>' +
-        factoryRecipeProductRow(route, visibleInputs[0], 'input', model, asset, 'input', true) +
+        factoryRecipeProductRow(route, visibleInputs[0], 'input', model, asset, 'input', compactPreview === true) +
       '</div>';
     }
     if (visibleByProducts.length) {
       html += '<div class="fp-card-product-section fp-card-product-section--byproduct">' +
         '<div class="fp-card-section-label">By-product</div>' +
-        factoryRecipeProductRow(route, visibleByProducts[0], 'output', model, asset, 'by-product', true) +
+        factoryRecipeProductRow(route, visibleByProducts[0], 'output', model, asset, 'by-product', compactPreview === true) +
       '</div>';
     }
     if (visibleOutputs.length) {
       html += '<div class="fp-card-product-section fp-card-product-section--output">' +
         '<div class="fp-card-section-label">Output</div>' +
         visibleOutputs.map(function (productId) {
-          return factoryRecipeProductRow(route, productId, 'output', model, asset, 'primary', true);
+          return factoryRecipeProductRow(route, productId, 'output', model, asset, 'primary', compactPreview === true);
         }).join('') +
       '</div>';
     }
@@ -3053,7 +3053,7 @@
         '<span class="omega-v2-factory-output">' + displayOutput + '</span>' + outputProduct + reason +
       '</div>' +
       '<div class="omega-v2-factory-count"><span>Owned:</span><strong>' + fmt(ownedCount) + '</strong></div>' +
-      factoryCardRecipeMarkup(routes, model, cardKey, factory) +
+      factoryCardRecipeMarkup(routes, model, cardKey, factory, false) +
       '<div class="omega-v2-factory-actions">' +
         '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build-details data-omega-v2-factory-build="' + esc(id) + '" data-factory-card-key="' + esc(cardKey) + '" data-factory-type="' + esc(type) + '"' +
           (canOperate ? '' : ' disabled title="Build actions are available only for the active player country."') + '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Build</button>' +
@@ -3108,7 +3108,7 @@
       '" data-factory-presence="' + presence + '">' +
       header +
       '<div class="fp-type-card-count"><span>Factories</span><strong>' + fmt(ownedCount) + '</strong></div>' +
-      factoryCardRecipeMarkup(routes, model, cardKey, null) +
+      factoryCardRecipeMarkup(routes, model, cardKey, null, true) +
       '<div class="fp-type-card-actions"><button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build-details data-omega-v2-factory-build="CATALOG" data-factory-card-key="' +
       esc(cardKey) + '" data-factory-type="' + esc(type) + '"' +
       (canBuild ? '' : ' disabled title="' + esc(disabledReason) + '"') +
