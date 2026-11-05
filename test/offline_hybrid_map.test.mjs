@@ -129,13 +129,15 @@ test("the offline atlas never substitutes a fake remote imagery tile", () => {
   assert.match(mapEngine, /window\.OmegaOfflineHybridAtlas\.activate/);
   assert.match(mainActivity, /if \(isAppAssetUri\(uri\)\) return missingAssetResponse\(uri\);/);
 });
-test("newer commits supersede stale Android emulator smoke runs on the same ref", () => {
+test("each PR revision preserves its bounded Android emulator smoke and diagnostics", () => {
   assert.ok(androidOfflineWorkflow.includes(
-    "group: omega-android9-gameplay-smoke-${{ github.ref }}"
+    "group: omega-android9-gameplay-smoke-${{ github.event.pull_request.number || github.ref }}-${{ github.run_id }}"
   ));
   assert.ok(androidOfflineWorkflow.includes(
-    "cancel-in-progress: true"
+    "cancel-in-progress: false"
   ));
+  assert.match(androidOfflineWorkflow, /timeout --signal=TERM --kill-after=20s 10m/);
+  assert.match(androidOfflineWorkflow, /omega-android9-smoke-diagnostics/);
 });
 
 test("canonical country profile pack is bundled for Android and refreshes offline smoke coverage", () => {
