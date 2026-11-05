@@ -64,8 +64,8 @@
   function safeCatalog() { return g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData) || null; }
   function requiresLegacyAndroidPaintProfile() {
     var userAgent = String(g.navigator && g.navigator.userAgent || '');
-    var android = userAgent.match(/Android\\s+(\\d+)/i);
-    var webViewVersion = userAgent.match(/(?:Chrome|Chromium)\\/(\\d+)/i);
+    var android = userAgent.match(/Android\s+(\d+)/i);
+    var webViewVersion = userAgent.match(/(?:Chrome|Chromium)\/(\d+)/i);
     // Android 9 devices commonly ship WebView 66. Keep their first factory
     // paint on a simple compositing path; modern devices retain the full deck.
     return !!((android && Number(android[1]) <= 9) ||
