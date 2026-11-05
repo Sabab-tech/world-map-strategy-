@@ -3450,9 +3450,10 @@ test('Factory landscape controls keep readable card text, independent detail scr
 test('phone landscape factory cards keep compact aligned columns without stage clipping', () => {
   const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  const breakpointStart = css.lastIndexOf('@media (orientation:landscape) and (max-width:899px) {');
+  const redesignStart = css.indexOf('/* OMEGA Factory Type Card Redesign 2026-11-06.');
+  const breakpointStart = css.lastIndexOf('@media (orientation:landscape) and (max-width:899px) {', redesignStart);
   assert.ok(breakpointStart >= 0, 'all phone-width landscape viewports need an explicit layout rule');
-  const phoneLandscape = css.slice(breakpointStart);
+  const phoneLandscape = css.slice(breakpointStart, redesignStart);
   assert.match(phoneLandscape, /\.fp-stage \{[^}]*width:100%[^}]*height:auto[^}]*aspect-ratio:auto[^}]*overflow:visible/s,
     'the stage must grow with content instead of clipping the landscape card register');
   assert.match(phoneLandscape, /\.fp-type-catalog-grid \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/s,
@@ -3476,12 +3477,12 @@ test('factory type catalog keeps three cards in landscape and readable full-widt
   const portraitStart = css.lastIndexOf('@media (max-width:680px) and (orientation:portrait) {');
   assert.ok(portraitStart > landscapeStart, 'portrait correction must follow the landscape rules in the cascade');
   const portrait = css.slice(portraitStart);
-  assert.match(portrait, /\.fp-type-catalog-grid,[\s\S]*?grid-template-columns:minmax\(0,1fr\) !important/,
+  assert.match(portrait, /\.fp-type-catalog-grid\s*\{[^}]*grid-template-columns:minmax\(0,1fr\) !important/s,
     'portrait phone cards must use the full available width');
   assert.match(portrait, /\.fp-card-product-row \.fp-product-identity-copy strong \{[^}]*overflow-wrap:break-word;[^}]*word-break:normal;/s,
     'product names must wrap at word boundaries instead of breaking into vertical letters');
-  assert.match(portrait, /\.fp-card-recipe \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/s,
-    'Input, By-product and Output remain aligned inside the wider portrait card');
+  assert.match(portrait, /\.fp-card-recipe \{[^}]*grid-template-columns:minmax\(0,1fr\)/s,
+    'Input, By-product and Output use one readable stacked column inside the portrait card');
   assert.ok(sw.includes('omega-offline-atlas-shell-v95'),
     'offline clients must refresh the corrected factory stylesheet');
   assert.ok(sw.includes('./omega_ui_v2/factory-production-command.css'),
