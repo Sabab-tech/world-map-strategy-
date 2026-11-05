@@ -3285,7 +3285,12 @@
     var waits = [];
     var privateRuntime = g.OmegaPrivateEnterpriseRegistryV1 ||
       (g.Omega && g.Omega.PrivateEnterpriseRegistryV1) || null;
-    if (model.privateEnterpriseBaseline && model.privateEnterpriseBaseline.status === 'LOADING' && privateRuntime) {
+    // The private 197-country baseline is not needed to render the regular
+    // Factory screen. Fetch and validate it only after the player opens Companies.
+    var requestedTab = String(options && options.tab || root.__omegaV2IndustryTab || 'factories');
+    if (requestedTab === 'companies' &&
+        model.privateEnterpriseBaseline && model.privateEnterpriseBaseline.status === 'LOADING' &&
+        privateRuntime) {
       try {
         var privateReady = privateRuntime.ready;
         if (privateReady && typeof privateReady.then === 'function') waits.push(privateReady);

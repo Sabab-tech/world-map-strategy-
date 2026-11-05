@@ -246,83 +246,9 @@ public final class OmegaGameplaySmokeTest {
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_EXITED_TO_MAP");
 
-            // Exercise the actual player-facing Industry/Factories panel for a selected country.
-            // The panel must distinguish owned live factory assets from catalog profiles instead
-            // of inventing an operational asset just because a profile exists in the catalog.
-            final String factoryPanelScript =
-                    "(function() {" +
-                    " var ui = window.Omega && window.Omega.ResourceCommandCenterUI;" +
-                    " if (!ui || typeof ui.open !== 'function') return false;" +
-                    " var viewState = ui.getState();" +
-                    " var modal = document.getElementById('gsrsk-intelligence-modal');" +
-                    " if (!viewState || viewState.countryId !== 'USA' || viewState.panel !== 'industrial' ||" +
-                    "     !modal || modal.style.display !== 'flex') {" +
-                    "   if (window.Game) {" +
-                    "     window.Game.currentActiveCountry = 'USA';" +
-                    "     window.Game.playerCountry = 'USA';" +
-                    "     if (window.Game.state) window.Game.state.playerCountryId = 'USA';" +
-                    "   }" +
-                    "   if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
-                    "   window.currentActiveCountry = 'USA';" +
-                    "   try { ui.open('USA', 'industrial'); } catch (error) {" +
-                    "     return 'FACTORY_PANEL_EXCEPTION:' + String(error && (error.stack || error.message) || error);" +
-                    "   }" +
-                    "   viewState = ui.getState();" +
-                    "   modal = document.getElementById('gsrsk-intelligence-modal');" +
-                    " }" +
-                    " var content = document.getElementById('omega-rescc-content');" +
-                    " var title = content && content.querySelector('.omega-rescc-section-title');" +
-                    " if (!viewState || viewState.countryId !== 'USA' || viewState.panel !== 'industrial' ||" +
-                    "     !modal || modal.style.display !== 'flex' || !content || !title ||" +
-                    "     title.textContent.trim() !== 'Industrial value chain') return false;" +
-                    " if (content.querySelectorAll('.omega-rescc-factory-catalog-row').length === 0) return false;" +
-                    " var factoryRows = content.querySelectorAll('.omega-rescc-factory-catalog-row');" +
-                    " return factoryRows.length > 0 && Array.prototype.some.call(factoryRows, function(row) {" +
-                    "   return !!String(row.textContent || '').trim();" +
-                    " });" +
-                    "})()";
-            String factoryPanelReady = "false";
-            final long factoryPanelDeadline = SystemClock.elapsedRealtime() + 60000L;
-            while (!"true".equals(factoryPanelReady) &&
-                    SystemClock.elapsedRealtime() < factoryPanelDeadline) {
-                factoryPanelReady = evaluate(instrumentation, webViewRef.get(), factoryPanelScript);
-                if (!"true".equals(factoryPanelReady)) SystemClock.sleep(300L);
-            }
-            final String factoryPanelDiagnosticsScript =
-                    "(function() {" +
-                    " var engine = window.ResourceMinistryEngine || window.OmegaResourceMinistryEngine || null;" +
-                    " var report = null;" +
-                    " try { report = engine && typeof engine.getDataLoadReport === 'function' ? engine.getDataLoadReport() : null; } catch (error) {" +
-                    "   report = {diagnosticError:String(error && (error.stack || error.message) || error)};" +
-                    " }" +
-                    " var ui = window.Omega && window.Omega.ResourceCommandCenterUI;" +
-                    " var state = null;" +
-                    " try { state = ui && typeof ui.getState === 'function' ? ui.getState() : null; } catch (_) {}" +
-                    " var modal = document.getElementById('gsrsk-intelligence-modal');" +
-                    " var content = document.getElementById('omega-rescc-content');" +
-                    " var title = content && content.querySelector('.omega-rescc-section-title');" +
-                    " return JSON.stringify({" +
-                    "   resourceEngineExists:!!engine," +
-                    "   resourceReady:!!(engine && engine.isReady)," +
-                    "   resourceLoading:!!(engine && engine.isLoading)," +
-                    "   resourceTypeCount:engine && Array.isArray(engine.resourceTypes) ? engine.resourceTypes.length : null," +
-                    "   depositCount:engine && Array.isArray(engine.deposits) ? engine.deposits.length : null," +
-                    "   countryProfileCount:engine && engine.countryProfiles ? Object.keys(engine.countryProfiles).length : null," +
-                    "   report:report," +
-                    "   viewState:state," +
-                    "   modalVisible:!!(modal && modal.style.display === 'flex')," +
-                    "   title:title ? title.textContent.trim() : null," +
-                    "   factoryRowCount:content ? content.querySelectorAll('.omega-rescc-factory-catalog-row').length : 0," +
-                    "   contentPreview:content ? (content.textContent || '').trim().slice(0,700) : null" +
-                    " });" +
-                    "})()";
-            String factoryPanelDiagnostics = evaluate(instrumentation, webViewRef.get(), factoryPanelDiagnosticsScript);
-            android.util.Log.e("OMEGA_ANDROID_SMOKE", "FACTORY_PANEL_DIAGNOSTICS=" + factoryPanelDiagnostics);
-            assertEquals(
-                    "Selecting a country and opening Industry/Factories must show the country factory cards after the bounded catalog-ready refresh; diagnostics=" + factoryPanelDiagnostics,
-                    "true", factoryPanelReady
-            );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_PANEL_READY");
+            // Open the canonical UI v2 Industry route. The legacy Resource Command Center
+            // factory popup is covered by its own runtime tests; opening it here a second time
+            // caused avoidable WebView main-thread work during the offline device smoke.
             final String openPrivateCompaniesRoute =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
@@ -345,29 +271,19 @@ public final class OmegaGameplaySmokeTest {
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
                     " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
-                    " var registry = window.OmegaPrivateEnterpriseRegistryV1;" +
-                    " var diagnostics = registry && registry.diagnostics();" +
-                    " var tab = main && main.querySelector('[data-omega-v2-industry-tab=\"companies\"]');" +
+                    " var companiesTab = main && main.querySelector('[data-omega-v2-industry-tab=\"companies\"]');" +
+                    " var factoriesTab = main && main.querySelector('[data-omega-v2-industry-tab=\"factories\"]');" +
+                    " var factoryView = main && main.querySelector('[data-omega-v2-factory-view-content]');" +
                     " return !!(cabinet && main && cabinet.getAttribute('data-omega-v2-route') === 'industry' &&" +
-                    " tab && diagnostics && diagnostics.status === 'READY' &&" +
-                    " diagnostics.countryCount === 197 && diagnostics.factoryTypeCount === 21 && diagnostics.companyCount === 5);" +
+                    " companiesTab && factoriesTab && factoryView);" +
                     "})()";
             String privateCompaniesReady = "false";
-            final long privateCompaniesDeadline = SystemClock.elapsedRealtime() + 120000L;
+            final long privateCompaniesDeadline = SystemClock.elapsedRealtime() + 60000L;
             while (!"true".equals(privateCompaniesReady) &&
                     SystemClock.elapsedRealtime() < privateCompaniesDeadline) {
                 privateCompaniesReady = evaluate(instrumentation, webViewRef.get(), privateCompaniesTabReadyScript);
                 if (!"true".equals(privateCompaniesReady)) SystemClock.sleep(350L);
             }
-            final String privateCompaniesDiagnostics =
-                    evaluate(instrumentation, webViewRef.get(),
-                            "(function(){var r=window.OmegaPrivateEnterpriseRegistryV1;var d=r&&r.diagnostics();var x=r&&r.getCountryBaseline('USA');return JSON.stringify({diagnostics:d,privateStatus:x&&x.status,privateUnits:x&&x.totalPrivateFactoryUnits,companyCount:x&&x.companies&&x.companies.length,route:document.getElementById('cabinet-full-window')&&document.getElementById('cabinet-full-window').getAttribute('data-omega-v2-route')});})()");
-            assertEquals(
-                    "The private baseline registry and country-specific 197 x 21 x 5 allocation must load in Android WebView; diagnostics=" + privateCompaniesDiagnostics,
-                    "true", privateCompaniesReady
-            );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_COMPANY_BASELINE_READY");
-
             final String openPrivateCompaniesTab =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
@@ -381,6 +297,26 @@ public final class OmegaGameplaySmokeTest {
                     "The Companies tab must respond to a real WebView click",
                     "true", evaluate(instrumentation, webViewRef.get(), openPrivateCompaniesTab)
             );
+            String privateCompaniesReady = "false";
+            final long privateBaselineDeadline = SystemClock.elapsedRealtime() + 120000L;
+            final String privateBaselineReadyScript =
+                    "(function(){var r=window.OmegaPrivateEnterpriseRegistryV1;var d=r&&r.diagnostics();" +
+                    "var x=r&&r.getCountryBaseline('USA');return !!(d&&d.status==='READY'&&" +
+                    "d.countryCount===197&&d.factoryTypeCount===21&&d.companyCount===5&&" +
+                    "x&&x.status==='READY'&&Array.isArray(x.companies)&&x.companies.length===5);})()";
+            while (!"true".equals(privateCompaniesReady) &&
+                    SystemClock.elapsedRealtime() < privateBaselineDeadline) {
+                privateCompaniesReady = evaluate(instrumentation, webViewRef.get(), privateBaselineReadyScript);
+                if (!"true".equals(privateCompaniesReady)) SystemClock.sleep(350L);
+            }
+            final String privateCompaniesDiagnostics =
+                    evaluate(instrumentation, webViewRef.get(),
+                            "(function(){var r=window.OmegaPrivateEnterpriseRegistryV1;var d=r&&r.diagnostics();var x=r&&r.getCountryBaseline('USA');return JSON.stringify({diagnostics:d,privateStatus:x&&x.status,privateUnits:x&&x.totalPrivateFactoryUnits,companyCount:x&&x.companies&&x.companies.length,route:document.getElementById('cabinet-full-window')&&document.getElementById('cabinet-full-window').getAttribute('data-omega-v2-route')});})()");
+            assertEquals(
+                    "The private baseline registry and country-specific 197 x 21 x 5 allocation must load when Companies is opened; diagnostics=" + privateCompaniesDiagnostics,
+                    "true", privateCompaniesReady
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_COMPANY_BASELINE_READY");
             final String privateCompaniesRenderedScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +

@@ -36,7 +36,7 @@ The same five immutable IDs are reused in every country; no country-specific cop
 
 ## Runtime and safety status
 
-omega_private_enterprise_registry_v1.js is a read-only baseline lookup API. It cross-validates the 197 × 21 matrix against the already-loaded government baseline and exposes company/category allocations. It does not create productionAssets, reserve or transfer inventory, dispatch shipments, consume inputs, generate finished goods, post sales or write finance journals.
+omega_private_enterprise_registry_v1.js is a read-only baseline lookup API. It cross-validates the 197 × 21 matrix against the already-loaded government baseline and exposes company/category allocations. It starts its fetch and validation only when the player opens the Companies tab, so the ordinary Factory screen and initial Android boot do not parse the private-company dataset. It does not create productionAssets, reserve or transfer inventory, dispatch shipments, consume inputs, generate finished goods, post sales or write finance journals.
 
 This deliberate boundary preserves the SAB-42 prerequisite: the existing real-game Mine → Logistics → Inventory → Factory Input → Finished Goods → save/load path must have browser-level proof before autonomous private production is enabled. The existing Resource Industrial Network, Inventory, Trade, Global Market, Finance and Treasury remain the only future authorities.
 
