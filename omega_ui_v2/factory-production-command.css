@@ -4991,7 +4991,11 @@
   }
 }
 @media (max-width:899px) and (orientation:portrait) {
-  .omega-v2-industry--factory-home .fp-type-catalog-grid {
+  /* Match the specificity of the earlier forced three-column rules. */
+  .omega-v2-industry--factory-home .fp-type-catalog-grid,
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace .fp-type-catalog-grid,
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace.fp-workspace--detail-open .fp-type-catalog-grid {
+    display:grid !important;
     grid-template-columns:minmax(0,1fr) !important;
     gap:9px;
   }
