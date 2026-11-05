@@ -3501,6 +3501,8 @@ test('factory type card redesign preserves the three-column landscape grid while
     'recipe preview must use one readable column inside each factory card');
   assert.match(redesign, /\.fp-card-product-section\s*,[\s\S]*?grid-template-columns:58px minmax\(0,1fr\)/,
     'Input, Output and By-product labels must align in a consistent label column');
+  assert.match(redesign, /\.fp-card-product-section--output \.fp-card-product-row\s*\{[^}]*grid-column:2;/,
+    'every primary output must remain aligned in the same product column');
   assert.match(redesign, /\.fp-product-icon-frame\s*\{[^}]*flex:0 0 23px/s,
     'product icons must have a fixed frame and must not collapse');
   assert.match(redesign, /overflow-wrap:break-word;[\s\S]*?word-break:normal;/,
