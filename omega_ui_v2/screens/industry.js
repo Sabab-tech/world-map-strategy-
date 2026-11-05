@@ -708,7 +708,13 @@
 
   function buildViewModel(options) {
     options = options || {};
+    var __omegaFactoryPerfStart = Date.now();
+    function __omegaFactoryPerfMark(name) {
+      try { if (g.console && typeof g.console.log === 'function') g.console.log('[OMEGA_BOOT_FACTORY_PERF_' + name + '] +' + (Date.now() - __omegaFactoryPerfStart) + 'ms'); } catch (_) {}
+    }
+    __omegaFactoryPerfMark('BUILD_BEGIN');
     var context = countryContext(options.countryId);
+    __omegaFactoryPerfMark('COUNTRY_CONTEXT');
     var resource = context.resource || {};
     var economy = context.economy || {};
     var industrial = resource.industrialNetwork && typeof resource.industrialNetwork === 'object' ? resource.industrialNetwork : {};
@@ -719,11 +725,13 @@
     if (context.countryId && factoryDataRuntime && typeof factoryDataRuntime.getCountryFactoryRegistry === 'function') {
       try { factoryStartingRegistry = factoryDataRuntime.getCountryFactoryRegistry(context.countryId); } catch (_) { factoryStartingRegistry = null; }
     }
+    __omegaFactoryPerfMark('STARTING_FACTORY_REGISTRY');
     var inventoryRuntime = g.OmegaCountryInventoryRuntime || (g.Omega && g.Omega.CountryInventoryRuntime) || null;
     var nationalInventory = null, canonicalResourceIds = [];
     if (context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
       try { nationalInventory = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: false }); } catch (_) { nationalInventory = null; }
     }
+    __omegaFactoryPerfMark('NATIONAL_INVENTORY');
     var finishedGoodsLedger = Array.isArray(resource.finishedGoodsLedger) ? resource.finishedGoodsLedger.slice() : [];
     var economyIndustrialRuntime = economy.industrialRuntime && typeof economy.industrialRuntime === 'object' ? economy.industrialRuntime : {};
     var economyFinishedGoods = Array.isArray(economyIndustrialRuntime.finishedGoodsLedger) ? economyIndustrialRuntime.finishedGoodsLedger : [];
@@ -748,10 +756,15 @@
         }).filter(Boolean);
       }
     } catch (_) { canonicalResourceIds = []; }
+    __omegaFactoryPerfMark('RESOURCE_CATALOG');
     var assets = factoryAssetRows(resource, economy);
+    __omegaFactoryPerfMark('FACTORY_ASSET_ROWS count=' + assets.length);
     var rawMineSites = countryMineSiteRows(context.countryId, resource);
+    __omegaFactoryPerfMark('COUNTRY_MINE_SITE_ROWS count=' + rawMineSites.length);
     var mineAssets = mineAssetRows(resource);
+    __omegaFactoryPerfMark('MINE_ASSET_ROWS count=' + mineAssets.length);
     var currentExtraction = currentTurnResourceAdded(resource, context.countryId);
+    __omegaFactoryPerfMark('CURRENT_EXTRACTION flows=' + (Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger.length : 0));
     var projects = Array.isArray(industrial.projects) ? industrial.projects : (Array.isArray(economy.projects) ? economy.projects : []);
     var researchProjects = Array.isArray(resource.technologyResearchProjects) ? resource.technologyResearchProjects : [];
     var technologyTransfers = Array.isArray(resource.technologyTransfers) ? resource.technologyTransfers : [];
@@ -824,6 +837,7 @@
         raw: asset
       };
     }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); });
+    __omegaFactoryPerfMark('FACTORY_ASSET_MAPPING active=' + mappedAssets.length);
     var mineSites = rawMineSites.map(function (site) {
       var quantitative = site.quantitative || site.real && site.real.quantitative || {};
       var production = mineDailyProduction(site);
@@ -841,6 +855,7 @@
       };
     });
     var dailyProductionKnownCount = mineSites.filter(function (site) { return site.dailyProduction && site.dailyProduction.value !== null; }).length;
+    __omegaFactoryPerfMark('MINE_SITE_MAPPING');
     var currentExtractionRows = currentExtraction.rows;
     var operatingMineCount = mineAssets.filter(function (asset) { return /^(OPERATIONAL|ACTIVE|RUNNING)$/.test(String(asset.status || '').toUpperCase()); }).length;
     var factoryTypeCountsIndex = Object.create(null);
@@ -883,6 +898,7 @@
     var factoryTypeCounts = Object.keys(factoryTypeCountsIndex).map(function (key) {
       return factoryTypeCountsIndex[key];
     }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    __omegaFactoryPerfMark('FACTORY_TYPE_COUNTS types=' + factoryTypeCounts.length);
     var factoryCount = factoryTypeCounts.reduce(function (total, row) { return total + (Number(row.count) || 0); }, 0);
     var seenCatalogTypes = Object.create(null);
     var factoryTypeCatalog = Object.keys(profiles).map(function (rawType) {
@@ -901,6 +917,7 @@
       return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
     });
     var cyclesList = Object.keys(cycles).map(function (id) { return Object.assign({ factoryId: id }, cycles[id] || {}); });
+    __omegaFactoryPerfMark('MODEL_READY');
     return {
       countryId: context.countryId,
       hasCountryState: !!(context.resource || context.economy),
@@ -3437,7 +3454,10 @@
   function render(root, options) {
     options = options || {};
     if (!root) return { ok: false, code: 'INDUSTRY_ROOT_REQUIRED' };
+    var __omegaRenderStart = Date.now();
+    try { if (g.console && typeof g.console.log === 'function') g.console.log('[OMEGA_BOOT_FACTORY_PERF_RENDER_BEGIN]'); } catch (_) {}
     var model = buildViewModel(options);
+    try { if (g.console && typeof g.console.log === 'function') g.console.log('[OMEGA_BOOT_FACTORY_PERF_RENDER_MODEL_READY] +' + (Date.now() - __omegaRenderStart) + 'ms'); } catch (_) {}
     var active = options.tab || root.__omegaV2IndustryTab || 'factories';
     var countryKey = String(model.countryId || '');
     warmFactoryPlanningData(root, options, model);
