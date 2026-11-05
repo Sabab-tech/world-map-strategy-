@@ -358,3 +358,51 @@ test('Production Ministry shows each country factory count on the matching facto
     Game.state.economy.BGD.productionAssets = previousAssets;
   }
 });
+
+
+test('Resource Ministry inventory separates canonical natural resources from industrial products', () => {
+  const resource = Game.state.resource.BGD;
+  const previous = {
+    inventory:resource.inventory,
+    processedWarehouse:resource.processedWarehouse,
+    batches:resource.batches
+  };
+  resource.inventory = Object.assign({}, previous.inventory || {}, {
+    iron_ore:13,
+    steel:7,
+    iron_concentrate:4
+  });
+  resource.processedWarehouse = {
+    warehouseId:'WH-BGD-PROCESSED',
+    availableByResource:{ steel:5, iron_concentrate:2 }
+  };
+  resource.batches = (Array.isArray(previous.batches) ? previous.batches : []).concat([{
+    batchId:'INDUSTRIAL-STEEL-LOT-01',
+    resourceId:'steel',
+    remainingQuantity:5,
+    quantity:5,
+    unit:'SIMULATION_RESOURCE_UNIT',
+    warehouseId:'WH-BGD-PROCESSED',
+    stage:'PROCESSED'
+  }]);
+  try {
+    ui.open('BGD','inventory');
+    const html = elements.get('gsrsk-intelligence-modal').innerHTML;
+    const naturalTable = html.match(/<table[^>]*data-inventory-table="natural-resources"[\\s\\S]*?<\\/table>/);
+    const industrialTable = html.match(/<table[^>]*data-inventory-table="industrial-products"[\\s\\S]*?<\\/table>/);
+    assert.ok(naturalTable, 'canonical natural resources must have their own inventory table');
+    assert.ok(industrialTable, 'manufactured products must have a separate industrial inventory table');
+    assert.match(naturalTable[0],/Iron Ore/);
+    assert.match(naturalTable[0],/Crude Oil/);
+    assert.doesNotMatch(naturalTable[0],/Steel|Iron Concentrate/);
+    assert.match(industrialTable[0],/Steel/);
+    assert.match(industrialTable[0],/Iron Concentrate/);
+    assert.doesNotMatch(industrialTable[0],/Iron Ore|Crude Oil/);
+    assert.match(html,/data-batch-table="natural-resources"/);
+    assert.match(html,/data-batch-table="industrial-products"/);
+  } finally {
+    resource.inventory = previous.inventory;
+    resource.processedWarehouse = previous.processedWarehouse;
+    resource.batches = previous.batches;
+  }
+});
