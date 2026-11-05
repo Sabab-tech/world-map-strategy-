@@ -249,80 +249,114 @@ public final class OmegaGameplaySmokeTest {
             // Exercise the actual player-facing Industry/Factories panel for a selected country.
             // The panel must distinguish owned live factory assets from catalog profiles instead
             // of inventing an operational asset just because a profile exists in the catalog.
-            final String factoryPanelScript =
+            // Exercise the actual UI v2 Industry & Factories catalogue. The retired
+            // ResourceCommandCenterUI factory-row renderer is not the player-facing card UI.
+            final String reopenUiV2Script =
                     "(function() {" +
-                    " var ui = window.Omega && window.Omega.ResourceCommandCenterUI;" +
-                    " if (!ui || typeof ui.open !== 'function') return false;" +
-                    " var viewState = ui.getState();" +
-                    " var modal = document.getElementById('gsrsk-intelligence-modal');" +
-                    " if (!viewState || viewState.countryId !== 'USA' || viewState.panel !== 'industrial' ||" +
-                    "     !modal || modal.style.display !== 'flex') {" +
-                    "   if (window.Game) {" +
-                    "     window.Game.currentActiveCountry = 'USA';" +
-                    "     window.Game.playerCountry = 'USA';" +
-                    "     if (window.Game.state) window.Game.state.playerCountryId = 'USA';" +
-                    "   }" +
-                    "   if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
-                    "   window.currentActiveCountry = 'USA';" +
-                    "   try { ui.open('USA', 'industrial'); } catch (error) {" +
-                    "     return 'FACTORY_PANEL_EXCEPTION:' + String(error && (error.stack || error.message) || error);" +
-                    "   }" +
-                    "   viewState = ui.getState();" +
-                    "   modal = document.getElementById('gsrsk-intelligence-modal');" +
-                    " }" +
-                    " var content = document.getElementById('omega-rescc-content');" +
-                    " var title = content && content.querySelector('.omega-rescc-section-title');" +
-                    " if (!viewState || viewState.countryId !== 'USA' || viewState.panel !== 'industrial' ||" +
-                    "     !modal || modal.style.display !== 'flex' || !content || !title ||" +
-                    "     title.textContent.trim() !== 'Industrial value chain') return false;" +
-                    " if (content.querySelectorAll('.omega-rescc-factory-catalog-row').length === 0) return false;" +
-                    " var factoryRows = content.querySelectorAll('.omega-rescc-factory-catalog-row');" +
-                    " return factoryRows.length > 0 && Array.prototype.some.call(factoryRows, function(row) {" +
-                    "   return !!String(row.textContent || '').trim();" +
-                    " });" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var entry = document.getElementById('omega-gov-entry-v3');" +
+                    " if (!cabinet || !entry) return false;" +
+                    " if (cabinet.getAttribute('data-omega-ui-v2-active') !== 'true') entry.click();" +
+                    " return cabinet.getAttribute('data-omega-ui-v2-active') === 'true';" +
                     "})()";
-            String factoryPanelReady = "false";
-            final long factoryPanelDeadline = SystemClock.elapsedRealtime() + 60000L;
-            while (!"true".equals(factoryPanelReady) &&
-                    SystemClock.elapsedRealtime() < factoryPanelDeadline) {
-                factoryPanelReady = evaluate(instrumentation, webViewRef.get(), factoryPanelScript);
-                if (!"true".equals(factoryPanelReady)) SystemClock.sleep(300L);
+            assertEquals("UI v2 must reopen from the map before testing the live Industry screen",
+                    "true", evaluate(instrumentation, webViewRef.get(), reopenUiV2Script));
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_UI_V2_REOPENED");
+
+            final String openMoreRouteScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var button = cabinet && cabinet.querySelector('[data-omega-v2-global-nav=\"more\"]');" +
+                    " if (!button) return false;" +
+                    " button.click();" +
+                    " return true;" +
+                    "})()";
+            assertEquals("The UI v2 More navigation button must respond",
+                    "true", evaluate(instrumentation, webViewRef.get(), openMoreRouteScript));
+
+            final String moreRouteReadyScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                    " return !!(cabinet && cabinet.getAttribute('data-omega-v2-route') === 'more' &&" +
+                    "   main && main.querySelector('[data-omega-v2-global-nav=\"industry\"]'));" +
+                    "})()";
+            String moreRouteReady = "false";
+            final long moreRouteDeadline = SystemClock.elapsedRealtime() + 30000L;
+            while (!"true".equals(moreRouteReady) &&
+                    SystemClock.elapsedRealtime() < moreRouteDeadline) {
+                moreRouteReady = evaluate(instrumentation, webViewRef.get(), moreRouteReadyScript);
+                if (!"true".equals(moreRouteReady)) SystemClock.sleep(300L);
             }
-            final String factoryPanelDiagnosticsScript =
+            assertEquals("Command Center must expose the Industry & Factories action",
+                    "true", moreRouteReady);
+
+            final String openIndustryRouteScript =
                     "(function() {" +
-                    " var engine = window.ResourceMinistryEngine || window.OmegaResourceMinistryEngine || null;" +
-                    " var report = null;" +
-                    " try { report = engine && typeof engine.getDataLoadReport === 'function' ? engine.getDataLoadReport() : null; } catch (error) {" +
-                    "   report = {diagnosticError:String(error && (error.stack || error.message) || error)};" +
-                    " }" +
-                    " var ui = window.Omega && window.Omega.ResourceCommandCenterUI;" +
-                    " var state = null;" +
-                    " try { state = ui && typeof ui.getState === 'function' ? ui.getState() : null; } catch (_) {}" +
-                    " var modal = document.getElementById('gsrsk-intelligence-modal');" +
-                    " var content = document.getElementById('omega-rescc-content');" +
-                    " var title = content && content.querySelector('.omega-rescc-section-title');" +
-                    " return JSON.stringify({" +
-                    "   resourceEngineExists:!!engine," +
-                    "   resourceReady:!!(engine && engine.isReady)," +
-                    "   resourceLoading:!!(engine && engine.isLoading)," +
-                    "   resourceTypeCount:engine && Array.isArray(engine.resourceTypes) ? engine.resourceTypes.length : null," +
-                    "   depositCount:engine && Array.isArray(engine.deposits) ? engine.deposits.length : null," +
-                    "   countryProfileCount:engine && engine.countryProfiles ? Object.keys(engine.countryProfiles).length : null," +
-                    "   report:report," +
-                    "   viewState:state," +
-                    "   modalVisible:!!(modal && modal.style.display === 'flex')," +
-                    "   title:title ? title.textContent.trim() : null," +
-                    "   factoryRowCount:content ? content.querySelectorAll('.omega-rescc-factory-catalog-row').length : 0," +
-                    "   contentPreview:content ? (content.textContent || '').trim().slice(0,700) : null" +
-                    " });" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                    " var button = main && main.querySelector('[data-omega-v2-global-nav=\"industry\"]');" +
+                    " if (!button) return false;" +
+                    " button.click();" +
+                    " return true;" +
                     "})()";
-            String factoryPanelDiagnostics = evaluate(instrumentation, webViewRef.get(), factoryPanelDiagnosticsScript);
-            android.util.Log.e("OMEGA_ANDROID_SMOKE", "FACTORY_PANEL_DIAGNOSTICS=" + factoryPanelDiagnostics);
+            assertEquals("The Industry & Factories UI v2 action must respond",
+                    "true", evaluate(instrumentation, webViewRef.get(), openIndustryRouteScript));
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_UI_V2_INDUSTRY_CLICKED");
+
+            final String factoryCardReadyScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                    " var screen = main && main.querySelector('[data-factory-stock-input-ui=\"v2\"]');" +
+                    " var grid = screen && screen.querySelector('.fp-type-catalog-grid');" +
+                    " var cards = grid ? grid.querySelectorAll('.omega-v2-factory-type-card') : [];" +
+                    " var recipe = null;" +
+                    " var name = null;" +
+                    " for (var i = 0; i < cards.length; i++) {" +
+                    "   if (!recipe) recipe = cards[i].querySelector('.fp-card-recipe');" +
+                    "   if (!name) name = cards[i].querySelector('.fp-type-card-name strong');" +
+                    " }" +
+                    " var rects = Array.prototype.map.call(cards, function(card) { return card.getBoundingClientRect(); });" +
+                    " var firstTop = rects.length ? Math.round(rects[0].top) : -1;" +
+                    " var firstRowCards = rects.filter(function(rect) { return Math.abs(Math.round(rect.top) - firstTop) <= 1; }).length;" +
+                    " var isPortrait = window.innerHeight >= window.innerWidth;" +
+                    " var expectedFirstRowCards = isPortrait && window.innerWidth <= 899 ? 1 : 3;" +
+                    " var recipeStyle = recipe ? window.getComputedStyle(recipe) : null;" +
+                    " var nameStyle = name ? window.getComputedStyle(name) : null;" +
+                    " window.__OMEGA_ANDROID_FACTORY_CARD_DIAGNOSTICS = {" +
+                    "   route:cabinet ? cabinet.getAttribute('data-omega-v2-route') : null," +
+                    "   screen:!!screen, grid:!!grid, factoryCardCount:cards.length," +
+                    "   viewportWidth:window.innerWidth, viewportHeight:window.innerHeight," +
+                    "   isPortrait:isPortrait, firstRowCards:firstRowCards," +
+                    "   expectedFirstRowCards:expectedFirstRowCards," +
+                    "   factoryName:name ? String(name.textContent || '').trim() : null," +
+                    "   recipeDisplay:recipeStyle ? recipeStyle.display : null," +
+                    "   recipeDirection:recipeStyle ? recipeStyle.flexDirection : null," +
+                    "   productNameWhiteSpace:nameStyle ? nameStyle.whiteSpace : null," +
+                    "   productNameWordBreak:nameStyle ? nameStyle.wordBreak : null" +
+                    " };" +
+                    " return !!(cabinet && cabinet.getAttribute('data-omega-v2-route') === 'industry' &&" +
+                    "   screen && grid && cards.length >= 3 && name && String(name.textContent || '').trim() &&" +
+                    "   recipeStyle && recipeStyle.display === 'flex' && recipeStyle.flexDirection === 'column' &&" +
+                    "   nameStyle && nameStyle.whiteSpace === 'normal' && nameStyle.wordBreak === 'normal' &&" +
+                    "   firstRowCards === expectedFirstRowCards);" +
+                    "})()";
+            String factoryCardReady = "false";
+            final long factoryCardDeadline = SystemClock.elapsedRealtime() + 60000L;
+            while (!"true".equals(factoryCardReady) &&
+                    SystemClock.elapsedRealtime() < factoryCardDeadline) {
+                factoryCardReady = evaluate(instrumentation, webViewRef.get(), factoryCardReadyScript);
+                if (!"true".equals(factoryCardReady)) SystemClock.sleep(350L);
+            }
+            final String factoryCardDiagnostics = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_FACTORY_CARD_DIAGNOSTICS || {});})()");
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "FACTORY_CARD_DIAGNOSTICS=" + factoryCardDiagnostics);
             assertEquals(
-                    "Selecting a country and opening Industry/Factories must show the country factory cards after the bounded catalog-ready refresh; diagnostics=" + factoryPanelDiagnostics,
-                    "true", factoryPanelReady
+                    "The real UI v2 factory catalogue must render readable stacked cards and the responsive row count; diagnostics=" + factoryCardDiagnostics,
+                    "true", factoryCardReady
             );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_PANEL_READY");
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_UI_V2_CARD_LAYOUT_READY");
         } finally {
             if (activity != null) {
                 final MainActivity launchedActivity = activity;
