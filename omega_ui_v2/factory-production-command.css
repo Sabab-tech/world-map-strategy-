@@ -4258,3 +4258,98 @@
 .omega-v2-industry--factory-home .fp-factory-detail-panel[hidden] {
   display:none !important;
 }
+
+/* Tighten Factory product identity and metadata. Keep the friendly product name
+   beside its canonical code, and prevent grid/flex stretching from separating
+   the coefficient and per-day rate by large empty vertical gaps. */
+.omega-v2-industry--factory-home .fp-factory-input-identity-line {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:3px 7px;
+  width:100%;
+  min-width:0;
+  margin:0;
+}
+.omega-v2-industry--factory-home .fp-factory-input-identity-line .fp-product-identity {
+  flex:0 1 auto;
+  min-width:0;
+  gap:5px;
+}
+.omega-v2-industry--factory-home .fp-factory-input-identity-line .fp-factory-input-id {
+  display:inline-flex;
+  align-items:center;
+  flex:0 0 auto;
+  margin:0;
+  padding:2px 5px;
+  border:1px solid rgba(104,164,197,.28);
+  border-radius:3px;
+  color:#9bb6c8;
+  background:rgba(10,31,47,.72);
+  font-size:7px;
+  line-height:1.15;
+  white-space:nowrap;
+  overflow-wrap:normal;
+}
+.omega-v2-industry--factory-home .fp-card-recipe {
+  align-content:start;
+  align-items:start;
+  justify-content:flex-start;
+  grid-auto-rows:min-content;
+}
+.omega-v2-industry--factory-home .fp-card-product-section,
+.omega-v2-industry--factory-home .fp-card-input-section,
+.omega-v2-industry--factory-home .fp-card-detail-columns > div {
+  align-self:start;
+  align-content:start;
+  justify-content:flex-start;
+  min-height:0;
+}
+.omega-v2-industry--factory-home .fp-card-product-row {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  grid-auto-rows:min-content;
+  align-content:start;
+  align-items:start;
+  align-self:start;
+  gap:2px;
+  height:auto;
+  min-height:0;
+  margin:0;
+}
+.omega-v2-industry--factory-home .fp-card-product-row > .fp-product-identity {
+  grid-column:1;
+  width:100%;
+  align-self:start;
+}
+.omega-v2-industry--factory-home .fp-card-product-meta {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:2px;
+  grid-column:1;
+  width:100%;
+  min-width:0;
+  margin:0;
+  padding-left:26px;
+}
+.omega-v2-industry--factory-home .fp-card-product-meta .fp-card-product-quantity {
+  display:block;
+  grid-column:auto;
+  width:auto;
+  max-width:100%;
+  margin:0;
+  padding:0;
+  text-align:left;
+  line-height:1.2;
+}
+.omega-v2-industry--factory-home .fp-card-product-meta .fp-card-product-rate,
+.omega-v2-industry--factory-home .fp-card-product-meta .fp-card-product-actual {
+  display:block;
+  grid-column:auto;
+  align-self:flex-start;
+  margin:0;
+  padding:0;
+  line-height:1.25;
+}

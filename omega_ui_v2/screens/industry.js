@@ -1655,8 +1655,9 @@
 
   function factoryInputIdentityMarkup(model, productId) {
     var label = panelProductLabel(model, productId);
-    return factoryProductIdentityMarkup(productId, label) +
-      '<small class="fp-factory-input-id">' + esc(productId) + '</small>' +
+    return '<span class="fp-factory-input-identity-line">' +
+      factoryProductIdentityMarkup(productId, label) +
+      '<small class="fp-factory-input-id">' + esc(productId) + '</small></span>' +
       factoryProductUsageMarkup(model, productId);
   }
 
@@ -2826,7 +2827,8 @@
     }
     return '<div class="fp-card-product-row" data-product-role="' + esc(roleLabel || side) + '">' +
       factoryProductIdentityMarkup(productId, panelProductLabel(model, productId)) +
-      '<span class="fp-card-product-quantity">' + esc(quantity) + '</span>' + rateMarkup + actual +
+      '<div class="fp-card-product-meta"><span class="fp-card-product-quantity">' + esc(quantity) + '</span>' +
+      rateMarkup + actual + '</div>' +
     '</div>';
   }
 
