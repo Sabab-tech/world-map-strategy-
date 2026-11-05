@@ -395,6 +395,13 @@ public final class OmegaGameplaySmokeTest {
                     " var plan = screen && screen.querySelector('[data-factory-input-plan=\"daily-v2\"]');" +
                     " var aggregate = plan && plan.querySelector('.fp-factory-input-total-table tbody tr');" +
                     " var perFactory = screen && screen.querySelector('.fp-factory-data-card .fp-factory-input-table tbody tr');" +
+                    " window.__OMEGA_ANDROID_INPUT_TABLE_DIAGNOSTICS = {" +
+                    " screen:!!screen, stage:!!stage, plan:!!plan, aggregate:!!aggregate, perFactory:!!perFactory," +
+                    " factoryCards:screen ? screen.querySelectorAll('.fp-factory-data-card').length : -1," +
+                    " aggregateRows:plan ? plan.querySelectorAll('.fp-factory-input-total-table tbody tr').length : -1," +
+                    " factoryRows:screen ? screen.querySelectorAll('.fp-factory-data-card .fp-factory-input-table tbody tr').length : -1," +
+                    " factoryCount:window.Game && window.Game.state && window.Game.state.economy && window.Game.state.economy.USA && Array.isArray(window.Game.state.economy.USA.productionAssets) ? window.Game.state.economy.USA.productionAssets.length : -1" +
+                    " };" +
                     " return !!(screen && stage && plan && aggregate && perFactory);" +
                     "})()";
             String inputTablesReady = "false";
@@ -406,7 +413,7 @@ public final class OmegaGameplaySmokeTest {
             }
             assertEquals(
                     "The Input tab must show both all-factory daily requirements and per-factory input inventory rows",
-                    "true", inputTablesReady
+                    "true", inputTablesReady + "; diagnostics=" + evaluate(instrumentation, webViewRef.get(), "(function(){return JSON.stringify(window.__OMEGA_ANDROID_INPUT_TABLE_DIAGNOSTICS || {});})()")
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_INPUT_TABLES_READY");
 
