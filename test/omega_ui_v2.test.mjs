@@ -489,6 +489,13 @@ test('industry factory cards show owned factory counts without a separate source
     factoryProfiles: {
       STEEL_MILL: { name:'Steel Mill', defaultRecipeId:'STEEL-RECIPE' },
       CEMENT_PLANT: { name:'Cement Plant', defaultRecipeId:'CEMENT-RECIPE' }
+    },
+    downstreamFactoryRecipes: {
+      'STEEL-RECIPE': {
+        factoryType:'STEEL_MILL', inputs:{iron_ore:1}, outputs:{steel:1,slag:0.1},
+        inputUnit:'tonnes', outputUnit:'tonnes', quantityBasis:'PER_SIMULATION_PRODUCTION_UNIT',
+        presentation:{primaryInputs:['iron_ore'],primaryOutputs:['steel'],byProducts:['slag']}
+      }
     }
   };
   globalThis.OmegaCountryFactoryStartingBaselineV1 = {
@@ -516,17 +523,28 @@ test('industry factory cards show owned factory counts without a separate source
       countryId:'BGD', tab:'factories', factoryView:'types'
     });
     assert.equal(result.ok, true);
-    assert.match(root.innerHTML, /Factory types &amp; country totals/);
+    assert.doesNotMatch(root.innerHTML, /Factory types &amp; country totals|EXISTING FACTORIES IN THIS COUNTRY|FACTORY TYPES NOT PRESENT IN THIS COUNTRY|EXISTING IN THIS COUNTRY|NOT PRESENT IN THIS COUNTRY/);
+    assert.doesNotMatch(root.innerHTML, /Modeled build time|Modeled capacity|Modeled construction cost|simulation/i);
+    assert.doesNotMatch(root.innerHTML, /class="fp-summary"/);
     assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
+    const steelCardStart = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="STEEL_MILL"');
+    const steelCardEnd = root.innerHTML.indexOf('</article>', steelCardStart);
+    const steelCardMarkup = root.innerHTML.slice(steelCardStart, steelCardEnd);
+    const inputPosition = steelCardMarkup.indexOf('data-product-role="input"');
+    const byProductPosition = steelCardMarkup.indexOf('data-product-role="by-product"');
+    const outputPosition = steelCardMarkup.indexOf('data-product-role="primary"');
+    assert.ok(inputPosition >= 0 && byProductPosition > inputPosition && outputPosition > byProductPosition,
+      'Input, By-product and Output must stay together in that left-to-right order');
+    assert.match(steelCardMarkup, /fp-product-icon-frame/,
+      'factory product identities must retain their canonical resource/product icons');
     const existingCard = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="STEEL_MILL"');
     const absentCard = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="CEMENT_PLANT"');
     assert.ok(existingCard >= 0 && absentCard > existingCard,
       'country-owned factory types must appear above types with zero factories');
-    assert.match(root.innerHTML, /EXISTING FACTORIES IN THIS COUNTRY/);
-    assert.match(root.innerHTML, /FACTORY TYPES NOT PRESENT IN THIS COUNTRY/);
-    assert.match(root.innerHTML, /data-factory-presence="present"/);
-    assert.match(root.innerHTML, /data-factory-presence="absent"/);
+    const zeroFactoryCard = root.innerHTML.slice(absentCard, root.innerHTML.indexOf('</article>', absentCard));
+    assert.match(zeroFactoryCard, /<span>Factories<\/span><strong>0<\/strong>/,
+      'zero itself clearly communicates that the selected country has no factory of that type');
     assert.doesNotMatch(root.innerHTML, /UNIDO|Official establishment data|Establishments|Source status/);
     const foreign = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'USA' });
     assert.equal(foreign.factoryCount, 0, 'another country does not inherit Bangladesh factory counts');
@@ -1621,9 +1639,8 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(root.innerHTML,/factory utility shortage/i);
     assert.match(root.innerHTML,/data-omega-v2-factory-build="FAC-STEEL"/);
     assert.match(root.innerHTML,/data-omega-v2-factory-destroy="FAC-STEEL"/);
-    assert.match(root.innerHTML,/class="fp-summary"/);
-    assert.match(root.innerHTML,/FACTORIES/);
-    assert.match(root.innerHTML,/PRODUCTION CYCLES/);
+    assert.doesNotMatch(root.innerHTML,/class="fp-summary"/);
+    assert.doesNotMatch(root.innerHTML,/PRODUCTION CYCLES/);
 
     // Every industrial tab must remain inside the reference command stage.
     // The old renderer used a different root for non-factory tabs, which discarded
@@ -1661,7 +1678,7 @@ test('factory command cards use canonical SVGs, daily production state, type cou
 
     const typeView = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'types'});
     assert.equal(typeView.ok,true);
-    assert.match(root.innerHTML,/Factory types &amp; country totals/);
+    assert.doesNotMatch(root.innerHTML,/Factory types &amp; country totals|EXISTING FACTORIES IN THIS COUNTRY|FACTORY TYPES NOT PRESENT IN THIS COUNTRY/);
     assert.equal((root.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length,3);
     assert.match(root.innerHTML,/Factories/);
     assert.match(root.innerHTML,/data-factory-view="types"/);
@@ -3334,6 +3351,8 @@ test('Factory landscape controls keep readable card text, independent detail scr
   assert.ok(css.includes('overflow-y:auto'));
   assert.ok(css.includes('touch-action:pan-y'));
   assert.ok(css.includes('min-height:46px'));
+  assert.match(css, /\.fp-card-recipe \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/s,
+    'Input, By-product and Output must have a shared three-column recipe row');
   assert.ok(css.includes('max-width:899px'));
   assert.ok(source.includes('var currentFactoryView = root.__omegaV2IndustryFactoryView'));
   assert.ok(source.includes('viewContent.innerHTML = factoryHomeViewMarkup'));
@@ -3342,7 +3361,7 @@ test('Factory landscape controls keep readable card text, independent detail scr
 });
 
 
-test('phone landscape factory cards keep a full-width horizontal layout without stage clipping', () => {
+test('phone landscape factory cards keep compact aligned columns without stage clipping', () => {
   const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
   const breakpointStart = css.lastIndexOf('@media (orientation:landscape) and (max-width:899px) {');
@@ -3350,8 +3369,8 @@ test('phone landscape factory cards keep a full-width horizontal layout without 
   const phoneLandscape = css.slice(breakpointStart);
   assert.match(phoneLandscape, /\.fp-stage \{[^}]*width:100%[^}]*height:auto[^}]*aspect-ratio:auto[^}]*overflow:visible/s,
     'the stage must grow with content instead of clipping the landscape card register');
-  assert.match(phoneLandscape, /\.fp-type-catalog-grid \{[^}]*grid-template-columns:minmax\(0,1fr\)/s,
-    'factory type cards must use the full available row width');
+  assert.match(phoneLandscape, /\.fp-type-catalog-grid \{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/s,
+    'factory type cards must use two compact columns in phone landscape');
   assert.match(phoneLandscape, /\.fp-assets-workspace \.omega-v2-factory-deck \{[^}]*position:relative[^}]*inset:auto[^}]*width:100%[^}]*max-height:none[^}]*grid-template-columns:minmax\(0,1fr\)/s,
     'live factory cards must leave the fixed container-unit position and use normal document flow');
   assert.match(phoneLandscape, /\.fp-factory-detail-panel \{[^}]*order:2[^}]*width:100%/s,

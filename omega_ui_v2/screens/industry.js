@@ -2777,7 +2777,7 @@
       '<div class="fp-card-build-metrics">' +
         '<div><small>Build duration</small><strong>' + fmt(profile.constructionDays, 'game-days') + '</strong></div>' +
         '<div><small>Construction cost</small><strong>' + fmt(profile.constructionCost, costUnit) + '</strong></div>' +
-        '<div><small>Designed capacity</small><strong>' + fmt(profile.defaultCapacityPerDay, 'simulation units/day') + '</strong></div>' +
+        '<div><small>Designed capacity</small><strong>' + fmt(profile.defaultCapacityPerDay, 'game units/day') + '</strong></div>' +
       '</div>' +
       materialsMarkup +
       '<div class="fp-card-requirements-grid"><div><small>Required infrastructure</small><div class="fp-card-requirement-tags">' + formatTags(infrastructure) + '</div></div>' +
@@ -2789,9 +2789,14 @@
     '</section>';
   }
 
-  function factoryRecipeProductRow(route, productId, side, model, asset, roleLabel) {
+  function factoryRecipeProductRow(route, productId, side, model, asset, roleLabel, compactPreview) {
     var map = side === 'input' ? route.inputs || {} : route.outputs || {};
     var amount = map[productId];
+    if (compactPreview === true) {
+      return '<div class="fp-card-product-row" data-product-role="' + esc(roleLabel || side) + '">' +
+        factoryProductIdentityMarkup(productId, panelProductLabel(model, productId)) +
+      '</div>';
+    }
     var quantity = factoryQuantityBasisLabel(amount, route, side);
     var routeUnit = side === 'input' ? route.inputUnit : route.outputUnit;
     var routeRate = factoryRouteRate(amount, route, factoryRouteCardCapacity(model, route, asset), routeUnit);
@@ -2962,13 +2967,8 @@
     routes = Array.isArray(routes) ? routes : [];
     var state = factoryCardUiState(model);
     var expanded = state.expandedKey === cardKey;
-    if (!routes.length) {
-      return '<section class="fp-card-recipe fp-card-recipe--empty"><span class="fp-card-muted">' +
-        (String(cardKey).indexOf('type:UNIVERSAL_MATERIALS') === 0
-          ? 'No eligible country resource-processing route is recorded.'
-          : 'Canonical production route not recorded.') +
-        '</span></section>';
-    }
+    if (!routes.length) return '';
+
     var route = routes[0];
     var inputs = Object.keys(route.inputs || {});
     var outputs = Object.keys(route.outputs || {});
@@ -2976,36 +2976,39 @@
     var primaryOutputs = factoryRouteProductIds(route, 'primaryOutputs', route.outputs || {});
     var coProducts = factoryRouteProductIds(route, 'coProducts', route.outputs || {});
     var byProducts = factoryRouteProductIds(route, 'byProducts', route.outputs || {});
-    // If role metadata is missing or no longer matches a route key, keep one
-    // deterministic canonical input visible without falsely calling it primary.
     if (!primaryInputs.length && inputs.length) primaryInputs = [inputs[0]];
-    if (!primaryOutputs.length && outputs.length === 1) primaryOutputs = outputs.slice();
+    // Use a neutral Output preview when role metadata is missing.
+    if (!primaryOutputs.length && outputs.length) primaryOutputs = [outputs[0]];
+
     var visibleInputs = primaryInputs.slice(0, 1);
-    var visibleOutputs = primaryOutputs.slice(0, 2);
+    var visibleOutputs = primaryOutputs.slice(0, 1);
+    var visibleByProducts = byProducts.slice(0, 1);
     var hiddenInputs = inputs.filter(function (id) { return visibleInputs.indexOf(id) < 0; });
     var hiddenOutputs = outputs.filter(function (id) {
       return visibleOutputs.indexOf(id) < 0 && byProducts.indexOf(id) < 0;
     });
-    var visibleByProducts = byProducts.slice(0, 1);
     var hasAlternatives = routes.length > 1;
     var html = '<section class="fp-card-recipe" data-factory-card-recipe="' + esc(cardKey) + '">';
-    if (visibleOutputs.length) {
-      html += '<div class="fp-card-product-section fp-card-product-section--output"><div class="fp-card-section-label">Main output</div>' +
-        visibleOutputs.map(function (id) { return factoryRecipeProductRow(route, id, 'output', model, asset, 'primary'); }).join('') +
+
+    if (visibleInputs.length) {
+      html += '<div class="fp-card-product-section fp-card-product-section--input">' +
+        '<div class="fp-card-section-label">Input</div>' +
+        factoryRecipeProductRow(route, visibleInputs[0], 'input', model, asset, 'input', true) +
       '</div>';
-    } else {
-      html += '<div class="fp-card-product-section"><div class="fp-card-section-label">Outputs</div><p class="fp-card-muted">Output roles not classified. Open production details to inspect the route.</p></div>';
     }
     if (visibleByProducts.length) {
-      html += '<div class="fp-card-byproduct-row"><span class="fp-card-section-label">By-product:</span>' +
-        factoryRecipeProductRow(route, visibleByProducts[0], 'output', model, asset, 'by-product') +
+      html += '<div class="fp-card-product-section fp-card-product-section--byproduct">' +
+        '<div class="fp-card-section-label">By-product</div>' +
+        factoryRecipeProductRow(route, visibleByProducts[0], 'output', model, asset, 'by-product', true) +
       '</div>';
     }
-    if (visibleInputs.length) {
-      html += '<div class="fp-card-input-section"><div class="fp-card-section-label">Input</div>' +
-        factoryRecipeProductRow(route, visibleInputs[0], 'input', model, asset, 'input') +
+    if (visibleOutputs.length) {
+      html += '<div class="fp-card-product-section fp-card-product-section--output">' +
+        '<div class="fp-card-section-label">Output</div>' +
+        factoryRecipeProductRow(route, visibleOutputs[0], 'output', model, asset, 'primary', true) +
       '</div>';
     }
+
     var canExpand = hasAlternatives || hiddenInputs.length > 0 || hiddenOutputs.length > 0 ||
       byProducts.length > visibleByProducts.length || coProducts.length > 0 ||
       !!(route.recipeId || num(route.cycleDays) !== null || route.quantityBasis);
@@ -3013,9 +3016,6 @@
       html += '<button type="button" class="fp-card-disclosure" data-omega-v2-factory-card-expand data-card-key="' + esc(cardKey) + '" aria-expanded="' + (expanded ? 'true' : 'false') + '" aria-label="' + (expanded ? 'Close production details' : 'Open production details') + '">' +
         '<span class="fp-card-disclosure-plate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 9 7 7 7-7M5 4l7 7 7-7"/></svg></span>' +
       '</button>';
-    }
-    if (hasAlternatives && !expanded) {
-      html += '<small class="fp-card-route-count">' + (routes.length - 1) + ' alternative production route(s) available in details</small>';
     }
     return html + '</section>';
   }
@@ -3096,34 +3096,32 @@
     var support = factoryTypeBuildSupport(type, catalog);
     var ownedCount = model.hasCountryState ? factoryTypeOwnedCount({ type: type }, model) : null;
     var presence = ownedCount === null ? 'unknown' : Number(ownedCount) > 0 ? 'present' : 'absent';
-    var presenceLabel = presence === 'present' ? 'EXISTING IN THIS COUNTRY'
-      : presence === 'absent' ? 'NOT PRESENT IN THIS COUNTRY' : 'COUNTRY DATA NOT LOADED';
     var canBuild = model.canOperateSelectedCountry === true && support.canBuild;
-    var duration = item.constructionDays == null ? 'Not recorded' : fmt(item.constructionDays) + ' game-days';
-    var capacity = item.defaultCapacityPerDay == null ? 'Not recorded' : fmt(item.defaultCapacityPerDay) + ' simulation units/day';
-    var cost = item.constructionCost == null ? 'Not recorded' : fmt(item.constructionCost);
     var disabledReason = !model.canOperateSelectedCountry
       ? 'Building is available only for the active player country.'
       : !support.canBuild ? 'No canonical recipe/input is registered for this type.' : '';
-    var header = '<header class="fp-type-card-head"><span class="fp-type-card-art">' + factorySvgMarkup({ type:type, name:item.name || type }) + '</span>' +
-      '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong><small>' + esc(readableIdentifier(item.category || 'Uncategorised')) + '</small></span></header>';
+    var header = '<header class="fp-type-card-head"><span class="fp-type-card-art">' +
+      factorySvgMarkup({ type:type, name:item.name || type }) + '</span>' +
+      '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong></span></header>';
     if (state.buildKey === cardKey) {
-      return '<article class="omega-v2-factory-type-card omega-v2-factory-type-card--' + presence + ' fp-type-card--build" data-omega-v2-factory-type-card data-factory-type="' + esc(type) + '" data-factory-presence="' + presence + '">' +
+      return '<article class="omega-v2-factory-type-card omega-v2-factory-type-card--' + presence +
+        ' fp-type-card--build" data-omega-v2-factory-type-card data-factory-type="' + esc(type) +
+        '" data-factory-presence="' + presence + '">' +
         header + '<div class="fp-type-card-count"><span>Factories</span><strong>' + fmt(ownedCount) + '</strong></div>' +
         factoryBuildRequirementsMarkup(type, model, cardKey) + '</article>';
     }
     var routes = factoryPresentationRoutes(model, type, null);
-    return '<article class="omega-v2-factory-type-card omega-v2-factory-type-card--' + presence + (state.expandedKey === cardKey ? ' fp-type-card--expanded' : '') + '" data-omega-v2-factory-type-card data-factory-type="' + esc(type) + '" data-factory-presence="' + presence + '">' +
+    return '<article class="omega-v2-factory-type-card omega-v2-factory-type-card--' + presence +
+      (state.expandedKey === cardKey ? ' fp-type-card--expanded' : '') +
+      '" data-omega-v2-factory-type-card data-factory-type="' + esc(type) +
+      '" data-factory-presence="' + presence + '">' +
       header +
       '<div class="fp-type-card-count"><span>Factories</span><strong>' + fmt(ownedCount) + '</strong></div>' +
-      '<div class="fp-type-card-presence" data-state="' + presence + '"><span class="fp-type-card-presence-led" aria-hidden="true"></span><strong>' + presenceLabel + '</strong></div>' +
-      '<dl class="fp-type-card-metrics"><div><dt>Modeled build time</dt><dd>' + esc(duration) + '</dd></div>' +
-      '<div><dt>Modeled capacity</dt><dd>' + esc(capacity) + '</dd></div>' +
-      '<div><dt>Modeled construction cost</dt><dd>' + esc(cost) + '</dd></div></dl>' +
       factoryCardRecipeMarkup(routes, model, cardKey, null) +
-      '<div class="fp-type-card-actions"><button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build-details data-omega-v2-factory-build="CATALOG" data-factory-card-key="' + esc(cardKey) + '" data-factory-type="' + esc(type) + '"' +
+      '<div class="fp-type-card-actions"><button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build-details data-omega-v2-factory-build="CATALOG" data-factory-card-key="' +
+      esc(cardKey) + '" data-factory-type="' + esc(type) + '"' +
       (canBuild ? '' : ' disabled title="' + esc(disabledReason) + '"') +
-      '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Build project</button></div></article>';
+      '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Build</button></div></article>';
   }
 
   function factoryTypeCatalogMarkup(model) {
@@ -3148,30 +3146,11 @@
       var byCategory = categoryA.localeCompare(categoryB);
       return byCategory || String(a && (a.name || a.type) || '').localeCompare(String(b && (b.name || b.type) || ''));
     });
-    var cardRows = rows.map(function (item) { return factoryTypeCard(item, model); });
-    var cards = '', lastCategory = null, lastPresence = null;
-    rows.forEach(function (item, index) {
-      var category = String(item && item.category || 'Uncategorised');
-      var count = owned(item);
-      var presence = count === null ? 'unknown' : Number(count) > 0 ? 'present' : 'absent';
-      if (lastPresence !== presence) {
-        var groupLabel = presence === 'present' ? 'EXISTING FACTORIES IN THIS COUNTRY'
-          : presence === 'absent' ? 'FACTORY TYPES NOT PRESENT IN THIS COUNTRY'
-          : 'FACTORY TYPES · COUNTRY DATA NOT LOADED';
-        cards += '<div class="fp-type-catalog-divider fp-type-catalog-divider--presence" role="separator" data-factory-presence-group="' + presence + '"><span>' + groupLabel + '</span></div>';
-        lastPresence = presence;
-        lastCategory = null;
-      }
-      if (lastCategory !== null && category !== lastCategory) cards += '<div class="fp-type-catalog-divider" role="separator" aria-hidden="true"></div>';
-      cards += cardRows[index];
-      lastCategory = category;
-    });
-    var empty = '<div class="omega-v2-factory-type-empty">Factory type profiles are not loaded. No ownership or production figures have been invented.</div>';
-    return '<section class="fp-type-catalog" aria-label="Factory types and selected-country totals">' +
-      '<header class="fp-type-catalog-heading"><div><span>OMEGA / COUNTRY INDUSTRY REGISTER</span><strong>Factory types &amp; country totals</strong></div>' +
-      '<span class="fp-type-catalog-total">' + fmt(rows.length) + ' types</span></header>' +
-      '<p class="fp-type-catalog-note">Factory types owned by this country appear first. Types with no recorded factories are grouped at the bottom.</p>' +
-      '<div class="fp-factory-catalog-workspace' + (factoryCardUiState(model).expandedKey ? ' fp-workspace--detail-open' : '') + '"><div class="fp-type-catalog-grid">' + (cards || empty) + '</div>' +
+    var cards = rows.map(function (item) { return factoryTypeCard(item, model); }).join('');
+    var empty = '<div class="omega-v2-factory-type-empty">No factory types available.</div>';
+    return '<section class="fp-type-catalog" aria-label="Factory types">' +
+      '<div class="fp-factory-catalog-workspace' + (factoryCardUiState(model).expandedKey ? ' fp-workspace--detail-open' : '') +
+      '"><div class="fp-type-catalog-grid">' + (cards || empty) + '</div>' +
       factoryDetailPanelMarkup(model) + '</div></section>';
   }
 
@@ -3230,7 +3209,7 @@
       '<div class="fp-project-type"><span>Factory type</span><strong>' + esc(profile.name || readableIdentifier(type)) + '</strong><small>' + esc(readableIdentifier(type)) + '</small></div>' +
       recipeControl + resourceControl +
       '<div class="fp-project-fields"><label>Build duration (modeled game-days)<input type="number" name="buildDays" min="1" step="1" inputmode="numeric" placeholder="' + esc(profile.constructionDays || 'Use profile default') + '"></label>' +
-      '<label>Capacity (simulation units/day)<input type="number" name="capacityPerDay" min="1" step="any" inputmode="decimal" placeholder="' + esc(profile.defaultCapacityPerDay || 'Use profile default') + '"></label>' +
+      '<label>Capacity (game units/day)<input type="number" name="capacityPerDay" min="1" step="any" inputmode="decimal" placeholder="' + esc(profile.defaultCapacityPerDay || 'Use profile default') + '"></label>' +
       '<label>Construction cost (' + esc(profile.unit || 'GAME_CURRENCY_UNITS') + ')<input type="number" name="cost" min="1" step="any" inputmode="decimal" placeholder="' + esc(profile.constructionCost || 'Use profile default') + '"></label></div>' +
       '<p class="fp-project-note">' + esc(gateText) + '</p><div class="fp-project-actions">' +
       '<button type="submit" class="omega-v2-factory-button omega-v2-factory-button--build"' + (disabled ? ' disabled' : '') + '>Start construction project</button>' +
@@ -3393,7 +3372,8 @@
         (factoryView === 'types' ? 'Show factory details' : 'Show factory type totals') + '">' +
         (factoryView === 'types' ? 'Details' : 'Type totals') + '</button>' : '') +
       '</nav></header>';
-    var summaryMarkup = '<div class="fp-summary" aria-label="Selected country production summary">' +
+    var summaryMarkup = active === 'factories' ? '' :
+      '<div class="fp-summary" aria-label="Selected country production summary">' +
       '<div class="fp-summary-item"><span>COUNTRY</span><strong>' + esc(model.countryId || 'Not recorded') + '</strong></div>' +
       '<div class="fp-summary-item"><span>FACTORIES</span><strong>' + fmt(model.factoryCount) + '</strong></div>' +
       '<div class="fp-summary-item"><span>FACTORY TYPES</span><strong>' + fmt(model.factoryTypeCatalog.length) + '</strong></div>' +

@@ -2092,7 +2092,7 @@
 }
 .omega-v2-industry--factory-home .fp-stage[data-factory-view="types"] .fp-deck { display:none !important; }
 .omega-v2-industry--factory-home .fp-type-catalog {
-  position:relative; width:100%; min-width:0; margin:7px 0 4px; padding:8px;
+  position:relative; width:100%; min-width:0; margin:5px 0 3px; padding:6px;
   border:1px solid rgba(94,151,192,.45); border-radius:9px;
   background:linear-gradient(180deg,rgba(7,26,43,.96),rgba(4,15,26,.98));
 }
@@ -2105,13 +2105,13 @@
 .omega-v2-industry--factory-home .fp-type-catalog-heading strong { color:#f2f8ff; font-size:15px; }
 .omega-v2-industry--factory-home .fp-type-catalog-total { color:#d7e8f5; border:1px solid rgba(122,177,210,.34); background:rgba(20,55,81,.68); padding:4px 8px; font-size:10px; font-weight:800; }
 .omega-v2-industry--factory-home .fp-type-catalog-note { margin:0 0 9px; color:#a8bfd0; font-size:10px; line-height:1.45; }
-.omega-v2-industry--factory-home .fp-type-catalog-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; gap:8px; }
+.omega-v2-industry--factory-home .fp-type-catalog-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:stretch; gap:6px; }
 .omega-v2-industry--factory-home .fp-type-catalog-divider {
   grid-column:1 / -1; height:0; min-height:0; padding:0; margin:3px 0;
   border:0; border-top:1px solid #506a7e; background:transparent; box-shadow:none;
 }
 .omega-v2-industry--factory-home .omega-v2-factory-type-card {
-  display:flex; flex-direction:column; min-width:0; gap:7px; padding:8px; color:#eaf4ff;
+  display:flex; flex-direction:column; min-width:0; gap:5px; padding:6px; color:#eaf4ff;
   border:1px solid #506a7e; border-radius:8px; background:linear-gradient(145deg,rgba(23,48,68,.98),rgba(6,18,31,.98));
   box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 9px rgba(0,0,0,.22);
 }
@@ -2741,9 +2741,10 @@
 
 /* Factory card progressive-disclosure layer. Additive to the existing OMEGA command-deck skin. */
 .omega-v2-industry--factory-home .fp-card-recipe {
-  display:flex;
-  flex-direction:column;
-  gap:7px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:start;
+  gap:5px;
   width:100%;
   min-width:0;
   margin:7px 0 5px;
@@ -2771,7 +2772,7 @@
 }
 .omega-v2-industry--factory-home .fp-card-product-row {
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-columns:minmax(0,1fr);
   align-items:center;
   column-gap:7px;
   row-gap:2px;
@@ -3564,11 +3565,9 @@
 @media (orientation:landscape) {
   .omega-v2-industry--factory-home .omega-v2-factory-type-card:not(.fp-type-card--build) {
     display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-columns:minmax(0,1fr) auto;
     grid-template-areas:
-      "head head"
-      "count presence"
-      "metrics metrics"
+      "head count"
       "recipe recipe"
       "actions actions";
     align-content:start;
@@ -3614,7 +3613,7 @@
   .omega-v2-industry--factory-home .omega-v2-factory-type-card:not(.fp-type-card--build) .fp-card-recipe {
     grid-area:recipe;
     display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-columns:repeat(3,minmax(0,1fr));
     align-items:start;
     gap:4px 7px;
     width:100%;
@@ -3807,18 +3806,14 @@
   .omega-v2-industry--factory-home .fp-assets-workspace .fp-card .fp-card-recipe {
     grid-area:recipe;
     display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-columns:repeat(3,minmax(0,1fr));
     align-items:start;
     gap:4px 7px;
     width:100%;
     margin:2px 0 0;
     padding:6px 5px 3px;
   }
-  .omega-v2-industry--factory-home .fp-card-recipe .fp-card-product-section--output { grid-column:1; }
-  .omega-v2-industry--factory-home .fp-card-recipe .fp-card-input-section { grid-column:2; }
-  .omega-v2-industry--factory-home .fp-card-recipe .fp-card-byproduct-row,
-  .omega-v2-industry--factory-home .fp-card-recipe .fp-card-disclosure,
-  .omega-v2-industry--factory-home .fp-card-recipe .fp-card-route-count { grid-column:1 / -1; }
+  .omega-v2-industry--factory-home .fp-card-recipe .fp-card-disclosure { grid-column:1 / -1; }
   .omega-v2-industry--factory-home .fp-assets-workspace .fp-card .omega-v2-factory-actions {
     position:relative;
     grid-area:actions;
@@ -4385,7 +4380,8 @@
     grid-template-columns:minmax(0,1fr);
   }
   .omega-v2-industry--factory-home .fp-type-catalog-grid {
-    grid-template-columns:minmax(0,1fr);
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px;
   }
   .omega-v2-industry--factory-home .fp-assets-workspace .omega-v2-factory-deck {
     position:relative;
@@ -4403,5 +4399,12 @@
     width:100%;
     max-height:42dvh;
     margin-top:4px;
+  }
+}
+
+
+@media (orientation:landscape) and (max-width:520px) {
+  .omega-v2-industry--factory-home .fp-type-catalog-grid {
+    grid-template-columns:minmax(0,1fr);
   }
 }
