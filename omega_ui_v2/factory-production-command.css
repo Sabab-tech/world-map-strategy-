@@ -5033,7 +5033,12 @@
     width:19px;
     height:19px;
   }
-  .omega-v2-industry--factory-home .fp-card-product-row .fp-product-identity-copy strong { font-size:12px; }
+  .omega-v2-industry--factory-home .fp-card-product-row .fp-product-identity-copy strong {
+    font-size:12px;
+    white-space:normal;
+    overflow-wrap:break-word;
+    word-break:normal;
+  }
   .omega-v2-industry--factory-home .fp-type-card-actions .omega-v2-factory-button {
     min-height:41px;
     font-size:11px;
