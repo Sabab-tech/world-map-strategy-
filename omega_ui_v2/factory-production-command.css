@@ -4365,3 +4365,43 @@
   line-height:1.25;
   overflow-wrap:anywhere;
 }
+
+/* Phone landscape: preserve the horizontal card composition at every phone
+   width. A single full-width card row prevents its metrics and recipe preview
+   from being compressed into narrow columns, while the stage grows with the
+   actual content instead of clipping it to the old 16:9 frame. */
+@media (orientation:landscape) and (max-width:899px) {
+  .omega-v2-industry--factory-home .fp-stage {
+    width:100%;
+    height:auto;
+    min-height:0;
+    aspect-ratio:auto;
+    overflow:visible;
+  }
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace,
+  .omega-v2-industry--factory-home .fp-assets-workspace,
+  .omega-v2-industry--factory-home .fp-factory-catalog-workspace.fp-workspace--detail-open,
+  .omega-v2-industry--factory-home .fp-assets-workspace.fp-workspace--detail-open {
+    grid-template-columns:minmax(0,1fr);
+  }
+  .omega-v2-industry--factory-home .fp-type-catalog-grid {
+    grid-template-columns:minmax(0,1fr);
+  }
+  .omega-v2-industry--factory-home .fp-assets-workspace .omega-v2-factory-deck {
+    position:relative;
+    inset:auto;
+    width:100%;
+    height:auto;
+    max-height:none;
+    min-height:0;
+    overflow:visible;
+    padding:0 0 12px;
+    grid-template-columns:minmax(0,1fr);
+  }
+  .omega-v2-industry--factory-home .fp-factory-detail-panel {
+    order:2;
+    width:100%;
+    max-height:42dvh;
+    margin-top:4px;
+  }
+}

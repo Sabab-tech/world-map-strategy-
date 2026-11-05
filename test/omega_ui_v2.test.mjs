@@ -3266,7 +3266,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v91'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v92'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3320,7 +3320,7 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
   assert.match(css,/fp-workspace--detail-open/);
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:680px\)/);
   assert.match(css,/grid-template-columns:repeat\(auto-fit,minmax\(245px,1fr\)\)/);
-  assert.match(sw,/omega-offline-atlas-shell-v91/);
+  assert.match(sw,/omega-offline-atlas-shell-v92/);
 });
 
 
@@ -3339,4 +3339,23 @@ test('Factory landscape controls keep readable card text, independent detail scr
   assert.ok(source.includes('viewContent.innerHTML = factoryHomeViewMarkup'));
   assert.ok(source.includes('__omegaV2FactoryRouteCache'));
   assert.ok(source.includes('__omegaV2FactoryDetailMarkupCache'));
+});
+
+
+test('phone landscape factory cards keep a full-width horizontal layout without stage clipping', () => {
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  const breakpointStart = css.lastIndexOf('@media (orientation:landscape) and (max-width:899px) {');
+  assert.ok(breakpointStart >= 0, 'all phone-width landscape viewports need an explicit layout rule');
+  const phoneLandscape = css.slice(breakpointStart);
+  assert.match(phoneLandscape, /\.fp-stage \{[^}]*width:100%[^}]*height:auto[^}]*aspect-ratio:auto[^}]*overflow:visible/s,
+    'the stage must grow with content instead of clipping the landscape card register');
+  assert.match(phoneLandscape, /\.fp-type-catalog-grid \{[^}]*grid-template-columns:minmax\(0,1fr\)/s,
+    'factory type cards must use the full available row width');
+  assert.match(phoneLandscape, /\.fp-assets-workspace \.omega-v2-factory-deck \{[^}]*position:relative[^}]*inset:auto[^}]*width:100%[^}]*max-height:none[^}]*grid-template-columns:minmax\(0,1fr\)/s,
+    'live factory cards must leave the fixed container-unit position and use normal document flow');
+  assert.match(phoneLandscape, /\.fp-factory-detail-panel \{[^}]*order:2[^}]*width:100%/s,
+    'the recipe detail panel must remain below the card workspace on phone landscape');
+  assert.ok(sw.includes('omega-offline-atlas-shell-v92'),
+    'Android offline shell must reload the landscape layout stylesheet');
 });
