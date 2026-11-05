@@ -600,7 +600,8 @@ test('industry treats starting and newly built factories as one live asset regis
     assert.match(root.innerHTML, /omega-v2-factory-command/);
     assert.match(root.innerHTML, /data-omega-v2-factory-card/);
     assert.match(root.innerHTML, /East Steel Works/);
-    assert.match(root.innerHTML, /FACTORIES/);
+    assert.match(root.innerHTML, /Factories/);
+    assert.doesNotMatch(root.innerHTML, /class="fp-summary"/);
     assert.doesNotMatch(root.innerHTML, /Starting factory allocation|Starting allocation|STARTING UNITS|Starting Factory Allocation/);
     assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant/);
     assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|FACTORY SVG SLOT/);
@@ -2915,7 +2916,7 @@ test('Factory input stock coverage is captured only at every tenth in-game day',
   }
 });
 
-test('factory cards progressively disclose canonical products, quantities and inline construction requirements', () => {
+test('factory cards keep a compact recipe preview and progressively disclose full details', () => {
   const previous = {
     Game:globalThis.Game,
     inventory:globalThis.OmegaCountryInventoryRuntime,
@@ -3021,23 +3022,25 @@ test('factory cards progressively disclose canonical products, quantities and in
     assert.equal(initial.ok,true);
     assert.match(root.innerHTML,/data-omega-v2-factory-type-card/);
     let steel = cardHtml('STEEL_AND_ALLOY_WORKS');
-    assert.match(steel,/Main output/);
+    assert.match(steel,/Output/);
     assert.match(steel,/Steel/);
     assert.match(steel,/ALLOY STEEL/i);
-    assert.match(steel,/By-product:/);
+    assert.match(steel,/By-product/);
     assert.match(steel,/BLAST FURNACE SLAG/i);
     assert.match(steel,/Input/);
     assert.match(steel,/IRON CONCENTRATE/i);
-    assert.match(steel,/0\.72 simulation resource unit \/ production unit/);
-    assert.match(steel,/0\.6 simulation resource unit \/ production unit/);
+    assert.doesNotMatch(steel,/0\\.72 simulation resource unit \/ production unit|0\\.6 simulation resource unit \/ production unit/,
+      'quantities belong in the detailed panel, not the normal factory card');
+    assert.doesNotMatch(steel,/simulation/i,
+      'the normal factory card must not show the prohibited word');
     assert.match(steel,/data-omega-v2-factory-card-expand/);
     assert.doesNotMatch(steel,/data-omega-v2-factory-section-toggle/,
       'expanded input/output rows are now shown in the adjacent side panel, not stacked inside the card');
     assert.match(root.innerHTML,/data-factory-detail-panel/);
     assert.doesNotMatch(steel,/PROCESSING DUST/i,'the second by-product must remain hidden in collapsed view');
     assert.doesNotMatch(steel,/COPPER CONCENTRATE/i,'only the primary input is shown in collapsed view');
-    assert.match(steel,/Modeled build time/);
-    assert.match(steel,/Build project/);
+    assert.doesNotMatch(steel,/Modeled build time|Modeled capacity|Modeled construction cost/);
+    assert.match(steel,/>Build</);
 
     // The view control must work repeatedly without rebuilding the navigation shell.
     const beforeViewToggleRoot = root.innerHTML;
@@ -3318,7 +3321,7 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
   assert.match(css,/@media \(orientation:landscape\)/);
   assert.match(css,/grid-template-areas:\s*"head count"\s*"recipe recipe"\s*"actions actions"/);
   assert.match(css,/grid-template-areas:\s*"badge title"\s*"art status"\s*"art count"/);
-  assert.match(css,/fp-card-product-section--output/);
+  assert.match(source,/fp-card-product-section--output/);
   assert.match(source,/fp-card-product-section--input/);
   assert.match(source,/class="fp-card-product-meta"/,
     'product coefficient and per-day rate must share one compact metadata block');
