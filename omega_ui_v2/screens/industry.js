@@ -3141,15 +3141,16 @@
     var disabledReason = !model.canOperateSelectedCountry
       ? 'Building is available only for the active player country.'
       : !support.canBuild ? 'No canonical recipe/input is registered for this type.' : '';
+    var count = '<span class="fp-type-card-count"><span>Factories</span><strong>' + fmt(ownedCount) + '</strong></span>';
     var header = '<header class="fp-type-card-head"><span class="fp-type-card-art">' +
       factorySvgMarkup({ type:type, name:item.name || type }) + '</span>' +
-      '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong></span></header>';
+      '<span class="fp-type-card-name"><strong>' + esc(item.name || type) + '</strong></span>' +
+      count + '</header>';
     if (state.buildKey === cardKey) {
       return '<article class="omega-v2-factory-type-card omega-v2-factory-type-card--' + presence +
         ' fp-type-card--build" data-omega-v2-factory-type-card data-factory-type="' + esc(type) +
         '" data-factory-presence="' + presence + '">' +
-        header + '<div class="fp-type-card-count"><span>Factories</span><strong>' + fmt(ownedCount) + '</strong></div>' +
-        factoryBuildRequirementsMarkup(type, model, cardKey) + '</article>';
+        header + factoryBuildRequirementsMarkup(type, model, cardKey) + '</article>';
     }
     var routes = factoryPresentationRoutes(model, type, null);
     return '<article class="omega-v2-factory-type-card omega-v2-factory-type-card--' + presence +
@@ -3157,7 +3158,6 @@
       '" data-omega-v2-factory-type-card data-factory-type="' + esc(type) +
       '" data-factory-presence="' + presence + '">' +
       header +
-      '<div class="fp-type-card-count"><span>Factories</span><strong>' + fmt(ownedCount) + '</strong></div>' +
       factoryCardRecipeMarkup(routes, model, cardKey, null, true) +
       '<div class="fp-type-card-actions"><button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build-details data-omega-v2-factory-build="CATALOG" data-factory-card-key="' +
       esc(cardKey) + '" data-factory-type="' + esc(type) + '"' +
