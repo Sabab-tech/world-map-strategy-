@@ -258,7 +258,10 @@
     var s=stateFor(root),candidate=s.countryId||g.OmegaMinistryViewCountry||(g.CountryIOS&&g.CountryIOS.activeCountry)||(g.Game&&(g.Game.currentActiveCountry||g.Game.selectedCountryId));
     if(candidate&&typeof candidate==='object')candidate=candidate.countryCode||candidate.iso3||candidate.countryId||candidate.code||candidate.name||candidate.id;
     var country=String(candidate||'').trim().toUpperCase(),gateway=g.OmegaCountryDataGateway||(g.Omega&&g.Omega.CountryDataGateway),snap=null;
-    try{if(country&&gateway&&typeof gateway.getSnapshot==='function')snap=gateway.getSnapshot(country);}catch(_){}
+    try{
+      if(country&&gateway&&typeof gateway.getSnapshotForView==='function')snap=gateway.getSnapshotForView(country);
+      else if(country&&gateway&&typeof gateway.getSnapshot==='function')snap=gateway.getSnapshot(country);
+    }catch(_){}
     var fields=snap&&snap.fields||{},keys=Object.keys(fields),available=keys.filter(function(k){return fields[k]&&fields[k].status==='AVAILABLE'&&fields[k].value!=null;}).length;
     function value(k){var r=fields[k];if(!r||r.status!=='AVAILABLE'||r.value==null||r.value==='')return'Not recorded';var v=r.value;if(typeof v==='number'&&Number.isFinite(v))v=v.toLocaleString('en-US',{maximumFractionDigits:2});return String(v)+(r.unit?' '+r.unit:'');}
     var finance=((g.Game&&g.Game.state&&g.Game.state.finance)||{})[country]||{},cash=finance.available!=null?finance.available:finance.cash;
