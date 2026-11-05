@@ -50,9 +50,11 @@ permissions:
   contents: read
 
 concurrency:
-  # CI smoke tests are disposable; newer commits must not wait behind stale emulator runs.
-  group: omega-android9-gameplay-smoke-${{ github.ref }}
-  cancel-in-progress: true
+  # Keep each PR revision's bounded emulator proof independent. The script has
+  # a 10-minute instrumentation deadline, so a newer push must not cancel the
+  # only API 28 result before its diagnostics are uploaded.
+  group: omega-android9-gameplay-smoke-${{ github.event.pull_request.number || github.ref }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   offline-gameplay-smoke:
