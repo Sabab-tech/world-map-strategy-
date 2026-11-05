@@ -3350,8 +3350,10 @@ test('phone landscape factory cards keep a full-width horizontal layout without 
   const phoneLandscape = css.slice(breakpointStart);
   assert.match(phoneLandscape, /\.fp-stage \{[^}]*width:100%[^}]*height:auto[^}]*aspect-ratio:auto[^}]*overflow:visible/s,
     'the stage must grow with content instead of clipping the landscape card register');
-  assert.match(phoneLandscape, /\.fp-type-catalog-grid,\s*\n\s*\.omega-v2-industry--factory-home \.fp-assets-workspace \.omega-v2-factory-deck \{[^}]*grid-template-columns:minmax\(0,1fr\)/s,
-    'both factory type cards and live factory cards must use the available row width');
+  assert.match(phoneLandscape, /\.fp-type-catalog-grid \{[^}]*grid-template-columns:minmax\(0,1fr\)/s,
+    'factory type cards must use the full available row width');
+  assert.match(phoneLandscape, /\.fp-assets-workspace \.omega-v2-factory-deck \{[^}]*position:relative[^}]*inset:auto[^}]*width:100%[^}]*max-height:none[^}]*grid-template-columns:minmax\(0,1fr\)/s,
+    'live factory cards must leave the fixed container-unit position and use normal document flow');
   assert.match(phoneLandscape, /\.fp-factory-detail-panel \{[^}]*order:2[^}]*width:100%/s,
     'the recipe detail panel must remain below the card workspace on phone landscape');
   assert.ok(sw.includes('omega-offline-atlas-shell-v92'),
