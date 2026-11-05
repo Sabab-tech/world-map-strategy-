@@ -1382,6 +1382,7 @@
   }
 
   function factoryProductionPlan(model) {
+    var __inputPerfStart = Date.now();
     model = model || {};
     var catalog = safeCatalog() || {};
     var profiles = model.catalogProfiles && typeof model.catalogProfiles === 'object' ? model.catalogProfiles :
@@ -1580,7 +1581,7 @@
         row.coverageQuantity = row.perDay === null ? null : row.perDay * coverageDays;
       });
     });
-    return {
+    var result = {
       countryId: model.countryId || null,
       totalFactories: Math.max(0, num(model.factoryCount) || typeRows.reduce(function (sum, row) { return sum + row.count; }, 0)),
       factoryTypeCount: typeRows.length,
@@ -1592,6 +1593,8 @@
         return !!(factory && factory.lastRun && (factory.lastRun.outputQuantities || factory.lastRun.outputs));
       }) || (Array.isArray(model.finishedGoodsLedger) && model.finishedGoodsLedger.length > 0)
     };
+    factoryInputPerfMark('PRODUCTION_PLAN', __inputPerfStart, 'types=' + typeRows.length);
+    return result;
   }
 
   function factoryPlanUnit(unit) {
@@ -1601,6 +1604,7 @@
   }
 
   function factoryInputPlanProducts(plan) {
+    var __inputPerfStart = Date.now();
     var byProduct = Object.create(null);
     (plan && Array.isArray(plan.types) ? plan.types : []).forEach(function (type) {
       (Array.isArray(type.inputs) ? type.inputs : []).forEach(function (input) {
@@ -1628,7 +1632,7 @@
         });
       });
     });
-    return Object.keys(byProduct).map(function (key) {
+    var result = Object.keys(byProduct).map(function (key) {
       var row = byProduct[key];
       row.perDay = row.perDayComplete && row.hasPerDay ? row.perDay : null;
       delete row.perDayComplete;
@@ -1637,6 +1641,8 @@
     }).sort(function (a, b) {
       return a.productId.localeCompare(b.productId);
     });
+    factoryInputPerfMark('PLAN_PRODUCTS', __inputPerfStart, 'products=' + result.length);
+    return result;
   }
 
   function factoryInputCoverageRecord(model, productId, factoryId) {
@@ -1735,6 +1741,7 @@
   }
 
   function factoryInputPlanMarkup(model) {
+    var __inputPerfStart = Date.now();
     var plan = factoryProductionPlan(model), products = factoryInputPlanProducts(plan);
     var snapshot = model && model.factoryInputCoverageSnapshot;
     var updatedDay = snapshot && num(snapshot.updatedDay);
@@ -1749,6 +1756,7 @@
       '</span></p>';
     if (!products.length) {
       html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factory input requirements are recorded for this country.</p></div></section>';
+      factoryInputPerfMark('PLAN_MARKUP_EMPTY', __inputPerfStart, 'products=0');
       return html;
     }
     html += '<div class="fp-factory-table-wrap"><table class="fp-factory-table fp-factory-input-table fp-factory-input-total-table"><thead><tr>' +
@@ -1781,6 +1789,7 @@
         '<td>' + factoryInputAggregateSourceMarkup(model, row.productId) + '</td><td>' + status + '</td></tr>';
     });
     html += '</tbody></table></div></section>';
+    factoryInputPerfMark('PLAN_MARKUP', __inputPerfStart, 'products=' + products.length + ' chars=' + html.length);
     return html;
   }
 
@@ -2238,6 +2247,15 @@
     html += '</tbody></table></div></section>';
     return html;
   }
+  function factoryInputPerfMark(name, startedAt, detail) {
+    try {
+      if (g.console && typeof g.console.log === 'function') {
+        g.console.log('[OMEGA_BOOT_FACTORY_INPUT_PERF_' + name + '] +' +
+          Math.max(0, Date.now() - startedAt) + 'ms' + (detail ? ' ' + detail : ''));
+      }
+    } catch (_) {}
+  }
+
   function factoryInputMarkupCache(model) {
     if (!model || typeof model !== 'object') return {};
     var cache = model.__omegaV2FactoryInputMarkupCache;
@@ -2450,6 +2468,7 @@
   }
 
   function factoryInputFactoryCardsMarkup(model, candidates, start, limit) {
+    var __inputPerfStart = Date.now();
     var html = '';
     var end = Math.min(candidates.length, Math.max(0, start) + Math.max(1, limit));
     for (var index = Math.max(0, start); index < end; index += 1) {
@@ -2504,17 +2523,21 @@
       });
       html += '</tbody></table></div></article>';
     }
+    factoryInputPerfMark('FACTORY_CARDS', __inputPerfStart, 'cards=' + (end - Math.max(0, start)) + ' chars=' + html.length);
     return { html:html, nextIndex:end, total:candidates.length };
   }
 
   function factoryInputPanelMarkup(model, root) {
+    var __inputPerfStart = Date.now();
     var planMarkup = factoryInputPlanMarkup(model);
     var candidates = factoryInputEligibleFactories(model);
     if (!candidates.length) {
       var hasFactories = Array.isArray(model && model.factories) && model.factories.length > 0;
-      return planMarkup + (hasFactories
+      var emptyResult = planMarkup + (hasFactories
         ? '<div class="omega-v2-empty">No delivered factory input rows are recorded yet. Planned daily requirements remain shown above.</div>'
         : '');
+      factoryInputPerfMark('INPUT_PANEL_EMPTY', __inputPerfStart, 'chars=' + emptyResult.length);
+      return emptyResult;
     }
     var visibleCount = root && root.__omegaV2FactoryInputModel === model
       ? Math.max(4, Math.floor(num(root.__omegaV2FactoryInputVisibleCount) || 4)) : 4;
@@ -2530,9 +2553,11 @@
       ? '<button type="button" class="omega-v2-button fp-factory-input-more" data-factory-input-show-more data-next-index="' +
         firstPage.nextIndex + '">Show more factories · ' + fmt(remaining) + ' remaining</button>'
       : '';
-    return planMarkup + '<section class="fp-factory-analytics" data-factory-input-panel aria-label="Recorded factory input deliveries">' +
+    var result = planMarkup + '<section class="fp-factory-analytics" data-factory-input-panel aria-label="Recorded factory input deliveries">' +
       '<h3 class="omega-v2-section-title">Factory input inventory and deliveries</h3>' +
       status + '<div data-factory-input-cards>' + firstPage.html + '</div>' + moreButton + '</section>';
+    factoryInputPerfMark('INPUT_PANEL', __inputPerfStart, 'candidates=' + candidates.length + ' products=' + (planMarkup.match(/<tbody><tr/g) || []).length + ' chars=' + result.length);
+    return result;
   }
 
   function updateFactoryInputCoverageSnapshotV1(event) {
@@ -3903,10 +3928,13 @@
         }
         var tab = target.closest('[data-omega-v2-industry-tab]');
         if (tab && root.contains(tab)) {
+          var __inputTabPerfStart = Date.now();
           var nextTab = tab.getAttribute('data-omega-v2-industry-tab');
           var activeInputModel = root.__omegaV2IndustryModel || model;
+          factoryInputPerfMark('TAB_HANDLER_BEGIN', __inputTabPerfStart, 'tab=' + nextTab);
           var existingFactoryView = typeof root.querySelector === 'function'
             ? root.querySelector('[data-omega-v2-factory-view-content]') : null;
+          factoryInputPerfMark('TAB_FAST_PATH', __inputTabPerfStart, 'existing=' + !!existingFactoryView + ' model=' + !!activeInputModel + ' countryMatch=' + (!!activeInputModel && String(root.__omegaV2IndustryCountryId || '') === String(activeInputModel.countryId || '')));
           if (nextTab === 'inventory' && existingFactoryView && activeInputModel &&
               String(root.__omegaV2IndustryCountryId || '') === String(activeInputModel.countryId || '')) {
             root.__omegaV2IndustryTab = nextTab;
@@ -3928,12 +3956,15 @@
                 button.classList.toggle('omega-v2-button--quiet', !selected);
               }
             });
+            factoryInputPerfMark('TAB_FAST_PATH_STATE', __inputTabPerfStart);
             var inputMarkup = factoryInputPanelMarkup(activeInputModel, root);
+            factoryInputPerfMark('TAB_FAST_PATH_MARKUP_READY', __inputTabPerfStart, 'chars=' + inputMarkup.length);
             var inputBody = '<div class="fp-content" data-omega-v2-industry-content data-active-tab="inventory">' +
               '<header class="fp-content-heading"><div><span>OMEGA / COUNTRY DATA</span><strong>Input</strong></div>' +
               '<span class="fp-content-country">' + esc(activeInputModel.countryId || 'Country not selected') + '</span></header>' +
               '<div class="fp-content-body">' + inputMarkup + '</div></div>';
             existingFactoryView.outerHTML = inputBody;
+            factoryInputPerfMark('TAB_FAST_PATH_DOM_ASSIGNED', __inputTabPerfStart);
             return;
           }
           root.__omegaV2IndustryTab = nextTab;
@@ -3941,6 +3972,7 @@
           root.__omegaV2FactoryCardUiState.buildKey = '';
           root.__omegaV2FactoryCardUiState.sections = Object.create(null);
           root.__omegaV2FactoryCardUiState.buildMaterialsExpanded = false;
+          factoryInputPerfMark('TAB_SCHEDULE_RENDER', __inputTabPerfStart);
           scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab }));
           return;
         }
