@@ -2870,7 +2870,7 @@
         return factoryRecipeProductRow(route, id, 'output', model, asset, 'unclassified');
       }).join('') : '') +
       '</div></div>' +
-      '<footer><span>Quantity basis: ' + esc(readableIdentifier(route.quantityBasis || 'Not recorded')) + '</span><span>Cycle: ' + esc(fmt(route.cycleDays, 'game-days')) + '</span>' +
+      '<footer><span>Quantity basis: ' + esc(route.quantityBasis === 'PER_SIMULATION_PRODUCTION_UNIT' ? 'Per production unit' : readableIdentifier(route.quantityBasis || 'Not recorded').toLowerCase()) + '</span><span>Cycle: ' + esc(fmt(route.cycleDays, 'game-days')) + '</span>' +
       (route.simulationOnly === true ? '<span>Modeled gameplay recipe</span>' : '') +
       '</footer></section>';
     return html;

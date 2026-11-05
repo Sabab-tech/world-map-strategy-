@@ -3085,7 +3085,9 @@ test('factory cards keep a compact recipe preview and progressively disclose ful
     assert.match(root.innerHTML,/COPPER CONCENTRATE/i);
     assert.match(root.innerHTML,/CEMENT FEED/i);
     assert.match(root.innerHTML,/PROCESSING DUST/i);
-    assert.match(root.innerHTML,/Quantity basis: PER SIMULATION PRODUCTION UNIT/);
+    assert.match(root.innerHTML,/Quantity basis: Per production unit/);
+    assert.doesNotMatch(root.innerHTML,/SIMULATION_RESOURCE_UNIT|PER_SIMULATION_PRODUCTION_UNIT|simulation units/i,
+      'internal data identifiers must not appear as player-facing copy');
     assert.match(root.innerHTML,/Steel and alloy works/i);
 
     root.__omegaV2FactoryCardUiState = {
