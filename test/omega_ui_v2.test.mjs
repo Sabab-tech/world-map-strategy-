@@ -3316,10 +3316,10 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
   assert.match(source,/fp-workspace--detail-open/);
   assert.match(source,/workspace\.classList\.toggle\('fp-workspace--detail-open', !!key\)/);
   assert.match(css,/@media \(orientation:landscape\)/);
-  assert.match(css,/grid-template-areas:\s*"head head"\s*"count presence"/);
+  assert.match(css,/grid-template-areas:\s*"head count"\s*"recipe recipe"\s*"actions actions"/);
   assert.match(css,/grid-template-areas:\s*"badge title"\s*"art status"\s*"art count"/);
   assert.match(css,/fp-card-product-section--output/);
-  assert.match(css,/fp-card-input-section/);
+  assert.match(source,/fp-card-product-section--input/);
   assert.match(source,/class="fp-card-product-meta"/,
     'product coefficient and per-day rate must share one compact metadata block');
   assert.match(css,/\.fp-factory-input-identity-line\s*\{[^}]*display:flex/s,
