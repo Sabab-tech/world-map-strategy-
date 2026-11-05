@@ -3353,7 +3353,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v95'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v96'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3391,7 +3391,7 @@ test('factory type cards keep three columns and lock every other card until the 
   assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
   assert.match(css,/data-detail-locked="true"/);
   assert.match(css,/touch-action:manipulation/);
-  assert.match(sw,/omega-offline-atlas-shell-v95/);
+  assert.match(sw,/omega-offline-atlas-shell-v96/);
 });
 
 test('Factory cards use horizontal internal layouts and only reserve the landscape detail panel when opened', () => {
@@ -3423,7 +3423,7 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:680px\)/);
   assert.match(css,/grid-template-columns:repeat\(auto-fit,minmax\(245px,1fr\)\)/);
   assert.match(css,/@media \(min-width:1200px\)[\s\S]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
-  assert.match(sw,/omega-offline-atlas-shell-v95/);
+  assert.match(sw,/omega-offline-atlas-shell-v96/);
 });
 
 
@@ -3462,7 +3462,7 @@ test('phone landscape factory cards keep compact aligned columns without stage c
     'live factory cards must leave the fixed container-unit position and use normal document flow');
   assert.match(phoneLandscape, /\.fp-factory-detail-panel \{[^}]*order:2[^}]*width:100%/s,
     'the recipe detail panel must remain below the card workspace on phone landscape');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v95'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v96'),
     'Android offline shell must reload the landscape layout stylesheet');
 });
 
@@ -3483,7 +3483,7 @@ test('factory type catalog keeps three cards in landscape and readable full-widt
     'product names must wrap at word boundaries instead of breaking into vertical letters');
   assert.match(portrait, /\.fp-card-recipe \{[^}]*grid-template-columns:minmax\(0,1fr\)/s,
     'Input, By-product and Output use one readable stacked column inside the portrait card');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v95'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v96'),
     'offline clients must refresh the corrected factory stylesheet');
   assert.ok(sw.includes('./omega_ui_v2/factory-production-command.css'),
     'the corrected stylesheet remains part of the offline shell');
@@ -3511,6 +3511,9 @@ test('factory type card redesign preserves the three-column landscape grid while
     'Build icon and button label must share a centered action row');
   assert.match(redesign, /@media \(max-width:520px\) and \(orientation:landscape\)[\s\S]*?grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,
     'phone landscape must retain three compact cards per row');
-  assert.match(redesign, /@media \(max-width:680px\) and \(orientation:portrait\)[\s\S]*?grid-template-columns:minmax\(0,1fr\) !important/,
+  assert.match(redesign, /@media \(max-width:899px\) and \(orientation:portrait\)[\s\S]*?grid-template-columns:minmax\(0,1fr\) !important/,
     'portrait phones keep full-width cards for readable text');
+  const portraitBreakpoint = redesign.match(/@media \\(max-width:(\\d+)px\\) and \\(orientation:portrait\\)/);
+  assert.ok(portraitBreakpoint && Number(portraitBreakpoint[1]) >= 709,
+    'the portrait rule must include the 709px viewport shown in the reported handset screenshot');
 });
