@@ -2974,7 +2974,7 @@ test('factory cards keep a compact recipe preview and progressively disclose ful
   const disclosureButton = {
     getAttribute(name) { return disclosureAttrs[name] || (name === 'data-card-key' ? 'type:STEEL_AND_ALLOY_WORKS' : null); },
     setAttribute(name, value) { disclosureAttrs[name] = value; },
-    closest() { return disclosureCard; }
+    closest() { return activeTypeCardMock; }
   };
   const sidePanel = {
     innerHTML:'', hidden:true,
@@ -2983,6 +2983,27 @@ test('factory cards keep a compact recipe preview and progressively disclose ful
   const viewContent = { innerHTML:'' };
   const workspaceState = {};
   const workspace = { classList:{ toggle(name, active) { workspaceState[name] = !!active; } } };
+  function makeCardMock(type) {
+    const attrs = { 'data-factory-type':type };
+    const buttonAttrs = {};
+    const action = {
+      disabled:false,
+      getAttribute(name) { return Object.prototype.hasOwnProperty.call(buttonAttrs,name) ? buttonAttrs[name] : null; },
+      setAttribute(name,value) { buttonAttrs[name] = String(value); },
+      removeAttribute(name) { delete buttonAttrs[name]; }
+    };
+    const classState = {};
+    return {
+      action,
+      getAttribute(name) { return Object.prototype.hasOwnProperty.call(attrs,name) ? attrs[name] : null; },
+      setAttribute(name,value) { attrs[name] = String(value); },
+      removeAttribute(name) { delete attrs[name]; },
+      classList:{ toggle(name,value) { classState[name] = !!value; } },
+      querySelectorAll(selector) { return selector === 'button' ? [action] : []; }
+    };
+  }
+  const activeTypeCardMock = makeCardMock('STEEL_AND_ALLOY_WORKS');
+  const otherTypeCardMock = makeCardMock('CEMENT_PLANT');
   const stageAttrs = {};
   const stage = { setAttribute(name, value) { stageAttrs[name] = value; } };
   const viewToggleAttrs = {};
@@ -3002,7 +3023,11 @@ test('factory cards keep a compact recipe preview and progressively disclose ful
       if (selector === '.fp-factory-catalog-workspace, .fp-assets-workspace') return workspace;
       return null;
     },
-    querySelectorAll(selector) { return selector === '[data-omega-v2-factory-card-expand]' ? [disclosureButton] : []; },
+    querySelectorAll(selector) {
+      if (selector === '[data-omega-v2-factory-card-expand]') return [disclosureButton];
+      if (selector === '[data-omega-v2-factory-type-card], [data-omega-v2-factory-card]') return [activeTypeCardMock,otherTypeCardMock];
+      return [];
+    },
     innerHTML:''
   };
   function render(options) {
@@ -3070,6 +3095,44 @@ test('factory cards keep a compact recipe preview and progressively disclose ful
     assert.equal(viewToggle.textContent,'Details');
     assert.equal(viewToggleAttrs['aria-pressed'],'false');
     assert.equal(root.innerHTML,beforeViewToggleRoot);
+
+    root.__omegaV2FactoryCardUiState = {
+      expandedKey:'type:STEEL_AND_ALLOY_WORKS',
+      buildKey:'',
+      sections:Object.create(null),
+      buildMaterialsExpanded:false
+    };
+    render();
+    assert.equal(activeTypeCardMock.getAttribute('data-detail-locked'),null,
+      'the active factory card must remain interactive');
+    assert.equal(activeTypeCardMock.action.disabled,false);
+    assert.equal(otherTypeCardMock.getAttribute('data-detail-locked'),'true',
+      'opening one factory detail panel must lock the other factory cards');
+    assert.equal(otherTypeCardMock.action.disabled,true,
+      'other factory actions must be actually disabled, not only dimmed');
+    const otherCardClickTarget = {
+      closest(selector) {
+        if (selector === '[data-detail-locked="true"]') return otherTypeCardMock;
+        if (selector === '[data-omega-v2-factory-build-details]') return otherTypeCardMock.action;
+        return null;
+      }
+    };
+    listeners.click({target:otherCardClickTarget});
+    assert.equal(root.__omegaV2FactoryCardUiState.buildKey,'',
+      'a locked card action must not open a second factory panel');
+    const secondTapTarget = {
+      closest(selector) {
+        if (selector === '[data-omega-v2-factory-card-expand]') return disclosureButton;
+        return null;
+      }
+    };
+    listeners.click({target:secondTapTarget});
+    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'',
+      'a second tap on the active disclosure closes its side panel');
+    assert.equal(otherTypeCardMock.getAttribute('data-detail-locked'),null,
+      'closing the active panel must unlock every other factory card');
+    assert.equal(otherTypeCardMock.action.disabled,false,
+      'closing the active panel restores each action to its original enabled state');
 
     root.__omegaV2FactoryCardUiState = {
       expandedKey:'type:STEEL_AND_ALLOY_WORKS',
@@ -3290,7 +3353,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v92'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v93'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3315,6 +3378,20 @@ test('factory production details use a landscape side panel and local delegated 
     'the side panel must reuse the existing canonical per-factory daily input calculation');
 });
 
+
+
+
+test('factory type cards keep three columns and lock every other card until the active card is tapped closed', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  assert.match(source,/function syncFactoryCardActionLock\(root, model\)/);
+  assert.match(source,/data-detail-locked="true"/);
+  assert.match(source,/selectedState\.expandedKey === selectedCardKey \? '' : selectedCardKey/);
+  assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
+  assert.match(css,/data-detail-locked="true"/);
+  assert.match(css,/touch-action:manipulation/);
+  assert.match(css,/omega-offline-atlas-shell-v93|omega-offline-atlas-shell-v93/);
+});
 
 test('Factory cards use horizontal internal layouts and only reserve the landscape detail panel when opened', () => {
   const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
@@ -3345,7 +3422,7 @@ test('Factory cards use horizontal internal layouts and only reserve the landsca
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:680px\)/);
   assert.match(css,/grid-template-columns:repeat\(auto-fit,minmax\(245px,1fr\)\)/);
   assert.match(css,/@media \(min-width:1200px\)[\s\S]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
-  assert.match(sw,/omega-offline-atlas-shell-v92/);
+  assert.match(sw,/omega-offline-atlas-shell-v93/);
 });
 
 
@@ -3383,6 +3460,6 @@ test('phone landscape factory cards keep compact aligned columns without stage c
     'live factory cards must leave the fixed container-unit position and use normal document flow');
   assert.match(phoneLandscape, /\.fp-factory-detail-panel \{[^}]*order:2[^}]*width:100%/s,
     'the recipe detail panel must remain below the card workspace on phone landscape');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v92'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v93'),
     'Android offline shell must reload the landscape layout stylesheet');
 });

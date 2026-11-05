@@ -2922,6 +2922,55 @@
       (key ? factoryDetailPanelContentsMarkup(model, key) : '') + '</aside>';
   }
 
+  function syncFactoryCardActionLock(root, model) {
+    if (!root || typeof root.querySelectorAll !== 'function') return false;
+    model = model || root.__omegaV2IndustryModel || {};
+    var uiState = factoryCardUiState(model);
+    var activeKey = String(uiState.expandedKey || uiState.buildKey || '');
+    var cards = root.querySelectorAll('[data-omega-v2-factory-type-card], [data-omega-v2-factory-card]');
+    for (var cardIndex = 0; cardIndex < cards.length; cardIndex += 1) {
+      var card = cards[cardIndex];
+      var type = String(card.getAttribute && card.getAttribute('data-factory-type') || '');
+      var assetId = String(card.getAttribute && card.getAttribute('data-factory-id') || '');
+      var cardKey = type ? 'type:' + type : assetId ? 'asset:' + assetId : '';
+      var locked = !!activeKey && cardKey !== activeKey;
+      if (card.setAttribute) {
+        if (locked) {
+          card.setAttribute('data-detail-locked', 'true');
+          card.setAttribute('aria-disabled', 'true');
+        } else {
+          if (card.removeAttribute) {
+            card.removeAttribute('data-detail-locked');
+            card.removeAttribute('aria-disabled');
+          } else {
+            card.setAttribute('data-detail-locked', 'false');
+            card.setAttribute('aria-disabled', 'false');
+          }
+        }
+      }
+      if (card.classList && typeof card.classList.toggle === 'function') {
+        card.classList.toggle('fp-factory-card--locked', locked);
+      }
+      var controls = typeof card.querySelectorAll === 'function' ? card.querySelectorAll('button') : [];
+      for (var controlIndex = 0; controlIndex < controls.length; controlIndex += 1) {
+        var control = controls[controlIndex];
+        if (!control || typeof control.disabled !== 'boolean') continue;
+        var originalDisabled = control.getAttribute
+          ? control.getAttribute('data-omega-v2-lock-original-disabled') : null;
+        if (locked) {
+          if (originalDisabled === null && control.setAttribute) {
+            control.setAttribute('data-omega-v2-lock-original-disabled', control.disabled ? 'true' : 'false');
+          }
+          control.disabled = true;
+        } else if (originalDisabled !== null) {
+          control.disabled = originalDisabled === 'true';
+          if (control.removeAttribute) control.removeAttribute('data-omega-v2-lock-original-disabled');
+        }
+      }
+    }
+    return true;
+  }
+
   function syncFactoryDetailPanel(root, model) {
     if (!root) return false;
     model = model || root.__omegaV2IndustryModel || {};
@@ -2943,6 +2992,7 @@
       var card = button.closest && button.closest('[data-omega-v2-factory-type-card], [data-omega-v2-factory-card]');
       if (card && card.setAttribute) card.setAttribute('data-detail-active', active ? 'true' : 'false');
     }
+    syncFactoryCardActionLock(root, model);
     var panel = typeof root.querySelector === 'function' ? root.querySelector('[data-factory-detail-panel]') : null;
     if (!panel) return false;
     panel.innerHTML = key ? factoryDetailPanelContentsMarkup(model, key) : '';
@@ -3386,6 +3436,7 @@
       compactTabs + summaryMarkup + panelBody + '<div class="fp-deck" aria-hidden="true"></div></div>' +
       (root.__omegaV2IndustryBuildFactoryType ? factoryProjectModal(model, root.__omegaV2IndustryBuildFactoryType) : '') + '</section>';
 
+    syncFactoryCardActionLock(root, model);
     if (!root.__omegaV2IndustryBound && typeof root.addEventListener === 'function') {
       root.addEventListener('error', function (event) {
         var image = event && event.target;
@@ -3397,6 +3448,8 @@
       root.addEventListener('click', function (event) {
         var target = event && event.target;
         if (!target || typeof target.closest !== 'function') return;
+        var lockedFactoryCard = target.closest('[data-detail-locked="true"]');
+        if (lockedFactoryCard && root.contains(lockedFactoryCard)) return;
 
         var viewToggle = target.closest('[data-omega-v2-factory-view-toggle]');
         if (viewToggle && root.contains(viewToggle)) {
@@ -3419,6 +3472,7 @@
           var stage = typeof root.querySelector === 'function' ? root.querySelector('.fp-stage') : null;
           if (viewContent) {
             viewContent.innerHTML = factoryHomeViewMarkup(root, activeViewModel, activeViewOptions, nextFactoryView);
+            syncFactoryCardActionLock(root, activeViewModel);
             if (stage && stage.setAttribute) stage.setAttribute('data-factory-view', nextFactoryView);
             viewToggle.textContent = nextFactoryView === 'types' ? 'Details' : 'Type totals';
             if (viewToggle.setAttribute) {
@@ -3529,7 +3583,8 @@
           });
           if (selectedAsset) {
             var selectedState = root.__omegaV2FactoryCardUiState || (root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false });
-            selectedState.expandedKey = 'asset:' + selectedId;
+            var selectedCardKey = 'asset:' + selectedId;
+            selectedState.expandedKey = selectedState.expandedKey === selectedCardKey ? '' : selectedCardKey;
             selectedState.buildKey = '';
             selectedState.sections = Object.create(null);
             syncFactoryDetailPanel(root, activeFactoryModel);
