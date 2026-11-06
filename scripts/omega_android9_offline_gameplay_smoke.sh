@@ -96,13 +96,14 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
     cat "$log_file"
     screenshot_dir="$artifact_dir/screenshots"
     mkdir -p "$screenshot_dir"
-    remote_screenshot_dir="/storage/emulated/0/Android/data/com.omega.globalsupremecommander/files/omega-smoke"
-    if ! timeout 30s adb pull "$remote_screenshot_dir" "$screenshot_dir"; then
-      echo "ERROR: Android Input UI screenshot retrieval failed" >&2
-      exit 1
-    fi
+    mkdir -p "$screenshot_dir/omega-smoke"
     for screenshot in factory-input-landscape.png; do
+      remote_screenshot_file="files/omega-smoke/$screenshot"
       local_screenshot="$screenshot_dir/omega-smoke/$screenshot"
+      if ! timeout 30s adb exec-out run-as com.omega.globalsupremecommander cat "$remote_screenshot_file" > "$local_screenshot"; then
+        echo "ERROR: Android Input UI screenshot retrieval failed through the debug app sandbox" >&2
+        exit 1
+      fi
       if [[ ! -s "$local_screenshot" ]]; then
         echo "ERROR: Required Android Input UI screenshot is missing: $local_screenshot" >&2
         find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
