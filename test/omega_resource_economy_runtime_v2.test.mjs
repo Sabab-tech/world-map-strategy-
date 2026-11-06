@@ -60,7 +60,9 @@ function createContext(){
           id:'PROC_1',stage:'PROCESSING',capacity:50,
           inputCoefficients:{iron_ore:1},
           outputProfile:{iron_intermediate:0.8},
-          companyId:'PROCESS_CO'
+          companyId:'LEGACY_COMPANY_ATTRIBUTION',
+          ownerCompanyId:'FACTORY_OWNER_CO',
+          operatorCompanyId:'PROCESS_OPERATOR_CO'
         }]
       }
     },
@@ -257,7 +259,12 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
 
   const accounts=worldState.economy.BGD.companyAccounts;
   assert.equal(accounts.MINER_CO.runtimeNetCashFlow,415);
-  assert.equal(accounts.PROCESS_CO.runtimeNetCashFlow,-500);
+  assert.equal(accounts.PROCESS_OPERATOR_CO.runtimeNetCashFlow,-500,
+    'factory input/processing cash flow must be attributed to the explicit operator before the legacy companyId or owner');
+  assert.equal(accounts.FACTORY_OWNER_CO,undefined,
+    'factory ownership must not receive operating expenses when a different operator is recorded');
+  assert.equal(accounts.LEGACY_COMPANY_ATTRIBUTION,undefined,
+    'legacy companyId must not override an explicit operator identity');
 
   assert.equal(worldState.trade.BGD.domesticSales.length,1);
   assert.equal(worldState.trade.BGD.domesticSales[0].sale.status,'SETTLED');
