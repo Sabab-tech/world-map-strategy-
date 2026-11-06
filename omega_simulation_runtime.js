@@ -85,7 +85,11 @@
       runtimeVersion:VERSION,
       status:runtime.status,
       clock:runtime.clock.snapshot(),
-      worldState:runtime.world.snapshot(),
+      // saveSlot serializes synchronously before its first await, so it may
+      // safely capture the authoritative root by reference and avoid allocating
+      // a second full copy of a very large world. Public saveState() keeps the
+      // detached deep-clone contract by default.
+      worldState:options.referenceWorldState===true?runtime.world.state:runtime.world.snapshot(),
       commands:runtime.commandQueue.snapshot(),
       events:runtime.events.snapshot(),
       ministryRuntime:runtime.ministryRuntime?.saveState?.()||null,
@@ -1056,7 +1060,7 @@
       // that same JSON string. The previous path walked the entire world twice
       // (stable checksum serialization + JSON.stringify), blocking the browser
       // main thread on large country/economy saves.
-      const snapshot=createSaveSnapshot(this,{includeDiagnostics:false});
+      const snapshot=createSaveSnapshot(this,{includeDiagnostics:false,referenceWorldState:true});
       const canonical=stableStringify(snapshot,true);
       const checksum=checksumText(canonical);
       snapshot.checksum=checksum;
