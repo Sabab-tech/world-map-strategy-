@@ -37,6 +37,12 @@ function makeHarness(){
   const handlers=new Map();
   const projects=state.resource.BGD.industrialNetwork.projects;
   const network={
+    factoryUtilityDiagnostics(){
+      return{status:'HEALTHY',utilityAuthority:'TEST_SIMULATION_UTILITY_STATE',
+        electricity:{availableThisTurn:10},water:{availableThisTurn:20},
+        workforce:{unemployedCount:100,authority:'TEST_SIMULATION_LABOUR_POOL'},
+        transportCapacity:{truck:{availableThisTurn:500,unit:'SIMULATION_RESOURCE_UNITS_PER_TURN',authority:'TEST_SIMULATION_TRANSPORT'}}};
+    },
     factoryConstructionMaterialQuote(country,profile){
       return{status:'QUOTED',materials:[{resourceId:'construction_aggregate',required:profile.constructionMaterials.construction_aggregate,available:100,sufficient:true}]};
     },
@@ -131,6 +137,10 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
 
   const preview=api.previewProposal('BGD',proposal.proposalId);
   assert.equal(preview.status,'READY');
+  assert.equal(preview.operationalReadiness.status,'READY');
+  assert.equal(preview.operationalReadiness.requirements.find(x=>x.type==='ELECTRICITY').available,10);
+  assert.equal(preview.operationalReadiness.requirements.find(x=>x.type==='WORKFORCE').available,100);
+  assert.equal(preview.operationalReadiness.transportCapacity[0].mode,'truck');
   assert.equal(preview.shortages.length,1);
   assert.equal(preview.shortages[0].resourceId,'iron_ore');
   assert.equal(preview.shortages[0].shortfall,500);
@@ -322,6 +332,8 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/sourceTransactionId/);
   assert.match(fragments[0],/Verify company capital/);
   assert.match(fragments[0],/Government decision queue/);
+  assert.match(fragments[0],/Private operator/);
+  assert.match(fragments[0],/Construction and operating readiness/);
   assert.match(fragments[0],/PRODUCTION GATED BY SAB-34/);
   assert.equal(fragments[0].includes('data-omega-v2-industry-tab="companies"'),false);
 });
