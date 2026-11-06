@@ -157,8 +157,11 @@
     for(var i=0;i<keys.length;i++)if(id(routes[keys[i]]&&routes[keys[i]].factoryType)===factoryType)return routes[keys[i]];
     return null;
   }
-  function resourceAvailable(country,resourceId){
-    var bucket=countryBucket('resource',country,false)||{},inv=obj(bucket.inventory)?bucket.inventory:{},warehouse=obj(bucket.warehouse)?bucket.warehouse:{};
+  function resourceAvailable(country,resourceId,resourceSnapshot){
+    // Read every input from the same caller-captured country snapshot. Re-resolving
+    // state per material can mix a stale/rotated country bucket into one preview.
+    var bucket=obj(resourceSnapshot)?resourceSnapshot:(countryBucket('resource',country,false)||{}),
+      inv=obj(bucket.inventory)?bucket.inventory:{},warehouse=obj(bucket.warehouse)?bucket.warehouse:{};
     var inventoryKey=Object.prototype.hasOwnProperty.call(inv,resourceId)?resourceId:Object.keys(inv).find(function(k){return token(k)===token(resourceId);});
     var rows=obj(warehouse.availableByResource)?warehouse.availableByResource:{};
     var warehouseKey=Object.prototype.hasOwnProperty.call(rows,resourceId)?resourceId:Object.keys(rows).find(function(k){return token(k)===token(resourceId);});
@@ -193,11 +196,12 @@
       resourceCountryKeys:Object.keys(resourceRoot),matchingCountryKeys:matchingCountryKeys,
       authority:amount===null?'UNOBSERVED':invAmount!==null&&warehouseFree!==null?'INVENTORY_AND_WAREHOUSE_LEDGER':warehouseFree!==null?'RAW_WAREHOUSE_LEDGER':'LEGACY_INVENTORY_AGGREGATE'};
   }
-  function inputForecast(country,profile,recipe,quantity){
-    var inputs=recipe&&recipe.inputs||{},capacity=Math.max(1,num(profile&&profile.defaultCapacityPerDay)||1)*quantity,rows=[];
+  function inputForecast(country,profile,recipe,quantity,resourceSnapshot){
+    var inputs=recipe&&recipe.inputs||{},capacity=Math.max(1,num(profile&&profile.defaultCapacityPerDay)||1)*quantity,rows=[],
+      snapshot=obj(resourceSnapshot)?resourceSnapshot:(countryBucket('resource',country,false)||{});
     Object.keys(inputs).forEach(function(resourceId){
       var perUnit=num(inputs[resourceId]);if(perUnit===null||perUnit<=0)return;
-      var needed=perUnit*capacity*30,stock=resourceAvailable(country,resourceId);
+      var needed=perUnit*capacity*30,stock=resourceAvailable(country,resourceId,snapshot);
       rows.push({resourceId:resourceId,perUnit:perUnit,forecast30Day:needed,available:stock.available,physicalAvailable:stock.physicalAvailable,
         protectedStock:stock.protectedStock,nationalDemandPerDay:stock.nationalDemandPerDay,consumerDemandPerDay:stock.consumerDemandPerDay,
         existingFactoryInputDemandPerDay:stock.existingFactoryInputDemandPerDay,existingDemand30Day:stock.existingDemand30Day,
@@ -264,7 +268,8 @@
     var livePrivate=privateAssets(cid).filter(function(a){return id(a.factoryType||a.type)===proposal.factoryType;}).length;
     var maximumPrivate=Math.floor(governmentCount*.60+1e-9);
     var maxAdditional=Math.max(0,maximumPrivate-openingPrivate-livePrivate);
-    var inputs=inputForecast(cid,profile,recipe,proposal.quantity);
+    var resourceSnapshot=countryBucket('resource',cid,false)||{};
+    var inputs=inputForecast(cid,profile,recipe,proposal.quantity,resourceSnapshot);
     var deficits=inputs.filter(function(x){return x.shortfall!==null&&x.shortfall>1e-9;});
     var unobserved=inputs.filter(function(x){return x.available===null||x.nationalDemandPerDay===null;});
     var operationalReadiness=operationalCapacityPreview(cid,profile,proposal.quantity);
