@@ -135,14 +135,37 @@
     var reserved=Math.max(0,num(warehouse.reservedByResource&&warehouse.reservedByResource[warehouseKey||resourceId])||0);
     var warehouseFree=warehouseAmount===null?null:Math.max(0,warehouseAmount-reserved);
     var amount=invAmount!==null&&warehouseFree!==null?Math.min(invAmount,warehouseFree):warehouseFree!==null?warehouseFree:invAmount;
-    return{resourceId:resourceId,available:amount===null?null:amount,reserved:reserved,authority:amount===null?'UNOBSERVED':invAmount!==null&&warehouseFree!==null?'INVENTORY_AND_WAREHOUSE_LEDGER':warehouseFree!==null?'RAW_WAREHOUSE_LEDGER':'LEGACY_INVENTORY_AGGREGATE'};
+    var strategic=obj(bucket.strategicReserve)||{},protectedMap=strategic.availableByResource||strategic.protectedByResource||strategic.minimumByResource||
+      bucket.protectedStockByResource||bucket.minimumStockByResource||{};
+    var protectedValue=null;
+    Object.keys(protectedMap).some(function(key){if(token(key)!==token(resourceId))return false;protectedValue=Math.max(0,num(protectedMap[key])||0);return true;});
+    var protectedQty=protectedValue===null?0:protectedValue;
+    var availableAfterProtection=amount===null?null:Math.max(0,amount-protectedQty);
+    var demandRuntime=obj(bucket.demandRuntime)||{},byResource=obj(demandRuntime.byResource)||{},demandRow=null;
+    Object.keys(byResource).some(function(key){if(token(key)!==token(resourceId))return false;demandRow=byResource[key];return true;});
+    var demandFresh=num(demandRuntime.lastTurn)===turn(),demandPerDay=demandFresh&&demandRow?num(demandRow.demandPerDay):null;
+    var consumerDemandPerDay=demandFresh&&demandRow?num(demandRow.consumerDemandPerDay):null;
+    var factoryDemandPerDay=demandFresh&&demandRow?num(demandRow.activeFactoryInputDemandPerDay):null;
+    var existingDemand30Day=demandPerDay===null?null:demandPerDay*30;
+    var availableForProposal=availableAfterProtection===null?null:
+      demandPerDay===null?availableAfterProtection:Math.max(0,availableAfterProtection-existingDemand30Day);
+    var confirmedInbound=demandFresh&&demandRow?Math.max(0,num(demandRow.pendingImportQuantity)||0):0;
+    return{resourceId:resourceId,available:availableForProposal,physicalAvailable:amount,availableAfterProtection:availableAfterProtection,
+      reserved:reserved,protectedStock:protectedQty,nationalDemandPerDay:demandPerDay,consumerDemandPerDay:consumerDemandPerDay,
+      existingFactoryInputDemandPerDay:factoryDemandPerDay,existingDemand30Day:existingDemand30Day,
+      confirmedInboundNotCounted:confirmedInbound,demandStatus:demandPerDay===null?'UNOBSERVED_OR_STALE':'CURRENT_TURN_SNAPSHOT',
+      authority:amount===null?'UNOBSERVED':invAmount!==null&&warehouseFree!==null?'INVENTORY_AND_WAREHOUSE_LEDGER':warehouseFree!==null?'RAW_WAREHOUSE_LEDGER':'LEGACY_INVENTORY_AGGREGATE'};
   }
   function inputForecast(country,profile,recipe,quantity){
     var inputs=recipe&&recipe.inputs||{},capacity=Math.max(1,num(profile&&profile.defaultCapacityPerDay)||1)*quantity,rows=[];
     Object.keys(inputs).forEach(function(resourceId){
       var perUnit=num(inputs[resourceId]);if(perUnit===null||perUnit<=0)return;
       var needed=perUnit*capacity*30,stock=resourceAvailable(country,resourceId);
-      rows.push({resourceId:resourceId,perUnit:perUnit,forecast30Day:needed,available:stock.available,shortfall:stock.available===null?null:Math.max(0,needed-stock.available),authority:stock.authority,reserved:stock.reserved});
+      rows.push({resourceId:resourceId,perUnit:perUnit,forecast30Day:needed,available:stock.available,physicalAvailable:stock.physicalAvailable,
+        protectedStock:stock.protectedStock,nationalDemandPerDay:stock.nationalDemandPerDay,consumerDemandPerDay:stock.consumerDemandPerDay,
+        existingFactoryInputDemandPerDay:stock.existingFactoryInputDemandPerDay,existingDemand30Day:stock.existingDemand30Day,
+        confirmedInboundNotCounted:stock.confirmedInboundNotCounted,demandStatus:stock.demandStatus,
+        shortfall:stock.available===null?null:Math.max(0,needed-stock.available),authority:stock.authority,reserved:stock.reserved});
     });
     return rows;
   }
@@ -157,7 +180,7 @@
     var maxAdditional=Math.max(0,maximumPrivate-openingPrivate-livePrivate);
     var inputs=inputForecast(cid,profile,recipe,proposal.quantity);
     var deficits=inputs.filter(function(x){return x.shortfall!==null&&x.shortfall>1e-9;});
-    var unobserved=inputs.filter(function(x){return x.available===null;});
+    var unobserved=inputs.filter(function(x){return x.available===null||x.nationalDemandPerDay===null;});
     var capacity=profile.defaultCapacityPerDay===undefined?null:num(profile.defaultCapacityPerDay)*proposal.quantity;
     var constructionQuote=null;
     try{var n=network();if(n&&typeof n.factoryConstructionMaterialQuote==='function')constructionQuote=n.factoryConstructionMaterialQuote(cid,profile);}catch(_){}
@@ -545,7 +568,7 @@
       }else if(p.status==='FUNDED')buttons='<button type="button" data-pe-action="construct" data-pe-proposal="'+p.proposalId+'">Start construction</button>';
       var preview=previewFor(p);
       var shortages=(preview.shortages||[]).map(function(x){return'<span class="pe-warning">'+escapeHtml(x.resourceId)+': projected 30-day shortfall '+Number(x.shortfall).toLocaleString('en-US')+'</span>';}).join('');
-      var unknown=(preview.unobservedInputs||[]).map(function(x){return'<span class="pe-info">Stock not observed: '+escapeHtml(x.resourceId)+'; no quantity assumed</span>';}).join('');
+      var unknown=(preview.unobservedInputs||[]).map(function(x){return'<span class="pe-info">'+(x.available===null?'Stock not observed: ':'Current demand forecast not observed: ')+escapeHtml(x.resourceId)+'; no quantity assumed</span>';}).join('');
       var progress=(p.projectIds||[]).length+'/'+p.quantity+' projects';
       var facts='<div class="pe-facts"><span>Factory: '+escapeHtml(p.factoryName)+'</span><span>Quantity: '+p.quantity+'</span><span>Capital: '+(p.capitalRequired===null?'Unquoted':Number(p.capitalRequired).toLocaleString('en-US')+' '+escapeHtml(p.capitalUnit))+'</span><span>Company capital: '+balance.toLocaleString('en-US')+'</span><span>Government factories: '+Number(preview.governmentFactoryCount||0).toLocaleString('en-US')+'</span><span>Private opening allocation: '+Number(preview.openingPrivateAllocation||0).toLocaleString('en-US')+'</span><span>Additional policy ceiling: '+Number(preview.maximumAdditionalUnits||0).toLocaleString('en-US')+'</span><span>Daily capacity forecast: '+Number(preview.requestedDailyCapacity||0).toLocaleString('en-US')+'</span><span>Source: '+p.sourcingPolicy.replace(/_/g,' ')+'</span><span>Projects: '+progress+'</span></div>';
       if(p.status==='PROPOSED')buttons='<label class="pe-adjust">Decision quantity <input type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="'+p.quantity+'" data-pe-adjust-quantity="'+p.proposalId+'"></label><button type="button" data-pe-action="adjust" data-pe-proposal="'+p.proposalId+'">Update quantity</button>'+buttons;
