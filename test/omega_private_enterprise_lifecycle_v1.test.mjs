@@ -63,12 +63,12 @@ function makeHarness(){
   };
   const governmentBaseline={
     getCountryBaseline(){
-      return{factoryCounts:{STEEL_WORKS:10,ZERO_GOV_FACTORY:0}};
+      return{factoryCounts:{STEEL_WORKS:20,ZERO_GOV_FACTORY:0}};
     }
   };
   const privateBaseline={
     getCountryBaseline(){
-      return{status:'READY',countryId:'BGD',governmentFactoryCounts:{STEEL_WORKS:10,ZERO_GOV_FACTORY:0},
+      return{status:'READY',countryId:'BGD',governmentFactoryCounts:{STEEL_WORKS:20,ZERO_GOV_FACTORY:0},
         factoryCounts:{STEEL_WORKS:10,ZERO_GOV_FACTORY:0},totalPrivateFactoryUnits:10,
         companies:[
           {companyId:'AURORA_INDUSTRIAL_GROUP',factoryCounts:{STEEL_WORKS:2,ZERO_GOV_FACTORY:0}},
