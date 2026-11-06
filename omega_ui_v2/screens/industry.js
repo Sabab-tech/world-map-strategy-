@@ -3637,9 +3637,11 @@
           !root.querySelector('[data-omega-v2-industry-tab]')) return;
       var currentTab = root.__omegaV2IndustryTab || options.tab || 'factories';
       var currentView = root.__omegaV2IndustryFactoryView || options.factoryView || 'types';
-      var currentManageOpen = !!(root.__omegaV2FactoryCardUiState && root.__omegaV2FactoryCardUiState.buildKey);
+      var currentCardState = root.__omegaV2FactoryCardUiState || {};
+      var currentManageOpen = !!currentCardState.buildKey;
+      var currentDetailsOpen = !!currentCardState.expandedKey;
       var refreshedModel = buildViewModel({ countryId:countryKey,
-        lightweightFactoryTypeView:currentTab === 'factories' && currentView === 'types' && !currentManageOpen });
+        lightweightFactoryTypeView:currentTab === 'factories' && currentView === 'types' && !currentManageOpen && !currentDetailsOpen });
       if (!(refreshedModel.catalogProfileCount > 0) && refreshedModel.factoryBaselineStatus !== 'READY') return;
       var active = root.__omegaV2IndustryTab || options.tab || 'factories';
       scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || options || {}, { countryId:countryKey, tab:active }),
@@ -3654,8 +3656,10 @@
     var requestedCountry = String(options.countryId || root.__omegaV2IndustryCountryId || '');
     var countryChanged = root.__omegaV2IndustryCountryId !== requestedCountry;
     var requestedFactoryView = countryChanged ? 'types' : (options.factoryView || root.__omegaV2IndustryFactoryView || 'types');
-    var managePanelOpen = !!(root.__omegaV2FactoryCardUiState && root.__omegaV2FactoryCardUiState.buildKey);
-    var lightweightTypeView = active === 'factories' && requestedFactoryView === 'types' && !managePanelOpen;
+    var cardUiState = root.__omegaV2FactoryCardUiState || {};
+    var managePanelOpen = !!cardUiState.buildKey;
+    var factoryDetailsOpen = !!cardUiState.expandedKey;
+    var lightweightTypeView = active === 'factories' && requestedFactoryView === 'types' && !managePanelOpen && !factoryDetailsOpen;
     var model = buildViewModel(Object.assign({}, options, { lightweightFactoryTypeView:lightweightTypeView }));
     var countryKey = String(model.countryId || '');
     warmFactoryPlanningData(root, options, model);
