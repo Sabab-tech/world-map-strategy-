@@ -276,14 +276,14 @@ function validateExportBatchAllocation(seller,resourceId,batchTransfers,governme
 }
 function allowedExportFactoryIds(seller,resourceId,governmentContractId){
  const policies=supplyDirectiveRows(seller,resourceId).filter(p=>p.directive==='FACTORY_ALLOCATION');
- if(!policies.length)return null;
- let allowed=new Set(policies[0].exportFactoryIds||[]);
+ const contract=supplyDirectiveRows(seller,resourceId).find(p=>p.directive==='GOVERNMENT_EXPORT_CONTRACT'&&
+  String(p.contractId||'')===String(governmentContractId||''));
+ if(!policies.length&&!(contract&&Array.isArray(contract.authorizedFactoryIds)&&contract.authorizedFactoryIds.length))return null;
+ let allowed=policies.length?new Set(policies[0].exportFactoryIds||[]):new Set(contract.authorizedFactoryIds||[]);
  for(const policy of policies.slice(1)){
   const next=new Set(policy.exportFactoryIds||[]);
   allowed=new Set([...allowed].filter(id=>next.has(id)));
  }
- const contract=supplyDirectiveRows(seller,resourceId).find(p=>p.directive==='GOVERNMENT_EXPORT_CONTRACT'&&
-  String(p.contractId||'')===String(governmentContractId||''));
  if(contract&&Array.isArray(contract.authorizedFactoryIds)&&contract.authorizedFactoryIds.length){
   const next=new Set(contract.authorizedFactoryIds);allowed=new Set([...allowed].filter(id=>next.has(id)));
  }
@@ -384,6 +384,11 @@ function governmentProcurementTx(cmd,ctx){
   warehouseId:warehouse.warehouseId||'WH-'+c+'-PROCESSED',countryId:c,batchId:x.governmentBatchId,
   sourceBatchId:x.sourceBatchId,resourceId:rid,quantity:x.quantity,simulationTurn:turn(),
   status:'OWNERSHIP_TRANSFER_RECEIVED',procurementId}));
+ const availableBatchIds=new Set(batches.filter(x=>['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(String(x?.stage||'').toUpperCase())&&
+  Math.max(0,num(x?.remainingQuantity!=null?x.remainingQuantity:x?.quantity)||0)>1e-7&&
+  !['CONSUMED','SOLD','TRANSFERRED','DEPLETED'].includes(String(x?.status||'').toUpperCase())).map(x=>String(x.batchId||'')));
+ warehouse.storedBatchIds=(Array.isArray(warehouse.storedBatchIds)?warehouse.storedBatchIds:[]).filter(x=>availableBatchIds.has(String(x)));
+ transfers.forEach(x=>{if(!warehouse.storedBatchIds.includes(x.governmentBatchId))warehouse.storedBatchIds.push(x.governmentBatchId);});
  while(warehouse.receipts.length>2048)warehouse.receipts.shift();
  const record={procurementId,policyId,companyId,countryId:c,resourceId:rid,quantity:q,totalValue:total,
   currency:ctx.stateTransaction.get('finance.currencyCode')||null,batchTransfers:transfers,turn:turn(),
