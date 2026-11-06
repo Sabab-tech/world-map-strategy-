@@ -82,5 +82,5 @@ test('exact country data key takes precedence over a conflicting ISO2 alias from
  const usa=sandbox.OmegaPrivateEnterpriseRegistryV1.getCountryBaseline('USA');
  assert.equal(usa.countryId,'USA');
  assert.equal(usa.companies.length,5);
- assert.ok(usa.governmentFactoryCounts && usa.governmentFactoryCounts.STEEL_AND_ALLOY_WORKS >= 0);
+ assert.deepEqual(usa.governmentFactoryCounts,government.countries.USA.factoryCounts);
 });
