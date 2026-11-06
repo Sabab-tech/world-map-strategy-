@@ -6675,3 +6675,20 @@
     padding:8px;
   }
 }
+
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] *,
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] *::before,
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] *::after {
+  animation:none !important;
+  transition:none !important;
+  filter:none !important;
+  backdrop-filter:none !important;
+  perspective:none !important;
+  text-shadow:none !important;
+}
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .fp-lines,
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .fp-line-card,
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .fp-lines-summary > div {
+  box-shadow:none !important;
+  transform:none !important;
+}
