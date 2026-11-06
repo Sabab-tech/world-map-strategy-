@@ -84,6 +84,17 @@ function harness(){
   return{sandbox,state,handlers,interop,events,txFactory};
 }
 
+function fullPrivateStateControlRights(){
+  return{
+    strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,
+    labourSafetyEnvironmentalRegulation:true,strategicSupplyOversight:true,
+    strategicContracts:true,domesticSupplyDirection:true,exportControl:true,
+    publicProcurement:true,competitionOversight:true,foreignOwnershipReview:true,
+    emergencyIntervention:true,operationalControl:'STATE_POLICY_ONLY',
+    authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'
+  };
+}
+
 test('embargo and blockade policies actively block scoped trade and routes, then lift cleanly',()=>{
   const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
   const embargo=api.declareEmbargo('BGD',{targetCountryId:'SAU',resourceId:'crude_oil',direction:'EXPORT',policyId:'EMBARGO-BGD-SAU-OIL'});
@@ -463,7 +474,7 @@ test('government procurement buys privately owned finished batches once and tran
     operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
     sourceFactoryId:'FAC-PRIVATE-WIDGETS',warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE',
     sourcePrivateProposalId:'PRIVATE-PROC-PROPOSAL-1',sourcePrivateDecisionId:'PRIVATE-PROC-DECISION-1',
-    sourcePrivateFundingId:'PRIVATE-PROC-FUNDING-1'
+    sourcePrivateFundingId:'PRIVATE-PROC-FUNDING-1',sourcePrivatePermitId:'PRIVATE-PROC-PERMIT-1'
   }];
   h.state.resource.BGD.inventoryLots={'WIDGETS-PRIVATE-BATCH':{
     batchId:'WIDGETS-PRIVATE-BATCH',resourceId:'widgets',quantity:100,remainingQuantity:100,
@@ -471,7 +482,7 @@ test('government procurement buys privately owned finished batches once and tran
     ownerCompanyId:companyId,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
     ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-PRIVATE-WIDGETS',
     sourcePrivateProposalId:'PRIVATE-PROC-PROPOSAL-1',sourcePrivateDecisionId:'PRIVATE-PROC-DECISION-1',
-    sourcePrivateFundingId:'PRIVATE-PROC-FUNDING-1',status:'AVAILABLE'
+    sourcePrivateFundingId:'PRIVATE-PROC-FUNDING-1',sourcePrivatePermitId:'PRIVATE-PROC-PERMIT-1',status:'AVAILABLE'
   }};
   h.state.resource.BGD.processedWarehouse={
     warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',availableByResource:{widgets:100},
@@ -489,7 +500,7 @@ test('government procurement buys privately owned finished batches once and tran
     operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',privatePermitId:'PRIVATE-PROC-PERMIT-1',privatePermitStatus:'ACTIVE',
     sourcePrivateProposalId:'PRIVATE-PROC-PROPOSAL-1',sourcePrivateDecisionId:'PRIVATE-PROC-DECISION-1',
     sourcePrivateFundingId:'PRIVATE-PROC-FUNDING-1',
-    stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
+    stateControlRights:fullPrivateStateControlRights()
   }]}};
   const before=h.state.finance.BGD.available;
   const payload={policyId:'GOV-PROC-POLICY-1',procurementId:'GOV-PROC-ORDER-1',
@@ -531,14 +542,15 @@ test('government procurement honours every company in its allowlist when a defau
     ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-AURORA-WIDGETS',
     warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE',
     sourcePrivateProposalId:'PRIVATE-MULTI-PROPOSAL',sourcePrivateDecisionId:'PRIVATE-MULTI-DECISION',
-    sourcePrivateFundingId:'PRIVATE-MULTI-FUNDING'
+    sourcePrivateFundingId:'PRIVATE-MULTI-FUNDING',sourcePrivatePermitId:'PRIVATE-MULTI-PERMIT'
   }];
   h.state.resource.BGD.inventoryLots={[batchId]:{
     batchId,resourceId:'widgets',quantity:10,remainingQuantity:10,unit:'UNITS',stage:'FINISHED',
     countryId:'BGD',warehouseId:'WH-BGD-PROCESSED',ownerCompanyId:allowedCompany,
     operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
     sourceFactoryId:'FAC-AURORA-WIDGETS',sourcePrivateProposalId:'PRIVATE-MULTI-PROPOSAL',
-    sourcePrivateDecisionId:'PRIVATE-MULTI-DECISION',sourcePrivateFundingId:'PRIVATE-MULTI-FUNDING',status:'AVAILABLE'
+    sourcePrivateDecisionId:'PRIVATE-MULTI-DECISION',sourcePrivateFundingId:'PRIVATE-MULTI-FUNDING',
+    sourcePrivatePermitId:'PRIVATE-MULTI-PERMIT',status:'AVAILABLE'
   }};
   h.state.resource.BGD.processedWarehouse={
     warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',status:'OPERATIONAL',
@@ -552,7 +564,7 @@ test('government procurement honours every company in its allowlist when a defau
     operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',privatePermitId:'PRIVATE-MULTI-PERMIT',privatePermitStatus:'ACTIVE',
     sourcePrivateProposalId:'PRIVATE-MULTI-PROPOSAL',sourcePrivateDecisionId:'PRIVATE-MULTI-DECISION',
     sourcePrivateFundingId:'PRIVATE-MULTI-FUNDING',
-    stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
+    stateControlRights:fullPrivateStateControlRights()
   }]};
   const policy=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
     policyId:'GOV-PROC-MULTI-COMPANY',contractId:'GOV-PROC-MULTI-COMPANY',
@@ -573,7 +585,8 @@ test('government procurement refuses unknown or non-private operator attribution
     stage:'FINISHED',countryId:'BGD',ownerCompanyId:companyId,operatorCompanyId:'UNKNOWN_OPERATOR',
     ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-UNKNOWN-OPERATOR',
     sourcePrivateProposalId:'UNKNOWN-OP-PROPOSAL',sourcePrivateDecisionId:'UNKNOWN-OP-DECISION',
-    sourcePrivateFundingId:'UNKNOWN-OP-FUNDING',warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE'
+    sourcePrivateFundingId:'UNKNOWN-OP-FUNDING',sourcePrivatePermitId:'UNKNOWN-OP-PERMIT',
+    unit:'UNITS',warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE'
   }];
   h.state.resource.BGD.inventory={widgets:10};
   h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',status:'OPERATIONAL',
@@ -583,7 +596,8 @@ test('government procurement refuses unknown or non-private operator attribution
     countryId:'BGD',ownerCompanyId:companyId,operatorCompanyId:'UNKNOWN_OPERATOR',
     ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-UNKNOWN-OPERATOR',
     sourcePrivateProposalId:'UNKNOWN-OP-PROPOSAL',sourcePrivateDecisionId:'UNKNOWN-OP-DECISION',
-    sourcePrivateFundingId:'UNKNOWN-OP-FUNDING',warehouseId:'WH-BGD-PROCESSED'
+    sourcePrivateFundingId:'UNKNOWN-OP-FUNDING',sourcePrivatePermitId:'UNKNOWN-OP-PERMIT',
+    unit:'UNITS',warehouseId:'WH-BGD-PROCESSED'
   }};
   h.state.economy={BGD:{productionAssets:[{
     id:'FAC-UNKNOWN-OPERATOR',countryId:'BGD',status:'OPERATIONAL',productionEnabled:true,
@@ -591,7 +605,7 @@ test('government procurement refuses unknown or non-private operator attribution
     operatorCompanyId:'UNKNOWN_OPERATOR',privatePermitId:'UNKNOWN-OP-PERMIT',privatePermitStatus:'ACTIVE',
     sourcePrivateProposalId:'UNKNOWN-OP-PROPOSAL',sourcePrivateDecisionId:'UNKNOWN-OP-DECISION',
     sourcePrivateFundingId:'UNKNOWN-OP-FUNDING',
-    stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
+    stateControlRights:fullPrivateStateControlRights()
   }]}};
   const policy=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
     policyId:'GOV-PROC-UNKNOWN-OPERATOR',contractId:'GOV-PROC-UNKNOWN-OPERATOR',
@@ -614,7 +628,15 @@ test('government procurement rejects in-transit, unstored, missing-lot and misma
     {name:'batch from another country',status:'AVAILABLE',stored:true,lot:true,asset:true,batchCountryId:'USA'},
     {name:'lot from another country',status:'AVAILABLE',stored:true,lot:true,asset:true,lotCountryId:'USA'},
     {name:'factory asset from another country',status:'AVAILABLE',stored:true,lot:true,asset:true,assetCountryId:'USA'},
-    {name:'lot points to another batch',status:'AVAILABLE',stored:true,lot:true,asset:true,lotBatchId:'DIFFERENT-BATCH-ID'}
+    {name:'lot points to another batch',status:'AVAILABLE',stored:true,lot:true,asset:true,lotBatchId:'DIFFERENT-BATCH-ID'},
+    {name:'warehouse from another country',status:'AVAILABLE',stored:true,lot:true,asset:true,
+      warehouseCountryId:'USA',expectedReason:'GOVERNMENT_PROCUREMENT_WAREHOUSE_COUNTRY_OR_ID_MISMATCH'},
+    {name:'lot unit mismatch',status:'AVAILABLE',stored:true,lot:true,asset:true,lotUnit:'TONNES'},
+    {name:'lot quantity mismatch',status:'AVAILABLE',stored:true,lot:true,asset:true,lotRemainingQuantity:9},
+    {name:'lot is not finished goods',status:'AVAILABLE',stored:true,lot:true,asset:true,lotStage:'INTERMEDIATE'},
+    {name:'batch permit lineage mismatch',status:'AVAILABLE',stored:true,lot:true,asset:true,batchPermitId:'OTHER-PERMIT'},
+    {name:'lot permit lineage mismatch',status:'AVAILABLE',stored:true,lot:true,asset:true,lotPermitId:'OTHER-PERMIT'},
+    {name:'missing sovereign control right',status:'AVAILABLE',stored:true,lot:true,asset:true,missingStateRight:'exportControl'}
   ];
   for(const scenario of scenarios){
     const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime,companyId='NOVA_CONSUMER_INDUSTRIES';
@@ -623,15 +645,18 @@ test('government procurement rejects in-transit, unstored, missing-lot and misma
     const sourceDecisionId='PROC-DECISION-'+scenario.name.replaceAll(' ','-');
     const sourceFundingId='PROC-FUNDING-'+scenario.name.replaceAll(' ','-');
     const privatePermitId='PROC-PERMIT-'+scenario.name.replaceAll(' ','-');
-    const batch={batchId:'PRIVATE-'+scenario.name.replaceAll(' ','-'),resourceId:'widgets',quantity:10,remainingQuantity:10,
+    const batch={batchId:'PRIVATE-'+scenario.name.replaceAll(' ','-'),resourceId:'widgets',quantity:10,remainingQuantity:10,unit:'UNITS',
       stage:'FINISHED',countryId:scenario.batchCountryId||'BGD',ownerCompanyId:companyId,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
       ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-PRIVATE-WIDGETS',
       sourcePrivateProposalId:sourceProposalId,sourcePrivateDecisionId:sourceDecisionId,sourcePrivateFundingId:sourceFundingId,
-      warehouseId:'WH-BGD-PROCESSED',status:scenario.status};
+      sourcePrivatePermitId:scenario.batchPermitId||privatePermitId,warehouseId:'WH-BGD-PROCESSED',status:scenario.status};
     h.state.resource.BGD.batches=[batch];
     h.state.resource.BGD.inventoryLots=scenario.lot?{[batch.batchId]:{...batch,
-      batchId:scenario.lotBatchId||batch.batchId,countryId:scenario.lotCountryId||batch.countryId}}:{};
-    h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',status:'OPERATIONAL',
+      batchId:scenario.lotBatchId||batch.batchId,countryId:scenario.lotCountryId||batch.countryId,
+      unit:scenario.lotUnit||batch.unit,stage:scenario.lotStage||batch.stage,
+      remainingQuantity:scenario.lotRemainingQuantity===undefined?batch.remainingQuantity:scenario.lotRemainingQuantity,
+      sourcePrivatePermitId:scenario.lotPermitId||batch.sourcePrivatePermitId}}:{};
+    h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',countryId:scenario.warehouseCountryId||'BGD',status:'OPERATIONAL',
       availableByResource:{widgets:10},reservedByResource:{widgets:0},
       storedBatchIds:scenario.stored?[batch.batchId]:[],receipts:[]};
     h.state.economy={BGD:{productionAssets:scenario.asset?[{
@@ -639,7 +664,11 @@ test('government procurement rejects in-transit, unstored, missing-lot and misma
       ownerType:'PRIVATE_ENTERPRISE',ownerCompanyId:companyId,operatorType:'PRIVATE_COMPANY_OPERATOR',
       operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',privatePermitId,privatePermitStatus:'ACTIVE',
       sourcePrivateProposalId:sourceProposalId,sourcePrivateDecisionId:sourceDecisionId,sourcePrivateFundingId:sourceFundingId,
-      stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
+      stateControlRights:(function(){
+        const rights=fullPrivateStateControlRights();
+        if(scenario.missingStateRight)rights[scenario.missingStateRight]=false;
+        return rights;
+      })()
     }]:[]}};
     api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
       policyId:'PROC-'+scenario.name,contractId:'PROC-'+scenario.name,companyId,
@@ -648,7 +677,7 @@ test('government procurement rejects in-transit, unstored, missing-lot and misma
     const result=api.purchasePrivateStock('BGD',{policyId:'PROC-'+scenario.name,procurementId:'PROC-'+scenario.name,
       companyId,resourceId:'widgets',quantity:5,totalValue:50,batchIds:[batch.batchId]});
     assert.equal(result.accepted,false,scenario.name+': '+JSON.stringify(result));
-    assert.equal(result.reason,'GOVERNMENT_PROCUREMENT_PRIVATE_STOCK_INSUFFICIENT',scenario.name);
+    assert.equal(result.reason,scenario.expectedReason||'GOVERNMENT_PROCUREMENT_PRIVATE_STOCK_INSUFFICIENT',scenario.name);
     assert.equal(h.state.finance.BGD.available,before,scenario.name+' must not debit Treasury');
     assert.equal(batch.remainingQuantity,10,scenario.name+' must not mutate source batch before validation completes');
   }
