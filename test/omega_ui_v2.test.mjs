@@ -3295,3 +3295,87 @@ test('Factory type overview skips heavy inventory and production-ledger mapping 
   assert.ok(source.includes("var dailyProductionKnownCount = lightweightTypeView ? 0 :"));
   assert.ok(source.includes("var flows = lightweightTypeView ? [] :"));
 });
+
+test('Production Lines joins exact selected-country cycles and committed logistics without inventing routes or owners',()=>{
+  const keys=['Game','OmegaResourceIndustrialCatalogData','Omega','currentActiveCountry','OmegaResourceIndustrialNetwork',
+    'OmegaResourceCommandCenterUI','OmegaCountryFactoryStartingBaselineV1','OmegaPrivateEnterpriseRegistryV1'];
+  const previous=Object.fromEntries(keys.map(key=>[key,globalThis[key]]));
+  globalThis.Omega={};
+  globalThis.currentActiveCountry='BGD';
+  globalThis.OmegaResourceIndustrialCatalogData={
+    factoryProfiles:{STEEL_AND_ALLOY_WORKS:{name:'Steel and Alloy Works'}},
+    factoryTypeAliases:{},downstreamFactoryRecipes:{},processingRules:{}
+  };
+  globalThis.OmegaCountryFactoryStartingBaselineV1=null;
+  globalThis.OmegaPrivateEnterpriseRegistryV1=null;
+  globalThis.Game={state:{
+    simulation:{session:{playerCountryId:'BGD'},turn:12,daysPerTurn:1},
+    resource:{BGD:{industrialNetwork:{
+      projects:[],
+      factoryProductionCycles:{
+        'FAC-LINE-1':{status:'IN_PROGRESS',productionQuantity:120,startDate:'2026-11-05',finishDate:'2026-11-07',sourceBatchIds:['BATCH-01']},
+        'FAC-LINE-2':{status:'PAUSED',productionQuantity:0}
+      },
+      shipments:[
+        {shipmentId:'SHIP-FACTORY-01',shipmentType:'WAREHOUSE_TO_FACTORY',countryId:'BGD',factoryId:'FAC-LINE-1',
+          resourceId:'iron_ore',quantity:50,targetQuantity:45,unit:'tonnes',targetUnit:'tonnes',batchId:'BATCH-01',
+          status:'IN_TRANSIT',etaTurn:14,etaDate:'2026-11-08',createdTurn:11,
+          route:{routeId:'ROUTE-01',sourceNode:'WH-BGD-RAW',destinationNode:'FACTORY:BGD:FAC-LINE-1',
+            destinationFactoryId:'FAC-LINE-1',transportMode:'truck',legs:[{transportMode:'truck',distanceKm:12}]}},
+        {shipmentId:'MINE-HAUL-ONLY',shipmentType:'MINE_TO_WAREHOUSE',countryId:'BGD',resourceId:'iron_ore',
+          quantity:50,status:'IN_TRANSIT',createdTurn:11,route:{sourceNode:'MINE:SITE-01',destinationNode:'WH-BGD-RAW'}}
+      ],
+      factoryInputRequests:[{
+        requestId:'REQ-01',countryId:'BGD',factoryId:'FAC-LINE-1',resourceId:'iron_ore',status:'PARTIALLY_FULFILLED',
+        deliveryStatus:'IN_TRANSIT',requestedQuantity:80,allocatedQuantity:50,fulfilledQuantity:0,inTransitQuantity:45,
+        unfulfilledQuantity:35,unit:'tonnes',transferIds:['SHIP-FACTORY-01'],updatedTurn:11
+      }],
+      warehouseFactoryDispatches:[{
+        dispatchId:'SHIP-FACTORY-01',shipmentId:'SHIP-FACTORY-01',countryId:'BGD',destinationFactoryId:'FAC-LINE-1',
+        resourceId:'iron_ore',quantity:50,targetQuantity:45,unit:'tonnes',targetUnit:'tonnes',batchId:'BATCH-01',
+        inputBatchId:'INPUT:SHIP-FACTORY-01',status:'IN_TRANSIT',createdTurn:11,
+        route:{routeId:'ROUTE-01',sourceNode:'WH-BGD-RAW',destinationNode:'FACTORY:BGD:FAC-LINE-1',
+          destinationFactoryId:'FAC-LINE-1',transportMode:'truck',legs:[{transportMode:'truck',distanceKm:12}]}
+      }],
+      routePreviews:[{status:'ROUTE_PREVIEW_ONLY',routeId:'PREVIEW-ONLY',factoryId:'FAC-LINE-1',distanceKm:999}]
+    } }},
+    economy:{BGD:{productionAssets:[
+      {id:'FAC-LINE-1',name:'National steel works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',companyId:'AURORA_INDUSTRIAL_GROUP'},
+      {id:'FAC-LINE-2',name:'Unmapped operator works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',companyId:'UNKNOWN_SIM_COMPANY'}
+    ]}}
+  }};
+  const root={
+    classList:{add(){}},
+    addEventListener(){},
+    contains(){return true;},
+    querySelector(){return null;},
+    querySelectorAll(){return[];},
+    innerHTML:''
+  };
+  try{
+    const result=globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'production-lines'});
+    assert.equal(result.ok,true);
+    assert.equal(result.model.lineActivity.length,2,'only the two cycle-backed factories from the selected country are shown');
+    const steel=result.model.lineActivity.find(row=>row.factoryId==='FAC-LINE-1');
+    assert.ok(steel);
+    assert.equal(steel.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+    assert.equal(steel.shipments.length,1,'mine-to-warehouse movement without a factory destination is not shown as a factory line shipment');
+    assert.equal(steel.shipments[0].shipmentId,'SHIP-FACTORY-01');
+    assert.equal(steel.shipments[0].route.destinationNode,'FACTORY:BGD:FAC-LINE-1');
+    assert.equal(steel.inputRequests[0].requestId,'REQ-01');
+    assert.equal(steel.warehouseDispatches[0].dispatchId,'SHIP-FACTORY-01');
+    assert.match(root.innerHTML,/Production &amp; delivery lines/);
+    assert.match(root.innerHTML,/Aurora Industrial Group/);
+    assert.match(root.innerHTML,/WH-BGD-RAW/);
+    assert.match(root.innerHTML,/FACTORY:BGD:FAC-LINE-1/);
+    assert.match(root.innerHTML,/truck/);
+    assert.match(root.innerHTML,/2026-11-08/);
+    assert.match(root.innerHTML,/REQ-01/);
+    assert.match(root.innerHTML,/Recorded owner not mapped to a global company/);
+    assert.doesNotMatch(root.innerHTML,/PREVIEW-ONLY|ROUTE_PREVIEW_ONLY|999/);
+    assert.doesNotMatch(root.innerHTML,/omega-v2-factory-backdrop/,
+      'the Lines view must not render or decode the large decorative factory photograph');
+  }finally{
+    for(const key of keys){if(previous[key]===undefined)delete globalThis[key];else globalThis[key]=previous[key];}
+  }
+});
