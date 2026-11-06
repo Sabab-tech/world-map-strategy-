@@ -219,6 +219,26 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /omega-offline-atlas-shell-v\d+/);
   const activeCache = serviceWorker.match(/const CACHE_NAME = ["'](omega-offline-atlas-shell-v[0-9]+)["'];/);
   assert.ok(activeCache, 'service worker must expose one explicit, versioned app-shell cache name');
+  assert.equal(activeCache[1], 'omega-offline-atlas-shell-v103',
+    'the shell cache version must match the current Factory Input / Private Company asset release');
+  assert.match(html, /updateViaCache:\s*['"]none['"]/,
+    'browser Service Worker updates must not reuse stale HTTP-cached worker scripts');
+  const coreAssets = serviceWorker.match(/const CORE_ASSETS = \[([\s\S]*?)\];/);
+  assert.ok(coreAssets, 'the offline shell must expose an explicit core asset manifest');
+  for (const asset of [
+    'omega_resource_logistics_runtime_v1.js',
+    'omega_resource_economy_runtime_v2.js',
+    'omega_resource_national_demand_runtime_v1.js',
+    'omega_resource_industrial_network_v1.js',
+    'omega_country_inventory_runtime_v1.js',
+    'omega_resource_startup_baseline_v1.js',
+    'omega_resource_gameplay_binding_v1.js'
+  ]) {
+    assert.ok(coreAssets[1].includes('"./' + asset + '"'),
+      'Factory Input offline boot is missing required runtime: ' + asset);
+    assert.ok(html.includes('src="' + asset + '"'),
+      'Factory Input runtime must also be loaded by the application shell: ' + asset);
+  }
   assert.match(serviceWorker, /key !== CACHE_NAME/,
     'activation must preserve the current shell cache while pruning older versions');
   assert.doesNotMatch(serviceWorker, /"\.\/omega_ui_system_redesign_v1\.css"/, 'legacy redesign CSS is not eagerly cached');
