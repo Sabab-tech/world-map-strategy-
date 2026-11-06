@@ -519,6 +519,14 @@ test('government procurement buys privately owned finished batches once and tran
   assert.ok(governmentBatch);
   assert.equal(governmentBatch.ownerCompanyId,'STATE_GOVERNMENT_STOCK_BGD');
   assert.equal(governmentBatch.sourceTransferBatchId,'WIDGETS-PRIVATE-BATCH');
+  const originalPrivateFactory=h.state.economy.BGD.productionAssets[0];
+  assert.equal(originalPrivateFactory.status,'OPERATIONAL');
+  assert.equal(originalPrivateFactory.ownerType,'PRIVATE_ENTERPRISE');
+  assert.equal(originalPrivateFactory.ownerCompanyId,companyId,
+    'government procurement transfers finished-goods stock, not the factory legal title');
+  assert.equal(originalPrivateFactory.operatorType,'PRIVATE_COMPANY_OPERATOR');
+  assert.equal(originalPrivateFactory.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP',
+    'government procurement must preserve the source factory operating company');
   assert.ok(h.state.resource.BGD.processedWarehouse.receipts.some(x=>x.batchId===governmentBatch.batchId&&
     x.status==='OWNERSHIP_TRANSFER_RECEIVED'));
   assert.equal(h.state.economy.BGD.companyAccounts[companyId].governmentProcurementRevenue,200);

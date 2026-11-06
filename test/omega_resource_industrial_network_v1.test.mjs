@@ -832,6 +832,11 @@ const decommissionAsset = {
   id:'FAC-DECOMMISSION-TEST',
   factoryType:'STEEL_AND_ALLOY_WORKS',
   status:'OPERATIONAL',
+  ownerType:'PRIVATE_ENTERPRISE',
+  ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',
+  operatorType:'PRIVATE_COMPANY_OPERATOR',
+  operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+  companyId:'MERIDIAN_ENGINEERING_GROUP',
   capacityPerDay:100,
   inputBatchLots:[{
     batchId:'INPUT:DECOMMISSION-TEST',
@@ -866,6 +871,14 @@ const decommissionResult = N.decommissionFactory({
 });
 assert.equal(decommissionResult.status,'DECOMMISSIONED');
 assert.equal(decommissionAsset.status,'DECOMMISSIONED');
+assert.equal(decommissionAsset.ownerType,'PRIVATE_ENTERPRISE');
+assert.equal(decommissionAsset.ownerCompanyId,'NOVA_CONSUMER_INDUSTRIES',
+  'decommissioning preserves the canonical private factory owner');
+assert.equal(decommissionAsset.operatorType,'PRIVATE_COMPANY_OPERATOR');
+assert.equal(decommissionAsset.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP',
+  'decommissioning preserves the distinct operating company');
+assert.equal(decommissionAsset.companyId,'MERIDIAN_ENGINEERING_GROUP',
+  'legacy factory company attribution remains aligned to its operator');
 assert.equal(decommissionAsset.productionHealth.status,'STOPPED');
 assert.equal(decommissionAsset.productionHealth.reason,'FACTORY_DECOMMISSIONED_BY_PLAYER');
 assert.equal(decommissionAsset.activeProductionCycleId,null);
