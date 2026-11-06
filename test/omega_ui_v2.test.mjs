@@ -456,7 +456,7 @@ test('Home Affairs budget remains read-only for a non-player country and does no
 });
 
 test('industry source avoids building datasets for inactive tabs', () => {
-  const source = fs.readFileSync(path.join(root, 'omega_ui_v2/screens/industry.js'), 'utf8');
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
   assert.match(source, /var activeTab = String\(options\.activeTab \|\| options\.tab \|\| 'factories'\)/);
   assert.match(source, /activeTab === 'production-lines' \? assets\.map/);
   assert.match(source, /if \(activeTab === 'production-lines'\) \{/);
