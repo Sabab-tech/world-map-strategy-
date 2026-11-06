@@ -732,19 +732,20 @@
     }
     var inventoryRuntime = g.OmegaCountryInventoryRuntime || (g.Omega && g.Omega.CountryInventoryRuntime) || null;
     var nationalInventory = null, canonicalResourceIds = [];
-    if (!lightweightTypeView && context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
+    if (!lightweightTypeView && (inputDetailView || stockSummaryView) && context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
       try { nationalInventory = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: false }); } catch (_) { nationalInventory = null; }
     }
-    var finishedGoodsLedger = stockSummaryView ? (Array.isArray(resource.finishedGoodsLedger) ? resource.finishedGoodsLedger.slice() : []) : [];
+    var needsFinishedGoods = stockSummaryView || activeTab === 'factories' && !lightweightTypeView;
+    var finishedGoodsLedger = needsFinishedGoods && Array.isArray(resource.finishedGoodsLedger) ? resource.finishedGoodsLedger.slice() : [];
     var economyIndustrialRuntime = economy.industrialRuntime && typeof economy.industrialRuntime === 'object' ? economy.industrialRuntime : {};
-    var economyFinishedGoods = stockSummaryView && Array.isArray(economyIndustrialRuntime.finishedGoodsLedger) ? economyIndustrialRuntime.finishedGoodsLedger : [];
+    var economyFinishedGoods = needsFinishedGoods && Array.isArray(economyIndustrialRuntime.finishedGoodsLedger) ? economyIndustrialRuntime.finishedGoodsLedger : [];
     var finishedEventIds = Object.create(null);
     finishedGoodsLedger.forEach(function (row) { if (row && row.transactionId) finishedEventIds[String(row.transactionId)] = true; });
     economyFinishedGoods.forEach(function (row) {
       var id = String(row && row.transactionId || '');
       if (row && (!id || !finishedEventIds[id])) { finishedGoodsLedger.push(row); if (id) finishedEventIds[id] = true; }
     });
-    var needsBatchRows = activeTab === 'inventory' || activeTab === 'factories' || stockSummaryView;
+    var needsBatchRows = activeTab === 'inventory' || stockSummaryView || activeTab === 'factories' && !lightweightTypeView;
     var resourceBatches = needsBatchRows && Array.isArray(resource.batches) ? resource.batches : [];
     var resourceInventoryLedger = stockSummaryView && Array.isArray(resource.inventoryLedger) ? resource.inventoryLedger : [];
     var processedWarehouse = stockSummaryView && resource.processedWarehouse && typeof resource.processedWarehouse === 'object' ? resource.processedWarehouse : {};
@@ -754,7 +755,7 @@
       ? nationalDemandRuntime.byResource : {};
     var domesticSales = stockSummaryView && Array.isArray(context.trade && context.trade.domesticSales) ? context.trade.domesticSales : [];
     try {
-      if (!lightweightTypeView && inventoryRuntime && typeof inventoryRuntime.getResourceCatalog === 'function') {
+      if (!lightweightTypeView && (inputDetailView || stockSummaryView) && inventoryRuntime && typeof inventoryRuntime.getResourceCatalog === 'function') {
         canonicalResourceIds = inventoryRuntime.getResourceCatalog().map(function (row) {
           return String(row && (row.resourceId || row.id) || '').trim().toLowerCase();
         }).filter(Boolean);
@@ -771,8 +772,8 @@
     var technologyTransfers = activeTab === 'research' ? (Array.isArray(resource.technologyTransfers) ? resource.technologyTransfers : []) : [];
     var technologyCapabilities = activeTab === 'research' ? (Array.isArray(resource.technologyCapabilities) ? resource.technologyCapabilities : []) : [];
     var technologyContracts = activeTab === 'research' ? (Array.isArray(industrial.technologyContracts) ? industrial.technologyContracts : []) : [];
-    var cycles = (activeTab === 'factories' || activeTab === 'production-lines') && industrial.factoryProductionCycles && typeof industrial.factoryProductionCycles === 'object' ? industrial.factoryProductionCycles : {};
-    var runs = activeTab !== 'production-lines' && industrial.factoryRuntime && typeof industrial.factoryRuntime === 'object' ? industrial.factoryRuntime : {};
+    var cycles = !lightweightTypeView && (activeTab === 'factories' || activeTab === 'production-lines') && industrial.factoryProductionCycles && typeof industrial.factoryProductionCycles === 'object' ? industrial.factoryProductionCycles : {};
+    var runs = !lightweightTypeView && activeTab !== 'production-lines' && industrial.factoryRuntime && typeof industrial.factoryRuntime === 'object' ? industrial.factoryRuntime : {};
     var profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
     var recipeCatalog = catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
     var processingRules = catalog.processingRules && typeof catalog.processingRules === 'object' ? catalog.processingRules : {};
@@ -1221,7 +1222,7 @@
       factoryBaselineStatus: factoryStartingRegistry && factoryStartingRegistry.status || 'NOT_READY',
       privateEnterpriseBaseline: privateEnterpriseBaseline,
       factoryInputCoverageDays: lightweightTypeView ? 100 : Math.max(1, Math.min(3650, Math.round(num(resource.factoryInputBaselineV1 && resource.factoryInputBaselineV1.targetCoverageDays) || num(resource.factoryInputPolicy && resource.factoryInputPolicy.targetCoverageDays) || 100))),
-      factoryInputCoverageSnapshot: inputDetailView && resource.factoryInputCoverageSnapshotV1 && typeof resource.factoryInputCoverageSnapshotV1 === 'object' ? resource.factoryInputCoverageSnapshotV1 : null,
+      factoryInputCoverageSnapshot: inputDetailView && !lightweightTypeView && resource.factoryInputCoverageSnapshotV1 && typeof resource.factoryInputCoverageSnapshotV1 === 'object' ? resource.factoryInputCoverageSnapshotV1 : null,
       factoryInputCoverageIntervalDays: 10,
       inputInventoryCount: !inputDetailView ? 0 : mappedAssets.reduce(function (total, row) { return total + (row.inputRows || []).filter(function (input) { return input.quantity !== null && input.quantity > 0; }).length; }, 0),
       nationalInventory: nationalInventory,
