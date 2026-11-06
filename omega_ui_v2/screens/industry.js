@@ -3891,9 +3891,95 @@
       // active Type totals / Details view. Never build a hidden second card tree.
       content = '';
     } else if (active === 'production-lines') {
-      content = model.cycles.length ? '<div class="omega-v2-grid">' + model.cycles.map(function (cycle) {
-        return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(cycle.factoryId) + '</h3><span class="omega-v2-status">' + esc(cycle.status || 'NOT_RECORDED') + '</span><div class="omega-v2-vehicle-stats"><div><span>Output quantity</span><strong>' + fmt(cycle.productionQuantity) + '</strong></div><div><span>Start date</span><strong>' + esc(cycle.startDate || 'Not recorded') + '</strong></div><div><span>Finish date</span><strong>' + esc(cycle.finishDate || 'Not recorded') + '</strong></div><div><span>Source batches</span><strong>' + fmt(Array.isArray(cycle.sourceBatchIds) ? cycle.sourceBatchIds.length : null) + '</strong></div></div></article>';
-      }).join('') + '</div>' : '<div class="omega-v2-empty">No tracked production cycles were returned by this country’s industrial state.</div>';
+      var lineRows = Array.isArray(model.lineActivity) ? model.lineActivity : [];
+      var lineActiveCount = lineRows.filter(function (line) {
+        return /^(RUNNING|IN_PROGRESS|PROCESSING|ACTIVE|OPERATING)$/.test(String(line.status || '').toUpperCase());
+      }).length;
+      var lineTransitCount = lineRows.filter(function (line) {
+        return (line.shipments || []).some(function (shipment) {
+          return /^(IN_TRANSIT|BLOCKED_ROUTE_BLOCKADE|BLOCKED_LEDGER_MISMATCH|BLOCKED_BATCH_LEDGER_MISMATCH)$/.test(String(shipment.status || '').toUpperCase());
+        });
+      }).length;
+      var lineBlockedCount = lineRows.filter(function (line) {
+        return /^(BLOCKED|FAILED|UNFULFILLED|STOPPED)$/.test(String(line.status || '').toUpperCase()) ||
+          (line.inputRequests || []).some(function (request) {
+            return /^(UNFULFILLED|BLOCKED|FAILED)$/.test(String(request.status || '').toUpperCase());
+          });
+      }).length;
+      var lineCards = lineRows.map(function (line) {
+        var latestShipment = line.shipments && line.shipments.length ? line.shipments[0] : null;
+        var latestDispatch = line.warehouseDispatches && line.warehouseDispatches.length ? line.warehouseDispatches[0] : null;
+        var route = latestShipment && latestShipment.route && typeof latestShipment.route === 'object'
+          ? latestShipment.route : latestDispatch && latestDispatch.route && typeof latestDispatch.route === 'object'
+            ? latestDispatch.route : {};
+        var routeLegs = Array.isArray(route.legs) ? route.legs : Array.isArray(route.vehiclePlan) ? route.vehiclePlan : [];
+        var transportModes = [];
+        routeLegs.forEach(function (leg) {
+          var mode = String(leg && (leg.transportMode || leg.mode) || '').trim();
+          if (mode && transportModes.indexOf(mode) < 0) transportModes.push(mode);
+        });
+        if (!transportModes.length && route.transportMode) transportModes.push(String(route.transportMode));
+        var routeSummary = transportModes.length ? transportModes.join(' → ') : 'Not recorded';
+        var routeSource = route.sourceNode || route.sourceWarehouseId || route.sourceSiteId || 'Not recorded';
+        var routeDestination = route.destinationNode || route.destinationWarehouseId || route.destinationFactoryId ||
+          latestDispatch && latestDispatch.destinationFactoryId || 'Not recorded';
+        var eta = latestShipment && (latestShipment.etaDate || latestShipment.etaTurn !== null && latestShipment.etaTurn !== undefined
+          ? latestShipment.etaDate || ('Turn ' + latestShipment.etaTurn) : null);
+        if (!eta && latestDispatch) eta = latestDispatch.etaTurn !== null && latestDispatch.etaTurn !== undefined
+          ? 'Turn ' + latestDispatch.etaTurn : null;
+        var shipmentMarkup = latestShipment
+          ? '<div class="fp-line-fact"><span>Latest shipment</span><strong>' + esc(latestShipment.shipmentType) + ' · ' + esc(latestShipment.status) + '</strong>' +
+            '<small>' + esc(latestShipment.resourceId || 'Resource not recorded') + ' · ' +
+            (latestShipment.quantity === null ? 'Quantity not recorded' : fmt(latestShipment.quantity) + ' ' + esc(latestShipment.unit || 'units')) +
+            (latestShipment.batchId ? ' · Batch ' + esc(latestShipment.batchId) : '') + '</small></div>'
+          : '<div class="fp-line-fact"><span>Latest shipment</span><strong>Not recorded</strong></div>';
+        var requestMarkup = (line.inputRequests || []).slice(0, 3).map(function (request) {
+          return '<div class="fp-line-input"><strong>' + esc(request.resourceId || 'Input not recorded') + '</strong>' +
+            '<span>' + esc(request.status) + ' · ' + esc(request.deliveryStatus) + '</span>' +
+            '<small>Requested ' + (request.requestedQuantity === null ? 'Not recorded' : fmt(request.requestedQuantity) + ' ' + esc(request.unit || 'units')) +
+            ' · Fulfilled ' + (request.fulfilledQuantity === null ? 'Not recorded' : fmt(request.fulfilledQuantity)) +
+            ' · In transit ' + (request.inTransitQuantity === null ? 'Not recorded' : fmt(request.inTransitQuantity)) +
+            ' · Unfulfilled ' + (request.unfulfilledQuantity === null ? 'Not recorded' : fmt(request.unfulfilledQuantity)) + '</small></div>';
+        }).join('');
+        var ownerText = line.ownerCompanyName
+          ? line.ownerCompanyName
+          : line.ownerRecordStatus === 'UNMAPPED_OWNER_RECORD' ? 'Recorded owner not mapped to a global company'
+            : 'Not recorded';
+        var statusText = String(line.status || 'NOT_RECORDED').replace(/_/g, ' ');
+        var sourceBatchCount = Array.isArray(line.sourceBatchIds) ? line.sourceBatchIds.length : 0;
+        return '<article class="fp-line-card" data-factory-id="' + esc(line.factoryId) + '">' +
+          '<header class="fp-line-card-head"><div><span class="fp-line-kicker">' + esc(line.type || 'Factory type not recorded') + '</span>' +
+          '<h3>' + esc(line.name || ('Factory ' + line.factoryId)) + '</h3><small>Factory ID · ' + esc(line.factoryId) + '</small></div>' +
+          '<span class="fp-line-status">' + esc(statusText) + '</span></header>' +
+          '<div class="fp-line-summary"><div><span>Current output</span><strong>' +
+          (line.productionQuantity === null ? 'Not recorded' : fmt(line.productionQuantity)) + '</strong></div>' +
+          '<div><span>Cycle start</span><strong>' + esc(line.startDate || 'Not recorded') + '</strong></div>' +
+          '<div><span>Cycle finish</span><strong>' + esc(line.finishDate || 'Not recorded') + '</strong></div>' +
+          '<div><span>Source batches</span><strong>' + (sourceBatchCount ? fmt(sourceBatchCount) : 'Not recorded') + '</strong></div></div>' +
+          '<div class="fp-line-facts">' + shipmentMarkup +
+          '<div class="fp-line-fact"><span>Recorded route</span><strong>' + esc(routeSource) + ' → ' + esc(routeDestination) + '</strong>' +
+          '<small>Transport ' + esc(routeSummary) + ' · ETA ' + esc(eta || 'Not recorded') + '</small></div>' +
+          '<div class="fp-line-fact"><span>Owner / operator</span><strong>' + esc(ownerText) + '</strong></div></div>' +
+          (requestMarkup ? '<section class="fp-line-inputs"><h4>Factory input requests</h4>' + requestMarkup + '</section>' : '') +
+          '<small class="fp-line-record-count">' + (line.shipments || []).length + ' shipment record(s) · ' +
+          (line.warehouseDispatches || []).length + ' warehouse dispatch record(s) · ' +
+          (line.inputRequests || []).length + ' input request record(s)</small></article>';
+      }).join('');
+      var lineSourceCounts = model.lineActivitySourceCounts || {};
+      content = '<section class="fp-lines" aria-label="Selected-country production and delivery lines">' +
+        '<header class="fp-lines-heading"><div><span>PLAYER COUNTRY · LIVE RECORDS</span><h3>Production &amp; delivery lines</h3></div>' +
+        '<small>' + esc(model.countryId || 'Country not recorded') + '</small></header>' +
+        '<div class="fp-lines-summary" aria-label="Current line activity summary">' +
+        '<div><span>Recorded lines</span><strong>' + fmt(lineRows.length) + '</strong></div>' +
+        '<div><span>Active cycles</span><strong>' + fmt(lineActiveCount) + '</strong></div>' +
+        '<div><span>In transit</span><strong>' + fmt(lineTransitCount) + '</strong></div>' +
+        '<div><span>Blocked</span><strong>' + fmt(lineBlockedCount) + '</strong></div></div>' +
+        (lineCards ? '<div class="fp-lines-list">' + lineCards + '</div>' :
+          '<div class="fp-lines-empty">No recorded production or delivery lines for this country.</div>') +
+        '<p class="fp-lines-provenance">Only this country’s factory cycles, committed shipments, warehouse dispatches and input requests are shown. Missing route, ETA or ownership fields remain unavailable; a planned route is not a shipment.</p>' +
+        '<small class="fp-lines-sources">Source records · ' + fmt(lineSourceCounts.productionCycles || 0) + ' cycles · ' +
+        fmt(lineSourceCounts.committedShipments || 0) + ' shipments · ' + fmt(lineSourceCounts.inputRequests || 0) +
+        ' input requests · ' + fmt(lineSourceCounts.warehouseDispatches || 0) + ' warehouse dispatches</small></section>';
     } else if (active === 'inventory') {
       content = factoryInputPanelMarkup(model);
     } else if (active === 'companies') {
