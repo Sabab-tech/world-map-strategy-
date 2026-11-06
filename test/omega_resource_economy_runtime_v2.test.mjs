@@ -328,6 +328,23 @@ test('export settlement blocks unknown and multiple batch owners instead of gues
   assert.equal(blocked.at(-1).settlementId,'EXPORT-MULTIPLE-OWNERS');
   assert.equal(blocked.at(-1).reason,'EXPORT_MULTIPLE_BATCH_OWNERS_REQUIRE_ALLOCATION');
 });
+test('domestic factory input transfer does not infer a seller from the mine operator when batch owner is unknown',async()=>{
+  const {context,worldState}=createContext();
+  delete worldState.resource.BGD.batches[0].ownerCompanyId;
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  await context.OmegaResourceEconomy.runTurn();
+
+  const saleRow=worldState.trade.BGD.domesticSales.find(row=>row.sale&&row.sale.resourceId==='iron_ore');
+  assert.ok(saleRow,'the physical factory-input movement must still be recorded');
+  assert.equal(saleRow.sale.status,'PHYSICAL_TRANSFER_COMPLETED');
+  assert.equal(saleRow.sale.paymentStatus,'UNOBSERVED_OWNER_ALLOCATION');
+  assert.equal(saleRow.sale.ownerAllocationStatus,'UNRESOLVED');
+  assert.equal(worldState.economy.BGD.companyAccounts.MINER_CO,undefined,
+    'mine operator is not automatically the legal owner or seller of an unowned batch');
+  assert.equal(worldState.economy.BGD.companyAccounts.PROCESS_OPERATOR_CO,undefined,
+    'buyer-company cash must not be debited when the supplier payee is unknown');
+});
 test('resource economy v2 completes mine-backed processing, domestic settlement and treasury receipt flow', async()=>{
   const {context,worldState}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
