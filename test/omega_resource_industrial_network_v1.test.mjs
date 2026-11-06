@@ -570,6 +570,18 @@ const builtOutputBatch=context.Game.state.resource.BGD.batches.find(row=>
   row.stage==='FINISHED'&&row.resourceId==='IRON_CONCENTRATE'&&
   (row.sourceBatchIds||[]).includes('BATCH-E2E-IRON-02'));
 assert.ok(builtOutputBatch,'finished product batch must retain lineage to the mine-produced source batch');
+assert.equal(builtOutputBatch.status,'AVAILABLE',
+  'newly completed output batches must be eligible for sale/procurement without a legacy status repair');
+assert.equal(builtOutputBatch.sourceFactoryId,builtFactoryId,
+  'finished batches must retain the canonical factory asset that manufactured them');
+const builtOutputLot=context.Game.state.resource.BGD.inventoryLots[builtOutputBatch.batchId];
+assert.ok(builtOutputLot,'the finished batch must have a matching lot');
+assert.equal(builtOutputLot.status,'AVAILABLE');
+assert.equal(builtOutputLot.sourceFactoryId,builtFactoryId,
+  'the lot must retain the same factory provenance as its batch');
+assert.equal(builtOutputLot.ownerCompanyId,builtOutputBatch.ownerCompanyId);
+assert.equal(builtOutputLot.operatorCompanyId,builtOutputBatch.operatorCompanyId);
+assert.equal(builtOutputLot.ownerAttributionStatus,builtOutputBatch.ownerAttributionStatus);
 const builtDeliveryAfterCycle=(context.Game.state.resource.BGD.industrialNetwork.deliveries||[])
   .find(row=>String(row.shipmentId)===String(builtFactoryShipment.shipmentId));
 assert.ok(builtDeliveryAfterCycle,'the persisted delivered-input ledger row must survive cycle completion');
