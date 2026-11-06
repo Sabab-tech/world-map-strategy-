@@ -3468,14 +3468,9 @@
 
   function factoryHomeViewMarkup(root, model, options, factoryView) {
     model = model || {};
-    var content = factoryView === 'types'
+    return factoryView === 'types'
       ? factoryTypeCatalogMarkup(model)
       : factoryAssetsWorkspaceMarkup(root, model, options);
-    return '<section class="fp-shared-factory-total" data-factory-total aria-label="Total factories in shared production pool">' +
-      '<div class="fp-shared-factory-total-copy"><span>SHARED PRODUCTION POOL</span><strong>Total factories</strong>' +
-      '<small>One combined count across all factory types and owners. Ownership differences are shown in Manage.</small></div>' +
-      '<div class="fp-shared-factory-total-value"><span>FACTORIES</span><strong data-factory-total-value>' + fmt(model.factoryCount) + '</strong></div>' +
-      '</section>' + content;
   }
 
   function factoryProjectModal(model, requestedType) {
@@ -3746,7 +3741,9 @@
     if (active !== 'factories') root.__omegaV2IndustryNotice = '';
     var compactTabs = '<header class="fp-top" aria-label="Factory production navigation">' +
       '<div class="fp-logo" aria-hidden="true"><svg class="fp-ic" viewBox="0 0 24 24"><path d="M3 21V9l6 3V8l6 4V6l6 3v12Z"/><path d="M6 21v-5m5 5v-5m5 5v-5M3 21h18"/></svg></div>' +
-      '<div class="fp-top-identity"><span>OMEGA / INDUSTRIAL SYSTEMS</span><strong>FACTORY PRODUCTION</strong><small>COUNTRY: ' + esc(model.countryId || 'Not recorded') + ' · ' + (model.canOperateSelectedCountry ? 'PLAYER CONTROL' : 'REFERENCE VIEW') + '</small></div>' +
+      '<div class="fp-top-identity"><span>OMEGA / INDUSTRIAL SYSTEMS</span><strong>FACTORY PRODUCTION</strong>' +
+      '<div class="fp-top-total" data-factory-total aria-label="Total factories in shared production pool"><strong data-factory-total-value>' + fmt(model.factoryCount) + '</strong><small>TOTAL FACTORIES</small></div>' +
+      '<small>COUNTRY: ' + esc(model.countryId || 'Not recorded') + ' · ' + (model.canOperateSelectedCountry ? 'PLAYER CONTROL' : 'REFERENCE VIEW') + '</small></div>' +
       '<nav class="omega-v2-factory-tabs fp-tabs" aria-label="Industrial panels">' +
       tabButton('factories', 'Factories', active) +
       tabButton('companies', 'Manage', active) +
