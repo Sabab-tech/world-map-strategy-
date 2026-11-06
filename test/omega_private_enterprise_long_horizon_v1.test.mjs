@@ -281,6 +281,12 @@ test('canonical game clock survives 30, 100 and 180 in-game days without hang, d
     const state = h.state.simulation;
     assert.equal(Number(state.turn), point.day, 'canonical Game.state turn must equal day ' + point.day);
     assert.equal(h.simulation.clock.turn, point.day, 'canonical clock must equal day ' + point.day);
+    assert.equal(h.simulation.clock.stepDurationMs, 86400000,
+      'one committed turn must remain exactly one in-game calendar day');
+    const expectedDate = new Date(Date.UTC(2015, 0, 1) + point.day * 86400000).toISOString().slice(0, 10);
+    assert.equal(state.date, expectedDate, 'calendar date must advance without drift at day ' + point.day);
+    const participantFailures = (state.lastTurnParticipantResults || []).filter(row => row.status === 'FAILED');
+    assert.deepEqual(participantFailures, [], 'no turn participant may fail at day ' + point.day);
     assert.equal(h.sessionApi.diagnostics().authoritativeState.worldStateLinked, true,
       'Game.state must remain the one authoritative state root');
     assert.equal(h.sessionApi.diagnostics().status, 'READY');
@@ -302,7 +308,7 @@ test('canonical game clock survives 30, 100 and 180 in-game days without hang, d
     assert.equal(dashboard.pipelineGate, 'BLOCKED_SAB34_PROOF_REQUIRED');
     assert.ok(dashboard.events.length <= 600, 'lifecycle audit history must remain bounded');
 
-    if (point.day === 100 || point.day === 180) {
+    if (point.day === 30 || point.day === 100 || point.day === 180) {
       const snapshot = h.simulation.saveState({ includeDiagnostics: false });
       assert.equal(snapshot.clock.turn, point.day);
       assert.equal(snapshot.worldState.simulation.turn, point.day);
@@ -335,7 +341,7 @@ test('canonical game clock survives 30, 100 and 180 in-game days without hang, d
       elapsedMs: Number(advanced.elapsedMs.toFixed(2)),
       totalProposals: dashboard.proposals.length,
       totalLifecycleEvents: dashboard.events.length,
-      saveLoadVerified: point.day >= 100
+      saveLoadVerified: true
     });
   }
 
