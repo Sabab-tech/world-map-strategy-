@@ -206,6 +206,7 @@ function createHarness() {
     sandbox,
     simulation,
     session,
+    sessionApi: sandbox.Omega.GameSession,
     api: sandbox.OmegaPrivateEnterpriseLifecycleV1,
     snapshotStaticState() {
       return {
@@ -271,7 +272,7 @@ test('canonical game clock survives 30, 100 and 180 in-game days without hang, d
 
   for (const point of checkpoints) {
     const stepCount = point.day - previousTurn;
-    const advanced = await advanceWithDeadline(h.session, stepCount, 30000);
+    const advanced = await advanceWithDeadline(h.sessionApi, stepCount, 30000);
     assert.equal(advanced.result.status, 'READY', 'game clock must remain READY at day ' + point.day);
     assert.equal(advanced.result.steps, stepCount, 'every requested game day must commit exactly once');
     previousTurn = point.day;
@@ -280,10 +281,10 @@ test('canonical game clock survives 30, 100 and 180 in-game days without hang, d
     const state = h.state.simulation;
     assert.equal(Number(state.turn), point.day, 'canonical Game.state turn must equal day ' + point.day);
     assert.equal(h.simulation.clock.turn, point.day, 'canonical clock must equal day ' + point.day);
-    assert.equal(h.session.diagnostics().authoritativeState.worldStateLinked, true,
+    assert.equal(h.sessionApi.diagnostics().authoritativeState.worldStateLinked, true,
       'Game.state must remain the one authoritative state root');
-    assert.equal(h.session.diagnostics().status, 'READY');
-    assert.equal(h.session.diagnostics().lastError, null);
+    assert.equal(h.sessionApi.diagnostics().status, 'READY');
+    assert.equal(h.sessionApi.diagnostics().lastError, null);
 
     const dashboard = h.api.getCountryDashboard('BGD');
     assert.equal(dashboard.proposals.length, point.expectedProposals,
@@ -348,6 +349,6 @@ test('canonical game clock survives 30, 100 and 180 in-game days without hang, d
   assert.equal(diagnostics.clock.turn, 180);
   assert.equal(diagnostics.authoritativeState.worldStateLinked, true);
   assert.equal(diagnostics.status, 'READY');
-  assert.ok(diagnostics.stepCount >= 180);
+  assert.ok(h.simulation.stepCount >= 180);
   console.log('OMEGA PRIVATE ENTERPRISE LONG-HORIZON PASS ' + JSON.stringify(stageMetrics));
 });
