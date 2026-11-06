@@ -2988,6 +2988,8 @@ test('factory cards flip in place and show Input, Output and Byproduct tabs with
   try {
     const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'types'});
     assert.equal(result.ok,true);
+    assert.equal(globalThis.OmegaUIV2Industry.formatFactoryDetailAmount(40000000000,'tonnes'),'40B t');
+    assert.equal(globalThis.OmegaUIV2Industry.formatFactoryDetailAmount(87000,''),'87K');
     const steelStart = root.innerHTML.indexOf('data-factory-type="STEEL_AND_ALLOY_WORKS"');
     const steelMarkup = root.innerHTML.slice(root.innerHTML.lastIndexOf('<article',steelStart),root.innerHTML.indexOf('</article>',steelStart));
     assert.match(steelMarkup,/data-omega-v2-factory-build-details/);
