@@ -261,9 +261,24 @@ test('playable mine extraction feeds a commissioned private factory through prod
     'omega_resource_endowment_runtime.js',
     'omega_resource_industrial_network_v1.js',
     'omega_resource_economy_runtime_v2.js',
+    'omega_country_factory_starting_baseline_v1.js',
+    'omega_private_enterprise_registry_v1.js',
     'omega_private_enterprise_lifecycle_v1.js'
   ];
   for(const file of modules)vm.runInContext(readText(file),g,{filename:file});
+  // Load and validate both real baseline datasets before a private proposal is
+  // allowed to pass the same readiness gate used by a new game session.
+  const governmentBaseline=g.OmegaCountryFactoryStartingBaselineV1||g.Omega?.CountryFactoryStartingBaselineV1;
+  const privateBaseline=g.OmegaPrivateEnterpriseRegistryV1||g.Omega?.PrivateEnterpriseRegistryV1;
+  assert.ok(governmentBaseline&&privateBaseline,'government and private factory registries must be mounted');
+  const governmentBaselineReady=await governmentBaseline.ready;
+  assert.equal(governmentBaselineReady.status,'READY',JSON.stringify(governmentBaselineReady));
+  const privateBaselineReady=await privateBaseline.ready;
+  assert.equal(privateBaselineReady.status,'READY',JSON.stringify(privateBaselineReady));
+  assert.equal(governmentBaselineReady.countryCount,197);
+  assert.equal(privateBaselineReady.diagnostics.countryCount,197);
+  assert.equal(privateBaselineReady.diagnostics.factoryTypeCount,21);
+  assert.equal(privateBaselineReady.diagnostics.companyCount,5);
   const endowment=g.OmegaResourceEndowmentRuntime||g.Omega?.ResourceEndowmentRuntime;
   const industry=g.OmegaResourceIndustrialNetwork||g.Omega?.ResourceIndustrialNetwork;
   const economy=g.OmegaResourceEconomy||g.Omega?.ResourceEconomy;
