@@ -4090,7 +4090,7 @@
         return policy.directive === 'GOVERNMENT_PROCUREMENT';
       });
       var procurementPolicyOptions = procurementPolicies.map(function (policy) {
-        return '<option value="' + esc(policy.policyId) + '">' + esc(policy.resourceId + ' · ' + policy.policyId) + '</option>';
+        return '<option value="' + esc(policy.policyId) + '" data-resource-id="' + esc(policy.resourceId) + '">' + esc(policy.resourceId + ' · ' + policy.policyId) + '</option>';
       }).join('');
       var privateCompanyOptions = [
         ['AURORA_INDUSTRIAL_GROUP','Aurora Industrial Group'],
@@ -4525,6 +4525,157 @@
           scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
           return;
         }
+        var statePolicyApply = target.closest('[data-state-policy-apply]');
+        if (statePolicyApply && root.contains(statePolicyApply) && !statePolicyApply.disabled) {
+          var policyApi = g.OmegaResourceStrategicPolicyRuntime || (g.Omega && g.Omega.ResourceStrategicPolicyRuntime);
+          var policyModel = root.__omegaV2IndustryModel || model;
+          function policyControl(selector) { return root.querySelector(selector); }
+          function policyValue(selector) {
+            var control = policyControl(selector);
+            return control && control.value !== undefined ? String(control.value).trim() : '';
+          }
+          function policyCsv(selector) {
+            return policyValue(selector).split(',').map(function (value) { return value.trim(); }).filter(Boolean);
+          }
+          if (!policyModel.canOperateSelectedCountry || !policyApi || typeof policyApi.setSupplyDirective !== 'function') {
+            root.__omegaV2IndustryNotice = 'State policy control is unavailable for this country. No directive was changed.';
+            scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'production-lines' }));
+            return;
+          }
+          var directive = policyValue('[data-state-policy-directive]').toUpperCase();
+          var resourceId = policyValue('[data-state-policy-resource]');
+          var quantityText = policyValue('[data-state-policy-quantity]');
+          var quantity = quantityText ? Number(quantityText) : null;
+          var targetCountry = policyValue('[data-state-policy-target]').toUpperCase();
+          var contractId = policyValue('[data-state-policy-contract]');
+          var companyIds = policyCsv('[data-state-policy-companies]').map(function (x) { return x.toUpperCase(); });
+          var domesticFactoryIds = policyCsv('[data-state-policy-domestic-factories]');
+          var exportFactoryIds = policyCsv('[data-state-policy-export-factories]');
+          var authorizedFactoryIds = policyCsv('[data-state-policy-contract-factories]');
+          var expiryText = policyValue('[data-state-policy-expiry]');
+          var expiresTurn = expiryText ? Number(expiryText) : null;
+          var reason = policyValue('[data-state-policy-reason]');
+          var directiveNeedsQuantity = ['DOMESTIC_PRIORITY','DOMESTIC_QUOTA','STRATEGIC_STOCK_RESERVE',
+            'GOVERNMENT_EXPORT_CONTRACT','GOVERNMENT_PROCUREMENT'].indexOf(directive) >= 0;
+          if (!resourceId || !directive || (directiveNeedsQuantity && (!Number.isFinite(quantity) || quantity <= 0)) ||
+              (expiresTurn !== null && (!Number.isInteger(expiresTurn) || expiresTurn < 0))) {
+            root.__omegaV2IndustryNotice = 'Choose a recorded product and provide the required positive quantity / valid expiry turn. No directive was changed.';
+            scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'production-lines' }));
+            return;
+          }
+          var currentTurn = Number(g.Game && g.Game.state && g.Game.state.simulation && g.Game.state.simulation.turn) || 0;
+          var directivePayload = {
+            resourceId:resourceId,
+            directive:directive,
+            policyId:'UI:'+String(policyModel.countryId||'')+':'+directive+':'+resourceId+':T'+currentTurn,
+            reason:reason,
+            companyIds:companyIds,
+            domesticFactoryIds:domesticFactoryIds,
+            exportFactoryIds:exportFactoryIds,
+            authorizedFactoryIds:authorizedFactoryIds
+          };
+          if (expiresTurn !== null) directivePayload.expiresTurn = expiresTurn;
+          if (['DOMESTIC_PRIORITY','DOMESTIC_QUOTA','STRATEGIC_STOCK_RESERVE'].indexOf(directive) >= 0) {
+            directivePayload.domesticReserveQuantity = quantity;
+          }
+          if (directive === 'GOVERNMENT_EXPORT_CONTRACT') {
+            directivePayload.contractId = contractId;
+            directivePayload.targetCountryId = targetCountry;
+            directivePayload.authorizedQuantity = quantity;
+          }
+          if (directive === 'GOVERNMENT_PROCUREMENT') {
+            directivePayload.contractId = contractId;
+            directivePayload.companyId = companyIds[0] || '';
+            directivePayload.procurementLimit = quantity;
+            directivePayload.authorizedQuantity = quantity;
+          }
+          if (directive === 'FACTORY_ALLOCATION' && (!domesticFactoryIds.length || !exportFactoryIds.length)) {
+            root.__omegaV2IndustryNotice = 'Factory allocation needs both the domestic and export factory ID lists. No directive was changed.';
+            scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'production-lines' }));
+            return;
+          }
+          try {
+            var setResult = policyApi.setSupplyDirective(policyModel.countryId, directivePayload);
+            var setOutcome = setResult && (setResult.result || setResult);
+            if (setResult && (setResult.accepted === true || setResult.status === 'APPLIED') &&
+                (!setOutcome || setOutcome.accepted !== false)) {
+              root.__omegaV2IndustryNotice = 'State directive ' + directive.replace(/_/g, ' ') + ' recorded for ' + resourceId + '.';
+            } else {
+              root.__omegaV2IndustryNotice = 'State directive was not applied: ' +
+                String(setOutcome && (setOutcome.reason || setOutcome.status) || setResult && setResult.status || 'runtime did not confirm the command').replace(/_/g, ' ') + '.';
+            }
+          } catch (policyError) {
+            root.__omegaV2IndustryNotice = 'State directive failed safely: ' + String(policyError && policyError.message || policyError) + '.';
+          }
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'production-lines' }));
+          return;
+        }
+
+        var statePolicyLift = target.closest('[data-state-policy-lift]');
+        if (statePolicyLift && root.contains(statePolicyLift)) {
+          var liftApi = g.OmegaResourceStrategicPolicyRuntime || (g.Omega && g.Omega.ResourceStrategicPolicyRuntime);
+          var liftModel = root.__omegaV2IndustryModel || model;
+          if (!liftApi || typeof liftApi.liftSupplyDirective !== 'function') {
+            root.__omegaV2IndustryNotice = 'State policy runtime is unavailable. No directive was lifted.';
+          } else {
+            try {
+              var liftResult = liftApi.liftSupplyDirective(liftModel.countryId,{
+                policyId:statePolicyLift.getAttribute('data-state-policy-lift') || '',
+                reason:'Lifted by player-government from Production Ministry Lines'
+              });
+              var liftOutcome = liftResult && (liftResult.result || liftResult);
+              root.__omegaV2IndustryNotice = liftResult && (liftResult.accepted === true || liftResult.status === 'APPLIED') &&
+                (!liftOutcome || liftOutcome.accepted !== false)
+                ? 'State supply directive lifted.'
+                : 'Directive was not lifted: ' + String(liftOutcome && (liftOutcome.reason || liftOutcome.status) || 'runtime did not confirm the command').replace(/_/g, ' ') + '.';
+            } catch (liftError) {
+              root.__omegaV2IndustryNotice = 'Directive lift failed safely: ' + String(liftError && liftError.message || liftError) + '.';
+            }
+          }
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'production-lines' }));
+          return;
+        }
+
+        var procurementButton = target.closest('[data-state-procurement-submit]');
+        if (procurementButton && root.contains(procurementButton) && !procurementButton.disabled) {
+          var procurementApi = g.OmegaResourceStrategicPolicyRuntime || (g.Omega && g.Omega.ResourceStrategicPolicyRuntime);
+          var procurementModel = root.__omegaV2IndustryModel || model;
+          var procurementPolicySelect = root.querySelector('[data-state-procurement-policy]');
+          var procurementCompany = policyValue('[data-state-procurement-company]').toUpperCase();
+          var procurementQuantity = Number(policyValue('[data-state-procurement-quantity]'));
+          var procurementValue = Number(policyValue('[data-state-procurement-value]'));
+          var procurementId = policyValue('[data-state-procurement-id]');
+          var policyOption = procurementPolicySelect && procurementPolicySelect.options
+            ? procurementPolicySelect.options[procurementPolicySelect.selectedIndex] : null;
+          var procurementPolicyId = policyOption ? String(policyOption.value || '') : '';
+          var procurementResourceId = policyOption ? String(policyOption.getAttribute('data-resource-id') || '') : '';
+          if (!procurementApi || typeof procurementApi.purchasePrivateStock !== 'function' ||
+              !procurementPolicyId || !procurementResourceId || !procurementId ||
+              !Number.isFinite(procurementQuantity) || procurementQuantity <= 0 ||
+              !Number.isFinite(procurementValue) || procurementValue <= 0 || !procurementCompany) {
+            root.__omegaV2IndustryNotice = 'Provide an active procurement policy, private company, unique order ID, positive quantity and payment. No purchase was made.';
+          } else {
+            try {
+              var procurementResult = procurementApi.purchasePrivateStock(procurementModel.countryId,{
+                policyId:procurementPolicyId,procurementId:procurementId,companyId:procurementCompany,
+                resourceId:procurementResourceId,quantity:procurementQuantity,totalValue:procurementValue
+              });
+              var procurementOutcome = procurementResult && (procurementResult.result || procurementResult);
+              if (procurementResult && (procurementResult.accepted === true || procurementResult.status === 'APPLIED') &&
+                  procurementOutcome && procurementOutcome.accepted !== false) {
+                root.__omegaV2IndustryNotice = 'Government procurement settled. Treasury payment and ownership transfer were recorded.';
+              } else {
+                root.__omegaV2IndustryNotice = 'Government procurement not completed: ' +
+                  String(procurementOutcome && (procurementOutcome.reason || procurementOutcome.status) || 'runtime did not confirm settlement').replace(/_/g, ' ') + '.';
+              }
+            } catch (procurementError) {
+              root.__omegaV2IndustryNotice = 'Government procurement failed safely: ' + String(procurementError && procurementError.message || procurementError) + '.';
+            }
+          }
+          scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'production-lines' }));
+          return;
+        }
+
         var tab = target.closest('[data-omega-v2-industry-tab]');
         if (tab && root.contains(tab)) {
           root.__omegaV2IndustryTab = tab.getAttribute('data-omega-v2-industry-tab');
