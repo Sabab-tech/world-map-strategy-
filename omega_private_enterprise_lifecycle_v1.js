@@ -1722,7 +1722,10 @@
   }
   function escapeHtml(value){return String(value==null?'':value).replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]);});}
   function refresh(root,country){
-    root.__omegaPrivateEnterpriseMessage='';
+    // Keep the result message written by the action handler. Clearing it here
+    // erased both success and rejection feedback immediately before the panel
+    // re-rendered, leaving a submit that was rejected indistinguishable from a
+    // submit handler that never ran.
     var api=g.OmegaUIV2Industry,opts=Object.assign({},root.__omegaV2IndustryOptions||{},{countryId:country,tab:'production-lines'});
     if(api&&typeof api.render==='function')api.render(root,opts);
   }
@@ -1803,6 +1806,7 @@
       var data=new FormData(form),result=createProposal({countryId:root.__omegaV2IndustryCountryId||playerCountry(),
         companyId:data.get('companyId'),operatorCompanyId:data.get('operatorCompanyId'),factoryType:data.get('factoryType'),quantity:data.get('quantity'),
         sourcingPolicy:data.get('sourcingPolicy'),stateSupportRequested:data.get('stateSupportRequested')==='on'});
+      root.__omegaPrivateEnterpriseLastProposalResult=clone(result);
       root.__omegaPrivateEnterpriseMessage=result.status==='PROPOSED'?'Proposal submitted. It has no factory, stock or cash effect until the government decision and funding stages.':('Proposal blocked: '+(result.reason||result.status));
       refresh(root,root.__omegaV2IndustryCountryId||playerCountry());
     });
