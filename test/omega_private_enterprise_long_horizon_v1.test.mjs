@@ -297,7 +297,7 @@ test('canonical game clock survives 30, 100, 180 and 365 in-game days without ha
     assert.equal(dashboard.proposals.length, point.expectedProposals,
       'only one bounded autonomous proposal is allowed per 30-day period at day ' + point.day);
     assert.deepEqual(
-      dashboard.proposals.map(row => row.companyId),
+      JSON.parse(JSON.stringify(dashboard.proposals.map(row => row.companyId))),
       expectedCompanies.slice(0, point.expectedProposals),
       'five company identities must rotate deterministically in order'
     );
