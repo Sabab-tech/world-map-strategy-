@@ -733,7 +733,14 @@ test('playable mine extraction feeds a commissioned private factory through prod
   const expectedFinishedLedgerCount=resource.finishedGoodsLedger.length;
   const expectedInventory=JSON.parse(JSON.stringify(resource.inventory));
   const expectedProcessedWarehouse=JSON.parse(JSON.stringify(resource.processedWarehouse.availableByResource));
-  const expectedOffer=JSON.parse(JSON.stringify(concentrateOffer));
+  // The fiscal close above may legitimately republish the live offer book
+  // from the now-settled warehouse/market snapshot. Save that authoritative,
+  // post-reconciliation offer rather than the earlier pre-fiscalization object.
+  const latestConcentrateOffer=(state.trade.BGD.offerBook||[]).find(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0);
+  assert.ok(latestConcentrateOffer,'the latest settled market offer must remain present immediately before save');
+  assert.ok(latestConcentrateOffer.sourceBatchIds.includes(run.batchId),
+    'the latest market offer must retain the mine extraction ancestry');
+  const expectedOffer=JSON.parse(JSON.stringify(latestConcentrateOffer));
   const expectedConcentrateOfferCount=(state.trade.BGD.offerBook||[]).filter(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0).length;
   const expectedTreasury=Number(state.finance.BGD.available)||0;
   const saved=await simulation.saveSlot('sab34-pipeline-proof');
