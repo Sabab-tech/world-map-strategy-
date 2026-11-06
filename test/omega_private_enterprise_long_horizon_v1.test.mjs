@@ -306,7 +306,7 @@ test('canonical game clock survives 30, 100, 180 and 365 in-game days without ha
       row.submissionMode === 'AUTONOMOUS_COMPANY_TURN_CYCLE'
     ));
     assert.equal(dashboard.productionEnabled, false, 'private production remains fail-closed before SAB-34 proof');
-    assert.equal(dashboard.pipelineGate, 'BLOCKED_SAB34_PROOF_REQUIRED');
+    assert.equal(dashboard.pipelineGate, 'BLOCKED_PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE');
     assert.ok(dashboard.events.length <= 600, 'lifecycle audit history must remain bounded');
 
     if (point.day === 30 || point.day === 100 || point.day === 180 || point.day === 365) {
