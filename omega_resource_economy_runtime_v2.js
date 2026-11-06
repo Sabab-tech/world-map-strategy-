@@ -496,11 +496,44 @@
     var p=cmd&&cmd.payload||{},cid=String(p.companyId||'').trim(),a=num(p.amount),key=String(p.idempotencyKey||'').trim();
     if(!cid||a===null||a<0)return{accepted:false,reason:'COMPANY_FLOW_INPUT_INVALID'};
     if(!key)return{accepted:false,reason:'COMPANY_FLOW_IDEMPOTENCY_KEY_REQUIRED'};
+    var direction=String(p.direction||'CREDIT').toUpperCase();
+    if(direction!=='CREDIT'&&direction!=='DEBIT')return{accepted:false,reason:'COMPANY_FLOW_DIRECTION_INVALID'};
+    var category=String(p.category||'OTHER').toUpperCase();
     var accounts=clone(ctx.stateTransaction.get('economy.companyAccounts')||{}),x=accounts[cid];
     if(!x||typeof x!=='object')x={companyId:cid,openingCashStatus:'UNKNOWN',runtimeNetCashFlow:0,grossRevenue:0,paymentsReceived:0,paymentsMade:0,taxPaid:0,workerIncomePaid:0,transportPaid:0,supplierRevenue:0,lastTurn:turn()};
-    if(String(p.direction||'CREDIT').toUpperCase()==='CREDIT'){x.runtimeNetCashFlow+=a;x.paymentsReceived+=a;x.grossRevenue+=(num(p.grossRevenue)||a);if(p.category==='DOMESTIC_SUPPLY'||p.category==='SUPPLIER_SALE')x.supplierRevenue+=a;}
-    else{x.runtimeNetCashFlow-=a;x.paymentsMade+=a;if(p.category==='TAX')x.taxPaid+=a;if(p.category==='WORKER_INCOME')x.workerIncomePaid+=a;if(p.category==='TRANSPORT')x.transportPaid+=a;}
-    x.lastTurn=turn();accounts[cid]=x;ctx.stateTransaction.set('economy.companyAccounts',accounts);return{accepted:true,companyId:cid,amount:a};
+    var entries=Array.isArray(x.cashFlowEntries)?x.cashFlowEntries:[];
+    var prior=entries.find(function(row){return String(row&&row.entryId||'')===key;});
+    if(prior){
+      if(Math.abs((num(prior.amount)||0)-a)>1e-9||String(prior.direction||'')!==direction||String(prior.category||'')!==category)
+        return{accepted:false,reason:'COMPANY_FLOW_IDEMPOTENCY_COLLISION',companyId:cid,entryId:key};
+      return{accepted:true,duplicate:true,noStateChangeAccepted:true,companyId:cid,amount:0,entryId:key};
+    }
+    if(direction==='CREDIT'){
+      x.runtimeNetCashFlow=(num(x.runtimeNetCashFlow)||0)+a;
+      x.paymentsReceived=(num(x.paymentsReceived)||0)+a;
+      x.grossRevenue=(num(x.grossRevenue)||0)+(num(p.grossRevenue)===null?a:num(p.grossRevenue));
+      if(category==='DOMESTIC_SUPPLY'||category==='SUPPLIER_SALE')x.supplierRevenue=(num(x.supplierRevenue)||0)+a;
+    }else{
+      x.runtimeNetCashFlow=(num(x.runtimeNetCashFlow)||0)-a;
+      x.paymentsMade=(num(x.paymentsMade)||0)+a;
+      if(category==='TAX'||category==='CORPORATE_PROFIT_TAX')x.taxPaid=(num(x.taxPaid)||0)+a;
+      if(category==='WORKER_INCOME')x.workerIncomePaid=(num(x.workerIncomePaid)||0)+a;
+      if(category==='TRANSPORT')x.transportPaid=(num(x.transportPaid)||0)+a;
+    }
+    if(x.cashFlowJournalStartedAtTurn===undefined||x.cashFlowJournalStartedAtTurn===null)
+      x.cashFlowJournalStartedAtTurn=turn();
+    x.cashFlowJournalVersion=1;
+    entries.push({
+      entryId:key,companyId:cid,amount:a,direction:direction,category:category,
+      grossRevenue:direction==='CREDIT'?(num(p.grossRevenue)===null?a:num(p.grossRevenue)):0,
+      currency:String(p.currency||'GAME_CURRENCY_UNITS'),
+      sourceId:String(p.saleId||p.settlementId||p.transactionId||p.projectId||p.sourceTransactionId||'')||null,
+      turn:turn(),status:'POSTED',authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'
+    });
+    while(entries.length>(num(rules().runtime.maxLedgerEntries)||2048))entries.shift();
+    x.cashFlowEntries=entries;
+    x.lastTurn=turn();accounts[cid]=x;ctx.stateTransaction.set('economy.companyAccounts',accounts);
+    return{accepted:true,companyId:cid,amount:a,entryId:key};
   }
   function flowHandler(path,field){
     return function(cmd,ctx){
