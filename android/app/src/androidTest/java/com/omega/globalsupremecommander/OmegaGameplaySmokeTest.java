@@ -719,7 +719,10 @@ public final class OmegaGameplaySmokeTest {
                             "if(!f||!f.country)return true;if(f.hadAssets)f.country.productionAssets=f.originalAssets;" +
                             "else delete f.country.productionAssets;delete window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
                             "delete window.__OMEGA_ANDROID_INPUT_LAYOUT;return true;})()", 10L);
-                } catch (Exception cleanupError) {
+                } catch (Throwable cleanupError) {
+                    // evaluate() reports its timeout with AssertionError. Catch it here
+                    // only because this is best-effort teardown of a test-only fixture;
+                    // never let cleanup mask the original navigation/rotation failure.
                     android.util.Log.w("OMEGA_ANDROID_SMOKE", "INPUT_FIXTURE_CLEANUP_FAILED", cleanupError);
                 }
             }
