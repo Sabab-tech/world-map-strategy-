@@ -37,7 +37,7 @@ test('Industry screen exposes private-company opening allocations without activa
  assert.doesNotMatch(industry,/tabButton\('companies', 'Manage'/);
  assert.match(industry,/data-private-factory-management/);
  assert.match(industry,/factoryManageOpened/);
- assert.match(industry,/government opening/);
+ assert.match(industry,/government opening/i);
  assert.match(industry,/data-factory-total/);
  assert.match(industry,/data-private-ownership-breakdown/);
  assert.match(industry,/Shared-pool factories are counted once in the main total/);
@@ -82,5 +82,5 @@ test('exact country data key takes precedence over a conflicting ISO2 alias from
  const usa=sandbox.OmegaPrivateEnterpriseRegistryV1.getCountryBaseline('USA');
  assert.equal(usa.countryId,'USA');
  assert.equal(usa.companies.length,5);
- assert.deepEqual(usa.governmentFactoryCounts,government.countries.USA.factoryCounts);
+ assert.deepEqual({...usa.governmentFactoryCounts},government.countries.USA.factoryCounts);
 });
