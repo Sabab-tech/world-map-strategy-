@@ -1670,7 +1670,27 @@
         ?'Private factory baseline unavailable: '+escapeHtml(root.__omegaPrivateBaselineError||loadStatus&&loadStatus.reason||'DATA_UNAVAILABLE')
         :'Loading private company opening baseline…';
       var retry=loadFailed?'<button type="button" data-pe-baseline-retry>Retry baseline load</button>':'';
-      shell.insertAdjacentHTML('beforeend','<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1"><h3>Company expansion proposals</h3><p>'+loadMessage+'</p>'+retry+'<p class="pe-footnote">The government and private baseline must load before the proposal approval preview can be calculated.</p></section>');
+      // Mount the actual proposal form contract immediately, while keeping every
+      // field disabled until the authoritative country baselines are validated.
+      // This prevents the Industry panel from appearing empty on slower offline
+      // WebViews while the 197-country baseline is still loading.
+      var pendingCompanyOptions=COMPANY_IDS.map(function(company){
+        return '<option value="'+company+'">'+escapeHtml(COMPANY_NAMES[company])+'</option>';
+      }).join('');
+      var pendingTypes=listFactoryTypes();
+      var pendingTypeOptions=pendingTypes.length?pendingTypes.map(function(type){
+        return '<option value="'+escapeHtml(type.id)+'">'+escapeHtml(type.name)+'</option>';
+      }).join(''):'<option value="">Factory catalogue loading…</option>';
+      var pendingForm='<form class="pe-form" data-pe-proposal-form aria-busy="true">'+
+        '<label>Private asset owner<select name="companyId" disabled>'+pendingCompanyOptions+'</select></label>'+
+        '<label>Private operator<select name="operatorCompanyId" disabled>'+pendingCompanyOptions+'</select></label>'+
+        '<label>Factory type<select name="factoryType" disabled>'+pendingTypeOptions+'</select></label>'+
+        '<label>Quantity<input name="quantity" type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="1" disabled></label>'+
+        '<label>Input sourcing<select name="sourcingPolicy" disabled><option value="DOMESTIC_ONLY">Domestic inputs</option><option value="COMPANY_FUNDED_IMPORTS">Company-funded imports</option><option value="MIXED">Mixed sourcing</option></select></label>'+
+        '<label class="pe-checkbox"><input name="stateSupportRequested" type="checkbox" disabled> Request possible Treasury grant support</label>'+
+        '<button type="submit" disabled>Submit company proposal</button></form>';
+      shell.insertAdjacentHTML('beforeend','<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1" data-pe-baseline-status="'+(loadFailed?'blocked':'loading')+'"><h3>Company expansion proposals</h3><p>'+loadMessage+'</p>'+pendingForm+retry+'<p class="pe-footnote">Proposal entry becomes available after the selected country’s government and private opening baselines are validated. No proposal, stock, factory or cash changes while loading.</p></section>');
+      bindUi(root);
       return;
     }
     var dash=getCountryDashboard(country),types=listFactoryTypes(),universalResources=listUniversalProcessingResources();
