@@ -140,15 +140,36 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
 
     const routeResult = await page.evaluate(() => {
       const country = 'BGD';
+      // Set every country-selection authority before opening the existing route.
+      // The UI host intentionally prioritizes OmegaMinistryViewCountry and the
+      // cabinet's selected country over Game.currentActiveCountry.
+      window.OmegaMinistryViewCountry = country;
       window.Game.currentActiveCountry = country;
+      window.Game.selectedCountryId = country;
       window.Game.playerCountry = country;
       window.Game.state.playerCountryId = country;
+      if (window.OmegaCabinetUI) window.OmegaCabinetUI.activeCountry = country;
       if (window.CountryIOS) window.CountryIOS.activeCountry = country;
       if (window.Omega?.Simulation?.createSession) {
         const session = window.Omega.Simulation.createSession({ playerCountryId: country });
         if (!session || session.playerCountryId !== country) return { ok: false, reason: 'PLAYER_SESSION_NOT_CREATED' };
       }
-      return { ok: window.OmegaUIV2Integration.openRoute('industry') === true, country };
+      // Reconcile an already-mounted cabinet before navigating. This invokes
+      // the real country-select handler rather than mutating its private state.
+      const cabinet = document.getElementById('cabinet-full-window');
+      const selector = cabinet?.querySelector('[data-omega-v2-country]');
+      if (selector && selector.value !== country) {
+        selector.value = country;
+        selector.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      const opened = window.OmegaUIV2Integration.openRoute('industry') === true;
+      const mountedCountry = cabinet?.__omegaUIV2State?.countryId || null;
+      return {
+        ok: opened && (!mountedCountry || mountedCountry === country),
+        reason: mountedCountry && mountedCountry !== country ? 'UI_COUNTRY_MISMATCH' : null,
+        mountedCountry,
+        country
+      };
     });
     assert.equal(routeResult.ok, true, 'existing Industry route must open for the selected country');
 
@@ -173,6 +194,10 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
           playerCountry: window.Omega?.Simulation?.getPlayerCountryId?.() ||
             window.Game?.state?.simulation?.session?.playerCountryId ||
             window.Game?.state?.playerCountryId || null,
+          uiCountry: main?.__omegaUIV2State?.countryId || main?.__omegaV2IndustryCountryId || null,
+          ministryViewCountry: window.OmegaMinistryViewCountry || null,
+          cabinetActiveCountry: window.OmegaCabinetUI?.activeCountry || null,
+          countrySelectorValue: main?.querySelector('[data-omega-v2-country]')?.value || null,
           industryHookInstalled: !!window.OmegaUIV2Industry?.__privateLifecycleWrapped,
           industryTab: shell?.getAttribute('data-active-tab') || null,
           lifecycleApiReady: !!window.OmegaPrivateEnterpriseLifecycleV1,
