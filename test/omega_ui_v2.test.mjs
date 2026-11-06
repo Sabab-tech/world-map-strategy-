@@ -490,6 +490,67 @@ test('industry view reads current country assets, cycles and projects without sy
   assert.equal(globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'}).factoryCount,0);
 });
 
+test('factory type views skip unrelated national inventory and cumulative history reads', () => {
+  const previous = {
+    Game:globalThis.Game,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    factoryBaseline:globalThis.OmegaCountryFactoryStartingBaselineV1
+  };
+  let inventoryReads = 0;
+  const resource = { batches:[], industrialNetwork:{ projects:[], factoryProductionCycles:{}, factoryRuntime:{} } };
+  Object.defineProperty(resource, 'finishedGoodsLedger', {
+    configurable:true,
+    get(){ throw new Error('Factory type render must not clone historical finished goods'); }
+  });
+  Object.defineProperty(resource.industrialNetwork, 'siteFlowLedger', {
+    configurable:true,
+    get(){ throw new Error('Factory type render must not scan cumulative site-flow history'); }
+  });
+  Object.defineProperty(resource, 'mineAssets', {
+    configurable:true,
+    get(){ throw new Error('Factory type render does not need the mine-asset projection'); }
+  });
+  globalThis.Game = { state:{
+    simulation:{ session:{ playerCountryId:'BGD' }, turn:3, daysPerTurn:1 },
+    resource:{ BGD:resource },
+    economy:{ BGD:{ productionAssets:[{
+      id:'FAST-FACTORY-01', name:'Fast Steel Works', factoryType:'STEEL_MILL',
+      status:'OPERATIONAL', capacityPerDay:12, inputUnit:'SIMULATION_RESOURCE_UNIT',
+      inputCoefficients:{ iron_ore:0.5 }, inputInventory:{ iron_ore:2 },
+      inputBatchLots:[{ batchId:'FAST-IRON-LOT', resourceId:'iron_ore', remainingQuantity:2, quantity:2, unit:'SIMULATION_RESOURCE_UNIT' }]
+    }] } }
+  } };
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles:{ STEEL_MILL:{ name:'Steel Mill', category:'Heavy Industry', defaultCapacityPerDay:12 } },
+    downstreamFactoryRecipes:{}, processingRules:{}
+  };
+  globalThis.OmegaCountryInventoryRuntime = {
+    getInventory(){ inventoryReads += 1; throw new Error('National inventory projection should be deferred'); },
+    getResourceCatalog(){ inventoryReads += 1; throw new Error('Resource catalog projection should be deferred'); }
+  };
+  try {
+    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; }, innerHTML:'' };
+    const result = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', tab:'factories', factoryView:'types' });
+    assert.equal(result.ok,true);
+    assert.equal(result.model.__omegaV2FactoryInputOptimized,true);
+    assert.equal(result.model.factoryCount,1);
+    assert.equal(result.model.factoryTypeCounts.find(row => row.type === 'STEEL_MILL').count,1);
+    assert.equal(result.model.cycles.length,0);
+    assert.equal(inventoryReads,0);
+    assert.match(root.innerHTML,/class="fp-type-catalog"/);
+    assert.match(root.innerHTML,/data-omega-v2-factory-type-card/);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime;
+    else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.factoryBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
+    else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.factoryBaseline;
+  }
+});
+
 test('industry factory cards show owned factory counts without a separate source-data panel', () => {
   const previousGame = globalThis.Game;
   const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
@@ -677,6 +738,45 @@ test('industry treats starting and newly built factories as one live asset regis
     assert.match(typeRoot.innerHTML, /Factories/);
     assert.match(typeRoot.innerHTML, /<strong>3<\/strong>/);
     assert.doesNotMatch(typeRoot.innerHTML, /Starting allocation|fp-type-card-count--starting|Starting units/);
+
+    // A country with a full factory catalog must not mount all rich type cards
+    // in its first WebView frame. Every canonical profile remains reachable.
+    const profiles = globalThis.OmegaResourceIndustrialCatalogData.factoryProfiles;
+    for (let index = 1; index <= 7; index += 1) {
+      profiles['TEST_FACTORY_TYPE_' + index] = {
+        name:'Test Factory Type ' + index,
+        category:'Test catalog',
+        defaultCapacityPerDay:10
+      };
+    }
+    const pagedTypeRoot = {
+      classList:{add(){}},listeners:Object.create(null),
+      addEventListener(type,listener){this.listeners[type]=listener;},
+      contains(){return true},innerHTML:''
+    };
+    const pagedTypeResult = globalThis.OmegaUIV2Industry.render(pagedTypeRoot, {
+      countryId:'BGD',tab:'factories',factoryView:'types'
+    });
+    assert.equal(pagedTypeResult.ok,true);
+    const renderedTypeCardCount = () => (pagedTypeRoot.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length;
+    assert.equal(renderedTypeCardCount(),3,
+      'the initial Android-friendly Industry route must mount exactly three factory-type cards');
+    assert.match(pagedTypeRoot.innerHTML,/Show next 3 factory types · 6 remaining/);
+    assert.match(pagedTypeRoot.innerHTML,/data-factory-type-show-more/,
+      'the remaining canonical factory types must remain accessible');
+    const showMoreTypesButton = {};
+    const clickShowMoreTypes = () => {
+      pagedTypeRoot.listeners.click({target:{closest(selector){
+        return selector === '[data-factory-type-show-more]' ? showMoreTypesButton : null;
+      }}});
+    };
+    for (const expectedCount of [6,9]) {
+      clickShowMoreTypes();
+      assert.equal(renderedTypeCardCount(),expectedCount,
+        'each continuation action must expose the next three canonical factory types');
+    }
+    assert.doesNotMatch(pagedTypeRoot.innerHTML,/data-factory-type-show-more/,
+      'the continuation control must disappear when the entire catalog is visible');
 
     const economyAssets = globalThis.Game.state.economy.BGD.productionAssets;
     const newlyBuiltFactory = {
@@ -1115,6 +1215,81 @@ test('factory Stock shows committed finished goods and traced use while Input sh
     assert.match(inputRoot.innerHTML,/class="fp-factory-input-identity-line"[^]*class="fp-factory-input-id"/,
       'the canonical product code must sit in the same compact identity line as its friendly name');
 
+    // A country with many live factories must not mount every per-factory
+    // table in a single Android WebView frame. All records remain reachable.
+    globalThis.Game.state.economy.BGD.productionAssets = Array.from({length:9},(_,index)=>({
+      id:'FACTORY-INPUT-PAGING-'+String(index+1).padStart(2,'0'),
+      name:'Steel Mill '+(index+1),
+      factoryType:'STEEL_MILL',
+      recipeId:'STEEL-RECIPE',
+      status:'OPERATIONAL',
+      capacityPerDay:10,
+      inputInventory:{iron_ore:20,coal:10},
+      inputCoefficients:{iron_ore:0.5,coal:0.25},
+      inputBatchLots:[
+        {batchId:'INPUT-PAGING-IRON-'+index,resourceId:'iron_ore',quantity:20,remainingQuantity:20,unit:'TONNES'},
+        {batchId:'INPUT-PAGING-COAL-'+index,resourceId:'coal',quantity:10,remainingQuantity:10,unit:'TONNES'}
+      ],
+      inputUnits:{iron_ore:'TONNES',coal:'TONNES'}
+    }));
+    const pagedInputRoot = {
+      classList:{add(){}},listeners:Object.create(null),
+      addEventListener(type,listener){this.listeners[type]=listener;},
+      contains(){return true},innerHTML:''
+    };
+    const pagedInput = globalThis.OmegaUIV2Industry.render(
+      pagedInputRoot,{countryId:'BGD',tab:'inventory'}
+    );
+    assert.equal(pagedInput.ok,true);
+    const renderedInputCardCount = () =>
+      (pagedInputRoot.innerHTML.match(/class="fp-factory-data-card"/g)||[]).length;
+    assert.equal(renderedInputCardCount(),4,
+      'the initial Input render must mount four factory detail cards');
+    assert.match(pagedInputRoot.innerHTML,/data-factory-input-show-more/,
+      'remaining factory input details must remain accessible');
+    let inputMoreRemoved = false;
+    const inputPageStatus = { textContent:'' };
+    const showMoreInputButton = {
+      attributes:{'data-next-index':'4'},
+      disabled:false,
+      textContent:'Show more factories',
+      getAttribute(name) {
+        return this.attributes[name] === undefined ? null : this.attributes[name];
+      },
+      setAttribute(name,value) {
+        this.attributes[name] = String(value);
+      },
+      parentNode:{
+        removeChild() {
+          inputMoreRemoved = true;
+          pagedInputRoot.innerHTML = pagedInputRoot.innerHTML.replace(
+            /<button[^>]*data-factory-input-show-more[^>]*>[\s\S]*?<\/button>/,''
+          );
+        }
+      }
+    };
+    pagedInputRoot.querySelector = (selector) => {
+      if (selector === '[data-factory-input-cards]') {
+        return { insertAdjacentHTML(_position,markup) { pagedInputRoot.innerHTML += markup; } };
+      }
+      if (selector === '[data-factory-input-page-status]') return inputPageStatus;
+      return null;
+    };
+    const clickShowMoreInput = () => {
+      pagedInputRoot.listeners.click({target:{closest(selector){
+        return selector === '[data-factory-input-show-more]' ? showMoreInputButton : null;
+      }}});
+    };
+    clickShowMoreInput();
+    assert.equal(renderedInputCardCount(),8,
+      'the next action must append the next four factory input records');
+    clickShowMoreInput();
+    assert.equal(renderedInputCardCount(),9,
+      'the final partial batch must preserve the ninth factory record');
+    assert.equal(inputMoreRemoved,true,
+      'the continuation control must be removed after every factory input record is shown');
+    assert.doesNotMatch(pagedInputRoot.innerHTML,/data-factory-input-show-more/);
+    assert.match(inputPageStatus.textContent,/9 of 9/);
 
     const factoryRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
     const factoryResult = globalThis.OmegaUIV2Industry.render(factoryRoot,{countryId:'BGD',tab:'factories'});
@@ -2682,11 +2857,15 @@ test('factory type cards restore counts from the existing country registry witho
     assert.deepEqual(model.factoryTypeCounts.map(row => [row.type,row.count]).sort(), [
       ['CEMENT_PLANT',4], ['STEEL_MILL',3]
     ]);
-    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const root = { classList:{ add(){} }, listeners:Object.create(null), addEventListener(name, handler){ this.listeners[name]=handler; }, contains(){ return true; } };
     const result = globalThis.OmegaUIV2Industry.render(root, {
       countryId:'BGD', tab:'factories', factoryView:'types'
     });
     assert.equal(result.ok, true);
+    const showMoreButton = {};
+    root.listeners.click({target:{closest(selector){
+      return selector === '[data-factory-type-show-more]' ? showMoreButton : null;
+    }}});
     assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
     assert.match(root.innerHTML, /<strong>4<\/strong>/);
@@ -2805,7 +2984,11 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     economy:{BGD:{productionAssets:[]}}
   }};
   try {
-    const inputRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const inputRoot = {
+      classList:{add(){}},listeners:Object.create(null),
+      addEventListener(type,listener){this.listeners[type]=listener;},
+      contains(){return true},innerHTML:''
+    };
     const input = globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
     assert.equal(input.ok,true);
     assert.equal(input.model.factoryCount,5);
@@ -2826,6 +3009,50 @@ test('Factory Stock and Input calculate all assigned factory-type requirements b
     assert.doesNotMatch(inputRoot.innerHTML,/Total \/ full cycle|100-day requirement|750 game units|Coverage target/);
     assert.match(inputRoot.innerHTML,/Limestone/);
     assert.doesNotMatch(inputRoot.innerHTML,/No active factories are recorded/);
+ 
+    // Large countries must not mount every per-factory table in one WebView frame.
+    // All factory records remain accessible in deterministic four-card batches.
+    globalThis.Game.state.economy.BGD.productionAssets = Array.from({length:9},(_,index)=>({
+      id:'FACTORY-INPUT-PAGING-'+String(index+1).padStart(2,'0'),
+      name:'Steel Mill '+(index+1),
+      factoryType:'STEEL_MILL',
+      recipeId:'STEEL-RECIPE',
+      status:'OPERATIONAL',
+      capacityPerDay:10,
+      inputInventory:{iron_ore:20,coal:10}
+    }));
+    globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
+    const renderedFactoryCardCount=()=> (inputRoot.innerHTML.match(/class="fp-factory-data-card"/g)||[]).length;
+    assert.equal(renderedFactoryCardCount(),4,'the initial Input render must mount only one four-factory detail batch');
+    assert.match(inputRoot.innerHTML,/data-factory-input-show-more/,
+      'remaining factory input details must be accessible through the continuation control');
+    let inputMoreRemoved=false;
+    const inputPageStatus={textContent:''};
+    const showMoreButton={
+      attributes:{'data-next-index':'4'},disabled:false,textContent:'',
+      getAttribute(name){return this.attributes[name]===undefined?null:this.attributes[name];},
+      setAttribute(name,value){this.attributes[name]=String(value);},
+      parentNode:{removeChild(){
+        inputMoreRemoved=true;
+        inputRoot.innerHTML=inputRoot.innerHTML.replace(/<button[^>]*data-factory-input-show-more[^>]*>[\s\S]*?<\/button>/,'');
+      }}
+    };
+    inputRoot.querySelector=(selector)=>{
+      if(selector==='[data-factory-input-cards]') return {insertAdjacentHTML(_position,markup){inputRoot.innerHTML+=markup;}};
+      if(selector==='[data-factory-input-page-status]') return inputPageStatus;
+      return null;
+    };
+    const clickShowMore=()=>{
+      inputRoot.listeners.click({target:{closest(selector){
+        return selector==='[data-factory-input-show-more]'?showMoreButton:null;
+      }}});
+    };
+    clickShowMore();
+    assert.equal(renderedFactoryCardCount(),8,'the next action must render the next four factory records');
+    clickShowMore();
+    assert.equal(renderedFactoryCardCount(),9,'the final partial batch must preserve the last factory record');
+    assert.equal(inputMoreRemoved,true,'the continuation control must disappear when all factory input records are rendered');
+    assert.match(inputPageStatus.textContent,/9 of 9/);
 
     const stockRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
     const stock = globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
@@ -3045,6 +3272,10 @@ test('factory cards flip in place and show Input, Output and Byproduct tabs with
   const otherCard = makeCard('CEMENT_PLANT');
   const root = {
     classList:{ add(){} },
+    // This card-interaction test targets the catalog in full, independently
+    // of the separate three-card progressive-rendering contract.
+    __omegaV2IndustryCountryId:'BGD',
+    __omegaV2FactoryTypeVisibleCount:99,
     addEventListener(name,handler) { listeners[name] = handler; },
     contains() { return true; },
     querySelectorAll(selector) {
@@ -3271,7 +3502,8 @@ test('Factory Input tables contain long cell content without changing factory ca
   const marker = '/* Factory Input table overflow containment: keep long labels and statuses inside their cells. */';
   const fixIndex = css.lastIndexOf(marker);
   assert.ok(fixIndex >= 0, 'the scoped Factory Input overflow rules must be present');
-  const fix = css.slice(fixIndex);
+  const legacyProfileIndex = css.indexOf('/* Android 9 / legacy WebView paint profile.', fixIndex);
+  const fix = css.slice(fixIndex, legacyProfileIndex >= 0 ? legacyProfileIndex : undefined);
   assert.match(fix, /\.fp-factory-table-wrap\s*\{[^}]*min-width:\s*0;[^}]*overflow-x:\s*auto;/s,
     'the Input table wrapper must remain constrained and horizontally scrollable');
   assert.match(fix, /\.fp-factory-input-table th,\s*\.omega-v2-industry--factory-home \.fp-factory-input-table td\s*\{[^}]*white-space:\s*normal;[^}]*overflow-wrap:\s*anywhere;/s,

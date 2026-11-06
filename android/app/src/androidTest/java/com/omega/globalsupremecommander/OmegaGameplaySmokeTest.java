@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.content.pm.ActivityInfo;
 import android.os.SystemClock;
 import android.view.View;
@@ -20,6 +21,8 @@ import org.json.JSONTokener;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -250,6 +253,74 @@ public final class OmegaGameplaySmokeTest {
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_EXITED_TO_MAP");
 
+            final String pauseClockScript =
+                    "(function() {" +
+                    " var lifecycle = window.Omega && window.Omega.GameLifecycle;" +
+                    " var sim = window.Omega && (window.Omega.SimulationRuntime || window.Omega.Simulation);" +
+                    " if (!lifecycle || typeof lifecycle.setSpeed !== 'function' || typeof lifecycle.getDiagnostics !== 'function' || !sim || !sim.clock) return false;" +
+                    " var applied = lifecycle.setSpeed(0);" +
+                    " var diagnostics = lifecycle.getDiagnostics();" +
+                    " var speed = diagnostics && diagnostics.clock ? Number(diagnostics.clock.speed) : null;" +
+                    " var status = String(sim.status || '').toUpperCase();" +
+                    " var safeToSeed = speed === 0 || (status !== 'RUNNING' && !(diagnostics && diagnostics.running === true));" +
+                    " window.__OMEGA_ANDROID_PAUSE_DIAGNOSTICS = {applied:applied, speed:speed, status:status, running:!!(diagnostics && diagnostics.running), safeToSeed:safeToSeed};" +
+                    " return safeToSeed;" +
+                    "})()";
+            final String pauseClockResult = evaluate(instrumentation, webViewRef.get(), pauseClockScript);
+            final String pauseClockDiagnostics = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_PAUSE_DIAGNOSTICS || {});})()");
+            assertEquals(
+                    "The visual-only fixture must not run during a live game turn; clock=" + pauseClockDiagnostics,
+                    "true", pauseClockResult
+            );
+
+            final String seedFactoryInputFixtureScript =
+                    "(function() {" +
+                    " var state = window.Game && window.Game.state;" +
+                    " if (!state) return false;" +
+                    " var economy = state.economy || (state.economy = {});" +
+                    " var country = economy.USA || (economy.USA = {});" +
+                    " var id = 'OMEGA-ANDROID-INPUT-UI-FACTORY';" +
+                    " var existing = Array.isArray(country.productionAssets) ? country.productionAssets : [];" +
+                    " if (existing.some(function(row) { return row && String(row.id || '') === id; })) return false;" +
+                    " window.__OMEGA_ANDROID_INPUT_FIXTURE = {" +
+                    "   country:country," +
+                    "   hadAssets:Object.prototype.hasOwnProperty.call(country, 'productionAssets')," +
+                    "   originalAssets:country.productionAssets," +
+                    "   id:id" +
+                    " };" +
+                    " var rows = existing.slice();" +
+                    " rows.push({" +
+                    "   id:id," +
+                    "   name:'Android Smoke Steel Works'," +
+                    "   factoryType:'STEEL_AND_ALLOY_WORKS'," +
+                    "   recipeId:'STEEL_PRIMARY_ROUTE_V1'," +
+                    "   status:'OPERATIONAL'," +
+                    "   capacityPerDay:900," +
+                    "   inputInventory:{iron_concentrate:120}," +
+                    "   inputBatchLots:[{" +
+                    "     batchId:'OMEGA-ANDROID-INPUT-UI-IRON-01'," +
+                    "     resourceId:'iron_concentrate'," +
+                    "     quantity:120," +
+                    "     remainingQuantity:120," +
+                    "     unit:'SIMULATION_RESOURCE_UNIT'," +
+                    "     status:'AVAILABLE_TO_FACTORY'" +
+                    "   }]" +
+                    " });" +
+                    " country.productionAssets = rows;" +
+                    " window.Game.currentActiveCountry = 'USA';" +
+                    " window.Game.playerCountry = 'USA';" +
+                    " state.playerCountryId = 'USA';" +
+                    " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
+                    " window.currentActiveCountry = 'USA';" +
+                    " return true;" +
+                    "})()";
+            assertEquals(
+                    "A temporary, non-persistent factory with a canonical input recipe must be available for visual validation",
+                    "true", evaluate(instrumentation, webViewRef.get(), seedFactoryInputFixtureScript)
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_UI_FIXTURE_READY");
+
             // Open the canonical UI v2 Industry route. The legacy Resource Command Center
             // factory popup is covered by its own runtime tests; opening it here a second time
             // caused avoidable WebView main-thread work during the offline device smoke.
@@ -288,6 +359,149 @@ public final class OmegaGameplaySmokeTest {
                     "Industry must expose the existing Lines tab without a separate Companies tab",
                     "true", evaluate(instrumentation, webViewRef.get(), linesTabReadyScript)
             );
+
+            final String openInputTabScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                    " var button = main && main.querySelector('[data-omega-v2-industry-tab=\"inventory\"]');" +
+                    " if (!button || button.disabled) return false;" +
+                    " button.click();" +
+                    " return true;" +
+                    "})()";
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_TAB_CLICK_BEGIN");
+            assertEquals("The actual Input tab control must respond to a tap",
+                    "true", evaluate(instrumentation, webViewRef.get(), openInputTabScript));
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_TAB_CLICK_RETURNED");
+            final String inputTablesReadyScript =
+                    "(function() {" +
+                    " var main = document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                    " var screen = main && main.querySelector('[data-factory-stock-input-ui=\"v2\"]');" +
+                    " var stage = screen && screen.querySelector('[data-active-tab=\"inventory\"]');" +
+                    " var plan = screen && screen.querySelector('[data-factory-input-plan=\"daily-v2\"]');" +
+                    " var aggregate = plan && plan.querySelector('.fp-factory-input-total-table tbody tr');" +
+                    " var perFactory = screen && screen.querySelector('.fp-factory-data-card .fp-factory-input-table tbody tr');" +
+                    " window.__OMEGA_ANDROID_INPUT_TABLE_DIAGNOSTICS = {" +
+                    " screen:!!screen, stage:!!stage, plan:!!plan, aggregate:!!aggregate, perFactory:!!perFactory," +
+                    " factoryCards:screen ? screen.querySelectorAll('.fp-factory-data-card').length : -1," +
+                    " aggregateRows:plan ? plan.querySelectorAll('.fp-factory-input-total-table tbody tr').length : -1," +
+                    " factoryRows:screen ? screen.querySelectorAll('.fp-factory-data-card .fp-factory-input-table tbody tr').length : -1," +
+                    " factoryCount:window.Game && window.Game.state && window.Game.state.economy && window.Game.state.economy.USA && Array.isArray(window.Game.state.economy.USA.productionAssets) ? window.Game.state.economy.USA.productionAssets.length : -1" +
+                    " };" +
+                    " return !!(screen && stage && plan && aggregate && perFactory);" +
+                    "})()";
+            String inputTablesReady = "false";
+            final long inputTablesDeadline = SystemClock.elapsedRealtime() + 60000L;
+            while (!"true".equals(inputTablesReady) &&
+                    SystemClock.elapsedRealtime() < inputTablesDeadline) {
+                inputTablesReady = evaluate(instrumentation, webViewRef.get(), inputTablesReadyScript);
+                if (!"true".equals(inputTablesReady)) SystemClock.sleep(400L);
+            }
+            final String inputTablesDiagnostic = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_INPUT_TABLE_DIAGNOSTICS || {});})()");
+            assertEquals(
+                    "The Input tab must show both all-factory daily requirements and per-factory input inventory rows; diagnostics=" + inputTablesDiagnostic,
+                    "true", inputTablesReady
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_INPUT_TABLES_READY");
+
+            final String revealInputRowScript =
+                    "(function() {" +
+                    " var main = document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                    " var row = main && main.querySelector('.fp-factory-input-total-table tbody tr');" +
+                    " if (!row) return false;" +
+                    " row.scrollIntoView({block:'center', inline:'nearest'});" +
+                    " return true;" +
+                    "})()";
+            assertEquals("The first aggregate input row must be reachable in the active viewport",
+                    "true", evaluate(instrumentation, webViewRef.get(), revealInputRowScript));
+
+            final String inputLayoutAuditScript =
+                    "(function() {" +
+                    " var main = document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                    " var screen = main && main.querySelector('[data-factory-stock-input-ui=\"v2\"]');" +
+                    " var stage = screen && screen.querySelector('[data-active-tab=\"inventory\"]');" +
+                    " var plan = screen && screen.querySelector('[data-factory-input-plan=\"daily-v2\"]');" +
+                    " var aggregate = plan && plan.querySelector('.fp-factory-input-total-table');" +
+                    " var aggregateRow = aggregate && aggregate.querySelector('tbody tr');" +
+                    " var factoryTable = screen && screen.querySelector('.fp-factory-data-card .fp-factory-input-table');" +
+                    " var factoryRow = factoryTable && factoryTable.querySelector('tbody tr');" +
+                    " function visible(node) {" +
+                    "   if (!node) return false;" +
+                    "   var rect = node.getBoundingClientRect(), style = getComputedStyle(node);" +
+                    "   return rect.width > 0 && rect.height > 0 && style.display !== 'none' &&" +
+                    "     style.visibility !== 'hidden' && Number(style.opacity || 1) > 0;" +
+                    " }" +
+                    " function iconVisible(row) {" +
+                    "   var frame = row && row.querySelector('.fp-product-icon-frame');" +
+                    "   var icon = row && row.querySelector('.fp-product-icon-visual');" +
+                    "   return !!(visible(frame) && visible(icon));" +
+                    " }" +
+                    " var aggregateWrap = aggregate && aggregate.closest('.fp-factory-table-wrap');" +
+                    " var factoryWrap = factoryTable && factoryTable.closest('.fp-factory-table-wrap');" +
+                    " function scrollable(wrap) {" +
+                    "   if (!wrap) return false;" +
+                    "   var style = getComputedStyle(wrap), width = wrap.clientWidth, range = wrap.scrollWidth - width;" +
+                    "   if (width <= 0 || range <= 1 || !/auto|scroll/.test(style.overflowX)) return false;" +
+                    "   var old = wrap.scrollLeft;" +
+                    "   wrap.scrollLeft = range;" +
+                    "   var moved = wrap.scrollLeft > old;" +
+                    "   wrap.scrollLeft = 0;" +
+                    "   return moved;" +
+                    " }" +
+                    " var headersA = aggregate ? aggregate.querySelectorAll('thead th').length : 0;" +
+                    " var headersF = factoryTable ? factoryTable.querySelectorAll('thead th').length : 0;" +
+                    " var text = (aggregateRow && aggregateRow.textContent || '') + ' ' + (factoryRow && factoryRow.textContent || '');" +
+                    " var orientation = window.innerWidth > window.innerHeight;" +
+                    " var metrics = {" +
+                    "   viewport:window.innerWidth + 'x' + window.innerHeight," +
+                    "   landscape:orientation," +
+                    "   inputTabPressed:!!(screen && screen.querySelector('[data-omega-v2-industry-tab=\"inventory\"][aria-pressed=\"true\"]'))," +
+                    "   aggregateRows:aggregate ? aggregate.querySelectorAll('tbody tr').length : 0," +
+                    "   perFactoryRows:factoryTable ? factoryTable.querySelectorAll('tbody tr').length : 0," +
+                    "   aggregateHeaders:headersA, perFactoryHeaders:headersF," +
+                    "   aggregateIconVisible:iconVisible(aggregateRow)," +
+                    "   perFactoryIconVisible:iconVisible(factoryRow)," +
+                    "   aggregateHorizontalScroll:scrollable(aggregateWrap)," +
+                    "   perFactoryHorizontalScroll:scrollable(factoryWrap)," +
+                    "   aggregateRowVisible:visible(aggregateRow)," +
+                    "   productNamePresent:/iron concentrate/i.test(text)" +
+                    " };" +
+                    " window.__OMEGA_ANDROID_INPUT_LAYOUT = metrics;" +
+                    " return !!(orientation && metrics.inputTabPressed && metrics.aggregateRows > 0 &&" +
+                    "   metrics.perFactoryRows > 0 && headersA === 7 && headersF === 8 &&" +
+                    "   metrics.aggregateIconVisible && metrics.perFactoryIconVisible &&" +
+                    "   metrics.aggregateHorizontalScroll && metrics.perFactoryHorizontalScroll &&" +
+                    "   metrics.aggregateRowVisible && metrics.productNamePresent);" +
+                    "})()";
+            String inputLayoutValid = evaluate(instrumentation, webViewRef.get(), inputLayoutAuditScript);
+            String inputLayoutMetrics = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_INPUT_LAYOUT || {});})()");
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "INPUT_UI_LANDSCAPE_LAYOUT=" + inputLayoutMetrics);
+            assertEquals(
+                    "Android landscape Input layout must visibly render product icons, all table columns and working horizontal scrollers; metrics=" +
+                            inputLayoutMetrics,
+                    "true", inputLayoutValid
+            );
+            SystemClock.sleep(500L);
+            captureScreenshot(instrumentation, "factory-input-landscape.png");
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_INPUT_LANDSCAPE_SCREENSHOT_SAVED");
+
+            final String cleanupInputFixtureBeforeFactoryPanelScript =
+                    "(function() {" +
+                    " var fixture = window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
+                    " if (!fixture || !fixture.country) return true;" +
+                    " if (fixture.hadAssets) fixture.country.productionAssets = fixture.originalAssets;" +
+                    " else delete fixture.country.productionAssets;" +
+                    " delete window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
+                    " delete window.__OMEGA_ANDROID_INPUT_LAYOUT;" +
+                    " return true;" +
+                    "})()";
+            assertEquals("The temporary Input UI fixture must be removed before the existing Resource Command Center smoke",
+                    "true", evaluate(instrumentation, webViewRef.get(), cleanupInputFixtureBeforeFactoryPanelScript));
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_UI_FIXTURE_CLEANED");
+
+
 
             final String activateLinesTab =
                     "(function() {" +
@@ -485,6 +699,17 @@ public final class OmegaGameplaySmokeTest {
                     navigationP95 + " maxMs=" + navigationMax + " nav=" + tabNavigationTiming);
 
         } finally {
+            if (webViewRef.get() != null) {
+                try {
+                    evaluate(instrumentation, webViewRef.get(),
+                            "(function(){var f=window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
+                            "if(!f||!f.country)return true;if(f.hadAssets)f.country.productionAssets=f.originalAssets;" +
+                            "else delete f.country.productionAssets;delete window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
+                            "delete window.__OMEGA_ANDROID_INPUT_LAYOUT;return true;})()", 10L);
+                } catch (Exception cleanupError) {
+                    android.util.Log.w("OMEGA_ANDROID_SMOKE", "INPUT_FIXTURE_CLEANUP_FAILED", cleanupError);
+                }
+            }
             if (activity != null) {
                 final MainActivity launchedActivity = activity;
                 // Posting cleanup is asynchronous; it must not mask a timeout by blocking on
@@ -493,6 +718,29 @@ public final class OmegaGameplaySmokeTest {
             }
             instrumentation.removeMonitor(activityMonitor);
         }
+    }
+
+    private static File captureScreenshot(
+            android.app.Instrumentation instrumentation,
+            String fileName
+    ) throws Exception {
+        final Bitmap bitmap = instrumentation.getUiAutomation().takeScreenshot();
+        assertNotNull("Android emulator screenshot must be captured", bitmap);
+        assertTrue("Android screenshot width must be positive", bitmap.getWidth() > 0);
+        assertTrue("Android screenshot height must be positive", bitmap.getHeight() > 0);
+        final File directory = instrumentation.getTargetContext().getExternalFilesDir("omega-smoke");
+        assertNotNull("Android external files directory must be available for smoke screenshots", directory);
+        assertTrue("Android screenshot directory must be creatable", directory.isDirectory() || directory.mkdirs());
+        final File output = new File(directory, fileName);
+        try (FileOutputStream stream = new FileOutputStream(output)) {
+            assertTrue("Android screenshot must encode as PNG", bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream));
+            stream.flush();
+        } finally {
+            bitmap.recycle();
+        }
+        assertTrue("Android screenshot file must be non-empty", output.isFile() && output.length() > 2048L);
+        android.util.Log.i("OMEGA_ANDROID_SMOKE", "SCREENSHOT_SAVED=" + output.getAbsolutePath() + " bytes=" + output.length());
+        return output;
     }
 
     private static void requestOrientation(
