@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 
-const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOfflineWorkflow, androidGradle, bootPerformanceMonitor, compositionRoot] = await Promise.all([
+const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOfflineWorkflow, androidSmokeScript, androidGradle, bootPerformanceMonitor, compositionRoot] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.js", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.css", import.meta.url), "utf8"),
@@ -12,6 +12,7 @@ const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOffl
   readFile(new URL("../android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java", import.meta.url), "utf8"),
   readFile(new URL("../omega-offline-map-sw.js", import.meta.url), "utf8"),
   readFile(new URL("../.github/workflows/omega-android-gameplay-smoke.yml", import.meta.url), "utf8"),
+  readFile(new URL("../scripts/omega_android9_offline_gameplay_smoke.sh", import.meta.url), "utf8"),
   readFile(new URL("../android/app/build.gradle", import.meta.url), "utf8"),
   readFile(new URL("../omega_boot_performance_monitor_v1.js", import.meta.url), "utf8"),
   readFile(new URL("../omega_enterprise_composition_root_v10.js", import.meta.url), "utf8")
@@ -136,6 +137,16 @@ test("newer commits supersede stale Android emulator smoke runs on the same ref"
   assert.ok(androidOfflineWorkflow.includes(
     "cancel-in-progress: true"
   ));
+});
+
+test("Android 9 smoke retrieves the screenshot from the WebView app external-files directory", () => {
+  assert.ok(androidSmokeScript.includes(
+    'remote_screenshot_dir="/storage/emulated/0/Android/data/com.omega.globalsupremecommander/files/omega-smoke"'
+  ), "screenshot pull must use the canonical Android external-files path reported by instrumentation");
+  assert.doesNotMatch(androidSmokeScript, /remote_screenshot_dir="\/sdcard\//,
+    "do not use the unreliable /sdcard alias on the API 28 emulator");
+  assert.ok(androidSmokeScript.includes('factory-input-landscape.png'),
+    "the captured landscape screenshot must remain a required smoke artifact");
 });
 
 test("canonical country profile pack is bundled for Android and refreshes offline smoke coverage", () => {
