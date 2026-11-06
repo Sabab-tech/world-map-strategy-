@@ -3323,7 +3323,10 @@ test('Production Lines joins exact selected-country cycles and committed logisti
           route:{routeId:'ROUTE-01',sourceNode:'WH-BGD-RAW',destinationNode:'FACTORY:BGD:FAC-LINE-1',
             destinationFactoryId:'FAC-LINE-1',transportMode:'truck',legs:[{transportMode:'truck',distanceKm:12}]}},
         {shipmentId:'MINE-HAUL-ONLY',shipmentType:'MINE_TO_WAREHOUSE',countryId:'BGD',resourceId:'iron_ore',
-          quantity:50,status:'IN_TRANSIT',createdTurn:11,route:{sourceNode:'MINE:SITE-01',destinationNode:'WH-BGD-RAW'}}
+          quantity:50,status:'IN_TRANSIT',createdTurn:11,route:{sourceNode:'MINE:SITE-01',destinationNode:'WH-BGD-RAW'}},
+        {shipmentId:'PREVIEW-SHIP',shipmentType:'WAREHOUSE_TO_FACTORY',countryId:'BGD',factoryId:'FAC-LINE-1',
+          resourceId:'iron_ore',quantity:999,status:'ROUTE_PREVIEW_ONLY',dispatchCommitted:false,createdTurn:12,
+          route:{routeId:'PREVIEW-SHIP-ROUTE',destinationFactoryId:'FAC-LINE-1',totalDistanceKm:999}}
       ],
       factoryInputRequests:[{
         requestId:'REQ-01',countryId:'BGD',factoryId:'FAC-LINE-1',resourceId:'iron_ore',status:'PARTIALLY_FULFILLED',
@@ -3359,7 +3362,8 @@ test('Production Lines joins exact selected-country cycles and committed logisti
     const steel=result.model.lineActivity.find(row=>row.factoryId==='FAC-LINE-1');
     assert.ok(steel);
     assert.equal(steel.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
-    assert.equal(steel.shipments.length,1,'mine-to-warehouse movement without a factory destination is not shown as a factory line shipment');
+    assert.equal(steel.shipments.length,1,'mine-to-warehouse movement and route-preview rows are not shown as committed factory shipments');
+    assert.equal(result.model.lineActivitySourceCounts.committedShipments,1,'only committed shipment rows contribute to the selected-country activity count');
     assert.equal(steel.shipments[0].shipmentId,'SHIP-FACTORY-01');
     assert.equal(steel.shipments[0].route.destinationNode,'FACTORY:BGD:FAC-LINE-1');
     assert.equal(steel.inputRequests[0].requestId,'REQ-01');
