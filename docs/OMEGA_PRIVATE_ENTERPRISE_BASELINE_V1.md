@@ -353,3 +353,17 @@ When SAB-34 proof is absent, commissioned private assets remain blocked and prop
 New regression coverage is in `test/omega_private_enterprise_lifecycle_v1.test.mjs` and is registered in the package and country-factory baseline CI workflow. The Android offline smoke workflow also includes the lifecycle runtime in its change triggers. The offline shell cache is v101 and includes the new script.
 
 This documentation records implementation intent and current branch code only. It is not evidence that exact-head GitHub Actions, Android 9 device smoke, live browser E2E, save/load, or the SAB-34 dependency has passed. PR #408 must remain Draft/Open until those real acceptance gates are verified.
+
+
+## Additional governance and recovery safeguards — 2026-11-06
+
+- A government approval now issues an explicit, country/company/operator/factory/quantity-scoped permit ID with issuer, conditions, issue turn and expiry turn. Construction verifies the permit scope and expiry before creating any additional project.
+- The proposal separates the private asset owner from the private operator. Both must reference one of the five canonical private-company IDs. The owner company funds construction; the operator is stored separately on the commissioned asset. State control rights remain an independent policy record; the government is not the routine operator.
+- Proposal preview now reads the existing Industrial Network's utility/workforce diagnostics and shows available electricity, water, workforce, infrastructure requirements, transport diagnostic capacity and whether warehouse storage-capacity data is present. Unknown values stay explicitly unobserved; they are not converted to available capacity.
+- Autonomous firms submit at most one deterministic proposal per 30 committed game-turn period for the active player country. The five canonical companies rotate; proposals require an existing positive company/factory baseline allocation under the 60% government-capacity ceiling. Submission alone creates no money, inventory, project or factory. The player-government still decides each application. No per-frame or all-country AI loop is used.
+- Partial multi-unit construction can resume the remaining units. Stable project request IDs and Finance capex transaction IDs prevent the already-started units from being spawned or paid for twice.
+- Company capital receipts now require the settled Finance credit to explicitly state the same currency as the proposal's capital unit. Missing or mismatched currency is rejected; no unverified USD/game-unit conversion is assumed.
+- Production Lines exposes a retry action after an actual private-baseline load failure and clears stale asynchronous pending state when the player changes country.
+- Private production still remains gated by SAB-34 exact-main pipeline proof. Proof release is retried by the existing factory operation gate and preserves the same asset. Technology, workforce, utility, stock, logistics and storage gates remain in force.
+
+These safeguards are branch implementation details only. The new lifecycle regression suite currently defines test coverage for them, but its exact-head GitHub Actions result and live device/browser proof must be checked separately.
