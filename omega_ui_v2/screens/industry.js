@@ -3940,6 +3940,7 @@
         var requestMarkup = (line.inputRequests || []).slice(0, 3).map(function (request) {
           return '<div class="fp-line-input"><strong>' + esc(request.resourceId || 'Input not recorded') + '</strong>' +
             '<span>' + esc(request.status) + ' · ' + esc(request.deliveryStatus) + '</span>' +
+            '<small>Request ID · ' + esc(request.requestId || 'Not recorded') + '</small>' +
             '<small>Requested ' + (request.requestedQuantity === null ? 'Not recorded' : fmt(request.requestedQuantity) + ' ' + esc(request.unit || 'units')) +
             ' · Fulfilled ' + (request.fulfilledQuantity === null ? 'Not recorded' : fmt(request.fulfilledQuantity)) +
             ' · In transit ' + (request.inTransitQuantity === null ? 'Not recorded' : fmt(request.inTransitQuantity)) +
