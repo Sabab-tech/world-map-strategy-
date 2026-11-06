@@ -295,7 +295,7 @@ public final class OmegaGameplaySmokeTest {
                     " return String((performance.now()-started).toFixed(2));" +
                     "})()";
             final String linesTapDuration = evaluate(instrumentation, webViewRef.get(), activateLinesTab);
-            assertFalse("Lines tab must be present and clickable", "MISSING_LINES_TAB".equals(linesTapDuration));
+            assertTrue("Lines tab must be present and clickable", !"MISSING_LINES_TAB".equals(linesTapDuration));
             final double linesTapMs;
             try { linesTapMs = Double.parseDouble(linesTapDuration); }
             catch (NumberFormatException error) { throw new AssertionError("Invalid Lines tap timing: " + linesTapDuration, error); }
@@ -338,7 +338,7 @@ public final class OmegaGameplaySmokeTest {
                         "if(!tab)return 'MISSING';var started=performance.now();tab.click();" +
                         "return String((performance.now()-started).toFixed(2));})()";
                 final String clickMsText = evaluate(instrumentation, webViewRef.get(), clickTabScript);
-                assertFalse(tabName + " tab must exist", "MISSING".equals(clickMsText));
+                assertTrue(tabName + " tab must exist", !"MISSING".equals(clickMsText));
                 final double clickMs;
                 try { clickMs = Double.parseDouble(clickMsText); }
                 catch (NumberFormatException error) { throw new AssertionError("Invalid " + tabName + " tap timing: " + clickMsText, error); }
