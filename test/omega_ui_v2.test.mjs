@@ -3207,7 +3207,7 @@ test('Factory Input tables contain long cell content without changing factory ca
   const fix = css.slice(fixIndex);
   assert.match(fix, /\.fp-factory-table-wrap\s*\{[^}]*min-width:\s*0;[^}]*overflow-x:\s*auto;/s,
     'the Input table wrapper must remain constrained and horizontally scrollable');
-  assert.match(fix, /\.fp-factory-input-table th,\s*\.omega-v2-industry--factory-home \.fp-factory-input-table td\s*\{[^}]*overflow-wrap:\s*anywhere;[^}]*white-space:\s*normal;/s,
+  assert.match(fix, /\.fp-factory-input-table th,\s*\.omega-v2-industry--factory-home \.fp-factory-input-table td\s*\{[^}]*white-space:\s*normal;[^}]*overflow-wrap:\s*anywhere;/s,
     'Input table cells must wrap long text rather than paint outside their bounds');
   assert.match(fix, /\.fp-factory-input-table \.fp-factory-source\s*\{[^}]*display:grid;[^}]*grid-template-columns:\s*minmax\(0,1fr\) minmax\(0,6em\);/s,
     'source labels and quantities must have bounded columns');
@@ -3220,6 +3220,6 @@ test('Factory Input tables contain long cell content without changing factory ca
   assert.doesNotMatch(fix, /\.fp-card|\.fp-type-card/,
     'the separate Input table fix must not alter factory cards');
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\\d+)"/)?.[1] || 0), 97,
+  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 97,
     'offline clients must fetch the updated Factory Input stylesheet');
 });
