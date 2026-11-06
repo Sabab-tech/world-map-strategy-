@@ -1501,7 +1501,12 @@
   }
   function diagnostics(){
     var cid=playerCountry(),dash=cid?getCountryDashboard(cid):null;
+    var resource=cid?countryBucket('resource',cid,false):null;
+    var demand=resource&&obj(resource.demandRuntime)?resource.demandRuntime:{};
+    var demandRows=obj(demand.byResource)?demand.byResource:{};
     return{version:VERSION,status:cid?'READY':'PLAYER_COUNTRY_UNRESOLVED',playerCountryId:cid||null,
+      resourceBucketFound:!!resource,demandSnapshotTurn:num(demand.lastTurn),
+      demandRuntimeResourceKeys:Object.keys(demandRows),
       proposalCount:dash?dash.proposals.length:0,productionEnabled:productionProofReady(),
       pipelineGate:productionProofReady()?'VERIFIED':'BLOCKED_SAB34_PROOF_REQUIRED',
       financeAuthority:'Game.state.finance[country].omegaFinance.ledger',
