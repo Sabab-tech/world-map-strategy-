@@ -263,6 +263,29 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     const companySelect = form.locator('select[name="companyId"]');
     const operatorSelect = form.locator('select[name="operatorCompanyId"]');
     const factorySelect = form.locator('select[name="factoryType"]');
+    await page.evaluate(() => {
+      const target = document.querySelector('[data-pe-proposal-form]');
+      const button = target?.querySelector('button[type="submit"]');
+      window.__omegaProposalSubmitTrace = {
+        validity:target?.checkValidity?.() ?? null,
+        validityMessage:target?.validationMessage || '',
+        submitButtonType:button?.type || null,
+        lifecycleRootHasSubmitHandler:!![...document.querySelectorAll('#cabinet-full-window *')]
+          .find(node=>node.__omegaPrivateEnterpriseUiBound)
+      };
+      document.addEventListener('submit', event => {
+        window.__omegaProposalSubmitTrace = Object.assign({},window.__omegaProposalSubmitTrace,{
+          captureSeen:true, captureDefaultPrevented:event.defaultPrevented,
+          captureFormMatches:!!event.target?.matches?.('[data-pe-proposal-form]')
+        });
+      }, true);
+      document.addEventListener('submit', event => {
+        window.__omegaProposalSubmitTrace = Object.assign({},window.__omegaProposalSubmitTrace,{
+          bubbleSeen:true, bubbleDefaultPrevented:event.defaultPrevented,
+          bubbleFormMatches:!!event.target?.matches?.('[data-pe-proposal-form]')
+        });
+      });
+    });
     const companyOptions = await companySelect.locator('option').evaluateAll(nodes =>
       nodes.map(node => node.value).filter(Boolean)
     );
@@ -301,6 +324,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         const proposals = window.Game?.state?.economy?.BGD?.privateEnterpriseLifecycle?.proposals || [];
         return {
           uiBound:lifecycleRoot?.__omegaPrivateEnterpriseUiBound || false,
+          submitTrace:window.__omegaProposalSubmitTrace || null,
           uiMessage:lifecycleRoot?.__omegaPrivateEnterpriseMessage || null,
           rootCountry:lifecycleRoot?.__omegaV2IndustryCountryId || null,
           rootTab:lifecycleRoot?.__omegaV2IndustryTab || null,
