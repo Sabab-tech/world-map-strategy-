@@ -169,6 +169,43 @@
     });
     return rows;
   }
+  function operationalCapacityPreview(country,profile,quantity){
+    var n=network(),diagnostic=null;
+    try{if(n&&typeof n.factoryUtilityDiagnostics==='function')diagnostic=n.factoryUtilityDiagnostics(country);}catch(_){}
+    var utilities=profile&&profile.utilities||{},rows=[];
+    function add(label,required,available,unit){
+      required=num(required);available=num(available);
+      if(required===null||required<=0)return;
+      rows.push({type:label,required:required,available:available,unit:unit,
+        status:available===null?'UNOBSERVED':available+1e-9>=required?'AVAILABLE':'SHORTFALL',
+        shortfall:available===null?null:Math.max(0,required-available),
+        authority:diagnostic&&diagnostic.utilityAuthority||'NOT_RECORDED'});
+    }
+    add('ELECTRICITY',num(utilities.electricityMWhPerDay)===null?null:num(utilities.electricityMWhPerDay)*quantity,
+      diagnostic&&diagnostic.electricity&&diagnostic.electricity.availableThisTurn,'MWh/day');
+    add('WATER',num(utilities.waterM3PerDay)===null?null:num(utilities.waterM3PerDay)*quantity,
+      diagnostic&&diagnostic.water&&diagnostic.water.availableThisTurn,'m3/day');
+    var workforce=diagnostic&&diagnostic.workforce||{},core=num(profile&&profile.employment&&profile.employment.coreOperatingCrew);
+    if(core===null)core=(num(profile&&profile.workforce&&profile.workforce.operators)||0)+(num(profile&&profile.workforce&&profile.workforce.engineers)||0);
+    if(core>0)rows.push({type:'WORKFORCE',required:core*quantity,
+      available:num(workforce.unemployedCount),unit:'workers',
+      status:num(workforce.unemployedCount)===null?'UNOBSERVED':num(workforce.unemployedCount)+1e-9>=core*quantity?'AVAILABLE':'SHORTFALL',
+      shortfall:num(workforce.unemployedCount)===null?null:Math.max(0,core*quantity-num(workforce.unemployedCount)),
+      authority:workforce.authority||'NOT_RECORDED'});
+    var resource=countryBucket('resource',country,false)||{},rawWarehouse=resource.warehouse||{};
+    var storageCapacity=rawWarehouse.capacityByResource||rawWarehouse.storageCapacityByResource||null;
+    var transport=diagnostic&&diagnostic.transportCapacity||{};
+    return{
+      status:rows.some(function(row){return row.status==='SHORTFALL';})?'SHORTFALL':rows.some(function(row){return row.status==='UNOBSERVED';})?'UNOBSERVED':'READY',
+      requirements:rows,
+      infrastructure:clone(profile&&profile.requiredInfrastructure||[]),
+      transportCapacity:Object.keys(transport).map(function(mode){var row=transport[mode]||{};return{mode:mode,availableThisTurn:num(row.availableThisTurn),unit:row.unit||null,authority:row.authority||'UNOBSERVED'};}),
+      storage:{status:storageCapacity?'CAPACITY_DATA_RECORDED':'CAPACITY_NOT_RECORDED',capacityByResource:storageCapacity?clone(storageCapacity):null,
+        warehouseId:rawWarehouse.warehouseId||null,authority:storageCapacity?'COUNTRY_RAW_WAREHOUSE_STATE':'UNOBSERVED'},
+      diagnosticTurn:num(diagnostic&&diagnostic.turn),utilityStatus:diagnostic&&diagnostic.status||'NOT_RECORDED',
+      authority:'EXISTING_INDUSTRIAL_NETWORK_UTILITY_AND_EMPLOYMENT_DIAGNOSTICS',simulationOnly:true
+    };
+  }
   function previewFor(proposal){
     var cid=proposal.countryId,base=baseline(cid),c=catalog()||{},profile=c.factoryProfiles&&c.factoryProfiles[proposal.factoryType],recipe=recipeFor(proposal.factoryType,profile);
     if(!base||base.status!=='READY')return{status:'BLOCKED',reason:'PRIVATE_AND_GOVERNMENT_BASELINES_NOT_READY'};
@@ -181,6 +218,7 @@
     var inputs=inputForecast(cid,profile,recipe,proposal.quantity);
     var deficits=inputs.filter(function(x){return x.shortfall!==null&&x.shortfall>1e-9;});
     var unobserved=inputs.filter(function(x){return x.available===null||x.nationalDemandPerDay===null;});
+    var operationalReadiness=operationalCapacityPreview(cid,profile,proposal.quantity);
     var capacity=profile.defaultCapacityPerDay===undefined?null:num(profile.defaultCapacityPerDay)*proposal.quantity;
     var constructionQuote=null;
     try{var n=network();if(n&&typeof n.factoryConstructionMaterialQuote==='function')constructionQuote=n.factoryConstructionMaterialQuote(cid,profile);}catch(_){}
@@ -192,7 +230,7 @@
       maximumPrivateUnits:maximumPrivate,maximumAdditionalUnits:maxAdditional,
       requestedDailyCapacity:capacity,constructionCostPerFactory:num(profile.constructionCost),capitalRequired:num(profile.constructionCost)===null?null:num(profile.constructionCost)*proposal.quantity,
       inputForecastDays:30,inputRequirements:inputs,shortages:deficits,unobservedInputs:unobserved,
-      constructionMaterials:constructionQuote,
+      constructionMaterials:constructionQuote,operationalReadiness:operationalReadiness,
       sourcingPolicy:proposal.sourcingPolicy,
       stateSupportRequested:proposal.stateSupportRequested===true,
       warnings:deficits.map(function(x){return{resourceId:x.resourceId,quantity:x.shortfall,forecastDays:30,reason:'INPUT_SUPPLY_DEFICIT'};}),
@@ -704,6 +742,11 @@
       var preview=previewFor(p);
       var shortages=(preview.shortages||[]).map(function(x){return'<span class="pe-warning">'+escapeHtml(x.resourceId)+': projected 30-day shortfall '+Number(x.shortfall).toLocaleString('en-US')+'</span>';}).join('');
       var unknown=(preview.unobservedInputs||[]).map(function(x){return'<span class="pe-info">'+(x.available===null?'Stock not observed: ':'Current demand forecast not observed: ')+escapeHtml(x.resourceId)+'; no quantity assumed</span>';}).join('');
+      var readinessRows=preview.operationalReadiness&&preview.operationalReadiness.requirements||[];
+      var readinessMarkup='<div class="pe-input-forecast"><strong>Construction and operating readiness · '+escapeHtml(preview.operationalReadiness&&preview.operationalReadiness.status||'UNOBSERVED')+'</strong>'+
+        readinessRows.map(function(x){return'<div class="pe-input-row"><span><b>'+escapeHtml(x.type)+'</b></span><span>Required<br><b>'+Number(x.required).toLocaleString('en-US')+' '+escapeHtml(x.unit)+'</b></span><span>Available<br><b>'+(x.available===null?'Not observed':Number(x.available).toLocaleString('en-US'))+'</b></span><span>Status<br><b>'+escapeHtml(x.status)+'</b></span></div>';}).join('')+
+        '<span class="pe-info">Infrastructure: '+escapeHtml((preview.operationalReadiness&&preview.operationalReadiness.infrastructure||[]).join(', ')||'Not recorded')+'</span>'+
+        '<span class="pe-info">Storage: '+escapeHtml(preview.operationalReadiness&&preview.operationalReadiness.storage&&preview.operationalReadiness.storage.status||'NOT_RECORDED')+'</span></div>';
       var inputDetails='<div class="pe-input-forecast"><strong>30-day input and domestic-supply preview</strong>'+(preview.inputRequirements||[]).map(function(x){
         var availableLabel=x.nationalDemandPerDay===null?'Available after protection · demand unobserved':'Domestic surplus after existing demand';
         var availableValue=x.available===null?'Not observed':Number(x.available).toLocaleString('en-US',{maximumFractionDigits:2});
@@ -718,7 +761,7 @@
       var capitalReceiptForm=p.status==='APPROVED_AWAITING_FUNDING'&&balance+1e-9<(num(p.capitalRequired)||0)
         ?'<form class="pe-capital-form" data-pe-capital-form data-pe-company="'+escapeHtml(p.companyId)+'"><label>Finance receipt transaction ID<input name="sourceTransactionId" type="text" maxlength="160" autocomplete="off" required></label><label>Settled amount ('+escapeHtml(p.capitalUnit)+')<input name="amount" type="number" min="0.01" step="any" inputmode="decimal" required></label><button type="submit">Verify company capital</button></form>'
         :'';
-      return'<article class="pe-proposal"><header><strong>'+escapeHtml(p.companyName)+'</strong><span>'+p.status.replace(/_/g,' ')+'</span></header>'+facts+inputDetails+shortages+unknown+capitalReceiptForm+'<div class="pe-actions">'+buttons+'</div></article>';
+      return'<article class="pe-proposal"><header><strong>'+escapeHtml(p.companyName)+'</strong><span>'+p.status.replace(/_/g,' ')+'</span></header>'+facts+readinessMarkup+inputDetails+shortages+unknown+capitalReceiptForm+'<div class="pe-actions">'+buttons+'</div></article>';
     }).join('')||'<div class="pe-empty">No company expansion proposal has been submitted for this country.</div>';
     var message=root.__omegaPrivateEnterpriseMessage?'<p class="pe-message" role="status">'+escapeHtml(root.__omegaPrivateEnterpriseMessage)+'</p>':'';
     var grantHelp='<small>State grant support is a real Treasury outflow and requires an explicit request plus approval. No company cash is assumed from the static opening allocation.</small>';
