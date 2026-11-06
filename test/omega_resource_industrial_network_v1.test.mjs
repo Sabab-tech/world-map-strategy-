@@ -328,6 +328,12 @@ assert.equal(openingRegistration.status,'COMPLETED',JSON.stringify(openingRegist
 const openingTextileFactory=sharedFactoryRegistry.find(asset=>
   asset.sourceType==='COUNTRY_STARTING_FACTORY_BASELINE'&&asset.factoryType==='TEXTILE_GARMENT_MILL');
 assert.ok(openingTextileFactory,'starting allocation must become a normal live factory asset');
+assert.equal(openingTextileFactory.ownerId,'STATE_INDUSTRY_BGD');
+assert.equal(openingTextileFactory.ownerType,'STATE_OWNED_ENTERPRISE');
+assert.equal(openingTextileFactory.operatorId,'STATE_INDUSTRY_BGD');
+assert.equal(openingTextileFactory.operatorType,'STATE_ENTERPRISE_OPERATOR');
+assert.equal(openingTextileFactory.companyId,'STATE_INDUSTRY_BGD');
+assert.equal(openingTextileFactory.stateControlRights.operationalControl,'STATE_OPERATOR');
 assert.ok(sharedFactoryRegistry.includes(fx),'the previously constructed factory must remain in the same registry');
 assert.ok(sharedFactoryRegistry.includes(openingTextileFactory),'the starting factory must join that registry');
 assert.strictEqual(context.Game.state.economy.BGD.productionAssets,sharedFactoryRegistry,
@@ -336,6 +342,23 @@ assert.ok(N.candidateFactories('BGD','cotton_fibre').some(row=>row.asset.id===op
   'the starting factory must be eligible in the same runtime input-routing and production path');
 assert.ok(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===fx.id),
   'the player-built factory must remain eligible in that same runtime path');
+
+// Simulate an older saved baseline asset that predates explicit owner/operator fields.
+// Re-registration must repair only this known government baseline record, without respawning it.
+['ownerId','ownerCompanyId','ownerType','operatorId','operatorCompanyId','operatorType','companyId',
+  'stateControlRights','ownershipMetadataAuthority'].forEach(key=>delete openingTextileFactory[key]);
+const repairedOpeningRegistration=N.registerStartingFactoryAssets({
+  countryId:'BGD',factoryCounts:openingFactoryCounts,sessionId:'SAME-RUNTIME-STARTING-FACTORY-TEST',
+  datasetVersion:'SAME_RUNTIME_BASELINE_V1'
+});
+assert.equal(repairedOpeningRegistration.status,'ALREADY_REGISTERED');
+assert.equal(openingTextileFactory.ownerId,'STATE_INDUSTRY_BGD');
+assert.equal(openingTextileFactory.operatorId,'STATE_INDUSTRY_BGD');
+assert.equal(openingTextileFactory.stateControlRights.authority,'OMEGA_STATE_FACTORY_OWNERSHIP_V1');
+assert.strictEqual(context.Game.state.economy.BGD.productionAssets,sharedFactoryRegistry,
+  'ownership repair must not replace or fork the shared production asset registry');
+assert.equal(sharedFactoryRegistry.filter(asset=>asset.sourceType==='COUNTRY_STARTING_FACTORY_BASELINE'&&
+  asset.factoryType==='TEXTILE_GARMENT_MILL').length,1,'legacy repair must not duplicate the baseline factory');
 
 const importCapability={technologyId:'AUTONOMOUS_MINE_HAULAGE',targetSiteId:'*',targetResourceId:'coal',targetSiteType:'*',status:'COMPLETE',effects:catalog.technologyProjects.AUTONOMOUS_MINE_HAULAGE.effects};
 context.Game.state.resource.USA={technologyCapabilities:[importCapability]};
