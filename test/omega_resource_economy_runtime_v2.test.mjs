@@ -208,7 +208,10 @@ test('export settlement replay is idempotent across company flows, Treasury clea
   const eventFor=totalValue=>new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{
     detail:{payload:{
       settlementId,sellerCountryId:'BGD',resourceId:'iron_ore',
-      totalValue,quantity:20,simulationTurn:1
+      totalValue,quantity:20,simulationTurn:1,
+      sourceBatchIds:['EXPORT-BATCH-1'],
+      batchTransfers:[{sourceBatchId:'EXPORT-BATCH-1',sourceBatchIds:['EXPORT-BATCH-1'],
+        ownerCompanyId:'MINER_CO',resourceId:'iron_ore',quantity:20}]
     }}
   });
   context.dispatchEvent(eventFor(200));
@@ -290,6 +293,40 @@ test('finished-goods economy ledger preserves owner and operator as separate par
   assert.equal(row.ownerCompanyId,'FACTORY_OWNER_CO');
   assert.equal(row.operatorCompanyId,'PROCESS_OPERATOR_CO');
   assert.equal(row.ownerAttributionStatus,'EXPLICIT_ASSET_OWNER');
+});
+test('export settlement blocks unknown and multiple batch owners instead of guessing a company',async()=>{
+  const {context,worldState}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  const beforeTreasury=worldState.finance.BGD.available;
+  const beforeCompanies=JSON.stringify(worldState.economy.BGD.companyAccounts||{});
+  const send=(payload)=>context.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{payload}}));
+
+  send({
+    settlementId:'EXPORT-UNKNOWN-OWNER',sellerCountryId:'BGD',resourceId:'iron_ore',
+    totalValue:200,quantity:20,sourceBatchIds:['UNKNOWN-BATCH'],
+    batchTransfers:[{sourceBatchId:'UNKNOWN-BATCH',resourceId:'iron_ore',quantity:20,ownerCompanyId:null}]
+  });
+  assert.equal(worldState.finance.BGD.available,beforeTreasury,'unknown batch ownership must not draw public Treasury');
+  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts||{}),beforeCompanies,
+    'unknown batch ownership must not create a company receipt');
+  let blocked=worldState.economy.BGD.industrialRuntime.tradeSettlementOwnershipFailures;
+  assert.equal(blocked.at(-1).settlementId,'EXPORT-UNKNOWN-OWNER');
+  assert.equal(blocked.at(-1).reason,'EXPORT_BATCH_OWNER_UNOBSERVED');
+
+  send({
+    settlementId:'EXPORT-MULTIPLE-OWNERS',sellerCountryId:'BGD',resourceId:'iron_ore',
+    totalValue:300,quantity:30,sourceBatchIds:['OWNER-A-BATCH','OWNER-B-BATCH'],
+    batchTransfers:[
+      {sourceBatchId:'OWNER-A-BATCH',resourceId:'iron_ore',quantity:15,ownerCompanyId:'OWNER_A'},
+      {sourceBatchId:'OWNER-B-BATCH',resourceId:'iron_ore',quantity:15,ownerCompanyId:'OWNER_B'}
+    ]
+  });
+  assert.equal(worldState.finance.BGD.available,beforeTreasury,'multi-owner export must not be credited to an arbitrary company');
+  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts||{}),beforeCompanies);
+  blocked=worldState.economy.BGD.industrialRuntime.tradeSettlementOwnershipFailures;
+  assert.equal(blocked.at(-1).settlementId,'EXPORT-MULTIPLE-OWNERS');
+  assert.equal(blocked.at(-1).reason,'EXPORT_MULTIPLE_BATCH_OWNERS_REQUIRE_ALLOCATION');
 });
 test('resource economy v2 completes mine-backed processing, domestic settlement and treasury receipt flow', async()=>{
   const {context,worldState}=createContext();
