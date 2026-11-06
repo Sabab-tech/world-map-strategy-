@@ -914,7 +914,7 @@
       rows=financeLedger(cid,false)||[],runtimeRows=account&&Array.isArray(account.cashFlowEntries)?account.cashFlowEntries:[],
       capexRows=rows.filter(function(row){return row&&id(row.companyId)===co&&row.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX'&&String(row.status||'').toUpperCase()==='POSTED';}),
       capex=capexRows.reduce(function(sum,row){return sum+(num(row.amount)||0);},0);
-    var revenue=0,cost=0,tax=0,worker=0,transport=0,other=0;
+    var revenue=0,cost=0,tax=0,worker=0,transport=0,inputMaterials=0,other=0;
     runtimeRows.forEach(function(row){
       if(!row||String(row.status||'').toUpperCase()!=='POSTED')return;
       var amount=num(row.amount);if(amount===null||amount<0)return;
@@ -926,6 +926,7 @@
           cost+=amount;
           if(category==='WORKER_INCOME')worker+=amount;
           else if(category==='TRANSPORT')transport+=amount;
+          else if(category==='FACTORY_INPUT_PURCHASE')inputMaterials+=amount;
           else other+=amount;
         }
       }
@@ -948,7 +949,7 @@
         entryCount:runtimeRows.length,recordedRevenue:cashFlowKnown?revenue:null,
         recordedOperatingCosts:cashFlowKnown?cost:null,recordedTaxPayments:cashFlowKnown?tax:null,
         workerCosts:cashFlowKnown?worker:null,transportCosts:cashFlowKnown?transport:null,
-        otherRecordedCosts:cashFlowKnown?other:null,
+        inputMaterialCosts:cashFlowKnown?inputMaterials:null,otherRecordedCosts:cashFlowKnown?other:null,
         currentCashBasisResult:cashFlowKnown?revenue-cost:null},
       constructionCapex:{amount:capex,transactionCount:capexRows.length,authority:'EXISTING_FINANCE_LEDGER'},
       capital:{availableBalance:capital?num(capital.availableBalance):null,
@@ -1020,6 +1021,11 @@
       return{status:'BLOCKED',reason:'SOVEREIGN_TREASURY_LEDGER_UNAVAILABLE',requiredTax:taxDue};
     if(taxDue>0&&!setTreasuryBalance(treasury,treasury.balance+taxDue))
       return{status:'BLOCKED',reason:'SOVEREIGN_TREASURY_CREDIT_FAILED',requiredTax:taxDue};
+    if(taxDue>0){
+      var treasuryFinance=financeBucket(cid,true);
+      treasuryFinance.taxRevenue=(num(treasuryFinance.taxRevenue)||0)+taxDue;
+      treasuryFinance.revenue=(num(treasuryFinance.revenue)||0)+taxDue;
+    }
     var taxTransactionId='PE-CORPORATE-TAX:'+cid+':'+co+':T'+endTurn;
     if(taxDue>0){
       financeRows.push({transactionId:taxTransactionId,type:'PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX',
