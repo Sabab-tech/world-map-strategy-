@@ -1194,11 +1194,12 @@
       }
     });
     var accruedOperatingCosts=periodCosts.reduce(function(sum,row){return sum+(num(row.amount)||0);},0);
-    var profitBeforeTax=revenue-cost-accruedOperatingCosts-existingTax,carried=num(capital.retainedEarningsBalance)||0;
+    var profitBeforeTax=revenue-cost-accruedOperatingCosts,carried=num(capital.retainedEarningsBalance)||0;
     var taxableProfit=Math.max(0,profitBeforeTax+Math.min(0,carried));
     var policy=companyTaxRate(cid),rate=policy.rate;
     if(rate===null||rate<0||rate>0.60)return{status:'BLOCKED',reason:'CORPORATE_PROFIT_TAX_RATE_INVALID',rate:rate};
-    var taxDue=Number((taxableProfit*rate).toFixed(2));
+    var grossTaxLiability=Number((taxableProfit*rate).toFixed(2));
+    var taxDue=Number(Math.max(0,grossTaxLiability-existingTax).toFixed(2));
     var periodNetCash=revenue-cost-existingTax;
     if(taxDue>periodNetCash+1e-9)
       return{status:'BLOCKED',reason:'INSUFFICIENT_REALIZED_COMPANY_CASH_FOR_TAX',available:periodNetCash,required:taxDue};
@@ -1226,7 +1227,7 @@
         category:'CORPORATE_PROFIT_TAX',currency:capital.currency||'GAME_CURRENCY_UNITS',
         sourceId:periodId,turn:endTurn,status:'POSTED',authority:'OMEGA_PRIVATE_ENTERPRISE_CASH_BASIS_TAX_V1'});
     }
-    var retainedAfter=carried+profitBeforeTax-taxDue;
+    var retainedAfter=carried+profitBeforeTax-existingTax-taxDue;
     capital.retainedEarningsBalance=Number(retainedAfter.toFixed(2));
     capital.retainedEarningsCurrency=capital.currency||'GAME_CURRENCY_UNITS';
     capital.lastFinancialCloseTurn=endTurn;
@@ -1241,7 +1242,8 @@
       grossReceipts:Number(revenue.toFixed(2)),operatingCosts:Number((cost+accruedOperatingCosts).toFixed(2)),
       cashOperatingCosts:Number(cost.toFixed(2)),accruedOperatingCosts:Number(accruedOperatingCosts.toFixed(2)),
       accruedCostByCategory:periodCosts.reduce(function(out,row){var key=String(row.category||'OTHER').toUpperCase();out[key]=(out[key]||0)+(num(row.amount)||0);return out;},{}),
-      otherTaxPaidBeforeClose:Number(existingTax.toFixed(2)),
+      grossTaxLiability:Number(grossTaxLiability.toFixed(2)),otherTaxPaidBeforeClose:Number(existingTax.toFixed(2)),
+      totalTaxPaidAfterClose:Number((existingTax+taxDue).toFixed(2)),
       profitBeforeTax:Number(profitBeforeTax.toFixed(2)),taxableProfit:Number(taxableProfit.toFixed(2)),
       corporateTaxRate:rate,taxRateSource:policy.source,corporateTaxPaid:taxDue,
       retainedEarningsAfter:capital.retainedEarningsBalance,
