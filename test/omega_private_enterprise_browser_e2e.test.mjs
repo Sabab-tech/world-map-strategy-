@@ -232,7 +232,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
           row.companyId === criteria.owner &&
           row.operatorCompanyId === criteria.operator &&
           row.factoryType === criteria.factoryType &&
-          !beforeProposalIds.includes(row.proposalId)).length,
+          !criteria.beforeProposalIds.includes(row.proposalId)).length,
         foreignCountry: JSON.stringify({
           inventory: state.resource?.USA?.inventory || {},
           warehouse: state.resource?.USA?.warehouse || {},
@@ -244,7 +244,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
           row.operatorCompanyId === criteria.operator &&
           row.factoryType === criteria.factoryType) || null
       };
-    }, { owner: companyOptions[0], operator: companyOptions[1], factoryType: selectedFactoryType });
+    }, { owner: companyOptions[0], operator: companyOptions[1], factoryType: selectedFactoryType, beforeProposalIds: before.proposalIds });
     assert.ok(after.proposal, 'the real browser form must create the exact submitted owner/operator/factory proposal');
     assert.equal(after.proposalCount, before.proposalCount + 1,
       'one manual proposal submission must append exactly one record without duplicate submission');
