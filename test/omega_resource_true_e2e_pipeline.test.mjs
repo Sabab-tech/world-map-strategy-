@@ -124,6 +124,10 @@ function buildContext(){
   }
   const context={
     console,Math,Number,String,Object,Array,Set,Map,WeakMap,Promise,JSON,Date,Intl,CustomEvent:CustomEventMock,
+    // The canonical baseline loaders use bounded fetch timers and abort signals.
+    // Provide the real Node timer APIs to this VM instead of making production
+    // initialization fail with TIMEOUT_UNAVAILABLE in the E2E harness.
+    setTimeout,clearTimeout,AbortController,
     fetch:fetchLocal,addEventListener:events.addEventListener.bind(events),dispatchEvent:events.dispatchEvent.bind(events),
     Game:{state},gameState:state,Omega:{MinistryInteroperability:interop,CanonicalIdentity:identity},
     OmegaMinistryInteroperability:interop,OmegaCanonicalIdentityRegistry:identity,ResourceMinistryEngine:engine,

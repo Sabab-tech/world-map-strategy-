@@ -785,13 +785,9 @@
       var rows = Array.isArray(asset.inputRows) ? asset.inputRows : [];
       return Object.keys(inventory).length > 0 || lots.length > 0 || rows.length > 0;
     }) : assets;
-    var countAssets = activeTab === 'inventory' ? assets.map(function (asset) {
-      var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
-      var type = normalizeFactoryType(rawType, catalog) || rawType;
-      return {id:String(asset.id || asset.assetId || asset.projectId || ''),
-        type:type || 'Not recorded',status:String(asset.status || 'NOT_RECORDED'),
-        raw:asset,name:String(asset.name || asset.factoryName || type || 'Factory')};
-    }) : null;
+    // Input totals use the authoritative asset rows directly. Avoid creating a
+    // second full descriptor object for every factory just to count by type.
+    var countAssets = activeTab === 'inventory' ? assets : null;
     if (activeTab === 'inventory' && resourceBatches.length) {
       var inputSourceBatchIds = Object.create(null);
       viewAssets.forEach(function (asset) {
@@ -953,28 +949,27 @@
     var currentExtractionRows = currentExtraction.rows;
     var operatingMineCount = mineAssets.filter(function (asset) { return /^(OPERATIONAL|ACTIVE|RUNNING)$/.test(String(asset.status || '').toUpperCase()); }).length;
     var factoryTypeCountsIndex = Object.create(null);
-    (countAssets || mappedAssets).forEach(function (factory) {
-      var typeKey = normalizeFactoryType(factory.type || '', catalog) || String(factory.type || 'NOT_RECORDED').trim().toUpperCase() || 'NOT_RECORDED';
-      if (!factoryTypeCountsIndex[typeKey]) {
-        var profile = profiles[typeKey] || profiles[factory.type] || {};
-        factoryTypeCountsIndex[typeKey] = { type: typeKey, name: String(profile.name || factory.type || 'Not recorded'), count: 0 };
-      }
-      factoryTypeCountsIndex[typeKey].count += 1;
-    });
-    // Pre-index non-baseline commissioned assets once. The old per-category filter
-    // rescanned the full productionAssets array 21 times during every Industry render,
-    // which made low-memory Android WebViews spend seconds in synchronous JS work.
     var nonBaselineActiveCountsByType = Object.create(null);
     var startingAssetCountsByType = Object.create(null);
+    // One pass builds the type totals and the baseline/non-baseline split. This
+    // avoids temporary maps and repeated scans of a large active-country registry.
     (countAssets || mappedAssets).forEach(function (factory) {
-      var sourceType = String(factory.raw && factory.raw.sourceType || '').toUpperCase();
-      var key = normalizeFactoryType(factory.type || '', catalog);
-      if (!key) return;
-      if (sourceType === 'COUNTRY_STARTING_FACTORY_BASELINE') {
-        startingAssetCountsByType[key] = (Number(startingAssetCountsByType[key]) || 0) + 1;
-        return;
+      var source = factory && factory.raw && typeof factory.raw === 'object' ? factory.raw : factory;
+      var rawType = String(source.factoryType || source.type || source.facilityType || factory.type || '');
+      var typeKey = normalizeFactoryType(rawType, catalog) || rawType.trim().toUpperCase() || 'NOT_RECORDED';
+      if (!factoryTypeCountsIndex[typeKey]) {
+        var profile = profiles[typeKey] || profiles[rawType] || {};
+        factoryTypeCountsIndex[typeKey] = { type: typeKey,
+          name: String(profile.name || source.name || source.factoryName || rawType || 'Not recorded'), count: 0 };
       }
-      nonBaselineActiveCountsByType[key] = (Number(nonBaselineActiveCountsByType[key]) || 0) + 1;
+      factoryTypeCountsIndex[typeKey].count += 1;
+      var key = normalizeFactoryType(rawType, catalog);
+      if (!key) return;
+      if (String(source.sourceType || '').toUpperCase() === 'COUNTRY_STARTING_FACTORY_BASELINE') {
+        startingAssetCountsByType[key] = (Number(startingAssetCountsByType[key]) || 0) + 1;
+      } else {
+        nonBaselineActiveCountsByType[key] = (Number(nonBaselineActiveCountsByType[key]) || 0) + 1;
+      }
     });
     // The baseline runtime already owns the country's factory counts. Use it only
     // to restore card display when starting asset records are absent. Once the
