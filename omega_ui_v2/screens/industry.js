@@ -826,12 +826,18 @@
     var processingRules = catalog.processingRules && typeof catalog.processingRules === 'object' ? catalog.processingRules : {};
     var flows = !optimizedFactoryRead && activeTab === 'factories' && !lightweightTypeView ? (Array.isArray(industrial.siteFlowLedger)
       ? industrial.siteFlowLedger : (Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger : [])) : [];
-    var mappedAssets = lightweightTypeView || activeTab === 'production-lines' ? assets.map(function (asset) {
+    var mappedAssets = lightweightTypeView || activeTab === 'production-lines' || stockSummaryView ? assets.map(function (asset) {
       asset = asset && typeof asset === 'object' ? asset : {};
       var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
       var type = normalizeFactoryType(rawType, catalog) || rawType;
+      var profile = profiles[type] || profiles[rawType.toUpperCase()] || profiles[rawType] || {};
+      var capacityPerDay = num(asset.capacityPerDay !== undefined ? asset.capacityPerDay :
+        asset.capacity !== undefined ? asset.capacity : asset.productionCapacity);
+      if (capacityPerDay === null) capacityPerDay = num(profile.defaultCapacityPerDay);
       return { id:String(asset.id || asset.assetId || asset.projectId || ''), type:type || 'Not recorded',
-        status:String(asset.status || 'NOT_RECORDED'), raw:asset, name:String(asset.name || asset.factoryName || type || 'Factory') };
+        status:String(asset.status || 'NOT_RECORDED'), capacityPerDay:capacityPerDay,
+        recipeId:String(asset.recipeId || profile.defaultRecipeId || ''), lastRun:asset.lastRun || null,
+        raw:asset, name:String(asset.name || asset.factoryName || profile.name || type || 'Factory') };
     }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); }) : activeTab === 'national-inventory' ? viewAssets.map(function (asset) {
       asset = asset && typeof asset === 'object' ? asset : {};
       var id = String(asset.id || asset.assetId || asset.projectId || '');
