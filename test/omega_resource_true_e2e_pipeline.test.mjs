@@ -659,8 +659,11 @@ test('playable site-marker execution flows through extraction, logistics, factor
   assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.inventory)),expectedInventory,'raw and finished inventory must be restored without quantity drift');
   assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.processedWarehouse.availableByResource)),expectedProcessedWarehouse);
   assert.equal(restoredResource.finishedGoodsLedger.length,expectedFinishedLedgerCount);
-  assert.deepEqual(restoredResource.batches.filter(row=>row.stage==='FINISHED'&&row.sourceBatchIds?.includes(run.batchId))
-    .map(row=>String(row.batchId)).sort(),expectedFinishedBatchIds);
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.batches
+    .filter(row=>row.stage==='FINISHED'&&row.sourceBatchIds?.includes(run.batchId))
+    .map(row=>String(row.batchId)).sort())),
+    JSON.parse(JSON.stringify(expectedFinishedBatchIds)),
+    'finished-goods IDs and source-batch ancestry must survive save/load without cross-realm comparison artifacts');
   const restoredFactory=restored.economy.BGD.productionAssets.find(row=>String(row.id||row.assetId||row.projectId)===String(run.factoryId));
   assert.ok(restoredFactory,'the same receiving factory must survive the canonical save/load');
   const restoredOffer=(restored.trade.BGD.offerBook||[]).find(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0);
