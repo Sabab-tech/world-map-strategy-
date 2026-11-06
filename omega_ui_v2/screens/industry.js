@@ -3558,7 +3558,7 @@
     var privateRuntime = g.OmegaPrivateEnterpriseRegistryV1 ||
       (g.Omega && g.Omega.PrivateEnterpriseRegistryV1) || null;
     // The private 197-country baseline is not needed to render the regular
-    // Factory screen. Fetch and validate it only after the player opens Companies.
+    // Factory screen. Fetch and validate it only after the player opens a factory card's Manage action.
     var requestedTab = String(options && options.tab || root.__omegaV2IndustryTab || 'factories');
     var factoryManageOpened = !!(root.__omegaV2FactoryCardUiState && root.__omegaV2FactoryCardUiState.buildKey);
     if ((requestedTab === 'companies' || factoryManageOpened) &&
