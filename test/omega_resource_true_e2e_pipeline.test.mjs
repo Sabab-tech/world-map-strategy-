@@ -248,7 +248,7 @@ function attachPlayableResourceSiteUi(h){
   };
 }
 
-test('playable site-marker execution flows through extraction, logistics, factory, output and save/load',async()=>{
+test('playable mine extraction feeds a commissioned private factory through production, finished goods and save/load',async()=>{
   const h=buildContext(),g=h.context,state=h.state;
   const modules=[
     'omega_resource_part04_identity_runtime.js',
@@ -260,7 +260,8 @@ test('playable site-marker execution flows through extraction, logistics, factor
     'omega_resource_country_boundary_guard.js',
     'omega_resource_endowment_runtime.js',
     'omega_resource_industrial_network_v1.js',
-    'omega_resource_economy_runtime_v2.js'
+    'omega_resource_economy_runtime_v2.js',
+    'omega_private_enterprise_lifecycle_v1.js'
   ];
   for(const file of modules)vm.runInContext(readText(file),g,{filename:file});
   const endowment=g.OmegaResourceEndowmentRuntime||g.Omega?.ResourceEndowmentRuntime;
@@ -307,24 +308,100 @@ test('playable site-marker execution flows through extraction, logistics, factor
   assert.equal(state.resource.KWT,foreignStateBeforeTick,'the non-selected country must not be hydrated or mutated');
   const catalogLoad=await industry.loadCatalog();
   assert.equal(catalogLoad.status,'READY',JSON.stringify(catalogLoad));
-  // Use the same simulated country-opening factory registration path as a new game.
-  // This proof must not use executeSitePipeline's test-only autoCommissionFactory shortcut.
+  // Commission a real private factory through proposal, permit, Finance funding,
+  // canonical construction, project completion and the live production gate.
+  // Test-only imported batches provide controlled opening stock; the mine marker
+  // below then adds a separately traceable extraction batch to this same factory.
   const factoryProfiles=g.OmegaResourceIndustrialCatalogData?.factoryProfiles||g.Omega?.ResourceIndustrialCatalogData?.factoryProfiles||{};
   const factoryTypes=Object.keys(factoryProfiles).sort();
   assert.equal(factoryTypes.length,21,'the playable factory registration must retain the canonical 21-type catalog');
-  const openingFactoryCounts=Object.fromEntries(factoryTypes.map(type=>[
-    type,type==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'?1:0
-  ]));
-  const openingFactories=industry.registerStartingFactoryAssets({
-    countryId:'BGD',factoryCounts:openingFactoryCounts,
-    datasetVersion:'OMEGA_COUNTRY_FACTORY_STARTING_BASELINE_V1',
-    sessionId:'SAB34-PLAYABLE-PIPELINE-PROOF'
-  });
-  assert.ok(['COMPLETED','COMPLETED_WITH_GAPS'].includes(openingFactories.status),JSON.stringify(openingFactories));
-  assert.equal(openingFactories.createdCount,1,'one catalog-backed opening processor must be registered for the coal route');
-  const openingFactory=state.economy.BGD.productionAssets.find(row=>
-    row.sourceType==='COUNTRY_STARTING_FACTORY_BASELINE'&&row.factoryType==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT');
-  assert.ok(openingFactory,'the pipeline must use a normal country opening factory asset');
+  const privateProfile=factoryProfiles.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT;
+  assert.ok(privateProfile,'the canonical universal processor must exist in the fixed catalog');
+  const countryResource=state.resource.BGD;
+  countryResource.inventory=countryResource.inventory||{};
+  countryResource.warehouse=countryResource.warehouse||{
+    warehouseId:'WH-BGD-RAW',countryId:'BGD',type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
+    availableByResource:{},reservedByResource:{},receipts:[]
+  };
+  countryResource.warehouse.availableByResource=countryResource.warehouse.availableByResource||{};
+  countryResource.warehouse.reservedByResource=countryResource.warehouse.reservedByResource||{};
+  countryResource.batches=Array.isArray(countryResource.batches)?countryResource.batches:[];
+  countryResource.inventoryLots=countryResource.inventoryLots||{};
+  const privateStartupStock={...privateProfile.constructionMaterials,coal:60000};
+  for(const [resourceId,rawQuantity] of Object.entries(privateStartupStock)){
+    const quantity=Number(rawQuantity);
+    assert.ok(Number.isFinite(quantity)&&quantity>0,'private construction and production stock must be positive: '+resourceId);
+    const batchId='TEST-PRIVATE-OPENING-STOCK:BGD:'+resourceId.toUpperCase();
+    const previousBatch=countryResource.batches.find(row=>row.batchId===batchId);
+    assert.equal(previousBatch,undefined,'opening-stock fixture must not duplicate a tracked source batch');
+    const priorInventory=Number(countryResource.inventory[resourceId])||0;
+    const priorWarehouse=Number(countryResource.warehouse.availableByResource[resourceId])||0;
+    const priorReserved=Number(countryResource.warehouse.reservedByResource[resourceId])||0;
+    countryResource.inventory[resourceId]=priorInventory+quantity;
+    countryResource.warehouse.availableByResource[resourceId]=priorWarehouse+quantity;
+    const batch={batchId,resourceId,countryId:'BGD',ownerCountryCode:'BGD',sourceCountryId:'BGD',
+      quantity,remainingQuantity:quantity,unit:'SIMULATION_RESOURCE_UNIT',stage:'RAW_INVENTORY',
+      status:'AVAILABLE',warehouseId:'WH-BGD-RAW',sourceType:'TEST_FIXTURE_IMPORT',
+      provenance:{sourceAuthority:'TEST_FIXTURE_IMPORT',sourceType:'SIMULATED_OPENING_IMPORT',
+        simulationOnly:true,authority:'OMEGA_PRIVATE_FACTORY_E2E_FIXTURE'},
+      createdTurn:Number(state.simulation.turn)||1};
+    countryResource.batches.push(batch);
+    countryResource.inventoryLots[batchId]={batchId,resourceId,countryId:'BGD',quantity,remainingQuantity:quantity,
+      unit:batch.unit,stage:'RAW_INVENTORY',status:'AVAILABLE',warehouseId:'WH-BGD-RAW',
+      sourceType:batch.sourceType,provenance:{...batch.provenance}};
+    assert.ok(countryResource.warehouse.availableByResource[resourceId]-priorReserved>=quantity,
+      'tracked imported stock must be available outside reservations');
+  }
+  const lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1;
+  assert.ok(lifecycle,'the real private-enterprise lifecycle must be mounted beside the production runtime');
+  assert.equal(lifecycle.productionProofReady(),true,
+    'private production must bind to the actual catalog, logistics, cycle and output runtime');
+  const proposal=lifecycle.createProposal({countryId:'BGD',companyId:'NOVA_CONSUMER_INDUSTRIES',
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+    processingResourceId:'coal',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
+  assert.equal(proposal.status,'PROPOSED',JSON.stringify(proposal));
+  const decision=lifecycle.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
+    allowStateSupport:true,conditions:{allowStateSupport:true}});
+  assert.equal(decision.status,'APPROVED_AWAITING_FUNDING',JSON.stringify(decision));
+  const funding=lifecycle.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,
+    sourceType:'GOVERNMENT_GRANT',amount:proposal.capitalRequired});
+  assert.equal(funding.status,'FUNDED',JSON.stringify(funding));
+  const construction=lifecycle.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+  assert.equal(construction.status,'UNDER_CONSTRUCTION',JSON.stringify(construction));
+  assert.equal(construction.started.length,1);
+  const privateProjectId=construction.started[0].projectId;
+  const privateProject=countryResource.industrialNetwork.projects.find(row=>row.projectId===privateProjectId);
+  assert.ok(privateProject,'private construction must be persisted in the canonical industrial project ledger');
+  assert.equal(privateProject.constructionMaterialsStatus,'CONSUMED');
+  assert.equal(privateProject.ownerType,'PRIVATE_ENTERPRISE');
+  assert.equal(privateProject.operatorType,'PRIVATE_COMPANY_OPERATOR');
+  assert.equal(privateProject.stateControlRights.strategicSupplyOversight,true);
+  assert.equal(privateProject.stateControlRights.foreignOwnershipReview,true);
+  for(let turn=0;turn<6;turn++){
+    advanceOneGameTurn(state);
+    const progress=await industry.advanceProjects('BGD');
+    assert.ok(Array.isArray(progress.completed),JSON.stringify(progress));
+  }
+  assert.ok(countryResource.industrialNetwork.projects.find(row=>row.projectId===privateProjectId)?.status==='COMPLETED',
+    'the canonical construction project must finish before its asset is accepted');
+  const privateFactory=state.economy.BGD.productionAssets.find(row=>row.constructionProjectId===privateProjectId);
+  assert.ok(privateFactory,'completed private construction must commission into canonical productionAssets');
+  assert.equal(privateFactory.ownerCompanyId,'NOVA_CONSUMER_INDUSTRIES');
+  assert.equal(privateFactory.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+  assert.equal(privateFactory.ownerType,'PRIVATE_ENTERPRISE');
+  assert.equal(privateFactory.operatorType,'PRIVATE_COMPANY_OPERATOR');
+  assert.equal(privateFactory.privatePermitStatus,'ACTIVE');
+  assert.equal(privateFactory.sourcePrivateProposalId,proposal.proposalId);
+  assert.equal(privateFactory.sourcePrivateDecisionId,decision.proposal.decision.decisionId);
+  assert.equal(privateFactory.sourcePrivateFundingId,funding.transactionId);
+  assert.equal(privateFactory.status,'OPERATIONAL');
+  assert.equal(privateFactory.productionEnabled,true,
+    'a commissioned private factory must be enabled by the real production runtime, not an injected proof flag');
+  assert.equal(privateFactory.blockedReason,null);
+  assert.equal(lifecycle.getProposal('BGD',proposal.proposalId).status,'COMMISSIONED');
+  assert.equal(countryResource.batches.some(row=>row.lastMovementType==='FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION'),
+    true,'private construction must consume tracked construction-material batches');
+  const openingFactory=privateFactory;
   const rawInventoryBeforeMinePipeline=Number(state.resource.BGD?.inventory?.coal)||0;
   const rawWarehouseBeforeMinePipeline=Number(state.resource.BGD?.warehouse?.availableByResource?.coal)||0;
 
