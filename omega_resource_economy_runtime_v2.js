@@ -170,7 +170,12 @@
     if(Array.isArray(mines))for(var i=0;i<mines.length;i++)if(tok(mines[i].resourceId)===tok(rid)&&(mines[i].operatorKey||mines[i].ownerKey))return String(mines[i].operatorKey||mines[i].ownerKey);
     return 'STATE_RESOURCE_POOL_'+canonical(c);
   }
-  function assetCompany(c,a){return String((a&&(a.companyId||a.ownerId||a.operatorId||a.company))||('STATE_INDUSTRY_'+canonical(c)));}
+  function assetCompany(c,a){
+    // Cash-flow attribution follows the operating entity. Ownership and state
+    // control rights remain separate; legacy companyId is the compatibility fallback.
+    return String((a&&(a.operatorCompanyId||a.operatorId||a.companyId||a.ownerCompanyId||a.ownerId||a.company))||
+      ('STATE_INDUSTRY_'+canonical(c)));
+  }
   function sovereignCompany(x){return /^STATE_|^GOVERNMENT_/i.test(String(x||''));}
 
   // Mine-logistics batches can span mine-held cargo, in-transit cargo, and received
