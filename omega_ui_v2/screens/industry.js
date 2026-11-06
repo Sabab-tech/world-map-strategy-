@@ -2017,7 +2017,9 @@
   }
 
   function factoryInputLiveRiskStatus(model, productId) {
-    var factories = Array.isArray(model && model.factories) ? model.factories : [];
+    // Only inspect factories which actually declare this input. The old all-factory
+    // scan repeated once per product made the Input panel quadratic on large saves.
+    var factories = factoryInputFactoriesForProduct(model, productId);
     for (var index = 0; index < factories.length; index += 1) {
       var factory = factories[index];
       var coefficient = factoryInputCoefficientFor(factory, productId);
@@ -2041,7 +2043,9 @@
   }
 
   function factoryInputAggregateSourceMarkup(model, productId) {
-    var grouped = Object.create(null), factories = Array.isArray(model && model.factories) ? model.factories : [];
+    // Reuse the per-model input-product index instead of rescanning every factory
+    // for every planned input product.
+    var grouped = Object.create(null), factories = factoryInputFactoriesForProduct(model, productId);
     factories.forEach(function (factory) {
       var coefficient = factoryInputCoefficientFor(factory, productId);
       var hasLot = (Array.isArray(factory.inputLots) ? factory.inputLots : []).some(function (lot) {
