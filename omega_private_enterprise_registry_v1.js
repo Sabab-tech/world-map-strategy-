@@ -61,7 +61,7 @@ function getCountryBaseline(countryId){
  if(!row)return null;
  return{status:'READY',countryId:row.countryId,countryName:row.countryName,industryArchetype:row.industryArchetype,
  totalGovernmentFactoryUnits:row.totalGovernmentFactoryUnits,totalPrivateFactoryUnits:row.totalPrivateFactoryUnits,
- privateToGovernmentBaselinePercent:row.privateToGovernmentBaselinePercent,factoryCounts:clone(row.factoryCounts),
+ privateToGovernmentBaselinePercent:row.privateToGovernmentBaselinePercent,governmentFactoryCounts:clone((governmentApi().getCountryBaseline(row.countryId)||{}).factoryCounts||{}),factoryCounts:clone(row.factoryCounts),
  categoryParticipationPercent:clone(row.categoryParticipationPercent),
  companies:loaded.companies.map(function(company){var counts=clone(row.companyFactoryCounts[company.id]||{});return{companyId:company.id,companyName:company.name,sectorAffinity:company.sectorAffinity,factoryCounts:counts,totalFactoryUnits:Object.keys(counts).reduce(function(s,k){return s+Number(counts[k]||0);},0)};}),
  allocationStatus:row.allocationStatus,ownershipStatus:'STATIC_STARTING_ALLOCATION_NOT_COMMISSIONED',productionEnabled:false,
