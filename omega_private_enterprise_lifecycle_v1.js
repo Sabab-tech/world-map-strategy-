@@ -814,7 +814,6 @@
        project.privatePermitAuthority!==permit.authority||
        String(project.stateControlRights?.operationalControl||'').toUpperCase()!=='STATE_POLICY_ONLY'||
        project.stateControlRights?.authority!=='OMEGA_STATE_CONTROL_RIGHTS_V1')return null;
-    var productionReady=productionProofReady();
     asset.ownerId=company;asset.ownerCompanyId=company;asset.ownerType='PRIVATE_ENTERPRISE';
     asset.operatorId=operatorCompany;asset.operatorCompanyId=operatorCompany;asset.operatorType='PRIVATE_COMPANY_OPERATOR';
     asset.companyId=operatorCompany;asset.stateControlRights=clone(project.stateControlRights||{});
