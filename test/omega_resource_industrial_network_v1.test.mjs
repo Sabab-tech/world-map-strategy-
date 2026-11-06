@@ -361,6 +361,11 @@ assert.ok(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===fx.id)
 // Re-registration must repair only this known government baseline record, without respawning it.
 ['ownerId','ownerCompanyId','ownerType','operatorId','operatorCompanyId','operatorType','companyId',
   'stateControlRights','ownershipMetadataAuthority'].forEach(key=>delete openingTextileFactory[key]);
+const legacyEpcFactory={
+  id:'LEGACY-EPC-FACTORY',countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+  status:'OPERATIONAL',authority:'SIMULATED_FACTORY_ASSET',companyId:'EPC_FACTORY_OWNER'
+};
+sharedFactoryRegistry.push(legacyEpcFactory);
 const repairedOpeningRegistration=N.registerStartingFactoryAssets({
   countryId:'BGD',factoryCounts:openingFactoryCounts,sessionId:'SAME-RUNTIME-STARTING-FACTORY-TEST',
   datasetVersion:'SAME_RUNTIME_BASELINE_V1'
@@ -369,6 +374,13 @@ assert.equal(repairedOpeningRegistration.status,'ALREADY_REGISTERED');
 assert.equal(openingTextileFactory.ownerId,'STATE_INDUSTRY_BGD');
 assert.equal(openingTextileFactory.operatorId,'STATE_INDUSTRY_BGD');
 assert.equal(openingTextileFactory.stateControlRights.authority,'OMEGA_STATE_FACTORY_OWNERSHIP_V1');
+assert.equal(legacyEpcFactory.ownerId,'STATE_INDUSTRY_BGD',
+  'legacy EPC sentinel must be migrated to the state owner, not retained as a private owner');
+assert.equal(legacyEpcFactory.operatorId,'STATE_INDUSTRY_BGD');
+assert.equal(legacyEpcFactory.companyId,'STATE_INDUSTRY_BGD',
+  'the compatibility operating-company field must no longer point to the EPC sentinel');
+assert.equal(legacyEpcFactory.legacyCompanyAttributionId,'EPC_FACTORY_OWNER',
+  'the historical sentinel must remain auditable after migration');
 assert.strictEqual(context.Game.state.economy.BGD.productionAssets,sharedFactoryRegistry,
   'ownership repair must not replace or fork the shared production asset registry');
 assert.equal(sharedFactoryRegistry.filter(asset=>asset.sourceType==='COUNTRY_STARTING_FACTORY_BASELINE'&&
