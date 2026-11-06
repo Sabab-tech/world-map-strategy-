@@ -71,10 +71,37 @@
     if(!obj(root.companyCapitalAccounts)&&create)root.companyCapitalAccounts={};
     return obj(root.companyCapitalAccounts)?root.companyCapitalAccounts:null;
   }
+  function estimateCompanyCapitalReservation(country,company){
+    var r=runtime(country,false),rows=financeLedger(country,false)||[],reserved=0;
+    (r&&Array.isArray(r.proposals)?r.proposals:[]).forEach(function(proposal){
+      if(id(proposal.companyId)!==id(company)||!proposal.funding||proposal.funding.status!=='FUNDED'||
+         ['FUNDED','UNDER_CONSTRUCTION','PARTIALLY_UNDER_CONSTRUCTION'].indexOf(proposal.status)<0)return;
+      var committed=Math.max(0,num(proposal.funding.amount)||0);
+      var spent=rows.filter(function(row){return row&&row.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX'&&
+        row.proposalId===proposal.proposalId&&id(row.companyId)===id(company)&&String(row.status||'').toUpperCase()==='POSTED';})
+        .reduce(function(total,row){return total+Math.max(0,num(row.amount)||0);},0);
+      reserved+=Math.max(0,committed-spent);
+    });
+    return reserved;
+  }
+  function normalizeCapitalReservation(country,company,account){
+    if(!account)return 0;
+    if(num(account.reservedBalance)===null){
+      var migrated=estimateCompanyCapitalReservation(country,company);
+      account.reservedBalance=migrated;
+      if(migrated>0){
+        account.availableBalance=Math.max(0,(num(account.availableBalance)||0)-migrated);
+        account.revision=(num(account.revision)||0)+1;
+      }
+    }
+    return Math.max(0,num(account.reservedBalance)||0);
+  }
   function capitalAccount(country,company,create){
     var all=capitalAccounts(country,create);if(!all)return null;
-    if(!obj(all[company])&&create)all[company]={companyId:company,currency:'GAME_CURRENCY_UNITS',availableBalance:0,capitalRaised:0,capitalSpent:0,revision:0};
-    return obj(all[company])?all[company]:null;
+    if(!obj(all[company])&&create)all[company]={companyId:company,currency:'GAME_CURRENCY_UNITS',availableBalance:0,reservedBalance:0,capitalRaised:0,capitalSpent:0,revision:0};
+    if(!obj(all[company]))return null;
+    normalizeCapitalReservation(country,company,all[company]);
+    return all[company];
   }
   function financeLedger(country,create){
     var root=financeRoot(country,create);if(!root)return null;
@@ -463,6 +490,11 @@
     if(proposal.status!=='APPROVED_AWAITING_FUNDING')return{status:'BLOCKED',reason:'PROPOSAL_NOT_APPROVED'};
     var amount=num(input.amount);if(amount===null||amount<=0||proposal.capitalRequired===null||Math.abs(amount-proposal.capitalRequired)>1e-6)
       return{status:'BLOCKED',reason:'FULL_CAPITAL_COMMITMENT_REQUIRED',required:proposal.capitalRequired,provided:amount};
+    var permit=proposal.permit;
+    if(!permit||permit.status!=='ACTIVE'||!proposal.decision||permit.permitId!==proposal.decision.permitId)
+      return{status:'BLOCKED',reason:'ACTIVE_GOVERNMENT_PERMIT_REQUIRED'};
+    if(num(permit.expiresAtTurn)===null||turn()>num(permit.expiresAtTurn))
+      return{status:'BLOCKED',reason:'GOVERNMENT_PERMIT_EXPIRED',permitId:permit.permitId,expiresAtTurn:permit.expiresAtTurn};
     var sourceType=String(input.sourceType||'COMPANY_CAPITAL').toUpperCase(),account=capitalAccount(cid,proposal.companyId,true);
     var transactionId='PE-FUNDING:'+proposal.proposalId+':'+proposal.decision.decisionId;
     var ledger=financeLedger(cid,true);
@@ -472,16 +504,24 @@
       var treasury=financeTreasury(cid);
       if(treasury.balance===null)return{status:'BLOCKED',reason:'TREASURY_BALANCE_UNAVAILABLE'};
       if(treasury.balance+1e-9<amount)return{status:'BLOCKED',reason:'INSUFFICIENT_TREASURY_BALANCE',available:treasury.balance,required:amount};
-      setTreasuryBalance(treasury,treasury.balance-amount);
-      account.availableBalance+=amount;account.capitalRaised+=amount;account.revision++;
+      if(!setTreasuryBalance(treasury,treasury.balance-amount))
+        return{status:'BLOCKED',reason:'TREASURY_DEBIT_FAILED'};
+      account.availableBalance+=amount;account.capitalRaised+=amount;
       ledger.push({transactionId:transactionId,type:'PRIVATE_ENTERPRISE_GOVERNMENT_GRANT',proposalId:proposalId,companyId:proposal.companyId,
         amount:amount,currency:proposal.capitalUnit,direction:'TRANSFER',debitAccount:'SOVEREIGN_TREASURY',creditAccount:'COMPANY_CAPITAL:'+proposal.companyId,
-        treasuryBalanceAfter:treasury.balance-amount,companyBalanceAfter:account.availableBalance,status:'POSTED',turn:turn(),authority:treasury.authority});
+        treasuryBalanceAfter:treasury.balance-amount,status:'POSTED',turn:turn(),authority:treasury.authority});
     }else if(sourceType==='COMPANY_CAPITAL'){
       if(account.availableBalance+1e-9<amount)return{status:'BLOCKED',reason:'INSUFFICIENT_COMPANY_CAPITAL',available:account.availableBalance,required:amount};
       ledger.push({transactionId:transactionId,type:'PRIVATE_COMPANY_CAPITAL_COMMITMENT',proposalId:proposalId,companyId:proposal.companyId,
         amount:amount,currency:proposal.capitalUnit,direction:'MEMO',companyBalanceBefore:account.availableBalance,status:'POSTED',turn:turn(),authority:'COMPANY_FINANCE_SUBLEDGER'});
     }else return{status:'BLOCKED',reason:'UNSUPPORTED_FUNDING_SOURCE'};
+    if(account.availableBalance+1e-9<amount)
+      return{status:'BLOCKED',reason:'INSUFFICIENT_UNRESERVED_COMPANY_CAPITAL',available:account.availableBalance,required:amount};
+    account.availableBalance=Math.max(0,account.availableBalance-amount);
+    account.reservedBalance=normalizeCapitalReservation(cid,proposal.companyId,account)+amount;
+    account.revision=(num(account.revision)||0)+1;
+    var fundingEntry=ledger.find(function(row){return row.transactionId===transactionId;});
+    if(fundingEntry){fundingEntry.companyBalanceAfter=account.availableBalance;fundingEntry.companyReservedAfter=account.reservedBalance;}
     proposal.funding={transactionId:transactionId,sourceType:sourceType,amount:amount,currency:proposal.capitalUnit,companyId:proposal.companyId,
       fundedTurn:turn(),status:'FUNDED',companyCapitalBalance:account.availableBalance};
     proposal.status='FUNDED';proposal.updatedTurn=turn();
@@ -504,9 +544,13 @@
       return{status:'BLOCKED',reason:'GOVERNMENT_PERMIT_SCOPE_MISMATCH'};
     var n=network(),c=catalog()||{},profile=c.factoryProfiles&&c.factoryProfiles[proposal.factoryType];
     if(!n||typeof n.startFactoryProject!=='function'||!profile)return{status:'BLOCKED',reason:'CANONICAL_FACTORY_CONSTRUCTION_RUNTIME_UNAVAILABLE'};
-    if(proposal.sourcingPolicy==='DOMESTIC_ONLY'){
-      var latest=previewFor(proposal);if(latest.status!=='READY'||latest.shortages.length)return{status:'BLOCKED',reason:'DOMESTIC_INPUT_SUPPLY_RECHECK_FAILED',preview:latest};
-    }
+    var latest=previewFor(proposal);
+    if(latest.status!=='READY')
+      return{status:'BLOCKED',reason:latest.reason||'PRIVATE_FACTORY_PRECONSTRUCTION_PREVIEW_BLOCKED',preview:latest};
+    if(latest.unobservedInputs&&latest.unobservedInputs.length)
+      return{status:'BLOCKED',reason:'FACTORY_INPUT_STOCK_OR_DEMAND_UNOBSERVED',unobservedInputs:clone(latest.unobservedInputs),preview:latest};
+    if(latest.shortages&&latest.shortages.length)
+      return{status:'BLOCKED',reason:'FACTORY_INPUT_STOCK_SHORTAGE',shortages:clone(latest.shortages),preview:latest};
     var quote=null;
     try{if(typeof n.factoryConstructionMaterialQuote==='function')quote=n.factoryConstructionMaterialQuote(cid,profile);}catch(e){return{status:'BLOCKED',reason:'CONSTRUCTION_BOM_QUOTE_FAILED',detail:String(e&&e.message||e)};}
     if(!quote||quote.status!=='QUOTED')return{status:'BLOCKED',reason:quote&&quote.reason||'CONSTRUCTION_MATERIAL_PREFLIGHT_FAILED',quote:quote};
@@ -515,8 +559,9 @@
     proposal.projectIds=Array.from(new Set(proposal.projectIds));
     var remainingQuantity=Math.max(0,proposal.quantity-proposal.projectIds.length);
     if(remainingQuantity===0){proposal.status='UNDER_CONSTRUCTION';return{status:'DUPLICATE',proposal:clone(proposal)};}
-    var account=capitalAccount(cid,proposal.companyId,false);if(!account||account.availableBalance+1e-9<unitCost*remainingQuantity)
-      return{status:'BLOCKED',reason:'COMPANY_CAPITAL_INSUFFICIENT_AT_CONSTRUCTION',available:account?account.availableBalance:0,required:unitCost*remainingQuantity};
+    var account=capitalAccount(cid,proposal.companyId,false),reservedCapital=account?normalizeCapitalReservation(cid,proposal.companyId,account):0;
+    if(!account||reservedCapital+1e-9<unitCost*remainingQuantity)
+      return{status:'BLOCKED',reason:'COMPANY_CAPITAL_NOT_RESERVED_FOR_CONSTRUCTION',reserved:reservedCapital,required:unitCost*remainingQuantity};
     // Aggregate remaining BOM preflight prevents a partial build caused by known material shortages.
     for(var m=0;m<quote.materials.length;m++){
       var row=quote.materials[m],required=num(row.required)*remainingQuantity,available=num(row.available);
@@ -551,11 +596,12 @@
       if(proposal.projectIds.indexOf(result.projectId)<0)proposal.projectIds.push(result.projectId);
       var ledger=financeLedger(cid,true),transactionId='PE-CAPEX:'+result.projectId;
       if(!ledger.some(function(x){return x.transactionId===transactionId;})){
-        account.availableBalance-=unitCost;account.capitalSpent+=unitCost;account.revision++;
+        account.reservedBalance=Math.max(0,normalizeCapitalReservation(cid,proposal.companyId,account)-unitCost);
+        account.capitalSpent+=unitCost;account.revision++;
         ledger.push({transactionId:transactionId,type:'PRIVATE_ENTERPRISE_FACTORY_CAPEX',proposalId:proposal.proposalId,projectId:result.projectId,
           companyId:proposal.companyId,amount:unitCost,currency:proposal.capitalUnit,direction:'TRANSFER',
-          debitAccount:'COMPANY_CAPITAL:'+proposal.companyId,creditAccount:'FACTORY_CONSTRUCTION:'+result.projectId,
-          balanceAfter:account.availableBalance,status:'POSTED',turn:turn(),authority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL'});
+          debitAccount:'COMPANY_CAPITAL_RESERVED:'+proposal.companyId,creditAccount:'FACTORY_CONSTRUCTION:'+result.projectId,
+          balanceAfter:account.availableBalance,reservedBalanceAfter:account.reservedBalance,status:'POSTED',turn:turn(),authority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL'});
       }
     }
     proposal.status=failures.length?(proposal.projectIds.length?'PARTIALLY_UNDER_CONSTRUCTION':'FUNDED'):'UNDER_CONSTRUCTION';
@@ -565,11 +611,60 @@
     recordEvent(cid,'COMPANY_CONSTRUCTION_STARTED',{proposalId:proposal.proposalId,companyId:proposal.companyId,startedCount:started.length,requestedCount:proposal.quantity,projectIds:proposal.projectIds.slice()});
     return{status:proposal.status,started:started.map(clone),failures:clone(failures),proposal:clone(proposal)};
   }
+  function authorizeFactoryProjectConstruction(input){
+    input=input||{};
+    var cid=canonicalCountry(input.countryId||playerCountry()),company=id(input.ownerCompanyId||input.ownerId),
+      operator=id(input.operatorCompanyId||input.operatorId),factoryType=id(input.factoryType),
+      proposal=getProposal(cid,input.sourcePrivateProposalId),permit=proposal&&proposal.permit,
+      funding=proposal&&proposal.funding,decision=proposal&&proposal.decision;
+    if(!cid||cid!==playerCountry())return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
+    if(!proposal)return{status:'BLOCKED',reason:'PRIVATE_PROPOSAL_NOT_FOUND'};
+    if(['FUNDED','PARTIALLY_UNDER_CONSTRUCTION'].indexOf(proposal.status)<0)
+      return{status:'BLOCKED',reason:'PRIVATE_PROPOSAL_NOT_FUNDED'};
+    if(!permit||permit.status!=='ACTIVE'||!decision||decision.decision!=='APPROVE'||
+       permit.permitId!==input.permitId||permit.permitId!==decision.permitId||
+       permit.authority!=='OMEGA_PRIVATE_ENTERPRISE_LICENSING_V1'||
+       decision.decisionId!==input.sourcePrivateDecisionId)
+      return{status:'BLOCKED',reason:'PRIVATE_GOVERNMENT_PERMIT_NOT_VERIFIED'};
+    if(num(permit.expiresAtTurn)===null||turn()>num(permit.expiresAtTurn)||
+       num(input.permitExpiryTurn)!==num(permit.expiresAtTurn))
+      return{status:'BLOCKED',reason:'GOVERNMENT_PERMIT_EXPIRED_OR_MISMATCHED'};
+    if(permit.countryId!==cid||permit.companyId!==company||permit.operatorCompanyId!==operator||
+       permit.factoryType!==factoryType||num(permit.quantity)!==num(proposal.quantity)||
+       id(proposal.companyId)!==company||id(proposal.operatorCompanyId||proposal.companyId)!==operator||
+       id(proposal.factoryType)!==factoryType||id(input.privateCompanyId)!==company||
+       id(input.companyId)!==company||String(input.ownerType||'').toUpperCase()!=='PRIVATE_ENTERPRISE'||
+       String(input.operatorType||'').toUpperCase()!=='PRIVATE_COMPANY_OPERATOR'||
+       String(input.stateControlRights&&input.stateControlRights.operationalControl||'').toUpperCase()!=='STATE_POLICY_ONLY')
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PERMIT_SCOPE_MISMATCH'};
+    var requestId=String(input.requestId||''),prefix=proposal.proposalId+':UNIT:';
+    var unitIndex=requestId.indexOf(prefix)===0?Number(requestId.slice(prefix.length)):NaN;
+    if(!Number.isInteger(unitIndex)||unitIndex<1||unitIndex>proposal.quantity)
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_APPROVED_UNIT_ID_REQUIRED'};
+    if(input.requirePrivateCommissioningGate!==true||
+       input.constructionFinanceAuthority!=='OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL'||
+       String(input.permitAuthority||'')!==String(permit.authority||''))
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_COMMISSIONING_GATE_REQUIRED'};
+    if(!funding||funding.status!=='FUNDED'||funding.transactionId!==input.sourcePrivateFundingId||
+       id(funding.companyId)!==company||Math.abs((num(funding.amount)||0)-(num(proposal.capitalRequired)||0))>1e-6)
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_FUNDING_RECEIPT_NOT_VERIFIED'};
+    var rows=financeLedger(cid,false)||[],fundingEntry=rows.find(function(row){
+      return row&&row.transactionId===funding.transactionId&&row.proposalId===proposal.proposalId&&
+        id(row.companyId)===company&&String(row.status||'').toUpperCase()==='POSTED';
+    });
+    if(!fundingEntry)return{status:'BLOCKED',reason:'PRIVATE_FACTORY_FINANCE_LEDGER_ENTRY_MISSING'};
+    var account=capitalAccount(cid,company,false),reserved=account?normalizeCapitalReservation(cid,company,account):0;
+    var unitCost=num(input.cost);
+    if(unitCost===null||unitCost<=0||reserved+1e-9<unitCost)
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_CAPITAL_NOT_RESERVED',reserved:reserved,required:unitCost};
+    return{status:'AUTHORIZED',countryId:cid,proposalId:proposal.proposalId,unitIndex:unitIndex,
+      permitId:permit.permitId,fundingTransactionId:funding.transactionId,authority:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1'};
+  }
   function productionProofReady(){
     var proof=g.OmegaPrivateEnterprisePipelineProof||g.__OMEGA_SAB34_PIPELINE_PROOF||null;
     return !!(proof&&proof.status==='VERIFIED'&&proof.siteSelection===true&&proof.extraction===true&&
       proof.logisticsReceipt===true&&proof.factoryInput===true&&proof.finishedGoods===true&&proof.saveLoad===true&&
-      typeof proof.exactMainSha==='string'&&proof.exactMainSha.length>=7);
+      typeof proof.exactMainSha==='string'&&/^[a-f0-9]{40}$/i.test(proof.exactMainSha));
   }
   function applyCommissionedAsset(country,project){
     if(!project||!project.sourcePrivateProposalId)return null;
@@ -591,7 +686,7 @@
     asset.ownershipStatus='PRIVATE_COMPANY_OWNED';asset.operatorStatus='PRIVATE_COMPANY_OPERATED';
     asset.sourcePrivateProposalId=project.sourcePrivateProposalId;asset.sourcePrivateDecisionId=project.sourcePrivateDecisionId||null;
     asset.sourcePrivateFundingId=project.sourcePrivateFundingId||null;asset.constructionProjectId=project.projectId;
-    var runtimeStatus=String(asset.status||'OPERATIONAL').toUpperCase();
+    var runtimeStatus=String(asset.privateCommissionedStatus||asset.status||'OPERATIONAL').toUpperCase();
     if(!asset.privateCommissionedStatus)asset.privateCommissionedStatus=runtimeStatus;
     asset.productionEnabled=productionReady&&runtimeStatus==='OPERATIONAL';
     if(!productionReady){
@@ -633,6 +728,10 @@
        String(target.ownerType||'').toUpperCase()!=='PRIVATE_ENTERPRISE')return{status:'BLOCKED',reason:'PRIVATE_FACTORY_NOT_FOUND'};
     var proposal=runtime(cid,false)?.proposals.find(function(p){return p.proposalId===target.sourcePrivateProposalId;});
     if(!proposal)return{status:'BLOCKED',reason:'PRIVATE_PROPOSAL_NOT_FOUND'};
+    var permit=proposal.permit;
+    if(!permit||permit.status!=='ACTIVE'||target.privatePermitId!==permit.permitId||
+       target.privatePermitStatus!=='ACTIVE'||owner!==id(permit.companyId)||operator!==id(permit.operatorCompanyId))
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PERMIT_NOT_VERIFIED'};
     var restored=[];
     (proposal.commissionedFactoryIds||[]).forEach(function(assetId){
       var asset=assets.find(function(row){return String(row.id||row.factoryId||'')===String(assetId);});
@@ -883,7 +982,8 @@
   var API=Object.freeze({
     VERSION:VERSION,companyIds:COMPANY_IDS.slice(),companyNames:clone(COMPANY_NAMES),
     createProposal:createProposal,adjustProposal:adjustProposal,advanceAutonomousProposalCycle:advanceAutonomousProposalCycle,decideProposal:decideProposal,previewProposal:function(country,id){var p=getProposal(country,id);return p?previewFor(p):{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};},
-    fundProposal:fundProposal,startConstruction:startConstruction,recordCompanyCapitalReceipt:recordCompanyCapitalReceipt,refreshCommissionedProductionGate:refreshCommissionedProductionGate,
+    fundProposal:fundProposal,startConstruction:startConstruction,authorizeFactoryProjectConstruction:authorizeFactoryProjectConstruction,
+    recordCompanyCapitalReceipt:recordCompanyCapitalReceipt,refreshCommissionedProductionGate:refreshCommissionedProductionGate,
     getProposal:getProposal,getCountryDashboard:getCountryDashboard,getCompanyCapitalSummary:getCompanyCapitalSummary,
     diagnostics:diagnostics,productionProofReady:productionProofReady
   });
