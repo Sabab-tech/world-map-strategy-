@@ -251,7 +251,7 @@ test('trade resource mutation requires explicit settlement authorization', async
   assert.equal(mismatchedDebit.status,'REJECTED');
   assert.equal(state.resource.IND.inventory.iron_ore,sellerStockBefore);
 
-  const sellerDebit=interop.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','IND',{resourceId:'iron_ore',quantity:10,transferAuthorization:sellerAuth});
+  const sellerDebit=interop.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','IND',{resourceId:'iron_ore',quantity:10,settlementId:'SET-1',transferAuthorization:sellerAuth});
   assert.equal(sellerDebit.status,'APPLIED');
   assert.equal(state.resource.IND.inventory.iron_ore,40);
 });
