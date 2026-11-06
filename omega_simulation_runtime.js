@@ -178,7 +178,7 @@
     return issues.slice(0,256);
   }
 
-  function replaceContents(target,source,cloneValues=true){
+  function replaceContents(target,source){
     for(const key of Object.keys(target)){
       if(key==='__proto__'||key==='constructor')continue;
       delete target[key];
@@ -186,7 +186,7 @@
     if(source&&typeof source==='object'){
       for(const [key,value] of Object.entries(source)){
         if(key==='__proto__'||key==='constructor')continue;
-        target[key]=cloneValues?clone(value):value;
+        target[key]=clone(value);
       }
     }
     return target;
@@ -439,8 +439,10 @@
 
     restore(snapshot,options={}){
       if(!snapshot||typeof snapshot!=='object')throw new Error('INVALID_AUTHORITATIVE_WORLD_SNAPSHOT');
-      replaceContents(this.state,snapshot,options.cloneValues!==false);
+      replaceContents(this.state,snapshot);
       this.ensureCore();
+      // loadState consumes the restored root directly. Avoid creating a second
+      // full detached snapshot when its caller does not use the return value.
       return options.returnSnapshot===false?this.state:this.snapshot();
     }
   }
@@ -990,7 +992,7 @@
       return snapshot;
     }
 
-    loadState(snapshot,options={}){
+    loadState(snapshot){
       if(!snapshot||typeof snapshot!=='object'||Array.isArray(snapshot))throw new Error('INVALID_SIMULATION_SAVE');
       if(Number(snapshot.schemaVersion)!==SESSION_VERSION)throw new Error('SIMULATION_SAVE_SCHEMA_MISMATCH');
       if(!snapshot.worldState||typeof snapshot.worldState!=='object'||Array.isArray(snapshot.worldState))
@@ -1004,14 +1006,10 @@
       // Snapshots without a checksum are accepted only as legacy saves for compatibility;
       // all newly generated snapshots are checksummed before persistence.
       this.lastLoadIntegrity=snapshot.checksum?'VERIFIED':'LEGACY_UNVERIFIED';
-      // loadSlot passes a freshly parsed, private JSON object. Adopt that detached
-      // tree directly into the existing Game.state root after all integrity checks,
-      // avoiding another recursive copy; direct public loadState callers retain the
-      // defensive copy-by-default behavior.
-      this.world.restore(snapshot.worldState,{
-        cloneValues:options.adoptWorldState!==true,
-        returnSnapshot:false
-      });
+      // Restore the validated save into the existing authoritative root. The
+      // recursive copy keeps caller-provided and cross-realm parsed snapshots
+      // isolated, while skipping the unused second detached snapshot.
+      this.world.restore(snapshot.worldState,{returnSnapshot:false});
       // Migrate legacy hourly saves into the canonical daily-turn timeline.
       // A simulation turn is one game day; wall-clock speed is controlled separately.
       const restoredClock=clone(snapshot.clock);
@@ -1113,7 +1111,7 @@
         if(indexedDbError)throw new Error('SAVE_SLOT_NOT_FOUND:'+key+'; INDEXEDDB:'+String(indexedDbError.message||indexedDbError));
         throw new Error('SAVE_SLOT_NOT_FOUND:'+key);
       }
-      return this.loadState(JSON.parse(raw),{adoptWorldState:true});
+      return this.loadState(JSON.parse(raw));
     }
 
     diagnostics(){
