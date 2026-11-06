@@ -278,3 +278,22 @@ test('industrial panel refreshes its first open when the shared factory catalog 
     'the same open panel must refresh when the shared factory catalog resolves');
   assert.match(modal.innerHTML,/Steel and Alloy Works/);
 });
+
+
+test('optional semantic bootstrap cannot invalidate authoritative resource JSON readiness', () => {
+  const source = fs.readFileSync('resource_ministry_engine.js', 'utf8');
+  const start = source.indexOf('async init()');
+  const end = source.indexOf('_mergeRuntimeDeposits(rows, sourceDatasetId)', start);
+  assert.ok(start >= 0 && end > start, 'the Resource Ministry init implementation must exist');
+  const init = source.slice(start, end);
+  const ready = init.indexOf('this.isReady = true;');
+  const bootstrap = init.indexOf('semanticEngine.bootstrap(semanticInput)');
+  assert.ok(ready >= 0 && bootstrap > ready,
+    'canonical resource data becomes ready before the optional semantic graph is built');
+  assert.match(init, /requestIdleCallback\(runSemanticBootstrap, \{ timeout: 5000 \}\)/,
+    'the legacy world-state bootstrap must be deferred to browser idle time when supported');
+  assert.match(init, /Optional semantic bootstrap failed; canonical Resource Ministry data remains ready/,
+    'an auxiliary semantic failure must be reported without changing canonical engine readiness');
+  assert.match(init, /GSRSK_MASTER_ENGINE_BOOTSTRAP_COMPLETE/,
+    'dependent integrations can observe completion of the deferred semantic bootstrap');
+});

@@ -8622,15 +8622,59 @@ _globalScope.GSRSK_DataFoundation = (() => {
 
                     const failedDatasets = entries.filter(x => !x.data && !x.optional).length;
                     this.dataLoadReport.status = failedDatasets ? 'DEGRADED' : 'READY';
-                    if (global.GSRSK_MasterEngine && typeof global.GSRSK_MasterEngine.bootstrap === 'function') {
-                        global.GSRSK_MasterEngine.bootstrap({
+                    // The canonical JSON datasets above are the authoritative Resource Ministry
+                    // readiness boundary. The legacy semantic world-state compiler is optional:
+                    // it builds a second graph and has thrown on Android WebView 66 in the past.
+                    // Never let that auxiliary graph invalidate loaded resource records or keep
+                    // the first Ministry screen waiting on a synchronous bootstrap.
+                    this.isReady = true;
+                    const semanticEngine = global.GSRSK_MasterEngine;
+                    if (semanticEngine && typeof semanticEngine.bootstrap === 'function') {
+                        const semanticInput = {
                             countries: Object.keys(this.countryProfiles),
                             resourceTypes: this.resourceTypes,
                             deposits: this.deposits
-                        });
+                        };
+                        this.dataLoadReport.semanticBootstrap = { status: 'SCHEDULED', authority: 'OPTIONAL_LEGACY_SEMANTIC_GRAPH' };
+                        const runSemanticBootstrap = () => {
+                            let semanticResult = null;
+                            try {
+                                semanticResult = semanticEngine.bootstrap(semanticInput);
+                                this.dataLoadReport.semanticBootstrap = {
+                                    status: 'READY',
+                                    authority: 'OPTIONAL_LEGACY_SEMANTIC_GRAPH'
+                                };
+                            } catch (semanticError) {
+                                const detail = String(semanticError && (semanticError.message || semanticError) || 'SEMANTIC_BOOTSTRAP_FAILED');
+                                this.dataLoadReport.semanticBootstrap = {
+                                    status: 'FAILED',
+                                    authority: 'OPTIONAL_LEGACY_SEMANTIC_GRAPH',
+                                    error: detail
+                                };
+                                console.warn('[GSRSK] Optional semantic bootstrap failed; canonical Resource Ministry data remains ready.', detail);
+                            }
+                            try {
+                                if (typeof global.dispatchEvent === 'function' && typeof global.CustomEvent === 'function') {
+                                    global.dispatchEvent(new global.CustomEvent('GSRSK_MASTER_ENGINE_BOOTSTRAP_COMPLETE', {
+                                        detail: { status: this.dataLoadReport.semanticBootstrap.status, result: semanticResult }
+                                    }));
+                                }
+                            } catch (_) {}
+                        };
+                        try {
+                            if (typeof global.requestIdleCallback === 'function') {
+                                global.requestIdleCallback(runSemanticBootstrap, { timeout: 5000 });
+                            } else if (typeof global.setTimeout === 'function') {
+                                global.setTimeout(runSemanticBootstrap, 0);
+                            } else {
+                                runSemanticBootstrap();
+                            }
+                        } catch (_) {
+                            runSemanticBootstrap();
+                        }
+                    } else {
+                        this.dataLoadReport.semanticBootstrap = { status: 'NOT_AVAILABLE', authority: 'OPTIONAL_LEGACY_SEMANTIC_GRAPH' };
                     }
-
-                    this.isReady = true;
                     console.log('[GSRSK] Resource Ministry Engine ready from JSON: ' + this.dataLoadReport.countryProfileCount + ' country profiles, ' + this.deposits.length + ' runtime deposits, ' + this.resourceTypes.length + ' commodities. status=' + this.dataLoadReport.status);
                     if (typeof window !== 'undefined') {
                         window.dispatchEvent(new CustomEvent('RESOURCE_STATE_UPDATED', { detail: { engine: this } }));

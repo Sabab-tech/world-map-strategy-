@@ -448,15 +448,22 @@ Game.DataLoader = {
         if (this.__countryConfigPromise) return this.__countryConfigPromise;
         fetcher = fetcher || this.getFetcher();
         const loader = this;
-        this.__countryConfigPromise = Promise.resolve().then(function () {
+        let loaded = false, promise;
+        promise = Promise.resolve().then(function () {
             return fetcher('countries.json');
         }).then(function (data) {
-            return loader.applyCountryConfig(data);
+            const rows = loader.applyCountryConfig(data);
+            loaded = !!rows;
+            return rows;
         }).catch(function (error) {
             console.warn('[OMEGA Map] Country roster could not be loaded; world boundaries can still render.', error);
             return null;
+        }).finally(function () {
+            // A transient failure must not pin a null result for the rest of the session.
+            if (!loaded && loader.__countryConfigPromise === promise) loader.__countryConfigPromise = null;
         });
-        return this.__countryConfigPromise;
+        this.__countryConfigPromise = promise;
+        return promise;
     },
 
     waitForMapRenderer(controller) {
@@ -623,18 +630,42 @@ Game.DataLoader = {
         // Economy, relation and minister datasets are independent and must not hold up map borders.
         const worldTask = this.loadWorldMap(fetcher);
         const supportTask = (async function () {
+            const fetchOptional = async function (filename) {
+                let controller = null, timer = null;
+                try {
+                    controller = typeof AbortController === 'function' ? new AbortController() : null;
+                    const request = Promise.resolve().then(function () {
+                        return fetcher(filename, { signal:controller ? controller.signal : undefined });
+                    });
+                    const timeout = new Promise(function (resolve, reject) {
+                        timer = window.setTimeout(function () {
+                            try { if (controller) controller.abort(); } catch (_) {}
+                            const error = new Error('STARTUP_DATA_FETCH_TIMEOUT:' + filename);
+                            error.code = 'STARTUP_DATA_FETCH_TIMEOUT';
+                            reject(error);
+                        }, 6500);
+                    });
+                    return await Promise.race([request, timeout]);
+                } catch (error) {
+                    console.warn('[OMEGA DataLoader] Optional startup dataset failed; other datasets will continue:', filename, error);
+                    return null;
+                } finally {
+                    if (timer !== null) window.clearTimeout(timer);
+                }
+            };
             try {
+                // These datasets are independent: one failed response must not discard the other.
                 const [popData, econData] = await Promise.all([
-                    fetcher('population.json'),
-                    fetcher('economy.json')
+                    fetchOptional('population.json'),
+                    fetchOptional('economy.json')
                 ]);
                 if (popData && typeof popData === 'object') Game.state.population = popData;
                 if (econData && typeof econData === 'object') Game.state.economy = econData;
 
                 const [rgeData, relData, minData] = await Promise.all([
-                    fetcher('relation_generation_engine.json'),
-                    fetcher('relations.json'),
-                    fetcher('ministers.json')
+                    fetchOptional('relation_generation_engine.json'),
+                    fetchOptional('relations.json'),
+                    fetchOptional('ministers.json')
                 ]);
 
                 if (rgeData && rgeData.RELATION_GENERATION_ENGINE) {
