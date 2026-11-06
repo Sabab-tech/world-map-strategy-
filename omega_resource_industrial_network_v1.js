@@ -3870,6 +3870,23 @@ function factoryOutputUnit(recipe,asset,productId,resource){
   }
   return String(recipe?.outputUnit||asset?.outputUnit||'SIMULATION_RESOURCE_UNIT').trim();
 }
+function factoryOwnershipParties(asset,countryId){
+  const row=asset&&typeof asset==='object'?asset:{},cid=canonicalCountry(countryId);
+  const explicitOwnerCompanyId=String(row.ownerCompanyId||row.ownerId||'').trim();
+  const legacyCompanyId=String(row.companyId||row.company||'').trim();
+  const explicitOperatorCompanyId=String(row.operatorCompanyId||row.operatorId||'').trim();
+  const operatorCompanyId=explicitOperatorCompanyId||legacyCompanyId||explicitOwnerCompanyId||('STATE_INDUSTRY_'+cid);
+  const ownerCompanyId=explicitOwnerCompanyId||legacyCompanyId||null;
+  const ownerAttributionStatus=explicitOwnerCompanyId?'EXPLICIT_ASSET_OWNER':
+    legacyCompanyId?'LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED':'UNASSIGNED';
+  return{
+    ownerCompanyId:ownerCompanyId||null,
+    operatorCompanyId:operatorCompanyId,
+    ownerAttributionStatus:ownerAttributionStatus,
+    operatorAttributionStatus:explicitOperatorCompanyId?'EXPLICIT_ASSET_OPERATOR':
+      legacyCompanyId?'LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED':'STATE_OPERATOR_FALLBACK'
+  };
+}
 function factoryOutputUnitPlan(resource,recipe,asset,productIds){
   const state=resource&&typeof resource==='object'?resource:{};
   const warehouse=state.processedWarehouse&&typeof state.processedWarehouse==='object'?state.processedWarehouse:{};
@@ -4004,6 +4021,7 @@ function commitFactoryCycleImmediately(input={}){
   asset.inputInventory=factoryStock;
   const sequence=Math.max(0,Number(n.factoryRunSequence)||0)+1;n.factoryRunSequence=sequence;
   const transactionId='FACTORYRUN:'+cid+':'+fid+':T'+turn()+':'+sequence;
+  const ownershipParties=factoryOwnershipParties(asset,cid);
   const finishedWarehouse=r.processedWarehouse||(r.processedWarehouse={warehouseId:'WH-'+cid+'-PROCESSED',countryId:cid,type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]});
   finishedWarehouse.availableByResource=finishedWarehouse.availableByResource||{};finishedWarehouse.storedBatchIds=Array.isArray(finishedWarehouse.storedBatchIds)?finishedWarehouse.storedBatchIds:[];
   finishedWarehouse.receipts=Array.isArray(finishedWarehouse.receipts)?finishedWarehouse.receipts:[];
@@ -4013,19 +4031,24 @@ function commitFactoryCycleImmediately(input={}){
     r.inventory[outputId]=(num(r.inventory[outputId])||0)+outQty;
     const batchId='OUTPUT:'+transactionId+':'+outputId,roots=[...new Set(sourceBatchIds.filter(Boolean))],unit=outputUnitPlan.units[outputId];
     const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',countryId:cid,
-      sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,ownerCompanyId:String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid)),
+      sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
+      ownerCompanyId:ownershipParties.ownerCompanyId,operatorCompanyId:ownershipParties.operatorCompanyId,
+      ownerAttributionStatus:ownershipParties.ownerAttributionStatus,
       sourceBatchIds:roots,sourceFactoryId:fid,warehouseId:'WH-'+cid+'-PROCESSED',locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',processId:transactionId,
       provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'SIMULATED_PROCESSING_YIELD',processingAuthority:'SIMULATED',status:'FINISHED_GOODS_CREATED',transactionId,sourceBatchIds:roots,simulationTurn:turn()}};
     batches.push(row);created.push(row);
     inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',countryId:cid,warehouseId:row.warehouseId,
-      locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,sourceBatchIds:roots,status:'AVAILABLE',provenance:clone(row.provenance),createdTurn:turn()};
+      locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,operatorCompanyId:row.operatorCompanyId,
+      ownerAttributionStatus:row.ownerAttributionStatus,sourceBatchIds:roots,status:'AVAILABLE',provenance:clone(row.provenance),createdTurn:turn()};
     finishedWarehouse.availableByResource[outputId]=(num(finishedWarehouse.availableByResource[outputId])||0)+outQty;
     writeFactoryOutputUnit(r,finishedWarehouse,outputId,unit);
     if(!finishedWarehouse.storedBatchIds.includes(batchId))finishedWarehouse.storedBatchIds.push(batchId);
     finishedWarehouse.receipts.push({receiptId:'WH-REC-'+batchId,warehouseId:row.warehouseId,countryId:cid,batchId,resourceId:outputId,quantity:outQty,unit,simulationTurn:turn(),status:'RECEIVED'});
   }
   while(finishedWarehouse.receipts.length>2048)finishedWarehouse.receipts.shift();while(batches.length>8192)batches.shift();
-  const record={transactionId,countryId:cid,factoryId:fid,companyId:String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid)),resourceId:rid,
+  const record={transactionId,countryId:cid,factoryId:fid,companyId:ownershipParties.operatorCompanyId,
+    operatorCompanyId:ownershipParties.operatorCompanyId,ownerCompanyId:ownershipParties.ownerCompanyId,
+    ownerAttributionStatus:ownershipParties.ownerAttributionStatus,resourceId:rid,
     inputQuantity:need,inputQuantities:{[rid]:need},requestedProduction:requested,outputs:output,outputQuantities:clone(output),recipe:clone(recipe),
     productionConstraints:clone(productionConstraints),
     cycleDays:recipe.cycleDays,turn:turn(),authority:'INDUSTRIAL_NETWORK_SIMULATION',status:'COMPLETED',inputSource:fromFactoryInput?'DELIVERED_SHIPMENT':'CENTRAL_INVENTORY',
@@ -4035,7 +4058,9 @@ function commitFactoryCycleImmediately(input={}){
   r.batches=batches;r.inventoryLots=inventoryLots;r.processedWarehouse=finishedWarehouse;
   processedTurns[fid]=turn();n.factoryProcessingTurns=processedTurns;
   r.finishedGoodsLedger=Array.isArray(r.finishedGoodsLedger)?r.finishedGoodsLedger:[];
-  r.finishedGoodsLedger.push({transactionId,countryId:cid,factoryId:fid,companyId:record.companyId,sourceBatchIds:record.sourceBatchIds,outputQuantities:clone(output),
+  r.finishedGoodsLedger.push({transactionId,countryId:cid,factoryId:fid,companyId:record.companyId,
+    operatorCompanyId:record.operatorCompanyId,ownerCompanyId:record.ownerCompanyId,ownerAttributionStatus:record.ownerAttributionStatus,
+    sourceBatchIds:record.sourceBatchIds,outputQuantities:clone(output),
     createdBatchIds:record.createdBatchIds,turn:turn(),authority:'SIMULATED_PROCESSING_YIELD',status:'AVAILABLE_TO_ECONOMY'});
   while(r.finishedGoodsLedger.length>2048)r.finishedGoodsLedger.shift();
   const inventoryLedger=Array.isArray(r.inventoryLedger)?r.inventoryLedger:[];
@@ -4045,7 +4070,8 @@ function commitFactoryCycleImmediately(input={}){
   factorySetProductionHealth(asset,requested+1e-6<ratedCapacity?'REDUCED':'RUNNING',requested,ratedCapacity,
     {transactionId,constraints:clone(productionConstraints)});
   emit('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',cid,record);
-  emit('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',cid,{transactionId,countryId:cid,factoryId:fid,companyId:record.companyId,outputs:clone(output),
+  emit('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',cid,{transactionId,countryId:cid,factoryId:fid,companyId:record.companyId,
+    operatorCompanyId:record.operatorCompanyId,ownerCompanyId:record.ownerCompanyId,ownerAttributionStatus:record.ownerAttributionStatus,outputs:clone(output),
     outputQuantities:clone(output),sourceBatchIds:record.sourceBatchIds,createdBatchIds:record.createdBatchIds,turn:turn(),
     authority:'SIMULATED_PROCESSING_YIELD',status:'AVAILABLE'});
   return record;
