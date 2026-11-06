@@ -183,9 +183,26 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       });
     } catch (error) {
       const diagnostics = await page.evaluate(() => {
-        const main = document.querySelector('#cabinet-full-window [data-omega-v2-main]');
+        const cabinet = document.getElementById('cabinet-full-window');
+        const main = cabinet?.querySelector('[data-omega-v2-main]');
         const shell = main?.querySelector('.omega-v2-factory-command');
-        const panel = main?.querySelector('[data-omega-private-company-lifecycle]');
+        const panel = cabinet?.querySelector('[data-omega-private-company-lifecycle]');
+        const industryRoots = [cabinet, ...(cabinet ? Array.from(cabinet.querySelectorAll('*')) : [])]
+          .filter(node => node && (
+            Object.prototype.hasOwnProperty.call(node, '__omegaV2IndustryTab') ||
+            Object.prototype.hasOwnProperty.call(node, '__omegaV2IndustryCountryId') ||
+            Object.prototype.hasOwnProperty.call(node, '__omegaV2IndustryOptions')
+          ))
+          .map(node => ({
+            tag:node.tagName || null,
+            id:node.id || null,
+            className:typeof node.className === 'string' ? node.className.slice(0,160) : null,
+            industryTab:node.__omegaV2IndustryTab || null,
+            industryCountry:node.__omegaV2IndustryCountryId || null,
+            optionsTab:node.__omegaV2IndustryOptions?.tab || null,
+            optionsCountry:node.__omegaV2IndustryOptions?.countryId || null,
+            shellTab:node.querySelector?.('.omega-v2-factory-command')?.getAttribute('data-active-tab') || null
+          }));
         const describe = api => {
           try { return api && typeof api.diagnostics === 'function' ? api.diagnostics() : null; }
           catch (diagnosticError) { return { error:String(diagnosticError && diagnosticError.message || diagnosticError) }; }
@@ -194,7 +211,8 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
           playerCountry: window.Omega?.Simulation?.getPlayerCountryId?.() ||
             window.Game?.state?.simulation?.session?.playerCountryId ||
             window.Game?.state?.playerCountryId || null,
-          uiCountry: main?.__omegaUIV2State?.countryId || main?.__omegaV2IndustryCountryId || null,
+          uiCountry: cabinet?.__omegaUIV2State?.countryId || main?.__omegaUIV2State?.countryId || null,
+          industryRoots,
           ministryViewCountry: window.OmegaMinistryViewCountry || null,
           cabinetActiveCountry: window.OmegaCabinetUI?.activeCountry || null,
           countrySelectorValue: main?.querySelector('[data-omega-v2-country]')?.value || null,
