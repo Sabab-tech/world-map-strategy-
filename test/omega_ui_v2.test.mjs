@@ -3314,7 +3314,8 @@ test('Production Lines joins exact selected-country cycles and committed logisti
       projects:[],
       factoryProductionCycles:{
         'FAC-LINE-1':{status:'IN_PROGRESS',productionQuantity:120,startDate:'2026-11-05',finishDate:'2026-11-07',sourceBatchIds:['BATCH-01']},
-        'FAC-LINE-2':{status:'PAUSED',productionQuantity:0}
+        'FAC-LINE-2':{status:'PAUSED',productionQuantity:0},
+        'FAC-LINE-3':{status:'IDLE',productionQuantity:0}
       },
       shipments:[
         {shipmentId:'SHIP-FACTORY-01',shipmentType:'WAREHOUSE_TO_FACTORY',countryId:'BGD',factoryId:'FAC-LINE-1',
@@ -3343,8 +3344,17 @@ test('Production Lines joins exact selected-country cycles and committed logisti
       routePreviews:[{status:'ROUTE_PREVIEW_ONLY',routeId:'PREVIEW-ONLY',factoryId:'FAC-LINE-1',distanceKm:999}]
     } }},
     economy:{BGD:{productionAssets:[
-      {id:'FAC-LINE-1',name:'National steel works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',companyId:'AURORA_INDUSTRIAL_GROUP'},
-      {id:'FAC-LINE-2',name:'Unmapped operator works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',companyId:'UNKNOWN_SIM_COMPANY'}
+      {id:'FAC-LINE-1',name:'National steel works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',
+        companyId:'AURORA_INDUSTRIAL_GROUP',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP',ownerType:'PRIVATE_ENTERPRISE',
+        operatorCompanyId:'ATLAS_TECHNOLOGY_CORPORATION',operatorType:'PRIVATE_OPERATOR',
+        stateControlRights:{strategicOversight:true,licensingAndPermits:true,emergencyIntervention:true,authority:'TEST_CONTROL_RIGHTS'}},
+      {id:'FAC-LINE-2',name:'Unmapped operator works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',companyId:'UNKNOWN_SIM_COMPANY'},
+      {id:'FAC-LINE-3',name:'State-owned auxiliary works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',
+        companyId:'STATE_INDUSTRY_BGD',ownerId:'STATE_INDUSTRY_BGD',ownerType:'STATE_OWNED_ENTERPRISE',
+        operatorId:'STATE_INDUSTRY_BGD',operatorType:'STATE_ENTERPRISE_OPERATOR',
+        stateControlRights:{strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,
+          competitionOversight:true,labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,
+          operationalControl:'STATE_OPERATOR',authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1'}}
     ]}}
   }};
   const root={
@@ -3358,10 +3368,21 @@ test('Production Lines joins exact selected-country cycles and committed logisti
   try{
     const result=globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'production-lines'});
     assert.equal(result.ok,true);
-    assert.equal(result.model.lineActivity.length,2,'only the two cycle-backed factories from the selected country are shown');
+    assert.equal(result.model.lineActivity.length,3,'only cycle-backed factories from the selected country are shown');
     const steel=result.model.lineActivity.find(row=>row.factoryId==='FAC-LINE-1');
     assert.ok(steel);
     assert.equal(steel.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+    assert.equal(steel.ownerRecordStatus,'VERIFIED_EXPLICIT_GLOBAL_COMPANY_OWNER');
+    assert.equal(steel.operatorCompanyId,'ATLAS_TECHNOLOGY_CORPORATION');
+    assert.equal(steel.operatorLabel,'Atlas Technology Corporation');
+    assert.match(steel.stateControlRightsStatus,/Strategic oversight/);
+    assert.match(steel.stateControlRightsStatus,/Licensing & permits/);
+    const stateLine=result.model.lineActivity.find(row=>row.factoryId==='FAC-LINE-3');
+    assert.ok(stateLine);
+    assert.equal(stateLine.ownerLabel,'State-owned enterprise');
+    assert.equal(stateLine.operatorLabel,'State enterprise operator');
+    assert.match(stateLine.stateControlRightsStatus,/Emergency intervention/);
+    assert.match(stateLine.stateControlRightsStatus,/Operations: STATE OPERATOR/);
     assert.equal(steel.shipments.length,1,'mine-to-warehouse movement and route-preview rows are not shown as committed factory shipments');
     assert.equal(result.model.lineActivitySourceCounts.committedShipments,1,'only committed shipment rows contribute to the selected-country activity count');
     assert.equal(steel.shipments[0].shipmentId,'SHIP-FACTORY-01');
@@ -3370,6 +3391,10 @@ test('Production Lines joins exact selected-country cycles and committed logisti
     assert.equal(steel.warehouseDispatches[0].dispatchId,'SHIP-FACTORY-01');
     assert.match(root.innerHTML,/Production &amp; delivery lines/);
     assert.match(root.innerHTML,/Aurora Industrial Group/);
+    assert.match(root.innerHTML,/Atlas Technology Corporation/);
+    assert.match(root.innerHTML,/State-owned enterprise/);
+    assert.match(root.innerHTML,/State enterprise operator/);
+    assert.match(root.innerHTML,/State control rights/);
     assert.match(root.innerHTML,/WH-BGD-RAW/);
     assert.match(root.innerHTML,/FACTORY:BGD:FAC-LINE-1/);
     assert.match(root.innerHTML,/truck/);
