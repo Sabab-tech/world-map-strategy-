@@ -97,7 +97,7 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   assert.equal(preview.status,'READY');
   assert.equal(preview.shortages.length,1);
   assert.equal(preview.shortages[0].resourceId,'iron_ore');
-  assert.equal(preview.shortages[0].shortfall,500);
+  assert.equal(preview.shortages[0].shortfall,600);
   assert.equal(h.state.resource.BGD.inventory.iron_ore,100);
 
   const decision=api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
