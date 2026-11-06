@@ -34,7 +34,10 @@ test('all opening allocations are simulation-only and not commissioned productio
 test('Industry screen exposes private-company opening allocations without activating production assets',()=>{
  const industry=fs.readFileSync(new URL('../omega_ui_v2/screens/industry.js',import.meta.url),'utf8');
  assert.match(industry,/OmegaPrivateEnterpriseRegistryV1/);
- assert.match(industry,/tabButton\('companies', 'Manage'/);
+ assert.doesNotMatch(industry,/tabButton\('companies', 'Manage'/);
+ assert.match(industry,/data-private-factory-management/);
+ assert.match(industry,/factoryManageOpened/);
+ assert.match(industry,/government opening/);
  assert.match(industry,/data-factory-total/);
  assert.match(industry,/data-private-ownership-breakdown/);
  assert.match(industry,/Shared-pool factories are counted once in the main total/);
@@ -79,4 +82,5 @@ test('exact country data key takes precedence over a conflicting ISO2 alias from
  const usa=sandbox.OmegaPrivateEnterpriseRegistryV1.getCountryBaseline('USA');
  assert.equal(usa.countryId,'USA');
  assert.equal(usa.companies.length,5);
+ assert.ok(usa.governmentFactoryCounts && usa.governmentFactoryCounts.STEEL_AND_ALLOY_WORKS >= 0);
 });
