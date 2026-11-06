@@ -1456,6 +1456,11 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
       resourceState.inventory[materialId]=(Number(resourceState.inventory[materialId])||0)+Number(requiredQty);
       resourceState.warehouse.availableByResource[materialId]=(Number(resourceState.warehouse.availableByResource[materialId])||0)+Number(requiredQty);
     }
+    // The central Simulation clock owns turn duration when stepDurationMs is configured.
+    // Set its explicit game-day bridge instead of relying on the legacy state field.
+    const simulationClock=context.Omega?.Simulation?.clock;
+    const priorGameDaysPerTurn=simulationClock?.gameDaysPerTurn;
+    if(simulationClock)simulationClock.gameDaysPerTurn=30;
     context.Game.state.simulation.daysPerTurn=30;
     const privateProjectInput={
       countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',resourceId:'iron_ore',
@@ -1554,6 +1559,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     console.log('OMEGA STARTING FACTORY LIVE REGISTRY / ADD / DESTROY REGRESSION PASSED');
   } finally {
     context.Game.state=previousState;
+    if(simulationClock)simulationClock.gameDaysPerTurn=priorGameDaysPerTurn;
   }
 }
 
