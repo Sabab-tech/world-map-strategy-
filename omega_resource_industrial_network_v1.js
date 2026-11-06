@@ -3467,6 +3467,7 @@ function startFactoryProject(input={}){
     operatorCompanyId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
     operatorType:privateOwnership?'PRIVATE_COMPANY_OPERATOR':'STATE_ENTERPRISE_OPERATOR',
     companyId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
+    permitId:privateOwnership?String(input.permitId||''):null,
     privatePermitId:privateOwnership?String(input.permitId||''):null,
     privatePermitStatus:privateOwnership?'ACTIVE':null,
     privatePermitAuthority:privateOwnership?String(input.permitAuthority||''):null,
