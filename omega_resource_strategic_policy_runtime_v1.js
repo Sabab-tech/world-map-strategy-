@@ -361,7 +361,7 @@ function governmentProcurementTx(cmd,ctx){
   return same?{accepted:true,duplicate:true,procurement:prior}:{accepted:false,reason:'GOVERNMENT_PROCUREMENT_IDEMPOTENCY_COLLISION'};
  }
  const policies=supplyDirectiveRows(c,rid),policy=policies.find(x=>x.policyId===policyId&&x.directive==='GOVERNMENT_PROCUREMENT'&&
-  (!x.companyIds?.length||x.companyIds.includes(companyId))&&(!x.companyId||x.companyId===companyId));
+  ((Array.isArray(x.companyIds)&&x.companyIds.length)?x.companyIds.includes(companyId):(!x.companyId||x.companyId===companyId)));
  if(!policy)return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_POLICY_NOT_ACTIVE'};
  const priorUse=procurements.filter(x=>x.policyId===policyId).reduce((sum,x)=>sum+(num(x.quantity)||0),0);
  const limit=num(policy.procurementLimit??policy.authorizedQuantity);
@@ -414,15 +414,15 @@ function governmentProcurementTx(cmd,ctx){
   const asset=assets.find(row=>String(row?.id||row?.factoryId||'')===sourceFactoryId);
   const lot=lots[batchId],status=String(b?.status||'').toUpperCase();
   return tok(b?.resourceId||b?.materialIdentity)===tok(rid)&&owner===companyId&&
-   PRIVATE_COMPANY_IDS.includes(operator)&&!['LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED','UNASSIGNED','NOT_RECORDED',''].includes(String(b?.ownerAttributionStatus||'').toUpperCase())&&
-   ['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(String(b?.stage||'').toUpperCase())&&
+   PRIVATE_COMPANY_IDS.includes(operator)&&String(b?.ownerAttributionStatus||'').toUpperCase()==='EXPLICIT_ASSET_OWNER'&&
+   String(b?.stage||'').toUpperCase()==='FINISHED'&&
    ['AVAILABLE','PARTIALLY_SOLD'].includes(status)&&storedIds.has(batchId)&&
    String(b?.warehouseId||'')===String(warehouse.warehouseId||'')&&
    !!lot&&tok(lot.resourceId||lot.materialIdentity)===tok(rid)&&
    String(lot.warehouseId||'')===String(warehouse.warehouseId||'')&&
    String(lot.ownerCompanyId||'').toUpperCase()===owner&&
    String(lot.operatorCompanyId||'').toUpperCase()===operator&&
-   String(lot.ownerAttributionStatus||'').toUpperCase()===String(b.ownerAttributionStatus||'').toUpperCase()&&
+   String(lot.ownerAttributionStatus||'').toUpperCase()==='EXPLICIT_ASSET_OWNER'&&
    ['AVAILABLE','PARTIALLY_SOLD'].includes(String(lot.status||'').toUpperCase())&&
    !!asset&&String(asset.status||'').toUpperCase()==='OPERATIONAL'&&asset.productionEnabled===true&&
    String(asset.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE'&&String(asset.operatorType||'').toUpperCase()==='PRIVATE_COMPANY_OPERATOR'&&
