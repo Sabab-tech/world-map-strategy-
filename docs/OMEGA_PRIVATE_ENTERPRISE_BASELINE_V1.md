@@ -249,3 +249,15 @@ Verified from `omega_simulation_runtime.js`:
 - [ ] Route procurement and sales through the existing Trade/Market plus confirmed inventory-batch/receipt authority; no synthetic supply or revenue.
 - [ ] Add additive world-save schema validation/migration and prove save → reload → transaction replay does not duplicate balances, shipments, receipts, sales, taxes or dividends.
 - [ ] Keep all finance simulation selected-country/turn scoped. No all-country company-account processing or per-frame finance updates.
+
+## Exact-head CI diagnosis and correction — 2026-11-06
+
+At PR head `d733e4b53ba069f0ee388ca1a1e84f0fa419a3e0`, the `OMEGA Country Factory Starting Baseline` job completed 131/133 tests successfully and exposed two failures in the newly added runtime-registry validation tests.
+
+- The valid-data failures stopped at `PRIVATE_COUNTRY_BASELINE_RATE_MISMATCH:TUR`.
+- Root cause: the runtime validator used `Math.round((private / government) * 1000) / 10`, while the authoritative generator's `round1(value)` uses `Math.round(value * 10) / 10` after computing the percentage. Floating-point operation order can flip a half-tenth boundary; the runtime validator therefore rejected a valid generated country ratio.
+- Correction committed at `10a16c857b1e6b20b986ca8c801d1aabda5e75fa`: the runtime category and country rate checks now match the generator's exact rounding sequence. No cap, roster, integer, total, provenance or corruption assertion was removed or loosened.
+- The same two failures also explain why the exact ISO3 country-key precedence test returned `BLOCKED`; that test must return `READY` again on the corrected exact head.
+- The old `d733e4b...` job is still a failed run and cannot certify the correction. The corrected head requires a fresh exact-head Actions run before its tests may be called passed.
+
+At the time of this note, Android 9 Offline Gameplay Smoke and Android Build were still in progress on the older `d733e4b...` head. Their result is not transferable to a later commit.
