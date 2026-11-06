@@ -3267,3 +3267,11 @@ test('Factory Input tables contain long cell content without changing factory ca
   assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 98,
     'offline clients must fetch the updated Factory Input stylesheet');
 });
+
+test('Industry view pre-indexes non-baseline factory assets instead of rescanning the entire asset list per category', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  assert.match(source, /var nonBaselineActiveCountsByType = Object\.create\(null\)/);
+  assert.match(source, /nonBaselineActiveCountsByType\[key\] = \(Number\(nonBaselineActiveCountsByType\[key\]\) \|\| 0\) \+ 1/);
+  assert.match(source, /var nonBaselineActiveCount = Number\(nonBaselineActiveCountsByType\[typeKey\]\) \|\| 0/);
+  assert.doesNotMatch(source, /var nonBaselineActiveCount = mappedAssets\.filter/);
+});
