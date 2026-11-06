@@ -3377,6 +3377,28 @@ function startFactoryProject(input={}){
   const factoryType=String(rule.factoryType||requestedType||'').trim().toUpperCase();
   const typeProfile=profiles[factoryType]||profile||{};
   const catalogProfile=Object.prototype.hasOwnProperty.call(profiles,factoryType);
+  let privateAuthorization=null;
+  if(privateOwnership){
+    const lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1;
+    if(!lifecycle||typeof lifecycle.authorizeFactoryProjectConstruction!=='function')
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_CONSTRUCTION_AUTHORIZATION_RUNTIME_UNAVAILABLE'};
+    const authorizationCost=Math.max(1,num(input.cost)||num(typeProfile.constructionCost)||1000);
+    privateAuthorization=lifecycle.authorizeFactoryProjectConstruction({
+      countryId:cid,requestId:String(input.requestId||''),factoryType,
+      ownerCompanyId:privateOwnerCompanyId,operatorCompanyId:privateOperatorCompanyId,
+      companyId:String(input.companyId||''),privateCompanyId:String(input.privateCompanyId||''),
+      ownerType:requestedOwnerType,operatorType:requestedOperatorType,
+      stateControlRights:input.stateControlRights,
+      requirePrivateCommissioningGate:input.requirePrivateCommissioningGate===true,
+      permitId:input.permitId,permitAuthority:input.permitAuthority,permitExpiryTurn:input.permitExpiryTurn,
+      sourcePrivateProposalId:input.sourcePrivateProposalId,sourcePrivateDecisionId:input.sourcePrivateDecisionId,
+      sourcePrivateFundingId:input.sourcePrivateFundingId,
+      constructionFinanceAuthority:input.constructionFinanceAuthority,cost:authorizationCost
+    });
+    if(privateAuthorization?.status!=='AUTHORIZED')
+      return{status:'BLOCKED',reason:privateAuthorization?.reason||'PRIVATE_FACTORY_CONSTRUCTION_AUTHORIZATION_REQUIRED',
+        authorization:clone(privateAuthorization||{status:'UNAVAILABLE'})};
+  }
   let constructionMaterialQuote=null;
   if(catalogProfile){
     constructionMaterialQuote=factoryConstructionMaterialQuote(cid,typeProfile);
@@ -3423,6 +3445,15 @@ function startFactoryProject(input={}){
     operatorCompanyId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
     operatorType:privateOwnership?'PRIVATE_COMPANY_OPERATOR':'STATE_ENTERPRISE_OPERATOR',
     companyId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
+    privatePermitId:privateOwnership?String(input.permitId||''):null,
+    privatePermitStatus:privateOwnership?'ACTIVE':null,
+    privatePermitAuthority:privateOwnership?String(input.permitAuthority||''):null,
+    permitExpiryTurn:privateOwnership?num(input.permitExpiryTurn):null,
+    sourcePrivateProposalId:privateOwnership?String(input.sourcePrivateProposalId||''):null,
+    sourcePrivateDecisionId:privateOwnership?String(input.sourcePrivateDecisionId||''):null,
+    sourcePrivateFundingId:privateOwnership?String(input.sourcePrivateFundingId||''):null,
+    privateCompanyId:privateOwnership?privateOwnerCompanyId:null,
+    requirePrivateCommissioningGate:privateOwnership?true:false,
     stateControlRights:privateOwnership?{
       strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
       labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,domesticSupplyDirection:true,
@@ -3500,10 +3531,23 @@ function advanceProjects(c){
       const techReady=(p.requiredTechnologyIds||[]).every(t=>resourceState(cid).technologyCapabilities?.some(x=>tok(x?.technologyId).toUpperCase()===tok(t)));
       const assetStatus=techReady?'OPERATIONAL':'TECHNOLOGY_LOCKED';
       const factoryProfile=p.factoryProfile||cat()?.factoryProfiles?.[normalizeFactoryType(p.factoryType)]||{};
+      const isPrivateFactory=String(p.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE';
+      const commissionedStatus=techReady?'OPERATIONAL':'TECHNOLOGY_LOCKED';
+      const assetStatus=isPrivateFactory?'BLOCKED':commissionedStatus;
       econ.productionAssets.push({id:p.factoryId,countryId:cid,stage:'PROCESSING',factoryType:p.factoryType,
         recipeId:p.recipeId||p.recipe?.recipeId||null,recipeMode:p.recipeMode||p.recipe?.recipeMode||'SINGLE_INPUT',
         recipeAuthority:p.recipeAuthority||p.recipe?.recipeAuthority||'INDUSTRIAL_CATALOG_RULE',
         capacity:inputCapacityFromFactory(p),capacityPerDay:inputCapacityFromFactory(p),locationNodeKey:p.targetLocationNodeKey,status:assetStatus,
+        privateCommissionedStatus:isPrivateFactory?commissionedStatus:null,
+        productionEnabled:isPrivateFactory?false:undefined,
+        productionStatus:isPrivateFactory?'STRATEGIC_SUPPLY_PIPELINE_PROOF_REQUIRED':undefined,
+        blockedReason:isPrivateFactory?'SAB34_PIPELINE_PROOF_REQUIRED':null,
+        privatePermitId:p.privatePermitId||null,privatePermitStatus:p.privatePermitStatus||null,
+        privatePermitAuthority:p.privatePermitAuthority||null,permitExpiryTurn:p.permitExpiryTurn??null,
+        sourcePrivateProposalId:p.sourcePrivateProposalId||null,sourcePrivateDecisionId:p.sourcePrivateDecisionId||null,
+        sourcePrivateFundingId:p.sourcePrivateFundingId||null,privateCompanyId:p.privateCompanyId||null,
+        requirePrivateCommissioningGate:p.requirePrivateCommissioningGate===true,
+        constructionProjectId:p.projectId,
         inputCoefficients:p.recipe.inputs,outputProfile:p.recipe.outputs,cycleDays:p.recipe.cycleDays,
         inputInventory:{},inputBatchLots:[],inputUnit:p.recipe?.inputUnit||factoryProfile.inputUnit||null,
         productionHealth:{status:'STOPPED',productivityPct:0,reason:'NO_FACTORY_INPUTS',missingInputs:Object.keys(p.recipe?.inputs||{}),updatedTurn:turn(),authority:'OMEGA_FACTORY_PRODUCTION_SCHEDULER_V1'},
@@ -3845,12 +3889,27 @@ function factoryUtilityDiagnostics(countryId){
 function factoryOperationGate(countryId,asset,employmentSnapshot){
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
   const cid=canonicalCountry(countryId),factoryId=String(asset.id||asset.assetId||asset.factoryId||asset.projectId||'');
-  if(String(asset.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE'&&asset.blockedReason==='SAB34_PIPELINE_PROOF_REQUIRED'){
+  if(String(asset.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE'){
     const lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||(g.Omega&&g.Omega.PrivateEnterpriseLifecycleV1);
-    if(lifecycle&&typeof lifecycle.refreshCommissionedProductionGate==='function')
-      lifecycle.refreshCommissionedProductionGate(cid,factoryId);
-    if(asset.blockedReason==='SAB34_PIPELINE_PROOF_REQUIRED')
+    if(!lifecycle||typeof lifecycle.productionProofReady!=='function'||
+       typeof lifecycle.refreshCommissionedProductionGate!=='function'||!lifecycle.productionProofReady()){
+      asset.productionEnabled=false;
+      asset.blockedReason='SAB34_PIPELINE_PROOF_REQUIRED';
+      if(String(asset.status||'').toUpperCase()!=='DECOMMISSIONED'&&String(asset.status||'').toUpperCase()!=='DESTROYED')
+        asset.status='BLOCKED';
       return{status:'BLOCKED',reason:'SAB34_PIPELINE_PROOF_REQUIRED',factoryId,authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
+    }
+    if(asset.blockedReason==='SAB34_PIPELINE_PROOF_REQUIRED'||asset.productionEnabled!==true){
+      const refreshed=lifecycle.refreshCommissionedProductionGate(cid,factoryId);
+      if(!refreshed||!['READY','PARTIALLY_READY'].includes(refreshed.status))
+        return{status:'BLOCKED',reason:refreshed?.reason||'PRIVATE_FACTORY_AUTHORIZATION_NOT_VERIFIED',factoryId,detail:clone(refreshed||{})};
+    }
+    const owner=String(asset.ownerCompanyId||asset.ownerId||'').trim().toUpperCase();
+    const operator=String(asset.operatorCompanyId||asset.operatorId||asset.companyId||'').trim().toUpperCase();
+    if(!COMPANY_IDS.includes(owner)||!COMPANY_IDS.includes(operator)||asset.productionEnabled!==true||
+       asset.privatePermitStatus!=='ACTIVE'||!asset.privatePermitId||!asset.sourcePrivateProposalId||
+       asset.stateControlRights?.operationalControl!=='STATE_POLICY_ONLY')
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_AUTHORIZATION_NOT_VERIFIED',factoryId,authority:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1'};
   }
   const status=String(asset.status||'OPERATIONAL').toUpperCase();
   if(['CLOSED','DECOMMISSIONED','DESTROYED','TECHNOLOGY_LOCKED','BLOCKED','UNDER_CONSTRUCTION','MAINTENANCE'].includes(status))
