@@ -3400,6 +3400,7 @@ function startFactoryProject(input={}){
     const authorizationCost=Math.max(1,num(input.cost)||num(typeProfile.constructionCost)||1000);
     privateAuthorization=lifecycle.authorizeFactoryProjectConstruction({
       countryId:cid,requestId:String(input.requestId||''),factoryType,
+      resourceId:rid||null,recipeId:rule.recipeId||requestedRecipeId||null,
       ownerCompanyId:privateOwnerCompanyId,operatorCompanyId:privateOperatorCompanyId,
       companyId:String(input.companyId||''),privateCompanyId:String(input.privateCompanyId||''),
       ownerType:requestedOwnerType,operatorType:requestedOperatorType,
