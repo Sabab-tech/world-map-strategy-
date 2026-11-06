@@ -4141,14 +4141,14 @@ function commitFactoryCycleImmediately(input={}){
       ownerAttributionStatus:ownershipParties.ownerAttributionStatus,
       sourceBatchIds:roots,sourceFactoryId:fid,warehouseId:'WH-'+cid+'-PROCESSED',locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',processId:transactionId,
       sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourcePrivateDecisionId:asset.sourcePrivateDecisionId||null,
-      sourcePrivateFundingId:asset.sourcePrivateFundingId||null,
-      provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'SIMULATED_PROCESSING_YIELD',processingAuthority:'SIMULATED',status:'FINISHED_GOODS_CREATED',transactionId,factoryId:fid,sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourceBatchIds:roots,simulationTurn:turn()}};
+      sourcePrivateFundingId:asset.sourcePrivateFundingId||null,sourcePrivatePermitId:asset.privatePermitId||null,
+      provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'SIMULATED_PROCESSING_YIELD',processingAuthority:'SIMULATED',status:'FINISHED_GOODS_CREATED',transactionId,factoryId:fid,sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourcePrivatePermitId:asset.privatePermitId||null,sourceBatchIds:roots,simulationTurn:turn()}};
     batches.push(row);created.push(row);
     inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',countryId:cid,warehouseId:row.warehouseId,
       locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,operatorCompanyId:row.operatorCompanyId,
       ownerAttributionStatus:row.ownerAttributionStatus,sourceFactoryId:fid,
       sourcePrivateProposalId:row.sourcePrivateProposalId,sourcePrivateDecisionId:row.sourcePrivateDecisionId,
-      sourcePrivateFundingId:row.sourcePrivateFundingId,sourceBatchIds:roots,status:'AVAILABLE',
+      sourcePrivateFundingId:row.sourcePrivateFundingId,sourcePrivatePermitId:row.sourcePrivatePermitId,sourceBatchIds:roots,status:'AVAILABLE',
       provenance:clone(row.provenance),createdTurn:turn()};
     finishedWarehouse.availableByResource[outputId]=(num(finishedWarehouse.availableByResource[outputId])||0)+outQty;
     writeFactoryOutputUnit(r,finishedWarehouse,outputId,unit);
@@ -4357,16 +4357,16 @@ function commitMultiInputFactoryCycleImmediately(input={}){
       sourceBatchIds:roots,sourceSiteIds:sites,sourceFactoryId:fid,warehouseId:'WH-'+cid+'-PROCESSED',
       locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',processId:transactionId,
       sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourcePrivateDecisionId:asset.sourcePrivateDecisionId||null,
-      sourcePrivateFundingId:asset.sourcePrivateFundingId||null,
+      sourcePrivateFundingId:asset.sourcePrivateFundingId||null,sourcePrivatePermitId:asset.privatePermitId||null,
       provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'SIMULATED_DOWNSTREAM_RECIPE',status:'FINISHED_GOODS_CREATED',
         transactionId,factoryId:fid,recipeId:recipe.recipeId||null,factoryType:asset.factoryType,
-        sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourceBatchIds:roots,sourceSiteIds:sites,simulationTurn:turn()}};
+        sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourcePrivatePermitId:asset.privatePermitId||null,sourceBatchIds:roots,sourceSiteIds:sites,simulationTurn:turn()}};
     batches.push(row);created.push(row);
     inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnitPlan.units[outputId],stage:'FINISHED',
       countryId:cid,warehouseId:row.warehouseId,locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,
       operatorCompanyId:row.operatorCompanyId,ownerAttributionStatus:row.ownerAttributionStatus,sourceFactoryId:fid,
       sourcePrivateProposalId:row.sourcePrivateProposalId,sourcePrivateDecisionId:row.sourcePrivateDecisionId,
-      sourcePrivateFundingId:row.sourcePrivateFundingId,sourceBatchIds:roots,sourceSiteIds:sites,status:'AVAILABLE',
+      sourcePrivateFundingId:row.sourcePrivateFundingId,sourcePrivatePermitId:row.sourcePrivatePermitId,sourceBatchIds:roots,sourceSiteIds:sites,status:'AVAILABLE',
       provenance:clone(row.provenance),createdTurn:turn()};
     const warehouseKey=outputWarehouseKeys[outputId]||outputId;
     finished.availableByResource[warehouseKey]=(num(finished.availableByResource[warehouseKey])||0)+outQty;
