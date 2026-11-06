@@ -3204,6 +3204,10 @@ test('factory cards flip in place and show Input, Output and Byproduct tabs with
   const otherCard = makeCard('CEMENT_PLANT');
   const root = {
     classList:{ add(){} },
+    // This card-interaction test targets the catalog in full, independently
+    // of the separate three-card progressive-rendering contract.
+    __omegaV2IndustryCountryId:'BGD',
+    __omegaV2FactoryTypeVisibleCount:99,
     addEventListener(name,handler) { listeners[name] = handler; },
     contains() { return true; },
     querySelectorAll(selector) {
@@ -3431,7 +3435,8 @@ test('Factory Input tables contain long cell content without changing factory ca
   const marker = '/* Factory Input table overflow containment: keep long labels and statuses inside their cells. */';
   const fixIndex = css.lastIndexOf(marker);
   assert.ok(fixIndex >= 0, 'the scoped Factory Input overflow rules must be present');
-  const fix = css.slice(fixIndex);
+  const legacyProfileIndex = css.indexOf('/* Android 9 / legacy WebView paint profile.', fixIndex);
+  const fix = css.slice(fixIndex, legacyProfileIndex >= 0 ? legacyProfileIndex : undefined);
   assert.match(fix, /\.fp-factory-table-wrap\s*\{[^}]*min-width:\s*0;[^}]*overflow-x:\s*auto;/s,
     'the Input table wrapper must remain constrained and horizontally scrollable');
   assert.match(fix, /\.fp-factory-input-table th,\s*\.omega-v2-industry--factory-home \.fp-factory-input-table td\s*\{[^}]*white-space:\s*normal;[^}]*overflow-wrap:\s*anywhere;/s,
