@@ -96,7 +96,7 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
     cat "$log_file"
     screenshot_dir="$artifact_dir/screenshots"
     mkdir -p "$screenshot_dir"
-    remote_screenshot_dir="/sdcard/Android/data/com.omega.globalsupremecommander/files/omega-smoke"
+    remote_screenshot_dir="/storage/emulated/0/Android/data/com.omega.globalsupremecommander/files/omega-smoke"
     if ! timeout 30s adb pull "$remote_screenshot_dir" "$screenshot_dir"; then
       echo "ERROR: Android Input UI screenshot retrieval failed" >&2
       exit 1
