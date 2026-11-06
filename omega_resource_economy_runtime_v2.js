@@ -993,6 +993,9 @@
         if(take<=1e-12)continue;
         var lineage=siteLineage(row),flow=lineage.originBatchId?(Array.isArray(network.siteFlowLedger)?network.siteFlowLedger.find(function(x){return String(x.batchId||'')===lineage.originBatchId;}):null):null;
         allocations.push({batchId:String(row.batchId||''),resourceId:rid,quantity:take,unit:row.unit||null,stage:stage,
+          ownerCompanyId:String(row.ownerCompanyId||'').trim()||null,
+          operatorCompanyId:String(row.operatorCompanyId||'').trim()||null,
+          ownerAttributionStatus:String(row.ownerAttributionStatus||'NOT_RECORDED').trim().toUpperCase(),
           sourceBatchIds:[...new Set((Array.isArray(row.sourceBatchIds)?row.sourceBatchIds:[]).map(String).filter(Boolean))],
           originatingBatchId:lineage.originBatchId||String(row.batchId||''),originResourceId:lineage.originResourceId||rid,
           siteId:flow?.siteId||lineage.site?.siteId||row.siteReferenceKey||row.siteId||null,
