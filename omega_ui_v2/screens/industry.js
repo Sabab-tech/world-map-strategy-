@@ -3944,13 +3944,17 @@
       }).length;
       var lineTransitCount = lineRows.filter(function (line) {
         return (line.shipments || []).some(function (shipment) {
-          return /^(IN_TRANSIT|BLOCKED_ROUTE_BLOCKADE|BLOCKED_LEDGER_MISMATCH|BLOCKED_BATCH_LEDGER_MISMATCH)$/.test(String(shipment.status || '').toUpperCase());
+          return String(shipment.status || '').toUpperCase() === 'IN_TRANSIT';
         });
       }).length;
       var lineBlockedCount = lineRows.filter(function (line) {
         return /^(BLOCKED|FAILED|UNFULFILLED|STOPPED)$/.test(String(line.status || '').toUpperCase()) ||
+          (line.shipments || []).some(function (shipment) {
+            return /^(BLOCKED_|FAILED)/.test(String(shipment.status || '').toUpperCase());
+          }) ||
           (line.inputRequests || []).some(function (request) {
-            return /^(UNFULFILLED|BLOCKED|FAILED)$/.test(String(request.status || '').toUpperCase());
+            return /^(UNFULFILLED|BLOCKED|FAILED)$/.test(String(request.status || '').toUpperCase()) ||
+              /^(BLOCKED|FAILED)$/.test(String(request.deliveryStatus || '').toUpperCase());
           });
       }).length;
       var lineCards = lineRows.map(function (line) {
