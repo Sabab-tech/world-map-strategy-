@@ -926,10 +926,15 @@
     // rescanned the full productionAssets array 21 times during every Industry render,
     // which made low-memory Android WebViews spend seconds in synchronous JS work.
     var nonBaselineActiveCountsByType = Object.create(null);
+    var startingAssetCountsByType = Object.create(null);
     mappedAssets.forEach(function (factory) {
-      if (String(factory.raw && factory.raw.sourceType || '').toUpperCase() === 'COUNTRY_STARTING_FACTORY_BASELINE') return;
+      var sourceType = String(factory.raw && factory.raw.sourceType || '').toUpperCase();
       var key = normalizeFactoryType(factory.type || '', catalog);
       if (!key) return;
+      if (sourceType === 'COUNTRY_STARTING_FACTORY_BASELINE') {
+        startingAssetCountsByType[key] = (Number(startingAssetCountsByType[key]) || 0) + 1;
+        return;
+      }
       nonBaselineActiveCountsByType[key] = (Number(nonBaselineActiveCountsByType[key]) || 0) + 1;
     });
     // The baseline runtime already owns the country's factory counts. Use it only
@@ -945,9 +950,15 @@
         var nonBaselineActiveCount = Number(nonBaselineActiveCountsByType[typeKey]) || 0;
         // The country baseline is the common factory count. Add completed
         // player builds, but never let missing baseline records hide the count.
+        var hasStartingAssetRecords = (Number(startingAssetCountsByType[typeKey]) || 0) > 0;
+        // When starting-factory asset records are present, the unified asset list
+        // already contains the baseline factories. Count that list once; adding the
+        // static opening allocation again duplicates every starting factory.
         var count = factoryStartingRegistry.runtimeRegistered === true
           ? liveCount
-          : Math.max(0, Number(row.startingCount) || 0) + nonBaselineActiveCount;
+          : hasStartingAssetRecords
+            ? Number(factoryTypeCountsIndex[typeKey] && factoryTypeCountsIndex[typeKey].count) || 0
+            : Math.max(0, Number(row.startingCount) || 0) + nonBaselineActiveCount;
         var profile = profiles[typeKey] || {};
         if (!factoryTypeCountsIndex[typeKey]) {
           factoryTypeCountsIndex[typeKey] = { type: typeKey, name: String(row.name || profile.name || typeKey), count: count };
@@ -1972,6 +1983,36 @@
       key === 'critical' ? 'Shortage' : 'Not verified');
     return '<span class="fp-factory-risk" data-state="' + key + '" role="status">' +
       '<i aria-hidden="true"></i><strong>' + esc(text) + '</strong></span>';
+  }
+
+  function factoryInputEfficiency(factory, rows) {
+    factory = factory && typeof factory === 'object' ? factory : {};
+    var raw = factory.raw && typeof factory.raw === 'object' ? factory.raw : factory;
+    var health = raw.productionHealth && typeof raw.productionHealth === 'object'
+      ? raw.productionHealth
+      : factory.productionHealth && typeof factory.productionHealth === 'object'
+        ? factory.productionHealth : {};
+    var detail = health.detail && typeof health.detail === 'object' ? health.detail : {};
+    var constraints = detail.constraints && typeof detail.constraints === 'object'
+      ? detail.constraints
+      : health.constraints && typeof health.constraints === 'object' ? health.constraints : {};
+    var rawMaterialRatio = num(constraints.rawMaterialRatio);
+    if (rawMaterialRatio === null) {
+      return { value:null, ratio:null, status:'unknown', reason:'RAW_MATERIAL_EFFICIENCY_NOT_RECORDED' };
+    }
+    // The production runtime records the usable raw-material ratio as a fraction.
+    // Do not infer operating efficiency from warehouse stock alone: stock coverage
+    // is not the same thing as measured production efficiency.
+    if (rawMaterialRatio < 0 || rawMaterialRatio > 1) {
+      return { value:null, ratio:null, status:'unknown', reason:'RAW_MATERIAL_RATIO_OUT_OF_RANGE' };
+    }
+    var reduction = Math.max(0, Math.min(100, (1 - rawMaterialRatio) * 100));
+    return {
+      value:Math.round(reduction * 100) / 100,
+      ratio:rawMaterialRatio,
+      status:reduction > 1e-9 ? 'reduced' : 'sufficient',
+      reason:String(health.reason || '')
+    };
   }
 
   function factoryInputLiveRiskStatus(model, productId) {
@@ -3928,11 +3969,19 @@
       var byCategory = categoryA.localeCompare(categoryB);
       return byCategory || String(a && (a.name || a.type) || '').localeCompare(String(b && (b.name || b.type) || ''));
     });
-    var cards = rows.map(function (item) { return factoryTypeCard(item, model); }).join('');
+    var visibleLimit = Math.max(3, Math.floor(num(model.factoryTypeVisibleCount) || 3));
+    var visibleRows = rows.slice(0, visibleLimit);
+    var cards = visibleRows.map(function (item) { return factoryTypeCard(item, model); }).join('');
+    var remaining = Math.max(0, rows.length - visibleRows.length);
+    var nextCount = Math.min(3, remaining);
+    var showMore = remaining > 0
+      ? '<button type="button" class="omega-v2-factory-button fp-type-show-more" data-factory-type-show-more>' +
+        'Show next ' + nextCount + ' factory types · ' + remaining + ' remaining</button>'
+      : '';
     var empty = '<div class="omega-v2-factory-type-empty">No factory types available.</div>';
     return '<section class="fp-type-catalog" aria-label="Factory types">' +
       '<div class="fp-factory-catalog-workspace' + (factoryCardUiState(model).expandedKey ? ' fp-workspace--detail-open' : '') +
-      '"><div class="fp-type-catalog-grid">' + (cards || empty) + '</div></div></section>';
+      '"><div class="fp-type-catalog-grid">' + (cards || empty) + '</div>' + showMore + '</div></section>';
   }
 
   function factoryAssetsWorkspaceMarkup(root, model, options) {
