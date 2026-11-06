@@ -284,11 +284,15 @@ test('an expired government permit cannot start construction after funding',()=>
 test('company capital receipts require an existing settled Finance ledger credit and reject replay',()=>{
   const h=makeHarness();
   h.state.finance.BGD.omegaFinance.ledger.push({transactionId:'BANK-DISBURSEMENT-1',type:'CORPORATE_LOAN_DISBURSEMENT',
-    companyId:COMPANY,amount:250,direction:'CREDIT',status:'SETTLED'});
-  const result=h.api.recordCompanyCapitalReceipt({countryId:'BGD',companyId:COMPANY,sourceTransactionId:'BANK-DISBURSEMENT-1',amount:250});
+    companyId:COMPANY,amount:250,currency:'GAME_CURRENCY_UNITS',direction:'CREDIT',status:'SETTLED'});
+  const result=h.api.recordCompanyCapitalReceipt({countryId:'BGD',companyId:COMPANY,sourceTransactionId:'BANK-DISBURSEMENT-1',amount:250,currency:'GAME_CURRENCY_UNITS'});
   assert.equal(result.status,'POSTED');
   assert.equal(h.api.getCompanyCapitalSummary('BGD',COMPANY).availableBalance,250);
-  const replay=h.api.recordCompanyCapitalReceipt({countryId:'BGD',companyId:COMPANY,sourceTransactionId:'BANK-DISBURSEMENT-1',amount:250});
+  const mismatched=h.api.recordCompanyCapitalReceipt({countryId:'BGD',companyId:COMPANY,sourceTransactionId:'BANK-DISBURSEMENT-1',amount:250,currency:'USD'});
+  assert.equal(mismatched.status,'BLOCKED');
+  assert.equal(mismatched.reason,'CAPITAL_SOURCE_CURRENCY_MISMATCH_OR_UNOBSERVED');
+  assert.equal(h.api.getCompanyCapitalSummary('BGD',COMPANY).availableBalance,250);
+  const replay=h.api.recordCompanyCapitalReceipt({countryId:'BGD',companyId:COMPANY,sourceTransactionId:'BANK-DISBURSEMENT-1',amount:250,currency:'GAME_CURRENCY_UNITS'});
   assert.equal(replay.status,'DUPLICATE');
   assert.equal(h.api.getCompanyCapitalSummary('BGD',COMPANY).availableBalance,250);
   const invalid=h.api.recordCompanyCapitalReceipt({countryId:'BGD',companyId:COMPANY,sourceTransactionId:'MISSING',amount:100});
