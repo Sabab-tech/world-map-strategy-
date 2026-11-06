@@ -570,17 +570,29 @@ test('government procurement refuses unknown or non-private operator attribution
   const companyId='NOVA_CONSUMER_INDUSTRIES';
   h.state.resource.BGD.batches=[{
     batchId:'UNVERIFIED-PRIVATE-BATCH',resourceId:'widgets',quantity:10,remainingQuantity:10,
-    stage:'FINISHED',ownerCompanyId:companyId,operatorCompanyId:'UNKNOWN_OPERATOR',
-    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',status:'AVAILABLE'
+    stage:'FINISHED',countryId:'BGD',ownerCompanyId:companyId,operatorCompanyId:'UNKNOWN_OPERATOR',
+    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-UNKNOWN-OPERATOR',
+    sourcePrivateProposalId:'UNKNOWN-OP-PROPOSAL',sourcePrivateDecisionId:'UNKNOWN-OP-DECISION',
+    sourcePrivateFundingId:'UNKNOWN-OP-FUNDING',warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE'
   }];
   h.state.resource.BGD.inventory={widgets:10};
   h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',status:'OPERATIONAL',
     availableByResource:{widgets:10},reservedByResource:{widgets:0},storedBatchIds:['UNVERIFIED-PRIVATE-BATCH'],receipts:[]};
   h.state.resource.BGD.inventoryLots={'UNVERIFIED-PRIVATE-BATCH':{
     batchId:'UNVERIFIED-PRIVATE-BATCH',resourceId:'widgets',quantity:10,remainingQuantity:10,status:'AVAILABLE',
-    ownerCompanyId:companyId,operatorCompanyId:'UNKNOWN_OPERATOR',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
-    warehouseId:'WH-BGD-PROCESSED'
+    countryId:'BGD',ownerCompanyId:companyId,operatorCompanyId:'UNKNOWN_OPERATOR',
+    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-UNKNOWN-OPERATOR',
+    sourcePrivateProposalId:'UNKNOWN-OP-PROPOSAL',sourcePrivateDecisionId:'UNKNOWN-OP-DECISION',
+    sourcePrivateFundingId:'UNKNOWN-OP-FUNDING',warehouseId:'WH-BGD-PROCESSED'
   }};
+  h.state.economy={BGD:{productionAssets:[{
+    id:'FAC-UNKNOWN-OPERATOR',countryId:'BGD',status:'OPERATIONAL',productionEnabled:true,
+    ownerType:'PRIVATE_ENTERPRISE',ownerCompanyId:companyId,operatorType:'PRIVATE_COMPANY_OPERATOR',
+    operatorCompanyId:'UNKNOWN_OPERATOR',privatePermitId:'UNKNOWN-OP-PERMIT',privatePermitStatus:'ACTIVE',
+    sourcePrivateProposalId:'UNKNOWN-OP-PROPOSAL',sourcePrivateDecisionId:'UNKNOWN-OP-DECISION',
+    sourcePrivateFundingId:'UNKNOWN-OP-FUNDING',
+    stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
+  }]}};
   const policy=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
     policyId:'GOV-PROC-UNKNOWN-OPERATOR',contractId:'GOV-PROC-UNKNOWN-OPERATOR',
     companyId,authorizedQuantity:10,procurementLimit:10});
@@ -598,7 +610,11 @@ test('government procurement rejects in-transit, unstored, missing-lot and misma
     {name:'in transit',status:'IN_TRANSIT',stored:true,lot:true,asset:true},
     {name:'not stored',status:'AVAILABLE',stored:false,lot:true,asset:true},
     {name:'missing lot',status:'AVAILABLE',stored:true,lot:false,asset:true},
-    {name:'wrong private factory owner',status:'AVAILABLE',stored:true,lot:true,asset:false}
+    {name:'wrong private factory owner',status:'AVAILABLE',stored:true,lot:true,asset:false},
+    {name:'batch from another country',status:'AVAILABLE',stored:true,lot:true,asset:true,batchCountryId:'USA'},
+    {name:'lot from another country',status:'AVAILABLE',stored:true,lot:true,asset:true,lotCountryId:'USA'},
+    {name:'factory asset from another country',status:'AVAILABLE',stored:true,lot:true,asset:true,assetCountryId:'USA'},
+    {name:'lot points to another batch',status:'AVAILABLE',stored:true,lot:true,asset:true,lotBatchId:'DIFFERENT-BATCH-ID'}
   ];
   for(const scenario of scenarios){
     const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime,companyId='NOVA_CONSUMER_INDUSTRIES';
@@ -608,19 +624,20 @@ test('government procurement rejects in-transit, unstored, missing-lot and misma
     const sourceFundingId='PROC-FUNDING-'+scenario.name.replaceAll(' ','-');
     const privatePermitId='PROC-PERMIT-'+scenario.name.replaceAll(' ','-');
     const batch={batchId:'PRIVATE-'+scenario.name.replaceAll(' ','-'),resourceId:'widgets',quantity:10,remainingQuantity:10,
-      stage:'FINISHED',countryId:'BGD',ownerCompanyId:companyId,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      stage:'FINISHED',countryId:scenario.batchCountryId||'BGD',ownerCompanyId:companyId,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
       ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-PRIVATE-WIDGETS',
       sourcePrivateProposalId:sourceProposalId,sourcePrivateDecisionId:sourceDecisionId,sourcePrivateFundingId:sourceFundingId,
       warehouseId:'WH-BGD-PROCESSED',status:scenario.status};
     h.state.resource.BGD.batches=[batch];
-    h.state.resource.BGD.inventoryLots=scenario.lot?{[batch.batchId]:{...batch}}:{};
+    h.state.resource.BGD.inventoryLots=scenario.lot?{[batch.batchId]:{...batch,
+      batchId:scenario.lotBatchId||batch.batchId,countryId:scenario.lotCountryId||batch.countryId}}:{};
     h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',status:'OPERATIONAL',
       availableByResource:{widgets:10},reservedByResource:{widgets:0},
       storedBatchIds:scenario.stored?[batch.batchId]:[],receipts:[]};
     h.state.economy={BGD:{productionAssets:scenario.asset?[{
-      id:'FAC-PRIVATE-WIDGETS',status:'OPERATIONAL',productionEnabled:true,ownerType:'PRIVATE_ENTERPRISE',
-      ownerCompanyId:companyId,operatorType:'PRIVATE_COMPANY_OPERATOR',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
-      privatePermitId,privatePermitStatus:'ACTIVE',
+      id:'FAC-PRIVATE-WIDGETS',countryId:scenario.assetCountryId||'BGD',status:'OPERATIONAL',productionEnabled:true,
+      ownerType:'PRIVATE_ENTERPRISE',ownerCompanyId:companyId,operatorType:'PRIVATE_COMPANY_OPERATOR',
+      operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',privatePermitId,privatePermitStatus:'ACTIVE',
       sourcePrivateProposalId:sourceProposalId,sourcePrivateDecisionId:sourceDecisionId,sourcePrivateFundingId:sourceFundingId,
       stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
     }]:[]}};
