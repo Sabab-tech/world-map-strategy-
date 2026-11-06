@@ -76,6 +76,43 @@
     return (hash>>>0).toString(16).padStart(8,'0');
   }
 
+  function indexedDbSaveRequest(indexedDB,operation,key,value){
+    return new Promise((resolve,reject)=>{
+      let database=null,settled=false;
+      const finish=(error,result)=>{
+        if(settled)return;
+        settled=true;
+        try{if(database)database.close();}catch(_){}
+        if(error)reject(error);else resolve(result);
+      };
+      let opening;
+      try{opening=indexedDB.open('omega-simulation-save-slots',1);}
+      catch(error){finish(error);return;}
+      opening.onupgradeneeded=()=>{
+        const db=opening.result;
+        if(!db.objectStoreNames.contains('slots'))db.createObjectStore('slots');
+      };
+      opening.onerror=()=>finish(opening.error||new Error('SAVE_DATABASE_OPEN_FAILED'));
+      opening.onblocked=()=>finish(new Error('SAVE_DATABASE_OPEN_BLOCKED'));
+      opening.onsuccess=()=>{
+        database=opening.result;
+        let transaction;
+        try{transaction=database.transaction('slots',operation==='put'?'readwrite':'readonly');}
+        catch(error){finish(error);return;}
+        let request,result=null;
+        transaction.oncomplete=()=>finish(null,result);
+        transaction.onerror=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_FAILED'));
+        transaction.onabort=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_ABORTED'));
+        try{
+          const store=transaction.objectStore('slots');
+          request=operation==='put'?store.put(String(value),String(key)):store.get(String(key));
+          request.onsuccess=()=>{result=request.result===undefined?null:request.result;};
+          request.onerror=()=>finish(request.error||new Error('SAVE_DATABASE_REQUEST_FAILED'));
+        }catch(error){try{transaction.abort();}catch(_){}finish(error);}
+      };
+    });
+  }
+
   function validateWorldSaveState(root){
     const issues=[];
     if(!root||typeof root!=='object'||Array.isArray(root))return[{type:'WORLD_STATE_ROOT_INVALID'}];
@@ -1004,18 +1041,52 @@
       return this.diagnostics();
     }
 
-    saveSlot(slot='default'){
-      if(typeof global.localStorage==='undefined')throw new Error('LOCAL_STORAGE_UNAVAILABLE');
+    async saveSlot(slot='default'){
       const key='omega.game.save.'+String(slot||'default');
-      global.localStorage.setItem(key,JSON.stringify(this.saveState()));
-      return {ok:true,key,turn:this.clock.turn};
+      // Volatile diagnostics are not part of the durable game state. Omitting
+      // their duplicate payload keeps ordinary save slots smaller without
+      // changing the authoritative world snapshot or its checksum.
+      const serialized=JSON.stringify(this.saveState({includeDiagnostics:false}));
+      if(global.indexedDB&&typeof global.indexedDB.open==='function'){
+        try{
+          await indexedDbSaveRequest(global.indexedDB,'put',key,serialized);
+          return {ok:true,key,turn:this.clock.turn,storage:'INDEXEDDB'};
+        }catch(indexedDbError){
+          // Preserve compatibility with browsers where IndexedDB is disabled
+          // or unavailable. The fallback may still fail on large saves, in
+          // which case the original storage error is included in the message.
+          try{
+            if(typeof global.localStorage!=='undefined'){
+              global.localStorage.setItem(key,serialized);
+              return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
+            }
+          }catch(localStorageError){
+            throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; INDEXEDDB:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
+          }
+          throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
+        }
+      }
+      if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
+      global.localStorage.setItem(key,serialized);
+      return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
     }
 
-    loadSlot(slot='default'){
-      if(typeof global.localStorage==='undefined')throw new Error('LOCAL_STORAGE_UNAVAILABLE');
+    async loadSlot(slot='default'){
       const key='omega.game.save.'+String(slot||'default');
-      const raw=global.localStorage.getItem(key);
-      if(!raw)throw new Error('SAVE_SLOT_NOT_FOUND:'+key);
+      let raw=null,indexedDbError=null;
+      if(global.indexedDB&&typeof global.indexedDB.open==='function'){
+        try{raw=await indexedDbSaveRequest(global.indexedDB,'get',key);}
+        catch(error){indexedDbError=error;}
+      }
+      // Read legacy localStorage saves when no IndexedDB record exists. Existing
+      // saves remain valid and are not deleted during migration.
+      if(raw===null||raw===undefined){
+        if(typeof global.localStorage!=='undefined')raw=global.localStorage.getItem(key);
+      }
+      if(!raw){
+        if(indexedDbError)throw new Error('SAVE_SLOT_NOT_FOUND:'+key+'; INDEXEDDB:'+String(indexedDbError.message||indexedDbError));
+        throw new Error('SAVE_SLOT_NOT_FOUND:'+key);
+      }
       return this.loadState(JSON.parse(raw));
     }
 
