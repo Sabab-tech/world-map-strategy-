@@ -3327,15 +3327,19 @@ function startFactoryProject(input={}){
   const privateCompanyIds=['AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP','NOVA_CONSUMER_INDUSTRIES','ATLAS_TECHNOLOGY_CORPORATION','TERRA_INFRASTRUCTURE_GROUP'];
   const requestedOwnerCompanyId=String(input.ownerCompanyId||input.ownerId||'').trim().toUpperCase();
   const requestedOperatorCompanyId=String(input.operatorCompanyId||input.operatorId||'').trim().toUpperCase();
-  const privateOwnership=String(input.ownershipModel||input.ownerType||'').trim().toUpperCase()==='PRIVATE_ENTERPRISE'||
+  const requestedOwnerType=String(input.ownerType||'').trim().toUpperCase();
+  const requestedOperatorType=String(input.operatorType||'').trim().toUpperCase();
+  const privateOwnership=String(input.ownershipModel||requestedOwnerType||'').trim().toUpperCase()==='PRIVATE_ENTERPRISE'||
     !!requestedOwnerCompanyId||!!requestedOperatorCompanyId;
   const privateOwnerCompanyId=requestedOwnerCompanyId||requestedOperatorCompanyId;
   const privateOperatorCompanyId=requestedOperatorCompanyId||requestedOwnerCompanyId;
   if(privateOwnership&&(!privateCompanyIds.includes(privateOwnerCompanyId)||!privateCompanyIds.includes(privateOperatorCompanyId)))
     return{status:'BLOCKED',reason:'PRIVATE_FACTORY_OWNER_OPERATOR_MUST_BE_REGISTERED_COMPANIES',
       ownerCompanyId:privateOwnerCompanyId||null,operatorCompanyId:privateOperatorCompanyId||null};
-  if(privateOwnership&&input.stateControlRights&&input.stateControlRights.operationalControl==='STATE_OPERATOR')
-    return{status:'BLOCKED',reason:'PRIVATE_FACTORY_CANNOT_ASSIGN_STATE_AS_DAILY_OPERATOR'};
+  if(privateOwnership&&(requestedOwnerType==='STATE_OWNED_ENTERPRISE'||
+      requestedOperatorType==='STATE_ENTERPRISE_OPERATOR'||
+      String(input.stateControlRights&&input.stateControlRights.operationalControl||'').toUpperCase()==='STATE_OPERATOR'))
+    return{status:'BLOCKED',reason:'PRIVATE_FACTORY_CANNOT_ASSIGN_STATE_AS_OWNER_OR_DAILY_OPERATOR'};
   const n=netState(cid);
   if(input.requestId){const prior=n.projects.find(row=>row.projectType==='FACTORY_CONSTRUCTION'&&String(row.requestId||'')===String(input.requestId));if(prior)return{...clone(prior),idempotent:true};}
   if(input.factoryId){const prior=n.projects.find(row=>row.projectType==='FACTORY_CONSTRUCTION'&&String(row.factoryId||'')===String(input.factoryId)&&['UNDER_CONSTRUCTION','COMPLETED'].includes(String(row.status||'')));if(prior)return{...clone(prior),idempotent:true};}
@@ -3417,7 +3421,7 @@ function startFactoryProject(input={}){
     ownerType:privateOwnership?'PRIVATE_ENTERPRISE':'STATE_OWNED_ENTERPRISE',
     operatorId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
     operatorCompanyId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
-    operatorType:privateOwnership?'PRIVATE_OPERATOR':'STATE_ENTERPRISE_OPERATOR',
+    operatorType:privateOwnership?'PRIVATE_COMPANY_OPERATOR':'STATE_ENTERPRISE_OPERATOR',
     companyId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
     stateControlRights:privateOwnership?{
       strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
