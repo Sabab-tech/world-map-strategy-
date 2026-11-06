@@ -233,6 +233,15 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         String(error && error.message || error) + '. Runtime diagnostics: ' + JSON.stringify(diagnostics));
     }
     await page.locator('[data-omega-private-company-lifecycle] select[name="operatorCompanyId"]').waitFor({ state: 'visible' });
+    await page.waitForFunction(() => {
+      const form = document.querySelector('[data-omega-private-company-lifecycle] [data-pe-proposal-form]');
+      const owner = form?.querySelector('select[name="companyId"]');
+      const operator = form?.querySelector('select[name="operatorCompanyId"]');
+      const factory = form?.querySelector('select[name="factoryType"]');
+      return !!form && form.getAttribute('aria-busy') !== 'true' &&
+        !!owner && !owner.disabled && !!operator && !operator.disabled &&
+        !!factory && !factory.disabled && owner.options.length === 5 && operator.options.length === 5;
+    }, null, { timeout: 45000 });
 
     const before = await page.evaluate(() => {
       const state = window.Game.state;
