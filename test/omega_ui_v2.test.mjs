@@ -3369,6 +3369,7 @@ test('Production Lines joins exact selected-country cycles and committed logisti
     assert.match(root.innerHTML,/WH-BGD-RAW/);
     assert.match(root.innerHTML,/FACTORY:BGD:FAC-LINE-1/);
     assert.match(root.innerHTML,/truck/);
+    assert.match(root.innerHTML,/Distance 12 km/);
     assert.match(root.innerHTML,/2026-11-08/);
     assert.match(root.innerHTML,/REQ-01/);
     assert.match(root.innerHTML,/Recorded owner not mapped to a global company/);
