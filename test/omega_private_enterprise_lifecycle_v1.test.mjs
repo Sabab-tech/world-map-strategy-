@@ -688,7 +688,8 @@ test('joint venture allocates small dividends by largest remainder without creat
   for(const companyId of [COMPANY,'AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP']){
     const vote=h.api.voteJointVentureResolution({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,
       resolutionId:resolution.resolution.resolutionId,companyId:companyId,vote:'FOR'});
-    if(companyId==='NOVA_CONSUMER_INDUSTRIES')assert.equal(vote.status,'APPROVED');
+    if(companyId==='MERIDIAN_ENGINEERING_GROUP')assert.equal(vote.status,'APPROVED');
+    else assert.equal(vote.status,'VOTE_RECORDED');
   }
   const paid=h.api.distributeJointVentureDividend({countryId:'BGD',
     jointVentureId:created.jointVenture.jointVentureId,resolutionId:resolution.resolution.resolutionId});
