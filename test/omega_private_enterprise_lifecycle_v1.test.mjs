@@ -122,7 +122,7 @@ test('autonomous company proposals are deterministic, once per 30 turns, and hav
 
 test('proposal -> approval -> real Treasury grant -> construction -> private commissioning is replay-safe and uses shared assets',()=>{
   const h=makeHarness(),api=h.api;
-  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',factoryType:'STEEL_WORKS',quantity:1,
     sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true,requestId:'proposal-001'});
   assert.equal(proposal.status,'PROPOSED');
   assert.equal(h.projects.length,0);
@@ -139,6 +139,10 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   const decision=api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}});
   assert.equal(decision.status,'APPROVED_AWAITING_FUNDING');
+  assert.ok(decision.proposal.permit.permitId);
+  assert.equal(decision.proposal.permit.companyId,COMPANY);
+  assert.equal(decision.proposal.permit.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+  assert.equal(decision.proposal.decision.permitId,decision.proposal.permit.permitId);
   assert.equal(h.projects.length,0);
 
   const funding=api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,sourceType:'GOVERNMENT_GRANT',amount:100});
@@ -155,7 +159,8 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   assert.equal(h.projects.length,1);
   assert.equal(h.projects[0].sourcePrivateProposalId,proposal.proposalId);
   assert.equal(h.projects[0].ownerCompanyId,COMPANY);
-  assert.equal(h.projects[0].operatorCompanyId,COMPANY);
+  assert.equal(h.projects[0].operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+  assert.equal(h.projects[0].permitId,decision.proposal.permit.permitId);
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,0);
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].capitalSpent,100);
   assert.equal(h.state.economy.BGD.companyAccounts,undefined,'legacy company flow tracker is not treated as a cash wallet');
@@ -166,7 +171,8 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   emit(h,'OMEGA_FACTORY_CAPACITY_CHANGED',{countryId:'BGD',payload:{projectId:project.projectId}});
   const asset=h.state.economy.BGD.productionAssets[0];
   assert.equal(asset.ownerCompanyId,COMPANY);
-  assert.equal(asset.operatorCompanyId,COMPANY);
+  assert.equal(asset.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+  assert.equal(asset.privatePermitId,decision.proposal.permit.permitId);
   assert.equal(asset.ownerType,'PRIVATE_ENTERPRISE');
   assert.equal(asset.operatorType,'PRIVATE_COMPANY_OPERATOR');
   assert.equal(asset.stateControlRights.licensingAndPermits,true);
@@ -243,6 +249,22 @@ test('zero-government factory categories cannot receive a private expansion prop
   const result=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
   assert.equal(result.status,'BLOCKED');
   assert.equal(h.projects.length,0);
+});
+
+test('an expired government permit cannot start construction after funding',()=>{
+  const h=makeHarness();
+  const proposal=h.api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+    sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
+  const approval=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
+    allowStateSupport:true,expiryTurn:3,conditions:{allowStateSupport:true}});
+  assert.equal(approval.status,'APPROVED_AWAITING_FUNDING');
+  assert.equal(approval.proposal.permit.expiresAtTurn,3);
+  assert.equal(h.api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,sourceType:'GOVERNMENT_GRANT',amount:100}).status,'FUNDED');
+  const blocked=h.api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+  assert.equal(blocked.status,'BLOCKED');
+  assert.equal(blocked.reason,'GOVERNMENT_PERMIT_EXPIRED');
+  assert.equal(h.projects.length,0);
+  assert.equal(h.state.economy.BGD.productionAssets.length,0);
 });
 
 test('company capital receipts require an existing settled Finance ledger credit and reject replay',()=>{
