@@ -68,12 +68,34 @@
       .map(key=>JSON.stringify(key)+':'+stableStringify(value[key])).join(',')+'}';
   }
 
-  function checksumSnapshot(value){
-    // Exclude only the top-level checksum without cloning the full snapshot.
-    const text=stableStringify(value||{},true);
+  function checksumText(text){
     let hash=2166136261;
     for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
     return (hash>>>0).toString(16).padStart(8,'0');
+  }
+
+  function checksumSnapshot(value){
+    // Exclude only the top-level checksum without cloning the full snapshot.
+    return checksumText(stableStringify(value||{},true));
+  }
+
+  function createSaveSnapshot(runtime,options={}){
+    const snapshot={
+      schemaVersion:SESSION_VERSION,
+      runtimeVersion:VERSION,
+      status:runtime.status,
+      clock:runtime.clock.snapshot(),
+      worldState:runtime.world.snapshot(),
+      commands:runtime.commandQueue.snapshot(),
+      events:runtime.events.snapshot(),
+      ministryRuntime:runtime.ministryRuntime?.saveState?.()||null,
+      interoperability:runtime.interoperability?.saveState?.()||null,
+      worldEngine:runtime.worldEngine?.exportSaveState?.({authoritativeState:true})||null
+    };
+    // Volatile diagnostics duplicate large participant results already held in
+    // runtime memory. Callers can omit them from routine durable autosaves.
+    if(options.includeDiagnostics!==false)snapshot.diagnostics=runtime.diagnostics();
+    return snapshot;
   }
 
   function indexedDbSaveRequest(indexedDB,operation,key,value){
@@ -959,21 +981,7 @@
     }
 
     saveState(options={}){
-      const snapshot={
-        schemaVersion:SESSION_VERSION,
-        runtimeVersion:VERSION,
-        status:this.status,
-        clock:this.clock.snapshot(),
-        worldState:this.world.snapshot(),
-        commands:this.commandQueue.snapshot(),
-        events:this.events.snapshot(),
-        ministryRuntime:this.ministryRuntime?.saveState?.()||null,
-        interoperability:this.interoperability?.saveState?.()||null,
-        worldEngine:this.worldEngine?.exportSaveState?.({authoritativeState:true})||null
-      };
-      // Volatile diagnostics duplicate large participant results already held in
-      // runtime memory. Callers can omit them from routine durable autosaves.
-      if(options.includeDiagnostics!==false)snapshot.diagnostics=this.diagnostics();
+      const snapshot=createSaveSnapshot(this,options);
       snapshot.checksum=checksumSnapshot(snapshot);
       return snapshot;
     }
@@ -1043,10 +1051,17 @@
 
     async saveSlot(slot='default'){
       const key='omega.game.save.'+String(slot||'default');
-      // Volatile diagnostics are not part of the durable game state. Omitting
-      // their duplicate payload keeps ordinary save slots smaller without
-      // changing the authoritative world snapshot or its checksum.
-      const serialized=JSON.stringify(this.saveState({includeDiagnostics:false}));
+      // Volatile diagnostics are not part of the durable game state. Serialize
+      // the canonical snapshot once, then hash and inject its root checksum into
+      // that same JSON string. The previous path walked the entire world twice
+      // (stable checksum serialization + JSON.stringify), blocking the browser
+      // main thread on large country/economy saves.
+      const snapshot=createSaveSnapshot(this,{includeDiagnostics:false});
+      const canonical=stableStringify(snapshot,true);
+      const checksum=checksumText(canonical);
+      snapshot.checksum=checksum;
+      const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
+        (canonical.length>2?',':'')+canonical.slice(1);
       if(global.indexedDB&&typeof global.indexedDB.open==='function'){
         try{
           await indexedDbSaveRequest(global.indexedDB,'put',key,serialized);
