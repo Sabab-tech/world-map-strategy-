@@ -502,9 +502,14 @@
     var accounts=clone(ctx.stateTransaction.get('economy.companyAccounts')||{}),x=accounts[cid];
     if(!x||typeof x!=='object')x={companyId:cid,openingCashStatus:'UNKNOWN',runtimeNetCashFlow:0,grossRevenue:0,paymentsReceived:0,paymentsMade:0,taxPaid:0,workerIncomePaid:0,transportPaid:0,supplierRevenue:0,lastTurn:turn()};
     var entries=Array.isArray(x.cashFlowEntries)?x.cashFlowEntries:[];
+    var grossRevenue=direction==='CREDIT'?(num(p.grossRevenue)===null?a:num(p.grossRevenue)):0;
+    var sourceId=String(p.saleId||p.settlementId||p.transactionId||p.projectId||p.sourceTransactionId||'')||null;
+    var currency=String(p.currency||'GAME_CURRENCY_UNITS');
     var prior=entries.find(function(row){return String(row&&row.entryId||'')===key;});
     if(prior){
-      if(Math.abs((num(prior.amount)||0)-a)>1e-9||String(prior.direction||'')!==direction||String(prior.category||'')!==category)
+      if(Math.abs((num(prior.amount)||0)-a)>1e-9||String(prior.direction||'')!==direction||
+         String(prior.category||'')!==category||Math.abs((num(prior.grossRevenue)||0)-grossRevenue)>1e-9||
+         String(prior.sourceId||'')!==String(sourceId||'')||String(prior.currency||'')!==currency)
         return{accepted:false,reason:'COMPANY_FLOW_IDEMPOTENCY_COLLISION',companyId:cid,entryId:key};
       return{accepted:true,duplicate:true,noStateChangeAccepted:true,companyId:cid,amount:0,entryId:key};
     }
@@ -525,9 +530,7 @@
     x.cashFlowJournalVersion=1;
     entries.push({
       entryId:key,companyId:cid,amount:a,direction:direction,category:category,
-      grossRevenue:direction==='CREDIT'?(num(p.grossRevenue)===null?a:num(p.grossRevenue)):0,
-      currency:String(p.currency||'GAME_CURRENCY_UNITS'),
-      sourceId:String(p.saleId||p.settlementId||p.transactionId||p.projectId||p.sourceTransactionId||'')||null,
+      grossRevenue:grossRevenue,currency:currency,sourceId:sourceId,
       turn:turn(),status:'POSTED',authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'
     });
     while(entries.length>(num(rules().runtime.maxLedgerEntries)||2048))entries.shift();
@@ -643,8 +646,14 @@
 
   function fiscalFor(gross,direction,companyId){
     var r=rules().fiscal;
-    var royalty=gross*(num(r.royaltyRate)||0),resourceTax=gross*(num(r.resourceTaxRate)||0),corporate=sovereignCompany(companyId)?0:gross*(num(r.corporateTaxRate)||0),exportDuty=String(direction||'').toUpperCase()==='EXPORT'?gross*(num(r.exportDutyRate)||0):0,other=gross*(num(r.otherReceiptRate)||0);
-    return{gross:gross,royalty:royalty,resourceTax:resourceTax,corporateTax:corporate,exportDuty:exportDuty,other:other,total:royalty+resourceTax+corporate+exportDuty+other,policySource:'resource_economy_rules.json'};
+    var royalty=gross*(num(r.royaltyRate)||0),resourceTax=gross*(num(r.resourceTaxRate)||0),
+      exportDuty=String(direction||'').toUpperCase()==='EXPORT'?gross*(num(r.exportDutyRate)||0):0,other=gross*(num(r.otherReceiptRate)||0);
+    // Corporate income tax is assessed at the company financial-period close on recorded positive net cash-basis profit.
+    // It must never be charged on gross mineral receipts here as well.
+    var corporate=0;
+    return{gross:gross,royalty:royalty,resourceTax:resourceTax,corporateTax:corporate,exportDuty:exportDuty,other:other,
+      total:royalty+resourceTax+corporate+exportDuty+other,policySource:'resource_economy_rules.json',
+      corporateTaxTreatment:'NET_CASH_BASIS_COMPANY_PERIOD_CLOSE'};
   }
 
   function settleDomestic(c,rid,q,consumed,buyer,facility,tx){
