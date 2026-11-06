@@ -1,0 +1,72 @@
+name: OMEGA Private Enterprise Real Browser E2E
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/omega-private-enterprise-browser-e2e.yml"
+      - "index.html"
+      - "omega_private_enterprise_registry_v1.js"
+      - "omega_private_enterprise_lifecycle_v1.js"
+      - "country_private_factory_starting_baseline_v1.json"
+      - "omega_ui_v2/**"
+      - "omega_resource_industrial_network_v1.js"
+      - "omega_resource_economy_runtime_v2.js"
+      - "omega_simulation_runtime.js"
+      - "test/omega_private_enterprise_browser_e2e.test.mjs"
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/omega-private-enterprise-browser-e2e.yml"
+      - "index.html"
+      - "omega_private_enterprise_registry_v1.js"
+      - "omega_private_enterprise_lifecycle_v1.js"
+      - "country_private_factory_starting_baseline_v1.json"
+      - "omega_ui_v2/**"
+      - "omega_resource_industrial_network_v1.js"
+      - "omega_resource_economy_runtime_v2.js"
+      - "omega_simulation_runtime.js"
+      - "test/omega_private_enterprise_browser_e2e.test.mjs"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: omega-private-enterprise-browser-\${{ github.event.pull_request.number || github.ref }}-\${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  chromium-browser-e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pinned Playwright browser runner
+        run: |
+          npm install --prefix "$RUNNER_TEMP/omega-browser-deps" --no-save --package-lock=false --ignore-scripts playwright@1.65.0
+          "$RUNNER_TEMP/omega-browser-deps/node_modules/.bin/playwright" install --with-deps chromium
+
+      - name: Run actual Chromium E2E and offline/responsive performance checks
+        env:
+          NODE_PATH: \${{ runner.temp }}/omega-browser-deps/node_modules
+          OMEGA_BROWSER_TEST_ARTIFACT_DIR: \${{ runner.temp }}/omega-private-enterprise-browser
+        run: |
+          mkdir -p "$OMEGA_BROWSER_TEST_ARTIFACT_DIR"
+          timeout --signal=TERM --kill-after=15s 5m node --test test/omega_private_enterprise_browser_e2e.test.mjs
+
+      - name: Upload real browser E2E diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-private-enterprise-real-browser-e2e
+          path: \${{ runner.temp }}/omega-private-enterprise-browser/**
+          if-no-files-found: warn
+          retention-days: 7
