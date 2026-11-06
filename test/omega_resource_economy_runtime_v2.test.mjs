@@ -376,8 +376,11 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
     'factory ownership must not receive operating expenses when a different operator is recorded');
   assert.equal(accounts.LEGACY_COMPANY_ATTRIBUTION,undefined,
     'legacy companyId must not override an explicit operator identity');
-  assert.equal(worldState.economy.BGD.industrialRuntime.materialOwners.iron_intermediate,'FACTORY_OWNER_CO',
+  const ownedOutputBatch=worldState.resource.BGD.batches.find(x=>x.resourceId==='iron_intermediate');
+  assert.equal(ownedOutputBatch?.ownerCompanyId,'FACTORY_OWNER_CO',
     'finished-goods export ownership must follow the asset owner rather than the factory operator');
+  assert.equal(ownedOutputBatch?.operatorCompanyId,'PROCESS_OPERATOR_CO',
+    'the operator remains distinct from the legal finished-goods owner');
 
   assert.equal(worldState.trade.BGD.domesticSales.length,1);
   assert.equal(worldState.trade.BGD.domesticSales[0].sale.status,'SETTLED');
