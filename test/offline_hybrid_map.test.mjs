@@ -197,6 +197,19 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /omega_finance_ministry_runtime_v1\.js/);
   assert.doesNotMatch(serviceWorker, /"\.\/omega_finance_ministry_v1\.css"/, 'legacy finance CSS is not eagerly cached');
   assert.match(serviceWorker, /economy_global_profiles_v1\.json/);
+  for (const asset of [
+    "resource_industrial_catalog_v1.json",
+    "resource_country_resource_context_index.json",
+    "country_factory_starting_baseline_v1.json",
+    "country_private_factory_starting_baseline_v1.json"
+  ]) {
+    assert.ok(serviceWorker.includes('"./' + asset + '"'),
+      asset + " must be part of the install-time core offline asset list");
+    assert.ok(serviceWorker.includes(asset.replaceAll(".", "\\.")),
+      asset + " must be included in the offline shell matcher");
+  }
+  assert.match(serviceWorker, /function isCoreOfflineData\(url\)/);
+  assert.match(serviceWorker, /if \(isCoreOfflineData\(url\)\) return false/);
   assert.match(serviceWorker, /finance_runtime_rules_v1\.json/);
   assert.match(serviceWorker, /finance_sector_registry_v1\.json/);
   assert.match(serviceWorker, /omega_macro_stability_runtime_v1\.js/);
