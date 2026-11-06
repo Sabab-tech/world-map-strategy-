@@ -556,6 +556,9 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
         const physicalBatchId=String(allocation.batchId||'').trim();
         return{sourceBatchId:physicalBatchId||allocation.originatingBatchId||null,
           sourceBatchIds:roots.filter(id=>id!==physicalBatchId),
+          ownerCompanyId:allocation.ownerCompanyId||null,
+          operatorCompanyId:allocation.operatorCompanyId||null,
+          ownerAttributionStatus:allocation.ownerAttributionStatus||'NOT_RECORDED',
           siteId:allocation.siteId||null,siteReferenceKey:allocation.siteReferenceKey||allocation.siteId||null,
           occurrenceKey:allocation.occurrenceKey||null,resourceId:offer.resourceId,
           quantity,unitPrice,totalValue:quantity*unitPrice};
