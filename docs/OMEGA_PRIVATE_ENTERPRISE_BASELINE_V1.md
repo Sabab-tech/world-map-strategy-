@@ -295,3 +295,31 @@ The earlier Finance audit correctly found that **FinanceMinistry itself** has no
 8. Reuse the current selected-country/turn pipeline. Do not introduce all-country company finance loops, per-frame work, timers, polling or extra boot requests.
 
 This extension is required before the five SAB-42 companies can be described as having real funded corporate finance. The existing Resource Economy flow display must be labelled as flow tracking, not available company cash.
+
+## SAB-42 Lines tab — first phone-safe implementation (2026-11-06)
+
+The first read-only Lines implementation is now present in PR #408. It does not activate private production, create proposals, or change inventory/finance state.
+
+### Data join and display
+
+- `buildViewModel()` reads only the selected country's existing `Game.state.resource[country].industrialNetwork` and `Game.state.economy[country].productionAssets`.
+- It builds one index from the selected country's actual factory assets and joins cycles by exact `factoryId`; committed shipment rows by exact recorded `factoryId` / destination factory reference; input requests by exact `factoryId`; and warehouse dispatch rows by their exact destination factory ID.
+- Mine-to-warehouse shipments that have no recorded factory destination are not misrepresented as factory lines.
+- Each rendered line contains only available factory/cycle values, latest committed shipment, input-request progress, actual route source/destination, recorded transport modes, actual route distance when the total or all leg distances are available, ETA when recorded, batch ID and verified owner where possible.
+- Owner display recognizes only the five canonical global company IDs. Unknown legacy/simulation IDs remain “Recorded owner not mapped to a global company”; absent fields remain “Not recorded”. Aggregate opening allocations are not used to infer individual commissioned asset ownership.
+- Planned route previews are not joined as shipments and cannot appear as committed movement.
+- The model caps the visible line list at 80 and retains at most four recent shipments, requests and dispatches per factory for the UI. It never scans other countries and creates no synthetic line ID.
+
+### Phone and Android safeguards
+
+- The Lines view is one column with compact cards and two-column small metric pairs; it has no wide tables or desktop dashboard.
+- The decorative factory backdrop/photo and its credit links are not rendered for Lines, so the tab does not initiate that image's decode.
+- The Lines view disables animations, transitions, filters, backdrop filters, perspective, text shadows, box shadows and transforms.
+- Android 9 instrumentation no longer checks the superseded in-card Factory Manage action. It verifies the actual Lines tab exists without a Companies navigation tab, waits for its content panel, and sequentially taps Lines → Input → Stock → Lines. Each tab's synchronous JS click handler must return within 1,000 ms, with a 10-second bounded render deadline per panel.
+
+### Tests added
+
+- A UI fixture covers exact selected-country factory/cycle/shipment/request/dispatch joins, excludes a mine-only haul from factory Lines, displays the five-company owner only for an exact canonical ID, preserves unknown-owner status, displays recorded distance/ETA, and excludes a route-preview-only record.
+- The Android API 28 smoke now validates Lines/Input/Stock reachability and click responsiveness instead of the old Manage-button path.
+
+**Still unavailable / not claimed as implemented:** pending government proposal inbox, company financing decisions, licensing/approval, construction/commissioning, enforceable corporate cash balance, corporate loans/equity, and private procurement/production/sales/tax/dividend authority. Those remain gated on the audited Finance/Trade model and SAB-34 end-to-end proof. The Lines view is read-only and reports only currently persisted state.
