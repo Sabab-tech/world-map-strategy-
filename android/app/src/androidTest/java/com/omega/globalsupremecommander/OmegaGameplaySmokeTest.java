@@ -326,6 +326,36 @@ public final class OmegaGameplaySmokeTest {
                     "true", activeLinesReady
             );
 
+            final String privateLifecycleDiagnosticsScript =
+                    "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                    "var panel=main&&main.querySelector('[data-omega-private-company-lifecycle]');" +
+                    "var form=panel&&panel.querySelector('[data-pe-proposal-form]');" +
+                    "var operator=form&&form.querySelector('select[name=operatorCompanyId]');" +
+                    "return JSON.stringify({panel:!!panel,proposalForm:!!form,operatorSelector:!!operator," +
+                    "baselineRetry:!!(panel&&panel.querySelector('[data-pe-baseline-retry]'))});})()";
+            String privateLifecycleReady = "false";
+            final long privateLifecycleDeadline = SystemClock.elapsedRealtime() + 10000L;
+            while (!"true".equals(privateLifecycleReady) &&
+                    SystemClock.elapsedRealtime() < privateLifecycleDeadline) {
+                final String lifecycleDiagnostics = evaluate(instrumentation, webViewRef.get(), privateLifecycleDiagnosticsScript);
+                try {
+                    org.json.JSONObject state = new org.json.JSONObject(lifecycleDiagnostics);
+                    privateLifecycleReady = Boolean.toString(state.optBoolean("panel") &&
+                            state.optBoolean("proposalForm") && state.optBoolean("operatorSelector"));
+                    if (!"true".equals(privateLifecycleReady) && state.optBoolean("baselineRetry")) {
+                        throw new AssertionError("Private company baseline failed to load offline: " + lifecycleDiagnostics);
+                    }
+                } catch (org.json.JSONException error) {
+                    throw new AssertionError("Invalid private lifecycle diagnostics: " + lifecycleDiagnostics, error);
+                }
+                if (!"true".equals(privateLifecycleReady)) SystemClock.sleep(200L);
+            }
+            assertEquals(
+                    "Production Lines must mount the private proposal form and separate operator selector",
+                    "true", privateLifecycleReady
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_ENTERPRISE_LIFECYCLE_MOUNTED");
+
             final String[] industryTabs = {"inventory", "national-inventory", "production-lines"};
             final String[] industryTabNames = {"Input", "Stock", "Lines"};
             final StringBuilder tabNavigationTiming = new StringBuilder();
