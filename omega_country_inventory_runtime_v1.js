@@ -599,7 +599,13 @@
       var key = keyInfo.key;
       var rawLive = number(inventory[key]);
       var live = Math.max(0, rawLive || 0);
-      if (rawLive !== null && rawLive < 0) inventory[key] = 0;
+      if (rawLive !== null && rawLive < 0) {
+        inventory[key] = 0;
+        // A corrupt negative balance is invalid state, not a real stock movement.
+        // Reset the observed baseline with the repair so the current factory output
+        // is credited once instead of compensating for the discarded negative value.
+        row.observedBalances[pid] = 0;
+      }
       var previous = number(row.observedBalances[pid]);
       if (previous === null) previous = live;
       var observedDelta = live - previous;
