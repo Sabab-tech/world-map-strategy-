@@ -411,9 +411,11 @@ public final class OmegaGameplaySmokeTest {
                 inputTablesReady = evaluate(instrumentation, webViewRef.get(), inputTablesReadyScript);
                 if (!"true".equals(inputTablesReady)) SystemClock.sleep(400L);
             }
+            final String inputTablesDiagnostic = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_INPUT_TABLE_DIAGNOSTICS || {});})()");
             assertEquals(
-                    "The Input tab must show both all-factory daily requirements and per-factory input inventory rows",
-                    "true", inputTablesReady + "; diagnostics=" + evaluate(instrumentation, webViewRef.get(), "(function(){return JSON.stringify(window.__OMEGA_ANDROID_INPUT_TABLE_DIAGNOSTICS || {});})()")
+                    "The Input tab must show both all-factory daily requirements and per-factory input inventory rows; diagnostics=" + inputTablesDiagnostic,
+                    "true", inputTablesReady
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_INPUT_TABLES_READY");
 
