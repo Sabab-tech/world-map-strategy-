@@ -319,7 +319,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     };
     try {
       await page.waitForFunction(criteria => {
-        const rows = window.Game?.state?.economy?.BGD?.privateEnterpriseLifecycle?.proposals || [];
+        const rows = window.OmegaPrivateEnterpriseLifecycleV1?.getCountryDashboard?.('BGD')?.proposals || [];
         return rows.some(row => row.status === 'PROPOSED' &&
           row.companyId === criteria.owner &&
           row.operatorCompanyId === criteria.operator &&
@@ -333,7 +333,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         const main = cabinet?.querySelector('[data-omega-v2-main]');
         const lifecycleRoot = [cabinet, ...(cabinet ? Array.from(cabinet.querySelectorAll('*')) : [])]
           .find(node => node && Object.prototype.hasOwnProperty.call(node, '__omegaPrivateEnterpriseUiBound'));
-        const proposals = window.Game?.state?.economy?.BGD?.privateEnterpriseLifecycle?.proposals || [];
+        const proposals = window.OmegaPrivateEnterpriseLifecycleV1?.getCountryDashboard?.('BGD')?.proposals || [];
         return {
           uiBound:lifecycleRoot?.__omegaPrivateEnterpriseUiBound || false,
           submitTrace:window.__omegaProposalSubmitTrace || null,
