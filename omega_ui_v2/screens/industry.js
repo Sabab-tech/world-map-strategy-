@@ -3820,11 +3820,26 @@
 
   function scheduleRender(root, options, label) {
     options = options || {};
+    function renderAndRefreshLifecyclePanel() {
+      var result = render(root, options);
+      if (result && result.ok) {
+        var lifecycle = g.OmegaPrivateEnterpriseLifecycleV1 ||
+          (g.Omega && g.Omega.PrivateEnterpriseLifecycleV1) || null;
+        if (lifecycle && typeof lifecycle.renderIndustryPanel === 'function') {
+          lifecycle.renderIndustryPanel(root, Object.assign({}, options, {
+            countryId:root && root.__omegaV2IndustryCountryId || options.countryId,
+            tab:root && root.__omegaV2IndustryTab || options.tab || 'factories'
+          }));
+        }
+      }
+      return result;
+    }
+    renderAndRefreshLifecyclePanel.__omegaPrivateLifecycleHandled = true;
     var scheduler = options.onScheduleRender;
     if (typeof scheduler === 'function') {
-      return scheduler(function () { return render(root, options); }, label || 'Updating this section', root);
+      return scheduler(renderAndRefreshLifecyclePanel, label || 'Updating this section', root);
     }
-    return render(root, options);
+    return renderAndRefreshLifecyclePanel();
   }
 
 
@@ -3842,7 +3857,7 @@
     // Factory screen. Fetch and validate it only after the player opens a factory card's Manage action.
     var requestedTab = String(options && options.tab || root.__omegaV2IndustryTab || 'factories');
     var factoryManageOpened = !!(root.__omegaV2FactoryCardUiState && root.__omegaV2FactoryCardUiState.buildKey);
-    if ((requestedTab === 'companies' || factoryManageOpened) &&
+    if ((requestedTab === 'companies' || requestedTab === 'production-lines' || factoryManageOpened) &&
         model.privateEnterpriseBaseline && model.privateEnterpriseBaseline.status === 'LOADING' &&
         privateRuntime) {
       if (factoryManageOpened) {
@@ -3929,7 +3944,7 @@
     var lightweightTypeView = active === 'factories' && requestedFactoryView === 'types' && !managePanelOpen && !factoryDetailsOpen;
     var model = buildViewModel(Object.assign({}, options, {
       lightweightFactoryTypeView:lightweightTypeView,
-      loadPrivateEnterpriseBaseline:active === 'companies' || managePanelOpen
+      loadPrivateEnterpriseBaseline:active === 'companies' || active === 'production-lines' || managePanelOpen
     }));
     var countryKey = String(model.countryId || '');
     warmFactoryPlanningData(root, options, model);
