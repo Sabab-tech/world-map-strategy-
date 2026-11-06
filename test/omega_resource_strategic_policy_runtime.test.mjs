@@ -409,6 +409,11 @@ test('state supply directives enforce domestic-only, quota, export contract and 
   assert.equal(contract.accepted,true,JSON.stringify(contract));
   const approved=api.evaluateExportDirective('BGD','SAU','iron_ore',20,'GOV-EXPORT-IRON-1',{iron_ore:100});
   assert.equal(approved.allowed,true,JSON.stringify(approved));
+  const wrongContractCompany=api.validateExportBatchAllocation('BGD','iron_ore',[
+    {sourceFactoryId:'FAC-EXPORT-01',ownerCompanyId:'MERIDIAN_ENGINEERING_GROUP'}
+  ],'GOV-EXPORT-IRON-1');
+  assert.equal(wrongContractCompany.allowed,false);
+  assert.equal(wrongContractCompany.reason,'GOVERNMENT_EXPORT_CONTRACT_COMPANY_NOT_AUTHORIZED');
   const wrongDestination=api.evaluateExportDirective('BGD','IND','iron_ore',1,'GOV-EXPORT-IRON-1',{iron_ore:100});
   assert.equal(wrongDestination.allowed,false);
   const overContract=api.evaluateExportDirective('BGD','SAU','iron_ore',21,'GOV-EXPORT-IRON-1',{iron_ore:100});
