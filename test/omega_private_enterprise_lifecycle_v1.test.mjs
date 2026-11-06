@@ -37,6 +37,7 @@ function makeHarness(){
   const handlers=new Map();
   const projects=state.resource.BGD.industrialNetwork.projects;
   const network={
+    failRequestId:null,
     factoryUtilityDiagnostics(){
       return{status:'HEALTHY',utilityAuthority:'TEST_SIMULATION_UTILITY_STATE',
         electricity:{availableThisTurn:10},water:{availableThisTurn:20},
@@ -47,6 +48,7 @@ function makeHarness(){
       return{status:'QUOTED',materials:[{resourceId:'construction_aggregate',required:profile.constructionMaterials.construction_aggregate,available:100,sufficient:true}]};
     },
     startFactoryProject(input){
+      if(network.failRequestId===input.requestId)return{status:'BLOCKED',reason:'TEST_PROJECT_REJECTED'};
       const project={
         projectId:'FACTORY:BGD:'+input.factoryType+':'+input.requestId,
         factoryId:'FAC:BGD:'+input.factoryType+':'+input.requestId,
@@ -263,6 +265,33 @@ test('zero-government factory categories cannot receive a private expansion prop
   const result=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
   assert.equal(result.status,'BLOCKED');
   assert.equal(h.projects.length,0);
+});
+
+test('partial construction resumes remaining units without duplicate project or capex entries',()=>{
+  const h=makeHarness(),api=h.api;
+  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:2,
+    sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
+  assert.equal(api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
+    allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
+  assert.equal(api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,sourceType:'GOVERNMENT_GRANT',amount:200}).status,'FUNDED');
+  h.network.failRequestId=proposal.proposalId+':UNIT:2';
+  const first=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+  assert.equal(first.status,'PARTIALLY_UNDER_CONSTRUCTION');
+  assert.equal(first.proposal.projectIds.length,1);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].capitalSpent,100);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,100);
+  assert.equal(h.state.finance.BGD.omegaFinance.ledger.filter(x=>x.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX').length,1);
+
+  h.network.failRequestId=null;
+  const resumed=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+  assert.equal(resumed.status,'UNDER_CONSTRUCTION');
+  assert.equal(resumed.proposal.projectIds.length,2);
+  assert.equal(h.projects.length,2);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].capitalSpent,200);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,0);
+  assert.equal(h.state.finance.BGD.omegaFinance.ledger.filter(x=>x.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX').length,2);
+  assert.equal(api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId}).status,'DUPLICATE');
+  assert.equal(h.projects.length,2);
 });
 
 test('an expired government permit cannot start construction after funding',()=>{
