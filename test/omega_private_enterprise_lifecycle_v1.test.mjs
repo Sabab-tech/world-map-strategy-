@@ -60,6 +60,7 @@ function makeHarness(){
         projectType:'FACTORY_CONSTRUCTION',countryId:'BGD',factoryType:input.factoryType,
         recipeId:input.recipeId,requestId:input.requestId,status:'UNDER_CONSTRUCTION',
         durationDays:60,progressDays:0,cost:input.cost,
+        privatePermitId:input.permitId,privatePermitStatus:'ACTIVE',privatePermitAuthority:input.permitAuthority,
         ...input
       };
       projects.push(project);
