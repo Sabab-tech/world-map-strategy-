@@ -923,6 +923,151 @@
       return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
     });
     var cyclesList = Object.keys(cycles).map(function (id) { return Object.assign({ factoryId: id }, cycles[id] || {}); });
+
+    // Build one selected-country Lines index from committed factory/cycle/logistics
+    // records. No global-country scan, synthetic line ID or preview-only route is used.
+    var lineShipments = Array.isArray(industrial.shipments) ? industrial.shipments : [];
+    var lineInputRequests = Array.isArray(industrial.factoryInputRequests) ? industrial.factoryInputRequests : [];
+    var lineWarehouseDispatches = Array.isArray(industrial.warehouseFactoryDispatches) ? industrial.warehouseFactoryDispatches : [];
+    var lineFactoryById = Object.create(null), lineByFactoryId = Object.create(null);
+    mappedAssets.forEach(function (factory) {
+      var id = String(factory && factory.id || '').trim();
+      if (id) lineFactoryById[id] = factory;
+    });
+    var knownCompanyNames = {
+      AURORA_INDUSTRIAL_GROUP:'Aurora Industrial Group',
+      MERIDIAN_ENGINEERING_GROUP:'Meridian Engineering Group',
+      NOVA_CONSUMER_INDUSTRIES:'Nova Consumer Industries',
+      ATLAS_TECHNOLOGY_CORPORATION:'Atlas Technology Corporation',
+      TERRA_INFRASTRUCTURE_GROUP:'Terra Infrastructure Group'
+    };
+    function ensureLine(factoryId) {
+      var id = String(factoryId || '').trim();
+      if (!id) return null;
+      if (lineByFactoryId[id]) return lineByFactoryId[id];
+      var factory = lineFactoryById[id] || null;
+      var cycle = cycles[id] && typeof cycles[id] === 'object' ? cycles[id] : null;
+      var raw = factory && factory.raw && typeof factory.raw === 'object' ? factory.raw : {};
+      var ownerId = String(raw.companyId || raw.ownerCompanyId || raw.operatorCompanyId ||
+        raw.ownerId || raw.operatorId || raw.company || '').trim().toUpperCase();
+      lineByFactoryId[id] = {
+        factoryId:id,
+        name:factory && factory.name || String(cycle && (cycle.factoryName || cycle.name) || 'Factory ' + id),
+        type:factory && factory.type || String(cycle && cycle.factoryType || 'Not recorded'),
+        status:String(cycle && cycle.status || factory && factory.status || 'NOT_RECORDED'),
+        productionQuantity:cycle && cycle.productionQuantity !== undefined ? num(cycle.productionQuantity) : null,
+        startDate:cycle && cycle.startDate || null,
+        finishDate:cycle && cycle.finishDate || null,
+        sourceBatchIds:Array.isArray(cycle && cycle.sourceBatchIds) ? cycle.sourceBatchIds.slice() : [],
+        ownerCompanyId:ownerId && knownCompanyNames[ownerId] ? ownerId : null,
+        ownerCompanyName:ownerId && knownCompanyNames[ownerId] ? knownCompanyNames[ownerId] : null,
+        ownerRecordStatus:ownerId && knownCompanyNames[ownerId] ? 'VERIFIED_GLOBAL_COMPANY_ID' :
+          (ownerId ? 'UNMAPPED_OWNER_RECORD' : 'NOT_RECORDED'),
+        shipments:[],
+        inputRequests:[],
+        warehouseDispatches:[],
+        latestActivityTurn:num(cycle && (cycle.updatedTurn !== undefined ? cycle.updatedTurn : cycle.completedTurn))
+      };
+      return lineByFactoryId[id];
+    }
+    cyclesList.forEach(function (cycle) {
+      var line = ensureLine(cycle && cycle.factoryId);
+      if (line) {
+        line.productionQuantity = cycle.productionQuantity !== undefined ? num(cycle.productionQuantity) : line.productionQuantity;
+        line.startDate = cycle.startDate || line.startDate;
+        line.finishDate = cycle.finishDate || line.finishDate;
+        line.sourceBatchIds = Array.isArray(cycle.sourceBatchIds) ? cycle.sourceBatchIds.slice() : line.sourceBatchIds;
+        line.status = String(cycle.status || line.status || 'NOT_RECORDED');
+      }
+    });
+    lineShipments.forEach(function (shipment) {
+      if (!shipment || typeof shipment !== 'object') return;
+      var route = shipment.route && typeof shipment.route === 'object' ? shipment.route : {};
+      var factoryId = shipment.factoryId || shipment.destinationFactoryId || shipment.toFactoryId ||
+        route.destinationFactoryId || route.factoryId || '';
+      var line = ensureLine(factoryId);
+      if (!line) return;
+      line.shipments.push({
+        shipmentId:String(shipment.shipmentId || ''),
+        shipmentType:String(shipment.shipmentType || 'NOT_RECORDED'),
+        status:String(shipment.status || 'NOT_RECORDED'),
+        resourceId:String(shipment.resourceId || ''),
+        quantity:num(shipment.quantity),
+        targetQuantity:num(shipment.targetQuantity),
+        unit:String(shipment.unit || ''),
+        targetUnit:String(shipment.targetUnit || ''),
+        batchId:String(shipment.batchId || ''),
+        etaDate:shipment.etaDate || null,
+        etaTurn:num(shipment.etaTurn),
+        createdTurn:num(shipment.createdTurn),
+        route:route
+      });
+      var activityTurn = num(shipment.updatedTurn !== undefined ? shipment.updatedTurn : shipment.createdTurn);
+      if (activityTurn !== null && (line.latestActivityTurn === null || line.latestActivityTurn === undefined ||
+          activityTurn > line.latestActivityTurn)) line.latestActivityTurn = activityTurn;
+    });
+    lineInputRequests.forEach(function (request) {
+      if (!request || typeof request !== 'object') return;
+      var line = ensureLine(request.factoryId || request.destinationFactoryId || '');
+      if (!line) return;
+      line.inputRequests.push({
+        requestId:String(request.requestId || ''),
+        resourceId:String(request.resourceId || ''),
+        status:String(request.status || 'NOT_RECORDED'),
+        deliveryStatus:String(request.deliveryStatus || 'NOT_RECORDED'),
+        requestedQuantity:num(request.requestedQuantity),
+        allocatedQuantity:num(request.allocatedQuantity),
+        fulfilledQuantity:num(request.fulfilledQuantity),
+        inTransitQuantity:num(request.inTransitQuantity),
+        unfulfilledQuantity:num(request.unfulfilledQuantity),
+        unit:String(request.unit || ''),
+        updatedTurn:num(request.updatedTurn),
+        transferIds:Array.isArray(request.transferIds) ? request.transferIds.slice() : []
+      });
+      if (num(request.updatedTurn) !== null &&
+          (line.latestActivityTurn === null || line.latestActivityTurn === undefined ||
+           num(request.updatedTurn) > line.latestActivityTurn)) line.latestActivityTurn = num(request.updatedTurn);
+    });
+    lineWarehouseDispatches.forEach(function (dispatch) {
+      if (!dispatch || typeof dispatch !== 'object') return;
+      var line = ensureLine(dispatch.destinationFactoryId || dispatch.factoryId || '');
+      if (!line) return;
+      var route = dispatch.route && typeof dispatch.route === 'object' ? dispatch.route : {};
+      line.warehouseDispatches.push({
+        dispatchId:String(dispatch.dispatchId || dispatch.shipmentId || ''),
+        shipmentId:String(dispatch.shipmentId || ''),
+        status:String(dispatch.status || 'NOT_RECORDED'),
+        resourceId:String(dispatch.resourceId || ''),
+        quantity:num(dispatch.quantity),
+        targetQuantity:num(dispatch.targetQuantity),
+        unit:String(dispatch.unit || ''),
+        targetUnit:String(dispatch.targetUnit || ''),
+        batchId:String(dispatch.batchId || ''),
+        inputBatchId:String(dispatch.inputBatchId || ''),
+        etaTurn:num(dispatch.etaTurn),
+        createdTurn:num(dispatch.createdTurn),
+        route:route
+      });
+      if (num(dispatch.createdTurn) !== null &&
+          (line.latestActivityTurn === null || line.latestActivityTurn === undefined ||
+           num(dispatch.createdTurn) > line.latestActivityTurn)) line.latestActivityTurn = num(dispatch.createdTurn);
+    });
+    var lineActivity = Object.keys(lineByFactoryId).map(function (id) {
+      var line = lineByFactoryId[id];
+      function newestFirst(a, b) { return (num(b && (b.updatedTurn !== undefined ? b.updatedTurn : b.createdTurn)) || 0) -
+        (num(a && (a.updatedTurn !== undefined ? a.updatedTurn : a.createdTurn)) || 0); }
+      line.shipments.sort(newestFirst);
+      line.inputRequests.sort(newestFirst);
+      line.warehouseDispatches.sort(newestFirst);
+      line.shipments = line.shipments.slice(0, 4);
+      line.inputRequests = line.inputRequests.slice(0, 4);
+      line.warehouseDispatches = line.warehouseDispatches.slice(0, 4);
+      return line;
+    }).sort(function (a, b) {
+      return (num(b.latestActivityTurn) || 0) - (num(a.latestActivityTurn) || 0) ||
+        String(a.name).localeCompare(String(b.name));
+    }).slice(0, 80);
+
     return {
       countryId: context.countryId,
       hasCountryState: !!(context.resource || context.economy),
@@ -948,6 +1093,13 @@
       technologyCapabilities: technologyCapabilities.slice(),
       technologyContracts: technologyContracts.slice(),
       cycles: cyclesList,
+      lineActivity: lineActivity,
+      lineActivitySourceCounts: {
+        productionCycles: cyclesList.length,
+        committedShipments: lineShipments.length,
+        inputRequests: lineInputRequests.length,
+        warehouseDispatches: lineWarehouseDispatches.length
+      },
       recentFlowCount: flows.length,
       recentFlows: flows.slice(-20).reverse(),
       catalogProfileCount: Object.keys(profiles).length,
