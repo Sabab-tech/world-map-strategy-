@@ -600,6 +600,10 @@
     if(reservedCapital+1e-9<capitalRequired)
       return{status:'BLOCKED',reason:'COMPANY_CAPITAL_NOT_RESERVED_FOR_CONSTRUCTION',reserved:reservedCapital,required:capitalRequired,
         newFactoryUnits:remainingQuantity,existingProjectsMissingCapex:unsettledExisting};
+    if(remainingQuantity===0&&unsettledExisting===0){
+      // Preserve the public idempotent contract once all requested units and CAPEX receipts exist.
+      return{status:'DUPLICATE',started:[],failures:[],proposal:clone(proposal)};
+    }
     var quote=null;
     if(remainingQuantity>0){
       try{if(typeof n.factoryConstructionMaterialQuote==='function')quote=n.factoryConstructionMaterialQuote(cid,profile);}
