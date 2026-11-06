@@ -970,6 +970,25 @@
         if (stateRights.emergencyIntervention === true) stateRightLabels.push('Emergency intervention');
         if (stateRights.operationalControl) stateRightLabels.push('Operations: ' + String(stateRights.operationalControl).replace(/_/g, ' '));
       }
+      var policyRuntime = g.OmegaResourceStrategicPolicyRuntime ||
+        (g.Omega && g.Omega.ResourceStrategicPolicyRuntime) || null;
+      var outputProfile = raw.outputProfile || raw.outputs || raw.outputQuantities || {};
+      var outputResourceIds = outputProfile && typeof outputProfile === 'object' ? Object.keys(outputProfile) : [];
+      var stateDirectiveLabels = [];
+      if (policyRuntime && typeof policyRuntime.supplyPolicySummary === 'function') {
+        outputResourceIds.forEach(function (resourceId) {
+          try {
+            var summary = policyRuntime.supplyPolicySummary(context.countryId, resourceId);
+            (summary && Array.isArray(summary.activeDirectives) ? summary.activeDirectives : []).forEach(function (directive) {
+              var label = String(directive.directive || '').replace(/_/g, ' ');
+              if (label && stateDirectiveLabels.indexOf(label) < 0) stateDirectiveLabels.push(label);
+            });
+          } catch (_) {}
+        });
+      }
+      var stateDirectiveStatus = outputResourceIds.length
+        ? (stateDirectiveLabels.length ? stateDirectiveLabels.join(' · ') : 'No active supply directive')
+        : 'Product scope not recorded';
       var isStateOwner = /^STATE_|^GOVERNMENT_/i.test(ownerId) || ownerType === 'STATE_OWNED_ENTERPRISE';
       var isStateOperator = /^STATE_|^GOVERNMENT_/i.test(explicitOperatorId) || operatorType === 'STATE_ENTERPRISE_OPERATOR';
       var ownerRoleExplicit = !!explicitOwnerId || !!ownerType;
@@ -1001,6 +1020,8 @@
             operatorRoleExplicit ? 'UNMAPPED_OPERATOR_TYPE' : 'NOT_RECORDED'),
         stateControlRightsStatus:stateRights ? (stateRightLabels.length ? stateRightLabels.join(' · ') : 'Recorded; details unavailable') : 'Not recorded',
         stateControlRightsCount:stateRightLabels.length,
+        stateSupplyDirectiveStatus:stateDirectiveStatus,
+        stateSupplyDirectiveLabels:stateDirectiveLabels,
         legacyCompanyAttributionId:legacyCompanyId || null,
         shipments:[],
         inputRequests:[],
@@ -4000,6 +4021,7 @@
         var ownerText = line.ownerLabel || 'Not recorded';
         var operatorText = line.operatorLabel || 'Not recorded';
         var stateRightsText = line.stateControlRightsStatus || 'Not recorded';
+        var stateDirectiveText = line.stateSupplyDirectiveStatus || 'Not recorded';
         var statusText = String(line.status || 'NOT_RECORDED').replace(/_/g, ' ');
         var sourceBatchCount = Array.isArray(line.sourceBatchIds) ? line.sourceBatchIds.length : 0;
         return '<article class="fp-line-card" data-factory-id="' + esc(line.factoryId) + '">' +
@@ -4018,7 +4040,8 @@
             ' · ETA ' + esc(eta || 'Not recorded') + '</small></div>' +
           '<div class="fp-line-fact"><span>Owner</span><strong>' + esc(ownerText) + '</strong></div>' +
           '<div class="fp-line-fact"><span>Operator</span><strong>' + esc(operatorText) + '</strong></div>' +
-          '<div class="fp-line-fact"><span>State control rights</span><strong>' + esc(stateRightsText) + '</strong></div></div>' +
+          '<div class="fp-line-fact"><span>State control rights</span><strong>' + esc(stateRightsText) + '</strong></div>' +
+          '<div class="fp-line-fact"><span>State supply directives</span><strong>' + esc(stateDirectiveText) + '</strong></div></div>' +
           (requestMarkup ? '<section class="fp-line-inputs"><h4>Factory input requests</h4>' + requestMarkup + '</section>' : '') +
           '<small class="fp-line-record-count">' + (line.shipments || []).length + ' shipment record(s) · ' +
           (line.warehouseDispatches || []).length + ' warehouse dispatch record(s) · ' +
