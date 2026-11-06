@@ -495,6 +495,24 @@ test('proposal requests cannot be created for another country or an unknown comp
   assert.equal(h.projects.length,0);
 });
 
+test('proposal request IDs replay only the original payload and reject collisions',()=>{
+  const h=makeHarness();
+  const input={countryId:'BGD',companyId:COMPANY,operatorCompanyId:'AURORA_INDUSTRIAL_GROUP',
+    factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',
+    requestId:'proposal-idempotency-guard'};
+  const first=h.api.createProposal(input);
+  assert.equal(first.status,'PROPOSED');
+  const replay=h.api.createProposal({...input});
+  assert.equal(replay.idempotent,true);
+  assert.equal(replay.proposalId,first.proposalId);
+  const quantityCollision=h.api.createProposal({...input,quantity:2});
+  assert.equal(quantityCollision.status,'BLOCKED');
+  assert.equal(quantityCollision.reason,'PROPOSAL_REQUEST_IDEMPOTENCY_COLLISION');
+  const operatorCollision=h.api.createProposal({...input,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP'});
+  assert.equal(operatorCollision.reason,'PROPOSAL_REQUEST_IDEMPOTENCY_COLLISION');
+  assert.equal(h.api.getProposal('BGD',first.proposalId).quantity,1);
+});
+
 test('Production Lines screen shows capital receipt verification for an approved underfunded company',()=>{
   const h=makeHarness();
   const proposal=h.api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
