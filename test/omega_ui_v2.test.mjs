@@ -1024,7 +1024,7 @@ test('UI v2 shell reuses canonical ISO-3 country options without repeated resolv
     assert.equal(resolveCount,1,
       'the selected country may resolve once, but canonical ISO-3 dropdown options must not trigger another 197 profile lookups');
     assert.match(root.innerHTML, /<option value="BGD" selected>/);
-    assert.match(root.innerHTML, /<option value="BHA">Country BHA/);
+    assert.match(root.innerHTML, /<option value="AAB">Country AAB/);
   } finally {
     if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
     if(previous.runtime===undefined)delete globalThis.OmegaCountryRuntimeData;else globalThis.OmegaCountryRuntimeData=previous.runtime;
