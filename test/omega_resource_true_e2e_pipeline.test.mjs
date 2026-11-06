@@ -238,7 +238,10 @@ function attachPlayableResourceSiteUi(h){
   };
   return{
     allMarkers,activeMarkers,selectedEvents,body,
-    waitForBinding:()=>waitFor(()=>!!g.Omega?.IndividualResourceSiteBinding,'site binding ready'),
+    waitForBinding:async()=>{
+      await waitFor(()=>!!g.Omega?.IndividualResourceSiteBinding,'site binding ready');
+      return g.Omega.IndividualResourceSiteBinding;
+    },
     waitForExtraction:siteId=>waitFor(()=>g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__?.siteId===siteId,'site action result'),
     executeButton:()=>g.document.getElementById('omega-individual-resource-panel')
       ?.querySelector('#omega-individual-execute')||null
