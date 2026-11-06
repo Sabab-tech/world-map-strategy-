@@ -20,6 +20,7 @@ function harness(){
   const state={
     simulation:{turn:1,date:'2015-01-01'},
     resource:{BGD:{},AAA:{},SAU:{}},
+    economy:{},
     trade:{BGD:{},AAA:{},SAU:{}},
     finance:{BGD:{available:10000000,reserves:10000000},AAA:{available:10000000,reserves:10000000},SAU:{available:10000000,reserves:10000000}}
   };
