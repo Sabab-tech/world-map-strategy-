@@ -230,8 +230,8 @@
       forecastOutputPerDay:(num(profile.defaultCapacityPerDay)||0)*quantity,
       expectedInputRequirements:inputForecast(cid,profile,recipe,quantity),
       operatorCompanyId:operatorCompany,
-      ownership:{ownerCompanyId:company,operatorCompanyId:operatorCompany,stateControlRights:{licensingAndPermits:true,fiscalRegulation:true,labourSafetyEnvironmentalRegulation:true,strategicSupplyOversight:true,competitionOversight:true,foreignOwnershipReview:true,emergencyIntervention:true,operationalControl:'STATE_POLICY_ONLY'}},
-      stateControlRights:{licensingAndPermits:true,fiscalRegulation:true,labourSafetyEnvironmentalRegulation:true,strategicSupplyOversight:true,competitionOversight:true,foreignOwnershipReview:true,emergencyIntervention:true,operationalControl:'STATE_POLICY_ONLY'},
+      ownership:{ownerCompanyId:company,operatorCompanyId:operatorCompany,stateControlRights:{strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,labourSafetyEnvironmentalRegulation:true,strategicSupplyOversight:true,strategicContracts:true,domesticSupplyDirection:true,exportControl:true,publicProcurement:true,competitionOversight:true,foreignOwnershipReview:true,emergencyIntervention:true,operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1',simulationOnly:true}},
+      stateControlRights:{strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,labourSafetyEnvironmentalRegulation:true,strategicSupplyOversight:true,strategicContracts:true,domesticSupplyDirection:true,exportControl:true,publicProcurement:true,competitionOversight:true,foreignOwnershipReview:true,emergencyIntervention:true,operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1',simulationOnly:true},
       status:'PROPOSED',createdTurn:turn(),updatedTurn:turn(),decision:null,projectIds:[],commissionedFactoryIds:[],
       productionEnabled:false,provenance:{source:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1',simulationOnly:true,realWorldCompany:false}
     };
