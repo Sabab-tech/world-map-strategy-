@@ -118,11 +118,15 @@ test('offline app shell caches runtime code but defers optional data files', () 
   const sw = read('omega-offline-map-sw.js');
   assert.match(sw, /\.\/omega_country_runtime_data_v1\.js/);
   assert.match(sw, /\.\/omega_country_data_gateway_v1\.js/);
-  for (const file of ['cities.json','economy.json','population.json','society.json','country_general_data_registry_v1.json','country_sector_profiles_v1.json','country_factory_starting_baseline_v1.json','country_factory_input_inventory_baseline_v1.json']) {
+  for (const file of ['cities.json','economy.json','population.json','society.json','country_general_data_registry_v1.json','country_sector_profiles_v1.json','country_factory_input_inventory_baseline_v1.json']) {
     assert.equal(sw.includes('./' + file), false, file + ' must be lazy');
   }
+  for (const file of ['country_factory_starting_baseline_v1.json','country_private_factory_starting_baseline_v1.json','resource_industrial_catalog_v1.json','resource_country_resource_context_index.json']) {
+    assert.ok(sw.includes('./' + file), file + ' is required for first-launch offline factory management');
+  }
+  assert.match(sw, /function isCoreOfflineData\(url\)/);
   const shellVersion=Number(sw.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1]||0);
-  assert.ok(shellVersion>=79,'offline data runtime must ship with the latest versioned shell cache');
+  assert.ok(shellVersion>=98,'offline factory baselines must ship with the current versioned shell cache');
   const bridge=read('omega_country_runtime_data_v1.js');
   assert.match(bridge,/loadCountryData/);assert.match(bridge,/releaseCountryData/);
 });
