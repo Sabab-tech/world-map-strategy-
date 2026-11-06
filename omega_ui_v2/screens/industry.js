@@ -62,6 +62,15 @@
   }
   function safeNetwork() { return g.OmegaResourceIndustrialNetwork || (g.Omega && g.Omega.ResourceIndustrialNetwork) || null; }
   function safeCatalog() { return g.OmegaResourceIndustrialCatalogData || (g.Omega && g.Omega.ResourceIndustrialCatalogData) || null; }
+  function requiresLegacyAndroidPaintProfile() {
+    var userAgent = String(g.navigator && g.navigator.userAgent || '');
+    var android = userAgent.match(/Android\s+(\d+)/i);
+    var webViewVersion = userAgent.match(/(?:Chrome|Chromium)\/(\d+)/i);
+    // Android 9 devices commonly ship WebView 66. Keep their first factory
+    // paint on a simple compositing path; modern devices retain the full deck.
+    return !!((android && Number(android[1]) <= 9) ||
+      (android && webViewVersion && Number(webViewVersion[1]) <= 70));
+  }
   function normalizeFactoryType(value, catalog) {
     var aliases = (catalog || safeCatalog() || {}).factoryTypeAliases || {};
     var key = String(value == null ? '' : value).trim().toUpperCase(), seen = Object.create(null);
@@ -468,13 +477,15 @@
 
   function factoryProductUsageMarkup(model, productId) {
     model = model || {};
-    var catalog = safeCatalog() || {};
+    var cache = factoryInputMarkupCache(model);
     var productKey = factoryProductKey(productId);
+    if (Object.prototype.hasOwnProperty.call(cache.usage, productKey)) return cache.usage[productKey];
+    var catalog = safeCatalog() || {};
     var useRoot = catalog.productUseCatalog && catalog.productUseCatalog.products &&
       typeof catalog.productUseCatalog.products === 'object' ? catalog.productUseCatalog.products : {};
     var use = useRoot[productKey] || null;
     if (!use) {
-      return '<div class="fp-product-use-map"><small><strong>Use map:</strong> Product use is not registered in the canonical catalog.</small></div>';
+      return (cache.usage[productKey] = '<div class="fp-product-use-map"><small><strong>Use map:</strong> Product use is not registered in the canonical catalog.</small></div>');
     }
     var recipes = model.catalogRecipes && typeof model.catalogRecipes === 'object' ? model.catalogRecipes :
       catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
@@ -522,11 +533,11 @@
       routeLabel = 'No downstream recycling or treatment factory route is registered';
     } else routeLabel = 'No downstream factory recipe currently consumes this product';
     var endUses = Array.isArray(use.endUses) ? use.endUses.filter(Boolean).map(String) : [];
-    return '<div class="fp-product-use-map" data-factory-product-use="' + esc(productKey) + '">' +
+    return (cache.usage[productKey] = '<div class="fp-product-use-map" data-factory-product-use="' + esc(productKey) + '">' +
       '<small><strong>Factory route:</strong> ' + esc(routeLabel) + '</small>' +
       (producerNames.length ? '<small><strong>Produced / supplied by:</strong> ' + esc(producerNames.join(', ')) + '</small>' : '') +
       (endUses.length ? '<small><strong>Sector uses:</strong> ' + esc(endUses.join(' ')) + '</small>' : '') +
-      '</div>';
+      '</div>');
   }
 
   function factoryProductStockMarkup(productId, label, value) {
@@ -706,7 +717,13 @@
 
   function buildViewModel(options) {
     options = options || {};
+    var __omegaFactoryPerfStart = Date.now();
+    function __omegaFactoryPerfMark(name) {
+      try { if (g.console && typeof g.console.log === 'function') g.console.log('[OMEGA_BOOT_FACTORY_PERF_' + name + '] +' + (Date.now() - __omegaFactoryPerfStart) + 'ms'); } catch (_) {}
+    }
+    __omegaFactoryPerfMark('BUILD_BEGIN');
     var context = countryContext(options.countryId);
+    __omegaFactoryPerfMark('COUNTRY_CONTEXT');
     var resource = context.resource || {};
     var economy = context.economy || {};
     var industrial = resource.industrialNetwork && typeof resource.industrialNetwork === 'object' ? resource.industrialNetwork : {};
@@ -717,50 +734,72 @@
     if (context.countryId && factoryDataRuntime && typeof factoryDataRuntime.getCountryFactoryRegistry === 'function') {
       try { factoryStartingRegistry = factoryDataRuntime.getCountryFactoryRegistry(context.countryId); } catch (_) { factoryStartingRegistry = null; }
     }
+    __omegaFactoryPerfMark('STARTING_FACTORY_REGISTRY');
+    var optimizedFactoryRead = options.__omegaV2FactoryInputOptimized === true;
     var inventoryRuntime = g.OmegaCountryInventoryRuntime || (g.Omega && g.Omega.CountryInventoryRuntime) || null;
     var nationalInventory = null, canonicalResourceIds = [];
-    if (context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
+    if (!optimizedFactoryRead && context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
       try { nationalInventory = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: false }); } catch (_) { nationalInventory = null; }
     }
-    var finishedGoodsLedger = Array.isArray(resource.finishedGoodsLedger) ? resource.finishedGoodsLedger.slice() : [];
-    var economyIndustrialRuntime = economy.industrialRuntime && typeof economy.industrialRuntime === 'object' ? economy.industrialRuntime : {};
-    var economyFinishedGoods = Array.isArray(economyIndustrialRuntime.finishedGoodsLedger) ? economyIndustrialRuntime.finishedGoodsLedger : [];
-    var finishedEventIds = Object.create(null);
-    finishedGoodsLedger.forEach(function (row) { if (row && row.transactionId) finishedEventIds[String(row.transactionId)] = true; });
-    economyFinishedGoods.forEach(function (row) {
-      var id = String(row && row.transactionId || '');
-      if (row && (!id || !finishedEventIds[id])) { finishedGoodsLedger.push(row); if (id) finishedEventIds[id] = true; }
-    });
+    __omegaFactoryPerfMark('NATIONAL_INVENTORY');
+    // Factory Types/Input do not read cumulative finished-goods history. Defer
+    // these projections for the lightweight, read-only catalog and Input views.
+    var finishedGoodsLedger = [];
+    if (!optimizedFactoryRead) {
+      finishedGoodsLedger = Array.isArray(resource.finishedGoodsLedger) ? resource.finishedGoodsLedger.slice() : [];
+      var economyIndustrialRuntime = economy.industrialRuntime && typeof economy.industrialRuntime === 'object' ? economy.industrialRuntime : {};
+      var economyFinishedGoods = Array.isArray(economyIndustrialRuntime.finishedGoodsLedger) ? economyIndustrialRuntime.finishedGoodsLedger : [];
+      var finishedEventIds = Object.create(null);
+      finishedGoodsLedger.forEach(function (row) { if (row && row.transactionId) finishedEventIds[String(row.transactionId)] = true; });
+      economyFinishedGoods.forEach(function (row) {
+        var id = String(row && row.transactionId || '');
+        if (row && (!id || !finishedEventIds[id])) { finishedGoodsLedger.push(row); if (id) finishedEventIds[id] = true; }
+      });
+    }
     var resourceBatches = Array.isArray(resource.batches) ? resource.batches : [];
-    var resourceInventoryLedger = Array.isArray(resource.inventoryLedger) ? resource.inventoryLedger : [];
-    var processedWarehouse = resource.processedWarehouse && typeof resource.processedWarehouse === 'object' ? resource.processedWarehouse : {};
+    var resourceInventoryLedger = optimizedFactoryRead ? [] : (Array.isArray(resource.inventoryLedger) ? resource.inventoryLedger : []);
+    var processedWarehouse = !optimizedFactoryRead && resource.processedWarehouse && typeof resource.processedWarehouse === 'object' ? resource.processedWarehouse : {};
     var nationalDemandRuntime = resource.nationalDemandRuntime && typeof resource.nationalDemandRuntime === 'object'
       ? resource.nationalDemandRuntime : resource.demandRuntime && typeof resource.demandRuntime === 'object' ? resource.demandRuntime : {};
     var demandByProduct = nationalDemandRuntime.byResource && typeof nationalDemandRuntime.byResource === 'object'
       ? nationalDemandRuntime.byResource : {};
     var domesticSales = Array.isArray(context.trade && context.trade.domesticSales) ? context.trade.domesticSales : [];
-    try {
-      if (inventoryRuntime && typeof inventoryRuntime.getResourceCatalog === 'function') {
-        canonicalResourceIds = inventoryRuntime.getResourceCatalog().map(function (row) {
-          return String(row && (row.resourceId || row.id) || '').trim().toLowerCase();
-        }).filter(Boolean);
-      }
-    } catch (_) { canonicalResourceIds = []; }
+    if (!optimizedFactoryRead) {
+      try {
+        if (inventoryRuntime && typeof inventoryRuntime.getResourceCatalog === 'function') {
+          canonicalResourceIds = inventoryRuntime.getResourceCatalog().map(function (row) {
+            return String(row && (row.resourceId || row.id) || '').trim().toLowerCase();
+          }).filter(Boolean);
+        }
+      } catch (_) { canonicalResourceIds = []; }
+    }
+    __omegaFactoryPerfMark('RESOURCE_CATALOG');
     var assets = factoryAssetRows(resource, economy);
+    __omegaFactoryPerfMark('FACTORY_ASSET_ROWS count=' + assets.length);
     var rawMineSites = countryMineSiteRows(context.countryId, resource);
-    var mineAssets = mineAssetRows(resource);
-    var currentExtraction = currentTurnResourceAdded(resource, context.countryId);
-    var projects = Array.isArray(industrial.projects) ? industrial.projects : (Array.isArray(economy.projects) ? economy.projects : []);
-    var researchProjects = Array.isArray(resource.technologyResearchProjects) ? resource.technologyResearchProjects : [];
-    var technologyTransfers = Array.isArray(resource.technologyTransfers) ? resource.technologyTransfers : [];
-    var technologyCapabilities = Array.isArray(resource.technologyCapabilities) ? resource.technologyCapabilities : [];
-    var technologyContracts = Array.isArray(industrial.technologyContracts) ? industrial.technologyContracts : [];
+    __omegaFactoryPerfMark('COUNTRY_MINE_SITE_ROWS count=' + rawMineSites.length);
+    var mineAssets = optimizedFactoryRead ? [] : mineAssetRows(resource);
+    __omegaFactoryPerfMark('MINE_ASSET_ROWS count=' + mineAssets.length);
+    var simState = stateRoot() || {}, simClock = simState.simulation || {};
+    var fastTurn = num(simClock.turn !== undefined ? simClock.turn : simState.turn !== undefined ? simState.turn : simState.simulationTurn);
+    var fastDaysPerTurn = num(simClock.daysPerTurn !== undefined ? simClock.daysPerTurn : simState.daysPerTurn);
+    if (fastDaysPerTurn !== null && fastDaysPerTurn <= 0) fastDaysPerTurn = null;
+    var currentExtraction = optimizedFactoryRead
+      ? { turn:fastTurn, rows:[], daysPerTurn:fastDaysPerTurn }
+      : currentTurnResourceAdded(resource, context.countryId);
+    __omegaFactoryPerfMark('CURRENT_EXTRACTION flows=' + (optimizedFactoryRead ? 0 : (Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger.length : 0)));
+    var projects = optimizedFactoryRead ? [] : (Array.isArray(industrial.projects) ? industrial.projects : (Array.isArray(economy.projects) ? economy.projects : []));
+    var researchProjects = optimizedFactoryRead ? [] : (Array.isArray(resource.technologyResearchProjects) ? resource.technologyResearchProjects : []);
+    var technologyTransfers = optimizedFactoryRead ? [] : (Array.isArray(resource.technologyTransfers) ? resource.technologyTransfers : []);
+    var technologyCapabilities = optimizedFactoryRead ? [] : (Array.isArray(resource.technologyCapabilities) ? resource.technologyCapabilities : []);
+    var technologyContracts = optimizedFactoryRead ? [] : (Array.isArray(industrial.technologyContracts) ? industrial.technologyContracts : []);
     var cycles = industrial.factoryProductionCycles && typeof industrial.factoryProductionCycles === 'object' ? industrial.factoryProductionCycles : {};
     var runs = industrial.factoryRuntime && typeof industrial.factoryRuntime === 'object' ? industrial.factoryRuntime : {};
     var profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
     var recipeCatalog = catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
     var processingRules = catalog.processingRules && typeof catalog.processingRules === 'object' ? catalog.processingRules : {};
-    var flows = Array.isArray(industrial.siteFlowLedger) ? industrial.siteFlowLedger : (Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger : []);
+    var flows = optimizedFactoryRead ? [] :
+      (Array.isArray(industrial.siteFlowLedger) ? industrial.siteFlowLedger : (Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger : []));
     var mappedAssets = assets.map(function (asset) {
       asset = asset && typeof asset === 'object' ? asset : {};
       var id = String(asset.id || asset.assetId || asset.projectId || '');
@@ -822,6 +861,7 @@
         raw: asset
       };
     }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); });
+    __omegaFactoryPerfMark('FACTORY_ASSET_MAPPING active=' + mappedAssets.length);
     var mineSites = rawMineSites.map(function (site) {
       var quantitative = site.quantitative || site.real && site.real.quantitative || {};
       var production = mineDailyProduction(site);
@@ -839,6 +879,7 @@
       };
     });
     var dailyProductionKnownCount = mineSites.filter(function (site) { return site.dailyProduction && site.dailyProduction.value !== null; }).length;
+    __omegaFactoryPerfMark('MINE_SITE_MAPPING');
     var currentExtractionRows = currentExtraction.rows;
     var operatingMineCount = mineAssets.filter(function (asset) { return /^(OPERATIONAL|ACTIVE|RUNNING)$/.test(String(asset.status || '').toUpperCase()); }).length;
     var factoryTypeCountsIndex = Object.create(null);
@@ -866,8 +907,11 @@
         }).length;
         // The country baseline is the common factory count. Add completed
         // player builds, but never let missing baseline records hide the count.
+        // A registered baseline count can lag the current asset ledger when a
+        // factory is commissioned or restored before the registry refreshes. Never
+        // let that stale snapshot hide a factory that is already in the country state.
         var count = factoryStartingRegistry.runtimeRegistered === true
-          ? liveCount
+          ? Math.max(liveCount, nonBaselineActiveCount)
           : Math.max(0, Number(row.startingCount) || 0) + nonBaselineActiveCount;
         var profile = profiles[typeKey] || {};
         if (!factoryTypeCountsIndex[typeKey]) {
@@ -881,6 +925,7 @@
     var factoryTypeCounts = Object.keys(factoryTypeCountsIndex).map(function (key) {
       return factoryTypeCountsIndex[key];
     }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    __omegaFactoryPerfMark('FACTORY_TYPE_COUNTS types=' + factoryTypeCounts.length);
     var factoryCount = factoryTypeCounts.reduce(function (total, row) { return total + (Number(row.count) || 0); }, 0);
     var seenCatalogTypes = Object.create(null);
     var factoryTypeCatalog = Object.keys(profiles).map(function (rawType) {
@@ -898,7 +943,10 @@
     }).filter(Boolean).sort(function (a, b) {
       return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
     });
-    var cyclesList = Object.keys(cycles).map(function (id) { return Object.assign({ factoryId: id }, cycles[id] || {}); });
+    var cyclesList = optimizedFactoryRead
+      ? { length:Object.keys(cycles).length }
+      : Object.keys(cycles).map(function (id) { return Object.assign({ factoryId: id }, cycles[id] || {}); });
+    __omegaFactoryPerfMark('MODEL_READY');
     return {
       countryId: context.countryId,
       hasCountryState: !!(context.resource || context.economy),
@@ -942,7 +990,8 @@
       processedStock: processedWarehouse.availableByResource && typeof processedWarehouse.availableByResource === 'object' ? processedWarehouse.availableByResource : {},
       demandByProduct: demandByProduct,
       domesticSales: domesticSales,
-      source: 'Game.state.economy[country].productionAssets + canonical industrial catalogue'
+      source: 'Game.state.economy[country].productionAssets + canonical industrial catalogue',
+      __omegaV2FactoryInputOptimized: optimizedFactoryRead
     };
   }
 
@@ -1345,6 +1394,7 @@
   }
 
   function factoryProductionPlan(model) {
+    var __inputPerfStart = Date.now();
     model = model || {};
     var catalog = safeCatalog() || {};
     var profiles = model.catalogProfiles && typeof model.catalogProfiles === 'object' ? model.catalogProfiles :
@@ -1543,7 +1593,7 @@
         row.coverageQuantity = row.perDay === null ? null : row.perDay * coverageDays;
       });
     });
-    return {
+    var result = {
       countryId: model.countryId || null,
       totalFactories: Math.max(0, num(model.factoryCount) || typeRows.reduce(function (sum, row) { return sum + row.count; }, 0)),
       factoryTypeCount: typeRows.length,
@@ -1555,6 +1605,8 @@
         return !!(factory && factory.lastRun && (factory.lastRun.outputQuantities || factory.lastRun.outputs));
       }) || (Array.isArray(model.finishedGoodsLedger) && model.finishedGoodsLedger.length > 0)
     };
+    factoryInputPerfMark('PRODUCTION_PLAN', __inputPerfStart, 'types=' + typeRows.length);
+    return result;
   }
 
   function factoryPlanUnit(unit) {
@@ -1564,6 +1616,7 @@
   }
 
   function factoryInputPlanProducts(plan) {
+    var __inputPerfStart = Date.now();
     var byProduct = Object.create(null);
     (plan && Array.isArray(plan.types) ? plan.types : []).forEach(function (type) {
       (Array.isArray(type.inputs) ? type.inputs : []).forEach(function (input) {
@@ -1591,7 +1644,7 @@
         });
       });
     });
-    return Object.keys(byProduct).map(function (key) {
+    var result = Object.keys(byProduct).map(function (key) {
       var row = byProduct[key];
       row.perDay = row.perDayComplete && row.hasPerDay ? row.perDay : null;
       delete row.perDayComplete;
@@ -1600,6 +1653,8 @@
     }).sort(function (a, b) {
       return a.productId.localeCompare(b.productId);
     });
+    factoryInputPerfMark('PLAN_PRODUCTS', __inputPerfStart, 'products=' + result.length);
+    return result;
   }
 
   function factoryInputCoverageRecord(model, productId, factoryId) {
@@ -1626,8 +1681,29 @@
       '<i aria-hidden="true"></i><strong>' + esc(text) + '</strong></span>';
   }
 
+  function factoryInputEfficiency(factory, inputRows) {
+    var raw = factory.raw || {}, health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
+    var reason = String(health.reason || factory.healthReason || '').toUpperCase();
+    var detail = health.detail && typeof health.detail === 'object' ? health.detail : {};
+    var constraints = detail.constraints && typeof detail.constraints === 'object' ? detail.constraints :
+      health.productionConstraints && typeof health.productionConstraints === 'object' ? health.productionConstraints : {};
+    var rawMaterialRatio = num(constraints.rawMaterialRatio);
+    if (rawMaterialRatio !== null) return { value: Math.max(0, Math.min(100, (1 - rawMaterialRatio) * 100)), observed: true };
+    if (/FACTORY_INPUT|INPUT_SHORTAGE|MATERIAL_SHORTAGE/.test(reason) && num(health.productivityPct) !== null) {
+      return { value: Math.max(0, 100 - Number(health.productivityPct)), observed: true };
+    }
+    var ratio = 1, observed = false;
+    inputRows.forEach(function (row) {
+      if (row.required === null || row.required <= 0 || row.current === null) return;
+      observed = true;
+      ratio = Math.min(ratio, Math.max(0, Math.min(1, row.current / row.required)));
+    });
+    if (observed) return { value: Math.max(0, (1 - ratio) * 100), observed: true };
+    return { value: null, observed: false };
+  }
+
   function factoryInputLiveRiskStatus(model, productId) {
-    var factories = Array.isArray(model && model.factories) ? model.factories : [];
+    var factories = factoryInputFactoriesForProduct(model, productId);
     for (var index = 0; index < factories.length; index += 1) {
       var factory = factories[index];
       var coefficient = factoryInputCoefficientFor(factory, productId);
@@ -1651,12 +1727,14 @@
   }
 
   function factoryInputAggregateSourceMarkup(model, productId) {
-    var grouped = Object.create(null), factories = Array.isArray(model && model.factories) ? model.factories : [];
+    var cache = factoryInputMarkupCache(model);
+    var productKey = factoryProductKey(productId);
+    if (Object.prototype.hasOwnProperty.call(cache.aggregateSources, productKey)) return cache.aggregateSources[productKey];
+    var grouped = Object.create(null), factories = factoryInputFactoriesForProduct(model, productId);
     factories.forEach(function (factory) {
       var coefficient = factoryInputCoefficientFor(factory, productId);
-      var hasLot = (Array.isArray(factory.inputLots) ? factory.inputLots : []).some(function (lot) {
-        return lot && String(lot.resourceId || lot.materialIdentity || '').toLowerCase() === String(productId).toLowerCase();
-      });
+      var card = cache.cardsByFactory && cache.cardsByFactory.get(factory);
+      var hasLot = !!(card && card.lotsByProduct[productKey] && card.lotsByProduct[productKey].length);
       if ((coefficient === null || coefficient <= 0) && !hasLot) return;
       factoryInputSourceRows(factory, productId, model).forEach(function (source) {
         var key = String(source.label || '').toLowerCase();
@@ -1667,14 +1745,15 @@
       });
     });
     var rows = Object.keys(grouped).map(function (key) { return grouped[key]; });
-    if (!rows.length) return '<span class="fp-factory-muted">Source not recorded</span>';
-    return rows.map(function (source) {
+    if (!rows.length) return (cache.aggregateSources[productKey] = '<span class="fp-factory-muted">Source not recorded</span>');
+    return (cache.aggregateSources[productKey] = rows.map(function (source) {
       return '<span class="fp-factory-source"><strong>' + esc(source.label) + '</strong><small>' +
         fmt(source.quantity, factoryPlanUnit(source.unit)) + '</small></span>';
-    }).join('');
+    }).join(''));
   }
 
   function factoryInputPlanMarkup(model) {
+    var __inputPerfStart = Date.now();
     var plan = factoryProductionPlan(model), products = factoryInputPlanProducts(plan);
     var snapshot = model && model.factoryInputCoverageSnapshot;
     var updatedDay = snapshot && num(snapshot.updatedDay);
@@ -1689,6 +1768,7 @@
       '</span></p>';
     if (!products.length) {
       html += '<div class="fp-factory-table-wrap"><p class="fp-factory-muted">No factory input requirements are recorded for this country.</p></div></section>';
+      factoryInputPerfMark('PLAN_MARKUP_EMPTY', __inputPerfStart, 'products=0');
       return html;
     }
     html += '<div class="fp-factory-table-wrap"><table class="fp-factory-table fp-factory-input-table fp-factory-input-total-table"><thead><tr>' +
@@ -1721,6 +1801,7 @@
         '<td>' + factoryInputAggregateSourceMarkup(model, row.productId) + '</td><td>' + status + '</td></tr>';
     });
     html += '</tbody></table></div></section>';
+    factoryInputPerfMark('PLAN_MARKUP', __inputPerfStart, 'products=' + products.length + ' chars=' + html.length);
     return html;
   }
 
@@ -2178,12 +2259,131 @@
     html += '</tbody></table></div></section>';
     return html;
   }
-  function factoryInputSourceRows(factory, productId, model) {
-    var lots = (factory.inputLots || []).filter(function (lot) {
-      return lot && String(lot.resourceId || lot.materialIdentity || '').toLowerCase() === String(productId).toLowerCase();
+  function factoryInputPerfMark(name, startedAt, detail) {
+    try {
+      if (g.console && typeof g.console.log === 'function') {
+        g.console.log('[OMEGA_BOOT_FACTORY_INPUT_PERF_' + name + '] +' +
+          Math.max(0, Date.now() - startedAt) + 'ms' + (detail ? ' ' + detail : ''));
+      }
+    } catch (_) {}
+  }
+
+  function factoryInputMarkupCache(model) {
+    if (!model || typeof model !== 'object') return {};
+    var cache = model.__omegaV2FactoryInputMarkupCache;
+    if (!cache || typeof cache !== 'object') {
+      cache = {
+        usage:Object.create(null), sourceRows:new WeakMap(),
+        aggregateSources:Object.create(null), factoryNames:null, batchesById:null,
+        factoriesByInputProduct:null, eligibleInputFactories:null,
+        cardsByFactory:new WeakMap(), dailyRequirements:new WeakMap(),
+        processingRulesByProduct:null
+      };
+      try { model.__omegaV2FactoryInputMarkupCache = cache; } catch (_) {}
+    }
+    return cache;
+  }
+
+  function factoryInputFactoriesForProduct(model, productId) {
+    var cache = factoryInputMarkupCache(model);
+    if (!cache.factoriesByInputProduct) {
+      var byProduct = Object.create(null), eligible = [];
+      (Array.isArray(model && model.factories) ? model.factories : []).forEach(function (factory) {
+        if (!factory || typeof factory !== 'object') return;
+        var ids = [], seen = Object.create(null), lotsByProduct = Object.create(null);
+        function addId(value) {
+          var key = factoryProductKey(value);
+          if (!key || seen[key]) return;
+          seen[key] = true;
+          ids.push(String(value));
+        }
+        Object.keys(factory.inputCoefficients || {}).forEach(addId);
+        (Array.isArray(factory.inputRows) ? factory.inputRows : []).forEach(function (row) {
+          addId(row && row.resourceId);
+        });
+        (Array.isArray(factory.inputLots) ? factory.inputLots : []).forEach(function (lot) {
+          var key = factoryProductKey(lot && (lot.resourceId || lot.materialIdentity));
+          if (!key) return;
+          addId(lot.resourceId || lot.materialIdentity);
+          if (!lotsByProduct[key]) lotsByProduct[key] = [];
+          lotsByProduct[key].push(lot);
+        });
+        if (!ids.length) return;
+        var card = { factory:factory, ids:ids, lotsByProduct:lotsByProduct };
+        eligible.push(card);
+        cache.cardsByFactory.set(factory, card);
+        ids.forEach(function (id) {
+          var key = factoryProductKey(id);
+          if (!byProduct[key]) byProduct[key] = [];
+          byProduct[key].push(factory);
+        });
+      });
+      cache.factoriesByInputProduct = byProduct;
+      cache.eligibleInputFactories = eligible;
+    }
+    return cache.factoriesByInputProduct[factoryProductKey(productId)] || [];
+  }
+
+  function factoryInputEligibleFactories(model) {
+    factoryInputFactoriesForProduct(model, '');
+    return factoryInputMarkupCache(model).eligibleInputFactories || [];
+  }
+
+  function factoryInputProcessingRulesByProduct(model) {
+    var cache = factoryInputMarkupCache(model);
+    if (cache.processingRulesByProduct) return cache.processingRulesByProduct;
+    var indexed = Object.create(null);
+    var catalog = safeCatalog() || {};
+    var rules = model && model.processingRules && typeof model.processingRules === 'object'
+      ? model.processingRules : catalog.processingRules || {};
+    Object.keys(rules).forEach(function (ruleKey) {
+      var rule = rules[ruleKey] || {};
+      var type = rule.factoryType ? normalizeFactoryType(rule.factoryType, catalog) : '';
+      Object.keys(rule.inputs && typeof rule.inputs === 'object' ? rule.inputs : {}).forEach(function (productId) {
+        var key = factoryProductKey(productId);
+        if (!key) return;
+        if (!indexed[key]) indexed[key] = [];
+        indexed[key].push({ rule:rule, type:type });
+      });
     });
-    var sourceGroups = Object.create(null), batches = model.resourceBatches || [], factoryNames = Object.create(null);
-    (model.factories || []).forEach(function (row) { if (row && row.id) factoryNames[String(row.id)] = row.name; });
+    cache.processingRulesByProduct = indexed;
+    return indexed;
+  }
+
+  function factoryInputSourceRows(factory, productId, model) {
+    var cache = factoryInputMarkupCache(model);
+    var key = factoryProductKey(productId);
+    var cacheByFactory = cache.sourceRows.get(factory);
+    if (cacheByFactory && Object.prototype.hasOwnProperty.call(cacheByFactory, key)) return cacheByFactory[key];
+    var rows = factoryInputSourceRowsUncached(factory, productId, model, cache);
+    cacheByFactory = cacheByFactory || Object.create(null);
+    cacheByFactory[key] = rows;
+    cache.sourceRows.set(factory, cacheByFactory);
+    return rows;
+  }
+
+  function factoryInputSourceRowsUncached(factory, productId, model, cache) {
+    var card = cache.cardsByFactory && cache.cardsByFactory.get(factory);
+    var productKey = factoryProductKey(productId);
+    var lots = card ? (card.lotsByProduct[productKey] || []) : (factory.inputLots || []).filter(function (lot) {
+      return lot && factoryProductKey(lot.resourceId || lot.materialIdentity) === productKey;
+    });
+    var sourceGroups = Object.create(null);
+    if (!cache.factoryNames) {
+      cache.factoryNames = Object.create(null);
+      (Array.isArray(model.factories) ? model.factories : []).forEach(function (row) {
+        if (row && row.id) cache.factoryNames[String(row.id)] = row.name;
+      });
+    }
+    if (!cache.batchesById) {
+      cache.batchesById = Object.create(null);
+      (Array.isArray(model.resourceBatches) ? model.resourceBatches : []).forEach(function (batch) {
+        var batchId = String(batch && batch.batchId || '');
+        if (batchId && !Object.prototype.hasOwnProperty.call(cache.batchesById, batchId)) {
+          cache.batchesById[batchId] = batch;
+        }
+      });
+    }
     lots.forEach(function (lot) {
       var remaining = num(lot.remainingQuantity !== undefined ? lot.remainingQuantity : lot.quantity);
       if (remaining === null || remaining <= 0) return;
@@ -2193,7 +2393,7 @@
       var sites = Array.isArray(lot.sourceSiteIds) ? lot.sourceSiteIds.filter(Boolean).map(String) : [];
       if (lot.siteId) sites.push(String(lot.siteId));
       (Array.isArray(lot.sourceBatchIds) ? lot.sourceBatchIds : []).forEach(function (batchId) {
-        var sourceBatch = batches.find(function (batch) { return batch && String(batch.batchId) === String(batchId); });
+        var sourceBatch = cache.batchesById[String(batchId)] || null;
         if (!sourceBatch) return;
         if (sourceBatch.siteId || sourceBatch.sourceSiteId || sourceBatch.siteReferenceKey) sites.push(String(sourceBatch.siteId || sourceBatch.sourceSiteId || sourceBatch.siteReferenceKey));
         if (!sourceFactory && sourceBatch.sourceFactoryId) sourceFactory = String(sourceBatch.sourceFactoryId);
@@ -2205,7 +2405,7 @@
       } else if (sites.length) {
         label = 'Domestic mine · ' + Array.from(new Set(sites)).join(', '); kind = 'mine';
       } else if (sourceFactory) {
-        label = 'Domestic factory · ' + (factoryNames[sourceFactory] || sourceFactory); kind = 'factory';
+        label = 'Domestic factory · ' + (cache.factoryNames[sourceFactory] || sourceFactory); kind = 'factory';
       } else if (/OPENING|STARTUP/.test(String(provenance.status || provenance.source || lot.batchId || '').toUpperCase())) {
         label = 'Opening allocation'; kind = 'opening';
       } else if (sourceCountry === model.countryId) {
@@ -2213,11 +2413,11 @@
       } else {
         label = 'Source not recorded'; kind = 'unknown';
       }
-      var key = label.toLowerCase();
-      sourceGroups[key] = sourceGroups[key] || { label:label, quantity:0, unit:String(lot.unit || ''), kind:kind };
-      sourceGroups[key].quantity += remaining;
+      var groupKey = label.toLowerCase();
+      sourceGroups[groupKey] = sourceGroups[groupKey] || { label:label, quantity:0, unit:String(lot.unit || ''), kind:kind };
+      sourceGroups[groupKey].quantity += remaining;
     });
-    return Object.keys(sourceGroups).map(function (key) { return sourceGroups[key]; });
+    return Object.keys(sourceGroups).map(function (groupKey) { return sourceGroups[groupKey]; });
   }
 
   function factoryInputSourceMarkup(factory, productId, model) {
@@ -2242,32 +2442,29 @@
   }
 
   function factoryInputDailyRequirement(factory, productId, model) {
+    var cache = factoryInputMarkupCache(model);
+    var productKey = factoryProductKey(productId);
+    var cached = cache.dailyRequirements.get(factory);
+    if (cached && Object.prototype.hasOwnProperty.call(cached, productKey)) return cached[productKey];
     var coefficient = factoryInputCoefficientFor(factory, productId);
     var capacity = num(factory && factory.capacityPerDay);
     var raw = factory && factory.raw || {};
-    var recipes = model && model.catalogRecipes || {};
-    var processingRules = model && model.processingRules || {};
+    var catalog = safeCatalog() || {};
+    var recipes = model && model.catalogRecipes || catalog.downstreamFactoryRecipes || {};
+    var processingRules = model && model.processingRules || catalog.processingRules || {};
     var recipe = recipes[String(factory && factory.recipeId || '')] || null;
     if (!recipe) {
       var resourceId = String(raw.resourceId || raw.inputResourceId || raw.primaryInputResourceId || '').trim();
       recipe = resourceId ? processingRules[resourceId] || null : null;
     }
     if (!recipe) {
-      var wantedType = normalizeFactoryType(factory && factory.type || '', safeCatalog());
-      var matchKey = Object.keys(processingRules).find(function (key) {
-        var rule = processingRules[key] || {};
-        var inputs = rule.inputs && typeof rule.inputs === 'object' ? rule.inputs : {};
-        var productKey = Object.keys(inputs).find(function (id) {
-          return String(id).toLowerCase() === String(productId || '').toLowerCase();
-        });
-        return productKey && (!rule.factoryType || normalizeFactoryType(rule.factoryType, safeCatalog()) === wantedType);
-      });
-      if (matchKey) recipe = processingRules[matchKey];
+      var wantedType = normalizeFactoryType(factory && factory.type || '', catalog);
+      var candidates = factoryInputProcessingRulesByProduct(model)[productKey] || [];
+      var match = candidates.find(function (entry) { return !entry.type || entry.type === wantedType; });
+      if (match) recipe = match.rule;
     }
     var unitMap = factory && factory.inputUnits && typeof factory.inputUnits === 'object' ? factory.inputUnits : {};
-    var unitKey = Object.keys(unitMap).find(function (key) {
-      return String(key).toLowerCase() === String(productId || '').toLowerCase();
-    });
+    var unitKey = Object.keys(unitMap).find(function (key) { return factoryProductKey(key) === productKey; });
     var unit = unitKey ? unitMap[unitKey] : factory && factory.inputUnit || recipe && recipe.inputUnit || '';
     var cycleDays = num(recipe && recipe.cycleDays);
     if (cycleDays === null) cycleDays = num(raw.cycleDays);
@@ -2275,55 +2472,25 @@
       cycleDays:cycleDays,
       quantityBasis:recipe && recipe.quantityBasis
     }, capacity, unit);
-    return rate ? rate.perDay : null;
+    var result = rate ? rate.perDay : null;
+    cached = cached || Object.create(null);
+    cached[productKey] = result;
+    cache.dailyRequirements.set(factory, cached);
+    return result;
   }
 
-    function factoryInputEfficiency(factory, inputRows) {
-    var raw = factory.raw || {}, health = raw.productionHealth && typeof raw.productionHealth === 'object' ? raw.productionHealth : {};
-    var reason = String(health.reason || factory.healthReason || '').toUpperCase();
-    var detail = health.detail && typeof health.detail === 'object' ? health.detail : {};
-    var constraints = detail.constraints && typeof detail.constraints === 'object' ? detail.constraints :
-      health.productionConstraints && typeof health.productionConstraints === 'object' ? health.productionConstraints : {};
-    var rawMaterialRatio = num(constraints.rawMaterialRatio);
-    if (rawMaterialRatio !== null) return { value: Math.max(0, Math.min(100, (1 - rawMaterialRatio) * 100)), observed: true };
-    if (/FACTORY_INPUT|INPUT_SHORTAGE|MATERIAL_SHORTAGE/.test(reason) && num(health.productivityPct) !== null) {
-      return { value: Math.max(0, 100 - Number(health.productivityPct)), observed: true };
-    }
-    var ratio = 1, observed = false;
-    inputRows.forEach(function (row) {
-      if (row.required === null || row.required <= 0 || row.current === null) return;
-      observed = true;
-      ratio = Math.min(ratio, Math.max(0, Math.min(1, row.current / row.required)));
-    });
-    if (observed) return { value: Math.max(0, (1 - ratio) * 100), observed: true };
-    return { value: null, observed: false };
-  }
-  function factoryInputPanelMarkup(model) {
-    var planMarkup = factoryInputPlanMarkup(model);
-    var factories = Array.isArray(model.factories) ? model.factories : [];
-    if (!factories.length) return planMarkup;
-    var html = '<section class="fp-factory-analytics" aria-label="Recorded factory input deliveries"><h3 class="omega-v2-section-title">Factory input inventory and deliveries</h3>';
-    var visibleFactories = 0;
-    factories.forEach(function (factory) {
-      var coefficientMap = factory.inputCoefficients && typeof factory.inputCoefficients === 'object' ? factory.inputCoefficients : {};
-      var ids = Object.keys(coefficientMap);
-      (factory.inputRows || []).forEach(function (row) {
-        if (ids.map(function (id) { return id.toLowerCase(); }).indexOf(String(row.resourceId).toLowerCase()) < 0) ids.push(row.resourceId);
-      });
-      (factory.inputLots || []).forEach(function (lot) {
-        var id = String(lot && (lot.resourceId || lot.materialIdentity) || '');
-        if (id && ids.map(function (value) { return value.toLowerCase(); }).indexOf(id.toLowerCase()) < 0) ids.push(id);
-      });
-      if (!ids.length) return;
-      visibleFactories += 1;
-      var capacity = num(factory.capacityPerDay), rows = [];
+  function factoryInputFactoryCardsMarkup(model, candidates, start, limit) {
+    var __inputPerfStart = Date.now();
+    var html = '';
+    var end = Math.min(candidates.length, Math.max(0, start) + Math.max(1, limit));
+    for (var index = Math.max(0, start); index < end; index += 1) {
+      var entry = candidates[index], factory = entry.factory, ids = entry.ids, rows = [];
       ids.forEach(function (productId) {
+        var key = factoryProductKey(productId);
         var coefficient = factoryInputCoefficientFor(factory, productId);
         var required = factoryInputDailyRequirement(factory, productId, model);
-        var current = factory.hasInputInventory ? panelValueByKey(factory.raw.inputInventory, productId) : null;
-        var lots = factory.inputLots.filter(function (lot) {
-          return String(lot && (lot.resourceId || lot.materialIdentity) || '').toLowerCase() === productId.toLowerCase();
-        });
+        var current = factory.hasInputInventory ? panelValueByKey(factory.raw && factory.raw.inputInventory, productId) : null;
+        var lots = entry.lotsByProduct[key] || [];
         var seen = Object.create(null), received = 0, hasReceipt = false, unit = '';
         lots.forEach(function (lot) {
           var batchId = String(lot.batchId || '');
@@ -2333,7 +2500,9 @@
           if (quantity !== null) { received += quantity; hasReceipt = true; }
           if (!unit && lot.unit) unit = lot.unit;
         });
-        var inputUnit = factory.inputUnits && Object.keys(factory.inputUnits).find(function (key) { return key.toLowerCase() === productId.toLowerCase(); });
+        var inputUnit = factory.inputUnits && Object.keys(factory.inputUnits).find(function (unitKey) {
+          return factoryProductKey(unitKey) === key;
+        });
         unit = factoryPlanUnit(unit || (inputUnit ? factory.inputUnits[inputUnit] : '') || factory.inputUnit || '');
         rows.push({ productId:productId, coefficient:coefficient, required:required, current:current,
           received:hasReceipt ? received : null, unit:unit });
@@ -2365,9 +2534,42 @@
             fmt(efficiency.value, '%') + '</span>') + '</td></tr>';
       });
       html += '</tbody></table></div></article>';
-    });
-    if (!visibleFactories) return planMarkup + '<div class="omega-v2-empty">No delivered factory input rows are recorded yet. Planned daily requirements remain shown above.</div>';
-    return planMarkup + html + '</section>';
+    }
+    factoryInputPerfMark('FACTORY_CARDS', __inputPerfStart, 'cards=' + (end - Math.max(0, start)) + ' chars=' + html.length);
+    return { html:html, nextIndex:end, total:candidates.length };
+  }
+
+  function factoryInputPanelMarkup(model, root) {
+    var __inputPerfStart = Date.now();
+    var planMarkup = factoryInputPlanMarkup(model);
+    var candidates = factoryInputEligibleFactories(model);
+    if (!candidates.length) {
+      var hasFactories = Array.isArray(model && model.factories) && model.factories.length > 0;
+      var emptyResult = planMarkup + (hasFactories
+        ? '<div class="omega-v2-empty">No delivered factory input rows are recorded yet. Planned daily requirements remain shown above.</div>'
+        : '');
+      factoryInputPerfMark('INPUT_PANEL_EMPTY', __inputPerfStart, 'chars=' + emptyResult.length);
+      return emptyResult;
+    }
+    var visibleCount = root && root.__omegaV2FactoryInputModel === model
+      ? Math.max(4, Math.floor(num(root.__omegaV2FactoryInputVisibleCount) || 4)) : 4;
+    if (root) {
+      root.__omegaV2FactoryInputModel = model;
+      root.__omegaV2FactoryInputVisibleCount = visibleCount;
+    }
+    var firstPage = factoryInputFactoryCardsMarkup(model, candidates, 0, visibleCount);
+    var remaining = Math.max(0, candidates.length - firstPage.nextIndex);
+    var status = '<p class="fp-factory-muted fp-factory-input-page-status" data-factory-input-page-status>Showing ' +
+      fmt(firstPage.nextIndex) + ' of ' + fmt(candidates.length) + ' factories with input records.</p>';
+    var moreButton = remaining
+      ? '<button type="button" class="omega-v2-button fp-factory-input-more" data-factory-input-show-more data-next-index="' +
+        firstPage.nextIndex + '">Show more factories · ' + fmt(remaining) + ' remaining</button>'
+      : '';
+    var result = planMarkup + '<section class="fp-factory-analytics" data-factory-input-panel aria-label="Recorded factory input deliveries">' +
+      '<h3 class="omega-v2-section-title">Factory input inventory and deliveries</h3>' +
+      status + '<div data-factory-input-cards>' + firstPage.html + '</div>' + moreButton + '</section>';
+    factoryInputPerfMark('INPUT_PANEL', __inputPerfStart, 'candidates=' + candidates.length + ' products=' + (planMarkup.match(/<tbody><tr/g) || []).length + ' chars=' + result.length);
+    return result;
   }
 
   function updateFactoryInputCoverageSnapshotV1(event) {
@@ -3435,11 +3637,19 @@
       var byCategory = categoryA.localeCompare(categoryB);
       return byCategory || String(a && (a.name || a.type) || '').localeCompare(String(b && (b.name || b.type) || ''));
     });
-    var cards = rows.map(function (item) { return factoryTypeCard(item, model); }).join('');
+    var totalTypes = rows.length;
+    var visibleLimit = Math.min(totalTypes, Math.max(3, Math.floor(num(model.factoryTypeVisibleCount) || 3)));
+    var visibleRows = rows.slice(0, visibleLimit);
+    // Render only a three-card batch initially; keep the canonical catalog accessible.
+    var cards = visibleRows.map(function (item) { return factoryTypeCard(item, model); }).join('');
     var empty = '<div class="omega-v2-factory-type-empty">No factory types available.</div>';
     return '<section class="fp-type-catalog" aria-label="Factory types">' +
       '<div class="fp-factory-catalog-workspace' + (factoryCardUiState(model).expandedKey ? ' fp-workspace--detail-open' : '') +
-      '"><div class="fp-type-catalog-grid">' + (cards || empty) + '</div></div></section>';
+      '"><div class="fp-type-catalog-grid">' + (cards || empty) + '</div></div>' +
+      (visibleRows.length < totalTypes ? '<div class="fp-factory-input-more-wrap"><button type="button" class="omega-v2-button fp-factory-input-more" data-factory-type-show-more>' +
+        'Show next ' + fmt(Math.min(3, totalTypes - visibleRows.length)) + ' factory types · ' +
+        fmt(totalTypes - visibleRows.length) + ' remaining</button></div>' : '') +
+      '</section>';
   }
 
   function factoryAssetsWorkspaceMarkup(root, model, options) {
@@ -3555,7 +3765,12 @@
       // Do not revive a hidden Industry screen after this read-only source request settles.
       if (typeof root.querySelector === 'function' &&
           !root.querySelector('[data-omega-v2-industry-tab]')) return;
-      var refreshedModel = buildViewModel({ countryId:countryKey });
+      var refreshedActive = root.__omegaV2IndustryTab || options.tab || 'factories';
+      var refreshedFast = refreshedActive === 'inventory' ||
+        (refreshedActive === 'factories' && root.__omegaV2IndustryFactoryView !== 'assets');
+      var refreshedModel = buildViewModel(refreshedFast
+        ? { countryId:countryKey, __omegaV2FactoryInputOptimized:true }
+        : { countryId:countryKey });
       if (!(refreshedModel.catalogProfileCount > 0) && refreshedModel.factoryBaselineStatus !== 'READY') return;
       var active = root.__omegaV2IndustryTab || options.tab || 'factories';
       scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || options || {}, { countryId:countryKey, tab:active }),
@@ -3566,14 +3781,23 @@
   function render(root, options) {
     options = options || {};
     if (!root) return { ok: false, code: 'INDUSTRY_ROOT_REQUIRED' };
-    var model = buildViewModel(options);
     var active = options.tab || root.__omegaV2IndustryTab || 'factories';
+    var requestedFactoryView = options.factoryView ||
+      (root.__omegaV2IndustryFactoryView || (root.__omegaV2IndustryFactoryViewExplicit ? 'assets' : 'types'));
+    var factoryCardStateForRead = root.__omegaV2FactoryCardUiState || {};
+    var buildSheetOpen = active === 'factories' && !!factoryCardStateForRead.buildKey;
+    var optimizedFactoryRead = active === 'inventory' ||
+      (active === 'factories' && requestedFactoryView === 'types' && !buildSheetOpen);
+    var model = buildViewModel(optimizedFactoryRead
+      ? Object.assign({}, options, { __omegaV2FactoryInputOptimized:true })
+      : options);
     var countryKey = String(model.countryId || '');
     warmFactoryPlanningData(root, options, model);
     if (root.__omegaV2IndustryCountryId !== countryKey) {
       root.__omegaV2IndustryCountryId = countryKey;
       root.__omegaV2IndustryFactoryViewExplicit = false;
       root.__omegaV2IndustryFactoryView = 'types';
+      root.__omegaV2FactoryTypeVisibleCount = 3;
       root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', detailsTab:'input', sections:Object.create(null), buildMaterialsExpanded:false };
     }
     if (!root.__omegaV2FactoryCardUiState || typeof root.__omegaV2FactoryCardUiState !== 'object') {
@@ -3586,6 +3810,10 @@
       root.__omegaV2FactoryCardUiState.buildMaterialsExpanded = false;
     }
     model.factoryCardUiState = root.__omegaV2FactoryCardUiState;
+    if (!Number.isFinite(Number(root.__omegaV2FactoryTypeVisibleCount)) || Number(root.__omegaV2FactoryTypeVisibleCount) < 1) {
+      root.__omegaV2FactoryTypeVisibleCount = 1;
+    }
+    model.factoryTypeVisibleCount = root.__omegaV2FactoryTypeVisibleCount;
     if (options.factoryView === 'assets' || options.factoryView === 'types') {
       root.__omegaV2IndustryFactoryView = options.factoryView;
       root.__omegaV2IndustryFactoryViewExplicit = true;
@@ -3602,7 +3830,7 @@
         return '<article class="omega-v2-card"><h3 class="omega-v2-card-title">' + esc(cycle.factoryId) + '</h3><span class="omega-v2-status">' + esc(cycle.status || 'NOT_RECORDED') + '</span><div class="omega-v2-vehicle-stats"><div><span>Output quantity</span><strong>' + fmt(cycle.productionQuantity) + '</strong></div><div><span>Start date</span><strong>' + esc(cycle.startDate || 'Not recorded') + '</strong></div><div><span>Finish date</span><strong>' + esc(cycle.finishDate || 'Not recorded') + '</strong></div><div><span>Source batches</span><strong>' + fmt(Array.isArray(cycle.sourceBatchIds) ? cycle.sourceBatchIds.length : null) + '</strong></div></div></article>';
       }).join('') + '</div>' : '<div class="omega-v2-empty">No tracked production cycles were returned by this country’s industrial state.</div>';
     } else if (active === 'inventory') {
-      content = factoryInputPanelMarkup(model);
+      content = factoryInputPanelMarkup(model, root);
     } else if (active === 'research') {
       var researchRows = model.researchProjects.map(function (item) { return Object.assign({ recordType:'RESEARCH' }, item || {}); })
         .concat(model.technologyTransfers.map(function (item) { return Object.assign({ recordType:'TECHNOLOGY TRANSFER' }, item || {}); }))
@@ -3674,10 +3902,11 @@
           '<span class="fp-content-country">' + esc(model.countryId || 'Country not selected') + '</span></header>' +
           '<div class="fp-content-body">' + content + '</div>' +
         '</div>';
-    root.innerHTML = '<section class="omega-v2-shell omega-v2-industry omega-v2-industry--factory-home" data-factory-stock-input-ui="v2">' +
+    var legacyAndroidPaintProfile = requiresLegacyAndroidPaintProfile();
+    root.innerHTML = '<section class="omega-v2-shell omega-v2-industry omega-v2-industry--factory-home" data-factory-stock-input-ui="v2" data-omega-v2-render-profile="' + (legacyAndroidPaintProfile ? 'legacy-android' : 'full') + '">' +
       '<div class="omega-v2-factory-command fp-stage" data-glow="hover" data-active-tab="' + esc(active) + '" data-factory-view="' + esc(active === 'factories' ? factoryView : 'assets') + '" aria-label="Factory production control">' +
-      '<img class="omega-v2-factory-backdrop" src="assets/ui-photos/industrial-production-line.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1280" height="720">' +
-      '<a class="omega-v2-factory-photo-credit" href="https://commons.wikimedia.org/wiki/File:Industrial_production_line_operating_in_a_large_modern_factory.jpg" target="_blank" rel="noopener noreferrer" aria-label="Photo credit: Shixart1985. CC BY 2.0 license. Image resized and converted to WebP.">Photo: <span class="omega-v2-factory-photo-author">Shixart1985</span></a><a class="omega-v2-factory-photo-license" href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="license noopener noreferrer" aria-label="Creative Commons Attribution 2.0 license">CC BY 2.0</a><span class="omega-v2-factory-photo-credit__changes">Image resized and converted to WebP.</span>' +
+      (legacyAndroidPaintProfile ? '' : '<img class="omega-v2-factory-backdrop" src="assets/ui-photos/industrial-production-line.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" width="1280" height="720">') +
+      (legacyAndroidPaintProfile ? '' : '<a class="omega-v2-factory-photo-credit" href="https://commons.wikimedia.org/wiki/File:Industrial_production_line_operating_in_a_large_modern_factory.jpg" target="_blank" rel="noopener noreferrer" aria-label="Photo credit: Shixart1985. CC BY 2.0 license. Image resized and converted to WebP.">Photo: <span class="omega-v2-factory-photo-author">Shixart1985</span></a><a class="omega-v2-factory-photo-license" href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="license noopener noreferrer" aria-label="Creative Commons Attribution 2.0 license">CC BY 2.0</a><span class="omega-v2-factory-photo-credit__changes">Image resized and converted to WebP.</span>') +
       (root.__omegaV2IndustryNotice ? '<div class="omega-v2-factory-notice" role="status">' + esc(root.__omegaV2IndustryNotice) + '</div>' : '') +
       compactTabs + summaryMarkup + panelBody + '<div class="fp-deck" aria-hidden="true"></div></div>' +
       (root.__omegaV2IndustryBuildFactoryType ? factoryProjectModal(model, root.__omegaV2IndustryBuildFactoryType) : '') + '</section>';
@@ -3904,9 +4133,65 @@
           scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: 'factories' }));
           return;
         }
+        var showMoreFactoryTypes = target.closest('[data-factory-type-show-more]');
+        if (showMoreFactoryTypes && root.contains(showMoreFactoryTypes)) {
+          var typePagingModel = root.__omegaV2IndustryModel || model;
+          var totalFactoryTypes = Array.isArray(typePagingModel.factoryTypeCatalog) ? typePagingModel.factoryTypeCatalog.length : 0;
+          var currentVisibleTypes = Math.max(3, Math.floor(num(root.__omegaV2FactoryTypeVisibleCount) || 3));
+          var nextVisibleTypes = Math.min(totalFactoryTypes, currentVisibleTypes + 3);
+          if (nextVisibleTypes > currentVisibleTypes) {
+            root.__omegaV2FactoryTypeVisibleCount = nextVisibleTypes;
+            scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || options || {}, { tab:'factories', factoryView:'types' }),
+              'Loading more factory type details');
+          }
+          return;
+        }
+        var showMoreFactoryInputs = target.closest('[data-factory-input-show-more]');
+        if (showMoreFactoryInputs && root.contains(showMoreFactoryInputs)) {
+          var inputPagingModel = root.__omegaV2IndustryModel || model;
+          var inputCandidates = factoryInputEligibleFactories(inputPagingModel);
+          var inputStartAttribute = typeof showMoreFactoryInputs.getAttribute === 'function'
+            ? showMoreFactoryInputs.getAttribute('data-next-index') : null;
+          var inputStart = inputStartAttribute === null || inputStartAttribute === undefined
+            ? Math.max(4, Math.floor(num(root.__omegaV2FactoryInputVisibleCount) || 4))
+            : Math.max(0, Math.floor(num(inputStartAttribute) || 0));
+          var inputBatch = factoryInputFactoryCardsMarkup(inputPagingModel, inputCandidates, inputStart, 4);
+          if (!inputBatch.html) return;
+          var inputCards = typeof root.querySelector === 'function'
+            ? root.querySelector('[data-factory-input-cards]') : null;
+          if (inputCards && typeof inputCards.insertAdjacentHTML === 'function') {
+            inputCards.insertAdjacentHTML('beforeend', inputBatch.html);
+          } else if (typeof root.innerHTML === 'string') {
+            var inputCardsMarker = root.innerHTML.indexOf('data-factory-input-cards');
+            var inputCardsOpen = inputCardsMarker >= 0 ? root.innerHTML.indexOf('>', inputCardsMarker) : -1;
+            if (inputCardsOpen < inputCardsMarker) return;
+            root.innerHTML = root.innerHTML.slice(0, inputCardsOpen + 1) + inputBatch.html + root.innerHTML.slice(inputCardsOpen + 1);
+          } else return;
+          if (typeof root.querySelector === 'function') {
+            var pageStatus = root.querySelector('[data-factory-input-page-status]');
+            if (pageStatus) pageStatus.textContent = 'Showing ' + inputBatch.nextIndex.toLocaleString('en-US') +
+              ' of ' + inputBatch.total.toLocaleString('en-US') + ' factories with input records.';
+          }
+          root.__omegaV2FactoryInputVisibleCount = inputBatch.nextIndex;
+          if (inputBatch.nextIndex >= inputBatch.total) {
+            if (showMoreFactoryInputs.parentNode && typeof showMoreFactoryInputs.parentNode.removeChild === 'function') {
+              showMoreFactoryInputs.parentNode.removeChild(showMoreFactoryInputs);
+            } else if (typeof root.innerHTML === 'string') {
+              root.innerHTML = root.innerHTML.replace(/<button[^>]*data-factory-input-show-more[^>]*>[\s\S]*?<\/button>/, '');
+            }
+          } else {
+            if (typeof showMoreFactoryInputs.setAttribute === 'function') showMoreFactoryInputs.setAttribute('data-next-index', String(inputBatch.nextIndex));
+            showMoreFactoryInputs.textContent = 'Show more factories · ' +
+              Math.max(0, inputBatch.total - inputBatch.nextIndex).toLocaleString('en-US') + ' remaining';
+            showMoreFactoryInputs.disabled = false;
+          }
+          return;
+        }
         var tab = target.closest('[data-omega-v2-industry-tab]');
         if (tab && root.contains(tab)) {
-          root.__omegaV2IndustryTab = tab.getAttribute('data-omega-v2-industry-tab');
+          var nextTab = tab.getAttribute('data-omega-v2-industry-tab');
+          if (nextTab === 'inventory') root.__omegaV2FactoryInputVisibleCount = 4;
+          root.__omegaV2IndustryTab = nextTab;
           root.__omegaV2FactoryCardUiState.expandedKey = '';
           root.__omegaV2FactoryCardUiState.buildKey = '';
           root.__omegaV2FactoryCardUiState.detailsTab = 'input';
