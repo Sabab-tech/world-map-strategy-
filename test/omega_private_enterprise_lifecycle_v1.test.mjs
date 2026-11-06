@@ -176,7 +176,7 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   assert.equal(asset.ownerType,'PRIVATE_ENTERPRISE');
   assert.equal(asset.operatorType,'PRIVATE_COMPANY_OPERATOR');
   assert.equal(asset.stateControlRights.licensingAndPermits,true);
-  assert.equal(asset.stateControlRights.operationalControl,'PRIVATE_OPERATOR_UNDER_STATE_POLICY');
+  assert.equal(asset.stateControlRights.operationalControl,'STATE_POLICY_ONLY');
   assert.equal(asset.status,'BLOCKED');
   assert.equal(asset.blockedReason,'SAB34_PIPELINE_PROOF_REQUIRED');
   assert.equal(asset.productionEnabled,false);
