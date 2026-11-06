@@ -105,19 +105,39 @@ function makeHarness(){
 }
 function emit(harness,type,detail){(harness.handlers.get(type)||[]).forEach(fn=>fn({type,detail}));}
 function setIronDemandSnapshot(harness,demandPerDay=0,consumerDemandPerDay=0,activeFactoryInputDemandPerDay=0){
-  const game=harness.sandbox.Game.state,resource=game.resource.BGD,turn=Number(game.simulation.turn)||0;
-  resource.demandRuntime={lastTurn:turn,byResource:{iron_ore:{
+  const game=harness.sandbox.Game.state,turn=Number(game.simulation.turn)||0;
+  const snapshot={lastTurn:turn,byResource:{iron_ore:{
     demandPerDay,consumerDemandPerDay,activeFactoryInputDemandPerDay,pendingImportQuantity:0
   }},authority:'TEST_CURRENT_TURN_DEMAND_SNAPSHOT'};
-  assert.equal(Object.keys(resource.demandRuntime.byResource).length,1,'test fixture must persist one demand row before the runtime call');
-  assert.equal(Object.keys(harness.sandbox.Game.state.resource.BGD.demandRuntime.byResource).length,1,'sandbox and state must share canonical demand row');
-  return resource.demandRuntime;
+  // Keep both fixture references synchronized. The lifecycle executes in a VM
+  // context while assertions and setup code hold the original harness state.
+  // Assigning only through one bridge can leave the runtime with an empty stale
+  // demand bucket even though the outer fixture appears populated.
+  const resourceBuckets=[
+    harness.sandbox.Game.state.resource?.BGD,
+    harness.state?.resource?.BGD
+  ].filter(Boolean);
+  for(const resource of new Set(resourceBuckets)){
+    resource.demandRuntime=JSON.parse(JSON.stringify(snapshot));
+  }
+  for(const resource of new Set(resourceBuckets)){
+    assert.equal(Object.keys(resource.demandRuntime?.byResource||{}).length,1,
+      'every runtime-visible country state must carry the current-turn demand row');
+    assert.equal(resource.demandRuntime.lastTurn,turn,
+      'demand evidence must be stamped with the current simulation turn');
+  }
+  return snapshot;
 }
 function setReadyIronSupply(harness,amount=1000){
-  const game=harness.sandbox.Game.state,resource=game.resource.BGD;
-  resource.inventory.iron_ore=amount;
-  resource.warehouse.availableByResource.iron_ore=amount;
-  resource.warehouse.reservedByResource.iron_ore=0;
+  const resourceBuckets=[
+    harness.sandbox.Game.state.resource?.BGD,
+    harness.state?.resource?.BGD
+  ].filter(Boolean);
+  for(const resource of new Set(resourceBuckets)){
+    resource.inventory.iron_ore=amount;
+    resource.warehouse.availableByResource.iron_ore=amount;
+    resource.warehouse.reservedByResource.iron_ore=0;
+  }
   setIronDemandSnapshot(harness,0,0,0);
 }
 
@@ -169,6 +189,7 @@ test('committed game-turn event schedules the autonomous proposal only once for 
 
 test('proposal -> approval -> real Treasury grant -> construction -> private commissioning is replay-safe and uses shared assets',()=>{
   const h=makeHarness(),api=h.api;
+  setIronDemandSnapshot(h,0,0,0);
   const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',factoryType:'STEEL_WORKS',quantity:1,
     sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true,requestId:'proposal-001'});
   assert.equal(proposal.status,'PROPOSED');
