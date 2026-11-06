@@ -672,6 +672,46 @@
       proof.logisticsReceipt===true&&proof.factoryInput===true&&proof.finishedGoods===true&&proof.saveLoad===true&&
       typeof proof.exactMainSha==='string'&&/^[a-f0-9]{40}$/i.test(proof.exactMainSha));
   }
+  function privateCommissioningRecordVerified(country,proposal,project,asset){
+    var cid=canonicalCountry(country),company=id(project&& (project.ownerCompanyId||project.ownerId||project.privateCompanyId||project.companyId)),
+      operator=id(project&& (project.operatorCompanyId||project.operatorId||company)),permit=proposal&&proposal.permit,
+      decision=proposal&&proposal.decision,funding=proposal&&proposal.funding;
+    if(!cid||!proposal||!project||!asset||COMPANY_IDS.indexOf(company)<0||COMPANY_IDS.indexOf(operator)<0)return false;
+    var rights=project.stateControlRights||{},assetRights=asset.stateControlRights||{};
+    var required=['strategicOversight','licensingAndPermits','fiscalRegulation','labourSafetyEnvironmentalRegulation',
+      'strategicSupplyOversight','strategicContracts','domesticSupplyDirection','exportControl','publicProcurement',
+      'competitionOversight','foreignOwnershipReview','emergencyIntervention'];
+    var fullRights=required.every(function(key){return rights[key]===true&&assetRights[key]===true;});
+    var financeRows=financeLedger(cid,false)||[];
+    var fundingEntry=financeRows.find(function(row){return row&&row.transactionId===funding?.transactionId&&
+      row.proposalId===proposal.proposalId&&id(row.companyId)===company&&String(row.status||'').toUpperCase()==='POSTED';});
+    var capexEntry=financeRows.find(function(row){return row&&row.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX'&&
+      row.proposalId===proposal.proposalId&&row.projectId===project.projectId&&id(row.companyId)===company&&
+      Math.abs((num(row.amount)||0)-(num(project.cost)||0))<1e-6&&String(row.status||'').toUpperCase()==='POSTED';});
+    return !!(permit&&permit.status==='ACTIVE'&&permit.authority==='OMEGA_PRIVATE_ENTERPRISE_LICENSING_V1'&&
+      permit.permitId===project.permitId&&permit.permitId===project.privatePermitId&&
+      project.privatePermitAuthority===permit.authority&&project.privatePermitStatus==='ACTIVE'&&
+      permit.countryId===cid&&permit.companyId===company&&permit.operatorCompanyId===operator&&
+      id(proposal.companyId)===company&&id(proposal.operatorCompanyId||proposal.companyId)===operator&&
+      proposal.factoryType===project.factoryType&&decision&&decision.decision==='APPROVE'&&
+      decision.decisionId===project.sourcePrivateDecisionId&&decision.permitId===permit.permitId&&
+      funding&&funding.status==='FUNDED'&&funding.transactionId===project.sourcePrivateFundingId&&
+      id(funding.companyId)===company&&fundingEntry&&capexEntry&&
+      project.sourcePrivateProposalId===proposal.proposalId&&project.status==='COMPLETED'&&
+      project.requirePrivateCommissioningGate===true&&String(project.ownerType).toUpperCase()==='PRIVATE_ENTERPRISE'&&
+      String(project.operatorType).toUpperCase()==='PRIVATE_COMPANY_OPERATOR'&&
+      rights.authority==='OMEGA_STATE_CONTROL_RIGHTS_V1'&&assetRights.authority==='OMEGA_STATE_CONTROL_RIGHTS_V1'&&
+      String(rights.operationalControl).toUpperCase()==='STATE_POLICY_ONLY'&&
+      String(assetRights.operationalControl).toUpperCase()==='STATE_POLICY_ONLY'&&fullRights&&
+      String(asset.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE'&&
+      id(asset.ownerCompanyId||asset.ownerId)===company&&
+      String(asset.operatorType||'').toUpperCase()==='PRIVATE_COMPANY_OPERATOR'&&
+      id(asset.operatorCompanyId||asset.operatorId||asset.companyId)===operator&&
+      asset.privatePermitId===permit.permitId&&asset.privatePermitStatus==='ACTIVE'&&
+      asset.privatePermitAuthority===permit.authority&&
+      asset.sourcePrivateProposalId===proposal.proposalId&&asset.sourcePrivateDecisionId===decision.decisionId&&
+      asset.sourcePrivateFundingId===funding.transactionId&&asset.constructionProjectId===project.projectId);
+  }
   function applyCommissionedAsset(country,project){
     if(!project||!project.sourcePrivateProposalId)return null;
     var cid=canonicalCountry(country),econ=countryBucket('economy',cid,false)||{},assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[];
@@ -684,6 +724,19 @@
     var permit=proposal&&proposal.permit;
     if(!permit||permit.permitId!==project.permitId||permit.status!=='ACTIVE'||permit.companyId!==company||
        permit.operatorCompanyId!==operatorCompany)return null;
+    var decision=proposal.decision,funding=proposal.funding,rows=financeLedger(cid,false)||[];
+    var fundingEntry=rows.find(function(row){return row&&row.transactionId===funding?.transactionId&&
+      row.proposalId===proposal.proposalId&&id(row.companyId)===company&&String(row.status||'').toUpperCase()==='POSTED';});
+    var capexEntry=rows.find(function(row){return row&&row.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX'&&
+      row.projectId===project.projectId&&row.proposalId===proposal.proposalId&&id(row.companyId)===company&&
+      Math.abs((num(row.amount)||0)-(num(project.cost)||0))<1e-6&&String(row.status||'').toUpperCase()==='POSTED';});
+    if(!decision||decision.decision!=='APPROVE'||decision.decisionId!==project.sourcePrivateDecisionId||
+       !funding||funding.status!=='FUNDED'||funding.transactionId!==project.sourcePrivateFundingId||
+       !fundingEntry||!capexEntry||project.status!=='COMPLETED'||project.requirePrivateCommissioningGate!==true||
+       project.privatePermitId!==permit.permitId||project.privatePermitStatus!=='ACTIVE'||
+       project.privatePermitAuthority!==permit.authority||
+       String(project.stateControlRights?.operationalControl||'').toUpperCase()!=='STATE_POLICY_ONLY'||
+       project.stateControlRights?.authority!=='OMEGA_STATE_CONTROL_RIGHTS_V1')return null;
     var productionReady=productionProofReady();
     asset.ownerId=company;asset.ownerCompanyId=company;asset.ownerType='PRIVATE_ENTERPRISE';
     asset.operatorId=operatorCompany;asset.operatorCompanyId=operatorCompany;asset.operatorType='PRIVATE_COMPANY_OPERATOR';
@@ -734,23 +787,17 @@
        String(target.ownerType||'').toUpperCase()!=='PRIVATE_ENTERPRISE')return{status:'BLOCKED',reason:'PRIVATE_FACTORY_NOT_FOUND'};
     var proposal=runtime(cid,false)?.proposals.find(function(p){return p.proposalId===target.sourcePrivateProposalId;});
     if(!proposal)return{status:'BLOCKED',reason:'PRIVATE_PROPOSAL_NOT_FOUND'};
-    var permit=proposal.permit,decision=proposal.decision,funding=proposal.funding;
-    var financeRows=financeLedger(cid,false)||[];
-    var fundingEntry=financeRows.find(function(row){return row&&row.transactionId===funding?.transactionId&&
-      row.proposalId===proposal.proposalId&&id(row.companyId)===owner&&String(row.status||'').toUpperCase()==='POSTED';});
-    var constructionProject=(countryBucket('resource',cid,false)||{}).industrialNetwork?.projects||[];
-    var projectRow=constructionProject.find(function(row){return row&&row.projectId===target.constructionProjectId&&
-      row.sourcePrivateProposalId===proposal.proposalId&&row.status==='COMPLETED';});
-    if(!permit||permit.status!=='ACTIVE'||permit.authority!=='OMEGA_PRIVATE_ENTERPRISE_LICENSING_V1'||
-       target.privatePermitId!==permit.permitId||target.privatePermitStatus!=='ACTIVE'||
-       target.privatePermitAuthority!==permit.authority||owner!==id(permit.companyId)||operator!==id(permit.operatorCompanyId)||
-       !decision||decision.decision!=='APPROVE'||target.sourcePrivateDecisionId!==decision.decisionId||
-       !funding||funding.status!=='FUNDED'||target.sourcePrivateFundingId!==funding.transactionId||!fundingEntry||!projectRow)
+    var targetProject=(countryBucket('resource',cid,false)||{}).industrialNetwork?.projects||[];
+    var targetProjectRow=targetProject.find(function(row){return row&&row.projectId===target.constructionProjectId;});
+    if(!privateCommissioningRecordVerified(cid,proposal,targetProjectRow,target))
       return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PERMIT_FINANCE_OR_CONSTRUCTION_PROVENANCE_NOT_VERIFIED'};
     var restored=[];
     (proposal.commissionedFactoryIds||[]).forEach(function(assetId){
       var asset=assets.find(function(row){return String(row.id||row.factoryId||'')===String(assetId);});
       if(!asset)return;
+      var projects=(countryBucket('resource',cid,false)||{}).industrialNetwork?.projects||[];
+      var project=projects.find(function(row){return row&&row.projectId===asset.constructionProjectId;});
+      if(!privateCommissioningRecordVerified(cid,proposal,project,asset))return;
       if(asset.blockedReason==='SAB34_PIPELINE_PROOF_REQUIRED'){
         var original=String(asset.privateCommissionedStatus||'OPERATIONAL').toUpperCase();
         asset.status=original;asset.productionEnabled=original==='OPERATIONAL';
