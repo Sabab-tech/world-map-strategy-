@@ -303,6 +303,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     await page.evaluate(() => {
       window.__omegaBrowserLongTasks = [];
       window.__omegaBrowserLongTaskObserverSupported = false;
+      window.__omegaBrowserHeapBefore = performance.memory?.usedJSHeapSize || null;
       if (typeof PerformanceObserver === 'function') {
         try {
           const observer = new PerformanceObserver(list => {
@@ -381,6 +382,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         longTaskObserverSupported: !!window.__omegaBrowserLongTaskObserverSupported,
         longTaskCount: rows.length,
         maxLongTaskMs: rows.reduce((max, row) => Math.max(max, Number(row.duration) || 0), 0),
+        heapBeforeBytes: window.__omegaBrowserHeapBefore || null,
         usedHeapBytes: performance.memory?.usedJSHeapSize || null,
         heapLimitBytes: performance.memory?.jsHeapSizeLimit || null,
         pageErrors: []
@@ -389,6 +391,10 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     if (metrics.runtime.longTaskObserverSupported) {
       assert.ok(metrics.runtime.maxLongTaskMs <= 1000,
         'no sustained UI long task may exceed 1000ms; metrics=' + JSON.stringify(metrics.runtime));
+    }
+    if (metrics.runtime.heapBeforeBytes && metrics.runtime.usedHeapBytes) {
+      assert.ok(metrics.runtime.usedHeapBytes - metrics.runtime.heapBeforeBytes <= 64 * 1024 * 1024,
+        'repeated real-browser navigation must not grow the JS heap by more than 64 MiB: ' + JSON.stringify(metrics.runtime));
     }
 
     metrics.pageErrors = pageErrors.slice();
