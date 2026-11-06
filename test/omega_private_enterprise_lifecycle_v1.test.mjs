@@ -61,7 +61,14 @@ function makeHarness(){
   const privateBaseline={
     getCountryBaseline(){
       return{status:'READY',countryId:'BGD',governmentFactoryCounts:{STEEL_WORKS:10,ZERO_GOV_FACTORY:0},
-        factoryCounts:{STEEL_WORKS:2,ZERO_GOV_FACTORY:0},totalPrivateFactoryUnits:2};
+        factoryCounts:{STEEL_WORKS:10,ZERO_GOV_FACTORY:0},totalPrivateFactoryUnits:10,
+        companies:[
+          {companyId:'AURORA_INDUSTRIAL_GROUP',factoryCounts:{STEEL_WORKS:2,ZERO_GOV_FACTORY:0}},
+          {companyId:'MERIDIAN_ENGINEERING_GROUP',factoryCounts:{STEEL_WORKS:2,ZERO_GOV_FACTORY:0}},
+          {companyId:'NOVA_CONSUMER_INDUSTRIES',factoryCounts:{STEEL_WORKS:2,ZERO_GOV_FACTORY:0}},
+          {companyId:'ATLAS_TECHNOLOGY_CORPORATION',factoryCounts:{STEEL_WORKS:2,ZERO_GOV_FACTORY:0}},
+          {companyId:'TERRA_INFRASTRUCTURE_GROUP',factoryCounts:{STEEL_WORKS:2,ZERO_GOV_FACTORY:0}}
+        ]};
     }
   };
   const sandbox={
@@ -83,6 +90,35 @@ function makeHarness(){
   return{state,network,projects,handlers,api:sandbox.OmegaPrivateEnterpriseLifecycleV1,sandbox};
 }
 function emit(harness,type,detail){(harness.handlers.get(type)||[]).forEach(fn=>fn({type,detail}));}
+
+test('autonomous company proposals are deterministic, once per 30 turns, and have no asset/stock/cash side effects',()=>{
+  const h=makeHarness(),beforeInventory=JSON.stringify(h.state.resource.BGD.inventory);
+  const beforeWarehouse=JSON.stringify(h.state.resource.BGD.warehouse);
+  const beforeTreasury=h.state.finance.BGD.available;
+  const first=h.api.advanceAutonomousProposalCycle();
+  assert.equal(first.status,'WAITING');
+  assert.equal(first.reason,'AUTONOMOUS_PROPOSAL_REVIEW_NOT_DUE');
+  h.state.simulation.turn=30;
+  const proposal=h.api.advanceAutonomousProposalCycle();
+  assert.equal(proposal.status,'PROPOSED');
+  assert.equal(proposal.proposal.companyId,'AURORA_INDUSTRIAL_GROUP');
+  assert.equal(proposal.proposal.submissionMode,'AUTONOMOUS_COMPANY_TURN_CYCLE');
+  assert.equal(proposal.proposal.proposalPeriod,1);
+  assert.equal(proposal.proposal.status,'PROPOSED');
+  assert.equal(h.projects.length,0);
+  assert.equal(h.state.economy.BGD.productionAssets.length,0);
+  assert.equal(JSON.stringify(h.state.resource.BGD.inventory),beforeInventory);
+  assert.equal(JSON.stringify(h.state.resource.BGD.warehouse),beforeWarehouse);
+  assert.equal(h.state.finance.BGD.available,beforeTreasury);
+  assert.equal(h.api.advanceAutonomousProposalCycle().status,'DUPLICATE');
+  h.state.simulation.turn=60;
+  const next=h.api.advanceAutonomousProposalCycle();
+  assert.equal(next.status,'PROPOSED');
+  assert.equal(next.proposal.companyId,'MERIDIAN_ENGINEERING_GROUP');
+  assert.equal(next.proposal.proposalPeriod,2);
+  assert.equal(h.projects.length,0);
+  assert.equal(h.state.economy.BGD.productionAssets.length,0);
+});
 
 test('proposal -> approval -> real Treasury grant -> construction -> private commissioning is replay-safe and uses shared assets',()=>{
   const h=makeHarness(),api=h.api;
