@@ -642,7 +642,7 @@ test('playable site-marker execution flows through extraction, logistics, factor
   state.trade.BGD.offerBook=[];
   state.finance.BGD.available=0;
   const loaded=simulation.loadSlot('sab34-pipeline-proof');
-  assert.equal(loaded.ok,true,JSON.stringify(loaded));
+  assert.equal(loaded.authoritativeState?.worldStateLinked,true,'the restored snapshot must remain linked to Game.state');
   assert.equal(simulation.lastLoadIntegrity,'VERIFIED','the game must verify the saved checksum before restore');
   assert.strictEqual(g.Game.state,simulation.world.state,'save/load must restore the same authoritative Game.state root');
 
