@@ -230,6 +230,12 @@ test('trade resource mutation requires explicit settlement authorization', async
   assert.equal(state.resource.BGD.inventory.iron_ore,100);
 
   const auth={type:'TRADE_SETTLEMENT',settlementId:'SET-1',requestId:'REQ-1',sourceCountryId:'IND',destinationCountryId:'BGD'};
+  const mismatchedCredit=interop.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_CREDIT','BGD',{
+    resourceId:'iron_ore',quantity:10,settlementId:'SET-OTHER',transferAuthorization:auth
+  });
+  assert.equal(mismatchedCredit.status,'REJECTED','payload cannot override the authorized settlement ID');
+  assert.equal(state.resource.BGD.inventory.iron_ore,100);
+
   const credited=interop.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_CREDIT','BGD',{resourceId:'iron_ore',quantity:10,transferAuthorization:auth});
   assert.equal(credited.status,'APPLIED');
   assert.equal(state.resource.BGD.inventory.iron_ore,110);
@@ -238,6 +244,13 @@ test('trade resource mutation requires explicit settlement authorization', async
   assert.equal(wrongSource.status,'REJECTED');
   assert.equal(state.resource.BGD.inventory.iron_ore,110);
   const sellerAuth={...auth,sourceCountryId:'IND',destinationCountryId:'BGD'};
+  const sellerStockBefore=state.resource.IND.inventory.iron_ore;
+  const mismatchedDebit=interop.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','IND',{
+    resourceId:'iron_ore',quantity:10,settlementId:'SET-OTHER',transferAuthorization:sellerAuth
+  });
+  assert.equal(mismatchedDebit.status,'REJECTED');
+  assert.equal(state.resource.IND.inventory.iron_ore,sellerStockBefore);
+
   const sellerDebit=interop.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','IND',{resourceId:'iron_ore',quantity:10,transferAuthorization:sellerAuth});
   assert.equal(sellerDebit.status,'APPLIED');
   assert.equal(state.resource.IND.inventory.iron_ore,40);
