@@ -519,3 +519,30 @@ test('legacy negative balances are normalized and never exposed as spendable sto
   assert.equal(item(inactive, 'steel').quantity, 0,
     'inactive saved snapshots must also clamp negative historical balances');
 });
+
+
+test('transaction and factory-event paths repair negative live balances before applying deltas', async () => {
+  const { state, api } = makeRuntime();
+  await api.init();
+
+  state.resource.BGD.inventory.iron_concentrate = -6;
+  const blockedDebit = api.consumeProduct({
+    countryId:'BGD', productId:'iron_concentrate', quantity:2,
+    eventId:'NEGATIVE-STOCK-DEBIT-01'
+  });
+  assert.equal(blockedDebit.status,'BLOCKED');
+  assert.equal(blockedDebit.reason,'INSUFFICIENT_INVENTORY');
+  assert.equal(blockedDebit.available,0);
+  assert.equal(state.resource.BGD.inventory.iron_concentrate,0,
+    'a direct debit must repair a negative balance before checking available stock');
+
+  state.resource.BGD.inventory.STEEL = -9;
+  const production = api.recordFactoryEvent('BGD',{
+    transactionId:'NEGATIVE-STOCK-FACTORY-OUTPUT-01',
+    outputQuantities:{STEEL:3}
+  });
+  assert.equal(production.status,'RECORDED');
+  assert.equal(state.resource.BGD.inventory.STEEL,3,
+    'factory reconciliation must clamp the stale opening balance before crediting output');
+  assert.equal(item(api.getInventory('BGD',{includeZero:true}),'steel').quantity,3);
+});
