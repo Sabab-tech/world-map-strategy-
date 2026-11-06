@@ -1465,7 +1465,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(commissionedPrivateFactory.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
     assert.equal(commissionedPrivateFactory.companyId,'MERIDIAN_ENGINEERING_GROUP');
     assert.equal(commissionedPrivateFactory.ownerType,'PRIVATE_ENTERPRISE');
-    assert.equal(commissionedPrivateFactory.operatorType,'PRIVATE_OPERATOR');
+    assert.equal(commissionedPrivateFactory.operatorType,'PRIVATE_COMPANY_OPERATOR');
     assert.equal(commissionedPrivateFactory.stateControlRights.operationalControl,'STATE_POLICY_ONLY');
     assert.equal(commissionedPrivateFactory.stateControlRights.domesticSupplyDirection,true);
     assert.equal(commissionedPrivateFactory.stateControlRights.exportControl,true);
