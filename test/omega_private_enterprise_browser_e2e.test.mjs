@@ -506,7 +506,11 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       { name: 'mobile-landscape', width: 844, height: 390 },
       { name: 'desktop', width: 1365, height: 768 }
     ]) {
-      await viewportSession.send('Emulation.setDeviceMetricsOverride', {
+      await page.evaluate(name => { window.__omegaBrowserCurrentViewport = name; }, viewport.name);
+      // The browser context already starts at 390x844 with isMobile/touch enabled.
+      // Reapplying the identical CDP metrics triggers an unnecessary initial
+      // resize/reflow on the loaded Industry screen, so only emulate transitions.
+      if (viewport.name !== 'mobile-portrait') await viewportSession.send('Emulation.setDeviceMetricsOverride', {
         width:viewport.width,
         height:viewport.height,
         deviceScaleFactor:1,
@@ -573,6 +577,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       return {
         longTaskObserverSupported: !!window.__omegaBrowserLongTaskObserverSupported,
         longTaskCount: rows.length,
+        currentViewport:window.__omegaBrowserCurrentViewport || null,
         longTasks: rows,
         maxLongTaskMs: rows.reduce((max, row) => Math.max(max, Number(row.duration) || 0), 0),
         heapBeforeBytes: window.__omegaBrowserHeapBefore || null,
