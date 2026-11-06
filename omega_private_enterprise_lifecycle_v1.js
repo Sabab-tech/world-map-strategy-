@@ -1325,12 +1325,70 @@
         :'';
       return'<article class="pe-proposal"><header><strong>'+escapeHtml(p.companyName)+'</strong><span>'+p.status.replace(/_/g,' ')+'</span></header>'+facts+readinessMarkup+inputDetails+shortages+unknown+capitalReceiptForm+'<div class="pe-actions">'+buttons+'</div></article>';
     }).join('')||'<div class="pe-empty">No company expansion proposal has been submitted for this country.</div>';
+    var financeCards=COMPANY_IDS.map(function(companyId){
+      var statement=getCompanyFinanceSummary(country,companyId),period=statement.lastClosedPeriod||null,
+        currency=statement.currency||'GAME_CURRENCY_UNITS';
+      function amount(value){return value===null||value===undefined?'Not recorded':Number(value).toLocaleString('en-US',{maximumFractionDigits:2})+' '+currency;}
+      var taxLabel=period?'Cash-basis tax '+amount(period.corporateTaxPaid)+' at '+(period.corporateTaxRate*100).toFixed(2)+'%':'Not assessed: close a journalled cash-flow period first';
+      return'<article class="pe-proposal"><header><strong>'+escapeHtml(statement.companyName||companyId)+'</strong><span>'+escapeHtml(statement.journal.status)+'</span></header>'+
+        '<div class="pe-facts"><span>Recorded receipts <b>'+amount(statement.grossRevenue)+'</b></span><span>Recorded payments <b>'+amount(statement.paymentsMade)+'</b></span>'+
+        '<span>Net cash flow <b>'+amount(statement.runtimeNetCashFlow)+'</b></span><span>Factory CAPEX <b>'+amount(statement.constructionCapex.amount)+'</b></span>'+
+        '<span>Retained earnings <b>'+amount(statement.capital.retainedEarningsBalance)+'</b></span><span>Tax status <b>'+escapeHtml(taxLabel)+'</b></span></div>'+
+        '<p class="pe-footnote">Profit is cash-basis simulation accounting. Unobserved inventory valuation, depreciation and missing production costs are not treated as zero.</p>'+
+        '<div class="pe-actions"><button type="button" data-pe-action="close-finance" data-pe-company="'+companyId+'">Close cash-flow period / assess profit tax</button></div></article>';
+    }).join('');
+    var jvDashboard=getJointVentureDashboard(country);
+    var jvCards=jvDashboard.jointVentures.slice(-12).reverse().map(function(jv){
+      var shareholderText=jv.shareholders.map(function(member){return escapeHtml(member.companyName)+' '+(member.shareBps/100).toFixed(2)+'%';}).join(' · ');
+      var actions=jv.status==='PROPOSED'
+        ?'<button type="button" data-pe-action="jv-approve" data-pe-jv="'+escapeHtml(jv.jointVentureId)+'">Government approve charter</button><button type="button" data-pe-action="jv-deny" data-pe-jv="'+escapeHtml(jv.jointVentureId)+'">Reject charter</button>'
+        :'';
+      var resolutions=jv.resolutions.slice(-6).reverse().map(function(resolution){
+        var votes=resolution.votes||[];
+        var voteMarkup='';
+        if(jv.status==='ACTIVE'&&resolution.status==='VOTING'){
+          voteMarkup=jv.shareholders.map(function(member){
+            var voted=votes.some(function(vote){return vote.companyId===member.companyId;});
+            return voted?'<span>'+escapeHtml(member.companyName)+' · VOTED</span>':
+              '<span>'+escapeHtml(member.companyName)+' · '+(member.shareBps/100).toFixed(2)+'% '+
+              '<button type="button" data-pe-action="jv-vote-for" data-pe-jv="'+escapeHtml(jv.jointVentureId)+'" data-pe-resolution="'+escapeHtml(resolution.resolutionId)+'" data-pe-company="'+member.companyId+'">FOR</button>'+
+              '<button type="button" data-pe-action="jv-vote-against" data-pe-jv="'+escapeHtml(jv.jointVentureId)+'" data-pe-resolution="'+escapeHtml(resolution.resolutionId)+'" data-pe-company="'+member.companyId+'">AGAINST</button></span>';
+          }).join('');
+        }
+        var pay=resolution.type==='DIVIDEND'&&resolution.status==='APPROVED'
+          ?'<button type="button" data-pe-action="jv-pay-dividend" data-pe-jv="'+escapeHtml(jv.jointVentureId)+'" data-pe-resolution="'+escapeHtml(resolution.resolutionId)+'">Pay approved dividend</button>':'';
+        return'<article class="pe-proposal"><header><strong>'+escapeHtml(resolution.type)+' · '+escapeHtml(resolution.resolutionId)+'</strong><span>'+escapeHtml(resolution.status)+'</span></header>'+
+          '<p>Amount '+(resolution.amount===null?'Not applicable':Number(resolution.amount).toLocaleString('en-US')+' '+escapeHtml(resolution.currency))+
+          ' · Required yes votes '+(resolution.requiredApprovalBps/100).toFixed(2)+'%</p>'+
+          (votes.length?'<small>'+votes.map(function(v){return escapeHtml(v.companyId)+' '+escapeHtml(v.vote)+' '+(v.shareBps/100).toFixed(2)+'%';}).join(' · ')+'</small>':'')+
+          '<div class="pe-actions">'+voteMarkup+pay+'</div></article>';
+      }).join('')||'<div class="pe-empty">No shareholder resolutions have been submitted.</div>';
+      var activeControls=jv.status==='ACTIVE'
+        ?'<form class="pe-form" data-pe-jv-resolution-form data-pe-jv="'+escapeHtml(jv.jointVentureId)+'"><label>Resolution<select name="type"><option value="OPERATING_BUDGET">Operating budget</option><option value="CAPEX">Capital expenditure</option><option value="DIVIDEND">Dividend</option><option value="DISSOLUTION">Dissolution</option></select></label><label>Amount for dividend<input name="amount" type="number" min="0.01" step="any" inputmode="decimal"></label><label>Description<input name="description" type="text" maxlength="500"></label><button type="submit">Submit shareholder resolution</button></form>'+
+         '<form class="pe-form" data-pe-jv-contribution-form data-pe-jv="'+escapeHtml(jv.jointVentureId)+'"><label>Contributing shareholder<select name="companyId">'+companyOptions+'</select></label><label>Post-tax retained earnings<input name="amount" type="number" min="0.01" step="any" inputmode="decimal" required></label><label>Contribution reference<input name="requestId" type="text" maxlength="100" required></label><button type="submit">Contribute retained earnings</button></form>':'';
+      return'<article class="pe-proposal"><header><strong>'+escapeHtml(jv.name)+'</strong><span>'+escapeHtml(jv.status)+'</span></header>'+
+        '<p>Manager: '+escapeHtml(jv.managingCompanyId)+' · Shares: '+shareholderText+'</p>'+
+        '<p>Linked factories: '+(jv.factoryIds.length?jv.factoryIds.map(escapeHtml).join(', '):'Company-level agreement; no factory linked yet')+
+        ' · JV retained earnings: '+Number(jv.retainedEarningsBalance||0).toLocaleString('en-US')+' GAME_CURRENCY_UNITS</p>'+
+        '<div class="pe-actions">'+actions+'</div>'+activeControls+'<div class="pe-proposals"><h4>Voting / dividend resolutions</h4>'+resolutions+'</div></article>';
+    }).join('')||'<div class="pe-empty">No joint ventures have been proposed for this country.</div>';
+    var jvCompanyOptions=companyOptions;
     var message=root.__omegaPrivateEnterpriseMessage?'<p class="pe-message" role="status">'+escapeHtml(root.__omegaPrivateEnterpriseMessage)+'</p>':'';
     var grantHelp='<small>State grant support is a real Treasury outflow and requires an explicit request plus approval. No company cash is assumed from the static opening allocation.</small>';
     var markup='<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1"><header class="pe-head"><div><small>PRODUCTION LINES / NATIONAL INDUSTRY POLICY</small><h3>Company expansion proposals</h3><p>Government decides; firms own and operate approved private assets.</p></div><span class="pe-gate">'+(dash.productionEnabled?'PRIVATE PRODUCTION ENABLED':'PRODUCTION GATED BY SAB-34')+'</span></header>'+
       '<div class="pe-overview"><span>Companies <b>5</b></span><span>Proposals <b>'+dash.proposals.length+'</b></span><span>Opening baseline <b>'+(baselineRow&&baselineRow.status==='READY'?baselineRow.totalPrivateFactoryUnits.toLocaleString('en-US'):'Unavailable')+'</b></span><span>Finance <b>'+Object.keys(capitalByCompany).length+' capital accounts</b></span></div>'+
       '<form class="pe-form" data-pe-proposal-form><label>Private asset owner<select name="companyId">'+companyOptions+'</select></label><label>Private operator<select name="operatorCompanyId">'+companyOptions+'</select></label><label>Factory type<select name="factoryType">'+typeOptions+'</select></label><label>Quantity<input name="quantity" type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="1" required></label><label>Input sourcing<select name="sourcingPolicy"><option value="DOMESTIC_ONLY">Domestic inputs</option><option value="COMPANY_FUNDED_IMPORTS">Company-funded imports</option><option value="MIXED">Mixed sourcing</option></select></label><label class="pe-checkbox"><input name="stateSupportRequested" type="checkbox"> Request possible Treasury grant support</label><button type="submit">Submit company proposal</button></form>'+grantHelp+message+
       '<div class="pe-proposals"><h4>Government decision queue</h4>'+cards+'</div>'+
+      '<details class="pe-proposals"><summary><strong>Corporate Finance / Profit / Tax / Cost</strong></summary><p class="pe-footnote">Committed company cash flows are journalled. A period close assesses tax only against recorded positive cash-basis operating profit. Factory CAPEX remains separate from operating cost; accrual inventory valuation is not fabricated.</p>'+financeCards+'</details>'+
+      '<section class="pe-proposals"><h4>Joint ventures / shareholder voting / dividends</h4>'+
+      '<form class="pe-form" data-pe-jv-form><label>JV name<input name="name" type="text" maxlength="100" value="Strategic Industrial Joint Venture" required></label>'+
+      '<label>Managing company / shareholder A<select name="companyA">'+jvCompanyOptions+'</select></label>'+
+      '<label>Shareholder B<select name="companyB">'+jvCompanyOptions+'</select></label>'+
+      '<label>Shareholder A equity (%)<input name="shareA" type="number" min="1" max="99" step="1" value="50" required></label>'+
+      '<label>Exact factory IDs (comma separated, optional)<input name="factoryIds" type="text" maxlength="1200"></label>'+
+      '<label>Unique charter reference<input name="requestId" type="text" maxlength="100" required></label>'+
+      '<button type="submit">Submit JV charter for government approval</button></form>'+jvCards+'</section>'+
+      '<p class="pe-footnote">JV assets retain their canonical owner/operator and state-control fields. Shareholder voting changes only corporate decisions. Dividends require post-tax retained earnings contributed to the JV and an approved weighted vote. The state keeps strategic oversight and permits. Private factory operation remains blocked until SAB-34 proof is verified.</p>'+
       '<p class="pe-footnote">Approval creates no stock reservation or import. Domestic inputs are checked against observed uncommitted inventory; company-funded imports require the existing paid Trade dispatch and confirmed warehouse receipt. Opening allocations are not operating factories. Construction uses the existing industrial project registry and bill of materials. Completed private factories remain production-blocked until the SAB-34 live supply-chain and save/load proof is verified.</p></section>';
     var old=shell.querySelector('[data-omega-private-company-lifecycle]');
     if(old&&old.remove)old.remove();
@@ -1365,6 +1423,34 @@
         refresh(root,root.__omegaV2IndustryCountryId||playerCountry());
         return;
       }
+      if(form.matches('[data-pe-jv-form]')){
+        if(event.preventDefault)event.preventDefault();
+        var jvData=new FormData(form),shareA=Number(jvData.get('shareA')),shareABps=Math.round(shareA*100);
+        var factoryIds=String(jvData.get('factoryIds')||'').split(',').map(function(value){return value.trim();}).filter(Boolean);
+        var jvResult=createJointVenture({countryId:root.__omegaV2IndustryCountryId||playerCountry(),
+          name:jvData.get('name'),requestId:jvData.get('requestId'),managingCompanyId:jvData.get('companyA'),
+          shareholders:[{companyId:jvData.get('companyA'),shareBps:shareABps},
+            {companyId:jvData.get('companyB'),shareBps:10000-shareABps}],factoryIds:factoryIds});
+        root.__omegaPrivateEnterpriseMessage=jvResult.status==='PROPOSED'?'JV charter submitted for government approval.':'JV charter blocked: '+String(jvResult.reason||jvResult.status).replace(/_/g,' ').toLowerCase()+'.';
+        refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
+      }
+      if(form.matches('[data-pe-jv-contribution-form]')){
+        if(event.preventDefault)event.preventDefault();
+        var contributionData=new FormData(form),contribution=contributeJointVentureRetainedEarnings({
+          countryId:root.__omegaV2IndustryCountryId||playerCountry(),jointVentureId:form.getAttribute('data-pe-jv'),
+          companyId:contributionData.get('companyId'),amount:contributionData.get('amount'),requestId:contributionData.get('requestId')});
+        root.__omegaPrivateEnterpriseMessage=contribution.status==='POSTED'?'Post-tax retained earnings contributed to the JV.':'JV contribution blocked: '+String(contribution.reason||contribution.status).replace(/_/g,' ').toLowerCase()+'.';
+        refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
+      }
+      if(form.matches('[data-pe-jv-resolution-form]')){
+        if(event.preventDefault)event.preventDefault();
+        var resolutionData=new FormData(form),resolutionType=resolutionData.get('type'),resolutionAmount=resolutionData.get('amount');
+        var resolutionResult=createJointVentureResolution({countryId:root.__omegaV2IndustryCountryId||playerCountry(),
+          jointVentureId:form.getAttribute('data-pe-jv'),type:resolutionType,amount:resolutionAmount,
+          description:resolutionData.get('description')});
+        root.__omegaPrivateEnterpriseMessage=resolutionResult.status==='VOTING'?'JV resolution submitted for weighted shareholder voting.':'JV resolution blocked: '+String(resolutionResult.reason||resolutionResult.status).replace(/_/g,' ').toLowerCase()+'.';
+        refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
+      }
       if(!form.matches('[data-pe-proposal-form]'))return;
       if(event.preventDefault)event.preventDefault();
       var data=new FormData(form),result=createProposal({countryId:root.__omegaV2IndustryCountryId||playerCountry(),
@@ -1387,6 +1473,18 @@
       var button=target&&target.closest?target.closest('[data-pe-action]'):null;if(!button)return;
       var proposalId=button.getAttribute('data-pe-proposal'),action=button.getAttribute('data-pe-action'),country=root.__omegaV2IndustryCountryId||playerCountry();
       var result;
+      if(action==='close-finance'){
+        result=closeCompanyFinancialPeriod({countryId:country,companyId:button.getAttribute('data-pe-company')});
+      }else if(action==='jv-approve'||action==='jv-deny'){
+        result=decideJointVenture({countryId:country,jointVentureId:button.getAttribute('data-pe-jv'),decision:action==='jv-approve'?'APPROVE':'DENY'});
+      }else if(action==='jv-vote-for'||action==='jv-vote-against'){
+        result=voteJointVentureResolution({countryId:country,jointVentureId:button.getAttribute('data-pe-jv'),
+          resolutionId:button.getAttribute('data-pe-resolution'),companyId:button.getAttribute('data-pe-company'),
+          vote:action==='jv-vote-for'?'FOR':'AGAINST'});
+      }else if(action==='jv-pay-dividend'){
+        result=distributeJointVentureDividend({countryId:country,jointVentureId:button.getAttribute('data-pe-jv'),
+          resolutionId:button.getAttribute('data-pe-resolution')});
+      }else
       if(action==='adjust'){
         var input=shellInput(root,'[data-pe-adjust-quantity="'+proposalId+'"]');
         result=adjustProposal({countryId:country,proposalId:proposalId,quantity:input&&input.value});
