@@ -314,7 +314,7 @@ test('construction retry reconciles a canonical project created before proposal 
     requirePrivateCommissioningGate:true
   });
   assert.equal(orphan.status,'UNDER_CONSTRUCTION');
-  assert.deepEqual(p.projectIds,[],'the simulated interruption occurs before the proposal pointer is saved');
+  assert.deepEqual(JSON.parse(JSON.stringify(p.projectIds)),[],'the simulated interruption occurs before the proposal pointer is saved');
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].reservedBalance,100);
   assert.equal(h.state.finance.BGD.omegaFinance.ledger.some(row=>row.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX'),false);
   const resumed=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
