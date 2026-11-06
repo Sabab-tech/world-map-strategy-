@@ -668,7 +668,7 @@ test('joint venture allocates small dividends by largest remainder without creat
       capitalRaised:0,capitalSpent:0,retainedEarningsBalance:1,revision:0},
     AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',currency:'GAME_CURRENCY_UNITS',
       availableBalance:0,reservedBalance:0,capitalRaised:0,capitalSpent:0,retainedEarningsBalance:0,revision:0},
-    NOVA_CONSUMER_INDUSTRIES:{companyId:'NOVA_CONSUMER_INDUSTRIES',currency:'GAME_CURRENCY_UNITS',
+    MERIDIAN_ENGINEERING_GROUP:{companyId:'MERIDIAN_ENGINEERING_GROUP',currency:'GAME_CURRENCY_UNITS',
       availableBalance:0,reservedBalance:0,capitalRaised:0,capitalSpent:0,retainedEarningsBalance:0,revision:0}
   };
   const created=h.api.createJointVenture({countryId:'BGD',name:'Three-party precision JV',requestId:'jv-rounding',
