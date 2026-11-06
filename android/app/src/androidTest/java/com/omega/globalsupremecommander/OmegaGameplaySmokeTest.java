@@ -350,8 +350,8 @@ public final class OmegaGameplaySmokeTest {
                 privateLifecycleLastDiagnostics = lifecycleDiagnostics;
                 try {
                     org.json.JSONObject state = new org.json.JSONObject(lifecycleDiagnostics);
-                    privateLifecycleReady = Boolean.toString(state.optBoolean("panel") &&
-                            state.optBoolean("proposalForm") && state.optBoolean("operatorSelector"));
+                    privateLifecycleReady = Boolean.toString("production-lines".equals(state.optString("tab")) &&
+                            state.optBoolean("panel") && state.optBoolean("proposalForm") && state.optBoolean("operatorSelector"));
                     if (!"true".equals(privateLifecycleReady) && state.optBoolean("baselineRetry")) {
                         throw new AssertionError("Private company baseline failed to load offline: " + lifecycleDiagnostics);
                     }
