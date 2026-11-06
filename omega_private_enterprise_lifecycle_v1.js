@@ -1848,8 +1848,33 @@
     var screen=g.OmegaUIV2Industry;if(!screen||typeof screen.render!=='function'||screen.__privateLifecycleWrapped)return false;
     var original=screen.render;
     var wrapped=function(root,options){
-      var result=original(root,options);
-      if(result&&result.ok)renderPanel(root,options||{});
+      options=options||{};
+      var renderOptions=options;
+      var scheduler=options.onScheduleRender;
+      // Industry tab controls use the screen module's local scheduleRender()
+      // helper, which invokes its private render() function instead of the
+      // exported OmegaUIV2Industry.render hook. Wrap that scheduler callback so
+      // the private-company panel is refreshed after every deferred tab/action
+      // render, not only after the first route mount.
+      if(typeof scheduler==='function'&&!options.__omegaPrivateLifecycleScheduleWrapped){
+        renderOptions=Object.assign({},options,{__omegaPrivateLifecycleScheduleWrapped:true});
+        renderOptions.onScheduleRender=function(callback,label,screenRoot){
+          var target=screenRoot||root;
+          return scheduler(function(){
+            var result=typeof callback==='function'?callback():null;
+            if(result&&result.ok){
+              var currentOptions=target&&target.__omegaV2IndustryOptions||renderOptions;
+              renderPanel(target,Object.assign({},currentOptions,{
+                countryId:target&&target.__omegaV2IndustryCountryId||currentOptions.countryId||playerCountry(),
+                tab:target&&target.__omegaV2IndustryTab||currentOptions.tab||'factories'
+              }));
+            }
+            return result;
+          },label,screenRoot);
+        };
+      }
+      var result=original(root,renderOptions);
+      if(result&&result.ok)renderPanel(root,renderOptions);
       return result;
     };
     g.OmegaUIV2Industry=Object.freeze(Object.assign({},screen,{render:wrapped,__privateLifecycleWrapped:true}));
