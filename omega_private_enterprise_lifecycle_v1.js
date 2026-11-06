@@ -877,23 +877,23 @@
     if(!privateCommissioningRecordVerified(cid,proposal,targetProjectRow,target))
       return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PERMIT_FINANCE_OR_CONSTRUCTION_PROVENANCE_NOT_VERIFIED'};
     var restored=[];
-    (proposal.commissionedFactoryIds||[]).forEach(function(assetId){
-      var asset=assets.find(function(row){return String(row.id||row.factoryId||'')===String(assetId);});
-      if(!asset)return;
-      var projects=(countryBucket('resource',cid,false)||{}).industrialNetwork?.projects||[];
-      var project=projects.find(function(row){return row&&row.projectId===asset.constructionProjectId;});
-      if(!privateCommissioningRecordVerified(cid,proposal,project,asset))return;
-      if(asset.blockedReason==='SAB34_PIPELINE_PROOF_REQUIRED'){
-        var original=String(asset.privateCommissionedStatus||'OPERATIONAL').toUpperCase();
-        asset.status=original;asset.productionEnabled=original==='OPERATIONAL';
-        asset.productionStatus=asset.productionEnabled?'READY_FOR_EXISTING_FACTORY_OPERATION_GATES':'FACTORY_RUNTIME_REQUIREMENTS_PENDING';
-        asset.blockedReason=asset.productionEnabled?null:'FACTORY_RUNTIME_REQUIREMENTS_PENDING';
-        if(asset.productionEnabled)asset.productionHealth={status:'STOPPED',productivityPct:0,reason:'NO_FACTORY_INPUTS',updatedTurn:turn(),authority:'OMEGA_FACTORY_PRODUCTION_SCHEDULER_V1'};
-        restored.push(String(asset.id||asset.factoryId));
-      }
+    // Validate and restore only the factory whose operation gate requested this check.
+    // Restoring every sibling here makes N asset checks repeatedly scan N assets and N ledger rows.
+    if(privateCommissioningRecordVerified(cid,proposal,targetProjectRow,target)&&
+       target.blockedReason==='SAB34_PIPELINE_PROOF_REQUIRED'){
+      var original=String(target.privateCommissionedStatus||'OPERATIONAL').toUpperCase();
+      target.status=original;target.productionEnabled=original==='OPERATIONAL';
+      target.productionStatus=target.productionEnabled?'READY_FOR_EXISTING_FACTORY_OPERATION_GATES':'FACTORY_RUNTIME_REQUIREMENTS_PENDING';
+      target.blockedReason=target.productionEnabled?null:'FACTORY_RUNTIME_REQUIREMENTS_PENDING';
+      if(target.productionEnabled)target.productionHealth={status:'STOPPED',productivityPct:0,reason:'NO_FACTORY_INPUTS',updatedTurn:turn(),authority:'OMEGA_FACTORY_PRODUCTION_SCHEDULER_V1'};
+      restored.push(String(target.id||target.factoryId));
+    }
+    const commissionedIds=Array.isArray(proposal.commissionedFactoryIds)?proposal.commissionedFactoryIds:[];
+    const assetById=new Map(assets.map(function(asset){return[String(asset.id||asset.factoryId||''),asset];}));
+    var allReady=commissionedIds.length===proposal.quantity&&commissionedIds.every(function(assetId){
+      var asset=assetById.get(String(assetId));
+      return asset&&String(asset.status||'').toUpperCase()==='OPERATIONAL'&&asset.productionEnabled===true;
     });
-    var allReady=(proposal.commissionedFactoryIds||[]).length===proposal.quantity&&
-      proposal.commissionedFactoryIds.every(function(assetId){var asset=assets.find(function(row){return String(row.id||row.factoryId||'')===String(assetId);});return asset&&asset.status==='OPERATIONAL'&&asset.productionEnabled===true;});
     if(allReady){
       proposal.status='COMMISSIONED';proposal.productionEnabled=true;proposal.updatedTurn=turn();
       proposal.commissioning={status:'COMMISSIONED',productionEnabled:true,gateReason:null,commissionedFactoryIds:proposal.commissionedFactoryIds.slice(),turn:turn()};
