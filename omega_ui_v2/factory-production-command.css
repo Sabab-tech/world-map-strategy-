@@ -6186,6 +6186,27 @@
   overflow-wrap:anywhere;
 }
 
+/* The seven-column daily Input summary must remain horizontally scrollable
+   on narrow Android landscape screens. Give the table a fixed intrinsic width
+   so older WebViews cannot shrink it to the viewport and report zero scroll range. */
+.omega-v2-industry--factory-home .fp-factory-plan > .fp-factory-table-wrap {
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow-x:scroll;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
+}
+.omega-v2-industry--factory-home .fp-factory-plan .fp-factory-input-total-table {
+  display:table;
+  width:1120px !important;
+  min-width:1120px !important;
+  max-width:none;
+  table-layout:fixed;
+}
+
 /* Android 9 / legacy WebView paint profile.
    Preserve the same factory data, cards, controls and three-card paging while
    avoiding expensive composited backdrops, gradients, filters and shadows on
