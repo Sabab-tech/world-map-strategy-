@@ -514,6 +514,45 @@ test('government procurement buys privately owned finished batches once and tran
   assert.equal(h.state.resource.BGD.batches.filter(x=>x.procurementId==='GOV-PROC-ORDER-1').length,1);
 });
 
+test('government procurement honours every company in its allowlist when a default company is also set',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const defaultCompany='NOVA_CONSUMER_INDUSTRIES',allowedCompany='AURORA_INDUSTRIAL_GROUP';
+  const batchId='MULTI-COMPANY-PRIVATE-FINISHED-BATCH';
+  h.state.resource.BGD.inventory={widgets:10};
+  h.state.resource.BGD.batches=[{
+    batchId,resourceId:'widgets',quantity:10,remainingQuantity:10,unit:'UNITS',stage:'FINISHED',
+    countryId:'BGD',ownerCompanyId:allowedCompany,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-AURORA-WIDGETS',
+    warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE'
+  }];
+  h.state.resource.BGD.inventoryLots={[batchId]:{
+    batchId,resourceId:'widgets',quantity:10,remainingQuantity:10,unit:'UNITS',stage:'FINISHED',
+    countryId:'BGD',warehouseId:'WH-BGD-PROCESSED',ownerCompanyId:allowedCompany,
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',status:'AVAILABLE'
+  }};
+  h.state.resource.BGD.processedWarehouse={
+    warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',status:'OPERATIONAL',
+    availableByResource:{widgets:10},reservedByResource:{widgets:0},
+    storedBatchIds:[batchId],receipts:[]
+  };
+  h.state.economy.BGD={productionAssets:[{
+    id:'FAC-AURORA-WIDGETS',countryId:'BGD',factoryType:'WIDGET_FACTORY',
+    status:'OPERATIONAL',productionEnabled:true,ownerType:'PRIVATE_ENTERPRISE',
+    ownerCompanyId:allowedCompany,operatorType:'PRIVATE_COMPANY_OPERATOR',
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
+  }]};
+  const policy=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
+    policyId:'GOV-PROC-MULTI-COMPANY',contractId:'GOV-PROC-MULTI-COMPANY',
+    companyId:defaultCompany,companyIds:[defaultCompany,allowedCompany],authorizedQuantity:10,procurementLimit:10});
+  assert.equal(policy.accepted,true,JSON.stringify(policy));
+  const result=api.purchasePrivateStock('BGD',{policyId:'GOV-PROC-MULTI-COMPANY',
+    procurementId:'GOV-PROC-MULTI-COMPANY-ORDER',companyId:allowedCompany,resourceId:'widgets',quantity:5,totalValue:50});
+  assert.equal(result.accepted,true,JSON.stringify(result));
+  assert.equal(h.state.resource.BGD.batches.find(x=>x.batchId===batchId).remainingQuantity,5);
+  assert.equal(h.state.finance.BGD.tradeSettlementHistory.filter(x=>x.settlementId==='GOV-PROC-MULTI-COMPANY-ORDER').length,1);
+});
+
 test('government procurement refuses unknown or non-private operator attribution',()=>{
   const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
   const companyId='NOVA_CONSUMER_INDUSTRIES';
