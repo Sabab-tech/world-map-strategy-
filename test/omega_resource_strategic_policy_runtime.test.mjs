@@ -470,6 +470,8 @@ test('government procurement buys privately owned finished batches once and tran
   const first=api.purchasePrivateStock('BGD',payload);
   assert.equal(first.accepted,true,JSON.stringify(first));
   assert.equal(h.state.finance.BGD.available,before-200);
+  assert.ok(h.state.finance.BGD.tradeSettlementHistory.some(x=>x.settlementId==='GOV-PROC-ORDER-1'&&x.type==='DEBIT'&&x.amount===200),
+    'government procurement Treasury debit must be recorded in the shared trade finance settlement journal');
   assert.equal(h.state.resource.BGD.inventory.widgets,100,'ownership purchase must not create aggregate inventory');
   assert.equal(h.state.resource.BGD.processedWarehouse.availableByResource.widgets,100,
     'same processed warehouse stock is transferred; it is not credited a second time');
