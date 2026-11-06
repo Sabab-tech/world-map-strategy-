@@ -3467,9 +3467,15 @@
   }
 
   function factoryHomeViewMarkup(root, model, options, factoryView) {
-    return factoryView === 'types'
+    model = model || {};
+    var content = factoryView === 'types'
       ? factoryTypeCatalogMarkup(model)
       : factoryAssetsWorkspaceMarkup(root, model, options);
+    return '<section class="fp-shared-factory-total" data-factory-total aria-label="Total factories in shared production pool">' +
+      '<div class="fp-shared-factory-total-copy"><span>SHARED PRODUCTION POOL</span><strong>Total factories</strong>' +
+      '<small>One combined count across all factory types and owners. Ownership differences are shown in Manage.</small></div>' +
+      '<div class="fp-shared-factory-total-value"><span>FACTORIES</span><strong data-factory-total-value>' + fmt(model.factoryCount) + '</strong></div>' +
+      '</section>' + content;
   }
 
   function factoryProjectModal(model, requestedType) {
@@ -3655,16 +3661,46 @@
             '</strong></div><div><span>Share of private baseline</span><strong>' + fmt(companyShare, '%') +
             '</strong></div></div>' + typeMarkup + '</article>';
         }).join('');
+        var privateFactoryCounts = privateAllocation.factoryCounts && typeof privateAllocation.factoryCounts === 'object'
+          ? privateAllocation.factoryCounts : {};
+        var ownershipTypes = Array.isArray(model.factoryTypeCatalog) ? model.factoryTypeCatalog.slice() : [];
+        var knownOwnershipTypes = Object.create(null);
+        ownershipTypes.forEach(function (row) { knownOwnershipTypes[String(row.type || '').toUpperCase()] = true; });
+        Object.keys(privateFactoryCounts).forEach(function (type) {
+          var key = String(type || '').toUpperCase();
+          if (!key || knownOwnershipTypes[key]) return;
+          knownOwnershipTypes[key] = true;
+          ownershipTypes.push({ type:key, name:readableIdentifier(key) });
+        });
+        ownershipTypes.sort(function (a, b) { return String(a.name || a.type).localeCompare(String(b.name || b.type)); });
+        var ownershipRows = ownershipTypes.map(function (row) {
+          var sharedCount = factoryTypeOwnedCount({ type:row.type }, model);
+          var privateCount = Math.max(0, Math.floor(Number(privateFactoryCounts[row.type]) || 0));
+          return '<tr data-factory-type="' + esc(row.type) + '"><th scope="row">' + esc(row.name || readableIdentifier(row.type)) +
+            '</th><td>' + (sharedCount === null ? 'Not recorded' : fmt(sharedCount)) +
+            '</td><td>' + fmt(privateCount) + '</td></tr>';
+        }).join('');
+        var ownershipBreakdown = '<section class="fp-private-ownership" data-private-ownership-breakdown="v1">' +
+          '<div class="fp-private-ownership-heading"><div><h3 class="omega-v2-section-title">Factory type ownership breakdown</h3>' +
+          '<p>Shared-pool factories are counted once in the main total. Private opening units remain separate until they are commissioned.</p></div>' +
+          '<span class="omega-v2-status">SINGLE SHARED POOL</span></div>' +
+          '<div class="fp-private-ownership-table-wrap"><table class="fp-private-ownership-table">' +
+          '<thead><tr><th scope="col">Factory type</th><th scope="col">Shared pool</th><th scope="col">Private opening</th></tr></thead>' +
+          '<tbody>' + (ownershipRows || '<tr><td colspan="3">Factory type data is not available yet.</td></tr>') + '</tbody>' +
+          '<tfoot><tr><th scope="row">Total</th><td>' + fmt(model.factoryCount) + '</td><td>' + fmt(privateAllocation.totalPrivateFactoryUnits) + '</td></tr></tfoot>' +
+          '</table></div></section>';
         content = '<section class="fp-private-companies"><div class="fp-private-company-overview">' +
           '<div><h3 class="omega-v2-section-title">Private company opening allocation</h3>' +
-          '<p>Modelled additional capacity for this country, allocated across the five global companies.</p></div>' +
+          '<p>Review ownership differences and company allocations for this country from one management area.</p></div>' +
           '<span class="omega-v2-status">NOT COMMISSIONED</span></div>' +
-          '<div class="fp-summary" aria-label="Private company baseline summary">' +
-          '<div class="fp-summary-item"><span>PRIVATE STARTING UNITS</span><strong>' + fmt(privateAllocation.totalPrivateFactoryUnits) + '</strong></div>' +
-          '<div class="fp-summary-item"><span>GOVERNMENT STARTING UNITS</span><strong>' + fmt(privateAllocation.totalGovernmentFactoryUnits) + '</strong></div>' +
+          '<div class="fp-summary" aria-label="Factory ownership management summary">' +
+          '<div class="fp-summary-item"><span>SHARED POOL FACTORIES</span><strong>' + fmt(model.factoryCount) + '</strong></div>' +
+          '<div class="fp-summary-item"><span>PRIVATE OPENING UNITS</span><strong>' + fmt(privateAllocation.totalPrivateFactoryUnits) + '</strong></div>' +
+          '<div class="fp-summary-item"><span>GOVERNMENT STARTING BASELINE</span><strong>' + fmt(privateAllocation.totalGovernmentFactoryUnits) + '</strong></div>' +
           '<div class="fp-summary-item"><span>PRIVATE / GOVERNMENT</span><strong>' + fmt(privateAllocation.privateToGovernmentBaselinePercent, '%') + '</strong></div>' +
-          '</div><div class="omega-v2-grid">' + companyCards + '</div>' +
-          '<p class="omega-v2-source">Opening allocation only. These units are not yet commissioned production assets and create no stock, shipments, input reservations, output, sales or company cash movements. Zero government categories remain zero for private companies.</p></section>';
+          '</div>' + ownershipBreakdown +
+          '<h3 class="omega-v2-section-title">Private companies</h3><div class="omega-v2-grid">' + companyCards + '</div>' +
+          '<p class="omega-v2-source">Private opening allocations are modeled planning data, not commissioned assets. They are excluded from the main factory total, inventory, shipments, input reservations, production, sales and company cash movements until construction and commissioning are completed through the shared runtime. Zero government categories remain zero for private companies.</p></section>';
       }
     } else if (active === 'research') {
       var researchRows = model.researchProjects.map(function (item) { return Object.assign({ recordType:'RESEARCH' }, item || {}); })
@@ -3704,7 +3740,7 @@
       'national-inventory':'Stock',
       research:'Research & technology',
       projects:'Industrial projects',
-      companies:'Private companies'
+      companies:'Manage'
     };
     var activeLabel = tabLabels[active] || 'Factory production';
     if (active !== 'factories') root.__omegaV2IndustryNotice = '';
@@ -3713,7 +3749,7 @@
       '<div class="fp-top-identity"><span>OMEGA / INDUSTRIAL SYSTEMS</span><strong>FACTORY PRODUCTION</strong><small>COUNTRY: ' + esc(model.countryId || 'Not recorded') + ' · ' + (model.canOperateSelectedCountry ? 'PLAYER CONTROL' : 'REFERENCE VIEW') + '</small></div>' +
       '<nav class="omega-v2-factory-tabs fp-tabs" aria-label="Industrial panels">' +
       tabButton('factories', 'Factories', active) +
-      tabButton('companies', 'Companies', active) +
+      tabButton('companies', 'Manage', active) +
       tabButton('production-lines', 'Lines', active) +
       tabButton('inventory', 'Input', active) +
       tabButton('national-inventory', 'Stock', active) +
