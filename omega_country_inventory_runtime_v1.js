@@ -597,13 +597,21 @@
         return;
       }
       var key = keyInfo.key;
-      var live = number(inventory[key]) || 0;
+      var rawLive = number(inventory[key]);
+      var live = Math.max(0, rawLive || 0);
+      if (rawLive !== null && rawLive < 0) {
+        inventory[key] = 0;
+        // A corrupt negative balance is invalid state, not a real stock movement.
+        // Reset the observed baseline with the repair so the current factory output
+        // is credited once instead of compensating for the discarded negative value.
+        row.observedBalances[pid] = 0;
+      }
       var previous = number(row.observedBalances[pid]);
       if (previous === null) previous = live;
       var observedDelta = live - previous;
       var correction = expectedDelta - observedDelta;
       if (Math.abs(correction) > EPSILON) {
-        adjustments.push({ productId: pid, key: key, before: live, correction: correction, after: live + correction });
+        adjustments.push({ productId: pid, key: key, before: live, correction: correction, after: Math.max(0, live + correction) });
       }
     });
 
@@ -893,7 +901,9 @@
     var inventory = resource.inventory;
     var key = inventoryKey(inventory, productId);
     if (key.ambiguous) return { status: 'BLOCKED', reason: 'AMBIGUOUS_INVENTORY_PRODUCT_KEYS', keys: key.ambiguous };
-    var current = number(inventory[key.key]) || 0;
+    var rawCurrent = number(inventory[key.key]);
+    var current = Math.max(0, rawCurrent || 0);
+    if (rawCurrent !== null && rawCurrent < 0) inventory[key.key] = 0;
     var delta = positive ? quantity : -quantity;
     if (negative && current + EPSILON < quantity) {
       return { status: 'BLOCKED', reason: 'INSUFFICIENT_INVENTORY', available: current, requested: quantity };
@@ -919,7 +929,7 @@
         if (warehouseResult.status !== 'RECORDED') return warehouseResult;
       }
     } else {
-      inventory[key.key] = current + delta;
+      inventory[key.key] = Math.max(0, current + delta);
       debitWarehouseAndBatches(cid, productId, quantity, action);
     }
 
