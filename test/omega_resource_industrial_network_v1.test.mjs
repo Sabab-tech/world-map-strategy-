@@ -1445,12 +1445,38 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
       resourceState.warehouse.availableByResource[materialId]=(Number(resourceState.warehouse.availableByResource[materialId])||0)+Number(requiredQty);
     }
     context.Game.state.simulation.daysPerTurn=30;
-    const privateFactoryProject=N.startFactoryProject({
+    const privateProjectInput={
       countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',resourceId:'iron_ore',
       capacityPerDay:800,buildDays:30,requiredTechnologyIds:[],factoryId:'FAC-PRIVATE-OWNER-OPERATOR-TEST',
+      requestId:'PRIVATE-PROPOSAL-TEST:UNIT:1',
       ownershipModel:'PRIVATE_ENTERPRISE',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP',
-      operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP'
-    });
+      operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',companyId:'AURORA_INDUSTRIAL_GROUP',
+      privateCompanyId:'AURORA_INDUSTRIAL_GROUP',
+      ownerType:'PRIVATE_ENTERPRISE',operatorType:'PRIVATE_COMPANY_OPERATOR',
+      stateControlRights:{strategicOversight:true,licensingAndPermits:true,domesticSupplyDirection:true,
+        exportControl:true,publicProcurement:true,operationalControl:'STATE_POLICY_ONLY'},
+      permitId:'PERMIT-PRIVATE-TEST',permitAuthority:'OMEGA_PRIVATE_ENTERPRISE_LICENSING_V1',permitExpiryTurn:20,
+      sourcePrivateProposalId:'PRIVATE-PROPOSAL-TEST',sourcePrivateDecisionId:'PRIVATE-DECISION-TEST',
+      sourcePrivateFundingId:'PRIVATE-FUNDING-TEST',constructionFinanceAuthority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL',
+      requirePrivateCommissioningGate:true,cost:100
+    };
+    const unauthorizedPrivateProject=N.startFactoryProject(privateProjectInput);
+    assert.equal(unauthorizedPrivateProject.status,'BLOCKED');
+    assert.equal(unauthorizedPrivateProject.reason,'PRIVATE_FACTORY_CONSTRUCTION_AUTHORIZATION_RUNTIME_UNAVAILABLE');
+    assert.equal(resourceState.industrialNetwork.projects.some(project=>project.factoryId===privateProjectInput.factoryId),false,
+      'direct private construction must fail closed when the lifecycle authority is absent');
+    context.OmegaPrivateEnterpriseLifecycleV1={
+      authorizeFactoryProjectConstruction(input){
+        const valid=input.requestId==='PRIVATE-PROPOSAL-TEST:UNIT:1'&&
+          input.ownerCompanyId==='AURORA_INDUSTRIAL_GROUP'&&input.operatorCompanyId==='MERIDIAN_ENGINEERING_GROUP'&&
+          input.permitId==='PERMIT-PRIVATE-TEST'&&input.sourcePrivateFundingId==='PRIVATE-FUNDING-TEST'&&
+          input.requirePrivateCommissioningGate===true;
+        return valid?{status:'AUTHORIZED'}:{status:'BLOCKED',reason:'TEST_PRIVATE_AUTHORIZATION_REJECTED'};
+      },
+      productionProofReady(){return false;},
+      refreshCommissionedProductionGate(){return{status:'BLOCKED',reason:'SAB34_PIPELINE_PROOF_REQUIRED'};}
+    };
+    const privateFactoryProject=N.startFactoryProject(privateProjectInput);
     assert.equal(privateFactoryProject.status,'UNDER_CONSTRUCTION',JSON.stringify(privateFactoryProject));
     assert.equal(privateFactoryProject.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
     assert.equal(privateFactoryProject.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
@@ -1479,6 +1505,17 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(commissionedPrivateFactory.ownerType,'PRIVATE_ENTERPRISE');
     assert.equal(commissionedPrivateFactory.operatorType,'PRIVATE_COMPANY_OPERATOR');
     assert.equal(commissionedPrivateFactory.stateControlRights.operationalControl,'STATE_POLICY_ONLY');
+    assert.equal(commissionedPrivateFactory.privatePermitId,'PERMIT-PRIVATE-TEST');
+    assert.equal(commissionedPrivateFactory.privatePermitStatus,'ACTIVE');
+    assert.equal(commissionedPrivateFactory.sourcePrivateProposalId,'PRIVATE-PROPOSAL-TEST');
+    assert.equal(commissionedPrivateFactory.productionEnabled,false);
+    assert.equal(commissionedPrivateFactory.status,'BLOCKED');
+    assert.equal(commissionedPrivateFactory.blockedReason,'SAB34_PIPELINE_PROOF_REQUIRED');
+    const privateProductionAttempt=N.startFactoryProductionCycle({countryId:'BGD',factoryId:commissionedPrivateFactory.id,resourceId:'iron_ore'});
+    assert.equal(privateProductionAttempt.status,'BLOCKED');
+    assert.equal(privateProductionAttempt.reason,'SAB34_PIPELINE_PROOF_REQUIRED',
+      'private factory must not start production without the verified live resource-pipeline proof');
+    assert.equal(resourceState.industrialNetwork.factoryProductionCycles[commissionedPrivateFactory.id],undefined);
     assert.equal(commissionedPrivateFactory.stateControlRights.domesticSupplyDirection,true);
     assert.equal(commissionedPrivateFactory.stateControlRights.exportControl,true);
     assert.notEqual(commissionedPrivateFactory.ownerCompanyId,commissionedPrivateFactory.operatorCompanyId);
