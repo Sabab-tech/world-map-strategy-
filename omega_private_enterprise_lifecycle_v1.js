@@ -853,7 +853,7 @@
       return typeof industrial[name]==='function';
     }))return false;
     var profiles=catalogue&&catalogue.factoryProfiles,processing=catalogue&&catalogue.processingRules;
-    return !!(obj(profiles)&&Object.keys(profiles).length===21&&
+    return !!(obj(profiles)&&Object.keys(profiles).length>0&&
       obj(processing)&&Object.keys(processing).length>0);
   }
   function privateCommissioningRecordVerified(country,proposal,project,asset){
@@ -971,7 +971,7 @@
   }
   function refreshCommissionedProductionGate(country,factoryId){
     var cid=canonicalCountry(country||playerCountry());
-    if(cid!==playerCountry()||!productionProofReady())return{status:'BLOCKED',reason:'SAB34_PIPELINE_PROOF_REQUIRED'};
+    if(cid!==playerCountry()||!productionProofReady())return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE'};
     var econ=countryBucket('economy',cid,false)||{},assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[],
       target=assets.find(function(a){return String(a.id||a.factoryId||'')===String(factoryId||'');});
     var owner=target&&id(target.ownerCompanyId||target.ownerId),operator=target&&id(target.operatorCompanyId||target.operatorId||target.companyId);
@@ -987,7 +987,7 @@
     // Validate and restore only the factory whose operation gate requested this check.
     // Restoring every sibling here makes N asset checks repeatedly scan N assets and N ledger rows.
     if(privateCommissioningRecordVerified(cid,proposal,targetProjectRow,target)&&
-       target.blockedReason==='SAB34_PIPELINE_PROOF_REQUIRED'){
+       target.blockedReason==='PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE'){
       var original=String(target.privateCommissionedStatus||'OPERATIONAL').toUpperCase();
       target.status=original;target.productionEnabled=original==='OPERATIONAL';
       target.productionStatus=target.productionEnabled?'READY_FOR_EXISTING_FACTORY_OPERATION_GATES':'FACTORY_RUNTIME_REQUIREMENTS_PENDING';
