@@ -149,6 +149,10 @@ test("Android 9 smoke exports its landscape screenshot through the debuggable ap
   ), "the host must read the screenshot through run-as instead of inaccessible shared storage");
   assert.ok(androidSmokeScript.includes('remote_screenshot_file="files/omega-smoke/$screenshot"'),
     "the screenshot path inside the app sandbox must stay aligned with instrumentation");
+  assert.ok(androidSmokeInstrumentation.includes("inputTabClickDeadline") &&
+    androidSmokeInstrumentation.includes("inputTabClicked") &&
+    androidSmokeInstrumentation.includes("inputTabClickDiagnostic"),
+    "the Input tab tap must tolerate transient async screen refreshes and retain failure diagnostics");
   assert.ok(androidSmokeScript.includes('factory-input-landscape.png'),
     "the captured landscape screenshot must remain a required smoke artifact");
 });
