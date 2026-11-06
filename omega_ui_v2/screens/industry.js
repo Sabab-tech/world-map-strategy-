@@ -3133,13 +3133,15 @@
       return factory && (factory.hasInputInventory === true ||
         factory.raw && factory.raw.inputInventory && typeof factory.raw.inputInventory === 'object');
     });
-    if (tracked.length) {
-      var currentTotal = 0, requiredTotal = 0, currentSeen = false, requiredSeen = false;
+    var completeInventory = !!assets.length && tracked.length === assets.length;
+    if (completeInventory) {
+      var currentTotal = 0, requiredTotal = 0, requiredSeen = false;
       tracked.forEach(function (factory) {
-        var current = factoryFindValue(factory.raw && factory.raw.inputInventory, productId);
-        if (current === null) return;
-        currentTotal += Math.max(0, current);
-        currentSeen = true;
+        var inventory = factory.raw && factory.raw.inputInventory;
+        var current = factoryFindValue(inventory, productId);
+        // An omitted key in a present, authoritative inventory map means zero stock.
+        if (current === null && inventory && typeof inventory === 'object') current = 0;
+        if (current !== null) currentTotal += Math.max(0, current);
         var requirement = factoryInputDailyRequirement(factory, productId, model);
         if (requirement === null) {
           var coefficient = factoryFindValue(route && route.inputs || {}, productId);
@@ -3151,12 +3153,9 @@
           requiredSeen = true;
         }
       });
-      if (currentSeen && requiredSeen) {
-        if (requiredTotal > 0 && currentTotal <= 1e-9) return { key:'critical', label:'Shortage' };
-        if (requiredTotal > 0 && currentTotal + 1e-9 < requiredTotal) return { key:'risk', label:'At risk' };
-        return { key:'stable', label:'Sufficient' };
-      }
-      if (currentSeen && currentTotal > 0) return { key:'risk', label:'Stock recorded' };
+      if (requiredSeen && requiredTotal > 0 && currentTotal <= 1e-9) return { key:'critical', label:'Shortage' };
+      if (requiredSeen && requiredTotal > 0 && currentTotal + 1e-9 < requiredTotal) return { key:'risk', label:'At risk' };
+      if (requiredSeen) return { key:'stable', label:'Sufficient' };
     }
     var coverage = factoryInputCoverageRecord(model, productId, context && context.asset ? context.asset.id : null);
     if (coverage) {
@@ -3183,19 +3182,23 @@
       return !!factory && (normalizeFactoryType(factory.type, safeCatalog()) || String(factory.type || '').toUpperCase()) === String(context && context.type || '');
     });
     if (!relevant.length) return { key:'unknown', label:'Not tracked' };
-    var produced = 0, consumed = 0, stock = 0, distributed = 0;
+    var produced = 0, consumed = 0, stock = 0, distributed = 0, stockTracked = false;
     relevant.forEach(function (row) {
       produced += Math.max(0, num(row.produced) || 0);
       consumed += Math.max(0, num(row.factoryUse) || 0) + Math.max(0, num(row.domesticConsumption) || 0);
-      stock += Math.max(0, num(row.currentStock) || 0);
+      var currentStock = num(row.currentStock);
+      if (currentStock !== null) {
+        stockTracked = true;
+        stock += Math.max(0, currentStock);
+      }
       distributed += Math.max(0, num(row.domesticSupply) || 0) + Math.max(0, num(row.exported) || 0);
     });
     if (consumed > 0 && consumed + 1e-9 >= produced) return { key:'consumed', label:'Consumed' };
     if (consumed > 0) return { key:'partial', label:'Partly used' };
     if (distributed > 0) return { key:'distributed', label:'Distributed' };
-    if (stock > 0) return { key:'stored', label:'In stock' };
-    if (produced > 0) return { key:'unused', label:'Unused' };
-    return { key:'unknown', label:'Not tracked' };
+    if (stockTracked && stock > 0) return { key:'stored', label:'In stock' };
+    if (produced > 0 && stockTracked) return { key:'unused', label:'Unused' };
+    return { key:'unknown', label:produced > 0 ? 'Use not tracked' : 'Not tracked' };
   }
 
   function factoryDetailHeaderMarkup(model, cardKey) {
@@ -4066,6 +4069,8 @@
     recordFactoryInputCoverage:updateFactoryInputCoverageSnapshotV1,
     resourceIconPath:factoryResourceIconPath,
     formatFactoryDetailAmount:factoryDetailFormatAmount,
+    factoryDetailOutputStatus:factoryDetailOutputStatus,
+    factoryDetailInputStatus:factoryDetailInputStatus,
     productIconVisualMarkup:factoryProductIconVisualMarkup,
     productIdentityMarkup:factoryProductIdentityMarkup,
     productUsageMarkup:factoryProductUsageMarkup
