@@ -3410,6 +3410,13 @@ test('Production Lines joins exact selected-country cycles and committed logisti
     assert.match(root.innerHTML,/State control rights/);
     assert.match(root.innerHTML,/State supply directives/);
     assert.match(root.innerHTML,/DOMESTIC ONLY/);
+    assert.match(root.innerHTML,/National supply controls/);
+    assert.match(root.innerHTML,/data-state-policy-apply/);
+    assert.match(root.innerHTML,/Issue state directive/);
+    assert.match(root.innerHTML,/data-state-policy-lift/);
+    assert.match(root.innerHTML,/Government procurement/);
+    assert.match(root.innerHTML,/Purchase private stock/);
+    assert.match(root.innerHTML,/data-state-procurement-submit/);
     assert.match(root.innerHTML,/WH-BGD-RAW/);
     assert.match(root.innerHTML,/FACTORY:BGD:FAC-LINE-1/);
     assert.match(root.innerHTML,/truck/);
