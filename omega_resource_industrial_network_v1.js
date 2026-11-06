@@ -3324,6 +3324,18 @@ function commissionMineProject(cid,p){
 function startFactoryProject(input={}){
   const cid=canonicalCountry(input.countryId);
   if(!cid)return{status:'BLOCKED',reason:'FACTORY_COUNTRY_INVALID'};
+  const privateCompanyIds=['AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP','NOVA_CONSUMER_INDUSTRIES','ATLAS_TECHNOLOGY_CORPORATION','TERRA_INFRASTRUCTURE_GROUP'];
+  const requestedOwnerCompanyId=String(input.ownerCompanyId||input.ownerId||'').trim().toUpperCase();
+  const requestedOperatorCompanyId=String(input.operatorCompanyId||input.operatorId||'').trim().toUpperCase();
+  const privateOwnership=String(input.ownershipModel||input.ownerType||'').trim().toUpperCase()==='PRIVATE_ENTERPRISE'||
+    !!requestedOwnerCompanyId||!!requestedOperatorCompanyId;
+  const privateOwnerCompanyId=requestedOwnerCompanyId||requestedOperatorCompanyId;
+  const privateOperatorCompanyId=requestedOperatorCompanyId||requestedOwnerCompanyId;
+  if(privateOwnership&&(!privateCompanyIds.includes(privateOwnerCompanyId)||!privateCompanyIds.includes(privateOperatorCompanyId)))
+    return{status:'BLOCKED',reason:'PRIVATE_FACTORY_OWNER_OPERATOR_MUST_BE_REGISTERED_COMPANIES',
+      ownerCompanyId:privateOwnerCompanyId||null,operatorCompanyId:privateOperatorCompanyId||null};
+  if(privateOwnership&&input.stateControlRights&&input.stateControlRights.operationalControl==='STATE_OPERATOR')
+    return{status:'BLOCKED',reason:'PRIVATE_FACTORY_CANNOT_ASSIGN_STATE_AS_DAILY_OPERATOR'};
   const n=netState(cid);
   if(input.requestId){const prior=n.projects.find(row=>row.projectType==='FACTORY_CONSTRUCTION'&&String(row.requestId||'')===String(input.requestId));if(prior)return{...clone(prior),idempotent:true};}
   if(input.factoryId){const prior=n.projects.find(row=>row.projectType==='FACTORY_CONSTRUCTION'&&String(row.factoryId||'')===String(input.factoryId)&&['UNDER_CONSTRUCTION','COMPLETED'].includes(String(row.status||'')));if(prior)return{...clone(prior),idempotent:true};}
@@ -3399,6 +3411,24 @@ function startFactoryProject(input={}){
     materialsRequired:constructionMaterialQuote?clone(constructionMaterialQuote.materials.map(row=>({resourceId:row.resourceId,quantity:row.required,unit:row.unit}))):[],
     materialAllocations:[],constructionMaterialsStatus:constructionMaterialQuote?'PENDING_CONSUMPTION':'NOT_APPLICABLE',
     employmentProfile:clone(typeProfile.employment||null),requestId:String(input.requestId||''),
+    ownershipModel:privateOwnership?'PRIVATE_ENTERPRISE':'STATE_OWNED_ENTERPRISE',
+    ownerId:privateOwnership?privateOwnerCompanyId:'STATE_INDUSTRY_'+cid,
+    ownerCompanyId:privateOwnership?privateOwnerCompanyId:'STATE_INDUSTRY_'+cid,
+    ownerType:privateOwnership?'PRIVATE_ENTERPRISE':'STATE_OWNED_ENTERPRISE',
+    operatorId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
+    operatorCompanyId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
+    operatorType:privateOwnership?'PRIVATE_OPERATOR':'STATE_ENTERPRISE_OPERATOR',
+    companyId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
+    stateControlRights:privateOwnership?{
+      strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
+      labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,domesticSupplyDirection:true,
+      exportControl:true,publicProcurement:true,strategicContracts:true,operationalControl:'STATE_POLICY_ONLY',
+      authority:'OMEGA_STATE_CONTROL_RIGHTS_V1',simulationOnly:true
+    }:{
+      strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
+      labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,operationalControl:'STATE_OPERATOR',
+      authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',simulationOnly:true
+    },
     authority:'SIMULATED_FACTORY_CONSTRUCTION_PROJECT',simulationOnly:true};
   if(constructionMaterialQuote){
     const materialAllocations=[];
@@ -3478,16 +3508,19 @@ function advanceProjects(c){
         workforce:clone(factoryProfile.workforce||{}),employmentProfile:clone(factoryProfile.employment||p.employmentProfile||null),
         utilityRequirements:clone(factoryProfile.utilities||{}),
         requiredInfrastructure:clone(factoryProfile.requiredInfrastructure||[]),
-        // The EPC contractor builds the asset; it does not own or operate it.
-        // Player-started public construction therefore commissions a state enterprise.
-        ownerId:'STATE_INDUSTRY_'+cid,ownerCompanyId:'STATE_INDUSTRY_'+cid,ownerType:'STATE_OWNED_ENTERPRISE',
-        operatorId:'STATE_INDUSTRY_'+cid,operatorCompanyId:'STATE_INDUSTRY_'+cid,operatorType:'STATE_ENTERPRISE_OPERATOR',
-        companyId:'STATE_INDUSTRY_'+cid,
-        stateControlRights:{
+        // The EPC contractor builds the asset; the project ownership record decides who owns and operates it.
+        // A private asset remains privately owned and privately operated; the State retains policy rights.
+        ownershipModel:p.ownershipModel||'STATE_OWNED_ENTERPRISE',
+        ownerId:p.ownerCompanyId||'STATE_INDUSTRY_'+cid,ownerCompanyId:p.ownerCompanyId||'STATE_INDUSTRY_'+cid,
+        ownerType:p.ownerType||'STATE_OWNED_ENTERPRISE',
+        operatorId:p.operatorCompanyId||'STATE_INDUSTRY_'+cid,operatorCompanyId:p.operatorCompanyId||'STATE_INDUSTRY_'+cid,
+        operatorType:p.operatorType||'STATE_ENTERPRISE_OPERATOR',
+        companyId:p.operatorCompanyId||'STATE_INDUSTRY_'+cid,
+        stateControlRights:clone(p.stateControlRights||{
           strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
           labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,
           operationalControl:'STATE_OPERATOR',authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',simulationOnly:true
-        },
+        }),
         constructionContractorType:p.contractorType||'DOMESTIC_EPC',
         constructionContractorCountryId:p.contractorCountryId||cid,
         simulationOnly:true,authority:'SIMULATED_FACTORY_ASSET',transportAccess:['road','rail','ship'],commissionedTurn:turn(),
