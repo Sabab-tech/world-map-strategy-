@@ -706,6 +706,7 @@
 
   function buildViewModel(options) {
     options = options || {};
+    var lightweightTypeView = options.lightweightFactoryTypeView === true;
     var context = countryContext(options.countryId);
     var resource = context.resource || {};
     var economy = context.economy || {};
@@ -725,28 +726,28 @@
     }
     var inventoryRuntime = g.OmegaCountryInventoryRuntime || (g.Omega && g.Omega.CountryInventoryRuntime) || null;
     var nationalInventory = null, canonicalResourceIds = [];
-    if (context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
+    if (!lightweightTypeView && context.countryId && inventoryRuntime && typeof inventoryRuntime.getInventory === 'function') {
       try { nationalInventory = inventoryRuntime.getInventory(context.countryId, { includeZero: true, includeLedger: false }); } catch (_) { nationalInventory = null; }
     }
-    var finishedGoodsLedger = Array.isArray(resource.finishedGoodsLedger) ? resource.finishedGoodsLedger.slice() : [];
+    var finishedGoodsLedger = lightweightTypeView ? [] : (Array.isArray(resource.finishedGoodsLedger) ? resource.finishedGoodsLedger.slice() : []);
     var economyIndustrialRuntime = economy.industrialRuntime && typeof economy.industrialRuntime === 'object' ? economy.industrialRuntime : {};
-    var economyFinishedGoods = Array.isArray(economyIndustrialRuntime.finishedGoodsLedger) ? economyIndustrialRuntime.finishedGoodsLedger : [];
+    var economyFinishedGoods = lightweightTypeView ? [] : (Array.isArray(economyIndustrialRuntime.finishedGoodsLedger) ? economyIndustrialRuntime.finishedGoodsLedger : []);
     var finishedEventIds = Object.create(null);
     finishedGoodsLedger.forEach(function (row) { if (row && row.transactionId) finishedEventIds[String(row.transactionId)] = true; });
     economyFinishedGoods.forEach(function (row) {
       var id = String(row && row.transactionId || '');
       if (row && (!id || !finishedEventIds[id])) { finishedGoodsLedger.push(row); if (id) finishedEventIds[id] = true; }
     });
-    var resourceBatches = Array.isArray(resource.batches) ? resource.batches : [];
-    var resourceInventoryLedger = Array.isArray(resource.inventoryLedger) ? resource.inventoryLedger : [];
-    var processedWarehouse = resource.processedWarehouse && typeof resource.processedWarehouse === 'object' ? resource.processedWarehouse : {};
-    var nationalDemandRuntime = resource.nationalDemandRuntime && typeof resource.nationalDemandRuntime === 'object'
-      ? resource.nationalDemandRuntime : resource.demandRuntime && typeof resource.demandRuntime === 'object' ? resource.demandRuntime : {};
+    var resourceBatches = lightweightTypeView ? [] : (Array.isArray(resource.batches) ? resource.batches : []);
+    var resourceInventoryLedger = lightweightTypeView ? [] : (Array.isArray(resource.inventoryLedger) ? resource.inventoryLedger : []);
+    var processedWarehouse = !lightweightTypeView && resource.processedWarehouse && typeof resource.processedWarehouse === 'object' ? resource.processedWarehouse : {};
+    var nationalDemandRuntime = !lightweightTypeView && resource.nationalDemandRuntime && typeof resource.nationalDemandRuntime === 'object'
+      ? resource.nationalDemandRuntime : !lightweightTypeView && resource.demandRuntime && typeof resource.demandRuntime === 'object' ? resource.demandRuntime : {};
     var demandByProduct = nationalDemandRuntime.byResource && typeof nationalDemandRuntime.byResource === 'object'
       ? nationalDemandRuntime.byResource : {};
-    var domesticSales = Array.isArray(context.trade && context.trade.domesticSales) ? context.trade.domesticSales : [];
+    var domesticSales = lightweightTypeView ? [] : (Array.isArray(context.trade && context.trade.domesticSales) ? context.trade.domesticSales : []);
     try {
-      if (inventoryRuntime && typeof inventoryRuntime.getResourceCatalog === 'function') {
+      if (!lightweightTypeView && inventoryRuntime && typeof inventoryRuntime.getResourceCatalog === 'function') {
         canonicalResourceIds = inventoryRuntime.getResourceCatalog().map(function (row) {
           return String(row && (row.resourceId || row.id) || '').trim().toLowerCase();
         }).filter(Boolean);
@@ -754,20 +755,26 @@
     } catch (_) { canonicalResourceIds = []; }
     var assets = factoryAssetRows(resource, economy);
     var rawMineSites = countryMineSiteRows(context.countryId, resource);
-    var mineAssets = mineAssetRows(resource);
-    var currentExtraction = currentTurnResourceAdded(resource, context.countryId);
-    var projects = Array.isArray(industrial.projects) ? industrial.projects : (Array.isArray(economy.projects) ? economy.projects : []);
-    var researchProjects = Array.isArray(resource.technologyResearchProjects) ? resource.technologyResearchProjects : [];
-    var technologyTransfers = Array.isArray(resource.technologyTransfers) ? resource.technologyTransfers : [];
-    var technologyCapabilities = Array.isArray(resource.technologyCapabilities) ? resource.technologyCapabilities : [];
-    var technologyContracts = Array.isArray(industrial.technologyContracts) ? industrial.technologyContracts : [];
-    var cycles = industrial.factoryProductionCycles && typeof industrial.factoryProductionCycles === 'object' ? industrial.factoryProductionCycles : {};
-    var runs = industrial.factoryRuntime && typeof industrial.factoryRuntime === 'object' ? industrial.factoryRuntime : {};
+    var mineAssets = lightweightTypeView ? [] : mineAssetRows(resource);
+    var currentExtraction = lightweightTypeView ? { rows:[], turn:null, daysPerTurn:null } : currentTurnResourceAdded(resource, context.countryId);
+    var projects = lightweightTypeView ? [] : (Array.isArray(industrial.projects) ? industrial.projects : (Array.isArray(economy.projects) ? economy.projects : []));
+    var researchProjects = lightweightTypeView ? [] : (Array.isArray(resource.technologyResearchProjects) ? resource.technologyResearchProjects : []);
+    var technologyTransfers = lightweightTypeView ? [] : (Array.isArray(resource.technologyTransfers) ? resource.technologyTransfers : []);
+    var technologyCapabilities = lightweightTypeView ? [] : (Array.isArray(resource.technologyCapabilities) ? resource.technologyCapabilities : []);
+    var technologyContracts = lightweightTypeView ? [] : (Array.isArray(industrial.technologyContracts) ? industrial.technologyContracts : []);
+    var cycles = !lightweightTypeView && industrial.factoryProductionCycles && typeof industrial.factoryProductionCycles === 'object' ? industrial.factoryProductionCycles : {};
+    var runs = !lightweightTypeView && industrial.factoryRuntime && typeof industrial.factoryRuntime === 'object' ? industrial.factoryRuntime : {};
     var profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
     var recipeCatalog = catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
     var processingRules = catalog.processingRules && typeof catalog.processingRules === 'object' ? catalog.processingRules : {};
     var flows = Array.isArray(industrial.siteFlowLedger) ? industrial.siteFlowLedger : (Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger : []);
-    var mappedAssets = assets.map(function (asset) {
+    var mappedAssets = lightweightTypeView ? assets.map(function (asset) {
+      asset = asset && typeof asset === 'object' ? asset : {};
+      var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
+      var type = normalizeFactoryType(rawType, catalog) || rawType;
+      return { id:String(asset.id || asset.assetId || asset.projectId || ''), type:type || 'Not recorded',
+        status:String(asset.status || 'NOT_RECORDED'), raw:asset, name:String(asset.name || asset.factoryName || type || 'Factory') };
+    }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); }) : assets.map(function (asset) {
       asset = asset && typeof asset === 'object' ? asset : {};
       var id = String(asset.id || asset.assetId || asset.projectId || '');
       var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
@@ -945,10 +952,10 @@
       processingRules: processingRules,
       factoryBaselineStatus: factoryStartingRegistry && factoryStartingRegistry.status || 'NOT_READY',
       privateEnterpriseBaseline: privateEnterpriseBaseline,
-      factoryInputCoverageDays: Math.max(1, Math.min(3650, Math.round(num(resource.factoryInputBaselineV1 && resource.factoryInputBaselineV1.targetCoverageDays) || num(resource.factoryInputPolicy && resource.factoryInputPolicy.targetCoverageDays) || 100))),
-      factoryInputCoverageSnapshot: resource.factoryInputCoverageSnapshotV1 && typeof resource.factoryInputCoverageSnapshotV1 === 'object' ? resource.factoryInputCoverageSnapshotV1 : null,
+      factoryInputCoverageDays: lightweightTypeView ? 100 : Math.max(1, Math.min(3650, Math.round(num(resource.factoryInputBaselineV1 && resource.factoryInputBaselineV1.targetCoverageDays) || num(resource.factoryInputPolicy && resource.factoryInputPolicy.targetCoverageDays) || 100))),
+      factoryInputCoverageSnapshot: !lightweightTypeView && resource.factoryInputCoverageSnapshotV1 && typeof resource.factoryInputCoverageSnapshotV1 === 'object' ? resource.factoryInputCoverageSnapshotV1 : null,
       factoryInputCoverageIntervalDays: 10,
-      inputInventoryCount: mappedAssets.reduce(function (total, row) { return total + row.inputRows.filter(function (input) { return input.quantity !== null && input.quantity > 0; }).length; }, 0),
+      inputInventoryCount: lightweightTypeView ? 0 : mappedAssets.reduce(function (total, row) { return total + row.inputRows.filter(function (input) { return input.quantity !== null && input.quantity > 0; }).length; }, 0),
       nationalInventory: nationalInventory,
       finishedGoodsLedger: finishedGoodsLedger,
       resourceBatches: resourceBatches,
@@ -3628,7 +3635,11 @@
       // Do not revive a hidden Industry screen after this read-only source request settles.
       if (typeof root.querySelector === 'function' &&
           !root.querySelector('[data-omega-v2-industry-tab]')) return;
-      var refreshedModel = buildViewModel({ countryId:countryKey });
+      var currentTab = root.__omegaV2IndustryTab || options.tab || 'factories';
+      var currentView = root.__omegaV2IndustryFactoryView || options.factoryView || 'types';
+      var currentManageOpen = !!(root.__omegaV2FactoryCardUiState && root.__omegaV2FactoryCardUiState.buildKey);
+      var refreshedModel = buildViewModel({ countryId:countryKey,
+        lightweightFactoryTypeView:currentTab === 'factories' && currentView === 'types' && !currentManageOpen });
       if (!(refreshedModel.catalogProfileCount > 0) && refreshedModel.factoryBaselineStatus !== 'READY') return;
       var active = root.__omegaV2IndustryTab || options.tab || 'factories';
       scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || options || {}, { countryId:countryKey, tab:active }),
@@ -3639,8 +3650,13 @@
   function render(root, options) {
     options = options || {};
     if (!root) return { ok: false, code: 'INDUSTRY_ROOT_REQUIRED' };
-    var model = buildViewModel(options);
     var active = options.tab || root.__omegaV2IndustryTab || 'factories';
+    var requestedCountry = String(options.countryId || root.__omegaV2IndustryCountryId || '');
+    var countryChanged = root.__omegaV2IndustryCountryId !== requestedCountry;
+    var requestedFactoryView = countryChanged ? 'types' : (options.factoryView || root.__omegaV2IndustryFactoryView || 'types');
+    var managePanelOpen = !!(root.__omegaV2FactoryCardUiState && root.__omegaV2FactoryCardUiState.buildKey);
+    var lightweightTypeView = active === 'factories' && requestedFactoryView === 'types' && !managePanelOpen;
+    var model = buildViewModel(Object.assign({}, options, { lightweightFactoryTypeView:lightweightTypeView }));
     var countryKey = String(model.countryId || '');
     warmFactoryPlanningData(root, options, model);
     if (root.__omegaV2IndustryCountryId !== countryKey) {
