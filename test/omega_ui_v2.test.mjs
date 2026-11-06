@@ -460,6 +460,7 @@ test('industry source avoids building datasets for inactive tabs', () => {
   assert.match(source, /var activeTab = String\(options\.activeTab \|\| options\.tab \|\| 'factories'\)/);
   assert.match(source, /activeTab === 'production-lines' \? assets\.map/);
   assert.match(source, /if \(activeTab === 'production-lines'\) \{/);
+  assert.match(source, /var refreshedModel = buildViewModel\(\{ countryId:countryKey, tab:currentTab,/);
   assert.match(source, /var currentExtraction = stockSummaryView \|\| needsMineProduction/);
   assert.match(source, /var production = needsMineProduction \? mineDailyProduction\(site\) : null/);
   assert.match(source, /var resourceInventoryLedger = stockSummaryView \?/);
