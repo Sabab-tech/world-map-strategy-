@@ -271,6 +271,8 @@
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     const embargo=strategicPolicy?.isResourceEmbargoed?.(buyer,seller,resourceId);
     if(embargo?.blocked){result.decision='REJECT';result.reason=embargo.reason||'RESOURCE_EMBARGO_ACTIVE';result.embargoPolicies=embargo.policies||[];return result;}
+    const supplyPolicy=result.quantity>0?strategicPolicy?.evaluateExportDirective?.(seller,buyer,resourceId,result.quantity,request.governmentContractId):null;
+    if(supplyPolicy&&supplyPolicy.allowed===false){result.decision='REJECT';result.reason=supplyPolicy.reason||'STATE_SUPPLY_DIRECTIVE_BLOCKED';result.stateSupplyDirective=supplyPolicy;return result;}
     const routeMode=String(request.transportMode||request.routeMode||'ship');
     const buyerBlockade=strategicPolicy?.isRouteBlocked?.(buyer,{resourceId,transportMode:routeMode,routeId:request.routeId,siteId:request.siteId});
     const sellerBlockade=strategicPolicy?.isRouteBlocked?.(seller,{resourceId,transportMode:routeMode,routeId:request.routeId,siteId:request.siteId});
@@ -349,7 +351,8 @@
         canonical(duplicate.targetCountryId||duplicate.sellerCountryId)===seller&&
         String(duplicate.resourceId||'').trim().toLowerCase().replace(/[\s-]+/g,'_')===resourceId.trim().toLowerCase().replace(/[\s-]+/g,'_')&&
         num(duplicate.quantity)===quantity&&num(duplicate.unitPrice)===unitPrice&&
-        String(duplicate.currency||currencyOf(buyer)||'').toUpperCase()===String(p.currency||currencyOf(buyer)||'').toUpperCase();
+        String(duplicate.currency||currencyOf(buyer)||'').toUpperCase()===String(p.currency||currencyOf(buyer)||'').toUpperCase()&&
+        String(duplicate.governmentContractId||'')===String(p.governmentContractId||'');
       return same?{accepted:true,duplicate:true,request:clone(duplicate)}:{accepted:false,reason:'TRADE_REQUEST_ID_CONFLICT'};
     }
     const rawLedger=ctx.stateTransaction.get('trade.globalTradeLedger');
@@ -363,7 +366,8 @@
       totalValue:Number((quantity*unitPrice).toFixed(8)),status:TYPES.SENT,stage:'OPEN',
       attempt:1,createdTurn:turn(),requestedTurn:turn(),source:p.source||'GLOBAL_TRADE_UI',
       needPressure:clamp(p.needPressure)??0.5,settlementStatus:'NOT_STARTED',
-      evidencePolicy:'COUNTERPARTY_REVIEW_REQUIRED'
+      evidencePolicy:'COUNTERPARTY_REVIEW_REQUIRED',
+      governmentContractId:String(p.governmentContractId||p.contractId||'').trim()||null
     };
     requests.push(request);
     ledger.requests.push({
@@ -526,6 +530,11 @@
     const reserve=Math.max(0,inv.reserve||0);
     if(q===null||q<=0)return{ok:false,reason:'QUANTITY_NOT_OBSERVED'};
     if(inv.stock-reserve<q)return{ok:false,reason:'SELLER_FREE_STOCK_INSUFFICIENT'};
+    const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+    const supplyPolicy=strategicPolicy?.evaluateExportDirective?.(req.targetCountryId,req.countryId,req.resourceId,q,req.governmentContractId,{
+      [req.resourceId]:inv.stock
+    });
+    if(supplyPolicy&&supplyPolicy.allowed===false)return{ok:false,reason:supplyPolicy.reason||'STATE_SUPPLY_DIRECTIVE_BLOCKED',stateSupplyDirective:supplyPolicy};
     if(values.fx===null||values.sellerValue===null||values.buyerValue===null)return{ok:false,reason:'SETTLEMENT_FX_OR_PRICE_NOT_OBSERVED'};
     if(buyerFin.liquidity===null)return{ok:false,reason:'BUYER_LIQUIDITY_NOT_OBSERVED'};
     // Local-currency buyerValue cannot be compared against USD Treasury. Government Banking
@@ -590,6 +599,10 @@
     const k=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(x=>token(x)===token(rid));
     if(!k)return{accepted:false,reason:'RESOURCE_NOT_OBSERVED'};
     const stock=num(inv[k]);if(stock===null||stock+1e-9<q)return{accepted:false,reason:'RESOURCE_STOCK_INSUFFICIENT'};
+    const supplyDirective=strategicPolicy?.evaluateExportDirective?.(seller,buyer,rid,q,auth.governmentContractId,inv);
+    if(supplyDirective&&supplyDirective.allowed===false)
+      return{accepted:false,reason:supplyDirective.reason||'STATE_SUPPLY_DIRECTIVE_BLOCKED',stateSupplyDirective:supplyDirective};
+    const exportFactoryIds=strategicPolicy?.allowedExportFactoryIds?.(seller,rid,auth.governmentContractId)||null;
     const strategic=ctx.stateTransaction.get('resource.strategicReserve')||{};
     const reservedStrategic=strategic.availableByResource&&typeof strategic.availableByResource==='object'?num(strategic.availableByResource[k]??strategic.availableByResource[rid])||0:0;
     if(stock-reservedStrategic+1e-9<q)return{accepted:false,reason:'STRATEGIC_STOCKPILE_PROTECTED',available:Math.max(0,stock-reservedStrategic),requested:q};
@@ -646,6 +659,8 @@
       if(remaining<=1e-9)break;
       if(token(b&&(b.resourceId||b.materialIdentity))!==token(rid)||nonCentral(b&&b.stage))continue;
       const before=availableQty(b);if(before<=0)continue;
+      const sourceFactoryId=String(b.sourceFactoryId||b.factoryId||'').trim();
+      if(Array.isArray(exportFactoryIds)&&(!sourceFactoryId||!exportFactoryIds.includes(sourceFactoryId)))continue;
       const stage=String(b.stage||'RAW').toUpperCase(),finished=isProcessed(stage),take=Math.min(before,remaining),after=Math.max(0,before-take);
       let lot=lots[b.batchId];
       if(!lot)lot={batchId:b.batchId,resourceId:rid,quantity:num(b.quantity)||before,remainingQuantity:before,unit:b.unit||null,stage:b.stage||'RAW',
@@ -661,10 +676,17 @@
         siteReferenceKey:b.siteReferenceKey||null,occurrenceKey:b.occurrenceKey||b.sourceOccurrenceKey||null,resourceId:rid,quantity:take,
         unit:b.unit||null,stage,warehouseId:b.warehouseId||(finished?processed.warehouseId:raw.warehouseId),
         sourceCountryId:seller,originCountryId:b.originCountryId||seller,destinationCountryId:buyer,
-        provenance:clone(b.provenance||{sourceAuthority:'UNOBSERVED'}),ownerCompanyId:b.ownerCompanyId||null});
+        provenance:clone(b.provenance||{sourceAuthority:'UNOBSERVED'}),ownerCompanyId:b.ownerCompanyId||null,
+        operatorCompanyId:b.operatorCompanyId||null,ownerAttributionStatus:b.ownerAttributionStatus||'NOT_RECORDED',
+        sourceFactoryId:sourceFactoryId||null});
       remaining-=take;
     }
-    if(remaining>1e-6)return{accepted:false,reason:'RESOURCE_BATCH_ALLOCATION_INCOMPLETE',remaining,requested:q,allocated:q-remaining};
+    if(remaining>1e-6)return{accepted:false,reason:exportFactoryIds?'STATE_FACTORY_EXPORT_ALLOCATION_STOCK_INSUFFICIENT':'RESOURCE_BATCH_ALLOCATION_INCOMPLETE',remaining,requested:q,allocated:q-remaining};
+    const allocationCheck=strategicPolicy?.validateExportBatchAllocation?.(seller,rid,batchTransfers,auth.governmentContractId);
+    if(allocationCheck&&allocationCheck.allowed===false)return{accepted:false,reason:allocationCheck.reason||'STATE_FACTORY_EXPORT_ALLOCATION_VIOLATION',stateSupplyDirective:allocationCheck};
+    const directiveCommit=strategicPolicy?.commitExportDirectiveTx?.(ctx,{settlementId:String(p.settlementId||''),resourceId:rid,
+      quantity:q,destinationCountryId:buyer,governmentContractId:auth.governmentContractId,batchTransfers});
+    if(directiveCommit&&directiveCommit.accepted===false)return{accepted:false,reason:directiveCommit.reason||'STATE_SUPPLY_DIRECTIVE_COMMIT_FAILED',stateSupplyDirective:directiveCommit};
     const next=clone(inv);next[k]=Math.max(0,stock-q);
     raw.availableByResource[rid]=Math.max(0,raw.availableByResource[rid]-rawDebit);
     processed.availableByResource[rid]=Math.max(0,processed.availableByResource[rid]-processedDebit);
@@ -1032,7 +1054,8 @@
       tariffPosted=true;
     }
 
-    const transferAuthorization={type:'TRADE_SETTLEMENT',settlementId:sid,requestId:req.requestId,sourceCountryId:s,destinationCountryId:c};
+    const transferAuthorization={type:'TRADE_SETTLEMENT',settlementId:sid,requestId:req.requestId,sourceCountryId:s,destinationCountryId:c,
+      governmentContractId:req.governmentContractId||null};
     const sellerResource=command('resource','OMEGA_TRADE_RESOURCE_DEBIT',s,{
       resourceId:req.resourceId,quantity:req.quantity,settlementId:sid,requestId:req.requestId,transferAuthorization
     });
