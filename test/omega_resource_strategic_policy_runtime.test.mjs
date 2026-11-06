@@ -391,3 +391,125 @@ test('sovereign wealth fund capitalization debits treasury once and persists con
  assert.equal(conflict.reason,'SWF_TRANSACTION_ID_CONFLICT');
  assert.equal(api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-INVALID',amount:0}).reason,'SWF_AMOUNT_MUST_BE_POSITIVE');
 });
+
+
+
+test('state supply directives enforce domestic-only, quota, export contract and bounded 46/4 factory allocation',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const domesticOnly=api.setSupplyDirective('BGD',{directive:'DOMESTIC_ONLY',resourceId:'iron_ore',
+    policyId:'DOMESTIC-ONLY-IRON',reason:'National shortage'});
+  assert.equal(domesticOnly.accepted,true,JSON.stringify(domesticOnly));
+  const blocked=api.evaluateExportDirective('BGD','SAU','iron_ore',1,null,{iron_ore:100});
+  assert.equal(blocked.allowed,false);
+  assert.equal(blocked.reason,'STATE_DIRECTIVE_DOMESTIC_ONLY');
+
+  const contract=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_EXPORT_CONTRACT',resourceId:'iron_ore',
+    policyId:'GOV-EXPORT-IRON-1',contractId:'GOV-EXPORT-IRON-1',targetCountryId:'SAU',
+    authorizedQuantity:20,companyIds:['AURORA_INDUSTRIAL_GROUP']});
+  assert.equal(contract.accepted,true,JSON.stringify(contract));
+  const approved=api.evaluateExportDirective('BGD','SAU','iron_ore',20,'GOV-EXPORT-IRON-1',{iron_ore:100});
+  assert.equal(approved.allowed,true,JSON.stringify(approved));
+  const wrongDestination=api.evaluateExportDirective('BGD','IND','iron_ore',1,'GOV-EXPORT-IRON-1',{iron_ore:100});
+  assert.equal(wrongDestination.allowed,false);
+  const overContract=api.evaluateExportDirective('BGD','SAU','iron_ore',21,'GOV-EXPORT-IRON-1',{iron_ore:100});
+  assert.equal(overContract.allowed,false);
+  assert.equal(overContract.reason,'GOVERNMENT_EXPORT_CONTRACT_QUANTITY_EXCEEDED');
+
+  const quota=api.setSupplyDirective('BGD',{directive:'DOMESTIC_QUOTA',resourceId:'copper',
+    policyId:'DOMESTIC-COPPER-70',domesticReserveQuantity:70});
+  assert.equal(quota.accepted,true,JSON.stringify(quota));
+  const quotaAllowed=api.evaluateExportDirective('BGD','SAU','copper',30,null,{copper:100});
+  assert.equal(quotaAllowed.allowed,true,JSON.stringify(quotaAllowed));
+  const quotaBlocked=api.evaluateExportDirective('BGD','SAU','copper',31,null,{copper:100});
+  assert.equal(quotaBlocked.allowed,false);
+  assert.equal(quotaBlocked.reason,'DOMESTIC_SUPPLY_PROTECTED');
+
+  const domesticFactoryIds=Array.from({length:46},(_,i)=>'FAC-'+String(i+1).padStart(2,'0'));
+  const exportFactoryIds=Array.from({length:4},(_,i)=>'FAC-'+String(i+47).padStart(2,'0'));
+  const allocation=api.setSupplyDirective('BGD',{directive:'FACTORY_ALLOCATION',resourceId:'finished_goods',
+    policyId:'FACTORY-ALLOCATION-46-4',domesticFactoryIds,exportFactoryIds});
+  assert.equal(allocation.accepted,true,JSON.stringify(allocation));
+  assert.equal(api.allowedExportFactoryIds('BGD','finished_goods').length,4);
+  assert.equal(api.validateExportBatchAllocation('BGD','finished_goods',
+    [{sourceFactoryId:'FAC-47',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP'}]).allowed,true);
+  const forbidden=api.validateExportBatchAllocation('BGD','finished_goods',
+    [{sourceFactoryId:'FAC-46',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP'}]);
+  assert.equal(forbidden.allowed,false);
+  assert.equal(forbidden.reason,'STATE_FACTORY_EXPORT_ALLOCATION_VIOLATION');
+  assert.equal(api.supplyPolicySummary('BGD','finished_goods').domesticFactoryCount,46);
+  assert.equal(api.supplyPolicySummary('BGD','finished_goods').exportFactoryCount,4);
+});
+
+test('government procurement buys privately owned finished batches once and transfers ownership inside shared warehouse',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const companyId='NOVA_CONSUMER_INDUSTRIES';
+  h.state.resource.BGD.inventory={widgets:100};
+  h.state.resource.BGD.batches=[{
+    batchId:'WIDGETS-PRIVATE-BATCH',resourceId:'widgets',quantity:100,remainingQuantity:100,
+    unit:'UNITS',stage:'FINISHED',countryId:'BGD',ownerCompanyId:companyId,
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+    sourceFactoryId:'FAC-PRIVATE-WIDGETS',warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE'
+  }];
+  h.state.resource.BGD.inventoryLots={'WIDGETS-PRIVATE-BATCH':{
+    batchId:'WIDGETS-PRIVATE-BATCH',resourceId:'widgets',quantity:100,remainingQuantity:100,
+    unit:'UNITS',stage:'FINISHED',countryId:'BGD',warehouseId:'WH-BGD-PROCESSED',
+    ownerCompanyId:companyId,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',status:'AVAILABLE'
+  }};
+  h.state.resource.BGD.processedWarehouse={
+    warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',availableByResource:{widgets:100},
+    storedBatchIds:['WIDGETS-PRIVATE-BATCH'],receipts:[]
+  };
+  const policy=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
+    policyId:'GOV-PROC-POLICY-1',contractId:'GOV-PROC-ORDER-1',
+    companyId,companyIds:[companyId],authorizedQuantity:50,procurementLimit:50});
+  assert.equal(policy.accepted,true,JSON.stringify(policy));
+  const before=h.state.finance.BGD.available;
+  const payload={policyId:'GOV-PROC-POLICY-1',procurementId:'GOV-PROC-ORDER-1',
+    companyId,resourceId:'widgets',quantity:20,totalValue:200,batchIds:['WIDGETS-PRIVATE-BATCH']};
+  const first=api.purchasePrivateStock('BGD',payload);
+  assert.equal(first.accepted,true,JSON.stringify(first));
+  assert.equal(h.state.finance.BGD.available,before-200);
+  assert.equal(h.state.resource.BGD.inventory.widgets,100,'ownership purchase must not create aggregate inventory');
+  assert.equal(h.state.resource.BGD.processedWarehouse.availableByResource.widgets,100,
+    'same processed warehouse stock is transferred; it is not credited a second time');
+  assert.equal(h.state.resource.BGD.batches.find(x=>x.batchId==='WIDGETS-PRIVATE-BATCH').remainingQuantity,80);
+  const governmentBatch=h.state.resource.BGD.batches.find(x=>x.procurementId==='GOV-PROC-ORDER-1');
+  assert.ok(governmentBatch);
+  assert.equal(governmentBatch.ownerCompanyId,'STATE_GOVERNMENT_STOCK_BGD');
+  assert.equal(governmentBatch.sourceTransferBatchId,'WIDGETS-PRIVATE-BATCH');
+  assert.ok(h.state.resource.BGD.processedWarehouse.receipts.some(x=>x.batchId===governmentBatch.batchId&&
+    x.status==='OWNERSHIP_TRANSFER_RECEIVED'));
+  assert.equal(h.state.economy.BGD.companyAccounts[companyId].governmentProcurementRevenue,200);
+  assert.equal(h.state.economy.BGD.companyAccounts[companyId].cashAuthority,
+    'AGGREGATE_FLOW_TRACKER_NOT_SPENDABLE_WALLET');
+
+  const replay=api.purchasePrivateStock('BGD',payload);
+  assert.equal(replay.accepted,true);
+  assert.equal(replay.duplicate,true);
+  assert.equal(h.state.finance.BGD.available,before-200,'procurement replay must not debit Treasury twice');
+  assert.equal(h.state.resource.BGD.batches.filter(x=>x.procurementId==='GOV-PROC-ORDER-1').length,1);
+});
+
+test('government procurement refuses unknown or non-private operator attribution',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const companyId='NOVA_CONSUMER_INDUSTRIES';
+  h.state.resource.BGD.batches=[{
+    batchId:'UNVERIFIED-PRIVATE-BATCH',resourceId:'widgets',quantity:10,remainingQuantity:10,
+    stage:'FINISHED',ownerCompanyId:companyId,operatorCompanyId:'UNKNOWN_OPERATOR',
+    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',status:'AVAILABLE'
+  }];
+  h.state.resource.BGD.inventoryLots={'UNVERIFIED-PRIVATE-BATCH':{
+    batchId:'UNVERIFIED-PRIVATE-BATCH',resourceId:'widgets',quantity:10,remainingQuantity:10,status:'AVAILABLE'
+  }};
+  const policy=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
+    policyId:'GOV-PROC-UNKNOWN-OPERATOR',contractId:'GOV-PROC-UNKNOWN-OPERATOR',
+    companyId,authorizedQuantity:10,procurementLimit:10});
+  assert.equal(policy.accepted,true,JSON.stringify(policy));
+  const before=h.state.finance.BGD.available;
+  const result=api.purchasePrivateStock('BGD',{policyId:'GOV-PROC-UNKNOWN-OPERATOR',
+    procurementId:'GOV-PROC-UNKNOWN-OPERATOR',companyId,resourceId:'widgets',quantity:5,totalValue:50});
+  assert.equal(result.accepted,false);
+  assert.equal(result.reason,'GOVERNMENT_PROCUREMENT_PRIVATE_STOCK_INSUFFICIENT');
+  assert.equal(h.state.finance.BGD.available,before);
+});
