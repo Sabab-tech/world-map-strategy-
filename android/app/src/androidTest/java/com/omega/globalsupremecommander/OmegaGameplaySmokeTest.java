@@ -451,6 +451,8 @@ public final class OmegaGameplaySmokeTest {
                     instrumentation, webViewRef.get(), true, 10000L);
             assertTrue("Portrait Industry content must not overflow horizontally: " + portraitViewport,
                     portraitViewport.optInt("scrollWidth") <= portraitViewport.optInt("width") + 2);
+            assertTrue("Portrait must keep private proposal form and operator selector mounted: " + portraitViewport,
+                    portraitViewport.optBoolean("privateFormVisible") && portraitViewport.optBoolean("operatorSelectorVisible"));
             assertTrue("Portrait rotation must preserve the same WebView instance",
                     activity.webViewForTest() == webViewRef.get());
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PORTRAIT_ROTATION_PASSED metrics=" + portraitViewport);
@@ -460,6 +462,10 @@ public final class OmegaGameplaySmokeTest {
                     instrumentation, webViewRef.get(), false, 10000L);
             assertTrue("Returning to landscape must preserve the same WebView instance",
                     activity.webViewForTest() == webViewRef.get());
+            assertTrue("Landscape must keep private proposal form and operator selector mounted: " + restoredLandscape,
+                    restoredLandscape.optBoolean("privateFormVisible") && restoredLandscape.optBoolean("operatorSelectorVisible"));
+            assertTrue("Landscape Industry content must not overflow horizontally: " + restoredLandscape,
+                    restoredLandscape.optInt("scrollWidth") <= restoredLandscape.optInt("width") + 2);
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=LANDSCAPE_ROTATION_RESTORED metrics=" + restoredLandscape);
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_LINES_NAV_READY p95Ms=" +
                     navigationP95 + " maxMs=" + navigationMax + " nav=" + tabNavigationTiming);
@@ -497,9 +503,12 @@ public final class OmegaGameplaySmokeTest {
             boolean portrait,
             long timeoutMs
     ) throws Exception {
-        final String script = "(function(){return JSON.stringify({width:document.documentElement.clientWidth," +
+        final String script = "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                "var panel=main&&main.querySelector('[data-omega-private-company-lifecycle]');" +
+                "return JSON.stringify({width:document.documentElement.clientWidth," +
                 "height:document.documentElement.clientHeight,scrollWidth:document.documentElement.scrollWidth," +
-                "scrollHeight:document.documentElement.scrollHeight});})()";
+                "scrollHeight:document.documentElement.scrollHeight,privateFormVisible:!!(panel&&panel.querySelector('[data-pe-proposal-form]'))," +
+                "operatorSelectorVisible:!!(panel&&panel.querySelector('select[name=operatorCompanyId]'))});})()";
         final long deadline = SystemClock.elapsedRealtime() + timeoutMs;
         org.json.JSONObject latest = new org.json.JSONObject();
         while (SystemClock.elapsedRealtime() < deadline) {
