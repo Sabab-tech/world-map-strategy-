@@ -588,6 +588,10 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/Other recorded costs/);
   assert.match(fragments[0],/data-pe-jv-form/);
   assert.match(fragments[0],/Shareholder E equity/);
+  assert.match(fragments[0],/Input materials/);
+  assert.match(fragments[0],/Worker costs/);
+  assert.match(fragments[0],/Transport costs/);
+  assert.match(fragments[0],/Other recorded costs/);
   assert.match(fragments[0],/Joint ventures \/ shareholder voting \/ dividends/);
   assert.match(fragments[0],/Close cash-flow period \/ assess profit tax/);
   assert.match(fragments[0],/Construction and operating readiness/);
@@ -683,7 +687,7 @@ test('joint venture allocates small dividends by largest remainder without creat
     jointVentureId:created.jointVenture.jointVentureId,resolutionId:resolution.resolution.resolutionId});
   assert.equal(paid.status,'PAID');
   assert.equal(paid.distribution.reduce((sum,row)=>sum+Math.round(row.amount*100),0),3);
-  assert.deepEqual(paid.distribution.map(row=>row.amount),[0.01,0.01,0.01]);
+  assert.equal(JSON.stringify(paid.distribution.map(row=>row.amount)),JSON.stringify([0.01,0.01,0.01]));
   assert.equal(h.api.getJointVentureDashboard('BGD').jointVentures[0].retainedEarningsBalance,0);
 });
 
