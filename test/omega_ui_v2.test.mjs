@@ -3181,6 +3181,8 @@ test('factory cards retain three landscape columns and constrain text to the car
   assert.match(css,/\.fp-card-detail-scroll\s*\{[^}]*overflow-y:auto/s);
   assert.match(css,/overflow-wrap:break-word/);
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:899px\)/);
+  assert.match(css,/@media \(orientation:portrait\) and \(max-width:899px\)[\s\S]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
+  assert.match(css,/\.fp-card-detail-row \.fp-card-detail-product\s*\{[^}]*grid-column:1 \/ -1/s);
   assert.match(sw,/omega-offline-atlas-shell-v96/);
 });
 
