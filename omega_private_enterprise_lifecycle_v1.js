@@ -186,6 +186,7 @@
       reserved:reserved,protectedStock:protectedQty,nationalDemandPerDay:demandPerDay,consumerDemandPerDay:consumerDemandPerDay,
       existingFactoryInputDemandPerDay:factoryDemandPerDay,existingDemand30Day:existingDemand30Day,
       confirmedInboundNotCounted:confirmedInbound,demandStatus:demandPerDay===null?'UNOBSERVED_OR_STALE':'CURRENT_TURN_SNAPSHOT',
+      demandSnapshotTurn:num(demandRuntime.lastTurn),demandEvaluationTurn:turn(),demandRowObserved:!!demandRow,
       authority:amount===null?'UNOBSERVED':invAmount!==null&&warehouseFree!==null?'INVENTORY_AND_WAREHOUSE_LEDGER':warehouseFree!==null?'RAW_WAREHOUSE_LEDGER':'LEGACY_INVENTORY_AGGREGATE'};
   }
   function inputForecast(country,profile,recipe,quantity){
@@ -260,7 +261,11 @@
     var maxAdditional=Math.max(0,maximumPrivate-openingPrivate-livePrivate);
     var inputs=inputForecast(cid,profile,recipe,proposal.quantity);
     var deficits=inputs.filter(function(x){return x.shortfall!==null&&x.shortfall>1e-9;});
-    var unobserved=inputs.filter(function(x){return x.available===null||x.nationalDemandPerDay===null;});
+    var unobserved=inputs.filter(function(x){
+      // Company-funded imports need observed physical stock, not domestic-demand telemetry.
+      return x.physicalAvailable===null||(proposal.sourcingPolicy!=='COMPANY_FUNDED_IMPORTS'&&
+        (x.available===null||x.nationalDemandPerDay===null));
+    });
     var operationalReadiness=operationalCapacityPreview(cid,profile,proposal.quantity);
     var safeDomestic=maximumDomesticQuantity(inputs,profile,maxAdditional);
     var capacity=profile.defaultCapacityPerDay===undefined?null:num(profile.defaultCapacityPerDay)*proposal.quantity;
@@ -1444,11 +1449,12 @@
       jv=r&&r.jointVentures.find(function(x){return x&&x.jointVentureId===String(input.jointVentureId||'');});
     if(cid!==playerCountry()||!jv||jv.status!=='ACTIVE')return{status:'BLOCKED',reason:'ACTIVE_PLAYER_COUNTRY_JV_REQUIRED'};
     var resolution=jv.resolutions.find(function(x){return x&&x.resolutionId===String(input.resolutionId||'');});
-    if(!resolution||resolution.type!=='DIVIDEND'||resolution.status!=='APPROVED')
-      return{status:'BLOCKED',reason:'APPROVED_JV_DIVIDEND_RESOLUTION_REQUIRED'};
-    var amount=num(resolution.amount),tx='PE-JV-DIVIDEND:'+resolution.resolutionId,
-      ledger=financeLedger(cid,true),prior=ledger.find(function(x){return x&&x.transactionId===tx;});
+    if(!resolution||resolution.type!=='DIVIDEND')return{status:'BLOCKED',reason:'JV_DIVIDEND_RESOLUTION_REQUIRED'};
+    var tx='PE-JV-DIVIDEND:'+resolution.resolutionId,ledger=financeLedger(cid,true),
+      prior=ledger.find(function(x){return x&&x.transactionId===tx;});
     if(prior)return{status:'DUPLICATE',transactionId:tx,distribution:clone(prior.distribution||[])};
+    if(resolution.status!=='APPROVED')return{status:'BLOCKED',reason:'APPROVED_JV_DIVIDEND_RESOLUTION_REQUIRED'};
+    var amount=num(resolution.amount);
     if(amount===null||amount<=0||(num(jv.retainedEarningsBalance)||0)+1e-9<amount)
       return{status:'BLOCKED',reason:'JV_RETAINED_EARNINGS_INSUFFICIENT',available:num(jv.retainedEarningsBalance)||0,required:amount};
     var amountCents=Math.round(amount*100),allocations=jv.shareholders.map(function(member,index){
