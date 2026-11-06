@@ -938,8 +938,14 @@
   }
 
   function recordOwner(c,done){
-    var company=String(done&&done.companyId||'').trim();if(!company)return;
-    var econ=bucket(c,'economy')||{},runtime=clone(econ.industrialRuntime||{}),owners=clone(runtime.materialOwners||{});Object.keys(done.outputQuantities||{}).forEach(function(rid){owners[rid]=company;});runtime.materialOwners=owners;runtime.lastTurn=turn();
+    // Only an explicit asset owner can own the finished goods. An operator or legacy
+    // companyId is not silently promoted into legal ownership.
+    var company=String(done&&done.ownerCompanyId||'').trim();
+    var ownerStatus=String(done&&done.ownerAttributionStatus||'').trim().toUpperCase();
+    if(!company||ownerStatus==='LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED'||ownerStatus==='UNASSIGNED')return;
+    var econ=bucket(c,'economy')||{},runtime=clone(econ.industrialRuntime||{}),owners=clone(runtime.materialOwners||{});
+    Object.keys(done.outputQuantities||{}).forEach(function(rid){owners[rid]=company;});
+    runtime.materialOwners=owners;runtime.lastTurn=turn();
     dispatch('economy','OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY',c,{industrialRuntime:runtime,companyAccounts:clone(econ.companyAccounts||{}),workerIncome:clone(econ.workerIncome||{}),supplierRevenue:clone(econ.supplierRevenue||{}),factoryOutput:clone(econ.factoryOutput||{}),correlationId:'OWNER-'+turn()+'-'+canonical(c)});
   }
 
@@ -1023,7 +1029,9 @@
     var c=canonical(p.countryId||raw.countryId||d.countryId),tx=String(p.transactionId||'').trim();if(!c||!tx)return;
     var quantities=p.outputQuantities||p.outputs||{},econ=bucket(c,'economy')||{},runtime=clone(econ.industrialRuntime||{}),rows=Array.isArray(runtime.finishedGoodsLedger)?runtime.finishedGoodsLedger:[];
     if(rows.some(function(x){return String(x.transactionId||'')===tx;}))return;
-    rows.push({transactionId:tx,countryId:c,factoryId:p.factoryId||null,companyId:p.companyId||null,outputQuantities:clone(quantities),
+    rows.push({transactionId:tx,countryId:c,factoryId:p.factoryId||null,companyId:p.companyId||null,
+      ownerCompanyId:p.ownerCompanyId||null,operatorCompanyId:p.operatorCompanyId||p.companyId||null,
+      ownerAttributionStatus:p.ownerAttributionStatus||'NOT_RECORDED',outputQuantities:clone(quantities),
       sourceBatchIds:Array.isArray(p.sourceBatchIds)?p.sourceBatchIds.slice():[],createdBatchIds:Array.isArray(p.createdBatchIds)?p.createdBatchIds.slice():[],
       turn:num(p.turn)===null?turn():num(p.turn),authority:p.authority||'SIMULATED_PROCESSING_YIELD',status:'REGISTERED_WITH_ECONOMY'});
     while(rows.length>(num(rules().runtime.maxLedgerEntries)||2048))rows.shift();runtime.finishedGoodsLedger=rows;runtime.lastFinishedGoodsTurn=turn();
@@ -1104,6 +1112,10 @@
         var asset=assets.find(function(item){return String(item.id||item.assetId||item.factoryId||item.projectId)===String(row.factoryId||'');})||{};
         return{transactionId:row.transactionId||null,facilityId:row.factoryId,factoryId:row.factoryId,
           companyId:asset.operatorCompanyId||asset.operatorId||asset.companyId||asset.ownerCompanyId||asset.ownerId||null,
+          ownerCompanyId:asset.ownerCompanyId||asset.ownerId||null,
+          operatorCompanyId:asset.operatorCompanyId||asset.operatorId||asset.companyId||null,
+          ownerAttributionStatus:asset.ownerCompanyId||asset.ownerId?'EXPLICIT_ASSET_OWNER':
+            asset.companyId?'LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED':'UNASSIGNED',
           factoryType:asset.factoryType||asset.type||null,stage:'PROCESSING',
           inputQuantities:clone(row.inputQuantities||{}),outputQuantities:clone(row.outputQuantities||{}),
           sourceBatchIds:clone(row.sourceBatchIds||[]),createdBatchIds:clone(row.createdBatchIds||[]),
