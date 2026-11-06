@@ -583,16 +583,9 @@
     if(canonical(auth.sourceCountryId)!==seller)return{accepted:false,reason:'TRADE_SOURCE_COUNTRY_MISMATCH',countryId:seller,sourceCountryId:canonical(auth.sourceCountryId)};
     const buyer=canonical(auth.destinationCountryId);
     if(!buyer||buyer===seller)return{accepted:false,reason:'TRADE_DESTINATION_COUNTRY_INVALID'};
-    const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
-    const embargo=strategicPolicy?.isResourceEmbargoed?.(buyer,seller,rid);
-    if(embargo?.blocked)return{accepted:false,reason:embargo.reason||'RESOURCE_EMBARGO_ACTIVE',policies:embargo.policies||[]};
-    const routeMode=String(p.transportMode||auth.transportMode||'ship');
-    const buyerBlockade=strategicPolicy?.isRouteBlocked?.(buyer,{resourceId:rid,transportMode:routeMode,routeId:p.routeId||auth.routeId,siteId:p.siteId||auth.siteId});
-    const sellerBlockade=strategicPolicy?.isRouteBlocked?.(seller,{resourceId:rid,transportMode:routeMode,routeId:p.routeId||auth.routeId,siteId:p.siteId||auth.siteId});
-    if(buyerBlockade?.blocked||sellerBlockade?.blocked)return{accepted:false,reason:'RESOURCE_ROUTE_BLOCKADE_ACTIVE',blockades:[...(buyerBlockade?.blockades||[]),...(sellerBlockade?.blockades||[])]};
     if(!rid||q===null||q<=0)return{accepted:false,reason:'RESOURCE_SETTLEMENT_INPUT_INVALID'};
-    const existingExportLedger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?ctx.stateTransaction.get('resource.inventoryLedger'):[];
     const settlementId=String(p.settlementId||'').trim();
+    const existingExportLedger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?ctx.stateTransaction.get('resource.inventoryLedger'):[];
     const priorExport=existingExportLedger.find(x=>String(x?.settlementId||'')===settlementId&&x?.type==='INTERNATIONAL_TRADE_EXPORT');
     if(priorExport){
       const same=String(priorExport.resourceId||'')===rid&&Math.abs((num(priorExport.quantity)||0)-q)<1e-7&&
@@ -603,6 +596,13 @@
         {accepted:false,reason:'TRADE_RESOURCE_DEBIT_IDEMPOTENCY_COLLISION',settlementId};
     }
     if(!settlementId)return{accepted:false,reason:'TRADE_SETTLEMENT_ID_REQUIRED'};
+    const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
+    const embargo=strategicPolicy?.isResourceEmbargoed?.(buyer,seller,rid);
+    if(embargo?.blocked)return{accepted:false,reason:embargo.reason||'RESOURCE_EMBARGO_ACTIVE',policies:embargo.policies||[]};
+    const routeMode=String(p.transportMode||auth.transportMode||'ship');
+    const buyerBlockade=strategicPolicy?.isRouteBlocked?.(buyer,{resourceId:rid,transportMode:routeMode,routeId:p.routeId||auth.routeId,siteId:p.siteId||auth.siteId});
+    const sellerBlockade=strategicPolicy?.isRouteBlocked?.(seller,{resourceId:rid,transportMode:routeMode,routeId:p.routeId||auth.routeId,siteId:p.siteId||auth.siteId});
+    if(buyerBlockade?.blocked||sellerBlockade?.blocked)return{accepted:false,reason:'RESOURCE_ROUTE_BLOCKADE_ACTIVE',blockades:[...(buyerBlockade?.blockades||[]),...(sellerBlockade?.blockades||[])]};
     if(!inv||typeof inv!=='object')return{accepted:false,reason:'RESOURCE_INVENTORY_NOT_OBSERVED'};
     const k=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(x=>token(x)===token(rid));
     if(!k)return{accepted:false,reason:'RESOURCE_NOT_OBSERVED'};
