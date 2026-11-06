@@ -871,3 +871,33 @@ test('private factory financial close fails closed when a required operating cos
   assert.equal(h.state.finance.BGD.available,beforeTreasury);
   assert.equal(h.state.finance.BGD.omegaFinance.ledger.some(row=>row.type==='PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX'),false);
 });
+
+
+test('financial close offsets prior tax payments against gross liability without reducing taxable profit twice',()=>{
+  const h=makeHarness(),api=h.api,company=COMPANY;
+  h.state.economy.BGD.companyAccounts={
+    [company]:{
+      companyId:company,runtimeNetCashFlow:470,grossRevenue:500,paymentsReceived:500,paymentsMade:30,
+      taxPaid:10,cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,lastTurn:4,
+      cashFlowEntries:[
+        {entryId:'PREPAID-TAX-SALE',companyId:company,amount:500,direction:'CREDIT',category:'DOMESTIC_SUPPLY',turn:4,status:'POSTED'},
+        {entryId:'PREPAID-TAX-INPUT',companyId:company,amount:20,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',turn:4,status:'POSTED'},
+        {entryId:'PREPAID-TAX-ALREADY-PAID',companyId:company,amount:10,direction:'DEBIT',category:'CORPORATE_PROFIT_TAX',turn:4,status:'POSTED'}
+      ]
+    }
+  };
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [company]:{companyId:company,currency:'GAME_CURRENCY_UNITS',availableBalance:0,reservedBalance:0,
+      retainedEarningsBalance:0,capitalRaised:0,capitalSpent:0,revision:0}
+  };
+  const beforeTreasury=h.state.finance.BGD.available;
+  const close=api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:company});
+  assert.equal(close.status,'CLOSED');
+  assert.equal(close.period.profitBeforeTax,480);
+  assert.equal(close.period.grossTaxLiability,96);
+  assert.equal(close.period.otherTaxPaidBeforeClose,10);
+  assert.equal(close.period.corporateTaxPaid,86);
+  assert.equal(close.period.totalTaxPaidAfterClose,96);
+  assert.equal(close.period.retainedEarningsAfter,384);
+  assert.equal(h.state.finance.BGD.available,beforeTreasury+86);
+});
