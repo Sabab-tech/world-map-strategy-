@@ -3543,6 +3543,8 @@ test('Factory Input tables contain long cell content without changing factory ca
     'stock icons and quantities must wrap inside their cell');
   assert.match(fix, /\.fp-factory-input-total-table th:nth-child\(3\)\s*\{\s*width:\s*24%;\s*\}/,
     'aggregate daily-use breakdown must keep enough column width');
+  assert.match(fix, /\.fp-factory-input-total-table\s*\{[^}]*min-width:\s*960px;/s,
+    'the seven-column aggregate Input table must overflow its constrained wrapper on narrow screens');
   assert.doesNotMatch(fix, /\.fp-card|\.fp-type-card/,
     'the separate Input table fix must not alter factory cards');
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
