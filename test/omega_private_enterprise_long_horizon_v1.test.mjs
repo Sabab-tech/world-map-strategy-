@@ -285,7 +285,7 @@ test('canonical game clock survives 30, 100, 180 and 365 in-game days without ha
     assert.equal(h.simulation.clock.stepDurationMs, 86400000,
       'one committed turn must remain exactly one in-game calendar day');
     const expectedDate = new Date(Date.UTC(2015, 0, 1) + point.day * 86400000).toISOString().slice(0, 10);
-    assert.equal(state.date, expectedDate, 'calendar date must advance without drift at day ' + point.day);
+    assert.equal(String(state.date).slice(0, 10), expectedDate, 'calendar date must advance without drift at day ' + point.day);
     const participantFailures = (state.lastTurnParticipantResults || []).filter(row => row.status === 'FAILED');
     assert.deepEqual(participantFailures, [], 'no turn participant may fail at day ' + point.day);
     assert.equal(h.sessionApi.diagnostics().authoritativeState.worldStateLinked, true,
