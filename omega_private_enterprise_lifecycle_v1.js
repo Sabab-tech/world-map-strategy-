@@ -199,7 +199,7 @@
         protectedStock:stock.protectedStock,nationalDemandPerDay:stock.nationalDemandPerDay,consumerDemandPerDay:stock.consumerDemandPerDay,
         existingFactoryInputDemandPerDay:stock.existingFactoryInputDemandPerDay,existingDemand30Day:stock.existingDemand30Day,
         confirmedInboundNotCounted:stock.confirmedInboundNotCounted,demandStatus:stock.demandStatus,
-        demandSnapshotTurn:stock.demandSnapshotTurn,demandEvaluationTurn:stock.demandEvaluationTurn,demandRowObserved:stock.demandRowObserved,demandRuntimePresent:stock.demandRuntimePresent,demandRuntimeResourceKeys:stock.demandRuntimeResourceKeys,resourceBucketKeys:stock.resourceBucketKeys,
+        demandSnapshotTurn:stock.demandSnapshotTurn,demandEvaluationTurn:stock.demandEvaluationTurn,demandRowObserved:stock.demandRowObserved,demandRuntimePresent:stock.demandRuntimePresent,demandRuntimeResourceKeys:stock.demandRuntimeResourceKeys,resourceBucketKeys:stock.resourceBucketKeys,demandRuntimePresent:stock.demandRuntimePresent,demandRuntimeResourceKeys:stock.demandRuntimeResourceKeys,resourceBucketKeys:stock.resourceBucketKeys,
         shortfall:stock.available===null?null:Math.max(0,needed-stock.available),authority:stock.authority,reserved:stock.reserved});
     });
     return rows;
