@@ -267,91 +267,62 @@ public final class OmegaGameplaySmokeTest {
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_COMPANY_ROUTE_OPENED");
 
-            final String privateCompaniesTabReadyScript =
+            final String factoryManageReadyScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
                     " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
-                    " var companiesTab = main && main.querySelector('[data-omega-v2-industry-tab=\"companies\"]');" +
-                    " var factoriesTab = main && main.querySelector('[data-omega-v2-industry-tab=\"factories\"]');" +
+                    " var factoriesTab = main && main.querySelector('[data-omega-v2-industry-tab=\\\"factories\\\"]');" +
                     " var factoryView = main && main.querySelector('[data-omega-v2-factory-view-content]');" +
+                    " var manage = factoryView && factoryView.querySelector('[data-omega-v2-factory-build-details]:not([disabled])');" +
+                    " var companiesTab = main && main.querySelector('[data-omega-v2-industry-tab=\\\"companies\\\"]');" +
                     " return !!(cabinet && main && cabinet.getAttribute('data-omega-v2-route') === 'industry' &&" +
-                    " companiesTab && factoriesTab && factoryView);" +
+                    " factoriesTab && factoryView && manage && !companiesTab);" +
                     "})()";
-            String industryRouteReady = "false";
-            final long industryRouteDeadline = SystemClock.elapsedRealtime() + 60000L;
-            while (!"true".equals(industryRouteReady) &&
-                    SystemClock.elapsedRealtime() < industryRouteDeadline) {
-                industryRouteReady = evaluate(instrumentation, webViewRef.get(), privateCompaniesTabReadyScript);
-                if (!"true".equals(industryRouteReady)) SystemClock.sleep(350L);
+            String factoryManageReady = "false";
+            final long factoryManageDeadline = SystemClock.elapsedRealtime() + 60000L;
+            while (!"true".equals(factoryManageReady) &&
+                    SystemClock.elapsedRealtime() < factoryManageDeadline) {
+                factoryManageReady = evaluate(instrumentation, webViewRef.get(), factoryManageReadyScript);
+                if (!"true".equals(factoryManageReady)) SystemClock.sleep(350L);
             }
             assertEquals(
-                    "The Industry screen must expose the Factory and Companies tabs before loading private data",
-                    "true", industryRouteReady
+                    "Industry must expose the unified Factory card and its in-card Manage action, not a separate Companies tab",
+                    "true", factoryManageReady
             );
-            final String openPrivateCompaniesTab =
+            final String openFactoryManage =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
                     " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
-                    " var tab = main && main.querySelector('[data-omega-v2-industry-tab=\"companies\"]');" +
-                    " if (!tab) return false;" +
-                    " tab.click();" +
+                    " var factoryView = main && main.querySelector('[data-omega-v2-factory-view-content]');" +
+                    " var manage = factoryView && factoryView.querySelector('[data-omega-v2-factory-build-details]:not([disabled])');" +
+                    " if (!manage) return false;" +
+                    " manage.click();" +
                     " return true;" +
                     "})()";
             assertEquals(
-                    "The Companies tab must respond to a real WebView click",
-                    "true", evaluate(instrumentation, webViewRef.get(), openPrivateCompaniesTab)
+                    "The factory card Manage button must open ownership and construction controls",
+                    "true", evaluate(instrumentation, webViewRef.get(), openFactoryManage)
             );
-            String privateCompaniesReady = "false";
+            String privateOwnershipReady = "false";
             final long privateBaselineDeadline = SystemClock.elapsedRealtime() + 120000L;
-            final String privateBaselineReadyScript =
+            final String privateOwnershipReadyScript =
                     "(function(){var r=window.OmegaPrivateEnterpriseRegistryV1;var d=r&&r.diagnostics();" +
-                    "var x=r&&r.getCountryBaseline('USA');return !!(d&&d.status==='READY'&&" +
-                    "d.countryCount===197&&d.factoryTypeCount===21&&d.companyCount===5&&" +
-                    "x&&x.status==='READY'&&Array.isArray(x.companies)&&x.companies.length===5);})()";
-            while (!"true".equals(privateCompaniesReady) &&
+                    "var m=document.querySelector('[data-private-factory-management]');" +
+                    "return !!(d&&d.status==='READY'&&d.countryCount===197&&d.factoryTypeCount===21&&" +
+                    "d.companyCount===5&&m&&m.getAttribute('data-private-factory-management')==='v1');})()";
+            while (!"true".equals(privateOwnershipReady) &&
                     SystemClock.elapsedRealtime() < privateBaselineDeadline) {
-                privateCompaniesReady = evaluate(instrumentation, webViewRef.get(), privateBaselineReadyScript);
-                if (!"true".equals(privateCompaniesReady)) SystemClock.sleep(350L);
+                privateOwnershipReady = evaluate(instrumentation, webViewRef.get(), privateOwnershipReadyScript);
+                if (!"true".equals(privateOwnershipReady)) SystemClock.sleep(350L);
             }
-            final String privateCompaniesDiagnostics =
+            final String privateOwnershipDiagnostics =
                     evaluate(instrumentation, webViewRef.get(),
-                            "(function(){var r=window.OmegaPrivateEnterpriseRegistryV1;var d=r&&r.diagnostics();var x=r&&r.getCountryBaseline('USA');return JSON.stringify({diagnostics:d,privateStatus:x&&x.status,privateUnits:x&&x.totalPrivateFactoryUnits,companyCount:x&&x.companies&&x.companies.length,route:document.getElementById('cabinet-full-window')&&document.getElementById('cabinet-full-window').getAttribute('data-omega-v2-route')});})()");
+                            "(function(){var r=window.OmegaPrivateEnterpriseRegistryV1;var d=r&&r.diagnostics();var m=document.querySelector('[data-private-factory-management]');return JSON.stringify({diagnostics:d,management:m&&m.getAttribute('data-private-factory-management'),text:m&&String(m.textContent||'').slice(0,1200),route:document.getElementById('cabinet-full-window')&&document.getElementById('cabinet-full-window').getAttribute('data-omega-v2-route')});})()");
             assertEquals(
-                    "The private baseline registry and country-specific 197 x 21 x 5 allocation must load when Companies is opened; diagnostics=" + privateCompaniesDiagnostics,
-                    "true", privateCompaniesReady
+                    "Private ownership must load only after the in-card Manage action; diagnostics=" + privateOwnershipDiagnostics,
+                    "true", privateOwnershipReady
             );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_COMPANY_BASELINE_READY");
-            final String privateCompaniesRenderedScript =
-                    "(function() {" +
-                    " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
-                    " var view = main && main.querySelector('[data-omega-v2-industry-content][data-active-tab=\"companies\"]');" +
-                    " var cards = view && view.querySelectorAll('.fp-private-company-card');" +
-                    " var text = view ? String(view.textContent || '') : '';" +
-                    " return !!(view && cards && cards.length === 5 &&" +
-                    " text.indexOf('Aurora Industrial Group') >= 0 &&" +
-                    " text.indexOf('Meridian Engineering Group') >= 0 &&" +
-                    " text.indexOf('Nova Consumer Industries') >= 0 &&" +
-                    " text.indexOf('Atlas Technology Corporation') >= 0 &&" +
-                    " text.indexOf('Terra Infrastructure Group') >= 0 &&" +
-                    " text.indexOf('NOT COMMISSIONED') >= 0 &&" +
-                    " text.indexOf('Opening allocation only') >= 0);" +
-                    "})()";
-            String privateCompaniesRendered = "false";
-            final long privateCompaniesRenderDeadline = SystemClock.elapsedRealtime() + 60000L;
-            while (!"true".equals(privateCompaniesRendered) &&
-                    SystemClock.elapsedRealtime() < privateCompaniesRenderDeadline) {
-                privateCompaniesRendered = evaluate(instrumentation, webViewRef.get(), privateCompaniesRenderedScript);
-                if (!"true".equals(privateCompaniesRendered)) SystemClock.sleep(300L);
-            }
-            final String privateCompaniesRenderDiagnostics =
-                    evaluate(instrumentation, webViewRef.get(),
-                            "(function(){var c=document.getElementById('cabinet-full-window');var m=c&&c.querySelector('[data-omega-v2-main]');var v=m&&m.querySelector('[data-omega-v2-industry-content]');return JSON.stringify({route:c&&c.getAttribute('data-omega-v2-route'),tab:v&&v.getAttribute('data-active-tab'),text:v&&String(v.textContent||'').slice(0,1000),cards:v&&v.querySelectorAll('.fp-private-company-card').length,diagnostics:window.OmegaPrivateEnterpriseRegistryV1&&window.OmegaPrivateEnterpriseRegistryV1.diagnostics()});})()");
-            assertEquals(
-                    "The Companies tab must render all five global private companies as non-commissioned opening allocations; diagnostics=" + privateCompaniesRenderDiagnostics,
-                    "true", privateCompaniesRendered
-            );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_COMPANIES_RENDERED");
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_MANAGE_PRIVATE_OWNERSHIP_READY");
         } finally {
             if (activity != null) {
                 final MainActivity launchedActivity = activity;
