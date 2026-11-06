@@ -726,7 +726,11 @@
       var consumed=result.result&&result.result.consumed||[],sourceBatchIds=[];
       consumed.forEach(function(item){(item.consumed||[]).forEach(function(x){if(x.batchId)sourceBatchIds.push(x.batchId);});});
       consumed.forEach(function(item){settleDomestic(c,item.resourceId,item.quantity,item.consumed,row.companyId,row.facilityId,tx);});
-      var done={transactionId:tx,countryId:canonical(c),facilityId:row.facilityId,companyId:row.companyId,stage:row.stage,inputQuantities:{},outputQuantities:clone(row.computedOutputs),sourceBatchIds:[...new Set(sourceBatchIds)],turn:turn(),status:'COMPLETED'};
+      var done={transactionId:tx,countryId:canonical(c),facilityId:row.facilityId,companyId:row.companyId,
+        ownerCompanyId:row.ownerCompanyId||null,operatorCompanyId:row.operatorCompanyId||row.companyId||null,
+        ownerAttributionStatus:row.ownerAttributionStatus||'NOT_RECORDED',
+        stage:row.stage,inputQuantities:{},outputQuantities:clone(row.computedOutputs),
+        sourceBatchIds:[...new Set(sourceBatchIds)],turn:turn(),status:'COMPLETED'};
       Object.keys(row.inputCoefficients).forEach(function(rid){done.inputQuantities[rid]=row.plannedScale*row.inputCoefficients[rid];});
       executed.push(done);
       emit(row.stage==='PROCESSING'?'OMEGA_RESOURCE_PROCESSING_COMPLETED':'OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',c,done,'resource-economy');
