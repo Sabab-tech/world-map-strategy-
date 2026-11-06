@@ -92,9 +92,14 @@
   }
   function setTreasuryBalance(source,amount){
     if(!source||!source.bucket||!source.field)return false;
-    source.bucket[source.field]=amount;
-    if(source.field==='available'&&obj(source.bucket.omegaFinance)&&num(source.bucket.omegaFinance.treasuryBalanceUsd)!==null)source.bucket.omegaFinance.treasuryBalanceUsd=amount;
-    if(source.field==='omegaFinance.treasuryBalanceUsd')source.bucket.available=amount;
+    if(source.field==='omegaFinance.treasuryBalanceUsd'){
+      source.bucket.omegaFinance=source.bucket.omegaFinance||{};
+      source.bucket.omegaFinance.treasuryBalanceUsd=amount;
+      source.bucket.available=amount;
+    }else{
+      source.bucket[source.field]=amount;
+      if(source.field==='available'&&obj(source.bucket.omegaFinance)&&num(source.bucket.omegaFinance.treasuryBalanceUsd)!==null)source.bucket.omegaFinance.treasuryBalanceUsd=amount;
+    }
     return true;
   }
   function recordEvent(country,type,payload){
@@ -200,7 +205,7 @@
       workforcePerFactory:clone(profile.workforce||{}),utilitiesPerFactory:clone(profile.utilities||{}),
       forecastOutputPerDay:(num(profile.defaultCapacityPerDay)||0)*quantity,
       expectedInputRequirements:inputForecast(cid,profile,recipe,quantity),
-      ownership:{ownerCompanyId:company,operatorCompanyId:company},
+      ownership:{ownerCompanyId:company,operatorCompanyId:company,stateControlRights:{licensingAndPermits:true,fiscalRegulation:true,labourSafetyEnvironmentalRegulation:true,strategicSupplyOversight:true,competitionOversight:true,foreignOwnershipReview:true,emergencyIntervention:true,operationalControl:'PRIVATE_OPERATOR_UNDER_STATE_POLICY'}},
       stateControlRights:{licensingAndPermits:true,fiscalRegulation:true,labourSafetyEnvironmentalRegulation:true,strategicSupplyOversight:true,competitionOversight:true,foreignOwnershipReview:true,emergencyIntervention:true,operationalControl:'PRIVATE_OPERATOR_UNDER_STATE_POLICY'},
       status:'PROPOSED',createdTurn:turn(),updatedTurn:turn(),decision:null,projectIds:[],commissionedFactoryIds:[],
       productionEnabled:false,provenance:{source:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1',simulationOnly:true,realWorldCompany:false}
@@ -222,8 +227,9 @@
     if(['APPROVE','DENY','DEFER'].indexOf(decision)<0)return{status:'BLOCKED',reason:'INVALID_GOVERNMENT_DECISION'};
     var preview=previewFor(proposal);
     if(decision==='APPROVE'&&preview.status!=='READY')return{status:'BLOCKED',reason:preview.reason||'APPROVAL_PREVIEW_BLOCKED',preview:preview};
-    if(decision==='APPROVE'&&proposal.sourcingPolicy==='DOMESTIC_ONLY'&&preview.shortages.length)
-      return{status:'BLOCKED',reason:'DOMESTIC_INPUT_SHORTAGE',shortages:clone(preview.shortages),preview:preview};
+    if(decision==='APPROVE'&&proposal.sourcingPolicy==='DOMESTIC_ONLY'&&(preview.shortages.length||preview.unobservedInputs.length))
+      return{status:'BLOCKED',reason:preview.shortages.length?'DOMESTIC_INPUT_SHORTAGE':'DOMESTIC_INPUT_STOCK_UNOBSERVED',
+        shortages:clone(preview.shortages),unobservedInputs:clone(preview.unobservedInputs),preview:preview};
     var stateSupport=decision==='APPROVE'&&input.allowStateSupport===true&&proposal.stateSupportRequested===true;
     proposal.status=decision==='APPROVE'?'APPROVED_AWAITING_FUNDING':decision==='DENY'?'DENIED':'DEFERRED';
     proposal.decision={decision:decision,decisionId:'PE-DECISION:'+proposal.proposalId+':T'+turn(),turn:turn(),
@@ -262,7 +268,7 @@
     if(['SETTLED','POSTED','COMPLETED','PAID'].indexOf(sourceStatus)<0||
        !/(EQUITY|INVESTMENT|LOAN|CAPITAL|RETAINED_EARNINGS)/.test(sourceType)||
        !['CREDIT','INFLOW','DEPOSIT'].includes(direction)||
-       (sourceCompany&&sourceCompany!==company)||
+       sourceCompany!==company||
        sourceAmount===null||Math.abs(sourceAmount-amount)>1e-6)
       return{status:'BLOCKED',reason:'CAPITAL_SOURCE_TRANSACTION_NOT_A_VERIFIED_COMPANY_CREDIT',sourceTransactionId:transactionId};
     var account=capitalAccount(cid,company,true),existing=ledgerHasTransaction(cid,'PE-CAPITAL-RECEIPT:'+transactionId);
@@ -442,8 +448,18 @@
     var c=catalog()||{},profiles=c.factoryProfiles||{};
     return Object.keys(profiles).map(function(type){return{id:type,name:profiles[type].name||type};});
   }
+  var stylesInstalled=false;
+  function ensureStyles(){
+    if(stylesInstalled||!g.document||!g.document.createElement)return;
+    var style=g.document.createElement('style');
+    style.id='omega-private-enterprise-lifecycle-styles-v1';
+    style.textContent='.omega-private-lifecycle{margin:12px 0;padding:12px;border:1px solid rgba(0,225,255,.28);border-radius:14px;background:linear-gradient(145deg,rgba(7,24,39,.97),rgba(3,12,25,.96));color:#e8f7ff;font:12px/1.45 system-ui,sans-serif}.omega-private-lifecycle .pe-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}.omega-private-lifecycle .pe-head small{color:#67dfff;letter-spacing:.08em;font-size:9px}.omega-private-lifecycle h3{margin:3px 0;font-size:16px}.omega-private-lifecycle p{margin:4px 0;color:#9db9cc}.omega-private-lifecycle .pe-gate{font-size:9px;color:#ffd88a;border:1px solid rgba(255,216,138,.4);border-radius:20px;padding:5px 8px}.omega-private-lifecycle .pe-overview{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.omega-private-lifecycle .pe-overview span{padding:5px 8px;background:rgba(0,0,0,.25);border:1px solid rgba(125,190,220,.15);border-radius:7px;color:#9bb8ca}.omega-private-lifecycle .pe-overview b{color:#fff;margin-left:4px}.omega-private-lifecycle .pe-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px;background:rgba(0,0,0,.22);border:1px solid rgba(100,180,220,.16);border-radius:10px}.omega-private-lifecycle .pe-form label{display:flex;flex-direction:column;gap:4px;color:#a9c5d7;font-size:10px;min-width:0}.omega-private-lifecycle input,.omega-private-lifecycle select{width:100%;min-width:0;box-sizing:border-box;padding:8px;border-radius:6px;background:#0b1c2b;border:1px solid rgba(88,182,220,.3);color:#edfaff;font:12px system-ui,sans-serif}.omega-private-lifecycle .pe-checkbox{grid-column:1/-1;flex-direction:row;align-items:center}.omega-private-lifecycle .pe-checkbox input{width:16px;height:16px}.omega-private-lifecycle button{border:1px solid rgba(0,225,255,.35);border-radius:7px;background:linear-gradient(135deg,#0b5470,#12334e);color:#eaffff;padding:8px 10px;font-size:10px;font-weight:700;cursor:pointer}.omega-private-lifecycle .pe-proposals{margin-top:12px}.omega-private-lifecycle h4{font-size:12px;margin:0 0 8px;color:#9deaff}.omega-private-lifecycle .pe-proposal{padding:9px;margin:7px 0;border:1px solid rgba(103,183,220,.18);border-radius:9px;background:rgba(0,0,0,.2)}.omega-private-lifecycle .pe-proposal header{display:flex;justify-content:space-between;gap:8px;color:#b8edff}.omega-private-lifecycle .pe-proposal header span{font-size:9px;color:#ffe0a0}.omega-private-lifecycle .pe-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:7px 0;color:#a8bdce;font-size:10px}.omega-private-lifecycle .pe-warning{display:block;color:#ffc56a;font-size:10px;margin:3px 0}.omega-private-lifecycle .pe-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.omega-private-lifecycle .pe-empty{padding:10px;color:#91a8bb;border:1px dashed rgba(120,180,210,.2);border-radius:8px}.omega-private-lifecycle .pe-message{padding:7px 9px;background:rgba(0,225,255,.08);border-left:2px solid #20cfff;color:#bceeff}.omega-private-lifecycle .pe-footnote,.omega-private-lifecycle>small{display:block;margin-top:9px;font-size:9px;color:#809aaa}.omega-private-lifecycle .pe-footnote{line-height:1.5}@media(max-width:520px){.omega-private-lifecycle{padding:9px}.omega-private-lifecycle .pe-form{grid-template-columns:1fr}.omega-private-lifecycle .pe-facts{grid-template-columns:1fr}.omega-private-lifecycle .pe-head{display:block}.omega-private-lifecycle .pe-gate{display:inline-block;margin-top:5px}}';
+    (g.document.head||g.document.documentElement).appendChild(style);
+    stylesInstalled=true;
+  }
   function renderPanel(root,options){
     if(!root||!root.querySelector)return;
+    ensureStyles();
     var tab=root.__omegaV2IndustryTab||options&&options.tab||'factories';
     if(tab!=='production-lines')return;
     var shell=root.querySelector('.omega-v2-factory-command')||root.querySelector('.omega-v2-industry-command')||root;
@@ -527,12 +543,7 @@
   }
   if(typeof g.addEventListener==='function'){
     g.addEventListener(NETWORK_EVENT,onFactoryCapacityChanged);
-    g.addEventListener('OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_CHANGED',function(){});
-    g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',function(){
-      // No global or per-frame company AI. Only keep the selected country's display in sync.
-      var country=playerCountry(),root=g.document&&g.document.querySelector&&g.document.querySelector('[data-omega-private-company-lifecycle]');
-      if(root&&country&&root.closest){var host=root.closest('.omega-v2-factory-command, .omega-v2-industry-command');if(host&&host.parentNode){var mount=host.parentNode;var panel=mount.querySelector('[data-omega-private-company-lifecycle]');if(panel&&panel.isConnected){panel.setAttribute('data-last-turn',String(turn()));}}}
-    });
+    // Lifecycle UI is rendered on explicit Industry navigation, not by polling or per-turn company AI.
   }
   installIndustryHook();
   var API=Object.freeze({
