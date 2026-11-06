@@ -166,8 +166,10 @@
     return null;
   }
   function resourceReadSnapshot(country){
-    var source=countryBucket('resource',country,false)||{},warehouse=obj(source.warehouse)?source.warehouse:{},
-      strategic=obj(source.strategicReserve)?source.strategicReserve:{};
+    var source=countryBucket('resource',country,false)||{},
+      warehouse=source.warehouse&&typeof source.warehouse==='object'&&!Array.isArray(source.warehouse)?source.warehouse:{},
+      strategic=source.strategicReserve&&typeof source.strategicReserve==='object'&&!Array.isArray(source.strategicReserve)
+        ?source.strategicReserve:{};
     // Copy only the ledgers used by the input forecast. Avoid cloning unrelated
     // shipment batches, projects, capacity metadata or other large mobile state.
     return{
@@ -201,8 +203,16 @@
     var reserved=Math.max(0,num(warehouse.reservedByResource&&warehouse.reservedByResource[warehouseKey||resourceId])||0);
     var warehouseFree=warehouseAmount===null?null:Math.max(0,warehouseAmount-reserved);
     var amount=invAmount!==null&&warehouseFree!==null?Math.min(invAmount,warehouseFree):warehouseFree!==null?warehouseFree:invAmount;
-    var strategic=obj(bucket.strategicReserve)||{},protectedMap=strategic.availableByResource||strategic.protectedByResource||strategic.minimumByResource||
-      bucket.protectedStockByResource||bucket.minimumStockByResource||{};
+    var strategic=bucket.strategicReserve&&typeof bucket.strategicReserve==='object'&&!Array.isArray(bucket.strategicReserve)
+      ?bucket.strategicReserve:{};
+    var protectedMap=strategic.availableByResource&&typeof strategic.availableByResource==='object'&&!Array.isArray(strategic.availableByResource)
+      ?strategic.availableByResource:
+      strategic.protectedByResource&&typeof strategic.protectedByResource==='object'&&!Array.isArray(strategic.protectedByResource)
+        ?strategic.protectedByResource:
+      strategic.minimumByResource&&typeof strategic.minimumByResource==='object'&&!Array.isArray(strategic.minimumByResource)
+        ?strategic.minimumByResource:
+      bucket.protectedStockByResource&&typeof bucket.protectedStockByResource==='object'?bucket.protectedStockByResource:
+      bucket.minimumStockByResource&&typeof bucket.minimumStockByResource==='object'?bucket.minimumStockByResource:{};
     var protectedValue=null;
     Object.keys(protectedMap).some(function(key){if(token(key)!==token(resourceId))return false;protectedValue=Math.max(0,num(protectedMap[key])||0);return true;});
     var protectedQty=protectedValue===null?0:protectedValue;
@@ -245,7 +255,9 @@
         shortfall:stock.available===null?null:Math.max(0,needed-stock.available),authority:stock.authority,reserved:stock.reserved,
         snapshotDemandLastTurn:num(snapshot.demandRuntime&&snapshot.demandRuntime.lastTurn),
         snapshotDemandResourceKeys:Object.keys(obj(snapshot.demandRuntime&&snapshot.demandRuntime.byResource)?snapshot.demandRuntime.byResource:{}),
-        snapshotDemandRuntimeOwnKeys:Object.keys(obj(snapshot.demandRuntime)?snapshot.demandRuntime:{} )});
+        snapshotDemandRuntimeOwnKeys:Object.keys(obj(snapshot.demandRuntime)?snapshot.demandRuntime:{} ),
+        snapshotStrategicResourceKeys:Object.keys(snapshot.strategicReserve?.availableByResource||{}),
+        snapshotStrategicReserveKeys:Object.keys(snapshot.strategicReserve||{})});
     });
     return rows;
   }
