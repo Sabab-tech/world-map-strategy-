@@ -420,7 +420,8 @@ test('playable mine extraction feeds a commissioned private factory through prod
   assert.equal(privateFactory.privatePermitStatus,'ACTIVE');
   assert.equal(privateFactory.sourcePrivateProposalId,proposal.proposalId);
   assert.equal(privateFactory.sourcePrivateDecisionId,decision.proposal.decision.decisionId);
-  assert.equal(privateFactory.sourcePrivateFundingId,funding.transactionId);
+  assert.equal(privateFactory.sourcePrivateFundingId,funding.proposal.funding.transactionId,
+    'commissioned private ownership must retain the canonical Finance funding transaction');
   assert.equal(privateFactory.status,'OPERATIONAL');
   assert.equal(privateFactory.productionEnabled,true,
     'a commissioned private factory must be enabled by the real production runtime, not an injected proof flag');
