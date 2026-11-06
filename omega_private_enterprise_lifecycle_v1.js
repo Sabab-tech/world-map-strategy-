@@ -822,6 +822,17 @@
     asset.ownershipStatus='PRIVATE_COMPANY_OWNED';asset.operatorStatus='PRIVATE_COMPANY_OPERATED';
     asset.sourcePrivateProposalId=project.sourcePrivateProposalId;asset.sourcePrivateDecisionId=project.sourcePrivateDecisionId||null;
     asset.sourcePrivateFundingId=project.sourcePrivateFundingId||null;asset.constructionProjectId=project.projectId;
+    var resource=countryBucket('resource',cid,false)||{},projects=resource.industrialNetwork&&resource.industrialNetwork.projects||[];
+    var canonicalProject=projects.find(function(row){return row&&row.projectId===project.projectId;});
+    if(!privateCommissioningRecordVerified(cid,proposal,canonicalProject,asset)){
+      asset.productionEnabled=false;asset.status='BLOCKED';
+      asset.productionStatus='PRIVATE_FACTORY_PROVENANCE_VERIFICATION_FAILED';
+      asset.blockedReason='PRIVATE_FACTORY_PROVENANCE_VERIFICATION_FAILED';
+      asset.productionHealth={status:'STOPPED',productivityPct:0,reason:'PRIVATE_FACTORY_PROVENANCE_VERIFICATION_FAILED',
+        updatedTurn:turn(),authority:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1'};
+      return null;
+    }
+    var productionReady=productionProofReady();
     var runtimeStatus=String(asset.privateCommissionedStatus||asset.status||'OPERATIONAL').toUpperCase();
     if(!asset.privateCommissionedStatus)asset.privateCommissionedStatus=runtimeStatus;
     asset.productionEnabled=productionReady&&runtimeStatus==='OPERATIONAL';
@@ -836,8 +847,6 @@
       asset.status=runtimeStatus;asset.productionStatus='READY_FOR_EXISTING_FACTORY_OPERATION_GATES';
       asset.blockedReason=null;
     }
-    var resource=countryBucket('resource',cid,false)||{},projects=resource.industrialNetwork&&resource.industrialNetwork.projects||[];
-    var proposal=runtime(cid,false)?.proposals.find(function(p){return p.proposalId===project.sourcePrivateProposalId;});
     if(proposal){
       if(!Array.isArray(proposal.commissionedFactoryIds))proposal.commissionedFactoryIds=[];
       if(proposal.commissionedFactoryIds.indexOf(asset.id)<0)proposal.commissionedFactoryIds.push(asset.id);
