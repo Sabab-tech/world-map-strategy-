@@ -52,7 +52,13 @@ function init(){
 }
 function getCountryBaseline(countryId){
  if(!loaded)return{status:errorText?'BLOCKED':'LOADING',reason:errorText||null};
- var row=loaded.countries[cid(countryId)];if(!row)return null;
+ // The baseline is keyed by the government's canonical ISO3 country IDs.
+ // Prefer an exact data key before consulting the UI alias resolver: some
+ // identity resolvers expose an ISO2 id (for example US) for an ISO3 key (USA).
+ var rawCountry=String(countryId==null?'':countryId).trim().toUpperCase();
+ var row=rawCountry&&loaded.countries[rawCountry];
+ if(!row){var canonical=cid(countryId);row=canonical&&loaded.countries[canonical];}
+ if(!row)return null;
  return{status:'READY',countryId:row.countryId,countryName:row.countryName,industryArchetype:row.industryArchetype,
  totalGovernmentFactoryUnits:row.totalGovernmentFactoryUnits,totalPrivateFactoryUnits:row.totalPrivateFactoryUnits,
  privateToGovernmentBaselinePercent:row.privateToGovernmentBaselinePercent,factoryCounts:clone(row.factoryCounts),
