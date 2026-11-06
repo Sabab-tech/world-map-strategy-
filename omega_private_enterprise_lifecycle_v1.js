@@ -175,6 +175,8 @@
     var availableAfterProtection=amount===null?null:Math.max(0,amount-protectedQty);
     var demandRuntime=obj(bucket.demandRuntime)||{},byResource=obj(demandRuntime.byResource)||{},demandRow=null;
     Object.keys(byResource).some(function(key){if(token(key)!==token(resourceId))return false;demandRow=byResource[key];return true;});
+    var resourceRoot=(state()||{}).resource||{};
+    var matchingCountryKeys=Object.keys(resourceRoot).filter(function(key){return canonicalCountry(key)===canonicalCountry(country);});
     var demandFresh=num(demandRuntime.lastTurn)===turn(),demandPerDay=demandFresh&&demandRow?num(demandRow.demandPerDay):null;
     var consumerDemandPerDay=demandFresh&&demandRow?num(demandRow.consumerDemandPerDay):null;
     var factoryDemandPerDay=demandFresh&&demandRow?num(demandRow.activeFactoryInputDemandPerDay):null;
@@ -188,6 +190,7 @@
       confirmedInboundNotCounted:confirmedInbound,demandStatus:demandPerDay===null?'UNOBSERVED_OR_STALE':'CURRENT_TURN_SNAPSHOT',
       demandSnapshotTurn:num(demandRuntime.lastTurn),demandEvaluationTurn:turn(),demandRowObserved:!!demandRow,
       demandRuntimePresent:obj(bucket.demandRuntime),demandRuntimeResourceKeys:Object.keys(byResource),resourceBucketKeys:Object.keys(bucket),
+      resourceCountryKeys:Object.keys(resourceRoot),matchingCountryKeys:matchingCountryKeys,
       authority:amount===null?'UNOBSERVED':invAmount!==null&&warehouseFree!==null?'INVENTORY_AND_WAREHOUSE_LEDGER':warehouseFree!==null?'RAW_WAREHOUSE_LEDGER':'LEGACY_INVENTORY_AGGREGATE'};
   }
   function inputForecast(country,profile,recipe,quantity){
