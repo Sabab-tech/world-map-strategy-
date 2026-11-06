@@ -627,6 +627,7 @@ test('playable site-marker execution flows through extraction, logistics, factor
   const expectedInventory=JSON.parse(JSON.stringify(resource.inventory));
   const expectedProcessedWarehouse=JSON.parse(JSON.stringify(resource.processedWarehouse.availableByResource));
   const expectedOffer=JSON.parse(JSON.stringify(concentrateOffer));
+  const expectedConcentrateOfferCount=(state.trade.BGD.offerBook||[]).filter(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0).length;
   const expectedTreasury=Number(state.finance.BGD.available)||0;
   const saved=simulation.saveSlot('sab34-pipeline-proof');
   assert.equal(saved.ok,true,JSON.stringify(saved));
@@ -671,7 +672,7 @@ test('playable site-marker execution flows through extraction, logistics, factor
     'processing replay after save/load must not duplicate the finished-goods transaction');
   assert.deepEqual(restoredResource.inventory,expectedInventory,
     'processing replay after save/load must not double-credit inventory');
-  assert.equal((restored.trade.BGD.offerBook||[]).filter(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0).length,1,
+  assert.equal((restored.trade.BGD.offerBook||[]).filter(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0).length,expectedConcentrateOfferCount,
     'processing replay must not duplicate the finished-goods market offer');
   console.log('OMEGA PLAYABLE RESOURCE PIPELINE + SAVE/LOAD PROOF PASSED');
 });
