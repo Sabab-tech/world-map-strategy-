@@ -304,7 +304,7 @@ test('every committed deposit event is routed country-by-country through factory
       'finished goods must preserve explicit source factory owner attribution');
     const batchTransfers=outputBatches.map(batch=>({
       sourceBatchId:batch.batchId,
-      sourceBatchIds:[...new Set([...(Array.isArray(batch.sourceBatchIds)?batch.sourceBatchIds:[]),f.batchId,batch.batchId].filter(Boolean).map(String))],
+      sourceBatchIds:[...new Set([...(Array.isArray(batch.sourceBatchIds)?batch.sourceBatchIds:[]),f.batchId].filter(Boolean).map(String))],
       resourceId:f.output,quantity:Math.max(0,Number(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0),
       stage:batch.stage,ownerCompanyId:batch.ownerCompanyId,operatorCompanyId:batch.operatorCompanyId,
       ownerAttributionStatus:batch.ownerAttributionStatus,unit:batch.unit||null
@@ -553,12 +553,14 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
       const transfers=allocations.map(allocation=>{
         const roots=[...new Set([allocation.originatingBatchId,...(allocation.sourceBatchIds||[])].map(String).filter(Boolean))];
         const quantity=Math.max(0,Number(allocation.quantity)||0),unitPrice=Math.max(0,Number(offer.price)||0);
-        return{sourceBatchId:allocation.originatingBatchId||allocation.batchId||null,sourceBatchIds:roots,
+        const physicalBatchId=String(allocation.batchId||'').trim();
+        return{sourceBatchId:physicalBatchId||allocation.originatingBatchId||null,
+          sourceBatchIds:roots.filter(id=>id!==physicalBatchId),
           siteId:allocation.siteId||null,siteReferenceKey:allocation.siteReferenceKey||allocation.siteId||null,
           occurrenceKey:allocation.occurrenceKey||null,resourceId:offer.resourceId,
           quantity,unitPrice,totalValue:quantity*unitPrice};
       }).filter(transfer=>transfer.sourceBatchId||transfer.sourceBatchIds.length);
-      const sourceBatchIds=[...new Set(transfers.flatMap(transfer=>[transfer.sourceBatchId,...transfer.sourceBatchIds].filter(Boolean).map(String)))];
+      const sourceBatchIds=[...new Set(transfers.flatMap(transfer=>transfer.sourceBatchIds||[]).filter(Boolean).map(String))];
       if(!sourceBatchIds.some(id=>expectedRawBatchIds.has(id)))continue;
       const totalValue=Number(offer.quantity)*Number(offer.price);
       assert.ok(totalValue>0,cid+': settlement value must be positive for '+offer.resourceId);
