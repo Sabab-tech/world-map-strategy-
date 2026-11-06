@@ -362,10 +362,11 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   assert.equal(worldState.resource.BGD.inventory.iron_intermediate,40);
 
   const fiscal=worldState.finance.BGD.resourceFiscal;
-  assert.equal(fiscal.thisTurn.total,115,JSON.stringify(fiscal));
-  assert.equal(worldState.finance.BGD.available,1115);
-  assert.equal(worldState.finance.BGD.resourceBudgetContribution,115);
-  assert.equal(worldState.finance.BGD.resourceBudgetContributionThisTurn,115);
+  assert.equal(fiscal.thisTurn.total,15,JSON.stringify(fiscal));
+  assert.equal(fiscal.thisTurn.corporateTax,0,'corporate income tax is assessed on net profit at company period close, not gross mineral receipts');
+  assert.equal(worldState.finance.BGD.available,1015);
+  assert.equal(worldState.finance.BGD.resourceBudgetContribution,15);
+  assert.equal(worldState.finance.BGD.resourceBudgetContributionThisTurn,15);
 
   const accounts=worldState.economy.BGD.companyAccounts;
   assert.equal(accounts.MINER_CO.runtimeNetCashFlow,415);
@@ -400,13 +401,13 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
 
   const dashboard=context.OmegaResourceEconomy.getCountryDashboard('BGD');
   assert.equal(dashboard.health.warehouseAuthoritative,true);
-  assert.equal(dashboard.treasury.fiscalThisTurn.total,115);
+  assert.equal(dashboard.treasury.fiscalThisTurn.total,15);
   assert.equal(dashboard.mines.total,1);
 
   assert.equal(typeof context.CountryIOS.renderChapter5_Resources,'function',
     'the existing Resource Ministry UI entrypoint must remain registered');
   assert.equal(dashboard.mines.total,1);
-  assert.equal(dashboard.treasury.fiscalThisTurn.total,115,
+  assert.equal(dashboard.treasury.fiscalThisTurn.total,15,
     'the runtime dashboard must expose the committed fiscal receipt independently of UI rendering');
 });
 
