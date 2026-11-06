@@ -19,7 +19,7 @@ import '../omega_ui_v2/world-command-dock.js';
 import { existsSync, readFileSync } from 'node:fs';
 
 function offlineShellCacheVersion(source) {
-  const match = source.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\\d+)"/);
+  const match = source.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/);
   return match ? Number(match[1]) : 0;
 }
 
