@@ -1208,17 +1208,22 @@ function onExtractionFiscalPosted(evt){
 function onTreasurySettlement(evt){
   const p=normalizedEventPayload(evt),cid=canonicalCountry(p.sellerCountryId||p.targetCountryId||p.sourceCountryId||p.countryId);
   if(!cid)return;
+  // Site-flow lineage is keyed only by original committed extraction batches.
+  // Downstream factory-input and finished-goods batch IDs are not additional mine roots.
+  const siteFlowRoots=new Set(siteFlowRows(cid).map(row=>String(row?.batchId||'').trim()).filter(Boolean));
+  const resolveSiteRoots=values=>[...new Set((Array.isArray(values)?values:[]).filter(Boolean).map(String))]
+    .filter(id=>siteFlowRoots.has(id));
   const inputTransfers=Array.isArray(p.batchTransfers)?p.batchTransfers:[],
     transferRows=inputTransfers.map(transfer=>{
-      const declaredRoots=Array.isArray(transfer?.sourceBatchIds)?transfer.sourceBatchIds.filter(Boolean).map(String):[],
-        roots=[...new Set((declaredRoots.length?declaredRoots:[transfer?.sourceBatchId]).filter(Boolean).map(String))],
+      const declaredRoots=Array.isArray(transfer?.sourceBatchIds)?transfer.sourceBatchIds:[],
+        roots=resolveSiteRoots(declaredRoots.length?declaredRoots:[transfer?.sourceBatchId]),
         quantity=num(transfer?.quantity);
       let value=num(transfer?.totalValue);
       const unitPrice=num(transfer?.unitPrice);
       if(value===null&&quantity!==null&&unitPrice!==null)value=quantity*unitPrice;
       return{roots,quantity,value,transfer};
     }).filter(item=>item.roots.length);
-  const topLevelRoots=[...new Set((Array.isArray(p.sourceBatchIds)?p.sourceBatchIds:[]).filter(Boolean).map(String))];
+  const topLevelRoots=resolveSiteRoots(p.sourceBatchIds);
   // Older settlement events may include only sourceBatchIds, not batchTransfers.
   if(!transferRows.length&&topLevelRoots.length)
     transferRows.push({roots:topLevelRoots,quantity:num(p.quantity),value:num(p.totalValue),transfer:null});
