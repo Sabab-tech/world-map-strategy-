@@ -717,7 +717,8 @@
     var privateEnterpriseRuntime = g.OmegaPrivateEnterpriseRegistryV1 ||
       (g.Omega && g.Omega.PrivateEnterpriseRegistryV1) || null;
     var privateEnterpriseBaseline = null;
-    if (context.countryId && privateEnterpriseRuntime && typeof privateEnterpriseRuntime.getCountryBaseline === 'function') {
+    if (options.loadPrivateEnterpriseBaseline === true && context.countryId && privateEnterpriseRuntime &&
+        typeof privateEnterpriseRuntime.getCountryBaseline === 'function') {
       try { privateEnterpriseBaseline = privateEnterpriseRuntime.getCountryBaseline(context.countryId); } catch (_) { privateEnterpriseBaseline = null; }
     }
     var factoryStartingRegistry = null;
@@ -767,7 +768,8 @@
     var profiles = catalog.factoryProfiles && typeof catalog.factoryProfiles === 'object' ? catalog.factoryProfiles : {};
     var recipeCatalog = catalog.downstreamFactoryRecipes && typeof catalog.downstreamFactoryRecipes === 'object' ? catalog.downstreamFactoryRecipes : {};
     var processingRules = catalog.processingRules && typeof catalog.processingRules === 'object' ? catalog.processingRules : {};
-    var flows = Array.isArray(industrial.siteFlowLedger) ? industrial.siteFlowLedger : (Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger : []);
+    var flows = lightweightTypeView ? [] : (Array.isArray(industrial.siteFlowLedger)
+      ? industrial.siteFlowLedger : (Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger : []));
     var mappedAssets = lightweightTypeView ? assets.map(function (asset) {
       asset = asset && typeof asset === 'object' ? asset : {};
       var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
@@ -837,7 +839,7 @@
     }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); });
     var mineSites = rawMineSites.map(function (site) {
       var quantitative = site.quantitative || site.real && site.real.quantitative || {};
-      var production = mineDailyProduction(site);
+      var production = lightweightTypeView ? null : mineDailyProduction(site);
       var resourceId = String(site.identity && (site.identity.resourceTypeId || site.identity.resourceId || site.identity.resourceName) ||
         site.sourceSiteRecord && (site.sourceSiteRecord.resourceId || site.sourceSiteRecord.resourceTypeId) || site.resourceId || site.resourceTypeId || 'Not recorded');
       var operation = site.operation || {};
@@ -847,11 +849,13 @@
         resourceId: resourceId,
         status: String(operation.realWorldStatus || operation.status || site.status || site.sourceSiteRecord && site.sourceSiteRecord.status || 'NOT_RECORDED'),
         dailyProduction: production,
-        reserve: quantitative.reserve || null,
+        reserve: lightweightTypeView ? null : quantitative.reserve || null,
         raw: site
       };
     });
-    var dailyProductionKnownCount = mineSites.filter(function (site) { return site.dailyProduction && site.dailyProduction.value !== null; }).length;
+    var dailyProductionKnownCount = lightweightTypeView ? 0 : mineSites.filter(function (site) {
+      return site.dailyProduction && site.dailyProduction.value !== null;
+    }).length;
     var currentExtractionRows = currentExtraction.rows;
     var operatingMineCount = mineAssets.filter(function (asset) { return /^(OPERATIONAL|ACTIVE|RUNNING)$/.test(String(asset.status || '').toUpperCase()); }).length;
     var factoryTypeCountsIndex = Object.create(null);
@@ -3701,7 +3705,10 @@
     var managePanelOpen = !!cardUiState.buildKey;
     var factoryDetailsOpen = !!cardUiState.expandedKey;
     var lightweightTypeView = active === 'factories' && requestedFactoryView === 'types' && !managePanelOpen && !factoryDetailsOpen;
-    var model = buildViewModel(Object.assign({}, options, { lightweightFactoryTypeView:lightweightTypeView }));
+    var model = buildViewModel(Object.assign({}, options, {
+      lightweightFactoryTypeView:lightweightTypeView,
+      loadPrivateEnterpriseBaseline:active === 'companies' || managePanelOpen
+    }));
     var countryKey = String(model.countryId || '');
     warmFactoryPlanningData(root, options, model);
     if (root.__omegaV2IndustryCountryId !== countryKey) {
