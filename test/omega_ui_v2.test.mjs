@@ -3156,7 +3156,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v99'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v100'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3216,7 +3216,7 @@ test('factory Details is an in-card flip with three independent product tabs', (
   assert.match(css,/fp-detail-status\[data-state="stable"\]/);
   assert.match(css,/fp-detail-status\[data-state="risk"\]/);
   assert.match(css,/fp-detail-status\[data-state="critical"\]/);
-  assert.match(sw,/omega-offline-atlas-shell-v99/);
+  assert.match(sw,/omega-offline-atlas-shell-v100/);
 });
 
 test('factory cards retain three landscape columns and constrain text to the card face', () => {
@@ -3234,7 +3234,7 @@ test('factory cards retain three landscape columns and constrain text to the car
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:899px\)/);
   assert.match(css,/@media \(orientation:portrait\) and \(max-width:899px\)[\s\S]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
   assert.match(css,/\.fp-card-detail-row \.fp-card-detail-product\s*\{[^}]*grid-column:1 \/ -1/s);
-  assert.match(sw,/omega-offline-atlas-shell-v99/);
+  assert.match(sw,/omega-offline-atlas-shell-v100/);
 });
 
 test('Factory Type identity header aligns icon, name and owned count in one row', () => {
@@ -3270,7 +3270,7 @@ test('Factory Input tables contain long cell content without changing factory ca
   assert.doesNotMatch(fix, /\.fp-card|\.fp-type-card/,
     'the separate Input table fix must not alter factory cards');
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 99,
+  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 100,
     'offline clients must fetch the updated Factory Input stylesheet');
 });
 
