@@ -542,7 +542,14 @@
       grossRevenue:grossRevenue,currency:currency,sourceId:sourceId,
       turn:turn(),status:'POSTED',authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'
     });
-    while(entries.length>(num(rules().runtime.maxLedgerEntries)||2048))entries.shift();
+    while(entries.length>(num(rules().runtime.maxLedgerEntries)||2048)){
+      var dropped=entries.shift(),droppedTurn=num(dropped&&dropped.turn);
+      x.cashFlowJournalDroppedEntries=(num(x.cashFlowJournalDroppedEntries)||0)+1;
+      if(droppedTurn!==null){
+        var earliest=num(x.cashFlowJournalEarliestDroppedTurn);
+        x.cashFlowJournalEarliestDroppedTurn=earliest===null?droppedTurn:Math.min(earliest,droppedTurn);
+      }
+    }
     x.cashFlowEntries=entries;
     x.lastTurn=turn();accounts[cid]=x;ctx.stateTransaction.set('economy.companyAccounts',accounts);
     return{accepted:true,companyId:cid,amount:a,entryId:key};
