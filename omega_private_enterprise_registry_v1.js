@@ -20,27 +20,66 @@ function fetchData(){
  return Promise.race([request,deadline]).finally(function(){if(timer!==null&&cancel)try{cancel(timer);}catch(_){}});
 }
 function validate(data,api){
- if(!obj(data)||data.datasetId!=='OMEGA_COUNTRY_PRIVATE_FACTORY_STARTING_BASELINE_V1'||data.countryCount!==197||data.factoryTypeCount!==21||data.companyCount!==5||!obj(data.countries)||!Array.isArray(data.factoryTypes)||!Array.isArray(data.companies))throw Error('PRIVATE_FACTORY_BASELINE_SCHEMA_INVALID');
- if(data.companies.map(function(x){return x.id;}).join('|')!==COMPANY_IDS.join('|'))throw Error('PRIVATE_COMPANY_IDENTITY_ROSTER_INVALID');
- var types=data.factoryTypes.map(function(x){return String(x.id||'').toUpperCase();}),countries=Object.keys(data.countries),total=0;
+ var sortedKeys=function(value){return Object.keys(value||{}).sort().join('|');};
+ if(!obj(data)||data.datasetId!=='OMEGA_COUNTRY_PRIVATE_FACTORY_STARTING_BASELINE_V1'||
+    data.countryCount!==197||data.factoryTypeCount!==21||data.companyCount!==5||
+    !obj(data.countries)||!Array.isArray(data.factoryTypes)||!Array.isArray(data.companies)||
+    !obj(data.model)||data.model.simulationOnly!==true||data.model.realWorldPrivateFacilityCounts!==false)
+  throw Error('PRIVATE_FACTORY_BASELINE_SCHEMA_INVALID');
+ if(data.companies.map(function(x){return x.id;}).join('|')!==COMPANY_IDS.join('|'))
+  throw Error('PRIVATE_COMPANY_IDENTITY_ROSTER_INVALID');
+ var types=data.factoryTypes.map(function(x){return String(x.id||'').toUpperCase();}),countries=Object.keys(data.countries),total=0,totalGovernment=0;
+ var expectedTypes=types.slice().sort().join('|'),expectedCompanies=COMPANY_IDS.slice().sort().join('|');
+ if(types.length!==21||new Set(types).size!==21)throw Error('PRIVATE_FACTORY_TYPE_ROSTER_INVALID');
  if(countries.length!==197||new Set(countries).size!==197)throw Error('PRIVATE_COUNTRY_ROSTER_INVALID');
  if(!api||typeof api.getCountryBaseline!=='function')throw Error('GOVERNMENT_FACTORY_BASELINE_API_UNAVAILABLE');
  countries.forEach(function(country){
   var row=data.countries[country],gov=api.getCountryBaseline(country);
-  if(!obj(row)||row.countryId!==country||!gov||!obj(row.factoryCounts)||!obj(row.companyFactoryCounts))throw Error('PRIVATE_COUNTRY_ROW_INVALID:'+country);
-  if(Object.keys(row.factoryCounts).sort().join('|')!==types.slice().sort().join('|')||Object.keys(row.companyFactoryCounts).sort().join('|')!==COMPANY_IDS.slice().sort().join('|'))throw Error('PRIVATE_CATEGORY_OR_COMPANY_ROSTER_INVALID:'+country);
+  if(!obj(row)||row.countryId!==country||!gov||!obj(gov.factoryCounts)||
+     !obj(row.factoryCounts)||!obj(row.categoryParticipationPercent)||!obj(row.companyFactoryCounts))
+   throw Error('PRIVATE_COUNTRY_ROW_INVALID:'+country);
+  if(sortedKeys(gov.factoryCounts)!==expectedTypes||sortedKeys(row.factoryCounts)!==expectedTypes||
+     sortedKeys(row.categoryParticipationPercent)!==expectedTypes||sortedKeys(row.companyFactoryCounts)!==expectedCompanies)
+   throw Error('PRIVATE_CATEGORY_OR_COMPANY_ROSTER_INVALID:'+country);
+  var countryPrivate=0,countryGovernment=0;
+  COMPANY_IDS.forEach(function(company){
+   var counts=row.companyFactoryCounts[company];
+   if(!obj(counts)||sortedKeys(counts)!==expectedTypes)
+    throw Error('PRIVATE_COMPANY_FACTORY_CATEGORY_ROSTER_INVALID:'+country+':'+company);
+  });
   types.forEach(function(type){
-   var governmentCount=Number(gov.factoryCounts[type]),privateCount=row.factoryCounts[type],assigned=0;
+   var governmentCount=gov.factoryCounts[type],privateCount=row.factoryCounts[type],assigned=0,rate=row.categoryParticipationPercent[type];
+   if(!Number.isInteger(governmentCount)||governmentCount<0)throw Error('GOVERNMENT_FACTORY_COUNT_INVALID:'+country+':'+type);
    if(!Number.isInteger(privateCount)||privateCount<0)throw Error('PRIVATE_FACTORY_COUNT_INVALID:'+country+':'+type);
    if(governmentCount===0&&privateCount!==0)throw Error('PRIVATE_ZERO_CATEGORY_NONZERO:'+country+':'+type);
    if(privateCount>Math.floor(governmentCount*.6+1e-9))throw Error('PRIVATE_FACTORY_OVER_60_PERCENT:'+country+':'+type);
-   COMPANY_IDS.forEach(function(company){var n=row.companyFactoryCounts[company]&&row.companyFactoryCounts[company][type];if(!Number.isInteger(n)||n<0)throw Error('PRIVATE_COMPANY_COUNT_INVALID:'+country+':'+company);assigned+=n;});
+   COMPANY_IDS.forEach(function(company){
+    var n=row.companyFactoryCounts[company][type];
+    if(!Number.isInteger(n)||n<0)throw Error('PRIVATE_COMPANY_COUNT_INVALID:'+country+':'+company+':'+type);
+    assigned+=n;
+   });
    if(assigned!==privateCount)throw Error('PRIVATE_COMPANY_SUM_MISMATCH:'+country+':'+type);
+   var expectedRate=governmentCount>0?Math.round(privateCount/governmentCount*1000)/10:0;
+   if(!Number.isFinite(rate)||rate<0||rate>60||Math.abs(rate-expectedRate)>.051)
+    throw Error('PRIVATE_FACTORY_RATE_INVALID:'+country+':'+type);
+   countryPrivate+=privateCount;countryGovernment+=governmentCount;
   });
-  total+=Number(row.totalPrivateFactoryUnits)||0;
+  if(!Number.isInteger(row.totalPrivateFactoryUnits)||row.totalPrivateFactoryUnits!==countryPrivate)
+   throw Error('PRIVATE_COUNTRY_TOTAL_MISMATCH:'+country);
+  if(!Number.isInteger(row.totalGovernmentFactoryUnits)||row.totalGovernmentFactoryUnits!==countryGovernment)
+   throw Error('PRIVATE_COUNTRY_GOVERNMENT_TOTAL_MISMATCH:'+country);
+  var expectedCountryRate=countryGovernment>0?Math.round(countryPrivate/countryGovernment*1000)/10:0;
+  if(!Number.isFinite(row.privateToGovernmentBaselinePercent)||
+     Math.abs(row.privateToGovernmentBaselinePercent-expectedCountryRate)>.051)
+   throw Error('PRIVATE_COUNTRY_BASELINE_RATE_MISMATCH:'+country);
+  if(row.allocationStatus!=='STATIC_PRIVATE_STARTING_ALLOCATION_NOT_COMMISSIONED'||
+     row.simulationOnly!==true||row.realWorldPrivateFacilityCounts!==false)
+   throw Error('PRIVATE_PROVENANCE_INVALID:'+country);
+  total+=countryPrivate;totalGovernment+=countryGovernment;
  });
  if(total!==Number(data.totalPrivateFactoryUnits))throw Error('PRIVATE_WORLD_TOTAL_MISMATCH');
- return{countryCount:197,factoryTypeCount:21,companyCount:5,totalPrivateFactoryUnits:total};
+ if(totalGovernment!==Number(data.totalGovernmentFactoryUnits))throw Error('PRIVATE_WORLD_GOVERNMENT_TOTAL_MISMATCH');
+ return{countryCount:197,factoryTypeCount:21,companyCount:5,totalPrivateFactoryUnits:total,totalGovernmentFactoryUnits:totalGovernment};
 }
 function init(){
  if(promise)return promise;
