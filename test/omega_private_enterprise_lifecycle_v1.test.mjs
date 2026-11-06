@@ -300,6 +300,7 @@ test('proposal requests cannot be created for another country or an unknown comp
   const h=makeHarness();
   assert.equal(h.api.createProposal({countryId:'USA',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1}).reason,'PLAYER_COUNTRY_SCOPE_ONLY');
   assert.equal(h.api.createProposal({countryId:'BGD',companyId:'UNREGISTERED_COMPANY',factoryType:'STEEL_WORKS',quantity:1}).reason,'UNKNOWN_CANONICAL_COMPANY');
+  assert.equal(h.api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'UNREGISTERED_OPERATOR',factoryType:'STEEL_WORKS',quantity:1}).reason,'UNKNOWN_PRIVATE_OPERATOR_COMPANY');
   assert.equal(h.projects.length,0);
 });
 
