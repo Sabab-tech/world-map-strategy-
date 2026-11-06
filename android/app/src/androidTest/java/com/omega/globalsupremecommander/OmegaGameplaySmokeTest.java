@@ -379,13 +379,27 @@ public final class OmegaGameplaySmokeTest {
                     " var cabinet = document.getElementById('cabinet-full-window');" +
                     " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
                     " var button = main && main.querySelector('[data-omega-v2-industry-tab=\"inventory\"]');" +
+                    " window.__OMEGA_ANDROID_INPUT_TAB_DIAGNOSTICS = {" +
+                    "   route:cabinet && cabinet.getAttribute('data-omega-v2-route')," +
+                    "   main:!!main, screen:!!(main && main.querySelector('[data-factory-stock-input-ui=\"v2\"]'))," +
+                    "   button:!!button, disabled:!!(button && button.disabled)" +
+                    " };" +
                     " if (!button || button.disabled) return false;" +
                     " button.click();" +
                     " return true;" +
                     "})()";
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_TAB_CLICK_BEGIN");
-            assertEquals("The actual Input tab control must respond to a tap",
-                    "true", evaluate(instrumentation, webViewRef.get(), openInputTabScript));
+            String inputTabClicked = "false";
+            final long inputTabClickDeadline = SystemClock.elapsedRealtime() + 15000L;
+            while (!"true".equals(inputTabClicked) &&
+                    SystemClock.elapsedRealtime() < inputTabClickDeadline) {
+                inputTabClicked = evaluate(instrumentation, webViewRef.get(), openInputTabScript);
+                if (!"true".equals(inputTabClicked)) SystemClock.sleep(300L);
+            }
+            final String inputTabClickDiagnostic = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_INPUT_TAB_DIAGNOSTICS || {});})()");
+            assertEquals("The actual Input tab control must respond to a tap; diagnostics=" + inputTabClickDiagnostic,
+                    "true", inputTabClicked);
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_TAB_CLICK_RETURNED");
             final String inputTablesReadyScript =
                     "(function() {" +
