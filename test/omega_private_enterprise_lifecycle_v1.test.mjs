@@ -189,8 +189,12 @@ test('proposal requests cannot be created for another country or an unknown comp
   assert.equal(h.projects.length,0);
 });
 
-test('Production Lines screen shows proposal queue without adding a new company navigation tab',()=>{
+test('Production Lines screen shows capital receipt verification for an approved underfunded company',()=>{
   const h=makeHarness();
+  const proposal=h.api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+    sourcingPolicy:'COMPANY_FUNDED_IMPORTS',requestId:'ui-funding-proposal'});
+  const approval=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
+  assert.equal(approval.status,'APPROVED_AWAITING_FUNDING');
   const fragments=[];
   const root={
     __omegaV2IndustryTab:'production-lines',
@@ -210,6 +214,9 @@ test('Production Lines screen shows proposal queue without adding a new company 
   assert.equal(fragments.length,1);
   assert.match(fragments[0],/Company expansion proposals/);
   assert.match(fragments[0],/data-pe-proposal-form/);
+  assert.match(fragments[0],/data-pe-capital-form/);
+  assert.match(fragments[0],/sourceTransactionId/);
+  assert.match(fragments[0],/Verify company capital/);
   assert.match(fragments[0],/Government decision queue/);
   assert.match(fragments[0],/PRODUCTION GATED BY SAB-34/);
   assert.equal(fragments[0].includes('data-omega-v2-industry-tab="companies"'),false);
