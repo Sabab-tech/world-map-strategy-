@@ -6112,60 +6112,32 @@
   .omega-v2-industry--factory-home .fp-private-company-card { padding:10px; gap:8px; }
 }
 
-/* Unified factory total and ownership management workspace. */
-.omega-v2-industry--factory-home .fp-shared-factory-total {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
-  margin: 10px 2px 14px;
-  padding: 12px 16px;
-  border: 1px solid rgba(87, 190, 255, .46);
-  border-radius: 10px;
-  background:
-    linear-gradient(112deg, rgba(7, 35, 57, .96), rgba(5, 18, 33, .94)),
-    radial-gradient(ellipse at 100% 0%, rgba(29, 154, 235, .2), transparent 62%);
-  box-shadow: inset 0 1px 0 rgba(226, 247, 255, .12), 0 5px 18px rgba(0, 0, 0, .24);
+/* The combined factory count lives inside the main Factory card header. */
+.omega-v2-industry--factory-home .fp-top-identity .fp-top-total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  width: max-content;
+  max-width: 100%;
+  margin: 2px 0;
+  padding: 3px 7px;
+  border: 1px solid rgba(87, 190, 255, .42);
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(12, 67, 100, .78), rgba(5, 25, 43, .82));
 }
-.omega-v2-industry--factory-home .fp-shared-factory-total-copy {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
-.omega-v2-industry--factory-home .fp-shared-factory-total-copy > span,
-.omega-v2-industry--factory-home .fp-shared-factory-total-value > span {
-  color: #7ecaff;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: .12em;
-}
-.omega-v2-industry--factory-home .fp-shared-factory-total-copy > strong {
-  color: #f2faff;
-  font-size: clamp(14px, 1.6vw, 19px);
-  font-weight: 900;
-  line-height: 1.15;
-}
-.omega-v2-industry--factory-home .fp-shared-factory-total-copy > small {
-  color: #a9c6d9;
-  font-size: 10px;
-  line-height: 1.35;
-}
-.omega-v2-industry--factory-home .fp-shared-factory-total-value {
-  display: grid;
-  justify-items: end;
-  gap: 1px;
-  min-width: 76px;
-  padding-left: 14px;
-  border-left: 1px solid rgba(125, 187, 222, .3);
-}
-.omega-v2-industry--factory-home .fp-shared-factory-total-value > strong {
+.omega-v2-industry--factory-home .fp-top-identity .fp-top-total strong {
   color: #f2fbff;
-  font-size: clamp(24px, 3.4vw, 34px);
+  font-size: 14px;
   font-weight: 950;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 12px rgba(49, 178, 255, .35);
+  text-shadow: 0 0 10px rgba(49, 178, 255, .36);
+}
+.omega-v2-industry--factory-home .fp-top-identity .fp-top-total small {
+  color: #83ccfa;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .09em;
 }
 .omega-v2-industry--factory-home .fp-private-ownership {
   min-width: 0;
@@ -6240,18 +6212,11 @@
   font-weight: 900;
 }
 @media (max-width: 560px) {
-  .omega-v2-industry--factory-home .fp-shared-factory-total {
-    gap: 8px;
-    margin: 7px 0 10px;
-    padding: 9px 10px;
+  .omega-v2-industry--factory-home .fp-top-identity .fp-top-total {
+    gap: 5px;
+    padding: 2px 5px;
   }
-  .omega-v2-industry--factory-home .fp-shared-factory-total-copy > small {
-    font-size: 9px;
-  }
-  .omega-v2-industry--factory-home .fp-shared-factory-total-value {
-    min-width: 60px;
-    padding-left: 9px;
-  }
+  .omega-v2-industry--factory-home .fp-top-identity .fp-top-total strong { font-size: 12px; }
   .omega-v2-industry--factory-home .fp-private-ownership {
     padding: 8px;
   }
