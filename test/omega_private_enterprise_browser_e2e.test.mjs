@@ -135,7 +135,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         !!window.OmegaUIV2Integration &&
         typeof window.OmegaUIV2Integration.openRoute === 'function' &&
         !!window.OmegaPrivateEnterpriseLifecycleV1;
-    }, { timeout: 150000 });
+    }, null, { timeout: 150000 });
     metrics.coreBootMs = Number((performance.now() - loadStarted).toFixed(2));
 
     const routeResult = await page.evaluate(() => {
@@ -173,7 +173,15 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         warehouse: JSON.stringify(resource.warehouse || {}),
         treasury: Number(finance.available ?? finance.omegaFinance?.treasuryBalanceUsd ?? 0),
         assets: (economy.productionAssets || []).length,
-        projects: (network.projects || []).length
+        projects: (network.projects || []).length,
+        proposalCount: (economy.privateEnterpriseLifecycle?.proposals || []).length,
+        turn: Number(state.simulation?.turn || 0),
+        foreignCountry: JSON.stringify({
+          inventory: state.resource?.USA?.inventory || {},
+          warehouse: state.resource?.USA?.warehouse || {},
+          treasury: state.finance?.USA?.available || 0,
+          assets: state.economy?.USA?.productionAssets || []
+        })
       };
     });
 
@@ -191,17 +199,21 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       nodes.map(node => node.value).filter(Boolean)
     );
     assert.ok(factoryOptions.length >= 1, 'at least one existing canonical factory profile must be selectable');
-    await factorySelect.selectOption(factoryOptions[0]);
+    const selectedFactoryType = factoryOptions[0];
+    await factorySelect.selectOption(selectedFactoryType);
     await form.locator('input[name="quantity"]').fill('1');
     await form.locator('select[name="sourcingPolicy"]').selectOption('MIXED');
     await form.locator('button[type="submit"]').click();
 
-    await page.waitForFunction(() => {
-      const state = window.Game?.state;
-      const rows = state?.economy?.BGD?.privateEnterpriseLifecycle?.proposals || [];
-      return rows.some(row => row.status === 'PROPOSED' && row.operatorCompanyId);
-    }, { timeout: 15000 });
-    const after = await page.evaluate(() => {
+    await page.waitForFunction(criteria => {
+      const rows = window.Game?.state?.economy?.BGD?.privateEnterpriseLifecycle?.proposals || [];
+      return rows.some(row => row.status === 'PROPOSED' &&
+        row.companyId === criteria.owner &&
+        row.operatorCompanyId === criteria.operator &&
+        row.factoryType === criteria.factoryType &&
+        Number(row.createdTurn) >= criteria.previousTurn);
+    }, { owner: companyOptions[0], operator: companyOptions[1], factoryType: selectedFactoryType, previousTurn: before.turn }, { timeout: 15000 });
+    const after = await page.evaluate(criteria => {
       const state = window.Game.state;
       const resource = state.resource?.BGD || {};
       const economy = state.economy?.BGD || {};
@@ -214,11 +226,25 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         treasury: Number(finance.available ?? finance.omegaFinance?.treasuryBalanceUsd ?? 0),
         assets: (economy.productionAssets || []).length,
         projects: (network.projects || []).length,
-        proposal: proposals.find(row => row.status === 'PROPOSED') || null
+        proposalCount: proposals.length,
+        foreignCountry: JSON.stringify({
+          inventory: state.resource?.USA?.inventory || {},
+          warehouse: state.resource?.USA?.warehouse || {},
+          treasury: state.finance?.USA?.available || 0,
+          assets: state.economy?.USA?.productionAssets || []
+        }),
+        proposal: proposals.slice().reverse().find(row => row.status === 'PROPOSED' &&
+          row.companyId === criteria.owner &&
+          row.operatorCompanyId === criteria.operator &&
+          row.factoryType === criteria.factoryType) || null
       };
-    });
+    }, { owner: companyOptions[0], operator: companyOptions[1], factoryType: selectedFactoryType });
+    assert.ok(after.proposal, 'the real browser form must create the exact submitted owner/operator/factory proposal');
+    assert.equal(after.proposalCount, before.proposalCount + 1,
+      'one manual proposal submission must append exactly one record without duplicate submission');
     assert.equal(after.inventory, before.inventory, 'a proposal alone must not mutate raw/finished inventory');
     assert.equal(after.warehouse, before.warehouse, 'a proposal alone must not reserve or create warehouse stock');
+    assert.equal(after.foreignCountry, before.foreignCountry, 'a player-country proposal must not mutate another country');
     assert.equal(after.treasury, before.treasury, 'a proposal alone must not debit or credit Treasury');
     assert.equal(after.assets, before.assets, 'a proposal alone must not create a production asset');
     assert.equal(after.projects, before.projects, 'a proposal alone must not create a construction project');
