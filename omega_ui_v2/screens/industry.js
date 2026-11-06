@@ -760,19 +760,6 @@
     });
     var needsBatchRows = activeTab === 'inventory' || stockSummaryView || activeTab === 'factories' && !lightweightTypeView;
     var resourceBatches = needsBatchRows && Array.isArray(resource.batches) ? resource.batches : [];
-    if (activeTab === 'inventory' && resourceBatches.length) {
-      var inputSourceBatchIds = Object.create(null);
-      viewAssets.forEach(function (asset) {
-        (Array.isArray(asset.inputBatchLots) ? asset.inputBatchLots : []).forEach(function (lot) {
-          (Array.isArray(lot && lot.sourceBatchIds) ? lot.sourceBatchIds : []).forEach(function (batchId) {
-            inputSourceBatchIds[String(batchId)] = true;
-          });
-        });
-      });
-      resourceBatches = resourceBatches.filter(function (batch) {
-        return !!(batch && inputSourceBatchIds[String(batch.batchId || '')]);
-      });
-    }
     var resourceInventoryLedger = stockSummaryView && Array.isArray(resource.inventoryLedger) ? resource.inventoryLedger : [];
     var processedWarehouse = stockSummaryView && resource.processedWarehouse && typeof resource.processedWarehouse === 'object' ? resource.processedWarehouse : {};
     var nationalDemandRuntime = stockSummaryView && resource.nationalDemandRuntime && typeof resource.nationalDemandRuntime === 'object'
@@ -805,6 +792,19 @@
         type:type || 'Not recorded',status:String(asset.status || 'NOT_RECORDED'),
         raw:asset,name:String(asset.name || asset.factoryName || type || 'Factory')};
     }) : null;
+    if (activeTab === 'inventory' && resourceBatches.length) {
+      var inputSourceBatchIds = Object.create(null);
+      viewAssets.forEach(function (asset) {
+        (Array.isArray(asset.inputBatchLots) ? asset.inputBatchLots : []).forEach(function (lot) {
+          (Array.isArray(lot && lot.sourceBatchIds) ? lot.sourceBatchIds : []).forEach(function (batchId) {
+            inputSourceBatchIds[String(batchId)] = true;
+          });
+        });
+      });
+      resourceBatches = resourceBatches.filter(function (batch) {
+        return !!(batch && inputSourceBatchIds[String(batch.batchId || '')]);
+      });
+    }
     var rawMineSites = !optimizedFactoryRead && needsMineSiteRows ? countryMineSiteRows(context.countryId, resource) : [];
     var mineAssets = optimizedFactoryRead || lightweightTypeView ? [] : mineAssetRows(resource);
     var simState = stateRoot() || {}, simClock = simState.simulation || {};
@@ -826,7 +826,7 @@
     var processingRules = catalog.processingRules && typeof catalog.processingRules === 'object' ? catalog.processingRules : {};
     var flows = !optimizedFactoryRead && activeTab === 'factories' && !lightweightTypeView ? (Array.isArray(industrial.siteFlowLedger)
       ? industrial.siteFlowLedger : (Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger : [])) : [];
-    var mappedAssets = lightweightTypeView || activeTab === 'production-lines' ? viewAssets.map(function (asset) {
+    var mappedAssets = lightweightTypeView || activeTab === 'production-lines' ? assets.map(function (asset) {
       asset = asset && typeof asset === 'object' ? asset : {};
       var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
       var type = normalizeFactoryType(rawType, catalog) || rawType;
