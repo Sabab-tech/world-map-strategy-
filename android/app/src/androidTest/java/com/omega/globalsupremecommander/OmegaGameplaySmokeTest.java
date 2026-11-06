@@ -362,6 +362,7 @@ public final class OmegaGameplaySmokeTest {
 
             final String startObserver =
                     "(function(){window.__omegaApi28LongTasks=[];window.__omegaApi28ObserverSupported=false;" +
+                    "window.__omegaApi28HeapBefore=performance.memory&&performance.memory.usedJSHeapSize||null;" +
                     "if(typeof PerformanceObserver==='function'){try{var o=new PerformanceObserver(function(list){" +
                     "list.getEntries().forEach(function(e){window.__omegaApi28LongTasks.push({duration:e.duration,startTime:e.startTime});});});" +
                     "o.observe({entryTypes:['longtask']});window.__omegaApi28ObserverSupported=true;window.__omegaApi28Observer=o;}catch(e){}}" +
@@ -424,6 +425,7 @@ public final class OmegaGameplaySmokeTest {
                     "(function(){var rows=window.__omegaApi28LongTasks||[];return JSON.stringify({" +
                     "observerSupported:!!window.__omegaApi28ObserverSupported,count:rows.length," +
                     "maxDuration:rows.reduce(function(m,x){return Math.max(m,Number(x.duration)||0);},0)," +
+                    "heapBefore:window.__omegaApi28HeapBefore||null," +
                     "heapUsed:performance.memory&&performance.memory.usedJSHeapSize||null," +
                     "heapLimit:performance.memory&&performance.memory.jsHeapSizeLimit||null," +
                     "viewport:{width:document.documentElement.clientWidth,height:document.documentElement.clientHeight," +
@@ -433,6 +435,12 @@ public final class OmegaGameplaySmokeTest {
             if (stressMetrics.optBoolean("observerSupported")) {
                 assertTrue("No post-boot UI long task may exceed 1000ms; metrics=" + stressMetrics,
                         stressMetrics.optDouble("maxDuration", 0.0d) <= 1000.0d);
+            }
+            final long heapBefore = stressMetrics.optLong("heapBefore", -1L);
+            final long heapAfter = stressMetrics.optLong("heapUsed", -1L);
+            if (heapBefore > 0L && heapAfter > 0L) {
+                assertTrue("Repeated tab navigation must not grow WebView JS heap by more than 64 MiB; metrics=" + stressMetrics,
+                        heapAfter - heapBefore <= 64L * 1024L * 1024L);
             }
             final org.json.JSONObject landscapeViewport = stressMetrics.optJSONObject("viewport");
             assertNotNull("API 28 landscape viewport metrics must be present", landscapeViewport);
