@@ -466,10 +466,28 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       if (typeof PerformanceObserver === 'function') {
         try {
           const observer = new PerformanceObserver(list => {
-            list.getEntries().forEach(entry => window.__omegaBrowserLongTasks.push({
-              duration: entry.duration,
-              startTime: entry.startTime
-            }));
+            list.getEntries().forEach(entry => {
+              const history = window.__omegaBrowserNavigationHistory || [];
+              let navigation = null;
+              for (let index = history.length - 1; index >= 0; index -= 1) {
+                if (Number(history[index].startedAt) <= Number(entry.startTime)) {
+                  navigation = history[index];
+                  break;
+                }
+              }
+              window.__omegaBrowserLongTasks.push({
+                duration: entry.duration,
+                startTime: entry.startTime,
+                navigation,
+                attribution: Array.from(entry.attribution || []).map(row => ({
+                  name:row.name || null,
+                  entryType:row.entryType || null,
+                  containerType:row.containerType || null,
+                  containerName:row.containerName || null,
+                  containerId:row.containerId || null
+                }))
+              });
+            });
           });
           observer.observe({ entryTypes: ['longtask'] });
           window.__omegaBrowserLongTaskObserverSupported = true;
@@ -523,11 +541,15 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       for (let round = 0; round < 6; round++) {
         for (const tab of tabs) {
           const locator = page.locator('#cabinet-full-window [data-omega-v2-main] [data-omega-v2-industry-tab="' + tab.id + '"]');
-          const latency = await locator.evaluate(element => {
+          const latency = await locator.evaluate((element, meta) => {
             const started = performance.now();
+            window.__omegaBrowserNavigationHistory = window.__omegaBrowserNavigationHistory || [];
+            window.__omegaBrowserNavigationHistory.push({
+              startedAt:started,viewport:meta.viewport,tab:meta.tab,round:meta.round
+            });
             element.click();
             return Number((performance.now() - started).toFixed(2));
-          });
+          }, { viewport:viewport.name, tab:tab.id, round:round });
           navigationLatencyMs.push(latency);
           assert.ok(latency <= 1000, viewport.name + ' ' + tab.label + ' click handler exceeded 1000ms: ' + latency);
           await page.waitForFunction(tabId => {
@@ -551,6 +573,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       return {
         longTaskObserverSupported: !!window.__omegaBrowserLongTaskObserverSupported,
         longTaskCount: rows.length,
+        longTasks: rows,
         maxLongTaskMs: rows.reduce((max, row) => Math.max(max, Number(row.duration) || 0), 0),
         heapBeforeBytes: window.__omegaBrowserHeapBefore || null,
         usedHeapBytes: performance.memory?.usedJSHeapSize || null,
