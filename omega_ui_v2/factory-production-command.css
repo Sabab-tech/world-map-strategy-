@@ -6692,3 +6692,112 @@
   box-shadow:none !important;
   transform:none !important;
 }
+
+
+/* Country-level policy controls stay inside Production Ministry Lines. */
+.omega-v2-industry--factory-home .fp-state-policy {
+  margin:10px 0;
+  padding:10px;
+  border:1px solid rgba(76,190,230,.22);
+  border-radius:10px;
+  background:rgba(6,18,31,.72);
+  color:var(--omega-text-primary,#dbeaf2);
+  min-width:0;
+}
+.omega-v2-industry--factory-home .fp-state-policy > summary {
+  cursor:pointer;
+  font-size:12px;
+  font-weight:800;
+  color:#a9e6f8;
+  padding:3px 0;
+}
+.omega-v2-industry--factory-home .fp-state-policy p,
+.omega-v2-industry--factory-home .fp-state-policy-empty {
+  color:#88a4b6;
+  font-size:10px;
+  line-height:1.45;
+  margin:7px 0;
+}
+.omega-v2-industry--factory-home .fp-state-policy-form,
+.omega-v2-industry--factory-home .fp-state-procurement {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:10px;
+  min-width:0;
+}
+.omega-v2-industry--factory-home .fp-state-policy label,
+.omega-v2-industry--factory-home .fp-state-procurement label {
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:0;
+  color:#9db7c6;
+  font-size:9px;
+  font-weight:700;
+}
+.omega-v2-industry--factory-home .fp-state-policy input,
+.omega-v2-industry--factory-home .fp-state-policy select,
+.omega-v2-industry--factory-home .fp-state-procurement input,
+.omega-v2-industry--factory-home .fp-state-procurement select {
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  min-height:34px;
+  box-sizing:border-box;
+  padding:6px 8px;
+  border:1px solid rgba(115,174,202,.24);
+  border-radius:6px;
+  background:#071421;
+  color:#e3f3f9;
+  font:inherit;
+  font-size:10px;
+}
+.omega-v2-industry--factory-home .fp-state-policy button,
+.omega-v2-industry--factory-home .fp-state-procurement button {
+  min-height:34px;
+  width:100%;
+  min-width:0;
+  padding:7px 10px;
+  border:1px solid rgba(72,190,230,.4);
+  border-radius:7px;
+  background:#0b3045;
+  color:#d8f4ff;
+  font-size:10px;
+  font-weight:800;
+}
+.omega-v2-industry--factory-home .fp-state-policy button:disabled,
+.omega-v2-industry--factory-home .fp-state-procurement button:disabled {
+  opacity:.45;
+}
+.omega-v2-industry--factory-home .fp-state-policy-active {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+  padding:7px 0;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.omega-v2-industry--factory-home .fp-state-policy-active > div {min-width:0;display:flex;flex-direction:column;gap:3px}
+.omega-v2-industry--factory-home .fp-state-policy-active strong {font-size:10px;color:#d5edf5}
+.omega-v2-industry--factory-home .fp-state-policy-active small {font-size:8px;color:#7895a8;overflow-wrap:anywhere}
+.omega-v2-industry--factory-home .fp-state-policy-active button {width:auto;min-width:48px;min-height:28px;padding:4px 8px}
+.omega-v2-industry--factory-home .fp-state-policy-active-list,
+.omega-v2-industry--factory-home .fp-state-procurement {
+  margin-top:12px;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.omega-v2-industry--factory-home .fp-state-policy-active-list h4,
+.omega-v2-industry--factory-home .fp-state-procurement h4 {
+  grid-column:1/-1;
+  margin:0;
+  color:#a9e6f8;
+  font-size:10px;
+}
+.omega-v2-industry--factory-home .fp-state-procurement p {grid-column:1/-1}
+@media(max-width:560px) {
+  .omega-v2-industry--factory-home .fp-state-policy-form,
+  .omega-v2-industry--factory-home .fp-state-procurement {grid-template-columns:minmax(0,1fr)}
+}
