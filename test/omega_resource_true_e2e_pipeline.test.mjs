@@ -631,7 +631,7 @@ test('playable site-marker execution flows through extraction, logistics, factor
   const expectedOffer=JSON.parse(JSON.stringify(concentrateOffer));
   const expectedConcentrateOfferCount=(state.trade.BGD.offerBook||[]).filter(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0).length;
   const expectedTreasury=Number(state.finance.BGD.available)||0;
-  const saved=simulation.saveSlot('sab34-pipeline-proof');
+  const saved=await simulation.saveSlot('sab34-pipeline-proof');
   assert.equal(saved.ok,true,JSON.stringify(saved));
   const persisted=JSON.parse(g.localStorage.getItem(saved.key));
   assert.ok(persisted?.checksum,'the persisted game snapshot must carry its integrity checksum');
@@ -644,7 +644,7 @@ test('playable site-marker execution flows through extraction, logistics, factor
   state.economy.BGD.productionAssets=[];
   state.trade.BGD.offerBook=[];
   state.finance.BGD.available=0;
-  const loaded=simulation.loadSlot('sab34-pipeline-proof');
+  const loaded=await simulation.loadSlot('sab34-pipeline-proof');
   assert.equal(loaded.authoritativeState?.worldStateLinked,true,'the restored snapshot must remain linked to Game.state');
   assert.equal(simulation.lastLoadIntegrity,'VERIFIED','the game must verify the saved checksum before restore');
   assert.strictEqual(g.Game.state,simulation.world.state,'save/load must restore the same authoritative Game.state root');
