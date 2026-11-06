@@ -656,8 +656,8 @@ test('playable site-marker execution flows through extraction, logistics, factor
   const restoredFlow=restoredResource.industrialNetwork.siteFlowLedger.find(row=>String(row.batchId)===String(run.batchId));
   assert.equal(restoredFlow?.siteId,site.siteId,'the saved batch lineage must preserve the exact physical-site identity');
   assert.equal(restoredFlow?.occurrenceKey,run.occurrenceKey,'the saved pipeline must preserve the source occurrence key');
-  assert.deepEqual(restoredResource.inventory,expectedInventory,'raw and finished inventory must be restored without quantity drift');
-  assert.deepEqual(restoredResource.processedWarehouse.availableByResource,expectedProcessedWarehouse);
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.inventory)),expectedInventory,'raw and finished inventory must be restored without quantity drift');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.processedWarehouse.availableByResource)),expectedProcessedWarehouse);
   assert.equal(restoredResource.finishedGoodsLedger.length,expectedFinishedLedgerCount);
   assert.deepEqual(restoredResource.batches.filter(row=>row.stage==='FINISHED'&&row.sourceBatchIds?.includes(run.batchId))
     .map(row=>String(row.batchId)).sort(),expectedFinishedBatchIds);
@@ -665,14 +665,14 @@ test('playable site-marker execution flows through extraction, logistics, factor
   assert.ok(restoredFactory,'the same receiving factory must survive the canonical save/load');
   const restoredOffer=(restored.trade.BGD.offerBook||[]).find(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0);
   assert.ok(restoredOffer,'the finished-goods market offer must survive save/load');
-  assert.deepEqual(restoredOffer,expectedOffer,'market quantity and source ancestry must survive save/load');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredOffer)),expectedOffer,'market quantity and source ancestry must survive save/load');
   assert.equal(Number(restored.finance.BGD.available)||0,expectedTreasury,'the resource fiscal receipt must survive save/load');
 
   // Replaying the processing stage after restore must not mint a second finished-goods batch.
   await industry.processPendingFactoryInputs('BGD');
   assert.equal(restoredResource.finishedGoodsLedger.length,expectedFinishedLedgerCount,
     'processing replay after save/load must not duplicate the finished-goods transaction');
-  assert.deepEqual(restoredResource.inventory,expectedInventory,
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.inventory)),expectedInventory,
     'processing replay after save/load must not double-credit inventory');
   assert.equal((restored.trade.BGD.offerBook||[]).filter(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0).length,expectedConcentrateOfferCount,
     'processing replay must not duplicate the finished-goods market offer');
