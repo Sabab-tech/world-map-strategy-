@@ -545,8 +545,15 @@ test('industry factory cards show owned factory counts without a separate source
     assert.doesNotMatch(root.innerHTML, /Modeled build time|Modeled capacity|Modeled construction cost|simulation/i);
     assert.doesNotMatch(root.innerHTML, /class="fp-summary"/);
     assert.match(root.innerHTML, /data-factory-total/);
-    assert.match(root.innerHTML, /Total factories/);
     assert.match(root.innerHTML, /data-factory-total-value>3<\/strong>/);
+    const mainFactoryHeaderStart = root.innerHTML.indexOf('<header class="fp-top"');
+    const mainFactoryHeaderEnd = root.innerHTML.indexOf('</header>', mainFactoryHeaderStart);
+    assert.ok(mainFactoryHeaderStart >= 0 && mainFactoryHeaderEnd > mainFactoryHeaderStart);
+    const mainFactoryHeader = root.innerHTML.slice(mainFactoryHeaderStart, mainFactoryHeaderEnd);
+    assert.match(mainFactoryHeader, /data-factory-total/);
+    assert.match(mainFactoryHeader, /TOTAL FACTORIES/);
+    assert.doesNotMatch(root.innerHTML.slice(mainFactoryHeaderEnd + 9), /data-factory-total/,
+      'the combined count must not render as a separate summary card below the main header');
     assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
     const steelCardStart = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="STEEL_MILL"');
