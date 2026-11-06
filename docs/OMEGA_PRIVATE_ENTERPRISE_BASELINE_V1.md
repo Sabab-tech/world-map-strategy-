@@ -49,3 +49,15 @@ node --test test/omega_private_enterprise_baseline_v1.test.mjs
 ~~~
 
 Tests enforce exact country/company/category coverage, deterministic output, integer reconciliation, the zero-category rule, the 60% cap and non-commissioned simulation-only provenance.
+
+
+## Opening allocation calibration revision (2026-11-06)
+
+The private opening allocation was recalibrated upward using the same country-level economic-sector context and specialization evidence. The five stable company identities, 197-country roster and 21 canonical factory categories are unchanged.
+
+- Government opening baseline: 15,920 abstract factory units.
+- Private opening baseline: 6,307 abstract factory units (previously 4,839).
+- Aggregate private-to-government ratio: 39.6%; this is a model output, not a target or permission to exceed any category cap.
+- The strict per-country/per-category rule remains private count <= floor(government count * 0.60).
+- Government-zero categories remain private-zero. Countries without comparable macro context or specialization evidence remain at zero rather than receiving invented allocations.
+- Company allocation still reconciles exactly to the five stable global company IDs. Opening allocations remain static and not commissioned; they create no production, inventory, shipments, output, sales or cash movements.
