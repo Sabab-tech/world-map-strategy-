@@ -259,6 +259,10 @@ public final class OmegaGameplaySmokeTest {
                     "   if (window.Game.state) window.Game.state.playerCountryId = 'USA'; }" +
                     " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
                     " window.currentActiveCountry = 'USA';" +
+                    " var simulation = window.Omega && window.Omega.Simulation;" +
+                    " if (!simulation || typeof simulation.createSession !== 'function') return false;" +
+                    " var session = simulation.createSession({ playerCountryId:'USA' });" +
+                    " if (!session || session.playerCountryId !== 'USA' || simulation.getPlayerCountryId() !== 'USA') return false;" +
                     " return integration.openRoute('industry') === true;" +
                     "})()";
             assertEquals(
@@ -285,8 +289,26 @@ public final class OmegaGameplaySmokeTest {
                 factoryManageReady = evaluate(instrumentation, webViewRef.get(), factoryManageReadyScript);
                 if (!"true".equals(factoryManageReady)) SystemClock.sleep(350L);
             }
+            final String factoryManageDiagnostics = evaluate(instrumentation, webViewRef.get(),
+                    "(function() {" +
+                    " var cabinet=document.getElementById('cabinet-full-window');" +
+                    " var main=cabinet&&cabinet.querySelector('[data-omega-v2-main]');" +
+                    " var view=main&&main.querySelector('[data-omega-v2-factory-view-content]');" +
+                    " var buttons=view?Array.prototype.slice.call(view.querySelectorAll('[data-omega-v2-factory-build-details]')):[];" +
+                    " return JSON.stringify({" +
+                    " route:cabinet&&cabinet.getAttribute('data-omega-v2-route')," +
+                    " playerCountry:window.Omega&&window.Omega.Simulation&&window.Omega.Simulation.getPlayerCountryId&&window.Omega.Simulation.getPlayerCountryId()," +
+                    " session:window.Game&&window.Game.state&&window.Game.state.simulation&&window.Game.state.simulation.session&&window.Game.state.simulation.session.playerCountryId," +
+                    " statePlayerCountry:window.Game&&window.Game.state&&window.Game.state.playerCountryId," +
+                    " activeCountry:window.OmegaMinistryViewCountry||window.currentActiveCountry||null," +
+                    " factoryTabs:main?main.querySelectorAll('[data-omega-v2-industry-tab=\\\"factories\\\"]').length:0," +
+                    " companiesTabs:main?main.querySelectorAll('[data-omega-v2-industry-tab=\\\"companies\\\"]').length:0," +
+                    " factoryViews:main?main.querySelectorAll('[data-omega-v2-factory-view-content]').length:0," +
+                    " buttons:buttons.slice(0,24).map(function(b){return {type:b.getAttribute('data-factory-type'),disabled:b.disabled,reason:b.getAttribute('title')};})" +
+                    " });" +
+                    "})()");
             assertEquals(
-                    "Industry must expose the unified Factory card and its in-card Manage action, not a separate Companies tab",
+                    "Industry must expose an enabled unified Factory-card Manage action, not a separate Companies tab; diagnostics=" + factoryManageDiagnostics,
                     "true", factoryManageReady
             );
             final String openFactoryManage =
