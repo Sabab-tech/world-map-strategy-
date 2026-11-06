@@ -241,14 +241,15 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       const economy = state.economy?.[country] || {};
       const finance = state.finance?.[country] || {};
       const network = resource.industrialNetwork || {};
+      const proposalRows = window.OmegaPrivateEnterpriseLifecycleV1?.getCountryDashboard?.(country)?.proposals || [];
       return {
         inventory: JSON.stringify(resource.inventory || {}),
         warehouse: JSON.stringify(resource.warehouse || {}),
         treasury: Number(finance.available ?? finance.omegaFinance?.treasuryBalanceUsd ?? 0),
         assets: (economy.productionAssets || []).length,
         projects: (network.projects || []).length,
-        proposalCount: (economy.privateEnterpriseLifecycle?.proposals || []).length,
-        proposalIds: (economy.privateEnterpriseLifecycle?.proposals || []).map(row => row.proposalId),
+        proposalCount: proposalRows.length,
+        proposalIds: proposalRows.map(row => row.proposalId),
         turn: Number(state.simulation?.turn || 0),
         foreignCountry: JSON.stringify({
           inventory: state.resource?.USA?.inventory || {},
@@ -365,7 +366,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       const economy = state.economy?.BGD || {};
       const finance = state.finance?.BGD || {};
       const network = resource.industrialNetwork || {};
-      const proposals = economy.privateEnterpriseLifecycle?.proposals || [];
+      const proposals = window.OmegaPrivateEnterpriseLifecycleV1?.getCountryDashboard?.('BGD')?.proposals || [];
       return {
         inventory: JSON.stringify(resource.inventory || {}),
         warehouse: JSON.stringify(resource.warehouse || {}),
