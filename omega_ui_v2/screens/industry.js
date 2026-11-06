@@ -2770,6 +2770,31 @@
       }).join('') : '<span class="fp-card-muted">None recorded</span>';
     };
     var costUnit = String(profile.unit || 'GAME_CURRENCY_UNITS').replace(/_/g, ' ').toLowerCase();
+    var privateBaseline = model.privateEnterpriseBaseline;
+    var privateOwnershipMarkup = '';
+    if (privateBaseline && privateBaseline.status === 'READY') {
+      var governmentOpening = privateBaseline.governmentFactoryCounts && Number(privateBaseline.governmentFactoryCounts[wanted]) || 0;
+      var privateOpening = privateBaseline.factoryCounts && Number(privateBaseline.factoryCounts[wanted]) || 0;
+      var companyOwnershipRows = (Array.isArray(privateBaseline.companies) ? privateBaseline.companies : [])
+        .map(function (company) {
+          var count = Number(company.factoryCounts && company.factoryCounts[wanted]) || 0;
+          return count > 0 ? '<div class="fp-card-bom-row"><span>' + esc(company.companyName) + '</span><strong>' + fmt(count) + '</strong></div>' : '';
+        }).filter(Boolean).join('');
+      privateOwnershipMarkup = '<section class="fp-card-build-materials" data-private-factory-management="v1">' +
+        '<div class="fp-card-build-section-head"><strong>Private enterprise / ownership</strong><span>Opening baseline</span></div>' +
+        '<div class="fp-card-build-metrics"><div><small>Government opening</small><strong>' + fmt(governmentOpening) + '</strong></div>' +
+        '<div><small>Private opening</small><strong>' + fmt(privateOpening) + '</strong></div>' +
+        '<div><small>Maximum private share</small><strong>60%</strong></div></div>' +
+        (governmentOpening === 0
+          ? '<p class="fp-card-build-provenance">Not established at game start: zero government factories means zero private opening factories. A company proposal and government approval are required before a new category can be created.</p>'
+          : '<p class="fp-card-build-provenance">Private opening allocation is a non-commissioned game-start baseline. It is not added to the operating factory count until valid construction and commissioning.</p>') +
+        (companyOwnershipRows ? '<div class="fp-card-build-section-head"><strong>Company allocation</strong></div>' + companyOwnershipRows : '') +
+        '</section>';
+    } else if (privateBaseline && privateBaseline.status === 'LOADING') {
+      privateOwnershipMarkup = '<section class="fp-card-build-materials" data-private-factory-management="loading"><strong>Loading private ownership details…</strong><p class="fp-card-build-provenance">The regular factory view remains independent of this optional data load.</p></section>';
+    } else {
+      privateOwnershipMarkup = '<section class="fp-card-build-materials" data-private-factory-management="unavailable"><strong>Private ownership details unavailable</strong><p class="fp-card-build-provenance">The existing factory remains usable; baseline data was not loaded.</p></section>';
+    }
     return '<section class="fp-card-build-state" data-factory-build-state="' + esc(cardKey) + '">' +
       '<header class="fp-card-build-heading"><div><span>CONSTRUCTION / BILL OF MATERIALS</span><strong>Build requirements</strong></div>' +
         '<button type="button" class="fp-card-back-button" data-omega-v2-factory-build-details-close aria-label="Back to factory overview"><span aria-hidden="true">‹</span> Back</button></header>' +
@@ -2778,7 +2803,7 @@
         '<div><small>Construction cost</small><strong>' + fmt(profile.constructionCost, costUnit) + '</strong></div>' +
         '<div><small>Designed capacity</small><strong>' + fmt(profile.defaultCapacityPerDay, 'game units/day') + '</strong></div>' +
       '</div>' +
-      materialsMarkup +
+      privateOwnershipMarkup + materialsMarkup +
       '<div class="fp-card-requirements-grid"><div><small>Required infrastructure</small><div class="fp-card-requirement-tags">' + formatTags(infrastructure) + '</div></div>' +
         '<div><small>Required technology</small><div class="fp-card-requirement-tags">' + formatTags(technology) + '</div></div></div>' +
       (profile.simulationOnly === true || profile.constructionMaterialsAuthority ? '<p class="fp-card-build-provenance">Modeled construction requirements · gameplay quantities, not real-world engineering measurements.</p>' : '') +
@@ -3535,7 +3560,8 @@
     // The private 197-country baseline is not needed to render the regular
     // Factory screen. Fetch and validate it only after the player opens Companies.
     var requestedTab = String(options && options.tab || root.__omegaV2IndustryTab || 'factories');
-    if (requestedTab === 'companies' &&
+    var factoryManageOpened = !!(root.__omegaV2FactoryCardUiState && root.__omegaV2FactoryCardUiState.buildKey);
+    if ((requestedTab === 'companies' || factoryManageOpened) &&
         model.privateEnterpriseBaseline && model.privateEnterpriseBaseline.status === 'LOADING' &&
         privateRuntime) {
       try {
@@ -3735,7 +3761,6 @@
       'national-inventory':'Stock',
       research:'Research & technology',
       projects:'Industrial projects',
-      companies:'Manage'
     };
     var activeLabel = tabLabels[active] || 'Factory production';
     if (active !== 'factories') root.__omegaV2IndustryNotice = '';
@@ -3746,7 +3771,6 @@
       '<small>COUNTRY: ' + esc(model.countryId || 'Not recorded') + ' · ' + (model.canOperateSelectedCountry ? 'PLAYER CONTROL' : 'REFERENCE VIEW') + '</small></div>' +
       '<nav class="omega-v2-factory-tabs fp-tabs" aria-label="Industrial panels">' +
       tabButton('factories', 'Factories', active) +
-      tabButton('companies', 'Manage', active) +
       tabButton('production-lines', 'Lines', active) +
       tabButton('inventory', 'Input', active) +
       tabButton('national-inventory', 'Stock', active) +
