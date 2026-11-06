@@ -34,7 +34,10 @@ test('all opening allocations are simulation-only and not commissioned productio
 test('Industry screen exposes private-company opening allocations without activating production assets',()=>{
  const industry=fs.readFileSync(new URL('../omega_ui_v2/screens/industry.js',import.meta.url),'utf8');
  assert.match(industry,/OmegaPrivateEnterpriseRegistryV1/);
- assert.match(industry,/tabButton\('companies', 'Companies'/);
+ assert.match(industry,/tabButton\('companies', 'Manage'/);
+ assert.match(industry,/data-factory-total/);
+ assert.match(industry,/data-private-ownership-breakdown/);
+ assert.match(industry,/Shared-pool factories are counted once in the main total/);
  assert.match(industry,/Private company opening allocation/);
  assert.match(industry,/NOT COMMISSIONED/);
  assert.match(industry,/no stock, shipments, input reservations, output, sales or company cash movements/);
