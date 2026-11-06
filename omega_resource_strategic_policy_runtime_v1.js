@@ -327,10 +327,21 @@ function governmentProcurementTx(cmd,ctx){
  const priorUse=procurements.filter(x=>x.policyId===policyId).reduce((sum,x)=>sum+(num(x.quantity)||0),0);
  const limit=num(policy.procurementLimit??policy.authorizedQuantity);
  if(limit!==null&&priorUse+q>limit+1e-7)return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_LIMIT_EXCEEDED',remaining:Math.max(0,limit-priorUse)};
+ const financeHistoryRaw=ctx.stateTransaction.get('finance.tradeSettlementHistory');
+ const financeHistory=Array.isArray(financeHistoryRaw)?clone(financeHistoryRaw):[];
+ const priorDebit=financeHistory.find(x=>String(x?.settlementId||'')===procurementId&&String(x?.type||'').toUpperCase()==='DEBIT');
+ if(priorDebit&&Math.abs((num(priorDebit.amount)||0)-total)>1e-7)
+  return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_FINANCE_IDEMPOTENCY_COLLISION'};
+ if(priorDebit)return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_LEDGER_FINANCE_STATE_MISMATCH'};
  const financeAvailable=num(ctx.stateTransaction.get('finance.available'));
  const financeReserves=num(ctx.stateTransaction.get('finance.reserves'));
  const treasury=financeAvailable!==null?financeAvailable:financeReserves;
- if(treasury===null||treasury+1e-7<total)return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_TREASURY_INSUFFICIENT',available:treasury,required:total};
+ const governmentBank=g.OmegaGovernmentBanking||g.Omega&&g.Omega.GovernmentBanking;
+ const treasuryHeld=financeAvailable!==null&&governmentBank&&typeof governmentBank.getReservedTreasuryUsd==='function'
+  ?Math.max(0,num(governmentBank.getReservedTreasuryUsd(c,procurementId))||0):0;
+ if(treasury===null||treasury-treasuryHeld+1e-7<total)
+  return{accepted:false,reason:treasury!==null&&treasury-treasuryHeld+1e-7>=total?'GOVERNMENT_PROCUREMENT_TREASURY_INSUFFICIENT':'GOVERNMENT_PROCUREMENT_TREASURY_INSUFFICIENT',
+   available:treasury,held:treasuryHeld,required:total};
  const rawBatches=ctx.stateTransaction.get('resource.batches'),batches=Array.isArray(rawBatches)?clone(rawBatches):[];
  const rawLots=ctx.stateTransaction.get('resource.inventoryLots'),lots=rawLots&&typeof rawLots==='object'?clone(rawLots):{};
  const selected=Array.isArray(p.batchIds)?p.batchIds.map(String):[];
@@ -368,6 +379,9 @@ function governmentProcurementTx(cmd,ctx){
  if(remaining>1e-6)return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_PRIVATE_STOCK_INSUFFICIENT',available:q-remaining,requested:q};
  if(financeAvailable!==null)ctx.stateTransaction.set('finance.available',financeAvailable-total);
  else ctx.stateTransaction.set('finance.reserves',financeReserves-total);
+ financeHistory.push({settlementId:procurementId,type:'DEBIT',amount:total,turn:turn(),countryId:c,
+  transactionType:'GOVERNMENT_PROCUREMENT',policyId,companyId});
+ ctx.stateTransaction.set('finance.tradeSettlementHistory',financeHistory.slice(-512));
  const accounts=clone(ctx.stateTransaction.get('economy.companyAccounts')||{}),account=accounts[companyId]||{
   companyId,openingCashStatus:'UNKNOWN',runtimeNetCashFlow:0,grossRevenue:0,paymentsReceived:0,paymentsMade:0,
   taxPaid:0,workerIncomePaid:0,transportPaid:0,supplierRevenue:0,lastTurn:turn()};
