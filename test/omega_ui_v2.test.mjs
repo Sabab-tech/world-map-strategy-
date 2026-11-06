@@ -968,6 +968,72 @@ test('UI v2 integration normalizes map-selected aliases before mounting country 
 });
 
 
+test('UI v2 shell reuses canonical ISO-3 country options without repeated resolver lookups', () => {
+  const previous = {
+    app:globalThis.OmegaUIV2App,
+    runtime:globalThis.OmegaCountryRuntimeData,
+    document:globalThis.document,
+    ministryCountry:globalThis.OmegaMinistryViewCountry,
+    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS
+  };
+  let resolveCount = 0;
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      resolveCount += 1;
+      const id = String(value || '').trim().toUpperCase();
+      return /^[A-Z]{3}$/.test(id) ? { iso3:id, officialName:'Country ' + id } : null;
+    }
+  };
+  globalThis.document = {};
+  const main = {
+    innerHTML:'',
+    setAttribute(){},
+    removeAttribute(){}
+  };
+  const root = {
+    innerHTML:'',
+    classList:{add(){}},
+    addEventListener(){},
+    querySelector(selector){ return selector === '[data-omega-v2-main]' ? main : null; },
+    querySelectorAll(){ return []; },
+    setAttribute(){},
+    removeAttribute(){},
+    getAttribute(){ return null; },
+    contains(){ return true; }
+  };
+  function iso3(index) {
+    return String.fromCharCode(
+      65 + Math.floor(index / 676),
+      65 + Math.floor(index / 26) % 26,
+      65 + index % 26
+    );
+  }
+  const countryOptions = Array.from({length:197}, (_, index) => ({
+    id:index === 0 ? 'BGD' : iso3(index),
+    name:index === 0 ? 'Bangladesh (BGD)' : 'Country ' + iso3(index)
+  }));
+  try {
+    const mounted = globalThis.OmegaUIV2App.mount(root, {
+      initialRoute:'map',
+      countryId:'BGD',
+      countryOptions:countryOptions,
+      renderMap(target) { target.innerHTML = '<section>Map ready</section>'; return {ok:true}; }
+    });
+    assert.equal(mounted.mounted, true);
+    assert.equal(countryOptions.length,197);
+    assert.equal(resolveCount,1,
+      'the selected country may resolve once, but canonical ISO-3 dropdown options must not trigger another 197 profile lookups');
+    assert.match(root.innerHTML, /<option value="BGD" selected>/);
+    assert.match(root.innerHTML, /<option value="BHA">Country BHA/);
+  } finally {
+    if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
+    if(previous.runtime===undefined)delete globalThis.OmegaCountryRuntimeData;else globalThis.OmegaCountryRuntimeData=previous.runtime;
+    if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
+    if(previous.ministryCountry===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.ministryCountry;
+    if(previous.diagnostics===undefined)delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS;else globalThis.__OMEGA_UI_V2_DIAGNOSTICS=previous.diagnostics;
+  }
+});
+
 test('direct Resources route mounts the Resource Ministry without rendering Government first', () => {
   const bridge = globalThis.OmegaUIV2Integration;
   const previous = {
