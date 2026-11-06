@@ -327,7 +327,7 @@ test('playable mine extraction feeds a commissioned private factory through prod
   countryResource.warehouse.reservedByResource=countryResource.warehouse.reservedByResource||{};
   countryResource.batches=Array.isArray(countryResource.batches)?countryResource.batches:[];
   countryResource.inventoryLots=countryResource.inventoryLots||{};
-  const privateStartupStock={...privateProfile.constructionMaterials,coal:60000};
+  const privateStartupStock={...privateProfile.constructionMaterials};
   for(const [resourceId,rawQuantity] of Object.entries(privateStartupStock)){
     const quantity=Number(rawQuantity);
     assert.ok(Number.isFinite(quantity)&&quantity>0,'private construction and production stock must be positive: '+resourceId);
