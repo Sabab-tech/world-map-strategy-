@@ -155,6 +155,40 @@ test('domestic-only approval fails closed on a measured shortage or unobserved s
   assert.equal(h.state.resource.BGD.inventory.iron_ore,100);
 });
 
+test('domestic approval subtracts strategic protection and current national demand, and blocks unobserved demand',()=>{
+  const h=makeHarness();
+  h.state.resource.BGD.inventory.iron_ore=1000;
+  h.state.resource.BGD.warehouse.availableByResource.iron_ore=1000;
+  h.state.resource.BGD.strategicReserve={availableByResource:{iron_ore:100}};
+  const proposal=h.api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'DOMESTIC_ONLY'});
+  const unknown=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
+  assert.equal(unknown.status,'BLOCKED');
+  assert.equal(unknown.reason,'DOMESTIC_INPUT_STOCK_UNOBSERVED');
+  assert.equal(h.state.resource.BGD.inventory.iron_ore,1000);
+
+  h.state.resource.BGD.demandRuntime={lastTurn:4,byResource:{iron_ore:{
+    demandPerDay:11,consumerDemandPerDay:5,activeFactoryInputDemandPerDay:6,pendingImportQuantity:0
+  }}};
+  const pressured=h.api.previewProposal('BGD',proposal.proposalId);
+  assert.equal(pressured.inputRequirements[0].protectedStock,100);
+  assert.equal(pressured.inputRequirements[0].existingDemand30Day,330);
+  assert.equal(pressured.inputRequirements[0].available,570);
+  assert.equal(pressured.shortages[0].shortfall,30);
+  const blocked=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
+  assert.equal(blocked.status,'BLOCKED');
+  assert.equal(blocked.reason,'DOMESTIC_INPUT_SHORTAGE');
+
+  h.state.resource.BGD.demandRuntime.byResource.iron_ore.demandPerDay=10;
+  h.state.resource.BGD.demandRuntime.byResource.iron_ore.consumerDemandPerDay=4;
+  h.state.resource.BGD.demandRuntime.byResource.iron_ore.activeFactoryInputDemandPerDay=6;
+  const safe=h.api.previewProposal('BGD',proposal.proposalId);
+  assert.equal(safe.inputRequirements[0].available,600);
+  assert.equal(safe.shortages.length,0);
+  const approved=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
+  assert.equal(approved.status,'APPROVED_AWAITING_FUNDING');
+  assert.equal(approved.proposal.decision.domesticInputCeiling,600);
+});
+
 test('zero-government factory categories cannot receive a private expansion proposal approval',()=>{
   const h=makeHarness();
   const proposal=h.api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'ZERO_GOV_FACTORY',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'});
