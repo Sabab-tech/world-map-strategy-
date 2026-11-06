@@ -70,6 +70,8 @@ function createContext(){
   };
 
   const handlers=new Map();
+  const commands=new Map();
+  let commandSequence=0;
   const stateTx=(countryId)=>({
     get(path){
       const parts=String(path).split('.');
@@ -100,14 +102,23 @@ function createContext(){
     commandHandlers:handlers,
     registerAction(){},
     registerCommandHandler(type,owner,handler){ handlers.set(type,{owner,handler}); },
-    dispatchCommand(owner,type,countryId,payload){
+    dispatchCommand(owner,type,countryId,payload,options={}){
       const item=handlers.get(type);
       if(!item)return {status:'UNAVAILABLE',reason:'HANDLER_NOT_FOUND'};
+      const commandId=String(options.commandId||('TEST-'+type+'-'+(++commandSequence)));
+      const fingerprint=JSON.stringify({owner,type,countryId,payload});
+      const previous=commands.get(commandId);
+      if(previous){
+        if(previous.fingerprint!==fingerprint)return {status:'FAILED',reason:'COMMAND_ID_COLLISION',commandId};
+        return {...previous.row,duplicate:true,idempotentReplay:true};
+      }
       const result=item.handler(
-        {commandId:'TEST-'+type,commandType:type,payload},
+        {commandId,commandType:type,payload},
         {countryId, stateTransaction:stateTx(countryId)}
       );
-      return {status:'APPLIED',result};
+      const row={status:result&&result.accepted===false?'FAILED':'APPLIED',result,commandId};
+      commands.set(commandId,{fingerprint,row});
+      return row;
     },
     emitEvent(type,countryId,source,payload,meta){
       events.dispatchEvent(new CustomEventMock(type,{detail:{eventType:type,countryId,payload,source,meta}}));
@@ -179,9 +190,52 @@ function createContext(){
     OmegaGlobalTrade:{processAll(){}}
   };
   context.globalThis=context;
-  return {context,worldState,handlers,events};
+  return {context,worldState,handlers,events,commands,stateTx};
 }
 
+test('export settlement replay is idempotent across company flows, Treasury clearing and fiscal receipts',async()=>{
+  const {context,worldState,commands}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+
+  const settlementId='EXPORT-SETTLEMENT-REPLAY-1';
+  const eventFor=totalValue=>new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{
+    detail:{payload:{
+      settlementId,sellerCountryId:'BGD',resourceId:'iron_ore',
+      totalValue,quantity:20,simulationTurn:1
+    }}
+  });
+  context.dispatchEvent(eventFor(200));
+  const availableAfterFirst=worldState.finance.BGD.available;
+  const accountAfterFirst=JSON.stringify(worldState.economy.BGD.companyAccounts.MINER_CO);
+  const workerFlowAfterFirst=worldState.economy.BGD.workerIncome.totalSinceRuntimeStart;
+  const transportAfterFirst=worldState.transport.BGD.resourceRevenue.totalSinceRuntimeStart;
+  const fiscalAfterFirst=worldState.finance.BGD.resourceFiscal.cumulative.total;
+  const clearingAfterFirst=worldState.finance.BGD.resourceSettlementClearing.length;
+  const commandCountAfterFirst=commands.size;
+
+  assert.equal(clearingAfterFirst,1);
+  assert.ok(commandCountAfterFirst>=6,'each payment, cost and receipt uses an authoritative command record');
+
+  // Simulate event replay after reload: the volatile listener guard is intentionally removed.
+  delete context.__OmegaResourceFiscalizedSettlements[settlementId];
+  context.dispatchEvent(eventFor(200));
+  assert.equal(worldState.finance.BGD.available,availableAfterFirst,'Treasury clearing and tax receipt must not post twice');
+  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts.MINER_CO),accountAfterFirst,'company income/payroll/freight flows must not post twice');
+  assert.equal(worldState.economy.BGD.workerIncome.totalSinceRuntimeStart,workerFlowAfterFirst);
+  assert.equal(worldState.transport.BGD.resourceRevenue.totalSinceRuntimeStart,transportAfterFirst);
+  assert.equal(worldState.finance.BGD.resourceFiscal.cumulative.total,fiscalAfterFirst);
+  assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,clearingAfterFirst);
+  assert.equal(commands.size,commandCountAfterFirst,'saved stable command identities must be replay-safe');
+
+  // Reusing a settlement identity with a different amount is a collision, not a second payment.
+  delete context.__OmegaResourceFiscalizedSettlements[settlementId];
+  context.dispatchEvent(eventFor(201));
+  assert.equal(worldState.finance.BGD.available,availableAfterFirst);
+  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts.MINER_CO),accountAfterFirst);
+  assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,clearingAfterFirst);
+  assert.ok([...commands.values()].some(x=>x.row.status==='FAILED'&&x.row.reason==='COMMAND_ID_COLLISION'));
+});
 test('resource economy v2 completes mine-backed processing, domestic settlement and treasury receipt flow', async()=>{
   const {context,worldState}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
