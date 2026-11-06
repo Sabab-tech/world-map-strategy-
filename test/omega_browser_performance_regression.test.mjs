@@ -486,7 +486,7 @@ test('world geometry loads before support datasets, shows real progress, caches 
   const coreAssets = worker.slice(worker.indexOf('const CORE_ASSETS'), worker.indexOf('];', worker.indexOf('const CORE_ASSETS')));
   const loaderStart = map.indexOf('async loadAssets()');
   const startWorld = map.indexOf('const worldTask = this.loadWorldMap(fetcher);', loaderStart);
-  const firstSupportData = map.indexOf("fetcher('population.json')", loaderStart);
+  const firstSupportData = map.indexOf("fetchOptional('population.json')", loaderStart);
 
   assert.ok(loaderStart >= 0 && startWorld > loaderStart && startWorld < firstSupportData,
     'canonical world geometry must start before economy, relation and ministry support data');
