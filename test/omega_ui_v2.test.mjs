@@ -1215,6 +1215,33 @@ test('factory Stock shows committed finished goods and traced use while Input sh
     assert.match(inputRoot.innerHTML,/class="fp-factory-input-identity-line"[^]*class="fp-factory-input-id"/,
       'the canonical product code must sit in the same compact identity line as its friendly name');
 
+    // A newly commissioned factory can have a valid recipe before its first
+    // raw-material delivery. Its required inputs must still be visible, with
+    // stock shown as unrecorded rather than hiding the factory entirely.
+    globalThis.Game.state.economy.BGD.productionAssets = [{
+      id:'FACTORY-NO-OPENING-INPUT-STOCK',
+      name:'Commissioned Steel Mill',
+      factoryType:'STEEL_MILL',
+      recipeId:'STEEL-RECIPE',
+      status:'OPERATIONAL',
+      capacityPerDay:10,
+      inputInventory:{},
+      inputBatchLots:[],
+      inputCoefficients:{iron_ore:0.5},
+      outputProfile:{steel:0.4}
+    }];
+    const noStockInputRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const noStockInput = globalThis.OmegaUIV2Industry.render(
+      noStockInputRoot,{countryId:'BGD',tab:'inventory'}
+    );
+    assert.equal(noStockInput.ok,true);
+    assert.match(noStockInputRoot.innerHTML,/Commissioned Steel Mill/,
+      'a recipe-ready factory must remain visible before its first input delivery');
+    assert.match(noStockInputRoot.innerHTML,/data-factory-product-identity="iron_ore"/,
+      'the factory must expose required recipe inputs even while its input warehouse is empty');
+    assert.match(noStockInputRoot.innerHTML,/Not recorded|Not verified/,
+      'empty opening stock must be reported as unrecorded, not fabricated as zero or used to hide the factory');
+
     // A country with many live factories must not mount every per-factory
     // table in a single Android WebView frame. All records remain reachable.
     globalThis.Game.state.economy.BGD.productionAssets = Array.from({length:9},(_,index)=>({
