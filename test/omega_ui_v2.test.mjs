@@ -3325,6 +3325,9 @@ test('Production Lines joins exact selected-country cycles and committed logisti
             destinationFactoryId:'FAC-LINE-1',transportMode:'truck',legs:[{transportMode:'truck',distanceKm:12}]}},
         {shipmentId:'MINE-HAUL-ONLY',shipmentType:'MINE_TO_WAREHOUSE',countryId:'BGD',resourceId:'iron_ore',
           quantity:50,status:'IN_TRANSIT',createdTurn:11,route:{sourceNode:'MINE:SITE-01',destinationNode:'WH-BGD-RAW'}},
+        {shipmentId:'BLOCKED-FACTORY-SHIP',shipmentType:'WAREHOUSE_TO_FACTORY',countryId:'BGD',factoryId:'FAC-LINE-2',
+          resourceId:'iron_ore',quantity:20,status:'BLOCKED_LEDGER_MISMATCH',dispatchCommitted:true,createdTurn:13,
+          route:{routeId:'BLOCKED-ROUTE',destinationFactoryId:'FAC-LINE-2'}},
         {shipmentId:'PREVIEW-SHIP',shipmentType:'WAREHOUSE_TO_FACTORY',countryId:'BGD',factoryId:'FAC-LINE-1',
           resourceId:'iron_ore',quantity:999,status:'ROUTE_PREVIEW_ONLY',dispatchCommitted:false,createdTurn:12,
           route:{routeId:'PREVIEW-SHIP-ROUTE',destinationFactoryId:'FAC-LINE-1',totalDistanceKm:999}}
@@ -3384,7 +3387,11 @@ test('Production Lines joins exact selected-country cycles and committed logisti
     assert.match(stateLine.stateControlRightsStatus,/Emergency intervention/);
     assert.match(stateLine.stateControlRightsStatus,/Operations: STATE OPERATOR/);
     assert.equal(steel.shipments.length,1,'mine-to-warehouse movement and route-preview rows are not shown as committed factory shipments');
-    assert.equal(result.model.lineActivitySourceCounts.committedShipments,1,'only committed shipment rows contribute to the selected-country activity count');
+    assert.equal(result.model.lineActivitySourceCounts.committedShipments,2,'only committed shipment rows contribute to the selected-country activity count');
+    assert.match(root.innerHTML,/<span>In transit<\/span><strong>1<\/strong>/,
+      'a blocked shipment must not inflate the in-transit count');
+    assert.match(root.innerHTML,/<span>Blocked<\/span><strong>1<\/strong>/,
+      'a blocked ledger shipment must be visible in the blocked count');
     assert.equal(steel.shipments[0].shipmentId,'SHIP-FACTORY-01');
     assert.equal(steel.shipments[0].route.destinationNode,'FACTORY:BGD:FAC-LINE-1');
     assert.equal(steel.inputRequests[0].requestId,'REQ-01');
