@@ -6335,3 +6335,95 @@
   white-space:normal;
   overflow-wrap:anywhere;
 }
+
+
+/* Low-power mobile WebViews: preserve all actions and data without expensive
+   full-screen image filtering or 3D compositing on Android 9-era GPUs. */
+@media (max-width:900px) {
+  .omega-v2-industry--factory-home .fp-stage {
+    background:linear-gradient(145deg,#0a2a4a,#06162b 62%,#030a14) !important;
+  }
+  .omega-v2-industry--factory-home .fp-stage::before { display:none !important; }
+  .omega-v2-industry--factory-home .fp-stage .omega-v2-factory-backdrop {
+    display:none !important;
+    filter:none !important;
+  }
+  .omega-v2-industry--factory-home .fp-card-flip-shell,
+  .omega-v2-industry--factory-home .fp-card-flip-inner {
+    height:auto !important;
+    perspective:none !important;
+    transform:none !important;
+    transform-style:flat !important;
+    transition:none !important;
+  }
+  .omega-v2-industry--factory-home .fp-card-face {
+    position:relative !important;
+    inset:auto !important;
+    width:100% !important;
+    height:auto !important;
+    min-height:0 !important;
+    backface-visibility:visible !important;
+    transform:none !important;
+    box-shadow:none !important;
+  }
+  .omega-v2-industry--factory-home .fp-card-face--back { display:none !important; }
+  .omega-v2-industry--factory-home .omega-v2-factory-type-card.fp-card--flipped .fp-card-face--front {
+    display:none !important;
+  }
+  .omega-v2-industry--factory-home .omega-v2-factory-type-card.fp-card--flipped .fp-card-face--back {
+    display:flex !important;
+  }
+  .omega-v2-industry--factory-home .omega-v2-factory-type-card {
+    box-shadow:0 1px 3px rgba(0,0,0,.22) !important;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-art .omega-v2-factory-svg {
+    filter:none !important;
+  }
+}
+
+/* Portrait phones retain the requested three-column factory catalogue. */
+@media (max-width:680px) and (orientation:portrait) {
+  .omega-v2-industry--factory-home .fp-type-catalog-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:5px !important;
+  }
+  .omega-v2-industry--factory-home .omega-v2-factory-type-card {
+    min-width:0;
+    padding:4px;
+    gap:4px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-head { flex-wrap:wrap; gap:3px; }
+  .omega-v2-industry--factory-home .fp-type-card-art {
+    flex:0 0 28px;
+    width:28px;
+    height:28px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-art .omega-v2-factory-svg {
+    width:24px;
+    height:24px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-name {
+    flex:1 1 100%;
+    min-width:0;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-name strong {
+    font-size:9px;
+    line-height:1.2;
+    overflow-wrap:anywhere;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-count {
+    flex:1 1 100%;
+    padding:2px 3px;
+    font-size:8px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-actions {
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:3px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-actions .omega-v2-factory-button {
+    min-height:27px;
+    padding:3px 2px;
+    font-size:8px;
+  }
+}

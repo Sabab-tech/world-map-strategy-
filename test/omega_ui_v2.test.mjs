@@ -1784,6 +1784,9 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(css,/prefers-reduced-motion:\s*reduce/);
     assert.match(css,/FP persistent command view fixes/);
     assert.match(css,/orientation:\s*landscape\) and \(max-height:\s*520px/);
+    assert.match(css,/@media \\(max-width:\\s*900px\\)[\\s\\S]*?transform-style:\\s*flat/);
+    assert.match(css,/fp-card--flipped[\\s\\S]*?fp-card-face--back[\\s\\S]*?display:flex !important/);
+    assert.match(css,/@media \\(max-width:680px\\) and \\(orientation:portrait\\)[\\s\\S]*?grid-template-columns:repeat\\(3,minmax\\(0,1fr\\)\\)/);
     assert.match(css,/fp-summary/);
     assert.match(css,/@supports not \(width:\s*1cqw\)[\s\S]*?\.fp-badge\s*\{\s*display:\s*grid/);
     assert.match(css,/data-state="stopped"/);
@@ -1823,6 +1826,9 @@ test('factory screen uses canonical local SVG art while fleet screens keep their
   assert.match(industry, /function factorySvgMarkup\(factory\)/);
   assert.match(industry, /assets\/omega-industrial-icons-v1\/factories\//);
   assert.match(industry, /data-omega-v2-factory-svg/);
+  assert.match(industry, /data-omega-v2-factory-src/);
+  assert.match(industry, /function activateFactoryArtwork\(root\)/);
+  assert.match(industry, /IntersectionObserver/);
   assert.match(industry, /factorySvgMarkup\(factory\)/);
   assert.match(fleet, /function fleetHeroPhoto\(\)/);
   assert.match(fleet, /assets\/ui-photos\/bangladesh-police-headquarters\.webp/);

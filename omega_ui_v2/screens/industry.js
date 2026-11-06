@@ -1020,9 +1020,50 @@
 
   function factorySvgMarkup(factory) {
     var label = String(factory && (factory.name || factory.type) || 'Factory');
-    return '<img class="omega-v2-factory-svg" data-omega-v2-factory-svg src="' + esc(factorySvgPath(factory)) +
-      '" data-fallback="assets/omega-industrial-icons-v1/factories/generic-resource-processing-plant.svg" alt="' +
-      esc(label + ' factory illustration') + '" width="128" height="128" loading="eager" decoding="async">';
+    var fallback = 'assets/omega-industrial-icons-v1/factories/generic-resource-processing-plant.svg';
+    return '<img class="omega-v2-factory-svg" data-omega-v2-factory-svg src="' + fallback +
+      '" data-omega-v2-factory-src="' + esc(factorySvgPath(factory)) + '" data-fallback="' + fallback + '" alt="' +
+      esc(label + ' factory illustration') + '" width="128" height="128" loading="lazy" decoding="async">';
+  }
+
+  // Older Android WebViews can stall while decoding every factory SVG at once.
+  // Keep a cached placeholder in the DOM and decode the real local artwork
+  // only when its card approaches the visible viewport.
+  function activateFactoryArtwork(root) {
+    if (!root || typeof root.querySelectorAll !== 'function') return;
+    var images = root.querySelectorAll('img[data-omega-v2-factory-src]');
+    if (!images || !images.length) return;
+    var previousObserver = root.__omegaV2FactoryArtworkObserver;
+    if (previousObserver && typeof previousObserver.disconnect === 'function') previousObserver.disconnect();
+    root.__omegaV2FactoryArtworkObserver = null;
+
+    function loadArtwork(image) {
+      if (!image || typeof image.getAttribute !== 'function') return;
+      var source = image.getAttribute('data-omega-v2-factory-src');
+      if (!source) return;
+      image.setAttribute('src', source);
+      image.removeAttribute('data-omega-v2-factory-src');
+    }
+
+    var Observer = g && g.IntersectionObserver;
+    if (typeof Observer !== 'function') {
+      for (var fallbackIndex = 0; fallbackIndex < images.length; fallbackIndex += 1) {
+        loadArtwork(images[fallbackIndex]);
+      }
+      return;
+    }
+
+    var observer = new Observer(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry || !entry.isIntersecting) return;
+        loadArtwork(entry.target);
+        observer.unobserve(entry.target);
+      });
+    }, { root:null, rootMargin:'220px 0px' });
+    root.__omegaV2FactoryArtworkObserver = observer;
+    for (var imageIndex = 0; imageIndex < images.length; imageIndex += 1) {
+      observer.observe(images[imageIndex]);
+    }
   }
 
   function factoryDailyOutput(factory) {
@@ -3850,6 +3891,7 @@
       (root.__omegaV2IndustryBuildFactoryType ? factoryProjectModal(model, root.__omegaV2IndustryBuildFactoryType) : '') + '</section>';
 
     syncFactoryDetailPanel(root, model);
+    activateFactoryArtwork(root);
     if (!root.__omegaV2IndustryBound && typeof root.addEventListener === 'function') {
       root.addEventListener('error', function (event) {
         var image = event && event.target;
