@@ -3564,10 +3564,28 @@
     if ((requestedTab === 'companies' || factoryManageOpened) &&
         model.privateEnterpriseBaseline && model.privateEnterpriseBaseline.status === 'LOADING' &&
         privateRuntime) {
-      try {
-        var privateReady = privateRuntime.ready;
-        if (privateReady && typeof privateReady.then === 'function') waits.push(privateReady);
-      } catch (_) {}
+      if (factoryManageOpened) {
+        var privateLoad = root.__omegaV2PrivateManageLoad;
+        if (!privateLoad || privateLoad.countryId !== countryKey) {
+          privateLoad = { countryId:countryKey };
+          root.__omegaV2PrivateManageLoad = privateLoad;
+          try {
+            Promise.resolve(privateRuntime.ready).then(function () {
+              if (root.__omegaV2PrivateManageLoad !== privateLoad ||
+                  String(root.__omegaV2IndustryCountryId || '') !== countryKey ||
+                  !(root.__omegaV2FactoryCardUiState && root.__omegaV2FactoryCardUiState.buildKey)) return;
+              root.__omegaV2PrivateManageLoad = null;
+              scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || options || {},
+                { countryId:countryKey, tab:'factories' }), 'Private factory ownership ready');
+            });
+          } catch (_) { root.__omegaV2PrivateManageLoad = null; }
+        }
+      } else {
+        try {
+          var privateReady = privateRuntime.ready;
+          if (privateReady && typeof privateReady.then === 'function') waits.push(privateReady);
+        } catch (_) {}
+      }
     }
     if (model.factoryBaselineStatus === 'LOADING' && runtime) {
       try {
