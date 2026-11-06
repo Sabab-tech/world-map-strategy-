@@ -146,5 +146,7 @@ test('startup support datasets fail independently and retryable roster failures 
   assert.match(map, /fetchOptional\('economy\.json'\)/);
   assert.match(map, /fetchOptional\('relation_generation_engine\.json'\)/);
   assert.match(map, /loader\.__countryConfigPromise = null/);
+  assert.match(map, /STARTUP_DATA_FETCH_TIMEOUT/);
+  assert.match(map, /controller/);
   assert.doesNotThrow(() => new vm.Script(map, { filename: 'map-engine-2.js' }));
 });

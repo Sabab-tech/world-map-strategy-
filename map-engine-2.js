@@ -631,10 +631,26 @@ Game.DataLoader = {
         const worldTask = this.loadWorldMap(fetcher);
         const supportTask = (async function () {
             const fetchOptional = async function (filename) {
-                try { return await fetcher(filename); }
-                catch (error) {
+                let controller = null, timer = null;
+                try {
+                    controller = typeof AbortController === 'function' ? new AbortController() : null;
+                    const request = Promise.resolve().then(function () {
+                        return fetcher(filename, { signal:controller ? controller.signal : undefined });
+                    });
+                    const timeout = new Promise(function (resolve, reject) {
+                        timer = window.setTimeout(function () {
+                            try { if (controller) controller.abort(); } catch (_) {}
+                            const error = new Error('STARTUP_DATA_FETCH_TIMEOUT:' + filename);
+                            error.code = 'STARTUP_DATA_FETCH_TIMEOUT';
+                            reject(error);
+                        }, 6500);
+                    });
+                    return await Promise.race([request, timeout]);
+                } catch (error) {
                     console.warn('[OMEGA DataLoader] Optional startup dataset failed; other datasets will continue:', filename, error);
                     return null;
+                } finally {
+                    if (timer !== null) window.clearTimeout(timer);
                 }
             };
             try {
