@@ -3275,3 +3275,12 @@ test('Industry view pre-indexes non-baseline factory assets instead of rescannin
   assert.match(source, /var nonBaselineActiveCount = Number\(nonBaselineActiveCountsByType\[typeKey\]\) \|\| 0/);
   assert.doesNotMatch(source, /var nonBaselineActiveCount = mappedAssets\.filter/);
 });
+
+test('Factory type overview skips heavy inventory and production-ledger mapping until a card is opened', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  assert.match(source, /var lightweightTypeView = options\.lightweightFactoryTypeView === true/);
+  assert.match(source, /!lightweightTypeView && context\.countryId && inventoryRuntime/);
+  assert.match(source, /var resourceBatches = lightweightTypeView \? \[\]/);
+  assert.match(source, /var lightweightTypeView = active === 'factories' && requestedFactoryView === 'types' && !managePanelOpen && !factoryDetailsOpen/);
+  assert.match(source, /lightweightFactoryTypeView:currentTab === 'factories' && currentView === 'types' && !currentManageOpen && !currentDetailsOpen/);
+});
