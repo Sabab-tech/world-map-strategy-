@@ -955,7 +955,10 @@
     if(r)for(var i=r.financialPeriods.length-1;i>=0;i--){
       if(r.financialPeriods[i]&&r.financialPeriods[i].companyId===co){lastPeriod=clone(r.financialPeriods[i]);break;}
     }
-    var cashFlowKnown=!!(account&&account.cashFlowJournalVersion===1&&Array.isArray(account.cashFlowEntries));
+    var cashFlowKnown=!!(account&&account.cashFlowJournalVersion===1&&Array.isArray(account.cashFlowEntries)),
+      droppedTotal=account?(num(account.cashFlowJournalDroppedEntries)||0):0,
+      droppedAtLastClose=capital?(num(capital.cashFlowJournalDroppedEntriesAtClose)||0):0,
+      openPeriodDroppedEntries=Math.max(0,droppedTotal-droppedAtLastClose);
     return{
       status:account?'RECORDED':'NO_COMPANY_CASHFLOW_RECORD',
       countryId:cid,companyId:co,companyName:COMPANY_NAMES[co],
@@ -965,9 +968,10 @@
       paymentsMade:account&&num(account.paymentsMade)!==null?num(account.paymentsMade):null,
       runtimeNetCashFlow:account&&num(account.runtimeNetCashFlow)!==null?num(account.runtimeNetCashFlow):null,
       journal:{status:!cashFlowKnown?'LEGACY_OR_NOT_RECORDED':
-          (num(account.cashFlowJournalDroppedEntries)||0)>0?'JOURNAL_TRUNCATED':'VERIFIED_RUNTIME_JOURNAL',
+          openPeriodDroppedEntries>0?'JOURNAL_TRUNCATED':'VERIFIED_RUNTIME_JOURNAL',
         version:cashFlowKnown?1:null,startedAtTurn:account&&num(account.cashFlowJournalStartedAtTurn),
-        entryCount:runtimeRows.length,droppedEntryCount:account?(num(account.cashFlowJournalDroppedEntries)||0):0,
+        entryCount:runtimeRows.length,droppedEntryCount:droppedTotal,
+        droppedEntriesSinceLastClose:openPeriodDroppedEntries,
         earliestDroppedTurn:account?num(account.cashFlowJournalEarliestDroppedTurn):null,
         recordedRevenue:cashFlowKnown?revenue:null,
         recordedOperatingCosts:cashFlowKnown?cost:null,recordedTaxPayments:cashFlowKnown?tax:null,
@@ -1011,10 +1015,11 @@
       startTurn=previousClose===null?num(company.cashFlowJournalStartedAtTurn):previousClose+1;
     if(startTurn===null)return{status:'BLOCKED',reason:'COMPANY_JOURNAL_START_TURN_UNKNOWN'};
     var droppedEntries=num(company.cashFlowJournalDroppedEntries)||0,
+      droppedAtLastClose=num(capital.cashFlowJournalDroppedEntriesAtClose)||0,
       earliestDroppedTurn=num(company.cashFlowJournalEarliestDroppedTurn);
-    if(droppedEntries>0&&earliestDroppedTurn!==null&&earliestDroppedTurn>=startTurn&&earliestDroppedTurn<=endTurn)
+    if(droppedEntries>droppedAtLastClose)
       return{status:'BLOCKED',reason:'COMPANY_FINANCIAL_PERIOD_JOURNAL_TRUNCATED',
-        periodStartTurn:startTurn,periodEndTurn:endTurn,droppedEntries:droppedEntries,
+        periodStartTurn:startTurn,periodEndTurn:endTurn,droppedEntriesSinceLastClose:droppedEntries-droppedAtLastClose,
         earliestDroppedTurn:earliestDroppedTurn};
     var periodId='PE-FINANCIAL-PERIOD:'+cid+':'+co+':T'+endTurn;
     var financeRows=financeLedger(cid,true);
@@ -1074,13 +1079,10 @@
     capital.retainedEarningsCurrency=capital.currency||'GAME_CURRENCY_UNITS';
     capital.lastFinancialCloseTurn=endTurn;
     capital.lastFinancialPeriodId=periodId;
+    capital.cashFlowJournalDroppedEntriesAtClose=droppedEntries;
     capital.revision=(num(capital.revision)||0)+1;
     company.lastFinancialCloseTurn=endTurn;
     company.lastTurn=endTurn;
-    if(droppedEntries>0&&earliestDroppedTurn!==null&&earliestDroppedTurn<startTurn){
-      company.cashFlowJournalDroppedEntries=0;
-      company.cashFlowJournalEarliestDroppedTurn=null;
-    }
     var closed={
       transactionId:periodId,companyId:co,companyName:COMPANY_NAMES[co],
       periodStartTurn:startTurn,periodEndTurn:endTurn,postedEntryCount:allEntries.length,
