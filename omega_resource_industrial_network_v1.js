@@ -3841,6 +3841,13 @@ function factoryUtilityDiagnostics(countryId){
 function factoryOperationGate(countryId,asset,employmentSnapshot){
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
   const cid=canonicalCountry(countryId),factoryId=String(asset.id||asset.assetId||asset.factoryId||asset.projectId||'');
+  if(String(asset.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE'&&asset.blockedReason==='SAB34_PIPELINE_PROOF_REQUIRED'){
+    const lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||(g.Omega&&g.Omega.PrivateEnterpriseLifecycleV1);
+    if(lifecycle&&typeof lifecycle.refreshCommissionedProductionGate==='function')
+      lifecycle.refreshCommissionedProductionGate(cid,factoryId);
+    if(asset.blockedReason==='SAB34_PIPELINE_PROOF_REQUIRED')
+      return{status:'BLOCKED',reason:'SAB34_PIPELINE_PROOF_REQUIRED',factoryId,authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
+  }
   const status=String(asset.status||'OPERATIONAL').toUpperCase();
   if(['CLOSED','DECOMMISSIONED','DESTROYED','TECHNOLOGY_LOCKED','BLOCKED','UNDER_CONSTRUCTION','MAINTENANCE'].includes(status))
     return{status:'BLOCKED',reason:'FACTORY_NOT_OPERATIONAL',factoryId,factoryStatus:status};
