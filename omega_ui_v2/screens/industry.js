@@ -3967,7 +3967,7 @@
       var currentCardState = root.__omegaV2FactoryCardUiState || {};
       var currentManageOpen = !!currentCardState.buildKey;
       var currentDetailsOpen = !!currentCardState.expandedKey;
-      var refreshedModel = buildViewModel({ countryId:countryKey,
+      var refreshedModel = buildViewModel({ countryId:countryKey, tab:currentTab,
         lightweightFactoryTypeView:currentTab === 'factories' && currentView === 'types' && !currentManageOpen && !currentDetailsOpen });
       if (!(refreshedModel.catalogProfileCount > 0) && refreshedModel.factoryBaselineStatus !== 'READY') return;
       var active = root.__omegaV2IndustryTab || options.tab || 'factories';
