@@ -266,6 +266,21 @@ function validateExportBatchAllocation(seller,resourceId,batchTransfers,governme
  }
  return{allowed:true,reason:null};
 }
+function allowedExportFactoryIds(seller,resourceId,governmentContractId){
+ const policies=supplyDirectiveRows(seller,resourceId).filter(p=>p.directive==='FACTORY_ALLOCATION');
+ if(!policies.length)return null;
+ let allowed=new Set(policies[0].exportFactoryIds||[]);
+ for(const policy of policies.slice(1)){
+  const next=new Set(policy.exportFactoryIds||[]);
+  allowed=new Set([...allowed].filter(id=>next.has(id)));
+ }
+ const contract=supplyDirectiveRows(seller,resourceId).find(p=>p.directive==='GOVERNMENT_EXPORT_CONTRACT'&&
+  String(p.contractId||'')===String(governmentContractId||''));
+ if(contract&&Array.isArray(contract.authorizedFactoryIds)&&contract.authorizedFactoryIds.length){
+  const next=new Set(contract.authorizedFactoryIds);allowed=new Set([...allowed].filter(id=>next.has(id)));
+ }
+ return [...allowed];
+}
 function commitExportDirectiveTx(ctx,payload){
  const p=payload||{},c=country(ctx.countryId),sid=String(p.settlementId||'').trim();
  if(!sid)return{accepted:false,reason:'STATE_DIRECTIVE_SETTLEMENT_ID_REQUIRED'};
@@ -991,7 +1006,7 @@ function diagnostics(){
   sovereignWealthFundCount:Object.values(resource).filter(r=>!!r?.sovereignWealthFund).length,
   marketLedgerCountries:Object.keys(trade).length};
 }
-const API=Object.freeze({VERSION,loadRules,install,diagnostics,isResourceEmbargoed,isRouteBlocked,setSupplyDirective:(c,p={})=>{install();return dispatch('trade','OMEGA_STATE_SUPPLY_DIRECTIVE_SET',c,p);},liftSupplyDirective:(c,p={})=>{install();return dispatch('trade','OMEGA_STATE_SUPPLY_DIRECTIVE_LIFT',c,p);},evaluateExportDirective,validateExportBatchAllocation,supplyPolicySummary,purchasePrivateStock:(c,p={})=>{install();return dispatch('finance','OMEGA_STATE_PRIVATE_GOVERNMENT_PROCUREMENT',c,p);},siteAvailableForExtraction,extractionMultiplier,recordExtractionImpactTx,recordProcessingImpactTx,declareEmbargo,liftEmbargo,declareBlockade,liftBlockade,startExploration,processCountry,processAll,approveInvestment,commissionSite,remediateSite,setCarbonQuota,recordCarbonEmission,previewCarbonActivity,evaluateCognitiveGate,startPowerProject,processPowerCountry,capitalizeSovereignWealthFund});
+const API=Object.freeze({VERSION,loadRules,install,diagnostics,isResourceEmbargoed,isRouteBlocked,setSupplyDirective:(c,p={})=>{install();return dispatch('trade','OMEGA_STATE_SUPPLY_DIRECTIVE_SET',c,p);},liftSupplyDirective:(c,p={})=>{install();return dispatch('trade','OMEGA_STATE_SUPPLY_DIRECTIVE_LIFT',c,p);},evaluateExportDirective,validateExportBatchAllocation,allowedExportFactoryIds,commitExportDirectiveTx,supplyPolicySummary,purchasePrivateStock:(c,p={})=>{install();return dispatch('finance','OMEGA_STATE_PRIVATE_GOVERNMENT_PROCUREMENT',c,p);},siteAvailableForExtraction,extractionMultiplier,recordExtractionImpactTx,recordProcessingImpactTx,declareEmbargo,liftEmbargo,declareBlockade,liftBlockade,startExploration,processCountry,processAll,approveInvestment,commissionSite,remediateSite,setCarbonQuota,recordCarbonEmission,previewCarbonActivity,evaluateCognitiveGate,startPowerProject,processPowerCountry,capitalizeSovereignWealthFund});
 g.Omega=g.Omega||{};g.Omega.ResourceStrategicPolicyRuntime=API;g.OmegaResourceStrategicPolicyRuntime=API;
 // Load the rules immediately; OMEGA_READY may already have fired before this script loads.
 loadRules().then(()=>install()).catch(()=>{});
