@@ -105,6 +105,13 @@ test('private enterprise registry defers baseline fetch and JSON parsing until f
  assert.match(registry,/get ready\s*\(\)\s*\{\s*return init\(\);\s*\}/);
  assert.doesNotMatch(registry,/g\.Omega\.PrivateEnterpriseRegistryV1=API;init\(\);/);
  const industry=fs.readFileSync(new URL('../omega_ui_v2/screens/industry.js',import.meta.url),'utf8');
+ const lifecycle=fs.readFileSync(new URL('../omega_private_enterprise_lifecycle_v1.js',import.meta.url),'utf8');
+ assert.match(lifecycle,/data-pe-proposal-form aria-busy="true"/,
+  'Production Lines must mount a disabled proposal form contract while the country baselines load');
+ assert.match(lifecycle,/select name="operatorCompanyId" disabled/,
+  'the separate private operator selector must be present during offline baseline loading');
+ assert.match(lifecycle,/bindUi\(root\);\s*return;/,
+  'the retry action must remain connected while the proposal form is waiting for baseline readiness');
  assert.match(industry,/privateRuntime\.ready/);
  assert.match(industry,/factoryManageOpened/,
   'private baseline fetch must wait until the in-card Manage action is opened');
