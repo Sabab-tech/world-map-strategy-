@@ -288,6 +288,63 @@
     recordEvent(cid,'COMPANY_PROPOSAL_DECIDED',{proposalId:proposal.proposalId,decision:decision,decisionId:proposal.decision.decisionId,allowStateSupport:stateSupport});
     return{status:proposal.status,proposal:clone(proposal),preview:preview};
   }
+  function advanceAutonomousProposalCycle(){
+    var cid=playerCountry(),period=Math.floor(turn()/30);
+    if(!cid||period<1)return{status:'WAITING',reason:'AUTONOMOUS_PROPOSAL_REVIEW_NOT_DUE'};
+    var r=runtime(cid,true);
+    if(r.lastAutonomousProposalPeriod===period)return{status:'DUPLICATE',period:period};
+    r.lastAutonomousProposalPeriod=period;
+    var base=baseline(cid);
+    if(!base||base.status!=='READY')return{status:'WAITING',reason:'PRIVATE_BASELINE_NOT_READY',period:period};
+    var companyIndex=(period-1)%COMPANY_IDS.length,company=COMPANY_IDS[companyIndex];
+    var active=r.proposals.some(function(p){return p.companyId===company&&
+      ['PROPOSED','APPROVED_AWAITING_FUNDING','FUNDED','UNDER_CONSTRUCTION','PARTIALLY_UNDER_CONSTRUCTION','COMMISSIONED_PRODUCTION_GATED'].indexOf(p.status)>=0;});
+    if(active)return{status:'WAITING',reason:'COMPANY_HAS_ACTIVE_PROPOSAL',companyId:company,period:period};
+    var companyRow=(base.companies||[]).find(function(row){return id(row.companyId||row.id)===company;});
+    var counts=companyRow&&companyRow.factoryCounts||{};
+    var eligible=Object.keys(counts).filter(function(type){return Number.isInteger(num(counts[type]))&&num(counts[type])>0;}).sort();
+    var selected=null,selectedPreview=null;
+    for(var i=0;i<eligible.length;i++){
+      var type=id(eligible[i]),candidate={countryId:cid,factoryType:type,quantity:1};
+      var preview=previewFor(candidate);
+      if(preview.status==='READY'){selected=type;selectedPreview=preview;break;}
+    }
+    if(!selected)return{status:'NO_ELIGIBLE_CANONICAL_EXPANSION',companyId:company,period:period};
+    var requestId='PE-AUTO:'+cid+':PERIOD:'+period+':'+company;
+    var created=createProposal({countryId:cid,companyId:company,factoryType:selected,quantity:1,
+      sourcingPolicy:'MIXED',stateSupportRequested:true,requestId:requestId});
+    if(created.status!=='PROPOSED')return{status:'BLOCKED',reason:created.reason||created.status,companyId:company,period:period};
+    var stored=r.proposals.find(function(p){return p.proposalId===created.proposalId;});
+    if(stored){
+      stored.submissionMode='AUTONOMOUS_COMPANY_TURN_CYCLE';
+      stored.submittedBy=company;
+      stored.proposalPeriod=period;
+      stored.expectedDemandSnapshot=clone(selectedPreview.inputRequirements||[]);
+      stored.provenance=Object.assign({},stored.provenance||{},{source:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1',
+        actor:'AUTONOMOUS_PRIVATE_COMPANY',period:period,simulationOnly:true});
+    }
+    recordEvent(cid,'AUTONOMOUS_COMPANY_PROPOSAL_SUBMITTED',{proposalId:created.proposalId,companyId:company,factoryType:selected,period:period});
+    return{status:'PROPOSED',proposal:getProposal(cid,created.proposalId),period:period,authority:'DETERMINISTIC_SELECTED_COUNTRY_TURN_CYCLE'};
+  }
+  function scheduleAutonomousProposalCycle(){
+    var cid=playerCountry(),period=Math.floor(turn()/30);
+    if(!cid||period<1)return;
+    var r=runtime(cid,true);
+    if(r.lastAutonomousProposalPeriod===period||r.pendingAutonomousProposalPeriod===period)return;
+    r.pendingAutonomousProposalPeriod=period;
+    var registry=g.OmegaPrivateEnterpriseRegistryV1||(g.Omega&&g.Omega.PrivateEnterpriseRegistryV1);
+    var ready;
+    try{ready=registry&&registry.ready;}catch(error){ready=Promise.reject(error);}
+    Promise.resolve(ready).then(function(){
+      if(playerCountry()!==cid||Math.floor(turn()/30)!==period)return;
+      var current=runtime(cid,true);
+      current.pendingAutonomousProposalPeriod=null;
+      advanceAutonomousProposalCycle();
+    }).catch(function(){
+      var current=runtime(cid,true);
+      if(current)current.pendingAutonomousProposalPeriod=null;
+    });
+  }
   function ledgerHasTransaction(country,transactionId){
     var bucket=financeBucket(country,false);if(!bucket)return null;
     var arrays=[bucket.omegaFinance&&bucket.omegaFinance.ledger,bucket.ledger,bucket.journal,bucket.transactions];
@@ -722,7 +779,7 @@
   installIndustryHook();
   var API=Object.freeze({
     VERSION:VERSION,companyIds:COMPANY_IDS.slice(),companyNames:clone(COMPANY_NAMES),
-    createProposal:createProposal,adjustProposal:adjustProposal,decideProposal:decideProposal,previewProposal:function(country,id){var p=getProposal(country,id);return p?previewFor(p):{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};},
+    createProposal:createProposal,adjustProposal:adjustProposal,advanceAutonomousProposalCycle:advanceAutonomousProposalCycle,decideProposal:decideProposal,previewProposal:function(country,id){var p=getProposal(country,id);return p?previewFor(p):{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};},
     fundProposal:fundProposal,startConstruction:startConstruction,recordCompanyCapitalReceipt:recordCompanyCapitalReceipt,refreshCommissionedProductionGate:refreshCommissionedProductionGate,
     getProposal:getProposal,getCountryDashboard:getCountryDashboard,getCompanyCapitalSummary:getCompanyCapitalSummary,
     diagnostics:diagnostics,productionProofReady:productionProofReady
