@@ -3115,6 +3115,37 @@ test('Factory Stock/Input UI assets invalidate the old offline shell cache', () 
 });
 
 
+test('factory output status stays unknown when no stock or consumption ledger exists', () => {
+  const typeContext = { type:'STEEL_AND_ALLOY_WORKS', asset:null };
+  const untrackedModel = {
+    factories:[{id:'FACTORY-OUTPUT-UNKNOWN',type:'STEEL_AND_ALLOY_WORKS',lastRun:null}],
+    finishedGoodsLedger:[{
+      transactionId:'OUTPUT-UNKNOWN-01',factoryId:'FACTORY-OUTPUT-UNKNOWN',
+      outputQuantities:{STEEL:900},unit:'SIMULATION_RESOURCE_UNIT'
+    }],
+    resourceBatches:[],
+    resourceInventoryLedger:[]
+  };
+  assert.deepEqual(
+    globalThis.OmegaUIV2Industry.factoryDetailOutputStatus(untrackedModel,typeContext,'STEEL'),
+    {key:'unknown',label:'Use not tracked'},
+    'a production record alone cannot prove that output was unused'
+  );
+  const trackedModel = {
+    factories:untrackedModel.factories,
+    finishedGoodsLedger:untrackedModel.finishedGoodsLedger,
+    resourceBatches:[{
+      batchId:'STEEL-BATCH-01',sourceFactoryId:'FACTORY-OUTPUT-UNKNOWN',
+      resourceId:'STEEL',quantity:900,remainingQuantity:900,stage:'FINISHED'
+    }],
+    resourceInventoryLedger:[]
+  };
+  assert.deepEqual(
+    globalThis.OmegaUIV2Industry.factoryDetailOutputStatus(trackedModel,typeContext,'STEEL'),
+    {key:'stored',label:'In stock'}
+  );
+});
+
 test('factory Details is an in-card flip with three independent product tabs', () => {
   const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
