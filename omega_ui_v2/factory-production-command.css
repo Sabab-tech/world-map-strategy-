@@ -6225,3 +6225,113 @@
     gap: 6px;
   }
 }
+
+/* Factory Input table overflow containment: keep long labels and statuses inside their cells. */
+.omega-v2-industry--factory-home .fp-factory-table-wrap {
+  display:block;
+  min-width:0;
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table {
+  width:100%;
+  max-width:none;
+  table-layout:fixed;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table th,
+.omega-v2-industry--factory-home .fp-factory-input-table td {
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table:not(.fp-factory-input-total-table) th:nth-child(1) { width:22%; }
+.omega-v2-industry--factory-home .fp-factory-input-table:not(.fp-factory-input-total-table) th:nth-child(2) { width:11%; }
+.omega-v2-industry--factory-home .fp-factory-input-table:not(.fp-factory-input-total-table) th:nth-child(3) { width:10%; }
+.omega-v2-industry--factory-home .fp-factory-input-table:not(.fp-factory-input-total-table) th:nth-child(4) { width:14%; }
+.omega-v2-industry--factory-home .fp-factory-input-table:not(.fp-factory-input-total-table) th:nth-child(5) { width:10%; }
+.omega-v2-industry--factory-home .fp-factory-input-table:not(.fp-factory-input-total-table) th:nth-child(6) { width:16%; }
+.omega-v2-industry--factory-home .fp-factory-input-table:not(.fp-factory-input-total-table) th:nth-child(7) { width:9%; }
+.omega-v2-industry--factory-home .fp-factory-input-table:not(.fp-factory-input-total-table) th:nth-child(8) { width:8%; }
+.omega-v2-industry--factory-home .fp-factory-input-total-table th:nth-child(1) { width:19%; }
+.omega-v2-industry--factory-home .fp-factory-input-total-table th:nth-child(2) { width:14%; }
+.omega-v2-industry--factory-home .fp-factory-input-total-table th:nth-child(3) { width:24%; }
+.omega-v2-industry--factory-home .fp-factory-input-total-table th:nth-child(4) { width:14%; }
+.omega-v2-industry--factory-home .fp-factory-input-total-table th:nth-child(5) { width:10%; }
+.omega-v2-industry--factory-home .fp-factory-input-total-table th:nth-child(6) { width:11%; }
+.omega-v2-industry--factory-home .fp-factory-input-total-table th:nth-child(7) { width:8%; }
+.omega-v2-industry--factory-home .fp-factory-input-table td > * {
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-factory-input-identity-line,
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-product-identity,
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-product-identity-copy,
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-product-use-map {
+  min-width:0;
+  max-width:100%;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-factory-input-identity-line .fp-factory-input-id {
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-factory-source {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,6em);
+  align-items:start;
+  gap:2px 6px;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-factory-source > strong,
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-factory-source > small {
+  min-width:0;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-factory-source > small {
+  flex:initial;
+  text-align:right;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-factory-risk {
+  display:inline-flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:4px;
+  min-width:0;
+  max-width:100%;
+  white-space:normal;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-factory-risk > strong {
+  flex:1 1 4em;
+  min-width:0;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-product-stock-quantity {
+  display:inline-flex;
+  flex-wrap:wrap;
+  align-items:center;
+  min-width:0;
+  max-width:100%;
+  white-space:normal;
+}
+.omega-v2-industry--factory-home .fp-factory-input-table .fp-product-stock-quantity > strong {
+  min-width:0;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-factory-input-total-table td:nth-child(2) strong,
+.omega-v2-industry--factory-home .fp-factory-input-total-table td:nth-child(5) strong {
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
