@@ -256,7 +256,7 @@ function assertNoEconomicSideEffects(h, before, checkpoint) {
   assert.equal(now.foreignCountry, before.foreignCountry, checkpoint + ': another country must remain untouched');
 }
 
-test('canonical game clock survives 30, 100 and 180 in-game days without hang, duplicate proposal, or cross-country mutation', {
+test('canonical game clock survives 30, 100, 180 and 365 in-game days without hang, duplicate proposal, or cross-country mutation', {
   timeout: 120000
 }, async () => {
   const h = createHarness();
@@ -265,7 +265,8 @@ test('canonical game clock survives 30, 100 and 180 in-game days without hang, d
   const checkpoints = [
     { day: 30, expectedProposals: 1 },
     { day: 100, expectedProposals: 3 },
-    { day: 180, expectedProposals: 5 }
+    { day: 180, expectedProposals: 5 },
+    { day: 365, expectedProposals: 5 }
   ];
   let previousTurn = 0;
   const stageMetrics = [];
@@ -308,7 +309,7 @@ test('canonical game clock survives 30, 100 and 180 in-game days without hang, d
     assert.equal(dashboard.pipelineGate, 'BLOCKED_SAB34_PROOF_REQUIRED');
     assert.ok(dashboard.events.length <= 600, 'lifecycle audit history must remain bounded');
 
-    if (point.day === 30 || point.day === 100 || point.day === 180) {
+    if (point.day === 30 || point.day === 100 || point.day === 180 || point.day === 365) {
       const snapshot = h.simulation.saveState({ includeDiagnostics: false });
       assert.equal(snapshot.clock.turn, point.day);
       assert.equal(snapshot.worldState.simulation.turn, point.day);
@@ -352,9 +353,9 @@ test('canonical game clock survives 30, 100 and 180 in-game days without hang, d
   assertNoEconomicSideEffects(h, before, 'FINAL_REPLAY');
 
   const diagnostics = h.simulation.diagnostics();
-  assert.equal(diagnostics.clock.turn, 180);
+  assert.equal(diagnostics.clock.turn, 365);
   assert.equal(diagnostics.authoritativeState.worldStateLinked, true);
   assert.equal(diagnostics.status, 'READY');
-  assert.ok(h.simulation.stepCount >= 180);
+  assert.ok(h.simulation.stepCount >= 365);
   console.log('OMEGA PRIVATE ENTERPRISE LONG-HORIZON PASS ' + JSON.stringify(stageMetrics));
 });
