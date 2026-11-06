@@ -763,7 +763,7 @@
     } catch (_) { canonicalResourceIds = []; }
     var assets = factoryAssetRows(resource, economy);
     var rawMineSites = needsMineSiteRows ? countryMineSiteRows(context.countryId, resource) : [];
-    var mineAssets = activeTab === 'factories' && !lightweightTypeView ? mineAssetRows(resource) : [];
+    var mineAssets = lightweightTypeView ? [] : mineAssetRows(resource);
     var currentExtraction = stockSummaryView || needsMineProduction
       ? currentTurnResourceAdded(resource, context.countryId) : { rows:[], turn:null, daysPerTurn:null };
     var projects = (activeTab === 'projects' || activeTab === 'factories')
@@ -812,7 +812,9 @@
       var run = runs[id] || null;
       return { id:id || null, name:String(asset.name || asset.factoryName || profile.name || type || id || 'Unnamed registered factory'),
         type:type || 'Not recorded', recipeId:recipeId || 'Not recorded', status:String(asset.status || 'NOT_RECORDED'),
-        capacityPerDay:capacityPerDay, inputCoefficients:inputCoefficients, outputProfile:outputProfile,
+        capacityPerDay:capacityPerDay, inputCoefficients:inputCoefficients,
+        inputUnit:String(asset.inputUnit || selectedRecipe && selectedRecipe.inputUnit || profile.inputUnit || ''),
+        outputProfile:outputProfile, outputUnit:String(asset.outputUnit || selectedRecipe && selectedRecipe.outputUnit || profile.outputUnit || ''),
         cycleDays:num(selectedRecipe && selectedRecipe.cycleDays) || num(profile.cycleDays) || 1,
         lastRun:run, latestOutputs:run && (run.outputQuantities || run.outputs) || null,
         healthStatus:String(health.status || 'NOT_RECORDED'), raw:asset };
