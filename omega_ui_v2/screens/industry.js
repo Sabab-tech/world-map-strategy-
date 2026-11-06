@@ -4584,8 +4584,13 @@
             directivePayload.authorizedQuantity = quantity;
           }
           if (directive === 'GOVERNMENT_PROCUREMENT') {
+            if (!contractId || !companyIds.length) {
+              root.__omegaV2IndustryNotice = 'Government procurement authority needs a contract ID and at least one registered private company. No directive was changed.';
+              scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab:'production-lines' }));
+              return;
+            }
             directivePayload.contractId = contractId;
-            directivePayload.companyId = companyIds[0] || '';
+            directivePayload.companyId = companyIds[0];
             directivePayload.procurementLimit = quantity;
             directivePayload.authorizedQuantity = quantity;
           }
