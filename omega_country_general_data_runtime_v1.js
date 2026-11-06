@@ -64,6 +64,40 @@ function evictRecord(key){
  for(const alias of entry.aliases)if(s.byAlias.get(alias)===key)s.byAlias.delete(alias);
  return true;
 }
+const COUNTRY_FETCH_TIMEOUT_MS=3500,COUNTRY_FETCH_ATTEMPTS=2;
+const pause=ms=>new Promise(resolve=>(root.setTimeout||setTimeout)(resolve,ms));
+async function fetchCountryPayload(requestKey){
+ let lastError=null;
+ for(let attempt=0;attempt<COUNTRY_FETCH_ATTEMPTS;attempt++){
+  let controller=null,timer=null;
+  try{
+   controller=typeof root.AbortController==='function'?new root.AbortController():null;
+   const request=(async()=>{
+    if(typeof root.fetch!=='function')throw Error('FETCH_UNAVAILABLE');
+    const response=await root.fetch(DATA_URL+encodeURIComponent(requestKey),{cache:'no-store',signal:controller?controller.signal:undefined});
+    if(!response||response.ok===false){
+     const error=Error('COUNTRY_GENERAL_DATA_FETCH_FAILED'+(response&&response.status?':'+response.status:''));
+     error.status=response&&response.status||0;throw error;
+    }
+    return await response.json();
+   })();
+   const timeout=new Promise((resolve,reject)=>{
+    timer=(root.setTimeout||setTimeout)(()=>{
+     try{controller&&controller.abort()}catch(_){}
+     const error=Error('COUNTRY_GENERAL_DATA_TIMEOUT');error.code='COUNTRY_GENERAL_DATA_TIMEOUT';reject(error);
+    },COUNTRY_FETCH_TIMEOUT_MS);
+   });
+   return await Promise.race([request,timeout]);
+  }catch(error){
+   lastError=error;
+   if(error&&(error.status===404||error.status===410))break;
+   if(attempt+1<COUNTRY_FETCH_ATTEMPTS)await pause(240);
+  }finally{
+   if(timer!==null)(root.clearTimeout||clearTimeout)(timer);
+  }
+ }
+ throw lastError||Error('COUNTRY_GENERAL_DATA_FETCH_FAILED');
+}
 async function init(countryValue){
  if(countryValue==null||str(countryValue)===''){s.settled=true;return true}
  try{const runtime=root.OmegaCountryRuntimeData;if(runtime?.ready)await runtime.ready}catch(_){}
@@ -76,10 +110,7 @@ async function init(countryValue){
  if(s.inflight.has(cacheKey))return s.inflight.get(cacheKey);
  let task;
  task=(async()=>{
-  if(typeof root.fetch!=='function')throw Error('FETCH_UNAVAILABLE');
-  const response=await root.fetch(DATA_URL+encodeURIComponent(requestKey),{cache:'no-store'});
-  if(!response||response.ok===false)throw Error('COUNTRY_GENERAL_DATA_FETCH_FAILED');
-  const data=await response.json(),schema=data?.metadata?.recordSchema;
+  const data=await fetchCountryPayload(requestKey),schema=data?.metadata?.recordSchema;
   if(!Array.isArray(data?.countries)||!data.countries.length||!Array.isArray(schema?.identityFields)||
      !Array.isArray(schema?.generalFactFields)||!Array.isArray(schema?.metricFields))throw Error('COUNTRY_GENERAL_DATA_SCHEMA_INVALID');
   // A country or full-registry invalidation may have happened while the request was in flight.

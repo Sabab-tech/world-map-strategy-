@@ -131,7 +131,8 @@
     return loadLegacyCountrySource(domain,profile);
   }
   async function loadCountryData(value,domains=['cities']){
-    if(state.promise)await state.promise;
+    const initialized=state.ready||await init();
+    if(!initialized)return{status:'REGISTRY_UNAVAILABLE',countryCode:null,records:{},error:state.error};
     const profile=resolveCountry(value);
     if(!profile)return{status:'COUNTRY_NOT_RESOLVED',countryCode:null,records:{}};
     const requested=(Array.isArray(domains)?domains:[domains]).map(x=>String(x||'').toLowerCase())
@@ -322,15 +323,49 @@
   function diagnostics() {
     return {version:'1.1.0',ready:state.ready,settled:state.settled,error:state.error,profileCount:state.profiles.length,countryIdentityCount:state.byCode.size+state.extras.size,flagCount:state.profiles.concat(Array.from(state.extras.values())).filter(p=>!!flagFor(p)).length,capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length,legacyEconomyRecords:Object.keys(state.legacyEconomy).length,legacyPopulationRecords:Object.keys(state.legacyPopulation).length,strategicProfiles:state.strategicProfileDiagnostics};
   }
+  const CORE_DATA_FETCH_ATTEMPTS=3,CORE_DATA_FETCH_TIMEOUT_MS=3500;
+  const pause=ms=>new Promise(resolve=>(root.setTimeout||setTimeout)(resolve,ms));
   async function load(path,optional) {
     if (typeof root.fetch!=='function') { if(optional)return null; throw new Error('FETCH_UNAVAILABLE:'+path); }
-    const response=await root.fetch(path,{cache:'no-store'});
-    if(!response||response.ok===false){if(optional)return null;throw new Error('DATA_FETCH_FAILED:'+path);}
-    return response.json();
+    let lastError=null;
+    for(let attempt=0;attempt<CORE_DATA_FETCH_ATTEMPTS;attempt++){
+      let controller=null,timer=null;
+      try{
+        controller=typeof root.AbortController==='function'?new root.AbortController():null;
+        const request=(async()=>{
+          const response=await root.fetch(path,{cache:'no-store',signal:controller?controller.signal:undefined});
+          if(!response||response.ok===false){
+            const error=new Error('DATA_FETCH_FAILED:'+path+(response&&response.status?':'+response.status:''));
+            error.status=response&&response.status||0;
+            throw error;
+          }
+          return await response.json();
+        })();
+        const timeout=new Promise((resolve,reject)=>{
+          timer=(root.setTimeout||setTimeout)(()=>{
+            try{controller&&controller.abort()}catch(_){}
+            const error=new Error('DATA_FETCH_TIMEOUT:'+path);
+            error.code='DATA_FETCH_TIMEOUT';
+            reject(error);
+          },CORE_DATA_FETCH_TIMEOUT_MS);
+        });
+        return await Promise.race([request,timeout]);
+      }catch(error){
+        lastError=error;
+        if(error&&(error.status===404||error.status===410))break;
+        if(attempt+1<CORE_DATA_FETCH_ATTEMPTS)await pause(180*(attempt+1));
+      }finally{
+        if(timer!==null)(root.clearTimeout||clearTimeout)(timer);
+      }
+    }
+    if(optional)return null;
+    throw lastError||new Error('DATA_FETCH_FAILED:'+path);
   }
   function init() {
+    if(state.ready)return Promise.resolve(true);
     if(state.promise)return state.promise;
-    state.promise=load('./economy_global_profiles_v1.json',false)
+    let task;
+    task=load('./economy_global_profiles_v1.json',false)
       .then(data=>{
         if(!data||!Array.isArray(data.countries))throw new Error('COUNTRY_PROFILE_REGISTRY_INVALID');
         buildProfiles(data.countries);addSupplementalIdentities();
@@ -339,8 +374,10 @@
         state.legacyEconomy={};state.legacyPopulation={};state.strategicProfiles.clear();
         state.strategicProfileDiagnostics={available:false,profileCount:0,error:'COUNTRY_SCOPED_PROFILE_NOT_REQUESTED'};
         state.ready=true;state.settled=true;state.error=null;return true;
-      }).catch(error=>{state.ready=false;state.settled=true;state.error=String(error?.message||error);return false;});
-    return state.promise;
+      }).catch(error=>{state.ready=false;state.settled=true;state.error=String(error?.message||error);return false;})
+      .finally(()=>{if(state.promise===task&&!state.ready)state.promise=null;});
+    state.promise=task;
+    return task;
   }
   function getSourceDataset(id){return state.datasets.get(String(id||'').trim())||null;}
   function diagnostics(){
@@ -353,18 +390,22 @@
       inFlightCountryLoads:state.countryLoads.size,countryRecordCacheLimit:COUNTRY_RECORD_CACHE_LIMIT,
       strategicProfiles:state.strategicProfileDiagnostics};
   }
-  let activeCountryForCities=null;
+  let activeCountryForCities=null,countryContextSequence=0;
   if(typeof root.addEventListener==='function')root.addEventListener('OMEGA_COUNTRY_CONTEXT_CHANGED',event=>{
     const value=event?.detail?.countryId||event?.detail?.country;if(!value)return;
-    const profile=resolveCountry(value);if(!profile)return;
-    const previous=activeCountryForCities;activeCountryForCities=profile.countryCode;
-    if(previous&&previous!==activeCountryForCities)releaseCountryData(previous);
-    loadCountryData(profile.countryCode,['cities']).then(result=>{
-      if(result.status==='READY'&&activeCountryForCities===profile.countryCode){
+    const sequence=++countryContextSequence;
+    (async()=>{
+      const initialized=state.ready||await init();
+      if(!initialized||sequence!==countryContextSequence)return;
+      const profile=resolveCountry(value);if(!profile)return;
+      const previous=activeCountryForCities;activeCountryForCities=profile.countryCode;
+      if(previous&&previous!==activeCountryForCities)releaseCountryData(previous);
+      const result=await loadCountryData(profile.countryCode,['cities']);
+      if(result.status==='READY'&&activeCountryForCities===profile.countryCode&&sequence===countryContextSequence){
         try{root.dispatchEvent(new CustomEvent('OMEGA_COUNTRY_RUNTIME_COUNTRY_DATA_READY',{detail:{countryId:profile.countryCode,domains:['cities']}}));}catch(_){}
         try{root.Game?.Map?.renderCountryHubs?.();}catch(_){}
       }
-    }).catch(error=>{state.error=String(error?.message||error)});
+    })().catch(error=>{state.error=String(error?.message||error)});
   });
   root.OmegaCountryRuntimeData=Object.freeze({version:'1.4.0',init,ready:init(),isReady:()=>state.ready,isSettled:()=>state.settled,
     resolveCountry,flagFor,getProfile,getStrategicProfile,getRecord,getLiveRecord,getSourceDataset,getCapital,getCities,
