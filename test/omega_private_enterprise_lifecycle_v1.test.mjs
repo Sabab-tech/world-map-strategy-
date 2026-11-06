@@ -236,6 +236,7 @@ test('domestic approval subtracts strategic protection and current national dema
     demandPerDay:11,consumerDemandPerDay:5,activeFactoryInputDemandPerDay:6,pendingImportQuantity:0
   }}};
   const pressured=h.api.previewProposal('BGD',proposal.proposalId);
+  assert.equal(pressured.maximumSafeDomesticFactoryQuantity,0);
   assert.equal(pressured.inputRequirements[0].protectedStock,100);
   assert.equal(pressured.inputRequirements[0].existingDemand30Day,330);
   assert.equal(pressured.inputRequirements[0].available,570);
@@ -248,6 +249,7 @@ test('domestic approval subtracts strategic protection and current national dema
   h.state.resource.BGD.demandRuntime.byResource.iron_ore.consumerDemandPerDay=4;
   h.state.resource.BGD.demandRuntime.byResource.iron_ore.activeFactoryInputDemandPerDay=6;
   const safe=h.api.previewProposal('BGD',proposal.proposalId);
+  assert.equal(safe.maximumSafeDomesticFactoryQuantity,1);
   assert.equal(safe.inputRequirements[0].available,600);
   assert.equal(safe.shortages.length,0);
   const approved=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
