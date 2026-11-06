@@ -207,8 +207,9 @@
     var cid=canonicalCountry(input.countryId||playerCountry()),player=playerCountry();
     if(!/^[A-Z]{3}$/.test(cid)||!player)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_NOT_RESOLVED'};
     if(cid!==player)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY',countryId:cid,playerCountryId:player};
-    var company=id(input.companyId),factoryType=id(input.factoryType),quantity=num(input.quantity);
+    var company=id(input.companyId),operatorCompany=id(input.operatorCompanyId||input.companyId),factoryType=id(input.factoryType),quantity=num(input.quantity);
     if(COMPANY_IDS.indexOf(company)<0)return{status:'BLOCKED',reason:'UNKNOWN_CANONICAL_COMPANY'};
+    if(COMPANY_IDS.indexOf(operatorCompany)<0)return{status:'BLOCKED',reason:'UNKNOWN_PRIVATE_OPERATOR_COMPANY'};
     if(!/^[A-Z0-9_]{3,96}$/.test(factoryType))return{status:'BLOCKED',reason:'CANONICAL_FACTORY_TYPE_REQUIRED'};
     if(quantity===null||!Number.isInteger(quantity)||quantity<1||quantity>MAX_PROJECTS_PER_PROPOSAL)return{status:'BLOCKED',reason:'PROPOSAL_QUANTITY_OUT_OF_RANGE',minimum:1,maximum:MAX_PROJECTS_PER_PROPOSAL};
     var c=catalog()||{},profile=c.factoryProfiles&&c.factoryProfiles[factoryType],recipe=recipeFor(factoryType,profile);
@@ -228,7 +229,8 @@
       workforcePerFactory:clone(profile.workforce||{}),utilitiesPerFactory:clone(profile.utilities||{}),
       forecastOutputPerDay:(num(profile.defaultCapacityPerDay)||0)*quantity,
       expectedInputRequirements:inputForecast(cid,profile,recipe,quantity),
-      ownership:{ownerCompanyId:company,operatorCompanyId:company,stateControlRights:{licensingAndPermits:true,fiscalRegulation:true,labourSafetyEnvironmentalRegulation:true,strategicSupplyOversight:true,competitionOversight:true,foreignOwnershipReview:true,emergencyIntervention:true,operationalControl:'PRIVATE_OPERATOR_UNDER_STATE_POLICY'}},
+      operatorCompanyId:operatorCompany,
+      ownership:{ownerCompanyId:company,operatorCompanyId:operatorCompany,stateControlRights:{licensingAndPermits:true,fiscalRegulation:true,labourSafetyEnvironmentalRegulation:true,strategicSupplyOversight:true,competitionOversight:true,foreignOwnershipReview:true,emergencyIntervention:true,operationalControl:'PRIVATE_OPERATOR_UNDER_STATE_POLICY'}},
       stateControlRights:{licensingAndPermits:true,fiscalRegulation:true,labourSafetyEnvironmentalRegulation:true,strategicSupplyOversight:true,competitionOversight:true,foreignOwnershipReview:true,emergencyIntervention:true,operationalControl:'PRIVATE_OPERATOR_UNDER_STATE_POLICY'},
       status:'PROPOSED',createdTurn:turn(),updatedTurn:turn(),decision:null,projectIds:[],commissionedFactoryIds:[],
       productionEnabled:false,provenance:{source:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1',simulationOnly:true,realWorldCompany:false}
@@ -278,12 +280,23 @@
         shortages:clone(preview.shortages),unobservedInputs:clone(preview.unobservedInputs),preview:preview};
     var stateSupport=decision==='APPROVE'&&input.allowStateSupport===true&&proposal.stateSupportRequested===true;
     proposal.status=decision==='APPROVE'?'APPROVED_AWAITING_FUNDING':decision==='DENY'?'DENIED':'DEFERRED';
-    proposal.decision={decision:decision,decisionId:'PE-DECISION:'+proposal.proposalId+':T'+turn(),turn:turn(),
+    var decisionId='PE-DECISION:'+proposal.proposalId+':T'+turn();
+    var permit=decision==='APPROVE'?{
+      permitId:'PE-PERMIT:'+proposal.proposalId+':T'+turn(),
+      countryId:cid,companyId:proposal.companyId,operatorCompanyId:proposal.operatorCompanyId||proposal.companyId,
+      factoryType:proposal.factoryType,quantity:proposal.quantity,status:'ACTIVE',
+      issuedBy:'PLAYER_GOVERNMENT',issuedTurn:turn(),expiresAtTurn:num(input.expiryTurn)||turn()+30,
+      conditions:clone(input.conditions||{}),stateControlRights:clone(proposal.stateControlRights),
+      authority:'OMEGA_PRIVATE_ENTERPRISE_LICENSING_V1'
+    }:null;
+    proposal.decision={decision:decision,decisionId:decisionId,turn:turn(),
       reviewer:'PLAYER_GOVERNMENT',reason:String(input.reason||'').slice(0,1000),conditions:clone(input.conditions||{}),
       approvedQuantity:decision==='APPROVE'?proposal.quantity:0,allowStateSupport:stateSupport,
+      permitId:permit&&permit.permitId||null,
       domesticInputCeiling:proposal.sourcingPolicy==='COMPANY_FUNDED_IMPORTS'?0:preview.inputRequirements.reduce(function(s,x){return s+(x.available===null||x.nationalDemandPerDay===null?0:Math.min(x.available,x.forecast30Day));},0),
       importSharePolicy:proposal.sourcingPolicy==='DOMESTIC_ONLY'?0:proposal.sourcingPolicy==='COMPANY_FUNDED_IMPORTS'?100:'REMAINDER_AFTER_DOMESTIC_ALLOCATION',
       preview:clone(preview),reviewTurn:turn(),expiryTurn:num(input.expiryTurn)||turn()+30};
+    proposal.permit=permit;
     proposal.updatedTurn=turn();
     recordEvent(cid,'COMPANY_PROPOSAL_DECIDED',{proposalId:proposal.proposalId,decision:decision,decisionId:proposal.decision.decisionId,allowStateSupport:stateSupport});
     return{status:proposal.status,proposal:clone(proposal),preview:preview};
@@ -425,6 +438,13 @@
     if(!proposal)return{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};
     if(proposal.status==='UNDER_CONSTRUCTION'||proposal.status==='PARTIALLY_UNDER_CONSTRUCTION'||proposal.status==='COMMISSIONED_PRODUCTION_GATED'||proposal.status==='COMMISSIONED')return{status:'DUPLICATE',proposal:clone(proposal)};
     if(proposal.status!=='FUNDED')return{status:'BLOCKED',reason:'PROPOSAL_NOT_FUNDED'};
+    var permit=proposal.permit;
+    if(!permit||permit.status!=='ACTIVE'||permit.permitId!==proposal.decision?.permitId)
+      return{status:'BLOCKED',reason:'ACTIVE_GOVERNMENT_PERMIT_REQUIRED'};
+    if(turn()>(num(permit.expiresAtTurn)||0))return{status:'BLOCKED',reason:'GOVERNMENT_PERMIT_EXPIRED',permitId:permit.permitId,expiresAtTurn:permit.expiresAtTurn};
+    if(num(permit.quantity)!==proposal.quantity||permit.companyId!==proposal.companyId||
+       permit.operatorCompanyId!==(proposal.operatorCompanyId||proposal.companyId))
+      return{status:'BLOCKED',reason:'GOVERNMENT_PERMIT_SCOPE_MISMATCH'};
     var n=network(),c=catalog()||{},profile=c.factoryProfiles&&c.factoryProfiles[proposal.factoryType];
     if(!n||typeof n.startFactoryProject!=='function'||!profile)return{status:'BLOCKED',reason:'CANONICAL_FACTORY_CONSTRUCTION_RUNTIME_UNAVAILABLE'};
     if(proposal.sourcingPolicy==='DOMESTIC_ONLY'){
@@ -447,8 +467,9 @@
       var result=n.startFactoryProject({countryId:cid,factoryType:proposal.factoryType,recipeId:proposal.recipeId,
         requestId:requestId,cost:unitCost,capacityPerDay:num(profile.defaultCapacityPerDay)||1,
         contractorType:'DOMESTIC_EPC',companyId:proposal.companyId,ownerCompanyId:proposal.companyId,ownerId:proposal.companyId,
-        operatorCompanyId:proposal.companyId,operatorId:proposal.companyId,ownerType:'PRIVATE_ENTERPRISE',operatorType:'PRIVATE_COMPANY_OPERATOR',
+        operatorCompanyId:proposal.operatorCompanyId||proposal.companyId,operatorId:proposal.operatorCompanyId||proposal.companyId,ownerType:'PRIVATE_ENTERPRISE',operatorType:'PRIVATE_COMPANY_OPERATOR',
         stateControlRights:clone(proposal.ownership&&proposal.ownership.stateControlRights||proposal.stateControlRights),
+        permitId:proposal.permit.permitId,permitAuthority:proposal.permit.authority,permitExpiryTurn:proposal.permit.expiresAtTurn,
         sourcePrivateProposalId:proposal.proposalId,sourcePrivateDecisionId:proposal.decision&&proposal.decision.decisionId,
         sourcePrivateFundingId:proposal.funding&&proposal.funding.transactionId,privateCompanyId:proposal.companyId,
         constructionFinanceAuthority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL',
@@ -456,8 +477,10 @@
       if(!result||String(result.status||'').toUpperCase()!=='UNDER_CONSTRUCTION'){
         failures.push({unit:i+1,result:clone(result||{status:'BLOCKED',reason:'CONSTRUCTION_NOT_STARTED'})});break;
       }
-      result.ownerCompanyId=proposal.companyId;result.ownerId=proposal.companyId;result.operatorCompanyId=proposal.companyId;result.operatorId=proposal.companyId;
+      result.ownerCompanyId=proposal.companyId;result.ownerId=proposal.companyId;
+      result.operatorCompanyId=proposal.operatorCompanyId||proposal.companyId;result.operatorId=proposal.operatorCompanyId||proposal.companyId;
       result.ownerType='PRIVATE_ENTERPRISE';result.operatorType='PRIVATE_COMPANY_OPERATOR';
+      result.permitId=proposal.permit.permitId;result.permitAuthority=proposal.permit.authority;result.permitExpiryTurn=proposal.permit.expiresAtTurn;
       result.sourcePrivateProposalId=proposal.proposalId;result.sourcePrivateDecisionId=proposal.decision.decisionId;
       result.sourcePrivateFundingId=proposal.funding.transactionId;result.privateCompanyId=proposal.companyId;
       result.stateControlRights=clone(proposal.ownership.stateControlRights);
@@ -488,12 +511,18 @@
     var cid=canonicalCountry(country),econ=countryBucket('economy',cid,false)||{},assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[];
     var asset=assets.find(function(a){return String(a.id||a.factoryId||'')===String(project.factoryId||'');});
     if(!asset)return null;
-    var company=id(project.privateCompanyId||project.ownerCompanyId||project.companyId);
-    if(COMPANY_IDS.indexOf(company)<0)return null;
+    var company=id(project.ownerCompanyId||project.ownerId||project.privateCompanyId||project.companyId);
+    var operatorCompany=id(project.operatorCompanyId||project.operatorId||company);
+    if(COMPANY_IDS.indexOf(company)<0||COMPANY_IDS.indexOf(operatorCompany)<0)return null;
+    var proposal=runtime(cid,false)?.proposals.find(function(p){return p.proposalId===project.sourcePrivateProposalId;});
+    var permit=proposal&&proposal.permit;
+    if(!permit||permit.permitId!==project.permitId||permit.status!=='ACTIVE'||permit.companyId!==company||
+       permit.operatorCompanyId!==operatorCompany)return null;
     var productionReady=productionProofReady();
     asset.ownerId=company;asset.ownerCompanyId=company;asset.ownerType='PRIVATE_ENTERPRISE';
-    asset.operatorId=company;asset.operatorCompanyId=company;asset.operatorType='PRIVATE_COMPANY_OPERATOR';
-    asset.companyId=company;asset.stateControlRights=clone(project.stateControlRights||{});
+    asset.operatorId=operatorCompany;asset.operatorCompanyId=operatorCompany;asset.operatorType='PRIVATE_COMPANY_OPERATOR';
+    asset.companyId=operatorCompany;asset.stateControlRights=clone(project.stateControlRights||{});
+    asset.privatePermitId=permit.permitId;asset.privatePermitStatus=permit.status;asset.privatePermitAuthority=permit.authority;
     asset.ownershipStatus='PRIVATE_COMPANY_OWNED';asset.operatorStatus='PRIVATE_COMPANY_OPERATED';
     asset.sourcePrivateProposalId=project.sourcePrivateProposalId;asset.sourcePrivateDecisionId=project.sourcePrivateDecisionId||null;
     asset.sourcePrivateFundingId=project.sourcePrivateFundingId||null;asset.constructionProjectId=project.projectId;
