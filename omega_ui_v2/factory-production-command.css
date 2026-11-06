@@ -6332,6 +6332,11 @@
   max-width:none;
   table-layout:fixed;
 }
+.omega-v2-industry--factory-home .fp-factory-input-total-table {
+  /* Keep all seven aggregate columns usable on a phone; the parent wrapper
+     supplies the horizontal scroller instead of compressing every cell. */
+  min-width:960px;
+}
 .omega-v2-industry--factory-home .fp-factory-input-table th,
 .omega-v2-industry--factory-home .fp-factory-input-table td {
   min-width:0;
