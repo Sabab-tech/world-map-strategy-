@@ -204,7 +204,7 @@ assert.equal(none.status,'BLOCKED');
 assert.equal(none.reason,'NO_MATCHING_FACTORY');
 
 context.Game.state.economy.BGD.productionAssets.push({
-  id:'FAC-COAL-PREP',countryId:'BGD',stage:'PROCESSING',factoryType:'COAL_PREPARATION_PLANT',
+  id:'FAC-COAL-PREP',countryId:'BGD',stage:'PROCESSING',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
   capacity:1000,inputCoefficients:{coal:1},outputProfile:{COAL_CONCENTRATE:.82,COAL_REJECT:.18},
   ownerCompanyId:'COAL_FACTORY_OWNER',ownerType:'GOVERNMENT',
   operatorCompanyId:'COAL_FACTORY_OPERATOR',operatorType:'STATE_GOVERNMENT_OPERATOR',companyId:'LEGACY_FACTORY_COMPANY_LABEL',
