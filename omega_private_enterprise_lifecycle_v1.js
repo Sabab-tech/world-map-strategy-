@@ -523,10 +523,12 @@
       var oldPanel=shell.querySelector('[data-omega-private-company-lifecycle]');
       if(oldPanel&&oldPanel.remove)oldPanel.remove();
       var loadStatus=registry&&registry.diagnostics?registry.diagnostics():null;
-      var loadMessage=failedCountry===country||loadStatus&&loadStatus.status==='BLOCKED'
+      var loadFailed=failedCountry===country||loadStatus&&loadStatus.status==='BLOCKED';
+      var loadMessage=loadFailed
         ?'Private factory baseline unavailable: '+escapeHtml(root.__omegaPrivateBaselineError||loadStatus&&loadStatus.reason||'DATA_UNAVAILABLE')
         :'Loading private company opening baseline…';
-      shell.insertAdjacentHTML('beforeend','<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1"><h3>Company expansion proposals</h3><p>'+loadMessage+'</p><p class="pe-footnote">The government and private baseline must load before the proposal approval preview can be calculated.</p></section>');
+      var retry=loadFailed?'<button type="button" data-pe-baseline-retry>Retry baseline load</button>':'';
+      shell.insertAdjacentHTML('beforeend','<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1"><h3>Company expansion proposals</h3><p>'+loadMessage+'</p>'+retry+'<p class="pe-footnote">The government and private baseline must load before the proposal approval preview can be calculated.</p></section>');
       return;
     }
     var dash=getCountryDashboard(country),types=listFactoryTypes();
@@ -600,7 +602,17 @@
       refresh(root,root.__omegaV2IndustryCountryId||playerCountry());
     });
     root.addEventListener('click',function(event){
-      var target=event.target,button=target&&target.closest?target.closest('[data-pe-action]'):null;if(!button)return;
+      var target=event.target,retry=target&&target.closest?target.closest('[data-pe-baseline-retry]'):null;
+      if(retry){
+        if(event.preventDefault)event.preventDefault();
+        var retryCountry=root.__omegaV2IndustryCountryId||playerCountry();
+        root.__omegaPrivateBaselineLoadFailedCountry='';
+        root.__omegaPrivateBaselinePendingCountry='';
+        root.__omegaPrivateBaselineError='';
+        renderPanel(root,Object.assign({},root.__omegaV2IndustryOptions||{},{countryId:retryCountry,tab:'production-lines'}));
+        return;
+      }
+      var button=target&&target.closest?target.closest('[data-pe-action]'):null;if(!button)return;
       var proposalId=button.getAttribute('data-pe-proposal'),action=button.getAttribute('data-pe-action'),country=root.__omegaV2IndustryCountryId||playerCountry();
       var result;
       if(action==='adjust'){
