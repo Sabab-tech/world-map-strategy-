@@ -783,7 +783,13 @@
       var inventory = asset.inputInventory && typeof asset.inputInventory === 'object' ? asset.inputInventory : {};
       var lots = Array.isArray(asset.inputBatchLots) ? asset.inputBatchLots : [];
       var rows = Array.isArray(asset.inputRows) ? asset.inputRows : [];
-      return Object.keys(inventory).length > 0 || lots.length > 0 || rows.length > 0;
+      var recipe = asset.recipe && typeof asset.recipe === 'object' ? asset.recipe : {};
+      var inputCoefficients = asset.inputCoefficients || asset.inputs || asset.inputProfile || recipe.inputs || {};
+      // An empty input warehouse is still a real input requirement. Include
+      // commissioned factories with a canonical recipe so the player can see
+      // the required products before the first delivery reaches the factory.
+      return Object.keys(inventory).length > 0 || lots.length > 0 || rows.length > 0 ||
+        Object.keys(inputCoefficients).length > 0;
     }) : assets;
     // Input totals use the authoritative asset rows directly. Avoid creating a
     // second full descriptor object for every factory just to count by type.
