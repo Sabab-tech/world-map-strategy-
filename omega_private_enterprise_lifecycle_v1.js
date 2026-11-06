@@ -1979,6 +1979,27 @@
     });
     root.__omegaPrivateEnterpriseUiBound=true;
   }
+  function bindIndustryTabRefresh(root){
+    if(!root||root.__omegaPrivateTabRefreshBound||typeof root.addEventListener!=='function')return;
+    root.addEventListener('click',function(event){
+      var target=event&&event.target,tab=target&&typeof target.closest==='function'
+        ?target.closest('[data-omega-v2-industry-tab]'):null;
+      if(!tab||(typeof root.contains==='function'&&!root.contains(tab)))return;
+      if(tab.getAttribute('data-omega-v2-industry-tab')!=='production-lines')return;
+      var scheduler=typeof g.setTimeout==='function'?g.setTimeout:function(fn){Promise.resolve().then(fn);};
+      scheduler.call(g,function(){
+        if(root.__omegaV2IndustryTab!=='production-lines')return;
+        var current=g.OmegaUIV2Industry;
+        if(!current||typeof current.render!=='function')return;
+        var currentOptions=root.__omegaV2IndustryOptions||{};
+        current.render(root,Object.assign({},currentOptions,{
+          countryId:root.__omegaV2IndustryCountryId||currentOptions.countryId||playerCountry(),
+          tab:'production-lines'
+        }));
+      },0);
+    });
+    root.__omegaPrivateTabRefreshBound=true;
+  }
   function installIndustryHook(){
     var screen=g.OmegaUIV2Industry;if(!screen||typeof screen.render!=='function'||screen.__privateLifecycleWrapped)return false;
     var original=screen.render;
@@ -2009,7 +2030,11 @@
         };
       }
       var result=original(root,renderOptions);
-      if(result&&result.ok)renderPanel(root,renderOptions);
+      if(result&&result.ok){
+        var activeOptions=root&&root.__omegaV2IndustryOptions||renderOptions;
+        if(typeof activeOptions.onScheduleRender!=='function')bindIndustryTabRefresh(root);
+        renderPanel(root,renderOptions);
+      }
       return result;
     };
     g.OmegaUIV2Industry=Object.freeze(Object.assign({},screen,{render:wrapped,__privateLifecycleWrapped:true}));
