@@ -17,6 +17,23 @@
     "workerIncomeRate": 0.12,
     "transportRevenueRate": 0.05
   },
+  "companyOperatingCosts": {
+    "schemaVersion": 1,
+    "currency": "GAME_CURRENCY_UNITS",
+    "electricityCostPerMWh": 2.5,
+    "industrialWaterCostPerM3": 0.2,
+    "workerCostPerWorkerDay": 0.05,
+    "annualMaintenanceRate": 0.02,
+    "costBasis": "SIMULATED_GAME_ECONOMY_DEFAULTS",
+    "overridePath": "Game.state.economy[countryId].privateEnterpriseCostPolicy",
+    "policyRules": {
+      "countryOverrideMustBeNonNegative": true,
+      "missingMaterialPrice": "BLOCK_FINANCIAL_PERIOD_CLOSE",
+      "unobservedUtilityQuantity": "BLOCK_FINANCIAL_PERIOD_CLOSE",
+      "unknownEmployment": "BLOCK_FINANCIAL_PERIOD_CLOSE",
+      "internalOwnerOperatorTransfer": "NO_EXTERNAL_CASH_POSTING"
+    }
+  },
   "runtime": {
     "maxLedgerEntries": 2048,
     "maxBatches": 8192
