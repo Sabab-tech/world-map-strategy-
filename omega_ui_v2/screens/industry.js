@@ -578,7 +578,10 @@
         byId[key] = Object.assign({}, byId[key], asset);
         return;
       }
-      byId[key] = Object.assign({}, asset);
+      // Keep unique canonical rows by reference. Only duplicate IDs need
+      // a merged copy; the old unconditional clone copied every field of every
+      // country's factory registry on each mobile Industry navigation.
+      byId[key] = asset;
       ordered.push(key);
     });
     return ordered.map(function (key) { return byId[key]; });
@@ -757,6 +760,19 @@
     });
     var needsBatchRows = activeTab === 'inventory' || stockSummaryView || activeTab === 'factories' && !lightweightTypeView;
     var resourceBatches = needsBatchRows && Array.isArray(resource.batches) ? resource.batches : [];
+    if (activeTab === 'inventory' && resourceBatches.length) {
+      var inputSourceBatchIds = Object.create(null);
+      viewAssets.forEach(function (asset) {
+        (Array.isArray(asset.inputBatchLots) ? asset.inputBatchLots : []).forEach(function (lot) {
+          (Array.isArray(lot && lot.sourceBatchIds) ? lot.sourceBatchIds : []).forEach(function (batchId) {
+            inputSourceBatchIds[String(batchId)] = true;
+          });
+        });
+      });
+      resourceBatches = resourceBatches.filter(function (batch) {
+        return !!(batch && inputSourceBatchIds[String(batch.batchId || '')]);
+      });
+    }
     var resourceInventoryLedger = stockSummaryView && Array.isArray(resource.inventoryLedger) ? resource.inventoryLedger : [];
     var processedWarehouse = stockSummaryView && resource.processedWarehouse && typeof resource.processedWarehouse === 'object' ? resource.processedWarehouse : {};
     var nationalDemandRuntime = stockSummaryView && resource.nationalDemandRuntime && typeof resource.nationalDemandRuntime === 'object'
@@ -772,6 +788,23 @@
       }
     } catch (_) { canonicalResourceIds = []; }
     var assets = factoryAssetRows(resource, economy);
+    // The Input tab displays factories that have actual input records. Aggregate
+    // requirements and national factory counts still use the complete registry
+    // below, but rendering does not allocate a full rich view-model for every
+    // empty factory asset in large country saves.
+    var viewAssets = activeTab === 'inventory' ? assets.filter(function (asset) {
+      var inventory = asset.inputInventory && typeof asset.inputInventory === 'object' ? asset.inputInventory : {};
+      var lots = Array.isArray(asset.inputBatchLots) ? asset.inputBatchLots : [];
+      var rows = Array.isArray(asset.inputRows) ? asset.inputRows : [];
+      return Object.keys(inventory).length > 0 || lots.length > 0 || rows.length > 0;
+    }) : assets;
+    var countAssets = activeTab === 'inventory' ? assets.map(function (asset) {
+      var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
+      var type = normalizeFactoryType(rawType, catalog) || rawType;
+      return {id:String(asset.id || asset.assetId || asset.projectId || ''),
+        type:type || 'Not recorded',status:String(asset.status || 'NOT_RECORDED'),
+        raw:asset,name:String(asset.name || asset.factoryName || type || 'Factory')};
+    }) : null;
     var rawMineSites = !optimizedFactoryRead && needsMineSiteRows ? countryMineSiteRows(context.countryId, resource) : [];
     var mineAssets = optimizedFactoryRead || lightweightTypeView ? [] : mineAssetRows(resource);
     var simState = stateRoot() || {}, simClock = simState.simulation || {};
@@ -793,13 +826,13 @@
     var processingRules = catalog.processingRules && typeof catalog.processingRules === 'object' ? catalog.processingRules : {};
     var flows = !optimizedFactoryRead && activeTab === 'factories' && !lightweightTypeView ? (Array.isArray(industrial.siteFlowLedger)
       ? industrial.siteFlowLedger : (Array.isArray(resource.siteFlowLedger) ? resource.siteFlowLedger : [])) : [];
-    var mappedAssets = lightweightTypeView || activeTab === 'production-lines' ? assets.map(function (asset) {
+    var mappedAssets = lightweightTypeView || activeTab === 'production-lines' ? viewAssets.map(function (asset) {
       asset = asset && typeof asset === 'object' ? asset : {};
       var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
       var type = normalizeFactoryType(rawType, catalog) || rawType;
       return { id:String(asset.id || asset.assetId || asset.projectId || ''), type:type || 'Not recorded',
         status:String(asset.status || 'NOT_RECORDED'), raw:asset, name:String(asset.name || asset.factoryName || type || 'Factory') };
-    }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); }) : activeTab === 'national-inventory' ? assets.map(function (asset) {
+    }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); }) : activeTab === 'national-inventory' ? viewAssets.map(function (asset) {
       asset = asset && typeof asset === 'object' ? asset : {};
       var id = String(asset.id || asset.assetId || asset.projectId || '');
       var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
@@ -832,7 +865,7 @@
         cycleDays:num(selectedRecipe && selectedRecipe.cycleDays) || num(profile.cycleDays) || 1,
         lastRun:run, latestOutputs:run && (run.outputQuantities || run.outputs) || null,
         healthStatus:String(health.status || 'NOT_RECORDED'), raw:asset };
-    }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); }) : assets.map(function (asset) {      asset = asset && typeof asset === 'object' ? asset : {};
+    }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); }) : viewAssets.map(function (asset) {      asset = asset && typeof asset === 'object' ? asset : {};
       var id = String(asset.id || asset.assetId || asset.projectId || '');
       var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
       var type = normalizeFactoryType(rawType, catalog) || rawType;
@@ -914,7 +947,7 @@
     var currentExtractionRows = currentExtraction.rows;
     var operatingMineCount = mineAssets.filter(function (asset) { return /^(OPERATIONAL|ACTIVE|RUNNING)$/.test(String(asset.status || '').toUpperCase()); }).length;
     var factoryTypeCountsIndex = Object.create(null);
-    mappedAssets.forEach(function (factory) {
+    (countAssets || mappedAssets).forEach(function (factory) {
       var typeKey = normalizeFactoryType(factory.type || '', catalog) || String(factory.type || 'NOT_RECORDED').trim().toUpperCase() || 'NOT_RECORDED';
       if (!factoryTypeCountsIndex[typeKey]) {
         var profile = profiles[typeKey] || profiles[factory.type] || {};
@@ -927,7 +960,7 @@
     // which made low-memory Android WebViews spend seconds in synchronous JS work.
     var nonBaselineActiveCountsByType = Object.create(null);
     var startingAssetCountsByType = Object.create(null);
-    mappedAssets.forEach(function (factory) {
+    (countAssets || mappedAssets).forEach(function (factory) {
       var sourceType = String(factory.raw && factory.raw.sourceType || '').toUpperCase();
       var key = normalizeFactoryType(factory.type || '', catalog);
       if (!key) return;
