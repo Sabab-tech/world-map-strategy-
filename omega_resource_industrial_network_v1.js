@@ -3925,11 +3925,11 @@ function factoryOperationGate(countryId,asset,employmentSnapshot){
         asset.status='BLOCKED';
       return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',factoryId,authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
     }
-    if(asset.blockedReason==='PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE'||asset.productionEnabled!==true){
-      const refreshed=lifecycle.refreshCommissionedProductionGate(cid,factoryId);
-      if(!refreshed||!['READY','PARTIALLY_READY'].includes(refreshed.status))
-        return{status:'BLOCKED',reason:refreshed?.reason||'PRIVATE_FACTORY_AUTHORIZATION_NOT_VERIFIED',factoryId,detail:clone(refreshed||{})};
-    }
+    // Re-check permit, financing, construction-project provenance and proposal
+    // ownership on every operation. A saved asset flag is not an authorization.
+    const refreshed=lifecycle.refreshCommissionedProductionGate(cid,factoryId);
+    if(!refreshed||!['READY','PARTIALLY_READY'].includes(refreshed.status))
+      return{status:'BLOCKED',reason:refreshed?.reason||'PRIVATE_FACTORY_AUTHORIZATION_NOT_VERIFIED',factoryId,detail:clone(refreshed||{})};
     const owner=String(asset.ownerCompanyId||asset.ownerId||'').trim().toUpperCase();
     const operator=String(asset.operatorCompanyId||asset.operatorId||asset.companyId||'').trim().toUpperCase();
     const registeredCompanies=Array.isArray(lifecycle.companyIds)
