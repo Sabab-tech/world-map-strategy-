@@ -410,6 +410,7 @@ test('factory construction authorization rejects forged identity, scope, permit 
   const p=api.getProposal('BGD',proposal.proposalId);
   const request={
     countryId:'BGD',requestId:p.proposalId+':UNIT:1',factoryType:p.factoryType,
+    resourceId:p.processingResourceId||null,recipeId:p.recipeId||null,
     ownerCompanyId:p.companyId,operatorCompanyId:p.operatorCompanyId,companyId:p.companyId,privateCompanyId:p.companyId,
     ownerType:'PRIVATE_ENTERPRISE',operatorType:'PRIVATE_COMPANY_OPERATOR',stateControlRights:p.stateControlRights,
     requirePrivateCommissioningGate:true,permitId:p.permit.permitId,permitAuthority:p.permit.authority,
