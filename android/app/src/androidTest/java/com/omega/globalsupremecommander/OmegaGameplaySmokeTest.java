@@ -271,80 +271,82 @@ public final class OmegaGameplaySmokeTest {
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_COMPANY_ROUTE_OPENED");
 
-            final String factoryManageReadyScript =
-                    "(function() {" +
-                    " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
-                    " var factoriesTab = main && main.querySelector('[data-omega-v2-industry-tab=\\\"factories\\\"]');" +
-                    " var factoryView = main && main.querySelector('[data-omega-v2-factory-view-content]');" +
-                    " var manage = factoryView && factoryView.querySelector('[data-omega-v2-factory-build-details]:not([disabled])');" +
-                    " var companiesTab = main && main.querySelector('[data-omega-v2-industry-tab=\\\"companies\\\"]');" +
-                    " return !!(cabinet && main && cabinet.getAttribute('data-omega-v2-route') === 'industry' &&" +
-                    " factoriesTab && factoryView && manage && !companiesTab);" +
-                    "})()";
-            String factoryManageReady = "false";
-            final long factoryManageDeadline = SystemClock.elapsedRealtime() + 60000L;
-            while (!"true".equals(factoryManageReady) &&
-                    SystemClock.elapsedRealtime() < factoryManageDeadline) {
-                factoryManageReady = evaluate(instrumentation, webViewRef.get(), factoryManageReadyScript);
-                if (!"true".equals(factoryManageReady)) SystemClock.sleep(350L);
-            }
-            final String factoryManageDiagnostics = evaluate(instrumentation, webViewRef.get(),
+            final String linesTabReadyScript =
                     "(function() {" +
                     " var cabinet=document.getElementById('cabinet-full-window');" +
                     " var main=cabinet&&cabinet.querySelector('[data-omega-v2-main]');" +
-                    " var view=main&&main.querySelector('[data-omega-v2-factory-view-content]');" +
-                    " var buttons=view?Array.prototype.slice.call(view.querySelectorAll('[data-omega-v2-factory-build-details]')):[];" +
-                    " return JSON.stringify({" +
-                    " route:cabinet&&cabinet.getAttribute('data-omega-v2-route')," +
-                    " playerCountry:window.Omega&&window.Omega.Simulation&&window.Omega.Simulation.getPlayerCountryId&&window.Omega.Simulation.getPlayerCountryId()," +
-                    " session:window.Game&&window.Game.state&&window.Game.state.simulation&&window.Game.state.simulation.session&&window.Game.state.simulation.session.playerCountryId," +
-                    " statePlayerCountry:window.Game&&window.Game.state&&window.Game.state.playerCountryId," +
-                    " activeCountry:window.OmegaMinistryViewCountry||window.currentActiveCountry||null," +
-                    " factoryTabs:main?main.querySelectorAll('[data-omega-v2-industry-tab=\\\"factories\\\"]').length:0," +
-                    " companiesTabs:main?main.querySelectorAll('[data-omega-v2-industry-tab=\\\"companies\\\"]').length:0," +
-                    " factoryViews:main?main.querySelectorAll('[data-omega-v2-factory-view-content]').length:0," +
-                    " buttons:buttons.slice(0,24).map(function(b){return {type:b.getAttribute('data-factory-type'),disabled:b.disabled,reason:b.getAttribute('title')};})" +
-                    " });" +
-                    "})()");
-            assertEquals(
-                    "Industry must expose an enabled unified Factory-card Manage action, not a separate Companies tab; diagnostics=" + factoryManageDiagnostics,
-                    "true", factoryManageReady
-            );
-            final String openFactoryManage =
-                    "(function() {" +
-                    " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
-                    " var factoryView = main && main.querySelector('[data-omega-v2-factory-view-content]');" +
-                    " var manage = factoryView && factoryView.querySelector('[data-omega-v2-factory-build-details]:not([disabled])');" +
-                    " if (!manage) return false;" +
-                    " manage.click();" +
-                    " return true;" +
+                    " var lines=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"production-lines\\\"]');" +
+                    " var companies=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"companies\\\"]');" +
+                    " return !!(cabinet&&main&&cabinet.getAttribute('data-omega-v2-route')==='industry'&&" +
+                    " lines&&!companies&&main.querySelector('[data-omega-v2-factory-view-content]'));" +
                     "})()";
             assertEquals(
-                    "The factory card Manage button must open ownership and construction controls",
-                    "true", evaluate(instrumentation, webViewRef.get(), openFactoryManage)
+                    "Industry must expose the existing Lines tab without a separate Companies tab",
+                    "true", evaluate(instrumentation, webViewRef.get(), linesTabReadyScript)
             );
-            String privateOwnershipReady = "false";
-            final long privateBaselineDeadline = SystemClock.elapsedRealtime() + 120000L;
-            final String privateOwnershipReadyScript =
-                    "(function(){var r=window.OmegaPrivateEnterpriseRegistryV1;var d=r&&r.diagnostics();" +
-                    "var m=document.querySelector('[data-private-factory-management]');" +
-                    "return !!(d&&d.status==='READY'&&d.countryCount===197&&d.factoryTypeCount===21&&" +
-                    "d.companyCount===5&&m&&m.getAttribute('data-private-factory-management')==='v1');})()";
-            while (!"true".equals(privateOwnershipReady) &&
-                    SystemClock.elapsedRealtime() < privateBaselineDeadline) {
-                privateOwnershipReady = evaluate(instrumentation, webViewRef.get(), privateOwnershipReadyScript);
-                if (!"true".equals(privateOwnershipReady)) SystemClock.sleep(350L);
+
+            final String activateLinesTab =
+                    "(function() {" +
+                    " var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                    " var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"production-lines\\\"]');" +
+                    " if(!tab) return 'MISSING_LINES_TAB';" +
+                    " var started=performance.now();" +
+                    " tab.click();" +
+                    " return String((performance.now()-started).toFixed(2));" +
+                    "})()";
+            final String linesTapDuration = evaluate(instrumentation, webViewRef.get(), activateLinesTab);
+            assertFalse("Lines tab must be present and clickable", "MISSING_LINES_TAB".equals(linesTapDuration));
+            final double linesTapMs;
+            try { linesTapMs = Double.parseDouble(linesTapDuration); }
+            catch (NumberFormatException error) { throw new AssertionError("Invalid Lines tap timing: " + linesTapDuration, error); }
+            assertTrue("Lines tab click handler must return within 1000ms; observed " + linesTapMs + "ms", linesTapMs <= 1000.0d);
+
+            String activeLinesReady = "false";
+            final long linesRenderDeadline = SystemClock.elapsedRealtime() + 15000L;
+            final String activeLinesScript =
+                    "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                    "var panel=main&&main.querySelector('[data-omega-v2-industry-content][data-active-tab=\\\"production-lines\\\"]');" +
+                    "var heading=panel&&panel.querySelector('.fp-content-heading');" +
+                    "var body=panel&&panel.querySelector('.fp-content-body');" +
+                    "return !!(panel&&heading&&/Production lines/i.test(heading.textContent||'')&&body);})()";
+            while (!"true".equals(activeLinesReady) &&
+                    SystemClock.elapsedRealtime() < linesRenderDeadline) {
+                activeLinesReady = evaluate(instrumentation, webViewRef.get(), activeLinesScript);
+                if (!"true".equals(activeLinesReady)) SystemClock.sleep(200L);
             }
-            final String privateOwnershipDiagnostics =
-                    evaluate(instrumentation, webViewRef.get(),
-                            "(function(){var r=window.OmegaPrivateEnterpriseRegistryV1;var d=r&&r.diagnostics();var m=document.querySelector('[data-private-factory-management]');return JSON.stringify({diagnostics:d,management:m&&m.getAttribute('data-private-factory-management'),text:m&&String(m.textContent||'').slice(0,1200),route:document.getElementById('cabinet-full-window')&&document.getElementById('cabinet-full-window').getAttribute('data-omega-v2-route')});})()");
+            final String linesDiagnostics = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){var c=document.getElementById('cabinet-full-window');var m=c&&c.querySelector('[data-omega-v2-main]');" +
+                    "var p=m&&m.querySelector('[data-omega-v2-industry-content]');" +
+                    "return JSON.stringify({route:c&&c.getAttribute('data-omega-v2-route'),country:window.Omega&&window.Omega.Simulation&&window.Omega.Simulation.getPlayerCountryId&&window.Omega.Simulation.getPlayerCountryId()," +
+                    "activeTab:p&&p.getAttribute('data-active-tab'),contentLength:p&&String(p.textContent||'').length," +
+                    "companiesTab:m&&m.querySelectorAll('[data-omega-v2-industry-tab=\\\"companies\\\"]').length," +
+                    "cycleCards:p&&p.querySelectorAll('.omega-v2-card').length,emptyState:p&&!!p.querySelector('.omega-v2-empty')});})()");
             assertEquals(
-                    "Private ownership must load only after the in-card Manage action; diagnostics=" + privateOwnershipDiagnostics,
-                    "true", privateOwnershipReady
+                    "The existing Lines panel must render for the selected country; diagnostics=" + linesDiagnostics,
+                    "true", activeLinesReady
             );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_MANAGE_PRIVATE_OWNERSHIP_READY");
+
+            final String existingTabNavigation =
+                    "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                    "var ids=['inventory','national-inventory','production-lines'];var results=[];" +
+                    "for(var i=0;i<ids.length;i++){var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"'+ids[i]+'\\\"]');" +
+                    "if(!tab)return 'MISSING:'+ids[i];var started=performance.now();tab.click();results.push({tab:ids[i],clickMs:Number((performance.now()-started).toFixed(2))});}" +
+                    "return JSON.stringify(results);})()";
+            final String tabNavigationTiming = evaluate(instrumentation, webViewRef.get(), existingTabNavigation);
+            assertFalse("Input, Stock and Lines tabs must all remain reachable", tabNavigationTiming.startsWith("MISSING:"));
+            final String finalLinesReady =
+                    "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                    "return !!(main&&main.querySelector('[data-omega-v2-industry-content][data-active-tab=\\\"production-lines\\\"]')&&" +
+                    "!main.querySelector('[data-omega-v2-industry-tab=\\\"companies\\\"]'));})()";
+            String finalLinesState = "false";
+            final long finalLinesDeadline = SystemClock.elapsedRealtime() + 15000L;
+            while (!"true".equals(finalLinesState) && SystemClock.elapsedRealtime() < finalLinesDeadline) {
+                finalLinesState = evaluate(instrumentation, webViewRef.get(), finalLinesReady);
+                if (!"true".equals(finalLinesState)) SystemClock.sleep(200L);
+            }
+            assertEquals("Lines must remain responsive after Input and Stock navigation", "true", finalLinesState);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_LINES_NAV_READY tapMs=" + linesTapMs + " nav=" + tabNavigationTiming);
+
         } finally {
             if (activity != null) {
                 final MainActivity launchedActivity = activity;
