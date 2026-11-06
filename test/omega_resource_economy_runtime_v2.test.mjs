@@ -222,7 +222,14 @@ test('export settlement replay is idempotent across company flows, Treasury clea
   const fiscalAfterFirst=worldState.finance.BGD.resourceFiscal.cumulative.total;
   const clearingAfterFirst=worldState.finance.BGD.resourceSettlementClearing.length;
   const commandCountAfterFirst=commands.size;
+  const companyJournal=worldState.economy.BGD.companyAccounts.MINER_CO.cashFlowEntries;
 
+  assert.ok(Array.isArray(companyJournal)&&companyJournal.length>=3,'settled receipts and actual operating costs must be journalled');
+  assert.equal(new Set(companyJournal.map(row=>row.entryId)).size,companyJournal.length,'each company cash-flow entry has a unique idempotency key');
+  assert.ok(companyJournal.some(row=>row.direction==='CREDIT'&&row.category==='SUPPLIER_SALE'));
+  assert.ok(companyJournal.some(row=>row.direction==='DEBIT'&&row.category==='WORKER_INCOME'));
+  assert.ok(companyJournal.some(row=>row.direction==='DEBIT'&&row.category==='TRANSPORT'));
+  assert.equal(worldState.finance.BGD.resourceFiscal.cumulative.corporateTax,0,'corporate income tax must not be charged on gross receipts');
   assert.equal(clearingAfterFirst,1);
   assert.ok(commandCountAfterFirst>=6,'each payment, cost and receipt uses an authoritative command record');
 
