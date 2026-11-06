@@ -554,60 +554,120 @@
       return{status:'BLOCKED',reason:'FACTORY_INPUT_STOCK_OR_DEMAND_UNOBSERVED',unobservedInputs:clone(latest.unobservedInputs),preview:latest};
     if(latest.shortages&&latest.shortages.length)
       return{status:'BLOCKED',reason:'FACTORY_INPUT_STOCK_SHORTAGE',shortages:clone(latest.shortages),preview:latest};
-    var quote=null;
-    try{if(typeof n.factoryConstructionMaterialQuote==='function')quote=n.factoryConstructionMaterialQuote(cid,profile);}catch(e){return{status:'BLOCKED',reason:'CONSTRUCTION_BOM_QUOTE_FAILED',detail:String(e&&e.message||e)};}
-    if(!quote||quote.status!=='QUOTED')return{status:'BLOCKED',reason:quote&&quote.reason||'CONSTRUCTION_MATERIAL_PREFLIGHT_FAILED',quote:quote};
     var unitCost=num(profile.constructionCost);if(unitCost===null||unitCost<=0)return{status:'BLOCKED',reason:'CANONICAL_CONSTRUCTION_COST_UNAVAILABLE'};
-    if(!Array.isArray(proposal.projectIds))proposal.projectIds=[];
-    proposal.projectIds=Array.from(new Set(proposal.projectIds));
-    var remainingQuantity=Math.max(0,proposal.quantity-proposal.projectIds.length);
-    if(remainingQuantity===0){proposal.status='UNDER_CONSTRUCTION';return{status:'DUPLICATE',proposal:clone(proposal)};}
-    var account=capitalAccount(cid,proposal.companyId,false),reservedCapital=account?normalizeCapitalReservation(cid,proposal.companyId,account):0;
-    if(!account||reservedCapital+1e-9<unitCost*remainingQuantity)
-      return{status:'BLOCKED',reason:'COMPANY_CAPITAL_NOT_RESERVED_FOR_CONSTRUCTION',reserved:reservedCapital,required:unitCost*remainingQuantity};
-    // Aggregate remaining BOM preflight prevents a partial build caused by known material shortages.
-    for(var m=0;m<quote.materials.length;m++){
-      var row=quote.materials[m],required=num(row.required)*remainingQuantity,available=num(row.available);
-      if(available===null||available+1e-9<required)return{status:'BLOCKED',reason:'AGGREGATE_CONSTRUCTION_MATERIAL_SHORTAGE',resourceId:row.resourceId,required:required,available:available===null?0:available};
+    var resourceState=countryBucket('resource',cid,false)||{},projectRows=resourceState.industrialNetwork&&Array.isArray(resourceState.industrialNetwork.projects)
+      ?resourceState.industrialNetwork.projects:[],ledger=financeLedger(cid,true),account=capitalAccount(cid,proposal.companyId,false);
+    if(!account)return{status:'BLOCKED',reason:'COMPANY_CAPITAL_ACCOUNT_UNAVAILABLE'};
+    var canonicalProjects=[],byRequest={};
+    for(var unit=1;unit<=proposal.quantity;unit++){
+      var expectedRequest=proposal.proposalId+':UNIT:'+String(unit),matches=projectRows.filter(function(row){
+        return row&&row.projectType==='FACTORY_CONSTRUCTION'&&String(row.requestId||'')===expectedRequest;
+      });
+      if(matches.length>1)return{status:'BLOCKED',reason:'PRIVATE_CONSTRUCTION_REQUEST_ID_COLLISION',
+        requestId:expectedRequest,projectIds:matches.map(function(x){return x.projectId;})};
+      if(!matches.length)continue;
+      var existing=matches[0];
+      if(existing.sourcePrivateProposalId!==proposal.proposalId||
+         String(existing.ownerCompanyId||existing.ownerId||'').toUpperCase()!==proposal.companyId||
+         String(existing.operatorCompanyId||existing.operatorId||'').toUpperCase()!==(proposal.operatorCompanyId||proposal.companyId)||
+         String(existing.privatePermitId||existing.permitId||'')!==String(permit.permitId)||
+         String(existing.sourcePrivateFundingId||'')!==String(proposal.funding&&proposal.funding.transactionId||'')||
+         String(existing.factoryType||'').toUpperCase()!==proposal.factoryType||
+         !['UNDER_CONSTRUCTION','COMPLETED'].includes(String(existing.status||'').toUpperCase()))
+        return{status:'BLOCKED',reason:'EXISTING_PRIVATE_CONSTRUCTION_PROVENANCE_MISMATCH',requestId:expectedRequest,projectId:existing.projectId};
+      canonicalProjects.push(existing);byRequest[expectedRequest]=existing;
+    }
+    // The canonical project registry, not a possibly half-saved proposal pointer list, decides which units exist.
+    proposal.projectIds=Array.from(new Set(canonicalProjects.map(function(row){return String(row.projectId);}).filter(Boolean)));
+    var remainingQuantity=Math.max(0,proposal.quantity-canonicalProjects.length);
+    var unsettledExisting=canonicalProjects.filter(function(project){
+      return !ledger.some(function(row){return row&&row.transactionId==='PE-CAPEX:'+project.projectId;});
+    }).length;
+    var reservedCapital=normalizeCapitalReservation(cid,proposal.companyId,account);
+    var capitalRequired=(remainingQuantity+unsettledExisting)*unitCost;
+    if(reservedCapital+1e-9<capitalRequired)
+      return{status:'BLOCKED',reason:'COMPANY_CAPITAL_NOT_RESERVED_FOR_CONSTRUCTION',reserved:reservedCapital,required:capitalRequired,
+        newFactoryUnits:remainingQuantity,existingProjectsMissingCapex:unsettledExisting};
+    var quote=null;
+    if(remainingQuantity>0){
+      try{if(typeof n.factoryConstructionMaterialQuote==='function')quote=n.factoryConstructionMaterialQuote(cid,profile);}
+      catch(e){return{status:'BLOCKED',reason:'CONSTRUCTION_BOM_QUOTE_FAILED',detail:String(e&&e.message||e)};}
+      if(!quote||quote.status!=='QUOTED')return{status:'BLOCKED',reason:quote&&quote.reason||'CONSTRUCTION_MATERIAL_PREFLIGHT_FAILED',quote:quote};
+      // Existing projects have already issued construction materials. Only quote inputs for missing units.
+      for(var m=0;m<quote.materials.length;m++){
+        var row=quote.materials[m],requiredUnit=num(row.required),available=num(row.available);
+        if(requiredUnit===null||requiredUnit<0||available===null||available+1e-9<requiredUnit*remainingQuantity)
+          return{status:'BLOCKED',reason:'AGGREGATE_CONSTRUCTION_MATERIAL_SHORTAGE',resourceId:row.resourceId,
+            required:requiredUnit===null?null:requiredUnit*remainingQuantity,available:available===null?0:available};
+      }
     }
     var started=[],failures=[];
-    for(var i=0;i<proposal.quantity;i++){
-      var requestId=proposal.proposalId+':UNIT:'+String(i+1);
-      var existingProject=proposal.projectIds.some(function(projectId){var projectRows=(countryBucket('resource',cid,false)||{}).industrialNetwork?.projects||[];return projectRows.some(function(row){return row.projectId===projectId&&row.requestId===requestId;});});
-      if(existingProject)continue;
-      var result=n.startFactoryProject({countryId:cid,factoryType:proposal.factoryType,recipeId:proposal.recipeId,
+    function settleUnitCapex(project,unitNumber){
+      if(!project||!project.projectId||String(project.requestId||'')!==proposal.proposalId+':UNIT:'+String(unitNumber)||
+         project.sourcePrivateProposalId!==proposal.proposalId||
+         String(project.ownerCompanyId||project.ownerId||'').toUpperCase()!==proposal.companyId||
+         String(project.operatorCompanyId||project.operatorId||'').toUpperCase()!==(proposal.operatorCompanyId||proposal.companyId)||
+         String(project.factoryType||'').toUpperCase()!==proposal.factoryType||
+         String(project.privatePermitId||project.permitId||'')!==String(permit.permitId)||
+         String(project.sourcePrivateFundingId||'')!==String(proposal.funding&&proposal.funding.transactionId||'')||
+         Math.abs((num(project.cost)||0)-unitCost)>1e-6||project.requirePrivateCommissioningGate!==true)
+        return{accepted:false,reason:'PRIVATE_CONSTRUCTION_PROJECT_PROVENANCE_MISMATCH'};
+      var transactionId='PE-CAPEX:'+project.projectId,prior=ledger.find(function(row){return row&&row.transactionId===transactionId;});
+      if(prior){
+        if(prior.type!=='PRIVATE_ENTERPRISE_FACTORY_CAPEX'||prior.proposalId!==proposal.proposalId||
+           prior.projectId!==project.projectId||prior.companyId!==proposal.companyId||
+           Math.abs((num(prior.amount)||0)-unitCost)>1e-6||String(prior.status||'').toUpperCase()!=='POSTED')
+          return{accepted:false,reason:'PRIVATE_CONSTRUCTION_CAPEX_LEDGER_COLLISION',transactionId:transactionId};
+        return{accepted:true,duplicate:true,transactionId:transactionId};
+      }
+      var reserveNow=normalizeCapitalReservation(cid,proposal.companyId,account);
+      if(reserveNow+1e-9<unitCost)return{accepted:false,reason:'PRIVATE_CONSTRUCTION_UNIT_CAPITAL_NOT_RESERVED',reserved:reserveNow,required:unitCost};
+      account.reservedBalance=Math.max(0,reserveNow-unitCost);account.capitalSpent+=unitCost;account.revision++;
+      ledger.push({transactionId:transactionId,type:'PRIVATE_ENTERPRISE_FACTORY_CAPEX',proposalId:proposal.proposalId,
+        projectId:project.projectId,companyId:proposal.companyId,amount:unitCost,currency:proposal.capitalUnit,direction:'TRANSFER',
+        debitAccount:'COMPANY_CAPITAL_RESERVED:'+proposal.companyId,creditAccount:'FACTORY_CONSTRUCTION:'+project.projectId,
+        balanceAfter:account.availableBalance,reservedBalanceAfter:account.reservedBalance,status:'POSTED',turn:turn(),
+        authority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL'});
+      return{accepted:true,transactionId:transactionId};
+    }
+    for(var i=1;i<=proposal.quantity;i++){
+      var requestId=proposal.proposalId+':UNIT:'+String(i),existingProject=byRequest[requestId]||null,result=null;
+      if(existingProject){
+        var reconciled=settleUnitCapex(existingProject,i);
+        if(!reconciled.accepted){failures.push({unit:i,result:reconciled});break;}
+        started.push(Object.assign({idempotent:true,capexReconciled:!reconciled.duplicate},existingProject));
+        if(proposal.projectIds.indexOf(existingProject.projectId)<0)proposal.projectIds.push(existingProject.projectId);
+        if(String(existingProject.status||'').toUpperCase()==='COMPLETED')applyCommissionedAsset(cid,existingProject);
+        continue;
+      }
+      result=n.startFactoryProject({countryId:cid,factoryType:proposal.factoryType,recipeId:proposal.recipeId,
         requestId:requestId,cost:unitCost,capacityPerDay:num(profile.defaultCapacityPerDay)||1,
         contractorType:'DOMESTIC_EPC',companyId:proposal.companyId,ownerCompanyId:proposal.companyId,ownerId:proposal.companyId,
-        operatorCompanyId:proposal.operatorCompanyId||proposal.companyId,operatorId:proposal.operatorCompanyId||proposal.companyId,ownerType:'PRIVATE_ENTERPRISE',operatorType:'PRIVATE_COMPANY_OPERATOR',
+        operatorCompanyId:proposal.operatorCompanyId||proposal.companyId,operatorId:proposal.operatorCompanyId||proposal.companyId,
+        ownerType:'PRIVATE_ENTERPRISE',operatorType:'PRIVATE_COMPANY_OPERATOR',
         stateControlRights:clone(proposal.ownership&&proposal.ownership.stateControlRights||proposal.stateControlRights),
-        permitId:proposal.permit.permitId,permitAuthority:proposal.permit.authority,permitExpiryTurn:proposal.permit.expiresAtTurn,
+        permitId:permit.permitId,permitAuthority:permit.authority,permitExpiryTurn:permit.expiresAtTurn,
         sourcePrivateProposalId:proposal.proposalId,sourcePrivateDecisionId:proposal.decision&&proposal.decision.decisionId,
         sourcePrivateFundingId:proposal.funding&&proposal.funding.transactionId,privateCompanyId:proposal.companyId,
-        constructionFinanceAuthority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL',
-        requirePrivateCommissioningGate:true});
+        constructionFinanceAuthority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL',requirePrivateCommissioningGate:true});
       if(!result||String(result.status||'').toUpperCase()!=='UNDER_CONSTRUCTION'){
-        failures.push({unit:i+1,result:clone(result||{status:'BLOCKED',reason:'CONSTRUCTION_NOT_STARTED'})});break;
+        failures.push({unit:i,result:clone(result||{status:'BLOCKED',reason:'CONSTRUCTION_NOT_STARTED'})});break;
       }
-      result.ownerCompanyId=proposal.companyId;result.ownerId=proposal.companyId;
-      result.operatorCompanyId=proposal.operatorCompanyId||proposal.companyId;result.operatorId=proposal.operatorCompanyId||proposal.companyId;
-      result.ownerType='PRIVATE_ENTERPRISE';result.operatorType='PRIVATE_COMPANY_OPERATOR';
-      result.permitId=proposal.permit.permitId;result.permitAuthority=proposal.permit.authority;result.permitExpiryTurn=proposal.permit.expiresAtTurn;
-      result.sourcePrivateProposalId=proposal.proposalId;result.sourcePrivateDecisionId=proposal.decision.decisionId;
-      result.sourcePrivateFundingId=proposal.funding.transactionId;result.privateCompanyId=proposal.companyId;
-      result.stateControlRights=clone(proposal.ownership.stateControlRights);
+      var settled=settleUnitCapex(result,i);
+      if(!settled.accepted){failures.push({unit:i,result:settled});break;}
       started.push(result);
       if(proposal.projectIds.indexOf(result.projectId)<0)proposal.projectIds.push(result.projectId);
-      var ledger=financeLedger(cid,true),transactionId='PE-CAPEX:'+result.projectId;
-      if(!ledger.some(function(x){return x.transactionId===transactionId;})){
-        account.reservedBalance=Math.max(0,normalizeCapitalReservation(cid,proposal.companyId,account)-unitCost);
-        account.capitalSpent+=unitCost;account.revision++;
-        ledger.push({transactionId:transactionId,type:'PRIVATE_ENTERPRISE_FACTORY_CAPEX',proposalId:proposal.proposalId,projectId:result.projectId,
-          companyId:proposal.companyId,amount:unitCost,currency:proposal.capitalUnit,direction:'TRANSFER',
-          debitAccount:'COMPANY_CAPITAL_RESERVED:'+proposal.companyId,creditAccount:'FACTORY_CONSTRUCTION:'+result.projectId,
-          balanceAfter:account.availableBalance,reservedBalanceAfter:account.reservedBalance,status:'POSTED',turn:turn(),authority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL'});
-      }
+      byRequest[requestId]=result;
     }
-    proposal.status=failures.length?(proposal.projectIds.length?'PARTIALLY_UNDER_CONSTRUCTION':'FUNDED'):'UNDER_CONSTRUCTION';
+    var allCompleted=proposal.projectIds.length===proposal.quantity&&proposal.projectIds.every(function(projectId){
+      var row=projectRows.find(function(project){return project&&project.projectId===projectId;})||
+        Object.keys(byRequest).map(function(key){return byRequest[key];}).find(function(project){return project&&project.projectId===projectId;});
+      return row&&String(row.status||'').toUpperCase()==='COMPLETED';
+    });
+    if(failures.length)proposal.status=proposal.projectIds.length?'PARTIALLY_UNDER_CONSTRUCTION':'FUNDED';
+    else if(allCompleted&&proposal.commissionedFactoryIds&&proposal.commissionedFactoryIds.length>=proposal.quantity)
+      proposal.status=proposal.productionEnabled?'COMMISSIONED':'COMMISSIONED_PRODUCTION_GATED';
+    else proposal.status='UNDER_CONSTRUCTION';
     proposal.updatedTurn=turn();
     proposal.construction={startedCount:proposal.projectIds.length,requestedCount:proposal.quantity,remainingCount:Math.max(0,proposal.quantity-proposal.projectIds.length),
       unitCost:unitCost,projectIds:proposal.projectIds.slice(),failures:failures};
