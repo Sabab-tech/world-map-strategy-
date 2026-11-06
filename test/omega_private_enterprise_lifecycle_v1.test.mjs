@@ -271,13 +271,13 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   assert.equal(asset.stateControlRights.publicProcurement,true);
   assert.equal(asset.stateControlRights.authority,'OMEGA_STATE_CONTROL_RIGHTS_V1');
   assert.equal(asset.status,'BLOCKED');
-  assert.equal(asset.blockedReason,'SAB34_PIPELINE_PROOF_REQUIRED');
+  assert.equal(asset.blockedReason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE');
   assert.equal(asset.productionEnabled,false);
   assert.equal(api.getProposal('BGD',proposal.proposalId).status,'COMMISSIONED_PRODUCTION_GATED');
   assert.equal(api.diagnostics().productionEnabled,false);
 
-  h.sandbox.OmegaPrivateEnterprisePipelineProof={status:'VERIFIED',siteSelection:true,extraction:true,
-    logisticsReceipt:true,factoryInput:true,finishedGoods:true,saveLoad:true,exactMainSha:'a'.repeat(40)};
+  Object.assign(h.network,{loadCatalog(){},executeSitePipeline(){},advanceShipments(){},advanceProjects(){},
+    startFactoryProductionCycle(){},executeFactoryCycle(){},processPendingFactoryInputs(){}});
   const gate=api.refreshCommissionedProductionGate('BGD',project.factoryId);
   assert.equal(gate.status,'READY');
   assert.equal(asset.status,'OPERATIONAL');
@@ -310,8 +310,8 @@ test('production proof refresh restores only the requested factory and gates sib
   const [first,second]=h.state.economy.BGD.productionAssets;
   assert.equal(first.status,'BLOCKED');
   assert.equal(second.status,'BLOCKED');
-  h.sandbox.OmegaPrivateEnterprisePipelineProof={status:'VERIFIED',siteSelection:true,extraction:true,
-    logisticsReceipt:true,factoryInput:true,finishedGoods:true,saveLoad:true,exactMainSha:'c'.repeat(40)};
+  Object.assign(h.network,{loadCatalog(){},executeSitePipeline(){},advanceShipments(){},advanceProjects(){},
+    startFactoryProductionCycle(){},executeFactoryCycle(){},processPendingFactoryInputs(){}});
   const firstGate=api.refreshCommissionedProductionGate('BGD',first.id);
   assert.equal(firstGate.status,'PARTIALLY_READY');
   assert.equal(first.status,'OPERATIONAL');
@@ -426,13 +426,14 @@ test('factory construction authorization rejects forged identity, scope, permit 
   assert.equal(h.projects.length,0,'authorization validation itself cannot create a project');
 });
 
-test('private production proof requires a full exact 40-character commit SHA',()=>{
+test('private production requires the mounted canonical extraction-to-output runtime, not a test-only attestation',()=>{
   const h=makeHarness(),api=h.api;
-  h.sandbox.OmegaPrivateEnterprisePipelineProof={status:'VERIFIED',siteSelection:true,extraction:true,
-    logisticsReceipt:true,factoryInput:true,finishedGoods:true,saveLoad:true,exactMainSha:'abcdef1234567'};
-  assert.equal(api.productionProofReady(),false);
-  h.sandbox.OmegaPrivateEnterprisePipelineProof.exactMainSha='b'.repeat(40);
-  assert.equal(api.productionProofReady(),true);
+  assert.equal(api.productionProofReady(),false,'a commissioning record cannot bypass a missing production runtime');
+  Object.assign(h.network,{loadCatalog(){},executeSitePipeline(){},advanceShipments(){},advanceProjects(){},
+    startFactoryProductionCycle(){},executeFactoryCycle(){},processPendingFactoryInputs(){}});
+  assert.equal(api.productionProofReady(),true,'the canonical production APIs make the private runtime eligible');
+  delete h.network.processPendingFactoryInputs;
+  assert.equal(api.productionProofReady(),false,'missing the live factory scheduler must fail closed');
 });
 
 test('domestic-only approval fails closed on a measured shortage or unobserved stock',()=>{
