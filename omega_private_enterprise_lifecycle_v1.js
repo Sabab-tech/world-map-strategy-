@@ -609,7 +609,9 @@
     if(cid!==playerCountry()||!productionProofReady())return{status:'BLOCKED',reason:'SAB34_PIPELINE_PROOF_REQUIRED'};
     var econ=countryBucket('economy',cid,false)||{},assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[],
       target=assets.find(function(a){return String(a.id||a.factoryId||'')===String(factoryId||'');});
-    if(!target||id(target.ownerCompanyId||target.ownerId)!==id(target.companyId||target.ownerCompanyId))return{status:'BLOCKED',reason:'PRIVATE_FACTORY_NOT_FOUND'};
+    var owner=target&&id(target.ownerCompanyId||target.ownerId),operator=target&&id(target.operatorCompanyId||target.operatorId||target.companyId);
+    if(!target||COMPANY_IDS.indexOf(owner)<0||COMPANY_IDS.indexOf(operator)<0||
+       String(target.ownerType||'').toUpperCase()!=='PRIVATE_ENTERPRISE')return{status:'BLOCKED',reason:'PRIVATE_FACTORY_NOT_FOUND'};
     var proposal=runtime(cid,false)?.proposals.find(function(p){return p.proposalId===target.sourcePrivateProposalId;});
     if(!proposal)return{status:'BLOCKED',reason:'PRIVATE_PROPOSAL_NOT_FOUND'};
     var restored=[];
