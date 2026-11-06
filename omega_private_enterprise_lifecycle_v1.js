@@ -198,6 +198,7 @@
         protectedStock:stock.protectedStock,nationalDemandPerDay:stock.nationalDemandPerDay,consumerDemandPerDay:stock.consumerDemandPerDay,
         existingFactoryInputDemandPerDay:stock.existingFactoryInputDemandPerDay,existingDemand30Day:stock.existingDemand30Day,
         confirmedInboundNotCounted:stock.confirmedInboundNotCounted,demandStatus:stock.demandStatus,
+        demandSnapshotTurn:stock.demandSnapshotTurn,demandEvaluationTurn:stock.demandEvaluationTurn,demandRowObserved:stock.demandRowObserved,
         shortfall:stock.available===null?null:Math.max(0,needed-stock.available),authority:stock.authority,reserved:stock.reserved});
     });
     return rows;
@@ -261,11 +262,7 @@
     var maxAdditional=Math.max(0,maximumPrivate-openingPrivate-livePrivate);
     var inputs=inputForecast(cid,profile,recipe,proposal.quantity);
     var deficits=inputs.filter(function(x){return x.shortfall!==null&&x.shortfall>1e-9;});
-    var unobserved=inputs.filter(function(x){
-      // Company-funded imports need observed physical stock, not domestic-demand telemetry.
-      return x.physicalAvailable===null||(proposal.sourcingPolicy!=='COMPANY_FUNDED_IMPORTS'&&
-        (x.available===null||x.nationalDemandPerDay===null));
-    });
+    var unobserved=inputs.filter(function(x){return x.available===null||x.nationalDemandPerDay===null;});
     var operationalReadiness=operationalCapacityPreview(cid,profile,proposal.quantity);
     var safeDomestic=maximumDomesticQuantity(inputs,profile,maxAdditional);
     var capacity=profile.defaultCapacityPerDay===undefined?null:num(profile.defaultCapacityPerDay)*proposal.quantity;
