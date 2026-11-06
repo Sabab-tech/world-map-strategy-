@@ -52,6 +52,18 @@ test('runtime registry blocks unknown company category keys and unreconciled agg
  assert.equal(totalResult.status,'BLOCKED');
  assert.match(totalResult.reason,/PRIVATE_COUNTRY_TOTAL_MISMATCH/);
 });
+test('runtime registry rejects non-integer and drifted world aggregates',async()=>{
+ const stringTotal=JSON.parse(JSON.stringify(generated));
+ stringTotal.totalPrivateFactoryUnits=String(stringTotal.totalPrivateFactoryUnits);
+ const stringResult=await loadPrivateRegistry(stringTotal);
+ assert.equal(stringResult.status,'BLOCKED');
+ assert.match(stringResult.reason,/PRIVATE_WORLD_TOTAL_MISMATCH/);
+ const governmentDrift=JSON.parse(JSON.stringify(generated));
+ governmentDrift.totalGovernmentFactoryUnits+=1;
+ const governmentResult=await loadPrivateRegistry(governmentDrift);
+ assert.equal(governmentResult.status,'BLOCKED');
+ assert.match(governmentResult.reason,/PRIVATE_WORLD_GOVERNMENT_TOTAL_MISMATCH/);
+});
 test('zero government categories never receive private or company factory units',()=>{
  for(const [country,g] of Object.entries(government.countries)){const r=generated.countries[country];for(const type of generated.factoryTypes.map(x=>x.id)){if(g.factoryCounts[type]!==0)continue;assert.equal(r.factoryCounts[type],0,country+':'+type);for(const company of generated.companies)assert.equal(r.companyFactoryCounts[company.id][type],0,country+':'+company.id+':'+type);}}
 });
