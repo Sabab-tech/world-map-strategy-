@@ -3264,7 +3264,7 @@ test('Factory Input tables contain long cell content without changing factory ca
   assert.doesNotMatch(fix, /\.fp-card|\.fp-type-card/,
     'the separate Input table fix must not alter factory cards');
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 98,
+  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 99,
     'offline clients must fetch the updated Factory Input stylesheet');
 });
 
