@@ -613,6 +613,42 @@ test('company tax close blocks when current-period cash-flow entries were pruned
   assert.equal(h.state.finance.BGD.omegaFinance.ledger.some(row=>row.type==='PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX'),false);
 });
 
+test('joint venture allocates small dividends by largest remainder without creating or losing cents',()=>{
+  const h=makeHarness();
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [COMPANY]:{companyId:COMPANY,currency:'GAME_CURRENCY_UNITS',availableBalance:0,reservedBalance:0,
+      capitalRaised:0,capitalSpent:0,retainedEarningsBalance:1,revision:0},
+    AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',currency:'GAME_CURRENCY_UNITS',
+      availableBalance:0,reservedBalance:0,capitalRaised:0,capitalSpent:0,retainedEarningsBalance:0,revision:0},
+    NOVA_CONSUMER_INDUSTRIES:{companyId:'NOVA_CONSUMER_INDUSTRIES',currency:'GAME_CURRENCY_UNITS',
+      availableBalance:0,reservedBalance:0,capitalRaised:0,capitalSpent:0,retainedEarningsBalance:0,revision:0}
+  };
+  const created=h.api.createJointVenture({countryId:'BGD',name:'Three-party precision JV',requestId:'jv-rounding',
+    managingCompanyId:COMPANY,shareholders:[
+      {companyId:COMPANY,shareBps:3334},
+      {companyId:'AURORA_INDUSTRIAL_GROUP',shareBps:3333},
+      {companyId:'NOVA_CONSUMER_INDUSTRIES',shareBps:3333}
+    ]});
+  assert.equal(created.status,'PROPOSED');
+  assert.equal(h.api.decideJointVenture({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,decision:'APPROVE'}).status,'ACTIVE');
+  assert.equal(h.api.contributeJointVentureRetainedEarnings({countryId:'BGD',
+    jointVentureId:created.jointVenture.jointVentureId,companyId:COMPANY,amount:0.03,requestId:'small-fund'}).status,'POSTED');
+  const resolution=h.api.createJointVentureResolution({countryId:'BGD',
+    jointVentureId:created.jointVenture.jointVentureId,type:'DIVIDEND',amount:0.03,requiredApprovalBps:10000});
+  assert.equal(resolution.status,'VOTING');
+  for(const companyId of [COMPANY,'AURORA_INDUSTRIAL_GROUP','NOVA_CONSUMER_INDUSTRIES']){
+    const vote=h.api.voteJointVentureResolution({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,
+      resolutionId:resolution.resolution.resolutionId,companyId:companyId,vote:'FOR'});
+    if(companyId==='NOVA_CONSUMER_INDUSTRIES')assert.equal(vote.status,'APPROVED');
+  }
+  const paid=h.api.distributeJointVentureDividend({countryId:'BGD',
+    jointVentureId:created.jointVenture.jointVentureId,resolutionId:resolution.resolution.resolutionId});
+  assert.equal(paid.status,'PAID');
+  assert.equal(paid.distribution.reduce((sum,row)=>sum+Math.round(row.amount*100),0),3);
+  assert.deepEqual(paid.distribution.map(row=>row.amount),[0.01,0.01,0.01]);
+  assert.equal(h.api.getJointVentureDashboard('BGD').jointVentures[0].retainedEarningsBalance,0);
+});
+
 test('joint venture needs exact shareholder weights, state approval, weighted votes and post-tax dividend funding',()=>{
   const h=makeHarness();
   h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
