@@ -328,6 +328,8 @@ function governmentProcurementTx(cmd,ctx){
  const selected=Array.isArray(p.batchIds)?p.batchIds.map(String):[];
  const candidates=batches.filter(b=>tok(b?.resourceId||b?.materialIdentity)===tok(rid)&&
   String(b?.ownerCompanyId||'').toUpperCase()===companyId&&
+  PRIVATE_COMPANY_IDS.includes(String(b?.operatorCompanyId||'').toUpperCase())&&
+  !['LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED','UNASSIGNED','NOT_RECORDED',''].includes(String(b?.ownerAttributionStatus||'').toUpperCase())&&
   ['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(String(b?.stage||'').toUpperCase())&&
   !['CONSUMED','SOLD','TRANSFERRED','DEPLETED'].includes(String(b?.status||'').toUpperCase())&&
   (selected.length===0||selected.includes(String(b?.batchId||''))));
