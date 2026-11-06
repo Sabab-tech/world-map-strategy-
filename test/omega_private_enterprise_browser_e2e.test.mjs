@@ -106,6 +106,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       serviceWorkers: 'block'
     });
     const page = await context.newPage();
+    const viewportSession = await context.newCDPSession(page);
     page.setDefaultTimeout(15000);
     page.on('pageerror', error => pageErrors.push(String(error && error.stack || error)));
     page.on('console', message => {
@@ -487,7 +488,18 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       { name: 'mobile-landscape', width: 844, height: 390 },
       { name: 'desktop', width: 1365, height: 768 }
     ]) {
-      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      await viewportSession.send('Emulation.setDeviceMetricsOverride', {
+        width:viewport.width,
+        height:viewport.height,
+        deviceScaleFactor:1,
+        mobile:viewport.name !== 'desktop',
+        screenWidth:viewport.width,
+        screenHeight:viewport.height,
+        screenOrientation:{
+          type:viewport.width > viewport.height ? 'landscapePrimary' : 'portraitPrimary',
+          angle:viewport.width > viewport.height ? 90 : 0
+        }
+      });
       await page.waitForTimeout(100);
       const layout = await page.locator('[data-omega-private-company-lifecycle]').evaluate(element => ({
         viewportWidth: document.documentElement.clientWidth,
