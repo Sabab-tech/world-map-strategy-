@@ -155,10 +155,40 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     const linesTab = page.locator('#cabinet-full-window [data-omega-v2-main] [data-omega-v2-industry-tab="production-lines"]');
     await linesTab.waitFor({ state: 'visible', timeout: 30000 });
     await linesTab.click();
-    await page.locator('[data-omega-private-company-lifecycle] [data-pe-proposal-form]').waitFor({
-      state: 'visible',
-      timeout: 45000
-    });
+    try {
+      await page.locator('[data-omega-private-company-lifecycle] [data-pe-proposal-form]').waitFor({
+        state: 'visible',
+        timeout: 45000
+      });
+    } catch (error) {
+      const diagnostics = await page.evaluate(() => {
+        const main = document.querySelector('#cabinet-full-window [data-omega-v2-main]');
+        const shell = main?.querySelector('.omega-v2-factory-command');
+        const panel = main?.querySelector('[data-omega-private-company-lifecycle]');
+        const describe = api => {
+          try { return api && typeof api.diagnostics === 'function' ? api.diagnostics() : null; }
+          catch (diagnosticError) { return { error:String(diagnosticError && diagnosticError.message || diagnosticError) }; }
+        };
+        return {
+          playerCountry: window.Omega?.Simulation?.getPlayerCountryId?.() ||
+            window.Game?.state?.simulation?.session?.playerCountryId ||
+            window.Game?.state?.playerCountryId || null,
+          industryHookInstalled: !!window.OmegaUIV2Industry?.__privateLifecycleWrapped,
+          industryTab: shell?.getAttribute('data-active-tab') || null,
+          lifecycleApiReady: !!window.OmegaPrivateEnterpriseLifecycleV1,
+          privateRegistry: describe(window.OmegaPrivateEnterpriseRegistryV1),
+          governmentFactoryRegistry: describe(window.OmegaCountryFactoryStartingBaselineV1),
+          panelText: panel?.textContent?.slice(0, 1200) || null,
+          panelHtml: panel?.outerHTML?.slice(0, 2400) || null,
+          bootResourceErrors: window.__OMEGA_DIAG__?.resources?.slice(-25) || [],
+          baselineRequests: performance.getEntriesByType('resource')
+            .filter(entry => /factory.*baseline|resource.*catalog|country.*context|economy.*profiles/i.test(entry.name))
+            .map(entry => ({ name:entry.name, duration:Math.round(entry.duration), transferSize:entry.transferSize || 0 }))
+        };
+      }).catch(diagnosticError => ({ diagnosticError:String(diagnosticError && diagnosticError.message || diagnosticError) }));
+      throw new Error('Private Company proposal form did not mount. Initial wait: ' +
+        String(error && error.message || error) + '. Runtime diagnostics: ' + JSON.stringify(diagnostics));
+    }
     await page.locator('[data-omega-private-company-lifecycle] select[name="operatorCompanyId"]').waitFor({ state: 'visible' });
 
     const before = await page.evaluate(() => {
