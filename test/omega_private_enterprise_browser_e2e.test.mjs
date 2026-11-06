@@ -279,14 +279,46 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     await form.locator('select[name="sourcingPolicy"]').selectOption('MIXED');
     await form.locator('button[type="submit"]').click();
 
-    await page.waitForFunction(criteria => {
-      const rows = window.Game?.state?.economy?.BGD?.privateEnterpriseLifecycle?.proposals || [];
-      return rows.some(row => row.status === 'PROPOSED' &&
-        row.companyId === criteria.owner &&
-        row.operatorCompanyId === criteria.operator &&
-        row.factoryType === criteria.factoryType &&
-        Number(row.createdTurn) >= criteria.previousTurn);
-    }, { owner: companyOptions[0], operator: companyOptions[1], factoryType: selectedFactoryType, previousTurn: before.turn }, { timeout: 15000 });
+    const proposalCriteria = {
+      owner:companyOptions[0], operator:companyOptions[1],
+      factoryType:selectedFactoryType, previousTurn:before.turn
+    };
+    try {
+      await page.waitForFunction(criteria => {
+        const rows = window.Game?.state?.economy?.BGD?.privateEnterpriseLifecycle?.proposals || [];
+        return rows.some(row => row.status === 'PROPOSED' &&
+          row.companyId === criteria.owner &&
+          row.operatorCompanyId === criteria.operator &&
+          row.factoryType === criteria.factoryType &&
+          Number(row.createdTurn) >= criteria.previousTurn);
+      }, proposalCriteria, { timeout: 15000 });
+    } catch (error) {
+      const submitDiagnostics = await page.evaluate(() => {
+        const cabinet = document.getElementById('cabinet-full-window');
+        const main = cabinet?.querySelector('[data-omega-v2-main]');
+        const lifecycleRoot = [cabinet, ...(cabinet ? Array.from(cabinet.querySelectorAll('*')) : [])]
+          .find(node => node && Object.prototype.hasOwnProperty.call(node, '__omegaPrivateEnterpriseUiBound'));
+        const proposals = window.Game?.state?.economy?.BGD?.privateEnterpriseLifecycle?.proposals || [];
+        return {
+          uiBound:lifecycleRoot?.__omegaPrivateEnterpriseUiBound || false,
+          uiMessage:lifecycleRoot?.__omegaPrivateEnterpriseMessage || null,
+          rootCountry:lifecycleRoot?.__omegaV2IndustryCountryId || null,
+          rootTab:lifecycleRoot?.__omegaV2IndustryTab || null,
+          rootError:lifecycleRoot?.__omegaPrivateBaselineError || null,
+          panelText:cabinet?.querySelector('[data-omega-private-company-lifecycle]')?.textContent?.slice(0,1200) || null,
+          formPresent:!!cabinet?.querySelector('[data-pe-proposal-form]'),
+          formValues:Array.from(cabinet?.querySelectorAll('[data-pe-proposal-form] select,[data-pe-proposal-form] input') || [])
+            .map(node => ({name:node.name,value:node.value,checked:node.checked})),
+          proposalCount:proposals.length,
+          recentProposals:proposals.slice(-5).map(row=>({status:row.status,reason:row.reason,companyId:row.companyId,operatorCompanyId:row.operatorCompanyId,factoryType:row.factoryType,createdTurn:row.createdTurn})),
+          lifecycleDiagnostics:window.OmegaPrivateEnterpriseLifecycleV1?.diagnostics?.() || null,
+          privateRegistryDiagnostics:window.OmegaPrivateEnterpriseRegistryV1?.diagnostics?.() || null,
+          currentTab:main?.querySelector('.omega-v2-factory-command')?.getAttribute('data-active-tab') || null
+        };
+      }).catch(diagnosticError => ({diagnosticError:String(diagnosticError && diagnosticError.message || diagnosticError)}));
+      throw new Error('Private Company proposal submit did not persist. Initial wait: ' +
+        String(error && error.message || error) + '. Submit diagnostics: ' + JSON.stringify(submitDiagnostics));
+    }
     const after = await page.evaluate(criteria => {
       const state = window.Game.state;
       const resource = state.resource?.BGD || {};
