@@ -15,6 +15,7 @@ on:
       - "omega_resource_economy_runtime_v2.js"
       - "omega_simulation_runtime.js"
       - "test/omega_private_enterprise_browser_e2e.test.mjs"
+      - "package.json"
   push:
     branches: [ main ]
     paths:
@@ -28,12 +29,13 @@ on:
       - "omega_resource_economy_runtime_v2.js"
       - "omega_simulation_runtime.js"
       - "test/omega_private_enterprise_browser_e2e.test.mjs"
+      - "package.json"
 
 permissions:
   contents: read
 
 concurrency:
-  group: omega-private-enterprise-browser-\${{ github.event.pull_request.number || github.ref }}-\${{ github.run_id }}
+  group: omega-private-enterprise-browser-${{ github.event.pull_request.number || github.ref }}-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -56,8 +58,8 @@ jobs:
 
       - name: Run actual Chromium E2E and offline/responsive performance checks
         env:
-          NODE_PATH: \${{ runner.temp }}/omega-browser-deps/node_modules
-          OMEGA_BROWSER_TEST_ARTIFACT_DIR: \${{ runner.temp }}/omega-private-enterprise-browser
+          NODE_PATH: ${{ runner.temp }}/omega-browser-deps/node_modules
+          OMEGA_BROWSER_TEST_ARTIFACT_DIR: ${{ runner.temp }}/omega-private-enterprise-browser
         run: |
           mkdir -p "$OMEGA_BROWSER_TEST_ARTIFACT_DIR"
           timeout --signal=TERM --kill-after=15s 5m node --test test/omega_private_enterprise_browser_e2e.test.mjs
@@ -67,6 +69,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: omega-private-enterprise-real-browser-e2e
-          path: \${{ runner.temp }}/omega-private-enterprise-browser/**
+          path: ${{ runner.temp }}/omega-private-enterprise-browser/**
           if-no-files-found: warn
           retention-days: 7
