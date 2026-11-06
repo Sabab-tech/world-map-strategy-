@@ -248,6 +248,14 @@ function validateExportBatchAllocation(seller,resourceId,batchTransfers,governme
  const c=country(seller),policies=supplyDirectiveRows(c,resourceId),rows=Array.isArray(batchTransfers)?batchTransfers:[];
  const contract=policies.find(p=>p.directive==='GOVERNMENT_EXPORT_CONTRACT'&&String(p.contractId||'')===String(governmentContractId||''));
  const allocation=policies.filter(p=>p.directive==='FACTORY_ALLOCATION');
+ if(contract&&(Array.isArray(contract.companyIds)&&contract.companyIds.length||contract.companyId)){
+  const allowedCompanies=new Set(Array.isArray(contract.companyIds)&&contract.companyIds.length?contract.companyIds:[contract.companyId]);
+  for(const row of rows){
+   const owner=String(row?.ownerCompanyId||'').trim().toUpperCase();
+   if(!owner||!allowedCompanies.has(owner))return{allowed:false,reason:'GOVERNMENT_EXPORT_CONTRACT_COMPANY_NOT_AUTHORIZED',
+    companyId:owner||null,policyId:contract.policyId};
+  }
+ }
  for(const p of allocation){
   const allowed=new Set(p.exportFactoryIds||[]);
   for(const row of rows){
@@ -354,7 +362,7 @@ function governmentProcurementTx(cmd,ctx){
    countryId:c,warehouseId:owned.warehouseId||'WH-'+c+'-PROCESSED',sourceBatchIds:clone(owned.sourceBatchIds||[]),
    ownerCompanyId:owned.ownerCompanyId,ownerAttributionStatus:owned.ownerAttributionStatus,status:'AVAILABLE',
    procurementId,createdTurn:turn(),provenance:clone(owned.provenance||{})};
-  transfers.push({sourceBatchId:sourceId,governmentBatchId:newId,quantity:take,resourceId:rid,companyId,ownerCompanyId:owned.ownerCompanyId});
+  transfers.push({sourceBatchId:sourceId,governmentBatchId:newId,quantity:take,resourceId:rid,companyId,ownerCompanyId:owned.ownerCompanyId,operatorCompanyId:b.operatorCompanyId});
   remaining-=take;
  }
  if(remaining>1e-6)return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_PRIVATE_STOCK_INSUFFICIENT',available:q-remaining,requested:q};
@@ -369,6 +377,14 @@ function governmentProcurementTx(cmd,ctx){
  account.governmentProcurementRevenue=(num(account.governmentProcurementRevenue)||0)+total;
  account.lastTurn=turn();account.cashAuthority='AGGREGATE_FLOW_TRACKER_NOT_SPENDABLE_WALLET';
  accounts[companyId]=account;
+ const warehouseRaw=ctx.stateTransaction.get('resource.processedWarehouse');
+ const warehouse=warehouseRaw&&typeof warehouseRaw==='object'?clone(warehouseRaw):{warehouseId:'WH-'+c+'-PROCESSED',countryId:c,availableByResource:{},storedBatchIds:[],receipts:[]};
+ warehouse.receipts=Array.isArray(warehouse.receipts)?warehouse.receipts:[];
+ transfers.forEach(x=>warehouse.receipts.push({receiptId:'GOVPROC-REC:'+procurementId+':'+x.governmentBatchId,
+  warehouseId:warehouse.warehouseId||'WH-'+c+'-PROCESSED',countryId:c,batchId:x.governmentBatchId,
+  sourceBatchId:x.sourceBatchId,resourceId:rid,quantity:x.quantity,simulationTurn:turn(),
+  status:'OWNERSHIP_TRANSFER_RECEIVED',procurementId}));
+ while(warehouse.receipts.length>2048)warehouse.receipts.shift();
  const record={procurementId,policyId,companyId,countryId:c,resourceId:rid,quantity:q,totalValue:total,
   currency:ctx.stateTransaction.get('finance.currencyCode')||null,batchTransfers:transfers,turn:turn(),
   status:'SETTLED',paymentStatus:'TREASURY_DEBITED_COMPANY_FLOW_CREDITED',
@@ -378,7 +394,7 @@ function governmentProcurementTx(cmd,ctx){
  ledger.push({type:'GOVERNMENT_PROCUREMENT_OWNERSHIP_TRANSFER',procurementId,resourceId:rid,quantity:q,
   totalValue:total,companyId,policyId,batchTransfers:transfers,turn:turn()});
  const limitRows=2048;ctx.stateTransaction.set('resource.batches',batches.slice(-8192));
- ctx.stateTransaction.set('resource.inventoryLots',lots);ctx.stateTransaction.set('resource.inventoryLedger',ledger.slice(-limitRows));
+ ctx.stateTransaction.set('resource.inventoryLots',lots);ctx.stateTransaction.set('resource.processedWarehouse',warehouse);ctx.stateTransaction.set('resource.inventoryLedger',ledger.slice(-limitRows));
  ctx.stateTransaction.set('trade.stateGovernmentProcurementLedger',procurements.slice(-limitRows));
  ctx.stateTransaction.set('economy.companyAccounts',accounts);
  emit('OMEGA_GOVERNMENT_PROCUREMENT_COMPLETED',c,record);
