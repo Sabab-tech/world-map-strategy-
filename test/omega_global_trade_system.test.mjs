@@ -166,6 +166,45 @@ assert.deepEqual({
 },beforeBlockade,'blockade rejection must not move stock or settle money');
 assert.equal(policy.liftBlockade('BGD',{policyId:'TRADE-BLOCKADE-E2E'}).accepted,true);
 
+// The final physical inventory debit must independently enforce the State's export instruction.
+const stateExportBan=policy.setSupplyDirective('SAU',{directive:'DOMESTIC_ONLY',resourceId:'crude_oil',
+  policyId:'TRADE-DOMESTIC-ONLY-E2E',reason:'Domestic supply shortage'});
+assert.equal(stateExportBan.accepted,true,JSON.stringify(stateExportBan));
+const finalDebitSnapshot={
+  stock:globalThis.Game.state.resource.SAU.inventory.crude_oil,
+  batch:globalThis.Game.state.resource.SAU.batches[0].remainingQuantity,
+  warehouse:globalThis.Game.state.resource.SAU.warehouse.availableByResource.crude_oil
+};
+const deniedFinalDebit=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','SAU',{
+  resourceId:'crude_oil',quantity:10,settlementId:'DIRECT-DOMESTIC-ONLY-DEBIT',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'DIRECT-DOMESTIC-ONLY-DEBIT',
+    sourceCountryId:'SAU',destinationCountryId:'BGD'}
+});
+assert.equal(deniedFinalDebit.status,'FAILED',JSON.stringify(deniedFinalDebit));
+assert.equal(deniedFinalDebit.result?.reason,'STATE_DIRECTIVE_DOMESTIC_ONLY');
+assert.deepEqual({
+  stock:globalThis.Game.state.resource.SAU.inventory.crude_oil,
+  batch:globalThis.Game.state.resource.SAU.batches[0].remainingQuantity,
+  warehouse:globalThis.Game.state.resource.SAU.warehouse.availableByResource.crude_oil
+},finalDebitSnapshot,'a rejected State directive must not move physical stock');
+assert.equal(policy.liftSupplyDirective('SAU',{policyId:'TRADE-DOMESTIC-ONLY-E2E'}).accepted,true);
+
+// A matching government export contract can authorize only its destination and quantity.
+const exportContract=policy.setSupplyDirective('SAU',{directive:'GOVERNMENT_EXPORT_CONTRACT',
+  resourceId:'crude_oil',policyId:'TRADE-EXPORT-CONTRACT-E2E',contractId:'TRADE-EXPORT-CONTRACT-E2E',
+  targetCountryId:'BGD',authorizedQuantity:10});
+assert.equal(exportContract.accepted,true,JSON.stringify(exportContract));
+const authorizedFinalDebit=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','SAU',{
+  resourceId:'crude_oil',quantity:10,settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+    sourceCountryId:'SAU',destinationCountryId:'BGD',governmentContractId:'TRADE-EXPORT-CONTRACT-E2E'}
+});
+assert.equal(authorizedFinalDebit.status,'APPLIED',JSON.stringify(authorizedFinalDebit));
+assert.equal(authorizedFinalDebit.result?.accepted,true);
+assert.equal(globalThis.Game.state.resource.SAU.inventory.crude_oil,finalDebitSnapshot.stock-10);
+assert.equal(globalThis.Game.state.trade.SAU.stateDirectiveSettlements.some(x=>
+  x.settlementId==='DIRECT-GOV-EXPORT-DEBIT'&&x.contractId==='TRADE-EXPORT-CONTRACT-E2E'),true);
+
 const invalidUiRequest=trade.createRequest('BGD',{
   requestId:'REQ-UI-INVALID',targetCountryId:'BGD',resourceId:'crude_oil',quantity:100,unitPrice:101,
   source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
