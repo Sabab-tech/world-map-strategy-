@@ -3300,7 +3300,11 @@ test('Production Lines joins exact selected-country cycles and committed logisti
   const keys=['Game','OmegaResourceIndustrialCatalogData','Omega','currentActiveCountry','OmegaResourceIndustrialNetwork',
     'OmegaResourceCommandCenterUI','OmegaCountryFactoryStartingBaselineV1','OmegaPrivateEnterpriseRegistryV1'];
   const previous=Object.fromEntries(keys.map(key=>[key,globalThis[key]]));
-  globalThis.Omega={};
+  globalThis.Omega={ResourceStrategicPolicyRuntime:{
+    supplyPolicySummary(countryId,resourceId){
+      return{countryId,resourceId,activeDirectives:resourceId==='steel_product'?[{directive:'DOMESTIC_ONLY'}]:[]};
+    }
+  }};
   globalThis.currentActiveCountry='BGD';
   globalThis.OmegaResourceIndustrialCatalogData={
     factoryProfiles:{STEEL_AND_ALLOY_WORKS:{name:'Steel and Alloy Works'}},
@@ -3348,6 +3352,7 @@ test('Production Lines joins exact selected-country cycles and committed logisti
     } }},
     economy:{BGD:{productionAssets:[
       {id:'FAC-LINE-1',name:'National steel works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',
+        outputProfile:{steel_product:1},
         companyId:'AURORA_INDUSTRIAL_GROUP',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP',ownerType:'PRIVATE_ENTERPRISE',
         operatorCompanyId:'ATLAS_TECHNOLOGY_CORPORATION',operatorType:'PRIVATE_OPERATOR',
         stateControlRights:{strategicOversight:true,licensingAndPermits:true,emergencyIntervention:true,authority:'TEST_CONTROL_RIGHTS'}},
@@ -3380,6 +3385,7 @@ test('Production Lines joins exact selected-country cycles and committed logisti
     assert.equal(steel.operatorLabel,'Atlas Technology Corporation');
     assert.match(steel.stateControlRightsStatus,/Strategic oversight/);
     assert.match(steel.stateControlRightsStatus,/Licensing & permits/);
+    assert.equal(steel.stateSupplyDirectiveStatus,'DOMESTIC ONLY');
     const stateLine=result.model.lineActivity.find(row=>row.factoryId==='FAC-LINE-3');
     assert.ok(stateLine);
     assert.equal(stateLine.ownerLabel,'State-owned enterprise');
@@ -3402,6 +3408,8 @@ test('Production Lines joins exact selected-country cycles and committed logisti
     assert.match(root.innerHTML,/State-owned enterprise/);
     assert.match(root.innerHTML,/State enterprise operator/);
     assert.match(root.innerHTML,/State control rights/);
+    assert.match(root.innerHTML,/State supply directives/);
+    assert.match(root.innerHTML,/DOMESTIC ONLY/);
     assert.match(root.innerHTML,/WH-BGD-RAW/);
     assert.match(root.innerHTML,/FACTORY:BGD:FAC-LINE-1/);
     assert.match(root.innerHTML,/truck/);
