@@ -12,6 +12,7 @@
   // Cross-ministry writes are granted only to a registered command type and exact paths.
   // Command payloads cannot add capabilities to this allowlist.
   const COMMAND_CROSS_DOMAIN_WRITE_PATHS=Object.freeze({
+    OMEGA_TRADE_RESOURCE_DEBIT:Object.freeze(['trade.stateDirectiveSettlements']),
     OMEGA_STATE_PRIVATE_GOVERNMENT_PROCUREMENT:Object.freeze([
       'resource.batches','resource.inventoryLots','resource.processedWarehouse',
       'resource.inventoryLedger','economy.companyAccounts','trade.stateGovernmentProcurementLedger'
