@@ -77,8 +77,8 @@ function validate(data,api){
    throw Error('PRIVATE_PROVENANCE_INVALID:'+country);
   total+=countryPrivate;totalGovernment+=countryGovernment;
  });
- if(total!==Number(data.totalPrivateFactoryUnits))throw Error('PRIVATE_WORLD_TOTAL_MISMATCH');
- if(totalGovernment!==Number(data.totalGovernmentFactoryUnits))throw Error('PRIVATE_WORLD_GOVERNMENT_TOTAL_MISMATCH');
+ if(!Number.isInteger(data.totalPrivateFactoryUnits)||total!==data.totalPrivateFactoryUnits)throw Error('PRIVATE_WORLD_TOTAL_MISMATCH');
+ if(!Number.isInteger(data.totalGovernmentFactoryUnits)||totalGovernment!==data.totalGovernmentFactoryUnits)throw Error('PRIVATE_WORLD_GOVERNMENT_TOTAL_MISMATCH');
  return{countryCount:197,factoryTypeCount:21,companyCount:5,totalPrivateFactoryUnits:total,totalGovernmentFactoryUnits:totalGovernment};
 }
 function init(){
