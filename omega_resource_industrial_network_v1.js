@@ -5644,7 +5644,14 @@ function registerStartingFactoryAssets(input={}){
     if(!asset.operatorId&&!asset.operatorCompanyId){
       asset.operatorId=stateEntityId;asset.operatorCompanyId=stateEntityId;asset.operatorType='STATE_ENTERPRISE_OPERATOR';
     }
-    if(!asset.companyId)asset.companyId=asset.operatorCompanyId||asset.operatorId||asset.ownerCompanyId||asset.ownerId||stateEntityId;
+    const legacyEpcSentinel=String(asset.authority||'')==='SIMULATED_FACTORY_ASSET'&&
+      String(asset.companyId||'').trim()==='EPC_FACTORY_OWNER';
+    if(legacyEpcSentinel){
+      asset.legacyCompanyAttributionId=asset.legacyCompanyAttributionId||asset.companyId;
+      asset.companyId=asset.operatorCompanyId||asset.operatorId||stateEntityId;
+    }else if(!asset.companyId){
+      asset.companyId=asset.operatorCompanyId||asset.operatorId||asset.ownerCompanyId||asset.ownerId||stateEntityId;
+    }
     if(!asset.stateControlRights||typeof asset.stateControlRights!=='object'){
       asset.stateControlRights={
         strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
@@ -5658,8 +5665,11 @@ function registerStartingFactoryAssets(input={}){
   // Additive legacy-save repair runs before the idempotent early return, but only
   // for assets explicitly created from the government starting-factory baseline.
   assets.forEach(asset=>{
-    if(String(asset?.sourceType||'').toUpperCase()==='COUNTRY_STARTING_FACTORY_BASELINE')
-      ensureStateFactoryOwnership(asset);
+    const baselineStateAsset=String(asset?.sourceType||'').toUpperCase()==='COUNTRY_STARTING_FACTORY_BASELINE';
+    const legacyEpcStateAsset=String(asset?.authority||'')==='SIMULATED_FACTORY_ASSET'&&
+      String(asset?.companyId||'').trim()==='EPC_FACTORY_OWNER'&&
+      !asset?.ownerId&&!asset?.ownerCompanyId&&!asset?.operatorId&&!asset?.operatorCompanyId;
+    if(baselineStateAsset||legacyEpcStateAsset)ensureStateFactoryOwnership(asset);
   });
   const activeFactoryAssets=()=>assets.filter(asset=>{
     const type=normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'');
