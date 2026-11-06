@@ -204,6 +204,20 @@ assert.equal(authorizedFinalDebit.result?.accepted,true);
 assert.equal(globalThis.Game.state.resource.SAU.inventory.crude_oil,finalDebitSnapshot.stock-10);
 assert.equal(globalThis.Game.state.trade.SAU.stateDirectiveSettlements.some(x=>
   x.settlementId==='DIRECT-GOV-EXPORT-DEBIT'&&x.contractId==='TRADE-EXPORT-CONTRACT-E2E'),true);
+const exactExportReplay=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','SAU',{
+  resourceId:'crude_oil',quantity:10,settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+    sourceCountryId:'SAU',destinationCountryId:'BGD',governmentContractId:'TRADE-EXPORT-CONTRACT-E2E'}
+});
+assert.equal(exactExportReplay.status,'APPLIED',JSON.stringify(exactExportReplay));
+assert.equal(exactExportReplay.result?.duplicate,true);
+const changedExportReplay=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','SAU',{
+  resourceId:'crude_oil',quantity:11,settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+    sourceCountryId:'SAU',destinationCountryId:'IND',governmentContractId:'TRADE-EXPORT-CONTRACT-E2E'}
+});
+assert.equal(changedExportReplay.status,'FAILED',JSON.stringify(changedExportReplay));
+assert.equal(changedExportReplay.result?.reason,'TRADE_RESOURCE_DEBIT_IDEMPOTENCY_COLLISION');
 
 const invalidUiRequest=trade.createRequest('BGD',{
   requestId:'REQ-UI-INVALID',targetCountryId:'BGD',resourceId:'crude_oil',quantity:100,unitPrice:101,
