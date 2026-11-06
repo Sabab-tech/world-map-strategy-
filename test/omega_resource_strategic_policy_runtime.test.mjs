@@ -557,6 +557,10 @@ test('government procurement honours every company in its allowlist when a defau
     availableByResource:{widgets:10},reservedByResource:{widgets:0},
     storedBatchIds:[batchId],receipts:[]
   };
+  // The strategic-policy harness intentionally starts with only resource,
+  // trade and finance state. This procurement fixture also exercises a
+  // privately owned factory, so create the economy bucket before assigning it.
+  h.state.economy = h.state.economy || {};
   h.state.economy.BGD={productionAssets:[{
     id:'FAC-AURORA-WIDGETS',countryId:'BGD',factoryType:'WIDGET_FACTORY',
     status:'OPERATIONAL',productionEnabled:true,ownerType:'PRIVATE_ENTERPRISE',
