@@ -511,7 +511,7 @@
         amount:amount,currency:proposal.capitalUnit,direction:'TRANSFER',debitAccount:'SOVEREIGN_TREASURY',creditAccount:'COMPANY_CAPITAL:'+proposal.companyId,
         treasuryBalanceAfter:treasury.balance-amount,status:'POSTED',turn:turn(),authority:treasury.authority});
     }else if(sourceType==='COMPANY_CAPITAL'){
-      if(account.availableBalance+1e-9<amount)return{status:'BLOCKED',reason:'INSUFFICIENT_COMPANY_CAPITAL',available:account.availableBalance,required:amount};
+      if(account.availableBalance+1e-9<amount)return{status:'BLOCKED',reason:'INSUFFICIENT_UNRESERVED_COMPANY_CAPITAL',available:account.availableBalance,required:amount};
       ledger.push({transactionId:transactionId,type:'PRIVATE_COMPANY_CAPITAL_COMMITMENT',proposalId:proposalId,companyId:proposal.companyId,
         amount:amount,currency:proposal.capitalUnit,direction:'MEMO',companyBalanceBefore:account.availableBalance,status:'POSTED',turn:turn(),authority:'COMPANY_FINANCE_SUBLEDGER'});
     }else return{status:'BLOCKED',reason:'UNSUPPORTED_FUNDING_SOURCE'};
@@ -660,8 +660,10 @@
     });
     if(!fundingEntry)return{status:'BLOCKED',reason:'PRIVATE_FACTORY_FINANCE_LEDGER_ENTRY_MISSING'};
     var account=capitalAccount(cid,company,false),reserved=account?normalizeCapitalReservation(cid,company,account):0;
-    var unitCost=num(input.cost);
-    if(unitCost===null||unitCost<=0||reserved+1e-9<unitCost)
+    var unitCost=num(input.cost),profile=catalog()?.factoryProfiles?.[factoryType]||{},canonicalUnitCost=num(profile.constructionCost);
+    if(unitCost===null||unitCost<=0||canonicalUnitCost===null||Math.abs(unitCost-canonicalUnitCost)>1e-6)
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_CANONICAL_CONSTRUCTION_COST_MISMATCH',provided:unitCost,expected:canonicalUnitCost};
+    if(reserved+1e-9<unitCost)
       return{status:'BLOCKED',reason:'PRIVATE_FACTORY_CAPITAL_NOT_RESERVED',reserved:reserved,required:unitCost};
     return{status:'AUTHORIZED',countryId:cid,proposalId:proposal.proposalId,unitIndex:unitIndex,
       permitId:permit.permitId,fundingTransactionId:funding.transactionId,authority:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1'};
@@ -833,7 +835,8 @@
       pipelineGate:productionProofReady()?'VERIFIED':'BLOCKED_SAB34_PROOF_REQUIRED'};
   }
   function getCompanyCapitalSummary(country,company){
-    var a=capitalAccount(country,id(company),false);return a?clone(a):{companyId:id(company),currency:'GAME_CURRENCY_UNITS',availableBalance:0,capitalRaised:0,capitalSpent:0,revision:0};
+    var a=capitalAccount(country,id(company),false);return a?clone(a):{companyId:id(company),currency:'GAME_CURRENCY_UNITS',
+      availableBalance:0,reservedBalance:0,capitalRaised:0,capitalSpent:0,revision:0};
   }
   function diagnostics(){
     var cid=playerCountry(),dash=cid?getCountryDashboard(cid):null;
