@@ -1631,6 +1631,8 @@
     if(!shell||!shell.insertAdjacentHTML)return;
     var country=canonicalCountry(options&&options.countryId||root.__omegaV2IndustryCountryId||playerCountry());
     if(country!==playerCountry())return;
+    var previousPanel=shell.querySelector('[data-omega-private-company-lifecycle]');
+    if(previousPanel&&previousPanel.remove)previousPanel.remove();
     var registry=g.OmegaPrivateEnterpriseRegistryV1||(g.Omega&&g.Omega.PrivateEnterpriseRegistryV1);
     var baselineRow=baseline(country);
     if(!baselineRow||baselineRow.status!=='READY'){
@@ -1995,7 +1997,7 @@
           var target=screenRoot||root;
           return scheduler(function(){
             var result=typeof callback==='function'?callback():null;
-            if(result&&result.ok){
+            if(result&&result.ok&&!(callback&&callback.__omegaPrivateLifecycleHandled)){
               var currentOptions=target&&target.__omegaV2IndustryOptions||renderOptions;
               renderPanel(target,Object.assign({},currentOptions,{
                 countryId:target&&target.__omegaV2IndustryCountryId||currentOptions.countryId||playerCountry(),
@@ -2033,7 +2035,7 @@
     createJointVentureResolution:createJointVentureResolution,voteJointVentureResolution:voteJointVentureResolution,
     contributeJointVentureRetainedEarnings:contributeJointVentureRetainedEarnings,
     distributeJointVentureDividend:distributeJointVentureDividend,getJointVentureDashboard:getJointVentureDashboard,
-    diagnostics:diagnostics,productionProofReady:productionProofReady
+    diagnostics:diagnostics,productionProofReady:productionProofReady,renderIndustryPanel:renderPanel
   });
   g.OmegaPrivateEnterpriseLifecycleV1=API;g.Omega=g.Omega||{};g.Omega.PrivateEnterpriseLifecycleV1=API;
   if(typeof module!=='undefined'&&module.exports)module.exports=API;
