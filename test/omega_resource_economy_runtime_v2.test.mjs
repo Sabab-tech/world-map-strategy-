@@ -211,18 +211,18 @@ test('export settlement replay is idempotent across company flows, Treasury clea
       totalValue,quantity:20,simulationTurn:1,
       sourceBatchIds:['EXPORT-BATCH-1'],
       batchTransfers:[{sourceBatchId:'EXPORT-BATCH-1',sourceBatchIds:['EXPORT-BATCH-1'],
-        ownerCompanyId:'MINER_CO',resourceId:'iron_ore',quantity:20}]
+        ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',resourceId:'iron_ore',quantity:20}]
     }}
   });
   context.dispatchEvent(eventFor(200));
   const availableAfterFirst=worldState.finance.BGD.available;
-  const accountAfterFirst=JSON.stringify(worldState.economy.BGD.companyAccounts.MINER_CO);
+  const accountAfterFirst=JSON.stringify(worldState.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES);
   const workerFlowAfterFirst=worldState.economy.BGD.workerIncome.totalSinceRuntimeStart;
   const transportAfterFirst=worldState.transport.BGD.resourceRevenue.totalSinceRuntimeStart;
   const fiscalAfterFirst=worldState.finance.BGD.resourceFiscal.cumulative.total;
   const clearingAfterFirst=worldState.finance.BGD.resourceSettlementClearing.length;
   const commandCountAfterFirst=commands.size;
-  const companyJournal=worldState.economy.BGD.companyAccounts.MINER_CO.cashFlowEntries;
+  const companyJournal=worldState.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES.cashFlowEntries;
 
   assert.ok(Array.isArray(companyJournal)&&companyJournal.length>=3,'settled receipts and actual operating costs must be journalled');
   assert.equal(new Set(companyJournal.map(row=>row.entryId)).size,companyJournal.length,'each company cash-flow entry has a unique idempotency key');
@@ -237,7 +237,7 @@ test('export settlement replay is idempotent across company flows, Treasury clea
   delete context.__OmegaResourceFiscalizedSettlements[settlementId];
   context.dispatchEvent(eventFor(200));
   assert.equal(worldState.finance.BGD.available,availableAfterFirst,'Treasury clearing and tax receipt must not post twice');
-  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts.MINER_CO),accountAfterFirst,'company income/payroll/freight flows must not post twice');
+  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES),accountAfterFirst,'company income/payroll/freight flows must not post twice');
   assert.equal(worldState.economy.BGD.workerIncome.totalSinceRuntimeStart,workerFlowAfterFirst);
   assert.equal(worldState.transport.BGD.resourceRevenue.totalSinceRuntimeStart,transportAfterFirst);
   assert.equal(worldState.finance.BGD.resourceFiscal.cumulative.total,fiscalAfterFirst);
@@ -248,7 +248,7 @@ test('export settlement replay is idempotent across company flows, Treasury clea
   delete context.__OmegaResourceFiscalizedSettlements[settlementId];
   context.dispatchEvent(eventFor(201));
   assert.equal(worldState.finance.BGD.available,availableAfterFirst);
-  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts.MINER_CO),accountAfterFirst);
+  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES),accountAfterFirst);
   assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,clearingAfterFirst);
   assert.ok(commandCollisions.some(x=>x.reason==='COMMAND_ID_COLLISION'),'same stable command ID with a changed payload must raise a persisted-command integrity collision');
 });
@@ -354,6 +354,14 @@ test('domestic factory input transfer does not infer a seller from the mine oper
 });
 test('resource economy v2 completes mine-backed processing, domestic settlement and treasury receipt flow', async()=>{
   const {context,worldState}=createContext();
+  // Run the real domestic-sale path with canonical private owner/operator identities.
+  worldState.resource.BGD.batches[0].ownerCompanyId='NOVA_CONSUMER_INDUSTRIES';
+  const privateFactory=worldState.economy.BGD.productionAssets[0];
+  privateFactory.ownerType='PRIVATE_ENTERPRISE';
+  privateFactory.ownerCompanyId='ATLAS_TECHNOLOGY_CORPORATION';
+  privateFactory.operatorType='PRIVATE_COMPANY_OPERATOR';
+  privateFactory.operatorCompanyId='MERIDIAN_ENGINEERING_GROUP';
+  privateFactory.companyId='MERIDIAN_ENGINEERING_GROUP';
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
   await context.OmegaResourceEconomy.runTurn();
@@ -369,17 +377,20 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   assert.equal(worldState.finance.BGD.resourceBudgetContributionThisTurn,15);
 
   const accounts=worldState.economy.BGD.companyAccounts;
-  assert.equal(accounts.MINER_CO.runtimeNetCashFlow,415);
-  assert.equal(accounts.PROCESS_OPERATOR_CO.runtimeNetCashFlow,-500,
-    'factory input/processing cash flow must be attributed to the explicit operator before the legacy companyId or owner');
-  assert.equal(accounts.FACTORY_OWNER_CO,undefined,
+  assert.equal(accounts.NOVA_CONSUMER_INDUSTRIES.runtimeNetCashFlow,415,
+    'domestic sale revenue must credit the private legal owner of the consumed batch');
+  assert.equal(accounts.MERIDIAN_ENGINEERING_GROUP.runtimeNetCashFlow,-500,
+    'factory input/processing cash flow must be attributed to the explicit private operator');
+  assert.equal(accounts.ATLAS_TECHNOLOGY_CORPORATION,undefined,
     'factory ownership must not receive operating expenses when a different operator is recorded');
   assert.equal(accounts.LEGACY_COMPANY_ATTRIBUTION,undefined,
     'legacy companyId must not override an explicit operator identity');
+  assert.equal(worldState.trade.BGD.domesticSales[0].sale.supplierAllocations.NOVA_CONSUMER_INDUSTRIES,50,
+    'settled domestic sale must retain the exact private-owner revenue allocation');
   const ownedOutputBatch=worldState.resource.BGD.batches.find(x=>x.resourceId==='iron_intermediate');
-  assert.equal(ownedOutputBatch?.ownerCompanyId,'FACTORY_OWNER_CO',
+  assert.equal(ownedOutputBatch?.ownerCompanyId,'ATLAS_TECHNOLOGY_CORPORATION',
     'finished-goods export ownership must follow the asset owner rather than the factory operator');
-  assert.equal(ownedOutputBatch?.operatorCompanyId,'PROCESS_OPERATOR_CO',
+  assert.equal(ownedOutputBatch?.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP',
     'the operator remains distinct from the legal finished-goods owner');
 
   assert.equal(worldState.trade.BGD.domesticSales.length,1);
