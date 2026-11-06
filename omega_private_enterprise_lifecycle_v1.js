@@ -1023,7 +1023,7 @@
     return{version:VERSION,countryId:cid,playerCountryId:playerCountry(),activeCountry:cid===playerCountry(),
       proposals:r?clone(r.proposals):[],events:r?clone(r.events):[],capitalAccounts:clone(accounts),
       companyIds:COMPANY_IDS.slice(),productionEnabled:productionProofReady(),
-      pipelineGate:productionProofReady()?'VERIFIED':'BLOCKED_SAB34_PROOF_REQUIRED'};
+      pipelineGate:productionProofReady()?'VERIFIED':'BLOCKED_PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE'};
   }
   function getCompanyCapitalSummary(country,company){
     var a=capitalAccount(country,id(company),false);return a?clone(a):{companyId:id(company),currency:'GAME_CURRENCY_UNITS',
@@ -1607,7 +1607,7 @@
       resourceBucketFound:!!resource,demandSnapshotTurn:num(demand.lastTurn),
       demandRuntimeResourceKeys:Object.keys(demandRows),
       proposalCount:dash?dash.proposals.length:0,productionEnabled:productionProofReady(),
-      pipelineGate:productionProofReady()?'VERIFIED':'BLOCKED_SAB34_PROOF_REQUIRED',
+      pipelineGate:productionProofReady()?'VERIFIED':'BLOCKED_PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',
       financeAuthority:'Game.state.finance[country].omegaFinance.ledger',
       constructionAuthority:'OmegaResourceIndustrialNetwork.startFactoryProject / advanceProjects',
       assetAuthority:'Game.state.economy[country].productionAssets',
