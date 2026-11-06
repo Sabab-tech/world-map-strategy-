@@ -253,6 +253,47 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     assert.equal(after.proposal.status, 'PROPOSED');
     metrics.proposalStage = 'PASS_NO_ECONOMIC_SIDE_EFFECTS';
 
+    // Exercise the real page's canonical persistence API, not a test-only snapshot copy.
+    // Use a unique temporary slot and a harmless simulation-root sentinel so the live
+    // inventory, finance, route and commissioned asset records are never deliberately
+    // corrupted while the game page is running.
+    metrics.browserSaveLoad = await page.evaluate(() => {
+      const runtime = window.Omega?.Simulation;
+      const stateRoot = window.Game?.state;
+      if (!runtime || typeof runtime.saveSlot !== 'function' || typeof runtime.loadSlot !== 'function' || !stateRoot) {
+        throw new Error('CANONICAL_BROWSER_SAVE_SLOT_API_UNAVAILABLE');
+      }
+      const previousStatus = runtime.status;
+      if (previousStatus === 'RUNNING' && typeof runtime.pauseSession === 'function') runtime.pauseSession();
+      const slot = 'private-enterprise-browser-e2e-' + Date.now();
+      const sentinel = '__omegaPrivateBrowserSaveLoadProbe';
+      const proposalIds = (stateRoot.economy?.BGD?.privateEnterpriseLifecycle?.proposals || []).map(row => row.proposalId);
+      const saved = runtime.saveSlot(slot);
+      if (!saved || saved.ok !== true) throw new Error('BROWSER_SAVE_SLOT_FAILED');
+      stateRoot.simulation[sentinel] = 'IN_MEMORY_TAMPER_AFTER_SAVE';
+      const loaded = runtime.loadSlot(slot);
+      const restoredIds = (window.Game.state.economy?.BGD?.privateEnterpriseLifecycle?.proposals || []).map(row => row.proposalId);
+      const result = {
+        saveOk: saved.ok === true,
+        loadIntegrity: runtime.lastLoadIntegrity,
+        sameAuthoritativeRoot: window.Game.state === stateRoot && runtime.world?.state === stateRoot,
+        worldStateLinked: loaded?.authoritativeState?.worldStateLinked === true,
+        sentinelCleared: stateRoot.simulation[sentinel] === undefined,
+        proposalIdsPreserved: JSON.stringify(proposalIds) === JSON.stringify(restoredIds),
+        proposalIds: restoredIds,
+        restoredTurn: runtime.clock?.turn,
+        previousStatus
+      };
+      try { window.localStorage.removeItem(saved.key); } catch (_) {}
+      if (previousStatus === 'RUNNING' && typeof runtime.resumeSession === 'function') runtime.resumeSession();
+      if (!result.saveOk || result.loadIntegrity !== 'VERIFIED' || !result.sameAuthoritativeRoot ||
+          !result.worldStateLinked || !result.sentinelCleared || !result.proposalIdsPreserved) {
+        throw new Error('BROWSER_SAVE_LOAD_INTEGRITY_FAILED:' + JSON.stringify(result));
+      }
+      return result;
+    });
+    metrics.browserSaveLoadStage = 'PASS_CANONICAL_SAVE_LOAD';
+
     await page.evaluate(() => {
       window.__omegaBrowserLongTasks = [];
       window.__omegaBrowserLongTaskObserverSupported = false;
@@ -289,11 +330,17 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         panelWidth: element.clientWidth,
         panelScrollWidth: element.scrollWidth,
         bodyScrollWidth: document.documentElement.scrollWidth,
+        privateFormVisible: !!element.querySelector('[data-pe-proposal-form]'),
+        operatorSelectorVisible: !!element.querySelector('select[name="operatorCompanyId"]'),
         tab: element.closest('[data-omega-v2-industry-content]')?.getAttribute('data-active-tab') || null
       }));
       assert.ok(layout.panelWidth > 0, viewport.name + ': private lifecycle panel must remain measurable');
       assert.ok(layout.panelScrollWidth <= layout.panelWidth + 2,
         viewport.name + ': private lifecycle panel must not overflow its own width: ' + JSON.stringify(layout));
+      assert.ok(layout.bodyScrollWidth <= viewport.width + 2,
+        viewport.name + ': the whole page must not overflow horizontally: ' + JSON.stringify(layout));
+      assert.equal(layout.privateFormVisible, true, viewport.name + ': proposal form must remain visible');
+      assert.equal(layout.operatorSelectorVisible, true, viewport.name + ': operator selector must remain visible');
       metrics.viewportRuns.push({ ...viewport, ...layout });
 
       for (let round = 0; round < 6; round++) {
@@ -341,7 +388,12 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     metrics.pageErrors = pageErrors.slice();
     metrics.consoleErrors = consoleErrors.slice();
     metrics.blockedExternalRequests = blockedExternalRequests.length;
+    const fatalConsoleErrors = consoleErrors.filter(message =>
+      !/net::ERR_BLOCKED_BY_CLIENT|blockedbyclient/i.test(message)
+    );
+    metrics.fatalConsoleErrors = fatalConsoleErrors;
     assert.deepEqual(pageErrors, [], 'actual browser E2E must not leave uncaught page exceptions');
+    assert.deepEqual(fatalConsoleErrors, [], 'actual browser E2E must not leave local script/runtime console errors');
     metrics.completed = true;
     fs.writeFileSync(path.join(artifacts, 'omega-private-enterprise-browser-metrics.json'), JSON.stringify(metrics, null, 2));
     await page.screenshot({ path: path.join(artifacts, 'omega-private-enterprise-browser-final.png'), fullPage: true });
