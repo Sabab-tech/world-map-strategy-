@@ -206,8 +206,8 @@ assert.equal(none.reason,'NO_MATCHING_FACTORY');
 context.Game.state.economy.BGD.productionAssets.push({
   id:'FAC-COAL-PREP',countryId:'BGD',stage:'PROCESSING',factoryType:'COAL_PREPARATION_PLANT',
   capacity:1000,inputCoefficients:{coal:1},outputProfile:{COAL_CONCENTRATE:.82,COAL_REJECT:.18},
-  ownerCompanyId:'COAL_FACTORY_OWNER',ownerType:'PRIVATE_ENTERPRISE',
-  operatorCompanyId:'COAL_FACTORY_OPERATOR',operatorType:'PRIVATE_OPERATOR',companyId:'LEGACY_FACTORY_COMPANY_LABEL',
+  ownerCompanyId:'STATE_GOVERNMENT_BGD',ownerType:'GOVERNMENT',
+  operatorCompanyId:'STATE_GOVERNMENT_BGD',operatorType:'STATE_GOVERNMENT_OPERATOR',companyId:'STATE_GOVERNMENT_BGD',
   transportAccess:['rail','road'],locationNodeKey:'INDUSTRIAL_ZONE:BGD'
 });
 
@@ -250,7 +250,7 @@ const advanced=N.advanceShipments('BGD');
 assert.equal(advanced.delivered,1);
 assert.equal(advanced.shipments[0].destinationStatus,'FACTORY_RECEIVED');
 assert.equal(advanced.shipments[0].processingStatus,'IN_PROGRESS',
-  'delivery should schedule production, not synchronously commit finished goods');
+  'delivery should schedule production, not synchronously commit finished goods: '+JSON.stringify(advanced.shipments[0]));
 assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.coal,45000,'delivered raw stock must leave the sovereign warehouse');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.coal,0,'shipment reservation must be released on delivery');
 assert.equal(context.Game.state.resource.BGD.inventory.coal,45000,'raw inventory must be debited once when the shipment is delivered');
