@@ -349,13 +349,13 @@
     var ready;
     try{ready=registry&&registry.ready;}catch(error){ready=Promise.reject(error);}
     Promise.resolve(ready).then(function(){
-      if(playerCountry()!==cid||Math.floor(turn()/30)!==period)return;
       var current=runtime(cid,true);
-      current.pendingAutonomousProposalPeriod=null;
+      if(current&&current.pendingAutonomousProposalPeriod===period)current.pendingAutonomousProposalPeriod=null;
+      if(playerCountry()!==cid||Math.floor(turn()/30)!==period)return;
       advanceAutonomousProposalCycle();
     }).catch(function(){
       var current=runtime(cid,true);
-      if(current)current.pendingAutonomousProposalPeriod=null;
+      if(current&&current.pendingAutonomousProposalPeriod===period)current.pendingAutonomousProposalPeriod=null;
     });
   }
   function ledgerHasTransaction(country,transactionId){
@@ -713,7 +713,7 @@
         return'<div class="pe-input-row"><span><b>'+escapeHtml(x.resourceId)+'</b><br>30-day need '+neededValue+'</span><span>'+availableLabel+'<br><b>'+availableValue+'</b></span><span>Current demand<br><b>'+demandValue+'</b></span><span>Shortfall<br><b>'+gapValue+'</b></span></div>';
       }).join('')+'</div>';
       var progress=(p.projectIds||[]).length+'/'+p.quantity+' projects';
-      var facts='<div class="pe-facts"><span>Asset owner: '+escapeHtml(COMPANY_NAMES[p.companyId]||p.companyId)+'</span><span>Operator: '+escapeHtml(COMPANY_NAMES[p.operatorCompanyId||p.companyId]||(p.operatorCompanyId||p.companyId))+'</span><span>Factory: '+escapeHtml(p.factoryName)+'</span><span>Quantity: '+p.quantity+'</span><span>Capital: '+(p.capitalRequired===null?'Unquoted':Number(p.capitalRequired).toLocaleString('en-US')+' '+escapeHtml(p.capitalUnit))+'</span><span>Company capital: '+balance.toLocaleString('en-US')+'</span><span>Government factories: '+Number(preview.governmentFactoryCount||0).toLocaleString('en-US')+'</span><span>Private opening allocation: '+Number(preview.openingPrivateAllocation||0).toLocaleString('en-US')+'</span><span>Additional policy ceiling: '+Number(preview.maximumAdditionalUnits||0).toLocaleString('en-US')+'</span><span>Daily capacity forecast: '+Number(preview.requestedDailyCapacity||0).toLocaleString('en-US')+'</span><span>Source: '+p.sourcingPolicy.replace(/_/g,' ')+'</span><span>Projects: '+progress+'</span></div>';
+      var facts='<div class="pe-facts"><span>Asset owner: '+escapeHtml(COMPANY_NAMES[p.companyId]||p.companyId)+'</span><span>Operator: '+escapeHtml(COMPANY_NAMES[p.operatorCompanyId||p.companyId]||(p.operatorCompanyId||p.companyId))+'</span><span>Factory: '+escapeHtml(p.factoryName)+'</span><span>Quantity: '+p.quantity+'</span><span>Capital: '+(p.capitalRequired===null?'Unquoted':Number(p.capitalRequired).toLocaleString('en-US')+' '+escapeHtml(p.capitalUnit))+'</span><span>Company capital: '+balance.toLocaleString('en-US')+'</span><span>Government factories: '+Number(preview.governmentFactoryCount||0).toLocaleString('en-US')+'</span><span>Private opening allocation: '+Number(preview.openingPrivateAllocation||0).toLocaleString('en-US')+'</span><span>Additional policy ceiling: '+Number(preview.maximumAdditionalUnits||0).toLocaleString('en-US')+'</span><span>Daily capacity forecast: '+Number(preview.requestedDailyCapacity||0).toLocaleString('en-US')+'</span><span>Source: '+p.sourcingPolicy.replace(/_/g,' ')+'</span><span>Permit: '+(p.permit?escapeHtml(p.permit.permitId)+' · expires T'+Number(p.permit.expiresAtTurn).toLocaleString('en-US'):'Not issued')+'</span><span>Projects: '+progress+'</span></div>';
       if(p.status==='PROPOSED')buttons='<label class="pe-adjust">Decision quantity <input type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="'+p.quantity+'" data-pe-adjust-quantity="'+p.proposalId+'"></label><button type="button" data-pe-action="adjust" data-pe-proposal="'+p.proposalId+'">Update quantity</button>'+buttons;
       var capitalReceiptForm=p.status==='APPROVED_AWAITING_FUNDING'&&balance+1e-9<(num(p.capitalRequired)||0)
         ?'<form class="pe-capital-form" data-pe-capital-form data-pe-company="'+escapeHtml(p.companyId)+'"><label>Finance receipt transaction ID<input name="sourceTransactionId" type="text" maxlength="160" autocomplete="off" required></label><label>Settled amount ('+escapeHtml(p.capitalUnit)+')<input name="amount" type="number" min="0.01" step="any" inputmode="decimal" required></label><button type="submit">Verify company capital</button></form>'
