@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { test } from 'node:test';
+import { runInNewContext } from 'node:vm';
 import { buildPrivateFactoryBaseline, validatePrivateFactoryBaseline } from '../scripts/build_country_private_factory_starting_baseline_v1.mjs';
 const government=JSON.parse(fs.readFileSync(new URL('../country_factory_starting_baseline_v1.json',import.meta.url),'utf8'));
 const generated=JSON.parse(fs.readFileSync(new URL('../country_private_factory_starting_baseline_v1.json',import.meta.url),'utf8'));
@@ -48,4 +49,31 @@ test('private enterprise registry defers baseline fetch and JSON parsing until f
  assert.match(industry,/requestedTab === 'companies'/,
   'private baseline fetch must wait until the Companies tab is opened');
  assert.match(industry,/privateEnterpriseBaseline\.status === 'LOADING'/);
+});
+
+test('exact country data key takes precedence over a conflicting ISO2 alias from the identity resolver',async()=>{
+ const registry=fs.readFileSync(new URL('../omega_private_enterprise_registry_v1.js',import.meta.url),'utf8');
+ const sandbox={
+  AbortController,
+  OmegaCanonicalIdentityRegistry:{resolveCountry(value){
+   return String(value).trim().toUpperCase()==='USA'?{id:'US'}:{id:String(value).trim().toUpperCase()};
+  }},
+  OmegaCountryFactoryStartingBaselineV1:{
+   ready:Promise.resolve({status:'READY'}),
+   getCountryBaseline(countryId){
+    const row=government.countries[String(countryId).trim().toUpperCase()];
+    return row?{factoryCounts:row.factoryCounts}:null;
+   }
+  },
+  fetch:async()=>({ok:true,json:async()=>generated}),
+  dispatchEvent(){},
+  CustomEvent:function CustomEvent(type,options){this.type=type;this.detail=options&&options.detail;},
+  setTimeout,clearTimeout
+ };
+ runInNewContext(registry,sandbox);
+ const ready=await sandbox.OmegaPrivateEnterpriseRegistryV1.ready;
+ assert.equal(ready.status,'READY');
+ const usa=sandbox.OmegaPrivateEnterpriseRegistryV1.getCountryBaseline('USA');
+ assert.equal(usa.countryId,'USA');
+ assert.equal(usa.companies.length,5);
 });
