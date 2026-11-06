@@ -417,7 +417,9 @@ function governmentProcurementTx(cmd,ctx){
   const privateDecisionId=String(asset?.sourcePrivateDecisionId||'');
   const privateFundingId=String(asset?.sourcePrivateFundingId||'');
   const privatePermitId=String(asset?.privatePermitId||'');
-  return tok(b?.resourceId||b?.materialIdentity)===tok(rid)&&owner===companyId&&
+  return country(b?.countryId)===c&&country(lot?.countryId)===c&&country(asset?.countryId)===c&&
+   String(lot?.batchId||'')===batchId&&
+   tok(b?.resourceId||b?.materialIdentity)===tok(rid)&&owner===companyId&&
    PRIVATE_COMPANY_IDS.includes(operator)&&String(b?.ownerAttributionStatus||'').toUpperCase()==='EXPLICIT_ASSET_OWNER'&&
    String(b?.stage||'').toUpperCase()==='FINISHED'&&
    ['AVAILABLE','PARTIALLY_SOLD'].includes(status)&&storedIds.has(batchId)&&
