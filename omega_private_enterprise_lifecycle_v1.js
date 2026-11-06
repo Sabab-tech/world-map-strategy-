@@ -1603,6 +1603,22 @@
         :'';
       return'<article class="pe-proposal"><header><strong>'+escapeHtml(p.companyName)+'</strong><span>'+p.status.replace(/_/g,' ')+'</span></header>'+facts+readinessMarkup+inputDetails+shortages+unknown+capitalReceiptForm+'<div class="pe-actions">'+buttons+'</div></article>';
     }).join('')||'<div class="pe-empty">No company expansion proposal has been submitted for this country.</div>';
+    var activeCostPolicy=companyOperatingCostPolicy(country),activeCostRates=activeCostPolicy.rates||{};
+    function costRateField(key,label,unit){
+      var raw=num(activeCostRates[key]),value=raw===null?'':String(raw);
+      return '<label>'+label+' ('+unit+')<input name="'+key+'" type="number" min="0" step="any" inputmode="decimal" value="'+escapeHtml(value)+'" placeholder="Not configured"></label>';
+    }
+    var costPolicyForm='<form class="pe-form" data-pe-cost-policy-form>'+
+      '<p class="pe-footnote">Set explicit game-economy rates for this country. Blank rates remain unpriced and block financial close; zero is an explicit zero-cost policy.</p>'+
+      '<label>New policy reference<input name="policyId" type="text" maxlength="160" required placeholder="BGD-OPERATING-COST-V2"></label>'+
+      '<label>Currency<input name="currency" type="text" maxlength="40" value="'+escapeHtml(activeCostPolicy.currency||'GAME_CURRENCY_UNITS')+'" required></label>'+
+      costRateField('electricityPerMWh','Electricity','per MWh')+
+      costRateField('waterPerM3','Industrial water','per m³')+
+      costRateField('laborPerWorkerDay','Labor','per worker-day')+
+      costRateField('maintenancePerFactoryDay','Maintenance','per factory-day')+
+      costRateField('overheadPerFactoryDay','Overhead','per factory-day')+
+      costRateField('depreciationPerFactoryDay','Depreciation','per factory-day')+
+      '<button type="submit">Save country operating cost policy</button></form>';
     var financeCards=COMPANY_IDS.map(function(companyId){
       var statement=getCompanyFinanceSummary(country,companyId),period=statement.lastClosedPeriod||null,
         currency=statement.currency||'GAME_CURRENCY_UNITS';
@@ -1612,7 +1628,10 @@
         'Tax close blocked when this open period contains pruned entries ('+statement.journal.droppedEntryCount+' dropped).':'';
       return'<article class="pe-proposal"><header><strong>'+escapeHtml(statement.companyName||companyId)+'</strong><span>'+escapeHtml(statement.journal.status)+'</span></header>'+
         '<div class="pe-facts"><span>Recorded receipts <b>'+amount(statement.grossRevenue)+'</b></span>'+
-        '<span>Operating costs <b>'+amount(statement.journal.recordedOperatingCosts)+'</b></span>'+
+        '<span>Cash operating costs <b>'+amount(statement.journal.recordedOperatingCosts)+'</b></span>'+
+        '<span>Accrued factory operating costs <b>'+amount(statement.journal.recordedAccruedOperatingCosts)+'</b></span>'+
+        '<span>Accounting profit <b>'+(statement.accountingProfit===null?'Not verifiable':amount(statement.accountingProfit))+'</b></span>'+
+        '<span>Unpriced cost items <b>'+Number(statement.journal.unpricedOperatingCostCount||0).toLocaleString('en-US')+'</b></span>'+
         '<span>Input materials <b>'+amount(statement.journal.inputMaterialCosts)+'</b></span>'+
         '<span>Worker costs <b>'+amount(statement.journal.workerCosts)+'</b></span>'+
         '<span>Transport costs <b>'+amount(statement.journal.transportCosts)+'</b></span>'+
@@ -1622,7 +1641,7 @@
         '<span>Factory CAPEX (separate) <b>'+amount(statement.constructionCapex.amount)+'</b></span>'+
         '<span>Retained earnings <b>'+amount(statement.capital.retainedEarningsBalance)+'</b></span>'+
         '<span>Tax status <b>'+escapeHtml(taxLabel)+'</b></span></div>'+
-        '<p class="pe-footnote">Cash-basis simulation only. Unsold inventory valuation, depreciation and unpriced operating services are not silently treated as zero. '+escapeHtml(journalWarning)+'</p>'+
+        '<p class="pe-footnote">Cash receipts and paid costs are taken from the shared company cash-flow journal. Factory utility, labor, maintenance, overhead and depreciation are accrued from completed operating events only where an explicit country rate is configured. Missing costs remain unpriced. '+escapeHtml(journalWarning)+'</p>'+
         '<div class="pe-actions"><button type="button" data-pe-action="close-finance" data-pe-company="'+companyId+'">Close cash-flow period / assess profit tax</button></div></article>';
     }).join('');
     var jvDashboard=getJointVentureDashboard(country);
@@ -1667,7 +1686,7 @@
       '<div class="pe-overview"><span>Companies <b>5</b></span><span>Proposals <b>'+dash.proposals.length+'</b></span><span>Opening baseline <b>'+(baselineRow&&baselineRow.status==='READY'?baselineRow.totalPrivateFactoryUnits.toLocaleString('en-US'):'Unavailable')+'</b></span><span>Finance <b>'+Object.keys(capitalByCompany).length+' capital accounts</b></span></div>'+
       '<form class="pe-form" data-pe-proposal-form><label>Private asset owner<select name="companyId">'+companyOptions+'</select></label><label>Private operator<select name="operatorCompanyId">'+companyOptions+'</select></label><label>Factory type<select name="factoryType">'+typeOptions+'</select></label><label>Quantity<input name="quantity" type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="1" required></label><label>Input sourcing<select name="sourcingPolicy"><option value="DOMESTIC_ONLY">Domestic inputs</option><option value="COMPANY_FUNDED_IMPORTS">Company-funded imports</option><option value="MIXED">Mixed sourcing</option></select></label><label class="pe-checkbox"><input name="stateSupportRequested" type="checkbox"> Request possible Treasury grant support</label><button type="submit">Submit company proposal</button></form>'+grantHelp+message+
       '<div class="pe-proposals"><h4>Government decision queue</h4>'+cards+'</div>'+
-      '<details class="pe-proposals"><summary><strong>Corporate Finance / Profit / Tax / Cost</strong></summary><p class="pe-footnote">Committed company cash flows are journalled. A period close assesses tax only against recorded positive cash-basis operating profit. Factory CAPEX remains separate from operating cost; accrual inventory valuation is not fabricated.</p>'+financeCards+'</details>'+
+      '<details class="pe-proposals"><summary><strong>Corporate Finance / Profit / Tax / Cost</strong></summary><p class="pe-footnote">Shared Finance journal + factory-event cost accruals. Financial close is blocked when required operating costs are unpriced. Factory CAPEX remains separate.</p>'+costPolicyForm+financeCards+'</details>'+
       '<section class="pe-proposals"><h4>Joint ventures / shareholder voting / dividends</h4>'+
       '<form class="pe-form" data-pe-jv-form><label>JV name<input name="name" type="text" maxlength="100" value="Strategic Industrial Joint Venture" required></label>'+
       '<label>Managing company / shareholder A<select name="companyA" required>'+jvCompanyOptions+'</select></label>'+
@@ -1717,6 +1736,23 @@
           :'Capital receipt rejected: '+String(capitalResult.reason||capitalResult.status).replace(/_/g,' ').toLowerCase()+'.';
         refresh(root,root.__omegaV2IndustryCountryId||playerCountry());
         return;
+      }
+      if(form.matches('[data-pe-cost-policy-form]')){
+        if(event.preventDefault)event.preventDefault();
+        var costData=new FormData(form),rates={};
+        OPERATING_COST_RATE_KEYS.forEach(function(key){
+          var raw=String(costData.get(key)||'').trim();
+          rates[key]=raw===''?null:Number(raw);
+        });
+        var costPolicyResult=setCompanyOperatingCostPolicy({
+          countryId:root.__omegaV2IndustryCountryId||playerCountry(),
+          policyId:costData.get('policyId'),currency:costData.get('currency'),rates:rates
+        });
+        root.__omegaPrivateEnterpriseMessage=costPolicyResult.status==='UPDATED'
+          ?'Country operating cost policy saved. Unpriced historical costs remain flagged; new matching factory events use this policy.'
+          :costPolicyResult.status==='DUPLICATE'?'This operating cost policy is already active.':
+          'Operating cost policy blocked: '+String(costPolicyResult.reason||costPolicyResult.status).replace(/_/g,' ').toLowerCase()+'.';
+        refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
       }
       if(form.matches('[data-pe-jv-form]')){
         if(event.preventDefault)event.preventDefault();
