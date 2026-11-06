@@ -440,11 +440,19 @@
     asset.ownershipStatus='PRIVATE_COMPANY_OWNED';asset.operatorStatus='PRIVATE_COMPANY_OPERATED';
     asset.sourcePrivateProposalId=project.sourcePrivateProposalId;asset.sourcePrivateDecisionId=project.sourcePrivateDecisionId||null;
     asset.sourcePrivateFundingId=project.sourcePrivateFundingId||null;asset.constructionProjectId=project.projectId;
-    asset.productionEnabled=productionReady;
+    var runtimeStatus=String(asset.status||'OPERATIONAL').toUpperCase();
+    if(!asset.privateCommissionedStatus)asset.privateCommissionedStatus=runtimeStatus;
+    asset.productionEnabled=productionReady&&runtimeStatus==='OPERATIONAL';
     if(!productionReady){
       asset.status='BLOCKED';asset.productionStatus='STRATEGIC_SUPPLY_PIPELINE_PROOF_REQUIRED';
       asset.productionHealth={status:'STOPPED',productivityPct:0,reason:'SAB34_PIPELINE_PROOF_REQUIRED',updatedTurn:turn(),authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
       asset.blockedReason='SAB34_PIPELINE_PROOF_REQUIRED';
+    }else if(runtimeStatus!=='OPERATIONAL'){
+      asset.productionStatus='FACTORY_RUNTIME_REQUIREMENTS_PENDING';
+      asset.blockedReason='FACTORY_RUNTIME_REQUIREMENTS_PENDING';
+    }else{
+      asset.status=runtimeStatus;asset.productionStatus='READY_FOR_EXISTING_FACTORY_OPERATION_GATES';
+      asset.blockedReason=null;
     }
     var resource=countryBucket('resource',cid,false)||{},projects=resource.industrialNetwork&&resource.industrialNetwork.projects||[];
     var proposal=runtime(cid,false)?.proposals.find(function(p){return p.proposalId===project.sourcePrivateProposalId;});
@@ -453,13 +461,46 @@
       if(proposal.commissionedFactoryIds.indexOf(asset.id)<0)proposal.commissionedFactoryIds.push(asset.id);
       var all=proposal.projectIds.every(function(projectId){var row=projects.find(function(x){return x.projectId===projectId;});return row&&row.status==='COMPLETED';});
       if(all&&proposal.commissionedFactoryIds.length>=proposal.projectIds.length){
-        proposal.status=productionReady?'COMMISSIONED':'COMMISSIONED_PRODUCTION_GATED';
-        proposal.updatedTurn=turn();proposal.productionEnabled=productionReady;
-        proposal.commissioning={status:proposal.status,productionEnabled:productionReady,commissionedFactoryIds:proposal.commissionedFactoryIds.slice(),turn:turn()};
+        proposal.status=productionReady&&asset.productionEnabled?'COMMISSIONED':'COMMISSIONED_PRODUCTION_GATED';
+        proposal.updatedTurn=turn();proposal.productionEnabled=productionReady&&asset.productionEnabled;
+        proposal.commissioning={status:proposal.status,productionEnabled:proposal.productionEnabled,
+          gateReason:productionReady?(asset.blockedReason||null):'SAB34_PIPELINE_PROOF_REQUIRED',
+          commissionedFactoryIds:proposal.commissionedFactoryIds.slice(),turn:turn()};
       }else proposal.status='UNDER_CONSTRUCTION';
     }
-    recordEvent(cid,'PRIVATE_FACTORY_COMMISSIONED',{projectId:project.projectId,proposalId:project.sourcePrivateProposalId,factoryId:asset.id,companyId:company,productionEnabled:productionReady,blockedReason:productionReady?null:'SAB34_PIPELINE_PROOF_REQUIRED'});
+    recordEvent(cid,'PRIVATE_FACTORY_COMMISSIONED',{projectId:project.projectId,proposalId:project.sourcePrivateProposalId,factoryId:asset.id,companyId:company,
+      productionEnabled:asset.productionEnabled,blockedReason:asset.blockedReason||null});
     return asset;
+  }
+  function refreshCommissionedProductionGate(country,factoryId){
+    var cid=canonicalCountry(country||playerCountry());
+    if(cid!==playerCountry()||!productionProofReady())return{status:'BLOCKED',reason:'SAB34_PIPELINE_PROOF_REQUIRED'};
+    var econ=countryBucket('economy',cid,false)||{},assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[],
+      target=assets.find(function(a){return String(a.id||a.factoryId||'')===String(factoryId||'');});
+    if(!target||id(target.ownerCompanyId||target.ownerId)!==id(target.companyId||target.ownerCompanyId))return{status:'BLOCKED',reason:'PRIVATE_FACTORY_NOT_FOUND'};
+    var proposal=runtime(cid,false)?.proposals.find(function(p){return p.proposalId===target.sourcePrivateProposalId;});
+    if(!proposal)return{status:'BLOCKED',reason:'PRIVATE_PROPOSAL_NOT_FOUND'};
+    var restored=[];
+    (proposal.commissionedFactoryIds||[]).forEach(function(assetId){
+      var asset=assets.find(function(row){return String(row.id||row.factoryId||'')===String(assetId);});
+      if(!asset)return;
+      if(asset.blockedReason==='SAB34_PIPELINE_PROOF_REQUIRED'){
+        var original=String(asset.privateCommissionedStatus||'OPERATIONAL').toUpperCase();
+        asset.status=original;asset.productionEnabled=original==='OPERATIONAL';
+        asset.productionStatus=asset.productionEnabled?'READY_FOR_EXISTING_FACTORY_OPERATION_GATES':'FACTORY_RUNTIME_REQUIREMENTS_PENDING';
+        asset.blockedReason=asset.productionEnabled?null:'FACTORY_RUNTIME_REQUIREMENTS_PENDING';
+        if(asset.productionEnabled)asset.productionHealth={status:'STOPPED',productivityPct:0,reason:'NO_FACTORY_INPUTS',updatedTurn:turn(),authority:'OMEGA_FACTORY_PRODUCTION_SCHEDULER_V1'};
+        restored.push(String(asset.id||asset.factoryId));
+      }
+    });
+    var allReady=(proposal.commissionedFactoryIds||[]).length===proposal.quantity&&
+      proposal.commissionedFactoryIds.every(function(assetId){var asset=assets.find(function(row){return String(row.id||row.factoryId||'')===String(assetId);});return asset&&asset.status==='OPERATIONAL'&&asset.productionEnabled===true;});
+    if(allReady){
+      proposal.status='COMMISSIONED';proposal.productionEnabled=true;proposal.updatedTurn=turn();
+      proposal.commissioning={status:'COMMISSIONED',productionEnabled:true,gateReason:null,commissionedFactoryIds:proposal.commissionedFactoryIds.slice(),turn:turn()};
+      recordEvent(cid,'PRIVATE_PRODUCTION_GATE_VERIFIED',{proposalId:proposal.proposalId,companyId:proposal.companyId,factoryIds:restored});
+    }
+    return{status:allReady?'READY':'PARTIALLY_READY',restoredFactoryIds:restored,proposalStatus:proposal.status};
   }
   function onFactoryCapacityChanged(event){
     var detail=event&&event.detail||{},payload=detail.payload||detail,projectId=String(payload.projectId||'');
@@ -682,7 +723,7 @@
   var API=Object.freeze({
     VERSION:VERSION,companyIds:COMPANY_IDS.slice(),companyNames:clone(COMPANY_NAMES),
     createProposal:createProposal,adjustProposal:adjustProposal,decideProposal:decideProposal,previewProposal:function(country,id){var p=getProposal(country,id);return p?previewFor(p):{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};},
-    fundProposal:fundProposal,startConstruction:startConstruction,recordCompanyCapitalReceipt:recordCompanyCapitalReceipt,
+    fundProposal:fundProposal,startConstruction:startConstruction,recordCompanyCapitalReceipt:recordCompanyCapitalReceipt,refreshCommissionedProductionGate:refreshCommissionedProductionGate,
     getProposal:getProposal,getCountryDashboard:getCountryDashboard,getCompanyCapitalSummary:getCompanyCapitalSummary,
     diagnostics:diagnostics,productionProofReady:productionProofReady
   });
