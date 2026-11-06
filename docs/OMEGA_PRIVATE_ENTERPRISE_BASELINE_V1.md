@@ -169,7 +169,7 @@ Bracketed fields are placeholders, not seeded game facts. Never display sample v
 
 | SAB-42 workstream | Verified state |
 |---|---|
-| Phase 0 — audit current runtime, PR and dependencies | Partial: PR #408, Industry UI, production assets, cycle/shipment/request and logistics schemas inspected; full Finance/Treasury policy audit and SAB-34 proof remain. |
+| Phase 0 — audit current runtime, PR and dependencies | Audit complete for PR/main diff, UI v2, Industry assets/cycles/logistics/shipments, Finance/Treasury, Government Banking, sovereign lending, Global Trade, Global Market and canonical Simulation save/load. SAB-34 gameplay proof remains a separate hard dependency, not a reason to mark the source audit incomplete. |
 | Phase 1 — owner/operator/control-rights model | Incomplete: static baseline identities exist; a complete authoritative asset ownership/operator/control-rights model is not verified. |
 | Phase 2 — registry and Finance references/reconciliation | Partial: five identity IDs and read-only baseline exist; proposal finance, company equity/debt and Finance journal reconciliation are not implemented. |
 | Phase 3 — state-owned compatibility | Existing shared factory pool and Build/Input/Stock UI remain in the branch; exact-head regression re-run is pending. |
@@ -261,3 +261,37 @@ At PR head `d733e4b53ba069f0ee388ca1a1e84f0fa419a3e0`, the `OMEGA Country Factor
 - The old `d733e4b...` job is still a failed run and cannot certify the correction. The corrected head requires a fresh exact-head Actions run before its tests may be called passed.
 
 At the time of this note, Android 9 Offline Gameplay Smoke and Android Build were still in progress on the older `d733e4b...` head. Their result is not transferable to a later commit.
+
+## Correction and extension — existing Resource Economy company cash-flow tracker (2026-11-06)
+
+The earlier Finance audit correctly found that **FinanceMinistry itself** has no company-owned account/balance API, but it did not fully describe the already-booted `omega_resource_economy_runtime_v2.js`. This file is loaded by `index.html` and is active in the selected-player-country resource turn pipeline. Its existing company-flow implementation must be reused/audited rather than duplicated.
+
+### What already exists
+
+- `assetCompany(country, asset)` reads `companyId`, `ownerId`, `operatorId` or `company`; if none exists it falls back to `STATE_INDUSTRY_<country>`. That fallback is a processing attribution default, **not evidence** that the asset has a verified government owner. A Lines UI ownership resolver must inspect raw fields and preserve unknown/unassigned.
+- Mine ownership can come from `operatorKey` / `ownerKey`; fallback `STATE_RESOURCE_POOL_<country>` is likewise a synthetic sovereign resource-pool attribution, not one of the five global company identities.
+- The runtime already registers `OMEGA_RESOURCE_ECON_COMPANY_FLOW` to update `Game.state.economy[country].companyAccounts[companyId]`. Its fields are aggregate deltas: `runtimeNetCashFlow`, `grossRevenue`, `paymentsReceived`, `paymentsMade`, `taxPaid`, `workerIncomePaid`, `transportPaid`, `supplierRevenue` and `lastTurn`. Opening cash is explicitly `UNKNOWN` on first creation.
+- The same runtime has resource-specific supplier/cost attribution, worker and transport flow counters, domestic sale records, finished-goods events, fiscal receipts and a company cash-flow panel in the Resource Economy dashboard.
+- Production is processed for the selected player country from the existing `productionAssets`, canonical recipes, real batch/warehouse records and Industrial Network result. `runTurn()` deduplicates the in-flight `turn:country` promise and serializes country-turn work. The Global Market computes a world read-only order-book projection for price discovery; its reference-only inventory asks cannot create fills. That global quote calculation is distinct from all-country company production AI.
+
+### What this is not
+
+- `economy.companyAccounts` is an aggregate cash-flow tracker, **not a funded corporate wallet or complete corporate general ledger**. It has no validated opening capital, available cash/bank balances, equity/share register, loan principal/interest/maturity, bond/FDI funding, insolvency waterfall or enforceable overdraft check.
+- The `companyFlowHandler` adds amounts to summary fields. It does not itself persist a durable per-transaction company journal or perform a company balance sufficiency test.
+- The dispatch wrapper currently supplies a correlation ID but does not pass a stable business-derived `commandId`. Interoperability deduplicates by `commandId`, not correlation ID; a repeated call with a new generated command ID can execute again. Do not treat a correlation ID as exactly-once accounting.
+- `fiscalHandler` does deduplicate fiscal receipts by receipt/settlement/sale/batch business key. However the `financeClearHandler` path debits country-level `finance.available` / reserves and appends `finance.resourceSettlementClearing`; its handler has no explicit settlement-key duplicate check. Export fiscalization's `__OmegaResourceFiscalizedSettlements` guard is in-memory and is not by itself a save/load-safe accounting guarantee.
+- Domestic settlement currently posts supplier credits and buyer debits as company-flow summaries. Those summaries are not proof of an independently funded buyer wallet or an executable company-to-company cash transfer. The export clearing path moves country-level Treasury funds into the company-flow summary; this is not an independent corporate bank account.
+- The current generic `companyId` keys include state/resource-pool/simulation fallbacks; they are not automatically one of the five SAB-42 global companies. Do not map arbitrary IDs to the five masters by name similarity.
+
+### Required safe extension path
+
+1. Preserve `economy.companyAccounts` and its history in old saves; do not introduce a second company cash store or UI-only balance.
+2. Define which existing resource-flow events represent real payments versus attribution-only estimates. Keep `UNKNOWN` distinct from zero and from a settled transaction.
+3. Extend the authoritative Finance/Trade/Interop contract to post stable, deterministic, save/load-persistent business transaction IDs for company payer/payee events. Correlation-only metadata is insufficient. Replays with the same key and same payload must return the original result; same key with different payload must fail as an integrity collision.
+4. Validate the payer's available corporate funds before a debit. A buyer company debit must be backed by actual company funds or an explicit government subsidy/guarantee/loan event; it must not be a negative summary entry with no liquidity constraint.
+5. Keep government Treasury receipts, company revenue, tax and public transfers as separate parties/entries. A company payment may not silently take funds from sovereign `finance.available` unless an explicitly authorized and budgeted public transfer is the source.
+6. Make settlement/cash events idempotent across save/reload, and reconcile company cash-flow totals to the underlying stable transaction keys and the existing national Finance journal without posting the same sale, freight, payroll or fiscal receipt twice.
+7. Add integration tests for duplicate domestic sale, duplicate trade settlement, duplicate worker/freight charge, duplicate tax receipt, save/reload/replay, insufficient buyer-company liquidity and explicit public subsidy. Assert exact deltas in both company summary and government Treasury.
+8. Reuse the current selected-country/turn pipeline. Do not introduce all-country company finance loops, per-frame work, timers, polling or extra boot requests.
+
+This extension is required before the five SAB-42 companies can be described as having real funded corporate finance. The existing Resource Economy flow display must be labelled as flow tracking, not available company cash.
