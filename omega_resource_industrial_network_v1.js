@@ -3906,9 +3906,11 @@ function factoryOperationGate(countryId,asset,employmentSnapshot){
     }
     const owner=String(asset.ownerCompanyId||asset.ownerId||'').trim().toUpperCase();
     const operator=String(asset.operatorCompanyId||asset.operatorId||asset.companyId||'').trim().toUpperCase();
-    if(!COMPANY_IDS.includes(owner)||!COMPANY_IDS.includes(operator)||asset.productionEnabled!==true||
-       asset.privatePermitStatus!=='ACTIVE'||!asset.privatePermitId||!asset.sourcePrivateProposalId||
-       asset.stateControlRights?.operationalControl!=='STATE_POLICY_ONLY')
+    const registeredCompanies=Array.isArray(lifecycle.companyIds)
+      ?lifecycle.companyIds.map(value=>String(value||'').trim().toUpperCase()):[];
+    if(!registeredCompanies.length||!registeredCompanies.includes(owner)||!registeredCompanies.includes(operator)||
+       asset.productionEnabled!==true||asset.privatePermitStatus!=='ACTIVE'||!asset.privatePermitId||
+       !asset.sourcePrivateProposalId||asset.stateControlRights?.operationalControl!=='STATE_POLICY_ONLY')
       return{status:'BLOCKED',reason:'PRIVATE_FACTORY_AUTHORIZATION_NOT_VERIFIED',factoryId,authority:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1'};
   }
   const status=String(asset.status||'OPERATIONAL').toUpperCase();
