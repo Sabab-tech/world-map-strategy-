@@ -972,7 +972,8 @@
       }
       var policyRuntime = g.OmegaResourceStrategicPolicyRuntime ||
         (g.Omega && g.Omega.ResourceStrategicPolicyRuntime) || null;
-      var outputProfile = raw.outputProfile || raw.outputs || raw.outputQuantities || {};
+      var outputProfile = raw.outputProfile || raw.outputs || raw.outputQuantities ||
+        (cycle && (cycle.outputQuantities || cycle.outputs)) || {};
       var outputResourceIds = outputProfile && typeof outputProfile === 'object' ? Object.keys(outputProfile) : [];
       var stateDirectiveLabels = [];
       if (policyRuntime && typeof policyRuntime.supplyPolicySummary === 'function') {
