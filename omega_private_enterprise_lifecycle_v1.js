@@ -217,6 +217,29 @@
   function getProposal(country,proposalId){
     var r=runtime(country,false);var p=r&&r.proposals.find(function(x){return x.proposalId===String(proposalId||'');});return p?clone(p):null;
   }
+  function adjustProposal(input){
+    input=input||{};var cid=canonicalCountry(input.countryId||playerCountry());
+    if(cid!==playerCountry()||!cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
+    var r=runtime(cid,false),proposal=r&&r.proposals.find(function(p){return p.proposalId===String(input.proposalId||'');});
+    if(!proposal)return{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};
+    if(proposal.status!=='PROPOSED')return{status:'BLOCKED',reason:'PROPOSAL_ALREADY_DECIDED'};
+    var quantity=num(input.quantity);
+    if(quantity===null||!Number.isInteger(quantity)||quantity<1||quantity>MAX_PROJECTS_PER_PROPOSAL)
+      return{status:'BLOCKED',reason:'PROPOSAL_QUANTITY_OUT_OF_RANGE',minimum:1,maximum:MAX_PROJECTS_PER_PROPOSAL};
+    var oldQuantity=proposal.quantity,oldCapital=proposal.capitalRequired,oldForecast=proposal.expectedInputRequirements;
+    var profile=(catalog()||{}).factoryProfiles&&catalog().factoryProfiles[proposal.factoryType];
+    proposal.quantity=quantity;
+    proposal.capitalRequired=profile&&num(profile.constructionCost)!==null?num(profile.constructionCost)*quantity:null;
+    proposal.expectedInputRequirements=inputForecast(cid,profile,recipeFor(proposal.factoryType,profile),quantity);
+    var preview=previewFor(proposal);
+    if(preview.status!=='READY'){
+      proposal.quantity=oldQuantity;proposal.capitalRequired=oldCapital;proposal.expectedInputRequirements=oldForecast;
+      return{status:'BLOCKED',reason:preview.reason||'ADJUSTED_QUANTITY_EXCEEDS_POLICY_CAP',preview:preview};
+    }
+    proposal.updatedTurn=turn();
+    recordEvent(cid,'COMPANY_PROPOSAL_QUANTITY_ADJUSTED',{proposalId:proposal.proposalId,previousQuantity:oldQuantity,approvedQuantity:quantity});
+    return{status:'PROPOSED',proposal:clone(proposal),preview:preview};
+  }
   function decideProposal(input){
     input=input||{};var cid=canonicalCountry(input.countryId||playerCountry()),player=playerCountry();
     if(cid!==player||!player)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
@@ -478,9 +501,12 @@
         if(balance+1e-9>=num(p.capitalRequired))buttons+='<button type="button" data-pe-action="fund-company" data-pe-proposal="'+p.proposalId+'">Fund from company capital</button>';
         if(p.decision&&p.decision.allowStateSupport)buttons+='<button type="button" data-pe-action="fund-grant" data-pe-proposal="'+p.proposalId+'">Authorize Treasury grant</button>';
       }else if(p.status==='FUNDED')buttons='<button type="button" data-pe-action="construct" data-pe-proposal="'+p.proposalId+'">Start construction</button>';
-      var shortages=(p.expectedInputRequirements||[]).filter(function(x){return x.shortfall!==null&&x.shortfall>0;}).map(function(x){return'<span class="pe-warning">'+x.resourceId+': projected shortfall '+Number(x.shortfall).toLocaleString('en-US')+'</span>';}).join('');
+      var preview=previewFor(p);
+      var shortages=(preview.shortages||[]).map(function(x){return'<span class="pe-warning">'+escapeHtml(x.resourceId)+': projected 30-day shortfall '+Number(x.shortfall).toLocaleString('en-US')+'</span>';}).join('');
+      var unknown=(preview.unobservedInputs||[]).map(function(x){return'<span class="pe-info">Stock not observed: '+escapeHtml(x.resourceId)+'; no quantity assumed</span>';}).join('');
       var progress=(p.projectIds||[]).length+'/'+p.quantity+' projects';
-      var facts='<div class="pe-facts"><span>Factory: '+p.factoryName+'</span><span>Quantity: '+p.quantity+'</span><span>Capital: '+(p.capitalRequired===null?'Unquoted':Number(p.capitalRequired).toLocaleString('en-US')+' '+p.capitalUnit)+'</span><span>Company capital: '+balance.toLocaleString('en-US')+'</span><span>Source: '+p.sourcingPolicy.replace(/_/g,' ')+'</span><span>Projects: '+progress+'</span></div>';
+      var facts='<div class="pe-facts"><span>Factory: '+escapeHtml(p.factoryName)+'</span><span>Quantity: '+p.quantity+'</span><span>Capital: '+(p.capitalRequired===null?'Unquoted':Number(p.capitalRequired).toLocaleString('en-US')+' '+escapeHtml(p.capitalUnit))+'</span><span>Company capital: '+balance.toLocaleString('en-US')+'</span><span>Government factories: '+Number(preview.governmentFactoryCount||0).toLocaleString('en-US')+'</span><span>Private opening allocation: '+Number(preview.openingPrivateAllocation||0).toLocaleString('en-US')+'</span><span>Additional policy ceiling: '+Number(preview.maximumAdditionalUnits||0).toLocaleString('en-US')+'</span><span>Daily capacity forecast: '+Number(preview.requestedDailyCapacity||0).toLocaleString('en-US')+'</span><span>Source: '+p.sourcingPolicy.replace(/_/g,' ')+'</span><span>Projects: '+progress+'</span></div>';
+      if(p.status==='PROPOSED')buttons='<label class="pe-adjust">Decision quantity <input type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="'+p.quantity+'" data-pe-adjust-quantity="'+p.proposalId+'"></label><button type="button" data-pe-action="adjust" data-pe-proposal="'+p.proposalId+'">Update quantity</button>'+buttons;
       return'<article class="pe-proposal"><header><strong>'+p.companyName+'</strong><span>'+p.status.replace(/_/g,' ')+'</span></header>'+facts+shortages+'<div class="pe-actions">'+buttons+'</div></article>';
     }).join('')||'<div class="pe-empty">No company expansion proposal has been submitted for this country.</div>';
     var message=root.__omegaPrivateEnterpriseMessage?'<p class="pe-message" role="status">'+escapeHtml(root.__omegaPrivateEnterpriseMessage)+'</p>':'';
@@ -488,8 +514,8 @@
     var markup='<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1"><header class="pe-head"><div><small>PRODUCTION LINES / NATIONAL INDUSTRY POLICY</small><h3>Company expansion proposals</h3><p>Government decides; firms own and operate approved private assets.</p></div><span class="pe-gate">'+(dash.productionEnabled?'PRIVATE PRODUCTION ENABLED':'PRODUCTION GATED BY SAB-34')+'</span></header>'+
       '<div class="pe-overview"><span>Companies <b>5</b></span><span>Proposals <b>'+dash.proposals.length+'</b></span><span>Opening baseline <b>'+(baselineRow&&baselineRow.status==='READY'?baselineRow.totalPrivateFactoryUnits.toLocaleString('en-US'):'Unavailable')+'</b></span><span>Finance <b>'+Object.keys(capitalByCompany).length+' capital accounts</b></span></div>'+
       '<form class="pe-form" data-pe-proposal-form><label>Company<select name="companyId">'+companyOptions+'</select></label><label>Factory type<select name="factoryType">'+typeOptions+'</select></label><label>Quantity<input name="quantity" type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="1" required></label><label>Input sourcing<select name="sourcingPolicy"><option value="DOMESTIC_ONLY">Domestic inputs</option><option value="COMPANY_FUNDED_IMPORTS">Company-funded imports</option><option value="MIXED">Mixed sourcing</option></select></label><label class="pe-checkbox"><input name="stateSupportRequested" type="checkbox"> Request possible Treasury grant support</label><button type="submit">Submit company proposal</button></form>'+grantHelp+message+
-      '<div class="pe-proposals"><h4>Government decision queue</h4>'+cards+'</div>'+
-      '<p class="pe-footnote">Opening allocations are not operating factories. Construction uses the existing industrial project registry and bill of materials. Completed private factories remain production-blocked until the SAB-34 live supply-chain and save/load proof is verified.</p></section>';
+      '<div class="pe-proposals"><h4>Government decision queue</h4>'+cards+shortages+unknown+'</div>'+
+      '<p class="pe-footnote">Approval creates no stock reservation or import. Domestic inputs are checked against observed uncommitted inventory; company-funded imports require the existing paid Trade dispatch and confirmed warehouse receipt. Opening allocations are not operating factories. Construction uses the existing industrial project registry and bill of materials. Completed private factories remain production-blocked until the SAB-34 live supply-chain and save/load proof is verified.</p></section>';
     var old=shell.querySelector('[data-omega-private-company-lifecycle]');
     if(old&&old.remove)old.remove();
     shell.insertAdjacentHTML('beforeend',markup);
@@ -500,6 +526,9 @@
     root.__omegaPrivateEnterpriseMessage='';
     var api=g.OmegaUIV2Industry,opts=Object.assign({},root.__omegaV2IndustryOptions||{},{countryId:country,tab:'production-lines'});
     if(api&&typeof api.render==='function')api.render(root,opts);
+  }
+  function shellInput(root,selector){
+    try{return root.querySelector(selector);}catch(_){return null;}
   }
   function bindUi(root){
     if(root.__omegaPrivateEnterpriseUiBound||typeof root.addEventListener!=='function')return;
@@ -516,7 +545,10 @@
       var target=event.target,button=target&&target.closest?target.closest('[data-pe-action]'):null;if(!button)return;
       var proposalId=button.getAttribute('data-pe-proposal'),action=button.getAttribute('data-pe-action'),country=root.__omegaV2IndustryCountryId||playerCountry();
       var result;
-      if(action==='approve')result=decideProposal({countryId:country,proposalId:proposalId,decision:'APPROVE',allowStateSupport:true,conditions:{allowStateSupport:true}});
+      if(action==='adjust'){
+        var input=shellInput(root,'[data-pe-adjust-quantity="'+proposalId+'"]');
+        result=adjustProposal({countryId:country,proposalId:proposalId,quantity:input&&input.value});
+      }else if(action==='approve')result=decideProposal({countryId:country,proposalId:proposalId,decision:'APPROVE',allowStateSupport:true,conditions:{allowStateSupport:true}});
       else if(action==='defer')result=decideProposal({countryId:country,proposalId:proposalId,decision:'DEFER',reason:'Deferred by player government'});
       else if(action==='deny')result=decideProposal({countryId:country,proposalId:proposalId,decision:'DENY',reason:'Rejected by player government'});
       else if(action==='fund-company'){var p=getProposal(country,proposalId);result=p?fundProposal({countryId:country,proposalId:proposalId,sourceType:'COMPANY_CAPITAL',amount:p.capitalRequired}):{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};}
@@ -548,7 +580,7 @@
   installIndustryHook();
   var API=Object.freeze({
     VERSION:VERSION,companyIds:COMPANY_IDS.slice(),companyNames:clone(COMPANY_NAMES),
-    createProposal:createProposal,decideProposal:decideProposal,previewProposal:function(country,id){var p=getProposal(country,id);return p?previewFor(p):{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};},
+    createProposal:createProposal,adjustProposal:adjustProposal,decideProposal:decideProposal,previewProposal:function(country,id){var p=getProposal(country,id);return p?previewFor(p):{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};},
     fundProposal:fundProposal,startConstruction:startConstruction,recordCompanyCapitalReceipt:recordCompanyCapitalReceipt,
     getProposal:getProposal,getCountryDashboard:getCountryDashboard,getCompanyCapitalSummary:getCompanyCapitalSummary,
     diagnostics:diagnostics,productionProofReady:productionProofReady
