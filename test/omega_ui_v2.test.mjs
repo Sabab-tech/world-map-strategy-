@@ -1784,9 +1784,9 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(css,/prefers-reduced-motion:\s*reduce/);
     assert.match(css,/FP persistent command view fixes/);
     assert.match(css,/orientation:\s*landscape\) and \(max-height:\s*520px/);
-    assert.match(css,/@media \\(max-width:\\s*900px\\)[\\s\\S]*?transform-style:\\s*flat/);
-    assert.match(css,/fp-card--flipped[\\s\\S]*?fp-card-face--back[\\s\\S]*?display:flex !important/);
-    assert.match(css,/@media \\(max-width:680px\\) and \\(orientation:portrait\\)[\\s\\S]*?grid-template-columns:repeat\\(3,minmax\\(0,1fr\\)\\)/);
+    assert.ok(css.includes('@media (max-width:900px)') && css.includes('transform-style:flat !important;'), 'mobile cards must avoid expensive 3D compositing');
+    assert.ok(css.includes('.omega-v2-factory-type-card.fp-card--flipped .fp-card-face--front') && css.includes('.omega-v2-factory-type-card.fp-card--flipped .fp-card-face--back') && css.includes('display:flex !important;'), 'mobile Details must swap card faces without 3D transforms');
+    assert.ok(css.includes('@media (max-width:680px) and (orientation:portrait)') && css.includes('grid-template-columns:repeat(3,minmax(0,1fr)) !important;'), 'portrait phones must keep three factory cards per row');
     assert.match(css,/fp-summary/);
     assert.match(css,/@supports not \(width:\s*1cqw\)[\s\S]*?\.fp-badge\s*\{\s*display:\s*grid/);
     assert.match(css,/data-state="stopped"/);
