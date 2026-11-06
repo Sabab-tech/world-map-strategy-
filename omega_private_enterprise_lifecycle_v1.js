@@ -299,7 +299,19 @@
     var sourcePolicy=String(input.sourcingPolicy||'DOMESTIC_ONLY').toUpperCase();
     if(['DOMESTIC_ONLY','COMPANY_FUNDED_IMPORTS','MIXED'].indexOf(sourcePolicy)<0)return{status:'BLOCKED',reason:'INVALID_INPUT_SOURCING_POLICY'};
     var requestId=String(input.requestId||'').trim();
-    if(requestId){var old=existingProposal(cid,requestId);if(old)return Object.assign({idempotent:true},clone(old));}
+    if(requestId){
+      var old=existingProposal(cid,requestId);
+      if(old){
+        var same=id(old.companyId)===company&&
+          id(old.operatorCompanyId||old.companyId)===operatorCompany&&
+          id(old.factoryType)===factoryType&&
+          Number(old.quantity)===quantity&&
+          String(old.sourcingPolicy||'DOMESTIC_ONLY').toUpperCase()===sourcePolicy&&
+          (old.stateSupportRequested===true)===(input.stateSupportRequested===true);
+        if(!same)return{status:'BLOCKED',reason:'PROPOSAL_REQUEST_IDEMPOTENCY_COLLISION',proposalId:old.proposalId};
+        return Object.assign({idempotent:true},clone(old));
+      }
+    }
     var r=runtime(cid,true),sequence=r.nextProposalSequence++,proposalId='PE-PROPOSAL:'+cid+':'+sequence;
     var proposal={
       proposalId:proposalId,requestId:requestId||proposalId,countryId:cid,companyId:company,companyName:COMPANY_NAMES[company],
