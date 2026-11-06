@@ -145,6 +145,13 @@
         const sellerBlockade=strategicPolicy?.isRouteBlocked?.(ask.countryId,{resourceId:rid,transportMode:routeMode,routeId:ask.routeId,siteId:ask.siteId});
         if(buyerBlockade?.blocked||sellerBlockade?.blocked){blockedPairs.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,resourceId:rid,reason:'RESOURCE_ROUTE_BLOCKADE_ACTIVE',blockades:[...(buyerBlockade?.blockades||[]),...(sellerBlockade?.blockades||[])]});continue;}
         const q=Math.min(bid.remaining,ask.remaining);if(!(q>0))continue;
+        const stateDirective=strategicPolicy?.evaluateExportDirective?.(ask.countryId,bid.countryId,rid,q,
+          ask.governmentContractId||bid.governmentContractId);
+        if(stateDirective&&stateDirective.allowed===false){
+          blockedPairs.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,resourceId:rid,
+            reason:stateDirective.reason||'STATE_SUPPLY_DIRECTIVE_BLOCKED',stateSupplyDirective:stateDirective});
+          continue;
+        }
         matched+=q;lastBid=bid;lastAsk=ask;
         matches.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,quantity:q,bidPriceUsd:bid.priceUsd,askPriceUsd:ask.priceUsd,bidPrice:bid.price,askPrice:ask.price,referenceLiquidity:!!ask.referenceOnly});
         bid.remaining-=q;ask.remaining-=q;
@@ -202,6 +209,12 @@
       const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
       const embargo=target?strategicPolicy?.isResourceEmbargoed?.(target,c,rid):null;
       if(embargo?.blocked)continue;
+      if(target){
+        const freeEstimate=Math.max(0,available);
+        const stateDirective=strategicPolicy?.evaluateExportDirective?.(c,target,rid,
+          quantity>0?Math.min(quantity,freeEstimate):freeEstimate,null,inv);
+        if(stateDirective&&stateDirective.allowed===false)continue;
+      }
       const buyerBlockade=target?strategicPolicy?.isRouteBlocked?.(target,{resourceId:rid,transportMode:'ship'}):null;
       const sellerBlockade=strategicPolicy?.isRouteBlocked?.(c,{resourceId:rid,transportMode:'ship'});
       if(buyerBlockade?.blocked||sellerBlockade?.blocked)continue;
