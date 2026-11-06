@@ -52,8 +52,8 @@ test('private enterprise registry defers baseline fetch and JSON parsing until f
  assert.doesNotMatch(registry,/g\.Omega\.PrivateEnterpriseRegistryV1=API;init\(\);/);
  const industry=fs.readFileSync(new URL('../omega_ui_v2/screens/industry.js',import.meta.url),'utf8');
  assert.match(industry,/privateRuntime\.ready/);
- assert.match(industry,/requestedTab === 'companies'/,
-  'private baseline fetch must wait until the Companies tab is opened');
+ assert.match(industry,/factoryManageOpened/,
+  'private baseline fetch must wait until the in-card Manage action is opened');
  assert.match(industry,/privateEnterpriseBaseline\.status === 'LOADING'/);
 });
 
