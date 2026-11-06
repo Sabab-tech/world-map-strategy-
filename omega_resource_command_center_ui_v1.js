@@ -953,7 +953,7 @@
       '</strong></div><div><span>Processed warehouse</span><strong>' + esc(processedWarehouse.warehouseId || 'Not registered') +
       '</strong></div><div><span>Current batches</span><strong>' + number(batches.length) + '</strong></div></div>' +
       coverageTargetForm +
-      '<p class="omega-rescc-note">Natural resources and industrial products are presented separately. Current stock is read once from the country inventory ledger; raw and processed warehouse balances remain separate and are not added twice. The 100-day column is a simulated opening-stock target, not a geological reserve or delivery record.</p>' +
+      '<p class="omega-rescc-note">Natural resources and industrial products are presented separately. Current stock is shown once from the country inventory ledger; raw and processed warehouse balances remain separate and are not added twice. The 100-day column is a simulated opening-stock target, not a geological reserve or delivery record.</p>' +
       '<h3 class="omega-rescc-section-title">Natural resource inventory</h3>' + naturalStockTable +
       '<h3 class="omega-rescc-section-title">Industrial inventory</h3>' + industrialStockTable +
       '<h3 class="omega-rescc-section-title">Natural resource batches</h3>' + naturalBatchTable +
