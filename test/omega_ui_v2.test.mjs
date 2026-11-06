@@ -3295,7 +3295,10 @@ test('Factory type overview skips heavy inventory and production-ledger mapping 
   assert.match(source, /var lightweightTypeView = active === 'factories' && requestedFactoryView === 'types' && !managePanelOpen && !factoryDetailsOpen/);
   assert.match(source, /lightweightFactoryTypeView:currentTab === 'factories' && currentView === 'types' && !currentManageOpen && !currentDetailsOpen/);
   assert.ok(source.includes("options.loadPrivateEnterpriseBaseline === true && context.countryId"));
-  assert.ok(source.includes("loadPrivateEnterpriseBaseline:active === 'companies' || managePanelOpen"));
+  assert.ok(source.includes("loadPrivateEnterpriseBaseline:active === 'companies' || active === 'production-lines' || managePanelOpen"),
+    'the lightweight Factory overview stays lazy, while Production Lines loads its private opening baseline');
+  assert.ok(source.includes("requestedTab === 'companies' || requestedTab === 'production-lines' || factoryManageOpened"),
+    'the detailed private baseline is requested only for the Companies or Production Lines tabs, or an opened Manage panel');
   assert.ok(source.includes("var production = lightweightTypeView ? null : mineDailyProduction(site);"));
   assert.ok(source.includes("var dailyProductionKnownCount = lightweightTypeView ? 0 :"));
   assert.ok(source.includes("var flows = lightweightTypeView ? [] :"));
