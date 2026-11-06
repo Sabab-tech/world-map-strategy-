@@ -253,6 +253,44 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   assert.equal(h.state.economy.BGD.productionAssets.length,1);
 });
 
+test('production proof refresh restores only the requested factory and gates siblings independently',()=>{
+  const h=makeHarness(),api=h.api;
+  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    factoryType:'STEEL_WORKS',quantity:2,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
+  assert.equal(api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
+    allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
+  assert.equal(api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,
+    sourceType:'GOVERNMENT_GRANT',amount:200}).status,'FUNDED');
+  setReadyIronSupply(h,1200);
+  const build=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+  assert.equal(build.status,'UNDER_CONSTRUCTION',JSON.stringify(build));
+  assert.equal(build.started.length,2);
+  for(const project of h.projects){
+    project.status='COMPLETED';
+    h.state.economy.BGD.productionAssets.push({
+      id:project.factoryId,countryId:'BGD',factoryType:project.factoryType,status:'OPERATIONAL'
+    });
+    emit(h,'OMEGA_FACTORY_CAPACITY_CHANGED',{countryId:'BGD',payload:{projectId:project.projectId}});
+  }
+  const [first,second]=h.state.economy.BGD.productionAssets;
+  assert.equal(first.status,'BLOCKED');
+  assert.equal(second.status,'BLOCKED');
+  h.sandbox.OmegaPrivateEnterprisePipelineProof={status:'VERIFIED',siteSelection:true,extraction:true,
+    logisticsReceipt:true,factoryInput:true,finishedGoods:true,saveLoad:true,exactMainSha:'c'.repeat(40)};
+  const firstGate=api.refreshCommissionedProductionGate('BGD',first.id);
+  assert.equal(firstGate.status,'PARTIALLY_READY');
+  assert.equal(first.status,'OPERATIONAL');
+  assert.equal(first.productionEnabled,true);
+  assert.equal(second.status,'BLOCKED','validating one factory must not silently activate every sibling');
+  assert.equal(second.productionEnabled,false);
+  assert.equal(api.getProposal('BGD',proposal.proposalId).status,'COMMISSIONED_PRODUCTION_GATED');
+  const secondGate=api.refreshCommissionedProductionGate('BGD',second.id);
+  assert.equal(secondGate.status,'READY');
+  assert.equal(second.status,'OPERATIONAL');
+  assert.equal(second.productionEnabled,true);
+  assert.equal(api.getProposal('BGD',proposal.proposalId).status,'COMMISSIONED');
+});
+
 test('construction retry reconciles a canonical project created before proposal and CAPEX pointers were saved',()=>{
   const h=makeHarness(),api=h.api;
   const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
