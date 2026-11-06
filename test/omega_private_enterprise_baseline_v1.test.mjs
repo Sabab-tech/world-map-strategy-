@@ -5,10 +5,52 @@ import { runInNewContext } from 'node:vm';
 import { buildPrivateFactoryBaseline, validatePrivateFactoryBaseline } from '../scripts/build_country_private_factory_starting_baseline_v1.mjs';
 const government=JSON.parse(fs.readFileSync(new URL('../country_factory_starting_baseline_v1.json',import.meta.url),'utf8'));
 const generated=JSON.parse(fs.readFileSync(new URL('../country_private_factory_starting_baseline_v1.json',import.meta.url),'utf8'));
+async function loadPrivateRegistry(payload){
+ const registry=fs.readFileSync(new URL('../omega_private_enterprise_registry_v1.js',import.meta.url),'utf8');
+ const sandbox={
+  AbortController,
+  OmegaCountryFactoryStartingBaselineV1:{
+   ready:Promise.resolve({status:'READY'}),
+   getCountryBaseline(countryId){
+    const row=government.countries[String(countryId).trim().toUpperCase()];
+    return row?{factoryCounts:row.factoryCounts}:null;
+   }
+  },
+  fetch:async()=>({ok:true,json:async()=>payload}),
+  dispatchEvent(){},
+  CustomEvent:function CustomEvent(type,options){this.type=type;this.detail=options&&options.detail;},
+  setTimeout,clearTimeout
+ };
+ runInNewContext(registry,sandbox);
+ return await sandbox.OmegaPrivateEnterpriseRegistryV1.ready;
+}
 test('private baseline covers exactly 197 countries, 21 factory types and five stable companies',()=>{
  assert.equal(generated.countryCount,197);assert.equal(generated.factoryTypeCount,21);assert.equal(generated.companyCount,5);
  assert.deepEqual(generated.factoryTypes.map(x=>x.id),government.factoryTypes.map(x=>x.id));
  assert.equal(validatePrivateFactoryBaseline(generated,government).ok,true);
+});
+test('baseline validator rejects extra company factory keys and country/world total drift',()=>{
+ const extraKey=JSON.parse(JSON.stringify(generated));
+ extraKey.countries.BGD.companyFactoryCounts.AURORA_INDUSTRIAL_GROUP.UNREGISTERED_FACTORY=1;
+ assert.throws(()=>validatePrivateFactoryBaseline(extraKey,government),/PRIVATE_COMPANY_FACTORY_ROSTER_INVALID/);
+ const countryTotal=JSON.parse(JSON.stringify(generated));
+ countryTotal.countries.BGD.totalGovernmentFactoryUnits+=1;
+ assert.throws(()=>validatePrivateFactoryBaseline(countryTotal,government),/PRIVATE_COUNTRY_GOVERNMENT_TOTAL_MISMATCH/);
+ const worldTotal=JSON.parse(JSON.stringify(generated));
+ worldTotal.totalGovernmentFactoryUnits+=1;
+ assert.throws(()=>validatePrivateFactoryBaseline(worldTotal,government),/PRIVATE_WORLD_GOVERNMENT_TOTAL_MISMATCH/);
+});
+test('runtime registry blocks unknown company category keys and unreconciled aggregates',async()=>{
+ const extraKey=JSON.parse(JSON.stringify(generated));
+ extraKey.countries.BGD.companyFactoryCounts.AURORA_INDUSTRIAL_GROUP.UNREGISTERED_FACTORY=1;
+ const extraResult=await loadPrivateRegistry(extraKey);
+ assert.equal(extraResult.status,'BLOCKED');
+ assert.match(extraResult.reason,/PRIVATE_COMPANY_FACTORY_CATEGORY_ROSTER_INVALID/);
+ const badTotal=JSON.parse(JSON.stringify(generated));
+ badTotal.countries.BGD.totalPrivateFactoryUnits+=1;
+ const totalResult=await loadPrivateRegistry(badTotal);
+ assert.equal(totalResult.status,'BLOCKED');
+ assert.match(totalResult.reason,/PRIVATE_COUNTRY_TOTAL_MISMATCH/);
 });
 test('zero government categories never receive private or company factory units',()=>{
  for(const [country,g] of Object.entries(government.countries)){const r=generated.countries[country];for(const type of generated.factoryTypes.map(x=>x.id)){if(g.factoryCounts[type]!==0)continue;assert.equal(r.factoryCounts[type],0,country+':'+type);for(const company of generated.companies)assert.equal(r.companyFactoryCounts[company.id][type],0,country+':'+company.id+':'+type);}}
