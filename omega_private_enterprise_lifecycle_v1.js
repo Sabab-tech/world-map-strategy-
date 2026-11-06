@@ -1517,8 +1517,15 @@
       '<section class="pe-proposals"><h4>Joint ventures / shareholder voting / dividends</h4>'+
       '<form class="pe-form" data-pe-jv-form><label>JV name<input name="name" type="text" maxlength="100" value="Strategic Industrial Joint Venture" required></label>'+
       '<label>Managing company / shareholder A<select name="companyA">'+jvCompanyOptions+'</select></label>'+
-      '<label>Shareholder B<select name="companyB">'+jvCompanyOptions+'</select></label>'+
-      '<label>Shareholder A equity (%)<input name="shareA" type="number" min="1" max="99" step="1" value="50" required></label>'+
+      '<label>Shareholder A equity (%)<input name="shareA" type="number" min="0.01" max="99.99" step="0.01" value="50" required></label>'+
+      '<label>Shareholder B<select name="companyB"><option value="">Not participating</option>'+jvCompanyOptions+'</select></label>'+
+      '<label>Shareholder B equity (%)<input name="shareB" type="number" min="0" max="99.99" step="0.01" value="50"></label>'+
+      '<label>Shareholder C<select name="companyC"><option value="">Not participating</option>'+jvCompanyOptions+'</select></label>'+
+      '<label>Shareholder C equity (%)<input name="shareC" type="number" min="0" max="99.99" step="0.01" value="0"></label>'+
+      '<label>Shareholder D<select name="companyD"><option value="">Not participating</option>'+jvCompanyOptions+'</select></label>'+
+      '<label>Shareholder D equity (%)<input name="shareD" type="number" min="0" max="99.99" step="0.01" value="0"></label>'+
+      '<label>Shareholder E<select name="companyE"><option value="">Not participating</option>'+jvCompanyOptions+'</select></label>'+
+      '<label>Shareholder E equity (%)<input name="shareE" type="number" min="0" max="99.99" step="0.01" value="0"></label>'+
       '<label>Exact factory IDs (comma separated, optional)<input name="factoryIds" type="text" maxlength="1200"></label>'+
       '<label>Unique charter reference<input name="requestId" type="text" maxlength="100" required></label>'+
       '<button type="submit">Submit JV charter for government approval</button></form>'+jvCards+'</section>'+
@@ -1559,12 +1566,17 @@
       }
       if(form.matches('[data-pe-jv-form]')){
         if(event.preventDefault)event.preventDefault();
-        var jvData=new FormData(form),shareA=Number(jvData.get('shareA')),shareABps=Math.round(shareA*100);
+        var jvData=new FormData(form),shareholders=[],shareholderLetters=['A','B','C','D','E'];
+        shareholderLetters.forEach(function(letter){
+          var companyId=String(jvData.get('company'+letter)||'').trim(),
+            shareValue=String(jvData.get('share'+letter)||'').trim();
+          if(!companyId&&!shareValue)return;
+          shareholders.push({companyId:companyId,shareBps:Math.round(Number(shareValue)*100)});
+        });
         var factoryIds=String(jvData.get('factoryIds')||'').split(',').map(function(value){return value.trim();}).filter(Boolean);
         var jvResult=createJointVenture({countryId:root.__omegaV2IndustryCountryId||playerCountry(),
           name:jvData.get('name'),requestId:jvData.get('requestId'),managingCompanyId:jvData.get('companyA'),
-          shareholders:[{companyId:jvData.get('companyA'),shareBps:shareABps},
-            {companyId:jvData.get('companyB'),shareBps:10000-shareABps}],factoryIds:factoryIds});
+          shareholders:shareholders,factoryIds:factoryIds});
         root.__omegaPrivateEnterpriseMessage=jvResult.status==='PROPOSED'?'JV charter submitted for government approval.':'JV charter blocked: '+String(jvResult.reason||jvResult.status).replace(/_/g,' ').toLowerCase()+'.';
         refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
       }
