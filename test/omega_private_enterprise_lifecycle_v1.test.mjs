@@ -104,14 +104,19 @@ function makeHarness(){
   return{state,network,projects,handlers,api:sandbox.OmegaPrivateEnterpriseLifecycleV1,sandbox};
 }
 function emit(harness,type,detail){(harness.handlers.get(type)||[]).forEach(fn=>fn({type,detail}));}
+function setIronDemandSnapshot(harness,demandPerDay=0,consumerDemandPerDay=0,activeFactoryInputDemandPerDay=0){
+  const game=harness.sandbox.Game.state,resource=game.resource.BGD,turn=Number(game.simulation.turn)||0;
+  resource.demandRuntime={lastTurn:turn,byResource:{iron_ore:{
+    demandPerDay,consumerDemandPerDay,activeFactoryInputDemandPerDay,pendingImportQuantity:0
+  }},authority:'TEST_CURRENT_TURN_DEMAND_SNAPSHOT'};
+  return resource.demandRuntime;
+}
 function setReadyIronSupply(harness,amount=1000){
-  const resource=harness.state.resource.BGD,turn=Number(harness.state.simulation.turn)||0;
+  const game=harness.sandbox.Game.state,resource=game.resource.BGD;
   resource.inventory.iron_ore=amount;
   resource.warehouse.availableByResource.iron_ore=amount;
   resource.warehouse.reservedByResource.iron_ore=0;
-  resource.demandRuntime={lastTurn:turn,byResource:{iron_ore:{
-    demandPerDay:0,consumerDemandPerDay:0,activeFactoryInputDemandPerDay:0,pendingImportQuantity:0
-  }}};
+  setIronDemandSnapshot(harness,0,0,0);
 }
 
 test('autonomous company proposals are deterministic, once per 30 turns, and have no asset/stock/cash side effects',()=>{
@@ -420,9 +425,7 @@ test('domestic approval subtracts strategic protection and current national dema
   assert.equal(unknown.reason,'DOMESTIC_INPUT_STOCK_UNOBSERVED');
   assert.equal(h.state.resource.BGD.inventory.iron_ore,1000);
 
-  h.state.resource.BGD.demandRuntime={lastTurn:4,byResource:{iron_ore:{
-    demandPerDay:11,consumerDemandPerDay:5,activeFactoryInputDemandPerDay:6,pendingImportQuantity:0
-  }}};
+  setIronDemandSnapshot(h,11,5,6);
   const pressured=h.api.previewProposal('BGD',proposal.proposalId);
   assert.equal(pressured.maximumSafeDomesticFactoryQuantity,0,JSON.stringify(pressured.inputRequirements[0]));
   assert.equal(pressured.inputRequirements[0].protectedStock,100);
