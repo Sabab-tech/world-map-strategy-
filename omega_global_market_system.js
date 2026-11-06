@@ -209,12 +209,6 @@
       const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
       const embargo=target?strategicPolicy?.isResourceEmbargoed?.(target,c,rid):null;
       if(embargo?.blocked)continue;
-      if(target){
-        const freeEstimate=Math.max(0,available);
-        const stateDirective=strategicPolicy?.evaluateExportDirective?.(c,target,rid,
-          quantity>0?Math.min(quantity,freeEstimate):freeEstimate,null,inv);
-        if(stateDirective&&stateDirective.allowed===false)continue;
-      }
       const buyerBlockade=target?strategicPolicy?.isRouteBlocked?.(target,{resourceId:rid,transportMode:'ship'}):null;
       const sellerBlockade=strategicPolicy?.isRouteBlocked?.(c,{resourceId:rid,transportMode:'ship'});
       if(buyerBlockade?.blocked||sellerBlockade?.blocked)continue;
@@ -222,6 +216,11 @@
       const spr=countryValue(c,'resource.strategicReserve'),protectedStock=n(spr?.availableByResource?.[rid])||0;
       const available=n(tradeable?.[rid])??Math.max(0,(n(inv?.[rid])||0)-protectedStock)+(n(prod?.[rid])||0);
       if(available<=0||available<quantity)continue;
+      if(target){
+        const stateDirective=strategicPolicy?.evaluateExportDirective?.(c,target,rid,
+          quantity>0?Math.min(quantity,available):available,null,{[rid]:available});
+        if(stateDirective&&stateDirective.allowed===false)continue;
+      }
       const q=quote(rid),rel=countryValue(target,'foreign.relations')?.[c]||countryValue(c,'foreign.relations')?.[target]||null;
       out.push({countryId:c,resourceId:rid,available,marketQuote:q,relationObserved:!!rel,tradeAgreementObserved:rel?.trade_agreement===true});
     }
