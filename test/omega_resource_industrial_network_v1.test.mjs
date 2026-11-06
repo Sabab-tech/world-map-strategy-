@@ -299,6 +299,19 @@ N.advanceProjects('BGD');
 assert(context.Game.state.resource.BGD.technologyCapabilities.some(x=>x.technologyId==='DIGITAL_MAINTENANCE'));
 const fx=context.Game.state.economy.BGD.productionAssets.find(x=>x.id===factoryProject.factoryId);
 assert.equal(fx.status,'OPERATIONAL');
+assert.equal(fx.companyId,'STATE_INDUSTRY_BGD','the EPC builder must not be recorded as the factory owner/company');
+assert.equal(fx.ownerId,'STATE_INDUSTRY_BGD');
+assert.equal(fx.ownerCompanyId,'STATE_INDUSTRY_BGD');
+assert.equal(fx.ownerType,'STATE_OWNED_ENTERPRISE');
+assert.equal(fx.operatorId,'STATE_INDUSTRY_BGD');
+assert.equal(fx.operatorCompanyId,'STATE_INDUSTRY_BGD');
+assert.equal(fx.operatorType,'STATE_ENTERPRISE_OPERATOR');
+assert.equal(fx.constructionContractorType,'DOMESTIC_EPC');
+assert.equal(fx.stateControlRights.operationalControl,'STATE_OPERATOR');
+assert.equal(fx.stateControlRights.strategicOversight,true);
+assert.equal(fx.stateControlRights.emergencyIntervention,true);
+assert.equal(fx.stateControlRights.authority,'OMEGA_STATE_FACTORY_OWNERSHIP_V1');
+assert.notEqual(fx.companyId,'EPC_FACTORY_OWNER','construction contractor identity must never be used as operating company identity');
 
 // Starting allocations and player construction must coexist in the exact same live
 // country registry and be visible to the same industrial runtime after commissioning.
