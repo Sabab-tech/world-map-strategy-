@@ -327,7 +327,15 @@ test('playable mine extraction feeds a commissioned private factory through prod
   countryResource.warehouse.reservedByResource=countryResource.warehouse.reservedByResource||{};
   countryResource.batches=Array.isArray(countryResource.batches)?countryResource.batches:[];
   countryResource.inventoryLots=countryResource.inventoryLots||{};
-  const privateStartupStock={...privateProfile.constructionMaterials};
+  countryResource.demandRuntime=countryResource.demandRuntime&&typeof countryResource.demandRuntime==='object'
+    ?countryResource.demandRuntime:{};
+  countryResource.demandRuntime.byResource=countryResource.demandRuntime.byResource&&typeof countryResource.demandRuntime.byResource==='object'
+    ?countryResource.demandRuntime.byResource:{};
+  countryResource.demandRuntime.lastTurn=Number(state.simulation.turn)||1;
+  countryResource.demandRuntime.byResource.coal=Object.assign({demandPerDay:0,consumerDemandPerDay:0,
+    activeFactoryInputDemandPerDay:0,pendingImportQuantity:0,authority:'OMEGA_PRIVATE_FACTORY_E2E_FIXTURE'},
+    countryResource.demandRuntime.byResource.coal||{});
+  const privateStartupStock={...privateProfile.constructionMaterials,coal:60000};
   for(const [resourceId,rawQuantity] of Object.entries(privateStartupStock)){
     const quantity=Number(rawQuantity);
     assert.ok(Number.isFinite(quantity)&&quantity>0,'private construction and production stock must be positive: '+resourceId);
