@@ -419,6 +419,10 @@
     var direction=String(source.direction||source.entryType||'').toUpperCase();
     var sourceCompany=id(source.companyId||source.beneficiaryCompanyId||source.counterpartyCompanyId);
     var sourceAmount=num(source.amountUsd!=null?source.amountUsd:(source.amount!=null?source.amount:source.value));
+    var sourceCurrency=id(source.currency||source.currencyCode||source.unit);
+    var expectedCurrency=id(input.currency||'GAME_CURRENCY_UNITS');
+    if(sourceCurrency!==expectedCurrency)
+      return{status:'BLOCKED',reason:'CAPITAL_SOURCE_CURRENCY_MISMATCH_OR_UNOBSERVED',sourceCurrency:sourceCurrency||'UNOBSERVED',expectedCurrency:expectedCurrency};
     if(['SETTLED','POSTED','COMPLETED','PAID'].indexOf(sourceStatus)<0||
        !/(EQUITY|INVESTMENT|LOAN|CAPITAL|RETAINED_EARNINGS)/.test(sourceType)||
        !['CREDIT','INFLOW','DEPOSIT'].includes(direction)||
@@ -796,7 +800,8 @@
           countryId:root.__omegaV2IndustryCountryId||playerCountry(),
           companyId:form.getAttribute('data-pe-company'),
           sourceTransactionId:capitalData.get('sourceTransactionId'),
-          amount:capitalData.get('amount')
+          amount:capitalData.get('amount'),
+          currency:(getProposal(root.__omegaV2IndustryCountryId||playerCountry(),form.closest('[data-pe-proposal]')&&form.closest('[data-pe-proposal]').getAttribute('data-pe-proposal'))||{}).capitalUnit
         });
         root.__omegaPrivateEnterpriseMessage=capitalResult.status==='POSTED'
           ?'Verified company capital receipt posted. Balance: '+Number(capitalResult.balance).toLocaleString('en-US')+'.'
