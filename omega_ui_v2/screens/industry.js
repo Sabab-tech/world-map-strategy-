@@ -1020,6 +1020,7 @@
             operatorRoleExplicit ? 'UNMAPPED_OPERATOR_TYPE' : 'NOT_RECORDED'),
         stateControlRightsStatus:stateRights ? (stateRightLabels.length ? stateRightLabels.join(' · ') : 'Recorded; details unavailable') : 'Not recorded',
         stateControlRightsCount:stateRightLabels.length,
+        outputResourceIds:outputResourceIds.slice(),
         stateSupplyDirectiveStatus:stateDirectiveStatus,
         stateSupplyDirectiveLabels:stateDirectiveLabels,
         legacyCompanyAttributionId:legacyCompanyId || null,
@@ -4047,6 +4048,87 @@
           (line.warehouseDispatches || []).length + ' warehouse dispatch record(s) · ' +
           (line.inputRequests || []).length + ' input request record(s)</small></article>';
       }).join('');
+      var statePolicyRuntime = g.OmegaResourceStrategicPolicyRuntime ||
+        (g.Omega && g.Omega.ResourceStrategicPolicyRuntime) || null;
+      var linePolicyResourceIds = [];
+      lineRows.forEach(function (line) {
+        (Array.isArray(line.outputResourceIds) ? line.outputResourceIds : []).forEach(function (resourceId) {
+          var key = String(resourceId || '').trim();
+          if (key && linePolicyResourceIds.indexOf(key) < 0) linePolicyResourceIds.push(key);
+        });
+      });
+      linePolicyResourceIds.sort();
+      var activeSupplyPolicies = [];
+      if (statePolicyRuntime && typeof statePolicyRuntime.supplyPolicySummary === 'function') {
+        linePolicyResourceIds.forEach(function (resourceId) {
+          try {
+            var policySummary = statePolicyRuntime.supplyPolicySummary(model.countryId, resourceId);
+            (policySummary && Array.isArray(policySummary.activeDirectives) ? policySummary.activeDirectives : []).forEach(function (policy) {
+              activeSupplyPolicies.push(Object.assign({ resourceId:resourceId }, policy));
+            });
+          } catch (_) {}
+        });
+      }
+      var linePolicyResourceOptions = linePolicyResourceIds.map(function (resourceId) {
+        return '<option value="' + esc(resourceId) + '">' + esc(resourceId.replace(/[_-]+/g, ' ')) + '</option>';
+      }).join('');
+      var policyDirectiveOptions = [
+        ['DOMESTIC_ONLY','Domestic only'],['DOMESTIC_PRIORITY','Domestic priority'],
+        ['DOMESTIC_QUOTA','Domestic quota'],['EXPORT_RESTRICTED','Export restricted'],
+        ['FACTORY_ALLOCATION','Factory allocation (domestic / export IDs)'],
+        ['GOVERNMENT_EXPORT_CONTRACT','Government export contract'],
+        ['GOVERNMENT_PROCUREMENT','Government procurement authority'],
+        ['STRATEGIC_STOCK_RESERVE','Strategic stock reserve']
+      ].map(function (row) { return '<option value="' + row[0] + '">' + esc(row[1]) + '</option>'; }).join('');
+      var activePolicyMarkup = activeSupplyPolicies.map(function (policy) {
+        return '<div class="fp-state-policy-active"><div><strong>' + esc(policy.directive.replace(/_/g, ' ')) + '</strong>' +
+          '<small>' + esc(policy.resourceId) + ' · ' + esc(policy.policyId) +
+          (policy.expiresTurn === null || policy.expiresTurn === undefined ? '' : ' · expires T' + esc(policy.expiresTurn)) +
+          '</small></div><button type="button" data-state-policy-lift="' + esc(policy.policyId) + '">Lift</button></div>';
+      }).join('');
+      var procurementPolicies = activeSupplyPolicies.filter(function (policy) {
+        return policy.directive === 'GOVERNMENT_PROCUREMENT';
+      });
+      var procurementPolicyOptions = procurementPolicies.map(function (policy) {
+        return '<option value="' + esc(policy.policyId) + '">' + esc(policy.resourceId + ' · ' + policy.policyId) + '</option>';
+      }).join('');
+      var privateCompanyOptions = [
+        ['AURORA_INDUSTRIAL_GROUP','Aurora Industrial Group'],
+        ['MERIDIAN_ENGINEERING_GROUP','Meridian Engineering Group'],
+        ['NOVA_CONSUMER_INDUSTRIES','Nova Consumer Industries'],
+        ['ATLAS_TECHNOLOGY_CORPORATION','Atlas Technology Corporation'],
+        ['TERRA_INFRASTRUCTURE_GROUP','Terra Infrastructure Group']
+      ].map(function (row) { return '<option value="' + row[0] + '">' + esc(row[1]) + '</option>'; }).join('');
+      var policyControlMarkup = '<details class="fp-state-policy"><summary>National supply controls</summary>' +
+        '<p>Issue or lift country-level supply instructions. They are enforced by market and trade settlement.</p>' +
+        (linePolicyResourceIds.length
+          ? '<div class="fp-state-policy-form">' +
+            '<label>Product<select data-state-policy-resource>' + linePolicyResourceOptions + '</select></label>' +
+            '<label>Directive<select data-state-policy-directive>' + policyDirectiveOptions + '</select></label>' +
+            '<label>Protected / authorized quantity<input type="number" min="0" step="any" data-state-policy-quantity placeholder="Quantity when required"></label>' +
+            '<label>Destination country (ISO3)<input type="text" maxlength="3" data-state-policy-target placeholder="e.g. SAU"></label>' +
+            '<label>Contract ID<input type="text" maxlength="80" data-state-policy-contract placeholder="Required for government contracts"></label>' +
+            '<label>Company IDs (comma-separated)<input type="text" data-state-policy-companies placeholder="Optional canonical private company IDs"></label>' +
+            '<label>Domestic factory IDs (comma-separated)<input type="text" data-state-policy-domestic-factories placeholder="FACTORY-01, FACTORY-02"></label>' +
+            '<label>Export factory IDs (comma-separated)<input type="text" data-state-policy-export-factories placeholder="Only these factories may export"></label>' +
+            '<label>Contract factory IDs (comma-separated)<input type="text" data-state-policy-contract-factories placeholder="Optional contract factory scope"></label>' +
+            '<label>Expiry turn<input type="number" min="0" step="1" data-state-policy-expiry placeholder="Optional"></label>' +
+            '<label>Reason<input type="text" maxlength="180" data-state-policy-reason placeholder="National supply / treaty obligation"></label>' +
+            '<button type="button" data-state-policy-apply>Issue state directive</button></div>'
+          : '<p class="fp-state-policy-empty">No recorded factory output product IDs are available. A product policy cannot be guessed.</p>') +
+        '<div class="fp-state-policy-active-list"><h4>Active directives</h4>' +
+          (activePolicyMarkup || '<p class="fp-state-policy-empty">No active supply directives for recorded output products.</p>') +
+        '</div>' +
+        '<div class="fp-state-procurement"><h4>Government procurement</h4>' +
+          '<p>Buy existing private finished goods under an active procurement directive. Treasury liquidity and Owner / Operator attribution are checked before stock changes.</p>' +
+          '<label>Procurement policy<select data-state-procurement-policy>' +
+            (procurementPolicyOptions || '<option value="">No active procurement policy</option>') + '</select></label>' +
+          '<label>Private company<select data-state-procurement-company>' + privateCompanyOptions + '</select></label>' +
+          '<label>Quantity<input type="number" min="0.000001" step="any" data-state-procurement-quantity placeholder="Purchase quantity"></label>' +
+          '<label>Total payment<input type="number" min="0.01" step="any" data-state-procurement-value placeholder="Treasury payment"></label>' +
+          '<label>Procurement ID<input type="text" maxlength="80" data-state-procurement-id placeholder="Unique order ID"></label>' +
+          '<button type="button" data-state-procurement-submit' + (procurementPolicies.length ? '' : ' disabled') + '>Purchase private stock</button>' +
+        '</div></details>';
       var lineSourceCounts = model.lineActivitySourceCounts || {};
       content = '<section class="fp-lines" aria-label="Selected-country production and delivery lines">' +
         '<header class="fp-lines-heading"><div><span>PLAYER COUNTRY · LIVE RECORDS</span><h3>Production &amp; delivery lines</h3></div>' +
@@ -4056,6 +4138,7 @@
         '<div><span>Active cycles</span><strong>' + fmt(lineActiveCount) + '</strong></div>' +
         '<div><span>In transit</span><strong>' + fmt(lineTransitCount) + '</strong></div>' +
         '<div><span>Blocked</span><strong>' + fmt(lineBlockedCount) + '</strong></div></div>' +
+        policyControlMarkup +
         (lineCards ? '<div class="fp-lines-list">' + lineCards + '</div>' :
           '<div class="fp-lines-empty">No recorded production or delivery lines for this country.</div>') +
         '<p class="fp-lines-provenance">Only this country’s factory cycles, committed shipments, warehouse dispatches and input requests are shown. Missing route, ETA or ownership fields remain unavailable; a planned route is not a shipment.</p>' +
