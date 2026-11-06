@@ -1211,6 +1211,7 @@
     return {
       countryId: context.countryId,
       hasCountryState: !!(context.resource || context.economy),
+      __omegaV2FactoryInputOptimized: optimizedFactoryRead,
       factoryCount: factoryCount,
       factoryTypeCounts: factoryTypeCounts,
       factoryTypeCatalog: factoryTypeCatalog,
