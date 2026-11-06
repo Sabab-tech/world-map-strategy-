@@ -1,4 +1,8 @@
 name: OMEGA Private Enterprise Real Browser E2E
+concurrency:
+  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 
 on:
   workflow_dispatch:
@@ -33,10 +37,6 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  group: omega-private-enterprise-browser-${{ github.event.pull_request.number || github.ref }}-${{ github.run_id }}
-  cancel-in-progress: false
 
 jobs:
   chromium-browser-e2e:

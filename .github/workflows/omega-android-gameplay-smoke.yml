@@ -1,4 +1,8 @@
 name: OMEGA Android 9 Offline Gameplay Smoke
+concurrency:
+  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 
 on:
   workflow_dispatch:
@@ -52,13 +56,6 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  # Keep each PR revision's bounded emulator proof independent. The script has
-  # a 10-minute instrumentation deadline, so a newer push must not cancel the
-  # only API 28 result before its diagnostics are uploaded.
-  group: omega-android9-gameplay-smoke-${{ github.event.pull_request.number || github.ref }}-${{ github.run_id }}
-  cancel-in-progress: false
 
 jobs:
   offline-gameplay-smoke:

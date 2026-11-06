@@ -1,0 +1,33 @@
+name: OMEGA PR CI Queue Coalescer
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  actions: write
+  contents: read
+concurrency:
+  group: omega-pr-ci-coalescer-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  cancel-superseded-runs:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Cancel obsolete runs for this PR branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t stale_run_ids < <(
+            gh run list --repo "$GITHUB_REPOSITORY" --branch "$HEAD_REF" --limit 1000 --json databaseId,status,headSha |
+              jq -r --arg current "$HEAD_SHA" '.[] | select(.headSha != $current and .status != "completed") | .databaseId'
+          )
+          for run_id in "${stale_run_ids[@]}"; do
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/cancel" >/dev/null
+            echo "Cancelled obsolete PR run ${run_id}"
+          done
+          echo "Preserved all workflow runs for current PR head ${HEAD_SHA}"
