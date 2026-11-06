@@ -8,7 +8,15 @@
 (function(global){
   'use strict';
 
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
+  // Cross-ministry writes are granted only to a registered command type and exact paths.
+  // Command payloads cannot add capabilities to this allowlist.
+  const COMMAND_CROSS_DOMAIN_WRITE_PATHS=Object.freeze({
+    OMEGA_STATE_PRIVATE_GOVERNMENT_PROCUREMENT:Object.freeze([
+      'resource.batches','resource.inventoryLots','resource.processedWarehouse',
+      'resource.inventoryLedger','economy.companyAccounts','trade.stateGovernmentProcurementLedger'
+    ])
+  });
 
   function clone(value,seen=new WeakMap()){
     if(value===null||typeof value!=='object')return value;
@@ -77,13 +85,15 @@
   }
 
   class StateTransaction{
-    constructor(stateSource,ownerMinistry,countryId,turn,commandId){
+    constructor(stateSource,ownerMinistry,countryId,turn,commandId,transactionOptions={}){
       this.version=VERSION;
       this.state=stateSource||global.Game?.state||global.gameState||null;
       this.ownerMinistry=String(ownerMinistry||'');
       this.countryId=canonicalCountryId(countryId);
       this.turn=Number.isFinite(Number(turn))?Number(turn):0;
       this.commandId=String(commandId||'');
+      this.commandType=String(transactionOptions.commandType||'');
+      this.authorizedCrossDomainWritePaths=new Set(COMMAND_CROSS_DOMAIN_WRITE_PATHS[this.commandType]||[]);
       this.transactionId='OMI-TX-'+this.turn+'-'+this.ownerMinistry+'-'+this.commandId;
       this.operations=[];
       this.writeBaseline=new Map();
@@ -108,7 +118,8 @@
         cities:'interior'
       };
       const owner=aliases[first]||first;
-      if(owner!==this.ownerMinistry)throw new Error('STATE_PATH_NOT_OWNED_BY_MINISTRY:'+p);
+      if(owner!==this.ownerMinistry&&!this.authorizedCrossDomainWritePaths.has(p))
+        throw new Error('STATE_PATH_NOT_OWNED_BY_MINISTRY:'+p);
       return p;
     }
 
@@ -265,9 +276,9 @@
 
   const api=Object.freeze({
     VERSION,
-    create:(ownerMinistry,countryId,turn,commandId,stateSource)=>new StateTransaction(
+    create:(ownerMinistry,countryId,turn,commandId,stateSource,transactionOptions={})=>new StateTransaction(
       stateSource||global.Game?.state||global.gameState||null,
-      ownerMinistry,countryId,turn,commandId
+      ownerMinistry,countryId,turn,commandId,transactionOptions
     )
   });
 
