@@ -3477,7 +3477,19 @@ function advanceProjects(c){
         requireTrackedInputs:p.recipeMode==='MULTI_INPUT'||factoryProfile.requireTrackedInputs===true,
         workforce:clone(factoryProfile.workforce||{}),employmentProfile:clone(factoryProfile.employment||p.employmentProfile||null),
         utilityRequirements:clone(factoryProfile.utilities||{}),
-        requiredInfrastructure:clone(factoryProfile.requiredInfrastructure||[]),companyId:'EPC_FACTORY_OWNER',
+        requiredInfrastructure:clone(factoryProfile.requiredInfrastructure||[]),
+        // The EPC contractor builds the asset; it does not own or operate it.
+        // Player-started public construction therefore commissions a state enterprise.
+        ownerId:'STATE_INDUSTRY_'+cid,ownerCompanyId:'STATE_INDUSTRY_'+cid,ownerType:'STATE_OWNED_ENTERPRISE',
+        operatorId:'STATE_INDUSTRY_'+cid,operatorCompanyId:'STATE_INDUSTRY_'+cid,operatorType:'STATE_ENTERPRISE_OPERATOR',
+        companyId:'STATE_INDUSTRY_'+cid,
+        stateControlRights:{
+          strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
+          labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,
+          operationalControl:'STATE_OPERATOR',authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',simulationOnly:true
+        },
+        constructionContractorType:p.contractorType||'DOMESTIC_EPC',
+        constructionContractorCountryId:p.contractorCountryId||cid,
         simulationOnly:true,authority:'SIMULATED_FACTORY_ASSET',transportAccess:['road','rail','ship'],commissionedTurn:turn(),
         requiredTechnologyIds:clone(p.requiredTechnologyIds||[])});
       emit('OMEGA_FACTORY_CAPACITY_CHANGED',cid,{factoryId:p.factoryId,capacity:inputCapacityFromFactory(p),projectId:p.projectId,status:assetStatus});
