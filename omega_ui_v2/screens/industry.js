@@ -2934,7 +2934,7 @@
       var card = cards[cardIndex];
       var type = String(card.getAttribute && card.getAttribute('data-factory-type') || '');
       var assetId = String(card.getAttribute && card.getAttribute('data-factory-id') || '');
-      var cardKey = type ? 'type:' + type : assetId ? 'asset:' + assetId : '';
+      var cardKey = assetId ? 'asset:' + assetId : type ? 'type:' + type : '';
       var locked = !!activeKey && cardKey !== activeKey;
       if (card.setAttribute) {
         if (locked) {
@@ -3452,8 +3452,7 @@
           }));
         }).join('')
       : '<div class="omega-v2-factory-empty">No factories are recorded for ' + esc(model.countryId || 'the selected country') + '.</div>';
-    return '<div class="fp-assets-workspace' + (factoryCardUiState(model).expandedKey ? ' fp-workspace--detail-open' : '') + '">' +
-      '<div class="omega-v2-factory-deck">' + factoryCards + '</div></div>';
+    return '<div class="fp-assets-workspace"><div class="omega-v2-factory-deck">' + factoryCards + '</div></div>';
   }
 
   function factoryHomeViewMarkup(root, model, options, factoryView) {
@@ -3572,7 +3571,7 @@
       root.__omegaV2IndustryCountryId = countryKey;
       root.__omegaV2IndustryFactoryViewExplicit = false;
       root.__omegaV2IndustryFactoryView = 'types';
-      root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false };
+      root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', detailsTab:'input', sections:Object.create(null), buildMaterialsExpanded:false };
     }
     if (!root.__omegaV2FactoryCardUiState || typeof root.__omegaV2FactoryCardUiState !== 'object') {
       root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false };
@@ -3907,6 +3906,7 @@
           root.__omegaV2IndustryTab = tab.getAttribute('data-omega-v2-industry-tab');
           root.__omegaV2FactoryCardUiState.expandedKey = '';
           root.__omegaV2FactoryCardUiState.buildKey = '';
+          root.__omegaV2FactoryCardUiState.detailsTab = 'input';
           root.__omegaV2FactoryCardUiState.sections = Object.create(null);
           root.__omegaV2FactoryCardUiState.buildMaterialsExpanded = false;
           scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab }));
@@ -4065,6 +4065,7 @@
     render:render,
     recordFactoryInputCoverage:updateFactoryInputCoverageSnapshotV1,
     resourceIconPath:factoryResourceIconPath,
+    formatFactoryDetailAmount:factoryDetailFormatAmount,
     productIconVisualMarkup:factoryProductIconVisualMarkup,
     productIdentityMarkup:factoryProductIdentityMarkup,
     productUsageMarkup:factoryProductUsageMarkup
