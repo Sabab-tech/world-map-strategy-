@@ -564,11 +564,17 @@
       return{status:'BLOCKED',reason:'GOVERNMENT_PERMIT_SCOPE_MISMATCH'};
     var n=network(),c=catalog()||{},profile=c.factoryProfiles&&c.factoryProfiles[proposal.factoryType];
     if(!n||typeof n.startFactoryProject!=='function'||!profile)return{status:'BLOCKED',reason:'CANONICAL_FACTORY_CONSTRUCTION_RUNTIME_UNAVAILABLE'};
+    var preflightResource=countryBucket('resource',cid,false)||{};
+    var preflightDemand=obj(preflightResource.demandRuntime)?clone(preflightResource.demandRuntime):null;
     var latest=previewFor(proposal);
+    var postflightResource=countryBucket('resource',cid,false)||{};
+    var postflightDemand=obj(postflightResource.demandRuntime)?clone(postflightResource.demandRuntime):null;
+    var demandEvidence={countryId:cid,proposalCountryId:proposal.countryId,turn:turn(),
+      before:preflightDemand,after:postflightDemand};
     if(latest.status!=='READY')
-      return{status:'BLOCKED',reason:latest.reason||'PRIVATE_FACTORY_PRECONSTRUCTION_PREVIEW_BLOCKED',preview:latest};
+      return{status:'BLOCKED',reason:latest.reason||'PRIVATE_FACTORY_PRECONSTRUCTION_PREVIEW_BLOCKED',preview:latest,demandEvidence:demandEvidence};
     if(latest.unobservedInputs&&latest.unobservedInputs.length)
-      return{status:'BLOCKED',reason:'FACTORY_INPUT_STOCK_OR_DEMAND_UNOBSERVED',unobservedInputs:clone(latest.unobservedInputs),preview:latest};
+      return{status:'BLOCKED',reason:'FACTORY_INPUT_STOCK_OR_DEMAND_UNOBSERVED',unobservedInputs:clone(latest.unobservedInputs),preview:latest,demandEvidence:demandEvidence};
     if(latest.shortages&&latest.shortages.length)
       return{status:'BLOCKED',reason:'FACTORY_INPUT_STOCK_SHORTAGE',shortages:clone(latest.shortages),preview:latest};
     var unitCost=num(profile.constructionCost);if(unitCost===null||unitCost<=0)return{status:'BLOCKED',reason:'CANONICAL_CONSTRUCTION_COST_UNAVAILABLE'};
