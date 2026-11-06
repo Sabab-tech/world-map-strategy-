@@ -424,7 +424,7 @@ test('domestic approval subtracts strategic protection and current national dema
     demandPerDay:11,consumerDemandPerDay:5,activeFactoryInputDemandPerDay:6,pendingImportQuantity:0
   }}};
   const pressured=h.api.previewProposal('BGD',proposal.proposalId);
-  assert.equal(pressured.maximumSafeDomesticFactoryQuantity,0);
+  assert.equal(pressured.maximumSafeDomesticFactoryQuantity,0,JSON.stringify(pressured.inputRequirements[0]));
   assert.equal(pressured.inputRequirements[0].protectedStock,100);
   assert.equal(pressured.inputRequirements[0].existingDemand30Day,330);
   assert.equal(pressured.inputRequirements[0].available,570);
@@ -672,16 +672,16 @@ test('joint venture allocates small dividends by largest remainder without creat
     managingCompanyId:COMPANY,shareholders:[
       {companyId:COMPANY,shareBps:3334},
       {companyId:'AURORA_INDUSTRIAL_GROUP',shareBps:3333},
-      {companyId:'NOVA_CONSUMER_INDUSTRIES',shareBps:3333}
+      {companyId:'MERIDIAN_ENGINEERING_GROUP',shareBps:3333}
     ]});
-  assert.equal(created.status,'PROPOSED');
+  assert.equal(created.status,'PROPOSED',JSON.stringify(created));
   assert.equal(h.api.decideJointVenture({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,decision:'APPROVE'}).status,'ACTIVE');
   assert.equal(h.api.contributeJointVentureRetainedEarnings({countryId:'BGD',
     jointVentureId:created.jointVenture.jointVentureId,companyId:COMPANY,amount:0.03,requestId:'small-fund'}).status,'POSTED');
   const resolution=h.api.createJointVentureResolution({countryId:'BGD',
     jointVentureId:created.jointVenture.jointVentureId,type:'DIVIDEND',amount:0.03,requiredApprovalBps:10000});
   assert.equal(resolution.status,'VOTING');
-  for(const companyId of [COMPANY,'AURORA_INDUSTRIAL_GROUP','NOVA_CONSUMER_INDUSTRIES']){
+  for(const companyId of [COMPANY,'AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP']){
     const vote=h.api.voteJointVentureResolution({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,
       resolutionId:resolution.resolution.resolutionId,companyId:companyId,vote:'FOR'});
     if(companyId==='NOVA_CONSUMER_INDUSTRIES')assert.equal(vote.status,'APPROVED');
