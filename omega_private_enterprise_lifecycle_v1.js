@@ -629,14 +629,20 @@
     if(num(permit.expiresAtTurn)===null||turn()>num(permit.expiresAtTurn)||
        num(input.permitExpiryTurn)!==num(permit.expiresAtTurn))
       return{status:'BLOCKED',reason:'GOVERNMENT_PERMIT_EXPIRED_OR_MISMATCHED'};
+    var rights=input.stateControlRights&&typeof input.stateControlRights==='object'?input.stateControlRights:{};
+    var requiredStateRights=['strategicOversight','licensingAndPermits','fiscalRegulation','labourSafetyEnvironmentalRegulation',
+      'strategicSupplyOversight','strategicContracts','domesticSupplyDirection','exportControl','publicProcurement',
+      'competitionOversight','foreignOwnershipReview','emergencyIntervention'];
+    var missingStateRights=requiredStateRights.filter(function(key){return rights[key]!==true;});
     if(permit.countryId!==cid||permit.companyId!==company||permit.operatorCompanyId!==operator||
        permit.factoryType!==factoryType||num(permit.quantity)!==num(proposal.quantity)||
        id(proposal.companyId)!==company||id(proposal.operatorCompanyId||proposal.companyId)!==operator||
        id(proposal.factoryType)!==factoryType||id(input.privateCompanyId)!==company||
        id(input.companyId)!==company||String(input.ownerType||'').toUpperCase()!=='PRIVATE_ENTERPRISE'||
        String(input.operatorType||'').toUpperCase()!=='PRIVATE_COMPANY_OPERATOR'||
-       String(input.stateControlRights&&input.stateControlRights.operationalControl||'').toUpperCase()!=='STATE_POLICY_ONLY')
-      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PERMIT_SCOPE_MISMATCH'};
+       String(rights.operationalControl||'').toUpperCase()!=='STATE_POLICY_ONLY'||
+       rights.authority!=='OMEGA_STATE_CONTROL_RIGHTS_V1'||missingStateRights.length)
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PERMIT_SCOPE_MISMATCH',missingStateRights:missingStateRights};
     var requestId=String(input.requestId||''),prefix=proposal.proposalId+':UNIT:';
     var unitIndex=requestId.indexOf(prefix)===0?Number(requestId.slice(prefix.length)):NaN;
     if(!Number.isInteger(unitIndex)||unitIndex<1||unitIndex>proposal.quantity)
@@ -728,10 +734,19 @@
        String(target.ownerType||'').toUpperCase()!=='PRIVATE_ENTERPRISE')return{status:'BLOCKED',reason:'PRIVATE_FACTORY_NOT_FOUND'};
     var proposal=runtime(cid,false)?.proposals.find(function(p){return p.proposalId===target.sourcePrivateProposalId;});
     if(!proposal)return{status:'BLOCKED',reason:'PRIVATE_PROPOSAL_NOT_FOUND'};
-    var permit=proposal.permit;
-    if(!permit||permit.status!=='ACTIVE'||target.privatePermitId!==permit.permitId||
-       target.privatePermitStatus!=='ACTIVE'||owner!==id(permit.companyId)||operator!==id(permit.operatorCompanyId))
-      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PERMIT_NOT_VERIFIED'};
+    var permit=proposal.permit,decision=proposal.decision,funding=proposal.funding;
+    var financeRows=financeLedger(cid,false)||[];
+    var fundingEntry=financeRows.find(function(row){return row&&row.transactionId===funding?.transactionId&&
+      row.proposalId===proposal.proposalId&&id(row.companyId)===owner&&String(row.status||'').toUpperCase()==='POSTED';});
+    var constructionProject=(countryBucket('resource',cid,false)||{}).industrialNetwork?.projects||[];
+    var projectRow=constructionProject.find(function(row){return row&&row.projectId===target.constructionProjectId&&
+      row.sourcePrivateProposalId===proposal.proposalId&&row.status==='COMPLETED';});
+    if(!permit||permit.status!=='ACTIVE'||permit.authority!=='OMEGA_PRIVATE_ENTERPRISE_LICENSING_V1'||
+       target.privatePermitId!==permit.permitId||target.privatePermitStatus!=='ACTIVE'||
+       target.privatePermitAuthority!==permit.authority||owner!==id(permit.companyId)||operator!==id(permit.operatorCompanyId)||
+       !decision||decision.decision!=='APPROVE'||target.sourcePrivateDecisionId!==decision.decisionId||
+       !funding||funding.status!=='FUNDED'||target.sourcePrivateFundingId!==funding.transactionId||!fundingEntry||!projectRow)
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PERMIT_FINANCE_OR_CONSTRUCTION_PROVENANCE_NOT_VERIFIED'};
     var restored=[];
     (proposal.commissionedFactoryIds||[]).forEach(function(assetId){
       var asset=assets.find(function(row){return String(row.id||row.factoryId||'')===String(assetId);});
