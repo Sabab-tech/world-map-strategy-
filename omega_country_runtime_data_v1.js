@@ -324,7 +324,16 @@
     return {version:'1.1.0',ready:state.ready,settled:state.settled,error:state.error,profileCount:state.profiles.length,countryIdentityCount:state.byCode.size+state.extras.size,flagCount:state.profiles.concat(Array.from(state.extras.values())).filter(p=>!!flagFor(p)).length,capitalCount:state.cities.size,profilesWithEconomy:state.profiles.filter(p=>p.sourceValues&&typeof p.sourceValues==='object').length,profilesWithPopulation:state.profiles.filter(p=>p.populationValues&&typeof p.populationValues==='object').length,legacyEconomyRecords:Object.keys(state.legacyEconomy).length,legacyPopulationRecords:Object.keys(state.legacyPopulation).length,strategicProfiles:state.strategicProfileDiagnostics};
   }
   const CORE_DATA_FETCH_ATTEMPTS=3,CORE_DATA_FETCH_TIMEOUT_MS=3500;
-  const pause=ms=>new Promise(resolve=>(root.setTimeout||setTimeout)(resolve,ms));
+  const scheduleTimer=(callback,ms)=>{
+    const schedule=typeof root.setTimeout==='function'?root.setTimeout.bind(root):(typeof setTimeout==='function'?setTimeout:null);
+    return schedule?schedule(callback,ms):null;
+  };
+  const clearTimer=id=>{
+    if(id===null||id===undefined)return;
+    const cancel=typeof root.clearTimeout==='function'?root.clearTimeout.bind(root):(typeof clearTimeout==='function'?clearTimeout:null);
+    if(cancel)cancel(id);
+  };
+  const pause=ms=>new Promise(resolve=>{if(scheduleTimer(resolve,ms)===null)resolve();});
   async function load(path,optional) {
     if (typeof root.fetch!=='function') { if(optional)return null; throw new Error('FETCH_UNAVAILABLE:'+path); }
     let lastError=null;
@@ -342,7 +351,7 @@
           return await response.json();
         })();
         const timeout=new Promise((resolve,reject)=>{
-          timer=(root.setTimeout||setTimeout)(()=>{
+          timer=scheduleTimer(()=>{
             try{controller&&controller.abort()}catch(_){}
             const error=new Error('DATA_FETCH_TIMEOUT:'+path);
             error.code='DATA_FETCH_TIMEOUT';
@@ -355,7 +364,7 @@
         if(error&&(error.status===404||error.status===410))break;
         if(attempt+1<CORE_DATA_FETCH_ATTEMPTS)await pause(180*(attempt+1));
       }finally{
-        if(timer!==null)(root.clearTimeout||clearTimeout)(timer);
+        clearTimer(timer);
       }
     }
     if(optional)return null;

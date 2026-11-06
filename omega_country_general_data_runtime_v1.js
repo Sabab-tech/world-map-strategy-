@@ -65,7 +65,16 @@ function evictRecord(key){
  return true;
 }
 const COUNTRY_FETCH_TIMEOUT_MS=3500,COUNTRY_FETCH_ATTEMPTS=2;
-const pause=ms=>new Promise(resolve=>(root.setTimeout||setTimeout)(resolve,ms));
+const scheduleTimer=(callback,ms)=>{
+ const schedule=typeof root.setTimeout==='function'?root.setTimeout.bind(root):(typeof setTimeout==='function'?setTimeout:null);
+ return schedule?schedule(callback,ms):null;
+};
+const clearTimer=id=>{
+ if(id===null||id===undefined)return;
+ const cancel=typeof root.clearTimeout==='function'?root.clearTimeout.bind(root):(typeof clearTimeout==='function'?clearTimeout:null);
+ if(cancel)cancel(id);
+};
+const pause=ms=>new Promise(resolve=>{if(scheduleTimer(resolve,ms)===null)resolve();});
 async function fetchCountryPayload(requestKey){
  let lastError=null;
  for(let attempt=0;attempt<COUNTRY_FETCH_ATTEMPTS;attempt++){
@@ -82,7 +91,7 @@ async function fetchCountryPayload(requestKey){
     return await response.json();
    })();
    const timeout=new Promise((resolve,reject)=>{
-    timer=(root.setTimeout||setTimeout)(()=>{
+    timer=scheduleTimer(()=>{
      try{controller&&controller.abort()}catch(_){}
      const error=Error('COUNTRY_GENERAL_DATA_TIMEOUT');error.code='COUNTRY_GENERAL_DATA_TIMEOUT';reject(error);
     },COUNTRY_FETCH_TIMEOUT_MS);
@@ -93,7 +102,7 @@ async function fetchCountryPayload(requestKey){
    if(error&&(error.status===404||error.status===410))break;
    if(attempt+1<COUNTRY_FETCH_ATTEMPTS)await pause(240);
   }finally{
-   if(timer!==null)(root.clearTimeout||clearTimeout)(timer);
+   clearTimer(timer);
   }
  }
  throw lastError||Error('COUNTRY_GENERAL_DATA_FETCH_FAILED');
