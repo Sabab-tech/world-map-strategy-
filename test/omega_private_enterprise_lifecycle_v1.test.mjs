@@ -141,6 +141,14 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   assert.equal(api.getProposal('BGD',proposal.proposalId).status,'COMMISSIONED_PRODUCTION_GATED');
   assert.equal(api.diagnostics().productionEnabled,false);
 
+  h.sandbox.OmegaPrivateEnterprisePipelineProof={status:'VERIFIED',siteSelection:true,extraction:true,
+    logisticsReceipt:true,factoryInput:true,finishedGoods:true,saveLoad:true,exactMainSha:'abcdef1234567'};
+  const gate=api.refreshCommissionedProductionGate('BGD',project.factoryId);
+  assert.equal(gate.status,'READY');
+  assert.equal(asset.status,'OPERATIONAL');
+  assert.equal(asset.productionEnabled,true);
+  assert.equal(asset.blockedReason,null);
+  assert.equal(api.getProposal('BGD',proposal.proposalId).status,'COMMISSIONED');
   assert.equal(api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId}).status,'DUPLICATE');
   assert.equal(h.state.economy.BGD.productionAssets.length,1);
 });
