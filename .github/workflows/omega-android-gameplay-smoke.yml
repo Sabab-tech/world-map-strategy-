@@ -83,7 +83,7 @@ jobs:
         run: node --test test/omega_android_web_compat_v1.test.mjs
 
       - name: Build Android debug APK and instrumentation APK
-        run: gradle -p android assembleDebug assembleDebugAndroidTest --no-daemon
+        run: timeout --signal=TERM --kill-after=20s 15m gradle -p android assembleDebug assembleDebugAndroidTest --no-daemon
 
       - name: Run offline gameplay smoke on Android 9 emulator (API 28)
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
