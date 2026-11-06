@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v102";
+const CACHE_NAME = "omega-offline-atlas-shell-v103";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
@@ -40,6 +40,7 @@ const CORE_ASSETS = [
   "./omega_battlefield_command_runtime_v1.js", "./military_command_catalog_v1.json", "./resource_industrial_catalog_v1.json",
   "./omega_factory_visual_catalog_v1.js", "./omega_country_factory_starting_baseline_v1.js", "./country_factory_starting_baseline_v1.json", "./omega_private_enterprise_registry_v1.js", "./country_private_factory_starting_baseline_v1.json", "./omega_private_enterprise_lifecycle_v1.js", "./omega_factory_visual_catalog_v1.json",
   "./assets/factories/omega_factory_atlas_01.webp", "./assets/factories/omega_factory_atlas_02.webp", "./assets/factories/omega_factory_atlas_03.webp",
+  "./omega_resource_logistics_runtime_v1.js", "./omega_resource_economy_runtime_v2.js", "./omega_resource_national_demand_runtime_v1.js",
   "./omega_resource_industrial_network_v1.js", "./omega_resource_startup_baseline_v1.js", "./resource_startup_baseline_rules_v1.json", "./omega_country_inventory_runtime_v1.js", "./omega_resource_command_center_ui_v1.js", "./omega_icon_system_v1.js",
   "./omega_icon_system_v1.css",
   "./omega_logistics_transport_catalog_v1.json",
