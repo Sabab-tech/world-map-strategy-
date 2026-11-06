@@ -501,10 +501,10 @@ test('playable mine extraction feeds a commissioned private factory through prod
   const mineDispatchQuantity=Number(run.shipment.quantity);
   const rawStockBeforeMineArrival=Number(resource.inventory.coal)||0;
   const rawWarehouseBeforeMineArrival=Number(resource.warehouse.availableByResource.coal)||0;
-  assert.ok(rawStockBeforeMineArrival+1e-6<mineDispatchQuantity,
-    'cargo must not remain available in the source inventory while the mine haul is in transit');
-  assert.ok(rawWarehouseBeforeMineArrival+1e-6<mineDispatchQuantity,
-    'cargo must not be pre-credited to raw warehouse inventory before the mine receipt');
+  assert.ok(Math.abs(rawStockBeforeMineArrival-rawInventoryBeforeMinePipeline)<1e-5,
+    'pre-existing source inventory must remain unchanged; newly extracted cargo is held in its source batch during transit');
+  assert.ok(Math.abs(rawWarehouseBeforeMineArrival-rawWarehouseBeforeMinePipeline)<1e-5,
+    'raw warehouse availability must remain at its pre-extraction balance until the individual mine receipt arrives');
   state.simulation.playerCountryId=null;
   const noPlayerTick=industry.advanceShipments('BGD');
   assert.equal(noPlayerTick.status,'SKIPPED','mine logistics must pause when no player country is selected');
