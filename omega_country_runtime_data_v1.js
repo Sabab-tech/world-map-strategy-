@@ -364,6 +364,7 @@
   function init() {
     if(state.ready)return Promise.resolve(true);
     if(state.promise)return state.promise;
+    state.settled=false;state.error=null;
     let task;
     task=load('./economy_global_profiles_v1.json',false)
       .then(data=>{

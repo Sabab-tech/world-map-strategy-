@@ -10,9 +10,9 @@ const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const profileRegistry = JSON.parse(read('economy_global_profiles_v1.json'));
 const cities = JSON.parse(read('cities.json'));
 
-function createCountryRuntime(fetchImpl) {
+function createCountryRuntime(fetchImpl, timers = { setTimeout, clearTimeout }) {
   const context = {
-    console, fetch: fetchImpl, setTimeout, clearTimeout, AbortController,
+    console, fetch: fetchImpl, setTimeout: timers.setTimeout, clearTimeout: timers.clearTimeout, AbortController,
     Promise, Map, Set, Array, Object, String, Number, Math, Date, RegExp
   };
   context.window = context;
@@ -41,6 +41,35 @@ test('canonical country registry retries a transient startup failure without rel
   assert.equal(await runtime.ready, true);
   assert.equal(attempts, 2, 'one transient failure should be recovered by the bounded retry');
   assert.equal(runtime.resolveCountry('USA')?.countryCode, 'US');
+  assert.equal(runtime.diagnostics().ready, true);
+});
+
+test('a stalled core registry request is aborted and retried instead of remaining pending', async () => {
+  let attempts = 0;
+  let aborted = false;
+  const quickTimers = {
+    setTimeout: (callback, _delay) => setTimeout(callback, 20),
+    clearTimeout
+  };
+  const runtime = createCountryRuntime((url, options) => {
+    if (!String(url).includes('economy_global_profiles_v1.json')) return Promise.resolve(jsonResponse(cities));
+    attempts += 1;
+    if (attempts === 1) {
+      return new Promise((resolve, reject) => {
+        options.signal.addEventListener('abort', () => {
+          aborted = true;
+          const error = new Error('request aborted by bounded timeout');
+          error.name = 'AbortError';
+          reject(error);
+        }, { once: true });
+      });
+    }
+    return Promise.resolve(jsonResponse(profileRegistry));
+  }, quickTimers);
+
+  assert.equal(await runtime.ready, true);
+  assert.equal(attempts, 2);
+  assert.equal(aborted, true, 'the timed-out fetch must be actively aborted');
   assert.equal(runtime.diagnostics().ready, true);
 });
 
