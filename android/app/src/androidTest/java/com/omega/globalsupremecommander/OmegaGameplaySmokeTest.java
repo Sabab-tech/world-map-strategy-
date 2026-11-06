@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,7 +16,10 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.json.JSONTokener;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -356,41 +360,109 @@ public final class OmegaGameplaySmokeTest {
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_ENTERPRISE_LIFECYCLE_MOUNTED");
 
+            final String startObserver =
+                    "(function(){window.__omegaApi28LongTasks=[];window.__omegaApi28ObserverSupported=false;" +
+                    "if(typeof PerformanceObserver==='function'){try{var o=new PerformanceObserver(function(list){" +
+                    "list.getEntries().forEach(function(e){window.__omegaApi28LongTasks.push({duration:e.duration,startTime:e.startTime});});});" +
+                    "o.observe({entryTypes:['longtask']});window.__omegaApi28ObserverSupported=true;window.__omegaApi28Observer=o;}catch(e){}}" +
+                    "return String(window.__omegaApi28ObserverSupported);})()";
+            final String observerReady = evaluate(instrumentation, webViewRef.get(), startObserver);
+            final ArrayList<Double> navigationHandlerTimes = new ArrayList<>();
             final String[] industryTabs = {"inventory", "national-inventory", "production-lines"};
             final String[] industryTabNames = {"Input", "Stock", "Lines"};
             final StringBuilder tabNavigationTiming = new StringBuilder();
-            for (int tabIndex = 0; tabIndex < industryTabs.length; tabIndex++) {
-                final String tabId = industryTabs[tabIndex];
-                final String tabName = industryTabNames[tabIndex];
-                final String clickTabScript =
-                        "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
-                        "var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"' + '" + tabId + "' + '\\\"]');" +
-                        "if(!tab)return 'MISSING';var started=performance.now();tab.click();" +
-                        "return String((performance.now()-started).toFixed(2));})()";
-                final String clickMsText = evaluate(instrumentation, webViewRef.get(), clickTabScript);
-                assertTrue(tabName + " tab must exist", !"MISSING".equals(clickMsText));
-                final double clickMs;
-                try { clickMs = Double.parseDouble(clickMsText); }
-                catch (NumberFormatException error) { throw new AssertionError("Invalid " + tabName + " tap timing: " + clickMsText, error); }
-                assertTrue(tabName + " tab click handler must return within 1000ms; observed " + clickMs + "ms", clickMs <= 1000.0d);
+            final long stressDeadline = SystemClock.elapsedRealtime() + 45000L;
 
-                String panelReady = "false";
-                final long panelDeadline = SystemClock.elapsedRealtime() + 10000L;
-                final String panelScript =
-                        "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
-                        "var tab='" + tabId + "';" +
-                        "var panel=main&&main.querySelector('[data-omega-v2-industry-content][data-active-tab=\\\"'+tab+'\\\"]');" +
-                        "return !!(panel&&panel.querySelector('.fp-content-heading')&&panel.querySelector('.fp-content-body'));})()";
-                while (!"true".equals(panelReady) && SystemClock.elapsedRealtime() < panelDeadline) {
-                    panelReady = evaluate(instrumentation, webViewRef.get(), panelScript);
-                    if (!"true".equals(panelReady)) SystemClock.sleep(200L);
+            // Ten complete Input/Stock/Lines rounds catch cumulative rendering/listener
+            // regressions rather than timing a single lucky click on a warm WebView.
+            for (int round = 0; round < 10; round++) {
+                for (int tabIndex = 0; tabIndex < industryTabs.length; tabIndex++) {
+                    assertTrue("Repeated Industry navigation must stay within the 45-second stress deadline",
+                            SystemClock.elapsedRealtime() < stressDeadline);
+                    final String tabId = industryTabs[tabIndex];
+                    final String tabName = industryTabNames[tabIndex];
+                    final String clickScript =
+                            "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                            "var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\"" + tabId + "\"]');" +
+                            "if(!tab)return 'MISSING';var started=performance.now();tab.click();" +
+                            "return String((performance.now()-started).toFixed(2));})()";
+                    final String clickText = evaluate(instrumentation, webViewRef.get(), clickScript, 10L);
+                    assertTrue(tabName + " tab must exist on round " + round, !"MISSING".equals(clickText));
+                    final double clickMs;
+                    try { clickMs = Double.parseDouble(clickText); }
+                    catch (NumberFormatException error) { throw new AssertionError("Invalid " + tabName + " tap timing: " + clickText, error); }
+                    navigationHandlerTimes.add(clickMs);
+                    assertTrue(tabName + " click handler exceeded 1000ms on round " + round + ": " + clickMs,
+                            clickMs <= 1000.0d);
+
+                    String panelReady = "false";
+                    final long panelDeadline = SystemClock.elapsedRealtime() + 10000L;
+                    final String panelScript =
+                            "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                            "var panel=main&&main.querySelector('[data-omega-v2-industry-content][data-active-tab=\"" + tabId + "\"]');" +
+                            "return !!(panel&&panel.querySelector('.fp-content-heading')&&panel.querySelector('.fp-content-body'));})()";
+                    while (!"true".equals(panelReady) && SystemClock.elapsedRealtime() < panelDeadline) {
+                        panelReady = evaluate(instrumentation, webViewRef.get(), panelScript, 10L);
+                        if (!"true".equals(panelReady)) SystemClock.sleep(100L);
+                    }
+                    assertEquals(tabName + " panel must render on round " + round, "true", panelReady);
+                    if (tabNavigationTiming.length() > 0) tabNavigationTiming.append(',');
+                    tabNavigationTiming.append(tabName).append('=').append(clickMs).append("ms");
                 }
-                assertEquals(tabName + " panel must render after its tab is tapped", "true", panelReady);
-                if (tabNavigationTiming.length() > 0) tabNavigationTiming.append(',');
-                tabNavigationTiming.append(tabName).append('=').append(clickMs).append("ms");
             }
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_LINES_NAV_READY tapMs=" + linesTapMs + " nav=" + tabNavigationTiming);
 
+            Collections.sort(navigationHandlerTimes);
+            final double navigationP95 = navigationHandlerTimes.get(
+                    Math.max(0, (int) Math.ceil(navigationHandlerTimes.size() * 0.95d) - 1));
+            final double navigationMax = navigationHandlerTimes.get(navigationHandlerTimes.size() - 1);
+            assertTrue("Industry tab-handler p95 must stay below 500ms; observed " + navigationP95,
+                    navigationP95 <= 500.0d);
+            assertTrue("Industry tab-handler max must stay below 1000ms; observed " + navigationMax,
+                    navigationMax <= 1000.0d);
+
+            final String stressMetricsScript =
+                    "(function(){var rows=window.__omegaApi28LongTasks||[];return JSON.stringify({" +
+                    "observerSupported:!!window.__omegaApi28ObserverSupported,count:rows.length," +
+                    "maxDuration:rows.reduce(function(m,x){return Math.max(m,Number(x.duration)||0);},0)," +
+                    "heapUsed:performance.memory&&performance.memory.usedJSHeapSize||null," +
+                    "heapLimit:performance.memory&&performance.memory.jsHeapSizeLimit||null," +
+                    "viewport:{width:document.documentElement.clientWidth,height:document.documentElement.clientHeight," +
+                    "scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight}});})()";
+            final org.json.JSONObject stressMetrics = new org.json.JSONObject(
+                    evaluate(instrumentation, webViewRef.get(), stressMetricsScript, 10L));
+            if (stressMetrics.optBoolean("observerSupported")) {
+                assertTrue("No post-boot UI long task may exceed 1000ms; metrics=" + stressMetrics,
+                        stressMetrics.optDouble("maxDuration", 0.0d) <= 1000.0d);
+            }
+            final org.json.JSONObject landscapeViewport = stressMetrics.optJSONObject("viewport");
+            assertNotNull("API 28 landscape viewport metrics must be present", landscapeViewport);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                    "STAGE=INDUSTRY_NAV_STRESS_COMPLETE rounds=10 taps=" + navigationHandlerTimes.size() +
+                            " p95Ms=" + navigationP95 + " maxMs=" + navigationMax +
+                            " longTasks=" + stressMetrics.optInt("count") +
+                            " longTaskObserver=" + stressMetrics.optBoolean("observerSupported") +
+                            " heapUsed=" + stressMetrics.optLong("heapUsed", -1) +
+                            " heapLimit=" + stressMetrics.optLong("heapLimit", -1));
+
+            // The app defaults to landscape, but a real orientation transition must keep
+            // the same Activity and WebView alive and must not spill the Lines UI sideways.
+            requestOrientation(activity, webViewRef.get(), ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, 10L);
+            final org.json.JSONObject portraitViewport = waitForViewport(
+                    instrumentation, webViewRef.get(), true, 10000L);
+            assertTrue("Portrait Industry content must not overflow horizontally: " + portraitViewport,
+                    portraitViewport.optInt("scrollWidth") <= portraitViewport.optInt("width") + 2);
+            assertTrue("Portrait rotation must preserve the same WebView instance",
+                    activity.webViewForTest() == webViewRef.get());
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PORTRAIT_ROTATION_PASSED metrics=" + portraitViewport);
+
+            requestOrientation(activity, webViewRef.get(), ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE, 10L);
+            final org.json.JSONObject restoredLandscape = waitForViewport(
+                    instrumentation, webViewRef.get(), false, 10000L);
+            assertTrue("Returning to landscape must preserve the same WebView instance",
+                    activity.webViewForTest() == webViewRef.get());
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=LANDSCAPE_ROTATION_RESTORED metrics=" + restoredLandscape);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_LINES_NAV_READY p95Ms=" +
+                    navigationP95 + " maxMs=" + navigationMax + " nav=" + tabNavigationTiming);
 
         } finally {
             if (activity != null) {
@@ -401,6 +473,43 @@ public final class OmegaGameplaySmokeTest {
             }
             instrumentation.removeMonitor(activityMonitor);
         }
+    }
+
+    private static void requestOrientation(
+            MainActivity activity,
+            WebView webView,
+            int orientation,
+            long timeoutSeconds
+    ) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean posted = webView.post(() -> {
+            activity.setRequestedOrientation(orientation);
+            latch.countDown();
+        });
+        assertTrue("WebView must accept a bounded orientation request", posted);
+        assertTrue("Orientation request must complete within " + timeoutSeconds + " seconds",
+                latch.await(timeoutSeconds, TimeUnit.SECONDS));
+    }
+
+    private static org.json.JSONObject waitForViewport(
+            android.app.Instrumentation instrumentation,
+            WebView webView,
+            boolean portrait,
+            long timeoutMs
+    ) throws Exception {
+        final String script = "(function(){return JSON.stringify({width:document.documentElement.clientWidth," +
+                "height:document.documentElement.clientHeight,scrollWidth:document.documentElement.scrollWidth," +
+                "scrollHeight:document.documentElement.scrollHeight});})()";
+        final long deadline = SystemClock.elapsedRealtime() + timeoutMs;
+        org.json.JSONObject latest = new org.json.JSONObject();
+        while (SystemClock.elapsedRealtime() < deadline) {
+            latest = new org.json.JSONObject(evaluate(instrumentation, webView, script, 10L));
+            if ((portrait && latest.optInt("height") > latest.optInt("width")) ||
+                    (!portrait && latest.optInt("width") > latest.optInt("height"))) return latest;
+            SystemClock.sleep(150L);
+        }
+        throw new AssertionError("WebView did not reach " + (portrait ? "portrait" : "landscape") +
+                " layout before deadline; last viewport=" + latest);
     }
 
     private static String evaluate(
@@ -439,6 +548,17 @@ public final class OmegaGameplaySmokeTest {
                         timeoutSeconds + " seconds after page load",
                 latch.await(timeoutSeconds, TimeUnit.SECONDS)
         );
-        return result.get();
+        final String raw = result.get();
+        if (raw == null) return null;
+        // WebView evaluateJavascript serializes a JavaScript string as a JSON string literal.
+        // Decode that case instead of relying on quote stripping; keep JSON objects and
+        // primitive boolean/number payloads unchanged.
+        try {
+            final Object decoded = new JSONTokener(raw).nextValue();
+            if (decoded instanceof String) return (String) decoded;
+        } catch (org.json.JSONException ignored) {
+            // Preserve raw JSON object, number or boolean results.
+        }
+        return raw;
     }
 }
