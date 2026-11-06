@@ -3452,7 +3452,7 @@ test('Factory Input tables contain long cell content without changing factory ca
   assert.doesNotMatch(fix, /\.fp-card|\.fp-type-card/,
     'the separate Input table fix must not alter factory cards');
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 98,
+  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 99,
     'offline clients must fetch the updated Factory Input stylesheet');
 });
 
@@ -3473,6 +3473,6 @@ test('Android landscape aggregate Factory Input table scrolls and refreshes in t
     'the aggregate table must preserve touch scrolling on Android');
   assert.doesNotMatch(rules, /\.fp-card|\.fp-type-card/,
     'the Input overflow fix must not alter factory card layout');
-  assert.equal(Number(sw.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\\d+)"/)?.[1] || 0), 99,
+  assert.ok(sw.includes('const CACHE_NAME = "omega-offline-atlas-shell-v99";'),
     'offline clients must install the updated landscape Input stylesheet');
 });
