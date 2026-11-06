@@ -263,6 +263,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     const companySelect = form.locator('select[name="companyId"]');
     const operatorSelect = form.locator('select[name="operatorCompanyId"]');
     const factorySelect = form.locator('select[name="factoryType"]');
+    const processingResourceSelect = form.locator('select[name="processingResourceId"]');
     await page.evaluate(() => {
       const target = document.querySelector('[data-pe-proposal-form]');
       const button = target?.querySelector('button[type="submit"]');
@@ -298,13 +299,23 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     assert.ok(factoryOptions.length >= 1, 'at least one existing canonical factory profile must be selectable');
     const selectedFactoryType = factoryOptions[0];
     await factorySelect.selectOption(selectedFactoryType);
+    let processingResourceId = null;
+    if (selectedFactoryType === 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT') {
+      await processingResourceSelect.waitFor({state:'visible'});
+      const processingOptions = await processingResourceSelect.locator('option').evaluateAll(nodes =>
+        nodes.map(node => node.value).filter(Boolean)
+      );
+      assert.ok(processingOptions.length > 0, 'Universal Materials must use an existing catalog processing rule');
+      processingResourceId = processingOptions[0];
+      await processingResourceSelect.selectOption(processingResourceId);
+    }
     await form.locator('input[name="quantity"]').fill('1');
     await form.locator('select[name="sourcingPolicy"]').selectOption('MIXED');
     await form.locator('button[type="submit"]').click();
 
     const proposalCriteria = {
       owner:companyOptions[0], operator:companyOptions[1],
-      factoryType:selectedFactoryType, previousTurn:before.turn
+      factoryType:selectedFactoryType, processingResourceId, previousTurn:before.turn
     };
     try {
       await page.waitForFunction(criteria => {
@@ -313,6 +324,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
           row.companyId === criteria.owner &&
           row.operatorCompanyId === criteria.operator &&
           row.factoryType === criteria.factoryType &&
+          (!criteria.processingResourceId || row.processingResourceId === criteria.processingResourceId) &&
           Number(row.createdTurn) >= criteria.previousTurn);
       }, proposalCriteria, { timeout: 15000 });
     } catch (error) {
