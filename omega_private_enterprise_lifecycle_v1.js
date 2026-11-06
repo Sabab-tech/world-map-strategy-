@@ -1634,6 +1634,34 @@
     (g.document.head||g.document.documentElement).appendChild(style);
     stylesInstalled=true;
   }
+  function companyFinanceCardsMarkup(country,capitalByCompany){
+    return COMPANY_IDS.map(function(companyId){
+      var statement=getCompanyFinanceSummary(country,companyId),period=statement.lastClosedPeriod||null,
+        currency=statement.currency||'GAME_CURRENCY_UNITS';
+      function amount(value){return value===null||value===undefined?'Not recorded':Number(value).toLocaleString('en-US',{maximumFractionDigits:2})+' '+currency;}
+      var taxLabel=period?'Cash-basis tax '+amount(period.corporateTaxPaid)+' at '+(period.corporateTaxRate*100).toFixed(2)+'%':'Not assessed: close a journalled cash-flow period first';
+      var journalWarning=(statement.journal.droppedEntryCount||0)>0?
+        'Tax close blocked when this open period contains pruned entries ('+statement.journal.droppedEntryCount+' dropped).':'';
+      return'<article class="pe-proposal"><header><strong>'+escapeHtml(statement.companyName||companyId)+'</strong><span>'+escapeHtml(statement.journal.status)+'</span></header>'+
+        '<div class="pe-facts"><span>Recorded receipts <b>'+amount(statement.grossRevenue)+'</b></span>'+
+        '<span>Cash operating costs <b>'+amount(statement.journal.recordedOperatingCosts)+'</b></span>'+
+        '<span>Accrued factory operating costs <b>'+amount(statement.journal.recordedAccruedOperatingCosts)+'</b></span>'+
+        '<span>Accounting profit <b>'+(statement.accountingProfit===null?'Not verifiable':amount(statement.accountingProfit))+'</b></span>'+
+        '<span>Unpriced cost items <b>'+Number(statement.journal.unpricedOperatingCostCount||0).toLocaleString('en-US')+'</b></span>'+
+        '<span>Input materials <b>'+amount(statement.journal.inputMaterialCosts)+'</b></span>'+
+        '<span>Worker costs <b>'+amount(statement.journal.workerCosts)+'</b></span>'+
+        '<span>Transport costs <b>'+amount(statement.journal.transportCosts)+'</b></span>'+
+        '<span>Other recorded costs <b>'+amount(statement.journal.otherRecordedCosts)+'</b></span>'+
+        '<span>Recorded tax payments <b>'+amount(statement.journal.recordedTaxPayments)+'</b></span>'+
+        '<span>Net cash flow <b>'+amount(statement.runtimeNetCashFlow)+'</b></span>'+
+        '<span>Factory CAPEX (separate) <b>'+amount(statement.constructionCapex.amount)+'</b></span>'+
+        '<span>Retained earnings <b>'+amount(statement.capital.retainedEarningsBalance)+'</b></span>'+
+        '<span>Tax status <b>'+escapeHtml(taxLabel)+'</b></span></div>'+
+        '<p class="pe-footnote">Cash receipts and paid costs are taken from the shared company cash-flow journal. Factory utility, labor, maintenance, overhead and depreciation are accrued from completed operating events only where an explicit country rate is configured. Missing costs remain unpriced. '+escapeHtml(journalWarning)+'</p>'+
+        '<div class="pe-actions"><button type="button" data-pe-action="close-finance" data-pe-company="'+companyId+'">Close cash-flow period / assess profit tax</button></div></article>';
+    }).join('');
+  }
+
   function renderPanel(root,options){
     if(!root||!root.querySelector)return;
     ensureStyles();
@@ -1644,6 +1672,8 @@
     var country=canonicalCountry(options&&options.countryId||root.__omegaV2IndustryCountryId||playerCountry());
     if(country!==playerCountry())return;
     var previousPanel=shell.querySelector('[data-omega-private-company-lifecycle]');
+    var financeWasOpen=!!(previousPanel&&previousPanel.querySelector('[data-pe-finance-details]')&&
+      previousPanel.querySelector('[data-pe-finance-details]').open);
     if(previousPanel&&previousPanel.remove)previousPanel.remove();
     var registry=g.OmegaPrivateEnterpriseRegistryV1||(g.Omega&&g.Omega.PrivateEnterpriseRegistryV1);
     var baselineRow=baseline(country);
@@ -1828,7 +1858,7 @@
       '<div class="pe-overview"><span>Companies <b>5</b></span><span>Proposals <b>'+dash.proposals.length+'</b></span><span>Opening baseline <b>'+(baselineRow&&baselineRow.status==='READY'?baselineRow.totalPrivateFactoryUnits.toLocaleString('en-US'):'Unavailable')+'</b></span><span>Finance <b>'+Object.keys(capitalByCompany).length+' capital accounts</b></span></div>'+
       '<form class="pe-form" data-pe-proposal-form><label>Private asset owner<select name="companyId">'+companyOptions+'</select></label><label>Private operator<select name="operatorCompanyId">'+companyOptions+'</select></label><label>Factory type<select name="factoryType">'+typeOptions+'</select></label>'+universalResourceField+'<label>Quantity<input name="quantity" type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="1" required></label><label>Input sourcing<select name="sourcingPolicy"><option value="DOMESTIC_ONLY">Domestic inputs</option><option value="COMPANY_FUNDED_IMPORTS">Company-funded imports</option><option value="MIXED">Mixed sourcing</option></select></label><label class="pe-checkbox"><input name="stateSupportRequested" type="checkbox"> Request possible Treasury grant support</label><button type="submit">Submit company proposal</button></form>'+grantHelp+message+
       '<div class="pe-proposals"><h4>Government decision queue</h4>'+cards+'</div>'+
-      '<details class="pe-proposals"><summary><strong>Corporate Finance / Profit / Tax / Cost</strong></summary><p class="pe-footnote">Shared Finance journal + factory-event cost accruals. Financial close is blocked when required operating costs are unpriced. Factory CAPEX remains separate.</p>'+costPolicyForm+financeCards+'</details>'+
+      '<details class="pe-proposals" data-pe-finance-details '+(financeWasOpen?'open':'')+'><summary><strong>Corporate Finance / Profit / Tax / Cost</strong></summary><p class="pe-footnote">Shared Finance journal + factory-event cost accruals. Financial close is blocked when required operating costs are unpriced. Factory CAPEX remains separate.</p>'+costPolicyForm+'<div data-pe-finance-card-host data-loaded="'+(financeWasOpen?'true':'false')+'">'+(financeWasOpen?companyFinanceCardsMarkup(country,capitalByCompany):'<p class="pe-empty">Open this section to load company financial statements.</p>')+'</div></details>'+
       '<section class="pe-proposals"><h4>Joint ventures / shareholder voting / dividends</h4>'+
       '<form class="pe-form" data-pe-jv-form><label>JV name<input name="name" type="text" maxlength="100" value="Strategic Industrial Joint Venture" required></label>'+
       '<label>Managing company / shareholder A<select name="companyA" required>'+jvCompanyOptions+'</select></label>'+
@@ -1850,6 +1880,22 @@
     if(old&&old.remove)old.remove();
     shell.insertAdjacentHTML('beforeend',markup);
     bindUi(root);
+    // Finance statements scan company cash-flow entries, accrued operating-cost
+    // records and the shared Finance ledger. They are not part of the visible
+    // proposal queue, so defer that work until the user opens Corporate Finance.
+    var financeDetails=shell.querySelector('[data-pe-finance-details]');
+    if(financeDetails&&typeof financeDetails.addEventListener==='function'){
+      var financeHost=financeDetails.querySelector('[data-pe-finance-card-host]');
+      if(financeHost){
+        var loadFinanceCards=function(){
+          if(!financeDetails.open||financeHost.getAttribute('data-loaded')==='true')return;
+          financeHost.innerHTML=companyFinanceCardsMarkup(country,capitalByCompany);
+          financeHost.setAttribute('data-loaded','true');
+        };
+        financeDetails.addEventListener('toggle',loadFinanceCards);
+        if(financeDetails.open)loadFinanceCards();
+      }
+    }
   }
   function escapeHtml(value){return String(value==null?'':value).replace(/[&<>"']/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]);});}
   function refresh(root,country){
