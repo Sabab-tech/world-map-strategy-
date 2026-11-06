@@ -4224,6 +4224,7 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   }
   const sequence=Math.max(0,Number(n.factoryRunSequence)||0)+1;n.factoryRunSequence=sequence;
   const transactionId='FACTORYRUN:'+cid+':'+fid+':T'+turn()+':'+sequence;
+  const ownershipParties=factoryOwnershipParties(asset,cid);
   const finished=r.processedWarehouse||(r.processedWarehouse={warehouseId:'WH-'+cid+'-PROCESSED',countryId:cid,
     type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',status:'OPERATIONAL',
     availableByResource:{},storedBatchIds:[],receipts:[]});
@@ -4233,7 +4234,7 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   const batches=Array.isArray(r.batches)?r.batches:(r.batches=[]);
   const inventoryLots=r.inventoryLots&&typeof r.inventoryLots==='object'?r.inventoryLots:(r.inventoryLots={});
   const roots=[...new Set(sourceBatchIds.filter(Boolean))],sites=[...new Set(sourceSiteIds.filter(Boolean))],created=[];
-  const companyId=String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid));
+  const companyId=ownershipParties.operatorCompanyId;
   for(const [outputId,outQty] of Object.entries(output)){
     if(!(outQty>1e-9))continue;
     const inventoryKey=outputInventoryKeys[outputId]||outputId;
@@ -4241,13 +4242,16 @@ function commitMultiInputFactoryCycleImmediately(input={}){
     const batchId='OUTPUT:'+transactionId+':'+outputId;
     const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnitPlan.units[outputId],
       stage:'FINISHED',countryId:cid,sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
-      ownerCompanyId:companyId,sourceBatchIds:roots,sourceSiteIds:sites,sourceFactoryId:fid,warehouseId:'WH-'+cid+'-PROCESSED',
+      ownerCompanyId:ownershipParties.ownerCompanyId,operatorCompanyId:ownershipParties.operatorCompanyId,
+      ownerAttributionStatus:ownershipParties.ownerAttributionStatus,
+      sourceBatchIds:roots,sourceSiteIds:sites,sourceFactoryId:fid,warehouseId:'WH-'+cid+'-PROCESSED',
       locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',processId:transactionId,
       provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'SIMULATED_DOWNSTREAM_RECIPE',status:'FINISHED_GOODS_CREATED',
         transactionId,recipeId:recipe.recipeId||null,factoryType:asset.factoryType,sourceBatchIds:roots,sourceSiteIds:sites,simulationTurn:turn()}};
     batches.push(row);created.push(row);
     inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnitPlan.units[outputId],stage:'FINISHED',
-      countryId:cid,warehouseId:row.warehouseId,locationNodeKey:row.locationNodeKey,ownerCompanyId:companyId,
+      countryId:cid,warehouseId:row.warehouseId,locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,
+      operatorCompanyId:row.operatorCompanyId,ownerAttributionStatus:row.ownerAttributionStatus,
       sourceBatchIds:roots,sourceSiteIds:sites,status:'AVAILABLE',provenance:clone(row.provenance),createdTurn:turn()};
     const warehouseKey=outputWarehouseKeys[outputId]||outputId;
     finished.availableByResource[warehouseKey]=(num(finished.availableByResource[warehouseKey])||0)+outQty;
@@ -4261,7 +4265,9 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   const inputQuantities=Object.fromEntries(needs.map(x=>[x.resourceId,x.required]));
   const totalInput=needs.reduce((sum,x)=>sum+x.required,0);
   const record={transactionId,countryId:cid,factoryId:fid,factoryType:asset.factoryType||recipe.factoryType||null,
-    recipeId:recipe.recipeId||asset.recipeId||null,recipeMode:'MULTI_INPUT',companyId,resourceId:requestedResource,
+    recipeId:recipe.recipeId||asset.recipeId||null,recipeMode:'MULTI_INPUT',companyId,
+    operatorCompanyId:ownershipParties.operatorCompanyId,ownerCompanyId:ownershipParties.ownerCompanyId,
+    ownerAttributionStatus:ownershipParties.ownerAttributionStatus,resourceId:requestedResource,
     inputQuantity:totalInput,inputQuantities,requestedProduction:productionQuantity,outputs:clone(output),outputQuantities:clone(output),
     recipe:clone(recipe),productionConstraints:clone(productionConstraints),
     cycleDays:recipe.cycleDays,turn:turn(),authority:'SIMULATED_DOWNSTREAM_PRODUCTION',status:'COMPLETED',
@@ -4272,7 +4278,9 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   r.batches=batches;r.inventoryLots=inventoryLots;r.processedWarehouse=finished;
   processedTurns[fid]=turn();n.factoryProcessingTurns=processedTurns;
   r.finishedGoodsLedger=Array.isArray(r.finishedGoodsLedger)?r.finishedGoodsLedger:[];
-  r.finishedGoodsLedger.push({transactionId,countryId:cid,factoryId:fid,companyId,sourceBatchIds:roots,sourceSiteIds:sites,
+  r.finishedGoodsLedger.push({transactionId,countryId:cid,factoryId:fid,companyId,
+    operatorCompanyId:record.operatorCompanyId,ownerCompanyId:record.ownerCompanyId,ownerAttributionStatus:record.ownerAttributionStatus,
+    sourceBatchIds:roots,sourceSiteIds:sites,
     outputQuantities:clone(output),createdBatchIds:record.createdBatchIds,turn:turn(),authority:'SIMULATED_DOWNSTREAM_PRODUCTION',
     recipeId:record.recipeId,status:'AVAILABLE_TO_ECONOMY'});
   while(r.finishedGoodsLedger.length>2048)r.finishedGoodsLedger.shift();
@@ -4285,7 +4293,9 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   factorySetProductionHealth(asset,productionQuantity+1e-6<capacity?'REDUCED':'RUNNING',productionQuantity,capacity,
     {transactionId,constraints:clone(productionConstraints)});
   emit('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',cid,record);
-  emit('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',cid,{transactionId,countryId:cid,factoryId:fid,companyId,outputs:clone(output),
+  emit('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',cid,{transactionId,countryId:cid,factoryId:fid,companyId,
+    operatorCompanyId:record.operatorCompanyId,ownerCompanyId:record.ownerCompanyId,ownerAttributionStatus:record.ownerAttributionStatus,
+    outputs:clone(output),
     outputQuantities:clone(output),sourceBatchIds:roots,sourceSiteIds:sites,createdBatchIds:record.createdBatchIds,turn:turn(),
     authority:'SIMULATED_DOWNSTREAM_PRODUCTION',status:'AVAILABLE'});
   return record;
