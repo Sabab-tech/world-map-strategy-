@@ -386,7 +386,8 @@
           processLot.lastMovementType='PROCESSING';
           inventoryLots[batch.batchId]=processLot;
         }
-        used.push({batchId:batch.batchId,quantity:take,stage:batch.stage,ownerCompanyId:batch.ownerCompanyId,purity:num(batch.purity),
+        used.push({batchId:batch.batchId,quantity:take,stage:batch.stage,ownerCompanyId:batch.ownerCompanyId,
+        ownerAttributionStatus:batch.ownerAttributionStatus,operatorCompanyId:batch.operatorCompanyId,purity:num(batch.purity),
         grade:num(batch.grade!=null?batch.grade:batch.gradePercent),quality:num(batch.quality),qualityState:clone(batch.qualityState||null),
         sourceBatchIds:Array.isArray(batch.sourceBatchIds)?batch.sourceBatchIds.slice():[],siteId:batch.siteId||batch.sourceSiteId||batch.siteReferenceKey||null,
         siteReferenceKey:batch.siteReferenceKey||null,occurrenceKey:batch.occurrenceKey||batch.sourceOccurrenceKey||null,
@@ -619,8 +620,10 @@
     var consumedRows=(Array.isArray(consumed)?consumed:[]).filter(function(x){return x&&num(x.quantity)>0;});
     var suppliers={},unattributedQuantity=0,attributedQuantity=0;
     consumedRows.forEach(function(x){
-      var owner=String(x.ownerCompanyId||'').trim(),quantity=num(x.quantity)||0;
-      if(owner&&owner!=='UNKNOWN_SOURCE'){suppliers[owner]=(suppliers[owner]||0)+quantity;attributedQuantity+=quantity;}
+      var owner=String(x.ownerCompanyId||'').trim(),ownerStatus=String(x.ownerAttributionStatus||'').toUpperCase(),quantity=num(x.quantity)||0;
+      var ownerRoleKnown=owner&&owner!=='UNKNOWN_SOURCE'&&
+        ownerStatus!=='LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED'&&ownerStatus!=='UNASSIGNED';
+      if(ownerRoleKnown){suppliers[owner]=(suppliers[owner]||0)+quantity;attributedQuantity+=quantity;}
       else unattributedQuantity+=quantity;
     });
     var totalSource=Object.keys(suppliers).reduce(function(sum,key){return sum+suppliers[key];},0);
@@ -631,8 +634,8 @@
       return{sourceBatchId:x.batchId||null,sourceBatchIds:roots,siteId:x.siteId||x.sourceSiteId||x.siteReferenceKey||null,
         siteReferenceKey:x.siteReferenceKey||null,occurrenceKey:x.occurrenceKey||null,resourceId:rid,quantity:num(x.quantity)||0,
         unit:x.unit||null,stage:x.stage||'UNOBSERVED',warehouseId:x.warehouseId||null,sourceCountryId:canonical(c),destinationCountryId:canonical(c),
-        ownerCompanyId:x.ownerCompanyId||null,
-        ownerAttributionStatus:x.ownerAttributionStatus|| (x.ownerCompanyId?'LEGACY_OR_UNCLASSIFIED_OWNER':'OWNER_NOT_RECORDED'),
+        ownerCompanyId:x.ownerCompanyId||null,operatorCompanyId:x.operatorCompanyId||null,
+        ownerAttributionStatus:x.ownerAttributionStatus|| (x.ownerCompanyId?'OWNER_ROLE_UNCLASSIFIED_BY_LEGACY_RECORD':'OWNER_NOT_RECORDED'),
         provenance:clone(x.provenance||{sourceAuthority:'UNOBSERVED'})};
     });
     var sourceBatchIds=[...new Set(batchTransfers.flatMap(function(x){return [...(x.sourceBatchIds||[]),x.sourceBatchId].filter(Boolean).map(String);}))];
