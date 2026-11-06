@@ -362,7 +362,7 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   assert.equal(worldState.resource.BGD.inventory.iron_intermediate,40);
 
   const fiscal=worldState.finance.BGD.resourceFiscal;
-  assert.equal(fiscal.thisTurn.total,115);
+  assert.equal(fiscal.thisTurn.total,115,JSON.stringify(fiscal));
   assert.equal(worldState.finance.BGD.available,1115);
   assert.equal(worldState.finance.BGD.resourceBudgetContribution,115);
   assert.equal(worldState.finance.BGD.resourceBudgetContributionThisTurn,115);
