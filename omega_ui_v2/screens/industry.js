@@ -949,8 +949,31 @@
       var factory = lineFactoryById[id] || null;
       var cycle = cycles[id] && typeof cycles[id] === 'object' ? cycles[id] : null;
       var raw = factory && factory.raw && typeof factory.raw === 'object' ? factory.raw : {};
-      var ownerId = String(raw.companyId || raw.ownerCompanyId || raw.operatorCompanyId ||
-        raw.ownerId || raw.operatorId || raw.company || '').trim().toUpperCase();
+      var ownership = raw.ownership && typeof raw.ownership === 'object' ? raw.ownership : {};
+      var ownerRecord = ownership.owner && typeof ownership.owner === 'object' ? ownership.owner : {};
+      var operatorRecord = ownership.operator && typeof ownership.operator === 'object' ? ownership.operator : {};
+      var explicitOwnerId = String(raw.ownerCompanyId || raw.ownerId || ownerRecord.companyId || ownerRecord.id || '').trim().toUpperCase();
+      var explicitOperatorId = String(raw.operatorCompanyId || raw.operatorId || operatorRecord.companyId || operatorRecord.id || '').trim().toUpperCase();
+      var legacyCompanyId = String(raw.companyId || raw.company || '').trim().toUpperCase();
+      var ownerId = explicitOwnerId || legacyCompanyId;
+      var ownerType = String(raw.ownerType || ownerRecord.type || '').trim().toUpperCase();
+      var operatorType = String(raw.operatorType || operatorRecord.type || '').trim().toUpperCase();
+      var stateRights = raw.stateControlRights && typeof raw.stateControlRights === 'object' ? raw.stateControlRights :
+        (ownership.stateControlRights && typeof ownership.stateControlRights === 'object' ? ownership.stateControlRights : null);
+      var stateRightLabels = [];
+      if (stateRights) {
+        if (stateRights.strategicOversight === true) stateRightLabels.push('Strategic oversight');
+        if (stateRights.licensingAndPermits === true) stateRightLabels.push('Licensing & permits');
+        if (stateRights.fiscalRegulation === true) stateRightLabels.push('Fiscal regulation');
+        if (stateRights.competitionOversight === true) stateRightLabels.push('Competition oversight');
+        if (stateRights.labourSafetyEnvironmentalRegulation === true) stateRightLabels.push('Labour, safety & environment');
+        if (stateRights.emergencyIntervention === true) stateRightLabels.push('Emergency intervention');
+        if (stateRights.operationalControl) stateRightLabels.push('Operations: ' + String(stateRights.operationalControl).replace(/_/g, ' '));
+      }
+      var isStateOwner = /^STATE_|^GOVERNMENT_/i.test(ownerId) || ownerType === 'STATE_OWNED_ENTERPRISE';
+      var isStateOperator = /^STATE_|^GOVERNMENT_/i.test(explicitOperatorId) || operatorType === 'STATE_ENTERPRISE_OPERATOR';
+      var ownerRoleExplicit = !!explicitOwnerId || !!ownerType;
+      var operatorRoleExplicit = !!explicitOperatorId || !!operatorType;
       lineByFactoryId[id] = {
         factoryId:id,
         name:factory && factory.name || String(cycle && (cycle.factoryName || cycle.name) || 'Factory ' + id),
@@ -962,8 +985,23 @@
         sourceBatchIds:Array.isArray(cycle && cycle.sourceBatchIds) ? cycle.sourceBatchIds.slice() : [],
         ownerCompanyId:ownerId && knownCompanyNames[ownerId] ? ownerId : null,
         ownerCompanyName:ownerId && knownCompanyNames[ownerId] ? knownCompanyNames[ownerId] : null,
-        ownerRecordStatus:ownerId && knownCompanyNames[ownerId] ? 'VERIFIED_GLOBAL_COMPANY_ID' :
-          (ownerId ? 'UNMAPPED_OWNER_RECORD' : 'NOT_RECORDED'),
+        ownerLabel:ownerId && knownCompanyNames[ownerId] ? knownCompanyNames[ownerId] :
+          (isStateOwner ? 'State-owned enterprise' : legacyCompanyId && knownCompanyNames[legacyCompanyId]
+            ? 'Company attribution: ' + knownCompanyNames[legacyCompanyId] + ' (ownership role not recorded)'
+            : ownerId ? 'Recorded owner not mapped to a global company' : 'Not recorded'),
+        ownerRecordStatus:ownerId && knownCompanyNames[ownerId] ? (ownerRoleExplicit ? 'VERIFIED_EXPLICIT_GLOBAL_COMPANY_OWNER' : 'LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED') :
+          (isStateOwner ? 'VERIFIED_STATE_ENTERPRISE_OWNER' : ownerId ? 'UNMAPPED_OWNER_RECORD' : 'NOT_RECORDED'),
+        operatorCompanyId:explicitOperatorId && knownCompanyNames[explicitOperatorId] ? explicitOperatorId : null,
+        operatorCompanyName:explicitOperatorId && knownCompanyNames[explicitOperatorId] ? knownCompanyNames[explicitOperatorId] : null,
+        operatorLabel:explicitOperatorId && knownCompanyNames[explicitOperatorId] ? knownCompanyNames[explicitOperatorId] :
+          (isStateOperator ? 'State enterprise operator' : explicitOperatorId ? 'Recorded operator not mapped to a global company' :
+            operatorRoleExplicit ? 'Operator role not mapped' : 'Not recorded'),
+        operatorRecordStatus:explicitOperatorId && knownCompanyNames[explicitOperatorId] ? 'VERIFIED_GLOBAL_COMPANY_OPERATOR' :
+          (isStateOperator ? 'VERIFIED_STATE_ENTERPRISE_OPERATOR' : explicitOperatorId ? 'UNMAPPED_OPERATOR_RECORD' :
+            operatorRoleExplicit ? 'UNMAPPED_OPERATOR_TYPE' : 'NOT_RECORDED'),
+        stateControlRightsStatus:stateRights ? (stateRightLabels.length ? stateRightLabels.join(' · ') : 'Recorded; details unavailable') : 'Not recorded',
+        stateControlRightsCount:stateRightLabels.length,
+        legacyCompanyAttributionId:legacyCompanyId || null,
         shipments:[],
         inputRequests:[],
         warehouseDispatches:[],
@@ -3955,10 +3993,9 @@
             ' · In transit ' + (request.inTransitQuantity === null ? 'Not recorded' : fmt(request.inTransitQuantity)) +
             ' · Unfulfilled ' + (request.unfulfilledQuantity === null ? 'Not recorded' : fmt(request.unfulfilledQuantity)) + '</small></div>';
         }).join('');
-        var ownerText = line.ownerCompanyName
-          ? line.ownerCompanyName
-          : line.ownerRecordStatus === 'UNMAPPED_OWNER_RECORD' ? 'Recorded owner not mapped to a global company'
-            : 'Not recorded';
+        var ownerText = line.ownerLabel || 'Not recorded';
+        var operatorText = line.operatorLabel || 'Not recorded';
+        var stateRightsText = line.stateControlRightsStatus || 'Not recorded';
         var statusText = String(line.status || 'NOT_RECORDED').replace(/_/g, ' ');
         var sourceBatchCount = Array.isArray(line.sourceBatchIds) ? line.sourceBatchIds.length : 0;
         return '<article class="fp-line-card" data-factory-id="' + esc(line.factoryId) + '">' +
@@ -3975,7 +4012,9 @@
           '<small>Transport ' + esc(routeSummary) + ' · Distance ' +
             (routeDistance === null ? 'Not recorded' : fmt(routeDistance) + ' km') +
             ' · ETA ' + esc(eta || 'Not recorded') + '</small></div>' +
-          '<div class="fp-line-fact"><span>Owner / operator</span><strong>' + esc(ownerText) + '</strong></div></div>' +
+          '<div class="fp-line-fact"><span>Owner</span><strong>' + esc(ownerText) + '</strong></div>' +
+          '<div class="fp-line-fact"><span>Operator</span><strong>' + esc(operatorText) + '</strong></div>' +
+          '<div class="fp-line-fact"><span>State control rights</span><strong>' + esc(stateRightsText) + '</strong></div></div>' +
           (requestMarkup ? '<section class="fp-line-inputs"><h4>Factory input requests</h4>' + requestMarkup + '</section>' : '') +
           '<small class="fp-line-record-count">' + (line.shipments || []).length + ' shipment record(s) · ' +
           (line.warehouseDispatches || []).length + ' warehouse dispatch record(s) · ' +
