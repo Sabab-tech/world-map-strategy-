@@ -3923,6 +3923,10 @@
         var routeSource = route.sourceNode || route.sourceWarehouseId || route.sourceSiteId || 'Not recorded';
         var routeDestination = route.destinationNode || route.destinationWarehouseId || route.destinationFactoryId ||
           latestDispatch && latestDispatch.destinationFactoryId || 'Not recorded';
+        var routeDistance = num(route.totalDistanceKm);
+        if (routeDistance === null && routeLegs.length && routeLegs.every(function (leg) { return num(leg && leg.distanceKm) !== null; })) {
+          routeDistance = routeLegs.reduce(function (sum, leg) { return sum + num(leg.distanceKm); }, 0);
+        }
         var eta = latestShipment && (latestShipment.etaDate || latestShipment.etaTurn !== null && latestShipment.etaTurn !== undefined
           ? latestShipment.etaDate || ('Turn ' + latestShipment.etaTurn) : null);
         if (!eta && latestDispatch) eta = latestDispatch.etaTurn !== null && latestDispatch.etaTurn !== undefined
@@ -3958,7 +3962,9 @@
           '<div><span>Source batches</span><strong>' + (sourceBatchCount ? fmt(sourceBatchCount) : 'Not recorded') + '</strong></div></div>' +
           '<div class="fp-line-facts">' + shipmentMarkup +
           '<div class="fp-line-fact"><span>Recorded route</span><strong>' + esc(routeSource) + ' → ' + esc(routeDestination) + '</strong>' +
-          '<small>Transport ' + esc(routeSummary) + ' · ETA ' + esc(eta || 'Not recorded') + '</small></div>' +
+          '<small>Transport ' + esc(routeSummary) + ' · Distance ' +
+            (routeDistance === null ? 'Not recorded' : fmt(routeDistance) + ' km') +
+            ' · ETA ' + esc(eta || 'Not recorded') + '</small></div>' +
           '<div class="fp-line-fact"><span>Owner / operator</span><strong>' + esc(ownerText) + '</strong></div></div>' +
           (requestMarkup ? '<section class="fp-line-inputs"><h4>Factory input requests</h4>' + requestMarkup + '</section>' : '') +
           '<small class="fp-line-record-count">' + (line.shipments || []).length + ' shipment record(s) · ' +
