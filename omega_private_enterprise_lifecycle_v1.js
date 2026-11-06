@@ -744,7 +744,7 @@
       else if(p.status==='APPROVED_AWAITING_FUNDING'){
         if(balance+1e-9>=num(p.capitalRequired))buttons+='<button type="button" data-pe-action="fund-company" data-pe-proposal="'+p.proposalId+'">Fund from company capital</button>';
         if(p.decision&&p.decision.allowStateSupport)buttons+='<button type="button" data-pe-action="fund-grant" data-pe-proposal="'+p.proposalId+'">Authorize Treasury grant</button>';
-      }else if(p.status==='FUNDED')buttons='<button type="button" data-pe-action="construct" data-pe-proposal="'+p.proposalId+'">Start construction</button>';
+      }else if(p.status==='FUNDED'||p.status==='PARTIALLY_UNDER_CONSTRUCTION')buttons='<button type="button" data-pe-action="construct" data-pe-proposal="'+p.proposalId+'">'+(p.status==='FUNDED'?'Start construction':'Resume remaining construction')+'</button>';
       var preview=previewFor(p);
       var shortages=(preview.shortages||[]).map(function(x){return'<span class="pe-warning">'+escapeHtml(x.resourceId)+': projected 30-day shortfall '+Number(x.shortfall).toLocaleString('en-US')+'</span>';}).join('');
       var unknown=(preview.unobservedInputs||[]).map(function(x){return'<span class="pe-info">'+(x.available===null?'Stock not observed: ':'Current demand forecast not observed: ')+escapeHtml(x.resourceId)+'; no quantity assumed</span>';}).join('');
