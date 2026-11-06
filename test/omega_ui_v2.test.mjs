@@ -455,6 +455,17 @@ test('Home Affairs budget remains read-only for a non-player country and does no
   }
 });
 
+test('industry source avoids building datasets for inactive tabs', () => {
+  const source = fs.readFileSync(path.join(root, 'omega_ui_v2/screens/industry.js'), 'utf8');
+  assert.match(source, /var activeTab = String\(options\.activeTab \|\| options\.tab \|\| 'factories'\)/);
+  assert.match(source, /activeTab === 'production-lines' \? assets\.map/);
+  assert.match(source, /if \(activeTab === 'production-lines'\) \{/);
+  assert.match(source, /var currentExtraction = stockSummaryView \|\| needsMineProduction/);
+  assert.match(source, /var production = needsMineProduction \? mineDailyProduction\(site\) : null/);
+  assert.match(source, /var resourceInventoryLedger = stockSummaryView \?/);
+  assert.match(source, /activeTab === 'production-lines' \? cyclesList\.length : 0/);
+});
+
 test('industry view reads current country assets, cycles and projects without synthesizing factories', () => {
   globalThis.Game = { state: {
     resource: { BGD: { industrialNetwork: {
