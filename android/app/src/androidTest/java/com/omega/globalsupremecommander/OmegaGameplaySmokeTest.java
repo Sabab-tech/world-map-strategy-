@@ -249,7 +249,7 @@ public final class OmegaGameplaySmokeTest {
             // Open the canonical UI v2 Industry route. The legacy Resource Command Center
             // factory popup is covered by its own runtime tests; opening it here a second time
             // caused avoidable WebView main-thread work during the offline device smoke.
-            final String openPrivateCompaniesRoute =
+            final String openIndustryRoute =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
                     " var integration = window.OmegaUIV2Integration;" +
@@ -267,9 +267,9 @@ public final class OmegaGameplaySmokeTest {
                     "})()";
             assertEquals(
                     "The existing Industry route must mount or navigate through the integration entry point for the selected player country",
-                    "true", evaluate(instrumentation, webViewRef.get(), openPrivateCompaniesRoute)
+                    "true", evaluate(instrumentation, webViewRef.get(), openIndustryRoute)
             );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_COMPANY_ROUTE_OPENED");
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_ROUTE_OPENED");
 
             final String linesTabReadyScript =
                     "(function() {" +
@@ -326,26 +326,41 @@ public final class OmegaGameplaySmokeTest {
                     "true", activeLinesReady
             );
 
-            final String existingTabNavigation =
-                    "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
-                    "var ids=['inventory','national-inventory','production-lines'];var results=[];" +
-                    "for(var i=0;i<ids.length;i++){var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"'+ids[i]+'\\\"]');" +
-                    "if(!tab)return 'MISSING:'+ids[i];var started=performance.now();tab.click();results.push({tab:ids[i],clickMs:Number((performance.now()-started).toFixed(2))});}" +
-                    "return JSON.stringify(results);})()";
-            final String tabNavigationTiming = evaluate(instrumentation, webViewRef.get(), existingTabNavigation);
-            assertFalse("Input, Stock and Lines tabs must all remain reachable", tabNavigationTiming.startsWith("MISSING:"));
-            final String finalLinesReady =
-                    "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
-                    "return !!(main&&main.querySelector('[data-omega-v2-industry-content][data-active-tab=\\\"production-lines\\\"]')&&" +
-                    "!main.querySelector('[data-omega-v2-industry-tab=\\\"companies\\\"]'));})()";
-            String finalLinesState = "false";
-            final long finalLinesDeadline = SystemClock.elapsedRealtime() + 15000L;
-            while (!"true".equals(finalLinesState) && SystemClock.elapsedRealtime() < finalLinesDeadline) {
-                finalLinesState = evaluate(instrumentation, webViewRef.get(), finalLinesReady);
-                if (!"true".equals(finalLinesState)) SystemClock.sleep(200L);
+            final String[] industryTabs = {"inventory", "national-inventory", "production-lines"};
+            final String[] industryTabNames = {"Input", "Stock", "Lines"};
+            final StringBuilder tabNavigationTiming = new StringBuilder();
+            for (int tabIndex = 0; tabIndex < industryTabs.length; tabIndex++) {
+                final String tabId = industryTabs[tabIndex];
+                final String tabName = industryTabNames[tabIndex];
+                final String clickTabScript =
+                        "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                        "var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"'+ " + tabId + " + '\\\"]');" +
+                        "if(!tab)return 'MISSING';var started=performance.now();tab.click();" +
+                        "return String((performance.now()-started).toFixed(2));})()";
+                final String clickMsText = evaluate(instrumentation, webViewRef.get(), clickTabScript);
+                assertFalse(tabName + " tab must exist", "MISSING".equals(clickMsText));
+                final double clickMs;
+                try { clickMs = Double.parseDouble(clickMsText); }
+                catch (NumberFormatException error) { throw new AssertionError("Invalid " + tabName + " tap timing: " + clickMsText, error); }
+                assertTrue(tabName + " tab click handler must return within 1000ms; observed " + clickMs + "ms", clickMs <= 1000.0d);
+
+                String panelReady = "false";
+                final long panelDeadline = SystemClock.elapsedRealtime() + 10000L;
+                final String panelScript =
+                        "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                        "var tab='" + tabId + "';" +
+                        "var panel=main&&main.querySelector('[data-omega-v2-industry-content][data-active-tab=\\\"'+tab+'\\\"]');" +
+                        "return !!(panel&&panel.querySelector('.fp-content-heading')&&panel.querySelector('.fp-content-body'));})()";
+                while (!"true".equals(panelReady) && SystemClock.elapsedRealtime() < panelDeadline) {
+                    panelReady = evaluate(instrumentation, webViewRef.get(), panelScript);
+                    if (!"true".equals(panelReady)) SystemClock.sleep(200L);
+                }
+                assertEquals(tabName + " panel must render after its tab is tapped", "true", panelReady);
+                if (tabNavigationTiming.length() > 0) tabNavigationTiming.append(',');
+                tabNavigationTiming.append(tabName).append('=').append(clickMs).append("ms");
             }
-            assertEquals("Lines must remain responsive after Input and Stock navigation", "true", finalLinesState);
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_LINES_NAV_READY tapMs=" + linesTapMs + " nav=" + tabNavigationTiming);
+
 
         } finally {
             if (activity != null) {
