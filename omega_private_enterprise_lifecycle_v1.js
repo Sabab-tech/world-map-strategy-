@@ -1570,7 +1570,7 @@
     return Object.keys(rules).filter(function(resourceId){
       return id(rules[resourceId]&&rules[resourceId].factoryType)==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT';
     }).map(function(resourceId){
-      return{id:resourceId,name:String(resourceId).replace(/_/g,' ').replace(/\\b[a-z]/g,function(ch){return ch.toUpperCase();})};
+      return{id:resourceId,name:String(resourceId).replace(/_/g,' ').replace(/\b[a-z]/g,function(ch){return ch.toUpperCase();})};
     });
   }
   var stylesInstalled=false;
