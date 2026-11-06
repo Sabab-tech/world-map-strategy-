@@ -325,6 +325,9 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         return {
           uiBound:lifecycleRoot?.__omegaPrivateEnterpriseUiBound || false,
           submitTrace:window.__omegaProposalSubmitTrace || null,
+          lastProposalResult:lifecycleRoot?.__omegaPrivateEnterpriseLastProposalResult || null,
+          pageErrors:pageErrors.slice(-12),
+          consoleErrors:consoleErrors.slice(-12),
           uiMessage:lifecycleRoot?.__omegaPrivateEnterpriseMessage || null,
           rootCountry:lifecycleRoot?.__omegaV2IndustryCountryId || null,
           rootTab:lifecycleRoot?.__omegaV2IndustryTab || null,
