@@ -1,7 +1,7 @@
 name: OMEGA Android 9 Offline Gameplay Smoke
 concurrency:
-  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: omega-android9-gameplay-smoke-${{ github.event.pull_request.number || github.ref }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 
 on:
