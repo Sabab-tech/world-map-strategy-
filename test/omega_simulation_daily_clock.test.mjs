@@ -141,7 +141,7 @@ test('save slot restores selected country, game date and authoritative state', a
   gameState.economy.BGD.treasury = 777;
   gameState.resource.BGD.inventory.crude_oil = 31;
 
-  const result = sim.saveSlot('default');
+  const result = await sim.saveSlot('default');
   assert.equal(result.ok, true);
   assert.equal(storage.has('omega.game.save.default'), true);
   const saved = JSON.parse(storage.get('omega.game.save.default'));
@@ -152,7 +152,7 @@ test('save slot restores selected country, game date and authoritative state', a
   gameState.economy.BGD.treasury = 0;
   gameState.resource.BGD.inventory.crude_oil = 0;
   gameState.simulation.date = '1900-01-01T00:00:00.000Z';
-  sim.loadSlot('default');
+  await sim.loadSlot('default');
 
   assert.equal(gameState.economy.BGD.treasury, 777);
   assert.equal(gameState.resource.BGD.inventory.crude_oil, 31);
@@ -222,14 +222,14 @@ test('save slot preserves an unfinished factory project, reserved input batches 
   const expectedProject = JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.projects[0]));
   const expectedCycle = JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.factoryProductionCycles['FAC-BGD-STEEL-01']));
   const expectedLot = JSON.parse(JSON.stringify(gameState.economy.BGD.productionAssets[0].inputBatchLots[0]));
-  const saved = sim.saveSlot('factory-acceptance');
+  const saved = await sim.saveSlot('factory-acceptance');
   assert.equal(saved.ok, true);
   assert.equal(storage.has('omega.game.save.factory-acceptance'), true);
 
   gameState.resource.BGD.industrialNetwork.projects = [];
   gameState.resource.BGD.industrialNetwork.factoryProductionCycles = {};
   gameState.economy.BGD.productionAssets = [];
-  const restored = sim.loadSlot('factory-acceptance');
+  const restored = await sim.loadSlot('factory-acceptance');
   assert.equal(restored.lastLoadIntegrity, 'VERIFIED', 'the restored factory snapshot must pass authoritative save integrity validation');
 
   assert.deepEqual(JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.projects[0])), expectedProject,
