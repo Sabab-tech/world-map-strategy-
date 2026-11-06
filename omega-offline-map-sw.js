@@ -16,6 +16,22 @@ let dataCacheMutation = Promise.resolve();
 const APP_BASE = new URL("./", self.location.href);
 const INDEX_URL = new URL("index.html", APP_BASE).href;
 const DATA_CACHE_META_URL = new URL("__omega-data-cache-index__", APP_BASE).href;
+const REQUIRED_FACTORY_INPUT_ASSETS = [
+  "./omega_country_factory_starting_baseline_v1.js",
+  "./country_factory_starting_baseline_v1.json",
+  "./resource_industrial_catalog_v1.json",
+  "./resource_country_resource_context_index.json",
+  "./economy_global_profiles_v1.json",
+  "./omega_private_enterprise_registry_v1.js",
+  "./country_private_factory_starting_baseline_v1.json",
+  "./omega_resource_logistics_runtime_v1.js",
+  "./omega_resource_economy_runtime_v2.js",
+  "./omega_resource_national_demand_runtime_v1.js",
+  "./omega_resource_industrial_network_v1.js",
+  "./omega_resource_startup_baseline_v1.js",
+  "./omega_country_inventory_runtime_v1.js",
+  "./omega_resource_gameplay_binding_v1.js"
+];
 const CORE_ASSETS = [
   "./", "./index.html", "./omega_android_compat_v1.js", "./world.json", "./leaflet.js", "./leaflet.css",
   "./style.css", "./design-tokens.js", "./omega_action_progress_v1.js", "./map-engine-1.js", "./map-engine-2.js",
@@ -413,6 +429,17 @@ self.addEventListener("install", event => {
       }
     });
     await Promise.all(workers.map(worker => worker.catch(() => null)));
+    // Do not activate an incomplete shell: the previous installed version stays
+    // available until every Factory Input / Private Company bootstrap dependency
+    // has a verified cached response.
+    const missingFactoryAssets = [];
+    for (const asset of REQUIRED_FACTORY_INPUT_ASSETS) {
+      const url = new URL(asset, APP_BASE).href;
+      if (!await cache.match(url)) missingFactoryAssets.push(asset);
+    }
+    if (missingFactoryAssets.length) {
+      throw new Error("OMEGA_FACTORY_INPUT_OFFLINE_CORE_INCOMPLETE:" + missingFactoryAssets.join(","));
+    }
     await self.skipWaiting();
   })());
 });
