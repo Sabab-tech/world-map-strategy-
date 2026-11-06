@@ -1306,6 +1306,8 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
 // collection used by factory construction, input routing, production and decommissioning.
 {
   const previousState=context.Game.state;
+  const simulationClock=context.Omega?.Simulation?.clock;
+  const priorGameDaysPerTurn=simulationClock?.gameDaysPerTurn;
   try {
     context.Game.state={
       simulation:{turn:1,playerCountryId:'BGD',session:{sessionId:'STARTING-FACTORY-ASSET-TEST',playerCountryId:'BGD',status:'READY',createdTurn:1}},
@@ -1458,8 +1460,6 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     }
     // The central Simulation clock owns turn duration when stepDurationMs is configured.
     // Set its explicit game-day bridge instead of relying on the legacy state field.
-    const simulationClock=context.Omega?.Simulation?.clock;
-    const priorGameDaysPerTurn=simulationClock?.gameDaysPerTurn;
     if(simulationClock)simulationClock.gameDaysPerTurn=30;
     context.Game.state.simulation.daysPerTurn=30;
     const privateProjectInput={
