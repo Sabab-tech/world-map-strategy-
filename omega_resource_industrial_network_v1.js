@@ -1210,7 +1210,8 @@ function onTreasurySettlement(evt){
   if(!cid)return;
   const inputTransfers=Array.isArray(p.batchTransfers)?p.batchTransfers:[],
     transferRows=inputTransfers.map(transfer=>{
-      const roots=[...new Set([transfer?.sourceBatchId,...(transfer?.sourceBatchIds||[])].filter(Boolean).map(String))],
+      const declaredRoots=Array.isArray(transfer?.sourceBatchIds)?transfer.sourceBatchIds.filter(Boolean).map(String):[],
+        roots=[...new Set((declaredRoots.length?declaredRoots:[transfer?.sourceBatchId]).filter(Boolean).map(String))],
         quantity=num(transfer?.quantity);
       let value=num(transfer?.totalValue);
       const unitPrice=num(transfer?.unitPrice);
