@@ -436,8 +436,8 @@
     if(cid!==player||!player)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
     var r=runtime(cid,false),proposal=r&&r.proposals.find(function(p){return p.proposalId===proposalId;});
     if(!proposal)return{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};
-    if(proposal.status==='UNDER_CONSTRUCTION'||proposal.status==='PARTIALLY_UNDER_CONSTRUCTION'||proposal.status==='COMMISSIONED_PRODUCTION_GATED'||proposal.status==='COMMISSIONED')return{status:'DUPLICATE',proposal:clone(proposal)};
-    if(proposal.status!=='FUNDED')return{status:'BLOCKED',reason:'PROPOSAL_NOT_FUNDED'};
+    if(proposal.status==='UNDER_CONSTRUCTION'||proposal.status==='COMMISSIONED_PRODUCTION_GATED'||proposal.status==='COMMISSIONED')return{status:'DUPLICATE',proposal:clone(proposal)};
+    if(proposal.status!=='FUNDED'&&proposal.status!=='PARTIALLY_UNDER_CONSTRUCTION')return{status:'BLOCKED',reason:'PROPOSAL_NOT_FUNDED'};
     var permit=proposal.permit;
     if(!permit||permit.status!=='ACTIVE'||permit.permitId!==proposal.decision?.permitId)
       return{status:'BLOCKED',reason:'ACTIVE_GOVERNMENT_PERMIT_REQUIRED'};
@@ -454,16 +454,22 @@
     try{if(typeof n.factoryConstructionMaterialQuote==='function')quote=n.factoryConstructionMaterialQuote(cid,profile);}catch(e){return{status:'BLOCKED',reason:'CONSTRUCTION_BOM_QUOTE_FAILED',detail:String(e&&e.message||e)};}
     if(!quote||quote.status!=='QUOTED')return{status:'BLOCKED',reason:quote&&quote.reason||'CONSTRUCTION_MATERIAL_PREFLIGHT_FAILED',quote:quote};
     var unitCost=num(profile.constructionCost);if(unitCost===null||unitCost<=0)return{status:'BLOCKED',reason:'CANONICAL_CONSTRUCTION_COST_UNAVAILABLE'};
-    var account=capitalAccount(cid,proposal.companyId,false);if(!account||account.availableBalance+1e-9<unitCost*proposal.quantity)
-      return{status:'BLOCKED',reason:'COMPANY_CAPITAL_INSUFFICIENT_AT_CONSTRUCTION',available:account?account.availableBalance:0,required:unitCost*proposal.quantity};
-    // Aggregate BOM preflight prevents a partial build caused by known material shortages.
+    if(!Array.isArray(proposal.projectIds))proposal.projectIds=[];
+    proposal.projectIds=Array.from(new Set(proposal.projectIds));
+    var remainingQuantity=Math.max(0,proposal.quantity-proposal.projectIds.length);
+    if(remainingQuantity===0){proposal.status='UNDER_CONSTRUCTION';return{status:'DUPLICATE',proposal:clone(proposal)};}
+    var account=capitalAccount(cid,proposal.companyId,false);if(!account||account.availableBalance+1e-9<unitCost*remainingQuantity)
+      return{status:'BLOCKED',reason:'COMPANY_CAPITAL_INSUFFICIENT_AT_CONSTRUCTION',available:account?account.availableBalance:0,required:unitCost*remainingQuantity};
+    // Aggregate remaining BOM preflight prevents a partial build caused by known material shortages.
     for(var m=0;m<quote.materials.length;m++){
-      var row=quote.materials[m],required=num(row.required)*proposal.quantity,available=num(row.available);
+      var row=quote.materials[m],required=num(row.required)*remainingQuantity,available=num(row.available);
       if(available===null||available+1e-9<required)return{status:'BLOCKED',reason:'AGGREGATE_CONSTRUCTION_MATERIAL_SHORTAGE',resourceId:row.resourceId,required:required,available:available===null?0:available};
     }
     var started=[],failures=[];
     for(var i=0;i<proposal.quantity;i++){
       var requestId=proposal.proposalId+':UNIT:'+String(i+1);
+      var existingProject=proposal.projectIds.some(function(projectId){var projectRows=(countryBucket('resource',cid,false)||{}).industrialNetwork?.projects||[];return projectRows.some(function(row){return row.projectId===projectId&&row.requestId===requestId;});});
+      if(existingProject)continue;
       var result=n.startFactoryProject({countryId:cid,factoryType:proposal.factoryType,recipeId:proposal.recipeId,
         requestId:requestId,cost:unitCost,capacityPerDay:num(profile.defaultCapacityPerDay)||1,
         contractorType:'DOMESTIC_EPC',companyId:proposal.companyId,ownerCompanyId:proposal.companyId,ownerId:proposal.companyId,
@@ -484,19 +490,21 @@
       result.sourcePrivateProposalId=proposal.proposalId;result.sourcePrivateDecisionId=proposal.decision.decisionId;
       result.sourcePrivateFundingId=proposal.funding.transactionId;result.privateCompanyId=proposal.companyId;
       result.stateControlRights=clone(proposal.ownership.stateControlRights);
-      started.push(result);proposal.projectIds.push(result.projectId);
-      account.availableBalance-=unitCost;account.capitalSpent+=unitCost;account.revision++;
+      started.push(result);
+      if(proposal.projectIds.indexOf(result.projectId)<0)proposal.projectIds.push(result.projectId);
       var ledger=financeLedger(cid,true),transactionId='PE-CAPEX:'+result.projectId;
       if(!ledger.some(function(x){return x.transactionId===transactionId;})){
+        account.availableBalance-=unitCost;account.capitalSpent+=unitCost;account.revision++;
         ledger.push({transactionId:transactionId,type:'PRIVATE_ENTERPRISE_FACTORY_CAPEX',proposalId:proposal.proposalId,projectId:result.projectId,
           companyId:proposal.companyId,amount:unitCost,currency:proposal.capitalUnit,direction:'TRANSFER',
           debitAccount:'COMPANY_CAPITAL:'+proposal.companyId,creditAccount:'FACTORY_CONSTRUCTION:'+result.projectId,
           balanceAfter:account.availableBalance,status:'POSTED',turn:turn(),authority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL'});
       }
     }
-    proposal.status=failures.length?(started.length?'PARTIALLY_UNDER_CONSTRUCTION':'FUNDED'):'UNDER_CONSTRUCTION';
+    proposal.status=failures.length?(proposal.projectIds.length?'PARTIALLY_UNDER_CONSTRUCTION':'FUNDED'):'UNDER_CONSTRUCTION';
     proposal.updatedTurn=turn();
-    proposal.construction={startedCount:started.length,requestedCount:proposal.quantity,unitCost:unitCost,projectIds:proposal.projectIds.slice(),failures:failures};
+    proposal.construction={startedCount:proposal.projectIds.length,requestedCount:proposal.quantity,remainingCount:Math.max(0,proposal.quantity-proposal.projectIds.length),
+      unitCost:unitCost,projectIds:proposal.projectIds.slice(),failures:failures};
     recordEvent(cid,'COMPANY_CONSTRUCTION_STARTED',{proposalId:proposal.proposalId,companyId:proposal.companyId,startedCount:started.length,requestedCount:proposal.quantity,projectIds:proposal.projectIds.slice()});
     return{status:proposal.status,started:started.map(clone),failures:clone(failures),proposal:clone(proposal)};
   }
