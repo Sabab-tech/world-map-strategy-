@@ -501,7 +501,9 @@
         Promise.resolve(readiness).then(function(result){
           if(root.__omegaPrivateBaselinePendingCountry!==country)return;
           root.__omegaPrivateBaselinePendingCountry='';
-          if(!result||result.status!=='READY')root.__omegaPrivateBaselineLoadFailedCountry=country;
+          var loadedRow=null;
+          try{loadedRow=baseline(country);}catch(_){}
+          if(!result||result.status!=='READY'||!loadedRow||loadedRow.status!=='READY')root.__omegaPrivateBaselineLoadFailedCountry=country;
           else root.__omegaPrivateBaselineLoadFailedCountry='';
           if(root.__omegaV2IndustryTab==='production-lines'){
             var current=g.OmegaUIV2Industry;
