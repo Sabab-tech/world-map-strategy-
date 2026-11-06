@@ -616,22 +616,46 @@
   function settleDomestic(c,rid,q,consumed,buyer,facility,tx){
     var pm=read(c,'trade.marketPrice')||{},price=num(pm[rid]);
     if(price===null&&g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.localPrice==='function'){try{price=num(g.OmegaGlobalMarket.localPrice(c,rid));}catch(_){}}
-    var suppliers={};(consumed||[]).forEach(function(x){var o=String(x.ownerCompanyId||'').trim(),n=num(x.quantity)||0;if(o&&o!=='UNKNOWN_SOURCE'&&n>0)suppliers[o]=(suppliers[o]||0)+n;});
-    if(!Object.keys(suppliers).length)suppliers[mineCompany(c,rid)]=q;
-    var totalSource=Object.keys(suppliers).reduce(function(s,k){return s+suppliers[k];},0)||q;
-    var batchTransfers=(consumed||[]).filter(function(x){return num(x&&x.quantity)>0;}).map(function(x){
+    var consumedRows=(Array.isArray(consumed)?consumed:[]).filter(function(x){return x&&num(x.quantity)>0;});
+    var suppliers={},unattributedQuantity=0,attributedQuantity=0;
+    consumedRows.forEach(function(x){
+      var owner=String(x.ownerCompanyId||'').trim(),quantity=num(x.quantity)||0;
+      if(owner&&owner!=='UNKNOWN_SOURCE'){suppliers[owner]=(suppliers[owner]||0)+quantity;attributedQuantity+=quantity;}
+      else unattributedQuantity+=quantity;
+    });
+    var totalSource=Object.keys(suppliers).reduce(function(sum,key){return sum+suppliers[key];},0);
+    var ownershipResolved=consumedRows.length>0&&Object.keys(suppliers).length>0&&
+      unattributedQuantity<=1e-6&&Math.abs(attributedQuantity-q)<=1e-5&&Math.abs(totalSource-q)<=1e-5;
+    var batchTransfers=consumedRows.map(function(x){
       var roots=[...new Set([...(Array.isArray(x.sourceBatchIds)?x.sourceBatchIds:[]),x.batchId].filter(Boolean).map(String))];
       return{sourceBatchId:x.batchId||null,sourceBatchIds:roots,siteId:x.siteId||x.sourceSiteId||x.siteReferenceKey||null,
         siteReferenceKey:x.siteReferenceKey||null,occurrenceKey:x.occurrenceKey||null,resourceId:rid,quantity:num(x.quantity)||0,
         unit:x.unit||null,stage:x.stage||'UNOBSERVED',warehouseId:x.warehouseId||null,sourceCountryId:canonical(c),destinationCountryId:canonical(c),
+        ownerCompanyId:x.ownerCompanyId||null,
+        ownerAttributionStatus:x.ownerAttributionStatus|| (x.ownerCompanyId?'LEGACY_OR_UNCLASSIFIED_OWNER':'OWNER_NOT_RECORDED'),
         provenance:clone(x.provenance||{sourceAuthority:'UNOBSERVED'})};
     });
     var sourceBatchIds=[...new Set(batchTransfers.flatMap(function(x){return [...(x.sourceBatchIds||[]),x.sourceBatchId].filter(Boolean).map(String);}))];
     var sale={saleId:'DOM-'+turn()+'-'+canonical(c)+'-'+tok(rid)+'-'+facility+'-'+tx,transactionId:tx,facilityId:facility,countryId:canonical(c),sellerCountryId:canonical(c),
       resourceId:rid,quantity:q,buyerCompanyId:buyer,supplierAllocations:clone(suppliers),direction:'DOMESTIC',simulationTurn:turn(),
       batchTransfers:batchTransfers,sourceBatchIds:sourceBatchIds};
-    if(price===null||price<=0){sale.status='PHYSICAL_TRANSFER_COMPLETED';sale.paymentStatus='UNOBSERVED';sale.valuationStatus='UNOBSERVED_MARKET_PRICE';dispatch('trade','OMEGA_RESOURCE_ECON_RECORD_DOMESTIC_SALE',c,{sale:sale,correlationId:sale.saleId,idempotencyKey:financialIdempotencyKey('DOMESTIC_SALE',sale.saleId)});return sale;}
-    sale.unitPrice=price;sale.totalValue=q*price;sale.status='SETTLED';sale.paymentStatus='SETTLED';sale.valuationStatus='OBSERVED_RUNTIME_MARKET_PRICE';
+    if(price===null||price<=0){
+      sale.status='PHYSICAL_TRANSFER_COMPLETED';sale.paymentStatus='UNOBSERVED';sale.valuationStatus='UNOBSERVED_MARKET_PRICE';
+      dispatch('trade','OMEGA_RESOURCE_ECON_RECORD_DOMESTIC_SALE',c,{sale:sale,correlationId:sale.saleId,idempotencyKey:financialIdempotencyKey('DOMESTIC_SALE',sale.saleId)});
+      return sale;
+    }
+    sale.unitPrice=price;sale.totalValue=q*price;
+    if(!ownershipResolved){
+      sale.status='PHYSICAL_TRANSFER_COMPLETED';
+      sale.paymentStatus='UNOBSERVED_OWNER_ALLOCATION';
+      sale.valuationStatus='OBSERVED_RUNTIME_MARKET_PRICE_OWNER_UNRESOLVED';
+      sale.ownerAllocationStatus='UNRESOLVED';
+      sale.unattributedQuantity=unattributedQuantity||q;
+      dispatch('trade','OMEGA_RESOURCE_ECON_RECORD_DOMESTIC_SALE',c,{sale:sale,correlationId:sale.saleId,idempotencyKey:financialIdempotencyKey('DOMESTIC_SALE',sale.saleId)});
+      return sale;
+    }
+    sale.status='SETTLED';sale.paymentStatus='SETTLED';sale.valuationStatus='OBSERVED_RUNTIME_MARKET_PRICE';
+    sale.ownerAllocationStatus='RECONCILED';
     Object.keys(suppliers).forEach(function(companyId){
       var gross=sale.totalValue*(suppliers[companyId]/totalSource);
       dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',c,{companyId:companyId,amount:gross,direction:'CREDIT',grossRevenue:gross,supplierRevenue:gross,category:'DOMESTIC_SUPPLY',saleId:sale.saleId,idempotencyKey:financialIdempotencyKey('COMPANY_FLOW','DOMESTIC',sale.saleId,companyId,'CREDIT','DOMESTIC_SUPPLY')});
