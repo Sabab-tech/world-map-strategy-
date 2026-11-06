@@ -189,8 +189,10 @@
   function resourceAvailable(country,resourceId,resourceSnapshot){
     // Read every input from the same caller-captured country snapshot. Re-resolving
     // state per material can mix a stale/rotated country bucket into one preview.
-    var bucket=obj(resourceSnapshot)?resourceSnapshot:(countryBucket('resource',country,false)||{}),
-      inv=obj(bucket.inventory)?bucket.inventory:{},warehouse=obj(bucket.warehouse)?bucket.warehouse:{};
+    var bucket=resourceSnapshot&&typeof resourceSnapshot==='object'&&!Array.isArray(resourceSnapshot)
+      ?resourceSnapshot:(countryBucket('resource',country,false)||{}),
+      inv=bucket.inventory&&typeof bucket.inventory==='object'&&!Array.isArray(bucket.inventory)?bucket.inventory:{},
+      warehouse=bucket.warehouse&&typeof bucket.warehouse==='object'&&!Array.isArray(bucket.warehouse)?bucket.warehouse:{};
     var inventoryKey=Object.prototype.hasOwnProperty.call(inv,resourceId)?resourceId:Object.keys(inv).find(function(k){return token(k)===token(resourceId);});
     var rows=obj(warehouse.availableByResource)?warehouse.availableByResource:{};
     var warehouseKey=Object.prototype.hasOwnProperty.call(rows,resourceId)?resourceId:Object.keys(rows).find(function(k){return token(k)===token(resourceId);});
@@ -205,7 +207,11 @@
     Object.keys(protectedMap).some(function(key){if(token(key)!==token(resourceId))return false;protectedValue=Math.max(0,num(protectedMap[key])||0);return true;});
     var protectedQty=protectedValue===null?0:protectedValue;
     var availableAfterProtection=amount===null?null:Math.max(0,amount-protectedQty);
-    var demandRuntime=obj(bucket.demandRuntime)||{},byResource=obj(demandRuntime.byResource)||{},demandRow=null;
+    var demandRuntime=bucket.demandRuntime&&typeof bucket.demandRuntime==='object'&&!Array.isArray(bucket.demandRuntime)
+      ?bucket.demandRuntime:{};
+    var rawDemandRows=demandRuntime.byResource;
+    var byResource=rawDemandRows&&typeof rawDemandRows==='object'&&!Array.isArray(rawDemandRows)?rawDemandRows:{};
+    var demandRow=null;
     Object.keys(byResource).some(function(key){if(token(key)!==token(resourceId))return false;demandRow=byResource[key];return true;});
     var resourceRoot=(state()||{}).resource||{};
     var matchingCountryKeys=Object.keys(resourceRoot).filter(function(key){return canonicalCountry(key)===canonicalCountry(country);});
