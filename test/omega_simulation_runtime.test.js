@@ -299,7 +299,8 @@ test('durable save slots checksum the canonical serialized world without a secon
   assert.equal(snapshot.worldState.resource.BGD.inventory.coal,50);
 
   state.resource.BGD.inventory.coal=999;
-  assert.equal(runtime.loadState(snapshot).lastLoadIntegrity,'VERIFIED');
+  assert.equal((await runtime.loadSlot('single-pass-save')).lastLoadIntegrity,'VERIFIED');
+  assert.equal(runtime.world.state,state,'loadSlot must preserve the single authoritative Game.state root');
   assert.equal(state.resource.BGD.inventory.coal,50,
     'single-pass serialized saves must restore the authoritative world state');
 });
