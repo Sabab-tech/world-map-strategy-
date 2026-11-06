@@ -852,9 +852,10 @@
     if(!industrial||!requiredRuntimeMethods.every(function(name){
       return typeof industrial[name]==='function';
     }))return false;
-    var profiles=catalogue&&catalogue.factoryProfiles,processing=catalogue&&catalogue.processingRules;
+    var profiles=catalogue&&catalogue.factoryProfiles;
+    var recipes=catalogue&&(catalogue.processingRules||catalogue.downstreamFactoryRecipes);
     return !!(obj(profiles)&&Object.keys(profiles).length>0&&
-      obj(processing)&&Object.keys(processing).length>0);
+      obj(recipes)&&Object.keys(recipes).length>0);
   }
   function privateCommissioningRecordVerified(country,proposal,project,asset){
     var cid=canonicalCountry(country),company=id(project&& (project.ownerCompanyId||project.ownerId||project.privateCompanyId||project.companyId)),
