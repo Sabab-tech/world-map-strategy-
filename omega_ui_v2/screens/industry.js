@@ -927,6 +927,7 @@
     // Build one selected-country Lines index from committed factory/cycle/logistics
     // records. No global-country scan, synthetic line ID or preview-only route is used.
     var lineShipments = Array.isArray(industrial.shipments) ? industrial.shipments : [];
+    var lineCommittedShipmentCount = 0;
     var lineInputRequests = Array.isArray(industrial.factoryInputRequests) ? industrial.factoryInputRequests : [];
     var lineWarehouseDispatches = Array.isArray(industrial.warehouseFactoryDispatches) ? industrial.warehouseFactoryDispatches : [];
     var lineFactoryById = Object.create(null), lineByFactoryId = Object.create(null);
@@ -982,11 +983,19 @@
     });
     lineShipments.forEach(function (shipment) {
       if (!shipment || typeof shipment !== 'object') return;
+      var shipmentId = String(shipment.shipmentId || '').trim();
+      var shipmentStatus = String(shipment.status || '').trim().toUpperCase();
+      var committedStatuses = ['IN_TRANSIT','DELIVERED','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
+        'BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING'];
+      // A route plan/preview is not a shipment. A visible movement needs the actual
+      // persisted shipment identity and a state produced by the dispatch/delivery runtime.
+      if (!shipmentId || shipment.dispatchCommitted === false || committedStatuses.indexOf(shipmentStatus) < 0) return;
       var route = shipment.route && typeof shipment.route === 'object' ? shipment.route : {};
       var factoryId = shipment.factoryId || shipment.destinationFactoryId || shipment.toFactoryId ||
         route.destinationFactoryId || route.factoryId || '';
       var line = ensureLine(factoryId);
       if (!line) return;
+      lineCommittedShipmentCount += 1;
       line.shipments.push({
         shipmentId:String(shipment.shipmentId || ''),
         shipmentType:String(shipment.shipmentType || 'NOT_RECORDED'),
@@ -1096,7 +1105,7 @@
       lineActivity: lineActivity,
       lineActivitySourceCounts: {
         productionCycles: cyclesList.length,
-        committedShipments: lineShipments.length,
+        committedShipments: lineCommittedShipmentCount,
         inputRequests: lineInputRequests.length,
         warehouseDispatches: lineWarehouseDispatches.length
       },
