@@ -461,13 +461,17 @@ test('government procurement buys privately owned finished batches once and tran
     batchId:'WIDGETS-PRIVATE-BATCH',resourceId:'widgets',quantity:100,remainingQuantity:100,
     unit:'UNITS',stage:'FINISHED',countryId:'BGD',ownerCompanyId:companyId,
     operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
-    sourceFactoryId:'FAC-PRIVATE-WIDGETS',warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE'
+    sourceFactoryId:'FAC-PRIVATE-WIDGETS',warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE',
+    sourcePrivateProposalId:'PRIVATE-PROC-PROPOSAL-1',sourcePrivateDecisionId:'PRIVATE-PROC-DECISION-1',
+    sourcePrivateFundingId:'PRIVATE-PROC-FUNDING-1'
   }];
   h.state.resource.BGD.inventoryLots={'WIDGETS-PRIVATE-BATCH':{
     batchId:'WIDGETS-PRIVATE-BATCH',resourceId:'widgets',quantity:100,remainingQuantity:100,
     unit:'UNITS',stage:'FINISHED',countryId:'BGD',warehouseId:'WH-BGD-PROCESSED',
     ownerCompanyId:companyId,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
-    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',status:'AVAILABLE'
+    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-PRIVATE-WIDGETS',
+    sourcePrivateProposalId:'PRIVATE-PROC-PROPOSAL-1',sourcePrivateDecisionId:'PRIVATE-PROC-DECISION-1',
+    sourcePrivateFundingId:'PRIVATE-PROC-FUNDING-1',status:'AVAILABLE'
   }};
   h.state.resource.BGD.processedWarehouse={
     warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',availableByResource:{widgets:100},
@@ -482,7 +486,9 @@ test('government procurement buys privately owned finished batches once and tran
   h.state.economy={BGD:{productionAssets:[{
     id:'FAC-PRIVATE-WIDGETS',countryId:'BGD',factoryType:'WIDGET_FACTORY',status:'OPERATIONAL',productionEnabled:true,
     ownerType:'PRIVATE_ENTERPRISE',ownerCompanyId:companyId,operatorType:'PRIVATE_COMPANY_OPERATOR',
-    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',privatePermitId:'PRIVATE-PROC-PERMIT-1',privatePermitStatus:'ACTIVE',
+    sourcePrivateProposalId:'PRIVATE-PROC-PROPOSAL-1',sourcePrivateDecisionId:'PRIVATE-PROC-DECISION-1',
+    sourcePrivateFundingId:'PRIVATE-PROC-FUNDING-1',
     stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
   }]}};
   const before=h.state.finance.BGD.available;
@@ -523,12 +529,16 @@ test('government procurement honours every company in its allowlist when a defau
     batchId,resourceId:'widgets',quantity:10,remainingQuantity:10,unit:'UNITS',stage:'FINISHED',
     countryId:'BGD',ownerCompanyId:allowedCompany,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
     ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-AURORA-WIDGETS',
-    warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE'
+    warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE',
+    sourcePrivateProposalId:'PRIVATE-MULTI-PROPOSAL',sourcePrivateDecisionId:'PRIVATE-MULTI-DECISION',
+    sourcePrivateFundingId:'PRIVATE-MULTI-FUNDING'
   }];
   h.state.resource.BGD.inventoryLots={[batchId]:{
     batchId,resourceId:'widgets',quantity:10,remainingQuantity:10,unit:'UNITS',stage:'FINISHED',
     countryId:'BGD',warehouseId:'WH-BGD-PROCESSED',ownerCompanyId:allowedCompany,
-    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',status:'AVAILABLE'
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+    sourceFactoryId:'FAC-AURORA-WIDGETS',sourcePrivateProposalId:'PRIVATE-MULTI-PROPOSAL',
+    sourcePrivateDecisionId:'PRIVATE-MULTI-DECISION',sourcePrivateFundingId:'PRIVATE-MULTI-FUNDING',status:'AVAILABLE'
   }};
   h.state.resource.BGD.processedWarehouse={
     warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',status:'OPERATIONAL',
@@ -539,7 +549,9 @@ test('government procurement honours every company in its allowlist when a defau
     id:'FAC-AURORA-WIDGETS',countryId:'BGD',factoryType:'WIDGET_FACTORY',
     status:'OPERATIONAL',productionEnabled:true,ownerType:'PRIVATE_ENTERPRISE',
     ownerCompanyId:allowedCompany,operatorType:'PRIVATE_COMPANY_OPERATOR',
-    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',privatePermitId:'PRIVATE-MULTI-PERMIT',privatePermitStatus:'ACTIVE',
+    sourcePrivateProposalId:'PRIVATE-MULTI-PROPOSAL',sourcePrivateDecisionId:'PRIVATE-MULTI-DECISION',
+    sourcePrivateFundingId:'PRIVATE-MULTI-FUNDING',
     stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
   }]};
   const policy=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
