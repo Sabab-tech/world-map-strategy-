@@ -30,6 +30,7 @@ function validate(data,api){
   throw Error('PRIVATE_COMPANY_IDENTITY_ROSTER_INVALID');
  var types=data.factoryTypes.map(function(x){return String(x.id||'').toUpperCase();}),countries=Object.keys(data.countries),total=0,totalGovernment=0;
  var expectedTypes=types.slice().sort().join('|'),expectedCompanies=COMPANY_IDS.slice().sort().join('|');
+ // Match the generator's round1(value) operation order exactly; changing multiplication order can flip a half-tenth boundary.
  if(types.length!==21||new Set(types).size!==21)throw Error('PRIVATE_FACTORY_TYPE_ROSTER_INVALID');
  if(countries.length!==197||new Set(countries).size!==197)throw Error('PRIVATE_COUNTRY_ROSTER_INVALID');
  if(!api||typeof api.getCountryBaseline!=='function')throw Error('GOVERNMENT_FACTORY_BASELINE_API_UNAVAILABLE');
@@ -59,7 +60,7 @@ function validate(data,api){
     assigned+=n;
    });
    if(assigned!==privateCount)throw Error('PRIVATE_COMPANY_SUM_MISMATCH:'+country+':'+type);
-   var expectedRate=governmentCount>0?Math.round(privateCount/governmentCount*1000)/10:0;
+   var expectedRate=governmentCount>0?Math.round((privateCount/governmentCount*100)*10)/10:0;
    if(!Number.isFinite(rate)||rate<0||rate>60||Math.abs(rate-expectedRate)>.051)
     throw Error('PRIVATE_FACTORY_RATE_INVALID:'+country+':'+type);
    countryPrivate+=privateCount;countryGovernment+=governmentCount;
@@ -68,7 +69,7 @@ function validate(data,api){
    throw Error('PRIVATE_COUNTRY_TOTAL_MISMATCH:'+country);
   if(!Number.isInteger(row.totalGovernmentFactoryUnits)||row.totalGovernmentFactoryUnits!==countryGovernment)
    throw Error('PRIVATE_COUNTRY_GOVERNMENT_TOTAL_MISMATCH:'+country);
-  var expectedCountryRate=countryGovernment>0?Math.round(countryPrivate/countryGovernment*1000)/10:0;
+  var expectedCountryRate=countryGovernment>0?Math.round((countryPrivate/countryGovernment*100)*10)/10:0;
   if(!Number.isFinite(row.privateToGovernmentBaselinePercent)||
      Math.abs(row.privateToGovernmentBaselinePercent-expectedCountryRate)>.051)
    throw Error('PRIVATE_COUNTRY_BASELINE_RATE_MISMATCH:'+country);
