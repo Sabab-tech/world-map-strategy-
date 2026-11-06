@@ -1495,7 +1495,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
       },
       productionProofReady(){return privateProofReady;},
       refreshCommissionedProductionGate(_country,factoryId){
-        if(!privateProofReady)return{status:'BLOCKED',reason:'SAB34_PIPELINE_PROOF_REQUIRED'};
+        if(!privateProofReady)return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE'};
         const asset=context.Game.state.economy.BGD.productionAssets.find(row=>row.id===factoryId);
         if(!asset)return{status:'BLOCKED',reason:'PRIVATE_FACTORY_NOT_FOUND'};
         asset.status='OPERATIONAL';asset.productionEnabled=true;asset.blockedReason=null;
@@ -1536,17 +1536,17 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(commissionedPrivateFactory.sourcePrivateProposalId,'PRIVATE-PROPOSAL-TEST');
     assert.equal(commissionedPrivateFactory.productionEnabled,false);
     assert.equal(commissionedPrivateFactory.status,'BLOCKED');
-    assert.equal(commissionedPrivateFactory.blockedReason,'SAB34_PIPELINE_PROOF_REQUIRED');
+    assert.equal(commissionedPrivateFactory.blockedReason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE');
     const privateProductionAttempt=N.startFactoryProductionCycle({countryId:'BGD',factoryId:commissionedPrivateFactory.id,resourceId:'iron_ore'});
     assert.equal(privateProductionAttempt.status,'BLOCKED');
-    assert.equal(privateProductionAttempt.reason,'SAB34_PIPELINE_PROOF_REQUIRED',
-      'private factory must not start production without the verified live resource-pipeline proof');
+    assert.equal(privateProductionAttempt.reason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',
+      'private factory must remain blocked until the canonical production runtime and lifecycle authorization are available');
     assert.equal(resourceState.industrialNetwork.factoryProductionCycles[commissionedPrivateFactory.id],undefined);
     privateProofReady=true;
     assert.doesNotThrow(()=>N.startFactoryProductionCycle({
       countryId:'BGD',factoryId:commissionedPrivateFactory.id,resourceId:'iron_ore'
     }), 'proof-ready private operation gate must resolve canonical company IDs without runtime ReferenceError');
-    assert.notEqual(commissionedPrivateFactory.blockedReason,'SAB34_PIPELINE_PROOF_REQUIRED');
+    assert.notEqual(commissionedPrivateFactory.blockedReason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE');
     assert.equal(commissionedPrivateFactory.productionEnabled,true,
       'a valid proof may restore authorization, after which ordinary workforce, utility and stock gates still apply');
     assert.equal(commissionedPrivateFactory.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
