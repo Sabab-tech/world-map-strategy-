@@ -113,7 +113,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     page.on('console', message => {
       const text = message.text();
       if (message.type() === 'error') consoleErrors.push(text);
-      if (/^\\[OMEGA_BOOT_FACTORY_INPUT_PERF_/.test(text)) factoryInputPerfLogs.push(text);
+      if (text.startsWith('[OMEGA_BOOT_FACTORY_INPUT_PERF_')) factoryInputPerfLogs.push(text);
     });
     page.on('requestfailed', request => {
       const url = request.url();
