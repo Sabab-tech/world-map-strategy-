@@ -431,12 +431,14 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       const proposalIds = (stateRoot.economy?.BGD?.privateEnterpriseLifecycle?.proposals || []).map(row => row.proposalId);
       const saved = await runtime.saveSlot(slot);
       if (!saved || saved.ok !== true) throw new Error('BROWSER_SAVE_SLOT_FAILED');
+      const localStorageSaveAbsent = window.localStorage.getItem(saved.key) === null;
       stateRoot.simulation[sentinel] = 'IN_MEMORY_TAMPER_AFTER_SAVE';
       const loaded = await runtime.loadSlot(slot);
       const restoredIds = (window.Game.state.economy?.BGD?.privateEnterpriseLifecycle?.proposals || []).map(row => row.proposalId);
       const result = {
         saveOk: saved.ok === true,
         storage: saved.storage || null,
+        localStorageSaveAbsent,
         loadIntegrity: runtime.lastLoadIntegrity,
         sameAuthoritativeRoot: window.Game.state === stateRoot && runtime.world?.state === stateRoot,
         worldStateLinked: loaded?.authoritativeState?.worldStateLinked === true,
@@ -448,7 +450,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       };
       try { window.localStorage.removeItem(saved.key); } catch (_) {}
       if (previousStatus === 'RUNNING' && typeof runtime.resumeSession === 'function') runtime.resumeSession();
-      if (!result.saveOk || result.storage !== 'INDEXEDDB' || result.loadIntegrity !== 'VERIFIED' || !result.sameAuthoritativeRoot ||
+      if (!result.saveOk || result.storage !== 'INDEXEDDB' || !result.localStorageSaveAbsent || result.loadIntegrity !== 'VERIFIED' || !result.sameAuthoritativeRoot ||
           !result.worldStateLinked || !result.sentinelCleared || !result.proposalIdsPreserved) {
         throw new Error('BROWSER_SAVE_LOAD_INTEGRITY_FAILED:' + JSON.stringify(result));
       }
