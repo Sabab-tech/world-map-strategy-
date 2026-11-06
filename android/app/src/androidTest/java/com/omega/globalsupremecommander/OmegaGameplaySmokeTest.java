@@ -238,21 +238,6 @@ public final class OmegaGameplaySmokeTest {
                     "true", evaluate(instrumentation, webViewRef.get(), repeatedUiNavigationScript)
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_REPEATED_BUTTON_NAV_READY");
-            final String finalExitScript =
-                    "(function() {" +
-                    " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var exit = cabinet && cabinet.querySelector('[data-omega-v2-exit]');" +
-                    " if (!exit) return false;" +
-                    " exit.click();" +
-                    " return !!(cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
-                    " document.body.getAttribute('data-active-layer') === '0');" +
-                    "})()";
-            assertEquals(
-                    "UI v2 exit must restore the world map after repeated navigation",
-                    "true", evaluate(instrumentation, webViewRef.get(), finalExitScript)
-            );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_EXITED_TO_MAP");
-
             final String pauseClockScript =
                     "(function() {" +
                     " var lifecycle = window.Omega && window.Omega.GameLifecycle;" +
@@ -340,9 +325,12 @@ public final class OmegaGameplaySmokeTest {
                     " if (!session || session.playerCountryId !== 'USA' || simulation.getPlayerCountryId() !== 'USA') return false;" +
                     " return integration.openRoute('industry') === true;" +
                     "})()";
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_ROUTE_OPEN_BEGIN");
+            final String industryRouteOpened = evaluate(instrumentation, webViewRef.get(), openIndustryRoute);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_ROUTE_OPEN_CALLBACK_RETURNED result=" + industryRouteOpened);
             assertEquals(
                     "The existing Industry route must mount or navigate through the integration entry point for the selected player country",
-                    "true", evaluate(instrumentation, webViewRef.get(), openIndustryRoute)
+                    "true", industryRouteOpened
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_ROUTE_OPENED");
 
@@ -710,6 +698,25 @@ public final class OmegaGameplaySmokeTest {
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=LANDSCAPE_ROTATION_RESTORED metrics=" + restoredLandscape);
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_LINES_NAV_READY p95Ms=" +
                     navigationP95 + " maxMs=" + navigationMax + " nav=" + tabNavigationTiming);
+
+            // Keep the world map renderer parked during the low-memory Industry,
+            // Input, and orientation checks. The repeated-navigation test above still
+            // exercises exit/reopen; this final close confirms map return after all
+            // Industry rendering work has finished.
+            final String finalExitScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var exit = cabinet && cabinet.querySelector('[data-omega-v2-exit]');" +
+                    " if (!exit) return false;" +
+                    " exit.click();" +
+                    " return !!(cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
+                    " document.body.getAttribute('data-active-layer') === '0');" +
+                    "})()";
+            assertEquals(
+                    "UI v2 exit must restore the world map after repeated navigation",
+                    "true", evaluate(instrumentation, webViewRef.get(), finalExitScript)
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_EXITED_TO_MAP");
 
         } finally {
             if (webViewRef.get() != null) {
