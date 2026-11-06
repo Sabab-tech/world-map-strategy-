@@ -181,3 +181,71 @@ Bracketed fields are placeholders, not seeded game facts. Never display sample v
 | One-PR rule | Continue only in PR #408; do not create duplicate/stacked PRs. |
 
 The currently inspected PR head before the latest validator commits had 14/15 Actions successful. Its Android 9 smoke failed because the test still required an enabled Factory Card Manage action; the failure is not evidence that the replacement Lines experience works, and changing only the assertion is not an acceptable fix. Re-run all relevant Actions against the exact new head before reporting results.
+
+## SAB-42 runtime authority audit — Finance, Banking, Trade and Save/Load (2026-11-06)
+
+This is a source audit of the existing PR #408 branch. It is not a claim that company finance or company runtime has been implemented.
+
+### Finance Ministry is the government Treasury authority
+
+Verified from `omega_finance_ministry_runtime_v1.js`:
+
+- Global API: `OmegaFinanceMinistry` / `Omega.FinanceMinistry`.
+- Read interfaces include `init()`, `diagnostics()`, `resolveCountry()`, `getProfiles()`, `getFinanceState(country)`, `getIndicators(country)`, `getBudgetSnapshot(country)` and `getRevenueSnapshot(country)`.
+- `getFinanceState(country)` returns a clone of the country's Finance model. A caller must not mutate that returned clone expecting the game state to change.
+- `applyAction(action)` is player-country-scoped and writes the government's Finance model. Current action contracts cover public tax/policy, reserve target, ministry/sector budget allocation and reallocation, government budget spending, sovereign borrowing and public debt repayment/service.
+- Government expense validation checks the sector's remaining public allocation and the national Treasury balance, and then decrements the government Treasury. Therefore calling `spend-budget` for private-company payroll, materials, capex or freight would incorrectly charge the state.
+- The internal Finance `postLedger` helper assigns transaction IDs using country, turn, revision and ledger length. The generic public expense path does not expose a company-account posting API or a universal caller-supplied idempotency contract.
+
+**Implementation restriction:** do not represent a company's cash as `finance[country].available` or `omegaFinance.treasuryBalanceUsd`; those values belong to national Treasury. Do not call public `spend-budget` on behalf of a company. A future corporate-finance extension must be implemented through the Finance authority itself, with explicit payer/payee account identity, an auditable single journal event, stable idempotency keys, and clear separation between company funds and government subsidy/equity/guarantee exposure.
+
+### Government Banking is a country banking/settlement layer
+
+Verified from `omega_government_banking_runtime_v1.js`:
+
+- It explicitly describes itself as an additive state/account layer while Finance Ministry remains Treasury authority.
+- It reads Treasury through `OmegaFinanceMinistry.getFinanceState()`; the Treasury mirror is `root.finance[country].available`.
+- Its API includes country account summary/policy, `quoteTransfer`, `transfer`, `convert`, `prepareTradeSettlement`, `commitTradeSettlement`, `cancelTradeSettlement`, `getTransaction`, reserved-Treasury checks and reconciliation.
+- It maintains account/settlement ledgers and idempotency records under the government-banking state. Its Treasury-writing path changes the authoritative country Treasury mirror. The separate bank account/transaction record is not an already-existing private-company wallet.
+
+**Implementation restriction:** never use a country USD account or a sovereign Treasury transfer to imply that a private company paid. The company must be an explicit transaction party in an authority that verifies company funds and records the counterparty settlement once. Government guarantees, state loans, grants and equity investments must separately record the government's real fiscal exposure.
+
+### World Bank Lending is sovereign credit, not corporate borrowing
+
+Verified from `omega_world_bank_lending_runtime_v1.js`:
+
+- State is rooted at `Game.state.governmentBanking.worldBankLending`, with country assessments, applications, loans, idempotency records, funding offers/claims and lending history.
+- The API offers country credit assessment, country loans, outstanding balance/principal, debt service, manual repayment and restructuring.
+- It reads Finance/Treasury state and processes country debt on the simulation's committed daily-turn event.
+
+**Implementation restriction:** do not issue a sovereign World Bank loan as though it were a company loan. A corporate commercial-bank loan, bond or FDI record requires a company-level borrower/owner identity, lender/financier, currency, terms, approval and repayment source; it must not silently increase public debt or government cash.
+
+### Global Trade is a two-country settlement pipeline
+
+Verified from `omega_global_trade_system.js`:
+
+- The existing system creates country-to-country import requests and settles through the Government Banking `prepareTradeSettlement` / `commitTradeSettlement` interfaces when available.
+- It coordinates counterpart review, buyer response, Finance debit/credit, resource debit/credit, seller settlement and closing the request. It has recovery logic for an already settled bank transaction so money or stock is not debited twice.
+- The current public request/settlement model uses buyer and seller country identities. It is not proof that a private legal company can act as a separately funded market buyer or seller.
+
+**Implementation restriction:** do not create a company-side import/procurement ledger around the existing national trade settlement. First extend the authoritative trade/finance contracts to represent the company as payer/seller while preserving actual inventory batch movement, one-time settlement, payment recovery and Treasury-only state support.
+
+### Authoritative save/load contract
+
+Verified from `omega_simulation_runtime.js`:
+
+- `Omega.Simulation.saveState()` snapshots the session schema/runtime version, clock, authoritative world state, command queue, event ledger, ministry runtime state, interoperability state and world-engine state; it computes a checksum. Routine callers may omit volatile diagnostics with `includeDiagnostics:false`.
+- `loadState(snapshot)` validates schema version, world state, clock and checksum when present; it validates world-state integrity, restores the authoritative world, clock, commands/events and registered runtime snapshots, and marks checksum-bearing saves `VERIFIED`. Legacy saves without checksums are admitted only as `LEGACY_UNVERIFIED`.
+- `saveSlot(slot)` and `loadSlot(slot)` persist the full snapshot through localStorage under `omega.game.save.<slot>`.
+- The authoritative world root reported by diagnostics is `Game.state`; the snapshot preserves that world state, including new fields placed in it.
+
+**Implementation restriction:** do not add a second company localStorage key, IndexedDB store, or out-of-band company save file. Any future commissioned company, contract, project, financing reference or ownership state must be represented in the canonical `Game.state` schema, validated/migrated additively, and included in save/load integrity tests. The static 197 × 21 opening allocation should remain a static deferred asset and must not be copied into every save as 4,839/6,307 live company assets.
+
+### Finance/save integration gate before company runtime
+
+- [ ] Define an authoritative company account identity that cannot collide with country Treasury or existing bank accounts.
+- [ ] Define one Finance-owned corporate transaction/journal contract for capital, payroll, input purchase, freight, revenue, interest, taxes, dividends, equity and debt; every posting must be idempotent and carry source, payer, payee, currency, amount, turn, related factory/proposal/shipment IDs and audit reference.
+- [ ] Prove public Treasury moves only for explicitly authorized public subsidy, state equity, guarantee call or state/development-bank financing. Ordinary private revenue/cost/debt must not mutate public Treasury or sovereign debt.
+- [ ] Route procurement and sales through the existing Trade/Market plus confirmed inventory-batch/receipt authority; no synthetic supply or revenue.
+- [ ] Add additive world-save schema validation/migration and prove save → reload → transaction replay does not duplicate balances, shipments, receipts, sales, taxes or dividends.
+- [ ] Keep all finance simulation selected-country/turn scoped. No all-country company-account processing or per-frame finance updates.
