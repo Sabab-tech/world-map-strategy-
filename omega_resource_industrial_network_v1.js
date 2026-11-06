@@ -3562,7 +3562,7 @@ function advanceProjects(c){
         privateCommissionedStatus:isPrivateFactory?commissionedStatus:null,
         productionEnabled:isPrivateFactory?false:undefined,
         productionStatus:isPrivateFactory?'STRATEGIC_SUPPLY_PIPELINE_PROOF_REQUIRED':undefined,
-        blockedReason:isPrivateFactory?'SAB34_PIPELINE_PROOF_REQUIRED':null,
+        blockedReason:isPrivateFactory?'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE':null,
         privatePermitId:p.privatePermitId||null,privatePermitStatus:p.privatePermitStatus||null,
         privatePermitAuthority:p.privatePermitAuthority||null,permitExpiryTurn:p.permitExpiryTurn??null,
         sourcePrivateProposalId:p.sourcePrivateProposalId||null,sourcePrivateDecisionId:p.sourcePrivateDecisionId||null,
@@ -3920,12 +3920,12 @@ function factoryOperationGate(countryId,asset,employmentSnapshot){
     if(!lifecycle||typeof lifecycle.productionProofReady!=='function'||
        typeof lifecycle.refreshCommissionedProductionGate!=='function'||!lifecycle.productionProofReady()){
       asset.productionEnabled=false;
-      asset.blockedReason='SAB34_PIPELINE_PROOF_REQUIRED';
+      asset.blockedReason='PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE';
       if(String(asset.status||'').toUpperCase()!=='DECOMMISSIONED'&&String(asset.status||'').toUpperCase()!=='DESTROYED')
         asset.status='BLOCKED';
-      return{status:'BLOCKED',reason:'SAB34_PIPELINE_PROOF_REQUIRED',factoryId,authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',factoryId,authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
     }
-    if(asset.blockedReason==='SAB34_PIPELINE_PROOF_REQUIRED'||asset.productionEnabled!==true){
+    if(asset.blockedReason==='PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE'||asset.productionEnabled!==true){
       const refreshed=lifecycle.refreshCommissionedProductionGate(cid,factoryId);
       if(!refreshed||!['READY','PARTIALLY_READY'].includes(refreshed.status))
         return{status:'BLOCKED',reason:refreshed?.reason||'PRIVATE_FACTORY_AUTHORIZATION_NOT_VERIFIED',factoryId,detail:clone(refreshed||{})};
