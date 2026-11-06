@@ -242,6 +242,55 @@ test('export settlement replay is idempotent across company flows, Treasury clea
   assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,clearingAfterFirst);
   assert.ok(commandCollisions.some(x=>x.reason==='COMMAND_ID_COLLISION'),'same stable command ID with a changed payload must raise a persisted-command integrity collision');
 });
+test('finished-goods material ownership follows explicit owner, never operator or legacy companyId',async()=>{
+  const {context,worldState}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+
+  context.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_PROCESSING_COMPLETED',{
+    detail:{payload:{
+      countryId:'BGD',transactionId:'FACTORYRUN:BGD:OWNER-OPERATOR-1:T1:1',
+      factoryId:'OWNER-OPERATOR-1',companyId:'PROCESS_OPERATOR_CO',
+      ownerCompanyId:'FACTORY_OWNER_CO',operatorCompanyId:'PROCESS_OPERATOR_CO',
+      ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',outputQuantities:{iron_intermediate:25},createdBatchIds:['OUTPUT-1']
+    }}
+  }));
+  assert.equal(worldState.economy.BGD.industrialRuntime.materialOwners.iron_intermediate,'FACTORY_OWNER_CO',
+    'only the explicit asset owner owns the finished product and export material attribution');
+  assert.notEqual(worldState.economy.BGD.industrialRuntime.materialOwners.iron_intermediate,'PROCESS_OPERATOR_CO');
+
+  context.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_PROCESSING_COMPLETED',{
+    detail:{payload:{
+      countryId:'BGD',transactionId:'FACTORYRUN:BGD:LEGACY-OWNER:T1:2',
+      factoryId:'LEGACY-OWNER',companyId:'LEGACY_OPERATOR_CO',
+      ownerCompanyId:'LEGACY_COMPANY_CO',operatorCompanyId:'LEGACY_OPERATOR_CO',
+      ownerAttributionStatus:'LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED',
+      outputQuantities:{unclassified_intermediate:10}
+    }}
+  }));
+  assert.equal(worldState.economy.BGD.industrialRuntime.materialOwners.unclassified_intermediate,undefined,
+    'a legacy companyId must not be promoted into legal finished-goods ownership');
+});
+test('finished-goods economy ledger preserves owner and operator as separate parties',async()=>{
+  const {context,worldState}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  context.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',{
+    detail:{payload:{
+      countryId:'BGD',transactionId:'FINISHED-OWNER-OPERATOR-1',factoryId:'OWNER-OPERATOR-1',
+      companyId:'PROCESS_OPERATOR_CO',ownerCompanyId:'FACTORY_OWNER_CO',
+      operatorCompanyId:'PROCESS_OPERATOR_CO',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+      outputQuantities:{iron_intermediate:25},sourceBatchIds:['SOURCE-1'],createdBatchIds:['OUTPUT-1'],
+      authority:'SIMULATED_DOWNSTREAM_PRODUCTION',status:'AVAILABLE'
+    }}
+  }));
+  const row=worldState.economy.BGD.industrialRuntime.finishedGoodsLedger.find(x=>x.transactionId==='FINISHED-OWNER-OPERATOR-1');
+  assert.ok(row);
+  assert.equal(row.companyId,'PROCESS_OPERATOR_CO');
+  assert.equal(row.ownerCompanyId,'FACTORY_OWNER_CO');
+  assert.equal(row.operatorCompanyId,'PROCESS_OPERATOR_CO');
+  assert.equal(row.ownerAttributionStatus,'EXPLICIT_ASSET_OWNER');
+});
 test('resource economy v2 completes mine-backed processing, domestic settlement and treasury receipt flow', async()=>{
   const {context,worldState}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
