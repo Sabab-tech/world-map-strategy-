@@ -253,6 +253,43 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   assert.equal(h.state.economy.BGD.productionAssets.length,1);
 });
 
+test('construction retry reconciles a canonical project created before proposal and CAPEX pointers were saved',()=>{
+  const h=makeHarness(),api=h.api;
+  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
+  const approval=api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
+    allowStateSupport:true,conditions:{allowStateSupport:true}});
+  assert.equal(approval.status,'APPROVED_AWAITING_FUNDING');
+  assert.equal(api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,
+    sourceType:'GOVERNMENT_GRANT',amount:100}).status,'FUNDED');
+  setReadyIronSupply(h,600);
+  const p=api.getProposal('BGD',proposal.proposalId);
+  const orphan=h.network.startFactoryProject({
+    countryId:'BGD',factoryType:p.factoryType,recipeId:p.recipeId,requestId:p.proposalId+':UNIT:1',
+    cost:100,capacityPerDay:10,contractorType:'DOMESTIC_EPC',companyId:COMPANY,
+    ownerCompanyId:COMPANY,ownerId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    operatorId:'MERIDIAN_ENGINEERING_GROUP',ownerType:'PRIVATE_ENTERPRISE',operatorType:'PRIVATE_COMPANY_OPERATOR',
+    stateControlRights:p.ownership.stateControlRights,permitId:p.permit.permitId,permitAuthority:p.permit.authority,
+    permitExpiryTurn:p.permit.expiresAtTurn,sourcePrivateProposalId:p.proposalId,
+    sourcePrivateDecisionId:p.decision.decisionId,sourcePrivateFundingId:p.funding.transactionId,
+    privateCompanyId:COMPANY,constructionFinanceAuthority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL',
+    requirePrivateCommissioningGate:true
+  });
+  assert.equal(orphan.status,'UNDER_CONSTRUCTION');
+  assert.deepEqual(p.projectIds,[],'the simulated interruption occurs before the proposal pointer is saved');
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].reservedBalance,100);
+  assert.equal(h.state.finance.BGD.omegaFinance.ledger.some(row=>row.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX'),false);
+  const resumed=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+  assert.equal(resumed.status,'UNDER_CONSTRUCTION',JSON.stringify(resumed));
+  assert.deepEqual(api.getProposal('BGD',proposal.proposalId).projectIds,[orphan.projectId]);
+  assert.equal(h.projects.length,1,'retry must reuse the canonical project rather than create a second factory');
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].reservedBalance,0);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].capitalSpent,100);
+  assert.equal(h.state.finance.BGD.omegaFinance.ledger.filter(row=>
+    row.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX'&&row.projectId===orphan.projectId&&row.status==='POSTED').length,1);
+  assert.equal(api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId}).status,'DUPLICATE');
+});
+
 test('company funding reservations prevent two proposals from pledging the same cash',()=>{
   const h=makeHarness(),api=h.api;
   h.state.finance.BGD.omegaFinance.ledger.push({transactionId:'BANK-CAPITAL-100',type:'CORPORATE_EQUITY_INVESTMENT',
