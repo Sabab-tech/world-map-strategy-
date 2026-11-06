@@ -89,6 +89,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
   let browser;
   const pageErrors = [];
   const consoleErrors = [];
+  const factoryInputPerfLogs = [];
   const blockedExternalRequests = [];
   const navigationLatencyMs = [];
   const metrics = { origin: server.origin, browser: 'Chromium', viewportRuns: [], navigationLatencyMs };
@@ -110,7 +111,9 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     page.setDefaultTimeout(15000);
     page.on('pageerror', error => pageErrors.push(String(error && error.stack || error)));
     page.on('console', message => {
-      if (message.type() === 'error') consoleErrors.push(message.text());
+      const text = message.text();
+      if (message.type() === 'error') consoleErrors.push(text);
+      if (/^\\[OMEGA_BOOT_FACTORY_INPUT_PERF_/.test(text)) factoryInputPerfLogs.push(text);
     });
     page.on('requestfailed', request => {
       const url = request.url();
@@ -588,7 +591,8 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     });
     if (metrics.runtime.longTaskObserverSupported) {
       assert.ok(metrics.runtime.maxLongTaskMs <= 1000,
-        'no sustained UI long task may exceed 1000ms; metrics=' + JSON.stringify(metrics.runtime));
+        'no sustained UI long task may exceed 1000ms; metrics=' + JSON.stringify(metrics.runtime) +
+        '; factoryInputPerf=' + JSON.stringify(factoryInputPerfLogs));
     }
     if (metrics.runtime.heapBeforeBytes && metrics.runtime.usedHeapBytes) {
       assert.ok(metrics.runtime.usedHeapBytes - metrics.runtime.heapBeforeBytes <= 64 * 1024 * 1024,
@@ -597,6 +601,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
 
     metrics.pageErrors = pageErrors.slice();
     metrics.consoleErrors = consoleErrors.slice();
+    metrics.factoryInputPerfLogs = factoryInputPerfLogs.slice();
     metrics.blockedExternalRequests = blockedExternalRequests.length;
     const fatalConsoleErrors = consoleErrors.filter(message =>
       !/net::ERR_BLOCKED_BY_CLIENT|blockedbyclient/i.test(message)
@@ -613,6 +618,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     metrics.failure = String(error && error.stack || error);
     metrics.pageErrors = pageErrors;
     metrics.consoleErrors = consoleErrors;
+    metrics.factoryInputPerfLogs = factoryInputPerfLogs.slice();
     metrics.blockedExternalRequests = blockedExternalRequests.length;
     fs.writeFileSync(path.join(artifacts, 'omega-private-enterprise-browser-failure.json'), JSON.stringify(metrics, null, 2));
     throw error;
