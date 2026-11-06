@@ -49,6 +49,11 @@ function makeHarness(){
     },
     startFactoryProject(input){
       if(network.failRequestId===input.requestId)return{status:'BLOCKED',reason:'TEST_PROJECT_REJECTED'};
+      if(String(input.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE'){
+        const authorization=sandbox.OmegaPrivateEnterpriseLifecycleV1?.authorizeFactoryProjectConstruction?.(input);
+        if(authorization?.status!=='AUTHORIZED')
+          return{status:'BLOCKED',reason:authorization?.reason||'PRIVATE_FACTORY_CONSTRUCTION_AUTHORIZATION_REQUIRED',authorization};
+      }
       const project={
         projectId:'FACTORY:BGD:'+input.factoryType+':'+input.requestId,
         factoryId:'FAC:BGD:'+input.factoryType+':'+input.requestId,
@@ -98,6 +103,15 @@ function makeHarness(){
   return{state,network,projects,handlers,api:sandbox.OmegaPrivateEnterpriseLifecycleV1,sandbox};
 }
 function emit(harness,type,detail){(harness.handlers.get(type)||[]).forEach(fn=>fn({type,detail}));}
+function setReadyIronSupply(harness,amount=1000){
+  const resource=harness.state.resource.BGD,turn=Number(harness.state.simulation.turn)||0;
+  resource.inventory.iron_ore=amount;
+  resource.warehouse.availableByResource.iron_ore=amount;
+  resource.warehouse.reservedByResource.iron_ore=0;
+  resource.demandRuntime={lastTurn:turn,byResource:{iron_ore:{
+    demandPerDay:0,consumerDemandPerDay:0,activeFactoryInputDemandPerDay:0,pendingImportQuantity:0
+  }}};
+}
 
 test('autonomous company proposals are deterministic, once per 30 turns, and have no asset/stock/cash side effects',()=>{
   const h=makeHarness(),beforeInventory=JSON.stringify(h.state.resource.BGD.inventory);
@@ -177,11 +191,19 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   const funding=api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,sourceType:'GOVERNMENT_GRANT',amount:100});
   assert.equal(funding.status,'FUNDED');
   assert.equal(h.state.finance.BGD.available,900);
-  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,100);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,0);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].reservedBalance,100);
   assert.equal(h.state.finance.BGD.omegaFinance.ledger.filter(x=>x.type==='PRIVATE_ENTERPRISE_GOVERNMENT_GRANT').length,1);
   assert.equal(api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,sourceType:'GOVERNMENT_GRANT',amount:100}).status,'DUPLICATE');
   assert.equal(h.state.finance.BGD.available,900);
 
+  const beforeReceipt=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+  assert.equal(beforeReceipt.status,'BLOCKED');
+  assert.equal(beforeReceipt.reason,'FACTORY_INPUT_STOCK_SHORTAGE');
+  assert.equal(h.projects.length,0,'import-sourced proposal cannot build before imported inputs physically arrive');
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].reservedBalance,100,
+    'failed preflight must not release or spend reserved capital');
+  setReadyIronSupply(h,600); // represents the paid import received into both authoritative stock ledgers
   const build=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
   assert.equal(build.status,'UNDER_CONSTRUCTION');
   assert.equal(build.started.length,1);
@@ -191,6 +213,7 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   assert.equal(h.projects[0].operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
   assert.equal(h.projects[0].permitId,decision.proposal.permit.permitId);
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,0);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].reservedBalance,0);
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].capitalSpent,100);
   assert.equal(h.state.economy.BGD.companyAccounts,undefined,'legacy company flow tracker is not treated as a cash wallet');
 
@@ -217,7 +240,7 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   assert.equal(api.diagnostics().productionEnabled,false);
 
   h.sandbox.OmegaPrivateEnterprisePipelineProof={status:'VERIFIED',siteSelection:true,extraction:true,
-    logisticsReceipt:true,factoryInput:true,finishedGoods:true,saveLoad:true,exactMainSha:'abcdef1234567'};
+    logisticsReceipt:true,factoryInput:true,finishedGoods:true,saveLoad:true,exactMainSha:'a'.repeat(40)};
   const gate=api.refreshCommissionedProductionGate('BGD',project.factoryId);
   assert.equal(gate.status,'READY');
   assert.equal(asset.status,'OPERATIONAL');
@@ -226,6 +249,77 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   assert.equal(api.getProposal('BGD',proposal.proposalId).status,'COMMISSIONED');
   assert.equal(api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId}).status,'DUPLICATE');
   assert.equal(h.state.economy.BGD.productionAssets.length,1);
+});
+
+test('company funding reservations prevent two proposals from pledging the same cash',()=>{
+  const h=makeHarness(),api=h.api;
+  h.state.finance.BGD.omegaFinance.ledger.push({transactionId:'BANK-CAPITAL-100',type:'CORPORATE_EQUITY_INVESTMENT',
+    companyId:COMPANY,amount:100,currency:'GAME_CURRENCY_UNITS',direction:'CREDIT',status:'SETTLED'});
+  assert.equal(api.recordCompanyCapitalReceipt({countryId:'BGD',companyId:COMPANY,sourceTransactionId:'BANK-CAPITAL-100',
+    amount:100,currency:'GAME_CURRENCY_UNITS'}).status,'POSTED');
+  const one=api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'});
+  const two=api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'});
+  assert.equal(api.decideProposal({countryId:'BGD',proposalId:one.proposalId,decision:'APPROVE'}).status,'APPROVED_AWAITING_FUNDING');
+  assert.equal(api.decideProposal({countryId:'BGD',proposalId:two.proposalId,decision:'APPROVE'}).status,'APPROVED_AWAITING_FUNDING');
+  assert.equal(api.fundProposal({countryId:'BGD',proposalId:one.proposalId,sourceType:'COMPANY_CAPITAL',amount:100}).status,'FUNDED');
+  const account=api.getCompanyCapitalSummary('BGD',COMPANY);
+  assert.equal(account.availableBalance,0);
+  assert.equal(account.reservedBalance,100);
+  const rejected=api.fundProposal({countryId:'BGD',proposalId:two.proposalId,sourceType:'COMPANY_CAPITAL',amount:100});
+  assert.equal(rejected.status,'BLOCKED');
+  assert.equal(rejected.reason,'INSUFFICIENT_UNRESERVED_COMPANY_CAPITAL');
+  assert.equal(api.getCompanyCapitalSummary('BGD',COMPANY).reservedBalance,100);
+  assert.equal(h.projects.length,0);
+});
+
+test('construction rechecks fresh input and demand snapshots for every sourcing mode',()=>{
+  const h=makeHarness(),api=h.api;
+  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+    sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
+  assert.equal(api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
+    allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
+  assert.equal(api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,sourceType:'GOVERNMENT_GRANT',amount:100}).status,'FUNDED');
+  setReadyIronSupply(h,600);
+  h.state.simulation.turn++;
+  const stale=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+  assert.equal(stale.status,'BLOCKED');
+  assert.equal(stale.reason,'FACTORY_INPUT_STOCK_OR_DEMAND_UNOBSERVED');
+  assert.equal(h.projects.length,0);
+  assert.equal(api.getCompanyCapitalSummary('BGD',COMPANY).reservedBalance,100);
+});
+
+test('factory construction authorization rejects forged identity, scope, permit and unit request',()=>{
+  const h=makeHarness(),api=h.api;
+  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
+  assert.equal(api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
+    allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
+  assert.equal(api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,sourceType:'GOVERNMENT_GRANT',amount:100}).status,'FUNDED');
+  const p=api.getProposal('BGD',proposal.proposalId);
+  const request={
+    countryId:'BGD',requestId:p.proposalId+':UNIT:1',factoryType:p.factoryType,
+    ownerCompanyId:p.companyId,operatorCompanyId:p.operatorCompanyId,companyId:p.companyId,privateCompanyId:p.companyId,
+    ownerType:'PRIVATE_ENTERPRISE',operatorType:'PRIVATE_COMPANY_OPERATOR',stateControlRights:p.stateControlRights,
+    requirePrivateCommissioningGate:true,permitId:p.permit.permitId,permitAuthority:p.permit.authority,
+    permitExpiryTurn:p.permit.expiresAtTurn,sourcePrivateProposalId:p.proposalId,
+    sourcePrivateDecisionId:p.decision.decisionId,sourcePrivateFundingId:p.funding.transactionId,
+    constructionFinanceAuthority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL',cost:100
+  };
+  assert.equal(api.authorizeFactoryProjectConstruction({...request,ownerCompanyId:'STATE_INDUSTRY_BGD'}).status,'BLOCKED');
+  assert.equal(api.authorizeFactoryProjectConstruction({...request,permitId:'FORGED'}).status,'BLOCKED');
+  assert.equal(api.authorizeFactoryProjectConstruction({...request,requestId:p.proposalId+':UNIT:2'}).status,'BLOCKED');
+  assert.equal(api.authorizeFactoryProjectConstruction({...request,sourcePrivateFundingId:'FORGED'}).status,'BLOCKED');
+  assert.equal(api.authorizeFactoryProjectConstruction(request).status,'AUTHORIZED');
+  assert.equal(h.projects.length,0,'authorization validation itself cannot create a project');
+});
+
+test('private production proof requires a full exact 40-character commit SHA',()=>{
+  const h=makeHarness(),api=h.api;
+  h.sandbox.OmegaPrivateEnterprisePipelineProof={status:'VERIFIED',siteSelection:true,extraction:true,
+    logisticsReceipt:true,factoryInput:true,finishedGoods:true,saveLoad:true,exactMainSha:'abcdef1234567'};
+  assert.equal(api.productionProofReady(),false);
+  h.sandbox.OmegaPrivateEnterprisePipelineProof.exactMainSha='b'.repeat(40);
+  assert.equal(api.productionProofReady(),true);
 });
 
 test('domestic-only approval fails closed on a measured shortage or unobserved stock',()=>{
@@ -293,12 +387,16 @@ test('partial construction resumes remaining units without duplicate project or 
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
   assert.equal(api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,sourceType:'GOVERNMENT_GRANT',amount:200}).status,'FUNDED');
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,0);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].reservedBalance,200);
+  setReadyIronSupply(h,1200);
   h.network.failRequestId=proposal.proposalId+':UNIT:2';
   const first=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
   assert.equal(first.status,'PARTIALLY_UNDER_CONSTRUCTION');
   assert.equal(first.proposal.projectIds.length,1);
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].capitalSpent,100);
-  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,100);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,0);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].reservedBalance,100);
   assert.equal(h.state.finance.BGD.omegaFinance.ledger.filter(x=>x.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX').length,1);
 
   h.network.failRequestId=null;
@@ -308,6 +406,7 @@ test('partial construction resumes remaining units without duplicate project or 
   assert.equal(h.projects.length,2);
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].capitalSpent,200);
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,0);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].reservedBalance,0);
   assert.equal(h.state.finance.BGD.omegaFinance.ledger.filter(x=>x.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX').length,2);
   assert.equal(api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId}).status,'DUPLICATE');
   assert.equal(h.projects.length,2);
@@ -318,10 +417,11 @@ test('an expired government permit cannot start construction after funding',()=>
   const proposal=h.api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
     sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
   const approval=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
-    allowStateSupport:true,expiryTurn:3,conditions:{allowStateSupport:true}});
+    allowStateSupport:true,expiryTurn:5,conditions:{allowStateSupport:true}});
   assert.equal(approval.status,'APPROVED_AWAITING_FUNDING');
-  assert.equal(approval.proposal.permit.expiresAtTurn,3);
+  assert.equal(approval.proposal.permit.expiresAtTurn,5);
   assert.equal(h.api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,sourceType:'GOVERNMENT_GRANT',amount:100}).status,'FUNDED');
+  h.state.simulation.turn=6;
   const blocked=h.api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
   assert.equal(blocked.status,'BLOCKED');
   assert.equal(blocked.reason,'GOVERNMENT_PERMIT_EXPIRED');
