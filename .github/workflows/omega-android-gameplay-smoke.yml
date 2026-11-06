@@ -20,6 +20,7 @@ on:
       - "map-engine-1.js"
       - "map-engine-2.js"
       - "test/**"
+      - "scripts/omega_android9_offline_gameplay_smoke.sh"
   push:
     branches: [ main ]
     paths:
@@ -37,6 +38,7 @@ on:
       - "omega_ui_system_redesign_v1.js"
       - "map-engine-1.js"
       - "map-engine-2.js"
+      - "scripts/omega_android9_offline_gameplay_smoke.sh"
 
 permissions:
   contents: read
