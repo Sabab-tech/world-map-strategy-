@@ -206,6 +206,8 @@ assert.equal(none.reason,'NO_MATCHING_FACTORY');
 context.Game.state.economy.BGD.productionAssets.push({
   id:'FAC-COAL-PREP',countryId:'BGD',stage:'PROCESSING',factoryType:'COAL_PREPARATION_PLANT',
   capacity:1000,inputCoefficients:{coal:1},outputProfile:{COAL_CONCENTRATE:.82,COAL_REJECT:.18},
+  ownerCompanyId:'COAL_FACTORY_OWNER',ownerType:'PRIVATE_ENTERPRISE',
+  operatorCompanyId:'COAL_FACTORY_OPERATOR',operatorType:'PRIVATE_OPERATOR',companyId:'LEGACY_FACTORY_COMPANY_LABEL',
   transportAccess:['rail','road'],locationNodeKey:'INDUSTRIAL_ZONE:BGD'
 });
 
@@ -274,6 +276,18 @@ assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResou
 assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_REJECT,180);
 assert.ok(context.Game.state.resource.BGD.batches.some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_CONCENTRATE'));
 assert.ok(Object.values(context.Game.state.resource.BGD.inventoryLots).some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_REJECT'));
+const coalFinishedBatch=context.Game.state.resource.BGD.batches.find(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_CONCENTRATE');
+assert.ok(coalFinishedBatch);
+assert.equal(coalFinishedBatch.ownerCompanyId,'COAL_FACTORY_OWNER',
+  'finished-goods inventory ownership must follow the explicit asset owner, not the operator');
+assert.equal(coalFinishedBatch.operatorCompanyId,'COAL_FACTORY_OPERATOR');
+assert.equal(coalFinishedBatch.ownerAttributionStatus,'EXPLICIT_ASSET_OWNER');
+const coalFactoryRecord=context.Game.state.resource.BGD.industrialNetwork.factoryRuntime['FAC-COAL-PREP'];
+assert.equal(coalFactoryRecord.companyId,'COAL_FACTORY_OPERATOR',
+  'production transaction companyId must stay with the operator for operating expenses');
+assert.equal(coalFactoryRecord.ownerCompanyId,'COAL_FACTORY_OWNER');
+assert.equal(coalFactoryRecord.operatorCompanyId,'COAL_FACTORY_OPERATOR');
+assert.equal(coalFactoryRecord.ownerAttributionStatus,'EXPLICIT_ASSET_OWNER');
 assert.equal(factory.inputBatchLots.reduce((sum,x)=>sum+(Number(x.remainingQuantity)||0),0),4000);
 
 const factoryBuildProfile=catalog.factoryProfiles.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT
