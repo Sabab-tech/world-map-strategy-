@@ -225,6 +225,10 @@ test("browser shell resources are cached locally for offline relaunch", () => {
     'browser Service Worker updates must not reuse stale HTTP-cached worker scripts');
   const coreAssets = serviceWorker.match(/const CORE_ASSETS = \[([\s\S]*?)\];/);
   assert.ok(coreAssets, 'the offline shell must expose an explicit core asset manifest');
+  const requiredFactoryAssets = serviceWorker.match(/const REQUIRED_FACTORY_INPUT_ASSETS = \[([\s\S]*?)\];/);
+  assert.ok(requiredFactoryAssets, 'the Service Worker must verify required Factory Input assets before activating');
+  assert.match(serviceWorker, /OMEGA_FACTORY_INPUT_OFFLINE_CORE_INCOMPLETE/,
+    'the Service Worker must keep the previous cache active if a required Factory Input asset is missing');
   for (const asset of [
     'omega_resource_logistics_runtime_v1.js',
     'omega_resource_economy_runtime_v2.js',
