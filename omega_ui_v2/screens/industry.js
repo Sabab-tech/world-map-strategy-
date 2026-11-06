@@ -856,6 +856,16 @@
       }
       factoryTypeCountsIndex[typeKey].count += 1;
     });
+    // Pre-index non-baseline commissioned assets once. The old per-category filter
+    // rescanned the full productionAssets array 21 times during every Industry render,
+    // which made low-memory Android WebViews spend seconds in synchronous JS work.
+    var nonBaselineActiveCountsByType = Object.create(null);
+    mappedAssets.forEach(function (factory) {
+      if (String(factory.raw && factory.raw.sourceType || '').toUpperCase() === 'COUNTRY_STARTING_FACTORY_BASELINE') return;
+      var key = normalizeFactoryType(factory.type || '', catalog);
+      if (!key) return;
+      nonBaselineActiveCountsByType[key] = (Number(nonBaselineActiveCountsByType[key]) || 0) + 1;
+    });
     // The baseline runtime already owns the country's factory counts. Use it only
     // to restore card display when starting asset records are absent. Once the
     // live registry is registered, the live asset count always wins.
@@ -866,10 +876,7 @@
         if (!typeKey) return;
         var liveCount = Number(liveFactoryCounts[typeKey]);
         if (!Number.isFinite(liveCount) || liveCount < 0) liveCount = 0;
-        var nonBaselineActiveCount = mappedAssets.filter(function (factory) {
-          return normalizeFactoryType(factory.type || '', catalog) === typeKey &&
-            String(factory.raw && factory.raw.sourceType || '').toUpperCase() !== 'COUNTRY_STARTING_FACTORY_BASELINE';
-        }).length;
+        var nonBaselineActiveCount = Number(nonBaselineActiveCountsByType[typeKey]) || 0;
         // The country baseline is the common factory count. Add completed
         // player builds, but never let missing baseline records hide the count.
         var count = factoryStartingRegistry.runtimeRegistered === true
