@@ -3476,12 +3476,11 @@ function startFactoryProject(input={}){
     sourcePrivateFundingId:privateOwnership?String(input.sourcePrivateFundingId||''):null,
     privateCompanyId:privateOwnership?privateOwnerCompanyId:null,
     requirePrivateCommissioningGate:privateOwnership?true:false,
-    stateControlRights:privateOwnership?{
-      strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
-      labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,domesticSupplyDirection:true,
-      exportControl:true,publicProcurement:true,strategicContracts:true,operationalControl:'STATE_POLICY_ONLY',
-      authority:'OMEGA_STATE_CONTROL_RIGHTS_V1',simulationOnly:true
-    }:{
+    // Preserve the complete rights record already authorized by the private
+    // enterprise lifecycle. Rebuilding a shorter local object silently dropped
+    // strategicSupplyOversight and foreignOwnershipReview, which prevented a
+    // correctly funded and permitted project from passing commissioning.
+    stateControlRights:privateOwnership?clone(input.stateControlRights||{}):{
       strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
       labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,operationalControl:'STATE_OPERATOR',
       authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',simulationOnly:true
