@@ -1454,11 +1454,21 @@
         currency=statement.currency||'GAME_CURRENCY_UNITS';
       function amount(value){return value===null||value===undefined?'Not recorded':Number(value).toLocaleString('en-US',{maximumFractionDigits:2})+' '+currency;}
       var taxLabel=period?'Cash-basis tax '+amount(period.corporateTaxPaid)+' at '+(period.corporateTaxRate*100).toFixed(2)+'%':'Not assessed: close a journalled cash-flow period first';
+      var journalWarning=(statement.journal.droppedEntryCount||0)>0?
+        'Tax close blocked when this open period contains pruned entries ('+statement.journal.droppedEntryCount+' dropped).':'';
       return'<article class="pe-proposal"><header><strong>'+escapeHtml(statement.companyName||companyId)+'</strong><span>'+escapeHtml(statement.journal.status)+'</span></header>'+
-        '<div class="pe-facts"><span>Recorded receipts <b>'+amount(statement.grossRevenue)+'</b></span><span>Recorded payments <b>'+amount(statement.paymentsMade)+'</b></span>'+
-        '<span>Net cash flow <b>'+amount(statement.runtimeNetCashFlow)+'</b></span><span>Factory CAPEX <b>'+amount(statement.constructionCapex.amount)+'</b></span>'+
-        '<span>Retained earnings <b>'+amount(statement.capital.retainedEarningsBalance)+'</b></span><span>Tax status <b>'+escapeHtml(taxLabel)+'</b></span></div>'+
-        '<p class="pe-footnote">Profit is cash-basis simulation accounting. Unobserved inventory valuation, depreciation and missing production costs are not treated as zero.</p>'+
+        '<div class="pe-facts"><span>Recorded receipts <b>'+amount(statement.grossRevenue)+'</b></span>'+
+        '<span>Operating costs <b>'+amount(statement.journal.recordedOperatingCosts)+'</b></span>'+
+        '<span>Input materials <b>'+amount(statement.journal.inputMaterialCosts)+'</b></span>'+
+        '<span>Worker costs <b>'+amount(statement.journal.workerCosts)+'</b></span>'+
+        '<span>Transport costs <b>'+amount(statement.journal.transportCosts)+'</b></span>'+
+        '<span>Other recorded costs <b>'+amount(statement.journal.otherRecordedCosts)+'</b></span>'+
+        '<span>Recorded tax payments <b>'+amount(statement.journal.recordedTaxPayments)+'</b></span>'+
+        '<span>Net cash flow <b>'+amount(statement.runtimeNetCashFlow)+'</b></span>'+
+        '<span>Factory CAPEX (separate) <b>'+amount(statement.constructionCapex.amount)+'</b></span>'+
+        '<span>Retained earnings <b>'+amount(statement.capital.retainedEarningsBalance)+'</b></span>'+
+        '<span>Tax status <b>'+escapeHtml(taxLabel)+'</b></span></div>'+
+        '<p class="pe-footnote">Cash-basis simulation only. Unsold inventory valuation, depreciation and unpriced operating services are not silently treated as zero. '+escapeHtml(journalWarning)+'</p>'+
         '<div class="pe-actions"><button type="button" data-pe-action="close-finance" data-pe-company="'+companyId+'">Close cash-flow period / assess profit tax</button></div></article>';
     }).join('');
     var jvDashboard=getJointVentureDashboard(country);
