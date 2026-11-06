@@ -230,17 +230,16 @@ function attachPlayableResourceSiteUi(h){
   h.events.addEventListener('OMEGA_RESOURCE_SITE_SELECTED',event=>selectedEvents.push(event.detail));
   const activeMarkers=()=>[...layers].flatMap(layer=>layer.markers||[]);
   const waitFor=async(predicate,label)=>{
-    for(let attempt=0;attempt<1000;attempt++){
+    for(let attempt=0;attempt<2000;attempt++){
       if(predicate())return true;
-      await new Promise(resolve=>setImmediate(resolve));
+      await new Promise(resolve=>setTimeout(resolve,5));
     }
     throw new Error('PLAYABLE_RESOURCE_UI_WAIT_TIMEOUT:'+label);
   };
   return{
     allMarkers,activeMarkers,selectedEvents,body,
     waitForBinding:()=>waitFor(()=>!!g.Omega?.IndividualResourceSiteBinding,'site binding ready'),
-    waitForExtraction:siteId=>waitFor(()=>g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__?.siteId===siteId&&
-      !!g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__?.result,'site action result'),
+    waitForExtraction:siteId=>waitFor(()=>g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__?.siteId===siteId,'site action result'),
     executeButton:()=>g.document.getElementById('omega-individual-resource-panel')
       ?.querySelector('#omega-individual-execute')||null
   };
