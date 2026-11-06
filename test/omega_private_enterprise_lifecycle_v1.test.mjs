@@ -109,6 +109,8 @@ function setIronDemandSnapshot(harness,demandPerDay=0,consumerDemandPerDay=0,act
   resource.demandRuntime={lastTurn:turn,byResource:{iron_ore:{
     demandPerDay,consumerDemandPerDay,activeFactoryInputDemandPerDay,pendingImportQuantity:0
   }},authority:'TEST_CURRENT_TURN_DEMAND_SNAPSHOT'};
+  assert.equal(Object.keys(resource.demandRuntime.byResource).length,1,'test fixture must persist one demand row before the runtime call');
+  assert.equal(Object.keys(harness.sandbox.Game.state.resource.BGD.demandRuntime.byResource).length,1,'sandbox and state must share canonical demand row');
   return resource.demandRuntime;
 }
 function setReadyIronSupply(harness,amount=1000){
