@@ -489,7 +489,31 @@
     if(!shell||!shell.insertAdjacentHTML)return;
     var country=canonicalCountry(options&&options.countryId||root.__omegaV2IndustryCountryId||playerCountry());
     if(country!==playerCountry())return;
-    var dash=getCountryDashboard(country),types=listFactoryTypes(),baselineRow=baseline(country);
+    var registry=g.OmegaPrivateEnterpriseRegistryV1||(g.Omega&&g.Omega.PrivateEnterpriseRegistryV1);
+    var baselineRow=baseline(country);
+    if(!baselineRow||baselineRow.status!=='READY'){
+      var pendingCountry=root.__omegaPrivateBaselinePendingCountry||'';
+      if(pendingCountry!==country){
+        root.__omegaPrivateBaselinePendingCountry=country;
+        var readiness;
+        try{readiness=registry&&registry.ready;}catch(error){readiness=Promise.reject(error);}
+        Promise.resolve(readiness).then(function(){
+          if(root.__omegaPrivateBaselinePendingCountry!==country)return;
+          root.__omegaPrivateBaselinePendingCountry='';
+          if(root.__omegaV2IndustryTab==='production-lines'){
+            var current=g.OmegaUIV2Industry;
+            if(current&&typeof current.render==='function')current.render(root,Object.assign({},root.__omegaV2IndustryOptions||options||{},{countryId:country,tab:'production-lines'}));
+          }
+        }).catch(function(error){root.__omegaPrivateBaselineError=String(error&&error.message||error);});
+      }
+      var oldPanel=shell.querySelector('[data-omega-private-company-lifecycle]');
+      if(oldPanel&&oldPanel.remove)oldPanel.remove();
+      var loadStatus=registry&&registry.diagnostics?registry.diagnostics():null;
+      var loadMessage=loadStatus&&loadStatus.status==='BLOCKED'?'Private factory baseline unavailable: '+escapeHtml(loadStatus.reason||'DATA_UNAVAILABLE'):'Loading private company opening baseline…';
+      shell.insertAdjacentHTML('beforeend','<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1"><h3>Company expansion proposals</h3><p>'+loadMessage+'</p><p class="pe-footnote">The government and private baseline must load before the proposal approval preview can be calculated.</p></section>');
+      return;
+    }
+    var dash=getCountryDashboard(country),types=listFactoryTypes();
     var capitalByCompany=dash.capitalAccounts||{};
     var companyOptions=COMPANY_IDS.map(function(company){var balance=capitalByCompany[company]&&num(capitalByCompany[company].availableBalance)||0;return'<option value="'+company+'">'+COMPANY_NAMES[company]+' · capital '+balance.toLocaleString('en-US')+'</option>';}).join('');
     var typeOptions=types.map(function(type){return'<option value="'+type.id+'">'+String(type.name).replace(/[&<>"]/g,function(ch){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]);})+'</option>';}).join('');
