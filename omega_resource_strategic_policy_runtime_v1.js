@@ -319,6 +319,11 @@ function commitExportDirectiveTx(ctx,payload){
   contractId=String(p.governmentContractId||'').trim()||null,signature=JSON.stringify(exportTransferSignature(p.batchTransfers));
  if(!c||!destination||!rid||q===null||q<=0)
   return{accepted:false,reason:'STATE_DIRECTIVE_SETTLEMENT_SCOPE_INVALID'};
+ const transfers=Array.isArray(p.batchTransfers)?p.batchTransfers:[];
+ const transferred=transfers.reduce((sum,row)=>sum+Math.max(0,num(row?.quantity)||0),0);
+ if(!transfers.length||Math.abs(transferred-q)>1e-6||
+    transfers.some(row=>tok(row?.resourceId)!==tok(rid)||num(row?.quantity)===null||num(row?.quantity)<=0))
+  return{accepted:false,reason:'STATE_DIRECTIVE_BATCH_TRANSFER_SCOPE_INVALID',requested:q,transferred};
  if(prior){
   const same=String(prior.resourceId||'')===rid&&Math.abs((num(prior.quantity)||0)-q)<1e-7&&
    country(prior.destinationCountryId)===destination&&String(prior.governmentContractId||'')===(contractId||'')&&
@@ -348,8 +353,11 @@ function governmentProcurementTx(cmd,ctx){
  const procurements=Array.isArray(priorLedger)?clone(priorLedger):[];
  const prior=procurements.find(x=>String(x.procurementId||'')===procurementId);
  if(prior){
+  const requestedBatchIds=Array.isArray(p.batchIds)?p.batchIds.map(String).sort():[];
+  const recordedBatchIds=Array.isArray(prior.requestBatchIds)?prior.requestBatchIds.map(String).sort():[];
   const same=prior.policyId===policyId&&prior.companyId===companyId&&prior.resourceId===rid&&
-    Math.abs((num(prior.quantity)||0)-q)<1e-7&&Math.abs((num(prior.totalValue)||0)-total)<1e-7;
+    Math.abs((num(prior.quantity)||0)-q)<1e-7&&Math.abs((num(prior.totalValue)||0)-total)<1e-7&&
+    JSON.stringify(recordedBatchIds)===JSON.stringify(requestedBatchIds);
   return same?{accepted:true,duplicate:true,procurement:prior}:{accepted:false,reason:'GOVERNMENT_PROCUREMENT_IDEMPOTENCY_COLLISION'};
  }
  const policies=supplyDirectiveRows(c,rid),policy=policies.find(x=>x.policyId===policyId&&x.directive==='GOVERNMENT_PROCUREMENT'&&
