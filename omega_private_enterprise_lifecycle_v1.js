@@ -206,6 +206,17 @@
       authority:'EXISTING_INDUSTRIAL_NETWORK_UTILITY_AND_EMPLOYMENT_DIAGNOSTICS',simulationOnly:true
     };
   }
+  function maximumDomesticQuantity(inputs,profile,limit){
+    var max=Math.max(0,Math.floor(num(limit)||0)),capacity=num(profile&&profile.defaultCapacityPerDay);
+    if(capacity===null||capacity<=0||!Array.isArray(inputs)||!inputs.length)return{quantity:0,status:'UNOBSERVED',reason:'CANONICAL_RECIPE_INPUT_RATE_UNAVAILABLE'};
+    for(var i=0;i<inputs.length;i++){
+      var row=inputs[i];
+      if(row.available===null||row.nationalDemandPerDay===null)return{quantity:null,status:'UNOBSERVED',resourceId:row.resourceId};
+      var perFactory=Math.max(0,num(row.perUnit)||0)*capacity*30;
+      if(perFactory>0)max=Math.min(max,Math.floor((Math.max(0,num(row.available)||0)+1e-9)/perFactory));
+    }
+    return{quantity:max,status:'MEASURED',horizonDays:30};
+  }
   function previewFor(proposal){
     var cid=proposal.countryId,base=baseline(cid),c=catalog()||{},profile=c.factoryProfiles&&c.factoryProfiles[proposal.factoryType],recipe=recipeFor(proposal.factoryType,profile);
     if(!base||base.status!=='READY')return{status:'BLOCKED',reason:'PRIVATE_AND_GOVERNMENT_BASELINES_NOT_READY'};
@@ -219,6 +230,7 @@
     var deficits=inputs.filter(function(x){return x.shortfall!==null&&x.shortfall>1e-9;});
     var unobserved=inputs.filter(function(x){return x.available===null||x.nationalDemandPerDay===null;});
     var operationalReadiness=operationalCapacityPreview(cid,profile,proposal.quantity);
+    var safeDomestic=maximumDomesticQuantity(inputs,profile,maxAdditional);
     var capacity=profile.defaultCapacityPerDay===undefined?null:num(profile.defaultCapacityPerDay)*proposal.quantity;
     var constructionQuote=null;
     try{var n=network();if(n&&typeof n.factoryConstructionMaterialQuote==='function')constructionQuote=n.factoryConstructionMaterialQuote(cid,profile);}catch(_){}
@@ -228,6 +240,8 @@
       countryId:cid,factoryType:proposal.factoryType,requestedQuantity:proposal.quantity,
       governmentFactoryCount:governmentCount,openingPrivateAllocation:openingPrivate,commissionedPrivateCount:livePrivate,
       maximumPrivateUnits:maximumPrivate,maximumAdditionalUnits:maxAdditional,
+      maximumSafeDomesticFactoryQuantity:safeDomestic.quantity,domesticQuantityAuthority:safeDomestic.status,
+      maximumRequestedAdditionalFactoryQuantity:Math.min(maxAdditional,proposal.quantity),
       requestedDailyCapacity:capacity,constructionCostPerFactory:num(profile.constructionCost),capitalRequired:num(profile.constructionCost)===null?null:num(profile.constructionCost)*proposal.quantity,
       inputForecastDays:30,inputRequirements:inputs,shortages:deficits,unobservedInputs:unobserved,
       constructionMaterials:constructionQuote,operationalReadiness:operationalReadiness,
@@ -313,9 +327,10 @@
     if(['APPROVE','DENY','DEFER'].indexOf(decision)<0)return{status:'BLOCKED',reason:'INVALID_GOVERNMENT_DECISION'};
     var preview=previewFor(proposal);
     if(decision==='APPROVE'&&preview.status!=='READY')return{status:'BLOCKED',reason:preview.reason||'APPROVAL_PREVIEW_BLOCKED',preview:preview};
-    if(decision==='APPROVE'&&proposal.sourcingPolicy==='DOMESTIC_ONLY'&&(preview.shortages.length||preview.unobservedInputs.length))
+    if(decision==='APPROVE'&&proposal.sourcingPolicy==='DOMESTIC_ONLY'&&(preview.shortages.length||preview.unobservedInputs.length||
+       preview.maximumSafeDomesticFactoryQuantity===null||proposal.quantity>preview.maximumSafeDomesticFactoryQuantity))
       return{status:'BLOCKED',reason:preview.shortages.length?'DOMESTIC_INPUT_SHORTAGE':'DOMESTIC_INPUT_STOCK_UNOBSERVED',
-        shortages:clone(preview.shortages),unobservedInputs:clone(preview.unobservedInputs),preview:preview};
+        shortages:clone(preview.shortages),unobservedInputs:clone(preview.unobservedInputs),maximumSafeDomesticFactoryQuantity:preview.maximumSafeDomesticFactoryQuantity,preview:preview};
     var stateSupport=decision==='APPROVE'&&input.allowStateSupport===true&&proposal.stateSupportRequested===true;
     proposal.status=decision==='APPROVE'?'APPROVED_AWAITING_FUNDING':decision==='DENY'?'DENIED':'DEFERRED';
     var decisionId='PE-DECISION:'+proposal.proposalId+':T'+turn();
@@ -762,7 +777,7 @@
         return'<div class="pe-input-row"><span><b>'+escapeHtml(x.resourceId)+'</b><br>30-day need '+neededValue+'</span><span>'+availableLabel+'<br><b>'+availableValue+'</b></span><span>Current demand<br><b>'+demandValue+'</b></span><span>Shortfall<br><b>'+gapValue+'</b></span></div>';
       }).join('')+'</div>';
       var progress=(p.projectIds||[]).length+'/'+p.quantity+' projects';
-      var facts='<div class="pe-facts"><span>Asset owner: '+escapeHtml(COMPANY_NAMES[p.companyId]||p.companyId)+'</span><span>Operator: '+escapeHtml(COMPANY_NAMES[p.operatorCompanyId||p.companyId]||(p.operatorCompanyId||p.companyId))+'</span><span>Factory: '+escapeHtml(p.factoryName)+'</span><span>Quantity: '+p.quantity+'</span><span>Capital: '+(p.capitalRequired===null?'Unquoted':Number(p.capitalRequired).toLocaleString('en-US')+' '+escapeHtml(p.capitalUnit))+'</span><span>Company capital: '+balance.toLocaleString('en-US')+'</span><span>Government factories: '+Number(preview.governmentFactoryCount||0).toLocaleString('en-US')+'</span><span>Private opening allocation: '+Number(preview.openingPrivateAllocation||0).toLocaleString('en-US')+'</span><span>Additional policy ceiling: '+Number(preview.maximumAdditionalUnits||0).toLocaleString('en-US')+'</span><span>Daily capacity forecast: '+Number(preview.requestedDailyCapacity||0).toLocaleString('en-US')+'</span><span>Source: '+p.sourcingPolicy.replace(/_/g,' ')+'</span><span>Permit: '+(p.permit?escapeHtml(p.permit.permitId)+' · expires T'+Number(p.permit.expiresAtTurn).toLocaleString('en-US'):'Not issued')+'</span><span>Projects: '+progress+'</span></div>';
+      var facts='<div class="pe-facts"><span>Asset owner: '+escapeHtml(COMPANY_NAMES[p.companyId]||p.companyId)+'</span><span>Operator: '+escapeHtml(COMPANY_NAMES[p.operatorCompanyId||p.companyId]||(p.operatorCompanyId||p.companyId))+'</span><span>Factory: '+escapeHtml(p.factoryName)+'</span><span>Quantity: '+p.quantity+'</span><span>Capital: '+(p.capitalRequired===null?'Unquoted':Number(p.capitalRequired).toLocaleString('en-US')+' '+escapeHtml(p.capitalUnit))+'</span><span>Company capital: '+balance.toLocaleString('en-US')+'</span><span>Government factories: '+Number(preview.governmentFactoryCount||0).toLocaleString('en-US')+'</span><span>Private opening allocation: '+Number(preview.openingPrivateAllocation||0).toLocaleString('en-US')+'</span><span>Additional policy ceiling: '+Number(preview.maximumAdditionalUnits||0).toLocaleString('en-US')+'</span><span>Max safe domestic-input factories: '+(preview.maximumSafeDomesticFactoryQuantity===null?'Not observed':Number(preview.maximumSafeDomesticFactoryQuantity).toLocaleString('en-US'))+'</span><span>Daily capacity forecast: '+Number(preview.requestedDailyCapacity||0).toLocaleString('en-US')+'</span><span>Source: '+p.sourcingPolicy.replace(/_/g,' ')+'</span><span>Permit: '+(p.permit?escapeHtml(p.permit.permitId)+' · expires T'+Number(p.permit.expiresAtTurn).toLocaleString('en-US'):'Not issued')+'</span><span>Projects: '+progress+'</span></div>';
       if(p.status==='PROPOSED')buttons='<label class="pe-adjust">Decision quantity <input type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="'+p.quantity+'" data-pe-adjust-quantity="'+p.proposalId+'"></label><button type="button" data-pe-action="adjust" data-pe-proposal="'+p.proposalId+'">Update quantity</button>'+buttons;
       var capitalReceiptForm=p.status==='APPROVED_AWAITING_FUNDING'&&balance+1e-9<(num(p.capitalRequired)||0)
         ?'<form class="pe-capital-form" data-pe-capital-form data-pe-company="'+escapeHtml(p.companyId)+'" data-pe-proposal="'+escapeHtml(p.proposalId)+'"><label>Finance receipt transaction ID<input name="sourceTransactionId" type="text" maxlength="160" autocomplete="off" required></label><label>Settled amount ('+escapeHtml(p.capitalUnit)+')<input name="amount" type="number" min="0.01" step="any" inputmode="decimal" required></label><button type="submit">Verify company capital</button></form>'
