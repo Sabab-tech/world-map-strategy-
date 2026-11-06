@@ -525,6 +525,10 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/Verify company capital/);
   assert.match(fragments[0],/Government decision queue/);
   assert.match(fragments[0],/Private operator/);
+  assert.match(fragments[0],/Corporate Finance \/ Profit \/ Tax \/ Cost/);
+  assert.match(fragments[0],/data-pe-jv-form/);
+  assert.match(fragments[0],/Joint ventures \/ shareholder voting \/ dividends/);
+  assert.match(fragments[0],/Close cash-flow period \/ assess profit tax/);
   assert.match(fragments[0],/Construction and operating readiness/);
   assert.match(fragments[0],/PRODUCTION GATED BY SAB-34/);
   assert.equal(fragments[0].includes('data-omega-v2-industry-tab="companies"'),false);
@@ -541,7 +545,8 @@ test('company cash-flow period close posts net-profit tax once and carries post-
       cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,lastTurn:4,
       cashFlowEntries:[
         {entryId:'SALE-1',companyId:COMPANY,amount:100,direction:'CREDIT',category:'DOMESTIC_SUPPLY',turn:1,status:'POSTED'},
-        {entryId:'WAGES-1',companyId:COMPANY,amount:40,direction:'DEBIT',category:'WORKER_INCOME',turn:2,status:'POSTED'}
+        {entryId:'WAGES-1',companyId:COMPANY,amount:20,direction:'DEBIT',category:'WORKER_INCOME',turn:2,status:'POSTED'},
+        {entryId:'INPUT-1',companyId:COMPANY,amount:20,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',turn:3,status:'POSTED'}
       ]
     }
   };
@@ -550,10 +555,14 @@ test('company cash-flow period close posts net-profit tax once and carries post-
   assert.equal(first.period.grossReceipts,100);
   assert.equal(first.period.operatingCosts,40);
   assert.equal(first.period.profitBeforeTax,60);
+  assert.equal(first.companyFinance.journal.inputMaterialCosts,20);
+  assert.equal(first.companyFinance.journal.workerCosts,20);
   assert.equal(first.period.corporateTaxRate,0.2);
   assert.equal(first.period.corporateTaxPaid,12);
   assert.equal(first.period.retainedEarningsAfter,48);
   assert.equal(h.state.finance.BGD.available,1012);
+  assert.equal(h.state.finance.BGD.taxRevenue,12);
+  assert.equal(h.state.finance.BGD.revenue,12);
   assert.equal(h.state.economy.BGD.companyAccounts[COMPANY].runtimeNetCashFlow,48);
   const duplicate=h.api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:COMPANY});
   assert.equal(duplicate.status,'DUPLICATE');
@@ -595,9 +604,8 @@ test('joint venture needs exact shareholder weights, state approval, weighted vo
   const paid=h.api.distributeJointVentureDividend({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,
     resolutionId:resolution.resolution.resolutionId});
   assert.equal(paid.status,'PAID');
-  assert.deepEqual(paid.distribution.map(row=>[row.companyId,row.amount]),[
-    [COMPANY,42],['AURORA_INDUSTRIAL_GROUP',28]
-  ]);
+  assert.equal(JSON.stringify(paid.distribution.map(row=>[row.companyId,row.amount])),
+    JSON.stringify([[COMPANY,42],['AURORA_INDUSTRIAL_GROUP',28]]));
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,47);
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts.AURORA_INDUSTRIAL_GROUP.availableBalance,28);
   assert.equal(h.api.getJointVentureDashboard('BGD').jointVentures[0].retainedEarningsBalance,30);
