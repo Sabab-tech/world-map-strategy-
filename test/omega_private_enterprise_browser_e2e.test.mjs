@@ -316,7 +316,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
           Number(row.createdTurn) >= criteria.previousTurn);
       }, proposalCriteria, { timeout: 15000 });
     } catch (error) {
-      const submitDiagnostics = await page.evaluate(() => {
+      const submitDiagnostics = await page.evaluate(({ pageErrors: recentPageErrors, consoleErrors: recentConsoleErrors }) => {
         const cabinet = document.getElementById('cabinet-full-window');
         const main = cabinet?.querySelector('[data-omega-v2-main]');
         const lifecycleRoot = [cabinet, ...(cabinet ? Array.from(cabinet.querySelectorAll('*')) : [])]
@@ -326,8 +326,8 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
           uiBound:lifecycleRoot?.__omegaPrivateEnterpriseUiBound || false,
           submitTrace:window.__omegaProposalSubmitTrace || null,
           lastProposalResult:lifecycleRoot?.__omegaPrivateEnterpriseLastProposalResult || null,
-          pageErrors:pageErrors.slice(-12),
-          consoleErrors:consoleErrors.slice(-12),
+          pageErrors:recentPageErrors,
+          consoleErrors:recentConsoleErrors,
           uiMessage:lifecycleRoot?.__omegaPrivateEnterpriseMessage || null,
           rootCountry:lifecycleRoot?.__omegaV2IndustryCountryId || null,
           rootTab:lifecycleRoot?.__omegaV2IndustryTab || null,
@@ -342,7 +342,8 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
           privateRegistryDiagnostics:window.OmegaPrivateEnterpriseRegistryV1?.diagnostics?.() || null,
           currentTab:main?.querySelector('.omega-v2-factory-command')?.getAttribute('data-active-tab') || null
         };
-      }).catch(diagnosticError => ({diagnosticError:String(diagnosticError && diagnosticError.message || diagnosticError)}));
+      }, { pageErrors:pageErrors.slice(-12), consoleErrors:consoleErrors.slice(-12) })
+        .catch(diagnosticError => ({diagnosticError:String(diagnosticError && diagnosticError.message || diagnosticError)}));
       throw new Error('Private Company proposal submit did not persist. Initial wait: ' +
         String(error && error.message || error) + '. Submit diagnostics: ' + JSON.stringify(submitDiagnostics));
     }
