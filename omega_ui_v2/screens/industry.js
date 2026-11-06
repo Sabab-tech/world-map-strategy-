@@ -2707,7 +2707,7 @@
       var byProduct = Object.create(null), eligible = [];
       (Array.isArray(model && model.factories) ? model.factories : []).forEach(function (factory) {
         if (!factory || typeof factory !== 'object') return;
-        var ids = [], seen = Object.create(null), lotsByProduct = Object.create(null);
+        var ids = [], seen = Object.create(null);
         function addId(value) {
           var key = factoryProductKey(value);
           if (!key || seen[key]) return;
@@ -2718,15 +2718,15 @@
         (Array.isArray(factory.inputRows) ? factory.inputRows : []).forEach(function (row) {
           addId(row && row.resourceId);
         });
+        // Keep only compact product identities in the all-factory index. Building
+        // one array per product and copying every lot into it duplicated a large
+        // input ledger before the first four visible cards were rendered.
+        // Lot rows are resolved lazily for the requested factory/product below.
         (Array.isArray(factory.inputLots) ? factory.inputLots : []).forEach(function (lot) {
-          var key = factoryProductKey(lot && (lot.resourceId || lot.materialIdentity));
-          if (!key) return;
-          addId(lot.resourceId || lot.materialIdentity);
-          if (!lotsByProduct[key]) lotsByProduct[key] = [];
-          lotsByProduct[key].push(lot);
+          addId(lot && (lot.resourceId || lot.materialIdentity));
         });
         if (!ids.length) return;
-        var card = { factory:factory, ids:ids, lotsByProduct:lotsByProduct };
+        var card = { factory:factory, ids:ids };
         eligible.push(card);
         cache.cardsByFactory.set(factory, card);
         ids.forEach(function (id) {
@@ -2768,9 +2768,8 @@
   }
 
   function factoryInputSourceRowsUncached(factory, productId, model, cache) {
-    var card = cache.cardsByFactory && cache.cardsByFactory.get(factory);
     var productKey = factoryProductKey(productId);
-    var lots = card ? (card.lotsByProduct[productKey] || []) : (factory.inputLots || []).filter(function (lot) {
+    var lots = (factory && Array.isArray(factory.inputLots) ? factory.inputLots : []).filter(function (lot) {
       return lot && factoryProductKey(lot.resourceId || lot.materialIdentity) === productKey;
     });
     var sourceGroups = Object.create(null);
@@ -2836,7 +2835,9 @@
         var coefficient = factoryInputCoefficientFor(factory, productId);
         var required = factoryInputDailyRequirement(factory, productId, model);
         var current = factory.hasInputInventory ? panelValueByKey(factory.raw && factory.raw.inputInventory, productId) : null;
-        var lots = entry.lotsByProduct[key] || [];
+        var lots = (Array.isArray(factory.inputLots) ? factory.inputLots : []).filter(function (lot) {
+          return lot && factoryProductKey(lot.resourceId || lot.materialIdentity) === key;
+        });
         var seen = Object.create(null), received = 0, hasReceipt = false, unit = '';
         lots.forEach(function (lot) {
           var batchId = String(lot.batchId || '');
