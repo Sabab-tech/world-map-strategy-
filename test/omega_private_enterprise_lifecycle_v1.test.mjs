@@ -492,3 +492,80 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/PRODUCTION GATED BY SAB-34/);
   assert.equal(fragments[0].includes('data-omega-v2-industry-tab="companies"'),false);
 });
+
+
+test('company cash-flow period close posts net-profit tax once and carries post-tax retained earnings',()=>{
+  const h=makeHarness();
+  h.state.economy.BGD.companyAccounts={
+    [COMPANY]:{
+      companyId:COMPANY,openingCashStatus:'UNKNOWN',
+      runtimeNetCashFlow:60,grossRevenue:100,paymentsReceived:100,paymentsMade:40,
+      taxPaid:0,workerIncomePaid:40,transportPaid:0,
+      cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,lastTurn:4,
+      cashFlowEntries:[
+        {entryId:'SALE-1',companyId:COMPANY,amount:100,direction:'CREDIT',category:'DOMESTIC_SUPPLY',turn:1,status:'POSTED'},
+        {entryId:'WAGES-1',companyId:COMPANY,amount:40,direction:'DEBIT',category:'WORKER_INCOME',turn:2,status:'POSTED'}
+      ]
+    }
+  };
+  const first=h.api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:COMPANY});
+  assert.equal(first.status,'CLOSED');
+  assert.equal(first.period.grossReceipts,100);
+  assert.equal(first.period.operatingCosts,40);
+  assert.equal(first.period.profitBeforeTax,60);
+  assert.equal(first.period.corporateTaxRate,0.2);
+  assert.equal(first.period.corporateTaxPaid,12);
+  assert.equal(first.period.retainedEarningsAfter,48);
+  assert.equal(h.state.finance.BGD.available,1012);
+  assert.equal(h.state.economy.BGD.companyAccounts[COMPANY].runtimeNetCashFlow,48);
+  const duplicate=h.api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:COMPANY});
+  assert.equal(duplicate.status,'DUPLICATE');
+  assert.equal(h.state.finance.BGD.available,1012);
+  assert.equal(h.api.getCompanyFinanceSummary('BGD',COMPANY).capital.retainedEarningsBalance,48);
+  assert.equal(h.state.finance.BGD.omegaFinance.ledger.filter(row=>row.type==='PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX').length,1);
+});
+
+test('joint venture needs exact shareholder weights, state approval, weighted votes and post-tax dividend funding',()=>{
+  const h=makeHarness();
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [COMPANY]:{companyId:COMPANY,currency:'GAME_CURRENCY_UNITS',availableBalance:5,reservedBalance:0,
+      capitalRaised:100,capitalSpent:0,retainedEarningsBalance:100,revision:0},
+    AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',currency:'GAME_CURRENCY_UNITS',
+      availableBalance:0,reservedBalance:0,capitalRaised:0,capitalSpent:0,retainedEarningsBalance:0,revision:0}
+  };
+  const invalid=h.api.createJointVenture({countryId:'BGD',managingCompanyId:COMPANY,
+    shareholders:[{companyId:COMPANY,shareBps:6000},{companyId:'AURORA_INDUSTRIAL_GROUP',shareBps:3000}]});
+  assert.equal(invalid.status,'BLOCKED');
+  assert.equal(invalid.reason,'JV_EQUITY_SHARES_MUST_SUM_TO_10000_BPS');
+  const created=h.api.createJointVenture({countryId:'BGD',name:'Steel Strategic JV',requestId:'jv-1',
+    managingCompanyId:COMPANY,shareholders:[
+      {companyId:COMPANY,shareBps:6000},{companyId:'AURORA_INDUSTRIAL_GROUP',shareBps:4000}
+    ]});
+  assert.equal(created.status,'PROPOSED');
+  assert.equal(h.api.decideJointVenture({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,decision:'APPROVE'}).status,'ACTIVE');
+  const contribution=h.api.contributeJointVentureRetainedEarnings({countryId:'BGD',
+    jointVentureId:created.jointVenture.jointVentureId,companyId:COMPANY,amount:100,requestId:'retained-1'});
+  assert.equal(contribution.status,'POSTED');
+  const resolution=h.api.createJointVentureResolution({countryId:'BGD',
+    jointVentureId:created.jointVenture.jointVentureId,type:'DIVIDEND',amount:70});
+  assert.equal(resolution.status,'VOTING');
+  const firstVote=h.api.voteJointVentureResolution({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,
+    resolutionId:resolution.resolution.resolutionId,companyId:COMPANY,vote:'FOR'});
+  assert.equal(firstVote.status,'VOTE_RECORDED');
+  const secondVote=h.api.voteJointVentureResolution({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,
+    resolutionId:resolution.resolution.resolutionId,companyId:'AURORA_INDUSTRIAL_GROUP',vote:'FOR'});
+  assert.equal(secondVote.status,'APPROVED');
+  const paid=h.api.distributeJointVentureDividend({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,
+    resolutionId:resolution.resolution.resolutionId});
+  assert.equal(paid.status,'PAID');
+  assert.deepEqual(paid.distribution.map(row=>[row.companyId,row.amount]),[
+    [COMPANY,42],['AURORA_INDUSTRIAL_GROUP',28]
+  ]);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,47);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts.AURORA_INDUSTRIAL_GROUP.availableBalance,28);
+  assert.equal(h.api.getJointVentureDashboard('BGD').jointVentures[0].retainedEarningsBalance,30);
+  const duplicate=h.api.distributeJointVentureDividend({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,
+    resolutionId:resolution.resolution.resolutionId});
+  assert.equal(duplicate.status,'DUPLICATE');
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,47);
+});
