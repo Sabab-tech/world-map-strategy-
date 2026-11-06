@@ -5619,6 +5619,12 @@ function registerStartingFactoryAssets(input={}){
     asset.ownershipMetadataAuthority=asset.ownershipMetadataAuthority||'OMEGA_STATE_FACTORY_OWNERSHIP_V1';
     return asset;
   };
+  // Additive legacy-save repair runs before the idempotent early return, but only
+  // for assets explicitly created from the government starting-factory baseline.
+  assets.forEach(asset=>{
+    if(String(asset?.sourceType||'').toUpperCase()==='COUNTRY_STARTING_FACTORY_BASELINE')
+      ensureStateFactoryOwnership(asset);
+  });
   const activeFactoryAssets=()=>assets.filter(asset=>{
     const type=normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'');
     return types.includes(type)&&!['DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION'].includes(String(asset?.status||'').toUpperCase());
@@ -5652,8 +5658,6 @@ function registerStartingFactoryAssets(input={}){
     const matchingExisting=assets.filter(asset=>normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type&&
       !['DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION'].includes(String(asset?.status||'').toUpperCase()));
     for(const existing of matchingExisting){
-      if(String(existing.sourceType||'').toUpperCase()==='COUNTRY_STARTING_FACTORY_BASELINE')
-        ensureStateFactoryOwnership(existing);
       const existingStatus=String(existing.status||'').toUpperCase();
       if(!existing.status)existing.status='OPERATIONAL';
       if(!existing.stage)existing.stage='PROCESSING';
