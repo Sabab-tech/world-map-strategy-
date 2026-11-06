@@ -477,6 +477,7 @@ test('industry factory cards show owned factory counts without a separate source
   const previousGame = globalThis.Game;
   const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
   const previousFactoryBaseline = globalThis.OmegaCountryFactoryStartingBaselineV1;
+  const previousPrivateEnterpriseRuntime = globalThis.OmegaPrivateEnterpriseRegistryV1;
   globalThis.Game = { state: {
     simulation: { session: { playerCountryId: 'BGD' }, turn: 12 },
     resource: {
@@ -496,6 +497,23 @@ test('industry factory cards show owned factory counts without a separate source
         inputUnit:'tonnes', outputUnit:'tonnes', quantityBasis:'PER_SIMULATION_PRODUCTION_UNIT',
         presentation:{primaryInputs:['iron_ore'],primaryOutputs:['steel'],byProducts:['slag']}
       }
+    }
+  };
+  globalThis.OmegaPrivateEnterpriseRegistryV1 = {
+    getCountryBaseline(countryId) {
+      if (countryId !== 'BGD') return null;
+      return {
+        status:'READY', totalGovernmentFactoryUnits:3, totalPrivateFactoryUnits:2,
+        privateToGovernmentBaselinePercent:66.7,
+        factoryCounts:{STEEL_MILL:2,CEMENT_PLANT:0},
+        companies:[
+          {companyId:'AURORA_INDUSTRIAL_GROUP',companyName:'Aurora Industrial Group',factoryCounts:{STEEL_MILL:1,CEMENT_PLANT:0},totalFactoryUnits:1},
+          {companyId:'MERIDIAN_ENGINEERING_GROUP',companyName:'Meridian Engineering Group',factoryCounts:{STEEL_MILL:1,CEMENT_PLANT:0},totalFactoryUnits:1},
+          {companyId:'NOVA_CONSUMER_INDUSTRIES',companyName:'Nova Consumer Industries',factoryCounts:{STEEL_MILL:0,CEMENT_PLANT:0},totalFactoryUnits:0},
+          {companyId:'ATLAS_TECHNOLOGY_CORPORATION',companyName:'Atlas Technology Corporation',factoryCounts:{STEEL_MILL:0,CEMENT_PLANT:0},totalFactoryUnits:0},
+          {companyId:'TERRA_INFRASTRUCTURE_GROUP',companyName:'Terra Infrastructure Group',factoryCounts:{STEEL_MILL:0,CEMENT_PLANT:0},totalFactoryUnits:0}
+        ]
+      };
     }
   };
   globalThis.OmegaCountryFactoryStartingBaselineV1 = {
@@ -526,6 +544,9 @@ test('industry factory cards show owned factory counts without a separate source
     assert.doesNotMatch(root.innerHTML, /Factory types &amp; country totals|EXISTING FACTORIES IN THIS COUNTRY|FACTORY TYPES NOT PRESENT IN THIS COUNTRY|EXISTING IN THIS COUNTRY|NOT PRESENT IN THIS COUNTRY/);
     assert.doesNotMatch(root.innerHTML, /Modeled build time|Modeled capacity|Modeled construction cost|simulation/i);
     assert.doesNotMatch(root.innerHTML, /class="fp-summary"/);
+    assert.match(root.innerHTML, /data-factory-total/);
+    assert.match(root.innerHTML, /Total factories/);
+    assert.match(root.innerHTML, /data-factory-total-value>3<\/strong>/);
     assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
     const steelCardStart = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="STEEL_MILL"');
@@ -547,6 +568,21 @@ test('industry factory cards show owned factory counts without a separate source
     assert.match(zeroFactoryCard, /<span>Factories<\/span><strong>0<\/strong>/,
       'zero itself clearly communicates that the selected country has no factory of that type');
     assert.doesNotMatch(root.innerHTML, /UNIDO|Official establishment data|Establishments|Source status/);
+    const manageRoot = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const manageResult = globalThis.OmegaUIV2Industry.render(manageRoot, {
+      countryId:'BGD', tab:'companies'
+    });
+    assert.equal(manageResult.ok, true);
+    assert.equal(manageResult.model.factoryCount, 3,
+      'uncommissioned private opening allocations must not inflate the shared factory total');
+    assert.match(manageRoot.innerHTML, /data-private-ownership-breakdown="v1"/);
+    assert.match(manageRoot.innerHTML, /Factory type ownership breakdown/);
+    assert.match(manageRoot.innerHTML, /SHARED POOL FACTORIES/);
+    assert.match(manageRoot.innerHTML, /PRIVATE OPENING UNITS/);
+    assert.match(manageRoot.innerHTML, /Aurora Industrial Group/);
+    assert.match(manageRoot.innerHTML, /Meridian Engineering Group/);
+    assert.match(manageRoot.innerHTML, /<tfoot><tr><th scope="row">Total<\/th><td>3<\/td><td>2<\/td>/);
+    assert.match(manageRoot.innerHTML, /not commissioned assets/i);
     const foreign = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'USA' });
     assert.equal(foreign.factoryCount, 0, 'another country does not inherit Bangladesh factory counts');
   } finally {
@@ -555,6 +591,8 @@ test('industry factory cards show owned factory counts without a separate source
     else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
     if (previousFactoryBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
     else globalThis.OmegaCountryFactoryStartingBaselineV1 = previousFactoryBaseline;
+    if (previousPrivateEnterpriseRuntime === undefined) delete globalThis.OmegaPrivateEnterpriseRegistryV1;
+    else globalThis.OmegaPrivateEnterpriseRegistryV1 = previousPrivateEnterpriseRuntime;
   }
 });
 
