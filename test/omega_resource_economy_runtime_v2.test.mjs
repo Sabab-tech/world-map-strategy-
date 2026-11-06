@@ -71,6 +71,7 @@ function createContext(){
 
   const handlers=new Map();
   const commands=new Map();
+  const commandCollisions=[];
   let commandSequence=0;
   const stateTx=(countryId)=>({
     get(path){
@@ -109,7 +110,10 @@ function createContext(){
       const fingerprint=JSON.stringify({owner,type,countryId,payload});
       const previous=commands.get(commandId);
       if(previous){
-        if(previous.fingerprint!==fingerprint)return {status:'FAILED',reason:'COMMAND_ID_COLLISION',commandId};
+        if(previous.fingerprint!==fingerprint){
+          commandCollisions.push({commandId,reason:'COMMAND_ID_COLLISION',existingFingerprint:previous.fingerprint,incomingFingerprint:fingerprint});
+          return {status:'FAILED',reason:'COMMAND_ID_COLLISION',commandId};
+        }
         return {...previous.row,duplicate:true,idempotentReplay:true};
       }
       const result=item.handler(
@@ -190,11 +194,11 @@ function createContext(){
     OmegaGlobalTrade:{processAll(){}}
   };
   context.globalThis=context;
-  return {context,worldState,handlers,events,commands,stateTx};
+  return {context,worldState,handlers,events,commands,commandCollisions,stateTx};
 }
 
 test('export settlement replay is idempotent across company flows, Treasury clearing and fiscal receipts',async()=>{
-  const {context,worldState,commands}=createContext();
+  const {context,worldState,commands,commandCollisions}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
 
@@ -234,7 +238,7 @@ test('export settlement replay is idempotent across company flows, Treasury clea
   assert.equal(worldState.finance.BGD.available,availableAfterFirst);
   assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts.MINER_CO),accountAfterFirst);
   assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,clearingAfterFirst);
-  assert.ok([...commands.values()].some(x=>x.row.status==='FAILED'&&x.row.reason==='COMMAND_ID_COLLISION'));
+  assert.ok(commandCollisions.some(x=>x.reason==='COMMAND_ID_COLLISION'),'same stable command ID with a changed payload must raise a persisted-command integrity collision');
 });
 test('resource economy v2 completes mine-backed processing, domestic settlement and treasury receipt flow', async()=>{
   const {context,worldState}=createContext();
