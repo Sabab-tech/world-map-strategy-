@@ -744,3 +744,60 @@ test('stale ministry writes are rejected and events publish only after a success
   assert.equal(result.eventsEmitted,0);
   assert.equal(result.eventsDiscarded,1);
 });
+
+test('government procurement command receives only its exact cross-ministry write authority',()=>{
+  const s=createSandbox();
+  s.state.resource[s.countryA].batches=[{batchId:'PRIVATE-BATCH',remainingQuantity:10}];
+  s.state.resource[s.countryA].inventoryLots={};
+  s.state.resource[s.countryA].processedWarehouse={warehouseId:'WH-'+s.countryA+'-PROCESSED'};
+  s.state.resource[s.countryA].inventoryLedger=[];
+  s.state.economy[s.countryA].companyAccounts={};
+  s.state.trade[s.countryA].stateGovernmentProcurementLedger=[];
+  s.mesh.registerCommandHandler('OMEGA_STATE_PRIVATE_GOVERNMENT_PROCUREMENT','finance',
+    (command,{stateTransaction})=>{
+      stateTransaction.set('finance.available',40);
+      stateTransaction.set('resource.batches',[{batchId:'GOVERNMENT-BATCH',remainingQuantity:10}]);
+      stateTransaction.set('resource.inventoryLots',{batch:{remainingQuantity:10}});
+      stateTransaction.set('resource.processedWarehouse',{warehouseId:'WH-'+s.countryA+'-PROCESSED',receipts:[{id:'RECEIPT'}]});
+      stateTransaction.set('resource.inventoryLedger',[{type:'GOVERNMENT_PROCUREMENT_OWNERSHIP_TRANSFER'}]);
+      stateTransaction.set('economy.companyAccounts',{NOVA_CONSUMER_INDUSTRIES:{governmentProcurementRevenue:50}});
+      stateTransaction.set('trade.stateGovernmentProcurementLedger',[{procurementId:'PROC-1'}]);
+      return{accepted:true};
+    });
+  const result=s.mesh.dispatchCommand('finance','OMEGA_STATE_PRIVATE_GOVERNMENT_PROCUREMENT',s.countryA,{},
+    {turn:6,commandType:'OMEGA_STATE_PRIVATE_GOVERNMENT_PROCUREMENT',commandId:'PROCUREMENT-CROSS-DOMAIN-1'});
+  assert.equal(result.status,'APPLIED',JSON.stringify(result));
+  assert.equal(s.state.finance[s.countryA].available,40);
+  assert.equal(s.state.resource[s.countryA].batches[0].batchId,'GOVERNMENT-BATCH');
+  assert.equal(s.state.resource[s.countryA].inventoryLots.batch.remainingQuantity,10);
+  assert.equal(s.state.resource[s.countryA].processedWarehouse.receipts[0].id,'RECEIPT');
+  assert.equal(s.state.resource[s.countryA].inventoryLedger.length,1);
+  assert.equal(s.state.economy[s.countryA].companyAccounts.NOVA_CONSUMER_INDUSTRIES.governmentProcurementRevenue,50);
+  assert.equal(s.state.trade[s.countryA].stateGovernmentProcurementLedger[0].procurementId,'PROC-1');
+  assert.equal(result.transaction.operations.length,7,
+    'finance plus six exact procurement paths must commit together');
+});
+
+test('generic finance commands cannot use procurement cross-domain capabilities',()=>{
+  const s=createSandbox();
+  const before=JSON.stringify({
+    resource:s.state.resource[s.countryA],
+    economy:s.state.economy[s.countryA],
+    trade:s.state.trade[s.countryA]
+  });
+  s.mesh.registerCommandHandler('FINANCE_GENERIC_CROSS_DOMAIN_ATTACK','finance',(command,{stateTransaction})=>{
+    stateTransaction.set('finance.reserves',1);
+    stateTransaction.set('resource.inventory',{oil:999999});
+    return{accepted:true};
+  });
+  const result=s.mesh.dispatchCommand('finance','FINANCE_GENERIC_CROSS_DOMAIN_ATTACK',s.countryA,{},
+    {turn:7,commandType:'FINANCE_GENERIC_CROSS_DOMAIN_ATTACK',commandId:'FINANCE-GENERIC-CROSS-DOMAIN-1'});
+  assert.equal(result.status,'FAILED');
+  assert.match(result.reason,/STATE_PATH_NOT_OWNED_BY_MINISTRY:resource\.inventory/);
+  assert.equal(s.state.finance[s.countryA].reserves,50);
+  assert.equal(JSON.stringify({
+    resource:s.state.resource[s.countryA],
+    economy:s.state.economy[s.countryA],
+    trade:s.state.trade[s.countryA]
+  }),before,'rejected cross-domain command must roll back all staged finance writes');
+});
