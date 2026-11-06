@@ -166,10 +166,25 @@
     return null;
   }
   function resourceReadSnapshot(country){
-    var source=countryBucket('resource',country,false)||{},snapshot={};
-    ['inventory','warehouse','demandRuntime','strategicReserve','protectedStockByResource','minimumStockByResource']
-      .forEach(function(key){if(source[key]!==undefined)snapshot[key]=clone(source[key]);});
-    return snapshot;
+    var source=countryBucket('resource',country,false)||{},warehouse=obj(source.warehouse)?source.warehouse:{},
+      strategic=obj(source.strategicReserve)?source.strategicReserve:{};
+    // Copy only the ledgers used by the input forecast. Avoid cloning unrelated
+    // shipment batches, projects, capacity metadata or other large mobile state.
+    return{
+      inventory:clone(obj(source.inventory)?source.inventory:{}),
+      warehouse:{
+        availableByResource:clone(obj(warehouse.availableByResource)?warehouse.availableByResource:{}),
+        reservedByResource:clone(obj(warehouse.reservedByResource)?warehouse.reservedByResource:{})
+      },
+      demandRuntime:obj(source.demandRuntime)?clone(source.demandRuntime):null,
+      strategicReserve:{
+        availableByResource:clone(obj(strategic.availableByResource)?strategic.availableByResource:{}),
+        protectedByResource:clone(obj(strategic.protectedByResource)?strategic.protectedByResource:{}),
+        minimumByResource:clone(obj(strategic.minimumByResource)?strategic.minimumByResource:{})
+      },
+      protectedStockByResource:clone(obj(source.protectedStockByResource)?source.protectedStockByResource:{}),
+      minimumStockByResource:clone(obj(source.minimumStockByResource)?source.minimumStockByResource:{})
+    };
   }
   function resourceAvailable(country,resourceId,resourceSnapshot){
     // Read every input from the same caller-captured country snapshot. Re-resolving
