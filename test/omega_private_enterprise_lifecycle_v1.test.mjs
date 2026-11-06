@@ -594,6 +594,9 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/Other recorded costs/);
   assert.match(fragments[0],/Joint ventures \/ shareholder voting \/ dividends/);
   assert.match(fragments[0],/Close cash-flow period \/ assess profit tax/);
+  assert.match(fragments[0],/data-pe-cost-policy-form/);
+  assert.match(fragments[0],/Electricity/);
+  assert.match(fragments[0],/Depreciation/);
   assert.match(fragments[0],/Construction and operating readiness/);
   assert.match(fragments[0],/PRODUCTION GATED BY SAB-34/);
   assert.equal(fragments[0].includes('data-omega-v2-industry-tab="companies"'),false);
@@ -753,4 +756,117 @@ test('joint venture needs exact shareholder weights, state approval, weighted vo
     resolutionId:resolution.resolution.resolutionId});
   assert.equal(duplicate.status,'DUPLICATE');
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].availableBalance,47);
+});
+
+
+test('private factory utility and completed-cycle events accrue auditable operating costs to the operator exactly once',()=>{
+  const h=makeHarness(),api=h.api;
+  const owner='AURORA_INDUSTRIAL_GROUP',operator=COMPANY;
+  h.state.economy.BGD.productionAssets.push({
+    id:'PRIVATE-STEEL-01',factoryType:'STEEL_WORKS',ownerType:'PRIVATE_ENTERPRISE',
+    ownerCompanyId:owner,operatorCompanyId:operator,operatorType:'PRIVATE_COMPANY_OPERATOR',
+    status:'OPERATIONAL',productionEnabled:true,employment:{jobsFilled:10}
+  });
+  h.state.economy.BGD.companyAccounts={
+    [operator]:{
+      companyId:operator,openingCashStatus:'UNKNOWN',runtimeNetCashFlow:480,grossRevenue:500,
+      paymentsReceived:500,paymentsMade:20,taxPaid:0,workerIncomePaid:0,transportPaid:0,
+      cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,lastTurn:4,
+      cashFlowEntries:[
+        {entryId:'PRIVATE-SALE-1',companyId:operator,amount:500,direction:'CREDIT',category:'DOMESTIC_SUPPLY',turn:4,status:'POSTED'},
+        {entryId:'PRIVATE-INPUT-1',companyId:operator,amount:20,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',turn:4,status:'POSTED'}
+      ]
+    }
+  };
+  const configured=api.setCompanyOperatingCostPolicy({countryId:'BGD',policyId:'BGD-COSTS-V1',currency:'GAME_CURRENCY_UNITS',
+    rates:{electricityPerMWh:5,waterPerM3:2,laborPerWorkerDay:3,
+      maintenancePerFactoryDay:4,overheadPerFactoryDay:1,depreciationPerFactoryDay:2}});
+  assert.equal(configured.status,'UPDATED');
+  assert.equal(api.setCompanyOperatingCostPolicy({countryId:'BGD',policyId:'BGD-COSTS-V1',currency:'GAME_CURRENCY_UNITS',
+    rates:{electricityPerMWh:5,waterPerM3:2,laborPerWorkerDay:3,
+      maintenancePerFactoryDay:4,overheadPerFactoryDay:1,depreciationPerFactoryDay:2}}).status,'DUPLICATE');
+  assert.equal(api.setCompanyOperatingCostPolicy({countryId:'BGD',policyId:'BGD-COSTS-V1',rates:{electricityPerMWh:6}}).reason,
+    'OPERATING_COST_POLICY_IDEMPOTENCY_COLLISION');
+  assert.equal(api.setCompanyOperatingCostPolicy({countryId:'USA',policyId:'USA-COSTS',rates:{electricityPerMWh:1}}).reason,
+    'PLAYER_COUNTRY_SCOPE_ONLY');
+  assert.equal(api.setCompanyOperatingCostPolicy({countryId:'BGD',policyId:'BGD-COSTS-BAD',rates:{electricityPerMWh:-1}}).reason,
+    'OPERATING_COST_RATE_INVALID');
+
+  const utilityEvent={countryId:'BGD',factoryId:'PRIVATE-STEEL-01',ownerCompanyId:owner,operatorCompanyId:operator,
+    transactionId:'UTILITY-CYCLE-1',electricityMWh:3,waterM3:4,turn:4,
+    authority:'SIMULATED_UTILITY_CONSUMPTION_LEDGER'};
+  emit(h,'OMEGA_FACTORY_UTILITY_CONSUMED',utilityEvent);
+  emit(h,'OMEGA_FACTORY_UTILITY_CONSUMED',utilityEvent);
+  const cycleEvent={countryId:'BGD',factoryId:'PRIVATE-STEEL-01',ownerCompanyId:owner,operatorCompanyId:operator,
+    cycleId:'CYCLE-PRIVATE-STEEL-1',transactionId:'FACTORY-OUTPUT-1',cycleDays:2,
+    actualProductionQuantity:10,turn:4,authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK'};
+  emit(h,'OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',cycleEvent);
+  emit(h,'OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',cycleEvent);
+
+  const runtime=h.state.economy.BGD.privateEnterpriseLifecycle;
+  assert.equal(runtime.operatingCostEntries.length,6);
+  assert.equal(runtime.unpricedOperatingCostEvents.length,0);
+  const categoryTotals=runtime.operatingCostEntries.reduce((out,row)=>{
+    out[row.category]=(out[row.category]||0)+row.amount;return out;
+  },{});
+  assert.deepEqual(JSON.parse(JSON.stringify(categoryTotals)),{
+    ELECTRICITY:15,INDUSTRIAL_WATER:8,LABOR:60,MAINTENANCE:8,OVERHEAD:2,DEPRECIATION:4
+  });
+  assert.ok(runtime.operatingCostEntries.every(row=>row.companyId===operator));
+  assert.ok(runtime.operatingCostEntries.every(row=>row.factoryId==='PRIVATE-STEEL-01'));
+  assert.equal(h.state.finance.BGD.omegaFinance.ledger.filter(row=>row.type==='PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL').length,6);
+
+  const statement=api.getCompanyFinanceSummary('BGD',operator);
+  assert.equal(statement.accountingProfit,383);
+  assert.equal(statement.accountingProfitStatus,'CASH_FLOW_PLUS_RECORDED_OPERATING_COST_ACCRUALS');
+  assert.equal(statement.journal.recordedAccruedOperatingCosts,97);
+  assert.equal(statement.journal.accruedCostByCategory.DEPRECIATION,4);
+
+  const close=api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:operator});
+  assert.equal(close.status,'CLOSED');
+  assert.equal(close.period.cashOperatingCosts,20);
+  assert.equal(close.period.accruedOperatingCosts,97);
+  assert.equal(close.period.operatingCosts,117);
+  assert.equal(close.period.profitBeforeTax,383);
+  assert.equal(close.period.corporateTaxPaid,76.6);
+  assert.equal(close.period.retainedEarningsAfter,306.4);
+  assert.equal(h.state.finance.BGD.available,1076.6);
+  assert.equal(api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:operator}).status,'DUPLICATE');
+  assert.equal(h.state.finance.BGD.available,1076.6);
+});
+
+test('private factory financial close fails closed when a required operating cost rate is unpriced',()=>{
+  const h=makeHarness(),api=h.api,operator=COMPANY,owner='AURORA_INDUSTRIAL_GROUP';
+  h.state.economy.BGD.productionAssets.push({
+    id:'PRIVATE-UNPRICED-01',factoryType:'STEEL_WORKS',ownerType:'PRIVATE_ENTERPRISE',
+    ownerCompanyId:owner,operatorCompanyId:operator,status:'OPERATIONAL',productionEnabled:true,
+    employment:{jobsFilled:4}
+  });
+  h.state.economy.BGD.companyAccounts={
+    [operator]:{
+      companyId:operator,runtimeNetCashFlow:100,grossRevenue:100,paymentsReceived:100,paymentsMade:0,
+      cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,lastTurn:4,
+      cashFlowEntries:[{entryId:'UNPRICED-SALE',companyId:operator,amount:100,direction:'CREDIT',
+        category:'DOMESTIC_SUPPLY',turn:4,status:'POSTED'}]
+    }
+  };
+  const policy=api.setCompanyOperatingCostPolicy({countryId:'BGD',policyId:'BGD-PARTIAL-COSTS',
+    rates:{waterPerM3:2}});
+  assert.equal(policy.status,'UPDATED');
+  const beforeTreasury=h.state.finance.BGD.available;
+  const event={countryId:'BGD',factoryId:'PRIVATE-UNPRICED-01',ownerCompanyId:owner,operatorCompanyId:operator,
+    transactionId:'UTILITY-UNPRICED-1',electricityMWh:2,waterM3:3,turn:4,
+    authority:'SIMULATED_UTILITY_CONSUMPTION_LEDGER'};
+  emit(h,'OMEGA_FACTORY_UTILITY_CONSUMED',event);
+  const runtime=h.state.economy.BGD.privateEnterpriseLifecycle;
+  assert.equal(runtime.operatingCostEntries.length,1);
+  assert.equal(runtime.operatingCostEntries[0].category,'INDUSTRIAL_WATER');
+  assert.equal(runtime.operatingCostEntries[0].amount,6);
+  assert.equal(runtime.unpricedOperatingCostEvents.length,1);
+  assert.equal(runtime.unpricedOperatingCostEvents[0].category,'ELECTRICITY');
+  const close=api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:operator});
+  assert.equal(close.status,'BLOCKED');
+  assert.equal(close.reason,'COMPANY_OPERATING_COSTS_UNPRICED');
+  assert.equal(h.state.finance.BGD.available,beforeTreasury);
+  assert.equal(h.state.finance.BGD.omegaFinance.ledger.some(row=>row.type==='PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX'),false);
 });
