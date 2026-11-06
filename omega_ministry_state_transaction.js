@@ -2,7 +2,7 @@
  * OMEGA MINISTRY STATE TRANSACTION SYSTEM v1.0.0
  *
  * Deterministic write boundary for authoritative country-scoped state.
- * Commands may mutate only the state owned by their registered ministry.
+ * Commands may mutate their ministry-owned state plus explicitly allowlisted command-scoped paths.
  * Real timestamps are never used for simulation decisions.
  */
 (function(global){
@@ -93,7 +93,9 @@
       this.turn=Number.isFinite(Number(turn))?Number(turn):0;
       this.commandId=String(commandId||'');
       this.commandType=String(transactionOptions.commandType||'');
-      this.authorizedCrossDomainWritePaths=new Set(COMMAND_CROSS_DOMAIN_WRITE_PATHS[this.commandType]||[]);
+      const commandPaths=Object.prototype.hasOwnProperty.call(COMMAND_CROSS_DOMAIN_WRITE_PATHS,this.commandType)
+        ?COMMAND_CROSS_DOMAIN_WRITE_PATHS[this.commandType]:[];
+      this.authorizedCrossDomainWritePaths=new Set(commandPaths);
       this.transactionId='OMI-TX-'+this.turn+'-'+this.ownerMinistry+'-'+this.commandId;
       this.operations=[];
       this.writeBaseline=new Map();
