@@ -323,3 +323,33 @@ The first read-only Lines implementation is now present in PR #408. It does not 
 - The Android API 28 smoke now validates Lines/Input/Stock reachability and click responsiveness instead of the old Manage-button path.
 
 **Still unavailable / not claimed as implemented:** pending government proposal inbox, company financing decisions, licensing/approval, construction/commissioning, enforceable corporate cash balance, corporate loans/equity, and private procurement/production/sales/tax/dividend authority. Those remain gated on the audited Finance/Trade model and SAB-34 end-to-end proof. The Lines view is read-only and reports only currently persisted state.
+
+
+## Lifecycle implementation update — 2026-11-06 (SAB-42 / PR #408)
+
+The following branch-only implementation supersedes the earlier "still unavailable" checklist above for proposal, approval, funding intake, construction and commissioning orchestration. It does not claim that the remaining company banking, private trading or SAB-34 production proof is complete.
+
+### Player-government proposal workflow
+
+The existing Industry → Production Lines view now includes a country-scoped private-company proposal queue. The form registers a proposal for one of the five canonical company IDs and an existing factory type. The player-government can adjust requested quantity, review the capacity ceiling and recipe-input forecast, then approve, defer or reject it. Proposal registration and a decision alone do not reserve stock, debit cash, create a project or create an asset.
+
+Approval preview reads the existing government/private baseline and authoritative current inventory/warehouse balances. It subtracts warehouse reservations and strategic protected stock, then uses the current-turn national demand snapshot to account for existing household and active factory demand over the 30-day horizon. A stale or missing demand snapshot remains explicitly unobserved; domestic-only approval fails closed rather than assuming demand is zero. Confirmed inbound imports are displayed separately and are not counted as usable stock before receipt.
+
+### Funding and construction
+
+- Company capital is credited only by verifying an existing settled Finance ledger transaction for the same canonical company, matching amount and credit direction. The Lines UI accepts the transaction reference and amount; a missing, unsettled, mismatched or replayed source is rejected.
+- An explicitly requested government grant is only available after the government decision records permission. It debits the selected country's existing Treasury balance and credits the company's Finance subaccount through the same Finance ledger.
+- Company balances live under the existing `finance[country].omegaFinance.companyCapitalAccounts` authority. The legacy `economy.companyAccounts` aggregate flow tracker is never treated as cash. This version does not originate a corporate loan or equity issue; an actual external funding transaction must already exist in Finance, or the player must authorize a Treasury grant.
+- Construction calls the existing `OmegaResourceIndustrialNetwork.startFactoryProject`, canonical factory profile/recipe, construction BOM and project clock. Each project is linked to the proposal, government decision, funding transaction, private company and sourcing policy. Capital/BOM preflight is checked before projects are started. The construction contractor does not become owner or operator.
+
+### Commissioning and production safety
+
+Completed projects join the existing `economy[country].productionAssets` collection exactly once. Private owner and operator are the canonical company ID; state licensing, fiscal, labor/safety, strategic-supply, competition and emergency rights are stored independently. Government-factory commissioning defaults remain unchanged.
+
+When SAB-34 proof is absent, commissioned private assets remain blocked and proposals show `COMMISSIONED_PRODUCTION_GATED`. The existing factory operation gate rechecks the verified proof on a subsequent operation attempt and can restore the same commissioned asset once the exact site-selection, extraction, logistics receipt, factory input, finished-goods and save/load proof is present. Existing technology, workforce and production-input gates still apply. No parallel factory pool, free import, fabricated cash, inventory, shipment or output is created.
+
+### Verification
+
+New regression coverage is in `test/omega_private_enterprise_lifecycle_v1.test.mjs` and is registered in the package and country-factory baseline CI workflow. The Android offline smoke workflow also includes the lifecycle runtime in its change triggers. The offline shell cache is v101 and includes the new script.
+
+This documentation records implementation intent and current branch code only. It is not evidence that exact-head GitHub Actions, Android 9 device smoke, live browser E2E, save/load, or the SAB-34 dependency has passed. PR #408 must remain Draft/Open until those real acceptance gates are verified.
