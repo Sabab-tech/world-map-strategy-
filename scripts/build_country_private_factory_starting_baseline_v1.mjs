@@ -134,35 +134,65 @@ export function buildPrivateFactoryBaseline(government){
 export function validatePrivateFactoryBaseline(data,government){
  validateGovernment(government);
  const companyIds=COMPANIES.map(x=>x.id),factoryIds=government.factoryTypes.map(x=>x.id);
- if(data.datasetId!=='OMEGA_COUNTRY_PRIVATE_FACTORY_STARTING_BASELINE_V1'||data.countryCount!==197||data.factoryTypeCount!==21||data.companyCount!==5||Object.keys(data.countries||{}).length!==197)throw Error('PRIVATE_FACTORY_BASELINE_SCHEMA_INVALID');
- if(data.companies.map(x=>x.id).join('|')!==companyIds.join('|')||data.factoryTypes.map(x=>x.id).join('|')!==factoryIds.join('|'))throw Error('PRIVATE_FACTORY_IDENTITY_ROSTER_MISMATCH');
- let total=0;
+ const sortedKeys=value=>Object.keys(value||{}).sort().join('|');
+ const expectedCompanyKeys=companyIds.slice().sort().join('|');
+ const expectedFactoryKeys=factoryIds.slice().sort().join('|');
+ if(!data||data.datasetId!=='OMEGA_COUNTRY_PRIVATE_FACTORY_STARTING_BASELINE_V1'||
+    data.countryCount!==197||data.factoryTypeCount!==21||data.companyCount!==5||
+    !data.model||data.model.simulationOnly!==true||data.model.realWorldPrivateFacilityCounts!==false||
+    !data.countries||Object.keys(data.countries).length!==197)
+  throw Error('PRIVATE_FACTORY_BASELINE_SCHEMA_INVALID');
+ if(!Array.isArray(data.companies)||data.companies.map(x=>x.id).join('|')!==companyIds.join('|')||
+    !Array.isArray(data.factoryTypes)||data.factoryTypes.map(x=>x.id).join('|')!==factoryIds.join('|'))
+  throw Error('PRIVATE_FACTORY_IDENTITY_ROSTER_MISMATCH');
+ let total=0,totalGovernment=0;
  for(const cid of Object.keys(government.countries)){
   const g=government.countries[cid],r=data.countries[cid];
-  if(!r||r.countryId!==cid||!r.factoryCounts||!r.categoryParticipationPercent||!r.companyFactoryCounts)throw Error('PRIVATE_FACTORY_COUNTRY_ROW_INVALID:'+cid);
-  if(Object.keys(r.companyFactoryCounts).sort().join('|')!==companyIds.slice().sort().join('|'))throw Error('PRIVATE_COMPANY_ROSTER_INVALID:'+cid);
-  let countryTotal=0;
+  if(!r||r.countryId!==cid||!r.factoryCounts||!r.categoryParticipationPercent||!r.companyFactoryCounts)
+   throw Error('PRIVATE_FACTORY_COUNTRY_ROW_INVALID:'+cid);
+  if(sortedKeys(r.factoryCounts)!==expectedFactoryKeys||
+     sortedKeys(r.categoryParticipationPercent)!==expectedFactoryKeys||
+     sortedKeys(r.companyFactoryCounts)!==expectedCompanyKeys)
+   throw Error('PRIVATE_FACTORY_COUNTRY_CATEGORY_OR_COMPANY_ROSTER_INVALID:'+cid);
+  let countryTotal=0,countryGovernmentTotal=0;
+  for(const companyId of companyIds){
+   const counts=r.companyFactoryCounts[companyId];
+   if(!counts||sortedKeys(counts)!==expectedFactoryKeys)
+    throw Error('PRIVATE_COMPANY_FACTORY_ROSTER_INVALID:'+cid+':'+companyId);
+  }
   for(const type of factoryIds){
-   const gc=g.factoryCounts[type],pc=r.factoryCounts[type];
+   const gc=g.factoryCounts[type],pc=r.factoryCounts[type],rate=r.categoryParticipationPercent[type];
+   if(!Number.isInteger(gc)||gc<0)throw Error('GOVERNMENT_FACTORY_COUNT_INVALID:'+cid+':'+type);
    if(!Number.isInteger(pc)||pc<0)throw Error('PRIVATE_FACTORY_COUNT_INVALID:'+cid+':'+type);
    const companySum=companyIds.reduce((sum,id)=>{
-    const count=r.companyFactoryCounts[id]&&r.companyFactoryCounts[id][type];
+    const count=r.companyFactoryCounts[id][type];
     if(!Number.isInteger(count)||count<0)throw Error('PRIVATE_COMPANY_FACTORY_COUNT_INVALID:'+cid+':'+id+':'+type);
     return sum+count;
    },0);
    if(companySum!==pc)throw Error('PRIVATE_COMPANY_ALLOCATION_MISMATCH:'+cid+':'+type);
    if(gc===0&&pc!==0)throw Error('PRIVATE_ZERO_GOVERNMENT_CATEGORY_VIOLATION:'+cid+':'+type);
    if(pc>Math.floor(gc*.6+1e-9))throw Error('PRIVATE_FACTORY_OVER_60_PERCENT:'+cid+':'+type);
-   const rate=r.categoryParticipationPercent[type];
-   if(!Number.isFinite(rate)||rate<0||rate>60||(pc>0&&Math.abs(pc/gc*100-rate)>.051))throw Error('PRIVATE_FACTORY_RATE_INVALID:'+cid+':'+type);
-   countryTotal+=pc;
+   const expectedRate=gc>0?round1(pc/gc*100):0;
+   if(!Number.isFinite(rate)||rate<0||rate>60||Math.abs(rate-expectedRate)>.051)
+    throw Error('PRIVATE_FACTORY_RATE_INVALID:'+cid+':'+type);
+   countryTotal+=pc;countryGovernmentTotal+=gc;
   }
-  if(countryTotal!==r.totalPrivateFactoryUnits)throw Error('PRIVATE_COUNTRY_TOTAL_MISMATCH:'+cid);
-  if(r.allocationStatus!=='STATIC_PRIVATE_STARTING_ALLOCATION_NOT_COMMISSIONED'||r.realWorldPrivateFacilityCounts!==false)throw Error('PRIVATE_PROVENANCE_INVALID:'+cid);
-  total+=countryTotal;
+  if(!Number.isInteger(r.totalPrivateFactoryUnits)||countryTotal!==r.totalPrivateFactoryUnits)
+   throw Error('PRIVATE_COUNTRY_TOTAL_MISMATCH:'+cid);
+  if(!Number.isInteger(r.totalGovernmentFactoryUnits)||countryGovernmentTotal!==r.totalGovernmentFactoryUnits)
+   throw Error('PRIVATE_COUNTRY_GOVERNMENT_TOTAL_MISMATCH:'+cid);
+  const expectedCountryRate=countryGovernmentTotal>0?round1(countryTotal/countryGovernmentTotal*100):0;
+  if(!Number.isFinite(r.privateToGovernmentBaselinePercent)||
+     Math.abs(r.privateToGovernmentBaselinePercent-expectedCountryRate)>.051)
+   throw Error('PRIVATE_COUNTRY_BASELINE_RATE_MISMATCH:'+cid);
+  if(r.allocationStatus!=='STATIC_PRIVATE_STARTING_ALLOCATION_NOT_COMMISSIONED'||
+     r.simulationOnly!==true||r.realWorldPrivateFacilityCounts!==false)
+   throw Error('PRIVATE_PROVENANCE_INVALID:'+cid);
+  total+=countryTotal;totalGovernment+=countryGovernmentTotal;
  }
  if(total!==data.totalPrivateFactoryUnits)throw Error('PRIVATE_WORLD_TOTAL_MISMATCH');
- return{ok:true,countryCount:197,factoryTypeCount:21,companyCount:5,totalPrivateFactoryUnits:total};
+ if(totalGovernment!==data.totalGovernmentFactoryUnits)throw Error('PRIVATE_WORLD_GOVERNMENT_TOTAL_MISMATCH');
+ return{ok:true,countryCount:197,factoryTypeCount:21,companyCount:5,totalPrivateFactoryUnits:total,totalGovernmentFactoryUnits:totalGovernment};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const government=JSON.parse(fs.readFileSync(INPUT,'utf8')),generated=buildPrivateFactoryBaseline(government),serialized=JSON.stringify(generated,null,2)+'\n';
