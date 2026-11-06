@@ -5599,6 +5599,26 @@ function registerStartingFactoryAssets(input={}){
   const registryKey=datasetVersion+':'+(sessionId||cid);
   const prior=network.startingFactoryAssetRegistrations[registryKey];
   const assets=factoryAssets(cid);
+  const ensureStateFactoryOwnership=asset=>{
+    if(!asset||typeof asset!=='object')return asset;
+    const stateEntityId='STATE_INDUSTRY_'+cid;
+    if(!asset.ownerId&&!asset.ownerCompanyId){
+      asset.ownerId=stateEntityId;asset.ownerCompanyId=stateEntityId;asset.ownerType='STATE_OWNED_ENTERPRISE';
+    }
+    if(!asset.operatorId&&!asset.operatorCompanyId){
+      asset.operatorId=stateEntityId;asset.operatorCompanyId=stateEntityId;asset.operatorType='STATE_ENTERPRISE_OPERATOR';
+    }
+    if(!asset.companyId)asset.companyId=asset.operatorCompanyId||asset.operatorId||asset.ownerCompanyId||asset.ownerId||stateEntityId;
+    if(!asset.stateControlRights||typeof asset.stateControlRights!=='object'){
+      asset.stateControlRights={
+        strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
+        labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,
+        operationalControl:'STATE_OPERATOR',authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',simulationOnly:true
+      };
+    }
+    asset.ownershipMetadataAuthority=asset.ownershipMetadataAuthority||'OMEGA_STATE_FACTORY_OWNERSHIP_V1';
+    return asset;
+  };
   const activeFactoryAssets=()=>assets.filter(asset=>{
     const type=normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'');
     return types.includes(type)&&!['DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION'].includes(String(asset?.status||'').toUpperCase());
@@ -5632,6 +5652,8 @@ function registerStartingFactoryAssets(input={}){
     const matchingExisting=assets.filter(asset=>normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'')===type&&
       !['DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION'].includes(String(asset?.status||'').toUpperCase()));
     for(const existing of matchingExisting){
+      if(String(existing.sourceType||'').toUpperCase()==='COUNTRY_STARTING_FACTORY_BASELINE')
+        ensureStateFactoryOwnership(existing);
       const existingStatus=String(existing.status||'').toUpperCase();
       if(!existing.status)existing.status='OPERATIONAL';
       if(!existing.stage)existing.stage='PROCESSING';
@@ -5697,6 +5719,15 @@ function registerStartingFactoryAssets(input={}){
           missingInputs:[],reason:'NO_FACTORY_INPUTS',updatedTurn:turn(),authority:'OMEGA_FACTORY_PRODUCTION_SCHEDULER_V1'},
         ...((dynamicProcessing||dynamicRecipeSet)?{}:{inputCoefficients,outputProfile}),
         sourceType:'COUNTRY_STARTING_FACTORY_BASELINE',sourceAuthority:'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
+        ownerId:'STATE_INDUSTRY_'+cid,ownerCompanyId:'STATE_INDUSTRY_'+cid,ownerType:'STATE_OWNED_ENTERPRISE',
+        operatorId:'STATE_INDUSTRY_'+cid,operatorCompanyId:'STATE_INDUSTRY_'+cid,operatorType:'STATE_ENTERPRISE_OPERATOR',
+        companyId:'STATE_INDUSTRY_'+cid,
+        stateControlRights:{
+          strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
+          labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,
+          operationalControl:'STATE_OPERATOR',authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',simulationOnly:true
+        },
+        ownershipMetadataAuthority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',
         baselineSessionId:sessionId||null,baselineOrdinal:ordinal,simulationOnly:true,realWorldFacilityCounts:false
       };
       assets.push(asset);
