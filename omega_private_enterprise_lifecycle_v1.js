@@ -566,11 +566,14 @@
     if(!n||typeof n.startFactoryProject!=='function'||!profile)return{status:'BLOCKED',reason:'CANONICAL_FACTORY_CONSTRUCTION_RUNTIME_UNAVAILABLE'};
     var preflightResource=countryBucket('resource',cid,false)||{};
     var preflightDemand=obj(preflightResource.demandRuntime)?clone(preflightResource.demandRuntime):null;
+    var preflightRecipe=recipeFor(proposal.factoryType,(catalog()||{}).factoryProfiles&&catalog().factoryProfiles[proposal.factoryType]);
+    var preflightResourceId=Object.keys(preflightRecipe&&preflightRecipe.inputs||{})[0]||'';
+    var preflightStockProbe=preflightResourceId?resourceAvailable(cid,preflightResourceId):null;
     var latest=previewFor(proposal);
     var postflightResource=countryBucket('resource',cid,false)||{};
     var postflightDemand=obj(postflightResource.demandRuntime)?clone(postflightResource.demandRuntime):null;
     var demandEvidence={countryId:cid,proposalCountryId:proposal.countryId,turn:turn(),
-      before:preflightDemand,after:postflightDemand};
+      before:preflightDemand,stockProbe:preflightStockProbe,after:postflightDemand};
     if(latest.status!=='READY')
       return{status:'BLOCKED',reason:latest.reason||'PRIVATE_FACTORY_PRECONSTRUCTION_PREVIEW_BLOCKED',preview:latest,demandEvidence:demandEvidence};
     if(latest.unobservedInputs&&latest.unobservedInputs.length)
