@@ -334,7 +334,7 @@ public final class OmegaGameplaySmokeTest {
                 final String tabName = industryTabNames[tabIndex];
                 final String clickTabScript =
                         "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
-                        "var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"'+ " + tabId + " + '\\\"]');" +
+                        "var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"' + '" + tabId + "' + '\\\"]');" +
                         "if(!tab)return 'MISSING';var started=performance.now();tab.click();" +
                         "return String((performance.now()-started).toFixed(2));})()";
                 final String clickMsText = evaluate(instrumentation, webViewRef.get(), clickTabScript);
