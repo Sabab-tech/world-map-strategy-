@@ -319,7 +319,7 @@ test('construction retry reconciles a canonical project created before proposal 
   assert.equal(h.state.finance.BGD.omegaFinance.ledger.some(row=>row.type==='PRIVATE_ENTERPRISE_FACTORY_CAPEX'),false);
   const resumed=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
   assert.equal(resumed.status,'UNDER_CONSTRUCTION',JSON.stringify(resumed));
-  assert.deepEqual(api.getProposal('BGD',proposal.proposalId).projectIds,[orphan.projectId]);
+  assert.deepEqual(JSON.parse(JSON.stringify(api.getProposal('BGD',proposal.proposalId).projectIds)),[orphan.projectId]);
   assert.equal(h.projects.length,1,'retry must reuse the canonical project rather than create a second factory');
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].reservedBalance,0);
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].capitalSpent,100);
@@ -676,8 +676,9 @@ test('joint venture allocates small dividends by largest remainder without creat
     ]});
   assert.equal(created.status,'PROPOSED',JSON.stringify(created));
   assert.equal(h.api.decideJointVenture({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,decision:'APPROVE'}).status,'ACTIVE');
-  assert.equal(h.api.contributeJointVentureRetainedEarnings({countryId:'BGD',
-    jointVentureId:created.jointVenture.jointVentureId,companyId:COMPANY,amount:0.03,requestId:'small-fund'}).status,'POSTED');
+  const contribution=h.api.contributeJointVentureRetainedEarnings({countryId:'BGD',
+    jointVentureId:created.jointVenture.jointVentureId,companyId:COMPANY,amount:0.03,requestId:'small-fund'});
+  assert.equal(contribution.status,'POSTED',JSON.stringify(contribution));
   const resolution=h.api.createJointVentureResolution({countryId:'BGD',
     jointVentureId:created.jointVenture.jointVentureId,type:'DIVIDEND',amount:0.03,requiredApprovalBps:10000});
   assert.equal(resolution.status,'VOTING');
