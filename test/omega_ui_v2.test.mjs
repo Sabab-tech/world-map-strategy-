@@ -461,7 +461,7 @@ test('industry source avoids building datasets for inactive tabs', () => {
   assert.match(source, /activeTab === 'production-lines' \? assets\.map/);
   assert.match(source, /if \(activeTab === 'production-lines'\) \{/);
   assert.match(source, /var refreshedModel = buildViewModel\(\{ countryId:countryKey, tab:currentTab,/);
-  assert.match(source, /var currentExtraction = stockSummaryView \|\| needsMineProduction/);
+  assert.match(source, /var currentExtraction = optimizedFactoryRead \|\| !\(stockSummaryView \|\| needsMineProduction\)/);
   assert.match(source, /var production = needsMineProduction \? mineDailyProduction\(site\) : null/);
   assert.match(source, /var resourceInventoryLedger = stockSummaryView \?/);
   assert.match(source, /activeTab === 'production-lines' \? cyclesList\.length : 0/);
@@ -836,7 +836,7 @@ test('industry research and technology records remain isolated to the selected c
     economy:{BGD:{productionAssets:[]},USA:{productionAssets:[]}}
   }};
   try {
-    const model = globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD'});
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD',tab:'research'});
     assert.deepEqual(model.researchProjects.map(row=>row.projectId), ['BGD-TECH-1']);
     assert.deepEqual(model.technologyTransfers.map(row=>row.projectId), ['BGD-IMPORT-1']);
     assert.deepEqual(model.technologyCapabilities.map(row=>row.capabilityId), ['BGD-CAP-1']);
@@ -3545,7 +3545,7 @@ test('Factory type overview skips heavy inventory and production-ledger mapping 
     'the detailed private baseline is requested only for the Companies or Production Lines tabs, or an opened Manage panel');
   assert.ok(source.includes("var production = needsMineProduction ? mineDailyProduction(site) : null;"));
   assert.ok(source.includes("var dailyProductionKnownCount = lightweightTypeView ? 0 :"));
-  assert.ok(source.includes("var flows = activeTab === 'factories' && !lightweightTypeView ?"));
+  assert.ok(source.includes("var flows = !optimizedFactoryRead && activeTab === 'factories' && !lightweightTypeView ?"));
 });
 
 test('Production Lines joins exact selected-country cycles and committed logistics without inventing routes or owners',()=>{
