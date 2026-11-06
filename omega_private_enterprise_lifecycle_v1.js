@@ -207,7 +207,10 @@
         existingFactoryInputDemandPerDay:stock.existingFactoryInputDemandPerDay,existingDemand30Day:stock.existingDemand30Day,
         confirmedInboundNotCounted:stock.confirmedInboundNotCounted,demandStatus:stock.demandStatus,
         demandSnapshotTurn:stock.demandSnapshotTurn,demandEvaluationTurn:stock.demandEvaluationTurn,demandRowObserved:stock.demandRowObserved,demandRuntimePresent:stock.demandRuntimePresent,demandRuntimeResourceKeys:stock.demandRuntimeResourceKeys,resourceBucketKeys:stock.resourceBucketKeys,
-        shortfall:stock.available===null?null:Math.max(0,needed-stock.available),authority:stock.authority,reserved:stock.reserved});
+        shortfall:stock.available===null?null:Math.max(0,needed-stock.available),authority:stock.authority,reserved:stock.reserved,
+        snapshotDemandLastTurn:num(snapshot.demandRuntime&&snapshot.demandRuntime.lastTurn),
+        snapshotDemandResourceKeys:Object.keys(obj(snapshot.demandRuntime&&snapshot.demandRuntime.byResource)?snapshot.demandRuntime.byResource:{}),
+        snapshotDemandRuntimeOwnKeys:Object.keys(obj(snapshot.demandRuntime)?snapshot.demandRuntime:{} )});
     });
     return rows;
   }
@@ -576,7 +579,7 @@
     var preflightDemand=obj(preflightResource.demandRuntime)?clone(preflightResource.demandRuntime):null;
     var preflightRecipe=recipeFor(proposal.factoryType,(catalog()||{}).factoryProfiles&&catalog().factoryProfiles[proposal.factoryType]);
     var preflightResourceId=Object.keys(preflightRecipe&&preflightRecipe.inputs||{})[0]||'';
-    var preflightStockProbe=preflightResourceId?resourceAvailable(cid,preflightResourceId):null;
+    var preflightStockProbe=preflightResourceId?resourceAvailable(cid,preflightResourceId,preflightResource):null;
     var latest=previewFor(proposal);
     var postflightResource=countryBucket('resource',cid,false)||{};
     var postflightDemand=obj(postflightResource.demandRuntime)?clone(postflightResource.demandRuntime):null;
