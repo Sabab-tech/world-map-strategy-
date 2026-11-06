@@ -601,4 +601,12 @@ test('export settlement directive idempotency rejects the same ID with a changed
       ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-EXP-1'}]});
   assert.equal(changed.accepted,false);
   assert.equal(changed.reason,'STATE_DIRECTIVE_SETTLEMENT_IDEMPOTENCY_COLLISION');
+  const noBatches=api.commitExportDirectiveTx(ctx,{settlementId:'EXPORT-EMPTY-BATCH',resourceId:'widgets',quantity:5,
+    destinationCountryId:'SAU',batchTransfers:[]});
+  assert.equal(noBatches.accepted,false);
+  assert.equal(noBatches.reason,'STATE_DIRECTIVE_BATCH_TRANSFER_SCOPE_INVALID');
+  const quantityMismatch=api.commitExportDirectiveTx(ctx,{settlementId:'EXPORT-QUANTITY-MISMATCH',resourceId:'widgets',quantity:5,
+    destinationCountryId:'SAU',batchTransfers:[{sourceBatchId:'B-3',resourceId:'widgets',quantity:4,sourceFactoryId:'FAC-EXP-1'}]});
+  assert.equal(quantityMismatch.accepted,false);
+  assert.equal(quantityMismatch.reason,'STATE_DIRECTIVE_BATCH_TRANSFER_SCOPE_INVALID');
 });
