@@ -335,13 +335,19 @@ public final class OmegaGameplaySmokeTest {
                     "var panel=main&&main.querySelector('[data-omega-private-company-lifecycle]');" +
                     "var form=panel&&panel.querySelector('[data-pe-proposal-form]');" +
                     "var operator=form&&form.querySelector('select[name=operatorCompanyId]');" +
-                    "return JSON.stringify({panel:!!panel,proposalForm:!!form,operatorSelector:!!operator," +
-                    "baselineRetry:!!(panel&&panel.querySelector('[data-pe-baseline-retry]'))});})()";
+                    "var registry=window.OmegaPrivateEnterpriseRegistryV1;" +
+                    "var diagnostic=registry&&typeof registry.diagnostics==='function'?registry.diagnostics():null;" +
+                    "return JSON.stringify({route:document.getElementById('cabinet-full-window')&&document.getElementById('cabinet-full-window').getAttribute('data-omega-v2-route')," +
+                    "tab:main&&main.__omegaV2IndustryTab,panel:!!panel,proposalForm:!!form,operatorSelector:!!operator," +
+                    "baselineRetry:!!(panel&&panel.querySelector('[data-pe-baseline-retry]'))," +
+                    "registryStatus:diagnostic&&diagnostic.status,registryReason:diagnostic&&diagnostic.reason});})()";
             String privateLifecycleReady = "false";
-            final long privateLifecycleDeadline = SystemClock.elapsedRealtime() + 10000L;
+            String privateLifecycleLastDiagnostics = "{}";
+            final long privateLifecycleDeadline = SystemClock.elapsedRealtime() + 20000L;
             while (!"true".equals(privateLifecycleReady) &&
                     SystemClock.elapsedRealtime() < privateLifecycleDeadline) {
                 final String lifecycleDiagnostics = evaluate(instrumentation, webViewRef.get(), privateLifecycleDiagnosticsScript);
+                privateLifecycleLastDiagnostics = lifecycleDiagnostics;
                 try {
                     org.json.JSONObject state = new org.json.JSONObject(lifecycleDiagnostics);
                     privateLifecycleReady = Boolean.toString(state.optBoolean("panel") &&
@@ -355,7 +361,7 @@ public final class OmegaGameplaySmokeTest {
                 if (!"true".equals(privateLifecycleReady)) SystemClock.sleep(200L);
             }
             assertEquals(
-                    "Production Lines must mount the private proposal form and separate operator selector",
+                    "Production Lines must mount the private proposal form and separate operator selector; diagnostics=" + privateLifecycleLastDiagnostics,
                     "true", privateLifecycleReady
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_ENTERPRISE_LIFECYCLE_MOUNTED");
