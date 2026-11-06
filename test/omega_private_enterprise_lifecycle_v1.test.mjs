@@ -128,6 +128,23 @@ test('autonomous company proposals are deterministic, once per 30 turns, and hav
   assert.equal(h.state.economy.BGD.productionAssets.length,0);
 });
 
+test('committed game-turn event schedules the autonomous proposal only once for the selected country',async()=>{
+  const h=makeHarness();
+  h.state.simulation.turn=30;
+  emit(h,'OMEGA_SIMULATION_TURN_COMMITTED',{countryId:'BGD',turn:30});
+  await Promise.resolve();
+  await Promise.resolve();
+  const dashboard=h.api.getCountryDashboard('BGD');
+  assert.equal(dashboard.proposals.length,1);
+  assert.equal(dashboard.proposals[0].submissionMode,'AUTONOMOUS_COMPANY_TURN_CYCLE');
+  assert.equal(dashboard.proposals[0].companyId,'AURORA_INDUSTRIAL_GROUP');
+  assert.equal(h.projects.length,0);
+  assert.equal(h.state.economy.BGD.productionAssets.length,0);
+  emit(h,'OMEGA_SIMULATION_TURN_COMMITTED',{countryId:'BGD',turn:30});
+  await Promise.resolve();
+  assert.equal(h.api.getCountryDashboard('BGD').proposals.length,1);
+});
+
 test('proposal -> approval -> real Treasury grant -> construction -> private commissioning is replay-safe and uses shared assets',()=>{
   const h=makeHarness(),api=h.api;
   const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',factoryType:'STEEL_WORKS',quantity:1,
