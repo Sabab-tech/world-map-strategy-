@@ -3301,8 +3301,8 @@ test('Industry view pre-indexes non-baseline factory assets instead of rescannin
 test('Factory type overview skips heavy inventory and production-ledger mapping until a card is opened', () => {
   const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
   assert.match(source, /var lightweightTypeView = options\.lightweightFactoryTypeView === true/);
-  assert.match(source, /!lightweightTypeView && context\.countryId && inventoryRuntime/);
-  assert.match(source, /var resourceBatches = lightweightTypeView \? \[\]/);
+  assert.match(source, /!lightweightTypeView && \(inputDetailView \|\| stockSummaryView\) && context\.countryId && inventoryRuntime/);
+  assert.match(source, /var needsBatchRows = activeTab === 'inventory' \|\| stockSummaryView \|\| activeTab === 'factories' && !lightweightTypeView/);
   assert.match(source, /var lightweightTypeView = active === 'factories' && requestedFactoryView === 'types' && !managePanelOpen && !factoryDetailsOpen/);
   assert.match(source, /lightweightFactoryTypeView:currentTab === 'factories' && currentView === 'types' && !currentManageOpen && !currentDetailsOpen/);
   assert.ok(source.includes("options.loadPrivateEnterpriseBaseline === true && context.countryId"));
@@ -3310,9 +3310,9 @@ test('Factory type overview skips heavy inventory and production-ledger mapping 
     'the lightweight Factory overview stays lazy, while Production Lines loads its private opening baseline');
   assert.ok(source.includes("requestedTab === 'companies' || requestedTab === 'production-lines' || factoryManageOpened"),
     'the detailed private baseline is requested only for the Companies or Production Lines tabs, or an opened Manage panel');
-  assert.ok(source.includes("var production = lightweightTypeView ? null : mineDailyProduction(site);"));
+  assert.ok(source.includes("var production = needsMineProduction ? mineDailyProduction(site) : null;"));
   assert.ok(source.includes("var dailyProductionKnownCount = lightweightTypeView ? 0 :"));
-  assert.ok(source.includes("var flows = lightweightTypeView ? [] :"));
+  assert.ok(source.includes("var flows = activeTab === 'factories' && !lightweightTypeView ?"));
 });
 
 test('Production Lines joins exact selected-country cycles and committed logistics without inventing routes or owners',()=>{
