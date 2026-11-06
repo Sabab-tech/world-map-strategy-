@@ -544,7 +544,12 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/Government decision queue/);
   assert.match(fragments[0],/Private operator/);
   assert.match(fragments[0],/Corporate Finance \/ Profit \/ Tax \/ Cost/);
+  assert.match(fragments[0],/Input materials/);
+  assert.match(fragments[0],/Worker costs/);
+  assert.match(fragments[0],/Transport costs/);
+  assert.match(fragments[0],/Other recorded costs/);
   assert.match(fragments[0],/data-pe-jv-form/);
+  assert.match(fragments[0],/Shareholder E equity/);
   assert.match(fragments[0],/Joint ventures \/ shareholder voting \/ dividends/);
   assert.match(fragments[0],/Close cash-flow period \/ assess profit tax/);
   assert.match(fragments[0],/Construction and operating readiness/);
@@ -589,6 +594,25 @@ test('company cash-flow period close posts net-profit tax once and carries post-
   assert.equal(h.state.finance.BGD.omegaFinance.ledger.filter(row=>row.type==='PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX').length,1);
 });
 
+test('company tax close blocks when current-period cash-flow entries were pruned',()=>{
+  const h=makeHarness();
+  h.state.economy.BGD.companyAccounts={
+    [COMPANY]:{
+      companyId:COMPANY,runtimeNetCashFlow:100,grossRevenue:100,paymentsReceived:100,paymentsMade:0,
+      cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,lastTurn:4,
+      cashFlowJournalDroppedEntries:3,cashFlowJournalEarliestDroppedTurn:2,
+      cashFlowEntries:[{entryId:'RECENT-SALE',companyId:COMPANY,amount:100,direction:'CREDIT',category:'DOMESTIC_SUPPLY',turn:4,status:'POSTED'}]
+    }
+  };
+  const before=h.state.finance.BGD.available;
+  const result=h.api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:COMPANY});
+  assert.equal(result.status,'BLOCKED');
+  assert.equal(result.reason,'COMPANY_FINANCIAL_PERIOD_JOURNAL_TRUNCATED');
+  assert.equal(h.state.finance.BGD.available,before);
+  assert.equal(h.api.getCompanyFinanceSummary('BGD',COMPANY).journal.status,'JOURNAL_TRUNCATED');
+  assert.equal(h.state.finance.BGD.omegaFinance.ledger.some(row=>row.type==='PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX'),false);
+});
+
 test('joint venture needs exact shareholder weights, state approval, weighted votes and post-tax dividend funding',()=>{
   const h=makeHarness();
   h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
@@ -606,10 +630,30 @@ test('joint venture needs exact shareholder weights, state approval, weighted vo
       {companyId:COMPANY,shareBps:6000},{companyId:'AURORA_INDUSTRIAL_GROUP',shareBps:4000}
     ]});
   assert.equal(created.status,'PROPOSED');
+  const collision=h.api.createJointVenture({countryId:'BGD',name:'Changed ownership terms',requestId:'jv-1',
+    managingCompanyId:COMPANY,shareholders:[
+      {companyId:COMPANY,shareBps:5000},{companyId:'AURORA_INDUSTRIAL_GROUP',shareBps:5000}
+    ]});
+  assert.equal(collision.status,'BLOCKED');
+  assert.equal(collision.reason,'JV_REQUEST_IDEMPOTENCY_COLLISION');
+  const exactReplay=h.api.createJointVenture({countryId:'BGD',name:'Steel Strategic JV',requestId:'jv-1',
+    managingCompanyId:COMPANY,shareholders:[
+      {companyId:COMPANY,shareBps:6000},{companyId:'AURORA_INDUSTRIAL_GROUP',shareBps:4000}
+    ]});
+  assert.equal(exactReplay.status,'DUPLICATE');
+  assert.equal(exactReplay.jointVenture.jointVentureId,created.jointVenture.jointVentureId);
   assert.equal(h.api.decideJointVenture({countryId:'BGD',jointVentureId:created.jointVenture.jointVentureId,decision:'APPROVE'}).status,'ACTIVE');
   const contribution=h.api.contributeJointVentureRetainedEarnings({countryId:'BGD',
     jointVentureId:created.jointVenture.jointVentureId,companyId:COMPANY,amount:100,requestId:'retained-1'});
   assert.equal(contribution.status,'POSTED');
+  const contributionCollision=h.api.contributeJointVentureRetainedEarnings({countryId:'BGD',
+    jointVentureId:created.jointVenture.jointVentureId,companyId:COMPANY,amount:90,requestId:'retained-1'});
+  assert.equal(contributionCollision.status,'BLOCKED');
+  assert.equal(contributionCollision.reason,'JV_CONTRIBUTION_REQUEST_IDEMPOTENCY_COLLISION');
+  const subCentResolution=h.api.createJointVentureResolution({countryId:'BGD',
+    jointVentureId:created.jointVenture.jointVentureId,type:'DIVIDEND',amount:70.001});
+  assert.equal(subCentResolution.status,'BLOCKED');
+  assert.equal(subCentResolution.reason,'JV_DIVIDEND_CURRENCY_PRECISION_EXCEEDED');
   const resolution=h.api.createJointVentureResolution({countryId:'BGD',
     jointVentureId:created.jointVenture.jointVentureId,type:'DIVIDEND',amount:70});
   assert.equal(resolution.status,'VOTING');
