@@ -6426,3 +6426,252 @@
   white-space:normal;
   overflow-wrap:anywhere;
 }
+
+
+/* SAB-42: phone-first, read-only Production Ministry Lines view.
+   Keep one column and avoid backdrop/photo/3D work on low-memory WebViews. */
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-width:0;
+  background:linear-gradient(160deg,rgba(5,16,29,.98),rgba(8,25,42,.98));
+  background-image:none !important;
+}
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .fp-deck,
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .omega-v2-factory-backdrop {
+  display:none !important;
+}
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .fp-lines {
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  min-width:0;
+  width:100%;
+  padding:0 1px 10px;
+}
+.omega-v2-industry--factory-home .fp-lines-heading {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+  padding:2px 1px 8px;
+  border-bottom:1px solid rgba(104,189,232,.2);
+}
+.omega-v2-industry--factory-home .fp-lines-heading > div { min-width:0; }
+.omega-v2-industry--factory-home .fp-lines-heading > div > span,
+.omega-v2-industry--factory-home .fp-lines-heading > small {
+  color:#7fa9c2;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.omega-v2-industry--factory-home .fp-lines-heading h3 {
+  margin:3px 0 0;
+  color:#eaf6ff;
+  font-size:14px;
+  line-height:1.2;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-lines-summary {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
+.omega-v2-industry--factory-home .fp-lines-summary > div {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:7px;
+  min-width:0;
+  min-height:34px;
+  padding:6px 8px;
+  border:1px solid rgba(104,189,232,.18);
+  border-radius:7px;
+  background:rgba(4,17,31,.8);
+}
+.omega-v2-industry--factory-home .fp-lines-summary span {
+  color:#8aaec5;
+  font-size:8px;
+  line-height:1.2;
+}
+.omega-v2-industry--factory-home .fp-lines-summary strong {
+  color:#f0f8ff;
+  font-size:12px;
+  font-variant-numeric:tabular-nums;
+}
+.omega-v2-industry--factory-home .fp-lines-list {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:8px;
+  min-width:0;
+}
+.omega-v2-industry--factory-home .fp-line-card {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+  padding:9px;
+  border:1px solid rgba(104,189,232,.2);
+  border-radius:9px;
+  background:linear-gradient(155deg,rgba(8,26,43,.96),rgba(4,15,27,.98));
+}
+.omega-v2-industry--factory-home .fp-line-card-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+}
+.omega-v2-industry--factory-home .fp-line-card-head > div { min-width:0; }
+.omega-v2-industry--factory-home .fp-line-kicker {
+  display:block;
+  color:#7fb4d3;
+  font-size:8px;
+  font-weight:800;
+  line-height:1.25;
+  text-transform:uppercase;
+}
+.omega-v2-industry--factory-home .fp-line-card h3 {
+  margin:3px 0 2px;
+  color:#eff8ff;
+  font-size:12px;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-card-head small {
+  color:#718fa5;
+  font-size:8px;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-status {
+  flex:0 0 auto;
+  max-width:45%;
+  padding:4px 6px;
+  border:1px solid rgba(109,194,235,.28);
+  border-radius:6px;
+  color:#b7dff4;
+  background:rgba(18,63,88,.35);
+  font-size:8px;
+  font-weight:850;
+  line-height:1.2;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-summary {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
+.omega-v2-industry--factory-home .fp-line-summary > div {
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  min-width:0;
+  padding:6px 7px;
+  border-radius:6px;
+  background:rgba(3,14,25,.72);
+}
+.omega-v2-industry--factory-home .fp-line-summary span,
+.omega-v2-industry--factory-home .fp-line-fact > span {
+  color:#82a6bd;
+  font-size:8px;
+  line-height:1.2;
+}
+.omega-v2-industry--factory-home .fp-line-summary strong {
+  color:#e6f4fd;
+  font-size:10px;
+  line-height:1.25;
+  font-variant-numeric:tabular-nums;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-facts {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:6px;
+}
+.omega-v2-industry--factory-home .fp-line-fact,
+.omega-v2-industry--factory-home .fp-line-input {
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  min-width:0;
+  padding:6px 7px;
+  border-left:2px solid rgba(69,180,231,.45);
+  border-radius:0 5px 5px 0;
+  background:rgba(3,14,25,.68);
+}
+.omega-v2-industry--factory-home .fp-line-fact strong,
+.omega-v2-industry--factory-home .fp-line-input strong {
+  color:#deeff9;
+  font-size:9px;
+  font-weight:850;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-fact small,
+.omega-v2-industry--factory-home .fp-line-input small,
+.omega-v2-industry--factory-home .fp-line-input span {
+  color:#829daf;
+  font-size:8px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-inputs {
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  min-width:0;
+}
+.omega-v2-industry--factory-home .fp-line-inputs h4 {
+  margin:0;
+  color:#a5c7dc;
+  font-size:9px;
+  font-weight:850;
+}
+.omega-v2-industry--factory-home .fp-line-record-count,
+.omega-v2-industry--factory-home .fp-lines-sources {
+  color:#64849a;
+  font-size:7px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-lines-empty {
+  padding:14px 10px;
+  border:1px dashed rgba(104,189,232,.24);
+  border-radius:8px;
+  color:#93afc2;
+  background:rgba(3,14,25,.55);
+  font-size:10px;
+  line-height:1.4;
+  text-align:center;
+}
+.omega-v2-industry--factory-home .fp-lines-provenance {
+  margin:0;
+  padding:7px 8px;
+  border-left:2px solid rgba(126,164,190,.4);
+  color:#7895a9;
+  background:rgba(4,15,26,.6);
+  font-size:8px;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+@media (min-width:700px) {
+  .omega-v2-industry--factory-home .fp-lines-summary {
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  .omega-v2-industry--factory-home .fp-line-facts {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media (max-width:380px) {
+  .omega-v2-industry--factory-home .fp-lines-summary > div {
+    min-height:32px;
+    padding:5px 6px;
+  }
+  .omega-v2-industry--factory-home .fp-line-card {
+    padding:8px;
+  }
+}
