@@ -66,6 +66,24 @@ test('selected-country preparation uses one country profile and not the global r
   assert.equal(api.diagnostics().sourceIds.includes('country_general_data_registry_v1.json'),false);
   assert.equal(api.releaseCountry('BD'),true);
 });
+
+test('view snapshots preserve authoritative display fields without running exhaustive source audits',()=>{
+  const api=fixture({world:{type:'FeatureCollection',features:[
+    {type:'Feature',id:'BGD',properties:{name:'Bangladesh',ISO_A2:'BD',ISO_A3:'BGD'}}
+  ]},roster:[{code:'BD',name:'Bangladesh'}]});
+  const audited=api.getSnapshot('BD');
+  const view=api.getSnapshotForView('BD');
+  assert.equal(view.status,'READY_UNAUDITED');
+  assert.equal(view.countryCode,audited.countryCode);
+  assert.equal(view.fields.population.value,audited.fields.population.value);
+  assert.equal(view.fields.gdp.value,audited.fields.gdp.value);
+  assert.equal(view.sources.length,0,'view snapshots skip the exhaustive source inventory');
+  assert.equal(view.diagnostics.auditPerformed,false);
+  assert.equal(view.diagnostics.errors.length,0);
+  assert.equal(Object.prototype.hasOwnProperty.call(view.raw,'worldFeature'),false);
+  assert.equal(api.auditCountry('BD').ok,true,'explicit audits retain full validation');
+});
+
 test('unknown country never silently falls back to another country',()=>{
   const snap=fixture().getSnapshot('Country Not In Registry');
   assert.equal(snap.status,'COUNTRY_NOT_RESOLVED');assert.equal(snap.countryCode,null);
@@ -123,6 +141,9 @@ test('new overview, gateway and legacy screen files are wired through the same c
   const html=read('index.html');
   assert.match(html,/omega_country_data_gateway_v1\.js/);
   assert.match(read('country-ios.js'),/gateway\.getValue\(requested, domains, paths\)/);
+  for (const path of ['omega_ui_v2/app.js','omega_ui_v2/screens/economy.js','omega_ui_v2/screens/reports.js','omega_ui_v2/screens/government.js','country-ios.js','map-engine-1.js']) {
+    assert.match(read(path),/getSnapshotForView/,path+' must use the lightweight display snapshot');
+  }
   assert.match(read('ministry_engine.js'),/OmegaCountryDataGateway/);
   assert.match(read('map-engine-1.js'),/OmegaCountryDataGateway/);
   assert.match(read('omega_country_overview_ministry_ui_v1.js'),/auditAllCountries/);
