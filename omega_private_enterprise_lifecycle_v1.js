@@ -493,23 +493,37 @@
     var baselineRow=baseline(country);
     if(!baselineRow||baselineRow.status!=='READY'){
       var pendingCountry=root.__omegaPrivateBaselinePendingCountry||'';
-      if(pendingCountry!==country){
+      var failedCountry=root.__omegaPrivateBaselineLoadFailedCountry||'';
+      if(pendingCountry!==country&&failedCountry!==country){
         root.__omegaPrivateBaselinePendingCountry=country;
         var readiness;
         try{readiness=registry&&registry.ready;}catch(error){readiness=Promise.reject(error);}
-        Promise.resolve(readiness).then(function(){
+        Promise.resolve(readiness).then(function(result){
           if(root.__omegaPrivateBaselinePendingCountry!==country)return;
           root.__omegaPrivateBaselinePendingCountry='';
+          if(!result||result.status!=='READY')root.__omegaPrivateBaselineLoadFailedCountry=country;
+          else root.__omegaPrivateBaselineLoadFailedCountry='';
           if(root.__omegaV2IndustryTab==='production-lines'){
             var current=g.OmegaUIV2Industry;
             if(current&&typeof current.render==='function')current.render(root,Object.assign({},root.__omegaV2IndustryOptions||options||{},{countryId:country,tab:'production-lines'}));
           }
-        }).catch(function(error){root.__omegaPrivateBaselineError=String(error&&error.message||error);});
+        }).catch(function(error){
+          if(root.__omegaPrivateBaselinePendingCountry!==country)return;
+          root.__omegaPrivateBaselinePendingCountry='';
+          root.__omegaPrivateBaselineLoadFailedCountry=country;
+          root.__omegaPrivateBaselineError=String(error&&error.message||error);
+          if(root.__omegaV2IndustryTab==='production-lines'){
+            var current=g.OmegaUIV2Industry;
+            if(current&&typeof current.render==='function')current.render(root,Object.assign({},root.__omegaV2IndustryOptions||options||{},{countryId:country,tab:'production-lines'}));
+          }
+        });
       }
       var oldPanel=shell.querySelector('[data-omega-private-company-lifecycle]');
       if(oldPanel&&oldPanel.remove)oldPanel.remove();
       var loadStatus=registry&&registry.diagnostics?registry.diagnostics():null;
-      var loadMessage=loadStatus&&loadStatus.status==='BLOCKED'?'Private factory baseline unavailable: '+escapeHtml(loadStatus.reason||'DATA_UNAVAILABLE'):'Loading private company opening baseline…';
+      var loadMessage=failedCountry===country||loadStatus&&loadStatus.status==='BLOCKED'
+        ?'Private factory baseline unavailable: '+escapeHtml(root.__omegaPrivateBaselineError||loadStatus&&loadStatus.reason||'DATA_UNAVAILABLE')
+        :'Loading private company opening baseline…';
       shell.insertAdjacentHTML('beforeend','<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1"><h3>Company expansion proposals</h3><p>'+loadMessage+'</p><p class="pe-footnote">The government and private baseline must load before the proposal approval preview can be calculated.</p></section>');
       return;
     }
