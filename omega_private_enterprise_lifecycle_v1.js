@@ -1516,10 +1516,10 @@
       '<details class="pe-proposals"><summary><strong>Corporate Finance / Profit / Tax / Cost</strong></summary><p class="pe-footnote">Committed company cash flows are journalled. A period close assesses tax only against recorded positive cash-basis operating profit. Factory CAPEX remains separate from operating cost; accrual inventory valuation is not fabricated.</p>'+financeCards+'</details>'+
       '<section class="pe-proposals"><h4>Joint ventures / shareholder voting / dividends</h4>'+
       '<form class="pe-form" data-pe-jv-form><label>JV name<input name="name" type="text" maxlength="100" value="Strategic Industrial Joint Venture" required></label>'+
-      '<label>Managing company / shareholder A<select name="companyA">'+jvCompanyOptions+'</select></label>'+
+      '<label>Managing company / shareholder A<select name="companyA" required>'+jvCompanyOptions+'</select></label>'+
       '<label>Shareholder A equity (%)<input name="shareA" type="number" min="0.01" max="99.99" step="0.01" value="50" required></label>'+
       '<label>Shareholder B<select name="companyB"><option value="">Not participating</option>'+jvCompanyOptions+'</select></label>'+
-      '<label>Shareholder B equity (%)<input name="shareB" type="number" min="0" max="99.99" step="0.01" value="50"></label>'+
+      '<label>Shareholder B equity (%)<input name="shareB" type="number" min="0" max="99.99" step="0.01" value="0"></label>'+
       '<label>Shareholder C<select name="companyC"><option value="">Not participating</option>'+jvCompanyOptions+'</select></label>'+
       '<label>Shareholder C equity (%)<input name="shareC" type="number" min="0" max="99.99" step="0.01" value="0"></label>'+
       '<label>Shareholder D<select name="companyD"><option value="">Not participating</option>'+jvCompanyOptions+'</select></label>'+
@@ -1570,8 +1570,8 @@
         shareholderLetters.forEach(function(letter){
           var companyId=String(jvData.get('company'+letter)||'').trim(),
             shareValue=String(jvData.get('share'+letter)||'').trim();
-          if(!companyId&&!shareValue)return;
-          shareholders.push({companyId:companyId,shareBps:Math.round(Number(shareValue)*100)});
+          if(!companyId&&(!shareValue||Number(shareValue)===0))return;
+          shareholders.push({companyId:companyId,shareBps:shareValue?Math.round(Number(shareValue)*100):0});
         });
         var factoryIds=String(jvData.get('factoryIds')||'').split(',').map(function(value){return value.trim();}).filter(Boolean);
         var jvResult=createJointVenture({countryId:root.__omegaV2IndustryCountryId||playerCountry(),
