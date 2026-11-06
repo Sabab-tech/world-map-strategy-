@@ -44,10 +44,10 @@ function countryModel(row){
  const specs=Array.isArray(row.specializations)?row.specializations:[],depth=Math.min(10,specs.length);
  let base,basis;
  if(comparable){
-  base=8+.58*clamp(m===null?0:m,0,35)+.20*clamp(i===null?0:i,0,50)+.06*clamp(s===null?0:s,0,80)+1.2*depth;
+  base=16+.62*clamp(m===null?0:m,0,35)+.22*clamp(i===null?0:i,0,50)+.06*clamp(s===null?0:s,0,80)+1.35*depth;
   basis='COMPARABLE_MACRO_AND_SPECIALIZATION_GAME_MODEL';
   if(c.manufacturingBand==='HIGH')base+=2;else if(c.manufacturingBand==='LOW')base-=1.5;
- }else if(depth){base=Math.min(34,8+depth*1.8);basis='SPECIALIZATION_ONLY_CONSERVATIVE_GAME_MODEL';}
+ }else if(depth){base=Math.min(42,16+depth*2.1);basis='SPECIALIZATION_ONLY_CONSERVATIVE_GAME_MODEL';}
  else{base=0;basis='NO_COMPARABLE_CONTEXT_OR_SPECIALIZATION_ZERO_PRIVATE_BASELINE';}
  return {baseParticipationPercent:round1(clamp(base,0,55)),basis,comparisonStatus:status,comparisonYear:Number.isInteger(year)?year:null,
  inputs:{manufacturingValueAddedPctGdp:m,industryValueAddedPctGdp:i,servicesValueAddedPctGdp:s,agricultureEmploymentPct:a,manufacturingBand:c.manufacturingBand||'NOT_COMPARABLE',specializationCount:specs.length}};
