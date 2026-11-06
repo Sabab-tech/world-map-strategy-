@@ -426,6 +426,8 @@ test('domestic approval subtracts strategic protection and current national dema
   assert.equal(h.state.resource.BGD.inventory.iron_ore,1000);
 
   setIronDemandSnapshot(h,11,5,6);
+  assert.equal(h.state.resource.BGD.demandRuntime.lastTurn,4);
+  assert.equal(h.sandbox.Game.state.resource.BGD.demandRuntime.lastTurn,4);
   const pressured=h.api.previewProposal('BGD',proposal.proposalId);
   assert.equal(pressured.maximumSafeDomesticFactoryQuantity,0,JSON.stringify(pressured.inputRequirements[0]));
   assert.equal(pressured.inputRequirements[0].protectedStock,100);
