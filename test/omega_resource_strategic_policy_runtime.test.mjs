@@ -603,9 +603,14 @@ test('government procurement rejects in-transit, unstored, missing-lot and misma
   for(const scenario of scenarios){
     const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime,companyId='NOVA_CONSUMER_INDUSTRIES';
     h.state.resource.BGD.inventory={widgets:10};
+    const sourceProposalId='PROC-PROPOSAL-'+scenario.name.replaceAll(' ','-');
+    const sourceDecisionId='PROC-DECISION-'+scenario.name.replaceAll(' ','-');
+    const sourceFundingId='PROC-FUNDING-'+scenario.name.replaceAll(' ','-');
+    const privatePermitId='PROC-PERMIT-'+scenario.name.replaceAll(' ','-');
     const batch={batchId:'PRIVATE-'+scenario.name.replaceAll(' ','-'),resourceId:'widgets',quantity:10,remainingQuantity:10,
       stage:'FINISHED',countryId:'BGD',ownerCompanyId:companyId,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
       ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-PRIVATE-WIDGETS',
+      sourcePrivateProposalId:sourceProposalId,sourcePrivateDecisionId:sourceDecisionId,sourcePrivateFundingId:sourceFundingId,
       warehouseId:'WH-BGD-PROCESSED',status:scenario.status};
     h.state.resource.BGD.batches=[batch];
     h.state.resource.BGD.inventoryLots=scenario.lot?{[batch.batchId]:{...batch}}:{};
@@ -615,6 +620,8 @@ test('government procurement rejects in-transit, unstored, missing-lot and misma
     h.state.economy={BGD:{productionAssets:scenario.asset?[{
       id:'FAC-PRIVATE-WIDGETS',status:'OPERATIONAL',productionEnabled:true,ownerType:'PRIVATE_ENTERPRISE',
       ownerCompanyId:companyId,operatorType:'PRIVATE_COMPANY_OPERATOR',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      privatePermitId,privatePermitStatus:'ACTIVE',
+      sourcePrivateProposalId:sourceProposalId,sourcePrivateDecisionId:sourceDecisionId,sourcePrivateFundingId:sourceFundingId,
       stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
     }]:[]}};
     api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
