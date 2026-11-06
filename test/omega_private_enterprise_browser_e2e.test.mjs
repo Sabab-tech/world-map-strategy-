@@ -409,7 +409,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     // Use a unique temporary slot and a harmless simulation-root sentinel so the live
     // inventory, finance, route and commissioned asset records are never deliberately
     // corrupted while the game page is running.
-    metrics.browserSaveLoad = await page.evaluate(() => {
+    metrics.browserSaveLoad = await page.evaluate(async () => {
       const runtime = window.Omega?.Simulation;
       const stateRoot = window.Game?.state;
       if (!runtime || typeof runtime.saveSlot !== 'function' || typeof runtime.loadSlot !== 'function' || !stateRoot) {
@@ -420,13 +420,14 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       const slot = 'private-enterprise-browser-e2e-' + Date.now();
       const sentinel = '__omegaPrivateBrowserSaveLoadProbe';
       const proposalIds = (stateRoot.economy?.BGD?.privateEnterpriseLifecycle?.proposals || []).map(row => row.proposalId);
-      const saved = runtime.saveSlot(slot);
+      const saved = await runtime.saveSlot(slot);
       if (!saved || saved.ok !== true) throw new Error('BROWSER_SAVE_SLOT_FAILED');
       stateRoot.simulation[sentinel] = 'IN_MEMORY_TAMPER_AFTER_SAVE';
-      const loaded = runtime.loadSlot(slot);
+      const loaded = await runtime.loadSlot(slot);
       const restoredIds = (window.Game.state.economy?.BGD?.privateEnterpriseLifecycle?.proposals || []).map(row => row.proposalId);
       const result = {
         saveOk: saved.ok === true,
+        storage: saved.storage || null,
         loadIntegrity: runtime.lastLoadIntegrity,
         sameAuthoritativeRoot: window.Game.state === stateRoot && runtime.world?.state === stateRoot,
         worldStateLinked: loaded?.authoritativeState?.worldStateLinked === true,
@@ -438,7 +439,7 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       };
       try { window.localStorage.removeItem(saved.key); } catch (_) {}
       if (previousStatus === 'RUNNING' && typeof runtime.resumeSession === 'function') runtime.resumeSession();
-      if (!result.saveOk || result.loadIntegrity !== 'VERIFIED' || !result.sameAuthoritativeRoot ||
+      if (!result.saveOk || result.storage !== 'INDEXEDDB' || result.loadIntegrity !== 'VERIFIED' || !result.sameAuthoritativeRoot ||
           !result.worldStateLinked || !result.sentinelCleared || !result.proposalIdsPreserved) {
         throw new Error('BROWSER_SAVE_LOAD_INTEGRITY_FAILED:' + JSON.stringify(result));
       }
