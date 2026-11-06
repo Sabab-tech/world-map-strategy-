@@ -197,6 +197,7 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
   assert.equal(api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,sourceType:'GOVERNMENT_GRANT',amount:100}).status,'DUPLICATE');
   assert.equal(h.state.finance.BGD.available,900);
 
+  setReadyIronSupply(h,100);
   const beforeReceipt=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
   assert.equal(beforeReceipt.status,'BLOCKED');
   assert.equal(beforeReceipt.reason,'FACTORY_INPUT_STOCK_SHORTAGE');
