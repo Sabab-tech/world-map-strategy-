@@ -413,6 +413,10 @@ function governmentProcurementTx(cmd,ctx){
   const operator=String(b?.operatorCompanyId||'').trim().toUpperCase();
   const asset=assets.find(row=>String(row?.id||row?.factoryId||'')===sourceFactoryId);
   const lot=lots[batchId],status=String(b?.status||'').toUpperCase();
+  const privateProposalId=String(asset?.sourcePrivateProposalId||'');
+  const privateDecisionId=String(asset?.sourcePrivateDecisionId||'');
+  const privateFundingId=String(asset?.sourcePrivateFundingId||'');
+  const privatePermitId=String(asset?.privatePermitId||'');
   return tok(b?.resourceId||b?.materialIdentity)===tok(rid)&&owner===companyId&&
    PRIVATE_COMPANY_IDS.includes(operator)&&String(b?.ownerAttributionStatus||'').toUpperCase()==='EXPLICIT_ASSET_OWNER'&&
    String(b?.stage||'').toUpperCase()==='FINISHED'&&
@@ -420,6 +424,7 @@ function governmentProcurementTx(cmd,ctx){
    String(b?.warehouseId||'')===String(warehouse.warehouseId||'')&&
    !!lot&&tok(lot.resourceId||lot.materialIdentity)===tok(rid)&&
    String(lot.warehouseId||'')===String(warehouse.warehouseId||'')&&
+   String(lot.sourceFactoryId||lot.factoryId||'')===sourceFactoryId&&
    String(lot.ownerCompanyId||'').toUpperCase()===owner&&
    String(lot.operatorCompanyId||'').toUpperCase()===operator&&
    String(lot.ownerAttributionStatus||'').toUpperCase()==='EXPLICIT_ASSET_OWNER'&&
@@ -429,6 +434,10 @@ function governmentProcurementTx(cmd,ctx){
    String(asset.ownerCompanyId||asset.ownerId||'').toUpperCase()===owner&&
    String(asset.operatorCompanyId||asset.operatorId||asset.companyId||'').toUpperCase()===operator&&
    asset.stateControlRights?.operationalControl==='STATE_POLICY_ONLY'&&asset.stateControlRights?.authority==='OMEGA_STATE_CONTROL_RIGHTS_V1'&&
+   asset.privatePermitStatus==='ACTIVE'&&!!privatePermitId&&!!privateProposalId&&!!privateDecisionId&&!!privateFundingId&&
+   String(b.sourcePrivateProposalId||'')===privateProposalId&&String(lot.sourcePrivateProposalId||'')===privateProposalId&&
+   String(b.sourcePrivateDecisionId||'')===privateDecisionId&&String(lot.sourcePrivateDecisionId||'')===privateDecisionId&&
+   String(b.sourcePrivateFundingId||'')===privateFundingId&&String(lot.sourcePrivateFundingId||'')===privateFundingId&&
    (selected.length===0||selected.includes(batchId));
  });
  let remaining=q,transfers=[],n=0;
