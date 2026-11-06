@@ -165,6 +165,12 @@
     for(var i=0;i<keys.length;i++)if(id(routes[keys[i]]&&routes[keys[i]].factoryType)===factoryType)return routes[keys[i]];
     return null;
   }
+  function resourceReadSnapshot(country){
+    var source=countryBucket('resource',country,false)||{},snapshot={};
+    ['inventory','warehouse','demandRuntime','strategicReserve','protectedStockByResource','minimumStockByResource']
+      .forEach(function(key){if(source[key]!==undefined)snapshot[key]=clone(source[key]);});
+    return snapshot;
+  }
   function resourceAvailable(country,resourceId,resourceSnapshot){
     // Read every input from the same caller-captured country snapshot. Re-resolving
     // state per material can mix a stale/rotated country bucket into one preview.
@@ -206,7 +212,7 @@
   }
   function inputForecast(country,profile,recipe,quantity,resourceSnapshot){
     var inputs=recipe&&recipe.inputs||{},capacity=Math.max(1,num(profile&&profile.defaultCapacityPerDay)||1)*quantity,rows=[],
-      snapshot=obj(resourceSnapshot)?resourceSnapshot:(countryBucket('resource',country,false)||{});
+      snapshot=obj(resourceSnapshot)?resourceSnapshot:resourceReadSnapshot(country);
     Object.keys(inputs).forEach(function(resourceId){
       var perUnit=num(inputs[resourceId]);if(perUnit===null||perUnit<=0)return;
       var needed=perUnit*capacity*30,stock=resourceAvailable(country,resourceId,snapshot);
@@ -271,7 +277,9 @@
     return{quantity:max,status:'MEASURED',horizonDays:30};
   }
   function previewFor(proposal){
-    var cid=proposal.countryId,base=baseline(cid),c=catalog()||{},profile=c.factoryProfiles&&c.factoryProfiles[proposal.factoryType],recipe=recipeFor(proposal.factoryType,profile,proposal.processingResourceId);
+    var cid=proposal.countryId,resourceSnapshot=resourceReadSnapshot(cid),
+      base=baseline(cid),c=catalog()||{},profile=c.factoryProfiles&&c.factoryProfiles[proposal.factoryType],
+      recipe=recipeFor(proposal.factoryType,profile,proposal.processingResourceId);
     if(!base||base.status!=='READY')return{status:'BLOCKED',reason:'PRIVATE_AND_GOVERNMENT_BASELINES_NOT_READY'};
     if(!profile||!recipe)return{status:'BLOCKED',reason:'CANONICAL_FACTORY_PROFILE_OR_RECIPE_UNAVAILABLE'};
     var governmentCount=num(base.governmentFactoryCounts&&base.governmentFactoryCounts[proposal.factoryType])||0;
@@ -279,7 +287,6 @@
     var livePrivate=privateAssets(cid).filter(function(a){return id(a.factoryType||a.type)===proposal.factoryType;}).length;
     var maximumPrivate=Math.floor(governmentCount*.60+1e-9);
     var maxAdditional=Math.max(0,maximumPrivate-openingPrivate-livePrivate);
-    var resourceSnapshot=countryBucket('resource',cid,false)||{};
     var inputs=inputForecast(cid,profile,recipe,proposal.quantity,resourceSnapshot);
     var deficits=inputs.filter(function(x){return x.shortfall!==null&&x.shortfall>1e-9;});
     var unobserved=inputs.filter(function(x){return x.available===null||x.nationalDemandPerDay===null;});
