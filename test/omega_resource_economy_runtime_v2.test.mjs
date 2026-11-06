@@ -479,6 +479,33 @@ test('factory input failure does not consume a resource that lacks the other req
   assert.equal(worldState.resource.BGD.inventory.copper,undefined);
 });
 
+test('private factory output keeps legal owner separate from operating company in batches and inventory lots',()=>{
+  const {context,worldState}=createContext();
+  const asset=worldState.economy.BGD.productionAssets[0];
+  asset.ownerType='PRIVATE_ENTERPRISE';
+  asset.ownerCompanyId='AURORA_INDUSTRIAL_GROUP';
+  asset.operatorCompanyId='NOVA_CONSUMER_INDUSTRIES';
+  asset.companyId='NOVA_CONSUMER_INDUSTRIES';
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  const result=context.OmegaResourceEconomy.executeCountryFactories('BGD');
+  assert.equal(result.executed.length,1);
+  const output=worldState.resource.BGD.batches.find(row=>row.resourceId==='iron_intermediate');
+  assert.ok(output);
+  assert.equal(output.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP','finished goods belong to the legal private owner');
+  assert.equal(output.operatorCompanyId,'NOVA_CONSUMER_INDUSTRIES','the operator remains separately recorded');
+  assert.equal(output.ownerAttributionStatus,'EXPLICIT_ASSET_OWNER');
+  const lot=worldState.resource.BGD.inventoryLots[output.batchId];
+  assert.equal(lot.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+  assert.equal(lot.operatorCompanyId,'NOVA_CONSUMER_INDUSTRIES');
+  const ledger=worldState.resource.BGD.inventoryLedger.find(row=>row.type==='PRODUCTION_TRANSACTION_COMMITTED');
+  assert.equal(ledger.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+  assert.equal(ledger.operatorCompanyId,'NOVA_CONSUMER_INDUSTRIES');
+  assert.equal(result.executed[0].companyId,'NOVA_CONSUMER_INDUSTRIES',
+    'operating costs and production execution follow the operator');
+  assert.equal(result.executed[0].ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+});
+
 test('factory production yields between bounded batches without skipping eligible facilities',async()=>{
   const {context,worldState}=createContext();
   let yieldCount=0;
