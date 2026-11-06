@@ -531,13 +531,14 @@ test('industry factory cards show owned factory counts without a separate source
     const steelCardStart = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="STEEL_MILL"');
     const steelCardEnd = root.innerHTML.indexOf('</article>', steelCardStart);
     const steelCardMarkup = root.innerHTML.slice(steelCardStart, steelCardEnd);
-    const inputPosition = steelCardMarkup.indexOf('data-product-role="input"');
-    const byProductPosition = steelCardMarkup.indexOf('data-product-role="by-product"');
-    const outputPosition = steelCardMarkup.indexOf('data-product-role="primary"');
-    assert.ok(inputPosition >= 0 && byProductPosition > inputPosition && outputPosition > byProductPosition,
-      'Input, By-product and Output must stay together in that left-to-right order');
-    assert.match(steelCardMarkup, /fp-product-icon-frame/,
-      'factory product identities must retain their canonical resource/product icons');
+    assert.match(steelCardMarkup, /fp-card-face--front/);
+    assert.match(steelCardMarkup, /fp-card-front-focus/);
+    assert.match(steelCardMarkup, /data-omega-v2-factory-details/);
+    assert.match(steelCardMarkup, />Manage</);
+    assert.doesNotMatch(steelCardMarkup, /data-product-role=/,
+      'recipe products must stay off the narrow front face and move to the flipped detail view');
+    assert.doesNotMatch(steelCardMarkup, /data-factory-detail-panel/,
+      'details must not create a second panel below the card');
     const existingCard = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="STEEL_MILL"');
     const absentCard = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="CEMENT_PLANT"');
     assert.ok(existingCard >= 0 && absentCard > existingCard,
@@ -1674,8 +1675,9 @@ test('factory command cards use canonical SVGs, daily production state, type cou
       'selecting a live factory must update the selected card and side panel without rerendering the Industry root');
     assert.equal(selectionAttrs['aria-pressed'],'true');
     assert.equal(assetCardAttrs['data-selected'],'true');
-    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'asset:FAC-STEEL');
-    assert.equal(sidePanel.hidden,false);
+    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'',
+      'selecting a live factory must not flip its card; Details is a separate action');
+    assert.equal(sidePanel.hidden,true);
 
     const typeView = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'types'});
     assert.equal(typeView.ok,true);
@@ -2916,7 +2918,7 @@ test('Factory input stock coverage is captured only at every tenth in-game day',
   }
 });
 
-test('factory cards keep a compact recipe preview and progressively disclose full details', () => {
+test('factory cards flip in place and show Input, Output and Byproduct tabs with compact values', () => {
   const previous = {
     Game:globalThis.Game,
     inventory:globalThis.OmegaCountryInventoryRuntime,
@@ -2939,364 +2941,114 @@ test('factory cards keep a compact recipe preview and progressively disclose ful
       batches:[],finishedGoodsLedger:[],inventoryLedger:[],
       processedWarehouse:{ availableByResource:{} }
     }},
-    economy:{ BGD:{ productionAssets:[{
-      id:'FACTORY-STEEL-CARD-01',
-      name:'Chattogram Steel Works',
-      factoryType:'STEEL_AND_ALLOY_WORKS',
-      recipeId:'STEEL_PRIMARY_ROUTE_V1',
-      status:'OPERATIONAL',
-      capacityPerDay:900,
-      inputInventory:{ iron_concentrate:120 },
-      inputBatchLots:[{
-        batchId:'STEEL-IRON-INPUT-01',resourceId:'iron_concentrate',quantity:120,remainingQuantity:120,
-        unit:'SIMULATION_RESOURCE_UNIT',status:'AVAILABLE_TO_FACTORY'
-      }]
-    }] } }
+    economy:{ BGD:{ productionAssets:[] } }
   }};
-  globalThis.OmegaCountryInventoryRuntime = {
-    getInventory(countryId, options) {
-      assert.equal(countryId,'BGD');
-      assert.equal(options.includeLedger,false);
-      return {
-        status:'READY',countryId:'BGD',countryName:'Bangladesh',active:true,readOnly:false,
-        items:[
-          {productId:'construction_aggregate',name:'Construction Aggregate',quantity:500,unit:'SIMULATION_RESOURCE_UNIT'},
-          {productId:'iron_concentrate',name:'Iron Concentrate',quantity:120,unit:'SIMULATION_RESOURCE_UNIT'}
-        ],
-        ledger:[]
-      };
-    },
-    getResourceCatalog() { return Object.keys(catalog.resourceRules).map(id => ({resourceId:id})); }
-  };
   const listeners = {};
-  const disclosureAttrs = { 'data-card-key':'type:STEEL_AND_ALLOY_WORKS', 'aria-expanded':'false' };
-  const disclosureCard = { setAttribute(name, value) { this[name] = value; }, classList:{toggle(){}} };
-  const disclosureButton = {
-    getAttribute(name) { return disclosureAttrs[name] || (name === 'data-card-key' ? 'type:STEEL_AND_ALLOY_WORKS' : null); },
-    setAttribute(name, value) { disclosureAttrs[name] = value; },
-    closest() { return activeTypeCardMock; }
-  };
-  const sidePanel = {
-    innerHTML:'', hidden:true,
-    setAttribute(name, value) { this[name] = value; }
-  };
-  const viewContent = { innerHTML:'' };
-  const workspaceState = {};
-  const workspace = { classList:{ toggle(name, active) { workspaceState[name] = !!active; } } };
-  function makeCardMock(type) {
+  function makeCard(type) {
     const attrs = { 'data-factory-type':type };
-    const buttonAttrs = {};
-    const action = {
-      disabled:false,
-      getAttribute(name) { return Object.prototype.hasOwnProperty.call(buttonAttrs,name) ? buttonAttrs[name] : null; },
-      setAttribute(name,value) { buttonAttrs[name] = String(value); },
-      removeAttribute(name) { delete buttonAttrs[name]; }
+    const actionAttrs = { 'data-factory-card-key':'type:' + type };
+    const face = {
+      innerHTML:'', hidden:true,
+      setAttribute(name,value) { this[name] = value; }
     };
+    const details = {
+      disabled:false,
+      getAttribute(name) { return actionAttrs[name] || null; },
+      setAttribute(name,value) { actionAttrs[name] = String(value); },
+      removeAttribute(name) { delete actionAttrs[name]; }
+    };
+    const manage = { disabled:false, getAttribute(){return null;}, setAttribute(){}, removeAttribute(){} };
     const classState = {};
     return {
-      action,
-      getAttribute(name) { return Object.prototype.hasOwnProperty.call(attrs,name) ? attrs[name] : null; },
+      face, details, manage,
+      getAttribute(name) { return attrs[name] || null; },
       setAttribute(name,value) { attrs[name] = String(value); },
       removeAttribute(name) { delete attrs[name]; },
       classList:{ toggle(name,value) { classState[name] = !!value; } },
-      querySelectorAll(selector) { return selector === 'button' ? [action] : []; }
+      querySelector(selector) {
+        if (selector === '[data-omega-v2-factory-details]') return details;
+        if (selector === '[data-factory-details-face]') return face;
+        return null;
+      },
+      querySelectorAll(selector) { return selector === 'button' ? [details,manage] : []; }
     };
   }
-  const activeTypeCardMock = makeCardMock('STEEL_AND_ALLOY_WORKS');
-  const otherTypeCardMock = makeCardMock('CEMENT_PLANT');
-  const stageAttrs = {};
-  const stage = { setAttribute(name, value) { stageAttrs[name] = value; } };
-  const viewToggleAttrs = {};
-  const viewToggle = {
-    textContent:'Details',
-    getAttribute(name) { return viewToggleAttrs[name] || null; },
-    setAttribute(name, value) { viewToggleAttrs[name] = value; }
-  };
+  const steelCard = makeCard('STEEL_AND_ALLOY_WORKS');
+  const otherCard = makeCard('CEMENT_PLANT');
   const root = {
-    classList:{add(){}},
-    addEventListener(name, callback) { listeners[name] = callback; },
+    classList:{ add(){} },
+    addEventListener(name,handler) { listeners[name] = handler; },
     contains() { return true; },
-    querySelector(selector) {
-      if (selector === '[data-factory-detail-panel]') return sidePanel;
-      if (selector === '[data-omega-v2-factory-view-content]') return viewContent;
-      if (selector === '.fp-stage') return stage;
-      if (selector === '.fp-factory-catalog-workspace, .fp-assets-workspace') return workspace;
-      return null;
-    },
     querySelectorAll(selector) {
-      if (selector === '[data-omega-v2-factory-card-expand]') return [disclosureButton];
-      if (selector === '[data-omega-v2-factory-type-card], [data-omega-v2-factory-card]') return [activeTypeCardMock,otherTypeCardMock];
-      return [];
+      return selector === '[data-omega-v2-factory-type-card], [data-omega-v2-factory-card]'
+        ? [steelCard,otherCard] : [];
     },
     innerHTML:''
   };
-  function render(options) {
-    return globalThis.OmegaUIV2Industry.render(root,Object.assign({countryId:'BGD',tab:'factories'},options||{}));
-  }
-  function cardHtml(type) {
-    const marker = 'data-factory-type="' + type + '"';
-    const position = root.innerHTML.indexOf(marker);
-    assert.ok(position >= 0,type + ' card must be rendered');
-    const start = root.innerHTML.lastIndexOf('<article',position);
-    const end = root.innerHTML.indexOf('</article>',position);
-    assert.ok(start >= 0 && end > start,type + ' card markup must be complete');
-    return root.innerHTML.slice(start,end + '</article>'.length);
-  }
   try {
-    const initial = render();
-    assert.equal(initial.ok,true);
-    assert.match(root.innerHTML,/data-omega-v2-factory-type-card/);
-    let steel = cardHtml('STEEL_AND_ALLOY_WORKS');
-    assert.match(steel,/Output/);
-    assert.match(steel,/Steel/);
-    assert.match(steel,/ALLOY STEEL/i,
-      'the compact Output cell keeps both canonical primary outputs visible');
-    assert.match(steel,/By-product/);
-    assert.match(steel,/BLAST FURNACE SLAG/i);
-    assert.match(steel,/Input/);
-    assert.match(steel,/IRON CONCENTRATE/i);
-    assert.doesNotMatch(steel,/0\.72 simulation resource unit \/ production unit|0\.6 simulation resource unit \/ production unit/,
-      'quantities belong in the detailed panel, not the normal factory card');
-    assert.doesNotMatch(steel,/simulation/i,
-      'the normal factory card must not show the prohibited word');
-    assert.match(steel,/data-omega-v2-factory-card-expand/);
-    assert.doesNotMatch(steel,/data-omega-v2-factory-section-toggle/,
-      'expanded input/output rows are now shown in the adjacent side panel, not stacked inside the card');
-    assert.match(root.innerHTML,/data-factory-detail-panel/);
-    assert.doesNotMatch(steel,/PROCESSING DUST/i,'the second by-product must remain hidden in collapsed view');
-    assert.doesNotMatch(steel,/COPPER CONCENTRATE/i,'only the primary input is shown in collapsed view');
-    assert.doesNotMatch(steel,/Modeled build time|Modeled capacity|Modeled construction cost/);
-    assert.match(steel,/>Build</);
-
-    // The view control must work repeatedly without rebuilding the navigation shell.
-    const beforeViewToggleRoot = root.innerHTML;
-    viewContent.innerHTML = 'Factory view mount';
-    const viewClickTarget = {
-      closest(selector) {
-        if (selector === '[data-omega-v2-factory-view-toggle]') return viewToggle;
-        return null;
-      }
-    };
-    listeners.click({target:viewClickTarget});
-    assert.equal(root.__omegaV2IndustryFactoryView,'assets');
-    assert.match(viewContent.innerHTML,/fp-assets-workspace/);
-    assert.match(viewContent.innerHTML,/FACTORY-STEEL-CARD-01/);
-    assert.equal(stageAttrs['data-factory-view'],'assets');
-    assert.equal(viewToggle.textContent,'Type totals');
-    assert.equal(viewToggleAttrs['aria-pressed'],'true');
-    assert.equal(root.innerHTML,beforeViewToggleRoot,
-      'view switching must update its content subtree without rebuilding navigation and summary');
-
-    listeners.click({target:viewClickTarget});
-    assert.equal(root.__omegaV2IndustryFactoryView,'types',
-      'the second view toggle must use current state, not a first-render closure value');
-    assert.match(viewContent.innerHTML,/fp-type-catalog/);
-    assert.equal(stageAttrs['data-factory-view'],'types');
-    assert.equal(viewToggle.textContent,'Details');
-    assert.equal(viewToggleAttrs['aria-pressed'],'false');
-    assert.equal(root.innerHTML,beforeViewToggleRoot);
-
-    root.__omegaV2FactoryCardUiState = {
-      expandedKey:'type:STEEL_AND_ALLOY_WORKS',
-      buildKey:'',
-      sections:Object.create(null),
-      buildMaterialsExpanded:false
-    };
-    render();
-    assert.equal(activeTypeCardMock.getAttribute('data-detail-locked'),null,
-      'the active factory card must remain interactive');
-    assert.equal(activeTypeCardMock.action.disabled,false);
-    assert.equal(otherTypeCardMock.getAttribute('data-detail-locked'),'true',
-      'opening one factory detail panel must lock the other factory cards');
-    assert.equal(otherTypeCardMock.action.disabled,true,
-      'other factory actions must be actually disabled, not only dimmed');
-    const otherCardClickTarget = {
-      closest(selector) {
-        if (selector === '[data-detail-locked="true"]') return otherTypeCardMock;
-        if (selector === '[data-omega-v2-factory-build-details]') return otherTypeCardMock.action;
-        return null;
-      }
-    };
-    listeners.click({target:otherCardClickTarget});
-    assert.equal(root.__omegaV2FactoryCardUiState.buildKey,'',
-      'a locked card action must not open a second factory panel');
-    const secondTapTarget = {
-      closest(selector) {
-        if (selector === '[data-omega-v2-factory-card-expand]') return disclosureButton;
-        return null;
-      }
-    };
-    listeners.click({target:secondTapTarget});
-    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'',
-      'a second tap on the active disclosure closes its side panel');
-    assert.equal(otherTypeCardMock.getAttribute('data-detail-locked'),null,
-      'closing the active panel must unlock every other factory card');
-    assert.equal(otherTypeCardMock.action.disabled,false,
-      'closing the active panel restores each action to its original enabled state');
-
-    root.__omegaV2FactoryCardUiState = {
-      expandedKey:'type:STEEL_AND_ALLOY_WORKS',
-      buildKey:'',
-      sections:Object.create(null),
-      buildMaterialsExpanded:false
-    };
-    render();
-    steel = cardHtml('STEEL_AND_ALLOY_WORKS');
-    assert.doesNotMatch(steel,/Complete production formula/,
-      'expanded recipe details must not increase card height or create a vertical list');
-    assert.match(root.innerHTML,/data-factory-detail-panel/);
-    assert.match(root.innerHTML,/Complete production formula/);
-    assert.match(root.innerHTML,/ALLOY STEEL/i);
-    assert.match(root.innerHTML,/COPPER CONCENTRATE/i);
-    assert.match(root.innerHTML,/CEMENT FEED/i);
-    assert.match(root.innerHTML,/PROCESSING DUST/i);
-    assert.match(root.innerHTML,/Quantity basis: Per production unit/);
-    assert.doesNotMatch(root.innerHTML,/SIMULATION_RESOURCE_UNIT|PER_SIMULATION_PRODUCTION_UNIT|simulation units/i,
-      'internal data identifiers must not appear as player-facing copy');
-    assert.match(root.innerHTML,/Steel and alloy works/i);
-
-    root.__omegaV2FactoryCardUiState = {
-      expandedKey:'',
-      buildKey:'type:STEEL_AND_ALLOY_WORKS',
-      sections:Object.create(null),
-      buildMaterialsExpanded:false
-    };
-    render();
-    steel = cardHtml('STEEL_AND_ALLOY_WORKS');
-    assert.match(steel,/Build requirements/);
-    assert.match(steel,/Construction materials/);
-    assert.match(steel,/240 game-days/);
-    assert.match(steel,/18,000/);
-    assert.match(steel,/CONSTRUCTION AGGREGATE/i);
-    assert.match(steel,/500 available/);
-    assert.match(steel,/Required infrastructure/);
-    assert.match(steel,/rail/);
-    assert.match(steel,/Start construction project/);
-    assert.doesNotMatch(steel,/Main output/,'Build mode must replace the production summary');
-    assert.doesNotMatch(steel,/BLAST FURNACE SLAG/i,'Build mode must not leak recipe products');
-    assert.match(steel,/data-omega-v2-factory-build-materials/);
-
-    root.__omegaV2FactoryCardUiState = {
-      expandedKey:'',
-      buildKey:'',
-      sections:Object.create(null),
-      buildMaterialsExpanded:false
-    };
-    render({factoryView:'assets'});
-    const live = root.innerHTML.match(/<article class="omega-v2-factory-card fp-card[^>]*data-factory-id="FACTORY-STEEL-CARD-01"[\s\S]*?<\/article>/);
-    assert.ok(live,'the live factory asset card must remain available');
-    assert.match(live[0],/Steel/);
-    assert.match(live[0],/ALLOY STEEL/i);
-    assert.match(live[0],/IRON CONCENTRATE/i);
-    assert.match(live[0],/Factory stock: 120 game units/);
-    assert.match(live[0],/data-omega-v2-factory-build-details/);
-    assert.match(live[0],/data-omega-v2-factory-destroy/);
-
-    root.__omegaV2FactoryCardUiState = {
-      expandedKey:'asset:FACTORY-STEEL-CARD-01',
-      buildKey:'',
-      sections:Object.create(null),
-      buildMaterialsExpanded:false
-    };
-    render({factoryView:'assets'});
-    const liveExpanded = root.innerHTML.match(/<article class="omega-v2-factory-card fp-card[^>]*data-factory-id="FACTORY-STEEL-CARD-01"[\s\S]*?<\/article>/);
-    assert.ok(liveExpanded);
-    assert.doesNotMatch(liveExpanded[0],/Complete production formula/,
-      'full recipe details must stay outside the card in the adjacent panel');
-    assert.match(root.innerHTML,/Complete production formula/);
-    assert.ok(root.innerHTML.includes('Not started / no committed output'));
-    assert.match(root.innerHTML,/Factory stock: 120 game units/);
-    assert.match(root.innerHTML,/Factory stock: Not recorded/,'an absent product key must remain unknown, not be converted to zero');
-    assert.match(root.innerHTML,/Modeled per game day per factory: 324 game units/,'the panel must reuse capacity × coefficient ÷ cycle days per factory');
-    const visibleCardText = liveExpanded[0].replace(/<[^>]*>/g,' ');
-    assert.doesNotMatch(visibleCardText,/[A-Za-z0-9]_[A-Za-z0-9]/,'visible card text must not expose underscore-based identifiers');
-
-    // Exercise the real delegated card disclosure handler and assert it updates root-local UI state.
-    root.__omegaV2FactoryCardUiState = {
-      expandedKey:'',
-      buildKey:'',
-      sections:Object.create(null),
-      buildMaterialsExpanded:false
-    };
-    render({factoryView:'types'});
-    const renderedBeforeDisclosure = root.innerHTML;
-    const clickTarget = {
-      closest(selector) {
-        if (selector === '[data-omega-v2-factory-card-expand]') return disclosureButton;
-        return null;
-      }
-    };
-    listeners.click({target:clickTarget});
-    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'type:STEEL_AND_ALLOY_WORKS');
-    assert.equal(root.__omegaV2FactoryCardUiState.buildKey,'');
-    assert.equal(root.innerHTML,renderedBeforeDisclosure,
-      'opening a recipe must not reassign or rebuild the full Industry root');
-    assert.equal(disclosureAttrs['aria-expanded'],'true');
-    assert.equal(sidePanel.hidden,false);
-    assert.match(sidePanel.innerHTML,/Complete production formula/);
-    assert.match(sidePanel.innerHTML,/COPPER CONCENTRATE/i);
-    listeners.click({target:clickTarget});
-    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'');
-    assert.equal(root.innerHTML,renderedBeforeDisclosure,
-      'closing a recipe must remain a local DOM update');
-    assert.equal(sidePanel.hidden,true);
-    assert.equal(sidePanel.innerHTML,'');
-  } finally {
-    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
-    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
-    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
-    if (previous.baseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1; else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.baseline;
-    if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
-    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
-    if (previous.network === undefined) delete globalThis.OmegaResourceIndustrialNetwork; else globalThis.OmegaResourceIndustrialNetwork = previous.network;
-  }
-});
-
-
-test('universal processing plan does not invent coal or iron ore when no eligible commercial sites exist', () => {
-  const previous = {
-    Game:globalThis.Game,
-    inventory:globalThis.OmegaCountryInventoryRuntime,
-    catalog:globalThis.OmegaResourceIndustrialCatalogData,
-    baseline:globalThis.OmegaCountryFactoryStartingBaselineV1,
-    countryRuntime:globalThis.OmegaCountryRuntimeData,
-    omega:globalThis.Omega,
-    network:globalThis.OmegaResourceIndustrialNetwork,
-    siteCatalog:globalThis.OmegaResourceSiteCanonicalCatalogData,
-    siteBinding:globalThis.OmegaIndividualResourceSiteBinding
-  };
-  const catalog = JSON.parse(readFileSync(new URL('../resource_industrial_catalog_v1.json', import.meta.url), 'utf8'));
-  globalThis.Omega = {};
-  globalThis.OmegaCountryRuntimeData = null;
-  globalThis.OmegaCountryFactoryStartingBaselineV1 = null;
-  globalThis.OmegaResourceIndustrialCatalogData = catalog;
-  globalThis.OmegaResourceIndustrialNetwork = null;
-  globalThis.OmegaCountryInventoryRuntime = null;
-  globalThis.OmegaResourceSiteCanonicalCatalogData = null;
-  globalThis.OmegaIndividualResourceSiteBinding = null;
-  globalThis.Game = { state:{
-    simulation:{ playerCountryId:'BGD', turn:1 },
-    resource:{ BGD:{
-      mineSiteReferences:[],
-      industrialNetwork:{ projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[] },
-      batches:[],finishedGoodsLedger:[],inventoryLedger:[],
-      processedWarehouse:{ availableByResource:{} }
-    }},
-    economy:{ BGD:{ productionAssets:[{
-      id:'UNIVERSAL-PROCESSING-EMPTY-SITE-MIX',
-      name:'Materials Processing Plant',
-      factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
-      status:'OPERATIONAL',
-      capacityPerDay:900
-    }] } }
-  }};
-  const root = { classList:{add(){}}, addEventListener(){}, contains(){return true;}, innerHTML:'' };
-  try {
-    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'inventory'});
+    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'types'});
     assert.equal(result.ok,true);
-    assert.match(root.innerHTML,/data-factory-input-plan/);
-    assert.doesNotMatch(root.innerHTML,/coal concentrate|iron concentrate|iron ore processing/i,
-      'no eligible domestic site must not create a hard-coded coal/iron processing route');
+    const steelStart = root.innerHTML.indexOf('data-factory-type="STEEL_AND_ALLOY_WORKS"');
+    const steelMarkup = root.innerHTML.slice(root.innerHTML.lastIndexOf('<article',steelStart),root.innerHTML.indexOf('</article>',steelStart));
+    assert.match(steelMarkup,/data-omega-v2-factory-build-details/);
+    assert.match(steelMarkup,/data-omega-v2-factory-details/);
+    assert.match(steelMarkup,/>Manage</);
+    assert.match(steelMarkup,/Details <span aria-hidden="true">i<\/span>/);
+    assert.doesNotMatch(steelMarkup,/data-product-role=/,
+      'collapsed front face must not render compressed ingredient/output rows');
+    assert.equal(steelCard.face.innerHTML,'');
+    const initialHtml = root.innerHTML;
+
+    const detailClick = { closest(selector) {
+      if (selector === '[data-omega-v2-factory-details]') return steelCard.details;
+      return null;
+    }};
+    listeners.click({target:detailClick});
+    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'type:STEEL_AND_ALLOY_WORKS');
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'input');
+    assert.equal(steelCard.details.getAttribute('aria-expanded'),'true');
+    assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="input"/);
+    assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="output"/);
+    assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="byproduct"/);
+    assert.match(steelCard.face.innerHTML,/aria-selected="true"/);
+    assert.match(steelCard.face.innerHTML,/Amount \/ day/);
+    assert.match(steelCard.face.innerHTML,/fp-card-detail-row/);
+    assert.equal(otherCard.getAttribute('data-detail-locked'),'true',
+      'only the active card may remain actionable while flipped');
+    assert.equal(otherCard.details.disabled,true);
+    assert.equal(root.innerHTML,initialHtml,
+      'flipping must update the existing card face locally without rebuilding the card register');
+
+    const outputTab = { getAttribute(name) { return name === 'data-omega-v2-factory-detail-tab' ? 'output' : null; } };
+    listeners.click({target:{closest(selector) {
+      if (selector === '[data-omega-v2-factory-detail-tab]') return outputTab;
+      return null;
+    }}});
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'output');
+    assert.match(steelCard.face.innerHTML,/aria-selected="true"/);
+    assert.match(steelCard.face.innerHTML,/data-product-id="steel"/i);
+
+    const byproductTab = { getAttribute(name) { return name === 'data-omega-v2-factory-detail-tab' ? 'byproduct' : null; } };
+    listeners.click({target:{closest(selector) {
+      if (selector === '[data-omega-v2-factory-detail-tab]') return byproductTab;
+      return null;
+    }}});
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'byproduct');
+    assert.match(steelCard.face.innerHTML,/fp-card-detail-table--no-status/);
+    assert.doesNotMatch(steelCard.face.innerHTML,/>Status</,
+      'byproduct rows must not create a status column');
+    assert.equal(otherCard.details.disabled,true);
+
+    listeners.click({target:{closest(selector) {
+      if (selector === '[data-omega-v2-factory-detail-close]') return {};
+      return null;
+    }}});
+    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'');
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'input');
+    assert.equal(steelCard.face.innerHTML,'');
+    assert.equal(steelCard.details.getAttribute('aria-expanded'),'false');
+    assert.equal(otherCard.getAttribute('data-detail-locked'),null);
+    assert.equal(otherCard.details.disabled,false);
   } finally {
     if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
     if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
@@ -3305,8 +3057,6 @@ test('universal processing plan does not invent coal or iron ore when no eligibl
     if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
     if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
     if (previous.network === undefined) delete globalThis.OmegaResourceIndustrialNetwork; else globalThis.OmegaResourceIndustrialNetwork = previous.network;
-    if (previous.siteCatalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData; else globalThis.OmegaResourceSiteCanonicalCatalogData = previous.siteCatalog;
-    if (previous.siteBinding === undefined) delete globalThis.OmegaIndividualResourceSiteBinding; else globalThis.OmegaIndividualResourceSiteBinding = previous.siteBinding;
   }
 });
 
@@ -3353,7 +3103,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v95'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v96'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3363,128 +3113,42 @@ test('Factory Stock/Input UI assets invalidate the old offline shell cache', () 
 });
 
 
-test('factory production details use a landscape side panel and local delegated disclosure updates', () => {
-  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
-  assert.match(source,/function factoryDetailPanelContentsMarkup/);
-  assert.match(source,/function syncFactoryDetailPanel/);
-  assert.match(source,/factoryDetailPanelMarkup\(model\)/);
-  assert.match(source,/syncFactoryDetailPanel\(root, root\.__omegaV2IndustryModel \|\| model\)/);
-  assert.match(css,/fp-factory-catalog-workspace/);
-  assert.match(css,/fp-assets-workspace/);
-  assert.match(css,/@media \(orientation:landscape\) and \(min-width:681px\)/);
-  assert.match(css,/fp-factory-detail-panel/);
-  assert.match(source,/Modeled per game day per factory:/,
-    'the side panel must reuse the existing canonical per-factory daily input calculation');
-});
-
-
-
-
-test('factory type cards keep three columns and lock every other card until the active card is tapped closed', () => {
+test('factory Details is an in-card flip with three independent product tabs', () => {
   const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  assert.match(source,/function factoryDetailBackContentsMarkup/);
+  assert.match(source,/function factoryDetailRowsMarkup/);
+  assert.match(source,/function factoryDetailInputStatus/);
+  assert.match(source,/function factoryDetailOutputStatus/);
+  assert.match(source,/data-omega-v2-factory-detail-tab/);
+  assert.match(source,/detailsState\.detailsTab = 'input'/);
+  assert.match(source,/data-omega-v2-factory-details/);
+  assert.match(source,/Details <span aria-hidden="true">i<\/span>/);
+  assert.match(source,/fp-card--flipped/);
+  assert.match(css,/\.fp-card--flipped \.fp-card-flip-inner\s*\{[^}]*transform:rotateY\(180deg\)/s);
+  assert.match(css,/\.fp-card-face--back\s*\{[^}]*transform:rotateY\(180deg\)/s);
+  assert.match(css,/\.fp-card-detail-table--no-status/);
+  assert.match(css,/fp-detail-status\[data-state="stable"\]/);
+  assert.match(css,/fp-detail-status\[data-state="risk"\]/);
+  assert.match(css,/fp-detail-status\[data-state="critical"\]/);
+  assert.match(sw,/omega-offline-atlas-shell-v96/);
+});
+
+test('factory cards retain three landscape columns and constrain text to the card face', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  assert.match(source,/factoryDetailFormatAmount/);
+  assert.match(source,/Math\.round\(amount\)/);
   assert.match(source,/function syncFactoryCardActionLock\(root, model\)/);
   assert.match(source,/data-detail-locked="true"/);
-  assert.match(source,/selectedState\.expandedKey === selectedCardKey \? '' : selectedCardKey/);
   assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
-  assert.match(css,/data-detail-locked="true"/);
-  assert.match(css,/touch-action:manipulation/);
-  assert.match(sw,/omega-offline-atlas-shell-v95/);
-});
-
-test('Factory cards use horizontal internal layouts and only reserve the landscape detail panel when opened', () => {
-  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
-  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
-  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  assert.match(source,/fp-workspace--detail-open/);
-  assert.match(source,/workspace\.classList\.toggle\('fp-workspace--detail-open', !!key\)/);
-  assert.match(css,/@media \(orientation:landscape\)/);
-  assert.match(css,/grid-template-areas:\s*"head count"\s*"recipe recipe"\s*"actions actions"/);
-  assert.match(css,/grid-template-areas:\s*"badge title"\s*"art status"\s*"art count"/);
-  assert.match(source,/fp-card-product-section--output/);
-  assert.match(source,/fp-card-product-section--input/);
-  assert.match(source,/class="fp-card-product-meta"/,
-    'product coefficient and per-day rate must share one compact metadata block');
-  assert.match(css,/\.fp-factory-input-identity-line\s*\{[^}]*display:flex/s,
-    'product code and friendly name must use a single compact horizontal identity line');
-  assert.match(css,/\.fp-card-product-meta\s*\{[^}]*gap:2px/s,
-    'recipe quantity and modeled daily rate must stay adjacent');
-  assert.match(css,/\.fp-card-product-meta\s*\{[^}]*flex-wrap:wrap/s,
-    'recipe metadata must wrap naturally rather than stretch vertically');
-  assert.match(css,/\.fp-card-product-meta\s*\{[^}]*align-content:flex-start/s,
-    'recipe metadata must stay pinned to the product row instead of being distributed through card height');
-  assert.match(css,/\.fp-card-recipe \.fp-card-product-row\[data-product-role\]\s*\{[^}]*flex:0 0 auto/s,
-    'recipe product rows must use their content height');
-  assert.match(css,/\.fp-card-recipe \.fp-card-product-row\[data-product-role\]\s*\{[^}]*grid-template-columns:minmax\(0,1fr\)/s,
-    'narrow landscape cards must not squeeze quantity text into a separate narrow column');
-  assert.match(css,/fp-workspace--detail-open/);
-  assert.match(css,/@media \(orientation:landscape\) and \(max-width:680px\)/);
-  assert.match(css,/grid-template-columns:repeat\(auto-fit,minmax\(245px,1fr\)\)/);
-  assert.match(css,/@media \(min-width:1200px\)[\s\S]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
-  assert.match(sw,/omega-offline-atlas-shell-v95/);
-});
-
-
-test('Factory landscape controls keep readable card text, independent detail scrolling and touch-sized disclosure', () => {
-  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
-  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
-  assert.ok(css.includes('@media (orientation:landscape)'));
-  assert.ok(css.includes('.fp-type-card-name strong {'));
-  assert.ok(css.includes('font-size:13px'));
-  assert.ok(css.includes('flex:0 0 48px'));
-  assert.ok(css.includes('overflow-y:auto'));
-  assert.ok(css.includes('touch-action:pan-y'));
-  assert.ok(css.includes('min-height:46px'));
-  assert.match(css, /\.fp-card-recipe \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/s,
-    'Input, By-product and Output must have a shared three-column recipe row');
-  assert.ok(css.includes('max-width:899px'));
-  assert.ok(source.includes('var currentFactoryView = root.__omegaV2IndustryFactoryView'));
-  assert.ok(source.includes('viewContent.innerHTML = factoryHomeViewMarkup'));
-  assert.ok(source.includes('__omegaV2FactoryRouteCache'));
-  assert.ok(source.includes('__omegaV2FactoryDetailMarkupCache'));
-});
-
-
-test('phone landscape factory cards keep compact aligned columns without stage clipping', () => {
-  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
-  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  const breakpointStart = css.lastIndexOf('@media (orientation:landscape) and (max-width:899px) {');
-  assert.ok(breakpointStart >= 0, 'all phone-width landscape viewports need an explicit layout rule');
-  const phoneLandscape = css.slice(breakpointStart);
-  assert.match(phoneLandscape, /\.fp-stage \{[^}]*width:100%[^}]*height:auto[^}]*aspect-ratio:auto[^}]*overflow:visible/s,
-    'the stage must grow with content instead of clipping the landscape card register');
-  assert.match(phoneLandscape, /\.fp-type-catalog-grid \{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/s,
-    'factory type cards must keep three compact columns in phone landscape');
-  assert.match(phoneLandscape, /\.fp-assets-workspace \.omega-v2-factory-deck \{[^}]*position:relative[^}]*inset:auto[^}]*width:100%[^}]*max-height:none[^}]*grid-template-columns:minmax\(0,1fr\)/s,
-    'live factory cards must leave the fixed container-unit position and use normal document flow');
-  assert.match(phoneLandscape, /\.fp-factory-detail-panel \{[^}]*order:2[^}]*width:100%/s,
-    'the recipe detail panel must remain below the card workspace on phone landscape');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v95'),
-    'Android offline shell must reload the landscape layout stylesheet');
-});
-
-test('factory card register stays three columns and stacks recipe groups on every orientation', () => {
-  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
-  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  const redesignStart = css.lastIndexOf('/* OMEGA Factory Cards v2');
-  assert.ok(redesignStart >= 0, 'the full factory-card redesign must be appended after legacy responsive rules');
-  const redesign = css.slice(redesignStart);
-  assert.match(redesign, /\.fp-type-catalog-grid[\s\S]*?grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/,
-    'Factory Type cards must remain three columns on portrait and landscape');
-  assert.match(redesign, /\.fp-assets-workspace \.omega-v2-factory-deck[\s\S]*?grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/,
-    'live Factory cards must use the same three-column register');
-  assert.match(redesign, /\.fp-card-recipe \{[\s\S]*?flex-direction:column !important/,
-    'Input, By-product and Output must stack as full-width groups inside each card');
-  assert.match(redesign, /\.fp-card-product-row \.fp-product-identity-copy strong[\s\S]*?overflow-wrap:break-word !important[\s\S]*?word-break:normal !important/,
-    'product names must wrap at word boundaries rather than split into narrow vertical fragments');
-  assert.match(redesign, /\.fp-card-product-row \.fp-product-icon-frame[\s\S]*?flex:0 0 22px !important/,
-    'product icons must retain a fixed non-shrinking frame');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v95'),
-    'offline clients must refresh the redesigned Factory stylesheet');
-  assert.ok(sw.includes('./omega_ui_v2/factory-production-command.css'),
-    'the redesigned stylesheet remains part of the offline shell');
+  assert.match(css,/\.fp-card-face\s*\{[^}]*backface-visibility:hidden/s);
+  assert.match(css,/\.fp-card-detail-scroll\s*\{[^}]*overflow-y:auto/s);
+  assert.match(css,/overflow-wrap:break-word/);
+  assert.match(css,/@media \(orientation:landscape\) and \(max-width:899px\)/);
+  assert.match(sw,/omega-offline-atlas-shell-v96/);
 });
 
 test('Factory Type identity header aligns icon, name and owned count in one row', () => {
