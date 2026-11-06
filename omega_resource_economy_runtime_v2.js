@@ -1103,7 +1103,7 @@
       executed=completed.filter(function(row){return row&&row.status==='COMPLETED';}).map(function(row){
         var asset=assets.find(function(item){return String(item.id||item.assetId||item.factoryId||item.projectId)===String(row.factoryId||'');})||{};
         return{transactionId:row.transactionId||null,facilityId:row.factoryId,factoryId:row.factoryId,
-          companyId:asset.companyId||asset.ownerCompanyId||asset.operatorCompanyId||null,
+          companyId:asset.operatorCompanyId||asset.operatorId||asset.companyId||asset.ownerCompanyId||asset.ownerId||null,
           factoryType:asset.factoryType||asset.type||null,stage:'PROCESSING',
           inputQuantities:clone(row.inputQuantities||{}),outputQuantities:clone(row.outputQuantities||{}),
           sourceBatchIds:clone(row.sourceBatchIds||[]),createdBatchIds:clone(row.createdBatchIds||[]),
