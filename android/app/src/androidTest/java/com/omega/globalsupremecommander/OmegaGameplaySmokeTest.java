@@ -350,8 +350,8 @@ public final class OmegaGameplaySmokeTest {
                     "(function() {" +
                     " var cabinet=document.getElementById('cabinet-full-window');" +
                     " var main=cabinet&&cabinet.querySelector('[data-omega-v2-main]');" +
-                    " var lines=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"production-lines\\\"]');" +
-                    " var companies=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"companies\\\"]');" +
+                    " var lines=main&&main.querySelector('[data-omega-v2-industry-tab=\"production-lines\"]');" +
+                    " var companies=main&&main.querySelector('[data-omega-v2-industry-tab=\"companies\"]');" +
                     " return !!(cabinet&&main&&cabinet.getAttribute('data-omega-v2-route')==='industry'&&" +
                     " lines&&!companies&&main.querySelector('[data-omega-v2-factory-view-content]'));" +
                     "})()";
