@@ -5094,8 +5094,13 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
       batchId:sourceBatchId,resourceId:cycle.primaryInputResourceId,transactionId:result.transactionId,
       createdBatchIds:result.createdBatchIds||[],outputQuantities:result.outputQuantities||{},turn:turn(),status:'PROCESSED'});
   }
+  const completionOwnership=factoryOwnershipParties(asset,cid);
   emit('OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',cid,{cycleId:cycle.cycleId,transactionId:result.transactionId,
-    factoryId:cycle.factoryId,outputQuantities:cycle.outputQuantities,finishDate:cycle.finishDate,actualCompletionDate:cycle.actualCompletionDate});
+    countryId:cid,factoryId:cycle.factoryId,ownerCompanyId:completionOwnership.ownerCompanyId,
+    operatorCompanyId:completionOwnership.operatorCompanyId,cycleDays:cycle.cycleDays,
+    actualProductionQuantity:cycle.actualProductionQuantity,outputQuantities:cycle.outputQuantities,
+    finishDate:cycle.finishDate,actualCompletionDate:cycle.actualCompletionDate,turn:turn(),
+    authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK'});
   return{status:'COMPLETED',countryId:cid,factoryId:String(cycle.factoryId||asset?.id||asset?.assetId||asset?.projectId||''),
     factoryType:String(asset?.factoryType||asset?.type||'').toUpperCase(),
     companyId:asset?.companyId||asset?.ownerCompanyId||asset?.operatorCompanyId||null,
