@@ -187,6 +187,7 @@
       existingFactoryInputDemandPerDay:factoryDemandPerDay,existingDemand30Day:existingDemand30Day,
       confirmedInboundNotCounted:confirmedInbound,demandStatus:demandPerDay===null?'UNOBSERVED_OR_STALE':'CURRENT_TURN_SNAPSHOT',
       demandSnapshotTurn:num(demandRuntime.lastTurn),demandEvaluationTurn:turn(),demandRowObserved:!!demandRow,
+      demandRuntimePresent:obj(bucket.demandRuntime),demandRuntimeResourceKeys:Object.keys(byResource),resourceBucketKeys:Object.keys(bucket),
       authority:amount===null?'UNOBSERVED':invAmount!==null&&warehouseFree!==null?'INVENTORY_AND_WAREHOUSE_LEDGER':warehouseFree!==null?'RAW_WAREHOUSE_LEDGER':'LEGACY_INVENTORY_AGGREGATE'};
   }
   function inputForecast(country,profile,recipe,quantity){
