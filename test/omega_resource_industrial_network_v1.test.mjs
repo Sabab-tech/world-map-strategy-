@@ -1438,6 +1438,40 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     const activeTypes=assets.filter(asset=>!['DECOMMISSIONED','DESTROYED'].includes(String(asset.status||'').toUpperCase()));
     assert.equal(activeTypes.length,1,'one textile factory remains active after the other textile and universal plant are retired');
     assert.equal(assets.length,3,'decommissioning preserves the historical asset record');
+    // A private expansion must preserve a private owner and private operator through commissioning.
+    const privateBuildProfile=catalog.factoryProfiles.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT;
+    for(const [materialId,requiredQty] of Object.entries(privateBuildProfile.constructionMaterials||{})){
+      resourceState.inventory[materialId]=(Number(resourceState.inventory[materialId])||0)+Number(requiredQty);
+      resourceState.warehouse.availableByResource[materialId]=(Number(resourceState.warehouse.availableByResource[materialId])||0)+Number(requiredQty);
+    }
+    context.Game.state.simulation.daysPerTurn=30;
+    const privateFactoryProject=N.startFactoryProject({
+      countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',resourceId:'iron_ore',
+      capacityPerDay:800,buildDays:30,requiredTechnologyIds:[],factoryId:'FAC-PRIVATE-OWNER-OPERATOR-TEST',
+      ownershipModel:'PRIVATE_ENTERPRISE',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP',
+      operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP'
+    });
+    assert.equal(privateFactoryProject.status,'UNDER_CONSTRUCTION',JSON.stringify(privateFactoryProject));
+    assert.equal(privateFactoryProject.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+    assert.equal(privateFactoryProject.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+    assert.equal(privateFactoryProject.companyId,'MERIDIAN_ENGINEERING_GROUP');
+    assert.equal(privateFactoryProject.stateControlRights.operationalControl,'STATE_POLICY_ONLY');
+    context.Game.state.simulation.turn+=1;
+    N.advanceProjects('BGD');
+    const commissionedPrivateFactory=resourceState===context.Game.state.resource.BGD
+      ?context.Game.state.economy.BGD.productionAssets.find(asset=>asset.id==='FAC-PRIVATE-OWNER-OPERATOR-TEST'):null;
+    assert.ok(commissionedPrivateFactory,'approved private project must commission into the shared productionAssets collection');
+    assert.equal(commissionedPrivateFactory.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+    assert.equal(commissionedPrivateFactory.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+    assert.equal(commissionedPrivateFactory.companyId,'MERIDIAN_ENGINEERING_GROUP');
+    assert.equal(commissionedPrivateFactory.ownerType,'PRIVATE_ENTERPRISE');
+    assert.equal(commissionedPrivateFactory.operatorType,'PRIVATE_OPERATOR');
+    assert.equal(commissionedPrivateFactory.stateControlRights.operationalControl,'STATE_POLICY_ONLY');
+    assert.equal(commissionedPrivateFactory.stateControlRights.domesticSupplyDirection,true);
+    assert.equal(commissionedPrivateFactory.stateControlRights.exportControl,true);
+    assert.notEqual(commissionedPrivateFactory.ownerCompanyId,commissionedPrivateFactory.operatorCompanyId);
+    assert.ok(!['STATE_OPERATOR','STATE_ENTERPRISE_OPERATOR'].includes(
+      commissionedPrivateFactory.stateControlRights.operationalControl));
     console.log('OMEGA STARTING FACTORY LIVE REGISTRY / ADD / DESTROY REGRESSION PASSED');
   } finally {
     context.Game.state=previousState;
