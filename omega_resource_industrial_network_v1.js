@@ -3529,7 +3529,6 @@ function advanceProjects(c){
     }else if(p.projectType==='FACTORY_CONSTRUCTION'){
       const econ=econState(cid);econ.productionAssets=Array.isArray(econ.productionAssets)?econ.productionAssets:[];
       const techReady=(p.requiredTechnologyIds||[]).every(t=>resourceState(cid).technologyCapabilities?.some(x=>tok(x?.technologyId).toUpperCase()===tok(t)));
-      const assetStatus=techReady?'OPERATIONAL':'TECHNOLOGY_LOCKED';
       const factoryProfile=p.factoryProfile||cat()?.factoryProfiles?.[normalizeFactoryType(p.factoryType)]||{};
       const isPrivateFactory=String(p.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE';
       const commissionedStatus=techReady?'OPERATIONAL':'TECHNOLOGY_LOCKED';
