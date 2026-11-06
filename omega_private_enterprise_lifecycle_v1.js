@@ -293,9 +293,9 @@
     if(!cid||period<1)return{status:'WAITING',reason:'AUTONOMOUS_PROPOSAL_REVIEW_NOT_DUE'};
     var r=runtime(cid,true);
     if(r.lastAutonomousProposalPeriod===period)return{status:'DUPLICATE',period:period};
-    r.lastAutonomousProposalPeriod=period;
     var base=baseline(cid);
     if(!base||base.status!=='READY')return{status:'WAITING',reason:'PRIVATE_BASELINE_NOT_READY',period:period};
+    r.lastAutonomousProposalPeriod=period;
     var companyIndex=(period-1)%COMPANY_IDS.length,company=COMPANY_IDS[companyIndex];
     var active=r.proposals.some(function(p){return p.companyId===company&&
       ['PROPOSED','APPROVED_AWAITING_FUNDING','FUNDED','UNDER_CONSTRUCTION','PARTIALLY_UNDER_CONSTRUCTION','COMMISSIONED_PRODUCTION_GATED'].indexOf(p.status)>=0;});
@@ -774,7 +774,8 @@
   }
   if(typeof g.addEventListener==='function'){
     g.addEventListener(NETWORK_EVENT,onFactoryCapacityChanged);
-    // Lifecycle UI is rendered on explicit Industry navigation, not by polling or per-turn company AI.
+    // UI refresh is event/navigation-driven. Proposal submissions are bounded to one active-country review per 30 committed game turns.
+    g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',scheduleAutonomousProposalCycle);
   }
   installIndustryHook();
   var API=Object.freeze({
