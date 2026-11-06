@@ -2510,8 +2510,10 @@
   }
 
   function factoryCardUiState(model) {
-    return model && model.factoryCardUiState && typeof model.factoryCardUiState === 'object'
-      ? model.factoryCardUiState : { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false };
+    var state = model && model.factoryCardUiState && typeof model.factoryCardUiState === 'object'
+      ? model.factoryCardUiState : { expandedKey:'', buildKey:'', detailsTab:'input', sections:Object.create(null), buildMaterialsExpanded:false };
+    if (!/^(input|output|byproduct)$/.test(String(state.detailsTab || '').toLowerCase())) state.detailsTab = 'input';
+    return state;
   }
 
   function factoryRouteProductIds(route, field, validMap) {
@@ -2975,29 +2977,29 @@
     if (!root) return false;
     model = model || root.__omegaV2IndustryModel || {};
     var key = String(factoryCardUiState(model).expandedKey || '');
-    var workspace = typeof root.querySelector === 'function'
-      ? root.querySelector('.fp-factory-catalog-workspace, .fp-assets-workspace') : null;
-    if (workspace && workspace.classList && typeof workspace.classList.toggle === 'function') {
-      workspace.classList.toggle('fp-workspace--detail-open', !!key);
-    }
-    var buttons = typeof root.querySelectorAll === 'function'
-      ? root.querySelectorAll('[data-omega-v2-factory-card-expand]') : [];
-    for (var i = 0; i < buttons.length; i += 1) {
-      var button = buttons[i];
-      var active = String(button.getAttribute('data-card-key') || '') === key;
-      if (button.setAttribute) {
-        button.setAttribute('aria-expanded', active ? 'true' : 'false');
-        button.setAttribute('aria-label', active ? 'Close production details' : 'Open production details');
+    var cards = typeof root.querySelectorAll === 'function'
+      ? root.querySelectorAll('[data-omega-v2-factory-type-card], [data-omega-v2-factory-card]') : [];
+    for (var i = 0; i < cards.length; i += 1) {
+      var card = cards[i];
+      var type = String(card.getAttribute && card.getAttribute('data-factory-type') || '');
+      var assetId = String(card.getAttribute && card.getAttribute('data-factory-id') || '');
+      var cardKey = type ? 'type:' + type : assetId ? 'asset:' + assetId : '';
+      var active = !!key && cardKey === key;
+      if (card.classList && typeof card.classList.toggle === 'function') card.classList.toggle('fp-card--flipped', active);
+      if (card.setAttribute) card.setAttribute('data-detail-active', active ? 'true' : 'false');
+      var trigger = card.querySelector && card.querySelector('[data-omega-v2-factory-details]');
+      if (trigger && trigger.setAttribute) {
+        trigger.setAttribute('aria-expanded', active ? 'true' : 'false');
+        trigger.setAttribute('aria-label', active ? 'Close factory details' : 'Open factory details');
       }
-      var card = button.closest && button.closest('[data-omega-v2-factory-type-card], [data-omega-v2-factory-card]');
-      if (card && card.setAttribute) card.setAttribute('data-detail-active', active ? 'true' : 'false');
+      var face = card.querySelector && card.querySelector('[data-factory-details-face]');
+      if (face) {
+        face.innerHTML = active ? factoryDetailBackContentsMarkup(model, cardKey) : '';
+        face.hidden = !active;
+        if (face.setAttribute) face.setAttribute('aria-hidden', active ? 'false' : 'true');
+      }
     }
     syncFactoryCardActionLock(root, model);
-    var panel = typeof root.querySelector === 'function' ? root.querySelector('[data-factory-detail-panel]') : null;
-    if (!panel) return false;
-    panel.innerHTML = key ? factoryDetailPanelContentsMarkup(model, key) : '';
-    panel.hidden = !key;
-    if (panel.setAttribute) panel.setAttribute('aria-hidden', key ? 'false' : 'true');
     return true;
   }
 
@@ -3061,6 +3063,210 @@
     return html + '</section>';
   }
 
+  function factoryDetailFormatAmount(value, unit) {
+    var amount = num(value);
+    if (amount === null || amount < 0) return 'Not recorded';
+    var magnitude = Math.abs(amount), divisor = 1, suffix = '';
+    if (magnitude >= 1e12) { divisor = 1e12; suffix = 'T'; }
+    else if (magnitude >= 1e9) { divisor = 1e9; suffix = 'B'; }
+    else if (magnitude >= 1e6) { divisor = 1e6; suffix = 'M'; }
+    else if (magnitude >= 1e3) { divisor = 1e3; suffix = 'K'; }
+    var rounded = Math.round(amount / divisor);
+    var amountText = suffix ? String(rounded) + suffix : Math.round(amount).toLocaleString('en-US');
+    var rawUnit = String(unit || '').trim();
+    var token = rawUnit.toUpperCase().replace(/[ _-]+/g, '');
+    var shortUnit = '';
+    if (/^(TONNE|TONNES|METRICTONNE|METRICTONNES|SIMULATIONTONNE|SIMULATIONTONNEEQUIVALENT|T)$/.test(token)) shortUnit = 't';
+    else if (/^(KILOGRAM|KILOGRAMS|KG)$/.test(token)) shortUnit = 'kg';
+    else if (/^(GRAM|GRAMS|G)$/.test(token)) shortUnit = 'g';
+    else if (/^(LITRE|LITRES|LITER|LITERS|L)$/.test(token)) shortUnit = 'L';
+    else if (/^(CUBICMETRE|CUBICMETRES|CUBICMETER|CUBICMETERS|M3)$/.test(token)) shortUnit = 'm³';
+    else if (/^(MEGAWATTHOUR|MEGAWATTHOURS|MWH)$/.test(token)) shortUnit = 'MWh';
+    else if (/^(KILOWATTHOUR|KILOWATTHOURS|KWH)$/.test(token)) shortUnit = 'kWh';
+    else if (/^(SIMULATIONRESOURCEUNIT|SIMULATIONUNITS|GAMEUNITS?)$/.test(token)) shortUnit = 'units';
+    else if (rawUnit) shortUnit = readableIdentifier(rawUnit).replace(/^simulation /i, '').slice(0, 12);
+    return amountText + (shortUnit ? ' ' + shortUnit : '');
+  }
+
+  function factoryDetailCapacity(model, context) {
+    if (context && context.asset) {
+      var assetCapacity = num(context.asset.capacityPerDay);
+      if (assetCapacity !== null && assetCapacity > 0) return assetCapacity;
+      var assetProfile = (model && model.catalogProfiles || (safeCatalog() || {}).factoryProfiles || {})[context.type] || {};
+      return num(assetProfile.defaultCapacityPerDay);
+    }
+    var matching = (Array.isArray(model && model.factories) ? model.factories : []).filter(function (factory) {
+      return (normalizeFactoryType(factory && factory.type, safeCatalog()) || String(factory && factory.type || '').toUpperCase()) === String(context && context.type || '');
+    });
+    var observed = matching.map(function (factory) { return num(factory && factory.capacityPerDay); })
+      .filter(function (value) { return value !== null && value > 0; });
+    if (observed.length) return observed.reduce(function (sum, value) { return sum + value; }, 0) / observed.length;
+    var profiles = model && model.catalogProfiles || (safeCatalog() || {}).factoryProfiles || {};
+    return num((profiles[String(context && context.type || '')] || {}).defaultCapacityPerDay);
+  }
+
+  function factoryDetailAmountMarkup(model, context, route, productId, side) {
+    var values = side === 'input' ? route && route.inputs || {} : route && route.outputs || {};
+    var value = factoryFindValue(values, productId);
+    if (value === null) value = values[productId];
+    var unit = side === 'input' ? route && route.inputUnit : route && route.outputUnit;
+    var capacity = factoryDetailCapacity(model, context);
+    var rate = factoryRouteRate(value, route, capacity, unit);
+    if (!rate) return '<span class="fp-detail-amount" data-amount-state="unknown">Not recorded</span>';
+    return '<span class="fp-detail-amount">' + esc(factoryDetailFormatAmount(rate.perDay, rate.unit)) + '<small>/day</small></span>';
+  }
+
+  function factoryDetailStatusMarkup(status) {
+    status = status || {};
+    var key = /^(stable|risk|critical|consumed|partial|stored|distributed|unused)$/.test(String(status.key || '').toLowerCase())
+      ? String(status.key).toLowerCase() : 'unknown';
+    var label = String(status.label || 'Not tracked');
+    return '<span class="fp-detail-status" data-state="' + key + '" role="status" aria-label="' + esc(label) + '">' + esc(label) + '</span>';
+  }
+
+  function factoryDetailInputStatus(model, context, route, productId) {
+    var assets = context && context.asset ? [context.asset] :
+      (Array.isArray(model && model.factories) ? model.factories : []).filter(function (factory) {
+        return (normalizeFactoryType(factory && factory.type, safeCatalog()) || String(factory && factory.type || '').toUpperCase()) === String(context && context.type || '');
+      });
+    var tracked = assets.filter(function (factory) {
+      return factory && (factory.hasInputInventory === true ||
+        factory.raw && factory.raw.inputInventory && typeof factory.raw.inputInventory === 'object');
+    });
+    if (tracked.length) {
+      var currentTotal = 0, requiredTotal = 0, currentSeen = false, requiredSeen = false;
+      tracked.forEach(function (factory) {
+        var current = factoryFindValue(factory.raw && factory.raw.inputInventory, productId);
+        if (current === null) return;
+        currentTotal += Math.max(0, current);
+        currentSeen = true;
+        var requirement = factoryInputDailyRequirement(factory, productId, model);
+        if (requirement === null) {
+          var coefficient = factoryFindValue(route && route.inputs || {}, productId);
+          var routeRate = factoryRouteRate(coefficient, route, num(factory.capacityPerDay) || factoryDetailCapacity(model, context), route && route.inputUnit);
+          requirement = routeRate ? routeRate.perDay : null;
+        }
+        if (requirement !== null && requirement >= 0) {
+          requiredTotal += requirement;
+          requiredSeen = true;
+        }
+      });
+      if (currentSeen && requiredSeen) {
+        if (requiredTotal > 0 && currentTotal <= 1e-9) return { key:'critical', label:'Shortage' };
+        if (requiredTotal > 0 && currentTotal + 1e-9 < requiredTotal) return { key:'risk', label:'At risk' };
+        return { key:'stable', label:'Sufficient' };
+      }
+      if (currentSeen && currentTotal > 0) return { key:'risk', label:'Stock recorded' };
+    }
+    var coverage = factoryInputCoverageRecord(model, productId, context && context.asset ? context.asset.id : null);
+    if (coverage) {
+      var coverageStatus = String(coverage.status || '').toUpperCase();
+      if (/SHORTAGE|CRITICAL/.test(coverageStatus)) return { key:'critical', label:'Shortage' };
+      if (/LOW_COVERAGE|AT_RISK|RISK/.test(coverageStatus)) return { key:'risk', label:'At risk' };
+      if (/BALANCED|STABLE|SUFFICIENT/.test(coverageStatus)) return { key:'stable', label:'Sufficient' };
+      var stock = num(coverage.currentStock !== undefined ? coverage.currentStock : coverage.recordedStock);
+      if (stock !== null && stock <= 1e-9) return { key:'critical', label:'Shortage' };
+      if (stock !== null && stock > 0) return { key:'risk', label:'Stock recorded' };
+    }
+    return { key:'unknown', label:'Not tracked' };
+  }
+
+  function factoryDetailOutputStatus(model, context, productId) {
+    var rows = model && model.__omegaV2FactoryOutputRowsCache;
+    if (!Array.isArray(rows)) rows = model.__omegaV2FactoryOutputRowsCache = factoryOutputRows(model || {});
+    var relevant = rows.filter(function (row) {
+      if (String(row && row.productId || '').toLowerCase() !== String(productId || '').toLowerCase()) return false;
+      if (context && context.asset) return String(row.factoryId || '') === String(context.asset.id || '');
+      var factory = (Array.isArray(model.factories) ? model.factories : []).find(function (item) {
+        return String(item && item.id || '') === String(row.factoryId || '');
+      });
+      return !!factory && (normalizeFactoryType(factory.type, safeCatalog()) || String(factory.type || '').toUpperCase()) === String(context && context.type || '');
+    });
+    if (!relevant.length) return { key:'unknown', label:'Not tracked' };
+    var produced = 0, consumed = 0, stock = 0, distributed = 0;
+    relevant.forEach(function (row) {
+      produced += Math.max(0, num(row.produced) || 0);
+      consumed += Math.max(0, num(row.factoryUse) || 0) + Math.max(0, num(row.domesticConsumption) || 0);
+      stock += Math.max(0, num(row.currentStock) || 0);
+      distributed += Math.max(0, num(row.domesticSupply) || 0) + Math.max(0, num(row.exported) || 0);
+    });
+    if (consumed > 0 && consumed + 1e-9 >= produced) return { key:'consumed', label:'Consumed' };
+    if (consumed > 0) return { key:'partial', label:'Partly used' };
+    if (distributed > 0) return { key:'distributed', label:'Distributed' };
+    if (stock > 0) return { key:'stored', label:'In stock' };
+    if (produced > 0) return { key:'unused', label:'Unused' };
+    return { key:'unknown', label:'Not tracked' };
+  }
+
+  function factoryDetailHeaderMarkup(model, cardKey) {
+    var context = factoryDetailContext(model, cardKey);
+    if (!context) return '';
+    if (!context.asset) {
+      var count = factoryTypeOwnedCount({ type:context.type }, model);
+      return '<header class="fp-type-card-head"><span class="fp-type-card-art">' +
+        factorySvgMarkup({ type:context.type, name:context.title }) + '</span>' +
+        '<span class="fp-type-card-name"><strong>' + esc(context.title) + '</strong></span>' +
+        '<span class="fp-type-card-count"><span>Factories</span><strong>' + fmt(count) + '</strong></span></header>';
+    }
+    var factory = context.asset;
+    return '<div class="fp-card-live-heading"><span class="fp-badge" aria-hidden="true">' + factorySvgMarkup(factory) + '</span>' +
+      '<div class="fp-card-live-title"><strong>' + esc(factory.name || context.title) + '</strong><small>' + esc(factoryTypeLabel(factory)) + '</small></div>' +
+      '<span class="fp-card-live-state" data-state="' + esc(factoryProductionState(factory).key) + '">' + esc(factoryProductionState(factory).label) + '</span></div>';
+  }
+
+  function factoryDetailRowsMarkup(model, context, route, tab) {
+    var inputs = Object.keys(route && route.inputs || {});
+    var outputs = Object.keys(route && route.outputs || {});
+    var byProducts = factoryRouteProductIds(route, 'byProducts', route && route.outputs || {});
+    var products = tab === 'input' ? inputs :
+      tab === 'byproduct' ? byProducts :
+      outputs.filter(function (id) { return byProducts.indexOf(id) < 0; });
+    if (!products.length) return '<p class="fp-card-detail-empty">No ' + (tab === 'byproduct' ? 'byproducts' : tab === 'input' ? 'inputs' : 'outputs') + ' are recorded for this route.</p>';
+    var hasStatus = tab !== 'byproduct';
+    return '<div class="fp-card-detail-table' + (hasStatus ? '' : ' fp-card-detail-table--no-status') + '" role="table" aria-label="' + esc(tab) + ' products">' +
+      '<div class="fp-card-detail-table-head" role="row"><span role="columnheader">Product</span><span role="columnheader">Amount / day</span>' +
+      (hasStatus ? '<span role="columnheader">Status</span>' : '') + '</div>' +
+      products.map(function (productId) {
+        var label = panelProductLabel(model, productId);
+        var status = tab === 'input'
+          ? factoryDetailInputStatus(model, context, route, productId)
+          : tab === 'output'
+            ? factoryDetailOutputStatus(model, context, productId)
+            : null;
+        return '<div class="fp-card-detail-row" role="row" data-product-id="' + esc(productId) + '">' +
+          '<div class="fp-card-detail-product" role="cell">' + factoryProductIdentityMarkup(productId, label) + '</div>' +
+          '<div role="cell">' + factoryDetailAmountMarkup(model, context, route, productId, tab === 'input' ? 'input' : 'output') + '</div>' +
+          (hasStatus ? '<div role="cell">' + factoryDetailStatusMarkup(status) + '</div>' : '') +
+          '</div>';
+      }).join('') + '</div>';
+  }
+
+  function factoryDetailBackContentsMarkup(model, cardKey) {
+    var context = factoryDetailContext(model, cardKey);
+    if (!context) return '<p class="fp-card-detail-empty">Factory detail is not available.</p>';
+    var state = factoryCardUiState(model);
+    var activeTab = /^(input|output|byproduct)$/.test(String(state.detailsTab || '').toLowerCase())
+      ? String(state.detailsTab).toLowerCase() : 'input';
+    var labels = [{ id:'input', label:'Input' }, { id:'output', label:'Output' }, { id:'byproduct', label:'Byproduct' }];
+    var tabs = '<nav class="fp-card-detail-tabs" role="tablist" aria-label="Factory product details">' +
+      labels.map(function (item) {
+        var selected = activeTab === item.id;
+        return '<button type="button" role="tab" class="fp-card-detail-tab' + (selected ? ' is-active' : '') +
+          '" data-omega-v2-factory-detail-tab="' + item.id + '" data-factory-card-key="' + esc(cardKey) +
+          '" aria-selected="' + (selected ? 'true' : 'false') + '">' + item.label + '</button>';
+      }).join('') + '</nav>';
+    var routes = Array.isArray(context.routes) ? context.routes : [];
+    var content = routes.length ? routes.map(function (route, index) {
+      return (routes.length > 1 ? '<div class="fp-card-detail-route-title">' + esc(readableIdentifier(route.name || route.recipeId || ('Route ' + (index + 1)))) + '</div>' : '') +
+        factoryDetailRowsMarkup(model, context, route, activeTab);
+    }).join('') : '<p class="fp-card-detail-empty">Production recipe is not recorded.</p>';
+    return '<div class="fp-card-back-body">' +
+      '<div class="fp-card-back-heading">' + factoryDetailHeaderMarkup(model, cardKey) +
+        '<button type="button" class="fp-card-back-close" data-omega-v2-factory-detail-close data-factory-card-key="' + esc(cardKey) + '" aria-label="Return to factory card">Back</button></div>' +
+      tabs + '<div class="fp-card-detail-scroll" data-factory-detail-scroll>' + content + '</div>' +
+      '<div class="fp-card-detail-footnote">Per factory · game quantities</div></div>';
+  }
+
   function factoryCard(factory, options) {
     options = options || {};
     var model = options.model || {};
@@ -3082,37 +3288,53 @@
     var canOperate = model.canOperateSelectedCountry === true;
     var isDecommissioned = /^(DECOMMISSIONED|DESTROYED)$/.test(String(factory.status || '').toUpperCase());
     var typeName = factoryTypeLabel(factory);
-    var head = '<span class="fp-badge" aria-hidden="true">' + factorySvgMarkup(factory) + '</span>' +
+    var head = '<div class="fp-card-live-heading"><span class="fp-badge" aria-hidden="true">' + factorySvgMarkup(factory) + '</span>' +
       '<button type="button" class="omega-v2-factory-title" data-omega-v2-factory-select="' + esc(id) + '" aria-pressed="' + (selected ? 'true' : 'false') + '" aria-label="Select ' + esc(factory.name) + '">' +
-        '<strong>' + esc(factory.name) + '</strong><small>' + esc(typeName) + '</small><span class="omega-v2-factory-title-mark" aria-hidden="true"></span>' +
-      '</button>';
+        '<strong>' + esc(factory.name) + '</strong><small>' + esc(typeName) + '</small></button></div>';
     if (state.buildKey === cardKey) {
       return '<article class="omega-v2-factory-card fp-card fp-card--build" data-omega-v2-factory-card data-factory-id="' + esc(id) + '" data-state="' + status.key + '">' +
         head + factoryBuildRequirementsMarkup(type, model, cardKey) + '</article>';
     }
     var routes = factoryPresentationRoutes(model, type, factory);
-    return '<article class="omega-v2-factory-card fp-card' + (state.expandedKey === cardKey ? ' fp-card--expanded' : '') + '" data-omega-v2-factory-card data-factory-id="' + esc(id) +
+    var route = routes[0] || {};
+    var inputCount = Object.keys(route.inputs || {}).length;
+    var outputCount = Object.keys(route.outputs || {}).filter(function (productId) {
+      return factoryRouteProductIds(route, 'byProducts', route.outputs || {}).indexOf(productId) < 0;
+    }).length;
+    var byProductCount = factoryRouteProductIds(route, 'byProducts', route.outputs || {}).length;
+    var focusProduct = factoryRouteProductIds(route, 'primaryOutputs', route.outputs || {})[0] ||
+      Object.keys(route.outputs || {})[0] || '';
+    var focus = focusProduct
+      ? '<div class="fp-card-front-focus"><small>PRIMARY OUTPUT</small>' +
+          factoryProductIdentityMarkup(focusProduct, panelProductLabel(model, focusProduct)) + '</div>'
+      : '<div class="fp-card-front-focus fp-card-front-focus--empty"><small>PRODUCTION ROUTE</small><strong>Not recorded</strong></div>';
+    var flippedClass = state.expandedKey === cardKey ? ' fp-card--flipped' : '';
+    return '<article class="omega-v2-factory-card fp-card' + flippedClass + '" data-omega-v2-factory-card data-factory-id="' + esc(id) +
       '" data-state="' + status.key + '" data-selected="' + (selected ? 'true' : 'false') +
       '" data-search="' + esc((factory.name + ' ' + id + ' ' + factory.type + ' ' + factory.recipeId).toLowerCase()) + '">' +
-      head +
-      '<button type="button" class="omega-v2-factory-art" data-omega-v2-factory-select="' + esc(id) + '" aria-pressed="' + (selected ? 'true' : 'false') + '" aria-label="Select ' + esc(factory.name) + ' factory">' +
-        '<span class="omega-v2-factory-ring" aria-hidden="true"></span><span class="omega-v2-factory-artwell">' + factorySvgMarkup(factory) + '</span>' +
-      '</button>' +
-      '<div class="omega-v2-factory-status-plate" data-state="' + status.key + '">' +
-        '<span class="omega-v2-factory-status-led" aria-hidden="true"></span><strong>' + esc(status.label) + '</strong>' +
-        '<span class="omega-v2-factory-output">' + displayOutput + '</span>' + outputProduct + reason +
-      '</div>' +
-      '<div class="omega-v2-factory-count"><span>Owned:</span><strong>' + fmt(ownedCount) + '</strong></div>' +
-      factoryCardRecipeMarkup(routes, model, cardKey, factory, false) +
-      '<div class="omega-v2-factory-actions">' +
-        '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build-details data-omega-v2-factory-build="' + esc(id) + '" data-factory-card-key="' + esc(cardKey) + '" data-factory-type="' + esc(type) + '"' +
-          (canOperate ? '' : ' disabled title="Build actions are available only for the active player country."') + '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Build</button>' +
-        '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--destroy" data-omega-v2-factory-destroy="' + esc(id) + '"' +
-          (!canOperate || isDecommissioned ? ' disabled title="This factory cannot be decommissioned from the current country view."': '') +
-          '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--destroy"></span>Destroy</button>' +
-      '</div></article>';
+      '<div class="fp-card-flip-shell"><div class="fp-card-flip-inner">' +
+      '<section class="fp-card-face fp-card-face--front" aria-label="' + esc(factory.name) + ' factory overview">' +
+        head +
+        '<div class="fp-card-live-status" data-state="' + status.key + '">' +
+          '<span class="omega-v2-factory-status-led" aria-hidden="true"></span><strong>' + esc(status.label) + '</strong>' +
+          '<span class="fp-card-live-output">' + displayOutput + '</span>' + outputProduct + reason +
+        '</div>' +
+        '<div class="fp-card-live-count"><span>Owned</span><strong>' + fmt(ownedCount) + '</strong></div>' +
+        focus +
+        '<div class="fp-card-route-summary"><span>Inputs <b>' + fmt(inputCount) + '</b></span><span>Outputs <b>' + fmt(outputCount) + '</b></span><span>Byproducts <b>' + fmt(byProductCount) + '</b></span></div>' +
+        '<div class="omega-v2-factory-actions fp-card-front-actions">' +
+          '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build-details data-omega-v2-factory-build="' + esc(id) + '" data-factory-card-key="' + esc(cardKey) + '" data-factory-type="' + esc(type) + '"' +
+            (canOperate ? '' : ' disabled title="Manage is available only for the active player country."') +
+            '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Manage</button>' +
+          '<button type="button" class="omega-v2-factory-button fp-card-details-button" data-omega-v2-factory-details data-factory-card-key="' + esc(cardKey) + '" aria-expanded="' + (state.expandedKey === cardKey ? 'true' : 'false') + '">Details <span aria-hidden="true">i</span></button>' +
+          '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--destroy fp-card-destroy-button" data-omega-v2-factory-destroy="' + esc(id) + '"' +
+            (!canOperate || isDecommissioned ? ' disabled title="This factory cannot be decommissioned from the current country view."' : '') + '>Destroy</button>' +
+        '</div>' +
+      '</section>' +
+      '<section class="fp-card-face fp-card-face--back" data-factory-details-face hidden aria-hidden="true"></section>' +
+      '</div></div></article>';
   }
-  function factoryTypeBuildSupport(type, catalog) {
+    function factoryTypeBuildSupport(type, catalog) {
     catalog = catalog || safeCatalog() || {};
     var wanted = normalizeFactoryType(type, catalog) || String(type || '').toUpperCase();
     var recipes = Object.keys(catalog.downstreamFactoryRecipes || {}).map(function (key) {
@@ -3135,11 +3357,11 @@
     var cardKey = 'type:' + type;
     var state = factoryCardUiState(model);
     var support = factoryTypeBuildSupport(type, catalog);
-    var ownedCount = model.hasCountryState ? factoryTypeOwnedCount({ type: type }, model) : null;
+    var ownedCount = model.hasCountryState ? factoryTypeOwnedCount({ type:type }, model) : null;
     var presence = ownedCount === null ? 'unknown' : Number(ownedCount) > 0 ? 'present' : 'absent';
     var canBuild = model.canOperateSelectedCountry === true && support.canBuild;
     var disabledReason = !model.canOperateSelectedCountry
-      ? 'Building is available only for the active player country.'
+      ? 'Managing factories is available only for the active player country.'
       : !support.canBuild ? 'No canonical recipe/input is registered for this type.' : '';
     var count = '<span class="fp-type-card-count"><span>Factories</span><strong>' + fmt(ownedCount) + '</strong></span>';
     var header = '<header class="fp-type-card-head"><span class="fp-type-card-art">' +
@@ -3153,19 +3375,42 @@
         header + factoryBuildRequirementsMarkup(type, model, cardKey) + '</article>';
     }
     var routes = factoryPresentationRoutes(model, type, null);
-    return '<article class="omega-v2-factory-type-card omega-v2-factory-type-card--' + presence +
-      (state.expandedKey === cardKey ? ' fp-type-card--expanded' : '') +
+    var route = routes[0] || {};
+    var inputCount = Object.keys(route.inputs || {}).length;
+    var outputCount = Object.keys(route.outputs || {}).filter(function (productId) {
+      return factoryRouteProductIds(route, 'byProducts', route.outputs || {}).indexOf(productId) < 0;
+    }).length;
+    var byProductCount = factoryRouteProductIds(route, 'byProducts', route.outputs || {}).length;
+    var focusProduct = factoryRouteProductIds(route, 'primaryOutputs', route.outputs || {})[0] ||
+      Object.keys(route.outputs || {})[0] || '';
+    var focus = focusProduct
+      ? '<div class="fp-card-front-focus"><small>PRIMARY OUTPUT</small>' +
+          factoryProductIdentityMarkup(focusProduct, panelProductLabel(model, focusProduct)) + '</div>'
+      : '<div class="fp-card-front-focus fp-card-front-focus--empty"><small>PRODUCTION ROUTE</small><strong>Not recorded</strong></div>';
+    var flippedClass = state.expandedKey === cardKey ? ' fp-card--flipped' : '';
+    return '<article class="omega-v2-factory-type-card omega-v2-factory-type-card--' + presence + flippedClass +
       '" data-omega-v2-factory-type-card data-factory-type="' + esc(type) +
       '" data-factory-presence="' + presence + '">' +
-      header +
-      factoryCardRecipeMarkup(routes, model, cardKey, null, true) +
-      '<div class="fp-type-card-actions"><button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build-details data-omega-v2-factory-build="CATALOG" data-factory-card-key="' +
-      esc(cardKey) + '" data-factory-type="' + esc(type) + '"' +
-      (canBuild ? '' : ' disabled title="' + esc(disabledReason) + '"') +
-      '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Build</button></div></article>';
+      '<div class="fp-card-flip-shell"><div class="fp-card-flip-inner">' +
+      '<section class="fp-card-face fp-card-face--front" aria-label="' + esc(item.name || type) + ' factory overview">' +
+        header +
+        '<div class="fp-card-type-category">' + esc(readableIdentifier(item.category || 'Industry')) + '</div>' +
+        focus +
+        '<div class="fp-card-route-summary"><span>Inputs <b>' + fmt(inputCount) + '</b></span><span>Outputs <b>' + fmt(outputCount) + '</b></span><span>Byproducts <b>' + fmt(byProductCount) + '</b></span></div>' +
+        '<div class="fp-type-card-actions">' +
+          '<button type="button" class="omega-v2-factory-button omega-v2-factory-button--build" data-omega-v2-factory-build-details data-omega-v2-factory-build="CATALOG" data-factory-card-key="' +
+          esc(cardKey) + '" data-factory-type="' + esc(type) + '"' +
+          (canBuild ? '' : ' disabled title="' + esc(disabledReason) + '"') +
+          '><span aria-hidden="true" class="omega-v2-action-icon omega-v2-action-icon--build"></span>Manage</button>' +
+          '<button type="button" class="omega-v2-factory-button fp-card-details-button" data-omega-v2-factory-details data-factory-card-key="' + esc(cardKey) +
+          '" aria-expanded="' + (state.expandedKey === cardKey ? 'true' : 'false') + '">Details <span aria-hidden="true">i</span></button>' +
+        '</div>' +
+      '</section>' +
+      '<section class="fp-card-face fp-card-face--back" data-factory-details-face hidden aria-hidden="true"></section>' +
+      '</div></div></article>';
   }
 
-  function factoryTypeCatalogMarkup(model) {
+    function factoryTypeCatalogMarkup(model) {
     model = model || {};
     var rows = Array.isArray(model.factoryTypeCatalog) ? model.factoryTypeCatalog.slice() : [];
     function owned(item) {
@@ -3191,8 +3436,7 @@
     var empty = '<div class="omega-v2-factory-type-empty">No factory types available.</div>';
     return '<section class="fp-type-catalog" aria-label="Factory types">' +
       '<div class="fp-factory-catalog-workspace' + (factoryCardUiState(model).expandedKey ? ' fp-workspace--detail-open' : '') +
-      '"><div class="fp-type-catalog-grid">' + (cards || empty) + '</div>' +
-      factoryDetailPanelMarkup(model) + '</div></section>';
+      '"><div class="fp-type-catalog-grid">' + (cards || empty) + '</div></div></section>';
   }
 
   function factoryAssetsWorkspaceMarkup(root, model, options) {
@@ -3209,7 +3453,7 @@
         }).join('')
       : '<div class="omega-v2-factory-empty">No factories are recorded for ' + esc(model.countryId || 'the selected country') + '.</div>';
     return '<div class="fp-assets-workspace' + (factoryCardUiState(model).expandedKey ? ' fp-workspace--detail-open' : '') + '">' +
-      '<div class="omega-v2-factory-deck">' + factoryCards + '</div>' + factoryDetailPanelMarkup(model) + '</div>';
+      '<div class="omega-v2-factory-deck">' + factoryCards + '</div></div>';
   }
 
   function factoryHomeViewMarkup(root, model, options, factoryView) {
@@ -3436,7 +3680,7 @@
       compactTabs + summaryMarkup + panelBody + '<div class="fp-deck" aria-hidden="true"></div></div>' +
       (root.__omegaV2IndustryBuildFactoryType ? factoryProjectModal(model, root.__omegaV2IndustryBuildFactoryType) : '') + '</section>';
 
-    syncFactoryCardActionLock(root, model);
+    syncFactoryDetailPanel(root, model);
     if (!root.__omegaV2IndustryBound && typeof root.addEventListener === 'function') {
       root.addEventListener('error', function (event) {
         var image = event && event.target;
@@ -3492,14 +3736,28 @@
           return;
         }
 
-        var cardDisclosure = target.closest('[data-omega-v2-factory-card-expand]');
-        if (cardDisclosure && root.contains(cardDisclosure)) {
-          var disclosureKey = cardDisclosure.getAttribute('data-card-key') || '';
-          var cardState = root.__omegaV2FactoryCardUiState || (root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false });
-          cardState.expandedKey = cardState.expandedKey === disclosureKey ? '' : disclosureKey;
-          cardState.buildKey = '';
-          cardState.sections = Object.create(null);
-          cardState.buildMaterialsExpanded = false;
+        var detailsButton = target.closest('[data-omega-v2-factory-details]');
+        if (detailsButton && root.contains(detailsButton)) {
+          var detailsKey = detailsButton.getAttribute('data-factory-card-key') || '';
+          var detailsState = root.__omegaV2FactoryCardUiState || (root.__omegaV2FactoryCardUiState = {
+            expandedKey:'', buildKey:'', detailsTab:'input', sections:Object.create(null), buildMaterialsExpanded:false
+          });
+          detailsState.expandedKey = detailsState.expandedKey === detailsKey ? '' : detailsKey;
+          detailsState.detailsTab = 'input';
+          detailsState.buildKey = '';
+          detailsState.sections = Object.create(null);
+          detailsState.buildMaterialsExpanded = false;
+          syncFactoryDetailPanel(root, root.__omegaV2IndustryModel || model);
+          return;
+        }
+
+        var detailTab = target.closest('[data-omega-v2-factory-detail-tab]');
+        if (detailTab && root.contains(detailTab)) {
+          var tabState = root.__omegaV2FactoryCardUiState || (root.__omegaV2FactoryCardUiState = {
+            expandedKey:'', buildKey:'', detailsTab:'input', sections:Object.create(null), buildMaterialsExpanded:false
+          });
+          var requestedTab = String(detailTab.getAttribute('data-omega-v2-factory-detail-tab') || 'input').toLowerCase();
+          if (/^(input|output|byproduct)$/.test(requestedTab)) tabState.detailsTab = requestedTab;
           syncFactoryDetailPanel(root, root.__omegaV2IndustryModel || model);
           return;
         }
@@ -3508,6 +3766,7 @@
         if (detailClose && root.contains(detailClose)) {
           var detailState = root.__omegaV2FactoryCardUiState || {};
           detailState.expandedKey = '';
+          detailState.detailsTab = 'input';
           detailState.sections = Object.create(null);
           syncFactoryDetailPanel(root, root.__omegaV2IndustryModel || model);
           return;
@@ -3582,9 +3841,11 @@
             return String(row && row.id || '') === selectedId;
           });
           if (selectedAsset) {
-            var selectedState = root.__omegaV2FactoryCardUiState || (root.__omegaV2FactoryCardUiState = { expandedKey:'', buildKey:'', sections:Object.create(null), buildMaterialsExpanded:false });
-            var selectedCardKey = 'asset:' + selectedId;
-            selectedState.expandedKey = selectedState.expandedKey === selectedCardKey ? '' : selectedCardKey;
+            var selectedState = root.__omegaV2FactoryCardUiState || (root.__omegaV2FactoryCardUiState = {
+              expandedKey:'', buildKey:'', detailsTab:'input', sections:Object.create(null), buildMaterialsExpanded:false
+            });
+            selectedState.expandedKey = '';
+            selectedState.detailsTab = 'input';
             selectedState.buildKey = '';
             selectedState.sections = Object.create(null);
             syncFactoryDetailPanel(root, activeFactoryModel);
