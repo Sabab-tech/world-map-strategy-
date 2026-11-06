@@ -1455,7 +1455,19 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(privateFactoryProject.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
     assert.equal(privateFactoryProject.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
     assert.equal(privateFactoryProject.companyId,'MERIDIAN_ENGINEERING_GROUP');
+    assert.equal(privateFactoryProject.operatorType,'PRIVATE_COMPANY_OPERATOR');
     assert.equal(privateFactoryProject.stateControlRights.operationalControl,'STATE_POLICY_ONLY');
+    const forbiddenStateOperator=N.startFactoryProject({
+      countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',resourceId:'iron_ore',
+      capacityPerDay:800,buildDays:30,requiredTechnologyIds:[],factoryId:'FAC-PRIVATE-STATE-OPERATOR-REJECT',
+      ownershipModel:'PRIVATE_ENTERPRISE',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP',
+      operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      stateControlRights:{operationalControl:'STATE_OPERATOR'}
+    });
+    assert.equal(forbiddenStateOperator.status,'BLOCKED');
+    assert.equal(forbiddenStateOperator.reason,'PRIVATE_FACTORY_CANNOT_ASSIGN_STATE_AS_OWNER_OR_DAILY_OPERATOR');
+    assert.equal(resourceState.industrialNetwork.projects.some(project=>project.factoryId==='FAC-PRIVATE-STATE-OPERATOR-REJECT'),false,
+      'invalid state operator must be rejected before any construction project is created');
     context.Game.state.simulation.turn+=1;
     N.advanceProjects('BGD');
     const commissionedPrivateFactory=resourceState===context.Game.state.resource.BGD
