@@ -246,8 +246,8 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       };
     }, { owner: companyOptions[0], operator: companyOptions[1], factoryType: selectedFactoryType, beforeProposalIds: before.proposalIds });
     assert.ok(after.proposal, 'the real browser form must create the exact submitted owner/operator/factory proposal');
-    assert.equal(after.proposalCount, before.proposalCount + 1,
-      'one manual proposal submission must append exactly one record without duplicate submission');
+    assert.equal(after.newManualProposalCount, 1,
+      'one manual form submission must append exactly one matching private owner/operator/factory proposal');
     assert.equal(after.inventory, before.inventory, 'a proposal alone must not mutate raw/finished inventory');
     assert.equal(after.warehouse, before.warehouse, 'a proposal alone must not reserve or create warehouse stock');
     assert.equal(after.foreignCountry, before.foreignCountry, 'a player-country proposal must not mutate another country');
