@@ -416,6 +416,7 @@ test('state supply directives enforce domestic-only, quota, export contract and 
   assert.equal(wrongContractCompany.reason,'GOVERNMENT_EXPORT_CONTRACT_COMPANY_NOT_AUTHORIZED');
   const wrongDestination=api.evaluateExportDirective('BGD','IND','iron_ore',1,'GOV-EXPORT-IRON-1',{iron_ore:100});
   assert.equal(wrongDestination.allowed,false);
+  assert.equal(wrongDestination.reason,'GOVERNMENT_EXPORT_CONTRACT_DESTINATION_MISMATCH');
   const overContract=api.evaluateExportDirective('BGD','SAU','iron_ore',21,'GOV-EXPORT-IRON-1',{iron_ore:100});
   assert.equal(overContract.allowed,false);
   assert.equal(overContract.reason,'GOVERNMENT_EXPORT_CONTRACT_QUANTITY_EXCEEDED');
@@ -428,6 +429,13 @@ test('state supply directives enforce domestic-only, quota, export contract and 
   const quotaBlocked=api.evaluateExportDirective('BGD','SAU','copper',31,null,{copper:100});
   assert.equal(quotaBlocked.allowed,false);
   assert.equal(quotaBlocked.reason,'DOMESTIC_SUPPLY_PROTECTED');
+
+  const missingStockPolicy=api.setSupplyDirective('BGD',{directive:'STRATEGIC_STOCK_RESERVE',resourceId:'rare_earth',
+    policyId:'UNKNOWN-STOCK-RESERVE',domesticReserveQuantity:10});
+  assert.equal(missingStockPolicy.accepted,true);
+  const unknownStock=api.evaluateExportDirective('BGD','SAU','rare_earth',1,null,{});
+  assert.equal(unknownStock.allowed,false);
+  assert.equal(unknownStock.reason,'STATE_SUPPLY_STOCK_UNOBSERVED');
 
   const domesticFactoryIds=Array.from({length:46},(_,i)=>'FAC-'+String(i+1).padStart(2,'0'));
   const exportFactoryIds=Array.from({length:4},(_,i)=>'FAC-'+String(i+47).padStart(2,'0'));
@@ -469,6 +477,14 @@ test('government procurement buys privately owned finished batches once and tran
     policyId:'GOV-PROC-POLICY-1',contractId:'GOV-PROC-ORDER-1',
     companyId,companyIds:[companyId],authorizedQuantity:50,procurementLimit:50});
   assert.equal(policy.accepted,true,JSON.stringify(policy));
+  h.state.resource.BGD.processedWarehouse.status='OPERATIONAL';
+  h.state.resource.BGD.inventoryLots['WIDGETS-PRIVATE-BATCH'].sourceFactoryId='FAC-PRIVATE-WIDGETS';
+  h.state.economy={BGD:{productionAssets:[{
+    id:'FAC-PRIVATE-WIDGETS',countryId:'BGD',factoryType:'WIDGET_FACTORY',status:'OPERATIONAL',productionEnabled:true,
+    ownerType:'PRIVATE_ENTERPRISE',ownerCompanyId:companyId,operatorType:'PRIVATE_COMPANY_OPERATOR',
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
+  }]}};
   const before=h.state.finance.BGD.available;
   const payload={policyId:'GOV-PROC-POLICY-1',procurementId:'GOV-PROC-ORDER-1',
     companyId,resourceId:'widgets',quantity:20,totalValue:200,batchIds:['WIDGETS-PRIVATE-BATCH']};
@@ -506,8 +522,13 @@ test('government procurement refuses unknown or non-private operator attribution
     stage:'FINISHED',ownerCompanyId:companyId,operatorCompanyId:'UNKNOWN_OPERATOR',
     ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',status:'AVAILABLE'
   }];
+  h.state.resource.BGD.inventory={widgets:10};
+  h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',status:'OPERATIONAL',
+    availableByResource:{widgets:10},reservedByResource:{widgets:0},storedBatchIds:['UNVERIFIED-PRIVATE-BATCH'],receipts:[]};
   h.state.resource.BGD.inventoryLots={'UNVERIFIED-PRIVATE-BATCH':{
-    batchId:'UNVERIFIED-PRIVATE-BATCH',resourceId:'widgets',quantity:10,remainingQuantity:10,status:'AVAILABLE'
+    batchId:'UNVERIFIED-PRIVATE-BATCH',resourceId:'widgets',quantity:10,remainingQuantity:10,status:'AVAILABLE',
+    ownerCompanyId:companyId,operatorCompanyId:'UNKNOWN_OPERATOR',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+    warehouseId:'WH-BGD-PROCESSED'
   }};
   const policy=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
     policyId:'GOV-PROC-UNKNOWN-OPERATOR',contractId:'GOV-PROC-UNKNOWN-OPERATOR',
@@ -519,4 +540,65 @@ test('government procurement refuses unknown or non-private operator attribution
   assert.equal(result.accepted,false);
   assert.equal(result.reason,'GOVERNMENT_PROCUREMENT_PRIVATE_STOCK_INSUFFICIENT');
   assert.equal(h.state.finance.BGD.available,before);
+});
+
+test('government procurement rejects in-transit, unstored, missing-lot and mismatched factory batches before debit',()=>{
+  const scenarios=[
+    {name:'in transit',status:'IN_TRANSIT',stored:true,lot:true,asset:true},
+    {name:'not stored',status:'AVAILABLE',stored:false,lot:true,asset:true},
+    {name:'missing lot',status:'AVAILABLE',stored:true,lot:false,asset:true},
+    {name:'wrong private factory owner',status:'AVAILABLE',stored:true,lot:true,asset:false}
+  ];
+  for(const scenario of scenarios){
+    const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime,companyId='NOVA_CONSUMER_INDUSTRIES';
+    h.state.resource.BGD.inventory={widgets:10};
+    const batch={batchId:'PRIVATE-'+scenario.name.replaceAll(' ','-'),resourceId:'widgets',quantity:10,remainingQuantity:10,
+      stage:'FINISHED',countryId:'BGD',ownerCompanyId:companyId,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-PRIVATE-WIDGETS',
+      warehouseId:'WH-BGD-PROCESSED',status:scenario.status};
+    h.state.resource.BGD.batches=[batch];
+    h.state.resource.BGD.inventoryLots=scenario.lot?{[batch.batchId]:{...batch}}:{};
+    h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',status:'OPERATIONAL',
+      availableByResource:{widgets:10},reservedByResource:{widgets:0},
+      storedBatchIds:scenario.stored?[batch.batchId]:[],receipts:[]};
+    h.state.economy={BGD:{productionAssets:scenario.asset?[{
+      id:'FAC-PRIVATE-WIDGETS',status:'OPERATIONAL',productionEnabled:true,ownerType:'PRIVATE_ENTERPRISE',
+      ownerCompanyId:companyId,operatorType:'PRIVATE_COMPANY_OPERATOR',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      stateControlRights:{operationalControl:'STATE_POLICY_ONLY',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'}
+    }]:[]}};
+    api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
+      policyId:'PROC-'+scenario.name,contractId:'PROC-'+scenario.name,companyId,
+      companyIds:[companyId],authorizedQuantity:10,procurementLimit:10});
+    const before=h.state.finance.BGD.available;
+    const result=api.purchasePrivateStock('BGD',{policyId:'PROC-'+scenario.name,procurementId:'PROC-'+scenario.name,
+      companyId,resourceId:'widgets',quantity:5,totalValue:50,batchIds:[batch.batchId]});
+    assert.equal(result.accepted,false,scenario.name+': '+JSON.stringify(result));
+    assert.equal(result.reason,'GOVERNMENT_PROCUREMENT_PRIVATE_STOCK_INSUFFICIENT',scenario.name);
+    assert.equal(h.state.finance.BGD.available,before,scenario.name+' must not debit Treasury');
+    assert.equal(batch.remainingQuantity,10,scenario.name+' must not mutate source batch before validation completes');
+  }
+});
+
+test('export settlement directive idempotency rejects the same ID with a changed transaction',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const policy=api.setSupplyDirective('BGD',{directive:'FACTORY_ALLOCATION',resourceId:'widgets',
+    policyId:'EXPORT-IDEMPOTENCY-ALLOCATION',domesticFactoryIds:['FAC-DOM-1'],exportFactoryIds:['FAC-EXP-1']});
+  assert.equal(policy.accepted,true);
+  const ctx={countryId:'BGD',stateTransaction:h.txFactory('BGD')};
+  const first=api.commitExportDirectiveTx(ctx,{settlementId:'EXPORT-REPLAY-1',resourceId:'widgets',quantity:5,
+    destinationCountryId:'SAU',batchTransfers:[{sourceBatchId:'B-1',resourceId:'widgets',quantity:5,
+      stage:'FINISHED',ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-EXP-1'}]});
+  assert.equal(first.accepted,true,JSON.stringify(first));
+  const exact=api.commitExportDirectiveTx(ctx,{settlementId:'EXPORT-REPLAY-1',resourceId:'widgets',quantity:5,
+    destinationCountryId:'SAU',batchTransfers:[{sourceBatchId:'B-1',resourceId:'widgets',quantity:5,
+      stage:'FINISHED',ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-EXP-1'}]});
+  assert.equal(exact.duplicate,true);
+  const changed=api.commitExportDirectiveTx(ctx,{settlementId:'EXPORT-REPLAY-1',resourceId:'widgets',quantity:7,
+    destinationCountryId:'IND',batchTransfers:[{sourceBatchId:'B-2',resourceId:'widgets',quantity:7,
+      stage:'FINISHED',ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-EXP-1'}]});
+  assert.equal(changed.accepted,false);
+  assert.equal(changed.reason,'STATE_DIRECTIVE_SETTLEMENT_IDEMPOTENCY_COLLISION');
 });
