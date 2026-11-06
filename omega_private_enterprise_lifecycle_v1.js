@@ -1791,31 +1791,6 @@
       costRateField('overheadPerFactoryDay','Overhead','per factory-day')+
       costRateField('depreciationPerFactoryDay','Depreciation','per factory-day')+
       '<button type="submit">Save country operating cost policy</button></form>';
-    var financeCards=COMPANY_IDS.map(function(companyId){
-      var statement=getCompanyFinanceSummary(country,companyId),period=statement.lastClosedPeriod||null,
-        currency=statement.currency||'GAME_CURRENCY_UNITS';
-      function amount(value){return value===null||value===undefined?'Not recorded':Number(value).toLocaleString('en-US',{maximumFractionDigits:2})+' '+currency;}
-      var taxLabel=period?'Cash-basis tax '+amount(period.corporateTaxPaid)+' at '+(period.corporateTaxRate*100).toFixed(2)+'%':'Not assessed: close a journalled cash-flow period first';
-      var journalWarning=(statement.journal.droppedEntryCount||0)>0?
-        'Tax close blocked when this open period contains pruned entries ('+statement.journal.droppedEntryCount+' dropped).':'';
-      return'<article class="pe-proposal"><header><strong>'+escapeHtml(statement.companyName||companyId)+'</strong><span>'+escapeHtml(statement.journal.status)+'</span></header>'+
-        '<div class="pe-facts"><span>Recorded receipts <b>'+amount(statement.grossRevenue)+'</b></span>'+
-        '<span>Cash operating costs <b>'+amount(statement.journal.recordedOperatingCosts)+'</b></span>'+
-        '<span>Accrued factory operating costs <b>'+amount(statement.journal.recordedAccruedOperatingCosts)+'</b></span>'+
-        '<span>Accounting profit <b>'+(statement.accountingProfit===null?'Not verifiable':amount(statement.accountingProfit))+'</b></span>'+
-        '<span>Unpriced cost items <b>'+Number(statement.journal.unpricedOperatingCostCount||0).toLocaleString('en-US')+'</b></span>'+
-        '<span>Input materials <b>'+amount(statement.journal.inputMaterialCosts)+'</b></span>'+
-        '<span>Worker costs <b>'+amount(statement.journal.workerCosts)+'</b></span>'+
-        '<span>Transport costs <b>'+amount(statement.journal.transportCosts)+'</b></span>'+
-        '<span>Other recorded costs <b>'+amount(statement.journal.otherRecordedCosts)+'</b></span>'+
-        '<span>Recorded tax payments <b>'+amount(statement.journal.recordedTaxPayments)+'</b></span>'+
-        '<span>Net cash flow <b>'+amount(statement.runtimeNetCashFlow)+'</b></span>'+
-        '<span>Factory CAPEX (separate) <b>'+amount(statement.constructionCapex.amount)+'</b></span>'+
-        '<span>Retained earnings <b>'+amount(statement.capital.retainedEarningsBalance)+'</b></span>'+
-        '<span>Tax status <b>'+escapeHtml(taxLabel)+'</b></span></div>'+
-        '<p class="pe-footnote">Cash receipts and paid costs are taken from the shared company cash-flow journal. Factory utility, labor, maintenance, overhead and depreciation are accrued from completed operating events only where an explicit country rate is configured. Missing costs remain unpriced. '+escapeHtml(journalWarning)+'</p>'+
-        '<div class="pe-actions"><button type="button" data-pe-action="close-finance" data-pe-company="'+companyId+'">Close cash-flow period / assess profit tax</button></div></article>';
-    }).join('');
     var jvDashboard=getJointVentureDashboard(country);
     var jvCards=jvDashboard.jointVentures.slice(-12).reverse().map(function(jv){
       var shareholderText=jv.shareholders.map(function(member){return escapeHtml(member.companyName)+' '+(member.shareBps/100).toFixed(2)+'%';}).join(' · ');

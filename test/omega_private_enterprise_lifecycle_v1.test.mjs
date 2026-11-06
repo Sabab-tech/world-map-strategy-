@@ -630,7 +630,11 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/Transport costs/);
   assert.match(fragments[0],/Other recorded costs/);
   assert.match(fragments[0],/Joint ventures \/ shareholder voting \/ dividends/);
-  assert.match(fragments[0],/Close cash-flow period \/ assess profit tax/);
+  assert.match(fragments[0],/data-pe-finance-details/);
+  assert.match(fragments[0],/data-pe-finance-card-host/);
+  assert.match(fragments[0],/Open this section to load company financial statements/);
+  assert.match(lifecycleSource,/Close cash-flow period \/ assess profit tax/);
+  assert.match(lifecycleSource,/companyFinanceCardsMarkup/);
   assert.match(fragments[0],/data-pe-cost-policy-form/);
   assert.match(fragments[0],/Electricity/);
   assert.match(fragments[0],/Depreciation/);
