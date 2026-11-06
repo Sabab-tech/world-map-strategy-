@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v97";
+const CACHE_NAME = "omega-offline-atlas-shell-v98";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
@@ -38,7 +38,7 @@ const CORE_ASSETS = [
   "./omega_home_ministry_police_operations_ui_v1.js", "./omega_home_ministry_police_capability_runtime_v1.js",
   "./omega_home_ministry_police_capability_recommendations_v1.json", "./omega_home_ministry_police_capability_material_requirements_v1.json", "./omega_home_ministry_country_police_baseline_v1.json",
   "./omega_battlefield_command_runtime_v1.js", "./military_command_catalog_v1.json", "./resource_industrial_catalog_v1.json",
-  "./omega_factory_visual_catalog_v1.js", "./omega_country_factory_starting_baseline_v1.js", "./omega_private_enterprise_registry_v1.js", "./country_private_factory_starting_baseline_v1.json", "./omega_factory_visual_catalog_v1.json",
+  "./omega_factory_visual_catalog_v1.js", "./omega_country_factory_starting_baseline_v1.js", "./country_factory_starting_baseline_v1.json", "./omega_private_enterprise_registry_v1.js", "./country_private_factory_starting_baseline_v1.json", "./omega_factory_visual_catalog_v1.json",
   "./assets/factories/omega_factory_atlas_01.webp", "./assets/factories/omega_factory_atlas_02.webp", "./assets/factories/omega_factory_atlas_03.webp",
   "./omega_resource_industrial_network_v1.js", "./omega_resource_startup_baseline_v1.js", "./resource_startup_baseline_rules_v1.json", "./omega_country_inventory_runtime_v1.js", "./omega_resource_command_center_ui_v1.js", "./omega_icon_system_v1.js",
   "./omega_icon_system_v1.css",
@@ -137,7 +137,7 @@ function isShellAsset(value) {
     const url = new URL(value, INDEX_URL);
     if (url.origin !== self.location.origin || !url.pathname.startsWith(APP_BASE.pathname)) return false;
     if (/\.(?:m?js|css|woff2?)$/i.test(url.pathname)) return true;
-    return /\/(?:index\.html?|world\.json|economy_global_profiles_v1\.json|resource_economy_rules\.json|country_primary_resource_opening_baseline_v1\.json)$/i.test(url.pathname);
+    return /\/(?:index\.html?|world\.json|economy_global_profiles_v1\.json|resource_economy_rules\.json|country_primary_resource_opening_baseline_v1\.json|resource_industrial_catalog_v1\.json|resource_country_resource_context_index\.json|country_factory_starting_baseline_v1\.json|country_private_factory_starting_baseline_v1\.json)$/i.test(url.pathname);
   } catch (_) {
     return false;
   }
@@ -147,10 +147,16 @@ function isLocalAppUrl(value) {
   return isShellAsset(value);
 }
 
+function isCoreOfflineData(url) {
+  // These immutable bootstrap datasets are required before the player can open
+  // the factory workspace. Install them with the versioned shell so first launch
+  // and relaunch work without a network connection.
+  return /\/(?:world\.json|economy_global_profiles_v1\.json|resource_economy_rules\.json|country_primary_resource_opening_baseline_v1\.json|resource_industrial_catalog_v1\.json|resource_country_resource_context_index\.json|country_factory_starting_baseline_v1\.json|country_private_factory_starting_baseline_v1\.json)$/i.test(url.pathname);
+}
 function isDataRequest(url) {
-  // The compact bootstrap stays in the shell. All larger mutable records and
-  // media assets use the bounded data cache and are downloaded only when used.
-  if (/\/(?:world\.json|economy_global_profiles_v1\.json)$/i.test(url.pathname)) return false;
+  // Core bootstrap JSON is served from the versioned shell cache. Mutable country
+  // data and media use the bounded data cache and are downloaded only when used.
+  if (isCoreOfflineData(url)) return false;
   return /\/api\/omega\/country-(?:domain|general-data|sector-profile)\//i.test(url.pathname) ||
     /\.(?:json|geojson|png|jpe?g|webp|avif|svg|woff2?)$/i.test(url.pathname);
 }
