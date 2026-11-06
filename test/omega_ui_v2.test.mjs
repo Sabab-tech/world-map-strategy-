@@ -3336,7 +3336,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v98'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v99'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3396,7 +3396,7 @@ test('factory Details is an in-card flip with three independent product tabs', (
   assert.match(css,/fp-detail-status\[data-state="stable"\]/);
   assert.match(css,/fp-detail-status\[data-state="risk"\]/);
   assert.match(css,/fp-detail-status\[data-state="critical"\]/);
-  assert.match(sw,/omega-offline-atlas-shell-v98/);
+  assert.match(sw,/omega-offline-atlas-shell-v99/);
 });
 
 test('factory cards retain three landscape columns and constrain text to the card face', () => {
@@ -3414,7 +3414,7 @@ test('factory cards retain three landscape columns and constrain text to the car
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:899px\)/);
   assert.match(css,/@media \(orientation:portrait\) and \(max-width:899px\)[\s\S]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
   assert.match(css,/\.fp-card-detail-row \.fp-card-detail-product\s*\{[^}]*grid-column:1 \/ -1/s);
-  assert.match(sw,/omega-offline-atlas-shell-v98/);
+  assert.match(sw,/omega-offline-atlas-shell-v99/);
 });
 
 test('Factory Type identity header aligns icon, name and owned count in one row', () => {
@@ -3454,4 +3454,25 @@ test('Factory Input tables contain long cell content without changing factory ca
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
   assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 98,
     'offline clients must fetch the updated Factory Input stylesheet');
+});
+
+ 
+test('Android landscape aggregate Factory Input table scrolls and refreshes in the offline shell', () => {
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  const marker = '/* The seven-column daily Input summary must remain horizontally scrollable';
+  const start = css.indexOf(marker);
+  assert.ok(start >= 0, 'the Android landscape aggregate Input table rule must exist');
+  const nextRule = css.indexOf('/* Android 9 / legacy WebView paint profile.', start);
+  const rules = css.slice(start, nextRule >= 0 ? nextRule : undefined);
+  assert.match(rules, /\.fp-factory-plan > \.fp-factory-table-wrap\s*\{[^}]*overflow-x:\s*scroll;/s,
+    'the aggregate table must have a real horizontal scroll container');
+  assert.match(rules, /\.fp-factory-input-total-table\s*\{[^}]*width:\s*1120px\s*!important;[^}]*min-width:\s*1120px\s*!important;[^}]*max-width:\s*none;/s,
+    'the seven-column table must preserve intrinsic width on legacy WebView');
+  assert.match(rules, /-webkit-overflow-scrolling:\s*touch;/,
+    'the aggregate table must preserve touch scrolling on Android');
+  assert.doesNotMatch(rules, /\.fp-card|\.fp-type-card/,
+    'the Input overflow fix must not alter factory card layout');
+  assert.equal(Number(sw.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\\d+)"/)?.[1] || 0), 99,
+    'offline clients must install the updated landscape Input stylesheet');
 });
