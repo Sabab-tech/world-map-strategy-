@@ -3700,7 +3700,7 @@
           '<div class="fp-summary-item"><span>PRIVATE / GOVERNMENT</span><strong>' + fmt(privateAllocation.privateToGovernmentBaselinePercent, '%') + '</strong></div>' +
           '</div>' + ownershipBreakdown +
           '<h3 class="omega-v2-section-title">Private companies</h3><div class="omega-v2-grid">' + companyCards + '</div>' +
-          '<p class="omega-v2-source">Private opening allocations are modeled planning data, not commissioned assets. They are excluded from the main factory total, inventory, shipments, input reservations, production, sales and company cash movements until construction and commissioning are completed through the shared runtime. Zero government categories remain zero for private companies.</p></section>';
+          '<p class="omega-v2-source">Private opening allocations are modeled planning data, not commissioned assets. They are excluded from the main factory total until construction and commissioning are completed through the shared runtime; before that they create no stock, shipments, input reservations, output, sales or company cash movements. Zero government categories remain zero for private companies.</p></section>';
       }
     } else if (active === 'research') {
       var researchRows = model.researchProjects.map(function (item) { return Object.assign({ recordType:'RESEARCH' }, item || {}); })
