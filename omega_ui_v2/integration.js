@@ -169,14 +169,21 @@
     });
     ids = active && seen[active] ? [active].concat(otherIds) : otherIds;
     return ids.map(function (id) {
-      var label = labels[id] || id;
-      try {
-        var resolved = gateway && typeof gateway.resolveCountry === 'function' ? gateway.resolveCountry(id) : null;
-        if (!resolved) resolved = runtime && typeof runtime.resolveCountry === 'function' ? runtime.resolveCountry(id) : null;
-        var identity = resolved && (resolved.identity || resolved.country || resolved);
-        label = String(identity && (identity.officialName || identity.name || identity.countryName) || label) + ' (' + id + ')';
-      } catch (_) { label = label + ' (' + id + ')'; }
-      return { id:id, name:label };
+      // listProfiles() already supplied the authoritative display label above.
+      // Re-resolving every one of the 197 cached ISO-3 entries here performed
+      // hundreds of redundant country-profile lookups during the first cabinet
+      // mount. Only state-only additions without a cached profile need fallback
+      // resolution.
+      var label = labels[id];
+      if (!label) {
+        try {
+          var resolved = gateway && typeof gateway.resolveCountry === 'function' ? gateway.resolveCountry(id) : null;
+          if (!resolved) resolved = runtime && typeof runtime.resolveCountry === 'function' ? runtime.resolveCountry(id) : null;
+          var identity = resolved && (resolved.identity || resolved.country || resolved);
+          label = String(identity && (identity.officialName || identity.name || identity.countryName) || id);
+        } catch (_) { label = id; }
+      }
+      return { id:id, name:String(label || id) + ' (' + id + ')' };
     });
   }
   function failClosed(root) {
