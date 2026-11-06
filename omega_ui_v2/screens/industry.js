@@ -4646,10 +4646,14 @@
           var procurementApi = g.OmegaResourceStrategicPolicyRuntime || (g.Omega && g.Omega.ResourceStrategicPolicyRuntime);
           var procurementModel = root.__omegaV2IndustryModel || model;
           var procurementPolicySelect = root.querySelector('[data-state-procurement-policy]');
-          var procurementCompany = policyValue('[data-state-procurement-company]').toUpperCase();
-          var procurementQuantity = Number(policyValue('[data-state-procurement-quantity]'));
-          var procurementValue = Number(policyValue('[data-state-procurement-value]'));
-          var procurementId = policyValue('[data-state-procurement-id]');
+          function procurementValueOf(selector) {
+            var control = root.querySelector(selector);
+            return control && control.value !== undefined ? String(control.value).trim() : '';
+          }
+          var procurementCompany = procurementValueOf('[data-state-procurement-company]').toUpperCase();
+          var procurementQuantity = Number(procurementValueOf('[data-state-procurement-quantity]'));
+          var procurementValue = Number(procurementValueOf('[data-state-procurement-value]'));
+          var procurementId = procurementValueOf('[data-state-procurement-id]');
           var policyOption = procurementPolicySelect && procurementPolicySelect.options
             ? procurementPolicySelect.options[procurementPolicySelect.selectedIndex] : null;
           var procurementPolicyId = policyOption ? String(policyOption.value || '') : '';
