@@ -278,6 +278,32 @@ test('compact autosave snapshots retain gameplay state and deterministic integri
   assert.equal(runtime.world.state.resource.BGD.inventory.coal,50);
 });
 
+test('durable save slots checksum the canonical serialized world without a second JSON traversal',async()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  state.resource={BGD:{inventory:{coal:50},batches:[{
+    batchId:'SAVE-BATCH-SINGLE-PASS',countryId:'BGD',ownerCountryCode:'BGD',
+    resourceId:'coal',quantity:50,remainingQuantity:50,stage:'RAW_EXTRACTED'
+  }]}};
+
+  const result=await runtime.saveSlot('single-pass-save');
+  assert.equal(result.ok,true);
+  assert.equal(result.storage,'LOCAL_STORAGE_FALLBACK');
+  const serialized=sandbox.localStorage.getItem(result.key);
+  assert.equal(typeof serialized,'string');
+  const snapshot=JSON.parse(serialized);
+  assert.match(snapshot.checksum,/^[0-9a-f]{8}$/);
+  assert.equal(snapshot.checksum,runtime.saveState({includeDiagnostics:false}).checksum,
+    'saveSlot checksum must match the public deterministic saveState checksum');
+  assert.equal(snapshot.worldState.resource.BGD.inventory.coal,50);
+
+  state.resource.BGD.inventory.coal=999;
+  assert.equal(runtime.loadState(snapshot).lastLoadIntegrity,'VERIFIED');
+  assert.equal(state.resource.BGD.inventory.coal,50,
+    'single-pass serialized saves must restore the authoritative world state');
+});
+
 test('turn autosave uses IndexedDB first and keeps localStorage as a recovery fallback',()=>{
   const lifecycle=fs.readFileSync(new URL('../omega_game_lifecycle_runtime_v1.js',import.meta.url),'utf8');
   assert.match(lifecycle,/includeDiagnostics:\s*options\.committedTurn !== true && options\.includeDiagnostics !== false/);
