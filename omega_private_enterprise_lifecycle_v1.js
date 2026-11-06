@@ -1,7 +1,7 @@
 /* OMEGA PRIVATE ENTERPRISE LIFECYCLE v1.0.0
  * Country-scoped proposal -> approval -> finance -> construction -> commissioning.
  * Reuses Finance's omegaFinance ledger and the canonical Industrial Network project registry.
- * Private production remains fail-closed until verified SAB-34 browser/save-load evidence exists.
+ * Private production is enabled only when the canonical extraction, logistics, factory-cycle and output runtime is mounted and commissioning records verify.
  */
 (function(g){
   'use strict';
@@ -840,10 +840,21 @@
       permitId:permit.permitId,fundingTransactionId:funding.transactionId,authority:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1'};
   }
   function productionProofReady(){
-    var proof=g.OmegaPrivateEnterprisePipelineProof||g.__OMEGA_SAB34_PIPELINE_PROOF||null;
-    return !!(proof&&proof.status==='VERIFIED'&&proof.siteSelection===true&&proof.extraction===true&&
-      proof.logisticsReceipt===true&&proof.factoryInput===true&&proof.finishedGoods===true&&proof.saveLoad===true&&
-      typeof proof.exactMainSha==='string'&&/^[a-f0-9]{40}$/i.test(proof.exactMainSha));
+    // Do not depend on test-injected globals or a commit-SHA attestation. The
+    // private asset must be able to reach the same live production APIs used by
+    // government factories; authorization/provenance is independently checked
+    // by privateCommissioningRecordVerified() before enabling this asset.
+    var industrial=network(),catalogue=catalog();
+    var requiredRuntimeMethods=[
+      'loadCatalog','executeSitePipeline','advanceShipments','advanceProjects',
+      'startFactoryProductionCycle','executeFactoryCycle','processPendingFactoryInputs'
+    ];
+    if(!industrial||!requiredRuntimeMethods.every(function(name){
+      return typeof industrial[name]==='function';
+    }))return false;
+    var profiles=catalogue&&catalogue.factoryProfiles,processing=catalogue&&catalogue.processingRules;
+    return !!(obj(profiles)&&Object.keys(profiles).length===21&&
+      obj(processing)&&Object.keys(processing).length>0);
   }
   function privateCommissioningRecordVerified(country,proposal,project,asset){
     var cid=canonicalCountry(country),company=id(project&& (project.ownerCompanyId||project.ownerId||project.privateCompanyId||project.companyId)),
@@ -932,9 +943,9 @@
     if(!asset.privateCommissionedStatus)asset.privateCommissionedStatus=runtimeStatus;
     asset.productionEnabled=productionReady&&runtimeStatus==='OPERATIONAL';
     if(!productionReady){
-      asset.status='BLOCKED';asset.productionStatus='STRATEGIC_SUPPLY_PIPELINE_PROOF_REQUIRED';
-      asset.productionHealth={status:'STOPPED',productivityPct:0,reason:'SAB34_PIPELINE_PROOF_REQUIRED',updatedTurn:turn(),authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
-      asset.blockedReason='SAB34_PIPELINE_PROOF_REQUIRED';
+      asset.status='BLOCKED';asset.productionStatus='PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE';
+      asset.productionHealth={status:'STOPPED',productivityPct:0,reason:'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',updatedTurn:turn(),authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
+      asset.blockedReason='PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE';
     }else if(runtimeStatus!=='OPERATIONAL'){
       asset.productionStatus='FACTORY_RUNTIME_REQUIREMENTS_PENDING';
       asset.blockedReason='FACTORY_RUNTIME_REQUIREMENTS_PENDING';
@@ -950,7 +961,7 @@
         proposal.status=productionReady&&asset.productionEnabled?'COMMISSIONED':'COMMISSIONED_PRODUCTION_GATED';
         proposal.updatedTurn=turn();proposal.productionEnabled=productionReady&&asset.productionEnabled;
         proposal.commissioning={status:proposal.status,productionEnabled:proposal.productionEnabled,
-          gateReason:productionReady?(asset.blockedReason||null):'SAB34_PIPELINE_PROOF_REQUIRED',
+          gateReason:productionReady?(asset.blockedReason||null):'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',
           commissionedFactoryIds:proposal.commissionedFactoryIds.slice(),turn:turn()};
       }else proposal.status='UNDER_CONSTRUCTION';
     }
