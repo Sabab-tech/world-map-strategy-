@@ -212,13 +212,31 @@ function statePolicyStock(countryId,resourceId,override){
  const key=Object.prototype.hasOwnProperty.call(map,rid)?rid:Object.keys(map).find(x=>tok(x)===tok(rid));
  return key===undefined?null:num(map[key]);
 }
+function exportTransferSignature(rows){
+ return (Array.isArray(rows)?rows:[]).map(x=>({
+  sourceBatchId:String(x?.sourceBatchId||''),
+  sourceBatchIds:Array.isArray(x?.sourceBatchIds)?x.sourceBatchIds.map(String).sort():[],
+  resourceId:String(x?.resourceId||''),
+  quantity:num(x?.quantity),
+  stage:String(x?.stage||'').toUpperCase(),
+  ownerCompanyId:String(x?.ownerCompanyId||'').trim().toUpperCase(),
+  operatorCompanyId:String(x?.operatorCompanyId||'').trim().toUpperCase(),
+  ownerAttributionStatus:String(x?.ownerAttributionStatus||'').trim().toUpperCase(),
+  sourceFactoryId:String(x?.sourceFactoryId||x?.factoryId||'')
+ })).sort((a,b)=>a.sourceBatchId.localeCompare(b.sourceBatchId));
+}
 function evaluateExportDirective(seller,buyer,resourceId,quantity,governmentContractId,stockOverride){
  const c=country(seller),target=country(buyer),rid=String(resourceId||'').trim(),q=num(quantity);
  if(!c||!target||!rid||q===null||q<=0)return{allowed:false,reason:'STATE_DIRECTIVE_SCOPE_INCOMPLETE'};
  const policies=supplyDirectiveRows(c,rid);
  if(!policies.length)return{allowed:true,reason:null,protectedQuantity:0,availableForExport:null,policies:[]};
- const matchingContract=policies.find(p=>p.directive==='GOVERNMENT_EXPORT_CONTRACT'&&
-  String(p.contractId||'')===String(governmentContractId||'')&&country(p.targetCountryId)===target);
+ const contractRows=policies.filter(p=>p.directive==='GOVERNMENT_EXPORT_CONTRACT'&&
+  String(p.contractId||'')===String(governmentContractId||''));
+ const matchingContract=contractRows.find(p=>country(p.targetCountryId)===target)||null;
+ if(String(governmentContractId||'').trim()&&contractRows.length&&!matchingContract)
+  return{allowed:false,reason:'GOVERNMENT_EXPORT_CONTRACT_DESTINATION_MISMATCH',
+   requestedDestination:target,authorizedDestinations:[...new Set(contractRows.map(p=>country(p.targetCountryId)))],
+   policies:contractRows.map(p=>p.policyId)};
  const hard=policies.filter(p=>['DOMESTIC_ONLY','EXPORT_RESTRICTED'].includes(p.directive));
  if(hard.length&&!matchingContract)return{allowed:false,reason:hard.some(p=>p.directive==='DOMESTIC_ONLY')?'STATE_DIRECTIVE_DOMESTIC_ONLY':'STATE_DIRECTIVE_EXPORT_RESTRICTED',
   protectedQuantity:null,availableForExport:0,policies:hard.map(p=>p.policyId)};
@@ -232,6 +250,9 @@ function evaluateExportDirective(seller,buyer,resourceId,quantity,governmentCont
    contractId:contract.contractId,remainingQuantity:remaining,requestedQuantity:q,policies:[contract.policyId]};
  }
  const stock=statePolicyStock(c,rid,stockOverride);
+ const reservePolicies=policies.filter(p=>['DOMESTIC_PRIORITY','DOMESTIC_QUOTA','STRATEGIC_STOCK_RESERVE'].includes(p.directive));
+ if(reservePolicies.length&&stock===null)return{allowed:false,reason:'STATE_SUPPLY_STOCK_UNOBSERVED',
+  protectedQuantity:null,availableForExport:null,requestedQuantity:q,policies:reservePolicies.map(p=>p.policyId)};
  let strategic=0;
  const reserve=state()?.resource?.[c]?.strategicReserve?.availableByResource;
  if(reserve&&typeof reserve==='object')strategic=Math.max(0,num(reserve[rid]??reserve[Object.keys(reserve).find(x=>tok(x)===tok(rid))])||0);
@@ -294,15 +315,25 @@ function commitExportDirectiveTx(ctx,payload){
  if(!sid)return{accepted:false,reason:'STATE_DIRECTIVE_SETTLEMENT_ID_REQUIRED'};
  const raw=ctx.stateTransaction.get('trade.stateDirectiveSettlements'),arr=Array.isArray(raw)?clone(raw):[];
  const prior=arr.find(x=>String(x.settlementId||'')===sid);
- if(prior)return{accepted:true,duplicate:true,settlement:prior};
- const evaluation=evaluateExportDirective(c,p.destinationCountryId,p.resourceId,p.quantity,p.governmentContractId,
+ const q=num(p.quantity),rid=String(p.resourceId||'').trim(),destination=country(p.destinationCountryId),
+  contractId=String(p.governmentContractId||'').trim()||null,signature=JSON.stringify(exportTransferSignature(p.batchTransfers));
+ if(!c||!destination||!rid||q===null||q<=0)
+  return{accepted:false,reason:'STATE_DIRECTIVE_SETTLEMENT_SCOPE_INVALID'};
+ if(prior){
+  const same=String(prior.resourceId||'')===rid&&Math.abs((num(prior.quantity)||0)-q)<1e-7&&
+   country(prior.destinationCountryId)===destination&&String(prior.governmentContractId||'')===(contractId||'')&&
+   JSON.stringify(exportTransferSignature(prior.batchTransfers))===signature;
+  return same?{accepted:true,duplicate:true,settlement:prior}:
+   {accepted:false,reason:'STATE_DIRECTIVE_SETTLEMENT_IDEMPOTENCY_COLLISION',settlement:prior};
+ }
+ const evaluation=evaluateExportDirective(c,destination,rid,q,contractId,
   ctx.stateTransaction.get('resource.inventory'));
  if(!evaluation.allowed)return{accepted:false,reason:evaluation.reason,detail:evaluation};
- const allocation=validateExportBatchAllocation(c,p.resourceId,p.batchTransfers,p.governmentContractId);
+ const allocation=validateExportBatchAllocation(c,rid,p.batchTransfers,contractId);
  if(!allocation.allowed)return{accepted:false,reason:allocation.reason,detail:allocation};
  const policyIds=evaluation.policies||[];
  const row={settlementId:sid,policyIds,contractPolicyId:evaluation.contractPolicyId||null,
-  contractId:evaluation.contractId||null,resourceId:String(p.resourceId),quantity:num(p.quantity),destinationCountryId:country(p.destinationCountryId),
+  contractId:evaluation.contractId||null,governmentContractId:contractId,resourceId:rid,quantity:q,destinationCountryId:destination,
   batchTransfers:clone(p.batchTransfers||[]),turn:turn(),status:'COMMITTED',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'};
  arr.push(row);ctx.stateTransaction.set('trade.stateDirectiveSettlements',arr.slice(-2048));
  return{accepted:true,settlement:row};
@@ -342,24 +373,66 @@ function governmentProcurementTx(cmd,ctx){
  if(treasury===null||treasury-treasuryHeld+1e-7<total)
   return{accepted:false,reason:treasury!==null&&treasury-treasuryHeld+1e-7>=total?'GOVERNMENT_PROCUREMENT_TREASURY_INSUFFICIENT':'GOVERNMENT_PROCUREMENT_TREASURY_INSUFFICIENT',
    available:treasury,held:treasuryHeld,required:total};
+ const inventory=ctx.stateTransaction.get('resource.inventory');
+ const stockMap=inventory&&typeof inventory==='object'?inventory:{};
+ const stockKey=Object.prototype.hasOwnProperty.call(stockMap,rid)?rid:Object.keys(stockMap).find(x=>tok(x)===tok(rid));
+ const aggregateStock=stockKey===undefined?null:num(stockMap[stockKey]);
+ if(aggregateStock===null||aggregateStock+1e-7<q)
+  return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_AGGREGATE_STOCK_UNOBSERVED_OR_INSUFFICIENT',
+   available:aggregateStock,requested:q};
+ const warehouseRaw=ctx.stateTransaction.get('resource.processedWarehouse');
+ if(!warehouseRaw||typeof warehouseRaw!=='object'||String(warehouseRaw.status||'').toUpperCase()!=='OPERATIONAL')
+  return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_PROCESSED_WAREHOUSE_NOT_OPERATIONAL'};
+ const warehouse=clone(warehouseRaw);
+ const warehouseMap=warehouse.availableByResource&&typeof warehouse.availableByResource==='object'?warehouse.availableByResource:{};
+ const warehouseKey=Object.prototype.hasOwnProperty.call(warehouseMap,rid)?rid:Object.keys(warehouseMap).find(x=>tok(x)===tok(rid));
+ const warehouseAvailable=warehouseKey===undefined?null:num(warehouseMap[warehouseKey]);
+ const reservedMap=warehouse.reservedByResource&&typeof warehouse.reservedByResource==='object'?warehouse.reservedByResource:{};
+ const reservedKey=warehouseKey!==undefined?warehouseKey:(Object.keys(reservedMap).find(x=>tok(x)===tok(rid)));
+ const warehouseReserved=Math.max(0,num(reservedMap[reservedKey]??reservedMap[rid])||0);
+ if(warehouseAvailable===null||warehouseAvailable-warehouseReserved+1e-7<q)
+  return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_WAREHOUSE_STOCK_INSUFFICIENT',
+   available:warehouseAvailable, reserved:warehouseReserved,requested:q};
+ const storedIds=new Set(Array.isArray(warehouse.storedBatchIds)?warehouse.storedBatchIds.map(String):[]);
  const rawBatches=ctx.stateTransaction.get('resource.batches'),batches=Array.isArray(rawBatches)?clone(rawBatches):[];
  const rawLots=ctx.stateTransaction.get('resource.inventoryLots'),lots=rawLots&&typeof rawLots==='object'?clone(rawLots):{};
+ const economy=ctx.stateTransaction.get('economy.productionAssets');
+ const assets=Array.isArray(economy)?economy:[];
  const selected=Array.isArray(p.batchIds)?p.batchIds.map(String):[];
- const candidates=batches.filter(b=>tok(b?.resourceId||b?.materialIdentity)===tok(rid)&&
-  String(b?.ownerCompanyId||'').toUpperCase()===companyId&&
-  PRIVATE_COMPANY_IDS.includes(String(b?.operatorCompanyId||'').toUpperCase())&&
-  !['LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED','UNASSIGNED','NOT_RECORDED',''].includes(String(b?.ownerAttributionStatus||'').toUpperCase())&&
-  ['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(String(b?.stage||'').toUpperCase())&&
-  !['CONSUMED','SOLD','TRANSFERRED','DEPLETED'].includes(String(b?.status||'').toUpperCase())&&
-  (selected.length===0||selected.includes(String(b?.batchId||''))));
+ const candidates=batches.filter(b=>{
+  const batchId=String(b?.batchId||''),sourceFactoryId=String(b?.sourceFactoryId||b?.factoryId||'');
+  const owner=String(b?.ownerCompanyId||'').trim().toUpperCase();
+  const operator=String(b?.operatorCompanyId||'').trim().toUpperCase();
+  const asset=assets.find(row=>String(row?.id||row?.factoryId||'')===sourceFactoryId);
+  const lot=lots[batchId],status=String(b?.status||'').toUpperCase();
+  return tok(b?.resourceId||b?.materialIdentity)===tok(rid)&&owner===companyId&&
+   PRIVATE_COMPANY_IDS.includes(operator)&&!['LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED','UNASSIGNED','NOT_RECORDED',''].includes(String(b?.ownerAttributionStatus||'').toUpperCase())&&
+   ['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(String(b?.stage||'').toUpperCase())&&
+   ['AVAILABLE','PARTIALLY_SOLD'].includes(status)&&storedIds.has(batchId)&&
+   String(b?.warehouseId||'')===String(warehouse.warehouseId||'')&&
+   !!lot&&tok(lot.resourceId||lot.materialIdentity)===tok(rid)&&
+   String(lot.warehouseId||'')===String(warehouse.warehouseId||'')&&
+   String(lot.ownerCompanyId||'').toUpperCase()===owner&&
+   String(lot.operatorCompanyId||'').toUpperCase()===operator&&
+   String(lot.ownerAttributionStatus||'').toUpperCase()===String(b.ownerAttributionStatus||'').toUpperCase()&&
+   ['AVAILABLE','PARTIALLY_SOLD'].includes(String(lot.status||'').toUpperCase())&&
+   !!asset&&String(asset.status||'').toUpperCase()==='OPERATIONAL'&&asset.productionEnabled===true&&
+   String(asset.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE'&&String(asset.operatorType||'').toUpperCase()==='PRIVATE_COMPANY_OPERATOR'&&
+   String(asset.ownerCompanyId||asset.ownerId||'').toUpperCase()===owner&&
+   String(asset.operatorCompanyId||asset.operatorId||asset.companyId||'').toUpperCase()===operator&&
+   asset.stateControlRights?.operationalControl==='STATE_POLICY_ONLY'&&asset.stateControlRights?.authority==='OMEGA_STATE_CONTROL_RIGHTS_V1'&&
+   (selected.length===0||selected.includes(batchId));
+ });
  let remaining=q,transfers=[],n=0;
  for(const b of candidates){
   if(remaining<=1e-7)break;
   const before=Math.max(0,num(b.remainingQuantity!=null?b.remainingQuantity:b.quantity)||0);
   const take=Math.min(before,remaining);if(take<=0)continue;
   const sourceId=String(b.batchId),lot=lots[sourceId];
-  if(lot&&Math.max(0,num(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)||0)+1e-7<take)
+  if(Math.max(0,num(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)||0)+1e-7<take)
    return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_BATCH_LOT_MISMATCH',batchId:sourceId};
+  if(take>Math.max(0,num(warehouseAvailable)-warehouseReserved)+1e-7)
+   return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_WAREHOUSE_STOCK_INSUFFICIENT',batchId:sourceId};
   b.remainingQuantity=before-take;b.status=b.remainingQuantity>1e-7?'PARTIALLY_SOLD':'SOLD';
   b.lastMovementType='GOVERNMENT_PROCUREMENT';b.lastMovementTurn=turn();
   if(lot){lot.remainingQuantity=Math.max(0,(num(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)||0)-take);lot.status=lot.remainingQuantity>1e-7?'PARTIALLY_SOLD':'SOLD';lot.lastMovementType='GOVERNMENT_PROCUREMENT';lot.lastMovementTurn=turn();}
@@ -391,8 +464,6 @@ function governmentProcurementTx(cmd,ctx){
  account.governmentProcurementRevenue=(num(account.governmentProcurementRevenue)||0)+total;
  account.lastTurn=turn();account.cashAuthority='AGGREGATE_FLOW_TRACKER_NOT_SPENDABLE_WALLET';
  accounts[companyId]=account;
- const warehouseRaw=ctx.stateTransaction.get('resource.processedWarehouse');
- const warehouse=warehouseRaw&&typeof warehouseRaw==='object'?clone(warehouseRaw):{warehouseId:'WH-'+c+'-PROCESSED',countryId:c,availableByResource:{},storedBatchIds:[],receipts:[]};
  warehouse.receipts=Array.isArray(warehouse.receipts)?warehouse.receipts:[];
  transfers.forEach(x=>warehouse.receipts.push({receiptId:'GOVPROC-REC:'+procurementId+':'+x.governmentBatchId,
   warehouseId:warehouse.warehouseId||'WH-'+c+'-PROCESSED',countryId:c,batchId:x.governmentBatchId,
@@ -405,7 +476,8 @@ function governmentProcurementTx(cmd,ctx){
  transfers.forEach(x=>{if(!warehouse.storedBatchIds.includes(x.governmentBatchId))warehouse.storedBatchIds.push(x.governmentBatchId);});
  while(warehouse.receipts.length>2048)warehouse.receipts.shift();
  const record={procurementId,policyId,companyId,countryId:c,resourceId:rid,quantity:q,totalValue:total,
-  currency:ctx.stateTransaction.get('finance.currencyCode')||null,batchTransfers:transfers,turn:turn(),
+  currency:ctx.stateTransaction.get('finance.currencyCode')||null,
+  requestBatchIds:selected.slice().sort(),batchTransfers:transfers,turn:turn(),
   status:'SETTLED',paymentStatus:'TREASURY_DEBITED_COMPANY_FLOW_CREDITED',
   warehouseId:'WH-'+c+'-PROCESSED',authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'};
  procurements.push(record);
