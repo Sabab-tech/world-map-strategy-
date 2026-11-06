@@ -2077,29 +2077,18 @@
   }
 
   function factoryInputAggregateSourceMarkup(model, productId) {
-    // Reuse the per-model input-product index instead of rescanning every factory
-    // for every planned input product.
-    var grouped = Object.create(null), factories = factoryInputFactoriesForProduct(model, productId);
-    factories.forEach(function (factory) {
-      var coefficient = factoryInputCoefficientFor(factory, productId);
-      var hasLot = (Array.isArray(factory.inputLots) ? factory.inputLots : []).some(function (lot) {
-        return lot && String(lot.resourceId || lot.materialIdentity || '').toLowerCase() === String(productId).toLowerCase();
-      });
-      if ((coefficient === null || coefficient <= 0) && !hasLot) return;
-      factoryInputSourceRows(factory, productId, model).forEach(function (source) {
-        var key = String(source.label || '').toLowerCase();
-        if (!key) return;
-        if (!grouped[key]) grouped[key] = { label:source.label, quantity:0, unit:source.unit || '' };
-        grouped[key].quantity += Math.max(0, num(source.quantity) || 0);
-        if (!grouped[key].unit && source.unit) grouped[key].unit = source.unit;
-      });
-    });
-    var rows = Object.keys(grouped).map(function (key) { return grouped[key]; });
-    if (!rows.length) return '<span class="fp-factory-muted">Source not recorded</span>';
-    return rows.map(function (source) {
-      return '<span class="fp-factory-source"><strong>' + esc(source.label) + '</strong><small>' +
-        fmt(source.quantity, factoryPlanUnit(source.unit)) + '</small></span>';
-    }).join('');
+    // The aggregate table must not walk every factory's full shipment lineage once
+    // per commodity during the first mobile render. Detailed provenance remains
+    // available on each paged factory card; this cell reports only a recorded
+    // aggregate when the ten-day coverage snapshot already contains one.
+    var coverage = factoryInputCoverageRecord(model, productId, null);
+    var quantity = coverage && num(coverage.sourceQuantity);
+    if (quantity !== null && quantity > 0) {
+      var unit = factoryPlanUnit(coverage.unit || '');
+      return '<span class="fp-factory-source"><strong>Recorded factory receipts</strong><small>' +
+        fmt(quantity, unit) + '</small><small>Detailed source lineage is listed by factory below</small></span>';
+    }
+    return '<span class="fp-factory-muted">See factory-level sources below</span>';
   }
 
   function factoryInputPlanMarkup(model) {
