@@ -392,6 +392,8 @@ function governmentProcurementTx(cmd,ctx){
  if(!warehouseRaw||typeof warehouseRaw!=='object'||String(warehouseRaw.status||'').toUpperCase()!=='OPERATIONAL')
   return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_PROCESSED_WAREHOUSE_NOT_OPERATIONAL'};
  const warehouse=clone(warehouseRaw);
+ if(country(warehouse.countryId)!==c||!String(warehouse.warehouseId||'').trim())
+  return{accepted:false,reason:'GOVERNMENT_PROCUREMENT_WAREHOUSE_COUNTRY_OR_ID_MISMATCH'};
  const warehouseMap=warehouse.availableByResource&&typeof warehouse.availableByResource==='object'?warehouse.availableByResource:{};
  const warehouseKey=Object.prototype.hasOwnProperty.call(warehouseMap,rid)?rid:Object.keys(warehouseMap).find(x=>tok(x)===tok(rid));
  const warehouseAvailable=warehouseKey===undefined?null:num(warehouseMap[warehouseKey]);
@@ -417,8 +419,19 @@ function governmentProcurementTx(cmd,ctx){
   const privateDecisionId=String(asset?.sourcePrivateDecisionId||'');
   const privateFundingId=String(asset?.sourcePrivateFundingId||'');
   const privatePermitId=String(asset?.privatePermitId||'');
+  const batchRemaining=num(b?.remainingQuantity!=null?b.remainingQuantity:b?.quantity);
+  const lotRemaining=num(lot?.remainingQuantity!=null?lot.remainingQuantity:lot?.quantity);
+  const requiredProcurementRights=['strategicOversight','licensingAndPermits','fiscalRegulation',
+   'labourSafetyEnvironmentalRegulation','strategicSupplyOversight','strategicContracts',
+   'domesticSupplyDirection','exportControl','publicProcurement','competitionOversight',
+   'foreignOwnershipReview','emergencyIntervention'];
+  const stateRightsComplete=requiredProcurementRights.every(key=>asset?.stateControlRights?.[key]===true);
   return country(b?.countryId)===c&&country(lot?.countryId)===c&&country(asset?.countryId)===c&&
    String(lot?.batchId||'')===batchId&&
+   String(b?.sourcePrivatePermitId||'')===privatePermitId&&String(lot?.sourcePrivatePermitId||'')===privatePermitId&&
+   batchRemaining!==null&&lotRemaining!==null&&Math.abs(batchRemaining-lotRemaining)<=1e-7&&
+   String(lot?.stage||'').toUpperCase()==='FINISHED'&&String(lot?.unit||'')===String(b?.unit||'')&&
+   stateRightsComplete&&
    tok(b?.resourceId||b?.materialIdentity)===tok(rid)&&owner===companyId&&
    PRIVATE_COMPANY_IDS.includes(operator)&&String(b?.ownerAttributionStatus||'').toUpperCase()==='EXPLICIT_ASSET_OWNER'&&
    String(b?.stage||'').toUpperCase()==='FINISHED'&&
