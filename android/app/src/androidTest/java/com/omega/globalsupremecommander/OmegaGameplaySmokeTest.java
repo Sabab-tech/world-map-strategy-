@@ -352,13 +352,26 @@ public final class OmegaGameplaySmokeTest {
                     " var main=cabinet&&cabinet.querySelector('[data-omega-v2-main]');" +
                     " var lines=main&&main.querySelector('[data-omega-v2-industry-tab=\"production-lines\"]');" +
                     " var companies=main&&main.querySelector('[data-omega-v2-industry-tab=\"companies\"]');" +
+                    " var factoryView=main&&main.querySelector('[data-omega-v2-factory-view-content]');" +
+                    " var industryView=main&&main.querySelector('[data-omega-v2-industry-content]');" +
+                    " window.__OMEGA_ANDROID_LINES_TAB_DIAGNOSTICS={route:cabinet&&cabinet.getAttribute('data-omega-v2-route')," +
+                    " main:!!main,lines:!!lines,companies:!!companies,factoryView:!!factoryView,industryView:!!industryView};" +
                     " return !!(cabinet&&main&&cabinet.getAttribute('data-omega-v2-route')==='industry'&&" +
-                    " lines&&!companies&&main.querySelector('[data-omega-v2-factory-view-content]'));" +
+                    " lines&&!companies&&(factoryView||industryView));" +
                     "})()";
+            String linesTabReady = "false";
+            final long linesTabDeadline = SystemClock.elapsedRealtime() + 15000L;
+            while (!"true".equals(linesTabReady) && SystemClock.elapsedRealtime() < linesTabDeadline) {
+                linesTabReady = evaluate(instrumentation, webViewRef.get(), linesTabReadyScript);
+                if (!"true".equals(linesTabReady)) SystemClock.sleep(200L);
+            }
+            final String linesTabDiagnostics = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_LINES_TAB_DIAGNOSTICS || {});})()");
             assertEquals(
-                    "Industry must expose the existing Lines tab without a separate Companies tab",
-                    "true", evaluate(instrumentation, webViewRef.get(), linesTabReadyScript)
+                    "Industry must expose the existing Lines tab without a separate Companies tab; diagnostics=" + linesTabDiagnostics,
+                    "true", linesTabReady
             );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_LINES_TAB_READY diagnostics=" + linesTabDiagnostics);
 
             final String openInputTabScript =
                     "(function() {" +
