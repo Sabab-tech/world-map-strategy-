@@ -131,7 +131,7 @@ function setIronDemandSnapshot(harness,demandPerDay=0,consumerDemandPerDay=0,act
     'the lifecycle runtime must resolve the same selected-country resource bucket as the fixture');
   assert.equal(runtimeEvidence.demandSnapshotTurn,turn,
     'the lifecycle runtime must read the current-turn demand snapshot just written by the fixture: '+JSON.stringify(runtimeEvidence));
-  assert.deepEqual(runtimeEvidence.demandRuntimeResourceKeys,['iron_ore'],
+  assert.equal(runtimeEvidence.demandRuntimeResourceKeys.join(','),'iron_ore',
     'the lifecycle runtime must read the fixture demand row, not an empty stale bucket: '+JSON.stringify(runtimeEvidence));
   return snapshot;
 }
