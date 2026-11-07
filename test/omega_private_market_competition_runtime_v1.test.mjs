@@ -154,7 +154,8 @@ test('a missing competition-oversight right blocks intervention even when the as
   assert.equal(row.stage,'INTERVENTION');
   assert.equal(row.interventionStatus,'BLOCKED_STATE_CONTROL');
   assert.equal(row.stateControlProof.reason,'PRIVATE_ASSET_STATE_CONTROL_RIGHTS_INCOMPLETE');
-  assert.deepEqual(row.stateControlProof.unverifiedAssetIds,['PRIVATE-FAC-1']);
+  assert.equal(row.stateControlProof.unverifiedAssetIds.length,1);
+  assert.equal(row.stateControlProof.unverifiedAssetIds[0],'PRIVATE-FAC-1');
   assert.equal(h.state.trade.BGD.marketCompetition.activeRestrictions.length,0);
 });
 
