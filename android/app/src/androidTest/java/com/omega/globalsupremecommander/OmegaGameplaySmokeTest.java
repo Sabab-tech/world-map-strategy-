@@ -278,38 +278,105 @@ public final class OmegaGameplaySmokeTest {
             );
 
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_GOVERNMENT_READY");
-            // Exercise repeated real UI v2 navigation taps, exit, and reopen. This
-            // specifically catches event bubbling into the retired layer renderers.
-            final String repeatedUiNavigationScript =
+            // Exercise real UI v2 taps one at a time. A single JavaScript evaluation
+            // that synchronously dispatched seven screen-changing clicks starved the
+            // API 28 WebView renderer and never delivered its callback. Separate calls
+            // yield between renders while retaining an assertion for every transition.
+            final String[] repeatedUiNavigationRoutes =
+                    new String[] {"economy", "government", "more", "economy", "government"};
+            for (String route : repeatedUiNavigationRoutes) {
+                final String routeTapScript =
+                        "(function() {" +
+                        " var cabinet = document.getElementById('cabinet-full-window');" +
+                        " if (!cabinet || !cabinet.__omegaUIV2State) return false;" +
+                        " var route = '" + route + "';" +
+                        " var controls = cabinet.querySelectorAll('[data-omega-v2-global-nav]');" +
+                        " var control = Array.prototype.filter.call(controls, function(node) {" +
+                        "   return node.getAttribute('data-omega-v2-global-nav') === route;" +
+                        " })[0];" +
+                        " if (!control || control.disabled) return false;" +
+                        " control.click();" +
+                        " return true;" +
+                        "})()";
+                assertEquals("The " + route + " navigation control must accept an individual tap",
+                        "true", evaluate(instrumentation, webViewRef.get(), routeTapScript));
+
+                final String routeReadyScript =
+                        "(function() {" +
+                        " var cabinet = document.getElementById('cabinet-full-window');" +
+                        " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                        " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
+                        "   cabinet.getAttribute('data-omega-v2-route') === '" + route + "' &&" +
+                        "   main && main.childElementCount > 0 && window.OmegaLayerManager &&" +
+                        "   Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
+                        "   document.body.getAttribute('data-active-layer') === '1');" +
+                        "})()";
+                String routeReady = "false";
+                final long routeDeadline = SystemClock.elapsedRealtime() + 15000L;
+                while (!"true".equals(routeReady) &&
+                        SystemClock.elapsedRealtime() < routeDeadline) {
+                    routeReady = evaluate(instrumentation, webViewRef.get(), routeReadyScript);
+                    if (!"true".equals(routeReady)) SystemClock.sleep(250L);
+                }
+                assertEquals("The " + route + " screen must remain responsive after its tap",
+                        "true", routeReady);
+                SystemClock.sleep(250L);
+            }
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_REPEATED_BUTTON_NAV_READY");
+
+            final String repeatedNavigationExitScript =
                     "(function() {" +
-                    " var entry = document.getElementById('omega-gov-entry-v3');" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " if (!entry || !cabinet || !cabinet.__omegaUIV2State) return false;" +
-                    " var sequence = ['economy','government','more','economy','government'];" +
-                    " for (var i = 0; i < sequence.length; i++) {" +
-                    "   var route = sequence[i];" +
-                    "   var control = cabinet.querySelector('[data-omega-v2-global-nav=\"' + route + '\"]');" +
-                    "   if (!control) return false;" +
-                    "   control.click();" +
-                    "   if (cabinet.getAttribute('data-omega-v2-route') !== route) return false;" +
-                    " }" +
-                    " var exit = cabinet.querySelector('[data-omega-v2-exit]');" +
+                    " var exit = cabinet && cabinet.querySelector('[data-omega-v2-exit]');" +
                     " if (!exit) return false;" +
                     " exit.click();" +
-                    " if (cabinet.getAttribute('data-omega-ui-v2-active') === 'true' ||" +
-                    "     document.body.getAttribute('data-active-layer') !== '0' ||" +
-                    "     Number(window.OmegaLayerManager.currentLayer) !== 0) return false;" +
+                    " return true;" +
+                    "})()";
+            assertEquals("UI v2 exit control must accept a separate tap",
+                    "true", evaluate(instrumentation, webViewRef.get(), repeatedNavigationExitScript));
+            final String mapRestoredScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
+                    "   document.body.getAttribute('data-active-layer') === '0' &&" +
+                    "   window.OmegaLayerManager && Number(window.OmegaLayerManager.currentLayer) === 0);" +
+                    "})()";
+            String mapRestored = "false";
+            final long mapRestoreDeadline = SystemClock.elapsedRealtime() + 15000L;
+            while (!"true".equals(mapRestored) &&
+                    SystemClock.elapsedRealtime() < mapRestoreDeadline) {
+                mapRestored = evaluate(instrumentation, webViewRef.get(), mapRestoredScript);
+                if (!"true".equals(mapRestored)) SystemClock.sleep(250L);
+            }
+            assertEquals("UI v2 exit must restore the map before reopening the cabinet",
+                    "true", mapRestored);
+
+            final String reopenCabinetScript =
+                    "(function() {" +
+                    " var entry = document.getElementById('omega-gov-entry-v3');" +
+                    " if (!entry) return false;" +
                     " entry.click();" +
-                    " return !!(cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
+                    " return true;" +
+                    "})()";
+            assertEquals("Government entry must accept a separate reopen tap",
+                    "true", evaluate(instrumentation, webViewRef.get(), reopenCabinetScript));
+            final String reopenedCabinetReadyScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
                     "   cabinet.getAttribute('data-omega-v2-route') === 'government' &&" +
                     "   Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
                     "   document.body.getAttribute('data-active-layer') === '1');" +
                     "})()";
-            assertEquals(
-                    "UI v2 buttons must keep navigating on repeated taps, exit to map and reopen without legacy UI",
-                    "true", evaluate(instrumentation, webViewRef.get(), repeatedUiNavigationScript)
-            );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_REPEATED_BUTTON_NAV_READY");
+            String reopenedCabinetReady = "false";
+            final long reopenDeadline = SystemClock.elapsedRealtime() + 15000L;
+            while (!"true".equals(reopenedCabinetReady) &&
+                    SystemClock.elapsedRealtime() < reopenDeadline) {
+                reopenedCabinetReady = evaluate(instrumentation, webViewRef.get(), reopenedCabinetReadyScript);
+                if (!"true".equals(reopenedCabinetReady)) SystemClock.sleep(250L);
+            }
+            assertEquals("Government cabinet must reopen after the map transition",
+                    "true", reopenedCabinetReady);
             final String openMoreRouteScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
