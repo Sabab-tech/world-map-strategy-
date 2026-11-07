@@ -1110,6 +1110,14 @@ test('insolvency opens only on recorded cash shortfall; restructuring, suspensio
   const approved=api.decideCompanyRestructuring({countryId:'BGD',companyId:company,
     caseId:plan.case.caseId,decision:'APPROVE',governmentReason:'Protect creditors and stop further unpriced losses.'});
   assert.equal(approved.status,'APPROVED');
+  const blockedDuringRestructuring=api.reservePrivateCompanyImport({
+    settlementId:'RESTRUCTURING-IMPORT-BLOCK',buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:company,sellerCompanyId:'AURORA_INDUSTRIAL_GROUP',buyerAmount:10,
+    sellerAmount:10,buyerCurrency:'GAME_CURRENCY_UNITS',sellerCurrency:'GAME_CURRENCY_UNITS',
+    quantity:1,resourceId:'iron_ore'
+  });
+  assert.equal(blockedDuringRestructuring.status,'BLOCKED');
+  assert.equal(blockedDuringRestructuring.reason,'BUYER_COMPANY_STATUS_BLOCKS_NEW_IMPORT');
   const applied=api.applyCompanyRestructuring({countryId:'BGD',companyId:company,caseId:plan.case.caseId});
   assert.equal(applied.status,'IMPLEMENTED',JSON.stringify(applied));
   assert.equal(h.state.economy.BGD.productionAssets[0].status,'MAINTENANCE');
