@@ -1181,13 +1181,15 @@
     var buyerCountry=canonicalCountry(input.buyerCountryId||playerCountry()),sellerCountry=canonicalCountry(input.sellerCountryId),
       buyerCompany=id(input.buyerCompanyId),sellerCompany=id(input.sellerCompanyId),settlementId=String(input.settlementId||'').trim(),
       buyerAmount=num(input.buyerAmount),sellerAmount=num(input.sellerAmount),quantity=num(input.quantity),
-      buyerCurrency=id(input.buyerCurrency),sellerCurrency=id(input.sellerCurrency);
+      buyerCurrency=id(input.buyerCurrency),sellerCurrency=id(input.sellerCurrency),
+      buyerPurchaseAmount=num(input.buyerPurchaseAmount)??num(input.buyerAmount),buyerTariffAmount=num(input.buyerTariffAmount)??0;
     if(buyerCountry!==playerCountry()||!sellerCountry||sellerCountry===buyerCountry)
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_COUNTRY_SCOPE_INVALID'};
     if(COMPANY_IDS.indexOf(buyerCompany)<0||COMPANY_IDS.indexOf(sellerCompany)<0)
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_COMPANY_ID_INVALID'};
     if(!settlementId||buyerAmount===null||buyerAmount<=0||sellerAmount===null||sellerAmount<=0||
-       quantity===null||quantity<=0||!buyerCurrency||!sellerCurrency)
+       buyerPurchaseAmount===null||buyerPurchaseAmount<=0||buyerTariffAmount===null||buyerTariffAmount<0||
+       Math.abs(buyerPurchaseAmount+buyerTariffAmount-buyerAmount)>1e-6||quantity===null||quantity<=0||!buyerCurrency||!sellerCurrency)
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_PAYMENT_FIELDS_INVALID'};
     if(buyerCurrency!==observedCompanyCurrency(buyerCountry)||sellerCurrency!==observedCompanyCurrency(sellerCountry))
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_COUNTRY_CURRENCY_NOT_RECONCILED',
@@ -1198,14 +1200,17 @@
     var prior=reservations[settlementId];
     var payload={settlementId:settlementId,buyerCountryId:buyerCountry,sellerCountryId:sellerCountry,
       buyerCompanyId:buyerCompany,sellerCompanyId:sellerCompany,buyerAmount:Number(buyerAmount.toFixed(2)),
+      buyerPurchaseAmount:Number(buyerPurchaseAmount.toFixed(2)),buyerTariffAmount:Number(buyerTariffAmount.toFixed(2)),
       sellerAmount:Number(sellerAmount.toFixed(2)),buyerCurrency:buyerCurrency,sellerCurrency:sellerCurrency,
       quantity:Number(quantity.toFixed(6)),resourceId:String(input.resourceId||''),unitPrice:num(input.unitPrice),
       status:'RESERVED',createdTurn:turn(),authority:'OMEGA_PRIVATE_COMPANY_TRADE_CASH_V1'};
     if(prior){
       var same=prior.buyerCountryId===buyerCountry&&prior.sellerCountryId===sellerCountry&&
         prior.buyerCompanyId===buyerCompany&&prior.sellerCompanyId===sellerCompany&&
-        Math.abs((num(prior.buyerAmount)||0)-buyerAmount)<=1e-8&&Math.abs((num(prior.sellerAmount)||0)-sellerAmount)<=1e-8&&
-        prior.buyerCurrency===buyerCurrency&&prior.sellerCurrency===sellerCurrency&&
+        Math.abs((num(prior.buyerAmount)||0)-buyerAmount)<=1e-8&&
+        Math.abs((num(prior.buyerPurchaseAmount)??num(prior.buyerAmount)||0)-buyerPurchaseAmount)<=1e-8&&
+        Math.abs((num(prior.buyerTariffAmount)||0)-buyerTariffAmount)<=1e-8&&
+        Math.abs((num(prior.sellerAmount)||0)-sellerAmount)<=1e-8&&prior.buyerCurrency===buyerCurrency&&prior.sellerCurrency===sellerCurrency&&
         Math.abs((num(prior.quantity)||0)-quantity)<=1e-8&&prior.resourceId===payload.resourceId;
       return same?{status:prior.status==='RESERVED'?'DUPLICATE':prior.status,reservation:clone(prior)}:
         {status:'BLOCKED',reason:'PRIVATE_IMPORT_SETTLEMENT_ID_COLLISION'};
@@ -1279,6 +1284,7 @@
       settlementId=String(input.settlementId||'').trim(),buyerCompany=id(input.buyerCompanyId),sellerCompany=id(input.sellerCompanyId),
       buyerAmount=num(input.buyerAmount),sellerAmount=num(input.sellerAmount),quantity=num(input.quantity),
       buyerCurrency=id(input.buyerCurrency),sellerCurrency=id(input.sellerCurrency),
+      buyerPurchaseAmount=num(input.buyerPurchaseAmount)??num(input.buyerAmount),buyerTariffAmount=num(input.buyerTariffAmount)??0,
       transfers=Array.isArray(input.batchTransfers)?input.batchTransfers:[];
     if(buyerCountry!==playerCountry()||!settlementId)return{status:'BLOCKED',reason:'PRIVATE_IMPORT_COMPLETION_SCOPE_INVALID'};
     var root=financeRoot(buyerCountry,true),reservations=root.companyTradeReservations||{},reservation=reservations[settlementId];
@@ -1287,6 +1293,8 @@
     if(reservation.status!=='RESERVED')return{status:'BLOCKED',reason:'PRIVATE_IMPORT_RESERVATION_NOT_ACTIVE'};
     if(reservation.buyerCompanyId!==buyerCompany||reservation.sellerCompanyId!==sellerCompany||
        Math.abs((num(reservation.buyerAmount)||0)-(buyerAmount||0))>1e-8||
+       Math.abs((num(reservation.buyerPurchaseAmount)??num(reservation.buyerAmount)||0)-(buyerPurchaseAmount||0))>1e-8||
+       Math.abs((num(reservation.buyerTariffAmount)||0)-(buyerTariffAmount||0))>1e-8||
        Math.abs((num(reservation.sellerAmount)||0)-(sellerAmount||0))>1e-8||
        reservation.buyerCurrency!==buyerCurrency||reservation.sellerCurrency!==sellerCurrency||
        Math.abs((num(reservation.quantity)||0)-(quantity||0))>1e-8)
@@ -1310,9 +1318,14 @@
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_BUYER_CASH_BECAME_UNAVAILABLE'};
     var debit=postPrivateTradeCashFlow(buyerCountry,buyerCompany,{
       entryId:'PE-PRIVATE-IMPORT-PAYMENT:'+settlementId,sourceId:settlementId,
-      amount:buyerAmount,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',currency:buyerCurrency
+      amount:buyerPurchaseAmount,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',currency:buyerCurrency
     });
     if(!['POSTED','DUPLICATE'].includes(debit.status))return{status:'BLOCKED',reason:'PRIVATE_IMPORT_BUYER_CASHFLOW_POST_FAILED',detail:debit};
+    var tariffDebit=buyerTariffAmount>1e-9?postPrivateTradeCashFlow(buyerCountry,buyerCompany,{
+      entryId:'PE-PRIVATE-IMPORT-TARIFF:'+settlementId,sourceId:settlementId,
+      amount:buyerTariffAmount,direction:'DEBIT',category:'TAX',currency:buyerCurrency
+    }):{status:'DUPLICATE'};
+    if(!['POSTED','DUPLICATE'].includes(tariffDebit.status))return{status:'BLOCKED',reason:'PRIVATE_IMPORT_TARIFF_CASHFLOW_POST_FAILED',detail:tariffDebit};
     var credit=postPrivateTradeCashFlow(sellerCountry,sellerCompany,{
       entryId:'PE-PRIVATE-IMPORT-RECEIPT:'+settlementId,sourceId:settlementId,
       amount:sellerAmount,direction:'CREDIT',category:'PRIVATE_COMPANY_EXPORT_SALE',currency:sellerCurrency
@@ -1323,8 +1336,8 @@
         var posted=entries.find(function(row){return row&&row.entryId==='PE-PRIVATE-IMPORT-PAYMENT:'+settlementId;});
         if(posted){
           posted.status='REVERSED';posted.reversedTurn=turn();posted.reversalReason='SELLER_COMPANY_CASHFLOW_POST_FAILED';
-          buyerAccount.runtimeNetCashFlow=(num(buyerAccount.runtimeNetCashFlow)||0)+buyerAmount;
-          buyerAccount.paymentsMade=Math.max(0,(num(buyerAccount.paymentsMade)||0)-buyerAmount);
+          buyerAccount.runtimeNetCashFlow=(num(buyerAccount.runtimeNetCashFlow)||0)+buyerPurchaseAmount;
+          buyerAccount.paymentsMade=Math.max(0,(num(buyerAccount.paymentsMade)||0)-buyerPurchaseAmount);
         }
       }
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_SELLER_CASHFLOW_POST_FAILED',detail:credit};
@@ -1352,7 +1365,8 @@
     var buyerLifecycle=runtime(buyerCountry,true),record={
       settlementId:settlementId,countryId:buyerCountry,sellerCountryId:sellerCountry,
       buyerCompanyId:buyerCompany,sellerCompanyId:sellerCompany,resourceId:String(input.resourceId||''),
-      quantity:Number(quantity.toFixed(6)),buyerAmount:Number(buyerAmount.toFixed(2)),sellerAmount:Number(sellerAmount.toFixed(2)),
+      quantity:Number(quantity.toFixed(6)),buyerAmount:Number(buyerAmount.toFixed(2)),
+      buyerPurchaseAmount:Number(buyerPurchaseAmount.toFixed(2)),buyerTariffAmount:Number(buyerTariffAmount.toFixed(2)),sellerAmount:Number(sellerAmount.toFixed(2)),
       buyerCurrency:buyerCurrency,sellerCurrency:sellerCurrency,batchTransfers:clone(transfers),
       sourceBatchIds:Array.from(new Set(transfers.flatMap(function(row){return [...(row.sourceBatchIds||[]),row.sourceBatchId].filter(Boolean).map(String);}))),
       createdBatchIds:Array.isArray(input.createdBatchIds)?input.createdBatchIds.map(String):[],
