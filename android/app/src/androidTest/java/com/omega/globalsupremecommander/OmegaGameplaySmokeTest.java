@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,8 +19,11 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -662,8 +666,8 @@ public final class OmegaGameplaySmokeTest {
         assertNotNull("Android emulator screenshot must be captured", bitmap);
         assertTrue("Android screenshot width must be positive", bitmap.getWidth() > 0);
         assertTrue("Android screenshot height must be positive", bitmap.getHeight() > 0);
-        final File directory = new File(instrumentation.getTargetContext().getFilesDir(), "omega-smoke");
-        assertNotNull("Android internal files directory must be available for smoke screenshots", directory);
+        final File directory = instrumentation.getTargetContext().getExternalFilesDir("omega-smoke");
+        assertNotNull("Android external files directory must be available for smoke screenshots", directory);
         assertTrue("Android screenshot directory must be creatable",
                 directory.isDirectory() || directory.mkdirs());
         final File output = new File(directory, fileName);
@@ -675,9 +679,43 @@ public final class OmegaGameplaySmokeTest {
             bitmap.recycle();
         }
         assertTrue("Android screenshot file must be non-empty", output.isFile() && output.length() > 2048L);
+        exportScreenshotForHost(instrumentation, output);
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
                 "SCREENSHOT_SAVED=" + output.getAbsolutePath() + " bytes=" + output.length());
         return output;
+    }
+
+    private static void exportScreenshotForHost(
+            android.app.Instrumentation instrumentation,
+            File screenshot
+    ) throws Exception {
+        final String destinationPath = "/sdcard/omega-smoke/" + screenshot.getName();
+        final String copyCommands =
+                "(mkdir -p /sdcard/omega-smoke && cp " +
+                shellQuote(screenshot.getAbsolutePath()) + " " +
+                shellQuote(destinationPath) + " && test -s " +
+                shellQuote(destinationPath) + ") 2>&1; status=$?; " +
+                "if [ \"$status\" -eq 0 ]; then " +
+                "echo OMEGA_SCREENSHOT_EXPORT_OK; else " +
+                "echo OMEGA_SCREENSHOT_EXPORT_FAILED; exit \"$status\"; fi";
+        final String command = "sh -c " + shellQuote(copyCommands);
+        final ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (ParcelFileDescriptor descriptor =
+                     instrumentation.getUiAutomation().executeShellCommand(command);
+             InputStream stream = new ParcelFileDescriptor.AutoCloseInputStream(descriptor)) {
+            final byte[] buffer = new byte[1024];
+            int count;
+            while ((count = stream.read(buffer)) != -1) output.write(buffer, 0, count);
+        }
+        final String commandOutput = output.toString(StandardCharsets.UTF_8);
+        assertTrue("Android shell must export the real PNG before the test app is uninstalled: " +
+                commandOutput, commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_OK"));
+        android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                "SCREENSHOT_EXPORTED=" + destinationPath + " bytes=" + screenshot.length());
+    }
+
+    private static String shellQuote(String value) {
+        return "'" + value.replace("'", "'\\''") + "'";
     }
 
     private static String evaluate(
