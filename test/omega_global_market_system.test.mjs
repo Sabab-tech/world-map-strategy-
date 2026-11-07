@@ -135,6 +135,26 @@ globalThis.Game.state.economy.SAU.privateEnterpriseLifecycle.companyStatuses.AUR
 assert.equal(market.privateCompanySuppliers('crude_oil',1,'BDG','AURORA_INDUSTRIAL_GROUP','SAU').length,0,
   'closed companies cannot publish supplier stock');
 globalThis.Game.state.economy.SAU.privateEnterpriseLifecycle.companyStatuses.AURORA_INDUSTRIAL_GROUP='ACTIVE';
+// Multiple private owners share one aggregate warehouse ceiling; the same free stock
+// cannot be advertised independently by each company.
+globalThis.Game.state.resource.SAU.batches.push({
+  batchId:'SAU-MERIDIAN-CRUDE-MARKET-2',resourceId:'crude_oil',
+  quantity:100,remainingQuantity:100,stage:'RAW_EXTRACTED',status:'AVAILABLE',
+  ownerCompanyId:'MERIDIAN_ENGINEERING_GROUP',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+  ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'SAU-MERIDIAN-OIL-FAC-2'
+});
+globalThis.Game.state.resource.SAU.inventoryLots['SAU-MERIDIAN-CRUDE-MARKET-2']={
+  batchId:'SAU-MERIDIAN-CRUDE-MARKET-2',resourceId:'crude_oil',
+  quantity:100,remainingQuantity:100,status:'AVAILABLE'
+};
+globalThis.Game.state.resource.SAU.warehouse.availableByResource.crude_oil=150;
+globalThis.Game.state.resource.SAU.warehouse.reservedByResource.crude_oil=0;
+const allPrivateSuppliers=market.privateCompanySuppliers('crude_oil',1,'BDG',null,'SAU');
+assert.equal(allPrivateSuppliers.length,2);
+assert.equal(allPrivateSuppliers.reduce((sum,row)=>sum+Math.round(row.available*1e6),0),150000000,
+  'all private suppliers together must not exceed the 150-unit warehouse free balance');
+assert.equal(allPrivateSuppliers.find(row=>row.companyId==='AURORA_INDUSTRIAL_GROUP').available,90);
+assert.equal(allPrivateSuppliers.find(row=>row.companyId==='MERIDIAN_ENGINEERING_GROUP').available,60);
 
 // Removing the actual seller offer leaves only inventory-derived reference liquidity.
 // It must inform the quote but must not count as an executable market trade.
