@@ -1046,6 +1046,14 @@ test('private market concentration uses settled attributable sales and excludes 
       supplierAllocations:{[COMPANY]:900}
     }}
   ]}};
+  const exportEntry={entryId:'PE-PRIVATE-IMPORT-RECEIPT:EXP-CONC-1',companyId:COMPANY,amount:300,
+    direction:'CREDIT',category:'PRIVATE_COMPANY_EXPORT_SALE',currency:'GAME_CURRENCY_UNITS',
+    sourceId:'EXP-CONC-1',turn:4,status:'POSTED'};
+  h.state.economy.BGD.companyAccounts={[COMPANY]:{companyId:COMPANY,cashFlowEntries:[exportEntry]}};
+  h.state.finance.BGD.omegaFinance.ledger.push({transactionId:'PE-PRIVATE-IMPORT-RECEIPT:EXP-CONC-1',
+    type:'PRIVATE_COMPANY_EXPORT_RECEIPT',companyId:COMPANY,counterpartyCountryId:'SAU',
+    counterpartyCompanyId:'AURORA_INDUSTRIAL_GROUP',resourceId:'iron_ore',quantity:30,
+    amount:300,currency:'GAME_CURRENCY_UNITS',direction:'CREDIT',status:'POSTED',turn:4,settlementId:'EXP-CONC-1'});
   const result=api.getPrivateMarketConcentration({countryId:'BGD',resourceId:'iron_ore',lookbackTurns:10});
   assert.equal(result.status,'AVAILABLE');
   assert.equal(result.verifiedSettledSaleCount,2);
@@ -1055,7 +1063,12 @@ test('private market concentration uses settled attributable sales and excludes 
   assert.equal(result.privateCompanyHhi,6800);
   assert.equal(result.concentration,'HIGH');
   assert.equal(result.firms[0].companyId,COMPANY);
-  assert.equal(result.coverage.crossBorderCompanySales,'NOT_INCLUDED_NO_VERIFIED_COMPANY_LEVEL_IMPORT_EXPORT_ATTRIBUTION');
+  assert.equal(result.privateCompanyExportReceiptsValue,300);
+  assert.equal(result.verifiedPrivateCompanyExportReceiptCount,1);
+  assert.equal(result.privateCompanyExportHhi,10000);
+  assert.equal(result.firms[0].settledPrivateExportReceiptValue,300);
+  assert.equal(result.firms[0].privateExportMixSharePct,100);
+  assert.equal(result.coverage.crossBorderCompanySales,'PRIVATE_EXPORT_RECEIPTS_REPORTED_SEPARATELY_NOT_MIXED_INTO_DOMESTIC_MARKET_SHARE');
 });
 
 test('insolvency opens only on recorded cash shortfall; restructuring, suspension and closure preserve asset history',()=>{
