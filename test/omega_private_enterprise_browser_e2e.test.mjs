@@ -1112,6 +1112,11 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       };
     });
     metrics.executeHitTest = executeHitTest;
+    assert.ok(
+      Number(executeHitTest.panel?.zIndex) > Number(executeHitTest.cabinet?.zIndex),
+      'resource site panel must be above the active cabinet stacking context: ' +
+      JSON.stringify(executeHitTest)
+    );
     assert.ok(executeHitTest.hitTarget,
       'resource site action must be the topmost hit target in the active UI layer: ' +
       JSON.stringify(executeHitTest));
