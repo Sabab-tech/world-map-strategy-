@@ -296,6 +296,8 @@ globalThis.Game.state.finance.SAU.currencyCode='USD';
 globalThis.OmegaGovernmentBanking={
   getCountryPolicy(countryId){return{countryCode:countryId,importTariffPct:2.5};}
 };
+const marketScenarioPending=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-UI-CREATE');
+if(marketScenarioPending){marketScenarioPending.status='REJECTED';marketScenarioPending.stage='TEST_HOLD';}
 globalThis.Game.state.trade.BGD.importRequests.push({
   requestId:'PRIVATE-MARKET-BID-E2E',countryId:'BGD',targetCountryId:'SAU',
   resourceId:'crude_oil',quantity:100,unitPrice:100,status:'SENT',stage:'OPEN'
