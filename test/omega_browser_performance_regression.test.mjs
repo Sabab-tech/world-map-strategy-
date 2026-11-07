@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 
-function thisWorkerCacheVersion(workerSource) {
-  return Number(workerSource.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\\d+)"/)?.[1] || 0);
+function workerCacheVersion(workerSource) {
+  return Number(workerSource.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0);
 }
 
 function createHarness() {
@@ -520,7 +520,7 @@ test('world geometry loads before support datasets, shows real progress, caches 
     'both hiding and restoring the world map must use the same interruptible layer scheduler');
   assert.ok(coreAssets.includes('"./map-engine-2.js"'),
     'the interruptible map lifecycle must be available after an offline relaunch');
-  assert.ok(thisWorkerCacheVersion(worker) >= 100,
+  assert.ok(workerCacheVersion(worker) >= 100,
     'the offline shell must invalidate the pre-batched map lifecycle cache');
   assert.ok(map.includes('this.__omegaWorldMapAbortController.abort()'),
     'leaving the world view must abort an unfinished map-only request');
@@ -536,6 +536,92 @@ test('world geometry loads before support datasets, shows real progress, caches 
     'the map and ministry must never be shown as one half-transparent composite');
   assert.ok(resourceBinding.includes('if(g.Game?.Map?.__omegaMapUiActive===false)return;'),
     'resource markers must not redraw during ministry navigation');
+});
+
+test('map layer suspension and restoration yield across frames and cancel stale batches', () => {
+  const source = read('map-engine-2.js');
+  const helperStart = source.indexOf('function cancelOmegaMapLayerBatch(mapState)');
+  const helperEnd = source.indexOf('Game.Map.setUiActive = function(active)', helperStart);
+  assert.ok(helperStart >= 0 && helperEnd > helperStart, 'the production map layer scheduler must be defined before UI switching');
+
+  const frames = new Map();
+  let nextFrame = 1;
+  const game = { Map:{
+    __omegaMapUiActive:false,
+    __omegaMapUiGeneration:1,
+    __omegaMapLayerBatchFrame:null,
+    __omegaMapLayerBatchFrameType:null,
+    __omegaDetachedLayers:[]
+  }};
+  const context = {
+    Game:game,
+    window:{
+      requestAnimationFrame(callback) {
+        const id = nextFrame++;
+        frames.set(id, callback);
+        return id;
+      },
+      cancelAnimationFrame(id) { frames.delete(id); },
+      setTimeout(callback) {
+        const id = nextFrame++;
+        frames.set(id, callback);
+        return id;
+      },
+      clearTimeout(id) { frames.delete(id); }
+    }
+  };
+  vm.runInNewContext(source.slice(helperStart, helperEnd), context, {
+    filename:'map-engine-2-layer-batch.js'
+  });
+
+  const layers = Array.from({ length:40 }, (_, index) => ({ id:index }));
+  const map = {
+    attached:new Set(layers),
+    eachLayer(callback) { Array.from(this.attached).forEach(callback); },
+    hasLayer(layer) { return this.attached.has(layer); },
+    removeLayer(layer) { this.attached.delete(layer); },
+    addLayer(layer) { this.attached.add(layer); },
+    invalidateSize() { this.invalidated = true; }
+  };
+  function flushFrames(limit = 20) {
+    let count = 0;
+    while (frames.size && count < limit) {
+      const item = frames.entries().next().value;
+      frames.delete(item[0]);
+      item[1]();
+      count += 1;
+    }
+    return count;
+  }
+
+  game.Map.__omegaDetachedLayers = layers.slice();
+  context.scheduleOmegaMapLayerBatch(map, layers, 'detach', 1);
+  assert.equal(map.attached.size, 40, 'layer detachment must not run inside the cabinet click callback');
+  flushFrames(1);
+  assert.equal(map.attached.size, 24, 'one frame may detach no more than sixteen map layers');
+  assert.ok(frames.size > 0, 'remaining layers must be continued on a later frame');
+
+  game.Map.__omegaMapUiGeneration = 2;
+  game.Map.__omegaMapUiActive = true;
+  context.cancelOmegaMapLayerBatch(game.Map);
+  context.scheduleOmegaMapLayerBatch(map, game.Map.__omegaDetachedLayers, 'attach', 2);
+  flushFrames();
+  assert.equal(map.attached.size, 40, 'a rapid return to the map must restore every detached layer');
+  assert.equal(game.Map.__omegaDetachedLayers.length, 0, 'the detached list clears only after restoration completes');
+  assert.equal(map.invalidated, true, 'map size is invalidated after the final layer batch');
+
+  game.Map.__omegaMapUiGeneration = 3;
+  game.Map.__omegaMapUiActive = false;
+  game.Map.__omegaDetachedLayers = layers.slice();
+  context.scheduleOmegaMapLayerBatch(map, layers, 'detach', 3);
+  flushFrames(1);
+  assert.equal(map.attached.size, 24);
+  game.Map.__omegaMapUiGeneration = 4;
+  game.Map.__omegaMapUiActive = true;
+  context.cancelOmegaMapLayerBatch(game.Map);
+  context.scheduleOmegaMapLayerBatch(map, game.Map.__omegaDetachedLayers, 'attach', 4);
+  flushFrames();
+  assert.equal(map.attached.size, 40, 'stale detach batches must not remove layers after a newer map activation');
 });
 
 
