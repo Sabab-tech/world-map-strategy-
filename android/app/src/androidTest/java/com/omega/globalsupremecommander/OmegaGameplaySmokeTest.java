@@ -766,60 +766,50 @@ public final class OmegaGameplaySmokeTest {
             File screenshot
     ) throws Exception {
         final android.content.Context targetContext = instrumentation.getTargetContext();
-        final File externalDirectory = targetContext.getExternalFilesDir("omega-smoke");
-        assertNotNull("Android app-specific external files directory must be available",
-                externalDirectory);
-        assertTrue("Android app-specific screenshot directory must be created",
-                externalDirectory.isDirectory() || externalDirectory.mkdirs());
+        final File internalDirectory = screenshot.getParentFile();
+        assertNotNull("Android internal screenshot directory must be available", internalDirectory);
+        assertTrue("Android internal screenshot directory must exist", internalDirectory.isDirectory());
 
-        final File exportedScreenshot = new File(externalDirectory, screenshot.getName());
-        final File statusFile = new File(externalDirectory, screenshot.getName() + ".exit");
-        android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "STAGE=SCREENSHOT_APP_COPY_BEGIN source=" + screenshot.getAbsolutePath() +
-                        " destination=" + exportedScreenshot.getAbsolutePath() +
-                        " bytes=" + screenshot.length());
-        try (InputStream input = new FileInputStream(screenshot);
-             FileOutputStream output = new FileOutputStream(exportedScreenshot)) {
-            final byte[] buffer = new byte[8192];
-            int count;
-            while ((count = input.read(buffer)) != -1) {
-                output.write(buffer, 0, count);
-            }
-            output.flush();
-        }
-        assertTrue("Android app-specific screenshot copy must preserve the complete PNG",
-                exportedScreenshot.isFile() && exportedScreenshot.length() == screenshot.length());
+        // Keep the PNG and marker in app-private internal storage. Android 9's
+        // shell cannot reliably traverse app-specific external storage; run-as
+        // can read this internal path while the debug target package is installed.
+        final File statusFile = new File(internalDirectory, screenshot.getName() + ".exit");
         try (FileOutputStream status = new FileOutputStream(statusFile)) {
             status.write('0');
             status.flush();
         }
-        assertTrue("Android app-specific screenshot copy status must be available",
-                statusFile.isFile() && statusFile.length() > 0);
-        android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "STAGE=SCREENSHOT_APP_COPY_FINISHED destination=" +
-                        exportedScreenshot.getAbsolutePath() +
-                        " bytes=" + exportedScreenshot.length() +
-                        " status=" + statusFile.getAbsolutePath());
+        assertTrue("Android internal screenshot status marker must be available",
+                statusFile.isFile() && statusFile.length() == 1L);
 
-        // Android 9's adb shell cannot traverse /Android/data even though the app
-        // can read its own getExternalFilesDir(). While the debug target is still
-        // installed, run-as reads those two files and the shell redirects stdout
-        // into a shell-owned staging directory that the host can pull after Gradle.
         final String packageName = targetContext.getPackageName();
         final String hostDirectory = "/sdcard/omega-smoke";
         final String hostPng = hostDirectory + "/" + screenshot.getName();
         final String hostStatus = hostPng + ".exit";
+        final String pngError = hostPng + ".stderr";
+        final String statusError = hostStatus + ".stderr";
         final String shellCommand =
                 "mkdir -p " + shellQuote(hostDirectory) +
-                " && run-as " + shellQuote(packageName) +
-                " cat " + shellQuote(exportedScreenshot.getAbsolutePath()) +
+                "; mkdir_status=$?; " +
+                "if [ \\"$mkdir_status\\" -eq 0 ]; then " +
+                "run-as " + shellQuote(packageName) +
+                " cat " + shellQuote(screenshot.getAbsolutePath()) +
                 " > " + shellQuote(hostPng) +
-                " && run-as " + shellQuote(packageName) +
+                " 2> " + shellQuote(pngError) +
+                "; png_status=$?; " +
+                "run-as " + shellQuote(packageName) +
                 " cat " + shellQuote(statusFile.getAbsolutePath()) +
                 " > " + shellQuote(hostStatus) +
-                " && echo OMEGA_EXPORT_OK || echo OMEGA_EXPORT_FAILED";
+                " 2> " + shellQuote(statusError) +
+                "; status_status=$?; " +
+                "else png_status=99; status_status=99; fi; " +
+                "printf 'OMEGA_EXPORT_RESULT mkdir=%s png=%s status=%s\\n' " +
+                "\\"$mkdir_status\\" \\"$png_status\\" \\"$status_status\\"; " +
+                "for diagnostic in " + shellQuote(pngError) + " " + shellQuote(statusError) +
+                "; do if [ -s \\"$diagnostic\\" ]; then " +
+                "printf 'SHELL_DIAGNOSTIC_FILE=%s\\n' \\"$diagnostic\\"; " +
+                "cat \\"$diagnostic\\"; fi; done";
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "STAGE=SCREENSHOT_HOST_EXPORT_BEGIN command=run-as-copy");
+                "STAGE=SCREENSHOT_HOST_EXPORT_BEGIN source=app-internal-run-as");
         final String shellResult;
         try (ParcelFileDescriptor descriptor =
                      instrumentation.getUiAutomation().executeShellCommand(shellCommand);
@@ -832,8 +822,10 @@ public final class OmegaGameplaySmokeTest {
             }
             shellResult = new String(response.toByteArray(), StandardCharsets.UTF_8).trim();
         }
-        assertEquals("Instrumentation must stage both screenshots for host-side adb pull",
-                "OMEGA_EXPORT_OK", shellResult);
+        assertEquals(
+                "Host staging must report successful mkdir, internal PNG export and marker export; shell output=" +
+                        shellResult,
+                "OMEGA_EXPORT_RESULT mkdir=0 png=0 status=0", shellResult);
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
                 "STAGE=SCREENSHOT_HOST_EXPORT_FINISHED png=" + hostPng +
                         " status=" + hostStatus);
