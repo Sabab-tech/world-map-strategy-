@@ -742,7 +742,7 @@ public final class OmegaGameplaySmokeTest {
         assertTrue("Android screenshot width must be positive", bitmap.getWidth() > 0);
         assertTrue("Android screenshot height must be positive", bitmap.getHeight() > 0);
         final File directory = new File(instrumentation.getTargetContext().getFilesDir(), "omega-smoke");
-        assertNotNull("Android external files directory must be available for smoke screenshots", directory);
+        assertNotNull("Android internal files directory must be available for smoke screenshots", directory);
         assertTrue("Android screenshot directory must be creatable",
                 directory.isDirectory() || directory.mkdirs());
         final File output = new File(directory, fileName);
