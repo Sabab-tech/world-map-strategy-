@@ -141,17 +141,20 @@ test("newer commits supersede stale Android emulator smoke runs on the same ref"
 });
 
 test("Android 9 smoke exports and validates a real landscape PNG before app cleanup", () => {
-  assert.ok(androidSmokeInstrumentation.includes('getExternalFilesDir("omega-smoke")') &&
-    androidSmokeInstrumentation.includes("new File(externalDirectory, screenshot.getName())") &&
-    androidSmokeInstrumentation.includes("new File(externalDirectory, screenshot.getName() + \".exit\")") &&
-    androidSmokeInstrumentation.includes("new FileInputStream(screenshot)") &&
-    androidSmokeInstrumentation.includes("exportedScreenshot.length() == screenshot.length()") &&
+  assert.ok(androidSmokeInstrumentation.includes('getFilesDir(), "omega-smoke"') &&
+    androidSmokeInstrumentation.includes("new File(internalDirectory, screenshot.getName() + \".exit\")") &&
     androidSmokeInstrumentation.includes("getUiAutomation().executeShellCommand(shellCommand)") &&
     androidSmokeInstrumentation.includes('shellQuote(packageName)') &&
     androidSmokeInstrumentation.includes("run-as ") &&
-    androidSmokeInstrumentation.includes("OMEGA_EXPORT_OK") &&
-    androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_HOST_EXPORT_FINISHED"),
-    "instrumentation must copy the complete PNG into app-specific storage and stage it for the adb shell with run-as before app cleanup");
+    androidSmokeInstrumentation.includes("cat \" + shellQuote(screenshot.getAbsolutePath())") &&
+    androidSmokeInstrumentation.includes("mkdir_status=$?") &&
+    androidSmokeInstrumentation.includes("png_status=$?") &&
+    androidSmokeInstrumentation.includes("status_status=$?") &&
+    androidSmokeInstrumentation.includes("OMEGA_EXPORT_RESULT mkdir=%s png=%s status=%s") &&
+    androidSmokeInstrumentation.includes("SHELL_DIAGNOSTIC_FILE=%s") &&
+    androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_HOST_EXPORT_FINISHED") &&
+    !androidSmokeInstrumentation.includes('getExternalFilesDir("omega-smoke")'),
+    "instrumentation must stage the PNG directly from app-private internal storage and expose separate shell exit codes and stderr diagnostics before app cleanup");
   assert.ok(androidSmokeScript.includes('remote_screenshot_dir="/sdcard/omega-smoke"') &&
     androidSmokeScript.includes('adb shell mkdir -p "$remote_screenshot_dir"') &&
     androidSmokeScript.includes('adb pull "$remote_screenshot_dir" "$screenshot_dir"') &&
