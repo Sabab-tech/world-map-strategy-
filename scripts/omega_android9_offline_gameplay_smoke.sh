@@ -87,9 +87,8 @@ attempt=1
 max_attempts=3
 while [[ "$attempt" -le "$max_attempts" ]]; do
   log_file="$artifact_dir/gradle-attempt-$attempt.log"
-  # Create a shell-owned staging directory before instrumentation. The target app
-  # streams its private PNG into this directory through run-as; adb pulls it after
-  # the instrumentation package has been removed.
+  # Use shared emulator storage for the screenshot artifact. Instrumentation exports
+  # the PNG before cleanup; adb pulls it from this shell-owned staging directory.
   adb shell rm -rf /sdcard/omega-smoke >/dev/null 2>&1 || true
   if ! timeout 10s adb shell mkdir -p /sdcard/omega-smoke ||
       ! timeout 10s adb shell test -d /sdcard/omega-smoke; then
