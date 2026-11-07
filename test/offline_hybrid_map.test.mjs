@@ -142,27 +142,24 @@ test("newer commits supersede stale Android emulator smoke runs on the same ref"
 
 test("Android 9 smoke exports and validates a real landscape PNG before app cleanup", () => {
   assert.ok(androidSmokeInstrumentation.includes(
-    'new File(instrumentation.getTargetContext().getFilesDir(), "omega-smoke")'
-  ), "instrumentation must stage the screenshot in app-internal storage for reliable API 28 run-as access");
-  assert.ok(androidSmokeInstrumentation.includes("executeShellCommand") &&
-    androidSmokeInstrumentation.includes("run-as com.omega.globalsupremecommander cat") &&
-    androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_EXPORT_BEGIN") &&
-    androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_EXPORT_SHELL_FINISHED") &&
-    androidSmokeInstrumentation.includes("statusPath = destinationPath + \".exit\"") &&
-    androidSmokeInstrumentation.includes("do not depend on shell") &&
+    'getExternalFilesDir("omega-smoke")'
+  ) && androidSmokeInstrumentation.includes("new File(externalDirectory, screenshot.getName())") &&
+    androidSmokeInstrumentation.includes("new File(externalDirectory, screenshot.getName() + \".exit\")") &&
+    androidSmokeInstrumentation.includes("new FileInputStream(screenshot)") &&
+    androidSmokeInstrumentation.includes("exportedScreenshot.length() == screenshot.length()") &&
+    androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_EXTERNAL_COPY_FINISHED"),
+    "instrumentation must copy the complete captured PNG and a success marker into app-specific external storage using the target app identity");
+  assert.ok(androidSmokeScript.includes('remote_screenshot_dir="/sdcard/Android/data/com.omega.globalsupremecommander/files/omega-smoke"') &&
+    androidSmokeScript.includes('adb pull "$remote_screenshot_dir" "$screenshot_dir"') &&
     androidSmokeScript.includes('status_file="$local_screenshot.exit"') &&
     androidSmokeScript.includes('export_exit="$(tr -d \'[:space:]\' <"$status_file")"'),
-    "instrumentation must export the PNG without depending on UiAutomation stdout, and the host must validate its recorded shell exit status before accepting the artifact");
-  assert.ok(androidSmokeScript.includes('adb shell mkdir -p /sdcard/omega-smoke') &&
-    androidSmokeScript.includes('remote_screenshot_dir="/sdcard/omega-smoke"') &&
-    androidSmokeScript.includes('adb pull "$remote_screenshot_dir" "$screenshot_dir"'),
-    "the host must prepare and retrieve the exported screenshot from the shared emulator staging directory");
+    "the host must pull the app-specific external files directory and validate the Java copy marker before accepting the artifact");
   assert.ok(androidSmokeScript.includes('89504e470d0a1a0a') &&
     androidSmokeScript.includes('screenshot_bytes'),
     "the host must reject error text, truncated files, and non-PNG screenshot artifacts");
   const executableSmokeScript = androidSmokeScript.replace(/^\s*#.*$/gm, '');
-  assert.doesNotMatch(executableSmokeScript, /\brun-as\b/,
-    "screenshot retrieval must not depend on an app package that the Gradle task may uninstall");
+  assert.doesNotMatch(executableSmokeScript, /\b(?:run-as|executeShellCommand)\b/,
+    "screenshot retrieval must not depend on UiAutomation shell execution or a package that the Gradle task may uninstall");
   assert.ok(androidSmokeInstrumentation.includes("inputTabClickDeadline") &&
     androidSmokeInstrumentation.includes("inputTabClicked") &&
     androidSmokeInstrumentation.includes("inputTabClickDiagnostic"),
