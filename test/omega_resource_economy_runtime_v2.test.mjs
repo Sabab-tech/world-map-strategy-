@@ -276,7 +276,7 @@ test('private-company settlement fiscalization does not credit seller revenue or
   const send=()=>context.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{
     detail:{payload:{
       settlementId,sellerCountryId:'BGD',resourceId:'iron_ore',totalValue:200,quantity:20,
-      buyerCompanyId,buyerCompanyId:buyerCompany,sellerCompanyId:sellerCompany,privateCompanyPurchase:true,
+      buyerCompanyId:buyerCompany,sellerCompanyId:sellerCompany,privateCompanyPurchase:true,
       sourceBatchIds:['PRIVATE-EXPORT-BATCH'],
       batchTransfers:[{sourceBatchId:'PRIVATE-EXPORT-BATCH',sourceBatchIds:['PRIVATE-EXPORT-BATCH'],
         ownerCompanyId:sellerCompany,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
@@ -284,18 +284,20 @@ test('private-company settlement fiscalization does not credit seller revenue or
     }}
   }));
   send();
-  assert.equal(account.grossRevenue,revenueBefore,'private import completion already credited seller revenue');
-  assert.equal(account.paymentsReceived,receivedBefore,'fiscalization must not post a second seller receipt');
+  const afterFirst=worldState.economy.BGD.companyAccounts[sellerCompany];
+  assert.equal(afterFirst.grossRevenue,revenueBefore,'private import completion already credited seller revenue');
+  assert.equal(afterFirst.paymentsReceived,receivedBefore,'fiscalization must not post a second seller receipt');
   assert.equal(worldState.finance.BGD.available,treasuryBefore,'private company cash is not cleared through public Treasury');
   assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,0,'private seller proceeds must not be Treasury-cleared');
-  const firstEntries=JSON.stringify(account.cashFlowEntries);
+  const firstEntries=JSON.stringify(afterFirst.cashFlowEntries);
   const commandTypes=[...commands.values()].map(row=>JSON.parse(row.fingerprint).type);
   assert.equal(commandTypes.includes('OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY'),false);
   delete context.__OmegaResourceFiscalizedSettlements[settlementId];
   send();
-  assert.equal(account.grossRevenue,revenueBefore,'replayed private settlement must not double-credit revenue');
-  assert.equal(account.paymentsReceived,receivedBefore,'replayed private settlement must not double-credit cash receipts');
-  assert.equal(JSON.stringify(account.cashFlowEntries),firstEntries,'replayed private settlement must not duplicate operating costs');
+  const afterReplay=worldState.economy.BGD.companyAccounts[sellerCompany];
+  assert.equal(afterReplay.grossRevenue,revenueBefore,'replayed private settlement must not double-credit revenue');
+  assert.equal(afterReplay.paymentsReceived,receivedBefore,'replayed private settlement must not double-credit cash receipts');
+  assert.equal(JSON.stringify(afterReplay.cashFlowEntries),firstEntries,'replayed private settlement must not duplicate operating costs');
 });
 test('finished-goods material ownership follows explicit owner, never operator or legacy companyId',async()=>{
   const {context,worldState}=createContext();
