@@ -2649,6 +2649,23 @@ test('cabinet exit updates the world-map layer immediately and cancels stale cle
     flushFrames();
     assert.equal(closeCount, 0, 'stale teardown must never close the newly opened cabinet');
     assert.equal(worldMapActive, true);
+
+    const suspended = globalThis.OmegaUIV2App.suspend(root);
+    assert.equal(suspended, true);
+    assert.equal(root.__omegaUIV2State.route, 'map');
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'map');
+    assert.equal(main.innerHTML, '', 'suspension releases the screen DOM but retains the outer shell');
+    assert.equal(root.__omegaUIV2State.shellMounted, true);
+
+    const resumed = globalThis.OmegaUIV2App.resume(root, options);
+    assert.equal(resumed.ok, true);
+    assert.equal(resumed.resumed, true);
+    assert.equal(resumed.route, 'government');
+    assert.match(main.innerHTML, /Preparing this section/);
+    assert.equal(frames.size, 1, 'resume renders the destination after yielding to the WebView');
+    flushFrames();
+    assert.match(main.innerHTML, /Government screen/);
+    assert.equal(root.getAttribute('data-omega-v2-navigation-pending'), null);
   } finally {
     if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
     if (previous.diagnostics === undefined) delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS; else globalThis.__OMEGA_UI_V2_DIAGNOSTICS = previous.diagnostics;
