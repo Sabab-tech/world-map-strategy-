@@ -2583,6 +2583,112 @@
     }).join('');
   }
 
+  function privateMarketConcentrationMarkup(country){
+    var cid=canonicalCountry(country),trade=countryBucket('trade',cid,false)||{},
+      sales=Array.isArray(trade.domesticSales)?trade.domesticSales:[],seen=Object.create(null);
+    var resourceIds=[];
+    sales.forEach(function(wrapper){
+      var sale=wrapper&&wrapper.sale&&typeof wrapper.sale==='object'?wrapper.sale:wrapper;
+      if(!sale||String(sale.status||'').toUpperCase()!=='SETTLED'||
+         String(sale.paymentStatus||'').toUpperCase()!=='SETTLED'||
+         String(sale.ownerAllocationStatus||'').toUpperCase()!=='RECONCILED')return;
+      var resourceId=String(sale.resourceId||'').trim();
+      if(resourceId&&!seen[resourceId]){seen[resourceId]=true;resourceIds.push(resourceId);}
+    });
+    var summaries=resourceIds.map(function(resourceId){
+      return getPrivateMarketConcentration({countryId:cid,resourceId:resourceId,lookbackTurns:365});
+    }).filter(function(row){return row&&row.status==='AVAILABLE';})
+      .sort(function(a,b){return (num(b.totalAttributedSettledMarketValue)||0)-(num(a.totalAttributedSettledMarketValue)||0);})
+      .slice(0,12);
+    if(!summaries.length)return'<div class="pe-empty">No verified, settled private-company sales are recorded for this country in the current market ledger.</div>';
+    function pct(value){return value===null||value===undefined?'Not available':Number(value).toFixed(2)+'%';}
+    function amount(value){return value===null||value===undefined?'Not available':Number(value).toLocaleString('en-US',{maximumFractionDigits:2});}
+    return summaries.map(function(row){
+      var leaders=row.firms.filter(function(firm){return (num(firm.settledSalesValue)||0)>0;})
+        .map(function(firm){return'<div class="pe-input-row"><span><b>'+escapeHtml(firm.companyName)+'</b></span>'+
+          '<span>Private-sector share<br><b>'+pct(firm.privateSectorSharePct)+'</b></span>'+
+          '<span>Total-market share<br><b>'+pct(firm.totalAttributedMarketSharePct)+'</b></span>'+
+          '<span>Settled sales<br><b>'+amount(firm.settledSalesValue)+'</b></span></div>';}).join('');
+      return'<article class="pe-proposal"><header><strong>'+escapeHtml(row.resourceId)+'</strong><span>'+escapeHtml(row.concentration)+' concentration</span></header>'+
+        '<div class="pe-facts"><span>Private-sector share of attributed sales <b>'+pct(row.privateSectorMarketSharePct)+'</b></span>'+
+        '<span>Private-company HHI <b>'+amount(row.privateCompanyHhi)+'</b></span>'+
+        '<span>Verified settled sales <b>'+Number(row.verifiedSettledSaleCount||0).toLocaleString('en-US')+'</b></span>'+
+        '<span>Total attributed market value <b>'+amount(row.totalAttributedSettledMarketValue)+'</b></span>'+
+        '<span>Private export receipts <b>'+amount(row.privateCompanyExportReceiptsValue)+'</b></span>'+
+        '<span>Export concentration / HHI <b>'+escapeHtml(row.privateExportConcentration)+' / '+amount(row.privateCompanyExportHhi)+'</b></span></div>'+
+        (leaders?'<div class="pe-input-forecast"><strong>Company market positions</strong>'+leaders+'</div>':'<p class="pe-empty">No attributable private-company sales for this resource.</p>')+
+        '<small class="pe-footnote">Only paid, settled and owner-attributed sales are included. Quotes, unsold inventory and production capacity are excluded. Export receipts are shown separately. HHI bands are game indicators, not legal competition findings.</small></article>';
+    }).join('');
+  }
+
+  function privateCompanyGovernanceMarkup(country){
+    var cid=canonicalCountry(country),r=runtime(cid,false)||{},statuses=r.companyStatuses||{},
+      econ=countryBucket('economy',cid,false)||{},assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[],
+      insolvencies=Array.isArray(r.insolvencyCases)?r.insolvencyCases:[],
+      restructurings=Array.isArray(r.restructuringCases)?r.restructuringCases:[];
+    function amount(value,currency){return value===null||value===undefined?'Not recorded':Number(value).toLocaleString('en-US',{maximumFractionDigits:2})+' '+(currency||'GAME_CURRENCY_UNITS');}
+    var companies=COMPANY_IDS.map(function(companyId){
+      var solvency=evaluateCompanySolvency(cid,companyId),companyStatus=String(statuses[companyId]||'ACTIVE').toUpperCase(),
+        currency=solvency.currency||'GAME_CURRENCY_UNITS',
+        companyAssets=assets.filter(function(asset){
+          if(!asset||['CLOSED','DESTROYED','DECOMMISSIONED'].includes(String(asset.status||'').toUpperCase()))return false;
+          return id(asset.ownerCompanyId||asset.ownerId)===companyId||
+            id(asset.operatorCompanyId||asset.operatorId||asset.companyId)===companyId;
+        });
+      var factoryOptions=companyAssets.map(function(asset){
+        var factoryId=String(asset.id||asset.factoryId||'');
+        return factoryId?'<option value="'+escapeHtml(factoryId)+'">'+escapeHtml(factoryId)+' · '+escapeHtml(asset.factoryType||asset.name||'Factory')+'</option>':'';
+      }).join('');
+      var insolvencyForm=solvency.status==='INSOLVENT'&&companyStatus!=='CLOSED'
+        ?'<form class="pe-form" data-pe-insolvency-form data-pe-company="'+companyId+'">'+
+          '<label>Insolvency case reference<input name="requestId" maxlength="100" required></label>'+
+          '<label>Recorded reason<textarea name="reason" minlength="12" maxlength="1000" required placeholder="Explain the verified cash shortfall and unpaid obligations."></textarea></label>'+
+          '<button type="submit">Open insolvency case</button></form>':'';
+      var canRestructure=['INSOLVENT','AT_RISK'].includes(solvency.status)&&
+        !['RESTRUCTURING','CLOSED'].includes(companyStatus)&&companyAssets.length>0;
+      var restructureForm=canRestructure
+        ?'<form class="pe-form" data-pe-restructure-form data-pe-company="'+companyId+'">'+
+          '<label>Restructuring reference<input name="requestId" maxlength="100" required></label>'+
+          '<label>Factory to suspend<select name="factoryId" required>'+factoryOptions+'</select></label>'+
+          '<label>Restructuring reason<textarea name="reason" minlength="12" maxlength="1000" required placeholder="Explain how suspending this loss-making line protects liquidity and creditors."></textarea></label>'+
+          '<button type="submit">Propose restructuring plan</button></form>':'';
+      var closureForm=['INSOLVENT','RESTRUCTURING'].includes(companyStatus)
+        ?'<form class="pe-form" data-pe-closure-form data-pe-company="'+companyId+'">'+
+          '<label>Closure reference<input name="requestId" maxlength="100" required></label>'+
+          '<label>Closure reason<textarea name="reason" minlength="12" maxlength="1000" required placeholder="Explain why the company cannot continue or recover."></textarea></label>'+
+          '<button type="submit">Close company and preserve asset history</button></form>':'';
+      return'<article class="pe-proposal"><header><strong>'+escapeHtml(COMPANY_NAMES[companyId]||companyId)+'</strong><span>'+escapeHtml(companyStatus)+' · '+escapeHtml(solvency.status)+'</span></header>'+
+        '<div class="pe-facts"><span>Available company cash <b>'+amount(solvency.availableCash,currency)+'</b></span>'+
+        '<span>Recorded current liabilities <b>'+amount(solvency.totalRecordedCurrentLiabilities,currency)+'</b></span>'+
+        '<span>Accrued operating payables <b>'+amount(solvency.accruedOperatingPayables,currency)+'</b></span>'+
+        '<span>Recorded debt outstanding <b>'+amount(solvency.recordedDebtOutstanding,currency)+'</b></span>'+
+        '<span>Retained earnings <b>'+amount(solvency.retainedEarnings,currency)+'</b></span>'+
+        '<span>Liquidity surplus <b>'+amount(solvency.liquiditySurplus,currency)+'</b></span></div>'+
+        '<small class="pe-footnote">'+escapeHtml(solvency.reason||'Solvency evidence unavailable')+'. '+escapeHtml(solvency.limitation||'')+'</small>'+
+        insolvencyForm+restructureForm+closureForm+'</article>';
+    }).join('');
+    var caseMarkup=restructurings.slice().reverse().slice(0,24).map(function(row){
+      var actions='';
+      if(row.status==='PROPOSED')actions='<button type="button" data-pe-action="restructure-approve" data-pe-company="'+escapeHtml(row.companyId)+'" data-pe-case="'+escapeHtml(row.caseId)+'">Approve plan</button>'+
+        '<button type="button" data-pe-action="restructure-defer" data-pe-company="'+escapeHtml(row.companyId)+'" data-pe-case="'+escapeHtml(row.caseId)+'">Defer</button>'+
+        '<button type="button" data-pe-action="restructure-deny" data-pe-company="'+escapeHtml(row.companyId)+'" data-pe-case="'+escapeHtml(row.caseId)+'">Reject</button>';
+      else if(row.status==='APPROVED')actions='<button type="button" data-pe-action="restructure-apply" data-pe-company="'+escapeHtml(row.companyId)+'" data-pe-case="'+escapeHtml(row.caseId)+'">Apply approved plan</button>';
+      return'<article class="pe-proposal"><header><strong>'+escapeHtml(row.companyId)+' · '+escapeHtml(row.caseId)+'</strong><span>'+escapeHtml(row.status)+'</span></header>'+
+        '<p>'+escapeHtml(row.reason||'No reason recorded')+'</p><div class="pe-actions">'+actions+'</div>'+
+        (row.failedActions&&row.failedActions.length?'<small class="pe-warning">Failed actions: '+escapeHtml(row.failedActions.map(function(x){return x.reason||x.type;}).join(', '))+'</small>':'')+
+        '</article>';
+    }).join('');
+    var insolvencyHistory=insolvencies.slice().reverse().slice(0,12).map(function(row){
+      return'<span class="pe-info">'+escapeHtml(row.companyId)+' · '+escapeHtml(row.status)+' · '+escapeHtml(row.reason)+'</span>';
+    }).join('');
+    return'<div class="pe-proposals"><h4>Company solvency and current liabilities</h4>'+companies+'</div>'+
+      '<div class="pe-proposals"><h4>Government restructuring decisions</h4>'+
+      (caseMarkup||'<div class="pe-empty">No restructuring proposals are recorded.</div>')+'</div>'+
+      '<div class="pe-proposals"><h4>Insolvency case history</h4>'+
+      (insolvencyHistory||'<div class="pe-empty">No insolvency cases are recorded.</div>')+'</div>'+
+      '<p class="pe-footnote">Insolvency is assessed only from recorded company cash and priced current liabilities. Unknown balances or unpriced costs remain unresolved. Closing a company stops its private assets and cancels open private trade requests without deleting the historical asset records or creditor balances.</p>';
+  }
+
   function renderPanel(root,options){
     if(!root||!root.querySelector)return;
     ensureStyles();
@@ -2595,6 +2701,10 @@
     var previousPanel=shell.querySelector('[data-omega-private-company-lifecycle]');
     var financeWasOpen=!!(previousPanel&&previousPanel.querySelector('[data-pe-finance-details]')&&
       previousPanel.querySelector('[data-pe-finance-details]').open);
+    var marketWasOpen=!!(previousPanel&&previousPanel.querySelector('[data-pe-market-details]')&&
+      previousPanel.querySelector('[data-pe-market-details]').open);
+    var oversightWasOpen=!!(previousPanel&&previousPanel.querySelector('[data-pe-oversight-details]')&&
+      previousPanel.querySelector('[data-pe-oversight-details]').open);
     if(previousPanel&&previousPanel.remove)previousPanel.remove();
     var registry=g.OmegaPrivateEnterpriseRegistryV1||(g.Omega&&g.Omega.PrivateEnterpriseRegistryV1);
     var baselineRow=baseline(country);
@@ -2792,6 +2902,8 @@
       '<label>Exact factory IDs (comma separated, optional)<input name="factoryIds" type="text" maxlength="1200"></label>'+
       '<label>Unique charter reference<input name="requestId" type="text" maxlength="100" required></label>'+
       '<button type="submit">Submit JV charter for government approval</button></form>'+jvCards+'</section>'+
+      '<details class="pe-proposals" data-pe-market-details '+(marketWasOpen?'open':'')+'><summary><strong>Private market share / concentration</strong></summary><p class="pe-footnote">Lazy-loaded from verified settled sales and separately verified export receipts. Unsold stock and quotes are not market share.</p><div data-pe-market-host data-loaded="false"><p class="pe-empty">Open this section to calculate observed private-sector market positions.</p></div></details>'+
+      '<details class="pe-proposals" data-pe-oversight-details '+(oversightWasOpen?'open':'')+'><summary><strong>Company solvency / insolvency / restructuring / closure</strong></summary><div data-pe-oversight-host data-loaded="false"><p class="pe-empty">Open this section to inspect recorded liabilities and government company-resolution actions.</p></div></details>'+
       '<p class="pe-footnote">JV assets retain their canonical owner/operator and state-control fields. Shareholder voting changes only corporate decisions. Dividends require post-tax retained earnings contributed to the JV and an approved weighted vote. The state keeps strategic oversight and permits. Private factory operation remains blocked until SAB-34 proof is verified.</p>'+
       '<p class="pe-footnote">Approval creates no stock reservation or import. Domestic inputs are checked against observed uncommitted inventory; company-funded imports require the existing paid Trade dispatch and confirmed warehouse receipt. Opening allocations are not operating factories. Construction uses the existing industrial project registry and bill of materials. Completed private factories remain production-blocked until the SAB-34 live supply-chain and save/load proof is verified.</p></section>';
     var old=shell.querySelector('[data-omega-private-company-lifecycle]');
@@ -2801,6 +2913,19 @@
     // Finance statements scan company cash-flow entries, accrued operating-cost
     // records and the shared Finance ledger. They are not part of the visible
     // proposal queue, so defer that work until the user opens Corporate Finance.
+    function attachLazyDetails(detailsSelector,hostSelector,render){
+      var details=shell.querySelector(detailsSelector),host=details&&details.querySelector(hostSelector);
+      if(!details||!host||typeof details.addEventListener!=='function')return;
+      var load=function(){
+        if(!details.open||host.getAttribute('data-loaded')==='true')return;
+        host.innerHTML=render();
+        host.setAttribute('data-loaded','true');
+      };
+      details.addEventListener('toggle',load);
+      if(details.open)load();
+    }
+    attachLazyDetails('[data-pe-market-details]','[data-pe-market-host]',function(){return privateMarketConcentrationMarkup(country);});
+    attachLazyDetails('[data-pe-oversight-details]','[data-pe-oversight-host]',function(){return privateCompanyGovernanceMarkup(country);});
     var financeDetails=shell.querySelector('[data-pe-finance-details]');
     if(financeDetails&&typeof financeDetails.addEventListener==='function'){
       var financeHost=financeDetails.querySelector('[data-pe-finance-card-host]');
@@ -2861,6 +2986,37 @@
           ?'Country operating cost policy saved. Unpriced historical costs remain flagged; new matching factory events use this policy.'
           :costPolicyResult.status==='DUPLICATE'?'This operating cost policy is already active.':
           'Operating cost policy blocked: '+String(costPolicyResult.reason||costPolicyResult.status).replace(/_/g,' ').toLowerCase()+'.';
+        refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
+      }
+      if(form.matches('[data-pe-insolvency-form]')){
+        if(event.preventDefault)event.preventDefault();
+        var insolvencyData=new FormData(form),insolvencyResult=openCompanyInsolvencyCase({
+          countryId:root.__omegaV2IndustryCountryId||playerCountry(),companyId:form.getAttribute('data-pe-company'),
+          requestId:insolvencyData.get('requestId'),reason:insolvencyData.get('reason')});
+        root.__omegaPrivateEnterpriseMessage=insolvencyResult.status==='OPEN'||insolvencyResult.status==='DUPLICATE'
+          ?'Insolvency case recorded: '+insolvencyResult.status+'.'
+          :'Insolvency case blocked: '+String(insolvencyResult.reason||insolvencyResult.status).replace(/_/g,' ').toLowerCase()+'.';
+        refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
+      }
+      if(form.matches('[data-pe-restructure-form]')){
+        if(event.preventDefault)event.preventDefault();
+        var restructureData=new FormData(form),restructureResult=proposeCompanyRestructuring({
+          countryId:root.__omegaV2IndustryCountryId||playerCountry(),companyId:form.getAttribute('data-pe-company'),
+          requestId:restructureData.get('requestId'),reason:restructureData.get('reason'),
+          actions:[{type:'SUSPEND_FACTORY',factoryId:restructureData.get('factoryId')}]});
+        root.__omegaPrivateEnterpriseMessage=restructureResult.status==='PROPOSED'||restructureResult.status==='DUPLICATE'
+          ?'Restructuring plan submitted for government approval.'
+          :'Restructuring proposal blocked: '+String(restructureResult.reason||restructureResult.status).replace(/_/g,' ').toLowerCase()+'.';
+        refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
+      }
+      if(form.matches('[data-pe-closure-form]')){
+        if(event.preventDefault)event.preventDefault();
+        var closureData=new FormData(form),closureResult=closePrivateCompany({
+          countryId:root.__omegaV2IndustryCountryId||playerCountry(),companyId:form.getAttribute('data-pe-company'),
+          requestId:closureData.get('requestId'),reason:closureData.get('reason')});
+        root.__omegaPrivateEnterpriseMessage=closureResult.status==='CLOSED'||closureResult.status==='DUPLICATE'
+          ?'Company closure recorded. Factory history and unpaid creditor balances are preserved.'
+          :'Company closure blocked: '+String(closureResult.reason||closureResult.status).replace(/_/g,' ').toLowerCase()+'.';
         refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
       }
       if(form.matches('[data-pe-jv-form]')){
@@ -2929,6 +3085,14 @@
       var result;
       if(action==='close-finance'){
         result=closeCompanyFinancialPeriod({countryId:country,companyId:button.getAttribute('data-pe-company')});
+      }else if(action==='restructure-approve'||action==='restructure-deny'||action==='restructure-defer'){
+        result=decideCompanyRestructuring({countryId:country,companyId:button.getAttribute('data-pe-company'),
+          caseId:button.getAttribute('data-pe-case'),
+          decision:action==='restructure-approve'?'APPROVE':action==='restructure-deny'?'DENY':'DEFER',
+          governmentReason:'Player-government decision recorded in the Production Lines company oversight panel.'});
+      }else if(action==='restructure-apply'){
+        result=applyCompanyRestructuring({countryId:country,companyId:button.getAttribute('data-pe-company'),
+          caseId:button.getAttribute('data-pe-case')});
       }else if(action==='jv-approve'||action==='jv-deny'){
         result=decideJointVenture({countryId:country,jointVentureId:button.getAttribute('data-pe-jv'),decision:action==='jv-approve'?'APPROVE':'DENY'});
       }else if(action==='jv-vote-for'||action==='jv-vote-against'){
