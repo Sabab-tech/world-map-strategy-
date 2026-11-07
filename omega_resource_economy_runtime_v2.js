@@ -674,6 +674,10 @@
 
   function settleDomestic(c,rid,q,consumed,buyer,facility,tx){
     var pm=read(c,'trade.marketPrice')||{},price=num(pm[rid]);
+    if(price===null){
+      var priceKey=Object.keys(pm).find(function(key){return tok(key)===tok(rid);});
+      if(priceKey!==undefined)price=num(pm[priceKey]);
+    }
     if(price===null&&g.OmegaGlobalMarket&&typeof g.OmegaGlobalMarket.localPrice==='function'){try{price=num(g.OmegaGlobalMarket.localPrice(c,rid));}catch(_){}}
     var consumedRows=(Array.isArray(consumed)?consumed:[]).filter(function(x){return x&&num(x.quantity)>0;});
     var suppliers={},unattributedQuantity=0,attributedQuantity=0;
