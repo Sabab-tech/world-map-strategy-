@@ -6,9 +6,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,10 +19,12 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -765,27 +766,16 @@ public final class OmegaGameplaySmokeTest {
             File screenshot
     ) throws Exception {
         final android.content.Context targetContext = instrumentation.getTargetContext();
-        final String writePermission = android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
-        if (targetContext.checkSelfPermission(writePermission) != PackageManager.PERMISSION_GRANTED) {
-            // API 28 protects shared external storage with a dangerous runtime permission.
-            // Grant it to the debug app from the instrumentation shell identity so the
-            // screenshot can be written outside Android/data and pulled by host-side adb.
-            instrumentation.getUiAutomation().grantRuntimePermission(
-                    targetContext.getPackageName(), writePermission);
-        }
-        assertEquals("Android 9 smoke app must hold shared-storage write permission",
-                PackageManager.PERMISSION_GRANTED, targetContext.checkSelfPermission(writePermission));
-
-        final File externalRoot = Environment.getExternalStorageDirectory();
-        assertNotNull("Shared external storage root must be available", externalRoot);
-        final File externalDirectory = new File(externalRoot, "omega-smoke");
-        assertTrue("Shared screenshot directory must be creatable",
+        final File externalDirectory = targetContext.getExternalFilesDir("omega-smoke");
+        assertNotNull("Android app-specific external files directory must be available",
+                externalDirectory);
+        assertTrue("Android app-specific screenshot directory must be created",
                 externalDirectory.isDirectory() || externalDirectory.mkdirs());
 
         final File exportedScreenshot = new File(externalDirectory, screenshot.getName());
         final File statusFile = new File(externalDirectory, screenshot.getName() + ".exit");
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "STAGE=SCREENSHOT_SHARED_COPY_BEGIN source=" + screenshot.getAbsolutePath() +
+                "STAGE=SCREENSHOT_APP_COPY_BEGIN source=" + screenshot.getAbsolutePath() +
                         " destination=" + exportedScreenshot.getAbsolutePath() +
                         " bytes=" + screenshot.length());
         try (InputStream input = new FileInputStream(screenshot);
@@ -797,19 +787,60 @@ public final class OmegaGameplaySmokeTest {
             }
             output.flush();
         }
-        assertTrue("Shared screenshot copy must preserve the complete PNG",
+        assertTrue("Android app-specific screenshot copy must preserve the complete PNG",
                 exportedScreenshot.isFile() && exportedScreenshot.length() == screenshot.length());
         try (FileOutputStream status = new FileOutputStream(statusFile)) {
             status.write('0');
             status.flush();
         }
-        assertTrue("Shared screenshot copy status must be available to the host",
+        assertTrue("Android app-specific screenshot copy status must be available",
                 statusFile.isFile() && statusFile.length() > 0);
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "STAGE=SCREENSHOT_SHARED_COPY_FINISHED destination=" +
+                "STAGE=SCREENSHOT_APP_COPY_FINISHED destination=" +
                         exportedScreenshot.getAbsolutePath() +
                         " bytes=" + exportedScreenshot.length() +
                         " status=" + statusFile.getAbsolutePath());
+
+        // Android 9's adb shell cannot traverse /Android/data even though the app
+        // can read its own getExternalFilesDir(). While the debug target is still
+        // installed, run-as reads those two files and the shell redirects stdout
+        // into a shell-owned staging directory that the host can pull after Gradle.
+        final String packageName = targetContext.getPackageName();
+        final String hostDirectory = "/sdcard/omega-smoke";
+        final String hostPng = hostDirectory + "/" + screenshot.getName();
+        final String hostStatus = hostPng + ".exit";
+        final String shellCommand =
+                "mkdir -p " + shellQuote(hostDirectory) +
+                " && run-as " + shellQuote(packageName) +
+                " cat " + shellQuote(exportedScreenshot.getAbsolutePath()) +
+                " > " + shellQuote(hostPng) +
+                " && run-as " + shellQuote(packageName) +
+                " cat " + shellQuote(statusFile.getAbsolutePath()) +
+                " > " + shellQuote(hostStatus) +
+                " && echo OMEGA_EXPORT_OK || echo OMEGA_EXPORT_FAILED";
+        android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                "STAGE=SCREENSHOT_HOST_EXPORT_BEGIN command=run-as-copy");
+        final String shellResult;
+        try (ParcelFileDescriptor descriptor =
+                     instrumentation.getUiAutomation().executeShellCommand(shellCommand);
+             InputStream shellOutput = new ParcelFileDescriptor.AutoCloseInputStream(descriptor);
+             ByteArrayOutputStream response = new ByteArrayOutputStream()) {
+            final byte[] buffer = new byte[1024];
+            int count;
+            while ((count = shellOutput.read(buffer)) != -1) {
+                response.write(buffer, 0, count);
+            }
+            shellResult = new String(response.toByteArray(), StandardCharsets.UTF_8).trim();
+        }
+        assertEquals("Instrumentation must stage both screenshots for host-side adb pull",
+                "OMEGA_EXPORT_OK", shellResult);
+        android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                "STAGE=SCREENSHOT_HOST_EXPORT_FINISHED png=" + hostPng +
+                        " status=" + hostStatus);
+    }
+
+    private static String shellQuote(String value) {
+        return "'" + value.replace("'", "'\\''") + "'";
     }
 
     private static String evaluate(
