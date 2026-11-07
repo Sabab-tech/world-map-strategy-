@@ -111,12 +111,24 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
     fi
     for screenshot in factory-input-landscape.png; do
       local_screenshot="$screenshot_dir/omega-smoke/$screenshot"
+      status_file="$local_screenshot.exit"
+      if [[ ! -s "$status_file" ]]; then
+        echo "ERROR: Android screenshot export status is missing: $status_file" >&2
+        find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
+        exit 1
+      fi
+      export_exit="$(tr -d '[:space:]' <"$status_file")"
+      if [[ "$export_exit" != "0" ]]; then
+        echo "ERROR: Android shell could not export the screenshot (exit=$export_exit)" >&2
+        exit 1
+      fi
       if [[ ! -s "$local_screenshot" ]]; then
         echo "ERROR: Required Android Input UI screenshot is missing: $local_screenshot" >&2
         find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
         exit 1
       fi
       screenshot_bytes="$(wc -c <"$local_screenshot" | tr -d '[:space:]')"
+      rm -f "$status_file"
       if [[ "$screenshot_bytes" -le 2048 ]]; then
         echo "ERROR: Android Input UI screenshot is too small to be a real capture: ${screenshot_bytes} bytes" >&2
         exit 1
