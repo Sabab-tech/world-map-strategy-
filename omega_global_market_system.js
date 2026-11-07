@@ -226,14 +226,15 @@
     }
     return out.sort((a,b)=>a.countryId.localeCompare(b.countryId));
   }
-  function privateCompanySuppliers(rid,quantity=0,buyer=null,sellerCompanyId=null){
-    const target=canonical(buyer),requested=Math.max(0,n(quantity)||0),companyFilter=String(sellerCompanyId||'').trim().toUpperCase(),
+  function privateCompanySuppliers(rid,quantity=0,buyer=null,sellerCompanyId=null,sellerCountryId=null){
+    const target=canonical(buyer),requestedSeller=sellerCountryId?canonical(sellerCountryId):null,
+      requested=Math.max(0,n(quantity)||0),companyFilter=String(sellerCompanyId||'').trim().toUpperCase(),
       lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1,
       companyIds=Array.isArray(lifecycle?.companyIds)?lifecycle.companyIds.map(x=>String(x).toUpperCase()):[],
       companyNames=lifecycle?.companyNames||{},out=[];
     if(!companyIds.length)return out;
     for(const c of countries()){
-      if(c===target)continue;
+      if(c===target||(requestedSeller&&c!==requestedSeller))continue;
       const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
       const embargo=target?strategicPolicy?.isResourceEmbargoed?.(target,c,rid):null;
       if(embargo?.blocked)continue;
