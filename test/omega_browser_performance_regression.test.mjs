@@ -271,7 +271,7 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   assert.match(renderer, /renderDuration >= 80/);
   assert.match(renderer, /Slow country feature render:/,
     'slow individual country geometry additions must identify the affected feature and render time');
-  assert.match(source, /World geometry load failed: ' \\+ errorName/,
+  assert.match(source, /World geometry load failed: ' \+ errorName/,
     'world geometry failures must preserve their error name and message in Android WebView console diagnostics');
   assert.match(source, /leafletReady=.+mapReady=/,
     'world geometry failures must capture whether the Leaflet and map surfaces were initialized');
