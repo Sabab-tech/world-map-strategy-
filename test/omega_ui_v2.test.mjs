@@ -3778,3 +3778,47 @@ test('Production Lines joins exact selected-country cycles and committed logisti
     for(const key of keys){if(previous[key]===undefined)delete globalThis[key];else globalThis[key]=previous[key];}
   }
 });
+
+
+test('factory Input tab avoids loading the canonical mine-site and mine-asset registries',()=>{
+  const keys=['Game','OmegaResourceIndustrialCatalogData','OmegaCountryInventoryRuntime',
+    'OmegaCountryFactoryStartingBaselineV1','OmegaPrivateEnterpriseRegistryV1',
+    'OmegaResourceSiteCanonicalCatalogData','OmegaIndividualResourceSiteBinding',
+    'OmegaResourceSiteCanonicalCatalogData'];
+  const previous=Object.fromEntries(keys.map(key=>[key,globalThis[key]]));
+  let inventoryReads=0;
+  const resource={industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{}},batches:[]};
+  Object.defineProperty(resource,'mineAssets',{configurable:true,get(){throw new Error('Input tab must not read mineAssets');}});
+  Object.defineProperty(resource,'mineSiteReferences',{configurable:true,get(){throw new Error('Input tab must not read mineSiteReferences');}});
+  globalThis.Game={state:{
+    simulation:{session:{playerCountryId:'BGD'},turn:4,daysPerTurn:1},
+    resource:{BGD:resource},
+    economy:{BGD:{productionAssets:[{
+      id:'INPUT-FAST-FACTORY',factoryType:'STEEL_MILL',status:'OPERATIONAL',
+      inputCoefficients:{iron_ore:0.5},inputInventory:{iron_ore:20},
+      inputBatchLots:[{batchId:'IRON-LOT-1',resourceId:'iron_ore',quantity:20,remainingQuantity:20}]
+    }]}}
+  }};
+  globalThis.OmegaResourceIndustrialCatalogData={
+    factoryProfiles:{STEEL_MILL:{name:'Steel Mill',defaultCapacityPerDay:12}},
+    processingRules:{},downstreamFactoryRecipes:{}
+  };
+  globalThis.OmegaCountryInventoryRuntime={
+    getInventory(){inventoryReads++;return{status:'READY',items:[]};},
+    getResourceCatalog(){inventoryReads++;return[];}
+  };
+  try{
+    const model=globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD',tab:'inventory'});
+    assert.equal(model.factoryCount,1);
+    assert.equal(model.factories.length,1);
+    assert.equal(model.factories[0].id,'INPUT-FAST-FACTORY');
+    assert.deepEqual(model.mineSites,[]);
+    assert.equal(model.registeredMineSiteCount,0);
+    assert.equal(inventoryReads,2,'the Input tab may read its inventory view, but not mine-site history');
+  }finally{
+    for(const key of keys){
+      if(previous[key]===undefined)delete globalThis[key];
+      else globalThis[key]=previous[key];
+    }
+  }
+});
