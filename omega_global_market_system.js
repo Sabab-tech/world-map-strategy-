@@ -285,9 +285,29 @@
       const warehouseFree=getFree(raw.availableByResource,raw.reservedByResource)+
         getFree(processed.availableByResource,processed.reservedByResource);
       const protectedStock=Math.max(0,n(reserve[rid])||0);
+      // Company-attributed batches can exceed the aggregate free warehouse balance when
+      // legacy, reserved or stale lot records overlap. Allocate the single exportable
+      // warehouse quantity across all owners once, rather than granting each company
+      // the same aggregate ceiling.
+      const exportableStock=Math.max(0,warehouseFree-protectedStock);
+      const owners=Object.keys(buckets).map(companyId=>({
+        companyId:companyId,row:buckets[companyId],units:Math.max(0,Math.floor(buckets[companyId].available*1e6+1e-7))
+      })).filter(x=>x.units>0);
+      const totalOwnerUnits=owners.reduce((sum,x)=>sum+x.units,0);
+      const exportableUnits=Math.min(totalOwnerUnits,Math.max(0,Math.floor(exportableStock*1e6+1e-7)));
+      let assignedUnits=0;
+      owners.forEach(owner=>{
+        const exact=totalOwnerUnits>0?exportableUnits*owner.units/totalOwnerUnits:0;
+        owner.allocatedUnits=Math.min(owner.units,Math.floor(exact));
+        owner.remainder=exact-owner.allocatedUnits;
+        assignedUnits+=owner.allocatedUnits;
+      });
+      owners.slice().sort((a,b)=>b.remainder-a.remainder||a.companyId.localeCompare(b.companyId))
+        .slice(0,Math.max(0,exportableUnits-assignedUnits))
+        .forEach(owner=>{if(owner.allocatedUnits<owner.units)owner.allocatedUnits++;});
       const q=quote(rid),rel=target?(countryValue(target,'foreign.relations')?.[c]||countryValue(c,'foreign.relations')?.[target]||null):null;
-      Object.keys(buckets).forEach(companyId=>{
-        const row=buckets[companyId],available=Math.max(0,Math.min(row.available,warehouseFree-protectedStock));
+      owners.forEach(owner=>{
+        const companyId=owner.companyId,row=owner.row,available=owner.allocatedUnits/1e6;
         if(available<=0||available+1e-9<requested)return;
         const stateDirective=target?strategicPolicy?.evaluateExportDirective?.(c,target,rid,
           requested>0?requested:available,null,{[rid]:available}):null;
