@@ -1187,6 +1187,11 @@
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_COUNTRY_SCOPE_INVALID'};
     if(COMPANY_IDS.indexOf(buyerCompany)<0||COMPANY_IDS.indexOf(sellerCompany)<0)
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_COMPANY_ID_INVALID'};
+    var buyerLifecycle=runtime(buyerCountry,false)||{},sellerLifecycle=runtime(sellerCountry,false)||{},
+      buyerCompanyStatus=String((buyerLifecycle.companyStatuses||{})[buyerCompany]||'ACTIVE').toUpperCase(),
+      sellerCompanyStatus=String((sellerLifecycle.companyStatuses||{})[sellerCompany]||'ACTIVE').toUpperCase();
+    if(buyerCompanyStatus!=='ACTIVE')return{status:'BLOCKED',reason:'BUYER_COMPANY_STATUS_BLOCKS_NEW_IMPORT',companyStatus:buyerCompanyStatus};
+    if(sellerCompanyStatus==='CLOSED')return{status:'BLOCKED',reason:'SELLER_COMPANY_CLOSED'};
     if(!settlementId||buyerAmount===null||buyerAmount<=0||sellerAmount===null||sellerAmount<=0||
        buyerPurchaseAmount===null||buyerPurchaseAmount<=0||buyerTariffAmount===null||buyerTariffAmount<0||
        Math.abs(buyerPurchaseAmount+buyerTariffAmount-buyerAmount)>1e-6||quantity===null||quantity<=0||!buyerCurrency||!sellerCurrency)
@@ -1202,6 +1207,7 @@
       buyerCompanyId:buyerCompany,sellerCompanyId:sellerCompany,buyerAmount:Number(buyerAmount.toFixed(2)),
       buyerPurchaseAmount:Number(buyerPurchaseAmount.toFixed(2)),buyerTariffAmount:Number(buyerTariffAmount.toFixed(2)),
       sellerAmount:Number(sellerAmount.toFixed(2)),buyerCurrency:buyerCurrency,sellerCurrency:sellerCurrency,
+      requestId:String(input.requestId||'').trim()||null,
       quantity:Number(quantity.toFixed(6)),resourceId:String(input.resourceId||''),unitPrice:num(input.unitPrice),
       status:'RESERVED',createdTurn:turn(),authority:'OMEGA_PRIVATE_COMPANY_TRADE_CASH_V1'};
     if(prior){
@@ -1287,6 +1293,11 @@
       buyerPurchaseAmount=num(input.buyerPurchaseAmount)??num(input.buyerAmount),buyerTariffAmount=num(input.buyerTariffAmount)??0,
       transfers=Array.isArray(input.batchTransfers)?input.batchTransfers:[];
     if(buyerCountry!==playerCountry()||!settlementId)return{status:'BLOCKED',reason:'PRIVATE_IMPORT_COMPLETION_SCOPE_INVALID'};
+    var buyerLifecycle=runtime(buyerCountry,false)||{},sellerLifecycle=runtime(sellerCountry,false)||{},
+      buyerStatus=String((buyerLifecycle.companyStatuses||{})[buyerCompany]||'ACTIVE').toUpperCase(),
+      sellerStatus=String((sellerLifecycle.companyStatuses||{})[sellerCompany]||'ACTIVE').toUpperCase();
+    if(buyerStatus!=='ACTIVE')return{status:'BLOCKED',reason:'BUYER_COMPANY_STATUS_BLOCKS_IMPORT_COMPLETION',companyStatus:buyerStatus};
+    if(sellerStatus==='CLOSED')return{status:'BLOCKED',reason:'SELLER_COMPANY_CLOSED'};
     var root=financeRoot(buyerCountry,true),reservations=root.companyTradeReservations||{},reservation=reservations[settlementId];
     if(!reservation)return{status:'BLOCKED',reason:'PRIVATE_IMPORT_RESERVATION_NOT_FOUND'};
     if(reservation.status==='SETTLED')return{status:'DUPLICATE',record:clone(reservation.procurementRecord||null)};
@@ -2367,7 +2378,28 @@
     if(current==='CLOSED')return{status:'DUPLICATE',reason:'COMPANY_ALREADY_CLOSED'};
     if(!['RESTRUCTURING','INSOLVENT'].includes(current))return{status:'BLOCKED',reason:'COMPANY_MUST_BE_INSOLVENT_OR_IN_RESTRUCTURING'};
     var econ=countryBucket('economy',cid,true),assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[],
-      account=capitalAccount(cid,co,true),closedAssets=[];
+      account=capitalAccount(cid,co,true),closedAssets=[],cancelledImports=[];
+    var financeRootBucket=financeRoot(cid,true),privateReservations=obj(financeRootBucket.companyTradeReservations)?financeRootBucket.companyTradeReservations:{};
+    Object.keys(privateReservations).forEach(function(settlementId){
+      var reservation=privateReservations[settlementId];
+      if(reservation&&reservation.buyerCompanyId===co&&reservation.status==='RESERVED'){
+        reservation.status='CANCELLED';reservation.cancelledTurn=turn();reservation.cancellationReason='BUYER_COMPANY_CLOSED';
+        cancelledImports.push(settlementId);
+      }
+    });
+    var tradeBucket=countryBucket('trade',cid,true),requests=Array.isArray(tradeBucket.importRequests)?tradeBucket.importRequests:[];
+    requests.forEach(function(request){
+      if(!request||String(request.status||'').toUpperCase()==='SETTLED'||
+         String(request.status||'').toUpperCase()==='REJECTED'||String(request.status||'').toUpperCase()==='FAILED')return;
+      if(request.buyerCompanyId!==co&&request.sellerCompanyId!==co)return;
+      request.status='CANCELLED';request.stage='COMPANY_CLOSED';request.cancelledTurn=turn();
+      request.cancellationReason='PRIVATE_COMPANY_CLOSED';cancelledImports.push(String(request.requestId||''));
+    });
+    tradeBucket.importRequests=requests;
+    tradeBucket.globalTradeLedger=tradeBucket.globalTradeLedger||{requests:[],decisions:[],settlements:[]};
+    tradeBucket.globalTradeLedger.requests=Array.isArray(tradeBucket.globalTradeLedger.requests)?tradeBucket.globalTradeLedger.requests:[];
+    cancelledImports.forEach(function(reference){tradeBucket.globalTradeLedger.requests.push({requestId:reference,status:'CANCELLED',reason:'PRIVATE_COMPANY_CLOSED',simulationTurn:turn()});});
+    tradeBucket.globalTradeLedger.requests=tradeBucket.globalTradeLedger.requests.slice(-MAX_HISTORY);
     assets.forEach(function(asset){
       var owner=id(asset&& (asset.ownerCompanyId||asset.ownerId)),operator=id(asset&&(asset.operatorCompanyId||asset.operatorId||asset.companyId));
       if(owner!==co&&operator!==co)return;
@@ -2392,6 +2424,7 @@
     r.companyClosures=r.companyClosures||{};
     r.companyClosures[co]={companyId:co,requestId:requestId,reason:reason,turn:turn(),
       closedFactoryIds:closedAssets,releasedReservedCash:Number(released.toFixed(2)),
+      cancelledPrivateTradeReservations:Array.from(new Set(cancelledImports)),
       remainingOperatingPayables:(r.operatingCostEntries||[]).filter(function(row){return row&&row.companyId===co&&row.status==='POSTED';})
         .reduce(function(sum,row){return sum+Math.max(0,(num(row.amount)||0)-(num(row.settledAmount)||0));},0),
       noAssetRecordsDeleted:true,authority:'OMEGA_PRIVATE_ENTERPRISE_CLOSURE_V1'};
