@@ -1142,6 +1142,40 @@ test('active competition expansion order blocks private permit approval without 
     'a competition review hold must not consume or mutate the company proposal');
 });
 
+test('active competition orders block newly approved funding and prevent funded proposals from starting construction',()=>{
+  const h=makeHarness(),api=h.api;
+  const awaitingFunding=submitProposal(api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1});
+  assert.equal(awaitingFunding.status,'PROPOSED');
+  assert.equal(api.decideProposal({countryId:'BGD',proposalId:awaitingFunding.proposalId,decision:'APPROVE',
+    allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
+
+  const funded=submitProposal(api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1});
+  assert.equal(funded.status,'PROPOSED');
+  assert.equal(api.decideProposal({countryId:'BGD',proposalId:funded.proposalId,decision:'APPROVE',
+    allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
+  assert.equal(api.fundProposal({countryId:'BGD',proposalId:funded.proposalId,
+    sourceType:'GOVERNMENT_GRANT',amount:100}).status,'FUNDED');
+
+  h.state.trade={BGD:{marketCompetition:{activeRestrictions:[{
+    caseId:'OMEGA-ANTITRUST:BGD:IRON_ORE:'+COMPANY,countryId:'BGD',resourceId:'iron_ore',
+    companyId:COMPANY,status:'ACTIVE',restrictionType:'PRIVATE_FACTORY_EXPANSION_HOLD',
+    startsTurn:4,authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'
+  }]}}};
+  const treasuryBefore=h.state.finance.BGD.omegaFinance.treasuryBalanceUsd;
+  const capitalBefore=JSON.stringify(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY]);
+  const fundingBlocked=api.fundProposal({countryId:'BGD',proposalId:awaitingFunding.proposalId,
+    sourceType:'GOVERNMENT_GRANT',amount:100});
+  assert.equal(fundingBlocked.status,'BLOCKED');
+  assert.equal(fundingBlocked.reason,'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE');
+  assert.equal(h.state.finance.BGD.omegaFinance.treasuryBalanceUsd,treasuryBefore);
+  assert.equal(JSON.stringify(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY]),capitalBefore);
+
+  const constructionBlocked=api.startConstruction({countryId:'BGD',proposalId:funded.proposalId});
+  assert.equal(constructionBlocked.status,'BLOCKED');
+  assert.equal(constructionBlocked.reason,'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE');
+  assert.equal(h.projects.length,0,'the restriction must prevent new canonical construction projects');
+});
+
 test('insolvency opens only on recorded cash shortfall; restructuring, suspension and closure preserve asset history',()=>{
   const h=makeHarness(),api=h.api,company=COMPANY,factoryId='PRIVATE-INSOLVENT-FAC-1';
   h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
