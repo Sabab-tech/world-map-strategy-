@@ -2562,17 +2562,28 @@
       function amount(value){return value===null||value===undefined?'Not recorded':Number(value).toLocaleString('en-US',{maximumFractionDigits:2})+' '+currency;}
       var taxLabel=period?'Cash-basis tax '+amount(period.corporateTaxPaid)+' at '+(period.corporateTaxRate*100).toFixed(2)+'%':'Not assessed: close a journalled cash-flow period first';
       var journalWarning=(statement.journal.droppedEntryCount||0)>0?
-        'Tax close blocked when this open period contains pruned entries ('+statement.journal.droppedEntryCount+' dropped).':'';
+        'Tax close blocked when this open period contains pruned entries ('+statement.journal.droppedEntryCount+' dropped).':'',
+        accrued=statement.journal.accruedCostByCategory||{};
       return'<article class="pe-proposal"><header><strong>'+escapeHtml(statement.companyName||companyId)+'</strong><span>'+escapeHtml(statement.journal.status)+'</span></header>'+
         '<div class="pe-facts"><span>Recorded receipts <b>'+amount(statement.grossRevenue)+'</b></span>'+
         '<span>Cash operating costs <b>'+amount(statement.journal.recordedOperatingCosts)+'</b></span>'+
         '<span>Accrued factory operating costs <b>'+amount(statement.journal.recordedAccruedOperatingCosts)+'</b></span>'+
-        '<span>Accounting profit <b>'+(statement.accountingProfit===null?'Not verifiable':amount(statement.accountingProfit))+'</b></span>'+
+        '<span>Current accounting profit <b>'+(statement.accountingProfit===null?'Not verifiable':amount(statement.accountingProfit))+'</b></span>'+
+        '<span>Net profit after posted taxes <b>'+(statement.netProfit===null?'Not verifiable':amount(statement.netProfit))+'</b></span>'+
+        '<span>Net profit status <b>'+escapeHtml(statement.netProfitStatus||'NOT_RECORDED')+'</b></span>'+
+        '<span>Last closed-period net profit after tax <b>'+amount(period&&period.netProfitAfterTax)+'</b></span>'+
         '<span>Unpriced cost items <b>'+Number(statement.journal.unpricedOperatingCostCount||0).toLocaleString('en-US')+'</b></span>'+
-        '<span>Input materials <b>'+amount(statement.journal.inputMaterialCosts)+'</b></span>'+
-        '<span>Worker costs <b>'+amount(statement.journal.workerCosts)+'</b></span>'+
-        '<span>Transport costs <b>'+amount(statement.journal.transportCosts)+'</b></span>'+
+        '<span>Input materials (cash) <b>'+amount(statement.journal.inputMaterialCosts)+'</b></span>'+
+        '<span>Worker costs (cash) <b>'+amount(statement.journal.workerCosts)+'</b></span>'+
+        '<span>Transport costs (cash) <b>'+amount(statement.journal.transportCosts)+'</b></span>'+
         '<span>Other recorded costs <b>'+amount(statement.journal.otherRecordedCosts)+'</b></span>'+
+        '<span>Electricity accrued <b>'+amount(accrued.ELECTRICITY)+'</b></span>'+
+        '<span>Industrial water accrued <b>'+amount(accrued.INDUSTRIAL_WATER)+'</b></span>'+
+        '<span>Labor accrued <b>'+amount(accrued.LABOR)+'</b></span>'+
+        '<span>Freight accrued <b>'+amount(accrued.FREIGHT)+'</b></span>'+
+        '<span>Maintenance accrued <b>'+amount(accrued.MAINTENANCE)+'</b></span>'+
+        '<span>Overhead accrued <b>'+amount(accrued.OVERHEAD)+'</b></span>'+
+        '<span>Depreciation accrued <b>'+amount(accrued.DEPRECIATION)+'</b></span>'+
         '<span>Recorded tax payments <b>'+amount(statement.journal.recordedTaxPayments)+'</b></span>'+
         '<span>Net cash flow <b>'+amount(statement.runtimeNetCashFlow)+'</b></span>'+
         '<span>Factory CAPEX (separate) <b>'+amount(statement.constructionCapex.amount)+'</b></span>'+
@@ -2662,6 +2673,7 @@
         '<span>Recorded current liabilities <b>'+amount(solvency.totalRecordedCurrentLiabilities,currency)+'</b></span>'+
         '<span>Accrued operating payables <b>'+amount(solvency.accruedOperatingPayables,currency)+'</b></span>'+
         '<span>Recorded debt outstanding <b>'+amount(solvency.recordedDebtOutstanding,currency)+'</b></span>'+
+        '<span>Debt evidence <b>'+escapeHtml(solvency.debtEvidenceStatus||'NOT_RECORDED')+'</b></span>'+
         '<span>Retained earnings <b>'+amount(solvency.retainedEarnings,currency)+'</b></span>'+
         '<span>Liquidity surplus <b>'+amount(solvency.liquiditySurplus,currency)+'</b></span></div>'+
         '<small class="pe-footnote">'+escapeHtml(solvency.reason||'Solvency evidence unavailable')+'. '+escapeHtml(solvency.limitation||'')+'</small>'+
