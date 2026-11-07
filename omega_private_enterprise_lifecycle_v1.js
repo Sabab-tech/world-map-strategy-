@@ -25,8 +25,11 @@
   function turn(){var s=state()||{};return num(s.simulation&&s.simulation.turn)??num(s.turn)??num(s.simulationTurn)??0;}
   function canonicalCountry(v){
     var raw=id(v);if(!raw)return '';
+    // Live country-domain state uses ISO-3 keys. Preserve an incoming ISO-3 directly
+    // instead of allowing an alias resolver's ISO-2 display identity to redirect reads.
+    if(/^[A-Z]{3}$/.test(raw))return raw;
     var registry=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
-    try{var resolved=registry&&registry.resolveCountry?registry.resolveCountry(v):null;if(resolved){var value=resolved.raw?.raw||resolved.raw||{};var iso3=value.iso3||value.iso3Code||value.ISO_A3||value.iso_a3||resolved.iso3||resolved.iso3Code;var code=id(iso3||resolved.id||resolved.canonicalId);if(/^[A-Z]{3}$/.test(code))return code;}}catch(_){}
+    try{var resolved=registry&&registry.resolveCountry?registry.resolveCountry(v):null;if(resolved){var value=resolved.raw?.raw||resolved.raw||{};var identity=value.identity||{};var iso3=value.iso3||value.iso3Code||value.ISO_A3||value.iso_a3||identity.iso3||identity.iso3Code||resolved.iso3||resolved.iso3Code;var code=id(iso3||resolved.id||resolved.canonicalId);if(/^[A-Z]{3}$/.test(code))return code;}}catch(_){}
     return raw;
   }
   function playerCountry(){
@@ -42,7 +45,9 @@
   function countryBucket(domain,country,create){
     var s=state();if(!s)return null;
     if(!obj(s[domain])){if(!create)return null;s[domain]={};}
-    var root=s[domain],cid=canonicalCountry(country),keys=Object.keys(root),key=keys.find(function(k){return canonicalCountry(k)===cid;});
+    var root=s[domain],raw=id(country),cid=/^[A-Z]{3}$/.test(raw)?raw:canonicalCountry(country),
+      keys=Object.keys(root),key=Object.prototype.hasOwnProperty.call(root,cid)?cid:
+        keys.find(function(k){return canonicalCountry(k)===cid;});
     if(!key&&create)key=cid;
     if(!key)return null;
     if(!obj(root[key])){if(!create)return null;root[key]={};}
