@@ -1091,11 +1091,26 @@
       }
     }
 
-    const buyerDebitAmount=useBank?num(bankQuote.buyerDebitUsd):check.buyerTotal;
+    const buyerDebitAmount=privateCompanyPurchase?Number((check.buyerTotal+privateTariffLocal).toFixed(2)):
+      useBank?num(bankQuote.buyerDebitUsd):check.buyerTotal;
     const sellerCreditAmount=useBank?num(bankQuote.sellerCreditUsd):check.sellerTotal;
-    const tariffUsd=useBank?(num(bankQuote.tariffUsd)||0):0;
+    const tariffUsd=privateCompanyPurchase?privateTariffUsd:(useBank?(num(bankQuote.tariffUsd)||0):0);
     function cancelBank(reason){if(useBank){try{bank.cancelTradeSettlement(sid,reason);}catch(_){}}}
+    function cancelPrivate(reason){if(privateCompanyPurchase&&lifecycle&&typeof lifecycle.cancelPrivateCompanyImport==='function'){
+      try{lifecycle.cancelPrivateCompanyImport({buyerCountryId:c,settlementId:sid,reason:reason||'TRADE_SETTLEMENT_ABORTED'});}catch(_){}
+    }}
     function compensateBuyer(reason){
+      if(privateCompanyPurchase){
+        let tariffReversed=!tariffPosted;
+        if(tariffPosted&&tariffUsd>0){
+          const reverse=command('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{amount:tariffUsd,
+            settlementId:sid+'-COMP-TARIFF',requestId:req.requestId,currency:'USD',reason:reason||'PRIVATE_TRADE_COMPENSATION'});
+          tariffReversed=reverse?.status==='APPLIED'||reverse?.result?.duplicate===true;
+          if(!tariffReversed)g.__OMEGA_SETTLEMENT_TRACE.tariffCompensation=clone(reverse);
+        }
+        cancelPrivate(reason);
+        return{privateCompany:true,tariffReversed};
+      }
       let tariffReversed=!tariffPosted;
       if(useBank&&tariffPosted&&tariffUsd>0){
         const reverse=command('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{
@@ -1126,15 +1141,28 @@
       });
     }
 
-    const debit=command('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{
-      amount:buyerDebitAmount,settlementId:sid,requestId:req.requestId,currency:useBank?'USD':check.buyerCurrency
-    });
+    const debit=privateCompanyPurchase?{status:'APPLIED',result:{privateCompanyReservation:clone(privateReservation)}}:
+      command('finance','OMEGA_TRADE_FINANCE_DEBIT',c,{
+        amount:buyerDebitAmount,settlementId:sid,requestId:req.requestId,currency:useBank?'USD':check.buyerCurrency
+      });
     g.__OMEGA_SETTLEMENT_TRACE.debit=clone(debit);
     if(debit?.status!=='APPLIED'&&debit?.result?.duplicate!==true){
       cancelBank(debit?.result?.reason||'BUYER_FINANCE_DEBIT_FAILED');
       emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,
         reason:debit?.result?.reason||'BUYER_FINANCE_DEBIT_FAILED'});
       return;
+    }
+    if(privateCompanyPurchase&&tariffUsd>0){
+      const tariff=command('finance','OMEGA_TRADE_FINANCE_CREDIT',c,{
+        amount:tariffUsd,settlementId:sid+'-TARIFF',requestId:req.requestId,currency:'USD',reason:'PRIVATE_COMPANY_IMPORT_TARIFF'
+      });
+      g.__OMEGA_SETTLEMENT_TRACE.privateTariffCredit=clone(tariff);
+      if(tariff?.status!=='APPLIED'&&tariff?.result?.duplicate!==true){
+        cancelPrivate('PRIVATE_IMPORT_TARIFF_CREDIT_FAILED');
+        emit('OMEGA_TRADE_SETTLEMENT_WAITING_FOR_FUNDS',c,{requestId:req.requestId,settlementId:sid,
+          reason:'PRIVATE_IMPORT_TARIFF_TREASURY_CREDIT_FAILED',detail:clone(tariff)});return;
+      }
+      tariffPosted=true;
     }
     if(useBank&&tariffUsd>0){
       const tariff=command('finance','OMEGA_TRADE_FINANCE_CREDIT',c,{
@@ -1156,7 +1184,9 @@
     }
 
     const transferAuthorization={type:'TRADE_SETTLEMENT',settlementId:sid,requestId:req.requestId,sourceCountryId:s,destinationCountryId:c,
-      governmentContractId:req.governmentContractId||null};
+      governmentContractId:req.governmentContractId||null,
+      buyerCompanyId:privateCompanyPurchase?req.buyerCompanyId:null,
+      sellerCompanyId:privateCompanyPurchase?req.sellerCompanyId:null};
     const sellerResource=command('resource','OMEGA_TRADE_RESOURCE_DEBIT',s,{
       resourceId:req.resourceId,quantity:req.quantity,settlementId:sid,requestId:req.requestId,transferAuthorization
     });
@@ -1166,9 +1196,10 @@
       emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,
         reason:sellerResource?.result?.reason||'SELLER_RESOURCE_DEBIT_FAILED',compensated:true});return;
     }
-    const sellerCredit=command('finance','OMEGA_TRADE_FINANCE_CREDIT',s,{
-      amount:sellerCreditAmount,settlementId:sid,requestId:req.requestId,currency:useBank?'USD':check.sellerCurrency
-    });
+    const sellerCredit=privateCompanyPurchase?{status:'APPLIED',result:{privateCompanyReceiptPending:true}}:
+      command('finance','OMEGA_TRADE_FINANCE_CREDIT',s,{
+        amount:sellerCreditAmount,settlementId:sid,requestId:req.requestId,currency:useBank?'USD':check.sellerCurrency
+      });
     g.__OMEGA_SETTLEMENT_TRACE.sellerCredit=clone(sellerCredit);
     if(sellerCredit?.status!=='APPLIED'&&sellerCredit?.result?.duplicate!==true){
       const reverse=reverseSellerResource(sellerResource);
@@ -1183,9 +1214,10 @@
     });
     g.__OMEGA_SETTLEMENT_TRACE.buyerResource=clone(buyerResource);
     if(buyerResource?.status!=='APPLIED'&&buyerResource?.result?.duplicate!==true){
-      const sellerDebit=command('finance','OMEGA_TRADE_FINANCE_DEBIT',s,{
-        amount:sellerCreditAmount,settlementId:sid+'-COMP-SELLER-FIN',requestId:req.requestId,currency:useBank?'USD':check.sellerCurrency
-      });
+      const sellerDebit=privateCompanyPurchase?{status:'APPLIED',result:{privateCompanyReceiptNotPosted:true}}:
+        command('finance','OMEGA_TRADE_FINANCE_DEBIT',s,{
+          amount:sellerCreditAmount,settlementId:sid+'-COMP-SELLER-FIN',requestId:req.requestId,currency:useBank?'USD':check.sellerCurrency
+        });
       g.__OMEGA_SETTLEMENT_TRACE.sellerFinanceCompensation=clone(sellerDebit);
       const reverse=reverseSellerResource(sellerResource);
       g.__OMEGA_SETTLEMENT_TRACE.sellerResourceCompensation=clone(reverse);
