@@ -6,6 +6,7 @@ import vm from 'node:vm';
 const read = path => fs.readFileSync(new URL('../' + path, import.meta.url), 'utf8');
 const binding = read('omega_resource_gameplay_binding_v1.js');
 const css = read('omega_ui_visual_system_v1.css');
+const activeCss = read('style.css');
 const context = {
   console: { log(){}, warn(){}, error(){} },
   addEventListener(){},
@@ -130,6 +131,10 @@ test('sparse site profiles remain clean and do not invent reserve or output figu
 
 test('resource detail panel has responsive, non-monospaced visual styles', () => {
   assert.match(css, /#omega-individual-resource-panel\.omega-resource-site-panel/);
+  assert.match(activeCss, /#omega-individual-resource-panel\.omega-resource-site-panel/);
+  assert.match(activeCss, /z-index:\s*1000002\s*!important/);
+  assert.match(activeCss, /pointer-events:\s*auto\s*!important/);
+  assert.match(activeCss, /@media\s*\(max-width:\s*480px\)/);
   assert.match(css, /\.omega-site-metrics/);
   assert.match(css, /\.omega-site-details/);
   assert.match(css, /@media\(max-width:480px\)/);
