@@ -1127,8 +1127,8 @@ test('private-company import debits the verified buyer wallet, credits the selli
   h.state.finance.BGD.currencyCode='USD';
   h.state.finance.SAU={currencyCode:'USD',omegaFinance:{ledger:[],companyCapitalAccounts:{}}};
   h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
-    [buyer]:{companyId:buyer,currency:'USD',availableBalance:1000,reservedBalance:0,
-      capitalRaised:1000,capitalSpent:0,revision:1}
+    [buyer]:{companyId:buyer,currency:'USD',availableBalance:500,reservedBalance:400,
+      capitalRaised:1000,capitalSpent:100,revision:1}
   };
   const beforeTreasury=h.state.finance.BGD.available;
   const reservation=api.reservePrivateCompanyImport({
@@ -1158,7 +1158,10 @@ test('private-company import debits the verified buyer wallet, credits the selli
     createdBatchIds:['TRADE-PRIVATE-IMPORT-BATCH-1'],deliveryReceiptIds:['WH-REC-TRADE-PRIVATE-IMPORT-BATCH-1']
   });
   assert.equal(completed.status,'SETTLED',JSON.stringify(completed));
-  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer].availableBalance,895);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer].availableBalance,395,
+    'construction capital is already deducted from available balance and must not be reserved twice');
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer].reservedBalance,400,
+    'private import settlement must preserve the existing construction reservation');
   assert.equal(h.state.finance.SAU.omegaFinance.companyCapitalAccounts[seller].availableBalance,100);
   assert.equal(h.state.finance.BGD.available,beforeTreasury,'the import purchase must not debit sovereign Treasury');
   assert.equal(h.state.finance.BGD.omegaFinance.ledger.some(row=>row.type==='PRIVATE_COMPANY_IMPORT_PAYMENT'&&row.amount===105),true);
