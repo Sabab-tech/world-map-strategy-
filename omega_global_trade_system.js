@@ -1483,7 +1483,43 @@
     const result=command('trade','OMEGA_TRADE_CREATE_IMPORT_REQUEST',countryId,{...clone(payload),requestId});
     return result&&['APPLIED','FAILED'].includes(String(result.status||''))&&result.result?result.result:result;
   }
-  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,processCountry,reviewRequest:sellerReviewDecision,createRequest,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
+  function createPrivateCompanyImportRequest(countryId,payload={}){
+    const buyer=canonical(countryId||playerSimulationCountryId()),seller=canonical(payload.targetCountryId),
+      resourceId=String(payload.resourceId||'').trim(),quantity=num(payload.quantity),
+      buyerCompanyId=String(payload.buyerCompanyId||'').trim().toUpperCase(),
+      sellerCompanyId=String(payload.sellerCompanyId||'').trim().toUpperCase(),
+      lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1,
+      companyIds=Array.isArray(lifecycle?.companyIds)?lifecycle.companyIds.map(x=>String(x).toUpperCase()):[],
+      market=g.OmegaGlobalMarket||g.Omega?.GlobalMarket;
+    if(!buyer||buyer!==playerSimulationCountryId())return{accepted:false,reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
+    if(!seller||seller===buyer||!resourceId||quantity===null||quantity<=0)
+      return{accepted:false,reason:'PRIVATE_IMPORT_REQUEST_FIELDS_INVALID'};
+    if(!companyIds.includes(buyerCompanyId)||!companyIds.includes(sellerCompanyId))
+      return{accepted:false,reason:'PRIVATE_IMPORT_COMPANY_ID_INVALID'};
+    if(!market||typeof market.privateCompanySuppliers!=='function'||typeof market.quote!=='function'||typeof market.localPrice!=='function')
+      return{accepted:false,reason:'PRIVATE_COMPANY_MARKET_SUPPLIER_RUNTIME_UNAVAILABLE'};
+    const quote=market.quote(resourceId);
+    if(String(quote?.status||'').toUpperCase()!=='CLEARED'||
+       num(quote?.clearingPriceUsd)===null||num(quote?.clearingPriceUsd)<=0)
+      return{accepted:false,reason:'EXECUTABLE_MARKET_CLEARING_PRICE_NOT_OBSERVED',quote:quote};
+    const suppliers=market.privateCompanySuppliers(resourceId,quantity,buyer,sellerCompanyId);
+    const supplier=suppliers.find(row=>row.countryId===seller&&row.companyId===sellerCompanyId);
+    if(!supplier)return{accepted:false,reason:'PRIVATE_SELLER_COMPANY_HAS_NO_VERIFIED_MARKET_STOCK',
+      sellerCountryId:seller,sellerCompanyId:sellerCompanyId,suppliers:suppliers};
+    const marketUnitPrice=market.localPrice(seller,resourceId),requestedPrice=num(payload.unitPrice);
+    if(marketUnitPrice===null||marketUnitPrice<=0)return{accepted:false,reason:'SELLER_LOCAL_MARKET_PRICE_NOT_OBSERVED'};
+    const unitPrice=requestedPrice===null?marketUnitPrice:requestedPrice;
+    if(unitPrice<=0)return{accepted:false,reason:'PRIVATE_IMPORT_UNIT_PRICE_INVALID'};
+    return createRequest(buyer,{...clone(payload),targetCountryId:seller,resourceId:resourceId,
+      quantity:quantity,unitPrice:unitPrice,buyerCompanyId:buyerCompanyId,sellerCompanyId:sellerCompanyId,
+      source:'OMEGA_PRIVATE_COMPANY_PROCUREMENT',marketPriceEvidence:{
+        status:quote.status,clearingPriceUsd:quote.clearingPriceUsd,unitPriceLocal:marketUnitPrice,
+        currency:currencyOf(seller),marketTurn:quote.generatedTurn,companyAvailableStock:supplier.available,
+        sourceBatchIds:supplier.sourceBatchIds,authority:'OMEGA_GLOBAL_MARKET_EXECUTABLE_CLEARING'
+      }});
+  }
+  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,processCountry,reviewRequest:sellerReviewDecision,
+    createRequest,createPrivateCompanyImportRequest,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
   g.Omega=g.Omega||{};g.Omega.GlobalTrade=API;g.OmegaGlobalTrade=API;
   try{init();}catch(e){g.OmegaGlobalTradeError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
