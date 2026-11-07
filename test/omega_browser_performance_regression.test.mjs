@@ -512,6 +512,10 @@ test('world geometry loads before support datasets, shows real progress, caches 
     map.includes("root.style.pointerEvents = 'none';") &&
     map.includes("root.style.visibility = this.__omegaMapRootVisibility === null ? '' : this.__omegaMapRootVisibility"),
     'ministry switching must hide and restore the map without collapsing its fixed layout');
+  assert.match(css, /#render-engine-root\\[data-omega-map-suspended="true"\\]\\s*\\{[^}]*visibility:\\s*hidden\\s*!important;[^}]*pointer-events:\\s*none\\s*!important;[^}]*\\}/s,
+    'the suspended-map CSS rule must preserve Leaflet layout and disable only map hit testing');
+  assert.doesNotMatch(css, /#render-engine-root\\[data-omega-map-suspended="true"\\]\\s*\\{[^}]*display:\\s*none/s,
+    'no important display:none rule may collapse the Leaflet surface during ministry navigation');
   const mapSwitchStart = map.indexOf('Game.Map.setUiActive = function(active)');
   const mapSwitchEnd = map.indexOf('Game.Map.getCountryPolygonStyle = function(feature)', mapSwitchStart);
   const mapSwitch = map.slice(mapSwitchStart, mapSwitchEnd);
