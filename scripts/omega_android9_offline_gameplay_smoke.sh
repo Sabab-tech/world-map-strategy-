@@ -87,14 +87,10 @@ attempt=1
 max_attempts=3
 while [[ "$attempt" -le "$max_attempts" ]]; do
   log_file="$artifact_dir/gradle-attempt-$attempt.log"
-  # Use shared emulator storage for the screenshot artifact. Instrumentation exports
-  # the PNG before cleanup; adb pulls it from this shell-owned staging directory.
-  adb shell rm -rf /sdcard/omega-smoke >/dev/null 2>&1 || true
-  if ! timeout 10s adb shell mkdir -p /sdcard/omega-smoke ||
-      ! timeout 10s adb shell test -d /sdcard/omega-smoke; then
-    echo "ERROR: Android shell could not prepare the screenshot staging directory" >&2
-    exit 1
-  fi
+  # The instrumentation process writes to its own app-specific external
+  # files directory; adb can pull that directory without UiAutomation shell I/O.
+  remote_screenshot_dir="/sdcard/Android/data/com.omega.globalsupremecommander/files/omega-smoke"
+  adb shell rm -rf "$remote_screenshot_dir" >/dev/null 2>&1 || true
   echo "Offline gameplay instrumentation attempt $attempt/$max_attempts"
   # Android instrumentation must not be allowed to occupy the workflow forever.
   # The Java test has bounded Activity/WebView waits; this is a final process-level
@@ -104,22 +100,21 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
     cat "$log_file"
     screenshot_dir="$artifact_dir/screenshots"
     mkdir -p "$screenshot_dir"
-    remote_screenshot_dir="/sdcard/omega-smoke"
     if ! timeout 30s adb pull "$remote_screenshot_dir" "$screenshot_dir"; then
-      echo "ERROR: Android Input UI screenshot retrieval failed from emulator staging storage" >&2
+      echo "ERROR: Android Input UI screenshot retrieval failed from app-specific external storage" >&2
       exit 1
     fi
     for screenshot in factory-input-landscape.png; do
       local_screenshot="$screenshot_dir/omega-smoke/$screenshot"
       status_file="$local_screenshot.exit"
       if [[ ! -s "$status_file" ]]; then
-        echo "ERROR: Android screenshot export status is missing: $status_file" >&2
+        echo "ERROR: Android app-copy status marker is missing: $status_file" >&2
         find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
         exit 1
       fi
       export_exit="$(tr -d '[:space:]' <"$status_file")"
       if [[ "$export_exit" != "0" ]]; then
-        echo "ERROR: Android shell could not export the screenshot (exit=$export_exit)" >&2
+        echo "ERROR: Android app could not finish copying the screenshot (status=$export_exit)" >&2
         exit 1
       fi
       if [[ ! -s "$local_screenshot" ]]; then
