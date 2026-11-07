@@ -84,6 +84,58 @@ assert.equal(q.matchedQuantity,100);
 assert.equal(q.clearingPriceUsd,100);
 assert.equal(market.localPrice('BDG','crude_oil'),100);
 
+// Private company supply must be attributed to exact owner batches and available warehouse stock.
+globalThis.OmegaPrivateEnterpriseLifecycleV1={
+  companyIds:['AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP'],
+  companyNames:{AURORA_INDUSTRIAL_GROUP:'Aurora Industrial Group',
+    MERIDIAN_ENGINEERING_GROUP:'Meridian Engineering Group'}
+};
+globalThis.Game.state.resource.SAU.batches=[{
+  batchId:'SAU-PRIVATE-CRUDE-MARKET-1',resourceId:'crude_oil',quantity:150,remainingQuantity:150,
+  stage:'RAW_EXTRACTED',status:'AVAILABLE',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP',
+  operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+  sourceFactoryId:'SAU-PRIVATE-OIL-FAC-1'
+},{
+  batchId:'SAU-UNKNOWN-CRUDE-MARKET-1',resourceId:'crude_oil',quantity:900,remainingQuantity:900,
+  stage:'RAW_EXTRACTED',status:'AVAILABLE',ownerCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+  operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'UNKNOWN_SOURCE',
+  sourceFactoryId:'SAU-UNKNOWN-OIL-FAC'
+}];
+globalThis.Game.state.resource.SAU.inventoryLots={
+  'SAU-PRIVATE-CRUDE-MARKET-1':{batchId:'SAU-PRIVATE-CRUDE-MARKET-1',resourceId:'crude_oil',
+    quantity:150,remainingQuantity:150,status:'AVAILABLE'},
+  'SAU-UNKNOWN-CRUDE-MARKET-1':{batchId:'SAU-UNKNOWN-CRUDE-MARKET-1',resourceId:'crude_oil',
+    quantity:900,remainingQuantity:900,status:'AVAILABLE'}
+};
+globalThis.Game.state.resource.SAU.warehouse={
+  availableByResource:{crude_oil:150},reservedByResource:{crude_oil:10}
+};
+globalThis.Game.state.resource.SAU.processedWarehouse={availableByResource:{},reservedByResource:{}};
+globalThis.Game.state.economy.SAU={
+  privateEnterpriseLifecycle:{companyStatuses:{AURORA_INDUSTRIAL_GROUP:'ACTIVE',
+    MERIDIAN_ENGINEERING_GROUP:'ACTIVE'}}
+};
+const exactPrivateSupplier=market.privateCompanySuppliers('crude_oil',100,'BDG',
+  'AURORA_INDUSTRIAL_GROUP','SAU');
+assert.equal(exactPrivateSupplier.length,1);
+assert.equal(exactPrivateSupplier[0].companyId,'AURORA_INDUSTRIAL_GROUP');
+assert.equal(exactPrivateSupplier[0].available,140,'reserved warehouse stock must not be offerable');
+assert.deepEqual(exactPrivateSupplier[0].sourceBatchIds,['SAU-PRIVATE-CRUDE-MARKET-1']);
+assert.deepEqual(exactPrivateSupplier[0].sourceFactoryIds,['SAU-PRIVATE-OIL-FAC-1']);
+assert.equal(market.privateCompanySuppliers('crude_oil',145,'BDG','AURORA_INDUSTRIAL_GROUP','SAU').length,0,
+  'a private supplier cannot offer more than its verified available quantity');
+globalThis.Game.state.resource.SAU.industrialNetwork={shipments:[{
+  shipmentId:'IN-TRANSIT-PRIVATE-1',batchId:'SAU-PRIVATE-CRUDE-MARKET-1',
+  resourceId:'crude_oil',quantity:20,status:'IN_TRANSIT'
+}]};
+assert.equal(market.privateCompanySuppliers('crude_oil',130,'BDG','AURORA_INDUSTRIAL_GROUP','SAU').length,0,
+  'stock already in transit cannot be promised again');
+globalThis.Game.state.resource.SAU.industrialNetwork.shipments=[];
+globalThis.Game.state.economy.SAU.privateEnterpriseLifecycle.companyStatuses.AURORA_INDUSTRIAL_GROUP='CLOSED';
+assert.equal(market.privateCompanySuppliers('crude_oil',1,'BDG','AURORA_INDUSTRIAL_GROUP','SAU').length,0,
+  'closed companies cannot publish supplier stock');
+globalThis.Game.state.economy.SAU.privateEnterpriseLifecycle.companyStatuses.AURORA_INDUSTRIAL_GROUP='ACTIVE';
+
 // Removing the actual seller offer leaves only inventory-derived reference liquidity.
 // It must inform the quote but must not count as an executable market trade.
 globalThis.Game.state.trade.SAU.offerBook={};
