@@ -1388,6 +1388,24 @@ Game.Map.ensureMapLoadingOverlay = function() {
 // Preserve the map's fixed layout and cached SVG/Leaflet tree while a ministry
 // owns the screen. display:none collapses the map surface and makes legacy WebView
 // rebuild/repaint every country path on return; visibility keeps that tree warm.
+function cancelDeferredGeoJSONResume() {
+    const timer = Game.__omegaGeoJSONResumeTimer;
+    if (timer !== null && timer !== undefined &&
+        typeof window.clearTimeout === 'function') {
+        window.clearTimeout(timer);
+    }
+    Game.__omegaGeoJSONResumeTimer = null;
+}
+function scheduleDeferredGeoJSONResume() {
+    cancelDeferredGeoJSONResume();
+    Game.__omegaGeoJSONResumeTimer = window.setTimeout(function () {
+        Game.__omegaGeoJSONResumeTimer = null;
+        if (Game.Map.__omegaMapUiActive !== true) return;
+        if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
+            Game.__omegaGeoJSONResumeRender();
+        }
+    }, 600);
+}
 Game.Map.setUiActive = function(active) {
     const nextActive = active === true;
     if (this.__omegaMapUiActive === nextActive) return true;
@@ -1395,6 +1413,9 @@ Game.Map.setUiActive = function(active) {
     const root = document.getElementById('render-engine-root');
 
     if (!nextActive) {
+        // Give a user returning from a ministry a short interaction window before
+        // the unfinished world geometry resumes. A second ministry tap cancels it.
+        cancelDeferredGeoJSONResume();
         const overlay = document.getElementById('omega-map-load-overlay');
         if (overlay) {
             overlay.classList.add('is-hidden');
@@ -1445,7 +1466,7 @@ Game.Map.setUiActive = function(active) {
     } else {
         this.updateMapLoadingProgress(this.__omegaMapLoadingProgress || 2, 'Preparing world map…', 'loading');
         if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
-            Game.__omegaGeoJSONResumeRender();
+            scheduleDeferredGeoJSONResume();
         } else if (this.countryGeoJSON && !Game.geojsonLayer &&
             Game.DataLoader && typeof Game.DataLoader.loadWorldMap === 'function') {
             const loader = Game.DataLoader;
