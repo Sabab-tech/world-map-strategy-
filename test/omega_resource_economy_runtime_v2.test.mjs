@@ -290,7 +290,7 @@ test('private-company settlement fiscalization does not credit seller revenue or
   const fiscalReceipts=Number(worldState.finance.BGD.resourceFiscal?.cumulative?.total)||0;
   assert.equal(worldState.finance.BGD.available,treasuryBefore+fiscalReceipts,
     'only export taxes/royalties may reach Treasury; private company sale proceeds stay in the company wallet');
-  assert.ok(fiscalReceipts<200,'public export receipts must not absorb the private company's full sale value');
+  assert.ok(fiscalReceipts<200,"public export receipts must not absorb the private company sale value");
   assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,0,'private seller proceeds must not be Treasury-cleared');
   const firstEntries=JSON.stringify(afterFirst.cashFlowEntries);
   const commandTypes=[...commands.values()].map(row=>JSON.parse(row.fingerprint).type);
