@@ -508,9 +508,10 @@ test('world geometry loads before support datasets, shows real progress, caches 
   assert.ok(css.includes('#render-engine-root[data-omega-map-loading="true"] { z-index:2000'),
     'the real startup loader must sit above map controls until initialization settles');
   assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
-  assert.ok(map.includes("root.style.display = 'none';") &&
-    map.includes("root.style.display = this.__omegaMapRootDisplay === null ? '' : this.__omegaMapRootDisplay"),
-    'ministry switching must hide and restore the map root through visibility alone');
+  assert.ok(map.includes("root.style.visibility = 'hidden';") &&
+    map.includes("root.style.pointerEvents = 'none';") &&
+    map.includes("root.style.visibility = this.__omegaMapRootVisibility === null ? '' : this.__omegaMapRootVisibility"),
+    'ministry switching must hide and restore the map without collapsing its fixed layout');
   const mapSwitchStart = map.indexOf('Game.Map.setUiActive = function(active)');
   const mapSwitchEnd = map.indexOf('Game.Map.getCountryPolygonStyle = function(feature)', mapSwitchStart);
   const mapSwitch = map.slice(mapSwitchStart, mapSwitchEnd);
@@ -519,7 +520,7 @@ test('world geometry loads before support datasets, shows real progress, caches 
     'ministry switching must preserve attached Leaflet layers instead of rebuilding the cached GeoJSON tree');
   assert.ok(coreAssets.includes('"./map-engine-2.js"'),
     'the cached map visibility lifecycle must be available after an offline relaunch');
-  assert.ok(workerCacheVersion(worker) >= 101,
+  assert.ok(workerCacheVersion(worker) >= 102,
     'the offline shell must invalidate the map visibility lifecycle cache');
   assert.ok(map.includes('this.__omegaWorldMapAbortController.abort()'),
     'leaving the world view must abort an unfinished map-only request');
@@ -537,7 +538,7 @@ test('world geometry loads before support datasets, shows real progress, caches 
     'resource markers must not redraw during ministry navigation');
 });
 
-test('Map ministry switching preserves attached Leaflet layers and cancels map work safely', () => {
+test('Map ministry switching preserves Leaflet layout and cached layers', () => {
   const source = read('map-engine-2.js');
   const start = source.indexOf('Game.Map.setUiActive = function(active) {');
   const end = source.indexOf('Game.Map.getCountryPolygonStyle = function(feature)', start);
@@ -545,7 +546,7 @@ test('Map ministry switching preserves attached Leaflet layers and cancels map w
 
   const attributes = new Map();
   const root = {
-    style:{display:'block'},
+    style:{display:'block', visibility:'visible', pointerEvents:'auto'},
     setAttribute(name, value) { attributes.set(name, String(value)); },
     removeAttribute(name) { attributes.delete(name); },
     getAttribute(name) { return attributes.has(name) ? attributes.get(name) : null; }
@@ -560,7 +561,6 @@ test('Map ministry switching preserves attached Leaflet layers and cancels map w
     ['render-engine-root', root],
     ['omega-map-load-overlay', overlay]
   ]);
-  const queuedFrames = [];
   const canceledFrames = [];
   let abortCount = 0;
   let resumeCount = 0;
@@ -579,11 +579,9 @@ test('Map ministry switching preserves attached Leaflet layers and cancels map w
   const game = {
     Map:{
       __omegaMapUiActive:true,
-      __omegaMapRootDisplay:null,
+      __omegaMapRootVisibility:null,
+      __omegaMapRootPointerEvents:null,
       __omegaMapLoadingProgress:14,
-      __omegaMapUiGeneration:0,
-      __omegaMapLayerBatchFrame:null,
-      __omegaMapLayerBatchFrameType:null,
       __omegaDetachedLayers:[],
       countryGeoJSON:{type:'FeatureCollection',features:[]},
       map,
@@ -599,8 +597,8 @@ test('Map ministry switching preserves attached Leaflet layers and cancels map w
     document:{getElementById(id) { return elements.get(id) || null; }},
     window:{
       cancelAnimationFrame(id) { canceledFrames.push(id); },
-      requestAnimationFrame(callback) { queuedFrames.push(callback); return queuedFrames.length; },
-      setTimeout(callback) { queuedFrames.push(callback); return queuedFrames.length; }
+      requestAnimationFrame() { throw new Error('map visibility switching must not schedule a costly size rebuild'); },
+      setTimeout() { throw new Error('map visibility switching must not queue map work'); }
     }
   };
   vm.runInNewContext(source.slice(start, end), context, {
@@ -609,37 +607,41 @@ test('Map ministry switching preserves attached Leaflet layers and cancels map w
 
   assert.equal(game.Map.setUiActive(false), true);
   assert.equal(game.Map.__omegaMapUiActive, false);
-  assert.equal(root.style.display, 'none');
+  assert.equal(root.style.display, 'block', 'hiding the map must preserve its fixed layout');
+  assert.equal(root.style.visibility, 'hidden');
+  assert.equal(root.style.pointerEvents, 'none');
   assert.equal(root.getAttribute('data-omega-map-suspended'), 'true');
   assert.ok(canceledFrames.includes(77), 'incomplete map rendering must pause when the map is hidden');
   assert.equal(game.__omegaGeoJSONRenderPaused, true);
   assert.equal(eachLayerCalls, 0, 'hiding the map must not enumerate Leaflet layers');
-  assert.equal(removeLayerCalls, 0, 'hiding the map must not detach the cached GeoJSON tree');
+  assert.equal(removeLayerCalls, 0, 'hiding the map must not detach cached country geometry');
   assert.equal(addLayerCalls, 0);
 
   assert.equal(game.Map.setUiActive(true), true);
   assert.equal(game.Map.__omegaMapUiActive, true);
   assert.equal(root.style.display, 'block');
+  assert.equal(root.style.visibility, 'visible');
+  assert.equal(root.style.pointerEvents, 'auto');
   assert.equal(root.getAttribute('data-omega-map-suspended'), null);
   assert.equal(progressCount, 1);
   assert.equal(resumeCount, 1, 'an incomplete cached geometry render must resume through its existing cursor');
-  assert.equal(queuedFrames.length, 1, 'map size refresh must be deferred until after the cabinet transition');
   assert.equal(eachLayerCalls, 0);
   assert.equal(removeLayerCalls, 0);
   assert.equal(addLayerCalls, 0);
+  assert.equal(invalidateSizeCalls, 0, 'a same-size fixed map surface must not trigger a full geometry relayout');
 
-  // A ministry may reopen before the deferred map-size refresh runs. The stale
-  // callback must observe the inactive flag and leave the map renderer untouched.
+  // A ministry may reopen immediately after returning to the map. The retained
+  // layout and Leaflet tree mean this transition has no deferred map repaint work.
   game.Map.countryGeoJSON = null;
   game.Map.__omegaWorldMapAbortController = {abort() { abortCount += 1; }};
   game.__omegaGeoJSONRenderFrame = 88;
   assert.equal(game.Map.setUiActive(false), true);
-  assert.equal(root.style.display, 'none');
+  assert.equal(root.style.display, 'block');
+  assert.equal(root.style.visibility, 'hidden');
+  assert.equal(root.style.pointerEvents, 'none');
   assert.equal(game.Map.__omegaMapUiActive, false);
   assert.equal(abortCount, 1, 'an unfinished map-only download must still abort on ministry entry');
   assert.ok(canceledFrames.includes(88));
-  queuedFrames[0]();
-  assert.equal(invalidateSizeCalls, 0, 'a stale map resize must not run after a newer ministry transition');
   assert.equal(eachLayerCalls, 0);
   assert.equal(removeLayerCalls, 0);
   assert.equal(addLayerCalls, 0);
