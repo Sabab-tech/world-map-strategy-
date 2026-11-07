@@ -873,8 +873,6 @@
     processed.availableByResource=processed.availableByResource||{};processed.storedBatchIds=Array.isArray(processed.storedBatchIds)?processed.storedBatchIds:[];
     processed.receipts=Array.isArray(processed.receipts)?processed.receipts:[];
     const isProcessed=stage=>['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(String(stage||'').toUpperCase());
-    const buyerCompanyId=String(auth.buyerCompanyId||'').trim().toUpperCase(),sellerCompanyId=String(auth.sellerCompanyId||'').trim().toUpperCase(),
-      privateCompanyTrade=!!(buyerCompanyId||sellerCompanyId);
     const lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1,
       companyIds=Array.isArray(lifecycle?.companyIds)?lifecycle.companyIds.map(x=>String(x).toUpperCase()):[];
     if(privateCompanyTrade&&(!buyerCompanyId||!sellerCompanyId||!companyIds.includes(buyerCompanyId)||!companyIds.includes(sellerCompanyId)))
