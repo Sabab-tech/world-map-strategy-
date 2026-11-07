@@ -29,6 +29,26 @@
   const turn=()=>{const s=state();return num(s?.simulation?.turn??s?.turn??s?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;};
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
   const canonical=v=>{const raw=String(v??'').trim();if(/^[A-Z]{3}$/i.test(raw))return id(raw);try{const r=registry()?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}return id(v);};
+  function countryIso3(value){
+    const raw=String(value??'').trim();
+    if(/^[A-Z]{3}$/i.test(raw))return id(raw);
+    try{
+      const hit=registry()?.resolveCountry?.(raw);
+      const resolved=hit?.raw?.iso3||hit?.raw?.iso3Code||hit?.raw?.countryCode||
+        hit?.iso3||hit?.iso3Code||hit?.countryCode;
+      if(resolved&&/^[A-Z]{3}$/i.test(String(resolved)))return id(resolved);
+    }catch(_){}
+    try{
+      const normalized=g.ResourceMinistryEngine?.normalizeCountryCode?.(raw);
+      if(normalized&&/^[A-Z]{3}$/i.test(String(normalized)))return id(normalized);
+    }catch(_){}
+    try{
+      const record=g.OmegaCountryGeneralDataRuntime?.getCountryRecord?.(raw);
+      const resolved=record?.identity?.iso3||record?.identity?.countryCode;
+      if(resolved&&/^[A-Z]{3}$/i.test(String(resolved)))return id(resolved);
+    }catch(_){}
+    return id(raw);
+  }
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
   const memory=()=>g.OmegaOpponentDeepMemory||g.Omega?.OpponentDeepMemory||null;
 
@@ -426,14 +446,8 @@
       if(typeof market?.privateCompanySuppliers!=='function')
         return{accepted:false,reason:'PRIVATE_COMPANY_MARKET_SUPPLIER_RUNTIME_UNAVAILABLE'};
       const supplier=market.privateCompanySuppliers(resourceId,quantity,buyer,sellerCompanyId)
-        .find(row=>{
-          let observedCountry=row.countryId,requestedCountry=seller;
-          try{
-            observedCountry=registry()?.resolveCountry?.(row.countryId)?.id||observedCountry;
-            requestedCountry=registry()?.resolveCountry?.(seller)?.id||requestedCountry;
-          }catch(_){}
-          return id(observedCountry)===id(requestedCountry)&&String(row.companyId||'').trim().toUpperCase()===sellerCompanyId;
-        });
+        .find(row=>countryIso3(row.countryId)===countryIso3(seller)&&
+          String(row.companyId||'').trim().toUpperCase()===sellerCompanyId);
       if(!supplier)return{accepted:false,reason:'PRIVATE_SELLER_COMPANY_HAS_NO_VERIFIED_MARKET_STOCK',sellerCompanyId:sellerCompanyId};
       marketPriceEvidence=Object.assign({},marketPriceEvidence,{
         status:quote.status,clearingPriceUsd:quote.clearingPriceUsd,marketTurn:quote.generatedTurn,
