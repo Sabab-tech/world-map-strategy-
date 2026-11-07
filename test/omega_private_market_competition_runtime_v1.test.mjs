@@ -133,6 +133,27 @@ test('dominance cannot trigger an expansion hold unless every private asset prov
   assert.equal(h.state.trade.BGD.marketCompetition.activeRestrictions.length,0);
 });
 
+test('missing sales evidence does not count as a below-threshold turn or release an existing hold',()=>{
+  const h=harness(),api=h.sandbox.OmegaPrivateMarketCompetitionRuntime;
+  api.processCountry('BGD');
+  h.state.trade.BGD.domesticSales[0].sale.paymentStatus='UNOBSERVED';
+  h.state.trade.BGD.domesticSales[0].sale.ownerAllocationStatus='UNRESOLVED';
+  h.state.simulation.turn++;
+  const result=api.processCountry('BGD');
+  assert.equal(result.status,'COMPLETED');
+  assert.equal(result.resourcesChecked,0);
+  assert.equal(h.state.trade.BGD.marketCompetition.cases[0].belowThresholdTurns,0);
+  assert.equal(h.state.trade.BGD.marketCompetition.activeRestrictions.length,1);
+});
+
+test('private-company HHI alone can open an investigation, but it does not imply dominance by itself',()=>{
+  const h=harness({metric:metric({share:25,hhi:2600})});
+  const result=h.sandbox.OmegaPrivateMarketCompetitionRuntime.processCountry('BGD');
+  assert.equal(result.status,'COMPLETED');
+  assert.equal(h.state.trade.BGD.marketCompetition.cases[0].stage,'INVESTIGATION');
+  assert.equal(h.state.trade.BGD.marketCompetition.activeRestrictions.length,0);
+});
+
 test('only the active player country may process a market competition turn',()=>{
   const h=harness();
   assert.equal(h.sandbox.OmegaPrivateMarketCompetitionRuntime.processCountry('SAU').reason,'PLAYER_COUNTRY_SCOPE_ONLY');
