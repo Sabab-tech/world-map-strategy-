@@ -147,6 +147,13 @@ function setReadyIronSupply(harness,amount=1000){
   }
   setIronDemandSnapshot(harness,0,0,0);
 }
+function submitProposal(api,input){
+  return api.createProposal(Object.assign({
+    requestReason:'The company seeks additional capacity for a documented domestic supply need.',
+    expectedBenefit:'This project adds modeled production capacity; realized income requires confirmed customer demand and settled sales.',
+    riskForecast:'Input supply, capital, utilities, workforce, storage, logistics and customer demand may constrain this project.'
+  },input||{}));
+}
 
 test('autonomous company proposals are deterministic, once per 30 turns, and have no asset/stock/cash side effects',()=>{
   const h=makeHarness(),beforeInventory=JSON.stringify(h.state.resource.BGD.inventory);
@@ -197,7 +204,7 @@ test('committed game-turn event schedules the autonomous proposal only once for 
 test('proposal -> approval -> real Treasury grant -> construction -> private commissioning is replay-safe and uses shared assets',()=>{
   const h=makeHarness(),api=h.api;
   setIronDemandSnapshot(h,0,0,0);
-  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',factoryType:'STEEL_WORKS',quantity:1,
+  const proposal=submitProposal(api,{countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',factoryType:'STEEL_WORKS',quantity:1,
     sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true,requestId:'proposal-001'});
   assert.equal(proposal.status,'PROPOSED');
   assert.equal(h.projects.length,0);
@@ -290,7 +297,7 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
 
 test('production proof refresh restores only the requested factory and gates siblings independently',()=>{
   const h=makeHarness(),api=h.api;
-  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+  const proposal=submitProposal(api,{countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
     factoryType:'STEEL_WORKS',quantity:2,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
@@ -328,7 +335,7 @@ test('production proof refresh restores only the requested factory and gates sib
 
 test('construction retry reconciles a canonical project created before proposal and CAPEX pointers were saved',()=>{
   const h=makeHarness(),api=h.api;
-  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+  const proposal=submitProposal(api,{countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
     factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
   const approval=api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}});
@@ -369,8 +376,8 @@ test('company funding reservations prevent two proposals from pledging the same 
     companyId:COMPANY,amount:100,currency:'GAME_CURRENCY_UNITS',direction:'CREDIT',status:'SETTLED'});
   assert.equal(api.recordCompanyCapitalReceipt({countryId:'BGD',companyId:COMPANY,sourceTransactionId:'BANK-CAPITAL-100',
     amount:100,currency:'GAME_CURRENCY_UNITS'}).status,'POSTED');
-  const one=api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'});
-  const two=api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'});
+  const one=submitProposal(api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'});
+  const two=submitProposal(api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'});
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:one.proposalId,decision:'APPROVE'}).status,'APPROVED_AWAITING_FUNDING');
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:two.proposalId,decision:'APPROVE'}).status,'APPROVED_AWAITING_FUNDING');
   assert.equal(api.fundProposal({countryId:'BGD',proposalId:one.proposalId,sourceType:'COMPANY_CAPITAL',amount:100}).status,'FUNDED');
@@ -386,7 +393,7 @@ test('company funding reservations prevent two proposals from pledging the same 
 
 test('construction rechecks fresh input and demand snapshots for every sourcing mode',()=>{
   const h=makeHarness(),api=h.api;
-  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+  const proposal=submitProposal(api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
     sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
@@ -402,7 +409,7 @@ test('construction rechecks fresh input and demand snapshots for every sourcing 
 
 test('factory construction authorization rejects forged identity, scope, permit and unit request',()=>{
   const h=makeHarness(),api=h.api;
-  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+  const proposal=submitProposal(api,{countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
     factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
@@ -438,7 +445,7 @@ test('private production requires the mounted canonical extraction-to-output run
 
 test('domestic-only approval fails closed on a measured shortage or unobserved stock',()=>{
   const h=makeHarness();
-  const proposal=h.api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'DOMESTIC_ONLY'});
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'DOMESTIC_ONLY'});
   const result=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
   assert.equal(result.status,'BLOCKED');
   assert.equal(result.reason,'DOMESTIC_INPUT_SHORTAGE');
@@ -451,7 +458,7 @@ test('domestic approval subtracts strategic protection and current national dema
   h.state.resource.BGD.inventory.iron_ore=1000;
   h.state.resource.BGD.warehouse.availableByResource.iron_ore=1000;
   h.state.resource.BGD.strategicReserve={availableByResource:{iron_ore:100}};
-  const proposal=h.api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'DOMESTIC_ONLY'});
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'DOMESTIC_ONLY'});
   const unknown=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
   assert.equal(unknown.status,'BLOCKED');
   assert.equal(unknown.reason,'DOMESTIC_INPUT_STOCK_UNOBSERVED');
@@ -484,7 +491,7 @@ test('domestic approval subtracts strategic protection and current national dema
 
 test('zero-government factory categories cannot receive a private expansion proposal approval',()=>{
   const h=makeHarness();
-  const proposal=h.api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'ZERO_GOV_FACTORY',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'});
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,factoryType:'ZERO_GOV_FACTORY',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'});
   assert.equal(proposal.status,'PROPOSED');
   const preview=h.api.previewProposal('BGD',proposal.proposalId);
   assert.equal(preview.status,'BLOCKED');
@@ -496,7 +503,7 @@ test('zero-government factory categories cannot receive a private expansion prop
 
 test('partial construction resumes remaining units without duplicate project or capex entries',()=>{
   const h=makeHarness(),api=h.api;
-  const proposal=api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:2,
+  const proposal=submitProposal(api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:2,
     sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
@@ -528,7 +535,7 @@ test('partial construction resumes remaining units without duplicate project or 
 
 test('an expired government permit cannot start construction after funding',()=>{
   const h=makeHarness();
-  const proposal=h.api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
     sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
   const approval=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
     allowStateSupport:true,expiryTurn:5,conditions:{allowStateSupport:true}});
@@ -562,6 +569,34 @@ test('company capital receipts require an existing settled Finance ledger credit
   assert.equal(invalid.reason,'CAPITAL_RECEIPT_NOT_VERIFIED_IN_FINANCE_LEDGER');
 });
 
+test('company application disclosures are mandatory, collision-protected and captured in government approval assessment',()=>{
+  const h=makeHarness(),api=h.api;
+  const base={countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'};
+  assert.equal(api.createProposal({...base,requestReason:'',expectedBenefit:'A sufficiently detailed benefit statement.',riskForecast:'A sufficiently detailed risk statement.'}).reason,
+    'COMPANY_REQUEST_REASON_REQUIRED');
+  assert.equal(api.createProposal({...base,requestReason:'The company needs a domestic contract.',expectedBenefit:'',riskForecast:'A sufficiently detailed risk statement.'}).reason,
+    'COMPANY_EXPECTED_BENEFIT_REQUIRED');
+  assert.equal(api.createProposal({...base,requestReason:'The company needs a domestic contract.',expectedBenefit:'It adds modeled production capacity.',riskForecast:''}).reason,
+    'COMPANY_RISK_FORECAST_REQUIRED');
+  const proposal=submitProposal(api,{...base,requestId:'disclosed-company-application'});
+  assert.equal(proposal.status,'PROPOSED');
+  assert.equal(proposal.requestReason,'The company seeks additional capacity for a documented domestic supply need.');
+  const changedReason=submitProposal(api,{...base,requestId:'disclosed-company-application',
+    requestReason:'The company now requests capacity for a different commercial reason.'});
+  assert.equal(changedReason.reason,'PROPOSAL_REQUEST_IDEMPOTENCY_COLLISION');
+  setIronDemandSnapshot(h,0,0,0);
+  setReadyIronSupply(h,1000);
+  const decision=api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
+  assert.equal(decision.status,'APPROVED_AWAITING_FUNDING');
+  assert.equal(decision.proposal.decision.companyApplication.requestReason,proposal.requestReason);
+  assert.equal(decision.proposal.approvalAssessment.authority,'OMEGA_PRIVATE_ENTERPRISE_APPROVAL_ASSESSMENT_V1');
+  assert.equal(decision.proposal.approvalAssessment.horizonDays,30);
+  assert.equal(decision.proposal.approvalAssessment.financialForecast.netOperatingResultAtFullSellThrough,null,
+    'the government must not see invented profit when prices and operating-cost rates are not observed');
+  assert.ok(decision.proposal.approvalAssessment.riskFlags.some(row=>row.code==='OUTPUT_MARKET_PRICE_UNOBSERVED'));
+});
+
 test('proposal requests cannot be created for another country or an unknown company identity',()=>{
   const h=makeHarness();
   assert.equal(h.api.createProposal({countryId:'USA',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1}).reason,'PLAYER_COUNTRY_SCOPE_ONLY');
@@ -575,22 +610,22 @@ test('proposal request IDs replay only the original payload and reject collision
   const input={countryId:'BGD',companyId:COMPANY,operatorCompanyId:'AURORA_INDUSTRIAL_GROUP',
     factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',
     requestId:'proposal-idempotency-guard'};
-  const first=h.api.createProposal(input);
+  const first=submitProposal(h.api,input);
   assert.equal(first.status,'PROPOSED');
-  const replay=h.api.createProposal({...input});
+  const replay=submitProposal(h.api,{...input});
   assert.equal(replay.idempotent,true);
   assert.equal(replay.proposalId,first.proposalId);
-  const quantityCollision=h.api.createProposal({...input,quantity:2});
+  const quantityCollision=submitProposal(h.api,{...input,quantity:2});
   assert.equal(quantityCollision.status,'BLOCKED');
   assert.equal(quantityCollision.reason,'PROPOSAL_REQUEST_IDEMPOTENCY_COLLISION');
-  const operatorCollision=h.api.createProposal({...input,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP'});
+  const operatorCollision=submitProposal(h.api,{...input,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP'});
   assert.equal(operatorCollision.reason,'PROPOSAL_REQUEST_IDEMPOTENCY_COLLISION');
   assert.equal(h.api.getProposal('BGD',first.proposalId).quantity,1);
 });
 
 test('Production Lines screen shows capital receipt verification for an approved underfunded company',()=>{
   const h=makeHarness();
-  const proposal=h.api.createProposal({countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
     sourcingPolicy:'COMPANY_FUNDED_IMPORTS',requestId:'ui-funding-proposal'});
   const approval=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
   assert.equal(approval.status,'APPROVED_AWAITING_FUNDING');
