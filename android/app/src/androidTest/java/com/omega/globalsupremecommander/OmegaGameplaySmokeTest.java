@@ -118,46 +118,38 @@ public final class OmegaGameplaySmokeTest {
             );
 
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OFFLINE_BRIDGE_READY");
+            // Verify the 2x UI control and return the clock to pause in the same
+            // WebView task. Two separate callbacks allowed the live simulation to
+            // start a large synchronous turn before the pause command reached WebView 66.
             final String speedControlScript =
                     "(function() {" +
-                    " if (!window.Omega || !window.Omega.GameLifecycle || !window.Game) return false;" +
-                    // A speed selection must be tested in a started game, not an unowned world.
+                    " var lifecycle = window.Omega && window.Omega.GameLifecycle;" +
+                    " if (!lifecycle || typeof lifecycle.setSpeed !== 'function' || typeof lifecycle.getDiagnostics !== 'function' || !window.Game) return false;" +
                     " window.Game.currentActiveCountry = 'USA';" +
                     " window.Game.playerCountry = 'USA';" +
                     " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
                     " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
                     " if (!button) return false;" +
                     " button.click();" +
-                    " var diagnostics = window.Omega.GameLifecycle.getDiagnostics();" +
-                    " return !!(diagnostics && diagnostics.clock && Number(diagnostics.clock.speed) === 2);" +
+                    " var running = lifecycle.getDiagnostics();" +
+                    " var runningSpeed = running && running.clock ? Number(running.clock.speed) : null;" +
+                    " if (runningSpeed !== 2) return false;" +
+                    " var pauseApplied = lifecycle.setSpeed(0);" +
+                    " var paused = lifecycle.getDiagnostics();" +
+                    " var pausedSpeed = paused && paused.clock ? Number(paused.clock.speed) : null;" +
+                    " var sim = window.Omega.SimulationRuntime || window.Omega.Simulation;" +
+                    " var status = String(sim && sim.status || '').toUpperCase();" +
+                    " var stopped = pausedSpeed === 0 || (status !== 'RUNNING' && !(paused && paused.running === true));" +
+                    " window.__OMEGA_ANDROID_CLOCK_DIAGNOSTICS = {runningSpeed:runningSpeed,pauseApplied:pauseApplied,pausedSpeed:pausedSpeed,status:status,running:!!(paused && paused.running),stopped:stopped};" +
+                    " return stopped;" +
                     "})()";
             assertEquals(
-                    "Tapping the 2x control must set the authoritative OMEGA simulation clock to speed 2",
+                    "The real 2x control must set speed 2 and then pause the authoritative clock before inserting the UI fixture",
                     "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
             );
-
-            // Stop the simulation before inserting an in-memory-only fixture. This keeps
-            // the visual test deterministic and prevents the fixture from entering a game turn.
-            final String pauseClockScript =
-                    "(function() {" +
-                    " var lifecycle = window.Omega && window.Omega.GameLifecycle;" +
-                    " var sim = window.Omega && (window.Omega.SimulationRuntime || window.Omega.Simulation);" +
-                    " if (!lifecycle || typeof lifecycle.setSpeed !== 'function' || typeof lifecycle.getDiagnostics !== 'function' || !sim || !sim.clock) return false;" +
-                    " var applied = lifecycle.setSpeed(0);" +
-                    " var diagnostics = lifecycle.getDiagnostics();" +
-                    " var speed = diagnostics && diagnostics.clock ? Number(diagnostics.clock.speed) : null;" +
-                    " var status = String(sim.status || '').toUpperCase();" +
-                    " var safeToSeed = speed === 0 || (status !== 'RUNNING' && !(diagnostics && diagnostics.running === true));" +
-                    " window.__OMEGA_ANDROID_PAUSE_DIAGNOSTICS = {applied:applied, speed:speed, status:status, running:!!(diagnostics && diagnostics.running), safeToSeed:safeToSeed};" +
-                    " return safeToSeed;" +
-                    "})()";
-            final String pauseClockResult = evaluate(instrumentation, webViewRef.get(), pauseClockScript);
-            final String pauseClockDiagnostics = evaluate(instrumentation, webViewRef.get(),
-                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_PAUSE_DIAGNOSTICS || {});})()");
-            assertEquals(
-                    "The visual-only fixture must not run during a live game turn; clock=" + pauseClockDiagnostics,
-                    "true", pauseClockResult
-            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=SIMULATION_CLOCK_PAUSED diagnostics=" +
+                    evaluate(instrumentation, webViewRef.get(),
+                            "(function(){return JSON.stringify(window.__OMEGA_ANDROID_CLOCK_DIAGNOSTICS || {});})()"));
 
             final String seedFactoryInputFixtureScript =
                     "(function() {" +
