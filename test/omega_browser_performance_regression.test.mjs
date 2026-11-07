@@ -508,10 +508,12 @@ test('world geometry loads before support datasets, shows real progress, caches 
   assert.ok(css.includes('#render-engine-root[data-omega-map-loading="true"] { z-index:2000'),
     'the real startup loader must sit above map controls until initialization settles');
   assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
-  assert.ok(map.includes("root.style.visibility = 'hidden';") &&
+  assert.ok(map.includes("root.style.display = 'none';") &&
+    map.includes("root.style.visibility = 'hidden';") &&
     map.includes("root.style.pointerEvents = 'none';") &&
-    map.includes("root.style.visibility = this.__omegaMapRootVisibility === null ? '' : this.__omegaMapRootVisibility"),
-    'ministry switching must hide and restore the map without collapsing its fixed layout');
+    map.includes("root.style.display = this.__omegaMapRootDisplay === null ? '' : this.__omegaMapRootDisplay") &&
+    map.includes("scheduleMapViewportRefresh();"),
+    'ministry switching must remove the map surface from WebView compositing and restore its Leaflet viewport');
   assert.match(css, /#render-engine-root\[data-omega-map-suspended="true"\]\s*\{[^}]*visibility:\s*hidden\s*!important;[^}]*pointer-events:\s*none\s*!important;[^}]*\}/s,
     'the suspended-map CSS rule must preserve Leaflet layout and disable only map hit testing');
   assert.doesNotMatch(css, /#render-engine-root\[data-omega-map-suspended="true"\]\s*\{[^}]*display:\s*none/s,
@@ -547,7 +549,7 @@ test('world geometry loads before support datasets, shows real progress, caches 
     'resource markers must not redraw during ministry navigation');
 });
 
-test('Map ministry switching preserves Leaflet layout and defers unfinished geometry until the map stays active', () => {
+test('Map ministry switching suspends the render surface, preserves Leaflet layers and defers unfinished geometry', () => {
   const source = read('map-engine-2.js');
   const helperStart = source.indexOf('function cancelDeferredGeoJSONResume()');
   const start = source.indexOf('Game.Map.setUiActive = function(active) {', helperStart);
@@ -593,6 +595,7 @@ test('Map ministry switching preserves Leaflet layout and defers unfinished geom
   const game = {
     Map:{
       __omegaMapUiActive:true,
+      __omegaMapRootDisplay:null,
       __omegaMapRootVisibility:null,
       __omegaMapRootPointerEvents:null,
       __omegaMapLoadingProgress:14,
@@ -610,8 +613,15 @@ test('Map ministry switching preserves Leaflet layout and defers unfinished geom
     Game:game,
     document:{getElementById(id) { return elements.get(id) || null; }},
     window:{
-      cancelAnimationFrame(id) { canceledFrames.push(id); },
-      requestAnimationFrame() { throw new Error('map visibility switching must not schedule a costly size rebuild'); },
+      cancelAnimationFrame(id) {
+        canceledFrames.push(id);
+        queuedTimers.delete(id);
+      },
+      requestAnimationFrame(callback) {
+        const id = nextTimer++;
+        queuedTimers.set(id, {callback, delay:0, frame:true});
+        return id;
+      },
       setTimeout(callback, delay) {
         const id = nextTimer++;
         queuedTimers.set(id, {callback, delay});
@@ -629,7 +639,7 @@ test('Map ministry switching preserves Leaflet layout and defers unfinished geom
 
   assert.equal(game.Map.setUiActive(false), true);
   assert.equal(game.Map.__omegaMapUiActive, false);
-  assert.equal(root.style.display, 'block', 'hiding the map must preserve its fixed layout');
+  assert.equal(root.style.display, 'none', 'the map canvas must leave the WebView render tree while a ministry is active');
   assert.equal(root.style.visibility, 'hidden');
   assert.equal(root.style.pointerEvents, 'none');
   assert.equal(root.getAttribute('data-omega-map-suspended'), 'true');
@@ -645,6 +655,13 @@ test('Map ministry switching preserves Leaflet layout and defers unfinished geom
   assert.equal(root.style.visibility, 'visible');
   assert.equal(root.style.pointerEvents, 'auto');
   assert.equal(root.getAttribute('data-omega-map-suspended'), null);
+  const viewportRefreshFrame = game.__omegaMapViewportRefreshFrame;
+  assert.ok(viewportRefreshFrame !== null && queuedTimers.has(viewportRefreshFrame),
+    'the restored map must refresh its viewport on the next animation frame');
+  const viewportRefreshTask = queuedTimers.get(viewportRefreshFrame);
+  queuedTimers.delete(viewportRefreshFrame);
+  viewportRefreshTask.callback();
+  assert.equal(invalidateSizeCalls, 1, 'the retained Leaflet map must measure its visible viewport after restoration');
   assert.equal(progressCount, 1);
   assert.equal(resumeCount, 0, 'unfinished geometry must not resume in the ministry-exit callback');
   const staleResumeTimer = game.__omegaGeoJSONResumeTimer;
@@ -678,13 +695,13 @@ test('Map ministry switching preserves Leaflet layout and defers unfinished geom
   game.Map.__omegaWorldMapAbortController = {abort() { abortCount += 1; }};
   game.__omegaGeoJSONRenderFrame = 88;
   assert.equal(game.Map.setUiActive(false), true);
-  assert.equal(root.style.display, 'block');
+  assert.equal(root.style.display, 'none');
   assert.equal(root.style.visibility, 'hidden');
   assert.equal(root.style.pointerEvents, 'none');
   assert.equal(game.Map.__omegaMapUiActive, false);
   assert.equal(abortCount, 1, 'an unfinished map-only download must still abort on ministry entry');
   assert.ok(canceledFrames.includes(88));
-  assert.equal(invalidateSizeCalls, 0, 'visibility-only map switching must not trigger a full geometry relayout');
+  assert.equal(invalidateSizeCalls, 1, 'a later reopen must cancel stale map refresh work rather than remeasure a hidden map');
   assert.equal(eachLayerCalls, 0);
   assert.equal(removeLayerCalls, 0);
   assert.equal(addLayerCalls, 0);
