@@ -1408,6 +1408,23 @@ test('retired operational-console bridge cannot mutate the active UI or legacy l
   }
 });
 
+test('UI v2 suspends route work but retains its shell for a lightweight second cabinet open', () => {
+  const app = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+  const integration = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
+  assert.match(app, /function suspend\(root\)[\s\S]*?releaseResourceScopeIfLeaving\(root, state\)[\s\S]*?invalidatePendingRender\(state\)[\s\S]*?main\.innerHTML = ''/);
+  assert.match(app, /function resume\(root, options\)[\s\S]*?state\.options = Object\.assign\(\{\}, state\.options \|\| \{\}, options\)[\s\S]*?scheduleNavigationRender\(root\)/);
+  assert.match(app, /resume:resume, suspend:suspend/);
+  assert.match(integration, /typeof g\.OmegaUIV2App\.resume === 'function'/);
+  assert.match(integration, /reusedApp && root\.__omegaUIV2State\.options[\s\S]*?countryOptions/);
+  assert.match(integration, /typeof g\.OmegaUIV2App\.suspend === 'function'[\s\S]*?g\.OmegaUIV2App\.suspend\(root\)/);
+  const closeStart = integration.indexOf('function closeToWorldMap()');
+  const bridgeStart = integration.indexOf('function installLegacyLayerBridge()', closeStart);
+  const closeLifecycle = integration.slice(closeStart, bridgeStart);
+  assert.match(closeLifecycle, /OmegaUIV2App\.suspend\(root\)/,
+    'map exit must suspend the mounted shell so reopening does not rebuild its country roster');
+
+});
+
 test('Back-to-Map bypasses legacy cabinet subsystem stack traps', () => {
   const bridge = globalThis.OmegaUIV2Integration;
   const previousManager = globalThis.OmegaLayerManager;
@@ -2632,6 +2649,23 @@ test('cabinet exit updates the world-map layer immediately and cancels stale cle
     flushFrames();
     assert.equal(closeCount, 0, 'stale teardown must never close the newly opened cabinet');
     assert.equal(worldMapActive, true);
+
+    const suspended = globalThis.OmegaUIV2App.suspend(root);
+    assert.equal(suspended, true);
+    assert.equal(root.__omegaUIV2State.route, 'map');
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'map');
+    assert.equal(main.innerHTML, '', 'suspension releases the screen DOM but retains the outer shell');
+    assert.equal(root.__omegaUIV2State.shellMounted, true);
+
+    const resumed = globalThis.OmegaUIV2App.resume(root, options);
+    assert.equal(resumed.ok, true);
+    assert.equal(resumed.resumed, true);
+    assert.equal(resumed.route, 'government');
+    assert.match(main.innerHTML, /Preparing this section/);
+    assert.equal(frames.size, 1, 'resume renders the destination after yielding to the WebView');
+    flushFrames();
+    assert.match(main.innerHTML, /Government screen/);
+    assert.equal(root.getAttribute('data-omega-v2-navigation-pending'), null);
   } finally {
     if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
     if (previous.diagnostics === undefined) delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS; else globalThis.__OMEGA_UI_V2_DIAGNOSTICS = previous.diagnostics;
@@ -3336,7 +3370,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v98'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v103'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3396,7 +3430,7 @@ test('factory Details is an in-card flip with three independent product tabs', (
   assert.match(css,/fp-detail-status\[data-state="stable"\]/);
   assert.match(css,/fp-detail-status\[data-state="risk"\]/);
   assert.match(css,/fp-detail-status\[data-state="critical"\]/);
-  assert.match(sw,/omega-offline-atlas-shell-v98/);
+  assert.match(sw,/omega-offline-atlas-shell-v103/);
 });
 
 test('factory cards retain three landscape columns and constrain text to the card face', () => {
@@ -3414,7 +3448,7 @@ test('factory cards retain three landscape columns and constrain text to the car
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:899px\)/);
   assert.match(css,/@media \(orientation:portrait\) and \(max-width:899px\)[\s\S]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
   assert.match(css,/\.fp-card-detail-row \.fp-card-detail-product\s*\{[^}]*grid-column:1 \/ -1/s);
-  assert.match(sw,/omega-offline-atlas-shell-v98/);
+  assert.match(sw,/omega-offline-atlas-shell-v103/);
 });
 
 test('Factory Type identity header aligns icon, name and owned count in one row', () => {
@@ -3452,6 +3486,27 @@ test('Factory Input tables contain long cell content without changing factory ca
   assert.doesNotMatch(fix, /\.fp-card|\.fp-type-card/,
     'the separate Input table fix must not alter factory cards');
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 98,
-    'offline clients must fetch the updated Factory Input stylesheet');
+  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 103,
+    'offline clients must fetch the refreshed ministry lifecycle and Factory Input assets');
+});
+
+ 
+test('Android landscape aggregate Factory Input table scrolls and refreshes in the offline shell', () => {
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  const marker = '/* The seven-column daily Input summary must remain horizontally scrollable';
+  const start = css.indexOf(marker);
+  assert.ok(start >= 0, 'the Android landscape aggregate Input table rule must exist');
+  const nextRule = css.indexOf('/* Android 9 / legacy WebView paint profile.', start);
+  const rules = css.slice(start, nextRule >= 0 ? nextRule : undefined);
+  assert.match(rules, /\.fp-factory-plan > \.fp-factory-table-wrap\s*\{[^}]*overflow-x:\s*scroll;/s,
+    'the aggregate table must have a real horizontal scroll container');
+  assert.match(rules, /\.fp-factory-input-total-table\s*\{[^}]*width:\s*1120px\s*!important;[^}]*min-width:\s*1120px\s*!important;[^}]*max-width:\s*none;/s,
+    'the seven-column table must preserve intrinsic width on legacy WebView');
+  assert.match(rules, /-webkit-overflow-scrolling:\s*touch;/,
+    'the aggregate table must preserve touch scrolling on Android');
+  assert.doesNotMatch(rules, /\.fp-card|\.fp-type-card/,
+    'the Input overflow fix must not alter factory card layout');
+  assert.ok(sw.includes('const CACHE_NAME = "omega-offline-atlas-shell-v103";'),
+    'offline clients must install the updated landscape Input stylesheet');
 });
