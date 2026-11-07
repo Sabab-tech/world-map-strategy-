@@ -146,11 +146,14 @@ test("Android 9 smoke exports and validates a real landscape PNG before app clea
   ), "instrumentation must stage the screenshot in the app-specific external files directory");
   assert.ok(androidSmokeInstrumentation.includes("executeShellCommand") &&
     androidSmokeInstrumentation.includes("run-as com.omega.globalsupremecommander cat") &&
+    androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_EXPORT_BEGIN") &&
+    androidSmokeInstrumentation.includes("SCREENSHOT_EXPORT_COMMAND_OUTPUT=") &&
     androidSmokeInstrumentation.includes("OMEGA_SCREENSHOT_EXPORT_OK"),
     "instrumentation must read the app-owned PNG as the target UID and stream it to shared emulator storage before the app is uninstalled");
-  assert.ok(androidSmokeScript.includes('remote_screenshot_dir="/sdcard/omega-smoke"') &&
+  assert.ok(androidSmokeScript.includes('adb shell mkdir -p /sdcard/omega-smoke') &&
+    androidSmokeScript.includes('remote_screenshot_dir="/sdcard/omega-smoke"') &&
     androidSmokeScript.includes('adb pull "$remote_screenshot_dir" "$screenshot_dir"'),
-    "the host must retrieve the exported screenshot from the shared emulator staging directory");
+    "the host must prepare and retrieve the exported screenshot from the shared emulator staging directory");
   assert.ok(androidSmokeScript.includes('89504e470d0a1a0a') &&
     androidSmokeScript.includes('screenshot_bytes'),
     "the host must reject error text, truncated files, and non-PNG screenshot artifacts");
