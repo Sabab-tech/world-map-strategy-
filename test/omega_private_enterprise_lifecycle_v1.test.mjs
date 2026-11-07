@@ -1090,6 +1090,23 @@ test('private market concentration uses settled attributable sales and excludes 
   assert.equal(result.coverage.crossBorderCompanySales,'PRIVATE_EXPORT_RECEIPTS_REPORTED_SEPARATELY_NOT_MIXED_INTO_DOMESTIC_MARKET_SHARE');
 });
 
+test('active competition expansion order blocks private permit approval without changing settled market history',()=>{
+  const h=makeHarness(),api=h.api;
+  const proposal=submitProposal(api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1});
+  assert.equal(proposal.status,'PROPOSED');
+  h.state.trade={BGD:{marketCompetition:{activeRestrictions:[{
+    caseId:'OMEGA-ANTITRUST:BGD:IRON_ORE:'+COMPANY,countryId:'BGD',resourceId:'iron_ore',
+    companyId:COMPANY,status:'ACTIVE',restrictionType:'PRIVATE_FACTORY_EXPANSION_HOLD',
+    startsTurn:4,authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'
+  }]}}};
+  const decision=api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'});
+  assert.equal(decision.status,'BLOCKED');
+  assert.equal(decision.reason,'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE');
+  assert.equal(decision.competitionCaseId,'OMEGA-ANTITRUST:BGD:IRON_ORE:'+COMPANY);
+  assert.equal(api.getProposal('BGD',proposal.proposalId).status,'PROPOSED',
+    'a competition review hold must not consume or mutate the company proposal');
+});
+
 test('insolvency opens only on recorded cash shortfall; restructuring, suspension and closure preserve asset history',()=>{
   const h=makeHarness(),api=h.api,company=COMPANY,factoryId='PRIVATE-INSOLVENT-FAC-1';
   h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
