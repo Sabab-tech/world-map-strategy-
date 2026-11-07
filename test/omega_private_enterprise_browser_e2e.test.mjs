@@ -1770,7 +1770,10 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
       if (!requestResult?.accepted || requestResult.request?.procurementType !== 'PRIVATE_COMPANY_TO_COMPANY') {
         throw new Error('PRIVATE_CASH_LIFECYCLE_COMPANY_PURCHASE_REQUEST_FAILED:' + JSON.stringify(requestResult));
       }
-      trade.processAll();
+      const tradeProcess = trade.processCountry(buyerCountry);
+      if (tradeProcess.status !== 'COMPLETED') {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_SELECTED_COUNTRY_TRADE_PROCESS_FAILED:' + JSON.stringify(tradeProcess));
+      }
       const buyerRequest = buyerTrade.importRequests.find(row => row.requestId === requestId);
       if (buyerRequest?.status !== 'SETTLED') {
         throw new Error('PRIVATE_CASH_LIFECYCLE_TRADE_NOT_SETTLED:' + JSON.stringify({
