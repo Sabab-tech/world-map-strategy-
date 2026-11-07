@@ -247,6 +247,27 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         !!factory && !factory.disabled && owner.options.length === 5 && operator.options.length === 5;
     }, null, { timeout: 45000 });
 
+    const marketDetails = page.locator('[data-omega-private-company-lifecycle] [data-pe-market-details]');
+    await marketDetails.locator('summary').click();
+    await page.waitForFunction(() =>
+      document.querySelector('[data-pe-market-host]')?.getAttribute('data-loaded') === 'true'
+    , null, { timeout: 15000 });
+    const marketPanelText = await page.locator('[data-pe-market-host]').textContent();
+    assert.match(marketPanelText,/No verified, settled private-company sales|concentration/i,
+      'market concentration panel must render from the recorded settled-sales ledger');
+    await marketDetails.locator('summary').click();
+
+    const oversightDetails = page.locator('[data-omega-private-company-lifecycle] [data-pe-oversight-details]');
+    await oversightDetails.locator('summary').click();
+    await page.waitForFunction(() =>
+      document.querySelector('[data-pe-oversight-host]')?.getAttribute('data-loaded') === 'true'
+    , null, { timeout: 15000 });
+    const oversightPanelText = await page.locator('[data-pe-oversight-host]').textContent();
+    assert.match(oversightPanelText,/Company solvency and current liabilities/);
+    assert.match(oversightPanelText,/AURORA|NOVA|MERIDIAN/);
+    assert.match(oversightPanelText,/Government restructuring decisions/);
+    await oversightDetails.locator('summary').click();
+
     const before = await page.evaluate(() => {
       const state = window.Game.state;
       const country = 'BGD';
