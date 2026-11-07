@@ -1277,14 +1277,19 @@ test('failed private-company receipt collision reverses buyer cash and makes the
 });
 
 
-test('private lifecycle keeps ISO-3 country buckets when the canonical display resolver returns ISO-2',()=>{
+test('private lifecycle prefers exact ISO-3 buckets over an earlier ISO-2 alias bucket',()=>{
   const h=makeHarness();
-  // Some identity providers expose ISO-2 as their display ID while preserving ISO-3
-  // in the source record. Economy/resource/finance runtime buckets are ISO-3 keyed.
+  // The legacy resolver returns the ISO-2 display ID while its top-level source
+  // record carries ISO-3. Both BD and BGD can resolve to BGD, but only BGD is the
+  // authoritative runtime key. Put the alias bucket first to reproduce the bug.
+  const authoritative=h.state.economy.BGD;
+  const decoy={privateEnterpriseLifecycle:{proposals:[{proposalId:'WRONG-COUNTRY-BUCKET'}]}};
+  h.state.economy={BD:decoy,BGD:authoritative};
   h.sandbox.OmegaCanonicalIdentityRegistry={
     resolveCountry(value){
-      return String(value).toUpperCase()==='BGD'
-        ?{id:'BD',raw:{identity:{iso2:'BD',iso3:'BGD'},name:'Bangladesh'}}
+      const key=String(value).toUpperCase();
+      return ['BGD','BD'].includes(key)
+        ?{id:'BD',raw:{iso3:'BGD',identity:{iso2:'BD',iso3:'BGD'},name:'Bangladesh'}}
         :null;
     }
   };
@@ -1296,5 +1301,6 @@ test('private lifecycle keeps ISO-3 country buckets when the canonical display r
   assert.equal(proposal.status,'PROPOSED',JSON.stringify(proposal));
   assert.equal(proposal.countryId,'BGD');
   assert.equal(h.state.economy.BGD.privateEnterpriseLifecycle.proposals.length,1);
-  assert.equal(h.state.economy.BD,undefined,'the alias display ID must not create or select a second country bucket');
+  assert.deepEqual(h.state.economy.BD.privateEnterpriseLifecycle.proposals,[{proposalId:'WRONG-COUNTRY-BUCKET'}],
+    'the lifecycle must not write to the earlier ISO-2 alias bucket');
 });
