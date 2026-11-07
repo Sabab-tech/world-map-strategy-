@@ -855,12 +855,15 @@ test('real Chromium map marker runs the exact site through a commissioned privat
 
       const canonical = window.OmegaResourceSiteCanonicalCatalogData || window.Omega?.ResourceSiteCanonicalCatalogData;
       const canonicalSites = Array.isArray(canonical?.sites) ? canonical.sites : [];
-      const siteIds = canonicalSites.map(row => String(row?.siteId || '').trim()).filter(Boolean);
-      const uniqueSiteIds = new Set(siteIds);
-      if (canonicalSites.length !== 199 || uniqueSiteIds.size !== 199) {
-        throw new Error('SAB34_CANONICAL_SITE_REGISTRY_COVERAGE_FAILED:' + JSON.stringify({
-          rows: canonicalSites.length,
-          uniqueSiteIds: uniqueSiteIds.size
+      const canonicalSiteIds = canonicalSites.map(row => String(row?.siteId || '').trim()).filter(Boolean);
+      const uniqueCanonicalSiteIds = new Set(canonicalSiteIds);
+      const bindingDiagnostics = window.Omega.IndividualResourceSiteBinding.diagnostics();
+      const masterMineSiteReferenceCount = Number(bindingDiagnostics?.sourceRecordCounts?.mineSites) || 0;
+      if (canonicalSites.length !== 315 || uniqueCanonicalSiteIds.size !== 315 || masterMineSiteReferenceCount !== 199) {
+        throw new Error('SAB34_SITE_REGISTRY_COVERAGE_FAILED:' + JSON.stringify({
+          canonicalRows: canonicalSites.length,
+          uniqueCanonicalSiteIds: uniqueCanonicalSiteIds.size,
+          masterMineSiteReferences: masterMineSiteReferenceCount
         }));
       }
 
@@ -877,15 +880,17 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         privateFactoryTypeCount: privateReady.diagnostics?.factoryTypeCount,
         privateCompanyCount: privateReady.diagnostics?.companyCount,
         canonicalSiteCount: canonicalSites.length,
-        uniqueCanonicalSiteCount: uniqueSiteIds.size,
+        uniqueCanonicalSiteCount: uniqueCanonicalSiteIds.size,
+        masterMineSiteReferenceCount,
         selectedCountryRouteCount: routeLoad.routeCount,
         fixtureBatchIds,
         foreignSnapshot,
         startingTreasury: Number(finance.available) || 0
       };
     });
-    assert.equal(preparation.canonicalSiteCount, 199);
-    assert.equal(preparation.uniqueCanonicalSiteCount, 199);
+    assert.equal(preparation.canonicalSiteCount, 315);
+    assert.equal(preparation.uniqueCanonicalSiteCount, 315);
+    assert.equal(preparation.masterMineSiteReferenceCount, 199);
     assert.equal(preparation.governmentCountryCount, 197);
     assert.equal(preparation.privateCountryCount, 197);
     assert.equal(preparation.privateFactoryTypeCount, 21);
