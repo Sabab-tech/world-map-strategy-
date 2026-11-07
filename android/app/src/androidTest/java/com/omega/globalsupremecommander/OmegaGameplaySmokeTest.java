@@ -604,13 +604,43 @@ public final class OmegaGameplaySmokeTest {
                             SystemClock.elapsedRealtime() < stressDeadline);
                     final String tabId = industryTabs[tabIndex];
                     final String tabName = industryTabNames[tabIndex];
+                    final String tabReadyScript =
+                            "(function(){var cabinet=document.getElementById('cabinet-full-window');" +
+                            "var main=cabinet&&cabinet.querySelector('[data-omega-v2-main]');" +
+                            "var nav=main&&main.querySelector('.fp-tabs');" +
+                            "var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\"" + tabId + "\"]');" +
+                            "var tabs=main?Array.prototype.map.call(main.querySelectorAll('[data-omega-v2-industry-tab]'),function(x){" +
+                            "return x.getAttribute('data-omega-v2-industry-tab');}):[];" +
+                            "return JSON.stringify({route:cabinet&&cabinet.getAttribute('data-omega-v2-route'),main:!!main," +
+                            "nav:!!nav,tab:!!tab,tabs:tabs,activeTab:main&&main.__omegaV2IndustryTab," +
+                            "privatePanel:!!(main&&main.querySelector('[data-omega-private-company-lifecycle]'))});})()";
+                    String tabReady = "false";
+                    String tabDiagnostics = "{}";
+                    final long tabReadyDeadline = SystemClock.elapsedRealtime() + 15000L;
+                    while (!"true".equals(tabReady) && SystemClock.elapsedRealtime() < tabReadyDeadline) {
+                        tabDiagnostics = evaluate(instrumentation, webViewRef.get(), tabReadyScript, 10L);
+                        try {
+                            org.json.JSONObject state = new org.json.JSONObject(tabDiagnostics);
+                            tabReady = Boolean.toString(state.optBoolean("main") &&
+                                    state.optBoolean("nav") && state.optBoolean("tab"));
+                        } catch (org.json.JSONException error) {
+                            throw new AssertionError("Invalid " + tabName + " tab diagnostics: " + tabDiagnostics, error);
+                        }
+                        if (!"true".equals(tabReady)) SystemClock.sleep(150L);
+                    }
+                    assertEquals(tabName + " tab must exist on round " + round +
+                            " after the Industry route settles; diagnostics=" + tabDiagnostics, "true", tabReady);
+                    android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                            "STAGE=INDUSTRY_NAV_TAB_READY tab=" + tabName + " round=" + round +
+                                    " diagnostics=" + tabDiagnostics);
                     final String clickScript =
                             "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
                             "var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\"" + tabId + "\"]');" +
                             "if(!tab)return 'MISSING';var started=performance.now();tab.click();" +
                             "return String((performance.now()-started).toFixed(2));})()";
                     final String clickText = evaluate(instrumentation, webViewRef.get(), clickScript, 10L);
-                    assertTrue(tabName + " tab must exist on round " + round, !"MISSING".equals(clickText));
+                    assertTrue(tabName + " click target must remain present after readiness; diagnostics=" +
+                            tabDiagnostics, !"MISSING".equals(clickText));
                     final double clickMs;
                     try { clickMs = Double.parseDouble(clickText); }
                     catch (NumberFormatException error) { throw new AssertionError("Invalid " + tabName + " tap timing: " + clickText, error); }
