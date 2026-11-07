@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 
-const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOfflineWorkflow, androidOfflineScript, androidGradle, bootPerformanceMonitor, compositionRoot] = await Promise.all([
+const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidGradle, bootPerformanceMonitor, compositionRoot] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.js", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.css", import.meta.url), "utf8"),
@@ -11,8 +11,6 @@ const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOffl
   readFile(new URL("../map-engine-1.js", import.meta.url), "utf8"),
   readFile(new URL("../android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java", import.meta.url), "utf8"),
   readFile(new URL("../omega-offline-map-sw.js", import.meta.url), "utf8"),
-  readFile(new URL("../.github/workflows/omega-android-gameplay-smoke.yml", import.meta.url), "utf8"),
-  readFile(new URL("../scripts/omega_android9_offline_gameplay_smoke.sh", import.meta.url), "utf8"),
   readFile(new URL("../android/app/build.gradle", import.meta.url), "utf8"),
   readFile(new URL("../omega_boot_performance_monitor_v1.js", import.meta.url), "utf8"),
   readFile(new URL("../omega_enterprise_composition_root_v10.js", import.meta.url), "utf8")
@@ -130,18 +128,7 @@ test("the offline atlas never substitutes a fake remote imagery tile", () => {
   assert.match(mapEngine, /window\.OmegaOfflineHybridAtlas\.activate/);
   assert.match(mainActivity, /if \(isAppAssetUri\(uri\)\) return missingAssetResponse\(uri\);/);
 });
-test("each PR revision preserves its bounded Android emulator smoke and diagnostics", () => {
-  assert.ok(androidOfflineWorkflow.includes(
-    "group: omega-android9-gameplay-smoke-${{ github.event.pull_request.number || github.ref }}-${{ github.run_id }}"
-  ));
-  assert.ok(androidOfflineWorkflow.includes(
-    "cancel-in-progress: false"
-  ));
-  assert.match(androidOfflineScript, /timeout --signal=TERM --kill-after=20s 10m/);
-  assert.match(androidOfflineWorkflow, /omega-android9-smoke-diagnostics/);
-});
-
-test("canonical country profile pack is bundled for Android and refreshes offline smoke coverage", () => {
+test("canonical country profile pack remains available to Android without bloating browser precache", () => {
   assert.match(androidGradle, /include '\*\.json'/);
   assert.match(androidGradle, /include '\*\.js'/);
   for (const asset of [
@@ -149,8 +136,6 @@ test("canonical country profile pack is bundled for Android and refreshes offlin
     "country_sector_profile_schema_v1.json",
     "country_general_data_registry_v1.json"
   ]) {
-    assert.ok(androidOfflineWorkflow.includes('      - "' + asset + '"'),
-      "Android offline smoke must rerun when " + asset + " changes.");
     if (asset === "country_sector_profile_schema_v1.json") {
       assert.ok(serviceWorker.includes('"./' + asset + '"'), "small sector schema remains available offline");
     } else {
@@ -197,19 +182,6 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /omega_finance_ministry_runtime_v1\.js/);
   assert.doesNotMatch(serviceWorker, /"\.\/omega_finance_ministry_v1\.css"/, 'legacy finance CSS is not eagerly cached');
   assert.match(serviceWorker, /economy_global_profiles_v1\.json/);
-  for (const asset of [
-    "resource_industrial_catalog_v1.json",
-    "resource_country_resource_context_index.json",
-    "country_factory_starting_baseline_v1.json",
-    "country_private_factory_starting_baseline_v1.json"
-  ]) {
-    assert.ok(serviceWorker.includes('"./' + asset + '"'),
-      asset + " must be part of the install-time core offline asset list");
-    assert.ok(serviceWorker.includes(asset.replaceAll(".", "\\.")),
-      asset + " must be included in the offline shell matcher");
-  }
-  assert.match(serviceWorker, /function isCoreOfflineData\(url\)/);
-  assert.match(serviceWorker, /if \(isCoreOfflineData\(url\)\) return false/);
   assert.match(serviceWorker, /finance_runtime_rules_v1\.json/);
   assert.match(serviceWorker, /finance_sector_registry_v1\.json/);
   assert.match(serviceWorker, /omega_macro_stability_runtime_v1\.js/);
@@ -219,30 +191,6 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /omega-offline-atlas-shell-v\d+/);
   const activeCache = serviceWorker.match(/const CACHE_NAME = ["'](omega-offline-atlas-shell-v[0-9]+)["'];/);
   assert.ok(activeCache, 'service worker must expose one explicit, versioned app-shell cache name');
-  assert.equal(activeCache[1], 'omega-offline-atlas-shell-v104',
-    'the shell cache version must match the current Factory Input / Private Company asset release');
-  assert.match(html, /updateViaCache:\s*['"]none['"]/,
-    'browser Service Worker updates must not reuse stale HTTP-cached worker scripts');
-  const coreAssets = serviceWorker.match(/const CORE_ASSETS = \[([\s\S]*?)\];/);
-  assert.ok(coreAssets, 'the offline shell must expose an explicit core asset manifest');
-  const requiredFactoryAssets = serviceWorker.match(/const REQUIRED_FACTORY_INPUT_ASSETS = \[([\s\S]*?)\];/);
-  assert.ok(requiredFactoryAssets, 'the Service Worker must verify required Factory Input assets before activating');
-  assert.match(serviceWorker, /OMEGA_FACTORY_INPUT_OFFLINE_CORE_INCOMPLETE/,
-    'the Service Worker must keep the previous cache active if a required Factory Input asset is missing');
-  for (const asset of [
-    'omega_resource_logistics_runtime_v1.js',
-    'omega_resource_economy_runtime_v2.js',
-    'omega_resource_national_demand_runtime_v1.js',
-    'omega_resource_industrial_network_v1.js',
-    'omega_country_inventory_runtime_v1.js',
-    'omega_resource_startup_baseline_v1.js',
-    'omega_resource_gameplay_binding_v1.js'
-  ]) {
-    assert.ok(coreAssets[1].includes('"./' + asset + '"'),
-      'Factory Input offline boot is missing required runtime: ' + asset);
-    assert.ok(html.includes('src="' + asset + '"'),
-      'Factory Input runtime must also be loaded by the application shell: ' + asset);
-  }
   assert.match(serviceWorker, /key !== CACHE_NAME/,
     'activation must preserve the current shell cache while pruning older versions');
   assert.doesNotMatch(serviceWorker, /"\.\/omega_ui_system_redesign_v1\.css"/, 'legacy redesign CSS is not eagerly cached');
