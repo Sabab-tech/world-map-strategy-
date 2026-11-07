@@ -983,3 +983,125 @@ test('financial close offsets prior tax payments against gross liability without
   assert.equal(close.period.retainedEarningsAfter,384);
   assert.equal(h.state.finance.BGD.available,beforeTreasury+86);
 });
+
+
+test('financial close does not expense an accrued cost twice when its cash settlement is posted',()=>{
+  const h=makeHarness(),api=h.api,company=COMPANY;
+  h.state.economy.BGD.companyAccounts={
+    [company]:{
+      companyId:company,runtimeNetCashFlow:350,grossRevenue:500,paymentsReceived:500,paymentsMade:150,
+      cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,lastTurn:4,
+      cashFlowEntries:[
+        {entryId:'CLOSE-DOUBLE-COUNT-SALE',companyId:company,amount:500,direction:'CREDIT',
+          category:'DOMESTIC_SUPPLY',turn:4,status:'POSTED'},
+        {entryId:'CLOSE-DOUBLE-COUNT-INPUT',companyId:company,amount:100,direction:'DEBIT',
+          category:'FACTORY_INPUT_PURCHASE',turn:4,status:'POSTED'},
+        {entryId:'CLOSE-DOUBLE-COUNT-PAYMENT',companyId:company,amount:50,direction:'DEBIT',
+          category:'OPERATING_COST_SETTLEMENT',sourceId:'ACCRUED-50',turn:4,status:'POSTED'}
+      ]
+    }
+  };
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [company]:{companyId:company,currency:'GAME_CURRENCY_UNITS',availableBalance:0,reservedBalance:0,
+      retainedEarningsBalance:0,capitalRaised:0,capitalSpent:0,revision:0}
+  };
+  h.state.economy.BGD.privateEnterpriseLifecycle={
+    proposals:[],events:[],financialPeriods:[],jointVentures:[],
+    operatingCostEntries:[{entryId:'ACCRUED-50',companyId:company,factoryId:'FAC-1',
+      amount:50,settledAmount:50,outstandingAmount:0,settlementStatus:'PAID',turn:4,status:'POSTED'}],
+    unpricedOperatingCostEvents:[]
+  };
+  const close=api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:company});
+  assert.equal(close.status,'CLOSED',JSON.stringify(close));
+  assert.equal(close.period.cashOperatingCosts,100,'the supplier/input expense is recognized once');
+  assert.equal(close.period.operatingCostSettlementPayments,50,'settlement is disclosed as a cash payment');
+  assert.equal(close.period.operatingCosts,150,'recognized expense is cash expense plus the accrued cost, not its later settlement');
+  assert.equal(close.period.profitBeforeTax,350,'the 50-unit accrual must not be counted a second time as an expense');
+  assert.equal(close.period.netProfitAfterTax,280);
+  assert.equal(close.period.retainedEarningsAfter,280);
+  const summary=api.getCompanyFinanceSummary('BGD',company);
+  assert.equal(summary.accountingProfit,350);
+  assert.equal(summary.netProfit,280);
+  assert.equal(summary.journal.operatingCostSettlementPayments,50);
+});
+
+test('private market concentration uses settled attributable sales and excludes reference-only or unsold stock',()=>{
+  const h=makeHarness(),api=h.api;
+  h.state.trade={BGD:{domesticSales:[
+    {turn:4,status:'SETTLED',sale:{
+      saleId:'CONCENTRATION-1',countryId:'BGD',resourceId:'iron_ore',simulationTurn:4,
+      status:'SETTLED',paymentStatus:'SETTLED',ownerAllocationStatus:'RECONCILED',
+      valuationStatus:'OBSERVED_RUNTIME_MARKET_PRICE',totalValue:1000,quantity:100,
+      supplierAllocations:{[COMPANY]:80,AURORA_INDUSTRIAL_GROUP:20}
+    }},
+    {turn:4,status:'SETTLED',sale:{
+      saleId:'CONCENTRATION-2',countryId:'BGD',resourceId:'iron_ore',simulationTurn:4,
+      status:'SETTLED',paymentStatus:'SETTLED',ownerAllocationStatus:'RECONCILED',
+      valuationStatus:'OBSERVED_RUNTIME_MARKET_PRICE',totalValue:1000,quantity:100,
+      supplierAllocations:{STATE_OWNED_SUPPLY:100}
+    }},
+    {turn:4,status:'PHYSICAL_TRANSFER_COMPLETED',sale:{
+      saleId:'CONCENTRATION-UNPAID',countryId:'BGD',resourceId:'iron_ore',simulationTurn:4,
+      status:'PHYSICAL_TRANSFER_COMPLETED',paymentStatus:'UNOBSERVED',totalValue:9000,quantity:900,
+      supplierAllocations:{[COMPANY]:900}
+    }}
+  ]}};
+  const result=api.getPrivateMarketConcentration({countryId:'BGD',resourceId:'iron_ore',lookbackTurns:10});
+  assert.equal(result.status,'AVAILABLE');
+  assert.equal(result.verifiedSettledSaleCount,2);
+  assert.equal(result.totalAttributedSettledMarketValue,2000);
+  assert.equal(result.privateSectorSettledSalesValue,1000);
+  assert.equal(result.privateSectorMarketSharePct,50);
+  assert.equal(result.privateCompanyHhi,6800);
+  assert.equal(result.concentration,'HIGH');
+  assert.equal(result.firms[0].companyId,COMPANY);
+  assert.equal(result.coverage.crossBorderCompanySales,'NOT_INCLUDED_NO_VERIFIED_COMPANY_LEVEL_IMPORT_EXPORT_ATTRIBUTION');
+});
+
+test('insolvency opens only on recorded cash shortfall; restructuring, suspension and closure preserve asset history',()=>{
+  const h=makeHarness(),api=h.api,company=COMPANY,factoryId='PRIVATE-INSOLVENT-FAC-1';
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [company]:{companyId:company,currency:'GAME_CURRENCY_UNITS',availableBalance:10,reservedBalance:20,
+      retainedEarningsBalance:-30,capitalRaised:100,capitalSpent:70,revision:1}
+  };
+  h.state.economy.BGD.productionAssets.push({
+    id:factoryId,factoryType:'STEEL_WORKS',ownerType:'PRIVATE_ENTERPRISE',
+    ownerCompanyId:company,operatorCompanyId:company,status:'OPERATIONAL',productionEnabled:true
+  });
+  h.state.economy.BGD.privateEnterpriseLifecycle={
+    proposals:[],events:[],financialPeriods:[],jointVentures:[],restructuringCases:[],
+    operatingCostEntries:[{entryId:'INSOLVENT-ACCRUAL',companyId:company,factoryId:factoryId,
+      amount:100,settledAmount:0,outstandingAmount:100,settlementStatus:'UNPAID',turn:4,status:'POSTED'}],
+    unpricedOperatingCostEvents:[]
+  };
+  const solvency=api.evaluateCompanySolvency('BGD',company);
+  assert.equal(solvency.status,'INSOLVENT');
+  assert.equal(solvency.totalRecordedCurrentLiabilities,100);
+  assert.equal(solvency.availableCash,10);
+  const opened=api.openCompanyInsolvencyCase({countryId:'BGD',companyId:company,
+    requestId:'INSOLVENCY-1',reason:'The company cannot meet its recorded payable obligations.'});
+  assert.equal(opened.status,'OPEN',JSON.stringify(opened));
+  assert.equal(api.openCompanyInsolvencyCase({countryId:'BGD',companyId:company,
+    requestId:'INSOLVENCY-1',reason:'The company cannot meet its recorded payable obligations.'}).status,'DUPLICATE');
+  const plan=api.proposeCompanyRestructuring({countryId:'BGD',companyId:company,requestId:'RESTRUCTURE-1',
+    reason:'Suspend the loss-making line and revise priced utility and labour rates.',
+    actions:[{type:'SUSPEND_FACTORY',factoryId:factoryId}]});
+  assert.equal(plan.status,'PROPOSED',JSON.stringify(plan));
+  const approved=api.decideCompanyRestructuring({countryId:'BGD',companyId:company,
+    caseId:plan.case.caseId,decision:'APPROVE',governmentReason:'Protect creditors and stop further unpriced losses.'});
+  assert.equal(approved.status,'APPROVED');
+  const applied=api.applyCompanyRestructuring({countryId:'BGD',companyId:company,caseId:plan.case.caseId});
+  assert.equal(applied.status,'IMPLEMENTED',JSON.stringify(applied));
+  assert.equal(h.state.economy.BGD.productionAssets[0].status,'MAINTENANCE');
+  assert.equal(h.state.economy.BGD.productionAssets[0].productionEnabled,false);
+  const closed=api.closePrivateCompany({countryId:'BGD',companyId:company,requestId:'CLOSE-1',
+    reason:'The restructuring has not restored liquidity and the company is closing.'});
+  assert.equal(closed.status,'CLOSED',JSON.stringify(closed));
+  assert.equal(h.state.economy.BGD.productionAssets[0].status,'CLOSED');
+  assert.equal(h.state.economy.BGD.productionAssets.length,1,'closure must preserve the canonical asset record');
+  assert.equal(closed.closure.releasedReservedCash,20);
+  assert.equal(closed.closure.remainingOperatingPayables,100,'closure does not silently erase creditors');
+  assert.equal(h.state.economy.BGD.privateEnterpriseLifecycle.companyStatuses[company],'CLOSED');
+  assert.equal(api.closePrivateCompany({countryId:'BGD',companyId:company,requestId:'CLOSE-1',
+    reason:'The company has closed.'}).status,'DUPLICATE');
+});
