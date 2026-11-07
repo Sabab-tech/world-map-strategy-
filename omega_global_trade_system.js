@@ -34,8 +34,9 @@
     if(/^[A-Z]{3}$/i.test(raw))return id(raw);
     try{
       const hit=registry()?.resolveCountry?.(raw);
-      const resolved=hit?.raw?.iso3||hit?.raw?.iso3Code||hit?.raw?.countryCode||
-        hit?.iso3||hit?.iso3Code||hit?.countryCode;
+      const record=hit?.raw?.raw||hit?.raw?.datasets?.['countries.json']||hit?.raw||{};
+      const resolved=record?.iso3||record?.iso3Code||record?.ISO_A3||record?.iso_a3||
+        record?.countryCode||hit?.iso3||hit?.iso3Code||hit?.countryCode;
       if(resolved&&/^[A-Z]{3}$/i.test(String(resolved)))return id(resolved);
     }catch(_){}
     try{
