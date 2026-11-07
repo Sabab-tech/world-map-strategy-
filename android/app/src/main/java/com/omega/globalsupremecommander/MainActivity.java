@@ -29,18 +29,6 @@ public final class MainActivity extends Activity {
             "https://appassets.androidplatform.net/assets/index.html";
     private volatile WebView webView;
     private WebViewAssetLoader assetLoader;
-    private volatile boolean mainFrameLoaded = false;
-
-    boolean hasMainFrameLoaded() {
-        return mainFrameLoaded;
-    }
-
-    // Package-private access for instrumentation avoids blocking the UI thread just
-    // to discover the WebView while the offline JavaScript bundle is booting.
-    WebView webViewForTest() {
-        return webView;
-    }
-
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -140,20 +128,10 @@ public final class MainActivity extends Activity {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
-                if (view == webView) mainFrameLoaded = false;
                 view.evaluateJavascript(
                         "window.OMEGA_ANDROID_APP=true;window.OMEGA_ANDROID_OFFLINE=true;",
                         null
                 );
-            }
-
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                if (view == webView) mainFrameLoaded = true;
-                if (BuildConfig.DEBUG) {
-                    android.util.Log.d("OMEGA_WEB_DIAGNOSTICS", "MAIN_FRAME_FINISHED=" + url);
-                }
             }
 
             @Override
@@ -289,7 +267,7 @@ public final class MainActivity extends Activity {
         public boolean isDiagnosticsEnabled() {
             // Per-script console tracing is expensive on Android 9's renderer. Keep it
             // opt-in for diagnostics instead of enabling hundreds of log callbacks in
-            // every debug launch and instrumentation smoke test.
+            // every debug launch.
             return BuildConfig.DEBUG && getIntent() != null
                     && getIntent().getBooleanExtra("omegaWebDiagnostics", false);
         }
