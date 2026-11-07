@@ -707,7 +707,7 @@ public final class OmegaGameplaySmokeTest {
             int count;
             while ((count = stream.read(buffer)) != -1) output.write(buffer, 0, count);
         }
-        final String commandOutput = output.toString(StandardCharsets.UTF_8);
+        final String commandOutput = output.toString(StandardCharsets.UTF_8.name());
         assertTrue("Android shell must export the real PNG before the test app is uninstalled: " +
                 commandOutput, commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_OK"));
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
