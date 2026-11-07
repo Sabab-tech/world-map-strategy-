@@ -1194,7 +1194,8 @@ test('private-company import debits the verified buyer wallet, credits the selli
     createdBatchIds:['TRADE-PRIVATE-IMPORT-BATCH-1']
   });
   assert.equal(consumed.status,'DUPLICATE');
-  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer].availableBalance,895);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer].availableBalance,395,
+    'duplicate completion must not refund or re-debit the buyer wallet');
   assert.equal(h.state.finance.SAU.omegaFinance.companyCapitalAccounts[seller].availableBalance,100);
   const records=h.state.economy.BGD.privateEnterpriseLifecycle.privateCompanyProcurementRecords;
   assert.equal(records.length,1);
