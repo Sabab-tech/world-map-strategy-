@@ -770,6 +770,9 @@
     if(!proposal)return{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};
     if(proposal.status==='FUNDED'||proposal.status==='UNDER_CONSTRUCTION'||proposal.status==='PARTIALLY_UNDER_CONSTRUCTION'||proposal.status==='COMMISSIONED_PRODUCTION_GATED'||proposal.status==='COMMISSIONED')return{status:'DUPLICATE',proposal:clone(proposal)};
     if(proposal.status!=='APPROVED_AWAITING_FUNDING')return{status:'BLOCKED',reason:'PROPOSAL_NOT_APPROVED'};
+    var competitionRestriction=activeCompetitionExpansionRestriction(cid,proposal.companyId,proposal.processingResourceId,proposal);
+    if(competitionRestriction)return{status:'BLOCKED',reason:'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE',
+      competitionCaseId:competitionRestriction.caseId,restriction:clone(competitionRestriction)};
     var amount=num(input.amount);if(amount===null||amount<=0||proposal.capitalRequired===null||Math.abs(amount-proposal.capitalRequired)>1e-6)
       return{status:'BLOCKED',reason:'FULL_CAPITAL_COMMITMENT_REQUIRED',required:proposal.capitalRequired,provided:amount};
     var permit=proposal.permit;
@@ -817,6 +820,9 @@
     if(!proposal)return{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};
     if(proposal.status==='UNDER_CONSTRUCTION'||proposal.status==='COMMISSIONED_PRODUCTION_GATED'||proposal.status==='COMMISSIONED')return{status:'DUPLICATE',proposal:clone(proposal)};
     if(proposal.status!=='FUNDED'&&proposal.status!=='PARTIALLY_UNDER_CONSTRUCTION')return{status:'BLOCKED',reason:'PROPOSAL_NOT_FUNDED'};
+    var competitionRestriction=activeCompetitionExpansionRestriction(cid,proposal.companyId,proposal.processingResourceId,proposal);
+    if(competitionRestriction)return{status:'BLOCKED',reason:'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE',
+      competitionCaseId:competitionRestriction.caseId,restriction:clone(competitionRestriction)};
     var permit=proposal.permit;
     if(!permit||permit.status!=='ACTIVE'||permit.permitId!==proposal.decision?.permitId)
       return{status:'BLOCKED',reason:'ACTIVE_GOVERNMENT_PERMIT_REQUIRED'};
