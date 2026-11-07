@@ -113,10 +113,25 @@
   }
   function capitalAccount(country,company,create){
     var all=capitalAccounts(country,create);if(!all)return null;
-    if(!obj(all[company])&&create)all[company]={companyId:company,currency:'GAME_CURRENCY_UNITS',availableBalance:0,reservedBalance:0,capitalRaised:0,capitalSpent:0,revision:0};
+    if(!obj(all[company])&&create)all[company]={companyId:company,currency:observedCompanyCurrency(country)||'GAME_CURRENCY_UNITS',availableBalance:0,reservedBalance:0,capitalRaised:0,capitalSpent:0,revision:0};
     if(!obj(all[company]))return null;
     normalizeCapitalReservation(country,company,all[company]);
     return all[company];
+  }
+  function reconcileCapitalCurrency(country,company,expectedCurrency,create){
+    var account=capitalAccount(country,company,!!create);
+    var expected=id(expectedCurrency||observedCompanyCurrency(country)||'GAME_CURRENCY_UNITS');
+    if(!account)return{ok:true,account:null,currency:expected};
+    var actual=id(account.currency||'GAME_CURRENCY_UNITS');
+    if(actual!==expected){
+      var nonZeroBalance=['availableBalance','reservedBalance','capitalRaised','capitalSpent','retainedEarningsBalance']
+        .some(function(key){return Math.abs(num(account[key])||0)>1e-9;});
+      if(nonZeroBalance)return{ok:false,reason:'COMPANY_CAPITAL_CURRENCY_MISMATCH',
+        companyId:id(company),expectedCurrency:expected,actualCurrency:actual};
+      account.currency=expected;
+      account.revision=(num(account.revision)||0)+1;
+    }
+    return{ok:true,account:account,currency:expected};
   }
   function financeLedger(country,create){
     var root=financeRoot(country,create);if(!root)return null;
@@ -2110,6 +2125,7 @@
     var requestId=String(input.requestId||'').trim(),r=runtime(cid,true),
       name=String(input.name||'Strategic Industrial Joint Venture').trim().slice(0,100),
       factoryIds=Array.isArray(input.factoryIds)?input.factoryIds.map(function(x){return String(x||'').trim();}).filter(Boolean):[];
+    var ventureCurrency=observedCompanyCurrency(cid)||'GAME_CURRENCY_UNITS';
     if(factoryIds.some(function(x,index){return factoryIds.indexOf(x)!==index;}))
       return{status:'BLOCKED',reason:'JV_FACTORY_ID_DUPLICATE'};
     if(requestId){
@@ -2122,11 +2138,16 @@
         return{status:'DUPLICATE',idempotent:true,jointVenture:clone(previous)};
       }
     }
+    for(var shareholderIndex=0;shareholderIndex<validated.shareholders.length;shareholderIndex++){
+      var shareholderCurrency=reconcileCapitalCurrency(cid,validated.shareholders[shareholderIndex].companyId,ventureCurrency,false);
+      if(!shareholderCurrency.ok)return{status:'BLOCKED',reason:'JV_SHAREHOLDER_CURRENCY_MISMATCH',
+        details:shareholderCurrency};
+    }
     var jv={
       jointVentureId:'PE-JV:'+cid+':'+r.nextJointVentureSequence++,
       requestId:requestId||null,countryId:cid,name:name,
       shareholders:validated.shareholders,managingCompanyId:manager,factoryIds:factoryIds,
-      status:'PROPOSED',createdTurn:turn(),updatedTurn:turn(),retainedEarningsBalance:0,currency:'GAME_CURRENCY_UNITS',
+      status:'PROPOSED',createdTurn:turn(),updatedTurn:turn(),retainedEarningsBalance:0,currency:ventureCurrency,
       resolutions:[],contributions:[],stateControlRights:{
         sovereignStrategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,
         exportControl:true,competitionOversight:true,operationalControl:'STATE_POLICY_ONLY',
@@ -2179,7 +2200,7 @@
       return{status:'BLOCKED',reason:'JV_VOTING_THRESHOLD_OUT_OF_RANGE'};
     var resolution={
       resolutionId:'PE-JV-RESOLUTION:'+jv.jointVentureId+':'+(jv.resolutions.length+1),
-      type:type,amount:amount,currency:'GAME_CURRENCY_UNITS',
+      type:type,amount:amount,currency:jv.currency||'GAME_CURRENCY_UNITS',
       description:String(input.description||type.replace(/_/g,' ')).slice(0,500),
       requiredApprovalBps:threshold,createdTurn:turn(),expiresAtTurn:num(input.expiresAtTurn)||turn()+30,
       status:'VOTING',votes:[]
@@ -2230,7 +2251,9 @@
       if(!sameContribution)return{status:'BLOCKED',reason:'JV_CONTRIBUTION_REQUEST_IDEMPOTENCY_COLLISION',transactionId:tx};
       return{status:'DUPLICATE',transactionId:tx,jointVenture:clone(jv)};
     }
-    var capital=capitalAccount(cid,company,true),retained=num(capital.retainedEarningsBalance)||0;
+    var capitalCurrency=reconcileCapitalCurrency(cid,company,jv.currency||'GAME_CURRENCY_UNITS',true);
+    if(!capitalCurrency.ok)return{status:'BLOCKED',reason:'JV_SHAREHOLDER_CURRENCY_MISMATCH',details:capitalCurrency};
+    var capital=capitalCurrency.account,retained=num(capital.retainedEarningsBalance)||0;
     if(retained+1e-9<amount)return{status:'BLOCKED',reason:'INSUFFICIENT_POST_TAX_RETAINED_EARNINGS',available:retained,required:amount};
     capital.retainedEarningsBalance=Number((retained-amount).toFixed(2));
     capital.revision=(num(capital.revision)||0)+1;
@@ -2257,6 +2280,16 @@
     var amount=num(resolution.amount);
     if(amount===null||amount<=0||(num(jv.retainedEarningsBalance)||0)+1e-9<amount)
       return{status:'BLOCKED',reason:'JV_RETAINED_EARNINGS_INSUFFICIENT',available:num(jv.retainedEarningsBalance)||0,required:amount};
+    var ventureCurrency=id(jv.currency||resolution.currency||'GAME_CURRENCY_UNITS');
+    if(id(resolution.currency||ventureCurrency)!==ventureCurrency)
+      return{status:'BLOCKED',reason:'JV_DIVIDEND_CURRENCY_MISMATCH',
+        expectedCurrency:ventureCurrency,resolutionCurrency:resolution.currency||null};
+    var memberCapitalAccounts=[];
+    for(var memberIndex=0;memberIndex<jv.shareholders.length;memberIndex++){
+      var memberCurrency=reconcileCapitalCurrency(cid,jv.shareholders[memberIndex].companyId,ventureCurrency,true);
+      if(!memberCurrency.ok)return{status:'BLOCKED',reason:'JV_SHAREHOLDER_CURRENCY_MISMATCH',details:memberCurrency};
+      memberCapitalAccounts.push(memberCurrency.account);
+    }
     var amountCents=Math.round(amount*100),allocations=jv.shareholders.map(function(member,index){
       var raw=amountCents*member.shareBps/10000,floor=Math.floor(raw);
       return{index:index,companyId:member.companyId,shareBps:member.shareBps,cents:floor,remainder:raw-floor};
@@ -2270,15 +2303,15 @@
     var distribution=[];
     for(var i=0;i<jv.shareholders.length;i++){
       var member=jv.shareholders[i],payout=allocations[i].cents/100;
-      var capital=capitalAccount(cid,member.companyId,true);
+      var capital=memberCapitalAccounts[i];
       if(payout<0||!Number.isFinite(payout))return{status:'BLOCKED',reason:'JV_DIVIDEND_ALLOCATION_INVALID'};
       capital.availableBalance=(num(capital.availableBalance)||0)+payout;
       capital.dividendsReceived=(num(capital.dividendsReceived)||0)+payout;
       capital.revision=(num(capital.revision)||0)+1;
-      distribution.push({companyId:member.companyId,shareBps:member.shareBps,amount:payout,currency:capital.currency||'GAME_CURRENCY_UNITS'});
+      distribution.push({companyId:member.companyId,shareBps:member.shareBps,amount:payout,currency:ventureCurrency});
       ledger.push({transactionId:tx+':'+member.companyId,type:'PRIVATE_ENTERPRISE_JV_DIVIDEND',
         companyId:member.companyId,jointVentureId:jv.jointVentureId,resolutionId:resolution.resolutionId,
-        amount:payout,currency:capital.currency||'GAME_CURRENCY_UNITS',direction:'CREDIT',
+        amount:payout,currency:ventureCurrency,direction:'CREDIT',
         debitAccount:'JV_RETAINED_EARNINGS:'+jv.jointVentureId,
         creditAccount:'COMPANY_CAPITAL:'+member.companyId,status:'POSTED',turn:turn(),
         authority:'OMEGA_PRIVATE_ENTERPRISE_JV_V1'});
@@ -2288,7 +2321,7 @@
     jv.updatedTurn=turn();
     var aggregate={transactionId:tx,type:'PRIVATE_ENTERPRISE_JV_DIVIDEND_DISTRIBUTION',
       jointVentureId:jv.jointVentureId,resolutionId:resolution.resolutionId,amount:amount,
-      currency:'GAME_CURRENCY_UNITS',direction:'TRANSFER',status:'POSTED',turn:turn(),
+      currency:ventureCurrency,direction:'TRANSFER',status:'POSTED',turn:turn(),
       distribution:clone(distribution),authority:'OMEGA_PRIVATE_ENTERPRISE_JV_V1'};
     ledger.push(aggregate);
     recordEvent(cid,'JOINT_VENTURE_DIVIDEND_DISTRIBUTED',{jointVentureId:jv.jointVentureId,resolutionId:resolution.resolutionId,amount:amount,distribution:distribution});
