@@ -7,7 +7,6 @@ import static org.junit.Assert.fail;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +19,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
@@ -762,37 +762,42 @@ public final class OmegaGameplaySmokeTest {
             android.app.Instrumentation instrumentation,
             File screenshot
     ) throws Exception {
-        final String destinationPath = "/sdcard/omega-smoke/" + screenshot.getName();
-        final String statusPath = destinationPath + ".exit";
-        // Read the PNG as the debuggable target UID, but do not depend on shell
-        // stdout: API 28 UiAutomation can return an empty output pipe even after
-        // the shell command ran. Persist its exit code beside the PNG instead.
-        final String command =
-                "run-as com.omega.globalsupremecommander cat " +
-                shellQuote(screenshot.getAbsolutePath()) + " > " +
-                shellQuote(destinationPath) + " 2>/dev/null; export_exit=$?; " +
-                "printf '%s\\n' \"$export_exit\" > " + shellQuote(statusPath) + "; " +
-                "log -t OMEGA_ANDROID_SMOKE \"SCREENSHOT_EXPORT_EXIT=$export_exit\"";
-        android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "STAGE=SCREENSHOT_EXPORT_BEGIN source=" + screenshot.getAbsolutePath() +
-                        " bytes=" + screenshot.length());
-        try (ParcelFileDescriptor descriptor =
-                     instrumentation.getUiAutomation().executeShellCommand(command);
-             InputStream stream = new ParcelFileDescriptor.AutoCloseInputStream(descriptor)) {
-            final byte[] buffer = new byte[1024];
-            while (stream.read(buffer) != -1) {
-                // Drain the shell pipe until EOF so the copy finishes before app cleanup.
-            }
+        final File externalDirectory =
+                instrumentation.getTargetContext().getExternalFilesDir("omega-smoke");
+        assertNotNull("Android app-specific external files directory must be available",
+                externalDirectory);
+        if (!externalDirectory.isDirectory()) {
+            assertTrue("Android app-specific screenshot directory must be created",
+                    externalDirectory.mkdirs());
         }
-        // The host checks the adjacent exit-code file, byte count and PNG signature
-        // after adb pull. That validates the actual artifact rather than shell stdout.
+        final File exportedScreenshot = new File(externalDirectory, screenshot.getName());
+        final File statusFile = new File(externalDirectory, screenshot.getName() + ".exit");
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "STAGE=SCREENSHOT_EXPORT_SHELL_FINISHED destination=" + destinationPath +
-                        " expectedBytes=" + screenshot.length());
-    }
-
-    private static String shellQuote(String value) {
-        return "'" + value.replace("'", "'\\''") + "'";
+                "STAGE=SCREENSHOT_EXTERNAL_COPY_BEGIN source=" + screenshot.getAbsolutePath() +
+                        " destination=" + exportedScreenshot.getAbsolutePath() +
+                        " bytes=" + screenshot.length());
+        try (InputStream input = new FileInputStream(screenshot);
+             FileOutputStream output = new FileOutputStream(exportedScreenshot)) {
+            final byte[] buffer = new byte[8192];
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                output.write(buffer, 0, count);
+            }
+            output.flush();
+        }
+        assertTrue("Android external screenshot copy must preserve the complete PNG",
+                exportedScreenshot.isFile() && exportedScreenshot.length() == screenshot.length());
+        try (FileOutputStream status = new FileOutputStream(statusFile)) {
+            status.write(new byte[] { '0', '\\n' });
+            status.flush();
+        }
+        assertTrue("Android screenshot copy status must be available to the host",
+                statusFile.isFile() && statusFile.length() > 0);
+        android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                "STAGE=SCREENSHOT_EXTERNAL_COPY_FINISHED destination=" +
+                        exportedScreenshot.getAbsolutePath() +
+                        " bytes=" + exportedScreenshot.length() +
+                        " status=" + statusFile.getAbsolutePath());
     }
 
     private static String evaluate(
