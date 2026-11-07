@@ -1417,7 +1417,12 @@ test('UI v2 suspends route work but retains its shell for a lightweight second c
   assert.match(integration, /typeof g\.OmegaUIV2App\.resume === 'function'/);
   assert.match(integration, /reusedApp && root\.__omegaUIV2State\.options[\s\S]*?countryOptions/);
   assert.match(integration, /typeof g\.OmegaUIV2App\.suspend === 'function'[\s\S]*?g\.OmegaUIV2App\.suspend\(root\)/);
-  assert.doesNotMatch(integration, /function closeToWorldMap\(\)[\s\S]{0,500}OmegaUIV2App\.unmount\(root\)/);
+  const closeStart = integration.indexOf('function closeToWorldMap()');
+  const bridgeStart = integration.indexOf('function installLegacyLayerBridge()', closeStart);
+  const closeLifecycle = integration.slice(closeStart, bridgeStart);
+  assert.match(closeLifecycle, /OmegaUIV2App\.suspend\(root\)/,
+    'map exit must suspend the mounted shell so reopening does not rebuild its country roster');
+
 });
 
 test('Back-to-Map bypasses legacy cabinet subsystem stack traps', () => {
