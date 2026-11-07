@@ -256,6 +256,11 @@ assert.equal(conflictingUiRequest?.accepted,false,'conflicting request ID reuse 
 assert.equal(conflictingUiRequest?.reason,'TRADE_REQUEST_ID_CONFLICT');
 console.log('OMEGA GLOBAL TRADE TEST PASSED');
 
+// The preceding public-trade regressions deliberately left State export limits active.
+// Remove those test policies before exercising a company-owned commercial export.
+assert.equal(policy.liftSupplyDirective('SAU',{policyId:'TRADE-DOMESTIC-ONLY-E2E'}).accepted,true);
+assert.equal(policy.liftSupplyDirective('SAU',{policyId:'TRADE-EXPORT-CONTRACT-E2E'}).accepted,true);
+
 // End-to-end private-company purchase: executable market quote -> exact private batch
 // -> company cash settlement -> import batch / warehouse receipt. The seller's national
 // Treasury is deliberately not the recipient of the commercial sale proceeds.
