@@ -6853,3 +6853,23 @@
   background:#0b2237 !important;
   background-image:none !important;
 }
+
+/* Android 9 WebView: preserve a real horizontal scroll range for the
+   aggregate daily-input table instead of allowing table-layout:fixed to shrink it. */
+.omega-v2-industry--factory-home .fp-factory-plan > .fp-factory-table-wrap {
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow-x:scroll;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
+}
+.omega-v2-industry--factory-home .fp-factory-plan .fp-factory-input-total-table {
+  display:table;
+  width:1120px !important;
+  min-width:1120px !important;
+  max-width:none;
+  table-layout:fixed;
+}
