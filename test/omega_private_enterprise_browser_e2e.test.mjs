@@ -1590,7 +1590,7 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         throw new Error('PRIVATE_CASH_LIFECYCLE_CURRENCY_OR_FX_UNOBSERVED:' +
           JSON.stringify({ buyerCurrency, sellerCurrency, fx }));
       }
-      metricsCurrencyProbe = { buyerCurrency, sellerCurrency, fx };
+      const currencyProbe = { buyerCurrency, sellerCurrency, fx };
 
       const sellerResource = ensureCountry(root.resource, sellerCountry);
       sellerResource.inventory = ensureObject(sellerResource.inventory);
@@ -2021,6 +2021,7 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
       }
       return {
         ...expected,
+        currencyProbe,
         saveLoad: restoredResult,
         idempotency: {
           duplicateClose: duplicateClose.status,
