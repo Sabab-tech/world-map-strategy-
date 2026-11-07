@@ -289,9 +289,24 @@ globalThis.Game.state.finance.SAU.currencyCode='USD';
 globalThis.OmegaGovernmentBanking={
   getCountryPolicy(countryId){return{countryCode:countryId,importTariffPct:2.5};}
 };
-globalThis.OmegaGlobalMarket={
-  quote(){return{resourceId:'crude_oil',status:'CLEARED',clearingPriceUsd:100,
-    generatedTurn:globalThis.Game.state.simulation.turn};},
+globalThis.Game.state.trade.BGD.importRequests.push({
+  requestId:'PRIVATE-MARKET-BID-E2E',countryId:'BGD',targetCountryId:'SAU',
+  resourceId:'crude_oil',quantity:100,unitPrice:100,status:'SENT',stage:'OPEN'
+});
+globalThis.Game.state.trade.SAU.offerBook=[{
+  offerId:'PRIVATE-MARKET-ASK-E2E',countryId:'SAU',resourceId:'crude_oil',
+  quantity:500,unitPrice:100,status:'ACTIVE'
+}];
+await import('../omega_global_market_system.js');
+const realMarket=globalThis.OmegaGlobalMarket;
+const realMarketRebuild=realMarket.rebuild();
+const realMarketQuote=realMarket.quote('crude_oil');
+assert.equal(realMarketQuote.status,'CLEARED',JSON.stringify({realMarketRebuild,realMarketQuote}));
+assert.equal(realMarketQuote.clearingPriceUsd,100);
+assert.equal(realMarketQuote.matchedQuantity,100);
+const discoveredPrivateSuppliers=realMarket.privateCompanySuppliers('crude_oil',100,'BGD',sellerCompany);
+assert.ok(discoveredPrivateSuppliers.some(row=>row.countryId==='SAU'&&row.companyId===sellerCompany&&
+  row.available===500&&row.sourceBatchIds.includes(companyBatchId)),JSON.stringify(discoveredPrivateSuppliers));},
   localPrice(){return 100;},
   privateCompanySuppliers(resourceId,quantity,buyer,sellerId){
     return [{countryId:'SAU',resourceId,companyId:sellerId,available:500,
