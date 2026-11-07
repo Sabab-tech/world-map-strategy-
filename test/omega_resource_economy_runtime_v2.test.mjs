@@ -252,6 +252,51 @@ test('export settlement replay is idempotent across company flows, Treasury clea
   assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,clearingAfterFirst);
   assert.ok(commandCollisions.some(x=>x.reason==='COMMAND_ID_COLLISION'),'same stable command ID with a changed payload must raise a persisted-command integrity collision');
 });
+test('private-company settlement fiscalization does not credit seller revenue or Treasury twice',async()=>{
+  const {context,worldState,commands}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  const settlementId='PRIVATE-COMPANY-SETTLEMENT-ONCE';
+  const sellerCompany='NOVA_CONSUMER_INDUSTRIES';
+  const buyerCompany='ATLAS_TECHNOLOGY_CORPORATION';
+  const account={
+    companyId:sellerCompany,openingCashStatus:'UNKNOWN',runtimeNetCashFlow:200,
+    grossRevenue:200,paymentsReceived:200,paymentsMade:0,taxPaid:0,
+    workerIncomePaid:0,transportPaid:0,supplierRevenue:200,lastTurn:1,
+    cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,cashFlowEntries:[{
+      entryId:'PE-PRIVATE-IMPORT-RECEIPT:'+settlementId,companyId:sellerCompany,
+      amount:200,direction:'CREDIT',category:'PRIVATE_COMPANY_EXPORT_SALE',
+      currency:'USD',sourceId:settlementId,turn:1,status:'POSTED'
+    }]
+  };
+  worldState.economy.BGD.companyAccounts={[sellerCompany]:account};
+  const treasuryBefore=worldState.finance.BGD.available;
+  const revenueBefore=account.grossRevenue;
+  const receivedBefore=account.paymentsReceived;
+  const send=()=>context.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{
+    detail:{payload:{
+      settlementId,sellerCountryId:'BGD',resourceId:'iron_ore',totalValue:200,quantity:20,
+      buyerCompanyId,buyerCompanyId:buyerCompany,sellerCompanyId:sellerCompany,privateCompanyPurchase:true,
+      sourceBatchIds:['PRIVATE-EXPORT-BATCH'],
+      batchTransfers:[{sourceBatchId:'PRIVATE-EXPORT-BATCH',sourceBatchIds:['PRIVATE-EXPORT-BATCH'],
+        ownerCompanyId:sellerCompany,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+        ownerAttributionStatus:'EXPLICIT_PRIVATE_COMPANY_ASSET_OWNER',resourceId:'iron_ore',quantity:20}]
+    }}
+  }));
+  send();
+  assert.equal(account.grossRevenue,revenueBefore,'private import completion already credited seller revenue');
+  assert.equal(account.paymentsReceived,receivedBefore,'fiscalization must not post a second seller receipt');
+  assert.equal(worldState.finance.BGD.available,treasuryBefore,'private company cash is not cleared through public Treasury');
+  assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,0,'private seller proceeds must not be Treasury-cleared');
+  const firstEntries=JSON.stringify(account.cashFlowEntries);
+  const commandTypes=[...commands.values()].map(row=>JSON.parse(row.fingerprint).type);
+  assert.equal(commandTypes.includes('OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY'),false);
+  delete context.__OmegaResourceFiscalizedSettlements[settlementId];
+  send();
+  assert.equal(account.grossRevenue,revenueBefore,'replayed private settlement must not double-credit revenue');
+  assert.equal(account.paymentsReceived,receivedBefore,'replayed private settlement must not double-credit cash receipts');
+  assert.equal(JSON.stringify(account.cashFlowEntries),firstEntries,'replayed private settlement must not duplicate operating costs');
+});
 test('finished-goods material ownership follows explicit owner, never operator or legacy companyId',async()=>{
   const {context,worldState}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
