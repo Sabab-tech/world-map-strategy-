@@ -1323,9 +1323,18 @@
     if(!['POSTED','DUPLICATE'].includes(debit.status))return{status:'BLOCKED',reason:'PRIVATE_IMPORT_BUYER_CASHFLOW_POST_FAILED',detail:debit};
     var tariffDebit=buyerTariffAmount>1e-9?postPrivateTradeCashFlow(buyerCountry,buyerCompany,{
       entryId:'PE-PRIVATE-IMPORT-TARIFF:'+settlementId,sourceId:settlementId,
-      amount:buyerTariffAmount,direction:'DEBIT',category:'TAX',currency:buyerCurrency
+      amount:buyerTariffAmount,direction:'DEBIT',category:'IMPORT_TARIFF',currency:buyerCurrency
     }):{status:'DUPLICATE'};
-    if(!['POSTED','DUPLICATE'].includes(tariffDebit.status))return{status:'BLOCKED',reason:'PRIVATE_IMPORT_TARIFF_CASHFLOW_POST_FAILED',detail:tariffDebit};
+    if(!['POSTED','DUPLICATE'].includes(tariffDebit.status)){
+      if(debit.status==='POSTED'){
+        var rollbackAccount=companyFlowAccount(buyerCountry,buyerCompany),rollbackRows=rollbackAccount&&rollbackAccount.cashFlowEntries||[];
+        var rollbackEntry=rollbackRows.find(function(row){return row&&row.entryId==='PE-PRIVATE-IMPORT-PAYMENT:'+settlementId;});
+        if(rollbackEntry){rollbackEntry.status='REVERSED';rollbackEntry.reversedTurn=turn();
+          rollbackAccount.runtimeNetCashFlow=(num(rollbackAccount.runtimeNetCashFlow)||0)+buyerPurchaseAmount;
+          rollbackAccount.paymentsMade=Math.max(0,(num(rollbackAccount.paymentsMade)||0)-buyerPurchaseAmount);}
+      }
+      return{status:'BLOCKED',reason:'PRIVATE_IMPORT_TARIFF_CASHFLOW_POST_FAILED',detail:tariffDebit};
+    }
     var credit=postPrivateTradeCashFlow(sellerCountry,sellerCompany,{
       entryId:'PE-PRIVATE-IMPORT-RECEIPT:'+settlementId,sourceId:settlementId,
       amount:sellerAmount,direction:'CREDIT',category:'PRIVATE_COMPANY_EXPORT_SALE',currency:sellerCurrency
@@ -1338,6 +1347,12 @@
           posted.status='REVERSED';posted.reversedTurn=turn();posted.reversalReason='SELLER_COMPANY_CASHFLOW_POST_FAILED';
           buyerAccount.runtimeNetCashFlow=(num(buyerAccount.runtimeNetCashFlow)||0)+buyerPurchaseAmount;
           buyerAccount.paymentsMade=Math.max(0,(num(buyerAccount.paymentsMade)||0)-buyerPurchaseAmount);
+        }
+        if(tariffDebit.status==='POSTED'){
+          var postedTariff=entries.find(function(row){return row&&row.entryId==='PE-PRIVATE-IMPORT-TARIFF:'+settlementId;});
+          if(postedTariff){postedTariff.status='REVERSED';postedTariff.reversedTurn=turn();
+            buyerAccount.runtimeNetCashFlow=(num(buyerAccount.runtimeNetCashFlow)||0)+buyerTariffAmount;
+            buyerAccount.paymentsMade=Math.max(0,(num(buyerAccount.paymentsMade)||0)-buyerTariffAmount);}
         }
       }
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_SELLER_CASHFLOW_POST_FAILED',detail:credit};
