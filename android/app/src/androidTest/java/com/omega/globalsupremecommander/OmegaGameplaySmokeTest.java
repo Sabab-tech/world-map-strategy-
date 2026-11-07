@@ -781,11 +781,11 @@ public final class OmegaGameplaySmokeTest {
                 statusFile.isFile() && statusFile.length() == 1L);
 
         final String packageName = targetContext.getPackageName();
-        final String hostDirectory = "/sdcard/omega-smoke";
+        final String hostDirectory = "/data/local/tmp/omega-smoke";
         final String hostPng = hostDirectory + "/" + screenshot.getName();
         final String hostStatus = hostPng + ".exit";
-        final String hostResult = hostDirectory + "/screenshot-export.result";
-        final String mkdirError = "/sdcard/omega-smoke-mkdir.stderr";
+        final String hostResult = "/data/local/tmp/omega-smoke-export.result";
+        final String mkdirError = "/data/local/tmp/omega-smoke-mkdir.stderr";
         final String pngError = hostPng + ".stderr";
         final String statusError = hostStatus + ".stderr";
         final String shellCommand =
@@ -804,8 +804,7 @@ public final class OmegaGameplaySmokeTest {
                 " 2> " + shellQuote(statusError) +
                 "; status_status=$?; " +
                 "else png_status=99; status_status=99; fi; " +
-                "printf 'OMEGA_EXPORT_RESULT mkdir=%s png=%s status=%s' " +
-                "$mkdir_status $png_status $status_status > " + shellQuote(hostResult) + "; " +
+                "echo OMEGA_EXPORT_RESULT mkdir=$mkdir_status png=$png_status status=$status_status > " + shellQuote(hostResult) + "; " +
                 "for diagnostic in " + shellQuote(mkdirError) + " " + shellQuote(pngError) + " " + shellQuote(statusError) +
                 "; do if [ -s $diagnostic ]; then " +
                 "echo SHELL_DIAGNOSTIC_FILE=$diagnostic; " +
