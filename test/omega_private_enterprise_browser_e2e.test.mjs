@@ -943,7 +943,10 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         processingResourceId: 'coal',
         quantity: 1,
         sourcingPolicy: 'COMPANY_FUNDED_IMPORTS',
-        stateSupportRequested: true
+        stateSupportRequested: true,
+        requestReason: 'Nova Consumer Industries requests a coal-processing facility to convert attributable domestic coal extraction into a saleable industrial intermediate.',
+        expectedBenefit: 'The commissioned plant adds modeled coal-concentrate output capacity. Company income is recognized only after a buyer consumes attributable output and the market settlement posts.',
+        riskForecast: 'The project remains exposed to mine output, shipment delays, recipe input quality, utility availability, construction capital, warehouse capacity and uncertain customer demand.'
       });
       if (proposal.status !== 'PROPOSED') throw new Error('SAB34_PRIVATE_PROPOSAL_FAILED:' + JSON.stringify(proposal));
       const decision = lifecycle.decideProposal({
