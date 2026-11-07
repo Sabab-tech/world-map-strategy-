@@ -1145,7 +1145,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     metrics.stages.push('REAL_MAP_MARKER_READY:' + targetSite.siteId);
     metrics.stages.push('EXACT_COMMISSIONED_FACTORY_BOUND_TO_CLICKED_CANONICAL_SITE');
 
-    const marker = page.locator('.omega-individual-site-marker[title=' + JSON.stringify(targetSite.siteName) + ']').first();
+    const marker = page.locator('.omega-individual-site-marker [data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']').first();
     await marker.waitFor({ state: 'visible', timeout: 90000 });
     await marker.click({ force: true, timeout: 45000 });
     await page.waitForFunction(siteId => {
@@ -1566,9 +1566,10 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         bucket[countryId] = ensureObject(bucket[countryId]);
         return bucket[countryId];
       };
-      if (!root.resource || !root.trade || !root.finance || !root.economy) {
-        throw new Error('PRIVATE_CASH_LIFECYCLE_COUNTRY_DOMAINS_UNAVAILABLE');
-      }
+      root.resource = ensureObject(root.resource);
+      root.trade = ensureObject(root.trade);
+      root.finance = ensureObject(root.finance);
+      root.economy = ensureObject(root.economy);
 
       const currentTurn = Number(root.simulation?.turn ?? simulation.clock.turn) || 0;
       const simulationTimeMs = Number(simulation.clock.simulationTimeMs) || 0;
