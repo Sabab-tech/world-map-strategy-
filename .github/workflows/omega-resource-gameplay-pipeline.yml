@@ -19,7 +19,11 @@ on:
       - 'test/omega_resource_command_center_ui_v1.test.mjs'
       - 'test/omega_resource_command_center_ui_v1_integration.test.mjs'
       - 'omega_global_trade_system.js'
+      - 'omega_global_market_system.js'
+      - 'test/omega_global_market_system.test.mjs'
       - 'test/omega_global_trade_system.test.mjs'
+      - 'omega_private_enterprise_lifecycle_v1.js'
+      - 'test/omega_private_enterprise_lifecycle_v1.test.mjs'
       - 'omega_resource_strategic_policy_runtime_v1.js'
       - 'resource_strategic_policy_rules_v1.json'
       - 'omega_simulation_runtime.js'
@@ -92,7 +96,11 @@ on:
       - 'test/omega_resource_command_center_ui_v1.test.mjs'
       - 'test/omega_resource_command_center_ui_v1_integration.test.mjs'
       - 'omega_global_trade_system.js'
+      - 'omega_global_market_system.js'
+      - 'test/omega_global_market_system.test.mjs'
       - 'test/omega_global_trade_system.test.mjs'
+      - 'omega_private_enterprise_lifecycle_v1.js'
+      - 'test/omega_private_enterprise_lifecycle_v1.test.mjs'
       - 'omega_resource_strategic_policy_runtime_v1.js'
       - 'resource_strategic_policy_rules_v1.json'
       - 'omega_simulation_runtime.js'
@@ -168,6 +176,8 @@ jobs:
         run: npm run test:resource-e2e
       - name: Autonomous per-country deposit-to-market regression
         run: npm run test:resource-global-auto
+      - name: Executable global market and private supplier ownership regression
+        run: npm run test:global-market
       - name: International trade lineage regression
         run: npm run test:global-trade
       - name: Global raw inventory regression
