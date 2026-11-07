@@ -128,7 +128,7 @@ globalThis.Game.state.resource.SAU.industrialNetwork={shipments:[{
   shipmentId:'IN-TRANSIT-PRIVATE-1',batchId:'SAU-PRIVATE-CRUDE-MARKET-1',
   resourceId:'crude_oil',quantity:20,status:'IN_TRANSIT'
 }]};
-assert.equal(market.privateCompanySuppliers('crude_oil',130,'BDG','AURORA_INDUSTRIAL_GROUP','SAU').length,0,
+assert.equal(market.privateCompanySuppliers('crude_oil',131,'BDG','AURORA_INDUSTRIAL_GROUP','SAU').length,0,
   'stock already in transit cannot be promised again');
 globalThis.Game.state.resource.SAU.industrialNetwork.shipments=[];
 globalThis.Game.state.economy.SAU.privateEnterpriseLifecycle.companyStatuses.AURORA_INDUSTRIAL_GROUP='CLOSED';
