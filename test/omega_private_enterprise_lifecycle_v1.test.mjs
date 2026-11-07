@@ -1275,3 +1275,26 @@ test('failed private-company receipt collision reverses buyer cash and makes the
   assert.equal(h.state.finance.SAU.omegaFinance.companyCapitalAccounts[seller].availableBalance,0);
   assert.equal(api.cancelPrivateCompanyImport({buyerCountryId:'BGD',settlementId:settlementId}).status,'DUPLICATE');
 });
+
+
+test('private lifecycle keeps ISO-3 country buckets when the canonical display resolver returns ISO-2',()=>{
+  const h=makeHarness();
+  // Some identity providers expose ISO-2 as their display ID while preserving ISO-3
+  // in the source record. Economy/resource/finance runtime buckets are ISO-3 keyed.
+  h.sandbox.OmegaCanonicalIdentityRegistry={
+    resolveCountry(value){
+      return String(value).toUpperCase()==='BGD'
+        ?{id:'BD',raw:{identity:{iso2:'BD',iso3:'BGD'},name:'Bangladesh'}}
+        :null;
+    }
+  };
+  h.sandbox.OmegaCountrySemanticBridge=h.sandbox.OmegaCanonicalIdentityRegistry;
+  const proposal=submitProposal(h.api,{
+    countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+    sourcingPolicy:'COMPANY_FUNDED_IMPORTS'
+  });
+  assert.equal(proposal.status,'PROPOSED',JSON.stringify(proposal));
+  assert.equal(proposal.countryId,'BGD');
+  assert.equal(h.state.economy.BGD.privateEnterpriseLifecycle.proposals.length,1);
+  assert.equal(h.state.economy.BD,undefined,'the alias display ID must not create or select a second country bucket');
+});
