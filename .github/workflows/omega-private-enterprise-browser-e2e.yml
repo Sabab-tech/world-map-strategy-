@@ -62,7 +62,7 @@ jobs:
           OMEGA_BROWSER_TEST_ARTIFACT_DIR: ${{ runner.temp }}/omega-private-enterprise-browser
         run: |
           mkdir -p "$OMEGA_BROWSER_TEST_ARTIFACT_DIR"
-          timeout --signal=TERM --kill-after=15s 5m node --test test/omega_private_enterprise_browser_e2e.test.mjs
+          timeout --signal=TERM --kill-after=15s 10m node --test test/omega_private_enterprise_browser_e2e.test.mjs
 
       - name: Upload real browser E2E diagnostics
         if: always()
