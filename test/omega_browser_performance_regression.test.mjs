@@ -520,6 +520,11 @@ test('world geometry loads before support datasets, shows real progress, caches 
     'ministry switching must preserve attached Leaflet layers instead of rebuilding the cached GeoJSON tree');
   assert.ok(coreAssets.includes('"./map-engine-2.js"'),
     'the cached map visibility lifecycle must be available after an offline relaunch');
+  assert.ok(map.includes('function scheduleDeferredGeoJSONResume()') &&
+    map.includes('cancelDeferredGeoJSONResume();') &&
+    map.includes('scheduleDeferredGeoJSONResume();') &&
+    map.includes('}, 600);'),
+    'unfinished map rendering must yield a bounded interaction window after a ministry closes and cancel on re-entry');
   assert.ok(workerCacheVersion(worker) >= 102,
     'the offline shell must invalidate the map visibility lifecycle cache');
   assert.ok(map.includes('this.__omegaWorldMapAbortController.abort()'),
