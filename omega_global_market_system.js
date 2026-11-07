@@ -285,7 +285,7 @@
       const protectedStock=Math.max(0,n(reserve[rid])||0);
       const q=quote(rid),rel=target?(countryValue(target,'foreign.relations')?.[c]||countryValue(c,'foreign.relations')?.[target]||null):null;
       Object.keys(buckets).forEach(companyId=>{
-        const row=buckets[companyId],available=Math.max(0,Math.min(row.available,warehouseFree,Math.max(0,row.available+warehouseFree-protectedStock)));
+        const row=buckets[companyId],available=Math.max(0,Math.min(row.available,warehouseFree-protectedStock));
         if(available<=0||available+1e-9<requested)return;
         const stateDirective=target?strategicPolicy?.evaluateExportDirective?.(c,target,rid,
           requested>0?requested:available,null,{[rid]:available}):null;
