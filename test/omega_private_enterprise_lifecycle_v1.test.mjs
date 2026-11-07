@@ -653,6 +653,11 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/Verify company capital/);
   assert.match(fragments[0],/Government decision queue/);
   assert.match(fragments[0],/Private operator/);
+  assert.match(fragments[0],/name="requestReason"/);
+  assert.match(fragments[0],/name="expectedBenefit"/);
+  assert.match(fragments[0],/name="riskForecast"/);
+  assert.match(fragments[0],/Government review/);
+  assert.match(fragments[0],/30-day benefit \/ risk assessment/);
   assert.match(fragments[0],/Corporate Finance \/ Profit \/ Tax \/ Cost/);
   assert.match(lifecycleSource,/Input materials/);
   assert.match(lifecycleSource,/Worker costs/);
