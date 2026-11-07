@@ -1740,13 +1740,26 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         status: 'SENT', stage: 'MARKET_QUOTE_ONLY'
       });
 
+      const marketCountryId = countryId => {
+        const registry = window.OmegaCanonicalIdentityRegistry || window.OmegaCountrySemanticBridge ||
+          window.Omega?.CanonicalIdentity;
+        try {
+          const resolved = registry?.resolveCountry?.(countryId);
+          return String(resolved?.id || countryId).trim().toUpperCase();
+        } catch (_) {
+          return String(countryId || '').trim().toUpperCase();
+        }
+      };
+      const marketBuyerCountryId = marketCountryId(buyerCountry);
+      const marketSellerCountryId = marketCountryId(sellerCountry);
       const rebuilt = market.rebuild();
       const quote = market.quote(resourceId);
       if (quote.status !== 'CLEARED' ||
-          !quote.matches.some(row => row.buyerCountryId === buyerCountry &&
-            row.sellerCountryId === sellerCountry && row.quantity >= quantity)) {
+          !quote.matches.some(row => row.buyerCountryId === marketBuyerCountryId &&
+            row.sellerCountryId === marketSellerCountryId && row.quantity >= quantity)) {
         throw new Error('PRIVATE_CASH_LIFECYCLE_EXECUTABLE_MARKET_QUOTE_FAILED:' +
-          JSON.stringify({ quote, market: rebuilt[resourceId] || null, bidPrice, fx }));
+          JSON.stringify({ quote, market: rebuilt[resourceId] || null, bidPrice, fx,
+            marketBuyerCountryId, marketSellerCountryId }));
       }
       const quoteOnly = buyerTrade.importRequests.find(row => row.requestId === quoteRequestId);
       quoteOnly.status = 'REJECTED';
@@ -1754,8 +1767,11 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
 
       const supplier = market.privateCompanySuppliers(resourceId, quantity, buyerCountry, sellerCompany, sellerCountry)
         .find(row => row.countryId === sellerCountry && row.companyId === sellerCompany);
-      if (!supplier || supplier.available < quantity || !supplier.sourceBatchIds.includes(sellerBatchId)) {
-        throw new Error('PRIVATE_CASH_LIFECYCLE_EXACT_PRIVATE_STOCK_NOT_FOUND:' + JSON.stringify(supplier || null));
+      if (!supplier || supplier.countryId !== marketSellerCountryId ||
+          supplier.available < quantity || !supplier.sourceBatchIds.includes(sellerBatchId)) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_EXACT_PRIVATE_STOCK_NOT_FOUND:' + JSON.stringify({
+          supplier: supplier || null, marketSellerCountryId
+        }));
       }
       const buyerCashBefore = buyerFinance.omegaFinance.companyCapitalAccounts[buyerCompany].availableBalance;
       const sellerTreasuryBefore = n(sellerFinance.available);
