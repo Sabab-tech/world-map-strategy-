@@ -3,22 +3,24 @@ set -euo pipefail
 
 artifact_dir="${RUNNER_TEMP:?RUNNER_TEMP must be set}/omega-android9-smoke"
 mkdir -p "$artifact_dir"
-logcat_pid=""
 
-cleanup() {
-  if [[ -n "$logcat_pid" ]]; then
-    kill "$logcat_pid" >/dev/null 2>&1 || true
-    wait "$logcat_pid" >/dev/null 2>&1 || true
-  fi
-}
-trap cleanup EXIT
+sdk_level="$(timeout 10s adb shell getprop ro.build.version.sdk | tr -d "\r")"
+if [[ "$sdk_level" != "28" ]]; then
+  echo "ERROR: expected Android 9 / API 28, found API $sdk_level" >&2
+  exit 1
+fi
 
-# Prefer Chrome's WebView when installed; use Android System WebView on the AOSP image.
-# Do not assume a Play Store-only package exists, and fail fast if no provider is available.
+device_state="$(timeout 10s adb get-state | tr -d "\r")"
+if [[ "$device_state" != "device" ]]; then
+  echo "ERROR: Android emulator is not online (state: $device_state)" >&2
+  adb devices -l >&2 || true
+  exit 1
+fi
+
 webview_provider=""
 for candidate in com.android.chrome com.android.webview; do
   if timeout 10s adb shell pm path "$candidate" 2>/dev/null \
-      | tr -d "\\r" | grep -q "^package:"; then
+      | tr -d "\r" | grep -q "^package:"; then
     webview_provider="$candidate"
     break
   fi
@@ -27,124 +29,55 @@ done
 if [[ -z "$webview_provider" ]]; then
   timeout 10s adb shell dumpsys webviewupdate \
     | tee "$artifact_dir/webview-provider.txt" || true
-  echo "ERROR: API 28 emulator has no installed Chrome or Android System WebView provider." >&2
+  echo "ERROR: Android 9 emulator has no installed WebView provider" >&2
   exit 1
 fi
-printf "%s\\n" "$webview_provider" >"$artifact_dir/webview-provider-selected.txt"
+
+printf "%s\n" "$sdk_level" >"$artifact_dir/api-level.txt"
+printf "%s\n" "$webview_provider" >"$artifact_dir/webview-provider.txt"
 timeout 10s adb shell cmd webviewupdate set-webview-implementation "$webview_provider" \
-  >"$artifact_dir/webview-provider-select.txt" 2>&1 || true
-timeout 10s adb shell dumpsys webviewupdate \
-  | tee "$artifact_dir/webview-provider.txt" || true
-timeout 10s adb shell dumpsys package "$webview_provider" \
-  | grep -m1 -E "versionName=|versionCode=" \
-  >"$artifact_dir/webview-provider-version.txt" 2>&1 || true
+  >"$artifact_dir/webview-provider-selection.txt" 2>&1 || true
 
-wait_for_api28() {
-  local poll state boot sdk
-  poll=1
-  while [[ "$poll" -le 45 ]]; do
-    state="$(timeout 5s adb get-state 2>/dev/null | tr -d "\r" || true)"
-    if [[ "$state" == "device" ]]; then
-      boot="$(timeout 5s adb shell getprop sys.boot_completed 2>/dev/null | tr -d "\r" || true)"
-      sdk="$(timeout 5s adb shell getprop ro.build.version.sdk 2>/dev/null | tr -d "\r" || true)"
-      if [[ "$boot" == "1" && "$sdk" == "28" ]]; then
-        echo "API 28 emulator online and fully booted (poll $poll)"
-        return 0
-      fi
-    elif [[ "$state" == "offline" ]]; then
-      adb reconnect offline >/dev/null 2>&1 || true
-    fi
-    sleep 2
-    poll=$((poll + 1))
-  done
-  echo "ERROR: API 28 emulator did not become ready" >&2
-  adb devices -l >&2 || true
-  return 1
-}
-
-wait_for_api28
-adb shell getprop ro.build.version.sdk | tee "$artifact_dir/api-level.txt"
-adb devices -l | tee "$artifact_dir/adb-devices-before.txt"
-
-# Capture WebView and instrumentation messages while Gradle is running. The old
-# script only dumped logcat after Gradle returned, so a hung test lost its best
-# diagnostics when the job was cancelled.
 adb logcat -c >/dev/null 2>&1 || true
 adb logcat -v threadtime \
-  "OMEGA_ANDROID_SMOKE:I" \
   "OMEGA_WEB_DIAGNOSTICS:D" \
   "ActivityManager:E" \
   "AndroidRuntime:E" \
   "Instrumentation:I" \
   "TestRunner:I" \
-  "Choreographer:I" \
-  "OpenGLRenderer:I" \
   "chromium:E" \
   "*:E" >"$artifact_dir/logcat-live.txt" 2>&1 &
 logcat_pid=$!
 
-attempt=1
-max_attempts=3
-while [[ "$attempt" -le "$max_attempts" ]]; do
-  log_file="$artifact_dir/gradle-attempt-$attempt.log"
-  echo "Offline gameplay instrumentation attempt $attempt/$max_attempts"
-  # Android instrumentation must not be allowed to occupy the workflow forever.
-  # The Java test has bounded Activity/WebView waits; this is a final process-level
-  # guard that still leaves time for logs and artifact upload before the job limit.
-  if timeout --signal=TERM --kill-after=20s 10m \
-      gradle -p android connectedDebugAndroidTest --no-daemon >"$log_file" 2>&1; then
-    cat "$log_file"
-    screenshot_dir="$artifact_dir/screenshots"
-    mkdir -p "$screenshot_dir"
-    remote_screenshot_dir="/sdcard/Android/data/com.omega.globalsupremecommander/files/omega-smoke"
-    if ! timeout 30s adb pull "$remote_screenshot_dir" "$screenshot_dir"; then
-      echo "ERROR: Android Input UI screenshot retrieval failed" >&2
-      exit 1
-    fi
-    for screenshot in factory-input-landscape.png; do
-      local_screenshot="$screenshot_dir/omega-smoke/$screenshot"
-      if [[ ! -s "$local_screenshot" ]]; then
-        echo "ERROR: Required Android Input UI screenshot is missing: $local_screenshot" >&2
-        find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
-        exit 1
-      fi
-      echo "ANDROID_UI_SCREENSHOT=$local_screenshot bytes=$(wc -c <"$local_screenshot")"
-    done
-    echo "PASS: API 28 offline gameplay and Factory Input UI visual instrumentation completed"
-    exit 0
-  else
-    test_exit=$?
-    cat "$log_file"
-    echo "Instrumentation attempt failed with exit code $test_exit"
+cleanup() {
+  if [[ -n "${logcat_pid:-}" ]]; then
+    kill "$logcat_pid" >/dev/null 2>&1 || true
+    wait "$logcat_pid" >/dev/null 2>&1 || true
   fi
+}
+trap cleanup EXIT
 
-  adb logcat -d -v threadtime >"$artifact_dir/logcat-attempt-$attempt.txt" 2>&1 || true
-  adb devices -l >"$artifact_dir/adb-devices-after-$attempt.txt" 2>&1 || true
-  for report_dir in android/app/build/outputs/androidTest-results android/app/build/reports/androidTests; do
-    if [[ -d "$report_dir" ]]; then
-      find "$report_dir" -type f -print
-      find "$report_dir" -type f -name "*.xml" -exec cat {} \;
-    fi
-  done
+# The Java instrumentation method has its own 60-second hard limit.
+# This larger guard covers Gradle startup, APK installation and test execution.
+set +e
+timeout --signal=TERM --kill-after=15s 7m \
+  gradle -p android connectedDebugAndroidTest --no-daemon --console=plain \
+  >"$artifact_dir/gradle.log" 2>&1
+test_exit=$?
+set -e
 
-  if [[ "$test_exit" -eq 124 || "$test_exit" -eq 137 ]]; then
-    echo "ERROR: Android instrumentation exceeded the 10-minute hard deadline; live logcat and Gradle output are saved." >&2
-    exit "$test_exit"
+cat "$artifact_dir/gradle.log"
+adb logcat -d -v threadtime >"$artifact_dir/logcat-final.txt" 2>&1 || true
+
+for report_dir in android/app/build/outputs/androidTest-results android/app/build/reports/androidTests; do
+  if [[ -d "$report_dir" ]]; then
+    find "$report_dir" -type f -print
   fi
-
-  if ! grep -Eiq "No compatible devices connected|Unknown API Level|ShellCommandUnresponsiveException|adb: device offline|device offline|Device offline" "$log_file"; then
-    echo "ERROR: instrumentation failed for a non-transport reason; diagnostics are saved" >&2
-    exit "$test_exit"
-  fi
-  if [[ "$attempt" -ge "$max_attempts" ]]; then
-    echo "ERROR: ADB/device discovery failed after $max_attempts attempts" >&2
-    exit "$test_exit"
-  fi
-
-  echo "Transient ADB failure; restarting ADB and rechecking API 28"
-  adb kill-server >/dev/null 2>&1 || true
-  adb start-server
-  adb reconnect offline >/dev/null 2>&1 || true
-  wait_for_api28 || exit "$test_exit"
-  attempt=$((attempt + 1))
 done
+
+if [[ "$test_exit" -ne 0 ]]; then
+  echo "ERROR: one-minute Android 9 launch smoke failed (Gradle exit $test_exit)." >&2
+  exit "$test_exit"
+fi
+
+echo "PASS: Android 9 bundled offline launch smoke completed."

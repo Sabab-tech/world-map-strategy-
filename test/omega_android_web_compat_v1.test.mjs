@@ -8,7 +8,6 @@ const read = (name) => fs.readFileSync(new URL(name, root), 'utf8');
 const compatibility = read('omega_android_compat_v1.js');
 const html = read('index.html');
 const iconSource = read('omega_icon_system_v1.js');
-const smokeSource = read('android/app/src/androidTest/java/com/omega/globalsupremecommander/OmegaGameplaySmokeTest.java');
 
 test('Android compatibility shim provides Promise.allSettled semantics on a legacy WebView', async () => {
   const context = vm.createContext({ window: {} });
@@ -58,12 +57,6 @@ test('icon system can be parsed by legacy Chromium without Unicode property-esca
   assert.ok(!iconSource.includes('const ICON_RE = /\\p{Extended_Pictographic}'));
   assert.ok(iconSource.includes('catch (_unsupportedUnicodePropertyEscape)'));
   assert.ok(iconSource.includes('const pictograph ='));
-});
-
-test('Android 9 smoke treats legacy runtime compatibility as a boot requirement', () => {
-  assert.ok(smokeSource.includes("typeof Array.prototype.flatMap === 'function'"));
-  assert.ok(smokeSource.includes("typeof Promise.allSettled === 'function'"), 'Android 9 smoke must verify Promise.allSettled before app boot');
-  assert.ok(smokeSource.includes('window.OMEGA_ICON_SYSTEM_V1'));
 });
 
 

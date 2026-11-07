@@ -1,4 +1,4 @@
-name: OMEGA Android 9 Offline Gameplay Smoke
+name: OMEGA Android 9 One-Minute Offline Launch Smoke
 
 on:
   workflow_dispatch:
@@ -49,7 +49,7 @@ concurrency:
 jobs:
   offline-gameplay-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,9 +68,6 @@ jobs:
       - name: Verify Android 9 WebView compatibility shims
         run: node --test test/omega_android_web_compat_v1.test.mjs
 
-      - name: Build Android debug APK and instrumentation APK
-        run: gradle -p android assembleDebug assembleDebugAndroidTest --no-daemon
-
       - name: Run offline gameplay smoke on Android 9 emulator (API 28)
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
@@ -79,7 +76,7 @@ jobs:
           target: default
           arch: x86_64
           profile: pixel_2
-          emulator-boot-timeout: 600
+          emulator-boot-timeout: 240
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 3072 -cores 4
           disable-animations: true
           script: bash scripts/omega_android9_offline_gameplay_smoke.sh
