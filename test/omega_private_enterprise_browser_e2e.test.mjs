@@ -264,7 +264,8 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     , null, { timeout: 15000 });
     const oversightPanelText = await page.locator('[data-pe-oversight-host]').textContent();
     assert.match(oversightPanelText,/Company solvency and current liabilities/);
-    assert.match(oversightPanelText,/AURORA|NOVA|MERIDIAN/);
+    assert.match(oversightPanelText,/AURORA|NOVA|MERIDIAN/i,
+      'oversight panel must render canonical company names irrespective of display capitalization');
     assert.match(oversightPanelText,/Government restructuring decisions/);
     await oversightDetails.locator('summary').click();
 

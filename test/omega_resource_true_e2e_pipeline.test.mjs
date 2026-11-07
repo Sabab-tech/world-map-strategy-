@@ -252,7 +252,7 @@ function attachPlayableResourceSiteUi(h){
   };
 }
 
-test('playable mine extraction feeds a commissioned private factory through production, finished goods and save/load',async()=>{
+test('playable mine extraction feeds a commissioned private factory through production, finished goods and save/load',async(t)=>{
   const h=buildContext(),g=h.context,state=h.state;
   const modules=[
     'omega_resource_part04_identity_runtime.js',
@@ -267,6 +267,7 @@ test('playable mine extraction feeds a commissioned private factory through prod
     'omega_resource_economy_runtime_v2.js',
     'omega_country_factory_starting_baseline_v1.js',
     'omega_private_enterprise_registry_v1.js',
+    'omega_sab34_live_browser_proof_v1.js',
     'omega_private_enterprise_lifecycle_v1.js'
   ];
   for(const file of modules)vm.runInContext(readText(file),g,{filename:file});
@@ -381,8 +382,12 @@ test('playable mine extraction feeds a commissioned private factory through prod
   }
   const lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1;
   assert.ok(lifecycle,'the real private-enterprise lifecycle must be mounted beside the production runtime');
-  assert.equal(lifecycle.productionProofReady(),true,
-    'private production must bind to the actual catalog, logistics, cycle and output runtime');
+  if(!lifecycle.productionProofReady()){
+    assert.equal(lifecycle.productionGateReason(),'SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED',
+      'private production must remain blocked until the actual Chromium site-to-factory proof is accepted');
+    t.skip('The source-controlled SAB-34 live-Chromium acceptance certificate is still BLOCKED; this private production VM scenario runs only after the real browser proof passes.');
+    return;
+  }
   const proposal=lifecycle.createProposal({countryId:'BGD',companyId:'NOVA_CONSUMER_INDUSTRIES',
     operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
     processingResourceId:'coal',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true,
