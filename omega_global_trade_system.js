@@ -988,9 +988,15 @@
     const c=canonical(req.countryId),s=canonical(req.targetCountryId);
     if(!c||!s)return;
     const bank=g.OmegaGovernmentBanking||g.Omega&&g.Omega.GovernmentBanking;
-    const useBank=!!(bank&&typeof bank.prepareTradeSettlement==='function'&&typeof bank.commitTradeSettlement==='function');
-    const sid=useBank
-      ?('SET-'+c+'-'+s+'-'+String(req.requestId||'').replace(/[^A-Za-z0-9_.:-]/g,'_').slice(0,180))
+    const privateCompanyPurchase=!!(req.buyerCompanyId&&req.sellerCompanyId),
+      lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1;
+    if(!!req.buyerCompanyId!==!!req.sellerCompanyId){
+      emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,reason:'PRIVATE_IMPORT_COMPANY_PAIR_INCOMPLETE'});return;
+    }
+    const useBank=!privateCompanyPurchase&&!!(bank&&typeof bank.prepareTradeSettlement==='function'&&typeof bank.commitTradeSettlement==='function');
+    const sid=privateCompanyPurchase
+      ?('SET-PRIVATE-'+c+'-'+s+'-'+String(req.requestId||'').replace(/[^A-Za-z0-9_.:-]/g,'_').slice(0,150))
+      :useBank?('SET-'+c+'-'+s+'-'+String(req.requestId||'').replace(/[^A-Za-z0-9_.:-]/g,'_').slice(0,180))
       :'SET-'+turn()+'-'+c+'-'+s+'-'+String(req.requestId);
 
     // Recovery after a prior attempt committed the banking journal but the request-closing
@@ -1027,7 +1033,36 @@
       return;
     }
 
-    let bankQuote=null,tariffPosted=false;
+    let bankQuote=null,tariffPosted=false,privateTariffLocal=0,privateTariffUsd=0,privateReservation=null;
+    if(privateCompanyPurchase){
+      const policy=bank&&typeof bank.getCountryPolicy==='function'?bank.getCountryPolicy(c):null;
+      const tariffPct=num(req.importTariffPct)??num(policy&&policy.importTariffPct);
+      if(tariffPct===null||tariffPct<0||tariffPct>80){
+        emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,reason:'PRIVATE_IMPORT_TARIFF_POLICY_UNOBSERVED_OR_INVALID'});return;
+      }
+      privateTariffLocal=Number((check.buyerTotal*tariffPct/100).toFixed(2));
+      if(privateTariffLocal>0){
+        const forex=g.OmegaForexMonetaryEngine||g.Omega&&g.Omega.ForexMonetaryEngine;
+        const localPerUsd=check.buyerCurrency==='USD'?1:num(forex&&typeof forex.getRate==='function'?forex.getRate(check.buyerCurrency,'SIMULATION'):null);
+        if(localPerUsd===null||localPerUsd<=0){
+          emit('OMEGA_TRADE_SETTLEMENT_WAITING_FOR_FUNDS',c,{requestId:req.requestId,settlementId:sid,reason:'PRIVATE_IMPORT_TARIFF_FX_RATE_NOT_OBSERVED'});return;
+        }
+        privateTariffUsd=Number((privateTariffLocal/localPerUsd).toFixed(2));
+      }
+      const reserve=lifecycle&&typeof lifecycle.reservePrivateCompanyImport==='function'
+        ?lifecycle.reservePrivateCompanyImport({settlementId:sid,buyerCountryId:c,sellerCountryId:s,
+          buyerCompanyId:req.buyerCompanyId,sellerCompanyId:req.sellerCompanyId,buyerAmount:Number((check.buyerTotal+privateTariffLocal).toFixed(2)),
+          buyerPurchaseAmount:check.buyerTotal,buyerTariffAmount:privateTariffLocal,sellerAmount:check.sellerTotal,
+          buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,quantity:req.quantity,
+          resourceId:req.resourceId,unitPrice:req.unitPrice})
+        :{status:'BLOCKED',reason:'PRIVATE_COMPANY_PROCUREMENT_RUNTIME_UNAVAILABLE'};
+      if(!['RESERVED','DUPLICATE','SETTLED'].includes(reserve.status)){
+        emit('OMEGA_TRADE_SETTLEMENT_WAITING_FOR_FUNDS',c,{requestId:req.requestId,settlementId:sid,
+          reason:reserve.reason||'PRIVATE_COMPANY_FUNDS_NOT_AVAILABLE',detail:clone(reserve)});return;
+      }
+      privateReservation=reserve.reservation||null;
+      g.__OMEGA_SETTLEMENT_TRACE.privateCompanyReservation=clone(reserve);
+    }
     if(useBank){
       bankQuote=bank.prepareTradeSettlement({
         authorization:'OMEGA_GLOBAL_TRADE',settlementId:sid,requestId:String(req.requestId),
