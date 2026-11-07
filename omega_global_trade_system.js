@@ -1134,6 +1134,8 @@
     function reverseSellerResource(sellerResource){
       const auth={type:'TRADE_SETTLEMENT',settlementId:sid+'-COMP-SELLER-RES',requestId:req.requestId,
         sourceCountryId:c,destinationCountryId:s,
+        buyerCompanyId:privateCompanyPurchase?req.sellerCompanyId:null,
+        sellerCompanyId:privateCompanyPurchase?req.buyerCompanyId:null,
         batchTransfers:(sellerResource?.result?.batchTransfers||[]).map(x=>({...x,sourceCountryId:c,destinationCountryId:s}))};
       return command('resource','OMEGA_TRADE_RESOURCE_CREDIT',s,{
         resourceId:req.resourceId,quantity:req.quantity,settlementId:sid+'-COMP-SELLER-RES',
@@ -1226,6 +1228,40 @@
         reason:buyerResource?.result?.reason||'BUYER_RESOURCE_CREDIT_FAILED',compensated:true});return;
     }
 
+    if(privateCompanyPurchase){
+      const createdBatchIds=clone(buyerResource?.result?.createdBatchIds||[]);
+      const receipts=createdBatchIds.map(batchId=>'WH-REC-'+batchId);
+      const companySettlement=lifecycle&&typeof lifecycle.completePrivateCompanyImport==='function'
+        ?lifecycle.completePrivateCompanyImport({settlementId:sid,buyerCountryId:c,sellerCountryId:s,
+          buyerCompanyId:req.buyerCompanyId,sellerCompanyId:req.sellerCompanyId,resourceId:req.resourceId,quantity:req.quantity,
+          buyerAmount:buyerDebitAmount,buyerPurchaseAmount:check.buyerTotal,buyerTariffAmount:privateTariffLocal,
+          sellerAmount:check.sellerTotal,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,
+          batchTransfers:clone(sellerResource?.result?.batchTransfers||[]),createdBatchIds:createdBatchIds,deliveryReceiptIds:receipts,
+          unitPrice:req.unitPrice})
+        :{status:'BLOCKED',reason:'PRIVATE_COMPANY_PROCUREMENT_RUNTIME_UNAVAILABLE'};
+      g.__OMEGA_SETTLEMENT_TRACE.privateCompanySettlement=clone(companySettlement);
+      if(!['SETTLED','DUPLICATE'].includes(companySettlement.status)){
+        const reverseBuyer=command('resource','OMEGA_TRADE_RESOURCE_DEBIT',c,{
+          resourceId:req.resourceId,quantity:req.quantity,settlementId:sid+'-COMP-BUYER-RES',requestId:req.requestId,
+          transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:sid+'-COMP-BUYER-RES',requestId:req.requestId,
+            sourceCountryId:c,destinationCountryId:s,governmentContractId:null,
+            buyerCompanyId:req.sellerCompanyId,sellerCompanyId:req.buyerCompanyId}
+        });
+        const reverseBuyerCredit=reverseBuyer?.status==='APPLIED'||reverseBuyer?.result?.duplicate===true
+          ?command('resource','OMEGA_TRADE_RESOURCE_CREDIT',s,{
+            resourceId:req.resourceId,quantity:req.quantity,settlementId:sid+'-COMP-BUYER-RES',requestId:req.requestId,
+            transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:sid+'-COMP-BUYER-RES',requestId:req.requestId,
+              sourceCountryId:c,destinationCountryId:s,buyerCompanyId:req.sellerCompanyId,sellerCompanyId:req.buyerCompanyId,
+              batchTransfers:clone(reverseBuyer?.result?.batchTransfers||[])}
+          }):{status:'FAILED',reason:'BUYER_RESOURCE_REVERSAL_DEBIT_FAILED'};
+        g.__OMEGA_SETTLEMENT_TRACE.privateCompanyStockCompensation={debit:clone(reverseBuyer),credit:clone(reverseBuyerCredit)};
+        compensateBuyer('PRIVATE_COMPANY_CASH_SETTLEMENT_FAILED');cancelBank('PRIVATE_COMPANY_CASH_SETTLEMENT_FAILED');
+        emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,
+          reason:companySettlement.reason||'PRIVATE_COMPANY_CASH_SETTLEMENT_FAILED',
+          compensated:(reverseBuyer?.status==='APPLIED'||reverseBuyer?.result?.duplicate===true)&&
+            (reverseBuyerCredit?.status==='APPLIED'||reverseBuyerCredit?.result?.duplicate===true)});return;
+      }
+    }
     const batchTransfers=clone(sellerResource?.result?.batchTransfers||[]);
     const createdBatchIds=clone(buyerResource?.result?.createdBatchIds||[]);
     if(useBank){
