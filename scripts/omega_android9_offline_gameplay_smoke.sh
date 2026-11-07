@@ -87,13 +87,11 @@ attempt=1
 max_attempts=3
 while [[ "$attempt" -le "$max_attempts" ]]; do
   log_file="$artifact_dir/gradle-attempt-$attempt.log"
-  # The instrumentation process writes to its own app-specific external
-  # files directory; adb can pull that directory without UiAutomation shell I/O.
-  # getExternalFilesDir("omega-smoke") reports this canonical API-28 path in the
-# instrumentation log. On this emulator image /sdcard does not resolve to the
-# app-specific external-storage mount, so adb pull from that alias misses the
-# directory even though exportScreenshotForHost() has copied the PNG successfully.
-remote_screenshot_dir="/storage/emulated/0/Android/data/com.omega.globalsupremecommander/files/omega-smoke"
+  # Screenshots are copied into shared external storage (not Android/data).
+  # API 28 app-private external directories are not readable by the adb shell
+  # identity used by `adb pull`, even when the instrumentation app can write them.
+  # The test grants WRITE_EXTERNAL_STORAGE to the debug app before exporting.
+  remote_screenshot_dir="/sdcard/omega-smoke"
   adb shell rm -rf "$remote_screenshot_dir" >/dev/null 2>&1 || true
   echo "Offline gameplay instrumentation attempt $attempt/$max_attempts"
   # Android instrumentation must not be allowed to occupy the workflow forever.
