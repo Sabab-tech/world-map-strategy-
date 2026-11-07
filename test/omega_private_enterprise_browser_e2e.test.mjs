@@ -1494,3 +1494,582 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     await server.close().catch(() => {});
   }
 });
+
+ 
+test('real Chromium reconciles private-company sale, buyer payment, seller revenue, corporate tax, dividend and save/load', {
+  timeout: 240000
+}, async () => {
+  const artifacts = process.env.OMEGA_BROWSER_TEST_ARTIFACT_DIR || path.join(ROOT, 'test-results', 'omega-private-enterprise-cash-lifecycle');
+  fs.mkdirSync(artifacts, { recursive: true });
+  const server = await startStaticServer();
+  let browser;
+  const pageErrors = [];
+  const consoleErrors = [];
+  const metrics = { browser: 'Chromium', offlineNetwork: true, stages: [] };
+
+  try {
+    browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+    });
+    const context = await browser.newContext({
+      viewport: { width: 1440, height: 1000 },
+      deviceScaleFactor: 1,
+      serviceWorkers: 'block'
+    });
+    const page = await context.newPage();
+    page.setDefaultTimeout(30000);
+    page.on('pageerror', error => pageErrors.push(String(error && error.stack || error)));
+    page.on('console', message => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+    await page.route('**/*', route => {
+      const target = route.request().url();
+      return target.startsWith(server.origin) ? route.continue() : route.abort('blockedbyclient');
+    });
+    await page.goto(server.origin + '/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.waitForFunction(() =>
+      document.readyState === 'complete' &&
+      !!window.Game?.state &&
+      !!window.Omega?.Simulation &&
+      typeof window.Omega.Simulation.saveSlot === 'function' &&
+      typeof window.Omega.Simulation.loadSlot === 'function' &&
+      !!window.OmegaGlobalTrade &&
+      !!window.OmegaGlobalMarket &&
+      !!window.OmegaPrivateEnterpriseLifecycleV1,
+    null, { timeout: 150000 });
+
+    const result = await page.evaluate(async () => {
+      const root = window.Game.state;
+      const simulation = window.Omega.Simulation;
+      const trade = window.OmegaGlobalTrade;
+      const market = window.OmegaGlobalMarket;
+      const lifecycle = window.OmegaPrivateEnterpriseLifecycleV1;
+      const buyerCountry = 'BGD';
+      const sellerCountry = 'SAU';
+      const buyerCompany = 'NOVA_CONSUMER_INDUSTRIES';
+      const sellerCompany = 'AURORA_INDUSTRIAL_GROUP';
+      const dividendPartner = 'MERIDIAN_ENGINEERING_GROUP';
+      const resourceId = 'crude_oil';
+      const quantity = 100;
+      const sellerBatchId = 'PE-CASH-LIFECYCLE-SELLER-BATCH-SAU';
+      const requestId = 'PE-CASH-LIFECYCLE-BUYER-REQUEST';
+      const quoteRequestId = 'PE-CASH-LIFECYCLE-MARKET-BID';
+      const slot = 'pe-cash-lifecycle-' + Date.now();
+      const n = value => {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+      const ensureObject = (value, fallback = {}) =>
+        value && typeof value === 'object' && !Array.isArray(value) ? value : fallback;
+      const ensureCountry = (bucket, countryId) => {
+        bucket[countryId] = ensureObject(bucket[countryId]);
+        return bucket[countryId];
+      };
+      if (!root.resource || !root.trade || !root.finance || !root.economy) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_COUNTRY_DOMAINS_UNAVAILABLE');
+      }
+
+      const currentTurn = Number(root.simulation?.turn ?? simulation.clock.turn) || 0;
+      const simulationTimeMs = Number(simulation.clock.simulationTimeMs) || 0;
+      simulation.createSession({
+        playerCountryId: buyerCountry,
+        startTurn: currentTurn,
+        simulationTimeMs,
+        sessionId: 'PE-CASH-LIFECYCLE-BROWSER'
+      });
+      window.Game.playerCountry = buyerCountry;
+      window.Game.currentActiveCountry = buyerCountry;
+      window.Game.selectedCountryId = buyerCountry;
+      root.playerCountryId = buyerCountry;
+
+      const buyerCurrency = trade.currencyOf(buyerCountry);
+      const sellerCurrency = trade.currencyOf(sellerCountry);
+      const fx = trade.fxRate(buyerCountry, sellerCountry);
+      if (!buyerCurrency || !sellerCurrency || fx === null || fx <= 0) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_CURRENCY_OR_FX_UNOBSERVED:' +
+          JSON.stringify({ buyerCurrency, sellerCurrency, fx }));
+      }
+      metricsCurrencyProbe = { buyerCurrency, sellerCurrency, fx };
+
+      const sellerResource = ensureCountry(root.resource, sellerCountry);
+      sellerResource.inventory = ensureObject(sellerResource.inventory);
+      sellerResource.batches = Array.isArray(sellerResource.batches) ? sellerResource.batches : [];
+      sellerResource.inventoryLots = ensureObject(sellerResource.inventoryLots);
+      sellerResource.warehouse = ensureObject(sellerResource.warehouse, {
+        warehouseId: 'WH-SAU-RAW', countryId: sellerCountry, type: 'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
+        status: 'OPERATIONAL', availableByResource: {}, reservedByResource: {}, storedBatchIds: [], receipts: []
+      });
+      sellerResource.warehouse.availableByResource = ensureObject(sellerResource.warehouse.availableByResource);
+      sellerResource.warehouse.reservedByResource = ensureObject(sellerResource.warehouse.reservedByResource);
+      sellerResource.warehouse.storedBatchIds = Array.isArray(sellerResource.warehouse.storedBatchIds)
+        ? sellerResource.warehouse.storedBatchIds : [];
+      sellerResource.warehouse.receipts = Array.isArray(sellerResource.warehouse.receipts)
+        ? sellerResource.warehouse.receipts : [];
+      sellerResource.processedWarehouse = ensureObject(sellerResource.processedWarehouse, {
+        warehouseId: 'WH-SAU-PROCESSED', countryId: sellerCountry, type: 'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',
+        status: 'OPERATIONAL', availableByResource: {}, reservedByResource: {}, storedBatchIds: [], receipts: []
+      });
+      sellerResource.processedWarehouse.availableByResource =
+        ensureObject(sellerResource.processedWarehouse.availableByResource);
+      sellerResource.processedWarehouse.reservedByResource =
+        ensureObject(sellerResource.processedWarehouse.reservedByResource);
+      sellerResource.processedWarehouse.storedBatchIds =
+        Array.isArray(sellerResource.processedWarehouse.storedBatchIds)
+          ? sellerResource.processedWarehouse.storedBatchIds : [];
+      if (sellerResource.batches.some(row => String(row?.batchId) === sellerBatchId)) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_SELLER_FIXTURE_BATCH_COLLISION');
+      }
+      const sellerQuantity = 500;
+      sellerResource.inventory[resourceId] = (n(sellerResource.inventory[resourceId]) || 0) + sellerQuantity;
+      sellerResource.batches.push({
+        batchId: sellerBatchId, resourceId, materialIdentity: resourceId,
+        quantity: sellerQuantity, remainingQuantity: sellerQuantity, unit: 'BARRELS',
+        stage: 'RAW_EXTRACTED', status: 'AVAILABLE', countryId: sellerCountry,
+        sourceCountryId: sellerCountry, originCountryId: sellerCountry,
+        ownerCountryCode: sellerCountry, destinationCountryId: sellerCountry,
+        ownerCompanyId: sellerCompany, operatorCompanyId: dividendPartner,
+        ownerAttributionStatus: 'EXPLICIT_ASSET_OWNER',
+        sourceFactoryId: 'SAU-PRIVATE-CASH-LIFECYCLE-FACTORY',
+        warehouseId: 'WH-SAU-RAW',
+        provenance: {
+          sourceAuthority: 'CONTROLLED_PRIVATE_OUTPUT_FIXTURE',
+          quantityAuthority: 'SIMULATION_TEST_FIXTURE',
+          authority: 'OMEGA_PRIVATE_ENTERPRISE_CASH_LIFECYCLE_BROWSER_E2E'
+        }
+      });
+      sellerResource.inventoryLots[sellerBatchId] = {
+        batchId: sellerBatchId, resourceId, quantity: sellerQuantity, remainingQuantity: sellerQuantity,
+        unit: 'BARRELS', stage: 'RAW_EXTRACTED', countryId: sellerCountry,
+        warehouseId: 'WH-SAU-RAW', status: 'AVAILABLE',
+        provenance: { sourceAuthority: 'CONTROLLED_PRIVATE_OUTPUT_FIXTURE' }
+      };
+      sellerResource.warehouse.availableByResource[resourceId] =
+        (n(sellerResource.warehouse.availableByResource[resourceId]) || 0) + sellerQuantity;
+      if (!sellerResource.warehouse.storedBatchIds.includes(sellerBatchId)) {
+        sellerResource.warehouse.storedBatchIds.push(sellerBatchId);
+      }
+
+      const buyerResource = ensureCountry(root.resource, buyerCountry);
+      buyerResource.inventory = ensureObject(buyerResource.inventory);
+      buyerResource.inventory[resourceId] = n(buyerResource.inventory[resourceId]) ?? 0;
+      buyerResource.batches = Array.isArray(buyerResource.batches) ? buyerResource.batches : [];
+      buyerResource.inventoryLots = ensureObject(buyerResource.inventoryLots);
+      buyerResource.warehouse = ensureObject(buyerResource.warehouse, {
+        warehouseId: 'WH-BGD-RAW', countryId: buyerCountry, type: 'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
+        status: 'OPERATIONAL', availableByResource: {}, reservedByResource: {}, storedBatchIds: [], receipts: []
+      });
+      buyerResource.warehouse.availableByResource = ensureObject(buyerResource.warehouse.availableByResource);
+      buyerResource.warehouse.reservedByResource = ensureObject(buyerResource.warehouse.reservedByResource);
+      buyerResource.warehouse.storedBatchIds = Array.isArray(buyerResource.warehouse.storedBatchIds)
+        ? buyerResource.warehouse.storedBatchIds : [];
+      buyerResource.warehouse.receipts = Array.isArray(buyerResource.warehouse.receipts)
+        ? buyerResource.warehouse.receipts : [];
+
+      const buyerFinance = ensureCountry(root.finance, buyerCountry);
+      buyerFinance.omegaFinance = ensureObject(buyerFinance.omegaFinance, { ledger: [], companyCapitalAccounts: {} });
+      buyerFinance.omegaFinance.ledger = Array.isArray(buyerFinance.omegaFinance.ledger)
+        ? buyerFinance.omegaFinance.ledger : [];
+      buyerFinance.omegaFinance.companyCapitalAccounts =
+        ensureObject(buyerFinance.omegaFinance.companyCapitalAccounts);
+      const openingBuyerCash = 100000000;
+      buyerFinance.omegaFinance.companyCapitalAccounts[buyerCompany] = {
+        companyId: buyerCompany, currency: buyerCurrency,
+        availableBalance: openingBuyerCash, reservedBalance: 0,
+        capitalRaised: openingBuyerCash, capitalSpent: 0,
+        retainedEarningsBalance: 0, revision: 1,
+        provenance: { authority: 'CONTROLLED_BROWSER_TEST_OPENING_CAPITAL' }
+      };
+      const sellerFinance = ensureCountry(root.finance, sellerCountry);
+      sellerFinance.omegaFinance = ensureObject(sellerFinance.omegaFinance, { ledger: [], companyCapitalAccounts: {} });
+      sellerFinance.omegaFinance.ledger = Array.isArray(sellerFinance.omegaFinance.ledger)
+        ? sellerFinance.omegaFinance.ledger : [];
+      sellerFinance.omegaFinance.companyCapitalAccounts =
+        ensureObject(sellerFinance.omegaFinance.companyCapitalAccounts);
+
+      const buyerTrade = ensureCountry(root.trade, buyerCountry);
+      const sellerTrade = ensureCountry(root.trade, sellerCountry);
+      buyerTrade.routeCapacity = ensureObject(buyerTrade.routeCapacity);
+      sellerTrade.routeCapacity = ensureObject(sellerTrade.routeCapacity);
+      buyerTrade.routeCapacity[resourceId] = Math.max(n(buyerTrade.routeCapacity[resourceId]) || 0, quantity * 5);
+      sellerTrade.routeCapacity[resourceId] = Math.max(n(sellerTrade.routeCapacity[resourceId]) || 0, quantity * 5);
+      buyerTrade.marketPrice = ensureObject(buyerTrade.marketPrice);
+      sellerTrade.marketPrice = ensureObject(sellerTrade.marketPrice);
+      sellerTrade.marketPrice[resourceId] = 100;
+      const foreignBuyer = ensureCountry(root.foreign, buyerCountry);
+      const foreignSeller = ensureCountry(root.foreign, sellerCountry);
+      foreignBuyer.relations = ensureObject(foreignBuyer.relations);
+      foreignSeller.relations = ensureObject(foreignSeller.relations);
+      const bilateral = {
+        overall: 90, trade: 90, political: 90, trust: 90,
+        trade_agreement: true, sanctions: false, war_state: false,
+        authority: 'CONTROLLED_BROWSER_TEST_DIPLOMATIC_FIXTURE'
+      };
+      foreignBuyer.relations[sellerCountry] = JSON.parse(JSON.stringify(bilateral));
+      foreignSeller.relations[buyerCountry] = JSON.parse(JSON.stringify(bilateral));
+
+      buyerTrade.importRequests = Array.isArray(buyerTrade.importRequests) ? buyerTrade.importRequests : [];
+      for (const row of buyerTrade.importRequests) {
+        if (row && ['SENT', 'COUNTER_OFFERED', 'ACCEPTED'].includes(String(row.status || '').toUpperCase())) {
+          row.status = 'REJECTED';
+          row.stage = 'CASH_LIFECYCLE_TEST_ISOLATION';
+        }
+      }
+      const sellerOfferPrice = 100;
+      const bidPrice = Number((sellerOfferPrice * fx * 1.25).toFixed(6));
+      const offers = Array.isArray(sellerTrade.offerBook) ? sellerTrade.offerBook : [];
+      if (sellerTrade.offerBook && !Array.isArray(sellerTrade.offerBook) &&
+          typeof sellerTrade.offerBook === 'object') {
+        for (const [rid, value] of Object.entries(sellerTrade.offerBook)) {
+          if (Array.isArray(value)) {
+            for (const row of value) offers.push(Object.assign({ resourceId: rid }, row));
+          } else if (value && typeof value === 'object') {
+            offers.push(Object.assign({ resourceId: rid }, value));
+          }
+        }
+      }
+      sellerTrade.offerBook = offers;
+      offers.push({
+        offerId: 'PE-CASH-LIFECYCLE-SELLER-ASK', countryId: sellerCountry,
+        resourceId, quantity: sellerQuantity, unitPrice: sellerOfferPrice, price: sellerOfferPrice,
+        status: 'ACTIVE', source: 'CONTROLLED_PRIVATE_OUTPUT_FIXTURE'
+      });
+      buyerTrade.importRequests.push({
+        requestId: quoteRequestId, countryId: buyerCountry, targetCountryId: sellerCountry,
+        resourceId, quantity, unitPrice: bidPrice, totalValue: quantity * bidPrice,
+        status: 'SENT', stage: 'MARKET_QUOTE_ONLY'
+      });
+
+      const rebuilt = market.rebuild();
+      const quote = market.quote(resourceId);
+      if (quote.status !== 'CLEARED' ||
+          !quote.matches.some(row => row.buyerCountryId === buyerCountry &&
+            row.sellerCountryId === sellerCountry && row.quantity >= quantity)) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_EXECUTABLE_MARKET_QUOTE_FAILED:' +
+          JSON.stringify({ quote, market: rebuilt[resourceId] || null, bidPrice, fx }));
+      }
+      const quoteOnly = buyerTrade.importRequests.find(row => row.requestId === quoteRequestId);
+      quoteOnly.status = 'REJECTED';
+      quoteOnly.stage = 'MARKET_QUOTE_EVIDENCE_CAPTURED';
+
+      const supplier = market.privateCompanySuppliers(resourceId, quantity, buyerCountry, sellerCompany, sellerCountry)
+        .find(row => row.countryId === sellerCountry && row.companyId === sellerCompany);
+      if (!supplier || supplier.available < quantity || !supplier.sourceBatchIds.includes(sellerBatchId)) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_EXACT_PRIVATE_STOCK_NOT_FOUND:' + JSON.stringify(supplier || null));
+      }
+      const buyerCashBefore = buyerFinance.omegaFinance.companyCapitalAccounts[buyerCompany].availableBalance;
+      const sellerTreasuryBefore = n(sellerFinance.available);
+      if (sellerTreasuryBefore === null) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_SELLER_TREASURY_NOT_OBSERVED');
+      }
+      const requestResult = trade.createPrivateCompanyImportRequest(buyerCountry, {
+        requestId, targetCountryId: sellerCountry, resourceId, quantity,
+        unitPrice: sellerOfferPrice, buyerCompanyId: buyerCompany, sellerCompanyId: sellerCompany,
+        importTariffPct: 0
+      });
+      if (!requestResult?.accepted || requestResult.request?.procurementType !== 'PRIVATE_COMPANY_TO_COMPANY') {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_COMPANY_PURCHASE_REQUEST_FAILED:' + JSON.stringify(requestResult));
+      }
+      trade.processAll();
+      const buyerRequest = buyerTrade.importRequests.find(row => row.requestId === requestId);
+      if (buyerRequest?.status !== 'SETTLED') {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_TRADE_NOT_SETTLED:' + JSON.stringify({
+          request: buyerRequest || null,
+          processTrace: window.__OMEGA_LAST_TRADE_PROCESS_TRACE || null,
+          settlementTrace: window.__OMEGA_SETTLEMENT_TRACE || null
+        }));
+      }
+      const settlementId = String(buyerRequest.settlementId || '');
+      const procurement = (root.economy[buyerCountry]?.privateEnterpriseLifecycle?.privateCompanyProcurementRecords || [])
+        .find(row => row.settlementId === settlementId);
+      if (!procurement || procurement.status !== 'SETTLED') {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_PROCUREMENT_RECORD_MISSING');
+      }
+      const buyerAccount = root.economy[buyerCountry]?.companyAccounts?.[buyerCompany];
+      const sellerAccount = root.economy[sellerCountry]?.companyAccounts?.[sellerCompany];
+      const buyerWallet = buyerFinance.omegaFinance.companyCapitalAccounts[buyerCompany];
+      const sellerWallet = sellerFinance.omegaFinance.companyCapitalAccounts[sellerCompany];
+      const buyerPaymentEntry = (buyerAccount?.cashFlowEntries || []).find(row =>
+        row.sourceId === settlementId && row.category === 'FACTORY_INPUT_PURCHASE' && row.direction === 'DEBIT');
+      const sellerReceiptEntry = (sellerAccount?.cashFlowEntries || []).find(row =>
+        row.sourceId === settlementId && row.category === 'PRIVATE_COMPANY_EXPORT_SALE' &&
+        row.direction === 'CREDIT' && row.status === 'POSTED');
+      const buyerPaymentLedger = buyerFinance.omegaFinance.ledger.find(row =>
+        row.transactionId === 'PE-PRIVATE-IMPORT-PAYMENT:' + settlementId);
+      const sellerReceiptLedger = sellerFinance.omegaFinance.ledger.find(row =>
+        row.transactionId === 'PE-PRIVATE-IMPORT-RECEIPT:' + settlementId);
+      if (!buyerPaymentEntry || !sellerReceiptEntry || !buyerPaymentLedger || !sellerReceiptLedger ||
+          !sellerWallet || !buyerWallet) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_PAYMENT_REVENUE_LEDGER_RECONCILIATION_FAILED');
+      }
+      if (Math.abs(buyerWallet.availableBalance - (buyerCashBefore - buyerPaymentLedger.amount)) > 1e-6 ||
+          Math.abs((Number(sellerWallet.availableBalance) || 0) - sellerReceiptLedger.amount) > 1e-6 ||
+          Math.abs((Number(sellerAccount.grossRevenue) || 0) - sellerReceiptLedger.amount) > 1e-6 ||
+          Math.abs((Number(sellerAccount.paymentsReceived) || 0) - sellerReceiptLedger.amount) > 1e-6) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_WALLET_AND_REVENUE_AMOUNT_MISMATCH:' + JSON.stringify({
+          buyerWallet: buyerWallet.availableBalance, buyerCashBefore,
+          buyerPayment: buyerPaymentLedger.amount,
+          sellerWallet: sellerWallet.availableBalance, sellerRevenue: sellerAccount.grossRevenue,
+          sellerPaymentsReceived: sellerAccount.paymentsReceived, sellerReceipt: sellerReceiptLedger.amount
+        }));
+      }
+      const sellerAmount = Number(sellerReceiptLedger.amount);
+      const buyerAmount = Number(buyerPaymentLedger.amount);
+      const sellerNetCashBeforeTax = Number(sellerAccount.runtimeNetCashFlow) || 0;
+      if (Math.abs(sellerNetCashBeforeTax - sellerAmount) > 1e-6) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_SELLER_OPERATING_CASH_NOT_RECONCILED:' +
+          JSON.stringify({ sellerNetCashBeforeTax, sellerAmount }));
+      }
+
+      const preservedTime = Number(simulation.clock.simulationTimeMs) || 0;
+      const settlementTurn = Number(root.simulation?.turn) || currentTurn;
+      simulation.createSession({
+        playerCountryId: sellerCountry,
+        startTurn: settlementTurn,
+        simulationTimeMs: preservedTime,
+        sessionId: 'PE-CASH-LIFECYCLE-TAX-JV'
+      });
+      window.Game.playerCountry = sellerCountry;
+      window.Game.currentActiveCountry = sellerCountry;
+      window.Game.selectedCountryId = sellerCountry;
+      root.playerCountryId = sellerCountry;
+      const tax = lifecycle.closeCompanyFinancialPeriod({ countryId: sellerCountry, companyId: sellerCompany });
+      if (tax.status !== 'CLOSED') {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_CORPORATE_TAX_CLOSE_FAILED:' + JSON.stringify(tax));
+      }
+      const taxRate = Number(tax.period.corporateTaxRate);
+      const taxPaid = Number(tax.period.corporateTaxPaid);
+      const expectedTax = Number((sellerAmount * taxRate).toFixed(2));
+      if (Math.abs(Number(tax.period.grossReceipts) - sellerAmount) > 1e-6 ||
+          Math.abs(taxPaid - expectedTax) > 1e-6 ||
+          Math.abs(Number(tax.period.retainedEarningsAfter) - (sellerAmount - taxPaid)) > 1e-6 ||
+          Math.abs(Number(sellerAccount.runtimeNetCashFlow) - (sellerAmount - taxPaid)) > 1e-6 ||
+          Math.abs(Number(sellerFinance.available) - (sellerTreasuryBefore + taxPaid)) > 1e-6) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_TAX_AND_RETAINED_EARNINGS_NOT_RECONCILED:' +
+          JSON.stringify({ tax, sellerAmount, taxPaid, sellerAccount, treasuryBefore: sellerTreasuryBefore,
+            treasuryAfter: sellerFinance.available }));
+      }
+      const taxEntry = sellerFinance.omegaFinance.ledger.find(row =>
+        row.type === 'PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX' && row.companyId === sellerCompany &&
+        Math.abs(Number(row.amount) - taxPaid) < 1e-6);
+      if (!taxEntry) throw new Error('PRIVATE_CASH_LIFECYCLE_CORPORATE_TAX_LEDGER_ENTRY_MISSING');
+
+      const jointVenture = lifecycle.createJointVenture({
+        countryId: sellerCountry, name: 'Cash lifecycle shareholder dividend proof',
+        requestId: 'PE-CASH-LIFECYCLE-JV-REQUEST',
+        managingCompanyId: sellerCompany,
+        shareholders: [
+          { companyId: sellerCompany, shareBps: 6000 },
+          { companyId: dividendPartner, shareBps: 4000 }
+        ]
+      });
+      if (jointVenture.status !== 'PROPOSED') {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_JV_PROPOSAL_FAILED:' + JSON.stringify(jointVenture));
+      }
+      const approved = lifecycle.decideJointVenture({
+        countryId: sellerCountry, jointVentureId: jointVenture.jointVenture.jointVentureId,
+        decision: 'APPROVE'
+      });
+      if (approved.status !== 'ACTIVE') throw new Error('PRIVATE_CASH_LIFECYCLE_JV_APPROVAL_FAILED:' + JSON.stringify(approved));
+      const retained = Number(lifecycle.getCompanyFinanceSummary(sellerCountry, sellerCompany).capital.retainedEarningsBalance);
+      const contributionAmount = Number((Math.floor(retained * 50) / 100).toFixed(2));
+      if (!(contributionAmount > 0)) throw new Error('PRIVATE_CASH_LIFECYCLE_POST_TAX_RETAINED_EARNINGS_NOT_AVAILABLE');
+      const contribution = lifecycle.contributeJointVentureRetainedEarnings({
+        countryId: sellerCountry, jointVentureId: jointVenture.jointVenture.jointVentureId,
+        companyId: sellerCompany, amount: contributionAmount, requestId: 'PE-CASH-LIFECYCLE-JV-FUNDING'
+      });
+      if (contribution.status !== 'POSTED') throw new Error('PRIVATE_CASH_LIFECYCLE_JV_CONTRIBUTION_FAILED:' + JSON.stringify(contribution));
+      const resolution = lifecycle.createJointVentureResolution({
+        countryId: sellerCountry, jointVentureId: jointVenture.jointVenture.jointVentureId,
+        type: 'DIVIDEND', amount: contributionAmount, requiredApprovalBps: 6667,
+        description: 'Distribute verified post-tax retained earnings from the settled company sale'
+      });
+      if (resolution.status !== 'VOTING') throw new Error('PRIVATE_CASH_LIFECYCLE_DIVIDEND_RESOLUTION_FAILED:' + JSON.stringify(resolution));
+      const firstVote = lifecycle.voteJointVentureResolution({
+        countryId: sellerCountry, jointVentureId: jointVenture.jointVenture.jointVentureId,
+        resolutionId: resolution.resolution.resolutionId, companyId: sellerCompany, vote: 'FOR'
+      });
+      const secondVote = lifecycle.voteJointVentureResolution({
+        countryId: sellerCountry, jointVentureId: jointVenture.jointVenture.jointVentureId,
+        resolutionId: resolution.resolution.resolutionId, companyId: dividendPartner, vote: 'FOR'
+      });
+      if (firstVote.status !== 'VOTE_RECORDED' || secondVote.status !== 'APPROVED') {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_WEIGHTED_DIVIDEND_VOTE_FAILED:' +
+          JSON.stringify({ firstVote, secondVote }));
+      }
+      const dividend = lifecycle.distributeJointVentureDividend({
+        countryId: sellerCountry, jointVentureId: jointVenture.jointVenture.jointVentureId,
+        resolutionId: resolution.resolution.resolutionId
+      });
+      if (dividend.status !== 'PAID') throw new Error('PRIVATE_CASH_LIFECYCLE_DIVIDEND_PAYMENT_FAILED:' + JSON.stringify(dividend));
+      const paidCents = dividend.distribution.reduce((sum, row) => sum + Math.round(Number(row.amount) * 100), 0);
+      if (paidCents !== Math.round(contributionAmount * 100) ||
+          Math.abs(Number(dividend.distribution.find(row => row.companyId === sellerCompany)?.amount) -
+            contributionAmount * 0.6) > 0.011 ||
+          Math.abs(Number(dividend.distribution.find(row => row.companyId === dividendPartner)?.amount) -
+            contributionAmount * 0.4) > 0.011) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_DIVIDEND_ALLOCATION_NOT_RECONCILED:' +
+          JSON.stringify({ contributionAmount, distribution: dividend.distribution }));
+      }
+
+      const expected = {
+        requestId, settlementId, buyerCompany, sellerCompany, resourceId, quantity,
+        buyerAmount, sellerAmount, buyerCurrency, sellerCurrency,
+        buyerWalletBalance: Number(buyerWallet.availableBalance),
+        sellerWalletBalance: Number(sellerWallet.availableBalance),
+        sellerGrossRevenue: Number(sellerAccount.grossRevenue),
+        sellerPaymentsReceived: Number(sellerAccount.paymentsReceived),
+        sellerRuntimeNetCashFlow: Number(sellerAccount.runtimeNetCashFlow),
+        taxPaid, taxRate, retainedEarningsAfterTax: Number(tax.period.retainedEarningsAfter),
+        treasuryAfterTax: Number(sellerFinance.available),
+        jointVentureId: jointVenture.jointVenture.jointVentureId,
+        jointVentureRetainedEarningsAfterDividend: Number(lifecycle.getJointVentureDashboard(sellerCountry)
+          .jointVentures.find(row => row.jointVentureId === jointVenture.jointVenture.jointVentureId)?.retainedEarningsBalance),
+        dividend: dividend.distribution,
+        buyerPaymentEntryId: buyerPaymentEntry.entryId,
+        sellerReceiptEntryId: sellerReceiptEntry.entryId,
+        taxTransactionId: taxEntry.transactionId,
+        dividendTransactionId: dividend.transactionId
+      };
+      const saved = await simulation.saveSlot(slot);
+      if (!saved?.ok) throw new Error('PRIVATE_CASH_LIFECYCLE_BROWSER_SAVE_FAILED:' + JSON.stringify(saved));
+      const localStorageSaveAbsent = window.localStorage.getItem(saved.key) === null;
+      root.simulation.__peCashLifecycleSaveProbe = 'TAMPERED_AFTER_SAVE';
+      const loaded = await simulation.loadSlot(slot);
+      const restored = window.Game.state;
+      const restoredBuyerWallet = restored.finance.BGD.omegaFinance.companyCapitalAccounts[buyerCompany];
+      const restoredSellerWallet = restored.finance.SAU.omegaFinance.companyCapitalAccounts[sellerCompany];
+      const restoredBuyerAccount = restored.economy.BGD.companyAccounts[buyerCompany];
+      const restoredSellerAccount = restored.economy.SAU.companyAccounts[sellerCompany];
+      const restoredTaxRows = restored.finance.SAU.omegaFinance.ledger.filter(row =>
+        row.type === 'PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX' && row.companyId === sellerCompany);
+      const restoredDividendRows = restored.finance.SAU.omegaFinance.ledger.filter(row =>
+        row.type === 'PRIVATE_ENTERPRISE_JV_DIVIDEND' && row.jointVentureId === expected.jointVentureId);
+      const restoredResult = {
+        sameAuthoritativeRoot: restored === root && simulation.world?.state === root,
+        storage: saved.storage || null,
+        localStorageSaveAbsent,
+        loadIntegrity: simulation.lastLoadIntegrity,
+        sentinelCleared: restored.simulation.__peCashLifecycleSaveProbe === undefined,
+        buyerWalletBalance: Number(restoredBuyerWallet.availableBalance),
+        sellerWalletBalance: Number(restoredSellerWallet.availableBalance),
+        buyerPaymentCount: restoredBuyerAccount.cashFlowEntries.filter(row =>
+          row.sourceId === settlementId && row.category === 'FACTORY_INPUT_PURCHASE' &&
+          row.direction === 'DEBIT' && row.status === 'POSTED').length,
+        sellerReceiptCount: restoredSellerAccount.cashFlowEntries.filter(row =>
+          row.sourceId === settlementId && row.category === 'PRIVATE_COMPANY_EXPORT_SALE' &&
+          row.direction === 'CREDIT' && row.status === 'POSTED').length,
+        sellerGrossRevenue: Number(restoredSellerAccount.grossRevenue),
+        sellerPaymentsReceived: Number(restoredSellerAccount.paymentsReceived),
+        sellerRuntimeNetCashFlow: Number(restoredSellerAccount.runtimeNetCashFlow),
+        taxRows: restoredTaxRows.length,
+        taxAmount: Number(restoredTaxRows[0]?.amount),
+        retainedEarnings: Number(lifecycle.getCompanyFinanceSummary(sellerCountry, sellerCompany).capital.retainedEarningsBalance),
+        dividendRows: restoredDividendRows.length,
+        dividendAmount: Number(restoredDividendRows.reduce((sum, row) => sum + Number(row.amount || 0), 0)),
+        jvBalance: Number(lifecycle.getJointVentureDashboard(sellerCountry).jointVentures
+          .find(row => row.jointVentureId === expected.jointVentureId)?.retainedEarningsBalance)
+      };
+      if (!restoredResult.sameAuthoritativeRoot || restoredResult.storage !== 'INDEXEDDB' ||
+          !restoredResult.localStorageSaveAbsent || restoredResult.loadIntegrity !== 'VERIFIED' ||
+          !restoredResult.sentinelCleared || restoredResult.buyerPaymentCount !== 1 ||
+          restoredResult.sellerReceiptCount !== 1 || restoredResult.taxRows !== 1 ||
+          restoredResult.dividendRows !== 2 ||
+          Math.abs(restoredResult.buyerWalletBalance - expected.buyerWalletBalance) > 1e-6 ||
+          Math.abs(restoredResult.sellerWalletBalance - expected.sellerWalletBalance) > 1e-6 ||
+          Math.abs(restoredResult.sellerGrossRevenue - expected.sellerGrossRevenue) > 1e-6 ||
+          Math.abs(restoredResult.sellerPaymentsReceived - expected.sellerPaymentsReceived) > 1e-6 ||
+          Math.abs(restoredResult.sellerRuntimeNetCashFlow - expected.sellerRuntimeNetCashFlow) > 1e-6 ||
+          Math.abs(restoredResult.taxAmount - expected.taxPaid) > 1e-6 ||
+          Math.abs(restoredResult.dividendAmount - contributionAmount) > 0.011 ||
+          Math.abs(restoredResult.jvBalance) > 1e-6) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_SAVE_LOAD_RECONCILIATION_FAILED:' +
+          JSON.stringify({ expected, restoredResult }));
+      }
+
+      const duplicateClose = lifecycle.closeCompanyFinancialPeriod({ countryId: sellerCountry, companyId: sellerCompany });
+      const duplicateDividend = lifecycle.distributeJointVentureDividend({
+        countryId: sellerCountry, jointVentureId: expected.jointVentureId,
+        resolutionId: resolution.resolution.resolutionId
+      });
+      const duplicateImport = lifecycle.completePrivateCompanyImport({
+        settlementId, buyerCountryId: buyerCountry, sellerCountryId: sellerCountry,
+        buyerCompanyId: buyerCompany, sellerCompanyId: sellerCompany,
+        buyerAmount, sellerAmount, buyerPurchaseAmount: procurement.buyerPurchaseAmount,
+        buyerTariffAmount: procurement.buyerTariffAmount, quantity,
+        buyerCurrency, sellerCurrency, resourceId, batchTransfers: procurement.batchTransfers
+      });
+      if (duplicateClose.status !== 'DUPLICATE' || duplicateDividend.status !== 'DUPLICATE' ||
+          duplicateImport.status !== 'DUPLICATE') {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_REPLAY_IDEMPOTENCY_FAILED:' +
+          JSON.stringify({ duplicateClose, duplicateDividend, duplicateImport }));
+      }
+      const afterReplay = {
+        sellerGrossRevenue: Number(restoredSellerAccount.grossRevenue),
+        sellerPaymentsReceived: Number(restoredSellerAccount.paymentsReceived),
+        sellerTaxCount: restoredTaxRows.length,
+        dividendRowCount: restoredDividendRows.length,
+        buyerPaymentCount: restoredBuyerAccount.cashFlowEntries.filter(row =>
+          row.sourceId === settlementId && row.category === 'FACTORY_INPUT_PURCHASE' &&
+          row.direction === 'DEBIT' && row.status === 'POSTED').length
+      };
+      if (afterReplay.sellerGrossRevenue !== expected.sellerGrossRevenue ||
+          afterReplay.sellerPaymentsReceived !== expected.sellerPaymentsReceived ||
+          afterReplay.sellerTaxCount !== 1 || afterReplay.dividendRowCount !== 2 ||
+          afterReplay.buyerPaymentCount !== 1) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_REPLAY_CHANGED_LEDGER:' + JSON.stringify(afterReplay));
+      }
+      return {
+        ...expected,
+        saveLoad: restoredResult,
+        idempotency: {
+          duplicateClose: duplicateClose.status,
+          duplicateDividend: duplicateDividend.status,
+          duplicateImport: duplicateImport.status,
+          afterReplay
+        },
+        settlementRecord: procurement
+      };
+    });
+
+    assert.equal(result.saveLoad.loadIntegrity, 'VERIFIED');
+    assert.equal(result.saveLoad.buyerPaymentCount, 1);
+    assert.equal(result.saveLoad.sellerReceiptCount, 1);
+    assert.equal(result.saveLoad.taxRows, 1);
+    assert.equal(result.saveLoad.dividendRows, 2);
+    assert.equal(result.idempotency.duplicateImport, 'DUPLICATE');
+    assert.equal(result.idempotency.duplicateClose, 'DUPLICATE');
+    assert.equal(result.idempotency.duplicateDividend, 'DUPLICATE');
+    metrics.completed = true;
+    metrics.reconciliation = result;
+    metrics.stages.push(
+      'EXECUTABLE_MARKET_QUOTE_TO_COMPANY_BUYER_PAYMENT',
+      'SELLER_COMPANY_REVENUE_AND_RECEIPT_LEDGER_MATCHED',
+      'CORPORATE_PROFIT_TAX_POSTED_TO_SOVEREIGN_TREASURY',
+      'POST_TAX_RETAINED_EARNINGS_TO_APPROVED_JV_DIVIDEND',
+      'INDEXEDDB_SAVE_LOAD_AND_REPLAY_IDEMPOTENCY_VERIFIED'
+    );
+    metrics.errors = { pageErrors, consoleErrors };
+    const fatalConsoleErrors = consoleErrors.filter(message =>
+      !/net::ERR_BLOCKED_BY_CLIENT|blockedbyclient/i.test(message)
+    );
+    assert.deepEqual(pageErrors, [], 'private cash lifecycle browser proof must not leave uncaught page exceptions');
+    assert.deepEqual(fatalConsoleErrors, [], 'private cash lifecycle browser proof must not leave local runtime errors');
+    fs.writeFileSync(path.join(artifacts, 'omega-private-enterprise-cash-lifecycle.json'), JSON.stringify(metrics, null, 2));
+    await page.screenshot({
+      path: path.join(artifacts, 'omega-private-enterprise-cash-lifecycle.png'),
+      fullPage: true
+    });
+  } catch (error) {
+    metrics.completed = false;
+    metrics.failure = String(error && error.stack || error);
+    metrics.errors = { pageErrors, consoleErrors };
+    try {
+      fs.writeFileSync(path.join(artifacts, 'omega-private-enterprise-cash-lifecycle-failure.json'), JSON.stringify(metrics, null, 2));
+    } catch (_) {}
+    throw error;
+  } finally {
+    if (browser) await browser.close().catch(() => {});
+    await server.close().catch(() => {});
+  }
+});
