@@ -1408,6 +1408,18 @@ test('retired operational-console bridge cannot mutate the active UI or legacy l
   }
 });
 
+test('UI v2 suspends route work but retains its shell for a lightweight second cabinet open', () => {
+  const app = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+  const integration = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
+  assert.match(app, /function suspend\(root\)[\s\S]*?releaseResourceScopeIfLeaving\(root, state\)[\s\S]*?invalidatePendingRender\(state\)[\s\S]*?main\.innerHTML = ''/);
+  assert.match(app, /function resume\(root, options\)[\s\S]*?state\.options = Object\.assign\(\{\}, state\.options \|\| \{\}, options\)[\s\S]*?scheduleNavigationRender\(root\)/);
+  assert.match(app, /resume:resume, suspend:suspend/);
+  assert.match(integration, /typeof g\.OmegaUIV2App\.resume === 'function'/);
+  assert.match(integration, /reusedApp && root\.__omegaUIV2State\.options[\s\S]*?countryOptions/);
+  assert.match(integration, /typeof g\.OmegaUIV2App\.suspend === 'function'[\s\S]*?g\.OmegaUIV2App\.suspend\(root\)/);
+  assert.doesNotMatch(integration, /function closeToWorldMap\(\)[\s\S]{0,500}OmegaUIV2App\.unmount\(root\)/);
+});
+
 test('Back-to-Map bypasses legacy cabinet subsystem stack traps', () => {
   const bridge = globalThis.OmegaUIV2Integration;
   const previousManager = globalThis.OmegaLayerManager;
