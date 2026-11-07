@@ -1289,6 +1289,9 @@ Game.Map = {
 Game.Map.__omegaMapUiActive = true;
 Game.Map.__omegaDetachedLayers = [];
 Game.Map.__omegaMapRootDisplay = null;
+Game.Map.__omegaMapLayerBatchFrame = null;
+Game.Map.__omegaMapLayerBatchFrameType = null;
+Game.Map.__omegaMapUiGeneration = 0;
 Game.Map.__omegaMapLoadingProgress = 0;
 
 Game.Map.updateMapLoadingProgress = function(percent, message, status) {
@@ -1380,10 +1383,94 @@ Game.Map.ensureMapLoadingOverlay = function() {
         });
     }
 };
+function cancelOmegaMapLayerBatch(mapState) {
+    if (!mapState) return;
+    const frame = mapState.__omegaMapLayerBatchFrame;
+    if (frame !== null && frame !== undefined) {
+        if (mapState.__omegaMapLayerBatchFrameType === 'timeout' &&
+            typeof window.clearTimeout === 'function') {
+            window.clearTimeout(frame);
+        } else if (typeof window.cancelAnimationFrame === 'function') {
+            window.cancelAnimationFrame(frame);
+        }
+    }
+    mapState.__omegaMapLayerBatchFrame = null;
+    mapState.__omegaMapLayerBatchFrameType = null;
+}
+function scheduleOmegaMapLayerBatch(map, layers, operation, generation) {
+    const mapState = Game.Map;
+    const rows = Array.isArray(layers) ? layers.slice() : [];
+    const expectedActive = operation === 'attach';
+    const batchSize = 16;
+    let cursor = 0;
+
+    function scheduleNext(callback) {
+        if (typeof window.requestAnimationFrame === 'function') {
+            mapState.__omegaMapLayerBatchFrameType = 'animation';
+            mapState.__omegaMapLayerBatchFrame = window.requestAnimationFrame(callback);
+        } else {
+            mapState.__omegaMapLayerBatchFrameType = 'timeout';
+            mapState.__omegaMapLayerBatchFrame = window.setTimeout(callback, 0);
+        }
+    }
+    function complete() {
+        if (mapState.__omegaMapUiGeneration !== generation ||
+            mapState.__omegaMapUiActive !== expectedActive) return;
+        mapState.__omegaMapLayerBatchFrame = null;
+        mapState.__omegaMapLayerBatchFrameType = null;
+        if (!expectedActive) return;
+
+        mapState.__omegaDetachedLayers = [];
+        if (Game.__omegaGeoJSONRenderComplete === true &&
+            mapState.__omegaCountryStyleRefreshPending === true &&
+            typeof mapState.refreshCountryPolygonStyles === 'function') {
+            mapState.refreshCountryPolygonStyles();
+        }
+        if (map && typeof map.invalidateSize === 'function') {
+            window.requestAnimationFrame(function () {
+                if (Game.Map.__omegaMapUiActive !== false) {
+                    map.invalidateSize({ pan:false, debounceMoveend:true });
+                }
+            });
+        }
+    }
+    function runBatch() {
+        mapState.__omegaMapLayerBatchFrame = null;
+        mapState.__omegaMapLayerBatchFrameType = null;
+        if (mapState.__omegaMapUiGeneration !== generation ||
+            mapState.__omegaMapUiActive !== expectedActive) return;
+
+        const end = Math.min(cursor + batchSize, rows.length);
+        for (; cursor < end; cursor += 1) {
+            const layer = rows[cursor];
+            try {
+                if (operation === 'detach') {
+                    if (map.hasLayer && map.hasLayer(layer)) map.removeLayer(layer);
+                } else if (!map.hasLayer || !map.hasLayer(layer)) {
+                    map.addLayer(layer);
+                }
+            } catch (_) {}
+        }
+        if (cursor < rows.length) scheduleNext(runBatch);
+        else complete();
+    }
+
+    if (!rows.length) {
+        complete();
+        return;
+    }
+    scheduleNext(runBatch);
+}
+
 Game.Map.setUiActive = function(active) {
     const nextActive = active === true;
     if (this.__omegaMapUiActive === nextActive) return true;
     this.__omegaMapUiActive = nextActive;
+    const generation = (Number(this.__omegaMapUiGeneration) || 0) + 1;
+    this.__omegaMapUiGeneration = generation;
+    // A rapid cabinet/map toggle supersedes the older layer batch. Retain the full
+    // detached list so the next direction can reconcile layers already processed.
+    cancelOmegaMapLayerBatch(this);
     const root = document.getElementById('render-engine-root');
     const map = this.map || window.map;
 
@@ -1409,15 +1496,22 @@ Game.Map.setUiActive = function(active) {
             try { this.__omegaWorldMapAbortController.abort(); } catch (_) {}
         }
 
-        if (map && typeof map.eachLayer === 'function' && typeof map.removeLayer === 'function') {
+        if (map) {
             const layers = [];
-            map.eachLayer(function (layer) { layers.push(layer); });
-            layers.forEach(function (layer) {
-                if (map.hasLayer && map.hasLayer(layer)) {
-                    try { map.removeLayer(layer); } catch (_) {}
-                }
-            });
+            const seen = new Set();
+            const rememberLayer = function (layer) {
+                if (!layer || seen.has(layer)) return;
+                seen.add(layer);
+                layers.push(layer);
+            };
+            if (typeof map.eachLayer === 'function' && typeof map.removeLayer === 'function') {
+                map.eachLayer(rememberLayer);
+            }
+            (this.__omegaDetachedLayers || []).forEach(rememberLayer);
             this.__omegaDetachedLayers = layers;
+            if (typeof map.removeLayer === 'function') {
+                scheduleOmegaMapLayerBatch(map, layers, 'detach', generation);
+            }
         }
         if (root) {
             if (this.__omegaMapRootDisplay === null) this.__omegaMapRootDisplay = root.style.display || '';
@@ -1432,22 +1526,7 @@ Game.Map.setUiActive = function(active) {
         root.removeAttribute('data-omega-map-suspended');
     }
     if (map) {
-        (this.__omegaDetachedLayers || []).forEach(function (layer) {
-            try {
-                if (!map.hasLayer || !map.hasLayer(layer)) map.addLayer(layer);
-            } catch (_) {}
-        });
-        this.__omegaDetachedLayers = [];
-        if (Game.__omegaGeoJSONRenderComplete === true &&
-            Game.Map.__omegaCountryStyleRefreshPending === true &&
-            typeof Game.Map.refreshCountryPolygonStyles === 'function') {
-            Game.Map.refreshCountryPolygonStyles();
-        }
-        if (typeof map.invalidateSize === 'function') {
-            window.requestAnimationFrame(function () {
-                if (Game.Map.__omegaMapUiActive !== false) map.invalidateSize({ pan:false, debounceMoveend:true });
-            });
-        }
+        scheduleOmegaMapLayerBatch(map, this.__omegaDetachedLayers || [], 'attach', generation);
     }
 
     if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON) {
