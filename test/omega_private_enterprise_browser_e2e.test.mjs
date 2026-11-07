@@ -1873,6 +1873,10 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         row.type === 'PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX' && row.companyId === sellerCompany &&
         Math.abs(Number(row.amount) - taxPaid) < 1e-6);
       if (!taxEntry) throw new Error('PRIVATE_CASH_LIFECYCLE_CORPORATE_TAX_LEDGER_ENTRY_MISSING');
+      if (taxEntry.currency !== sellerCurrency || tax.period.currency !== sellerCurrency) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_TAX_CURRENCY_NOT_RECONCILED:' +
+          JSON.stringify({ expected: sellerCurrency, taxPeriodCurrency: tax.period.currency, ledgerCurrency: taxEntry.currency }));
+      }
 
       const jointVenture = lifecycle.createJointVenture({
         countryId: sellerCountry, name: 'Cash lifecycle shareholder dividend proof',
@@ -1885,6 +1889,10 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
       });
       if (jointVenture.status !== 'PROPOSED') {
         throw new Error('PRIVATE_CASH_LIFECYCLE_JV_PROPOSAL_FAILED:' + JSON.stringify(jointVenture));
+      }
+      if (jointVenture.jointVenture.currency !== sellerCurrency) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_JV_CURRENCY_NOT_RECONCILED:' +
+          JSON.stringify({ expected: sellerCurrency, actual: jointVenture.jointVenture.currency }));
       }
       const approved = lifecycle.decideJointVenture({
         countryId: sellerCountry, jointVentureId: jointVenture.jointVenture.jointVentureId,
@@ -1905,6 +1913,10 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         description: 'Distribute verified post-tax retained earnings from the settled company sale'
       });
       if (resolution.status !== 'VOTING') throw new Error('PRIVATE_CASH_LIFECYCLE_DIVIDEND_RESOLUTION_FAILED:' + JSON.stringify(resolution));
+      if (resolution.resolution.currency !== sellerCurrency) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_DIVIDEND_RESOLUTION_CURRENCY_NOT_RECONCILED:' +
+          JSON.stringify({ expected: sellerCurrency, actual: resolution.resolution.currency }));
+      }
       const firstVote = lifecycle.voteJointVentureResolution({
         countryId: sellerCountry, jointVentureId: jointVenture.jointVenture.jointVentureId,
         resolutionId: resolution.resolution.resolutionId, companyId: sellerCompany, vote: 'FOR'
@@ -1922,6 +1934,16 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         resolutionId: resolution.resolution.resolutionId
       });
       if (dividend.status !== 'PAID') throw new Error('PRIVATE_CASH_LIFECYCLE_DIVIDEND_PAYMENT_FAILED:' + JSON.stringify(dividend));
+      const dividendAggregate = sellerFinance.omegaFinance.ledger.find(row => row.transactionId === dividend.transactionId &&
+        row.type === 'PRIVATE_ENTERPRISE_JV_DIVIDEND_DISTRIBUTION');
+      const dividendLedgerRows = sellerFinance.omegaFinance.ledger.filter(row => row.type === 'PRIVATE_ENTERPRISE_JV_DIVIDEND' &&
+        row.jointVentureId === jointVenture.jointVenture.jointVentureId);
+      if (!dividendAggregate || dividendAggregate.currency !== sellerCurrency ||
+          dividend.distribution.some(row => row.currency !== sellerCurrency) ||
+          dividendLedgerRows.length !== 2 || dividendLedgerRows.some(row => row.currency !== sellerCurrency)) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_DIVIDEND_CURRENCY_NOT_RECONCILED:' +
+          JSON.stringify({ expected: sellerCurrency, dividendAggregate, distribution: dividend.distribution, dividendLedgerRows }));
+      }
       const paidCents = dividend.distribution.reduce((sum, row) => sum + Math.round(Number(row.amount) * 100), 0);
       if (paidCents !== Math.round(contributionAmount * 100) ||
           Math.abs(Number(dividend.distribution.find(row => row.companyId === sellerCompany)?.amount) -
@@ -1940,9 +1962,11 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         sellerGrossRevenue: Number(sellerAccount.grossRevenue),
         sellerPaymentsReceived: Number(sellerAccount.paymentsReceived),
         sellerRuntimeNetCashFlow: Number(sellerAccount.runtimeNetCashFlow),
-        taxPaid, taxRate, retainedEarningsAfterTax: Number(tax.period.retainedEarningsAfter),
+        taxPaid, taxRate, taxCurrency: taxEntry.currency, retainedEarningsAfterTax: Number(tax.period.retainedEarningsAfter),
         treasuryAfterTax: Number(sellerFinance.available),
         jointVentureId: jointVenture.jointVenture.jointVentureId,
+        jointVentureCurrency: jointVenture.jointVenture.currency,
+        dividendCurrency: dividendAggregate.currency,
         jointVentureRetainedEarningsAfterDividend: Number(lifecycle.getJointVentureDashboard(sellerCountry)
           .jointVentures.find(row => row.jointVentureId === jointVenture.jointVenture.jointVentureId)?.retainedEarningsBalance),
         dividend: dividend.distribution,
@@ -1965,6 +1989,10 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         row.type === 'PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX' && row.companyId === sellerCompany);
       const restoredDividendRows = restored.finance.SAU.omegaFinance.ledger.filter(row =>
         row.type === 'PRIVATE_ENTERPRISE_JV_DIVIDEND' && row.jointVentureId === expected.jointVentureId);
+      const restoredDividendAggregate = restored.finance.SAU.omegaFinance.ledger.find(row =>
+        row.type === 'PRIVATE_ENTERPRISE_JV_DIVIDEND_DISTRIBUTION' && row.jointVentureId === expected.jointVentureId);
+      const restoredJV = lifecycle.getJointVentureDashboard(sellerCountry).jointVentures
+        .find(row => row.jointVentureId === expected.jointVentureId);
       const restoredResult = {
         sameAuthoritativeRoot: restored === root && simulation.world?.state === root,
         storage: saved.storage || null,
@@ -1984,17 +2012,24 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         sellerRuntimeNetCashFlow: Number(restoredSellerAccount.runtimeNetCashFlow),
         taxRows: restoredTaxRows.length,
         taxAmount: Number(restoredTaxRows[0]?.amount),
+        taxCurrency: restoredTaxRows[0]?.currency || null,
         retainedEarnings: Number(lifecycle.getCompanyFinanceSummary(sellerCountry, sellerCompany).capital.retainedEarningsBalance),
+        jointVentureCurrency: restoredJV?.currency || null,
         dividendRows: restoredDividendRows.length,
         dividendAmount: Number(restoredDividendRows.reduce((sum, row) => sum + Number(row.amount || 0), 0)),
-        jvBalance: Number(lifecycle.getJointVentureDashboard(sellerCountry).jointVentures
-          .find(row => row.jointVentureId === expected.jointVentureId)?.retainedEarningsBalance)
+        dividendRowCurrencies: restoredDividendRows.map(row => row.currency),
+        dividendAggregateCurrency: restoredDividendAggregate?.currency || null,
+        jvBalance: Number(restoredJV?.retainedEarningsBalance)
       };
       if (!restoredResult.sameAuthoritativeRoot || restoredResult.storage !== 'INDEXEDDB' ||
           !restoredResult.localStorageSaveAbsent || restoredResult.loadIntegrity !== 'VERIFIED' ||
           !restoredResult.sentinelCleared || restoredResult.buyerPaymentCount !== 1 ||
           restoredResult.sellerReceiptCount !== 1 || restoredResult.taxRows !== 1 ||
+          restoredResult.taxCurrency !== sellerCurrency ||
+          restoredResult.jointVentureCurrency !== sellerCurrency ||
           restoredResult.dividendRows !== 2 ||
+          restoredResult.dividendAggregateCurrency !== sellerCurrency ||
+          restoredResult.dividendRowCurrencies.some(currency => currency !== sellerCurrency) ||
           Math.abs(restoredResult.buyerWalletBalance - expected.buyerWalletBalance) > 1e-6 ||
           Math.abs(restoredResult.sellerWalletBalance - expected.sellerWalletBalance) > 1e-6 ||
           Math.abs(restoredResult.sellerGrossRevenue - expected.sellerGrossRevenue) > 1e-6 ||
