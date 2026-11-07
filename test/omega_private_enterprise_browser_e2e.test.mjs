@@ -1024,9 +1024,27 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         throw new Error('SAB34_BACKGROUND_ENGINE_CLOCK_NOT_PAUSED');
       }
 
-      const advanced = await simulation.advance(6);
-      if (advanced.status === 'ERROR' || advanced.steps !== 6) {
-        throw new Error('SAB34_CENTRAL_GAME_CLOCK_CONSTRUCTION_ADVANCE_FAILED:' + JSON.stringify(advanced));
+      // One authoritative turn carries the exact remaining construction interval.
+      // This preserves the full central turn pipeline while avoiding five duplicate
+      // 17-ministry/world-simulation passes that do not add evidence to this construction gate.
+      // Restore the ordinary 30-day test cadence immediately after the committed turn so
+      // mine/factory ETAs and subsequent production cycles keep their normal test semantics.
+      const constructionDays = Math.max(1, Math.ceil(Number(construction.started[0].durationDays) || 180));
+      let advanced;
+      simulation.clock.gameDaysPerTurn = constructionDays;
+      simulation.clock.stepDurationMs = constructionDays * 86400000;
+      state.simulation.daysPerTurn = constructionDays;
+      try {
+        advanced = await simulation.advance(1);
+      } finally {
+        simulation.clock.gameDaysPerTurn = 30;
+        simulation.clock.stepDurationMs = 30 * 86400000;
+        state.simulation.daysPerTurn = 30;
+      }
+      if (advanced.status === 'ERROR' || advanced.steps !== 1) {
+        throw new Error('SAB34_CENTRAL_GAME_CLOCK_CONSTRUCTION_ADVANCE_FAILED:' + JSON.stringify({
+          constructionDays, advanced
+        }));
       }
       const resource = state.resource.BGD;
       const project = resource.industrialNetwork.projects.find(row => String(row.projectId) === String(projectId));
@@ -1052,7 +1070,9 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         operatorCompanyId: factory.operatorCompanyId,
         constructionStatus: project.status,
         productionEnabled: factory.productionEnabled,
-        committedTurn: Number(simulation.clock.turn)
+        committedTurn: Number(simulation.clock.turn),
+        constructionDays,
+        constructionAdvanceTurns: advanced.steps
       };
     });
     metrics.commissioning = commissioning;
