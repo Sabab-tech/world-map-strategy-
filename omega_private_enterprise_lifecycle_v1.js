@@ -1244,6 +1244,7 @@
       root=financeRoot(cid,false),reservations=root&&root.companyTradeReservations||{},row=reservations[settlementId];
     if(cid!==playerCountry()||!row)return{status:'BLOCKED',reason:'PRIVATE_IMPORT_RESERVATION_NOT_FOUND'};
     if(row.status==='CANCELLED')return{status:'DUPLICATE',reservation:clone(row)};
+    if(row.status==='FAILED')return{status:'DUPLICATE',reason:'PRIVATE_IMPORT_RESERVATION_ALREADY_FAILED',reservation:clone(row)};
     if(row.status!=='RESERVED')return{status:'BLOCKED',reason:'PRIVATE_IMPORT_RESERVATION_ALREADY_FINALIZED',currentStatus:row.status};
     row.status='CANCELLED';row.cancelledTurn=turn();row.cancellationReason=String(input.reason||'TRADE_SETTLEMENT_ABORTED');
     recordEvent(cid,'PRIVATE_COMPANY_IMPORT_CASH_RELEASED',{settlementId:settlementId,buyerCompanyId:row.buyerCompanyId,reason:row.cancellationReason});
@@ -1261,6 +1262,8 @@
       return{status:'BLOCKED',reason:'PRIVATE_TRADE_CASHFLOW_FIELDS_INVALID'};
     var prior=entries.find(function(row){return row&&row.entryId===entryId;});
     if(prior){
+      if(String(prior.status||'').toUpperCase()==='REVERSED')
+        return{status:'BLOCKED',reason:'PRIVATE_TRADE_CASHFLOW_ENTRY_PREVIOUSLY_REVERSED',entry:clone(prior)};
       var same=Math.abs((num(prior.amount)||0)-amount)<=1e-8&&prior.direction===direction&&
         prior.category===category&&id(prior.currency)===currency&&String(prior.sourceId||'')===sourceId;
       return same?{status:'DUPLICATE',entry:clone(prior)}:{status:'BLOCKED',reason:'PRIVATE_TRADE_CASHFLOW_IDEMPOTENCY_COLLISION'};
@@ -1308,6 +1311,13 @@
     if(!reservation)return{status:'BLOCKED',reason:'PRIVATE_IMPORT_RESERVATION_NOT_FOUND'};
     if(reservation.status==='SETTLED')return{status:'DUPLICATE',record:clone(reservation.procurementRecord||null)};
     if(reservation.status!=='RESERVED')return{status:'BLOCKED',reason:'PRIVATE_IMPORT_RESERVATION_NOT_ACTIVE'};
+    var failImport=function(reason,detail){
+      reservation.status='FAILED';reservation.failedTurn=turn();reservation.failureReason=reason;
+      reservation.failureDetail=detail?clone(detail):null;
+      recordEvent(buyerCountry,'PRIVATE_COMPANY_IMPORT_SETTLEMENT_FAILED',{settlementId:settlementId,
+        buyerCompanyId:buyerCompany,reason:reason});
+      return{status:'BLOCKED',reason:reason,detail:detail||null};
+    };
     if(reservation.buyerCompanyId!==buyerCompany||reservation.sellerCompanyId!==sellerCompany||
        Math.abs((num(reservation.buyerAmount)||0)-(buyerAmount||0))>1e-8||
        Math.abs(((num(reservation.buyerPurchaseAmount)??num(reservation.buyerAmount))||0)-(buyerPurchaseAmount||0))>1e-8||
@@ -1329,57 +1339,58 @@
     }
     var buyerWallet=privateCompanyWallet(buyerCountry,buyerCompany,buyerCurrency,false),
       sellerWallet=privateCompanyWallet(sellerCountry,sellerCompany,sellerCurrency,true);
-    if(!buyerWallet.ok||!sellerWallet.ok)return{status:'BLOCKED',reason:'PRIVATE_IMPORT_COMPANY_WALLET_CURRENCY_INVALID',
-      buyerWallet:buyerWallet,sellerWallet:sellerWallet};
+    if(!buyerWallet.ok||!sellerWallet.ok)return failImport('PRIVATE_IMPORT_COMPANY_WALLET_CURRENCY_INVALID',
+      {buyerWallet:buyerWallet,sellerWallet:sellerWallet});
     var otherHeldReservations=Object.keys(reservations).reduce(function(sum,key){
       var row=reservations[key];
       return sum+(key!==settlementId&&row&&row.buyerCompanyId===buyerCompany&&row.status==='RESERVED'
         ?Math.max(0,num(row.buyerAmount)||0):0);
     },0);
     if((num(buyerWallet.account.availableBalance)||0)-otherHeldReservations+1e-8<(num(reservation.buyerAmount)||0))
-      return{status:'BLOCKED',reason:'PRIVATE_IMPORT_BUYER_CASH_BECAME_UNAVAILABLE',
+      return failImport('PRIVATE_IMPORT_BUYER_CASH_BECAME_UNAVAILABLE',{
         availableAfterOtherReservations:Math.max(0,(num(buyerWallet.account.availableBalance)||0)-otherHeldReservations),
-        required:num(reservation.buyerAmount)||0};
+        required:num(reservation.buyerAmount)||0});
     var debit=postPrivateTradeCashFlow(buyerCountry,buyerCompany,{
       entryId:'PE-PRIVATE-IMPORT-PAYMENT:'+settlementId,sourceId:settlementId,
       amount:buyerPurchaseAmount,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',currency:buyerCurrency
     });
-    if(!['POSTED','DUPLICATE'].includes(debit.status))return{status:'BLOCKED',reason:'PRIVATE_IMPORT_BUYER_CASHFLOW_POST_FAILED',detail:debit};
+    if(!['POSTED','DUPLICATE'].includes(debit.status))return failImport('PRIVATE_IMPORT_BUYER_CASHFLOW_POST_FAILED',debit);
     var tariffDebit=buyerTariffAmount>1e-9?postPrivateTradeCashFlow(buyerCountry,buyerCompany,{
       entryId:'PE-PRIVATE-IMPORT-TARIFF:'+settlementId,sourceId:settlementId,
       amount:buyerTariffAmount,direction:'DEBIT',category:'IMPORT_TARIFF',currency:buyerCurrency
     }):{status:'DUPLICATE'};
     if(!['POSTED','DUPLICATE'].includes(tariffDebit.status)){
-      if(debit.status==='POSTED'){
+      if(['POSTED','DUPLICATE'].indexOf(debit.status)>=0){
         var rollbackAccount=companyFlowAccount(buyerCountry,buyerCompany),rollbackRows=rollbackAccount&&rollbackAccount.cashFlowEntries||[];
         var rollbackEntry=rollbackRows.find(function(row){return row&&row.entryId==='PE-PRIVATE-IMPORT-PAYMENT:'+settlementId;});
-        if(rollbackEntry){rollbackEntry.status='REVERSED';rollbackEntry.reversedTurn=turn();
+        if(rollbackEntry&&rollbackEntry.status==='POSTED'){
+          rollbackEntry.status='REVERSED';rollbackEntry.reversedTurn=turn();rollbackEntry.reversalReason='PRIVATE_IMPORT_TARIFF_CASHFLOW_POST_FAILED';
           rollbackAccount.runtimeNetCashFlow=(num(rollbackAccount.runtimeNetCashFlow)||0)+buyerPurchaseAmount;
           rollbackAccount.paymentsMade=Math.max(0,(num(rollbackAccount.paymentsMade)||0)-buyerPurchaseAmount);}
       }
-      return{status:'BLOCKED',reason:'PRIVATE_IMPORT_TARIFF_CASHFLOW_POST_FAILED',detail:tariffDebit};
+      return failImport('PRIVATE_IMPORT_TARIFF_CASHFLOW_POST_FAILED',tariffDebit);
     }
     var credit=postPrivateTradeCashFlow(sellerCountry,sellerCompany,{
       entryId:'PE-PRIVATE-IMPORT-RECEIPT:'+settlementId,sourceId:settlementId,
       amount:sellerAmount,direction:'CREDIT',category:'PRIVATE_COMPANY_EXPORT_SALE',currency:sellerCurrency
     });
     if(!['POSTED','DUPLICATE'].includes(credit.status)){
-      if(debit.status==='POSTED'){
+      if(['POSTED','DUPLICATE'].indexOf(debit.status)>=0){
         var buyerAccount=companyFlowAccount(buyerCountry,buyerCompany),entries=buyerAccount&&buyerAccount.cashFlowEntries||[];
         var posted=entries.find(function(row){return row&&row.entryId==='PE-PRIVATE-IMPORT-PAYMENT:'+settlementId;});
-        if(posted){
+        if(posted&&posted.status==='POSTED'){
           posted.status='REVERSED';posted.reversedTurn=turn();posted.reversalReason='SELLER_COMPANY_CASHFLOW_POST_FAILED';
           buyerAccount.runtimeNetCashFlow=(num(buyerAccount.runtimeNetCashFlow)||0)+buyerPurchaseAmount;
           buyerAccount.paymentsMade=Math.max(0,(num(buyerAccount.paymentsMade)||0)-buyerPurchaseAmount);
         }
-        if(tariffDebit.status==='POSTED'){
+        if(['POSTED','DUPLICATE'].indexOf(tariffDebit.status)>=0){
           var postedTariff=entries.find(function(row){return row&&row.entryId==='PE-PRIVATE-IMPORT-TARIFF:'+settlementId;});
-          if(postedTariff){postedTariff.status='REVERSED';postedTariff.reversedTurn=turn();
+          if(postedTariff&&postedTariff.status==='POSTED'){postedTariff.status='REVERSED';postedTariff.reversedTurn=turn();
             buyerAccount.runtimeNetCashFlow=(num(buyerAccount.runtimeNetCashFlow)||0)+buyerTariffAmount;
             buyerAccount.paymentsMade=Math.max(0,(num(buyerAccount.paymentsMade)||0)-buyerTariffAmount);}
         }
       }
-      return{status:'BLOCKED',reason:'PRIVATE_IMPORT_SELLER_CASHFLOW_POST_FAILED',detail:credit};
+      return failImport('PRIVATE_IMPORT_SELLER_CASHFLOW_POST_FAILED',credit);
     }
     var buyerRoot=financeRoot(buyerCountry,true),sellerRoot=financeRoot(sellerCountry,true),
       buyerLedger=financeLedger(buyerCountry,true),sellerLedger=financeLedger(sellerCountry,true),
