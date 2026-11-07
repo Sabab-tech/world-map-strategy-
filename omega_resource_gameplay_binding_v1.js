@@ -608,7 +608,7 @@ function addMapMarkers(){
    const angle=(Math.max(0,position)*(2*Math.PI/group.length))-(Math.PI/2);
    dx=Math.round(Math.cos(angle)*radius);dy=Math.round(Math.sin(angle)*radius);offsetMarkerCount++;
   }
-  const icon=L.divIcon({className:'omega-individual-site-marker',html:'<span style="--site-color:'+color+'">'+esc(glyph)+'</span>',iconSize:[26,26],iconAnchor:[13-dx,13-dy],tooltipAnchor:[-dx,-12-dy]});
+  const icon=L.divIcon({className:'omega-individual-site-marker',html:'<span data-omega-site-id="'+esc(site.siteId)+'" style="--site-color:'+color+'">'+esc(glyph)+'</span>',iconSize:[26,26],iconAnchor:[13-dx,13-dy],tooltipAnchor:[-dx,-12-dy]});
   const marker=L.marker([lat,lng],{icon,title:String(site.siteName||site.siteId),keyboard:true,alt:String(site.siteName||site.siteId)});
   marker.bindTooltip?.(String(site.siteName||site.siteId)+' · '+site.countryId+' · '+rawResource,{direction:'top',sticky:true});
   marker.on('click',()=>setSelected(site.siteId));marker.addTo(markerLayer);rendered++;
