@@ -762,10 +762,13 @@ public final class OmegaGameplaySmokeTest {
         // path directly. Read the source as the debuggable target app with run-as,
         // then let the outer shell write the bytes into its adb-pull staging folder.
         final String command =
-                "mkdir -p /sdcard/omega-smoke && run-as com.omega.globalsupremecommander cat " +
+                "run-as com.omega.globalsupremecommander cat " +
                 shellQuote(screenshot.getAbsolutePath()) + " 2>&1 > " +
                 shellQuote(destinationPath) + " && test -s " +
-                shellQuote(destinationPath) + " && echo OMEGA_SCREENSHOT_EXPORT_OK";
+                shellQuote(destinationPath) + " 2>&1 && echo OMEGA_SCREENSHOT_EXPORT_OK";
+        android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                "STAGE=SCREENSHOT_EXPORT_BEGIN source=" + screenshot.getAbsolutePath() +
+                        " bytes=" + screenshot.length());
         final ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (ParcelFileDescriptor descriptor =
                      instrumentation.getUiAutomation().executeShellCommand(command);
@@ -775,6 +778,10 @@ public final class OmegaGameplaySmokeTest {
             while ((count = stream.read(buffer)) != -1) output.write(buffer, 0, count);
         }
         final String commandOutput = output.toString(StandardCharsets.UTF_8.name());
+        if (!commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_OK")) {
+            android.util.Log.e("OMEGA_ANDROID_SMOKE",
+                    "SCREENSHOT_EXPORT_COMMAND_OUTPUT=" + commandOutput);
+        }
         assertTrue("Android shell must export the real PNG before the test app is uninstalled: " +
                 commandOutput, commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_OK"));
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
