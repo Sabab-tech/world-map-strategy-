@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 
-const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOfflineWorkflow, androidSmokeScript, androidSmokeInstrumentation, androidGradle, bootPerformanceMonitor, compositionRoot, androidManifest] = await Promise.all([
+const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOfflineWorkflow, androidSmokeScript, androidSmokeInstrumentation, androidGradle, bootPerformanceMonitor, compositionRoot] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.js", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.css", import.meta.url), "utf8"),
@@ -16,8 +16,7 @@ const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOffl
   readFile(new URL("../android/app/src/androidTest/java/com/omega/globalsupremecommander/OmegaGameplaySmokeTest.java", import.meta.url), "utf8"),
   readFile(new URL("../android/app/build.gradle", import.meta.url), "utf8"),
   readFile(new URL("../omega_boot_performance_monitor_v1.js", import.meta.url), "utf8"),
-  readFile(new URL("../omega_enterprise_composition_root_v10.js", import.meta.url), "utf8"),
-  readFile(new URL("../android/app/src/main/AndroidManifest.xml", import.meta.url), "utf8")
+  readFile(new URL("../omega_enterprise_composition_root_v10.js", import.meta.url), "utf8")
 ]);
 
 test("offline map has a Bengali label and stays in the existing satellite control", () => {
@@ -142,30 +141,28 @@ test("newer commits supersede stale Android emulator smoke runs on the same ref"
 });
 
 test("Android 9 smoke exports and validates a real landscape PNG before app cleanup", () => {
-  assert.ok(androidManifest.includes(
-    '<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />'
-  ), "the legacy shared-storage permission must be limited to Android 9 and earlier");
-  assert.ok(androidSmokeInstrumentation.includes("Environment.getExternalStorageDirectory()") &&
-    androidSmokeInstrumentation.includes('new File(externalDirectory, "omega-smoke")') &&
-    androidSmokeInstrumentation.includes("android.Manifest.permission.WRITE_EXTERNAL_STORAGE") &&
-    androidSmokeInstrumentation.includes("grantRuntimePermission") &&
+  assert.ok(androidSmokeInstrumentation.includes('getExternalFilesDir("omega-smoke")') &&
     androidSmokeInstrumentation.includes("new File(externalDirectory, screenshot.getName())") &&
     androidSmokeInstrumentation.includes("new File(externalDirectory, screenshot.getName() + \".exit\")") &&
     androidSmokeInstrumentation.includes("new FileInputStream(screenshot)") &&
     androidSmokeInstrumentation.includes("exportedScreenshot.length() == screenshot.length()") &&
-    androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_SHARED_COPY_FINISHED"),
-    "instrumentation must copy the complete PNG and success marker into adb-readable shared external storage");
+    androidSmokeInstrumentation.includes("getUiAutomation().executeShellCommand(shellCommand)") &&
+    androidSmokeInstrumentation.includes('shellQuote(packageName)') &&
+    androidSmokeInstrumentation.includes("run-as ") &&
+    androidSmokeInstrumentation.includes("OMEGA_EXPORT_OK") &&
+    androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_HOST_EXPORT_FINISHED"),
+    "instrumentation must copy the complete PNG into app-specific storage and stage it for the adb shell with run-as before app cleanup");
   assert.ok(androidSmokeScript.includes('remote_screenshot_dir="/sdcard/omega-smoke"') &&
+    androidSmokeScript.includes('adb shell mkdir -p "$remote_screenshot_dir"') &&
     androidSmokeScript.includes('adb pull "$remote_screenshot_dir" "$screenshot_dir"') &&
     androidSmokeScript.includes('status_file="$local_screenshot.exit"') &&
     androidSmokeScript.includes('export_exit="$(tr -d \'[:space:]\' <"$status_file")"'),
-    "the host must pull the shared screenshot directory and validate the Java copy marker before accepting the artifact");
+    "the host must pull the instrumentation-staged directory and validate the Java copy marker before accepting the artifact");
   assert.ok(androidSmokeScript.includes('89504e470d0a1a0a') &&
     androidSmokeScript.includes('screenshot_bytes'),
     "the host must reject error text, truncated files, and non-PNG screenshot artifacts");
-  const executableSmokeScript = androidSmokeScript.replace(/^\s*#.*$/gm, '');
-  assert.doesNotMatch(executableSmokeScript, /\b(?:run-as|executeShellCommand)\b/,
-    "screenshot retrieval must not depend on UiAutomation shell execution or run-as");
+  assert.doesNotMatch(androidSmokeScript.replace(/^\s*#.*$/gm, ''), /\b(?:run-as|executeShellCommand)\b/,
+    "run-as must stay inside the instrumentation lifecycle rather than depending on a package after Gradle cleanup");
   assert.ok(androidSmokeInstrumentation.includes("inputTabClickDeadline") &&
     androidSmokeInstrumentation.includes("inputTabClicked") &&
     androidSmokeInstrumentation.includes("inputTabClickDiagnostic"),
