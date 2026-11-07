@@ -303,6 +303,10 @@ if(ordinaryPending){ordinaryPending.status='REJECTED';ordinaryPending.stage='TES
 const buyerTreasuryBeforePrivate=globalThis.Game.state.finance.BGD.available;
 const sellerTreasuryBeforePrivate=globalThis.Game.state.finance.SAU.available;
 const buyerPrivateCashBefore=globalThis.Game.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyerCompany].availableBalance;
+const sellerPrivateAccountBefore=globalThis.Game.state.economy.SAU.companyAccounts?.[sellerCompany]||null;
+const sellerGrossRevenueBefore=Number(sellerPrivateAccountBefore?.grossRevenue)||0;
+const sellerPaymentsReceivedBefore=Number(sellerPrivateAccountBefore?.paymentsReceived)||0;
+const sellerGenericSaleCountBefore=(sellerPrivateAccountBefore?.cashFlowEntries||[]).filter(row=>row.category==='SUPPLIER_SALE').length;
 const privateRequest=trade.createPrivateCompanyImportRequest('BGD',{
   requestId:'PRIVATE-CO-PROCUREMENT-E2E',targetCountryId:'SAU',resourceId:'crude_oil',
   quantity:100,unitPrice:100,buyerCompanyId:buyerCompany,sellerCompanyId:sellerCompany
@@ -343,6 +347,13 @@ const sellerPrivateJournal=globalThis.Game.state.economy.SAU.companyAccounts[sel
 assert(buyerPrivateJournal.some(x=>x.category==='FACTORY_INPUT_PURCHASE'&&x.amount===10000&&x.sourceId===privateSettledRequest.settlementId&&x.status==='POSTED'));
 assert(buyerPrivateJournal.some(x=>x.category==='IMPORT_TARIFF'&&x.amount===250&&x.sourceId===privateSettledRequest.settlementId&&x.status==='POSTED'));
 assert(sellerPrivateJournal.some(x=>x.category==='PRIVATE_COMPANY_EXPORT_SALE'&&x.amount===10000&&x.sourceId===privateSettledRequest.settlementId&&x.status==='POSTED'));
+const sellerPrivateAccount=globalThis.Game.state.economy.SAU.companyAccounts[sellerCompany];
+assert.equal(sellerPrivateAccount.grossRevenue,sellerGrossRevenueBefore+10000,
+  'the seller company must recognize the trade value exactly once');
+assert.equal(sellerPrivateAccount.paymentsReceived,sellerPaymentsReceivedBefore+10000,
+  'the seller company wallet receives the buyer payment exactly once');
+assert.equal(sellerPrivateJournal.filter(row=>row.category==='SUPPLIER_SALE').length,sellerGenericSaleCountBefore,
+  'generic trade fiscalization must not issue a second seller revenue credit');
 const privateProcurementRecord=globalThis.Game.state.economy.BGD.privateEnterpriseLifecycle.privateCompanyProcurementRecords.find(x=>
   x.settlementId===privateSettledRequest.settlementId);
 assert.equal(privateProcurementRecord.status,'SETTLED');
