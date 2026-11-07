@@ -784,7 +784,7 @@ public final class OmegaGameplaySmokeTest {
         final String hostDirectory = "/sdcard/omega-smoke";
         final String hostPng = hostDirectory + "/" + screenshot.getName();
         final String hostStatus = hostPng + ".exit";
-        final String mkdirError = hostDirectory + "/mkdir.stderr";
+        final String mkdirError = "/sdcard/omega-smoke-mkdir.stderr";
         final String pngError = hostPng + ".stderr";
         final String statusError = hostStatus + ".stderr";
         final String shellCommand =
