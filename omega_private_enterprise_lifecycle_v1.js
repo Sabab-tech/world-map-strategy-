@@ -1225,7 +1225,9 @@
       var row=reservations[key];
       return sum+((row&&row.buyerCompanyId===buyerCompany&&row.status==='RESERVED')?Math.max(0,num(row.buyerAmount)||0):0);
     },0);
-    var available=Math.max(0,(num(wallet.account.availableBalance)||0)-(num(wallet.account.reservedBalance)||0)-held);
+    // Capital construction reservations are already removed from availableBalance by fundProposal().
+    // Only subtract outstanding private-trade reservations here, or capex is reserved twice.
+    var available=Math.max(0,(num(wallet.account.availableBalance)||0)-held);
     if(available+1e-8<buyerAmount)return{status:'BLOCKED',reason:'INSUFFICIENT_PRIVATE_COMPANY_IMPORT_CASH',
       companyId:buyerCompany,available:available,required:buyerAmount,currency:buyerCurrency};
     reservations[settlementId]=payload;root.companyTradeReservations=reservations;
@@ -1296,7 +1298,8 @@
     var buyerLifecycle=runtime(buyerCountry,false)||{},sellerLifecycle=runtime(sellerCountry,false)||{},
       buyerStatus=String((buyerLifecycle.companyStatuses||{})[buyerCompany]||'ACTIVE').toUpperCase(),
       sellerStatus=String((sellerLifecycle.companyStatuses||{})[sellerCompany]||'ACTIVE').toUpperCase();
-    if(buyerStatus!=='ACTIVE')return{status:'BLOCKED',reason:'BUYER_COMPANY_STATUS_BLOCKS_IMPORT_COMPLETION',companyStatus:buyerStatus};
+    if(['INSOLVENT','CLOSED'].indexOf(buyerStatus)>=0)
+      return{status:'BLOCKED',reason:'BUYER_COMPANY_STATUS_BLOCKS_IMPORT_COMPLETION',companyStatus:buyerStatus};
     if(sellerStatus==='CLOSED')return{status:'BLOCKED',reason:'SELLER_COMPANY_CLOSED'};
     var root=financeRoot(buyerCountry,true),reservations=root.companyTradeReservations||{},reservation=reservations[settlementId];
     if(!reservation)return{status:'BLOCKED',reason:'PRIVATE_IMPORT_RESERVATION_NOT_FOUND'};
@@ -1325,8 +1328,15 @@
       sellerWallet=privateCompanyWallet(sellerCountry,sellerCompany,sellerCurrency,true);
     if(!buyerWallet.ok||!sellerWallet.ok)return{status:'BLOCKED',reason:'PRIVATE_IMPORT_COMPANY_WALLET_CURRENCY_INVALID',
       buyerWallet:buyerWallet,sellerWallet:sellerWallet};
-    if((num(buyerWallet.account.availableBalance)||0)+1e-8<(num(reservation.buyerAmount)||0))
-      return{status:'BLOCKED',reason:'PRIVATE_IMPORT_BUYER_CASH_BECAME_UNAVAILABLE'};
+    var otherHeldReservations=Object.keys(reservations).reduce(function(sum,key){
+      var row=reservations[key];
+      return sum+(key!==settlementId&&row&&row.buyerCompanyId===buyerCompany&&row.status==='RESERVED'
+        ?Math.max(0,num(row.buyerAmount)||0):0);
+    },0);
+    if((num(buyerWallet.account.availableBalance)||0)-otherHeldReservations+1e-8<(num(reservation.buyerAmount)||0))
+      return{status:'BLOCKED',reason:'PRIVATE_IMPORT_BUYER_CASH_BECAME_UNAVAILABLE',
+        availableAfterOtherReservations:Math.max(0,(num(buyerWallet.account.availableBalance)||0)-otherHeldReservations),
+        required:num(reservation.buyerAmount)||0};
     var debit=postPrivateTradeCashFlow(buyerCountry,buyerCompany,{
       entryId:'PE-PRIVATE-IMPORT-PAYMENT:'+settlementId,sourceId:settlementId,
       amount:buyerPurchaseAmount,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',currency:buyerCurrency
