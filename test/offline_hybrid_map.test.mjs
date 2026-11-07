@@ -160,6 +160,9 @@ test("Android 9 smoke exports and validates a real landscape PNG before app clea
   assert.ok(androidSmokeScript.includes('remote_screenshot_dir="/sdcard/omega-smoke"') &&
     androidSmokeScript.includes('adb shell mkdir -p "$remote_screenshot_dir"') &&
     androidSmokeScript.includes('adb pull "$remote_screenshot_dir" "$screenshot_dir"') &&
+    androidSmokeScript.includes('screenshot-export.result') &&
+    androidSmokeScript.includes('OMEGA_EXPORT_RESULT mkdir=0 png=0 status=0') &&
+    androidSmokeScript.includes('failed-attempt-$attempt-screenshot-staging') &&
     androidSmokeScript.includes('status_file="$local_screenshot.exit"') &&
     androidSmokeScript.includes('export_exit="$(tr -d \'[:space:]\' <"$status_file")"'),
     "the host must pull the instrumentation-staged directory and validate the Java copy marker before accepting the artifact");
