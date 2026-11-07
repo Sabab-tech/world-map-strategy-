@@ -122,6 +122,42 @@ test('high HHI or 40 percent leader share opens an investigation without automat
   assert.equal(h.state.trade.BGD.marketCompetition.activeRestrictions.length,0);
 });
 
+test('watch, investigation and intervention boundaries are inclusive and advance only on committed turns',()=>{
+  const h=harness({metric:metric({share:30,hhi:1499})}),api=h.sandbox.OmegaPrivateMarketCompetitionRuntime;
+  assert.equal(api.processCountry('BGD').status,'COMPLETED');
+  let row=h.state.trade.BGD.marketCompetition.cases[0];
+  assert.equal(row.stage,'WATCH');
+  assert.equal(row.leaderTotalMarketSharePct,30);
+
+  h.setMetric(metric({share:40,hhi:1499}));
+  h.state.simulation.turn++;
+  assert.equal(api.processCountry('BGD').status,'COMPLETED');
+  row=h.state.trade.BGD.marketCompetition.cases[0];
+  assert.equal(row.stage,'INVESTIGATION');
+  assert.equal(row.leaderTotalMarketSharePct,40);
+
+  h.setMetric(metric({share:40,hhi:5000}));
+  h.state.simulation.turn++;
+  assert.equal(api.processCountry('BGD').status,'COMPLETED');
+  row=h.state.trade.BGD.marketCompetition.cases[0];
+  assert.equal(row.stage,'INTERVENTION');
+  assert.equal(row.interventionStatus,'ACTIVE');
+  assert.equal(h.state.trade.BGD.marketCompetition.activeRestrictions.length,1);
+});
+
+test('a missing competition-oversight right blocks intervention even when the asset permit is otherwise active',()=>{
+  const h=harness(),asset=h.state.economy.BGD.productionAssets[0];
+  asset.stateControlRights.competitionOversight=false;
+  const result=h.sandbox.OmegaPrivateMarketCompetitionRuntime.processCountry('BGD');
+  assert.equal(result.status,'COMPLETED');
+  const row=h.state.trade.BGD.marketCompetition.cases[0];
+  assert.equal(row.stage,'INTERVENTION');
+  assert.equal(row.interventionStatus,'BLOCKED_STATE_CONTROL');
+  assert.equal(row.stateControlProof.reason,'PRIVATE_ASSET_STATE_CONTROL_RIGHTS_INCOMPLETE');
+  assert.deepEqual(row.stateControlProof.unverifiedAssetIds,['PRIVATE-FAC-1']);
+  assert.equal(h.state.trade.BGD.marketCompetition.activeRestrictions.length,0);
+});
+
 test('dominance cannot trigger an expansion hold unless every private asset proves the full state-control rights',()=>{
   const h=harness({metric:metric({share:55,hhi:6000}),stateRights:false});
   const result=h.sandbox.OmegaPrivateMarketCompetitionRuntime.processCountry('BGD');
