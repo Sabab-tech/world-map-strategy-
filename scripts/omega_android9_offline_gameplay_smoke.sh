@@ -117,7 +117,7 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
       done
       exit 1
     fi
-    export_result="$(tr -d '\\r\\n' <"$export_result_file")"
+    export_result="$(cat "$export_result_file")"
     if [[ "$export_result" != "OMEGA_EXPORT_RESULT mkdir=0 png=0 status=0" ]]; then
       echo "ERROR: Screenshot export command reported failure: $export_result" >&2
       for diagnostic in "$screenshot_dir/omega-smoke-mkdir.stderr" "$screenshot_dir/omega-smoke/"*.stderr; do
