@@ -606,12 +606,19 @@
       return{accepted:false,reason:'TRADE_SETTLEMENT_AUTHORIZATION_ID_MISMATCH',settlementId:payloadSettlementId,authorizedSettlementId:authorizationSettlementId};
     const settlementId=payloadSettlementId||authorizationSettlementId;
     if(!settlementId)return{accepted:false,reason:'TRADE_SETTLEMENT_ID_REQUIRED'};
+    const buyerCompanyId=String(auth.buyerCompanyId||'').trim().toUpperCase(),
+      sellerCompanyId=String(auth.sellerCompanyId||'').trim().toUpperCase(),privateCompanyTrade=!!(buyerCompanyId||sellerCompanyId),
+      lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1,
+      companyIds=Array.isArray(lifecycle?.companyIds)?lifecycle.companyIds.map(x=>String(x).toUpperCase()):[];
+    if(privateCompanyTrade&&(!buyerCompanyId||!sellerCompanyId||!companyIds.includes(buyerCompanyId)||!companyIds.includes(sellerCompanyId)))
+      return{accepted:false,reason:'PRIVATE_TRADE_CANONICAL_COMPANY_AUTHORIZATION_INVALID'};
     const existingExportLedger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?ctx.stateTransaction.get('resource.inventoryLedger'):[];
     const priorExport=existingExportLedger.find(x=>String(x?.settlementId||'')===settlementId&&x?.type==='INTERNATIONAL_TRADE_EXPORT');
     if(priorExport){
       const same=String(priorExport.resourceId||'')===rid&&Math.abs((num(priorExport.quantity)||0)-q)<1e-7&&
         canonical(priorExport.sourceCountryId||seller)===seller&&canonical(priorExport.destinationCountryId||'')===buyer&&
-        String(priorExport.governmentContractId||'')===String(auth.governmentContractId||'');
+        String(priorExport.governmentContractId||'')===String(auth.governmentContractId||'')&&
+        String(priorExport.sellerCompanyId||'')===sellerCompanyId&&String(priorExport.buyerCompanyId||'')===buyerCompanyId;
       return same?{accepted:true,duplicate:true,resourceId:rid,quantity:num(priorExport.quantity)||q,
         sourceCountryId:seller,destinationCountryId:buyer,transferType:'TRADE',batchTransfers:clone(priorExport.batchTransfers||[])}:
         {accepted:false,reason:'TRADE_RESOURCE_DEBIT_IDEMPOTENCY_COLLISION',settlementId};
@@ -651,13 +658,18 @@
     const isProcessed=stage=>['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(String(stage||'').toUpperCase());
     const nonCentral=stage=>['FACTORY_INPUT','CONSUMED','TRANSFERRED_TO_FACTORY','SOLD','TRANSFERRED_OUT'].includes(String(stage||'').toUpperCase());
     const availableQty=b=>Math.max(0,num(b&&b.remainingQuantity!=null?b.remainingQuantity:b&&b.quantity)||0);
-    const central=rows.filter(b=>token(b&&(b.resourceId||b.materialIdentity))===token(rid)&&!nonCentral(b&&b.stage)&&availableQty(b)>1e-9);
+    const centralAll=rows.filter(b=>token(b&&(b.resourceId||b.materialIdentity))===token(rid)&&!nonCentral(b&&b.stage)&&availableQty(b)>1e-9);
+    const centralAllQty=centralAll.reduce((sum,b)=>sum+availableQty(b),0);
+    if(centralAllQty>stock+1e-6)return{accepted:false,reason:'RESOURCE_BATCH_INVENTORY_MISMATCH',inventory:stock,trackedCentralQuantity:centralAllQty};
+    const explicitOwnerStatus=value=>!['NOT_RECORDED','OWNER_NOT_RECORDED','UNASSIGNED','UNKNOWN_SOURCE','LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED'].includes(String(value||'').toUpperCase());
+    const central=privateCompanyTrade?centralAll.filter(b=>String(b.ownerCompanyId||b.ownerId||'').trim().toUpperCase()===sellerCompanyId&&
+      explicitOwnerStatus(b.ownerAttributionStatus)&&companyIds.includes(String(b.operatorCompanyId||b.operatorId||'').trim().toUpperCase())):centralAll;
     const centralQty=central.reduce((sum,b)=>sum+availableQty(b),0);
-    if(centralQty>stock+1e-6)return{accepted:false,reason:'RESOURCE_BATCH_INVENTORY_MISMATCH',inventory:stock,trackedCentralQuantity:centralQty};
+    if(privateCompanyTrade&&centralQty+1e-8<q)return{accepted:false,reason:'PRIVATE_SELLER_COMPANY_STOCK_INSUFFICIENT',sellerCompanyId:sellerCompanyId,available:centralQty,requested:q};
 
     // Represent aggregate-only opening stock as an explicitly unobserved balance.
     // It is not assigned to a mine or passed off as observed geological provenance.
-    const legacyQty=Math.max(0,stock-centralQty);
+    const legacyQty=privateCompanyTrade?0:Math.max(0,stock-centralAllQty);
     if(legacyQty>1e-9){
       const legacyId='LEGACY-TRADE-STOCK:'+seller+':'+token(rid);
       let legacy=rows.find(b=>String(b?.batchId||'')===legacyId);
@@ -682,13 +694,15 @@
     if(raw.availableByResource[rid]-rawReserved+processed.availableByResource[rid]-processedReserved+1e-6<q){
       return{accepted:false,reason:'WAREHOUSE_STOCK_INSUFFICIENT',available:Math.max(0,raw.availableByResource[rid]-rawReserved)+Math.max(0,processed.availableByResource[rid]-processedReserved),requested:q};
     }
-    const fifo=central.concat(rows.filter(b=>String(b?.batchId||'')==='LEGACY-TRADE-STOCK:'+seller+':'+token(rid))).filter((b,i,a)=>a.findIndex(x=>String(x?.batchId)===String(b?.batchId))===i);
+    const fifo=central.concat(privateCompanyTrade?[]:rows.filter(b=>String(b?.batchId||'')==='LEGACY-TRADE-STOCK:'+seller+':'+token(rid))).filter((b,i,a)=>a.findIndex(x=>String(x?.batchId)===String(b?.batchId))===i);
     let remaining=q;const batchTransfers=[];let rawDebit=0,processedDebit=0;
     for(const b of fifo){
       if(remaining<=1e-9)break;
       if(token(b&&(b.resourceId||b.materialIdentity))!==token(rid)||nonCentral(b&&b.stage))continue;
       const before=availableQty(b);if(before<=0)continue;
       const sourceFactoryId=String(b.sourceFactoryId||b.factoryId||'').trim();
+      if(privateCompanyTrade&&(String(b.ownerCompanyId||b.ownerId||'').trim().toUpperCase()!==sellerCompanyId||
+         !explicitOwnerStatus(b.ownerAttributionStatus)||!companyIds.includes(String(b.operatorCompanyId||b.operatorId||'').trim().toUpperCase())))continue;
       if(Array.isArray(exportFactoryIds)&&(!sourceFactoryId||!exportFactoryIds.includes(sourceFactoryId)))continue;
       const stage=String(b.stage||'RAW').toUpperCase(),finished=isProcessed(stage),take=Math.min(before,remaining),after=Math.max(0,before-take);
       let lot=lots[b.batchId];
@@ -724,6 +738,7 @@
     const ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
     ledger.push({type:'INTERNATIONAL_TRADE_EXPORT',settlementId:settlementId,resourceId:rid,quantity:q,
       sourceCountryId:seller,destinationCountryId:buyer,governmentContractId:String(auth.governmentContractId||'')||null,
+      buyerCompanyId:buyerCompanyId||null,sellerCompanyId:sellerCompanyId||null,
       batchTransfers:clone(batchTransfers),turn:turn()});
     while(ledger.length>2048)ledger.shift();
     ctx.stateTransaction.set('resource.inventory',next);ctx.stateTransaction.set('resource.batches',rows);ctx.stateTransaction.set('resource.inventoryLots',lots);
