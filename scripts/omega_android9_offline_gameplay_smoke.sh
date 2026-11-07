@@ -103,6 +103,26 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
     mkdir -p "$screenshot_dir"
     if ! timeout 30s adb pull "$remote_screenshot_dir" "$screenshot_dir"; then
       echo "ERROR: Android Input UI screenshot retrieval failed from instrumentation staging storage" >&2
+      timeout 10s adb pull /sdcard/omega-smoke-mkdir.stderr "$screenshot_dir/" >/dev/null 2>&1 || true
+      find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
+      exit 1
+    fi
+    timeout 10s adb pull /sdcard/omega-smoke-mkdir.stderr "$screenshot_dir/" >/dev/null 2>&1 || true
+    export_result_file="$screenshot_dir/omega-smoke/screenshot-export.result"
+    if [[ ! -s "$export_result_file" ]]; then
+      echo "ERROR: Instrumentation did not create the screenshot export result file: $export_result_file" >&2
+      find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
+      for diagnostic in "$screenshot_dir/omega-smoke-mkdir.stderr" "$screenshot_dir/omega-smoke/"*.stderr; do
+        if [[ -s "$diagnostic" ]]; then echo "--- $diagnostic ---" >&2; cat "$diagnostic" >&2; fi
+      done
+      exit 1
+    fi
+    export_result="$(tr -d '\\r\\n' <"$export_result_file")"
+    if [[ "$export_result" != "OMEGA_EXPORT_RESULT mkdir=0 png=0 status=0" ]]; then
+      echo "ERROR: Screenshot export command reported failure: $export_result" >&2
+      for diagnostic in "$screenshot_dir/omega-smoke-mkdir.stderr" "$screenshot_dir/omega-smoke/"*.stderr; do
+        if [[ -s "$diagnostic" ]]; then echo "--- $diagnostic ---" >&2; cat "$diagnostic" >&2; fi
+      done
       exit 1
     fi
     for screenshot in factory-input-landscape.png; do
@@ -142,6 +162,11 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
     test_exit=$?
     cat "$log_file"
     echo "Instrumentation attempt failed with exit code $test_exit"
+    failed_screenshot_dir="$artifact_dir/failed-attempt-$attempt-screenshot-staging"
+    mkdir -p "$failed_screenshot_dir"
+    timeout 30s adb pull "$remote_screenshot_dir" "$failed_screenshot_dir" >/dev/null 2>&1 || true
+    timeout 10s adb pull /sdcard/omega-smoke-mkdir.stderr "$failed_screenshot_dir/" >/dev/null 2>&1 || true
+    find "$failed_screenshot_dir" -maxdepth 4 -type f -print >&2 || true
   fi
 
   adb logcat -d -v threadtime >"$artifact_dir/logcat-attempt-$attempt.txt" 2>&1 || true
