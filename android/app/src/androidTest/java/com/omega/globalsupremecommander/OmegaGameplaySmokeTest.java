@@ -6,7 +6,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.os.Environment;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
@@ -762,18 +764,28 @@ public final class OmegaGameplaySmokeTest {
             android.app.Instrumentation instrumentation,
             File screenshot
     ) throws Exception {
-        final File externalDirectory =
-                instrumentation.getTargetContext().getExternalFilesDir("omega-smoke");
-        assertNotNull("Android app-specific external files directory must be available",
-                externalDirectory);
-        if (!externalDirectory.isDirectory()) {
-            assertTrue("Android app-specific screenshot directory must be created",
-                    externalDirectory.mkdirs());
+        final android.content.Context targetContext = instrumentation.getTargetContext();
+        final String writePermission = android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+        if (targetContext.checkSelfPermission(writePermission) != PackageManager.PERMISSION_GRANTED) {
+            // API 28 protects shared external storage with a dangerous runtime permission.
+            // Grant it to the debug app from the instrumentation shell identity so the
+            // screenshot can be written outside Android/data and pulled by host-side adb.
+            instrumentation.getUiAutomation().grantRuntimePermission(
+                    targetContext.getPackageName(), writePermission);
         }
+        assertEquals("Android 9 smoke app must hold shared-storage write permission",
+                PackageManager.PERMISSION_GRANTED, targetContext.checkSelfPermission(writePermission));
+
+        final File externalRoot = Environment.getExternalStorageDirectory();
+        assertNotNull("Shared external storage root must be available", externalRoot);
+        final File externalDirectory = new File(externalRoot, "omega-smoke");
+        assertTrue("Shared screenshot directory must be creatable",
+                externalDirectory.isDirectory() || externalDirectory.mkdirs());
+
         final File exportedScreenshot = new File(externalDirectory, screenshot.getName());
         final File statusFile = new File(externalDirectory, screenshot.getName() + ".exit");
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "STAGE=SCREENSHOT_EXTERNAL_COPY_BEGIN source=" + screenshot.getAbsolutePath() +
+                "STAGE=SCREENSHOT_SHARED_COPY_BEGIN source=" + screenshot.getAbsolutePath() +
                         " destination=" + exportedScreenshot.getAbsolutePath() +
                         " bytes=" + screenshot.length());
         try (InputStream input = new FileInputStream(screenshot);
@@ -785,16 +797,16 @@ public final class OmegaGameplaySmokeTest {
             }
             output.flush();
         }
-        assertTrue("Android external screenshot copy must preserve the complete PNG",
+        assertTrue("Shared screenshot copy must preserve the complete PNG",
                 exportedScreenshot.isFile() && exportedScreenshot.length() == screenshot.length());
         try (FileOutputStream status = new FileOutputStream(statusFile)) {
             status.write('0');
             status.flush();
         }
-        assertTrue("Android screenshot copy status must be available to the host",
+        assertTrue("Shared screenshot copy status must be available to the host",
                 statusFile.isFile() && statusFile.length() > 0);
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "STAGE=SCREENSHOT_EXTERNAL_COPY_FINISHED destination=" +
+                "STAGE=SCREENSHOT_SHARED_COPY_FINISHED destination=" +
                         exportedScreenshot.getAbsolutePath() +
                         " bytes=" + exportedScreenshot.length() +
                         " status=" + statusFile.getAbsolutePath());
