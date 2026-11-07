@@ -741,7 +741,7 @@ public final class OmegaGameplaySmokeTest {
         assertNotNull("Android emulator screenshot must be captured", bitmap);
         assertTrue("Android screenshot width must be positive", bitmap.getWidth() > 0);
         assertTrue("Android screenshot height must be positive", bitmap.getHeight() > 0);
-        final File directory = instrumentation.getTargetContext().getExternalFilesDir("omega-smoke");
+        final File directory = new File(instrumentation.getTargetContext().getFilesDir(), "omega-smoke");
         assertNotNull("Android external files directory must be available for smoke screenshots", directory);
         assertTrue("Android screenshot directory must be creatable",
                 directory.isDirectory() || directory.mkdirs());
@@ -765,14 +765,20 @@ public final class OmegaGameplaySmokeTest {
             File screenshot
     ) throws Exception {
         final String destinationPath = "/sdcard/omega-smoke/" + screenshot.getName();
-        // UiAutomation's shell identity cannot read an app-owned external-files
-        // path directly. Read the source as the debuggable target app with run-as,
-        // then let the outer shell write the bytes into its adb-pull staging folder.
+        // Keep the source in app-internal storage so API 28 run-as can read it
+        // without relying on external-storage/FUSE permissions. The shell opens
+        // the shared destination, while run-as streams the PNG from the target UID.
         final String command =
                 "run-as com.omega.globalsupremecommander cat " +
-                shellQuote(screenshot.getAbsolutePath()) + " 2>&1 > " +
-                shellQuote(destinationPath) + " && test -s " +
-                shellQuote(destinationPath) + " 2>&1 && echo OMEGA_SCREENSHOT_EXPORT_OK";
+                shellQuote(screenshot.getAbsolutePath()) + " > " +
+                shellQuote(destinationPath) + "; export_exit=$?; " +
+                "export_bytes=$(wc -c < " + shellQuote(destinationPath) +
+                " 2>/dev/null | tr -d '[:space:]'); " +
+                "echo OMEGA_SCREENSHOT_EXPORT_EXIT=$export_exit; " +
+                "echo OMEGA_SCREENSHOT_EXPORT_BYTES=$export_bytes; " +
+                "if [ \"$export_exit\" -eq 0 ] && [ \"$export_bytes\" -ge " +
+                screenshot.length() +
+                " ]; then echo OMEGA_SCREENSHOT_EXPORT_OK; else echo OMEGA_SCREENSHOT_EXPORT_FAILED; fi";
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
                 "STAGE=SCREENSHOT_EXPORT_BEGIN source=" + screenshot.getAbsolutePath() +
                         " bytes=" + screenshot.length());
@@ -789,8 +795,11 @@ public final class OmegaGameplaySmokeTest {
             android.util.Log.e("OMEGA_ANDROID_SMOKE",
                     "SCREENSHOT_EXPORT_COMMAND_OUTPUT=" + commandOutput);
         }
-        assertTrue("Android shell must export the real PNG before the test app is uninstalled: " +
-                commandOutput, commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_OK"));
+        final boolean exported = commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_EXIT=0") &&
+                commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_BYTES=" + screenshot.length()) &&
+                commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_OK");
+        assertTrue("Android shell must export the complete real PNG before the test app is uninstalled: " +
+                commandOutput, exported);
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
                 "SCREENSHOT_EXPORTED=" + destinationPath + " bytes=" + screenshot.length());
     }
