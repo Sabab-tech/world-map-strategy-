@@ -517,13 +517,22 @@
   function getProposal(country,proposalId){
     var r=runtime(country,false);var p=r&&r.proposals.find(function(x){return x.proposalId===String(proposalId||'');});return p?clone(p):null;
   }
-  function activeCompetitionExpansionRestriction(country,company,resourceId){
+  function activeCompetitionExpansionRestriction(country,company,resourceId,proposal){
     var cid=canonicalCountry(country),trade=countryBucket('trade',cid,false)||{},
-      competition=trade.marketCompetition||{},rows=Array.isArray(competition.activeRestrictions)?competition.activeRestrictions:[];
+      competition=trade.marketCompetition||{},rows=Array.isArray(competition.activeRestrictions)?competition.activeRestrictions:[],
+      relevantResources=[];
+    if(resourceId)relevantResources.push(token(resourceId));
+    if(proposal&&Array.isArray(proposal.expectedInputRequirements))proposal.expectedInputRequirements.forEach(function(row){
+      if(row&&row.resourceId)relevantResources.push(token(row.resourceId));
+    });
+    relevantResources=[...new Set(relevantResources.filter(Boolean))];
+    // Do not block unrelated industries when the application has no verified
+    // resource link to the concentrated market.
+    if(!relevantResources.length)return null;
     return rows.find(function(row){
       return row&&String(row.status||'').toUpperCase()==='ACTIVE'&&
         canonicalCountry(row.countryId||cid)===cid&&id(row.companyId)===id(company)&&
-        (!resourceId||token(row.resourceId)===token(resourceId))&&
+        relevantResources.indexOf(token(row.resourceId))>=0&&
         (num(row.startsTurn)===null||turn()>=num(row.startsTurn));
     })||null;
   }
@@ -539,7 +548,7 @@
     var oldQuantity=proposal.quantity,oldCapital=proposal.capitalRequired,oldForecast=proposal.expectedInputRequirements,
       oldProcessingResourceId=proposal.processingResourceId,oldRecipeId=proposal.recipeId;
     if(quantity>oldQuantity){
-      var competitionRestriction=activeCompetitionExpansionRestriction(cid,proposal.companyId,proposal.processingResourceId);
+      var competitionRestriction=activeCompetitionExpansionRestriction(cid,proposal.companyId,proposal.processingResourceId,proposal);
       if(competitionRestriction)return{status:'BLOCKED',reason:'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE',
         competitionCaseId:competitionRestriction.caseId,restriction:clone(competitionRestriction)};
     }
@@ -572,7 +581,7 @@
     var decision=String(input.decision||'').toUpperCase();
     if(['APPROVE','DENY','DEFER'].indexOf(decision)<0)return{status:'BLOCKED',reason:'INVALID_GOVERNMENT_DECISION'};
     if(decision==='APPROVE'){
-      var competitionRestriction=activeCompetitionExpansionRestriction(cid,proposal.companyId,proposal.processingResourceId);
+      var competitionRestriction=activeCompetitionExpansionRestriction(cid,proposal.companyId,proposal.processingResourceId,proposal);
       if(competitionRestriction)return{status:'BLOCKED',reason:'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE',
         competitionCaseId:competitionRestriction.caseId,restriction:clone(competitionRestriction)};
     }
@@ -965,7 +974,7 @@
       funding=proposal&&proposal.funding,decision=proposal&&proposal.decision;
     if(!cid||cid!==playerCountry())return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
     if(!proposal)return{status:'BLOCKED',reason:'PRIVATE_PROPOSAL_NOT_FOUND'};
-    var competitionRestriction=activeCompetitionExpansionRestriction(cid,company,proposal.processingResourceId);
+    var competitionRestriction=activeCompetitionExpansionRestriction(cid,company,proposal.processingResourceId,proposal);
     if(competitionRestriction)return{status:'BLOCKED',reason:'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE',
       competitionCaseId:competitionRestriction.caseId,restriction:clone(competitionRestriction)};
     if(['FUNDED','PARTIALLY_UNDER_CONSTRUCTION'].indexOf(proposal.status)<0)
@@ -1089,7 +1098,7 @@
     var permit=proposal&&proposal.permit;
     if(!permit||permit.permitId!==project.permitId||permit.status!=='ACTIVE'||permit.companyId!==company||
        permit.operatorCompanyId!==operatorCompany)return null;
-    var competitionRestriction=activeCompetitionExpansionRestriction(cid,company,proposal.processingResourceId);
+    var competitionRestriction=activeCompetitionExpansionRestriction(cid,company,proposal.processingResourceId,proposal);
     if(competitionRestriction){
       asset.productionEnabled=false;asset.status='BLOCKED';
       asset.productionStatus='ANTITRUST_EXPANSION_RESTRICTION_ACTIVE';
