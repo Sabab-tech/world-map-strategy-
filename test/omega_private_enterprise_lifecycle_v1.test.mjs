@@ -1145,13 +1145,13 @@ test('active competition expansion order blocks private permit approval without 
 test('active competition orders block newly approved funding and prevent funded proposals from starting construction',()=>{
   const h=makeHarness(),api=h.api;
   setReadyIronSupply(h,1200);
-  const awaitingFunding=submitProposal(api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1});
+  const awaitingFunding=submitProposal(api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,stateSupportRequested:true});
   assert.equal(awaitingFunding.status,'PROPOSED');
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:awaitingFunding.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
 
   const constructionCompany='AURORA_INDUSTRIAL_GROUP';
-  const funded=submitProposal(api,{countryId:'BGD',companyId:constructionCompany,factoryType:'STEEL_WORKS',quantity:1});
+  const funded=submitProposal(api,{countryId:'BGD',companyId:constructionCompany,factoryType:'STEEL_WORKS',quantity:1,stateSupportRequested:true});
   assert.equal(funded.status,'PROPOSED');
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:funded.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
