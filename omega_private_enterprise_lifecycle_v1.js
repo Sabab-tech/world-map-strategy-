@@ -1293,7 +1293,7 @@
     if(reservation.status!=='RESERVED')return{status:'BLOCKED',reason:'PRIVATE_IMPORT_RESERVATION_NOT_ACTIVE'};
     if(reservation.buyerCompanyId!==buyerCompany||reservation.sellerCompanyId!==sellerCompany||
        Math.abs((num(reservation.buyerAmount)||0)-(buyerAmount||0))>1e-8||
-       Math.abs((num(reservation.buyerPurchaseAmount)??num(reservation.buyerAmount)||0)-(buyerPurchaseAmount||0))>1e-8||
+       Math.abs(((num(reservation.buyerPurchaseAmount)??num(reservation.buyerAmount))||0)-(buyerPurchaseAmount||0))>1e-8||
        Math.abs((num(reservation.buyerTariffAmount)||0)-(buyerTariffAmount||0))>1e-8||
        Math.abs((num(reservation.sellerAmount)||0)-(sellerAmount||0))>1e-8||
        reservation.buyerCurrency!==buyerCurrency||reservation.sellerCurrency!==sellerCurrency||
