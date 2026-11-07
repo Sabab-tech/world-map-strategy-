@@ -189,8 +189,8 @@ function processCountry(countryId){
    row.status='OPEN';row.stage=stage;row.lastObservedTurn=turn();row.lastObservedPrivateCompanyHhi=hhi;
    row.leaderTotalMarketSharePct=Number(share.toFixed(4));
    row.privateSectorMarketSharePct=num(summary.privateSectorMarketSharePct);
-   row.verifiedSettledSaleCount:num(summary.verifiedSettledSaleCount)||0;
-   row.totalAttributedSettledMarketValue:num(summary.totalAttributedSettledMarketValue)||0;
+   row.verifiedSettledSaleCount=num(summary.verifiedSettledSaleCount)||0;
+   row.totalAttributedSettledMarketValue=num(summary.totalAttributedSettledMarketValue)||0;
    row.evidenceWindow={fromTurn:summary.fromTurn,toTurn:summary.toTurn,lookbackTurns:summary.lookbackTurns,
     source:'SETTLED_PAID_OWNER_ATTRIBUTION_RECONCILED_DOMESTIC_SALES'};
    row.thresholds=clone(THRESHOLDS);row.thresholdAuthority='GAMEPLAY_MODEL_INDICATORS_NOT_LEGAL_FINDINGS';
