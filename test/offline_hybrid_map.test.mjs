@@ -148,6 +148,8 @@ test("Android 9 smoke exports and validates a real landscape PNG before app clea
     androidSmokeInstrumentation.includes("run-as ") &&
     androidSmokeInstrumentation.includes("cat \" + shellQuote(screenshot.getAbsolutePath())") &&
     androidSmokeInstrumentation.includes("mkdir_status=$?") &&
+    androidSmokeInstrumentation.includes("mkdir.stderr") &&
+    androidSmokeInstrumentation.includes("shellQuote(mkdirError)") &&
     androidSmokeInstrumentation.includes("png_status=$?") &&
     androidSmokeInstrumentation.includes("status_status=$?") &&
     androidSmokeInstrumentation.includes("OMEGA_EXPORT_RESULT mkdir=%s png=%s status=%s") &&
