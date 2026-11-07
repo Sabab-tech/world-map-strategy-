@@ -14,7 +14,7 @@
     ATLAS_TECHNOLOGY_CORPORATION:'Atlas Technology Corporation',
     TERRA_INFRASTRUCTURE_GROUP:'Terra Infrastructure Group'
   };
-  var MAX_PROPOSALS=250,MAX_EVENTS=600,MAX_PROJECTS_PER_PROPOSAL=25;
+  var MAX_PROPOSALS=250,MAX_EVENTS=600,MAX_PROJECTS_PER_PROPOSAL=25,MAX_TRADE_HISTORY=4096;
   var NETWORK_EVENT='OMEGA_FACTORY_CAPACITY_CHANGED';
   function obj(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
   function clone(v){if(v===null||typeof v!=='object')return v;if(Array.isArray(v))return v.map(clone);var o={};Object.keys(v).forEach(function(k){if(k!=='__proto__'&&k!=='constructor')o[k]=clone(v[k]);});return o;}
@@ -2399,7 +2399,7 @@
     tradeBucket.globalTradeLedger=tradeBucket.globalTradeLedger||{requests:[],decisions:[],settlements:[]};
     tradeBucket.globalTradeLedger.requests=Array.isArray(tradeBucket.globalTradeLedger.requests)?tradeBucket.globalTradeLedger.requests:[];
     cancelledImports.forEach(function(reference){tradeBucket.globalTradeLedger.requests.push({requestId:reference,status:'CANCELLED',reason:'PRIVATE_COMPANY_CLOSED',simulationTurn:turn()});});
-    tradeBucket.globalTradeLedger.requests=tradeBucket.globalTradeLedger.requests.slice(-MAX_HISTORY);
+    tradeBucket.globalTradeLedger.requests=tradeBucket.globalTradeLedger.requests.slice(-MAX_TRADE_HISTORY);
     assets.forEach(function(asset){
       var owner=id(asset&& (asset.ownerCompanyId||asset.ownerId)),operator=id(asset&&(asset.operatorCompanyId||asset.operatorId||asset.companyId));
       if(owner!==co&&operator!==co)return;
