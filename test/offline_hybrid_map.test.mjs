@@ -157,7 +157,8 @@ test("Android 9 smoke exports and validates a real landscape PNG before app clea
   assert.ok(androidSmokeScript.includes('89504e470d0a1a0a') &&
     androidSmokeScript.includes('screenshot_bytes'),
     "the host must reject error text, truncated files, and non-PNG screenshot artifacts");
-  assert.doesNotMatch(androidSmokeScript, /run-as/,
+  const executableSmokeScript = androidSmokeScript.replace(/^\s*#.*$/gm, '');
+  assert.doesNotMatch(executableSmokeScript, /\brun-as\b/,
     "screenshot retrieval must not depend on an app package that the Gradle task may uninstall");
   assert.ok(androidSmokeInstrumentation.includes("inputTabClickDeadline") &&
     androidSmokeInstrumentation.includes("inputTabClicked") &&
