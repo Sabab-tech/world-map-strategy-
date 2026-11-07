@@ -1291,6 +1291,8 @@ Game.Map.__omegaDetachedLayers = [];
 Game.Map.__omegaMapRootDisplay = null;
 Game.Map.__omegaMapRootVisibility = null;
 Game.Map.__omegaMapRootPointerEvents = null;
+Game.__omegaMapViewportRefreshFrame = null;
+Game.__omegaMapViewportRefreshUsesTimeout = false;
 Game.Map.__omegaMapLoadingProgress = 0;
 
 Game.Map.updateMapLoadingProgress = function(percent, message, status) {
@@ -1406,6 +1408,44 @@ function scheduleDeferredGeoJSONResume() {
         }
     }, 600);
 }
+// A hidden-but-laid-out Leaflet canvas still participates in legacy WebView
+// compositing. Remove the map surface from the render tree while a ministry owns
+// the screen, but keep Leaflet's layer objects attached for a cheap return.
+function cancelMapViewportRefresh() {
+    const frame = Game.__omegaMapViewportRefreshFrame;
+    if (frame !== null && frame !== undefined) {
+        if (Game.__omegaMapViewportRefreshUsesTimeout === true) {
+            if (typeof window.clearTimeout === 'function') window.clearTimeout(frame);
+        } else if (typeof window.cancelAnimationFrame === 'function') {
+            window.cancelAnimationFrame(frame);
+        }
+    }
+    Game.__omegaMapViewportRefreshFrame = null;
+    Game.__omegaMapViewportRefreshUsesTimeout = false;
+}
+function scheduleMapViewportRefresh() {
+    cancelMapViewportRefresh();
+    const refresh = function () {
+        Game.__omegaMapViewportRefreshFrame = null;
+        Game.__omegaMapViewportRefreshUsesTimeout = false;
+        if (Game.Map.__omegaMapUiActive !== true) return;
+        const root = document.getElementById('render-engine-root');
+        if (root && root.style && root.style.display === 'none') return;
+        const map = Game.Map.map || window.map;
+        if (map && typeof map.invalidateSize === 'function') {
+            try { map.invalidateSize({ pan:false, animate:false }); }
+            catch (_) {
+                try { map.invalidateSize(false); } catch (_) {}
+            }
+        }
+    };
+    if (typeof window.requestAnimationFrame === 'function') {
+        Game.__omegaMapViewportRefreshFrame = window.requestAnimationFrame(refresh);
+    } else if (typeof window.setTimeout === 'function') {
+        Game.__omegaMapViewportRefreshUsesTimeout = true;
+        Game.__omegaMapViewportRefreshFrame = window.setTimeout(refresh, 0);
+    }
+}
 Game.Map.setUiActive = function(active) {
     const nextActive = active === true;
     if (this.__omegaMapUiActive === nextActive) return true;
@@ -1416,6 +1456,7 @@ Game.Map.setUiActive = function(active) {
         // Give a user returning from a ministry a short interaction window before
         // the unfinished world geometry resumes. A second ministry tap cancels it.
         cancelDeferredGeoJSONResume();
+        cancelMapViewportRefresh();
         const overlay = document.getElementById('omega-map-load-overlay');
         if (overlay) {
             overlay.classList.add('is-hidden');
@@ -1439,9 +1480,11 @@ Game.Map.setUiActive = function(active) {
         }
 
         if (root) {
+            if (this.__omegaMapRootDisplay === null) this.__omegaMapRootDisplay = root.style.display || '';
             if (this.__omegaMapRootVisibility === null) this.__omegaMapRootVisibility = root.style.visibility || '';
             if (this.__omegaMapRootPointerEvents === null) this.__omegaMapRootPointerEvents = root.style.pointerEvents || '';
             root.setAttribute('data-omega-map-suspended', 'true');
+            root.style.display = 'none';
             root.style.visibility = 'hidden';
             root.style.pointerEvents = 'none';
         }
@@ -1449,10 +1492,14 @@ Game.Map.setUiActive = function(active) {
     }
 
     if (root) {
+        root.style.display = this.__omegaMapRootDisplay === null ? '' : this.__omegaMapRootDisplay;
         root.style.visibility = this.__omegaMapRootVisibility === null ? '' : this.__omegaMapRootVisibility;
         root.style.pointerEvents = this.__omegaMapRootPointerEvents === null ? '' : this.__omegaMapRootPointerEvents;
         root.removeAttribute('data-omega-map-suspended');
     }
+    // Re-measure Leaflet after the fixed map surface becomes visible again.
+    // The refresh runs on the next frame, before deferred geometry can resume.
+    scheduleMapViewportRefresh();
 
     if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON) {
         // A cached map returns instantly: do not flash the startup loader on every ministry exit.
