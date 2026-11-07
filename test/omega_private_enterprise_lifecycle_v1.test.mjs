@@ -1144,6 +1144,7 @@ test('active competition expansion order blocks private permit approval without 
 
 test('active competition orders block newly approved funding and prevent funded proposals from starting construction',()=>{
   const h=makeHarness(),api=h.api;
+  setReadyIronSupply(h,1200);
   const awaitingFunding=submitProposal(api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1});
   assert.equal(awaitingFunding.status,'PROPOSED');
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:awaitingFunding.proposalId,decision:'APPROVE',
