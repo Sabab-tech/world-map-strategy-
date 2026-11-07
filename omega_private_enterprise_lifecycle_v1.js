@@ -262,7 +262,7 @@
     });
     return rows;
   }
-  function applicationText(value){return String(value==null?'':value).replace(/\\r\\n/g,'\\n').trim();}
+  function applicationText(value){return String(value==null?'':value).replace(/\r\n/g,'\n').trim();}
   function observedMarketPrice(country,resourceId){
     var trade=countryBucket('trade',country,false)||{},prices=obj(trade.marketPrice)?trade.marketPrice:{},keys=Object.keys(prices),key=keys.find(function(row){return token(row)===token(resourceId);});
     if(!key)return null;
