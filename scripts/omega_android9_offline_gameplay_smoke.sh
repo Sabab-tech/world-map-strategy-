@@ -103,7 +103,7 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
     screenshot_dir="$artifact_dir/screenshots"
     mkdir -p "$screenshot_dir"
     if ! timeout 30s adb pull "$remote_screenshot_dir" "$screenshot_dir"; then
-      echo "ERROR: Android Input UI screenshot retrieval failed from app-specific external storage" >&2
+      echo "ERROR: Android Input UI screenshot retrieval failed from shared external storage" >&2
       exit 1
     fi
     for screenshot in factory-input-landscape.png; do
