@@ -364,7 +364,14 @@ assert.equal(sellerResource.inventoryLots[companyBatchId].remainingQuantity,400)
 assert.equal(globalThis.Game.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyerCompany].availableBalance,39750);
 assert.equal(globalThis.Game.state.finance.SAU.omegaFinance.companyCapitalAccounts[sellerCompany].availableBalance,10000);
 assert.equal(globalThis.Game.state.finance.BGD.available,buyerTreasuryBeforePrivate+250,
-  'only the 2.5% import tariff is credited to sovereign Treasury; company trade value is not');
+  'private buyer Treasury delta mismatch: '+JSON.stringify({
+    before:buyerTreasuryBeforePrivate,after:globalThis.Game.state.finance.BGD.available,
+    financeHistory:globalThis.Game.state.finance.BGD.tradeSettlementHistory,
+    trace:globalThis.__OMEGA_SETTLEMENT_TRACE,
+    request:privateSettledRequest,
+    buyerLedger:globalThis.Game.state.finance.BGD.omegaFinance.ledger,
+    sellerFinanceHistory:globalThis.Game.state.finance.SAU.tradeSettlementHistory
+  }));
 assert.equal(globalThis.Game.state.finance.SAU.available,sellerTreasuryBeforePrivate,
   'private seller revenue must not be credited to the sovereign Treasury');
 const buyerPrivateJournal=globalThis.Game.state.economy.BGD.companyAccounts[buyerCompany].cashFlowEntries;
