@@ -1102,16 +1102,25 @@
         buyerCompanyId:p.buyerCompanyId||null});
       return;
     }
-    // Private-company procurement already posts both company wallets and the seller's
-    // revenue journal in completePrivateCompanyImport(). Do not clear or credit it again.
-    if(!privateCompanyTrade){
-      var clear=dispatch('finance','OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY',seller,{
-        amount:gross,settlementId:sid,companyId:company,correlationId:sid,
-        idempotencyKey:financialIdempotencyKey('EXPORT_CLEAR',sid,company)
-      });if(!clear||clear.status!=='APPLIED')return;
+    // Private-company procurement already posts both company wallets, import tariff,
+    // seller revenue and its cash journal in completePrivateCompanyImport(). It must not
+    // enter the sovereign mineral-export fiscal path or create a second wage/freight split.
+    if(privateCompanyTrade){
+      g.__OmegaResourceFiscalizedSettlements[sid]=true;
+      emit('OMEGA_RESOURCE_TRADE_RECONCILED',seller,{settlementId:sid,resourceId:rid,
+        companyId:company,gross:gross,status:'PRIVATE_COMPANY_CASH_ALREADY_RECONCILED',
+        buyerCompanyId:p.buyerCompanyId,sellerCompanyId:p.sellerCompanyId,
+        quantity:num(p.quantity)||null,batchTransfers:Array.isArray(p.batchTransfers)?clone(p.batchTransfers):[],
+        sourceBatchIds:Array.isArray(p.sourceBatchIds)?p.sourceBatchIds.slice():[],
+        publicTreasuryClearing:false,authority:'OMEGA_PRIVATE_COMPANY_PROCUREMENT_V1'},'finance');
+      return;
     }
+    var clear=dispatch('finance','OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY',seller,{
+      amount:gross,settlementId:sid,companyId:company,correlationId:sid,
+      idempotencyKey:financialIdempotencyKey('EXPORT_CLEAR',sid,company)
+    });if(!clear||clear.status!=='APPLIED')return;
     g.__OmegaResourceFiscalizedSettlements[sid]=true;
-    if(!privateCompanyTrade)dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{
+    dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{
       companyId:company,amount:gross,direction:'CREDIT',grossRevenue:gross,supplierRevenue:gross,
       category:'SUPPLIER_SALE',settlementId:sid,
       idempotencyKey:financialIdempotencyKey('COMPANY_FLOW','EXPORT',sid,company,'CREDIT','SUPPLIER_SALE')});
