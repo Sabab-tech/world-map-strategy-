@@ -426,7 +426,14 @@
       if(typeof market?.privateCompanySuppliers!=='function')
         return{accepted:false,reason:'PRIVATE_COMPANY_MARKET_SUPPLIER_RUNTIME_UNAVAILABLE'};
       const supplier=market.privateCompanySuppliers(resourceId,quantity,buyer,sellerCompanyId)
-        .find(row=>canonical(row.countryId)===seller&&String(row.companyId||'').trim().toUpperCase()===sellerCompanyId);
+        .find(row=>{
+          let observedCountry=row.countryId,requestedCountry=seller;
+          try{
+            observedCountry=registry()?.resolveCountry?.(row.countryId)?.id||observedCountry;
+            requestedCountry=registry()?.resolveCountry?.(seller)?.id||requestedCountry;
+          }catch(_){}
+          return id(observedCountry)===id(requestedCountry)&&String(row.companyId||'').trim().toUpperCase()===sellerCompanyId;
+        });
       if(!supplier)return{accepted:false,reason:'PRIVATE_SELLER_COMPANY_HAS_NO_VERIFIED_MARKET_STOCK',sellerCompanyId:sellerCompanyId};
       marketPriceEvidence=Object.assign({},marketPriceEvidence,{
         status:quote.status,clearingPriceUsd:quote.clearingPriceUsd,marketTurn:quote.generatedTurn,
