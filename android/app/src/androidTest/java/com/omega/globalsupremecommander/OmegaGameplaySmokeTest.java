@@ -784,6 +784,7 @@ public final class OmegaGameplaySmokeTest {
         final String hostDirectory = "/sdcard/omega-smoke";
         final String hostPng = hostDirectory + "/" + screenshot.getName();
         final String hostStatus = hostPng + ".exit";
+        final String hostResult = hostDirectory + "/screenshot-export.result";
         final String mkdirError = "/sdcard/omega-smoke-mkdir.stderr";
         final String pngError = hostPng + ".stderr";
         final String statusError = hostStatus + ".stderr";
@@ -803,33 +804,34 @@ public final class OmegaGameplaySmokeTest {
                 " 2> " + shellQuote(statusError) +
                 "; status_status=$?; " +
                 "else png_status=99; status_status=99; fi; " +
-                "printf 'OMEGA_EXPORT_RESULT mkdir=%s png=%s status=%s\\n' " +
-                "$mkdir_status $png_status $status_status; " +
+                "printf 'OMEGA_EXPORT_RESULT mkdir=%s png=%s status=%s\\\\n' " +
+                "$mkdir_status $png_status $status_status > " + shellQuote(hostResult) + "; " +
                 "for diagnostic in " + shellQuote(mkdirError) + " " + shellQuote(pngError) + " " + shellQuote(statusError) +
                 "; do if [ -s $diagnostic ]; then " +
-                "printf 'SHELL_DIAGNOSTIC_FILE=%s\\n' $diagnostic; " +
+                "printf 'SHELL_DIAGNOSTIC_FILE=%s\\\\n' $diagnostic; " +
                 "cat $diagnostic; fi; done";
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
                 "STAGE=SCREENSHOT_HOST_EXPORT_BEGIN source=app-internal-run-as");
         final String shellResult;
         try (ParcelFileDescriptor descriptor =
-                     instrumentation.getUiAutomation().executeShellCommand(shellCommand);
-             InputStream shellOutput = new ParcelFileDescriptor.AutoCloseInputStream(descriptor);
-             ByteArrayOutputStream response = new ByteArrayOutputStream()) {
-            final byte[] buffer = new byte[1024];
-            int count;
-            while ((count = shellOutput.read(buffer)) != -1) {
-                response.write(buffer, 0, count);
+                     instrumentation.getUiAutomation().executeShellCommand(shellCommand)) {
+            assertNotNull("Android UiAutomation must return a shell output descriptor", descriptor);
+            try (InputStream shellOutput = new ParcelFileDescriptor.AutoCloseInputStream(descriptor);
+                 ByteArrayOutputStream response = new ByteArrayOutputStream()) {
+                final byte[] buffer = new byte[1024];
+                int count;
+                while ((count = shellOutput.read(buffer)) != -1) {
+                    response.write(buffer, 0, count);
+                }
+                shellResult = new String(response.toByteArray(), StandardCharsets.UTF_8).trim();
             }
-            shellResult = new String(response.toByteArray(), StandardCharsets.UTF_8).trim();
         }
-        assertEquals(
-                "Host staging must report successful mkdir, internal PNG export and marker export; shell output=" +
-                        shellResult,
-                "OMEGA_EXPORT_RESULT mkdir=0 png=0 status=0", shellResult);
+        // Android 9 may return an empty stdout descriptor for a shell command even
+        // when redirections have completed. The host-side pull validates the result
+        // file, both exit codes, stderr diagnostics and the actual PNG bytes.
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "STAGE=SCREENSHOT_HOST_EXPORT_FINISHED png=" + hostPng +
-                        " status=" + hostStatus);
+                "STAGE=SCREENSHOT_HOST_EXPORT_COMMAND_RETURNED stdout=" + shellResult +
+                        " resultFile=" + hostResult);
     }
 
     private static String shellQuote(String value) {
