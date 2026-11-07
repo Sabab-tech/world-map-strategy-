@@ -681,6 +681,17 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/Construction and operating readiness/);
   assert.match(fragments[0],/PRODUCTION GATED BY SAB-34/);
   assert.equal(fragments[0].includes('data-omega-v2-industry-tab="companies"'),false);
+  assert.match(fragments[0],/data-pe-market-details/);
+  assert.match(fragments[0],/Private market share \/ concentration/);
+  assert.match(lifecycleSource,/function privateMarketConcentrationMarkup/);
+  assert.match(lifecycleSource,/settledSalesValue/);
+  assert.match(fragments[0],/data-pe-oversight-details/);
+  assert.match(fragments[0],/Company solvency \/ insolvency \/ restructuring \/ closure/);
+  assert.match(lifecycleSource,/data-pe-insolvency-form/);
+  assert.match(lifecycleSource,/data-pe-restructure-form/);
+  assert.match(lifecycleSource,/data-pe-closure-form/);
+  assert.match(lifecycleSource,/restructure-approve/);
+  assert.match(lifecycleSource,/restructure-apply/);
 });
 
 
