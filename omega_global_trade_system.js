@@ -165,7 +165,7 @@
   }
   function privateCompanyAvailableStock(country,resourceId,companyId){
     const c=canonical(country),co=String(companyId||'').trim().toUpperCase(),rid=String(resourceId||'').trim(),
-      rs=countryValue(c,'resource'),rows=Array.isArray(rs?.batches)?rs.batches:[],
+      rs=countryEntry(state()?.resource,c)||null,rows=Array.isArray(rs?.batches)?rs.batches:[],
       lots=rs?.inventoryLots&&typeof rs.inventoryLots==='object'?rs.inventoryLots:{},
       shipments=Array.isArray(rs?.industrialNetwork?.shipments)?rs.industrialNetwork.shipments:[],
       nonCentral=new Set(['FACTORY_INPUT','CONSUMED','TRANSFERRED_TO_FACTORY','SOLD','TRANSFERRED_OUT','DEPLETED']),
