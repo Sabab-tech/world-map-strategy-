@@ -1540,8 +1540,8 @@
     if(String(quote?.status||'').toUpperCase()!=='CLEARED'||
        num(quote?.clearingPriceUsd)===null||num(quote?.clearingPriceUsd)<=0)
       return{accepted:false,reason:'EXECUTABLE_MARKET_CLEARING_PRICE_NOT_OBSERVED',quote:quote};
-    const suppliers=market.privateCompanySuppliers(resourceId,quantity,buyer,sellerCompanyId);
-    const supplier=suppliers.find(row=>row.countryId===seller&&row.companyId===sellerCompanyId);
+    const suppliers=market.privateCompanySuppliers(resourceId,quantity,buyer,sellerCompanyId,seller);
+    const supplier=suppliers.find(row=>String(row.companyId||'').trim().toUpperCase()===sellerCompanyId);
     if(!supplier)return{accepted:false,reason:'PRIVATE_SELLER_COMPANY_HAS_NO_VERIFIED_MARKET_STOCK',
       sellerCountryId:seller,sellerCompanyId:sellerCompanyId,suppliers:suppliers};
     const marketUnitPrice=market.localPrice(seller,resourceId),requestedPrice=num(payload.unitPrice);
