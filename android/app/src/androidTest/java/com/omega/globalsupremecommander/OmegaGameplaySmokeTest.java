@@ -804,11 +804,11 @@ public final class OmegaGameplaySmokeTest {
                 " 2> " + shellQuote(statusError) +
                 "; status_status=$?; " +
                 "else png_status=99; status_status=99; fi; " +
-                "printf 'OMEGA_EXPORT_RESULT mkdir=%s png=%s status=%s\\\\n' " +
+                "printf 'OMEGA_EXPORT_RESULT mkdir=%s png=%s status=%s' " +
                 "$mkdir_status $png_status $status_status > " + shellQuote(hostResult) + "; " +
                 "for diagnostic in " + shellQuote(mkdirError) + " " + shellQuote(pngError) + " " + shellQuote(statusError) +
                 "; do if [ -s $diagnostic ]; then " +
-                "printf 'SHELL_DIAGNOSTIC_FILE=%s\\\\n' $diagnostic; " +
+                "echo SHELL_DIAGNOSTIC_FILE=$diagnostic; " +
                 "cat $diagnostic; fi; done";
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
                 "STAGE=SCREENSHOT_HOST_EXPORT_BEGIN source=app-internal-run-as");
