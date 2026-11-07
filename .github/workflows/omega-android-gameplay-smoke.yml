@@ -47,7 +47,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  offline-gameplay-smoke:
+  offline-launch-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -68,7 +68,7 @@ jobs:
       - name: Verify Android 9 WebView compatibility shims
         run: node --test test/omega_android_web_compat_v1.test.mjs
 
-      - name: Run offline gameplay smoke on Android 9 emulator (API 28)
+      - name: Run one-minute offline launch smoke on Android 9 emulator (API 28)
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 28
@@ -79,7 +79,7 @@ jobs:
           emulator-boot-timeout: 240
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 3072 -cores 4
           disable-animations: true
-          script: bash scripts/omega_android9_offline_gameplay_smoke.sh
+          script: bash scripts/omega_android9_launch_smoke.sh
       - name: Upload Android 9 smoke diagnostics
         if: always()
         uses: actions/upload-artifact@v4
