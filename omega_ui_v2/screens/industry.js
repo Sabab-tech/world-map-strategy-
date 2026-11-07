@@ -723,7 +723,10 @@
     var activeTab = String(options.activeTab || options.tab || 'factories');
     var stockSummaryView = activeTab === 'national-inventory';
     var inputDetailView = activeTab === 'inventory' || activeTab === 'factories';
-    var needsMineSiteRows = activeTab === 'factories' || activeTab === 'inventory' || stockSummaryView;
+    // The Input tab is a factory-input view, not a mine-site browser. Loading and de-duplicating
+    // the canonical + bound 607-site registry on every Input navigation caused a >1s mobile
+    // main-thread task without contributing data to that tab.
+    var needsMineSiteRows = activeTab === 'factories' || stockSummaryView;
     var needsMineProduction = activeTab === 'factories' && !lightweightTypeView;
     var context = countryContext(options.countryId);
     var resource = context.resource || {};
@@ -808,7 +811,7 @@
       });
     }
     var rawMineSites = !optimizedFactoryRead && needsMineSiteRows ? countryMineSiteRows(context.countryId, resource) : [];
-    var mineAssets = optimizedFactoryRead || lightweightTypeView ? [] : mineAssetRows(resource);
+    var mineAssets = optimizedFactoryRead || lightweightTypeView || activeTab === 'inventory' ? [] : mineAssetRows(resource);
     var simState = stateRoot() || {}, simClock = simState.simulation || {};
     var fastTurn = num(simClock.turn !== undefined ? simClock.turn : simState.turn !== undefined ? simState.turn : simState.simulationTurn);
     var fastDaysPerTurn = num(simClock.daysPerTurn !== undefined ? simClock.daysPerTurn : simState.daysPerTurn);
