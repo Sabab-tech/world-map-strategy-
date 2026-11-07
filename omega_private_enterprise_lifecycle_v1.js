@@ -1189,8 +1189,11 @@
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_COMPANY_ID_INVALID'};
     var buyerLifecycle=runtime(buyerCountry,false)||{},sellerLifecycle=runtime(sellerCountry,false)||{},
       buyerCompanyStatus=String((buyerLifecycle.companyStatuses||{})[buyerCompany]||'ACTIVE').toUpperCase(),
-      sellerCompanyStatus=String((sellerLifecycle.companyStatuses||{})[sellerCompany]||'ACTIVE').toUpperCase();
-    if(buyerCompanyStatus!=='ACTIVE')return{status:'BLOCKED',reason:'BUYER_COMPANY_STATUS_BLOCKS_NEW_IMPORT',companyStatus:buyerCompanyStatus};
+      sellerCompanyStatus=String((sellerLifecycle.companyStatuses||{})[sellerCompany]||'ACTIVE').toUpperCase(),
+      buyerSolvency=evaluateCompanySolvency(buyerCountry,buyerCompany);
+    if(buyerCompanyStatus!=='ACTIVE'||buyerSolvency.status==='INSOLVENT')
+      return{status:'BLOCKED',reason:'BUYER_COMPANY_STATUS_BLOCKS_NEW_IMPORT',
+        companyStatus:buyerCompanyStatus,solvencyStatus:buyerSolvency.status,solvencyReason:buyerSolvency.reason};
     if(sellerCompanyStatus==='CLOSED')return{status:'BLOCKED',reason:'SELLER_COMPANY_CLOSED'};
     if(!settlementId||buyerAmount===null||buyerAmount<=0||sellerAmount===null||sellerAmount<=0||
        buyerPurchaseAmount===null||buyerPurchaseAmount<=0||buyerTariffAmount===null||buyerTariffAmount<0||
