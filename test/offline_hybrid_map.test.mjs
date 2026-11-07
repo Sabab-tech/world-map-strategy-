@@ -140,15 +140,21 @@ test("newer commits supersede stale Android emulator smoke runs on the same ref"
   ));
 });
 
-test("Android 9 smoke exports its landscape screenshot through the debuggable app sandbox", () => {
+test("Android 9 smoke exports and validates a real landscape PNG before app cleanup", () => {
   assert.ok(androidSmokeInstrumentation.includes(
-    'new File(instrumentation.getTargetContext().getFilesDir(), "omega-smoke")'
-  ), "instrumentation must write the screenshot to the target app's internal files directory");
-  assert.ok(androidSmokeScript.includes(
-    'adb exec-out run-as com.omega.globalsupremecommander cat "$remote_screenshot_file" > "$local_screenshot"'
-  ), "the host must read the screenshot through run-as instead of inaccessible shared storage");
-  assert.ok(androidSmokeScript.includes('remote_screenshot_file="files/omega-smoke/$screenshot"'),
-    "the screenshot path inside the app sandbox must stay aligned with instrumentation");
+    'getExternalFilesDir("omega-smoke")'
+  ), "instrumentation must stage the screenshot in the app-specific external files directory");
+  assert.ok(androidSmokeInstrumentation.includes("executeShellCommand") &&
+    androidSmokeInstrumentation.includes("OMEGA_SCREENSHOT_EXPORT_OK"),
+    "instrumentation must copy the screenshot to shared emulator storage before the app is uninstalled");
+  assert.ok(androidSmokeScript.includes('remote_screenshot_dir="/sdcard/omega-smoke"') &&
+    androidSmokeScript.includes('adb pull "$remote_screenshot_dir" "$screenshot_dir"'),
+    "the host must retrieve the exported screenshot from the shared emulator staging directory");
+  assert.ok(androidSmokeScript.includes('89504e470d0a1a0a') &&
+    androidSmokeScript.includes('screenshot_bytes'),
+    "the host must reject error text, truncated files, and non-PNG screenshot artifacts");
+  assert.doesNotMatch(androidSmokeScript, /run-as/,
+    "screenshot retrieval must not depend on an app package that the Gradle task may uninstall");
   assert.ok(androidSmokeInstrumentation.includes("inputTabClickDeadline") &&
     androidSmokeInstrumentation.includes("inputTabClicked") &&
     androidSmokeInstrumentation.includes("inputTabClickDiagnostic"),
