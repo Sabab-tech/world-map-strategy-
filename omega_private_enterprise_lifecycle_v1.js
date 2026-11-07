@@ -531,6 +531,7 @@
     if(!relevantResources.length)return null;
     return rows.find(function(row){
       return row&&String(row.status||'').toUpperCase()==='ACTIVE'&&
+        row.authority==='OMEGA_STATE_CONTROL_RIGHTS_V1'&&row.restrictionType==='PRIVATE_FACTORY_EXPANSION_HOLD'&&
         canonicalCountry(row.countryId||cid)===cid&&id(row.companyId)===id(company)&&
         relevantResources.indexOf(token(row.resourceId))>=0&&
         (num(row.startsTurn)===null||turn()>=num(row.startsTurn));
