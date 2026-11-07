@@ -1477,7 +1477,21 @@ function assetCanAccept(asset,resourceId){
   return ks.some(k=>tok(k)===tok(resourceId));
 }
 function candidateFactories(c,resourceId){
-  return factoryAssets(c).filter(a=>assetCanAccept(a,resourceId)).map((asset,index)=>({asset,index,recipe:recipeFor(resourceId,asset)}));
+  return factoryAssets(c).filter(a=>assetCanAccept(a,resourceId))
+    .map((asset,index)=>({asset,index,recipe:recipeFor(resourceId,asset)}))
+    // Keep explicit source-site assignments ahead of this fallback selection.
+    // For unbound compatible capacity, a commissioned private company factory
+    // must enter the same mine-shipment and production runtime as state factories.
+    .sort((left,right)=>{
+      function privatePriority(row){
+        const asset=row?.asset||{};
+        return String(asset.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE' &&
+          String(asset.operatorType||'').toUpperCase()==='PRIVATE_COMPANY_OPERATOR' &&
+          asset.productionEnabled===true &&
+          String(asset.status||'').toUpperCase()==='OPERATIONAL' ? 1 : 0;
+      }
+      return privatePriority(right)-privatePriority(left)||left.index-right.index;
+    });
 }
 
 function nodeToken(type,c,idv){return type+':'+canonicalCountry(c)+':'+String(idv||'').replace(/[^A-Za-z0-9_-]/g,'_')}
