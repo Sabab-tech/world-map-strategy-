@@ -1088,6 +1088,34 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     metrics.selection = selection;
     metrics.stages.push('REAL_MAP_MARKER_CLICK_SELECTED_THE_EXACT_SITE_ID');
 
+    const executeHitTest = await page.locator('#omega-individual-execute').evaluate(button => {
+      const rect = button.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const hit = document.elementFromPoint(x, y);
+      const panel = document.getElementById('omega-individual-resource-panel');
+      const cabinet = document.getElementById('cabinet-full-window');
+      const countryCard = document.getElementById('country-info-card');
+      const style = element => element ? {
+        position: getComputedStyle(element).position,
+        zIndex: getComputedStyle(element).zIndex,
+        pointerEvents: getComputedStyle(element).pointerEvents
+      } : null;
+      return {
+        hitTarget: !!hit && (hit === button || button.contains(hit)),
+        hitElement: hit ? (hit.tagName + (hit.id ? '#' + hit.id : '') +
+          (hit.className && typeof hit.className === 'string' ? '.' + hit.className.trim().replace(/\\s+/g, '.') : '')) : null,
+        buttonRect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+        panel: style(panel),
+        cabinet: style(cabinet),
+        countryCard: style(countryCard)
+      };
+    });
+    metrics.executeHitTest = executeHitTest;
+    assert.ok(executeHitTest.hitTarget,
+      'resource site action must be the topmost hit target in the active UI layer: ' +
+      JSON.stringify(executeHitTest));
+
     await page.locator('#omega-individual-execute').click({ timeout: 30000 });
     await page.waitForFunction(siteId => {
       const run = window.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__;
