@@ -1201,3 +1201,69 @@ test('private-company import debits the verified buyer wallet, credits the selli
   assert.equal(records.length,1);
   assert.equal(records[0].status,'SETTLED');
 });
+
+
+test('failed private-company receipt collision reverses buyer cash and makes the reservation terminal',()=>{
+  const h=makeHarness(),api=h.api,buyer=COMPANY,seller='AURORA_INDUSTRIAL_GROUP',settlementId='PRIVATE-IMPORT-FAIL-1';
+  h.state.finance.BGD.currencyCode='USD';
+  h.state.finance.SAU={currencyCode:'USD',omegaFinance:{
+    ledger:[],companyCapitalAccounts:{
+      [seller]:{companyId:seller,currency:'USD',availableBalance:0,reservedBalance:0,
+        capitalRaised:0,capitalSpent:0,revision:0}
+    }
+  }};
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [buyer]:{companyId:buyer,currency:'USD',availableBalance:1000,reservedBalance:0,
+      capitalRaised:1000,capitalSpent:0,revision:1}
+  };
+  h.state.economy.SAU={companyAccounts:{[seller]:{
+    companyId:seller,runtimeNetCashFlow:99,grossRevenue:99,paymentsReceived:99,
+    paymentsMade:0,supplierRevenue:99,lastTurn:4,
+    cashFlowEntries:[{entryId:'PE-PRIVATE-IMPORT-RECEIPT:'+settlementId,
+      companyId:seller,amount:99,direction:'CREDIT',category:'PRIVATE_COMPANY_EXPORT_SALE',
+      currency:'USD',sourceId:settlementId,turn:4,status:'POSTED'}]
+  }}};
+  const reservation=api.reservePrivateCompanyImport({
+    settlementId:settlementId,buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    resourceId:'iron_ore',quantity:10,unitPrice:10
+  });
+  assert.equal(reservation.status,'RESERVED',JSON.stringify(reservation));
+  const transfer=[{sourceBatchId:'SAU-PRIVATE-FAIL-BATCH',sourceBatchIds:['SAU-PRIVATE-FAIL-BATCH'],
+    ownerCompanyId:seller,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'SAU-PRIVATE-FAIL-FAC',
+    quantity:10,resourceId:'iron_ore',stage:'RAW_EXTRACTED'}];
+  const first=api.completePrivateCompanyImport({
+    settlementId:settlementId,buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    resourceId:'iron_ore',quantity:10,batchTransfers:transfer
+  });
+  assert.equal(first.status,'BLOCKED');
+  assert.equal(first.reason,'PRIVATE_IMPORT_SELLER_CASHFLOW_POST_FAILED');
+  const buyerWallet=h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer];
+  assert.equal(buyerWallet.availableBalance,1000,'failed trade must not debit company wallet');
+  const buyerAccount=h.state.economy.BGD.companyAccounts[buyer];
+  const purchase=buyerAccount.cashFlowEntries.find(x=>x.entryId==='PE-PRIVATE-IMPORT-PAYMENT:'+settlementId);
+  const tariff=buyerAccount.cashFlowEntries.find(x=>x.entryId==='PE-PRIVATE-IMPORT-TARIFF:'+settlementId);
+  assert.equal(purchase.status,'REVERSED');
+  assert.equal(tariff.status,'REVERSED');
+  assert.equal(buyerAccount.runtimeNetCashFlow,0);
+  assert.equal(buyerAccount.paymentsMade,0);
+  const failedReservation=h.state.finance.BGD.omegaFinance.companyTradeReservations[settlementId];
+  assert.equal(failedReservation.status,'FAILED');
+  const second=api.completePrivateCompanyImport({
+    settlementId:settlementId,buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    resourceId:'iron_ore',quantity:10,batchTransfers:transfer
+  });
+  assert.equal(second.status,'BLOCKED');
+  assert.equal(second.reason,'PRIVATE_IMPORT_RESERVATION_NOT_ACTIVE');
+  assert.equal(buyerWallet.availableBalance,1000);
+  assert.equal(purchase.status,'REVERSED');
+  assert.equal(tariff.status,'REVERSED');
+  assert.equal(h.state.finance.SAU.omegaFinance.companyCapitalAccounts[seller].availableBalance,0);
+  assert.equal(api.cancelPrivateCompanyImport({buyerCountryId:'BGD',settlementId:settlementId}).status,'DUPLICATE');
+});
