@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 
-const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOfflineWorkflow, androidGradle, bootPerformanceMonitor, compositionRoot] = await Promise.all([
+const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOfflineWorkflow, androidSmokeScript, androidSmokeInstrumentation, androidGradle, bootPerformanceMonitor, compositionRoot] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.js", import.meta.url), "utf8"),
   readFile(new URL("../offline-hybrid-map.css", import.meta.url), "utf8"),
@@ -12,6 +12,8 @@ const [html, js, css, world, mapEngine, mainActivity, serviceWorker, androidOffl
   readFile(new URL("../android/app/src/main/java/com/omega/globalsupremecommander/MainActivity.java", import.meta.url), "utf8"),
   readFile(new URL("../omega-offline-map-sw.js", import.meta.url), "utf8"),
   readFile(new URL("../.github/workflows/omega-android-gameplay-smoke.yml", import.meta.url), "utf8"),
+  readFile(new URL("../scripts/omega_android9_offline_gameplay_smoke.sh", import.meta.url), "utf8"),
+  readFile(new URL("../android/app/src/androidTest/java/com/omega/globalsupremecommander/OmegaGameplaySmokeTest.java", import.meta.url), "utf8"),
   readFile(new URL("../android/app/build.gradle", import.meta.url), "utf8"),
   readFile(new URL("../omega_boot_performance_monitor_v1.js", import.meta.url), "utf8"),
   readFile(new URL("../omega_enterprise_composition_root_v10.js", import.meta.url), "utf8")
@@ -136,6 +138,37 @@ test("newer commits supersede stale Android emulator smoke runs on the same ref"
   assert.ok(androidOfflineWorkflow.includes(
     "cancel-in-progress: true"
   ));
+});
+
+test("Android 9 smoke exports and validates a real landscape PNG before app cleanup", () => {
+  assert.ok(androidSmokeInstrumentation.includes('getExternalFilesDir("omega-smoke")') &&
+    androidSmokeInstrumentation.includes("new File(externalDirectory, screenshot.getName())") &&
+    androidSmokeInstrumentation.includes("new File(externalDirectory, screenshot.getName() + \".exit\")") &&
+    androidSmokeInstrumentation.includes("new FileInputStream(screenshot)") &&
+    androidSmokeInstrumentation.includes("exportedScreenshot.length() == screenshot.length()") &&
+    androidSmokeInstrumentation.includes("getUiAutomation().executeShellCommand(shellCommand)") &&
+    androidSmokeInstrumentation.includes('shellQuote(packageName)') &&
+    androidSmokeInstrumentation.includes("run-as ") &&
+    androidSmokeInstrumentation.includes("OMEGA_EXPORT_OK") &&
+    androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_HOST_EXPORT_FINISHED"),
+    "instrumentation must copy the complete PNG into app-specific storage and stage it for the adb shell with run-as before app cleanup");
+  assert.ok(androidSmokeScript.includes('remote_screenshot_dir="/sdcard/omega-smoke"') &&
+    androidSmokeScript.includes('adb shell mkdir -p "$remote_screenshot_dir"') &&
+    androidSmokeScript.includes('adb pull "$remote_screenshot_dir" "$screenshot_dir"') &&
+    androidSmokeScript.includes('status_file="$local_screenshot.exit"') &&
+    androidSmokeScript.includes('export_exit="$(tr -d \'[:space:]\' <"$status_file")"'),
+    "the host must pull the instrumentation-staged directory and validate the Java copy marker before accepting the artifact");
+  assert.ok(androidSmokeScript.includes('89504e470d0a1a0a') &&
+    androidSmokeScript.includes('screenshot_bytes'),
+    "the host must reject error text, truncated files, and non-PNG screenshot artifacts");
+  assert.doesNotMatch(androidSmokeScript.replace(/^\s*#.*$/gm, ''), /\b(?:run-as|executeShellCommand)\b/,
+    "run-as must stay inside the instrumentation lifecycle rather than depending on a package after Gradle cleanup");
+  assert.ok(androidSmokeInstrumentation.includes("inputTabClickDeadline") &&
+    androidSmokeInstrumentation.includes("inputTabClicked") &&
+    androidSmokeInstrumentation.includes("inputTabClickDiagnostic"),
+    "the Input tab tap must tolerate transient async screen refreshes and retain failure diagnostics");
+  assert.ok(androidSmokeScript.includes('factory-input-landscape.png'),
+    "the captured landscape screenshot must remain a required smoke artifact");
 });
 
 test("canonical country profile pack is bundled for Android and refreshes offline smoke coverage", () => {
