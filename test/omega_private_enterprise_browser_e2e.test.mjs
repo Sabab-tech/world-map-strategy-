@@ -790,6 +790,54 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       window.__sab34RemovedLifecycleAutosaveFinalizer = autosaveFinalizer;
       state.simulation.daysPerTurn = 30;
 
+      // This acceptance proof exercises the real authoritative turn coordinator and every
+      // registered turn participant, including Resource Economy, mine logistics, Trade,
+      // private-enterprise lifecycle and production/fiscal settlement. The global world
+      // simulation and the separate 17-ministry pump are intentionally excluded here:
+      // they do not contribute to this single-country resource pipeline and have their own
+      // independent required CI workflows (OMEGA Ministry Runtime / OMEGA Language System).
+      // Keep these exclusions test-local; never modify the production coordinator or gate.
+      const turnParticipants = typeof simulation.participantDiagnostics === 'function'
+        ? simulation.participantDiagnostics() : [];
+      const resourceEconomy = window.OmegaResourceEconomy || window.Omega?.ResourceEconomy;
+      const globalTrade = window.OmegaGlobalTrade || window.Omega?.GlobalTrade;
+      const privateLifecycle = window.OmegaPrivateEnterpriseLifecycleV1 || window.Omega?.PrivateEnterpriseLifecycleV1;
+      if (!turnParticipants.length || typeof resourceEconomy?.runTurn !== 'function' ||
+          typeof globalTrade?.processCountry !== 'function' ||
+          typeof privateLifecycle?.getCountryDashboard !== 'function') {
+        throw new Error('SAB34_RESOURCE_TURN_PARTICIPANTS_NOT_READY:' + JSON.stringify({
+          participantCount: turnParticipants.length,
+          resourceEconomyReady: typeof resourceEconomy?.runTurn === 'function',
+          globalTradeReady: typeof globalTrade?.processCountry === 'function',
+          privateLifecycleReady: typeof privateLifecycle?.getCountryDashboard === 'function'
+        }));
+      }
+      window.__sab34ResourceTurnParticipantIds = turnParticipants.map(row => row.id);
+      window.__sab34ResourceTurnAdvanceInProgress = false;
+      window.__sab34AdvanceResourceTurns = async function(turns) {
+        if (window.__sab34ResourceTurnAdvanceInProgress) {
+          throw new Error('SAB34_RESOURCE_TURN_ADVANCE_REENTRANT');
+        }
+        const previousWorldEngine = simulation.worldEngine;
+        const previousMinistryPump = simulation.ministryPump;
+        const requestedTurns = Math.max(0, Math.floor(Number(turns) || 0));
+        window.__sab34ResourceTurnAdvanceInProgress = true;
+        simulation.worldEngine = {
+          setAuthoritativeState() {},
+          processSimulationTick() {
+            return { status: 'SKIPPED_TEST_SCOPE', authority: 'SAB34_BROWSER_RESOURCE_PIPELINE_SCOPE' };
+          }
+        };
+        simulation.ministryPump = null;
+        try {
+          return await simulation.advance(requestedTurns);
+        } finally {
+          simulation.worldEngine = previousWorldEngine;
+          simulation.ministryPump = previousMinistryPump;
+          window.__sab34ResourceTurnAdvanceInProgress = false;
+        }
+      };
+
       const [endowmentReady, governmentReady, privateReady] = await Promise.all([
         endowment.initialize(),
         governmentBaseline.ready,
@@ -1026,7 +1074,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       simulation.clock.gameDaysPerTurn=constructionDays;
       simulation.clock.stepDurationMs=constructionDays*86400000;
       state.simulation.daysPerTurn=constructionDays;
-      try{advanced=await simulation.advance(1);}
+      try{advanced=await window.__sab34AdvanceResourceTurns(1);}
       finally{
         simulation.clock.gameDaysPerTurn=30;simulation.clock.stepDurationMs=30*86400000;state.simulation.daysPerTurn=30;
       }
@@ -1227,7 +1275,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const current = Number(simulation.clock.turn) || 0;
       const turns = Math.max(1, Math.ceil(eta - current));
       if (turns > 90) throw new Error('SAB34_MINE_ETA_EXCEEDS_TEST_BOUND:' + turns);
-      const advanced = await simulation.advance(turns);
+      const advanced = await window.__sab34AdvanceResourceTurns(turns);
       if (advanced.status === 'ERROR' || advanced.steps !== turns) {
         throw new Error('SAB34_MINE_HAUL_CENTRAL_TURN_ADVANCE_FAILED:' + JSON.stringify(advanced));
       }
@@ -1260,7 +1308,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const current = Number(simulation.clock.turn) || 0;
       const turns = Math.max(1, Math.ceil(eta - current));
       if (turns > 90) throw new Error('SAB34_FACTORY_ETA_EXCEEDS_TEST_BOUND:' + turns);
-      const advanced = await simulation.advance(turns);
+      const advanced = await window.__sab34AdvanceResourceTurns(turns);
       if (advanced.status === 'ERROR' || advanced.steps !== turns) {
         throw new Error('SAB34_FACTORY_HAUL_CENTRAL_TURN_ADVANCE_FAILED:' + JSON.stringify(advanced));
       }
@@ -1306,7 +1354,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         row.stage === 'FINISHED' && Array.isArray(row.sourceBatchIds) && row.sourceBatchIds.includes(run.batchId));
       const inputBalance = () => Number(factory.inputInventory?.coal) || 0;
       while (turns < 20 && (inputBalance() > 1e-6 || finishedRows().length < 2)) {
-        const advanced = await simulation.advance(1);
+        const advanced = await window.__sab34AdvanceResourceTurns(1);
         if (advanced.status === 'ERROR' || advanced.steps !== 1) {
           throw new Error('SAB34_FACTORY_CYCLE_CENTRAL_TURN_FAILED:' + JSON.stringify(advanced));
         }
@@ -1431,7 +1479,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
           JSON.stringify(result.sourceFlow) !== JSON.stringify(expected.sourceFlow)) {
         throw new Error('SAB34_SITE_PIPELINE_SAVE_LOAD_DATA_DRIFT:' + JSON.stringify({ expected, result }));
       }
-      const replay = await simulation.advance(1);
+      const replay = await window.__sab34AdvanceResourceTurns(1);
       if (replay.status === 'ERROR' || replay.steps !== 1) throw new Error('SAB34_POST_RESTORE_REPLAY_FAILED:' + JSON.stringify(replay));
       const replayedLedgerCount = restoredResource.finishedGoodsLedger?.length || 0;
       const replayedFinishedIds = (restoredResource.batches || []).filter(row =>
