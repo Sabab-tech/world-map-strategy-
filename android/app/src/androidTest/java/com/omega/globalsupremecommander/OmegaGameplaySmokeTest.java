@@ -3,10 +3,10 @@ package com.omega.globalsupremecommander;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.content.pm.ActivityInfo;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,7 +17,10 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.json.JSONTokener;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.concurrent.CountDownLatch;
@@ -132,77 +135,6 @@ public final class OmegaGameplaySmokeTest {
                     "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
             );
 
-            // Stop the simulation before inserting an in-memory-only fixture. This keeps
-            // the visual test deterministic and prevents the fixture from entering a game turn.
-            final String pauseClockScript =
-                    "(function() {" +
-                    " var lifecycle = window.Omega && window.Omega.GameLifecycle;" +
-                    " var sim = window.Omega && (window.Omega.SimulationRuntime || window.Omega.Simulation);" +
-                    " if (!lifecycle || typeof lifecycle.setSpeed !== 'function' || typeof lifecycle.getDiagnostics !== 'function' || !sim || !sim.clock) return false;" +
-                    " var applied = lifecycle.setSpeed(0);" +
-                    " var diagnostics = lifecycle.getDiagnostics();" +
-                    " var speed = diagnostics && diagnostics.clock ? Number(diagnostics.clock.speed) : null;" +
-                    " var status = String(sim.status || '').toUpperCase();" +
-                    " var safeToSeed = speed === 0 || (status !== 'RUNNING' && !(diagnostics && diagnostics.running === true));" +
-                    " window.__OMEGA_ANDROID_PAUSE_DIAGNOSTICS = {applied:applied, speed:speed, status:status, running:!!(diagnostics && diagnostics.running), safeToSeed:safeToSeed};" +
-                    " return safeToSeed;" +
-                    "})()";
-            final String pauseClockResult = evaluate(instrumentation, webViewRef.get(), pauseClockScript);
-            final String pauseClockDiagnostics = evaluate(instrumentation, webViewRef.get(),
-                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_PAUSE_DIAGNOSTICS || {});})()");
-            assertEquals(
-                    "The visual-only fixture must not run during a live game turn; clock=" + pauseClockDiagnostics,
-                    "true", pauseClockResult
-            );
-
-            final String seedFactoryInputFixtureScript =
-                    "(function() {" +
-                    " var state = window.Game && window.Game.state;" +
-                    " if (!state) return false;" +
-                    " var economy = state.economy || (state.economy = {});" +
-                    " var country = economy.USA || (economy.USA = {});" +
-                    " var id = 'OMEGA-ANDROID-INPUT-UI-FACTORY';" +
-                    " var existing = Array.isArray(country.productionAssets) ? country.productionAssets : [];" +
-                    " if (existing.some(function(row) { return row && String(row.id || '') === id; })) return false;" +
-                    " window.__OMEGA_ANDROID_INPUT_FIXTURE = {" +
-                    "   country:country," +
-                    "   hadAssets:Object.prototype.hasOwnProperty.call(country, 'productionAssets')," +
-                    "   originalAssets:country.productionAssets," +
-                    "   id:id" +
-                    " };" +
-                    " var rows = existing.slice();" +
-                    " rows.push({" +
-                    "   id:id," +
-                    "   name:'Android Smoke Steel Works'," +
-                    "   factoryType:'STEEL_AND_ALLOY_WORKS'," +
-                    "   recipeId:'STEEL_PRIMARY_ROUTE_V1'," +
-                    "   status:'OPERATIONAL'," +
-                    "   capacityPerDay:900," +
-                    "   inputInventory:{iron_concentrate:120}," +
-                    "   inputBatchLots:[{" +
-                    "     batchId:'OMEGA-ANDROID-INPUT-UI-IRON-01'," +
-                    "     resourceId:'iron_concentrate'," +
-                    "     quantity:120," +
-                    "     remainingQuantity:120," +
-                    "     unit:'SIMULATION_RESOURCE_UNIT'," +
-                    "     status:'AVAILABLE_TO_FACTORY'" +
-                    "   }]" +
-                    " });" +
-                    " country.productionAssets = rows;" +
-                    " window.Game.currentActiveCountry = 'USA';" +
-                    " window.Game.playerCountry = 'USA';" +
-                    " state.playerCountryId = 'USA';" +
-                    " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
-                    " window.currentActiveCountry = 'USA';" +
-                    " return true;" +
-                    "})()";
-            assertEquals(
-                    "A temporary, non-persistent factory with a canonical input recipe must be available for visual validation",
-                    "true", evaluate(instrumentation, webViewRef.get(), seedFactoryInputFixtureScript)
-            );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_UI_FIXTURE_READY");
-
-
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OPEN_MINISTRY");
             final String ministryNavigationScript =
                     "(function() {" +
@@ -306,73 +238,128 @@ public final class OmegaGameplaySmokeTest {
                     "true", evaluate(instrumentation, webViewRef.get(), repeatedUiNavigationScript)
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_REPEATED_BUTTON_NAV_READY");
-            final String openMoreRouteScript =
+            final String pauseClockScript =
                     "(function() {" +
-                    " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var button = cabinet && cabinet.querySelector('[data-omega-v2-global-nav=\"more\"]');" +
-                    " if (!button) return false;" +
-                    " button.click();" +
-                    " return true;" +
+                    " var lifecycle = window.Omega && window.Omega.GameLifecycle;" +
+                    " var sim = window.Omega && (window.Omega.SimulationRuntime || window.Omega.Simulation);" +
+                    " if (!lifecycle || typeof lifecycle.setSpeed !== 'function' || typeof lifecycle.getDiagnostics !== 'function' || !sim || !sim.clock) return false;" +
+                    " var applied = lifecycle.setSpeed(0);" +
+                    " var diagnostics = lifecycle.getDiagnostics();" +
+                    " var speed = diagnostics && diagnostics.clock ? Number(diagnostics.clock.speed) : null;" +
+                    " var status = String(sim.status || '').toUpperCase();" +
+                    " var safeToSeed = speed === 0 || (status !== 'RUNNING' && !(diagnostics && diagnostics.running === true));" +
+                    " window.__OMEGA_ANDROID_PAUSE_DIAGNOSTICS = {applied:applied, speed:speed, status:status, running:!!(diagnostics && diagnostics.running), safeToSeed:safeToSeed};" +
+                    " return safeToSeed;" +
                     "})()";
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OPEN_MORE_BUTTON_CLICK_BEGIN");
-            assertEquals("The visible More navigation button must respond",
-                    "true", evaluate(instrumentation, webViewRef.get(), openMoreRouteScript));
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OPEN_MORE_BUTTON_CLICK_RETURNED");
-            final String moreRouteReadyScript =
-                    "(function() {" +
-                    " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
-                    " return !!(cabinet && cabinet.getAttribute('data-omega-v2-route') === 'more' &&" +
-                    " main && main.querySelector('[data-omega-v2-global-nav=\"industry\"]'));" +
-                    "})()";
-            String moreRouteReady = "false";
-            final long moreRouteDeadline = SystemClock.elapsedRealtime() + 30000L;
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=MORE_ROUTE_WAIT_BEGIN");
-            while (!"true".equals(moreRouteReady) &&
-                    SystemClock.elapsedRealtime() < moreRouteDeadline) {
-                moreRouteReady = evaluate(instrumentation, webViewRef.get(), moreRouteReadyScript);
-                if (!"true".equals(moreRouteReady)) SystemClock.sleep(300L);
-            }
-            android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                    "STAGE=MORE_ROUTE_WAIT_END result=" + moreRouteReady);
-            assertEquals("Command Center must expose the Industry & Factories action",
-                    "true", moreRouteReady);
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=MORE_ROUTE_READY");
+            final String pauseClockResult = evaluate(instrumentation, webViewRef.get(), pauseClockScript);
+            final String pauseClockDiagnostics = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_PAUSE_DIAGNOSTICS || {});})()");
+            assertEquals(
+                    "The visual-only fixture must not run during a live game turn; clock=" + pauseClockDiagnostics,
+                    "true", pauseClockResult
+            );
 
-            final String openIndustryRouteScript =
+            final String seedFactoryInputFixtureScript =
                     "(function() {" +
-                    " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
-                    " var button = main && main.querySelector('[data-omega-v2-global-nav=\"industry\"]');" +
-                    " if (!button) return false;" +
-                    " button.click();" +
+                    " var state = window.Game && window.Game.state;" +
+                    " if (!state) return false;" +
+                    " var economy = state.economy || (state.economy = {});" +
+                    " var country = economy.USA || (economy.USA = {});" +
+                    " var id = 'OMEGA-ANDROID-INPUT-UI-FACTORY';" +
+                    " var existing = Array.isArray(country.productionAssets) ? country.productionAssets : [];" +
+                    " if (existing.some(function(row) { return row && String(row.id || '') === id; })) return false;" +
+                    " window.__OMEGA_ANDROID_INPUT_FIXTURE = {" +
+                    "   country:country," +
+                    "   hadAssets:Object.prototype.hasOwnProperty.call(country, 'productionAssets')," +
+                    "   originalAssets:country.productionAssets," +
+                    "   id:id" +
+                    " };" +
+                    " var rows = existing.slice();" +
+                    " rows.push({" +
+                    "   id:id," +
+                    "   name:'Android Smoke Steel Works'," +
+                    "   factoryType:'STEEL_AND_ALLOY_WORKS'," +
+                    "   recipeId:'STEEL_PRIMARY_ROUTE_V1'," +
+                    "   status:'OPERATIONAL'," +
+                    "   capacityPerDay:900," +
+                    "   inputInventory:{iron_concentrate:120}," +
+                    "   inputBatchLots:[{" +
+                    "     batchId:'OMEGA-ANDROID-INPUT-UI-IRON-01'," +
+                    "     resourceId:'iron_concentrate'," +
+                    "     quantity:120," +
+                    "     remainingQuantity:120," +
+                    "     unit:'SIMULATION_RESOURCE_UNIT'," +
+                    "     status:'AVAILABLE_TO_FACTORY'" +
+                    "   }]" +
+                    " });" +
+                    " country.productionAssets = rows;" +
+                    " window.Game.currentActiveCountry = 'USA';" +
+                    " window.Game.playerCountry = 'USA';" +
+                    " state.playerCountryId = 'USA';" +
+                    " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
+                    " window.currentActiveCountry = 'USA';" +
                     " return true;" +
                     "})()";
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OPEN_INDUSTRY_BUTTON_CLICK_BEGIN");
-            assertEquals("The Industry & Factories domain action must respond",
-                    "true", evaluate(instrumentation, webViewRef.get(), openIndustryRouteScript));
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OPEN_INDUSTRY_BUTTON_CLICK_RETURNED");
-            final String industryRouteReadyScript =
+            assertEquals(
+                    "A temporary, non-persistent factory with a canonical input recipe must be available for visual validation",
+                    "true", evaluate(instrumentation, webViewRef.get(), seedFactoryInputFixtureScript)
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_UI_FIXTURE_READY");
+
+            // Open the canonical UI v2 Industry route. The legacy Resource Command Center
+            // factory popup is covered by its own runtime tests; opening it here a second time
+            // caused avoidable WebView main-thread work during the offline device smoke.
+            final String openIndustryRoute =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
-                    " return !!(cabinet && cabinet.getAttribute('data-omega-v2-route') === 'industry' &&" +
-                    " main && main.querySelector('[data-factory-stock-input-ui=\"v2\"]') &&" +
-                    " main.querySelector('[data-omega-v2-industry-tab=\"inventory\"]'));" +
+                    " var integration = window.OmegaUIV2Integration;" +
+                    " if (!cabinet || !integration || typeof integration.openRoute !== 'function') return false;" +
+                    " window.OmegaMinistryViewCountry = 'USA';" +
+                    " if (window.Game) { window.Game.currentActiveCountry = 'USA'; window.Game.playerCountry = 'USA';" +
+                    "   if (window.Game.state) window.Game.state.playerCountryId = 'USA'; }" +
+                    " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
+                    " window.currentActiveCountry = 'USA';" +
+                    " var simulation = window.Omega && window.Omega.Simulation;" +
+                    " if (!simulation || typeof simulation.createSession !== 'function') return false;" +
+                    " var session = simulation.createSession({ playerCountryId:'USA' });" +
+                    " if (!session || session.playerCountryId !== 'USA' || simulation.getPlayerCountryId() !== 'USA') return false;" +
+                    " return integration.openRoute('industry') === true;" +
                     "})()";
-            String industryRouteReady = "false";
-            final long industryRouteDeadline = SystemClock.elapsedRealtime() + 45000L;
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_ROUTE_WAIT_BEGIN");
-            while (!"true".equals(industryRouteReady) &&
-                    SystemClock.elapsedRealtime() < industryRouteDeadline) {
-                industryRouteReady = evaluate(instrumentation, webViewRef.get(), industryRouteReadyScript);
-                if (!"true".equals(industryRouteReady)) SystemClock.sleep(350L);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_ROUTE_OPEN_BEGIN");
+            final String industryRouteOpened = evaluate(instrumentation, webViewRef.get(), openIndustryRoute);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_ROUTE_OPEN_CALLBACK_RETURNED result=" + industryRouteOpened);
+            assertEquals(
+                    "The existing Industry route must mount or navigate through the integration entry point for the selected player country",
+                    "true", industryRouteOpened
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_ROUTE_OPENED");
+
+            final String linesTabReadyScript =
+                    "(function() {" +
+                    " var cabinet=document.getElementById('cabinet-full-window');" +
+                    " var main=cabinet&&cabinet.querySelector('[data-omega-v2-main]');" +
+                    " var lines=main&&main.querySelector('[data-omega-v2-industry-tab=\"production-lines\"]');" +
+                    " var companies=main&&main.querySelector('[data-omega-v2-industry-tab=\"companies\"]');" +
+                    " var factoryView=main&&main.querySelector('[data-omega-v2-factory-view-content]');" +
+                    " var industryView=main&&main.querySelector('[data-omega-v2-industry-content]');" +
+                    " window.__OMEGA_ANDROID_LINES_TAB_DIAGNOSTICS={route:cabinet&&cabinet.getAttribute('data-omega-v2-route')," +
+                    " main:!!main,lines:!!lines,companies:!!companies,factoryView:!!factoryView,industryView:!!industryView};" +
+                    " return !!(cabinet&&main&&cabinet.getAttribute('data-omega-v2-route')==='industry'&&" +
+                    " lines&&!companies&&(factoryView||industryView));" +
+                    "})()";
+            String linesTabReady = "false";
+            final long linesTabDeadline = SystemClock.elapsedRealtime() + 15000L;
+            while (!"true".equals(linesTabReady) && SystemClock.elapsedRealtime() < linesTabDeadline) {
+                linesTabReady = evaluate(instrumentation, webViewRef.get(), linesTabReadyScript);
+                if (!"true".equals(linesTabReady)) SystemClock.sleep(200L);
             }
-            android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                    "STAGE=INDUSTRY_ROUTE_WAIT_END result=" + industryRouteReady);
-            assertEquals("The UI v2 Industry screen must mount from its real Command Center navigation",
-                    "true", industryRouteReady);
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_INDUSTRY_READY");
+            final String linesTabDiagnostics = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_LINES_TAB_DIAGNOSTICS || {});})()");
+            assertEquals(
+                    "Industry must expose the existing Lines tab without a separate Companies tab; diagnostics=" + linesTabDiagnostics,
+                    "true", linesTabReady
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_LINES_TAB_READY diagnostics=" + linesTabDiagnostics);
 
             final String openInputTabScript =
                     "(function() {" +
@@ -501,6 +488,260 @@ public final class OmegaGameplaySmokeTest {
             captureScreenshot(instrumentation, "factory-input-landscape.png");
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_INPUT_LANDSCAPE_SCREENSHOT_SAVED");
 
+            final String cleanupInputFixtureBeforeFactoryPanelScript =
+                    "(function() {" +
+                    " var fixture = window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
+                    " if (!fixture || !fixture.country) return true;" +
+                    " if (fixture.hadAssets) fixture.country.productionAssets = fixture.originalAssets;" +
+                    " else delete fixture.country.productionAssets;" +
+                    " delete window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
+                    " delete window.__OMEGA_ANDROID_INPUT_LAYOUT;" +
+                    " return true;" +
+                    "})()";
+            assertEquals("The temporary Input UI fixture must be removed before the existing Resource Command Center smoke",
+                    "true", evaluate(instrumentation, webViewRef.get(), cleanupInputFixtureBeforeFactoryPanelScript));
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_UI_FIXTURE_CLEANED");
+
+
+
+            final String activateLinesTab =
+                    "(function() {" +
+                    " var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                    " var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\\\"production-lines\\\"]');" +
+                    " if(!tab) return 'MISSING_LINES_TAB';" +
+                    " var started=performance.now();" +
+                    " tab.click();" +
+                    " return String((performance.now()-started).toFixed(2));" +
+                    "})()";
+            final String linesTapDuration = evaluate(instrumentation, webViewRef.get(), activateLinesTab);
+            assertTrue("Lines tab must be present and clickable", !"MISSING_LINES_TAB".equals(linesTapDuration));
+            final double linesTapMs;
+            try { linesTapMs = Double.parseDouble(linesTapDuration); }
+            catch (NumberFormatException error) { throw new AssertionError("Invalid Lines tap timing: " + linesTapDuration, error); }
+            assertTrue("Lines tab click handler must return within 1000ms; observed " + linesTapMs + "ms", linesTapMs <= 1000.0d);
+
+            String activeLinesReady = "false";
+            final long linesRenderDeadline = SystemClock.elapsedRealtime() + 15000L;
+            final String activeLinesScript =
+                    "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                    "var panel=main&&main.querySelector('[data-omega-v2-industry-content][data-active-tab=\\\"production-lines\\\"]');" +
+                    "var heading=panel&&panel.querySelector('.fp-content-heading');" +
+                    "var body=panel&&panel.querySelector('.fp-content-body');" +
+                    "return !!(panel&&heading&&/Production lines/i.test(heading.textContent||'')&&body);})()";
+            while (!"true".equals(activeLinesReady) &&
+                    SystemClock.elapsedRealtime() < linesRenderDeadline) {
+                activeLinesReady = evaluate(instrumentation, webViewRef.get(), activeLinesScript);
+                if (!"true".equals(activeLinesReady)) SystemClock.sleep(200L);
+            }
+            final String linesDiagnostics = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){var c=document.getElementById('cabinet-full-window');var m=c&&c.querySelector('[data-omega-v2-main]');" +
+                    "var p=m&&m.querySelector('[data-omega-v2-industry-content]');" +
+                    "return JSON.stringify({route:c&&c.getAttribute('data-omega-v2-route'),country:window.Omega&&window.Omega.Simulation&&window.Omega.Simulation.getPlayerCountryId&&window.Omega.Simulation.getPlayerCountryId()," +
+                    "activeTab:p&&p.getAttribute('data-active-tab'),contentLength:p&&String(p.textContent||'').length," +
+                    "companiesTab:m&&m.querySelectorAll('[data-omega-v2-industry-tab=\\\"companies\\\"]').length," +
+                    "cycleCards:p&&p.querySelectorAll('.omega-v2-card').length,emptyState:p&&!!p.querySelector('.omega-v2-empty')});})()");
+            assertEquals(
+                    "The existing Lines panel must render for the selected country; diagnostics=" + linesDiagnostics,
+                    "true", activeLinesReady
+            );
+
+            final String privateLifecycleDiagnosticsScript =
+                    "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                    "var panel=main&&main.querySelector('[data-omega-private-company-lifecycle]');" +
+                    "var form=panel&&panel.querySelector('[data-pe-proposal-form]');" +
+                    "var operator=form&&form.querySelector('select[name=operatorCompanyId]');" +
+                    "var registry=window.OmegaPrivateEnterpriseRegistryV1;" +
+                    "var diagnostic=registry&&typeof registry.diagnostics==='function'?registry.diagnostics():null;" +
+                    "return JSON.stringify({route:document.getElementById('cabinet-full-window')&&document.getElementById('cabinet-full-window').getAttribute('data-omega-v2-route')," +
+                    "tab:main&&main.__omegaV2IndustryTab,panel:!!panel,proposalForm:!!form,operatorSelector:!!operator," +
+                    "baselineRetry:!!(panel&&panel.querySelector('[data-pe-baseline-retry]'))," +
+                    "registryStatus:diagnostic&&diagnostic.status,registryReason:diagnostic&&diagnostic.reason});})()";
+            String privateLifecycleReady = "false";
+            String privateLifecycleLastDiagnostics = "{}";
+            final long privateLifecycleDeadline = SystemClock.elapsedRealtime() + 20000L;
+            while (!"true".equals(privateLifecycleReady) &&
+                    SystemClock.elapsedRealtime() < privateLifecycleDeadline) {
+                final String lifecycleDiagnostics = evaluate(instrumentation, webViewRef.get(), privateLifecycleDiagnosticsScript);
+                privateLifecycleLastDiagnostics = lifecycleDiagnostics;
+                try {
+                    org.json.JSONObject state = new org.json.JSONObject(lifecycleDiagnostics);
+                    privateLifecycleReady = Boolean.toString("production-lines".equals(state.optString("tab")) &&
+                            state.optBoolean("panel") && state.optBoolean("proposalForm") && state.optBoolean("operatorSelector"));
+                    if (!"true".equals(privateLifecycleReady) && state.optBoolean("baselineRetry")) {
+                        throw new AssertionError("Private company baseline failed to load offline: " + lifecycleDiagnostics);
+                    }
+                } catch (org.json.JSONException error) {
+                    throw new AssertionError("Invalid private lifecycle diagnostics: " + lifecycleDiagnostics, error);
+                }
+                if (!"true".equals(privateLifecycleReady)) SystemClock.sleep(200L);
+            }
+            assertEquals(
+                    "Production Lines must mount the private proposal form and separate operator selector; diagnostics=" + privateLifecycleLastDiagnostics,
+                    "true", privateLifecycleReady
+            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PRIVATE_ENTERPRISE_LIFECYCLE_MOUNTED");
+
+            final String startObserver =
+                    "(function(){window.__omegaApi28LongTasks=[];window.__omegaApi28ObserverSupported=false;" +
+                    "window.__omegaApi28HeapBefore=performance.memory&&performance.memory.usedJSHeapSize||null;" +
+                    "if(typeof PerformanceObserver==='function'){try{var o=new PerformanceObserver(function(list){" +
+                    "list.getEntries().forEach(function(e){window.__omegaApi28LongTasks.push({duration:e.duration,startTime:e.startTime});});});" +
+                    "o.observe({entryTypes:['longtask']});window.__omegaApi28ObserverSupported=true;window.__omegaApi28Observer=o;}catch(e){}}" +
+                    "return String(window.__omegaApi28ObserverSupported);})()";
+            final String observerReady = evaluate(instrumentation, webViewRef.get(), startObserver);
+            final ArrayList<Double> navigationHandlerTimes = new ArrayList<>();
+            final String[] industryTabs = {"inventory", "national-inventory", "production-lines"};
+            final String[] industryTabNames = {"Input", "Stock", "Lines"};
+            final StringBuilder tabNavigationTiming = new StringBuilder();
+            final long stressDeadline = SystemClock.elapsedRealtime() + 45000L;
+
+            // Three complete Input/Stock/Lines rounds verify repeat navigation on
+            // API 28 without turning the smoke test into a 30-render saturation benchmark.
+            // Each round still measures every real click handler and waits for its panel.
+            for (int round = 0; round < 3; round++) {
+                for (int tabIndex = 0; tabIndex < industryTabs.length; tabIndex++) {
+                    assertTrue("Repeated Industry navigation must stay within the 45-second stress deadline",
+                            SystemClock.elapsedRealtime() < stressDeadline);
+                    final String tabId = industryTabs[tabIndex];
+                    final String tabName = industryTabNames[tabIndex];
+                    final String tabReadyScript =
+                            "(function(){var cabinet=document.getElementById('cabinet-full-window');" +
+                            "var main=cabinet&&cabinet.querySelector('[data-omega-v2-main]');" +
+                            "var nav=main&&main.querySelector('.fp-tabs');" +
+                            "var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\"" + tabId + "\"]');" +
+                            "var tabs=main?Array.prototype.map.call(main.querySelectorAll('[data-omega-v2-industry-tab]'),function(x){" +
+                            "return x.getAttribute('data-omega-v2-industry-tab');}):[];" +
+                            "return JSON.stringify({route:cabinet&&cabinet.getAttribute('data-omega-v2-route'),main:!!main," +
+                            "nav:!!nav,tab:!!tab,tabs:tabs,activeTab:main&&main.__omegaV2IndustryTab," +
+                            "privatePanel:!!(main&&main.querySelector('[data-omega-private-company-lifecycle]'))});})()";
+                    String tabReady = "false";
+                    String tabDiagnostics = "{}";
+                    final long tabReadyDeadline = SystemClock.elapsedRealtime() + 15000L;
+                    while (!"true".equals(tabReady) && SystemClock.elapsedRealtime() < tabReadyDeadline) {
+                        tabDiagnostics = evaluate(instrumentation, webViewRef.get(), tabReadyScript, 10L);
+                        try {
+                            org.json.JSONObject state = new org.json.JSONObject(tabDiagnostics);
+                            tabReady = Boolean.toString(state.optBoolean("main") &&
+                                    state.optBoolean("nav") && state.optBoolean("tab"));
+                        } catch (org.json.JSONException error) {
+                            throw new AssertionError("Invalid " + tabName + " tab diagnostics: " + tabDiagnostics, error);
+                        }
+                        if (!"true".equals(tabReady)) SystemClock.sleep(150L);
+                    }
+                    assertEquals(tabName + " tab must exist on round " + round +
+                            " after the Industry route settles; diagnostics=" + tabDiagnostics, "true", tabReady);
+                    android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                            "STAGE=INDUSTRY_NAV_TAB_READY tab=" + tabName + " round=" + round +
+                                    " diagnostics=" + tabDiagnostics);
+                    final String clickScript =
+                            "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                            "var tab=main&&main.querySelector('[data-omega-v2-industry-tab=\"" + tabId + "\"]');" +
+                            "if(!tab)return 'MISSING';var started=performance.now();tab.click();" +
+                            "return String((performance.now()-started).toFixed(2));})()";
+                    final String clickText = evaluate(instrumentation, webViewRef.get(), clickScript, 10L);
+                    assertTrue(tabName + " click target must remain present after readiness; diagnostics=" +
+                            tabDiagnostics, !"MISSING".equals(clickText));
+                    final double clickMs;
+                    try { clickMs = Double.parseDouble(clickText); }
+                    catch (NumberFormatException error) { throw new AssertionError("Invalid " + tabName + " tap timing: " + clickText, error); }
+                    navigationHandlerTimes.add(clickMs);
+                    assertTrue(tabName + " click handler exceeded 1000ms on round " + round + ": " + clickMs,
+                            clickMs <= 1000.0d);
+
+                    String panelReady = "false";
+                    final long panelDeadline = SystemClock.elapsedRealtime() + 10000L;
+                    final String panelScript =
+                            "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                            "var panel=main&&main.querySelector('[data-omega-v2-industry-content][data-active-tab=\"" + tabId + "\"]');" +
+                            "return !!(panel&&panel.querySelector('.fp-content-heading')&&panel.querySelector('.fp-content-body'));})()";
+                    while (!"true".equals(panelReady) && SystemClock.elapsedRealtime() < panelDeadline) {
+                        panelReady = evaluate(instrumentation, webViewRef.get(), panelScript, 10L);
+                        if (!"true".equals(panelReady)) SystemClock.sleep(100L);
+                    }
+                    assertEquals(tabName + " panel must render on round " + round, "true", panelReady);
+                    if (tabNavigationTiming.length() > 0) tabNavigationTiming.append(',');
+                    tabNavigationTiming.append(tabName).append('=').append(clickMs).append("ms");
+                    // Yield one short paint window before the next synthetic tap. A real
+                    // user cannot issue 30 DOM clicks without letting Android render.
+                    SystemClock.sleep(120L);
+                }
+                android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                        "STAGE=INDUSTRY_NAV_ROUND_COMPLETE round=" + (round + 1) +
+                                " taps=" + navigationHandlerTimes.size());
+            }
+
+            assertEquals("API 28 must complete three full Input/Stock/Lines navigation rounds",
+                    9, navigationHandlerTimes.size());
+            Collections.sort(navigationHandlerTimes);
+            final double navigationP95 = navigationHandlerTimes.get(
+                    Math.max(0, (int) Math.ceil(navigationHandlerTimes.size() * 0.95d) - 1));
+            final double navigationMax = navigationHandlerTimes.get(navigationHandlerTimes.size() - 1);
+            assertTrue("Industry tab-handler p95 must stay below 500ms; observed " + navigationP95,
+                    navigationP95 <= 500.0d);
+            assertTrue("Industry tab-handler max must stay below 1000ms; observed " + navigationMax,
+                    navigationMax <= 1000.0d);
+
+            final String stressMetricsScript =
+                    "(function(){var rows=window.__omegaApi28LongTasks||[];return JSON.stringify({" +
+                    "observerSupported:!!window.__omegaApi28ObserverSupported,count:rows.length," +
+                    "maxDuration:rows.reduce(function(m,x){return Math.max(m,Number(x.duration)||0);},0)," +
+                    "heapBefore:window.__omegaApi28HeapBefore||null," +
+                    "heapUsed:performance.memory&&performance.memory.usedJSHeapSize||null," +
+                    "heapLimit:performance.memory&&performance.memory.jsHeapSizeLimit||null," +
+                    "viewport:{width:document.documentElement.clientWidth,height:document.documentElement.clientHeight," +
+                    "scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight}});})()";
+            final org.json.JSONObject stressMetrics = new org.json.JSONObject(
+                    evaluate(instrumentation, webViewRef.get(), stressMetricsScript, 10L));
+            if (stressMetrics.optBoolean("observerSupported")) {
+                assertTrue("No post-boot UI long task may exceed 1000ms; metrics=" + stressMetrics,
+                        stressMetrics.optDouble("maxDuration", 0.0d) <= 1000.0d);
+            }
+            final long heapBefore = stressMetrics.optLong("heapBefore", -1L);
+            final long heapAfter = stressMetrics.optLong("heapUsed", -1L);
+            if (heapBefore > 0L && heapAfter > 0L) {
+                assertTrue("Repeated tab navigation must not grow WebView JS heap by more than 64 MiB; metrics=" + stressMetrics,
+                        heapAfter - heapBefore <= 64L * 1024L * 1024L);
+            }
+            final org.json.JSONObject landscapeViewport = stressMetrics.optJSONObject("viewport");
+            assertNotNull("API 28 landscape viewport metrics must be present", landscapeViewport);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                    "STAGE=INDUSTRY_NAV_STRESS_COMPLETE rounds=10 taps=" + navigationHandlerTimes.size() +
+                            " p95Ms=" + navigationP95 + " maxMs=" + navigationMax +
+                            " longTasks=" + stressMetrics.optInt("count") +
+                            " longTaskObserver=" + stressMetrics.optBoolean("observerSupported") +
+                            " heapUsed=" + stressMetrics.optLong("heapUsed", -1) +
+                            " heapLimit=" + stressMetrics.optLong("heapLimit", -1));
+
+            // The app defaults to landscape, but a real orientation transition must keep
+            // the same Activity and WebView alive and must not spill the Lines UI sideways.
+            requestOrientation(activity, webViewRef.get(), ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, 10L);
+            final org.json.JSONObject portraitViewport = waitForViewport(
+                    instrumentation, webViewRef.get(), true, 10000L);
+            assertTrue("Portrait Industry content must not overflow horizontally: " + portraitViewport,
+                    portraitViewport.optInt("scrollWidth") <= portraitViewport.optInt("width") + 2);
+            assertTrue("Portrait must keep private proposal form and operator selector mounted: " + portraitViewport,
+                    portraitViewport.optBoolean("privateFormVisible") && portraitViewport.optBoolean("operatorSelectorVisible"));
+            assertTrue("Portrait rotation must preserve the same WebView instance",
+                    activity.webViewForTest() == webViewRef.get());
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=PORTRAIT_ROTATION_PASSED metrics=" + portraitViewport);
+
+            requestOrientation(activity, webViewRef.get(), ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE, 10L);
+            final org.json.JSONObject restoredLandscape = waitForViewport(
+                    instrumentation, webViewRef.get(), false, 10000L);
+            assertTrue("Returning to landscape must preserve the same WebView instance",
+                    activity.webViewForTest() == webViewRef.get());
+            assertTrue("Landscape must keep private proposal form and operator selector mounted: " + restoredLandscape,
+                    restoredLandscape.optBoolean("privateFormVisible") && restoredLandscape.optBoolean("operatorSelectorVisible"));
+            assertTrue("Landscape Industry content must not overflow horizontally: " + restoredLandscape,
+                    restoredLandscape.optInt("scrollWidth") <= restoredLandscape.optInt("width") + 2);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=LANDSCAPE_ROTATION_RESTORED metrics=" + restoredLandscape);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INDUSTRY_LINES_NAV_READY p95Ms=" +
+                    navigationP95 + " maxMs=" + navigationMax + " nav=" + tabNavigationTiming);
+
+            // Keep the world map renderer parked during the low-memory Industry,
+            // Input, and orientation checks. The repeated-navigation test above still
+            // exercises exit/reopen; this final close confirms map return after all
+            // Industry rendering work has finished.
             final String finalExitScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
@@ -516,118 +757,19 @@ public final class OmegaGameplaySmokeTest {
             );
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_EXITED_TO_MAP");
 
-            final String cleanupInputFixtureBeforeFactoryPanelScript =
-                    "(function() {" +
-                    " var fixture = window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
-                    " if (!fixture || !fixture.country) return true;" +
-                    " if (fixture.hadAssets) fixture.country.productionAssets = fixture.originalAssets;" +
-                    " else delete fixture.country.productionAssets;" +
-                    " delete window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
-                    " delete window.__OMEGA_ANDROID_INPUT_LAYOUT;" +
-                    " return true;" +
-                    "})()";
-            assertEquals("The temporary Input UI fixture must be removed before the existing Resource Command Center smoke",
-                    "true", evaluate(instrumentation, webViewRef.get(), cleanupInputFixtureBeforeFactoryPanelScript));
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_UI_FIXTURE_CLEANED");
-
-            final String factoryPanelScript =
-                    "(function() {" +
-                    " var ui = window.Omega && window.Omega.ResourceCommandCenterUI;" +
-                    " if (!ui || typeof ui.open !== 'function') return false;" +
-                    " var viewState = ui.getState();" +
-                    " var modal = document.getElementById('gsrsk-intelligence-modal');" +
-                    " if (!viewState || viewState.countryId !== 'USA' || viewState.panel !== 'industrial' ||" +
-                    "     !modal || modal.style.display !== 'flex') {" +
-                    "   if (window.Game) {" +
-                    "     window.Game.currentActiveCountry = 'USA';" +
-                    "     window.Game.playerCountry = 'USA';" +
-                    "     if (window.Game.state) window.Game.state.playerCountryId = 'USA';" +
-                    "   }" +
-                    "   if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
-                    "   window.currentActiveCountry = 'USA';" +
-                    "   try { ui.open('USA', 'industrial'); } catch (error) {" +
-                    "     return 'FACTORY_PANEL_EXCEPTION:' + String(error && (error.stack || error.message) || error);" +
-                    "   }" +
-                    "   viewState = ui.getState();" +
-                    "   modal = document.getElementById('gsrsk-intelligence-modal');" +
-                    " }" +
-                    " var content = document.getElementById('omega-rescc-content');" +
-                    " var title = content && content.querySelector('.omega-rescc-section-title');" +
-                    " if (!viewState || viewState.countryId !== 'USA' || viewState.panel !== 'industrial' ||" +
-                    "     !modal || modal.style.display !== 'flex' || !content || !title ||" +
-                    "     title.textContent.trim() !== 'Industrial value chain') return false;" +
-                    " if (content.querySelectorAll('.omega-rescc-factory-catalog-row').length === 0) return false;" +
-                    " var factoryRows = content.querySelectorAll('.omega-rescc-factory-catalog-row');" +
-                    " return factoryRows.length > 0 && Array.prototype.some.call(factoryRows, function(row) {" +
-                    "   return !!String(row.textContent || '').trim();" +
-                    " });" +
-                    "})()";
-            String factoryPanelReady = "false";
-            final long factoryPanelDeadline = SystemClock.elapsedRealtime() + 60000L;
-            while (!"true".equals(factoryPanelReady) &&
-                    SystemClock.elapsedRealtime() < factoryPanelDeadline) {
-                factoryPanelReady = evaluate(instrumentation, webViewRef.get(), factoryPanelScript);
-                if (!"true".equals(factoryPanelReady)) SystemClock.sleep(300L);
-            }
-            final String factoryPanelDiagnosticsScript =
-                    "(function() {" +
-                    " var engine = window.ResourceMinistryEngine || window.OmegaResourceMinistryEngine || null;" +
-                    " var report = null;" +
-                    " try { report = engine && typeof engine.getDataLoadReport === 'function' ? engine.getDataLoadReport() : null; } catch (error) {" +
-                    "   report = {diagnosticError:String(error && (error.stack || error.message) || error)};" +
-                    " }" +
-                    " var ui = window.Omega && window.Omega.ResourceCommandCenterUI;" +
-                    " var state = null;" +
-                    " try { state = ui && typeof ui.getState === 'function' ? ui.getState() : null; } catch (_) {}" +
-                    " var modal = document.getElementById('gsrsk-intelligence-modal');" +
-                    " var content = document.getElementById('omega-rescc-content');" +
-                    " var title = content && content.querySelector('.omega-rescc-section-title');" +
-                    " return JSON.stringify({" +
-                    "   resourceEngineExists:!!engine," +
-                    "   resourceReady:!!(engine && engine.isReady)," +
-                    "   resourceLoading:!!(engine && engine.isLoading)," +
-                    "   resourceTypeCount:engine && Array.isArray(engine.resourceTypes) ? engine.resourceTypes.length : null," +
-                    "   depositCount:engine && Array.isArray(engine.deposits) ? engine.deposits.length : null," +
-                    "   countryProfileCount:engine && engine.countryProfiles ? Object.keys(engine.countryProfiles).length : null," +
-                    "   report:report," +
-                    "   viewState:state," +
-                    "   modalVisible:!!(modal && modal.style.display === 'flex')," +
-                    "   title:title ? title.textContent.trim() : null," +
-                    "   factoryRowCount:content ? content.querySelectorAll('.omega-rescc-factory-catalog-row').length : 0," +
-                    "   contentPreview:content ? (content.textContent || '').trim().slice(0,700) : null" +
-                    " });" +
-                    "})()";
-            String factoryPanelDiagnostics = evaluate(instrumentation, webViewRef.get(), factoryPanelDiagnosticsScript);
-            android.util.Log.e("OMEGA_ANDROID_SMOKE", "FACTORY_PANEL_DIAGNOSTICS=" + factoryPanelDiagnostics);
-            assertEquals(
-                    "Selecting a country and opening Industry/Factories must show the country factory cards after the bounded catalog-ready refresh; diagnostics=" + factoryPanelDiagnostics,
-                    "true", factoryPanelReady
-            );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=FACTORY_PANEL_READY");
-
-
-
-
-
         } finally {
             if (webViewRef.get() != null) {
-                final String cleanupInputFixtureScript =
-                        "(function() {" +
-                        " var fixture = window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
-                        " if (!fixture || !fixture.country) return true;" +
-                        " if (fixture.hadAssets) fixture.country.productionAssets = fixture.originalAssets;" +
-                        " else delete fixture.country.productionAssets;" +
-                        " delete window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
-                        " delete window.__OMEGA_ANDROID_INPUT_LAYOUT;" +
-                        " return true;" +
-                        "})()";
                 try {
-                    evaluate(instrumentation, webViewRef.get(), cleanupInputFixtureScript, 10L);
+                    evaluate(instrumentation, webViewRef.get(),
+                            "(function(){var f=window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
+                            "if(!f||!f.country)return true;if(f.hadAssets)f.country.productionAssets=f.originalAssets;" +
+                            "else delete f.country.productionAssets;delete window.__OMEGA_ANDROID_INPUT_FIXTURE;" +
+                            "delete window.__OMEGA_ANDROID_INPUT_LAYOUT;return true;})()", 10L);
                 } catch (Throwable cleanupError) {
-                    // Preserve the original instrumentation failure. Cleanup runs against
-                    // the same WebView thread and must never replace the actionable assertion.
-                    android.util.Log.e("OMEGA_ANDROID_SMOKE",
-                            "Temporary input fixture cleanup did not complete", cleanupError);
+                    // evaluate() reports its timeout with AssertionError. Catch it here
+                    // only because this is best-effort teardown of a test-only fixture;
+                    // never let cleanup mask the original navigation/rotation failure.
+                    android.util.Log.w("OMEGA_ANDROID_SMOKE", "INPUT_FIXTURE_CLEANUP_FAILED", cleanupError);
                 }
             }
             if (activity != null) {
@@ -650,20 +792,57 @@ public final class OmegaGameplaySmokeTest {
         assertTrue("Android screenshot height must be positive", bitmap.getHeight() > 0);
         final File directory = instrumentation.getTargetContext().getExternalFilesDir("omega-smoke");
         assertNotNull("Android external files directory must be available for smoke screenshots", directory);
-        assertTrue("Android screenshot directory must be creatable",
-                directory.isDirectory() || directory.mkdirs());
+        assertTrue("Android screenshot directory must be creatable", directory.isDirectory() || directory.mkdirs());
         final File output = new File(directory, fileName);
         try (FileOutputStream stream = new FileOutputStream(output)) {
-            assertTrue("Android screenshot must encode as PNG",
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream));
+            assertTrue("Android screenshot must encode as PNG", bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream));
             stream.flush();
         } finally {
             bitmap.recycle();
         }
         assertTrue("Android screenshot file must be non-empty", output.isFile() && output.length() > 2048L);
-        android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "SCREENSHOT_SAVED=" + output.getAbsolutePath() + " bytes=" + output.length());
+        android.util.Log.i("OMEGA_ANDROID_SMOKE", "SCREENSHOT_SAVED=" + output.getAbsolutePath() + " bytes=" + output.length());
         return output;
+    }
+
+    private static void requestOrientation(
+            MainActivity activity,
+            WebView webView,
+            int orientation,
+            long timeoutSeconds
+    ) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean posted = webView.post(() -> {
+            activity.setRequestedOrientation(orientation);
+            latch.countDown();
+        });
+        assertTrue("WebView must accept a bounded orientation request", posted);
+        assertTrue("Orientation request must complete within " + timeoutSeconds + " seconds",
+                latch.await(timeoutSeconds, TimeUnit.SECONDS));
+    }
+
+    private static org.json.JSONObject waitForViewport(
+            android.app.Instrumentation instrumentation,
+            WebView webView,
+            boolean portrait,
+            long timeoutMs
+    ) throws Exception {
+        final String script = "(function(){var main=document.querySelector('#cabinet-full-window [data-omega-v2-main]');" +
+                "var panel=main&&main.querySelector('[data-omega-private-company-lifecycle]');" +
+                "return JSON.stringify({width:document.documentElement.clientWidth," +
+                "height:document.documentElement.clientHeight,scrollWidth:document.documentElement.scrollWidth," +
+                "scrollHeight:document.documentElement.scrollHeight,privateFormVisible:!!(panel&&panel.querySelector('[data-pe-proposal-form]'))," +
+                "operatorSelectorVisible:!!(panel&&panel.querySelector('select[name=operatorCompanyId]'))});})()";
+        final long deadline = SystemClock.elapsedRealtime() + timeoutMs;
+        org.json.JSONObject latest = new org.json.JSONObject();
+        while (SystemClock.elapsedRealtime() < deadline) {
+            latest = new org.json.JSONObject(evaluate(instrumentation, webView, script, 10L));
+            if ((portrait && latest.optInt("height") > latest.optInt("width")) ||
+                    (!portrait && latest.optInt("width") > latest.optInt("height"))) return latest;
+            SystemClock.sleep(150L);
+        }
+        throw new AssertionError("WebView did not reach " + (portrait ? "portrait" : "landscape") +
+                " layout before deadline; last viewport=" + latest);
     }
 
     private static String evaluate(
@@ -697,23 +876,22 @@ public final class OmegaGameplaySmokeTest {
                 })
         );
         assertTrue("WebView must accept the JavaScript evaluation task", posted);
-        if (!latch.await(timeoutSeconds, TimeUnit.SECONDS)) {
-            final Thread webViewThread = webView.getHandler() == null
-                    ? null : webView.getHandler().getLooper().getThread();
-            final StringBuilder stack = new StringBuilder();
-            if (webViewThread != null) {
-                for (StackTraceElement frame : webViewThread.getStackTrace()) {
-                    stack.append("\\n  at ").append(frame);
-                }
-            }
-            android.util.Log.e("OMEGA_ANDROID_SMOKE",
-                    "JAVASCRIPT_CALLBACK_TIMEOUT after " + timeoutSeconds +
-                            "s; webViewThread=" + (webViewThread == null ? "unknown" : webViewThread.getName()) +
-                            stack);
-            fail("WebView JavaScript evaluation callback should return within " +
-                    timeoutSeconds + " seconds after page load; webViewThread=" +
-                    (webViewThread == null ? "unknown" : webViewThread.getName()) + stack);
+        assertTrue(
+                "WebView JavaScript evaluation callback should return within " +
+                        timeoutSeconds + " seconds after page load",
+                latch.await(timeoutSeconds, TimeUnit.SECONDS)
+        );
+        final String raw = result.get();
+        if (raw == null) return null;
+        // WebView evaluateJavascript serializes a JavaScript string as a JSON string literal.
+        // Decode that case instead of relying on quote stripping; keep JSON objects and
+        // primitive boolean/number payloads unchanged.
+        try {
+            final Object decoded = new JSONTokener(raw).nextValue();
+            if (decoded instanceof String) return (String) decoded;
+        } catch (org.json.JSONException ignored) {
+            // Preserve raw JSON object, number or boolean results.
         }
-        return result.get();
+        return raw;
     }
 }

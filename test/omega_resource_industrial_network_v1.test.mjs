@@ -204,8 +204,10 @@ assert.equal(none.status,'BLOCKED');
 assert.equal(none.reason,'NO_MATCHING_FACTORY');
 
 context.Game.state.economy.BGD.productionAssets.push({
-  id:'FAC-COAL-PREP',countryId:'BGD',stage:'PROCESSING',factoryType:'COAL_PREPARATION_PLANT',
+  id:'FAC-COAL-PREP',countryId:'BGD',stage:'PROCESSING',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
   capacity:1000,inputCoefficients:{coal:1},outputProfile:{COAL_CONCENTRATE:.82,COAL_REJECT:.18},
+  ownerCompanyId:'COAL_FACTORY_OWNER',ownerType:'GOVERNMENT',
+  operatorCompanyId:'COAL_FACTORY_OPERATOR',operatorType:'STATE_GOVERNMENT_OPERATOR',companyId:'LEGACY_FACTORY_COMPANY_LABEL',
   transportAccess:['rail','road'],locationNodeKey:'INDUSTRIAL_ZONE:BGD'
 });
 
@@ -248,7 +250,7 @@ const advanced=N.advanceShipments('BGD');
 assert.equal(advanced.delivered,1);
 assert.equal(advanced.shipments[0].destinationStatus,'FACTORY_RECEIVED');
 assert.equal(advanced.shipments[0].processingStatus,'IN_PROGRESS',
-  'delivery should schedule production, not synchronously commit finished goods');
+  'delivery should schedule production, not synchronously commit finished goods: '+JSON.stringify(advanced.shipments[0]));
 assert.equal(context.Game.state.resource.BGD.warehouse.availableByResource.coal,45000,'delivered raw stock must leave the sovereign warehouse');
 assert.equal(context.Game.state.resource.BGD.warehouse.reservedByResource.coal,0,'shipment reservation must be released on delivery');
 assert.equal(context.Game.state.resource.BGD.inventory.coal,45000,'raw inventory must be debited once when the shipment is delivered');
@@ -274,6 +276,18 @@ assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResou
 assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_REJECT,180);
 assert.ok(context.Game.state.resource.BGD.batches.some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_CONCENTRATE'));
 assert.ok(Object.values(context.Game.state.resource.BGD.inventoryLots).some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_REJECT'));
+const coalFinishedBatch=context.Game.state.resource.BGD.batches.find(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_CONCENTRATE');
+assert.ok(coalFinishedBatch);
+assert.equal(coalFinishedBatch.ownerCompanyId,'COAL_FACTORY_OWNER',
+  'finished-goods inventory ownership must follow the explicit asset owner, not the operator');
+assert.equal(coalFinishedBatch.operatorCompanyId,'COAL_FACTORY_OPERATOR');
+assert.equal(coalFinishedBatch.ownerAttributionStatus,'EXPLICIT_ASSET_OWNER');
+const coalFactoryRecord=context.Game.state.resource.BGD.industrialNetwork.factoryRuntime['FAC-COAL-PREP'];
+assert.equal(coalFactoryRecord.companyId,'COAL_FACTORY_OPERATOR',
+  'production transaction companyId must stay with the operator for operating expenses');
+assert.equal(coalFactoryRecord.ownerCompanyId,'COAL_FACTORY_OWNER');
+assert.equal(coalFactoryRecord.operatorCompanyId,'COAL_FACTORY_OPERATOR');
+assert.equal(coalFactoryRecord.ownerAttributionStatus,'EXPLICIT_ASSET_OWNER');
 assert.equal(factory.inputBatchLots.reduce((sum,x)=>sum+(Number(x.remainingQuantity)||0),0),4000);
 
 const factoryBuildProfile=catalog.factoryProfiles.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT
@@ -299,6 +313,19 @@ N.advanceProjects('BGD');
 assert(context.Game.state.resource.BGD.technologyCapabilities.some(x=>x.technologyId==='DIGITAL_MAINTENANCE'));
 const fx=context.Game.state.economy.BGD.productionAssets.find(x=>x.id===factoryProject.factoryId);
 assert.equal(fx.status,'OPERATIONAL');
+assert.equal(fx.companyId,'STATE_INDUSTRY_BGD','the EPC builder must not be recorded as the factory owner/company');
+assert.equal(fx.ownerId,'STATE_INDUSTRY_BGD');
+assert.equal(fx.ownerCompanyId,'STATE_INDUSTRY_BGD');
+assert.equal(fx.ownerType,'STATE_OWNED_ENTERPRISE');
+assert.equal(fx.operatorId,'STATE_INDUSTRY_BGD');
+assert.equal(fx.operatorCompanyId,'STATE_INDUSTRY_BGD');
+assert.equal(fx.operatorType,'STATE_ENTERPRISE_OPERATOR');
+assert.equal(fx.constructionContractorType,'DOMESTIC_EPC');
+assert.equal(fx.stateControlRights.operationalControl,'STATE_OPERATOR');
+assert.equal(fx.stateControlRights.strategicOversight,true);
+assert.equal(fx.stateControlRights.emergencyIntervention,true);
+assert.equal(fx.stateControlRights.authority,'OMEGA_STATE_FACTORY_OWNERSHIP_V1');
+assert.notEqual(fx.companyId,'EPC_FACTORY_OWNER','construction contractor identity must never be used as operating company identity');
 
 // Starting allocations and player construction must coexist in the exact same live
 // country registry and be visible to the same industrial runtime after commissioning.
@@ -315,6 +342,12 @@ assert.equal(openingRegistration.status,'COMPLETED',JSON.stringify(openingRegist
 const openingTextileFactory=sharedFactoryRegistry.find(asset=>
   asset.sourceType==='COUNTRY_STARTING_FACTORY_BASELINE'&&asset.factoryType==='TEXTILE_GARMENT_MILL');
 assert.ok(openingTextileFactory,'starting allocation must become a normal live factory asset');
+assert.equal(openingTextileFactory.ownerId,'STATE_INDUSTRY_BGD');
+assert.equal(openingTextileFactory.ownerType,'STATE_OWNED_ENTERPRISE');
+assert.equal(openingTextileFactory.operatorId,'STATE_INDUSTRY_BGD');
+assert.equal(openingTextileFactory.operatorType,'STATE_ENTERPRISE_OPERATOR');
+assert.equal(openingTextileFactory.companyId,'STATE_INDUSTRY_BGD');
+assert.equal(openingTextileFactory.stateControlRights.operationalControl,'STATE_OPERATOR');
 assert.ok(sharedFactoryRegistry.includes(fx),'the previously constructed factory must remain in the same registry');
 assert.ok(sharedFactoryRegistry.includes(openingTextileFactory),'the starting factory must join that registry');
 assert.strictEqual(context.Game.state.economy.BGD.productionAssets,sharedFactoryRegistry,
@@ -323,6 +356,35 @@ assert.ok(N.candidateFactories('BGD','cotton_fibre').some(row=>row.asset.id===op
   'the starting factory must be eligible in the same runtime input-routing and production path');
 assert.ok(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===fx.id),
   'the player-built factory must remain eligible in that same runtime path');
+
+// Simulate an older saved baseline asset that predates explicit owner/operator fields.
+// Re-registration must repair only this known government baseline record, without respawning it.
+['ownerId','ownerCompanyId','ownerType','operatorId','operatorCompanyId','operatorType','companyId',
+  'stateControlRights','ownershipMetadataAuthority'].forEach(key=>delete openingTextileFactory[key]);
+const legacyEpcFactory={
+  id:'LEGACY-EPC-FACTORY',countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+  status:'OPERATIONAL',authority:'SIMULATED_FACTORY_ASSET',companyId:'EPC_FACTORY_OWNER'
+};
+sharedFactoryRegistry.push(legacyEpcFactory);
+const repairedOpeningRegistration=N.registerStartingFactoryAssets({
+  countryId:'BGD',factoryCounts:openingFactoryCounts,sessionId:'SAME-RUNTIME-STARTING-FACTORY-TEST',
+  datasetVersion:'SAME_RUNTIME_BASELINE_V1'
+});
+assert.equal(repairedOpeningRegistration.status,'ALREADY_REGISTERED');
+assert.equal(openingTextileFactory.ownerId,'STATE_INDUSTRY_BGD');
+assert.equal(openingTextileFactory.operatorId,'STATE_INDUSTRY_BGD');
+assert.equal(openingTextileFactory.stateControlRights.authority,'OMEGA_STATE_FACTORY_OWNERSHIP_V1');
+assert.equal(legacyEpcFactory.ownerId,'STATE_INDUSTRY_BGD',
+  'legacy EPC sentinel must be migrated to the state owner, not retained as a private owner');
+assert.equal(legacyEpcFactory.operatorId,'STATE_INDUSTRY_BGD');
+assert.equal(legacyEpcFactory.companyId,'STATE_INDUSTRY_BGD',
+  'the compatibility operating-company field must no longer point to the EPC sentinel');
+assert.equal(legacyEpcFactory.legacyCompanyAttributionId,'EPC_FACTORY_OWNER',
+  'the historical sentinel must remain auditable after migration');
+assert.strictEqual(context.Game.state.economy.BGD.productionAssets,sharedFactoryRegistry,
+  'ownership repair must not replace or fork the shared production asset registry');
+assert.equal(sharedFactoryRegistry.filter(asset=>asset.sourceType==='COUNTRY_STARTING_FACTORY_BASELINE'&&
+  asset.factoryType==='TEXTILE_GARMENT_MILL').length,1,'legacy repair must not duplicate the baseline factory');
 
 const importCapability={technologyId:'AUTONOMOUS_MINE_HAULAGE',targetSiteId:'*',targetResourceId:'coal',targetSiteType:'*',status:'COMPLETE',effects:catalog.technologyProjects.AUTONOMOUS_MINE_HAULAGE.effects};
 context.Game.state.resource.USA={technologyCapabilities:[importCapability]};
@@ -508,6 +570,18 @@ const builtOutputBatch=context.Game.state.resource.BGD.batches.find(row=>
   row.stage==='FINISHED'&&row.resourceId==='IRON_CONCENTRATE'&&
   (row.sourceBatchIds||[]).includes('BATCH-E2E-IRON-02'));
 assert.ok(builtOutputBatch,'finished product batch must retain lineage to the mine-produced source batch');
+assert.equal(builtOutputBatch.status,'AVAILABLE',
+  'newly completed output batches must be eligible for sale/procurement without a legacy status repair');
+assert.equal(builtOutputBatch.sourceFactoryId,builtFactoryId,
+  'finished batches must retain the canonical factory asset that manufactured them');
+const builtOutputLot=context.Game.state.resource.BGD.inventoryLots[builtOutputBatch.batchId];
+assert.ok(builtOutputLot,'the finished batch must have a matching lot');
+assert.equal(builtOutputLot.status,'AVAILABLE');
+assert.equal(builtOutputLot.sourceFactoryId,builtFactoryId,
+  'the lot must retain the same factory provenance as its batch');
+assert.equal(builtOutputLot.ownerCompanyId,builtOutputBatch.ownerCompanyId);
+assert.equal(builtOutputLot.operatorCompanyId,builtOutputBatch.operatorCompanyId);
+assert.equal(builtOutputLot.ownerAttributionStatus,builtOutputBatch.ownerAttributionStatus);
 const builtDeliveryAfterCycle=(context.Game.state.resource.BGD.industrialNetwork.deliveries||[])
   .find(row=>String(row.shipmentId)===String(builtFactoryShipment.shipmentId));
 assert.ok(builtDeliveryAfterCycle,'the persisted delivered-input ledger row must survive cycle completion');
@@ -758,6 +832,11 @@ const decommissionAsset = {
   id:'FAC-DECOMMISSION-TEST',
   factoryType:'STEEL_AND_ALLOY_WORKS',
   status:'OPERATIONAL',
+  ownerType:'PRIVATE_ENTERPRISE',
+  ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',
+  operatorType:'PRIVATE_COMPANY_OPERATOR',
+  operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+  companyId:'MERIDIAN_ENGINEERING_GROUP',
   capacityPerDay:100,
   inputBatchLots:[{
     batchId:'INPUT:DECOMMISSION-TEST',
@@ -792,6 +871,14 @@ const decommissionResult = N.decommissionFactory({
 });
 assert.equal(decommissionResult.status,'DECOMMISSIONED');
 assert.equal(decommissionAsset.status,'DECOMMISSIONED');
+assert.equal(decommissionAsset.ownerType,'PRIVATE_ENTERPRISE');
+assert.equal(decommissionAsset.ownerCompanyId,'NOVA_CONSUMER_INDUSTRIES',
+  'decommissioning preserves the canonical private factory owner');
+assert.equal(decommissionAsset.operatorType,'PRIVATE_COMPANY_OPERATOR');
+assert.equal(decommissionAsset.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP',
+  'decommissioning preserves the distinct operating company');
+assert.equal(decommissionAsset.companyId,'MERIDIAN_ENGINEERING_GROUP',
+  'legacy factory company attribution remains aligned to its operator');
 assert.equal(decommissionAsset.productionHealth.status,'STOPPED');
 assert.equal(decommissionAsset.productionHealth.reason,'FACTORY_DECOMMISSIONED_BY_PLAYER');
 assert.equal(decommissionAsset.activeProductionCycleId,null);
@@ -1232,6 +1319,8 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
 // collection used by factory construction, input routing, production and decommissioning.
 {
   const previousState=context.Game.state;
+  const simulationClock=context.Omega?.Simulation?.clock;
+  const priorGameDaysPerTurn=simulationClock?.gameDaysPerTurn;
   try {
     context.Game.state={
       simulation:{turn:1,playerCountryId:'BGD',session:{sessionId:'STARTING-FACTORY-ASSET-TEST',playerCountryId:'BGD',status:'READY',createdTurn:1}},
@@ -1376,9 +1465,114 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     const activeTypes=assets.filter(asset=>!['DECOMMISSIONED','DESTROYED'].includes(String(asset.status||'').toUpperCase()));
     assert.equal(activeTypes.length,1,'one textile factory remains active after the other textile and universal plant are retired');
     assert.equal(assets.length,3,'decommissioning preserves the historical asset record');
+    // A private expansion must preserve a private owner and private operator through commissioning.
+    const privateBuildProfile=catalog.factoryProfiles.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT;
+    for(const [materialId,requiredQty] of Object.entries(privateBuildProfile.constructionMaterials||{})){
+      resourceState.inventory[materialId]=(Number(resourceState.inventory[materialId])||0)+Number(requiredQty);
+      resourceState.warehouse.availableByResource[materialId]=(Number(resourceState.warehouse.availableByResource[materialId])||0)+Number(requiredQty);
+    }
+    // The central Simulation clock owns turn duration when stepDurationMs is configured.
+    // Set its explicit game-day bridge instead of relying on the legacy state field.
+    if(simulationClock)simulationClock.gameDaysPerTurn=30;
+    context.Game.state.simulation.daysPerTurn=30;
+    const privateProjectInput={
+      countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',resourceId:'iron_ore',
+      capacityPerDay:800,buildDays:30,requiredTechnologyIds:[],factoryId:'FAC-PRIVATE-OWNER-OPERATOR-TEST',
+      requestId:'PRIVATE-PROPOSAL-TEST:UNIT:1',
+      ownershipModel:'PRIVATE_ENTERPRISE',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP',
+      operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',companyId:'AURORA_INDUSTRIAL_GROUP',
+      privateCompanyId:'AURORA_INDUSTRIAL_GROUP',
+      ownerType:'PRIVATE_ENTERPRISE',operatorType:'PRIVATE_COMPANY_OPERATOR',
+      stateControlRights:{strategicOversight:true,licensingAndPermits:true,domesticSupplyDirection:true,
+        exportControl:true,publicProcurement:true,operationalControl:'STATE_POLICY_ONLY'},
+      permitId:'PERMIT-PRIVATE-TEST',permitAuthority:'OMEGA_PRIVATE_ENTERPRISE_LICENSING_V1',permitExpiryTurn:20,
+      sourcePrivateProposalId:'PRIVATE-PROPOSAL-TEST',sourcePrivateDecisionId:'PRIVATE-DECISION-TEST',
+      sourcePrivateFundingId:'PRIVATE-FUNDING-TEST',constructionFinanceAuthority:'OMEGA_FINANCE_PRIVATE_ENTERPRISE_CAPITAL',
+      requirePrivateCommissioningGate:true,cost:100
+    };
+    const unauthorizedPrivateProject=N.startFactoryProject(privateProjectInput);
+    assert.equal(unauthorizedPrivateProject.status,'BLOCKED');
+    assert.equal(unauthorizedPrivateProject.reason,'PRIVATE_FACTORY_CONSTRUCTION_AUTHORIZATION_RUNTIME_UNAVAILABLE');
+    assert.equal(resourceState.industrialNetwork.projects.some(project=>project.factoryId===privateProjectInput.factoryId),false,
+      'direct private construction must fail closed when the lifecycle authority is absent');
+    let privateProofReady=false;
+    context.OmegaPrivateEnterpriseLifecycleV1={
+      companyIds:['AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP','NOVA_CONSUMER_INDUSTRIES',
+        'ATLAS_TECHNOLOGY_CORPORATION','TERRA_INFRASTRUCTURE_GROUP'],
+      authorizeFactoryProjectConstruction(input){
+        const valid=input.requestId==='PRIVATE-PROPOSAL-TEST:UNIT:1'&&
+          input.ownerCompanyId==='AURORA_INDUSTRIAL_GROUP'&&input.operatorCompanyId==='MERIDIAN_ENGINEERING_GROUP'&&
+          input.permitId==='PERMIT-PRIVATE-TEST'&&input.sourcePrivateFundingId==='PRIVATE-FUNDING-TEST'&&
+          input.requirePrivateCommissioningGate===true;
+        return valid?{status:'AUTHORIZED'}:{status:'BLOCKED',reason:'TEST_PRIVATE_AUTHORIZATION_REJECTED'};
+      },
+      productionProofReady(){return privateProofReady;},
+      refreshCommissionedProductionGate(_country,factoryId){
+        if(!privateProofReady)return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE'};
+        const asset=context.Game.state.economy.BGD.productionAssets.find(row=>row.id===factoryId);
+        if(!asset)return{status:'BLOCKED',reason:'PRIVATE_FACTORY_NOT_FOUND'};
+        asset.status='OPERATIONAL';asset.productionEnabled=true;asset.blockedReason=null;
+        return{status:'READY',restoredFactoryIds:[factoryId]};
+      }
+    };
+    const privateFactoryProject=N.startFactoryProject(privateProjectInput);
+    assert.equal(privateFactoryProject.status,'UNDER_CONSTRUCTION',JSON.stringify(privateFactoryProject));
+    assert.equal(privateFactoryProject.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+    assert.equal(privateFactoryProject.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+    assert.equal(privateFactoryProject.companyId,'MERIDIAN_ENGINEERING_GROUP');
+    assert.equal(privateFactoryProject.operatorType,'PRIVATE_COMPANY_OPERATOR');
+    assert.equal(privateFactoryProject.stateControlRights.operationalControl,'STATE_POLICY_ONLY');
+    const forbiddenStateOperator=N.startFactoryProject({
+      countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',resourceId:'iron_ore',
+      capacityPerDay:800,buildDays:30,requiredTechnologyIds:[],factoryId:'FAC-PRIVATE-STATE-OPERATOR-REJECT',
+      ownershipModel:'PRIVATE_ENTERPRISE',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP',
+      operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      stateControlRights:{operationalControl:'STATE_OPERATOR'}
+    });
+    assert.equal(forbiddenStateOperator.status,'BLOCKED');
+    assert.equal(forbiddenStateOperator.reason,'PRIVATE_FACTORY_CANNOT_ASSIGN_STATE_AS_OWNER_OR_DAILY_OPERATOR');
+    assert.equal(resourceState.industrialNetwork.projects.some(project=>project.factoryId==='FAC-PRIVATE-STATE-OPERATOR-REJECT'),false,
+      'invalid state operator must be rejected before any construction project is created');
+    context.Game.state.simulation.turn+=1;
+    N.advanceProjects('BGD');
+    const commissionedPrivateFactory=resourceState===context.Game.state.resource.BGD
+      ?context.Game.state.economy.BGD.productionAssets.find(asset=>asset.id==='FAC-PRIVATE-OWNER-OPERATOR-TEST'):null;
+    assert.ok(commissionedPrivateFactory,'approved private project must commission into the shared productionAssets collection');
+    assert.equal(commissionedPrivateFactory.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+    assert.equal(commissionedPrivateFactory.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+    assert.equal(commissionedPrivateFactory.companyId,'MERIDIAN_ENGINEERING_GROUP');
+    assert.equal(commissionedPrivateFactory.ownerType,'PRIVATE_ENTERPRISE');
+    assert.equal(commissionedPrivateFactory.operatorType,'PRIVATE_COMPANY_OPERATOR');
+    assert.equal(commissionedPrivateFactory.stateControlRights.operationalControl,'STATE_POLICY_ONLY');
+    assert.equal(commissionedPrivateFactory.privatePermitId,'PERMIT-PRIVATE-TEST');
+    assert.equal(commissionedPrivateFactory.privatePermitStatus,'ACTIVE');
+    assert.equal(commissionedPrivateFactory.sourcePrivateProposalId,'PRIVATE-PROPOSAL-TEST');
+    assert.equal(commissionedPrivateFactory.productionEnabled,false);
+    assert.equal(commissionedPrivateFactory.status,'BLOCKED');
+    assert.equal(commissionedPrivateFactory.blockedReason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE');
+    const privateProductionAttempt=N.startFactoryProductionCycle({countryId:'BGD',factoryId:commissionedPrivateFactory.id,resourceId:'iron_ore'});
+    assert.equal(privateProductionAttempt.status,'BLOCKED');
+    assert.equal(privateProductionAttempt.reason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',
+      'private factory must remain blocked until the canonical production runtime and lifecycle authorization are available');
+    assert.equal(resourceState.industrialNetwork.factoryProductionCycles[commissionedPrivateFactory.id],undefined);
+    privateProofReady=true;
+    assert.doesNotThrow(()=>N.startFactoryProductionCycle({
+      countryId:'BGD',factoryId:commissionedPrivateFactory.id,resourceId:'iron_ore'
+    }), 'proof-ready private operation gate must resolve canonical company IDs without runtime ReferenceError');
+    assert.notEqual(commissionedPrivateFactory.blockedReason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE');
+    assert.equal(commissionedPrivateFactory.productionEnabled,true,
+      'a valid proof may restore authorization, after which ordinary workforce, utility and stock gates still apply');
+    assert.equal(commissionedPrivateFactory.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+    assert.equal(commissionedPrivateFactory.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+    assert.equal(commissionedPrivateFactory.stateControlRights.domesticSupplyDirection,true);
+    assert.equal(commissionedPrivateFactory.stateControlRights.exportControl,true);
+    assert.notEqual(commissionedPrivateFactory.ownerCompanyId,commissionedPrivateFactory.operatorCompanyId);
+    assert.ok(!['STATE_OPERATOR','STATE_ENTERPRISE_OPERATOR'].includes(
+      commissionedPrivateFactory.stateControlRights.operationalControl));
     console.log('OMEGA STARTING FACTORY LIVE REGISTRY / ADD / DESTROY REGRESSION PASSED');
   } finally {
     context.Game.state=previousState;
+    if(simulationClock)simulationClock.gameDaysPerTurn=priorGameDaysPerTurn;
   }
 }
 

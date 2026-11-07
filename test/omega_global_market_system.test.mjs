@@ -65,6 +65,17 @@ assert.equal(blockedByNavalBlockade.crude_oil.clearing.matchedQuantity,0);
 assert.equal(blockedByNavalBlockade.crude_oil.clearing.blockedTradePairs.some(x=>x.reason==='RESOURCE_ROUTE_BLOCKADE_ACTIVE'),true);
 assert.equal(market.suppliers('crude_oil',1,'BDG').some(x=>x.countryId==='SAU'),false,'a blockaded seller must not appear in eligible suppliers');
 assert.equal(policy.liftBlockade('BDG',{policyId:'MARKET-BLOCKADE-TEST'}).accepted,true);
+const domesticOnly=policy.setSupplyDirective('SAU',{directive:'DOMESTIC_ONLY',resourceId:'crude_oil',
+  policyId:'MARKET-DOMESTIC-ONLY-TEST',reason:'Domestic supply shortage'});
+assert.equal(domesticOnly.accepted,true,JSON.stringify(domesticOnly));
+const stateRestrictedBooks=market.rebuild();
+assert.equal(stateRestrictedBooks.crude_oil.clearing.matchedQuantity,0,
+  'state domestic-only instruction must prevent an otherwise price-eligible cross-border market match');
+assert.equal(stateRestrictedBooks.crude_oil.clearing.blockedTradePairs.some(x=>
+  x.reason==='STATE_DIRECTIVE_DOMESTIC_ONLY'),true);
+assert.equal(market.suppliers('crude_oil',1,'BDG').some(x=>x.countryId==='SAU'),false,
+  'state-restricted exports must not appear in the eligible supplier list');
+assert.equal(policy.liftSupplyDirective('SAU',{policyId:'MARKET-DOMESTIC-ONLY-TEST'}).accepted,true);
 const books=market.rebuild();
 assert(books.crude_oil);
 const q=market.quote('crude_oil');

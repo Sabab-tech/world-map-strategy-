@@ -145,6 +145,13 @@
         const sellerBlockade=strategicPolicy?.isRouteBlocked?.(ask.countryId,{resourceId:rid,transportMode:routeMode,routeId:ask.routeId,siteId:ask.siteId});
         if(buyerBlockade?.blocked||sellerBlockade?.blocked){blockedPairs.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,resourceId:rid,reason:'RESOURCE_ROUTE_BLOCKADE_ACTIVE',blockades:[...(buyerBlockade?.blockades||[]),...(sellerBlockade?.blockades||[])]});continue;}
         const q=Math.min(bid.remaining,ask.remaining);if(!(q>0))continue;
+        const stateDirective=strategicPolicy?.evaluateExportDirective?.(ask.countryId,bid.countryId,rid,q,
+          ask.governmentContractId||bid.governmentContractId);
+        if(stateDirective&&stateDirective.allowed===false){
+          blockedPairs.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,resourceId:rid,
+            reason:stateDirective.reason||'STATE_SUPPLY_DIRECTIVE_BLOCKED',stateSupplyDirective:stateDirective});
+          continue;
+        }
         matched+=q;lastBid=bid;lastAsk=ask;
         matches.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,quantity:q,bidPriceUsd:bid.priceUsd,askPriceUsd:ask.priceUsd,bidPrice:bid.price,askPrice:ask.price,referenceLiquidity:!!ask.referenceOnly});
         bid.remaining-=q;ask.remaining-=q;
@@ -209,6 +216,11 @@
       const spr=countryValue(c,'resource.strategicReserve'),protectedStock=n(spr?.availableByResource?.[rid])||0;
       const available=n(tradeable?.[rid])??Math.max(0,(n(inv?.[rid])||0)-protectedStock)+(n(prod?.[rid])||0);
       if(available<=0||available<quantity)continue;
+      if(target){
+        const stateDirective=strategicPolicy?.evaluateExportDirective?.(c,target,rid,
+          quantity>0?Math.min(quantity,available):available,null,{[rid]:available});
+        if(stateDirective&&stateDirective.allowed===false)continue;
+      }
       const q=quote(rid),rel=countryValue(target,'foreign.relations')?.[c]||countryValue(c,'foreign.relations')?.[target]||null;
       out.push({countryId:c,resourceId:rid,available,marketQuote:q,relationObserved:!!rel,tradeAgreementObserved:rel?.trade_agreement===true});
     }

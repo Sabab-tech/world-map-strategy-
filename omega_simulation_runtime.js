@@ -68,12 +68,75 @@
       .map(key=>JSON.stringify(key)+':'+stableStringify(value[key])).join(',')+'}';
   }
 
-  function checksumSnapshot(value){
-    // Exclude only the top-level checksum without cloning the full snapshot.
-    const text=stableStringify(value||{},true);
+  function checksumText(text){
     let hash=2166136261;
     for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
     return (hash>>>0).toString(16).padStart(8,'0');
+  }
+
+  function checksumSnapshot(value){
+    // Exclude only the top-level checksum without cloning the full snapshot.
+    return checksumText(stableStringify(value||{},true));
+  }
+
+  function createSaveSnapshot(runtime,options={},referenceWorldState=false){
+    const snapshot={
+      schemaVersion:SESSION_VERSION,
+      runtimeVersion:VERSION,
+      status:runtime.status,
+      clock:runtime.clock.snapshot(),
+      // saveSlot serializes synchronously before its first await, so it may
+      // safely capture the authoritative root by reference and avoid allocating
+      // a second full copy of a very large world. Public saveState() keeps the
+      // detached deep-clone contract by default.
+      worldState:referenceWorldState?runtime.world.state:runtime.world.snapshot(),
+      commands:runtime.commandQueue.snapshot(),
+      events:runtime.events.snapshot(),
+      ministryRuntime:runtime.ministryRuntime?.saveState?.()||null,
+      interoperability:runtime.interoperability?.saveState?.()||null,
+      worldEngine:runtime.worldEngine?.exportSaveState?.({authoritativeState:true})||null
+    };
+    // Volatile diagnostics duplicate large participant results already held in
+    // runtime memory. Callers can omit them from routine durable autosaves.
+    if(options.includeDiagnostics!==false)snapshot.diagnostics=runtime.diagnostics();
+    return snapshot;
+  }
+
+  function indexedDbSaveRequest(indexedDB,operation,key,value){
+    return new Promise((resolve,reject)=>{
+      let database=null,settled=false;
+      const finish=(error,result)=>{
+        if(settled)return;
+        settled=true;
+        try{if(database)database.close();}catch(_){}
+        if(error)reject(error);else resolve(result);
+      };
+      let opening;
+      try{opening=indexedDB.open('omega-simulation-save-slots',1);}
+      catch(error){finish(error);return;}
+      opening.onupgradeneeded=()=>{
+        const db=opening.result;
+        if(!db.objectStoreNames.contains('slots'))db.createObjectStore('slots');
+      };
+      opening.onerror=()=>finish(opening.error||new Error('SAVE_DATABASE_OPEN_FAILED'));
+      opening.onblocked=()=>finish(new Error('SAVE_DATABASE_OPEN_BLOCKED'));
+      opening.onsuccess=()=>{
+        database=opening.result;
+        let transaction;
+        try{transaction=database.transaction('slots',operation==='put'?'readwrite':'readonly');}
+        catch(error){finish(error);return;}
+        let request,result=null;
+        transaction.oncomplete=()=>finish(null,result);
+        transaction.onerror=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_FAILED'));
+        transaction.onabort=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_ABORTED'));
+        try{
+          const store=transaction.objectStore('slots');
+          request=operation==='put'?store.put(String(value),String(key)):store.get(String(key));
+          request.onsuccess=()=>{result=request.result===undefined?null:request.result;};
+          request.onerror=()=>finish(request.error||new Error('SAVE_DATABASE_REQUEST_FAILED'));
+        }catch(error){try{transaction.abort();}catch(_){}finish(error);}
+      };
+    });
   }
 
   function validateWorldSaveState(root){
@@ -374,11 +437,13 @@
       return clone(this.state);
     }
 
-    restore(snapshot){
+    restore(snapshot,options={}){
       if(!snapshot||typeof snapshot!=='object')throw new Error('INVALID_AUTHORITATIVE_WORLD_SNAPSHOT');
       replaceContents(this.state,snapshot);
       this.ensureCore();
-      return this.snapshot();
+      // loadState consumes the restored root directly. Avoid creating a second
+      // full detached snapshot when its caller does not use the return value.
+      return options.returnSnapshot===false?this.state:this.snapshot();
     }
   }
 
@@ -922,21 +987,7 @@
     }
 
     saveState(options={}){
-      const snapshot={
-        schemaVersion:SESSION_VERSION,
-        runtimeVersion:VERSION,
-        status:this.status,
-        clock:this.clock.snapshot(),
-        worldState:this.world.snapshot(),
-        commands:this.commandQueue.snapshot(),
-        events:this.events.snapshot(),
-        ministryRuntime:this.ministryRuntime?.saveState?.()||null,
-        interoperability:this.interoperability?.saveState?.()||null,
-        worldEngine:this.worldEngine?.exportSaveState?.({authoritativeState:true})||null
-      };
-      // Volatile diagnostics duplicate large participant results already held in
-      // runtime memory. Callers can omit them from routine durable autosaves.
-      if(options.includeDiagnostics!==false)snapshot.diagnostics=this.diagnostics();
+      const snapshot=createSaveSnapshot(this,options);
       snapshot.checksum=checksumSnapshot(snapshot);
       return snapshot;
     }
@@ -955,7 +1006,10 @@
       // Snapshots without a checksum are accepted only as legacy saves for compatibility;
       // all newly generated snapshots are checksummed before persistence.
       this.lastLoadIntegrity=snapshot.checksum?'VERIFIED':'LEGACY_UNVERIFIED';
-      this.world.restore(snapshot.worldState);
+      // Restore the validated save into the existing authoritative root. The
+      // recursive copy keeps caller-provided and cross-realm parsed snapshots
+      // isolated, while skipping the unused second detached snapshot.
+      this.world.restore(snapshot.worldState,{returnSnapshot:false});
       // Migrate legacy hourly saves into the canonical daily-turn timeline.
       // A simulation turn is one game day; wall-clock speed is controlled separately.
       const restoredClock=clone(snapshot.clock);
@@ -1004,18 +1058,59 @@
       return this.diagnostics();
     }
 
-    saveSlot(slot='default'){
-      if(typeof global.localStorage==='undefined')throw new Error('LOCAL_STORAGE_UNAVAILABLE');
+    async saveSlot(slot='default'){
       const key='omega.game.save.'+String(slot||'default');
-      global.localStorage.setItem(key,JSON.stringify(this.saveState()));
-      return {ok:true,key,turn:this.clock.turn};
+      // Volatile diagnostics are not part of the durable game state. Serialize
+      // the canonical snapshot once, then hash and inject its root checksum into
+      // that same JSON string. The previous path walked the entire world twice
+      // (stable checksum serialization + JSON.stringify), blocking the browser
+      // main thread on large country/economy saves.
+      const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},true);
+      const canonical=stableStringify(snapshot,true);
+      const checksum=checksumText(canonical);
+      snapshot.checksum=checksum;
+      const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
+        (canonical.length>2?',':'')+canonical.slice(1);
+      if(global.indexedDB&&typeof global.indexedDB.open==='function'){
+        try{
+          await indexedDbSaveRequest(global.indexedDB,'put',key,serialized);
+          return {ok:true,key,turn:this.clock.turn,storage:'INDEXEDDB'};
+        }catch(indexedDbError){
+          // Preserve compatibility with browsers where IndexedDB is disabled
+          // or unavailable. The fallback may still fail on large saves, in
+          // which case the original storage error is included in the message.
+          try{
+            if(typeof global.localStorage!=='undefined'){
+              global.localStorage.setItem(key,serialized);
+              return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
+            }
+          }catch(localStorageError){
+            throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; INDEXEDDB:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
+          }
+          throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
+        }
+      }
+      if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
+      global.localStorage.setItem(key,serialized);
+      return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
     }
 
-    loadSlot(slot='default'){
-      if(typeof global.localStorage==='undefined')throw new Error('LOCAL_STORAGE_UNAVAILABLE');
+    async loadSlot(slot='default'){
       const key='omega.game.save.'+String(slot||'default');
-      const raw=global.localStorage.getItem(key);
-      if(!raw)throw new Error('SAVE_SLOT_NOT_FOUND:'+key);
+      let raw=null,indexedDbError=null;
+      if(global.indexedDB&&typeof global.indexedDB.open==='function'){
+        try{raw=await indexedDbSaveRequest(global.indexedDB,'get',key);}
+        catch(error){indexedDbError=error;}
+      }
+      // Read legacy localStorage saves when no IndexedDB record exists. Existing
+      // saves remain valid and are not deleted during migration.
+      if(raw===null||raw===undefined){
+        if(typeof global.localStorage!=='undefined')raw=global.localStorage.getItem(key);
+      }
+      if(!raw){
+        if(indexedDbError)throw new Error('SAVE_SLOT_NOT_FOUND:'+key+'; INDEXEDDB:'+String(indexedDbError.message||indexedDbError));
+        throw new Error('SAVE_SLOT_NOT_FOUND:'+key);
+      }
       return this.loadState(JSON.parse(raw));
     }
 

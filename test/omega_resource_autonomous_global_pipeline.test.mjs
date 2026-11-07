@@ -159,6 +159,7 @@ function seedTestFactory(state,site,resourceId){
     outputProfile:{...(processing.outputs||{})},cycleDays:Number(processing.cycleDays)||1,
     inputInventory:{},inputBatchLots:[],transportAccess:['truck','rail','ship','pipeline'],
     locationNodeKey:'TEST_FACTORY:'+cid+':'+site.siteId,
+    ownerCompanyId:'TEST_FACTORY_OWNER_'+cid,operatorCompanyId:'TEST_FACTORY_OPERATOR_'+cid,
     simulationOnly:true,authority:'SIMULATED_TEST_FIXTURE'
   };
   assets.push(asset);
@@ -295,9 +296,26 @@ test('every committed deposit event is routed country-by-country through factory
     assert.ok(flow.createdBatchIds.length>0);
     assert.equal(flow.countryId,c);
     assert.ok((state.trade[c].offerBook||[]).some(x=>x.resourceId===f.output&&x.quantity>0),JSON.stringify(state.trade[c].offerBook));
+    const outputBatches=flow.createdBatchIds.map(id=>(rs.batches||[]).find(batch=>String(batch.batchId)===String(id)))
+      .filter(batch=>batch&&String(batch.resourceId||'')===String(f.output)&&
+        Math.max(0,Number(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0)>1e-9);
+    assert.ok(outputBatches.length>0,'settlement must reference finished goods batches created by this factory run');
+    assert.ok(outputBatches.every(batch=>batch.ownerCompanyId&&batch.ownerAttributionStatus==='EXPLICIT_ASSET_OWNER'),
+      'finished goods must preserve explicit source factory owner attribution');
+    const batchTransfers=outputBatches.map(batch=>({
+      sourceBatchId:batch.batchId,
+      sourceBatchIds:[...new Set([...(Array.isArray(batch.sourceBatchIds)?batch.sourceBatchIds:[]),f.batchId].filter(Boolean).map(String))],
+      resourceId:f.output,quantity:Math.max(0,Number(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0),
+      stage:batch.stage,ownerCompanyId:batch.ownerCompanyId,operatorCompanyId:batch.operatorCompanyId,
+      ownerAttributionStatus:batch.ownerAttributionStatus,unit:batch.unit||null
+    }));
+    const settlementQuantity=batchTransfers.reduce((sum,row)=>sum+Math.max(0,Number(row.quantity)||0),0);
+    assert.ok(batchTransfers.every(row=>row.sourceBatchIds.includes(f.batchId)),
+      'finished-goods settlement must retain ancestry to its originating deposit');
+    assert.ok(settlementQuantity>0,'settlement must be backed by positive finished-batch stock');
     g.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',countryId:c,payload:{
-      settlementId:'AUTO-SETTLEMENT-'+c+'-'+f.output,sellerCountryId:c,resourceId:f.output,quantity:Number(rs.inventory[f.output]),
-      totalValue:50000,batchTransfers:[{sourceBatchId:f.batchId,sourceBatchIds:[f.batchId]}]
+      settlementId:'AUTO-SETTLEMENT-'+c+'-'+f.output,sellerCountryId:c,resourceId:f.output,quantity:settlementQuantity,
+      totalValue:50000,batchTransfers
     }}}));
     assert.ok(Number(state.finance[c].resourceFiscal?.thisTurn?.total)>0,'country-specific treasury must receive fiscal receipts from its own settlement');
     assert.ok((flow.treasurySettlements||[]).some(x=>x.settlementId==='AUTO-SETTLEMENT-'+c+'-'+f.output),
@@ -535,12 +553,17 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
       const transfers=allocations.map(allocation=>{
         const roots=[...new Set([allocation.originatingBatchId,...(allocation.sourceBatchIds||[])].map(String).filter(Boolean))];
         const quantity=Math.max(0,Number(allocation.quantity)||0),unitPrice=Math.max(0,Number(offer.price)||0);
-        return{sourceBatchId:allocation.originatingBatchId||allocation.batchId||null,sourceBatchIds:roots,
+        const physicalBatchId=String(allocation.batchId||'').trim();
+        return{sourceBatchId:physicalBatchId||allocation.originatingBatchId||null,
+          sourceBatchIds:roots.filter(id=>id!==physicalBatchId),
+          ownerCompanyId:allocation.ownerCompanyId||null,
+          operatorCompanyId:allocation.operatorCompanyId||null,
+          ownerAttributionStatus:allocation.ownerAttributionStatus||'NOT_RECORDED',
           siteId:allocation.siteId||null,siteReferenceKey:allocation.siteReferenceKey||allocation.siteId||null,
           occurrenceKey:allocation.occurrenceKey||null,resourceId:offer.resourceId,
           quantity,unitPrice,totalValue:quantity*unitPrice};
       }).filter(transfer=>transfer.sourceBatchId||transfer.sourceBatchIds.length);
-      const sourceBatchIds=[...new Set(transfers.flatMap(transfer=>[transfer.sourceBatchId,...transfer.sourceBatchIds].filter(Boolean).map(String)))];
+      const sourceBatchIds=[...new Set(transfers.flatMap(transfer=>transfer.sourceBatchIds||[]).filter(Boolean).map(String))];
       if(!sourceBatchIds.some(id=>expectedRawBatchIds.has(id)))continue;
       const totalValue=Number(offer.quantity)*Number(offer.price);
       assert.ok(totalValue>0,cid+': settlement value must be positive for '+offer.resourceId);

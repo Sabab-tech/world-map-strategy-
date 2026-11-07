@@ -1,4 +1,8 @@
 name: OMEGA Android 9 Offline Gameplay Smoke
+concurrency:
+  group: omega-android9-gameplay-smoke-${{ github.event.pull_request.number || github.ref }}-${{ github.run_id }}
+  cancel-in-progress: false
+
 
 on:
   workflow_dispatch:
@@ -11,6 +15,12 @@ on:
       - "omega_country_inventory_runtime_v1.js"
       - "omega_boot_performance_monitor_v1.js"
       - "omega_enterprise_composition_root_v10.js"
+      - "omega_private_enterprise_registry_v1.js"
+      - "omega_private_enterprise_lifecycle_v1.js"
+      - "scripts/omega_android9_offline_gameplay_smoke.sh"
+      - "country_private_factory_starting_baseline_v1.json"
+      - "omega_ui_v2/screens/industry.js"
+      - "omega_ui_v2/factory-production-command.css"
       - "omega-offline-map-sw.js"
       - "country_sector_profiles_v1.json"
       - "country_sector_profile_schema_v1.json"
@@ -29,6 +39,12 @@ on:
       - "omega_country_inventory_runtime_v1.js"
       - "omega_boot_performance_monitor_v1.js"
       - "omega_enterprise_composition_root_v10.js"
+      - "omega_private_enterprise_registry_v1.js"
+      - "omega_private_enterprise_lifecycle_v1.js"
+      - "scripts/omega_android9_offline_gameplay_smoke.sh"
+      - "country_private_factory_starting_baseline_v1.json"
+      - "omega_ui_v2/screens/industry.js"
+      - "omega_ui_v2/factory-production-command.css"
       - "omega-offline-map-sw.js"
       - "country_sector_profiles_v1.json"
       - "country_sector_profile_schema_v1.json"
@@ -40,11 +56,6 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  # CI smoke tests are disposable; newer commits must not wait behind stale emulator runs.
-  group: omega-android9-gameplay-smoke-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   offline-gameplay-smoke:
@@ -69,7 +80,7 @@ jobs:
         run: node --test test/omega_android_web_compat_v1.test.mjs
 
       - name: Build Android debug APK and instrumentation APK
-        run: gradle -p android assembleDebug assembleDebugAndroidTest --no-daemon
+        run: timeout --signal=TERM --kill-after=20s 15m gradle -p android assembleDebug assembleDebugAndroidTest --no-daemon
 
       - name: Run offline gameplay smoke on Android 9 emulator (API 28)
         uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
