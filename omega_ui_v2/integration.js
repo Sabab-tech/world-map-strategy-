@@ -267,22 +267,31 @@
       if (country) g.OmegaMinistryViewCountry = country;
       var supportedRoutes = ['map','overview','government','economy','more','industry','reports','religion','home-affairs','resources','ministry-detail','mine-detail'];
       var initialRoute = supportedRoutes.indexOf(mountOptions.initialRoute) >= 0 ? mountOptions.initialRoute : 'government';
-      var result = g.OmegaUIV2App.mount(root, {
+      var reusedApp = !!(root.__omegaUIV2State &&
+        typeof g.OmegaUIV2App.resume === 'function');
+      var appOptions = {
         initialRoute:initialRoute,
-        initialMinistryId:mountOptions.initialMinistryId || null,
+        initialMinistryId:mountOptions.initialMinistryId || (reusedApp ? mountOptions.ministryId || null : null),
         initialSection:mountOptions.initialSection || 'dashboard',
         initialResourceSiteId:mountOptions.initialResourceSiteId || null,
         initialGovernmentView:mountOptions.initialGovernmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry',
         initialHistory:Array.isArray(mountOptions.initialHistory) ? mountOptions.initialHistory : [],
         countryId:country,
-        countryOptions:availableCountryOptions(country),
+        // The canonical roster is static for this app session. Reuse it instead of
+        // resolving and sorting all 197 country profiles on every cabinet reopen.
+        countryOptions:reusedApp && root.__omegaUIV2State.options
+          ? root.__omegaUIV2State.options.countryOptions || []
+          : availableCountryOptions(country),
         onBackToMap:closeToWorldMap,
         onPrepareBackToMap:prepareCloseToWorldMap,
         onCountryChange:function (id) {
           var code = canonicalCountry(id);
           if (code) g.OmegaMinistryViewCountry = code;
         },
-      });
+      };
+      var result = reusedApp
+        ? g.OmegaUIV2App.resume(root, appOptions)
+        : g.OmegaUIV2App.mount(root, appOptions);
       if (!result || result.ok === false || result.mounted !== true) {
         lastError = result && result.code || 'UI_V2_MOUNT_FAILED';
         failClosed(root);
@@ -290,7 +299,7 @@
       }
       lastMount = { countryId:country || null, route:result.route || initialRoute || 'government', mounted:true };
       lastError = null;
-      if (mountOptions.ministryId && g.OmegaUIV2App && typeof g.OmegaUIV2App.openMinistry === 'function') { if (!g.OmegaUIV2App.openMinistry(root, mountOptions.ministryId)) { lastError = 'UI_V2_MINISTRY_ROUTE_FAILED'; failClosed(root); return { ok:false, code:lastError }; } lastMount.route = 'ministry-detail'; }
+      if (!reusedApp && mountOptions.ministryId && g.OmegaUIV2App && typeof g.OmegaUIV2App.openMinistry === 'function') { if (!g.OmegaUIV2App.openMinistry(root, mountOptions.ministryId)) { lastError = 'UI_V2_MINISTRY_ROUTE_FAILED'; failClosed(root); return { ok:false, code:lastError }; } lastMount.route = 'ministry-detail'; }
       return { ok:true, countryId:country || null, result:result, route:lastMount.route || mountOptions.initialRoute || 'government' };
     } catch (error) {
       lastError = String(error && error.message || error || 'UI_V2_MOUNT_EXCEPTION');
@@ -363,8 +372,9 @@
     var root = cabinetRoot();
     setV2CabinetActive(root, false);
     try {
-      if (root && g.OmegaUIV2App && root.__omegaUIV2State && typeof g.OmegaUIV2App.unmount === 'function') {
-        g.OmegaUIV2App.unmount(root);
+      if (root && g.OmegaUIV2App && root.__omegaUIV2State) {
+        if (typeof g.OmegaUIV2App.suspend === 'function') g.OmegaUIV2App.suspend(root);
+        else if (typeof g.OmegaUIV2App.unmount === 'function') g.OmegaUIV2App.unmount(root);
       }
     } catch (_) {}
     if (root) {
