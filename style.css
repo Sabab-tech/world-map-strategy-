@@ -5463,15 +5463,15 @@ body.modal-open .ui-bottom-navigation {
 
 /* Active resource-site interaction surface.
    The detailed presentation stylesheet is intentionally not linked by the current app shell.
-   Keep this minimum layout contract in the loaded stylesheet so the map-site controls sit
-   above the fixed country information card and remain clickable on mobile and desktop. */
+   Keep this layout contract in the loaded stylesheet so the map-site controls sit above the
+   active UI v2 cabinet stacking context as well as the country information card. */
 #omega-individual-resource-panel.omega-resource-site-panel {
     box-sizing: border-box !important;
     display: none;
     position: fixed !important;
     left: 12px !important;
     bottom: 64px !important;
-    z-index: 1000002 !important;
+    z-index: 2147483200 !important;
     width: min(430px, calc(100vw - 24px)) !important;
     max-width: calc(100vw - 24px) !important;
     max-height: 78vh !important;
