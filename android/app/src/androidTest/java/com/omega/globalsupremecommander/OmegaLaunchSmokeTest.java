@@ -68,25 +68,12 @@ public final class OmegaLaunchSmokeTest {
                     launchedActivity instanceof MainActivity);
 
             final Activity activity = launchedActivity;
-            final AtomicReference<WebView> webViewRef = new AtomicReference<>();
-            final AtomicReference<String> appUrlRef = new AtomicReference<>();
-            final AtomicReference<Boolean> javascriptEnabledRef = new AtomicReference<>(false);
-
-            instrumentation.runOnMainSync(() -> {
-                final WebView webView = findWebView(activity.getWindow().getDecorView());
-                webViewRef.set(webView);
-                if (webView != null) {
-                    appUrlRef.set(webView.getUrl());
-                    javascriptEnabledRef.set(webView.getSettings().getJavaScriptEnabled());
-                }
-            });
-
-            final WebView webView = webViewRef.get();
+            final WebView webView = findWebView(activity.getWindow().getDecorView());
             assertNotNull("MainActivity must display a native WebView", webView);
             assertEquals("The game must load from APK-bundled assets, not a remote host",
-                    APP_URL, appUrlRef.get());
+                    APP_URL, webView.getUrl());
             assertTrue("The bundled game requires JavaScript to be enabled",
-                    Boolean.TRUE.equals(javascriptEnabledRef.get()));
+                    webView.getSettings().getJavaScriptEnabled());
 
             String lastJavascriptResult = "not evaluated";
             boolean coreReady = false;
@@ -94,16 +81,13 @@ public final class OmegaLaunchSmokeTest {
                 final CountDownLatch callback = new CountDownLatch(1);
                 final AtomicReference<String> result = new AtomicReference<>();
 
-                instrumentation.runOnMainSync(() -> {
-                    if (!webView.isAttachedToWindow()) {
-                        callback.countDown();
-                        return;
-                    }
-                    webView.evaluateJavascript(CORE_READY_SCRIPT, value -> {
-                        result.set(value);
-                        callback.countDown();
-                    });
-                });
+                final boolean posted = webView.post(() ->
+                        webView.evaluateJavascript(CORE_READY_SCRIPT, value -> {
+                            result.set(value);
+                            callback.countDown();
+                        })
+                );
+                assertTrue("WebView must accept the asynchronous readiness check", posted);
 
                 final long remainingMs = Math.max(
                         1L,
@@ -130,8 +114,7 @@ public final class OmegaLaunchSmokeTest {
         } finally {
             instrumentation.removeMonitor(monitor);
             if (launchedActivity != null && !launchedActivity.isFinishing()) {
-                final Activity activityToClose = launchedActivity;
-                instrumentation.runOnMainSync(activityToClose::finish);
+                launchedActivity.runOnUiThread(launchedActivity::finish);
             }
         }
     }
