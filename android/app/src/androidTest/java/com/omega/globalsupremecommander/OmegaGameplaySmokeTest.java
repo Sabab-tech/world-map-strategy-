@@ -297,9 +297,10 @@ public final class OmegaGameplaySmokeTest {
                         "(function() {" +
                         " var cabinet = document.getElementById('cabinet-full-window');" +
                         " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                        " var mapRoot = document.getElementById('render-engine-root');" +
                         " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
                         "   cabinet.getAttribute('data-omega-v2-route') === '" + route + "' &&" +
-                        "   main && main.childElementCount > 0 && window.OmegaLayerManager &&" +
+                        "   main && main.childElementCount > 0 && mapRoot && mapRoot.style.display === 'none' && window.OmegaLayerManager &&" +
                         "   Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
                         "   document.body.getAttribute('data-active-layer') === '1');" +
                         "})()";
@@ -329,8 +330,10 @@ public final class OmegaGameplaySmokeTest {
             final String mapRestoredScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var mapRoot = document.getElementById('render-engine-root');" +
                     " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
                     "   cabinet.getAttribute('aria-hidden') === 'true' && cabinet.style.display === 'none' &&" +
+                    "   mapRoot && mapRoot.style.display !== 'none' &&" +
                     "   cabinet.__omegaUIV2State && cabinet.__omegaUIV2State.route === 'map' &&" +
                     "   cabinet.__omegaUIV2State.shellMounted === true &&" +
                     "   cabinet.querySelector('[data-omega-v2-main]') && cabinet.querySelector('[data-omega-v2-main]').childElementCount === 0 &&" +
@@ -347,6 +350,7 @@ public final class OmegaGameplaySmokeTest {
             }
             assertEquals("UI v2 exit must restore the map before reopening the cabinet",
                     "true", mapRestored);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=MAP_SURFACE_RESTORED");
 
             final String reopenCabinetScript =
                     "(function() {" +
@@ -355,13 +359,16 @@ public final class OmegaGameplaySmokeTest {
                     " entry.click();" +
                     " return true;" +
                     "})()";
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=REOPEN_MINISTRY_TAP_BEGIN");
             assertEquals("Government entry must accept a separate reopen tap",
                     "true", evaluate(instrumentation, webViewRef.get(), reopenCabinetScript));
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=REOPEN_MINISTRY_TAP_RETURNED");
             final String reopenedCabinetReadyScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var mapRoot = document.getElementById('render-engine-root');" +
                     " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
-                    "   cabinet.getAttribute('data-omega-v2-route') === 'government' &&" +
+                    "   cabinet.getAttribute('data-omega-v2-route') === 'government' && mapRoot && mapRoot.style.display === 'none' &&" +
                     "   Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
                     "   document.body.getAttribute('data-active-layer') === '1' &&" +
                     "   cabinet.querySelector('[data-omega-v2-main]') &&" +
