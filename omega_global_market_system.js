@@ -255,8 +255,9 @@
         const owner=String(batch.ownerCompanyId||batch.ownerId||'').trim().toUpperCase(),
           operator=String(batch.operatorCompanyId||batch.operatorId||batch.companyId||'').trim().toUpperCase(),
           ownerStatus=String(batch.ownerAttributionStatus||'').toUpperCase(),
+          companyStatus=String(countryValue(c,'economy.privateEnterpriseLifecycle.companyStatuses')?.[owner]||'ACTIVE').toUpperCase(),
           stage=String(batch.stage||'').toUpperCase(),status=String(batch.status||'').toUpperCase();
-        if(!companyIds.includes(owner)||(companyFilter&&owner!==companyFilter)||!companyIds.includes(operator))return;
+        if(!companyIds.includes(owner)||(companyFilter&&owner!==companyFilter)||!companyIds.includes(operator)||companyStatus==='CLOSED')return;
         if(['NOT_RECORDED','OWNER_NOT_RECORDED','UNASSIGNED','UNKNOWN_SOURCE','LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED'].includes(ownerStatus))return;
         if(['FACTORY_INPUT','CONSUMED','TRANSFERRED_TO_FACTORY','SOLD','TRANSFERRED_OUT','DEPLETED'].includes(stage)||
            ['SOLD','CONSUMED','TRANSFERRED','DEPLETED'].includes(status))return;
