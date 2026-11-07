@@ -87,6 +87,11 @@ attempt=1
 max_attempts=3
 while [[ "$attempt" -le "$max_attempts" ]]; do
   log_file="$artifact_dir/gradle-attempt-$attempt.log"
+  # The instrumentation test copies its app-private PNG through run-as into this
+  # shell-owned staging directory before the target app is removed by Gradle.
+  remote_screenshot_dir="/sdcard/omega-smoke"
+  adb shell rm -rf "$remote_screenshot_dir" >/dev/null 2>&1 || true
+  adb shell mkdir -p "$remote_screenshot_dir"
   echo "Offline gameplay instrumentation attempt $attempt/$max_attempts"
   # Android instrumentation must not be allowed to occupy the workflow forever.
   # The Java test has bounded Activity/WebView waits; this is a final process-level
@@ -96,19 +101,40 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
     cat "$log_file"
     screenshot_dir="$artifact_dir/screenshots"
     mkdir -p "$screenshot_dir"
-    remote_screenshot_dir="/sdcard/Android/data/com.omega.globalsupremecommander/files/omega-smoke"
     if ! timeout 30s adb pull "$remote_screenshot_dir" "$screenshot_dir"; then
-      echo "ERROR: Android Input UI screenshot retrieval failed" >&2
+      echo "ERROR: Android Input UI screenshot retrieval failed from instrumentation staging storage" >&2
       exit 1
     fi
     for screenshot in factory-input-landscape.png; do
       local_screenshot="$screenshot_dir/omega-smoke/$screenshot"
+      status_file="$local_screenshot.exit"
+      if [[ ! -s "$status_file" ]]; then
+        echo "ERROR: Android app-copy status marker is missing: $status_file" >&2
+        find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
+        exit 1
+      fi
+      export_exit="$(tr -d '[:space:]' <"$status_file")"
+      if [[ "$export_exit" != "0" ]]; then
+        echo "ERROR: Android app could not finish copying the screenshot (status=$export_exit)" >&2
+        exit 1
+      fi
       if [[ ! -s "$local_screenshot" ]]; then
         echo "ERROR: Required Android Input UI screenshot is missing: $local_screenshot" >&2
         find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
         exit 1
       fi
-      echo "ANDROID_UI_SCREENSHOT=$local_screenshot bytes=$(wc -c <"$local_screenshot")"
+      screenshot_bytes="$(wc -c <"$local_screenshot" | tr -d '[:space:]')"
+      rm -f "$status_file"
+      if [[ "$screenshot_bytes" -le 2048 ]]; then
+        echo "ERROR: Android Input UI screenshot is too small to be a real capture: ${screenshot_bytes} bytes" >&2
+        exit 1
+      fi
+      png_signature="$(od -An -tx1 -N8 "$local_screenshot" | tr -d '[:space:]')"
+      if [[ "$png_signature" != "89504e470d0a1a0a" ]]; then
+        echo "ERROR: Android Input UI artifact is not a valid PNG (signature=$png_signature)" >&2
+        exit 1
+      fi
+      echo "ANDROID_UI_SCREENSHOT=$local_screenshot bytes=$screenshot_bytes signature=$png_signature"
     done
     echo "PASS: API 28 offline gameplay and Factory Input UI visual instrumentation completed"
     exit 0
