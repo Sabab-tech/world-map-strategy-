@@ -602,7 +602,22 @@ Game.DataLoader = {
             const aborted = (controller && controller.signal && controller.signal.aborted) ||
                 (error && error.name === 'AbortError');
             if (!aborted) {
-                console.error('[OMEGA Map] World geometry load failed.', error);
+                const errorName = error && error.name ? String(error.name) : 'Error';
+                const errorCode = error && error.code ? String(error.code) : '';
+                const errorMessage = error && error.message
+                    ? String(error.message).replace(/\s+/g, ' ').slice(0, 400)
+                    : String(error || 'Unknown loading error').replace(/\s+/g, ' ').slice(0, 400);
+                const mapSurface = Game.Map && (Game.Map.map || window.map);
+                const leafletReady = !!(window.L && typeof window.L.geoJSON === 'function');
+                const mapReady = !!(mapSurface && typeof mapSurface.addLayer === 'function');
+                const errorStack = error && error.stack
+                    ? String(error.stack).replace(/\s+/g, ' ').slice(0, 260) : '';
+                console.error('[OMEGA Map] World geometry load failed: ' + errorName +
+                    (errorCode ? ' [' + errorCode + ']' : '') + ': ' + errorMessage +
+                    '; leafletReady=' + leafletReady + '; mapReady=' + mapReady +
+                    '; uiActive=' + (Game.Map.__omegaMapUiActive !== false) +
+                    '; requestAborted=' + !!(controller && controller.signal && controller.signal.aborted) +
+                    (errorStack ? '; stack=' + errorStack : ''));
                 if (Game.Map.__omegaMapUiActive !== false) {
                     if (Game.Map.countryGeoJSON && typeof Game.Map.handleWorldMapRenderFailure === 'function') {
                         Game.Map.handleWorldMapRenderFailure(error);
@@ -1289,6 +1304,10 @@ Game.Map = {
 Game.Map.__omegaMapUiActive = true;
 Game.Map.__omegaDetachedLayers = [];
 Game.Map.__omegaMapRootDisplay = null;
+Game.Map.__omegaMapRootVisibility = null;
+Game.Map.__omegaMapRootPointerEvents = null;
+Game.__omegaMapViewportRefreshFrame = null;
+Game.__omegaMapViewportRefreshUsesTimeout = false;
 Game.Map.__omegaMapLoadingProgress = 0;
 
 Game.Map.updateMapLoadingProgress = function(percent, message, status) {
@@ -1380,14 +1399,79 @@ Game.Map.ensureMapLoadingOverlay = function() {
         });
     }
 };
+// The map root is hidden while a ministry owns the screen. Keep Leaflet's
+// existing layer tree attached: removing and re-adding the GeoJSON layer forces
+// legacy WebView to rebuild every country path and can starve the renderer.
+// Preserve the map's fixed layout and cached SVG/Leaflet tree while a ministry
+// owns the screen. display:none collapses the map surface and makes legacy WebView
+// rebuild/repaint every country path on return; visibility keeps that tree warm.
+function cancelDeferredGeoJSONResume() {
+    const timer = Game.__omegaGeoJSONResumeTimer;
+    if (timer !== null && timer !== undefined &&
+        typeof window.clearTimeout === 'function') {
+        window.clearTimeout(timer);
+    }
+    Game.__omegaGeoJSONResumeTimer = null;
+}
+function scheduleDeferredGeoJSONResume() {
+    cancelDeferredGeoJSONResume();
+    Game.__omegaGeoJSONResumeTimer = window.setTimeout(function () {
+        Game.__omegaGeoJSONResumeTimer = null;
+        if (Game.Map.__omegaMapUiActive !== true) return;
+        if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
+            Game.__omegaGeoJSONResumeRender();
+        }
+    }, 600);
+}
+// A hidden-but-laid-out Leaflet canvas still participates in legacy WebView
+// compositing. Remove the map surface from the render tree while a ministry owns
+// the screen, but keep Leaflet's layer objects attached for a cheap return.
+function cancelMapViewportRefresh() {
+    const frame = Game.__omegaMapViewportRefreshFrame;
+    if (frame !== null && frame !== undefined) {
+        if (Game.__omegaMapViewportRefreshUsesTimeout === true) {
+            if (typeof window.clearTimeout === 'function') window.clearTimeout(frame);
+        } else if (typeof window.cancelAnimationFrame === 'function') {
+            window.cancelAnimationFrame(frame);
+        }
+    }
+    Game.__omegaMapViewportRefreshFrame = null;
+    Game.__omegaMapViewportRefreshUsesTimeout = false;
+}
+function scheduleMapViewportRefresh() {
+    cancelMapViewportRefresh();
+    const refresh = function () {
+        Game.__omegaMapViewportRefreshFrame = null;
+        Game.__omegaMapViewportRefreshUsesTimeout = false;
+        if (Game.Map.__omegaMapUiActive !== true) return;
+        const root = document.getElementById('render-engine-root');
+        if (root && root.style && root.style.display === 'none') return;
+        const map = Game.Map.map || window.map;
+        if (map && typeof map.invalidateSize === 'function') {
+            try { map.invalidateSize({ pan:false, animate:false }); }
+            catch (_) {
+                try { map.invalidateSize(false); } catch (_) {}
+            }
+        }
+    };
+    if (typeof window.requestAnimationFrame === 'function') {
+        Game.__omegaMapViewportRefreshFrame = window.requestAnimationFrame(refresh);
+    } else if (typeof window.setTimeout === 'function') {
+        Game.__omegaMapViewportRefreshUsesTimeout = true;
+        Game.__omegaMapViewportRefreshFrame = window.setTimeout(refresh, 0);
+    }
+}
 Game.Map.setUiActive = function(active) {
     const nextActive = active === true;
     if (this.__omegaMapUiActive === nextActive) return true;
     this.__omegaMapUiActive = nextActive;
     const root = document.getElementById('render-engine-root');
-    const map = this.map || window.map;
 
     if (!nextActive) {
+        // Give a user returning from a ministry a short interaction window before
+        // the unfinished world geometry resumes. A second ministry tap cancels it.
+        cancelDeferredGeoJSONResume();
+        cancelMapViewportRefresh();
         const overlay = document.getElementById('omega-map-load-overlay');
         if (overlay) {
             overlay.classList.add('is-hidden');
@@ -1403,52 +1487,34 @@ Game.Map.setUiActive = function(active) {
         if (Game.__omegaGeoJSONRenderComplete !== true) Game.__omegaGeoJSONRenderPaused = true;
 
         // If the large map JSON is still downloading, stop that map-only request.
-        // Game simulation and shared country/resource systems remain untouched.
+        // Game simulation, shared country/resource systems and cached Leaflet layers
+        // remain untouched while the ministry owns the screen.
         if (!this.countryGeoJSON && this.__omegaWorldMapAbortController &&
             typeof this.__omegaWorldMapAbortController.abort === 'function') {
             try { this.__omegaWorldMapAbortController.abort(); } catch (_) {}
         }
 
-        if (map && typeof map.eachLayer === 'function' && typeof map.removeLayer === 'function') {
-            const layers = [];
-            map.eachLayer(function (layer) { layers.push(layer); });
-            layers.forEach(function (layer) {
-                if (map.hasLayer && map.hasLayer(layer)) {
-                    try { map.removeLayer(layer); } catch (_) {}
-                }
-            });
-            this.__omegaDetachedLayers = layers;
-        }
         if (root) {
             if (this.__omegaMapRootDisplay === null) this.__omegaMapRootDisplay = root.style.display || '';
+            if (this.__omegaMapRootVisibility === null) this.__omegaMapRootVisibility = root.style.visibility || '';
+            if (this.__omegaMapRootPointerEvents === null) this.__omegaMapRootPointerEvents = root.style.pointerEvents || '';
             root.setAttribute('data-omega-map-suspended', 'true');
             root.style.display = 'none';
+            root.style.visibility = 'hidden';
+            root.style.pointerEvents = 'none';
         }
         return true;
     }
 
     if (root) {
         root.style.display = this.__omegaMapRootDisplay === null ? '' : this.__omegaMapRootDisplay;
+        root.style.visibility = this.__omegaMapRootVisibility === null ? '' : this.__omegaMapRootVisibility;
+        root.style.pointerEvents = this.__omegaMapRootPointerEvents === null ? '' : this.__omegaMapRootPointerEvents;
         root.removeAttribute('data-omega-map-suspended');
     }
-    if (map) {
-        (this.__omegaDetachedLayers || []).forEach(function (layer) {
-            try {
-                if (!map.hasLayer || !map.hasLayer(layer)) map.addLayer(layer);
-            } catch (_) {}
-        });
-        this.__omegaDetachedLayers = [];
-        if (Game.__omegaGeoJSONRenderComplete === true &&
-            Game.Map.__omegaCountryStyleRefreshPending === true &&
-            typeof Game.Map.refreshCountryPolygonStyles === 'function') {
-            Game.Map.refreshCountryPolygonStyles();
-        }
-        if (typeof map.invalidateSize === 'function') {
-            window.requestAnimationFrame(function () {
-                if (Game.Map.__omegaMapUiActive !== false) map.invalidateSize({ pan:false, debounceMoveend:true });
-            });
-        }
-    }
+    // Re-measure Leaflet after the fixed map surface becomes visible again.
+    // The refresh runs on the next frame, before deferred geometry can resume.
+    scheduleMapViewportRefresh();
 
     if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON) {
         // A cached map returns instantly: do not flash the startup loader on every ministry exit.
@@ -1462,7 +1528,7 @@ Game.Map.setUiActive = function(active) {
     } else {
         this.updateMapLoadingProgress(this.__omegaMapLoadingProgress || 2, 'Preparing world map…', 'loading');
         if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
-            Game.__omegaGeoJSONResumeRender();
+            scheduleDeferredGeoJSONResume();
         } else if (this.countryGeoJSON && !Game.geojsonLayer &&
             Game.DataLoader && typeof Game.DataLoader.loadWorldMap === 'function') {
             const loader = Game.DataLoader;
@@ -1649,12 +1715,21 @@ Game.Map.renderGeoJSON = function(geoData) {
     const featureCount = featureCollection ? featureCollection.length : 0;
     const recoverableFeatureErrorLimit = Math.max(3, Math.floor(featureCount * 0.05));
     const addFeatureSafely = function(feature, index) {
+        const props = feature && feature.properties || {};
+        const featureName = props.ADMIN || props.name || props.NAME || ('feature ' + (index + 1));
+        const startedAt = Date.now();
         try {
             layer.addData(feature);
+            const renderDuration = Date.now() - startedAt;
+            if (renderDuration >= 80) {
+                const geometryType = feature && feature.geometry && feature.geometry.type
+                    ? String(feature.geometry.type) : 'unknown';
+                console.warn('[OMEGA Map] Slow country feature render: ' + String(featureName) +
+                    ' (' + geometryType + ') addData=' + renderDuration + 'ms');
+            }
             return true;
         } catch (error) {
-            const props = feature && feature.properties || {};
-            const name = props.ADMIN || props.name || props.NAME || ('feature ' + (index + 1));
+            const name = featureName;
             const message = String(error && error.message || error || 'Unknown feature error').slice(0, 140);
             const errors = Game.__omegaGeoJSONRenderErrors || (Game.__omegaGeoJSONRenderErrors = []);
             errors.push({ index:index, country:String(name), message:message });
