@@ -3933,11 +3933,12 @@ function factoryOperationGate(countryId,asset,employmentSnapshot){
     const lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||(g.Omega&&g.Omega.PrivateEnterpriseLifecycleV1);
     if(!lifecycle||typeof lifecycle.productionProofReady!=='function'||
        typeof lifecycle.refreshCommissionedProductionGate!=='function'||!lifecycle.productionProofReady()){
-      asset.productionEnabled=false;
-      asset.blockedReason='PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE';
+      const gateReason=typeof lifecycle?.productionGateReason==='function'
+        ?lifecycle.productionGateReason():'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE';
+      asset.productionEnabled=false;asset.blockedReason=gateReason;
       if(String(asset.status||'').toUpperCase()!=='DECOMMISSIONED'&&String(asset.status||'').toUpperCase()!=='DESTROYED')
         asset.status='BLOCKED';
-      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',factoryId,authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
+      return{status:'BLOCKED',reason:gateReason,factoryId,authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
     }
     // Re-check permit, financing, construction-project provenance and proposal
     // ownership on every operation. A saved asset flag is not an authorization.

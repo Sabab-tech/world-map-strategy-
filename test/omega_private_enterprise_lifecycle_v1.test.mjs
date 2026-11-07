@@ -155,6 +155,24 @@ function submitProposal(api,input){
   },input||{}));
 }
 
+function installVerifiedSAB34BrowserProof(harness){
+  const proof={
+    schemaVersion:1,status:'VERIFIED',authority:'SAB34_LIVE_BROWSER_ACCEPTANCE_CERTIFICATE_V1',
+    workflow:'OMEGA Private Enterprise Real Browser E2E',browser:'Chromium',
+    proofCommitSha:'a'.repeat(40),workflowRunId:'123456789',
+    workflowRunUrl:'https://github.com/Sabab-tech/world-map-strategy-/actions/runs/123456789',
+    verifiedAt:'2026-11-08T00:00:00.000Z',
+    stages:{
+      realAppBoot:true,siteMarkerSelection:true,siteExtractionAndMineDispatch:true,
+      mineReceiptAndFactoryDispatch:true,factoryReceiptAndInputLot:true,
+      finishedGoodsAndMarketLineage:true,selectedCountryIsolation:true,indexedDbSaveLoadReplay:true
+    }
+  };
+  harness.sandbox.OmegaSAB34LiveBrowserProofV1=proof;
+  harness.sandbox.Omega.SAB34LiveBrowserProofV1=proof;
+  return proof;
+}
+
 test('autonomous company proposals are deterministic, once per 30 turns, and have no asset/stock/cash side effects',()=>{
   const h=makeHarness(),beforeInventory=JSON.stringify(h.state.resource.BGD.inventory);
   const beforeWarehouse=JSON.stringify(h.state.resource.BGD.warehouse);
@@ -285,6 +303,10 @@ test('proposal -> approval -> real Treasury grant -> construction -> private com
 
   Object.assign(h.network,{loadCatalog(){},executeSitePipeline(){},advanceShipments(){},advanceProjects(){},
     startFactoryProductionCycle(){},executeFactoryCycle(){},processPendingFactoryInputs(){}});
+  assert.equal(api.refreshCommissionedProductionGate('BGD',project.factoryId).reason,
+    'SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED',
+    'runtime APIs alone must not release a private factory');
+  installVerifiedSAB34BrowserProof(h);
   const gate=api.refreshCommissionedProductionGate('BGD',project.factoryId);
   assert.equal(gate.status,'READY');
   assert.equal(asset.status,'OPERATIONAL');
@@ -319,6 +341,7 @@ test('production proof refresh restores only the requested factory and gates sib
   assert.equal(second.status,'BLOCKED');
   Object.assign(h.network,{loadCatalog(){},executeSitePipeline(){},advanceShipments(){},advanceProjects(){},
     startFactoryProductionCycle(){},executeFactoryCycle(){},processPendingFactoryInputs(){}});
+  installVerifiedSAB34BrowserProof(h);
   const firstGate=api.refreshCommissionedProductionGate('BGD',first.id);
   assert.equal(firstGate.status,'PARTIALLY_READY');
   assert.equal(first.status,'OPERATIONAL');
@@ -433,14 +456,26 @@ test('factory construction authorization rejects forged identity, scope, permit 
   assert.equal(h.projects.length,0,'authorization validation itself cannot create a project');
 });
 
-test('private production requires the mounted canonical extraction-to-output runtime, not a test-only attestation',()=>{
+test('private production fails closed until every live-Chromium SAB-34 site-to-factory proof stage is certified',()=>{
   const h=makeHarness(),api=h.api;
-  assert.equal(api.productionProofReady(),false,'a commissioning record cannot bypass a missing production runtime');
+  assert.equal(api.productionProofReady(),false,'no production runtime means no production');
   Object.assign(h.network,{loadCatalog(){},executeSitePipeline(){},advanceShipments(){},advanceProjects(){},
     startFactoryProductionCycle(){},executeFactoryCycle(){},processPendingFactoryInputs(){}});
-  assert.equal(api.productionProofReady(),true,'the canonical production APIs make the private runtime eligible');
+  assert.equal(api.productionProofReady(),false,'runtime function presence is not live browser evidence');
+  assert.equal(api.productionGateReason(),'SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED');
+  h.sandbox.OmegaSAB34LiveBrowserProofV1={
+    schemaVersion:1,status:'VERIFIED',authority:'SAB34_LIVE_BROWSER_ACCEPTANCE_CERTIFICATE_V1',
+    workflow:'OMEGA Private Enterprise Real Browser E2E',browser:'Chromium',
+    proofCommitSha:'a'.repeat(40),workflowRunId:'123456789',
+    workflowRunUrl:'https://github.com/Sabab-tech/world-map-strategy-/actions/runs/123456789',
+    verifiedAt:'2026-11-08T00:00:00.000Z',stages:{siteMarkerSelection:true}
+  };
+  assert.equal(api.productionProofReady(),false,'partial browser evidence must not release production');
+  installVerifiedSAB34BrowserProof(h);
+  assert.equal(api.productionGateReason(),null);
+  assert.equal(api.productionProofReady(),true,'complete browser proof and canonical runtime release the gate');
   delete h.network.processPendingFactoryInputs;
-  assert.equal(api.productionProofReady(),false,'missing the live factory scheduler must fail closed');
+  assert.equal(api.productionProofReady(),false,'the full production runtime must remain available');
 });
 
 test('domestic-only approval fails closed on a measured shortage or unobserved stock',()=>{

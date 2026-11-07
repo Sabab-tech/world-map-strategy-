@@ -840,7 +840,9 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       if (!profile || Object.keys(profiles).length !== 21) {
         throw new Error('SAB34_CANONICAL_21_FACTORY_CATALOG_NOT_READY');
       }
-      const startupStock = Object.assign({}, profile.constructionMaterials || {}, { coal: 60000 });
+      const startupStock = Object.fromEntries(Object.entries(profile.constructionMaterials || {})
+        .map(([resourceId, quantity]) => [resourceId, Number(quantity) * 2]));
+      startupStock.coal = Math.max(Number(startupStock.coal) || 0, 60000);
       const fixtureBatchIds = [];
       for (const [resourceId, rawQuantity] of Object.entries(startupStock)) {
         const quantity = Number(rawQuantity);
@@ -971,112 +973,109 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const simulation = window.Omega.Simulation;
       const industry = window.OmegaResourceIndustrialNetwork || window.Omega?.ResourceIndustrialNetwork;
       const lifecycle = window.OmegaPrivateEnterpriseLifecycleV1 || window.Omega?.PrivateEnterpriseLifecycleV1;
-      if (!lifecycle || typeof lifecycle.createProposal !== 'function' || !lifecycle.productionProofReady()) {
-        throw new Error('SAB34_PRIVATE_ENTERPRISE_PRODUCTION_RUNTIME_NOT_READY');
+      const catalog = window.OmegaResourceIndustrialCatalogData || window.Omega?.ResourceIndustrialCatalogData;
+      const profile = catalog?.factoryProfiles?.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT;
+      if (!lifecycle || typeof lifecycle.createProposal !== 'function' ||
+          typeof lifecycle.productionGateReason !== 'function' || !industry ||
+          typeof industry.startFactoryProject !== 'function' || !profile) {
+        throw new Error('SAB34_ACCEPTANCE_GATE_OR_CANONICAL_FACTORY_RUNTIME_NOT_MOUNTED');
+      }
+      const proofAcceptedAtStart = lifecycle.productionProofReady() === true;
+      const gateReasonAtStart = lifecycle.productionGateReason();
+      if (!proofAcceptedAtStart && gateReasonAtStart !== 'SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED') {
+        throw new Error('SAB34_PRIVATE_PRODUCTION_DID_NOT_FAIL_CLOSED_FOR_MISSING_BROWSER_CERTIFICATE:' + gateReasonAtStart);
       }
       const proposal = lifecycle.createProposal({
-        countryId: 'BGD',
-        companyId: 'NOVA_CONSUMER_INDUSTRIES',
-        operatorCompanyId: 'MERIDIAN_ENGINEERING_GROUP',
-        factoryType: 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
-        processingResourceId: 'coal',
-        quantity: 1,
-        sourcingPolicy: 'COMPANY_FUNDED_IMPORTS',
-        stateSupportRequested: true,
-        requestReason: 'Nova Consumer Industries requests a coal-processing facility to convert attributable domestic coal extraction into a saleable industrial intermediate.',
-        expectedBenefit: 'The commissioned plant adds modeled coal-concentrate output capacity. Company income is recognized only after a buyer consumes attributable output and the market settlement posts.',
-        riskForecast: 'The project remains exposed to mine output, shipment delays, recipe input quality, utility availability, construction capital, warehouse capacity and uncertain customer demand.'
+        countryId:'BGD',companyId:'NOVA_CONSUMER_INDUSTRIES',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+        factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',processingResourceId:'coal',
+        quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true,
+        requestReason:'Nova Consumer Industries requests a coal-processing facility to convert attributable domestic coal extraction into a saleable industrial intermediate.',
+        expectedBenefit:'The commissioned plant adds modeled coal-concentrate output capacity. Company income is recognized only after a buyer consumes attributable output and the market settlement posts.',
+        riskForecast:'The project remains exposed to mine output, shipment delays, recipe input quality, utility availability, construction capital, warehouse capacity and uncertain customer demand.'
       });
-      if (proposal.status !== 'PROPOSED') throw new Error('SAB34_PRIVATE_PROPOSAL_FAILED:' + JSON.stringify(proposal));
-      const decision = lifecycle.decideProposal({
-        countryId: 'BGD',
-        proposalId: proposal.proposalId,
-        decision: 'APPROVE',
-        allowStateSupport: true,
-        conditions: { allowStateSupport: true }
-      });
-      if (decision.status !== 'APPROVED_AWAITING_FUNDING') {
-        throw new Error('SAB34_PRIVATE_PERMIT_FAILED:' + JSON.stringify(decision));
+      if(proposal.status!=='PROPOSED')throw new Error('SAB34_PRIVATE_PROPOSAL_FAILED:'+JSON.stringify(proposal));
+      const decision=lifecycle.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
+        allowStateSupport:true,conditions:{allowStateSupport:true}});
+      if(decision.status!=='APPROVED_AWAITING_FUNDING')throw new Error('SAB34_PRIVATE_PERMIT_FAILED:'+JSON.stringify(decision));
+      const funding=lifecycle.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,
+        sourceType:'GOVERNMENT_GRANT',amount:proposal.capitalRequired});
+      if(funding.status!=='FUNDED')throw new Error('SAB34_PRIVATE_FUNDING_FAILED:'+JSON.stringify(funding));
+      const privateConstruction=lifecycle.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+      if(privateConstruction.status!=='UNDER_CONSTRUCTION'||privateConstruction.started?.length!==1)
+        throw new Error('SAB34_PRIVATE_CONSTRUCTION_FAILED:'+JSON.stringify(privateConstruction));
+      const privateProjectId=privateConstruction.started[0].projectId;
+      let governmentProject=null;
+      if(!proofAcceptedAtStart){
+        governmentProject=industry.startFactoryProject({
+          countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+          recipeId:privateConstruction.started[0].recipeId,resourceId:'coal',
+          buildDays:Math.max(1,Number(privateConstruction.started[0].durationDays)||180),
+          capacityPerDay:Math.max(1,Number(profile.defaultCapacityPerDay)||1),
+          requestId:'SAB34_LIVE_BROWSER_STATE_OWNED_FACTORY_QUALIFICATION'
+        });
+        if(governmentProject?.status!=='UNDER_CONSTRUCTION')
+          throw new Error('SAB34_STATE_OWNED_QUALIFICATION_FACTORY_CONSTRUCTION_FAILED:'+JSON.stringify(governmentProject));
       }
-      const funding = lifecycle.fundProposal({
-        countryId: 'BGD',
-        proposalId: proposal.proposalId,
-        sourceType: 'GOVERNMENT_GRANT',
-        amount: proposal.capitalRequired
-      });
-      if (funding.status !== 'FUNDED') throw new Error('SAB34_PRIVATE_FUNDING_FAILED:' + JSON.stringify(funding));
-      const construction = lifecycle.startConstruction({ countryId: 'BGD', proposalId: proposal.proposalId });
-      if (construction.status !== 'UNDER_CONSTRUCTION' || construction.started?.length !== 1) {
-        throw new Error('SAB34_PRIVATE_CONSTRUCTION_FAILED:' + JSON.stringify(construction));
-      }
-      const projectId = construction.started[0].projectId;
-
-      // This browser proof advances authoritative turns directly below. Keep the
-      // wall-clock scheduler paused so its 100 ms frame loop cannot race those
-      // deterministic turns or fan out unrelated background work across 17 ministries.
-      // SimulationCoordinator.advance() still executes the full canonical turn pipeline
-      // while the clock is paused; it advances the clock explicitly via step().
-      if (!simulation.clock || typeof simulation.clock.pause !== 'function') {
-        throw new Error('SAB34_CANONICAL_CLOCK_PAUSE_UNAVAILABLE');
-      }
+      if(!simulation.clock||typeof simulation.clock.pause!=='function')throw new Error('SAB34_CANONICAL_CLOCK_PAUSE_UNAVAILABLE');
       simulation.clock.pause();
-      if (simulation.clock.paused !== true) {
-        throw new Error('SAB34_BACKGROUND_ENGINE_CLOCK_NOT_PAUSED');
-      }
-
-      // One authoritative turn carries the exact remaining construction interval.
-      // This preserves the full central turn pipeline while avoiding five duplicate
-      // 17-ministry/world-simulation passes that do not add evidence to this construction gate.
-      // Restore the ordinary 30-day test cadence immediately after the committed turn so
-      // mine/factory ETAs and subsequent production cycles keep their normal test semantics.
-      const constructionDays = Math.max(1, Math.ceil(Number(construction.started[0].durationDays) || 180));
+      if(simulation.clock.paused!==true)throw new Error('SAB34_BACKGROUND_ENGINE_CLOCK_NOT_PAUSED');
+      const constructionDays=Math.max(1,Math.ceil(Math.max(
+        Number(governmentProject?.durationDays)||0,Number(privateConstruction.started[0].durationDays)||180)));
       let advanced;
-      simulation.clock.gameDaysPerTurn = constructionDays;
-      simulation.clock.stepDurationMs = constructionDays * 86400000;
-      state.simulation.daysPerTurn = constructionDays;
-      try {
-        advanced = await simulation.advance(1);
-      } finally {
-        simulation.clock.gameDaysPerTurn = 30;
-        simulation.clock.stepDurationMs = 30 * 86400000;
-        state.simulation.daysPerTurn = 30;
+      simulation.clock.gameDaysPerTurn=constructionDays;
+      simulation.clock.stepDurationMs=constructionDays*86400000;
+      state.simulation.daysPerTurn=constructionDays;
+      try{advanced=await simulation.advance(1);}
+      finally{
+        simulation.clock.gameDaysPerTurn=30;simulation.clock.stepDurationMs=30*86400000;state.simulation.daysPerTurn=30;
       }
-      if (advanced.status === 'ERROR' || advanced.steps !== 1) {
-        throw new Error('SAB34_CENTRAL_GAME_CLOCK_CONSTRUCTION_ADVANCE_FAILED:' + JSON.stringify({
-          constructionDays, advanced
+      if(advanced.status==='ERROR'||advanced.steps!==1)
+        throw new Error('SAB34_CENTRAL_GAME_CLOCK_CONSTRUCTION_ADVANCE_FAILED:'+JSON.stringify({constructionDays,advanced}));
+      const projects=state.resource.BGD.industrialNetwork.projects;
+      const privateProject=projects.find(row=>String(row.projectId)===String(privateProjectId));
+      const privateFactory=state.economy.BGD.productionAssets.find(row=>String(row.constructionProjectId)===String(privateProjectId));
+      if(privateProject?.status!=='COMPLETED'||!privateFactory)
+        throw new Error('SAB34_PRIVATE_FACTORY_NOT_COMMISSIONED:'+JSON.stringify({privateProject,privateFactoryPresent:!!privateFactory}));
+      if(privateFactory.ownerType!=='PRIVATE_ENTERPRISE'||privateFactory.ownerCompanyId!=='NOVA_CONSUMER_INDUSTRIES'||
+         privateFactory.operatorType!=='PRIVATE_COMPANY_OPERATOR'||privateFactory.operatorCompanyId!=='MERIDIAN_ENGINEERING_GROUP')
+        throw new Error('SAB34_PRIVATE_FACTORY_OWNER_OPERATOR_MISMATCH:'+JSON.stringify(privateFactory));
+      if(proofAcceptedAtStart){
+        if(privateFactory.productionEnabled!==true||privateFactory.status!=='OPERATIONAL')
+          throw new Error('SAB34_VERIFIED_BROWSER_PROOF_DID_NOT_ENABLE_PRIVATE_FACTORY:'+JSON.stringify(privateFactory));
+      }else if(privateFactory.productionEnabled===true||privateFactory.status!=='BLOCKED'||
+               privateFactory.blockedReason!=='SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED'){
+        throw new Error('SAB34_PRIVATE_FACTORY_DID_NOT_FAIL_CLOSED_BEFORE_BROWSER_PROOF:'+JSON.stringify({
+          factory:privateFactory,gateReason:lifecycle.productionGateReason()
         }));
       }
-      const resource = state.resource.BGD;
-      const project = resource.industrialNetwork.projects.find(row => String(row.projectId) === String(projectId));
-      const factory = state.economy.BGD.productionAssets.find(row => String(row.constructionProjectId) === String(projectId));
-      if (project?.status !== 'COMPLETED' || !factory) {
-        throw new Error('SAB34_PRIVATE_FACTORY_NOT_COMMISSIONED:' + JSON.stringify({
-          project: project ? { status: project.status, progressDays: project.progressDays, durationDays: project.durationDays } : null,
-          projectId,
-          assetCount: state.economy.BGD.productionAssets.length,
-          lastTurn: advanced.last?.turn
-        }));
+      let governmentFactory=null;
+      if(governmentProject){
+        const governmentProjectRow=projects.find(row=>String(row.projectId)===String(governmentProject.projectId));
+        governmentFactory=state.economy.BGD.productionAssets.find(row=>String(row.constructionProjectId)===String(governmentProject.projectId));
+        if(governmentProjectRow?.status!=='COMPLETED'||!governmentFactory||
+           governmentFactory.ownerType!=='STATE_OWNED_ENTERPRISE'||
+           String(governmentFactory.status||'').toUpperCase()!=='OPERATIONAL')
+          throw new Error('SAB34_STATE_OWNED_QUALIFICATION_FACTORY_NOT_OPERATIONAL:'+JSON.stringify({governmentProjectRow,governmentFactory}));
       }
-      if (factory.ownerType !== 'PRIVATE_ENTERPRISE' || factory.ownerCompanyId !== 'NOVA_CONSUMER_INDUSTRIES' ||
-          factory.operatorType !== 'PRIVATE_COMPANY_OPERATOR' || factory.operatorCompanyId !== 'MERIDIAN_ENGINEERING_GROUP') {
-        throw new Error('SAB34_PRIVATE_FACTORY_OWNER_OPERATOR_MISMATCH:' + JSON.stringify(factory));
-      }
-      if (factory.productionEnabled !== true) throw new Error('SAB34_PRIVATE_FACTORY_PRODUCTION_NOT_ENABLED:' + JSON.stringify(factory));
-      return {
-        proposalId: proposal.proposalId,
-        projectId,
-        factoryId: String(factory.id || factory.assetId || factory.projectId),
-        ownerCompanyId: factory.ownerCompanyId,
-        operatorCompanyId: factory.operatorCompanyId,
-        constructionStatus: project.status,
-        productionEnabled: factory.productionEnabled,
-        committedTurn: Number(simulation.clock.turn),
-        constructionDays,
-        constructionAdvanceTurns: advanced.steps
+      const targetFactory=proofAcceptedAtStart?privateFactory:governmentFactory;
+      if(!targetFactory)throw new Error('SAB34_NO_ACTIVE_FACTORY_AVAILABLE_FOR_SITE_PIPELINE_PROOF');
+      return{
+        proposalId:proposal.proposalId,projectId:privateProjectId,
+        privateFactoryId:String(privateFactory.id||privateFactory.assetId||privateFactory.projectId),
+        privateFactoryStatus:privateFactory.status,privateProductionEnabled:privateFactory.productionEnabled===true,
+        privateFactoryBlockReason:privateFactory.blockedReason||null,
+        factoryId:String(targetFactory.id||targetFactory.assetId||targetFactory.projectId),
+        targetFactoryOwnerType:targetFactory.ownerType,proofAcceptedAtStart,gateReasonAtStart,
+        constructionStatus:privateProject.status,committedTurn:Number(simulation.clock.turn),
+        constructionDays,constructionAdvanceTurns:advanced.steps
       };
     });
-    metrics.commissioning = commissioning;
-    metrics.stages.push('PRIVATE_FACTORY_PROPOSED_APPROVED_FUNDED_AND_COMMISSIONED_ON_CENTRAL_GAME_TURNS');
+    metrics.commissioning=commissioning;
+    metrics.stages.push('PRIVATE_FACTORY_COMMISSIONED_AND_HELD_BEHIND_SAB34_LIVE_BROWSER_PROOF_GATE');
+    metrics.stages.push(commissioning.proofAcceptedAtStart
+      ?'VERIFIED_SAB34_CERTIFICATE_SELECTED_PRIVATE_FACTORY'
+      :'UNVERIFIED_SAB34_CERTIFICATE_SELECTED_STATE_OWNED_QUALIFICATION_FACTORY');
+
 
     const targetSite = await page.evaluate(() => {
       const binding = window.Omega?.IndividualResourceSiteBinding;
@@ -1121,8 +1120,29 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         longitude: lng
       };
     });
+    const siteFactoryBinding = await page.evaluate(({ siteId, factoryId }) => {
+      const assets=window.Game.state.economy.BGD.productionAssets||[];
+      const factory=assets.find(row=>String(row.id||row.assetId||row.projectId)===String(factoryId));
+      if(!factory||String(factory.status||'').toUpperCase()!=='OPERATIONAL')
+        throw new Error('SAB34_SITE_FACTORY_BINDING_TARGET_NOT_OPERATIONAL:'+JSON.stringify({siteId,factoryId}));
+      factory.sourceSiteId=String(siteId);
+      factory.siteBindingAuthority='SAB34_REAL_CHROMIUM_SITE_TO_FACTORY_ACCEPTANCE_TEST';
+      return{siteId:factory.sourceSiteId,factoryId:String(factory.id),ownerType:factory.ownerType};
+    },{siteId:targetSite.siteId,factoryId:commissioning.factoryId});
+    assert.equal(siteFactoryBinding.siteId,targetSite.siteId);
+    assert.equal(siteFactoryBinding.factoryId,commissioning.factoryId);
+    if(commissioning.proofAcceptedAtStart){
+      assert.equal(siteFactoryBinding.ownerType,'PRIVATE_ENTERPRISE');
+      assert.equal(commissioning.privateProductionEnabled,true);
+    }else{
+      assert.equal(siteFactoryBinding.ownerType,'STATE_OWNED_ENTERPRISE');
+      assert.equal(commissioning.privateProductionEnabled,false);
+      assert.equal(commissioning.privateFactoryBlockReason,'SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED');
+    }
+    metrics.siteFactoryBinding=siteFactoryBinding;
     metrics.selectedSite = targetSite;
     metrics.stages.push('REAL_MAP_MARKER_READY:' + targetSite.siteId);
+    metrics.stages.push('EXACT_COMMISSIONED_FACTORY_BOUND_TO_CLICKED_CANONICAL_SITE');
 
     const marker = page.locator('.omega-individual-site-marker[title=' + JSON.stringify(targetSite.siteName) + ']').first();
     await marker.waitFor({ state: 'visible', timeout: 90000 });
@@ -1440,7 +1460,29 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       fullPage: true
     });
     fs.writeFileSync(path.join(artifacts, 'sab34-real-browser-pipeline.json'), JSON.stringify(metrics, null, 2));
-    console.log('SAB34 REAL CHROMIUM SITE -> PRIVATE FACTORY -> FINISHED GOODS -> INDEXEDDB SAVE/LOAD PASSED');
+    metrics.sab34Acceptance={
+      proofAcceptedAtStart:commissioning.proofAcceptedAtStart,
+      gateReasonAtStart:commissioning.gateReasonAtStart,
+      stages:{
+        realAppBoot:!!metrics.preparation,
+        siteMarkerSelection:!!metrics.selection&&metrics.selection.selectedSiteId===targetSite.siteId,
+        siteExtractionAndMineDispatch:extraction.result?.extractionStatus==='COMMITTED'&&extraction.result?.shipment?.shipmentType==='MINE_TO_WAREHOUSE',
+        mineReceiptAndFactoryDispatch:mineArrival.receipt?.status==='RECEIVED'&&mineArrival.factoryShipment?.shipmentType==='RAW_TO_FACTORY',
+        factoryReceiptAndInputLot:factoryArrival.delivery?.status==='DELIVERED'&&!!factoryArrival.inputLot,
+        finishedGoodsAndMarketLineage:production.finished.length>=2&&!!production.offer&&production.offer.sourceBatchIds.includes(extraction.result.batchId)&&production.offer.sourceSiteIds.includes(targetSite.siteId),
+        selectedCountryIsolation:foreignAfterPipeline===preparation.foreignSnapshot,
+        indexedDbSaveLoadReplay:saveLoad.storage==='INDEXEDDB'&&saveLoad.loadIntegrity==='VERIFIED'&&
+          saveLoad.replayedLedgerCount===saveLoad.finishedLedgerCount&&JSON.stringify(saveLoad.replayedFinishedIds)===JSON.stringify(saveLoad.finishedIds)
+      }
+    };
+    if(Object.values(metrics.sab34Acceptance.stages).some(value=>value!==true))
+      throw new Error('SAB34_BROWSER_ACCEPTANCE_STAGES_INCOMPLETE:'+JSON.stringify(metrics.sab34Acceptance));
+    if(commissioning.proofAcceptedAtStart&&siteFactoryBinding.ownerType!=='PRIVATE_ENTERPRISE')
+      throw new Error('SAB34_CERTIFIED_RUN_DID_NOT_USE_PRIVATE_FACTORY:'+JSON.stringify({commissioning,siteFactoryBinding}));
+    if(!commissioning.proofAcceptedAtStart&&siteFactoryBinding.ownerType!=='STATE_OWNED_ENTERPRISE')
+      throw new Error('SAB34_UNCERTIFIED_RUN_BYPASSED_PRIVATE_PRODUCTION_GATE:'+JSON.stringify({commissioning,siteFactoryBinding}));
+    console.log('SAB34 REAL CHROMIUM SITE -> '+commissioning.targetFactoryOwnerType+
+      ' FACTORY -> FINISHED GOODS -> INDEXEDDB SAVE/LOAD PASSED');
   } catch (error) {
     metrics.failure = String(error && error.stack || error);
     metrics.errors = { pageErrors, consoleErrors };

@@ -1029,24 +1029,40 @@
     return{status:'AUTHORIZED',countryId:cid,proposalId:proposal.proposalId,unitIndex:unitIndex,
       permitId:permit.permitId,fundingTransactionId:funding.transactionId,authority:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1'};
   }
-  function productionProofReady(){
-    // Do not depend on test-injected globals or a commit-SHA attestation. The
-    // private asset must be able to reach the same live production APIs used by
-    // government factories; authorization/provenance is independently checked
-    // by privateCommissioningRecordVerified() before enabling this asset.
+  function productionRuntimeCapabilityReady(){
     var industrial=network(),catalogue=catalog();
     var requiredRuntimeMethods=[
       'loadCatalog','executeSitePipeline','advanceShipments','advanceProjects',
       'startFactoryProductionCycle','executeFactoryCycle','processPendingFactoryInputs'
     ];
-    if(!industrial||!requiredRuntimeMethods.every(function(name){
-      return typeof industrial[name]==='function';
-    }))return false;
+    if(!industrial||!requiredRuntimeMethods.every(function(name){return typeof industrial[name]==='function';}))return false;
     var profiles=catalogue&&catalogue.factoryProfiles;
     var recipes=catalogue&&(catalogue.processingRules||catalogue.downstreamFactoryRecipes);
-    return !!(obj(profiles)&&Object.keys(profiles).length>0&&
-      obj(recipes)&&Object.keys(recipes).length>0);
+    return !!(obj(profiles)&&Object.keys(profiles).length>0&&obj(recipes)&&Object.keys(recipes).length>0);
   }
+  function sab34LiveBrowserProofAccepted(){
+    var proof=g.OmegaSAB34LiveBrowserProofV1||(g.Omega&&g.Omega.SAB34LiveBrowserProofV1);
+    if(!proof||proof.schemaVersion!==1||proof.status!=='VERIFIED'||
+       proof.authority!=='SAB34_LIVE_BROWSER_ACCEPTANCE_CERTIFICATE_V1'||
+       proof.workflow!=='OMEGA Private Enterprise Real Browser E2E'||proof.browser!=='Chromium'||
+       !/^[a-f0-9]{40}$/i.test(String(proof.proofCommitSha||'')))return false;
+    var runId=String(proof.workflowRunId||'');
+    if(!/^[0-9]+$/.test(runId)||
+       String(proof.workflowRunUrl||'')!=='https://github.com/Sabab-tech/world-map-strategy-/actions/runs/'+runId||
+       !proof.verifiedAt||!Number.isFinite(Date.parse(String(proof.verifiedAt))))return false;
+    var stages=proof.stages||{};
+    var requiredStages=[
+      'realAppBoot','siteMarkerSelection','siteExtractionAndMineDispatch','mineReceiptAndFactoryDispatch',
+      'factoryReceiptAndInputLot','finishedGoodsAndMarketLineage','selectedCountryIsolation','indexedDbSaveLoadReplay'
+    ];
+    return requiredStages.every(function(stage){return stages[stage]===true;});
+  }
+  function productionGateReason(){
+    if(!productionRuntimeCapabilityReady())return'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE';
+    if(!sab34LiveBrowserProofAccepted())return'SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED';
+    return null;
+  }
+  function productionProofReady(){return productionGateReason()===null;}
   function privateCommissioningRecordVerified(country,proposal,project,asset){
     var cid=canonicalCountry(country),company=id(project&& (project.ownerCompanyId||project.ownerId||project.privateCompanyId||project.companyId)),
       operator=id(project&& (project.operatorCompanyId||project.operatorId||company)),permit=proposal&&proposal.permit,
@@ -1139,20 +1155,18 @@
         updatedTurn:turn(),authority:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1'};
       return null;
     }
-    var productionReady=productionProofReady();
+    var gateReason=productionGateReason(),productionReady=!gateReason;
     var runtimeStatus=String(asset.privateCommissionedStatus||asset.status||'OPERATIONAL').toUpperCase();
     if(!asset.privateCommissionedStatus)asset.privateCommissionedStatus=runtimeStatus;
     asset.productionEnabled=productionReady&&runtimeStatus==='OPERATIONAL';
-    if(!productionReady){
-      asset.status='BLOCKED';asset.productionStatus='PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE';
-      asset.productionHealth={status:'STOPPED',productivityPct:0,reason:'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',updatedTurn:turn(),authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
-      asset.blockedReason='PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE';
+    if(gateReason){
+      asset.status='BLOCKED';asset.productionStatus=gateReason;
+      asset.productionHealth={status:'STOPPED',productivityPct:0,reason:gateReason,updatedTurn:turn(),authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
+      asset.blockedReason=gateReason;
     }else if(runtimeStatus!=='OPERATIONAL'){
-      asset.productionStatus='FACTORY_RUNTIME_REQUIREMENTS_PENDING';
-      asset.blockedReason='FACTORY_RUNTIME_REQUIREMENTS_PENDING';
+      asset.productionStatus='FACTORY_RUNTIME_REQUIREMENTS_PENDING';asset.blockedReason='FACTORY_RUNTIME_REQUIREMENTS_PENDING';
     }else{
-      asset.status=runtimeStatus;asset.productionStatus='READY_FOR_EXISTING_FACTORY_OPERATION_GATES';
-      asset.blockedReason=null;
+      asset.status=runtimeStatus;asset.productionStatus='READY_FOR_EXISTING_FACTORY_OPERATION_GATES';asset.blockedReason=null;
     }
     if(proposal){
       if(!Array.isArray(proposal.commissionedFactoryIds))proposal.commissionedFactoryIds=[];
@@ -1162,7 +1176,7 @@
         proposal.status=productionReady&&asset.productionEnabled?'COMMISSIONED':'COMMISSIONED_PRODUCTION_GATED';
         proposal.updatedTurn=turn();proposal.productionEnabled=productionReady&&asset.productionEnabled;
         proposal.commissioning={status:proposal.status,productionEnabled:proposal.productionEnabled,
-          gateReason:productionReady?(asset.blockedReason||null):'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',
+          gateReason:gateReason||null,
           commissionedFactoryIds:proposal.commissionedFactoryIds.slice(),turn:turn()};
       }else proposal.status='UNDER_CONSTRUCTION';
     }
@@ -1172,7 +1186,9 @@
   }
   function refreshCommissionedProductionGate(country,factoryId){
     var cid=canonicalCountry(country||playerCountry());
-    if(cid!==playerCountry()||!productionProofReady())return{status:'BLOCKED',reason:'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE'};
+    var gateReason=productionGateReason();
+    if(cid!==playerCountry())return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
+    if(gateReason)return{status:'BLOCKED',reason:gateReason};
     var econ=countryBucket('economy',cid,false)||{},assets=Array.isArray(econ.productionAssets)?econ.productionAssets:[],
       target=assets.find(function(a){return String(a.id||a.factoryId||'')===String(factoryId||'');});
     var owner=target&&id(target.ownerCompanyId||target.ownerId),operator=target&&id(target.operatorCompanyId||target.operatorId||target.companyId);
@@ -1192,7 +1208,7 @@
     // Validate and restore only the factory whose operation gate requested this check.
     // Restoring every sibling here makes N asset checks repeatedly scan N assets and N ledger rows.
     if(privateCommissioningRecordVerified(cid,proposal,targetProjectRow,target)&&
-       target.blockedReason==='PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE'){
+       ['PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE','SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED'].indexOf(target.blockedReason)>=0){
       var original=String(target.privateCommissionedStatus||'OPERATIONAL').toUpperCase();
       target.status=original;target.productionEnabled=original==='OPERATIONAL';
       target.productionStatus=target.productionEnabled?'READY_FOR_EXISTING_FACTORY_OPERATION_GATES':'FACTORY_RUNTIME_REQUIREMENTS_PENDING';
@@ -1227,7 +1243,7 @@
     return{version:VERSION,countryId:cid,playerCountryId:playerCountry(),activeCountry:cid===playerCountry(),
       proposals:r?clone(r.proposals):[],events:r?clone(r.events):[],capitalAccounts:clone(accounts),
       companyIds:COMPANY_IDS.slice(),productionEnabled:productionProofReady(),
-      pipelineGate:productionProofReady()?'VERIFIED':'BLOCKED_PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE'};
+      pipelineGate:productionGateReason()||'VERIFIED',productionGateReason:productionGateReason()};
   }
   function getCompanyCapitalSummary(country,company){
     var a=capitalAccount(country,id(company),false);return a?clone(a):{companyId:id(company),currency:'GAME_CURRENCY_UNITS',
@@ -2571,7 +2587,7 @@
       resourceBucketFound:!!resource,demandSnapshotTurn:num(demand.lastTurn),
       demandRuntimeResourceKeys:Object.keys(demandRows),
       proposalCount:dash?dash.proposals.length:0,productionEnabled:productionProofReady(),
-      pipelineGate:productionProofReady()?'VERIFIED':'BLOCKED_PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',
+      pipelineGate:productionGateReason()||'VERIFIED',productionGateReason:productionGateReason(),
       financeAuthority:'Game.state.finance[country].omegaFinance.ledger',
       constructionAuthority:'OmegaResourceIndustrialNetwork.startFactoryProject / advanceProjects',
       assetAuthority:'Game.state.economy[country].productionAssets',
@@ -3262,7 +3278,7 @@
     getPrivateMarketConcentration:getPrivateMarketConcentration,evaluateCompanySolvency:evaluateCompanySolvency,
     openCompanyInsolvencyCase:openCompanyInsolvencyCase,proposeCompanyRestructuring:proposeCompanyRestructuring,decideCompanyRestructuring:decideCompanyRestructuring,
     applyCompanyRestructuring:applyCompanyRestructuring,closePrivateCompany:closePrivateCompany,
-    diagnostics:diagnostics,productionProofReady:productionProofReady,renderIndustryPanel:renderPanel
+    diagnostics:diagnostics,productionProofReady:productionProofReady,productionGateReason:productionGateReason,renderIndustryPanel:renderPanel
   });
   g.OmegaPrivateEnterpriseLifecycleV1=API;g.Omega=g.Omega||{};g.Omega.PrivateEnterpriseLifecycleV1=API;
   if(typeof module!=='undefined'&&module.exports)module.exports=API;
