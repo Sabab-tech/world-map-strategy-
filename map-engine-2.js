@@ -602,7 +602,22 @@ Game.DataLoader = {
             const aborted = (controller && controller.signal && controller.signal.aborted) ||
                 (error && error.name === 'AbortError');
             if (!aborted) {
-                console.error('[OMEGA Map] World geometry load failed.', error);
+                const errorName = error && error.name ? String(error.name) : 'Error';
+                const errorCode = error && error.code ? String(error.code) : '';
+                const errorMessage = error && error.message
+                    ? String(error.message).replace(/\\s+/g, ' ').slice(0, 400)
+                    : String(error || 'Unknown loading error').replace(/\\s+/g, ' ').slice(0, 400);
+                const mapSurface = Game.Map && (Game.Map.map || window.map);
+                const leafletReady = !!(window.L && typeof window.L.geoJSON === 'function');
+                const mapReady = !!(mapSurface && typeof mapSurface.addLayer === 'function');
+                const errorStack = error && error.stack
+                    ? String(error.stack).replace(/\\s+/g, ' ').slice(0, 260) : '';
+                console.error('[OMEGA Map] World geometry load failed: ' + errorName +
+                    (errorCode ? ' [' + errorCode + ']' : '') + ': ' + errorMessage +
+                    '; leafletReady=' + leafletReady + '; mapReady=' + mapReady +
+                    '; uiActive=' + (Game.Map.__omegaMapUiActive !== false) +
+                    '; requestAborted=' + !!(controller && controller.signal && controller.signal.aborted) +
+                    (errorStack ? '; stack=' + errorStack : ''));
                 if (Game.Map.__omegaMapUiActive !== false) {
                     if (Game.Map.countryGeoJSON && typeof Game.Map.handleWorldMapRenderFailure === 'function') {
                         Game.Map.handleWorldMapRenderFailure(error);
@@ -1700,12 +1715,21 @@ Game.Map.renderGeoJSON = function(geoData) {
     const featureCount = featureCollection ? featureCollection.length : 0;
     const recoverableFeatureErrorLimit = Math.max(3, Math.floor(featureCount * 0.05));
     const addFeatureSafely = function(feature, index) {
+        const props = feature && feature.properties || {};
+        const featureName = props.ADMIN || props.name || props.NAME || ('feature ' + (index + 1));
+        const startedAt = Date.now();
         try {
             layer.addData(feature);
+            const renderDuration = Date.now() - startedAt;
+            if (renderDuration >= 80) {
+                const geometryType = feature && feature.geometry && feature.geometry.type
+                    ? String(feature.geometry.type) : 'unknown';
+                console.warn('[OMEGA Map] Slow country feature render: ' + String(featureName) +
+                    ' (' + geometryType + ') addData=' + renderDuration + 'ms');
+            }
             return true;
         } catch (error) {
-            const props = feature && feature.properties || {};
-            const name = props.ADMIN || props.name || props.NAME || ('feature ' + (index + 1));
+            const name = featureName;
             const message = String(error && error.message || error || 'Unknown feature error').slice(0, 140);
             const errors = Game.__omegaGeoJSONRenderErrors || (Game.__omegaGeoJSONRenderErrors = []);
             errors.push({ index:index, country:String(name), message:message });
