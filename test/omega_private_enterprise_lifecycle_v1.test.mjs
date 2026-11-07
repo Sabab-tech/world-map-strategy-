@@ -1078,6 +1078,13 @@ test('insolvency opens only on recorded cash shortfall; restructuring, suspensio
   assert.equal(solvency.status,'INSOLVENT');
   assert.equal(solvency.totalRecordedCurrentLiabilities,100);
   assert.equal(solvency.availableCash,10);
+  const blockedBuyerImport=api.reservePrivateCompanyImport({
+    settlementId:'INSOLVENT-IMPORT-BLOCK',buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:company,sellerCompanyId:'AURORA_INDUSTRIAL_GROUP',buyerAmount:10,
+    sellerAmount:10,buyerCurrency:'GAME_CURRENCY_UNITS',sellerCurrency:'GAME_CURRENCY_UNITS',quantity:1,resourceId:'iron_ore'
+  });
+  assert.equal(blockedBuyerImport.status,'BLOCKED');
+  assert.equal(blockedBuyerImport.reason,'BUYER_COMPANY_STATUS_BLOCKS_NEW_IMPORT');
   const opened=api.openCompanyInsolvencyCase({countryId:'BGD',companyId:company,
     requestId:'INSOLVENCY-1',reason:'The company cannot meet its recorded payable obligations.'});
   assert.equal(opened.status,'OPEN',JSON.stringify(opened));
@@ -1094,6 +1101,11 @@ test('insolvency opens only on recorded cash shortfall; restructuring, suspensio
   assert.equal(applied.status,'IMPLEMENTED',JSON.stringify(applied));
   assert.equal(h.state.economy.BGD.productionAssets[0].status,'MAINTENANCE');
   assert.equal(h.state.economy.BGD.productionAssets[0].productionEnabled,false);
+  h.state.finance.BGD.omegaFinance.companyTradeReservations={
+    'OPEN-PRIVATE-IMPORT':{settlementId:'OPEN-PRIVATE-IMPORT',buyerCompanyId:company,status:'RESERVED'}
+  };
+  h.state.trade={BGD:{importRequests:[{requestId:'OPEN-PRIVATE-ORDER',buyerCompanyId:company,
+    sellerCompanyId:'AURORA_INDUSTRIAL_GROUP',status:'SENT',stage:'OPEN'}],globalTradeLedger:{requests:[],decisions:[],settlements:[]}}};
   const closed=api.closePrivateCompany({countryId:'BGD',companyId:company,requestId:'CLOSE-1',
     reason:'The restructuring has not restored liquidity and the company is closing.'});
   assert.equal(closed.status,'CLOSED',JSON.stringify(closed));
@@ -1101,6 +1113,9 @@ test('insolvency opens only on recorded cash shortfall; restructuring, suspensio
   assert.equal(h.state.economy.BGD.productionAssets.length,1,'closure must preserve the canonical asset record');
   assert.equal(closed.closure.releasedReservedCash,20);
   assert.equal(closed.closure.remainingOperatingPayables,100,'closure does not silently erase creditors');
+  assert.equal(h.state.finance.BGD.omegaFinance.companyTradeReservations['OPEN-PRIVATE-IMPORT'].status,'CANCELLED');
+  assert.equal(h.state.trade.BGD.importRequests[0].status,'CANCELLED');
+  assert.equal(closed.closure.cancelledPrivateTradeReservations.includes('OPEN-PRIVATE-IMPORT'),true);
   assert.equal(h.state.economy.BGD.privateEnterpriseLifecycle.companyStatuses[company],'CLOSED');
   assert.equal(api.closePrivateCompany({countryId:'BGD',companyId:company,requestId:'CLOSE-1',
     reason:'The company has closed.'}).status,'DUPLICATE');
