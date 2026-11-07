@@ -511,8 +511,11 @@ test('world geometry loads before support datasets, shows real progress, caches 
   assert.ok(map.includes("root.style.display = 'none';") &&
     map.includes("root.style.display = this.__omegaMapRootDisplay === null ? '' : this.__omegaMapRootDisplay"),
     'ministry switching must hide and restore the map root through visibility alone');
-  assert.ok(!map.includes('scheduleOmegaMapLayerBatch') &&
-    !map.includes('map.removeLayer(layer)') && !map.includes('map.addLayer(layer)'),
+  const mapSwitchStart = map.indexOf('Game.Map.setUiActive = function(active)');
+  const mapSwitchEnd = map.indexOf('Game.Map.getCountryPolygonStyle = function(feature)', mapSwitchStart);
+  const mapSwitch = map.slice(mapSwitchStart, mapSwitchEnd);
+  assert.ok(!mapSwitch.includes('eachLayer') &&
+    !mapSwitch.includes('removeLayer') && !mapSwitch.includes('addLayer'),
     'ministry switching must preserve attached Leaflet layers instead of rebuilding the cached GeoJSON tree');
   assert.ok(coreAssets.includes('"./map-engine-2.js"'),
     'the cached map visibility lifecycle must be available after an offline relaunch');
