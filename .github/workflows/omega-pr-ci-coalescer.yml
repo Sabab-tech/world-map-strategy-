@@ -24,7 +24,7 @@ jobs:
           set -euo pipefail
           mapfile -t stale_run_ids < <(
             gh run list --repo "$GITHUB_REPOSITORY" --branch "$HEAD_REF" --limit 1000 --json databaseId,status,headSha,workflowName |
-              jq -r --arg current "$HEAD_SHA" '.[] | select(.headSha != $current and .status != "completed" and .workflowName != "OMEGA Private Enterprise Real Browser E2E") | .databaseId'
+              jq -r --arg current "$HEAD_SHA" '.[] | select(.headSha != $current and .status != "completed" and (.workflowName != "OMEGA Private Enterprise Real Browser E2E" or .status == "queued" or .status == "pending")) | .databaseId'
           )
           for run_id in "${stale_run_ids[@]}"; do
             # A stale run can finish after the list above is read but before the
