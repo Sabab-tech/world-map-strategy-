@@ -1208,7 +1208,7 @@
       var same=prior.buyerCountryId===buyerCountry&&prior.sellerCountryId===sellerCountry&&
         prior.buyerCompanyId===buyerCompany&&prior.sellerCompanyId===sellerCompany&&
         Math.abs((num(prior.buyerAmount)||0)-buyerAmount)<=1e-8&&
-        Math.abs((num(prior.buyerPurchaseAmount)??num(prior.buyerAmount)||0)-buyerPurchaseAmount)<=1e-8&&
+        Math.abs(((num(prior.buyerPurchaseAmount)??num(prior.buyerAmount))||0)-buyerPurchaseAmount)<=1e-8&&
         Math.abs((num(prior.buyerTariffAmount)||0)-buyerTariffAmount)<=1e-8&&
         Math.abs((num(prior.sellerAmount)||0)-sellerAmount)<=1e-8&&prior.buyerCurrency===buyerCurrency&&prior.sellerCurrency===sellerCurrency&&
         Math.abs((num(prior.quantity)||0)-quantity)<=1e-8&&prior.resourceId===payload.resourceId;
