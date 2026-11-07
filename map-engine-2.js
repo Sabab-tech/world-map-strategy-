@@ -1289,6 +1289,8 @@ Game.Map = {
 Game.Map.__omegaMapUiActive = true;
 Game.Map.__omegaDetachedLayers = [];
 Game.Map.__omegaMapRootDisplay = null;
+Game.Map.__omegaMapRootVisibility = null;
+Game.Map.__omegaMapRootPointerEvents = null;
 Game.Map.__omegaMapLoadingProgress = 0;
 
 Game.Map.updateMapLoadingProgress = function(percent, message, status) {
@@ -1383,12 +1385,14 @@ Game.Map.ensureMapLoadingOverlay = function() {
 // The map root is hidden while a ministry owns the screen. Keep Leaflet's
 // existing layer tree attached: removing and re-adding the GeoJSON layer forces
 // legacy WebView to rebuild every country path and can starve the renderer.
+// Preserve the map's fixed layout and cached SVG/Leaflet tree while a ministry
+// owns the screen. display:none collapses the map surface and makes legacy WebView
+// rebuild/repaint every country path on return; visibility keeps that tree warm.
 Game.Map.setUiActive = function(active) {
     const nextActive = active === true;
     if (this.__omegaMapUiActive === nextActive) return true;
     this.__omegaMapUiActive = nextActive;
     const root = document.getElementById('render-engine-root');
-    const map = this.map || window.map;
 
     if (!nextActive) {
         const overlay = document.getElementById('omega-map-load-overlay');
@@ -1414,28 +1418,19 @@ Game.Map.setUiActive = function(active) {
         }
 
         if (root) {
-            if (this.__omegaMapRootDisplay === null) this.__omegaMapRootDisplay = root.style.display || '';
+            if (this.__omegaMapRootVisibility === null) this.__omegaMapRootVisibility = root.style.visibility || '';
+            if (this.__omegaMapRootPointerEvents === null) this.__omegaMapRootPointerEvents = root.style.pointerEvents || '';
             root.setAttribute('data-omega-map-suspended', 'true');
-            root.style.display = 'none';
+            root.style.visibility = 'hidden';
+            root.style.pointerEvents = 'none';
         }
         return true;
     }
 
     if (root) {
-        root.style.display = this.__omegaMapRootDisplay === null ? '' : this.__omegaMapRootDisplay;
+        root.style.visibility = this.__omegaMapRootVisibility === null ? '' : this.__omegaMapRootVisibility;
+        root.style.pointerEvents = this.__omegaMapRootPointerEvents === null ? '' : this.__omegaMapRootPointerEvents;
         root.removeAttribute('data-omega-map-suspended');
-    }
-    if (map && typeof map.invalidateSize === 'function') {
-        const refreshMapSize = function () {
-            if (Game.Map.__omegaMapUiActive !== false) {
-                map.invalidateSize({ pan:false, debounceMoveend:true });
-            }
-        };
-        if (typeof window.requestAnimationFrame === 'function') {
-            window.requestAnimationFrame(refreshMapSize);
-        } else if (typeof window.setTimeout === 'function') {
-            window.setTimeout(refreshMapSize, 0);
-        }
     }
 
     if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON) {
