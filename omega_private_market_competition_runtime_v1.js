@@ -32,6 +32,7 @@ const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulation
 const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
 function country(v){
  const raw=id(v);if(!raw)return '';
+ if(/^[A-Z]{3}$/.test(raw))return raw;
  try{const r=(g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity)?.resolveCountry?.(raw);if(r?.id)return id(r.id);}catch(_){}
  return raw;
 }
@@ -184,8 +185,8 @@ function processCountry(countryId){
      interventionStatus:'NOT_REQUIRED',belowThresholdTurns:0,authority:'OMEGA_PRIVATE_MARKET_COMPETITION_RUNTIME'};
     cases.push(row);byId.set(key,row);
    }
-   row.status='OPEN';row.stage=stage;row.lastObservedTurn=turn();row.lastObservedPrivateCompanyHhi:hhi;
-   row.leaderTotalMarketSharePct:Number(share.toFixed(4));
+   row.status='OPEN';row.stage=stage;row.lastObservedTurn=turn();row.lastObservedPrivateCompanyHhi=hhi;
+   row.leaderTotalMarketSharePct=Number(share.toFixed(4));
    row.privateSectorMarketSharePct:num(summary.privateSectorMarketSharePct);
    row.verifiedSettledSaleCount:num(summary.verifiedSettledSaleCount)||0;
    row.totalAttributedSettledMarketValue:num(summary.totalAttributedSettledMarketValue)||0;
