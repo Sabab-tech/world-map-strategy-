@@ -385,7 +385,10 @@ test('playable mine extraction feeds a commissioned private factory through prod
     'private production must bind to the actual catalog, logistics, cycle and output runtime');
   const proposal=lifecycle.createProposal({countryId:'BGD',companyId:'NOVA_CONSUMER_INDUSTRIES',
     operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
-    processingResourceId:'coal',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true});
+    processingResourceId:'coal',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true,
+    requestReason:'Nova Consumer Industries requests a coal-processing facility to convert attributable domestic coal extraction into a saleable industrial intermediate.',
+    expectedBenefit:'The commissioned plant adds modeled coal-concentrate output capacity. Company income is recognized only after a buyer consumes attributable output and the market settlement posts.',
+    riskForecast:'The project remains exposed to mine output, shipment delays, recipe input quality, utility availability, construction capital, warehouse capacity and uncertain customer demand.'});
   assert.equal(proposal.status,'PROPOSED',JSON.stringify(proposal));
   const decision=lifecycle.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}});
