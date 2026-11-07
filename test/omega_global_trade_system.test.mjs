@@ -306,13 +306,7 @@ assert.equal(realMarketQuote.clearingPriceUsd,100);
 assert.equal(realMarketQuote.matchedQuantity,100);
 const discoveredPrivateSuppliers=realMarket.privateCompanySuppliers('crude_oil',100,'BGD',sellerCompany);
 assert.ok(discoveredPrivateSuppliers.some(row=>row.countryId==='SAU'&&row.companyId===sellerCompany&&
-  row.available===500&&row.sourceBatchIds.includes(companyBatchId)),JSON.stringify(discoveredPrivateSuppliers));},
-  localPrice(){return 100;},
-  privateCompanySuppliers(resourceId,quantity,buyer,sellerId){
-    return [{countryId:'SAU',resourceId,companyId:sellerId,available:500,
-      sourceBatchIds:[companyBatchId],marketQuote:{status:'CLEARED',clearingPriceUsd:100}}];
-  }
-};
+  row.available===500&&row.sourceBatchIds.includes(companyBatchId)),JSON.stringify(discoveredPrivateSuppliers));
 const ordinaryPending=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-UI-CREATE');
 if(ordinaryPending){ordinaryPending.status='REJECTED';ordinaryPending.stage='TEST_HOLD';}
 const buyerTreasuryBeforePrivate=globalThis.Game.state.finance.BGD.available;
