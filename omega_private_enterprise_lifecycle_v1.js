@@ -2193,8 +2193,10 @@
     if(lookback===null)lookback=365;
     if(!Number.isInteger(lookback)||lookback<1||lookback>3650)return{status:'BLOCKED',reason:'LOOKBACK_TURNS_OUT_OF_RANGE'};
     var fromTurn=Math.max(0,turn()-lookback+1),totalAttributedValue=0,privateValue=0,unattributedSales=0,
-      verifiedSales=0,byCompany=Object.create(null),byResource=Object.create(null);
-    COMPANY_IDS.forEach(function(company){byCompany[company]={companyId:company,companyName:COMPANY_NAMES[company],salesValue:0,quantity:0,saleCount:0};});
+      verifiedSales=0,privateExportValue=0,verifiedPrivateExportReceipts=0,
+      byCompany=Object.create(null),byResource=Object.create(null),financeRows=financeLedger(cid,false)||[];
+    COMPANY_IDS.forEach(function(company){byCompany[company]={companyId:company,companyName:COMPANY_NAMES[company],
+      salesValue:0,quantity:0,saleCount:0,exportReceiptValue:0,exportQuantity:0,exportReceiptCount:0};});
     rows.forEach(function(wrapper){
       var sale=wrapper&&wrapper.sale&&typeof wrapper.sale==='object'?wrapper.sale:wrapper,
         t=num(wrapper&&wrapper.turn)??num(sale&&sale.simulationTurn);
@@ -2218,15 +2220,37 @@
         }
       });
     });
+    financeRows.forEach(function(entry){
+      if(!entry||entry.type!=='PRIVATE_COMPANY_EXPORT_RECEIPT'||String(entry.status||'').toUpperCase()!=='POSTED')return;
+      var companyId=id(entry.companyId),amount=num(entry.amount),t=num(entry.turn),resourceId=String(entry.resourceId||''),
+        settlementId=String(entry.settlementId||'').trim();
+      if(COMPANY_IDS.indexOf(companyId)<0||amount===null||amount<=0||t===null||t<fromTurn||t>turn()||!settlementId)return;
+      if(resourceFilter&&resourceId.toLowerCase()!==resourceFilter.toLowerCase())return;
+      var account=companyFlowAccount(cid,companyId),journal=account&&Array.isArray(account.cashFlowEntries)?account.cashFlowEntries:[],
+        journalEntry=journal.find(function(row){return row&&row.entryId==='PE-PRIVATE-IMPORT-RECEIPT:'+settlementId&&
+          row.status==='POSTED'&&row.direction==='CREDIT'&&row.category==='PRIVATE_COMPANY_EXPORT_SALE'&&
+          String(row.sourceId||'')===settlementId&&Math.abs((num(row.amount)||0)-amount)<=1e-8&&
+          id(row.currency)===id(entry.currency);});
+      if(!journalEntry)return;
+      byCompany[companyId].exportReceiptValue+=amount;
+      byCompany[companyId].exportQuantity+=Math.max(0,num(entry.quantity)||0);
+      byCompany[companyId].exportReceiptCount++;
+      privateExportValue+=amount;verifiedPrivateExportReceipts++;
+    });
     var firms=COMPANY_IDS.map(function(companyId){
       var row=byCompany[companyId],privateShare=privateValue>0?row.salesValue/privateValue*100:0,
-        totalShare=totalAttributedValue>0?row.salesValue/totalAttributedValue*100:0;
+        totalShare=totalAttributedValue>0?row.salesValue/totalAttributedValue*100:0,
+        exportMixShare=privateExportValue>0?row.exportReceiptValue/privateExportValue*100:0;
       return{companyId:companyId,companyName:COMPANY_NAMES[companyId],
         settledSalesValue:Number(row.salesValue.toFixed(2)),quantity:Number(row.quantity.toFixed(6)),
         saleCount:row.saleCount,privateSectorSharePct:Number(privateShare.toFixed(4)),
-        totalAttributedMarketSharePct:Number(totalShare.toFixed(4))};
+        totalAttributedMarketSharePct:Number(totalShare.toFixed(4)),
+        settledPrivateExportReceiptValue:Number(row.exportReceiptValue.toFixed(2)),
+        privateExportQuantity:Number(row.exportQuantity.toFixed(6)),privateExportReceiptCount:row.exportReceiptCount,
+        privateExportMixSharePct:Number(exportMixShare.toFixed(4))};
     }).sort(function(a,b){return b.settledSalesValue-a.settledSalesValue||a.companyId.localeCompare(b.companyId);});
-    var privateHhi=privateValue>0?firms.reduce(function(sum,row){return sum+Math.pow(row.privateSectorSharePct,2);},0):null;
+    var privateHhi=privateValue>0?firms.reduce(function(sum,row){return sum+Math.pow(row.privateSectorSharePct,2);},0):null,
+      privateExportHhi=privateExportValue>0?firms.reduce(function(sum,row){return sum+Math.pow(row.privateExportMixSharePct,2);},0):null;
     var privateSharePct=totalAttributedValue>0?privateValue/totalAttributedValue*100:null;
     return{status:verifiedSales?'AVAILABLE':'NO_VERIFIED_PRIVATE_SALES',countryId:cid,resourceId:resourceFilter||null,
       lookbackTurns:lookback,fromTurn:fromTurn,toTurn:turn(),verifiedSettledSaleCount:verifiedSales,
@@ -2234,9 +2258,13 @@
       privateSectorMarketSharePct:privateSharePct===null?null:Number(privateSharePct.toFixed(4)),
       privateCompanyHhi:privateHhi===null?null:Number(privateHhi.toFixed(2)),
       concentration:privateHhi===null?'UNAVAILABLE':privateHhi>=2500?'HIGH':privateHhi>=1500?'MODERATE':'LOW',
+      privateCompanyExportReceiptsValue:Number(privateExportValue.toFixed(2)),
+      verifiedPrivateCompanyExportReceiptCount:verifiedPrivateExportReceipts,
+      privateCompanyExportHhi:privateExportHhi===null?null:Number(privateExportHhi.toFixed(2)),
+      privateExportConcentration:privateExportHhi===null?'UNAVAILABLE':privateExportHhi>=2500?'HIGH':privateExportHhi>=1500?'MODERATE':'LOW',
       firms:firms,unattributedOrUnvaluedSalesCount:unattributedSales,
-      coverage:{status:'DOMESTIC_SETTLED_SALES_ONLY',includesPrivateCompanyAttribution:true,
-        crossBorderCompanySales:'NOT_INCLUDED_NO_VERIFIED_COMPANY_LEVEL_IMPORT_EXPORT_ATTRIBUTION',
+      coverage:{status:'DOMESTIC_SETTLED_SALES_PLUS_SEPARATE_VERIFIED_PRIVATE_EXPORT_RECEIPT_MIX',includesPrivateCompanyAttribution:true,
+        crossBorderCompanySales:'PRIVATE_EXPORT_RECEIPTS_REPORTED_SEPARATELY_NOT_MIXED_INTO_DOMESTIC_MARKET_SHARE',
         referenceOnlyQuotesExcluded:true,unsoldInventoryExcluded:true,productionCapacityExcluded:true,
         thresholds:'MODEL_INDICATORS_NOT_LEGAL_COMPETITION_FINDINGS'},
       authority:'OMEGA_PRIVATE_ENTERPRISE_MARKET_CONCENTRATION_V1',simulationOnly:true};
