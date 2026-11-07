@@ -338,8 +338,10 @@ public final class OmegaGameplaySmokeTest {
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
                     " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
-                    "   document.body.getAttribute('data-active-layer') === '0' &&" +
-                    "   window.OmegaLayerManager && Number(window.OmegaLayerManager.currentLayer) === 0);" +
+                    "   cabinet.getAttribute('aria-hidden') === 'true' && cabinet.style.display === 'none' &&" +
+                    "   !cabinet.__omegaUIV2State && document.body.getAttribute('data-active-layer') === '0' &&" +
+                    "   window.OmegaLayerManager && Number(window.OmegaLayerManager.currentLayer) === 0 &&" +
+                    "   window.Game && window.Game.Map && window.Game.Map.__omegaMapUiActive === true);" +
                     "})()";
             String mapRestored = "false";
             final long mapRestoreDeadline = SystemClock.elapsedRealtime() + 15000L;
