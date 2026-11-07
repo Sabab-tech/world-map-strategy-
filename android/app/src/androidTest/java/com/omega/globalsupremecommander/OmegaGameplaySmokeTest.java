@@ -770,9 +770,8 @@ public final class OmegaGameplaySmokeTest {
         assertNotNull("Android internal screenshot directory must be available", internalDirectory);
         assertTrue("Android internal screenshot directory must exist", internalDirectory.isDirectory());
 
-        // Keep the PNG and marker in app-private internal storage. Android 9's
-        // shell cannot reliably traverse app-specific external storage; run-as
-        // can read this internal path while the debug target package is installed.
+        // Keep the PNG and marker in app-private internal storage. run-as can read
+        // this path reliably while the debug target package is installed.
         final File statusFile = new File(internalDirectory, screenshot.getName() + ".exit");
         try (FileOutputStream status = new FileOutputStream(statusFile)) {
             status.write('0');
@@ -790,7 +789,7 @@ public final class OmegaGameplaySmokeTest {
         final String shellCommand =
                 "mkdir -p " + shellQuote(hostDirectory) +
                 "; mkdir_status=$?; " +
-                "if [ \\"$mkdir_status\\" -eq 0 ]; then " +
+                "if [ $mkdir_status -eq 0 ]; then " +
                 "run-as " + shellQuote(packageName) +
                 " cat " + shellQuote(screenshot.getAbsolutePath()) +
                 " > " + shellQuote(hostPng) +
@@ -803,11 +802,11 @@ public final class OmegaGameplaySmokeTest {
                 "; status_status=$?; " +
                 "else png_status=99; status_status=99; fi; " +
                 "printf 'OMEGA_EXPORT_RESULT mkdir=%s png=%s status=%s\\n' " +
-                "\\"$mkdir_status\\" \\"$png_status\\" \\"$status_status\\"; " +
+                "$mkdir_status $png_status $status_status; " +
                 "for diagnostic in " + shellQuote(pngError) + " " + shellQuote(statusError) +
-                "; do if [ -s \\"$diagnostic\\" ]; then " +
-                "printf 'SHELL_DIAGNOSTIC_FILE=%s\\n' \\"$diagnostic\\"; " +
-                "cat \\"$diagnostic\\"; fi; done";
+                "; do if [ -s $diagnostic ]; then " +
+                "printf 'SHELL_DIAGNOSTIC_FILE=%s\\n' $diagnostic; " +
+                "cat $diagnostic; fi; done";
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
                 "STAGE=SCREENSHOT_HOST_EXPORT_BEGIN source=app-internal-run-as");
         final String shellResult;
