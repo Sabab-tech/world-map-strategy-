@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,8 +19,12 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -114,46 +119,38 @@ public final class OmegaGameplaySmokeTest {
             );
 
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=OFFLINE_BRIDGE_READY");
+            // Verify the 2x UI control and return the clock to pause in the same
+            // WebView task. Two separate callbacks allowed the live simulation to
+            // start a large synchronous turn before the pause command reached WebView 66.
             final String speedControlScript =
                     "(function() {" +
-                    " if (!window.Omega || !window.Omega.GameLifecycle || !window.Game) return false;" +
-                    // A speed selection must be tested in a started game, not an unowned world.
+                    " var lifecycle = window.Omega && window.Omega.GameLifecycle;" +
+                    " if (!lifecycle || typeof lifecycle.setSpeed !== 'function' || typeof lifecycle.getDiagnostics !== 'function' || !window.Game) return false;" +
                     " window.Game.currentActiveCountry = 'USA';" +
                     " window.Game.playerCountry = 'USA';" +
                     " if (window.CountryIOS) window.CountryIOS.activeCountry = 'USA';" +
                     " var button = document.querySelector('.speed-btn[data-speed=\\\"2\\\"]');" +
                     " if (!button) return false;" +
                     " button.click();" +
-                    " var diagnostics = window.Omega.GameLifecycle.getDiagnostics();" +
-                    " return !!(diagnostics && diagnostics.clock && Number(diagnostics.clock.speed) === 2);" +
+                    " var running = lifecycle.getDiagnostics();" +
+                    " var runningSpeed = running && running.clock ? Number(running.clock.speed) : null;" +
+                    " if (runningSpeed !== 2) return false;" +
+                    " var pauseApplied = lifecycle.setSpeed(0);" +
+                    " var paused = lifecycle.getDiagnostics();" +
+                    " var pausedSpeed = paused && paused.clock ? Number(paused.clock.speed) : null;" +
+                    " var sim = window.Omega.SimulationRuntime || window.Omega.Simulation;" +
+                    " var status = String(sim && sim.status || '').toUpperCase();" +
+                    " var stopped = pausedSpeed === 0 || (status !== 'RUNNING' && !(paused && paused.running === true));" +
+                    " window.__OMEGA_ANDROID_CLOCK_DIAGNOSTICS = {runningSpeed:runningSpeed,pauseApplied:pauseApplied,pausedSpeed:pausedSpeed,status:status,running:!!(paused && paused.running),stopped:stopped};" +
+                    " return stopped;" +
                     "})()";
             assertEquals(
-                    "Tapping the 2x control must set the authoritative OMEGA simulation clock to speed 2",
+                    "The real 2x control must set speed 2 and then pause the authoritative clock before inserting the UI fixture",
                     "true", evaluate(instrumentation, webViewRef.get(), speedControlScript)
             );
-
-            // Stop the simulation before inserting an in-memory-only fixture. This keeps
-            // the visual test deterministic and prevents the fixture from entering a game turn.
-            final String pauseClockScript =
-                    "(function() {" +
-                    " var lifecycle = window.Omega && window.Omega.GameLifecycle;" +
-                    " var sim = window.Omega && (window.Omega.SimulationRuntime || window.Omega.Simulation);" +
-                    " if (!lifecycle || typeof lifecycle.setSpeed !== 'function' || typeof lifecycle.getDiagnostics !== 'function' || !sim || !sim.clock) return false;" +
-                    " var applied = lifecycle.setSpeed(0);" +
-                    " var diagnostics = lifecycle.getDiagnostics();" +
-                    " var speed = diagnostics && diagnostics.clock ? Number(diagnostics.clock.speed) : null;" +
-                    " var status = String(sim.status || '').toUpperCase();" +
-                    " var safeToSeed = speed === 0 || (status !== 'RUNNING' && !(diagnostics && diagnostics.running === true));" +
-                    " window.__OMEGA_ANDROID_PAUSE_DIAGNOSTICS = {applied:applied, speed:speed, status:status, running:!!(diagnostics && diagnostics.running), safeToSeed:safeToSeed};" +
-                    " return safeToSeed;" +
-                    "})()";
-            final String pauseClockResult = evaluate(instrumentation, webViewRef.get(), pauseClockScript);
-            final String pauseClockDiagnostics = evaluate(instrumentation, webViewRef.get(),
-                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_PAUSE_DIAGNOSTICS || {});})()");
-            assertEquals(
-                    "The visual-only fixture must not run during a live game turn; clock=" + pauseClockDiagnostics,
-                    "true", pauseClockResult
-            );
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=SIMULATION_CLOCK_PAUSED diagnostics=" +
+                    evaluate(instrumentation, webViewRef.get(),
+                            "(function(){return JSON.stringify(window.__OMEGA_ANDROID_CLOCK_DIAGNOSTICS || {});})()"));
 
             final String seedFactoryInputFixtureScript =
                     "(function() {" +
@@ -274,38 +271,121 @@ public final class OmegaGameplaySmokeTest {
             );
 
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_GOVERNMENT_READY");
-            // Exercise repeated real UI v2 navigation taps, exit, and reopen. This
-            // specifically catches event bubbling into the retired layer renderers.
-            final String repeatedUiNavigationScript =
+            // Exercise real UI v2 taps one at a time. A single JavaScript evaluation
+            // that synchronously dispatched seven screen-changing clicks starved the
+            // API 28 WebView renderer and never delivered its callback. Separate calls
+            // yield between renders while retaining an assertion for every transition.
+            final String[] repeatedUiNavigationRoutes =
+                    new String[] {"economy", "government", "more", "economy", "government"};
+            for (String route : repeatedUiNavigationRoutes) {
+                final String routeTapScript =
+                        "(function() {" +
+                        " var cabinet = document.getElementById('cabinet-full-window');" +
+                        " if (!cabinet || !cabinet.__omegaUIV2State) return false;" +
+                        " var route = '" + route + "';" +
+                        " var controls = cabinet.querySelectorAll('[data-omega-v2-global-nav]');" +
+                        " var control = Array.prototype.filter.call(controls, function(node) {" +
+                        "   return node.getAttribute('data-omega-v2-global-nav') === route;" +
+                        " })[0];" +
+                        " if (!control || control.disabled) return false;" +
+                        " control.click();" +
+                        " return true;" +
+                        "})()";
+                assertEquals("The " + route + " navigation control must accept an individual tap",
+                        "true", evaluate(instrumentation, webViewRef.get(), routeTapScript));
+
+                final String routeReadyScript =
+                        "(function() {" +
+                        " var cabinet = document.getElementById('cabinet-full-window');" +
+                        " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                        " var mapRoot = document.getElementById('render-engine-root');" +
+                        " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
+                        "   cabinet.getAttribute('data-omega-v2-route') === '" + route + "' &&" +
+                        "   main && main.childElementCount > 0 && mapRoot && mapRoot.style.display === 'none' && window.OmegaLayerManager &&" +
+                        "   Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
+                        "   document.body.getAttribute('data-active-layer') === '1');" +
+                        "})()";
+                String routeReady = "false";
+                final long routeDeadline = SystemClock.elapsedRealtime() + 15000L;
+                while (!"true".equals(routeReady) &&
+                        SystemClock.elapsedRealtime() < routeDeadline) {
+                    routeReady = evaluate(instrumentation, webViewRef.get(), routeReadyScript);
+                    if (!"true".equals(routeReady)) SystemClock.sleep(250L);
+                }
+                assertEquals("The " + route + " screen must remain responsive after its tap",
+                        "true", routeReady);
+                SystemClock.sleep(250L);
+            }
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_REPEATED_BUTTON_NAV_READY");
+
+            final String repeatedNavigationExitScript =
                     "(function() {" +
-                    " var entry = document.getElementById('omega-gov-entry-v3');" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
-                    " if (!entry || !cabinet || !cabinet.__omegaUIV2State) return false;" +
-                    " var sequence = ['economy','government','more','economy','government'];" +
-                    " for (var i = 0; i < sequence.length; i++) {" +
-                    "   var route = sequence[i];" +
-                    "   var control = cabinet.querySelector('[data-omega-v2-global-nav=\"' + route + '\"]');" +
-                    "   if (!control) return false;" +
-                    "   control.click();" +
-                    "   if (cabinet.getAttribute('data-omega-v2-route') !== route) return false;" +
-                    " }" +
-                    " var exit = cabinet.querySelector('[data-omega-v2-exit]');" +
+                    " var exit = cabinet && cabinet.querySelector('[data-omega-v2-exit]');" +
                     " if (!exit) return false;" +
                     " exit.click();" +
-                    " if (cabinet.getAttribute('data-omega-ui-v2-active') === 'true' ||" +
-                    "     document.body.getAttribute('data-active-layer') !== '0' ||" +
-                    "     Number(window.OmegaLayerManager.currentLayer) !== 0) return false;" +
-                    " entry.click();" +
-                    " return !!(cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
-                    "   cabinet.getAttribute('data-omega-v2-route') === 'government' &&" +
-                    "   Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
-                    "   document.body.getAttribute('data-active-layer') === '1');" +
+                    " return true;" +
                     "})()";
-            assertEquals(
-                    "UI v2 buttons must keep navigating on repeated taps, exit to map and reopen without legacy UI",
-                    "true", evaluate(instrumentation, webViewRef.get(), repeatedUiNavigationScript)
-            );
-            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=UI_V2_REPEATED_BUTTON_NAV_READY");
+            assertEquals("UI v2 exit control must accept a separate tap",
+                    "true", evaluate(instrumentation, webViewRef.get(), repeatedNavigationExitScript));
+            final String mapRestoredScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var mapRoot = document.getElementById('render-engine-root');" +
+                    " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
+                    "   cabinet.getAttribute('aria-hidden') === 'true' && cabinet.style.display === 'none' &&" +
+                    "   mapRoot && mapRoot.style.display !== 'none' &&" +
+                    "   cabinet.__omegaUIV2State && cabinet.__omegaUIV2State.route === 'map' &&" +
+                    "   cabinet.__omegaUIV2State.shellMounted === true &&" +
+                    "   cabinet.querySelector('[data-omega-v2-main]') && cabinet.querySelector('[data-omega-v2-main]').childElementCount === 0 &&" +
+                    "   document.body.getAttribute('data-active-layer') === '0' &&" +
+                    "   window.OmegaLayerManager && Number(window.OmegaLayerManager.currentLayer) === 0 &&" +
+                    "   window.Game && window.Game.Map && window.Game.Map.__omegaMapUiActive === true);" +
+                    "})()";
+            String mapRestored = "false";
+            final long mapRestoreDeadline = SystemClock.elapsedRealtime() + 15000L;
+            while (!"true".equals(mapRestored) &&
+                    SystemClock.elapsedRealtime() < mapRestoreDeadline) {
+                mapRestored = evaluate(instrumentation, webViewRef.get(), mapRestoredScript);
+                if (!"true".equals(mapRestored)) SystemClock.sleep(250L);
+            }
+            assertEquals("UI v2 exit must restore the map before reopening the cabinet",
+                    "true", mapRestored);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=MAP_SURFACE_RESTORED");
+
+            final String reopenCabinetScript =
+                    "(function() {" +
+                    " var entry = document.getElementById('omega-gov-entry-v3');" +
+                    " if (!entry) return false;" +
+                    " entry.click();" +
+                    " return true;" +
+                    "})()";
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=REOPEN_MINISTRY_TAP_BEGIN");
+            assertEquals("Government entry must accept a separate reopen tap",
+                    "true", evaluate(instrumentation, webViewRef.get(), reopenCabinetScript));
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=REOPEN_MINISTRY_TAP_RETURNED");
+            final String reopenedCabinetReadyScript =
+                    "(function() {" +
+                    " var cabinet = document.getElementById('cabinet-full-window');" +
+                    " var mapRoot = document.getElementById('render-engine-root');" +
+                    " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
+                    "   cabinet.getAttribute('data-omega-v2-route') === 'government' && mapRoot && mapRoot.style.display === 'none' &&" +
+                    "   Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
+                    "   document.body.getAttribute('data-active-layer') === '1' &&" +
+                    "   cabinet.querySelector('[data-omega-v2-main]') &&" +
+                    "   cabinet.querySelector('[data-omega-v2-main]').childElementCount > 0 &&" +
+                    "   cabinet.getAttribute('data-omega-v2-navigation-pending') !== 'true');" +
+                    "})()";
+            String reopenedCabinetReady = "false";
+            final long reopenDeadline = SystemClock.elapsedRealtime() + 15000L;
+            while (!"true".equals(reopenedCabinetReady) &&
+                    SystemClock.elapsedRealtime() < reopenDeadline) {
+                reopenedCabinetReady = evaluate(instrumentation, webViewRef.get(), reopenedCabinetReadyScript);
+                if (!"true".equals(reopenedCabinetReady)) SystemClock.sleep(250L);
+            }
+            assertEquals("Government cabinet must reopen and finish its route render after the map transition",
+                    "true", reopenedCabinetReady);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=GOVERNMENT_REOPENED_WITH_RETAINED_SHELL");
             final String openMoreRouteScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
@@ -379,13 +459,27 @@ public final class OmegaGameplaySmokeTest {
                     " var cabinet = document.getElementById('cabinet-full-window');" +
                     " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
                     " var button = main && main.querySelector('[data-omega-v2-industry-tab=\"inventory\"]');" +
+                    " window.__OMEGA_ANDROID_INPUT_TAB_DIAGNOSTICS = {" +
+                    "   route:cabinet && cabinet.getAttribute('data-omega-v2-route')," +
+                    "   main:!!main, screen:!!(main && main.querySelector('[data-factory-stock-input-ui=\"v2\"]'))," +
+                    "   button:!!button, disabled:!!(button && button.disabled)" +
+                    " };" +
                     " if (!button || button.disabled) return false;" +
                     " button.click();" +
                     " return true;" +
                     "})()";
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_TAB_CLICK_BEGIN");
-            assertEquals("The actual Input tab control must respond to a tap",
-                    "true", evaluate(instrumentation, webViewRef.get(), openInputTabScript));
+            String inputTabClicked = "false";
+            final long inputTabClickDeadline = SystemClock.elapsedRealtime() + 15000L;
+            while (!"true".equals(inputTabClicked) &&
+                    SystemClock.elapsedRealtime() < inputTabClickDeadline) {
+                inputTabClicked = evaluate(instrumentation, webViewRef.get(), openInputTabScript);
+                if (!"true".equals(inputTabClicked)) SystemClock.sleep(300L);
+            }
+            final String inputTabClickDiagnostic = evaluate(instrumentation, webViewRef.get(),
+                    "(function(){return JSON.stringify(window.__OMEGA_ANDROID_INPUT_TAB_DIAGNOSTICS || {});})()");
+            assertEquals("The actual Input tab control must respond to a tap; diagnostics=" + inputTabClickDiagnostic,
+                    "true", inputTabClicked);
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=INPUT_TAB_CLICK_RETURNED");
             final String inputTablesReadyScript =
                     "(function() {" +
@@ -648,8 +742,8 @@ public final class OmegaGameplaySmokeTest {
         assertNotNull("Android emulator screenshot must be captured", bitmap);
         assertTrue("Android screenshot width must be positive", bitmap.getWidth() > 0);
         assertTrue("Android screenshot height must be positive", bitmap.getHeight() > 0);
-        final File directory = instrumentation.getTargetContext().getExternalFilesDir("omega-smoke");
-        assertNotNull("Android external files directory must be available for smoke screenshots", directory);
+        final File directory = new File(instrumentation.getTargetContext().getFilesDir(), "omega-smoke");
+        assertNotNull("Android internal files directory must be available for smoke screenshots", directory);
         assertTrue("Android screenshot directory must be creatable",
                 directory.isDirectory() || directory.mkdirs());
         final File output = new File(directory, fileName);
@@ -661,9 +755,83 @@ public final class OmegaGameplaySmokeTest {
             bitmap.recycle();
         }
         assertTrue("Android screenshot file must be non-empty", output.isFile() && output.length() > 2048L);
+        exportScreenshotForHost(instrumentation, output);
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
                 "SCREENSHOT_SAVED=" + output.getAbsolutePath() + " bytes=" + output.length());
         return output;
+    }
+
+    private static void exportScreenshotForHost(
+            android.app.Instrumentation instrumentation,
+            File screenshot
+    ) throws Exception {
+        final android.content.Context targetContext = instrumentation.getTargetContext();
+        final File internalDirectory = screenshot.getParentFile();
+        assertNotNull("Android internal screenshot directory must be available", internalDirectory);
+        assertTrue("Android internal screenshot directory must exist", internalDirectory.isDirectory());
+
+        // Keep the PNG and marker in app-private internal storage. run-as can read
+        // this path reliably while the debug target package is installed.
+        final File statusFile = new File(internalDirectory, screenshot.getName() + ".exit");
+        try (FileOutputStream status = new FileOutputStream(statusFile)) {
+            status.write('0');
+            status.flush();
+        }
+        assertTrue("Android internal screenshot status marker must be available",
+                statusFile.isFile() && statusFile.length() == 1L);
+
+        final String packageName = targetContext.getPackageName();
+        final String hostDirectory = "/sdcard/omega-smoke";
+        final String hostPng = hostDirectory + "/" + screenshot.getName();
+        final String hostStatus = hostPng + ".exit";
+        final String pngError = hostPng + ".stderr";
+        final String statusError = hostStatus + ".stderr";
+        final String shellCommand =
+                "mkdir -p " + shellQuote(hostDirectory) +
+                "; mkdir_status=$?; " +
+                "if [ $mkdir_status -eq 0 ]; then " +
+                "run-as " + shellQuote(packageName) +
+                " cat " + shellQuote(screenshot.getAbsolutePath()) +
+                " > " + shellQuote(hostPng) +
+                " 2> " + shellQuote(pngError) +
+                "; png_status=$?; " +
+                "run-as " + shellQuote(packageName) +
+                " cat " + shellQuote(statusFile.getAbsolutePath()) +
+                " > " + shellQuote(hostStatus) +
+                " 2> " + shellQuote(statusError) +
+                "; status_status=$?; " +
+                "else png_status=99; status_status=99; fi; " +
+                "printf 'OMEGA_EXPORT_RESULT mkdir=%s png=%s status=%s\\n' " +
+                "$mkdir_status $png_status $status_status; " +
+                "for diagnostic in " + shellQuote(pngError) + " " + shellQuote(statusError) +
+                "; do if [ -s $diagnostic ]; then " +
+                "printf 'SHELL_DIAGNOSTIC_FILE=%s\\n' $diagnostic; " +
+                "cat $diagnostic; fi; done";
+        android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                "STAGE=SCREENSHOT_HOST_EXPORT_BEGIN source=app-internal-run-as");
+        final String shellResult;
+        try (ParcelFileDescriptor descriptor =
+                     instrumentation.getUiAutomation().executeShellCommand(shellCommand);
+             InputStream shellOutput = new ParcelFileDescriptor.AutoCloseInputStream(descriptor);
+             ByteArrayOutputStream response = new ByteArrayOutputStream()) {
+            final byte[] buffer = new byte[1024];
+            int count;
+            while ((count = shellOutput.read(buffer)) != -1) {
+                response.write(buffer, 0, count);
+            }
+            shellResult = new String(response.toByteArray(), StandardCharsets.UTF_8).trim();
+        }
+        assertEquals(
+                "Host staging must report successful mkdir, internal PNG export and marker export; shell output=" +
+                        shellResult,
+                "OMEGA_EXPORT_RESULT mkdir=0 png=0 status=0", shellResult);
+        android.util.Log.i("OMEGA_ANDROID_SMOKE",
+                "STAGE=SCREENSHOT_HOST_EXPORT_FINISHED png=" + hostPng +
+                        " status=" + hostStatus);
+    }
+
+    private static String shellQuote(String value) {
+        return "'" + value.replace("'", "'\\''") + "'";
     }
 
     private static String evaluate(
