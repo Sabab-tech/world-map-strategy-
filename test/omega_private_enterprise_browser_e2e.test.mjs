@@ -989,6 +989,20 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         throw new Error('SAB34_PRIVATE_CONSTRUCTION_FAILED:' + JSON.stringify(construction));
       }
       const projectId = construction.started[0].projectId;
+
+      // This browser proof advances authoritative turns directly below. Keep the
+      // wall-clock scheduler paused so its 100 ms frame loop cannot race those
+      // deterministic turns or fan out unrelated background work across 17 ministries.
+      // SimulationCoordinator.advance() still executes the full canonical turn pipeline
+      // while the clock is paused; it advances the clock explicitly via step().
+      if (!simulation.clock || typeof simulation.clock.pause !== 'function') {
+        throw new Error('SAB34_CANONICAL_CLOCK_PAUSE_UNAVAILABLE');
+      }
+      simulation.clock.pause();
+      if (simulation.clock.paused !== true) {
+        throw new Error('SAB34_BACKGROUND_ENGINE_CLOCK_NOT_PAUSED');
+      }
+
       const advanced = await simulation.advance(6);
       if (advanced.status === 'ERROR' || advanced.steps !== 6) {
         throw new Error('SAB34_CENTRAL_GAME_CLOCK_CONSTRUCTION_ADVANCE_FAILED:' + JSON.stringify(advanced));
