@@ -459,6 +459,8 @@ test('playable mine extraction feeds a commissioned private factory through prod
   assert.notEqual(uiExecution.result?.factoryBootstrap?.status,'CREATED_SIMULATION_ONLY',
     'the UI pipeline must not request test-only automatic factory commissioning');
   const run=uiExecution.result;
+  assert.equal(String(run.factoryId),String(openingFactory.id||openingFactory.assetId||openingFactory.projectId),
+    'the mine pipeline must dispatch to the exact commissioned private factory, not an unbound government baseline factory');
   assert.equal(run.status,'IN_TRANSIT',JSON.stringify(run));
   assert.equal(run.extractionStatus,'COMMITTED');
   assert.ok(run.batchId&&run.shipmentId&&run.extractionPlanId);
@@ -629,6 +631,15 @@ test('playable mine extraction feeds a commissioned private factory through prod
   assert.equal(resource.inventoryLots[run.batchId].remainingQuantity,sourceBatch.remainingQuantity);
   const factory=state.economy.BGD.productionAssets.find(x=>String(x.id||x.assetId||x.projectId)===String(run.factoryId));
   assert.ok(factory,'receiving factory must be in the country economy state');
+  assert.equal(String(factory.id||factory.assetId||factory.projectId),
+    String(openingFactory.id||openingFactory.assetId||openingFactory.projectId),
+    'the delivered resource must enter the commissioned private factory asset');
+  assert.equal(factory.ownerType,'PRIVATE_ENTERPRISE');
+  assert.equal(factory.ownerCompanyId,'NOVA_CONSUMER_INDUSTRIES');
+  assert.equal(factory.operatorType,'PRIVATE_COMPANY_OPERATOR');
+  assert.equal(factory.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+  assert.equal(factory.productionEnabled,true,
+    'the actual receiving private factory must remain enabled in the canonical production scheduler');
   const targetInputLot=factory.inputBatchLots.find(x=>String(x.batchId)===String(delivery.factoryInputBatchId));
   assert.ok(targetInputLot,'delivery must create a tracked factory-input lot');
   assert.ok(targetInputLot.sourceBatchIds.includes(run.batchId),'factory input lot must preserve the exact extraction batch lineage');
