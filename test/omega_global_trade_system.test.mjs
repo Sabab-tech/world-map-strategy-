@@ -92,6 +92,8 @@ assert.deepEqual({
   buyerCash:globalThis.Game.state.finance.BGD.available,sellerCash:globalThis.Game.state.finance.SAU.available
 },settlementSnapshot,'duplicate settlement events must not change trade balances or treasury cash');
 
+const ordinaryPending=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-UI-CREATE');
+if(ordinaryPending){ordinaryPending.status='REJECTED';ordinaryPending.stage='TEST_HOLD';}
 globalThis.Game.state.trade.BGD.importRequests.push({requestId:'REQ-REJECT',countryId:'BGD',targetCountryId:'SAU',resourceId:'crude_oil',quantity:100000,status:'SENT',stage:'COUNTERPARTY_DECISION_PENDING',createdTurn:1,unitPrice:100});
 globalThis.Game.state.foreign.BGD.relations.SAU.trade_agreement=false;
 trade.processAll();
@@ -309,8 +311,6 @@ assert.ok(realMarketQuote.matches.some(match=>match.buyerCountryId==='BGD'&&matc
 const discoveredPrivateSuppliers=realMarket.privateCompanySuppliers('crude_oil',100,'BGD',sellerCompany);
 assert.ok(discoveredPrivateSuppliers.some(row=>row.countryId==='SAU'&&row.companyId===sellerCompany&&
   row.available===500&&row.sourceBatchIds.includes(companyBatchId)),JSON.stringify(discoveredPrivateSuppliers));
-const ordinaryPending=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-UI-CREATE');
-if(ordinaryPending){ordinaryPending.status='REJECTED';ordinaryPending.stage='TEST_HOLD';}
 const buyerTreasuryBeforePrivate=globalThis.Game.state.finance.BGD.available;
 const sellerTreasuryBeforePrivate=globalThis.Game.state.finance.SAU.available;
 const buyerPrivateCashBefore=globalThis.Game.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyerCompany].availableBalance;
