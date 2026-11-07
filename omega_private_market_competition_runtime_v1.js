@@ -159,12 +159,13 @@ function processCountry(countryId){
  const api=marketApi();if(!api||typeof api.getPrivateMarketConcentration!=='function')
   return{status:'UNAVAILABLE',reason:'PRIVATE_MARKET_CONCENTRATION_API_UNAVAILABLE'};
  const snapshot=prior,cases=Array.isArray(snapshot.cases)?snapshot.cases:[],byId=new Map(cases.map(row=>[row.caseId,row]));
- const observed=new Set(),decisions=[],resources=settledResources(cid);
+ const observed=new Set(),evaluatedResources=new Set(),decisions=[],resources=settledResources(cid);
  resources.forEach(resourceId=>{
   let summary;
   try{summary=api.getPrivateMarketConcentration({countryId:cid,resourceId,lookbackTurns:THRESHOLDS.lookbackTurns});}
   catch(error){decisions.push({resourceId,status:'ERROR',reason:String(error?.message||error)});return;}
   if(!summary||summary.status!=='AVAILABLE')return;
+  evaluatedResources.add(token(resourceId));
   const firms=(Array.isArray(summary.firms)?summary.firms:[])
    .filter(row=>COMPANY_IDS.includes(id(row.companyId))&&(num(row.settledSalesValue)||0)>0)
    .sort((a,b)=>(num(b.totalAttributedMarketSharePct)||0)-(num(a.totalAttributedMarketSharePct)||0)||
@@ -187,7 +188,7 @@ function processCountry(countryId){
    }
    row.status='OPEN';row.stage=stage;row.lastObservedTurn=turn();row.lastObservedPrivateCompanyHhi=hhi;
    row.leaderTotalMarketSharePct=Number(share.toFixed(4));
-   row.privateSectorMarketSharePct:num(summary.privateSectorMarketSharePct);
+   row.privateSectorMarketSharePct=num(summary.privateSectorMarketSharePct);
    row.verifiedSettledSaleCount:num(summary.verifiedSettledSaleCount)||0;
    row.totalAttributedSettledMarketValue:num(summary.totalAttributedSettledMarketValue)||0;
    row.evidenceWindow={fromTurn:summary.fromTurn,toTurn:summary.toTurn,lookbackTurns:summary.lookbackTurns,
@@ -221,7 +222,7 @@ function processCountry(countryId){
   });
  });
  cases.forEach(row=>{
-  if(!row||row.status==='RESOLVED'||observed.has(row.caseId))return;
+  if(!row||row.status==='RESOLVED'||observed.has(row.caseId)||!evaluatedResources.has(token(row.resourceId)))return;
   row.belowThresholdTurns=(num(row.belowThresholdTurns)||0)+1;
   row.lastBelowThresholdTurn=turn();row.updatedTurn=turn();
   if(row.belowThresholdTurns>=THRESHOLDS.releaseConfirmationTurns){
@@ -254,7 +255,8 @@ function getCompanyExpansionRestriction(countryId,companyId,resourceId){
  const cid=country(countryId||playerCountry()),company=id(companyId),rid=String(resourceId||'').trim();
  if(cid!==playerCountry()||!company)return null;
  const rows=competitionState(cid).activeRestrictions||[];
- const found=rows.find(row=>row&&String(row.status||'').toUpperCase()==='ACTIVE'&&id(row.companyId)===company&&
+ const found=rows.find(row=>row&&String(row.status||'').toUpperCase()==='ACTIVE'&&row.authority==='OMEGA_STATE_CONTROL_RIGHTS_V1'&&
+  row.restrictionType==='PRIVATE_FACTORY_EXPANSION_HOLD'&&id(row.companyId)===company&&
   (!rid||token(row.resourceId)===token(rid))&&
   (num(row.startsTurn)===null||turn()>=num(row.startsTurn)));
  return found?clone(found):null;
