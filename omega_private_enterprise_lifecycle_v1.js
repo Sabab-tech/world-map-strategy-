@@ -653,6 +653,37 @@
       if(current&&current.pendingAutonomousProposalPeriod===period)current.pendingAutonomousProposalPeriod=null;
     });
   }
+  function onCommittedSimulationTurn(event){
+    // Construction completion is emitted during SIMULATE, before the authoritative
+    // world state is committed. Reconcile private assets again after COMMIT so the
+    // lifecycle never relies on a pre-commit factory-array snapshot.
+    var detail=event&&event.detail?event.detail:(event||{}),cid=canonicalCountry(
+      detail.countryId||detail.playerCountryId||playerCountry()),active=playerCountry();
+    if(!cid||cid!==active)return;
+    var resource=countryBucket('resource',cid,false)||{},
+      projects=resource.industrialNetwork&&Array.isArray(resource.industrialNetwork.projects)
+        ?resource.industrialNetwork.projects:[],
+      economy=countryBucket('economy',cid,false)||{},
+      assets=Array.isArray(economy.productionAssets)?economy.productionAssets:[],
+      r=runtime(cid,false);
+    if(r&&Array.isArray(r.proposals)&&projects.length&&assets.length){
+      projects.forEach(function(project){
+        if(!project||project.projectType!=='FACTORY_CONSTRUCTION'||
+           String(project.status||'').toUpperCase()!=='COMPLETED'||
+           !project.sourcePrivateProposalId)return;
+        var proposal=r.proposals.find(function(row){return row&&row.proposalId===project.sourcePrivateProposalId;});
+        if(!proposal||['DENIED','DEFERRED','CLOSED'].indexOf(String(proposal.status||'').toUpperCase())>=0)return;
+        var factoryId=String(project.factoryId||'');
+        var asset=assets.find(function(row){return row&&String(row.id||row.factoryId||row.assetId||'')===factoryId;});
+        if(!asset||asset.productionEnabled===true||
+           asset.blockedReason!=='PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE')return;
+        // This call rechecks the permit, approval, settled funding, capex ledger,
+        // construction project, owner/operator and all sovereign control rights.
+        applyCommissionedAsset(cid,project);
+      });
+    }
+    scheduleAutonomousProposalCycle();
+  }
   function ledgerHasTransaction(country,transactionId){
     var bucket=financeBucket(country,false);if(!bucket)return null;
     var arrays=[bucket.omegaFinance&&bucket.omegaFinance.ledger,bucket.ledger,bucket.journal,bucket.transactions];
@@ -2992,7 +3023,7 @@
     g.addEventListener('OMEGA_RESOURCE_DELIVERY_COMPLETED',onPrivateFactoryFreightDelivered);
     g.addEventListener('OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',onPrivateFactoryCycleCompleted);
     // UI refresh is event/navigation-driven. Proposal submissions are bounded to one active-country review per 30 committed game turns.
-    g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',scheduleAutonomousProposalCycle);
+    g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',onCommittedSimulationTurn);
   }
   installIndustryHook();
   var API=Object.freeze({
