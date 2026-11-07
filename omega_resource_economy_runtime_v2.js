@@ -402,8 +402,14 @@
         var processedAvailable=Math.max(0,num(processedWarehouse?.availableByResource?.[resId])||0),processedTake=Math.min(processedAvailable,remaining);
         processedDebit+=processedTake;remaining-=processedTake;
       }
-      if(warehouse&&warehouse.availableByResource){warehouse.availableByResource[resId]=Math.max(0,(num(warehouse.availableByResource[resId])||0)-rawDebit);}
-      if(processedWarehouse&&processedWarehouse.availableByResource){processedWarehouse.availableByResource[resId]=Math.max(0,(num(processedWarehouse.availableByResource[resId])||0)-processedDebit);}
+      if(warehouse&&warehouse.availableByResource){
+        var rawWarehouseKey=Object.keys(warehouse.availableByResource).find(function(key){return tok(key)===tok(resId);})||resId;
+        warehouse.availableByResource[rawWarehouseKey]=Math.max(0,(num(warehouse.availableByResource[rawWarehouseKey])||0)-rawDebit);
+      }
+      if(processedWarehouse&&processedWarehouse.availableByResource){
+        var processedWarehouseKey=Object.keys(processedWarehouse.availableByResource).find(function(key){return tok(key)===tok(resId);})||resId;
+        processedWarehouse.availableByResource[processedWarehouseKey]=Math.max(0,(num(processedWarehouse.availableByResource[processedWarehouseKey])||0)-processedDebit);
+      }
       consumed.push({resourceId:resId,quantity:need,consumed:used});
     }
 
