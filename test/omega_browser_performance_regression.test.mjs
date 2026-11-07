@@ -538,11 +538,13 @@ test('world geometry loads before support datasets, shows real progress, caches 
     'resource markers must not redraw during ministry navigation');
 });
 
-test('Map ministry switching preserves Leaflet layout and cached layers', () => {
+test('Map ministry switching preserves Leaflet layout and defers unfinished geometry until the map stays active', () => {
   const source = read('map-engine-2.js');
-  const start = source.indexOf('Game.Map.setUiActive = function(active) {');
+  const helperStart = source.indexOf('function cancelDeferredGeoJSONResume()');
+  const start = source.indexOf('Game.Map.setUiActive = function(active) {', helperStart);
   const end = source.indexOf('Game.Map.getCountryPolygonStyle = function(feature)', start);
-  assert.ok(start >= 0 && end > start, 'the production map visibility lifecycle must be extractable');
+  assert.ok(helperStart >= 0 && start > helperStart && end > start,
+    'the production map visibility and deferred-resume lifecycle must be extractable');
 
   const attributes = new Map();
   const root = {
@@ -562,6 +564,9 @@ test('Map ministry switching preserves Leaflet layout and cached layers', () => 
     ['omega-map-load-overlay', overlay]
   ]);
   const canceledFrames = [];
+  const queuedTimers = new Map();
+  const canceledTimers = [];
+  let nextTimer = 1;
   let abortCount = 0;
   let resumeCount = 0;
   let progressCount = 0;
@@ -582,7 +587,6 @@ test('Map ministry switching preserves Leaflet layout and cached layers', () => 
       __omegaMapRootVisibility:null,
       __omegaMapRootPointerEvents:null,
       __omegaMapLoadingProgress:14,
-      __omegaDetachedLayers:[],
       countryGeoJSON:{type:'FeatureCollection',features:[]},
       map,
       updateMapLoadingProgress() { progressCount += 1; }
@@ -590,6 +594,7 @@ test('Map ministry switching preserves Leaflet layout and cached layers', () => 
     __omegaGeoJSONRenderComplete:false,
     __omegaGeoJSONRenderFrame:77,
     __omegaGeoJSONRenderPaused:false,
+    __omegaGeoJSONResumeTimer:null,
     __omegaGeoJSONResumeRender() { resumeCount += 1; }
   };
   const context = {
@@ -598,10 +603,18 @@ test('Map ministry switching preserves Leaflet layout and cached layers', () => 
     window:{
       cancelAnimationFrame(id) { canceledFrames.push(id); },
       requestAnimationFrame() { throw new Error('map visibility switching must not schedule a costly size rebuild'); },
-      setTimeout() { throw new Error('map visibility switching must not queue map work'); }
+      setTimeout(callback, delay) {
+        const id = nextTimer++;
+        queuedTimers.set(id, {callback, delay});
+        return id;
+      },
+      clearTimeout(id) {
+        canceledTimers.push(id);
+        queuedTimers.delete(id);
+      }
     }
   };
-  vm.runInNewContext(source.slice(start, end), context, {
+  vm.runInNewContext(source.slice(helperStart, end), context, {
     filename:'map-engine-2-visibility-lifecycle.js'
   });
 
@@ -624,14 +637,34 @@ test('Map ministry switching preserves Leaflet layout and cached layers', () => 
   assert.equal(root.style.pointerEvents, 'auto');
   assert.equal(root.getAttribute('data-omega-map-suspended'), null);
   assert.equal(progressCount, 1);
-  assert.equal(resumeCount, 1, 'an incomplete cached geometry render must resume through its existing cursor');
+  assert.equal(resumeCount, 0, 'unfinished geometry must not resume in the ministry-exit callback');
+  const staleResumeTimer = game.__omegaGeoJSONResumeTimer;
+  assert.ok(staleResumeTimer !== null && queuedTimers.has(staleResumeTimer),
+    'map geometry resume must be deferred for immediate user interaction');
+  assert.equal(queuedTimers.get(staleResumeTimer).delay, 600);
   assert.equal(eachLayerCalls, 0);
   assert.equal(removeLayerCalls, 0);
   assert.equal(addLayerCalls, 0);
-  assert.equal(invalidateSizeCalls, 0, 'a same-size fixed map surface must not trigger a full geometry relayout');
 
-  // A ministry may reopen immediately after returning to the map. The retained
-  // layout and Leaflet tree mean this transition has no deferred map repaint work.
+  // Reopening a ministry inside the interaction window cancels the pending
+  // map render before it can monopolize the Android WebView main thread.
+  assert.equal(game.Map.setUiActive(false), true);
+  assert.ok(canceledTimers.includes(staleResumeTimer));
+  assert.equal(queuedTimers.has(staleResumeTimer), false);
+  assert.equal(resumeCount, 0);
+
+  // If the user stays on the map, the same cached GeoJSON cursor resumes.
+  assert.equal(game.Map.setUiActive(true), true);
+  const activeResumeTimer = game.__omegaGeoJSONResumeTimer;
+  const resumeTask = queuedTimers.get(activeResumeTimer);
+  assert.ok(resumeTask, 'a stable map view must eventually resume unfinished geometry');
+  assert.equal(resumeTask.delay, 600);
+  queuedTimers.delete(activeResumeTimer);
+  resumeTask.callback();
+  assert.equal(resumeCount, 1, 'the existing render cursor must resume once the map remains active');
+
+  // A ministry may reopen after map work has resumed. The cached layer tree is
+  // retained, and an unfinished map-only download still aborts on ministry entry.
   game.Map.countryGeoJSON = null;
   game.Map.__omegaWorldMapAbortController = {abort() { abortCount += 1; }};
   game.__omegaGeoJSONRenderFrame = 88;
@@ -642,13 +675,12 @@ test('Map ministry switching preserves Leaflet layout and cached layers', () => 
   assert.equal(game.Map.__omegaMapUiActive, false);
   assert.equal(abortCount, 1, 'an unfinished map-only download must still abort on ministry entry');
   assert.ok(canceledFrames.includes(88));
+  assert.equal(invalidateSizeCalls, 0, 'visibility-only map switching must not trigger a full geometry relayout');
   assert.equal(eachLayerCalls, 0);
   assert.equal(removeLayerCalls, 0);
   assert.equal(addLayerCalls, 0);
-  assert.equal(originalLayers.size, 3, 'the cached Leaflet layer references remain intact across every switch');
+  assert.equal(originalLayers.size, 3, 'cached Leaflet layer references remain intact across every switch');
 });
-
-
 
 test('universal action progress covers legacy controls, mining actions and resource command center; map retry reuses cached geography', () => {
   const html = read('index.html');
