@@ -132,7 +132,7 @@ test('sparse site profiles remain clean and do not invent reserve or output figu
 test('resource detail panel has responsive, non-monospaced visual styles', () => {
   assert.match(css, /#omega-individual-resource-panel\.omega-resource-site-panel/);
   assert.match(activeCss, /#omega-individual-resource-panel\.omega-resource-site-panel/);
-  assert.match(activeCss, /z-index:\s*1000002\s*!important/);
+  assert.match(activeCss, /z-index:\s*2147483200\s*!important/);
   assert.match(activeCss, /pointer-events:\s*auto\s*!important/);
   assert.match(activeCss, /@media\s*\(max-width:\s*480px\)/);
   assert.match(css, /\.omega-site-metrics/);
