@@ -605,13 +605,13 @@ Game.DataLoader = {
                 const errorName = error && error.name ? String(error.name) : 'Error';
                 const errorCode = error && error.code ? String(error.code) : '';
                 const errorMessage = error && error.message
-                    ? String(error.message).replace(/\\s+/g, ' ').slice(0, 400)
-                    : String(error || 'Unknown loading error').replace(/\\s+/g, ' ').slice(0, 400);
+                    ? String(error.message).replace(/\s+/g, ' ').slice(0, 400)
+                    : String(error || 'Unknown loading error').replace(/\s+/g, ' ').slice(0, 400);
                 const mapSurface = Game.Map && (Game.Map.map || window.map);
                 const leafletReady = !!(window.L && typeof window.L.geoJSON === 'function');
                 const mapReady = !!(mapSurface && typeof mapSurface.addLayer === 'function');
                 const errorStack = error && error.stack
-                    ? String(error.stack).replace(/\\s+/g, ' ').slice(0, 260) : '';
+                    ? String(error.stack).replace(/\s+/g, ' ').slice(0, 260) : '';
                 console.error('[OMEGA Map] World geometry load failed: ' + errorName +
                     (errorCode ? ' [' + errorCode + ']' : '') + ': ' + errorMessage +
                     '; leafletReady=' + leafletReady + '; mapReady=' + mapReady +
