@@ -677,6 +677,14 @@ test('playable mine extraction feeds a commissioned private factory through prod
     assert.equal(resource.inventoryLots[b.batchId].remainingQuantity,b.remainingQuantity);
     assert.equal(Number(resource.processedWarehouse.availableByResource[b.resourceId])||0,Number(resource.inventory[b.resourceId])||0);
   }
+  const privateConcentrateBatch=finished.find(row=>String(row.resourceId||'').toUpperCase()==='COAL_CONCENTRATE');
+  assert.ok(privateConcentrateBatch,'the private processing line must produce the canonical coal-concentrate market product');
+  assert.equal(privateConcentrateBatch.ownerCompanyId,'NOVA_CONSUMER_INDUSTRIES',
+    'the finished batch must preserve the private asset owner identity');
+  assert.equal(privateConcentrateBatch.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP',
+    'the finished batch must preserve the private operator identity');
+  assert.equal(privateConcentrateBatch.ownerAttributionStatus,'EXPLICIT_ASSET_OWNER',
+    'private output revenue must be blocked unless batch ownership is explicit');
   assert.ok(lastCompletedCycle?.transactionId,'the full multi-turn processing cycle must return its committed transaction ID');
   assert.ok(resource.finishedGoodsLedger.some(x=>x.transactionId===lastCompletedCycle.transactionId),'processing transaction must persist to the finished-goods ledger');
   assert.ok((state.economy.BGD.industrialRuntime?.finishedGoodsLedger||[]).some(x=>x.transactionId===lastCompletedCycle.transactionId),'finished goods event must register in Economy Runtime');
@@ -721,6 +729,76 @@ test('playable mine extraction feeds a commissioned private factory through prod
   const repeatFiscalProcess=economy.processCountry('BGD');
   assert.equal(repeatFiscalProcess.extractionFiscal.posted,0,'reprocessing the same batch must not post extraction fiscal twice');
   assert.equal(Number(state.finance.BGD.available)||0,cashAfterExtractionFiscal,'treasury balance must remain stable on repeated fiscal processing');
+
+  // A second company runs the existing canonical steel route and consumes the
+  // private seller's actual finished-goods batch. The runtime must settle the
+  // customer payment, credit the owner, and debit the buyer from the same sale ID.
+  const downstreamRecipes=g.OmegaResourceIndustrialCatalogData?.downstreamFactoryRecipes||{};
+  const steelRecipe=downstreamRecipes.STEEL_PRIMARY_ROUTE_V1;
+  assert.ok(steelRecipe&&steelRecipe.factoryType==='STEEL_AND_ALLOY_WORKS',
+    'the buyer must use the existing canonical steel recipe, not a test-only recipe');
+  for(const [resourceId,rate] of Object.entries(steelRecipe.inputs||{})){
+    if(String(resourceId).toLowerCase()==='coal_concentrate')continue;
+    const quantity=Number(rate)*100;
+    const batchId='TEST-SAB34-REVENUE-INPUT:'+String(resourceId).toUpperCase();
+    resource.inventory[resourceId]=(Number(resource.inventory[resourceId])||0)+quantity;
+    resource.warehouse.availableByResource[resourceId]=(Number(resource.warehouse.availableByResource[resourceId])||0)+quantity;
+    resource.batches.push({batchId,resourceId,countryId:'BGD',ownerCountryCode:'BGD',quantity,remainingQuantity:quantity,
+      unit:'SIMULATION_RESOURCE_UNIT',stage:'RAW_INVENTORY',status:'AVAILABLE',warehouseId:'WH-BGD-RAW',
+      sourceType:'TEST_FIXTURE_IMPORT',ownerCompanyId:null,operatorCompanyId:null,ownerAttributionStatus:'UNASSIGNED',
+      provenance:{sourceAuthority:'OMEGA_SAB34_REVENUE_E2E_FIXTURE',simulationOnly:true}});
+    resource.inventoryLots[batchId]={batchId,resourceId,countryId:'BGD',quantity,remainingQuantity:quantity,
+      unit:'SIMULATION_RESOURCE_UNIT',stage:'RAW_INVENTORY',status:'AVAILABLE',warehouseId:'WH-BGD-RAW',
+      sourceType:'TEST_FIXTURE_IMPORT',provenance:{sourceAuthority:'OMEGA_SAB34_REVENUE_E2E_FIXTURE',simulationOnly:true}};
+  }
+  const buyerCompany='AURORA_INDUSTRIAL_GROUP';
+  const buyerFactory={id:'SAB34-REAL-SALE-BUYER-STEEL-WORKS',countryId:'BGD',factoryType:steelRecipe.factoryType,
+    stage:'FACTORY',capacity:1,inputs:JSON.parse(JSON.stringify(steelRecipe.inputs)),outputs:JSON.parse(JSON.stringify(steelRecipe.outputs)),
+    companyId:buyerCompany,ownerCompanyId:buyerCompany,operatorCompanyId:buyerCompany,
+    ownerType:'PRIVATE_ENTERPRISE',operatorType:'PRIVATE_COMPANY_OPERATOR',status:'OPERATIONAL',productionEnabled:true};
+  state.economy.BGD.productionAssets.push(buyerFactory);
+  const sellerBefore=JSON.parse(JSON.stringify(state.economy.BGD.companyAccounts?.NOVA_CONSUMER_INDUSTRIES||{
+    grossRevenue:0,paymentsReceived:0,paymentsMade:0,cashFlowEntries:[]}));
+  const buyerBefore=JSON.parse(JSON.stringify(state.economy.BGD.companyAccounts?.[buyerCompany]||{
+    grossRevenue:0,paymentsReceived:0,paymentsMade:0,cashFlowEntries:[]}));
+  advanceOneGameTurn(state);
+  const customerProduction=economy.processCountry('BGD');
+  assert.ok(customerProduction.factoriesExecuted>=1,JSON.stringify(customerProduction));
+  const settledSales=(state.trade.BGD.domesticSales||[]).map(row=>row.sale||row)
+    .filter(sale=>sale&&sale.resourceId&&String(sale.resourceId).toLowerCase()==='coal_concentrate'&&
+      sale.buyerCompanyId===buyerCompany&&sale.status==='SETTLED'&&sale.paymentStatus==='SETTLED');
+  assert.ok(settledSales.length>=1,
+    'the actual buyer factory must consume the private seller batch and settle a domestic sale: '+JSON.stringify(state.trade.BGD.domesticSales));
+  const privateSale=settledSales.find(sale=>sale.sourceBatchIds?.includes(privateConcentrateBatch.batchId));
+  assert.ok(privateSale,'the settled customer sale must cite the exact private finished-goods batch');
+  assert.equal(privateSale.ownerAllocationStatus,'RECONCILED');
+  assert.ok(Number(privateSale.supplierAllocations?.NOVA_CONSUMER_INDUSTRIES)>0);
+  assert.ok(Number(privateSale.totalValue)>0&&Number(privateSale.unitPrice)>0,
+    'the payment must use the observed country market price and positive consumed quantity');
+  const sellerAfter=state.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES;
+  const buyerAfter=state.economy.BGD.companyAccounts[buyerCompany];
+  const sellerReceipt=sellerAfter.cashFlowEntries.find(row=>row.sourceId===privateSale.saleId&&
+    row.direction==='CREDIT'&&row.category==='DOMESTIC_SUPPLY'&&row.status==='POSTED');
+  const buyerPayment=buyerAfter.cashFlowEntries.find(row=>row.sourceId===privateSale.saleId&&
+    row.direction==='DEBIT'&&row.category==='FACTORY_INPUT_PURCHASE'&&row.status==='POSTED');
+  assert.ok(sellerReceipt,'the same settled sale must post a seller company cash receipt');
+  assert.ok(buyerPayment,'the same settled sale must debit the buyer company payment');
+  assert.ok(Math.abs(sellerReceipt.amount-privateSale.totalValue)<1e-7);
+  assert.ok(Math.abs(buyerPayment.amount-privateSale.totalValue)<1e-7);
+  assert.ok(sellerAfter.grossRevenue>(Number(sellerBefore.grossRevenue)||0));
+  assert.ok(sellerAfter.paymentsReceived>(Number(sellerBefore.paymentsReceived)||0));
+  assert.ok(buyerAfter.paymentsMade>(Number(buyerBefore.paymentsMade)||0));
+  const sellerRevenueAfterSale=sellerAfter.grossRevenue,sellerPaymentsAfterSale=sellerAfter.paymentsReceived;
+  const buyerPaymentsAfterSale=buyerAfter.paymentsMade;
+  const domesticSaleCountAfterSale=state.trade.BGD.domesticSales.length;
+  const replaySaleProcess=economy.processCountry('BGD');
+  assert.ok(replaySaleProcess.factoriesExecuted>=0);
+  assert.equal(state.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES.grossRevenue,sellerRevenueAfterSale,
+    'replaying a committed production turn must not create a duplicate seller payment');
+  assert.equal(state.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES.paymentsReceived,sellerPaymentsAfterSale);
+  assert.equal(state.economy.BGD.companyAccounts[buyerCompany].paymentsMade,buyerPaymentsAfterSale);
+  assert.equal(state.trade.BGD.domesticSales.length,domesticSaleCountAfterSale,
+    'the same production turn must not create a duplicate sale record');
   const treasuryBefore=cashAfterExtractionFiscal;
   g.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',countryId:'BGD',payload:{
     settlementId:'SETTLEMENT-E2E-COAL-1',sellerCountryId:'BGD',resourceId:'COAL_CONCENTRATE',totalValue:100000
@@ -756,6 +834,8 @@ test('playable mine extraction feeds a commissioned private factory through prod
     'the latest market offer must retain the mine extraction ancestry');
   const expectedOffer=JSON.parse(JSON.stringify(latestConcentrateOffer));
   const expectedConcentrateOfferCount=(state.trade.BGD.offerBook||[]).filter(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0).length;
+  const expectedDomesticSales=JSON.parse(JSON.stringify(state.trade.BGD.domesticSales||[]));
+  const expectedCompanyAccounts=JSON.parse(JSON.stringify(state.economy.BGD.companyAccounts||{}));
   const expectedTreasury=Number(state.finance.BGD.available)||0;
   const saved=await simulation.saveSlot('sab34-pipeline-proof');
   assert.equal(saved.ok,true,JSON.stringify(saved));
@@ -768,7 +848,9 @@ test('playable mine extraction feeds a commissioned private factory through prod
   state.resource.BGD.inventory={};
   state.resource.BGD.processedWarehouse.availableByResource={};
   state.economy.BGD.productionAssets=[];
+  state.economy.BGD.companyAccounts={};
   state.trade.BGD.offerBook=[];
+  state.trade.BGD.domesticSales=[];
   state.finance.BGD.available=0;
   const loaded=await simulation.loadSlot('sab34-pipeline-proof');
   assert.equal(loaded.authoritativeState?.worldStateLinked,true,'the restored snapshot must remain linked to Game.state');
@@ -795,6 +877,13 @@ test('playable mine extraction feeds a commissioned private factory through prod
   const restoredOffer=(restored.trade.BGD.offerBook||[]).find(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0);
   assert.ok(restoredOffer,'the finished-goods market offer must survive save/load');
   assert.deepEqual(JSON.parse(JSON.stringify(restoredOffer)),expectedOffer,'market quantity and source ancestry must survive save/load');
+  assert.deepEqual(JSON.parse(JSON.stringify(restored.trade.BGD.domesticSales||[])),expectedDomesticSales,
+    'the actual customer sale and payment settlement must survive save/load');
+  assert.deepEqual(JSON.parse(JSON.stringify(restored.economy.BGD.companyAccounts||{})),expectedCompanyAccounts,
+    'seller revenue receipts and buyer purchase debits must survive save/load');
+  assert.ok((restored.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES.cashFlowEntries||[])
+    .some(row=>row.sourceId===privateSale.saleId&&row.direction==='CREDIT'&&row.status==='POSTED'),
+    'the private company revenue entry must survive save/load');
   assert.equal(Number(restored.finance.BGD.available)||0,expectedTreasury,'the resource fiscal receipt must survive save/load');
 
   // Replaying the processing stage after restore must not mint a second finished-goods batch.
