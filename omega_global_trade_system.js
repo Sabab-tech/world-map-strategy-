@@ -782,6 +782,12 @@
     processed.availableByResource=processed.availableByResource||{};processed.storedBatchIds=Array.isArray(processed.storedBatchIds)?processed.storedBatchIds:[];
     processed.receipts=Array.isArray(processed.receipts)?processed.receipts:[];
     const isProcessed=stage=>['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(String(stage||'').toUpperCase());
+    const buyerCompanyId=String(auth.buyerCompanyId||'').trim().toUpperCase(),sellerCompanyId=String(auth.sellerCompanyId||'').trim().toUpperCase(),
+      privateCompanyTrade=!!(buyerCompanyId||sellerCompanyId);
+    const lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1,
+      companyIds=Array.isArray(lifecycle?.companyIds)?lifecycle.companyIds.map(x=>String(x).toUpperCase()):[];
+    if(privateCompanyTrade&&(!buyerCompanyId||!sellerCompanyId||!companyIds.includes(buyerCompanyId)||!companyIds.includes(sellerCompanyId)))
+      return{accepted:false,reason:'PRIVATE_IMPORT_COMPANY_AUTHORIZATION_INVALID'};
     const createdBatchIds=[],acceptedTransfers=[];let credited=0;
     for(let i=0;i<plan.length;i++){
       const transfer=plan[i]||{},quantity=Math.max(0,num(transfer.quantity)||0);if(quantity<=0)continue;
@@ -792,12 +798,18 @@
       const roots=[...new Set((Array.isArray(transfer.sourceBatchIds)?transfer.sourceBatchIds:[]).map(String).filter(Boolean))];
       const batch={batchId,resourceId:rid,materialIdentity:rid,quantity,remainingQuantity:quantity,unit:transfer.unit||null,stage:productStage,
         countryId:buyer,sourceCountryId:seller,originCountryId:transfer.originCountryId||seller,ownerCountryCode:buyer,destinationCountryId:buyer,
-        ownerCompanyId:null,sourceBatchIds:roots,sourceTransferBatchId:transfer.sourceBatchId||null,sourceTransferCountryId:seller,
+        ownerCompanyId:privateCompanyTrade?buyerCompanyId:null,operatorCompanyId:privateCompanyTrade?buyerCompanyId:null,
+        ownerAttributionStatus:privateCompanyTrade?'EXPLICIT_PRIVATE_COMPANY_PURCHASE':'NOT_RECORDED',
+        sourceOwnerCompanyId:transfer.ownerCompanyId||null,sourceOperatorCompanyId:transfer.operatorCompanyId||null,
+        sourceFactoryId:transfer.sourceFactoryId||null,sourceSellerCompanyId:sellerCompanyId||transfer.ownerCompanyId||null,
+        sourceBatchIds:roots,sourceTransferBatchId:transfer.sourceBatchId||null,sourceTransferCountryId:seller,
         sourceSiteId:transfer.siteId||null,siteReferenceKey:transfer.siteReferenceKey||null,occurrenceKey:transfer.occurrenceKey||null,
         warehouseId:warehouse.warehouseId,locationNodeKey:warehouse.locationNodeKey,transferReference:settlementId||null,
         timestampTurn:turn(),lastMovementType:'INTERNATIONAL_TRADE_IMPORT',lastMovementTurn:turn(),
         provenance:{sourceSubsystem:'OMEGA_GLOBAL_TRADE_SYSTEM',sourceAuthority:transfer.provenance?.sourceAuthority||'UNOBSERVED',
           transferAuthority:'SETTLED_INTERNATIONAL_TRADE',settlementId:settlementId||null,sourceCountryId:seller,
+          buyerCompanyId:buyerCompanyId||null,sellerCompanyId:sellerCompanyId||null,
+          sourceOwnerCompanyId:transfer.ownerCompanyId||null,sourceOperatorCompanyId:transfer.operatorCompanyId||null,
           sourceBatchId:transfer.sourceBatchId||null,sourceBatchIds:roots,sourceSiteId:transfer.siteId||null,occurrenceKey:transfer.occurrenceKey||null,
           sourceProvenance:clone(transfer.provenance||{sourceAuthority:'UNOBSERVED'}),simulationTurn:turn()}};
       rows.push(batch);createdBatchIds.push(batchId);
@@ -810,13 +822,15 @@
         quantity,unit:batch.unit,simulationTurn:turn(),status:'RECEIVED',sourceCountryId:seller,settlementId:settlementId||null});
       credited+=quantity;
       acceptedTransfers.push({sourceBatchId:transfer.sourceBatchId||null,sourceBatchIds:roots,creditedBatchId:batchId,quantity,resourceId:rid,
-        sourceCountryId:seller,destinationCountryId:buyer,status:'CREDITED'});
+        sourceCountryId:seller,destinationCountryId:buyer,ownerCompanyId:privateCompanyTrade?buyerCompanyId:null,
+        sellerCompanyId:sellerCompanyId||transfer.ownerCompanyId||null,sourceFactoryId:transfer.sourceFactoryId||null,status:'CREDITED'});
     }
     if(Math.abs(credited-q)>1e-6)return{accepted:false,reason:'TRADE_IMPORT_CREDIT_QUANTITY_MISMATCH',requested:q,credited};
     next[k]=current+credited;
     const ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
     ledger.push({type:'INTERNATIONAL_TRADE_IMPORT',settlementId:settlementId||null,resourceId:rid,quantity:credited,
-      sourceCountryId:seller,createdBatchIds,batchTransfers:acceptedTransfers,turn:turn()});
+      sourceCountryId:seller,createdBatchIds,batchTransfers:acceptedTransfers,
+      buyerCompanyId:buyerCompanyId||null,sellerCompanyId:sellerCompanyId||null,turn:turn()});
     while(ledger.length>2048)ledger.shift();
     ctx.stateTransaction.set('resource.inventory',next);ctx.stateTransaction.set('resource.batches',rows);ctx.stateTransaction.set('resource.inventoryLots',lots);
     ctx.stateTransaction.set('resource.warehouse',raw);ctx.stateTransaction.set('resource.processedWarehouse',processed);ctx.stateTransaction.set('resource.inventoryLedger',ledger);
