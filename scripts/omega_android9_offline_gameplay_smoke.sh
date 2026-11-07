@@ -87,12 +87,11 @@ attempt=1
 max_attempts=3
 while [[ "$attempt" -le "$max_attempts" ]]; do
   log_file="$artifact_dir/gradle-attempt-$attempt.log"
-  # Screenshots are copied into shared external storage (not Android/data).
-  # API 28 app-private external directories are not readable by the adb shell
-  # identity used by `adb pull`, even when the instrumentation app can write them.
-  # The test grants WRITE_EXTERNAL_STORAGE to the debug app before exporting.
+  # The instrumentation test copies its app-private PNG through run-as into this
+  # shell-owned staging directory before the target app is removed by Gradle.
   remote_screenshot_dir="/sdcard/omega-smoke"
   adb shell rm -rf "$remote_screenshot_dir" >/dev/null 2>&1 || true
+  adb shell mkdir -p "$remote_screenshot_dir"
   echo "Offline gameplay instrumentation attempt $attempt/$max_attempts"
   # Android instrumentation must not be allowed to occupy the workflow forever.
   # The Java test has bounded Activity/WebView waits; this is a final process-level
@@ -103,7 +102,7 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
     screenshot_dir="$artifact_dir/screenshots"
     mkdir -p "$screenshot_dir"
     if ! timeout 30s adb pull "$remote_screenshot_dir" "$screenshot_dir"; then
-      echo "ERROR: Android Input UI screenshot retrieval failed from shared external storage" >&2
+      echo "ERROR: Android Input UI screenshot retrieval failed from instrumentation staging storage" >&2
       exit 1
     fi
     for screenshot in factory-input-landscape.png; do
