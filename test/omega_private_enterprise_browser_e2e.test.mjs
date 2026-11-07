@@ -859,7 +859,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const uniqueCanonicalSiteIds = new Set(canonicalSiteIds);
       const bindingDiagnostics = window.Omega.IndividualResourceSiteBinding.diagnostics();
       const masterMineSiteReferenceCount = Number(bindingDiagnostics?.sourceRecordCounts?.mineSites) || 0;
-      if (canonicalSites.length !== 315 || uniqueCanonicalSiteIds.size !== 315 || masterMineSiteReferenceCount !== 199) {
+      if (canonicalSites.length !== 607 || uniqueCanonicalSiteIds.size !== 607 || masterMineSiteReferenceCount !== 199) {
         throw new Error('SAB34_SITE_REGISTRY_COVERAGE_FAILED:' + JSON.stringify({
           canonicalRows: canonicalSites.length,
           uniqueCanonicalSiteIds: uniqueCanonicalSiteIds.size,
@@ -888,8 +888,8 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         startingTreasury: Number(finance.available) || 0
       };
     });
-    assert.equal(preparation.canonicalSiteCount, 315);
-    assert.equal(preparation.uniqueCanonicalSiteCount, 315);
+    assert.equal(preparation.canonicalSiteCount, 607);
+    assert.equal(preparation.uniqueCanonicalSiteCount, 607);
     assert.equal(preparation.masterMineSiteReferenceCount, 199);
     assert.equal(preparation.governmentCountryCount, 197);
     assert.equal(preparation.privateCountryCount, 197);
