@@ -1105,3 +1105,67 @@ test('insolvency opens only on recorded cash shortfall; restructuring, suspensio
   assert.equal(api.closePrivateCompany({countryId:'BGD',companyId:company,requestId:'CLOSE-1',
     reason:'The company has closed.'}).status,'DUPLICATE');
 });
+
+
+test('private-company import debits the verified buyer wallet, credits the selling company, and preserves receipt lineage exactly once',()=>{
+  const h=makeHarness(),api=h.api,buyer=COMPANY,seller='AURORA_INDUSTRIAL_GROUP',operator='MERIDIAN_ENGINEERING_GROUP';
+  h.state.finance.BGD.currencyCode='USD';
+  h.state.finance.SAU={currencyCode:'USD',omegaFinance:{ledger:[],companyCapitalAccounts:{}}};
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [buyer]:{companyId:buyer,currency:'USD',availableBalance:1000,reservedBalance:0,
+      capitalRaised:1000,capitalSpent:0,revision:1}
+  };
+  const beforeTreasury=h.state.finance.BGD.available;
+  const reservation=api.reservePrivateCompanyImport({
+    settlementId:'PRIVATE-IMPORT-E2E-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    resourceId:'iron_ore',quantity:10,unitPrice:10
+  });
+  assert.equal(reservation.status,'RESERVED',JSON.stringify(reservation));
+  assert.equal(api.reservePrivateCompanyImport({
+    settlementId:'PRIVATE-IMPORT-E2E-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    resourceId:'iron_ore',quantity:10,unitPrice:10
+  }).status,'DUPLICATE');
+  const transfer=[{
+    sourceBatchId:'SAU-PRIVATE-ORE-BATCH-1',sourceBatchIds:['SAU-PRIVATE-ORE-BATCH-1'],
+    ownerCompanyId:seller,operatorCompanyId:operator,ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+    sourceFactoryId:'SAU-PRIVATE-ORE-FAC-1',quantity:10,resourceId:'iron_ore',
+    stage:'RAW_EXTRACTED',provenance:{sourceAuthority:'RECORDED_PRIVATE_FACTORY_OUTPUT'}
+  }];
+  const completed=api.completePrivateCompanyImport({
+    settlementId:'PRIVATE-IMPORT-E2E-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    resourceId:'iron_ore',quantity:10,unitPrice:10,batchTransfers:transfer,
+    createdBatchIds:['TRADE-PRIVATE-IMPORT-BATCH-1'],deliveryReceiptIds:['WH-REC-TRADE-PRIVATE-IMPORT-BATCH-1']
+  });
+  assert.equal(completed.status,'SETTLED',JSON.stringify(completed));
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer].availableBalance,895);
+  assert.equal(h.state.finance.SAU.omegaFinance.companyCapitalAccounts[seller].availableBalance,100);
+  assert.equal(h.state.finance.BGD.available,beforeTreasury,'the import purchase must not debit sovereign Treasury');
+  assert.equal(h.state.finance.BGD.omegaFinance.ledger.some(row=>row.type==='PRIVATE_COMPANY_IMPORT_PAYMENT'&&row.amount===105),true);
+  assert.equal(h.state.finance.SAU.omegaFinance.ledger.some(row=>row.type==='PRIVATE_COMPANY_EXPORT_RECEIPT'&&row.amount===100),true);
+  const buyerJournal=h.state.economy.BGD.companyAccounts[buyer].cashFlowEntries;
+  const sellerJournal=h.state.economy.SAU.companyAccounts[seller].cashFlowEntries;
+  assert.equal(buyerJournal.some(row=>row.category==='FACTORY_INPUT_PURCHASE'&&row.amount===100&&row.status==='POSTED'),true);
+  assert.equal(buyerJournal.some(row=>row.category==='IMPORT_TARIFF'&&row.amount===5&&row.status==='POSTED'),true);
+  assert.equal(sellerJournal.some(row=>row.category==='PRIVATE_COMPANY_EXPORT_SALE'&&row.amount===100&&row.status==='POSTED'),true);
+  assert.equal(completed.record.sourceBatchIds.includes('SAU-PRIVATE-ORE-BATCH-1'),true);
+  assert.equal(completed.record.createdBatchIds.includes('TRADE-PRIVATE-IMPORT-BATCH-1'),true);
+  const consumed=api.completePrivateCompanyImport({
+    settlementId:'PRIVATE-IMPORT-E2E-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    resourceId:'iron_ore',quantity:10,batchTransfers:transfer,
+    createdBatchIds:['TRADE-PRIVATE-IMPORT-BATCH-1']
+  });
+  assert.equal(consumed.status,'DUPLICATE');
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer].availableBalance,895);
+  assert.equal(h.state.finance.SAU.omegaFinance.companyCapitalAccounts[seller].availableBalance,100);
+  const records=h.state.economy.BGD.privateEnterpriseLifecycle.privateCompanyProcurementRecords;
+  assert.equal(records.length,1);
+  assert.equal(records[0].status,'SETTLED');
+});
