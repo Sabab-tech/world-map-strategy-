@@ -68,7 +68,7 @@ function startStaticServer() {
       resolve({
         server,
         origin: 'http://127.0.0.1:' + address.port,
-        close: () => new Promise(done => server.close(() => done()))
+        close: () => new Promise(done => { server.closeAllConnections?.(); server.close(() => done()); })
       });
     });
   });
