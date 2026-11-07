@@ -323,6 +323,12 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       processingResourceId = processingOptions[0];
       await processingResourceSelect.selectOption(processingResourceId);
     }
+    await form.locator('textarea[name="requestReason"]').fill(
+      'The company requests additional manufacturing capacity to support a documented domestic supply need.');
+    await form.locator('textarea[name="expectedBenefit"]').fill(
+      'The project adds modeled processing capacity; realized revenue depends on confirmed customer demand and settled sales.');
+    await form.locator('textarea[name="riskForecast"]').fill(
+      'Material risks include recipe inputs, capital, utilities, workforce, transport, storage and unconfirmed customer demand.');
     await form.locator('input[name="quantity"]').fill('1');
     await form.locator('select[name="sourcingPolicy"]').selectOption('MIXED');
     await form.locator('button[type="submit"]').click();
