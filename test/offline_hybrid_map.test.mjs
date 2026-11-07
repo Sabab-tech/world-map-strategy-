@@ -219,7 +219,7 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /omega-offline-atlas-shell-v\d+/);
   const activeCache = serviceWorker.match(/const CACHE_NAME = ["'](omega-offline-atlas-shell-v[0-9]+)["'];/);
   assert.ok(activeCache, 'service worker must expose one explicit, versioned app-shell cache name');
-  assert.equal(activeCache[1], 'omega-offline-atlas-shell-v103',
+  assert.equal(activeCache[1], 'omega-offline-atlas-shell-v104',
     'the shell cache version must match the current Factory Input / Private Company asset release');
   assert.match(html, /updateViaCache:\s*['"]none['"]/,
     'browser Service Worker updates must not reuse stale HTTP-cached worker scripts');
