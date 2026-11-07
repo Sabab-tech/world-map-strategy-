@@ -5460,3 +5460,72 @@ body.modal-open .ui-bottom-navigation {
   .omega-map-load-track span { transition:none; }
 }
 
+
+/* Active resource-site interaction surface.
+   The detailed presentation stylesheet is intentionally not linked by the current app shell.
+   Keep this minimum layout contract in the loaded stylesheet so the map-site controls sit
+   above the fixed country information card and remain clickable on mobile and desktop. */
+#omega-individual-resource-panel.omega-resource-site-panel {
+    box-sizing: border-box !important;
+    display: none;
+    position: fixed !important;
+    left: 12px !important;
+    bottom: 64px !important;
+    z-index: 1000002 !important;
+    width: min(430px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: 78vh !important;
+    overflow: auto !important;
+    overscroll-behavior: contain;
+    padding: 16px !important;
+    border: 1px solid #34465c;
+    border-radius: 15px;
+    background: rgba(16, 25, 35, 0.98);
+    color: #e8edf2;
+    box-shadow: 0 14px 42px rgba(0, 0, 0, 0.44);
+    pointer-events: auto !important;
+    isolation: isolate;
+}
+#omega-individual-resource-panel .omega-site-actions {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    margin-top: 13px;
+    padding-top: 12px;
+    border-top: 1px solid #34465c;
+}
+#omega-individual-resource-panel .omega-site-action {
+    position: relative;
+    z-index: 2;
+    min-width: 0;
+    min-height: 40px;
+    padding: 10px 9px;
+    border: 1px solid #43566a;
+    border-radius: 9px;
+    color: #e8edf2;
+    background: #162332;
+    font: 650 12px/1.25 system-ui, -apple-system, "Segoe UI", sans-serif;
+    cursor: pointer;
+    pointer-events: auto;
+}
+#omega-individual-resource-panel .omega-site-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+#omega-individual-resource-panel button:focus-visible,
+#omega-individual-resource-panel select:focus-visible {
+    outline: 2px solid #76b7d8;
+    outline-offset: 2px;
+}
+@media (max-width: 480px) {
+    #omega-individual-resource-panel.omega-resource-site-panel {
+        left: 8px !important;
+        bottom: 58px !important;
+        width: calc(100vw - 16px) !important;
+        max-width: calc(100vw - 16px) !important;
+        max-height: 78vh !important;
+        padding: 13px !important;
+    }
+}
