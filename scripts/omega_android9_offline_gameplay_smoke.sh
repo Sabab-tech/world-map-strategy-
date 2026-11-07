@@ -89,8 +89,11 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
   log_file="$artifact_dir/gradle-attempt-$attempt.log"
   # The instrumentation test copies its app-private PNG through run-as into this
   # shell-owned staging directory before the target app is removed by Gradle.
-  remote_screenshot_dir="/sdcard/omega-smoke"
+  remote_screenshot_dir="/data/local/tmp/omega-smoke"
+  remote_export_result="/data/local/tmp/omega-smoke-export.result"
+  remote_mkdir_error="/data/local/tmp/omega-smoke-mkdir.stderr"
   adb shell rm -rf "$remote_screenshot_dir" >/dev/null 2>&1 || true
+  adb shell rm -f "$remote_export_result" "$remote_mkdir_error" >/dev/null 2>&1 || true
   adb shell mkdir -p "$remote_screenshot_dir"
   echo "Offline gameplay instrumentation attempt $attempt/$max_attempts"
   # Android instrumentation must not be allowed to occupy the workflow forever.
@@ -103,12 +106,13 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
     mkdir -p "$screenshot_dir"
     if ! timeout 30s adb pull "$remote_screenshot_dir" "$screenshot_dir"; then
       echo "ERROR: Android Input UI screenshot retrieval failed from instrumentation staging storage" >&2
-      timeout 10s adb pull /sdcard/omega-smoke-mkdir.stderr "$screenshot_dir/" >/dev/null 2>&1 || true
+    timeout 10s adb pull "$remote_mkdir_error" "$screenshot_dir/" >/dev/null 2>&1 || true
+    timeout 10s adb pull "$remote_export_result" "$screenshot_dir/" >/dev/null 2>&1 || true
       find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
       exit 1
     fi
-    timeout 10s adb pull /sdcard/omega-smoke-mkdir.stderr "$screenshot_dir/" >/dev/null 2>&1 || true
-    export_result_file="$screenshot_dir/omega-smoke/screenshot-export.result"
+    timeout 10s adb pull "$remote_mkdir_error" "$screenshot_dir/" >/dev/null 2>&1 || true
+    export_result_file="$screenshot_dir/omega-smoke-export.result"
     if [[ ! -s "$export_result_file" ]]; then
       echo "ERROR: Instrumentation did not create the screenshot export result file: $export_result_file" >&2
       find "$screenshot_dir" -maxdepth 4 -type f -print >&2 || true
@@ -165,7 +169,8 @@ while [[ "$attempt" -le "$max_attempts" ]]; do
     failed_screenshot_dir="$artifact_dir/failed-attempt-$attempt-screenshot-staging"
     mkdir -p "$failed_screenshot_dir"
     timeout 30s adb pull "$remote_screenshot_dir" "$failed_screenshot_dir" >/dev/null 2>&1 || true
-    timeout 10s adb pull /sdcard/omega-smoke-mkdir.stderr "$failed_screenshot_dir/" >/dev/null 2>&1 || true
+    timeout 10s adb pull "$remote_mkdir_error" "$failed_screenshot_dir/" >/dev/null 2>&1 || true
+    timeout 10s adb pull "$remote_export_result" "$failed_screenshot_dir/" >/dev/null 2>&1 || true
     find "$failed_screenshot_dir" -maxdepth 4 -type f -print >&2 || true
   fi
 
