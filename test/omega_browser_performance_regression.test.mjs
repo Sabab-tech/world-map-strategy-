@@ -8,6 +8,10 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
 
+function thisWorkerCacheVersion(workerSource) {
+  return Number(workerSource.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\\d+)"/)?.[1] || 0);
+}
+
 function createHarness() {
   const elementsById = new Map();
   const documentListeners = new Map();
@@ -504,6 +508,20 @@ test('world geometry loads before support datasets, shows real progress, caches 
   assert.ok(css.includes('#render-engine-root[data-omega-map-loading="true"] { z-index:2000'),
     'the real startup loader must sit above map controls until initialization settles');
   assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
+  assert.ok(map.includes('function scheduleOmegaMapLayerBatch(map, layers, operation, generation)'),
+    'map layer attach/detach must be split into bounded UI-frame batches');
+  assert.ok(map.includes('const batchSize = 16'),
+    'map layer work must yield after a small bounded number of layers per frame');
+  assert.ok(map.includes('cancelOmegaMapLayerBatch(this)') &&
+    map.includes('this.__omegaMapUiGeneration = generation'),
+    'a rapid cabinet/map toggle must cancel stale batches and let the newest direction win');
+  assert.ok(map.includes("scheduleOmegaMapLayerBatch(map, layers, 'detach', generation)") &&
+    map.includes("scheduleOmegaMapLayerBatch(map, this.__omegaDetachedLayers || [], 'attach', generation)"),
+    'both hiding and restoring the world map must use the same interruptible layer scheduler');
+  assert.ok(coreAssets.includes('"./map-engine-2.js"'),
+    'the interruptible map lifecycle must be available after an offline relaunch');
+  assert.ok(thisWorkerCacheVersion(worker) >= 100,
+    'the offline shell must invalidate the pre-batched map lifecycle cache');
   assert.ok(map.includes('this.__omegaWorldMapAbortController.abort()'),
     'leaving the world view must abort an unfinished map-only request');
   assert.ok(map.includes('Game.__omegaGeoJSONResumeRender = scheduleFeatureChunk'),
