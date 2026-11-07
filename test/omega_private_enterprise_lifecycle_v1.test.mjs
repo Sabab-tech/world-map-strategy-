@@ -1149,18 +1149,22 @@ test('active competition orders block newly approved funding and prevent funded 
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:awaitingFunding.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
 
-  const funded=submitProposal(api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1});
+  const constructionCompany='AURORA_INDUSTRIAL_GROUP';
+  const funded=submitProposal(api,{countryId:'BGD',companyId:constructionCompany,factoryType:'STEEL_WORKS',quantity:1});
   assert.equal(funded.status,'PROPOSED');
   assert.equal(api.decideProposal({countryId:'BGD',proposalId:funded.proposalId,decision:'APPROVE',
     allowStateSupport:true,conditions:{allowStateSupport:true}}).status,'APPROVED_AWAITING_FUNDING');
   assert.equal(api.fundProposal({countryId:'BGD',proposalId:funded.proposalId,
     sourceType:'GOVERNMENT_GRANT',amount:100}).status,'FUNDED');
 
-  h.state.trade={BGD:{marketCompetition:{activeRestrictions:[{
-    caseId:'OMEGA-ANTITRUST:BGD:IRON_ORE:'+COMPANY,countryId:'BGD',resourceId:'iron_ore',
-    companyId:COMPANY,status:'ACTIVE',restrictionType:'PRIVATE_FACTORY_EXPANSION_HOLD',
+  const restrictionFor=companyId=>({
+    caseId:'OMEGA-ANTITRUST:BGD:IRON_ORE:'+companyId,countryId:'BGD',resourceId:'iron_ore',
+    companyId,status:'ACTIVE',restrictionType:'PRIVATE_FACTORY_EXPANSION_HOLD',
     startsTurn:4,authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'
-  }]}}};
+  });
+  h.state.trade={BGD:{marketCompetition:{activeRestrictions:[
+    restrictionFor(COMPANY),restrictionFor(constructionCompany)
+  ]}}};
   const treasuryBefore=h.state.finance.BGD.omegaFinance.treasuryBalanceUsd;
   const capitalBefore=JSON.stringify(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY]);
   const fundingBlocked=api.fundProposal({countryId:'BGD',proposalId:awaitingFunding.proposalId,
