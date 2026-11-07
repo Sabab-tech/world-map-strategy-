@@ -788,7 +788,7 @@ public final class OmegaGameplaySmokeTest {
         assertTrue("Android external screenshot copy must preserve the complete PNG",
                 exportedScreenshot.isFile() && exportedScreenshot.length() == screenshot.length());
         try (FileOutputStream status = new FileOutputStream(statusFile)) {
-            status.write(new byte[] { '0', '\\n' });
+            status.write('0');
             status.flush();
         }
         assertTrue("Android screenshot copy status must be available to the host",
