@@ -268,6 +268,13 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   assert.match(renderer, /requestAnimationFrame\(addFeatureChunk\)/);
   assert.match(renderer, /addFeatureSafely\(featureCollection\[nextFeature\],\s*nextFeature\)/,
     'isolated bad country geometry must be caught without abandoning the remaining world features');
+  assert.match(renderer, /renderDuration >= 80/);
+  assert.match(renderer, /Slow country feature render:/,
+    'slow individual country geometry additions must identify the affected feature and render time');
+  assert.match(source, /World geometry load failed: ' \\+ errorName/,
+    'world geometry failures must preserve their error name and message in Android WebView console diagnostics');
+  assert.match(source, /leafletReady=.+mapReady=/,
+    'world geometry failures must capture whether the Leaflet and map surfaces were initialized');
   assert.match(renderer, /renderToken !== Game\.__omegaGeoJSONRenderToken/);
   assert.match(renderer, /OMEGAGeographicRegionSystem/);
   assert.match(renderer, /Game\.countryLabels\.length = 0/);
