@@ -1091,7 +1091,9 @@
         resourceId:req.resourceId,quantity:req.quantity,totalValue:sellerValue,buyerValue,
         fx:priorRow.fx||null,buyerCurrency:priorRow.buyerCurrencyCode||currencyOf(c),
         sellerCurrency:priorRow.sellerCurrencyCode||currencyOf(s),sourceCountryId:s,destinationCountryId:c,
-        transferType:'TRADE',batchTransfers,sourceBatchIds,createdBatchIds,recovered:true});
+        transferType:'TRADE',buyerCompanyId:req.buyerCompanyId||null,sellerCompanyId:req.sellerCompanyId||null,
+        privateCompanyPurchase:!!(req.buyerCompanyId&&req.sellerCompanyId),
+        batchTransfers,sourceBatchIds,createdBatchIds,recovered:true});
       g.__OMEGA_SETTLEMENT_TRACE={requestId:req.requestId,settlementId:sid,recovered:true};
       return;
     }
@@ -1385,7 +1387,10 @@
     emit('OMEGA_TRADE_SETTLEMENT_COMPLETED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,
       resourceId:req.resourceId,quantity:req.quantity,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,
       fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,
-      sourceCountryId:s,destinationCountryId:c,transferType:'TRADE',batchTransfers,sourceBatchIds,createdBatchIds});
+      sourceCountryId:s,destinationCountryId:c,transferType:'TRADE',
+      buyerCompanyId:req.buyerCompanyId||null,sellerCompanyId:req.sellerCompanyId||null,
+      privateCompanyPurchase:privateCompanyPurchase,
+      batchTransfers,sourceBatchIds,createdBatchIds});
     try{memory()?.record?.(c,{type:'RELATIONAL',sourceEvent:'OMEGA_TRADE_SETTLEMENT_COMPLETED',
       targetCountryId:s,action:'IMPORT',outcome:{status:'SETTLED'},importance:.9,confidence:.9,
       evidence:{settlementId:sid}});}catch(_){}
