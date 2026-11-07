@@ -692,6 +692,14 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(lifecycleSource,/data-pe-closure-form/);
   assert.match(lifecycleSource,/restructure-approve/);
   assert.match(lifecycleSource,/restructure-apply/);
+  assert.match(lifecycleSource,/Net profit after posted taxes/);
+  assert.match(lifecycleSource,/Last closed-period net profit after tax/);
+  assert.match(lifecycleSource,/Electricity accrued/);
+  assert.match(lifecycleSource,/Industrial water accrued/);
+  assert.match(lifecycleSource,/Freight accrued/);
+  assert.match(lifecycleSource,/Maintenance accrued/);
+  assert.match(lifecycleSource,/Depreciation accrued/);
+  assert.match(lifecycleSource,/Debt evidence/);
 });
 
 
