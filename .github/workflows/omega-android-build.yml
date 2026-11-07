@@ -1,8 +1,4 @@
 name: OMEGA Android Build
-concurrency:
-  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 
 on:
   push:
@@ -17,6 +13,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify Android WebView compatibility shims
+        run: node --test test/omega_android_web_compat_v1.test.mjs
 
       - name: Setup JDK 17
         uses: actions/setup-java@v4
