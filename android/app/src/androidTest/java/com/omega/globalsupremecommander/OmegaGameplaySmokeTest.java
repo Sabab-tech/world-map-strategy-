@@ -758,15 +758,14 @@ public final class OmegaGameplaySmokeTest {
             File screenshot
     ) throws Exception {
         final String destinationPath = "/sdcard/omega-smoke/" + screenshot.getName();
-        final String copyCommands =
-                "(mkdir -p /sdcard/omega-smoke && cp " +
-                shellQuote(screenshot.getAbsolutePath()) + " " +
+        // UiAutomation's shell identity cannot read an app-owned external-files
+        // path directly. Read the source as the debuggable target app with run-as,
+        // then let the outer shell write the bytes into its adb-pull staging folder.
+        final String command =
+                "mkdir -p /sdcard/omega-smoke && run-as com.omega.globalsupremecommander cat " +
+                shellQuote(screenshot.getAbsolutePath()) + " 2>&1 > " +
                 shellQuote(destinationPath) + " && test -s " +
-                shellQuote(destinationPath) + ") 2>&1; status=$?; " +
-                "if [ \"$status\" -eq 0 ]; then " +
-                "echo OMEGA_SCREENSHOT_EXPORT_OK; else " +
-                "echo OMEGA_SCREENSHOT_EXPORT_FAILED; exit \"$status\"; fi";
-        final String command = "sh -c " + shellQuote(copyCommands);
+                shellQuote(destinationPath) + " && echo OMEGA_SCREENSHOT_EXPORT_OK";
         final ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (ParcelFileDescriptor descriptor =
                      instrumentation.getUiAutomation().executeShellCommand(command);
