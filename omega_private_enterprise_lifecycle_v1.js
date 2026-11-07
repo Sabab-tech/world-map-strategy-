@@ -1334,7 +1334,6 @@
       buyerWalletAccount=buyerWallet.account,sellerWalletAccount=sellerWallet.account;
     buyerWalletAccount.availableBalance=Number(Math.max(0,(num(buyerWalletAccount.availableBalance)||0)-buyerAmount).toFixed(2));
     buyerWalletAccount.revision=(num(buyerWalletAccount.revision)||0)+1;
-    delete buyerRoot.companyTradeReservations[settlementId];
     var buyerTransaction='PE-PRIVATE-IMPORT-PAYMENT:'+settlementId,
       sellerTransaction='PE-PRIVATE-IMPORT-RECEIPT:'+settlementId;
     if(!buyerLedger.some(function(row){return row&&row.transactionId===buyerTransaction;}))
