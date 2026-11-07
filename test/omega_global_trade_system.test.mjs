@@ -319,7 +319,9 @@ assert.equal(realMarketQuote.status,'CLEARED',JSON.stringify({realMarketRebuild,
 assert.equal(realMarketQuote.clearingPriceUsd,100);
 assert.equal(realMarketQuote.matchedQuantity,100);
 assert.ok(realMarketQuote.matches.some(match=>match.buyerCountryId==='BGD'&&match.sellerCountryId==='SAU'&&match.quantity===100),
-  'the executable quote must originate from the buyer bid crossing the seller ask');
+  'the executable quote must originate from the buyer bid crossing the seller ask: '+JSON.stringify({
+    matches:realMarketQuote.matches,bids:realMarketRebuild.crude_oil?.orders?.bids,asks:realMarketRebuild.crude_oil?.orders?.asks
+  }));
 const discoveredPrivateSuppliers=realMarket.privateCompanySuppliers('crude_oil',100,'BGD',sellerCompany);
 assert.ok(discoveredPrivateSuppliers.some(row=>row.countryId==='SAU'&&row.companyId===sellerCompany&&
   row.available===500&&row.sourceBatchIds.includes(companyBatchId)),JSON.stringify(discoveredPrivateSuppliers));
