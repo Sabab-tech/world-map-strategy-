@@ -68,12 +68,48 @@ public final class OmegaLaunchSmokeTest {
                     launchedActivity instanceof MainActivity);
 
             final Activity activity = launchedActivity;
-            final WebView webView = findWebView(activity.getWindow().getDecorView());
+            final CountDownLatch webViewReady = new CountDownLatch(1);
+            final AtomicReference<WebView> webViewRef = new AtomicReference<>();
+            final AtomicReference<String> appUrlRef = new AtomicReference<>();
+            final AtomicReference<Boolean> javascriptEnabledRef = new AtomicReference<>(false);
+            final AtomicReference<Throwable> webViewReadFailure = new AtomicReference<>();
+
+            // Every WebView API, including simple getters, must run on the WebView's
+            // owning UI thread. runOnUiThread posts without waiting for UI idleness;
+            // the test thread enforces its own bounded latch deadline.
+            activity.runOnUiThread(() -> {
+                try {
+                    final WebView found = findWebView(activity.getWindow().getDecorView());
+                    webViewRef.set(found);
+                    if (found != null) {
+                        appUrlRef.set(found.getUrl());
+                        javascriptEnabledRef.set(found.getSettings().getJavaScriptEnabled());
+                    }
+                } catch (Throwable failure) {
+                    webViewReadFailure.set(failure);
+                } finally {
+                    webViewReady.countDown();
+                }
+            });
+
+            final long remainingForViewMs = Math.max(
+                    1L,
+                    deadline - SystemClock.elapsedRealtime()
+            );
+            assertTrue("WebView must be discoverable on the UI thread within the launch budget",
+                    webViewReady.await(Math.min(2000L, remainingForViewMs),
+                            TimeUnit.MILLISECONDS));
+            if (webViewReadFailure.get() != null) {
+                throw new AssertionError("Unable to inspect WebView on its UI thread",
+                        webViewReadFailure.get());
+            }
+
+            final WebView webView = webViewRef.get();
             assertNotNull("MainActivity must display a native WebView", webView);
             assertEquals("The game must load from APK-bundled assets, not a remote host",
-                    APP_URL, webView.getUrl());
+                    APP_URL, appUrlRef.get());
             assertTrue("The bundled game requires JavaScript to be enabled",
-                    webView.getSettings().getJavaScriptEnabled());
+                    Boolean.TRUE.equals(javascriptEnabledRef.get()));
 
             String lastJavascriptResult = "not evaluated";
             boolean coreReady = false;
