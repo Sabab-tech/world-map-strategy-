@@ -149,7 +149,7 @@ test("Android 9 smoke exports and validates a real landscape PNG before app clea
     androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_EXPORT_BEGIN") &&
     androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_EXPORT_SHELL_FINISHED") &&
     androidSmokeInstrumentation.includes("statusPath = destinationPath + \".exit\"") &&
-    androidSmokeInstrumentation.includes("Do not depend on shell") &&
+    androidSmokeInstrumentation.includes("do not depend on shell") &&
     androidSmokeScript.includes('status_file="$local_screenshot.exit"') &&
     androidSmokeScript.includes('export_exit="$(tr -d \'[:space:]\' <"$status_file")"'),
     "instrumentation must export the PNG without depending on UiAutomation stdout, and the host must validate its recorded shell exit status before accepting the artifact");
