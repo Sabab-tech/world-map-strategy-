@@ -331,7 +331,10 @@ public final class OmegaGameplaySmokeTest {
                     " var cabinet = document.getElementById('cabinet-full-window');" +
                     " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
                     "   cabinet.getAttribute('aria-hidden') === 'true' && cabinet.style.display === 'none' &&" +
-                    "   !cabinet.__omegaUIV2State && document.body.getAttribute('data-active-layer') === '0' &&" +
+                    "   cabinet.__omegaUIV2State && cabinet.__omegaUIV2State.route === 'map' &&" +
+                    "   cabinet.__omegaUIV2State.shellMounted === true &&" +
+                    "   cabinet.querySelector('[data-omega-v2-main]') && cabinet.querySelector('[data-omega-v2-main]').childElementCount === 0 &&" +
+                    "   document.body.getAttribute('data-active-layer') === '0' &&" +
                     "   window.OmegaLayerManager && Number(window.OmegaLayerManager.currentLayer) === 0 &&" +
                     "   window.Game && window.Game.Map && window.Game.Map.__omegaMapUiActive === true);" +
                     "})()";
@@ -360,7 +363,10 @@ public final class OmegaGameplaySmokeTest {
                     " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') === 'true' &&" +
                     "   cabinet.getAttribute('data-omega-v2-route') === 'government' &&" +
                     "   Number(window.OmegaLayerManager.currentLayer) === 1 &&" +
-                    "   document.body.getAttribute('data-active-layer') === '1');" +
+                    "   document.body.getAttribute('data-active-layer') === '1' &&" +
+                    "   cabinet.querySelector('[data-omega-v2-main]') &&" +
+                    "   cabinet.querySelector('[data-omega-v2-main]').childElementCount > 0 &&" +
+                    "   cabinet.getAttribute('data-omega-v2-navigation-pending') !== 'true');" +
                     "})()";
             String reopenedCabinetReady = "false";
             final long reopenDeadline = SystemClock.elapsedRealtime() + 15000L;
@@ -369,8 +375,9 @@ public final class OmegaGameplaySmokeTest {
                 reopenedCabinetReady = evaluate(instrumentation, webViewRef.get(), reopenedCabinetReadyScript);
                 if (!"true".equals(reopenedCabinetReady)) SystemClock.sleep(250L);
             }
-            assertEquals("Government cabinet must reopen after the map transition",
+            assertEquals("Government cabinet must reopen and finish its route render after the map transition",
                     "true", reopenedCabinetReady);
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=GOVERNMENT_REOPENED_WITH_RETAINED_SHELL");
             final String openMoreRouteScript =
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
