@@ -19,11 +19,9 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -765,43 +763,32 @@ public final class OmegaGameplaySmokeTest {
             File screenshot
     ) throws Exception {
         final String destinationPath = "/sdcard/omega-smoke/" + screenshot.getName();
-        // Keep the source in app-internal storage so API 28 run-as can read it
-        // without relying on external-storage/FUSE permissions. The shell opens
-        // the shared destination, while run-as streams the PNG from the target UID.
+        final String statusPath = destinationPath + ".exit";
+        // Read the PNG as the debuggable target UID, but do not depend on shell
+        // stdout: API 28 UiAutomation can return an empty output pipe even after
+        // the shell command ran. Persist its exit code beside the PNG instead.
         final String command =
                 "run-as com.omega.globalsupremecommander cat " +
                 shellQuote(screenshot.getAbsolutePath()) + " > " +
-                shellQuote(destinationPath) + "; export_exit=$?; " +
-                "export_bytes=$(wc -c < " + shellQuote(destinationPath) +
-                " 2>/dev/null | tr -d '[:space:]'); " +
-                "echo OMEGA_SCREENSHOT_EXPORT_EXIT=$export_exit; " +
-                "echo OMEGA_SCREENSHOT_EXPORT_BYTES=$export_bytes; " +
-                "if [ \"$export_exit\" -eq 0 ] && [ \"$export_bytes\" -ge " +
-                screenshot.length() +
-                " ]; then echo OMEGA_SCREENSHOT_EXPORT_OK; else echo OMEGA_SCREENSHOT_EXPORT_FAILED; fi";
+                shellQuote(destinationPath) + " 2>/dev/null; export_exit=$?; " +
+                "printf '%s\\n' \"$export_exit\" > " + shellQuote(statusPath) + "; " +
+                "log -t OMEGA_ANDROID_SMOKE \"SCREENSHOT_EXPORT_EXIT=$export_exit\"";
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
                 "STAGE=SCREENSHOT_EXPORT_BEGIN source=" + screenshot.getAbsolutePath() +
                         " bytes=" + screenshot.length());
-        final ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (ParcelFileDescriptor descriptor =
                      instrumentation.getUiAutomation().executeShellCommand(command);
              InputStream stream = new ParcelFileDescriptor.AutoCloseInputStream(descriptor)) {
             final byte[] buffer = new byte[1024];
-            int count;
-            while ((count = stream.read(buffer)) != -1) output.write(buffer, 0, count);
+            while (stream.read(buffer) != -1) {
+                // Drain the shell pipe until EOF so the copy finishes before app cleanup.
+            }
         }
-        final String commandOutput = output.toString(StandardCharsets.UTF_8.name());
-        if (!commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_OK")) {
-            android.util.Log.e("OMEGA_ANDROID_SMOKE",
-                    "SCREENSHOT_EXPORT_COMMAND_OUTPUT=" + commandOutput);
-        }
-        final boolean exported = commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_EXIT=0") &&
-                commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_BYTES=" + screenshot.length()) &&
-                commandOutput.contains("OMEGA_SCREENSHOT_EXPORT_OK");
-        assertTrue("Android shell must export the complete real PNG before the test app is uninstalled: " +
-                commandOutput, exported);
+        // The host checks the adjacent exit-code file, byte count and PNG signature
+        // after adb pull. That validates the actual artifact rather than shell stdout.
         android.util.Log.i("OMEGA_ANDROID_SMOKE",
-                "SCREENSHOT_EXPORTED=" + destinationPath + " bytes=" + screenshot.length());
+                "STAGE=SCREENSHOT_EXPORT_SHELL_FINISHED destination=" + destinationPath +
+                        " expectedBytes=" + screenshot.length());
     }
 
     private static String shellQuote(String value) {
