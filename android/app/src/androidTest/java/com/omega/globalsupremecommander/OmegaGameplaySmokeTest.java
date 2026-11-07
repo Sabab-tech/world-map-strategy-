@@ -784,10 +784,12 @@ public final class OmegaGameplaySmokeTest {
         final String hostDirectory = "/sdcard/omega-smoke";
         final String hostPng = hostDirectory + "/" + screenshot.getName();
         final String hostStatus = hostPng + ".exit";
+        final String mkdirError = hostDirectory + "/mkdir.stderr";
         final String pngError = hostPng + ".stderr";
         final String statusError = hostStatus + ".stderr";
         final String shellCommand =
                 "mkdir -p " + shellQuote(hostDirectory) +
+                " 2> " + shellQuote(mkdirError) +
                 "; mkdir_status=$?; " +
                 "if [ $mkdir_status -eq 0 ]; then " +
                 "run-as " + shellQuote(packageName) +
@@ -803,7 +805,7 @@ public final class OmegaGameplaySmokeTest {
                 "else png_status=99; status_status=99; fi; " +
                 "printf 'OMEGA_EXPORT_RESULT mkdir=%s png=%s status=%s\\n' " +
                 "$mkdir_status $png_status $status_status; " +
-                "for diagnostic in " + shellQuote(pngError) + " " + shellQuote(statusError) +
+                "for diagnostic in " + shellQuote(mkdirError) + " " + shellQuote(pngError) + " " + shellQuote(statusError) +
                 "; do if [ -s $diagnostic ]; then " +
                 "printf 'SHELL_DIAGNOSTIC_FILE=%s\\n' $diagnostic; " +
                 "cat $diagnostic; fi; done";
