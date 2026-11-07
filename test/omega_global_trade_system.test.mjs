@@ -253,3 +253,100 @@ const conflictingUiRequest=trade.createRequest('BGD',{
 assert.equal(conflictingUiRequest?.accepted,false,'conflicting request ID reuse must fail');
 assert.equal(conflictingUiRequest?.reason,'TRADE_REQUEST_ID_CONFLICT');
 console.log('OMEGA GLOBAL TRADE TEST PASSED');
+
+// End-to-end private-company purchase: executable market quote -> exact private batch
+// -> company cash settlement -> import batch / warehouse receipt. The seller's national
+// Treasury is deliberately not the recipient of the commercial sale proceeds.
+await import('../omega_private_enterprise_lifecycle_v1.js');
+globalThis.Game.playerCountry='BGD';
+const buyerCompany='NOVA_CONSUMER_INDUSTRIES',sellerCompany='AURORA_INDUSTRIAL_GROUP';
+const companyBatchId='SAU-PRIVATE-CRUDE-BATCH-E2E';
+const sellerResource=globalThis.Game.state.resource.SAU;
+sellerResource.inventory.crude_oil=(Number(sellerResource.inventory.crude_oil)||0)+500;
+sellerResource.batches.push({
+  batchId:companyBatchId,resourceId:'crude_oil',materialIdentity:'crude_oil',
+  quantity:500,remainingQuantity:500,unit:'BARRELS',stage:'RAW_EXTRACTED',
+  countryId:'SAU',sourceCountryId:'SAU',originCountryId:'SAU',ownerCountryCode:'SAU',
+  ownerCompanyId:sellerCompany,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+  ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'SAU-PRIVATE-OIL-FAC-1',
+  warehouseId:'WH-SAU-RAW',provenance:{sourceAuthority:'RECORDED_PRIVATE_COMPANY_OUTPUT'}
+});
+sellerResource.inventoryLots[companyBatchId]={
+  batchId:companyBatchId,resourceId:'crude_oil',quantity:500,remainingQuantity:500,
+  unit:'BARRELS',stage:'RAW_EXTRACTED',countryId:'SAU',warehouseId:'WH-SAU-RAW',
+  status:'AVAILABLE',provenance:{sourceAuthority:'RECORDED_PRIVATE_COMPANY_OUTPUT'}
+};
+sellerResource.warehouse.availableByResource.crude_oil+=500;
+sellerResource.warehouse.storedBatchIds.push(companyBatchId);
+globalThis.Game.state.finance.BGD.omegaFinance={
+  ledger:[],companyCapitalAccounts:{
+    [buyerCompany]:{companyId:buyerCompany,currency:'USD',availableBalance:50000,
+      reservedBalance:0,capitalRaised:50000,capitalSpent:0,revision:1}
+  }
+};
+globalThis.Game.state.finance.BGD.currencyCode='USD';
+globalThis.Game.state.finance.SAU.currencyCode='USD';
+globalThis.OmegaGovernmentBanking={
+  getCountryPolicy(countryId){return{countryCode:countryId,importTariffPct:2.5};}
+};
+globalThis.OmegaGlobalMarket={
+  quote(){return{resourceId:'crude_oil',status:'CLEARED',clearingPriceUsd:100,
+    generatedTurn:globalThis.Game.state.simulation.turn};},
+  localPrice(){return 100;},
+  privateCompanySuppliers(resourceId,quantity,buyer,sellerId){
+    return [{countryId:'SAU',resourceId,companyId:sellerId,available:500,
+      sourceBatchIds:[companyBatchId],marketQuote:{status:'CLEARED',clearingPriceUsd:100}}];
+  }
+};
+const ordinaryPending=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-UI-CREATE');
+if(ordinaryPending){ordinaryPending.status='REJECTED';ordinaryPending.stage='TEST_HOLD';}
+const buyerTreasuryBeforePrivate=globalThis.Game.state.finance.BGD.available;
+const sellerTreasuryBeforePrivate=globalThis.Game.state.finance.SAU.available;
+const buyerPrivateCashBefore=globalThis.Game.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyerCompany].availableBalance;
+const privateRequest=trade.createPrivateCompanyImportRequest('BGD',{
+  requestId:'PRIVATE-CO-PROCUREMENT-E2E',targetCountryId:'SAU',resourceId:'crude_oil',
+  quantity:100,unitPrice:100,buyerCompanyId:buyerCompany,sellerCompanyId:sellerCompany
+});
+assert.equal(privateRequest?.accepted,true,JSON.stringify(privateRequest));
+assert.equal(privateRequest.request?.procurementType,'PRIVATE_COMPANY_TO_COMPANY');
+assert.equal(privateRequest.request?.buyerCompanyId,buyerCompany);
+assert.equal(privateRequest.request?.sellerCompanyId,sellerCompany);
+const privateProcessed=trade.processCountry('BGD');
+assert.equal(privateProcessed.status,'COMPLETED',JSON.stringify(privateProcessed));
+const privateSettledRequest=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='PRIVATE-CO-PROCUREMENT-E2E');
+assert.equal(privateSettledRequest?.status,'SETTLED',JSON.stringify({
+  request:privateSettledRequest,trace:globalThis.__OMEGA_LAST_TRADE_PROCESS_TRACE,
+  settlement:globalThis.__OMEGA_SETTLEMENT_TRACE
+}));
+assert.equal(privateSettledRequest?.procurementType,'PRIVATE_COMPANY_TO_COMPANY');
+const privateImportLedger=globalThis.Game.state.resource.BGD.inventoryLedger.find(x=>
+  x.type==='INTERNATIONAL_TRADE_IMPORT'&&x.settlementId===privateSettledRequest.settlementId);
+assert(privateImportLedger,'the company order must end in a committed import inventory ledger');
+const privateImportedBatch=globalThis.Game.state.resource.BGD.batches.find(x=>
+  x.batchId===privateImportLedger.createdBatchIds[0]);
+assert.equal(privateImportedBatch.ownerCompanyId,buyerCompany);
+assert.equal(privateImportedBatch.operatorCompanyId,buyerCompany);
+assert.equal(privateImportedBatch.sourceSellerCompanyId,sellerCompany);
+assert.equal(privateImportedBatch.provenance.sourceOwnerCompanyId,sellerCompany);
+assert(globalThis.Game.state.resource.BGD.warehouse.receipts.some(x=>
+  x.batchId===privateImportedBatch.batchId&&x.status==='RECEIVED'&&x.sourceCountryId==='SAU'));
+assert.equal(sellerResource.batches.find(x=>x.batchId===companyBatchId).remainingQuantity,400);
+assert.equal(sellerResource.inventoryLots[companyBatchId].remainingQuantity,400);
+assert.equal(globalThis.Game.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyerCompany].availableBalance,39750);
+assert.equal(globalThis.Game.state.finance.SAU.omegaFinance.companyCapitalAccounts[sellerCompany].availableBalance,10000);
+assert.equal(globalThis.Game.state.finance.BGD.available,buyerTreasuryBeforePrivate+250,
+  'only the 2.5% import tariff is credited to sovereign Treasury; company trade value is not');
+assert.equal(globalThis.Game.state.finance.SAU.available,sellerTreasuryBeforePrivate,
+  'private seller revenue must not be credited to the sovereign Treasury');
+const buyerPrivateJournal=globalThis.Game.state.economy.BGD.companyAccounts[buyerCompany].cashFlowEntries;
+const sellerPrivateJournal=globalThis.Game.state.economy.SAU.companyAccounts[sellerCompany].cashFlowEntries;
+assert(buyerPrivateJournal.some(x=>x.category==='FACTORY_INPUT_PURCHASE'&&x.amount===10000&&x.sourceId===privateSettledRequest.settlementId&&x.status==='POSTED'));
+assert(buyerPrivateJournal.some(x=>x.category==='IMPORT_TARIFF'&&x.amount===250&&x.sourceId===privateSettledRequest.settlementId&&x.status==='POSTED'));
+assert(sellerPrivateJournal.some(x=>x.category==='PRIVATE_COMPANY_EXPORT_SALE'&&x.amount===10000&&x.sourceId===privateSettledRequest.settlementId&&x.status==='POSTED'));
+const privateProcurementRecord=globalThis.Game.state.economy.BGD.privateEnterpriseLifecycle.privateCompanyProcurementRecords.find(x=>
+  x.settlementId===privateSettledRequest.settlementId);
+assert.equal(privateProcurementRecord.status,'SETTLED');
+assert(privateProcurementRecord.createdBatchIds.includes(privateImportedBatch.batchId));
+assert.equal(globalThis.Game.state.trade.BGD.importValue,105000);
+assert.equal(globalThis.Game.state.trade.SAU.exportValue,105000);
+console.log('OMEGA PRIVATE COMPANY PROCUREMENT AND IMPORT DELIVERY E2E PASSED');
