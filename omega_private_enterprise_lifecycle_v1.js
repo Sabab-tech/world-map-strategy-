@@ -517,6 +517,16 @@
   function getProposal(country,proposalId){
     var r=runtime(country,false);var p=r&&r.proposals.find(function(x){return x.proposalId===String(proposalId||'');});return p?clone(p):null;
   }
+  function activeCompetitionExpansionRestriction(country,company,resourceId){
+    var cid=canonicalCountry(country),trade=countryBucket('trade',cid,false)||{},
+      competition=trade.marketCompetition||{},rows=Array.isArray(competition.activeRestrictions)?competition.activeRestrictions:[];
+    return rows.find(function(row){
+      return row&&String(row.status||'').toUpperCase()==='ACTIVE'&&
+        canonicalCountry(row.countryId||cid)===cid&&id(row.companyId)===id(company)&&
+        (!resourceId||token(row.resourceId)===token(resourceId))&&
+        (num(row.startsTurn)===null||turn()>=num(row.startsTurn));
+    })||null;
+  }
   function adjustProposal(input){
     input=input||{};var cid=canonicalCountry(input.countryId||playerCountry());
     if(cid!==playerCountry()||!cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
@@ -528,6 +538,11 @@
       return{status:'BLOCKED',reason:'PROPOSAL_QUANTITY_OUT_OF_RANGE',minimum:1,maximum:MAX_PROJECTS_PER_PROPOSAL};
     var oldQuantity=proposal.quantity,oldCapital=proposal.capitalRequired,oldForecast=proposal.expectedInputRequirements,
       oldProcessingResourceId=proposal.processingResourceId,oldRecipeId=proposal.recipeId;
+    if(quantity>oldQuantity){
+      var competitionRestriction=activeCompetitionExpansionRestriction(cid,proposal.companyId,proposal.processingResourceId);
+      if(competitionRestriction)return{status:'BLOCKED',reason:'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE',
+        competitionCaseId:competitionRestriction.caseId,restriction:clone(competitionRestriction)};
+    }
     var profile=(catalog()||{}).factoryProfiles&&catalog().factoryProfiles[proposal.factoryType],
       nextProcessingResourceId=proposal.factoryType==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'
         ?token(input.processingResourceId||proposal.processingResourceId||''):null,
@@ -556,6 +571,11 @@
     if(proposal.status!=='PROPOSED')return{status:'BLOCKED',reason:'PROPOSAL_ALREADY_DECIDED',currentStatus:proposal.status};
     var decision=String(input.decision||'').toUpperCase();
     if(['APPROVE','DENY','DEFER'].indexOf(decision)<0)return{status:'BLOCKED',reason:'INVALID_GOVERNMENT_DECISION'};
+    if(decision==='APPROVE'){
+      var competitionRestriction=activeCompetitionExpansionRestriction(cid,proposal.companyId,proposal.processingResourceId);
+      if(competitionRestriction)return{status:'BLOCKED',reason:'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE',
+        competitionCaseId:competitionRestriction.caseId,restriction:clone(competitionRestriction)};
+    }
     var preview=previewFor(proposal);
     if(decision==='APPROVE'&&(!applicationText(proposal.requestReason)||!applicationText(proposal.expectedBenefit)||!applicationText(proposal.riskForecast)))
       return{status:'BLOCKED',reason:'COMPANY_APPLICATION_DISCLOSURE_REQUIRED'};
@@ -945,6 +965,9 @@
       funding=proposal&&proposal.funding,decision=proposal&&proposal.decision;
     if(!cid||cid!==playerCountry())return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
     if(!proposal)return{status:'BLOCKED',reason:'PRIVATE_PROPOSAL_NOT_FOUND'};
+    var competitionRestriction=activeCompetitionExpansionRestriction(cid,company,proposal.processingResourceId);
+    if(competitionRestriction)return{status:'BLOCKED',reason:'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE',
+      competitionCaseId:competitionRestriction.caseId,restriction:clone(competitionRestriction)};
     if(['FUNDED','PARTIALLY_UNDER_CONSTRUCTION'].indexOf(proposal.status)<0)
       return{status:'BLOCKED',reason:'PRIVATE_PROPOSAL_NOT_FUNDED'};
     if(!permit||permit.status!=='ACTIVE'||!decision||decision.decision!=='APPROVE'||
@@ -1066,6 +1089,16 @@
     var permit=proposal&&proposal.permit;
     if(!permit||permit.permitId!==project.permitId||permit.status!=='ACTIVE'||permit.companyId!==company||
        permit.operatorCompanyId!==operatorCompany)return null;
+    var competitionRestriction=activeCompetitionExpansionRestriction(cid,company,proposal.processingResourceId);
+    if(competitionRestriction){
+      asset.productionEnabled=false;asset.status='BLOCKED';
+      asset.productionStatus='ANTITRUST_EXPANSION_RESTRICTION_ACTIVE';
+      asset.blockedReason='ANTITRUST_EXPANSION_RESTRICTION_ACTIVE';
+      asset.competitionCaseId=competitionRestriction.caseId;
+      asset.productionHealth={status:'STOPPED',productivityPct:0,reason:'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE',
+        updatedTurn:turn(),authority:'OMEGA_PRIVATE_MARKET_COMPETITION_RUNTIME'};
+      return null;
+    }
     var decision=proposal.decision,funding=proposal.funding,rows=financeLedger(cid,false)||[];
     var fundingEntry=rows.find(function(row){return row&&row.transactionId===funding?.transactionId&&
       row.proposalId===proposal.proposalId&&id(row.companyId)===company&&String(row.status||'').toUpperCase()==='POSTED';});
