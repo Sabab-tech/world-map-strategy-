@@ -142,12 +142,14 @@ test("newer commits supersede stale Android emulator smoke runs on the same ref"
 
 test("Android 9 smoke exports and validates a real landscape PNG before app cleanup", () => {
   assert.ok(androidSmokeInstrumentation.includes(
-    'getExternalFilesDir("omega-smoke")'
-  ), "instrumentation must stage the screenshot in the app-specific external files directory");
+    'new File(instrumentation.getTargetContext().getFilesDir(), "omega-smoke")'
+  ), "instrumentation must stage the screenshot in app-internal storage for reliable API 28 run-as access");
   assert.ok(androidSmokeInstrumentation.includes("executeShellCommand") &&
     androidSmokeInstrumentation.includes("run-as com.omega.globalsupremecommander cat") &&
     androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_EXPORT_BEGIN") &&
     androidSmokeInstrumentation.includes("SCREENSHOT_EXPORT_COMMAND_OUTPUT=") &&
+    androidSmokeInstrumentation.includes("OMEGA_SCREENSHOT_EXPORT_EXIT=") &&
+    androidSmokeInstrumentation.includes("OMEGA_SCREENSHOT_EXPORT_BYTES=") &&
     androidSmokeInstrumentation.includes("OMEGA_SCREENSHOT_EXPORT_OK"),
     "instrumentation must read the app-owned PNG as the target UID and stream it to shared emulator storage before the app is uninstalled");
   assert.ok(androidSmokeScript.includes('adb shell mkdir -p /sdcard/omega-smoke') &&
