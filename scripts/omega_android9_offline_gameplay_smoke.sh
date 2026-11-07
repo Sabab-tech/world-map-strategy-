@@ -87,8 +87,15 @@ attempt=1
 max_attempts=3
 while [[ "$attempt" -le "$max_attempts" ]]; do
   log_file="$artifact_dir/gradle-attempt-$attempt.log"
-  # Remove stale screenshots so a previous attempt cannot satisfy this run's artifact gate.
+  # Create a shell-owned staging directory before instrumentation. The target app
+  # streams its private PNG into this directory through run-as; adb pulls it after
+  # the instrumentation package has been removed.
   adb shell rm -rf /sdcard/omega-smoke >/dev/null 2>&1 || true
+  if ! timeout 10s adb shell mkdir -p /sdcard/omega-smoke ||
+      ! timeout 10s adb shell test -d /sdcard/omega-smoke; then
+    echo "ERROR: Android shell could not prepare the screenshot staging directory" >&2
+    exit 1
+  fi
   echo "Offline gameplay instrumentation attempt $attempt/$max_attempts"
   # Android instrumentation must not be allowed to occupy the workflow forever.
   # The Java test has bounded Activity/WebView waits; this is a final process-level
