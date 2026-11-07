@@ -59,6 +59,7 @@
     if(!Array.isArray(r.jointVentures))r.jointVentures=[];
     if(!Array.isArray(r.operatingCostEntries))r.operatingCostEntries=[];
     if(!Array.isArray(r.unpricedOperatingCostEvents))r.unpricedOperatingCostEvents=[];
+    if(!Array.isArray(r.inputConsumptionEntries))r.inputConsumptionEntries=[];
     if(!Number.isInteger(r.nextProposalSequence)||r.nextProposalSequence<1)r.nextProposalSequence=1;
     if(!Number.isInteger(r.nextJointVentureSequence)||r.nextJointVentureSequence<1)r.nextJointVentureSequence=1;
     return r;
@@ -1110,7 +1111,10 @@
     var row={entryId:entryId,countryId:cid,companyId:company,factoryId:factoryId,sourceEventId:source,
       category:category,quantity:num(input.quantity),unit:String(input.unit||''),unitRate:num(input.unitRate),
       amount:Number(amount.toFixed(2)),currency:String(input.currency||'GAME_CURRENCY_UNITS'),
-      turn:num(input.turn)??turn(),status:'POSTED',basis:'ACCRUAL_COST',authority:'OMEGA_PRIVATE_ENTERPRISE_OPERATING_COST_V1'};
+      turn:num(input.turn)??turn(),status:'POSTED',basis:'ACCRUAL_COST',
+      settledAmount:0,outstandingAmount:Number(amount.toFixed(2)),settlementStatus:'UNPAID',settlementEntries:[],
+      workforceEvidence:obj(input.workforceEvidence)?clone(input.workforceEvidence):null,
+      authority:'OMEGA_PRIVATE_ENTERPRISE_OPERATING_COST_V1'};
     r.operatingCostEntries.push(row);if(r.operatingCostEntries.length>4096)r.operatingCostEntries.splice(0,r.operatingCostEntries.length-4096);
     var ledger=financeLedger(cid,true),existing=ledger.find(function(x){return x&&x.transactionId===entryId;});
     if(!existing)ledger.push({transactionId:entryId,type:'PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL',
@@ -1121,6 +1125,171 @@
     if(ledger.length>4096)ledger.splice(0,ledger.length-4096);
     return{status:'POSTED',entry:clone(row)};
   }
+
+  function recordPrivateFactoryInputConsumption(country,input){
+    var cid=canonicalCountry(country),company=id(input.companyId),r=runtime(cid,true),
+      batchId=String(input.batchId||'').trim(),resourceId=String(input.resourceId||'').trim(),
+      cycleId=String(input.cycleId||'').trim(),quantity=num(input.quantity),
+      roots=Array.isArray(input.sourceBatchIds)?Array.from(new Set(input.sourceBatchIds.map(function(x){return String(x||'').trim();}).filter(Boolean))):[];
+    if(cid!==playerCountry()||COMPANY_IDS.indexOf(company)<0||!cycleId||quantity===null||quantity<=0)
+      return{status:'BLOCKED',reason:'FACTORY_INPUT_CONSUMPTION_INVALID'};
+    var sourceToken=roots.length?roots.slice().sort().join(','):(batchId||'UNTRACKED'),
+      entryId='PE-INPUT-CONSUMPTION:'+cid+':'+cycleId+':'+company+':'+sourceToken,
+      prior=r.inputConsumptionEntries.find(function(row){return row&&row.entryId===entryId;});
+    if(prior){
+      if(Math.abs((num(prior.quantity)||0)-quantity)>1e-8||prior.resourceId!==resourceId)
+        return{status:'BLOCKED',reason:'FACTORY_INPUT_CONSUMPTION_IDEMPOTENCY_COLLISION',entryId:entryId};
+      return{status:'DUPLICATE',entryId:entryId};
+    }
+    if(!roots.length||String(input.stage||'').toUpperCase()==='LEGACY_UNALLOCATED'){
+      appendUnpricedOperatingCost(cid,{sourceEventId:entryId,companyId:company,factoryId:input.factoryId,
+        category:'FACTORY_INPUT',quantity:quantity,unit:input.unit||'',reason:'FACTORY_INPUT_SOURCE_BATCH_NOT_RECORDED',turn:input.turn});
+      return{status:'UNPRICED',entryId:entryId,reason:'FACTORY_INPUT_SOURCE_BATCH_NOT_RECORDED'};
+    }
+    var trade=countryBucket('trade',cid,false)||{},sales=Array.isArray(trade.domesticSales)?trade.domesticSales:[],
+      cashAccount=companyFlowAccount(cid,company),cashRows=cashAccount&&Array.isArray(cashAccount.cashFlowEntries)?cashAccount.cashFlowEntries:[],
+      matchedSales=[],unmatchedRoots=roots.slice();
+    sales.forEach(function(wrapper){
+      var sale=wrapper&&wrapper.sale&&typeof wrapper.sale==='object'?wrapper.sale:wrapper;
+      if(!sale||String(sale.status||'').toUpperCase()!=='SETTLED'||
+         String(sale.paymentStatus||'').toUpperCase()!=='SETTLED'||
+         id(sale.buyerCompanyId)!==company)return;
+      var saleRoots=Array.isArray(sale.sourceBatchIds)?sale.sourceBatchIds.map(String):[];
+      var overlap=roots.filter(function(root){return saleRoots.indexOf(root)>=0;});
+      if(!overlap.length)return;
+      var cashEntry=cashRows.find(function(row){
+        return row&&String(row.status||'').toUpperCase()==='POSTED'&&
+          String(row.direction||'').toUpperCase()==='DEBIT'&&
+          String(row.category||'').toUpperCase()==='FACTORY_INPUT_PURCHASE'&&
+          String(row.sourceId||'')===String(sale.saleId||'');
+      });
+      if(!cashEntry)return;
+      matchedSales.push({saleId:String(sale.saleId),cashEntryId:String(cashEntry.entryId),sourceBatchIds:overlap});
+      unmatchedRoots=unmatchedRoots.filter(function(root){return overlap.indexOf(root)<0;});
+    });
+    if(unmatchedRoots.length||!matchedSales.length){
+      appendUnpricedOperatingCost(cid,{sourceEventId:entryId,companyId:company,factoryId:input.factoryId,
+        category:'FACTORY_INPUT',quantity:quantity,unit:input.unit||'',
+        reason:'FACTORY_INPUT_ACQUISITION_COST_NOT_LINKED_TO_SETTLED_COMPANY_PURCHASE',
+        turn:input.turn});
+      return{status:'UNPRICED',entryId:entryId,unmatchedSourceBatchIds:unmatchedRoots};
+    }
+    var row={entryId:entryId,countryId:cid,companyId:company,factoryId:String(input.factoryId||''),
+      cycleId:cycleId,batchId:batchId,resourceId:resourceId,quantity:quantity,unit:String(input.unit||''),
+      sourceBatchIds:roots,recognizedSaleIds:matchedSales.map(function(x){return x.saleId;}),
+      recognizedCashEntryIds:matchedSales.map(function(x){return x.cashEntryId;}),
+      costTreatment:'PURCHASE_CASH_ALREADY_RECOGNIZED',amount:null,currency:'GAME_CURRENCY_UNITS',
+      turn:num(input.turn)??turn(),status:'RECONCILED',
+      authority:'OMEGA_PRIVATE_ENTERPRISE_INPUT_COST_RECONCILIATION_V1'};
+    r.inputConsumptionEntries.push(row);
+    if(r.inputConsumptionEntries.length>4096)r.inputConsumptionEntries.splice(0,r.inputConsumptionEntries.length-4096);
+    var ledger=financeLedger(cid,true);
+    if(!ledger.some(function(x){return x&&x.transactionId===entryId;})){
+      ledger.push({transactionId:entryId,type:'PRIVATE_ENTERPRISE_INPUT_CONSUMPTION_RECONCILED',
+        companyId:company,factoryId:row.factoryId,cycleId:cycleId,batchId:batchId,resourceId:resourceId,
+        quantity:quantity,unit:row.unit,recognizedSaleIds:row.recognizedSaleIds,
+        recognizedCashEntryIds:row.recognizedCashEntryIds,amount:0,currency:row.currency,
+        direction:'MEMO',status:'POSTED',turn:row.turn,
+        authority:'OMEGA_PRIVATE_ENTERPRISE_INPUT_COST_RECONCILIATION_V1'});
+      if(ledger.length>4096)ledger.splice(0,ledger.length-4096);
+    }
+    return{status:'RECONCILED',entry:clone(row)};
+  }
+
+  function settleAccruedOperatingCosts(country,company,availableCash,settlementTurn){
+    var cid=canonicalCountry(country),co=id(company),r=runtime(cid,true),
+      account=companyFlowAccount(cid,co),ledger=financeLedger(cid,true),cash=Math.max(0,num(availableCash)||0),
+      totalSettled=0,totalOutstanding=0,settlementCount=0;
+    if(cid!==playerCountry()||!account||!Array.isArray(account.cashFlowEntries))
+      return{status:'BLOCKED',reason:'COMPANY_OPERATING_CASH_JOURNAL_UNAVAILABLE',settled:0,outstanding:0};
+    var rows=r.operatingCostEntries.filter(function(row){
+      return row&&row.companyId===co&&row.status==='POSTED'&&(num(row.amount)||0)>0;
+    }).sort(function(a,b){return(num(a.turn)||0)-(num(b.turn)||0)||String(a.entryId).localeCompare(String(b.entryId));});
+    rows.forEach(function(row){
+      var amount=Math.max(0,num(row.amount)||0),sourceId=String(row.entryId||'');
+      var journalPayments=account.cashFlowEntries.filter(function(entry){
+        return entry&&entry.category==='OPERATING_COST_SETTLEMENT'&&entry.sourceId===sourceId&&
+          String(entry.status||'').toUpperCase()==='POSTED';
+      });
+      var journalSettled=journalPayments.reduce(function(sum,entry){return sum+Math.max(0,num(entry.amount)||0);},0);
+      var financePayments=ledger.filter(function(entry){
+        return entry&&entry.type==='PRIVATE_ENTERPRISE_OPERATING_COST_SETTLEMENT'&&entry.sourceEntryId===sourceId&&
+          String(entry.status||'').toUpperCase()==='POSTED';
+      });
+      var financeSettled=financePayments.reduce(function(sum,entry){return sum+Math.max(0,num(entry.amount)||0);},0);
+      var settled=Math.min(amount,Math.max(journalSettled,financeSettled,num(row.settledAmount)||0));
+      row.settledAmount=Number(settled.toFixed(2));
+      row.outstandingAmount=Number(Math.max(0,amount-settled).toFixed(2));
+      row.settlementEntries=Array.isArray(row.settlementEntries)?row.settlementEntries:[];
+      var missingFinance=journalPayments.filter(function(payment){
+        return !financePayments.some(function(financeEntry){return financeEntry.transactionId===payment.entryId;});
+      });
+      missingFinance.forEach(function(payment){
+        ledger.push({transactionId:payment.entryId,type:'PRIVATE_ENTERPRISE_OPERATING_COST_SETTLEMENT',
+          sourceEntryId:sourceId,companyId:co,factoryId:row.factoryId,category:row.category,
+          amount:payment.amount,currency:payment.currency||row.currency,direction:'TRANSFER',
+          debitAccount:'COMPANY_ACCRUED_EXPENSES_PAYABLE:'+co,creditAccount:'COMPANY_OPERATING_CASH:'+co,
+          status:'POSTED',turn:payment.turn,authority:'OMEGA_PRIVATE_ENTERPRISE_CASH_SETTLEMENT_V1'});
+      });
+      var outstanding=Math.max(0,amount-settled);
+      if(outstanding<=1e-8){row.settlementStatus='PAID';return;}
+      if(cash<=1e-8){totalOutstanding+=outstanding;row.settlementStatus=settled>0?'PARTIALLY_PAID':'UNPAID';return;}
+      var paymentAmount=Number(Math.min(cash,outstanding).toFixed(2));
+      if(paymentAmount<=0){totalOutstanding+=outstanding;row.settlementStatus=settled>0?'PARTIALLY_PAID':'UNPAID';return;}
+      var seq=financePayments.length+missingFinance.length+1,
+        settlementId='PE-OPERATING-COST-SETTLEMENT:'+sourceId+':S'+seq;
+      var existingJournal=account.cashFlowEntries.find(function(entry){return entry&&entry.entryId===settlementId;});
+      if(existingJournal){
+        var already=Math.max(0,num(existingJournal.amount)||0);
+        paymentAmount=Math.min(cash,outstanding,already);
+        settled=Math.min(amount,settled+paymentAmount);
+        row.settledAmount=Number(settled.toFixed(2));
+        row.outstandingAmount=Number(Math.max(0,amount-settled).toFixed(2));
+        row.settlementStatus=row.outstandingAmount<=1e-8?'PAID':'PARTIALLY_PAID';
+        totalSettled+=paymentAmount;cash=Math.max(0,cash-paymentAmount);settlementCount++;
+        return;
+      }
+      var payment={entryId:settlementId,companyId:co,amount:paymentAmount,direction:'DEBIT',
+        category:'OPERATING_COST_SETTLEMENT',currency:row.currency||'GAME_CURRENCY_UNITS',
+        sourceId:sourceId,turn:num(settlementTurn)??turn(),status:'POSTED',
+        authority:'OMEGA_PRIVATE_ENTERPRISE_CASH_SETTLEMENT_V1'};
+      account.cashFlowEntries.push(payment);
+      account.runtimeNetCashFlow=(num(account.runtimeNetCashFlow)||0)-paymentAmount;
+      account.paymentsMade=(num(account.paymentsMade)||0)+paymentAmount;
+      ledger.push({transactionId:settlementId,type:'PRIVATE_ENTERPRISE_OPERATING_COST_SETTLEMENT',
+        sourceEntryId:sourceId,companyId:co,factoryId:row.factoryId,category:row.category,
+        amount:paymentAmount,currency:payment.currency,direction:'TRANSFER',
+        debitAccount:'COMPANY_ACCRUED_EXPENSES_PAYABLE:'+co,creditAccount:'COMPANY_OPERATING_CASH:'+co,
+        status:'POSTED',turn:payment.turn,authority:'OMEGA_PRIVATE_ENTERPRISE_CASH_SETTLEMENT_V1'});
+      row.settledAmount=Number((settled+paymentAmount).toFixed(2));
+      row.outstandingAmount=Number(Math.max(0,amount-row.settledAmount).toFixed(2));
+      row.settlementStatus=row.outstandingAmount<=1e-8?'PAID':'PARTIALLY_PAID';
+      row.settlementEntries.push({transactionId:settlementId,amount:paymentAmount,turn:payment.turn});
+      totalSettled+=paymentAmount;cash=Math.max(0,cash-paymentAmount);settlementCount++;
+    });
+    totalOutstanding=rows.reduce(function(sum,row){return sum+Math.max(0,num(row.outstandingAmount)??(num(row.amount)||0)-(num(row.settledAmount)||0));},0);
+    return{status:'RECONCILED',settled:Number(totalSettled.toFixed(2)),outstanding:Number(totalOutstanding.toFixed(2)),
+      availableCashRemaining:Number(cash.toFixed(2)),settlementCount:settlementCount};
+  }
+
+  function onPrivateFactoryFreightDelivered(event){
+    var d=event&&event.detail||{},cid=canonicalCountry(d.countryId||d.country||playerCountry());
+    if(cid!==playerCountry()||String(d.status||'').toUpperCase()!=='DELIVERED_TO_FACTORY')return;
+    var factory=privateFactoryForCostEvent(cid,d.factoryId,d.ownerCompanyId,d.operatorCompanyId);
+    if(!factory.ok)return;
+    var shipment=String(d.shipmentId||'').trim();if(!shipment)return;
+    var amount=num(d.freightCost),currency=String(d.freightCurrency||'');
+    if(d.freightCostAuthority!=='SIMULATED_ROUTE_TOTAL_COST'||currency!=='GAME_CURRENCY_UNITS'||amount===null||amount<0){
+      appendUnpricedOperatingCost(cid,{sourceEventId:'FREIGHT:'+shipment,companyId:factory.operatorCompanyId,
+        factoryId:d.factoryId,category:'FREIGHT',quantity:1,unit:'SHIPMENT',
+        reason:'PRIVATE_FACTORY_FREIGHT_COST_NOT_OBSERVED',turn:d.turn});
+      return;
+    }
+    recordAccruedOperatingCost(cid,{sourceEventId:'FREIGHT:'+shipment,companyId:factory.operatorCompanyId,
+      factoryId:d.factoryId,category:'FREIGHT',quantity:1,unit:'SHIPMENT',unitRate:amount,amount:amount,
+      currency:currency,turn:d.turn});
+  }
+
   function onPrivateFactoryUtilityConsumed(event){
     var d=event&&event.detail||{},cid=canonicalCountry(d.countryId||d.country||playerCountry());
     if(cid!==playerCountry()||d.authority!=='SIMULATED_UTILITY_CONSUMPTION_LEDGER')return;
@@ -1147,6 +1316,19 @@
     var cycleDays=num(d.cycleDays);
     if(cycleDays===null||cycleDays<=0){appendUnpricedOperatingCost(cid,{sourceEventId:source,companyId:factory.operatorCompanyId,
       factoryId:d.factoryId,category:'CYCLE_DURATION',reason:'FACTORY_CYCLE_DURATION_NOT_RECORDED',turn:d.turn});return;}
+    var consumed=Array.isArray(d.consumedInputs)?d.consumedInputs:[],
+      declaredInputs=obj(d.inputQuantities)?d.inputQuantities:{},
+      declaredInputCount=Object.keys(declaredInputs).filter(function(key){return(num(declaredInputs[key])||0)>1e-9;}).length;
+    if(declaredInputCount&&!consumed.length){
+      appendUnpricedOperatingCost(cid,{sourceEventId:'INPUTS:'+source,companyId:factory.operatorCompanyId,
+        factoryId:d.factoryId,category:'FACTORY_INPUT',reason:'FACTORY_INPUT_CONSUMPTION_DETAIL_NOT_RECORDED',turn:d.turn});
+    }else{
+      consumed.forEach(function(row,index){
+        recordPrivateFactoryInputConsumption(cid,{companyId:factory.operatorCompanyId,factoryId:d.factoryId,
+          cycleId:source,batchId:row&&row.batchId,resourceId:row&&row.resourceId,quantity:row&&row.quantity,
+          unit:row&&row.unit,stage:row&&row.stage,sourceBatchIds:row&&row.sourceBatchIds,turn:d.turn,index:index});
+      });
+    }
     function addDaily(category,rateKey,quantity,unit){
       if(quantity===null||quantity<=0)return;
       var rate=num(rates[rateKey]);
@@ -1156,11 +1338,15 @@
         category:category,quantity:quantity,unit:unit,unitRate:rate,amount:quantity*rate,currency:policy.currency,turn:d.turn});
     }
     var econ=countryBucket('economy',cid,false)||{},employment=econ.factoryEmployment||{},
-      employmentRow=employment.factories&&employment.factories[String(d.factoryId)]||factory.asset.employment||{},
-      workers=num(employmentRow.jobsFilled);
+      employmentRow=obj(d.workforce)?d.workforce:(employment.factories&&employment.factories[String(d.factoryId)]||factory.asset.employment||{}),
+      workers=num(employmentRow.jobsFilled),supported=num(employmentRow.jobsSupported);
     if(workers===null)appendUnpricedOperatingCost(cid,{sourceEventId:source,companyId:factory.operatorCompanyId,
       factoryId:d.factoryId,category:'LABOR',reason:'FACTORY_EMPLOYMENT_COST_BASIS_NOT_RECORDED',turn:d.turn});
-    else addDaily('LABOR','laborPerWorkerDay',workers*cycleDays,'WORKER_DAYS');
+    else if(supported!==null&&supported>0&&workers<=0)
+      appendUnpricedOperatingCost(cid,{sourceEventId:source,companyId:factory.operatorCompanyId,
+        factoryId:d.factoryId,category:'LABOR',quantity:supported,unit:'WORKERS',
+        reason:'PRIVATE_FACTORY_HAS_NO_ASSIGNED_WORKERS',turn:d.turn});
+    else if(workers>0)addDaily('LABOR','laborPerWorkerDay',workers*cycleDays,'WORKER_DAYS');
     addDaily('MAINTENANCE','maintenancePerFactoryDay',cycleDays,'FACTORY_DAYS');
     addDaily('OVERHEAD','overheadPerFactoryDay',cycleDays,'FACTORY_DAYS');
     addDaily('DEPRECIATION','depreciationPerFactoryDay',cycleDays,'FACTORY_DAYS');
@@ -2076,6 +2262,7 @@
   if(typeof g.addEventListener==='function'){
     g.addEventListener(NETWORK_EVENT,onFactoryCapacityChanged);
     g.addEventListener('OMEGA_FACTORY_UTILITY_CONSUMED',onPrivateFactoryUtilityConsumed);
+    g.addEventListener('OMEGA_RESOURCE_DELIVERY_COMPLETED',onPrivateFactoryFreightDelivered);
     g.addEventListener('OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',onPrivateFactoryCycleCompleted);
     // UI refresh is event/navigation-driven. Proposal submissions are bounded to one active-country review per 30 committed game turns.
     g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',scheduleAutonomousProposalCycle);
