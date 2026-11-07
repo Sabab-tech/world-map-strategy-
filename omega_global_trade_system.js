@@ -405,6 +405,9 @@
       sellerCompanyId=String(p.sellerCompanyId||'').trim().toUpperCase(),
       privateCompanyPurchase=!!(buyerCompanyId||sellerCompanyId),
       lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1;
+    // Command payloads may be deeply frozen by the state transaction boundary.
+    // Keep derived market evidence local rather than mutating caller-owned input.
+    var marketPriceEvidence=clone(p.marketPriceEvidence||{});
     if(privateCompanyPurchase){
       if(!buyerCompanyId||!sellerCompanyId)return{accepted:false,reason:'PRIVATE_IMPORT_BUYER_AND_SELLER_COMPANIES_REQUIRED'};
       const companyIds=Array.isArray(lifecycle?.companyIds)?lifecycle.companyIds.map(x=>String(x).toUpperCase()):[];
@@ -418,7 +421,7 @@
       const supplier=market.privateCompanySuppliers(resourceId,quantity,buyer,sellerCompanyId)
         .find(row=>row.countryId===seller&&row.companyId===sellerCompanyId);
       if(!supplier)return{accepted:false,reason:'PRIVATE_SELLER_COMPANY_HAS_NO_VERIFIED_MARKET_STOCK',sellerCompanyId:sellerCompanyId};
-      p.marketPriceEvidence=Object.assign({},p.marketPriceEvidence||{},{
+      marketPriceEvidence=Object.assign({},marketPriceEvidence,{
         status:quote.status,clearingPriceUsd:quote.clearingPriceUsd,marketTurn:quote.generatedTurn,
         companyAvailableStock:supplier.available,sourceBatchIds:supplier.sourceBatchIds,
         authority:'OMEGA_GLOBAL_MARKET_EXECUTABLE_CLEARING'});
@@ -451,7 +454,7 @@
       evidencePolicy:'COUNTERPARTY_REVIEW_REQUIRED',
       governmentContractId:String(p.governmentContractId||p.contractId||'').trim()||null,
       buyerCompanyId:buyerCompanyId||null,sellerCompanyId:sellerCompanyId||null,
-      marketPriceEvidence:privateCompanyPurchase?clone(p.marketPriceEvidence||{}):null,
+      marketPriceEvidence:privateCompanyPurchase?clone(marketPriceEvidence):null,
       procurementType:privateCompanyPurchase?'PRIVATE_COMPANY_TO_COMPANY':'COUNTRY_TRADE'
     };
     requests.push(request);
