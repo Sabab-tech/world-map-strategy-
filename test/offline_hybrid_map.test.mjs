@@ -157,10 +157,12 @@ test("Android 9 smoke exports and validates a real landscape PNG before app clea
     androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_HOST_EXPORT_COMMAND_RETURNED") &&
     !androidSmokeInstrumentation.includes('getExternalFilesDir("omega-smoke")'),
     "instrumentation must stage the PNG directly from app-private internal storage and expose separate shell exit codes and stderr diagnostics before app cleanup");
-  assert.ok(androidSmokeScript.includes('remote_screenshot_dir="/sdcard/omega-smoke"') &&
+  assert.ok(androidSmokeScript.includes('remote_screenshot_dir="/data/local/tmp/omega-smoke"') &&
     androidSmokeScript.includes('adb shell mkdir -p "$remote_screenshot_dir"') &&
     androidSmokeScript.includes('adb pull "$remote_screenshot_dir" "$screenshot_dir"') &&
-    androidSmokeScript.includes('screenshot-export.result') &&
+    androidSmokeScript.includes('remote_export_result="/data/local/tmp/omega-smoke-export.result"') &&
+    androidSmokeScript.includes('export_result_file="$screenshot_dir/omega-smoke-export.result"') &&
+    androidSmokeScript.includes('adb pull "$remote_export_result" "$screenshot_dir/"') &&
     androidSmokeScript.includes('OMEGA_EXPORT_RESULT mkdir=0 png=0 status=0') &&
     androidSmokeScript.includes('failed-attempt-$attempt-screenshot-staging') &&
     androidSmokeScript.includes('status_file="$local_screenshot.exit"') &&
