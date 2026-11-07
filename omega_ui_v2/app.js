@@ -767,6 +767,74 @@
     };
     return Object.assign({ mounted:true }, render(root));
   }
+  function suspend(root) {
+    if (typeof root === 'string') root = g.document && g.document.querySelector(root);
+    var state = stateFor(root);
+    if (!root || !state) return false;
+
+    // Keep the inexpensive navigation shell and its delegated listeners alive,
+    // but release every route-owned resource before handing the screen to the map.
+    state.route = 'map';
+    state.ministryId = null;
+    state.section = 'dashboard';
+    state.resourceSiteId = null;
+    state.governmentView = 'executive-ministry';
+    state.history.length = 0;
+    releaseResourceScopeIfLeaving(root, state);
+    invalidatePendingRender(state);
+
+    var main = root.querySelector && root.querySelector('[data-omega-v2-main]');
+    if (main) {
+      stopScreenRotation(main);
+      main.innerHTML = '';
+      if (main.removeAttribute) main.removeAttribute('aria-busy');
+    }
+    if (root.removeAttribute) root.removeAttribute('data-omega-v2-navigation-pending');
+    state.lastRenderedScreenIdentity = screenIdentity(state);
+    syncNavigationChrome(root, state);
+    return true;
+  }
+
+  function resume(root, options) {
+    options = options || {};
+    if (typeof root === 'string') root = g.document && g.document.querySelector(root);
+    if (!root) return { ok:false, code:'UI_V2_ROOT_NOT_FOUND' };
+    if (!stateFor(root)) return mount(root, options);
+
+    var state = stateFor(root);
+    var internalRoutes = ['home-affairs', 'resources', 'ministry-detail', 'mine-detail'];
+    var acceptedRoutes = ROUTES.concat(internalRoutes);
+    var initialRoute = acceptedRoutes.indexOf(options.initialRoute) >= 0 ? options.initialRoute : 'government';
+    state.route = options.initialMinistryId ? routeName(options.initialMinistryId) : initialRoute;
+    state.ministryId = options.initialMinistryId ? String(options.initialMinistryId) : null;
+    state.section = options.initialSection || 'dashboard';
+    state.resourceSiteId = options.initialResourceSiteId || null;
+    state.governmentView = options.initialGovernmentView === 'all-ministries'
+      ? 'all-ministries' : 'executive-ministry';
+    state.countryId = canonicalCountry(options.countryId || currentCountry() || state.countryId || '');
+    state.history = Array.isArray(options.initialHistory) ? options.initialHistory.map(function (item) {
+      item = item || {};
+      return {
+        route:item.route || 'map',
+        ministryId:item.ministryId || null,
+        section:item.section || 'dashboard',
+        resourceSiteId:item.resourceSiteId || null,
+        governmentView:item.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry'
+      };
+    }) : [];
+    state.options = Object.assign({}, state.options || {}, options);
+    state.shellMounted = true;
+
+    var countryControl = root.querySelector && root.querySelector('[data-omega-v2-country]');
+    if (countryControl && state.countryId) countryControl.value = state.countryId;
+
+    releaseResourceScopeIfLeaving(root, state);
+    invalidatePendingRender(state);
+    syncNavigationChrome(root, state);
+    if (!scheduleNavigationRender(root)) return { ok:false, code:'UI_V2_RESUME_FAILED' };
+    return { ok:true, mounted:true, route:state.route, resumed:true };
+  }
+
   function unmount(root) {
     if (typeof root === 'string') root = g.document && g.document.querySelector(root);
     if (!root || !root.__omegaUIV2State) return { ok:false, code:'UI_V2_NOT_MOUNTED' };
@@ -784,5 +852,5 @@
     return { ok:true };
   }
 
-  g.OmegaUIV2App = Object.freeze({ version:'1.0.0', mount:mount, render:render, navigate:navigate, back:back, openMinistry:openMinistry, unmount:unmount, destinations:ROUTES.slice() });
+  g.OmegaUIV2App = Object.freeze({ version:'1.0.0', mount:mount, resume:resume, suspend:suspend, render:render, navigate:navigate, back:back, openMinistry:openMinistry, unmount:unmount, destinations:ROUTES.slice() });
 })(typeof window !== 'undefined' ? window : globalThis);
