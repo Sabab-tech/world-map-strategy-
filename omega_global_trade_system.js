@@ -342,6 +342,16 @@
     if(!resourceId)return{accepted:false,reason:'RESOURCE_ID_REQUIRED'};
     if(quantity===null||quantity<=0)return{accepted:false,reason:'QUANTITY_MUST_BE_POSITIVE'};
     if(unitPrice===null||unitPrice<0)return{accepted:false,reason:'UNIT_PRICE_MUST_BE_NON_NEGATIVE'};
+    const buyerCompanyId=String(p.buyerCompanyId||'').trim().toUpperCase(),
+      sellerCompanyId=String(p.sellerCompanyId||'').trim().toUpperCase(),
+      privateCompanyPurchase=!!(buyerCompanyId||sellerCompanyId),
+      lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1;
+    if(privateCompanyPurchase){
+      if(!buyerCompanyId||!sellerCompanyId)return{accepted:false,reason:'PRIVATE_IMPORT_BUYER_AND_SELLER_COMPANIES_REQUIRED'};
+      const companyIds=Array.isArray(lifecycle?.companyIds)?lifecycle.companyIds.map(x=>String(x).toUpperCase()):[];
+      if(!companyIds.length||!companyIds.includes(buyerCompanyId)||!companyIds.includes(sellerCompanyId))
+        return{accepted:false,reason:'PRIVATE_IMPORT_CANONICAL_COMPANY_REGISTRY_UNAVAILABLE_OR_INVALID'};
+    }
     const requestId=String(p.requestId||('TRADE-'+turn()+'-'+buyer+'-'+seller+'-'+token(resourceId)+'-'+Date.now()));
     const existingRequests=ctx.stateTransaction.get('trade.importRequests');
     const requests=Array.isArray(existingRequests)?clone(existingRequests):[];
@@ -352,7 +362,8 @@
         String(duplicate.resourceId||'').trim().toLowerCase().replace(/[\s-]+/g,'_')===resourceId.trim().toLowerCase().replace(/[\s-]+/g,'_')&&
         num(duplicate.quantity)===quantity&&num(duplicate.unitPrice)===unitPrice&&
         String(duplicate.currency||currencyOf(buyer)||'').toUpperCase()===String(p.currency||currencyOf(buyer)||'').toUpperCase()&&
-        String(duplicate.governmentContractId||'')===String(p.governmentContractId||'');
+        String(duplicate.governmentContractId||'')===String(p.governmentContractId||'')&&
+        String(duplicate.buyerCompanyId||'')===buyerCompanyId&&String(duplicate.sellerCompanyId||'')===sellerCompanyId;
       return same?{accepted:true,duplicate:true,request:clone(duplicate)}:{accepted:false,reason:'TRADE_REQUEST_ID_CONFLICT'};
     }
     const rawLedger=ctx.stateTransaction.get('trade.globalTradeLedger');
@@ -367,7 +378,9 @@
       attempt:1,createdTurn:turn(),requestedTurn:turn(),source:p.source||'GLOBAL_TRADE_UI',
       needPressure:clamp(p.needPressure)??0.5,settlementStatus:'NOT_STARTED',
       evidencePolicy:'COUNTERPARTY_REVIEW_REQUIRED',
-      governmentContractId:String(p.governmentContractId||p.contractId||'').trim()||null
+      governmentContractId:String(p.governmentContractId||p.contractId||'').trim()||null,
+      buyerCompanyId:buyerCompanyId||null,sellerCompanyId:sellerCompanyId||null,
+      procurementType:privateCompanyPurchase?'PRIVATE_COMPANY_TO_COMPANY':'COUNTRY_TRADE'
     };
     requests.push(request);
     ledger.requests.push({
@@ -536,12 +549,15 @@
     });
     if(supplyPolicy&&supplyPolicy.allowed===false)return{ok:false,reason:supplyPolicy.reason||'STATE_SUPPLY_DIRECTIVE_BLOCKED',stateSupplyDirective:supplyPolicy};
     if(values.fx===null||values.sellerValue===null||values.buyerValue===null)return{ok:false,reason:'SETTLEMENT_FX_OR_PRICE_NOT_OBSERVED'};
-    if(buyerFin.liquidity===null)return{ok:false,reason:'BUYER_LIQUIDITY_NOT_OBSERVED'};
+    const privateCompanyPurchase=!!(req.buyerCompanyId&&req.sellerCompanyId);
+    if(!!req.buyerCompanyId!==!!req.sellerCompanyId)return{ok:false,reason:'PRIVATE_IMPORT_COMPANY_PAIR_INCOMPLETE'};
+    if(!privateCompanyPurchase&&buyerFin.liquidity===null)return{ok:false,reason:'BUYER_LIQUIDITY_NOT_OBSERVED'};
     // Local-currency buyerValue cannot be compared against USD Treasury. Government Banking
     // verifies the exact USD debit (including tariff) after bilateral review.
-    if(!g.OmegaGovernmentBanking&&buyerFin.liquidity<values.buyerValue)return{ok:false,reason:'BUYER_LIQUIDITY_INSUFFICIENT'};
+    if(!privateCompanyPurchase&&!g.OmegaGovernmentBanking&&buyerFin.liquidity<values.buyerValue)return{ok:false,reason:'BUYER_LIQUIDITY_INSUFFICIENT'};
     if(buyerInv.stock===null)return{ok:false,reason:'BUYER_RESOURCE_INVENTORY_NOT_OBSERVED'};
-    return{ok:true,total:values.sellerValue,buyerTotal:values.buyerValue,sellerTotal:values.sellerValue,price:num(req.unitPrice),fx:values.fx,buyerCurrency:values.buyerCurrency,sellerCurrency:values.sellerCurrency};
+    return{ok:true,total:values.sellerValue,buyerTotal:values.buyerValue,sellerTotal:values.sellerValue,price:num(req.unitPrice),fx:values.fx,buyerCurrency:values.buyerCurrency,sellerCurrency:values.sellerCurrency,
+      settlementAuthority:privateCompanyPurchase?'PRIVATE_COMPANY_WALLETS':'GOVERNMENT_BANKING_OR_COUNTRY_FINANCE'};
   }
 
   function financeDebitHandler(cmd,ctx){
