@@ -147,11 +147,12 @@ test("Android 9 smoke exports and validates a real landscape PNG before app clea
   assert.ok(androidSmokeInstrumentation.includes("executeShellCommand") &&
     androidSmokeInstrumentation.includes("run-as com.omega.globalsupremecommander cat") &&
     androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_EXPORT_BEGIN") &&
-    androidSmokeInstrumentation.includes("SCREENSHOT_EXPORT_COMMAND_OUTPUT=") &&
-    androidSmokeInstrumentation.includes("OMEGA_SCREENSHOT_EXPORT_EXIT=") &&
-    androidSmokeInstrumentation.includes("OMEGA_SCREENSHOT_EXPORT_BYTES=") &&
-    androidSmokeInstrumentation.includes("OMEGA_SCREENSHOT_EXPORT_OK"),
-    "instrumentation must read the app-owned PNG as the target UID and stream it to shared emulator storage before the app is uninstalled");
+    androidSmokeInstrumentation.includes("STAGE=SCREENSHOT_EXPORT_SHELL_FINISHED") &&
+    androidSmokeInstrumentation.includes("statusPath = destinationPath + \".exit\"") &&
+    androidSmokeInstrumentation.includes("Do not depend on shell") &&
+    androidSmokeScript.includes('status_file="$local_screenshot.exit"') &&
+    androidSmokeScript.includes('export_exit="$(tr -d \'[:space:]\' <"$status_file")"'),
+    "instrumentation must export the PNG without depending on UiAutomation stdout, and the host must validate its recorded shell exit status before accepting the artifact");
   assert.ok(androidSmokeScript.includes('adb shell mkdir -p /sdcard/omega-smoke') &&
     androidSmokeScript.includes('remote_screenshot_dir="/sdcard/omega-smoke"') &&
     androidSmokeScript.includes('adb pull "$remote_screenshot_dir" "$screenshot_dir"'),
