@@ -2002,6 +2002,28 @@
       limitation:'Cash-flow insolvency indicator only. Unvalued fixed assets, unrecorded creditors and unpriced costs cannot be assumed away.',
       authority:'OMEGA_PRIVATE_ENTERPRISE_SOLVENCY_V1',simulationOnly:true};
   }
+  function openCompanyInsolvencyCase(input){
+    input=input||{};
+    var cid=canonicalCountry(input.countryId||playerCountry()),co=id(input.companyId),
+      requestId=String(input.requestId||'').trim(),reason=applicationText(input.reason),r=runtime(cid,true);
+    if(cid!==playerCountry()||COMPANY_IDS.indexOf(co)<0)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_OR_COMPANY_SCOPE_INVALID'};
+    if(!requestId||reason.length<12||reason.length>1000)return{status:'BLOCKED',reason:'INSOLVENCY_CASE_REASON_AND_REQUEST_ID_REQUIRED'};
+    var solvency=evaluateCompanySolvency(cid,co);
+    if(solvency.status!=='INSOLVENT')return{status:'BLOCKED',reason:'VERIFIED_COMPANY_CASH_INSOLVENCY_REQUIRED',solvency:solvency};
+    if(String(r.companyStatuses[co]||'ACTIVE').toUpperCase()==='CLOSED')return{status:'BLOCKED',reason:'COMPANY_ALREADY_CLOSED'};
+    r.insolvencyCases=Array.isArray(r.insolvencyCases)?r.insolvencyCases:[];
+    var prior=r.insolvencyCases.find(function(row){return row&&row.requestId===requestId;});
+    if(prior)return prior.companyId===co&&prior.reason===reason
+      ?{status:'DUPLICATE',case:clone(prior)}:{status:'BLOCKED',reason:'INSOLVENCY_REQUEST_IDEMPOTENCY_COLLISION'};
+    var row={caseId:'PE-INSOLVENCY:'+cid+':'+co+':'+requestId,requestId:requestId,
+      countryId:cid,companyId:co,reason:reason,solvencySnapshot:clone(solvency),
+      status:'OPEN',openedTurn:turn(),authority:'OMEGA_PRIVATE_ENTERPRISE_INSOLVENCY_V1'};
+    r.insolvencyCases.push(row);r.companyStatuses[co]='INSOLVENT';
+    recordEvent(cid,'PRIVATE_COMPANY_INSOLVENCY_OPENED',{caseId:row.caseId,companyId:co,
+      totalRecordedCurrentLiabilities:solvency.totalRecordedCurrentLiabilities,
+      availableCash:solvency.availableCash});
+    return{status:'OPEN',case:clone(row)};
+  }
   function proposeCompanyRestructuring(input){
     input=input||{};
     var cid=canonicalCountry(input.countryId||playerCountry()),co=id(input.companyId),requestId=String(input.requestId||'').trim(),
@@ -2640,7 +2662,7 @@
     contributeJointVentureRetainedEarnings:contributeJointVentureRetainedEarnings,
     distributeJointVentureDividend:distributeJointVentureDividend,getJointVentureDashboard:getJointVentureDashboard,
     getPrivateMarketConcentration:getPrivateMarketConcentration,evaluateCompanySolvency:evaluateCompanySolvency,
-    proposeCompanyRestructuring:proposeCompanyRestructuring,decideCompanyRestructuring:decideCompanyRestructuring,
+    openCompanyInsolvencyCase:openCompanyInsolvencyCase,proposeCompanyRestructuring:proposeCompanyRestructuring,decideCompanyRestructuring:decideCompanyRestructuring,
     applyCompanyRestructuring:applyCompanyRestructuring,closePrivateCompany:closePrivateCompany,
     diagnostics:diagnostics,productionProofReady:productionProofReady,renderIndustryPanel:renderPanel
   });
