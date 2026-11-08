@@ -3171,7 +3171,11 @@
         sourcingPolicy:data.get('sourcingPolicy'),stateSupportRequested:data.get('stateSupportRequested')==='on'});
       root.__omegaPrivateEnterpriseLastProposalResult=clone(result);
       root.__omegaPrivateEnterpriseMessage=result.status==='PROPOSED'?'Proposal submitted. It has no factory, stock or cash effect until the government decision and funding stages.':('Proposal blocked: '+(result.reason||result.status));
-      refresh(root,root.__omegaV2IndustryCountryId||playerCountry());
+      // Repaint only this lifecycle panel. The full Industry route renderer can
+      // rehydrate its own screen state; proposal submission must remain attached
+      // to the same canonical Game.state economy bucket that accepted the command.
+      var proposalCountry=root.__omegaV2IndustryCountryId||playerCountry();
+      renderPanel(root,Object.assign({},root.__omegaV2IndustryOptions||{},{countryId:proposalCountry,tab:'production-lines'}));
     });
     root.addEventListener('change',function(event){
       var target=event.target,form=target&&target.closest?target.closest('[data-pe-proposal-form]'):null;
