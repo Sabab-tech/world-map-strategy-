@@ -179,9 +179,16 @@ globalThis.Game.state.finance.SAU={};
 globalThis.Game.state.economy.BDG={};
 globalThis.Game.state.economy.SAU={};
 globalThis.OmegaForexMonetaryEngine={
+  getCountryQuotes(mode){
+    assert.equal(mode,'SIMULATION');
+    return[
+      {countryCode:'BD',iso3:'BGD',currencyCode:'BDT',localPerUsd:77},
+      {countryCode:'SA',iso3:'SAU',currencyCode:'SAR',localPerUsd:3.75}
+    ];
+  },
   getProfiles(){return[
-    {iso3:'BGD',currencyCode:'BDT'},
-    {iso3:'SAU',currencyCode:'SAR'}
+    {countryCode:'BD',iso3:'BGD',currencyCode:'BDT'},
+    {countryCode:'SA',iso3:'SAU',currencyCode:'SAR'}
   ];},
   getCurrencyCode(profile){return profile.currencyCode;},
   getRate(code,mode){
