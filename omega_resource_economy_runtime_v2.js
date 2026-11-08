@@ -562,10 +562,23 @@
   }
   function flowHandler(path,field){
     return function(cmd,ctx){
-      var p=cmd&&cmd.payload||{},a=num(p.amount),key=String(p.idempotencyKey||'').trim();
+      var p=cmd&&cmd.payload||{},a=num(p.amount),key=String(p.idempotencyKey||'').trim(),
+        sourceId=String(p.saleId||p.settlementId||p.transactionId||p.projectId||'').trim()||null;
       if(a===null||a<0)return{accepted:false,reason:field+'_FLOW_INVALID'};
       if(!key)return{accepted:false,reason:field+'_FLOW_IDEMPOTENCY_KEY_REQUIRED'};
-      var x=clone(ctx.stateTransaction.get(path)||{});x.totalSinceRuntimeStart=(num(x.totalSinceRuntimeStart)||0)+a;x.lastTurn=turn();ctx.stateTransaction.set(path,x);return{accepted:true,amount:a};
+      var x=clone(ctx.stateTransaction.get(path)||{}),entries=Array.isArray(x.appliedEntries)?x.appliedEntries:[],
+        prior=entries.find(function(row){return String(row&&row.entryId||'')===key;});
+      if(prior){
+        if(Math.abs((num(prior.amount)||0)-a)>1e-9||String(prior.sourceId||'')!==String(sourceId||''))
+          return{accepted:false,reason:field+'_FLOW_IDEMPOTENCY_COLLISION',entryId:key};
+        return{accepted:true,duplicate:true,noStateChangeAccepted:true,amount:0,entryId:key};
+      }
+      entries.push({entryId:key,amount:a,sourceId:sourceId,turn:turn()});
+      while(entries.length>(num(rules().runtime.maxLedgerEntries)||2048))entries.shift();
+      x.appliedEntries=entries;
+      x.totalSinceRuntimeStart=(num(x.totalSinceRuntimeStart)||0)+a;
+      x.lastTurn=turn();ctx.stateTransaction.set(path,x);
+      return{accepted:true,amount:a,entryId:key};
     };
   }
 
