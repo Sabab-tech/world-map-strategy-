@@ -54,14 +54,29 @@
     // Finance country buckets are not guaranteed to be materialized in older saves.
     // Currency identity still belongs to the canonical Finance/Forex profile registry.
     const monetary=g.OmegaForexMonetaryEngine||g.Omega&&g.Omega.ForexMonetaryEngine;
-    if(!monetary||typeof monetary.getProfiles!=='function'||typeof monetary.getCurrencyCode!=='function')return null;
+    if(!monetary)return null;
     const target=canonical(c);
     if(!target)return null;
+
+    // Forex quote rows expose the canonical countryCode used by the simulation
+    // state (often ISO2) as well as the source ISO3. Prefer that exact key before
+    // falling back to Finance profile identity resolution.
+    if(typeof monetary.getCountryQuotes==='function'){
+      try{
+        const quotes=monetary.getCountryQuotes('SIMULATION')||[];
+        const quote=quotes.find(row=>
+          [row?.countryCode,row?.iso3].some(value=>
+            value&&(id(value)===target||canonical(value)===target)));
+        const quoteCode=String(quote?.currencyCode||'').trim().toUpperCase();
+        if(quoteCode)return quoteCode;
+      }catch(_){}
+    }
+    if(typeof monetary.getProfiles!=='function'||typeof monetary.getCurrencyCode!=='function')return null;
     let profiles=[];
     try{profiles=monetary.getProfiles()||[];}catch(_){return null;}
     const profile=profiles.find(row=>
-      [row?.iso3,row?.countryCode,row?.code,row?.iso2]
-        .some(value=>value&&canonical(value)===target));
+      [row?.countryCode,row?.code,row?.iso2,row?.iso3]
+        .some(value=>value&&(id(value)===target||canonical(value)===target)));
     if(!profile)return null;
     try{return String(monetary.getCurrencyCode(profile)||'').trim().toUpperCase()||null;}
     catch(_){return null;}
