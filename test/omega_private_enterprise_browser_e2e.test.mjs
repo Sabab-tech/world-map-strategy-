@@ -2112,24 +2112,39 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         }));
       }
       const settlementId = String(buyerRequest.settlementId || '');
-      const countryBucketKey = (domain,countryId) => {
-        const rows=root[domain]||{};
+      const countryBucketAliases = value => {
         const resolver=window.OmegaCanonicalIdentityRegistry||window.OmegaCountrySemanticBridge||window.Omega?.CanonicalIdentity;
-        const toIso3=value=>{
-          const raw=String(value||'').trim().toUpperCase();
-          if(/^[A-Z]{3}$/.test(raw))return raw;
+        const normalize=value=>String(value||'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_');
+        const values=new Set([normalize(value)]);
+        for(const candidate of [value,String(value||'').replace(/[_-]+/g,' ')]){
           try{
-            const hit=resolver?.resolveCountry?.(value);
-            const source=hit?.raw?.raw||hit?.raw||{};
-            return String(source.iso3||source.iso3Code||source.ISO_A3||source.iso_a3||
-              source.identity?.iso3||source.identity?.iso3Code||hit?.iso3||hit?.iso3Code||'').trim().toUpperCase();
-          }catch(_){return '';}
-        };
-        const target=toIso3(countryId);
-        return Object.keys(rows).find(key=>toIso3(key)===target)||null;
+            const hit=resolver?.resolveCountry?.(candidate);
+            if(!hit)continue;
+            const source=hit.raw?.raw||hit.raw||{};
+            [
+              source.iso3,source.iso3Code,source.ISO_A3,source.iso_a3,
+              source.iso2,source.code,source.identity?.iso3,source.identity?.iso3Code,
+              hit.id,hit.canonicalId,hit.iso3,hit.iso3Code,source.name,source.officialName,
+              ...(Array.isArray(source.aliases)?source.aliases:[])
+            ].filter(Boolean).forEach(item=>values.add(normalize(item)));
+          }catch(_){}
+        }
+        return values;
       };
-      const buyerEconomyKey=countryBucketKey('economy',buyerCountry);
-      const sellerEconomyKey=countryBucketKey('economy',sellerCountry);
+      const countryBucketKey = (domain,countryId,predicate) => {
+        const rows=root[domain]||{},target=countryBucketAliases(countryId);
+        const matches=Object.keys(rows).filter(key=>{
+          const keyAliases=countryBucketAliases(key);
+          return Array.from(target).some(alias=>keyAliases.has(alias));
+        });
+        return matches.find(key=>predicate?.(rows[key],key))||matches[0]||null;
+      };
+      const buyerEconomyKey=countryBucketKey('economy',buyerCountry,bucket=>
+        (bucket?.privateEnterpriseLifecycle?.privateCompanyProcurementRecords||[])
+          .some(row=>String(row?.settlementId||'')===settlementId));
+      const sellerEconomyKey=countryBucketKey('economy',sellerCountry,bucket=>
+        (bucket?.companyAccounts?.[sellerCompany]?.cashFlowEntries||[])
+          .some(row=>String(row?.sourceId||'')===settlementId&&row.category==='PRIVATE_COMPANY_EXPORT_SALE'));
       const procurementRowsByCountry = Object.entries(root.economy || {}).map(([countryId,bucket])=>({
         countryId,
         records:(bucket?.privateEnterpriseLifecycle?.privateCompanyProcurementRecords||[])
@@ -2175,6 +2190,7 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
           !sellerWallet || !buyerWallet) {
         throw new Error('PRIVATE_CASH_LIFECYCLE_PAYMENT_REVENUE_LEDGER_RECONCILIATION_FAILED:'+JSON.stringify({
           buyerCountry,buyerEconomyKey,sellerCountry,sellerEconomyKey,settlementId,
+          economyCountryKeys:Object.keys(root.economy||{}),
           buyerAccountPresent:!!buyerAccount,sellerAccountPresent:!!sellerAccount,
           buyerAccountKeys:Object.keys(buyerEconomyBucket?.companyAccounts||{}),
           sellerAccountKeys:Object.keys(sellerEconomyBucket?.companyAccounts||{}),
