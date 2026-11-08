@@ -1221,6 +1221,20 @@
       const existing=bucket.find(row=>row.type===type&&row.capture===capture);
       if(existing)return;
       const id='legacy.turn-listener.'+(++legacySequence);
+      // Keep a non-mutating registration map so slow legacy participants can be
+      // traced back to their original file/function without changing dispatch.
+      const listenerDiagnostics=global.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__
+        ||(global.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__=[]);
+      let registrationStack='';
+      try{registrationStack=String(new Error('OMEGA_LEGACY_TURN_LISTENER_REGISTRATION').stack||'');}catch(_){}
+      const currentScript=global.document?.currentScript||null;
+      listenerDiagnostics.push({
+        id,
+        listenerName:typeof listener==='function'?(listener.name||'<anonymous>'):
+          (typeof listener?.handleEvent==='function'?(listener.handleEvent.name||'handleEvent'):'<listener-object>'),
+        registrationScript:currentScript?.src||currentScript?.getAttribute?.('src')||null,
+        registrationStack
+      });
       const once=!!(options&&typeof options==='object'&&options.once);
       let called=false,unregister=()=>{};
       const invoke=async event=>{

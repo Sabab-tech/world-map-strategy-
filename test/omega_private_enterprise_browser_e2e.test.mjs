@@ -1070,6 +1070,8 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         selectedCountryRouteCount: routeLoad.routeCount,
         fixtureBatchIds,
         foreignSnapshot,
+        legacyTurnListenerDiagnostics: Array.isArray(window.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__)
+          ? window.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__.map(row => Object.assign({}, row)) : [],
         startingTreasury: Number(finance.available) || 0
       };
     });
