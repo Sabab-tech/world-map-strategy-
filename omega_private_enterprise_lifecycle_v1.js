@@ -51,12 +51,33 @@
     for(var i=0;i<candidates.length;i++){var raw=candidates[i]&&typeof candidates[i]==='object'?(candidates[i].iso3||candidates[i].countryCode||candidates[i].countryId||candidates[i].code||candidates[i].id):candidates[i];var cid=canonicalCountry(raw);if(/^[A-Z]{3}$/.test(cid))return cid;}
     return '';
   }
+  function countryAliasKeys(country){
+    var registry=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
+    if(!registry||typeof registry.resolveCountry!=='function')return [];
+    for(var i=0,candidates=[country,String(country==null?'':country).replace(/[_-]+/g,' ')];i<candidates.length;i++){
+      try{
+        var hit=registry.resolveCountry(candidates[i]);if(!hit||!hit.id)continue;
+        var row=hit.raw&&hit.raw.raw||hit.raw||{};
+        return Array.from(new Set([
+          row.iso3,row.iso3Code,row.ISO_A3,row.iso_a3,row.iso2,row.code,
+          hit.id,hit.canonicalId,row.name,row.officialName
+        ].concat(Array.isArray(row.aliases)?row.aliases:[])
+          .filter(Boolean).map(function(value){return id(value);})));
+      }catch(_){}
+    }
+    return [];
+  }
   function countryBucket(domain,country,create){
     var s=state();if(!s)return null;
     if(!obj(s[domain])){if(!create)return null;s[domain]={};}
     var root=s[domain],raw=id(country),cid=/^[A-Z]{3}$/.test(raw)?raw:canonicalCountry(country),
-      keys=Object.keys(root),key=Object.prototype.hasOwnProperty.call(root,cid)?cid:
-        keys.find(function(k){return canonicalCountry(k)===cid;});
+      keys=Object.keys(root),aliases=new Set([raw,cid].concat(countryAliasKeys(country)).map(function(value){return id(value);}));
+    var key=Object.prototype.hasOwnProperty.call(root,cid)?cid:
+      keys.find(function(k){
+        var normalized=id(k);
+        return aliases.has(normalized)||canonicalCountry(k)===cid||
+          countryAliasKeys(k).some(function(alias){return aliases.has(id(alias));});
+      });
     if(!key&&create)key=cid;
     if(!key)return null;
     if(!obj(root[key])){if(!create)return null;root[key]={};}
