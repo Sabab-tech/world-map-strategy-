@@ -36,8 +36,19 @@ test('15 fixed vehicle tiers have unique names, SVG identities and progressive s
 
 test('180-day police turn catch-up completes with bounded crime history and projected daily records', () => {
   const state = setup(100000000000);
-  api.getState('AAA');
-  const police = state.interior.AAA.police;
+  const countryRows = baselineData.countries;
+  const bangladeshBaseline = countryRows.find(row => row.code === 'BD');
+  assert.ok(bangladeshBaseline, 'the checked-in Bangladesh police baseline must be available');
+  Game.countryId = 'BD';
+  Game.playerCountryId = 'BD';
+  CountryIOS.activeCountry = 'BD';
+  state.economy.BD = { treasury: 100000000000 };
+  state.population.BD = { population: bangladeshBaseline.population.value };
+  state.simulation = { turn: 0, simulationTimeMs: 0 };
+  const boot = api.bootstrapCountryPoliceBaselines(countryRows);
+  assert.equal(boot.ok, true, JSON.stringify(boot));
+  api.getState('BD');
+  const police = state.interior.BD.police;
   assert.ok(police.crimeBaseline?.ratesPer100k, 'the selected country crime baseline must be loaded');
   police.lastPayrollDay = 0;
   police.lastFleetSimulationDay = 0;
@@ -46,9 +57,9 @@ test('180-day police turn catch-up completes with bounded crime history and proj
   state.simulation.turn = 4320;
 
   const startedAt = performance.now();
-  api.processTurn({ detail: { payload: { countryId: 'AAA', turn: 4320 } } });
+  api.processTurn({ detail: { payload: { countryId: 'BD', turn: 4320 } } });
   const elapsedMs = performance.now() - startedAt;
-  const after = api.getState('AAA');
+  const after = api.getState('BD');
 
   assert.equal(after.lastCrimeSimulationDay, 180);
   assert.equal(after.crimeModel?.lastUpdatedDay, 180);
