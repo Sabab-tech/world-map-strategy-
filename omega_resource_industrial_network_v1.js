@@ -3172,8 +3172,8 @@ function factoryConstructionMaterialQuote(c,profile){
     unit:profile.constructionMaterialUnit||'SIMULATION_RESOURCE_UNIT',authority:profile.constructionMaterialsAuthority||'UNDECLARED',
     materials,missingMaterials:missing,ready:missing.length===0,simulationOnly:true};
 }
-function consumeFactoryConstructionMaterial(c,material,quantity,projectId,unit='SIMULATION_RESOURCE_UNIT'){
-  const allocations=consumeMineConstructionMaterial(c,material,quantity,projectId,'FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION',unit);
+function consumeFactoryConstructionMaterial(c,material,quantity,projectId,unit='SIMULATION_RESOURCE_UNIT',batchIndex=null){
+  const allocations=consumeMineConstructionMaterial(c,material,quantity,projectId,'FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION',unit,batchIndex);
   return allocations.map(row=>({...row,unit,sourceUnit:row.sourceUnit||row.unit||'NOT_RECORDED',
     unitBridge:{sourceUnit:row.sourceUnit||row.unit||'NOT_RECORDED',targetUnit:unit,factor:1,simulationOnly:true,
       authority:'SIMULATED_FACTORY_CONSTRUCTION_UNIT_BRIDGE'},projectId,movementType:'FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION',
@@ -3225,13 +3225,25 @@ function quoteMineProject(input={}){
       reserveAuthority:site.quantitative?.reserve?.status||site.reserve?.status||'UNOBSERVED',coordinateAuthority:site.location?.coordinatePrecision||site.location?.coordinateStatus||'UNOBSERVED',realWorldStatusIsNotChangedByPlayerCommissioning:true},
     ready:treasury.value!==null&&treasury.value+1e-9>=costUsd&&materials.every(x=>x.sufficient)&&assignedWorkers!==null&&assignedWorkers>=workersRequired&&!activeProject};
 }
-function consumeMineConstructionMaterial(c,material,quantity,projectId,movementType='MINE_CONSTRUCTION_MATERIAL_CONSUMPTION',unitOverride=null){
+function indexConstructionBatchesByResource(batches){
+  const index=new Map();
+  for(const batch of Array.isArray(batches)?batches:[]){
+    const resourceId=tok(batch?.resourceId||batch?.materialIdentity);
+    if(!resourceId)continue;
+    let rows=index.get(resourceId);
+    if(!rows){rows=[];index.set(resourceId,rows);}
+    rows.push(batch);
+  }
+  return index;
+}
+function consumeMineConstructionMaterial(c,material,quantity,projectId,movementType='MINE_CONSTRUCTION_MATERIAL_CONSUMPTION',unitOverride=null,batchIndex=null){
   const cid=canonicalCountry(c),rs=resourceState(cid),stock=mineConstructionStock(cid,material),inv=rs.inventory||(rs.inventory={});
   const warehouse=rs.warehouse||(rs.warehouse={warehouseId:'WH-'+cid+'-RAW',countryId:cid,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',availableByResource:{},reservedByResource:{}});
   warehouse.availableByResource=warehouse.availableByResource||{};warehouse.reservedByResource=warehouse.reservedByResource||{};
   const batches=Array.isArray(rs.batches)?rs.batches:[],lots=rs.inventoryLots&&typeof rs.inventoryLots==='object'?rs.inventoryLots:{};
+  const candidateBatches=batchIndex instanceof Map?(batchIndex.get(tok(material))||[]):batches;
   let remaining=quantity;const allocations=[];
-  for(const batch of batches){
+  for(const batch of candidateBatches){
     if(remaining<=1e-9)break;
     if(tok(batch?.resourceId||batch?.materialIdentity)!==tok(material))continue;
     if(['FACTORY_INPUT','CONSUMED','TRANSFERRED_TO_FACTORY','SOLD','EXHAUSTED'].includes(String(batch?.stage||batch?.status||'').toUpperCase()))continue;
@@ -3277,8 +3289,9 @@ function startMineProject(input={}){
   if(short.length)return{status:'BLOCKED',reason:'INSUFFICIENT_CONSTRUCTION_MATERIALS',materials:short,quote};
   if(!quote.commissioningReady)return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_ALREADY_IN_PROGRESS',projectId:quote.activeProjectId,quote};
   const account=countryFinanceBucket(cid),treasuryBefore=account.value;
+  const constructionBatchIndex=indexConstructionBatchesByResource(resourceState(cid).batches);
   const materialAllocations=[];
-  for(const item of quote.materials)materialAllocations.push(...consumeMineConstructionMaterial(cid,item.resourceId,item.required,'MINE_BUILD:'+siteId));
+  for(const item of quote.materials)materialAllocations.push(...consumeMineConstructionMaterial(cid,item.resourceId,item.required,'MINE_BUILD:'+siteId,'MINE_CONSTRUCTION_MATERIAL_CONSUMPTION',null,constructionBatchIndex));
   const treasuryAfter=treasuryBefore-quote.costUsd;
   if(account.field==='available')account.bucket.available=treasuryAfter;
   else if(account.field==='treasury')account.bucket.treasury=treasuryAfter;
@@ -3506,9 +3519,13 @@ function startFactoryProject(input={}){
     },
     authority:'SIMULATED_FACTORY_CONSTRUCTION_PROJECT',simulationOnly:true};
   if(constructionMaterialQuote){
+    // Build the per-resource view once. Re-scanning every country batch for each
+    // BOM line made a second project scale as O(materials × all batches) and could
+    // block the Chromium main thread during commissioning on a populated save.
+    const constructionBatchIndex=indexConstructionBatchesByResource(resourceState(cid).batches);
     const materialAllocations=[];
     for(const material of constructionMaterialQuote.materials)
-      materialAllocations.push(...consumeFactoryConstructionMaterial(cid,material.resourceId,material.required,project.projectId,constructionMaterialQuote.unit));
+      materialAllocations.push(...consumeFactoryConstructionMaterial(cid,material.resourceId,material.required,project.projectId,constructionMaterialQuote.unit,constructionBatchIndex));
     project.materialAllocations=clone(materialAllocations);project.constructionMaterialsStatus='CONSUMED';project.constructionMaterialsConsumedTurn=turn();
   }
   n.projects.push(project);n.projects=n.projects.slice(-MAX_PROJECTS);
