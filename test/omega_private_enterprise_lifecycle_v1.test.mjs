@@ -1557,7 +1557,7 @@ test('private lifecycle merges populated BANGLADESH records into a newly materia
     resolveCountry(value){
       const key=String(value||'').toUpperCase();
       return ['BGD','BD','BANGLADESH'].includes(key)
-        ?{id:'BD',raw:{iso3:'BGD',iso2:'BD',name:'Bangladesh',officialName:'People's Republic of Bangladesh'}}
+        ?{id:'BD',raw:{iso3:'BGD',iso2:'BD',name:'Bangladesh',officialName:"Bangladesh"}}
         :null;
     }
   };
