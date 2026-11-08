@@ -191,6 +191,25 @@ test('private-company HHI alone can open an investigation, but it does not imply
   assert.equal(h.state.trade.BGD.marketCompetition.activeRestrictions.length,0);
 });
 
+test('competition monitor persists through the authoritative Simulation world root instead of a stale Game.state copy',()=>{
+  const h=harness(),api=h.sandbox.OmegaPrivateMarketCompetitionRuntime;
+  const authoritative=h.state;
+  const staleCompatibilityRoot=structuredClone(authoritative);
+  h.sandbox.Omega.Simulation={
+    getPlayerCountryId:()=> 'BGD',
+    world:{state:authoritative},
+    clock:{turn:10}
+  };
+  h.sandbox.Game.state=staleCompatibilityRoot;
+  const result=api.processCountry('BGD');
+  assert.equal(result.status,'COMPLETED',JSON.stringify(result));
+  assert.equal(authoritative.trade.BGD.marketCompetition.lastProcessedTurn,10);
+  assert.equal(authoritative.trade.BGD.marketCompetition.cases.length,1);
+  assert.equal(authoritative.trade.BGD.marketCompetition.activeRestrictions.length,1);
+  assert.equal(staleCompatibilityRoot.trade.BGD.marketCompetition,undefined,
+    'the compatibility copy must not receive shadow competition cases or restrictions');
+});
+
 test('only the active player country may process a market competition turn',()=>{
   const h=harness();
   assert.equal(h.sandbox.OmegaPrivateMarketCompetitionRuntime.processCountry('SAU').reason,'PLAYER_COUNTRY_SCOPE_ONLY');
