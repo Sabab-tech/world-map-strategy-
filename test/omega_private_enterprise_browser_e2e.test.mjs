@@ -1391,7 +1391,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(extraction.result?.shipment?.shipmentType, 'MINE_TO_WAREHOUSE');
     assert.equal(String(extraction.result?.factoryId), commissioning.factoryId);
     assert.equal(String(extraction.result?.route?.destinationFactoryId||''),commissioning.factoryId,
-      'the site's actual dispatched route must identify the selected factory destination');
+      'the actual dispatched route must identify the selected factory destination');
     assert.equal(extraction.result?.factoryBootstrapStatus, 'EXISTING');
     assert.ok(extraction.result?.batchId && extraction.result?.shipmentId && extraction.result?.extractionPlanId);
     metrics.extraction = extraction;
