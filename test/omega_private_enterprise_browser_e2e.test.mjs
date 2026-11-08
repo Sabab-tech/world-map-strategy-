@@ -709,9 +709,10 @@ test('real Chromium map marker runs the exact site through a commissioned privat
   fs.mkdirSync(artifacts, { recursive: true });
   const server = await startStaticServer();
   let browser;
+  let page;
   const pageErrors = [];
   const consoleErrors = [];
-  const metrics = { browser: 'Chromium', offlineNetwork: true, stages: [] };
+  const metrics = { browser: 'Chromium', offlineNetwork: true, stages: [], progressLogs: [] };
 
   try {
     browser = await chromium.launch({
@@ -723,11 +724,13 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       deviceScaleFactor: 1,
       serviceWorkers: 'block'
     });
-    const page = await context.newPage();
+    page = await context.newPage();
     page.setDefaultTimeout(30000);
     page.on('pageerror', error => pageErrors.push(String(error && error.stack || error)));
     page.on('console', message => {
-      if (message.type() === 'error') consoleErrors.push(message.text());
+      const messageText=message.text();
+      if(messageText.startsWith('[SAB34_PROGRESS]'))metrics.progressLogs.push(messageText);
+      if (message.type() === 'error') consoleErrors.push(messageText);
     });
     await page.route('**/*', route => {
       const target = route.request().url();
@@ -840,6 +843,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
           watch.trace.push(entry);
           if (watch.trace.length > 128) watch.trace.splice(0, watch.trace.length - 128);
           watch.active = label;
+          try{console.info('[SAB34_PROGRESS] TURN_STAGE_START '+label);}catch(_){}
           let timeoutId = null;
           try {
             const timeout = new Promise((_, reject) => {
@@ -861,6 +865,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
             if (timeoutId !== null) window.clearTimeout(timeoutId);
             entry.finishedAt = Date.now();
             entry.durationMs = entry.finishedAt - entry.startedAt;
+            try{console.info('[SAB34_PROGRESS] TURN_STAGE_FINISH '+label+' '+entry.status+' '+entry.durationMs+'ms');}catch(_){}
             watch.active = null;
           }
         };
@@ -1079,7 +1084,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     metrics.preparation = preparation;
     metrics.stages.push('199_CANONICAL_SITES_AND_197_COUNTRY_FACTORY_BASELINES_READY');
 
-    const commissioning = await page.evaluate(async () => {
+    const commissioningPromise = page.evaluate(async () => {
       const state = window.Game.state;
       const simulation = window.Omega.Simulation;
       const industry = window.OmegaResourceIndustrialNetwork || window.Omega?.ResourceIndustrialNetwork;
@@ -1096,6 +1101,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       if (!proofAcceptedAtStart && gateReasonAtStart !== 'SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED') {
         throw new Error('SAB34_PRIVATE_PRODUCTION_DID_NOT_FAIL_CLOSED_FOR_MISSING_BROWSER_CERTIFICATE:' + gateReasonAtStart);
       }
+      console.info('[SAB34_PROGRESS] COMMISSIONING_BEGIN '+JSON.stringify({turn:simulation.clock.turn,participants:simulation.participantDiagnostics?.().map(row=>row.id)||[]}));
       const proposal = lifecycle.createProposal({
         countryId:'BGD',companyId:'NOVA_CONSUMER_INDUSTRIES',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
         factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',processingResourceId:'coal',
@@ -1105,13 +1111,17 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         riskForecast:'The project remains exposed to mine output, shipment delays, recipe input quality, utility availability, construction capital, warehouse capacity and uncertain customer demand.'
       });
       if(proposal.status!=='PROPOSED')throw new Error('SAB34_PRIVATE_PROPOSAL_FAILED:'+JSON.stringify(proposal));
+      console.info('[SAB34_PROGRESS] PROPOSAL_CREATED '+proposal.proposalId);
       const decision=lifecycle.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
         allowStateSupport:true,conditions:{allowStateSupport:true}});
       if(decision.status!=='APPROVED_AWAITING_FUNDING')throw new Error('SAB34_PRIVATE_PERMIT_FAILED:'+JSON.stringify(decision));
+      console.info('[SAB34_PROGRESS] PROPOSAL_APPROVED '+proposal.proposalId);
       const funding=lifecycle.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,
         sourceType:'GOVERNMENT_GRANT',amount:proposal.capitalRequired});
       if(funding.status!=='FUNDED')throw new Error('SAB34_PRIVATE_FUNDING_FAILED:'+JSON.stringify(funding));
+      console.info('[SAB34_PROGRESS] PROPOSAL_FUNDED '+proposal.proposalId);
       const privateConstruction=lifecycle.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+      console.info('[SAB34_PROGRESS] PRIVATE_CONSTRUCTION_STARTED '+JSON.stringify(privateConstruction));
       if(privateConstruction.status!=='UNDER_CONSTRUCTION'||privateConstruction.started?.length!==1)
         throw new Error('SAB34_PRIVATE_CONSTRUCTION_FAILED:'+JSON.stringify(privateConstruction));
       const privateProjectId=privateConstruction.started[0].projectId;
@@ -1136,7 +1146,11 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       simulation.clock.gameDaysPerTurn=constructionDays;
       simulation.clock.stepDurationMs=constructionDays*86400000;
       state.simulation.daysPerTurn=constructionDays;
-      try{advanced=await window.__sab34AdvanceResourceTurns(1);}
+      try{
+        console.info('[SAB34_PROGRESS] CONSTRUCTION_TURN_ADVANCE_START '+JSON.stringify({constructionDays,turn:simulation.clock.turn,participants:window.__sab34ResourceTurnParticipantIds}));
+        advanced=await window.__sab34AdvanceResourceTurns(1);
+        console.info('[SAB34_PROGRESS] CONSTRUCTION_TURN_ADVANCE_FINISH '+JSON.stringify({steps:advanced.steps,status:advanced.status,turn:simulation.clock.turn}));
+      }
       finally{
         simulation.clock.gameDaysPerTurn=30;simulation.clock.stepDurationMs=30*86400000;state.simulation.daysPerTurn=30;
       }
@@ -1195,6 +1209,43 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         constructionDays,constructionAdvanceTurns:advanced.steps
       };
     });
+    let commissioningTimeoutId=null;
+    let commissioning;
+    try{
+      commissioning=await Promise.race([
+        commissioningPromise,
+        new Promise((_,reject)=>{
+          commissioningTimeoutId=setTimeout(()=>reject(new Error('SAB34_COMMISSIONING_OUTER_TIMEOUT_AFTER_180000MS')),180000);
+        })
+      ]);
+    }catch(commissioningError){
+      metrics.commissioningOuterFailure=String(commissioningError&&commissioningError.stack||commissioningError);
+      try{
+        const diagnosticPromise=page.evaluate(()=>{
+          const simulation=window.Omega?.Simulation;
+          const watch=window.__sab34ResourceTurnWatch||{};
+          return{
+            activeStage:watch.active||null,
+            trace:(watch.trace||[]).slice(-64),
+            turn:simulation?.clock?.turn??null,
+            status:simulation?.status??null,
+            lastError:simulation?.lastError??null,
+            participantResults:(simulation?.lastTurnParticipantResults||[]).slice(-64),
+            phaseHandlers:[...(simulation?.phaseHandlers?.keys?.()||[])],
+            participantIds:simulation?.participantDiagnostics?.()||[]
+          };
+        });
+        metrics.commissioningTimeoutDiagnostics=await Promise.race([
+          diagnosticPromise,
+          new Promise(resolve=>setTimeout(()=>resolve({diagnosticTimeout:true}),8000))
+        ]);
+      }catch(diagnosticError){
+        metrics.commissioningTimeoutDiagnosticsError=String(diagnosticError&&diagnosticError.message||diagnosticError);
+      }
+      throw commissioningError;
+    }finally{
+      if(commissioningTimeoutId!==null)clearTimeout(commissioningTimeoutId);
+    }
     metrics.commissioning=commissioning;
     metrics.stages.push('PRIVATE_FACTORY_COMMISSIONED_AND_HELD_BEHIND_SAB34_LIVE_BROWSER_PROOF_GATE');
     metrics.stages.push(commissioning.proofAcceptedAtStart
@@ -1679,7 +1730,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     metrics.failure = String(error && error.stack || error);
     metrics.errors = { pageErrors, consoleErrors };
     try {
-      metrics.turnDiagnostics = await page.evaluate(() => {
+      const diagnosticsPromise = page.evaluate(() => {
         const simulation = window.Omega?.Simulation;
         const watch = window.__sab34ResourceTurnWatch || {};
         return {
@@ -1693,6 +1744,10 @@ test('real Chromium map marker runs the exact site through a commissioned privat
           participantIds: simulation?.participantDiagnostics?.() || []
         };
       });
+      metrics.turnDiagnostics = await Promise.race([
+        diagnosticsPromise,
+        new Promise(resolve=>setTimeout(()=>resolve({diagnosticTimeout:true}),8000))
+      ]);
     } catch (diagnosticError) {
       metrics.turnDiagnosticsError = String(diagnosticError && diagnosticError.message || diagnosticError);
     }
