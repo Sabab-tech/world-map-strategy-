@@ -1525,6 +1525,15 @@ test('real Chromium map marker runs the exact site through a commissioned privat
 
     const mineEta = Number(extraction.result.shipment.etaTurn);
     assert.ok(Number.isFinite(mineEta), 'mine haul must expose its real ETA game turn');
+    const mineShipment=extraction.result.shipment;
+    const mineTravelDays=Math.max(1,Math.ceil(Number(mineShipment.route?.travelTimeDays)||0));
+    const mineDispatchDate=Date.parse(mineShipment.createdDate);
+    const mineEtaDate=Date.parse(mineShipment.etaDate);
+    assert.ok(Number.isFinite(mineDispatchDate)&&Number.isFinite(mineEtaDate),
+      'mine haul must persist both dispatch and calendar ETA dates');
+    assert.equal(Math.round((mineEtaDate-mineDispatchDate)/86400000),mineTravelDays,
+      'a temporary 180-day construction turn must not stretch the route calendar ETA to 180 days');
+    metrics.mineRouteEta={travelDays:mineTravelDays,dispatchDate:mineShipment.createdDate,etaDate:mineShipment.etaDate};
     const mineArrival = await page.evaluate(async eta => {
       const simulation = window.Omega.Simulation;
       const current = Number(simulation.clock.turn) || 0;
