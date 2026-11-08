@@ -1509,9 +1509,15 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(extraction.result?.status, 'IN_TRANSIT', JSON.stringify(extraction));
     assert.equal(extraction.result?.extractionStatus, 'COMMITTED');
     assert.equal(extraction.result?.shipment?.shipmentType, 'MINE_TO_WAREHOUSE');
-    assert.equal(String(extraction.result?.factoryId), commissioning.factoryId);
-    assert.equal(String(extraction.result?.route?.destinationFactoryId||''),commissioning.factoryId,
-      'the actual dispatched route must identify the selected factory destination');
+    assert.equal(String(extraction.result?.factoryId), commissioning.factoryId,
+      'the site flow must retain the selected operational factory across both logistics legs');
+    // This first leg is explicitly mine -> raw warehouse. Its route must not pretend
+    // that the mine truck is already delivering to the factory; the factory leg is
+    // dispatched only after the raw-warehouse receipt is committed.
+    assert.equal(String(extraction.result?.route?.destinationWarehouseId||''), 'WH-BGD-RAW',
+      'the mine-haul route must identify the canonical raw-warehouse destination');
+    assert.equal(String(extraction.result?.route?.destinationNode||''), 'WH-BGD-RAW',
+      'the first logistics leg must end at the raw warehouse node');
     assert.equal(extraction.result?.factoryBootstrapStatus, 'EXISTING');
     assert.ok(extraction.result?.batchId && extraction.result?.shipmentId && extraction.result?.extractionPlanId);
     metrics.extraction = extraction;
@@ -1547,6 +1553,10 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(mineArrival.receipt?.receivedFrom, 'MINE_SITE_LOGISTICS');
     assert.ok(mineArrival.factoryShipment, 'mine receipt must dispatch a separate raw-to-factory shipment');
     assert.equal(mineArrival.factoryShipment.siteId, targetSite.siteId);
+    assert.equal(String(mineArrival.factoryShipment.factoryId||''),commissioning.factoryId,
+      'the second logistics leg must preserve the same selected factory identity');
+    assert.equal(String(mineArrival.factoryShipment.route?.destinationFactoryId||''),commissioning.factoryId,
+      'the actual raw-to-factory route must terminate at the selected operational factory');
     metrics.mineArrival = mineArrival;
     metrics.stages.push('MINE_HAUL_RECEIPT_POSTED_AND_FACTORY_LEG_DISPATCHED');
 
