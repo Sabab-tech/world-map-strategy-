@@ -2336,8 +2336,14 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
       const restored = window.Game.state;
       const restoredBuyerWallet = restored.finance.BGD.omegaFinance.companyCapitalAccounts[buyerCompany];
       const restoredSellerWallet = restored.finance.SAU.omegaFinance.companyCapitalAccounts[sellerCompany];
-      const restoredBuyerAccount = restored.economy.BGD.companyAccounts[buyerCompany];
-      const restoredSellerAccount = restored.economy.SAU.companyAccounts[sellerCompany];
+      const restoredBuyerEconomyKey=countryBucketKey('economy',buyerCountry);
+      const restoredSellerEconomyKey=countryBucketKey('economy',sellerCountry);
+      const restoredBuyerAccount = restored.economy?.[restoredBuyerEconomyKey]?.companyAccounts?.[buyerCompany]||null;
+      const restoredSellerAccount = restored.economy?.[restoredSellerEconomyKey]?.companyAccounts?.[sellerCompany]||null;
+      if(!restoredBuyerAccount||!restoredSellerAccount)throw new Error('PRIVATE_CASH_LIFECYCLE_RESTORED_COMPANY_ACCOUNTS_MISSING:'+JSON.stringify({
+        buyerCountry,buyerEconomyKey:restoredBuyerEconomyKey,sellerCountry,sellerEconomyKey:restoredSellerEconomyKey,
+        economyKeys:Object.keys(restored.economy||{})
+      }));
       const restoredTaxRows = restored.finance.SAU.omegaFinance.ledger.filter(row =>
         row.type === 'PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX' && row.companyId === sellerCompany);
       const restoredDividendRows = restored.finance.SAU.omegaFinance.ledger.filter(row =>
