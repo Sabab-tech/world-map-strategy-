@@ -2173,7 +2173,22 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         row.transactionId === 'PE-PRIVATE-IMPORT-RECEIPT:' + settlementId);
       if (!buyerPaymentEntry || !sellerReceiptEntry || !buyerPaymentLedger || !sellerReceiptLedger ||
           !sellerWallet || !buyerWallet) {
-        throw new Error('PRIVATE_CASH_LIFECYCLE_PAYMENT_REVENUE_LEDGER_RECONCILIATION_FAILED');
+        throw new Error('PRIVATE_CASH_LIFECYCLE_PAYMENT_REVENUE_LEDGER_RECONCILIATION_FAILED:'+JSON.stringify({
+          buyerCountry,buyerEconomyKey,sellerCountry,sellerEconomyKey,settlementId,
+          buyerAccountPresent:!!buyerAccount,sellerAccountPresent:!!sellerAccount,
+          buyerAccountKeys:Object.keys(buyerEconomyBucket?.companyAccounts||{}),
+          sellerAccountKeys:Object.keys(sellerEconomyBucket?.companyAccounts||{}),
+          buyerPaymentEntry:buyerPaymentEntry||null,sellerReceiptEntry:sellerReceiptEntry||null,
+          buyerEntryIds:(buyerAccount?.cashFlowEntries||[]).map(row=>({entryId:row.entryId,sourceId:row.sourceId,category:row.category,direction:row.direction,status:row.status})),
+          sellerEntryIds:(sellerAccount?.cashFlowEntries||[]).map(row=>({entryId:row.entryId,sourceId:row.sourceId,category:row.category,direction:row.direction,status:row.status})),
+          buyerWalletPresent:!!buyerWallet,sellerWalletPresent:!!sellerWallet,
+          buyerFinanceLedgerIds:(buyerFinance.omegaFinance.ledger||[]).map(row=>row.transactionId),
+          sellerFinanceLedgerIds:(sellerFinance.omegaFinance.ledger||[]).map(row=>row.transactionId),
+          buyerSettlementLedger:(buyerFinance.omegaFinance.ledger||[]).filter(row=>String(row.transactionId||'').includes(settlementId)),
+          sellerSettlementLedger:(sellerFinance.omegaFinance.ledger||[]).filter(row=>String(row.transactionId||'').includes(settlementId)),
+          financeReservation:buyerFinance.omegaFinance.companyTradeReservations?.[settlementId]||null,
+          procurementRecord:procurement||null
+        }));
       }
       if (Math.abs(buyerWallet.availableBalance - (buyerCashBefore - buyerPaymentLedger.amount)) > 1e-6 ||
           Math.abs((Number(sellerWallet.availableBalance) || 0) - sellerReceiptLedger.amount) > 1e-6 ||
