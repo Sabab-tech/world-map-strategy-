@@ -178,6 +178,8 @@ globalThis.Game.state.finance.BGD={};
 globalThis.Game.state.finance.SAU={};
 globalThis.Game.state.economy.BGD={};
 globalThis.Game.state.economy.SAU={};
+globalThis.Game.state.trade.BGD={importRequests:[]};
+globalThis.Game.state.trade.SAU=globalThis.Game.state.trade.SAU||{offerBook:[]};
 globalThis.OmegaForexMonetaryEngine={
   getCountryQuotes(mode){
     assert.equal(mode,'SIMULATION');
