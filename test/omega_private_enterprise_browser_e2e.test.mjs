@@ -2067,12 +2067,13 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
       quoteOnly.status = 'REJECTED';
       quoteOnly.stage = 'MARKET_QUOTE_EVIDENCE_CAPTURED';
 
-      const supplier = market.privateCompanySuppliers(resourceId, quantity, buyerCountry, sellerCompany, sellerCountry)
-        .find(row => row.countryId === sellerCountry && row.companyId === sellerCompany);
+      const supplierCandidates = market.privateCompanySuppliers(resourceId, quantity, buyerCountry, sellerCompany, sellerCountry);
+      const supplier = supplierCandidates.find(row =>
+        row.countryId === marketSellerCountryId && row.companyId === sellerCompany);
       if (!supplier || supplier.countryId !== marketSellerCountryId ||
           supplier.available < quantity || !supplier.sourceBatchIds.includes(sellerBatchId)) {
         throw new Error('PRIVATE_CASH_LIFECYCLE_EXACT_PRIVATE_STOCK_NOT_FOUND:' + JSON.stringify({
-          supplier: supplier || null, marketSellerCountryId
+          supplier: supplier || null, marketSellerCountryId, supplierCandidates
         }));
       }
       const buyerCashBefore = buyerFinance.omegaFinance.companyCapitalAccounts[buyerCompany].availableBalance;
