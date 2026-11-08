@@ -1523,3 +1523,62 @@ test('private lifecycle prefers exact ISO-3 buckets over an earlier ISO-2 alias 
   assert.deepEqual(h.state.economy.BD.privateEnterpriseLifecycle.proposals,[{proposalId:'WRONG-COUNTRY-BUCKET'}],
     'the lifecycle must not write to the earlier ISO-2 alias bucket');
 });
+
+
+test('private lifecycle merges populated BANGLADESH records into a newly materialized BGD bucket',()=>{
+  const h=makeHarness();
+  const legacyLifecycle={
+    schemaVersion:'test',
+    nextProposalSequence:2,
+    nextJointVentureSequence:1,
+    proposals:[{
+      proposalId:'PE-PROPOSAL:BGD:1',countryId:'BGD',companyId:COMPANY,
+      operatorCompanyId:COMPANY,factoryType:'STEEL_WORKS',status:'PROPOSED',createdTurn:4
+    }],
+    events:[{eventId:'PE-EVENT:BGD:T4:LEGACY',countryId:'BGD',type:'PROPOSAL_CREATED'}],
+    financialPeriods:[],jointVentures:[],restructuringCases:[],
+    procurementRecords:[{
+      procurementRecordId:'PRIVATE-PROCUREMENT:BGD:SETTLED-1',
+      settlementId:'SETTLED-1',countryId:'BGD',status:'SETTLED'
+    }],
+    privateCompanyProcurementRecords:[{
+      procurementRecordId:'PRIVATE-COMPANY-PROCUREMENT:BGD:SETTLED-1',
+      settlementId:'SETTLED-1',countryId:'BGD',status:'SETTLED'
+    }],
+    companyStatuses:{[COMPANY]:'ACTIVE'}
+  };
+  // Older saves may keep lifecycle records under the display-name key while a
+  // newer subsystem materializes an otherwise empty canonical BGD economy bucket.
+  h.state.economy={
+    BANGLADESH:{privateEnterpriseLifecycle:legacyLifecycle},
+    BGD:{productionAssets:[]}
+  };
+  h.sandbox.OmegaCanonicalIdentityRegistry={
+    resolveCountry(value){
+      const key=String(value||'').toUpperCase();
+      return ['BGD','BD','BANGLADESH'].includes(key)
+        ?{id:'BD',raw:{iso3:'BGD',iso2:'BD',name:'Bangladesh',officialName:'People's Republic of Bangladesh'}}
+        :null;
+    }
+  };
+  h.sandbox.OmegaCountrySemanticBridge=h.sandbox.OmegaCanonicalIdentityRegistry;
+
+  const dashboard=h.api.getCountryDashboard('BGD');
+  assert.equal(dashboard.countryId,'BGD');
+  assert.equal(dashboard.proposals.length,1,
+    'the canonical dashboard must not hide proposals stored under BANGLADESH');
+  assert.equal(h.state.economy.BGD.privateEnterpriseLifecycle.procurementRecords[0].status,'SETTLED',
+    'the canonical lifecycle must retain already-settled procurement records');
+  assert.equal(h.state.economy.BGD.privateEnterpriseLifecycle.privateCompanyProcurementRecords[0].settlementId,'SETTLED-1');
+
+  const created=submitProposal(h.api,{
+    countryId:'BGD',companyId:COMPANY,operatorCompanyId:COMPANY,
+    factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'
+  });
+  assert.equal(created.status,'PROPOSED',JSON.stringify(created));
+  assert.equal(h.state.economy.BGD.privateEnterpriseLifecycle.proposals.length,2);
+  assert.equal(h.state.economy.BANGLADESH.privateEnterpriseLifecycle.proposals.length,2,
+    'legacy alias readers must continue to see the same lifecycle object');
+  assert.equal(h.state.economy.BGD.privateEnterpriseLifecycle.procurementRecords.length,1,
+    'country-bucket reconciliation must not duplicate or drop procurement records');
+});
