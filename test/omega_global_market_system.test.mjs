@@ -170,4 +170,33 @@ assert.equal(referenceOnly.bestAskUsd,null,'reference ask must not be presented 
 assert.equal(referenceOnly.askDepth,0);
 assert.equal(referenceOnly.referenceAskDepth>0,true);
 assert.equal(referenceOnly.matches.some(x=>x.referenceLiquidity),false);
+// Canonical Forex simulation rates are the authoritative fallback when legacy
+// Finance exchange_rate_usd fields are absent. Both sides must remain executable.
+globalThis.Game.state.finance.BDG={currencyCode:'BDT'};
+globalThis.Game.state.finance.SAU={currencyCode:'SAR'};
+globalThis.Game.state.economy.BDG={currency_code:'BDT'};
+globalThis.Game.state.economy.SAU={currency_code:'SAR'};
+globalThis.OmegaForexMonetaryEngine={
+  getRate(code,mode){
+    assert.equal(mode,'SIMULATION');
+    return ({BDT:77,SAR:3.75,USD:1})[String(code||'').toUpperCase()]??null;
+  }
+};
+globalThis.Game.state.trade.BDG.importRequests=[{
+  requestId:'FOREX-RATE-FALLBACK-BID',resourceId:'crude_oil',
+  quantity:100,unitPrice:2566.666667,status:'SENT'
+}];
+globalThis.Game.state.trade.SAU.offerBook=[{
+  offerId:'FOREX-RATE-FALLBACK-ASK',resourceId:'crude_oil',
+  quantity:500,unitPrice:100,status:'ACTIVE'
+}];
+const forexFallbackBooks=market.rebuild();
+const forexFallbackQuote=market.quote('crude_oil');
+assert.equal(forexFallbackBooks.crude_oil.orders.bids[0]?.priceUsd,33.33333333766234);
+assert.equal(forexFallbackBooks.crude_oil.orders.asks.find(row=>!row.referenceOnly)?.priceUsd,100/3.75);
+assert.equal(forexFallbackQuote.status,'CLEARED',JSON.stringify({forexFallbackBooks,forexFallbackQuote}));
+assert.equal(forexFallbackQuote.matchedQuantity,100);
+assert.equal(forexFallbackQuote.matches.some(row=>row.buyerCountryId==='BD'&&row.sellerCountryId==='SA'&&row.quantity===100),true);
+delete globalThis.OmegaForexMonetaryEngine;
+
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');
