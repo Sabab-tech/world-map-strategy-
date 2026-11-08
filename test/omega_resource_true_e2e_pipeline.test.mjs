@@ -812,6 +812,28 @@ test('playable mine extraction feeds a commissioned private factory through prod
   assert.ok((state.finance.BGD.resourceFiscalLedger||[]).some(x=>x.settlementId==='SETTLEMENT-E2E-COAL-1'),'trade settlement must create a treasury fiscal ledger row');
   assert.ok(Number(state.finance.BGD.resourceFiscal?.thisTurn?.total)>0,'resource taxes and royalties must post to the treasury');
   assert.ok(Number(state.finance.BGD.available)>treasuryBefore-100000,'fiscal receipts must change treasury cash');
+  const settlementId='SETTLEMENT-E2E-COAL-1';
+  const clearingRow=(state.finance.BGD.resourceSettlementClearing||[]).find(row=>row.settlementId===settlementId);
+  assert.ok(clearingRow,'the settled trade must persist its Treasury-to-company clearing row');
+  const settlementCompany=state.economy.BGD.companyAccounts?.[clearingRow.companyId];
+  assert.ok(settlementCompany,'the settlement must credit the verified source company');
+  assert.ok((settlementCompany.cashFlowEntries||[]).some(row=>
+    row.sourceId===settlementId&&row.direction==='CREDIT'&&row.category==='SUPPLIER_SALE'),
+    'seller revenue must be persisted in the company cash journal');
+  assert.ok((settlementCompany.cashFlowEntries||[]).some(row=>
+    row.sourceId===settlementId&&row.direction==='DEBIT'&&row.category==='WORKER_INCOME'),
+    'worker allocations must be persisted as company cash outflows');
+  const settlementCashSnapshot=world=>JSON.parse(JSON.stringify({
+    treasury:world.finance.BGD.available,
+    clearing:world.finance.BGD.resourceSettlementClearing,
+    fiscal:world.finance.BGD.resourceFiscal,
+    fiscalLedger:world.finance.BGD.resourceFiscalLedger,
+    companyAccounts:world.economy.BGD.companyAccounts,
+    workerIncome:world.economy.BGD.workerIncome,
+    supplierRevenue:world.economy.BGD.supplierRevenue,
+    transportRevenue:world.transport.BGD.resourceRevenue
+  }));
+  const expectedSettlementCash=settlementCashSnapshot(state);
   assert.equal(industry.diagnostics('BGD').targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
 
   // Verify the canonical simulation save/load round-trip preserves the exact source
@@ -858,6 +880,12 @@ test('playable mine extraction feeds a commissioned private factory through prod
   state.trade.BGD.offerBook=[];
   state.trade.BGD.domesticSales=[];
   state.finance.BGD.available=0;
+  state.finance.BGD.resourceSettlementClearing=[];
+  state.finance.BGD.resourceFiscal={};
+  state.finance.BGD.resourceFiscalLedger=[];
+  state.economy.BGD.workerIncome={};
+  state.economy.BGD.supplierRevenue={};
+  state.transport.BGD.resourceRevenue={};
   const loaded=await simulation.loadSlot('sab34-pipeline-proof');
   assert.equal(loaded.authoritativeState?.worldStateLinked,true,'the restored snapshot must remain linked to Game.state');
   assert.equal(simulation.lastLoadIntegrity,'VERIFIED','the game must verify the saved checksum before restore');
@@ -891,6 +919,19 @@ test('playable mine extraction feeds a commissioned private factory through prod
     .some(row=>row.sourceId===privateSale.saleId&&row.direction==='CREDIT'&&row.status==='POSTED'),
     'the private company revenue entry must survive save/load');
   assert.equal(Number(restored.finance.BGD.available)||0,expectedTreasury,'the resource fiscal receipt must survive save/load');
+  assert.deepEqual(settlementCashSnapshot(restored),expectedSettlementCash,
+    'Treasury clearing, fiscal receipts, company cash and worker/supplier/transport ledgers must survive save/load');
+
+  // A full page reload clears volatile guards. Replaying the same settlement must be a no-op.
+  delete g.__OmegaResourceFiscalizedSettlements;
+  g.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{
+    eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',countryId:'BGD',payload:{
+      settlementId:'SETTLEMENT-E2E-COAL-1',sellerCountryId:'BGD',resourceId:'COAL_CONCENTRATE',totalValue:100000
+    }
+  }}));
+  const afterSettlementReplay=simulation.world.state;
+  assert.deepEqual(settlementCashSnapshot(afterSettlementReplay),expectedSettlementCash,
+    'the same settlement replay after save/load must not double-post Treasury, company, worker or transport money');
 
   // Replaying the processing stage after restore must not mint a second finished-goods batch.
   await industry.processPendingFactoryInputs('BGD');
