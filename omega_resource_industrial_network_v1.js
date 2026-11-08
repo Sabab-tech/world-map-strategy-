@@ -404,9 +404,11 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   legs=finalizedMetrics.status==='READY'?finalizedMetrics.legs:legs;
   const days=Math.max(0,num(finalizedMetrics.travelTimeDays)||0);
   const etaTurns=Math.max(1,Math.ceil(days/dayWindow)),etaTurn=turn()+etaTurns;
-  // Arrival dates align to the game's discrete turn cadence, not a sub-turn date that
-  // the simulation cannot actually process while its clock jumps multiple days per turn.
-  const etaDate=factoryAddGameDays(factoryCurrentGameDate(),etaTurns*dayWindow);
+  // Keep the calendar ETA tied to the route's actual travel duration. A construction
+  // fast-forward can temporarily make this dispatch turn 180 days long even though
+  // the next normal turn is 30 days; multiplying the route ETA by that temporary
+  // turn window would strand a 1.7-day shipment for six game months.
+  const etaDate=factoryAddGameDays(factoryCurrentGameDate(),Math.max(1,Math.ceil(days)));
   const shipmentId='MINEHAUL:'+h32(JSON.stringify({cid,siteId,batchId,turn:turn(),sequence:network.shipments.length+1,quantity}));
   const route={status:'PLANNED',routeId:routeProfile.routeId,countryId:cid,siteId,sourceSiteId:siteId,sourceNode:siteId,
     destinationNode:warehouseId,destinationWarehouseId:warehouseId,resourceId:rid,requestedQuantity:remaining,
@@ -2307,7 +2309,7 @@ function dispatchShipment(input={}){
   if(quantity<plannedQuantity)route.quantityAdjustment={reason:quantityAdjustmentReason||'SOURCE_BATCH_OR_LOT_ROUNDING_CAP',plannedQuantity,actualQuantity:quantity};
   const shipmentTravelDays=Math.max(0,num(route.travelTimeDays)||0);
   const shipmentEtaTurns=Math.max(1,num(route.etaTurn)-turn());
-  const shipmentEtaDate=factoryAddGameDays(factoryCurrentGameDate(),shipmentEtaTurns*daysPerTurn());
+  const shipmentEtaDate=factoryAddGameDays(factoryCurrentGameDate(),Math.max(1,Math.ceil(shipmentTravelDays)));
   const s={shipmentId,shipmentType,countryId:cid,siteId:warehouseShipment?null:plan.siteId,resourceId:plan.resourceId,
     factoryId:plan.factoryId,quantity,unit:input.unit||sourceBatch?.unit||'TONNES',
     batchId:sourceBatchId||null,occurrenceKey:input.occurrenceKey||sourceBatch?.occurrenceKey||null,
@@ -2769,7 +2771,7 @@ function advanceShipments(c){
     if(s.status==='BLOCKED_ROUTE_BLOCKADE'){
       s.status='IN_TRANSIT';s.blockReason=null;s.blockadePolicies=[];s.blockedTransportModes=[];
       s.resumedTurn=turn();s.etaTurn=Math.max(turn()+1,num(s.etaTurn)||turn()+1);
-      s.etaDate=factoryAddGameDays(factoryCurrentGameDate(),Math.max(1,s.etaTurn-turn())*daysPerTurn());
+      s.etaDate=factoryAddGameDays(factoryCurrentGameDate(),Math.max(1,Math.ceil(num(s.route?.travelTimeDays)||0)));
       if(s.route){s.route.etaTurn=s.etaTurn;s.route.etaDate=s.etaDate;}
       if(['MINE_TO_WAREHOUSE','RAW_TO_FACTORY'].includes(String(s.shipmentType||''))){
         const rt=siteLogisticsState(cid,s.siteId,siteLogisticsRouteFor(cid,s.siteId));
