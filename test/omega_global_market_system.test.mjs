@@ -174,9 +174,9 @@ assert.equal(referenceOnly.matches.some(x=>x.referenceLiquidity),false);
 // Finance exchange_rate_usd fields are absent. Both sides must remain executable.
 // Deliberately omit per-country Finance currency snapshots. The canonical
 // Forex profile registry remains the authority for both currency identity and rate.
-globalThis.Game.state.finance.BDG={};
+globalThis.Game.state.finance.BGD={};
 globalThis.Game.state.finance.SAU={};
-globalThis.Game.state.economy.BDG={};
+globalThis.Game.state.economy.BGD={};
 globalThis.Game.state.economy.SAU={};
 globalThis.OmegaForexMonetaryEngine={
   getCountryQuotes(mode){
@@ -196,7 +196,7 @@ globalThis.OmegaForexMonetaryEngine={
     return ({BDT:77,SAR:3.75,USD:1})[String(code||'').toUpperCase()]??null;
   }
 };
-globalThis.Game.state.trade.BDG.importRequests=[{
+globalThis.Game.state.trade.BGD.importRequests=[{
   requestId:'FOREX-RATE-FALLBACK-BID',resourceId:'crude_oil',
   quantity:100,unitPrice:2566.666667,status:'SENT'
 }];
@@ -208,7 +208,7 @@ const forexFallbackBooks=market.rebuild();
 const forexFallbackQuote=market.quote('crude_oil');
 assert.equal(forexFallbackBooks.crude_oil.orders.bids[0]?.priceUsd,33.33333333766234,JSON.stringify({
   countryIds:Object.keys(globalThis.Game.state.trade),
-  buyerRequests:globalThis.Game.state.trade.BDG?.importRequests,
+  buyerRequests:globalThis.Game.state.trade.BGD?.importRequests,
   financeKeys:Object.keys(globalThis.Game.state.finance||{}),
   buyerFinance:globalThis.Game.state.finance?.BDG,
   forexQuotes:globalThis.OmegaForexMonetaryEngine.getCountryQuotes('SIMULATION'),
