@@ -3,15 +3,15 @@ import fs from 'node:fs';
 
 globalThis.Game={state:{
   simulation:{turn:1},
-  finance:{BGD:{currencyCode:'USD'},SAU:{currencyCode:'USD'}},
-  economy:{BGD:{currency_code:'USD',exchange_rate_usd:1},SAU:{currency_code:'USD',exchange_rate_usd:1}},
-  resource:{BGD:{inventory:{crude_oil:0},production:{crude_oil:0},consumption:{crude_oil:0}},
+  finance:{BDG:{currencyCode:'USD'},SAU:{currencyCode:'USD'}},
+  economy:{BDG:{currency_code:'USD',exchange_rate_usd:1},SAU:{currency_code:'USD',exchange_rate_usd:1}},
+  resource:{BDG:{inventory:{crude_oil:0},production:{crude_oil:0},consumption:{crude_oil:0}},
             SAU:{inventory:{crude_oil:5000},production:{crude_oil:0},consumption:{crude_oil:0}}},
   trade:{
-    BGD:{importRequests:[{requestId:'BID-1',resourceId:'crude_oil',quantity:100,unitPrice:110,status:'SENT'}]},
+    BDG:{importRequests:[{requestId:'BID-1',resourceId:'crude_oil',quantity:100,unitPrice:110,status:'SENT'}]},
     SAU:{offerBook:{crude_oil:{offerId:'ASK-1',resourceId:'crude_oil',quantity:100,unitPrice:90}}}
   },
-  foreign:{BGD:{relations:{SAU:{trade_agreement:true}}},SAU:{relations:{BGD:{trade_agreement:true}}}}
+  foreign:{BDG:{relations:{SAU:{trade_agreement:true}}},SAU:{relations:{BDG:{trade_agreement:true}}}}
 }};
 globalThis.CustomEvent=globalThis.CustomEvent||class{constructor(type,init={}){this.type=String(type);this.detail=init.detail;}};
 if(typeof globalThis.dispatchEvent!=='function'){const t=new EventTarget();globalThis.dispatchEvent=t.dispatchEvent.bind(t);globalThis.addEventListener=t.addEventListener.bind(t);}
@@ -174,6 +174,11 @@ assert.equal(referenceOnly.matches.some(x=>x.referenceLiquidity),false);
 // Finance exchange_rate_usd fields are absent. Both sides must remain executable.
 // Deliberately omit per-country Finance currency snapshots. The canonical
 // Forex profile registry remains the authority for both currency identity and rate.
+// Remove the legacy misspelled buyer identity before this focused FX test.
+// The earlier policy scenarios intentionally retain their original fixture keys.
+for(const domain of ['finance','economy','resource','trade','foreign']){
+  if(globalThis.Game.state[domain])delete globalThis.Game.state[domain].BDG;
+}
 globalThis.Game.state.finance.BGD={};
 globalThis.Game.state.finance.SAU={};
 globalThis.Game.state.economy.BGD={};
