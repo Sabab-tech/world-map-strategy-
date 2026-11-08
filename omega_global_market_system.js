@@ -55,8 +55,16 @@
     if(!code)return null;
     if(code==='USD')return 1;
     const raw=n(countryValue(c,'economy.exchange_rate_usd')??countryValue(c,'finance.exchange_rate_usd')??countryValue(c,'finance.usdPerUnit'));
-    if(raw===null||raw<=0)return null;
-    return raw;
+    if(raw!==null&&raw>0)return raw;
+
+    // Trade settlement and market clearing must share the same canonical Forex
+    // simulation rate. A country's Finance bucket can contain a valid currency code
+    // while its legacy exchange_rate_usd field is still absent; returning null here
+    // silently drops its bids/asks from the executable order book.
+    const monetary=g.OmegaForexMonetaryEngine||g.Omega&&g.Omega.ForexMonetaryEngine;
+    if(!monetary||typeof monetary.getRate!=='function')return null;
+    const simulationRate=n(monetary.getRate(code,'SIMULATION'));
+    return simulationRate!==null&&simulationRate>0?simulationRate:null;
   }
   function toUsd(c,price){
     const p=n(price),r=usdRate(c);if(p===null||r===null)return null;
