@@ -172,11 +172,18 @@ assert.equal(referenceOnly.referenceAskDepth>0,true);
 assert.equal(referenceOnly.matches.some(x=>x.referenceLiquidity),false);
 // Canonical Forex simulation rates are the authoritative fallback when legacy
 // Finance exchange_rate_usd fields are absent. Both sides must remain executable.
-globalThis.Game.state.finance.BDG={currencyCode:'BDT'};
-globalThis.Game.state.finance.SAU={currencyCode:'SAR'};
-globalThis.Game.state.economy.BDG={currency_code:'BDT'};
-globalThis.Game.state.economy.SAU={currency_code:'SAR'};
+// Deliberately omit per-country Finance currency snapshots. The canonical
+// Forex profile registry remains the authority for both currency identity and rate.
+globalThis.Game.state.finance.BDG={};
+globalThis.Game.state.finance.SAU={};
+globalThis.Game.state.economy.BDG={};
+globalThis.Game.state.economy.SAU={};
 globalThis.OmegaForexMonetaryEngine={
+  getProfiles(){return[
+    {iso3:'BGD',currencyCode:'BDT'},
+    {iso3:'SAU',currencyCode:'SAR'}
+  ];},
+  getCurrencyCode(profile){return profile.currencyCode;},
   getRate(code,mode){
     assert.equal(mode,'SIMULATION');
     return ({BDT:77,SAR:3.75,USD:1})[String(code||'').toUpperCase()]??null;
