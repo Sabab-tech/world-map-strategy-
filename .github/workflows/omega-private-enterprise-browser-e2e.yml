@@ -42,8 +42,20 @@ permissions:
 
 jobs:
   chromium-browser-e2e:
+    name: chromium-${{ matrix.scenario }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scenario: proposal-ui
+            test_name_pattern: "real Chromium browser boots OMEGA"
+          - scenario: site-factory-save-load
+            test_name_pattern: "real Chromium map marker"
+          - scenario: cash-settlement
+            test_name_pattern: "real Chromium reconciles"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,19 +70,20 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/omega-browser-deps" --no-save --package-lock=false --ignore-scripts playwright@1.65.0
           "$RUNNER_TEMP/omega-browser-deps/node_modules/.bin/playwright" install --with-deps chromium
 
-      - name: Run actual Chromium E2E and offline/responsive performance checks
+      - name: Run isolated Chromium scenario
         env:
           NODE_PATH: ${{ runner.temp }}/omega-browser-deps/node_modules
           OMEGA_BROWSER_TEST_ARTIFACT_DIR: ${{ runner.temp }}/omega-private-enterprise-browser
         run: |
           mkdir -p "$OMEGA_BROWSER_TEST_ARTIFACT_DIR"
-          timeout --signal=TERM --kill-after=15s 20m node --test test/omega_private_enterprise_browser_e2e.test.mjs
+          echo "Running Chromium scenario: ${{ matrix.scenario }}"
+          timeout --signal=TERM --kill-after=15s 12m node --test --test-name-pattern="${{ matrix.test_name_pattern }}" test/omega_private_enterprise_browser_e2e.test.mjs
 
       - name: Upload real browser E2E diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: omega-private-enterprise-real-browser-e2e
+          name: omega-private-enterprise-real-browser-e2e-${{ matrix.scenario }}
           path: ${{ runner.temp }}/omega-private-enterprise-browser/**
           if-no-files-found: warn
           retention-days: 7
