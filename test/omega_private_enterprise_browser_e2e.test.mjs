@@ -1127,6 +1127,12 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const privateProjectId=privateConstruction.started[0].projectId;
       let governmentProject=null;
       if(!proofAcceptedAtStart){
+        const qualificationFactoryStartedAt=performance.now();
+        console.info('[SAB34_PROGRESS] QUALIFICATION_FACTORY_START '+JSON.stringify({
+          countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+          batchCount:Array.isArray(state.resource?.BGD?.batches)?state.resource.BGD.batches.length:0,
+          bomResourceCount:Object.keys(profile.constructionMaterials||{}).length
+        }));
         governmentProject=industry.startFactoryProject({
           countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
           recipeId:privateConstruction.started[0].recipeId,resourceId:'coal',
@@ -1134,6 +1140,10 @@ test('real Chromium map marker runs the exact site through a commissioned privat
           capacityPerDay:Math.max(1,Number(profile.defaultCapacityPerDay)||1),
           requestId:'SAB34_LIVE_BROWSER_STATE_OWNED_FACTORY_QUALIFICATION'
         });
+        console.info('[SAB34_PROGRESS] QUALIFICATION_FACTORY_FINISH '+JSON.stringify({
+          durationMs:Number((performance.now()-qualificationFactoryStartedAt).toFixed(2)),
+          status:governmentProject?.status||null,projectId:governmentProject?.projectId||null
+        }));
         if(governmentProject?.status!=='UNDER_CONSTRUCTION')
           throw new Error('SAB34_STATE_OWNED_QUALIFICATION_FACTORY_CONSTRUCTION_FAILED:'+JSON.stringify(governmentProject));
       }
