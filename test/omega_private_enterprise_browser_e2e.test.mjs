@@ -1184,7 +1184,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       :'UNVERIFIED_SAB34_CERTIFICATE_SELECTED_STATE_OWNED_QUALIFICATION_FACTORY');
 
 
-    const targetSite = await page.evaluate(() => {
+    const targetSite = await page.evaluate(async () => {
       const binding = window.Omega?.IndividualResourceSiteBinding;
       const canonical = window.OmegaResourceSiteCanonicalCatalogData || window.Omega?.ResourceSiteCanonicalCatalogData;
       const rows = Array.isArray(canonical?.sites) ? canonical.sites : [];
