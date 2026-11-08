@@ -1212,13 +1212,19 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       mapApi.resourceState.selectedResources = new Set(['all']);
       window.Game.currentActiveCountry = 'BGD';
       if (window.CountryIOS) window.CountryIOS.activeCountry = 'BGD';
-      map.setView([lat, lng], Math.max(8, Number(map.getZoom?.() || 4)));
+      // Chromium can change the Leaflet container's dimensions while the
+      // cabinet and country overlays mount. Recalculate the viewport before
+      // rebuilding the marker layer so the selected canonical site is renderable.
+      map.invalidateSize?.({pan:false});
+      map.setView([lat, lng], Math.max(8, Number(map.getZoom?.() || 4)), {animate:false});
       window.__sab34SiteSelectionEvents = [];
       window.__sab34ExpectedSiteId = String(site.siteId);
       window.addEventListener('OMEGA_RESOURCE_SITE_SELECTED', event => {
         window.__sab34SiteSelectionEvents.push(event.detail || {});
       });
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       binding.refresh();
+      await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       return {
         siteId: String(site.siteId),
         siteName: String(site.siteName || site.name || site.siteId),
@@ -1252,9 +1258,29 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     metrics.stages.push('REAL_MAP_MARKER_READY:' + targetSite.siteId);
     metrics.stages.push('EXACT_COMMISSIONED_FACTORY_BOUND_TO_CLICKED_CANONICAL_SITE');
 
-    const markerGlyph = page.locator('.omega-individual-site-marker [data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']').first();
-    await markerGlyph.waitFor({ state: 'visible', timeout: 90000 });
-    const marker = markerGlyph.locator('xpath=..');
+    const marker = page.locator('.omega-individual-site-marker').filter({
+      has:page.locator('[data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']')
+    }).first();
+    try {
+      await page.waitForFunction(siteId => {
+        const node=Array.from(document.querySelectorAll('.omega-individual-site-marker'))
+          .find(element=>element.querySelector('[data-omega-site-id]')?.getAttribute('data-omega-site-id')===siteId);
+        const render=window.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__;
+        return !!node && !!render && Number(render.renderedMarkerCount)>0;
+      },targetSite.siteId,{timeout:60000});
+    } catch (error) {
+      const markerDiagnostics=await page.evaluate(siteId=>({
+        targetFound:!!Array.from(document.querySelectorAll('.omega-individual-site-marker'))
+          .find(element=>element.querySelector('[data-omega-site-id]')?.getAttribute('data-omega-site-id')===siteId),
+        markerCount:document.querySelectorAll('.omega-individual-site-marker').length,
+        markerRender:window.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__||null,
+        binding:window.Omega?.IndividualResourceSiteBinding?.diagnostics?.()||null,
+        mapSize:(window.Game?.Map?.map||window.map)?.getSize?.()||null,
+        mapBounds:(()=>{try{return (window.Game?.Map?.map||window.map)?.getBounds?.()?.toBBoxString?.()||null;}catch(_){return null;}})()
+      }),targetSite.siteId);
+      throw new Error('SAB34_CANONICAL_SITE_MARKER_NOT_RENDERED:'+JSON.stringify(markerDiagnostics)+
+        '; original='+String(error&&error.message||error));
+    }
     await marker.click({ force: true, timeout: 45000 });
     try {
       await page.waitForFunction(siteId => {
@@ -1711,6 +1737,7 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
       root.trade = ensureObject(root.trade);
       root.finance = ensureObject(root.finance);
       root.economy = ensureObject(root.economy);
+      root.foreign = ensureObject(root.foreign);
       root.foreign = ensureObject(root.foreign);
 
       const currentTurn = Number(root.simulation?.turn ?? simulation.clock.turn) || 0;
