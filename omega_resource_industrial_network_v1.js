@@ -5496,6 +5496,17 @@ async function executeSitePipeline(input={}){
     preparedFactory=preparedFactoryBootstrap.factory||null;
     if(!preparedFactory)return{status:'BLOCKED',reason:'SITE_FACTORY_BOOTSTRAP_BLOCKED',detail:preparedFactoryBootstrap};
   }
+  // Capture the eligible destination before extraction emits its synchronous event.
+  // The event observer may commit the mine-to-warehouse leg before candidate discovery
+  // has completed; this API still owns the selected site request and must persist its
+  // real factory destination for the later warehouse-to-factory leg.
+  const factoryCandidatesBeforeExtraction=candidateFactories(cid,rid);
+  const selectedFactoryBeforeExtraction=preparedFactory||
+    factoryCandidatesBeforeExtraction.find(({asset})=>
+      String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
+    factoryCandidatesBeforeExtraction[0]?.asset||null;
+  const selectedFactoryIdBeforeExtraction=String(selectedFactoryBeforeExtraction?.id||
+    selectedFactoryBeforeExtraction?.assetId||selectedFactoryBeforeExtraction?.projectId||'').trim();
   const extraction=await endowment.extractCountry(cid,keys);
   const records=extraction?.result?.records||extraction?.records||[];
   const record=records.find(x=>keys.includes(String(x?.occurrenceKey||''))&&canonicalCountry(x?.countryId||cid)===cid&&x?.producedBatch);
@@ -5508,11 +5519,39 @@ async function executeSitePipeline(input={}){
   if(existingFlow?.mineLogisticsRouteId){
     const network=netState(cid),mineShipment=network.shipments.find(shipment=>String(shipment.batchId||'')===String(batch.batchId||'')&&
       shipment.shipmentType==='MINE_TO_WAREHOUSE'&&['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(shipment.status||'')));
+    const currentCandidates=candidateFactories(cid,rid);
+    const currentCandidateIds=new Set(currentCandidates.map(({asset})=>String(
+      asset?.id||asset?.assetId||asset?.projectId||'').trim()).filter(Boolean));
+    const preferredFactory=preparedFactory||
+      currentCandidates.find(({asset})=>
+        String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
+      currentCandidates[0]?.asset||null;
+    const preferredFactoryId=String(preferredFactory?.id||
+      preferredFactory?.assetId||preferredFactory?.projectId||'').trim();
+    const priorFactoryId=String(existingFlow.factoryId||'').trim();
+    // Keep a prior destination only while it is still an eligible candidate.
+    // Otherwise rebind to the factory selected from the current canonical runtime.
+    const resolvedFactoryId=currentCandidateIds.has(priorFactoryId)
+      ?priorFactoryId
+      :(preferredFactoryId||selectedFactoryIdBeforeExtraction||'');
+    if(resolvedFactoryId&&priorFactoryId!==resolvedFactoryId){
+      existingFlow.factoryId=resolvedFactoryId;
+      existingFlow.factorySelectionAuthority=preparedFactory
+        ?'EXPLICIT_SITE_FACTORY_SELECTION'
+        :'CANONICAL_COMPATIBLE_FACTORY_CANDIDATE';
+      existingFlow.factorySelectedAtTurn=turn();
+      addFlowStage(existingFlow,'FACTORY','DESTINATION_SELECTED',{
+        factoryId:resolvedFactoryId,
+        authority:existingFlow.factorySelectionAuthority,
+        selectedBeforeExtraction:Boolean(selectedFactoryIdBeforeExtraction)
+      });
+      saveSiteFlow(cid,existingFlow);
+    }
     const status=mineShipment?'IN_TRANSIT':String(existingFlow.mineLogisticsStatus||'')==='WAREHOUSE_RECEIVED'?'WAREHOUSE_RECEIVED':
       String(existingFlow.mineLogisticsStatus||'')==='AWAITING_CAPACITY'?'AWAITING_TRANSPORT_CAPACITY':'BLOCKED';
     const execution={executionId:'SITE-PIPELINE:'+cid+':'+site.siteId+':T'+turn(),siteId:site.siteId,countryId:cid,resourceId:rid,
       occurrenceKey:record.occurrenceKey,batchId:batch.batchId,quantity:mineShipment?.quantity||0,extractedQuantity:quantity,
-      unit:batch.unit||'TONNES',turn:turn(),factoryId:existingFlow.factoryId||null,factoryBootstrapStatus:preparedFactoryBootstrap?.status||'EXISTING',
+      unit:batch.unit||'TONNES',turn:turn(),factoryId:resolvedFactoryId||null,factoryBootstrapStatus:preparedFactoryBootstrap?.status||'EXISTING',
       extractionStatus:'COMMITTED',extractionPlanId:extractionPlan.planId,shipmentStatus:mineShipment?'DISPATCHED':status,
       shipmentId:mineShipment?.shipmentId||existingFlow.mineHaulShipmentId||null,
       route:clone(mineShipment?.route||existingFlow.routeProfile||null),mineLogisticsStatus:existingFlow.mineLogisticsStatus,status};
