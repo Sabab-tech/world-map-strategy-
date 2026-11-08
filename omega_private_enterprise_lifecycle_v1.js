@@ -128,10 +128,15 @@
     // BANGLADESH). Prefer the populated lifecycle and merge unique ledger rows
     // before returning, rather than letting an empty BGD bucket hide settled data.
     var aliases=new Set([cid].concat(countryAliasKeys(country)).map(function(value){return id(value);}));
+    var iso2Aliases=new Set(countryAliasKeys(country).filter(function(value){return /^[A-Z]{2}$/.test(value);}));
     var aliasEconomies=Object.keys(economyRoot).filter(function(key){
       var candidate=economyRoot[key];
       if(!obj(candidate)||candidate===econ)return false;
       var normalized=id(key);
+      // An existing ISO-3 runtime is authoritative over a competing ISO-2 key.
+      // Display-name legacy buckets (BANGLADESH) still need migration, but a
+      // two-letter alias must not be merged into an already materialized BGD bucket.
+      if(iso2Aliases.has(normalized))return false;
       return aliases.has(normalized)||canonicalCountry(key)===cid||
         countryAliasKeys(key).some(function(alias){return aliases.has(id(alias));});
     }).map(function(key){return economyRoot[key];});
