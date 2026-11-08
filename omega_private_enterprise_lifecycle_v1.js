@@ -83,10 +83,81 @@
     if(!obj(root[key])){if(!create)return null;root[key]={};}
     return root[key];
   }
+  function lifecycleRecordIdentity(row){
+    if(!obj(row))return JSON.stringify(row);
+    var fields=['proposalId','eventId','jointVentureId','caseId','restructuringCaseId',
+      'procurementRecordId','recordId','settlementId','entryId','sourceEventId','transactionId','periodId','id'];
+    for(var i=0;i<fields.length;i++){
+      var value=row[fields[i]];
+      if(value!==undefined&&value!==null&&String(value)!=='')return fields[i]+':'+String(value);
+    }
+    return JSON.stringify(row);
+  }
+  function mergeLifecycleRuntime(target,source){
+    if(!obj(target)||!obj(source)||target===source)return target;
+    var listKeys=['proposals','events','financialPeriods','jointVentures','restructuringCases',
+      'procurementRecords','privateCompanyProcurementRecords','operatingCostEntries',
+      'unpricedOperatingCostEvents','inputConsumptionEntries'];
+    listKeys.forEach(function(key){
+      if(!Array.isArray(target[key]))target[key]=[];
+      var rows=Array.isArray(source[key])?source[key]:[],seen=new Set(target[key].map(lifecycleRecordIdentity));
+      rows.forEach(function(row){
+        var identity=lifecycleRecordIdentity(row);
+        if(!seen.has(identity)){target[key].push(row);seen.add(identity);}
+      });
+    });
+    Object.keys(source).forEach(function(key){
+      if(listKeys.indexOf(key)>=0)return;
+      var from=source[key],to=target[key];
+      if(to===undefined||to===null){target[key]=from;return;}
+      if(obj(to)&&obj(from)&&!Array.isArray(to)&&!Array.isArray(from)){
+        Object.keys(from).forEach(function(child){
+          if(to[child]===undefined||to[child]===null)to[child]=from[child];
+        });
+      }
+    });
+    target.nextProposalSequence=Math.max(1,Number(target.nextProposalSequence)||1,Number(source.nextProposalSequence)||1);
+    target.nextJointVentureSequence=Math.max(1,Number(target.nextJointVentureSequence)||1,Number(source.nextJointVentureSequence)||1);
+    return target;
+  }
   function runtime(country,create){
-    var econ=countryBucket('economy',country,create);if(!econ)return null;
-    if(!obj(econ.privateEnterpriseLifecycle)&&create)econ.privateEnterpriseLifecycle={schemaVersion:VERSION,nextProposalSequence:1,nextJointVentureSequence:1,proposals:[],events:[],financialPeriods:[],jointVentures:[]};
-    var r=econ.privateEnterpriseLifecycle;
+    var cid=canonicalCountry(country),economyRoot=(state()||{}).economy||{},
+      econ=countryBucket('economy',country,create);if(!econ)return null;
+    // A canonical ISO-3 bucket can appear after older saves already placed the
+    // same country's lifecycle under a display-name/ISO-2 alias (for example,
+    // BANGLADESH). Prefer the populated lifecycle and merge unique ledger rows
+    // before returning, rather than letting an empty BGD bucket hide settled data.
+    var aliases=new Set([cid].concat(countryAliasKeys(country)).map(function(value){return id(value);}));
+    var aliasEconomies=Object.keys(economyRoot).filter(function(key){
+      var candidate=economyRoot[key];
+      if(!obj(candidate)||candidate===econ)return false;
+      var normalized=id(key);
+      return aliases.has(normalized)||canonicalCountry(key)===cid||
+        countryAliasKeys(key).some(function(alias){return aliases.has(id(alias));});
+    }).map(function(key){return economyRoot[key];});
+    var aliasRuntimes=aliasEconomies.map(function(bucket){return bucket.privateEnterpriseLifecycle;})
+      .filter(function(value){return obj(value);});
+    var r=obj(econ.privateEnterpriseLifecycle)?econ.privateEnterpriseLifecycle:null;
+    if(!r&&aliasRuntimes.length){
+      aliasRuntimes.sort(function(left,right){
+        function count(value){return ['proposals','events','financialPeriods','jointVentures','procurementRecords',
+          'privateCompanyProcurementRecords','operatingCostEntries','unpricedOperatingCostEvents','inputConsumptionEntries']
+          .reduce(function(total,key){return total+(Array.isArray(value[key])?value[key].length:0);},0);}
+        return count(right)-count(left);
+      });
+      r=aliasRuntimes[0];
+      econ.privateEnterpriseLifecycle=r;
+    }
+    if(r){
+      aliasRuntimes.forEach(function(aliasRuntime){mergeLifecycleRuntime(r,aliasRuntime);});
+      // Keep legacy alias readers connected to the same live lifecycle object.
+      aliasEconomies.forEach(function(bucket){bucket.privateEnterpriseLifecycle=r;});
+    }
+    if(!r&&create){
+      r={schemaVersion:VERSION,nextProposalSequence:1,nextJointVentureSequence:1,
+        proposals:[],events:[],financialPeriods:[],jointVentures:[]};
+      econ.privateEnterpriseLifecycle=r;
+    }
     if(!obj(r))return null;
     if(!Array.isArray(r.proposals))r.proposals=[];
     if(!Array.isArray(r.events))r.events=[];
