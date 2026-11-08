@@ -203,6 +203,21 @@ test('private-enterprise lifecycle writes to the canonical Simulation world root
     'the stale legacy Game.state must not receive duplicate or shadow private-enterprise records');
 });
 
+test('private-enterprise lifecycle writes to the canonical Simulation world root, not a stale Game.state compatibility object',()=>{
+  const h=makeHarness();
+  const authoritative=h.state;
+  const staleCompatibilityRoot=JSON.parse(JSON.stringify(authoritative));
+  h.sandbox.Omega.Simulation.world={state:authoritative};
+  h.sandbox.Game.state=staleCompatibilityRoot;
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    factoryType:'STEEL_WORKS',quantity:1,requestId:'authoritative-world-root-proposal'});
+  assert.equal(proposal.status,'PROPOSED',JSON.stringify(proposal));
+  assert.equal(authoritative.economy.BGD.privateEnterpriseLifecycle.proposals.length,1);
+  assert.equal(h.api.getCountryDashboard('BGD').proposals[0].proposalId,proposal.proposalId);
+  assert.equal(staleCompatibilityRoot.economy.BGD.privateEnterpriseLifecycle,undefined,
+    'the stale legacy Game.state must not receive duplicate or shadow private-enterprise records');
+});
+
 test('autonomous company proposals are deterministic, once per 30 turns, and have no asset/stock/cash side effects',()=>{
   const h=makeHarness(),beforeInventory=JSON.stringify(h.state.resource.BGD.inventory);
   const beforeWarehouse=JSON.stringify(h.state.resource.BGD.warehouse);

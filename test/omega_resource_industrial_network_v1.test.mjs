@@ -1550,6 +1550,8 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(commissionedPrivateFactory.productionEnabled,false);
     assert.equal(commissionedPrivateFactory.status,'BLOCKED');
     assert.equal(commissionedPrivateFactory.blockedReason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE');
+    assert.equal(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===commissionedPrivateFactory.id),false,
+      'a private factory blocked by the SAB-34 production gate cannot receive routed mine shipments');
     const privateProductionAttempt=N.startFactoryProductionCycle({countryId:'BGD',factoryId:commissionedPrivateFactory.id,resourceId:'iron_ore'});
     assert.equal(privateProductionAttempt.status,'BLOCKED');
     assert.equal(privateProductionAttempt.reason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',
@@ -1562,6 +1564,8 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.notEqual(commissionedPrivateFactory.blockedReason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE');
     assert.equal(commissionedPrivateFactory.productionEnabled,true,
       'a valid proof may restore authorization, after which ordinary workforce, utility and stock gates still apply');
+    assert.ok(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===commissionedPrivateFactory.id),
+      'only after proof and lifecycle authorization may the private factory enter real routing candidates');
     assert.equal(commissionedPrivateFactory.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
     assert.equal(commissionedPrivateFactory.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
     assert.equal(commissionedPrivateFactory.stateControlRights.domesticSupplyDirection,true);

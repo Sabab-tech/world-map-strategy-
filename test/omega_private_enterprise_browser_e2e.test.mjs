@@ -1168,8 +1168,22 @@ test('real Chromium map marker runs the exact site through a commissioned privat
            String(governmentFactory.status||'').toUpperCase()!=='OPERATIONAL')
           throw new Error('SAB34_STATE_OWNED_QUALIFICATION_FACTORY_NOT_OPERATIONAL:'+JSON.stringify({governmentProjectRow,governmentFactory}));
       }
-      const targetFactory=proofAcceptedAtStart?privateFactory:governmentFactory;
-      if(!targetFactory)throw new Error('SAB34_NO_ACTIVE_FACTORY_AVAILABLE_FOR_SITE_PIPELINE_PROOF');
+      // Select through the same live candidate API that executeSitePipeline uses.
+      // This makes the browser proof sensitive to the real production gate and avoids
+      // hand-picking or mutating a factory to manufacture a site association.
+      const candidateRows=industry.candidateFactories('BGD','coal');
+      const targetFactory=candidateRows[0]?.asset||null;
+      if(!targetFactory)throw new Error('SAB34_NO_REAL_COMPATIBLE_FACTORY_CANDIDATE:'+JSON.stringify({candidateCount:candidateRows.length}));
+      const targetFactoryId=String(targetFactory.id||targetFactory.assetId||targetFactory.projectId||'');
+      if(proofAcceptedAtStart){
+        if(targetFactoryId!==String(privateFactory.id||privateFactory.assetId||privateFactory.projectId))
+          throw new Error('SAB34_REAL_CANDIDATE_DID_NOT_SELECT_NEWLY_COMMISSIONED_PRIVATE_FACTORY:'+JSON.stringify({
+            targetFactoryId,privateFactoryId:privateFactory.id,candidateRows:candidateRows.map(row=>row.asset?.id)}));
+      }else if(String(targetFactory.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE'){
+        throw new Error('SAB34_PRIVATE_FACTORY_ENTERED_REAL_CANDIDATES_BEFORE_BROWSER_PROOF:'+JSON.stringify({
+          targetFactoryId,productionEnabled:targetFactory.productionEnabled,status:targetFactory.status
+        }));
+      }
       return{
         proposalId:proposal.proposalId,projectId:privateProjectId,
         privateFactoryId:String(privateFactory.id||privateFactory.assetId||privateFactory.projectId),
