@@ -2406,6 +2406,19 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         countryId: sellerCountry, jointVentureId: expected.jointVentureId,
         resolutionId: resolution.resolution.resolutionId
       });
+      // Import completion is player-country scoped even for an idempotent replay.
+      // The lifecycle above switched the active session to the seller for tax/dividend
+      // verification, so restore the buyer country before replaying its settled import.
+      simulation.createSession({
+        playerCountryId:buyerCountry,
+        startTurn:Number(restored.simulation?.turn??simulation.clock.turn)||0,
+        simulationTimeMs:Number(simulation.clock.simulationTimeMs)||0,
+        sessionId:'PE-CASH-LIFECYCLE-IMPORT-REPLAY'
+      });
+      window.Game.playerCountry=buyerCountry;
+      window.Game.currentActiveCountry=buyerCountry;
+      window.Game.selectedCountryId=buyerCountry;
+      restored.playerCountryId=buyerCountry;
       const duplicateImport = lifecycle.completePrivateCompanyImport({
         settlementId, buyerCountryId: buyerCountry, sellerCountryId: sellerCountry,
         buyerCompanyId: buyerCompany, sellerCompanyId: sellerCompany,
