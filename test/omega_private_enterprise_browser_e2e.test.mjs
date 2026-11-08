@@ -1372,6 +1372,51 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       throw new Error('SAB34_CANONICAL_SITE_MARKER_NOT_RENDERED:'+JSON.stringify(markerDiagnostics)+
         '; original='+String(error&&error.message||error));
     }
+    try {
+      await page.waitForFunction(() => {
+        const game=window.Game;
+        const map=game?.Map;
+        const overlay=document.getElementById('omega-map-load-overlay');
+        const mapRoot=document.getElementById('render-engine-root');
+        return game?.__omegaGeoJSONRenderComplete===true &&
+          !!map?.countryGeoJSON && !!game?.geojsonLayer &&
+          overlay?.classList.contains('is-hidden') &&
+          !mapRoot?.hasAttribute('data-omega-map-loading');
+      },null,{timeout:90000});
+    } catch (error) {
+      const mapDiagnostics=await page.evaluate(() => {
+        const game=window.Game;
+        const map=game?.Map;
+        const overlay=document.getElementById('omega-map-load-overlay');
+        const mapRoot=document.getElementById('render-engine-root');
+        return {
+          mapUiActive:map?.__omegaMapUiActive??null,
+          loadingProgress:map?.__omegaMapLoadingProgress??null,
+          worldLoadPromisePending:!!game?.DataLoader?.__worldLoadPromise,
+          worldLoadAbortPending:!!map?.__omegaWorldMapAbortController,
+          worldLoadAborted:map?.__omegaWorldMapAbortController?.signal?.aborted??null,
+          countryGeoJsonLoaded:!!map?.countryGeoJSON,
+          pendingGeoJsonLoaded:!!game?.__omegaGeoJSONPendingData,
+          renderComplete:game?.__omegaGeoJSONRenderComplete??null,
+          renderPaused:game?.__omegaGeoJSONRenderPaused??null,
+          renderFramePending:game?.__omegaGeoJSONRenderFrame!==null&&game?.__omegaGeoJSONRenderFrame!==undefined,
+          featureCount:Array.isArray(map?.countryGeoJSON?.features)?map.countryGeoJSON.features.length:0,
+          renderedCountryCount:game?.geojsonLayer?.getLayers?.().length??null,
+          overlay:{
+            className:overlay?.className??null,
+            state:overlay?.getAttribute('data-state')??null,
+            ariaBusy:overlay?.getAttribute('aria-busy')??null,
+            status:document.getElementById('omega-map-load-status')?.textContent??null,
+            percent:document.getElementById('omega-map-load-percent')?.textContent??null
+          },
+          mapRootLoading:mapRoot?.getAttribute('data-omega-map-loading')??null
+        };
+      });
+      metrics.worldMapReadyFailure={error:String(error&&error.message||error),mapDiagnostics};
+      throw new Error('SAB34_WORLD_MAP_GEOMETRY_NOT_READY_FOR_REAL_SITE_INTERACTION:'+
+        JSON.stringify(mapDiagnostics)+'; original='+String(error&&error.message||error));
+    }
+    metrics.stages.push('WORLD_MAP_GEOMETRY_RENDERED_AND_STARTUP_OVERLAY_DISMISSED');
     const markerHitTest=await marker.evaluate(element=>{
       const rect=element.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;
       const hit=document.elementFromPoint(x,y);
