@@ -221,13 +221,32 @@
     return null;
   }
   function currencyOf(country){
-    return String(
+    const observed=String(
       countryValue(country,'trade.settlementCurrency')||
       countryValue(country,'finance.currencyCode')||
       countryValue(country,'economy.currency_code')||
       countryValue(country,'economy.currencyCode')||
       ''
-    ).trim().toUpperCase()||null;
+    ).trim().toUpperCase();
+    if(observed)return observed;
+
+    // Country currency identity is owned by the canonical Finance/Forex profile
+    // registry. Older state snapshots do not necessarily materialize currencyCode
+    // into each country's finance/economy bucket, so resolve that authoritative
+    // profile before declaring the currency unavailable.
+    const monetary=g.OmegaForexMonetaryEngine||g.Omega&&g.Omega.ForexMonetaryEngine;
+    if(!monetary||typeof monetary.getProfiles!=='function'||typeof monetary.getCurrencyCode!=='function')
+      return null;
+    const target=canonical(country);
+    if(!target)return null;
+    let profiles=[];
+    try{profiles=monetary.getProfiles()||[];}catch(_){return null;}
+    const profile=profiles.find(row=>
+      [row?.iso3,row?.countryCode,row?.code,row?.iso2]
+        .some(value=>value&&canonical(value)===target));
+    if(!profile)return null;
+    try{return String(monetary.getCurrencyCode(profile)||'').trim().toUpperCase()||null;}
+    catch(_){return null;}
   }
   function fxRate(buyer,seller){
     const bc=currencyOf(buyer),sc=currencyOf(seller);
