@@ -1372,6 +1372,94 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       throw new Error('SAB34_CANONICAL_SITE_MARKER_NOT_RENDERED:'+JSON.stringify(markerDiagnostics)+
         '; original='+String(error&&error.message||error));
     }
+
+    // Exercise a real pointer click while the startup overlay is visibly loading.
+    // This catches the former regression where the centered, opaque overlay sat
+    // above the exact site marker and made a genuine browser click impossible.
+    const previousOverlayState=await page.evaluate(() => {
+      const overlay=document.getElementById('omega-map-load-overlay');
+      const mapRoot=document.getElementById('render-engine-root');
+      if(!overlay||!mapRoot)throw new Error('SAB34_MAP_LOADING_OVERLAY_NOT_MOUNTED');
+      const snapshot={
+        className:overlay.className,
+        dataState:overlay.hasAttribute('data-state')?{present:true,value:overlay.getAttribute('data-state')}:{present:false},
+        ariaHidden:overlay.hasAttribute('aria-hidden')?{present:true,value:overlay.getAttribute('aria-hidden')}:{present:false},
+        ariaBusy:overlay.hasAttribute('aria-busy')?{present:true,value:overlay.getAttribute('aria-busy')}:{present:false},
+        mapRootLoading:mapRoot.hasAttribute('data-omega-map-loading')
+          ?{present:true,value:mapRoot.getAttribute('data-omega-map-loading')}:{present:false}
+      };
+      overlay.classList.remove('is-hidden');
+      overlay.setAttribute('data-state','loading');
+      overlay.setAttribute('aria-hidden','false');
+      overlay.setAttribute('aria-busy','true');
+      mapRoot.setAttribute('data-omega-map-loading','true');
+      return snapshot;
+    });
+    let markerHitTest=null;
+    try {
+      markerHitTest=await marker.evaluate(element=>{
+        const rect=element.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;
+        const hit=document.elementFromPoint(x,y);
+        const overlay=document.getElementById('omega-map-load-overlay');
+        const card=overlay?.querySelector('.omega-map-load-card');
+        const retry=overlay?.querySelector('#omega-map-load-retry');
+        return{
+          hitTarget:!!hit&&(hit===element||element.contains(hit)),
+          hitElement:hit?(hit.tagName+(hit.id?'#'+hit.id:'')):null,
+          overlayVisible:!!overlay&&!overlay.classList.contains('is-hidden'),
+          overlayPointerEvents:overlay?getComputedStyle(overlay).pointerEvents:null,
+          cardPointerEvents:card?getComputedStyle(card).pointerEvents:null,
+          retryPointerEvents:retry?getComputedStyle(retry).pointerEvents:null,
+          rect:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},
+          cabinetActive:document.getElementById('cabinet-full-window')?.getAttribute('data-omega-ui-v2-active')==='true'
+        };
+      });
+      assert.equal(markerHitTest.overlayVisible,true,'the loading overlay must be visible during the click-through regression');
+      assert.equal(markerHitTest.overlayPointerEvents,'none','the loading overlay must not capture map pointer events');
+      assert.equal(markerHitTest.cardPointerEvents,'none','the progress card must not cover an individual site marker');
+      assert.equal(markerHitTest.retryPointerEvents,'auto','the explicit retry action must remain interactive');
+      assert.ok(markerHitTest.hitTarget,'real map marker must receive a browser pointer through the visible loading overlay: '+JSON.stringify(markerHitTest));
+      await marker.click({ timeout: 45000 });
+      try {
+        await page.waitForFunction(siteId => {
+          const selected=document.getElementById('omega-individual-select');
+          return selected?.value===siteId&&
+            (window.__sab34SiteSelectionEvents||[]).some(event=>String(event.siteId)===String(siteId));
+        },targetSite.siteId,{timeout:30000});
+      } catch (selectionError) {
+        const selectionDiagnostics=await page.evaluate(() => ({
+          events:window.__sab34SiteSelectionEvents||[],
+          selectedSiteId:document.getElementById('omega-individual-select')?.value||null,
+          matchingMarkerCount:Array.from(document.querySelectorAll('[data-omega-site-id]'))
+            .filter(node=>String(node.getAttribute('data-omega-site-id'))===String(window.__sab34ExpectedSiteId||'')).length,
+          markerDiagnostics:window.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__||null,
+          panelVisible:document.getElementById('omega-individual-resource-panel')?.style.display||null
+        })).catch(diagnosticError=>({diagnosticError:String(diagnosticError&&diagnosticError.message||diagnosticError)}));
+        metrics.selectionFailure={error:String(selectionError&&selectionError.message||selectionError),
+          markerHitTest,selectionDiagnostics};
+        throw selectionError;
+      }
+    } finally {
+      await page.evaluate(snapshot => {
+        const overlay=document.getElementById('omega-map-load-overlay');
+        const mapRoot=document.getElementById('render-engine-root');
+        if(!overlay||!mapRoot)return;
+        overlay.className=snapshot.className;
+        for(const [name,value] of [
+          ['data-state',snapshot.dataState],
+          ['aria-hidden',snapshot.ariaHidden],
+          ['aria-busy',snapshot.ariaBusy]
+        ]){
+          if(value?.present)overlay.setAttribute(name,value.value);
+          else overlay.removeAttribute(name);
+        }
+        if(snapshot.mapRootLoading?.present)mapRoot.setAttribute('data-omega-map-loading',snapshot.mapRootLoading.value);
+        else mapRoot.removeAttribute('data-omega-map-loading');
+      },previousOverlayState);
+    }
+    metrics.markerHitTest=markerHitTest;
+    metrics.stages.push('REAL_MAP_MARKER_CLICKED_THROUGH_VISIBLE_LOADING_OVERLAY');
+
     try {
       await page.waitForFunction(() => {
         const game=window.Game;
@@ -1406,6 +1494,9 @@ test('real Chromium map marker runs the exact site through a commissioned privat
             className:overlay?.className??null,
             state:overlay?.getAttribute('data-state')??null,
             ariaBusy:overlay?.getAttribute('aria-busy')??null,
+            pointerEvents:overlay?getComputedStyle(overlay).pointerEvents:null,
+            cardPointerEvents:overlay?.querySelector('.omega-map-load-card')
+              ?getComputedStyle(overlay.querySelector('.omega-map-load-card')).pointerEvents:null,
             status:document.getElementById('omega-map-load-status')?.textContent??null,
             percent:document.getElementById('omega-map-load-percent')?.textContent??null
           },
@@ -1417,35 +1508,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         JSON.stringify(mapDiagnostics)+'; original='+String(error&&error.message||error));
     }
     metrics.stages.push('WORLD_MAP_GEOMETRY_RENDERED_AND_STARTUP_OVERLAY_DISMISSED');
-    const markerHitTest=await marker.evaluate(element=>{
-      const rect=element.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;
-      const hit=document.elementFromPoint(x,y);
-      return{hitTarget:!!hit&&(hit===element||element.contains(hit)),
-        hitElement:hit?(hit.tagName+(hit.id?'#'+hit.id:'')):null,
-        rect:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},
-        cabinetActive:document.getElementById('cabinet-full-window')?.getAttribute('data-omega-ui-v2-active')==='true'};
-    });
-    assert.ok(markerHitTest.hitTarget,'real map marker must receive the browser pointer: '+JSON.stringify(markerHitTest));
-    await marker.click({ timeout: 45000 });
-    try {
-      await page.waitForFunction(siteId => {
-        const selected = document.getElementById('omega-individual-select');
-        return selected?.value === siteId &&
-          (window.__sab34SiteSelectionEvents || []).some(event => String(event.siteId) === String(siteId));
-      }, targetSite.siteId, { timeout: 30000 });
-    } catch (selectionError) {
-      const selectionDiagnostics = await page.evaluate(() => ({
-        events:window.__sab34SiteSelectionEvents || [],
-        selectedSiteId:document.getElementById('omega-individual-select')?.value || null,
-        matchingMarkerCount:Array.from(document.querySelectorAll('[data-omega-site-id]'))
-          .filter(node=>String(node.getAttribute('data-omega-site-id'))===String(window.__sab34ExpectedSiteId||'')).length,
-        markerDiagnostics:window.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__ || null,
-        panelVisible:document.getElementById('omega-individual-resource-panel')?.style.display || null
-      })).catch(diagnosticError=>({diagnosticError:String(diagnosticError&&diagnosticError.message||diagnosticError)}));
-      metrics.selectionFailure={error:String(selectionError&&selectionError.message||selectionError),
-        selectionDiagnostics};
-      throw selectionError;
-    }
+
     const selection = await page.evaluate(() => ({
       events: window.__sab34SiteSelectionEvents || [],
       selectedSiteId: document.getElementById('omega-individual-select')?.value || null,
@@ -1454,7 +1517,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     }));
     assert.equal(selection.selectedSiteId, targetSite.siteId);
     assert.ok(selection.events.some(event => String(event.siteId) === targetSite.siteId));
-    metrics.selection = selection;
+    metrics.selection=selection;
     metrics.stages.push('REAL_MAP_MARKER_CLICK_SELECTED_THE_EXACT_SITE_ID');
 
     const executeHitTest = await page.locator('#omega-individual-execute').evaluate(button => {
