@@ -456,14 +456,118 @@ test('real site extraction flows through raw warehouse, transport, factory, fini
   assert.equal(repeatFiscalProcess.extractionFiscal.posted,0,'reprocessing the same batch must not post extraction fiscal twice');
   assert.equal(Number(state.finance.BGD.available)||0,cashAfterExtractionFiscal,'treasury balance must remain stable on repeated fiscal processing');
   const treasuryBefore=cashAfterExtractionFiscal;
-  g.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',countryId:'BGD',payload:{
+  const settlementEvent=new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',countryId:'BGD',payload:{
     settlementId:'SETTLEMENT-E2E-COAL-1',sellerCountryId:'BGD',resourceId:'COAL_CONCENTRATE',totalValue:100000
-  }}}));
+  }}});
+  g.dispatchEvent(settlementEvent);
   assert.ok((state.finance.BGD.resourceFiscalLedger||[]).some(x=>x.settlementId==='SETTLEMENT-E2E-COAL-1'),'trade settlement must create a treasury fiscal ledger row');
   assert.ok(Number(state.finance.BGD.resourceFiscal?.thisTurn?.total)>0,'resource taxes and royalties must post to the treasury');
   assert.ok(Number(state.finance.BGD.available)>treasuryBefore-100000,'fiscal receipts must change treasury cash');
+  const clearingRow=(state.finance.BGD.resourceSettlementClearing||[]).find(x=>x.settlementId==='SETTLEMENT-E2E-COAL-1');
+  assert.ok(clearingRow,'settlement must create a persistent Treasury-to-company clearing row');
+  const settlementCompany=state.economy.BGD.companyAccounts?.[clearingRow.companyId];
+  assert.ok(settlementCompany,'the receiving company wallet must be updated by the settlement');
+  assert.ok((settlementCompany.cashFlowEntries||[]).some(x=>x.sourceId==='SETTLEMENT-E2E-COAL-1'&&x.direction==='CREDIT'&&x.category==='SUPPLIER_SALE'),
+    'company revenue must have a persistent cash-journal entry keyed to the settlement');
+  assert.ok((settlementCompany.cashFlowEntries||[]).some(x=>x.sourceId==='SETTLEMENT-E2E-COAL-1'&&x.direction==='DEBIT'&&x.category==='WORKER_INCOME'),
+    'worker allocations must be journaled as company cash outflows');
+
+  // Save the complete site -> mine-haul -> factory -> finished-goods -> cash-settlement state.
+  vm.runInContext(readText('omega_simulation_runtime.js'),g,{filename:'omega_simulation_runtime.js',timeout:10000});
+  const simulation=g.Omega?.SimulationRuntime;
+  assert.ok(simulation?.saveSlot&&simulation?.loadSlot,'the canonical Simulation Runtime save/load API must be mounted');
+  const saveStore=new Map();
+  g.localStorage={
+    getItem(key){return saveStore.has(String(key))?saveStore.get(String(key)):null;},
+    setItem(key,value){saveStore.set(String(key),String(value));},
+    removeItem(key){saveStore.delete(String(key));},
+    clear(){saveStore.clear();}
+  };
+  const expectedCashSettlement=JSON.parse(JSON.stringify({
+    treasury:state.finance.BGD.available,
+    clearing:state.finance.BGD.resourceSettlementClearing,
+    fiscal:state.finance.BGD.resourceFiscal,
+    fiscalLedger:state.finance.BGD.resourceFiscalLedger,
+    companyAccounts:state.economy.BGD.companyAccounts,
+    workerIncome:state.economy.BGD.workerIncome,
+    supplierRevenue:state.economy.BGD.supplierRevenue,
+    transportRevenue:state.transport.BGD.resourceRevenue
+  }));
+  const expectedSiteFlow=JSON.parse(JSON.stringify(resource.industrialNetwork.siteFlowLedger
+    .filter(x=>String(x.batchId)===String(run.batchId))));
+  const expectedFactory=JSON.parse(JSON.stringify(factory));
+  const expectedFinishedBatches=JSON.parse(JSON.stringify(finished.map(x=>x.batchId).sort()));
+  const expectedInventory=JSON.parse(JSON.stringify(resource.inventory));
+  const expectedProcessedWarehouse=JSON.parse(JSON.stringify(resource.processedWarehouse.availableByResource));
+  const saved=await simulation.saveSlot('site-factory-cash-settlement-proof');
+  assert.equal(saved.ok,true,JSON.stringify(saved));
+  const persisted=JSON.parse(g.localStorage.getItem(saved.key));
+  assert.ok(persisted?.checksum,'saved game state must carry an integrity checksum');
+
+  // Damage the in-memory state so a passing reload proves that the disk snapshot was restored.
+  state.resource.BGD.batches=[];
+  state.resource.BGD.industrialNetwork.siteFlowLedger=[];
+  state.resource.BGD.inventory={};
+  state.resource.BGD.processedWarehouse.availableByResource={};
+  state.economy.BGD.productionAssets=[];
+  state.economy.BGD.companyAccounts={};
+  state.trade.BGD.offerBook=[];
+  state.trade.BGD.domesticSales=[];
+  state.finance.BGD.available=0;
+  state.finance.BGD.resourceSettlementClearing=[];
+  const loaded=await simulation.loadSlot('site-factory-cash-settlement-proof');
+  assert.equal(loaded.authoritativeState?.worldStateLinked,true,'the loaded snapshot must remain linked to Game.state');
+  assert.equal(simulation.lastLoadIntegrity,'VERIFIED','save/load must verify the persisted checksum');
+  assert.strictEqual(g.Game.state,simulation.world.state,'save/load must restore the canonical Game.state object');
+  const restored=simulation.world.state;
+  const restoredResource=restored.resource.BGD;
+  assert.ok(restoredResource.batches.some(x=>String(x.batchId)===String(run.batchId)),
+    'the original physical-site extraction batch must survive save/load');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.industrialNetwork.siteFlowLedger
+    .filter(x=>String(x.batchId)===String(run.batchId)))),expectedSiteFlow,
+    'the mine-to-factory site lineage must survive save/load');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.inventory)),expectedInventory,
+    'raw and processed inventory must survive save/load without quantity drift');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.processedWarehouse.availableByResource)),expectedProcessedWarehouse);
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.batches
+    .filter(x=>x.stage==='FINISHED'&&x.sourceBatchIds?.includes(run.batchId)).map(x=>x.batchId).sort())),expectedFinishedBatches,
+    'factory output batch IDs and mine ancestry must survive save/load');
+  const restoredFactory=restored.economy.BGD.productionAssets.find(x=>String(x.id||x.assetId||x.projectId)===String(run.factoryId));
+  assert.ok(restoredFactory,'the receiving factory must survive save/load');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredFactory)),expectedFactory,
+    'the factory input/output runtime state must be restored exactly');
+  assert.deepEqual(JSON.parse(JSON.stringify({
+    treasury:restored.finance.BGD.available,
+    clearing:restored.finance.BGD.resourceSettlementClearing,
+    fiscal:restored.finance.BGD.resourceFiscal,
+    fiscalLedger:restored.finance.BGD.resourceFiscalLedger,
+    companyAccounts:restored.economy.BGD.companyAccounts,
+    workerIncome:restored.economy.BGD.workerIncome,
+    supplierRevenue:restored.economy.BGD.supplierRevenue,
+    transportRevenue:restored.transport.BGD.resourceRevenue
+  })),expectedCashSettlement,'company, worker, transport, tax and Treasury ledgers must survive save/load');
+
+  // A page reload clears volatile globals. Replaying the exact same settlement must be a no-op.
+  delete g.__OmegaResourceFiscalizedSettlements;
+  g.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{
+    eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',countryId:'BGD',payload:{
+      settlementId:'SETTLEMENT-E2E-COAL-1',sellerCountryId:'BGD',resourceId:'COAL_CONCENTRATE',totalValue:100000
+    }
+  }}));
+  const afterReplay=simulation.world.state;
+  assert.deepEqual(JSON.parse(JSON.stringify({
+    treasury:afterReplay.finance.BGD.available,
+    clearing:afterReplay.finance.BGD.resourceSettlementClearing,
+    fiscal:afterReplay.finance.BGD.resourceFiscal,
+    fiscalLedger:afterReplay.finance.BGD.resourceFiscalLedger,
+    companyAccounts:afterReplay.economy.BGD.companyAccounts,
+    workerIncome:afterReplay.economy.BGD.workerIncome,
+    supplierRevenue:afterReplay.economy.BGD.supplierRevenue,
+    transportRevenue:afterReplay.transport.BGD.resourceRevenue
+  })),expectedCashSettlement,
+    'replaying the same site-linked cash settlement after save/load must not double-post Treasury, company, worker or transport money');
   assert.equal(industry.diagnostics('BGD').targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
-  console.log('OMEGA TRUE RESOURCE GAMEPLAY PIPELINE PASSED');
+  console.log('OMEGA TRUE RESOURCE GAMEPLAY + CASH SETTLEMENT SAVE/LOAD PROOF PASSED');
 });
 
 test('committed game turns run the selected country mine and industrial pipeline once without wall-clock timers', async () => {
