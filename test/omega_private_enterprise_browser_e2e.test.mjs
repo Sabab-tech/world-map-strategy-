@@ -814,6 +814,44 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       }
       window.__sab34ResourceTurnParticipantIds = turnParticipants.map(row => row.id);
       window.__sab34ResourceTurnAdvanceInProgress = false;
+      window.__sab34ResourceTurnWatch = window.__sab34ResourceTurnWatch || {
+        active: null, trace: [], timeoutMs: 120000
+      };
+      const wrapTurnStage = (label, handler) => {
+        if (typeof handler !== 'function' || handler.__sab34TurnWatchWrapped) return handler;
+        const wrapped = async function(...args) {
+          const watch = window.__sab34ResourceTurnWatch;
+          const entry = { label, startedAt: Date.now(), status: 'RUNNING' };
+          watch.trace.push(entry);
+          if (watch.trace.length > 128) watch.trace.splice(0, watch.trace.length - 128);
+          watch.active = label;
+          let timeoutId = null;
+          try {
+            const timeout = new Promise((_, reject) => {
+              timeoutId = window.setTimeout(() => reject(
+                new Error('SAB34_TURN_STAGE_TIMEOUT:' + label)
+              ), watch.timeoutMs);
+            });
+            const result = await Promise.race([
+              Promise.resolve().then(() => handler.apply(this, args)),
+              timeout
+            ]);
+            entry.status = 'COMPLETED';
+            return result;
+          } catch (error) {
+            entry.status = 'FAILED';
+            entry.error = String(error && error.message || error);
+            throw error;
+          } finally {
+            if (timeoutId !== null) window.clearTimeout(timeoutId);
+            entry.finishedAt = Date.now();
+            entry.durationMs = entry.finishedAt - entry.startedAt;
+            watch.active = null;
+          }
+        };
+        wrapped.__sab34TurnWatchWrapped = true;
+        return wrapped;
+      };
       window.__sab34AdvanceResourceTurns = async function(turns) {
         if (window.__sab34ResourceTurnAdvanceInProgress) {
           throw new Error('SAB34_RESOURCE_TURN_ADVANCE_REENTRANT');
@@ -830,6 +868,15 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         };
         simulation.ministryPump = null;
         try {
+          for (const [phase, handler] of simulation.phaseHandlers.entries()) {
+            simulation.phaseHandlers.set(phase, wrapTurnStage('phase:' + phase, handler));
+          }
+          for (const [id, entry] of simulation.turnParticipants.entries()) {
+            entry.handler = wrapTurnStage('participant:' + id, entry.handler);
+          }
+          for (const [id, entry] of simulation.turnFinalizers.entries()) {
+            entry.handler = wrapTurnStage('finalizer:' + id, entry.handler);
+          }
           return await simulation.advance(requestedTurns);
         } finally {
           simulation.worldEngine = previousWorldEngine;
@@ -1535,6 +1582,24 @@ test('real Chromium map marker runs the exact site through a commissioned privat
   } catch (error) {
     metrics.failure = String(error && error.stack || error);
     metrics.errors = { pageErrors, consoleErrors };
+    try {
+      metrics.turnDiagnostics = await page.evaluate(() => {
+        const simulation = window.Omega?.Simulation;
+        const watch = window.__sab34ResourceTurnWatch || {};
+        return {
+          activeStage: watch.active || null,
+          trace: (watch.trace || []).slice(-64),
+          turn: simulation?.clock?.turn ?? null,
+          status: simulation?.status ?? null,
+          lastError: simulation?.lastError ?? null,
+          participantResults: (simulation?.lastTurnParticipantResults || []).slice(-32),
+          finalizerResults: (simulation?.lastTurnFinalizerResults || []).slice(-32),
+          participantIds: simulation?.participantDiagnostics?.() || []
+        };
+      });
+    } catch (diagnosticError) {
+      metrics.turnDiagnosticsError = String(diagnosticError && diagnosticError.message || diagnosticError);
+    }
     try { fs.writeFileSync(path.join(artifacts, 'sab34-real-browser-pipeline-failure.json'), JSON.stringify(metrics, null, 2)); } catch (_) {}
     throw error;
   } finally {
@@ -1632,14 +1697,34 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
       window.Game.selectedCountryId = buyerCountry;
       root.playerCountryId = buyerCountry;
 
+      const monetary = window.OmegaForexMonetaryEngine || window.Omega?.ForexMonetaryEngine;
+      if (!monetary || typeof monetary.init !== 'function') {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_CANONICAL_FOREX_RUNTIME_NOT_MOUNTED');
+      }
+      const fxInitialization = await monetary.init();
+      if (fxInitialization?.initialized !== true) {
+        throw new Error('PRIVATE_CASH_LIFECYCLE_FOREX_PROFILE_REGISTRY_NOT_READY:' +
+          JSON.stringify(fxInitialization || monetary.diagnostics?.() || null));
+      }
       const buyerCurrency = trade.currencyOf(buyerCountry);
       const sellerCurrency = trade.currencyOf(sellerCountry);
+      const buyerLocalPerUsd = Number(monetary.getRate(buyerCurrency, 'SIMULATION'));
+      const sellerLocalPerUsd = Number(monetary.getRate(sellerCurrency, 'SIMULATION'));
       const fx = trade.fxRate(buyerCountry, sellerCountry);
-      if (!buyerCurrency || !sellerCurrency || fx === null || fx <= 0) {
+      if (buyerCurrency !== 'BDT' || sellerCurrency !== 'SAR' ||
+          !Number.isFinite(buyerLocalPerUsd) || buyerLocalPerUsd <= 0 ||
+          !Number.isFinite(sellerLocalPerUsd) || sellerLocalPerUsd <= 0 ||
+          fx === null || fx <= 0) {
+        const currencyRows = (monetary.getCountryQuotes?.('SIMULATION') || [])
+          .filter(row => ['BGD', 'SAU'].includes(String(row.iso3 || '').toUpperCase()));
         throw new Error('PRIVATE_CASH_LIFECYCLE_CURRENCY_OR_FX_UNOBSERVED:' +
-          JSON.stringify({ buyerCurrency, sellerCurrency, fx }));
+          JSON.stringify({
+            buyerCurrency, sellerCurrency, buyerLocalPerUsd, sellerLocalPerUsd, fx,
+            fxDiagnostics: monetary.diagnostics?.() || fxInitialization,
+            currencyRows
+          }));
       }
-      const currencyProbe = { buyerCurrency, sellerCurrency, fx };
+      const currencyProbe = { buyerCurrency, sellerCurrency, buyerLocalPerUsd, sellerLocalPerUsd, fx };
 
       const sellerResource = ensureCountry(root.resource, sellerCountry);
       sellerResource.inventory = ensureObject(sellerResource.inventory);
@@ -2168,6 +2253,16 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
     metrics.completed = false;
     metrics.failure = String(error && error.stack || error);
     metrics.errors = { pageErrors, consoleErrors };
+    try {
+      metrics.forexDiagnostics = await page.evaluate(() => ({
+        finance: window.OmegaFinanceMinistry?.diagnostics?.() || null,
+        forex: window.OmegaForexMonetaryEngine?.diagnostics?.() || null,
+        buyer: window.OmegaGlobalTrade?.currencyOf?.('BGD') || null,
+        seller: window.OmegaGlobalTrade?.currencyOf?.('SAU') || null
+      }));
+    } catch (diagnosticError) {
+      metrics.forexDiagnosticsError = String(diagnosticError && diagnosticError.message || diagnosticError);
+    }
     try {
       fs.writeFileSync(path.join(artifacts, 'omega-private-enterprise-cash-lifecycle-failure.json'), JSON.stringify(metrics, null, 2));
     } catch (_) {}
