@@ -2102,12 +2102,32 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         }));
       }
       const settlementId = String(buyerRequest.settlementId || '');
+      const countryBucketKey = (domain,countryId) => {
+        const rows=root[domain]||{};
+        const resolver=window.OmegaCanonicalIdentityRegistry||window.OmegaCountrySemanticBridge||window.Omega?.CanonicalIdentity;
+        const toIso3=value=>{
+          const raw=String(value||'').trim().toUpperCase();
+          if(/^[A-Z]{3}$/.test(raw))return raw;
+          try{
+            const hit=resolver?.resolveCountry?.(value);
+            const source=hit?.raw?.raw||hit?.raw||{};
+            return String(source.iso3||source.iso3Code||source.ISO_A3||source.iso_a3||
+              source.identity?.iso3||source.identity?.iso3Code||hit?.iso3||hit?.iso3Code||'').trim().toUpperCase();
+          }catch(_){return '';}
+        };
+        const target=toIso3(countryId);
+        return Object.keys(rows).find(key=>toIso3(key)===target)||null;
+      };
+      const buyerEconomyKey=countryBucketKey('economy',buyerCountry);
+      const sellerEconomyKey=countryBucketKey('economy',sellerCountry);
       const procurementRowsByCountry = Object.entries(root.economy || {}).map(([countryId,bucket])=>({
         countryId,
         records:(bucket?.privateEnterpriseLifecycle?.privateCompanyProcurementRecords||[])
           .filter(row=>String(row?.settlementId||'')===settlementId)
       })).filter(row=>row.records.length);
-      const buyerLifecycle=root.economy?.[buyerCountry]?.privateEnterpriseLifecycle||null;
+      const buyerEconomyBucket=buyerEconomyKey?root.economy[buyerEconomyKey]:null;
+      const sellerEconomyBucket=sellerEconomyKey?root.economy[sellerEconomyKey]:null;
+      const buyerLifecycle=buyerEconomyBucket?.privateEnterpriseLifecycle||null;
       const financeReservationRows=Object.entries(root.finance||{}).map(([countryId,bucket])=>({
         countryId,
         reservation:bucket?.omegaFinance?.companyTradeReservations?.[settlementId]||null
@@ -2119,7 +2139,8 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
           buyerCountry,sellerCountry,marketBuyerCountryId,marketSellerCountryId,
           requestId,requestStatus:buyerRequest.status,settlementId,
           economyCountryKeys:Object.keys(root.economy||{}),
-          buyerEconomyBucketKeys:Object.keys(root.economy?.[buyerCountry]||{}),
+          buyerEconomyBucketKey:buyerEconomyKey,
+          buyerEconomyBucketKeys:Object.keys(buyerEconomyBucket||{}),
           buyerLifecycleRecordCount:buyerLifecycle?.privateCompanyProcurementRecords?.length??null,
           procurementRowsByCountry,financeReservationRows,
           lifecycleDiagnostics:lifecycle.diagnostics?.()||null,
@@ -2127,8 +2148,8 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
           settlementTrace:window.__OMEGA_SETTLEMENT_TRACE||null
         }));
       }
-      const buyerAccount = root.economy[buyerCountry]?.companyAccounts?.[buyerCompany];
-      const sellerAccount = root.economy[sellerCountry]?.companyAccounts?.[sellerCompany];
+      const buyerAccount = buyerEconomyBucket?.companyAccounts?.[buyerCompany];
+      const sellerAccount = sellerEconomyBucket?.companyAccounts?.[sellerCompany];
       const buyerWallet = buyerFinance.omegaFinance.companyCapitalAccounts[buyerCompany];
       const sellerWallet = sellerFinance.omegaFinance.companyCapitalAccounts[sellerCompany];
       const buyerPaymentEntry = (buyerAccount?.cashFlowEntries || []).find(row =>
