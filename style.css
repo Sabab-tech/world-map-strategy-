@@ -5458,7 +5458,7 @@ body.modal-open .ui-bottom-navigation {
 .omega-map-load-footer { align-items:center; color:#91a7bd; display:flex; font-size:9px; font-weight:800; justify-content:space-between; letter-spacing:.12em; margin-top:10px; }
 .omega-map-load-footer strong { color:#e7f4ff; font-size:12px; letter-spacing:0; }
 .omega-map-load-overlay[data-state="error"] .omega-map-load-track span { background:#e68d8d; }
-#omega-map-load-retry { background:#142f48; border:1px solid #5484aa; border-radius:8px; color:#edf5ff; cursor:pointer; margin-top:18px; min-height:40px; padding:8px 14px; }
+#omega-map-load-retry { background:#142f48; border:1px solid #5484aa; border-radius:8px; color:#edf5ff; cursor:pointer; margin-top:18px; min-height:40px; padding:8px 14px; pointer-events:auto; }
 #omega-map-load-retry[hidden] { display:none !important; }
 @media (prefers-reduced-motion:reduce) {
   .omega-map-load-track span { transition:none; }
