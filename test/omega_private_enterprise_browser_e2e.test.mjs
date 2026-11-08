@@ -1409,7 +1409,15 @@ test('real Chromium map marker runs the exact site through a commissioned privat
           overlayVisible:!!overlay&&!overlay.classList.contains('is-hidden'),
           overlayPointerEvents:overlay?getComputedStyle(overlay).pointerEvents:null,
           cardPointerEvents:card?getComputedStyle(card).pointerEvents:null,
-          retryPointerEvents:retry?getComputedStyle(retry).pointerEvents:null,
+          retryHidden:retry?retry.hidden:null,
+          retryPointerEventsWhenVisible:(()=>{
+            if(!retry)return null;
+            const wasHidden=retry.hidden;
+            retry.hidden=false;
+            const pointerEvents=getComputedStyle(retry).pointerEvents;
+            retry.hidden=wasHidden;
+            return pointerEvents;
+          })(),
           rect:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},
           cabinetActive:document.getElementById('cabinet-full-window')?.getAttribute('data-omega-ui-v2-active')==='true'
         };
@@ -1417,7 +1425,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       assert.equal(markerHitTest.overlayVisible,true,'the loading overlay must be visible during the click-through regression');
       assert.equal(markerHitTest.overlayPointerEvents,'none','the loading overlay must not capture map pointer events');
       assert.equal(markerHitTest.cardPointerEvents,'none','the progress card must not cover an individual site marker');
-      assert.equal(markerHitTest.retryPointerEvents,'auto','the explicit retry action must remain interactive');
+      assert.equal(markerHitTest.retryPointerEventsWhenVisible,'auto','the explicit retry action must remain interactive when the error state exposes it');
       assert.ok(markerHitTest.hitTarget,'real map marker must receive a browser pointer through the visible loading overlay: '+JSON.stringify(markerHitTest));
       await marker.click({ timeout: 45000 });
       try {
