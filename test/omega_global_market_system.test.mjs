@@ -206,7 +206,14 @@ globalThis.Game.state.trade.SAU.offerBook=[{
 }];
 const forexFallbackBooks=market.rebuild();
 const forexFallbackQuote=market.quote('crude_oil');
-assert.equal(forexFallbackBooks.crude_oil.orders.bids[0]?.priceUsd,33.33333333766234);
+assert.equal(forexFallbackBooks.crude_oil.orders.bids[0]?.priceUsd,33.33333333766234,JSON.stringify({
+  countryIds:Object.keys(globalThis.Game.state.trade),
+  buyerRequests:globalThis.Game.state.trade.BDG?.importRequests,
+  financeKeys:Object.keys(globalThis.Game.state.finance||{}),
+  buyerFinance:globalThis.Game.state.finance?.BDG,
+  forexQuotes:globalThis.OmegaForexMonetaryEngine.getCountryQuotes('SIMULATION'),
+  marketOrders:forexFallbackBooks.crude_oil?.orders||null
+}));
 assert.equal(forexFallbackBooks.crude_oil.orders.asks.find(row=>!row.referenceOnly)?.priceUsd,100/3.75);
 assert.equal(forexFallbackQuote.status,'CLEARED',JSON.stringify({forexFallbackBooks,forexFallbackQuote}));
 assert.equal(forexFallbackQuote.matchedQuantity,100);
