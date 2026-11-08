@@ -27,7 +27,14 @@ const clone=(v,seen=new WeakMap())=>{
 const num=v=>{if(v===null||v===undefined||v==='')return null;const x=Number(v);return Number.isFinite(x)?x:null;};
 const id=v=>String(v??'').trim().toUpperCase();
 const token=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
-const state=()=>g.Game?.state||g.gameState||{};
+const state=()=>{
+ const simulation=g.Omega&&(g.Omega.SimulationRuntime||g.Omega.Simulation);
+ const authoritative=simulation&&simulation.world&&simulation.world.state;
+ if(authoritative&&typeof authoritative==='object'&&!Array.isArray(authoritative))return authoritative;
+ const omegaWorld=g.Omega&&g.Omega.World&&g.Omega.World.state;
+ if(omegaWorld&&typeof omegaWorld==='object'&&!Array.isArray(omegaWorld))return omegaWorld;
+ return g.Game?.state||g.gameState||{};
+};
 const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
 const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
 function country(v){
