@@ -48,7 +48,23 @@
     return bucket;
   }
   function currency(c){
-    return String(countryValue(c,'finance.currencyCode')||countryValue(c,'economy.currency_code')||countryValue(c,'economy.currencyCode')||countryValue(c,'trade.settlementCurrency')||'').trim().toUpperCase()||null;
+    const stored=String(countryValue(c,'finance.currencyCode')||countryValue(c,'economy.currency_code')||countryValue(c,'economy.currencyCode')||countryValue(c,'trade.settlementCurrency')||'').trim().toUpperCase();
+    if(stored)return stored;
+
+    // Finance country buckets are not guaranteed to be materialized in older saves.
+    // Currency identity still belongs to the canonical Finance/Forex profile registry.
+    const monetary=g.OmegaForexMonetaryEngine||g.Omega&&g.Omega.ForexMonetaryEngine;
+    if(!monetary||typeof monetary.getProfiles!=='function'||typeof monetary.getCurrencyCode!=='function')return null;
+    const target=canonical(c);
+    if(!target)return null;
+    let profiles=[];
+    try{profiles=monetary.getProfiles()||[];}catch(_){return null;}
+    const profile=profiles.find(row=>
+      [row?.iso3,row?.countryCode,row?.code,row?.iso2]
+        .some(value=>value&&canonical(value)===target));
+    if(!profile)return null;
+    try{return String(monetary.getCurrencyCode(profile)||'').trim().toUpperCase()||null;}
+    catch(_){return null;}
   }
   function usdRate(c){
     const code=currency(c);
