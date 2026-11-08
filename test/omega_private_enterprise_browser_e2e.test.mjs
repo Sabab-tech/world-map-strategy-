@@ -154,6 +154,9 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
       window.Game.state.playerCountryId = country;
       if (window.OmegaCabinetUI) window.OmegaCabinetUI.activeCountry = country;
       if (window.CountryIOS) window.CountryIOS.activeCountry = country;
+      if (window.Omega?.Simulation?.clock && typeof window.Omega.Simulation.clock.stop === 'function') {
+        window.Omega.Simulation.clock.stop();
+      }
       if (window.Omega?.Simulation?.createSession) {
         const session = window.Omega.Simulation.createSession({ playerCountryId: country });
         if (!session || session.playerCountryId !== country) return { ok: false, reason: 'PLAYER_SESSION_NOT_CREATED' };
@@ -392,6 +395,14 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
             .map(node => ({name:node.name,value:node.value,checked:node.checked})),
           proposalCount:proposals.length,
           recentProposals:proposals.slice(-5).map(row=>({status:row.status,reason:row.reason,companyId:row.companyId,operatorCompanyId:row.operatorCompanyId,factoryType:row.factoryType,createdTurn:row.createdTurn})),
+          directLifecycleState:window.Game?.state?.economy?.BGD?.privateEnterpriseLifecycle || null,
+          matchingCountryBuckets:Object.entries(window.Game?.state?.economy || {})
+            .filter(([key])=>String(key).toUpperCase()==='BGD'||/BANGLADESH/i.test(String(key)))
+            .map(([key,value])=>({key,proposalCount:value?.privateEnterpriseLifecycle?.proposals?.length||0,
+              proposals:value?.privateEnterpriseLifecycle?.proposals?.slice(-3)||[]})),
+          stateKeys:Object.keys(window.Game?.state || {}),
+          simulationClock:{running:window.Omega?.Simulation?.clock?.running ?? null,
+            turn:window.Omega?.Simulation?.clock?.turn ?? null},
           lifecycleDiagnostics:window.OmegaPrivateEnterpriseLifecycleV1?.diagnostics?.() || null,
           privateRegistryDiagnostics:window.OmegaPrivateEnterpriseRegistryV1?.diagnostics?.() || null,
           currentTab:main?.querySelector('.omega-v2-factory-command')?.getAttribute('data-active-tab') || null
@@ -1203,6 +1214,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       if (window.CountryIOS) window.CountryIOS.activeCountry = 'BGD';
       map.setView([lat, lng], Math.max(8, Number(map.getZoom?.() || 4)));
       window.__sab34SiteSelectionEvents = [];
+      window.__sab34ExpectedSiteId = String(site.siteId);
       window.addEventListener('OMEGA_RESOURCE_SITE_SELECTED', event => {
         window.__sab34SiteSelectionEvents.push(event.detail || {});
       });
@@ -1240,14 +1252,29 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     metrics.stages.push('REAL_MAP_MARKER_READY:' + targetSite.siteId);
     metrics.stages.push('EXACT_COMMISSIONED_FACTORY_BOUND_TO_CLICKED_CANONICAL_SITE');
 
-    const marker = page.locator('.omega-individual-site-marker [data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']').first();
-    await marker.waitFor({ state: 'visible', timeout: 90000 });
+    const markerGlyph = page.locator('.omega-individual-site-marker [data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']').first();
+    await markerGlyph.waitFor({ state: 'visible', timeout: 90000 });
+    const marker = markerGlyph.locator('xpath=..');
     await marker.click({ force: true, timeout: 45000 });
-    await page.waitForFunction(siteId => {
-      const selected = document.getElementById('omega-individual-select');
-      return selected?.value === siteId &&
-        (window.__sab34SiteSelectionEvents || []).some(event => String(event.siteId) === String(siteId));
-    }, targetSite.siteId, { timeout: 30000 });
+    try {
+      await page.waitForFunction(siteId => {
+        const selected = document.getElementById('omega-individual-select');
+        return selected?.value === siteId &&
+          (window.__sab34SiteSelectionEvents || []).some(event => String(event.siteId) === String(siteId));
+      }, targetSite.siteId, { timeout: 30000 });
+    } catch (selectionError) {
+      const selectionDiagnostics = await page.evaluate(() => ({
+        events:window.__sab34SiteSelectionEvents || [],
+        selectedSiteId:document.getElementById('omega-individual-select')?.value || null,
+        matchingMarkerCount:Array.from(document.querySelectorAll('[data-omega-site-id]'))
+          .filter(node=>String(node.getAttribute('data-omega-site-id'))===String(window.__sab34ExpectedSiteId||'')).length,
+        markerDiagnostics:window.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__ || null,
+        panelVisible:document.getElementById('omega-individual-resource-panel')?.style.display || null
+      })).catch(diagnosticError=>({diagnosticError:String(diagnosticError&&diagnosticError.message||diagnosticError)}));
+      metrics.selectionFailure={error:String(selectionError&&selectionError.message||selectionError),
+        selectionDiagnostics};
+      throw selectionError;
+    }
     const selection = await page.evaluate(() => ({
       events: window.__sab34SiteSelectionEvents || [],
       selectedSiteId: document.getElementById('omega-individual-select')?.value || null,
@@ -1616,6 +1643,7 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
   fs.mkdirSync(artifacts, { recursive: true });
   const server = await startStaticServer();
   let browser;
+  let page;
   const pageErrors = [];
   const consoleErrors = [];
   const metrics = { browser: 'Chromium', offlineNetwork: true, stages: [] };
@@ -1630,7 +1658,7 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
       deviceScaleFactor: 1,
       serviceWorkers: 'block'
     });
-    const page = await context.newPage();
+    page = await context.newPage();
     page.setDefaultTimeout(30000);
     page.on('pageerror', error => pageErrors.push(String(error && error.stack || error)));
     page.on('console', message => {
@@ -1683,6 +1711,7 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
       root.trade = ensureObject(root.trade);
       root.finance = ensureObject(root.finance);
       root.economy = ensureObject(root.economy);
+      root.foreign = ensureObject(root.foreign);
 
       const currentTurn = Number(root.simulation?.turn ?? simulation.clock.turn) || 0;
       const simulationTimeMs = Number(simulation.clock.simulationTimeMs) || 0;
