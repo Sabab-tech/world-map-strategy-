@@ -1473,6 +1473,10 @@ function recipeFor(resourceId,asset={}){
 function assetCanAccept(asset,resourceId){
   const status=String(asset?.status||'OPERATIONAL').toUpperCase();
   if(!asset||['CLOSED','DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION','BLOCKED','TECHNOLOGY_LOCKED','MAINTENANCE'].includes(status))return false;
+  const privateAsset=String(asset.ownerType||asset.ownershipModel||'').toUpperCase()==='PRIVATE_ENTERPRISE';
+  // A stale OPERATIONAL status must never make an unverified private asset a
+  // mine-shipment destination. Private routing requires the explicit lifecycle gate.
+  if(privateAsset&&(asset.productionEnabled!==true||status!=='OPERATIONAL'))return false;
   const recipe=recipeFor(resourceId,asset),ks=Object.keys(recipe.inputs);
   return ks.some(k=>tok(k)===tok(resourceId));
 }

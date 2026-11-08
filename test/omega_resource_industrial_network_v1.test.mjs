@@ -1552,6 +1552,11 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     assert.equal(commissionedPrivateFactory.blockedReason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE');
     assert.equal(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===commissionedPrivateFactory.id),false,
       'a private factory blocked by the SAB-34 production gate cannot receive routed mine shipments');
+    const blockedStatus=commissionedPrivateFactory.status;
+    commissionedPrivateFactory.status='OPERATIONAL';
+    assert.equal(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===commissionedPrivateFactory.id),false,
+      'a stale OPERATIONAL label cannot bypass the missing private-production authorization flag');
+    commissionedPrivateFactory.status=blockedStatus;
     const privateProductionAttempt=N.startFactoryProductionCycle({countryId:'BGD',factoryId:commissionedPrivateFactory.id,resourceId:'iron_ore'});
     assert.equal(privateProductionAttempt.status,'BLOCKED');
     assert.equal(privateProductionAttempt.reason,'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE',
