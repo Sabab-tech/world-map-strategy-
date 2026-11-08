@@ -1131,14 +1131,51 @@
     var clear=dispatch('finance','OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY',seller,{
       amount:gross,settlementId:sid,companyId:company,correlationId:sid,
       idempotencyKey:financialIdempotencyKey('EXPORT_CLEAR',sid,company)
-    });if(!clear||clear.status!=='APPLIED')return;
-    g.__OmegaResourceFiscalizedSettlements[sid]=true;
-    dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{
+    });
+    if(!clear||clear.status!=='APPLIED')return;
+    var companyCredit=dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{
       companyId:company,amount:gross,direction:'CREDIT',grossRevenue:gross,supplierRevenue:gross,
       category:'SUPPLIER_SALE',settlementId:sid,
-      idempotencyKey:financialIdempotencyKey('COMPANY_FLOW','EXPORT',sid,company,'CREDIT','SUPPLIER_SALE')});
-    var f=fiscalFor(gross,'EXPORT',company);if(f.total>0)dispatch('finance','OMEGA_RESOURCE_ECON_FISCAL_RECEIPT',seller,{receipt:Object.assign({},f,{settlementId:sid,sellerCountryId:seller,resourceId:rid,companyId:company}),correlationId:sid,idempotencyKey:financialIdempotencyKey('FISCAL_RECEIPT','EXPORT',sid,company)});
-    var w=gross*(num(rules().operatingAllocation.workerIncomeRate)||0),t=gross*(num(rules().operatingAllocation.transportRevenueRate)||0);if(w>0){dispatch('economy','OMEGA_RESOURCE_ECON_WORKER_FLOW',seller,{amount:w,settlementId:sid,idempotencyKey:financialIdempotencyKey('WORKER_FLOW','EXPORT',sid,company)});dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{companyId:company,amount:w,direction:'DEBIT',category:'WORKER_INCOME',settlementId:sid,idempotencyKey:financialIdempotencyKey('COMPANY_FLOW','EXPORT',sid,company,'DEBIT','WORKER_INCOME')});}if(t>0){dispatch('transport','OMEGA_RESOURCE_ECON_TRANSPORT_REVENUE',seller,{amount:t,settlementId:sid,idempotencyKey:financialIdempotencyKey('TRANSPORT_FLOW','EXPORT',sid,company)});dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{companyId:company,amount:t,direction:'DEBIT',category:'TRANSPORT',settlementId:sid,idempotencyKey:financialIdempotencyKey('COMPANY_FLOW','EXPORT',sid,company,'DEBIT','TRANSPORT')});}
+      idempotencyKey:financialIdempotencyKey('COMPANY_FLOW','EXPORT',sid,company,'CREDIT','SUPPLIER_SALE')
+    });
+    if(!companyCredit||companyCredit.status!=='APPLIED')return;
+    var f=fiscalFor(gross,'EXPORT',company);
+    if(f.total>0){
+      var fiscal=dispatch('finance','OMEGA_RESOURCE_ECON_FISCAL_RECEIPT',seller,{
+        receipt:Object.assign({},f,{settlementId:sid,sellerCountryId:seller,resourceId:rid,companyId:company}),
+        correlationId:sid,idempotencyKey:financialIdempotencyKey('FISCAL_RECEIPT','EXPORT',sid,company)
+      });
+      if(!fiscal||fiscal.status!=='APPLIED')return;
+    }
+    var w=gross*(num(rules().operatingAllocation.workerIncomeRate)||0),
+      t=gross*(num(rules().operatingAllocation.transportRevenueRate)||0);
+    if(w>0){
+      var worker=dispatch('economy','OMEGA_RESOURCE_ECON_WORKER_FLOW',seller,{
+        amount:w,settlementId:sid,companyId:company,
+        idempotencyKey:financialIdempotencyKey('WORKER_FLOW','EXPORT',sid,company)
+      });
+      if(!worker||worker.status!=='APPLIED')return;
+      var workerExpense=dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{
+        companyId:company,amount:w,direction:'DEBIT',category:'WORKER_INCOME',settlementId:sid,
+        idempotencyKey:financialIdempotencyKey('COMPANY_FLOW','EXPORT',sid,company,'DEBIT','WORKER_INCOME')
+      });
+      if(!workerExpense||workerExpense.status!=='APPLIED')return;
+    }
+    if(t>0){
+      var transport=dispatch('transport','OMEGA_RESOURCE_ECON_TRANSPORT_REVENUE',seller,{
+        amount:t,settlementId:sid,companyId:company,
+        idempotencyKey:financialIdempotencyKey('TRANSPORT_FLOW','EXPORT',sid,company)
+      });
+      if(!transport||transport.status!=='APPLIED')return;
+      var transportExpense=dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{
+        companyId:company,amount:t,direction:'DEBIT',category:'TRANSPORT',settlementId:sid,
+        idempotencyKey:financialIdempotencyKey('COMPANY_FLOW','EXPORT',sid,company,'DEBIT','TRANSPORT')
+      });
+      if(!transportExpense||transportExpense.status!=='APPLIED')return;
+    }
+    // Commit the volatile fast-path guard only after every durable ledger accepted.
+    // A partial failure remains retryable; persisted idempotency journals prevent replayed legs.
+    g.__OmegaResourceFiscalizedSettlements[sid]=true;
     emit('OMEGA_RESOURCE_TRADE_RECONCILED',seller,{settlementId:sid,resourceId:rid,companyId:company,gross:gross,fiscal:f,status:'FISCALIZED',
       quantity:num(p.quantity)||null,batchTransfers:Array.isArray(p.batchTransfers)?clone(p.batchTransfers):[],sourceBatchIds:Array.isArray(p.sourceBatchIds)?p.sourceBatchIds.slice():[]},'finance');
   }
