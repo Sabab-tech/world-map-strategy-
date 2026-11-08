@@ -3,15 +3,15 @@ import fs from 'node:fs';
 
 globalThis.Game={state:{
   simulation:{turn:1},
-  finance:{BDG:{currencyCode:'USD'},SAU:{currencyCode:'USD'}},
-  economy:{BDG:{currency_code:'USD',exchange_rate_usd:1},SAU:{currency_code:'USD',exchange_rate_usd:1}},
-  resource:{BDG:{inventory:{crude_oil:0},production:{crude_oil:0},consumption:{crude_oil:0}},
+  finance:{BGD:{currencyCode:'USD'},SAU:{currencyCode:'USD'}},
+  economy:{BGD:{currency_code:'USD',exchange_rate_usd:1},SAU:{currency_code:'USD',exchange_rate_usd:1}},
+  resource:{BGD:{inventory:{crude_oil:0},production:{crude_oil:0},consumption:{crude_oil:0}},
             SAU:{inventory:{crude_oil:5000},production:{crude_oil:0},consumption:{crude_oil:0}}},
   trade:{
-    BDG:{importRequests:[{requestId:'BID-1',resourceId:'crude_oil',quantity:100,unitPrice:110,status:'SENT'}]},
+    BGD:{importRequests:[{requestId:'BID-1',resourceId:'crude_oil',quantity:100,unitPrice:110,status:'SENT'}]},
     SAU:{offerBook:{crude_oil:{offerId:'ASK-1',resourceId:'crude_oil',quantity:100,unitPrice:90}}}
   },
-  foreign:{BDG:{relations:{SAU:{trade_agreement:true}}},SAU:{relations:{BDG:{trade_agreement:true}}}}
+  foreign:{BGD:{relations:{SAU:{trade_agreement:true}}},SAU:{relations:{BGD:{trade_agreement:true}}}}
 }};
 globalThis.CustomEvent=globalThis.CustomEvent||class{constructor(type,init={}){this.type=String(type);this.detail=init.detail;}};
 if(typeof globalThis.dispatchEvent!=='function'){const t=new EventTarget();globalThis.dispatchEvent=t.dispatchEvent.bind(t);globalThis.addEventListener=t.addEventListener.bind(t);}
