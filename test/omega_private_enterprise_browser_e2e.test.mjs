@@ -140,6 +140,10 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         typeof window.OmegaUIV2Integration.openRoute === 'function' &&
         !!window.OmegaPrivateEnterpriseLifecycleV1;
     }, null, { timeout: 150000 });
+    await page.waitForFunction(() =>
+      !!window.Game?.state && !!window.Omega?.Simulation?.world?.state &&
+      window.Game.state === window.Omega.Simulation.world.state
+    , null, { timeout: 30000 });
     metrics.coreBootMs = Number((performance.now() - loadStarted).toFixed(2));
 
     const routeResult = await page.evaluate(() => {
@@ -1203,9 +1207,16 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const lng = Number(coordinates.lng ?? coordinates.lon ?? coordinates.longitude);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error('SAB34_SELECTED_SITE_COORDINATES_MISSING:' + site.siteId);
       const mapApi = window.Game?.Map;
+      const cabinet=document.getElementById('cabinet-full-window');
+      const cabinetActive=cabinet?.getAttribute('data-omega-ui-v2-active')==='true';
+      if(cabinetActive){
+        const returned=window.OmegaUIV2Integration?.openRoute?.('map')===true;
+        if(!returned)throw new Error('SAB34_CABINET_COULD_NOT_RETURN_TO_REAL_MAP');
+      }
+      if(typeof mapApi?.setUiActive==='function')mapApi.setUiActive(true);
+      mapApi.__omegaMapUiActive = true;
       const map = mapApi?.map || window.map;
       if (!map || typeof map.setView !== 'function') throw new Error('SAB34_REAL_LEAFLET_MAP_NOT_READY');
-      mapApi.__omegaMapUiActive = true;
       mapApi.resourceState = mapApi.resourceState || {};
       mapApi.resourceState.enabled = true;
       mapApi.resourceState.scope = 'NATION';
@@ -1234,29 +1245,34 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         longitude: lng
       };
     });
-    const siteFactoryBinding = await page.evaluate(({ siteId, factoryId }) => {
-      const assets=window.Game.state.economy.BGD.productionAssets||[];
+    const targetFactorySnapshot = await page.evaluate(factoryId => {
+      const state=window.Omega?.Simulation?.world?.state;
+      if(!state||state!==window.Game?.state)throw new Error('SAB34_AUTHORITATIVE_GAME_STATE_NOT_LINKED');
+      const assets=state.economy?.BGD?.productionAssets||[];
       const factory=assets.find(row=>String(row.id||row.assetId||row.projectId)===String(factoryId));
       if(!factory||String(factory.status||'').toUpperCase()!=='OPERATIONAL')
-        throw new Error('SAB34_SITE_FACTORY_BINDING_TARGET_NOT_OPERATIONAL:'+JSON.stringify({siteId,factoryId}));
-      factory.sourceSiteId=String(siteId);
-      factory.siteBindingAuthority='SAB34_REAL_CHROMIUM_SITE_TO_FACTORY_ACCEPTANCE_TEST';
-      return{siteId:factory.sourceSiteId,factoryId:String(factory.id),ownerType:factory.ownerType};
-    },{siteId:targetSite.siteId,factoryId:commissioning.factoryId});
-    assert.equal(siteFactoryBinding.siteId,targetSite.siteId);
-    assert.equal(siteFactoryBinding.factoryId,commissioning.factoryId);
+        throw new Error('SAB34_SELECTED_FACTORY_NOT_OPERATIONAL:'+JSON.stringify({factoryId}));
+      return{
+        factoryId:String(factory.id||factory.assetId||factory.projectId),
+        ownerType:String(factory.ownerType||''),
+        productionEnabled:factory.productionEnabled===true,
+        blockedReason:factory.blockedReason||null,
+        factoryType:String(factory.factoryType||'').toUpperCase()
+      };
+    },commissioning.factoryId);
+    assert.equal(targetFactorySnapshot.factoryId,commissioning.factoryId);
     if(commissioning.proofAcceptedAtStart){
-      assert.equal(siteFactoryBinding.ownerType,'PRIVATE_ENTERPRISE');
-      assert.equal(commissioning.privateProductionEnabled,true);
+      assert.equal(targetFactorySnapshot.ownerType,'PRIVATE_ENTERPRISE');
+      assert.equal(targetFactorySnapshot.productionEnabled,true);
     }else{
-      assert.equal(siteFactoryBinding.ownerType,'STATE_OWNED_ENTERPRISE');
+      assert.equal(targetFactorySnapshot.ownerType,'STATE_OWNED_ENTERPRISE');
       assert.equal(commissioning.privateProductionEnabled,false);
       assert.equal(commissioning.privateFactoryBlockReason,'SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED');
     }
-    metrics.siteFactoryBinding=siteFactoryBinding;
+    metrics.targetFactorySnapshot=targetFactorySnapshot;
     metrics.selectedSite = targetSite;
     metrics.stages.push('REAL_MAP_MARKER_READY:' + targetSite.siteId);
-    metrics.stages.push('EXACT_COMMISSIONED_FACTORY_BOUND_TO_CLICKED_CANONICAL_SITE');
+    metrics.stages.push('OPERATIONAL_FACTORY_TARGET_SELECTED_WITHOUT_SYNTHETIC_SITE_BINDING');
 
     const marker = page.locator('.omega-individual-site-marker').filter({
       has:page.locator('[data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']')
@@ -1281,7 +1297,16 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       throw new Error('SAB34_CANONICAL_SITE_MARKER_NOT_RENDERED:'+JSON.stringify(markerDiagnostics)+
         '; original='+String(error&&error.message||error));
     }
-    await marker.click({ force: true, timeout: 45000 });
+    const markerHitTest=await marker.evaluate(element=>{
+      const rect=element.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;
+      const hit=document.elementFromPoint(x,y);
+      return{hitTarget:!!hit&&(hit===element||element.contains(hit)),
+        hitElement:hit?(hit.tagName+(hit.id?'#'+hit.id:'')):null,
+        rect:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},
+        cabinetActive:document.getElementById('cabinet-full-window')?.getAttribute('data-omega-ui-v2-active')==='true'};
+    });
+    assert.ok(markerHitTest.hitTarget,'real map marker must receive the browser pointer: '+JSON.stringify(markerHitTest));
+    await marker.click({ timeout: 45000 });
     try {
       await page.waitForFunction(siteId => {
         const selected = document.getElementById('omega-individual-select');
@@ -1359,10 +1384,14 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       };
     });
     assert.equal(extraction.siteId, targetSite.siteId);
+    assert.equal(extraction.result?.siteId, targetSite.siteId,
+      'the executed pipeline must retain the exact canonical site selected by the user');
     assert.equal(extraction.result?.status, 'IN_TRANSIT', JSON.stringify(extraction));
     assert.equal(extraction.result?.extractionStatus, 'COMMITTED');
     assert.equal(extraction.result?.shipment?.shipmentType, 'MINE_TO_WAREHOUSE');
     assert.equal(String(extraction.result?.factoryId), commissioning.factoryId);
+    assert.equal(String(extraction.result?.route?.destinationFactoryId||''),commissioning.factoryId,
+      'the site's actual dispatched route must identify the selected factory destination');
     assert.equal(extraction.result?.factoryBootstrapStatus, 'EXISTING');
     assert.ok(extraction.result?.batchId && extraction.result?.shipmentId && extraction.result?.extractionPlanId);
     metrics.extraction = extraction;
@@ -1626,10 +1655,10 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     };
     if(Object.values(metrics.sab34Acceptance.stages).some(value=>value!==true))
       throw new Error('SAB34_BROWSER_ACCEPTANCE_STAGES_INCOMPLETE:'+JSON.stringify(metrics.sab34Acceptance));
-    if(commissioning.proofAcceptedAtStart&&siteFactoryBinding.ownerType!=='PRIVATE_ENTERPRISE')
-      throw new Error('SAB34_CERTIFIED_RUN_DID_NOT_USE_PRIVATE_FACTORY:'+JSON.stringify({commissioning,siteFactoryBinding}));
-    if(!commissioning.proofAcceptedAtStart&&siteFactoryBinding.ownerType!=='STATE_OWNED_ENTERPRISE')
-      throw new Error('SAB34_UNCERTIFIED_RUN_BYPASSED_PRIVATE_PRODUCTION_GATE:'+JSON.stringify({commissioning,siteFactoryBinding}));
+    if(commissioning.proofAcceptedAtStart&&targetFactorySnapshot.ownerType!=='PRIVATE_ENTERPRISE')
+      throw new Error('SAB34_CERTIFIED_RUN_DID_NOT_USE_PRIVATE_FACTORY:'+JSON.stringify({commissioning,targetFactorySnapshot}));
+    if(!commissioning.proofAcceptedAtStart&&targetFactorySnapshot.ownerType!=='STATE_OWNED_ENTERPRISE')
+      throw new Error('SAB34_UNCERTIFIED_RUN_BYPASSED_PRIVATE_PRODUCTION_GATE:'+JSON.stringify({commissioning,targetFactorySnapshot}));
     console.log('SAB34 REAL CHROMIUM SITE -> '+commissioning.targetFactoryOwnerType+
       ' FACTORY -> FINISHED GOODS -> INDEXEDDB SAVE/LOAD PASSED');
   } catch (error) {
@@ -1707,8 +1736,9 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
     null, { timeout: 150000 });
 
     const result = await page.evaluate(async () => {
-      const root = window.Game.state;
+      const root = window.Omega?.Simulation?.world?.state || window.Game.state;
       const simulation = window.Omega.Simulation;
+      if(root!==window.Game?.state)throw new Error('PRIVATE_CASH_LIFECYCLE_AUTHORITATIVE_STATE_NOT_LINKED');
       const trade = window.OmegaGlobalTrade;
       const market = window.OmegaGlobalMarket;
       const lifecycle = window.OmegaPrivateEnterpriseLifecycleV1;
@@ -1762,10 +1792,23 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         throw new Error('PRIVATE_CASH_LIFECYCLE_FOREX_PROFILE_REGISTRY_NOT_READY:' +
           JSON.stringify(fxInitialization || monetary.diagnostics?.() || null));
       }
+      const forexQuotes=monetary.getCountryQuotes?.('SIMULATION')||[];
+      const buyerQuote=forexQuotes.find(row=>String(row.iso3||'').trim().toUpperCase()===buyerCountry);
+      const sellerQuote=forexQuotes.find(row=>String(row.iso3||'').trim().toUpperCase()===sellerCountry);
+      if(!buyerQuote?.currencyCode||!sellerQuote?.currencyCode)
+        throw new Error('PRIVATE_CASH_LIFECYCLE_COUNTRY_CURRENCY_PROFILE_MISSING:'+
+          JSON.stringify({buyerQuote:buyerQuote||null,sellerQuote:sellerQuote||null}));
+      // Use the exact country/currency pair returned by the canonical Forex profile
+      // registry. Seed only missing Finance currency metadata; no currency or FX rate
+      // is invented by the test.
+      const buyerFinanceForCurrency=ensureCountry(root.finance,buyerCountry);
+      const sellerFinanceForCurrency=ensureCountry(root.finance,sellerCountry);
+      if(!buyerFinanceForCurrency.currencyCode)buyerFinanceForCurrency.currencyCode=buyerQuote.currencyCode;
+      if(!sellerFinanceForCurrency.currencyCode)sellerFinanceForCurrency.currencyCode=sellerQuote.currencyCode;
       const buyerCurrency = trade.currencyOf(buyerCountry);
       const sellerCurrency = trade.currencyOf(sellerCountry);
-      const buyerLocalPerUsd = Number(monetary.getRate(buyerCurrency, 'SIMULATION'));
-      const sellerLocalPerUsd = Number(monetary.getRate(sellerCurrency, 'SIMULATION'));
+      const buyerLocalPerUsd = Number(buyerQuote.localPerUsd);
+      const sellerLocalPerUsd = Number(sellerQuote.localPerUsd);
       const fx = trade.fxRate(buyerCountry, sellerCountry);
       if (buyerCurrency !== 'BDT' || sellerCurrency !== 'SAR' ||
           !Number.isFinite(buyerLocalPerUsd) || buyerLocalPerUsd <= 0 ||

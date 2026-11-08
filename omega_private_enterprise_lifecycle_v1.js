@@ -21,7 +21,16 @@
   function num(v){if(v===null||v===undefined||v==='')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
   function id(v){return String(v==null?'':v).trim().toUpperCase();}
   function token(v){return String(v==null?'':v).trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
-  function state(){return g.Game&&g.Game.state?g.Game.state:(g.gameState||null);}
+  function state(){
+    // The simulation world owns the live root after boot, session changes and save/load.
+    // Legacy Game.state remains the compatibility surface, not a second authority.
+    var simulation=g.Omega&&(g.Omega.SimulationRuntime||g.Omega.Simulation);
+    var authoritative=simulation&&simulation.world&&simulation.world.state;
+    if(obj(authoritative))return authoritative;
+    var omegaWorld=g.Omega&&g.Omega.World&&g.Omega.World.state;
+    if(obj(omegaWorld))return omegaWorld;
+    return g.Game&&obj(g.Game.state)?g.Game.state:(obj(g.gameState)?g.gameState:null);
+  }
   function turn(){var s=state()||{};return num(s.simulation&&s.simulation.turn)??num(s.turn)??num(s.simulationTurn)??0;}
   function canonicalCountry(v){
     var raw=id(v);if(!raw)return '';
