@@ -2102,10 +2102,30 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         }));
       }
       const settlementId = String(buyerRequest.settlementId || '');
-      const procurement = (root.economy[buyerCountry]?.privateEnterpriseLifecycle?.privateCompanyProcurementRecords || [])
+      const procurementRowsByCountry = Object.entries(root.economy || {}).map(([countryId,bucket])=>({
+        countryId,
+        records:(bucket?.privateEnterpriseLifecycle?.privateCompanyProcurementRecords||[])
+          .filter(row=>String(row?.settlementId||'')===settlementId)
+      })).filter(row=>row.records.length);
+      const buyerLifecycle=root.economy?.[buyerCountry]?.privateEnterpriseLifecycle||null;
+      const financeReservationRows=Object.entries(root.finance||{}).map(([countryId,bucket])=>({
+        countryId,
+        reservation:bucket?.omegaFinance?.companyTradeReservations?.[settlementId]||null
+      })).filter(row=>row.reservation);
+      const procurement = (buyerLifecycle?.privateCompanyProcurementRecords || [])
         .find(row => row.settlementId === settlementId);
       if (!procurement || procurement.status !== 'SETTLED') {
-        throw new Error('PRIVATE_CASH_LIFECYCLE_PROCUREMENT_RECORD_MISSING');
+        throw new Error('PRIVATE_CASH_LIFECYCLE_PROCUREMENT_RECORD_MISSING:' + JSON.stringify({
+          buyerCountry,sellerCountry,marketBuyerCountryId,marketSellerCountryId,
+          requestId,requestStatus:buyerRequest.status,settlementId,
+          economyCountryKeys:Object.keys(root.economy||{}),
+          buyerEconomyBucketKeys:Object.keys(root.economy?.[buyerCountry]||{}),
+          buyerLifecycleRecordCount:buyerLifecycle?.privateCompanyProcurementRecords?.length??null,
+          procurementRowsByCountry,financeReservationRows,
+          lifecycleDiagnostics:lifecycle.diagnostics?.()||null,
+          latestTradeTrace:window.__OMEGA_LAST_TRADE_PROCESS_TRACE||null,
+          settlementTrace:window.__OMEGA_SETTLEMENT_TRACE||null
+        }));
       }
       const buyerAccount = root.economy[buyerCountry]?.companyAccounts?.[buyerCompany];
       const sellerAccount = root.economy[sellerCountry]?.companyAccounts?.[sellerCompany];
