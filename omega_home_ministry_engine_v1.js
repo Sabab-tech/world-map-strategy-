@@ -1788,10 +1788,10 @@
     }else VEHICLES.forEach(function(v){total+=(Math.max(0,num(s.vehiclesOwned[v.level])||0)*v.maintenancePerDay*policyWearMultiplier);});
     return Math.round(total*100)/100;
   }
-  function getCrimeSimulationProjection(country,suppliedState){
+  function getCrimeSimulationProjection(country,suppliedState,sharedCrimeContext){
     const cid=normalizeCountry(country||currentCountry()),state=suppliedState||getState(cid),baseline=state&&state.crimeBaseline;
     if(!state||!baseline||!baseline.ratesPer100k)return{available:false,reason:'POLICE_BASELINE_NOT_LOADED',countryId:cid};
-    const sharedCrime=crimeReductionSharedContext(state,baseline,cid),rows={};
+    const sharedCrime=sharedCrimeContext||crimeReductionSharedContext(state,baseline,cid),rows={};
     let baselineIndex=0,currentIndex=0;
     Object.keys(baseline.ratesPer100k).forEach(function(category){
       const rate=num(baseline.ratesPer100k[category]);if(rate===null||rate<0)return;
@@ -1810,7 +1810,11 @@
     if(toDay<=last)return false;
     const fromDay=Math.max(0,Math.floor(last)),elapsed=Math.min(365,Math.floor(toDay)-fromDay);
     if(elapsed<=0)return false;
-    const snap=getCrimeSimulationProjection(country,state);
+    // Police staffing, fleet, departments, patrol plans, policies and rulebook
+    // are stable during this one catch-up pass. Normalize/count them once, rather
+    // than rebuilding the same country context for every simulated day.
+    const sharedCrime=crimeReductionSharedContext(state,state.crimeBaseline,country);
+    const snap=getCrimeSimulationProjection(country,state,sharedCrime);
     if(!snap.available){state.lastCrimeSimulationDay=Math.floor(toDay);return true;}
     const model=state.crimeModel&&typeof state.crimeModel==='object'?state.crimeModel:{};
     const acc=state.crimeAccumulator&&typeof state.crimeAccumulator==='object'?state.crimeAccumulator:{};
@@ -1829,7 +1833,7 @@
     let changed=false;
     let daySnapshot=snap;
     for(let step=1;step<=elapsed;step++){
-      if(step>1)daySnapshot=getCrimeSimulationProjection(country,state);
+      if(step>1)daySnapshot=getCrimeSimulationProjection(country,state,sharedCrime);
       const day=fromDay+step;let incidents=0,byCategory={};
       Object.keys(daySnapshot.categories).forEach(function(category){
         const row=daySnapshot.categories[category];if(row.projectedAnnualIncidents===null)return;
