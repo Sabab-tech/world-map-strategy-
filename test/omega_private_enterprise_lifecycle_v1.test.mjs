@@ -361,6 +361,24 @@ test('government tender quantity is a requested target, not a ceiling on the com
     'government receives the company offer, not its own requested tender quantity echoed back');
 });
 
+
+test('reference prices are not treated as proof of customer demand',()=>{
+  const h=makeHarness();
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){
+      return{resourceId,status:'NO_CROSS',priceDiscovery:'REFERENCE_ONLY',
+        matchedQuantity:0,bidDepth:0,askDepth:0,referencePrice:12,generatedTurn:30};
+    }
+  };
+  h.state.simulation.turn=30;
+  const response=h.api.advanceAutonomousProposalCycle();
+  assert.equal(response.status,'PROPOSED',JSON.stringify(response));
+  assert.equal(response.proposal.governmentOfftakeRequested,true);
+  assert.ok(response.proposal.companyStrategy.selectedOpportunity.marketSignals.every(row=>
+    row.signal==='CURRENT_TURN_REFERENCE_PRICE_ONLY'));
+  assert.match(response.proposal.riskForecast,/Customer demand and a cleared selling price are not verified/);
+});
+
 test('stale market clearing cannot influence a company factory choice or expansion quantity',()=>{
   const h=makeHarness();
   h.sandbox.Omega.GlobalMarket={
