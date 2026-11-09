@@ -630,3 +630,31 @@ test('capacity upgrade requests persist only through their economy-owned country
   assert.deepEqual(worldState.economy.BGD.capacityUpgradeRequests,[request],
     'a foreign-country capacity request must never overwrite the BGD economy bucket');
 });
+
+
+test('resource economy resolves Bangladesh ISO2 aliases into the ISO3 BGD state bucket',()=>{
+  const {context,worldState}=createContext();
+  const registry={
+    resolveCountry(value){
+      const raw=value&&typeof value==='object'
+        ?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.id||value.name)
+        :String(value||'').trim().toUpperCase();
+      if(['BD','BGD','BANGLADESH'].includes(String(raw).toUpperCase()))
+        return{id:'BD',canonicalId:'BD',countryCode:'BD',iso3:'BGD',raw:{countryCode:'BD',iso3:'BGD'}};
+      return{id:String(raw).toUpperCase(),iso3:String(raw).toUpperCase(),raw:{iso3:String(raw).toUpperCase()}};
+    },
+    list(){return[{id:'BD',countryCode:'BD',iso3:'BGD'}];}
+  };
+  context.OmegaCanonicalIdentityRegistry=registry;
+  context.Omega.CanonicalIdentity=registry;
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+
+  const dashboard=context.OmegaResourceEconomy.getCountryDashboard('BD');
+  assert.equal(dashboard.countryId,'BGD');
+  assert.equal(dashboard.mines.total,1);
+  assert.equal(dashboard.inventory.actual.iron_ore,100);
+  assert.equal(worldState.resource.BD,undefined,
+    'an ISO2 display alias must not create a duplicate resource state bucket');
+  assert.equal(context.OmegaResourceEconomy.diagnostics().countryCount,1);
+});
