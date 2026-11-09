@@ -1904,12 +1904,13 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     metrics.factoryArrival = factoryArrival;
     metrics.stages.push('RAW_TO_FACTORY_DELIVERY_CREATED_TRACEABLE_FACTORY_INPUT_LOT');
 
-    const production = await page.evaluate(async () => {
+    const production = await page.evaluate(async selectedFactoryId => {
       const simulation = window.Omega.Simulation;
       const state = window.Game.state;
       const resource = state.resource.BGD;
       const run = window.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__.result;
-      const factoryId = String(factory.id || factory.assetId || factory.projectId || run.factoryId);
+      const factoryId = String(selectedFactoryId || run.factoryId || '');
+      if (!factoryId) throw new Error('SAB34_SELECTED_FACTORY_ID_MISSING_FOR_PRODUCTION');
       const currentFactory = () => (Array.isArray(state.economy?.BGD?.productionAssets)
         ? state.economy.BGD.productionAssets : [])
         .find(row => String(row.id || row.assetId || row.projectId) === factoryId) || null;
@@ -2008,7 +2009,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         treasury: Number(state.finance?.BGD?.available) || 0,
         reconciliation
       };
-    });
+    }, commissioning.factoryId);
     assert.ok(production.inputConsumed > 0, JSON.stringify(production));
     assert.ok(production.finished.length >= 2, JSON.stringify(production));
     assert.ok(production.finished.every(row => row.sourceBatchIds.includes(extraction.result.batchId)));
