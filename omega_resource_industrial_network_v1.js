@@ -5064,9 +5064,17 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
     transferCount:transfers.length,transfers,blocked};
 }
 function factoryCycleDue(cycle){
+  const clock=g.Omega?.Simulation?.clock||null;
+  const currentTurn=num(clock?.turn)??turn();
+  const finishTurn=num(cycle?.finishTurn);
+  const turnReached=finishTurn!==null&&currentTurn>=finishTurn;
   const now=factoryCurrentGameDate();
-  if(cycle?.finishDate&&now)return factoryDateReached(now,cycle.finishDate);
-  return turn()>=Math.max(0,num(cycle?.finishTurn)||Number.MAX_SAFE_INTEGER);
+  const dateReached=!!(cycle?.finishDate&&now&&factoryDateReached(now,cycle.finishDate));
+  // Calendar date and committed turn are two views of the same authoritative game
+  // clock. A stale date mirror must not keep a due cycle active when its finish turn
+  // has already committed; likewise a clock date past finishDate can settle a cycle
+  // when a legacy turn mirror is stale.
+  return turnReached||dateReached;
 }
 function startFactoryProductionCycle(input={}){
   const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||'');
@@ -5161,7 +5169,10 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
       reason:cycle.lastBlockedReason,detail:result,turn:turn()});
     return{status:'PAUSED',countryId:cid,factoryId:String(cycle.factoryId||asset?.id||asset?.assetId||asset?.projectId||''),cycleId:cycle.cycleId,reason:cycle.lastBlockedReason,detail:result};
   }
-  cycle.status='COMPLETED';cycle.completedTurn=turn();cycle.actualCompletionDate=factoryCurrentGameDate()||cycle.finishDate;
+  cycle.status='COMPLETED';cycle.completedTurn=turn();
+  const completionDate=factoryCurrentGameDate();
+  cycle.actualCompletionDate=cycle.finishDate&&(!completionDate||!factoryDateReached(completionDate,cycle.finishDate))
+    ?cycle.finishDate:(completionDate||cycle.finishDate);
   const actualProduction=Math.max(0,num(result.requestedProduction)||cycle.productionQuantity);
   cycle.actualProductionQuantity=Number(actualProduction.toFixed(6));
   cycle.productivityPct=cycle.capacityPerDay>0?Number((actualProduction/cycle.capacityPerDay*100).toFixed(2)):0;
