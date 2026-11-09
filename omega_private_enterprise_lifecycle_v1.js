@@ -971,6 +971,7 @@
     proposal.governmentCounterOffer.respondedTurn=turn();
     proposal.governmentCounterOffer.settlementStatus='NOT_SETTLED_REQUIRES_SEPARATE_APPROVAL_AND_FUNDING';
     proposal.status='PROPOSED';proposal.updatedTurn=turn();proposal.decision=null;proposal.permit=null;
+    proposal.governmentReview=null;
     proposal.companyCase=companyBusinessCase(proposal);
     recordEvent(cid,'COMPANY_ACCEPTED_GOVERNMENT_COUNTER_OFFER',{proposalId:proposal.proposalId,
       companyId:actor,quantity:quantity,fundingSource:proposal.negotiatedFundingSource});
@@ -985,6 +986,10 @@
     if(decision==='RESUME'){
       if(proposal.status!=='ON_HOLD')return{status:'BLOCKED',reason:'PROPOSAL_NOT_ON_GOVERNMENT_HOLD'};
       proposal.status='PROPOSED';proposal.updatedTurn=turn();
+      var resumedPreview=previewFor(proposal);
+      proposal.governmentReview={reviewer:'PLAYER_GOVERNMENT',reviewedTurn:turn(),outcome:'RESUMED_FOR_REVIEW',
+        assessment:proposalDecisionAssessment(proposal,resumedPreview),
+        evidenceAuthority:'LIVE_SELECTED_COUNTRY_MARKET_SUPPLY_UTILITY_WORKFORCE_AND_FINANCE'};
       proposal.governmentActions=Array.isArray(proposal.governmentActions)?proposal.governmentActions:[];
       proposal.governmentActions.push({action:'RESUME',turn:turn(),reviewer:'PLAYER_GOVERNMENT',reason:String(input.reason||'Resumed for further review.').slice(0,1000)});
       recordEvent(cid,'GOVERNMENT_RESUMED_COMPANY_PROPOSAL',{proposalId:proposal.proposalId});
@@ -993,6 +998,10 @@
     if(proposal.status!=='PROPOSED'&&!(proposal.status==='ON_HOLD'&&decision==='DENY'))
       return{status:'BLOCKED',reason:'PROPOSAL_ALREADY_DECIDED',currentStatus:proposal.status};
     if(decision==='HOLD'){
+      var holdPreview=previewFor(proposal);
+      proposal.governmentReview={reviewer:'PLAYER_GOVERNMENT',reviewedTurn:turn(),outcome:'PAUSED_FOR_FURTHER_REVIEW',
+        assessment:proposalDecisionAssessment(proposal,holdPreview),
+        evidenceAuthority:'LIVE_SELECTED_COUNTRY_MARKET_SUPPLY_UTILITY_WORKFORCE_AND_FINANCE'};
       proposal.status='ON_HOLD';proposal.updatedTurn=turn();
       proposal.governmentActions=Array.isArray(proposal.governmentActions)?proposal.governmentActions:[];
       proposal.governmentActions.push({action:'HOLD',turn:turn(),reviewer:'PLAYER_GOVERNMENT',reason:String(input.reason||'Government review placed on hold.').slice(0,1000)});
@@ -1019,6 +1028,10 @@
       var equity=num(terms.governmentEquityBps);
       if(equity===null)equity=0;
       if(!Number.isInteger(equity)||equity<0||equity>10000)return{status:'BLOCKED',reason:'COUNTER_OFFER_EQUITY_OUT_OF_RANGE'};
+      var counterPreview=previewFor(proposal);
+      proposal.governmentReview={reviewer:'PLAYER_GOVERNMENT',reviewedTurn:turn(),outcome:'COUNTER_OFFER_ISSUED',
+        assessment:proposalDecisionAssessment(proposal,counterPreview),
+        evidenceAuthority:'LIVE_SELECTED_COUNTRY_MARKET_SUPPLY_UTILITY_WORKFORCE_AND_FINANCE'};
       proposal.governmentCounterOffer={quantity:quantity,supportType:supportType,
         maxGovernmentContribution:maxContribution,governmentEquityBps:equity,
         conditions:String(terms.conditions||'').slice(0,1000),
@@ -1039,7 +1052,7 @@
       if(competitionRestriction)return{status:'BLOCKED',reason:'ANTITRUST_EXPANSION_RESTRICTION_ACTIVE',
         competitionCaseId:competitionRestriction.caseId,restriction:clone(competitionRestriction)};
     }
-    var preview=previewFor(proposal);
+    var preview=previewFor(proposal),independentAssessment=proposalDecisionAssessment(proposal,preview);
     if(decision==='APPROVE'&&(!applicationText(proposal.requestReason)||!applicationText(proposal.expectedBenefit)||!applicationText(proposal.riskForecast)))
       return{status:'BLOCKED',reason:'COMPANY_APPLICATION_DISCLOSURE_REQUIRED'};
     if(decision==='APPROVE'&&preview.status!=='READY')return{status:'BLOCKED',reason:preview.reason||'APPROVAL_PREVIEW_BLOCKED',preview:preview};
@@ -1048,7 +1061,10 @@
       return{status:'BLOCKED',reason:preview.shortages.length?'DOMESTIC_INPUT_SHORTAGE':'DOMESTIC_INPUT_STOCK_UNOBSERVED',
         shortages:clone(preview.shortages),unobservedInputs:clone(preview.unobservedInputs),maximumSafeDomesticFactoryQuantity:preview.maximumSafeDomesticFactoryQuantity,preview:preview};
     var stateSupport=decision==='APPROVE'&&input.allowStateSupport===true&&proposal.stateSupportRequested===true;
-    var approvalAssessment=decision==='APPROVE'?proposalDecisionAssessment(proposal,preview):null;
+    var approvalAssessment=decision==='APPROVE'?independentAssessment:null;
+    proposal.governmentReview={reviewer:'PLAYER_GOVERNMENT',reviewedTurn:turn(),outcome:decision,
+      assessment:clone(independentAssessment),
+      evidenceAuthority:'LIVE_SELECTED_COUNTRY_MARKET_SUPPLY_UTILITY_WORKFORCE_AND_FINANCE'};
     proposal.status=decision==='APPROVE'?'APPROVED_AWAITING_FUNDING':decision==='DENY'?'DENIED':'DEFERRED';
     var decisionId='PE-DECISION:'+proposal.proposalId+':T'+turn();
     var permit=decision==='APPROVE'?{
@@ -3564,7 +3580,7 @@
         var gapValue=x.shortfall===null?'Not calculated':Number(x.shortfall).toLocaleString('en-US',{maximumFractionDigits:2});
         return'<div class="pe-input-row"><span><b>'+escapeHtml(x.resourceId)+'</b><br>30-day need '+neededValue+'</span><span>'+availableLabel+'<br><b>'+availableValue+'</b></span><span>Current demand<br><b>'+demandValue+'</b></span><span>Shortfall<br><b>'+gapValue+'</b></span></div>';
       }).join('')+'</div>';
-      var assessment=p.approvalAssessment||proposalDecisionAssessment(p,preview);
+      var assessment=p.governmentReview&&p.governmentReview.assessment||p.approvalAssessment||proposalDecisionAssessment(p,preview);
       var applicationMarkup='<div class="pe-input-forecast"><strong>Company-authored business case · submitted by '+escapeHtml(COMPANY_NAMES[p.submittedBy||p.companyId]||p.submittedBy||p.companyId)+'</strong>'+
         '<p><b>Why the company wants to build</b><br>'+escapeHtml(p.requestReason||'Not recorded')+'</p>'+
         '<p><b>What the company offers and expects</b><br>'+escapeHtml(p.expectedBenefit||'Not recorded')+'</p>'+
