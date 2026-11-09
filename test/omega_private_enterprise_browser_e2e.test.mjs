@@ -475,7 +475,7 @@ test('real Chromium browser verifies company-originated proposals, government te
         bodyScrollWidth: document.documentElement.scrollWidth,
         governmentInvitationVisible: !!element.querySelector('[data-pe-invitation-form]'),
         governmentDoesNotAuthorCompanyProposal: !element.querySelector('[data-pe-proposal-form]'),
-        operatorSelectorAbsent: !element.querySelector('select[name="operatorCompanyId]'),
+        operatorSelectorAbsent: !element.querySelector('select[name="operatorCompanyId"]'),
         tab: element.closest('[data-omega-v2-industry-content]')?.getAttribute('data-active-tab') || null
       }));
       assert.ok(layout.panelWidth > 0, viewport.name + ': private lifecycle panel must remain measurable');

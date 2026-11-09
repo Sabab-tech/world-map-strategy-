@@ -572,8 +572,8 @@
         var need=num(row.forecast30Day),available=num(row.available),covered=need!==null&&available!==null&&available+1e-9>=need,
           shortfall=need===null||available===null?null:Math.max(0,need-available),suppliers=[],privateSuppliers=[];
         if(shortfall!==null&&shortfall>1e-9&&marketApi){
-          try{if(typeof marketApi.suppliers==='function')suppliers=marketApi.suppliers(row.resourceId,shortfall,proposal.countryId)||[];}catch(_){}
-          try{if(typeof marketApi.privateCompanySuppliers==='function')privateSuppliers=marketApi.privateCompanySuppliers(row.resourceId,shortfall,proposal.countryId)||[];}catch(_){}
+          try{if(typeof marketApi.suppliers==='function'){var found=marketApi.suppliers(row.resourceId,shortfall,proposal.countryId);suppliers=Array.isArray(found)?found:[];}}catch(_){}
+          try{if(typeof marketApi.privateCompanySuppliers==='function'){var privateFound=marketApi.privateCompanySuppliers(row.resourceId,shortfall,proposal.countryId);privateSuppliers=Array.isArray(privateFound)?privateFound:[];}}catch(_){}
         }
         return{resourceId:row.resourceId,required30Day:need,domesticUncommittedAvailable:available,
           currentDemandPerDay:num(row.nationalDemandPerDay),shortfall:shortfall,
@@ -596,8 +596,9 @@
         return{resourceId:row.resourceId,projected30DayQuantity:num(row.projectedQuantity),
           localMarketPrice:clone(row.marketPrice||null),marketStatus:quote.status||'UNAVAILABLE',
           priceDiscovery:quote.priceDiscovery||'UNAVAILABLE',clearingPriceUsd:cleared?num(quote.clearingPriceUsd):null,
-          referencePriceUsd:num(quote.referencePrice),matchedQuantity:num(quote.matchedQuantity),
-          bidDepth:num(quote.bidDepth),askDepth:num(quote.askDepth),
+          referencePriceUsd:num(quote.referencePriceUsd===undefined?quote.referencePrice:quote.referencePriceUsd),
+          bestBidUsd:num(quote.bestBidUsd),bestAskUsd:num(quote.bestAskUsd),
+          matchedQuantity:num(quote.matchedQuantity),bidDepth:num(quote.bidDepth),askDepth:num(quote.askDepth),
           evidenceStatus:cleared?'VERIFIED_ORDER_BOOK_CLEARING':
             quote.referencePrice!==undefined&&quote.referencePrice!==null?'REFERENCE_ONLY_NOT_A_SETTLED_MARKET_PRICE':'MARKET_PRICE_UNVERIFIED'};
       }),
@@ -626,7 +627,9 @@
       supplyChainProof:{horizonDays:30,inputs:inputs,
         domesticCoverageStatus:allDomesticCovered?'ALL_INPUTS_COVERED_BY_CURRENT_DOMESTIC_SURPLUS':
           allInputsObserved?'DOMESTIC_SHORTFALL_POTENTIAL_IMPORTS_NOT_CONTRACTS':'INPUT_STOCK_OR_DEMAND_UNVERIFIED',
-        securedAtSubmission:allDomesticCovered,
+        domesticSurplusCouldCoverNeed:allDomesticCovered,
+        securedAtSubmission:false,
+        securedSupplyEvidenceStatus:'NO_SIGNED_CONTRACT_OR_RESERVED_SUPPLY_RECORD',
         externalSupplierStatus:'AVAILABILITY_IS_NOT_A_SIGNED_CONTRACT_OR_DELIVERY',
         authority:'CURRENT_TURN_UNCOMMITTED_DOMESTIC_STOCK_AND_AVAILABLE_EXTERNAL_SUPPLY'},
       financingOffer:{preferredStructure:preference,
@@ -635,16 +638,22 @@
         constructionCapitalRequired:required,fundingGap:fundingGap,
         privateShareholdingRequested:['PRIVATE_SHAREHOLDERS','JOINT_VENTURE','PRIVATE_EQUITY'].indexOf(preference)>=0,
         requestedPrivateShareholdingBps:num(proposal.requestedPrivateShareholdingBps),
+        privateShareholdingTermsStatus:num(proposal.requestedPrivateShareholdingBps)===null?
+          (['PRIVATE_SHAREHOLDERS','JOINT_VENTURE','PRIVATE_EQUITY'].indexOf(preference)>=0?'REQUESTED_TERMS_REQUIRE_NEGOTIATION':'NOT_REQUESTED'):
+          'COMPANY_SHAREHOLDING_TERMS_STATED',
         requestedGovernmentGrant:proposal.stateSupportRequested===true?required:0,
         requestedGovernmentEquityBps:num(proposal.requestedGovernmentEquityBps),
         requestedLoanGuarantee:proposal.requestedLoanGuarantee===true,
+        requestedLoanGuaranteeStatus:proposal.requestedLoanGuarantee===true?'REQUESTED_NOT_APPROVED':'NOT_REQUESTED',
         settlementStatus:'PROPOSAL_ONLY_NOT_SETTLED',
         limitation:'Private equity, loans, guarantees and public support are requests only until a matching verified Finance ledger settlement exists.'},
       companyExpectations:{governmentPermit:true,
         publicInfrastructureRequested:proposal.publicInfrastructureRequested===true,
         utilitySupportRequested:proposal.utilitySupportRequested===true,
         governmentOfftakeRequested:proposal.governmentOfftakeRequested===true,
-        requestedConditions:clone(proposal.companyRequestedConditions||[])},
+        requestedConditions:clone(proposal.companyRequestedConditions||[]),
+        supportRequestStatus:proposal.publicInfrastructureRequested||proposal.utilitySupportRequested||
+          proposal.governmentOfftakeRequested?'COMPANY_REQUESTS_PUBLIC_SUPPORT':'NO_ADDITIONAL_PUBLIC_SUPPORT_REQUESTED'},
       governmentInvitationId:proposal.governmentInvitationId||null,
       authority:'OMEGA_COMPANY_ORIGINATED_BUSINESS_CASE_V1',simulationOnly:true
     };
@@ -961,7 +970,8 @@
         return{status:'BLOCKED',reason:'UNSUPPORTED_GOVERNMENT_COUNTER_OFFER'};
       if(maxContribution===null)maxContribution=0;
       if(maxContribution<0)return{status:'BLOCKED',reason:'COUNTER_OFFER_SUPPORT_AMOUNT_INVALID'};
-      if(supportType==='CAPITAL_GRANT'&&maxContribution>0){
+      if(supportType==='CAPITAL_GRANT'){
+        if(maxContribution<=0)return{status:'BLOCKED',reason:'CAPITAL_GRANT_AMOUNT_REQUIRED'};
         var treasury=financeTreasury(cid);
         if(treasury.balance===null||treasury.balance+1e-9<maxContribution)
           return{status:'BLOCKED',reason:'INSUFFICIENT_TREASURY_BALANCE',available:treasury.balance,requested:maxContribution};
@@ -3343,7 +3353,7 @@
           (row.potentialExternalSuppliers&&row.potentialExternalSuppliers.length?'<small>Potential external sources: '+row.potentialExternalSuppliers.map(function(x){return escapeHtml(x.countryId)+' ('+caseAmount(x.available)+')';}).join(', ')+' · not contracted</small>':'')+
           (row.potentialPrivateCompanySuppliers&&row.potentialPrivateCompanySuppliers.length?'<small>Potential company sources: '+row.potentialPrivateCompanySuppliers.map(function(x){return escapeHtml(x.companyName||x.companyId)+' / '+escapeHtml(x.countryId)+' ('+caseAmount(x.available)+')';}).join(', ')+' · not contracted</small>':'');
         }).join(''):'<span class="pe-info">Input stock or demand evidence has not been verified.</span>')+
-        '<small>Potential suppliers are not secured supply. The government must verify contracts, delivery capacity and receipts independently.</small></div>';
+        '<small>Potential suppliers are not secured supply. The government must verify contracts, delivery capacity and receipts independently. No signed contract or reserved supply is recorded in this proposal.</small></div>';
       var financing=companyCase.financingOffer||{};
       var companyFinanceOfferMarkup='<div class="pe-input-forecast"><strong>Company financing offer / request</strong>'+
         '<div class="pe-facts"><span>Preferred structure <b>'+escapeHtml(financing.preferredStructure||'NOT_STATED')+'</b></span>'+
@@ -3353,8 +3363,14 @@
         '<span>Funding gap <b>'+caseAmount(financing.fundingGap)+'</b></span>'+
         '<span>Government grant requested <b>'+caseAmount(financing.requestedGovernmentGrant)+'</b></span>'+
         '<span>Government equity requested <b>'+caseAmount(financing.requestedGovernmentEquityBps)+' bps</b></span>'+
-        '<span>Private shareholding <b>'+(financing.privateShareholdingRequested?'Requested':'Not requested')+'</b></span></div>'+
-        '<small>'+escapeHtml(financing.companyCapitalAccountStatus||'CAPITAL_NOT_VERIFIED')+' · '+escapeHtml(financing.settlementStatus||'PROPOSAL_ONLY_NOT_SETTLED')+'. Requests are not funds until a matching Finance ledger transaction is verified.</small></div>';
+        '<span>Private shareholding <b>'+(financing.privateShareholdingRequested?'Requested':'Not requested')+'</b></span>'+
+        '<span>Shareholding terms <b>'+escapeHtml(financing.privateShareholdingTermsStatus||'NOT_STATED')+'</b></span>'+
+        '<span>Loan guarantee <b>'+(financing.requestedLoanGuarantee?'Requested':'Not requested')+'</b></span>'+
+        '<span>Public infrastructure <b>'+(companyCase.companyExpectations&&companyCase.companyExpectations.publicInfrastructureRequested?'Requested':'Not requested')+'</b></span>'+
+        '<span>Utility support <b>'+(companyCase.companyExpectations&&companyCase.companyExpectations.utilitySupportRequested?'Requested':'Not requested')+'</b></span>'+
+        '<span>Government offtake <b>'+(companyCase.companyExpectations&&companyCase.companyExpectations.governmentOfftakeRequested?'Requested':'Not requested')+'</b></span></div>'+
+        '<small>'+escapeHtml(financing.companyCapitalAccountStatus||'CAPITAL_NOT_VERIFIED')+' · '+escapeHtml(financing.settlementStatus||'PROPOSAL_ONLY_NOT_SETTLED')+'. Requests are not funds until a matching Finance ledger transaction is verified.</small>'+
+        '<small>Company-requested conditions: '+escapeHtml((companyCase.companyExpectations&&companyCase.companyExpectations.requestedConditions||[]).join('; ')||'None stated')+'</small></div>';
       var financial=assessment.financialForecast||{};
       function forecastAmount(value){return value===null||value===undefined?'Not observed':Number(value).toLocaleString('en-US',{maximumFractionDigits:2})+(financial.currency?' '+escapeHtml(financial.currency):'');}
       var riskMarkup='<div class="pe-input-forecast"><strong>Government review · 30-day benefit / risk assessment · '+escapeHtml(assessment.riskStatus||'UNRESOLVED')+'</strong>'+
@@ -3463,7 +3479,7 @@
     var markup='<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1"><header class="pe-head"><div><small>PRODUCTION LINES / NATIONAL INDUSTRY POLICY</small><h3>Company expansion proposals</h3><p>Companies initiate and justify projects. Government verifies, negotiates, permits or rejects them.</p></div><span class="pe-gate">'+(dash.productionEnabled?'PRIVATE PRODUCTION ENABLED':'PRODUCTION GATED BY SAB-34')+'</span></header>'+
       '<div class="pe-overview"><span>Companies <b>5</b></span><span>Proposals <b>'+dash.proposals.length+'</b></span><span>Opening baseline <b>'+(baselineRow&&baselineRow.status==='READY'?baselineRow.totalPrivateFactoryUnits.toLocaleString('en-US'):'Unavailable')+'</b></span><span>Finance <b>'+Object.keys(capitalByCompany).length+' capital accounts</b></span></div>'+
       invitationSection+message+
-      '<div class="pe-proposals"><h4>Company-submitted offers · government decision queue</h4>'+cards+'</div>'+
+      '<div class="pe-proposals"><h4>Government decision queue · company-submitted offers</h4>'+cards+'</div>'+
       '<details class="pe-proposals" data-pe-finance-details '+(financeWasOpen?'open':'')+'><summary><strong>Corporate Finance / Profit / Tax / Cost</strong></summary><p class="pe-footnote">Shared Finance journal + factory-event cost accruals. Financial close is blocked when required operating costs are unpriced. Factory CAPEX remains separate.</p>'+costPolicyForm+'<div data-pe-finance-card-host data-loaded="'+(financeWasOpen?'true':'false')+'">'+(financeWasOpen?companyFinanceCardsMarkup(country,capitalByCompany):'<p class="pe-empty">Open this section to load company financial statements.</p>')+'</div></details>'+
       '<section class="pe-proposals"><h4>Joint ventures / shareholder voting / dividends</h4>'+
       '<form class="pe-form" data-pe-jv-form><label>JV name<input name="name" type="text" maxlength="100" value="Strategic Industrial Joint Venture" required></label>'+
