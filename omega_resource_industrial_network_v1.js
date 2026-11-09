@@ -92,6 +92,30 @@ const canonicalCountry=v=>{
   // Runtime country buckets use ISO-3. Never resolve an incoming ISO-3 through a name/alias
   // index first: the resolver may return the ISO-2 display identity (e.g. KWT -> KW).
   if(/^[A-Z]{3}$/i.test(raw))return id(raw);
+  // Country-profile identities carry both alpha-2 and alpha-3 fields. Prefer the
+  // explicit ISO-3 profile identity over a public registry/display id (e.g. BD).
+  try{
+    const profiles=g.ResourceMinistryEngine?.countryProfiles;
+    if(profiles&&typeof profiles==='object'){
+      const wanted=id(raw);
+      for(const [profileKey,profile] of Object.entries(profiles)){
+        const identity=profile?.identity||profile?.countryIdentity||profile||{};
+        const aliases=[
+          profileKey,identity.iso2,identity.countryCode,identity.country_code,
+          identity.code,identity.id,identity.countryId,identity.countryName,
+          identity.name,profile?.iso2,profile?.countryCode,profile?.code,profile?.id
+        ];
+        if(!aliases.some(value=>id(value)===wanted))continue;
+        const candidates=[
+          identity.iso3,identity.iso3Code,identity.iso_a3,identity.ISO_A3,
+          identity.countryIso3,profile?.iso3,profile?.iso3Code,profile?.countryIso3,
+          /^[A-Z]{3}$/i.test(String(profileKey||''))?profileKey:null
+        ];
+        const iso3=candidates.find(value=>/^[A-Z]{3}$/i.test(String(value||'').trim()));
+        if(iso3)return id(iso3);
+      }
+    }
+  }catch(_){}
   try{
     const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
     const r=b?.resolveCountry?.(raw);
