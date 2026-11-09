@@ -1654,7 +1654,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(Math.round((mineEtaDate-mineDispatchDate)/86400000),mineTravelDays,
       'a temporary 180-day construction turn must not stretch the route calendar ETA to 180 days');
     metrics.mineRouteEta={travelDays:mineTravelDays,dispatchDate:mineShipment.createdDate,etaDate:mineShipment.etaDate};
-    const mineArrival = await page.evaluate(async (eta, etaDate) => {
+    const mineArrival = await page.evaluate(async ({eta, etaDate}) => {
       const simulation = window.Omega.Simulation;
       const advanced = await window.__sab34AdvanceResourceTurnsToEta(eta, etaDate, 'MINE_TO_WAREHOUSE');
       const state = window.Game.state;
@@ -1673,7 +1673,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         factoryShipment: factoryShipment || null,
         siteRuntime: resource.industrialNetwork?.siteLogisticsBySiteId?.[run.siteId] || null
       };
-    }, mineEta, String(mineShipment.etaDate));
+    }, {eta:mineEta,etaDate:String(mineShipment.etaDate)});
     assert.equal(mineArrival.receipt?.status, 'RECEIVED', JSON.stringify(mineArrival));
     assert.equal(mineArrival.receipt?.receivedFrom, 'MINE_SITE_LOGISTICS');
     assert.ok(mineArrival.factoryShipment, 'mine receipt must dispatch a separate raw-to-factory shipment');
@@ -1687,7 +1687,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
 
     const factoryEta = Number(mineArrival.factoryShipment.etaTurn);
     assert.ok(Number.isFinite(factoryEta), 'factory-bound shipment must expose its ETA game turn');
-    const factoryArrival = await page.evaluate(async (eta, etaDate) => {
+    const factoryArrival = await page.evaluate(async ({eta, etaDate}) => {
       const simulation = window.Omega.Simulation;
       const advanced = await window.__sab34AdvanceResourceTurnsToEta(eta, etaDate, 'RAW_TO_FACTORY');
       const state = window.Game.state;
@@ -1711,7 +1711,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         inputLot: inputLot || null,
         inputInventory: factory?.inputInventory || {}
       };
-    }, factoryEta, String(mineArrival.factoryShipment.etaDate));
+    }, {eta:factoryEta,etaDate:String(mineArrival.factoryShipment.etaDate)});
     assert.equal(factoryArrival.delivery?.status, 'DELIVERED', JSON.stringify(factoryArrival));
     assert.equal(factoryArrival.delivery?.destinationStatus, 'FACTORY_RECEIVED');
     assert.equal(factoryArrival.factoryId, commissioning.factoryId);
