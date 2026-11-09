@@ -106,12 +106,18 @@ test('private enterprise registry defers baseline fetch and JSON parsing until f
  assert.doesNotMatch(registry,/g\.Omega\.PrivateEnterpriseRegistryV1=API;init\(\);/);
  const industry=fs.readFileSync(new URL('../omega_ui_v2/screens/industry.js',import.meta.url),'utf8');
  const lifecycle=fs.readFileSync(new URL('../omega_private_enterprise_lifecycle_v1.js',import.meta.url),'utf8');
- assert.match(lifecycle,/data-pe-proposal-form aria-busy="true"/,
-  'Production Lines must mount a disabled proposal form contract while the country baselines load');
- assert.match(lifecycle,/select name="operatorCompanyId" disabled/,
-  'the separate private operator selector must be present during offline baseline loading');
- assert.match(lifecycle,/bindUi\(root\);\s*return;/,
-  'the retry action must remain connected while the proposal form is waiting for baseline readiness');
+  assert.doesNotMatch(lifecycle,/data-pe-proposal-form/,
+   'the government must never be shown a form to author a private company proposal');
+  assert.doesNotMatch(lifecycle,/select name="operatorCompanyId"/,
+   'owner and operator are determined by the company, not selected by government');
+  assert.match(lifecycle,/Companies independently prepare their market analysis/,
+   'the loading state must describe the company-originated submission model');
+  assert.match(lifecycle,/data-pe-invitation-form/,
+   'government may publish a separate tender instead of preparing a company application');
+  assert.match(lifecycle,/data-pe-counter-form/,
+   'government can negotiate a proposal without becoming the applicant');
+  assert.match(lifecycle,/bindUi\(root\);\s*return;/,
+   'the retry action must remain connected while company baseline data is waiting');
  assert.match(industry,/privateRuntime\.ready/);
  assert.match(industry,/factoryManageOpened/,
   'private baseline fetch must wait until the in-card Manage action is opened');
