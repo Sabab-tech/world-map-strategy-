@@ -96,11 +96,16 @@ const canonicalCountry=v=>{
     const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
     const r=b?.resolveCountry?.(raw);
     const source=r?.raw?.raw||r?.raw?.datasets?.['countries.json']||r?.raw||{};
-    const iso3=source?.iso3||source?.iso3Code||source?.countryCode||source?.countryId||
-      r?.iso3||r?.iso3Code||r?.countryCode||r?.countryId;
-    if(iso3&&/^[A-Z]{3}$/i.test(String(iso3).trim()))return id(iso3);
-    if(r?.id)return id(r.id);
+    const iso3Candidates=[
+      source?.iso3,source?.iso3Code,source?.ISO_A3,source?.iso_a3,
+      r?.iso3,r?.iso3Code,r?.ISO_A3,r?.iso_a3,
+      source?.countryId,r?.countryId,source?.countryCode,r?.countryCode
+    ];
+    const iso3=iso3Candidates.find(value=>/^[A-Z]{3}$/i.test(String(value||'').trim()));
+    if(iso3)return id(iso3);
   }catch(_){}
+  // The identity registry's public id may be ISO-2 (BD/KW). ResourceMinistryEngine
+  // owns the repository's ISO-3 mapping and must run before any display-id fallback.
   try{
     const normalized=g.ResourceMinistryEngine?.normalizeCountryCode?.(raw);
     if(normalized&&/^[A-Z]{3}$/i.test(String(normalized).trim()))return id(normalized);
