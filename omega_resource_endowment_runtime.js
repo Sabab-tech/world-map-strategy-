@@ -72,7 +72,11 @@
     const quantityNormalizer=g.Omega?.ResourceQuantityNormalization||g.OmegaResourceQuantityNormalization;
     if(typeof quantityNormalizer?.normalizeSiteRecord==='function')row=quantityNormalizer.normalizeSiteRecord(row)||row;
     else if(typeof quantityNormalizer?.normalizeSiteQuantities==='function')row=quantityNormalizer.normalizeSiteQuantities(row)||row;
-    return row;
+    // Attach per-site simulation reserves after quantity normalization. The reserve
+    // dataset is a separate authority from the canonical physical-site catalog, so
+    // reserve-only sites (for example Cigar Lake) must be enriched at the binding
+    // boundary instead of silently receiving no extractable reserve/capacity.
+    return enrichSimulationReserve(row);
   }
   g.OmegaResourceSiteDataContract={version:'1.0.0',normalizeSiteRecord,normalizeSiteQuantitative};
   const id=v=>String(v??'').trim().toUpperCase();
