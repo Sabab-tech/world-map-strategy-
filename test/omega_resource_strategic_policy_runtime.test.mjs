@@ -252,6 +252,43 @@ test('unknown environmental units are rejected without a fabricated default impa
   assert.equal(preview.reason,'ENVIRONMENTAL_UNIT_SCALE_UNAVAILABLE');
 });
 
+test('simulation resource units accrue game-only environmental impact but never fabricate physical CO2e',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const preview=api.previewCarbonActivity('BGD','coal',1500,'SIMULATION_RESOURCE_UNIT','FACTORY_PROCESSING');
+  assert.equal(preview.allowed,true,JSON.stringify(preview));
+  assert.equal(preview.emissionsKnown,false);
+  assert.equal(preview.emissionsTonnesCo2e,null);
+  assert.equal(preview.reason,'NO_SIMULATED_FACTOR_CONFIGURED');
+
+  const recorded=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_PROCESSING','BGD',{
+    transactionId:'PROCESS-SIMULATION-UNIT-1',siteId:'SITE_BGD_TEST_LOCKED',
+    resourceId:'coal',quantity:1500,unit:'SIMULATION_RESOURCE_UNIT'
+  });
+  assert.equal(recorded.status,'APPLIED',JSON.stringify(recorded));
+  assert.equal(recorded.result.accepted,true,JSON.stringify(recorded));
+  assert.equal(h.state.resource.BGD.environmentalLedger.length,1);
+  assert.equal(h.state.resource.BGD.environmentalLedger[0].unit,'SIMULATION_RESOURCE_UNIT');
+  assert.equal(h.state.resource.BGD.environmentalLedger[0].status,'COMMITTED');
+  assert.equal(h.state.resource.BGD.carbonEmissionsLedger,undefined,
+    'game-only resource units must not be converted into physical tonnes of CO2e');
+
+  const quota=api.setCarbonQuota('BGD',{
+    quotaId:'SIMULATION-UNIT-CARBON-FAIL-CLOSED',allowanceTonnesCo2e:100,periodTurns:10
+  });
+  assert.equal(quota.accepted,true,JSON.stringify(quota));
+  const quotaPreview=api.previewCarbonActivity('BGD','coal',1500,'SIMULATION_RESOURCE_UNIT','FACTORY_PROCESSING');
+  assert.equal(quotaPreview.allowed,false);
+  assert.equal(quotaPreview.reason,'CARBON_EMISSIONS_FACTOR_UNAVAILABLE');
+  const quotaBlocked=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_PROCESSING','BGD',{
+    transactionId:'PROCESS-SIMULATION-UNIT-QUOTA-1',siteId:'SITE_BGD_TEST_LOCKED',
+    resourceId:'coal',quantity:1500,unit:'SIMULATION_RESOURCE_UNIT'
+  });
+  assert.equal(quotaBlocked.status,'FAILED',JSON.stringify(quotaBlocked));
+  assert.equal(quotaBlocked.result.reason,'CARBON_EMISSIONS_FACTOR_UNAVAILABLE');
+  assert.equal(h.state.resource.BGD.environmentalLedger.length,1,
+    'unknown physical emissions must keep the active quota enforcement fail-closed');
+});
+
 
 test('carbon quota tracks CO2e separately from environmental impact indexes and blocks over-quota emissions',()=>{
  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
