@@ -426,7 +426,12 @@ Game.DataLoader = {
         this.__assetsLoadingMessage = String(message || 'Loading startup data…');
         this.__assetsLoadingStatus = status || 'loading';
         if (Game.Map && typeof Game.Map.updateMapLoadingProgress === 'function') {
-            Game.Map.updateMapLoadingProgress(this.__assetsLoadingProgress, this.__assetsLoadingMessage, this.__assetsLoadingStatus);
+            Game.Map.updateMapLoadingProgress(
+                this.__assetsLoadingProgress,
+                this.__assetsLoadingMessage,
+                this.__assetsLoadingStatus,
+                'startup'
+            );
         }
         return this.__assetsLoadingProgress;
     },
@@ -754,8 +759,10 @@ Game.DataLoader = {
                 const stageCount = startupDatasets.length;
                 const fetchOptional = async function (item, index) {
                     let controller = null, timer = null, request = null;
-                    const stageStart = (index / stageCount) * 82;
-                    const stageSpan = 82 / stageCount;
+                    const supportStageStart = 46;
+                    const supportStageSpan = 35;
+                    const stageStart = supportStageStart + (index / stageCount) * supportStageSpan;
+                    const stageSpan = supportStageSpan / stageCount;
                     try {
                         controller = typeof AbortController === 'function' ? new AbortController() : null;
                         request = Promise.resolve().then(function () {
@@ -800,7 +807,7 @@ Game.DataLoader = {
                     const item = startupDatasets[index];
                     failedStage = item.label;
                     loader.setStartupProgress(
-                        (index / stageCount) * 82,
+                        46 + (index / stageCount) * 35,
                         'Loading ' + item.label + ' (' + (index + 1) + '/' + startupDatasets.length + ')…',
                         'loading'
                     );
@@ -1458,7 +1465,7 @@ Game.Map.__omegaDetachedLayers = [];
 Game.Map.__omegaMapRootDisplay = null;
 Game.Map.__omegaMapLoadingProgress = 0;
 
-Game.Map.updateMapLoadingProgress = function(percent, message, status) {
+Game.Map.updateMapLoadingProgress = function(percent, message, status, source) {
     const overlay = document.getElementById('omega-map-load-overlay');
     const progress = document.getElementById('omega-map-load-progress');
     const percentLabel = document.getElementById('omega-map-load-percent');
@@ -1466,20 +1473,34 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status) {
     const statusLabel = document.getElementById('omega-map-load-status');
     const mapRoot = document.getElementById('render-engine-root');
     const retryButton = document.getElementById('omega-map-load-retry');
-    if (!overlay || this.__omegaMapUiActive === false) return;
-    const bounded = Math.max(0, Math.min(100, Number(percent) || 0));
+    const startupLoader = Game.DataLoader;
+    const coordinatedStartupActive = !!(startupLoader && startupLoader.__assetsLoadPromise &&
+        startupLoader.__assetsLoadComplete !== true);
+    const isStartupProgressUpdate = source === 'startup';
+    const rawPercent = Math.max(0, Math.min(100, Number(percent) || 0));
+    const bounded = coordinatedStartupActive && !isStartupProgressUpdate
+        ? Math.min(45, 2 + rawPercent * 0.43)
+        : rawPercent;
+    const effectiveStatus = coordinatedStartupActive && !isStartupProgressUpdate && status === 'complete'
+        ? 'loading' : status;
+    if (coordinatedStartupActive && !isStartupProgressUpdate) {
+        startupLoader.__assetsLoadingProgress = bounded;
+        startupLoader.__assetsLoadingMessage = String(message || 'Preparing world map…');
+        startupLoader.__assetsLoadingStatus = effectiveStatus || 'loading';
+    }
     this.__omegaMapLoadingProgress = bounded;
+    if (!overlay || this.__omegaMapUiActive === false) return;
     overlay.classList.remove('is-hidden');
     overlay.setAttribute('aria-hidden', 'false');
-    overlay.setAttribute('aria-busy', status === 'loading' ? 'true' : 'false');
-    overlay.setAttribute('data-state', status || 'loading');
+    overlay.setAttribute('aria-busy', effectiveStatus === 'loading' ? 'true' : 'false');
+    overlay.setAttribute('data-state', effectiveStatus || 'loading');
     if (mapRoot) mapRoot.setAttribute('data-omega-map-loading', 'true');
     if (progress) progress.style.width = bounded + '%';
     if (progressBar) progressBar.setAttribute('aria-valuenow', String(Math.floor(bounded)));
     if (percentLabel) percentLabel.textContent = Math.floor(bounded) + '%';
     if (statusLabel && message) statusLabel.textContent = String(message);
-    if (retryButton) retryButton.hidden = status !== 'error';
-    if (status === 'complete') {
+    if (retryButton) retryButton.hidden = effectiveStatus !== 'error';
+    if (effectiveStatus === 'complete') {
         const map = this.map || window.map;
         if (map && typeof map.invalidateSize === 'function') {
             window.setTimeout(function () {
