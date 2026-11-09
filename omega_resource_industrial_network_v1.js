@@ -5808,11 +5808,25 @@ async function executeSitePipeline(input={}){
         :(currentCandidateIds.has(priorFactoryId)
           ?priorFactoryId
           :(selectedFactoryIdBeforeExtraction||'')));
-    if(resolvedFactoryId&&priorFactoryId!==resolvedFactoryId){
+    const explicitFactorySelection=Boolean(
+      (requestedFactory&&currentCandidateIds.has(requestedFactoryId))||preparedFactory
+    );
+    const resolvedSelectionAuthority=explicitFactorySelection
+      ?'EXPLICIT_SITE_FACTORY_SELECTION'
+      :'CANONICAL_COMPATIBLE_FACTORY_CANDIDATE';
+    const hasFactorySelectionTimestamp=existingFlow.factorySelectedAtTurn!==undefined&&
+      existingFlow.factorySelectedAtTurn!==null&&existingFlow.factorySelectedAtTurn!==''&&
+      Number.isFinite(Number(existingFlow.factorySelectedAtTurn));
+    // The extraction listener can create the mine-haul flow with this same factory ID
+    // before this explicit UI request finishes. Persist the authority/timestamp even
+    // when the selected ID itself did not change.
+    if(resolvedFactoryId&&(
+      priorFactoryId!==resolvedFactoryId||
+      existingFlow.factorySelectionAuthority!==resolvedSelectionAuthority||
+      !hasFactorySelectionTimestamp
+    )){
       existingFlow.factoryId=resolvedFactoryId;
-      existingFlow.factorySelectionAuthority=(requestedFactoryId||preparedFactory)
-        ?'EXPLICIT_SITE_FACTORY_SELECTION'
-        :'CANONICAL_COMPATIBLE_FACTORY_CANDIDATE';
+      existingFlow.factorySelectionAuthority=resolvedSelectionAuthority;
       existingFlow.factorySelectedAtTurn=turn();
       addFlowStage(existingFlow,'FACTORY','DESTINATION_SELECTED',{
         factoryId:resolvedFactoryId,
