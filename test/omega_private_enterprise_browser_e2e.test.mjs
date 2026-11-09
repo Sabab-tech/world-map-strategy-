@@ -1772,17 +1772,21 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const state = window.Game.state;
       const resource = state.resource.BGD;
       const run = window.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__.result;
-      const factory = state.economy.BGD.productionAssets.find(row =>
-        String(row.id || row.assetId || row.projectId) === String(run.factoryId));
-      if (!factory) throw new Error('SAB34_RECEIVING_FACTORY_DISAPPEARED');
+      const factoryId = String(factory.id || factory.assetId || factory.projectId || run.factoryId);
+      const currentFactory = () => (Array.isArray(state.economy?.BGD?.productionAssets)
+        ? state.economy.BGD.productionAssets : [])
+        .find(row => String(row.id || row.assetId || row.projectId) === factoryId) || null;
+      if (!currentFactory()) throw new Error('SAB34_RECEIVING_FACTORY_DISAPPEARED');
       let turns = 0;
       const finishedRows = () => (resource.batches || []).filter(row =>
         row.stage === 'FINISHED' && Array.isArray(row.sourceBatchIds) && row.sourceBatchIds.includes(run.batchId));
-      const inputBalance = () => Number(factory.inputInventory?.coal) || 0;
+      // State transactions replace the country bucket with committed snapshots on each turn.
+      // Re-resolve the live asset by its stable ID instead of reading the pre-turn object.
+      const inputBalance = () => Number(currentFactory()?.inputInventory?.coal) || 0;
       const initialInputBalance = inputBalance();
       const productionSnapshot = () => {
         const network = resource.industrialNetwork || {};
-        const factoryId = String(factory.id || factory.assetId || factory.projectId || '');
+        const liveFactory = currentFactory();
         const cycle = network.factoryProductionCycles?.[factoryId] || null;
         const currentDate = String(simulation.clock?.simulationDate?.() || state.simulation?.date || '').slice(0, 10);
         const cycleHistory = (Array.isArray(network.factoryProductionCycleHistory)
@@ -1795,9 +1799,10 @@ test('real Chromium map marker runs the exact site through a commissioned privat
           }));
         return {
           clockTurn: Number(simulation.clock?.turn), stateTurn: Number(state.simulation?.turn),
-          currentDate, factoryStatus: factory.status || null, productionStatus: factory.productionStatus || null,
-          productionHealth: factory.productionHealth || null,
-          activeProductionCycleId: factory.activeProductionCycleId || null,
+          currentDate, factoryStatus: liveFactory?.status || null, productionStatus: liveFactory?.productionStatus || null,
+          productionHealth: liveFactory?.productionHealth || null,
+          activeProductionCycleId: liveFactory?.activeProductionCycleId || null,
+          inputInventory: liveFactory?.inputInventory || {},
           cycle: cycle ? {
             cycleId: cycle.cycleId, status: cycle.status, startTurn: cycle.startTurn, finishTurn: cycle.finishTurn,
             startDate: cycle.startDate, finishDate: cycle.finishDate, primaryInputResourceId: cycle.primaryInputResourceId,
@@ -1808,7 +1813,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
             dateReached: !!cycle.finishDate && currentDate >= String(cycle.finishDate)
           } : null,
           cycleHistory,
-          inputLots: (Array.isArray(factory.inputBatchLots) ? factory.inputBatchLots : [])
+          inputLots: (Array.isArray(liveFactory?.inputBatchLots) ? liveFactory.inputBatchLots : [])
             .filter(row => String(row.resourceId || row.materialIdentity || '').toLowerCase() === 'coal')
             .map(row => ({
               batchId: row.batchId, quantity: row.quantity, remainingQuantity: row.remainingQuantity,
