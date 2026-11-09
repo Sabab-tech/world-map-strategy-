@@ -64,8 +64,10 @@
           (String(source.countryId||'').trim().length===3?source.countryId:null)||
           (String(x&&x.countryId||'').trim().length===3?x.countryId:null);
       if(iso3&&/^[A-Z]{3}$/.test(id(iso3)))return id(iso3);
-      if(x&&x.id)return id(x.id);
-      if(x&&x.canonicalId)return id(x.canonicalId);
+      var engineCountry=g.ResourceMinistryEngine?.normalizeCountryCode?.(raw);
+      if(engineCountry&&/^[A-Z]{3}$/.test(id(engineCountry)))return id(engineCountry);
+      if(x&&/^[A-Z]{3}$/.test(id(x.id)))return id(x.id);
+      if(x&&/^[A-Z]{3}$/.test(id(x.canonicalId)))return id(x.canonicalId);
     }catch(_){}
     return direct;
   }
