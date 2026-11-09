@@ -805,6 +805,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         window.Omega = window.Omega || {};
         window.Omega.ResourceIndustrialNetwork = observedIndustry;
         window.OmegaResourceIndustrialNetwork = observedIndustry;
+        window.__sab34ObservedIndustryApi = observedIndustry;
         window.__sab34IndustryTurnProbeInstalled = true;
       }
 
@@ -1766,6 +1767,10 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         } : null,
         factoryShipment: factoryShipment || null,
         industrialTurnResult: window.__sab34LastIndustrialTurnResult || null,
+        industrialTurnError: window.__sab34LastIndustrialTurnError || null,
+        industrialTurnCalls: window.__sab34IndustrialTurnCalls || [],
+        observedIndustryApiMounted: window.Omega?.ResourceIndustrialNetwork === window.__sab34ObservedIndustryApi,
+        currentIndustryRunCountryTurnType: typeof window.Omega?.ResourceIndustrialNetwork?.runCountryTurn,
         participantResults: (simulation.lastTurnParticipantResults || []).slice(-24),
         siteRuntime: resource.industrialNetwork?.siteLogisticsBySiteId?.[run.siteId] || null,
         warehouseCoal: {
@@ -1821,6 +1826,10 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         resourceEconomyDiagnostics: economy?.diagnostics?.() || null,
         publishParticipants,
         industrialTurnResult: window.__sab34LastIndustrialTurnResult || null,
+        industrialTurnError: window.__sab34LastIndustrialTurnError || null,
+        industrialTurnCalls: window.__sab34IndustrialTurnCalls || [],
+        observedIndustryApiMounted: window.Omega?.ResourceIndustrialNetwork === window.__sab34ObservedIndustryApi,
+        currentIndustryRunCountryTurnType: typeof window.Omega?.ResourceIndustrialNetwork?.runCountryTurn,
         delivery: delivery || shipment || null,
         shipmentRows,
         sourceBatch: sourceBatch ? {
