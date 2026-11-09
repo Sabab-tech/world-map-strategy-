@@ -1439,22 +1439,39 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         longitude: lng
       };
     });
-    const targetFactorySnapshot = await page.evaluate(factoryId => {
+    const targetFactorySnapshot = await page.evaluate(({factoryId,siteId}) => {
       const state=window.Omega?.Simulation?.world?.state;
       if(!state||state!==window.Game?.state)throw new Error('SAB34_AUTHORITATIVE_GAME_STATE_NOT_LINKED');
       const assets=state.economy?.BGD?.productionAssets||[];
       const factory=assets.find(row=>String(row.id||row.assetId||row.projectId)===String(factoryId));
       if(!factory||String(factory.status||'').toUpperCase()!=='OPERATIONAL')
         throw new Error('SAB34_SELECTED_FACTORY_NOT_OPERATIONAL:'+JSON.stringify({factoryId}));
+      const industry=window.OmegaResourceIndustrialNetwork||window.Omega?.ResourceIndustrialNetwork;
+      const candidates=industry?.candidateFactories?.('BGD','coal',siteId)||[];
+      const resolvedRecipe=industry?.recipeFor?.('coal',factory)||null;
       return{
         factoryId:String(factory.id||factory.assetId||factory.projectId),
         ownerType:String(factory.ownerType||''),
         productionEnabled:factory.productionEnabled===true,
         blockedReason:factory.blockedReason||null,
-        factoryType:String(factory.factoryType||'').toUpperCase()
+        factoryType:String(factory.factoryType||'').toUpperCase(),
+        status:String(factory.status||'').toUpperCase(),
+        constructionProjectId:factory.constructionProjectId||null,
+        recipeId:factory.recipeId||null,
+        recipeMode:factory.recipeMode||null,
+        inputCoefficients:JSON.parse(JSON.stringify(factory.inputCoefficients||{})),
+        resolvedCoalInputs:JSON.parse(JSON.stringify(resolvedRecipe?.inputs||{})),
+        candidateFactoryIds:candidates.map(({asset})=>String(asset?.id||asset?.assetId||asset?.projectId||''))
       };
-    },commissioning.factoryId);
+    },{factoryId:commissioning.factoryId,siteId:targetSite.siteId});
     assert.equal(targetFactorySnapshot.factoryId,commissioning.factoryId);
+    assert.ok(Number(targetFactorySnapshot.inputCoefficients.coal)>0||
+      Number(targetFactorySnapshot.resolvedCoalInputs.coal)>0,
+      'the commissioned factory must retain its coal recipe after baseline registration: '+
+      JSON.stringify(targetFactorySnapshot));
+    assert.ok(targetFactorySnapshot.candidateFactoryIds.includes(commissioning.factoryId),
+      'the commissioned destination must remain in the live coal candidate set: '+
+      JSON.stringify(targetFactorySnapshot));
     if(commissioning.proofAcceptedAtStart){
       assert.equal(targetFactorySnapshot.ownerType,'PRIVATE_ENTERPRISE');
       assert.equal(targetFactorySnapshot.productionEnabled,true);
