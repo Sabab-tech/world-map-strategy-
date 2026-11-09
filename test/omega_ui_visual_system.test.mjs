@@ -134,7 +134,7 @@ test('unified visual system is the final offline-cached visual authority for the
     '@media (max-width: 600px)', '@media (pointer: coarse)',
     '@media (prefers-reduced-motion: reduce)'
   ]) assert.ok(css.includes(selector), 'missing shared UI contract: ' + selector);
-  assert.doesNotMatch(css, /@import\\s+url\\(/i, 'the core design cannot depend on remote stylesheets');
-  assert.doesNotMatch(css, /:has\\s*\\(/i, 'the stylesheet must remain compatible with older Android WebView');
-  assert.doesNotMatch(html, /src="omega_ui_button_system_v1\\.js"/, 'the visual contract must not add a document-wide mutation observer');
+  assert.equal(css.includes('@import url('), false, 'the core design cannot depend on remote stylesheets');
+  assert.equal(css.includes(':has('), false, 'the stylesheet must remain compatible with older Android WebView');
+  assert.equal(html.includes('src="omega_ui_button_system_v1.js"'), false, 'the visual contract must not add a document-wide mutation observer');
 });
