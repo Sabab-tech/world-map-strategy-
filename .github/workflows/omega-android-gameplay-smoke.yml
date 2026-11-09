@@ -70,42 +70,7 @@ jobs:
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 3072 -cores 4
           disable-animations: true
-          script: |
-            set -euo pipefail
-            evidence="$RUNNER_TEMP/omega-android-gameplay"
-            mkdir -p "$evidence"
-            adb shell getprop ro.build.version.sdk | tee "$evidence/api-level.txt"
-            adb devices -l | tee "$evidence/adb-devices.txt"
-            adb shell dumpsys webviewupdate > "$evidence/webview-provider.txt" 2>&1 || true
-            adb logcat -c >/dev/null 2>&1 || true
-            adb logcat -v threadtime \
-              "OMEGA_ANDROID_SMOKE:I" \
-              "OMEGA_WEB_DIAGNOSTICS:D" \
-              "ActivityManager:E" \
-              "AndroidRuntime:E" \
-              "Instrumentation:I" \
-              "TestRunner:I" \
-              "chromium:E" \
-              "*:S" > "$evidence/logcat-live.txt" 2>&1 &
-            logcat_pid=$!
-            cleanup() {
-              if [[ -n "$logcat_pid" ]]; then
-                kill "$logcat_pid" >/dev/null 2>&1 || true
-                wait "$logcat_pid" >/dev/null 2>&1 || true
-              fi
-              adb logcat -d -v threadtime > "$evidence/logcat-final.txt" 2>&1 || true
-              adb shell dumpsys activity activities > "$evidence/activity-final.txt" 2>&1 || true
-              adb devices -l > "$evidence/adb-devices-final.txt" 2>&1 || true
-            }
-            trap cleanup EXIT
-            set +e
-            timeout --signal=TERM --kill-after=20s 12m \
-              gradle -p android connectedDebugAndroidTest --no-daemon --console=plain --stacktrace \
-              2>&1 | tee "$evidence/gradle-connected-test.log"
-            gradle_exit=${PIPESTATUS[0]}
-            set -e
-            printf '%s\\n' "$gradle_exit" > "$evidence/gradle-exit-code.txt"
-            exit "$gradle_exit"
+          script: bash scripts/omega_android9_gameplay_smoke.sh
 
       - name: Verify Android instrumentation result
         if: always()
@@ -148,7 +113,7 @@ jobs:
         with:
           name: omega-android-api28-gameplay-${{ github.sha }}
           path: |
-            ${{ runner.temp }}/omega-android-gameplay/**
+            android/app/build/omega-android-gameplay-evidence/**
             android/app/build/outputs/androidTest-results/**
             android/app/build/reports/androidTests/**
           if-no-files-found: warn
