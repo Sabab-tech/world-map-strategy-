@@ -265,14 +265,17 @@ assert.equal(context.Game.state.resource.BGD.processedWarehouse,undefined,
   'the processed warehouse must not be fabricated before there is production output');
 
 context.Game.state.simulation.turn=Math.max(Number(context.Game.state.simulation.turn)||0,Number(cycle.finishTurn)||0);
-// The central simulation clock is authoritative even when the legacy Game.state
-// date mirror is one day stale. A due cycle must not remain IN_PROGRESS because
-// an older listener has not yet refreshed that compatibility field.
+// The committed central turn can be due while both legacy and central date mirrors
+// lag by one day. The cycle must finish by its authoritative finishTurn, and its
+// recorded completion date must never precede the scheduled finishDate.
 const cycleFinishEpoch=Date.parse(String(cycle.finishDate)+'T00:00:00.000Z');
-context.Game.state.simulation.date=new Date(cycleFinishEpoch-86400000).toISOString().slice(0,10);
-context.Omega.Simulation={clock:{simulationDate:()=>String(cycle.finishDate)+'T00:00:00.000Z'}};
+const staleCycleDate=new Date(cycleFinishEpoch-86400000).toISOString().slice(0,10);
+context.Game.state.simulation.date=staleCycleDate;
+context.Omega.Simulation={clock:{turn:Number(cycle.finishTurn),simulationDate:()=>staleCycleDate+'T00:00:00.000Z'}};
 const completed= await N.processPendingFactoryInputs('BGD');
 delete context.Omega.Simulation;
+assert.equal(completed.completed[0].actualCompletionDate,cycle.finishDate,
+  'turn-based recovery must not record a completion date before the scheduled factory finish date');
 assert.equal(completed.completedCount,1,JSON.stringify(completed));
 assert.equal(completed.completed[0].status,'COMPLETED');
 assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE,820,'completed factory output must enter the resource inventory');
