@@ -55,13 +55,10 @@
         (String(source.countryId||'').trim().length===3?source.countryId:null)||
         (String(hit?.countryId||'').trim().length===3?hit.countryId:null);
       if(iso3&&/^[A-Z]{3}$/.test(id(iso3)))return id(iso3);
-      if(hit?.id)return id(hit.id);
-      if(hit?.canonicalId)return id(hit.canonicalId);
     }catch(_){}
     try{
-      const e=g.ResourceMinistryEngine;
-      const x=e?.normalizeCountryCode?.(raw);
-      if(x&&/^[A-Z]{3}$/.test(id(x)))return id(x);
+      const normalized=g.ResourceMinistryEngine?.normalizeCountryCode?.(raw);
+      if(normalized&&/^[A-Z]{3}$/.test(id(normalized)))return id(normalized);
     }catch(_){}
     return direct.replace(/\s+/g,'_');
   }
