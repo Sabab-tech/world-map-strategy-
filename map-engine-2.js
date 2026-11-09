@@ -1488,7 +1488,7 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status, source) {
         startupLoader.__assetsLoadingMessage = String(message || 'Preparing world map…');
         startupLoader.__assetsLoadingStatus = effectiveStatus || 'loading';
     }
-    this.__omegaMapLoadingProgress = bounded;
+    this.__omegaMapLoadingProgress = rawPercent;
     if (!overlay || this.__omegaMapUiActive === false) return;
     overlay.classList.remove('is-hidden');
     overlay.setAttribute('aria-hidden', 'false');
