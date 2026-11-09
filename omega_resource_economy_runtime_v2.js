@@ -519,19 +519,21 @@
 
   function publishCapacityUpgradeRequestsHandler(cmd,ctx){
     var c=canonical(ctx.countryId),p=cmd&&cmd.payload||{},
-      rows=Array.isArray(p.requests)?p.requests:[];
+      rows=Array.isArray(p.requests)?p.requests:[],scopedRows=[];
     if(!c)return{accepted:false,reason:'CAPACITY_UPGRADE_COUNTRY_REQUIRED'};
     for(var i=0;i<rows.length;i++){
       var row=rows[i];
       if(!row||typeof row!=='object'||Array.isArray(row))
         return{accepted:false,reason:'CAPACITY_UPGRADE_REQUEST_INVALID',index:i};
-      if(canonical(row.countryId)!==c)
+      var requestCountry=String(row.countryId||'').trim()?canonical(row.countryId):c;
+      if(requestCountry!==c)
         return{accepted:false,reason:'CAPACITY_UPGRADE_REQUEST_COUNTRY_MISMATCH',
-          index:i,expectedCountryId:c,requestCountryId:canonical(row.countryId)};
+          index:i,expectedCountryId:c,requestCountryId:requestCountry};
+      scopedRows.push(row.countryId?clone(row):Object.assign({},clone(row),{countryId:c}));
     }
     var maximum=Math.max(1,Math.floor(num(rules().runtime.maxLedgerEntries)||2048));
-    ctx.stateTransaction.set('economy.capacityUpgradeRequests',rows.slice(-maximum));
-    return{accepted:true,countryId:c,requestCount:rows.length,turn:turn(),
+    ctx.stateTransaction.set('economy.capacityUpgradeRequests',scopedRows.slice(-maximum));
+    return{accepted:true,countryId:c,requestCount:scopedRows.length,turn:turn(),
       authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'};
   }
 
