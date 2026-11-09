@@ -761,6 +761,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const state = window.Game.state;
       // Turn-level profiling is opt-in and confined to this isolated SAB-34 browser proof.
       window.__OMEGA_RESOURCE_ECONOMY_PERF__ = true;
+      window.__OMEGA_RESOURCE_ECON_PERF__ = true;
       const simulation = window.Omega?.Simulation;
       const endowment = window.OmegaResourceEndowmentRuntime || window.Omega?.ResourceEndowmentRuntime;
       const industry = window.OmegaResourceIndustrialNetwork || window.Omega?.ResourceIndustrialNetwork;
