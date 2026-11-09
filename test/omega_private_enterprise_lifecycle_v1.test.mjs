@@ -950,12 +950,12 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/Company market analysis/);
   assert.match(fragments[0],/Company supply-chain evidence/);
   assert.match(fragments[0],/Company financing offer/);
-  assert.match(fragments[0],/Government decision queue/);
+  assert.match(fragments[0],/Government decision inbox/);
   assert.match(fragments[0],/data-pe-capital-form/);
   assert.match(fragments[0],/sourceTransactionId/);
   assert.match(fragments[0],/Verify company capital/);
-  assert.match(fragments[0],/Government review/);
-  assert.match(fragments[0],/30-day benefit \/ risk assessment/);
+  assert.match(fragments[0],/Independent government assessment/);
+  assert.match(fragments[0],/30-day benefit \/ risk/);
   assert.match(fragments[0],/Corporate Finance \/ Profit \/ Tax \/ Cost/);
   assert.match(lifecycleSource,/Input materials/);
   assert.match(lifecycleSource,/Worker costs/);
