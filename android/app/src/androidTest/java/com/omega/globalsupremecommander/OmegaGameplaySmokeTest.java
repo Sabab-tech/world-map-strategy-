@@ -330,9 +330,7 @@ public final class OmegaGameplaySmokeTest {
                     " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
                     "   cabinet.getAttribute('aria-hidden') === 'true' && cabinet.style.display === 'none' &&" +
                     "   mapRoot && mapRoot.style.display !== 'none' &&" +
-                    "   cabinet.__omegaUIV2State && cabinet.__omegaUIV2State.route === 'map' &&" +
-                    "   cabinet.__omegaUIV2State.shellMounted === true &&" +
-                    "   cabinet.querySelector('[data-omega-v2-main]') && cabinet.querySelector('[data-omega-v2-main]').childElementCount === 0 &&" +
+                    "   !cabinet.__omegaUIV2State && cabinet.childElementCount === 0 &&" +
                     "   document.body.getAttribute('data-active-layer') === '0' &&" +
                     "   window.OmegaLayerManager && Number(window.OmegaLayerManager.currentLayer) === 0 &&" +
                     "   window.Game && window.Game.Map && window.Game.Map.__omegaMapUiActive === true);" +
