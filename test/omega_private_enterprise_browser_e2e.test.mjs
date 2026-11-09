@@ -1748,7 +1748,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const runtime = window.Omega?.ResourceEndowmentRuntime || window.OmegaResourceEndowmentRuntime;
       const repeated = await runtime.extractCountry('BGD', [String(source.occurrenceKey)]);
       const payload = repeated?.result || repeated || {};
-      return { status: repeated?.status || null, accepted: payload.accepted, extracted: payload.extracted, before, after:snapshot() };
+      return { status: repeated?.status || null, accepted: payload.accepted, extracted: payload.extracted, replayed: payload.replayed, before, after:snapshot() };
     }, extraction.result.batchId);
     assert.equal(repeatedExtraction.status, 'APPLIED');
     assert.equal(repeatedExtraction.accepted, true);
