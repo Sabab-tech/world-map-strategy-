@@ -621,7 +621,8 @@ test('capacity upgrade requests persist only through their economy-owned country
   },{commandId:'CAPACITY-OWNER-SAVE-1'});
   assert.equal(saved.status,'APPLIED',JSON.stringify(saved));
   assert.equal(saved.result.accepted,true,JSON.stringify(saved));
-  assert.deepEqual(worldState.economy.BGD.capacityUpgradeRequests,[request,{...legacyRequest,countryId:'BGD'}],
+  assert.equal(JSON.stringify(worldState.economy.BGD.capacityUpgradeRequests),
+    JSON.stringify([request,{...legacyRequest,countryId:'BGD'}]),
     'legacy requests without an explicit country stay scoped to their existing country bucket');
 
   const rejected=context.Omega.MinistryInteroperability.dispatchCommand('economy',type,'BGD',{
@@ -629,7 +630,8 @@ test('capacity upgrade requests persist only through their economy-owned country
   },{commandId:'CAPACITY-OWNER-CROSS-COUNTRY-1'});
   assert.equal(rejected.status,'FAILED',JSON.stringify(rejected));
   assert.equal(rejected.result.reason,'CAPACITY_UPGRADE_REQUEST_COUNTRY_MISMATCH');
-  assert.deepEqual(worldState.economy.BGD.capacityUpgradeRequests,[request,{...legacyRequest,countryId:'BGD'}],
+  assert.equal(JSON.stringify(worldState.economy.BGD.capacityUpgradeRequests),
+    JSON.stringify([request,{...legacyRequest,countryId:'BGD'}]),
     'a foreign-country capacity request must never overwrite the BGD economy bucket');
 });
 
