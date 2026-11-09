@@ -622,6 +622,7 @@ test('Resource Economy registers as one ordered simulation subsystem instead of 
   assert.equal(sim.diagnostics().turnParticipantCount, beforeParticipants + 1,
     'Resource Economy must register one stable participant with the canonical simulation runner');
 
+  sim.startSession({ playerCountryId: 'BGD' });
   await sim.frame(STEP_MS);
 
   assert.equal(industrialCalls, 1, 'the ordered participant must run the selected-country economy exactly once');
