@@ -518,22 +518,32 @@ function dispatchResidualMineHauls(countryId){
   for(const batch of Array.isArray(resource.batches)?resource.batches:[]){
     const id=String(batch?.batchId||'');if(id&&!batchesById.has(id))batchesById.set(id,batch);
   }
-  const activeMineHaulBatchIds=new Set(),activeStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH']);
+  const activeMineHaulBatchIds=new Set(),activeFactoryHaulBatchIds=new Set(),
+    activeStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH','BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING']);
   for(const shipment of Array.isArray(network.shipments)?network.shipments:[]){
-    if(String(shipment?.shipmentType||'')!=='MINE_TO_WAREHOUSE'||!activeStatuses.has(String(shipment?.status||'')))continue;
-    const batchId=String(shipment?.batchId||'');if(batchId)activeMineHaulBatchIds.add(batchId);
+    if(!activeStatuses.has(String(shipment?.status||'')))continue;
+    const batchId=String(shipment?.batchId||'');if(!batchId)continue;
+    if(String(shipment?.shipmentType||'')==='MINE_TO_WAREHOUSE')activeMineHaulBatchIds.add(batchId);
+    if(String(shipment?.shipmentType||'')==='RAW_TO_FACTORY')activeFactoryHaulBatchIds.add(batchId);
   }
   for(const flow of rows){
     if(!flow?.mineLogisticsRouteId)continue;
-    // Mine-haul and factory-haul legs have independent per-turn dispatch limits.
-    const batchId=String(flow.batchId||'');if(!batchId||Number(flow.lastMineResidualDispatchTurn)===turn())continue;
+    const batchId=String(flow.batchId||'');
+    if(!batchId||Number(flow.lastMineResidualDispatchTurn)===turn()||
+      Number(flow.lastMineFactoryReceiptTurn)===turn())continue;
     const route=siteLogisticsRouteFor(cid,flow.siteId);
     if(!route)continue;
     const source=batchesById.get(batchId);
     if(!source)continue;
-    // Only an existing mine-to-warehouse leg blocks another mine dispatch.
-    // A parallel factory leg can be in transit while residual cargo is still hauled.
-    if(activeMineHaulBatchIds.has(batchId))continue;
+    const warehouseReceived=Math.max(0,num(flow.mineWarehouseReceivedQuantity)||0);
+    const factoryDispatched=Math.max(0,num(flow.factoryDispatchedQuantity)||0);
+    const unassignedWarehouseReceipt=Math.max(0,warehouseReceived-factoryDispatched);
+    // Serialize both legs for each batch. Do not haul more source stock while a
+    // factory-bound leg is active, or during the turn its receipt is committed.
+    // Also wait until every already-received warehouse tonne has been assigned
+    // to a factory shipment before dispatching another mine residual.
+    if(activeMineHaulBatchIds.has(batchId)||activeFactoryHaulBatchIds.has(batchId)||
+      unassignedWarehouseReceipt>1e-6)continue;
     const total=Math.max(0,num(source.quantity)||num(source.remainingQuantity)||0);
     const alreadyDispatched=Math.max(0,num(flow.mineWarehouseDispatchedQuantity)||0);
     const sourceRemaining=Math.max(0,num(source.remainingQuantity!=null?source.remainingQuantity:source.quantity)||0);
@@ -2452,7 +2462,10 @@ function dispatchResidualSiteBatches(c){
     const batchId=String(flow.batchId||'').trim();
     const lastDispatchTurn=flow.mineLogisticsRouteId
       ?Number(flow.lastFactoryResidualDispatchTurn):Number(flow.lastResidualDispatchTurn);
-    if(!batchId||lastDispatchTurn===turn())continue;
+    if(!batchId||lastDispatchTurn===turn()||
+      (flow.mineLogisticsRouteId&&Number(flow.lastMineFactoryReceiptTurn)===turn()))continue;
+    // A newly received factory leg is settled for the turn before another residual
+    // factory shipment is dispatched from the same source batch.
     // A mine haul in transit does not make the already-received warehouse portion unavailable.
     // The received-minus-factory-dispatched balance below decides if a factory leg can start.
     if(['PENDING_ROUTE_PROFILE','MINE_LOGISTICS_BLOCKED'].includes(String(flow.mineLogisticsStatus||'')))continue;

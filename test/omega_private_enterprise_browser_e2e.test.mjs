@@ -1956,6 +1956,8 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const run = window.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__.result;
       const shipmentRows = (resource.industrialNetwork?.shipments || []).filter(row =>
         String(row.batchId) === String(run.batchId) && row.shipmentType === 'RAW_TO_FACTORY');
+      const mineShipmentRows = (resource.industrialNetwork?.shipments || []).filter(row =>
+        String(row.batchId) === String(run.batchId) && row.shipmentType === 'MINE_TO_WAREHOUSE');
       const shipment = shipmentRows[shipmentRows.length - 1] || null;
       const factory = state.economy.BGD.productionAssets.find(row =>
         String(row.id || row.assetId || row.projectId) === String(run.factoryId));
@@ -1991,6 +1993,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         currentIndustryRunCountryTurnType: typeof window.Omega?.ResourceIndustrialNetwork?.runCountryTurn,
         delivery: delivery || shipment || null,
         shipmentRows,
+        mineShipmentRows,
         sourceBatch: sourceBatch ? {
           batchId: sourceBatch.batchId, status: sourceBatch.status, stage: sourceBatch.stage,
           quantity: sourceBatch.quantity, remainingQuantity: sourceBatch.remainingQuantity,
@@ -2013,6 +2016,12 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       };
     }, {eta:factoryEta,etaDate:String(mineArrival.factoryShipment.etaDate)});
     assert.equal(factoryArrival.delivery?.status, 'DELIVERED', JSON.stringify(factoryArrival));
+    assert.equal(factoryArrival.shipmentRows.length, 1,
+      'the batch must not dispatch a second factory leg during the first factory receipt turn: ' +
+      JSON.stringify(factoryArrival.shipmentRows));
+    assert.equal(factoryArrival.mineShipmentRows.length, 1,
+      'the batch must not dispatch another mine haul while its factory leg is active or newly received: ' +
+      JSON.stringify(factoryArrival.mineShipmentRows));
     assert.equal(factoryArrival.delivery?.destinationStatus, 'FACTORY_RECEIVED');
     assert.equal(factoryArrival.factoryId, commissioning.factoryId);
     assert.ok(factoryArrival.nationalDemandFinalizationMs < 120000,
