@@ -3616,7 +3616,7 @@
           (row.potentialExternalSuppliers&&row.potentialExternalSuppliers.length?'<small>Potential external sources: '+row.potentialExternalSuppliers.map(function(x){return escapeHtml(x.countryId)+' ('+caseAmount(x.available)+')';}).join(', ')+' · not contracted</small>':'')+
           (row.potentialPrivateCompanySuppliers&&row.potentialPrivateCompanySuppliers.length?'<small>Potential company sources: '+row.potentialPrivateCompanySuppliers.map(function(x){return escapeHtml(x.companyName||x.companyId)+' / '+escapeHtml(x.countryId)+' ('+caseAmount(x.available)+')';}).join(', ')+' · not contracted</small>':'');
         }).join(''):'<span class="pe-info">Input stock or demand evidence has not been verified.</span>')+
-        '<small>The company must provide supplier contracts, deliverable volumes, sourcing routes and logistics evidence. The government independently verifies the company's evidence. Potential suppliers are not secured supply; no signed contract or reserved supply is recorded in this proposal.</small></div>';
+        '<small>The company must provide supplier contracts, deliverable volumes, sourcing routes and logistics evidence. The government independently verifies the supplier evidence submitted by the company. Potential suppliers are not secured supply; no signed contract or reserved supply is recorded in this proposal.</small></div>';
       var financing=companyCase.financingOffer||{};
       var companyFinanceOfferMarkup='<div class="pe-input-forecast"><strong>Company financing offer / request</strong>'+
         '<div class="pe-facts"><span>Preferred structure <b>'+escapeHtml(financing.preferredStructure||'NOT_STATED')+'</b></span>'+
