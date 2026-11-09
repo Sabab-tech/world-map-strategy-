@@ -475,6 +475,44 @@ test('country borders stay visible in base map and visual overlays', () => {
     'map overlays must not use the old almost-invisible border styles');
 });
 
+test('late economy baseline fills missing values without replacing live factory state', () => {
+  const source = read('map-engine-2.js');
+  const start = source.indexOf('function mergeEconomyBaseline(');
+  assert.notEqual(start, -1, 'map startup must merge static economy data into the live runtime registry');
+  const end = source.indexOf('\\n}\\n', start);
+  assert.notEqual(end, -1, 'economy baseline merge helper must be a complete function');
+  const helper = source.slice(start, end + 2);
+  const sandbox = {};
+  vm.runInNewContext(helper + '\\nthis.mergeEconomyBaseline=mergeEconomyBaseline;', sandbox, {
+    filename: 'map-engine-2.js#mergeEconomyBaseline'
+  });
+
+  const productionAssets = [{ id:'FAC:BGD:TEST', status:'OPERATIONAL' }];
+  const bgd = { productionAssets, treasury:900, gdp:1200, settings:{ taxRate:15, runtimeFlag:true } };
+  const bangladesh = { gdp:700, ai:'survival' };
+  const liveEconomy = { BGD:bgd, BANGLADESH:bangladesh };
+  const baseline = {
+    BGD:{ gdp:1000, stock:{ food:100, oil:80 }, settings:{ taxRate:5, baselineFlag:true } },
+    BANGLADESH:{ gdp:650, ai:'greedy', stock:{ food:90 } },
+    IND:{ gdp:500, debt:25 }
+  };
+
+  const merged = sandbox.mergeEconomyBaseline(liveEconomy, baseline);
+  assert.equal(merged, liveEconomy, 'a live economy object must be merged in place');
+  assert.equal(merged.BGD, bgd, 'the player country bucket reference must remain stable');
+  assert.equal(merged.BGD.productionAssets, productionAssets, 'live factory asset array must not be replaced');
+  assert.equal(merged.BGD.productionAssets[0].id, 'FAC:BGD:TEST');
+  assert.equal(merged.BGD.treasury, 900, 'runtime treasury must win over baseline values');
+  assert.equal(merged.BGD.gdp, 1200, 'existing live GDP must not be overwritten');
+  assert.equal(merged.BGD.stock.food, 100, 'existing nested runtime inventory must be preserved');
+  assert.equal(merged.BGD.stock.oil, 80, 'missing baseline nested defaults must be filled');
+  assert.equal(merged.BGD.settings.taxRate, 15, 'existing nested policy values must be preserved');
+  assert.equal(merged.BGD.settings.baselineFlag, true, 'missing nested baseline metadata must be filled');
+  assert.equal(merged.BANGLADESH, bangladesh, 'legacy alias bucket identity must remain stable');
+  assert.equal(merged.BANGLADESH.gdp, 700, 'legacy alias runtime values must win');
+  assert.equal(merged.IND.gdp, 500, 'new country baseline buckets must still be added');
+});
+
 test('world geometry loads before support datasets, shows real progress, caches once and pauses with ministry UI', () => {
   const map = read('map-engine-2.js');
   const html = read('index.html');
