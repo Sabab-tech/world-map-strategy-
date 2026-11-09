@@ -500,6 +500,8 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
   assert.ok(startup.indexOf('await loader.loadCountryConfig(fetcher)') > renderGate &&
     startup.indexOf('await loader.loadCountryConfig(fetcher)') < firstSupportData,
     'country metadata must get its ordered post-map recovery attempt before supporting datasets');
+  assert.ok(startup.includes('Game.Map.refreshCountryPolygonStyles()'),
+    'successful late country metadata recovery must restyle the already-rendered country polygons');
   assert.doesNotMatch(startup, /Promise\.(?:all|allSettled)\(/,
     'startup stages must not fan out into concurrent dataset loads');
   assert.match(startup, /for \(let index = 0; index < startupDatasets\.length; index \+= 1\)[\s\S]*?await fetchOptional\(item, index\)/,
