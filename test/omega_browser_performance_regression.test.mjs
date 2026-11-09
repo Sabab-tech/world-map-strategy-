@@ -485,7 +485,7 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
   const worker = read('omega-offline-map-sw.js');
   const coreAssets = worker.slice(worker.indexOf('const CORE_ASSETS'), worker.indexOf('];', worker.indexOf('const CORE_ASSETS')));
   const loaderStart = map.indexOf('async loadAssets()');
-  const loaderEnd = map.indexOf('\\n    }\\n};\\nGame.LabelSystem', loaderStart);
+  const loaderEnd = map.indexOf('\n    }\n};\nGame.LabelSystem', loaderStart);
   const startup = map.slice(loaderStart, loaderEnd);
   const worldStart = startup.indexOf('await loader.loadWorldMap(fetcher)');
   const renderGate = startup.indexOf('await loader.waitForWorldMapRender()');
@@ -497,17 +497,17 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
   assert.ok(loaderStart >= 0 && loaderEnd > loaderStart, 'the canonical startup coordinator should exist');
   assert.ok(worldStart >= 0 && renderGate > worldStart && firstSupportData > renderGate,
     'no supporting dataset may start until the world map has finished rendering');
-  assert.doesNotMatch(startup, /Promise\\.(?:all|allSettled)\\(/,
+  assert.doesNotMatch(startup, /Promise\.(?:all|allSettled)\(/,
     'startup stages must not fan out into concurrent dataset loads');
-  assert.match(startup, /for \\(let index = 0; index < startupDatasets\\.length; index \\+= 1\\)[\\s\\S]*?await fetchOptional\\(item, index\\)/,
+  assert.match(startup, /for \(let index = 0; index < startupDatasets\.length; index \+= 1\)[\s\S]*?await fetchOptional\(item, index\)/,
     'supporting datasets must be awaited one by one in their declared dependency order');
-  assert.match(startup, /await Promise\\.resolve\\(Game\\.Diplomacy\\.generateAllBilateralRelations\\(chunk\\)\\)/,
+  assert.match(startup, /await Promise\.resolve\(Game\.Diplomacy\.generateAllBilateralRelations\(chunk\)\)/,
     'relation-generation chunks must finish before the next chunk or finalization starts');
-  assert.doesNotMatch(startup, /setTimeout\\(processRelationChunk/,
+  assert.doesNotMatch(startup, /setTimeout\(processRelationChunk/,
     'relation generation must not escape into an unawaited background task');
-  assert.match(startup, /if \\(this\\.__assetsLoadPromise\\) return this\\.__assetsLoadPromise/,
+  assert.match(startup, /if \(this\.__assetsLoadPromise\) return this\.__assetsLoadPromise/,
     'concurrent startup requests must share one in-flight coordinator');
-  assert.match(worldLoader, /await countriesPromise;[\\s\\S]*?return fetcher\\('world\\.json'/,
+  assert.match(worldLoader, /await countriesPromise;[\s\S]*?return fetcher\('world\.json'/,
     'the canonical country roster must finish before world geometry is requested');
 
   assert.ok(map.includes("return fetcher('world.json', {"),
@@ -531,7 +531,7 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
     'the complete startup pipeline must be single-flight and reusable after success');
   assert.ok(map.includes('Game.DataLoader.loadAssets();'),
     'map retry must resume the full staged startup sequence rather than only redrawing the map');
-  assert.ok(map.includes('startupLoader.__assetsLoadingStatus === \'loading\''),
+  assert.ok(map.includes("startupLoader.__assetsLoadingStatus === 'loading'"),
     'map activation must restore the active startup-stage progress after a ministry pause');
   assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
   assert.ok(map.includes('this.__omegaWorldMapAbortController.abort()'),
