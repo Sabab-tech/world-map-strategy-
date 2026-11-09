@@ -592,15 +592,17 @@
         var quote=null;
         try{if(marketApi&&typeof marketApi.quote==='function')quote=marketApi.quote(row.resourceId);}catch(_){}
         quote=quote||{};
-        var cleared=String(quote.status||'').toUpperCase()==='CLEARED'&&
+        var marketSnapshotCurrent=num(quote.generatedTurn)===turn(),
+          cleared=marketSnapshotCurrent&&String(quote.status||'').toUpperCase()==='CLEARED'&&
           String(quote.priceDiscovery||'').toUpperCase()==='ORDER_BOOK_CROSSING'&&num(quote.clearingPriceUsd)!==null;
         return{resourceId:row.resourceId,projected30DayQuantity:num(row.projectedQuantity),
           localMarketPrice:clone(row.marketPrice||null),marketStatus:quote.status||'UNAVAILABLE',
+          marketGeneratedTurn:num(quote.generatedTurn),marketSnapshotCurrent:marketSnapshotCurrent,
           priceDiscovery:quote.priceDiscovery||'UNAVAILABLE',clearingPriceUsd:cleared?num(quote.clearingPriceUsd):null,
           referencePriceUsd:num(quote.referencePriceUsd===undefined?quote.referencePrice:quote.referencePriceUsd),
           bestBidUsd:num(quote.bestBidUsd),bestAskUsd:num(quote.bestAskUsd),
           matchedQuantity:num(quote.matchedQuantity),bidDepth:num(quote.bidDepth),askDepth:num(quote.askDepth),
-          evidenceStatus:cleared?'VERIFIED_ORDER_BOOK_CLEARING':
+          evidenceStatus:!marketSnapshotCurrent?'STALE_OR_UNVERIFIED_MARKET_SNAPSHOT':cleared?'VERIFIED_CURRENT_TURN_ORDER_BOOK_CLEARING':
             quote.referencePrice!==undefined&&quote.referencePrice!==null?'REFERENCE_ONLY_NOT_A_SETTLED_MARKET_PRICE':'MARKET_PRICE_UNVERIFIED'};
       }),
       allDomesticCovered=inputs.length>0&&inputs.every(function(row){return row.domesticCoverage==='COVERED';}),
@@ -1141,6 +1143,8 @@
       var rotation=companyIndex%eligible.length;
       eligible=eligible.slice(rotation).concat(eligible.slice(0,rotation));
     }
+    var selectionOrder=Object.create(null);
+    eligible.forEach(function(type,index){selectionOrder[type]=index;});
     var marketApi=g.Omega&&(g.Omega.GlobalMarket||g.Omega.globalMarket)||g.OmegaGlobalMarket||null;
     function quote(resourceId){
       try{return marketApi&&typeof marketApi.quote==='function'?marketApi.quote(resourceId)||{}:{};}catch(_){return{};}
@@ -1162,27 +1166,32 @@
         processingResourceId:processingResourceId,sourcingPolicy:'MIXED',stateSupportRequested:false});
       if(one.status!=='READY'||num(one.maximumAdditionalUnits)===null||one.maximumAdditionalUnits<1)return null;
       var maximum=Math.min(MAX_PROJECTS_PER_PROPOSAL,Math.floor(one.maximumAdditionalUnits));
-      var dailyCapacity=num(profile.defaultCapacityPerDay)||0,outputs=recipe.outputs||{},marketSignals=[],demandSupportedUnits=1;
+      var dailyCapacity=num(profile.defaultCapacityPerDay)||0,outputs=recipe.outputs||{},marketSignals=[],demandSupportedUnits=1,
+        clock=g.Omega&&g.Omega.Simulation&&g.Omega.Simulation.clock||{},
+        daysPerTurn=num(clock.gameDaysPerTurn??clock.daysPerTurn??state()?.simulation?.daysPerTurn??state()?.simulation?.turnDays);
+      if(daysPerTurn===null||daysPerTurn<=0)daysPerTurn=1;
       Object.keys(outputs).forEach(function(resourceId){
-        var row=quote(resourceId)||{},matched=Math.max(0,num(row.matchedQuantity)||0),
-          bidDepth=Math.max(0,num(row.bidDepth)||0),askDepth=Math.max(0,num(row.askDepth)||0),
+        var row=quote(resourceId)||{},currentTurnEvidence=num(row.generatedTurn)===turn(),
+          matched=currentTurnEvidence?Math.max(0,num(row.matchedQuantity)||0):0,
+          bidDepth=currentTurnEvidence?Math.max(0,num(row.bidDepth)||0):0,
+          askDepth=currentTurnEvidence?Math.max(0,num(row.askDepth)||0):0,
           price=observedMarketPrice(cid,resourceId),perUnit=num(outputs[resourceId]),
-          oneFactory30Day=perUnit===null?null:perUnit*dailyCapacity*30,
-          signal='UNOBSERVED',score=0;
-        if(matched>0){
-          signal='OBSERVED_MATCHED_ORDER_VOLUME';score=32;
-          if(oneFactory30Day!==null&&oneFactory30Day>0)
-            demandSupportedUnits=Math.max(demandSupportedUnits,Math.ceil(matched/oneFactory30Day));
-        }else if(bidDepth>0){signal='OPEN_BUY_ORDER_DEPTH';score=22;}
-        else if(price&&price.unitPrice>0){signal='REFERENCE_PRICE_ONLY';score=8;}
-        else{signal='NO_VERIFIED_MARKET_SIGNAL';score=-4;}
+          oneFactoryTurn=perUnit===null?null:perUnit*dailyCapacity*daysPerTurn,
+          signal='UNOBSERVED_OR_STALE',score=-5;
+        if(currentTurnEvidence&&matched>0){
+          signal='CURRENT_TURN_MATCHED_ORDER_VOLUME';score=32;
+          if(oneFactoryTurn!==null&&oneFactoryTurn>0)
+            demandSupportedUnits=Math.max(demandSupportedUnits,Math.ceil(matched/oneFactoryTurn));
+        }else if(currentTurnEvidence&&bidDepth>0){signal='CURRENT_TURN_OPEN_BUY_ORDER_DEPTH';score=22;}
+        else if(currentTurnEvidence&&price&&price.unitPrice>0){signal='CURRENT_TURN_REFERENCE_PRICE_ONLY';score=8;}
+        else if(currentTurnEvidence){signal='NO_VERIFIED_MARKET_SIGNAL';score=-4;}
         marketSignals.push({resourceId:resourceId,signal:signal,marketStatus:row.status||'UNAVAILABLE',
-          priceDiscovery:row.priceDiscovery||'UNAVAILABLE',matchedQuantity:matched,bidDepth:bidDepth,
+          priceDiscovery:row.priceDiscovery||'UNAVAILABLE',generatedTurn:num(row.generatedTurn),
+          evaluatedTurn:turn(),currentTurnEvidence:currentTurnEvidence,matchedQuantity:matched,bidDepth:bidDepth,
           askDepth:askDepth,bestBidUsd:num(row.bestBidUsd),bestAskUsd:num(row.bestAskUsd),
-          localMarketPrice:price,score:score,capacityPerFactory30Day:oneFactory30Day});
+          localMarketPrice:price,score:score,capacityPerFactoryPerTurn:oneFactoryTurn,gameDaysPerTurn:daysPerTurn});
       });
       var quantity=Math.min(maximum,Math.max(1,Math.floor(demandSupportedUnits)));
-      if(invitation)quantity=Math.min(quantity,Math.max(1,num(invitation.quantity)||1));
       var firstInputs=inputForecast(cid,profile,recipe,quantity),
         allDomesticCovered=firstInputs.length>0&&firstInputs.every(function(row){
           return row.available!==null&&row.available+1e-9>=row.forecast30Day;
@@ -1228,7 +1237,7 @@
     var candidates=eligible.map(evaluate).filter(Boolean);
     if(!candidates.length)return{status:invitation?'INVITATION_NOT_FEASIBLE':'NO_FEASIBLE_COMPANY_INVESTMENT',
       companyId:company,period:period,invitationId:invitation&&invitation.invitationId||null};
-    candidates.sort(function(a,b){return b.totalScore-a.totalScore||a.factoryType.localeCompare(b.factoryType);});
+    candidates.sort(function(a,b){return b.totalScore-a.totalScore||selectionOrder[a.factoryType]-selectionOrder[b.factoryType];});
     var selected=candidates[0],selectedProfile=(catalog()||{}).factoryProfiles[selected.factoryType],
       capital=capitalAccount(cid,company,false),cash=capital?num(capital.availableBalance):null,
       required=selected.capitalRequired,fundingGap=cash===null?null:Math.max(0,(required||0)-cash),
@@ -1301,7 +1310,11 @@
           operationalStatus:row.operationalStatus};}),
         supplyPlan:{policy:selected.sourcingPolicy,inputs:clone(inputs),
           action:'COMPANY_TO_ARRANGE_DOMESTIC_PURCHASES_OR_COMPANY_FUNDED_IMPORTS',
-          proofStatus:selected.supplyStatus,securedAtSubmission:false},
+          proofStatus:selected.supplyStatus,securedAtSubmission:false,
+          supplierAvailabilityEvidence:'SEE_COMPANY_SUPPLY_CHAIN_PROOF_AND_LIVE_PRIVATE_BATCH_SOURCES',
+          governmentTenderRequest:invitation?{invitationId:invitation.invitationId,
+            requestedFactoryCount:num(invitation.quantity),supportOffered:clone(invitation.supportOffer||{})}:null,
+          companyOfferedFactoryCount:selected.quantity},
         financingDecision:{preferredStructure:financingPreference,companyCashAvailable:cash,
           capitalRequired:required,fundingGap:fundingGap,externalFundingRequested:requestedExternalFunding,
           privateShareholdingRequested:financingPreference==='PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE',
