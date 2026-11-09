@@ -1593,6 +1593,20 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     metrics.selection=selection;
     metrics.stages.push('REAL_MAP_MARKER_CLICK_SELECTED_THE_EXACT_SITE_ID');
 
+    // Select the factory through the visible site panel, not by mutating game state.
+    // This proves the exact commissioned destination survives the complete site action.
+    await page.waitForFunction(({factoryId,siteId}) => {
+      const selector=document.getElementById('omega-individual-factory-select');
+      return !!selector&&!selector.disabled&&selector.getAttribute('data-site-id')===siteId&&
+        Array.from(selector.options||[]).some(option=>String(option.value)===factoryId);
+    },{factoryId:commissioning.factoryId,siteId:targetSite.siteId},{timeout:30000});
+    await page.locator('#omega-individual-factory-select').selectOption(commissioning.factoryId);
+    const selectedDestination=await page.locator('#omega-individual-factory-select').inputValue();
+    assert.equal(selectedDestination,commissioning.factoryId,
+      'the live site panel must retain the selected commissioned factory destination');
+    metrics.selectedDestinationFactoryId=selectedDestination;
+    metrics.stages.push('USER_SELECTED_COMMISSIONED_FACTORY_IN_REAL_SITE_PANEL');
+
     const executeHitTest = await page.locator('#omega-individual-execute').evaluate(button => {
       const rect = button.getBoundingClientRect();
       const x = rect.left + rect.width / 2;
