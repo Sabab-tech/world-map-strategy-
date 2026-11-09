@@ -199,12 +199,14 @@
     var flow=flowByBatch&&flowByBatch.get(String(batch&&batch.batchId||''));
     if(flow&&(flow.mineLogisticsRouteId||flow.mineLogisticsStockDebited===true)){
       var received=Math.max(0,num(flow.mineWarehouseReceivedQuantity)||0);
-      // A mine-flow batch can include mine-held, in-transit, warehouse, and already
-      // dispatched cargo. Only receipts not yet sent to factories or consumed in the
-      // warehouse are physically available to another production transaction.
-      var factoryDispatched=Math.max(0,num(flow.factoryDispatchedQuantity)||0);
+      // A factory-bound shipment remains physically in the raw-warehouse ledger as
+      // reserved stock until the factory receipt commits. Do not subtract dispatch
+      // here: consumers exclude its reservation separately, while delivery still
+      // needs the available + reserved pair to validate the same physical quantity.
+      // Mine-held and mine-to-warehouse transit quantities are excluded because they
+      // have not incremented mineWarehouseReceivedQuantity.
       var warehouseConsumed=Math.max(0,num(flow.mineWarehouseConsumedQuantity)||0);
-      return Math.min(remaining,Math.max(0,received-factoryDispatched-warehouseConsumed));
+      return Math.min(remaining,Math.max(0,received-warehouseConsumed));
     }
     return remaining;
   }
@@ -231,9 +233,10 @@
       var batchId=String(shipment&&shipment.batchId||'').trim();
       if(!batchId||!activeStatuses.has(String(shipment.status||'')))return;
       if(!['MINE_TO_WAREHOUSE','RAW_TO_FACTORY','WAREHOUSE_TO_FACTORY'].includes(String(shipment.shipmentType||'')))return;
-      var flow=flows.get(batchId);
-      // Site-flow factory dispatches are already excluded by batchInventoryQuantity.
-      if(flow&&(flow.mineLogisticsRouteId||flow.mineLogisticsStockDebited===true))return;
+      // A mine-to-warehouse shipment is not warehouse stock yet, so it must not
+      // reserve an already-received portion of the same source batch. Factory-bound
+      // legs do reserve received stock for both site-flow and ordinary warehouse batches.
+      if(String(shipment.shipmentType||'')==='MINE_TO_WAREHOUSE')return;
       reservedByBatch[batchId]=(reservedByBatch[batchId]||0)+Math.max(0,num(shipment.quantity)||0);
     });
     return{flowByBatch:flows,reservedByBatch:reservedByBatch};
