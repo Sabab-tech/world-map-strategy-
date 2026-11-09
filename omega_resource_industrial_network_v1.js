@@ -855,7 +855,7 @@ function masterSites(){
           countryIsolationKey:countryId
         }]}
     };
-  }).filter(Boolean).map(site=>quantitativeEngineAdapter(site,site.quantitative)):[];
+  }).filter(Boolean).map(site=>quantitativeEngineAdapter(site,site.quantitative));
   const byId=new Map(base.map(site=>[String(site?.siteId||''),site]));
   // Append eligible sites from the in-memory canonical catalog so map-visible legacy
   // sites are also discoverable by the industrial runtime. Keep existing records first.
