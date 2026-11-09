@@ -602,3 +602,31 @@ test('all modeled mine rows are not capped by the removed legacy 512-row limiter
   assert.doesNotMatch(code,/slice\(0,\s*MAX_MINES\)/);
   assert.match(code,/OMEGA_RESOURCE_EXTRACT_TICK/);
 });
+
+test('capacity upgrade requests persist only through their economy-owned country command',()=>{
+  const {context,worldState,handlers}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+
+  const type='OMEGA_RESOURCE_ECON_PUBLISH_CAPACITY_UPGRADE_REQUESTS';
+  const registration=handlers.get(type);
+  assert.ok(registration,'economy-owned capacity request publisher must be registered');
+  assert.equal(registration.owner,'economy');
+
+  const request={requestId:'CAPACITY-OWNER-1',countryId:'BGD',resourceId:'iron_ore',
+    status:'UNDER_CONSTRUCTION',projectId:'PROJECT-CAPACITY-OWNER-1'};
+  const saved=context.Omega.MinistryInteroperability.dispatchCommand('economy',type,'BGD',{
+    requests:[request]
+  },{commandId:'CAPACITY-OWNER-SAVE-1'});
+  assert.equal(saved.status,'APPLIED',JSON.stringify(saved));
+  assert.equal(saved.result.accepted,true,JSON.stringify(saved));
+  assert.deepEqual(worldState.economy.BGD.capacityUpgradeRequests,[request]);
+
+  const rejected=context.Omega.MinistryInteroperability.dispatchCommand('economy',type,'BGD',{
+    requests:[{...request,countryId:'KWT'}]
+  },{commandId:'CAPACITY-OWNER-CROSS-COUNTRY-1'});
+  assert.equal(rejected.status,'FAILED',JSON.stringify(rejected));
+  assert.equal(rejected.result.reason,'CAPACITY_UPGRADE_REQUEST_COUNTRY_MISMATCH');
+  assert.deepEqual(worldState.economy.BGD.capacityUpgradeRequests,[request],
+    'a foreign-country capacity request must never overwrite the BGD economy bucket');
+});
