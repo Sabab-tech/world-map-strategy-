@@ -2855,7 +2855,18 @@ function advanceShipments(c){
   dispatchResidualSiteBatches(cid);
   dispatchResidualMineHauls(cid);
   dispatchResidualFactoryOutputs(cid);
-  for(const s of n.shipments){
+  // Delivery dependencies are ordered on a per-turn working copy only. Mine receipts
+  // must credit the raw warehouse before factory-bound shipments validate available and
+  // reserved balances. Keep n.shipments itself untouched so ledger insertion order and
+  // persisted shipment identity remain stable.
+  const deliveryOrder=[...n.shipments].sort((a,b)=>{
+    const priority=shipment=>{
+      const type=String(shipment?.shipmentType||'');
+      return type==='MINE_TO_WAREHOUSE'?0:type==='RAW_TO_FACTORY'?1:2;
+    };
+    return priority(a)-priority(b);
+  });
+  for(const s of deliveryOrder){
     const shipmentStatus=String(s.status||'');
     const retryableDeliveryBlock=['BLOCKED_LEDGER_MISMATCH','BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING'].includes(shipmentStatus);
     if(retryableDeliveryBlock&&Number(s.lastDeliveryAttemptTurn??s.blockedTurn)===turn())continue;
