@@ -2836,6 +2836,13 @@ function advanceShipments(c){
   if(!selectedPlayer)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:cid,delivered:0,mineDelivered:0,shipments:[]};
   if(selectedPlayer!==cid)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selectedPlayer,delivered:0,mineDelivered:0,shipments:[]};
   if(siteLogisticsActiveCountry!==cid)void loadSiteLogisticsRoutes(cid);
+  // Resource Economy extracts mines before calling this runtime, but its normal
+  // inventory-to-warehouse reconciliation previously ran only after industrial
+  // deliveries. Reconcile first so same-turn mine receipts are visible to the
+  // RAW_TO_FACTORY available/reserved check instead of being credited afterward.
+  const preDeliveryReconciliation=dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',cid,{
+    correlationId:'INDUSTRIAL-PRE-DELIVERY-RECONCILE:'+turn()
+  });
   const n=netState(cid),delivered=[],mineDelivered=[];
   const markShipmentDeliveryAttempt=(shipment,isRetry=false)=>{
     const alreadyMarkedThisTurn=Number(shipment.lastDeliveryAttemptTurn)===turn();
@@ -2855,22 +2862,16 @@ function advanceShipments(c){
   dispatchResidualSiteBatches(cid);
   dispatchResidualMineHauls(cid);
   dispatchResidualFactoryOutputs(cid);
-  // Delivery dependencies are ordered dynamically on a working view only. A mine
-  // receipt can synchronously emit events that append more due mine receipts, so a
-  // one-time sorted snapshot is insufficient: drain all currently-due mine receipts
-  // before selecting any RAW_TO_FACTORY shipment. Never reorder the persisted ledger.
-  const processedDeliveryShipments=new Set();
-  const deliveryPriority=shipment=>{
-    const type=String(shipment?.shipmentType||'');
-    return type==='MINE_TO_WAREHOUSE'?0:type==='RAW_TO_FACTORY'?1:2;
-  };
-  while(true){
-    const currentShipments=netState(cid).shipments;
-    const nextShipment=[...currentShipments].filter(shipment=>!processedDeliveryShipments.has(shipment))
-      .sort((a,b)=>deliveryPriority(a)-deliveryPriority(b))[0];
-    if(!nextShipment)break;
-    const s=nextShipment;
-    processedDeliveryShipments.add(s);
+  // Keep the persisted shipment ledger untouched while processing due mine receipts
+  // before factory-bound deliveries. This preserves insertion order and shipment identity.
+  const deliveryOrder=[...n.shipments].sort((a,b)=>{
+    const priority=shipment=>{
+      const type=String(shipment?.shipmentType||'');
+      return type==='MINE_TO_WAREHOUSE'?0:type==='RAW_TO_FACTORY'?1:2;
+    };
+    return priority(a)-priority(b);
+  });
+  for(const s of deliveryOrder){
     const shipmentStatus=String(s.status||'');
     const retryableDeliveryBlock=['BLOCKED_LEDGER_MISMATCH','BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING'].includes(shipmentStatus);
     if(retryableDeliveryBlock&&Number(s.lastDeliveryAttemptTurn??s.blockedTurn)===turn())continue;
