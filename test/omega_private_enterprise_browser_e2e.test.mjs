@@ -1941,9 +1941,19 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       'source batch and inventory lot must retain the same original extraction quantity');
     assert.equal(factoryArrival.sourceBatch?.remainingQuantity, factoryArrival.sourceLot?.remainingQuantity,
       'source batch and inventory lot must retain the same remaining quantity');
-    assert.ok(Number(factoryArrival.sourceFlow?.mineWarehouseReceivedQuantity||0)+1e-9 >=
-      Number(factoryArrival.sourceFlow?.factoryDispatchedQuantity||0),
-      'factory-bound dispatches must never exceed stock actually received into the raw warehouse');
+    assert.equal(Number(factoryArrival.sourceBatch?.quantity), 146889,
+      'the source batch must retain its exact committed 30-day extraction quantity');
+    assert.equal(Number(factoryArrival.sourceBatch?.remainingQuantity), 137709,
+      'the source batch must lose exactly the 9,180 tonnes accepted by the factory');
+    assert.equal(Number(factoryArrival.sourceFlow?.mineWarehouseReceivedQuantity), 9180,
+      'the mine-flow ledger must retain the exact warehouse receipt quantity');
+    assert.equal(Number(factoryArrival.sourceFlow?.factoryDispatchedQuantity), 9180,
+      'the factory-flow ledger must retain the exact completed factory transfer quantity');
+    assert.equal(Math.max(0,
+      Number(factoryArrival.sourceFlow?.mineWarehouseReceivedQuantity||0) -
+      Number(factoryArrival.sourceFlow?.factoryDispatchedQuantity||0) -
+      Number(factoryArrival.sourceFlow?.mineWarehouseConsumedQuantity||0)), 0,
+      'a delivered factory shipment must no longer be counted as raw warehouse stock');
     assert.equal(factoryArrival.countryCoalInventory, factoryArrival.warehouseCoal.available,
       'country aggregate inventory and raw warehouse stock must remain reconciled after delivery');
     metrics.factoryArrival = factoryArrival;
