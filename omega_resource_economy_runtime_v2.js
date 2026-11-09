@@ -51,15 +51,23 @@
   }
   function registry(){return g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||(g.Omega&&g.Omega.CanonicalIdentity)||null;}
   function canonical(v){
+    var raw=v&&typeof v==='object'
+      ?(v.iso3||v.iso3Code||v.countryCode||v.countryId||v.code||v.name||v.id||v.canonicalId):v;
+    var direct=id(raw);
+    if(/^[A-Z]{3}$/.test(direct))return direct;
     try{
-      var r=registry();
-      if(r&&typeof r.resolveCountry==='function'){
-        var x=r.resolveCountry(v);
-        if(x&&x.id)return id(x.id);
-        if(x&&x.canonicalId)return id(x.canonicalId);
-      }
+      var r=registry(),x=r&&typeof r.resolveCountry==='function'?r.resolveCountry(raw):null,
+        source=x&&x.raw&&x.raw.raw||x&&x.raw&&x.raw.datasets&&x.raw.datasets['countries.json']||x&&x.raw||x||{},
+        iso3=source.iso3||source.iso3Code||x&&x.iso3||x&&x.iso3Code||
+          (String(source.countryCode||'').trim().length===3?source.countryCode:null)||
+          (String(x&&x.countryCode||'').trim().length===3?x.countryCode:null)||
+          (String(source.countryId||'').trim().length===3?source.countryId:null)||
+          (String(x&&x.countryId||'').trim().length===3?x.countryId:null);
+      if(iso3&&/^[A-Z]{3}$/.test(id(iso3)))return id(iso3);
+      if(x&&x.id)return id(x.id);
+      if(x&&x.canonicalId)return id(x.canonicalId);
     }catch(_){}
-    return id(v);
+    return direct;
   }
   function countries(){
     var r=registry(),out=[];
