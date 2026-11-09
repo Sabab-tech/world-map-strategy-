@@ -1032,3 +1032,102 @@ test('committed game turns run the selected country mine and industrial pipeline
   assert.equal(JSON.stringify(state.resource.KWT || null), foreignBefore,
     'other countries are not hydrated or mutated by the selected-country turn runner');
 });
+
+test('player-country turn batches finished-goods and owner publications into one economy and market publish', async () => {
+  const h = buildContext(), g = h.context, state = h.state;
+  const economySource = readText('omega_resource_economy_runtime_v2.js');
+  vm.runInContext(economySource, g, { filename: 'omega_resource_economy_runtime_v2.js' });
+
+  state.simulation.playerCountryId = 'BGD';
+  state.resource.BGD = {
+    inventory: { COAL_CONCENTRATE: 100, IRON_CONCENTRATE: 80 },
+    batches: [], inventoryLots: {}, mines: [],
+    warehouse: { warehouseId: 'WH-BGD-RAW', availableByResource: {}, reservedByResource: {} }
+  };
+  state.economy.BGD = {
+    productionAssets: [
+      { id: 'FAC-BGD-COAL-01', companyId: 'PRIVATE-COAL-01', ownerCompanyId: 'PRIVATE-COAL-01', operatorCompanyId: 'PRIVATE-COAL-01', factoryType: 'COAL_PROCESSING' },
+      { id: 'FAC-BGD-IRON-01', companyId: 'PRIVATE-IRON-01', ownerCompanyId: 'PRIVATE-IRON-01', operatorCompanyId: 'PRIVATE-IRON-01', factoryType: 'IRON_PROCESSING' }
+    ],
+    industrialRuntime: { finishedGoodsLedger: [], materialOwners: {} }
+  };
+  state.trade.BGD = { marketPrice: { COAL_CONCENTRATE: 100, IRON_CONCENTRATE: 80 } };
+
+  const interop = g.Omega.MinistryInteroperability;
+  const originalDispatch = interop.dispatchCommand.bind(interop);
+  const dispatchCounts = new Map();
+  interop.dispatchCommand = function (owner, type, countryId, payload) {
+    dispatchCounts.set(type, (dispatchCounts.get(type) || 0) + 1);
+    return originalDispatch(owner, type, countryId, payload);
+  };
+  let registrationEvents = 0;
+  h.events.addEventListener('OMEGA_RESOURCE_FINISHED_GOODS_ECONOMY_REGISTERED', () => {
+    registrationEvents += 1;
+  });
+
+  const rows = [
+    {
+      factoryId: 'FAC-BGD-COAL-01', companyId: 'PRIVATE-COAL-01', ownerCompanyId: 'PRIVATE-COAL-01', operatorCompanyId: 'PRIVATE-COAL-01', ownerAttributionStatus: 'EXPLICIT_ASSET_OWNER',
+      transactionId: 'TURN-BATCH-COAL-01', resourceId: 'COAL_CONCENTRATE', quantity: 5
+    },
+    {
+      factoryId: 'FAC-BGD-IRON-01', companyId: 'PRIVATE-IRON-01', ownerCompanyId: 'PRIVATE-IRON-01', operatorCompanyId: 'PRIVATE-IRON-01', ownerAttributionStatus: 'EXPLICIT_ASSET_OWNER',
+      transactionId: 'TURN-BATCH-IRON-01', resourceId: 'IRON_CONCENTRATE', quantity: 7
+    }
+  ];
+  g.Omega.ResourceIndustrialNetwork = {
+    async runCountryTurn(countryId) {
+      assert.equal(countryId, 'BGD');
+      for (const row of rows) {
+        const payload = {
+          countryId, factoryId: row.factoryId, companyId: row.companyId, ownerCompanyId: row.ownerCompanyId,
+          operatorCompanyId: row.operatorCompanyId, ownerAttributionStatus: row.ownerAttributionStatus,
+          transactionId: row.transactionId, outputQuantities: { [row.resourceId]: row.quantity },
+          sourceBatchIds: [], createdBatchIds: [], turn: state.simulation.turn
+        };
+        g.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_PROCESSING_COMPLETED', {
+          detail: { countryId, payload }
+        }));
+        g.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE', {
+          detail: { eventType: 'OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE', countryId, payload }
+        }));
+        assert.equal(dispatchCounts.get('OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY') || 0, 0,
+          'factory events must remain queued until the selected-country turn reaches its publication boundary');
+        assert.equal(dispatchCounts.get('OMEGA_RESOURCE_ECON_PUBLISH_OFFER_BOOK') || 0, 0,
+          'finished-goods events must not rebuild the same market offer book per factory');
+      }
+      return {
+        countryId,
+        factory: {
+          completed: rows.map(row => ({
+            status: 'COMPLETED', factoryId: row.factoryId, transactionId: row.transactionId,
+            outputQuantities: { [row.resourceId]: row.quantity }, sourceBatchIds: [], createdBatchIds: []
+          })),
+          blocked: []
+        }
+      };
+    }
+  };
+
+  const result = await g.Omega.ResourceEconomy.runTurn();
+  assert.equal(result.status, 'COMPLETED', JSON.stringify(result));
+  assert.equal(dispatchCounts.get('OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY'), 1,
+    'the turn must publish the combined economy runtime once, not once per factory plus once at turn end');
+  assert.equal(dispatchCounts.get('OMEGA_RESOURCE_ECON_PUBLISH_OFFER_BOOK'), 1,
+    'the turn must publish the market offer book once after all factory output is committed');
+
+  const runtime = state.economy.BGD.industrialRuntime;
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(runtime.finishedGoodsLedger.map(row => row.transactionId).sort())),
+    rows.map(row => row.transactionId).sort(),
+    'all finished-goods transactions must survive batching in the authoritative economy ledger'
+  );
+  assert.equal(runtime.materialOwners.COAL_CONCENTRATE, 'PRIVATE-COAL-01');
+  assert.equal(runtime.materialOwners.IRON_CONCENTRATE, 'PRIVATE-IRON-01');
+  assert.equal(runtime.finishedGoodsLedger.find(row => row.transactionId === 'TURN-BATCH-COAL-01').ownerCompanyId, 'PRIVATE-COAL-01');
+  assert.equal(runtime.finishedGoodsLedger.find(row => row.transactionId === 'TURN-BATCH-COAL-01').operatorCompanyId, 'PRIVATE-COAL-01');
+  assert.equal(state.economy.BGD.factoryOutput.COAL_CONCENTRATE, 5);
+  assert.equal(state.economy.BGD.factoryOutput.IRON_CONCENTRATE, 7);
+  assert.equal(registrationEvents, 2,
+    'each completed factory transaction must still emit its economy/market registration event');
+});
