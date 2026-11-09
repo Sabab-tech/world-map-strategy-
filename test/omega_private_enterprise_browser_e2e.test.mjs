@@ -1241,20 +1241,36 @@ test('real Chromium map marker runs the exact site through a commissioned privat
            String(governmentFactory.status||'').toUpperCase()!=='OPERATIONAL')
           throw new Error('SAB34_STATE_OWNED_QUALIFICATION_FACTORY_NOT_OPERATIONAL:'+JSON.stringify({governmentProjectRow,governmentFactory}));
       }
-      // Select through the same live candidate API that executeSitePipeline uses.
-      // This makes the browser proof sensitive to the real production gate and avoids
-      // hand-picking or mutating a factory to manufacture a site association.
+      // Select through the same live candidate API that executeSitePipeline uses,
+      // but pin the candidate to the factory commissioned by this proof. Taking
+      // candidateRows[0] can silently route the mine to an older starting-baseline
+      // factory (FAC-START) with an unrelated in-progress cycle, leaving the newly
+      // commissioned qualification asset unused.
       const candidateRows=industry.candidateFactories('BGD','coal');
-      const targetFactory=candidateRows[0]?.asset||null;
-      if(!targetFactory)throw new Error('SAB34_NO_REAL_COMPATIBLE_FACTORY_CANDIDATE:'+JSON.stringify({candidateCount:candidateRows.length}));
+      const expectedFactory=proofAcceptedAtStart?privateFactory:governmentFactory;
+      const expectedFactoryId=String(expectedFactory?.id||expectedFactory?.assetId||expectedFactory?.projectId||'');
+      const selectedCandidate=candidateRows.find(({asset})=>
+        String(asset?.id||asset?.assetId||asset?.projectId||'')===expectedFactoryId)||null;
+      if(!expectedFactoryId||!selectedCandidate){
+        throw new Error('SAB34_COMMISSIONED_FACTORY_NOT_IN_REAL_CANDIDATE_SET:'+JSON.stringify({
+          proofAcceptedAtStart,expectedFactoryId,expectedFactoryStatus:expectedFactory?.status||null,
+          candidateFactoryIds:candidateRows.map(({asset})=>String(asset?.id||asset?.assetId||asset?.projectId||''))
+        }));
+      }
+      const targetFactory=selectedCandidate.asset;
       const targetFactoryId=String(targetFactory.id||targetFactory.assetId||targetFactory.projectId||'');
+      if(targetFactoryId!==expectedFactoryId)
+        throw new Error('SAB34_REAL_CANDIDATE_FACTORY_IDENTITY_MISMATCH:'+JSON.stringify({
+          targetFactoryId,expectedFactoryId
+        }));
       if(proofAcceptedAtStart){
-        if(targetFactoryId!==String(privateFactory.id||privateFactory.assetId||privateFactory.projectId))
-          throw new Error('SAB34_REAL_CANDIDATE_DID_NOT_SELECT_NEWLY_COMMISSIONED_PRIVATE_FACTORY:'+JSON.stringify({
-            targetFactoryId,privateFactoryId:privateFactory.id,candidateRows:candidateRows.map(row=>row.asset?.id)}));
-      }else if(String(targetFactory.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE'){
-        throw new Error('SAB34_PRIVATE_FACTORY_ENTERED_REAL_CANDIDATES_BEFORE_BROWSER_PROOF:'+JSON.stringify({
-          targetFactoryId,productionEnabled:targetFactory.productionEnabled,status:targetFactory.status
+        if(String(targetFactory.ownerType||'').toUpperCase()!=='PRIVATE_ENTERPRISE'||targetFactory.productionEnabled!==true)
+          throw new Error('SAB34_PRIVATE_FACTORY_NOT_ELIGIBLE_AFTER_VERIFIED_BROWSER_PROOF:'+JSON.stringify({
+            targetFactoryId,ownerType:targetFactory.ownerType,productionEnabled:targetFactory.productionEnabled,status:targetFactory.status
+          }));
+      }else if(String(targetFactory.ownerType||'').toUpperCase()!=='STATE_OWNED_ENTERPRISE'){
+        throw new Error('SAB34_QUALIFICATION_FACTORY_IS_NOT_STATE_OWNED:'+JSON.stringify({
+          targetFactoryId,ownerType:targetFactory.ownerType,status:targetFactory.status
         }));
       }
       return{
