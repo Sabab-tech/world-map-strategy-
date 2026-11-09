@@ -328,6 +328,15 @@ test('real Chromium browser verifies company-originated proposals, government te
     assert.equal(companyResponse.proposal.companyId,companyPlan.companyId);
     assert.equal(companyResponse.proposal.submittedBy,companyPlan.companyId);
     assert.equal(companyResponse.proposal.proposalOrigin,'GOVERNMENT_INVITATION_RESPONSE');
+    await page.waitForFunction(() => {
+      const card=document.querySelector('[data-pe-decision-card]');
+      return card && card.querySelector('[data-pe-offer-summary]') &&
+        card.querySelector('[data-pe-company-case-details]') &&
+        card.querySelector('[data-pe-government-review-details]');
+    },null,{timeout:15000});
+    const companyOfferText=await lifecyclePanel.locator('[data-pe-offer-summary]').first().innerText();
+    assert.match(companyOfferText,/Company wants to build/i);
+    assert.match(companyOfferText,/Construction period/i);
     const invitationRecord = await page.evaluate(id => window.OmegaPrivateEnterpriseLifecycleV1
       .getCountryDashboard('BGD').governmentInvitations.find(row=>row.requestId===id),invitationId);
     assert.equal(companyResponse.proposal.governmentInvitationId,invitationRecord.invitationId);
