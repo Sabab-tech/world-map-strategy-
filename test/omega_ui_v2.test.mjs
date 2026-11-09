@@ -3455,3 +3455,21 @@ test('Factory Input tables contain long cell content without changing factory ca
   assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 98,
     'offline clients must fetch the updated Factory Input stylesheet');
 });
+
+test('UI v2 suspends route work but retains its shell for a lightweight second cabinet open', () => {
+  const app = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+  const integration = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
+  assert.match(app, /function suspend\(root\)[\s\S]*?releaseResourceScopeIfLeaving\(root, state\)[\s\S]*?invalidatePendingRender\(state\)[\s\S]*?main\.innerHTML = ''/);
+  assert.match(app, /function resume\(root, options\)[\s\S]*?state\.options = Object\.assign\(\{\}, state\.options \|\| \{\}, options\)[\s\S]*?scheduleNavigationRender\(root\)/);
+  assert.match(app, /resume:resume, suspend:suspend/);
+  assert.match(integration, /typeof g\.OmegaUIV2App\.resume === 'function'/);
+  assert.match(integration, /reusedApp && root\.__omegaUIV2State\.options[\s\S]*?countryOptions/);
+  assert.match(integration, /typeof g\.OmegaUIV2App\.suspend === 'function'[\s\S]*?g\.OmegaUIV2App\.suspend\(root\)/);
+  const closeStart = integration.indexOf('function closeToWorldMap()');
+  const bridgeStart = integration.indexOf('function installLegacyLayerBridge()', closeStart);
+  const closeLifecycle = integration.slice(closeStart, bridgeStart);
+  assert.match(closeLifecycle, /OmegaUIV2App\.suspend\(root\)/,
+    'map exit must suspend the mounted shell so reopening does not rebuild its country roster');
+
+});
+
