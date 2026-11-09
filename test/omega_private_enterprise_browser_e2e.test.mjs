@@ -887,11 +887,11 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         try {
           // This browser proof validates one committed site batch and its first mine/factory
           // shipment legs. The 30-day extraction turn can leave residual cargo at the mine;
-          // when the ETA helper compresses the next turn to one day, normal residual dispatch
-          // would add another 51-tonne shipment and make the single-leg assertions inspect
-          // that newer in-transit shipment instead of the exact shipment being settled here.
-          // Freeze only this selected batch's residual dispatches for the ETA turn. Its already
-          // dispatched mine and factory shipments still advance and settle through real handlers.
+          // when the ETA helper compresses the next turn to one day, normal mine-residual
+          // dispatch would add another 51-tonne mine haul and a second downstream shipment.
+          // Freeze only the selected batch's mine residual dispatch for this ETA turn. Do not
+          // freeze factory residual dispatch: the real mine receipt must still create its first
+          // warehouse-to-factory shipment during this same turn.
           const activeRun=window.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__?.result||null;
           if(activeRun?.batchId){
             const activeCountry=String(activeRun.countryId||state.simulation?.session?.playerCountryId||'').trim();
@@ -899,9 +899,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
             const activeFlow=(activeNetwork?.siteFlowLedger||[]).find(row=>
               String(row?.batchId||'')===String(activeRun.batchId));
             if(!activeFlow)throw new Error('SAB34_TARGET_SITE_FLOW_MISSING_BEFORE_ETA_ADVANCE:'+String(activeRun.batchId));
-            activeFlow.lastResidualDispatchTurn=targetTurn;
             activeFlow.lastMineResidualDispatchTurn=targetTurn;
-            activeFlow.lastFactoryResidualDispatchTurn=targetTurn;
           }
           const advanced = await window.__sab34AdvanceResourceTurns(1);
           if (advanced.status === 'ERROR' || advanced.steps !== 1 || Number(clock.turn) !== targetTurn) {
