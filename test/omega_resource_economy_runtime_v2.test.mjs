@@ -644,13 +644,20 @@ test('resource economy resolves Bangladesh ISO2 aliases into the ISO3 BGD state 
         ?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.id||value.name)
         :String(value||'').trim().toUpperCase();
       if(['BD','BGD','BANGLADESH'].includes(String(raw).toUpperCase()))
-        return{id:'BD',canonicalId:'BD',countryCode:'BD',iso3:'BGD',raw:{countryCode:'BD',iso3:'BGD'}};
-      return{id:String(raw).toUpperCase(),iso3:String(raw).toUpperCase(),raw:{iso3:String(raw).toUpperCase()}};
+        return{id:'BD',canonicalId:'BD',countryCode:'BD',raw:{countryCode:'BD',iso2:'BD'}};
+      return{id:String(raw).toUpperCase(),raw:{countryCode:String(raw).toUpperCase()}};
     },
     list(){return[{id:'BD',countryCode:'BD',iso3:'BGD'}];}
   };
   context.OmegaCanonicalIdentityRegistry=registry;
   context.Omega.CanonicalIdentity=registry;
+  context.ResourceMinistryEngine={
+    normalizeCountryCode(value){
+      const raw=String(value??'').trim().toUpperCase();
+      if(raw==='BD'||raw==='BANGLADESH')return'BGD';
+      return raw;
+    }
+  };
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
 
