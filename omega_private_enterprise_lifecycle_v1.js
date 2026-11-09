@@ -966,7 +966,11 @@
     proposal.quantity=quantity;proposal.capitalRequired=required;
     proposal.expectedInputRequirements=clone(candidate.expectedInputRequirements);
     proposal.negotiatedFundingSource=grantAvailable?'GOVERNMENT_GRANT':'COMPANY_CAPITAL';
-    if(grantAvailable)proposal.stateSupportRequested=true;
+    if(grantAvailable){
+      proposal.stateSupportRequested=true;
+      proposal.financingPreference='GOVERNMENT_GRANT';
+      proposal.requestedGovernmentGrantAmount=fundingGap;
+    }
     proposal.governmentCounterOffer.companyResponse='ACCEPTED';
     proposal.governmentCounterOffer.respondedTurn=turn();
     proposal.governmentCounterOffer.settlementStatus='NOT_SETTLED_REQUIRES_SEPARATE_APPROVAL_AND_FUNDING';
