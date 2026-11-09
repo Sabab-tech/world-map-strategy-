@@ -88,6 +88,7 @@ public final class OmegaGameplaySmokeTest {
                     " window.OMEGA_ANDROID_OFFLINE === true &&" +
                     " typeof Array.prototype.flatMap === 'function' && typeof Promise.allSettled === 'function' &&" +
                     " window.OMEGA_ICON_SYSTEM_V1 && typeof window.OMEGA_ICON_SYSTEM_V1.nameForEmoji === 'function' &&" +
+                    " window.L && typeof window.L.map === 'function' && typeof window.L.geoJSON === 'function' &&" +
                     " window.Game && window.Omega" +
                     " );" +
                     "})()";
@@ -327,13 +328,17 @@ public final class OmegaGameplaySmokeTest {
                     "(function() {" +
                     " var cabinet = document.getElementById('cabinet-full-window');" +
                     " var mapRoot = document.getElementById('render-engine-root');" +
+                    " var main = cabinet && cabinet.querySelector('[data-omega-v2-main]');" +
+                    " var suspendedState = cabinet && cabinet.__omegaUIV2State;" +
+                    " var map = window.Game && window.Game.Map && (window.Game.Map.map || window.map);" +
                     " return !!(cabinet && cabinet.getAttribute('data-omega-ui-v2-active') !== 'true' &&" +
                     "   cabinet.getAttribute('aria-hidden') === 'true' && cabinet.style.display === 'none' &&" +
-                    "   mapRoot && mapRoot.style.display !== 'none' &&" +
-                    "   !cabinet.__omegaUIV2State && cabinet.childElementCount === 0 &&" +
+                    "   mapRoot && mapRoot.style.display !== 'none' && mapRoot.style.visibility !== 'hidden' &&" +
+                    "   suspendedState && suspendedState.route === 'map' && main && main.childElementCount === 0 &&" +
+                    "   map && typeof map.invalidateSize === 'function' &&" +
                     "   document.body.getAttribute('data-active-layer') === '0' &&" +
                     "   window.OmegaLayerManager && Number(window.OmegaLayerManager.currentLayer) === 0 &&" +
-                    "   window.Game && window.Game.Map && window.Game.Map.__omegaMapUiActive === true);" +
+                    "   window.Game.Map.__omegaMapUiActive === true);" +
                     "})()";
             String mapRestored = "false";
             final long mapRestoreDeadline = SystemClock.elapsedRealtime() + 15000L;
@@ -342,7 +347,10 @@ public final class OmegaGameplaySmokeTest {
                 mapRestored = evaluate(instrumentation, webViewRef.get(), mapRestoredScript);
                 if (!"true".equals(mapRestored)) SystemClock.sleep(250L);
             }
-            assertEquals("UI v2 exit must restore the map before reopening the cabinet",
+            android.util.Log.i("OMEGA_ANDROID_SMOKE", "MAP_RESTORE_DIAGNOSTICS=" +
+                    evaluate(instrumentation, webViewRef.get(),
+                            "(function(){var c=document.getElementById('cabinet-full-window'),m=document.getElementById('render-engine-root'),s=c&&c.__omegaUIV2State,main=c&&c.querySelector('[data-omega-v2-main]'),map=window.Game&&window.Game.Map&&(window.Game.Map.map||window.map);return JSON.stringify({cabinetDisplay:c&&c.style.display,cabinetAriaHidden:c&&c.getAttribute('aria-hidden'),cabinetActive:c&&c.getAttribute('data-omega-ui-v2-active'),retainedShell:!!s,route:s&&s.route,mainChildren:main&&main.childElementCount,mapDisplay:m&&m.style.display,mapVisibility:m&&m.style.visibility,mapUiActive:window.Game&&window.Game.Map&&window.Game.Map.__omegaMapUiActive,mapInstance:!!map,mapLayerManager:window.OmegaLayerManager&&window.OmegaLayerManager.currentLayer,bodyLayer:document.body.getAttribute('data-active-layer'),leaflet:window.L&&window.L.version,leafletAlias:window.leaflet&&window.leaflet.version});})()"));
+            assertEquals("UI v2 exit must restore the live map and leave only a suspended UI-v2 shell",
                     "true", mapRestored);
             android.util.Log.i("OMEGA_ANDROID_SMOKE", "STAGE=MAP_SURFACE_RESTORED");
 
