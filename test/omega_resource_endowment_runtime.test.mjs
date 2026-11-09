@@ -212,7 +212,7 @@ assert.equal(cigarLakeBinding.site.simulationReserveAuthority,'SCENARIO_SIMULATI
 assert.ok(Number(cigarLakeBinding.site.simulationReserveQuantity)>0);
 assert.equal(cigarLakeBinding.site.simulationReserveUnit,'TONNES',
   'Cigar Lake U3O8 reserve must be normalized before it is used by the uranium extraction engine');
-assert.equal(cigarLakeBinding.site.simulationAnnualProductionUnit,'TONNES');
+assert.equal(cigarLakeBinding.site.simulationAnnualOutputUnit,'TONNES');
 assert.ok(Number(cigarLakeBinding.site.simulationAnnualProductionRatePerDay)>0,
   'Cigar Lake annual-output provenance must normalize to the same canonical unit as its reserve');
 assert.equal(cigarLakeBinding.site.simulationTargetGameplayLifeYears,437);
