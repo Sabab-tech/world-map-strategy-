@@ -1155,7 +1155,6 @@
             commodityKey:child?key:null
           });
           seen.add(key);
-          if(siteId&&resourceId)siteResourceSeen.add(siteId+'\\u0000'+resourceId);
         }
       }
     }catch(_){}
