@@ -1817,7 +1817,8 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(selectedFlow.factoryId, commissioning.factoryId,
       'the persisted site flow must use the commissioned private factory, not a starting-baseline factory');
     assert.equal(selectedFlow.selectionAuthority, 'EXPLICIT_SITE_FACTORY_SELECTION',
-      'the persisted destination must record the explicit UI factory selection');
+      'the persisted destination must record the explicit UI factory selection: ' +
+      JSON.stringify(selectedFlow));
     assert.ok(Number.isFinite(selectedFlow.factorySelectedAtTurn),
       'the site-flow ledger must timestamp the explicit factory destination selection');
     metrics.selectedFactoryFlow = selectedFlow;
