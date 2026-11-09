@@ -477,6 +477,15 @@ test('country borders stay visible in base map and visual overlays', () => {
 
 test('late economy baseline fills missing values without replacing live factory state', () => {
   const source = read('map-engine-2.js');
+  const loaderStart = source.indexOf('async loadAssets()');
+  const economyFetch = source.indexOf("fetchOptional('economy.json')", loaderStart);
+  const nextSupportFetch = source.indexOf("fetchOptional('relation_generation_engine.json')", economyFetch);
+  const economyHydration = source.slice(economyFetch, nextSupportFetch);
+  assert.match(economyHydration, /mergeEconomyBaseline\\(liveEconomy, econData\\)/,
+    'late startup economy data must be merged into the live registry');
+  assert.doesNotMatch(economyHydration, /Game\\.state\\.economy\\s*=\\s*econData/,
+    'startup JSON must never replace an already-running economy registry');
+
   const start = source.indexOf('function mergeEconomyBaseline(');
   assert.notEqual(start, -1, 'map startup must merge static economy data into the live runtime registry');
   const end = source.indexOf('\n}\n', start);
