@@ -40,12 +40,9 @@
         (String(source.countryId||'').trim().length===3?source.countryId:null)||
         (String(hit?.countryId||'').trim().length===3?hit.countryId:null);
       if(iso3&&/^[A-Z]{3}$/.test(id(iso3)))return id(iso3);
-      if(hit?.id)return id(hit.id);
-      if(hit?.canonicalId)return id(hit.canonicalId);
     }catch(_){}
     try{
-      const engine=g.ResourceMinistryEngine;
-      const resolved=engine?.normalizeCountryCode?.(raw);
+      const resolved=g.ResourceMinistryEngine?.normalizeCountryCode?.(raw);
       if(resolved&&/^[A-Z]{3}$/.test(id(resolved)))return id(resolved);
     }catch(_){}
     return direct.replace(/\s+/g,'_');
