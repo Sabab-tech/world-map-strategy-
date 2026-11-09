@@ -592,3 +592,41 @@ test('daily tick supplies the same turn, duration and date to every subsystem', 
   }
   assert.equal(dispatched.filter(event => event.type === 'OMEGA_SIMULATION_TURN_COMMITTED').length, 5);
 });
+
+test('Resource Economy registers as one ordered simulation subsystem instead of a legacy turn listener', async () => {
+  const { win, sim, gameState } = createRuntime();
+  const beforeParticipants = sim.diagnostics().turnParticipantCount;
+  let industrialCalls = 0;
+  win.CustomEvent = class {
+    constructor(type, options = {}) { this.type = type; this.detail = options.detail; }
+  };
+  gameState.resource.BGD = { inventory: {}, batches: [], mines: [] };
+  gameState.economy.BGD = { productionAssets: [] };
+  win.Omega.ResourceIndustrialNetwork = {
+    async runCountryTurn(countryId) {
+      industrialCalls += 1;
+      assert.equal(countryId, 'BGD');
+      return { countryId, factory: { completed: [], blocked: [] } };
+    }
+  };
+
+  const economySource = fs.readFileSync(path.join(root, 'omega_resource_economy_runtime_v2.js'), 'utf8');
+  const economyContext = vm.createContext({
+    window: win, globalThis: win, console, CustomEvent: win.CustomEvent,
+    Date, JSON, Number, String, Math, Object, Array, Set, Map, WeakMap, Promise, Intl
+  });
+  vm.runInContext(economySource, economyContext, { filename: 'omega_resource_economy_runtime_v2.js' });
+
+  assert.equal(win.Omega.ResourceEconomy.diagnostics().turnParticipantMode, 'ORDERED_SUBSYSTEM');
+  assert.equal(sim.diagnostics().turnParticipantCount, beforeParticipants + 1,
+    'Resource Economy must register one stable participant with the canonical simulation runner');
+
+  sim.startSession({ playerCountryId: 'BGD' });
+  await sim.frame(STEP_MS);
+
+  assert.equal(industrialCalls, 1, 'the ordered participant must run the selected-country economy exactly once');
+  const resourceParticipants = sim.diagnostics().lastTurnParticipantResults
+    .filter(row => row.id === 'omega.resource-economy.player-country');
+  assert.equal(resourceParticipants.length, 1);
+  assert.equal(resourceParticipants[0].status, 'COMPLETED');
+});
