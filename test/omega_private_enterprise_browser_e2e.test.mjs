@@ -776,9 +776,30 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         const authoritativeIndustry = industry;
         const observedIndustry = Object.assign({}, authoritativeIndustry, {
           runCountryTurn: async function(countryId, ...args) {
-            const result = await authoritativeIndustry.runCountryTurn(countryId, ...args);
-            window.__sab34LastIndustrialTurnResult = JSON.parse(JSON.stringify(result));
-            return result;
+            const call = {
+              countryId: String(countryId || ''),
+              turnBefore: Number(window.Game?.state?.simulation?.turn) || 0,
+              dateBefore: String(window.Game?.state?.simulation?.date || ''),
+              playerCountryBefore: String(window.Omega?.Simulation?.getPlayerCountryId?.() || ''),
+              sessionCountryBefore: String(window.Game?.state?.simulation?.session?.playerCountryId || '')
+            };
+            window.__sab34IndustrialTurnCalls = (window.__sab34IndustrialTurnCalls || []).concat(call).slice(-16);
+            try {
+              const result = await authoritativeIndustry.runCountryTurn(countryId, ...args);
+              window.__sab34LastIndustrialTurnResult = JSON.parse(JSON.stringify(result));
+              window.__sab34LastIndustrialTurnError = null;
+              return result;
+            } catch (error) {
+              window.__sab34LastIndustrialTurnError = {
+                countryId: call.countryId, turn: Number(window.Game?.state?.simulation?.turn) || 0,
+                message: String(error?.message || error),
+                stack: String(error?.stack || '')
+              };
+              throw error;
+            } finally {
+              call.turnAfter = Number(window.Game?.state?.simulation?.turn) || 0;
+              call.dateAfter = String(window.Game?.state?.simulation?.date || '');
+            }
           }
         });
         window.Omega = window.Omega || {};
