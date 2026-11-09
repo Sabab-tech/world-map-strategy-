@@ -429,8 +429,16 @@
         blocked++;
       }
     }
-    ctx.stateTransaction.set('economy.capacityUpgradeRequests',rows.slice(-MAX_REQUESTS));
-    return{processed,started,completed,blocked};
+    const persisted=dispatch('economy','OMEGA_RESOURCE_ECON_PUBLISH_CAPACITY_UPGRADE_REQUESTS',c,{
+      requests:rows.slice(-MAX_REQUESTS),
+      correlationId:'RESOURCE-CAPACITY-UPGRADE-PUBLISH-'+turn()+'-'+c
+    });
+    if(persisted?.status!=='APPLIED'){
+      return{processed,started,completed,blocked,status:'PERSISTENCE_FAILED',
+        reason:persisted?.result?.reason||persisted?.reason||'CAPACITY_UPGRADE_STATE_PUBLISH_FAILED',
+        persistence:persisted};
+    }
+    return{processed,started,completed,blocked,status:'PERSISTED',persistenceStatus:'APPLIED'};
   }
 
   function removeId(arr,idValue){
