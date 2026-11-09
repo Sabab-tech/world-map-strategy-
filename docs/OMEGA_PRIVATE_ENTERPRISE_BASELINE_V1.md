@@ -377,3 +377,19 @@ This documentation records implementation intent and current branch code only. I
 - Private production still remains gated by SAB-34 exact-main pipeline proof. Proof release is retried by the existing factory operation gate and preserves the same asset. Technology, workforce, utility, stock, logistics and storage gates remain in force.
 
 These safeguards are branch implementation details only. The new lifecycle regression suite currently defines test coverage for them, but its exact-head GitHub Actions result and live device/browser proof must be checked separately.
+
+
+## Company investment decisions and government review — 2026-11-10
+
+The company is the applicant and investment decision-maker. The government is the regulator, negotiator and permit authority; it does not author the company's business case.
+
+- On its scheduled company turn, a firm compares every factory category available to its own opening allocation. It scores current output-market evidence (matched orders, buy-side depth and recorded reference prices), the 30-day input picture, utility/workforce readiness, available company capital and construction duration. It submits the strongest eligible opportunity rather than selecting the first catalog entry.
+- The company chooses and states its proposed factory count. Where verified matched output orders support additional capacity, the proposed count can increase, but it remains bounded by the company's available expansion ceiling. Weak or missing market evidence results in a conservative one-unit proposal and is explicitly disclosed.
+- The company proposal states its reason, output/capacity offer, planned construction duration, current market evidence, input needs, sourcing policy, capital it can contribute, funding gap, preferred financing structure, requested public support, and supply/operational risks. The company remains responsible for arranging and paying for its supply chain.
+- Potential suppliers and stock availability are not represented as a secured supply contract. The company case records current domestic coverage, input gaps, potential suppliers, its sourcing plan and whether signed commitments/physical receipts are actually present. Construction continues to require the existing paid dispatch and warehouse-receipt checks.
+- Private shareholding can be requested, but a binding percentage is not fabricated when there is no defensible company valuation. The company states that it is offering an equity route and leaves the percentage for valuation and negotiation. Its own available capital and the remaining funding request are shown separately.
+- A government invitation is a separate optional tender. It states the public requirement and what support the state can actually offer. An invited company still makes its own market assessment, sets the scale it is willing to build, discloses its risks and states its financing terms. A tender never creates a company proposal or commits public money.
+- The government inbox is a decision card, not a form for writing the company's proposal. Company evidence/offer and the independent government assessment are separate expandable areas. The government can pause review, resume it, counteroffer, approve, defer or reject. A counteroffer requires a company response; acceptance is not a permit or a settlement.
+- A government review record stores the independent market/supply/utility/workforce/finance assessment and the action taken. Approval, financing settlement, construction, commissioning and production remain separate gates.
+
+The 2026-11-10 implementation is covered by new lifecycle tests for evidence-based opportunity ranking, company-selected quantity, explicit capital/share terms, partial government-grant negotiation and government review records. This description is intent, not a substitute for the exact-head CI and browser results.
