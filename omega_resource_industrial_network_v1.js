@@ -1518,10 +1518,11 @@ function candidateFactories(c,resourceId,requestedSiteId=null){
   const siteId=String(requestedSiteId||'').trim();
   return factoryAssets(c).filter(a=>assetCanAccept(a,resourceId))
     .map((asset,index)=>({asset,index,recipe:recipeFor(resourceId,asset)}))
-    // Verified private production remains first. A newly commissioned compatible
-    // factory is next, so an older opening-baseline asset cannot shadow it merely
-    // because that asset carries a site binding or was registered earlier.
-    // Site-linked starting assets remain eligible after commissioned capacity.
+    // A verified private operator remains first for live production. An explicit
+    // site binding is next, then a purpose-built factory commissioned from a
+    // construction project. Country starting-baseline facilities remain eligible
+    // as the fallback; they must not shadow a newly built compatible plant merely
+    // because they were registered earlier in productionAssets.
     .sort((left,right)=>{
       function privatePriority(row){
         const asset=row?.asset||{};
@@ -1539,8 +1540,8 @@ function candidateFactories(c,resourceId,requestedSiteId=null){
         return String(asset.constructionProjectId||'').trim() ? 1 : 0;
       }
       return privatePriority(right)-privatePriority(left)||
-        commissionedPriority(right)-commissionedPriority(left)||
         sitePriority(right)-sitePriority(left)||
+        commissionedPriority(right)-commissionedPriority(left)||
         left.index-right.index;
     });
 }
@@ -5595,9 +5596,22 @@ async function executeSitePipeline(input={}){
   // has completed; this API still owns the selected site request and must persist its
   // real factory destination for the later warehouse-to-factory leg.
   const factoryCandidatesBeforeExtraction=candidateFactories(cid,rid,site.siteId);
-  // candidateFactories already applies the canonical private / commissioned /
-  // site-linked priority. Do not reintroduce a site-only shortcut here.
-  const selectedFactoryBeforeExtraction=preparedFactory||
+  const requestedFactoryId=String(input.factoryId||input.selectedFactoryId||'').trim();
+  const requestedFactoryCandidate=requestedFactoryId
+    ?factoryCandidatesBeforeExtraction.find(({asset})=>String(
+      asset?.id||asset?.assetId||asset?.projectId||'').trim()===requestedFactoryId)||null
+    :null;
+  // An explicit destination must be eligible for this commodity and country before
+  // extraction commits. Never silently substitute a different factory for a user choice.
+  if(requestedFactoryId&&!requestedFactoryCandidate){
+    return{status:'BLOCKED',reason:'FACTORY_NOT_ELIGIBLE_FOR_SITE',countryId:cid,
+      siteId:site.siteId,resourceId:rid,factoryId:requestedFactoryId,
+      candidateFactoryIds:factoryCandidatesBeforeExtraction.map(({asset})=>String(
+        asset?.id||asset?.assetId||asset?.projectId||'').trim()).filter(Boolean)};
+  }
+  const selectedFactoryBeforeExtraction=requestedFactoryCandidate?.asset||preparedFactory||
+    factoryCandidatesBeforeExtraction.find(({asset})=>
+      String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
     factoryCandidatesBeforeExtraction[0]?.asset||null;
   const selectedFactoryIdBeforeExtraction=String(selectedFactoryBeforeExtraction?.id||
     selectedFactoryBeforeExtraction?.assetId||selectedFactoryBeforeExtraction?.projectId||'').trim();
@@ -5660,23 +5674,28 @@ async function executeSitePipeline(input={}){
     const currentCandidates=candidateFactories(cid,rid,site.siteId);
     const currentCandidateIds=new Set(currentCandidates.map(({asset})=>String(
       asset?.id||asset?.assetId||asset?.projectId||'').trim()).filter(Boolean));
-    // Reuse candidateFactories' canonical ordering during flow reconciliation too.
-    const preferredFactory=preparedFactory||currentCandidates[0]?.asset||null;
+    const requestedFactory=currentCandidates.find(({asset})=>String(
+      asset?.id||asset?.assetId||asset?.projectId||'').trim()===requestedFactoryId)||null;
+    const preferredFactory=requestedFactory?.asset||preparedFactory||
+      currentCandidates.find(({asset})=>
+        String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
+      currentCandidates[0]?.asset||null;
     const preferredFactoryId=String(preferredFactory?.id||
       preferredFactory?.assetId||preferredFactory?.projectId||'').trim();
     const priorFactoryId=String(existingFlow.factoryId||'').trim();
-    // A site-flow observer may have recorded an older opening-baseline factory
-    // before this request finished resolving the current candidate set. Keep the
-    // canonical preferred destination (site-bound / commissioned / verified private)
-    // ahead of that stale-but-still-eligible prior ID.
-    const resolvedFactoryId=currentCandidateIds.has(preferredFactoryId)
-      ?preferredFactoryId
-      :(currentCandidateIds.has(priorFactoryId)
-        ?priorFactoryId
-        :(selectedFactoryIdBeforeExtraction||''));
+    // The event observer may have recorded an older destination before this API call
+    // completed. An explicit user choice wins; otherwise keep the canonical site-bound
+    // candidate ahead of a stale-but-still-eligible prior destination.
+    const resolvedFactoryId=currentCandidateIds.has(requestedFactoryId)
+      ?requestedFactoryId
+      :(currentCandidateIds.has(preferredFactoryId)
+        ?preferredFactoryId
+        :(currentCandidateIds.has(priorFactoryId)
+          ?priorFactoryId
+          :(selectedFactoryIdBeforeExtraction||'')));
     if(resolvedFactoryId&&priorFactoryId!==resolvedFactoryId){
       existingFlow.factoryId=resolvedFactoryId;
-      existingFlow.factorySelectionAuthority=preparedFactory
+      existingFlow.factorySelectionAuthority=(requestedFactoryId||preparedFactory)
         ?'EXPLICIT_SITE_FACTORY_SELECTION'
         :'CANONICAL_COMPATIBLE_FACTORY_CANDIDATE';
       existingFlow.factorySelectedAtTurn=turn();
@@ -5702,7 +5721,9 @@ async function executeSitePipeline(input={}){
   }
   const candidates=candidateFactories(cid,rid,site.siteId);
   let factoryBootstrap=preparedFactoryBootstrap||null;
-  let factoryChoice=preparedFactory||
+  const requestedFactory=candidates.find(({asset})=>String(
+    asset?.id||asset?.assetId||asset?.projectId||'').trim()===requestedFactoryId)||null;
+  let factoryChoice=requestedFactory?.asset||preparedFactory||
     candidates.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
     candidates[0]?.asset||null;
   // A missing factory must never be silently fabricated during normal gameplay.
