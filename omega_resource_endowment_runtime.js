@@ -1054,6 +1054,27 @@
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
     const wanted=canonical(c),out=[],seen=new Set();
+    // Reserve-state membership is stable during this read. Index it once instead of
+    // rescanning every reserve for each parent occurrence and each canonical site.
+    const reserveKeysByParent=new Map(),reserveBySiteResource=new Map();
+    const reserveEntries=rr.reserveStates?.entries?.();
+    if(reserveEntries){
+      for(const [rawKey,reserve] of reserveEntries){
+        const reserveKey=String(rawKey||'');
+        const parentKey=String(reserve?.parentOccurrenceKey||'').trim();
+        if(parentKey){
+          let keys=reserveKeysByParent.get(parentKey);
+          if(!keys){keys=[];reserveKeysByParent.set(parentKey,keys);}
+          keys.push(reserveKey);
+        }
+        const siteId=String(reserve?.siteReferenceKey||reserve?.siteId||'').trim();
+        const resourceId=rid(reserve?.resourceId);
+        if(siteId&&resourceId){
+          const indexKey=siteId+'\\u0000'+resourceId;
+          if(!reserveBySiteResource.has(indexKey))reserveBySiteResource.set(indexKey,reserve);
+        }
+      }
+    }
     try{
       const engineDepositKeys=engineDepositKeyIndex(e);
       const occurrences=reg.getOccurrencesByCountry?.(wanted)||[];
@@ -1066,7 +1087,7 @@
         const keys=[];
         const addKey=k=>{const s=String(k||'');if(s&&!seen.has(s))keys.push(s);};
         addKey(parentKey);
-        for(const k of rr.reserveStates?.keys?.()||[])if(String(k)===parentKey||String(rr.reserveStates.get(k)?.parentOccurrenceKey||'')===parentKey)addKey(k);
+        for(const key of reserveKeysByParent.get(parentKey)||[])addKey(key);
         for(const key of keys){
           const reserve=rr.getReserveState?.(key),capacity=rr.getCapacityForOccurrence?.(key);if(!reserve)continue;
           const resourceId=rid(reserve.resourceId||occ.resourceTypeId||occ.resourceTypeKey);if(!resourceId)continue;
@@ -1105,8 +1126,7 @@
              String(operation.status||rawSite.status||'').toUpperCase()==='NOT_APPLICABLE'||runtime.aliasOfSiteId||
              site.map?.markerEligible===false||map.markerEligible===false)continue;
           if(out.some(x=>String(x.siteReferenceKey||'')===siteId&&rid(x.resourceId)===siteResource))continue;
-          const existingReserve=[...(rr.reserveStates?.values?.()||[])].find(x=>
-            String(x?.siteReferenceKey||x?.siteId||'')===siteId&&rid(x?.resourceId)===siteResource);
+          const existingReserve=reserveBySiteResource.get(siteId+'\\u0000'+siteResource)||null;
           const occurrenceKey=String(existingReserve?.occurrenceKey||('SITE_RUNTIME:'+wanted+':'+siteId+':'+siteResource));
           let reserve=existingReserve||rr.getReserveState?.(occurrenceKey)||null;
           let capacity=rr.getCapacityForOccurrence?.(occurrenceKey)||null;
