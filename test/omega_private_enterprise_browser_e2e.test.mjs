@@ -2018,6 +2018,12 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.ok(production.offer.sourceSiteIds.includes(targetSite.siteId));
     assert.ok(production.fiscalRow?.valuationComplete && production.fiscalRow?.cashPosted, JSON.stringify(production));
     assert.ok(production.reconciliation?.result?.status === 'HEALTHY', JSON.stringify(production.reconciliation));
+    const reconciliationOperations = production.reconciliation?.transaction?.operations || [];
+    assert.ok(reconciliationOperations.every(operation =>
+      JSON.stringify(operation.before) !== JSON.stringify(operation.after)),
+      'stable inventory reconciliation must not record no-op full-state writes');
+    assert.ok(JSON.stringify(production.reconciliation).length < 256 * 1024,
+      'repeated inventory reconciliation must not persist megabyte-scale before/after snapshots');
     metrics.production = production;
     metrics.stages.push('FACTORY_PROCESSED_INPUTS_TO_FINISHED_GOODS_MARKET_AND_TREASURY');
 
