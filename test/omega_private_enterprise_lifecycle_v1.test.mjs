@@ -274,14 +274,14 @@ test('government counter-offer needs a company response and later separate gover
     counterOffer:{quantity:1,supportType:'CAPITAL_GRANT',maxGovernmentContribution:100,
       reason:'The state can support this project if the company accepts the agreed delivery obligations.'}});
   assert.equal(counter.status,'NEGOTIATION_PENDING_COMPANY');
-  assert.equal(counter.proposal.permit,null);
+  assert.equal(counter.proposal.permit,undefined);
   assert.equal(h.state.finance.BGD.available,treasuryBefore,
     'a counter-offer is not a Treasury payment');
   const accepted=h.api.respondToGovernmentCounterOffer({countryId:'BGD',proposalId:proposal.proposalId,
     actorCompanyId:COMPANY,response:'ACCEPT'});
   assert.equal(accepted.status,'PROPOSED');
   assert.equal(accepted.proposal.negotiatedFundingSource,'GOVERNMENT_GRANT');
-  assert.equal(accepted.proposal.permit,null);
+  assert.equal(accepted.proposal.permit,undefined);
   assert.equal(h.state.finance.BGD.available,treasuryBefore,
     'company acceptance does not itself approve or fund the project');
   const approval=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',allowStateSupport:true});
@@ -782,6 +782,37 @@ test('proposal request IDs replay only the original payload and reject collision
   assert.equal(h.api.getProposal('BGD',first.proposalId).quantity,1);
 });
 
+test('Production Lines screen offers counter-negotiation while a company proposal awaits review',()=>{
+  const h=makeHarness();
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+    sourcingPolicy:'COMPANY_FUNDED_IMPORTS',requestId:'ui-counter-offer-proposal'});
+  assert.equal(proposal.status,'PROPOSED');
+  const fragments=[];
+  const root={
+    __omegaV2IndustryTab:'production-lines',
+    __omegaV2IndustryCountryId:'BGD',
+    __omegaV2IndustryOptions:{countryId:'BGD',tab:'production-lines'},
+    querySelector(selector){
+      if(selector==='.omega-v2-factory-command')return{insertAdjacentHTML(_position,html){fragments.push(html);},querySelector(){return null;}};
+      if(selector==='.omega-v2-industry-command')return null;
+      return null;
+    },
+    addEventListener(){},
+  };
+  h.sandbox.OmegaUIV2Industry={render(target,options){target.__omegaV2IndustryTab=options.tab;return{ok:true};}};
+  runInNewContext(lifecycleSource,h.sandbox);
+  h.sandbox.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'production-lines'});
+  assert.equal(fragments.length,1);
+  assert.match(fragments[0],/data-pe-counter-form/);
+  assert.match(fragments[0],/name="quantity"/);
+  assert.match(fragments[0],/name="supportType"/);
+  assert.match(fragments[0],/name="maxGovernmentContribution"/);
+  assert.match(fragments[0],/Send counter-offer to company/);
+  assert.match(fragments[0],/data-pe-action="hold"/);
+  assert.match(fragments[0],/data-pe-action="approve"/);
+  assert.equal(h.api.getProposal('BGD',proposal.proposalId).status,'PROPOSED');
+});
+
 test('Production Lines screen shows capital receipt verification for an approved underfunded company',()=>{
   const h=makeHarness();
   const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
@@ -814,8 +845,6 @@ test('Production Lines screen shows capital receipt verification for an approved
     'company reasoning, benefits and risks must be supplied by the company agent');
   assert.match(fragments[0],/data-pe-invitation-form/,
     'government can issue a separate public tender when it needs private capacity');
-  assert.match(fragments[0],/data-pe-counter-form/,
-    'government can negotiate through a counter-offer to the company');
   assert.match(fragments[0],/Company-authored business case/);
   assert.match(fragments[0],/Company market analysis/);
   assert.match(fragments[0],/Company supply-chain evidence/);
