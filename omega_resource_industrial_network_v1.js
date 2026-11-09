@@ -6175,20 +6175,28 @@ function registerStartingFactoryAssets(input={}){
         existing.capacityPerDay=requirements.ratedCapacityPerDay;
         existing.capacity=requirements.ratedCapacityPerDay;
       }
-      if(dynamicProcessing)existing.recipeMode='DYNAMIC_PROCESSING';
-      else if(dynamicRecipeSet)existing.recipeMode='DYNAMIC_RECIPE_SET';
-      else if(!existing.recipeId&&!existing.recipe?.recipeId)existing.recipeId=requirements.recipeId;
-      if(!dynamicProcessing&&!dynamicRecipeSet&&!existing.inputCoefficients&&!existing.inputs&&!existing.inputProfile&&!existing.recipe?.inputs)
-        existing.inputCoefficients=clone(requirements.inputsPerProductionUnit||{});
-      if(!dynamicProcessing&&!dynamicRecipeSet&&!existing.outputProfile&&!existing.outputCoefficients&&!existing.recipe?.outputs)
-        existing.outputProfile=clone(requirements.outputsPerProductionUnit||{});
-      if(!existing.recipeMode)existing.recipeMode=dynamicProcessing?'DYNAMIC_PROCESSING':(dynamicRecipeSet?'DYNAMIC_RECIPE_SET':
-        (Object.keys(existing.inputCoefficients||existing.inputs||{}).length>1?'MULTI_INPUT':'SINGLE_INPUT'));
-      if(!existing.recipeAuthority)existing.recipeAuthority=dynamicProcessing?'INDUSTRIAL_CATALOG_DYNAMIC_PROCESSING':
-        (dynamicRecipeSet?'INDUSTRIAL_CATALOG_RECIPE_SET':requirements.authority||'SIMULATED_GAMEPLAY_RULE');
-      if(existing.cycleDays==null)existing.cycleDays=Math.max(1,Number(requirements.processing?.cycleDays)||1);
-      if(!existing.inputUnit)existing.inputUnit=requirements.inputUnit||'SIMULATION_RESOURCE_UNIT';
-      if(!existing.outputUnit)existing.outputUnit=requirements.outputUnit||'SIMULATION_RESOURCE_UNIT';
+      // Starting-baseline registration may run after player construction has
+      // commissioned another asset of this same factory type. Its commodity-specific
+      // recipe is authoritative and must not be rewritten as the baseline's dynamic
+      // recipe. In particular, doing so on a new coal plant changes recipeFor('coal')
+      // and removes that exact destination from candidateFactories before extraction.
+      const isCommissionedProject=!!String(existing.constructionProjectId||'').trim();
+      if(!isCommissionedProject){
+        if(dynamicProcessing)existing.recipeMode='DYNAMIC_PROCESSING';
+        else if(dynamicRecipeSet)existing.recipeMode='DYNAMIC_RECIPE_SET';
+        else if(!existing.recipeId&&!existing.recipe?.recipeId)existing.recipeId=requirements.recipeId;
+        if(!dynamicProcessing&&!dynamicRecipeSet&&!existing.inputCoefficients&&!existing.inputs&&!existing.inputProfile&&!existing.recipe?.inputs)
+          existing.inputCoefficients=clone(requirements.inputsPerProductionUnit||{});
+        if(!dynamicProcessing&&!dynamicRecipeSet&&!existing.outputProfile&&!existing.outputCoefficients&&!existing.recipe?.outputs)
+          existing.outputProfile=clone(requirements.outputsPerProductionUnit||{});
+        if(!existing.recipeMode)existing.recipeMode=dynamicProcessing?'DYNAMIC_PROCESSING':(dynamicRecipeSet?'DYNAMIC_RECIPE_SET':
+          (Object.keys(existing.inputCoefficients||existing.inputs||{}).length>1?'MULTI_INPUT':'SINGLE_INPUT'));
+        if(!existing.recipeAuthority)existing.recipeAuthority=dynamicProcessing?'INDUSTRIAL_CATALOG_DYNAMIC_PROCESSING':
+          (dynamicRecipeSet?'INDUSTRIAL_CATALOG_RECIPE_SET':requirements.authority||'SIMULATED_GAMEPLAY_RULE');
+        if(existing.cycleDays==null)existing.cycleDays=Math.max(1,Number(requirements.processing?.cycleDays)||1);
+        if(!existing.inputUnit)existing.inputUnit=requirements.inputUnit||'SIMULATION_RESOURCE_UNIT';
+        if(!existing.outputUnit)existing.outputUnit=requirements.outputUnit||'SIMULATION_RESOURCE_UNIT';
+      }
       if(!Array.isArray(existing.requiredTechnologyIds))existing.requiredTechnologyIds=[];
       if(!existing.baselineTechnologyContext)existing.baselineTechnologyContext=clone(requirements.construction?.requiredTechnologyIds||[]);
       if(!existing.inputInventory||typeof existing.inputInventory!=='object'||Array.isArray(existing.inputInventory))existing.inputInventory={};
