@@ -1681,6 +1681,28 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       'the live site panel must retain the selected commissioned factory destination');
     metrics.selectedDestinationFactoryId=selectedDestination;
     metrics.stages.push('USER_SELECTED_COMMISSIONED_FACTORY_IN_REAL_SITE_PANEL');
+    const preDispatchFactoryState=await page.evaluate(({factoryId,siteId})=>{
+      const industry=window.OmegaResourceIndustrialNetwork||window.Omega?.ResourceIndustrialNetwork;
+      const assets=window.Game?.state?.economy?.BGD?.productionAssets||[];
+      const asset=assets.find(row=>String(row.id||row.assetId||row.projectId)===factoryId)||null;
+      const candidates=industry?.candidateFactories?.('BGD','coal',siteId)||[];
+      const resolved=asset?industry?.recipeFor?.('coal',asset)||null:null;
+      return{
+        factoryId,siteId,
+        asset:asset?{
+          id:asset.id,status:asset.status,ownerType:asset.ownerType,
+          constructionProjectId:asset.constructionProjectId||null,
+          recipeId:asset.recipeId||null,recipeMode:asset.recipeMode||null,
+          inputCoefficients:asset.inputCoefficients||{},
+          resolvedInputs:resolved?.inputs||{}
+        }:null,
+        candidateFactoryIds:candidates.map(({asset:row})=>String(row?.id||row?.assetId||row?.projectId||''))
+      };
+    },{factoryId:commissioning.factoryId,siteId:targetSite.siteId});
+    metrics.preDispatchFactoryState=preDispatchFactoryState;
+    assert.ok(preDispatchFactoryState.candidateFactoryIds.includes(commissioning.factoryId),
+      'the chosen operational factory must remain a live coal candidate immediately before dispatch: '+
+      JSON.stringify(preDispatchFactoryState));
 
     const executeHitTest = await page.locator('#omega-individual-execute').evaluate(button => {
       const rect = button.getBoundingClientRect();
