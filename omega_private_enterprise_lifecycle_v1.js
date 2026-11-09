@@ -565,6 +565,7 @@
   }
   function companyBusinessCase(proposal){
     var preview=previewFor(proposal),assessment=proposalDecisionAssessment(proposal,preview),
+      profile=(catalog()||{}).factoryProfiles&&catalog().factoryProfiles[proposal.factoryType],
       marketApi=g.Omega&&(g.Omega.GlobalMarket||g.Omega.globalMarket)||g.OmegaGlobalMarket||null,
       account=capitalAccount(proposal.countryId,proposal.companyId,false),
       cash=account?num(account.availableBalance):null,required=num(proposal.capitalRequired),
@@ -617,6 +618,10 @@
       projectOffer:{factoryType:proposal.factoryType,factoryName:proposal.factoryName,
         requestedFactoryCount:proposal.quantity,dailyCapacityForecast:num(preview.requestedDailyCapacity),
         thirtyDayCapacityCeiling:num(preview.requestedDailyCapacity)===null?null:Number((num(preview.requestedDailyCapacity)*30).toFixed(2)),
+        constructionDurationDays:num(proposal.constructionDurationDays)??num(profile&&profile.constructionDays)??num(profile&&profile.buildDays),
+        projectedCommissioningTurn:(num(proposal.constructionDurationDays)??num(profile&&profile.constructionDays)??num(profile&&profile.buildDays))===null
+          ?null:turn()+(num(proposal.constructionDurationDays)??num(profile&&profile.constructionDays)??num(profile&&profile.buildDays)),
+        operatingHorizonDays:num(proposal.operatingHorizonDays)??num(profile&&profile.operatingHorizonDays),
         workforceForecast:jobs,utilitiesPerFactory:clone(proposal.utilitiesPerFactory||{}),
         operatorCompanyId:proposal.operatorCompanyId||proposal.companyId},
       marketAnalysis:{horizonDays:30,outputs:outputs,
@@ -625,6 +630,8 @@
         limitations:['A reference quote is not a cleared trade.','Production capacity is not customer demand.',
           'Only settled deliveries and paid sales establish realized revenue.']},
       supplyChainProof:{horizonDays:30,inputs:inputs,
+        sourcingPolicy:proposal.sourcingPolicy,
+        companyPlan:proposal.companyStrategy&&proposal.companyStrategy.supplyPlan||null,
         domesticCoverageStatus:allDomesticCovered?'ALL_INPUTS_COVERED_BY_CURRENT_DOMESTIC_SURPLUS':
           allInputsObserved?'DOMESTIC_SHORTFALL_POTENTIAL_IMPORTS_NOT_CONTRACTS':'INPUT_STOCK_OR_DEMAND_UNVERIFIED',
         domesticSurplusCouldCoverNeed:allDomesticCovered,
@@ -636,13 +643,19 @@
         companyCapitalAccountStatus:account?'RECORDED_COMPANY_CAPITAL_ACCOUNT':'NO_VERIFIED_COMPANY_CAPITAL_ACCOUNT',
         companyCashAvailable:cash,companyCapitalOffer:cash===null||required===null?null:Math.min(cash,required),
         constructionCapitalRequired:required,fundingGap:fundingGap,
-        privateShareholdingRequested:['PRIVATE_SHAREHOLDERS','JOINT_VENTURE','PRIVATE_EQUITY'].indexOf(preference)>=0,
+        privateShareholdingRequested:['PRIVATE_SHAREHOLDERS','JOINT_VENTURE','PRIVATE_EQUITY','PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE'].indexOf(preference)>=0,
         requestedPrivateShareholdingBps:num(proposal.requestedPrivateShareholdingBps),
         privateShareholdingTermsStatus:num(proposal.requestedPrivateShareholdingBps)===null?
-          (['PRIVATE_SHAREHOLDERS','JOINT_VENTURE','PRIVATE_EQUITY'].indexOf(preference)>=0?'REQUESTED_TERMS_REQUIRE_NEGOTIATION':'NOT_REQUESTED'):
+          (['PRIVATE_SHAREHOLDERS','JOINT_VENTURE','PRIVATE_EQUITY','PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE'].indexOf(preference)>=0
+            ?'PRIVATE_SHAREHOLDING_REQUESTED_PERCENTAGE_REQUIRES_VALUATION_AND_NEGOTIATION':'NOT_REQUESTED'):
           'COMPANY_SHAREHOLDING_TERMS_STATED',
-        requestedGovernmentGrant:proposal.stateSupportRequested===true?required:0,
+        requestedExternalFundingAmount:fundingGap===null?required:fundingGap,
+        fundingGapStatus:fundingGap===null?'COMPANY_CASH_UNOBSERVED_REQUIRES_DUE_DILIGENCE':'CALCULATED_FROM_RECORDED_COMPANY_CAPITAL',
+        requestedGovernmentGrant:proposal.stateSupportRequested===true&&preference==='GOVERNMENT_GRANT'
+          ?Math.min(fundingGap===null?(required||0):fundingGap,
+            num(proposal.requestedGovernmentGrantAmount)===null?(fundingGap===null?(required||0):fundingGap):num(proposal.requestedGovernmentGrantAmount)):0,
         requestedGovernmentEquityBps:num(proposal.requestedGovernmentEquityBps),
+        requestedLoanAmount:num(proposal.requestedLoanAmount),
         requestedLoanGuarantee:proposal.requestedLoanGuarantee===true,
         requestedLoanGuaranteeStatus:proposal.requestedLoanGuarantee===true?'REQUESTED_NOT_APPROVED':'NOT_REQUESTED',
         settlementStatus:'PROPOSAL_ONLY_NOT_SETTLED',
@@ -654,6 +667,7 @@
         requestedConditions:clone(proposal.companyRequestedConditions||[]),
         supportRequestStatus:proposal.publicInfrastructureRequested||proposal.utilitySupportRequested||
           proposal.governmentOfftakeRequested?'COMPANY_REQUESTS_PUBLIC_SUPPORT':'NO_ADDITIONAL_PUBLIC_SUPPORT_REQUESTED'},
+      companyDecision:clone(proposal.companyStrategy||null),
       governmentInvitationId:proposal.governmentInvitationId||null,
       authority:'OMEGA_COMPANY_ORIGINATED_BUSINESS_CASE_V1',simulationOnly:true
     };
@@ -691,6 +705,21 @@
     if(expectedBenefit.length>1000)return{status:'BLOCKED',reason:'COMPANY_EXPECTED_BENEFIT_TOO_LONG',field:'expectedBenefit',maximumLength:1000};
     if(riskForecast.length<12)return{status:'BLOCKED',reason:'COMPANY_RISK_FORECAST_REQUIRED',field:'riskForecast',minimumLength:12};
     if(riskForecast.length>1000)return{status:'BLOCKED',reason:'COMPANY_RISK_FORECAST_TOO_LONG',field:'riskForecast',maximumLength:1000};
+    var requestedPrivateShareholdingBps=num(input.requestedPrivateShareholdingBps),
+      requestedGovernmentEquityBps=num(input.requestedGovernmentEquityBps),
+      requestedLoanAmount=num(input.requestedLoanAmount),requestedGovernmentGrantAmount=num(input.requestedGovernmentGrantAmount),
+      constructionDurationDays=num(input.constructionDurationDays),operatingHorizonDays=num(input.operatingHorizonDays),
+      companyStrategy=obj(input.companyStrategy)?clone(input.companyStrategy):null;
+    if(requestedPrivateShareholdingBps!==null&&(!Number.isInteger(requestedPrivateShareholdingBps)||requestedPrivateShareholdingBps<0||requestedPrivateShareholdingBps>10000))
+      return{status:'BLOCKED',reason:'PRIVATE_SHAREHOLDING_REQUEST_OUT_OF_RANGE'};
+    if(requestedGovernmentEquityBps!==null&&(!Number.isInteger(requestedGovernmentEquityBps)||requestedGovernmentEquityBps<0||requestedGovernmentEquityBps>10000))
+      return{status:'BLOCKED',reason:'GOVERNMENT_EQUITY_REQUEST_OUT_OF_RANGE'};
+    if(requestedLoanAmount!==null&&requestedLoanAmount<0)return{status:'BLOCKED',reason:'COMPANY_LOAN_REQUEST_INVALID'};
+    if(requestedGovernmentGrantAmount!==null&&requestedGovernmentGrantAmount<0)return{status:'BLOCKED',reason:'COMPANY_GRANT_REQUEST_INVALID'};
+    if(constructionDurationDays!==null&&(!Number.isInteger(constructionDurationDays)||constructionDurationDays<1||constructionDurationDays>3650))
+      return{status:'BLOCKED',reason:'COMPANY_CONSTRUCTION_DURATION_INVALID'};
+    if(operatingHorizonDays!==null&&(!Number.isInteger(operatingHorizonDays)||operatingHorizonDays<1||operatingHorizonDays>36500))
+      return{status:'BLOCKED',reason:'COMPANY_OPERATING_HORIZON_INVALID'};
     var requestId=String(input.requestId||'').trim();
     if(requestId){
       var old=existingProposal(cid,requestId);
@@ -702,6 +731,13 @@
           Number(old.quantity)===quantity&&
           String(old.sourcingPolicy||'DOMESTIC_ONLY').toUpperCase()===sourcePolicy&&
           (old.stateSupportRequested===true)===(input.stateSupportRequested===true)&&
+          num(old.requestedPrivateShareholdingBps)===requestedPrivateShareholdingBps&&
+          num(old.requestedGovernmentEquityBps)===requestedGovernmentEquityBps&&
+          num(old.requestedLoanAmount)===requestedLoanAmount&&
+          num(old.requestedGovernmentGrantAmount)===requestedGovernmentGrantAmount&&
+          num(old.constructionDurationDays)===constructionDurationDays&&
+          num(old.operatingHorizonDays)===operatingHorizonDays&&
+          JSON.stringify(old.companyStrategy||null)===JSON.stringify(companyStrategy||null)&&
           applicationText(old.requestReason)===requestReason&&
           applicationText(old.expectedBenefit)===expectedBenefit&&
           applicationText(old.riskForecast)===riskForecast;
@@ -726,8 +762,11 @@
       submittedBy:company,proposalOrigin:String(input.proposalOrigin||'COMPANY_INITIATED').toUpperCase(),
       governmentInvitationId:String(input.governmentInvitationId||'').trim()||null,
       financingPreference:String(input.financingPreference||'').toUpperCase()||null,
-      requestedPrivateShareholdingBps:num(input.requestedPrivateShareholdingBps),
-      requestedGovernmentEquityBps:num(input.requestedGovernmentEquityBps),
+      requestedPrivateShareholdingBps:requestedPrivateShareholdingBps,
+      requestedGovernmentEquityBps:requestedGovernmentEquityBps,
+      requestedLoanAmount:requestedLoanAmount,requestedGovernmentGrantAmount:requestedGovernmentGrantAmount,
+      constructionDurationDays:constructionDurationDays,operatingHorizonDays:operatingHorizonDays,
+      companyStrategy:companyStrategy,
       requestedLoanGuarantee:input.requestedLoanGuarantee===true,
       publicInfrastructureRequested:input.publicInfrastructureRequested===true,
       utilitySupportRequested:input.utilitySupportRequested===true,
@@ -903,9 +942,10 @@
       profile=catalog()?.factoryProfiles?.[proposal.factoryType],unitCost=num(profile&&profile.constructionCost),
       required=unitCost===null||quantity===null?null:unitCost*quantity,
       account=capitalAccount(cid,actor,false),available=account?num(account.availableBalance):null,
+      fundingGap=required===null?null:Math.max(0,required-(available===null?0:available)),
       grantAvailable=String(counter.supportType||'').toUpperCase()==='CAPITAL_GRANT'&&
-        num(counter.maxGovernmentContribution)!==null&&required!==null&&
-        num(counter.maxGovernmentContribution)+1e-9>=required,
+        num(counter.maxGovernmentContribution)!==null&&fundingGap!==null&&
+        num(counter.maxGovernmentContribution)+1e-9>=fundingGap,
       companyCanFund=available!==null&&required!==null&&available+1e-9>=required;
     if(quantity===null||!Number.isInteger(quantity)||quantity<1||quantity>proposal.quantity||required===null)
       return{status:'BLOCKED',reason:'GOVERNMENT_COUNTER_OFFER_QUANTITY_OR_COST_INVALID'};
@@ -1051,8 +1091,9 @@
         account=capitalAccount(cid,company,false),cash=account?num(account.availableBalance):null,
         profile=catalog()?.factoryProfiles?.[pendingNegotiation.factoryType],
         required=num(profile&&profile.constructionCost)===null?null:num(profile.constructionCost)*num(counter.quantity||pendingNegotiation.quantity),
+        gap=required===null?null:Math.max(0,required-(cash===null?0:cash)),
         grant=String(counter.supportType||'').toUpperCase()==='CAPITAL_GRANT'&&
-          required!==null&&num(counter.maxGovernmentContribution)!==null&&num(counter.maxGovernmentContribution)+1e-9>=required,
+          gap!==null&&num(counter.maxGovernmentContribution)!==null&&num(counter.maxGovernmentContribution)+1e-9>=gap,
         companyCanFund=cash!==null&&required!==null&&cash+1e-9>=required;
       var response=respondToGovernmentCounterOffer({countryId:cid,proposalId:pendingNegotiation.proposalId,
         actorCompanyId:company,response:grant||companyCanFund?'ACCEPT':'REJECT'});
@@ -1071,54 +1112,240 @@
         !row.responses.some(function(response){return response.companyId===company;});
     });
     var invitation=invitations.find(function(row){return Number(counts[row.factoryType]||0)>0;})||null;
-    var eligible=invitation?[invitation.factoryType]:Object.keys(counts).filter(function(type){
+    var eligible=invitation?[id(invitation.factoryType)]:Object.keys(counts).filter(function(type){
       return Number.isInteger(num(counts[type]))&&num(counts[type])>0;
-    }).sort();
-    var selected=null,selectedPreview=null,selectedQuantity=invitation?invitation.quantity:1;
-    for(var i=0;i<eligible.length;i++){
-      var type=id(eligible[i]),candidate={countryId:cid,factoryType:type,quantity:selectedQuantity};
-      var preview=previewFor(candidate);
-      if(preview.status==='READY'){selected=type;selectedPreview=preview;break;}
-    }
-    if(!selected)return{status:invitation?'INVITATION_NOT_FEASIBLE':'NO_ELIGIBLE_CANONICAL_EXPANSION',
+    }).map(id).sort();
+    if(!eligible.length)return{status:invitation?'INVITATION_NOT_FEASIBLE':'NO_COMPANY_FACTORY_ALLOCATION',
       companyId:company,period:period,invitationId:invitation&&invitation.invitationId||null};
-    var profile=catalog()?.factoryProfiles?.[selected],capitalNeeded=num(profile&&profile.constructionCost)===null?
-      null:num(profile.constructionCost)*selectedQuantity,capital=capitalAccount(cid,company,false),
-      cash=capital?num(capital.availableBalance):null,
-      financingPreference=cash!==null&&capitalNeeded!==null&&cash+1e-9>=capitalNeeded?'PRIVATE_COMPANY_CAPITAL':
-        invitation&&invitation.supportOffer&&invitation.supportOffer.type==='CAPITAL_GRANT'?'GOVERNMENT_GRANT':
-        'PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE';
-    var requestId='PE-AUTO:'+cid+':PERIOD:'+period+':'+company;
-    var capacity=Number(selectedPreview.requestedDailyCapacity||0);
-    var created=createProposal({countryId:cid,companyId:company,factoryType:selected,quantity:selectedQuantity,
-      requestReason:COMPANY_NAMES[company]+' submits this company-originated application after reviewing its current factory allocation, the selected-country industrial demand snapshot and available input supply for '+selected.replace(/_/g,' ').toLowerCase()+'. The company asks the government to assess the enclosed market and supply evidence before issuing any permit.',
-      expectedBenefit:'The company offers '+capacity.toLocaleString('en-US')+' units/day of modeled production capacity across '+selectedQuantity+' proposed factory unit(s). This is a capacity offer, not a customer order or guaranteed sales forecast; market clearing, actual deliveries and paid sales remain separate evidence.',
-      riskForecast:'The company discloses the current-turn domestic input coverage, potential uncontracted external suppliers, market-price discovery status, construction capital, utilities, workforce and transport limitations in its attached business case. Any unobserved evidence remains unresolved and is not represented as secured.',
-      sourcingPolicy:'MIXED',stateSupportRequested:financingPreference==='GOVERNMENT_GRANT'||
-        !!(invitation&&invitation.supportOffer&&invitation.supportOffer.type==='CAPITAL_GRANT'),
-      financingPreference:financingPreference,proposalOrigin:invitation?'GOVERNMENT_INVITATION_RESPONSE':'COMPANY_INITIATED',
-      governmentInvitationId:invitation&&invitation.invitationId||null,requestId:requestId});
+    if(eligible.length>1){
+      var rotation=companyIndex%eligible.length;
+      eligible=eligible.slice(rotation).concat(eligible.slice(0,rotation));
+    }
+    var marketApi=g.Omega&&(g.Omega.GlobalMarket||g.Omega.globalMarket)||g.OmegaGlobalMarket||null;
+    function quote(resourceId){
+      try{return marketApi&&typeof marketApi.quote==='function'?marketApi.quote(resourceId)||{}:{};}catch(_){return{};}
+    }
+    function evaluate(type){
+      var profile=(catalog()||{}).factoryProfiles&&catalog().factoryProfiles[type];
+      if(!profile)return null;
+      var processingResourceId=null;
+      if(type==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'){
+        processingResourceId=invitation&&invitation.processingResourceId||null;
+        if(!processingResourceId){
+          var universal=listUniversalProcessingResources();
+          processingResourceId=universal.length?universal[0].id:null;
+        }
+      }
+      var recipe=recipeFor(type,profile,processingResourceId);
+      if(!recipe)return null;
+      var one=previewFor({countryId:cid,companyId:company,factoryType:type,quantity:1,
+        processingResourceId:processingResourceId,sourcingPolicy:'MIXED',stateSupportRequested:false});
+      if(one.status!=='READY'||num(one.maximumAdditionalUnits)===null||one.maximumAdditionalUnits<1)return null;
+      var maximum=Math.min(MAX_PROJECTS_PER_PROPOSAL,Math.floor(one.maximumAdditionalUnits));
+      var dailyCapacity=num(profile.defaultCapacityPerDay)||0,outputs=recipe.outputs||{},marketSignals=[],demandSupportedUnits=1;
+      Object.keys(outputs).forEach(function(resourceId){
+        var row=quote(resourceId)||{},matched=Math.max(0,num(row.matchedQuantity)||0),
+          bidDepth=Math.max(0,num(row.bidDepth)||0),askDepth=Math.max(0,num(row.askDepth)||0),
+          price=observedMarketPrice(cid,resourceId),perUnit=num(outputs[resourceId]),
+          oneFactory30Day=perUnit===null?null:perUnit*dailyCapacity*30,
+          signal='UNOBSERVED',score=0;
+        if(matched>0){
+          signal='OBSERVED_MATCHED_ORDER_VOLUME';score=32;
+          if(oneFactory30Day!==null&&oneFactory30Day>0)
+            demandSupportedUnits=Math.max(demandSupportedUnits,Math.ceil(matched/oneFactory30Day));
+        }else if(bidDepth>0){signal='OPEN_BUY_ORDER_DEPTH';score=22;}
+        else if(price&&price.unitPrice>0){signal='REFERENCE_PRICE_ONLY';score=8;}
+        else{signal='NO_VERIFIED_MARKET_SIGNAL';score=-4;}
+        marketSignals.push({resourceId:resourceId,signal:signal,marketStatus:row.status||'UNAVAILABLE',
+          priceDiscovery:row.priceDiscovery||'UNAVAILABLE',matchedQuantity:matched,bidDepth:bidDepth,
+          askDepth:askDepth,bestBidUsd:num(row.bestBidUsd),bestAskUsd:num(row.bestAskUsd),
+          localMarketPrice:price,score:score,capacityPerFactory30Day:oneFactory30Day});
+      });
+      var quantity=Math.min(maximum,Math.max(1,Math.floor(demandSupportedUnits)));
+      if(invitation)quantity=Math.min(quantity,Math.max(1,num(invitation.quantity)||1));
+      var firstInputs=inputForecast(cid,profile,recipe,quantity),
+        allDomesticCovered=firstInputs.length>0&&firstInputs.every(function(row){
+          return row.available!==null&&row.available+1e-9>=row.forecast30Day;
+        }),
+        anyDomesticCovered=firstInputs.some(function(row){
+          return row.available!==null&&row.available+1e-9>=row.forecast30Day;
+        }),
+        sourcingPolicy=allDomesticCovered?'DOMESTIC_ONLY':
+          anyDomesticCovered?'MIXED':'COMPANY_FUNDED_IMPORTS',
+        preview=previewFor({countryId:cid,companyId:company,factoryType:type,quantity:quantity,
+          processingResourceId:processingResourceId,sourcingPolicy:sourcingPolicy,stateSupportRequested:false});
+      if(preview.status!=='READY')return null;
+      var inputRows=preview.inputRequirements||[],covered=inputRows.filter(function(row){
+        return row.available!==null&&row.available+1e-9>=row.forecast30Day;
+      }).length,unobserved=inputRows.filter(function(row){return row.available===null||row.nationalDemandPerDay===null;}).length,
+        shortfalls=inputRows.filter(function(row){return row.shortfall!==null&&row.shortfall>1e-9;}).length,
+        supplyScore=inputRows.length===0?-6:covered===inputRows.length?20:
+          covered>0?8:unobserved>0?-5:-12;
+      var operational=preview.operationalReadiness||{},
+        operationalScore=operational.status==='READY'?15:operational.status==='SHORTFALL'?-12:-5,
+        capital=capitalAccount(cid,company,false),cash=capital?num(capital.availableBalance):null,
+        capitalRequired=num(profile.constructionCost)===null?null:num(profile.constructionCost)*quantity,
+        capitalScore=cash===null?-4:capitalRequired===null?-2:
+          cash+1e-9>=capitalRequired?15:cash>0?7:-2,
+        marketScore=marketSignals.length?marketSignals.reduce(function(total,row){return total+row.score;},0)/marketSignals.length:-5,
+        duration=num(profile.constructionDays)||num(profile.buildDays),durationScore=duration===null?0:duration<=60?5:duration>=240?-5:0,
+        invitationScore=invitation?5:0,
+        totalScore=marketScore+supplyScore+operationalScore+capitalScore+durationScore+invitationScore,
+        assessment=proposalDecisionAssessment({countryId:cid,companyId:company,factoryType:type,
+          quantity:quantity,processingResourceId:processingResourceId,sourcingPolicy:sourcingPolicy,
+          capitalRequired:capitalRequired,capitalUnit:profile.unit||'GAME_CURRENCY_UNITS'},preview);
+      return{factoryType:type,factoryName:profile.name||type,processingResourceId:processingResourceId,
+        quantity:quantity,maximumAvailableQuantity:maximum,capitalRequired:capitalRequired,
+        constructionDurationDays:duration,marketSignals:marketSignals,marketScore:marketScore,
+        supplyScore:supplyScore,supplyStatus:allDomesticCovered?'DOMESTIC_INPUTS_COVERED':
+          unobserved?'INPUT_DATA_UNOBSERVED':shortfalls?'INPUT_SHORTFALL':'PARTIAL_INPUT_COVERAGE',
+        operationalStatus:operational.status||'UNOBSERVED',operationalScore:operationalScore,
+        companyCashAvailable:cash,capitalScore:capitalScore,durationScore:durationScore,
+        invitationScore:invitationScore,totalScore:totalScore,preview:preview,
+        assessment:assessment,sourcingPolicy:sourcingPolicy,
+        demandSupportedUnits:demandSupportedUnits};
+    }
+    var candidates=eligible.map(evaluate).filter(Boolean);
+    if(!candidates.length)return{status:invitation?'INVITATION_NOT_FEASIBLE':'NO_FEASIBLE_COMPANY_INVESTMENT',
+      companyId:company,period:period,invitationId:invitation&&invitation.invitationId||null};
+    candidates.sort(function(a,b){return b.totalScore-a.totalScore||a.factoryType.localeCompare(b.factoryType);});
+    var selected=candidates[0],selectedProfile=(catalog()||{}).factoryProfiles[selected.factoryType],
+      capital=capitalAccount(cid,company,false),cash=capital?num(capital.availableBalance):null,
+      required=selected.capitalRequired,fundingGap=cash===null?null:Math.max(0,(required||0)-cash),
+      tenderOffer=invitation&&invitation.supportOffer||{},tenderType=String(tenderOffer.type||'NO_PUBLIC_FINANCING').toUpperCase(),
+      tenderMaximum=Math.max(0,num(tenderOffer.maxGovernmentContribution)||0),
+      requestedExternalFunding=fundingGap===null?(required||0):fundingGap,
+      financingPreference='PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE';
+    if(cash!==null&&required!==null&&cash+1e-9>=required)financingPreference='PRIVATE_COMPANY_CAPITAL';
+    else if(invitation&&tenderType==='CAPITAL_GRANT'&&tenderMaximum+1e-9>=requestedExternalFunding)
+      financingPreference='GOVERNMENT_GRANT';
+    else if(invitation&&tenderType==='GOVERNMENT_EQUITY')financingPreference='GOVERNMENT_EQUITY';
+    else if(invitation&&tenderType==='LOAN_GUARANTEE')financingPreference='LOAN_GUARANTEE';
+    var supportRequested=financingPreference==='GOVERNMENT_GRANT'||
+      financingPreference==='GOVERNMENT_EQUITY'||financingPreference==='LOAN_GUARANTEE'||
+      !!(invitation&&['INFRASTRUCTURE_SUPPORT','UTILITY_SUPPORT','OFFTAKE_CONTRACT'].indexOf(tenderType)>=0);
+    var readiness=selected.preview.operationalReadiness||{},
+      utilityShortfall=(readiness.requirements||[]).some(function(row){
+        return['ELECTRICITY','WATER'].indexOf(row.type)>=0&&row.status==='SHORTFALL';
+      }),
+      infrastructureRequested=(readiness.infrastructure||[]).length>0||
+        !!(invitation&&tenderType==='INFRASTRUCTURE_SUPPORT'),
+      utilitySupportRequested=utilityShortfall||(invitation&&tenderType==='UTILITY_SUPPORT'),
+      marketUnproven=selected.marketSignals.every(function(row){
+        return row.signal==='NO_VERIFIED_MARKET_SIGNAL'||row.signal==='UNOBSERVED';
+      }),
+      offtakeRequested=marketUnproven||(invitation&&tenderType==='OFFTAKE_CONTRACT'),
+      inputs=selected.preview.inputRequirements||[],
+      gaps=inputs.filter(function(row){return row.shortfall===null||row.shortfall>1e-9;}),
+      marketReason=selected.marketSignals.map(function(row){
+        return row.resourceId+': '+row.signal.toLowerCase().replace(/_/g,' ');
+      }).join('; ')||'no output market evidence is currently recorded',
+      supplyReason=inputs.length?inputs.map(function(row){
+        return row.resourceId+' '+(row.available===null?'stock/demand unobserved':
+          row.shortfall>0?'shortfall '+Number(row.shortfall).toLocaleString('en-US'):'domestic surplus covers forecast');
+      }).join('; '):'recipe input evidence unavailable',
+      capacityPerDay=selected.preview.requestedDailyCapacity,
+      buildDays=selected.constructionDurationDays,
+      requestReason=COMPANY_NAMES[company]+' selected '+selected.quantity+' '+selected.factoryName+
+        ' unit(s) after comparing its eligible factory opportunities against current output-market signals, '+
+        '30-day input availability, utility/workforce readiness and its own recorded capital. '+
+        'The observed output-market evidence is '+marketReason+'. The company is submitting its own investment case for an independent government decision.',
+      expectedBenefit='The company offers '+Number(capacityPerDay||0).toLocaleString('en-US')+
+        ' units/day of modeled capacity ('+Number((Number(capacityPerDay||0)*30).toFixed(2)).toLocaleString('en-US')+
+        ' units over 30 days) from '+selected.quantity+' factory unit(s). Its proposed construction duration is '+
+        (buildDays===null?'not recorded':buildDays+' days')+'. This is production capacity, not guaranteed customer demand or settled sales.',
+      riskForecast='The company accepts the following disclosed exposures: '+supplyReason+
+        '. Supply policy: '+selected.sourcingPolicy+'. No supplier is treated as contracted or physically secured until an actual signed commitment, paid shipment and warehouse receipt are recorded. '+
+        (gaps.length?'Input gaps or unknown supply remain the company’s responsibility to source and fund. ':'Current stock covers the modeled input forecast, but future replenishment is not guaranteed. ')+
+        (readiness.status==='SHORTFALL'?'The company also faces an observed utility/workforce readiness shortfall. ':
+          readiness.status==='UNOBSERVED'?'Some utility/workforce evidence is unobserved. ':'')+
+        (marketUnproven?'Customer demand and a cleared selling price are not verified; the company may request a public offtake discussion. ':'')+
+        (fundingGap===null?'Company cash is not verified and the funding gap remains unresolved. ':
+          fundingGap>0?'Recorded company capital leaves a funding gap of '+fundingGap+' '+(selectedProfile.unit||'GAME_CURRENCY_UNITS')+'. ':'')+
+        'The company will not treat forecasts, supplier listings or requested public support as settled commitments.',
+      strategy={
+        schemaVersion:1,actorCompanyId:company,decision:'SUBMIT_COMPANY_INITIATED_INVESTMENT',
+        decisionTurn:turn(),selectionMethod:'HIGHEST_CURRENT_MARKET_SUPPLY_OPERATIONAL_AND_CAPITAL_SCORE',
+        confidence:selected.totalScore>=45?'HIGH':selected.totalScore>=20?'MEDIUM':'LOW',
+        horizonDays:30,selectedOpportunity:{factoryType:selected.factoryType,factoryName:selected.factoryName,
+          requestedFactoryCount:selected.quantity,totalScore:selected.totalScore,
+          marketScore:selected.marketScore,supplyScore:selected.supplyScore,
+          operationalScore:selected.operationalScore,capitalScore:selected.capitalScore,
+          marketSignals:clone(selected.marketSignals),supplyStatus:selected.supplyStatus,
+          operationalStatus:selected.operationalStatus,capitalRequired:selected.capitalRequired,
+          companyCashAvailable:selected.companyCashAvailable},
+        alternativesConsidered:candidates.map(function(row){return{factoryType:row.factoryType,
+          requestedFactoryCount:row.quantity,totalScore:row.totalScore,marketScore:row.marketScore,
+          supplyScore:row.supplyScore,operationalScore:row.operationalScore,capitalScore:row.capitalScore,
+          marketSignals:clone(row.marketSignals),supplyStatus:row.supplyStatus,
+          operationalStatus:row.operationalStatus};}),
+        supplyPlan:{policy:selected.sourcingPolicy,inputs:clone(inputs),
+          action:'COMPANY_TO_ARRANGE_DOMESTIC_PURCHASES_OR_COMPANY_FUNDED_IMPORTS',
+          proofStatus:selected.supplyStatus,securedAtSubmission:false},
+        financingDecision:{preferredStructure:financingPreference,companyCashAvailable:cash,
+          capitalRequired:required,fundingGap:fundingGap,externalFundingRequested:requestedExternalFunding,
+          privateShareholdingRequested:financingPreference==='PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE',
+          privateShareholdingTerms:'PERCENTAGE_REQUIRES_INDEPENDENT_COMPANY_VALUATION_AND_NEGOTIATION',
+          governmentSupportRequested:supportRequested,tenderInvitationId:invitation&&invitation.invitationId||null},
+        reasons:[selected.marketSignals.some(function(row){return row.signal==='OBSERVED_MATCHED_ORDER_VOLUME'||row.signal==='OPEN_BUY_ORDER_DEPTH';})
+          ?'Selected using observed buyer-side order-book activity.':'No strong buyer-side order-book evidence; submitted conservatively at the smallest viable scale.',
+          selected.supplyStatus==='DOMESTIC_INPUTS_COVERED'?'Current domestic input surplus covers the modeled 30-day requirement.':
+            'The company identifies supply gaps or unobserved inputs and submits a sourcing plan instead of claiming secured supply.',
+          readiness.status==='READY'?'Recorded utility/workforce diagnostics show operational readiness.':
+            'Utility/workforce readiness contains a shortfall or unobserved evidence and is disclosed for government review.'],
+        limitations:['A market quote or order-book depth is not a guaranteed future sale.',
+          'Potential suppliers are not contracts or delivery commitments.',
+          'Share percentages require a defensible valuation before they can be offered as binding terms.']
+      };
+    var created=createProposal({countryId:cid,companyId:company,operatorCompanyId:company,
+      factoryType:selected.factoryType,processingResourceId:selected.processingResourceId,
+      quantity:selected.quantity,sourcingPolicy:selected.sourcingPolicy,
+      requestReason:requestReason,expectedBenefit:expectedBenefit,riskForecast:riskForecast,
+      stateSupportRequested:supportRequested,financingPreference:financingPreference,
+      requestedPrivateShareholdingBps:null,
+      requestedGovernmentEquityBps:financingPreference==='GOVERNMENT_EQUITY'?
+        Math.max(0,num(tenderOffer.governmentEquityBps)||0):0,
+      requestedLoanGuarantee:financingPreference==='LOAN_GUARANTEE',
+      requestedLoanAmount:financingPreference==='LOAN_GUARANTEE'?requestedExternalFunding:null,
+      requestedGovernmentGrantAmount:financingPreference==='GOVERNMENT_GRANT'?
+        Math.min(requestedExternalFunding,tenderMaximum||requestedExternalFunding):0,
+      publicInfrastructureRequested:infrastructureRequested,
+      utilitySupportRequested:utilitySupportRequested===true,
+      governmentOfftakeRequested:offtakeRequested===true,
+      companyRequestedConditions:[
+        'Government permit and any public support must be separately approved and recorded before construction.',
+        'Company-funded imports and domestic supply must be paid, dispatched and physically received before construction consumes them.',
+        'Any private shareholding percentage remains subject to a defensible company valuation and negotiated shareholder terms.'
+      ],
+      constructionDurationDays:buildDays,operatingHorizonDays:num(selectedProfile.operatingHorizonDays),
+      companyStrategy:strategy,proposalOrigin:invitation?'GOVERNMENT_INVITATION_RESPONSE':'COMPANY_INITIATED',
+      governmentInvitationId:invitation&&invitation.invitationId||null,
+      requestId:'PE-AUTO:'+cid+':PERIOD:'+period+':'+company});
     if(created.status!=='PROPOSED')return{status:'BLOCKED',reason:created.reason||created.status,companyId:company,period:period};
     var stored=r.proposals.find(function(p){return p.proposalId===created.proposalId;});
     if(stored){
       stored.submissionMode='AUTONOMOUS_COMPANY_TURN_CYCLE';
       stored.submittedBy=company;
       stored.proposalPeriod=period;
-      stored.expectedDemandSnapshot=clone(selectedPreview.inputRequirements||[]);
+      stored.expectedDemandSnapshot=clone(selected.preview.inputRequirements||[]);
       stored.provenance=Object.assign({},stored.provenance||{},{source:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1',
         actor:'AUTONOMOUS_PRIVATE_COMPANY',period:period,simulationOnly:true});
+      stored.companyCase=companyBusinessCase(stored);
     }
     if(invitation){
       invitation.responses.push({companyId:company,companyName:COMPANY_NAMES[company],
         proposalId:created.proposalId,status:'PROPOSED',submittedTurn:turn(),
+        requestedQuantity:selected.quantity,companyFinancingPreference:financingPreference,
         authority:'AUTONOMOUS_PRIVATE_COMPANY_RESPONSE'});
       recordEvent(cid,'COMPANY_RESPONDED_TO_GOVERNMENT_INVITATION',{invitationId:invitation.invitationId,
         proposalId:created.proposalId,companyId:company});
     }
     recordEvent(cid,'AUTONOMOUS_COMPANY_PROPOSAL_SUBMITTED',{proposalId:created.proposalId,companyId:company,
-      factoryType:selected,period:period,invitationId:invitation&&invitation.invitationId||null});
+      factoryType:selected.factoryType,quantity:selected.quantity,selectionScore:selected.totalScore,
+      period:period,invitationId:invitation&&invitation.invitationId||null});
     return{status:'PROPOSED',proposal:getProposal(cid,created.proposalId),period:period,
-      invitationId:invitation&&invitation.invitationId||null,authority:'DETERMINISTIC_SELECTED_COUNTRY_COMPANY_TURN_CYCLE'};
+      invitationId:invitation&&invitation.invitationId||null,companyDecision:clone(strategy),
+      authority:'SELECTED_COUNTRY_COMPANY_INVESTMENT_DECISION_ENGINE'};
   }
   function scheduleAutonomousProposalCycle(){
     var cid=playerCountry(),period=Math.floor(turn()/30);
@@ -3092,6 +3319,7 @@
     var style=g.document.createElement('style');
     style.id='omega-private-enterprise-lifecycle-styles-v1';
     style.textContent='.omega-private-lifecycle{margin:12px 0;padding:12px;border:1px solid rgba(0,225,255,.28);border-radius:14px;background:linear-gradient(145deg,rgba(7,24,39,.97),rgba(3,12,25,.96));color:#e8f7ff;font:12px/1.45 system-ui,sans-serif}.omega-private-lifecycle .pe-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}.omega-private-lifecycle .pe-head small{color:#67dfff;letter-spacing:.08em;font-size:9px}.omega-private-lifecycle h3{margin:3px 0;font-size:16px}.omega-private-lifecycle p{margin:4px 0;color:#9db9cc}.omega-private-lifecycle .pe-gate{font-size:9px;color:#ffd88a;border:1px solid rgba(255,216,138,.4);border-radius:20px;padding:5px 8px}.omega-private-lifecycle .pe-overview{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.omega-private-lifecycle .pe-overview span{padding:5px 8px;background:rgba(0,0,0,.25);border:1px solid rgba(125,190,220,.15);border-radius:7px;color:#9bb8ca}.omega-private-lifecycle .pe-overview b{color:#fff;margin-left:4px}.omega-private-lifecycle .pe-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:10px;background:rgba(0,0,0,.22);border:1px solid rgba(100,180,220,.16);border-radius:10px}.omega-private-lifecycle .pe-form label{display:flex;flex-direction:column;gap:4px;color:#a9c5d7;font-size:10px;min-width:0}.omega-private-lifecycle input,.omega-private-lifecycle select{width:100%;min-width:0;box-sizing:border-box;padding:8px;border-radius:6px;background:#0b1c2b;border:1px solid rgba(88,182,220,.3);color:#edfaff;font:12px system-ui,sans-serif}.omega-private-lifecycle .pe-checkbox{grid-column:1/-1;flex-direction:row;align-items:center}.omega-private-lifecycle .pe-checkbox input{width:16px;height:16px}.omega-private-lifecycle [data-pe-universal-resource-field][hidden]{display:none!important}.omega-private-lifecycle button{border:1px solid rgba(0,225,255,.35);border-radius:7px;background:linear-gradient(135deg,#0b5470,#12334e);color:#eaffff;padding:8px 10px;font-size:10px;font-weight:700;cursor:pointer}.omega-private-lifecycle .pe-capital-form{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(90px,.8fr) auto;gap:6px;align-items:end;margin:8px 0;padding:8px;border:1px solid rgba(115,195,220,.18);border-radius:8px;background:rgba(0,0,0,.2)}.omega-private-lifecycle .pe-capital-form label{display:flex;flex-direction:column;gap:3px;min-width:0;color:#a9c5d7;font-size:9px}.omega-private-lifecycle .pe-capital-form input{width:100%;min-width:0;box-sizing:border-box;padding:7px;border-radius:6px;background:#0b1c2b;border:1px solid rgba(88,182,220,.3);color:#edfaff;font:11px system-ui,sans-serif}@media(max-width:520px){.omega-private-lifecycle .pe-capital-form{grid-template-columns:1fr 1fr}.omega-private-lifecycle .pe-capital-form button{grid-column:1/-1}}.omega-private-lifecycle .pe-proposals{margin-top:12px}.omega-private-lifecycle h4{font-size:12px;margin:0 0 8px;color:#9deaff}.omega-private-lifecycle .pe-proposal{padding:9px;margin:7px 0;border:1px solid rgba(103,183,220,.18);border-radius:9px;background:rgba(0,0,0,.2)}.omega-private-lifecycle .pe-proposal header{display:flex;justify-content:space-between;gap:8px;color:#b8edff}.omega-private-lifecycle .pe-proposal header span{font-size:9px;color:#ffe0a0}.omega-private-lifecycle .pe-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin:7px 0;color:#a8bdce;font-size:10px}.omega-private-lifecycle .pe-warning{display:block;color:#ffc56a;font-size:10px;margin:3px 0}.omega-private-lifecycle .pe-info{display:block;color:#91c8db;font-size:10px;margin:3px 0}.omega-private-lifecycle .pe-adjust{display:inline-flex;align-items:center;gap:5px;max-width:190px;color:#a9c5d7;font-size:10px}.omega-private-lifecycle .pe-adjust input{width:65px}.omega-private-lifecycle .pe-input-forecast{display:grid;gap:5px;padding:8px;margin:7px 0;border-radius:8px;background:rgba(5,25,40,.55);border:1px solid rgba(100,180,220,.13)}.omega-private-lifecycle .pe-input-forecast>strong{font-size:10px;color:#a6eaff}.omega-private-lifecycle .pe-input-row{display:grid;grid-template-columns:minmax(0,1.1fr) repeat(3,minmax(0,1fr));gap:5px;color:#91adbf;font-size:9px}.omega-private-lifecycle .pe-input-row span{min-width:0;overflow-wrap:anywhere}.omega-private-lifecycle .pe-input-row b{color:#e3f6ff;font-weight:600}@media(max-width:520px){.omega-private-lifecycle .pe-input-row{grid-template-columns:1fr 1fr}}.omega-private-lifecycle .pe-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.omega-private-lifecycle .pe-empty{padding:10px;color:#91a8bb;border:1px dashed rgba(120,180,210,.2);border-radius:8px}.omega-private-lifecycle .pe-message{padding:7px 9px;background:rgba(0,225,255,.08);border-left:2px solid #20cfff;color:#bceeff}.omega-private-lifecycle .pe-footnote,.omega-private-lifecycle>small{display:block;margin-top:9px;font-size:9px;color:#809aaa}.omega-private-lifecycle .pe-footnote{line-height:1.5}@media(max-width:520px){.omega-private-lifecycle{padding:9px}.omega-private-lifecycle .pe-form{grid-template-columns:1fr}.omega-private-lifecycle .pe-facts{grid-template-columns:1fr}.omega-private-lifecycle .pe-head{display:block}.omega-private-lifecycle .pe-gate{display:inline-block;margin-top:5px}}';
+    style.textContent += '.omega-private-lifecycle .pe-offer-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:9px 0;padding:9px;border:1px solid rgba(0,225,255,.25);border-radius:10px;background:linear-gradient(120deg,rgba(0,107,139,.16),rgba(0,0,0,.18))}.omega-private-lifecycle .pe-offer-summary>div{min-width:0;padding:5px 7px;border-left:2px solid rgba(0,225,255,.35)}.omega-private-lifecycle .pe-offer-summary small{display:block;color:#81cfe3;font-size:8px;text-transform:uppercase;letter-spacing:.06em}.omega-private-lifecycle .pe-offer-summary strong{display:block;color:#f1fbff;font-size:12px;overflow-wrap:anywhere}.omega-private-lifecycle .pe-case-details{margin:8px 0;border:1px solid rgba(115,190,220,.16);border-radius:9px;background:rgba(0,0,0,.14)}.omega-private-lifecycle .pe-case-details>summary{cursor:pointer;padding:9px;color:#a6eaff;font-size:10px;font-weight:700}.omega-private-lifecycle .pe-case-details[open]>summary{border-bottom:1px solid rgba(115,190,220,.13)}.omega-private-lifecycle .pe-case-details .pe-case-body{padding:7px}.omega-private-lifecycle .pe-government-actions{margin-top:9px;padding:9px;border:1px solid rgba(255,196,105,.2);border-radius:9px;background:rgba(60,35,5,.12)}.omega-private-lifecycle .pe-government-actions>strong{display:block;color:#ffe0a0;font-size:11px;margin-bottom:6px}@media(max-width:680px){.omega-private-lifecycle .pe-offer-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}';
     (g.document.head||g.document.documentElement).appendChild(style);
     stylesInstalled=true;
   }
@@ -3373,7 +3601,7 @@
         '<small>Company-requested conditions: '+escapeHtml((companyCase.companyExpectations&&companyCase.companyExpectations.requestedConditions||[]).join('; ')||'None stated')+'</small></div>';
       var financial=assessment.financialForecast||{};
       function forecastAmount(value){return value===null||value===undefined?'Not observed':Number(value).toLocaleString('en-US',{maximumFractionDigits:2})+(financial.currency?' '+escapeHtml(financial.currency):'');}
-      var riskMarkup='<div class="pe-input-forecast"><strong>Government review · 30-day benefit / risk assessment · '+escapeHtml(assessment.riskStatus||'UNRESOLVED')+'</strong>'+
+      var riskMarkup='<div class="pe-input-forecast"><strong>Independent government assessment · 30-day benefit / risk · '+escapeHtml(assessment.riskStatus||'UNRESOLVED')+'</strong>'+
         '<div class="pe-input-row"><span>Daily processing capacity<br><b>'+forecastAmount(assessment.capacity&&assessment.capacity.dailyProcessingCapacity)+'</b></span>'+
         '<span>30-day processing capacity<br><b>'+forecastAmount(assessment.capacity&&assessment.capacity.projected30DayProcessingCapacity)+'</b></span>'+
         '<span>Gross sales ceiling<br><b>'+forecastAmount(financial.grossSalesCeilingAtFullSellThrough)+'</b></span>'+
@@ -3382,6 +3610,24 @@
         (assessment.riskFlags||[]).map(function(flag){return'<span class="'+(flag.severity==='HIGH'?'pe-warning':'pe-info')+'">'+escapeHtml(flag.severity)+' · '+escapeHtml(flag.code.replace(/_/g,' '))+(flag.count?' ('+flag.count+')':'')+'</span>';}).join('')+
         '<small>Unobserved market prices, demand and operating costs are not converted into revenue or assumed profit. Only settled sales enter company revenue.</small></div>';
       var progress=(p.projectIds||[]).length+'/'+p.quantity+' projects';
+      var projectOffer=companyCase.projectOffer||{},buildDays=projectOffer.constructionDurationDays;
+      var externalFunding=financing.requestedExternalFundingAmount;
+      var privateEquityTerms=financing.privateShareholdingRequested
+        ?(financing.requestedPrivateShareholdingBps===null?'Percentage to be negotiated after valuation':Number(financing.requestedPrivateShareholdingBps/100).toFixed(2)+'% offered')
+        :'Not requested';
+      var offerSummaryMarkup='<div class="pe-offer-summary" data-pe-offer-summary="'+escapeHtml(p.proposalId)+'">'+
+        '<div><small>Company wants to build</small><strong>'+Number(projectOffer.requestedFactoryCount||p.quantity).toLocaleString('en-US')+' × '+escapeHtml(p.factoryName)+'</strong></div>'+
+        '<div><small>Construction period</small><strong>'+(buildDays===null||buildDays===undefined?'Not recorded':Number(buildDays).toLocaleString('en-US')+' days')+'</strong></div>'+
+        '<div><small>Company capital offer</small><strong>'+caseAmount(financing.companyCapitalOffer)+' '+escapeHtml(p.capitalUnit||'')+'</strong></div>'+
+        '<div><small>External funding asked</small><strong>'+caseAmount(externalFunding)+' '+escapeHtml(p.capitalUnit||'')+'</strong></div>'+
+        '<div><small>Preferred finance</small><strong>'+escapeHtml(financing.preferredStructure||'Not stated')+'</strong></div>'+
+        '<div><small>Private shareholding</small><strong>'+escapeHtml(privateEquityTerms)+'</strong></div>'+
+        '<div><small>Government grant asked</small><strong>'+caseAmount(financing.requestedGovernmentGrant)+' '+escapeHtml(p.capitalUnit||'')+'</strong></div>'+
+        '<div><small>Company risk disclosure</small><strong>'+escapeHtml(assessment.riskStatus||'UNRESOLVED')+'</strong></div></div>';
+      var companyCaseDetails='<details class="pe-case-details" data-pe-company-case-details><summary>Company business case · market, supply chain, benefits and financing offer</summary><div class="pe-case-body">'+
+        applicationMarkup+companyMarketMarkup+companySupplyMarkup+companyFinanceOfferMarkup+'</div></details>';
+      var governmentReviewDetails='<details class="pe-case-details" data-pe-government-review-details><summary>Independent government assessment · market reality, national supply and public risk</summary><div class="pe-case-body">'+
+        riskMarkup+readinessMarkup+inputDetails+shortages+unknown+'</div></details>';
       var facts='<div class="pe-facts"><span>Asset owner: '+escapeHtml(COMPANY_NAMES[p.companyId]||p.companyId)+'</span><span>Operator: '+escapeHtml(COMPANY_NAMES[p.operatorCompanyId||p.companyId]||(p.operatorCompanyId||p.companyId))+'</span><span>Factory: '+escapeHtml(p.factoryName)+'</span><span>Quantity: '+p.quantity+'</span><span>Capital: '+(p.capitalRequired===null?'Unquoted':Number(p.capitalRequired).toLocaleString('en-US')+' '+escapeHtml(p.capitalUnit))+'</span><span>Company capital: '+balance.toLocaleString('en-US')+'</span><span>Government factories: '+Number(preview.governmentFactoryCount||0).toLocaleString('en-US')+'</span><span>Private opening allocation: '+Number(preview.openingPrivateAllocation||0).toLocaleString('en-US')+'</span><span>Additional policy ceiling: '+Number(preview.maximumAdditionalUnits||0).toLocaleString('en-US')+'</span><span>Max safe domestic-input factories: '+(preview.maximumSafeDomesticFactoryQuantity===null?'Not observed':Number(preview.maximumSafeDomesticFactoryQuantity).toLocaleString('en-US'))+'</span><span>Daily capacity forecast: '+Number(preview.requestedDailyCapacity||0).toLocaleString('en-US')+'</span><span>Source: '+p.sourcingPolicy.replace(/_/g,' ')+'</span><span>Permit: '+(p.permit?escapeHtml(p.permit.permitId)+' · expires T'+Number(p.permit.expiresAtTurn).toLocaleString('en-US'):'Not issued')+'</span><span>Projects: '+progress+'</span></div>';
       if(p.status==='PROPOSED')buttons='<label class="pe-adjust">Decision quantity <input type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="'+p.quantity+'" data-pe-adjust-quantity="'+p.proposalId+'"></label><button type="button" data-pe-action="adjust" data-pe-proposal="'+p.proposalId+'">Update quantity</button>'+buttons;
       var capitalReceiptForm=p.status==='APPROVED_AWAITING_FUNDING'&&balance+1e-9<(num(p.capitalRequired)||0)
@@ -3396,9 +3642,10 @@
           '<label>Government conditions<textarea name="conditions" maxlength="1000" placeholder="Conditions the company must accept"></textarea></label>'+
           '<label>Government reason<textarea name="reason" minlength="12" maxlength="1000" required placeholder="Explain the counter-offer and public-interest conditions"></textarea></label>'+
           '<button type="submit">Send counter-offer to company</button></form>':'';
-      return'<article class="pe-proposal"><header><strong>'+escapeHtml(p.companyName)+'</strong><span>'+p.status.replace(/_/g,' ')+'</span></header>'+facts+applicationMarkup+companyMarketMarkup+companySupplyMarkup+companyFinanceOfferMarkup+riskMarkup+readinessMarkup+inputDetails+shortages+unknown+
+      return'<article class="pe-proposal" data-pe-decision-card="'+escapeHtml(p.proposalId)+'"><header><strong>'+escapeHtml(p.companyName)+'</strong><span>'+p.status.replace(/_/g,' ')+'</span></header>'+facts+offerSummaryMarkup+
+        companyCaseDetails+governmentReviewDetails+
         (p.governmentCounterOffer?'<div class="pe-input-forecast"><strong>Government counter-offer · company response '+escapeHtml(p.governmentCounterOffer.companyResponse||'PENDING')+'</strong><p>'+escapeHtml(p.governmentCounterOffer.reason||'')+'</p><small>Terms: '+escapeHtml(p.governmentCounterOffer.supportType)+' · quantity '+Number(p.governmentCounterOffer.quantity||0)+' · maximum public contribution '+caseAmount(p.governmentCounterOffer.maxGovernmentContribution)+' · '+escapeHtml(p.governmentCounterOffer.settlementStatus||'OFFER ONLY')+'</small></div>':'')+
-        capitalReceiptForm+counterOfferForm+'<div class="pe-actions">'+buttons+'</div></article>';
+        '<div class="pe-government-actions"><strong>Government decision · review the company offer, verify the facts, then decide</strong>'+counterOfferForm+capitalReceiptForm+'<div class="pe-actions">'+buttons+'</div></div></article>';
     }).join('')||'<div class="pe-empty">No company expansion proposal has been submitted for this country.</div>';
     var activeCostPolicy=companyOperatingCostPolicy(country),activeCostRates=activeCostPolicy.rates||{};
     function costRateField(key,label,unit){
@@ -3465,8 +3712,8 @@
         ' · Equity '+Number(row.supportOffer&&row.supportOffer.governmentEquityBps||0)/100+'%</small>'+
         '<div>'+ (responses||'<span class="pe-empty">No company has responded yet.</span>') +'</div><div class="pe-actions">'+close+'</div></article>';
     }).join('')||'<div class="pe-empty">The government has not issued an invitation. Companies can still submit independent proposals.</div>';
-    var invitationSection='<section class="pe-proposals"><h4>Government-initiated invitation / public tender</h4>'+
-      '<p class="pe-footnote">Use this only when the government needs private capacity or cannot fund the project itself. This publishes a request to companies; it does not create a company proposal, spend Treasury money or reserve resources.</p>'+
+    var invitationSection='<section class="pe-proposals"><h4>Optional government tender · a separate invitation to private companies</h4>'+
+      '<p class="pe-footnote">Use this only when the state has a documented capacity or funding gap. The government states the public need and any support it can offer. Each company must independently assess the market, choose its own quantity, disclose risks and submit its own investment terms. Publishing a tender does not create a company proposal, spend Treasury money or reserve resources.</p>'+
       '<form class="pe-form" data-pe-invitation-form><label>Factory category<select name="factoryType" required>'+typeOptions+'</select></label>'+
       '<label>Requested quantity<input name="quantity" type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="1" required></label>'+
       '<label>Government support offered<select name="supportType"><option value="NO_PUBLIC_FINANCING">No public financing · company funds it</option><option value="CAPITAL_GRANT">Capital grant</option><option value="GOVERNMENT_EQUITY">Government equity (terms only)</option><option value="LOAN_GUARANTEE">Loan guarantee (terms only)</option><option value="OFFTAKE_CONTRACT">Public purchase / offtake</option><option value="INFRASTRUCTURE_SUPPORT">Infrastructure support</option><option value="UTILITY_SUPPORT">Utility support</option></select></label>'+
@@ -3479,7 +3726,7 @@
     var markup='<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1"><header class="pe-head"><div><small>PRODUCTION LINES / NATIONAL INDUSTRY POLICY</small><h3>Company expansion proposals</h3><p>Companies initiate and justify projects. Government verifies, negotiates, permits or rejects them.</p></div><span class="pe-gate">'+(dash.productionEnabled?'PRIVATE PRODUCTION ENABLED':'PRODUCTION GATED BY SAB-34')+'</span></header>'+
       '<div class="pe-overview"><span>Companies <b>5</b></span><span>Proposals <b>'+dash.proposals.length+'</b></span><span>Opening baseline <b>'+(baselineRow&&baselineRow.status==='READY'?baselineRow.totalPrivateFactoryUnits.toLocaleString('en-US'):'Unavailable')+'</b></span><span>Finance <b>'+Object.keys(capitalByCompany).length+' capital accounts</b></span></div>'+
       invitationSection+message+
-      '<div class="pe-proposals"><h4>Government decision queue · company-submitted offers</h4>'+cards+'</div>'+
+      '<div class="pe-proposals"><h4>Government decision inbox · proposals submitted by private companies</h4>'+cards+'</div>'+
       '<details class="pe-proposals" data-pe-finance-details '+(financeWasOpen?'open':'')+'><summary><strong>Corporate Finance / Profit / Tax / Cost</strong></summary><p class="pe-footnote">Shared Finance journal + factory-event cost accruals. Financial close is blocked when required operating costs are unpriced. Factory CAPEX remains separate.</p>'+costPolicyForm+'<div data-pe-finance-card-host data-loaded="'+(financeWasOpen?'true':'false')+'">'+(financeWasOpen?companyFinanceCardsMarkup(country,capitalByCompany):'<p class="pe-empty">Open this section to load company financial statements.</p>')+'</div></details>'+
       '<section class="pe-proposals"><h4>Joint ventures / shareholder voting / dividends</h4>'+
       '<form class="pe-form" data-pe-jv-form><label>JV name<input name="name" type="text" maxlength="100" value="Strategic Industrial Joint Venture" required></label>'+
