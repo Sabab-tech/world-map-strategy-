@@ -281,7 +281,7 @@ test('government counter-offer needs a company response and later separate gover
     actorCompanyId:COMPANY,response:'ACCEPT'});
   assert.equal(accepted.status,'PROPOSED');
   assert.equal(accepted.proposal.negotiatedFundingSource,'GOVERNMENT_GRANT');
-  assert.equal(accepted.proposal.permit,undefined);
+  assert.equal(accepted.proposal.permit,null);
   assert.equal(h.state.finance.BGD.available,treasuryBefore,
     'company acceptance does not itself approve or fund the project');
   const approval=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',allowStateSupport:true});
