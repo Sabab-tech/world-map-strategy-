@@ -1009,9 +1009,27 @@ part6SimulationState.session=part6SimulationState.session&&typeof part6Simulatio
   ?part6SimulationState.session:{};
 part6SimulationState.session.playerCountryId=part6CopperSite.countryId;
 part6SimulationState.playerCountryId=part6CopperSite.countryId;
-const part6InventoryBeforeMine=Number(globalThis.Game.state.resource?.[part6CopperSite.countryId]?.inventory?.[part6CopperSite.resourceId])||0;
-const part6WarehouseBeforeMine=Number(globalThis.Game.state.resource?.[part6CopperSite.countryId]?.warehouse?.availableByResource?.[part6CopperSite.resourceId])||0;
-globalThis.Game.state.simulation.turn=Number(globalThis.Game.state.simulation.turn||0)+1;
+const part6NextTurn=Number(globalThis.Game.state.simulation.turn||0)+1;
+const part6ResourceBeforeMine=globalThis.Game.state.resource?.[part6CopperSite.countryId]||{};
+const part6InventoryBeforeMine=Number(part6ResourceBeforeMine.inventory?.[part6CopperSite.resourceId])||0;
+const part6WarehouseBeforeMine=Number(part6ResourceBeforeMine.warehouse?.availableByResource?.[part6CopperSite.resourceId])||0;
+const part6PriorProduction=(part6ResourceBeforeMine.mineProductionLedger||[]).find(row=>
+  Number(row.turn??row.simulationTurn)===part6NextTurn&&
+  String(row.siteReferenceKey||'')===String(part6CopperSite.siteId)&&
+  String(row.resourceId||'')===String(part6CopperSite.resourceId)&&
+  Number(row.quantity||0)>0
+);
+const part6PriorBatch=part6PriorProduction
+  ?(part6ResourceBeforeMine.batches||[]).find(row=>String(row.batchId||'')===String(part6PriorProduction.batchId||'')):null;
+const part6PriorFlow=part6PriorProduction
+  ?(part6ResourceBeforeMine.industrialNetwork?.siteFlowLedger||[]).find(row=>String(row.batchId||'')===String(part6PriorProduction.batchId||'')):null;
+const part6PriorActiveHaul=part6PriorProduction
+  ?(part6ResourceBeforeMine.industrialNetwork?.shipments||[]).some(row=>
+    String(row.batchId||'')===String(part6PriorProduction.batchId||'')&&row.shipmentType==='MINE_TO_WAREHOUSE'&&
+    ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(row.status||''))):false;
+const part6ExpectedStockDebit=part6PriorBatch&&!part6PriorFlow?.mineLogisticsStockDebited&&!part6PriorActiveHaul
+  ?Math.max(0,Number(part6PriorBatch.remainingQuantity??part6PriorBatch.quantity)||0):0;
+globalThis.Game.state.simulation.turn=part6NextTurn;
 const part6Pipeline=await industrial.executeSitePipeline({
   countryId:part6CopperSite.countryId,siteId:part6CopperSite.siteId,
   resourceId:part6CopperSite.resourceId,autoCommissionFactory:true,transportMode:'rail'
@@ -1032,10 +1050,19 @@ const part6MineQuantity=Number(part6MineShipment.quantity||0);
 assert.ok(part6MineQuantity>0);
 assert.equal(part6SourceState.batches.find(item=>String(item.batchId)===String(part6Pipeline.batchId))?.warehouseId,null,
   'the Part 6 source batch stays at the mine until its first-leg receipt');
-assert.ok(Math.abs((Number(part6SourceState.warehouse?.availableByResource?.[part6CopperSite.resourceId])||0)-part6WarehouseBeforeMine)<1e-5,
-  'mine cargo must not be credited to raw warehouse stock before arrival; pre-existing country stock must remain unchanged');
-assert.ok(Math.abs((Number(part6SourceState.inventory?.[part6CopperSite.resourceId])||0)-part6InventoryBeforeMine)<1e-5,
-  'the dispatched source batch must leave aggregate inventory exactly once while it is physically at the mine/transit');
+const part6ExpectedInventoryAfterMine=Math.max(0,part6InventoryBeforeMine-part6ExpectedStockDebit);
+const part6ExpectedWarehouseAfterMine=Math.max(0,part6WarehouseBeforeMine-part6ExpectedStockDebit);
+assert.ok(Math.abs((Number(part6SourceState.warehouse?.availableByResource?.[part6CopperSite.resourceId])||0)-part6ExpectedWarehouseAfterMine)<1e-5,
+  'mine haul must remove only a previously committed, not-yet-held source batch from raw warehouse stock: '+JSON.stringify({
+    before:part6WarehouseBeforeMine,after:Number(part6SourceState.warehouse?.availableByResource?.[part6CopperSite.resourceId])||0,
+    expectedDebit:part6ExpectedStockDebit,priorBatch:part6PriorBatch?.batchId||null,priorFlowDebited:part6PriorFlow?.mineLogisticsStockDebited===true,
+    priorActiveHaul:part6PriorActiveHaul
+  }));
+assert.ok(Math.abs((Number(part6SourceState.inventory?.[part6CopperSite.resourceId])||0)-part6ExpectedInventoryAfterMine)<1e-5,
+  'mine haul must debit aggregate inventory exactly once for a pre-existing batch and must not debit pre-existing country stock: '+JSON.stringify({
+    before:part6InventoryBeforeMine,after:Number(part6SourceState.inventory?.[part6CopperSite.resourceId])||0,
+    expectedDebit:part6ExpectedStockDebit
+  }));
 advanceToGameTurn(globalThis.Game.state,Number(part6MineShipment.etaTurn));
 const part6MineArrival=industrial.advanceShipments(part6CopperSite.countryId);
 assert.ok(part6MineArrival.mineDelivered>=1,'Part 6 mine haul must reach the warehouse: '+JSON.stringify(part6MineArrival));

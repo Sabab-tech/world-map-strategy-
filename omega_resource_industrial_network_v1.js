@@ -2836,6 +2836,13 @@ function advanceShipments(c){
   if(!selectedPlayer)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:cid,delivered:0,mineDelivered:0,shipments:[]};
   if(selectedPlayer!==cid)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selectedPlayer,delivered:0,mineDelivered:0,shipments:[]};
   if(siteLogisticsActiveCountry!==cid)void loadSiteLogisticsRoutes(cid);
+  // Resource Economy extracts mines before calling this runtime, but its normal
+  // inventory-to-warehouse reconciliation previously ran only after industrial
+  // deliveries. Reconcile first so same-turn mine receipts are visible to the
+  // RAW_TO_FACTORY available/reserved check instead of being credited afterward.
+  const preDeliveryReconciliation=dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',cid,{
+    correlationId:'INDUSTRIAL-PRE-DELIVERY-RECONCILE:'+turn()
+  });
   const n=netState(cid),delivered=[],mineDelivered=[];
   const markShipmentDeliveryAttempt=(shipment,isRetry=false)=>{
     const alreadyMarkedThisTurn=Number(shipment.lastDeliveryAttemptTurn)===turn();
@@ -2855,7 +2862,16 @@ function advanceShipments(c){
   dispatchResidualSiteBatches(cid);
   dispatchResidualMineHauls(cid);
   dispatchResidualFactoryOutputs(cid);
-  for(const s of n.shipments){
+  // Keep the persisted shipment ledger untouched while processing due mine receipts
+  // before factory-bound deliveries. This preserves insertion order and shipment identity.
+  const deliveryOrder=[...n.shipments].sort((a,b)=>{
+    const priority=shipment=>{
+      const type=String(shipment?.shipmentType||'');
+      return type==='MINE_TO_WAREHOUSE'?0:type==='RAW_TO_FACTORY'?1:2;
+    };
+    return priority(a)-priority(b);
+  });
+  for(const s of deliveryOrder){
     const shipmentStatus=String(s.status||'');
     const retryableDeliveryBlock=['BLOCKED_LEDGER_MISMATCH','BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING'].includes(shipmentStatus);
     if(retryableDeliveryBlock&&Number(s.lastDeliveryAttemptTurn??s.blockedTurn)===turn())continue;
@@ -3691,11 +3707,21 @@ function startPadmaCorridorProject(input={}){
   if(canonicalCountry(input.countryId)!=='BGD')return{status:'BLOCKED',reason:'PADMA_CORRIDOR_IS_BGD_SPECIFIC'};
   return startInfrastructureProject({...input,countryId:'BGD',infrastructureType:'bridge',distanceKm:num(input.distanceKm)||6.15,capacityPerDay:num(input.capacityPerDay)||60000,corridorId:'PADMA_EAST_WEST',fromNode:input.fromNode||'PADMA_WEST_GATEWAY',toNode:input.toNode||'PADMA_EAST_GATEWAY',contractorType:input.contractorType||'DOMESTIC_EPC'});
 }
-function advanceProjects(c){
-  const cid=canonicalCountry(c),n=netState(cid),completed=[],technologyCompleted=advanceTechnologyProjects(cid);
+function advanceProjects(c,options={}){
+  const cid=canonicalCountry(c),n=netState(cid),completed=[];
+  const constructionDaysOverride=num(options&&options.constructionDaysOverride);
+  const selectedProjectIds=Array.isArray(options&&options.projectIds)
+    ?new Set(options.projectIds.map(value=>String(value||'').trim()).filter(Boolean)):null;
+  // Construction can be fast-forwarded independently for explicitly selected projects.
+  // All other projects and every logistics/production subsystem continue using the
+  // authoritative central clock's ordinary daysPerTurn() value.
+  const technologyCompleted=constructionDaysOverride!==null&&constructionDaysOverride>0
+    ?[]:advanceTechnologyProjects(cid);
   for(const p of n.projects){
     if(p.status!=='UNDER_CONSTRUCTION')continue;
-    const step=daysPerTurn()*(p.contractorType==='FOREIGN_EPC'?1.10:1);
+    if(selectedProjectIds&&!selectedProjectIds.has(String(p.projectId||'')))continue;
+    const step=(constructionDaysOverride!==null&&constructionDaysOverride>0
+      ?constructionDaysOverride:daysPerTurn())*(p.contractorType==='FOREIGN_EPC'?1.10:1);
     p.progressDays=Math.min(num(p.durationDays)||1,(num(p.progressDays)||0)+step);
     p.progressPct=Math.min(1,p.progressDays/(num(p.durationDays)||1));
     p.remainingDays=Math.max(0,Math.ceil((num(p.durationDays)||1)-p.progressDays));
@@ -5559,13 +5585,42 @@ function ensureSimulationFactory(cid,site,resourceId,quantity,options={}){
 async function executeSitePipeline(input={}){
   const cid=canonicalCountry(input.countryId);
   if(!cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISSING'};
+  const requestedFactoryId=String(input.factoryId||input.selectedFactoryId||'').trim();
+  const diagnosticResourceId=tok(input.resourceId||'');
+  const diagnosticSiteId=String(input.siteId||'').trim();
+  const factoryPipelineDiagnostics=[];
+  const captureFactoryPipelineState=stage=>{
+    const assets=factoryAssets(cid);
+    const matching=assets.filter(asset=>String(asset?.id||asset?.assetId||asset?.projectId||'').trim()===requestedFactoryId);
+    const snapshot={
+      stage,turn:turn(),assetCount:assets.length,
+      requestedFactoryMatches:matching.map(asset=>({
+        id:String(asset.id||asset.assetId||asset.projectId||''),
+        status:String(asset.status||'OPERATIONAL').toUpperCase(),
+        ownerType:String(asset.ownerType||asset.ownershipModel||''),
+        productionEnabled:asset.productionEnabled===true,
+        constructionProjectId:asset.constructionProjectId||null,
+        recipeId:asset.recipeId||null,recipeMode:asset.recipeMode||null,
+        inputCoefficients:clone(asset.inputCoefficients||asset.inputs||asset.inputProfile||{}),
+        resolvedInputs:recipeFor(diagnosticResourceId||String(asset.resourceId||''),asset).inputs
+      })),
+      candidateFactoryIds:diagnosticResourceId
+        ?candidateFactories(cid,diagnosticResourceId,diagnosticSiteId).map(({asset})=>String(asset.id||asset.assetId||asset.projectId||''))
+        :[]
+    };
+    factoryPipelineDiagnostics.push(snapshot);
+    return snapshot;
+  };
+  captureFactoryPipelineState('API_ENTRY');
   const selectedPlayer=playerSimulationCountryId();
   if(selectedPlayer&&selectedPlayer!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selectedPlayer};
   const routeLoad=await loadSiteLogisticsRoutes(cid);
+  captureFactoryPipelineState('AFTER_ROUTE_LOAD');
   if(routeLoad.status!=='READY'&&selectedPlayer)return{status:'BLOCKED',reason:routeLoad.reason||'PLAYER_COUNTRY_LOGISTICS_NOT_READY',detail:routeLoad};
   const endowment=g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentRuntime;
   if(!endowment?.initialize||!endowment?.hydrateCountry||!endowment?.extractCountry)return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_RUNTIME_UNAVAILABLE'};
   const initialized=await endowment.initialize();
+  captureFactoryPipelineState('AFTER_ENDOWMENT_INITIALIZE');
   if(initialized?.status!=='READY')return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized};
   const site=siteById(input.siteId);
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
@@ -5584,8 +5639,11 @@ async function executeSitePipeline(input={}){
   if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid};
   const rid=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId||site?.identity?.resourceTypeId);
   if(!rid)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
-  const loaded=await loadCatalog();if(loaded?.status==='FAILED')return{status:'BLOCKED',reason:'INDUSTRIAL_CATALOG_UNAVAILABLE',detail:loaded};
+  const loaded=await loadCatalog();
+  captureFactoryPipelineState('AFTER_CATALOG_LOAD');
+  if(loaded?.status==='FAILED')return{status:'BLOCKED',reason:'INDUSTRIAL_CATALOG_UNAVAILABLE',detail:loaded};
   const hydrated=await endowment.hydrateCountry(cid);
+  captureFactoryPipelineState('AFTER_COUNTRY_HYDRATION');
   if(hydrated?.status!=='APPLIED'||hydrated?.result?.accepted===false)return{status:'BLOCKED',reason:'COUNTRY_HYDRATION_NOT_COMMITTED',detail:hydrated};
   const extractionPlan=planExtraction({countryId:cid,siteId:site.siteId,resourceId:rid,quantity:input.quantity,remainingReserve:input.remainingReserve});
   if(extractionPlan?.status!=='PLANNED')return{status:'BLOCKED',reason:'INDUSTRIAL_EXTRACTION_PLAN_BLOCKED',siteId:site.siteId,detail:extractionPlan};
@@ -5643,7 +5701,6 @@ async function executeSitePipeline(input={}){
   // has completed; this API still owns the selected site request and must persist its
   // real factory destination for the later warehouse-to-factory leg.
   const factoryCandidatesBeforeExtraction=candidateFactories(cid,rid,site.siteId);
-  const requestedFactoryId=String(input.factoryId||input.selectedFactoryId||'').trim();
   const requestedFactoryCandidate=requestedFactoryId
     ?factoryCandidatesBeforeExtraction.find(({asset})=>String(
       asset?.id||asset?.assetId||asset?.projectId||'').trim()===requestedFactoryId)||null
@@ -5654,7 +5711,18 @@ async function executeSitePipeline(input={}){
     return{status:'BLOCKED',reason:'FACTORY_NOT_ELIGIBLE_FOR_SITE',countryId:cid,
       siteId:site.siteId,resourceId:rid,factoryId:requestedFactoryId,
       candidateFactoryIds:factoryCandidatesBeforeExtraction.map(({asset})=>String(
-        asset?.id||asset?.assetId||asset?.projectId||'').trim()).filter(Boolean)};
+        asset?.id||asset?.assetId||asset?.projectId||'').trim()).filter(Boolean),
+      factoryPipelineDiagnostics:factoryPipelineDiagnostics,
+      currentFactoryDiagnostics:factoryAssets(cid).map(asset=>({
+        id:String(asset?.id||asset?.assetId||asset?.projectId||''),
+        status:String(asset?.status||'OPERATIONAL').toUpperCase(),
+        ownerType:String(asset?.ownerType||asset?.ownershipModel||''),
+        productionEnabled:asset?.productionEnabled===true,
+        constructionProjectId:asset?.constructionProjectId||null,
+        recipeId:asset?.recipeId||null,recipeMode:asset?.recipeMode||null,
+        inputCoefficients:clone(asset?.inputCoefficients||asset?.inputs||asset?.inputProfile||{}),
+        resolvedInputs:recipeFor(rid,asset).inputs
+      }))};
   }
   const selectedFactoryBeforeExtraction=requestedFactoryCandidate?.asset||preparedFactory||
     factoryCandidatesBeforeExtraction.find(({asset})=>
@@ -6159,20 +6227,28 @@ function registerStartingFactoryAssets(input={}){
         existing.capacityPerDay=requirements.ratedCapacityPerDay;
         existing.capacity=requirements.ratedCapacityPerDay;
       }
-      if(dynamicProcessing)existing.recipeMode='DYNAMIC_PROCESSING';
-      else if(dynamicRecipeSet)existing.recipeMode='DYNAMIC_RECIPE_SET';
-      else if(!existing.recipeId&&!existing.recipe?.recipeId)existing.recipeId=requirements.recipeId;
-      if(!dynamicProcessing&&!dynamicRecipeSet&&!existing.inputCoefficients&&!existing.inputs&&!existing.inputProfile&&!existing.recipe?.inputs)
-        existing.inputCoefficients=clone(requirements.inputsPerProductionUnit||{});
-      if(!dynamicProcessing&&!dynamicRecipeSet&&!existing.outputProfile&&!existing.outputCoefficients&&!existing.recipe?.outputs)
-        existing.outputProfile=clone(requirements.outputsPerProductionUnit||{});
-      if(!existing.recipeMode)existing.recipeMode=dynamicProcessing?'DYNAMIC_PROCESSING':(dynamicRecipeSet?'DYNAMIC_RECIPE_SET':
-        (Object.keys(existing.inputCoefficients||existing.inputs||{}).length>1?'MULTI_INPUT':'SINGLE_INPUT'));
-      if(!existing.recipeAuthority)existing.recipeAuthority=dynamicProcessing?'INDUSTRIAL_CATALOG_DYNAMIC_PROCESSING':
-        (dynamicRecipeSet?'INDUSTRIAL_CATALOG_RECIPE_SET':requirements.authority||'SIMULATED_GAMEPLAY_RULE');
-      if(existing.cycleDays==null)existing.cycleDays=Math.max(1,Number(requirements.processing?.cycleDays)||1);
-      if(!existing.inputUnit)existing.inputUnit=requirements.inputUnit||'SIMULATION_RESOURCE_UNIT';
-      if(!existing.outputUnit)existing.outputUnit=requirements.outputUnit||'SIMULATION_RESOURCE_UNIT';
+      // Starting-baseline registration may run after player construction has
+      // commissioned another asset of this same factory type. Its commodity-specific
+      // recipe is authoritative and must not be rewritten as the baseline's dynamic
+      // recipe. In particular, doing so on a new coal plant changes recipeFor('coal')
+      // and removes that exact destination from candidateFactories before extraction.
+      const isCommissionedProject=!!String(existing.constructionProjectId||'').trim();
+      if(!isCommissionedProject){
+        if(dynamicProcessing)existing.recipeMode='DYNAMIC_PROCESSING';
+        else if(dynamicRecipeSet)existing.recipeMode='DYNAMIC_RECIPE_SET';
+        else if(!existing.recipeId&&!existing.recipe?.recipeId)existing.recipeId=requirements.recipeId;
+        if(!dynamicProcessing&&!dynamicRecipeSet&&!existing.inputCoefficients&&!existing.inputs&&!existing.inputProfile&&!existing.recipe?.inputs)
+          existing.inputCoefficients=clone(requirements.inputsPerProductionUnit||{});
+        if(!dynamicProcessing&&!dynamicRecipeSet&&!existing.outputProfile&&!existing.outputCoefficients&&!existing.recipe?.outputs)
+          existing.outputProfile=clone(requirements.outputsPerProductionUnit||{});
+        if(!existing.recipeMode)existing.recipeMode=dynamicProcessing?'DYNAMIC_PROCESSING':(dynamicRecipeSet?'DYNAMIC_RECIPE_SET':
+          (Object.keys(existing.inputCoefficients||existing.inputs||{}).length>1?'MULTI_INPUT':'SINGLE_INPUT'));
+        if(!existing.recipeAuthority)existing.recipeAuthority=dynamicProcessing?'INDUSTRIAL_CATALOG_DYNAMIC_PROCESSING':
+          (dynamicRecipeSet?'INDUSTRIAL_CATALOG_RECIPE_SET':requirements.authority||'SIMULATED_GAMEPLAY_RULE');
+        if(existing.cycleDays==null)existing.cycleDays=Math.max(1,Number(requirements.processing?.cycleDays)||1);
+        if(!existing.inputUnit)existing.inputUnit=requirements.inputUnit||'SIMULATION_RESOURCE_UNIT';
+        if(!existing.outputUnit)existing.outputUnit=requirements.outputUnit||'SIMULATION_RESOURCE_UNIT';
+      }
       if(!Array.isArray(existing.requiredTechnologyIds))existing.requiredTechnologyIds=[];
       if(!existing.baselineTechnologyContext)existing.baselineTechnologyContext=clone(requirements.construction?.requiredTechnologyIds||[]);
       if(!existing.inputInventory||typeof existing.inputInventory!=='object'||Array.isArray(existing.inputInventory))existing.inputInventory={};

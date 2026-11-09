@@ -1657,6 +1657,55 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
 }
 
 
+// A starting-baseline registration may run after a commissioned project exists.
+// It must hydrate baseline assets without rewriting that project's explicit recipe.
+{
+  const priorState=context.Game.state;
+  try{
+    context.Game.state={
+      simulation:{turn:2,playerCountryId:'BGD',session:{sessionId:'PROJECT-RECIPE-PRESERVATION',playerCountryId:'BGD',status:'READY'}},
+      economy:{BGD:{productionAssets:[
+        {id:'FAC-START:BGD:UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT:1',
+          countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+          sourceType:'COUNTRY_STARTING_FACTORY_BASELINE',status:'OPERATIONAL'},
+        {id:'FAC:BGD:UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT:T1:P1:COAL',
+          countryId:'BGD',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+          constructionProjectId:'PROJECT-COAL-PLANT',status:'OPERATIONAL',
+          recipeId:'PROCESSING:coal',recipeMode:'SINGLE_INPUT',recipeAuthority:'INDUSTRIAL_CATALOG_RULE',
+          inputCoefficients:{coal:1},outputProfile:{COAL_CONCENTRATE:0.82,COAL_REJECT:0.18},
+          cycleDays:1,inputUnit:'SIMULATION_RESOURCE_UNIT',outputUnit:'SIMULATION_RESOURCE_UNIT'}
+      ]}},
+      resource:{BGD:{inventory:{},warehouse:{availableByResource:{},reservedByResource:{}}}},
+      transport:{BGD:{infrastructure:{utilitySupply:{electricityMWhPerDay:1000000,waterM3PerDay:1000000,status:'AVAILABLE'}}}}
+    };
+    await N.loadCatalog();
+    const counts=Object.fromEntries(Object.keys(catalog.factoryProfiles).sort().map(type=>[type,0]));
+    counts.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT=2;
+    const registered=N.registerStartingFactoryAssets({
+      countryId:'BGD',factoryCounts:counts,sessionId:'PROJECT-RECIPE-PRESERVATION',
+      datasetVersion:'TEST_PROJECT_RECIPE_PRESERVATION_V1'
+    });
+    assert.equal(registered.status,'COMPLETED',JSON.stringify(registered));
+    const assets=context.Game.state.economy.BGD.productionAssets;
+    const baselineAsset=assets.find(asset=>asset.sourceType==='COUNTRY_STARTING_FACTORY_BASELINE');
+    const commissioned=assets.find(asset=>asset.constructionProjectId==='PROJECT-COAL-PLANT');
+    assert.equal(baselineAsset.recipeMode,'DYNAMIC_PROCESSING',
+      'starting universal baseline assets retain catalog-driven commodity processing');
+    assert.equal(commissioned.recipeMode,'SINGLE_INPUT',
+      'baseline registration must not replace a commissioned project recipe mode');
+    assert.deepEqual(commissioned.inputCoefficients,{coal:1},
+      'the commissioned coal input coefficient must remain authoritative');
+    assert.deepEqual(commissioned.outputProfile,{COAL_CONCENTRATE:0.82,COAL_REJECT:0.18});
+    assert.ok(N.candidateFactories('BGD','coal').some(row=>row.asset.id===commissioned.id),
+      'a commissioned coal plant must remain eligible as the selected RAW_TO_FACTORY destination');
+    assert.equal(N.recipeFor('coal',commissioned).inputs.coal,1,
+      'the live factory recipe must continue to consume coal after baseline registration');
+  }finally{
+    context.Game.state=priorState;
+  }
+}
+
+
 // A boot-time catalog request is shared with factory baseline initialization.
 // It must time out, abort the request and release the promise slot for retries.
 {
