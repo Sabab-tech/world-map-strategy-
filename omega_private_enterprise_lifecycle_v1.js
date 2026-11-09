@@ -1261,7 +1261,7 @@
         !!(invitation&&tenderType==='INFRASTRUCTURE_SUPPORT'),
       utilitySupportRequested=utilityShortfall||(invitation&&tenderType==='UTILITY_SUPPORT'),
       marketUnproven=selected.marketSignals.every(function(row){
-        return['NO_VERIFIED_MARKET_SIGNAL','UNOBSERVED','UNOBSERVED_OR_STALE'].indexOf(row.signal)>=0;
+        return['NO_VERIFIED_MARKET_SIGNAL','UNOBSERVED','UNOBSERVED_OR_STALE','CURRENT_TURN_REFERENCE_PRICE_ONLY'].indexOf(row.signal)>=0;
       }),
       offtakeRequested=marketUnproven||(invitation&&tenderType==='OFFTAKE_CONTRACT'),
       inputs=selected.preview.inputRequirements||[],
