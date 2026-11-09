@@ -879,6 +879,24 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         state.simulation.turn = clock.turn;
         state.simulation.date = new Date(targetDateMs - dayMs).toISOString().slice(0, 10);
         state.simulation.daysPerTurn = 1;
+        // This browser proof validates one committed site batch and its first mine/factory
+        // shipment legs. The 30-day extraction turn can leave residual cargo at the mine;
+        // when the ETA helper compresses the next turn to one day, normal residual dispatch
+        // would add another 51-tonne shipment and make the single-leg assertions inspect
+        // that newer in-transit shipment instead of the exact shipment being settled here.
+        // Freeze only this selected batch's residual dispatches for the ETA turn. Its already
+        // dispatched mine and factory shipments still advance and settle through real handlers.
+        const activeRun=window.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__?.result||null;
+        if(activeRun?.batchId){
+          const activeCountry=String(activeRun.countryId||state.simulation?.session?.playerCountryId||'').trim();
+          const activeNetwork=state.resource?.[activeCountry]?.industrialNetwork;
+          const activeFlow=(activeNetwork?.siteFlowLedger||[]).find(row=>
+            String(row?.batchId||'')===String(activeRun.batchId));
+          if(!activeFlow)throw new Error('SAB34_TARGET_SITE_FLOW_MISSING_BEFORE_ETA_ADVANCE:'+String(activeRun.batchId));
+          activeFlow.lastResidualDispatchTurn=targetTurn;
+          activeFlow.lastMineResidualDispatchTurn=targetTurn;
+          activeFlow.lastFactoryResidualDispatchTurn=targetTurn;
+        }
         console.info('[SAB34_PROGRESS] ETA_FAST_FORWARD ' + JSON.stringify({
           label, fromTurn: currentTurn, targetTurn, compressedTurns,
           recordedEtaDate: new Date(requestedDateMs).toISOString().slice(0, 10),
