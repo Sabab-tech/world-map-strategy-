@@ -3269,29 +3269,10 @@
         ?'Private factory baseline unavailable: '+escapeHtml(root.__omegaPrivateBaselineError||loadStatus&&loadStatus.reason||'DATA_UNAVAILABLE')
         :'Loading private company opening baseline…';
       var retry=loadFailed?'<button type="button" data-pe-baseline-retry>Retry baseline load</button>':'';
-      // Mount the actual proposal form contract immediately, while keeping every
-      // field disabled until the authoritative country baselines are validated.
-      // This prevents the Industry panel from appearing empty on slower offline
-      // WebViews while the 197-country baseline is still loading.
-      var pendingCompanyOptions=COMPANY_IDS.map(function(company){
-        return '<option value="'+company+'">'+escapeHtml(COMPANY_NAMES[company])+'</option>';
-      }).join('');
-      var pendingTypes=listFactoryTypes();
-      var pendingTypeOptions=pendingTypes.length?pendingTypes.map(function(type){
-        return '<option value="'+escapeHtml(type.id)+'">'+escapeHtml(type.name)+'</option>';
-      }).join(''):'<option value="">Factory catalogue loading…</option>';
-      var pendingForm='<form class="pe-form" data-pe-proposal-form aria-busy="true">'+
-        '<label>Private asset owner<select name="companyId" disabled>'+pendingCompanyOptions+'</select></label>'+
-        '<label>Private operator<select name="operatorCompanyId" disabled>'+pendingCompanyOptions+'</select></label>'+
-        '<label>Factory type<select name="factoryType" disabled>'+pendingTypeOptions+'</select></label>'+
-        '<label>Request Reason<textarea name="requestReason" minlength="12" maxlength="1000" required disabled></textarea></label>'+
-        '<label>Expected Benefit<textarea name="expectedBenefit" minlength="12" maxlength="1000" required disabled></textarea></label>'+
-        '<label>Risk Forecast<textarea name="riskForecast" minlength="12" maxlength="1000" required disabled></textarea></label>'+
-        '<label>Quantity<input name="quantity" type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="1" disabled></label>'+
-        '<label>Input sourcing<select name="sourcingPolicy" disabled><option value="DOMESTIC_ONLY">Domestic inputs</option><option value="COMPANY_FUNDED_IMPORTS">Company-funded imports</option><option value="MIXED">Mixed sourcing</option></select></label>'+
-        '<label class="pe-checkbox"><input name="stateSupportRequested" type="checkbox" disabled> Request possible Treasury grant support</label>'+
-        '<button type="submit" disabled>Submit company proposal</button></form>';
-      shell.insertAdjacentHTML('beforeend','<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1" data-pe-baseline-status="'+(loadFailed?'blocked':'loading')+'"><h3>Company expansion proposals</h3><p>'+loadMessage+'</p>'+pendingForm+retry+'<p class="pe-footnote">Proposal entry becomes available after the selected country’s government and private opening baselines are validated. No proposal, stock, factory or cash changes while loading.</p></section>');
+      // Company agents, not the government player, prepare and submit business cases.
+      // Keep the loading state informational; do not mount an application form on behalf
+      // of a company before the authoritative country baselines have been validated.
+      shell.insertAdjacentHTML('beforeend','<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1" data-pe-baseline-status="'+(loadFailed?'blocked':'loading')+'"><h3>Private company proposals</h3><p>'+loadMessage+'</p>'+retry+'<p class="pe-footnote">Companies independently prepare their market analysis, input sourcing plan, financing offer, expected benefits and risks. The government reviews and negotiates their submissions after the country baselines load. No proposal, stock, factory or cash changes while loading.</p></section>');
       bindUi(root);
       return;
     }
@@ -3304,7 +3285,9 @@
     var cards=dash.proposals.slice().reverse().map(function(p){
       var account=capitalByCompany[p.companyId]||{},balance=num(account.availableBalance)||0;
       var buttons='';
-      if(p.status==='PROPOSED')buttons='<button type="button" data-pe-action="approve" data-pe-proposal="'+p.proposalId+'">Approve</button><button type="button" data-pe-action="defer" data-pe-proposal="'+p.proposalId+'">Defer</button><button type="button" data-pe-action="deny" data-pe-proposal="'+p.proposalId+'">Reject</button>';
+      if(p.status==='PROPOSED')buttons='<button type="button" data-pe-action="approve" data-pe-proposal="'+p.proposalId+'">Approve</button><button type="button" data-pe-action="hold" data-pe-proposal="'+p.proposalId+'">Hold</button><button type="button" data-pe-action="defer" data-pe-proposal="'+p.proposalId+'">Defer</button><button type="button" data-pe-action="deny" data-pe-proposal="'+p.proposalId+'">Reject</button>';
+      else if(p.status==='ON_HOLD')buttons='<button type="button" data-pe-action="resume" data-pe-proposal="'+p.proposalId+'">Resume review</button><button type="button" data-pe-action="deny" data-pe-proposal="'+p.proposalId+'">Reject</button>';
+      else if(p.status==='NEGOTIATION_PENDING_COMPANY')buttons='<span class="pe-info">Counter-offer sent · awaiting company response</span>';
       else if(p.status==='APPROVED_AWAITING_FUNDING'){
         if(balance+1e-9>=num(p.capitalRequired))buttons+='<button type="button" data-pe-action="fund-company" data-pe-proposal="'+p.proposalId+'">Fund from company capital</button>';
         if(p.decision&&p.decision.allowStateSupport)buttons+='<button type="button" data-pe-action="fund-grant" data-pe-proposal="'+p.proposalId+'">Authorize Treasury grant</button>';
@@ -3326,10 +3309,34 @@
         return'<div class="pe-input-row"><span><b>'+escapeHtml(x.resourceId)+'</b><br>30-day need '+neededValue+'</span><span>'+availableLabel+'<br><b>'+availableValue+'</b></span><span>Current demand<br><b>'+demandValue+'</b></span><span>Shortfall<br><b>'+gapValue+'</b></span></div>';
       }).join('')+'</div>';
       var assessment=p.approvalAssessment||proposalDecisionAssessment(p,preview);
-      var applicationMarkup='<div class="pe-input-forecast"><strong>Company application · required before approval</strong>'+
-        '<p><b>Request reason</b><br>'+escapeHtml(p.requestReason||'Not recorded')+'</p>'+
-        '<p><b>Expected benefit</b><br>'+escapeHtml(p.expectedBenefit||'Not recorded')+'</p>'+
-        '<p><b>Company risk forecast</b><br>'+escapeHtml(p.riskForecast||'Not recorded')+'</p></div>';
+      var applicationMarkup='<div class="pe-input-forecast"><strong>Company-authored business case · submitted by '+escapeHtml(COMPANY_NAMES[p.submittedBy||p.companyId]||p.submittedBy||p.companyId)+'</strong>'+
+        '<p><b>Why the company wants to build</b><br>'+escapeHtml(p.requestReason||'Not recorded')+'</p>'+
+        '<p><b>What the company offers and expects</b><br>'+escapeHtml(p.expectedBenefit||'Not recorded')+'</p>'+
+        '<p><b>Risks disclosed by the company</b><br>'+escapeHtml(p.riskForecast||'Not recorded')+'</p></div>';
+      var companyCase=p.companyCase||{};
+      var caseMarketRows=companyCase.marketAnalysis&&companyCase.marketAnalysis.outputs||[];
+      var caseSupplyRows=companyCase.supplyChainProof&&companyCase.supplyChainProof.inputs||[];
+      function caseAmount(value){return value===null||value===undefined?'Not verified':Number(value).toLocaleString('en-US',{maximumFractionDigits:2});}
+      var companyMarketMarkup='<div class="pe-input-forecast"><strong>Company market analysis · 30-day output scenario</strong>'+
+        (caseMarketRows.length?caseMarketRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b><br>Output '+caseAmount(row.projected30DayQuantity)+'</span><span>Market signal<br><b>'+escapeHtml(row.priceDiscovery||'UNAVAILABLE')+'</b></span><span>Clearing price<br><b>'+(row.clearingPriceUsd===null?'Not cleared':caseAmount(row.clearingPriceUsd)+' USD')+'</b></span><span>Matched quantity<br><b>'+caseAmount(row.matchedQuantity)+'</b></span></div><small>'+escapeHtml(row.evidenceStatus||'MARKET_EVIDENCE_UNAVAILABLE')+'</small>';}).join(''):'<span class="pe-info">No output market quote is verified.</span>')+
+        '<small>Reference prices are not cleared trades. Capacity is not demand, and projected production is not guaranteed sales.</small></div>';
+      var companySupplyMarkup='<div class="pe-input-forecast"><strong>Company supply-chain evidence · '+escapeHtml(companyCase.supplyChainProof&&companyCase.supplyChainProof.domesticCoverageStatus||'UNVERIFIED')+'</strong>'+
+        (caseSupplyRows.length?caseSupplyRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b><br>30-day need '+caseAmount(row.required30Day)+'</span><span>Domestic surplus<br><b>'+caseAmount(row.domesticUncommittedAvailable)+'</b></span><span>Coverage<br><b>'+escapeHtml(row.domesticCoverage)+'</b></span><span>Gap<br><b>'+caseAmount(row.shortfall)+'</b></span></div>'+
+          (row.potentialExternalSuppliers&&row.potentialExternalSuppliers.length?'<small>Potential external sources: '+row.potentialExternalSuppliers.map(function(x){return escapeHtml(x.countryId)+' ('+caseAmount(x.available)+')';}).join(', ')+' · not contracted</small>':'')+
+          (row.potentialPrivateCompanySuppliers&&row.potentialPrivateCompanySuppliers.length?'<small>Potential company sources: '+row.potentialPrivateCompanySuppliers.map(function(x){return escapeHtml(x.companyName||x.companyId)+' / '+escapeHtml(x.countryId)+' ('+caseAmount(x.available)+')';}).join(', ')+' · not contracted</small>':'');
+        }).join(''):'<span class="pe-info">Input stock or demand evidence has not been verified.</span>')+
+        '<small>Potential suppliers are not secured supply. The government must verify contracts, delivery capacity and receipts independently.</small></div>';
+      var financing=companyCase.financingOffer||{};
+      var companyFinanceOfferMarkup='<div class="pe-input-forecast"><strong>Company financing offer / request</strong>'+
+        '<div class="pe-facts"><span>Preferred structure <b>'+escapeHtml(financing.preferredStructure||'NOT_STATED')+'</b></span>'+
+        '<span>Company cash available <b>'+caseAmount(financing.companyCashAvailable)+'</b></span>'+
+        '<span>Company capital offered <b>'+caseAmount(financing.companyCapitalOffer)+'</b></span>'+
+        '<span>Capital required <b>'+caseAmount(financing.constructionCapitalRequired)+'</b></span>'+
+        '<span>Funding gap <b>'+caseAmount(financing.fundingGap)+'</b></span>'+
+        '<span>Government grant requested <b>'+caseAmount(financing.requestedGovernmentGrant)+'</b></span>'+
+        '<span>Government equity requested <b>'+caseAmount(financing.requestedGovernmentEquityBps)+' bps</b></span>'+
+        '<span>Private shareholding <b>'+(financing.privateShareholdingRequested?'Requested':'Not requested')+'</b></span></div>'+
+        '<small>'+escapeHtml(financing.companyCapitalAccountStatus||'CAPITAL_NOT_VERIFIED')+' · '+escapeHtml(financing.settlementStatus||'PROPOSAL_ONLY_NOT_SETTLED')+'. Requests are not funds until a matching Finance ledger transaction is verified.</small></div>';
       var financial=assessment.financialForecast||{};
       function forecastAmount(value){return value===null||value===undefined?'Not observed':Number(value).toLocaleString('en-US',{maximumFractionDigits:2})+(financial.currency?' '+escapeHtml(financial.currency):'');}
       var riskMarkup='<div class="pe-input-forecast"><strong>Government review · 30-day benefit / risk assessment · '+escapeHtml(assessment.riskStatus||'UNRESOLVED')+'</strong>'+
@@ -3346,7 +3353,18 @@
       var capitalReceiptForm=p.status==='APPROVED_AWAITING_FUNDING'&&balance+1e-9<(num(p.capitalRequired)||0)
         ?'<form class="pe-capital-form" data-pe-capital-form data-pe-company="'+escapeHtml(p.companyId)+'" data-pe-proposal="'+escapeHtml(p.proposalId)+'"><label>Finance receipt transaction ID<input name="sourceTransactionId" type="text" maxlength="160" autocomplete="off" required></label><label>Settled amount ('+escapeHtml(p.capitalUnit)+')<input name="amount" type="number" min="0.01" step="any" inputmode="decimal" required></label><button type="submit">Verify company capital</button></form>'
         :'';
-      return'<article class="pe-proposal"><header><strong>'+escapeHtml(p.companyName)+'</strong><span>'+p.status.replace(/_/g,' ')+'</span></header>'+facts+applicationMarkup+riskMarkup+readinessMarkup+inputDetails+shortages+unknown+capitalReceiptForm+'<div class="pe-actions">'+buttons+'</div></article>';
+      var counterOfferForm=p.status==='PROPOSED'
+        ?'<form class="pe-form" data-pe-counter-form data-pe-proposal="'+escapeHtml(p.proposalId)+'"><strong>Government negotiation / counter-offer</strong>'+
+          '<label>Permitted quantity<input name="quantity" type="number" min="1" max="'+p.quantity+'" step="1" value="'+p.quantity+'" required></label>'+
+          '<label>Government offer type<select name="supportType"><option value="NO_PUBLIC_FINANCING">No public financing</option><option value="CAPITAL_GRANT">Capital grant</option><option value="GOVERNMENT_EQUITY">Government equity (terms only)</option><option value="LOAN_GUARANTEE">Loan guarantee (terms only)</option><option value="OFFTAKE_CONTRACT">Public purchase / offtake</option><option value="INFRASTRUCTURE_SUPPORT">Infrastructure support</option><option value="UTILITY_SUPPORT">Utility support</option></select></label>'+
+          '<label>Maximum grant amount<input name="maxGovernmentContribution" type="number" min="0" step="any" value="0"></label>'+
+          '<label>Government equity (basis points)<input name="governmentEquityBps" type="number" min="0" max="10000" step="1" value="0"></label>'+
+          '<label>Government conditions<textarea name="conditions" maxlength="1000" placeholder="Conditions the company must accept"></textarea></label>'+
+          '<label>Government reason<textarea name="reason" minlength="12" maxlength="1000" required placeholder="Explain the counter-offer and public-interest conditions"></textarea></label>'+
+          '<button type="submit">Send counter-offer to company</button></form>':'';
+      return'<article class="pe-proposal"><header><strong>'+escapeHtml(p.companyName)+'</strong><span>'+p.status.replace(/_/g,' ')+'</span></header>'+facts+applicationMarkup+companyMarketMarkup+companySupplyMarkup+companyFinanceOfferMarkup+riskMarkup+readinessMarkup+inputDetails+shortages+unknown+
+        (p.governmentCounterOffer?'<div class="pe-input-forecast"><strong>Government counter-offer · company response '+escapeHtml(p.governmentCounterOffer.companyResponse||'PENDING')+'</strong><p>'+escapeHtml(p.governmentCounterOffer.reason||'')+'</p><small>Terms: '+escapeHtml(p.governmentCounterOffer.supportType)+' · quantity '+Number(p.governmentCounterOffer.quantity||0)+' · maximum public contribution '+caseAmount(p.governmentCounterOffer.maxGovernmentContribution)+' · '+escapeHtml(p.governmentCounterOffer.settlementStatus||'OFFER ONLY')+'</small></div>':'')+
+        capitalReceiptForm+counterOfferForm+'<div class="pe-actions">'+buttons+'</div></article>';
     }).join('')||'<div class="pe-empty">No company expansion proposal has been submitted for this country.</div>';
     var activeCostPolicy=companyOperatingCostPolicy(country),activeCostRates=activeCostPolicy.rates||{};
     function costRateField(key,label,unit){
@@ -3401,15 +3419,33 @@
     }).join('')||'<div class="pe-empty">No joint ventures have been proposed for this country.</div>';
     var jvCompanyOptions=companyOptions;
     var message=root.__omegaPrivateEnterpriseMessage?'<p class="pe-message" role="status">'+escapeHtml(root.__omegaPrivateEnterpriseMessage)+'</p>':'';
-    var grantHelp='<small>State grant support is a real Treasury outflow and requires an explicit request plus approval. No company cash is assumed from the static opening allocation.</small>';
-    var markup='<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1"><header class="pe-head"><div><small>PRODUCTION LINES / NATIONAL INDUSTRY POLICY</small><h3>Company expansion proposals</h3><p>Government decides; firms own and operate approved private assets.</p></div><span class="pe-gate">'+(dash.productionEnabled?'PRIVATE PRODUCTION ENABLED':'PRODUCTION GATED BY SAB-34')+'</span></header>'+
+    var invitationRows=dash.governmentInvitations||[];
+    var invitationCards=invitationRows.slice().reverse().map(function(row){
+      var responses=(row.responses||[]).map(function(response){
+        return'<span class="pe-info">'+escapeHtml(response.companyName||response.companyId)+' · '+escapeHtml(response.status)+' · '+escapeHtml(response.proposalId)+'</span>';
+      }).join('');
+      var close=row.status==='OPEN'?'<button type="button" data-pe-action="close-invitation" data-pe-invitation="'+escapeHtml(row.invitationId)+'">Close invitation</button>':'';
+      return'<article class="pe-proposal"><header><strong>'+escapeHtml(row.factoryName)+' · '+Number(row.quantity).toLocaleString('en-US')+' unit(s)</strong><span>'+escapeHtml(row.status)+'</span></header>'+
+        '<p>'+escapeHtml(row.governmentRationale)+'</p><small>Government support offer: '+escapeHtml(row.supportOffer&&row.supportOffer.type||'NO_PUBLIC_FINANCING')+
+        ' · Maximum contribution '+Number(row.supportOffer&&row.supportOffer.maxGovernmentContribution||0).toLocaleString('en-US')+
+        ' · Equity '+Number(row.supportOffer&&row.supportOffer.governmentEquityBps||0)/100+'%</small>'+
+        '<div>'+ (responses||'<span class="pe-empty">No company has responded yet.</span>') +'</div><div class="pe-actions">'+close+'</div></article>';
+    }).join('')||'<div class="pe-empty">The government has not issued an invitation. Companies can still submit independent proposals.</div>';
+    var invitationSection='<section class="pe-proposals"><h4>Government-initiated invitation / public tender</h4>'+
+      '<p class="pe-footnote">Use this only when the government needs private capacity or cannot fund the project itself. This publishes a request to companies; it does not create a company proposal, spend Treasury money or reserve resources.</p>'+
+      '<form class="pe-form" data-pe-invitation-form><label>Factory category<select name="factoryType" required>'+typeOptions+'</select></label>'+
+      '<label>Requested quantity<input name="quantity" type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="1" required></label>'+
+      '<label>Government support offered<select name="supportType"><option value="NO_PUBLIC_FINANCING">No public financing · company funds it</option><option value="CAPITAL_GRANT">Capital grant</option><option value="GOVERNMENT_EQUITY">Government equity (terms only)</option><option value="LOAN_GUARANTEE">Loan guarantee (terms only)</option><option value="OFFTAKE_CONTRACT">Public purchase / offtake</option><option value="INFRASTRUCTURE_SUPPORT">Infrastructure support</option><option value="UTILITY_SUPPORT">Utility support</option></select></label>'+
+      '<label>Maximum government contribution<input name="maxGovernmentContribution" type="number" min="0" step="any" value="0"></label>'+
+      '<label>Government equity target (basis points)<input name="governmentEquityBps" type="number" min="0" max="10000" step="1" value="0"></label>'+
+      '<label>Invitation validity (turns)<input name="expiresAfterTurns" type="number" min="30" max="900" step="1" value="90"></label>'+
+      '<label>Invitation reference<input name="requestId" type="text" maxlength="100" required placeholder="BGD-INDUSTRIAL-TENDER-001"></label>'+
+      '<label>Government requirement / public-interest reason<textarea name="governmentRationale" minlength="12" maxlength="1000" required placeholder="Explain the capacity gap, strategic requirement and public conditions."></textarea></label>'+
+      '<button type="submit">Publish government invitation</button></form>'+invitationCards+'</section>';
+    var markup='<section class="omega-private-lifecycle" data-omega-private-company-lifecycle="v1"><header class="pe-head"><div><small>PRODUCTION LINES / NATIONAL INDUSTRY POLICY</small><h3>Company expansion proposals</h3><p>Companies initiate and justify projects. Government verifies, negotiates, permits or rejects them.</p></div><span class="pe-gate">'+(dash.productionEnabled?'PRIVATE PRODUCTION ENABLED':'PRODUCTION GATED BY SAB-34')+'</span></header>'+
       '<div class="pe-overview"><span>Companies <b>5</b></span><span>Proposals <b>'+dash.proposals.length+'</b></span><span>Opening baseline <b>'+(baselineRow&&baselineRow.status==='READY'?baselineRow.totalPrivateFactoryUnits.toLocaleString('en-US'):'Unavailable')+'</b></span><span>Finance <b>'+Object.keys(capitalByCompany).length+' capital accounts</b></span></div>'+
-      '<form class="pe-form" data-pe-proposal-form><label>Private asset owner<select name="companyId">'+companyOptions+'</select></label><label>Private operator<select name="operatorCompanyId">'+companyOptions+'</select></label><label>Factory type<select name="factoryType">'+typeOptions+'</select></label>'+universalResourceField+
-      '<label>Request Reason<textarea name="requestReason" minlength="12" maxlength="1000" required placeholder="Why does this company need this factory? Describe the business or national supply need."></textarea><small>Mandatory · explain why the company is applying.</small></label>'+
-      '<label>Expected Benefit<textarea name="expectedBenefit" minlength="12" maxlength="1000" required placeholder="Describe the expected capacity, product or market benefit."></textarea><small>Mandatory · include the expected benefit; unverified sales are not guaranteed revenue.</small></label>'+
-      '<label>Risk Forecast<textarea name="riskForecast" minlength="12" maxlength="1000" required placeholder="Identify input, capital, utility, workforce, logistics and market risks."></textarea><small>Mandatory · explain the risks the company expects.</small></label>'+
-      '<label>Quantity<input name="quantity" type="number" min="1" max="'+MAX_PROJECTS_PER_PROPOSAL+'" step="1" value="1" required></label><label>Input sourcing<select name="sourcingPolicy"><option value="DOMESTIC_ONLY">Domestic inputs</option><option value="COMPANY_FUNDED_IMPORTS">Company-funded imports</option><option value="MIXED">Mixed sourcing</option></select></label><label class="pe-checkbox"><input name="stateSupportRequested" type="checkbox"> Request possible Treasury grant support</label><button type="submit">Submit company proposal</button></form>'+grantHelp+message+
-      '<div class="pe-proposals"><h4>Government decision queue</h4>'+cards+'</div>'+
+      invitationSection+message+
+      '<div class="pe-proposals"><h4>Company-submitted offers · government decision queue</h4>'+cards+'</div>'+
       '<details class="pe-proposals" data-pe-finance-details '+(financeWasOpen?'open':'')+'><summary><strong>Corporate Finance / Profit / Tax / Cost</strong></summary><p class="pe-footnote">Shared Finance journal + factory-event cost accruals. Financial close is blocked when required operating costs are unpriced. Factory CAPEX remains separate.</p>'+costPolicyForm+'<div data-pe-finance-card-host data-loaded="'+(financeWasOpen?'true':'false')+'">'+(financeWasOpen?companyFinanceCardsMarkup(country,capitalByCompany):'<p class="pe-empty">Open this section to load company financial statements.</p>')+'</div></details>'+
       '<section class="pe-proposals"><h4>Joint ventures / shareholder voting / dividends</h4>'+
       '<form class="pe-form" data-pe-jv-form><label>JV name<input name="name" type="text" maxlength="100" value="Strategic Industrial Joint Venture" required></label>'+
@@ -3576,26 +3612,36 @@
         root.__omegaPrivateEnterpriseMessage=resolutionResult.status==='VOTING'?'JV resolution submitted for weighted shareholder voting.':'JV resolution blocked: '+String(resolutionResult.reason||resolutionResult.status).replace(/_/g,' ').toLowerCase()+'.';
         refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
       }
-      if(!form.matches('[data-pe-proposal-form]'))return;
-      if(event.preventDefault)event.preventDefault();
-      var data=new FormData(form),result=createProposal({countryId:root.__omegaV2IndustryCountryId||playerCountry(),
-        companyId:data.get('companyId'),operatorCompanyId:data.get('operatorCompanyId'),factoryType:data.get('factoryType'),quantity:data.get('quantity'),
-        processingResourceId:data.get('processingResourceId'),
-        requestReason:data.get('requestReason'),expectedBenefit:data.get('expectedBenefit'),riskForecast:data.get('riskForecast'),
-        sourcingPolicy:data.get('sourcingPolicy'),stateSupportRequested:data.get('stateSupportRequested')==='on'});
-      root.__omegaPrivateEnterpriseLastProposalResult=clone(result);
-      root.__omegaPrivateEnterpriseMessage=result.status==='PROPOSED'?'Proposal submitted. It has no factory, stock or cash effect until the government decision and funding stages.':('Proposal blocked: '+(result.reason||result.status));
-      // Repaint only this lifecycle panel. The full Industry route renderer can
-      // rehydrate its own screen state; proposal submission must remain attached
-      // to the same canonical Game.state economy bucket that accepted the command.
-      var proposalCountry=root.__omegaV2IndustryCountryId||playerCountry();
-      renderPanel(root,Object.assign({},root.__omegaV2IndustryOptions||{},{countryId:proposalCountry,tab:'production-lines'}));
-    });
-    root.addEventListener('change',function(event){
-      var target=event.target,form=target&&target.closest?target.closest('[data-pe-proposal-form]'):null;
-      if(!form||!target.matches||!target.matches('select[name="factoryType"]'))return;
-      var field=form.querySelector('[data-pe-universal-resource-field]');
-      if(field)field.hidden=String(target.value||'').toUpperCase()!=='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT';
+      if(form.matches('[data-pe-invitation-form]')){
+        if(event.preventDefault)event.preventDefault();
+        var invitationData=new FormData(form),invitationResult=createGovernmentInvitation({
+          countryId:root.__omegaV2IndustryCountryId||playerCountry(),factoryType:invitationData.get('factoryType'),
+          quantity:invitationData.get('quantity'),supportType:invitationData.get('supportType'),
+          maxGovernmentContribution:invitationData.get('maxGovernmentContribution'),
+          governmentEquityBps:invitationData.get('governmentEquityBps'),
+          expiresAfterTurns:invitationData.get('expiresAfterTurns'),
+          requestId:invitationData.get('requestId'),governmentRationale:invitationData.get('governmentRationale')});
+        root.__omegaPrivateEnterpriseLastInvitationResult=clone(invitationResult);
+        root.__omegaPrivateEnterpriseMessage=invitationResult.status==='OPEN'||invitationResult.status==='DUPLICATE'
+          ?'Government invitation published. Companies now decide whether and how to respond.'
+          :'Government invitation blocked: '+String(invitationResult.reason||invitationResult.status).replace(/_/g,' ').toLowerCase()+'.';
+        refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
+      }
+      if(form.matches('[data-pe-counter-form]')){
+        if(event.preventDefault)event.preventDefault();
+        var counterData=new FormData(form),counterResult=decideProposal({
+          countryId:root.__omegaV2IndustryCountryId||playerCountry(),
+          proposalId:form.getAttribute('data-pe-proposal'),decision:'COUNTER_OFFER',
+          counterOffer:{quantity:counterData.get('quantity'),supportType:counterData.get('supportType'),
+            maxGovernmentContribution:counterData.get('maxGovernmentContribution'),
+            governmentEquityBps:counterData.get('governmentEquityBps'),
+            conditions:counterData.get('conditions'),reason:counterData.get('reason')}});
+        root.__omegaPrivateEnterpriseMessage=counterResult.status==='NEGOTIATION_PENDING_COMPANY'
+          ?'Counter-offer sent. The company must accept or reject the terms before the government can issue a permit.'
+          :'Counter-offer blocked: '+String(counterResult.reason||counterResult.status).replace(/_/g,' ').toLowerCase()+'.';
+        refresh(root,root.__omegaV2IndustryCountryId||playerCountry());return;
+      }
+      return;
     });
     root.addEventListener('click',function(event){
       var target=event.target,retry=target&&target.closest?target.closest('[data-pe-baseline-retry]'):null;
@@ -3611,7 +3657,9 @@
       var button=target&&target.closest?target.closest('[data-pe-action]'):null;if(!button)return;
       var proposalId=button.getAttribute('data-pe-proposal'),action=button.getAttribute('data-pe-action'),country=root.__omegaV2IndustryCountryId||playerCountry();
       var result;
-      if(action==='close-finance'){
+      if(action==='close-invitation'){
+        result=closeGovernmentInvitation({countryId:country,invitationId:button.getAttribute('data-pe-invitation')});
+      }else if(action==='close-finance'){
         result=closeCompanyFinancialPeriod({countryId:country,companyId:button.getAttribute('data-pe-company')});
       }else if(action==='restructure-approve'||action==='restructure-deny'||action==='restructure-defer'){
         result=decideCompanyRestructuring({countryId:country,companyId:button.getAttribute('data-pe-company'),
@@ -3635,6 +3683,8 @@
         var input=shellInput(root,'[data-pe-adjust-quantity="'+proposalId+'"]');
         result=adjustProposal({countryId:country,proposalId:proposalId,quantity:input&&input.value});
       }else if(action==='approve')result=decideProposal({countryId:country,proposalId:proposalId,decision:'APPROVE',allowStateSupport:true,conditions:{allowStateSupport:true}});
+      else if(action==='hold')result=decideProposal({countryId:country,proposalId:proposalId,decision:'HOLD',reason:'Government review placed this proposal on hold.'});
+      else if(action==='resume')result=decideProposal({countryId:country,proposalId:proposalId,decision:'RESUME',reason:'Government resumed its review.'});
       else if(action==='defer')result=decideProposal({countryId:country,proposalId:proposalId,decision:'DEFER',reason:'Deferred by player government'});
       else if(action==='deny')result=decideProposal({countryId:country,proposalId:proposalId,decision:'DENY',reason:'Rejected by player government'});
       else if(action==='fund-company'){var p=getProposal(country,proposalId);result=p?fundProposal({countryId:country,proposalId:proposalId,sourceType:'COMPANY_CAPITAL',amount:p.capitalRequired}):{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};}
