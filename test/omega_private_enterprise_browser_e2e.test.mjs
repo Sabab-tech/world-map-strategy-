@@ -1783,6 +1783,9 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const sourceBatch = (resource.batches || []).find(row => String(row.batchId) === String(run.batchId));
       const sourceLot = resource.inventoryLots?.[String(run.batchId)] || null;
       const rawWarehouse = resource.warehouse || {};
+      const economy = window.OmegaResourceEconomy || window.Omega?.ResourceEconomy || null;
+      const publishParticipants = advanced.last?.phases?.PUBLISH?.participants ||
+        simulation.lastTurnParticipantResults || state.simulation?.lastTurnParticipantResults || [];
       return {
         advancedTurns: advanced.steps,
         compressedTurns: advanced.compressedTurns,
@@ -1791,9 +1794,14 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         stateTurn: Number(state.simulation?.turn),
         stateDate: String(state.simulation?.date || ''),
         clockDate: String(simulation.clock.simulationDate?.() || ''),
+        simulationPlayerCountry: simulation.getPlayerCountryId?.() || null,
+        sessionPlayerCountry: state.simulation?.session?.playerCountryId || null,
+        resourceEconomyTurnToken: window.__OmegaResourceEconomyV2Turn || null,
+        resourceEconomyDiagnostics: economy?.diagnostics?.() || null,
+        publishParticipants,
+        industrialTurnResult: window.__sab34LastIndustrialTurnResult || null,
         delivery: delivery || shipment || null,
         shipmentRows,
-        industrialTurnResult: window.__sab34LastIndustrialTurnResult || null,
         sourceBatch: sourceBatch ? {
           batchId: sourceBatch.batchId, status: sourceBatch.status, stage: sourceBatch.stage,
           quantity: sourceBatch.quantity, remainingQuantity: sourceBatch.remainingQuantity,
