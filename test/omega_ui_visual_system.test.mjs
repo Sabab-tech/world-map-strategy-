@@ -120,7 +120,7 @@ test('unified visual system is the final offline-cached visual authority for the
   const iconIndex = html.indexOf('href="omega_icon_system_v1.css"');
   assert.ok(styleIndex > iconIndex && iconIndex >= 0, 'the unified visual layer must load after every existing application stylesheet');
   assert.ok(serviceWorker.includes('"./omega_ui_unified_visual_system_v1.css"'), 'the unified visual layer must be available offline');
-  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v107"/);
+  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v108"/);
   for (const token of [
     '--omega-ui-bg:', '--omega-ui-surface:', '--omega-ui-border:',
     '--omega-ui-text:', '--omega-ui-accent:', '--omega-ui-control-height:',
@@ -157,7 +157,7 @@ test('Atlas Command refinement establishes compact typography, layered surfaces 
   assert.match(css, /@media \(max-width: 600px\)/);
   assert.match(css, /@media \(orientation: landscape\) and \(max-height: 500px\)/);
   assert.match(css, /@media \(hover: hover\) and \(pointer: fine\)/);
-  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v107"/);
+  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v108"/);
   assert.ok(serviceWorker.includes('"./omega_ui_unified_visual_system_v1.css"'), 'the refined design layer remains in the offline shell');
 });
 
