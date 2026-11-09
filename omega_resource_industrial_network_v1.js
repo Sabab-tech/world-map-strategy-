@@ -5585,13 +5585,42 @@ function ensureSimulationFactory(cid,site,resourceId,quantity,options={}){
 async function executeSitePipeline(input={}){
   const cid=canonicalCountry(input.countryId);
   if(!cid)return{status:'BLOCKED',reason:'SITE_COUNTRY_MISSING'};
+  const requestedFactoryId=String(input.factoryId||input.selectedFactoryId||'').trim();
+  const diagnosticResourceId=tok(input.resourceId||'');
+  const diagnosticSiteId=String(input.siteId||'').trim();
+  const factoryPipelineDiagnostics=[];
+  const captureFactoryPipelineState=stage=>{
+    const assets=factoryAssets(cid);
+    const matching=assets.filter(asset=>String(asset?.id||asset?.assetId||asset?.projectId||'').trim()===requestedFactoryId);
+    const snapshot={
+      stage,turn:turn(),assetCount:assets.length,
+      requestedFactoryMatches:matching.map(asset=>({
+        id:String(asset.id||asset.assetId||asset.projectId||''),
+        status:String(asset.status||'OPERATIONAL').toUpperCase(),
+        ownerType:String(asset.ownerType||asset.ownershipModel||''),
+        productionEnabled:asset.productionEnabled===true,
+        constructionProjectId:asset.constructionProjectId||null,
+        recipeId:asset.recipeId||null,recipeMode:asset.recipeMode||null,
+        inputCoefficients:clone(asset.inputCoefficients||asset.inputs||asset.inputProfile||{}),
+        resolvedInputs:recipeFor(diagnosticResourceId||String(asset.resourceId||''),asset).inputs
+      })),
+      candidateFactoryIds:diagnosticResourceId
+        ?candidateFactories(cid,diagnosticResourceId,diagnosticSiteId).map(({asset})=>String(asset.id||asset.assetId||asset.projectId||''))
+        :[]
+    };
+    factoryPipelineDiagnostics.push(snapshot);
+    return snapshot;
+  };
+  captureFactoryPipelineState('API_ENTRY');
   const selectedPlayer=playerSimulationCountryId();
   if(selectedPlayer&&selectedPlayer!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selectedPlayer};
   const routeLoad=await loadSiteLogisticsRoutes(cid);
+  captureFactoryPipelineState('AFTER_ROUTE_LOAD');
   if(routeLoad.status!=='READY'&&selectedPlayer)return{status:'BLOCKED',reason:routeLoad.reason||'PLAYER_COUNTRY_LOGISTICS_NOT_READY',detail:routeLoad};
   const endowment=g.Omega?.ResourceEndowmentRuntime||g.OmegaResourceEndowmentRuntime;
   if(!endowment?.initialize||!endowment?.hydrateCountry||!endowment?.extractCountry)return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_RUNTIME_UNAVAILABLE'};
   const initialized=await endowment.initialize();
+  captureFactoryPipelineState('AFTER_ENDOWMENT_INITIALIZE');
   if(initialized?.status!=='READY')return{status:'BLOCKED',reason:'RESOURCE_ENDOWMENT_NOT_READY',detail:initialized};
   const site=siteById(input.siteId);
   if(!site?.siteId)return{status:'BLOCKED',reason:'SITE_NOT_FOUND'};
@@ -5610,8 +5639,11 @@ async function executeSitePipeline(input={}){
   if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid};
   const rid=tok(input.resourceId||site?.real?.resourceId||site?.sourceSiteRecord?.resourceId||site?.identity?.resourceTypeId);
   if(!rid)return{status:'BLOCKED',reason:'RESOURCE_ID_MISSING'};
-  const loaded=await loadCatalog();if(loaded?.status==='FAILED')return{status:'BLOCKED',reason:'INDUSTRIAL_CATALOG_UNAVAILABLE',detail:loaded};
+  const loaded=await loadCatalog();
+  captureFactoryPipelineState('AFTER_CATALOG_LOAD');
+  if(loaded?.status==='FAILED')return{status:'BLOCKED',reason:'INDUSTRIAL_CATALOG_UNAVAILABLE',detail:loaded};
   const hydrated=await endowment.hydrateCountry(cid);
+  captureFactoryPipelineState('AFTER_COUNTRY_HYDRATION');
   if(hydrated?.status!=='APPLIED'||hydrated?.result?.accepted===false)return{status:'BLOCKED',reason:'COUNTRY_HYDRATION_NOT_COMMITTED',detail:hydrated};
   const extractionPlan=planExtraction({countryId:cid,siteId:site.siteId,resourceId:rid,quantity:input.quantity,remainingReserve:input.remainingReserve});
   if(extractionPlan?.status!=='PLANNED')return{status:'BLOCKED',reason:'INDUSTRIAL_EXTRACTION_PLAN_BLOCKED',siteId:site.siteId,detail:extractionPlan};
@@ -5669,7 +5701,6 @@ async function executeSitePipeline(input={}){
   // has completed; this API still owns the selected site request and must persist its
   // real factory destination for the later warehouse-to-factory leg.
   const factoryCandidatesBeforeExtraction=candidateFactories(cid,rid,site.siteId);
-  const requestedFactoryId=String(input.factoryId||input.selectedFactoryId||'').trim();
   const requestedFactoryCandidate=requestedFactoryId
     ?factoryCandidatesBeforeExtraction.find(({asset})=>String(
       asset?.id||asset?.assetId||asset?.projectId||'').trim()===requestedFactoryId)||null
@@ -5680,7 +5711,18 @@ async function executeSitePipeline(input={}){
     return{status:'BLOCKED',reason:'FACTORY_NOT_ELIGIBLE_FOR_SITE',countryId:cid,
       siteId:site.siteId,resourceId:rid,factoryId:requestedFactoryId,
       candidateFactoryIds:factoryCandidatesBeforeExtraction.map(({asset})=>String(
-        asset?.id||asset?.assetId||asset?.projectId||'').trim()).filter(Boolean)};
+        asset?.id||asset?.assetId||asset?.projectId||'').trim()).filter(Boolean),
+      factoryPipelineDiagnostics:factoryPipelineDiagnostics,
+      currentFactoryDiagnostics:factoryAssets(cid).map(asset=>({
+        id:String(asset?.id||asset?.assetId||asset?.projectId||''),
+        status:String(asset?.status||'OPERATIONAL').toUpperCase(),
+        ownerType:String(asset?.ownerType||asset?.ownershipModel||''),
+        productionEnabled:asset?.productionEnabled===true,
+        constructionProjectId:asset?.constructionProjectId||null,
+        recipeId:asset?.recipeId||null,recipeMode:asset?.recipeMode||null,
+        inputCoefficients:clone(asset?.inputCoefficients||asset?.inputs||asset?.inputProfile||{}),
+        resolvedInputs:recipeFor(rid,asset).inputs
+      }))};
   }
   const selectedFactoryBeforeExtraction=requestedFactoryCandidate?.asset||preparedFactory||
     factoryCandidatesBeforeExtraction.find(({asset})=>
