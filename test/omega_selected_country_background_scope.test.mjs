@@ -47,8 +47,11 @@ test('resource economy and mine/action pipelines never call world-wide processin
   assert.doesNotMatch(runTurnCore, /extractAll\(\)|countries\(\)\.forEach|GlobalTrade\.processAll/);
   const runTurn = between(economy, 'function runTurn(){', 'var resourceUiRefreshPending=false;');
   assert.match(runTurn, /playerSimulationCountryId\(\)/);
-  const turnListener = between(economy, "g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED'", "g.addEventListener('OMEGA_READY'");
-  assert.match(turnListener, /playerSimulationCountryId\(\)/);
+  const turnHandler = between(economy, 'function runResourceEconomyTurnParticipant(){', 'function installResourceEconomyTurnParticipant(){');
+  assert.match(turnHandler, /playerSimulationCountryId\(\)/);
+  const turnRegistration = between(economy, 'function installResourceEconomyTurnParticipant(){', 'function boot(){');
+  assert.match(turnRegistration, /registerSubsystem\|\|simulation\.registerTurnParticipant/);
+  assert.match(turnRegistration, /omega\.resource-economy\.player-country/);
 
   const actions = read('omega_resource_action_execution_runtime.js');
   assert.match(actions, /function onTurn\(\)\{const countryId=playerSimulationCountryId\(\);if\(countryId\)return processCountry\(countryId\)/);
