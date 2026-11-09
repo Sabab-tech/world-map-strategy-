@@ -1905,6 +1905,26 @@ function batchFromExtraction(x,record){
       existingPath.stages.push({stage:'EXTRACTION_SCAN',turn:turn()});
       existingPath.lastTurn=turn();
       minePaths[x.occurrenceKey]=existingPath;
+      const alreadyExtractedThisTurn=mineProductionLedger.some(row=>
+        n(row?.turn??row?.simulationTurn)===turn()&&
+        String(row?.occurrenceKey||row?.mineId||'')===String(x.occurrenceKey)&&
+        (n(row?.quantity)||0)>0&&String(row?.batchId||'').trim()
+      );
+      if(alreadyExtractedThisTurn){
+        const priorRecord=mineProductionLedger.find(row=>
+          n(row?.turn??row?.simulationTurn)===turn()&&
+          String(row?.occurrenceKey||row?.mineId||'')===String(x.occurrenceKey)&&
+          (n(row?.quantity)||0)>0
+        );
+        const priorBatchId=String(priorRecord?.batchId||'');
+        if(!existingPath.stages.some(stage=>stage.stage==='EXTRACTION_SKIPPED_ALREADY_COMMITTED'&&
+          stage.turn===turn()&&String(stage.batchId||'')===priorBatchId)){
+          existingPath.stages.push({stage:'EXTRACTION_SKIPPED_ALREADY_COMMITTED',turn:turn(),
+            batchId:priorBatchId,quantity:n(priorRecord?.quantity)||0});
+        }
+        minePaths[x.occurrenceKey]=existingPath;
+        continue;
+      }
       const markPathBlocked=(reason,details={})=>{
         existingPath.status='BLOCKED';existingPath.blockReason=String(reason||'EXTRACTION_NOT_APPROVED');
         existingPath.stages.push({stage:'EXTRACTION_BLOCKED',turn:turn(),status:'BLOCKED',reason:existingPath.blockReason,...clone(details)});
@@ -2030,11 +2050,6 @@ function batchFromExtraction(x,record){
           simulationTurn:turn(),status:'BLOCKED',blockReason:reason,approvedQuantity:0,carbonGate:clone(carbonGate)};
         markPathBlocked(reason,{carbonGate:clone(carbonGate)});continue;
       }
-      r.registerReserveState(result.reserveAfter);
-      production[resource]=(n(production[resource])||0)+q;
-      inventory[resource]=(n(inventory[resource])||0)+q;
-      reserves[resource]=n(result.reserveAfter.residualQuantity)||0;
-      current[x.occurrenceKey]=clone(result.reserveAfter.toJSON?.()||result.reserveAfter);
       const record={
         extractionId:'EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey).replace(/[^A-Z0-9:_-]/gi,''),
         countryId:c,simulationTurn:turn(),occurrenceKey:x.occurrenceKey,siteReferenceKey:x.siteReferenceKey||null,siteName:x.depositName||null,
@@ -2052,7 +2067,19 @@ function batchFromExtraction(x,record){
       const batchCheck=boundary()?.validateLocalBatch?.(batch,c);
       if(batchCheck&&!batchCheck.ok)throw new Error(batchCheck.reason||'RESOURCE_COUNTRY_BOUNDARY_VIOLATION');
       if(!batch.batchId||batch.quantity<=0)throw new Error('EXTRACTION_BATCH_CREATION_FAILED');
-      if(!existingBatches.some(b=>String(b?.batchId)===batch.batchId))existingBatches.push(batch);
+      const conflictingBatch=existingBatches.find(row=>String(row?.batchId||'')===batch.batchId);
+      if(conflictingBatch||Object.prototype.hasOwnProperty.call(inventoryLots,batch.batchId)){
+        const reason='EXTRACTION_BATCH_ID_COLLISION';
+        blocked.push({occurrenceKey:x.occurrenceKey,resourceId:resource,reason,batchId:batch.batchId});
+        markPathBlocked(reason,{batchId:batch.batchId,existingOccurrenceKey:conflictingBatch?.occurrenceKey||null});
+        continue;
+      }
+      r.registerReserveState(result.reserveAfter);
+      production[resource]=(n(production[resource])||0)+q;
+      inventory[resource]=(n(inventory[resource])||0)+q;
+      reserves[resource]=n(result.reserveAfter.residualQuantity)||0;
+      current[x.occurrenceKey]=clone(result.reserveAfter.toJSON?.()||result.reserveAfter);
+      existingBatches.push(batch);
       if(typeof strategicPolicy?.recordExtractionImpactTx==='function'){
         const environmentalResult=strategicPolicy.recordExtractionImpactTx(ctx,{transactionId:batch.batchId,siteId:policySiteId||x.occurrenceKey,resourceId:resource,quantity:q,unit:batch.unit,batchId:batch.batchId,extractionId:record.extractionId});
         if(environmentalResult?.accepted===false&&environmentalResult.reason!=='ENVIRONMENTAL_RULES_UNAVAILABLE'){

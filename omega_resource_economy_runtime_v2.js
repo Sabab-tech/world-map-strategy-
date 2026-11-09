@@ -222,6 +222,7 @@
 
   function reconcileHandler(cmd,ctx){
     var c=canonical(ctx.countryId),inv=clone(ctx.stateTransaction.get('resource.inventory')||{}),bs=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[],warehouse=clone(ctx.stateTransaction.get('resource.warehouse')||{warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]}),processedWarehouse=clone(ctx.stateTransaction.get('resource.processedWarehouse')||{warehouseId:'WH-'+c+'-PROCESSED',countryId:c,type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+c+':PROCESSED',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]});
+    var inventoryLots=clone(ctx.stateTransaction.get('resource.inventoryLots')||{});
     var network=clone(ctx.stateTransaction.get('resource.industrialNetwork')||{}),flowByBatch=new Map(
       (Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[])
         .filter(function(flow){return flow&&flow.batchId;})
@@ -247,6 +248,34 @@
     }
     var before=inventoryGaps(inv,bs,flowByBatch),allocated={};
     bs.forEach(function(b){var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=batchInventoryQuantity(b,flowByBatch);if(rid&&q>0)allocated[rid]=(allocated[rid]||0)+q;});
+    // Received source-batch balances and their mine-flow receipts are the physical
+    // on-hand authority. Keep aggregate inventory aligned before rebuilding the
+    // warehouse view, otherwise delivery sees stock in one ledger but zero in another.
+    Object.keys(allocated).forEach(function(rid){
+      var hasInventory=Object.prototype.hasOwnProperty.call(inv,rid);
+      var current=hasInventory?num(inv[rid]):0;
+      if(current===null||current<0)return;
+      var onHand=Math.max(0,num(allocated[rid])||0);
+      if(current+1e-9>=onHand)return;
+      var restored=onHand-current;
+      inv[rid]=onHand;
+      ledger.push({type:'INVENTORY_RECONCILIATION',resourceId:rid,quantity:restored,
+        policy:'RESTORE_FROM_RECEIVED_BATCH_LEDGER',status:'INVENTORY_RESTORED_FROM_BATCH_LEDGER',turn:turn()});
+    });
+    bs.forEach(function(b){
+      var batchId=String(b&&b.batchId||''),lot=batchId?inventoryLots[batchId]:null;
+      if(!lot)return;
+      var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim();
+      if(lot.resourceId&&tok(lot.resourceId)!==tok(rid))return;
+      if(lot.countryId&&canonical(lot.countryId)!==c)return;
+      var quantity=num(b.quantity),remaining=num(b.remainingQuantity!=null?b.remainingQuantity:b.quantity);
+      if(quantity===null||quantity<0||remaining===null||remaining<0||remaining>quantity+1e-9)return;
+      if(num(lot.quantity)===quantity&&num(lot.remainingQuantity)===remaining)return;
+      inventoryLots[batchId]=Object.assign({},lot,{quantity:quantity,remainingQuantity:remaining,lastReconciledTurn:turn()});
+      ledger.push({type:'INVENTORY_LOT_RECONCILIATION',resourceId:rid,batchId:batchId,
+        quantity:Math.abs((num(lot.quantity)||0)-quantity),policy:'MATCH_BATCH_LEDGER',
+        status:'LOT_BALANCE_RESTORED_FROM_BATCH_LEDGER',turn:turn()});
+    });
     Object.keys(inv).forEach(function(rid){
       var q=num(inv[rid]);if(q===null||q<0)return;
       var diff=q-(num(allocated[rid])||0);
@@ -280,7 +309,8 @@
     });
     warehouse.storedBatchIds=[...new Set(warehouse.storedBatchIds)];warehouse.lastReconciledTurn=turn();
     processedWarehouse.storedBatchIds=[...new Set(processedWarehouse.storedBatchIds)];processedWarehouse.lastReconciledTurn=turn();
-    ctx.stateTransaction.set('resource.batches',bs);ctx.stateTransaction.set('resource.inventoryLedger',ledger);
+    ctx.stateTransaction.set('resource.inventory',inv);ctx.stateTransaction.set('resource.batches',bs);
+    ctx.stateTransaction.set('resource.inventoryLots',inventoryLots);ctx.stateTransaction.set('resource.inventoryLedger',ledger);
     ctx.stateTransaction.set('resource.warehouse',warehouse);ctx.stateTransaction.set('resource.processedWarehouse',processedWarehouse);
     ctx.stateTransaction.set('resource.inventoryIntegrity',{status:after.length?'DEGRADED':'HEALTHY',checkedTurn:turn(),gaps:after.slice(-64),previousGaps:before.slice(-64),authority:'RESOURCE_INVENTORY_AUTHORITY'});
     return{accepted:true,countryId:c,status:after.length?'DEGRADED':'HEALTHY',gaps:after.slice(-64)};

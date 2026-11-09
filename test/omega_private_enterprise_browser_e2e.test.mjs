@@ -1725,6 +1725,44 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(extraction.result?.factoryBootstrapStatus, 'EXISTING');
     assert.ok(extraction.result?.batchId && extraction.result?.shipmentId && extraction.result?.extractionPlanId);
     metrics.extraction = extraction;
+    const repeatedExtraction = await page.evaluate(async batchId => {
+      const resource = window.Game.state.resource.BGD;
+      const source = (resource.batches || []).find(row => String(row.batchId) === String(batchId));
+      if (!source) throw new Error('SAB34_SOURCE_BATCH_MISSING_BEFORE_IDEMPOTENCY_PROOF');
+      const resourceId = String(source.resourceId || '');
+      const snapshot = () => {
+        const current = window.Game.state.resource.BGD;
+        const batch = (current.batches || []).find(row => String(row.batchId) === String(batchId));
+        const lot = current.inventoryLots?.[String(batchId)] || null;
+        return {
+          inventory: Number(current.inventory?.[resourceId]) || 0,
+          warehouse: Number(current.warehouse?.availableByResource?.[resourceId]) || 0,
+          batchQuantity: Number(batch?.quantity) || 0,
+          batchRemaining: Number(batch?.remainingQuantity) || 0,
+          lotQuantity: Number(lot?.quantity) || 0,
+          lotRemaining: Number(lot?.remainingQuantity) || 0,
+          ledgerRows: (current.mineProductionLedger || []).filter(row => String(row.batchId || '') === String(batchId)).length
+        };
+      };
+      const before = snapshot();
+      const runtime = window.Omega?.ResourceEndowmentRuntime || window.OmegaResourceEndowmentRuntime;
+      const repeated = await runtime.extractCountry('BGD', [String(source.occurrenceKey)]);
+      const payload = repeated?.result || repeated || {};
+      return { status: repeated?.status || null, accepted: payload.accepted, extracted: payload.extracted, before, after:snapshot() };
+    }, extraction.result.batchId);
+    assert.equal(repeatedExtraction.status, 'APPLIED');
+    assert.equal(repeatedExtraction.accepted, true);
+    assert.equal(repeatedExtraction.extracted, 0,
+      'repeating a successful site extraction in the same turn must be idempotent');
+    assert.equal(repeatedExtraction.before.ledgerRows, 1,
+      'one successful extraction must map to one production-ledger row for the batch');
+    assert.equal(repeatedExtraction.before.batchQuantity, repeatedExtraction.before.lotQuantity,
+      'source batch and inventory lot must retain the same original quantity');
+    assert.equal(repeatedExtraction.before.batchRemaining, repeatedExtraction.before.lotRemaining,
+      'source batch and inventory lot must retain the same remaining quantity');
+    assert.deepEqual(repeatedExtraction.after, repeatedExtraction.before,
+      'a repeated extraction must not add stock, overwrite its lot, or create duplicate ledger rows');
+    metrics.repeatedExtractionIdempotency = repeatedExtraction;
     metrics.stages.push('REAL_SITE_PANEL_ACTION_COMMITTED_EXTRACTION_AND_DISPATCHED_MINE_HAUL');
 
     const mineEta = Number(extraction.result.shipment.etaTurn);
@@ -1857,6 +1895,10 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.ok(factoryArrival.inputLot, 'factory receipt must create an input batch lot');
     assert.ok(factoryArrival.inputLot.sourceBatchIds.includes(extraction.result.batchId));
     assert.ok(Number(factoryArrival.inputInventory.coal) > 0);
+    assert.ok(factoryArrival.sourceLot?.remainingQuantity <= factoryArrival.sourceLot?.quantity,
+      'source lot remaining quantity must never exceed the original extraction lot quantity');
+    assert.equal(factoryArrival.countryCoalInventory, factoryArrival.warehouseCoal.available,
+      'country aggregate inventory and raw warehouse stock must remain reconciled after delivery');
     metrics.factoryArrival = factoryArrival;
     metrics.stages.push('RAW_TO_FACTORY_DELIVERY_CREATED_TRACEABLE_FACTORY_INPUT_LOT');
 
