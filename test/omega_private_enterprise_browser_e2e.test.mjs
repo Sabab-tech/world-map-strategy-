@@ -165,20 +165,27 @@ test('real Chromium browser verifies company-originated proposals, government te
         const session = window.Omega.Simulation.createSession({ playerCountryId: country });
         if (!session || session.playerCountryId !== country) return { ok: false, reason: 'PLAYER_SESSION_NOT_CREATED' };
       }
-      // Reconcile an already-mounted cabinet before navigating. This invokes
-      // the real country-select handler rather than mutating its private state.
-      const cabinet = document.getElementById('cabinet-full-window');
-      const selector = cabinet?.querySelector('[data-omega-v2-country]');
-      if (selector && selector.value !== country) {
-        selector.value = country;
-        selector.dispatchEvent(new Event('change', { bubbles: true }));
-      }
+      // Mount the route, then exercise its real country selector. A matching DOM
+      // value alone is not proof that the UI-owned selection state received the change.
       const opened = window.OmegaUIV2Integration.openRoute('industry') === true;
-      const mountedCountry = cabinet?.__omegaUIV2State?.countryId || null;
+      if (!opened) return { ok: false, reason: 'INDUSTRY_ROUTE_NOT_OPENED', country };
+      const cabinet = document.getElementById('cabinet-full-window');
+      if (!cabinet) return { ok: false, reason: 'CABINET_ROOT_MISSING', country };
+      const selector = cabinet.querySelector('[data-omega-v2-country]');
+      if (!selector) return { ok: false, reason: 'COUNTRY_SELECTOR_MISSING', country };
+      selector.value = country;
+      selector.dispatchEvent(new Event('change', { bubbles: true }));
+      const mountedCountry = cabinet.__omegaUIV2State?.countryId || null;
+      const selectedCountry = selector.value || null;
+      const selectionAuthority = window.OmegaMinistryViewCountry || null;
       return {
-        ok: opened && (!mountedCountry || mountedCountry === country),
-        reason: mountedCountry && mountedCountry !== country ? 'UI_COUNTRY_MISMATCH' : null,
+        ok: selectedCountry === country && mountedCountry === country && selectionAuthority === country,
+        reason: selectedCountry !== country ? 'COUNTRY_SELECTOR_MISMATCH' :
+          mountedCountry !== country ? 'UI_COUNTRY_MISMATCH' :
+          selectionAuthority !== country ? 'COUNTRY_SELECTION_AUTHORITY_MISMATCH' : null,
+        selectedCountry,
         mountedCountry,
+        selectionAuthority,
         country
       };
     });
