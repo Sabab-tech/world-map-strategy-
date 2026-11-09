@@ -357,6 +357,27 @@ assert.ok(N.candidateFactories('BGD','cotton_fibre').some(row=>row.asset.id===op
 assert.ok(N.candidateFactories('BGD','iron_ore').some(row=>row.asset.id===fx.id),
   'the player-built factory must remain eligible in that same runtime path');
 
+// A purpose-built facility must win over an older generic starting allocation for
+// the same commodity. Otherwise site extraction silently routes into a baseline
+// factory that may already have an unrelated cycle in flight.
+const baselineIronFactory={
+  id:'FAC-START:BGD:UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT:1',
+  countryId:'BGD',factoryType:fx.factoryType,status:'OPERATIONAL',
+  sourceType:'COUNTRY_STARTING_FACTORY_BASELINE',
+  ownerType:'STATE_OWNED_ENTERPRISE',operatorType:'STATE_ENTERPRISE_OPERATOR',
+  inputCoefficients:{iron_ore:1},outputProfile:{IRON_CONCENTRATE:0.67,ORE_TAILINGS:0.33}
+};
+sharedFactoryRegistry.unshift(baselineIronFactory);
+assert.equal(N.candidateFactories('BGD','iron_ore')[0]?.asset?.id,fx.id,
+  'newly commissioned compatible factories must be selected before generic starting-baseline fallback assets');
+const siteBoundIronFactory={...baselineIronFactory,id:'FAC-SITE-BOUND:BGD:IRON',
+  sourceType:'COUNTRY_STARTING_FACTORY_BASELINE',sourceSiteId:'SITE_BGD_iron_mine'};
+sharedFactoryRegistry.unshift(siteBoundIronFactory);
+assert.equal(N.candidateFactories('BGD','iron_ore','SITE_BGD_iron_mine')[0]?.asset?.id,siteBoundIronFactory.id,
+  'an explicit source-site factory assignment must outrank unbound capacity');
+sharedFactoryRegistry.splice(sharedFactoryRegistry.indexOf(siteBoundIronFactory),1);
+sharedFactoryRegistry.splice(sharedFactoryRegistry.indexOf(baselineIronFactory),1);
+
 // Simulate an older saved baseline asset that predates explicit owner/operator fields.
 // Re-registration must repair only this known government baseline record, without respawning it.
 ['ownerId','ownerCompanyId','ownerType','operatorId','operatorCompanyId','operatorType','companyId',
