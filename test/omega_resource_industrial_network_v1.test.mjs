@@ -540,8 +540,18 @@ context.Game.state.economy.BGD.productionAssets.forEach(asset=>{
   asset.status=String(asset.id)===builtFactoryId?'OPERATIONAL':'CLOSED';
 });
 const ironRawBefore=Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore)||0;
+const siteExecutionsBeforeExplicitChoice=context.Game.state.resource.BGD.industrialNetwork.siteExecutions.length;
+const rejectedFactoryRun=await N.executeSitePipeline({
+  countryId:'BGD',siteId:'SITE_BGD_IRON_02',resourceId:'iron_ore',
+  factoryId:'FAC-BGD-NOT-A-CANDIDATE',transportMode:'rail'
+});
+assert.equal(rejectedFactoryRun.status,'BLOCKED',JSON.stringify(rejectedFactoryRun));
+assert.equal(rejectedFactoryRun.reason,'FACTORY_NOT_ELIGIBLE_FOR_SITE');
+assert.equal(context.Game.state.resource.BGD.industrialNetwork.siteExecutions.length,siteExecutionsBeforeExplicitChoice,
+  'an invalid explicit factory choice must be rejected before extraction or site-flow mutation');
 const builtFactoryRun=await N.executeSitePipeline({
-  countryId:'BGD',siteId:'SITE_BGD_IRON_02',resourceId:'iron_ore',transportMode:'rail'
+  countryId:'BGD',siteId:'SITE_BGD_IRON_02',resourceId:'iron_ore',
+  factoryId:builtFactoryId,transportMode:'rail'
 });
 assert.equal(builtFactoryRun.status,'IN_TRANSIT',JSON.stringify(builtFactoryRun));
 assert.equal(builtFactoryRun.factoryId,builtFactoryId,
