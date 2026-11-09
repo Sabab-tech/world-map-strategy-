@@ -1261,7 +1261,7 @@
         !!(invitation&&tenderType==='INFRASTRUCTURE_SUPPORT'),
       utilitySupportRequested=utilityShortfall||(invitation&&tenderType==='UTILITY_SUPPORT'),
       marketUnproven=selected.marketSignals.every(function(row){
-        return row.signal==='NO_VERIFIED_MARKET_SIGNAL'||row.signal==='UNOBSERVED';
+        return['NO_VERIFIED_MARKET_SIGNAL','UNOBSERVED','UNOBSERVED_OR_STALE'].indexOf(row.signal)>=0;
       }),
       offtakeRequested=marketUnproven||(invitation&&tenderType==='OFFTAKE_CONTRACT'),
       inputs=selected.preview.inputRequirements||[],
@@ -1320,7 +1320,9 @@
           privateShareholdingRequested:financingPreference==='PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE',
           privateShareholdingTerms:'PERCENTAGE_REQUIRES_INDEPENDENT_COMPANY_VALUATION_AND_NEGOTIATION',
           governmentSupportRequested:supportRequested,tenderInvitationId:invitation&&invitation.invitationId||null},
-        reasons:[selected.marketSignals.some(function(row){return row.signal==='OBSERVED_MATCHED_ORDER_VOLUME'||row.signal==='OPEN_BUY_ORDER_DEPTH';})
+        governmentTender:invitation?{requestedFactoryCount:num(invitation.quantity),companyOfferedFactoryCount:selected.quantity,
+          supportOffer:clone(tenderOffer)}:null,
+        reasons:[selected.marketSignals.some(function(row){return row.signal==='CURRENT_TURN_MATCHED_ORDER_VOLUME'||row.signal==='CURRENT_TURN_OPEN_BUY_ORDER_DEPTH';})
           ?'Selected using observed buyer-side order-book activity.':'No strong buyer-side order-book evidence; submitted conservatively at the smallest viable scale.',
           selected.supplyStatus==='DOMESTIC_INPUTS_COVERED'?'Current domestic input surplus covers the modeled 30-day requirement.':
             'The company identifies supply gaps or unobserved inputs and submits a sourcing plan instead of claiming secured supply.',
