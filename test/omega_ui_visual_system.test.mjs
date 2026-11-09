@@ -129,6 +129,7 @@ test('unified visual system is the final offline-cached visual authority for the
   for (const selector of [
     'button {', 'button.btn-primary', 'button.btn-danger',
     '.omega-v2-nav-button', '.icon-btn', '#omega-atlas-command-dock',
+    '#omega-individual-resource-panel .omega-site-actions', 'position: sticky !important',
     '.omega-atlas-command-button', 'input:not([type="checkbox"])',
     'button:focus-visible', 'button:disabled',
     '@media (max-width: 600px)', '@media (pointer: coarse)',
