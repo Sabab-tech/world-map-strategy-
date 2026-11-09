@@ -1685,18 +1685,23 @@ Game.Map.setUiActive = function(active) {
                         return;
                     }
                     if (!Game.geojsonLayer || Game.__omegaGeoJSONRenderComplete !== true) {
-                        loader.loadWorldMap();
+                        loader.loadAssets();
                     }
                     return;
                 }
 
                 // A map request aborted while a ministry was opening is settled before
-                // its controller is cleared. Retry only after that cleanup has completed.
-                loader.loadWorldMap();
+                // its controller is cleared. Retry the full staged pipeline only after the
+                // old map and startup promises have both released their single-flight locks.
+                loader.loadAssets();
             };
 
             if (pendingWorldLoad && abortedWorldController?.signal?.aborted === true) {
-                pendingWorldLoad.then(retryWorldMapAfterAbort, retryWorldMapAfterAbort);
+                pendingWorldLoad.then(function () {
+                    window.setTimeout(retryWorldMapAfterAbort, 0);
+                }, function () {
+                    window.setTimeout(retryWorldMapAfterAbort, 0);
+                });
             } else {
                 window.setTimeout(retryWorldMapAfterAbort, 0);
             }
