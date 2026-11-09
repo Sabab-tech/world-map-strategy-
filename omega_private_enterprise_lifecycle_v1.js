@@ -1175,7 +1175,9 @@
           matched=currentTurnEvidence?Math.max(0,num(row.matchedQuantity)||0):0,
           bidDepth=currentTurnEvidence?Math.max(0,num(row.bidDepth)||0):0,
           askDepth=currentTurnEvidence?Math.max(0,num(row.askDepth)||0):0,
-          price=observedMarketPrice(cid,resourceId),perUnit=num(outputs[resourceId]),
+          price=observedMarketPrice(cid,resourceId),
+          referencePrice=num(row.referencePriceUsd===undefined?row.referencePrice:row.referencePriceUsd),
+          perUnit=num(outputs[resourceId]),
           oneFactoryTurn=perUnit===null?null:perUnit*dailyCapacity*daysPerTurn,
           signal='UNOBSERVED_OR_STALE',score=-5;
         if(currentTurnEvidence&&matched>0){
@@ -1183,13 +1185,16 @@
           if(oneFactoryTurn!==null&&oneFactoryTurn>0)
             demandSupportedUnits=Math.max(demandSupportedUnits,Math.ceil(matched/oneFactoryTurn));
         }else if(currentTurnEvidence&&bidDepth>0){signal='CURRENT_TURN_OPEN_BUY_ORDER_DEPTH';score=22;}
-        else if(currentTurnEvidence&&price&&price.unitPrice>0){signal='CURRENT_TURN_REFERENCE_PRICE_ONLY';score=8;}
+        else if(currentTurnEvidence&&((price&&price.unitPrice>0)||(referencePrice!==null&&referencePrice>0))){
+          signal='CURRENT_TURN_REFERENCE_PRICE_ONLY';score=8;
+        }
         else if(currentTurnEvidence){signal='NO_VERIFIED_MARKET_SIGNAL';score=-4;}
         marketSignals.push({resourceId:resourceId,signal:signal,marketStatus:row.status||'UNAVAILABLE',
           priceDiscovery:row.priceDiscovery||'UNAVAILABLE',generatedTurn:num(row.generatedTurn),
           evaluatedTurn:turn(),currentTurnEvidence:currentTurnEvidence,matchedQuantity:matched,bidDepth:bidDepth,
           askDepth:askDepth,bestBidUsd:num(row.bestBidUsd),bestAskUsd:num(row.bestAskUsd),
-          localMarketPrice:price,score:score,capacityPerFactoryPerTurn:oneFactoryTurn,gameDaysPerTurn:daysPerTurn});
+          referencePriceUsd:referencePrice,localMarketPrice:price,score:score,
+          capacityPerFactoryPerTurn:oneFactoryTurn,gameDaysPerTurn:daysPerTurn});
       });
       var quantity=Math.min(maximum,Math.max(1,Math.floor(demandSupportedUnits)));
       var firstInputs=inputForecast(cid,profile,recipe,quantity),
