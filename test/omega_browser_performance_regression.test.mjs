@@ -475,7 +475,7 @@ test('country borders stay visible in base map and visual overlays', () => {
     'map overlays must not use the old almost-invisible border styles');
 });
 
-test('world geometry loads before support datasets, shows real progress, caches once and pauses with ministry UI', () => {
+test('world geometry and supporting datasets run as a serialized startup pipeline with resumable progress', () => {
   const map = read('map-engine-2.js');
   const html = read('index.html');
   const css = read('style.css');
@@ -485,15 +485,35 @@ test('world geometry loads before support datasets, shows real progress, caches 
   const worker = read('omega-offline-map-sw.js');
   const coreAssets = worker.slice(worker.indexOf('const CORE_ASSETS'), worker.indexOf('];', worker.indexOf('const CORE_ASSETS')));
   const loaderStart = map.indexOf('async loadAssets()');
-  const startWorld = map.indexOf('const worldTask = this.loadWorldMap(fetcher);', loaderStart);
-  const firstSupportData = map.indexOf("fetchOptional('population.json')", loaderStart);
+  const loaderEnd = map.indexOf('\\n    }\\n};\\nGame.LabelSystem', loaderStart);
+  const startup = map.slice(loaderStart, loaderEnd);
+  const worldStart = startup.indexOf('await loader.loadWorldMap(fetcher)');
+  const renderGate = startup.indexOf('await loader.waitForWorldMapRender()');
+  const firstSupportData = startup.indexOf("filename: 'population.json'");
+  const worldLoaderStart = map.indexOf('loadWorldMap(fetcher) {');
+  const worldLoaderEnd = map.indexOf('async loadAssets()', worldLoaderStart);
+  const worldLoader = map.slice(worldLoaderStart, worldLoaderEnd);
 
-  assert.ok(loaderStart >= 0 && startWorld > loaderStart && startWorld < firstSupportData,
-    'canonical world geometry must start before economy, relation and ministry support data');
+  assert.ok(loaderStart >= 0 && loaderEnd > loaderStart, 'the canonical startup coordinator should exist');
+  assert.ok(worldStart >= 0 && renderGate > worldStart && firstSupportData > renderGate,
+    'no supporting dataset may start until the world map has finished rendering');
+  assert.doesNotMatch(startup, /Promise\\.(?:all|allSettled)\\(/,
+    'startup stages must not fan out into concurrent dataset loads');
+  assert.match(startup, /for \\(let index = 0; index < startupDatasets\\.length; index \\+= 1\\)[\\s\\S]*?await fetchOptional\\(item, index\\)/,
+    'supporting datasets must be awaited one by one in their declared dependency order');
+  assert.match(startup, /await Promise\\.resolve\\(Game\\.Diplomacy\\.generateAllBilateralRelations\\(chunk\\)\\)/,
+    'relation-generation chunks must finish before the next chunk or finalization starts');
+  assert.doesNotMatch(startup, /setTimeout\\(processRelationChunk/,
+    'relation generation must not escape into an unawaited background task');
+  assert.match(startup, /if \\(this\\.__assetsLoadPromise\\) return this\\.__assetsLoadPromise/,
+    'concurrent startup requests must share one in-flight coordinator');
+  assert.match(worldLoader, /await countriesPromise;[\\s\\S]*?return fetcher\\('world\\.json'/,
+    'the canonical country roster must finish before world geometry is requested');
+
   assert.ok(map.includes("return fetcher('world.json', {"),
     'world geometry must use the abortable data loader');
   assert.ok(map.includes("onProgress:function (ratio, received, total)"),
-    'the loader progress must be based on transferred bytes when the response exposes a stream');
+    'the map download progress must be based on transferred bytes');
   assert.ok(designTokens.includes("response.body.getReader()") && designTokens.includes("onProgress(total > 0 ? 0 : null, 0, total)"),
     'the shared resilient fetch must report actual streaming progress rather than a timer estimate');
   assert.ok(html.includes('id="omega-map-load-overlay"') && html.includes('id="omega-map-load-progress"') &&
@@ -503,6 +523,16 @@ test('world geometry loads before support datasets, shows real progress, caches 
     'offline relaunch must include the abortable streaming fetch helper needed by map startup');
   assert.ok(css.includes('#render-engine-root[data-omega-map-loading="true"] { z-index:2000'),
     'the real startup loader must sit above map controls until initialization settles');
+  assert.ok(map.includes('waitForWorldMapRender()') && map.includes('settleWorldMapRenderWaiters(null, renderToken)'),
+    'the support pipeline must wait for the final incremental GeoJSON render frame');
+  assert.ok(map.includes('settleWorldMapRenderWaiters(new Error'),
+    'a failed render must release the waiter with an explicit failure instead of leaving startup stuck');
+  assert.ok(map.includes('this.__assetsLoadPromise = promise') && map.includes('__assetsLoadComplete'),
+    'the complete startup pipeline must be single-flight and reusable after success');
+  assert.ok(map.includes('Game.DataLoader.loadAssets();'),
+    'map retry must resume the full staged startup sequence rather than only redrawing the map');
+  assert.ok(map.includes('startupLoader.__assetsLoadingStatus === \'loading\''),
+    'map activation must restore the active startup-stage progress after a ministry pause');
   assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
   assert.ok(map.includes('this.__omegaWorldMapAbortController.abort()'),
     'leaving the world view must abort an unfinished map-only request');
