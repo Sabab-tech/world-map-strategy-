@@ -236,6 +236,99 @@ test('company proposal includes its own market analysis, supply-chain proof and 
     'AVAILABILITY_IS_NOT_A_SIGNED_CONTRACT_OR_DELIVERY');
 });
 
+
+test('company investment engine compares eligible factories and submits its own scale, construction and financing terms',()=>{
+  const h=makeHarness();
+  const isolatedCatalog=JSON.parse(JSON.stringify(catalog));
+  isolatedCatalog.factoryProfiles.COPPER_WORKS={
+    factoryType:'COPPER_WORKS',name:'Copper Works',defaultRecipeId:'COPPER_ROUTE',
+    constructionCost:30,constructionDays:90,defaultCapacityPerDay:10,
+    constructionMaterials:{construction_aggregate:5},constructionMaterialUnit:'SIMULATION_RESOURCE_UNIT',
+    workforce:{operators:2},utilities:{electricityMWhPerDay:1},unit:'GAME_CURRENCY_UNITS'
+  };
+  isolatedCatalog.downstreamFactoryRecipes.COPPER_ROUTE={
+    recipeId:'COPPER_ROUTE',factoryType:'COPPER_WORKS',inputs:{iron_ore:1},outputs:{copper:1},cycleDays:1
+  };
+  h.sandbox.OmegaResourceIndustrialCatalogData=isolatedCatalog;
+  const registry=h.sandbox.OmegaPrivateEnterpriseRegistryV1;
+  const originalBaseline=registry.getCountryBaseline.bind(registry);
+  registry.getCountryBaseline=function(countryId){
+    const row=originalBaseline(countryId);
+    row.governmentFactoryCounts.COPPER_WORKS=20;
+    row.factoryCounts.COPPER_WORKS=10;
+    row.companies.forEach(company=>{company.factoryCounts.COPPER_WORKS=1;});
+    return row;
+  };
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',currency:'GAME_CURRENCY_UNITS',
+      availableBalance:20,reservedBalance:0,capitalRaised:20,capitalSpent:0,revision:1}
+  };
+  h.state.trade={BGD:{marketPrice:{steel:5,copper:11},currencyCode:'GAME_CURRENCY_UNITS'}};
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){
+      if(resourceId==='copper')return{status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
+        matchedQuantity:600,bidDepth:600,askDepth:80,bestBidUsd:11,bestAskUsd:12,clearingPriceUsd:11};
+      return{status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',matchedQuantity:0,bidDepth:0,askDepth:0};
+    }
+  };
+  const beforeInventory=JSON.stringify(h.state.resource.BGD.inventory);
+  const beforeTreasury=h.state.finance.BGD.available;
+  h.state.simulation.turn=30;
+  const result=h.api.advanceAutonomousProposalCycle();
+  assert.equal(result.status,'PROPOSED',JSON.stringify(result));
+  const proposal=result.proposal;
+  assert.equal(proposal.companyId,'AURORA_INDUSTRIAL_GROUP');
+  assert.equal(proposal.factoryType,'COPPER_WORKS',
+    'the company must rank all eligible opportunities using market evidence, not choose the first alphabetic category');
+  assert.equal(proposal.quantity,2,
+    'the company proposes scale based on observed matched output-market volume, within the available expansion ceiling');
+  assert.equal(proposal.companyStrategy.selectedOpportunity.factoryType,'COPPER_WORKS');
+  assert.ok(proposal.companyStrategy.alternativesConsidered.some(row=>row.factoryType==='STEEL_WORKS'));
+  assert.equal(proposal.companyCase.projectOffer.requestedFactoryCount,2);
+  assert.equal(proposal.companyCase.projectOffer.constructionDurationDays,90);
+  assert.equal(proposal.companyCase.financingOffer.companyCapitalOffer,20);
+  assert.equal(proposal.companyCase.financingOffer.fundingGap,40);
+  assert.equal(proposal.companyCase.financingOffer.requestedExternalFundingAmount,40);
+  assert.equal(proposal.companyCase.financingOffer.preferredStructure,'PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE');
+  assert.equal(proposal.companyCase.financingOffer.privateShareholdingRequested,true);
+  assert.equal(proposal.companyCase.financingOffer.requestedPrivateShareholdingBps,null,
+    'an equity percentage is not invented without a defensible company valuation');
+  assert.equal(proposal.companyCase.financingOffer.privateShareholdingTermsStatus,
+    'PRIVATE_SHAREHOLDING_REQUESTED_PERCENTAGE_REQUIRES_VALUATION_AND_NEGOTIATION');
+  assert.equal(proposal.companyCase.supplyChainProof.securedAtSubmission,false);
+  assert.equal(JSON.stringify(h.state.resource.BGD.inventory),beforeInventory);
+  assert.equal(h.state.finance.BGD.available,beforeTreasury);
+  assert.equal(h.projects.length,0);
+  assert.equal(h.state.economy.BGD.productionAssets.length,0);
+});
+
+test('company can accept a government grant covering only the verified funding gap, without settling it',()=>{
+  const h=makeHarness();
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [COMPANY]:{companyId:COMPANY,currency:'GAME_CURRENCY_UNITS',
+      availableBalance:40,reservedBalance:0,capitalRaised:40,capitalSpent:0,revision:1}
+  };
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,
+    factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',
+    requestId:'partial-government-grant-negotiation'});
+  const treasuryBefore=h.state.finance.BGD.available;
+  const counter=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'COUNTER_OFFER',
+    counterOffer:{quantity:1,supportType:'CAPITAL_GRANT',maxGovernmentContribution:60,
+      reason:'Government offers to cover only the verified capital gap while the company contributes its own capital.'}});
+  assert.equal(counter.status,'NEGOTIATION_PENDING_COMPANY');
+  const accepted=h.api.respondToGovernmentCounterOffer({countryId:'BGD',proposalId:proposal.proposalId,
+    actorCompanyId:COMPANY,response:'ACCEPT'});
+  assert.equal(accepted.status,'PROPOSED');
+  assert.equal(accepted.proposal.negotiatedFundingSource,'GOVERNMENT_GRANT');
+  assert.equal(accepted.proposal.financingPreference,'GOVERNMENT_GRANT');
+  assert.equal(accepted.proposal.companyCase.financingOffer.companyCapitalOffer,40);
+  assert.equal(accepted.proposal.companyCase.financingOffer.requestedGovernmentGrant,60);
+  assert.equal(accepted.proposal.permit,null);
+  assert.equal(h.state.finance.BGD.available,treasuryBefore,
+    'company acceptance is a negotiated term only; public money still needs separate approval and Finance settlement');
+  assert.equal(h.projects.length,0);
+});
+
 test('government invitation is a tender only; the autonomous company prepares and submits its response',()=>{
   const h=makeHarness(),beforeInventory=JSON.stringify(h.state.resource.BGD.inventory),
     beforeWarehouse=JSON.stringify(h.state.resource.BGD.warehouse),beforeTreasury=h.state.finance.BGD.available;
@@ -289,12 +382,20 @@ test('government counter-offer needs a company response and later separate gover
   assert.equal(h.state.finance.BGD.available,treasuryBefore);
 });
 
-test('government can hold, resume and reject a company-originated proposal',()=>{
+test('government can pause, independently review, resume and reject a company-originated proposal',()=>{
   const h=makeHarness(),proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,
     factoryType:'STEEL_WORKS',quantity:1,requestId:'hold-resume-steel-001'});
-  assert.equal(h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'HOLD'}).status,'ON_HOLD');
-  assert.equal(h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'RESUME'}).status,'PROPOSED');
-  assert.equal(h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'DENY'}).status,'DENIED');
+  const held=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'HOLD'});
+  assert.equal(held.status,'ON_HOLD');
+  assert.equal(held.proposal.governmentReview.reviewer,'PLAYER_GOVERNMENT');
+  assert.equal(held.proposal.governmentReview.outcome,'PAUSED_FOR_FURTHER_REVIEW');
+  assert.equal(held.proposal.governmentReview.assessment.authority,'OMEGA_PRIVATE_ENTERPRISE_APPROVAL_ASSESSMENT_V1');
+  const resumed=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'RESUME'});
+  assert.equal(resumed.status,'PROPOSED');
+  assert.equal(resumed.proposal.governmentReview.outcome,'RESUMED_FOR_REVIEW');
+  const denied=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'DENY'});
+  assert.equal(denied.status,'DENIED');
+  assert.equal(denied.proposal.governmentReview.outcome,'DENY');
 });
 
 test('autonomous company proposals are deterministic, once per 30 turns, and have no asset/stock/cash side effects',()=>{
