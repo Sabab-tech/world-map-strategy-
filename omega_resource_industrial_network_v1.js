@@ -45,6 +45,16 @@ function factoryDateOnly(value){
   return m[1]+'-'+m[2]+'-'+m[3];
 }
 function factoryCurrentGameDate(){
+  // The simulation clock is the authoritative calendar. Game.state.simulation.date
+  // is a compatibility mirror and can lag behind a committed turn while older
+  // browser listeners reconcile their own state. Preferring that mirror can leave
+  // an otherwise due factory cycle IN_PROGRESS forever even after its finishTurn.
+  const simulation=g.Omega?.Simulation||g.OmegaSimulationRuntime||null;
+  try{
+    const clockDate=typeof simulation?.clock?.simulationDate==='function'
+      ?factoryDateOnly(simulation.clock.simulationDate()):null;
+    if(clockDate)return clockDate;
+  }catch(_){}
   const s=state()||{},sim=s.simulation||{};
   const direct=factoryDateOnly(sim.date||sim.currentDate||sim.gameDate||s.gameDate||s.date);
   if(direct)return direct;
