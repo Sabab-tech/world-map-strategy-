@@ -1240,35 +1240,39 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       if(simulation.clock.paused!==true)throw new Error('SAB34_BACKGROUND_ENGINE_CLOCK_NOT_PAUSED');
       const constructionDays=Math.max(1,Math.ceil(Math.max(
         Number(governmentProject?.durationDays)||0,Number(privateConstruction.started[0].durationDays)||180)));
-      let advanced;
-      // This browser proof accelerates construction only. Keep the resource participant
-      // on the established 30-day production window instead of multiplying mine output
-      // by the construction duration during the same committed turn.
+      // Construction receives its own explicit project-progress window. The central
+      // simulation clock, mine extraction, mine-haul routing and every other turn
+      // participant remain on the normal 30-day window.
       const resourceWindowDays=30;
       const resourceWindowMs=resourceWindowDays*86400000;
-      simulation.clock.gameDaysPerTurn=constructionDays;
+      simulation.clock.gameDaysPerTurn=resourceWindowDays;
       simulation.clock.stepDurationMs=resourceWindowMs;
-      state.simulation.daysPerTurn=constructionDays;
-      if(Number(simulation.clock.stepDurationMs)!==30*86400000)
+      state.simulation.daysPerTurn=resourceWindowDays;
+      if(Number(simulation.clock.stepDurationMs)!==resourceWindowMs||
+         Number(simulation.clock.gameDaysPerTurn)!==resourceWindowDays)
         throw new Error('SAB34_CONSTRUCTION_FAST_FORWARD_CHANGED_RESOURCE_WINDOW');
-      try{
-        console.info('[SAB34_PROGRESS] CONSTRUCTION_TURN_ADVANCE_START '+JSON.stringify({
-          constructionDays,resourceWindowDays,turn:simulation.clock.turn,
-          participants:window.__sab34ResourceTurnParticipantIds
+      const constructionAdvance=industry.advanceProjects('BGD',{
+        constructionDaysOverride:constructionDays,
+        projectIds:[privateProjectId,governmentProject?.projectId].filter(Boolean)
+      });
+      const advancedProjectIds=(constructionAdvance.completed||[]).map(row=>String(row.projectId||''));
+      if(constructionAdvance.status!=='ADVANCED'||!advancedProjectIds.includes(String(privateProjectId))||
+         (governmentProject&&!advancedProjectIds.includes(String(governmentProject.projectId))))
+        throw new Error('SAB34_CONSTRUCTION_ONLY_ADVANCE_FAILED:'+JSON.stringify({
+          constructionDays,constructionAdvance,privateProjectId,governmentProjectId:governmentProject?.projectId||null
         }));
-        advanced=await window.__sab34AdvanceResourceTurns(1);
-        console.info('[SAB34_PROGRESS] CONSTRUCTION_TURN_ADVANCE_FINISH '+JSON.stringify({
-          steps:advanced.steps,status:advanced.status,turn:simulation.clock.turn,
-          resourceWindowDays:simulation.clock.stepDurationMs/86400000
-        }));
-      }
-      finally{
-        simulation.clock.gameDaysPerTurn=30;
-        simulation.clock.stepDurationMs=resourceWindowMs;
-        state.simulation.daysPerTurn=30;
-      }
+      console.info('[SAB34_PROGRESS] CONSTRUCTION_ONLY_ADVANCE_FINISH '+JSON.stringify({
+        constructionDays,completedProjectIds:advancedProjectIds,turn:simulation.clock.turn,
+        resourceWindowDays:simulation.clock.stepDurationMs/86400000
+      }));
+      const advanced=await window.__sab34AdvanceResourceTurns(1);
+      console.info('[SAB34_PROGRESS] NORMAL_RESOURCE_TURN_FINISH '+JSON.stringify({
+        steps:advanced.steps,status:advanced.status,turn:simulation.clock.turn,
+        resourceWindowDays:simulation.clock.stepDurationMs/86400000,
+        gameDaysPerTurn:simulation.clock.gameDaysPerTurn
+      }));
       if(advanced.status==='ERROR'||advanced.steps!==1)
-        throw new Error('SAB34_CENTRAL_GAME_CLOCK_CONSTRUCTION_ADVANCE_FAILED:'+JSON.stringify({constructionDays,advanced}));
+        throw new Error('SAB34_CENTRAL_GAME_CLOCK_RESOURCE_TURN_FAILED:'+JSON.stringify({constructionDays,advanced}));
       const projects=state.resource.BGD.industrialNetwork.projects;
       const privateProject=projects.find(row=>String(row.projectId)===String(privateProjectId));
       const privateFactory=state.economy.BGD.productionAssets.find(row=>String(row.constructionProjectId)===String(privateProjectId));
@@ -1863,8 +1867,8 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     }, {eta:mineEta,etaDate:String(mineShipment.etaDate)});
     assert.equal(mineArrival.receipt?.status, 'RECEIVED', JSON.stringify(mineArrival));
     assert.equal(mineArrival.receipt?.receivedFrom, 'MINE_SITE_LOGISTICS');
-    assert.equal(Number(mineArrival.receipt?.quantity), 9180,
-      'the actual mine receipt must preserve the committed 9,180-tonne shipment quantity');
+    assert.equal(Number(mineArrival.receipt?.quantity), 1530,
+      'the actual mine receipt must preserve the committed 1,530-tonne shipment quantity');
     assert.ok(mineArrival.nationalDemandFinalizationMs < 120000,
       'country demand finalization must complete with margin below the ordered-turn publish timeout: ' +
       String(mineArrival.nationalDemandFinalizationMs) + 'ms');
@@ -1960,11 +1964,11 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       'source batch and inventory lot must retain the same remaining quantity');
     assert.equal(Number(factoryArrival.sourceBatch?.quantity), 146889,
       'the source batch must retain its exact committed 30-day extraction quantity');
-    assert.equal(Number(factoryArrival.sourceBatch?.remainingQuantity), 137709,
-      'the source batch must lose exactly the 9,180 tonnes accepted by the factory');
-    assert.equal(Number(factoryArrival.sourceFlow?.mineWarehouseReceivedQuantity), 9180,
+    assert.equal(Number(factoryArrival.sourceBatch?.remainingQuantity), 145359,
+      'the source batch must lose exactly the 1,530 tonnes accepted by the factory');
+    assert.equal(Number(factoryArrival.sourceFlow?.mineWarehouseReceivedQuantity), 1530,
       'the mine-flow ledger must retain the exact warehouse receipt quantity');
-    assert.equal(Number(factoryArrival.sourceFlow?.factoryDispatchedQuantity), 9180,
+    assert.equal(Number(factoryArrival.sourceFlow?.factoryDispatchedQuantity), 1530,
       'the factory-flow ledger must retain the exact completed factory transfer quantity');
     assert.equal(Math.max(0,
       Number(factoryArrival.sourceFlow?.mineWarehouseReceivedQuantity||0) -
