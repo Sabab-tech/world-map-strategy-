@@ -752,12 +752,12 @@ Game.DataLoader = {
 
                 const stageCount = startupDatasets.length;
                 const fetchOptional = async function (item, index) {
-                    let controller = null, timer = null;
+                    let controller = null, timer = null, request = null;
                     const stageStart = (index / stageCount) * 82;
                     const stageSpan = 82 / stageCount;
                     try {
                         controller = typeof AbortController === 'function' ? new AbortController() : null;
-                        const request = Promise.resolve().then(function () {
+                        request = Promise.resolve().then(function () {
                             return fetcher(item.filename, {
                                 signal: controller ? controller.signal : undefined,
                                 onProgress: function (ratio, received, total) {
@@ -780,6 +780,12 @@ Game.DataLoader = {
                         });
                         return await Promise.race([request, timeout]);
                     } catch (error) {
+                        try { if (controller) controller.abort(); } catch (_) {}
+                        // Do not advance the serial queue while an aborted request is
+                        // still settling; otherwise a slow transport can overlap the next file.
+                        if (request) {
+                            try { await request; } catch (_) {}
+                        }
                         console.warn('[OMEGA DataLoader] Optional startup dataset failed; the next stage will continue:', item.filename, error);
                         return null;
                     } finally {
