@@ -2849,8 +2849,13 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
       const restored = window.Game.state;
       const restoredBuyerWallet = restored.finance.BGD.omegaFinance.companyCapitalAccounts[buyerCompany];
       const restoredSellerWallet = restored.finance.SAU.omegaFinance.companyCapitalAccounts[sellerCompany];
-      const restoredBuyerEconomyKey=countryBucketKey('economy',buyerCountry);
-      const restoredSellerEconomyKey=countryBucketKey('economy',sellerCountry);
+      // A save may retain both canonical ISO-3 and display-name country buckets.
+      // Select the restored bucket that actually owns the company account instead of
+      // assuming the first matching country alias is the authoritative account bucket.
+      const restoredBuyerEconomyKey=countryBucketKey('economy',buyerCountry,bucket=>
+        !!bucket?.companyAccounts?.[buyerCompany]);
+      const restoredSellerEconomyKey=countryBucketKey('economy',sellerCountry,bucket=>
+        !!bucket?.companyAccounts?.[sellerCompany]);
       const restoredBuyerAccount = restored.economy?.[restoredBuyerEconomyKey]?.companyAccounts?.[buyerCompany]||null;
       const restoredSellerAccount = restored.economy?.[restoredSellerEconomyKey]?.companyAccounts?.[sellerCompany]||null;
       if(!restoredBuyerAccount||!restoredSellerAccount)throw new Error('PRIVATE_CASH_LIFECYCLE_RESTORED_COMPANY_ACCOUNTS_MISSING:'+JSON.stringify({
