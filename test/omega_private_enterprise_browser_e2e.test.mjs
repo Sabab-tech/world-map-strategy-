@@ -770,6 +770,22 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       if (!simulation?.clock || !endowment || !industry || !economy || !governmentBaseline || !privateBaseline) {
         throw new Error('SAB34_REQUIRED_RUNTIME_NOT_MOUNTED');
       }
+      // Preserve the authoritative runtime behavior while exposing the exact turn result
+      // to this isolated browser proof. This is diagnostic-only and does not change state.
+      if (!window.__sab34IndustryTurnProbeInstalled) {
+        const authoritativeIndustry = industry;
+        const observedIndustry = Object.assign({}, authoritativeIndustry, {
+          runCountryTurn: async function(countryId, ...args) {
+            const result = await authoritativeIndustry.runCountryTurn(countryId, ...args);
+            window.__sab34LastIndustrialTurnResult = JSON.parse(JSON.stringify(result));
+            return result;
+          }
+        });
+        window.Omega = window.Omega || {};
+        window.Omega.ResourceIndustrialNetwork = observedIndustry;
+        window.OmegaResourceIndustrialNetwork = observedIndustry;
+        window.__sab34IndustryTurnProbeInstalled = true;
+      }
 
       const clock = simulation.clock;
       const currentTurn = Number(state.simulation?.turn ?? clock.turn) || 0;
@@ -1739,20 +1755,41 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const state = window.Game.state;
       const resource = state.resource.BGD;
       const run = window.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__.result;
-      const shipment = (resource.industrialNetwork?.shipments || []).find(row =>
-        String(row.shipmentId) === String(advanced.last?.phases?.SIMULATE?.shipments?.[0]?.shipmentId || '') ||
-        (String(row.batchId) === String(run.batchId) && row.shipmentType === 'RAW_TO_FACTORY' && row.status === 'DELIVERED'));
+      const shipmentRows = (resource.industrialNetwork?.shipments || []).filter(row =>
+        String(row.batchId) === String(run.batchId) && row.shipmentType === 'RAW_TO_FACTORY');
+      const shipment = shipmentRows[shipmentRows.length - 1] || null;
       const factory = state.economy.BGD.productionAssets.find(row =>
         String(row.id || row.assetId || row.projectId) === String(run.factoryId));
-      const delivery = (resource.industrialNetwork?.shipments || []).find(row =>
-        String(row.batchId) === String(run.batchId) && row.shipmentType === 'RAW_TO_FACTORY' && row.status === 'DELIVERED');
+      const delivery = shipment?.status === 'DELIVERED' ? shipment : null;
       const inputLot = delivery && factory?.inputBatchLots?.find(row => String(row.batchId) === String(delivery.factoryInputBatchId));
+      const sourceBatch = (resource.batches || []).find(row => String(row.batchId) === String(run.batchId));
+      const sourceLot = resource.inventoryLots?.[String(run.batchId)] || null;
+      const rawWarehouse = resource.warehouse || {};
       return {
         advancedTurns: advanced.steps,
         compressedTurns: advanced.compressedTurns,
         committedEtaDate: advanced.committedEtaDate,
         currentTurn: Number(simulation.clock.turn),
+        stateTurn: Number(state.simulation?.turn),
+        stateDate: String(state.simulation?.date || ''),
+        clockDate: String(simulation.clock.simulationDate?.() || ''),
         delivery: delivery || shipment || null,
+        shipmentRows,
+        industrialTurnResult: window.__sab34LastIndustrialTurnResult || null,
+        sourceBatch: sourceBatch ? {
+          batchId: sourceBatch.batchId, status: sourceBatch.status, stage: sourceBatch.stage,
+          quantity: sourceBatch.quantity, remainingQuantity: sourceBatch.remainingQuantity,
+          warehouseId: sourceBatch.warehouseId, locationNodeKey: sourceBatch.locationNodeKey
+        } : null,
+        sourceLot: sourceLot ? {
+          status: sourceLot.status, stage: sourceLot.stage, quantity: sourceLot.quantity,
+          remainingQuantity: sourceLot.remainingQuantity, warehouseId: sourceLot.warehouseId
+        } : null,
+        warehouseCoal: {
+          available: Number(rawWarehouse.availableByResource?.coal) || 0,
+          reserved: Number(rawWarehouse.reservedByResource?.coal) || 0
+        },
+        countryCoalInventory: Number(resource.inventory?.coal) || 0,
         factoryId: String(factory?.id || factory?.assetId || factory?.projectId || ''),
         inputLot: inputLot || null,
         inputInventory: factory?.inputInventory || {}
