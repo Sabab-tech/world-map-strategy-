@@ -12,7 +12,7 @@ const MINEPLAY_EXTRA_BATCH_URL='resource_site_country_mineplay_batch_20261024_v1
 const MINEPLAY_CRITICAL_BATCH_URL='resource_site_country_mineplay_critical_batch_20261024_v1.json';
 const LEGACY_GAMEPLAY_URLS=['resource_site_legacy_gameplay_expansion_part_1_v1.json','resource_site_legacy_gameplay_expansion_part_2_v1.json','resource_site_legacy_gameplay_expansion_part_3_v1.json','resource_site_legacy_gameplay_expansion_part_4_v1.json','resource_site_legacy_gameplay_expansion_part_5_v1.json','resource_site_legacy_gameplay_expansion_part_6_v1.json'];
 const LEGACY_CANONICAL_ALIAS_IDS={SITE_AUS_olympic_dam_uranium_copper:'SITE_AUS_olympic_dam_mine',SITE_BRA_carajas_iron_ore_mine_legacy2:'SITE_BRA_carajas_iron_ore_mine',SITE_CHL_escondida_copper_mine_legacy2:'SITE_CHL_escondida_copper_mine',SITE_IDN_grasberg_copper_gold_mine:'SITE_IDN_grasberg_mine',SITE_COD_tenke_fungurume_copper_cobalt_complex:'SITE_COD_tenke_fungurume_mine',SITE_COD_kibali_gold_mine_complex:'SITE_COD_kibali_gold_mine',SITE_CAN_voiseys_bay_nickel_mine:'SITE_CAN_voisey_s_bay_nickel_mine',SITE_GBR_boulby_mine:'SITE_GBR_boulby_potash_mine',SITE_SWE_kiruna_iron_ore_mine:'SITE_SWE_kiruna_iron_mine',SITE_PRK_musan_iron_ore_mine:'SITE_PRK_musan_iron_mine'};
-let sites=[], selected=null, markers=[], markerLayer=null, panel=null, statusNode=null, detailNode=null, selectNode=null;
+let sites=[], selected=null, selectedFactoryId='', markers=[], markerLayer=null, panel=null, statusNode=null, detailNode=null, selectNode=null, factorySelectNode=null;
 const sitesById=new Map(), sitesByCountry=new Map(), sitesByGrid=new Map();
 const MAX_MAP_RESOURCE_MARKERS=350, MAX_RESOURCE_SELECTOR_OPTIONS=150, RESOURCE_GRID_DEGREES=10;
 const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -453,6 +453,52 @@ function detail(s){
 }
 g.Omega=g.Omega||{};
 g.Omega.IndividualResourceSitePresentation={render:renderSiteDetail};
+function factoryAssetId(asset){
+ return String(asset?.id||asset?.assetId||asset?.projectId||'').trim();
+}
+async function renderFactorySelector(site){
+ const node=factorySelectNode,targetSiteId=String(site?.siteId||'');
+ if(!node||!targetSiteId)return;
+ node.disabled=true;
+ node.innerHTML='<option value="">Loading compatible factories…</option>';
+ const net=api();
+ try{
+  const loaded=await net?.loadCatalog?.();
+  if(loaded?.status==='FAILED')throw new Error('FACTORY_CATALOG_UNAVAILABLE');
+  if(selected!==targetSiteId||factorySelectNode!==node)return;
+  const resourceId=site.real?.resourceId||site.sourceSiteRecord?.resourceId||
+   site.sourceSiteRecord?.resourceTypeId||site.identity?.resourceTypeId||'';
+  const rows=typeof net?.candidateFactories==='function'
+   ?net.candidateFactories(site.countryId,resourceId,targetSiteId):[];
+  const candidates=(Array.isArray(rows)?rows:[]).map(row=>row?.asset).filter(Boolean)
+   .map(asset=>({asset,id:factoryAssetId(asset)})).filter(row=>row.id);
+  if(!candidates.length){
+   selectedFactoryId='';
+   node.innerHTML='<option value="">No compatible operational factory</option>';
+   node.disabled=true;
+   return;
+  }
+  const retained=candidates.find(row=>row.id===selectedFactoryId);
+  selectedFactoryId=(retained||candidates[0]).id;
+  node.innerHTML=candidates.map(({asset,id})=>{
+   const type=humanize(asset.factoryType||asset.type||asset.facilityType||'Factory');
+   const company=asset.operatorCompanyName||asset.operatorCompanyId||asset.ownerCompanyName||
+    asset.ownerCompanyId||asset.companyId||'';
+   const owner=company?' · '+humanize(company):'';
+   const status=humanize(asset.status||'OPERATIONAL');
+   return '<option value="'+esc(id)+'">'+esc(type+owner+' · '+status+' ('+id+')')+'</option>';
+  }).join('');
+  node.value=selectedFactoryId;
+  node.disabled=false;
+  node.setAttribute('data-site-id',targetSiteId);
+ }catch(error){
+  if(selected!==targetSiteId||factorySelectNode!==node)return;
+  selectedFactoryId='';
+  node.innerHTML='<option value="">Factory catalog unavailable</option>';
+  node.disabled=true;
+  setStatus('Factory destination unavailable · '+humanize(error?.message||'factory catalog failed')+'.');
+ }
+}
 function setSelected(id){
  const s=sitesById.get(String(id))||sites.find(x=>String(x.siteId)===String(id));if(!s)return;
  selected=s.siteId;
@@ -466,6 +512,7 @@ function setSelected(id){
   selectNode.value=String(id);
  }
  detail(s);if(panel)panel.style.display='block';
+ void renderFactorySelector(s);
  const c=s.coordinates||s.location?.coordinates||{};
  const map=g.Game?.Map?.map||g.map;
  if(map&&Number.isFinite(Number(c.lat))&&Number.isFinite(Number(c.lng))&&typeof map.setView==='function')map.setView([Number(c.lat),Number(c.lng)],Math.max(7,Number(map.getZoom?.()||4)));
@@ -660,7 +707,10 @@ async function execute(){
  try{
   // Normal gameplay must not auto-create a simulation-only factory. Explicit scenario
   // fixtures may request that capability directly from the industrial runtime.
-  const result=await net.executeSitePipeline({countryId:s.countryId,siteId:s.siteId,resourceId:s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.identity?.resourceTypeId});
+  const factoryId=String(factorySelectNode?.value||selectedFactoryId||'').trim();
+  const result=await net.executeSitePipeline({countryId:s.countryId,siteId:s.siteId,
+   resourceId:s.real?.resourceId||s.sourceSiteRecord?.resourceId||s.sourceSiteRecord?.resourceTypeId||s.identity?.resourceTypeId,
+   ...(factoryId?{factoryId}:{})});
   g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__={siteId:s.siteId,result};
   if(result?.status==='IN_TRANSIT'){
    setStatus('Extraction committed · shipment dispatched'+(result.shipment?.etaTurn!==undefined?' · estimated arrival turn '+formatScalar(result.shipment.etaTurn):'')+'.');
@@ -687,12 +737,16 @@ function mount(){
   '<p id="omega-individual-status" class="omega-site-status" role="status" aria-live="polite">Loading resource site data…</p>'+
   '<label class="omega-site-select-label" for="omega-individual-select">Selected site</label>'+
   '<select id="omega-individual-select" class="omega-site-select"></select>'+
+  '<label class="omega-site-select-label" for="omega-individual-factory-select">Destination factory</label>'+
+  '<select id="omega-individual-factory-select" class="omega-site-select" aria-label="Destination factory" disabled><option value="">Select a site first</option></select>'+
   '<div id="omega-individual-detail" class="omega-site-detail"></div>'+
   '<div class="omega-site-actions"><button id="omega-individual-plan" class="omega-site-action omega-site-action--plan" type="button">Plan extraction</button><button id="omega-individual-execute" class="omega-site-action omega-site-action--execute" type="button">Run site pipeline</button></div>';
  document.body.appendChild(panel);
- statusNode=panel.querySelector('#omega-individual-status');detailNode=panel.querySelector('#omega-individual-detail');selectNode=panel.querySelector('#omega-individual-select');
+ statusNode=panel.querySelector('#omega-individual-status');detailNode=panel.querySelector('#omega-individual-detail');
+ selectNode=panel.querySelector('#omega-individual-select');factorySelectNode=panel.querySelector('#omega-individual-factory-select');
  panel.querySelector('#omega-individual-close').addEventListener('click',()=>panel.style.display='none');
  selectNode.addEventListener('change',()=>setSelected(selectNode.value));
+ factorySelectNode.addEventListener('change',()=>{selectedFactoryId=String(factorySelectNode.value||'').trim();});
  panel.querySelector('#omega-individual-plan').addEventListener('click',()=>void plan());
  panel.querySelector('#omega-individual-execute').addEventListener('click',()=>void execute());
 }
