@@ -1,0 +1,434 @@
+/* OMEGA Unified Visual System v1
+ * One offline-first visual contract for map, command dock, ministries, dialogs and forms.
+ * Presentation-only: no click handlers, data mutation or engine ownership is added here.
+ */
+:root {
+  --omega-ui-bg: #071321;
+  --omega-ui-surface: #0d1b2b;
+  --omega-ui-surface-raised: #12253a;
+  --omega-ui-surface-soft: #182e45;
+  --omega-ui-border: #294158;
+  --omega-ui-border-strong: #49647d;
+  --omega-ui-text: #edf3fa;
+  --omega-ui-muted: #9fb2c7;
+  --omega-ui-accent: #72b7ea;
+  --omega-ui-accent-soft: rgba(114, 183, 234, .14);
+  --omega-ui-gold: #e1c077;
+  --omega-ui-success: #70d5b0;
+  --omega-ui-warning: #efc277;
+  --omega-ui-danger: #e69c9c;
+  --omega-ui-radius-sm: 8px;
+  --omega-ui-radius-md: 11px;
+  --omega-ui-radius-lg: 15px;
+  --omega-ui-control-height: 44px;
+  --omega-ui-icon-size: 42px;
+  --omega-ui-font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --omega-ui-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+}
+html, body, #app, #ui-engine-root, #render-engine-root,
+.omega-v2-app-root, #cabinet-full-window {
+  font-family: var(--omega-ui-font) !important;
+}
+body, #app {
+  color: var(--omega-ui-text);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+#ui-engine-root, #ui-engine-root *,
+.omega-v2-app-root, .omega-v2-app-root *,
+#cabinet-full-window, #cabinet-full-window * { box-sizing: border-box; }
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--omega-ui-font) !important;
+  letter-spacing: -.015em;
+  line-height: 1.25;
+  overflow-wrap: break-word;
+}
+p, label, small, li, td, th { font-family: var(--omega-ui-font); }
+.omega-v2-title { letter-spacing: -.025em !important; }
+.omega-v2-eyebrow {
+  color: var(--omega-ui-gold) !important;
+  font-size: 10px !important;
+  font-weight: 750 !important;
+  letter-spacing: .11em !important;
+}
+
+/* One button geometry/type scale for static and runtime-rendered controls. */
+button {
+  box-sizing: border-box !important;
+  min-width: 0;
+  min-height: var(--omega-ui-control-height) !important;
+  max-width: 100%;
+  padding: 9px 14px !important;
+  border: 1px solid var(--omega-ui-border-strong) !important;
+  border-radius: var(--omega-ui-radius-md) !important;
+  background: var(--omega-ui-surface-raised) !important;
+  color: var(--omega-ui-text) !important;
+  font-family: var(--omega-ui-font) !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0 !important;
+  text-align: center;
+  text-decoration: none;
+  text-transform: none !important;
+  text-shadow: none !important;
+  white-space: normal;
+  overflow-wrap: break-word;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease !important;
+}
+button:disabled, button[disabled], button[aria-disabled="true"] {
+  opacity: .48 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--omega-ui-accent) !important;
+  outline-offset: 2px !important;
+}
+button.btn-primary, button.primary, button[type="submit"],
+button.omega-v2-button--primary, button[data-variant="primary"],
+button[data-button-kind="primary"] {
+  border-color: #4b8db5 !important;
+  background: #174b68 !important;
+  color: #f4fbff !important;
+}
+button.btn-danger, button.danger, button.omega-v2-button--danger,
+button[data-variant="danger"], button[data-button-kind="danger"] {
+  border-color: #925466 !important;
+  background: #3a252d !important;
+  color: #ffe5ea !important;
+}
+button.btn-secondary, button.secondary, button.omega-v2-button--quiet,
+button[data-variant="secondary"] {
+  border-color: var(--omega-ui-border) !important;
+  background: transparent !important;
+  color: var(--omega-ui-muted) !important;
+}
+.nav-btn, .tab-btn, .metric-opt-btn, .layer-opt-btn, .speed-btn,
+button[role="tab"], .omega-v2-nav-button, .omega-v2-route-link,
+.omega-atlas-command-button, .omega-v2-filterbar button {
+  min-height: 42px !important;
+  padding: 8px 11px !important;
+  border-radius: 10px !important;
+  background: var(--omega-ui-surface) !important;
+  border-color: var(--omega-ui-border) !important;
+  color: var(--omega-ui-muted) !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+}
+.nav-btn.active, .tab-btn.active, .metric-opt-btn.active,
+.layer-opt-btn.active, .speed-btn.active,
+button[role="tab"][aria-selected="true"], button[aria-current="page"],
+button[aria-pressed="true"], .omega-v2-nav-button.is-active,
+.omega-v2-route-link.is-current,
+.omega-atlas-command-button[aria-current="page"] {
+  border-color: var(--omega-ui-accent) !important;
+  background: var(--omega-ui-accent-soft) !important;
+  color: #eaf7ff !important;
+}
+.omega-v2-button {
+  min-height: 44px !important;
+  padding: 10px 14px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+}
+.omega-v2-button--accent {
+  border-color: #8f7545 !important;
+  background: #3b3325 !important;
+  color: #fff2d6 !important;
+}
+
+/* Icon controls keep a fixed square hit area. */
+.icon-btn, button.icon-only, button[aria-label="Close"],
+button[aria-label="Close dialog"], button[aria-label="Close panel"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 var(--omega-ui-icon-size);
+  width: var(--omega-ui-icon-size) !important;
+  min-width: var(--omega-ui-icon-size) !important;
+  max-width: var(--omega-ui-icon-size) !important;
+  height: var(--omega-ui-icon-size) !important;
+  min-height: var(--omega-ui-icon-size) !important;
+  max-height: var(--omega-ui-icon-size) !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+#btn-ministry-dock {
+  min-width: 40px !important;
+  width: 42px !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+}
+
+/* Map shell controls remain compact and gesture-safe. */
+.ui-top-hud, .ui-right-controls, .ui-bottom-navigation,
+#map-metric-dropdown, .map-metric-dropdown, #resource-filter-box {
+  border: 1px solid var(--omega-ui-border) !important;
+  border-radius: var(--omega-ui-radius-lg) !important;
+  background: rgba(7, 19, 33, .97) !important;
+  color: var(--omega-ui-text) !important;
+  box-shadow: var(--omega-ui-shadow) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.ui-top-hud { gap: 10px !important; padding: 8px 12px !important; }
+.ui-right-controls { gap: 7px !important; padding: 7px !important; }
+.ui-right-controls .icon-btn { border-radius: 10px !important; }
+.ui-bottom-navigation { gap: 5px !important; padding: 6px !important; }
+.ui-bottom-navigation .nav-btn {
+  min-width: 74px;
+  min-height: 44px !important;
+  padding: 7px 9px !important;
+  font-size: 11px !important;
+}
+.city-btn-marker, button.city-btn-marker,
+.leaflet-control-zoom-in, .leaflet-control-zoom-out {
+  min-width: 28px !important;
+  width: auto !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  max-height: 34px !important;
+  padding: 2px 6px !important;
+  border-radius: 7px !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+}
+.leaflet-control-zoom-in, .leaflet-control-zoom-out {
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 !important;
+}
+
+/* One five-destination dock for map-to-ministry navigation. */
+#omega-atlas-command-dock {
+  position: fixed !important;
+  z-index: 2147482000 !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  transform: translateX(-50%) !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  align-items: stretch;
+  gap: 4px !important;
+  width: calc(100vw - 20px) !important;
+  max-width: 560px !important;
+  padding: 6px !important;
+  border: 1px solid var(--omega-ui-border) !important;
+  border-radius: 15px !important;
+  background: rgba(7, 19, 33, .98) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .4) !important;
+}
+#omega-atlas-command-dock[hidden] { display: none !important; }
+#omega-atlas-command-dock .omega-atlas-command-button {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+  min-height: 54px !important;
+  width: 100% !important;
+  padding: 5px 2px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--omega-ui-muted) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  line-height: 1.15 !important;
+  overflow-wrap: normal;
+}
+.omega-atlas-command-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--omega-ui-accent);
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* V2 shell, ministry pages, cards and information surfaces. */
+.omega-v2-app-header {
+  border-bottom: 1px solid var(--omega-ui-border) !important;
+  background: var(--omega-ui-bg) !important;
+  color: var(--omega-ui-text) !important;
+}
+.omega-v2-app-brand strong { color: var(--omega-ui-text) !important; }
+.omega-v2-app-brand small, .omega-v2-subtitle,
+.omega-v2-card-meta, .omega-v2-source, .omega-v2-kpi span {
+  color: var(--omega-ui-muted) !important;
+}
+.omega-v2-card, .omega-v2-kpi, .omega-v2-minister-table-wrap,
+.omega-v2-minister-recruitment-panel {
+  border-color: var(--omega-ui-border) !important;
+}
+.omega-v2-card {
+  border-radius: var(--omega-ui-radius-lg) !important;
+  background: var(--omega-ui-surface) !important;
+  box-shadow: none !important;
+}
+.omega-v2-kpi {
+  border-radius: var(--omega-ui-radius-md) !important;
+  background: var(--omega-ui-surface-raised) !important;
+}
+.omega-v2-kpi strong { color: var(--omega-ui-text) !important; }
+.omega-v2-note {
+  border-left-color: var(--omega-ui-gold) !important;
+  background: var(--omega-ui-surface) !important;
+  color: var(--omega-ui-muted) !important;
+}
+.omega-v2-status {
+  border-color: var(--omega-ui-border-strong) !important;
+  font-weight: 700 !important;
+}
+.omega-v2-filterbar input, .omega-v2-filterbar select {
+  min-height: 42px !important;
+  border-color: var(--omega-ui-border-strong) !important;
+  border-radius: 10px !important;
+  background: var(--omega-ui-surface) !important;
+  color: var(--omega-ui-text) !important;
+  font: 13px/1.3 var(--omega-ui-font) !important;
+}
+
+/* Keep resource-site actions inside the scrollable panel hit area. */
+#omega-individual-resource-panel .omega-site-actions {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 5 !important;
+  margin: 13px -16px -16px !important;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  border-top: 1px solid var(--omega-ui-border) !important;
+  background: var(--omega-ui-bg) !important;
+}
+@media (max-width: 480px) {
+  #omega-individual-resource-panel .omega-site-actions {
+    margin-left: -13px !important;
+    margin-right: -13px !important;
+    padding-left: 13px !important;
+    padding-right: 13px !important;
+  }
+}
+
+/* Shared forms, table typography and validation focus. */
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--omega-ui-border-strong) !important;
+  border-radius: 9px !important;
+  background: var(--omega-ui-surface) !important;
+  color: var(--omega-ui-text) !important;
+  font-family: var(--omega-ui-font) !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  box-shadow: none !important;
+}
+textarea { min-height: 88px; }
+input::placeholder, textarea::placeholder { color: #8298ae !important; opacity: 1; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--omega-ui-accent); }
+select option { background: var(--omega-ui-surface); color: var(--omega-ui-text); }
+table { border-color: var(--omega-ui-border) !important; }
+th { color: var(--omega-ui-muted); font-size: 11px; font-weight: 750; text-transform: none; }
+td { color: var(--omega-ui-text); }
+.omega-modal, .omega-drawer, #command-hub-modal,
+#cabinet-full-window[data-omega-ui-v2-active="true"],
+#ministry-dashboard-view, .country-info-card, .city-detail-bar {
+  color: var(--omega-ui-text);
+}
+.omega-modal, .omega-drawer, #command-hub-modal,
+#cabinet-full-window[data-omega-ui-v2-active="true"] {
+  border-color: var(--omega-ui-border) !important;
+  background: var(--omega-ui-bg) !important;
+}
+.omega-v2-app-main { scrollbar-color: var(--omega-ui-border-strong) transparent; }
+.omega-v2-app-main::-webkit-scrollbar { width: 6px; }
+.omega-v2-app-main::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background: var(--omega-ui-border-strong);
+}
+
+/* Responsive sizing and safe-area handling. */
+@media (max-width: 600px) {
+  button { min-height: 44px !important; padding: 9px 11px !important; font-size: 12px !important; }
+  .icon-btn, button.icon-only, button[aria-label="Close"],
+  button[aria-label="Close dialog"], button[aria-label="Close panel"] {
+    min-width: 42px !important;
+    width: 42px !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+  }
+  .ui-top-hud {
+    max-width: calc(100vw - 16px) !important;
+    gap: 7px !important;
+    padding: 7px 9px !important;
+  }
+  .ui-right-controls {
+    right: 8px !important;
+    gap: 6px !important;
+    padding: 6px !important;
+  }
+  .ui-bottom-navigation { max-width: calc(100vw - 16px) !important; gap: 3px !important; }
+  .ui-bottom-navigation .nav-btn {
+    min-width: 62px;
+    padding: 7px 5px !important;
+    font-size: 10px !important;
+  }
+  #omega-atlas-command-dock {
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+    width: calc(100vw - 16px) !important;
+    gap: 2px !important;
+    padding: 5px !important;
+  }
+  #omega-atlas-command-dock .omega-atlas-command-button {
+    min-height: 52px !important;
+    padding: 4px 1px !important;
+    font-size: 9px !important;
+  }
+}
+@media (max-width: 359px) {
+  #omega-atlas-command-dock .omega-atlas-command-button { font-size: 8px !important; }
+  .omega-v2-shell { padding-left: 10px !important; padding-right: 10px !important; }
+}
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled):not([aria-disabled="true"]) {
+    border-color: var(--omega-ui-accent) !important;
+    background-color: var(--omega-ui-surface-soft) !important;
+  }
+  button.btn-primary:hover, button.primary:hover, button.omega-v2-button--primary:hover {
+    background-color: #205b7b !important;
+  }
+}
+@media (pointer: coarse) {
+  button, button::before, button::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
