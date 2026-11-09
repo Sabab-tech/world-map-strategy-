@@ -686,6 +686,7 @@ Game.DataLoader = {
         if (this.__assetsLoadPromise) return this.__assetsLoadPromise;
 
         const loader = this;
+        const RELATION_COUNTRIES_PER_FRAME = this.isConstrainedDevice() ? 1 : 2;
         let promise;
         promise = (async function () {
             let failedStage = 'canonical world map';
@@ -821,7 +822,7 @@ Game.DataLoader = {
                 failedStage = 'bilateral relation generation';
                 const relationCountries = Object.keys(Game.state.economy || {});
                 if (Game.Diplomacy && typeof Game.Diplomacy.generateAllBilateralRelations === 'function' && relationCountries.length) {
-                    const relationsPerFrame = loader.isConstrainedDevice() ? 1 : 2;
+                    const relationsPerFrame = RELATION_COUNTRIES_PER_FRAME;
                     const scheduleRelationChunk = typeof window.requestAnimationFrame === 'function'
                         ? function (callback) { window.requestAnimationFrame(callback); }
                         : function (callback) { window.setTimeout(callback, 0); };
