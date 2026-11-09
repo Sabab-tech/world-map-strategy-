@@ -532,7 +532,7 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
   assert.ok(map.includes('Game.DataLoader.loadAssets();'),
     'map retry must resume the full staged startup sequence rather than only redrawing the map');
   const abortResumeStart = map.indexOf('const retryWorldMapAfterAbort = function ()');
-  const abortResumeEnd = map.indexOf('        }\\n    }\\n    return true;', abortResumeStart);
+  const abortResumeEnd = map.indexOf('    return true;', abortResumeStart);
   const abortResume = map.slice(abortResumeStart, abortResumeEnd);
   assert.ok(abortResume.includes('loader.loadAssets();'),
     'returning from a ministry after an aborted map fetch must restart the full startup pipeline');
