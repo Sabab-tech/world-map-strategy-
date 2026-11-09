@@ -103,6 +103,7 @@ const frac=s=>h32(s)/4294967296;
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,Number(v)||0));
 
 let catalog=null, catalogPromise=null;
+let masterSiteCache=null,masterSiteCacheSources=null,masterSiteIndex=new Map();
 let siteLogisticsManifest=null,siteLogisticsManifestPromise=null;
 let siteLogisticsActiveCountry=null,siteLogisticsRouteMap=new Map(),siteLogisticsCountryLoadPromise=null;
 const pendingSiteLogisticsBatches=new Set();
@@ -804,20 +805,29 @@ function quantitativeEngineAdapter(site, quantitative){
 function masterSites(){
   const x=g.OmegaResourceSiteMasterResearchData||g.Omega?.ResourceSiteMasterResearchData;
   const catalog=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
+  const expansion=g.OmegaResourceSiteCountryExpansionData||g.Omega?.ResourceSiteCountryExpansionData;
+  const contract=g.OmegaResourceSiteDataContract||null,industrialCatalog=cat();
+  const masterRows=Array.isArray(x?.sites)?x.sites:[];
   const canonicalRows=Array.isArray(catalog?.sites)?catalog.sites:[];
+  const expansionRows=Array.isArray(expansion?.records)?expansion.records:[];
+  const cachedSources=masterSiteCacheSources;
+  if(masterSiteCache&&cachedSources&&cachedSources.master===x&&cachedSources.masterRows===masterRows&&
+     cachedSources.canonical===catalog&&cachedSources.canonicalRows===canonicalRows&&
+     cachedSources.expansion===expansion&&cachedSources.expansionRows===expansionRows&&
+     cachedSources.contract===contract&&cachedSources.industrialCatalog===industrialCatalog)
+    return masterSiteCache;
   const canonicalById=new Map(canonicalRows.map(row=>[String(row?.siteId||''),row]));
   // Preserve master research records, but attach the exact same canonical quantitative contract by site ID.
   const base=Array.isArray(x?.sites)?x.sites.map(site=>{
     const canonical=canonicalById.get(String(site?.siteId||''))||null;
     if(!canonical)return site;
-    const normalized=g.OmegaResourceSiteDataContract?.normalizeSiteRecord?.(canonical)||canonical;
+    const normalized=contract?.normalizeSiteRecord?.(canonical)||canonical;
     return quantitativeEngineAdapter({...site,canonicalSiteRecord:clone(normalized),identity:clone(normalized.identity||site.identity||{}),
       quantitativeProvenance:clone(normalized.quantitative?.quantitativeProvenance||site.quantitativeProvenance||{}),
       map:clone(normalized.map||site.map||{}),location:clone(site.location||normalized.location||{}),
       sourceReference:clone(normalized.sourceReference||site.sourceReference||{})},normalized.quantitative||site.quantitative||{});
   }):[];
-  const expansion=g.OmegaResourceSiteCountryExpansionData||g.Omega?.ResourceSiteCountryExpansionData;
-  const extra=Array.isArray(expansion?.records)?expansion.records.map(row=>{
+  const extra=expansionRows.map(row=>{
     const resourceId=String(row?.identity?.resourceTypeId||'').trim();
     const method=String(row?.operation?.extractionMethod||'').trim();
     const siteType=String(row?.identity?.siteType||'RESOURCE_SITE').trim();
@@ -894,7 +904,11 @@ function masterSites(){
   });
   for(const site of canonicalExtras)if(!byId.has(site.siteId))byId.set(site.siteId,site);
   for(const site of extra)if(!byId.has(site.siteId))byId.set(site.siteId,site);
-  return [...byId.values()];
+  const rows=[...byId.values()];
+  masterSiteCache=rows;
+  masterSiteIndex=new Map(rows.map(site=>[String(site?.siteId||''),site]));
+  masterSiteCacheSources={master:x,masterRows,canonical:catalog,canonicalRows,expansion,expansionRows,contract,industrialCatalog};
+  return rows;
 }
 function runtimeCountryIds(){
   const ids=new Set(masterSites().map(site=>canonicalCountry(site.countryId)).filter(Boolean));
@@ -924,7 +938,8 @@ function playerSimulationCountryId(){
 }
 function siteById(siteId){
   const key=String(siteId||'').trim();
-  const site=masterSites().find(x=>String(x?.siteId||'')===key)||null;
+  masterSites();
+  const site=masterSiteIndex.get(key)||null;
   if(!site)return null;
   const cid=canonicalCountry(site.countryId||site.sourceSiteRecord?.countryCode);
   const assets=Array.isArray(state()?.resource?.[cid]?.mineAssets)?state().resource[cid].mineAssets:[];
@@ -5552,10 +5567,54 @@ async function executeSitePipeline(input={}){
   const selectedFactoryIdBeforeExtraction=String(selectedFactoryBeforeExtraction?.id||
     selectedFactoryBeforeExtraction?.assetId||selectedFactoryBeforeExtraction?.projectId||'').trim();
   const extraction=await endowment.extractCountry(cid,keys);
-  const records=extraction?.result?.records||extraction?.records||[];
+  const extractionResult=extraction?.result||extraction||{};
+  const records=Array.isArray(extractionResult?.records)?extractionResult.records:[];
   const record=records.find(x=>keys.includes(String(x?.occurrenceKey||''))&&canonicalCountry(x?.countryId||cid)===cid&&x?.producedBatch);
-  if(extraction?.status!=='APPLIED'||extraction?.result?.accepted===false||!record){
-    return{status:'BLOCKED',reason:'SITE_EXTRACTION_NOT_COMMITTED',siteId:site.siteId,occurrenceKeys:keys,extractionStatus:extraction?.status||null,detail:extraction?.reason||extraction?.detail||extraction?.result?.error||extraction?.result?.blocked||extraction?.result?.reason||null};
+  if(extraction?.status!=='APPLIED'||extractionResult?.accepted===false||!record){
+    const countryResource=state()?.resource?.[cid]||{};
+    const reserveRegistry=g.__OmegaResourceReserveRegistry||g.OmegaResourceReserveRegistry;
+    const occurrenceDiagnostics=keys.map(key=>{
+      const mine=countryResource.mineStates?.[key]||null;
+      const output=countryResource.mineOutputs?.[key]||null;
+      const path=countryResource.minePaths?.[key]||null;
+      const reserve=reserveRegistry?.getReserveState?.(key)||mine;
+      const capacity=reserveRegistry?.getCapacityForOccurrence?.(key)||null;
+      return{
+        occurrenceKey:key,siteReferenceKey:mine?.siteReferenceKey||mine?.siteId||null,
+        resourceId:mine?.resourceId||mine?.resourceTypeId||null,
+        reserve:reserve?{residualQuantity:num(reserve.residualQuantity),unit:reserve.unit||null,
+          operationalStatus:reserve.operationalStatus||null,stateVersion:num(reserve.stateVersion)}:null,
+        capacity:capacity?{activeRate:num(capacity.activeRate),dailyRate:num(capacity.dailyRate),
+          nominalRate:num(capacity.nominalRate),unit:capacity.unit||null,authority:capacity.authority||null}:null,
+        output:output?{status:output.status||null,blockReason:output.blockReason||null,
+          producedQuantity:num(output.producedQuantity??output.approvedQuantity??output.quantity),
+          simulationTurn:num(output.simulationTurn??output.turn)}:null,
+        path:path?{status:path.status||null,blockReason:path.blockReason||null,
+          lastStages:(Array.isArray(path.stages)?path.stages.slice(-4):[]).map(stage=>({
+            stage:stage.stage||null,status:stage.status||null,reason:stage.reason||null,turn:num(stage.turn)
+          }))}:null
+      };
+    });
+    const blocked=extractionResult?.blocked;
+    const detail={
+      reason:extractionResult?.reason||extraction?.reason||null,
+      accepted:extractionResult?.accepted??null,
+      extractedCount:num(extractionResult?.extracted),
+      blockedCount:Array.isArray(blocked)?blocked.length:num(blocked),
+      blockedRows:Array.isArray(blocked)?blocked.slice(0,12).map(row=>({
+        occurrenceKey:row.occurrenceKey||null,siteId:row.siteId||null,resourceId:row.resourceId||null,
+        reason:row.reason||null
+      })):[],
+      records:records.slice(0,12).map(row=>({
+        occurrenceKey:row.occurrenceKey||null,siteReferenceKey:row.siteReferenceKey||null,
+        resourceId:row.resourceId||null,approvedQuantity:num(row.approvedQuantity),
+        batchId:row.producedBatch?.batchId||null
+      })),
+      occurrenceDiagnostics,
+      commandId:extraction?.commandId||extractionResult?.commandId||null
+    };
+    return{status:'BLOCKED',reason:'SITE_EXTRACTION_NOT_COMMITTED',siteId:site.siteId,countryId:cid,
+      occurrenceKeys:keys,extractionStatus:extraction?.status||null,detail};
   }
   const batch=record.producedBatch,quantity=Math.max(0,num(record.approvedQuantity)||num(batch.quantity)||num(record.quantity)||0);
   if(quantity<=0)return{status:'BLOCKED',reason:'EXTRACTION_BATCH_QUANTITY_INVALID',siteId:site.siteId,occurrenceKey:record.occurrenceKey};
