@@ -135,6 +135,8 @@
   const mineSiteReferenceCache=new Map();
   const siteExecutionRowsCache=new Map();
   let siteExecutionRowsCacheTurn=null;
+  const occurrenceRowsCache=new Map();
+  let occurrenceRowsCacheTurn=null;
   let mineSiteReferenceCacheYear=null;
   let engineDepositKeySource=null,engineDepositKeySourceLength=-1,engineDepositKeySet=new Set(),engineDepositKeyBuildCount=0;
   // ResourceMinistryEngine publishes its deposit array as a stable data snapshot. Build
@@ -947,6 +949,7 @@
     const currentYear=simulationYear();
     if(mineSiteReferenceCacheYear!==currentYear){
       mineSiteReferenceCache.clear();
+      occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;
       mineSiteReferenceCacheYear=currentYear;
     }
     const cached=mineSiteReferenceCache.get(wanted);
@@ -1110,7 +1113,25 @@
 
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
-    const wanted=canonical(c),out=[],seen=new Set(),siteResourceSeen=new Set();
+    const wanted=canonical(c),siteReferences=mineSiteReferenceRows(wanted),currentTurn=turn();
+    if(occurrenceRowsCacheTurn!==currentTurn){
+      occurrenceRowsCache.clear();occurrenceRowsCacheTurn=currentTurn;
+    }
+    const reserveStates=rr.reserveStates||null,cached=occurrenceRowsCache.get(wanted);
+    if(cached&&cached.registry===reg&&cached.engine===e&&cached.reserveStates===reserveStates&&
+       cached.reserveSize===(reserveStates?.size??null)&&cached.siteReferences===siteReferences){
+      return cached.rows.map(row=>{
+        const key=String(row?.occurrenceKey||'');
+        return{
+          ...row,
+          reserveState:rr.getReserveState?.(key)||row.reserveState,
+          capacity:rr.getCapacityForOccurrence?.(key)||row.capacity,
+          lifecycle:rr.lifecycles?.get?.(key)||row.lifecycle,
+          accessibility:rr.accessibilityStates?.get?.(key)||row.accessibility
+        };
+      });
+    }
+    const out=[],seen=new Set(),siteResourceSeen=new Set();
     // Reserve-state membership is stable during this read. Index it once instead of
     // rescanning every reserve for each parent occurrence and each canonical site.
     const reserveKeysByParent=new Map(),reserveBySiteResource=new Map();
@@ -1176,7 +1197,7 @@
         const siteId=String(row?.siteReferenceKey||'').trim(),resourceId=rid(row?.resourceId);
         if(siteId&&resourceId)siteResourceSeen.add(siteId+'\\u0000'+resourceId);
       }
-      const canonicalRows=mineSiteReferenceRows(wanted);
+      const canonicalRows=siteReferences;
       const reserveCtor=(g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine)?.ReserveState;
       const capacityCtor=(g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine)?.Capacity;
       if(reserveCtor&&capacityCtor){
@@ -1259,6 +1280,10 @@
     }catch(error){
       g.__OmegaCanonicalSiteExecutionBridgeError=String(error?.message||error);
     }
+    occurrenceRowsCache.set(wanted,{
+      registry:reg,engine:e,reserveStates,reserveSize:reserveStates?.size??null,
+      siteReferences,rows:out
+    });
     return out;
   }
 
@@ -1399,6 +1424,10 @@ function batchFromExtraction(x,record){
       siteExecutionRowsCache.clear();
       siteExecutionRowsCacheTurn=currentTurn;
     }
+    if(occurrenceRowsCacheTurn!==currentTurn){
+      occurrenceRowsCache.clear();
+      occurrenceRowsCacheTurn=currentTurn;
+    }
     const cached=siteExecutionRowsCache.get(cid);
     const requestedOccurrenceKeys=new Set(Array.isArray(existing?.requestedOccurrenceKeys)?existing.requestedOccurrenceKeys.map(String):[]);
     if(cached&&requestedOccurrenceKeys.size===0){
@@ -1498,7 +1527,28 @@ function batchFromExtraction(x,record){
         });
       }
     };
-    mineSiteReferenceRows(c).forEach(ref=>{if(ref.commercialExtraction===false)return;add(ref,null,ref.resourceId||ref.resourceTypeId||ref.resourceTypeKey||null,'MINE_SITE');});
+    const requestedSiteReferenceKeys=new Set();
+    if(requestedOccurrenceKeys.size){
+      for(const key of requestedOccurrenceKeys){
+        const mine=existing?.mineStates?.[key]||{};
+        const siteId=String(mine.siteReferenceKey||mine.siteId||mine.sourceSiteId||'').trim();
+        if(siteId)requestedSiteReferenceKeys.add(siteId);
+      }
+      const controllers=state()?.resource?.[cid]?.mineSiteControllers||{};
+      for(const [controllerKey,controller] of Object.entries(controllers)){
+        const linked=Array.isArray(controller?.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys:[];
+        if(linked.some(key=>requestedOccurrenceKeys.has(String(key)))){
+          const siteId=String(controller?.siteReferenceKey||controllerKey||'').trim();
+          if(siteId)requestedSiteReferenceKeys.add(siteId);
+        }
+      }
+    }
+    mineSiteReferenceRows(c).forEach(ref=>{
+      const siteId=String(ref?.siteReferenceKey||ref?.siteId||'').trim();
+      if(requestedSiteReferenceKeys.size&&!requestedSiteReferenceKeys.has(siteId))return;
+      if(ref.commercialExtraction===false)return;
+      add(ref,null,ref.resourceId||ref.resourceTypeId||ref.resourceTypeKey||null,'MINE_SITE');
+    });
     g.__OmegaResourceSiteIdentityDiagnostics=g.__OmegaResourceSiteIdentityDiagnostics||{};
     g.__OmegaResourceSiteIdentityDiagnostics[c]={turn:turn(),canonicalRegistryOccurrenceCount:authoritativeStreams.length,
       suppressedProfileDuplicateCount:suppressedProfileDuplicates.length,suppressedProfileDuplicates:suppressedProfileDuplicates.slice(0,256)};
@@ -2276,7 +2326,7 @@ function batchFromExtraction(x,record){
       };
       // A failed optional reference load remains retryable instead of becoming an empty READY cache.
       supplementalResourceDataReport=report.status==='READY'?report:null;
-      try{profileCache.clear();mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;}catch(_){}
+      try{profileCache.clear();mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;}catch(_){}
       g.OmegaResourceSupplementalDataReport=clone(report);
       g.Omega=g.Omega||{};
       g.Omega.ResourceSupplementalDataReport=g.OmegaResourceSupplementalDataReport;
@@ -2978,7 +3028,7 @@ function batchFromExtraction(x,record){
     const serializedAfter=JSON.stringify(merged);
     const changed=!existing||serializedBefore!==serializedAfter;
     const becameExecutable=!wasExecutable;
-    if(changed){mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;}
+    if(changed){mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;}
     return{status:!existing?'REGISTERED':changed?'ENRICHED':'EXISTS',siteId,countryId,resourceId,
       changed,executionRequired:!existing||becameExecutable};
   }
@@ -3252,7 +3302,7 @@ function batchFromExtraction(x,record){
       data.totalSiteCount=data.sites.length;
       data.dynamicSimulationSiteCount=Math.max(0,n(data.dynamicSimulationSiteCount)||0)+1;
     }
-    mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;
+    mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;
     return{status:'REGISTERED',siteId,countryId,resourceId,identityAuthority:'CANONICAL_SITE_REGISTRY',
       quantityAuthority:'SIMULATED',productionAuthority:'SIMULATED'};
   }
