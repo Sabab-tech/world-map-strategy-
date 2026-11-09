@@ -1240,16 +1240,31 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const constructionDays=Math.max(1,Math.ceil(Math.max(
         Number(governmentProject?.durationDays)||0,Number(privateConstruction.started[0].durationDays)||180)));
       let advanced;
+      // This browser proof accelerates construction only. Keep the resource participant
+      // on the established 30-day production window instead of multiplying mine output
+      // by the construction duration during the same committed turn.
+      const resourceWindowDays=30;
+      const resourceWindowMs=resourceWindowDays*86400000;
       simulation.clock.gameDaysPerTurn=constructionDays;
-      simulation.clock.stepDurationMs=constructionDays*86400000;
+      simulation.clock.stepDurationMs=resourceWindowMs;
       state.simulation.daysPerTurn=constructionDays;
+      if(Number(simulation.clock.stepDurationMs)!==30*86400000)
+        throw new Error('SAB34_CONSTRUCTION_FAST_FORWARD_CHANGED_RESOURCE_WINDOW');
       try{
-        console.info('[SAB34_PROGRESS] CONSTRUCTION_TURN_ADVANCE_START '+JSON.stringify({constructionDays,turn:simulation.clock.turn,participants:window.__sab34ResourceTurnParticipantIds}));
+        console.info('[SAB34_PROGRESS] CONSTRUCTION_TURN_ADVANCE_START '+JSON.stringify({
+          constructionDays,resourceWindowDays,turn:simulation.clock.turn,
+          participants:window.__sab34ResourceTurnParticipantIds
+        }));
         advanced=await window.__sab34AdvanceResourceTurns(1);
-        console.info('[SAB34_PROGRESS] CONSTRUCTION_TURN_ADVANCE_FINISH '+JSON.stringify({steps:advanced.steps,status:advanced.status,turn:simulation.clock.turn}));
+        console.info('[SAB34_PROGRESS] CONSTRUCTION_TURN_ADVANCE_FINISH '+JSON.stringify({
+          steps:advanced.steps,status:advanced.status,turn:simulation.clock.turn,
+          resourceWindowDays:simulation.clock.stepDurationMs/86400000
+        }));
       }
       finally{
-        simulation.clock.gameDaysPerTurn=30;simulation.clock.stepDurationMs=30*86400000;state.simulation.daysPerTurn=30;
+        simulation.clock.gameDaysPerTurn=30;
+        simulation.clock.stepDurationMs=resourceWindowMs;
+        state.simulation.daysPerTurn=30;
       }
       if(advanced.status==='ERROR'||advanced.steps!==1)
         throw new Error('SAB34_CENTRAL_GAME_CLOCK_CONSTRUCTION_ADVANCE_FAILED:'+JSON.stringify({constructionDays,advanced}));
@@ -1697,6 +1712,9 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(extraction.result?.status, 'IN_TRANSIT', JSON.stringify(extraction));
     assert.equal(extraction.result?.extractionStatus, 'COMMITTED');
     assert.equal(extraction.result?.shipment?.shipmentType, 'MINE_TO_WAREHOUSE');
+    assert.equal(Number(extraction.result?.shipment?.route?.requestedQuantity),
+      Number(extraction.result?.extractedQuantity),
+      'mine route request must use the same committed 30-day extraction batch quantity');
     assert.equal(String(extraction.result?.factoryId), commissioning.factoryId,
       'the site flow must retain the selected operational factory across both logistics legs');
     const selectedFlow = await page.evaluate(batchId => {
@@ -1881,6 +1899,8 @@ test('real Chromium map marker runs the exact site through a commissioned privat
           status: sourceLot.status, stage: sourceLot.stage, quantity: sourceLot.quantity,
           remainingQuantity: sourceLot.remainingQuantity, warehouseId: sourceLot.warehouseId
         } : null,
+        sourceFlow: JSON.parse(JSON.stringify((resource.industrialNetwork?.siteFlowLedger || []).find(row =>
+          String(row.batchId) === String(run.batchId)) || null)),
         warehouseCoal: {
           available: Number(rawWarehouse.availableByResource?.coal) || 0,
           reserved: Number(rawWarehouse.reservedByResource?.coal) || 0
@@ -1899,6 +1919,13 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.ok(Number(factoryArrival.inputInventory.coal) > 0);
     assert.ok(factoryArrival.sourceLot?.remainingQuantity <= factoryArrival.sourceLot?.quantity,
       'source lot remaining quantity must never exceed the original extraction lot quantity');
+    assert.equal(factoryArrival.sourceBatch?.quantity, factoryArrival.sourceLot?.quantity,
+      'source batch and inventory lot must retain the same original extraction quantity');
+    assert.equal(factoryArrival.sourceBatch?.remainingQuantity, factoryArrival.sourceLot?.remainingQuantity,
+      'source batch and inventory lot must retain the same remaining quantity');
+    assert.ok(Number(factoryArrival.sourceFlow?.mineWarehouseReceivedQuantity||0)+1e-9 >=
+      Number(factoryArrival.sourceFlow?.factoryDispatchedQuantity||0),
+      'factory-bound dispatches must never exceed stock actually received into the raw warehouse');
     assert.equal(factoryArrival.countryCoalInventory, factoryArrival.warehouseCoal.available,
       'country aggregate inventory and raw warehouse stock must remain reconciled after delivery');
     metrics.factoryArrival = factoryArrival;
