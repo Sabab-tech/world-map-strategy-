@@ -479,11 +479,11 @@ test('late economy baseline fills missing values without replacing live factory 
   const source = read('map-engine-2.js');
   const start = source.indexOf('function mergeEconomyBaseline(');
   assert.notEqual(start, -1, 'map startup must merge static economy data into the live runtime registry');
-  const end = source.indexOf('\\n}\\n', start);
+  const end = source.indexOf('\n}\n', start);
   assert.notEqual(end, -1, 'economy baseline merge helper must be a complete function');
   const helper = source.slice(start, end + 2);
   const sandbox = {};
-  vm.runInNewContext(helper + '\\nthis.mergeEconomyBaseline=mergeEconomyBaseline;', sandbox, {
+  vm.runInNewContext(helper + '\nthis.mergeEconomyBaseline=mergeEconomyBaseline;', sandbox, {
     filename: 'map-engine-2.js#mergeEconomyBaseline'
   });
 
