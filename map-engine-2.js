@@ -411,6 +411,29 @@ Game.Diplomacy = {
     }
 };
 
+function mergeEconomyBaseline(liveEconomy, baselineEconomy) {
+    const isRecord = value => !!value && typeof value === 'object' && !Array.isArray(value);
+    const target = isRecord(liveEconomy) ? liveEconomy : {};
+    if (!isRecord(baselineEconomy)) return target;
+
+    const mergeMissing = function (current, baseline) {
+        Object.keys(baseline).forEach(function (key) {
+            if (key === '__proto__' || key === 'constructor') return;
+            const baselineValue = baseline[key];
+            if (!Object.prototype.hasOwnProperty.call(current, key) || current[key] === undefined) {
+                current[key] = baselineValue;
+                return;
+            }
+            if (isRecord(current[key]) && isRecord(baselineValue)) {
+                mergeMissing(current[key], baselineValue);
+            }
+        });
+    };
+
+    mergeMissing(target, baselineEconomy);
+    return target;
+}
+
 Game.DataLoader = {
     __worldLoadPromise: null,
     __countryConfigPromise: null,
@@ -728,7 +751,13 @@ Game.DataLoader = {
                         filename: 'economy.json',
                         label: 'Economy data',
                         apply: function (data) {
-                            if (data && typeof data === 'object') Game.state.economy = data;
+                            if (data && typeof data === 'object' && !Array.isArray(data)) {
+                                const liveEconomy = Game.state.economy;
+                                const mergedEconomy = mergeEconomyBaseline(liveEconomy, data);
+                                // A delayed startup response must not replace the live economy
+                                // after production assets, inventories or ledgers already exist.
+                                if (mergedEconomy !== liveEconomy) Game.state.economy = mergedEconomy;
+                            }
                         }
                     },
                     {

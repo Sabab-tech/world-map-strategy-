@@ -475,6 +475,54 @@ test('country borders stay visible in base map and visual overlays', () => {
     'map overlays must not use the old almost-invisible border styles');
 });
 
+test('late economy baseline fills missing values without replacing live factory state', () => {
+  const source = read('map-engine-2.js');
+  const economyDataset = source.indexOf("filename: 'economy.json'");
+  const nextDataset = source.indexOf("filename: 'relation_generation_engine.json'", economyDataset);
+  assert.notEqual(economyDataset, -1, 'startup must retain the economy baseline dataset');
+  assert.ok(nextDataset > economyDataset, 'economy data must be applied before relation data');
+  const economyHydration = source.slice(economyDataset, nextDataset);
+  assert.match(economyHydration, /mergeEconomyBaseline\(liveEconomy, data\)/,
+    'late economy startup data must merge into the live registry');
+  assert.doesNotMatch(economyHydration, /Game\.state\.economy\s*=\s*data/,
+    'startup JSON must not replace an already-running economy registry');
+
+  const start = source.indexOf('function mergeEconomyBaseline(');
+  assert.notEqual(start, -1, 'map startup must merge static economy data into the live runtime registry');
+  const end = source.indexOf('\n}\n', start);
+  assert.notEqual(end, -1, 'economy baseline merge helper must be a complete function');
+  const helperSource = source.slice(start, end + 2);
+  const sandbox = {};
+  vm.runInNewContext(helperSource + '\nthis.mergeEconomyBaseline=mergeEconomyBaseline;', sandbox, {
+    filename: 'map-engine-2.js#mergeEconomyBaseline'
+  });
+
+  const productionAssets = [{ id:'FAC:BGD:UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT:T0:P1', status:'OPERATIONAL' }];
+  const bgd = { productionAssets, treasury:900, gdp:1200, settings:{ taxRate:15, runtimeFlag:true } };
+  const legacyBangladesh = { gdp:700, ai:'survival' };
+  const liveEconomy = { BGD:bgd, BANGLADESH:legacyBangladesh };
+  const baseline = {
+    BGD:{ gdp:1000, stock:{ food:100, oil:80 }, settings:{ taxRate:5, baselineFlag:true } },
+    BANGLADESH:{ gdp:650, ai:'greedy', stock:{ food:90 } },
+    IND:{ gdp:500, debt:25 }
+  };
+
+  const merged = sandbox.mergeEconomyBaseline(liveEconomy, baseline);
+  assert.equal(merged, liveEconomy, 'a live economy object must be merged in place');
+  assert.equal(merged.BGD, bgd, 'the player country bucket reference must remain stable');
+  assert.equal(merged.BGD.productionAssets, productionAssets, 'live factory assets must not be replaced');
+  assert.equal(merged.BGD.productionAssets[0].id, 'FAC:BGD:UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT:T0:P1');
+  assert.equal(merged.BGD.treasury, 900, 'runtime treasury must win over baseline values');
+  assert.equal(merged.BGD.gdp, 1200, 'existing live GDP must not be overwritten');
+  assert.equal(merged.BGD.stock.food, 100, 'existing nested runtime inventory must be preserved');
+  assert.equal(merged.BGD.stock.oil, 80, 'missing baseline nested defaults must be filled');
+  assert.equal(merged.BGD.settings.taxRate, 15, 'existing nested policy values must be preserved');
+  assert.equal(merged.BGD.settings.baselineFlag, true, 'missing nested baseline metadata must be filled');
+  assert.equal(merged.BANGLADESH, legacyBangladesh, 'legacy alias bucket identity must remain stable');
+  assert.equal(merged.BANGLADESH.gdp, 700, 'legacy alias runtime values must win');
+  assert.equal(merged.IND.gdp, 500, 'new country baseline buckets must still be added');
+});
+
 test('world geometry and supporting datasets run as a serialized startup pipeline with resumable progress', () => {
   const map = read('map-engine-2.js');
   const html = read('index.html');
