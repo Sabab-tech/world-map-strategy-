@@ -55,12 +55,12 @@ const context={
     }
   },
   ResourceMinistryEngine:{
-    normalizeCountryCode(value){
-      const raw=String(value??'').trim().toUpperCase();
-      if(raw==='BD'||raw==='BANGLADESH')return'BGD';
-      if(raw==='KW'||raw==='KUWAIT')return'KWT';
-      return raw;
-    }
+    countryProfiles:{
+      BGD:{identity:{iso2:'BD',iso3:'BGD',countryCode:'BD',countryName:'Bangladesh'}}
+    },
+    // Deliberately keep the legacy display code: the authoritative country profile
+    // must supply ISO-3 even when a generic normalizer returns the ISO-2 alias.
+    normalizeCountryCode(value){return String(value??'').trim().toUpperCase();}
   },
   OmegaResourceSiteMasterResearchData:{
     siteCount:6,
