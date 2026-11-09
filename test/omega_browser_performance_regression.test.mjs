@@ -532,11 +532,13 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
   assert.ok(map.includes('Game.DataLoader.loadAssets();'),
     'map retry must resume the full staged startup sequence rather than only redrawing the map');
   const abortResumeStart = map.indexOf('const retryWorldMapAfterAbort = function ()');
-  const abortResumeEnd = map.indexOf('if (pendingWorldLoad && abortedWorldController?.signal?.aborted === true)', abortResumeStart);
+  const abortResumeEnd = map.indexOf('        }\\n    }\\n    return true;', abortResumeStart);
   const abortResume = map.slice(abortResumeStart, abortResumeEnd);
   assert.ok(abortResume.includes('loader.loadAssets();'),
     'returning from a ministry after an aborted map fetch must restart the full startup pipeline');
-  assert.match(abortResume, /pendingWorldLoad\.then\(function \(\) \{[\s\S]*?setTimeout\(retryWorldMapAfterAbort, 0\)/,
+  const abortRetrySchedulingStart = map.indexOf('if (pendingWorldLoad && abortedWorldController?.signal?.aborted === true)', abortResumeStart);
+  const abortRetryScheduling = map.slice(abortRetrySchedulingStart, abortResumeEnd);
+  assert.match(abortRetryScheduling, /pendingWorldLoad\.then\(function \(\) \{[\s\S]*?setTimeout\(retryWorldMapAfterAbort, 0\)/,
     'the full startup retry must wait until the aborted map request releases its single-flight lock');
   assert.ok(map.includes("startupLoader.__assetsLoadingStatus === 'loading'"),
     'map activation must restore the active startup-stage progress after a ministry pause');
