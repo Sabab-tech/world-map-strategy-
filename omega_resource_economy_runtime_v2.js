@@ -194,19 +194,20 @@
   // warehouse stock. Their full remainingQuantity is not the same as warehouse inventory.
   // Count only the portion actually receipted into the sovereign warehouse, minus portions
   // already accepted by factories; leave mine-held and in-transit quantities out of inventory.
-  function batchInventoryQuantity(batch,flowByBatch){
+  function batchInventoryQuantity(batch,flowByBatch,factoryInTransitByBatch){
     var remaining=Math.max(0,num(batch&&(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity))||0);
-    var flow=flowByBatch&&flowByBatch.get(String(batch&&batch.batchId||''));
+    var batchId=String(batch&&batch.batchId||''),flow=flowByBatch&&flowByBatch.get(batchId);
     if(flow&&(flow.mineLogisticsRouteId||flow.mineLogisticsStockDebited===true)){
       var received=Math.max(0,num(flow.mineWarehouseReceivedQuantity)||0);
-      // A factory-bound shipment remains physically in the raw-warehouse ledger as
-      // reserved stock until the factory receipt commits. Do not subtract dispatch
-      // here: consumers exclude its reservation separately, while delivery still
-      // needs the available + reserved pair to validate the same physical quantity.
-      // Mine-held and mine-to-warehouse transit quantities are excluded because they
-      // have not incremented mineWarehouseReceivedQuantity.
+      // A factory-bound shipment remains in raw-warehouse available+reserved stock
+      // until receipt commits. Once DELIVERED, its quantity must leave the country
+      // raw-inventory ledger. Subtract completed factory transfers, not in-transit
+      // reservations, so delivery validation still sees the reserved source quantity.
+      var factoryDispatched=Math.max(0,num(flow.factoryDispatchedQuantity)||0);
+      var factoryInTransit=Math.max(0,num(factoryInTransitByBatch&&factoryInTransitByBatch[batchId])||0);
+      var factoryDelivered=Math.max(0,factoryDispatched-factoryInTransit);
       var warehouseConsumed=Math.max(0,num(flow.mineWarehouseConsumedQuantity)||0);
-      return Math.min(remaining,Math.max(0,received-warehouseConsumed));
+      return Math.min(remaining,Math.max(0,received-factoryDelivered-warehouseConsumed));
     }
     return remaining;
   }
@@ -223,7 +224,7 @@
     return Math.max(0,onHand-held);
   }
   function consumptionLedgerMaps(network){
-    var flows=new Map(),flowIndexByBatch=new Map(),reservedByBatch={},
+    var flows=new Map(),flowIndexByBatch=new Map(),reservedByBatch={},factoryInTransitByBatch={},
       flowRows=Array.isArray(network&&network.siteFlowLedger)?network.siteFlowLedger:[];
     flowRows.forEach(function(flow,index){
       if(flow&&flow.batchId){
@@ -234,16 +235,20 @@
     var activeStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
       'BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING']);
     (Array.isArray(network&&network.shipments)?network.shipments:[]).forEach(function(shipment){
-      var batchId=String(shipment&&shipment.batchId||'').trim();
+      var batchId=String(shipment&&shipment.batchId||'').trim(),type=String(shipment&&shipment.shipmentType||'');
       if(!batchId||!activeStatuses.has(String(shipment.status||'')))return;
-      if(!['MINE_TO_WAREHOUSE','RAW_TO_FACTORY','WAREHOUSE_TO_FACTORY'].includes(String(shipment.shipmentType||'')))return;
-      // A mine-to-warehouse shipment is not warehouse stock yet, so it must not
-      // reserve an already-received portion of the same source batch. Factory-bound
-      // legs do reserve received stock for both site-flow and ordinary warehouse batches.
-      if(String(shipment.shipmentType||'')==='MINE_TO_WAREHOUSE')return;
-      reservedByBatch[batchId]=(reservedByBatch[batchId]||0)+Math.max(0,num(shipment.quantity)||0);
+      if(!['MINE_TO_WAREHOUSE','RAW_TO_FACTORY','WAREHOUSE_TO_FACTORY'].includes(type))return;
+      // A mine-to-warehouse shipment is not warehouse stock yet. Factory-bound legs
+      // remain in the warehouse ledger while reserved, then are removed from on-hand
+      // stock after their delivery status changes to DELIVERED.
+      if(type==='MINE_TO_WAREHOUSE')return;
+      var quantity=Math.max(0,num(shipment.quantity)||0);
+      reservedByBatch[batchId]=(reservedByBatch[batchId]||0)+quantity;
+      if(type==='RAW_TO_FACTORY'||type==='WAREHOUSE_TO_FACTORY')
+        factoryInTransitByBatch[batchId]=(factoryInTransitByBatch[batchId]||0)+quantity;
     });
-    return{flowByBatch:flows,flowIndexByBatch:flowIndexByBatch,reservedByBatch:reservedByBatch};
+    return{flowByBatch:flows,flowIndexByBatch:flowIndexByBatch,
+      reservedByBatch:reservedByBatch,factoryInTransitByBatch:factoryInTransitByBatch};
   }
   // Apply site-flow consumption with copy-on-write. National demand may issue many
   // per-resource consume commands in one turn; deep-cloning the entire logistics
@@ -276,10 +281,10 @@
     flow.lastMineWarehouseConsumptionTurn=turn();
     return true;
   }
-  function inventoryGaps(inv,rows,flowByBatch){
+  function inventoryGaps(inv,rows,flowByBatch,factoryInTransitByBatch){
     var allocated={},g=[];
     (rows||[]).forEach(function(b){
-      var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=batchInventoryQuantity(b,flowByBatch);
+      var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=batchInventoryQuantity(b,flowByBatch,factoryInTransitByBatch);
       if(rid&&q>0)allocated[rid]=(allocated[rid]||0)+q;
     });
     Object.keys(inv||{}).forEach(function(rid){
@@ -318,11 +323,9 @@
     var previousProcessedReceipts=new Map((Array.isArray(processedWarehouseBefore.receipts)?processedWarehouseBefore.receipts:[])
       .filter(function(row){return row&&row.batchId;})
       .map(function(row){return[String(row.batchId),row];}));
-    var network=clone(ctx.stateTransaction.get('resource.industrialNetwork')||{}),flowByBatch=new Map(
-      (Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[])
-        .filter(function(flow){return flow&&flow.batchId;})
-        .map(function(flow){return[String(flow.batchId),flow];})
-    );
+    var network=clone(ctx.stateTransaction.get('resource.industrialNetwork')||{}),
+      reconciliationMaps=consumptionLedgerMaps(network),flowByBatch=reconciliationMaps.flowByBatch,
+      factoryInTransitByBatch=reconciliationMaps.factoryInTransitByBatch;
     var boundaryCheck=boundary()?.validateResourceCollection?.(bs,c);
     if(boundaryCheck&&!boundaryCheck.ok){
       ctx.stateTransaction.set('resource.inventoryIntegrity',{status:'DEGRADED',checkedTurn:turn(),gaps:[],boundaryViolations:clone(boundaryCheck.violations||[]),authority:'RESOURCE_INVENTORY_AUTHORITY'});
@@ -341,8 +344,8 @@
       emit('OMEGA_RESOURCE_COUNTRY_BOUNDARY_VIOLATION',c,{violations:[clone(processedWarehouseBoundary)],turn:turn()});
       return{accepted:false,status:'DEGRADED',countryId:c,reason:'CROSS_COUNTRY_PROCESSED_WAREHOUSE_BREACH',violations:[clone(processedWarehouseBoundary)]};
     }
-    var before=inventoryGaps(inv,bs,flowByBatch),allocated={};
-    bs.forEach(function(b){var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=batchInventoryQuantity(b,flowByBatch);if(rid&&q>0)allocated[rid]=(allocated[rid]||0)+q;});
+    var before=inventoryGaps(inv,bs,flowByBatch,factoryInTransitByBatch),allocated={};
+    bs.forEach(function(b){var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=batchInventoryQuantity(b,flowByBatch,factoryInTransitByBatch);if(rid&&q>0)allocated[rid]=(allocated[rid]||0)+q;});
     // Received source-batch balances and their mine-flow receipts are the physical
     // on-hand authority. Keep aggregate inventory aligned before rebuilding the
     // warehouse view, otherwise delivery sees stock in one ledger but zero in another.
@@ -389,11 +392,11 @@
     });
     while(bs.length>(num(rules().runtime.maxBatches)||8192))bs.shift();
     while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
-    var after=inventoryGaps(inv,bs,flowByBatch);
+    var after=inventoryGaps(inv,bs,flowByBatch,factoryInTransitByBatch);
     warehouse.availableByResource={};warehouse.storedBatchIds=[];
     processedWarehouse.availableByResource={};processedWarehouse.storedBatchIds=[];processedWarehouse.receipts=[];
     bs.forEach(function(b){
-      var q=batchInventoryQuantity(b,flowByBatch);
+      var q=batchInventoryQuantity(b,flowByBatch,factoryInTransitByBatch);
       if(q<=0)return;
       var rid=String(b&&(b.resourceId||b.materialIdentity)||'').trim();if(!rid)return;
       var stage=String(b.stage||'RAW').toUpperCase(),isProcessed=['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(stage);
@@ -494,7 +497,7 @@
       var batchId=String(sourceBatch&&sourceBatch.batchId||''),stage=String(sourceBatch&&sourceBatch.stage||'RAW').toUpperCase(),
         isProcessed=['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(stage);
       var batchRemaining=Math.max(0,num(sourceBatch&&(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity))||0);
-      var warehouseOnHand=batchInventoryQuantity(sourceBatch,flowByBatch);
+      var warehouseOnHand=batchInventoryQuantity(sourceBatch,flowByBatch,maps.factoryInTransitByBatch);
       var batchReserved=Math.max(0,num(reservedByBatch[batchId])||0);
       var spendable=Math.max(0,Math.min(batchRemaining,warehouseOnHand-batchReserved));
       spendable=Math.min(spendable,isProcessed?processedBudget:rawBudget);
@@ -613,7 +616,7 @@
         var batchId=String(batch&&batch.batchId||''),batchStage=String(batch.stage||'RAW').toUpperCase(),
           isProcessed=['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(batchStage);
         var batchQty=Math.max(0,num(batch&&(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity))||0);
-        var warehouseOnHand=batchInventoryQuantity(batch,flowByBatch);
+        var warehouseOnHand=batchInventoryQuantity(batch,flowByBatch,maps.factoryInTransitByBatch);
         var batchReserved=Math.max(0,num(reservedByBatch[batchId])||0);
         var spendable=Math.max(0,Math.min(batchQty,warehouseOnHand-batchReserved));
         spendable=Math.min(spendable,isProcessed?processedBudget:rawBudget);
