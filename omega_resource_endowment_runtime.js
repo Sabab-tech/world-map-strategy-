@@ -158,14 +158,15 @@
     };
     return engineDepositKeySet;
   }
-  // Hot-path indexes are invalidated whenever the canonical site catalog changes.
+  // Index by country only: the resource predicate remains in the original matcher,
+  // so legacy rows with late or alternate resource overlays cannot be dropped.
   let canonicalSiteIndexSource=null,canonicalSiteIndexDirty=true;
-  let canonicalSitesByCountryResource=new Map(),canonicalSiteMatchCache=new Map();
+  let canonicalSitesByCountry=new Map(),canonicalSiteMatchCache=new Map();
   function invalidateCanonicalSiteIndexes(){
     canonicalSiteIndexDirty=true;
     canonicalSiteMatchCache.clear();
   }
-  function canonicalSiteCandidates(countryId,resourceId){
+  function canonicalSiteCandidates(countryId){
     const source=canonicalSiteCatalogMap||{};
     if(canonicalSiteIndexDirty||canonicalSiteIndexSource!==source){
       const next=new Map();
@@ -173,18 +174,16 @@
         if(site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||
            LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')])continue;
         const country=canonical(site?.countryId||site?.identity?.countryIso3||'');
-        const resource=rid(site?.identity?.resourceTypeId);
-        if(!country||!resource)continue;
-        const key=country+'\\u0000'+resource;
-        let rows=next.get(key);if(!rows){rows=[];next.set(key,rows);}
+        if(!country)continue;
+        let rows=next.get(country);if(!rows){rows=[];next.set(country,rows);}
         rows.push(site);
       }
-      canonicalSitesByCountryResource=next;
+      canonicalSitesByCountry=next;
       canonicalSiteIndexSource=source;
       canonicalSiteIndexDirty=false;
       canonicalSiteMatchCache.clear();
     }
-    return canonicalSitesByCountryResource.get(canonical(countryId)+'\\u0000'+rid(resourceId))||[];
+    return canonicalSitesByCountry.get(canonical(countryId))||[];
   }
   let engineDepositRowSource=null,engineDepositRowSourceLength=-1,engineDepositRowsByCountryName=new Map();
   function engineDepositRowIndex(e){
@@ -1098,7 +1097,7 @@
         if(score>bestScore){bestScore=score;best=site;}
       }
     };
-    scoreCandidates(canonicalSiteCandidates(wanted,ridWanted));
+    scoreCandidates(canonicalSiteCandidates(wanted));
     // Some legacy catalog rows are hydrated through alias/identity overlays after the
     // country-resource index is first built. Preserve the original full-catalog match
     // as a correctness fallback when the narrow candidate set cannot resolve a site.
