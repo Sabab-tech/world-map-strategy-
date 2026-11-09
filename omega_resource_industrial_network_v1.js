@@ -3707,11 +3707,21 @@ function startPadmaCorridorProject(input={}){
   if(canonicalCountry(input.countryId)!=='BGD')return{status:'BLOCKED',reason:'PADMA_CORRIDOR_IS_BGD_SPECIFIC'};
   return startInfrastructureProject({...input,countryId:'BGD',infrastructureType:'bridge',distanceKm:num(input.distanceKm)||6.15,capacityPerDay:num(input.capacityPerDay)||60000,corridorId:'PADMA_EAST_WEST',fromNode:input.fromNode||'PADMA_WEST_GATEWAY',toNode:input.toNode||'PADMA_EAST_GATEWAY',contractorType:input.contractorType||'DOMESTIC_EPC'});
 }
-function advanceProjects(c){
-  const cid=canonicalCountry(c),n=netState(cid),completed=[],technologyCompleted=advanceTechnologyProjects(cid);
+function advanceProjects(c,options={}){
+  const cid=canonicalCountry(c),n=netState(cid),completed=[];
+  const constructionDaysOverride=num(options&&options.constructionDaysOverride);
+  const selectedProjectIds=Array.isArray(options&&options.projectIds)
+    ?new Set(options.projectIds.map(value=>String(value||'').trim()).filter(Boolean)):null;
+  // Construction can be fast-forwarded independently for explicitly selected projects.
+  // All other projects and every logistics/production subsystem continue using the
+  // authoritative central clock's ordinary daysPerTurn() value.
+  const technologyCompleted=constructionDaysOverride!==null&&constructionDaysOverride>0
+    ?[]:advanceTechnologyProjects(cid);
   for(const p of n.projects){
     if(p.status!=='UNDER_CONSTRUCTION')continue;
-    const step=daysPerTurn()*(p.contractorType==='FOREIGN_EPC'?1.10:1);
+    if(selectedProjectIds&&!selectedProjectIds.has(String(p.projectId||'')))continue;
+    const step=(constructionDaysOverride!==null&&constructionDaysOverride>0
+      ?constructionDaysOverride:daysPerTurn())*(p.contractorType==='FOREIGN_EPC'?1.10:1);
     p.progressDays=Math.min(num(p.durationDays)||1,(num(p.progressDays)||0)+step);
     p.progressPct=Math.min(1,p.progressDays/(num(p.durationDays)||1));
     p.remainingDays=Math.max(0,Math.ceil((num(p.durationDays)||1)-p.progressDays));
