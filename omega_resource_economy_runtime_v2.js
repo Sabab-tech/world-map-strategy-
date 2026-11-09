@@ -76,8 +76,7 @@
         var a=r.list('COUNTRY');
         if(!Array.isArray(a)||!a.length)a=r.list();
         if(Array.isArray(a))a.forEach(function(v){
-          var x=v&&typeof v==='object'?(v.id||v.canonicalId||v.code||v.countryId||v.key):v;
-          x=canonical(x);
+          var x=canonical(v);
           if(x&&out.indexOf(x)<0)out.push(x);
         });
       }
