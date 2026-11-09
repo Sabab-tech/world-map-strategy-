@@ -1518,11 +1518,10 @@ function candidateFactories(c,resourceId,requestedSiteId=null){
   const siteId=String(requestedSiteId||'').trim();
   return factoryAssets(c).filter(a=>assetCanAccept(a,resourceId))
     .map((asset,index)=>({asset,index,recipe:recipeFor(resourceId,asset)}))
-    // A verified private operator remains first for live production. An explicit
-    // site binding is next, then a purpose-built factory commissioned from a
-    // construction project. Country starting-baseline facilities remain eligible
-    // as the fallback; they must not shadow a newly built compatible plant merely
-    // because they were registered earlier in productionAssets.
+    // Verified private production remains first. A newly commissioned compatible
+    // factory is next, so an older opening-baseline asset cannot shadow it merely
+    // because that asset carries a site binding or was registered earlier.
+    // Site-linked starting assets remain eligible after commissioned capacity.
     .sort((left,right)=>{
       function privatePriority(row){
         const asset=row?.asset||{};
@@ -1540,8 +1539,8 @@ function candidateFactories(c,resourceId,requestedSiteId=null){
         return String(asset.constructionProjectId||'').trim() ? 1 : 0;
       }
       return privatePriority(right)-privatePriority(left)||
-        sitePriority(right)-sitePriority(left)||
         commissionedPriority(right)-commissionedPriority(left)||
+        sitePriority(right)-sitePriority(left)||
         left.index-right.index;
     });
 }
@@ -5596,9 +5595,9 @@ async function executeSitePipeline(input={}){
   // has completed; this API still owns the selected site request and must persist its
   // real factory destination for the later warehouse-to-factory leg.
   const factoryCandidatesBeforeExtraction=candidateFactories(cid,rid,site.siteId);
+  // candidateFactories already applies the canonical private / commissioned /
+  // site-linked priority. Do not reintroduce a site-only shortcut here.
   const selectedFactoryBeforeExtraction=preparedFactory||
-    factoryCandidatesBeforeExtraction.find(({asset})=>
-      String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
     factoryCandidatesBeforeExtraction[0]?.asset||null;
   const selectedFactoryIdBeforeExtraction=String(selectedFactoryBeforeExtraction?.id||
     selectedFactoryBeforeExtraction?.assetId||selectedFactoryBeforeExtraction?.projectId||'').trim();
@@ -5661,10 +5660,8 @@ async function executeSitePipeline(input={}){
     const currentCandidates=candidateFactories(cid,rid,site.siteId);
     const currentCandidateIds=new Set(currentCandidates.map(({asset})=>String(
       asset?.id||asset?.assetId||asset?.projectId||'').trim()).filter(Boolean));
-    const preferredFactory=preparedFactory||
-      currentCandidates.find(({asset})=>
-        String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
-      currentCandidates[0]?.asset||null;
+    // Reuse candidateFactories' canonical ordering during flow reconciliation too.
+    const preferredFactory=preparedFactory||currentCandidates[0]?.asset||null;
     const preferredFactoryId=String(preferredFactory?.id||
       preferredFactory?.assetId||preferredFactory?.projectId||'').trim();
     const priorFactoryId=String(existingFlow.factoryId||'').trim();
