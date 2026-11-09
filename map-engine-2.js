@@ -707,6 +707,11 @@ Game.DataLoader = {
                 failedStage = 'world boundary rendering';
                 await loader.waitForWorldMapRender();
 
+                // Preserve the original late-retry fallback: if the roster fetch failed
+                // before the world request, try it once more after the map is ready.
+                failedStage = 'canonical country metadata';
+                await loader.loadCountryConfig(fetcher);
+
                 const startupDatasets = [
                     {
                         filename: 'population.json',
