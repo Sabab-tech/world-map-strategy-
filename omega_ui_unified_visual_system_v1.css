@@ -226,7 +226,8 @@ button[aria-label="Close dialog"], button[aria-label="Close panel"] {
   grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   align-items: stretch;
   gap: 4px !important;
-  width: min(560px, calc(100vw - 20px)) !important;
+  width: calc(100vw - 20px) !important;
+  max-width: 560px !important;
   padding: 6px !important;
   border: 1px solid var(--omega-ui-border) !important;
   border-radius: 15px !important;
@@ -363,7 +364,7 @@ td { color: var(--omega-ui-text); }
     padding: 7px 9px !important;
   }
   .ui-right-controls {
-    right: max(8px, env(safe-area-inset-right, 0px)) !important;
+    right: 8px !important;
     gap: 6px !important;
     padding: 6px !important;
   }
