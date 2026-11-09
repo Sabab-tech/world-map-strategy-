@@ -1086,12 +1086,23 @@
     if(canonicalSiteMatchCache.has(matchKey))return canonicalSiteMatchCache.get(matchKey);
     const tt=new Set(target.split(/\\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
     let best=null,bestScore=0;
-    for(const site of canonicalSiteCandidates(wanted,ridWanted)){
-      const name=normalizeName(site?.siteName),st=new Set(name.split(/\\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
-      let common=0;for(const t of tt)if(st.has(t))common++;
-      const score=common/Math.max(tt.size,st.size,1);
-      if(score>bestScore){bestScore=score;best=site;}
-    }
+    const scoreCandidates=rows=>{
+      for(const site of rows){
+        if(site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||
+           LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')])continue;
+        if(canonical(site?.countryId||site?.identity?.countryIso3||'')!==wanted||
+           rid(site?.identity?.resourceTypeId)!==ridWanted)continue;
+        const name=normalizeName(site?.siteName),st=new Set(name.split(/\\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
+        let common=0;for(const t of tt)if(st.has(t))common++;
+        const score=common/Math.max(tt.size,st.size,1);
+        if(score>bestScore){bestScore=score;best=site;}
+      }
+    };
+    scoreCandidates(canonicalSiteCandidates(wanted,ridWanted));
+    // Some legacy catalog rows are hydrated through alias/identity overlays after the
+    // country-resource index is first built. Preserve the original full-catalog match
+    // as a correctness fallback when the narrow candidate set cannot resolve a site.
+    if(bestScore<0.25)scoreCandidates(Object.values(canonicalSiteCatalogMap||{}));
     const resolved=bestScore>=0.25?String(best?.siteId||''):null;
     if(canonicalSiteMatchCache.size>8192)canonicalSiteMatchCache.clear();
     canonicalSiteMatchCache.set(matchKey,resolved);
@@ -1205,6 +1216,7 @@
               resourceId:siteResource,geologicalQuantity:reserveQuantity,recoverableQuantity:reserveQuantity,residualQuantity:reserveQuantity,
               unit,operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,simulationOnly:reserveAuthority!=='OBSERVED',
               provenance:{sourceAuthority:reserveAuthority==='OBSERVED'?'OBSERVED':'SIMULATED',
+                stateAuthority:reserveAuthority==='OBSERVED'?'OBSERVED':'SIMULATED',
                 quantityAuthority:reserveAuthority==='OBSERVED'?'OBSERVED':'SIMULATED',authorityDetail:reserveAuthority,
                 sourceDatasetId:site.sourceDatasetId||rawSite.sourceDatasetId||'resource_site_canonical_catalog_v1.json',
                 siteReferenceKey:siteId,simulationExtractionHorizonYears:reserveAuthority==='SIMULATED_400_YEAR_FALLBACK'?400:null,
