@@ -1726,14 +1726,32 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const receipt = (resource.warehouse?.receipts || []).find(row => String(row.receiptId) === receiptId);
       const factoryShipment = (resource.industrialNetwork?.shipments || []).find(row =>
         String(row.batchId) === String(run.batchId) && row.shipmentType === 'RAW_TO_FACTORY' && row.status === 'IN_TRANSIT');
+      const mineShipment = (resource.industrialNetwork?.shipments || []).find(row =>
+        String(row.shipmentId) === String(run.shipmentId)) || null;
       return {
         advancedTurns: advanced.steps,
         compressedTurns: advanced.compressedTurns,
         currentTurn: Number(simulation.clock.turn),
+        stateTurn: Number(state.simulation?.turn),
         committedEtaDate: advanced.committedEtaDate,
+        clockDate: String(simulation.clock.simulationDate?.() || ''),
+        playerSessionCountry: state.simulation?.session?.playerCountryId || null,
         receipt: receipt || null,
+        mineShipment: mineShipment ? {
+          shipmentId: mineShipment.shipmentId, status: mineShipment.status,
+          blockReason: mineShipment.blockReason || null, etaTurn: mineShipment.etaTurn,
+          etaDate: mineShipment.etaDate, lastDeliveryAttemptTurn: mineShipment.lastDeliveryAttemptTurn,
+          deliveryLedgerSnapshot: mineShipment.deliveryLedgerSnapshot || null
+        } : null,
         factoryShipment: factoryShipment || null,
-        siteRuntime: resource.industrialNetwork?.siteLogisticsBySiteId?.[run.siteId] || null
+        industrialTurnResult: window.__sab34LastIndustrialTurnResult || null,
+        participantResults: (simulation.lastTurnParticipantResults || []).slice(-24),
+        siteRuntime: resource.industrialNetwork?.siteLogisticsBySiteId?.[run.siteId] || null,
+        warehouseCoal: {
+          available: Number(resource.warehouse?.availableByResource?.coal) || 0,
+          reserved: Number(resource.warehouse?.reservedByResource?.coal) || 0,
+          receipts: (resource.warehouse?.receipts || []).filter(row => row.resourceId === 'coal').length
+        }
       };
     }, {eta:mineEta,etaDate:String(mineShipment.etaDate)});
     assert.equal(mineArrival.receipt?.status, 'RECEIVED', JSON.stringify(mineArrival));
