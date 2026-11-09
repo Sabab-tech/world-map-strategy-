@@ -1114,7 +1114,7 @@ function onExtractionCommitted(evt){
     row.blockReason='NON_COMMERCIAL_SITE';saveSiteFlow(cid,row);return;
   }
   if(routeProfileAtExtraction){
-    const routeCompatible=candidateFactories(cid,rid);
+    const routeCompatible=candidateFactories(cid,rid,site?.siteId||null);
     const routeFactory=routeCompatible.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||routeCompatible[0]?.asset||null;
     if(routeFactory)row.factoryId=String(routeFactory.id||routeFactory.assetId||routeFactory.projectId||'');
     row.mineLogisticsRouteId=routeProfileAtExtraction.routeId;row.mineLogisticsStatus='PENDING';
@@ -1147,7 +1147,7 @@ function onExtractionCommitted(evt){
       return;
     }
   }
-  const compatible=candidateFactories(cid,rid);
+  const compatible=candidateFactories(cid,rid,site?.siteId||null);
   let factoryChoice=compatible.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||compatible[0]?.asset||null,bootstrap=null;
   // Extraction commit callbacks receive the normalized event payload, not executeSitePipeline's local input.
   // Requiring an explicit event flag keeps ordinary extraction from inventing a factory and avoids a stale global reference.
@@ -1504,12 +1504,15 @@ function assetCanAccept(asset,resourceId){
   const recipe=recipeFor(resourceId,asset),ks=Object.keys(recipe.inputs);
   return ks.some(k=>tok(k)===tok(resourceId));
 }
-function candidateFactories(c,resourceId){
+function candidateFactories(c,resourceId,requestedSiteId=null){
+  const siteId=String(requestedSiteId||'').trim();
   return factoryAssets(c).filter(a=>assetCanAccept(a,resourceId))
     .map((asset,index)=>({asset,index,recipe:recipeFor(resourceId,asset)}))
-    // Keep explicit source-site assignments ahead of this fallback selection.
-    // For unbound compatible capacity, a commissioned private company factory
-    // must enter the same mine-shipment and production runtime as state factories.
+    // A verified private operator remains first for live production. An explicit
+    // site binding is next, then a purpose-built factory commissioned from a
+    // construction project. Country starting-baseline facilities remain eligible
+    // as the fallback; they must not shadow a newly built compatible plant merely
+    // because they were registered earlier in productionAssets.
     .sort((left,right)=>{
       function privatePriority(row){
         const asset=row?.asset||{};
@@ -1518,7 +1521,18 @@ function candidateFactories(c,resourceId){
           asset.productionEnabled===true &&
           String(asset.status||'').toUpperCase()==='OPERATIONAL' ? 1 : 0;
       }
-      return privatePriority(right)-privatePriority(left)||left.index-right.index;
+      function sitePriority(row){
+        const asset=row?.asset||{};
+        return siteId && String(asset.sourceSiteId||asset.siteId||'').trim()===siteId ? 1 : 0;
+      }
+      function commissionedPriority(row){
+        const asset=row?.asset||{};
+        return String(asset.constructionProjectId||'').trim() ? 1 : 0;
+      }
+      return privatePriority(right)-privatePriority(left)||
+        sitePriority(right)-sitePriority(left)||
+        commissionedPriority(right)-commissionedPriority(left)||
+        left.index-right.index;
     });
 }
 
@@ -2126,7 +2140,7 @@ function planShipment(input={}){
   const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   const siteGate=warehouseSource?null:strategicPolicy?.siteAvailableForExtraction?.(cid,site.siteId,site);
   if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid,resourceId:rid};
-  let candidates=candidateFactories(cid,rid);
+  let candidates=candidateFactories(cid,rid,site?.siteId||null);
   const sourceSiteId=String(site?.siteId||'').trim();
   const sourceSiteFactories=candidates.filter(({asset})=>
     String(asset?.sourceSiteId||asset?.siteId||'').trim()===sourceSiteId);
@@ -5452,7 +5466,7 @@ function ensureSimulationFactory(cid,site,resourceId,quantity,options={}){
   const economy=econState(cid);if(!Array.isArray(economy.productionAssets))economy.productionAssets=[];
   const assets=economy.productionAssets,siteId=String(site?.siteId||'');
   const factoryId='FAC-SIM:'+cid+':'+String(siteId).replace(/[^A-Za-z0-9_-]/g,'_')+':'+tok(resourceId);
-  const compatible=candidateFactories(cid,resourceId);
+  const compatible=candidateFactories(cid,resourceId,siteId);
   // Explicit auto-commissioning binds a new deposit to a source-site factory when possible.
   // Otherwise retain the legacy shared-factory fallback for callers that do not request it.
   const siteFactory=compatible.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===siteId);
@@ -5559,7 +5573,7 @@ async function executeSitePipeline(input={}){
   // The event observer may commit the mine-to-warehouse leg before candidate discovery
   // has completed; this API still owns the selected site request and must persist its
   // real factory destination for the later warehouse-to-factory leg.
-  const factoryCandidatesBeforeExtraction=candidateFactories(cid,rid);
+  const factoryCandidatesBeforeExtraction=candidateFactories(cid,rid,site.siteId);
   const selectedFactoryBeforeExtraction=preparedFactory||
     factoryCandidatesBeforeExtraction.find(({asset})=>
       String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
@@ -5622,7 +5636,7 @@ async function executeSitePipeline(input={}){
   if(existingFlow?.mineLogisticsRouteId){
     const network=netState(cid),mineShipment=network.shipments.find(shipment=>String(shipment.batchId||'')===String(batch.batchId||'')&&
       shipment.shipmentType==='MINE_TO_WAREHOUSE'&&['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(shipment.status||'')));
-    const currentCandidates=candidateFactories(cid,rid);
+    const currentCandidates=candidateFactories(cid,rid,site.siteId);
     const currentCandidateIds=new Set(currentCandidates.map(({asset})=>String(
       asset?.id||asset?.assetId||asset?.projectId||'').trim()).filter(Boolean));
     const preferredFactory=preparedFactory||
@@ -5663,7 +5677,7 @@ async function executeSitePipeline(input={}){
     if(mineShipment)emit('OMEGA_RESOURCE_SITE_PIPELINE_STARTED',cid,execution);
     return{...execution,shipment:mineShipment?clone(mineShipment):null};
   }
-  const candidates=candidateFactories(cid,rid);
+  const candidates=candidateFactories(cid,rid,site.siteId);
   let factoryBootstrap=preparedFactoryBootstrap||null;
   let factoryChoice=preparedFactory||
     candidates.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
