@@ -710,7 +710,11 @@ Game.DataLoader = {
                 // Preserve the original late-retry fallback: if the roster fetch failed
                 // before the world request, try it once more after the map is ready.
                 failedStage = 'canonical country metadata';
-                await loader.loadCountryConfig(fetcher);
+                const recoveredCountryConfig = await loader.loadCountryConfig(fetcher);
+                if (recoveredCountryConfig && Game.__omegaGeoJSONRenderComplete === true &&
+                    typeof Game.Map.refreshCountryPolygonStyles === 'function') {
+                    Game.Map.refreshCountryPolygonStyles();
+                }
 
                 const startupDatasets = [
                     {
