@@ -21,7 +21,44 @@
   const canonical=v=>{try{const r=registry()?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}return id(v);};
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
   const turn=()=>n(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
-  const countries=()=>{
+  // A market rebuild reads one stable world snapshot for every resource. Resolve each
+  // country/domain bucket once so resource-by-resource clearing does not repeatedly scan
+  // all country keys and re-resolve the same aliases.
+  let activeMarketSnapshot=null;
+  function createMarketSnapshot(){
+    const root=state()||{},countryIds=new Set();
+    const resolveRow=row=>{
+      const raw=row&&typeof row==='object'
+        ?(row.iso3||row.iso3Code||row.countryCode||row.country_id||row.countryId||row.canonicalId||row.id||row.code)
+        :row;
+      const value=canonical(raw);
+      if(value&&value!=='[OBJECT OBJECT]')countryIds.add(value);
+    };
+    try{
+      const rows=registry()?.list?.('COUNTRY')||registry()?.list?.()||[];
+      if(Array.isArray(rows))rows.forEach(resolveRow);
+    }catch(_){}
+    const domains=['trade','resource','finance','foreign','economy'];
+    for(const domain of domains){
+      const source=root[domain];
+      if(source&&typeof source==='object')Object.keys(source).forEach(resolveRow);
+    }
+    const buckets=Object.create(null);
+    for(const domain of domains){
+      const source=root[domain];
+      if(!source||typeof source!=='object')continue;
+      const index=Object.create(null);
+      for(const key of Object.keys(source)){
+        const cid=canonical(key);
+        if(cid&&!Object.prototype.hasOwnProperty.call(index,cid))index[cid]=source[key];
+      }
+      // Preserve the old direct-key preference when canonical and alias keys coexist.
+      for(const cid of countryIds)if(Object.prototype.hasOwnProperty.call(source,cid))index[cid]=source[cid];
+      buckets[domain]=index;
+    }
+    return{countryIds:[...countryIds].filter(Boolean).sort(),buckets,currencyByCountry:new Map(),usdRateByCountry:new Map()};
+  }
+  const countries=()=>activeMarketSnapshot?activeMarketSnapshot.countryIds:(()=>{
     const out=new Set();
     const resolveRow=row=>{
       const raw=row&&typeof row==='object'
@@ -40,23 +77,29 @@
       if(root&&typeof root==='object')Object.keys(root).forEach(resolveRow);
     }
     return [...out].filter(Boolean).sort();
-  };
+  })();
   function countryValue(c,path){
-    const cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();let bucket=state()?.[domain];
-    if(bucket&&typeof bucket==='object')bucket=bucket[cid]??bucket[Object.keys(bucket).find(k=>canonical(k)===cid)];
+    const cid=canonical(c),parts=String(path||'').split('.'),domain=parts.shift();let bucket;
+    if(activeMarketSnapshot)bucket=activeMarketSnapshot.buckets[domain]?.[cid];
+    else{
+      bucket=state()?.[domain];
+      if(bucket&&typeof bucket==='object')bucket=bucket[cid]??bucket[Object.keys(bucket).find(k=>canonical(k)===cid)];
+    }
     for(const p of parts){if(bucket==null||!Object.prototype.hasOwnProperty.call(Object(bucket),p))return undefined;bucket=bucket[p];}
     return bucket;
   }
   function currency(c){
+    const target=canonical(c),cache=activeMarketSnapshot?.currencyByCountry;
+    if(cache?.has(target))return cache.get(target);
+    const remember=value=>{if(cache)cache.set(target,value);return value;};
     const stored=String(countryValue(c,'finance.currencyCode')||countryValue(c,'economy.currency_code')||countryValue(c,'economy.currencyCode')||countryValue(c,'trade.settlementCurrency')||'').trim().toUpperCase();
-    if(stored)return stored;
+    if(stored)return remember(stored);
 
     // Finance country buckets are not guaranteed to be materialized in older saves.
     // Currency identity still belongs to the canonical Finance/Forex profile registry.
     const monetary=g.OmegaForexMonetaryEngine||g.Omega&&g.Omega.ForexMonetaryEngine;
-    if(!monetary)return null;
-    const target=canonical(c);
-    if(!target)return null;
+    if(!monetary)return remember(null);
+    if(!target)return remember(null);
 
     // Forex quote rows expose the canonical countryCode used by the simulation
     // state (often ISO2) as well as the source ISO3. Prefer that exact key before
@@ -68,34 +111,37 @@
           [row?.countryCode,row?.iso3].some(value=>
             value&&(id(value)===target||canonical(value)===target)));
         const quoteCode=String(quote?.currencyCode||'').trim().toUpperCase();
-        if(quoteCode)return quoteCode;
+        if(quoteCode)return remember(quoteCode);
       }catch(_){}
     }
-    if(typeof monetary.getProfiles!=='function'||typeof monetary.getCurrencyCode!=='function')return null;
+    if(typeof monetary.getProfiles!=='function'||typeof monetary.getCurrencyCode!=='function')return remember(null);
     let profiles=[];
-    try{profiles=monetary.getProfiles()||[];}catch(_){return null;}
+    try{profiles=monetary.getProfiles()||[];}catch(_){return remember(null);}
     const profile=profiles.find(row=>
       [row?.countryCode,row?.code,row?.iso2,row?.iso3]
         .some(value=>value&&(id(value)===target||canonical(value)===target)));
-    if(!profile)return null;
-    try{return String(monetary.getCurrencyCode(profile)||'').trim().toUpperCase()||null;}
-    catch(_){return null;}
+    if(!profile)return remember(null);
+    try{return remember(String(monetary.getCurrencyCode(profile)||'').trim().toUpperCase()||null);}
+    catch(_){return remember(null);}
   }
   function usdRate(c){
+    const target=canonical(c),cache=activeMarketSnapshot?.usdRateByCountry;
+    if(cache?.has(target))return cache.get(target);
+    const remember=value=>{if(cache)cache.set(target,value);return value;};
     const code=currency(c);
-    if(!code)return null;
-    if(code==='USD')return 1;
+    if(!code)return remember(null);
+    if(code==='USD')return remember(1);
     const raw=n(countryValue(c,'economy.exchange_rate_usd')??countryValue(c,'finance.exchange_rate_usd')??countryValue(c,'finance.usdPerUnit'));
-    if(raw!==null&&raw>0)return raw;
+    if(raw!==null&&raw>0)return remember(raw);
 
     // Trade settlement and market clearing must share the same canonical Forex
     // simulation rate. A country's Finance bucket can contain a valid currency code
     // while its legacy exchange_rate_usd field is still absent; returning null here
     // silently drops its bids/asks from the executable order book.
     const monetary=g.OmegaForexMonetaryEngine||g.Omega&&g.Omega.ForexMonetaryEngine;
-    if(!monetary||typeof monetary.getRate!=='function')return null;
+    if(!monetary||typeof monetary.getRate!=='function')return remember(null);
     const simulationRate=n(monetary.getRate(code,'SIMULATION'));
-    return simulationRate!==null&&simulationRate>0?simulationRate:null;
+    return remember(simulationRate!==null&&simulationRate>0?simulationRate:null);
   }
   function toUsd(c,price){
     const p=n(price),r=usdRate(c);if(p===null||r===null)return null;
@@ -216,17 +262,23 @@
       generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.filter(x=>x.referenceOnly!==true).length,referenceAsks:asks.filter(x=>x.referenceOnly===true).length}};
   }
   function rebuild(){
-    const markets={};
-    const seedCountry=countries()[0];
-    const persisted=seedCountry?countryValue(seedCountry,'trade.marketHistory'):{};
-    for(const rid of resourceIds()){
-      const orders=collectOrders(rid);
-      const h=Array.isArray(persisted?.[rid])?persisted[rid]:[];
-      const clearing=clearResource(rid,orders,h);
-      markets[rid]={orders,clearing,history:h.concat([{turn:turn(),...clearing}]).slice(-MAX_MARKET_HISTORY)};
+    const previousSnapshot=activeMarketSnapshot;
+    activeMarketSnapshot=createMarketSnapshot();
+    try{
+      const markets={};
+      const seedCountry=countries()[0];
+      const persisted=seedCountry?countryValue(seedCountry,'trade.marketHistory'):{};
+      for(const rid of resourceIds()){
+        const orders=collectOrders(rid);
+        const h=Array.isArray(persisted?.[rid])?persisted[rid]:[];
+        const clearing=clearResource(rid,orders,h);
+        markets[rid]={orders,clearing,history:h.concat([{turn:turn(),...clearing}]).slice(-MAX_MARKET_HISTORY)};
+      }
+      g.__OmegaMarketBooks=markets;
+      return markets;
+    }finally{
+      activeMarketSnapshot=previousSnapshot;
     }
-    g.__OmegaMarketBooks=markets;
-    return markets;
   }
   function quote(rid){
     const key=String(rid||'').trim();
