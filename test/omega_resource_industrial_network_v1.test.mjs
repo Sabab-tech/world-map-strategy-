@@ -1319,8 +1319,12 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     const completedOnArrival=startedCycle.status==='COMPLETED';
     const finishedBatchCountBeforeClockReplay=(resourceState.batches||[]).filter(row=>row.stage==='FINISHED').length;
     assert.equal(startedCycle.primaryInputResourceId,'iron_ore');
-    assert.equal(universal.inputInventory.iron_ore,100,
-      'tracked opening allocation enters factory input only after the physical warehouse shipment is received');
+    assert.equal(universal.inputInventory.iron_ore,completedOnArrival?0:100,
+      'tracked opening allocation enters factory input only after receipt and is consumed only if its cycle is already due');
+    if(completedOnArrival){
+      assert.ok(Number(resourceState.inventory.IRON_CONCENTRATE)>0,
+        'a cycle due on the committed turn must publish its finished output immediately');
+    }
     context.Game.state.simulation.turn=Number(startedCycle.finishTurn);
     context.Game.state.simulation.date=startedCycle.finishDate;
     const schedulerFinish= await N.processPendingFactoryInputs('BGD');
