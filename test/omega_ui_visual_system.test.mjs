@@ -120,7 +120,7 @@ test('unified visual system is the final offline-cached visual authority for the
   const iconIndex = html.indexOf('href="omega_icon_system_v1.css"');
   assert.ok(styleIndex > iconIndex && iconIndex >= 0, 'the unified visual layer must load after every existing application stylesheet');
   assert.ok(serviceWorker.includes('"./omega_ui_unified_visual_system_v1.css"'), 'the unified visual layer must be available offline');
-  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v106"/);
+  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v107"/);
   for (const token of [
     '--omega-ui-bg:', '--omega-ui-surface:', '--omega-ui-border:',
     '--omega-ui-text:', '--omega-ui-accent:', '--omega-ui-control-height:',
@@ -139,3 +139,25 @@ test('unified visual system is the final offline-cached visual authority for the
   assert.equal(css.includes(':has('), false, 'the stylesheet must remain compatible with older Android WebView');
   assert.equal(html.includes('src="omega_ui_button_system_v1.js"'), false, 'the visual contract must not add a document-wide mutation observer');
 });
+
+
+test('Atlas Command refinement establishes compact typography, layered surfaces and responsive control hierarchy', () => {
+  const css = read('omega_ui_unified_visual_system_v1.css');
+  const serviceWorker = read('omega-offline-map-sw.js');
+  assert.match(css, /--omega-atlas-title-size:\s*clamp\(19px,\s*3\.4vw,\s*24px\)/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-title/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-section-title/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-card/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-kpi/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-button--primary/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-button--accent/);
+  assert.match(css, /#omega-atlas-command-dock \.omega-atlas-command-button\[aria-current="page"\]/);
+  assert.match(css, /#top-status-bar/);
+  assert.match(css, /#omega-global-time-hud/);
+  assert.match(css, /@media \(max-width: 600px\)/);
+  assert.match(css, /@media \(orientation: landscape\) and \(max-height: 500px\)/);
+  assert.match(css, /@media \(hover: hover\) and \(pointer: fine\)/);
+  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v107"/);
+  assert.ok(serviceWorker.includes('"./omega_ui_unified_visual_system_v1.css"'), 'the refined design layer remains in the offline shell');
+});
+
