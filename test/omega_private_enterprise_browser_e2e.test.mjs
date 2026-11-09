@@ -80,7 +80,7 @@ function percentile(values, fraction) {
   return sorted[Math.max(0, Math.ceil(sorted.length * fraction) - 1)];
 }
 
-test('real Chromium browser boots OMEGA, submits a no-side-effect private proposal, survives responsive navigation and records performance', {
+test('real Chromium browser verifies company-originated proposals, government tenders, responsive navigation and performance', {
   timeout: 240000
 }, async () => {
   const artifacts = process.env.OMEGA_BROWSER_TEST_ARTIFACT_DIR || path.join(ROOT, 'test-results', 'omega-private-enterprise-browser');
@@ -184,87 +184,29 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     });
     assert.equal(routeResult.ok, true, 'existing Industry route must open for the selected country');
 
+
     const linesTab = page.locator('#cabinet-full-window [data-omega-v2-main] [data-omega-v2-industry-tab="production-lines"]');
     await linesTab.waitFor({ state: 'visible', timeout: 30000 });
     await linesTab.click();
-    try {
-      await page.locator('[data-omega-private-company-lifecycle] [data-pe-proposal-form]').waitFor({
-        state: 'visible',
-        timeout: 45000
-      });
-    } catch (error) {
-      const diagnostics = await page.evaluate(() => {
-        const cabinet = document.getElementById('cabinet-full-window');
-        const main = cabinet?.querySelector('[data-omega-v2-main]');
-        const shell = main?.querySelector('.omega-v2-factory-command');
-        const panel = cabinet?.querySelector('[data-omega-private-company-lifecycle]');
-        const industryRoots = [cabinet, ...(cabinet ? Array.from(cabinet.querySelectorAll('*')) : [])]
-          .filter(node => node && (
-            Object.prototype.hasOwnProperty.call(node, '__omegaV2IndustryTab') ||
-            Object.prototype.hasOwnProperty.call(node, '__omegaV2IndustryCountryId') ||
-            Object.prototype.hasOwnProperty.call(node, '__omegaV2IndustryOptions')
-          ))
-          .map(node => ({
-            tag:node.tagName || null,
-            id:node.id || null,
-            className:typeof node.className === 'string' ? node.className.slice(0,160) : null,
-            industryTab:node.__omegaV2IndustryTab || null,
-            industryCountry:node.__omegaV2IndustryCountryId || null,
-            optionsTab:node.__omegaV2IndustryOptions?.tab || null,
-            optionsCountry:node.__omegaV2IndustryOptions?.countryId || null,
-            shellTab:node.querySelector?.('.omega-v2-factory-command')?.getAttribute('data-active-tab') || null
-          }));
-        const describe = api => {
-          try { return api && typeof api.diagnostics === 'function' ? api.diagnostics() : null; }
-          catch (diagnosticError) { return { error:String(diagnosticError && diagnosticError.message || diagnosticError) }; }
-        };
-        return {
-          playerCountry: window.Omega?.Simulation?.getPlayerCountryId?.() ||
-            window.Game?.state?.simulation?.session?.playerCountryId ||
-            window.Game?.state?.playerCountryId || null,
-          uiCountry: cabinet?.__omegaUIV2State?.countryId || main?.__omegaUIV2State?.countryId || null,
-          industryRoots,
-          ministryViewCountry: window.OmegaMinistryViewCountry || null,
-          cabinetActiveCountry: window.OmegaCabinetUI?.activeCountry || null,
-          countrySelectorValue: main?.querySelector('[data-omega-v2-country]')?.value || null,
-          industryHookInstalled: !!window.OmegaUIV2Industry?.__privateLifecycleWrapped,
-          industryTab: shell?.getAttribute('data-active-tab') || null,
-          lifecycleApiReady: !!window.OmegaPrivateEnterpriseLifecycleV1,
-          privateRegistry: describe(window.OmegaPrivateEnterpriseRegistryV1),
-          governmentFactoryRegistry: describe(window.OmegaCountryFactoryStartingBaselineV1),
-          panelText: panel?.textContent?.slice(0, 1200) || null,
-          panelHtml: panel?.outerHTML?.slice(0, 2400) || null,
-          bootResourceErrors: window.__OMEGA_DIAG__?.resources?.slice(-25) || [],
-          baselineRequests: performance.getEntriesByType('resource')
-            .filter(entry => /factory.*baseline|resource.*catalog|country.*context|economy.*profiles/i.test(entry.name))
-            .map(entry => ({ name:entry.name, duration:Math.round(entry.duration), transferSize:entry.transferSize || 0 }))
-        };
-      }).catch(diagnosticError => ({ diagnosticError:String(diagnosticError && diagnosticError.message || diagnosticError) }));
-      throw new Error('Private Company proposal form did not mount. Initial wait: ' +
-        String(error && error.message || error) + '. Runtime diagnostics: ' + JSON.stringify(diagnostics));
-    }
-    await page.locator('[data-omega-private-company-lifecycle] select[name="operatorCompanyId"]').waitFor({ state: 'visible' });
-    await page.waitForFunction(() => {
-      const form = document.querySelector('[data-omega-private-company-lifecycle] [data-pe-proposal-form]');
-      const owner = form?.querySelector('select[name="companyId"]');
-      const operator = form?.querySelector('select[name="operatorCompanyId"]');
-      const factory = form?.querySelector('select[name="factoryType"]');
-      return !!form && form.getAttribute('aria-busy') !== 'true' &&
-        !!owner && !owner.disabled && !!operator && !operator.disabled &&
-        !!factory && !factory.disabled && owner.options.length === 5 && operator.options.length === 5;
-    }, null, { timeout: 45000 });
+    const lifecyclePanel = page.locator('[data-omega-private-company-lifecycle]');
+    await lifecyclePanel.waitFor({state:'visible',timeout:45000});
+    await lifecyclePanel.locator('[data-pe-invitation-form]').waitFor({state:'visible',timeout:15000});
+    assert.equal(await lifecyclePanel.locator('[data-pe-proposal-form]').count(),0,
+      'government must not receive a form that lets it write a company proposal');
+    assert.equal(await lifecyclePanel.locator('select[name="operatorCompanyId"]').count(),0,
+      'government must not choose the company owner or operator');
 
-    const marketDetails = page.locator('[data-omega-private-company-lifecycle] [data-pe-market-details]');
+    const marketDetails = lifecyclePanel.locator('[data-pe-market-details]');
     await marketDetails.locator('summary').click();
     await page.waitForFunction(() =>
       document.querySelector('[data-pe-market-host]')?.getAttribute('data-loaded') === 'true'
     , null, { timeout: 15000 });
     const marketPanelText = await page.locator('[data-pe-market-host]').textContent();
     assert.match(marketPanelText,/No verified, settled private-company sales|concentration/i,
-      'market concentration panel must render from the recorded settled-sales ledger');
+      'market concentration must continue to use recorded settled-sales evidence');
     await marketDetails.locator('summary').click();
 
-    const oversightDetails = page.locator('[data-omega-private-company-lifecycle] [data-pe-oversight-details]');
+    const oversightDetails = lifecyclePanel.locator('[data-pe-oversight-details]');
     await oversightDetails.locator('summary').click();
     await page.waitForFunction(() =>
       document.querySelector('[data-pe-oversight-host]')?.getAttribute('data-loaded') === 'true'
@@ -272,194 +214,150 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
     const oversightPanelText = await page.locator('[data-pe-oversight-host]').textContent();
     assert.match(oversightPanelText,/Company solvency and current liabilities/);
     assert.match(oversightPanelText,/AURORA|NOVA|MERIDIAN/i,
-      'oversight panel must render canonical company names irrespective of display capitalization');
+      'oversight must still show the canonical private companies');
     assert.match(oversightPanelText,/Government restructuring decisions/);
     await oversightDetails.locator('summary').click();
 
+    const companyPlan = await page.evaluate(() => {
+      const api = window.OmegaPrivateEnterpriseLifecycleV1;
+      const state = window.Game?.state;
+      const baseline = window.OmegaPrivateEnterpriseRegistryV1?.getCountryBaseline?.('BGD');
+      if (!api || !state || !baseline || baseline.status !== 'READY') {
+        throw new Error('COMPANY_BASELINE_OR_LIFECYCLE_API_NOT_READY');
+      }
+      const proposals = api.getCountryDashboard('BGD').proposals || [];
+      const activeStatuses = new Set([
+        'PROPOSED','ON_HOLD','NEGOTIATION_PENDING_COMPANY','APPROVED_AWAITING_FUNDING',
+        'FUNDED','UNDER_CONSTRUCTION','PARTIALLY_UNDER_CONSTRUCTION','COMMISSIONED_PRODUCTION_GATED'
+      ]);
+      const lastPeriod = Number(state.economy?.BGD?.privateEnterpriseLifecycle?.lastAutonomousProposalPeriod || 0);
+      const currentTurn = Number(state.simulation?.turn || 0);
+      const currentPeriod = Math.floor(currentTurn / 30);
+      const firstPeriod = Math.max(lastPeriod,currentPeriod,0) + 1;
+      for (let period = firstPeriod; period <= firstPeriod + 9; period += 1) {
+        const companyId = api.companyIds[(period - 1) % api.companyIds.length];
+        if (proposals.some(row => row.companyId === companyId && activeStatuses.has(row.status))) continue;
+        const company = (baseline.companies || []).find(row => String(row.companyId || row.id).toUpperCase() === companyId);
+        const counts = company?.factoryCounts || {};
+        const factoryTypes = Object.keys(counts).filter(type =>
+          Number(counts[type]) > 0 && type !== 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'
+        ).sort();
+        for (const factoryType of factoryTypes) {
+          const preview = api.previewCompanyExpansion('BGD',companyId,factoryType,1);
+          if (preview?.status === 'READY') {
+            return {period,companyId,factoryType,previewStatus:preview.status};
+          }
+        }
+      }
+      throw new Error('NO_COMPANY_WITH_A_READY_OPENING_FACTORY_ALLOCATION');
+    });
+    assert.ok(companyPlan.companyId && companyPlan.factoryType,
+      'a company must select its own existing factory allocation before responding to a tender');
+
     const before = await page.evaluate(() => {
-      const state = window.Game.state;
-      const country = 'BGD';
-      const resource = state.resource?.[country] || {};
-      const economy = state.economy?.[country] || {};
-      const finance = state.finance?.[country] || {};
-      const network = resource.industrialNetwork || {};
-      const proposalRows = window.OmegaPrivateEnterpriseLifecycleV1?.getCountryDashboard?.(country)?.proposals || [];
-      return {
-        inventory: JSON.stringify(resource.inventory || {}),
-        warehouse: JSON.stringify(resource.warehouse || {}),
-        treasury: Number(finance.available ?? finance.omegaFinance?.treasuryBalanceUsd ?? 0),
-        assets: (economy.productionAssets || []).length,
-        projects: (network.projects || []).length,
-        proposalCount: proposalRows.length,
-        proposalIds: proposalRows.map(row => row.proposalId),
-        turn: Number(state.simulation?.turn || 0),
-        foreignCountry: JSON.stringify({
-          inventory: state.resource?.USA?.inventory || {},
-          warehouse: state.resource?.USA?.warehouse || {},
-          treasury: state.finance?.USA?.available || 0,
-          assets: state.economy?.USA?.productionAssets || []
-        })
-      };
-    });
-
-    const form = page.locator('[data-pe-proposal-form]');
-    const companySelect = form.locator('select[name="companyId"]');
-    const operatorSelect = form.locator('select[name="operatorCompanyId"]');
-    const factorySelect = form.locator('select[name="factoryType"]');
-    const processingResourceSelect = form.locator('select[name="processingResourceId"]');
-    await page.evaluate(() => {
-      const target = document.querySelector('[data-pe-proposal-form]');
-      const button = target?.querySelector('button[type="submit"]');
-      window.__omegaProposalSubmitTrace = {
-        validity:target?.checkValidity?.() ?? null,
-        validityMessage:target?.validationMessage || '',
-        submitButtonType:button?.type || null,
-        lifecycleRootHasSubmitHandler:!![...document.querySelectorAll('#cabinet-full-window *')]
-          .find(node=>node.__omegaPrivateEnterpriseUiBound)
-      };
-      document.addEventListener('submit', event => {
-        window.__omegaProposalSubmitTrace = Object.assign({},window.__omegaProposalSubmitTrace,{
-          captureSeen:true, captureDefaultPrevented:event.defaultPrevented,
-          captureFormMatches:!!event.target?.matches?.('[data-pe-proposal-form]')
-        });
-      }, true);
-      document.addEventListener('submit', event => {
-        window.__omegaProposalSubmitTrace = Object.assign({},window.__omegaProposalSubmitTrace,{
-          bubbleSeen:true, bubbleDefaultPrevented:event.defaultPrevented,
-          bubbleFormMatches:!!event.target?.matches?.('[data-pe-proposal-form]')
-        });
-      });
-    });
-    const companyOptions = await companySelect.locator('option').evaluateAll(nodes =>
-      nodes.map(node => node.value).filter(Boolean)
-    );
-    assert.equal(companyOptions.length, 5, 'the player must see the five globally canonical companies');
-    await companySelect.selectOption(companyOptions[0]);
-    await operatorSelect.selectOption(companyOptions[1]);
-    const factoryOptions = await factorySelect.locator('option').evaluateAll(nodes =>
-      nodes.map(node => node.value).filter(Boolean)
-    );
-    assert.ok(factoryOptions.length >= 1, 'at least one existing canonical factory profile must be selectable');
-    const selectedFactoryType = factoryOptions[0];
-    await factorySelect.selectOption(selectedFactoryType);
-    let processingResourceId = null;
-    if (selectedFactoryType === 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT') {
-      await processingResourceSelect.waitFor({state:'visible'});
-      const processingOptions = await processingResourceSelect.locator('option').evaluateAll(nodes =>
-        nodes.map(node => node.value).filter(Boolean)
-      );
-      assert.ok(processingOptions.length > 0, 'Universal Materials must use an existing catalog processing rule');
-      processingResourceId = processingOptions[0];
-      await processingResourceSelect.selectOption(processingResourceId);
-    }
-    await form.locator('textarea[name="requestReason"]').fill(
-      'The company requests additional manufacturing capacity to support a documented domestic supply need.');
-    await form.locator('textarea[name="expectedBenefit"]').fill(
-      'The project adds modeled processing capacity; realized revenue depends on confirmed customer demand and settled sales.');
-    await form.locator('textarea[name="riskForecast"]').fill(
-      'Material risks include recipe inputs, capital, utilities, workforce, transport, storage and unconfirmed customer demand.');
-    await form.locator('input[name="quantity"]').fill('1');
-    await form.locator('select[name="sourcingPolicy"]').selectOption('MIXED');
-    await form.locator('button[type="submit"]').click();
-
-    const proposalCriteria = {
-      owner:companyOptions[0], operator:companyOptions[1],
-      factoryType:selectedFactoryType, processingResourceId, previousTurn:before.turn
-    };
-    try {
-      await page.waitForFunction(criteria => {
-        const rows = window.OmegaPrivateEnterpriseLifecycleV1?.getCountryDashboard?.('BGD')?.proposals || [];
-        return rows.some(row => row.status === 'PROPOSED' &&
-          row.companyId === criteria.owner &&
-          row.operatorCompanyId === criteria.operator &&
-          row.factoryType === criteria.factoryType &&
-          (!criteria.processingResourceId || row.processingResourceId === criteria.processingResourceId) &&
-          Number(row.createdTurn) >= criteria.previousTurn);
-      }, proposalCriteria, { timeout: 15000 });
-    } catch (error) {
-      const submitDiagnostics = await page.evaluate(({ pageErrors: recentPageErrors, consoleErrors: recentConsoleErrors }) => {
-        const cabinet = document.getElementById('cabinet-full-window');
-        const main = cabinet?.querySelector('[data-omega-v2-main]');
-        const lifecycleRoot = [cabinet, ...(cabinet ? Array.from(cabinet.querySelectorAll('*')) : [])]
-          .find(node => node && Object.prototype.hasOwnProperty.call(node, '__omegaPrivateEnterpriseUiBound'));
-        const proposals = window.OmegaPrivateEnterpriseLifecycleV1?.getCountryDashboard?.('BGD')?.proposals || [];
-        return {
-          uiBound:lifecycleRoot?.__omegaPrivateEnterpriseUiBound || false,
-          submitTrace:window.__omegaProposalSubmitTrace || null,
-          lastProposalResult:lifecycleRoot?.__omegaPrivateEnterpriseLastProposalResult || null,
-          pageErrors:recentPageErrors,
-          consoleErrors:recentConsoleErrors,
-          uiMessage:lifecycleRoot?.__omegaPrivateEnterpriseMessage || null,
-          rootCountry:lifecycleRoot?.__omegaV2IndustryCountryId || null,
-          rootTab:lifecycleRoot?.__omegaV2IndustryTab || null,
-          rootError:lifecycleRoot?.__omegaPrivateBaselineError || null,
-          panelText:cabinet?.querySelector('[data-omega-private-company-lifecycle]')?.textContent?.slice(0,1200) || null,
-          formPresent:!!cabinet?.querySelector('[data-pe-proposal-form]'),
-          formValues:Array.from(cabinet?.querySelectorAll('[data-pe-proposal-form] select,[data-pe-proposal-form] input') || [])
-            .map(node => ({name:node.name,value:node.value,checked:node.checked})),
-          proposalCount:proposals.length,
-          recentProposals:proposals.slice(-5).map(row=>({status:row.status,reason:row.reason,companyId:row.companyId,operatorCompanyId:row.operatorCompanyId,factoryType:row.factoryType,createdTurn:row.createdTurn})),
-          directLifecycleState:window.Game?.state?.economy?.BGD?.privateEnterpriseLifecycle || null,
-          matchingCountryBuckets:Object.entries(window.Game?.state?.economy || {})
-            .filter(([key])=>String(key).toUpperCase()==='BGD'||/BANGLADESH/i.test(String(key)))
-            .map(([key,value])=>({key,proposalCount:value?.privateEnterpriseLifecycle?.proposals?.length||0,
-              proposals:value?.privateEnterpriseLifecycle?.proposals?.slice(-3)||[]})),
-          stateKeys:Object.keys(window.Game?.state || {}),
-          simulationClock:{running:window.Omega?.Simulation?.clock?.running ?? null,
-            turn:window.Omega?.Simulation?.clock?.turn ?? null},
-          lifecycleDiagnostics:window.OmegaPrivateEnterpriseLifecycleV1?.diagnostics?.() || null,
-          privateRegistryDiagnostics:window.OmegaPrivateEnterpriseRegistryV1?.diagnostics?.() || null,
-          currentTab:main?.querySelector('.omega-v2-factory-command')?.getAttribute('data-active-tab') || null
-        };
-      }, { pageErrors:pageErrors.slice(-12), consoleErrors:consoleErrors.slice(-12) })
-        .catch(diagnosticError => ({diagnosticError:String(diagnosticError && diagnosticError.message || diagnosticError)}));
-      throw new Error('Private Company proposal submit did not persist. Initial wait: ' +
-        String(error && error.message || error) + '. Submit diagnostics: ' + JSON.stringify(submitDiagnostics));
-    }
-    const after = await page.evaluate(criteria => {
       const state = window.Game.state;
       const resource = state.resource?.BGD || {};
       const economy = state.economy?.BGD || {};
       const finance = state.finance?.BGD || {};
-      const network = resource.industrialNetwork || {};
-      const proposals = window.OmegaPrivateEnterpriseLifecycleV1?.getCountryDashboard?.('BGD')?.proposals || [];
+      const proposals = window.OmegaPrivateEnterpriseLifecycleV1.getCountryDashboard('BGD').proposals || [];
       return {
-        inventory: JSON.stringify(resource.inventory || {}),
-        warehouse: JSON.stringify(resource.warehouse || {}),
-        treasury: Number(finance.available ?? finance.omegaFinance?.treasuryBalanceUsd ?? 0),
-        assets: (economy.productionAssets || []).length,
-        projects: (network.projects || []).length,
-        proposalCount: proposals.length,
-        newManualProposalCount: proposals.filter(row => row.status === 'PROPOSED' &&
-          row.companyId === criteria.owner &&
-          row.operatorCompanyId === criteria.operator &&
-          row.factoryType === criteria.factoryType &&
-          !criteria.beforeProposalIds.includes(row.proposalId)).length,
-        foreignCountry: JSON.stringify({
-          inventory: state.resource?.USA?.inventory || {},
-          warehouse: state.resource?.USA?.warehouse || {},
-          treasury: state.finance?.USA?.available || 0,
-          assets: state.economy?.USA?.productionAssets || []
-        }),
-        proposal: proposals.slice().reverse().find(row => row.status === 'PROPOSED' &&
-          row.companyId === criteria.owner &&
-          row.operatorCompanyId === criteria.operator &&
-          row.factoryType === criteria.factoryType) || null
+        inventory:JSON.stringify(resource.inventory || {}),
+        warehouse:JSON.stringify(resource.warehouse || {}),
+        treasury:Number(finance.available ?? finance.omegaFinance?.treasuryBalanceUsd ?? 0),
+        assets:(economy.productionAssets || []).length,
+        projects:(resource.industrialNetwork?.projects || []).length,
+        proposalIds:proposals.map(row=>row.proposalId),
+        proposalCount:proposals.length,
+        foreignCountry:JSON.stringify({
+          inventory:state.resource?.USA?.inventory || {},
+          warehouse:state.resource?.USA?.warehouse || {},
+          treasury:state.finance?.USA?.available || 0,
+          assets:state.economy?.USA?.productionAssets || []
+        })
       };
-    }, { owner: companyOptions[0], operator: companyOptions[1], factoryType: selectedFactoryType, beforeProposalIds: before.proposalIds });
-    assert.ok(after.proposal, 'the real browser form must create the exact submitted owner/operator/factory proposal');
-    assert.equal(after.newManualProposalCount, 1,
-      'one manual form submission must append exactly one matching private owner/operator/factory proposal');
-    assert.equal(after.inventory, before.inventory, 'a proposal alone must not mutate raw/finished inventory');
-    assert.equal(after.warehouse, before.warehouse, 'a proposal alone must not reserve or create warehouse stock');
-    assert.equal(after.foreignCountry, before.foreignCountry, 'a player-country proposal must not mutate another country');
-    assert.equal(after.treasury, before.treasury, 'a proposal alone must not debit or credit Treasury');
-    assert.equal(after.assets, before.assets, 'a proposal alone must not create a production asset');
-    assert.equal(after.projects, before.projects, 'a proposal alone must not create a construction project');
-    assert.equal(after.proposal.companyId, companyOptions[0]);
-    assert.equal(after.proposal.operatorCompanyId, companyOptions[1]);
-    assert.equal(after.proposal.status, 'PROPOSED');
-    metrics.proposalStage = 'PASS_NO_ECONOMIC_SIDE_EFFECTS';
+    });
+
+    const invitationForm = lifecyclePanel.locator('[data-pe-invitation-form]');
+    await invitationForm.locator('select[name="factoryType"]').selectOption(companyPlan.factoryType);
+    await invitationForm.locator('input[name="quantity"]').fill('1');
+    await invitationForm.locator('select[name="supportType"]').selectOption('NO_PUBLIC_FINANCING');
+    await invitationForm.locator('input[name="maxGovernmentContribution"]').fill('0');
+    const invitationId = 'BROWSER-INDUSTRIAL-TENDER-' + Date.now();
+    await invitationForm.locator('input[name="requestId"]').fill(invitationId);
+    await invitationForm.locator('textarea[name="governmentRationale"]').fill(
+      'The government identifies a domestic capacity gap and invites existing private companies to submit independently researched offers.'
+    );
+    await invitationForm.locator('button[type="submit"]').click();
+    await page.waitForFunction(id => {
+      const rows = window.OmegaPrivateEnterpriseLifecycleV1?.getCountryDashboard?.('BGD')?.governmentInvitations || [];
+      return rows.some(row => row.requestId === id && row.status === 'OPEN');
+    }, invitationId, {timeout:15000});
+    const afterInvitation = await page.evaluate(id => {
+      const state=window.Game.state,resource=state.resource?.BGD||{},economy=state.economy?.BGD||{},
+        finance=state.finance?.BGD||{},dashboard=window.OmegaPrivateEnterpriseLifecycleV1.getCountryDashboard('BGD');
+      return {
+        inventory:JSON.stringify(resource.inventory||{}),
+        warehouse:JSON.stringify(resource.warehouse||{}),
+        treasury:Number(finance.available??finance.omegaFinance?.treasuryBalanceUsd??0),
+        assets:(economy.productionAssets||[]).length,
+        projects:(resource.industrialNetwork?.projects||[]).length,
+        proposalCount:dashboard.proposals.length,
+        invitation:dashboard.governmentInvitations.find(row=>row.requestId===id) || null
+      };
+    }, invitationId);
+    assert.equal(afterInvitation.proposalCount,before.proposalCount,
+      'publishing a government tender must not manufacture a company proposal');
+    assert.equal(afterInvitation.inventory,before.inventory,'publishing a tender must not alter inventory');
+    assert.equal(afterInvitation.warehouse,before.warehouse,'publishing a tender must not reserve warehouse stock');
+    assert.equal(afterInvitation.treasury,before.treasury,'publishing a tender must not spend public funds');
+    assert.equal(afterInvitation.assets,before.assets,'publishing a tender must not create a factory');
+    assert.equal(afterInvitation.projects,before.projects,'publishing a tender must not create a construction project');
+
+    const companyResponse = await page.evaluate(period => {
+      window.Game.state.simulation.turn = period * 30;
+      return window.OmegaPrivateEnterpriseLifecycleV1.advanceAutonomousProposalCycle();
+    }, companyPlan.period);
+    assert.equal(companyResponse.status,'PROPOSED',JSON.stringify(companyResponse));
+    assert.equal(companyResponse.proposal.companyId,companyPlan.companyId);
+    assert.equal(companyResponse.proposal.submittedBy,companyPlan.companyId);
+    assert.equal(companyResponse.proposal.proposalOrigin,'GOVERNMENT_INVITATION_RESPONSE');
+    const invitationRecord = await page.evaluate(id => window.OmegaPrivateEnterpriseLifecycleV1
+      .getCountryDashboard('BGD').governmentInvitations.find(row=>row.requestId===id),invitationId);
+    assert.equal(companyResponse.proposal.governmentInvitationId,invitationRecord.invitationId);
+    assert.ok(companyResponse.proposal.companyCase?.marketAnalysis,
+      'company must submit its own market analysis');
+    assert.ok(companyResponse.proposal.companyCase?.supplyChainProof,
+      'company must submit its own supply-chain evidence');
+    assert.ok(companyResponse.proposal.companyCase?.financingOffer,
+      'company must state its preferred financing and funding gap');
+    const afterCompany = await page.evaluate(proposalId => {
+      const state=window.Game.state,resource=state.resource?.BGD||{},economy=state.economy?.BGD||{},
+        finance=state.finance?.BGD||{},dashboard=window.OmegaPrivateEnterpriseLifecycleV1.getCountryDashboard('BGD');
+      return {
+        inventory:JSON.stringify(resource.inventory||{}),
+        warehouse:JSON.stringify(resource.warehouse||{}),
+        treasury:Number(finance.available??finance.omegaFinance?.treasuryBalanceUsd??0),
+        assets:(economy.productionAssets||[]).length,
+        projects:(resource.industrialNetwork?.projects||[]).length,
+        foreignCountry:JSON.stringify({
+          inventory:state.resource?.USA?.inventory||{},
+          warehouse:state.resource?.USA?.warehouse||{},
+          treasury:state.finance?.USA?.available||0,
+          assets:state.economy?.USA?.productionAssets||[]
+        }),
+        proposal:dashboard.proposals.find(row=>row.proposalId===proposalId) || null
+      };
+    }, companyResponse.proposal.proposalId);
+    assert.equal(afterCompany.inventory,before.inventory,'a proposal must not change raw/finished inventory');
+    assert.equal(afterCompany.warehouse,before.warehouse,'a proposal must not create or reserve warehouse stock');
+    assert.equal(afterCompany.treasury,before.treasury,'a proposal must not move company or Treasury cash');
+    assert.equal(afterCompany.assets,before.assets,'a proposal must not create a production asset');
+    assert.equal(afterCompany.projects,before.projects,'a proposal must not create a construction project');
+    assert.equal(afterCompany.foreignCountry,before.foreignCountry,'selected-country proposal must not change another country');
+    assert.equal(afterCompany.proposal.companyId,companyPlan.companyId);
+    assert.equal(afterCompany.proposal.submittedBy,companyPlan.companyId);
+    assert.equal(afterCompany.proposal.proposalOrigin,'GOVERNMENT_INVITATION_RESPONSE');
+    metrics.proposalStage = 'PASS_COMPANY_ORIGINATED_TENDER_RESPONSE_NO_SIDE_EFFECTS';
 
     // Exercise the real page's canonical persistence API, not a test-only snapshot copy.
     // Use a unique temporary slot and a harmless simulation-root sentinel so the live
@@ -575,8 +473,9 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         panelWidth: element.clientWidth,
         panelScrollWidth: element.scrollWidth,
         bodyScrollWidth: document.documentElement.scrollWidth,
-        privateFormVisible: !!element.querySelector('[data-pe-proposal-form]'),
-        operatorSelectorVisible: !!element.querySelector('select[name="operatorCompanyId"]'),
+        governmentInvitationVisible: !!element.querySelector('[data-pe-invitation-form]'),
+        governmentDoesNotAuthorCompanyProposal: !element.querySelector('[data-pe-proposal-form]'),
+        operatorSelectorAbsent: !element.querySelector('select[name="operatorCompanyId]'),
         tab: element.closest('[data-omega-v2-industry-content]')?.getAttribute('data-active-tab') || null
       }));
       assert.ok(layout.panelWidth > 0, viewport.name + ': private lifecycle panel must remain measurable');
@@ -584,8 +483,9 @@ test('real Chromium browser boots OMEGA, submits a no-side-effect private propos
         viewport.name + ': private lifecycle panel must not overflow its own width: ' + JSON.stringify(layout));
       assert.ok(layout.bodyScrollWidth <= viewport.width + 2,
         viewport.name + ': the whole page must not overflow horizontally: ' + JSON.stringify(layout));
-      assert.equal(layout.privateFormVisible, true, viewport.name + ': proposal form must remain visible');
-      assert.equal(layout.operatorSelectorVisible, true, viewport.name + ': operator selector must remain visible');
+      assert.equal(layout.governmentInvitationVisible, true, viewport.name + ': government tender form must remain visible');
+      assert.equal(layout.governmentDoesNotAuthorCompanyProposal, true, viewport.name + ': government must not author a company proposal');
+      assert.equal(layout.operatorSelectorAbsent, true, viewport.name + ': government must not select the private operator');
       metrics.viewportRuns.push({ ...viewport, ...layout });
 
       for (let round = 0; round < 6; round++) {
