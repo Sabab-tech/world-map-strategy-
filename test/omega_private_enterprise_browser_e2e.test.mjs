@@ -1713,9 +1713,10 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(extraction.result?.status, 'IN_TRANSIT', JSON.stringify(extraction));
     assert.equal(extraction.result?.extractionStatus, 'COMMITTED');
     assert.equal(extraction.result?.shipment?.shipmentType, 'MINE_TO_WAREHOUSE');
-    assert.equal(Number(extraction.result?.shipment?.route?.requestedQuantity),
-      Number(extraction.result?.extractedQuantity),
-      'mine route request must use the same committed 30-day extraction batch quantity');
+    assert.equal(Number(extraction.result?.extractedQuantity), 146889,
+      'Barapukuria must use its 4,896.3 t/day rate over the correct 30-day mining window');
+    assert.equal(Number(extraction.result?.shipment?.route?.requestedQuantity), 146889,
+      'mine route must request the exact 30-day committed extraction quantity');
     assert.equal(String(extraction.result?.factoryId), commissioning.factoryId,
       'the site flow must retain the selected operational factory across both logistics legs');
     const selectedFlow = await page.evaluate(batchId => {
@@ -1809,7 +1810,11 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         String(row.batchId) === String(run.batchId) && row.shipmentType === 'RAW_TO_FACTORY' && row.status === 'IN_TRANSIT');
       const mineShipment = (resource.industrialNetwork?.shipments || []).find(row =>
         String(row.shipmentId) === String(run.shipmentId)) || null;
+      const economyProfile = window.__OMEGA_RESOURCE_ECONOMY_LAST_TURN_PROFILE || null;
+      const nationalDemandProfile = (economyProfile?.phases || []).find(row =>
+        row.label === 'process-country-finalization') || null;
       return {
+        nationalDemandFinalizationMs: Number(nationalDemandProfile?.durationMs) || 0,
         advancedTurns: advanced.steps,
         compressedTurns: advanced.compressedTurns,
         currentTurn: Number(simulation.clock.turn),
@@ -1841,6 +1846,11 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     }, {eta:mineEta,etaDate:String(mineShipment.etaDate)});
     assert.equal(mineArrival.receipt?.status, 'RECEIVED', JSON.stringify(mineArrival));
     assert.equal(mineArrival.receipt?.receivedFrom, 'MINE_SITE_LOGISTICS');
+    assert.equal(Number(mineArrival.receipt?.quantity), 9180,
+      'the actual mine receipt must preserve the committed 9,180-tonne shipment quantity');
+    assert.ok(mineArrival.nationalDemandFinalizationMs < 120000,
+      'country demand finalization must complete with margin below the ordered-turn publish timeout: ' +
+      String(mineArrival.nationalDemandFinalizationMs) + 'ms');
     assert.ok(mineArrival.factoryShipment, 'mine receipt must dispatch a separate raw-to-factory shipment');
     assert.equal(mineArrival.factoryShipment.siteId, targetSite.siteId);
     assert.equal(String(mineArrival.factoryShipment.factoryId||''),commissioning.factoryId,
@@ -1869,9 +1879,13 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const sourceLot = resource.inventoryLots?.[String(run.batchId)] || null;
       const rawWarehouse = resource.warehouse || {};
       const economy = window.OmegaResourceEconomy || window.Omega?.ResourceEconomy || null;
+      const economyProfile = window.__OMEGA_RESOURCE_ECONOMY_LAST_TURN_PROFILE || null;
+      const nationalDemandProfile = (economyProfile?.phases || []).find(row =>
+        row.label === 'process-country-finalization') || null;
       const publishParticipants = advanced.last?.phases?.PUBLISH?.participants ||
         simulation.lastTurnParticipantResults || state.simulation?.lastTurnParticipantResults || [];
       return {
+        nationalDemandFinalizationMs: Number(nationalDemandProfile?.durationMs) || 0,
         advancedTurns: advanced.steps,
         compressedTurns: advanced.compressedTurns,
         committedEtaDate: advanced.committedEtaDate,
@@ -1915,6 +1929,9 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(factoryArrival.delivery?.status, 'DELIVERED', JSON.stringify(factoryArrival));
     assert.equal(factoryArrival.delivery?.destinationStatus, 'FACTORY_RECEIVED');
     assert.equal(factoryArrival.factoryId, commissioning.factoryId);
+    assert.ok(factoryArrival.nationalDemandFinalizationMs < 120000,
+      'turn publish must retain adequate margin after country demand finalization: ' +
+      String(factoryArrival.nationalDemandFinalizationMs) + 'ms');
     assert.ok(factoryArrival.inputLot, 'factory receipt must create an input batch lot');
     assert.ok(factoryArrival.inputLot.sourceBatchIds.includes(extraction.result.batchId));
     assert.ok(Number(factoryArrival.inputInventory.coal) > 0);
