@@ -2999,7 +2999,7 @@ function advanceShipments(c){
       const reservation=n.reservations?.[String(s.reservationId||s.shipmentId||'')]||null;
       s.deliveryLedgerSnapshot={
         countryId:cid,turn:turn(),warehouseId:sourceWarehouse.warehouseId,warehouseKind:sourceWarehouse.kind,
-        resourceId:rid,quantity,availableKey,reservedKey,available,reserved,
+        resourceId:rid,quantity,availableKey:warehouseKey,reservedKey,available,reserved,
         reservation:clone(reservation),
         countryInventoryKey:inventoryKey,
         countryInventory:inventoryKey===null?null:Math.max(0,num(r.inventory[inventoryKey])||0),
