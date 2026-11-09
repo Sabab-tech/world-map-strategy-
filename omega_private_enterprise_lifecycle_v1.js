@@ -584,8 +584,8 @@
           potentialPrivateCompanySuppliers:privateSuppliers.slice(0,5).map(function(x){return{
             countryId:x.countryId,companyId:x.companyId,companyName:x.companyName,available:num(x.available),
             sourceBatchIds:clone(x.sourceBatchIds||[]),sourceFactoryIds:clone(x.sourceFactoryIds||[]),
-            status:'POTENTIAL_NOT_CONTRACTED',authority:x.authority||'EXACT_PRIVATE_BATCH_AND_WAREHOUSE_STOCK'});}
-          )};
+            status:'POTENTIAL_NOT_CONTRACTED',authority:x.authority||'EXACT_PRIVATE_BATCH_AND_WAREHOUSE_STOCK'};})
+          };
       }),
       outputs=(assessment.outputForecast||[]).map(function(row){
         var quote=null;
