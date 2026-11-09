@@ -50,7 +50,16 @@ const context={
     resolveCountry(value){
       const key=String(value??'').trim().toUpperCase();
       if(key==='KUWAIT'||key==='KW'||key==='KWT')return{id:'KW',raw:{iso3:'KWT',iso2:'KW',name:'Kuwait'}};
+      if(key==='BD'||key==='BANGLADESH')return{id:'BD',canonicalId:'BD',countryCode:'BD',raw:{countryCode:'BD',iso2:'BD',name:'Bangladesh'}};
       return null;
+    }
+  },
+  ResourceMinistryEngine:{
+    normalizeCountryCode(value){
+      const raw=String(value??'').trim().toUpperCase();
+      if(raw==='BD'||raw==='BANGLADESH')return'BGD';
+      if(raw==='KW'||raw==='KUWAIT')return'KWT';
+      return raw;
     }
   },
   OmegaResourceSiteMasterResearchData:{
@@ -118,6 +127,16 @@ context.Omega.MinistryInteroperability={
 vm.createContext(context);
 vm.runInContext(fs.readFileSync('omega_resource_industrial_network_v1.js','utf8'),context,{filename:'omega_resource_industrial_network_v1.js'});
 const N=context.Omega.ResourceIndustrialNetwork;
+// Player identity may arrive from the global country selector as ISO-2 (BD), while
+// logistics assets/state are keyed by ISO-3 (BGD). Resolve through the repository's
+// canonical resource-country normalizer before applying the player-country scope gate.
+context.Game.state.simulation.playerCountryId='BD';
+const iso2PlayerShipmentResult=await N.advanceShipments('BGD');
+assert.notEqual(iso2PlayerShipmentResult.reason,'PLAYER_COUNTRY_SCOPE_VIOLATION',
+  'an ISO-2 player identity must resolve to the same ISO-3 country bucket before logistics runs');
+assert.notEqual(iso2PlayerShipmentResult.reason,'PLAYER_COUNTRY_NOT_SELECTED');
+assert.equal(iso2PlayerShipmentResult.countryId,'BGD');
+context.Game.state.simulation.playerCountryId='BGD';
 const genericCoalPreview=await N.previewSiteTransport({countryId:'BGD',siteId:'SITE_BGD_COAL_01',quantity:1000});
 assert.equal(genericCoalPreview.status,'READY',JSON.stringify(genericCoalPreview));
 assert.equal(genericCoalPreview.routeLegCount,1,'generic unverified intermodal template must resolve to one commodity-preferred mode');
