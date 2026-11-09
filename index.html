@@ -947,7 +947,7 @@
 <script src="design-tokens.js"></script>
 <script src="omega_action_progress_v1.js" defer></script>
 <script src="omega_icon_system_v1.js" defer></script>
-<script src="leaflet.js" defer onload="window.__OMEGA_DIAG__.boot.scriptStatus['leaflet.js']='LOADED'"></script>
+<script src="leaflet.js" defer onload="window.L=window.L||window.leaflet;window.__OMEGA_DIAG__.boot.scriptStatus['leaflet.js']=window.L?'LOADED':'LOADED_WITHOUT_GLOBAL'"></script>
 
 <script src="omega_country_runtime_data_v1.js" defer></script>
 <script src="omega_simulation_runtime.js" defer></script>

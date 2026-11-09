@@ -1,0 +1,120 @@
+name: OMEGA Android Gameplay Compatibility (API 28)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/omega-android-gameplay-smoke.yml"
+      - "android/**"
+      - "index.html"
+      - "**/*.js"
+      - "**/*.json"
+      - "**/*.css"
+      - "omega_ui_v2/**"
+      - "test/**"
+      - "scripts/**"
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/omega-android-gameplay-smoke.yml"
+      - "android/**"
+      - "index.html"
+      - "**/*.js"
+      - "**/*.json"
+      - "**/*.css"
+      - "omega_ui_v2/**"
+      - "scripts/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: omega-android-gameplay-api28-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gameplay-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify Android WebView compatibility shims
+        run: node --test test/omega_android_web_compat_v1.test.mjs
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "9.6.1"
+
+      - name: Run installed-app gameplay smoke on Android 9 (API 28)
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 28
+          target: default
+          arch: x86_64
+          profile: pixel_2
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save -noaudio -no-boot-anim -camera-back none -camera-front none -memory 3072 -cores 4
+          disable-animations: true
+          script: bash scripts/omega_android9_gameplay_smoke.sh
+
+      - name: Verify Android instrumentation result
+        if: always()
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const root = 'android/app/build/outputs/androidTest-results/connected/debug';
+          const files = [];
+          function walk(dir) {
+            if (!fs.existsSync(dir)) return;
+            for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
+              const full = path.join(dir, item.name);
+              if (item.isDirectory()) walk(full);
+              else if (item.name.endsWith('.xml')) files.push(full);
+            }
+          }
+          walk(root);
+          if (!files.length) throw new Error('ANDROID_INSTRUMENTATION_XML_MISSING');
+          let tests = 0, failures = 0, errors = 0, skipped = 0;
+          for (const file of files) {
+            const xml = fs.readFileSync(file, 'utf8');
+            const summary = xml.match(/<testsuites[^>]*>/);
+            if (!summary) continue;
+            const attr = (name) => Number((summary[0].match(new RegExp(name + '="([0-9]+)"')) || [])[1] || 0);
+            tests += attr('tests');
+            failures += attr('failures');
+            errors += attr('errors');
+            skipped += attr('skipped');
+          }
+          console.log(JSON.stringify({ files, tests, failures, errors, skipped }, null, 2));
+          if (tests < 1 || failures !== 0 || errors !== 0) {
+            throw new Error('ANDROID_GAMEPLAY_INSTRUMENTATION_NOT_PASSED');
+          }
+          NODE
+
+      - name: Upload Android gameplay test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-android-api28-gameplay-${{ github.sha }}
+          path: |
+            android/app/build/omega-android-gameplay-evidence/**
+            android/app/build/outputs/androidTest-results/**
+            android/app/build/reports/androidTests/**
+          if-no-files-found: warn
+          retention-days: 14

@@ -3336,7 +3336,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v98'),
+  assert.ok(sw.includes('omega-offline-atlas-shell-v103'),
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3396,7 +3396,7 @@ test('factory Details is an in-card flip with three independent product tabs', (
   assert.match(css,/fp-detail-status\[data-state="stable"\]/);
   assert.match(css,/fp-detail-status\[data-state="risk"\]/);
   assert.match(css,/fp-detail-status\[data-state="critical"\]/);
-  assert.match(sw,/omega-offline-atlas-shell-v98/);
+  assert.match(sw,/omega-offline-atlas-shell-v103/);
 });
 
 test('factory cards retain three landscape columns and constrain text to the card face', () => {
@@ -3414,7 +3414,7 @@ test('factory cards retain three landscape columns and constrain text to the car
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:899px\)/);
   assert.match(css,/@media \(orientation:portrait\) and \(max-width:899px\)[\s\S]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
   assert.match(css,/\.fp-card-detail-row \.fp-card-detail-product\s*\{[^}]*grid-column:1 \/ -1/s);
-  assert.match(sw,/omega-offline-atlas-shell-v98/);
+  assert.match(sw,/omega-offline-atlas-shell-v103/);
 });
 
 test('Factory Type identity header aligns icon, name and owned count in one row', () => {
@@ -3452,6 +3452,24 @@ test('Factory Input tables contain long cell content without changing factory ca
   assert.doesNotMatch(fix, /\.fp-card|\.fp-type-card/,
     'the separate Input table fix must not alter factory cards');
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 98,
+  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 103,
     'offline clients must fetch the updated Factory Input stylesheet');
 });
+
+test('UI v2 suspends route work but retains its shell for a lightweight second cabinet open', () => {
+  const app = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+  const integration = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
+  assert.match(app, /function suspend\(root\)[\s\S]*?releaseResourceScopeIfLeaving\(root, state\)[\s\S]*?invalidatePendingRender\(state\)[\s\S]*?main\.innerHTML = ''/);
+  assert.match(app, /function resume\(root, options\)[\s\S]*?state\.options = Object\.assign\(\{\}, state\.options \|\| \{\}, options\)[\s\S]*?scheduleNavigationRender\(root\)/);
+  assert.match(app, /resume:resume, suspend:suspend/);
+  assert.match(integration, /typeof g\.OmegaUIV2App\.resume === 'function'/);
+  assert.match(integration, /reusedApp && root\.__omegaUIV2State\.options[\s\S]*?countryOptions/);
+  assert.match(integration, /typeof g\.OmegaUIV2App\.suspend === 'function'[\s\S]*?g\.OmegaUIV2App\.suspend\(root\)/);
+  const closeStart = integration.indexOf('function closeToWorldMap()');
+  const bridgeStart = integration.indexOf('function installLegacyLayerBridge()', closeStart);
+  const closeLifecycle = integration.slice(closeStart, bridgeStart);
+  assert.match(closeLifecycle, /OmegaUIV2App\.suspend\(root\)/,
+    'map exit must suspend the mounted shell so reopening does not rebuild its country roster');
+
+});
+
