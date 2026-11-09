@@ -497,6 +497,9 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
   assert.ok(loaderStart >= 0 && loaderEnd > loaderStart, 'the canonical startup coordinator should exist');
   assert.ok(worldStart >= 0 && renderGate > worldStart && firstSupportData > renderGate,
     'no supporting dataset may start until the world map has finished rendering');
+  assert.ok(startup.indexOf('await loader.loadCountryConfig(fetcher)') > renderGate &&
+    startup.indexOf('await loader.loadCountryConfig(fetcher)') < firstSupportData,
+    'country metadata must get its ordered post-map recovery attempt before supporting datasets');
   assert.doesNotMatch(startup, /Promise\.(?:all|allSettled)\(/,
     'startup stages must not fan out into concurrent dataset loads');
   assert.match(startup, /for \(let index = 0; index < startupDatasets\.length; index \+= 1\)[\s\S]*?await fetchOptional\(item, index\)/,
