@@ -1,0 +1,18 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const source = fs.readFileSync('./minister_capability_engine.js','utf8');
+const sandbox={console,Math,Object,Number,String,Map,Set,Date}; sandbox.globalThis=sandbox; sandbox.window=sandbox;
+vm.runInNewContext(source,sandbox,{filename:'minister_capability_engine.js'});
+const engine=sandbox.OmegaMinisterCapability;
+assert.ok(engine,'capability engine must initialize');
+const security={id:'Defense_1',stats:{discipline:95,strategic:90,corruption:5},efficiency:{crisis_handling:95,accuracy:85,decision_speed:85}};
+const fiscal={id:'Finance_1',stats:{discipline:80,strategic:92,corruption:8},efficiency:{crisis_handling:85,accuracy:92,decision_speed:80}};
+const s=engine.evaluate(security,'SECURITY',100);
+const f=engine.evaluate(fiscal,'FISCAL',100);
+assert.ok(s.score>80,'security specialist should have a material security capability score');
+assert.ok(f.score>80,'finance specialist should have a material fiscal capability score');
+assert.ok(s.multiplier>1,'capability must materially modify effective output');
+engine.register(security);
+assert.equal(engine.get('Defense_1','SECURITY',100).profileId,'Defense_1');
+console.log('Minister capability tests: PASS');

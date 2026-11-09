@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title-barge-inland-bulk desc-barge-inland-bulk" data-omega-icon-kind="transport" data-omega-icon-id="barge-inland-bulk">
+<title id="title-barge-inland-bulk">Inland bulk barge</title><desc id="desc-barge-inland-bulk">Cargo-class-specific barge transport for dry bulk. No individual registration identity is recorded.</desc>
+<defs>
+<linearGradient id="plate-barge-inland-bulk" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f3f8fb"/><stop offset=".5" stop-color="#bdcbd5"/><stop offset="1" stop-color="#71899b"/></linearGradient>
+<linearGradient id="metal-barge-inland-bulk" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f5fafc"/><stop offset=".35" stop-color="#becbd4"/><stop offset=".72" stop-color="#71889a"/><stop offset="1" stop-color="#344c60"/></linearGradient>
+<linearGradient id="blue-barge-inland-bulk" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9be7f4"/><stop offset=".4" stop-color="#287fa9"/><stop offset="1" stop-color="#153e5e"/></linearGradient>
+<filter id="shadow-barge-inland-bulk" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#091725" flood-opacity=".48"/></filter>
+</defs>
+<rect x="4.5" y="4.5" width="119" height="119" rx="21" fill="url(#plate-barge-inland-bulk)" stroke="#627b8f" stroke-opacity=".8"/><rect x="8" y="8" width="112" height="112" rx="17" fill="none" stroke="#fff" stroke-opacity=".6"/>
+<path d="M14 24H114M15 112H113" stroke="#fff" stroke-opacity=".58" stroke-width="2"/><g filter="url(#shadow-barge-inland-bulk)"><path d="M10 78H118L102 96H24Z" fill="url(#metal-barge-inland-bulk)" stroke="#40576b" stroke-width="2"/><path d="M20 68 32 52 43 61 55 44 66 58 78 49 90 61 102 54 107 77H20Z" fill="#b98b5c" stroke="#76573d" stroke-width="2"/><path d="M32 55 43 61M55 51 66 58M78 55 90 61" stroke="#ebc493" stroke-width="2"/><path d="M13 103Q29 97 45 103T77 103T112 103" fill="none" stroke="#35b8df" stroke-width="3"/></g>
+</svg>

@@ -1,0 +1,408 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+const elements = new Map();
+function makeElement(tag) {
+  return {
+    tagName: String(tag).toUpperCase(), id: '', style: {}, innerHTML: '', listeners: {},
+    addEventListener(type, handler) { this.listeners[type] = handler; },
+    querySelectorAll() { return []; },
+    setAttribute(name, value) { this[name] = value; },
+    getAttribute(name) { return this[name] ?? null; },
+    hasAttribute(name) { return this[name] !== undefined; },
+    closest() { return null; }
+  };
+}
+
+globalThis.window = globalThis;
+globalThis.document = {
+  getElementById(id) { return elements.get(id) || null; },
+  createElement(tag) { return makeElement(tag); },
+  body: { appendChild(node) { elements.set(node.id, node); } }
+};
+globalThis.CustomEvent = class {
+  constructor(type, init = {}) { this.type = type; this.detail = init.detail || {}; }
+};
+globalThis.Game = {
+  state: {
+    playerCountryId: 'BGD',
+    simulation: { turn: 1 },
+    resource: {
+      BGD: {
+        inventory: { iron_ore: 100, crude_oil: 50 },
+        production: { iron_ore: 10, crude_oil: 5 },
+        consumption: { iron_ore: 3, crude_oil: 2 },
+        reserves: { iron_ore: 900, crude_oil: 500 },
+        endowment: { iron_ore: 1000 },
+        tradeAvailability: { iron_ore: 90, crude_oil: 40 },
+        warehouse: { warehouseId: 'WH-BGD-RAW', availableByResource: { iron_ore: 80 } },
+        strategicReserve: { warehouseId: 'SPR-BGD', availableByResource: { iron_ore: 10 } },
+        batches: [
+          { batchId: 'B1', resourceId: 'iron_ore', remainingQuantity: 80, unit: 'METRIC_TONNE', warehouseId: 'WH-BGD-RAW' },
+          { batchId: 'B-PARTIAL', resourceId: 'iron_ore', remainingQuantity: 80, quantity: 100, unit: 'METRIC_TONNE', warehouseId: null, status: 'PARTIAL_STOCK_ACROSS_MINE_WAREHOUSE_OR_TRANSIT', stage: 'PARTIALLY_IN_RAW_INVENTORY', locationNodeKey: 'MIXED:MINE_RAW_WAREHOUSE_OR_TRANSIT' }
+        ],
+        industrialNetwork: {
+          siteFlowLedger: [
+            { siteId: 'SITE-BGD-IRON', status: 'IN_TRANSIT', resourceId: 'iron_ore' },
+            { siteId: 'SITE-BGD-IRON', batchId: 'B-PARTIAL', resourceId: 'iron_ore', mineLogisticsRouteId: 'ROUTE-BGD-IRON', mineWarehouseReceivedQuantity: 35, factoryDispatchedQuantity: 15, mineHeldQuantity: 30 }
+          ],
+          projects: [{ projectId: 'FACTORY-P1', status: 'UNDER_CONSTRUCTION' }],
+          technologyContracts: [{ projectId: 'TECH-P1', status: 'IN_PROGRESS' }],
+          shipments: [{ shipmentId: 'CORE-SHIPMENT-1', shipmentType: 'RAW_TO_FACTORY', status: 'IN_TRANSIT', resourceId: 'iron_ore', quantity: 80, factoryId: 'FAC-BGD-IRON', etaTurn: 4 }]
+        },
+        mineSiteReferences: [{ siteId: 'SITE-BGD-IRON', countryId: 'BGD', resourceId: 'iron_ore', name: 'Test Mine' }],
+        surveyRequests: [], surveyResults: [], reserveBufferRequests: [],
+        mineProductionLedger: [], logistics: { shipments: [{ shipmentId: 'LEGACY-PREVIEW-1', batchId: 'B-OLD', status: 'IN_TRANSIT', resourceId: 'iron_ore', quantity: 80 }] }, environment: { waterRecycling: { status: 'RESEARCH' } }, byproducts: []
+      }
+    },
+    economy: {
+      BGD: {
+        productionAssets: [{
+          id: 'FAC-BGD-IRON', resourceId: 'iron_ore', inputCoefficients: { iron_ore: 1 },
+          outputProfile: { steel: 0.8 }, inputInventory: { iron_ore: 20 }, capacity: 50, status: 'OPERATIONAL'
+        }],
+        capacityUpgradeRequests: []
+      }
+    },
+    finance: { BGD: { available: 100000, reserves: 50000, currencyCode: 'BDT', treasuryLedger: [] } },
+    trade: { BGD: { importRequests: [], globalTradeLedger: { requests: [], decisions: [], settlements: [] } } },
+    foreign: { BGD: { relations: { SAU: { trade_agreement: true } }, treaties: {} } },
+    population: { BGD: {} }
+  }
+};
+globalThis.CountryIOS = { activeCountry: 'BGD' };
+globalThis.OmegaCanonicalIdentityRegistry = {
+  resolveCountry(value) {
+    const raw = String(value || '').trim().toUpperCase();
+    return { id: raw === 'BANGLADESH' ? 'BGD' : raw };
+  },
+  list() { return [{ id: 'BGD' }, { id: 'SAU' }]; }
+};
+globalThis.ResourceMinistryEngine = {
+  activeCountry: 'BGD',
+  normalizeCountryCode(value) {
+    const raw = String(value || '').trim().toUpperCase();
+    return raw === 'BANGLADESH' ? 'BGD' : raw;
+  },
+  resourceTypes: [
+    { id: 'iron_ore', name: 'Iron Ore', unit: 'METRIC_TONNE', icon: '⛏️', basePrice: 100, category: 'MINERAL', processChain: ['extraction', 'smelting'] },
+    { id: 'crude_oil', name: 'Crude Oil', unit: 'BARREL', icon: '🛢️', basePrice: 80, category: 'ENERGY' },
+    { id: 'coal', name: 'Coal', unit: 'METRIC_TONNE', icon: '⚫', category: 'ENERGY' }
+  ],
+  deposits: [
+    { name: 'Test Deposit', country: 'Bangladesh', countryCode: 'BGD', lat: 23.7, lng: 90.4, resourceId: 'iron_ore', reserves: 100, grade: 0.5, status: 'AVAILABLE' },
+    { name: 'Other Country Deposit', country: 'Saudi Arabia', countryCode: 'SAU', lat: 24, lng: 45, resourceId: 'crude_oil', reserves: 250, status: 'AVAILABLE' }
+  ],
+  getAuthoritativeResourceSummary() {
+    return {
+      version: 'TEST_RUNTIME', briefing: 'Live test fixture', globalMetrics: { autonomyIndex: 50, strategicReservesTotalDays: 10 },
+      resourcesList: [
+        { id: 'iron_ore', name: 'Iron Ore', unit: 'METRIC_TONNE', inventory: 100, dailyProduction: 10, dailyConsumption: 2, netBalance: 8, reserve: 900, stockDays: 50, tradeAvailability: 90 },
+        { id: 'crude_oil', name: 'Crude Oil', unit: 'BARREL', inventory: 50, dailyProduction: 5, dailyConsumption: 3, reserve: 500, stockDays: 20 }
+      ]
+    };
+  },
+  getCountryResourceProfile() { return { identity: { name: 'Bangladesh' } }; }
+};
+const sourceCards = Array.from({ length: 16 }, (_, index) => {
+  const point = String(index + 1).padStart(2, '0');
+  return '<div class="dept-card" style="border-color:#aaa"><span>' + point +
+    '. Test Point</span><button onclick="window.ResourceMinistryEngine.openModal(\'BANGLADESH\', \'matrix\');">Open</button></div>';
+}).join('');
+globalThis.OmegaCabinetUI = { activeCountry: 'BGD', getResource16CardsHtml() { return sourceCards; } };
+globalThis.Omega = {
+  IndividualResourceSiteBinding: { sites: [
+    { siteId: 'FILE-SITE-BGD-IRON', countryId: 'BGD', siteName: 'File-backed Bangladesh iron mine',
+      real: { resourceId: 'iron_ore' }, operation: { status: 'ACTIVE_SITE_REFERENCE' }, extractionExecutable: false,
+      quantitative: { reserve: { quantity: 700, unit: 'METRIC_TONNE' }, production: { rate: 5, unit: 'METRIC_TONNE_PER_DAY' } },
+      simulation: { transportRoute: [{ routeId: 'ROUTE-BGD-IRON-1', routeName: 'Rail to smelter', mode: 'rail', from: 'FILE-SITE-BGD-IRON', to: 'FAC-BGD-IRON', distanceKm: 42 }] },
+      processing: { upstreamProcess: 'Beneficiation', refinedOutputs: ['iron_concentrate'] },
+      coordinates: { lat: 24, lng: 90 }, location: { countryName: 'Bangladesh' } }
+  ] },
+  MinistryInteroperability: {
+    dispatchCommand() { return { status: 'APPLIED', result: { accepted: true } }; },
+    registerCommandHandler() {}, registerAction() {}, configure() {}, emitEvent() { return { status: 'APPLIED' }; }
+  }
+};
+globalThis.Omega.ResourceIndustrialNetwork = {
+  diagnostics() { return { version: 'TEST_RUNTIME', projectCount: 1 }; },
+  gameplayPipelineDiagnostics(countryScope) {
+    globalThis.__pipelineDiagnosticScope = countryScope || null;
+    const countryId = String(countryScope || 'BGD').toUpperCase();
+    return {
+      diagnosticScope: countryScope ? countryId : 'GLOBAL',
+      perCountry: [{ countryId, extractionFlows: 1, dispatched: 1, processed: 1, stages: { EXTRACTION: 1 } }]
+    };
+  },
+  candidateFactories(country, resourceId) {
+    return resourceId === 'iron_ore' ? [{ asset: Game.state.economy.BGD.productionAssets[0] }] : [];
+  },
+  executeSitePipeline() { return Promise.resolve({ status: 'BLOCKED', reason: 'TEST_FIXTURE' }); },
+  executeFactoryCycle() { return { status: 'BLOCKED', reason: 'TEST_FIXTURE' }; },
+  startFactoryProject() { return { status: 'STARTED', projectId: 'FACTORY-P2' }; },
+  startTechnologyProject() { return { status: 'IN_PROGRESS', projectId: 'TECH-P2' }; }
+};
+globalThis.Omega.ResourceEndowmentRuntime = {
+  countryMineSiteReferences() { return []; }, countryMines() { return []; }, diagnostics() { return {}; }
+};
+globalThis.Omega.ResourceLogisticsRuntime = { planFromFactoryInput() { return { status: 'APPLIED', result: { accepted: true } }; } };
+globalThis.Omega.ResourceSystemHardening = {
+  logisticsConstraints() { return { totalMultiplier: 1 }; }, diagnostics() { return {}; }
+};
+globalThis.OmegaGlobalMarket = {
+  rebuild() { return { iron_ore: { orders: { bids: [], asks: [] } } }; },
+  quote(resourceId) { return { resourceId, status: 'NO_CROSS', priceDiscovery: 'REFERENCE_ONLY', referencePrice: 100, referenceLiquidity: true, matches: [], matchedQuantity: 0 }; },
+  diagnostics() { return { resourceMarkets: 2 }; }
+};
+globalThis.OmegaGlobalTrade = { diagnostics() { return {}; }, createRequest() { return { accepted: true, status: 'SENT' }; } };
+globalThis.OmegaResourceAuthoritativeAdapter = { install() { return true; } };
+globalThis.OmegaCognitiveOS = {};
+
+await import('../omega_resource_command_center_ui_v1.js');
+const ui = globalThis.OmegaResourceCommandCenterUI;
+
+test('industrial panel requests scoped diagnostics for the selected country', () => {
+  globalThis.__pipelineDiagnosticScope = null;
+  ui.open('BGD', 'industrial');
+  assert.equal(globalThis.__pipelineDiagnosticScope, 'BGD',
+    'opening a single-country panel must not request a full global ledger scan');
+});
+
+test('all sixteen panels render without runtime exceptions', () => {
+  const panels = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment'];
+  for (const panel of panels) {
+    ui.open('BGD', panel);
+    assert.equal(ui.getState().panel, panel);
+    const modal = elements.get('gsrsk-intelligence-modal');
+    assert.ok(modal && modal.innerHTML.includes('Resource Command Center'), panel + ' should render the command center shell');
+    assert.ok(modal.innerHTML.includes('value="' + panel + '" selected'), panel + ' should be the sole selected section in the compact navigator');
+    assert.equal((modal.innerHTML.match(/<button[^>]*data-panel=/g) || []).length, 0, 'the panel must not duplicate all sixteen points as visible buttons');
+  }
+});
+
+test('all sixteen legacy card buttons route to their own panel, including filtered cards', () => {
+  const expected = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment'];
+  const result = globalThis.OmegaCabinetUI.getResource16CardsHtml();
+  assert.equal(typeof result, 'string');
+  const blocks = result.split('<div class="dept-card" style=').slice(1);
+  assert.equal(blocks.length, 16);
+  blocks.forEach((block, index) => {
+    const onclick = (block.match(/onclick="([^"]+)"/) || [])[1];
+    assert.ok(onclick, 'point ' + (index + 1) + ' must have an action');
+    assert.ok(onclick.includes(", '" + expected[index] + "');"), 'point ' + (index + 1) + ' must route to ' + expected[index] + ', got ' + onclick);
+    assert.ok(onclick.includes("openModal('BGD'"), 'point ' + (index + 1) + ' must use the selected country scope');
+  });
+});
+
+
+test('canonical site profiles appear in relevant tabs without becoming live production or shipments', () => {
+  ui.open('BGD', 'extraction');
+  let modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /File-backed Bangladesh iron mine/);
+  assert.match(modal.innerHTML, /Country site profiles/);
+  assert.match(modal.innerHTML, /FILE-SITE-BGD-IRON/);
+  assert.match(modal.innerHTML, /Runtime mine records/);
+
+  ui.open('BGD', 'reserves');
+  modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /value="iron_ore" selected/);
+  assert.match(modal.innerHTML, /Proven reserves/);
+  assert.match(modal.innerHTML, /900/);
+  assert.doesNotMatch(modal.innerHTML, /Site reserve facts from existing data files|FILE-BACKED SITE PROFILE/);
+  assert.doesNotMatch(modal.innerHTML, /Survey Resource/);
+  assert.equal((modal.innerHTML.match(/class="omega-rescc-ledger-metric"/g) || []).length, 7);
+
+  ui.open('BGD', 'logistics');
+  modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /Saved route profiles from existing data files/);
+  assert.match(modal.innerHTML, /ROUTE-BGD-IRON-1/);
+  assert.match(modal.innerHTML, /PROFILE ONLY/);
+  assert.match(modal.innerHTML, /Actual shipment state/);
+  assert.match(modal.innerHTML, /CORE-SHIPMENT-1/, 'live shipment cards must read the Industrial Network ledger');
+  assert.match(modal.innerHTML, /LEGACY PLAN · NOT A SHIPMENT/, 'legacy route plans must never be presented as actual deliveries');
+  assert.match(modal.innerHTML, /B-PARTIAL/, 'a partially received mine batch must remain visible in the raw-warehouse panel');
+  assert.ok(modal.innerHTML.includes('<strong>20</strong>'), 'the warehouse card must show received-minus-dispatched quantity, not the whole source batch');
+  assert.match(modal.innerHTML, /B-OLD/, 'old planning history remains visible by its batch ID under the non-authoritative label');
+
+  ui.open('BGD', 'processing');
+  modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /Processing capabilities from existing site files/);
+  assert.match(modal.innerHTML, /Beneficiation/);
+
+  ui.open('BGD', 'cascade');
+  modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /CORE-SHIPMENT-1/, 'cascade shipment consequences must use the authoritative Industrial Network ledger');
+  assert.doesNotMatch(modal.innerHTML, /LEGACY-PREVIEW-1/, 'legacy route previews must not appear as live shipment consequences');
+});
+
+test('reserves ledger lists only resources backed by country quantities or local resource records', () => {
+  const originalSummary = ResourceMinistryEngine.getAuthoritativeResourceSummary;
+  ResourceMinistryEngine.getAuthoritativeResourceSummary = function () {
+    const summary = originalSummary.apply(this, arguments);
+    return Object.assign({}, summary, {
+      resourcesList: (summary.resourcesList || []).concat([{
+        id: 'coal', name: 'Coal', unit: 'METRIC_TONNE',
+        endowment: 0, reserve: 0, inventory: 0, dailyProduction: 0,
+        dailyConsumption: 0, netBalance: 0, stockDays: 0
+      }])
+    });
+  };
+  try {
+    ui.open('BGD', 'reserves');
+    let modal = elements.get('gsrsk-intelligence-modal');
+    assert.match(modal.innerHTML, /omega-rescc-resource-select/);
+    assert.match(modal.innerHTML, /value="iron_ore" selected/);
+    assert.match(modal.innerHTML, /value="crude_oil"/);
+    assert.doesNotMatch(modal.innerHTML, /value="coal"/,
+      'a global-catalogue resource with only zero quantities must not appear');
+    assert.match(modal.innerHTML, /100 METRIC_TONNE/);
+    assert.match(modal.innerHTML, /900 METRIC_TONNE/);
+    assert.doesNotMatch(modal.innerHTML, /Survey Resource/);
+
+    modal.listeners.change({ target: { id: 'omega-rescc-resource-select', value: 'crude_oil' } });
+    assert.match(modal.innerHTML, /value="crude_oil" selected/);
+    assert.match(modal.innerHTML, /50 BARREL/);
+    assert.match(modal.innerHTML, /500 BARREL/);
+    assert.equal((modal.innerHTML.match(/class="omega-rescc-ledger-metric"/g) || []).length, 7,
+      'only one resource detail card should be rendered at a time');
+
+    modal.listeners.change({ target: { id: 'omega-rescc-resource-select', value: 'coal' } });
+    assert.doesNotMatch(modal.innerHTML, /value="coal"/,
+      'the ledger must not allow selecting a resource absent from country state');
+    assert.doesNotMatch(modal.innerHTML, /Survey Resource/,
+      'an absent catalogue-only commodity is hidden, not presented as a survey prompt');
+  } finally {
+    ResourceMinistryEngine.getAuthoritativeResourceSummary = originalSummary;
+  }
+});
+
+test('deposit view filters loaded JSON deposits to the selected country', () => {
+  ui.open('BGD', 'deposits');
+  const modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /Test Deposit/);
+  assert.doesNotMatch(modal.innerHTML, /Other Country Deposit/);
+  assert.match(modal.innerHTML, /Country-scoped JSON deposit registry/);
+});
+
+test('resource state readers merge name-keyed country data into canonical country views', () => {
+  Game.state.resource.BANGLADESH = {
+    batches: [{ batchId: 'B-ALIAS-1', resourceId: 'iron_ore', remainingQuantity: 17, unit: 'METRIC_TONNE' }],
+    mineSiteReferences: [{ siteId: 'SITE-ALIAS-1', countryId: 'BANGLADESH', resourceId: 'iron_ore', siteName: 'Alias-keyed mine' }]
+  };
+  ui.open('BGD', 'inventory');
+  let modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /B-ALIAS-1/);
+  assert.match(modal.innerHTML, /17/);
+  ui.open('BGD', 'extraction');
+  modal = elements.get('gsrsk-intelligence-modal');
+  assert.match(modal.innerHTML, /Alias-keyed mine/);
+});
+
+test('Production Ministry shows each country factory count on the matching factory card', () => {
+  const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const previousBaseline = globalThis.OmegaCountryFactoryStartingBaselineV1;
+  const previousAssets = Game.state.economy.BGD.productionAssets;
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', category:'Heavy Industry', defaultRecipeId:'STEEL-RECIPE' },
+      TEXTILE_GARMENT_MILL: { name:'Textile Mill', category:'Light Industry', defaultRecipeId:'TEXTILE-RECIPE' }
+    },
+    factoryCatalogPolicy: { categoryOrder:['Heavy Industry','Light Industry'] },
+    downstreamFactoryRecipes: {},
+    processingRules: {}
+  };
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryFactoryRegistry(countryId) {
+      assert.equal(countryId, 'BGD');
+      return {
+        status:'READY', runtimeRegistered:false,
+        registry:[
+          { factoryType:'STEEL_MILL', name:'Steel Mill', startingCount:3 },
+          { factoryType:'TEXTILE_GARMENT_MILL', name:'Textile Mill', startingCount:2 }
+        ],
+        liveFactoryTypeCounts:{ STEEL_MILL:0, TEXTILE_GARMENT_MILL:0 }
+      };
+    }
+  };
+  Game.state.economy.BGD.productionAssets = [
+    { id:'BGD-STEEL-BUILD-1', factoryType:'STEEL_MILL', status:'OPERATIONAL',
+      sourceType:'PLAYER_FACTORY_CONSTRUCTION', capacityPerDay:50 }
+  ];
+  try {
+    ui.open('BGD', 'industrial');
+    const html = elements.get('gsrsk-intelligence-modal').innerHTML;
+    assert.equal(html.split('<article class="omega-rescc-factory-catalog-row"').length - 1, 2,
+      'count the rendered factory cards, not their CSS selector');
+    assert.match(html, /Steel Mill/);
+    assert.match(html, /Textile Mill/);
+    const cardMarker = '<article class="omega-rescc-factory-catalog-row"';
+    const firstCard = html.indexOf(cardMarker);
+    const secondCard = html.indexOf(cardMarker, firstCard + cardMarker.length);
+    assert.ok(firstCard >= 0 && secondCard > firstCard);
+    const steelCard = html.slice(firstCard, secondCard);
+    const textileCard = html.slice(secondCard, html.indexOf('</section>', secondCard) > 0
+      ? html.indexOf('</section>', secondCard) : html.length);
+    assert.ok(steelCard.includes('<span>Factories</span><strong>4</strong>'),
+      'the steel card shows three country factories plus the one completed player build');
+    assert.ok(textileCard.includes('<span>Factories</span><strong>2</strong>'),
+      'the textile card shows the country factory total');
+    assert.match(html, /BGD-STEEL-BUILD-1/,
+      'the actual factory record remains inside the matching factory type card');
+    assert.ok(html.includes('<span>Factories</span>'));
+    assert.doesNotMatch(html, /Factory catalog|My factories|commissioned factory|SOURCE_UNAVAILABLE|Source status/i);
+  } finally {
+    if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
+    if (previousBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
+    else globalThis.OmegaCountryFactoryStartingBaselineV1 = previousBaseline;
+    Game.state.economy.BGD.productionAssets = previousAssets;
+  }
+});
+
+
+test('Resource Ministry inventory separates canonical natural resources from industrial products', () => {
+  const resource = Game.state.resource.BGD;
+  const previous = {
+    inventory:resource.inventory,
+    processedWarehouse:resource.processedWarehouse,
+    batches:resource.batches
+  };
+  resource.inventory = Object.assign({}, previous.inventory || {}, {
+    iron_ore:13,
+    steel:7,
+    iron_concentrate:4
+  });
+  resource.processedWarehouse = {
+    warehouseId:'WH-BGD-PROCESSED',
+    availableByResource:{ steel:5, iron_concentrate:2 }
+  };
+  resource.batches = (Array.isArray(previous.batches) ? previous.batches : []).concat([{
+    batchId:'INDUSTRIAL-STEEL-LOT-01',
+    resourceId:'steel',
+    remainingQuantity:5,
+    quantity:5,
+    unit:'SIMULATION_RESOURCE_UNIT',
+    warehouseId:'WH-BGD-PROCESSED',
+    stage:'PROCESSED'
+  }]);
+  try {
+    ui.open('BGD','inventory');
+    const html = elements.get('gsrsk-intelligence-modal').innerHTML;
+    const naturalTable = html.match(/<table[^>]*data-inventory-table="natural-resources"[\s\S]*?<\/table>/);
+    const industrialTable = html.match(/<table[^>]*data-inventory-table="industrial-products"[\s\S]*?<\/table>/);
+    assert.ok(naturalTable, 'canonical natural resources must have their own inventory table');
+    assert.ok(industrialTable, 'manufactured products must have a separate industrial inventory table');
+    assert.match(naturalTable[0],/Iron Ore/);
+    assert.match(naturalTable[0],/Crude Oil/);
+    assert.doesNotMatch(naturalTable[0],/Steel|Iron Concentrate/);
+    assert.match(industrialTable[0],/Steel/);
+    assert.match(industrialTable[0],/Iron Concentrate/);
+    assert.doesNotMatch(industrialTable[0],/Iron Ore|Crude Oil/);
+    assert.match(html,/data-batch-table="natural-resources"/);
+    assert.match(html,/data-batch-table="industrial-products"/);
+  } finally {
+    resource.inventory = previous.inventory;
+    resource.processedWarehouse = previous.processedWarehouse;
+    resource.batches = previous.batches;
+  }
+});

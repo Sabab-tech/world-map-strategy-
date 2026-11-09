@@ -1,0 +1,1133 @@
+import assert from 'node:assert/strict';
+import { readFileSync, existsSync } from 'node:fs';
+import { test } from 'node:test';
+import vm from 'node:vm';
+
+const readJson = file => JSON.parse(readFileSync(new URL('../'+file, import.meta.url), 'utf8'));
+const readText = file => readFileSync(new URL('../'+file, import.meta.url), 'utf8');
+
+function advanceOneGameTurn(state){
+  const sim=state.simulation||(state.simulation={});
+  const step=Math.max(1,Math.round(Number(sim.daysPerTurn)||1));
+  const base=String(sim.date||String(Number(sim.startYear)||2015)+'-01-01');
+  const date=new Date(base+'T00:00:00.000Z');
+  date.setUTCDate(date.getUTCDate()+step);
+  sim.date=date.toISOString().slice(0,10);
+  sim.turn=(Number(sim.turn)||1)+1;
+}
+function advanceToGameTurn(state,targetTurn){
+  const target=Math.max(1,Number(targetTurn)||1);
+  let guard=0;
+  while((Number(state.simulation?.turn)||1)<target){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_GAME_CLOCK_TURN_GUARD');
+  }
+}
+function advanceToCycleFinish(state,cycle){
+  const sim=state.simulation||(state.simulation={});
+  if(!sim.date)sim.date=String(cycle?.startDate||String(Number(sim.startYear)||2015)+'-01-01');
+  const currentTurn=Number(sim.turn)||1;
+  const targetTurn=Math.max(currentTurn+1,Number(cycle?.finishTurn)||currentTurn+1);
+  const targetDate=cycle?.finishDate?new Date(String(cycle.finishDate)+'T00:00:00.000Z'):null;
+  let guard=0;
+  while((Number(sim.turn)||1)<targetTurn||(targetDate&&new Date(String(sim.date)+'T00:00:00.000Z')<targetDate)){
+    advanceOneGameTurn(state);
+    if(++guard>10000)throw new Error('TEST_FACTORY_CYCLE_CLOCK_GUARD');
+  }
+}
+
+class EventTargetMock {
+  constructor(){this.listeners=new Map();}
+  addEventListener(type,fn){const rows=this.listeners.get(type)||[];rows.push(fn);this.listeners.set(type,rows);}
+  dispatchEvent(evt){for(const fn of this.listeners.get(evt.type)||[])fn(evt);return true;}
+  async dispatchAndWait(evt){
+    const pending=[];
+    for(const fn of this.listeners.get(evt.type)||[]){
+      const result=fn(evt);
+      if(result&&typeof result.then==='function')pending.push(result);
+    }
+    await Promise.all(pending);
+    return true;
+  }
+}
+class CustomEventMock {constructor(type,init={}){this.type=type;this.detail=init.detail;}}
+
+function buildContext(){
+  const a=readJson('resources.json'),b=readJson('resources_2.json'),ext=readJson('resource_type_extensions_v1.json');
+  const profiles={...(a.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{}),...(b.GSRSK_Master_CountryProfiles_v14?.countryProfiles||{})};
+  const deposits=[...(a.runtime_deposits||[]),...(b.runtime_deposits||[])];
+  const resourceTypes={...(a.resource_types||{}),...(b.resource_types||{}),...(a.GSRSK_Master_Resource_Data_v14?.resource_types||{}),...(b.GSRSK_Master_Resource_Data_v14?.resource_types||{}),...(ext.resource_types||{}),...(ext.GSRSK_Master_Resource_Data_v14?.resource_types||{})};
+  const profileRows=Object.entries(profiles);
+  const identity={
+    resolveCountry(value){
+      const raw=String(value??'').trim().toUpperCase();
+      const hit=profileRows.find(([key,row])=>{
+        const x=row?.identity||row||{};
+        return key.toUpperCase()===raw||String(x.iso3||'').toUpperCase()===raw||String(x.iso2||'').toUpperCase()===raw||String(x.name||'').toUpperCase()===raw;
+      });
+      return hit?{id:String(hit[1]?.identity?.iso3||hit[1]?.identity?.countryId||hit[0]).toUpperCase(),raw:hit[1]?.identity||hit[1]}:(/^[A-Z]{3}$/.test(raw)?{id:raw,raw:{iso3:raw,countryId:raw}}:null);
+    },
+    list(){return profileRows.map(([key,row])=>String(row?.identity?.iso3||row?.identity?.countryId||key).toUpperCase());}
+  };
+  const engine={
+    isReady:true,countryProfiles:profiles,deposits,resourceTypes:Object.values(resourceTypes),
+    mineSiteReferenceCount:profileRows.reduce((sum,[key,row])=>{
+      const p=row?.identity||row||{},sites=p?.resource_infrastructure_context?.mineSites||row?.resource_infrastructure_context?.mineSites||row?.infrastructure_context?.mineSites||[];
+      return sum+(Array.isArray(sites)?sites.length:0);
+    },0),
+    getDataLoadReport(){return{authority:'RESOURCE_JSON',countryProfileCount:profileRows.length,depositCount:deposits.length};},
+    normalizeCountryCode(value){return identity.resolveCountry(value)?.id||String(value??'').trim().toUpperCase();}
+  };
+  const state={simulation:{turn:1,startYear:2025,date:'2025-01-01',daysPerTurn:30},resource:{},economy:{},
+    finance:{BGD:{available:1000000,reserves:2000000}},trade:{BGD:{marketPrice:{COAL_CONCENTRATE:100,COAL_REJECT:5}}},transport:{},foreign:{}};
+  const events=new EventTargetMock(),handlers=new Map();
+  function txFactory(countryId){
+    return{
+      get(path){
+        const parts=String(path).split('.'),domain=parts.shift();let cur=state[domain]?.[countryId];
+        for(const part of parts){if(cur==null)return undefined;cur=cur[part];}
+        return cur===undefined?undefined:cur;
+      },
+      set(path,value){
+        const parts=String(path).split('.'),domain=parts.shift();state[domain]=state[domain]||{};state[domain][countryId]=state[domain][countryId]||{};
+        if(!parts.length){state[domain][countryId]=value;return;}
+        let cur=state[domain][countryId];
+        for(let i=0;i<parts.length-1;i++){if(!cur[parts[i]]||typeof cur[parts[i]]!=='object')cur[parts[i]]={};cur=cur[parts[i]];}
+        cur[parts[parts.length-1]]=value;
+      }
+    };
+  }
+  const interop={
+    registerAction(){},
+    registerCommandHandler(type,_owner,fn){handlers.set(type,fn);},
+    dispatchCommand(_owner,type,countryId,payload={}){
+      const fn=handlers.get(type);if(!fn)return{status:'UNAVAILABLE',reason:'HANDLER_NOT_FOUND',commandId:'TEST-'+type};
+      const result=fn({commandId:'TEST-'+type,payload},{countryId,stateTransaction:txFactory(countryId)});
+      return{status:result?.accepted===false?'REJECTED':'APPLIED',result,commandId:'TEST-'+type};
+    },
+    emitEvent(type,countryId,source,payload,meta){
+      events.dispatchEvent(new CustomEventMock(type,{detail:{eventType:type,countryId,source,payload,meta}}));
+      return true;
+    }
+  };
+  const fetchLocal=async url=>{
+    const clean=String(url).split('?')[0].replace(/^\.\//,'').replace(/^\/+/,'');
+    try{
+      const data=JSON.parse(readFileSync(new URL('../'+clean,import.meta.url),'utf8'));
+      return{ok:true,status:200,json:async()=>data};
+    }catch(_){return{ok:false,status:404,json:async()=>{throw new Error('LOCAL_TEST_FIXTURE_NOT_FOUND:'+clean);}};}
+  };
+  const manifest=readJson('resource_site_reference_expanded_manifest.json');
+  const losslessSites=[];
+  for(const part of manifest.parts||[]){
+    const pack=readJson(part.file);for(const site of pack.sites||[])losslessSites.push(site);
+  }
+  const context={
+    console,Math,Number,String,Object,Array,Set,Map,WeakMap,Promise,JSON,Date,Intl,CustomEvent:CustomEventMock,
+    // The canonical baseline loaders use bounded fetch timers and abort signals.
+    // Provide the real Node timer APIs to this VM instead of making production
+    // initialization fail with TIMEOUT_UNAVAILABLE in the E2E harness.
+    setTimeout,clearTimeout,AbortController,
+    fetch:fetchLocal,addEventListener:events.addEventListener.bind(events),dispatchEvent:events.dispatchEvent.bind(events),
+    Game:{state},gameState:state,Omega:{MinistryInteroperability:interop,CanonicalIdentity:identity},
+    OmegaMinistryInteroperability:interop,OmegaCanonicalIdentityRegistry:identity,ResourceMinistryEngine:engine,
+    OmegaResourceSiteMasterResearchData:readJson('resource_site_master_registry_v1.json'),
+    OmegaResourceSiteCanonicalCatalogData:readJson('resource_site_canonical_catalog_v1.json'),
+    OmegaResourceSiteReserveSimulationData:readJson('resource_site_reserve_simulation_v1.json'),
+    OmegaResourceSiteResearchEvidenceData:readJson('resource_site_research_evidence_v1.json'),
+    OmegaResourceSiteCountryExpansionData:readJson('resource_site_country_expansion_v1.json'),
+    OmegaResourceLosslessReferenceData:{siteCount:losslessSites.length,sites:losslessSites},
+    OmegaResourceIndustrialCatalogData:readJson('resource_industrial_catalog_v1.json')
+  };
+  context.Omega.ResourceSiteMasterResearchData=context.OmegaResourceSiteMasterResearchData;
+  context.Omega.ResourceSiteCanonicalCatalogData=context.OmegaResourceSiteCanonicalCatalogData;
+  context.Omega.ResourceSiteReserveSimulationData=context.OmegaResourceSiteReserveSimulationData;
+  context.Omega.ResourceSiteResearchEvidenceData=context.OmegaResourceSiteResearchEvidenceData;
+  context.Omega.ResourceSiteCountryExpansionData=context.OmegaResourceSiteCountryExpansionData;
+  context.Omega.ResourceLosslessReferenceData=context.OmegaResourceLosslessReferenceData;
+  context.Omega.ResourceIndustrialCatalogData=context.OmegaResourceIndustrialCatalogData;
+  context.globalThis=context;
+  vm.createContext(context);
+  return{context,state,events,identity,engine,handlers};
+}
+
+
+function attachPlayableResourceSiteUi(h){
+  const g=h.context,layers=new Set(),allMarkers=[],selectedEvents=[];
+  class FakeElement{
+    constructor(tagName){
+      this.tagName=String(tagName||'div').toLowerCase();this.children=[];this.options=[];
+      this.listeners=new Map();this.style={};this.value='';this.textContent='';this.id='';this.className='';
+      this._innerHTML='';
+    }
+    set innerHTML(value){this._innerHTML=String(value||'');}
+    get innerHTML(){return this._innerHTML;}
+    addEventListener(type,listener){
+      const list=this.listeners.get(type)||[];list.push(listener);this.listeners.set(type,list);
+    }
+    fire(type='click'){
+      const list=this.listeners.get(type)||[];
+      let result;
+      for(const listener of list)result=listener.call(this,{type,target:this});
+      return result;
+    }
+    appendChild(child){
+      this.children.push(child);child.parentNode=this;
+      if(this.tagName==='select')this.options.push(child);
+      return child;
+    }
+    querySelector(selector){
+      const id=String(selector||'').replace(/^#/,'');
+      let child=this.children.find(row=>row.id===id);
+      if(!child){
+        const tag=id.endsWith('-select')?'select':(id.includes('execute')||id.includes('plan')||id.includes('close')?'button':'div');
+        child=new FakeElement(tag);child.id=id;this.appendChild(child);
+      }
+      return child;
+    }
+  }
+  const body={children:[],appendChild(node){this.children.push(node);node.parentNode=this;return node;}};
+  const findById=(nodes,id)=>{
+    for(const node of nodes||[]){
+      if(node?.id===id)return node;
+      const nested=findById(node?.children,id);if(nested)return nested;
+    }
+    return null;
+  };
+  g.document={
+    body,
+    createElement(tag){return new FakeElement(tag);},
+    getElementById(id){return findById(body.children,String(id));}
+  };
+  const map={
+    hasLayer(layer){return layers.has(layer);},
+    removeLayer(layer){layers.delete(layer);},
+    setView(){return this;},
+    getZoom(){return 4;},
+    latLngToLayerPoint([lat,lng]){return{x:Number(lng)*10,y:Number(lat)*10};},
+    on(){return this;},
+    whenReady(callback){callback();return this;}
+  };
+  g.L={
+    layerGroup(){return{markers:[],addTo(){layers.add(this);return this;}};},
+    divIcon(options){return options;},
+    marker(latlng,options){
+      const marker={latlng,options,listeners:new Map(),
+        bindTooltip(){return this;},
+        on(type,listener){this.listeners.set(type,listener);return this;},
+        addTo(layer){layer.markers.push(this);allMarkers.push(this);return this;},
+        click(){return this.listeners.get('click')?.({type:'click',target:this});}
+      };
+      return marker;
+    }
+  };
+  g.Game.Map={
+    map,resourceCatalog:[],
+    resourceDepositsLayer:{clearLayers(){this.clearCount=(this.clearCount||0)+1;}},
+    resourceState:{enabled:true,scope:'NATION',selectedResources:new Set(['all'])}
+  };
+  g.Game.currentActiveCountry='BGD';
+  // The binding yields between large source files. Microtask scheduling keeps this
+  // deterministic without leaving wall-clock timers alive in the Node test process.
+  g.setTimeout=callback=>{queueMicrotask(callback);return 1;};
+  g.clearTimeout=()=>{};
+  h.events.addEventListener('OMEGA_RESOURCE_SITE_SELECTED',event=>selectedEvents.push(event.detail));
+  const activeMarkers=()=>[...layers].flatMap(layer=>layer.markers||[]);
+  const waitFor=async(predicate,label)=>{
+    for(let attempt=0;attempt<2000;attempt++){
+      if(predicate())return true;
+      await new Promise(resolve=>setTimeout(resolve,5));
+    }
+    throw new Error('PLAYABLE_RESOURCE_UI_WAIT_TIMEOUT:'+label);
+  };
+  return{
+    allMarkers,activeMarkers,selectedEvents,body,
+    waitForBinding:async()=>{
+      await waitFor(()=>!!g.Omega?.IndividualResourceSiteBinding,'site binding ready');
+      return g.Omega.IndividualResourceSiteBinding;
+    },
+    waitForExtraction:siteId=>waitFor(()=>g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__?.siteId===siteId,'site action result'),
+    executeButton:()=>g.document.getElementById('omega-individual-resource-panel')
+      ?.querySelector('#omega-individual-execute')||null
+  };
+}
+
+test('playable mine extraction feeds a commissioned private factory through production, finished goods and save/load',async(t)=>{
+  const h=buildContext(),g=h.context,state=h.state;
+  const modules=[
+    'omega_resource_part04_identity_runtime.js',
+    'omega_resource_part05_reserve_extraction_runtime.js',
+    'omega_resource_production_model_v2.js',
+    'omega_resource_site_integrity_v1.js',
+    'omega_resource_scenario_engineering_data_v1.js',
+    'omega_resource_realism_runtime_v1.js',
+    'omega_resource_country_boundary_guard.js',
+    'omega_resource_endowment_runtime.js',
+    'omega_resource_industrial_network_v1.js',
+    'omega_resource_economy_runtime_v2.js',
+    'omega_country_factory_starting_baseline_v1.js',
+    'omega_private_enterprise_registry_v1.js',
+    'omega_sab34_live_browser_proof_v1.js',
+    'omega_private_enterprise_lifecycle_v1.js'
+  ];
+  for(const file of modules)vm.runInContext(readText(file),g,{filename:file});
+  // Load and validate both real baseline datasets before a private proposal is
+  // allowed to pass the same readiness gate used by a new game session.
+  const governmentBaseline=g.OmegaCountryFactoryStartingBaselineV1||g.Omega?.CountryFactoryStartingBaselineV1;
+  const privateBaseline=g.OmegaPrivateEnterpriseRegistryV1||g.Omega?.PrivateEnterpriseRegistryV1;
+  assert.ok(governmentBaseline&&privateBaseline,'government and private factory registries must be mounted');
+  const governmentBaselineReady=await governmentBaseline.ready;
+  assert.equal(governmentBaselineReady.status,'READY',JSON.stringify(governmentBaselineReady));
+  const privateBaselineReady=await privateBaseline.ready;
+  assert.equal(privateBaselineReady.status,'READY',JSON.stringify(privateBaselineReady));
+  assert.equal(governmentBaselineReady.countryCount,197);
+  assert.equal(privateBaselineReady.diagnostics.countryCount,197);
+  assert.equal(privateBaselineReady.diagnostics.factoryTypeCount,21);
+  assert.equal(privateBaselineReady.diagnostics.companyCount,5);
+  const endowment=g.OmegaResourceEndowmentRuntime||g.Omega?.ResourceEndowmentRuntime;
+  const industry=g.OmegaResourceIndustrialNetwork||g.Omega?.ResourceIndustrialNetwork;
+  const economy=g.OmegaResourceEconomy||g.Omega?.ResourceEconomy;
+  assert.ok(endowment&&industry&&economy,'real Endowment, Industrial and Economy runtimes must load');
+  const init=await endowment.initialize();
+  assert.equal(init.status,'READY',JSON.stringify(init));
+  const canonical=g.OmegaResourceSiteCanonicalCatalogData;
+  const eligible=(canonical.sites||[]).filter(x=>{
+    const country=String(x.countryId||x.identity?.countryIso3||'').toUpperCase();
+    const resource=String(x.identity?.resourceTypeId||x.real?.resourceId||x.sourceSiteRecord?.resourceId||'').toLowerCase();
+    return country==='BGD'&&resource.includes('coal')&&x.map?.markerEligible!==false&&!x.runtime?.aliasOfSiteId&&x.operation?.commercialExtraction!==false;
+  });
+  const site=eligible.find(x=>/barapukuria/i.test(String(x.siteName||'')))||eligible[0];
+  assert.ok(site,'canonical Bangladesh coal site must be present and executable');
+  const hydration=await endowment.hydrateCountry('BGD');
+  assert.equal(hydration.status,'APPLIED',JSON.stringify(hydration));
+  assert.notEqual(hydration.result?.accepted,false,JSON.stringify(hydration));
+  // Explicit simulation fixture: workforce and utility supply must be recorded before production.
+  state.economy.BGD=state.economy.BGD||{productionAssets:[]};
+  state.economy.BGD.unemploymentCount=100000;
+  state.economy.BGD.laborForce=1000000;
+  state.economy.BGD.unemployment_rate=10;
+  state.transport.BGD=state.transport.BGD||{};
+  state.transport.BGD.infrastructure=state.transport.BGD.infrastructure||{
+    roads:{capacityPerDay:40000,quality:.9},rail:{capacityPerDay:90000,quality:.9},
+    ports:{capacityPerDay:180000,quality:.9},bridges:{capacityPerDay:45000,quality:.9},
+    pipelines:{capacityPerDay:350000,quality:.9}
+  };
+  state.transport.BGD.infrastructure.utilitySupply={electricityMWhPerDay:1000000,waterM3PerDay:1000000,
+    authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]};
+  state.simulation.playerCountryId='BGD';
+  const countryRouteLoad=await industry.loadSiteLogisticsRoutes('BGD');
+  assert.equal(countryRouteLoad.status,'READY',JSON.stringify(countryRouteLoad));
+  assert.equal(countryRouteLoad.routeCount,4,'only Bangladesh route shard should be loaded');
+  const siteRuntimes=state.resource.BGD.industrialNetwork.siteLogisticsBySiteId;
+  assert.equal(Object.keys(siteRuntimes).length,4,'every site in the selected-country shard gets an independent runtime ledger');
+  assert.ok(Object.values(siteRuntimes).every(row=>row.status==='IDLE'&&row.runtimeActive===false),
+    'route registration must not automatically run every mine');
+  const foreignStateBeforeTick=state.resource.KWT;
+  const foreignTick=industry.advanceShipments('KWT');
+  assert.equal(foreignTick.status,'SKIPPED','a non-selected country must not advance logistics');
+  assert.equal(state.resource.KWT,foreignStateBeforeTick,'the non-selected country must not be hydrated or mutated');
+  const catalogLoad=await industry.loadCatalog();
+  assert.equal(catalogLoad.status,'READY',JSON.stringify(catalogLoad));
+  // Commission a real private factory through proposal, permit, Finance funding,
+  // canonical construction, project completion and the live production gate.
+  // Test-only imported batches provide controlled opening stock; the mine marker
+  // below then adds a separately traceable extraction batch to this same factory.
+  const factoryProfiles=g.OmegaResourceIndustrialCatalogData?.factoryProfiles||g.Omega?.ResourceIndustrialCatalogData?.factoryProfiles||{};
+  const factoryTypes=Object.keys(factoryProfiles).sort();
+  assert.equal(factoryTypes.length,21,'the playable factory registration must retain the canonical 21-type catalog');
+  const privateProfile=factoryProfiles.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT;
+  assert.ok(privateProfile,'the canonical universal processor must exist in the fixed catalog');
+  const countryResource=state.resource.BGD;
+  countryResource.inventory=countryResource.inventory||{};
+  countryResource.warehouse=countryResource.warehouse||{
+    warehouseId:'WH-BGD-RAW',countryId:'BGD',type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
+    availableByResource:{},reservedByResource:{},receipts:[]
+  };
+  countryResource.warehouse.availableByResource=countryResource.warehouse.availableByResource||{};
+  countryResource.warehouse.reservedByResource=countryResource.warehouse.reservedByResource||{};
+  countryResource.batches=Array.isArray(countryResource.batches)?countryResource.batches:[];
+  countryResource.inventoryLots=countryResource.inventoryLots||{};
+  countryResource.demandRuntime=countryResource.demandRuntime&&typeof countryResource.demandRuntime==='object'
+    ?countryResource.demandRuntime:{};
+  countryResource.demandRuntime.byResource=countryResource.demandRuntime.byResource&&typeof countryResource.demandRuntime.byResource==='object'
+    ?countryResource.demandRuntime.byResource:{};
+  countryResource.demandRuntime.lastTurn=Number(state.simulation.turn)||1;
+  countryResource.demandRuntime.byResource.coal=Object.assign({demandPerDay:0,consumerDemandPerDay:0,
+    activeFactoryInputDemandPerDay:0,pendingImportQuantity:0,authority:'OMEGA_PRIVATE_FACTORY_E2E_FIXTURE'},
+    countryResource.demandRuntime.byResource.coal||{});
+  const privateStartupStock={...privateProfile.constructionMaterials,coal:60000};
+  for(const [resourceId,rawQuantity] of Object.entries(privateStartupStock)){
+    const quantity=Number(rawQuantity);
+    assert.ok(Number.isFinite(quantity)&&quantity>0,'private construction and production stock must be positive: '+resourceId);
+    const batchId='TEST-PRIVATE-OPENING-STOCK:BGD:'+resourceId.toUpperCase();
+    const previousBatch=countryResource.batches.find(row=>row.batchId===batchId);
+    assert.equal(previousBatch,undefined,'opening-stock fixture must not duplicate a tracked source batch');
+    const priorInventory=Number(countryResource.inventory[resourceId])||0;
+    const priorWarehouse=Number(countryResource.warehouse.availableByResource[resourceId])||0;
+    const priorReserved=Number(countryResource.warehouse.reservedByResource[resourceId])||0;
+    countryResource.inventory[resourceId]=priorInventory+quantity;
+    countryResource.warehouse.availableByResource[resourceId]=priorWarehouse+quantity;
+    const batch={batchId,resourceId,countryId:'BGD',ownerCountryCode:'BGD',sourceCountryId:'BGD',
+      quantity,remainingQuantity:quantity,unit:'SIMULATION_RESOURCE_UNIT',stage:'RAW_INVENTORY',
+      status:'AVAILABLE',warehouseId:'WH-BGD-RAW',sourceType:'TEST_FIXTURE_IMPORT',
+      provenance:{sourceAuthority:'TEST_FIXTURE_IMPORT',sourceType:'SIMULATED_OPENING_IMPORT',
+        simulationOnly:true,authority:'OMEGA_PRIVATE_FACTORY_E2E_FIXTURE'},
+      createdTurn:Number(state.simulation.turn)||1};
+    countryResource.batches.push(batch);
+    countryResource.inventoryLots[batchId]={batchId,resourceId,countryId:'BGD',quantity,remainingQuantity:quantity,
+      unit:batch.unit,stage:'RAW_INVENTORY',status:'AVAILABLE',warehouseId:'WH-BGD-RAW',
+      sourceType:batch.sourceType,provenance:{...batch.provenance}};
+    assert.ok(countryResource.warehouse.availableByResource[resourceId]-priorReserved>=quantity,
+      'tracked imported stock must be available outside reservations');
+  }
+  const lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1;
+  assert.ok(lifecycle,'the real private-enterprise lifecycle must be mounted beside the production runtime');
+  if(!lifecycle.productionProofReady()){
+    assert.equal(lifecycle.productionGateReason(),'SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED',
+      'private production must remain blocked until the actual Chromium site-to-factory proof is accepted');
+    t.skip('The source-controlled SAB-34 live-Chromium acceptance certificate is still BLOCKED; this private production VM scenario runs only after the real browser proof passes.');
+    return;
+  }
+  const proposal=lifecycle.createProposal({countryId:'BGD',companyId:'NOVA_CONSUMER_INDUSTRIES',
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',
+    processingResourceId:'coal',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',stateSupportRequested:true,
+    requestReason:'Nova Consumer Industries requests a coal-processing facility to convert attributable domestic coal extraction into a saleable industrial intermediate.',
+    expectedBenefit:'The commissioned plant adds modeled coal-concentrate output capacity. Company income is recognized only after a buyer consumes attributable output and the market settlement posts.',
+    riskForecast:'The project remains exposed to mine output, shipment delays, recipe input quality, utility availability, construction capital, warehouse capacity and uncertain customer demand.'});
+  assert.equal(proposal.status,'PROPOSED',JSON.stringify(proposal));
+  const decision=lifecycle.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE',
+    allowStateSupport:true,conditions:{allowStateSupport:true}});
+  assert.equal(decision.status,'APPROVED_AWAITING_FUNDING',JSON.stringify(decision));
+  const funding=lifecycle.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,
+    sourceType:'GOVERNMENT_GRANT',amount:proposal.capitalRequired});
+  assert.equal(funding.status,'FUNDED',JSON.stringify(funding));
+  const construction=lifecycle.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+  assert.equal(construction.status,'UNDER_CONSTRUCTION',JSON.stringify(construction));
+  assert.equal(construction.started.length,1);
+  const privateProjectId=construction.started[0].projectId;
+  const privateProject=countryResource.industrialNetwork.projects.find(row=>row.projectId===privateProjectId);
+  assert.ok(privateProject,'private construction must be persisted in the canonical industrial project ledger');
+  assert.equal(privateProject.constructionMaterialsStatus,'CONSUMED');
+  assert.equal(privateProject.ownerType,'PRIVATE_ENTERPRISE');
+  assert.equal(privateProject.operatorType,'PRIVATE_COMPANY_OPERATOR');
+  assert.equal(privateProject.stateControlRights.strategicSupplyOversight,true);
+  assert.equal(privateProject.stateControlRights.foreignOwnershipReview,true);
+  for(let turn=0;turn<6;turn++){
+    advanceOneGameTurn(state);
+    const progress=await industry.advanceProjects('BGD');
+    assert.ok(Array.isArray(progress.completed),JSON.stringify(progress));
+  }
+  assert.ok(countryResource.industrialNetwork.projects.find(row=>row.projectId===privateProjectId)?.status==='COMPLETED',
+    'the canonical construction project must finish before its asset is accepted');
+  const privateFactory=state.economy.BGD.productionAssets.find(row=>row.constructionProjectId===privateProjectId);
+  assert.ok(privateFactory,'completed private construction must commission into canonical productionAssets');
+  assert.equal(privateFactory.ownerCompanyId,'NOVA_CONSUMER_INDUSTRIES');
+  assert.equal(privateFactory.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+  assert.equal(privateFactory.ownerType,'PRIVATE_ENTERPRISE');
+  assert.equal(privateFactory.operatorType,'PRIVATE_COMPANY_OPERATOR');
+  assert.equal(privateFactory.privatePermitStatus,'ACTIVE');
+  assert.equal(privateFactory.sourcePrivateProposalId,proposal.proposalId);
+  assert.equal(privateFactory.sourcePrivateDecisionId,decision.proposal.decision.decisionId);
+  assert.equal(privateFactory.sourcePrivateFundingId,funding.proposal.funding.transactionId,
+    'commissioned private ownership must retain the canonical Finance funding transaction');
+  assert.equal(privateFactory.status,'OPERATIONAL');
+  assert.equal(privateFactory.productionEnabled,true,
+    'a commissioned private factory must be enabled by the real production runtime, not an injected proof flag');
+  assert.equal(privateFactory.blockedReason,null);
+  assert.equal(lifecycle.getProposal('BGD',proposal.proposalId).status,'COMMISSIONED');
+  assert.equal(countryResource.batches.some(row=>row.lastMovementType==='FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION'),
+    true,'private construction must consume tracked construction-material batches');
+  const openingFactory=privateFactory;
+  const rawInventoryBeforeMinePipeline=Number(state.resource.BGD?.inventory?.coal)||0;
+  const rawWarehouseBeforeMinePipeline=Number(state.resource.BGD?.warehouse?.availableByResource?.coal)||0;
+
+  // Run the actual site binding against the real checked-in site data and a map marker
+  // click, then activate the same action button rendered by the playable site panel.
+  const ui=attachPlayableResourceSiteUi(h);
+  vm.runInContext(readText('omega_resource_gameplay_binding_v1.js'),g,
+    {filename:'omega_resource_gameplay_binding_v1.js',timeout:10000});
+  g.dispatchEvent(new CustomEventMock('OMEGA_READY'));
+  const binding=await ui.waitForBinding();
+  const boundSite=binding.sites.find(row=>String(row.siteId)===String(site.siteId));
+  assert.ok(boundSite,'the exact canonical site must be present in the playable marker registry');
+  const marker=ui.activeMarkers().find(row=>String(row.options?.title||'')===String(site.siteName||site.siteId));
+  assert.ok(marker,'the real playable map binding must render the selected individual site marker');
+  marker.click();
+  assert.equal(ui.selectedEvents.length,1,'clicking one marker must publish one exact-site selection event');
+  assert.equal(ui.selectedEvents[0].siteId,site.siteId,'the map click must preserve the canonical siteId');
+  assert.equal(ui.selectedEvents[0].countryId,'BGD');
+  const executeButton=ui.executeButton();
+  assert.ok(executeButton,'the selected-site panel must expose its real Run site pipeline action');
+  executeButton.fire('click');
+  await ui.waitForExtraction(site.siteId);
+  const uiExecution=g.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__;
+  assert.equal(uiExecution.siteId,site.siteId,'the player action must execute the same site ID that was clicked');
+  assert.equal(uiExecution.result?.factoryBootstrapStatus,'EXISTING',
+    'normal gameplay must use the registered opening factory, not fabricate a site-specific factory');
+  assert.notEqual(uiExecution.result?.factoryBootstrap?.status,'CREATED_SIMULATION_ONLY',
+    'the UI pipeline must not request test-only automatic factory commissioning');
+  const run=uiExecution.result;
+  assert.equal(String(run.factoryId),String(openingFactory.id||openingFactory.assetId||openingFactory.projectId),
+    'the mine pipeline must dispatch to the exact commissioned private factory, not an unbound government baseline factory');
+  assert.equal(run.status,'IN_TRANSIT',JSON.stringify(run));
+  assert.equal(run.extractionStatus,'COMMITTED');
+  assert.ok(run.batchId&&run.shipmentId&&run.extractionPlanId);
+  assert.equal(run.shipment.shipmentType,'MINE_TO_WAREHOUSE','mine output must travel as a separate first-leg shipment');
+  const resource=state.resource.BGD;
+  assert.ok(resource,'raw resource state must be committed to Bangladesh');
+  const sourceBatch=resource.batches.find(x=>String(x.batchId)===String(run.batchId));
+  assert.ok(sourceBatch,'extraction must create a real central batch');
+  assert.ok(resource.inventoryLots[run.batchId],'extraction must create a real inventory lot');
+  assert.equal(sourceBatch.countryId,'BGD');
+  assert.equal(sourceBatch.destinationWarehouseId,'WH-BGD-RAW');
+  assert.equal(sourceBatch.warehouseId,null,'a mine-haul batch must not claim warehouse location before receipt');
+  assert.equal(resource.warehouse.countryId,'BGD');
+  const initialSourceQuantity=Number(sourceBatch.remainingQuantity);
+  assert.ok(initialSourceQuantity+1e-6>=Number(run.quantity));
+  const initialFlow=resource.industrialNetwork.siteFlowLedger.find(row=>String(row.batchId)===String(run.batchId));
+  assert.ok(initialFlow,'the mine flow must have its own authoritative batch ledger row');
+  const heldAfterFirstDispatch=Number(initialFlow.mineHeldQuantity)||0;
+  assert.ok(Math.abs((Number(initialFlow.mineWarehouseDispatchedQuantity)||0)-Number(run.shipment.quantity))<1e-5,
+    'the flow ledger must account for each mine-haul dispatch exactly once');
+  assert.equal(sourceBatch.stage,heldAfterFirstDispatch>1e-6?'PARTIALLY_MINE_HAULED':'MINE_TO_WAREHOUSE_IN_TRANSIT');
+  assert.equal(resource.inventoryLots[run.batchId].stage,sourceBatch.stage);
+  assert.equal(sourceBatch.warehouseId,null,'the batch is not in the raw warehouse while its mine haul is in transit');
+  assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].status,'IN_TRANSIT_TO_WAREHOUSE');
+  assert.ok(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].stages.some(stage=>
+    stage.stage==='WAREHOUSE_ACCOUNTING'&&stage.status==='SOURCE_STOCK_RESERVED_FOR_TRANSIT'),
+    'source stock reservation must remain in the audit stage history without overwriting the live transit status');
+  assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].runtimeActive,true,'the selected mine runtime must be active while its haul is moving');
+  assert.ok(Math.abs((Number(initialFlow.mineHeldQuantity)||0)-(initialSourceQuantity-Number(run.shipment.quantity)))<1e-5,
+    'unshipped batch balance must remain reserved at the mine, not in warehouse availability');
+  assert.ok(Math.abs((Number(resource.inventory.coal)||0)-rawInventoryBeforeMinePipeline)<1e-5,
+    'the whole batch must leave country inventory exactly once at first-leg dispatch');
+  assert.ok(Math.abs((Number(resource.warehouse.availableByResource.coal)||0)-rawWarehouseBeforeMinePipeline)<1e-5,
+    'the whole batch must leave raw-warehouse availability until its individual arrival receipts');
+  const mineSiteRuntime=resource.industrialNetwork.siteLogisticsBySiteId[site.siteId];
+  assert.ok(mineSiteRuntime.activeShipmentIds.includes(run.shipmentId),
+    'the exact mine-haul shipment must remain in the active-shipment ledger');
+  assert.ok(mineSiteRuntime.activeShipments.some(row=>String(row.shipmentId)===String(run.shipmentId)&&row.stage==='MINE_TO_WAREHOUSE'),
+    'the exact mine-haul shipment must retain its own active lifecycle stage');
+  const mineDispatchQuantity=Number(run.shipment.quantity);
+  const rawStockBeforeMineArrival=Number(resource.inventory.coal)||0;
+  const rawWarehouseBeforeMineArrival=Number(resource.warehouse.availableByResource.coal)||0;
+  assert.ok(Math.abs(rawStockBeforeMineArrival-rawInventoryBeforeMinePipeline)<1e-5,
+    'pre-existing source inventory must remain unchanged; newly extracted cargo is held in its source batch during transit');
+  assert.ok(Math.abs(rawWarehouseBeforeMineArrival-rawWarehouseBeforeMinePipeline)<1e-5,
+    'raw warehouse availability must remain at its pre-extraction balance until the individual mine receipt arrives');
+  state.simulation.playerCountryId=null;
+  const noPlayerTick=industry.advanceShipments('BGD');
+  assert.equal(noPlayerTick.status,'SKIPPED','mine logistics must pause when no player country is selected');
+  assert.equal(resource.industrialNetwork.shipments.find(x=>String(x.shipmentId)===String(run.shipmentId))?.status,'IN_TRANSIT',
+    'an unselected-country tick must not advance a mine shipment');
+  state.simulation.playerCountryId='BGD';
+  const priorStrategicPolicy=g.Omega.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime||null;
+  const railBlockade={isRouteBlocked(countryId,scope){
+    const blocked=countryId==='BGD'&&scope.transportMode==='rail';
+    return{blocked,reason:blocked?'TEST_RAIL_BLOCKADE':null,blockades:blocked?[{policyId:'TEST_RAIL_BLOCKADE',modes:['rail']}]:[]};
+  }};
+  g.Omega.ResourceStrategicPolicyRuntime=railBlockade;g.OmegaResourceStrategicPolicyRuntime=railBlockade;
+  advanceToGameTurn(state,run.shipment.etaTurn);
+  const blockedMineArrival=await industry.advanceShipments('BGD');
+  assert.equal(blockedMineArrival.mineDelivered,0,'a blockade on an intermediate rail leg must stop the whole mine route');
+  assert.equal(resource.industrialNetwork.shipments.find(x=>String(x.shipmentId)===String(run.shipmentId))?.status,'BLOCKED_ROUTE_BLOCKADE');
+  assert.equal(resource.industrialNetwork.siteLogisticsBySiteId[site.siteId].status,'BLOCKED_ROUTE',
+    'a mine runtime must show route blockade state instead of appearing idle or healthy');
+  assert.equal(resource.warehouse.receipts.some(x=>String(x.receiptId)==='MINE-WH-REC:'+String(run.shipmentId)),false,
+    'a blocked shipment must not post a premature warehouse receipt');
+  if(priorStrategicPolicy){g.Omega.ResourceStrategicPolicyRuntime=priorStrategicPolicy;g.OmegaResourceStrategicPolicyRuntime=priorStrategicPolicy;}
+  else{delete g.Omega.ResourceStrategicPolicyRuntime;delete g.OmegaResourceStrategicPolicyRuntime;}
+  const resumedMineRoute=await industry.advanceShipments('BGD');
+  assert.equal(resumedMineRoute.mineDelivered,0,'reopened route must wait until its rescheduled arrival tick');
+  assert.equal(resource.industrialNetwork.shipments.find(x=>String(x.shipmentId)===String(run.shipmentId))?.status,'IN_TRANSIT');
+  advanceOneGameTurn(state);
+  const mineAdvanced=await industry.advanceShipments('BGD');
+  assert.ok(mineAdvanced.mineDelivered>=1,JSON.stringify(mineAdvanced));
+  const mineReceipt=resource.warehouse.receipts.find(x=>String(x.receiptId)==='MINE-WH-REC:'+String(run.shipmentId));
+  assert.ok(mineReceipt,'mine shipment must post an idempotent raw-warehouse receipt');
+  assert.equal(mineReceipt.receivedFrom,'MINE_SITE_LOGISTICS');
+  assert.equal(mineReceipt.status,'RECEIVED');
+  const flowAfterMineReceipt=resource.industrialNetwork.siteFlowLedger.find(row=>String(row.batchId)===String(run.batchId));
+  const activeResidualMineHaul=(resource.industrialNetwork.shipments||[]).some(x=>
+    String(x.batchId)===String(run.batchId)&&x.shipmentType==='MINE_TO_WAREHOUSE'&&
+    ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(x.status||'')));
+  if((Number(flowAfterMineReceipt?.mineHeldQuantity)||0)>1e-6){
+    assert.equal(sourceBatch.warehouseId,null,'a batch split between mine-held and warehouse stock has no single warehouse location');
+    assert.equal(resource.inventoryLots[run.batchId].warehouseId,null);
+  }else if(activeResidualMineHaul){
+    assert.equal(sourceBatch.stage,'MINE_TO_WAREHOUSE_IN_TRANSIT',
+      'a residual mine shipment may remain in transit after a partial warehouse receipt');
+    assert.equal(sourceBatch.warehouseId,null,'a mine-haul remainder must not claim raw warehouse location');
+    assert.equal(resource.inventoryLots[run.batchId].stage,'MINE_TO_WAREHOUSE_IN_TRANSIT');
+    assert.equal(resource.inventoryLots[run.batchId].warehouseId,null);
+  }else{
+    assert.equal(sourceBatch.stage,'RAW_INVENTORY');
+    assert.equal(sourceBatch.warehouseId,null,'the second leg has reserved this batch for factory transit');
+    assert.equal(resource.inventoryLots[run.batchId].stage,'RAW_INVENTORY');
+    assert.equal(resource.inventoryLots[run.batchId].warehouseId,null,
+      'the in-transit factory-bound lot must not claim a single raw-warehouse location');
+  }
+  const factoryShipment=(resource.industrialNetwork.shipments||[]).find(x=>String(x.batchId)===String(run.batchId)&&
+    x.shipmentType==='RAW_TO_FACTORY'&&String(x.status)==='IN_TRANSIT');
+  assert.ok(factoryShipment,'factory shipment must only start after the mine haul receipt');
+  assert.equal(factoryShipment.siteId,site.siteId);
+  const siteRuntime=resource.industrialNetwork.siteLogisticsBySiteId[site.siteId];
+  assert.equal(siteRuntime.runtimeActive,true,'the same mine runtime must transition to its factory-bound haul');
+  const activeShipmentStages=new Set((siteRuntime.activeShipments||[]).map(row=>String(row.stage||'')));
+  assert.ok(activeShipmentStages.has('RAW_TO_FACTORY'),
+    'the active-shipment ledger must keep the factory-bound leg even when another leg is moving');
+  assert.ok(['RAW_TO_FACTORY','MINE_TO_WAREHOUSE'].includes(String(siteRuntime.currentStage||'')),
+    'the site status must identify a real active logistics stage');
+  assert.equal(siteRuntime.status,siteRuntime.currentStage==='RAW_TO_FACTORY'?'IN_TRANSIT_TO_FACTORY':'IN_TRANSIT_TO_WAREHOUSE',
+    'the audit history must not overwrite the operational status of whichever shipment is currently active');
+  assert.ok(siteRuntime.activeShipmentIds.includes(factoryShipment.shipmentId),
+    'the exact factory-bound shipment must be tracked even when this mine has other parallel shipments');
+  assert.ok(siteRuntime.activeShipments.some(row=>String(row.shipmentId)===String(factoryShipment.shipmentId)&&row.stage==='RAW_TO_FACTORY'),
+    'the factory-bound shipment must retain its own active lifecycle stage');
+  const rawStockBeforeDelivery=Number(resource.inventory.coal)||0;
+  const rawWarehouseBeforeDelivery=Number(resource.warehouse.availableByResource.coal)||0;
+  const rawReservationBeforeDelivery=Number(resource.warehouse.reservedByResource.coal)||0;
+  const inTransitBeforeDelivery=new Set((resource.industrialNetwork?.shipments||[])
+    .filter(x=>String(x.resourceId)==='coal'&&String(x.status)==='IN_TRANSIT').map(x=>String(x.shipmentId)));
+  assert.ok(rawStockBeforeDelivery+1e-6>=Number(factoryShipment.quantity));
+  assert.ok(rawWarehouseBeforeDelivery+1e-6>=Number(factoryShipment.quantity));
+  assert.ok(rawReservationBeforeDelivery+1e-6>=Number(factoryShipment.quantity));
+  advanceToGameTurn(state,factoryShipment.etaTurn);
+  const advanced=await industry.advanceShipments('BGD');
+  assert.ok(advanced.delivered>=1,JSON.stringify(advanced));
+  const delivery=advanced.shipments.find(item=>String(item.shipmentId)===String(factoryShipment.shipmentId)||String(item.batchId)===String(run.batchId));
+  assert.ok(delivery,'the exact second-leg shipment must reach its factory after the authoritative ETA');
+  assert.equal(delivery.status,'DELIVERED');
+  assert.equal(delivery.processingStatus,'IN_PROGRESS',JSON.stringify(delivery.processing));
+  assert.equal(delivery.batchId,run.batchId);
+  assert.equal(delivery.destinationStatus,'FACTORY_RECEIVED');
+  assert.equal(siteRuntime.activeShipmentIds.includes(factoryShipment.shipmentId),false,
+    'the delivered factory-bound shipment must be removed from the active ledger');
+  assert.equal(siteRuntime.runtimeActive,siteRuntime.activeShipmentIds.length>0,
+    'the site remains active only when another shipment is still moving');
+  if(siteRuntime.activeShipmentIds.length===0){
+    assert.equal(siteRuntime.activeShipmentId,null);
+    assert.equal(siteRuntime.currentStage,'FACTORY_RECEIVED');
+  }else{
+    assert.ok(siteRuntime.activeShipmentId&&siteRuntime.activeShipmentIds.includes(siteRuntime.activeShipmentId),
+      'the compatibility activeShipmentId pointer must reference a still-active shipment');
+  }
+  // Only raw-warehouse-to-factory shipments debit sovereign raw inventory.
+  // Other shipment types can share this tick but belong to different ledgers.
+  const sameResourceDeliveryQuantity=advanced.shipments
+    .filter(x=>String(x.resourceId)==='coal'&&String(x.shipmentType||'')==='RAW_TO_FACTORY')
+    .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
+  const sameResourceMineReceiptQuantity=(advanced.mineShipments||[]).filter(x=>String(x.resourceId)==='coal')
+    .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
+  assert.equal(Number(resource.inventory.coal)||0,
+    rawStockBeforeDelivery+sameResourceMineReceiptQuantity-sameResourceDeliveryQuantity,
+    'raw inventory must reconcile mine receipts and factory consumption exactly once');
+  assert.equal(Number(resource.warehouse.availableByResource.coal)||0,
+    rawWarehouseBeforeDelivery+sameResourceMineReceiptQuantity-sameResourceDeliveryQuantity,
+    'raw warehouse on-hand stock must reconcile mine receipts and factory receipts in the same turn');
+  const newlyReservedCoal=(resource.industrialNetwork?.shipments||[])
+    // Mine-to-warehouse hauls debit held mine stock; only the factory leg reserves raw warehouse stock.
+    .filter(x=>String(x.resourceId)==='coal'&&String(x.shipmentType||'')==='RAW_TO_FACTORY'&&
+      String(x.status)==='IN_TRANSIT'&&!inTransitBeforeDelivery.has(String(x.shipmentId)))
+    .reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
+  assert.ok(Math.abs((Number(resource.warehouse.reservedByResource.coal)||0)-
+    (rawReservationBeforeDelivery-sameResourceDeliveryQuantity+newlyReservedCoal))<1e-5,
+    'delivery must release its own reservation once while keeping other deposit shipments reserved');
+  assert.equal(resource.industrialNetwork?.reservations?.[delivery.reservationId]?.status,'DELIVERED',
+    'the exact delivered shipment reservation must close');
+  assert.equal(Number(sourceBatch.remainingQuantity)||0,initialSourceQuantity-Number(delivery.quantity));
+  assert.equal(resource.inventoryLots[run.batchId].remainingQuantity,sourceBatch.remainingQuantity);
+  const factory=state.economy.BGD.productionAssets.find(x=>String(x.id||x.assetId||x.projectId)===String(run.factoryId));
+  assert.ok(factory,'receiving factory must be in the country economy state');
+  assert.equal(String(factory.id||factory.assetId||factory.projectId),
+    String(openingFactory.id||openingFactory.assetId||openingFactory.projectId),
+    'the delivered resource must enter the commissioned private factory asset');
+  assert.equal(factory.ownerType,'PRIVATE_ENTERPRISE');
+  assert.equal(factory.ownerCompanyId,'NOVA_CONSUMER_INDUSTRIES');
+  assert.equal(factory.operatorType,'PRIVATE_COMPANY_OPERATOR');
+  assert.equal(factory.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP');
+  assert.equal(factory.productionEnabled,true,
+    'the actual receiving private factory must remain enabled in the canonical production scheduler');
+  const targetInputLot=factory.inputBatchLots.find(x=>String(x.batchId)===String(delivery.factoryInputBatchId));
+  assert.ok(targetInputLot,'delivery must create a tracked factory-input lot');
+  assert.ok(targetInputLot.sourceBatchIds.includes(run.batchId),'factory input lot must preserve the exact extraction batch lineage');
+  const inputBalance=()=>Number(factory.inputInventory.coal)||0;
+  const inputLotsBalance=()=>factory.inputBatchLots.filter(x=>String(x.resourceId)==='coal')
+    .reduce((sum,x)=>sum+(Number(x.remainingQuantity)||0),0);
+  assert.ok(inputBalance()>0,'a shipment larger than one turn of factory throughput must preserve unprocessed input');
+  assert.ok(Math.abs(inputBalance()-inputLotsBalance())<1e-5,
+    'factory input aggregate must equal its batch-lot remaining quantities after partial processing');
+  assert.ok(Number(delivery.processing?.productionQuantity)>0&&delivery.processing?.finishDate,
+    'the delivery turn must schedule a tracked production quantity and explicit finish date');
+  let followupTurns=0,lastCompletedCycle=null;
+  while(inputBalance()>1e-6&&followupTurns<10){
+    advanceOneGameTurn(state);
+    const followup=await industry.processPendingFactoryInputs('BGD');
+    assert.ok((Number(followup.completedCount)||0)+(Number(followup.startedCount)||0)>=1,
+      JSON.stringify({followup,inputBalance:inputBalance(),factoryId:factory.id}));
+    if((followup.completed||[]).length)lastCompletedCycle=followup.completed[followup.completed.length-1];
+    assert.ok(Math.abs(inputBalance()-inputLotsBalance())<1e-5,
+      'every later factory processing turn must keep aggregate input and batch lineage reconciled');
+    followupTurns+=1;
+  }
+  assert.ok(followupTurns>0,'remaining factory input must resume processing on later simulation turns');
+  assert.equal(inputBalance(),0,'the full delivered lot must eventually be processed across throughput-limited turns');
+  assert.equal(inputLotsBalance(),0,'all factory-input lots must close once the delivered quantity is processed');
+  const finished=(resource.batches||[]).filter(x=>x.stage==='FINISHED'&&x.sourceBatchIds?.includes(run.batchId));
+  assert.ok(finished.length>=2,'recipe product and coproduct must have traceable output batches');
+  for(const b of finished){
+    assert.equal(b.countryId,'BGD');
+    assert.equal(b.ownerCountryCode,'BGD');
+    assert.equal(b.warehouseId,'WH-BGD-PROCESSED');
+    assert.equal(resource.inventoryLots[b.batchId].remainingQuantity,b.remainingQuantity);
+    assert.equal(Number(resource.processedWarehouse.availableByResource[b.resourceId])||0,Number(resource.inventory[b.resourceId])||0);
+  }
+  const privateConcentrateBatch=finished.find(row=>String(row.resourceId||'').toUpperCase()==='COAL_CONCENTRATE');
+  assert.ok(privateConcentrateBatch,'the private processing line must produce the canonical coal-concentrate market product');
+  assert.equal(privateConcentrateBatch.ownerCompanyId,'NOVA_CONSUMER_INDUSTRIES',
+    'the finished batch must preserve the private asset owner identity');
+  assert.equal(privateConcentrateBatch.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP',
+    'the finished batch must preserve the private operator identity');
+  assert.equal(privateConcentrateBatch.ownerAttributionStatus,'EXPLICIT_ASSET_OWNER',
+    'private output revenue must be blocked unless batch ownership is explicit');
+  assert.ok(lastCompletedCycle?.transactionId,'the full multi-turn processing cycle must return its committed transaction ID');
+  assert.ok(resource.finishedGoodsLedger.some(x=>x.transactionId===lastCompletedCycle.transactionId),'processing transaction must persist to the finished-goods ledger');
+  assert.ok((state.economy.BGD.industrialRuntime?.finishedGoodsLedger||[]).some(x=>x.transactionId===lastCompletedCycle.transactionId),'finished goods event must register in Economy Runtime');
+  const concentrateOffer=(state.trade.BGD.offerBook||[]).find(x=>x.resourceId==='COAL_CONCENTRATE'&&x.quantity>0);
+  assert.ok(concentrateOffer,'priced finished goods must be published into the actual market offer book');
+  assert.ok(Array.isArray(concentrateOffer.batchAllocations)&&concentrateOffer.batchAllocations.length>0,
+    'every offer must retain the batch-level allocation list needed for opponent analysis');
+  const concentrateOfferQuantity=concentrateOffer.batchAllocations.reduce((sum,x)=>sum+(Number(x.quantity)||0),0);
+  assert.ok(Math.abs(concentrateOfferQuantity-Number(concentrateOffer.quantity))<1e-5,
+    'market offer quantity must equal the sum of its source batch allocations');
+  assert.ok(concentrateOffer.sourceBatchIds.includes(run.batchId),
+    'market offer must carry ancestry back to the source mine extraction batch');
+  assert.ok(concentrateOffer.sourceSiteIds.includes(site.siteId),
+    'market offer must expose the originating deposit site to opponent analysis');
+  const originAllocation=concentrateOffer.batchAllocations.find(x=>x.originatingBatchId===run.batchId);
+  const originFlow=resource.industrialNetwork.siteFlowLedger.find(x=>String(x.batchId)===String(run.batchId));
+  assert.ok(originAllocation&&originAllocation.siteReferenceKey===site.siteId&&originAllocation.occurrenceKey===run.occurrenceKey,
+    'offer lineage must preserve canonical site and occurrence identity: '+JSON.stringify({
+      allocation:originAllocation?{originatingBatchId:originAllocation.originatingBatchId,siteId:originAllocation.siteId,
+        siteReferenceKey:originAllocation.siteReferenceKey,occurrenceKey:originAllocation.occurrenceKey}:null,
+      expected:{batchId:run.batchId,siteId:site.siteId,occurrenceKey:run.occurrenceKey},
+      sourceFlow:originFlow?{batchId:originFlow.batchId,siteId:originFlow.siteId,occurrenceKey:originFlow.occurrenceKey}:null
+    }));
+  const reconciliation=g.OmegaResourceEconomy.reconcileCountry('BGD');
+  assert.equal(reconciliation.status,'APPLIED',JSON.stringify(reconciliation));
+  assert.equal(reconciliation.result.status,'HEALTHY',JSON.stringify(reconciliation.result));
+  assert.equal(Number(resource.warehouse.availableByResource.coal)||0,Number(resource.inventory.coal)||0);
+  assert.equal(Number(resource.processedWarehouse.availableByResource.COAL_CONCENTRATE)||0,Number(resource.inventory.COAL_CONCENTRATE)||0);
+  assert.equal(Number(resource.processedWarehouse.availableByResource.COAL_REJECT)||0,Number(resource.inventory.COAL_REJECT)||0);
+  const cashBeforeExtractionFiscal=Number(state.finance.BGD.available)||0;
+  const pendingExtractionFiscal=(state.finance.BGD.resourceExtractionFiscalLedger||[]).find(x=>String(x.batchId)===String(run.batchId));
+  assert.ok(pendingExtractionFiscal,'extraction must register a fiscal pending row keyed by its real batch');
+  const fiscalProcess=economy.processCountry('BGD');
+  assert.ok(fiscalProcess.extractionFiscal.posted>=1,JSON.stringify(fiscalProcess.extractionFiscal));
+  const valuedExtraction=(state.finance.BGD.resourceExtractionFiscalLedger||[]).find(x=>String(x.batchId)===String(run.batchId));
+  assert.ok(valuedExtraction?.valuationComplete&&valuedExtraction.cashPosted);
+  assert.ok(valuedExtraction.marketValue>0&&valuedExtraction.unitPrice>0);
+  assert.ok(['COUNTRY_MARKET_PRICE','GLOBAL_MARKET_QUOTE','RESOURCE_REFERENCE_PRICE','SIMULATED_FROM_SOURCE_COMMODITY','SIMULATED_FALLBACK'].includes(valuedExtraction.priceAuthority));
+  assert.ok((state.finance.BGD.resourceFiscalLedger||[]).some(x=>x.receiptId===valuedExtraction.receiptId));
+  assert.ok(Number(state.finance.BGD.available)>cashBeforeExtractionFiscal,"the extracted resource royalty/tax must credit its own country treasury");
+  const cashAfterExtractionFiscal=Number(state.finance.BGD.available)||0;
+  const repeatFiscalProcess=economy.processCountry('BGD');
+  assert.equal(repeatFiscalProcess.extractionFiscal.posted,0,'reprocessing the same batch must not post extraction fiscal twice');
+  assert.equal(Number(state.finance.BGD.available)||0,cashAfterExtractionFiscal,'treasury balance must remain stable on repeated fiscal processing');
+
+  // A second company runs the existing canonical steel route and consumes the
+  // private seller's actual finished-goods batch. The runtime must settle the
+  // customer payment, credit the owner, and debit the buyer from the same sale ID.
+  const downstreamRecipes=g.OmegaResourceIndustrialCatalogData?.downstreamFactoryRecipes||{};
+  const steelRecipe=downstreamRecipes.STEEL_PRIMARY_ROUTE_V1;
+  assert.ok(steelRecipe&&steelRecipe.factoryType==='STEEL_AND_ALLOY_WORKS',
+    'the buyer must use the existing canonical steel recipe, not a test-only recipe');
+  for(const [resourceId,rate] of Object.entries(steelRecipe.inputs||{})){
+    if(String(resourceId).toLowerCase()==='coal_concentrate')continue;
+    const quantity=Number(rate)*100;
+    const batchId='TEST-SAB34-REVENUE-INPUT:'+String(resourceId).toUpperCase();
+    resource.inventory[resourceId]=(Number(resource.inventory[resourceId])||0)+quantity;
+    resource.warehouse.availableByResource[resourceId]=(Number(resource.warehouse.availableByResource[resourceId])||0)+quantity;
+    resource.batches.push({batchId,resourceId,countryId:'BGD',ownerCountryCode:'BGD',quantity,remainingQuantity:quantity,
+      unit:'SIMULATION_RESOURCE_UNIT',stage:'RAW_INVENTORY',status:'AVAILABLE',warehouseId:'WH-BGD-RAW',
+      sourceType:'TEST_FIXTURE_IMPORT',ownerCompanyId:null,operatorCompanyId:null,ownerAttributionStatus:'UNASSIGNED',
+      provenance:{sourceAuthority:'OMEGA_SAB34_REVENUE_E2E_FIXTURE',simulationOnly:true}});
+    resource.inventoryLots[batchId]={batchId,resourceId,countryId:'BGD',quantity,remainingQuantity:quantity,
+      unit:'SIMULATION_RESOURCE_UNIT',stage:'RAW_INVENTORY',status:'AVAILABLE',warehouseId:'WH-BGD-RAW',
+      sourceType:'TEST_FIXTURE_IMPORT',provenance:{sourceAuthority:'OMEGA_SAB34_REVENUE_E2E_FIXTURE',simulationOnly:true}};
+  }
+  const buyerCompany='AURORA_INDUSTRIAL_GROUP';
+  const buyerFactory={id:'SAB34-REAL-SALE-BUYER-STEEL-WORKS',countryId:'BGD',factoryType:steelRecipe.factoryType,
+    stage:'FACTORY',capacity:1,inputs:JSON.parse(JSON.stringify(steelRecipe.inputs)),outputs:JSON.parse(JSON.stringify(steelRecipe.outputs)),
+    companyId:buyerCompany,ownerCompanyId:buyerCompany,operatorCompanyId:buyerCompany,
+    ownerType:'PRIVATE_ENTERPRISE',operatorType:'PRIVATE_COMPANY_OPERATOR',status:'OPERATIONAL',productionEnabled:true};
+  state.economy.BGD.productionAssets.push(buyerFactory);
+  const sellerBefore=JSON.parse(JSON.stringify(state.economy.BGD.companyAccounts?.NOVA_CONSUMER_INDUSTRIES||{
+    grossRevenue:0,paymentsReceived:0,paymentsMade:0,cashFlowEntries:[]}));
+  const buyerBefore=JSON.parse(JSON.stringify(state.economy.BGD.companyAccounts?.[buyerCompany]||{
+    grossRevenue:0,paymentsReceived:0,paymentsMade:0,cashFlowEntries:[]}));
+  advanceOneGameTurn(state);
+  const customerProduction=economy.processCountry('BGD');
+  assert.ok(customerProduction.factoriesExecuted>=1,JSON.stringify(customerProduction));
+  const settledSales=(state.trade.BGD.domesticSales||[]).map(row=>row.sale||row)
+    .filter(sale=>sale&&sale.resourceId&&String(sale.resourceId).toLowerCase()==='coal_concentrate'&&
+      sale.buyerCompanyId===buyerCompany&&sale.status==='SETTLED'&&sale.paymentStatus==='SETTLED');
+  assert.ok(settledSales.length>=1,
+    'the actual buyer factory must consume the private seller batch and settle a domestic sale: '+JSON.stringify(state.trade.BGD.domesticSales));
+  const privateSale=settledSales.find(sale=>(sale.batchTransfers||[]).some(row=>
+    String(row.resourceId||'').toLowerCase()==='coal_concentrate'&&
+    row.ownerCompanyId==='NOVA_CONSUMER_INDUSTRIES'&&row.ownerAttributionStatus==='EXPLICIT_ASSET_OWNER'));
+  assert.ok(privateSale,'the settled customer sale must identify the actual private-owned finished-goods batch transfer');
+  const sellerBatchTransfer=privateSale.batchTransfers.find(row=>
+    String(row.resourceId||'').toLowerCase()==='coal_concentrate'&&row.ownerCompanyId==='NOVA_CONSUMER_INDUSTRIES');
+  assert.ok(sellerBatchTransfer&&sellerBatchTransfer.sourceBatchId,
+    'the sale must preserve the consumed physical source batch ID');
+  assert.ok(resource.batches.some(row=>String(row.batchId)===String(sellerBatchTransfer.sourceBatchId)&&
+    row.ownerCompanyId==='NOVA_CONSUMER_INDUSTRIES'),
+    'the seller revenue must point back to a physical batch owned by the private company');
+  assert.equal(privateSale.ownerAllocationStatus,'RECONCILED');
+  assert.ok(Number(privateSale.supplierAllocations?.NOVA_CONSUMER_INDUSTRIES)>0);
+  assert.ok(Number(privateSale.totalValue)>0&&Number(privateSale.unitPrice)>0,
+    'the payment must use the observed country market price and positive consumed quantity');
+  const sellerAfter=state.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES;
+  const buyerAfter=state.economy.BGD.companyAccounts[buyerCompany];
+  const sellerReceipt=sellerAfter.cashFlowEntries.find(row=>row.sourceId===privateSale.saleId&&
+    row.direction==='CREDIT'&&row.category==='DOMESTIC_SUPPLY'&&row.status==='POSTED');
+  const buyerPayment=buyerAfter.cashFlowEntries.find(row=>row.sourceId===privateSale.saleId&&
+    row.direction==='DEBIT'&&row.category==='FACTORY_INPUT_PURCHASE'&&row.status==='POSTED');
+  assert.ok(sellerReceipt,'the same settled sale must post a seller company cash receipt');
+  assert.ok(buyerPayment,'the same settled sale must debit the buyer company payment');
+  assert.ok(Math.abs(sellerReceipt.amount-privateSale.totalValue)<1e-7);
+  assert.ok(Math.abs(buyerPayment.amount-privateSale.totalValue)<1e-7);
+  assert.ok(sellerAfter.grossRevenue>(Number(sellerBefore.grossRevenue)||0));
+  assert.ok(sellerAfter.paymentsReceived>(Number(sellerBefore.paymentsReceived)||0));
+  assert.ok(buyerAfter.paymentsMade>(Number(buyerBefore.paymentsMade)||0));
+  const sellerRevenueAfterSale=sellerAfter.grossRevenue,sellerPaymentsAfterSale=sellerAfter.paymentsReceived;
+  const buyerPaymentsAfterSale=buyerAfter.paymentsMade;
+  assert.ok(Number.isFinite(sellerRevenueAfterSale)&&Number.isFinite(sellerPaymentsAfterSale)&&Number.isFinite(buyerPaymentsAfterSale));
+  const treasuryBefore=cashAfterExtractionFiscal;
+  g.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',countryId:'BGD',payload:{
+    settlementId:'SETTLEMENT-E2E-COAL-1',sellerCountryId:'BGD',resourceId:'COAL_CONCENTRATE',totalValue:100000
+  }}}));
+  assert.ok((state.finance.BGD.resourceFiscalLedger||[]).some(x=>x.settlementId==='SETTLEMENT-E2E-COAL-1'),'trade settlement must create a treasury fiscal ledger row');
+  assert.ok(Number(state.finance.BGD.resourceFiscal?.thisTurn?.total)>0,'resource taxes and royalties must post to the treasury');
+  assert.ok(Number(state.finance.BGD.available)>treasuryBefore-100000,'fiscal receipts must change treasury cash');
+  const settlementId='SETTLEMENT-E2E-COAL-1';
+  const clearingRow=(state.finance.BGD.resourceSettlementClearing||[]).find(row=>row.settlementId===settlementId);
+  assert.ok(clearingRow,'the settled trade must persist its Treasury-to-company clearing row');
+  const settlementCompany=state.economy.BGD.companyAccounts?.[clearingRow.companyId];
+  assert.ok(settlementCompany,'the settlement must credit the verified source company');
+  assert.ok((settlementCompany.cashFlowEntries||[]).some(row=>
+    row.sourceId===settlementId&&row.direction==='CREDIT'&&row.category==='SUPPLIER_SALE'),
+    'seller revenue must be persisted in the company cash journal');
+  assert.ok((settlementCompany.cashFlowEntries||[]).some(row=>
+    row.sourceId===settlementId&&row.direction==='DEBIT'&&row.category==='WORKER_INCOME'),
+    'worker allocations must be persisted as company cash outflows');
+  const settlementCashSnapshot=world=>JSON.parse(JSON.stringify({
+    treasury:world.finance.BGD.available,
+    clearing:world.finance.BGD.resourceSettlementClearing,
+    fiscal:world.finance.BGD.resourceFiscal,
+    fiscalLedger:world.finance.BGD.resourceFiscalLedger,
+    companyAccounts:world.economy.BGD.companyAccounts,
+    workerIncome:world.economy.BGD.workerIncome,
+    supplierRevenue:world.economy.BGD.supplierRevenue,
+    transportRevenue:world.transport.BGD.resourceRevenue
+  }));
+  const expectedSettlementCash=settlementCashSnapshot(state);
+  assert.equal(industry.diagnostics('BGD').targetArchitecture,'SITE -> EXTRACTION -> WAREHOUSE -> ROUTE -> FACTORY -> PROCESS -> OUTPUT');
+
+  // Verify the canonical simulation save/load round-trip preserves the exact source
+  // batch, site lineage, completed outputs, factory inventory, market offer and treasury.
+  vm.runInContext(readText('omega_simulation_runtime.js'),g,
+    {filename:'omega_simulation_runtime.js',timeout:10000});
+  const simulation=g.Omega?.SimulationRuntime;
+  assert.ok(simulation?.saveSlot&&simulation?.loadSlot,'the canonical Simulation Runtime save/load API must be mounted');
+  const saveStore=new Map();
+  g.localStorage={
+    getItem(key){return saveStore.has(String(key))?saveStore.get(String(key)):null;},
+    setItem(key,value){saveStore.set(String(key),String(value));},
+    removeItem(key){saveStore.delete(String(key));},
+    clear(){saveStore.clear();}
+  };
+  const expectedFinishedBatchIds=finished.map(row=>String(row.batchId)).sort();
+  const expectedFinishedLedgerCount=resource.finishedGoodsLedger.length;
+  const expectedInventory=JSON.parse(JSON.stringify(resource.inventory));
+  const expectedProcessedWarehouse=JSON.parse(JSON.stringify(resource.processedWarehouse.availableByResource));
+  // The fiscal close above may legitimately republish the live offer book
+  // from the now-settled warehouse/market snapshot. Save that authoritative,
+  // post-reconciliation offer rather than the earlier pre-fiscalization object.
+  const latestConcentrateOffer=(state.trade.BGD.offerBook||[]).find(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0);
+  assert.ok(latestConcentrateOffer,'the latest settled market offer must remain present immediately before save');
+  assert.ok(latestConcentrateOffer.sourceBatchIds.includes(run.batchId),
+    'the latest market offer must retain the mine extraction ancestry');
+  const expectedOffer=JSON.parse(JSON.stringify(latestConcentrateOffer));
+  const expectedConcentrateOfferCount=(state.trade.BGD.offerBook||[]).filter(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0).length;
+  const expectedDomesticSales=JSON.parse(JSON.stringify(state.trade.BGD.domesticSales||[]));
+  const expectedCompanyAccounts=JSON.parse(JSON.stringify(state.economy.BGD.companyAccounts||{}));
+  const expectedTreasury=Number(state.finance.BGD.available)||0;
+  const saved=await simulation.saveSlot('sab34-pipeline-proof');
+  assert.equal(saved.ok,true,JSON.stringify(saved));
+  const persisted=JSON.parse(g.localStorage.getItem(saved.key));
+  assert.ok(persisted?.checksum,'the persisted game snapshot must carry its integrity checksum');
+
+  // Deliberately damage only the in-memory copy. Loading must recover authoritative data.
+  state.resource.BGD.batches=[];
+  state.resource.BGD.finishedGoodsLedger=[];
+  state.resource.BGD.inventory={};
+  state.resource.BGD.processedWarehouse.availableByResource={};
+  state.economy.BGD.productionAssets=[];
+  state.economy.BGD.companyAccounts={};
+  state.trade.BGD.offerBook=[];
+  state.trade.BGD.domesticSales=[];
+  state.finance.BGD.available=0;
+  state.finance.BGD.resourceSettlementClearing=[];
+  state.finance.BGD.resourceFiscal={};
+  state.finance.BGD.resourceFiscalLedger=[];
+  state.economy.BGD.workerIncome={};
+  state.economy.BGD.supplierRevenue={};
+  state.transport.BGD.resourceRevenue={};
+  const loaded=await simulation.loadSlot('sab34-pipeline-proof');
+  assert.equal(loaded.authoritativeState?.worldStateLinked,true,'the restored snapshot must remain linked to Game.state');
+  assert.equal(simulation.lastLoadIntegrity,'VERIFIED','the game must verify the saved checksum before restore');
+  assert.strictEqual(g.Game.state,simulation.world.state,'save/load must restore the same authoritative Game.state root');
+
+  const restored=simulation.world.state;
+  const restoredResource=restored.resource.BGD;
+  const restoredSourceBatch=restoredResource.batches.find(row=>String(row.batchId)===String(run.batchId));
+  assert.ok(restoredSourceBatch,'the original site extraction batch must survive save/load');
+  const restoredFlow=restoredResource.industrialNetwork.siteFlowLedger.find(row=>String(row.batchId)===String(run.batchId));
+  assert.equal(restoredFlow?.siteId,site.siteId,'the saved batch lineage must preserve the exact physical-site identity');
+  assert.equal(restoredFlow?.occurrenceKey,run.occurrenceKey,'the saved pipeline must preserve the source occurrence key');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.inventory)),expectedInventory,'raw and finished inventory must be restored without quantity drift');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.processedWarehouse.availableByResource)),expectedProcessedWarehouse);
+  assert.equal(restoredResource.finishedGoodsLedger.length,expectedFinishedLedgerCount);
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.batches
+    .filter(row=>row.stage==='FINISHED'&&row.sourceBatchIds?.includes(run.batchId))
+    .map(row=>String(row.batchId)).sort())),
+    JSON.parse(JSON.stringify(expectedFinishedBatchIds)),
+    'finished-goods IDs and source-batch ancestry must survive save/load without cross-realm comparison artifacts');
+  const restoredFactory=restored.economy.BGD.productionAssets.find(row=>String(row.id||row.assetId||row.projectId)===String(run.factoryId));
+  assert.ok(restoredFactory,'the same receiving factory must survive the canonical save/load');
+  const restoredOffer=(restored.trade.BGD.offerBook||[]).find(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0);
+  assert.ok(restoredOffer,'the finished-goods market offer must survive save/load');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredOffer)),expectedOffer,'market quantity and source ancestry must survive save/load');
+  assert.deepEqual(JSON.parse(JSON.stringify(restored.trade.BGD.domesticSales||[])),expectedDomesticSales,
+    'the actual customer sale and payment settlement must survive save/load');
+  assert.deepEqual(JSON.parse(JSON.stringify(restored.economy.BGD.companyAccounts||{})),expectedCompanyAccounts,
+    'seller revenue receipts and buyer purchase debits must survive save/load');
+  assert.ok((restored.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES.cashFlowEntries||[])
+    .some(row=>row.sourceId===privateSale.saleId&&row.direction==='CREDIT'&&row.status==='POSTED'),
+    'the private company revenue entry must survive save/load');
+  assert.equal(Number(restored.finance.BGD.available)||0,expectedTreasury,'the resource fiscal receipt must survive save/load');
+  assert.deepEqual(settlementCashSnapshot(restored),expectedSettlementCash,
+    'Treasury clearing, fiscal receipts, company cash and worker/supplier/transport ledgers must survive save/load');
+
+  // A full page reload clears volatile guards. Replaying the same settlement must be a no-op.
+  delete g.__OmegaResourceFiscalizedSettlements;
+  g.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{
+    eventType:'OMEGA_TRADE_SETTLEMENT_COMPLETED',countryId:'BGD',payload:{
+      settlementId:'SETTLEMENT-E2E-COAL-1',sellerCountryId:'BGD',resourceId:'COAL_CONCENTRATE',totalValue:100000
+    }
+  }}));
+  const afterSettlementReplay=simulation.world.state;
+  assert.deepEqual(settlementCashSnapshot(afterSettlementReplay),expectedSettlementCash,
+    'the same settlement replay after save/load must not double-post Treasury, company, worker or transport money');
+
+  // Replaying the processing stage after restore must not mint a second finished-goods batch.
+  await industry.processPendingFactoryInputs('BGD');
+  assert.equal(restoredResource.finishedGoodsLedger.length,expectedFinishedLedgerCount,
+    'processing replay after save/load must not duplicate the finished-goods transaction');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredResource.inventory)),expectedInventory,
+    'processing replay after save/load must not double-credit inventory');
+  assert.equal((restored.trade.BGD.offerBook||[]).filter(row=>row.resourceId==='COAL_CONCENTRATE'&&row.quantity>0).length,expectedConcentrateOfferCount,
+    'processing replay must not duplicate the finished-goods market offer');
+  console.log('OMEGA PLAYABLE RESOURCE PIPELINE + SAVE/LOAD PROOF PASSED');
+});
+
+test('committed game turns run the selected country mine and industrial pipeline once without wall-clock timers', async () => {
+  const h = buildContext(), g = h.context, state = h.state;
+  const modules = [
+    'omega_resource_part04_identity_runtime.js',
+    'omega_resource_part05_reserve_extraction_runtime.js',
+    'omega_resource_production_model_v2.js',
+    'omega_resource_site_integrity_v1.js',
+    'omega_resource_scenario_engineering_data_v1.js',
+    'omega_resource_realism_runtime_v1.js',
+    'omega_resource_country_boundary_guard.js',
+    'omega_resource_endowment_runtime.js',
+    'omega_resource_industrial_network_v1.js',
+    'omega_resource_economy_runtime_v2.js'
+  ];
+  for (const file of modules) vm.runInContext(readText(file), g, { filename: file });
+  const endowment = g.OmegaResourceEndowmentRuntime || g.Omega?.ResourceEndowmentRuntime;
+  const industry = g.OmegaResourceIndustrialNetwork || g.Omega?.ResourceIndustrialNetwork;
+  const economy = g.OmegaResourceEconomy || g.Omega?.ResourceEconomy;
+  assert.ok(endowment && industry && economy);
+  assert.equal((await endowment.initialize()).status, 'READY');
+  const hydration = await endowment.hydrateCountry('BGD');
+  assert.equal(hydration.status, 'APPLIED', JSON.stringify(hydration));
+  state.economy.BGD = state.economy.BGD || { productionAssets: [] };
+  state.economy.BGD.unemploymentCount = 100000;
+  state.economy.BGD.laborForce = 1000000;
+  state.economy.BGD.unemployment_rate = 10;
+  state.transport.BGD = state.transport.BGD || {};
+  state.transport.BGD.infrastructure = {
+    roads: { capacityPerDay: 40000, quality: .9 },
+    rail: { capacityPerDay: 90000, quality: .9 },
+    ports: { capacityPerDay: 180000, quality: .9 },
+    bridges: { capacityPerDay: 45000, quality: .9 },
+    pipelines: { capacityPerDay: 350000, quality: .9 },
+    utilitySupply: {
+      electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+      authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+    }
+  };
+  state.simulation.playerCountryId = 'BGD';
+  const firstCommittedTurn = Number(state.simulation.turn) || 1;
+  const routeLoad = await industry.loadSiteLogisticsRoutes('BGD');
+  assert.equal(routeLoad.status, 'READY', JSON.stringify(routeLoad));
+  const foreignBefore = JSON.stringify(state.resource.KWT || null);
+  const extractionCalls = [], industrialCalls = [];
+  const startProduction = endowment.startCountryProduction.bind(endowment);
+  const runCountryTurn = industry.runCountryTurn.bind(industry);
+  // Runtime APIs are intentionally frozen. Wrap the references in the test harness
+  // instead of mutating production API objects.
+  const observedEndowment = Object.assign({}, endowment, {
+    startCountryProduction: async function (countryId, ...args) {
+      extractionCalls.push({ countryId, turn: state.simulation.turn });
+      return startProduction(countryId, ...args);
+    }
+  });
+  const observedIndustry = Object.assign({}, industry, {
+    runCountryTurn: async function (countryId, ...args) {
+      industrialCalls.push({ countryId, turn: state.simulation.turn });
+      return runCountryTurn(countryId, ...args);
+    }
+  });
+  g.OmegaResourceEndowmentRuntime = observedEndowment;
+  g.Omega.ResourceEndowmentRuntime = observedEndowment;
+  g.OmegaResourceIndustrialNetwork = observedIndustry;
+  g.Omega.ResourceIndustrialNetwork = observedIndustry;
+
+  const firstCommit = h.events.dispatchAndWait(new CustomEventMock('OMEGA_SIMULATION_TURN_COMMITTED'));
+  const firstTurnPromise = economy.runTurn();
+  await firstCommit;
+  await firstTurnPromise;
+  const repeatedSameTurn = economy.runTurn();
+  assert.strictEqual(repeatedSameTurn, firstTurnPromise,
+    'a second resource run in the same committed turn reuses the same in-flight/completed task');
+  await repeatedSameTurn;
+  assert.deepEqual(extractionCalls, [{ countryId: 'BGD', turn: firstCommittedTurn }]);
+  assert.deepEqual(industrialCalls, [{ countryId: 'BGD', turn: firstCommittedTurn }]);
+
+  advanceOneGameTurn(state);
+  await h.events.dispatchAndWait(new CustomEventMock('OMEGA_SIMULATION_TURN_COMMITTED'));
+  await economy.runTurn();
+  assert.deepEqual(extractionCalls.map(row => row.turn), [firstCommittedTurn, firstCommittedTurn + 1],
+    'mine extraction advances once on each committed game turn, not from a wall-clock timer');
+  assert.deepEqual(industrialCalls.map(row => row.turn), [firstCommittedTurn, firstCommittedTurn + 1],
+    'mine-haul arrivals and factory input transfers advance once on each committed game turn');
+  assert.ok(extractionCalls.every(row => row.countryId === 'BGD'));
+  assert.ok(industrialCalls.every(row => row.countryId === 'BGD'));
+  assert.equal(JSON.stringify(state.resource.KWT || null), foreignBefore,
+    'other countries are not hydrated or mutated by the selected-country turn runner');
+});
+
+test('player-country turn batches finished-goods and owner publications into one economy and market publish', async () => {
+  const h = buildContext(), g = h.context, state = h.state;
+  const economySource = readText('omega_resource_economy_runtime_v2.js');
+  vm.runInContext(economySource, g, { filename: 'omega_resource_economy_runtime_v2.js' });
+
+  state.simulation.playerCountryId = 'BGD';
+  state.resource.BGD = {
+    inventory: { COAL_CONCENTRATE: 100, IRON_CONCENTRATE: 80 },
+    batches: [], inventoryLots: {}, mines: [],
+    warehouse: { warehouseId: 'WH-BGD-RAW', availableByResource: {}, reservedByResource: {} }
+  };
+  state.economy.BGD = {
+    productionAssets: [
+      { id: 'FAC-BGD-COAL-01', companyId: 'PRIVATE-COAL-01', ownerCompanyId: 'PRIVATE-COAL-01', operatorCompanyId: 'PRIVATE-COAL-01', factoryType: 'COAL_PROCESSING' },
+      { id: 'FAC-BGD-IRON-01', companyId: 'PRIVATE-IRON-01', ownerCompanyId: 'PRIVATE-IRON-01', operatorCompanyId: 'PRIVATE-IRON-01', factoryType: 'IRON_PROCESSING' }
+    ],
+    industrialRuntime: { finishedGoodsLedger: [], materialOwners: {} }
+  };
+  state.trade.BGD = { marketPrice: { COAL_CONCENTRATE: 100, IRON_CONCENTRATE: 80 } };
+
+  const interop = g.Omega.MinistryInteroperability;
+  const originalDispatch = interop.dispatchCommand.bind(interop);
+  const dispatchCounts = new Map();
+  interop.dispatchCommand = function (owner, type, countryId, payload) {
+    dispatchCounts.set(type, (dispatchCounts.get(type) || 0) + 1);
+    return originalDispatch(owner, type, countryId, payload);
+  };
+  let registrationEvents = 0;
+  h.events.addEventListener('OMEGA_RESOURCE_FINISHED_GOODS_ECONOMY_REGISTERED', () => {
+    registrationEvents += 1;
+  });
+
+  const rows = [
+    {
+      factoryId: 'FAC-BGD-COAL-01', companyId: 'PRIVATE-COAL-01', ownerCompanyId: 'PRIVATE-COAL-01', operatorCompanyId: 'PRIVATE-COAL-01', ownerAttributionStatus: 'EXPLICIT_ASSET_OWNER',
+      transactionId: 'TURN-BATCH-COAL-01', resourceId: 'COAL_CONCENTRATE', quantity: 5
+    },
+    {
+      factoryId: 'FAC-BGD-IRON-01', companyId: 'PRIVATE-IRON-01', ownerCompanyId: 'PRIVATE-IRON-01', operatorCompanyId: 'PRIVATE-IRON-01', ownerAttributionStatus: 'EXPLICIT_ASSET_OWNER',
+      transactionId: 'TURN-BATCH-IRON-01', resourceId: 'IRON_CONCENTRATE', quantity: 7
+    }
+  ];
+  g.Omega.ResourceIndustrialNetwork = {
+    async runCountryTurn(countryId) {
+      assert.equal(countryId, 'BGD');
+      for (const row of rows) {
+        const payload = {
+          countryId, factoryId: row.factoryId, companyId: row.companyId, ownerCompanyId: row.ownerCompanyId,
+          operatorCompanyId: row.operatorCompanyId, ownerAttributionStatus: row.ownerAttributionStatus,
+          transactionId: row.transactionId, outputQuantities: { [row.resourceId]: row.quantity },
+          sourceBatchIds: [], createdBatchIds: [], turn: state.simulation.turn
+        };
+        g.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_PROCESSING_COMPLETED', {
+          detail: { countryId, payload }
+        }));
+        g.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE', {
+          detail: { eventType: 'OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE', countryId, payload }
+        }));
+        assert.equal(dispatchCounts.get('OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY') || 0, 0,
+          'factory events must remain queued until the selected-country turn reaches its publication boundary');
+        assert.equal(dispatchCounts.get('OMEGA_RESOURCE_ECON_PUBLISH_OFFER_BOOK') || 0, 0,
+          'finished-goods events must not rebuild the same market offer book per factory');
+      }
+      return {
+        countryId,
+        factory: {
+          completed: rows.map(row => ({
+            status: 'COMPLETED', factoryId: row.factoryId, transactionId: row.transactionId,
+            outputQuantities: { [row.resourceId]: row.quantity }, sourceBatchIds: [], createdBatchIds: []
+          })),
+          blocked: []
+        }
+      };
+    }
+  };
+
+  const result = await g.Omega.ResourceEconomy.runTurn();
+  assert.equal(result.status, 'COMPLETED', JSON.stringify(result));
+  assert.equal(dispatchCounts.get('OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY'), 1,
+    'the turn must publish the combined economy runtime once, not once per factory plus once at turn end');
+  assert.equal(dispatchCounts.get('OMEGA_RESOURCE_ECON_PUBLISH_OFFER_BOOK'), 1,
+    'the turn must publish the market offer book once after all factory output is committed');
+
+  const runtime = state.economy.BGD.industrialRuntime;
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(runtime.finishedGoodsLedger.map(row => row.transactionId).sort())),
+    rows.map(row => row.transactionId).sort(),
+    'all finished-goods transactions must survive batching in the authoritative economy ledger'
+  );
+  assert.equal(runtime.materialOwners.COAL_CONCENTRATE, 'PRIVATE-COAL-01');
+  assert.equal(runtime.materialOwners.IRON_CONCENTRATE, 'PRIVATE-IRON-01');
+  assert.equal(runtime.finishedGoodsLedger.find(row => row.transactionId === 'TURN-BATCH-COAL-01').ownerCompanyId, 'PRIVATE-COAL-01');
+  assert.equal(runtime.finishedGoodsLedger.find(row => row.transactionId === 'TURN-BATCH-COAL-01').operatorCompanyId, 'PRIVATE-COAL-01');
+  assert.equal(state.economy.BGD.factoryOutput.COAL_CONCENTRATE, 5);
+  assert.equal(state.economy.BGD.factoryOutput.IRON_CONCENTRATE, 7);
+  assert.equal(registrationEvents, 2,
+    'each completed factory transaction must still emit its economy/market registration event');
+});

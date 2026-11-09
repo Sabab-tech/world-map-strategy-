@@ -1,0 +1,155 @@
+name: OMEGA Country General Data Registry
+concurrency:
+  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 7 * *"
+  pull_request:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/omega-country-general-data-registry.yml"
+      - "country_factory_starting_baseline_v1.json"
+      - "scripts/enrich_country_factory_starting_baseline_v1.mjs"
+      - "test/country_factory_starting_baseline_alignment_v1.test.mjs"
+      - "country-ios.js"
+      - "ministry_engine.js"
+      - "test/omega_ministry_country_details_runtime.test.mjs"
+      - "index.html"
+      - "style.css"
+      - "omega_country_runtime_data_v1.js"
+      - "omega_country_data_gateway_v1.js"
+      - "omega_country_behavior_engine_v1.js"
+      - "omega_country_overview_ministry_ui_v1.js"
+      - "map-engine-1.js"
+      - "map-engine-2.js"
+      - "omega_ministry_entry_v3.js"
+      - "omega_ui_system_redesign_v1.js"
+      - "omega_opponent_adaptive_strategy_system.js"
+      - "server_bootstrap.js"
+      - "omega-offline-map-sw.js"
+      - "test/omega_country_runtime_data_v1.test.mjs"
+      - "test/omega_country_data_gateway_v1.test.mjs"
+      - "test/omega_opponent_e2e_runtime.test.mjs"
+      - "test/omega_country_behavior_engine_v1.test.mjs"
+      - "relation_generation_engine.json"
+      - "resource_site_reserve_simulation_v1.json"
+      - "scripts/build_country_general_data_registry_v1.mjs"
+      - "scripts/build_country_sector_profiles_v1.mjs"
+      - "country_sector_profile_schema_v1.json"
+      - "country_sector_profiles_v1.json"
+      - "country_official_index_observations_v1.json"
+      - "test/country_sector_profiles_v1.test.mjs"
+      - "omega_country_sector_profile_ui_v1.js"
+      - "omega_country_sector_profile_ui_v1.css"
+      - "omega_country_general_data_runtime_v1.js"
+      - "test/omega_country_sector_profile_ui_v1.test.mjs"
+      - "test/country_general_data_registry_v1.test.mjs"
+      - "countries.json"
+      - "cities.json"
+      - "population.json"
+      - "economy.json"
+      - "economy_global_profiles_v1.json"
+      - "economy_raw_financial_data_v2.json"
+      - "resource_country_resource_context_index.json"
+      - "omega_home_ministry_country_police_baseline_v1.json"
+
+permissions:
+  contents: write
+
+jobs:
+  build-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Snapshot prior registry for preservation regression test
+        run: |
+          if [[ -f country_general_data_registry_v1.json ]]; then
+            cp country_general_data_registry_v1.json /tmp/omega-country-general-registry-before.json
+          else
+            rm -f /tmp/omega-country-general-registry-before.json
+          fi
+
+      - name: Build unified country registry and refresh source indicators
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            node scripts/build_country_general_data_registry_v1.mjs
+          else
+            node scripts/build_country_general_data_registry_v1.mjs --refresh-sources
+          fi
+
+      - name: Build canonical country sector profiles
+        run: node scripts/build_country_sector_profiles_v1.mjs
+
+      - name: Regenerate source-aligned factory profiles for every country
+        run: node scripts/enrich_country_factory_starting_baseline_v1.mjs
+
+      - name: Validate shared schema, source preservation and coverage accounting
+        run: |
+          node --check omega_country_data_gateway_v1.js
+          node --check omega_country_behavior_engine_v1.js
+          node --check omega_country_overview_ministry_ui_v1.js
+          node --check omega_country_sector_profile_ui_v1.js
+          node --check omega_opponent_adaptive_strategy_system.js
+          node --check country-ios.js
+          node --check ministry_engine.js
+          node --check map-engine-1.js
+          node --check map-engine-2.js
+          node --check omega_ministry_entry_v3.js
+          node --check omega_ui_system_redesign_v1.js
+          node --test test/country_general_data_registry_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs test/omega_country_behavior_engine_v1.test.mjs test/omega_ministry_country_details_runtime.test.mjs test/omega_country_data_gateway_v1.test.mjs
+          node test/omega_opponent_e2e_runtime.test.mjs
+          node --check scripts/build_country_sector_profiles_v1.mjs
+          node --test test/country_sector_profiles_v1.test.mjs test/omega_country_sector_profile_ui_v1.test.mjs
+          node --check scripts/enrich_country_factory_starting_baseline_v1.mjs
+          node --test test/country_factory_starting_baseline_alignment_v1.test.mjs
+          node scripts/enrich_country_factory_starting_baseline_v1.mjs --check
+
+      - name: Commit canonical country data artifacts only if changed
+        if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -f country_general_data_registry_v1.json country_sector_profiles_v1.json country_factory_starting_baseline_v1.json
+          if git diff --cached --quiet; then
+            echo "Country data artifacts unchanged; no generated data commit required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update canonical country data artifacts"
+          # Other data workflows may update main while this registry is building.
+          # Rebase this generated-artifact commit onto the newest main and retry
+          # fast-forward pushes instead of losing either workflow's output.
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            git fetch origin "${GITHUB_REF_NAME}"
+            if ! git rebase "origin/${GITHUB_REF_NAME}"; then
+              git rebase --abort || true
+              echo "Rebase conflict while refreshing canonical country data."
+              exit 1
+            fi
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              pushed=true
+              break
+            fi
+            echo "main moved during push attempt ${attempt}; retrying after fetch/rebase."
+            sleep 2
+          done
+          if [[ "$pushed" != "true" ]]; then
+            echo "Could not push canonical country data after five safe retries."
+            exit 1
+          fi

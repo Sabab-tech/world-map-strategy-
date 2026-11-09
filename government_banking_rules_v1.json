@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "baselineYear": 2015,
+  "fxFeeBps": 15,
+  "defaultImportTariffPct": 2.5,
+  "maximumImportTariffPct": 80,
+  "defaultTransferDelayTurns": 0,
+  "maximumTransferDelayTurns": 365,
+  "maximumSingleTransferPctOfGDP": 2,
+  "defaultCorrespondentLimitUsd": 250000000,
+  "defaultDailyTransferLimitUsd": 1000000000,
+  "highRiskSingleTransferLimitUsd": 10000000,
+  "maximumCounterpartyRiskPct": 95,
+  "riskDebtToGdpPct": 300,
+  "riskInflationPct": 50,
+  "lowReserveToGdpPct": 5,
+  "maximumLedgerEntries": 4096,
+  "maximumHistoryEntries": 256,
+  "currencyRateMode": "SIMULATION",
+  "missingRatePolicy": "REJECT",
+  "openingAccountSource": "EXISTING_FINANCE_TREASURY",
+  "reconciliationPolicy": "EXPLICIT_LEDGER_DELTA",
+  "tradePolicyEnabled": true,
+  "policyNotes": {
+    "defaultImportTariffPct": "Game-rule default; not an observation of real national tariff law.",
+    "defaultCorrespondentLimitUsd": "Gameplay risk-control default; country policy may lower or raise it.",
+    "fxFeeBps": "Simulated clearing fee paid to the in-game clearing house.",
+    "baselineYear": "Existing country economic baselines remain 2015; currency simulations are separate from current official reference quotes."
+  }
+}

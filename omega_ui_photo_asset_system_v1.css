@@ -1,0 +1,30 @@
+/* OMEGA licensed photo library. Bounded, lazy-loaded, and usable in Android WebView. */
+.omega-ui-photo-gallery { box-sizing: border-box; width: 100%; min-width: 0; margin: 12px 0; }
+.omega-ui-photo-gallery__notice {
+  margin: 0 0 10px; padding: 8px 10px; border-left: 2px solid var(--omega-ui-accent, #7fc5e2);
+  background: rgba(127, 197, 226, .08); color: var(--omega-ui-muted, #a3b3c4); font-size: 11px; line-height: 1.5;
+}
+.omega-ui-photo-gallery__grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; align-items: stretch;
+}
+.omega-ui-photo { box-sizing: border-box; min-width: 0; margin: 0; overflow: hidden;
+  border: 1px solid var(--omega-ui-border, #344960); border-radius: 9px; background: var(--omega-ui-surface, #111d2d); }
+.omega-ui-photo img {
+  display: block; width: 100%; height: auto; max-height: 190px; aspect-ratio: 16 / 9;
+  object-fit: cover; background: #192838;
+}
+.omega-ui-photo figcaption { display: grid; gap: 5px; padding: 8px 9px 9px; color: var(--omega-ui-text, #e8eef5);
+  font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+.omega-ui-photo__credit { color: var(--omega-ui-muted, #a3b3c4); font-size: 10px; }
+.omega-ui-photo__credit a { color: var(--omega-ui-accent, #7fc5e2); text-decoration: underline; text-underline-offset: 2px; }
+.omega-ui-photo__changes { color: var(--omega-ui-muted, #a3b3c4); font-size: 10px; }
+.omega-ui-photo-reference-disclosure { box-sizing: border-box; width: 100%; min-width: 0; margin-top: 14px;
+  border: 1px solid var(--omega-ui-border, #344960); border-radius: 10px; background: var(--omega-ui-surface, #111d2d); }
+.omega-ui-photo-reference-disclosure > summary { min-height: 42px; box-sizing: border-box; padding: 12px 14px;
+  cursor: pointer; color: var(--omega-ui-text, #e8eef5); font-size: 13px; font-weight: 700; }
+.omega-ui-photo-reference-disclosure[open] > summary { border-bottom: 1px solid var(--omega-ui-border, #344960); }
+.omega-ui-photo-reference-disclosure__body { padding: 10px; }
+@media (max-width: 420px) {
+  .omega-ui-photo-gallery__grid { grid-template-columns: minmax(0, 1fr); }
+  .omega-ui-photo img { max-height: 170px; }
+}

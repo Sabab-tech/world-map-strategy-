@@ -1,0 +1,2238 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+  "generatedAt": "2026-10-11",
+  "purpose": "Append-only supplemental mine/site records. Existing files and records are not replaced or rewritten.",
+  "recordCount": 16,
+  "integrationStatus": "SUPPLEMENTAL_DATA_ONLY_NOT_YET_BOUND_TO_EXISTING_RUNTIME_OR_MAP",
+  "importantRules": [
+    "Null means not verified; never treat null as zero or fabricate a value.",
+    "Coordinate values are approximate site/region centroids and must be displayed as approximate.",
+    "Do not use this file as proof that all sites are executable in the extraction pipeline.",
+    "Existing catalog IDs were checked to avoid exact duplicate names; re-check aliases before merge."
+  ],
+  "records": [
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CHL_escondida_copper_mine",
+      "siteName": "Escondida Copper Mine",
+      "countryId": "CHL",
+      "identity": {
+        "countryIso3": "CHL",
+        "countryName": "Chile",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Chile",
+        "adminRegion": "Antofagasta Region, Atacama Desert",
+        "locality": "Antofagasta Region, Atacama Desert",
+        "coordinates": {
+          "lat": -24.27,
+          "lng": -69.07
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "BHP (57.5%); Rio Tinto (30%); JECO (12.5%)",
+        "operator": "Minera Escondida",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "OPEN_PIT; SULPHIDE CONCENTRATION; OXIDE LEACHING",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_contained_copper",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": 1261200,
+          "rate": null,
+          "unit": "tonnes_copper_per_year",
+          "year": 2024,
+          "status": "REPORTED_PUBLIC_SOURCE"
+        },
+        "grade": {
+          "value": 0.9,
+          "unit": "percent_copper_concentrator_feed",
+          "status": "REPORTED_PUBLIC_SOURCE"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "tonnes_copper_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.bhp.com/what-we-do/global-locations/chile/escondida",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "REPORTED",
+          "grade": "REPORTED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT; SULPHIDE CONCENTRATION; OXIDE LEACHING",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "CHL",
+        "warehouseSiteId": "SITE_CHL_escondida_copper_mine",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.bhp.com/what-we-do/global-locations/chile/escondida",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          },
+          {
+            "url": "https://www.bhp.com/-/media/documents/media/reports-and-presentations/2024/241120_chileancoppersitetour_day2presentationsandspeeches.pdf",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 2
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.bhp.com/what-we-do/global-locations/chile/escondida",
+          "https://www.bhp.com/-/media/documents/media/reports-and-presentations/2024/241120_chileancoppersitetour_day2presentationsandspeeches.pdf"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_AUS_olympic_dam_copper_uranium_mine",
+      "siteName": "Olympic Dam Mine",
+      "countryId": "AUS",
+      "identity": {
+        "countryIso3": "AUS",
+        "countryName": "Australia",
+        "siteType": "UNDERGROUND_POLYMETALLIC_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Australia",
+        "adminRegion": "Roxby Downs, South Australia",
+        "locality": "Roxby Downs, South Australia",
+        "coordinates": {
+          "lat": -30.44,
+          "lng": 136.89
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "BHP",
+        "operator": "BHP",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "UNDERGROUND; MULTI-METAL ORE PROCESSING",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "tonnes_copper_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "percent_copper",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "tonnes_copper_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.bhp.com/what-we-do/global-locations/australia/olympic-dam",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "UNDERGROUND; MULTI-METAL ORE PROCESSING",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "AUS",
+        "warehouseSiteId": "SITE_AUS_olympic_dam_copper_uranium_mine",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.bhp.com/what-we-do/global-locations/australia/olympic-dam",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.bhp.com/what-we-do/global-locations/australia/olympic-dam"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_GHA_ahafo_gold_mine",
+      "siteName": "Ahafo Gold Mine",
+      "countryId": "GHA",
+      "identity": {
+        "countryIso3": "GHA",
+        "countryName": "Ghana",
+        "siteType": "GOLD_MINE_COMPLEX",
+        "resourceTypeId": "gold",
+        "resourceName": "gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Ghana",
+        "adminRegion": "Ahafo Region, near Kenyasi",
+        "locality": "Ahafo Region, near Kenyasi",
+        "coordinates": {
+          "lat": 6.75,
+          "lng": -2.25
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "Newmont",
+        "operator": "Newmont",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "OPEN_PIT_AND_UNDERGROUND; CARBON_IN_LEACH",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "troy_ounces_gold_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "grams_per_tonne_gold",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "troy_ounces_gold_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.newmont.com/operations-and-projects/global-presence/africa/ahafo-ghana/default.aspx",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT_AND_UNDERGROUND; CARBON_IN_LEACH",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "GHA",
+        "warehouseSiteId": "SITE_GHA_ahafo_gold_mine",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.newmont.com/operations-and-projects/global-presence/africa/ahafo-ghana/default.aspx",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.newmont.com/operations-and-projects/global-presence/africa/ahafo-ghana/default.aspx"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_MRT_tasiast_gold_mine",
+      "siteName": "Tasiast Gold Mine",
+      "countryId": "MRT",
+      "identity": {
+        "countryIso3": "MRT",
+        "countryName": "Mauritania",
+        "siteType": "OPEN_PIT_GOLD_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Mauritania",
+        "adminRegion": "Inchiri Region, north-western Mauritania",
+        "locality": "Inchiri Region, north-western Mauritania",
+        "coordinates": {
+          "lat": 20.25,
+          "lng": -15.35
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "Kinross Gold",
+        "operator": "Tasiast Mauritanie Limited S.A.",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "OPEN_PIT; MILLING; GOLD_RECOVERY",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "troy_ounces_gold_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "grams_per_tonne_gold",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "troy_ounces_gold_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.kinross.com/operations/default.aspx#tasiast",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT; MILLING; GOLD_RECOVERY",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "MRT",
+        "warehouseSiteId": "SITE_MRT_tasiast_gold_mine",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.kinross.com/operations/default.aspx#tasiast",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.kinross.com/operations/default.aspx#tasiast"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_PAN_cobre_panama_copper_mine",
+      "siteName": "Cobre Panamá Mine",
+      "countryId": "PAN",
+      "identity": {
+        "countryIso3": "PAN",
+        "countryName": "Panama",
+        "siteType": "OPEN_PIT_COPPER_GOLD_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Panama",
+        "adminRegion": "Donoso District, Colón Province",
+        "locality": "Donoso District, Colón Province",
+        "coordinates": {
+          "lat": 8.87,
+          "lng": -80.65
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "First Quantum Minerals (majority interest)",
+        "operator": "Minera Panamá, S.A.",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "CARE_AND_MAINTENANCE_SUSPENDED",
+        "operationalStatus": "CARE_AND_MAINTENANCE_SUSPENDED",
+        "extractionMethod": "OPEN_PIT; COPPER CONCENTRATION",
+        "extractionEligibility": "NON_EXECUTABLE_UNTIL_STATUS_VERIFIED",
+        "commercialExtraction": false
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "tonnes_copper_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "percent_copper",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "tonnes_copper_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.first-quantum.com/English/operations/default.aspx",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT; COPPER CONCENTRATION",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "PAN",
+        "warehouseSiteId": "SITE_PAN_cobre_panama_copper_mine",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.first-quantum.com/English/operations/default.aspx",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.first-quantum.com/English/operations/default.aspx"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_COD_tenke_fungurume_copper_cobalt_mine",
+      "siteName": "Tenke Fungurume Copper-Cobalt Mine",
+      "countryId": "COD",
+      "identity": {
+        "countryIso3": "COD",
+        "countryName": "Democratic Republic of the Congo",
+        "siteType": "OPEN_PIT_COPPER_COBALT_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Democratic Republic of the Congo",
+        "adminRegion": "Lualaba Province, near Fungurume",
+        "locality": "Lualaba Province, near Fungurume",
+        "coordinates": {
+          "lat": -10.6,
+          "lng": 26.15
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "CMOC; Gécamines; other minority interests",
+        "operator": "Tenke Fungurume Mining",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "OPEN_PIT; HYDROMETALLURGICAL PROCESSING",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "tonnes_copper_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "percent_copper",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "tonnes_copper_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://en.cmoc.com/html/Business/CopperandCobalt/",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT; HYDROMETALLURGICAL PROCESSING",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "COD",
+        "warehouseSiteId": "SITE_COD_tenke_fungurume_copper_cobalt_mine",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://en.cmoc.com/html/Business/CopperandCobalt/",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://en.cmoc.com/html/Business/CopperandCobalt/"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_GIN_simandou_iron_ore_project",
+      "siteName": "Simandou Iron Ore Project",
+      "countryId": "GIN",
+      "identity": {
+        "countryIso3": "GIN",
+        "countryName": "Guinea",
+        "siteType": "IRON_ORE_MINE_PROJECT",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "iron ore",
+        "ontologyKey": "IRON_ORE"
+      },
+      "location": {
+        "countryName": "Guinea",
+        "adminRegion": "Nzérékoré and Kankan regions, Simandou Range",
+        "locality": "Nzérékoré and Kankan regions, Simandou Range",
+        "coordinates": {
+          "lat": 8.56,
+          "lng": -8.9
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "Simfer and Winning Consortium Simandou joint-venture structures",
+        "operator": "Project joint ventures",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "DEVELOPMENT_AND_RAMP_UP",
+        "operationalStatus": "DEVELOPMENT_AND_RAMP_UP",
+        "extractionMethod": "OPEN_PIT; RAIL_AND_PORT_EXPORT_SYSTEM",
+        "extractionEligibility": "NON_EXECUTABLE_UNTIL_STATUS_VERIFIED",
+        "commercialExtraction": false
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "tonnes_iron_ore_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "percent_iron",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "tonnes_iron_ore_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.riotinto.com/en/operations/africa/simandou",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT; RAIL_AND_PORT_EXPORT_SYSTEM",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "GIN",
+        "warehouseSiteId": "SITE_GIN_simandou_iron_ore_project",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 2,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.riotinto.com/en/operations/africa/simandou",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          },
+          {
+            "url": "https://www.wcs-guinea.com/",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 2
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.riotinto.com/en/operations/africa/simandou",
+          "https://www.wcs-guinea.com/"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_IDN_grasberg_mineral_district",
+      "siteName": "Grasberg Mine Complex",
+      "countryId": "IDN",
+      "identity": {
+        "countryIso3": "IDN",
+        "countryName": "Indonesia",
+        "siteType": "UNDERGROUND_COPPER_GOLD_MINE_COMPLEX",
+        "resourceTypeId": "copper",
+        "resourceName": "copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Indonesia",
+        "adminRegion": "Mimika Regency, Central Papua",
+        "locality": "Mimika Regency, Central Papua",
+        "coordinates": {
+          "lat": -4.06,
+          "lng": 137.12
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "PT Freeport Indonesia; Indonesian state interests",
+        "operator": "PT Freeport Indonesia",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "UNDERGROUND_BLOCK_CAVING; FLOTATION",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "tonnes_copper_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "percent_copper",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "tonnes_copper_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.fcx.com/operations/indonesia",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "UNDERGROUND_BLOCK_CAVING; FLOTATION",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "IDN",
+        "warehouseSiteId": "SITE_IDN_grasberg_mineral_district",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.fcx.com/operations/indonesia",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.fcx.com/operations/indonesia"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_BRA_carajas_iron_ore_complex",
+      "siteName": "Carajás Iron Ore Complex",
+      "countryId": "BRA",
+      "identity": {
+        "countryIso3": "BRA",
+        "countryName": "Brazil",
+        "siteType": "OPEN_PIT_IRON_ORE_MINE_COMPLEX",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "iron ore",
+        "ontologyKey": "IRON_ORE"
+      },
+      "location": {
+        "countryName": "Brazil",
+        "adminRegion": "Pará State, Carajás Mineral Province",
+        "locality": "Pará State, Carajás Mineral Province",
+        "coordinates": {
+          "lat": -6.06,
+          "lng": -50.16
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "Vale",
+        "operator": "Vale",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "OPEN_PIT; CRUSHING; SCREENING; BENEFICIATION",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "million_tonnes_iron_ore_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "percent_iron",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "million_tonnes_iron_ore_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://vale.com/iron-ore",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT; CRUSHING; SCREENING; BENEFICIATION",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "BRA",
+        "warehouseSiteId": "SITE_BRA_carajas_iron_ore_complex",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://vale.com/iron-ore",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://vale.com/iron-ore"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_ZAF_sishen_iron_ore_mine",
+      "siteName": "Sishen Iron Ore Mine",
+      "countryId": "ZAF",
+      "identity": {
+        "countryIso3": "ZAF",
+        "countryName": "South Africa",
+        "siteType": "OPEN_PIT_IRON_ORE_MINE",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "iron ore",
+        "ontologyKey": "IRON_ORE"
+      },
+      "location": {
+        "countryName": "South Africa",
+        "adminRegion": "Northern Cape, near Kathu",
+        "locality": "Northern Cape, near Kathu",
+        "coordinates": {
+          "lat": -27.79,
+          "lng": 22.98
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "Kumba Iron Ore / Anglo American",
+        "operator": "Kumba Iron Ore",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "OPEN_PIT; CRUSHING; SCREENING; BENEFICIATION",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "million_tonnes_iron_ore_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "percent_iron",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "million_tonnes_iron_ore_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.angloamerican.com/our-businesses/kumba-iron-ore/operations/sishen",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT; CRUSHING; SCREENING; BENEFICIATION",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "ZAF",
+        "warehouseSiteId": "SITE_ZAF_sishen_iron_ore_mine",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.angloamerican.com/our-businesses/kumba-iron-ore/operations/sishen",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.angloamerican.com/our-businesses/kumba-iron-ore/operations/sishen"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_PER_cerro_verde_copper_mine",
+      "siteName": "Cerro Verde Copper Mine",
+      "countryId": "PER",
+      "identity": {
+        "countryIso3": "PER",
+        "countryName": "Peru",
+        "siteType": "OPEN_PIT_COPPER_MOLYBDENUM_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Peru",
+        "adminRegion": "Arequipa Region",
+        "locality": "Arequipa Region",
+        "coordinates": {
+          "lat": -16.53,
+          "lng": -71.59
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "Freeport-McMoRan and joint-venture partners",
+        "operator": "Sociedad Minera Cerro Verde",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "OPEN_PIT; CONCENTRATION; LEACHING",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "tonnes_copper_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "percent_copper",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "tonnes_copper_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.fcx.com/operations/peru",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT; CONCENTRATION; LEACHING",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "PER",
+        "warehouseSiteId": "SITE_PER_cerro_verde_copper_mine",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.fcx.com/operations/peru",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.fcx.com/operations/peru"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_MEX_cerro_san_pedro_gold_silver_mine",
+      "siteName": "Peñasquito Mine",
+      "countryId": "MEX",
+      "identity": {
+        "countryIso3": "MEX",
+        "countryName": "Mexico",
+        "siteType": "OPEN_PIT_POLYMETALLIC_MINE",
+        "resourceTypeId": "gold",
+        "resourceName": "gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Mexico",
+        "adminRegion": "Zacatecas State",
+        "locality": "Zacatecas State",
+        "coordinates": {
+          "lat": 24.64,
+          "lng": -101.72
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "Newmont",
+        "operator": "Newmont",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "OPEN_PIT; FLOTATION_AND_HEAP_LEACHING",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "troy_ounces_gold_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "grams_per_tonne_gold",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "troy_ounces_gold_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.newmont.com/operations-and-projects/global-presence/north-america/penasquito-mexico/default.aspx",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT; FLOTATION_AND_HEAP_LEACHING",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "MEX",
+        "warehouseSiteId": "SITE_MEX_cerro_san_pedro_gold_silver_mine",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.newmont.com/operations-and-projects/global-presence/north-america/penasquito-mexico/default.aspx",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.newmont.com/operations-and-projects/global-presence/north-america/penasquito-mexico/default.aspx"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_CAN_mine_ontario_red_lake_gold_district",
+      "siteName": "Red Lake Gold District",
+      "countryId": "CAN",
+      "identity": {
+        "countryIso3": "CAN",
+        "countryName": "Canada",
+        "siteType": "UNDERGROUND_GOLD_MINE_DISTRICT",
+        "resourceTypeId": "gold",
+        "resourceName": "gold",
+        "ontologyKey": "GOLD"
+      },
+      "location": {
+        "countryName": "Canada",
+        "adminRegion": "Red Lake, Ontario",
+        "locality": "Red Lake, Ontario",
+        "coordinates": {
+          "lat": 51.02,
+          "lng": -93.83
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "Evolution Mining (operations portfolio)",
+        "operator": "Evolution Mining",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "UNDERGROUND; MILLING_AND_GOLD_RECOVERY",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "troy_ounces_gold_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "grams_per_tonne_gold",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "troy_ounces_gold_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://evolutionmining.com.au/operations/",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "UNDERGROUND; MILLING_AND_GOLD_RECOVERY",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "CAN",
+        "warehouseSiteId": "SITE_CAN_mine_ontario_red_lake_gold_district",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://evolutionmining.com.au/operations/",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://evolutionmining.com.au/operations/"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_KAZ_bozshakol_copper_mine",
+      "siteName": "Bozshakol Copper Mine",
+      "countryId": "KAZ",
+      "identity": {
+        "countryIso3": "KAZ",
+        "countryName": "Kazakhstan",
+        "siteType": "OPEN_PIT_COPPER_MINE",
+        "resourceTypeId": "copper",
+        "resourceName": "copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Kazakhstan",
+        "adminRegion": "Pavlodar Region",
+        "locality": "Pavlodar Region",
+        "coordinates": {
+          "lat": 52,
+          "lng": 74.85
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "Kaz Minerals",
+        "operator": "KAZ Minerals Bozshakol",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "OPEN_PIT; FLOTATION; OXIDE_LEACHING",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "tonnes_copper_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "percent_copper",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "tonnes_copper_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.kazminerals.com/our-business/bozshakol/",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "OPEN_PIT; FLOTATION; OXIDE_LEACHING",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "KAZ",
+        "warehouseSiteId": "SITE_KAZ_bozshakol_copper_mine",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.kazminerals.com/our-business/bozshakol/",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.kazminerals.com/our-business/bozshakol/"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_ZMB_mopani_copper_mines",
+      "siteName": "Mopani Copper Mines",
+      "countryId": "ZMB",
+      "identity": {
+        "countryIso3": "ZMB",
+        "countryName": "Zambia",
+        "siteType": "UNDERGROUND_COPPER_MINE_COMPLEX",
+        "resourceTypeId": "copper",
+        "resourceName": "copper",
+        "ontologyKey": "COPPER"
+      },
+      "location": {
+        "countryName": "Zambia",
+        "adminRegion": "Copperbelt Province, Kitwe and Mufulira",
+        "locality": "Copperbelt Province, Kitwe and Mufulira",
+        "coordinates": {
+          "lat": -12.17,
+          "lng": 27.5
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "ZCCM-IH and strategic investor interests",
+        "operator": "Mopani Copper Mines Plc",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "UNDERGROUND; CONCENTRATION; SMELTING",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "tonnes_copper_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "percent_copper",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "tonnes_copper_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://www.mopani.com.zm/",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "UNDERGROUND; CONCENTRATION; SMELTING",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "ZMB",
+        "warehouseSiteId": "SITE_ZMB_mopani_copper_mines",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://www.mopani.com.zm/",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://www.mopani.com.zm/"
+        ]
+      }
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "siteId": "SITE_TUR_kiirunavaara_iron_ore_mine",
+      "siteName": "Kiirunavaara Iron Ore Mine",
+      "countryId": "SWE",
+      "identity": {
+        "countryIso3": "SWE",
+        "countryName": "Sweden",
+        "siteType": "UNDERGROUND_IRON_ORE_MINE",
+        "resourceTypeId": "iron_ore",
+        "resourceName": "iron ore",
+        "ontologyKey": "IRON_ORE"
+      },
+      "location": {
+        "countryName": "Sweden",
+        "adminRegion": "Kiruna, Norrbotten County",
+        "locality": "Kiruna, Norrbotten County",
+        "coordinates": {
+          "lat": 67.84,
+          "lng": 20.22
+        },
+        "coordinateStatus": "APPROXIMATE_SITE_CENTROID",
+        "coordinateSource": "PUBLISHED_SITE_OR_REGION_REFERENCE"
+      },
+      "ownership": {
+        "owner": "LKAB",
+        "operator": "LKAB",
+        "ownerEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION",
+        "operatorEvidenceStatus": "SOURCE_LINKED_REQUIRES_CURRENT_REPORT_VERIFICATION"
+      },
+      "operation": {
+        "status": "ACTIVE_PRODUCING",
+        "operationalStatus": "ACTIVE_PRODUCING",
+        "extractionMethod": "UNDERGROUND_SUBLEVEL_CAVING; BENEFICIATION",
+        "extractionEligibility": "REVIEW_REQUIRED_BEFORE_EXECUTION",
+        "commercialExtraction": true
+      },
+      "quantitative": {
+        "reserve": {
+          "quantity": null,
+          "unit": "tonnes_ore",
+          "year": null,
+          "status": "UNOBSERVED",
+          "basis": null
+        },
+        "production": {
+          "annual": null,
+          "rate": null,
+          "unit": "million_tonnes_iron_ore_per_year",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "grade": {
+          "value": null,
+          "unit": "percent_iron",
+          "status": "UNOBSERVED"
+        },
+        "recovery": {
+          "value": null,
+          "unit": "percent",
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "throughput": {
+          "value": null,
+          "unit": null,
+          "year": null,
+          "status": "UNOBSERVED"
+        },
+        "purity": {
+          "value": null,
+          "unit": null,
+          "status": "NOT_APPLICABLE_OR_UNOBSERVED"
+        },
+        "capacity": {
+          "nominal": null,
+          "minimum": null,
+          "maximum": null,
+          "unit": "million_tonnes_iron_ore_per_year",
+          "status": "UNOBSERVED"
+        },
+        "reportedMetrics": {},
+        "quantitativeProvenance": {
+          "structuredSource": "https://lkab.com/en/what-we-do/our-products/iron-ore/",
+          "capacitySource": null,
+          "promotedAt": "2026-10-11"
+        },
+        "completeness": {
+          "reserve": "UNOBSERVED",
+          "production": "UNOBSERVED",
+          "grade": "UNOBSERVED",
+          "structuredEvidence": true,
+          "coreFieldCount": 2,
+          "overall": "PARTIAL_SOURCE_LINKED"
+        }
+      },
+      "processing": {
+        "upstreamProcess": "UNDERGROUND_SUBLEVEL_CAVING; BENEFICIATION",
+        "midstreamProcess": "SITE_SPECIFIC_PROCESSING_ROUTE_REQUIRES_TECHNICAL_REPORT_VERIFICATION",
+        "refinedOutputs": [],
+        "downstreamSectors": []
+      },
+      "logistics": {
+        "warehouseCountryId": "SWE",
+        "warehouseSiteId": "SITE_TUR_kiirunavaara_iron_ore_mine",
+        "inventoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE",
+        "factoryRouteStatus": "NOT_YET_BOUND_TO_RUNTIME_PIPELINE"
+      },
+      "verification": {
+        "researchState": "PRIMARY_SOURCE_LINKED_INITIAL_RESEARCH",
+        "reviewedAt": "2026-10-11",
+        "sourceCount": 1,
+        "sourceAuthorities": [
+          "OPERATOR_PRIMARY_OR_COMPANY_SITE"
+        ],
+        "dataLimitations": "Reserve, grade, recovery, capacity and production values are deliberately null where this batch's linked sources did not substantiate a site-specific number. Coordinates are approximate map centroids, not survey-grade points."
+      },
+      "sourceReference": {
+        "authoritativeDatasets": [],
+        "sources": [
+          {
+            "url": "https://lkab.com/en/what-we-do/our-products/iron-ore/",
+            "sourceType": "OPERATOR_OR_OWNER_PRIMARY",
+            "accessed": "2026-10-11",
+            "scope": "site identity, ownership/operator context, operation context; numeric fields require source-specific verification"
+          }
+        ],
+        "sourceCount": 1
+      },
+      "provenance": {
+        "batchId": "OMEGA_RESOURCE_SITE_EXPANSION_2026_10_11_BATCH_01",
+        "method": "ADDITIVE_SOURCE_LINKED_SITE_RECORDS",
+        "syntheticReserveGeneration": false,
+        "sourceURLs": [
+          "https://lkab.com/en/what-we-do/our-products/iron-ore/"
+        ]
+      }
+    }
+  ]
+}

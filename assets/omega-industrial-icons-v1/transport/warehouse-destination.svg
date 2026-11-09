@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="warehouse-title warehouse-desc" data-omega-icon-kind="logistics-destination" data-omega-icon-id="warehouse-destination">
+<title id="warehouse-title">Raw-material warehouse destination</title>
+<desc id="warehouse-desc">A plated industrial warehouse with corrugated steel roof, marked cargo bay, loading dock and cyan route lights.</desc>
+<defs>
+  <linearGradient id="wh-plate" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8fcff"/><stop offset=".45" stop-color="#c5d4dc"/><stop offset="1" stop-color="#6e899b"/></linearGradient>
+  <linearGradient id="wh-wall" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e4edf1"/><stop offset=".58" stop-color="#98aebb"/><stop offset="1" stop-color="#526b7e"/></linearGradient>
+  <linearGradient id="wh-door" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#172f43"/><stop offset="1" stop-color="#061321"/></linearGradient>
+  <linearGradient id="wh-cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c7faff"/><stop offset=".5" stop-color="#2fd7ff"/><stop offset="1" stop-color="#0873a6"/></linearGradient>
+  <filter id="wh-shadow" x="-20%" y="-20%" width="140%" height="145%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#020b13" flood-opacity=".55"/></filter>
+  <filter id="wh-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect x="4" y="4" width="120" height="120" rx="21" fill="#071827" stroke="#2fd7ff" stroke-width="1.6" filter="url(#wh-glow)"/>
+<rect x="8" y="8" width="112" height="112" rx="17" fill="url(#wh-plate)" stroke="#eefbff" stroke-opacity=".72" stroke-width="1.2"/>
+<path d="M15 24H113M15 105H113" stroke="#fff" stroke-opacity=".68" stroke-width="1.4"/>
+<g filter="url(#wh-shadow)">
+  <path d="M17 45 64 24 111 45 104 52 24 52Z" fill="url(#wh-plate)" stroke="#405c70" stroke-width="2"/>
+  <path d="M24 49 64 32 104 49" fill="none" stroke="#eefaff" stroke-width="1.8"/>
+  <path d="M24 51H104V94H24Z" fill="url(#wh-wall)" stroke="#405b6e" stroke-width="2"/>
+  <path d="M31 55V90M39 55V90M47 55V90M55 55V90M63 55V90M71 55V90M79 55V90M87 55V90M95 55V90" stroke="#eaf4f7" stroke-opacity=".6" stroke-width="1.2"/>
+  <path d="M48 62H80V94H48Z" fill="url(#wh-door)" stroke="#d2e2e9" stroke-width="2"/>
+  <path d="M52 67H76M52 73H76M52 79H76M52 85H76" stroke="#718e9f" stroke-width="1.5"/>
+  <path d="M18 95H110V101H18Z" fill="#344d60" stroke="#dbe8ee" stroke-width="1.5"/>
+  <path d="M24 101H104" stroke="url(#wh-cyan)" stroke-width="2.7" filter="url(#wh-glow)"/>
+  <path d="M29 82H43V94H29Z" fill="#9fb3bf" stroke="#eaf6fa" stroke-width="1.2"/>
+  <path d="M31 79H41V82H31Z" fill="#dbe7ec"/>
+  <path d="M31 86H41M36 82V94" stroke="#536e81" stroke-width="1.2"/>
+  <path d="M85 84H99V94H85Z" fill="#c3d2d9" stroke="#eefaff" stroke-width="1.2"/>
+  <path d="M87 81H97V84H87Z" fill="#edf5f8"/>
+  <path d="M87 88H97M92 84V94" stroke="#657f91" stroke-width="1.2"/>
+  <path d="M17 108H111" stroke="#314b5f" stroke-width="3" stroke-linecap="round"/>
+</g>
+<circle cx="103" cy="26" r="7" fill="#0b3047" stroke="#baf7ff" stroke-width="1.4"/>
+<path d="M99 26H107M103 22V30" stroke="#64e8ff" stroke-width="1.5" stroke-linecap="round"/>
+<rect x="13" y="13" width="27" height="4" rx="2" fill="#2fd7ff" opacity=".85"/>
+</svg>

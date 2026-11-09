@@ -1,0 +1,6 @@
+{
+  "name": "Global Geopolitical Strategy Simulator",
+  "description": "Global Geopolitical Strategy Simulator game engine and world map strategy",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

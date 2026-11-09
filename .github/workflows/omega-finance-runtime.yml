@@ -1,0 +1,69 @@
+name: OMEGA Finance Runtime
+concurrency:
+  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  finance-runtime:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate Finance runtime syntax
+        run: node --check omega_finance_ministry_runtime_v1.js
+      - name: Validate Finance test syntax
+        run: node --check test/omega_finance_ministry_runtime_v1.test.mjs
+      - name: Finance country registry and runtime transaction tests
+        run: node --test test/omega_finance_ministry_runtime_v1.test.mjs
+      - name: Validate World Bank lending runtime and test syntax
+        run: node --check omega_world_bank_lending_runtime_v1.js && node --check test/omega_world_bank_lending_runtime_v1.test.mjs
+      - name: World Bank country credit, loan issuance, turn service and repayment tests
+        run: node --test test/omega_world_bank_lending_runtime_v1.test.mjs
+      - name: Validate FX monetary runtime syntax
+        run: node --check omega_forex_monetary_engine_v1.js
+      - name: Validate FX regression test syntax
+        run: node --check test/omega_forex_monetary_engine_v1.test.mjs
+      - name: FX conversion, monetary policy and history tests
+        run: node --test test/omega_forex_monetary_engine_v1.test.mjs
+      - name: Government Banking runtime and test syntax
+        run: node --check omega_government_banking_runtime_v1.js && node --check test/omega_government_banking_runtime_v1.test.mjs
+      - name: Multi-currency clearing, escrow and trade tests
+        run: node --test test/omega_government_banking_runtime_v1.test.mjs
+      - name: Economic transmission runtime and test syntax
+        run: node --check omega_economic_transmission_runtime_v1.js && node --check test/omega_economic_transmission_runtime_v1.test.mjs
+      - name: Real wages, producer costs and macro stress tests
+        run: node --test test/omega_economic_transmission_runtime_v1.test.mjs
+
+      - name: Validate international trade and national demand coupling
+        run: node --check omega_global_trade_system.js && node --check omega_resource_national_demand_runtime_v1.js && node --check test/omega_global_trade_system.test.mjs && node --check test/omega_resource_national_demand_runtime_v1.test.mjs
+      - name: Run trade and purchasing-power demand regressions
+        run: node --test test/omega_global_trade_system.test.mjs test/omega_resource_national_demand_runtime_v1.test.mjs
+
+      - name: Validate raw financial registry and macro rules
+        run: node -e "const fs=require('node:fs');const assert=require('node:assert/strict');const d=JSON.parse(fs.readFileSync('economy_raw_financial_data_v2.json','utf8'));const r=JSON.parse(fs.readFileSync('finance_macro_stability_rules_v1.json','utf8'));assert.equal(d.countries.length,249);assert.equal(d.metadata.rawFieldCount,Object.keys(d.metadata.fieldCatalogue).length);assert.ok(r.policies.growth&&r.policies.austerity)"
+      - name: Validate macro stability runtime syntax
+        run: node --check omega_macro_stability_runtime_v1.js
+      - name: Macro stability raw-data and runtime tests
+        run: node --test test/omega_macro_stability_runtime_v1.test.mjs
+
+      - name: Validate Finance analytics runtime and tests
+        run: node --check omega_finance_analytics_runtime_v1.js && node --check test/omega_finance_analytics_runtime_v1.test.mjs
+      - name: Finance analytics preview and live-turn tests
+        run: node --test test/omega_finance_analytics_runtime_v1.test.mjs
+      - name: Offline Finance and Macro cache regression
+        run: node --check test/offline_hybrid_map.test.mjs && node --test test/offline_hybrid_map.test.mjs

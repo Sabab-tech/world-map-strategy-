@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Agriculture and Food emblem</title>
+  <desc id="desc">Original OMEGA ministry emblem in navy, steel silver and signal blue.</desc>
+  <rect x="4" y="4" width="120" height="120" rx="25" fill="#edf3f8" stroke="#68849d" stroke-width="3"/>
+  <circle cx="64" cy="64" r="47" fill="#0b2238" stroke="#77c8f2" stroke-width="2.5"/>
+  <circle cx="64" cy="64" r="39" fill="none" stroke="#9fb4c8" stroke-width="1.2" opacity=".6"/>
+  <g fill="none" stroke="#e3edf6" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"><path d="M64 101V45M64 69C43 69 35 53 35 40c19 0 29 11 29 29M64 58c0-20 14-31 31-31 0 19-9 33-31 38M64 81c-17 0-24-10-26-22M64 91c17 0 26-10 29-22"/></g>
+  <g fill="none" stroke="#77c8f2" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M64 42v-9m-12 5 7 5m18-5-7 5"/></g>
+</svg>

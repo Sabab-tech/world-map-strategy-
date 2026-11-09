@@ -1,0 +1,1101 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_INDUSTRIAL_SVG_ICON_LIBRARY_V1",
+  "purpose": "Canonical offline SVG library for OMEGA resources and the consolidated 21-type factory catalog. Former specialty factory SVGs remain preserved as legacy assets and are not displayed as separate canonical types.",
+  "rendering": {
+    "format": "SVG",
+    "viewBox": "0 0 128 128",
+    "artDirection": "Dimensional industrial vector artwork; resource icons use metallic contrast plates, factory icons retain the dark-navy category plate, and logistics transport heroes use transparent three-dimensional vehicle illustrations.",
+    "background": "Resource SVGs use a light silver-metal backplate for contrast; canonical factory SVGs retain their shared dark-navy backplate.",
+    "dependencies": []
+  },
+  "sourceCatalog": "resource_industrial_catalog_v1.json",
+  "summary": {
+    "resourceIconCount": 42,
+    "factoryIconCount": 21,
+    "totalIconCount": 63,
+    "canonicalFactoryTypeCount": 21,
+    "canonicalResourceRuleCount": 42,
+    "integratedIntoRuntime": true,
+    "legacyFactoryIconCount": 39,
+    "transportVariantIconCount": 25,
+    "transportVariantsByMode": {
+      "barge": 6,
+      "ship": 6,
+      "rail": 6,
+      "truck": 6,
+      "pipeline": 1
+    },
+    "totalTransportVariantIconCount": 25
+  },
+  "logisticsNodeAssets": [
+    {
+      "id": "mine-site",
+      "label": "Resource mine site",
+      "file": "logistics/mine-site.svg",
+      "kind": "LOGISTICS_NODE",
+      "offline": true
+    },
+    {
+      "id": "warehouse-node",
+      "label": "Raw resource warehouse",
+      "file": "logistics/warehouse-node.svg",
+      "kind": "LOGISTICS_NODE",
+      "offline": true
+    }
+  ],
+  "resources": [
+    {
+      "id": "aragonite",
+      "label": "Aragonite",
+      "file": "resources/aragonite.svg",
+      "color": "#e6dcc2"
+    },
+    {
+      "id": "basalt",
+      "label": "Basalt",
+      "file": "resources/basalt.svg",
+      "color": "#414952"
+    },
+    {
+      "id": "bauxite",
+      "label": "Bauxite",
+      "file": "resources/bauxite.svg",
+      "color": "#a85739"
+    },
+    {
+      "id": "boron",
+      "label": "Boron Minerals",
+      "file": "resources/boron.svg",
+      "color": "#8ebf8d"
+    },
+    {
+      "id": "chromite",
+      "label": "Chromite",
+      "file": "resources/chromite.svg",
+      "color": "#434b53"
+    },
+    {
+      "id": "coal",
+      "label": "Coal",
+      "file": "resources/coal.svg",
+      "color": "#353b43"
+    },
+    {
+      "id": "cobalt",
+      "label": "Cobalt",
+      "file": "resources/cobalt.svg",
+      "color": "#3b76bd"
+    },
+    {
+      "id": "construction_aggregate",
+      "label": "Construction Aggregate",
+      "file": "resources/construction-aggregate.svg",
+      "color": "#88877f"
+    },
+    {
+      "id": "copper",
+      "label": "Copper",
+      "file": "resources/copper.svg",
+      "color": "#c66d3e"
+    },
+    {
+      "id": "coral_aggregate",
+      "label": "Coral Aggregate",
+      "file": "resources/coral-aggregate.svg",
+      "color": "#e6b7a0"
+    },
+    {
+      "id": "crude_oil",
+      "label": "Crude Oil",
+      "file": "resources/crude-oil.svg",
+      "color": "#242c36"
+    },
+    {
+      "id": "diamond",
+      "label": "Diamond",
+      "file": "resources/diamond.svg",
+      "color": "#8de3f0"
+    },
+    {
+      "id": "diatomite",
+      "label": "Diatomite",
+      "file": "resources/diatomite.svg",
+      "color": "#dcd5bd"
+    },
+    {
+      "id": "dolomite",
+      "label": "Dolomite",
+      "file": "resources/dolomite.svg",
+      "color": "#b7ad9d"
+    },
+    {
+      "id": "gold",
+      "label": "Gold",
+      "file": "resources/gold.svg",
+      "color": "#efb934"
+    },
+    {
+      "id": "granite",
+      "label": "Granite",
+      "file": "resources/granite.svg",
+      "color": "#84888e"
+    },
+    {
+      "id": "graphite",
+      "label": "Graphite",
+      "file": "resources/graphite.svg",
+      "color": "#555d68"
+    },
+    {
+      "id": "gypsum",
+      "label": "Gypsum",
+      "file": "resources/gypsum.svg",
+      "color": "#e9dfc8"
+    },
+    {
+      "id": "ilmenite",
+      "label": "Ilmenite",
+      "file": "resources/ilmenite.svg",
+      "color": "#343a42"
+    },
+    {
+      "id": "iron_ore",
+      "label": "Iron Ore",
+      "file": "resources/iron-ore.svg",
+      "color": "#a65b45"
+    },
+    {
+      "id": "limestone",
+      "label": "Limestone",
+      "file": "resources/limestone.svg",
+      "color": "#d5cdb9"
+    },
+    {
+      "id": "lithium",
+      "label": "Lithium",
+      "file": "resources/lithium.svg",
+      "color": "#69cdd4"
+    },
+    {
+      "id": "magnesite",
+      "label": "Magnesite",
+      "file": "resources/magnesite.svg",
+      "color": "#d9d0c2"
+    },
+    {
+      "id": "manganese",
+      "label": "Manganese",
+      "file": "resources/manganese.svg",
+      "color": "#74677a"
+    },
+    {
+      "id": "marble",
+      "label": "Marble",
+      "file": "resources/marble.svg",
+      "color": "#eeeae1"
+    },
+    {
+      "id": "natural_gas",
+      "label": "Natural Gas",
+      "file": "resources/natural-gas.svg",
+      "color": "#69b9eb"
+    },
+    {
+      "id": "nickel",
+      "label": "Nickel",
+      "file": "resources/nickel.svg",
+      "color": "#a4b1bc"
+    },
+    {
+      "id": "niobium",
+      "label": "Niobium",
+      "file": "resources/niobium.svg",
+      "color": "#889dcc"
+    },
+    {
+      "id": "oil_shale",
+      "label": "Oil Shale",
+      "file": "resources/oil-shale.svg",
+      "color": "#62534b"
+    },
+    {
+      "id": "phosphate",
+      "label": "Phosphate Rock",
+      "file": "resources/phosphate.svg",
+      "color": "#c7ae80"
+    },
+    {
+      "id": "platinum",
+      "label": "Platinum",
+      "file": "resources/platinum.svg",
+      "color": "#d6dfe5"
+    },
+    {
+      "id": "potash",
+      "label": "Potash",
+      "file": "resources/potash.svg",
+      "color": "#c56d79"
+    },
+    {
+      "id": "rare_earth",
+      "label": "Rare Earth Elements",
+      "file": "resources/rare-earth.svg",
+      "color": "#9c82d7"
+    },
+    {
+      "id": "ruby",
+      "label": "Ruby",
+      "file": "resources/ruby.svg",
+      "color": "#d52f54"
+    },
+    {
+      "id": "rutile",
+      "label": "Rutile",
+      "file": "resources/rutile.svg",
+      "color": "#b75d4b"
+    },
+    {
+      "id": "salt",
+      "label": "Rock Salt",
+      "file": "resources/salt.svg",
+      "color": "#f2f5f6"
+    },
+    {
+      "id": "silica_sand",
+      "label": "Silica Sand",
+      "file": "resources/silica-sand.svg",
+      "color": "#e1c58b"
+    },
+    {
+      "id": "silver",
+      "label": "Silver",
+      "file": "resources/silver.svg",
+      "color": "#bdc9d6"
+    },
+    {
+      "id": "tin",
+      "label": "Tin",
+      "file": "resources/tin.svg",
+      "color": "#b2bec8"
+    },
+    {
+      "id": "tungsten",
+      "label": "Tungsten",
+      "file": "resources/tungsten.svg",
+      "color": "#555c66"
+    },
+    {
+      "id": "uranium",
+      "label": "Uranium",
+      "file": "resources/uranium.svg",
+      "color": "#bfc83d"
+    },
+    {
+      "id": "zinc",
+      "label": "Zinc",
+      "file": "resources/zinc.svg",
+      "color": "#8da9bd"
+    }
+  ],
+  "factories": [
+    {
+      "id": "FERTILIZER_CHEMICAL_PLANT",
+      "label": "Fertilizer and Agrochemicals",
+      "category": "AGRICULTURE_AND_FOOD",
+      "file": "factories/fertilizer-chemical-plant.svg",
+      "color": "#77b86b",
+      "motif": "fertilizer-sprout"
+    },
+    {
+      "id": "FOOD_PROCESSING_COLD_CHAIN",
+      "label": "Food Processing and Cold Chain",
+      "category": "AGRICULTURE_AND_FOOD",
+      "file": "factories/food-processing-cold-chain.svg",
+      "color": "#77b86b",
+      "motif": "grain-and-food-jar"
+    },
+    {
+      "id": "INDUSTRIAL_CHEMICALS_GAS_PLANT",
+      "label": "Industrial Chemicals and Gases",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/industrial-chemicals-gas-plant.svg",
+      "color": "#48b8ca",
+      "motif": "gas-cylinders-and-flask"
+    },
+    {
+      "id": "PETROCHEMICAL_POLYMER_PLANT",
+      "label": "Petrochemical, Plastics and Polymers",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/petrochemical-polymer-plant.svg",
+      "color": "#48b8ca",
+      "motif": "laboratory-flask-and-polymer-molecule"
+    },
+    {
+      "id": "RECYCLING_WASTE_PROCESSING_PLANT",
+      "label": "Recycling and Waste Processing Plant",
+      "category": "CIRCULAR_INDUSTRY",
+      "file": "factories/recycling-waste-processing-plant.svg",
+      "color": "#65b9a0",
+      "motif": "recycling-arrows-and-bin"
+    },
+    {
+      "id": "CEMENT_CONCRETE_PLANT",
+      "label": "Cement and Concrete Works",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/cement-concrete-plant.svg",
+      "color": "#cbb58b",
+      "motif": "cement-sack"
+    },
+    {
+      "id": "GLASS_CERAMICS_PLANT",
+      "label": "Glass and Ceramics Works",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/glass-ceramics-plant.svg",
+      "color": "#cbb58b",
+      "motif": "glassware-and-ceramic"
+    },
+    {
+      "id": "BATTERY_ENERGY_STORAGE_PLANT",
+      "label": "Battery and Energy Storage Plant",
+      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
+      "file": "factories/battery-energy-storage-plant.svg",
+      "color": "#53aee1",
+      "motif": "battery"
+    },
+    {
+      "id": "ELECTRONICS_SEMICONDUCTOR_FAB",
+      "label": "Electronics and Semiconductor Fab",
+      "category": "ELECTRONICS_AND_ENERGY_STORAGE",
+      "file": "factories/electronics-semiconductor-fab.svg",
+      "color": "#53aee1",
+      "motif": "microchip"
+    },
+    {
+      "id": "DEFENSE_EQUIPMENT_FACTORY",
+      "label": "Defence Equipment Factory",
+      "category": "HEALTHCARE_AND_DEFENCE",
+      "file": "factories/defense-equipment-factory.svg",
+      "color": "#9cb19a",
+      "motif": "armored-vehicle"
+    },
+    {
+      "id": "PHARMA_MEDICAL_SUPPLIES_PLANT",
+      "label": "Pharmaceuticals and Medical Supplies",
+      "category": "HEALTHCARE_AND_DEFENCE",
+      "file": "factories/pharma-medical-supplies-plant.svg",
+      "color": "#9cb19a",
+      "motif": "capsule-tablet-and-cross"
+    },
+    {
+      "id": "GRID_EQUIPMENT_FACTORY",
+      "label": "Grid and Electrical Equipment",
+      "category": "MACHINERY_AND_CAPITAL_GOODS",
+      "file": "factories/grid-equipment-factory.svg",
+      "color": "#7a9eb9",
+      "motif": "power-transmission"
+    },
+    {
+      "id": "INDUSTRIAL_MACHINERY_MACHINE_TOOLS",
+      "label": "Industrial Machinery and Machine Tools",
+      "category": "MACHINERY_AND_CAPITAL_GOODS",
+      "file": "factories/industrial-machinery-machine-tools.svg",
+      "color": "#7a9eb9",
+      "motif": "gear-and-wrench"
+    },
+    {
+      "id": "NON_FERROUS_METAL_SMELTER",
+      "label": "Non-Ferrous Metal Smelter",
+      "category": "METALS_AND_ALLOYS",
+      "file": "factories/non-ferrous-metal-smelter.svg",
+      "color": "#e37c50",
+      "motif": "molten-metal-crucible"
+    },
+    {
+      "id": "STEEL_AND_ALLOY_WORKS",
+      "label": "Steel and Alloy Works",
+      "category": "METALS_AND_ALLOYS",
+      "file": "factories/steel-and-alloy-works.svg",
+      "color": "#e37c50",
+      "motif": "steel-beam-and-ingot"
+    },
+    {
+      "id": "PAPER_PACKAGING_MILL",
+      "label": "Paper and Packaging Mill",
+      "category": "PAPER_AND_PACKAGING",
+      "file": "factories/paper-packaging-mill.svg",
+      "color": "#c2a678",
+      "motif": "paper-roll-and-carton"
+    },
+    {
+      "id": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "label": "Universal Materials & Elements Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/universal-materials-elements-processing-plant.svg",
+      "color": "#b98c5b",
+      "motif": "mineral-crystals-and-sample-vials"
+    },
+    {
+      "id": "TEXTILE_GARMENT_MILL",
+      "label": "Textile and Garment Mill",
+      "category": "TEXTILES_AND_APPAREL",
+      "file": "factories/textile-garment-mill.svg",
+      "color": "#b886d5",
+      "motif": "thread-spool-and-shirt"
+    },
+    {
+      "id": "AEROSPACE_EQUIPMENT_PLANT",
+      "label": "Aerospace and Aircraft Equipment",
+      "category": "TRANSPORT_AND_AEROSPACE",
+      "file": "factories/aerospace-equipment-plant.svg",
+      "color": "#8fa7c3",
+      "motif": "aircraft"
+    },
+    {
+      "id": "SHIP_RAIL_EQUIPMENT_YARD",
+      "label": "Shipbuilding and Rail Equipment Yard",
+      "category": "TRANSPORT_AND_AEROSPACE",
+      "file": "factories/ship-rail-equipment-yard.svg",
+      "color": "#8fa7c3",
+      "motif": "cargo-ship-and-rail-wheel"
+    },
+    {
+      "id": "VEHICLE_TRUCK_BUS_ASSEMBLY",
+      "label": "Vehicle, Truck and Bus Assembly",
+      "category": "TRANSPORT_AND_AEROSPACE",
+      "file": "factories/vehicle-truck-bus-assembly.svg",
+      "color": "#8fa7c3",
+      "motif": "car-and-robotic-assembly-arm"
+    }
+  ],
+  "legacyFactories": [
+    {
+      "id": "AGGREGATE_CRUSHING_PLANT",
+      "label": "Aggregate Crushing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/aggregate-crushing-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "ALUMINA_REFINERY",
+      "label": "Alumina Refinery",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/alumina-refinery.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "BORATE_PROCESSING_PLANT",
+      "label": "Borate Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/borate-processing-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "CEMENT_LIMESTONE_PLANT",
+      "label": "Cement Limestone Feed Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/cement-limestone-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "CHROMITE_CONCENTRATOR",
+      "label": "Chromite Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/chromite-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "COAL_PREPARATION_PLANT",
+      "label": "Coal Preparation Plant",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/coal-preparation-plant.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "COBALT_REFINERY",
+      "label": "Cobalt Refinery",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/cobalt-refinery.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "COPPER_CONCENTRATOR",
+      "label": "Copper Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/copper-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "DIAMOND_RECOVERY_PLANT",
+      "label": "Diamond Recovery Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/diamond-recovery-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "DIATOMITE_PROCESSING_PLANT",
+      "label": "Diatomite Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/diatomite-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "DOLOMITE_PROCESSING_PLANT",
+      "label": "Dolomite Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/dolomite-processing-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GAS_PROCESSING_PLANT",
+      "label": "Natural Gas Processing Plant",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/gas-processing-plant.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GEMSTONE_SORTING_PLANT",
+      "label": "Gemstone Sorting Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/gemstone-sorting-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GENERIC_RESOURCE_PROCESSING_PLANT",
+      "label": "Generic Resource Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/generic-resource-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GLASS_SILICA_PLANT",
+      "label": "Silica Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/glass-silica-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GOLD_PROCESSING_PLANT",
+      "label": "Gold Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/gold-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GRAPHITE_CONCENTRATOR",
+      "label": "Graphite Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/graphite-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "GYPSUM_PROCESSING_PLANT",
+      "label": "Gypsum Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/gypsum-processing-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "LITHIUM_CONVERSION_PLANT",
+      "label": "Lithium Conversion Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/lithium-conversion-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "MAGNESIA_PLANT",
+      "label": "Magnesia Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/magnesia-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "MANGANESE_BENEFICIATION_PLANT",
+      "label": "Manganese Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/manganese-beneficiation-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "MINERAL_PROCESSING_PLANT",
+      "label": "Mineral Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/mineral-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "MINERAL_SANDS_PLANT",
+      "label": "Mineral Sands Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/mineral-sands-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "NICKEL_PROCESSING_PLANT",
+      "label": "Nickel Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/nickel-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "NIOBIUM_CONCENTRATION_PLANT",
+      "label": "Niobium Concentration Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/niobium-concentration-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "OIL_SHALE_RETORT",
+      "label": "Oil Shale Retort",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/oil-shale-retort.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "ORE_BENEFICIATION_PLANT",
+      "label": "Ore Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/ore-beneficiation-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "PGM_CONCENTRATOR",
+      "label": "Platinum Group Metals Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/pgm-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "PHOSPHATE_BENEFICIATION_PLANT",
+      "label": "Phosphate Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/phosphate-beneficiation-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "POTASH_PROCESSING_PLANT",
+      "label": "Potash Processing Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/potash-processing-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "RARE_EARTH_BENEFICIATION_PLANT",
+      "label": "Rare Earth Beneficiation Plant",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/rare-earth-beneficiation-plant.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "REFINERY",
+      "label": "Petroleum Refinery",
+      "category": "CHEMICALS_AND_POLYMERS",
+      "file": "factories/refinery.svg",
+      "color": "#48b8ca",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "SALT_REFINERY",
+      "label": "Salt Refinery",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/salt-refinery.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "SILVER_CONCENTRATOR",
+      "label": "Silver Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/silver-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "STONE_PROCESSING_PLANT",
+      "label": "Stone Processing Plant",
+      "category": "CONSTRUCTION_AND_GLASS",
+      "file": "factories/stone-processing-plant.svg",
+      "color": "#cbb58b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "TIN_CONCENTRATOR",
+      "label": "Tin Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/tin-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "TUNGSTEN_CONCENTRATOR",
+      "label": "Tungsten Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/tungsten-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "URANIUM_MILL",
+      "label": "Uranium Mill",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/uranium-mill.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    },
+    {
+      "id": "ZINC_CONCENTRATOR",
+      "label": "Zinc Concentrator",
+      "category": "RAW_RESOURCE_PROCESSING",
+      "file": "factories/zinc-concentrator.svg",
+      "color": "#b98c5b",
+      "canonicalFactoryType": "UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT",
+      "legacy": true
+    }
+  ],
+  "transportVariants": [
+    {
+      "id": "barge-container-cargo",
+      "label": "Inland container barge",
+      "assetId": "barge-container-cargo",
+      "transportMode": "barge",
+      "cargoClass": "general_cargo",
+      "file": "transport/variants/barge-container-cargo.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "barge-gas-tanker",
+      "label": "Inland gas tanker barge",
+      "assetId": "barge-gas-tanker",
+      "transportMode": "barge",
+      "cargoClass": "gas",
+      "file": "transport/variants/barge-gas-tanker.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "barge-inland-bulk",
+      "label": "Inland bulk barge",
+      "assetId": "barge-inland-bulk",
+      "transportMode": "barge",
+      "cargoClass": "dry_bulk",
+      "file": "transport/variants/barge-inland-bulk.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "barge-liquid-tanker",
+      "label": "Inland liquid tanker barge",
+      "assetId": "barge-liquid-tanker",
+      "transportMode": "barge",
+      "cargoClass": "liquid",
+      "file": "transport/variants/barge-liquid-tanker.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "barge-ore-carrier",
+      "label": "Inland ore barge",
+      "assetId": "barge-ore-carrier",
+      "transportMode": "barge",
+      "cargoClass": "ore",
+      "file": "transport/variants/barge-ore-carrier.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "ship-bulk-carrier",
+      "label": "Dry-bulk carrier ship",
+      "assetId": "ship-bulk-carrier",
+      "transportMode": "ship",
+      "cargoClass": "dry_bulk",
+      "file": "transport/variants/ship-bulk-carrier.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "ship-container-carrier",
+      "label": "Container cargo ship",
+      "assetId": "ship-container-carrier",
+      "transportMode": "ship",
+      "cargoClass": "general_cargo",
+      "file": "transport/variants/ship-container-carrier.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "ship-lng-carrier",
+      "label": "LNG and gas carrier ship",
+      "assetId": "ship-lng-carrier",
+      "transportMode": "ship",
+      "cargoClass": "gas",
+      "file": "transport/variants/ship-lng-carrier.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "ship-oil-tanker",
+      "label": "Oil and liquid tanker ship",
+      "assetId": "ship-oil-tanker",
+      "transportMode": "ship",
+      "cargoClass": "liquid",
+      "file": "transport/variants/ship-oil-tanker.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "ship-ore-carrier",
+      "label": "Heavy ore carrier ship",
+      "assetId": "ship-ore-carrier",
+      "transportMode": "ship",
+      "cargoClass": "ore",
+      "file": "transport/variants/ship-ore-carrier.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "train-bulk-hopper",
+      "label": "Open bulk-hopper freight train",
+      "assetId": "train-bulk-hopper",
+      "transportMode": "rail",
+      "cargoClass": "dry_bulk",
+      "file": "transport/variants/train-bulk-hopper.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "train-container-freight",
+      "label": "Container freight train",
+      "assetId": "train-container-freight",
+      "transportMode": "rail",
+      "cargoClass": "general_cargo",
+      "file": "transport/variants/train-container-freight.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "train-gas-tank-cars",
+      "label": "Pressurized gas railcars",
+      "assetId": "train-gas-tank-cars",
+      "transportMode": "rail",
+      "cargoClass": "gas",
+      "file": "transport/variants/train-gas-tank-cars.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "train-liquid-tank-cars",
+      "label": "Liquid-tanker railcars",
+      "assetId": "train-liquid-tank-cars",
+      "transportMode": "rail",
+      "cargoClass": "liquid",
+      "file": "transport/variants/train-liquid-tank-cars.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "train-ore-hopper",
+      "label": "Ore-hopper freight train",
+      "assetId": "train-ore-hopper",
+      "transportMode": "rail",
+      "cargoClass": "ore",
+      "file": "transport/variants/train-ore-hopper.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "truck-container-hauler",
+      "label": "General-cargo container truck",
+      "assetId": "truck-container-hauler",
+      "transportMode": "truck",
+      "cargoClass": "general_cargo",
+      "file": "transport/variants/truck-container-hauler.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "truck-dry-bulk-tipper",
+      "label": "Dry-bulk tipper truck",
+      "assetId": "truck-dry-bulk-tipper",
+      "transportMode": "truck",
+      "cargoClass": "dry_bulk",
+      "file": "transport/variants/truck-dry-bulk-tipper.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "truck-gas-tanker",
+      "label": "Pressurized gas tanker truck",
+      "assetId": "truck-gas-tanker",
+      "transportMode": "truck",
+      "cargoClass": "gas",
+      "file": "transport/variants/truck-gas-tanker.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "truck-liquid-tanker",
+      "label": "Liquid tanker truck",
+      "assetId": "truck-liquid-tanker",
+      "transportMode": "truck",
+      "cargoClass": "liquid",
+      "file": "transport/variants/truck-liquid-tanker.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "truck-ore-hauler",
+      "label": "Heavy ore-haul dump truck",
+      "assetId": "truck-ore-hauler",
+      "transportMode": "truck",
+      "cargoClass": "ore",
+      "file": "transport/variants/truck-ore-hauler.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_VARIANT_ICON_V1"
+    },
+    {
+      "id": "mode-hero-road-truck",
+      "label": "Dimensional road freight truck",
+      "assetId": "mode-hero-road-truck",
+      "transportMode": "truck",
+      "cargoClass": "mode_hero",
+      "file": "transport/variants/mode-hero-road-truck.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_MODE_HERO_ART_V1"
+    },
+    {
+      "id": "mode-hero-freight-train",
+      "label": "Dimensional freight train",
+      "assetId": "mode-hero-freight-train",
+      "transportMode": "rail",
+      "cargoClass": "mode_hero",
+      "file": "transport/variants/mode-hero-freight-train.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_MODE_HERO_ART_V1"
+    },
+    {
+      "id": "mode-hero-cargo-ship",
+      "label": "Dimensional cargo ship",
+      "assetId": "mode-hero-cargo-ship",
+      "transportMode": "ship",
+      "cargoClass": "mode_hero",
+      "file": "transport/variants/mode-hero-cargo-ship.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_MODE_HERO_ART_V1"
+    },
+    {
+      "id": "mode-hero-river-barge",
+      "label": "Dimensional river cargo barge",
+      "assetId": "mode-hero-river-barge",
+      "transportMode": "barge",
+      "cargoClass": "mode_hero",
+      "file": "transport/variants/mode-hero-river-barge.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_MODE_HERO_ART_V1"
+    },
+    {
+      "id": "mode-hero-pipeline",
+      "label": "Dimensional industrial pipeline",
+      "assetId": "mode-hero-pipeline",
+      "transportMode": "pipeline",
+      "cargoClass": "mode_hero",
+      "file": "transport/variants/mode-hero-pipeline.svg",
+      "viewBox": "0 0 128 128",
+      "source": "LOCAL_SVG_ASSET",
+      "authority": "OMEGA_RESOURCE_TRANSPORT_MODE_HERO_ART_V1"
+    }
+  ]
+}

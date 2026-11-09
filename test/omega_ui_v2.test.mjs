@@ -1,0 +1,3824 @@
+import test from 'node:test';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+
+import '../omega_ui_v2/navigation-registry.js';
+import '../omega_ui_v2/ministry-visual-registry.js';
+import '../omega_ui_v2/screens/police-fleet.js';
+import '../omega_ui_v2/screens/resource-ministry.js';
+import '../omega_ui_v2/screens/government.js';
+import '../omega_ui_v2/screens/ministry-detail.js';
+import '../omega_ui_v2/screens/mine-detail.js';
+import '../omega_ui_v2/screens/industry.js';
+import '../omega_ui_v2/screens/home-affairs.js';
+import '../omega_ui_v2/screens/reports.js';
+import '../omega_ui_v2/screens/economy.js';
+import '../omega_ui_v2/app.js';
+import '../omega_ui_v2/integration.js';
+import '../omega_ui_v2/world-command-dock.js';
+import { existsSync, readFileSync } from 'node:fs';
+
+function offlineShellCacheVersion(source) {
+  const match = source.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/);
+  return match ? Number(match[1]) : 0;
+}
+
+test('factory product usage notes resolve recipe consumers and preserve the existing SVG identity', () => {
+  const catalog = JSON.parse(readFileSync(new URL('../resource_industrial_catalog_v1.json', import.meta.url), 'utf8'));
+  const previousGlobalCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const previousOmega = globalThis.Omega;
+  globalThis.OmegaResourceIndustrialCatalogData = catalog;
+  globalThis.Omega = Object.assign({}, previousOmega || {}, { ResourceIndustrialCatalogData: catalog });
+  const model = {
+    catalogProfiles: catalog.factoryProfiles,
+    catalogRecipes: catalog.downstreamFactoryRecipes,
+    processingRules: catalog.processingRules
+  };
+  try {
+    const steel = globalThis.OmegaUIV2Industry.productUsageMarkup(model, 'steel');
+    assert.match(steel, /Industrial Machinery and Machine Tools/);
+    assert.match(steel, /Grid and Electrical Equipment/);
+    assert.match(steel, /Vehicle, Truck and Bus Assembly/);
+    assert.match(steel, /Sector uses:/);
+    const scrap = globalThis.OmegaUIV2Industry.productUsageMarkup(model, 'metal_scrap');
+    assert.match(scrap, /Recycling and Waste Processing Plant/);
+    const food = globalThis.OmegaUIV2Industry.productUsageMarkup(model, 'processed_food');
+    assert.match(food, /No downstream factory recipe currently consumes this product/);
+    assert.match(food, /People and households consume processed food/);
+    const dust = globalThis.OmegaUIV2Industry.productUsageMarkup(model, 'processing_dust');
+    assert.match(dust, /No downstream recycling or treatment factory route is registered/);
+
+    const keyOf = value => String(value ?? '').trim().toLowerCase()
+      .replace(/^res[_-]?type[:_\/-]?/, '').replace(/[\s-]+/g, '_');
+    const routeConsumers = new Map();
+    const routeProducers = new Map();
+    const addRoute = (map, product, factoryType) => {
+      const key = keyOf(product);
+      const profile = catalog.factoryProfiles[factoryType] || {};
+      const name = profile.name || factoryType;
+      if (!map.has(key)) map.set(key, new Set());
+      map.get(key).add(name);
+    };
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[char]);
+    for (const rule of Object.values(catalog.processingRules || {})) {
+      const type = rule.factoryType || 'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT';
+      for (const product of Object.keys(rule.inputs || {})) addRoute(routeConsumers, product, type);
+      for (const product of Object.keys(rule.outputs || {})) addRoute(routeProducers, product, type);
+    }
+    for (const recipe of Object.values(catalog.downstreamFactoryRecipes || {})) {
+      for (const product of Object.keys(recipe.inputs || {})) addRoute(routeConsumers, product, recipe.factoryType);
+      for (const product of Object.keys(recipe.outputs || {})) addRoute(routeProducers, product, recipe.factoryType);
+    }
+    for (const [product, expectedNames] of routeConsumers) {
+      const markup = globalThis.OmegaUIV2Industry.productUsageMarkup(model, product);
+      for (const name of expectedNames) {
+        assert.ok(markup.includes(escapeHtml(name)), product + ': consumer route must include ' + name);
+      }
+    }
+    for (const [product, expectedNames] of routeProducers) {
+      const markup = globalThis.OmegaUIV2Industry.productUsageMarkup(model, product);
+      for (const name of expectedNames) {
+        assert.ok(markup.includes(escapeHtml(name)), product + ': producer route must include ' + name);
+      }
+    }
+
+    const identity = globalThis.OmegaUIV2Industry.productIdentityMarkup('processed_food', 'Processed Food');
+    assert.match(identity, /<svg/);
+    assert.match(identity, /fp-product-icon-frame/);
+
+    // Both aggregate daily requirements and per-factory input inventory use this
+    // shared renderer, so recipe/sector-use details must remain visible in both.
+    const industrySource = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+    const helperStart = industrySource.indexOf('function factoryInputIdentityMarkup(model, productId)');
+    const helperEnd = industrySource.indexOf('  function factoryInputAggregateSourceMarkup', helperStart);
+    assert.ok(helperStart >= 0 && helperEnd > helperStart, 'factory input identity renderer must exist');
+    const inputIdentityHelper = industrySource.slice(helperStart, helperEnd);
+    assert.ok(inputIdentityHelper.includes('factoryProductUsageMarkup(model, productId)'));
+    const inputTableCall = 'factoryInputIdentityMarkup(model, row.productId)';
+    assert.equal(industrySource.split(inputTableCall).length - 1, 2,
+      'both input views must render product-use routes');
+  } finally {
+    if (previousGlobalCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previousGlobalCatalog;
+    if (previousOmega === undefined) delete globalThis.Omega;
+    else globalThis.Omega = previousOmega;
+  }
+});
+
+test('Government navigation has exactly Executive Ministry and All Ministries', () => {
+  const nav = globalThis.OmegaUIV2Navigation;
+  assert.ok(nav);
+  assert.deepEqual(nav.governmentDestinations.map((item) => item.id), ['executive-ministry', 'all-ministries']);
+  assert.equal(nav.canRenderCountryOverview('executive-ministry'), true);
+  assert.equal(nav.canRenderCountryOverview('all-ministries'), false);
+  assert.equal(nav.normalizeGovernmentDestination('overview'), 'executive-ministry');
+});
+
+test('registry exposes 18 canonical ministry destinations with local visual assets', () => {
+  const nav = globalThis.OmegaUIV2Navigation;
+  const visuals = globalThis.OmegaUIV2MinistryVisualRegistry;
+  assert.equal(nav.ministryIds.length, 18);
+  assert.equal(new Set(nav.ministryIds).size, 18);
+  assert.equal(nav.visibleRegularMinistryCount, 17);
+  assert.equal(nav.visibleMinistryCount, 18);
+  assert.equal(nav.unresolvedDirectoryLabelCount, 0);
+  assert.ok(nav.ministryIds.includes('cabinet_council'));
+  assert.equal(visuals.count, 18);
+  assert.deepEqual(visuals.ids, nav.ministryIds);
+  assert.equal(visuals.get('defense').logo, 'assets/Military_Ministry_Logo_Concept_A.png.jpg');
+  assert.equal(visuals.get('foreign_affairs').logo, 'assets/IMG_20260703_180105.jpg');
+  assert.ok(visuals.get('intelligence_cyber').image.includes('China_Military_Facilities_What_Satellites_Reveal'));
+  assert.ok(visuals.get('intelligence_cyber').gallery.includes('assets/images (14).jpeg'));
+});
+
+test('newly uploaded national-security, research and trade references are assigned to ministry galleries', () => {
+  const visuals = globalThis.OmegaUIV2MinistryVisualRegistry;
+  assert.ok(visuals.get('science_research').gallery.includes('assets/1776286900118.png'));
+  assert.ok(visuals.get('trade').gallery.includes('assets/futuristic-digital-visualization-global-import-260nw-2615199881.jpg'));
+  assert.ok(visuals.get('defense').gallery.includes('assets/vecteezy_ai-generated-futuristic-army-combatants-in-a-firefight-with_35839258.jpg'));
+  assert.ok(visuals.get('intelligence_cyber').gallery.includes('assets/1783055273164.jpg'));
+  assert.ok(visuals.get('intelligence_cyber').gallery.includes('assets/1783068102501.jpg'));
+});
+
+test('all ministry cover photos, gallery assets and uploaded logos exist in the repository', () => {
+  const visuals = globalThis.OmegaUIV2MinistryVisualRegistry;
+  for (const visual of visuals.list()) {
+    for (const asset of [visual.image, visual.logo, ...(visual.gallery || [])].filter(Boolean)) {
+      assert.ok(existsSync(new URL('../' + asset, import.meta.url)), visual.title + ' is missing asset ' + asset);
+    }
+  }
+});
+
+test('police fleet view model reads all 15 canonical profiles and preserves missing values', () => {
+  const vehicles = Array.from({ length: 15 }, (_, index) => ({
+    level: index + 1,
+    id: 'vehicle-' + (index + 1),
+    name: 'Vehicle ' + (index + 1),
+    className: 'Tier ' + (index + 1),
+    cost: index === 0 ? 1000 : undefined,
+    speed: index === 0 ? 120 : undefined,
+    acceleration: index === 0 ? 48 : undefined,
+    capabilities: index === 0 ? { response: 42, patrol: 52 } : undefined,
+    terrain: index === 0 ? 'City streets' : undefined,
+    environmentFit: { city: index === 0 ? 98 : undefined }
+  }));
+  globalThis.OmegaHomeMinistryEngine = {
+    VEHICLES: vehicles,
+    getCurrentCountryId: () => 'BGD',
+    getState: () => ({
+      unlockedVehicleLevel: 3,
+      vehiclesOwned: { '1': 2, '2': 0, '3': 1 },
+      pendingVehicleOrder: { level: 4, quantity: 2, totalCost: 5000 }
+    })
+  };
+  globalThis.OMEGA_UI_ADAPTER = {
+    getPoliceVehicleSvg: (level) => '<svg aria-label="Vehicle ' + level + '"></svg>',
+    renderVehicleCatalog: () => {}
+  };
+  const model = globalThis.OmegaUIV2PoliceFleet.buildViewModel();
+  assert.equal(model.ready, true);
+  assert.equal(model.catalogCount, 15);
+  assert.equal(model.catalogCountMatchesExpected, true);
+  assert.deepEqual(model.vehicles.map((vehicle) => vehicle.level), Array.from({ length: 15 }, (_, i) => i + 1));
+  assert.equal(model.vehicles[0].ownedCount, 2);
+  assert.equal(model.vehicles[0].acceleration, 48);
+  assert.equal(model.vehicles[0].capabilities.response, 42);
+  assert.equal(model.vehicles[0].terrain, 'City streets');
+  assert.equal(model.vehicles[3].pendingOrder.quantity, 2);
+  assert.equal(model.vehicles[4].cost, null);
+  assert.equal(model.vehicles[4].speed, null);
+  assert.equal(model.vehicles[4].unlocked, false);
+});
+
+test('police fleet view model fails visibly rather than fabricating catalog entries', () => {
+  delete globalThis.OmegaHomeMinistryEngine;
+  const model = globalThis.OmegaUIV2PoliceFleet.buildViewModel();
+  assert.equal(model.ready, false);
+  assert.equal(model.catalogCount, 0);
+  assert.equal(model.reason, 'CANONICAL_POLICE_VEHICLE_CATALOG_UNAVAILABLE');
+});
+
+test('resource site view model deduplicates by siteId and scopes country before presentation', () => {
+  const sites = [
+    { siteId: 'BGD-GAS-01', countryId: 'BGD', resourceId: 'natural_gas', siteName: 'Gas Site', quantitative: { reserve: { quantity: 40, unit: 'BCF', status: 'OBSERVED' }, production: { annual: 4, annualUnit: 'BCF/year', status: 'OBSERVED' } } },
+    { siteId: 'BGD-GAS-01', countryId: 'BGD', resourceId: 'natural_gas', siteName: 'Duplicate Alias' },
+    { siteId: 'USA-OIL-01', countryId: 'USA', resourceId: 'crude_oil', siteName: 'Oil Site' },
+    { siteId: 'MISSING-COUNTRY', resourceId: 'coal', siteName: 'Incomplete Identity' }
+  ];
+  const model = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({ countryId: 'BGD', sites });
+  assert.equal(model.siteCount, 1);
+  assert.equal(model.sites[0].siteId, 'BGD-GAS-01');
+  assert.equal(model.sites[0].reserve.value, 40);
+  assert.equal(model.sites[0].production.value, 4);
+  assert.equal(model.sites[0].stock, null);
+});
+
+test('resource view model keeps simulated reserve out of reported reserve', () => {
+  const model = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({
+    countryId: 'BGD',
+    sites: [{
+      siteId: 'BGD-IRON-01',
+      countryId: 'BGD',
+      resourceId: 'iron_ore',
+      quantitative: { reserve: { quantity: null, unit: 'tonnes', status: 'UNQUANTIFIED' } },
+      simulation: { reserve: { quantity: 5000, unit: 'tonnes', status: 'SIMULATED' } }
+    }]
+  });
+  assert.equal(model.sites[0].reserve.value, null);
+  assert.equal(model.sites[0].modeledReserve.modeledValue, 5000);
+});
+
+
+test('Government directory includes every canonical cabinet record', () => {
+  globalThis.OmegaCabinetUI = {
+    ministriesDatabase: {
+      cabinet_council: { id:'cabinet_council', title:'Executive Cabinet', category:'governance' },
+      interior_security: { id:'interior_security', title:'Interior & Security', category:'governance', status:'PEACEFUL' },
+      energy_mining: { id:'energy_mining', title:'Energy & Mining', category:'agriculture', status:'POWERFUL' }
+    }
+  };
+  const rows = globalThis.OmegaUIV2Government.getMinistryRows();
+  assert.deepEqual(rows.map((row) => row.id), ['cabinet_council', 'interior_security', 'energy_mining']);
+  assert.equal(rows.length, 3);
+});
+
+
+test('executive government overview reuses its ministry rows without loading unused minister state', () => {
+  const keys = ['OmegaCabinetUI','OmegaMinisterRecruitment','OmegaMinisterStateRegistry',
+    'OmegaLiveMinisterSelectorV9','OmegaCountryDataGateway'];
+  const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
+  let activeMinisterReads = 0;
+  globalThis.OmegaCabinetUI = {
+    ministriesDatabase: {
+      energy_mining: { id:'energy_mining', title:'Energy & Mining', bnTitle:'Energy', category:'agriculture' },
+      interior_security: { id:'interior_security', title:'Interior & Security', bnTitle:'Interior', category:'governance' }
+    }
+  };
+  globalThis.OmegaMinisterRecruitment = {
+    normalizeCountryCode(value) { return String(value || '').toUpperCase() === 'BANGLADESH' ? 'BGD' : String(value || '').toUpperCase(); }
+  };
+  globalThis.OmegaMinisterStateRegistry = {
+    getActiveMinisterSummary() { activeMinisterReads += 1; return null; }
+  };
+  globalThis.OmegaLiveMinisterSelectorV9 = {
+    active() { activeMinisterReads += 1; return null; }
+  };
+  globalThis.OmegaCountryDataGateway = {
+    getSnapshot(countryId) {
+      assert.equal(countryId, 'BGD');
+      return {
+        countryCode:'BGD',
+        status:'OK',
+        identity:{ countryCode:'BGD', name:'Bangladesh', officialName:'People’s Republic of Bangladesh' },
+        fields:{},
+        diagnostics:{ missingFields:[] }
+      };
+    }
+  };
+  const root = {
+    classList:{ add() {} },
+    addEventListener() {},
+    innerHTML:''
+  };
+  try {
+    const result = globalThis.OmegaUIV2Government.render(root, { countryId:'BGD' });
+    assert.equal(result.ok, true);
+    assert.equal(result.view, 'executive-ministry');
+    assert.equal(activeMinisterReads, 0,
+      'the executive overview only uses ministry labels and must not read every minister record');
+    assert.match(root.innerHTML, /Energy &amp; Mining|Energy & Mining/);
+    assert.match(root.innerHTML, /Interior &amp; Security|Interior & Security/);
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete globalThis[key];
+      else globalThis[key] = previous[key];
+    }
+  }
+});
+
+test('Government ministry rows show the canonical active minister for the explicitly selected country', () => {
+  const previous = {
+    OmegaCabinetUI: globalThis.OmegaCabinetUI,
+    OmegaMinisterRecruitment: globalThis.OmegaMinisterRecruitment,
+    OmegaMinisterStateRegistry: globalThis.OmegaMinisterStateRegistry,
+    OmegaLiveMinisterSelectorV9: globalThis.OmegaLiveMinisterSelectorV9
+  };
+  globalThis.OmegaCabinetUI = {
+    activeCountry: 'USA',
+    ministriesDatabase: {
+      interior_security: {
+        id: 'interior_security',
+        title: 'Interior & Security',
+        category: 'governance',
+        ministerName: 'Stale minister from another country'
+      }
+    }
+  };
+  globalThis.OmegaMinisterRecruitment = {
+    normalizeCountryCode(value) {
+      const label = String(value == null ? '' : value).trim().toUpperCase();
+      return label === 'BANGLADESH' || label === 'BGD' ? 'BGD' : label;
+    }
+  };
+  globalThis.OmegaMinisterStateRegistry = {
+    getActiveMinisterSummary(countryId, ministryId) {
+      return countryId === 'BGD' && ministryId === 'interior_security'
+        ? {
+            ministerId: 'BGD-INTERIOR-01',
+            staticProfile: { ministerId: 'BGD-INTERIOR-01', baseName: 'Country-scoped Minister' },
+            runtimeState: { status: 'ACTIVE' }
+          }
+        : null;
+    }
+  };
+  globalThis.OmegaLiveMinisterSelectorV9 = {
+    active(ministryId, countryId) {
+      const normalized = globalThis.OmegaMinisterRecruitment.normalizeCountryCode(countryId);
+      const active = globalThis.OmegaMinisterStateRegistry.getActiveMinisterSummary(normalized, ministryId);
+      return active ? {
+        ministerId: active.ministerId,
+        staticProfile: active.staticProfile,
+        profile: active.staticProfile,
+        runtime: active.runtimeState
+      } : null;
+    }
+  };
+  try {
+    const rows = globalThis.OmegaUIV2Government.getMinistryRows('Bangladesh');
+    const ministry = rows.find((row) => row.id === 'interior_security');
+    assert.equal(ministry.ministerName, 'Country-scoped Minister');
+    assert.doesNotMatch(ministry.ministerName, /Stale minister/);
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete globalThis[key];
+      else globalThis[key] = value;
+    }
+  }
+});
+
+test('Home Affairs exposes its planned sections including Budget & Expenditure without creating a separate recruitment destination', () => {
+  const tabs = globalThis.OmegaUIV2HomeAffairs.tabs;
+  assert.deepEqual(tabs.map((item) => item.id), ['dashboard', 'budget', 'personnel', 'fleet', 'patrols', 'facilities', 'incidents', 'laws']);
+  assert.equal(tabs.some((item) => /recruit/i.test(item.id)), false);
+});
+
+
+test('Home Affairs restores the Finance-backed budget and expenditure panel and saves category allocations through the canonical engine', () => {
+  const previous = globalThis.OmegaHomeMinistryEngine;
+  const saved = { plan:null, country:null };
+  const snapshot = {
+    available:true, valid:true, canEdit:true, countryId:'AAA',
+    parentBudgetUsd:1000000, parentRemainingUsd:900000, treasuryBalanceUsd:2500000,
+    planTotalUsd:1000000, unplannedBudgetUsd:0, spentThisYearUsd:100000,
+    plan:{
+      personnel:{mode:'percent',value:45}, vehicles:{mode:'percent',value:20},
+      maintenance:{mode:'percent',value:15}, facilities:{mode:'percent',value:8},
+      training:{mode:'percent',value:5}, operations:{mode:'percent',value:7}
+    },
+    categories:{
+      personnel:{budgetUsd:450000,spentUsd:60000,remainingUsd:390000},
+      vehicles:{budgetUsd:200000,spentUsd:20000,remainingUsd:180000},
+      maintenance:{budgetUsd:150000,spentUsd:10000,remainingUsd:140000},
+      facilities:{budgetUsd:80000,spentUsd:5000,remainingUsd:75000},
+      training:{budgetUsd:50000,spentUsd:5000,remainingUsd:45000},
+      operations:{budgetUsd:70000,spentUsd:0,remainingUsd:70000}
+    }
+  };
+  globalThis.OmegaHomeMinistryEngine = {
+    getHomeBudgetSnapshot(country) { assert.equal(country,'AAA'); return snapshot; },
+    setHomeBudgetPlan(plan,country) { saved.plan=plan; saved.country=country; return {ok:true,snapshot}; }
+  };
+  const values = {personnel:'45',vehicles:'20',maintenance:'15',facilities:'8',training:'5',operations:'7'};
+  const root = {
+    innerHTML:'',
+    classList:{add(){}},
+    handlers:{},
+    addEventListener(type,handler){this.handlers[type]=handler;},
+    contains(){return true;},
+    querySelector(selector){
+      const valueMatch=selector.match(/data-omega-v2-budget-value="([^"]+)"/);
+      if(valueMatch)return {value:values[valueMatch[1]]};
+      const modeMatch=selector.match(/data-omega-v2-budget-mode="([^"]+)"/);
+      if(modeMatch)return {value:'percent'};
+      return null;
+    }
+  };
+  try {
+    const dashboardRoot={innerHTML:'',classList:{add(){}},addEventListener(){},contains(){return true;}};
+    const dashboardResult=globalThis.OmegaUIV2HomeAffairs.render(dashboardRoot,{countryId:'AAA',tab:'dashboard'});
+    assert.equal(dashboardResult.ok,true);
+    assert.match(dashboardRoot.innerHTML,/Annual Home Affairs allocation/);
+    assert.match(dashboardRoot.innerHTML,/\$1,000,000/);
+    assert.match(dashboardRoot.innerHTML,/OPEN HOME AFFAIRS BUDGET/);
+    const result=globalThis.OmegaUIV2HomeAffairs.render(root,{countryId:'AAA',tab:'budget'});
+    assert.equal(result.ok,true);
+    assert.equal(result.tab,'budget');
+    assert.match(root.innerHTML,/Budget &amp; Expenditure/);
+    assert.match(root.innerHTML,/\$1,000,000/);
+    assert.match(root.innerHTML,/\$2,500,000/);
+    assert.match(root.innerHTML,/\$60,000/);
+    assert.match(root.innerHTML,/SAVE HOME AFFAIRS BUDGET/);
+    const action={disabled:false,getAttribute(name){return name==='data-omega-v2-action'?'save-home-budget':null;}};
+    const target={closest(selector){return selector==='[data-omega-v2-home-tab]'?null:selector==='[data-omega-v2-action]'?action:null;}};
+    root.handlers.click({target});
+    assert.equal(saved.country,'AAA');
+    assert.deepEqual(saved.plan,{
+      personnel:{mode:'percent',value:45},vehicles:{mode:'percent',value:20},
+      maintenance:{mode:'percent',value:15},facilities:{mode:'percent',value:8},
+      training:{mode:'percent',value:5},operations:{mode:'percent',value:7}
+    });
+    assert.match(root.innerHTML,/budget plan saved/i);
+  } finally {
+    if(previous===undefined)delete globalThis.OmegaHomeMinistryEngine;
+    else globalThis.OmegaHomeMinistryEngine=previous;
+  }
+});
+
+test('Home Affairs budget remains read-only for a non-player country and does not offer made-up values', () => {
+  const previous=globalThis.OmegaHomeMinistryEngine;
+  globalThis.OmegaHomeMinistryEngine={
+    getHomeBudgetSnapshot(){return {available:true,valid:true,canEdit:false,countryId:'BBB',parentBudgetUsd:20000000,parentRemainingUsd:20000000,treasuryBalanceUsd:30000000,planTotalUsd:20000000,unplannedBudgetUsd:0,spentThisYearUsd:0,plan:{personnel:{mode:'percent',value:45},vehicles:{mode:'percent',value:20},maintenance:{mode:'percent',value:15},facilities:{mode:'percent',value:8},training:{mode:'percent',value:5},operations:{mode:'percent',value:7}},categories:{personnel:{budgetUsd:9000000,spentUsd:0,remainingUsd:9000000},vehicles:{budgetUsd:4000000,spentUsd:0,remainingUsd:4000000},maintenance:{budgetUsd:3000000,spentUsd:0,remainingUsd:3000000},facilities:{budgetUsd:1600000,spentUsd:0,remainingUsd:1600000},training:{budgetUsd:1000000,spentUsd:0,remainingUsd:1000000},operations:{budgetUsd:1400000,spentUsd:0,remainingUsd:1400000}}};}
+  };
+  try {
+    const root={innerHTML:'',classList:{add(){}},addEventListener(){},contains(){return true;}};
+    const result=globalThis.OmegaUIV2HomeAffairs.render(root,{countryId:'BBB',tab:'budget'});
+    assert.equal(result.ok,true);
+    assert.match(root.innerHTML,/READ-ONLY COUNTRY VIEW/);
+    assert.match(root.innerHTML,/disabled/);
+    assert.match(root.innerHTML,/\$20,000,000/);
+    assert.doesNotMatch(root.innerHTML,/Not allocated/);
+  } finally {
+    if(previous===undefined)delete globalThis.OmegaHomeMinistryEngine;
+    else globalThis.OmegaHomeMinistryEngine=previous;
+  }
+});
+
+test('industry source avoids building datasets for inactive tabs', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  assert.match(source, /var activeTab = String\(options\.activeTab \|\| options\.tab \|\| 'factories'\)/);
+  assert.match(source, /lightweightTypeView \|\| activeTab === 'production-lines' \|\| stockSummaryView \? assets\.map/);
+  assert.match(source, /if \(activeTab === 'production-lines'\) \{/);
+  assert.match(source, /var refreshedModel = buildViewModel\(\{ countryId:countryKey, tab:currentTab,/);
+  assert.match(source, /var currentExtraction = optimizedFactoryRead \|\| !\(stockSummaryView \|\| needsMineProduction\)/);
+  assert.match(source, /var production = needsMineProduction \? mineDailyProduction\(site\) : null/);
+  assert.match(source, /var resourceInventoryLedger = stockSummaryView && Array\.isArray\(resource\.inventoryLedger\) \?/);
+  assert.match(source, /activeTab === 'production-lines' \? cyclesList\.length : 0/);
+});
+
+test('industry view reads current country assets, cycles and projects without synthesizing factories', () => {
+  globalThis.Game = { state: {
+    resource: { BGD: { industrialNetwork: {
+      projects: [{ projectId:'P-1', projectType:'MINE_CONSTRUCTION', status:'UNDER_CONSTRUCTION' }],
+      factoryProductionCycles: { 'FAC-1': { status:'IN_PROGRESS', productionQuantity:20, sourceBatchIds:['B-1'] } }
+    } } },
+    economy: { BGD: { productionAssets: [
+      { id:'FAC-1', factoryType:'STEEL_MILL', capacityPerDay:50, inputInventory:{ iron_ore:20 }, employment:{jobsFilled:3,jobsSupported:5} }
+    ] } }
+  } };
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: { STEEL_MILL: { name:'Steel Mill', defaultRecipeId:'STEEL-RECIPE', employment:{jobsPerFactory:5} } }
+  };
+  const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+  assert.equal(model.factoryCount,1);
+  assert.equal(model.factories[0].id,'FAC-1');
+  assert.equal(model.factories[0].capacityPerDay,50);
+  assert.equal(model.factories[0].inputRows[0].quantity,20);
+  assert.equal(model.cycles.length,1);
+  assert.equal(model.projects.length,1);
+  assert.equal(globalThis.OmegaUIV2Industry.buildViewModel({countryId:'USA'}).factoryCount,0);
+});
+
+test('factory type views skip unrelated national inventory and cumulative history reads', () => {
+  const previous = {
+    Game:globalThis.Game,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    factoryBaseline:globalThis.OmegaCountryFactoryStartingBaselineV1
+  };
+  let inventoryReads = 0;
+  const resource = { batches:[], industrialNetwork:{ projects:[], factoryProductionCycles:{}, factoryRuntime:{} } };
+  Object.defineProperty(resource, 'finishedGoodsLedger', {
+    configurable:true,
+    get(){ throw new Error('Factory type render must not clone historical finished goods'); }
+  });
+  Object.defineProperty(resource.industrialNetwork, 'siteFlowLedger', {
+    configurable:true,
+    get(){ throw new Error('Factory type render must not scan cumulative site-flow history'); }
+  });
+  Object.defineProperty(resource, 'mineAssets', {
+    configurable:true,
+    get(){ throw new Error('Factory type render does not need the mine-asset projection'); }
+  });
+  globalThis.Game = { state:{
+    simulation:{ session:{ playerCountryId:'BGD' }, turn:3, daysPerTurn:1 },
+    resource:{ BGD:resource },
+    economy:{ BGD:{ productionAssets:[{
+      id:'FAST-FACTORY-01', name:'Fast Steel Works', factoryType:'STEEL_MILL',
+      status:'OPERATIONAL', capacityPerDay:12, inputUnit:'SIMULATION_RESOURCE_UNIT',
+      inputCoefficients:{ iron_ore:0.5 }, inputInventory:{ iron_ore:2 },
+      inputBatchLots:[{ batchId:'FAST-IRON-LOT', resourceId:'iron_ore', remainingQuantity:2, quantity:2, unit:'SIMULATION_RESOURCE_UNIT' }]
+    }] } }
+  } };
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles:{ STEEL_MILL:{ name:'Steel Mill', category:'Heavy Industry', defaultCapacityPerDay:12 } },
+    downstreamFactoryRecipes:{}, processingRules:{}
+  };
+  globalThis.OmegaCountryInventoryRuntime = {
+    getInventory(){ inventoryReads += 1; throw new Error('National inventory projection should be deferred'); },
+    getResourceCatalog(){ inventoryReads += 1; throw new Error('Resource catalog projection should be deferred'); }
+  };
+  try {
+    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; }, innerHTML:'' };
+    const result = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', tab:'factories', factoryView:'types' });
+    assert.equal(result.ok,true);
+    assert.equal(result.model.__omegaV2FactoryInputOptimized,true);
+    assert.equal(result.model.factoryCount,1);
+    assert.equal(result.model.factoryTypeCounts.find(row => row.type === 'STEEL_MILL').count,1);
+    assert.equal(result.model.cycles.length,0);
+    assert.equal(inventoryReads,0);
+    assert.match(root.innerHTML,/class="fp-type-catalog"/);
+    assert.match(root.innerHTML,/data-omega-v2-factory-type-card/);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime;
+    else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.factoryBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
+    else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.factoryBaseline;
+  }
+});
+
+test('industry factory cards show owned factory counts without a separate source-data panel', () => {
+  const previousGame = globalThis.Game;
+  const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const previousFactoryBaseline = globalThis.OmegaCountryFactoryStartingBaselineV1;
+  const previousPrivateEnterpriseRuntime = globalThis.OmegaPrivateEnterpriseRegistryV1;
+  globalThis.Game = { state: {
+    simulation: { session: { playerCountryId: 'BGD' }, turn: 12 },
+    resource: {
+      BGD: { industrialNetwork: { projects: [], factoryProductionCycles: {}, factoryRuntime: {}, siteFlowLedger: [] } },
+      USA: { industrialNetwork: { projects: [], factoryProductionCycles: {}, factoryRuntime: {}, siteFlowLedger: [] } }
+    },
+    economy: { BGD: { productionAssets: [] }, USA: { productionAssets: [] } }
+  } };
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', defaultRecipeId:'STEEL-RECIPE' },
+      CEMENT_PLANT: { name:'Cement Plant', defaultRecipeId:'CEMENT-RECIPE' }
+    },
+    downstreamFactoryRecipes: {
+      'STEEL-RECIPE': {
+        factoryType:'STEEL_MILL', inputs:{iron_ore:1}, outputs:{steel:1,slag:0.1},
+        inputUnit:'tonnes', outputUnit:'tonnes', quantityBasis:'PER_SIMULATION_PRODUCTION_UNIT',
+        presentation:{primaryInputs:['iron_ore'],primaryOutputs:['steel'],byProducts:['slag']}
+      }
+    }
+  };
+  globalThis.OmegaPrivateEnterpriseRegistryV1 = {
+    getCountryBaseline(countryId) {
+      if (countryId !== 'BGD') return null;
+      return {
+        status:'READY', totalGovernmentFactoryUnits:3, totalPrivateFactoryUnits:2,
+        privateToGovernmentBaselinePercent:66.7,
+        factoryCounts:{STEEL_MILL:2,CEMENT_PLANT:0},
+        companies:[
+          {companyId:'AURORA_INDUSTRIAL_GROUP',companyName:'Aurora Industrial Group',factoryCounts:{STEEL_MILL:1,CEMENT_PLANT:0},totalFactoryUnits:1},
+          {companyId:'MERIDIAN_ENGINEERING_GROUP',companyName:'Meridian Engineering Group',factoryCounts:{STEEL_MILL:1,CEMENT_PLANT:0},totalFactoryUnits:1},
+          {companyId:'NOVA_CONSUMER_INDUSTRIES',companyName:'Nova Consumer Industries',factoryCounts:{STEEL_MILL:0,CEMENT_PLANT:0},totalFactoryUnits:0},
+          {companyId:'ATLAS_TECHNOLOGY_CORPORATION',companyName:'Atlas Technology Corporation',factoryCounts:{STEEL_MILL:0,CEMENT_PLANT:0},totalFactoryUnits:0},
+          {companyId:'TERRA_INFRASTRUCTURE_GROUP',companyName:'Terra Infrastructure Group',factoryCounts:{STEEL_MILL:0,CEMENT_PLANT:0},totalFactoryUnits:0}
+        ]
+      };
+    }
+  };
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryFactoryRegistry(countryId) {
+      if (countryId !== 'BGD') return null;
+      return {
+        status:'READY', runtimeRegistered:false,
+        registry:[
+          {factoryType:'STEEL_MILL',name:'Steel Mill',startingCount:3},
+          {factoryType:'CEMENT_PLANT',name:'Cement Plant',startingCount:0}
+        ],
+        liveFactoryTypeCounts:{STEEL_MILL:0,CEMENT_PLANT:0}
+      };
+    },
+  };
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(model.factoryCount, 3);
+    assert.equal(model.countryFactoryEstablishmentData, undefined);
+    assert.deepEqual(model.factoryTypeCounts.map(row => [row.type,row.count]), [
+      ['CEMENT_PLANT',0], ['STEEL_MILL',3]
+    ]);
+    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const result = globalThis.OmegaUIV2Industry.render(root, {
+      countryId:'BGD', tab:'factories', factoryView:'types'
+    });
+    assert.equal(result.ok, true);
+    assert.doesNotMatch(root.innerHTML, /Factory types &amp; country totals|EXISTING FACTORIES IN THIS COUNTRY|FACTORY TYPES NOT PRESENT IN THIS COUNTRY|EXISTING IN THIS COUNTRY|NOT PRESENT IN THIS COUNTRY/);
+    assert.doesNotMatch(root.innerHTML, /Modeled build time|Modeled capacity|Modeled construction cost|simulation/i);
+    assert.doesNotMatch(root.innerHTML, /class="fp-summary"/);
+    assert.match(root.innerHTML, /data-factory-total/);
+    assert.match(root.innerHTML, /data-factory-total-value>3<\/strong>/);
+    const mainFactoryHeaderStart = root.innerHTML.indexOf('<header class="fp-top"');
+    const mainFactoryHeaderEnd = root.innerHTML.indexOf('</header>', mainFactoryHeaderStart);
+    assert.ok(mainFactoryHeaderStart >= 0 && mainFactoryHeaderEnd > mainFactoryHeaderStart);
+    const mainFactoryHeader = root.innerHTML.slice(mainFactoryHeaderStart, mainFactoryHeaderEnd);
+    assert.match(mainFactoryHeader, /data-factory-total/);
+    assert.match(mainFactoryHeader, /TOTAL FACTORIES/);
+    assert.doesNotMatch(root.innerHTML.slice(mainFactoryHeaderEnd + 9), /data-factory-total/,
+      'the combined count must not render as a separate summary card below the main header');
+    assert.match(root.innerHTML, /Factories/);
+    assert.match(root.innerHTML, /<strong>3<\/strong>/);
+    const steelCardStart = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="STEEL_MILL"');
+    const steelCardEnd = root.innerHTML.indexOf('</article>', steelCardStart);
+    const steelCardMarkup = root.innerHTML.slice(steelCardStart, steelCardEnd);
+    assert.match(steelCardMarkup, /fp-card-face--front/);
+    assert.match(steelCardMarkup, /fp-card-front-focus/);
+    assert.match(steelCardMarkup, /data-omega-v2-factory-details/);
+    assert.match(steelCardMarkup, />Manage</);
+    assert.doesNotMatch(steelCardMarkup, /data-product-role=/,
+      'recipe products must stay off the narrow front face and move to the flipped detail view');
+    assert.doesNotMatch(steelCardMarkup, /data-factory-detail-panel/,
+      'details must not create a second panel below the card');
+    const existingCard = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="STEEL_MILL"');
+    const absentCard = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="CEMENT_PLANT"');
+    assert.ok(existingCard >= 0 && absentCard > existingCard,
+      'country-owned factory types must appear above types with zero factories');
+    const zeroFactoryCard = root.innerHTML.slice(absentCard, root.innerHTML.indexOf('</article>', absentCard));
+    assert.match(zeroFactoryCard, /<span>Factories<\/span><strong>0<\/strong>/,
+      'zero itself clearly communicates that the selected country has no factory of that type');
+    assert.doesNotMatch(root.innerHTML, /UNIDO|Official establishment data|Establishments|Source status/);
+    const manageRoot = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const manageResult = globalThis.OmegaUIV2Industry.render(manageRoot, {
+      countryId:'BGD', tab:'companies'
+    });
+    assert.equal(manageResult.ok, true);
+    assert.equal(manageResult.model.factoryCount, 3,
+      'uncommissioned private opening allocations must not inflate the shared factory total');
+    assert.match(manageRoot.innerHTML, /data-private-ownership-breakdown="v1"/);
+    assert.match(manageRoot.innerHTML, /Factory type ownership breakdown/);
+    assert.match(manageRoot.innerHTML, /SHARED POOL FACTORIES/);
+    assert.match(manageRoot.innerHTML, /PRIVATE OPENING UNITS/);
+    assert.match(manageRoot.innerHTML, /Aurora Industrial Group/);
+    assert.match(manageRoot.innerHTML, /Meridian Engineering Group/);
+    assert.match(manageRoot.innerHTML, /<tfoot><tr><th scope="row">Total<\/th><td>3<\/td><td>2<\/td>/);
+    assert.match(manageRoot.innerHTML, /not commissioned assets/i);
+    const foreign = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'USA' });
+    assert.equal(foreign.factoryCount, 0, 'another country does not inherit Bangladesh factory counts');
+  } finally {
+    if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
+    if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
+    if (previousFactoryBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
+    else globalThis.OmegaCountryFactoryStartingBaselineV1 = previousFactoryBaseline;
+    if (previousPrivateEnterpriseRuntime === undefined) delete globalThis.OmegaPrivateEnterpriseRegistryV1;
+    else globalThis.OmegaPrivateEnterpriseRegistryV1 = previousPrivateEnterpriseRuntime;
+  }
+});
+
+test('industry treats starting and newly built factories as one live asset registry', () => {
+  const previousGame = globalThis.Game;
+  const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  globalThis.Game = { state: {
+    simulation: { session: { playerCountryId: 'BGD' }, turn: 12, daysPerTurn: 1 },
+    resource: {
+      BGD: { industrialNetwork: { projects: [], factoryProductionCycles: {}, factoryRuntime: {}, siteFlowLedger: [] } },
+      USA: { industrialNetwork: { projects: [], factoryProductionCycles: {}, factoryRuntime: {}, siteFlowLedger: [] } }
+    },
+    economy: {
+      BGD: { productionAssets: [
+        { id:'FAC-START:BGD:STEEL_MILL:1', factoryType:'STEEL_MILL', name:'East Steel Works', capacityPerDay:120, status:'OPERATIONAL', sourceType:'COUNTRY_STARTING_FACTORY_BASELINE' },
+        { id:'FAC-START:BGD:STEEL_MILL:2', factoryType:'STEEL_MILL', name:'West Steel Works', capacityPerDay:90, status:'OPERATIONAL', sourceType:'COUNTRY_STARTING_FACTORY_BASELINE' },
+        { id:'FAC-START:BGD:STEEL_MILL:3', factoryType:'STEEL_MILL', name:'Central Steel Works', capacityPerDay:85, status:'OPERATIONAL', sourceType:'COUNTRY_STARTING_FACTORY_BASELINE' }
+      ] },
+      USA: { productionAssets: [
+        { id:'USA-CEMENT-1', factoryType:'CEMENT_PLANT', name:'Foreign Cement Plant', capacityPerDay:400 }
+      ] }
+    }
+  } };
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', defaultRecipeId:'STEEL-RECIPE' },
+      CEMENT_PLANT: { name:'Cement Plant', defaultRecipeId:'CEMENT-RECIPE' }
+    }
+  };
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(model.factoryCount, 3,
+      'every starting factory must be a normal asset in the live factory collection');
+    assert.deepEqual(model.factoryTypeCounts.map((row) => ({ name:row.name, count:row.count })), [
+      { name:'Steel Mill', count:3 }
+    ]);
+    assert.equal(Object.prototype.hasOwnProperty.call(model, 'startingFactoryUnits'), false,
+      'the Industry view model must not expose a second starting-factory counter');
+    assert.equal(Object.prototype.hasOwnProperty.call(model.factoryTypeCatalog[0], 'startingCount'), false,
+      'factory types must not expose a parallel starting allocation count');
+    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const result = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', tab:'factories', factoryView:'assets' });
+    assert.equal(result.ok, true);
+    assert.match(root.innerHTML, /omega-v2-factory-command/);
+    assert.match(root.innerHTML, /data-omega-v2-factory-card/);
+    assert.match(root.innerHTML, /East Steel Works/);
+    assert.match(root.innerHTML, /Factories/);
+    assert.doesNotMatch(root.innerHTML, /class="fp-summary"/);
+    assert.doesNotMatch(root.innerHTML, /Starting factory allocation|Starting allocation|STARTING UNITS|Starting Factory Allocation/);
+    assert.doesNotMatch(root.innerHTML, /Foreign Cement Plant/);
+    assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|FACTORY SVG SLOT/);
+
+    const typeRoot = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const typeResult = globalThis.OmegaUIV2Industry.render(typeRoot, {
+      countryId:'BGD', tab:'factories', factoryView:'types'
+    });
+    assert.equal(typeResult.ok, true);
+    assert.match(typeRoot.innerHTML, /Factories/);
+    assert.match(typeRoot.innerHTML, /<strong>3<\/strong>/);
+    assert.doesNotMatch(typeRoot.innerHTML, /Starting allocation|fp-type-card-count--starting|Starting units/);
+
+    // A country with a full factory catalog must not mount all rich type cards
+    // in its first WebView frame. Every canonical profile remains reachable.
+    const profiles = globalThis.OmegaResourceIndustrialCatalogData.factoryProfiles;
+    for (let index = 1; index <= 7; index += 1) {
+      profiles['TEST_FACTORY_TYPE_' + index] = {
+        name:'Test Factory Type ' + index,
+        category:'Test catalog',
+        defaultCapacityPerDay:10
+      };
+    }
+    const pagedTypeRoot = {
+      classList:{add(){}},listeners:Object.create(null),
+      addEventListener(type,listener){this.listeners[type]=listener;},
+      contains(){return true},innerHTML:''
+    };
+    const pagedTypeResult = globalThis.OmegaUIV2Industry.render(pagedTypeRoot, {
+      countryId:'BGD',tab:'factories',factoryView:'types'
+    });
+    assert.equal(pagedTypeResult.ok,true);
+    const renderedTypeCardCount = () => (pagedTypeRoot.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length;
+    assert.equal(renderedTypeCardCount(),3,
+      'the initial Android-friendly Industry route must mount exactly three factory-type cards');
+    assert.match(pagedTypeRoot.innerHTML,/Show next 3 factory types · 6 remaining/);
+    assert.match(pagedTypeRoot.innerHTML,/data-factory-type-show-more/,
+      'the remaining canonical factory types must remain accessible');
+    const showMoreTypesButton = {};
+    const clickShowMoreTypes = () => {
+      pagedTypeRoot.listeners.click({target:{closest(selector){
+        return selector === '[data-factory-type-show-more]' ? showMoreTypesButton : null;
+      }}});
+    };
+    for (const expectedCount of [6,9]) {
+      clickShowMoreTypes();
+      assert.equal(renderedTypeCardCount(),expectedCount,
+        'each continuation action must expose the next three canonical factory types');
+    }
+    assert.doesNotMatch(pagedTypeRoot.innerHTML,/data-factory-type-show-more/,
+      'the continuation control must disappear when the entire catalog is visible');
+
+    const economyAssets = globalThis.Game.state.economy.BGD.productionAssets;
+    const newlyBuiltFactory = {
+      id:'BGD-STEEL-4', factoryType:'STEEL_MILL', name:'Newly Built Steel Works',
+      capacityPerDay:75, status:'OPERATIONAL', sourceType:'PLAYER_FACTORY_CONSTRUCTION'
+    };
+    economyAssets.push(newlyBuiltFactory);
+    const afterBuild = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(afterBuild.factoryCount, 4,
+      'a completed construction asset must join, not sit beside, the same starting asset collection');
+    assert.equal(afterBuild.factoryTypeCounts.find(row => row.type === 'STEEL_MILL').count, 4);
+    assert.equal(economyAssets.filter(asset => asset.factoryType === 'STEEL_MILL').length, 4,
+      'starting and constructed factories must share one productionAssets collection');
+
+    const afterBuildTypeRoot = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    globalThis.OmegaUIV2Industry.render(afterBuildTypeRoot, {
+      countryId:'BGD', tab:'factories', factoryView:'types'
+    });
+    assert.match(afterBuildTypeRoot.innerHTML, /<strong>4<\/strong>/,
+      'the type total must update from the same live asset collection');
+
+    newlyBuiltFactory.status = 'DECOMMISSIONED';
+    const afterDecommission = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(afterDecommission.factoryCount, 3,
+      'decommissioning must remove the asset from active totals without deleting its record');
+    assert.equal(economyAssets.length, 4,
+      'the decommissioned factory asset must remain in the single collection for history');
+    assert.equal(economyAssets[3].status, 'DECOMMISSIONED');
+  } finally {
+    if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
+    if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
+  }
+});
+
+test('industry research and technology records remain isolated to the selected country', () => {
+  const previous = {
+    Game:globalThis.Game, runtime:globalThis.OmegaCountryRuntimeData,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData, inventory:globalThis.OmegaCountryInventoryRuntime,
+    omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaCountryInventoryRuntime = null;
+  globalThis.OmegaResourceIndustrialCatalogData = { factoryProfiles:{} };
+  globalThis.Game = { state:{
+    resource:{
+      BGD:{
+        technologyResearchProjects:[{projectId:'BGD-TECH-1',technologyId:'ORE_SORTING',technologyName:'Ore Sorting',status:'IN_PROGRESS',progress:35,progressUnits:7,requiredUnits:20,startedTurn:4}],
+        technologyTransfers:[{projectId:'BGD-IMPORT-1',technologyId:'MINE_AUTOMATION',status:'COMPLETED',donorCountryId:'USA',progress:100}],
+        technologyCapabilities:[{capabilityId:'BGD-CAP-1',technologyId:'ORE_SORTING',sourceType:'RESEARCH',completedTurn:9}],
+        industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[]}
+      },
+      USA:{technologyResearchProjects:[{projectId:'USA-SECRET-1',technologyId:'UNRELATED_TECH',technologyName:'Foreign-only record',status:'IN_PROGRESS'}],
+        technologyTransfers:[],technologyCapabilities:[],industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[]}}
+    },
+    economy:{BGD:{productionAssets:[]},USA:{productionAssets:[]}}
+  }};
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD',tab:'research'});
+    assert.deepEqual(model.researchProjects.map(row=>row.projectId), ['BGD-TECH-1']);
+    assert.deepEqual(model.technologyTransfers.map(row=>row.projectId), ['BGD-IMPORT-1']);
+    assert.deepEqual(model.technologyCapabilities.map(row=>row.capabilityId), ['BGD-CAP-1']);
+    const root = {classList:{add(){}}, addEventListener(){}, contains(){return true}};
+    const rendered = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'research'});
+    assert.equal(rendered.ok,true);
+    assert.match(root.innerHTML,/Ore Sorting/);
+    assert.match(root.innerHTML,/MINE_AUTOMATION/);
+    assert.doesNotMatch(root.innerHTML,/Foreign-only record|USA-SECRET-1|UNRELATED_TECH/);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.runtime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.runtime;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
+test('selected ISO3 country resolves name-keyed economy data across Economy, Industry and Reports tabs', () => {
+  const previous = {
+    Game:globalThis.Game, runtime:globalThis.OmegaCountryRuntimeData,
+    catalog:globalThis.OmegaResourceSiteCanonicalCatalogData, industrial:globalThis.OmegaResourceIndustrialCatalogData,
+    inventory:globalThis.OmegaCountryInventoryRuntime, ministryCountry:globalThis.OmegaMinistryViewCountry,
+    homeEngine:globalThis.OmegaHomeMinistryEngine, gateway:globalThis.OmegaCountryDataGateway, omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      const key = String(value || '').trim().toUpperCase();
+      return key === 'BANGLADESH' || key === 'BGD' || key === 'BD'
+        ? { countryCode:'BD', iso3:'BGD', numericCode:'050', name:'Bangladesh', economyKey:'BANGLADESH', populationKey:'BANGLADESH' }
+        : key === 'UNITED STATES' || key === 'USA' || key === 'US'
+          ? { countryCode:'US', iso3:'USA', numericCode:'840', name:'United States', economyKey:'USA', populationKey:'USA' }
+          : null;
+    }
+  };
+  globalThis.Game = {
+    state:{
+      resource:{ BGD:{ industrialNetwork:{ projects:[], factoryProductionCycles:{}, factoryRuntime:{}, siteFlowLedger:[] } } },
+      economy:{ BANGLADESH:{ currencyCode:'BDT', gdp:195000000000,
+        productionAssets:[{ id:'BGD-SMELTER-01', name:'National smelter', factoryType:'SMELTER', status:'ACTIVE' }],
+        projects:[] } },
+      finance:{ BANGLADESH:{ available:123456, currencyCode:'BDT', ledger:[] } }
+    }
+  };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites:[
+    { siteId:'BGD-MINE-01', countryId:'BGD', resourceId:'coal', siteName:'Bangladesh coal' },
+    { siteId:'USA-MINE-01', countryId:'USA', resourceId:'copper', siteName:'United States copper' }
+  ] };
+  globalThis.OmegaResourceIndustrialCatalogData = { factoryProfiles:{ SMELTER:{ name:'Smelter', authority:'TEST' } } };
+  globalThis.OmegaCountryInventoryRuntime = { getInventory(countryId) { return { status:'READY', countryId:countryId, items:[], unbounded:true }; } };
+  globalThis.OmegaMinistryViewCountry = 'BD';
+  globalThis.OmegaHomeMinistryEngine = null;
+  globalThis.OmegaCountryDataGateway = null;
+  try {
+    const industry = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BD' });
+    assert.equal(industry.countryId, 'BGD');
+    assert.equal(industry.factoryCount, 1, 'Industry must resolve legacy BANGLADESH-keyed economy assets');
+    const economy = globalThis.OmegaUIV2Economy.buildViewModel({ countryId:'BD' });
+    assert.equal(economy.countryId, 'BGD');
+    assert.equal(economy.treasuryCash, 123456, 'Economy must resolve legacy BANGLADESH-keyed finance data');
+    assert.equal(economy.currencyCode, 'BDT');
+    const reports = globalThis.OmegaUIV2Reports.buildViewModel({ countryId:'BANGLADESH' });
+    assert.equal(reports.countryId, 'BGD');
+    assert.equal(reports.siteCount, 1, 'Reports must count only the selected country in the canonical site registry');
+    assert.equal(reports.factoryCount, 1, 'Reports must resolve selected-country factories from the legacy economy bucket');
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.runtime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.runtime;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceSiteCanonicalCatalogData; else globalThis.OmegaResourceSiteCanonicalCatalogData = previous.catalog;
+    if (previous.industrial === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.industrial;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.ministryCountry === undefined) delete globalThis.OmegaMinistryViewCountry; else globalThis.OmegaMinistryViewCountry = previous.ministryCountry;
+    if (previous.homeEngine === undefined) delete globalThis.OmegaHomeMinistryEngine; else globalThis.OmegaHomeMinistryEngine = previous.homeEngine;
+    if (previous.gateway === undefined) delete globalThis.OmegaCountryDataGateway; else globalThis.OmegaCountryDataGateway = previous.gateway;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
+test('UI v2 integration normalizes map-selected aliases before mounting country screens', () => {
+  const previous = {
+    app:globalThis.OmegaUIV2App, runtime:globalThis.OmegaCountryRuntimeData,
+    document:globalThis.document, ministryCountry:globalThis.OmegaMinistryViewCountry,
+    homeEngine:globalThis.OmegaHomeMinistryEngine, gateway:globalThis.OmegaCountryDataGateway, omega:globalThis.Omega
+  };
+  let mountedOptions = null;
+  globalThis.Omega = {};
+  const countryProfiles = [
+    { countryCode:'BD', iso3:'BGD', numericCode:'050', name:'Bangladesh', economyKey:'BANGLADESH' },
+    { countryCode:'US', iso3:'USA', numericCode:'840', name:'United States', economyKey:'USA' },
+    { countryCode:'JP', iso3:'JPN', numericCode:'392', name:'Japan', economyKey:'JPN' },
+    { countryCode:'CA', iso3:'CAN', numericCode:'124', name:'Canada', economyKey:'CAN' }
+  ];
+  globalThis.OmegaCountryRuntimeData = {
+    listProfiles() { return countryProfiles.slice(); },
+    resolveCountry(value) {
+      const key = String(value || '').trim().toUpperCase();
+      if (key === 'BANGLADESH' || key === 'BD') return countryProfiles[0];
+      return countryProfiles.find(profile => [profile.iso3, profile.countryCode, profile.name].some(id => String(id || '').toUpperCase() === key)) || null;
+    }
+  };
+  globalThis.OmegaHomeMinistryEngine = null;
+  globalThis.OmegaCountryDataGateway = null;
+  globalThis.document = { body:{ setAttribute(){}, classList:{ add(){}, remove(){}, toggle(){} } }, getElementById(){ return null; } };
+  globalThis.OmegaUIV2App = { mount(root, options) { mountedOptions = options; return { mounted:true, route:options.initialRoute }; } };
+  const root = { style:{}, setAttribute(){}, removeAttribute(){}, getAttribute(){ return null; } };
+  try {
+    const result = globalThis.OmegaUIV2Integration.mountIntoCabinet(root, { countryId:'BANGLADESH', initialRoute:'economy' });
+    assert.equal(result.ok, true);
+    assert.equal(result.countryId, 'BGD');
+    assert.equal(mountedOptions.countryId, 'BGD');
+    assert.equal(mountedOptions.countryOptions[0].id, 'BGD');
+    const selectable = new Set(mountedOptions.countryOptions.map(row => row.id));
+    for (const code of ['BGD','USA','JPN','CAN']) assert.ok(selectable.has(code), 'country browser must include canonical profile ' + code);
+    assert.equal(mountedOptions.countryOptions.length, 4, 'country options must be a deduplicated all-profile roster, not only countries with Home Ministry state');
+    mountedOptions.onCountryChange('JP');
+    assert.equal(globalThis.OmegaMinistryViewCountry, 'JPN', 'non-player browsing must select another country without changing the player-country action gate');
+    mountedOptions.onCountryChange('BD');
+    assert.equal(globalThis.OmegaMinistryViewCountry, 'BGD');
+  } finally {
+    if (previous.app === undefined) delete globalThis.OmegaUIV2App; else globalThis.OmegaUIV2App = previous.app;
+    if (previous.runtime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.runtime;
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.ministryCountry === undefined) delete globalThis.OmegaMinistryViewCountry; else globalThis.OmegaMinistryViewCountry = previous.ministryCountry;
+    if (previous.homeEngine === undefined) delete globalThis.OmegaHomeMinistryEngine; else globalThis.OmegaHomeMinistryEngine = previous.homeEngine;
+    if (previous.gateway === undefined) delete globalThis.OmegaCountryDataGateway; else globalThis.OmegaCountryDataGateway = previous.gateway;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
+
+test('UI v2 shell reuses canonical ISO-3 country options without repeated resolver lookups', () => {
+  const previous = {
+    app:globalThis.OmegaUIV2App,
+    runtime:globalThis.OmegaCountryRuntimeData,
+    document:globalThis.document,
+    ministryCountry:globalThis.OmegaMinistryViewCountry,
+    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS
+  };
+  let resolveCount = 0;
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      resolveCount += 1;
+      const id = String(value || '').trim().toUpperCase();
+      return /^[A-Z]{3}$/.test(id) ? { iso3:id, officialName:'Country ' + id } : null;
+    }
+  };
+  globalThis.document = {};
+  const main = {
+    innerHTML:'',
+    setAttribute(){},
+    removeAttribute(){}
+  };
+  const root = {
+    innerHTML:'',
+    classList:{add(){}},
+    addEventListener(){},
+    querySelector(selector){ return selector === '[data-omega-v2-main]' ? main : null; },
+    querySelectorAll(){ return []; },
+    setAttribute(){},
+    removeAttribute(){},
+    getAttribute(){ return null; },
+    contains(){ return true; }
+  };
+  function iso3(index) {
+    return String.fromCharCode(
+      65 + Math.floor(index / 676),
+      65 + Math.floor(index / 26) % 26,
+      65 + index % 26
+    );
+  }
+  const countryOptions = Array.from({length:197}, (_, index) => ({
+    id:index === 0 ? 'BGD' : iso3(index),
+    name:index === 0 ? 'Bangladesh (BGD)' : 'Country ' + iso3(index)
+  }));
+  try {
+    const mounted = globalThis.OmegaUIV2App.mount(root, {
+      initialRoute:'map',
+      countryId:'BGD',
+      countryOptions:countryOptions,
+      renderMap(target) { target.innerHTML = '<section>Map ready</section>'; return {ok:true}; }
+    });
+    assert.equal(mounted.mounted, true);
+    assert.equal(countryOptions.length,197);
+    assert.equal(resolveCount,1,
+      'the selected country may resolve once, but canonical ISO-3 dropdown options must not trigger another 197 profile lookups');
+    assert.match(root.innerHTML, /<option value="BGD" selected>/);
+    assert.match(root.innerHTML, /<option value="AAB">Country AAB/);
+  } finally {
+    if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
+    if(previous.runtime===undefined)delete globalThis.OmegaCountryRuntimeData;else globalThis.OmegaCountryRuntimeData=previous.runtime;
+    if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
+    if(previous.ministryCountry===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.ministryCountry;
+    if(previous.diagnostics===undefined)delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS;else globalThis.__OMEGA_UI_V2_DIAGNOSTICS=previous.diagnostics;
+  }
+});
+
+test('direct Resources route mounts the Resource Ministry without rendering Government first', () => {
+  const bridge = globalThis.OmegaUIV2Integration;
+  const previous = {
+    app:globalThis.OmegaUIV2App,
+    document:globalThis.document,
+    game:globalThis.Game,
+    country:globalThis.OmegaMinistryViewCountry,
+    countryRuntime:globalThis.OmegaCountryRuntimeData,
+    homeEngine:globalThis.OmegaHomeMinistryEngine,
+    gateway:globalThis.OmegaCountryDataGateway,
+    omega:globalThis.Omega,
+    manager:globalThis.OmegaLayerManager
+  };
+  const attrs = Object.create(null);
+  const bodyClasses = new Set();
+  const root = {
+    style:{},
+    setAttribute(key,value){attrs[key]=String(value);},
+    getAttribute(key){return attrs[key] || null;},
+    removeAttribute(key){delete attrs[key];}
+  };
+  const body = {
+    setAttribute(){},
+    classList:{
+      add(key){bodyClasses.add(key);},
+      remove(key){bodyClasses.delete(key);},
+      toggle(key,value){if(value)bodyClasses.add(key);else bodyClasses.delete(key);}
+    }
+  };
+  let mountedOptions = null;
+  let openMinistryCalls = 0;
+  globalThis.document = {
+    body,
+    getElementById(id){return id === 'cabinet-full-window' ? root : null;}
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = {
+    listProfiles(){return [{countryCode:'BD',iso3:'BGD',name:'Bangladesh'}];},
+    resolveCountry(value){
+      return ['BGD','BD','BANGLADESH'].includes(String(value || '').toUpperCase())
+        ? {countryCode:'BD',iso3:'BGD',name:'Bangladesh'} : null;
+    }
+  };
+  globalThis.OmegaHomeMinistryEngine = null;
+  globalThis.OmegaCountryDataGateway = null;
+  globalThis.OmegaMinistryViewCountry = 'BGD';
+  globalThis.Game = {Map:{setUiActive(){return true;}}};
+  globalThis.OmegaLayerManager = null;
+  globalThis.OmegaUIV2App = {
+    destinations:[],
+    mount(node,options){
+      mountedOptions = options;
+      return {ok:true,mounted:true,route:options.initialRoute};
+    },
+    openMinistry(){openMinistryCalls+=1;return false;}
+  };
+  try {
+    assert.equal(bridge.openRoute('resources'),true);
+    assert.equal(mountedOptions.initialRoute,'resources');
+    assert.equal(mountedOptions.initialMinistryId,'energy_mining');
+    assert.equal(mountedOptions.ministryId,undefined);
+    assert.equal(openMinistryCalls,0,
+      'the direct Resource route must not mount Government and then synchronously render Resources');
+  } finally {
+    if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
+    if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
+    if(previous.game===undefined)delete globalThis.Game;else globalThis.Game=previous.game;
+    if(previous.country===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.country;
+    if(previous.countryRuntime===undefined)delete globalThis.OmegaCountryRuntimeData;else globalThis.OmegaCountryRuntimeData=previous.countryRuntime;
+    if(previous.homeEngine===undefined)delete globalThis.OmegaHomeMinistryEngine;else globalThis.OmegaHomeMinistryEngine=previous.homeEngine;
+    if(previous.gateway===undefined)delete globalThis.OmegaCountryDataGateway;else globalThis.OmegaCountryDataGateway=previous.gateway;
+    if(previous.omega===undefined)delete globalThis.Omega;else globalThis.Omega=previous.omega;
+    if(previous.manager===undefined)delete globalThis.OmegaLayerManager;else globalThis.OmegaLayerManager=previous.manager;
+  }
+});
+
+test('factory Stock shows committed finished goods and traced use while Input shows delivery sources and shortage efficiency', () => {
+  const previous = {
+    Game:globalThis.Game,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    industrialCatalog:globalThis.OmegaResourceIndustrialCatalogData,
+    countryRuntime:globalThis.OmegaCountryRuntimeData,
+    omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_AND_ALLOY_WORKS: { name:'Steel and Alloy Works', defaultRecipeId:'STEEL-RECIPE', defaultCapacityPerDay:5 }
+    },
+    downstreamFactoryRecipes: {
+      'STEEL-RECIPE': { recipeId:'STEEL-RECIPE', factoryType:'STEEL_AND_ALLOY_WORKS', inputs:{iron_ore:2}, outputs:{steel:1}, inputUnit:'TONNES', outputUnit:'TONNES' }
+    }
+  };
+  globalThis.Game = { state:{
+    simulation:{ playerCountryId:'BGD' },
+    resource:{
+      BGD:{
+        finishedGoodsLedger:[{
+          transactionId:'RUN-STEEL-1',countryId:'BGD',factoryId:'FACTORY-STEEL-1',
+          outputQuantities:{steel:10},createdBatchIds:['OUTPUT-STEEL-1'],turn:12,status:'AVAILABLE_TO_ECONOMY'
+        }],
+        batches:[{
+          batchId:'OUTPUT-STEEL-1',resourceId:'steel',sourceFactoryId:'FACTORY-STEEL-1',
+          quantity:10,remainingQuantity:6,unit:'TONNES',stage:'FINISHED',status:'AVAILABLE',
+          processId:'RUN-STEEL-1'
+        }],
+        processedWarehouse:{availableByResource:{steel:6}},
+        inventoryLedger:[
+          {type:'INVENTORY_CONSUMED',resourceId:'steel',quantity:2,reason:'NATIONAL_DEMAND',
+            consumed:[{batchId:'OUTPUT-STEEL-1',quantity:2,stage:'FINISHED'}]},
+          {type:'INTERNATIONAL_TRADE_EXPORT',resourceId:'steel',quantity:2,
+            batchTransfers:[{sourceBatchId:'OUTPUT-STEEL-1',resourceId:'steel',quantity:2,destinationCountryId:'USA'}]}
+        ],
+        nationalDemandRuntime:{byResource:{
+          steel:{status:'BALANCED',demandThisTurn:4,demandPerDay:4,projectedDemandPerDay:16,demandUnit:'TONNES',unmetDemand:0,nationalConsumption:2}
+        }},
+        industrialNetwork:{
+          projects:[],factoryProductionCycles:{},
+          factoryRuntime:{
+            'FACTORY-STEEL-1':{
+              transactionId:'RUN-STEEL-1',factoryId:'FACTORY-STEEL-1',turn:12,status:'COMPLETED',
+              outputQuantities:{steel:10},inputQuantities:{iron_ore:20}
+            }
+          },
+          siteFlowLedger:[]
+        }
+      }
+    },
+    economy:{
+      BGD:{
+        productionAssets:[{
+          id:'FACTORY-STEEL-1',name:'Chattogram Steel Works',factoryType:'STEEL_AND_ALLOY_WORKS',recipeId:'STEEL-RECIPE',
+          status:'OPERATIONAL',capacityPerDay:5,
+          inputInventory:{iron_ore:3},
+          inputBatchLots:[{
+            batchId:'INPUT-IRON-1',resourceId:'iron_ore',quantity:10,remainingQuantity:3,
+            unit:'TONNES',sourceCountryId:'BGD',sourceSiteIds:['BGD-MINE-01'],status:'AVAILABLE_TO_FACTORY'
+          }],
+          productionHealth:{
+            status:'REDUCED',productivityPct:60,reason:'FACTORY_INPUT_SHORTAGE',
+            actualOutputPerDay:5,outputResourceId:'steel',outputUnit:'TONNES',
+            dailyOperatingCostByProduct:{steel:{amountPerDay:250,currency:'USD'}},
+            detail:{constraints:{rawMaterialRatio:0.6}},
+            missingInputs:[{resourceId:'iron_ore',required:10,available:3}]
+          }
+        },{
+          id:'FACTORY-STEEL-2',name:'Dhaka Steel Works',factoryType:'STEEL_AND_ALLOY_WORKS',recipeId:'STEEL-RECIPE',
+          status:'OPERATIONAL',capacityPerDay:7,
+          productionHealth:{
+            status:'RUNNING',actualOutputPerDay:7,outputResourceId:'steel',outputUnit:'TONNES',
+            dailyOperatingCostByProduct:{steel:{amountPerDay:350,currency:'USD'}}
+          }
+        }]
+      }
+    },
+    trade:{BGD:{domesticSales:[]}}
+  }};
+  globalThis.OmegaCountryInventoryRuntime = {
+    getInventory(countryId, options) {
+      assert.equal(options.includeZero,true);
+      assert.equal(options.includeLedger,false, 'the industry view needs stock rows, not a full unbounded inventory-history clone');
+      return {
+        status:'READY',countryId:countryId,countryName:'Bangladesh',active:true,readOnly:false,
+        unbounded:true,items:[
+          {productId:'steel',name:'Steel',quantity:6,unit:'TONNES'},
+          {productId:'iron_ore',name:'Iron Ore',quantity:3,unit:'TONNES'}
+        ],ledger:[]
+      };
+    },
+    getResourceCatalog() { return []; }
+  };
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD'});
+    assert.equal(model.factories.length,2);
+    const stockRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const stockResult = globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.equal(stockResult.ok,true);
+    assert.match(stockRoot.innerHTML,/Stock/);
+    assert.match(stockRoot.innerHTML,/data-factory-stock-input-ui="v2"/,
+      'the updated factory screen must expose the current Stock/Input UI build marker');
+    assert.match(stockRoot.innerHTML,/data-factory-output-summary="v1"/);
+    assert.match(stockRoot.innerHTML,/data-factory-output-row="steel"/);
+    assert.match(stockRoot.innerHTML,/data-factory-product-identity="steel"/,
+      'finished output rows must include the generated Steel identity icon');
+    assert.match(stockRoot.innerHTML,/12 TONNES/);
+    assert.match(stockRoot.innerHTML,/USD 600/);
+    assert.match(stockRoot.innerHTML,/Domestic use/);
+    assert.match(stockRoot.innerHTML,/USA 2 TONNES/);
+    assert.match(stockRoot.innerHTML,/data-state="future"/,
+      'a documented product-specific future demand uplift must activate the yellow LED');
+    assert.doesNotMatch(stockRoot.innerHTML,/Planned \/ full cycle|Planned \/ day|Planned output|Produced to date|Current stock/,
+      'the Stock panel must not display plan quantities or duplicate historic stock columns');
+    assert.equal((stockRoot.innerHTML.match(/data-factory-output-row="steel"/g)||[]).length,1,
+      'a product must have one row even when multiple trace records are associated with it');
+
+    const steelDemand = globalThis.Game.state.resource.BGD.nationalDemandRuntime.byResource.steel;
+    delete steelDemand.projectedDemandPerDay;
+    steelDemand.status = 'BALANCED';
+    steelDemand.demandPerDay = 4;
+    steelDemand.unmetDemand = 0;
+    globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.match(stockRoot.innerHTML,/data-state="ok"/,'covered current demand must show green');
+
+    steelDemand.status = 'SHORTAGE';
+    steelDemand.demandPerDay = 15;
+    steelDemand.unmetDemand = 3;
+    globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.match(stockRoot.innerHTML,/data-state="shortage"/,'current unmet demand must show red');
+
+    steelDemand.status = 'UNAVAILABLE';
+    steelDemand.demandPerDay = null;
+    steelDemand.unmetDemand = 0;
+    globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.match(stockRoot.innerHTML,/data-state="unknown"/,'missing demand evidence must stay neutral grey');
+
+    delete globalThis.Game.state.economy.BGD.productionAssets[0].productionHealth.dailyOperatingCostByProduct;
+    delete globalThis.Game.state.economy.BGD.productionAssets[1].productionHealth.dailyOperatingCostByProduct;
+    globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.match(stockRoot.innerHTML,/fp-output-not-recorded[^<]*Not recorded|fp-output-cost-cell[^]*Not recorded/,
+      'missing cost must be shown as Not recorded rather than a fabricated expense');
+
+    assert.doesNotMatch(stockRoot.innerHTML,/UNBOUNDED STOCK LOG/,
+      'the factory Stock button must not fall back to a national raw-resource snapshot');
+
+    const inputRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const inputResult = globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
+    assert.equal(inputResult.ok,true);
+    assert.match(inputRoot.innerHTML,/Input/);
+    assert.match(inputRoot.innerHTML,/Chattogram Steel Works/);
+    assert.match(inputRoot.innerHTML,/Iron Ore/);
+    assert.match(inputRoot.innerHTML,/10 TONNES/);
+    assert.match(inputRoot.innerHTML,/3 TONNES/);
+    assert.match(inputRoot.innerHTML,/Domestic mine/);
+    assert.match(inputRoot.innerHTML,/BGD-MINE-01/);
+    assert.match(inputRoot.innerHTML,/Shortage/);
+    assert.match(inputRoot.innerHTML,/40 %/);
+    assert.match(inputRoot.innerHTML,/Efficiency reduction/);
+    assert.match(inputRoot.innerHTML,/data-factory-product-identity="iron_ore"/,
+      'factory input rows must carry the correct resource identity');
+    assert.match(inputRoot.innerHTML,/resources\/iron-ore\.svg/,
+      'raw input resources must use their own canonical dimensional SVG asset');
+    assert.match(inputRoot.innerHTML,/data-factory-stock-product="iron_ore"/,
+      'the current factory input balance must carry the same resource icon');
+    assert.match(inputRoot.innerHTML,/class="fp-factory-input-identity-line"[^]*class="fp-factory-input-id"/,
+      'the canonical product code must sit in the same compact identity line as its friendly name');
+
+    // A newly commissioned factory can have a valid recipe before its first
+    // raw-material delivery. Its required inputs must still be visible, with
+    // stock shown as unrecorded rather than hiding the factory entirely.
+    globalThis.Game.state.economy.BGD.productionAssets = [{
+      id:'FACTORY-NO-OPENING-INPUT-STOCK',
+      name:'Commissioned Steel Mill',
+      factoryType:'STEEL_MILL',
+      recipeId:'STEEL-RECIPE',
+      status:'OPERATIONAL',
+      capacityPerDay:10,
+      inputInventory:{},
+      inputBatchLots:[],
+      inputCoefficients:{iron_ore:0.5},
+      outputProfile:{steel:0.4}
+    }];
+    const noStockInputRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const noStockInput = globalThis.OmegaUIV2Industry.render(
+      noStockInputRoot,{countryId:'BGD',tab:'inventory'}
+    );
+    assert.equal(noStockInput.ok,true);
+    assert.match(noStockInputRoot.innerHTML,/Commissioned Steel Mill/,
+      'a recipe-ready factory must remain visible before its first input delivery');
+    assert.match(noStockInputRoot.innerHTML,/data-factory-product-identity="iron_ore"/,
+      'the factory must expose required recipe inputs even while its input warehouse is empty');
+    assert.match(noStockInputRoot.innerHTML,/Not recorded|Not verified/,
+      'empty opening stock must be reported as unrecorded, not fabricated as zero or used to hide the factory');
+
+    // A country with many live factories must not mount every per-factory
+    // table in a single Android WebView frame. All records remain reachable.
+    globalThis.Game.state.economy.BGD.productionAssets = Array.from({length:9},(_,index)=>({
+      id:'FACTORY-INPUT-PAGING-'+String(index+1).padStart(2,'0'),
+      name:'Steel Mill '+(index+1),
+      factoryType:'STEEL_MILL',
+      recipeId:'STEEL-RECIPE',
+      status:'OPERATIONAL',
+      capacityPerDay:10,
+      inputInventory:{iron_ore:20,coal:10},
+      inputCoefficients:{iron_ore:0.5,coal:0.25},
+      inputBatchLots:[
+        {batchId:'INPUT-PAGING-IRON-'+index,resourceId:'iron_ore',quantity:20,remainingQuantity:20,unit:'TONNES'},
+        {batchId:'INPUT-PAGING-COAL-'+index,resourceId:'coal',quantity:10,remainingQuantity:10,unit:'TONNES'}
+      ],
+      inputUnits:{iron_ore:'TONNES',coal:'TONNES'}
+    }));
+    const pagedInputRoot = {
+      classList:{add(){}},listeners:Object.create(null),
+      addEventListener(type,listener){this.listeners[type]=listener;},
+      contains(){return true},innerHTML:''
+    };
+    const pagedInput = globalThis.OmegaUIV2Industry.render(
+      pagedInputRoot,{countryId:'BGD',tab:'inventory'}
+    );
+    assert.equal(pagedInput.ok,true);
+    const renderedInputCardCount = () =>
+      (pagedInputRoot.innerHTML.match(/class="fp-factory-data-card"/g)||[]).length;
+    assert.equal(renderedInputCardCount(),4,
+      'the initial Input render must mount four factory detail cards');
+    assert.match(pagedInputRoot.innerHTML,/data-factory-input-show-more/,
+      'remaining factory input details must remain accessible');
+    let inputMoreRemoved = false;
+    const inputPageStatus = { textContent:'' };
+    const showMoreInputButton = {
+      attributes:{'data-next-index':'4'},
+      disabled:false,
+      textContent:'Show more factories',
+      getAttribute(name) {
+        return this.attributes[name] === undefined ? null : this.attributes[name];
+      },
+      setAttribute(name,value) {
+        this.attributes[name] = String(value);
+      },
+      parentNode:{
+        removeChild() {
+          inputMoreRemoved = true;
+          pagedInputRoot.innerHTML = pagedInputRoot.innerHTML.replace(
+            /<button[^>]*data-factory-input-show-more[^>]*>[\s\S]*?<\/button>/,''
+          );
+        }
+      }
+    };
+    pagedInputRoot.querySelector = (selector) => {
+      if (selector === '[data-factory-input-cards]') {
+        return { insertAdjacentHTML(_position,markup) { pagedInputRoot.innerHTML += markup; } };
+      }
+      if (selector === '[data-factory-input-page-status]') return inputPageStatus;
+      return null;
+    };
+    const clickShowMoreInput = () => {
+      pagedInputRoot.listeners.click({target:{closest(selector){
+        return selector === '[data-factory-input-show-more]' ? showMoreInputButton : null;
+      }}});
+    };
+    clickShowMoreInput();
+    assert.equal(renderedInputCardCount(),8,
+      'the next action must append the next four factory input records');
+    clickShowMoreInput();
+    assert.equal(renderedInputCardCount(),9,
+      'the final partial batch must preserve the ninth factory record');
+    assert.equal(inputMoreRemoved,true,
+      'the continuation control must be removed after every factory input record is shown');
+    assert.doesNotMatch(pagedInputRoot.innerHTML,/data-factory-input-show-more/);
+    assert.match(inputPageStatus.textContent,/9 of 9/);
+
+    const factoryRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const factoryResult = globalThis.OmegaUIV2Industry.render(factoryRoot,{countryId:'BGD',tab:'factories'});
+    assert.equal(factoryResult.ok,true);
+    assert.match(factoryRoot.innerHTML,/data-omega-v2-factory-type-card/);
+    assert.match(factoryRoot.innerHTML,/Steel and Alloy Works/);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime;
+    else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.industrialCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previous.industrialCatalog;
+    if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData;
+    else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
+test('reports list nine source-linked report categories and do not treat missing data as zero', () => {
+  globalThis.Game = { state: { resource:{BGD:{industrialNetwork:{projects:[]}}}, economy:{BGD:{productionAssets:[]}} } };
+  globalThis.OmegaCountryDataGateway = {
+    getSnapshot: () => ({ status:'OK', fields:{
+      gdp:{status:'AVAILABLE',value:100,unit:'USD'},
+      population:{status:'UNAVAILABLE',value:null}
+    },diagnostics:{missingFields:['population']} })
+  };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites:[] };
+  const model = globalThis.OmegaUIV2Reports.buildViewModel({countryId:'BGD'});
+  assert.equal(model.categories.length,9);
+  assert.equal(model.fields.available,1);
+  assert.equal(model.fields.missing,1);
+  assert.equal(model.available['resources-mining'],false);
+  assert.equal(model.siteCount,0);
+});
+
+test('mine detail refuses an unknown siteId instead of showing a different site', () => {
+  const root = { classList:{ add(){} }, innerHTML:'' };
+  const result = globalThis.OmegaUIV2MineDetail.render(root, {
+    countryId:'BGD',
+    siteId:'BGD-NOT-REGISTERED',
+    sites:[{siteId:'BGD-GAS-01',countryId:'BGD',resourceId:'natural_gas',siteName:'Known gas site'}]
+  });
+  assert.equal(result.ok,false);
+  assert.equal(result.code,'CANONICAL_SITE_ID_NOT_FOUND');
+  assert.ok(root.innerHTML.includes('BGD-NOT-REGISTERED'));
+  assert.ok(root.innerHTML.includes('No substitute site'));
+});
+
+test('application shell exports explicit mount and contains only five intended global destinations', () => {
+  const app = globalThis.OmegaUIV2App;
+  assert.ok(app);
+  assert.equal(typeof app.mount,'function');
+  assert.deepEqual(app.destinations,['map','overview','government','economy','more','industry','reports','religion']);
+  assert.equal(globalThis.OmegaUIV2Navigation.governmentDestinations.length,2);
+});
+
+test('economy model keeps unavailable cash and macroeconomic values unavailable', () => {
+  globalThis.Game = { state:{ finance:{BGD:{}}, economy:{BGD:{currencyCode:'BDT'}} } };
+  globalThis.OmegaCountryDataGateway = {
+    getSnapshot: () => ({ fields:{gdp:{status:'AVAILABLE',value:42,unit:'USD'},debt:{status:'UNAVAILABLE',value:null}} })
+  };
+  const model = globalThis.OmegaUIV2Economy.buildViewModel({countryId:'BGD'});
+  assert.equal(model.treasuryCash,null);
+  assert.equal(model.gdp.value,42);
+  assert.equal(model.debt.value,null);
+  assert.equal(model.currencyCode,'BDT');
+});
+
+
+test('UI v2 integration is controllable and reports the real mount dependency', () => {
+  const bridge = globalThis.OmegaUIV2Integration;
+  assert.ok(bridge);
+  assert.equal(bridge.isEnabled(), true);
+  bridge.setEnabled(false);
+  assert.equal(bridge.isEnabled(), false);
+  const blocked = bridge.mountIntoCabinet();
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.code, 'UI_V2_INTEGRATION_UNAVAILABLE');
+  bridge.setEnabled(true);
+  assert.equal(bridge.isEnabled(), true);
+});
+
+test('Government entry mount synchronizes existing layer, sidebar and map visibility', () => {
+  const bridge = globalThis.OmegaUIV2Integration;
+  const previous = {
+    document:globalThis.document,
+    app:globalThis.OmegaUIV2App,
+    manager:globalThis.OmegaLayerManager,
+    country:globalThis.OmegaMinistryViewCountry,
+    updateBack:globalThis.updateGlobalBackButtonVisibility,
+    game:globalThis.Game
+  };
+  const attributes = Object.create(null);
+  const dashboard = { style:{}, setAttribute() {}, removeAttribute() {} };
+  const world = { style:{} };
+  const bodyAttrs = Object.create(null);
+  const bodyClasses = new Set();
+  const root = {
+    style:{},
+    classList:{ add() {}, remove() {} },
+    setAttribute(key,value){ attributes[key]=String(value); },
+    getAttribute(key){ return attributes[key] || null; },
+    removeAttribute(key){ delete attributes[key]; }
+  };
+  const manager = {
+    currentLayer:0,
+    layerStack:[0],
+    sidebarLayer:null,
+    updateRightSidebar(layer){ this.sidebarLayer=layer; }
+  };
+  globalThis.document = {
+    getElementById(id) {
+      if (id === 'cabinet-full-window') return root;
+      if (id === 'ministry-dashboard-view') return dashboard;
+      if (id === 'world-ui-root') return world;
+      return null;
+    },
+    body:{
+      setAttribute(key,value){ bodyAttrs[key]=String(value); },
+      classList:{ add(key){ bodyClasses.add(key); } }
+    }
+  };
+  globalThis.OmegaUIV2App = { mount() { return { ok:true, mounted:true, route:'government' }; } };
+  globalThis.Game = { Map:{ active:true, setUiActive(active) { this.active=active === true; return true; } } };
+  globalThis.OmegaLayerManager = manager;
+  globalThis.OmegaMinistryViewCountry = 'BGD';
+  globalThis.updateGlobalBackButtonVisibility = () => {};
+  try {
+    const result = bridge.mountIntoCabinet(root);
+    assert.equal(result.ok,true);
+    assert.equal(attributes['data-omega-ui-v2-active'],'true');
+    assert.equal(bodyAttrs['data-active-layer'],'1');
+    assert.ok(bodyClasses.has('modal-open'));
+    assert.equal(manager.currentLayer,1);
+    assert.equal(manager.sidebarLayer,null,'UI v2 mount must not invoke the retired sidebar renderer');
+    assert.deepEqual(manager.layerStack,[0,1]);
+    assert.equal(world.style.opacity,'1','the ministry parent must remain opaque because the map is hidden independently');
+    assert.equal(globalThis.Game.Map.active,false,'map presentation must suspend when the ministry opens');
+    assert.equal(world.style.pointerEvents,'none');
+    assert.equal(dashboard.style.display,'none');
+    assert.equal(root.style.display,'flex');
+  } finally {
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document=previous.document;
+    if (previous.app === undefined) delete globalThis.OmegaUIV2App; else globalThis.OmegaUIV2App=previous.app;
+    if (previous.manager === undefined) delete globalThis.OmegaLayerManager; else globalThis.OmegaLayerManager=previous.manager;
+    if (previous.country === undefined) delete globalThis.OmegaMinistryViewCountry; else globalThis.OmegaMinistryViewCountry=previous.country;
+    if (previous.updateBack === undefined) delete globalThis.updateGlobalBackButtonVisibility; else globalThis.updateGlobalBackButtonVisibility=previous.updateBack;
+    if (previous.game === undefined) delete globalThis.Game; else globalThis.Game=previous.game;
+  }
+});
+
+test('retired operational-console bridge cannot mutate the active UI or legacy layer stack', () => {
+  const bridge = globalThis.OmegaUIV2Integration;
+  const previous = { document:globalThis.document, manager:globalThis.OmegaLayerManager, notification:globalThis.showOmegaNotification };
+  const attrs = { 'data-omega-ui-v2-active':'true' };
+  const root = { style:{display:'flex'}, __omegaUIV2State:{route:'ministry-detail',ministryId:'defense'},
+    setAttribute(k,v){attrs[k]=String(v);}, getAttribute(k){return attrs[k]||null;}, removeAttribute(k){delete attrs[k];} };
+  const dashboard={style:{}}, world={style:{}}, bodyAttrs={};
+  const manager={currentLayer:1,layerStack:[0,1],setLayerCalls:0,sidebarCalls:0,
+    setLayer(){this.setLayerCalls+=1;},updateRightSidebar(){this.sidebarCalls+=1;}};
+  globalThis.document={getElementById(id){return id==='cabinet-full-window'?root:id==='ministry-dashboard-view'?dashboard:id==='world-ui-root'?world:null;},
+    body:{setAttribute(k,v){bodyAttrs[k]=String(v);},classList:{add(){},remove(){}}}};
+  globalThis.OmegaLayerManager=manager;
+  globalThis.showOmegaNotification=()=>{};
+  try {
+    const result=bridge.openOperationalConsole('defense');
+    assert.equal(result.ok,false);
+    assert.equal(result.code,'LEGACY_UI_DISCONNECTED');
+    assert.equal(manager.currentLayer,1);
+    assert.equal(manager.setLayerCalls,0);
+    assert.equal(manager.sidebarCalls,0);
+    assert.equal(root.__omegaUIV2State.route,'ministry-detail');
+    assert.equal(root.getAttribute('data-omega-ui-v2-active'),'true');
+  } finally {
+    if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
+    if(previous.manager===undefined)delete globalThis.OmegaLayerManager;else globalThis.OmegaLayerManager=previous.manager;
+    if(previous.notification===undefined)delete globalThis.showOmegaNotification;else globalThis.showOmegaNotification=previous.notification;
+  }
+});
+
+test('Back-to-Map bypasses legacy cabinet subsystem stack traps', () => {
+  const bridge = globalThis.OmegaUIV2Integration;
+  const previousManager = globalThis.OmegaLayerManager;
+  const manager = {
+    currentLayer:1,
+    layerStack:[0,1,5],
+    calledPop:false,
+    popLayer() { this.calledPop = true; this.currentLayer = 5; },
+    setLayer(layer, data, skipPush) { this.currentLayer = layer; }
+  };
+  globalThis.OmegaLayerManager = manager;
+  try {
+    assert.equal(bridge.closeToWorldMap(), true);
+    assert.equal(manager.currentLayer, 0);
+    assert.deepEqual(manager.layerStack, [0]);
+    assert.equal(manager.calledPop, false);
+  } finally {
+    if (previousManager === undefined) delete globalThis.OmegaLayerManager;
+    else globalThis.OmegaLayerManager = previousManager;
+  }
+});
+
+test('production shell loads UI v2 and excludes retired UI controllers from the active cache', () => {
+  const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  const entry = readFileSync(new URL('../omega_ministry_entry_v3.js', import.meta.url), 'utf8');
+  const modules = [
+    'omega_ui_v2/omega-ui-v2.css','omega_ui_v2/navigation-registry.js',
+    'omega_ui_v2/screens/government.js','omega_ui_v2/screens/ministry-detail.js',
+    'omega_ui_v2/screens/economy.js','omega_ui_v2/screens/resource-ministry.js',
+    'omega_ui_v2/screens/mine-detail.js','omega_ui_v2/screens/industry.js',
+    'omega_ui_v2/screens/home-affairs.js','omega_ui_v2/screens/police-fleet.js',
+    'omega_ui_v2/screens/reports.js','omega_ui_v2/app.js',
+    'omega_ui_v2/integration.js','omega_ui_v2/world-command-dock.js'
+  ];
+  for (const modulePath of modules) {
+    assert.ok(index.includes(modulePath), 'index.html must load ' + modulePath);
+    assert.ok(sw.includes(modulePath), 'offline service worker must pre-cache ' + modulePath);
+  }
+  assert.match(sw, /omega-offline-atlas-shell-v\d+/);
+  assert.ok(entry.includes('OmegaUIV2Integration'));
+  assert.ok(entry.includes('opened-ui-v2'));
+  assert.equal(entry.includes('openMainMinistryView'), false);
+  assert.equal(entry.includes('OmegaLayerManager.setLayer'), false);
+  assert.equal(entry.includes('renderCabinet('), false);
+  for (const retired of ['omega_ui_system_redesign_v1.js','omega_ui_interaction_guard.js','omega_ui_button_system_v1.js']) {
+    assert.equal(index.includes('src="' + retired + '"'),false, retired + ' must not load');
+    assert.equal(sw.includes('"./' + retired + '"'),false, retired + ' must not be pre-cached');
+  }
+});
+
+test('world command dock exposes the unified mobile-first primary routes', () => {
+  const dock = globalThis.OmegaUIV2WorldCommandDock;
+  assert.ok(dock);
+  assert.deepEqual(dock.routes.map((item) => item.id), ['map','overview','government','economy','more']);
+  assert.equal(typeof dock.mount, 'function');
+  assert.equal(typeof dock.launch, 'function');
+});
+
+
+test('religion and ideology navigation stays inside UI v2', () => {
+  const app = globalThis.OmegaUIV2App;
+  assert.ok(app.destinations.includes('religion'));
+  const source = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+  assert.ok(source.includes('mosque-architecture'));
+  assert.equal(source.includes('openReligionIdeologySystem(event)'), false);
+  assert.equal(source.includes('data-omega-v2-open-religion'), false);
+  assert.ok(source.includes('data-omega-v2-global-nav="government"'));
+  assert.ok(source.includes("photoMarkup('mosque-architecture'"));
+  assert.equal(source.includes("domainPhoto('mosque-architecture'"), false);
+});
+
+test('Programmatic minister recruitment opens UI v2 for the explicitly selected country', () => {
+  const previous = {
+    OmegaCabinetUI: globalThis.OmegaCabinetUI,
+    OmegaMinisterRecruitment: globalThis.OmegaMinisterRecruitment,
+    OmegaMinisterStateRegistry: globalThis.OmegaMinisterStateRegistry,
+    OmegaLiveMinisterSelectorV9: globalThis.OmegaLiveMinisterSelectorV9
+  };
+  globalThis.OmegaCabinetUI = {
+    activeCountry: 'USA',
+    ministriesDatabase: {
+      cabinet_council: { id:'cabinet_council', title:'Executive Cabinet', category:'governance' },
+      interior_security: { id:'interior_security', title:'Interior & Security', category:'governance' },
+      trade: { id:'trade', title:'Trade', category:'economy' }
+    }
+  };
+  globalThis.OmegaMinisterRecruitment = {
+    normalizeCountryCode(value) { return String(value == null ? '' : value).trim().toUpperCase(); },
+    fetchRoster: async () => []
+  };
+  globalThis.OmegaMinisterStateRegistry = {
+    getActiveMinisterSummary() { return null; },
+    getActiveMinister() { return null; }
+  };
+  globalThis.OmegaLiveMinisterSelectorV9 = { active() { return null; } };
+  const viewChanges = [];
+  const root = {
+    classList: { add() {} },
+    addEventListener() {},
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    contains() { return true; },
+    innerHTML: ''
+  };
+  try {
+    const result = globalThis.OmegaUIV2Government.openRecruitment(root, 'interior_security', {
+      countryId: 'BGD',
+      view: 'executive-ministry',
+      onViewChange(view) { viewChanges.push(view); }
+    });
+    assert.deepEqual(result, {
+      ok: true,
+      ministryId: 'interior_security',
+      countryId: 'BGD',
+      view: 'all-ministries'
+    });
+    assert.equal(root.__omegaV2RecruitingMinistry, 'interior_security');
+    assert.equal(root.__omegaV2RecruitingCountry, 'BGD');
+    assert.equal(root.__omegaV2GovernmentView, 'all-ministries');
+    assert.deepEqual(viewChanges, ['all-ministries']);
+    assert.match(root.innerHTML, /data-omega-v2-minister-recruitment-panel/);
+    assert.match(root.innerHTML, /data-country-id="BGD"/);
+    assert.match(root.innerHTML, /data-ministry-id="interior_security"/);
+    assert.equal(root.innerHTML.includes('omega-minister-command'), false);
+  } finally {
+    globalThis.OmegaUIV2Government.stopAutoRotation(root);
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete globalThis[key];
+      else globalThis[key] = value;
+    }
+  }
+});
+
+test('Government exposes emblems, minister recruitment and a stable future portrait slot', () => {
+  const government = readFileSync(new URL('../omega_ui_v2/screens/government.js', import.meta.url), 'utf8');
+  const detail = readFileSync(new URL('../omega_ui_v2/screens/ministry-detail.js', import.meta.url), 'utf8');
+  assert.match(government, /function ministerRecruitmentTable\(rows\)/);
+  assert.match(government, /data-omega-v2-minister-recruitment=/);
+  assert.match(government, /data-omega-v2-minister-portrait-slot/);
+  assert.match(government, /g\.OmegaMinisterRecruitment/);
+  assert.match(government, /engine\.fetchRoster/);
+  assert.match(government, /OmegaLiveMinisterSelectorV9/);
+  assert.match(government, /function ministerCandidateCard\(candidate, selectedId\)/);
+  assert.match(government, /data-omega-v2-minister-candidate-card/);
+  assert.match(government, /data-omega-v2-minister-current-officeholder/);
+  assert.match(government, /__omegaV2RecruitmentRequestId/);
+  assert.match(government, /button\.disabled = true;\s*button\.textContent = root\.__omegaV2RecruitmentHasCurrentMinister/);
+  assert.match(government, /selector\.appoint\(recruitingId, candidate, country\)/);
+  assert.match(government, /appointmentScreenStillCurrent/);
+  assert.match(government, /activeOptions\.isScreenWorkCurrent\(\)/);
+  assert.doesNotMatch(government, /id="omega-v2-minister-candidate" data-omega-v2-minister-candidate/);
+  const ministerStyles = readFileSync(new URL('../omega_ui_v2/omega-ui-v2.css', import.meta.url), 'utf8');
+  assert.match(ministerStyles, /\.omega-v2-minister-candidate-card\.is-selected/);
+  assert.match(ministerStyles, /\.omega-v2-minister-avatar/);
+
+  assert.match(detail, /omega-v2-ministry-appointed-minister/);
+  const portrait = globalThis.OmegaUIV2Government.renderMinisterPortrait({ id:'treasury_finance', ministerName:'Test Minister', ministerPortraitUrl:'assets/ministers/test-minister.webp' });
+  assert.match(portrait, /data-omega-v2-minister-portrait-slot/);
+  assert.match(portrait, /src="assets\/ministers\/test-minister\.webp"/);
+  const placeholder = globalThis.OmegaUIV2Government.renderMinisterPortrait({ id:'treasury_finance', ministerName:'Test Minister' });
+  assert.match(placeholder, /MINISTER PORTRAIT/);
+  const previousCabinet = globalThis.OmegaCabinetUI;
+  globalThis.OmegaCabinetUI = { ministriesDatabase:{
+    cabinet_council:{ id:'cabinet_council', title:'Executive Cabinet', category:'governance' },
+    interior_security:{ id:'interior_security', title:'Interior & Security', category:'governance' },
+    treasury_finance:{ id:'treasury_finance', title:'Treasury & Finance', category:'finance' }
+  } };
+  const root = { classList:{ add(){} }, addEventListener(){}, querySelector(){ return null; }, querySelectorAll(){ return []; }, innerHTML:'', contains(){ return true; } };
+  try {
+    const rendered = globalThis.OmegaUIV2Government.render(root, { view:'all-ministries', countryId:'BGD' });
+    assert.equal(rendered.ministryCount, 3);
+    assert.match(root.innerHTML, /omega-v2-ministry-grid/);
+    assert.match(root.innerHTML, /data-omega-v2-ministry-rotator/);
+    assert.match(root.innerHTML, /data-omega-v2-minister-portrait-slot/);
+    assert.match(root.innerHTML, /Recruit \/ Replace/);
+    assert.match(root.innerHTML, /class="omega-v2-ministry-logo-image"/, 'ministry logo asset must be rendered in the directory card');
+    assert.ok(root.innerHTML.includes('assets/ui-photos/bangladesh-police-headquarters.webp') || root.innerHTML.includes('assets/economy_bg.jpg.jpg'));
+  } finally {
+    globalThis.OmegaCabinetUI = previousCabinet;
+  }
+});
+
+test('Universal navigation keeps the World tab internal and supplies a separate exit action', () => {
+  const appSource = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+  const bridgeSource = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
+  assert.ok(appSource.includes('data-omega-v2-jump-ministry'));
+  assert.ok(appSource.includes('data-omega-v2-jump-route'));
+  assert.ok(appSource.includes('data-omega-v2-exit'));
+  assert.ok(appSource.includes('historySnapshot(state)'));
+  assert.equal(appSource.includes("destination === 'map' && stateFor(root).options"), false);
+  assert.equal(bridgeSource.includes('renderMap:function () { return closeToWorldMap(); }'), false);
+});
+
+test('economy USD formatting works in the legacy Android 9 WebView NumberFormat implementation', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/economy.js', import.meta.url), 'utf8');
+  const nativeNumberFormat = Intl.NumberFormat;
+  const sandbox = {};
+  sandbox.Intl = {
+    NumberFormat: function (locale, options) {
+      // Chromium 66 could fail when currency maximumFractionDigits is set to 1
+      // without also overriding the currency's default minimumFractionDigits (2).
+      if (options && options.style === 'currency' &&
+          options.minimumFractionDigits === undefined &&
+          options.maximumFractionDigits !== undefined && options.maximumFractionDigits < 2) {
+        throw new RangeError('maximumFractionDigits value is out of range');
+      }
+      // Android 9 WebView predates the Intl compact-notation option.
+      const compatibleOptions = Object.assign({}, options || {});
+      delete compatibleOptions.notation;
+      return new nativeNumberFormat(locale, compatibleOptions);
+    }
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(source, sandbox, { filename:'omega_ui_v2/screens/economy.js', timeout:1000 });
+  sandbox.Game = { state: { finance: { USA: {
+    available:2500000000, revenue:3500000, expenditure:1000000, budgetBalance:250000000
+  } }, economy: { USA:{} } } };
+  sandbox.OmegaCountryDataGateway = {
+    getSnapshot: () => ({ fields: {
+      gdp:{status:'AVAILABLE', value:7000000000000, unit:'USD', sourceName:'fixture'},
+      inflation:{status:'UNAVAILABLE', value:null},
+      debtToGdpPct:{status:'UNAVAILABLE', value:null},
+      reserves:{status:'UNAVAILABLE', value:null},
+      debt:{status:'UNAVAILABLE', value:null},
+      tradeBalance:{status:'UNAVAILABLE', value:null}
+    } })
+  };
+  const root = {
+    innerHTML:'',
+    classList:{ add(){} },
+    addEventListener(){},
+    __omegaV2EconomyBound:true
+  };
+  const result = sandbox.OmegaUIV2Economy.render(root, { countryId:'USA', tab:'overview' });
+  assert.equal(result.ok, true);
+  assert.match(root.innerHTML, /\$2\.5B/);
+  assert.match(root.innerHTML, /\$3,500,000\.00/);
+  assert.match(root.innerHTML, /\$7T/);
+});
+
+test('Finance has six separate data-backed tabs', () => {
+  const finance = globalThis.OmegaUIV2Economy;
+  assert.ok(finance);
+  assert.deepEqual(finance.tabs.map((item) => item.id), ['overview', 'treasury', 'budget', 'debt', 'monetary', 'trade']);
+  const source = readFileSync(new URL('../omega_ui_v2/screens/economy.js', import.meta.url), 'utf8');
+  assert.match(source, /data-omega-v2-economy-tab/);
+  assert.match(source, /data-omega-v2-finance-panel/);
+  assert.match(source, /Game\.state\.finance\[country\]/);
+  const root = { classList:{ add(){} }, addEventListener(){}, innerHTML:'' };
+  for (const tab of finance.tabs) {
+    const result = finance.render(root, { countryId:'BGD', tab:tab.id });
+    assert.equal(result.tab, tab.id);
+    assert.ok(root.innerHTML.includes('data-omega-v2-finance-panel="' + tab.id + '"'));
+  }
+});
+
+test('Home Affairs hides unready shared placeholders and shows the Bangladesh reference photo only for Bangladesh', () => {
+  const keys = ['OmegaHomeMinistryEngine','OmegaCountryRuntimeData','OmegaCountryDataGateway','OmegaUIPhotoAssets','OmegaMinistryViewCountry'];
+  const prior = Object.fromEntries(keys.map(key => [key, globalThis[key]]));
+  globalThis.OmegaMinistryViewCountry = '';
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      const raw = String(value || '').trim().toUpperCase();
+      if (['BD','BGD','BDG','BANGLADESH'].includes(raw)) return { countryCode:'BD', iso3:'BGD', name:'Bangladesh' };
+      if (['US','USA','UNITED STATES'].includes(raw)) return { countryCode:'US', iso3:'USA', name:'United States' };
+      return null;
+    }
+  };
+  globalThis.OmegaCountryDataGateway = null;
+  globalThis.OmegaUIPhotoAssets = {
+    get(id) {
+      return id === 'bangladesh-police-headquarters'
+        ? { path:'assets/ui-photos/bangladesh-police-headquarters.webp', caption:'Bangladesh police headquarters' }
+        : null;
+    }
+  };
+  globalThis.OmegaHomeMinistryEngine = {
+    getState(country) {
+      if (String(country).toUpperCase() === 'USA') {
+        return { baselineVersion:0, baselineSource:null, policeCount:250, policeEfficiency:60, policeTrust:55, publicSatisfaction:55, vehiclesOwned:{}, incidentLedger:[], unlockedVehicleLevel:1, specialAgents:0, recruitmentFeePerOfficerUsd:500, dailySalaryPerOfficerUsd:1, facilityLevels:{station:1}, trainingQualityLevel:1, policeRecruitmentLevel:1, patrolPlan:{urban:25} };
+      }
+      return { baselineVersion:1, baselineSource:'OMEGA_COUNTRY_POLICE_BASELINE_V1',
+        openingConditionModel:'MODELED_COUNTRY_SPECIFIC_POLICE_FLEET_CRIME_GEOGRAPHY_V1',
+        policeCount:205417, policeEfficiency:61, policeTrust:67, publicSatisfaction:65,
+        vehiclesOwned:{'1':2894}, incidentLedger:[], unlockedVehicleLevel:1, specialAgents:0,
+        recruitmentFeePerOfficerUsd:500, dailySalaryPerOfficerUsd:1.88, facilityLevels:{station:1},
+        trainingQualityLevel:1, policeRecruitmentLevel:1, patrolPlan:{urban:25} };
+    },
+    estimateRecruitmentImpact() { return { ok:true, upfrontCostUsd:500, addedDailyPayrollUsd:1, additionalIncidentsAvoidedPerYear:1 }; },
+    getCountryFleetSnapshot() { return { ownedUnits:0 }; }
+  };
+  try {
+    const usRoot = { classList:{ add(){} }, addEventListener(){}, contains(){return true;} };
+    const usRender = globalThis.OmegaUIV2HomeAffairs.render(usRoot,{countryId:'USA'});
+    assert.equal(usRender.ok,true);
+    assert.match(usRoot.innerHTML,/COUNTRY BASELINE LOADING/);
+    assert.match(usRoot.innerHTML,/Not recorded/);
+    assert.doesNotMatch(usRoot.innerHTML,/<strong>250<\/strong>|<strong>60%<\/strong>|<strong>55%<\/strong>/);
+    assert.doesNotMatch(usRoot.innerHTML,/bangladesh-police-headquarters/);
+
+    const bdRoot = { classList:{ add(){} }, addEventListener(){}, contains(){return true;} };
+    const bdRender = globalThis.OmegaUIV2HomeAffairs.render(bdRoot,{countryId:'BDG'});
+    assert.equal(bdRender.ok,true);
+    assert.match(bdRoot.innerHTML,/COUNTRY BASELINE READY/);
+    assert.match(bdRoot.innerHTML,/bangladesh-police-headquarters\.webp/);
+    assert.match(bdRoot.innerHTML,/<strong>205,417<\/strong>/);
+    assert.match(bdRoot.innerHTML,/<strong>61%<\/strong>/);
+  } finally {
+    for (const key of keys) {
+      if (prior[key] === undefined) delete globalThis[key];
+      else globalThis[key] = prior[key];
+    }
+  }
+});
+
+
+test('factory command cards use canonical SVGs, daily production state, type counts and conditional neon selection', async () => {
+  const keys = ['Game','OmegaResourceIndustrialCatalogData','Omega','currentActiveCountry','OmegaResourceIndustrialNetwork','OmegaResourceCommandCenterUI'];
+  const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
+  globalThis.Omega = {};
+  globalThis.currentActiveCountry = 'BGD';
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_AND_ALLOY_WORKS: { name:'Steel and Alloy Works' },
+      INDUSTRIAL_CHEMICALS_GAS_PLANT: { name:'Industrial Chemicals and Gases' },
+      RARE_EARTH_BENEFICIATION_PLANT: { name:'Rare Earth Processing' }
+    },
+    factoryTypeAliases: {},
+    downstreamFactoryRecipes: {
+      STEEL_PRIMARY_ROUTE_V1: { recipeId:'STEEL_PRIMARY_ROUTE_V1', factoryType:'STEEL_AND_ALLOY_WORKS', inputs:{iron_ore:1}, outputs:{steel:1} }
+    },
+    processingRules: {}
+  };
+  globalThis.Game = { state: {
+    simulation: { session: { playerCountryId:'BGD' }, turn:4, daysPerTurn:1 },
+    resource: { BGD: { industrialNetwork: {
+      projects:[],
+      factoryProductionCycles:{
+        'FAC-STEEL':{status:'IN_PROGRESS',productionQuantity:125,cycleDays:1},
+        'FAC-CHEM':{status:'IN_PROGRESS',productionQuantity:62,cycleDays:1},
+        'FAC-STOP':{status:'PAUSED',productionQuantity:0,cycleDays:1}
+      },
+      factoryRuntime:{}, siteFlowLedger:[]
+    } } },
+    economy: { BGD: { productionAssets:[
+      {id:'FAC-STEEL',name:'Steel Factory',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',
+        capacityPerDay:125,outputPerDay:125,outputUnit:'tonnes',outputResourceId:'steel',
+        productionHealth:{status:'RUNNING',productivityPct:100,productionUnitsPerCycle:125,outputPerDay:125,outputUnit:'tonnes',outputResourceId:'steel'}},
+      {id:'FAC-CHEM',name:'Chemical Factory',factoryType:'INDUSTRIAL_CHEMICALS_GAS_PLANT',status:'OPERATIONAL',
+        capacityPerDay:125,outputPerDay:62,outputUnit:'tonnes',outputResourceId:'chemicals',
+        productionHealth:{status:'REDUCED',productivityPct:49.6,productionUnitsPerCycle:62,outputPerDay:62,outputUnit:'tonnes',outputResourceId:'chemicals',reason:'FACTORY_UTILITY_SHORTAGE'}},
+      {id:'FAC-STOP',name:'Rare Materials Factory',factoryType:'RARE_EARTH_BENEFICIATION_PLANT',status:'OPERATIONAL',
+        capacityPerDay:90,outputPerDay:70,outputUnit:'tonnes',outputResourceId:'rare_materials',
+        productionHealth:{status:'STOPPED',productivityPct:0,productionUnitsPerCycle:0,outputPerDay:70,outputUnit:'tonnes',outputResourceId:'rare_materials',reason:'FACTORY_INPUT_SHORTAGE'}}
+    ] } }
+  } };
+  const handlers = {};
+  const selectionAttrs = {};
+  const assetCardAttrs = {};
+  const selectionButton = {
+    getAttribute(name) { return name === 'data-omega-v2-factory-select' ? 'FAC-STEEL' : selectionAttrs[name]; },
+    setAttribute(name, value) { selectionAttrs[name] = value; }
+  };
+  const selectedAssetCard = {
+    getAttribute(name) { return name === 'data-factory-id' ? 'FAC-STEEL' : assetCardAttrs[name]; },
+    setAttribute(name, value) { assetCardAttrs[name] = value; }
+  };
+  const sidePanel = {
+    innerHTML:'',
+    hidden:true,
+    setAttribute(name, value) { this[name] = value; }
+  };
+  const root = {
+    classList:{add(){}},
+    addEventListener(name,handler){handlers[name]=handler;},
+    contains(){return true;},
+    querySelector(selector) { return selector === '[data-factory-detail-panel]' ? sidePanel : null; },
+    querySelectorAll(selector) {
+      if (selector === '[data-omega-v2-factory-card-expand]') return [];
+      if (selector === '[data-omega-v2-factory-select]') return [selectionButton];
+      if (selector === '[data-omega-v2-factory-card]') return [selectedAssetCard];
+      return [];
+    },
+    innerHTML:''
+  };
+  try {
+    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'assets'});
+    assert.equal(result.ok,true);
+    assert.equal(result.model.factoryCount,3);
+    assert.match(root.innerHTML,/class="omega-v2-factory-command fp-stage"/);
+    assert.match(root.innerHTML,/class="fp-top"/);
+    assert.match(root.innerHTML,/OMEGA \/ INDUSTRIAL SYSTEMS/);
+    assert.match(root.innerHTML,/class="fp-deck"/);
+    assert.equal((root.innerHTML.match(/data-omega-v2-factory-card/g)||[]).length,3);
+    assert.match(root.innerHTML,/assets\/omega-industrial-icons-v1\/factories\/steel-and-alloy-works\.svg/);
+    assert.match(root.innerHTML,/assets\/omega-industrial-icons-v1\/factories\/industrial-chemicals-gas-plant\.svg/);
+    assert.match(root.innerHTML,/assets\/omega-industrial-icons-v1\/factories\/rare-earth-beneficiation-plant\.svg/);
+    assert.match(root.innerHTML,/data-state="running"/);
+    assert.match(root.innerHTML,/data-state="reduced"/);
+    assert.match(root.innerHTML,/data-state="stopped"/);
+    assert.match(root.innerHTML,/\+ 125 tonnes\/day/);
+    assert.match(root.innerHTML,/\+ 62 tonnes\/day/);
+    assert.match(root.innerHTML,/0 tonnes\/day/);
+    assert.match(root.innerHTML,/factory utility shortage/i);
+    assert.match(root.innerHTML,/data-omega-v2-factory-build="FAC-STEEL"/);
+    assert.match(root.innerHTML,/data-omega-v2-factory-destroy="FAC-STEEL"/);
+    assert.doesNotMatch(root.innerHTML,/class="fp-summary"/);
+    assert.doesNotMatch(root.innerHTML,/PRODUCTION CYCLES/);
+
+    // Every industrial tab must remain inside the reference command stage.
+    // The old renderer used a different root for non-factory tabs, which discarded
+    // the new metal/neon interface as soon as any top-tab button was pressed.
+    for (const tab of ['production-lines','inventory','national-inventory','research','projects']) {
+      const tabResult = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab});
+      assert.equal(tabResult.ok,true,tab + ' tab should render');
+      assert.match(root.innerHTML,/class="omega-v2-factory-command fp-stage"/,tab + ' must keep the command stage');
+      assert.match(root.innerHTML,/class="fp-top"/,tab + ' must keep the command header');
+      assert.match(root.innerHTML,/class="fp-summary"/,tab + ' must keep country data metrics');
+      assert.match(root.innerHTML,/class="fp-content"/,tab + ' content must render inside the themed shell');
+      assert.match(root.innerHTML,new RegExp('data-active-tab="' + tab + '"'),tab + ' must mark the active tab');
+      assert.doesNotMatch(root.innerHTML,/class="omega-v2-heading"/,tab + ' must not fall back to the legacy screen');
+    }
+    const returnToFactories = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'assets'});
+    assert.equal(returnToFactories.ok,true);
+    assert.match(root.innerHTML,/data-omega-v2-factory-card/);
+    assert.match(root.innerHTML,/commons\.wikimedia\.org\/wiki\/File:Industrial_production_line_operating_in_a_large_modern_factory\.jpg/);
+    assert.match(root.innerHTML,/href="https:\/\/creativecommons\.org\/licenses\/by\/2\.0\//);
+    assert.match(root.innerHTML,/Image resized and converted to WebP/);
+    assert.doesNotMatch(root.innerHTML,/<small class="omega-v2-factory-reason">not recorded<\/small>/);
+    const click = handlers.click;
+    assert.equal(typeof click,'function');
+    const htmlBeforeLocalSelection = root.innerHTML;
+    click({target:{closest(selector){
+      if(selector==='[data-omega-v2-factory-select]') return selectionButton;
+      return null;
+    }}});
+    assert.equal(root.innerHTML,htmlBeforeLocalSelection,
+      'selecting a live factory must update the selected card and side panel without rerendering the Industry root');
+    assert.equal(selectionAttrs['aria-pressed'],'true');
+    assert.equal(assetCardAttrs['data-selected'],'true');
+    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'',
+      'selecting a live factory must not flip its card; Details is a separate action');
+    assert.equal(sidePanel.hidden,true);
+
+    const typeView = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'types'});
+    assert.equal(typeView.ok,true);
+    assert.doesNotMatch(root.innerHTML,/Factory types &amp; country totals|EXISTING FACTORIES IN THIS COUNTRY|FACTORY TYPES NOT PRESENT IN THIS COUNTRY/);
+    assert.equal((root.innerHTML.match(/data-omega-v2-factory-type-card/g)||[]).length,3);
+    assert.match(root.innerHTML,/Factories/);
+    assert.match(root.innerHTML,/data-factory-view="types"/);
+
+    // Build stays within UI v2 rather than opening the retired command centre.
+    let legacyOpenCalls = 0;
+    let projectRequest = null;
+    globalThis.OmegaResourceCommandCenterUI = {
+      open(){ legacyOpenCalls += 1; },
+      openPanel(){ legacyOpenCalls += 1; }
+    };
+    globalThis.OmegaResourceIndustrialNetwork = {
+      async loadCatalog(){ return {status:'READY'}; },
+      startFactoryProject(input) {
+        projectRequest = input;
+        const project = {
+          projectId:'FACTORY:BGD:STEEL_AND_ALLOY_WORKS:TEST',
+          projectType:'FACTORY_CONSTRUCTION', countryId:input.countryId,
+          factoryType:input.factoryType, factoryId:'FAC-STEEL-NEW',
+          status:'UNDER_CONSTRUCTION', startTurn:4, cost:1000, resourceId:'iron_ore'
+        };
+        globalThis.Game.state.resource.BGD.industrialNetwork.projects.push(project);
+        return project;
+      }
+    };
+    click({target:{closest(selector){
+      if(selector==='[data-omega-v2-factory-build]')return{
+        disabled:false,
+        getAttribute(name){return name==='data-factory-type'?'STEEL_AND_ALLOY_WORKS':'CATALOG';}
+      };
+      return null;
+    }}});
+    assert.match(root.innerHTML,/data-omega-v2-factory-project-form/);
+    assert.match(root.innerHTML,/Start factory construction/);
+    assert.equal(legacyOpenCalls,0,'the Build button must not open the retired command centre');
+    assert.equal(typeof handlers.submit,'function','the in-UI form must expose a submit handler');
+    const projectForm = {elements:{
+      factoryType:{value:'STEEL_AND_ALLOY_WORKS'}, recipeId:{value:'STEEL_PRIMARY_ROUTE_V1'},
+      resourceId:{value:''}, cost:{value:''}, capacityPerDay:{value:''}, buildDays:{value:''}
+    }};
+    await handlers.submit({target:{closest(selector){
+      return selector==='[data-omega-v2-factory-project-form]'?projectForm:null;
+    }},preventDefault(){}});
+    assert.equal(projectRequest.countryId,'BGD');
+    assert.equal(projectRequest.factoryType,'STEEL_AND_ALLOY_WORKS');
+    assert.equal(projectRequest.recipeId,'STEEL_PRIMARY_ROUTE_V1');
+    assert.equal(legacyOpenCalls,0,'submitting Build must remain inside UI v2');
+    assert.match(root.innerHTML,/FACTORY:BGD:STEEL_AND_ALLOY_WORKS:TEST/);
+    assert.match(root.innerHTML,/class="omega-v2-factory-command fp-stage"/);
+    const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css',import.meta.url),'utf8');
+    assert.match(css,/grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+    assert.match(css,/FP Command Stage/);
+    assert.match(css,/aspect-ratio:\s*1672\/941/);
+    assert.match(css,/@supports \(width:\s*1cqw\)/);
+    assert.match(css,/prefers-reduced-motion:\s*reduce/);
+    assert.match(css,/FP persistent command view fixes/);
+    assert.match(css,/orientation:\s*landscape\) and \(max-height:\s*520px/);
+    assert.ok(css.includes('@media (max-width:900px)') && css.includes('transform-style:flat !important;'), 'mobile cards must avoid expensive 3D compositing');
+    assert.ok(css.includes('.omega-v2-factory-type-card.fp-card--flipped .fp-card-face--front') && css.includes('.omega-v2-factory-type-card.fp-card--flipped .fp-card-face--back') && css.includes('display:flex !important;'), 'mobile Details must swap card faces without 3D transforms');
+    assert.ok(css.includes('@media (max-width:680px) and (orientation:portrait)') && css.includes('grid-template-columns:repeat(3,minmax(0,1fr)) !important;'), 'portrait phones must keep three factory cards per row');
+    assert.match(css,/fp-summary/);
+    assert.match(css,/@supports not \(width:\s*1cqw\)[\s\S]*?\.fp-badge\s*\{\s*display:\s*grid/);
+    assert.match(css,/data-state="stopped"/);
+    assert.match(css,/data-selected="true"\]\[data-state="running"/);
+    assert.match(css,/data-selected="true"\]\[data-state="reduced"/);
+  } finally {
+    for(const key of keys) {
+      if(previous[key]===undefined)delete globalThis[key];
+      else globalThis[key]=previous[key];
+    }
+  }
+});
+
+test('Home Affairs legal register shows stored law sections and never fabricates missing law text', () => {
+  const previousEngine = globalThis.OmegaHomeMinistryEngine;
+  globalThis.OmegaHomeMinistryEngine = {
+    getState: () => ({ laws:[{ name:'Public Safety Act', sections:[{ number:'12', title:'Police accountability', text:'Recorded provision text.' }] }] }),
+    estimateRecruitmentImpact: () => ({ ok:false, code:'TEST_QUOTE_UNAVAILABLE' }),
+    getCountryFleetSnapshot: () => null
+  };
+  const root = { classList:{ add(){} }, addEventListener(){}, querySelector(){ return null; }, innerHTML:'' };
+  try {
+    const result = globalThis.OmegaUIV2HomeAffairs.render(root, { countryId:'BGD', tab:'laws' });
+    assert.equal(result.tab, 'laws');
+    assert.match(root.innerHTML, /Public Safety Act/);
+    assert.match(root.innerHTML, /Police accountability/);
+    assert.match(root.innerHTML, /Recorded provision text\./);
+    assert.match(root.innerHTML, /Law \/ Act/);
+  } finally {
+    globalThis.OmegaHomeMinistryEngine = previousEngine;
+  }
+});
+
+test('factory screen uses canonical local SVG art while fleet screens keep their local photos', () => {
+  const industry = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  const fleet = readFileSync(new URL('../omega_ui_v2/screens/police-fleet.js', import.meta.url), 'utf8');
+  assert.match(industry, /function factorySvgMarkup\(factory\)/);
+  assert.match(industry, /assets\/omega-industrial-icons-v1\/factories\//);
+  assert.match(industry, /data-omega-v2-factory-svg/);
+  assert.match(industry, /data-omega-v2-factory-src/);
+  assert.match(industry, /function activateFactoryArtwork\(root\)/);
+  assert.match(industry, /IntersectionObserver/);
+  assert.match(industry, /factorySvgMarkup\(factory\)/);
+  assert.match(fleet, /function fleetHeroPhoto\(\)/);
+  assert.match(fleet, /assets\/ui-photos\/bangladesh-police-headquarters\.webp/);
+  assert.match(fleet, /fleetHeroPhoto\(\)/);
+});
+
+
+test('all ministry detail pages use the matching local cover, uploaded logo and gallery registry', () => {
+  const detail = readFileSync(new URL('../omega_ui_v2/screens/ministry-detail.js', import.meta.url), 'utf8');
+  const visualRegistry = globalThis.OmegaUIV2MinistryVisualRegistry;
+  assert.equal(visualRegistry.count, 18);
+  assert.match(detail, /function ministryVisualMarkup\(/);
+  assert.match(detail, /visual\.image/);
+  assert.match(detail, /visual\.logo/);
+  assert.match(detail, /visual\.gallery/);
+  assert.match(detail, /data-omega-v2-ministry-visual/);
+  for (const id of globalThis.OmegaUIV2Navigation.ministryIds) {
+    const visual = visualRegistry.get(id);
+    assert.ok(visual && visual.image, id + ' must have a ministry-specific cover image');
+    assert.ok(visual.logo, id + ' must have a ministry-specific logo');
+  }
+});
+
+test('universal navigation and the isolated legacy-free shell are wired into the offline cache', () => {
+  const app = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const worker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  const refreshCss = readFileSync(new URL('../omega_ui_v2/ministry-visual-refresh.css', import.meta.url), 'utf8');
+  const shellCss = readFileSync(new URL('../omega_ui_v2/omega-ui-v2.css', import.meta.url), 'utf8');
+  const isolationCss = readFileSync(new URL('../omega_ui_v2/legacy-disconnect.css', import.meta.url), 'utf8');
+  const integration = readFileSync(new URL('../omega_ui_v2/integration.js', import.meta.url), 'utf8');
+  assert.equal(html.includes('<script src="presentation-engine.js"'), false,
+    'retired PresentationEngine must not start in the production shell');
+  assert.equal(html.includes('<script src="ui_engine_core.js"'), false,
+    'retired adapter renderer and its polling loop must not start in the production shell');
+  assert.equal(html.includes('unpkg.com/react@18'), false,
+    'unused render-blocking React/Recharts libraries must not delay app startup');
+  assert.ok(app.includes('data-omega-v2-jump-route'));
+  assert.ok(app.includes('data-omega-v2-jump-ministry'));
+  assert.ok(app.includes('function exitToMap('));
+  assert.ok(app.includes('state.history.length = 0'));
+  assert.ok(app.includes("root.addEventListener('keydown'"));
+  assert.ok(app.includes('root.contains(ownControl)'));
+  assert.ok(app.includes('event.stopPropagation()'));
+  assert.ok(html.includes('omega_ui_v2/ministry-visual-refresh.css'));
+  assert.match(worker, /omega-offline-atlas-shell-v\d+/);
+  assert.ok(worker.includes('"./omega_ui_v2/legacy-disconnect.css"'));
+  assert.ok(refreshCss.includes('omega-v2-ministry-detail-cover-image'));
+  assert.ok(refreshCss.includes('min-height: 48px'));
+  assert.ok(shellCss.includes('overflow-y:auto;'));
+  assert.ok(shellCss.includes('touch-action:pan-y pinch-zoom;'));
+  assert.ok(isolationCss.includes('#ministry-dashboard-view'));
+  assert.ok(isolationCss.includes('display: none !important'));
+  assert.ok(isolationCss.includes('z-index: 2147483000 !important'));
+  assert.doesNotMatch(integration, /function\s+restoreLegacy\s*\(|function\s+resumeAfterOperationalConsole\s*\(|g\.OmegaCabinetUI\s*\.renderCabinet\s*\(/, 'integration must not call retired cabinet renderers');
+  assert.equal(integration.includes('manager.setLayer('),false);
+  assert.ok(integration.includes('function installLegacyLayerBridge()'));
+  assert.ok(integration.includes('manager.setLayer = function (layerNum, data)'));
+  assert.ok(integration.includes('manager.popLayer = function ()'));
+  assert.ok(integration.includes('g.OmegaUIV2App.back(root) === true'));
+
+  assert.ok(integration.includes('installLegacyLayerBridge();'));
+  assert.ok(integration.includes("api.openRoute('government') === true"));
+
+  for (const screenPath of ['industry.js','resource-ministry.js','ministry-detail.js','mine-detail.js','home-affairs.js']) {
+    const screen = readFileSync(new URL('../omega_ui_v2/screens/' + screenPath, import.meta.url), 'utf8');
+    assert.equal(screen.includes('onOpenOperationalConsole'),false, screenPath + ' must not expose the retired console callback');
+    assert.equal(screen.includes('data-omega-v2-open-operational-console'),false, screenPath + ' must not expose the retired console control');
+    assert.equal(screen.includes('open-console'),false, screenPath + ' must not route to the retired console');
+  }
+  for (const retired of ['omega_ui_system_redesign_v1.js','omega_ui_interaction_guard.js','omega_ui_button_system_v1.js']) {
+    assert.equal(html.includes('src="' + retired + '"'),false);
+    assert.equal(worker.includes('"./' + retired + '"'),false);
+  }
+});
+
+test('all 18 ministry detail pages render their registry cover and any matching uploaded logo', () => {
+  const previousCabinet = globalThis.OmegaCabinetUI;
+  globalThis.OmegaCabinetUI = { ministriesDatabase: Object.fromEntries(
+    globalThis.OmegaUIV2Navigation.ministryIds.map((id) => [id, { id, title:id.replace(/_/g, ' ') }])
+  ) };
+  try {
+    for (const id of globalThis.OmegaUIV2Navigation.ministryIds) {
+      const visual = globalThis.OmegaUIV2MinistryVisualRegistry.get(id);
+      const root = { classList:{ add(){} }, addEventListener(){}, innerHTML:'' };
+      const result = globalThis.OmegaUIV2MinistryDetail.render(root, { ministryId:id, countryId:'BGD' });
+      assert.equal(result.ok, true, id + ' detail should render');
+      assert.ok(root.innerHTML.includes(visual.image), id + ' detail must render its mapped cover image');
+      for (const galleryPath of visual.gallery || []) {
+        assert.ok(root.innerHTML.includes(galleryPath), id + ' detail must render gallery image ' + galleryPath);
+      }
+      if (visual.logo) assert.ok(root.innerHTML.includes(visual.logo), id + ' detail must render its uploaded logo');
+    }
+  } finally {
+    if (previousCabinet === undefined) delete globalThis.OmegaCabinetUI;
+    else globalThis.OmegaCabinetUI = previousCabinet;
+  }
+});
+
+test('UI v2 restores internal ministry routes and Escape returns to the previous screen', () => {
+  const previousCabinet = globalThis.OmegaCabinetUI;
+  const previousCountry = globalThis.OmegaMinistryViewCountry;
+  const previousDocument = globalThis.document;
+  // The production mount deliberately requires a browser document. Supply the
+  // smallest shell here; omitting createElement keeps the rotator timer inert.
+  globalThis.document = {};
+  const handlers = Object.create(null);
+  const main = {
+    classList:{ add(){} },
+    addEventListener(name, handler){ handlers['main:' + name] = handler; },
+    querySelector(){ return null; },
+    querySelectorAll(){ return []; },
+    innerHTML:''
+  };
+  const backButton = { disabled:false };
+  const attrs = Object.create(null);
+  const root = {
+    innerHTML:'',
+    classList:{ add(){} },
+    addEventListener(name, handler){ handlers[name] = handler; },
+    querySelector(selector) {
+      if (selector === '[data-omega-v2-main]') return main;
+      if (selector === '[data-omega-v2-back]') return backButton;
+      return null;
+    },
+    setAttribute(name, value){ attrs[name] = String(value); },
+    getAttribute(name){ return attrs[name] || null; },
+    contains(){ return true; }
+  };
+  globalThis.OmegaCabinetUI = { ministriesDatabase: {
+    defense:{ id:'defense', title:'Defense & Armed Forces', category:'defense' },
+    cabinet_council:{ id:'cabinet_council', title:'Executive Cabinet', category:'governance' }
+  } };
+  globalThis.OmegaMinistryViewCountry = 'BGD';
+  try {
+    const mounted = globalThis.OmegaUIV2App.mount(root, {
+      initialRoute:'ministry-detail', initialMinistryId:'defense', initialSection:'assets', countryId:'BGD',
+      initialHistory:[{ route:'government', ministryId:null, section:'dashboard', governmentView:'all-ministries' }]
+    });
+    assert.equal(mounted.mounted, true);
+    assert.equal(root.__omegaUIV2State.route, 'ministry-detail');
+    assert.equal(root.__omegaUIV2State.ministryId, 'defense');
+    assert.equal(root.__omegaUIV2State.section, 'assets');
+    assert.equal(root.__omegaUIV2State.history.length, 1);
+    let prevented = false;
+    handlers.keydown({ key:'Escape', preventDefault(){ prevented = true; } });
+    assert.equal(prevented, true);
+    assert.equal(root.__omegaUIV2State.route, 'government');
+    assert.equal(root.__omegaUIV2State.governmentView, 'all-ministries');
+
+    assert.equal(globalThis.OmegaUIV2App.openMinistry(root, 'defense'), true);
+    let altLeftPrevented = false;
+    handlers.keydown({ key:'ArrowLeft', altKey:true, preventDefault(){ altLeftPrevented = true; } });
+    assert.equal(altLeftPrevented, true);
+    assert.equal(root.__omegaUIV2State.route, 'government');
+    assert.equal(root.__omegaUIV2State.governmentView, 'all-ministries');
+  } finally {
+    if (previousCabinet === undefined) delete globalThis.OmegaCabinetUI;
+    else globalThis.OmegaCabinetUI = previousCabinet;
+    if (previousCountry === undefined) delete globalThis.OmegaMinistryViewCountry;
+    else globalThis.OmegaMinistryViewCountry = previousCountry;
+    if (previousDocument === undefined) delete globalThis.document;
+    else globalThis.document = previousDocument;
+  }
+});
+
+test('failed UI v2 mount fails closed and never revives the legacy Cabinet', () => {
+  const bridge = globalThis.OmegaUIV2Integration;
+  const previous = {
+    document:globalThis.document, app:globalThis.OmegaUIV2App, manager:globalThis.OmegaLayerManager,
+    country:globalThis.OmegaMinistryViewCountry, cabinet:globalThis.OmegaCabinetUI,
+    updateBack:globalThis.updateGlobalBackButtonVisibility
+  };
+  const attrs = Object.create(null), calls = [];
+  const root = { style:{display:'flex',visibility:'visible',pointerEvents:'auto'}, innerHTML:'legacy markup',
+    setAttribute(k,v){attrs[k]=String(v);}, getAttribute(k){return attrs[k]||null;}, removeAttribute(k){delete attrs[k];} };
+  const dashboard={style:{display:'flex',visibility:'visible',opacity:'1'},setAttribute(){},removeAttribute(){}};
+  const world={style:{opacity:'0.5',pointerEvents:'none'}}, bodyAttrs={};
+  const manager={currentLayer:0,layerStack:[0],setLayer(){calls.push('setLayer');},updateRightSidebar(){calls.push('sidebar');}};
+  globalThis.document={getElementById(id){return id==='cabinet-full-window'?root:id==='ministry-dashboard-view'?dashboard:id==='world-ui-root'?world:null;},
+    body:{setAttribute(k,v){bodyAttrs[k]=String(v);},classList:{add(){},remove(){}}}};
+  globalThis.OmegaUIV2App={mount(){throw new Error('simulated v2 render failure');},unmount(){return {ok:true};}};
+  globalThis.OmegaLayerManager=manager;
+  globalThis.OmegaMinistryViewCountry='BGD';
+  globalThis.OmegaCabinetUI={renderCabinet(){calls.push('legacy-render');}};
+  globalThis.updateGlobalBackButtonVisibility=()=>calls.push('legacy-back-update');
+  try {
+    const result=bridge.mountIntoCabinet(root);
+    assert.equal(result.ok,false);
+    assert.equal(result.code,'UI_V2_MOUNT_EXCEPTION');
+    assert.equal(root.style.display,'none');
+    assert.equal(root.style.pointerEvents,'none');
+    assert.equal(root.innerHTML,'');
+    assert.equal(root.getAttribute('data-omega-ui-v2-active'),null);
+    assert.equal(dashboard.style.display,'none');
+    assert.equal(world.style.opacity,'1');
+    assert.equal(world.style.pointerEvents,'auto');
+    assert.equal(bodyAttrs['data-active-layer'],'0');
+    assert.equal(manager.currentLayer,0);
+    assert.deepEqual(calls,[]);
+  } finally {
+    if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
+    if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
+    if(previous.manager===undefined)delete globalThis.OmegaLayerManager;else globalThis.OmegaLayerManager=previous.manager;
+    if(previous.country===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.country;
+    if(previous.cabinet===undefined)delete globalThis.OmegaCabinetUI;else globalThis.OmegaCabinetUI=previous.cabinet;
+    if(previous.updateBack===undefined)delete globalThis.updateGlobalBackButtonVisibility;else globalThis.updateGlobalBackButtonVisibility=previous.updateBack;
+  }
+});
+
+test('resource ministry reads only selected-country rows from the global site registries', () => {
+  const canonicalKey = 'OmegaResourceSiteCanonicalCatalogData';
+  const bindingKey = 'OmegaIndividualResourceSiteBinding';
+  const previousCanonical = globalThis[canonicalKey];
+  const previousBinding = globalThis[bindingKey];
+  const previousCountryRuntime = globalThis.OmegaCountryRuntimeData;
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      const key = String(value || '').trim().toUpperCase();
+      return key === 'BANGLADESH' || key === 'BGD' || key === 'BD'
+        ? { countryCode:'BD', iso3:'BGD', numericCode:'050', name:'Bangladesh' }
+        : key === 'UNITED STATES' || key === 'USA' || key === 'US'
+          ? { countryCode:'US', iso3:'USA', numericCode:'840', name:'United States' }
+          : null;
+    }
+  };
+  globalThis[canonicalKey] = {
+    sites: [
+      { siteId:'BGD-COAL-01', countryId:'BGD', resourceId:'coal', siteName:'Bangladesh coal' },
+      { siteId:'USA-OIL-01', countryId:'USA', resourceId:'crude_oil', siteName:'United States oil' }
+    ]
+  };
+  globalThis[bindingKey] = {
+    sites: [
+      { siteId:'BGD-COAL-01', countryId:'BGD', resourceId:'coal', siteName:'Duplicate Bangladesh coal' },
+      { siteId:'BGD-GAS-01', countryId:'BGD', resourceId:'natural_gas', siteName:'Bangladesh gas' },
+      { siteId:'IND-IRON-01', countryId:'IND', resourceId:'iron_ore', siteName:'India iron ore' }
+    ]
+  };
+  try {
+    const selected = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({ countryId:'BGD' });
+    assert.equal(selected.siteCount, 2);
+    assert.deepEqual(new Set(selected.sites.map((site) => site.countryId)), new Set(['BGD']));
+    assert.deepEqual(new Set(selected.sites.map((site) => site.siteId)), new Set(['BGD-COAL-01', 'BGD-GAS-01']));
+
+    const selectedByName = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({ countryId:'BANGLADESH' });
+    assert.equal(selectedByName.siteCount, 2, 'display-name country IDs must normalize to canonical ISO3 resource IDs');
+    assert.deepEqual(new Set(selectedByName.sites.map((site) => site.countryId)), new Set(['BGD']));
+    assert.deepEqual(new Set(selectedByName.sites.map((site) => site.siteId)), new Set(['BGD-COAL-01', 'BGD-GAS-01']));
+
+    const selectedByIso3 = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({ countryId:'USA' });
+    assert.equal(selectedByIso3.siteCount, 1);
+    assert.deepEqual(new Set(selectedByIso3.sites.map((site) => site.siteId)), new Set(['USA-OIL-01']));
+
+    const nameBasedSite = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({
+      countryId:'BANGLADESH',
+      sites:[{siteId:'NAME-BASED-BGD',siteName:'Name-based Bangladesh site',countryId:'Bangladesh',resourceId:'copper'}]
+    });
+    assert.equal(nameBasedSite.siteCount, 1, 'legacy rows with country names must normalize before filtering');
+    assert.equal(nameBasedSite.sites[0].siteId, 'NAME-BASED-BGD');
+
+    const noCountry = globalThis.OmegaUIV2ResourceMinistry.buildViewModel({});
+    assert.equal(noCountry.siteCount, 0, 'no selected nation must not render the entire global site catalog');
+  } finally {
+    if (previousCanonical === undefined) delete globalThis[canonicalKey];
+    else globalThis[canonicalKey] = previousCanonical;
+    if (previousBinding === undefined) delete globalThis[bindingKey];
+    else globalThis[bindingKey] = previousBinding;
+    if (previousCountryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData;
+    else globalThis.OmegaCountryRuntimeData = previousCountryRuntime;
+  }
+});
+
+
+test('industrial command panel scopes factory, mine, daily-rate and current-turn extraction data to the selected country', () => {
+  const keys = ['Game','Omega','OmegaCountryRuntimeData','OmegaResourceIndustrialCatalogData',
+    'OmegaResourceSiteCanonicalCatalogData','OmegaIndividualResourceSiteBinding','OmegaMinistryViewCountry','currentActiveCountry'];
+  const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaIndividualResourceSiteBinding = null;
+  globalThis.OmegaMinistryViewCountry = 'BGD';
+  globalThis.currentActiveCountry = 'BGD';
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Catalog Steel Mill', defaultRecipeId:'STEEL-RECIPE' },
+      CATALOG_ONLY_PROFILE: { name:'Profile must not count as a factory' }
+    }
+  };
+  globalThis.OmegaResourceSiteCanonicalCatalogData = { sites: [
+    {
+      siteId:'BGD-MINE-1', countryId:'BGD', siteName:'Bangladesh Iron Mine',
+      identity:{ countryIso3:'BGD', resourceTypeId:'iron_ore', resourceName:'Iron Ore' },
+      quantitative:{ production:{ rate:12, unit:'tonnes/day', status:'REPORTED' } },
+      operation:{ status:'OPERATING' }
+    },
+    {
+      siteId:'USA-MINE-1', countryId:'USA', siteName:'United States Copper Mine',
+      identity:{ countryIso3:'USA', resourceTypeId:'copper', resourceName:'Copper' },
+      quantitative:{ production:{ rate:900, unit:'tonnes/day', status:'REPORTED' } },
+      operation:{ status:'OPERATING' }
+    }
+  ] };
+  globalThis.Game = { state: {
+    simulation:{ turn:3, daysPerTurn:30, session:{ playerCountryId:'BGD' } },
+    resource:{
+      BGD:{
+        mineAssets:[{ siteId:'BGD-MINE-1', status:'OPERATIONAL' }],
+        industrialNetwork:{
+          // Mirror retained for compatibility; the economy registry below owns the factory.
+          factoryAssets:[{ id:'BGD-NET-FACTORY', name:'Bangladesh Alloy Works', factoryType:'STEEL_MILL', status:'ACTIVE' }],
+          siteFlowLedger:[
+            { countryId:'BGD', siteId:'BGD-MINE-1', resourceId:'iron_ore', unit:'tonnes', quantity:40, extractionTurn:3, status:'EXTRACTION_COMMITTED' },
+            { countryId:'BGD', siteId:'BGD-MINE-1', resourceId:'iron_ore', unit:'tonnes', quantity:150, extractionTurn:2, status:'EXTRACTION_COMMITTED' },
+            { countryId:'USA', siteId:'USA-MINE-1', resourceId:'copper', unit:'tonnes', quantity:999, extractionTurn:3, status:'EXTRACTION_COMMITTED' }
+          ]
+        }
+      },
+      USA:{
+        mineAssets:[],
+        industrialNetwork:{ factoryAssets:[], siteFlowLedger:[
+          { countryId:'USA', siteId:'USA-MINE-1', resourceId:'copper', unit:'tonnes', quantity:9, extractionTurn:3, status:'EXTRACTION_COMMITTED' }
+        ] }
+      }
+    },
+    economy:{
+      BGD:{ productionAssets:[
+        { id:'BGD-STEEL-1', name:'Bangladesh Steelworks', factoryType:'STEEL_MILL', capacityPerDay:30, status:'OPERATIONAL' },
+        { id:'BGD-NET-FACTORY', name:'Bangladesh Alloy Works', factoryType:'STEEL_MILL', capacityPerDay:25, status:'ACTIVE' }
+      ] },
+      USA:{ productionAssets:[{ id:'USA-COPPER-1', name:'United States Copper Refinery', factoryType:'COPPER_REFINERY', status:'ACTIVE' }] }
+    }
+  } };
+
+  try {
+    const bangladesh = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(bangladesh.factoryCount, 2, 'only registered game-state factory assets count, not catalog profiles');
+    assert.deepEqual(bangladesh.factoryNames.sort(), ['Bangladesh Alloy Works','Bangladesh Steelworks'].sort());
+    assert.equal(bangladesh.registeredMineSiteCount, 1);
+    assert.equal(bangladesh.operatingMineCount, 1);
+    assert.equal(bangladesh.dailyProductionKnownCount, 1);
+    assert.equal(bangladesh.mineSites[0].dailyProduction.value, 12);
+    assert.match(bangladesh.mineSites[0].dailyProduction.unit, /tonnes\/day/i);
+    assert.deepEqual(bangladesh.currentTurnExtraction.map((row) => ({ resourceId:row.resourceId, quantity:row.quantity })), [
+      { resourceId:'iron_ore', quantity:40 }
+    ]);
+    assert.equal(bangladesh.canOperateSelectedCountry, true);
+    assert.equal(bangladesh.currentTurnDaysPerTurn, 30);
+    assert.ok(Math.abs(bangladesh.currentTurnExtraction[0].averagePerDay - (40 / 30)) < 1e-5);
+
+    const unitedStates = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'USA' });
+    assert.equal(unitedStates.factoryCount, 1);
+    assert.deepEqual(unitedStates.factoryNames, ['United States Copper Refinery']);
+    assert.equal(unitedStates.registeredMineSiteCount, 1);
+    assert.deepEqual(unitedStates.currentTurnExtraction.map((row) => ({ resourceId:row.resourceId, quantity:row.quantity })), [
+      { resourceId:'copper', quantity:9 }
+    ]);
+    assert.equal(unitedStates.canOperateSelectedCountry, false);
+
+    const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const rendered = globalThis.OmegaUIV2Industry.render(root, { countryId:'BGD', factoryView:'assets' });
+    assert.equal(rendered.ok, true);
+    assert.match(root.innerHTML, /omega-v2-industry--factory-home/);
+    assert.match(root.innerHTML, /omega-v2-factory-command/);
+    assert.match(root.innerHTML, /data-omega-v2-factory-card/);
+    assert.match(root.innerHTML, /Bangladesh Alloy Works/);
+    assert.match(root.innerHTML, /Catalog Steel Mill/);
+    assert.doesNotMatch(root.innerHTML, /Bangladesh Iron Mine|Daily mine production|Build \/ view mines|FACTORY SVG SLOT/);
+    assert.doesNotMatch(root.innerHTML, /12 tonnes\/day|1\.33 tonnes\/game-day/);
+    assert.doesNotMatch(root.innerHTML, /United States Copper Refinery|United States Copper Mine|USA-MINE-1/,
+      'the selected-country factory panel must not render another country’s factory or mine rows');
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete globalThis[key];
+      else globalThis[key] = previous[key];
+    }
+  }
+});
+
+test('screen render failures preserve a working navigation shell and skip duplicate ministry lookup work', () => {
+  const previous = {
+    document:globalThis.document,
+    government:globalThis.OmegaUIV2Government,
+    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS,
+    requestAnimationFrame:globalThis.requestAnimationFrame,
+    cancelAnimationFrame:globalThis.cancelAnimationFrame
+  };
+  let rowsCalled = 0;
+  const handlers = Object.create(null);
+  const attrs = Object.create(null);
+  const mainAttrs = Object.create(null);
+  const main = {
+    innerHTML:'',
+    setAttribute(key, value) { mainAttrs[key] = String(value); },
+    removeAttribute(key) { delete mainAttrs[key]; }
+  };
+  const backButton = { disabled:false };
+  let shellHtml = '';
+  let shellWrites = 0;
+  const root = {
+    get innerHTML() { return shellHtml; },
+    set innerHTML(value) { shellWrites += 1; shellHtml = value; main.innerHTML = ''; },
+    classList:{ add(){}, remove(){} },
+    addEventListener(type, handler) { handlers[type] = handler; },
+    contains() { return true; },
+    querySelector(selector) {
+      if (selector === '[data-omega-v2-main]') return main;
+      if (selector === '[data-omega-v2-back]') return backButton;
+      return null;
+    },
+    querySelectorAll() { return []; },
+    setAttribute(key, value) { attrs[key] = String(value); },
+    removeAttribute(key) { delete attrs[key]; },
+    getAttribute(key) { return Object.prototype.hasOwnProperty.call(attrs, key) ? attrs[key] : null; }
+  };
+  const frames = new Map();
+  let nextFrame = 1;
+  globalThis.requestAnimationFrame = (callback) => {
+    const id = nextFrame++;
+    frames.set(id, callback);
+    return id;
+  };
+  globalThis.cancelAnimationFrame = (id) => frames.delete(id);
+  function flushFrames() {
+    let turns = 0;
+    while (frames.size && turns < 10) {
+      const first = frames.entries().next().value;
+      frames.delete(first[0]);
+      first[1](16);
+      turns += 1;
+    }
+    assert.equal(frames.size, 0, 'scheduled render should settle within its two animation frames');
+  }
+  globalThis.document = {};
+  globalThis.OmegaUIV2Government = {
+    getMinistryRows() { rowsCalled += 1; throw new Error('duplicate ministry lookup should not run'); },
+    render() { throw new Error('simulated ministry renderer crash'); }
+  };
+  try {
+    const result = globalThis.OmegaUIV2App.mount(root, { initialRoute:'government' });
+    assert.equal(result.ok, true, 'the fallback shell remains a valid mounted UI');
+    assert.equal(result.code, 'SCREEN_RENDER_FAILED');
+    assert.equal(result.screenRecovery, true);
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'government');
+    assert.match(main.innerHTML, /This screen could not be opened/);
+    assert.match(main.innerHTML, /data-omega-v2-global-nav="more"/);
+    assert.equal(rowsCalled, 0, 'the global route menu must not trigger an extra ministry database read');
+    assert.equal(globalThis.__OMEGA_UI_V2_DIAGNOSTICS.lastRenderFailure.route, 'government');
+    assert.match(globalThis.__OMEGA_UI_V2_DIAGNOSTICS.lastRenderFailure.message, /simulated ministry renderer crash/);
+
+    const control = {
+      closest(selector) {
+        if (selector === 'button,a[href],[role="button"],summary' ||
+            selector === '[data-omega-v2-global-nav]') return this;
+        return null;
+      },
+      getAttribute(name) { return name === 'data-omega-v2-global-nav' ? 'more' : null; }
+    };
+    handlers.click({
+      target:control,
+      preventDefault(){},
+      stopPropagation(){}
+    });
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'more');
+    assert.match(main.innerHTML, /Preparing this section/);
+    assert.equal(frames.size, 1, 'navigation work must be deferred so the loading state can paint');
+    flushFrames();
+    assert.match(main.innerHTML, /Command Center/);
+    assert.equal(shellWrites, 1, 'rendering a new destination must not rebuild the whole app shell');
+  } finally {
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.government === undefined) delete globalThis.OmegaUIV2Government; else globalThis.OmegaUIV2Government = previous.government;
+    if (previous.diagnostics === undefined) delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS; else globalThis.__OMEGA_UI_V2_DIAGNOSTICS = previous.diagnostics;
+    if (previous.requestAnimationFrame === undefined) delete globalThis.requestAnimationFrame; else globalThis.requestAnimationFrame = previous.requestAnimationFrame;
+    if (previous.cancelAnimationFrame === undefined) delete globalThis.cancelAnimationFrame; else globalThis.cancelAnimationFrame = previous.cancelAnimationFrame;
+  }
+});
+
+test('rapid navigation reuses the app shell, paints feedback, cancels stale renders and measures screen time', () => {
+  const previous = {
+    document:globalThis.document,
+    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS,
+    requestAnimationFrame:globalThis.requestAnimationFrame,
+    cancelAnimationFrame:globalThis.cancelAnimationFrame,
+    government:globalThis.OmegaUIV2Government
+  };
+  const handlers = Object.create(null);
+  const attrs = Object.create(null);
+  const mainAttrs = Object.create(null);
+  const main = {
+    innerHTML:'',
+    setAttribute(key, value) { mainAttrs[key] = String(value); },
+    removeAttribute(key) { delete mainAttrs[key]; }
+  };
+  const backButton = { disabled:false };
+  let shellHtml = '';
+  let shellWrites = 0;
+  const root = {
+    get innerHTML() { return shellHtml; },
+    set innerHTML(value) { shellWrites += 1; shellHtml = value; main.innerHTML = ''; },
+    classList:{ add(){}, remove(){} },
+    addEventListener(type, handler) { handlers[type] = handler; },
+    contains() { return true; },
+    querySelector(selector) {
+      if (selector === '[data-omega-v2-main]') return main;
+      if (selector === '[data-omega-v2-back]') return backButton;
+      return null;
+    },
+    querySelectorAll() { return []; },
+    setAttribute(key, value) { attrs[key] = String(value); },
+    removeAttribute(key) { delete attrs[key]; },
+    getAttribute(key) { return Object.prototype.hasOwnProperty.call(attrs, key) ? attrs[key] : null; }
+  };
+  const frames = new Map();
+  let nextFrame = 1;
+  globalThis.requestAnimationFrame = (callback) => {
+    const id = nextFrame++;
+    frames.set(id, callback);
+    return id;
+  };
+  globalThis.cancelAnimationFrame = (id) => frames.delete(id);
+  function clickRoute(route) {
+    const control = {
+      closest(selector) {
+        if (selector === 'button,a[href],[role="button"],summary' ||
+            selector === '[data-omega-v2-global-nav]') return this;
+        return null;
+      },
+      getAttribute(name) { return name === 'data-omega-v2-global-nav' ? route : null; }
+    };
+    handlers.click({ target:control, preventDefault(){}, stopPropagation(){} });
+  }
+  function flushFrames() {
+    let turns = 0;
+    while (frames.size && turns < 12) {
+      const first = frames.entries().next().value;
+      frames.delete(first[0]);
+      first[1](16);
+      turns += 1;
+    }
+    assert.equal(frames.size, 0, 'the latest screen render must settle without a stale animation frame');
+  }
+
+  globalThis.document = {};
+  globalThis.OmegaUIV2Government = {
+    render(root) { root.innerHTML = '<section>Government screen</section>'; return { ok:true }; },
+    stopAutoRotation() {}
+  };
+  try {
+    const mounted = globalThis.OmegaUIV2App.mount(root, { initialRoute:'government' });
+    assert.equal(mounted.mounted, true);
+    assert.match(main.innerHTML, /Government screen/);
+    assert.equal(shellWrites, 1);
+
+    clickRoute('overview');
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'overview');
+    assert.match(main.innerHTML, /Preparing this section/);
+    assert.equal(mainAttrs['aria-busy'], 'true');
+
+    clickRoute('more');
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'more');
+    assert.match(main.innerHTML, /Preparing this section/);
+    assert.equal(frames.size, 1, 'the new tap replaces the previous screen render rather than queueing both');
+    assert.equal(shellWrites, 1, 'the header and bottom navigation must survive subsequent route changes');
+    flushFrames();
+
+    assert.match(main.innerHTML, /Command Center/);
+    assert.doesNotMatch(main.innerHTML, /Country Overview/);
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'more');
+    assert.equal(root.getAttribute('data-omega-v2-navigation-pending'), null);
+    assert.equal(mainAttrs['aria-busy'], undefined);
+    assert.equal(globalThis.__OMEGA_UI_V2_DIAGNOSTICS.lastScreenRender.route, 'more');
+    assert.ok(globalThis.__OMEGA_UI_V2_DIAGNOSTICS.screenRenderCount >= 2);
+  } finally {
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.diagnostics === undefined) delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS; else globalThis.__OMEGA_UI_V2_DIAGNOSTICS = previous.diagnostics;
+    if (previous.requestAnimationFrame === undefined) delete globalThis.requestAnimationFrame; else globalThis.requestAnimationFrame = previous.requestAnimationFrame;
+    if (previous.cancelAnimationFrame === undefined) delete globalThis.cancelAnimationFrame; else globalThis.cancelAnimationFrame = previous.cancelAnimationFrame;
+    if (previous.government === undefined) delete globalThis.OmegaUIV2Government; else globalThis.OmegaUIV2Government = previous.government;
+  }
+});
+
+test('cabinet exit updates the world-map layer immediately and cancels stale cleanup when reopened', () => {
+  const previous = {
+    document:globalThis.document,
+    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS,
+    requestAnimationFrame:globalThis.requestAnimationFrame,
+    cancelAnimationFrame:globalThis.cancelAnimationFrame,
+    government:globalThis.OmegaUIV2Government
+  };
+  const handlers = Object.create(null);
+  const attrs = Object.create(null);
+  const mainAttrs = Object.create(null);
+  const main = {
+    innerHTML:'',
+    setAttribute(key, value) { mainAttrs[key] = String(value); },
+    removeAttribute(key) { delete mainAttrs[key]; }
+  };
+  let shellHtml = '';
+  const root = {
+    get innerHTML() { return shellHtml; },
+    set innerHTML(value) { shellHtml = value; main.innerHTML = ''; },
+    classList:{ add(){}, remove(){} },
+    addEventListener(type, handler) { handlers[type] = handler; },
+    contains() { return true; },
+    querySelector(selector) {
+      if (selector === '[data-omega-v2-main]') return main;
+      if (selector === '[data-omega-v2-back]') return { disabled:false };
+      return null;
+    },
+    querySelectorAll() { return []; },
+    setAttribute(key, value) { attrs[key] = String(value); },
+    removeAttribute(key) { delete attrs[key]; },
+    getAttribute(key) { return Object.prototype.hasOwnProperty.call(attrs, key) ? attrs[key] : null; }
+  };
+  const frames = new Map();
+  let nextFrame = 1;
+  globalThis.requestAnimationFrame = (callback) => {
+    const id = nextFrame++;
+    frames.set(id, callback);
+    return id;
+  };
+  globalThis.cancelAnimationFrame = (id) => frames.delete(id);
+  let prepareCount = 0;
+  let closeCount = 0;
+  let worldMapActive = true;
+  const options = {
+    initialRoute:'government',
+    onPrepareBackToMap() { prepareCount += 1; worldMapActive = false; },
+    onBackToMap() { closeCount += 1; return true; }
+  };
+  function clickExit() {
+    const control = {
+      closest(selector) {
+        if (selector === 'button,a[href],[role="button"],summary' ||
+            selector === '[data-omega-v2-exit]') return this;
+        return null;
+      },
+      getAttribute(name) { return name === 'data-omega-v2-exit' ? '' : null; }
+    };
+    handlers.click({ target:control, preventDefault(){}, stopPropagation(){} });
+  }
+  function flushFrames() {
+    let turns = 0;
+    while (frames.size && turns < 12) {
+      const first = frames.entries().next().value;
+      frames.delete(first[0]);
+      first[1](16);
+      turns += 1;
+    }
+    assert.equal(frames.size, 0, 'queued frame work must settle or be cancelled');
+  }
+
+  globalThis.document = {};
+  globalThis.OmegaUIV2Government = {
+    render(target) { target.innerHTML = '<section>Government screen</section>'; return { ok:true }; },
+    stopAutoRotation() {}
+  };
+  try {
+    const mounted = globalThis.OmegaUIV2App.mount(root, options);
+    assert.equal(mounted.mounted, true);
+    assert.match(main.innerHTML, /Government screen/);
+
+    clickExit();
+    assert.equal(prepareCount, 1, 'world-map layer state must be updated synchronously on exit');
+    assert.equal(worldMapActive, false);
+    assert.equal(closeCount, 0, 'heavy cabinet teardown must be deferred until after the loading frame');
+    assert.match(main.innerHTML, /Returning to the world map/);
+    assert.equal(frames.size, 1, 'the deferred teardown should be scheduled after the loading state');
+
+    worldMapActive = true;
+    const reopened = globalThis.OmegaUIV2App.mount(root, options);
+    assert.equal(reopened.mounted, true, 'the cabinet must be reopenable before stale teardown runs');
+    assert.equal(root.getAttribute('data-omega-v2-route'), 'government');
+    assert.match(main.innerHTML, /Government screen/);
+    assert.equal(frames.size, 0, 'reopening must cancel pending teardown from the previous cabinet session');
+    flushFrames();
+    assert.equal(closeCount, 0, 'stale teardown must never close the newly opened cabinet');
+    assert.equal(worldMapActive, true);
+  } finally {
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.diagnostics === undefined) delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS; else globalThis.__OMEGA_UI_V2_DIAGNOSTICS = previous.diagnostics;
+    if (previous.requestAnimationFrame === undefined) delete globalThis.requestAnimationFrame; else globalThis.requestAnimationFrame = previous.requestAnimationFrame;
+    if (previous.cancelAnimationFrame === undefined) delete globalThis.cancelAnimationFrame; else globalThis.cancelAnimationFrame = previous.cancelAnimationFrame;
+    if (previous.government === undefined) delete globalThis.OmegaUIV2Government; else globalThis.OmegaUIV2Government = previous.government;
+  }
+});
+
+test('each newer destination aborts the previous screen work signal before scheduling its own render', () => {
+  const previous = {
+    document:globalThis.document,
+    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS,
+    requestAnimationFrame:globalThis.requestAnimationFrame,
+    cancelAnimationFrame:globalThis.cancelAnimationFrame,
+    government:globalThis.OmegaUIV2Government
+  };
+  const handlers = Object.create(null);
+  const attrs = Object.create(null);
+  const main = {
+    innerHTML:'',
+    setAttribute(){},
+    removeAttribute(){}
+  };
+  let shellHtml = '';
+  const root = {
+    get innerHTML() { return shellHtml; },
+    set innerHTML(value) { shellHtml = value; main.innerHTML = ''; },
+    classList:{ add(){}, remove(){} },
+    addEventListener(type, handler) { handlers[type] = handler; },
+    contains() { return true; },
+    querySelector(selector) {
+      if (selector === '[data-omega-v2-main]') return main;
+      if (selector === '[data-omega-v2-back]') return { disabled:false };
+      return null;
+    },
+    querySelectorAll() { return []; },
+    setAttribute(key,value) { attrs[key] = String(value); },
+    removeAttribute(key) { delete attrs[key]; },
+    getAttribute(key) { return Object.prototype.hasOwnProperty.call(attrs,key) ? attrs[key] : null; }
+  };
+  const frames = new Map();
+  let nextFrame = 1;
+  globalThis.requestAnimationFrame = callback => {
+    const id = nextFrame++;
+    frames.set(id,callback);
+    return id;
+  };
+  globalThis.cancelAnimationFrame = id => frames.delete(id);
+  const seenSignals = [];
+  function clickRoute(route) {
+    const control = {
+      closest(selector) {
+        if (selector === 'button,a[href],[role="button"],summary' ||
+            selector === '[data-omega-v2-global-nav]') return this;
+        return null;
+      },
+      getAttribute(name) { return name === 'data-omega-v2-global-nav' ? route : null; }
+    };
+    handlers.click({ target:control, preventDefault(){}, stopPropagation(){} });
+  }
+  function flushFrames() {
+    let turns = 0;
+    while (frames.size && turns < 12) {
+      const first = frames.entries().next().value;
+      frames.delete(first[0]);
+      first[1](16);
+      turns += 1;
+    }
+    assert.equal(frames.size,0,'only the latest navigation may retain scheduled frame work');
+  }
+
+  globalThis.document = {};
+  globalThis.OmegaUIV2Government = {
+    render(target,options) {
+      seenSignals.push(options && options.screenSignal);
+      target.innerHTML = '<section>Government screen</section>';
+      return { ok:true };
+    },
+    stopAutoRotation(){}
+  };
+  try {
+    const mounted = globalThis.OmegaUIV2App.mount(root,{initialRoute:'government'});
+    assert.equal(mounted.mounted,true);
+    const firstSignal = seenSignals[seenSignals.length-1];
+    assert.ok(firstSignal && typeof firstSignal.aborted === 'boolean',
+      'screen renderers must receive a per-destination AbortSignal');
+
+    clickRoute('overview');
+    const secondSignal = root.__omegaUIV2State.screenAbortController.signal;
+    assert.equal(firstSignal.aborted,true,
+      'the previous screen request must be cancelled synchronously on the first new tap');
+    assert.equal(secondSignal.aborted,false);
+
+    clickRoute('more');
+    assert.equal(secondSignal.aborted,true,
+      'a rapid second tap must cancel the pending work for the intermediate destination too');
+    assert.equal(frames.size,1,'superseded destination frames must be discarded instead of queued');
+
+    flushFrames();
+    assert.equal(root.getAttribute('data-omega-v2-route'),'more');
+    assert.match(main.innerHTML,/Command Center/);
+    assert.equal(root.getAttribute('data-omega-v2-navigation-pending'),null);
+  } finally {
+    if (previous.document === undefined) delete globalThis.document; else globalThis.document = previous.document;
+    if (previous.diagnostics === undefined) delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS; else globalThis.__OMEGA_UI_V2_DIAGNOSTICS = previous.diagnostics;
+    if (previous.requestAnimationFrame === undefined) delete globalThis.requestAnimationFrame; else globalThis.requestAnimationFrame = previous.requestAnimationFrame;
+    if (previous.cancelAnimationFrame === undefined) delete globalThis.cancelAnimationFrame; else globalThis.cancelAnimationFrame = previous.cancelAnimationFrame;
+    if (previous.government === undefined) delete globalThis.OmegaUIV2Government; else globalThis.OmegaUIV2Government = previous.government;
+  }
+});
+
+
+test('factory type cards restore counts from the existing country registry without extra source tables', () => {
+  const previousGame = globalThis.Game;
+  const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
+  const previousBaseline = globalThis.OmegaCountryFactoryStartingBaselineV1;
+  globalThis.Game = { state: {
+    simulation: { session: { playerCountryId: 'BGD' }, turn: 1 },
+    resource: { BGD: {
+      productionAssets: [{ id:'IGNORED-RESOURCE-MIRROR', factoryType:'STEEL_MILL', status:'OPERATIONAL' }],
+      industrialNetwork: {
+        productionAssets: [{ id:'IGNORED-INDUSTRIAL-MIRROR', factoryType:'CEMENT_PLANT', status:'OPERATIONAL' }],
+        factoryAssets: [{ id:'IGNORED-FACTORY-MIRROR', factoryType:'CEMENT_PLANT', status:'OPERATIONAL' }],
+        projects: [], factoryProductionCycles: {}, factoryRuntime: {}, siteFlowLedger: []
+      }
+    } },
+    economy: { BGD: { productionAssets: [] } }
+  } };
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', category:'Heavy Industry' },
+      CEMENT_PLANT: { name:'Cement Plant', category:'Construction' }
+    }
+  };
+  let runtimeRegistered = false;
+  let liveCounts = { STEEL_MILL:0, CEMENT_PLANT:0 };
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryFactoryRegistry(countryId) {
+      assert.equal(countryId, 'BGD');
+      return {
+        status:'READY', runtimeRegistered,
+        registry:[
+          { factoryType:'STEEL_MILL', name:'Steel Mill', startingCount:3 },
+          { factoryType:'CEMENT_PLANT', name:'Cement Plant', startingCount:4 }
+        ],
+        liveFactoryTypeCounts: liveCounts
+      };
+    }
+  };
+  try {
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(model.factories.length, 0);
+    assert.equal(model.factoryCount, 7);
+    assert.deepEqual(model.factoryTypeCounts.map(row => [row.type,row.count]).sort(), [
+      ['CEMENT_PLANT',4], ['STEEL_MILL',3]
+    ]);
+    const root = { classList:{ add(){} }, listeners:Object.create(null), addEventListener(name, handler){ this.listeners[name]=handler; }, contains(){ return true; } };
+    const result = globalThis.OmegaUIV2Industry.render(root, {
+      countryId:'BGD', tab:'factories', factoryView:'types'
+    });
+    assert.equal(result.ok, true);
+    const showMoreButton = {};
+    root.listeners.click({target:{closest(selector){
+      return selector === '[data-factory-type-show-more]' ? showMoreButton : null;
+    }}});
+    assert.match(root.innerHTML, /Factories/);
+    assert.match(root.innerHTML, /<strong>3<\/strong>/);
+    assert.match(root.innerHTML, /<strong>4<\/strong>/);
+    assert.doesNotMatch(root.innerHTML, /UNIDO|Official establishment data|Source status/);
+
+    runtimeRegistered = true;
+    liveCounts = { STEEL_MILL:1, CEMENT_PLANT:2 };
+    globalThis.Game.state.economy.BGD.productionAssets = [
+      { id:'LIVE-STEEL-1', factoryType:'STEEL_MILL', status:'OPERATIONAL' },
+      { id:'LIVE-CEMENT-1', factoryType:'CEMENT_PLANT', status:'OPERATIONAL' },
+      { id:'LIVE-CEMENT-2', factoryType:'CEMENT_PLANT', status:'OPERATIONAL' }
+    ];
+    const liveModel = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'BGD' });
+    assert.equal(liveModel.factoryCount, 3);
+    assert.deepEqual(liveModel.factoryTypeCounts.map(row => [row.type,row.count]).sort(), [
+      ['CEMENT_PLANT',2], ['STEEL_MILL',1]
+    ]);
+  } finally {
+    if (previousGame === undefined) delete globalThis.Game; else globalThis.Game = previousGame;
+    if (previousCatalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData;
+    else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
+    if (previousBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
+    else globalThis.OmegaCountryFactoryStartingBaselineV1 = previousBaseline;
+  }
+});
+
+
+test('every canonical factory recipe input and output renders a product-specific SVG identity', () => {
+  const catalog = JSON.parse(readFileSync('resource_industrial_catalog_v1.json','utf8'));
+  const api = globalThis.OmegaUIV2Industry;
+  assert.ok(api && typeof api.productIconVisualMarkup === 'function');
+  const iconManifest = JSON.parse(readFileSync('assets/omega-industrial-icons-v1/manifest.json','utf8'));
+  assert.equal(iconManifest.resources.length,42,'all canonical raw resources must retain their SVG identities');
+  for (const resource of iconManifest.resources) {
+    const markup = api.productIconVisualMarkup(resource.id,resource.label);
+    assert.ok(markup.includes('assets/omega-industrial-icons-v1/' + resource.file),
+      resource.id + ' must resolve to its own canonical raw-resource SVG');
+  }
+  const productIds = new Set();
+  for (const recipe of Object.values(catalog.downstreamFactoryRecipes || {})) {
+    for (const productId of [
+      ...Object.keys(recipe && recipe.inputs || {}),
+      ...Object.keys(recipe && recipe.outputs || {})
+    ]) productIds.add(String(productId).toLowerCase());
+  }
+  assert.ok(productIds.size >= 90, 'canonical recipes should cover the downstream product namespace');
+  for (const productId of productIds) {
+    const label = productId.split(/[_-]+/).map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+    const markup = api.productIconVisualMarkup(productId,label);
+    assert.ok(markup.includes('<svg ') || markup.includes('<img '), productId + ' must render a visual icon');
+    assert.ok(markup.includes('data-factory-product-icon="' + productId + '"'),
+      productId + ' must keep its exact identity attached to the SVG');
+    assert.ok(markup.includes('aria-label=') || markup.includes('alt='),
+      productId + ' icon must have an accessible label');
+  }
+  assert.ok(api.productIconVisualMarkup('copper','Copper').includes('resources/copper.svg'),
+    'Copper must resolve to the copper asset rather than a generic drawing');
+  assert.ok(api.productIconVisualMarkup('steel','Steel').includes('data-icon-source="generated-product"'),
+    'Steel must use a finished-product SVG rather than pretending to be raw iron ore');
+  const productMotifs = new Set();
+  for (const productId of productIds) {
+    const label = productId.split(/[_-]+/).map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+    const markup = api.productIconVisualMarkup(productId,label);
+    if (markup.includes('data-icon-source="canonical-resource"')) continue;
+    const motif = markup.match(/data-icon-motif="([^"]+)"/)?.[1];
+    assert.ok(motif, productId + ' must expose its physical SVG motif');
+    assert.notEqual(motif, 'industrial-crate', productId + ' must not fall back to a generic crate icon');
+    productMotifs.add(motif);
+  }
+  assert.ok(productMotifs.size >= 25, 'canonical industrial products must use a broad set of recognizably different silhouettes');
+});
+
+
+test('Factory Stock and Input calculate all assigned factory-type requirements before production starts', () => {
+  const previous = {
+    Game:globalThis.Game,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    baseline:globalThis.OmegaCountryFactoryStartingBaselineV1,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    countryRuntime:globalThis.OmegaCountryRuntimeData,
+    omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', category:'Metals', defaultCapacityPerDay:10, defaultRecipeId:'STEEL-RECIPE', recipeIds:['STEEL-RECIPE'] },
+      CEMENT_PLANT: { name:'Cement Plant', category:'Construction', defaultCapacityPerDay:20, defaultRecipeId:'CEMENT-RECIPE', recipeIds:['CEMENT-RECIPE'] }
+    },
+    downstreamFactoryRecipes: {
+      'STEEL-RECIPE': { recipeId:'STEEL-RECIPE', factoryType:'STEEL_MILL', cycleDays:2, inputs:{iron_ore:0.5,coal:0.25}, outputs:{steel:0.8}, inputUnit:'SIMULATION_RESOURCE_UNIT', outputUnit:'SIMULATION_RESOURCE_UNIT' },
+      'CEMENT-RECIPE': { recipeId:'CEMENT-RECIPE', factoryType:'CEMENT_PLANT', cycleDays:1, inputs:{limestone:0.4}, outputs:{cement:0.9}, inputUnit:'SIMULATION_RESOURCE_UNIT', outputUnit:'SIMULATION_RESOURCE_UNIT' }
+    },
+    processingRules: {}
+  };
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryFactoryRegistry(countryId) {
+      assert.equal(countryId,'BGD');
+      return {
+        status:'READY',
+        runtimeRegistered:false,
+        registry:[
+          {factoryType:'STEEL_MILL',name:'Steel Mill',startingCount:3},
+          {factoryType:'CEMENT_PLANT',name:'Cement Plant',startingCount:2}
+        ],
+        liveFactoryTypeCounts:{STEEL_MILL:0,CEMENT_PLANT:0}
+      };
+    }
+  };
+  globalThis.Game = { state:{
+    simulation:{session:{playerCountryId:'BGD'},turn:1},
+    resource:{BGD:{
+      industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[]},
+      batches:[],finishedGoodsLedger:[],inventoryLedger:[],processedWarehouse:{availableByResource:{}}
+    }},
+    economy:{BGD:{productionAssets:[]}}
+  }};
+  try {
+    const inputRoot = {
+      classList:{add(){}},listeners:Object.create(null),
+      addEventListener(type,listener){this.listeners[type]=listener;},
+      contains(){return true},innerHTML:''
+    };
+    const input = globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
+    assert.equal(input.ok,true);
+    assert.equal(input.model.factoryCount,5);
+    assert.match(inputRoot.innerHTML,/All factory input requirements/);
+    assert.match(inputRoot.innerHTML,/Steel Mill/);
+    assert.match(inputRoot.innerHTML,/3 factories/);
+    const inputPlanStart = inputRoot.innerHTML.indexOf('data-factory-input-plan');
+    const inputSteelOrder = inputRoot.innerHTML.indexOf('Steel Mill ·',inputPlanStart);
+    const inputCementOrder = inputRoot.innerHTML.indexOf('Cement Plant ·',inputPlanStart);
+    assert.ok(inputSteelOrder >= 0 && inputCementOrder > inputSteelOrder,
+      'input plans must list owned factory types before less numerous/absent types');
+    assert.match(inputRoot.innerHTML,/Iron Ore/);
+    assert.match(inputRoot.innerHTML,/Total required \/ day/);
+    assert.match(inputRoot.innerHTML,/7\.5 game units/);
+    assert.match(inputRoot.innerHTML,/Every 10 game days/);
+    assert.match(inputRoot.innerHTML,/Awaiting the first Day 10 checkpoint/);
+    assert.match(inputRoot.innerHTML,/iron_ore/);
+    assert.doesNotMatch(inputRoot.innerHTML,/Total \/ full cycle|100-day requirement|750 game units|Coverage target/);
+    assert.match(inputRoot.innerHTML,/Limestone/);
+    assert.doesNotMatch(inputRoot.innerHTML,/No active factories are recorded/);
+ 
+    // Large countries must not mount every per-factory table in one WebView frame.
+    // All factory records remain accessible in deterministic four-card batches.
+    globalThis.Game.state.economy.BGD.productionAssets = Array.from({length:9},(_,index)=>({
+      id:'FACTORY-INPUT-PAGING-'+String(index+1).padStart(2,'0'),
+      name:'Steel Mill '+(index+1),
+      factoryType:'STEEL_MILL',
+      recipeId:'STEEL-RECIPE',
+      status:'OPERATIONAL',
+      capacityPerDay:10,
+      inputInventory:{iron_ore:20,coal:10}
+    }));
+    globalThis.OmegaUIV2Industry.render(inputRoot,{countryId:'BGD',tab:'inventory'});
+    const renderedFactoryCardCount=()=> (inputRoot.innerHTML.match(/class="fp-factory-data-card"/g)||[]).length;
+    assert.equal(renderedFactoryCardCount(),4,'the initial Input render must mount only one four-factory detail batch');
+    assert.match(inputRoot.innerHTML,/data-factory-input-show-more/,
+      'remaining factory input details must be accessible through the continuation control');
+    let inputMoreRemoved=false;
+    const inputPageStatus={textContent:''};
+    const showMoreButton={
+      attributes:{'data-next-index':'4'},disabled:false,textContent:'',
+      getAttribute(name){return this.attributes[name]===undefined?null:this.attributes[name];},
+      setAttribute(name,value){this.attributes[name]=String(value);},
+      parentNode:{removeChild(){
+        inputMoreRemoved=true;
+        inputRoot.innerHTML=inputRoot.innerHTML.replace(/<button[^>]*data-factory-input-show-more[^>]*>[\s\S]*?<\/button>/,'');
+      }}
+    };
+    inputRoot.querySelector=(selector)=>{
+      if(selector==='[data-factory-input-cards]') return {insertAdjacentHTML(_position,markup){inputRoot.innerHTML+=markup;}};
+      if(selector==='[data-factory-input-page-status]') return inputPageStatus;
+      return null;
+    };
+    const clickShowMore=()=>{
+      inputRoot.listeners.click({target:{closest(selector){
+        return selector==='[data-factory-input-show-more]'?showMoreButton:null;
+      }}});
+    };
+    clickShowMore();
+    assert.equal(renderedFactoryCardCount(),8,'the next action must render the next four factory records');
+    clickShowMore();
+    assert.equal(renderedFactoryCardCount(),9,'the final partial batch must preserve the last factory record');
+    assert.equal(inputMoreRemoved,true,'the continuation control must disappear when all factory input records are rendered');
+    assert.match(inputPageStatus.textContent,/9 of 9/);
+
+    const stockRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const stock = globalThis.OmegaUIV2Industry.render(stockRoot,{countryId:'BGD',tab:'national-inventory'});
+    assert.equal(stock.ok,true);
+    assert.match(stockRoot.innerHTML,/data-factory-output-summary="v1"/);
+    assert.match(stockRoot.innerHTML,/Output \/ day/);
+    assert.match(stockRoot.innerHTML,/Cost \/ day/);
+    assert.match(stockRoot.innerHTML,/Used in/);
+    assert.match(stockRoot.innerHTML,/Steel/);
+    assert.match(stockRoot.innerHTML,/Cement/);
+    assert.match(stockRoot.innerHTML,/data-factory-output-row="steel"/);
+    assert.match(stockRoot.innerHTML,/data-factory-output-row="cement"/);
+    assert.match(stockRoot.innerHTML,/Not recorded/);
+    assert.match(stockRoot.innerHTML,/data-state="unknown"/);
+    assert.doesNotMatch(stockRoot.innerHTML,/Factory-type output and stock plan|Planned \/ full cycle|Planned \/ day|Planned output|Produced to date|24 game units|12 game units/,
+      'the summary must not leak modeled recipe output as actual production');
+    assert.doesNotMatch(stockRoot.innerHTML,/Iron Ore/);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.baseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1; else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.baseline;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
+test('Factory input stock coverage is captured only at every tenth in-game day', () => {
+  const previous = {
+    Game:globalThis.Game,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    baseline:globalThis.OmegaCountryFactoryStartingBaselineV1,
+    countryRuntime:globalThis.OmegaCountryRuntimeData,
+    omega:globalThis.Omega
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaResourceIndustrialCatalogData = {
+    factoryProfiles: {
+      STEEL_MILL: { name:'Steel Mill', category:'Metals', defaultCapacityPerDay:10, defaultRecipeId:'STEEL-RECIPE', recipeIds:['STEEL-RECIPE'] },
+      CEMENT_PLANT: { name:'Cement Plant', category:'Construction', defaultCapacityPerDay:20, defaultRecipeId:'CEMENT-RECIPE', recipeIds:['CEMENT-RECIPE'] }
+    },
+    downstreamFactoryRecipes: {
+      'STEEL-RECIPE': { recipeId:'STEEL-RECIPE', factoryType:'STEEL_MILL', cycleDays:2, inputs:{iron_ore:0.5,coal:0.25}, outputs:{steel:0.8}, inputUnit:'SIMULATION_RESOURCE_UNIT', outputUnit:'SIMULATION_RESOURCE_UNIT' },
+      'CEMENT-RECIPE': { recipeId:'CEMENT-RECIPE', factoryType:'CEMENT_PLANT', cycleDays:1, inputs:{limestone:0.4}, outputs:{cement:0.9}, inputUnit:'SIMULATION_RESOURCE_UNIT', outputUnit:'SIMULATION_RESOURCE_UNIT' }
+    },
+    processingRules:{}
+  };
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = {
+    getCountryFactoryRegistry(countryId) {
+      assert.equal(countryId,'BGD');
+      return {
+        status:'READY',
+        runtimeRegistered:true,
+        registry:[
+          {factoryType:'STEEL_MILL',name:'Steel Mill',startingCount:1},
+          {factoryType:'CEMENT_PLANT',name:'Cement Plant',startingCount:1}
+        ],
+        liveFactoryTypeCounts:{STEEL_MILL:1,CEMENT_PLANT:1}
+      };
+    }
+  };
+  globalThis.Game = { state:{
+    simulation:{session:{playerCountryId:'BGD'},turn:9},
+    resource:{BGD:{
+      industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[]},
+      batches:[],finishedGoodsLedger:[],inventoryLedger:[],processedWarehouse:{availableByResource:{}}
+    }},
+    economy:{BGD:{productionAssets:[
+      {
+        id:'FACTORY-STEEL-COVERAGE-01',name:'Bangladesh Steel Mill',factoryType:'STEEL_MILL',
+        recipeId:'STEEL-RECIPE',status:'OPERATIONAL',capacityPerDay:10,
+        inputInventory:{iron_ore:25,coal:25},
+        inputBatchLots:[
+          {batchId:'IRON-IMPORT-01',resourceId:'iron_ore',quantity:25,remainingQuantity:25,
+            unit:'SIMULATION_RESOURCE_UNIT',sourceCountryId:'IND'}
+        ]
+      },
+      {
+        id:'FACTORY-CEMENT-COVERAGE-01',name:'Bangladesh Cement Plant',factoryType:'CEMENT_PLANT',
+        recipeId:'CEMENT-RECIPE',status:'OPERATIONAL',capacityPerDay:20,
+        inputInventory:{limestone:80},
+        inputBatchLots:[
+          {batchId:'LIME-MINE-01',resourceId:'limestone',quantity:80,remainingQuantity:80,
+            unit:'SIMULATION_RESOURCE_UNIT',sourceCountryId:'BGD',sourceSiteIds:['SITE-BGD-LIMESTONE-01']}
+        ]
+      }
+    ]}}
+  }};
+  try {
+    const bucket = globalThis.Game.state.resource.BGD;
+    const first = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:9}});
+    assert.equal(first.updatedDay,10);
+    const iron = first.products.find(row => row.productId === 'iron_ore');
+    const coal = first.products.find(row => row.productId === 'coal');
+    const limestone = first.products.find(row => row.productId === 'limestone');
+    assert.equal(iron.dailyRequired,2.5);
+    assert.equal(iron.currentStock,25);
+    assert.equal(iron.coverageDays,10);
+    assert.equal(iron.importShare,1);
+    assert.equal(iron.status,'risk');
+    assert.equal(coal.coverageDays,20);
+    assert.equal(coal.status,'stable');
+    assert.equal(limestone.coverageDays,10);
+    assert.equal(limestone.status,'risk');
+
+    globalThis.Game.state.economy.BGD.productionAssets[0].inputInventory.iron_ore = 12.5;
+    const offCheckpoint = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:10}});
+    assert.equal(offCheckpoint,null,'Day 11 must not refresh the Day 10 coverage snapshot');
+    assert.equal(bucket.factoryInputCoverageSnapshotV1.updatedDay,10);
+
+    const second = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:19}});
+    const secondIron = second.products.find(row => row.productId === 'iron_ore');
+    assert.equal(second.updatedDay,20);
+    assert.equal(secondIron.coverageDays,5);
+    assert.equal(secondIron.status,'risk');
+
+    globalThis.Game.state.economy.BGD.productionAssets[0].inputInventory.iron_ore = 1;
+    const third = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:29}});
+    const thirdIron = third.products.find(row => row.productId === 'iron_ore');
+    assert.equal(third.updatedDay,30);
+    assert.equal(thirdIron.coverageDays,0.4);
+    assert.equal(thirdIron.status,'critical');
+
+    const root = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const rendered = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'inventory'});
+    assert.equal(rendered.ok,true);
+    assert.match(root.innerHTML,/Bangladesh Steel Mill/);
+    assert.match(root.innerHTML,/Import/);
+    assert.match(root.innerHTML,/Domestic mine/);
+    assert.match(root.innerHTML,/data-state="critical"/);
+    assert.match(root.innerHTML,/0\.4 days/);
+    assert.match(root.innerHTML,/Updated on Day 30/);
+    assert.match(root.innerHTML,/iron_ore/);
+
+    delete globalThis.Game.state.economy.BGD.productionAssets[0].inputInventory.coal;
+    const fourth = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:39}});
+    const fourthCoal = fourth.products.find(row => row.productId === 'coal');
+    assert.equal(fourth.updatedDay,40);
+    assert.equal(fourthCoal.stockComplete,false,'a missing input balance must remain unverified');
+    assert.equal(fourthCoal.currentStock,null);
+    assert.equal(fourthCoal.coverageDays,null);
+
+    globalThis.Game.state.economy.BGD.productionAssets[0].inputInventory.iron_ore = 0;
+    const fifth = globalThis.OmegaUIV2Industry.recordFactoryInputCoverage({detail:{simulationTurn:49}});
+    const fifthIron = fifth.products.find(row => row.productId === 'iron_ore');
+    assert.equal(fifth.updatedDay,50);
+    assert.equal(fifthIron.currentStock,0,'an explicit zero balance remains a recorded zero');
+    assert.equal(fifthIron.coverageDays,0);
+    assert.equal(fifthIron.status,'critical');
+
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.baseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1; else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.baseline;
+    if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+  }
+});
+
+test('factory cards flip in place and show Input, Output and Byproduct tabs with compact values', () => {
+  const previous = {
+    Game:globalThis.Game,
+    inventory:globalThis.OmegaCountryInventoryRuntime,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    baseline:globalThis.OmegaCountryFactoryStartingBaselineV1,
+    countryRuntime:globalThis.OmegaCountryRuntimeData,
+    omega:globalThis.Omega,
+    network:globalThis.OmegaResourceIndustrialNetwork
+  };
+  const catalog = JSON.parse(readFileSync(new URL('../resource_industrial_catalog_v1.json', import.meta.url), 'utf8'));
+  globalThis.Omega = {};
+  globalThis.OmegaCountryRuntimeData = null;
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = null;
+  globalThis.OmegaResourceIndustrialCatalogData = catalog;
+  globalThis.OmegaResourceIndustrialNetwork = null;
+  globalThis.Game = { state:{
+    simulation:{ playerCountryId:'BGD', turn:1 },
+    resource:{ BGD:{
+      industrialNetwork:{ projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[] },
+      batches:[],finishedGoodsLedger:[],inventoryLedger:[],
+      processedWarehouse:{ availableByResource:{} }
+    }},
+    economy:{ BGD:{ productionAssets:[] } }
+  }};
+  const listeners = {};
+  function makeCard(type) {
+    const attrs = { 'data-factory-type':type };
+    const actionAttrs = { 'data-factory-card-key':'type:' + type };
+    const face = {
+      innerHTML:'', hidden:true,
+      setAttribute(name,value) { this[name] = value; }
+    };
+    const details = {
+      disabled:false,
+      getAttribute(name) { return actionAttrs[name] || null; },
+      setAttribute(name,value) { actionAttrs[name] = String(value); },
+      removeAttribute(name) { delete actionAttrs[name]; }
+    };
+    const manage = { disabled:false, getAttribute(){return null;}, setAttribute(){}, removeAttribute(){} };
+    const classState = {};
+    return {
+      face, details, manage,
+      getAttribute(name) { return attrs[name] || null; },
+      setAttribute(name,value) { attrs[name] = String(value); },
+      removeAttribute(name) { delete attrs[name]; },
+      classList:{ toggle(name,value) { classState[name] = !!value; } },
+      querySelector(selector) {
+        if (selector === '[data-omega-v2-factory-details]') return details;
+        if (selector === '[data-factory-details-face]') return face;
+        return null;
+      },
+      querySelectorAll(selector) { return selector === 'button' ? [details,manage] : []; }
+    };
+  }
+  const steelCard = makeCard('STEEL_AND_ALLOY_WORKS');
+  const otherCard = makeCard('CEMENT_PLANT');
+  const root = {
+    classList:{ add(){} },
+    // This card-interaction test targets the catalog in full, independently
+    // of the separate three-card progressive-rendering contract.
+    __omegaV2IndustryCountryId:'BGD',
+    __omegaV2FactoryTypeVisibleCount:99,
+    addEventListener(name,handler) { listeners[name] = handler; },
+    contains() { return true; },
+    querySelectorAll(selector) {
+      return selector === '[data-omega-v2-factory-type-card], [data-omega-v2-factory-card]'
+        ? [steelCard,otherCard] : [];
+    },
+    innerHTML:''
+  };
+  try {
+    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories',factoryView:'types'});
+    assert.equal(result.ok,true);
+    assert.equal(globalThis.OmegaUIV2Industry.formatFactoryDetailAmount(40000000000,'tonnes'),'40B t');
+    assert.equal(globalThis.OmegaUIV2Industry.formatFactoryDetailAmount(87000,''),'87K');
+    const steelStart = root.innerHTML.indexOf('data-factory-type="STEEL_AND_ALLOY_WORKS"');
+    const steelMarkup = root.innerHTML.slice(root.innerHTML.lastIndexOf('<article',steelStart),root.innerHTML.indexOf('</article>',steelStart));
+    assert.match(steelMarkup,/data-omega-v2-factory-build-details/);
+    assert.match(steelMarkup,/data-omega-v2-factory-details/);
+    assert.match(steelMarkup,/>Manage</);
+    assert.match(steelMarkup,/Details <span aria-hidden="true">i<\/span>/);
+    assert.doesNotMatch(steelMarkup,/data-product-role=/,
+      'collapsed front face must not render compressed ingredient/output rows');
+    assert.equal(steelCard.face.innerHTML,'');
+    const initialHtml = root.innerHTML;
+
+    const detailClick = { closest(selector) {
+      if (selector === '[data-omega-v2-factory-details]') return steelCard.details;
+      return null;
+    }};
+    listeners.click({target:detailClick});
+    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'type:STEEL_AND_ALLOY_WORKS');
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'input');
+    assert.equal(steelCard.details.getAttribute('aria-expanded'),'true');
+    assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="input"/);
+    assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="output"/);
+    assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="byproduct"/);
+    assert.match(steelCard.face.innerHTML,/aria-selected="true"/);
+    assert.match(steelCard.face.innerHTML,/Amount \/ day/);
+    assert.match(steelCard.face.innerHTML,/fp-card-detail-row/);
+    assert.equal(otherCard.getAttribute('data-detail-locked'),'true',
+      'only the active card may remain actionable while flipped');
+    assert.equal(otherCard.details.disabled,true);
+    assert.equal(root.innerHTML,initialHtml,
+      'flipping must update the existing card face locally without rebuilding the card register');
+
+    const outputTab = { getAttribute(name) { return name === 'data-omega-v2-factory-detail-tab' ? 'output' : null; } };
+    listeners.click({target:{closest(selector) {
+      if (selector === '[data-omega-v2-factory-detail-tab]') return outputTab;
+      return null;
+    }}});
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'output');
+    assert.match(steelCard.face.innerHTML,/aria-selected="true"/);
+    assert.match(steelCard.face.innerHTML,/data-product-id="steel"/i);
+
+    const byproductTab = { getAttribute(name) { return name === 'data-omega-v2-factory-detail-tab' ? 'byproduct' : null; } };
+    listeners.click({target:{closest(selector) {
+      if (selector === '[data-omega-v2-factory-detail-tab]') return byproductTab;
+      return null;
+    }}});
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'byproduct');
+    assert.match(steelCard.face.innerHTML,/fp-card-detail-table--no-status/);
+    assert.doesNotMatch(steelCard.face.innerHTML,/>Status</,
+      'byproduct rows must not create a status column');
+    assert.equal(otherCard.details.disabled,true);
+
+    listeners.click({target:{closest(selector) {
+      if (selector === '[data-omega-v2-factory-detail-close]') return {};
+      return null;
+    }}});
+    assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'');
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'input');
+    assert.equal(steelCard.face.innerHTML,'');
+    assert.equal(steelCard.details.getAttribute('aria-expanded'),'false');
+    assert.equal(otherCard.getAttribute('data-detail-locked'),null);
+    assert.equal(otherCard.details.disabled,false);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.inventory === undefined) delete globalThis.OmegaCountryInventoryRuntime; else globalThis.OmegaCountryInventoryRuntime = previous.inventory;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.baseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1; else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.baseline;
+    if (previous.countryRuntime === undefined) delete globalThis.OmegaCountryRuntimeData; else globalThis.OmegaCountryRuntimeData = previous.countryRuntime;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+    if (previous.network === undefined) delete globalThis.OmegaResourceIndustrialNetwork; else globalThis.OmegaResourceIndustrialNetwork = previous.network;
+  }
+});
+
+test('factory catalog warm-up timeout releases a never-settling optional load without blocking the initial view', async () => {
+  const previous = {
+    Game:globalThis.Game,
+    catalog:globalThis.OmegaResourceIndustrialCatalogData,
+    baseline:globalThis.OmegaCountryFactoryStartingBaselineV1,
+    network:globalThis.OmegaResourceIndustrialNetwork,
+    omega:globalThis.Omega,
+    setTimeout:globalThis.setTimeout,
+    clearTimeout:globalThis.clearTimeout
+  };
+  globalThis.Omega = {};
+  globalThis.OmegaResourceIndustrialCatalogData = null;
+  globalThis.OmegaCountryFactoryStartingBaselineV1 = null;
+  globalThis.OmegaResourceIndustrialNetwork = { loadCatalog(){ return new Promise(() => {}); } };
+  globalThis.Game = { state:{
+    simulation:{ playerCountryId:'BGD', turn:1 },
+    resource:{ BGD:{ industrialNetwork:{ projects:[],factoryProductionCycles:{},factoryRuntime:{},siteFlowLedger:[] } } },
+    economy:{ BGD:{} }
+  }};
+  globalThis.setTimeout = callback => { Promise.resolve().then(callback); return 1; };
+  globalThis.clearTimeout = () => {};
+  const root = { classList:{add(){}}, addEventListener(){}, contains(){return true;}, querySelector(){return {};}, innerHTML:'' };
+  try {
+    const result = globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'factories'});
+    assert.equal(result.ok,true,'initial render must return without awaiting catalog readiness');
+    assert.ok(root.__omegaV2IndustryPlanWarmup);
+    await root.__omegaV2IndustryPlanWarmup.promise;
+    assert.equal(root.__omegaV2IndustryPlanWarmup.completed,true);
+    assert.equal(root.__omegaV2IndustryPlanWarmup.timedOut,true);
+  } finally {
+    if (previous.Game === undefined) delete globalThis.Game; else globalThis.Game = previous.Game;
+    if (previous.catalog === undefined) delete globalThis.OmegaResourceIndustrialCatalogData; else globalThis.OmegaResourceIndustrialCatalogData = previous.catalog;
+    if (previous.baseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1; else globalThis.OmegaCountryFactoryStartingBaselineV1 = previous.baseline;
+    if (previous.network === undefined) delete globalThis.OmegaResourceIndustrialNetwork; else globalThis.OmegaResourceIndustrialNetwork = previous.network;
+    if (previous.omega === undefined) delete globalThis.Omega; else globalThis.Omega = previous.omega;
+    globalThis.setTimeout = previous.setTimeout;
+    globalThis.clearTimeout = previous.clearTimeout;
+  }
+});
+
+test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
+  const sw = readFileSync('omega-offline-map-sw.js','utf8');
+  const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
+  assert.ok(offlineShellCacheVersion(sw) > 100,
+    'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
+  assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
+  assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
+  for (const selector of ['.fp-product-identity','.fp-product-icon-frame','.fp-product-stock-quantity']) {
+    assert.ok(css.includes(selector), selector + ' must be styled in the actual factory command stylesheet');
+  }
+});
+
+
+test('factory output status stays unknown when no stock or consumption ledger exists', () => {
+  const typeContext = { type:'STEEL_AND_ALLOY_WORKS', asset:null };
+  const untrackedModel = {
+    factories:[{id:'FACTORY-OUTPUT-UNKNOWN',type:'STEEL_AND_ALLOY_WORKS',lastRun:null}],
+    finishedGoodsLedger:[{
+      transactionId:'OUTPUT-UNKNOWN-01',factoryId:'FACTORY-OUTPUT-UNKNOWN',
+      outputQuantities:{STEEL:900},unit:'SIMULATION_RESOURCE_UNIT'
+    }],
+    resourceBatches:[],
+    resourceInventoryLedger:[]
+  };
+  assert.deepEqual(
+    globalThis.OmegaUIV2Industry.factoryDetailOutputStatus(untrackedModel,typeContext,'STEEL'),
+    {key:'unknown',label:'Use not tracked'},
+    'a production record alone cannot prove that output was unused'
+  );
+  const trackedModel = {
+    factories:untrackedModel.factories,
+    finishedGoodsLedger:untrackedModel.finishedGoodsLedger,
+    resourceBatches:[{
+      batchId:'STEEL-BATCH-01',sourceFactoryId:'FACTORY-OUTPUT-UNKNOWN',
+      resourceId:'STEEL',quantity:900,remainingQuantity:900,stage:'FINISHED'
+    }],
+    resourceInventoryLedger:[]
+  };
+  assert.deepEqual(
+    globalThis.OmegaUIV2Industry.factoryDetailOutputStatus(trackedModel,typeContext,'STEEL'),
+    {key:'stored',label:'In stock'}
+  );
+});
+
+test('factory Details is an in-card flip with three independent product tabs', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  assert.match(source,/function factoryDetailBackContentsMarkup/);
+  assert.match(source,/function factoryDetailRowsMarkup/);
+  assert.match(source,/function factoryDetailInputStatus/);
+  assert.match(source,/function factoryDetailOutputStatus/);
+  assert.match(source,/data-omega-v2-factory-detail-tab/);
+  assert.match(source,/detailsState\.detailsTab = 'input'/);
+  assert.match(source,/data-omega-v2-factory-details/);
+  assert.match(source,/Details <span aria-hidden="true">i<\/span>/);
+  assert.match(source,/fp-card--flipped/);
+  assert.match(css,/\.fp-card--flipped \.fp-card-flip-inner\s*\{[^}]*transform:rotateY\(180deg\)/s);
+  assert.match(css,/\.fp-card-face--back\s*\{[^}]*transform:rotateY\(180deg\)/s);
+  assert.match(css,/\.fp-card-detail-table--no-status/);
+  assert.match(css,/fp-detail-status\[data-state="stable"\]/);
+  assert.match(css,/fp-detail-status\[data-state="risk"\]/);
+  assert.match(css,/fp-detail-status\[data-state="critical"\]/);
+  assert.ok(offlineShellCacheVersion(sw) > 100);
+});
+
+test('factory cards retain three landscape columns and constrain text to the card face', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  assert.match(source,/factoryDetailFormatAmount/);
+  assert.match(source,/Math\.round\(amount\)/);
+  assert.match(source,/function syncFactoryCardActionLock\(root, model\)/);
+  assert.match(source,/data-detail-locked="true"/);
+  assert.match(css,/grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
+  assert.match(css,/\.fp-card-face\s*\{[^}]*backface-visibility:hidden/s);
+  assert.match(css,/\.fp-card-detail-scroll\s*\{[^}]*overflow-y:auto/s);
+  assert.match(css,/overflow-wrap:break-word/);
+  assert.match(css,/@media \(orientation:landscape\) and \(max-width:899px\)/);
+  assert.match(css,/@media \(orientation:portrait\) and \(max-width:899px\)[\s\S]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
+  assert.match(css,/\.fp-card-detail-row \.fp-card-detail-product\s*\{[^}]*grid-column:1 \/ -1/s);
+  assert.ok(offlineShellCacheVersion(sw) > 100);
+});
+
+test('Factory Type identity header aligns icon, name and owned count in one row', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  assert.match(source, /var count = '<span class="fp-type-card-count"/);
+  const headerStart = source.indexOf('var header = \'<header class="fp-type-card-head"');
+  const countInHeader = source.indexOf("count + '</header>'", headerStart);
+  assert.ok(headerStart >= 0 && countInHeader > headerStart,
+    'factory count must be emitted inside the same header as the factory icon and name');
+  assert.match(css, /\.fp-type-card-head \{[\s\S]*?grid-template-columns:30px minmax\(0,1fr\) auto/);
+  assert.match(css, /\.fp-type-card-count \{[\s\S]*?flex-direction:column/);
+});
+
+test('Factory Input tables contain long cell content without changing factory cards', () => {
+  const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
+  const marker = '/* Factory Input table overflow containment: keep long labels and statuses inside their cells. */';
+  const fixIndex = css.lastIndexOf(marker);
+  assert.ok(fixIndex >= 0, 'the scoped Factory Input overflow rules must be present');
+  const legacyProfileIndex = css.indexOf('/* Android 9 / legacy WebView paint profile.', fixIndex);
+  const fix = css.slice(fixIndex, legacyProfileIndex >= 0 ? legacyProfileIndex : undefined);
+  assert.match(fix, /\.fp-factory-table-wrap\s*\{[^}]*min-width:\s*0;[^}]*overflow-x:\s*auto;/s,
+    'the Input table wrapper must remain constrained and horizontally scrollable');
+  assert.match(fix, /\.fp-factory-input-table th,\s*\.omega-v2-industry--factory-home \.fp-factory-input-table td\s*\{[^}]*white-space:\s*normal;[^}]*overflow-wrap:\s*anywhere;/s,
+    'Input table cells must wrap long text rather than paint outside their bounds');
+  assert.match(fix, /\.fp-factory-input-table \.fp-factory-source\s*\{[^}]*display:grid;[^}]*grid-template-columns:\s*minmax\(0,1fr\) minmax\(0,6em\);/s,
+    'source labels and quantities must have bounded columns');
+  assert.match(fix, /\.fp-factory-input-table \.fp-factory-risk\s*\{[^}]*flex-wrap:\s*wrap;[^}]*white-space:\s*normal;/s,
+    'status labels must wrap inside the Current Situation cell');
+  assert.match(fix, /\.fp-factory-input-table \.fp-product-stock-quantity\s*\{[^}]*flex-wrap:\s*wrap;[^}]*white-space:\s*normal;/s,
+    'stock icons and quantities must wrap inside their cell');
+  assert.match(fix, /\.fp-factory-input-total-table th:nth-child\(3\)\s*\{\s*width:\s*24%;\s*\}/,
+    'aggregate daily-use breakdown must keep enough column width');
+  assert.match(fix, /\.fp-factory-input-total-table\s*\{[^}]*min-width:\s*960px;/s,
+    'the seven-column aggregate Input table must overflow its constrained wrapper on narrow screens');
+  assert.doesNotMatch(fix, /\.fp-card|\.fp-type-card/,
+    'the separate Input table fix must not alter factory cards');
+  const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  assert.ok(offlineShellCacheVersion(serviceWorker) > 100,
+    'offline clients must fetch the updated Factory Input stylesheet');
+});
+
+test('Industry view pre-indexes non-baseline factory assets instead of rescanning the entire asset list per category', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  assert.match(source, /var nonBaselineActiveCountsByType = Object\.create\(null\)/);
+  assert.match(source, /nonBaselineActiveCountsByType\[key\] = \(Number\(nonBaselineActiveCountsByType\[key\]\) \|\| 0\) \+ 1/);
+  assert.match(source, /var nonBaselineActiveCount = Number\(nonBaselineActiveCountsByType\[typeKey\]\) \|\| 0/);
+  assert.doesNotMatch(source, /var nonBaselineActiveCount = mappedAssets\.filter/);
+});
+
+test('Factory type overview skips heavy inventory and production-ledger mapping until a card is opened', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  assert.match(source, /var lightweightTypeView = options\.lightweightFactoryTypeView === true/);
+  assert.match(source, /!lightweightTypeView && \(inputDetailView \|\| stockSummaryView\) && context\.countryId && inventoryRuntime/);
+  assert.match(source, /var needsBatchRows = activeTab === 'inventory' \|\| stockSummaryView \|\| activeTab === 'factories' && !lightweightTypeView/);
+  assert.match(source, /var lightweightTypeView = active === 'factories' && requestedFactoryView === 'types' && !managePanelOpen && !factoryDetailsOpen/);
+  assert.match(source, /lightweightFactoryTypeView:currentTab === 'factories' && currentView === 'types' && !currentManageOpen && !currentDetailsOpen/);
+  assert.ok(source.includes("options.loadPrivateEnterpriseBaseline === true && context.countryId"));
+  assert.ok(source.includes("loadPrivateEnterpriseBaseline:active === 'companies' || active === 'production-lines' || managePanelOpen"),
+    'the lightweight Factory overview stays lazy, while Production Lines loads its private opening baseline');
+  assert.ok(source.includes("requestedTab === 'companies' || requestedTab === 'production-lines' || factoryManageOpened"),
+    'the detailed private baseline is requested only for the Companies or Production Lines tabs, or an opened Manage panel');
+  assert.ok(source.includes("var production = needsMineProduction ? mineDailyProduction(site) : null;"));
+  assert.ok(source.includes("var dailyProductionKnownCount = lightweightTypeView ? 0 :"));
+  assert.ok(source.includes("var flows = !optimizedFactoryRead && activeTab === 'factories' && !lightweightTypeView ?"));
+});
+
+test('Production Lines joins exact selected-country cycles and committed logistics without inventing routes or owners',()=>{
+  const keys=['Game','OmegaResourceIndustrialCatalogData','Omega','currentActiveCountry','OmegaResourceIndustrialNetwork',
+    'OmegaResourceCommandCenterUI','OmegaCountryFactoryStartingBaselineV1','OmegaPrivateEnterpriseRegistryV1'];
+  const previous=Object.fromEntries(keys.map(key=>[key,globalThis[key]]));
+  globalThis.Omega={ResourceStrategicPolicyRuntime:{
+    supplyPolicySummary(countryId,resourceId){
+      return{countryId,resourceId,activeDirectives:resourceId==='steel_product'?[{directive:'DOMESTIC_ONLY'}]:[]};
+    }
+  }};
+  globalThis.currentActiveCountry='BGD';
+  globalThis.OmegaResourceIndustrialCatalogData={
+    factoryProfiles:{STEEL_AND_ALLOY_WORKS:{name:'Steel and Alloy Works'}},
+    factoryTypeAliases:{},downstreamFactoryRecipes:{},processingRules:{}
+  };
+  globalThis.OmegaCountryFactoryStartingBaselineV1=null;
+  globalThis.OmegaPrivateEnterpriseRegistryV1=null;
+  globalThis.Game={state:{
+    simulation:{session:{playerCountryId:'BGD'},turn:12,daysPerTurn:1},
+    resource:{BGD:{industrialNetwork:{
+      projects:[],
+      factoryProductionCycles:{
+        'FAC-LINE-1':{status:'IN_PROGRESS',productionQuantity:120,startDate:'2026-11-05',finishDate:'2026-11-07',sourceBatchIds:['BATCH-01']},
+        'FAC-LINE-2':{status:'PAUSED',productionQuantity:0},
+        'FAC-LINE-3':{status:'IDLE',productionQuantity:0}
+      },
+      shipments:[
+        {shipmentId:'SHIP-FACTORY-01',shipmentType:'WAREHOUSE_TO_FACTORY',countryId:'BGD',factoryId:'FAC-LINE-1',
+          resourceId:'iron_ore',quantity:50,targetQuantity:45,unit:'tonnes',targetUnit:'tonnes',batchId:'BATCH-01',
+          status:'IN_TRANSIT',etaTurn:14,etaDate:'2026-11-08',createdTurn:11,
+          route:{routeId:'ROUTE-01',sourceNode:'WH-BGD-RAW',destinationNode:'FACTORY:BGD:FAC-LINE-1',
+            destinationFactoryId:'FAC-LINE-1',transportMode:'truck',legs:[{transportMode:'truck',distanceKm:12}]}},
+        {shipmentId:'MINE-HAUL-ONLY',shipmentType:'MINE_TO_WAREHOUSE',countryId:'BGD',resourceId:'iron_ore',
+          quantity:50,status:'IN_TRANSIT',createdTurn:11,route:{sourceNode:'MINE:SITE-01',destinationNode:'WH-BGD-RAW'}},
+        {shipmentId:'BLOCKED-FACTORY-SHIP',shipmentType:'WAREHOUSE_TO_FACTORY',countryId:'BGD',factoryId:'FAC-LINE-2',
+          resourceId:'iron_ore',quantity:20,status:'BLOCKED_LEDGER_MISMATCH',dispatchCommitted:true,createdTurn:13,
+          route:{routeId:'BLOCKED-ROUTE',destinationFactoryId:'FAC-LINE-2'}},
+        {shipmentId:'PREVIEW-SHIP',shipmentType:'WAREHOUSE_TO_FACTORY',countryId:'BGD',factoryId:'FAC-LINE-1',
+          resourceId:'iron_ore',quantity:999,status:'ROUTE_PREVIEW_ONLY',dispatchCommitted:false,createdTurn:12,
+          route:{routeId:'PREVIEW-SHIP-ROUTE',destinationFactoryId:'FAC-LINE-1',totalDistanceKm:999}}
+      ],
+      factoryInputRequests:[{
+        requestId:'REQ-01',countryId:'BGD',factoryId:'FAC-LINE-1',resourceId:'iron_ore',status:'PARTIALLY_FULFILLED',
+        deliveryStatus:'IN_TRANSIT',requestedQuantity:80,allocatedQuantity:50,fulfilledQuantity:0,inTransitQuantity:45,
+        unfulfilledQuantity:35,unit:'tonnes',transferIds:['SHIP-FACTORY-01'],updatedTurn:11
+      }],
+      warehouseFactoryDispatches:[{
+        dispatchId:'SHIP-FACTORY-01',shipmentId:'SHIP-FACTORY-01',countryId:'BGD',destinationFactoryId:'FAC-LINE-1',
+        resourceId:'iron_ore',quantity:50,targetQuantity:45,unit:'tonnes',targetUnit:'tonnes',batchId:'BATCH-01',
+        inputBatchId:'INPUT:SHIP-FACTORY-01',status:'IN_TRANSIT',createdTurn:11,
+        route:{routeId:'ROUTE-01',sourceNode:'WH-BGD-RAW',destinationNode:'FACTORY:BGD:FAC-LINE-1',
+          destinationFactoryId:'FAC-LINE-1',transportMode:'truck',legs:[{transportMode:'truck',distanceKm:12}]}
+      }],
+      routePreviews:[{status:'ROUTE_PREVIEW_ONLY',routeId:'PREVIEW-ONLY',factoryId:'FAC-LINE-1',distanceKm:999}]
+    } }},
+    economy:{BGD:{productionAssets:[
+      {id:'FAC-LINE-1',name:'National steel works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',
+        outputProfile:{steel_product:1},
+        companyId:'AURORA_INDUSTRIAL_GROUP',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP',ownerType:'PRIVATE_ENTERPRISE',
+        operatorCompanyId:'ATLAS_TECHNOLOGY_CORPORATION',operatorType:'PRIVATE_OPERATOR',
+        stateControlRights:{strategicOversight:true,licensingAndPermits:true,emergencyIntervention:true,authority:'TEST_CONTROL_RIGHTS'}},
+      {id:'FAC-LINE-2',name:'Unmapped operator works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',companyId:'UNKNOWN_SIM_COMPANY'},
+      {id:'FAC-LINE-3',name:'State-owned auxiliary works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',
+        companyId:'STATE_INDUSTRY_BGD',ownerId:'STATE_INDUSTRY_BGD',ownerType:'STATE_OWNED_ENTERPRISE',
+        operatorId:'STATE_INDUSTRY_BGD',operatorType:'STATE_ENTERPRISE_OPERATOR',
+        stateControlRights:{strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,
+          competitionOversight:true,labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,
+          operationalControl:'STATE_OPERATOR',authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1'}}
+    ]}}
+  }};
+  const root={
+    classList:{add(){}},
+    addEventListener(){},
+    contains(){return true;},
+    querySelector(){return null;},
+    querySelectorAll(){return[];},
+    innerHTML:''
+  };
+  try{
+    const result=globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'production-lines'});
+    assert.equal(result.ok,true);
+    assert.equal(result.model.lineActivity.length,3,'only cycle-backed factories from the selected country are shown');
+    const steel=result.model.lineActivity.find(row=>row.factoryId==='FAC-LINE-1');
+    assert.ok(steel);
+    assert.equal(steel.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+    assert.equal(steel.ownerRecordStatus,'VERIFIED_EXPLICIT_GLOBAL_COMPANY_OWNER');
+    assert.equal(steel.operatorCompanyId,'ATLAS_TECHNOLOGY_CORPORATION');
+    assert.equal(steel.operatorLabel,'Atlas Technology Corporation');
+    assert.match(steel.stateControlRightsStatus,/Strategic oversight/);
+    assert.match(steel.stateControlRightsStatus,/Licensing & permits/);
+    assert.equal(steel.stateSupplyDirectiveStatus,'DOMESTIC ONLY');
+    const stateLine=result.model.lineActivity.find(row=>row.factoryId==='FAC-LINE-3');
+    assert.ok(stateLine);
+    assert.equal(stateLine.ownerLabel,'State-owned enterprise');
+    assert.equal(stateLine.operatorLabel,'State enterprise operator');
+    assert.match(stateLine.stateControlRightsStatus,/Emergency intervention/);
+    assert.match(stateLine.stateControlRightsStatus,/Operations: STATE OPERATOR/);
+    assert.equal(steel.shipments.length,1,'mine-to-warehouse movement and route-preview rows are not shown as committed factory shipments');
+    assert.equal(result.model.lineActivitySourceCounts.committedShipments,2,'only committed shipment rows contribute to the selected-country activity count');
+    assert.match(root.innerHTML,/<span>In transit<\/span><strong>1<\/strong>/,
+      'a blocked shipment must not inflate the in-transit count');
+    assert.match(root.innerHTML,/<span>Blocked<\/span><strong>1<\/strong>/,
+      'a blocked ledger shipment must be visible in the blocked count');
+    assert.equal(steel.shipments[0].shipmentId,'SHIP-FACTORY-01');
+    assert.equal(steel.shipments[0].route.destinationNode,'FACTORY:BGD:FAC-LINE-1');
+    assert.equal(steel.inputRequests[0].requestId,'REQ-01');
+    assert.equal(steel.warehouseDispatches[0].dispatchId,'SHIP-FACTORY-01');
+    assert.match(root.innerHTML,/Production &amp; delivery lines/);
+    assert.match(root.innerHTML,/Aurora Industrial Group/);
+    assert.match(root.innerHTML,/Atlas Technology Corporation/);
+    assert.match(root.innerHTML,/State-owned enterprise/);
+    assert.match(root.innerHTML,/State enterprise operator/);
+    assert.match(root.innerHTML,/State control rights/);
+    assert.match(root.innerHTML,/State supply directives/);
+    assert.match(root.innerHTML,/DOMESTIC ONLY/);
+    assert.match(root.innerHTML,/National supply controls/);
+    assert.match(root.innerHTML,/data-state-policy-apply/);
+    assert.match(root.innerHTML,/Issue state directive/);
+    assert.match(root.innerHTML,/data-state-policy-lift/);
+    assert.match(root.innerHTML,/Government procurement/);
+    assert.match(root.innerHTML,/Purchase private stock/);
+    assert.match(root.innerHTML,/data-state-procurement-submit/);
+    assert.match(root.innerHTML,/WH-BGD-RAW/);
+    assert.match(root.innerHTML,/FACTORY:BGD:FAC-LINE-1/);
+    assert.match(root.innerHTML,/truck/);
+    assert.match(root.innerHTML,/Distance 12 km/);
+    assert.match(root.innerHTML,/2026-11-08/);
+    assert.match(root.innerHTML,/REQ-01/);
+    assert.match(root.innerHTML,/Recorded owner not mapped to a global company/);
+    assert.doesNotMatch(root.innerHTML,/PREVIEW-ONLY|ROUTE_PREVIEW_ONLY|999/);
+    assert.doesNotMatch(root.innerHTML,/omega-v2-factory-backdrop/,
+      'the Lines view must not render or decode the large decorative factory photograph');
+  }finally{
+    for(const key of keys){if(previous[key]===undefined)delete globalThis[key];else globalThis[key]=previous[key];}
+  }
+});
+
+
+test('factory Input tab avoids loading the canonical mine-site and mine-asset registries',()=>{
+  const keys=['Game','OmegaResourceIndustrialCatalogData','OmegaCountryInventoryRuntime',
+    'OmegaCountryFactoryStartingBaselineV1','OmegaPrivateEnterpriseRegistryV1',
+    'OmegaResourceSiteCanonicalCatalogData','OmegaIndividualResourceSiteBinding',
+    'OmegaResourceSiteCanonicalCatalogData'];
+  const previous=Object.fromEntries(keys.map(key=>[key,globalThis[key]]));
+  let inventoryReads=0;
+  const resource={industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{}},batches:[]};
+  Object.defineProperty(resource,'mineAssets',{configurable:true,get(){throw new Error('Input tab must not read mineAssets');}});
+  Object.defineProperty(resource,'mineSiteReferences',{configurable:true,get(){throw new Error('Input tab must not read mineSiteReferences');}});
+  globalThis.Game={state:{
+    simulation:{session:{playerCountryId:'BGD'},turn:4,daysPerTurn:1},
+    resource:{BGD:resource},
+    economy:{BGD:{productionAssets:[{
+      id:'INPUT-FAST-FACTORY',factoryType:'STEEL_MILL',status:'OPERATIONAL',
+      inputCoefficients:{iron_ore:0.5},inputInventory:{iron_ore:20},
+      inputBatchLots:[{batchId:'IRON-LOT-1',resourceId:'iron_ore',quantity:20,remainingQuantity:20}]
+    }]}}
+  }};
+  globalThis.OmegaResourceIndustrialCatalogData={
+    factoryProfiles:{STEEL_MILL:{name:'Steel Mill',defaultCapacityPerDay:12}},
+    processingRules:{},downstreamFactoryRecipes:{}
+  };
+  globalThis.OmegaCountryInventoryRuntime={
+    getInventory(){inventoryReads++;return{status:'READY',items:[]};},
+    getResourceCatalog(){inventoryReads++;return[];}
+  };
+  try{
+    const model=globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD',tab:'inventory'});
+    assert.equal(model.factoryCount,1);
+    assert.equal(model.factories.length,1);
+    assert.equal(model.factories[0].id,'INPUT-FAST-FACTORY');
+    assert.deepEqual(model.mineSites,[]);
+    assert.equal(model.registeredMineSiteCount,0);
+    assert.equal(inventoryReads,2,'the Input tab may read its inventory view, but not mine-site history');
+  }finally{
+    for(const key of keys){
+      if(previous[key]===undefined)delete globalThis[key];
+      else globalThis[key]=previous[key];
+    }
+  }
+});

@@ -1,0 +1,163 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
+
+test('new UI loads its application-shell and SVG icon stylesheets while retired layout CSS remains inactive', () => {
+  const html = read('index.html');
+  const linkedStylesheets = [...html.matchAll(/<link\b(?=[^>]*rel=["']stylesheet["'])[^>]*href=["']([^"']+\.css)["'][^>]*>/gi)].map((m) => m[1]);
+  assert.ok(linkedStylesheets.includes('leaflet.css'));
+  assert.ok(linkedStylesheets.includes('style.css'));
+  assert.ok(linkedStylesheets.includes('offline-hybrid-map.css'));
+  assert.ok(linkedStylesheets.includes('omega_ui_v2/omega-ui-v2.css'));
+  assert.ok(linkedStylesheets.includes('omega_icon_system_v1.css'), 'SVG icon sizing and sprite presentation must be active');
+  for (const oldCss of ['omega_ui_interaction_fix_v2.css','omega_ui_visual_system_v1.css','omega_ui_system_redesign_v1.css','omega_ui_photo_asset_system_v1.css','omega_ui_button_system_v1.css']) {
+    assert.equal(linkedStylesheets.includes(oldCss), false, oldCss + ' must not load from index.html');
+    assert.ok(fs.existsSync(path.join(root, oldCss)), oldCss + ' must remain on disk');
+  }
+});
+
+test('visual system uses stable surfaces and low-overhead rendering', () => {
+  const css = read('omega_ui_visual_system_v1.css');
+  for (const token of ['--ui-bg:', '--ui-surface:', '--ui-border:', '--ui-text:', '--ui-accent:']) {
+    assert.ok(css.includes(token), `missing design token ${token}`);
+  }
+  assert.match(css, /backdrop-filter:none!important/);
+  assert.match(css, /prefers-reduced-motion:reduce/);
+  assert.match(css, /\.res-chip-item\.selected/);
+  assert.doesNotMatch(css, /\.res-chip-item:has\(/, 'must work on older Android WebView');
+  assert.match(css, /#resource-filter-box\.hidden\{display:none!important;\}/);
+});
+
+test('resource selector uses consistent non-emoji symbols and selected-state classes', () => {
+  const js = read('map-engine-2.js');
+  const catalog = js.match(/Game\.Map\.resourceCatalog = \[([\s\S]*?)\n\];/);
+  assert.ok(catalog, 'resource catalog must exist');
+  const ids = [...catalog[1].matchAll(/id: '([^']+)'/g)].map((m) => m[1]);
+  assert.equal(ids.length, 20, 'all 20 resource filter categories must remain available');
+  assert.equal(new Set(ids).size, ids.length, 'resource IDs must be unique');
+  assert.match(catalog[1], /icon: 'Fe'/);
+  assert.match(catalog[1], /icon: 'Au'/);
+  assert.match(catalog[1], /icon: 'Si'/);
+  assert.doesNotMatch(catalog[1], /icon: '[^']*[\u{1F000}-\u{1FAFF}]/u, 'catalog icons should use consistent text glyphs');
+  assert.match(js, /class="omega-resource-glyph" data-resource="\$\{item\.id\}"/);
+  assert.match(js, /class="omega-resource-glyph omega-resource-glyph--map"/);
+  assert.match(js, /parentEl\.classList\.add\('selected'\)/);
+  assert.match(js, /parentEl\.classList\.remove\('selected'\)/);
+});
+
+test('country-scoped city layer remains gated by country selection', () => {
+  const js = read('map-engine-2.js');
+  const start = js.indexOf('renderCountryHubs() {');
+  assert.ok(start >= 0);
+  const body = js.slice(start, js.indexOf('\n    },', start));
+  assert.match(body, /const countryName = Game\.currentActiveCountry;/);
+  assert.match(body, /if \(!countryName\) return/);
+  assert.match(body, /registry\[countryId\]/);
+  assert.match(body, /countryRuntime\.getCities\(countryName\)/);
+  assert.match(body, /this\.resourceState && this\.resourceState\.enabled/);
+  assert.match(js, /normalizedScope === 'WORLD'/);
+  assert.match(js, /SELECT A COUNTRY FOR NATION SCOPE/);
+  assert.match(js, /if \(scope === 'NATION' && !activeCountryRaw\)/);
+  assert.doesNotMatch(js, /activeCountryNorm = normCountry\([^;]*'BANGLADESH'/);
+});
+
+
+test('health ministry logo fills the existing icon box, including already-mounted images', () => {
+  const js = read('health-ministry-logo.js');
+  assert.match(js, /objectFit:'fill'/);
+  assert.match(js, /if \(existingImg\) \{/);
+  assert.match(js, /width:'100%', height:'100%', minWidth:'0', minHeight:'0'/);
+  assert.match(js, /maxWidth:'100%', maxHeight:'100%', objectFit:'fill'/);
+  assert.match(js, /element\.replaceChildren\(makeLogo\(\)\)/);
+});
+
+
+test('button design has consistent tactical surfaces, clear states, and mobile-safe targets', () => {
+  const css = read('omega_ui_visual_system_v1.css');
+  for (const token of ['--ui-btn-bg:', '--ui-btn-border:', '--ui-btn-radius:', '--ui-btn-primary:']) {
+    assert.ok(css.includes(token), `missing button design token ${token}`);
+  }
+  assert.match(css, /#ui-engine-root \.speed-controls \.speed-btn\.active/);
+  assert.match(css, /#ui-engine-root \.icon-btn > \.omega-ui-icon/);
+  assert.match(css, /min-height:36px!important/);
+  assert.match(css, /\.access-card:focus-visible/);
+  assert.match(css, /\.c-ministry-btn:focus-visible/);
+  assert.match(css, /@media\(hover:hover\) and \(pointer:fine\)/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(css, /#btn-ministry-dock:active:not\(:disabled\)/);
+});
+
+test('button polish preserves the low-end Android no-transition policy on touch devices', () => {
+  const css = read('omega_ui_visual_system_v1.css');
+  assert.match(css, /@media\(pointer:coarse\)/);
+  assert.match(css, /#ui-engine-root \.icon-btn/);
+  assert.match(css, /#resource-filter-box button,#omega-individual-resource-panel button,[\s\S]*?transition:none!important/);
+});
+
+
+test('parchment ministry cards omit efficiency badges and health logo fills only its own card', () => {
+  const engine = read('ministry_engine.js');
+  const css = read('style.css');
+  const renderStart = engine.indexOf('data-ministry-id="${m.id}"');
+  const renderEnd = engine.indexOf('this.initViewportScrollHandlers();', renderStart);
+  assert.ok(renderStart >= 0 && renderEnd > renderStart, 'ministry card renderer must exist');
+  assert.doesNotMatch(engine.slice(renderStart, renderEnd), /% EFF/, 'efficiency badge must not render on ministry cards');
+  assert.match(css, /\.parchment-card-btn\[data-ministry-id="health_welfare"\] \.parchment-icon-box\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;[^}]*width:\s*100%;[^}]*height:\s*100%/s);
+  assert.match(css, /\.parchment-card-btn\[data-ministry-id="health_welfare"\] \.parchment-icon-box img\s*\{[^}]*object-fit:\s*fill/s);
+});
+
+
+test('unified visual system is the final offline-cached visual authority for the whole application', () => {
+  const html = read('index.html');
+  const css = read('omega_ui_unified_visual_system_v1.css');
+  const serviceWorker = read('omega-offline-map-sw.js');
+  const styleIndex = html.indexOf('href="omega_ui_unified_visual_system_v1.css"');
+  const iconIndex = html.indexOf('href="omega_icon_system_v1.css"');
+  assert.ok(styleIndex > iconIndex && iconIndex >= 0, 'the unified visual layer must load after every existing application stylesheet');
+  assert.ok(serviceWorker.includes('"./omega_ui_unified_visual_system_v1.css"'), 'the unified visual layer must be available offline');
+  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v108"/);
+  for (const token of [
+    '--omega-ui-bg:', '--omega-ui-surface:', '--omega-ui-border:',
+    '--omega-ui-text:', '--omega-ui-accent:', '--omega-ui-control-height:',
+    '--omega-ui-icon-size:', '--omega-ui-font:'
+  ]) assert.ok(css.includes(token), 'missing unified token: ' + token);
+  for (const selector of [
+    'button {', 'button.btn-primary', 'button.btn-danger',
+    '.omega-v2-nav-button', '.icon-btn', '#omega-atlas-command-dock',
+    '#omega-individual-resource-panel .omega-site-actions', 'position: sticky !important',
+    '.omega-atlas-command-button', 'input:not([type="checkbox"])',
+    'button:focus-visible', 'button:disabled',
+    '@media (max-width: 600px)', '@media (pointer: coarse)',
+    '@media (prefers-reduced-motion: reduce)'
+  ]) assert.ok(css.includes(selector), 'missing shared UI contract: ' + selector);
+  assert.equal(css.includes('@import url('), false, 'the core design cannot depend on remote stylesheets');
+  assert.equal(css.includes(':has('), false, 'the stylesheet must remain compatible with older Android WebView');
+  assert.equal(html.includes('src="omega_ui_button_system_v1.js"'), false, 'the visual contract must not add a document-wide mutation observer');
+});
+
+
+test('Atlas Command refinement establishes compact typography, layered surfaces and responsive control hierarchy', () => {
+  const css = read('omega_ui_unified_visual_system_v1.css');
+  const serviceWorker = read('omega-offline-map-sw.js');
+  assert.match(css, /--omega-atlas-title-size:\s*clamp\(19px,\s*3\.4vw,\s*24px\)/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-title/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-section-title/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-card/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-kpi/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-button--primary/);
+  assert.match(css, /\.omega-v2-screen \.omega-v2-button--accent/);
+  assert.match(css, /#omega-atlas-command-dock \.omega-atlas-command-button\[aria-current="page"\]/);
+  assert.match(css, /#top-status-bar/);
+  assert.match(css, /#omega-global-time-hud/);
+  assert.match(css, /@media \(max-width: 600px\)/);
+  assert.match(css, /@media \(orientation: landscape\) and \(max-height: 500px\)/);
+  assert.match(css, /@media \(hover: hover\) and \(pointer: fine\)/);
+  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v108"/);
+  assert.ok(serviceWorker.includes('"./omega_ui_unified_visual_system_v1.css"'), 'the refined design layer remains in the offline shell');
+});
+

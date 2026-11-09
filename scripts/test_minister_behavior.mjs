@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+
+function load(path){const source=fs.readFileSync(path,'utf8');vm.runInNewContext(source,sandbox,{filename:path});}
+const listeners={};
+const sandbox={console,Date,JSON,Object,Array,Map,Set,WeakSet,Math,Number,String,CustomEvent:class CustomEvent{constructor(type,init={}){this.type=type;this.detail=init.detail}},addEventListener:(t,f)=>{(listeners[t]??=[]).push(f)},dispatchEvent:e=>{for(const f of listeners[e.type]||[])f(e);return true},setInterval:()=>1,clearInterval:()=>{},setTimeout:()=>1,clearTimeout:()=>{},localStorage:{getItem:()=>null,setItem:()=>{}},globalThis:null};sandbox.globalThis=sandbox;
+load('./omega_minister_state_system.js');
+sandbox.OmegaMinisterRuntimeConfig=JSON.parse(fs.readFileSync('./minister_system_config.json','utf8'));
+sandbox.OmegaMinisterStateRegistry.setConfig(sandbox.OmegaMinisterRuntimeConfig);
+load('./minister_capability_engine.js');
+load('./minister_behavior_engine.js');
+const r=sandbox.OmegaMinisterStateRegistry;
+const b=sandbox.OmegaMinisterBehavior;
+const profile={id:'Energy_1',age:45,background:'Energy Policy Specialist',stats:{strategic:90,discipline:85,aggression:20,empathy:70,corruption:5},efficiency:{accuracy:92,decision_speed:88,crisis_handling:86},ideology:{type:'technocrat'}};
+r.recruitCandidate(profile,'BGD','energy_mining',0);
+const before=r.getMinister('Energy_1');
+assert.equal(before.staticProfile.baseAge,45);
+const normal=b.createDecisionContract('Energy_1','Diversify imports',{feasibility:90,risk:40,authority:100,informationQuality:1,operation:'NEGOTIATION',playerDirective:true});
+assert.equal(normal.ministerId,'Energy_1');
+assert.equal(normal.worldMutationByMinister,false);
+assert.equal(normal.executionAuthority,'PART_15_EXECUTION_ENGINE');
+assert.equal(normal.playerDirective,true);
+const low=b.rankOptions('Energy_1',[{id:'safe',risk:20,feasibility:95,taskFit:1},{id:'risky',risk:90,feasibility:95,taskFit:1}],{operation:'INDUSTRY',authority:100,informationQuality:1});
+assert.ok(low[0].evaluation.score>=low[1].evaluation.score);
+r.updateStress('Energy_1',{economicCondition:90,politicalCondition:70,crisisExposure:80,timePressure:80,uncertainty:60});
+const stressed=r.getMinister('Energy_1');
+assert.ok(stressed.runtimeState.stress>before.runtimeState.stress);
+assert.ok(stressed.effectiveCapability.effectiveCapability<before.effectiveCapability.effectiveCapability);
+console.log('Minister behavior/context tests: PASS');

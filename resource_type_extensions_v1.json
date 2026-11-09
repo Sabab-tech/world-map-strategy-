@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_TYPE_EXTENSIONS_V1",
+  "authority": "ADDITIVE_RESOURCE_MASTER_CATALOG_EXTENSION",
+  "purpose": "Provide the three resource type identities referenced by canonical mine sites and industrial processing rules but absent from the legacy resource master files.",
+  "additiveOnly": true,
+  "sourceFiles": [
+    "resources.json",
+    "resources_2.json",
+    "resource_industrial_catalog_v1.json",
+    "resource_site_quantity_completion_v1.json"
+  ],
+  "resource_types": {
+    "gypsum": {
+      "id": "gypsum",
+      "name": "Gypsum",
+      "category": "industrial_minerals",
+      "unit": "metric_tons",
+      "strategicImportance": "important_industrial_mineral",
+      "description": "Industrial sulfate mineral used in plaster, wallboard, cement setting control and soil conditioning."
+    },
+    "niobium": {
+      "id": "niobium",
+      "name": "Niobium",
+      "category": "critical_minerals",
+      "unit": "metric_tons",
+      "strategicImportance": "critical",
+      "description": "Strategic alloying metal used in high-strength steel, superalloys and selected advanced materials."
+    },
+    "ruby": {
+      "id": "ruby",
+      "name": "Ruby",
+      "category": "gemstones",
+      "unit": "carats",
+      "strategicImportance": "specialty_material",
+      "description": "Gem-quality corundum used in jewelry and specialty optical applications; output depends on grading and recovery."
+    }
+  },
+  "GSRSK_Master_Resource_Data_v14": {
+    "resource_types": {
+      "gypsum": {
+        "id": "gypsum",
+        "name": "Gypsum",
+        "category": "industrial_minerals",
+        "unit": "metric_tons",
+        "strategicImportance": "important_industrial_mineral",
+        "description": "Industrial sulfate mineral used in plaster, wallboard, cement setting control and soil conditioning."
+      },
+      "niobium": {
+        "id": "niobium",
+        "name": "Niobium",
+        "category": "critical_minerals",
+        "unit": "metric_tons",
+        "strategicImportance": "critical",
+        "description": "Strategic alloying metal used in high-strength steel, superalloys and selected advanced materials."
+      },
+      "ruby": {
+        "id": "ruby",
+        "name": "Ruby",
+        "category": "gemstones",
+        "unit": "carats",
+        "strategicImportance": "specialty_material",
+        "description": "Gem-quality corundum used in jewelry and specialty optical applications; output depends on grading and recovery."
+      }
+    }
+  }
+}

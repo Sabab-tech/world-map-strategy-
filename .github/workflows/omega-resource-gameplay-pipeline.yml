@@ -1,0 +1,204 @@
+name: OMEGA Resource Gameplay Pipeline
+concurrency:
+  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+
+on:
+  push:
+    branches: [main, feature/milestone-b-resource-e2e]
+    paths:
+      - 'server.js'
+      - 'server_bootstrap.js'
+      - 'resource_ministry_engine.js'
+      - 'omega_resource_gameplay_binding_v1.js'
+      - 'test/omega_resource_site_data_completeness.test.mjs'
+      - 'omega_resource_ai_decision_service.js'
+      - 'test/omega_resource_ai_decision_service.test.mjs'
+      - 'omega_resource_command_center_ui_v1.js'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1_integration.test.mjs'
+      - 'omega_global_trade_system.js'
+      - 'omega_global_market_system.js'
+      - 'test/omega_global_market_system.test.mjs'
+      - 'test/omega_global_trade_system.test.mjs'
+      - 'omega_private_enterprise_lifecycle_v1.js'
+      - 'test/omega_private_enterprise_lifecycle_v1.test.mjs'
+      - 'omega_resource_strategic_policy_runtime_v1.js'
+      - 'resource_strategic_policy_rules_v1.json'
+      - 'omega_simulation_runtime.js'
+      - 'test/omega_resource_strategic_policy_runtime.test.mjs'
+      - 'test/omega_simulation_runtime.test.js'
+      - 'test/omega_resource_multicentury_depletion.test.mjs'
+      - '.github/workflows/omega-resource-gameplay-pipeline.yml'
+      - 'omega_resource_endowment_runtime.js'
+      - 'omega_resource_quantity_normalization_v1.js'
+      - 'resource_site_quantity_completion_v1.json'
+      - 'test/omega_resource_quantity_normalization_v1.test.mjs'
+      - 'test/omega_resource_quantity_completion_v1.test.mjs'
+      - 'omega_ui_v2/integration.js'
+      - 'test/omega_ui_v2.test.mjs'
+      - 'omega_resource_part04_identity_runtime.js'
+      - 'omega_resource_part05_reserve_extraction_runtime.js'
+      - 'omega_resource_production_model_v2.js'
+      - 'omega_resource_site_integrity_v1.js'
+      - 'omega_resource_scenario_engineering_data_v1.js'
+      - 'omega_resource_realism_runtime_v1.js'
+      - 'omega_resource_country_boundary_guard.js'
+      - 'omega_resource_industrial_network_v1.js'
+      - 'omega_icon_system_v1.js'
+      - 'omega_icon_system_v1.css'
+      - 'omega_resource_economy_runtime_v2.js'
+      - 'omega_global_trade_system.js'
+      - 'resource*.json'
+      - 'resources*.json'
+      - 'omega_resource_national_demand_runtime_v1.js'
+      - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
+      - 'omega_opponent_autonomy_system.js'
+      - 'test/omega_resource_supply_provenance.test.mjs'
+      - 'test/omega_resource_recipe_coverage.test.mjs'
+      - 'resource_industrial_catalog_v1.json'
+      - 'resource_site_canonical_catalog_v1.json'
+      - 'resource_site_master_registry_v1.json'
+      - 'resource_site_reference_expanded_manifest.json'
+      - 'resource_site_reference_expanded_part_*.json'
+      - 'test/omega_resource_true_e2e_pipeline.test.mjs'
+      - 'test/omega_resource_autonomous_global_pipeline.test.mjs'
+      - 'test/omega_resource_recipe_coverage.test.mjs'
+      - 'resource_industrial_catalog_v1.json'
+      - 'resource_site_canonical_catalog_v1.json'
+      - 'resource_site_master_registry_v1.json'
+      - 'resource_site_reference_expanded_manifest.json'
+      - 'resource_site_reference_expanded_part_*.json'
+      - 'test/omega_resource_global_pipeline.test.mjs'
+      - 'test/omega_resource_endowment_runtime.test.mjs'
+      - 'test/omega_resource_production_capacity_contract.test.mjs'
+      - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_factory_production_baseline.test.mjs'
+      - 'test/omega_resource_logistics_runtime_v1.test.mjs'
+      - 'test/omega_resource_milestone_a_integrity.test.mjs'
+      - 'package.json'
+      - 'index.html'
+      - 'ministry_engine.js'
+      - 'omega_live_operations_observability_v1.js'
+      - 'country-ios.js'
+      - 'test/omega_live_operations_observability_v1.test.mjs'
+  pull_request:
+    paths:
+      - 'server.js'
+      - 'server_bootstrap.js'
+      - 'resource_ministry_engine.js'
+      - 'omega_resource_gameplay_binding_v1.js'
+      - 'test/omega_resource_site_data_completeness.test.mjs'
+      - 'omega_resource_ai_decision_service.js'
+      - 'test/omega_resource_ai_decision_service.test.mjs'
+      - 'omega_resource_command_center_ui_v1.js'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1_integration.test.mjs'
+      - 'omega_global_trade_system.js'
+      - 'omega_global_market_system.js'
+      - 'test/omega_global_market_system.test.mjs'
+      - 'test/omega_global_trade_system.test.mjs'
+      - 'omega_private_enterprise_lifecycle_v1.js'
+      - 'test/omega_private_enterprise_lifecycle_v1.test.mjs'
+      - 'omega_resource_strategic_policy_runtime_v1.js'
+      - 'resource_strategic_policy_rules_v1.json'
+      - 'omega_simulation_runtime.js'
+      - 'test/omega_resource_strategic_policy_runtime.test.mjs'
+      - 'test/omega_simulation_runtime.test.js'
+      - 'test/omega_resource_multicentury_depletion.test.mjs'
+      - '.github/workflows/omega-resource-gameplay-pipeline.yml'
+      - 'omega_resource_endowment_runtime.js'
+      - 'omega_resource_quantity_normalization_v1.js'
+      - 'resource_site_quantity_completion_v1.json'
+      - 'test/omega_resource_quantity_normalization_v1.test.mjs'
+      - 'test/omega_resource_quantity_completion_v1.test.mjs'
+      - 'omega_ui_v2/integration.js'
+      - 'test/omega_ui_v2.test.mjs'
+      - 'omega_resource_industrial_network_v1.js'
+      - 'omega_icon_system_v1.js'
+      - 'omega_icon_system_v1.css'
+      - 'omega_resource_economy_runtime_v2.js'
+      - 'omega_global_trade_system.js'
+      - 'resource*.json'
+      - 'resources*.json'
+      - 'omega_resource_national_demand_runtime_v1.js'
+      - 'test/omega_resource_national_demand_runtime_v1.test.mjs'
+      - 'omega_opponent_autonomy_system.js'
+      - 'test/omega_resource_supply_provenance.test.mjs'
+      - 'test/omega_resource_true_e2e_pipeline.test.mjs'
+      - 'test/omega_resource_global_pipeline.test.mjs'
+      - 'test/omega_resource_industrial_network_v1.test.mjs'
+      - 'test/omega_factory_production_baseline.test.mjs'
+      - 'test/omega_resource_autonomous_global_pipeline.test.mjs'
+      - 'test/omega_resource_endowment_runtime.test.mjs'
+      - 'test/omega_resource_economy_runtime_v2.test.mjs'
+      - 'test/omega_global_trade_system.test.mjs'
+      - 'package.json'
+      - 'index.html'
+      - 'ministry_engine.js'
+      - 'omega_live_operations_observability_v1.js'
+      - 'country-ios.js'
+      - 'test/omega_live_operations_observability_v1.test.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-resource-gameplay-pipeline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Repository syntax and source-integrity checks
+        run: npm run lint
+      - name: Server AI resource decision contract
+        run: npm run test:resource-ai-decision
+      - name: Live operations UI data-binding regression
+        run: npm run test:liveops
+      - name: All-country browsing and factory UI regression
+        run: npm run test:omega-ui-v2 && node --test test/omega_ui_v2_asset_navigation.test.mjs
+      - name: Milestone A complete registry audit
+        run: npm run test:resource-site-integrity
+      - name: Source-preserving quantity normalization and missing-site coverage
+        run: npm run test:resource-quantity-normalization && npm run test:resource-quantity-completion
+      - name: Endowment runtime regression
+        run: npm run test:resource-endowment
+      - name: Every-deposit resource recipe coverage
+        run: npm run test:resource-recipe-coverage
+      - name: Real Endowment to output, market and treasury
+        run: npm run test:resource-e2e
+      - name: Autonomous per-country deposit-to-market regression
+        run: npm run test:resource-global-auto
+      - name: Executable global market and private supplier ownership regression
+        run: npm run test:global-market
+      - name: International trade lineage regression
+        run: npm run test:global-trade
+      - name: Global raw inventory regression
+        run: npm run test:resource-global-pipeline
+      - name: Authoritative resource adapter regression
+        run: npm run test:resource-authoritative
+      - name: Resource action and settlement regression
+        run: npm run test:resource-actions && npm run test:resource-request
+      - name: Production and realism regressions
+        run: npm run test:resource-production-model && npm run test:resource-realism
+      - name: National demand and player supply lifeline regression
+        run: npm run test:resource-demand
+      - name: Resource Command Center supply policy UI regression
+        run: node --test test/omega_resource_command_center_ui_v1.test.mjs test/omega_resource_command_center_ui_v1_integration.test.mjs
+      - name: Resource state hardening regression
+        run: npm run test:resource-system-hardening
+      - name: Industrial network regression
+        run: npm run test:resource-industrial-network
+      - name: Factory catalog, construction and quantity integrity
+        run: npm run test:factory-baseline
+      - name: Transport logistics regression
+        run: npm run test:resource-logistics
+      - name: Strategic policy, depletion and save/load integrity regressions
+        run: npm run test:resource-strategic-policy && npm run test:resource-multicentury-depletion

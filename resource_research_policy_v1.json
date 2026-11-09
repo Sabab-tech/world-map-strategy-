@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "OMEGA_RESOURCE_RESEARCH_POLICY_V1",
+  "authority": {
+    "observed": [
+      "OBSERVED",
+      "WEB_SOURCE_BACKED",
+      "WEB_RESEARCHED",
+      "WEB_RESEARCHED_CURATED"
+    ],
+    "simulated": [
+      "SIMULATED",
+      "SCENARIO_SIMULATION_DATA"
+    ],
+    "unobserved": [
+      "UNOBSERVED"
+    ],
+    "precedence": [
+      "OBSERVED",
+      "SIMULATED",
+      "UNOBSERVED"
+    ],
+    "rule": "SIMULATED values may fill a gameplay state only where evidence is missing; they may not overwrite a higher-authority observed value."
+  },
+  "status": "ACTIVE",
+  "purpose": "Separate mineral reporting semantics, petroleum resource classification, site engineering simulation, decline calibration, and commodity-level validation.",
+  "domains": {
+    "minerals": {
+      "framework": "CRIRSCO_STYLE",
+      "referenceStandard": "CRIRSCO International Reporting Template",
+      "reportingStages": [
+        {
+          "stage": "EXPLORATION_RESULTS",
+          "meaning": "Exploration information; not a Mineral Resource or Mineral Reserve."
+        },
+        {
+          "stage": "MINERAL_RESOURCES",
+          "categories": [
+            "INFERRED",
+            "INDICATED",
+            "MEASURED"
+          ],
+          "meaning": "Geological knowledge/confidence is represented separately from economic conversion."
+        },
+        {
+          "stage": "MINERAL_RESERVES",
+          "categories": [
+            "PROBABLE",
+            "PROVED"
+          ],
+          "meaning": "Economically mineable part of a Mineral Resource after applicable Modifying Factors are considered."
+        }
+      ],
+      "modifyingFactors": [
+        "MINING",
+        "PROCESSING",
+        "METALLURGY",
+        "INFRASTRUCTURE",
+        "ECONOMIC",
+        "MARKETING",
+        "LEGAL",
+        "ENVIRONMENTAL",
+        "SOCIAL",
+        "GOVERNMENTAL"
+      ],
+      "rule": "Simulation reserves must not be labelled PROVED or PROBABLE unless an evidence-backed record explicitly carries that classification."
+    },
+    "petroleum": {
+      "framework": "SPE_PRMS_2018",
+      "referenceStandard": "Petroleum Resources Management System 2018",
+      "primaryClasses": [
+        "RESERVES",
+        "CONTINGENT_RESOURCES",
+        "PROSPECTIVE_RESOURCES"
+      ],
+      "reservesUncertainty": [
+        "1P",
+        "2P",
+        "3P"
+      ],
+      "reservesProjectMaturity": [
+        "ON_PRODUCTION",
+        "APPROVED_FOR_DEVELOPMENT",
+        "JUSTIFIED_FOR_DEVELOPMENT"
+      ],
+      "contingentProjectMaturity": [
+        "DEVELOPMENT_PENDING",
+        "DEVELOPMENT_ON_HOLD",
+        "DEVELOPMENT_UNCLARIFIED",
+        "DEVELOPMENT_NOT_VIABLE"
+      ],
+      "prospectiveProjectMaturity": [
+        "PLAY",
+        "LEAD",
+        "PROSPECT"
+      ],
+      "balancePolicy": "Production + Reserves + Contingent Resources + Unrecoverable must remain consistent with discovered PIIP where the model uses a discovered PIIP accounting frame.",
+      "rule": "Technology under development may support a Contingent Resource scenario but must not be promoted to Reserves without established technology and project commerciality evidence."
+    }
+  },
+  "production": {
+    "decline": {
+      "petroleum": {
+        "method": "FIELD_SPECIFIC_DECLINE",
+        "universalDeclineRateAllowed": false,
+        "calibrationSource": "IEA_2025_FIELD_LEVEL_ANALYSIS"
+      },
+      "minerals": {
+        "method": "SITE_ENGINEERING_CAPACITY_DEPLETION",
+        "universalDeclineRateAllowed": false
+      }
+    },
+    "stateVariables": [
+      "nominalCapacity",
+      "minimumCapacity",
+      "maximumCapacity",
+      "utilization",
+      "recovery",
+      "maintenance",
+      "decline",
+      "operatingCost",
+      "activeRate"
+    ],
+    "rule": "A missing observed rate is not replaced by a real-world claim; a gameplay fallback is marked SIMULATED and remains separate from observed evidence."
+  },
+  "calibration": {
+    "source": "USGS Mineral Commodity Summaries 2026",
+    "datasetClass": "WORLD_NONFUEL_MINERAL_COMMODITY_PRODUCTION",
+    "coverage": "OVER_90_COMMODITIES",
+    "use": [
+      "COMMODITY_LEVEL_VALIDATION",
+      "WORLD_PRODUCTION_SANITY_CHECK",
+      "SCENARIO_CALIBRATION"
+    ],
+    "prohibition": [
+      "SITE_SPECIFIC_RESERVE_INFERENCE",
+      "SITE_OWNER_INFERENCE",
+      "SITE_SPECIFIC_PRODUCTION_CLAIM"
+    ]
+  },
+  "sources": [
+    {
+      "id": "CRIRSCO_IRT_2024",
+      "authority": "CRIRSCO",
+      "url": "https://crirsco.com/documentation/crirsco-international-reporting-template/"
+    },
+    {
+      "id": "JORC_2012",
+      "authority": "JORC",
+      "url": "https://jorc.org/jorc-code/"
+    },
+    {
+      "id": "SPE_PRMS_2018",
+      "authority": "SPE",
+      "url": "https://www.spe.org/en/industry/reserves/"
+    },
+    {
+      "id": "IEA_2025_DECLINE",
+      "authority": "IEA",
+      "url": "https://www.iea.org/reports/the-implications-of-oil-and-gas-field-decline-rates"
+    },
+    {
+      "id": "USGS_MCS_2026",
+      "authority": "USGS",
+      "url": "https://www.usgs.gov/data/mineral-commodity-summaries-2026-data-release"
+    }
+  ]
+}

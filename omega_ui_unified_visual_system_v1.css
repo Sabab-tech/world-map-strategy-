@@ -1,0 +1,862 @@
+/* OMEGA Unified Visual System v1
+ * One offline-first visual contract for map, command dock, ministries, dialogs and forms.
+ * Presentation-only: no click handlers, data mutation or engine ownership is added here.
+ */
+:root {
+  --omega-ui-bg: #071321;
+  --omega-ui-surface: #0d1b2b;
+  --omega-ui-surface-raised: #12253a;
+  --omega-ui-surface-soft: #182e45;
+  --omega-ui-border: #294158;
+  --omega-ui-border-strong: #49647d;
+  --omega-ui-text: #edf3fa;
+  --omega-ui-muted: #9fb2c7;
+  --omega-ui-accent: #72b7ea;
+  --omega-ui-accent-soft: rgba(114, 183, 234, .14);
+  --omega-ui-gold: #e1c077;
+  --omega-ui-success: #70d5b0;
+  --omega-ui-warning: #efc277;
+  --omega-ui-danger: #e69c9c;
+  --omega-ui-radius-sm: 8px;
+  --omega-ui-radius-md: 11px;
+  --omega-ui-radius-lg: 15px;
+  --omega-ui-control-height: 44px;
+  --omega-ui-icon-size: 42px;
+  --omega-ui-font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --omega-ui-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+}
+html, body, #app, #ui-engine-root, #render-engine-root,
+.omega-v2-app-root, #cabinet-full-window {
+  font-family: var(--omega-ui-font) !important;
+}
+body, #app {
+  color: var(--omega-ui-text);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+#ui-engine-root, #ui-engine-root *,
+.omega-v2-app-root, .omega-v2-app-root *,
+#cabinet-full-window, #cabinet-full-window * { box-sizing: border-box; }
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--omega-ui-font) !important;
+  letter-spacing: -.015em;
+  line-height: 1.25;
+  overflow-wrap: break-word;
+}
+p, label, small, li, td, th { font-family: var(--omega-ui-font); }
+.omega-v2-title { letter-spacing: -.025em !important; }
+.omega-v2-eyebrow {
+  color: var(--omega-ui-gold) !important;
+  font-size: 10px !important;
+  font-weight: 750 !important;
+  letter-spacing: .11em !important;
+}
+
+/* One button geometry/type scale for static and runtime-rendered controls. */
+button {
+  box-sizing: border-box !important;
+  min-width: 0;
+  min-height: var(--omega-ui-control-height) !important;
+  max-width: 100%;
+  padding: 9px 14px !important;
+  border: 1px solid var(--omega-ui-border-strong) !important;
+  border-radius: var(--omega-ui-radius-md) !important;
+  background: var(--omega-ui-surface-raised) !important;
+  color: var(--omega-ui-text) !important;
+  font-family: var(--omega-ui-font) !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0 !important;
+  text-align: center;
+  text-decoration: none;
+  text-transform: none !important;
+  text-shadow: none !important;
+  white-space: normal;
+  overflow-wrap: break-word;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease !important;
+}
+button:disabled, button[disabled], button[aria-disabled="true"] {
+  opacity: .48 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--omega-ui-accent) !important;
+  outline-offset: 2px !important;
+}
+button.btn-primary, button.primary, button[type="submit"],
+button.omega-v2-button--primary, button[data-variant="primary"],
+button[data-button-kind="primary"] {
+  border-color: #4b8db5 !important;
+  background: #174b68 !important;
+  color: #f4fbff !important;
+}
+button.btn-danger, button.danger, button.omega-v2-button--danger,
+button[data-variant="danger"], button[data-button-kind="danger"] {
+  border-color: #925466 !important;
+  background: #3a252d !important;
+  color: #ffe5ea !important;
+}
+button.btn-secondary, button.secondary, button.omega-v2-button--quiet,
+button[data-variant="secondary"] {
+  border-color: var(--omega-ui-border) !important;
+  background: transparent !important;
+  color: var(--omega-ui-muted) !important;
+}
+.nav-btn, .tab-btn, .metric-opt-btn, .layer-opt-btn, .speed-btn,
+button[role="tab"], .omega-v2-nav-button, .omega-v2-route-link,
+.omega-atlas-command-button, .omega-v2-filterbar button {
+  min-height: 42px !important;
+  padding: 8px 11px !important;
+  border-radius: 10px !important;
+  background: var(--omega-ui-surface) !important;
+  border-color: var(--omega-ui-border) !important;
+  color: var(--omega-ui-muted) !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+}
+.nav-btn.active, .tab-btn.active, .metric-opt-btn.active,
+.layer-opt-btn.active, .speed-btn.active,
+button[role="tab"][aria-selected="true"], button[aria-current="page"],
+button[aria-pressed="true"], .omega-v2-nav-button.is-active,
+.omega-v2-route-link.is-current,
+.omega-atlas-command-button[aria-current="page"] {
+  border-color: var(--omega-ui-accent) !important;
+  background: var(--omega-ui-accent-soft) !important;
+  color: #eaf7ff !important;
+}
+.omega-v2-button {
+  min-height: 44px !important;
+  padding: 10px 14px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+}
+.omega-v2-button--accent {
+  border-color: #8f7545 !important;
+  background: #3b3325 !important;
+  color: #fff2d6 !important;
+}
+
+/* Icon controls keep a fixed square hit area. */
+.icon-btn, button.icon-only, button[aria-label="Close"],
+button[aria-label="Close dialog"], button[aria-label="Close panel"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 var(--omega-ui-icon-size);
+  width: var(--omega-ui-icon-size) !important;
+  min-width: var(--omega-ui-icon-size) !important;
+  max-width: var(--omega-ui-icon-size) !important;
+  height: var(--omega-ui-icon-size) !important;
+  min-height: var(--omega-ui-icon-size) !important;
+  max-height: var(--omega-ui-icon-size) !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+#btn-ministry-dock {
+  min-width: 40px !important;
+  width: 42px !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+}
+
+/* Map shell controls remain compact and gesture-safe. */
+.ui-top-hud, .ui-right-controls, .ui-bottom-navigation,
+#map-metric-dropdown, .map-metric-dropdown, #resource-filter-box {
+  border: 1px solid var(--omega-ui-border) !important;
+  border-radius: var(--omega-ui-radius-lg) !important;
+  background: rgba(7, 19, 33, .97) !important;
+  color: var(--omega-ui-text) !important;
+  box-shadow: var(--omega-ui-shadow) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.ui-top-hud { gap: 10px !important; padding: 8px 12px !important; }
+.ui-right-controls { gap: 7px !important; padding: 7px !important; }
+.ui-right-controls .icon-btn { border-radius: 10px !important; }
+.ui-bottom-navigation { gap: 5px !important; padding: 6px !important; }
+.ui-bottom-navigation .nav-btn {
+  min-width: 74px;
+  min-height: 44px !important;
+  padding: 7px 9px !important;
+  font-size: 11px !important;
+}
+.city-btn-marker, button.city-btn-marker,
+.leaflet-control-zoom-in, .leaflet-control-zoom-out {
+  min-width: 28px !important;
+  width: auto !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  max-height: 34px !important;
+  padding: 2px 6px !important;
+  border-radius: 7px !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+}
+.leaflet-control-zoom-in, .leaflet-control-zoom-out {
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 !important;
+}
+
+/* One five-destination dock for map-to-ministry navigation. */
+#omega-atlas-command-dock {
+  position: fixed !important;
+  z-index: 2147482000 !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  transform: translateX(-50%) !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  align-items: stretch;
+  gap: 4px !important;
+  width: calc(100vw - 20px) !important;
+  max-width: 560px !important;
+  padding: 6px !important;
+  border: 1px solid var(--omega-ui-border) !important;
+  border-radius: 15px !important;
+  background: rgba(7, 19, 33, .98) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .4) !important;
+}
+#omega-atlas-command-dock[hidden] { display: none !important; }
+#omega-atlas-command-dock .omega-atlas-command-button {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+  min-height: 54px !important;
+  width: 100% !important;
+  padding: 5px 2px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  color: var(--omega-ui-muted) !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  line-height: 1.15 !important;
+  overflow-wrap: normal;
+}
+.omega-atlas-command-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: var(--omega-ui-accent);
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* V2 shell, ministry pages, cards and information surfaces. */
+.omega-v2-app-header {
+  border-bottom: 1px solid var(--omega-ui-border) !important;
+  background: var(--omega-ui-bg) !important;
+  color: var(--omega-ui-text) !important;
+}
+.omega-v2-app-brand strong { color: var(--omega-ui-text) !important; }
+.omega-v2-app-brand small, .omega-v2-subtitle,
+.omega-v2-card-meta, .omega-v2-source, .omega-v2-kpi span {
+  color: var(--omega-ui-muted) !important;
+}
+.omega-v2-card, .omega-v2-kpi, .omega-v2-minister-table-wrap,
+.omega-v2-minister-recruitment-panel {
+  border-color: var(--omega-ui-border) !important;
+}
+.omega-v2-card {
+  border-radius: var(--omega-ui-radius-lg) !important;
+  background: var(--omega-ui-surface) !important;
+  box-shadow: none !important;
+}
+.omega-v2-kpi {
+  border-radius: var(--omega-ui-radius-md) !important;
+  background: var(--omega-ui-surface-raised) !important;
+}
+.omega-v2-kpi strong { color: var(--omega-ui-text) !important; }
+.omega-v2-note {
+  border-left-color: var(--omega-ui-gold) !important;
+  background: var(--omega-ui-surface) !important;
+  color: var(--omega-ui-muted) !important;
+}
+.omega-v2-status {
+  border-color: var(--omega-ui-border-strong) !important;
+  font-weight: 700 !important;
+}
+.omega-v2-filterbar input, .omega-v2-filterbar select {
+  min-height: 42px !important;
+  border-color: var(--omega-ui-border-strong) !important;
+  border-radius: 10px !important;
+  background: var(--omega-ui-surface) !important;
+  color: var(--omega-ui-text) !important;
+  font: 13px/1.3 var(--omega-ui-font) !important;
+}
+
+/* Keep resource-site actions inside the scrollable panel hit area. */
+#omega-individual-resource-panel .omega-site-actions {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 5 !important;
+  margin: 13px -16px -16px !important;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  border-top: 1px solid var(--omega-ui-border) !important;
+  background: var(--omega-ui-bg) !important;
+}
+@media (max-width: 480px) {
+  #omega-individual-resource-panel .omega-site-actions {
+    margin-left: -13px !important;
+    margin-right: -13px !important;
+    padding-left: 13px !important;
+    padding-right: 13px !important;
+  }
+}
+
+/* Shared forms, table typography and validation focus. */
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--omega-ui-border-strong) !important;
+  border-radius: 9px !important;
+  background: var(--omega-ui-surface) !important;
+  color: var(--omega-ui-text) !important;
+  font-family: var(--omega-ui-font) !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  box-shadow: none !important;
+}
+textarea { min-height: 88px; }
+input::placeholder, textarea::placeholder { color: #8298ae !important; opacity: 1; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--omega-ui-accent); }
+select option { background: var(--omega-ui-surface); color: var(--omega-ui-text); }
+table { border-color: var(--omega-ui-border) !important; }
+th { color: var(--omega-ui-muted); font-size: 11px; font-weight: 750; text-transform: none; }
+td { color: var(--omega-ui-text); }
+.omega-modal, .omega-drawer, #command-hub-modal,
+#cabinet-full-window[data-omega-ui-v2-active="true"],
+#ministry-dashboard-view, .country-info-card, .city-detail-bar {
+  color: var(--omega-ui-text);
+}
+.omega-modal, .omega-drawer, #command-hub-modal,
+#cabinet-full-window[data-omega-ui-v2-active="true"] {
+  border-color: var(--omega-ui-border) !important;
+  background: var(--omega-ui-bg) !important;
+}
+.omega-v2-app-main { scrollbar-color: var(--omega-ui-border-strong) transparent; }
+.omega-v2-app-main::-webkit-scrollbar { width: 6px; }
+.omega-v2-app-main::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background: var(--omega-ui-border-strong);
+}
+
+/* Responsive sizing and safe-area handling. */
+@media (max-width: 600px) {
+  button { min-height: 44px !important; padding: 9px 11px !important; font-size: 12px !important; }
+  .icon-btn, button.icon-only, button[aria-label="Close"],
+  button[aria-label="Close dialog"], button[aria-label="Close panel"] {
+    min-width: 42px !important;
+    width: 42px !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+  }
+  .ui-top-hud {
+    max-width: calc(100vw - 16px) !important;
+    gap: 7px !important;
+    padding: 7px 9px !important;
+  }
+  .ui-right-controls {
+    right: 8px !important;
+    gap: 6px !important;
+    padding: 6px !important;
+  }
+  .ui-bottom-navigation { max-width: calc(100vw - 16px) !important; gap: 3px !important; }
+  .ui-bottom-navigation .nav-btn {
+    min-width: 62px;
+    padding: 7px 5px !important;
+    font-size: 10px !important;
+  }
+  #omega-atlas-command-dock {
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+    width: calc(100vw - 16px) !important;
+    gap: 2px !important;
+    padding: 5px !important;
+  }
+  #omega-atlas-command-dock .omega-atlas-command-button {
+    min-height: 52px !important;
+    padding: 4px 1px !important;
+    font-size: 9px !important;
+  }
+}
+@media (max-width: 359px) {
+  #omega-atlas-command-dock .omega-atlas-command-button { font-size: 8px !important; }
+  .omega-v2-shell { padding-left: 10px !important; padding-right: 10px !important; }
+}
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled):not([aria-disabled="true"]) {
+    border-color: var(--omega-ui-accent) !important;
+    background-color: var(--omega-ui-surface-soft) !important;
+  }
+  button.btn-primary:hover, button.primary:hover, button.omega-v2-button--primary:hover {
+    background-color: #205b7b !important;
+  }
+}
+@media (pointer: coarse) {
+  button, button::before, button::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+
+/* OMEGA ATLAS COMMAND REFINEMENT V2
+ * A deliberate visual hierarchy for the whole game: compact type, layered surfaces,
+ * controlled blue/brass highlights and consistent semantic controls.
+ * Presentation only. Existing routes, event handlers, data and gameplay owners are untouched.
+ */
+:root {
+  --omega-atlas-ink: #050d18;
+  --omega-atlas-panel: #0b1929;
+  --omega-atlas-panel-raised: #11243a;
+  --omega-atlas-panel-highlight: #18334b;
+  --omega-atlas-line: rgba(131, 169, 195, .25);
+  --omega-atlas-line-strong: rgba(126, 190, 220, .48);
+  --omega-atlas-white: #f2f6fb;
+  --omega-atlas-copy: #c2d0dd;
+  --omega-atlas-muted: #8da4b8;
+  --omega-atlas-blue: #68c9f0;
+  --omega-atlas-blue-glow: rgba(58, 174, 225, .20);
+  --omega-atlas-brass: #dfbd78;
+  --omega-atlas-brass-glow: rgba(223, 189, 120, .16);
+  --omega-atlas-success: #75d6b2;
+  --omega-atlas-warning: #f0c778;
+  --omega-atlas-danger: #ed929e;
+  --omega-atlas-title-size: clamp(19px, 3.4vw, 24px);
+  --omega-atlas-section-size: 15px;
+  --omega-atlas-card-title-size: 13px;
+  --omega-atlas-body-size: 13px;
+  --omega-atlas-meta-size: 10px;
+  --omega-atlas-radius: 14px;
+}
+
+#ui-engine-root,
+.omega-v2-app-root,
+.omega-v2-screen,
+#cabinet-full-window[data-omega-ui-v2-active="true"] {
+  font-family: var(--omega-ui-font), system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--omega-atlas-white);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Fixed type scale: titles stay useful, but never take over the screen. */
+#ui-engine-root h1,
+.omega-v2-screen .omega-v2-title,
+.omega-v2-screen .omega-v2-heading h1 {
+  font-size: var(--omega-atlas-title-size) !important;
+  font-weight: 760 !important;
+  letter-spacing: -.035em !important;
+  line-height: 1.18 !important;
+  overflow-wrap: break-word !important;
+  margin-block: 3px 5px !important;
+}
+#ui-engine-root h2,
+.omega-v2-screen h2,
+.omega-v2-screen .omega-v2-section-title {
+  font-size: var(--omega-atlas-section-size) !important;
+  font-weight: 740 !important;
+  letter-spacing: -.015em !important;
+  line-height: 1.3 !important;
+}
+#ui-engine-root h3,
+.omega-v2-screen h3,
+.omega-v2-screen .omega-v2-card-title {
+  font-size: var(--omega-atlas-card-title-size) !important;
+  font-weight: 720 !important;
+  line-height: 1.35 !important;
+}
+.omega-v2-screen {
+  font-size: var(--omega-atlas-body-size);
+  line-height: 1.43;
+}
+.omega-v2-screen .omega-v2-subtitle,
+.omega-v2-screen .omega-v2-note,
+.omega-v2-screen .omega-v2-card-meta {
+  font-size: 11px !important;
+  line-height: 1.48 !important;
+}
+.omega-v2-screen .omega-v2-source,
+.omega-v2-screen .omega-v2-eyebrow,
+.omega-v2-screen .omega-v2-kpi span {
+  font-size: var(--omega-atlas-meta-size) !important;
+  line-height: 1.35 !important;
+}
+.omega-v2-screen .omega-v2-kpi strong {
+  font-size: clamp(17px, 2.5vw, 21px) !important;
+  line-height: 1.16 !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.025em;
+}
+#ui-engine-root .res-val,
+#ui-engine-root .status-item,
+#ui-engine-root .ogth-time,
+#ui-engine-root .ogth-economy,
+#ui-engine-root .ogth-assets {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The app frame and content workspace have distinct depths, not one flat sheet. */
+.omega-v2-app-root,
+#cabinet-full-window[data-omega-ui-v2-active="true"] {
+  background:
+    radial-gradient(ellipse at 12% -18%, rgba(58, 174, 225, .12), transparent 42%),
+    radial-gradient(ellipse at 100% 0%, rgba(223, 189, 120, .055), transparent 34%),
+    linear-gradient(180deg, #081624 0%, #060f1b 100%) !important;
+}
+.omega-v2-app-header {
+  background: linear-gradient(105deg, rgba(13, 30, 47, .99), rgba(7, 18, 31, .99)) !important;
+  border-bottom: 1px solid var(--omega-atlas-line-strong) !important;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, .22), inset 0 1px rgba(255, 255, 255, .035);
+}
+.omega-v2-brand-mark {
+  border-color: rgba(223, 189, 120, .72) !important;
+  background: linear-gradient(145deg, #1d3d55, #0a1b2b) !important;
+  box-shadow: 0 0 15px rgba(104, 201, 240, .12), inset 0 1px rgba(255, 255, 255, .10);
+}
+.omega-v2-app-brand strong {
+  color: var(--omega-atlas-white) !important;
+  font-size: 12px !important;
+  letter-spacing: .105em !important;
+}
+.omega-v2-app-brand small {
+  color: var(--omega-atlas-muted) !important;
+  font-size: 8px !important;
+  letter-spacing: .11em !important;
+}
+.omega-v2-app-main {
+  scrollbar-color: rgba(104, 201, 240, .34) transparent;
+}
+.omega-v2-heading {
+  border-bottom-color: var(--omega-atlas-line) !important;
+  padding-bottom: 11px;
+  margin-bottom: 13px;
+}
+.omega-v2-heading .omega-v2-eyebrow {
+  color: var(--omega-atlas-brass) !important;
+  letter-spacing: .15em !important;
+}
+
+/* Cards and metrics use restrained elevation with a fine light-catching edge. */
+.omega-v2-screen .omega-v2-card {
+  background:
+    linear-gradient(145deg, rgba(20, 42, 62, .97), rgba(10, 24, 39, .99)) !important;
+  border: 1px solid var(--omega-atlas-line) !important;
+  border-radius: var(--omega-atlas-radius) !important;
+  box-shadow:
+    0 9px 22px rgba(0, 0, 0, .19),
+    inset 0 1px rgba(255, 255, 255, .045) !important;
+  min-width: 0;
+}
+.omega-v2-screen .omega-v2-card.is-selected,
+.omega-v2-screen .omega-v2-card:focus-within {
+  border-color: var(--omega-atlas-line-strong) !important;
+  box-shadow:
+    0 0 0 1px rgba(104, 201, 240, .12),
+    0 10px 24px rgba(0, 0, 0, .24),
+    inset 0 1px rgba(255, 255, 255, .07) !important;
+}
+.omega-v2-screen .omega-v2-kpi {
+  background:
+    linear-gradient(145deg, rgba(23, 48, 69, .98), rgba(10, 25, 40, .98)) !important;
+  border: 1px solid rgba(131, 169, 195, .24) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .05), 0 5px 14px rgba(0, 0, 0, .13);
+  min-width: 0;
+  padding: 11px 12px !important;
+}
+.omega-v2-screen .omega-v2-kpi span {
+  color: var(--omega-atlas-muted) !important;
+  letter-spacing: .035em;
+}
+.omega-v2-screen .omega-v2-kpi strong {
+  color: var(--omega-atlas-white) !important;
+}
+.omega-v2-screen .omega-v2-note {
+  background: linear-gradient(100deg, rgba(25, 46, 63, .88), rgba(10, 25, 39, .84)) !important;
+  border: 1px solid rgba(131, 169, 195, .20) !important;
+  border-left: 2px solid var(--omega-atlas-brass) !important;
+  border-radius: 10px !important;
+  color: var(--omega-atlas-copy) !important;
+  padding: 10px 12px !important;
+}
+.omega-v2-screen .omega-v2-empty {
+  background: rgba(8, 22, 36, .55);
+  border: 1px dashed rgba(131, 169, 195, .34) !important;
+  border-radius: 12px !important;
+  color: var(--omega-atlas-muted);
+}
+
+/* Semantic controls: primary actions stand out; utility and danger actions do not. */
+.omega-v2-screen .omega-v2-button {
+  min-height: 42px !important;
+  padding: 9px 13px !important;
+  border: 1px solid var(--omega-atlas-line-strong) !important;
+  border-radius: 10px !important;
+  background: linear-gradient(180deg, #19334b, #10243a) !important;
+  color: var(--omega-atlas-white) !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 680 !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0 !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .055), 0 3px 9px rgba(0, 0, 0, .16) !important;
+}
+.omega-v2-screen .omega-v2-button--primary {
+  background: linear-gradient(135deg, #237c9f, #174e70) !important;
+  border-color: rgba(104, 201, 240, .78) !important;
+  color: #f4fbff !important;
+  box-shadow: 0 4px 15px rgba(35, 124, 159, .24), inset 0 1px rgba(255, 255, 255, .16) !important;
+}
+.omega-v2-screen .omega-v2-button--accent {
+  background: linear-gradient(135deg, #5b4b2f, #342b20) !important;
+  border-color: rgba(223, 189, 120, .68) !important;
+  color: #fff0cf !important;
+  box-shadow: 0 4px 13px rgba(133, 102, 47, .17), inset 0 1px rgba(255, 255, 255, .09) !important;
+}
+.omega-v2-screen .omega-v2-button--quiet {
+  background: rgba(7, 20, 33, .38) !important;
+  border-color: rgba(131, 169, 195, .20) !important;
+  color: var(--omega-atlas-copy) !important;
+  box-shadow: none !important;
+}
+.omega-v2-screen .omega-v2-button:disabled,
+.omega-v2-screen .omega-v2-button[aria-disabled="true"] {
+  opacity: .42 !important;
+  filter: saturate(.55);
+  box-shadow: none !important;
+}
+.omega-v2-screen .omega-v2-status {
+  border: 1px solid var(--omega-atlas-line) !important;
+  border-radius: 999px !important;
+  padding: 4px 8px !important;
+  font-size: 9px !important;
+  font-weight: 740 !important;
+  letter-spacing: .035em;
+}
+.omega-v2-screen .omega-v2-status[data-state="ready"],
+.omega-v2-screen .omega-v2-status[data-state="operational"] {
+  background: rgba(55, 149, 119, .12);
+  border-color: rgba(117, 214, 178, .30) !important;
+  color: var(--omega-atlas-success) !important;
+}
+.omega-v2-screen .omega-v2-status[data-state="attention"],
+.omega-v2-screen .omega-v2-status[data-state="locked"] {
+  background: rgba(180, 132, 46, .13);
+  border-color: rgba(240, 199, 120, .32) !important;
+  color: var(--omega-atlas-warning) !important;
+}
+.omega-v2-screen .omega-v2-status[data-state="blocked"],
+.omega-v2-screen .omega-v2-status[data-state="error"] {
+  background: rgba(170, 68, 82, .13);
+  border-color: rgba(237, 146, 158, .32) !important;
+  color: var(--omega-atlas-danger) !important;
+}
+
+/* Tabs and dock navigation have a clear, quiet resting state and a lit active state. */
+.omega-v2-bottom-nav {
+  background: linear-gradient(180deg, rgba(13, 31, 48, .985), rgba(5, 14, 24, .99)) !important;
+  border-top: 1px solid var(--omega-atlas-line-strong) !important;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, .23);
+}
+.omega-v2-nav-button {
+  border-radius: 10px !important;
+  color: var(--omega-atlas-muted) !important;
+  font-size: 10px !important;
+  font-weight: 680 !important;
+  min-height: 46px !important;
+  padding: 6px 3px !important;
+}
+.omega-v2-nav-button.is-active {
+  background: linear-gradient(145deg, rgba(44, 104, 135, .30), rgba(17, 43, 62, .76)) !important;
+  border-color: rgba(104, 201, 240, .52) !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .06), 0 0 13px rgba(58, 174, 225, .10);
+  color: #eaf8ff !important;
+}
+#omega-atlas-command-dock {
+  background: linear-gradient(145deg, rgba(15, 34, 52, .985), rgba(5, 15, 26, .99)) !important;
+  border-color: var(--omega-atlas-line-strong) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .42), 0 0 20px rgba(58, 174, 225, .08) !important;
+}
+#omega-atlas-command-dock .omega-atlas-command-button[aria-current="page"],
+#omega-atlas-command-dock .omega-atlas-command-button[aria-pressed="true"],
+#omega-atlas-command-dock .omega-atlas-command-button.active {
+  background: linear-gradient(145deg, rgba(46, 111, 143, .34), rgba(16, 42, 60, .72)) !important;
+  border-color: rgba(104, 201, 240, .46) !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .08), 0 0 12px rgba(58, 174, 225, .10);
+  color: var(--omega-atlas-white) !important;
+}
+#omega-atlas-command-dock .omega-atlas-command-icon {
+  color: var(--omega-atlas-blue) !important;
+  filter: drop-shadow(0 0 5px rgba(104, 201, 240, .25));
+}
+
+/* The map remains dominant; its panels get depth without changing their geometry. */
+#top-status-bar,
+.ui-top-hud,
+#omega-global-time-hud {
+  border-color: var(--omega-atlas-line-strong) !important;
+  background: linear-gradient(115deg, rgba(12, 29, 46, .98), rgba(5, 16, 28, .98)) !important;
+  box-shadow: 0 8px 23px rgba(0, 0, 0, .28), inset 0 1px rgba(255, 255, 255, .045) !important;
+}
+#omega-global-time-hud {
+  border-radius: 12px !important;
+}
+#omega-global-time-hud .ogth-time strong {
+  color: var(--omega-atlas-white) !important;
+  font-size: 15px !important;
+  line-height: 1.15 !important;
+}
+#omega-global-time-hud .ogth-time [data-omega-game-status],
+#omega-global-time-hud .ogth-time [data-omega-game-day] {
+  color: var(--omega-atlas-muted) !important;
+  font-size: 9px !important;
+}
+#map-metric-dropdown,
+#resource-filter-box,
+.omega-modal,
+.omega-drawer,
+#command-hub-modal,
+#ministry-dashboard-view,
+.country-info-card,
+.city-detail-bar {
+  border-color: var(--omega-atlas-line-strong) !important;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .42), inset 0 1px rgba(255, 255, 255, .035) !important;
+}
+#map-metric-dropdown,
+#resource-filter-box {
+  background: linear-gradient(145deg, rgba(13, 31, 49, .99), rgba(5, 16, 28, .99)) !important;
+}
+#ui-engine-root .speed-btn {
+  min-width: 36px !important;
+  min-height: 34px !important;
+  padding: 5px 8px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+}
+#ui-engine-root .speed-btn.active {
+  background: linear-gradient(145deg, rgba(42, 111, 145, .42), rgba(16, 50, 71, .84)) !important;
+  border-color: var(--omega-atlas-blue) !important;
+  box-shadow: 0 0 12px rgba(58, 174, 225, .14), inset 0 1px rgba(255, 255, 255, .08) !important;
+  color: #eaf8ff !important;
+}
+#ui-engine-root .res-node {
+  color: var(--omega-atlas-copy);
+  font-size: 11px !important;
+  line-height: 1.25 !important;
+}
+#ui-engine-root .res-val {
+  color: var(--omega-atlas-white) !important;
+  font-size: 11px !important;
+}
+#ui-engine-root .metric-pill-btn,
+#ui-engine-root #top-bar-dropdown-trigger {
+  border-color: rgba(104, 201, 240, .46) !important;
+  background: linear-gradient(145deg, rgba(30, 81, 105, .62), rgba(12, 36, 54, .9)) !important;
+  box-shadow: 0 0 13px rgba(58, 174, 225, .10) !important;
+}
+
+/* Forms stay quiet until focused; focus is visible without a full-screen glow. */
+.omega-v2-screen input:not([type="checkbox"]):not([type="radio"]),
+.omega-v2-screen select,
+.omega-v2-screen textarea {
+  background: linear-gradient(180deg, rgba(8, 21, 35, .98), rgba(12, 27, 42, .98)) !important;
+  border-color: rgba(131, 169, 195, .34) !important;
+  border-radius: 9px !important;
+  color: var(--omega-atlas-white) !important;
+  font-size: 13px !important;
+  min-height: 42px;
+}
+.omega-v2-screen input:focus,
+.omega-v2-screen select:focus,
+.omega-v2-screen textarea:focus {
+  border-color: var(--omega-atlas-blue) !important;
+  box-shadow: 0 0 0 2px rgba(104, 201, 240, .13) !important;
+}
+
+/* Desktop receives restrained feedback; touch and reduced-motion stay inexpensive. */
+@media (hover: hover) and (pointer: fine) {
+  .omega-v2-screen .omega-v2-card:hover {
+    border-color: rgba(126, 190, 220, .48) !important;
+    box-shadow: 0 12px 27px rgba(0, 0, 0, .24), 0 0 14px rgba(58, 174, 225, .07) !important;
+  }
+  .omega-v2-screen .omega-v2-button:hover:not(:disabled) {
+    filter: brightness(1.10);
+  }
+  #omega-atlas-command-dock .omega-atlas-command-button:hover:not(:disabled) {
+    background: rgba(58, 174, 225, .10) !important;
+    border-color: rgba(104, 201, 240, .30) !important;
+    color: var(--omega-atlas-white) !important;
+  }
+}
+@media (max-width: 600px) {
+  .omega-v2-screen .omega-v2-shell,
+  .omega-v2-shell {
+    padding-left: 11px !important;
+    padding-right: 11px !important;
+  }
+  .omega-v2-screen .omega-v2-title {
+    font-size: 20px !important;
+    line-height: 1.2 !important;
+  }
+  .omega-v2-screen .omega-v2-section-title,
+  .omega-v2-screen h2 {
+    font-size: 14px !important;
+  }
+  .omega-v2-screen .omega-v2-card {
+    border-radius: 12px !important;
+  }
+  .omega-v2-screen .omega-v2-kpi {
+    padding: 10px !important;
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .omega-v2-app-header {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+  .omega-v2-app-brand .omega-v2-brand-mark {
+    height: 30px !important;
+    width: 30px !important;
+  }
+  .omega-v2-bottom-nav .omega-v2-nav-button {
+    min-height: 40px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+}
+

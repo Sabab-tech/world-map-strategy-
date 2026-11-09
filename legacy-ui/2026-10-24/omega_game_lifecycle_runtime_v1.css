@@ -1,0 +1,359 @@
+/* OMEGA compact, always-available time and treasury HUD. */
+#omega-global-time-hud {
+  position: fixed;
+  top: 51px;
+  left: 6px;
+  right: 6px;
+  z-index: 1000001;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
+  padding: 5px 7px;
+  overflow: hidden;
+  border: 1px solid rgba(91, 157, 190, .36);
+  border-radius: 7px;
+  background: rgba(4, 12, 23, .94);
+  color: #dce9f7;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .38);
+  font-family: Inter, Arial, sans-serif;
+  line-height: 1.2;
+  contain: layout paint;
+}
+/* The ministry layer is a separate high-z stacking surface; leave room so its title row stays usable. */
+#map-metric-dropdown { z-index: 1000002 !important; }
+body[data-active-layer]:not([data-active-layer="0"]) #ministry-dashboard-view,
+body[data-active-layer]:not([data-active-layer="0"]) #cabinet-full-window {
+  top: 115px !important;
+  height: calc(100vh - 115px) !important;
+  max-height: calc(100vh - 115px) !important;
+}
+body.ios-active #ministry-dashboard-view,
+body.ios-active #cabinet-full-window {
+  top: 70px !important;
+  height: calc(100vh - 70px) !important;
+  max-height: calc(100vh - 70px) !important;
+}
+#omega-global-time-hud * { box-sizing: border-box; }
+#omega-global-time-hud .ogth-topline {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+#omega-global-time-hud .ogth-time {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 10px;
+}
+#omega-global-time-hud [data-omega-game-status] {
+  color: #80d4a5;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .035em;
+}
+#omega-global-time-hud [data-omega-game-date] {
+  color: #fff;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+#omega-global-time-hud [data-omega-game-day] {
+  color: #8cb4d4;
+  font-size: 9px;
+}
+#omega-global-time-hud .ogth-controls {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+#omega-global-time-hud .ogth-controls button {
+  box-sizing: border-box !important;
+  min-width: 27px !important;
+  width: auto !important;
+  min-height: 23px !important;
+  height: 23px !important;
+  padding: 2px 6px !important;
+  border: 1px solid rgba(124, 162, 194, .35) !important;
+  border-radius: 4px !important;
+  background: rgba(14, 30, 49, .96) !important;
+  color: #d7e6f5 !important;
+  font-family: inherit !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  touch-action: manipulation !important;
+}
+#omega-global-time-hud .ogth-controls button.active {
+  border-color: #5cbd93 !important;
+  background: rgba(27, 90, 69, .68) !important;
+  color: #c8ffe2 !important;
+}
+#omega-global-time-hud .ogth-controls button[data-omega-action="toggle"] {
+  min-width: 31px !important;
+  color: #fff !important;
+}
+#omega-global-time-hud .ogth-economy,
+#omega-global-time-hud .ogth-assets {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  color: #b8c9da;
+}
+#omega-global-time-hud .ogth-economy::-webkit-scrollbar,
+#omega-global-time-hud .ogth-assets::-webkit-scrollbar { display: none; }
+#omega-global-time-hud .ogth-economy { color: #c9dfc9; }
+#omega-global-time-hud .ogth-assets { color: #9dbbd1; }
+#omega-global-time-hud .ogth-save {
+  display: block;
+  max-width: 90px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: #8edab0;
+  font-size: 8px;
+}
+#top-status-bar,
+.top-status-bar {
+  height: 37px !important;
+  min-height: 37px !important;
+  gap: 5px !important;
+  padding: 0 5px !important;
+}
+#top-status-bar .status-item,
+.top-status-bar .status-item {
+  gap: 3px !important;
+  font-size: 9px !important;
+}
+#top-status-bar .status-item .icon,
+.top-status-bar .status-item .icon { font-size: 10px !important; }
+#top-status-bar .speed-controls,
+.top-status-bar .speed-controls {
+  gap: 1px !important;
+  padding: 1px 2px !important;
+}
+#top-status-bar .speed-btn,
+.top-status-bar .speed-btn {
+  min-width: 23px !important;
+  min-height: 21px !important;
+  padding: 2px 4px !important;
+  font-size: 9px !important;
+}
+#top-status-bar .status-resources .res-node,
+.top-status-bar .status-resources .res-node {
+  gap: 3px !important;
+  padding: 2px 5px !important;
+  font-size: 9px !important;
+}
+#top-status-bar #metric-selector-pill,
+.top-status-bar #metric-selector-pill {
+  padding: 2px 6px !important;
+  border-width: 1px !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+#top-status-bar #active-metric-label,
+.top-status-bar #active-metric-label { font-size: 9px !important; }
+#top-status-bar .res-val,
+.top-status-bar .res-val { font-size: 9px !important; }
+/* The visual-system sheet gives its buttons a more-specific 36px minimum; override it explicitly. */
+#ui-engine-root #top-status-bar .speed-controls .speed-btn {
+  min-width: 23px !important;
+  width: auto !important;
+  min-height: 21px !important;
+  height: 21px !important;
+  padding: 2px 4px !important;
+  font-size: 9px !important;
+  line-height: 1 !important;
+}
+#ui-engine-root #top-status-bar .status-resources .res-node {
+  min-height: 22px !important;
+  height: auto !important;
+  gap: 3px !important;
+  padding: 2px 5px !important;
+  font-size: 9px !important;
+}
+#ui-engine-root #top-status-bar .status-resources .res-icon,
+#ui-engine-root #top-status-bar .status-resources .res-trend {
+  font-size: 9px !important;
+  margin-left: 0 !important;
+}
+
+body[data-active-layer]:not([data-active-layer="0"]) #omega-global-time-hud,
+body.ios-active #omega-global-time-hud,
+body.modal-open #omega-global-time-hud {
+  top: 4px;
+}
+@media (max-width: 420px) {
+  #omega-global-time-hud {
+    left: 4px;
+    right: 4px;
+    padding: 4px 5px;
+    gap: 2px;
+  }
+  #omega-global-time-hud .ogth-time { gap: 4px; }
+  #omega-global-time-hud [data-omega-game-status] { font-size: 8px; }
+  #omega-global-time-hud [data-omega-game-date] { font-size: 10px; }
+  #omega-global-time-hud [data-omega-game-day] { font-size: 8px; }
+  #omega-global-time-hud .ogth-controls { gap: 1px; }
+  #omega-global-time-hud .ogth-save { max-width: 40px; font-size: 7px; }
+  #omega-global-time-hud .ogth-controls button {
+    min-width: 20px !important;
+    min-height: 22px !important;
+    height: 22px !important;
+    padding: 2px 4px !important;
+    font-size: 9px !important;
+  }
+  #omega-global-time-hud .ogth-controls button[data-omega-action="toggle"] { min-width: 23px !important; }
+  #omega-global-time-hud .ogth-economy,
+  #omega-global-time-hud .ogth-assets { font-size: 8px; }
+}
+
+
+/* Unified main-screen header: game date/speed and live economic assets share one surface. */
+#top-status-bar,
+.top-status-bar {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 104px !important;
+  flex-wrap: wrap !important;
+  gap: 3px 7px !important;
+  padding: 4px 6px !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+#top-status-bar .status-left {
+  flex: 0 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  flex-wrap: nowrap !important;
+  justify-content: flex-start !important;
+  gap: 5px !important;
+}
+#top-status-bar .status-left .status-item {
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  max-width: 62vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#top-status-bar .status-resources {
+  display: flex !important;
+  flex: 0 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  flex-wrap: nowrap !important;
+  justify-content: flex-start !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+#top-status-bar .status-resources .res-node:not(#metric-selector-pill),
+#top-status-bar #top-bar-dropdown-trigger,
+#top-status-bar .status-right {
+  display: none !important;
+}
+#top-status-bar #metric-selector-pill {
+  max-width: 36vw;
+  padding: 3px 7px !important;
+  border-width: 1px !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+#top-status-bar #metric-selector-pill .res-icon,
+#top-status-bar #metric-selector-pill .res-trend {
+  display: none !important;
+}
+#top-status-bar #active-metric-label {
+  font-size: 10px !important;
+}
+
+/* This element is now embedded in the top bar, not a second fixed overlay. */
+#omega-global-time-hud {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: auto !important;
+  flex: 1 1 100% !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 2px 4px 0 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 2px 10px !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-top: 1px solid rgba(91, 157, 190, .22) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  contain: none !important;
+}
+#omega-global-time-hud .ogth-topline,
+#omega-global-time-hud .ogth-save {
+  display: none !important;
+}
+#omega-global-time-hud .ogth-economy,
+#omega-global-time-hud .ogth-assets {
+  display: block !important;
+  flex: 1 1 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  scrollbar-width: none;
+  font-size: 9px !important;
+  line-height: 1.25 !important;
+}
+#omega-global-time-hud .ogth-economy::-webkit-scrollbar,
+#omega-global-time-hud .ogth-assets::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* The top chrome is hidden on ministry layers, so the dashboard must use the full viewport. */
+body[data-active-layer]:not([data-active-layer="0"]) #ministry-dashboard-view,
+body[data-active-layer]:not([data-active-layer="0"]) #cabinet-full-window,
+body.ios-active #ministry-dashboard-view,
+body.ios-active #cabinet-full-window {
+  top: 0 !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
+}
+
+@media (max-width: 760px) {
+  #top-status-bar .status-left {
+    flex: 0 1 auto !important;
+    width: auto !important;
+  }
+  #top-status-bar .status-resources {
+    flex: 0 1 auto !important;
+    width: auto !important;
+  }
+  #omega-global-time-hud .ogth-economy,
+  #omega-global-time-hud .ogth-assets {
+    font-size: 8px !important;
+  }
+}

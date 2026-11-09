@@ -1,0 +1,203 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import test from 'node:test';
+import vm from 'node:vm';
+
+const source = fs.readFileSync(new URL('../omega_ui_v2/text-presentation.js', import.meta.url), 'utf8');
+
+class MockText {
+  constructor(value) {
+    this.nodeType = 3;
+    this.nodeValue = value;
+    this.parentNode = null;
+  }
+  get parentElement() {
+    return this.parentNode && this.parentNode.nodeType === 1 ? this.parentNode : null;
+  }
+}
+
+class MockElement {
+  constructor(tagName) {
+    this.nodeType = 1;
+    this.tagName = String(tagName).toUpperCase();
+    this.childNodes = [];
+    this.parentNode = null;
+    this.attributes = Object.create(null);
+    this.style = {};
+    this.value = '';
+    this.isContentEditable = false;
+  }
+  get parentElement() {
+    return this.parentNode && this.parentNode.nodeType === 1 ? this.parentNode : null;
+  }
+  appendChild(node) {
+    node.parentNode = this;
+    this.childNodes.push(node);
+    return node;
+  }
+  replaceChild(nextNode, oldNode) {
+    const index = this.childNodes.indexOf(oldNode);
+    assert.notEqual(index, -1);
+    nextNode.parentNode = this;
+    oldNode.parentNode = null;
+    this.childNodes[index] = nextNode;
+    return oldNode;
+  }
+  setAttribute(name, value) {
+    this.attributes[name] = String(value);
+  }
+  getAttribute(name) {
+    return Object.prototype.hasOwnProperty.call(this.attributes, name) ? this.attributes[name] : null;
+  }
+  hasAttribute(name) {
+    return Object.prototype.hasOwnProperty.call(this.attributes, name);
+  }
+  get textContent() {
+    return this.childNodes.map((node) =>
+      node.nodeType === 3 ? node.nodeValue : node.textContent
+    ).join('');
+  }
+  set textContent(value) {
+    this.childNodes = [];
+    const text = String(value == null ? '' : value);
+    if (text) this.appendChild(new MockText(text));
+  }
+}
+
+function createEnvironment() {
+  const observers = [];
+  const document = {
+    body: new MockElement('body'),
+    head: new MockElement('head'),
+    getElementById(id) {
+      return this.head.childNodes.find(node => node.id === id) ||
+        this.body.childNodes.find(node => node.id === id) || null;
+    },
+    createElement(tagName) {
+      return new MockElement(tagName);
+    }
+  };
+  class MockMutationObserver {
+    constructor(callback) {
+      this.callback = callback;
+      observers.push(this);
+    }
+    observe(target, options) {
+      this.target = target;
+      this.options = options;
+    }
+    trigger(records) {
+      this.callback(records);
+    }
+  }
+  const window = { document, MutationObserver: MockMutationObserver };
+  vm.runInNewContext(source, { window });
+  return { window, document, observers };
+}
+
+test('underscore labels look readable, bold and italic while original textContent stays unchanged', () => {
+  const env = createEnvironment();
+  const label = new MockElement('span');
+  const originalText = new MockText('natural_gas__reserve');
+  label.appendChild(originalText);
+  env.document.body.appendChild(label);
+
+  // Simulate the observer seeing a label inserted by a later UI render.
+  env.observers[0].trigger([{ type: 'childList', addedNodes: [label] }]);
+
+  const display = label.childNodes[0];
+  assert.equal(label.textContent, 'natural_gas__reserve');
+  assert.equal(display.tagName, 'STRONG');
+  assert.equal(display.getAttribute('data-omega-ui-display-label'), 'true');
+  assert.equal(display.getAttribute('data-omega-ui-display-text'), 'natural gas reserve');
+  assert.equal(display.getAttribute('aria-label'), 'natural gas reserve');
+  assert.equal(display.childNodes[0].tagName, 'SPAN');
+  assert.equal(display.childNodes[0].getAttribute('class'), 'omega-ui-raw-label');
+  assert.equal(display.childNodes[0].childNodes[0], originalText);
+  assert.equal(originalText.nodeValue, 'natural_gas__reserve');
+
+  const style = env.document.getElementById('omega-ui-text-presentation-style');
+  assert.ok(style, 'presentation stylesheet must be installed');
+  assert.match(style.textContent, /font-weight:700;font-style:italic/);
+  assert.match(style.textContent, /content:attr\(data-omega-ui-display-text\)/);
+});
+
+test('canonical values, data attributes, code, editable text and form controls remain untouched', () => {
+  const env = createEnvironment();
+
+  const input = new MockElement('input');
+  input.value = 'natural_gas';
+  input.setAttribute('data-resource-id', 'natural_gas');
+  env.document.body.appendChild(input);
+
+  const code = new MockElement('code');
+  code.appendChild(new MockText('resource_site_id'));
+  env.document.body.appendChild(code);
+
+  const editable = new MockElement('div');
+  editable.isContentEditable = true;
+  editable.appendChild(new MockText('player_note_value'));
+  env.document.body.appendChild(editable);
+
+  const select = new MockElement('select');
+  const option = new MockElement('option');
+  option.appendChild(new MockText('crude_oil'));
+  select.appendChild(option);
+  env.document.body.appendChild(select);
+
+  // The formatter auto-installs when the script loads.
+  assert.equal(input.value, 'natural_gas');
+  assert.equal(input.getAttribute('data-resource-id'), 'natural_gas');
+  assert.equal(code.textContent, 'resource_site_id');
+  assert.equal(editable.textContent, 'player_note_value');
+  assert.equal(option.textContent, 'crude_oil');
+});
+
+test('new and updated interface labels change only their display presentation', () => {
+  const env = createEnvironment();
+  const observer = env.observers[0];
+  assert.ok(observer, 'a DOM observer must handle future UI renders');
+
+  const card = new MockElement('div');
+  const originalText = new MockText('iron_ore');
+  card.appendChild(originalText);
+  env.document.body.appendChild(card);
+  observer.trigger([{ type: 'childList', addedNodes: [card] }]);
+
+  const strong = card.childNodes[0];
+  assert.equal(card.textContent, 'iron_ore');
+  assert.equal(strong.getAttribute('data-omega-ui-display-text'), 'iron ore');
+  assert.equal(strong.childNodes[0].childNodes[0], originalText);
+
+  originalText.nodeValue = 'coal_ore';
+  observer.trigger([{ type: 'characterData', target: originalText }]);
+  assert.equal(card.textContent, 'coal_ore');
+  assert.equal(strong.getAttribute('data-omega-ui-display-text'), 'coal ore');
+  assert.equal(card.childNodes[0], strong, 'updates must reuse the existing display wrapper');
+  assert.equal(strong.childNodes[0].childNodes[0], originalText, 'updates must keep the original text node');
+
+  assert.equal(env.window.OmegaUIPresentation.formatLabel('country___name'), 'country name');
+  assert.equal(env.window.OmegaUIPresentation.install(), true);
+  assert.equal(env.observers.length, 1, 'installation must be idempotent');
+});
+
+test('map geometry and map-owned text stay outside the presentation observer', () => {
+  const env = createEnvironment();
+  const observer = env.observers[0];
+
+  const mapRoot = new MockElement('div');
+  mapRoot.id = 'render-engine-root';
+  const mapText = new MockElement('span');
+  mapText.appendChild(new MockText('map_feature_internal_name'));
+  mapRoot.appendChild(mapText);
+  env.document.body.appendChild(mapRoot);
+
+  observer.trigger([{ type: 'childList', addedNodes: [mapRoot] }]);
+  assert.equal(mapText.textContent, 'map_feature_internal_name');
+
+  const textNode = mapText.childNodes[0];
+  textNode.nodeValue = 'another_map_label';
+  observer.trigger([{ type: 'characterData', target: textNode }]);
+  assert.equal(mapText.textContent, 'another_map_label');
+  assert.equal(mapText.childNodes[0].tagName, undefined, 'map text nodes must not gain presentation wrappers');
+});
