@@ -40,19 +40,30 @@
   const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
 
   function canonicalCountry(v){
-    const raw=String(v??'').trim(),u=raw.toUpperCase();
-    if(!raw)return null;
+    const raw=v&&typeof v==='object'
+      ?(v.iso3||v.iso3Code||v.countryCode||v.countryId||v.code||v.name||v.id||v.canonicalId)
+      :String(v??'').trim();
+    const direct=id(raw);if(!direct)return null;
+    if(/^[A-Z]{3}$/.test(direct))return direct;
     try{
-      const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge;
+      const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
       const hit=bridge?.resolveCountry?.(raw);
+      const source=hit?.raw?.raw||hit?.raw?.datasets?.['countries.json']||hit?.raw||hit||{};
+      const iso3=source.iso3||source.iso3Code||hit?.iso3||hit?.iso3Code||
+        (String(source.countryCode||'').trim().length===3?source.countryCode:null)||
+        (String(hit?.countryCode||'').trim().length===3?hit.countryCode:null)||
+        (String(source.countryId||'').trim().length===3?source.countryId:null)||
+        (String(hit?.countryId||'').trim().length===3?hit.countryId:null);
+      if(iso3&&/^[A-Z]{3}$/.test(id(iso3)))return id(iso3);
       if(hit?.id)return id(hit.id);
+      if(hit?.canonicalId)return id(hit.canonicalId);
     }catch(_){}
     try{
       const e=g.ResourceMinistryEngine;
       const x=e?.normalizeCountryCode?.(raw);
-      if(x)return id(x);
+      if(x&&/^[A-Z]{3}$/.test(id(x)))return id(x);
     }catch(_){}
-    return u.replace(/\s+/g,'_');
+    return direct.replace(/\s+/g,'_');
   }
 
   function rules(){
