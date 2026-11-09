@@ -991,7 +991,7 @@ test('Production Lines screen shows capital receipt verification for an approved
   runInNewContext(lifecycleSource,h.sandbox);
   h.sandbox.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'production-lines'});
   assert.equal(fragments.length,1);
-  assert.match(fragments[0],/Company expansion proposals/);
+  assert.match(fragments[0],/Private Company Investment/);
   assert.doesNotMatch(fragments[0],/data-pe-proposal-form/,
     'the government must not author the company application or its reasoning');
   assert.doesNotMatch(fragments[0],/name="operatorCompanyId"/,
@@ -1003,6 +1003,7 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/Company-authored business case/);
   assert.match(fragments[0],/Company market analysis/);
   assert.match(fragments[0],/Company supply-chain evidence/);
+  assert.match(fragments[0],/The company must provide supplier contracts/);
   assert.match(fragments[0],/Company financing offer/);
   assert.match(fragments[0],/Government decision inbox/);
   assert.match(fragments[0],/data-pe-capital-form/);
