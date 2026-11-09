@@ -375,7 +375,7 @@ test('reference prices are not treated as proof of customer demand',()=>{
   assert.equal(response.status,'PROPOSED',JSON.stringify(response));
   assert.equal(response.proposal.governmentOfftakeRequested,true);
   assert.ok(response.proposal.companyStrategy.selectedOpportunity.marketSignals.every(row=>
-    row.signal==='CURRENT_TURN_REFERENCE_PRICE_ONLY'));
+    row.signal==='CURRENT_TURN_REFERENCE_PRICE_ONLY'&&row.referencePriceUsd===12));
   assert.match(response.proposal.riskForecast,/Customer demand and a cleared selling price are not verified/);
 });
 
