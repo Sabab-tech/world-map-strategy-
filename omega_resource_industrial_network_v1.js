@@ -4737,9 +4737,17 @@ function transferFactoryInputsFromWarehouse(countryId,asset,recipe,allocationTar
     transferCount:transfers.length,transfers,blocked};
 }
 function factoryCycleDue(cycle){
+  const clock=g.Omega?.Simulation?.clock||null;
+  const currentTurn=num(clock?.turn)??turn();
+  const finishTurn=num(cycle?.finishTurn);
+  const turnReached=finishTurn!==null&&currentTurn>=finishTurn;
   const now=factoryCurrentGameDate();
-  if(cycle?.finishDate&&now)return factoryDateReached(now,cycle.finishDate);
-  return turn()>=Math.max(0,num(cycle?.finishTurn)||Number.MAX_SAFE_INTEGER);
+  const dateReached=!!(cycle?.finishDate&&now&&factoryDateReached(now,cycle.finishDate));
+  // Calendar date and committed turn are two views of the same authoritative game
+  // clock. A stale date mirror must not keep a due cycle active when its finish turn
+  // has already committed; likewise a clock date past finishDate can settle a cycle
+  // when a legacy turn mirror is stale.
+  return turnReached||dateReached;
 }
 function startFactoryProductionCycle(input={}){
   const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||'');
