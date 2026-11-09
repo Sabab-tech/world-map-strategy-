@@ -267,8 +267,8 @@ test('company investment engine compares eligible factories and submits its own 
   h.sandbox.Omega.GlobalMarket={
     quote(resourceId){
       if(resourceId==='copper')return{status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
-        matchedQuantity:600,bidDepth:600,askDepth:80,bestBidUsd:11,bestAskUsd:12,clearingPriceUsd:11};
-      return{status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',matchedQuantity:0,bidDepth:0,askDepth:0};
+        matchedQuantity:15,bidDepth:600,askDepth:80,bestBidUsd:11,bestAskUsd:12,clearingPriceUsd:11,generatedTurn:30};
+      return{status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',matchedQuantity:0,bidDepth:0,askDepth:0,generatedTurn:30};
     }
   };
   const beforeInventory=JSON.stringify(h.state.resource.BGD.inventory);
@@ -296,6 +296,11 @@ test('company investment engine compares eligible factories and submits its own 
   assert.equal(proposal.companyCase.financingOffer.privateShareholdingTermsStatus,
     'PRIVATE_SHAREHOLDING_REQUESTED_PERCENTAGE_REQUIRES_VALUATION_AND_NEGOTIATION');
   assert.equal(proposal.companyCase.supplyChainProof.securedAtSubmission,false);
+  assert.ok(proposal.companyStrategy.selectedOpportunity.marketSignals.some(row=>
+    row.resourceId==='copper'&&row.currentTurnEvidence===true&&row.matchedQuantity===15),
+    'market order flow must be explicitly tied to the current game turn');
+  assert.ok(proposal.companyCase.marketAnalysis.outputs.some(row=>
+    row.resourceId==='copper'&&row.marketSnapshotCurrent===true));
   assert.equal(JSON.stringify(h.state.resource.BGD.inventory),beforeInventory);
   assert.equal(h.state.finance.BGD.available,beforeTreasury);
   assert.equal(h.projects.length,0);
@@ -327,6 +332,53 @@ test('company can accept a government grant covering only the verified funding g
   assert.equal(h.state.finance.BGD.available,treasuryBefore,
     'company acceptance is a negotiated term only; public money still needs separate approval and Finance settlement');
   assert.equal(h.projects.length,0);
+});
+
+
+test('government tender quantity is a requested target, not a ceiling on the company offer',()=>{
+  const h=makeHarness();
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){
+      return{resourceId,status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
+        matchedQuantity:15,bidDepth:20,askDepth:12,bestBidUsd:10,bestAskUsd:9,
+        clearingPriceUsd:9.5,generatedTurn:30};
+    }
+  };
+  const invitation=h.api.createGovernmentInvitation({countryId:'BGD',factoryType:'STEEL_WORKS',
+    quantity:1,supportType:'NO_PUBLIC_FINANCING',requestId:'gov-tender-company-scale-001',
+    governmentRationale:'The state needs additional domestic steel capacity but the private company must determine a viable investment scale.'});
+  assert.equal(invitation.status,'OPEN');
+  h.state.simulation.turn=30;
+  const response=h.api.advanceAutonomousProposalCycle();
+  assert.equal(response.status,'PROPOSED',JSON.stringify(response));
+  assert.equal(invitation.invitation.quantity,1);
+  assert.equal(response.proposal.quantity,2,
+    'the company chooses its offer quantity from current-turn market evidence within its own expansion ceiling');
+  assert.equal(response.proposal.companyStrategy.supplyPlan.governmentTenderRequest.requestedFactoryCount,1);
+  assert.equal(response.proposal.companyStrategy.supplyPlan.companyOfferedFactoryCount,2);
+  const stored=h.api.getCountryDashboard('BGD').governmentInvitations[0];
+  assert.equal(stored.responses[0].requestedQuantity,2,
+    'government receives the company offer, not its own requested tender quantity echoed back');
+});
+
+test('stale market clearing cannot influence a company factory choice or expansion quantity',()=>{
+  const h=makeHarness();
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){
+      return{resourceId,status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
+        matchedQuantity:600,bidDepth:800,askDepth:500,bestBidUsd:10,bestAskUsd:9,
+        clearingPriceUsd:9.5,generatedTurn:29};
+    }
+  };
+  h.state.simulation.turn=30;
+  const response=h.api.advanceAutonomousProposalCycle();
+  assert.equal(response.status,'PROPOSED',JSON.stringify(response));
+  assert.equal(response.proposal.quantity,1,
+    'a prior-turn market match cannot justify a larger company investment');
+  assert.ok(response.proposal.companyStrategy.selectedOpportunity.marketSignals.every(row=>
+    row.currentTurnEvidence===false&&row.matchedQuantity===0&&row.bidDepth===0));
+  assert.equal(response.proposal.companyStrategy.selectedOpportunity.marketSignals[0].signal,
+    'UNOBSERVED_OR_STALE');
 });
 
 test('government invitation is a tender only; the autonomous company prepares and submits its response',()=>{
