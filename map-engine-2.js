@@ -750,7 +750,7 @@ Game.DataLoader = {
                     }
                 ];
 
-                const stageCount = startupDatasets.length + 1;
+                const stageCount = startupDatasets.length;
                 const fetchOptional = async function (item, index) {
                     let controller = null, timer = null;
                     const stageStart = (index / stageCount) * 82;
@@ -870,7 +870,7 @@ Game.DataLoader = {
                     mapLoaded: Game.__omegaGeoJSONRenderComplete === true,
                     countryCount: Array.isArray(Game.Map.countryGeoJSON && Game.Map.countryGeoJSON.features)
                         ? Game.Map.countryGeoJSON.features.length : 0,
-                    supportDataReady: true
+                    
                 };
                 loader.__assetsLoadComplete = true;
                 loader.__assetsLoadResult = result;
@@ -883,7 +883,6 @@ Game.DataLoader = {
                     mapLoaded: Game.__omegaGeoJSONRenderComplete === true,
                     countryCount: Array.isArray(Game.Map.countryGeoJSON && Game.Map.countryGeoJSON.features)
                         ? Game.Map.countryGeoJSON.features.length : 0,
-                    supportDataReady: false,
                     failedStage: failedStage,
                     error: reason
                 };
