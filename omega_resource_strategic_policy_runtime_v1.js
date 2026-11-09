@@ -20,9 +20,24 @@ const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulation
 const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
 let policyRules=null,loadPromise=null,handlersReady=false,registeredHandlerCount=0,registrationErrors=[];
 function country(v){
- const raw=String(v??'').trim();if(!raw)return null;
- try{const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;const hit=b?.resolveCountry?.(raw);if(hit?.id)return id(hit.id);}catch(_){}
- return id(raw);
+ const raw=v&&typeof v==='object'
+  ?(v.iso3||v.iso3Code||v.countryCode||v.countryId||v.code||v.name||v.id||v.canonicalId)
+  :String(v??'').trim();
+ const direct=id(raw);if(!direct)return null;
+ if(/^[A-Z]{3}$/.test(direct))return direct;
+ try{
+  const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity,
+   hit=b?.resolveCountry?.(raw),source=hit?.raw?.raw||hit?.raw?.datasets?.['countries.json']||hit?.raw||hit||{},
+   iso3=source.iso3||source.iso3Code||hit?.iso3||hit?.iso3Code||
+    (String(source.countryCode||'').trim().length===3?source.countryCode:null)||
+    (String(hit?.countryCode||'').trim().length===3?hit.countryCode:null)||
+    (String(source.countryId||'').trim().length===3?source.countryId:null)||
+    (String(hit?.countryId||'').trim().length===3?hit.countryId:null);
+  if(iso3&&/^[A-Z]{3}$/.test(id(iso3)))return id(iso3);
+  if(hit?.id)return id(hit.id);
+  if(hit?.canonicalId)return id(hit.canonicalId);
+ }catch(_){}
+ return direct;
 }
 function inlineRules(){return g.OmegaResourceStrategicPolicyRules||g.Omega?.ResourceStrategicPolicyRules||null;}
 async function loadRules(){
