@@ -744,7 +744,7 @@ test('player-country turn batches finished-goods and owner publications into one
 
   const runtime = state.economy.BGD.industrialRuntime;
   assert.deepEqual(
-    runtime.finishedGoodsLedger.map(row => row.transactionId).sort(),
+    JSON.parse(JSON.stringify(runtime.finishedGoodsLedger.map(row => row.transactionId).sort())),
     rows.map(row => row.transactionId).sort(),
     'all finished-goods transactions must survive batching in the authoritative economy ledger'
   );
