@@ -947,7 +947,7 @@ function playerSimulationCountryId(){
   for(const value of candidates){
     const raw=value&&typeof value==='object'?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.id||value.name):value;
     const cid=canonicalCountry(raw);
-    if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z0-9]{2,3}$/.test(cid))return cid;
+    if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z]{3}$/.test(cid))return cid;
   }
   return null;
 }
