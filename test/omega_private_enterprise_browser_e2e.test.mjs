@@ -1485,6 +1485,19 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       assert.equal(commissioning.privateFactoryBlockReason,'SAB34_LIVE_BROWSER_SITE_TO_FACTORY_PROOF_NOT_ACCEPTED');
     }
     metrics.targetFactorySnapshot=targetFactorySnapshot;
+    await page.evaluate(({factoryId}) => {
+      const gameState=window.Game?.state;
+      const worldState=window.Omega?.Simulation?.world?.state;
+      const gameCountry=gameState?.economy?.BGD;
+      const worldCountry=worldState?.economy?.BGD;
+      window.__sab34FactoryRegistryReference={
+        gameState,worldState,gameEconomy:gameState?.economy,gameCountry,
+        gameAssets:gameCountry?.productionAssets,
+        gameFactory:gameCountry?.productionAssets?.find(row=>String(row.id||row.assetId||row.projectId)===String(factoryId)),
+        worldEconomy:worldState?.economy,worldCountry,worldAssets:worldCountry?.productionAssets,
+        worldFactory:worldCountry?.productionAssets?.find(row=>String(row.id||row.assetId||row.projectId)===String(factoryId))
+      };
+    },{factoryId:commissioning.factoryId});
     metrics.selectedSite = targetSite;
     metrics.stages.push('REAL_MAP_MARKER_READY:' + targetSite.siteId);
     metrics.stages.push('OPERATIONAL_FACTORY_TARGET_SELECTED_WITHOUT_SYNTHETIC_SITE_BINDING');
@@ -1682,20 +1695,42 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     metrics.selectedDestinationFactoryId=selectedDestination;
     metrics.stages.push('USER_SELECTED_COMMISSIONED_FACTORY_IN_REAL_SITE_PANEL');
     const preDispatchFactoryState=await page.evaluate(({factoryId,siteId})=>{
+      const state=window.Game?.state;
+      const worldState=window.Omega?.Simulation?.world?.state;
+      const ref=window.__sab34FactoryRegistryReference||{};
+      const gameCountry=state?.economy?.BGD,worldCountry=worldState?.economy?.BGD;
+      const assets=gameCountry?.productionAssets||[],worldAssets=worldCountry?.productionAssets||[];
       const industry=window.OmegaResourceIndustrialNetwork||window.Omega?.ResourceIndustrialNetwork;
-      const assets=window.Game?.state?.economy?.BGD?.productionAssets||[];
       const asset=assets.find(row=>String(row.id||row.assetId||row.projectId)===factoryId)||null;
+      const worldAsset=worldAssets.find(row=>String(row.id||row.assetId||row.projectId)===factoryId)||null;
       const candidates=industry?.candidateFactories?.('BGD','coal',siteId)||[];
       const resolved=asset?industry?.recipeFor?.('coal',asset)||null:null;
       return{
         factoryId,siteId,
-        asset:asset?{
-          id:asset.id,status:asset.status,ownerType:asset.ownerType,
-          constructionProjectId:asset.constructionProjectId||null,
-          recipeId:asset.recipeId||null,recipeMode:asset.recipeMode||null,
-          inputCoefficients:asset.inputCoefficients||{},
-          resolvedInputs:resolved?.inputs||{}
-        }:null,
+        registryIdentity:{
+          gameRootSameAsBefore:state===ref.gameState,
+          worldRootSameAsBefore:worldState===ref.worldState,
+          gameAndWorldRootSame:state===worldState,
+          gameEconomySameAsBefore:state?.economy===ref.gameEconomy,
+          gameCountrySameAsBefore:gameCountry===ref.gameCountry,
+          gameAssetsSameAsBefore:gameCountry?.productionAssets===ref.gameAssets,
+          worldEconomySameAsBefore:worldState?.economy===ref.worldEconomy,
+          worldCountrySameAsBefore:worldCountry===ref.worldCountry,
+          worldAssetsSameAsBefore:worldCountry?.productionAssets===ref.worldAssets,
+          originalGameArrayStillHasFactory:!!ref.gameAssets?.some(row=>String(row.id||row.assetId||row.projectId)===factoryId),
+          originalWorldArrayStillHasFactory:!!ref.worldAssets?.some(row=>String(row.id||row.assetId||row.projectId)===factoryId),
+          currentGameAssetCount:assets.length,currentWorldAssetCount:worldAssets.length,
+          currentGameAssetIds:assets.map(row=>String(row.id||row.assetId||row.projectId||'')).filter(Boolean),
+          currentWorldAssetIds:worldAssets.map(row=>String(row.id||row.assetId||row.projectId||'')).filter(Boolean),
+          currentGameCountryKeys:Object.keys(state?.economy||{}),
+          currentWorldCountryKeys:Object.keys(worldState?.economy||{})
+        },
+        asset:asset?{id:asset.id,status:asset.status,ownerType:asset.ownerType,
+          constructionProjectId:asset.constructionProjectId||null,recipeId:asset.recipeId||null,
+          recipeMode:asset.recipeMode||null,inputCoefficients:asset.inputCoefficients||{},
+          resolvedInputs:resolved?.inputs||{}}:null,
+        worldAsset:worldAsset?{id:worldAsset.id,status:worldAsset.status,ownerType:worldAsset.ownerType,
+          recipeId:worldAsset.recipeId||null}:null,
         candidateFactoryIds:candidates.map(({asset:row})=>String(row?.id||row?.assetId||row?.projectId||''))
       };
     },{factoryId:commissioning.factoryId,siteId:targetSite.siteId});
