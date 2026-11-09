@@ -197,11 +197,13 @@
   function batchInventoryQuantity(batch,flowByBatch){
     var remaining=Math.max(0,num(batch&&(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity))||0);
     var flow=flowByBatch&&flowByBatch.get(String(batch&&batch.batchId||''));
-    if(flow&&flow.mineLogisticsStockDebited===true){
+    if(flow&&(flow.mineLogisticsRouteId||flow.mineLogisticsStockDebited===true)){
       var received=Math.max(0,num(flow.mineWarehouseReceivedQuantity)||0);
-      var original=Math.max(0,num(batch&&batch.quantity)||remaining);
-      var transferredToFactory=Math.max(0,original-remaining);
-      return Math.max(0,received-transferredToFactory);
+      // Batch depletion is not proof of a factory transfer: mine dispatch, transit,
+      // and other stock movements also change remainingQuantity. The site-flow ledger
+      // records the actual factory-bound quantity separately.
+      var factoryDispatched=Math.max(0,num(flow.factoryDispatchedQuantity)||0);
+      return Math.min(remaining,Math.max(0,received-factoryDispatched));
     }
     return remaining;
   }
