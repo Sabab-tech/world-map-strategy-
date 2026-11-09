@@ -110,3 +110,32 @@ test('parchment ministry cards omit efficiency badges and health logo fills only
   assert.match(css, /\.parchment-card-btn\[data-ministry-id="health_welfare"\] \.parchment-icon-box\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0;[^}]*width:\s*100%;[^}]*height:\s*100%/s);
   assert.match(css, /\.parchment-card-btn\[data-ministry-id="health_welfare"\] \.parchment-icon-box img\s*\{[^}]*object-fit:\s*fill/s);
 });
+
+
+test('unified visual system is the final offline-cached visual authority for the whole application', () => {
+  const html = read('index.html');
+  const css = read('omega_ui_unified_visual_system_v1.css');
+  const serviceWorker = read('omega-offline-map-sw.js');
+  const styleIndex = html.indexOf('href="omega_ui_unified_visual_system_v1.css"');
+  const iconIndex = html.indexOf('href="omega_icon_system_v1.css"');
+  assert.ok(styleIndex > iconIndex && iconIndex >= 0, 'the unified visual layer must load after every existing application stylesheet');
+  assert.ok(serviceWorker.includes('"./omega_ui_unified_visual_system_v1.css"'), 'the unified visual layer must be available offline');
+  assert.match(serviceWorker, /CACHE_NAME = "omega-offline-atlas-shell-v106"/);
+  for (const token of [
+    '--omega-ui-bg:', '--omega-ui-surface:', '--omega-ui-border:',
+    '--omega-ui-text:', '--omega-ui-accent:', '--omega-ui-control-height:',
+    '--omega-ui-icon-size:', '--omega-ui-font:'
+  ]) assert.ok(css.includes(token), 'missing unified token: ' + token);
+  for (const selector of [
+    'button {', 'button.btn-primary', 'button.btn-danger',
+    '.omega-v2-nav-button', '.icon-btn', '#omega-atlas-command-dock',
+    '#omega-individual-resource-panel .omega-site-actions', 'position: sticky !important',
+    '.omega-atlas-command-button', 'input:not([type="checkbox"])',
+    'button:focus-visible', 'button:disabled',
+    '@media (max-width: 600px)', '@media (pointer: coarse)',
+    '@media (prefers-reduced-motion: reduce)'
+  ]) assert.ok(css.includes(selector), 'missing shared UI contract: ' + selector);
+  assert.equal(css.includes('@import url('), false, 'the core design cannot depend on remote stylesheets');
+  assert.equal(css.includes(':has('), false, 'the stylesheet must remain compatible with older Android WebView');
+  assert.equal(html.includes('src="omega_ui_button_system_v1.js"'), false, 'the visual contract must not add a document-wide mutation observer');
+});
