@@ -5246,6 +5246,7 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
     productivityPct:cycle.productivityPct||0,inputQuantities:clone(cycle.inputQuantities||{}),
     outputQuantities:clone(cycle.outputQuantities||{}),sourceBatchIds:clone(result.sourceBatchIds||[]),
     createdBatchIds:clone(cycle.createdBatchIds||[]),finishDate:cycle.finishDate,
+    actualCompletionDate:cycle.actualCompletionDate||null,
     authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK'};
 }
 function selectFactoryProductionRecipeForTurn(countryId,asset){
@@ -5667,11 +5668,15 @@ async function executeSitePipeline(input={}){
     const preferredFactoryId=String(preferredFactory?.id||
       preferredFactory?.assetId||preferredFactory?.projectId||'').trim();
     const priorFactoryId=String(existingFlow.factoryId||'').trim();
-    // Keep a prior destination only while it is still an eligible candidate.
-    // Otherwise rebind to the factory selected from the current canonical runtime.
-    const resolvedFactoryId=currentCandidateIds.has(priorFactoryId)
-      ?priorFactoryId
-      :(preferredFactoryId||selectedFactoryIdBeforeExtraction||'');
+    // A site-flow observer may have recorded an older opening-baseline factory
+    // before this request finished resolving the current candidate set. Keep the
+    // canonical preferred destination (site-bound / commissioned / verified private)
+    // ahead of that stale-but-still-eligible prior ID.
+    const resolvedFactoryId=currentCandidateIds.has(preferredFactoryId)
+      ?preferredFactoryId
+      :(currentCandidateIds.has(priorFactoryId)
+        ?priorFactoryId
+        :(selectedFactoryIdBeforeExtraction||''));
     if(resolvedFactoryId&&priorFactoryId!==resolvedFactoryId){
       existingFlow.factoryId=resolvedFactoryId;
       existingFlow.factorySelectionAuthority=preparedFactory
