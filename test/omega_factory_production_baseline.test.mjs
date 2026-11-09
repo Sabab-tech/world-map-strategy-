@@ -1733,3 +1733,44 @@ test('all canonical factory types have executable catalog recipes and multi-rout
   assert.ok(ledger.some(row => row.recipeId === recipeId),
     'finished-goods accounting must keep the recipe identity');
 });
+
+
+test('factory cycle publishes finished goods when the committed turn reaches finish even if the date mirror is stale', async () => {
+  const { context, api } = makeRuntime();
+  const asset = makeSteelAsset();
+  context.Game.state.simulation.date = '2015-01-01';
+  context.Game.state.economy.BGD = {
+    unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10,
+    productionAssets: [asset]
+  };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  api.reconcileFactoryEmployment('BGD');
+
+  const started = await api.processPendingFactoryInputs('BGD');
+  assert.equal(started.startedCount, 1, JSON.stringify(started));
+  const network = context.Game.state.resource.BGD.industrialNetwork;
+  const cycle = network.factoryProductionCycles[asset.id];
+  assert.ok(cycle.finishTurn > context.Game.state.simulation.turn);
+  assert.equal(cycle.status, 'IN_PROGRESS');
+  assert.equal((context.Game.state.resource.BGD.batches || []).some(row => row.stage === 'FINISHED'), false,
+    'finished goods must not be published before the cycle finish turn');
+
+  // Reproduce the browser failure: the committed simulation turn advances, but the
+  // legacy date mirror remains stale. Either authoritative clock view must settle the cycle.
+  context.Game.state.simulation.turn = cycle.finishTurn;
+  context.Game.state.simulation.date = '2015-01-01';
+  const completed = await api.processPendingFactoryInputs('BGD');
+  assert.equal(completed.completedCount, 1, JSON.stringify(completed));
+  assert.equal(cycle.status, 'COMPLETED');
+  const state = context.Game.state.resource.BGD;
+  const output = state.batches.find(row => row.resourceId === 'STEEL' && row.stage === 'FINISHED');
+  assert.ok(output, 'the due cycle must create its finished-goods batch');
+  assert.equal(output.quantity, cycle.expectedOutputs.STEEL);
+  assert.equal(state.processedWarehouse.availableByResource.STEEL, output.quantity);
+  assert.ok(state.finishedGoodsLedger.some(row => row.transactionId === cycle.transactionId &&
+    row.createdBatchIds.includes(output.batchId)),
+    'the finished-goods ledger must reference the exact committed output batch');
+});
