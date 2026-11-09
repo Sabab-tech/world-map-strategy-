@@ -1,4 +1,8 @@
 name: OMEGA UI Licensed Photo Assets
+concurrency:
+  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 
 on:
   push:
@@ -27,10 +31,6 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  group: omega-ui-photo-assets-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   import-licensed-photos:

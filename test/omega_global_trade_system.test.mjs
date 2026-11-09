@@ -92,6 +92,8 @@ assert.deepEqual({
   buyerCash:globalThis.Game.state.finance.BGD.available,sellerCash:globalThis.Game.state.finance.SAU.available
 },settlementSnapshot,'duplicate settlement events must not change trade balances or treasury cash');
 
+const ordinaryPending=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-UI-CREATE');
+if(ordinaryPending){ordinaryPending.status='REJECTED';ordinaryPending.stage='TEST_HOLD';}
 globalThis.Game.state.trade.BGD.importRequests.push({requestId:'REQ-REJECT',countryId:'BGD',targetCountryId:'SAU',resourceId:'crude_oil',quantity:100000,status:'SENT',stage:'COUNTERPARTY_DECISION_PENDING',createdTurn:1,unitPrice:100});
 globalThis.Game.state.foreign.BGD.relations.SAU.trade_agreement=false;
 trade.processAll();
@@ -166,6 +168,63 @@ assert.deepEqual({
 },beforeBlockade,'blockade rejection must not move stock or settle money');
 assert.equal(policy.liftBlockade('BGD',{policyId:'TRADE-BLOCKADE-E2E'}).accepted,true);
 
+// The final physical inventory debit must independently enforce the State's export instruction.
+const stateExportBan=policy.setSupplyDirective('SAU',{directive:'DOMESTIC_ONLY',resourceId:'crude_oil',
+  policyId:'TRADE-DOMESTIC-ONLY-E2E',reason:'Domestic supply shortage'});
+assert.equal(stateExportBan.accepted,true,JSON.stringify(stateExportBan));
+const finalDebitSnapshot={
+  stock:globalThis.Game.state.resource.SAU.inventory.crude_oil,
+  batch:globalThis.Game.state.resource.SAU.batches[0].remainingQuantity,
+  warehouse:globalThis.Game.state.resource.SAU.warehouse.availableByResource.crude_oil
+};
+const deniedFinalDebit=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','SAU',{
+  resourceId:'crude_oil',quantity:10,settlementId:'DIRECT-DOMESTIC-ONLY-DEBIT',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'DIRECT-DOMESTIC-ONLY-DEBIT',
+    sourceCountryId:'SAU',destinationCountryId:'BGD'}
+});
+assert.equal(deniedFinalDebit.status,'FAILED',JSON.stringify(deniedFinalDebit));
+assert.equal(deniedFinalDebit.result?.reason,'STATE_DIRECTIVE_DOMESTIC_ONLY');
+assert.deepEqual({
+  stock:globalThis.Game.state.resource.SAU.inventory.crude_oil,
+  batch:globalThis.Game.state.resource.SAU.batches[0].remainingQuantity,
+  warehouse:globalThis.Game.state.resource.SAU.warehouse.availableByResource.crude_oil
+},finalDebitSnapshot,'a rejected State directive must not move physical stock');
+assert.equal(policy.liftSupplyDirective('SAU',{policyId:'TRADE-DOMESTIC-ONLY-E2E'}).accepted,true);
+
+// A matching government export contract can authorize only its destination and quantity.
+const exportContract=policy.setSupplyDirective('SAU',{directive:'GOVERNMENT_EXPORT_CONTRACT',
+  resourceId:'crude_oil',policyId:'TRADE-EXPORT-CONTRACT-E2E',contractId:'TRADE-EXPORT-CONTRACT-E2E',
+  targetCountryId:'BGD',authorizedQuantity:10});
+assert.equal(exportContract.accepted,true,JSON.stringify(exportContract));
+const authorizedFinalDebit=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','SAU',{
+  resourceId:'crude_oil',quantity:10,settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+    sourceCountryId:'SAU',destinationCountryId:'BGD',governmentContractId:'TRADE-EXPORT-CONTRACT-E2E'}
+});
+assert.equal(authorizedFinalDebit.status,'APPLIED',JSON.stringify(authorizedFinalDebit));
+assert.equal(authorizedFinalDebit.result?.accepted,true);
+assert.equal(globalThis.Game.state.resource.SAU.inventory.crude_oil,finalDebitSnapshot.stock-10);
+assert.equal(globalThis.Game.state.trade.SAU.stateDirectiveSettlements.some(x=>
+  x.settlementId==='DIRECT-GOV-EXPORT-DEBIT'&&x.contractId==='TRADE-EXPORT-CONTRACT-E2E'),true);
+const replayEmbargo=policy.declareEmbargo('SAU',{targetCountryId:'BGD',resourceId:'crude_oil',
+  direction:'EXPORT',policyId:'POST-SETTLEMENT-REPLAY-EMBARGO'});
+assert.equal(replayEmbargo.accepted,true,JSON.stringify(replayEmbargo));
+const exactExportReplay=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','SAU',{
+  resourceId:'crude_oil',quantity:10,settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+    sourceCountryId:'SAU',destinationCountryId:'BGD',governmentContractId:'TRADE-EXPORT-CONTRACT-E2E'}
+});
+assert.equal(exactExportReplay.status,'APPLIED',JSON.stringify(exactExportReplay));
+assert.equal(exactExportReplay.result?.duplicate,true);
+const changedExportReplay=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','SAU',{
+  resourceId:'crude_oil',quantity:11,settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'DIRECT-GOV-EXPORT-DEBIT',
+    sourceCountryId:'SAU',destinationCountryId:'IND',governmentContractId:'TRADE-EXPORT-CONTRACT-E2E'}
+});
+assert.equal(changedExportReplay.status,'FAILED',JSON.stringify(changedExportReplay));
+assert.equal(changedExportReplay.result?.reason,'TRADE_RESOURCE_DEBIT_IDEMPOTENCY_COLLISION');
+assert.equal(policy.liftEmbargo('SAU',{policyId:'POST-SETTLEMENT-REPLAY-EMBARGO'}).accepted,true);
+
 const invalidUiRequest=trade.createRequest('BGD',{
   requestId:'REQ-UI-INVALID',targetCountryId:'BGD',resourceId:'crude_oil',quantity:100,unitPrice:101,
   source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
@@ -196,3 +255,148 @@ const conflictingUiRequest=trade.createRequest('BGD',{
 assert.equal(conflictingUiRequest?.accepted,false,'conflicting request ID reuse must fail');
 assert.equal(conflictingUiRequest?.reason,'TRADE_REQUEST_ID_CONFLICT');
 console.log('OMEGA GLOBAL TRADE TEST PASSED');
+
+// The preceding public-trade regressions deliberately left State export limits active.
+// Remove those test policies before exercising a company-owned commercial export.
+assert.equal(policy.liftSupplyDirective('SAU',{policyId:'TRADE-DOMESTIC-ONLY-E2E'}).accepted,true);
+assert.equal(policy.liftSupplyDirective('SAU',{policyId:'TRADE-EXPORT-CONTRACT-E2E'}).accepted,true);
+
+// End-to-end private-company purchase: executable market quote -> exact private batch
+// -> company cash settlement -> import batch / warehouse receipt. The seller's national
+// Treasury is deliberately not the recipient of the commercial sale proceeds.
+await import('../omega_private_enterprise_lifecycle_v1.js');
+globalThis.Game.playerCountry='BGD';
+const buyerCompany='NOVA_CONSUMER_INDUSTRIES',sellerCompany='AURORA_INDUSTRIAL_GROUP';
+const companyBatchId='SAU-PRIVATE-CRUDE-BATCH-E2E';
+const sellerResource=globalThis.Game.state.resource.SAU;
+sellerResource.inventory.crude_oil=(Number(sellerResource.inventory.crude_oil)||0)+500;
+sellerResource.batches.push({
+  batchId:companyBatchId,resourceId:'crude_oil',materialIdentity:'crude_oil',
+  quantity:500,remainingQuantity:500,unit:'BARRELS',stage:'RAW_EXTRACTED',
+  countryId:'SAU',sourceCountryId:'SAU',originCountryId:'SAU',ownerCountryCode:'SAU',
+  ownerCompanyId:sellerCompany,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+  ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'SAU-PRIVATE-OIL-FAC-1',
+  warehouseId:'WH-SAU-RAW',provenance:{sourceAuthority:'RECORDED_PRIVATE_COMPANY_OUTPUT'}
+});
+sellerResource.inventoryLots[companyBatchId]={
+  batchId:companyBatchId,resourceId:'crude_oil',quantity:500,remainingQuantity:500,
+  unit:'BARRELS',stage:'RAW_EXTRACTED',countryId:'SAU',warehouseId:'WH-SAU-RAW',
+  status:'AVAILABLE',provenance:{sourceAuthority:'RECORDED_PRIVATE_COMPANY_OUTPUT'}
+};
+sellerResource.warehouse.availableByResource.crude_oil+=500;
+sellerResource.warehouse.storedBatchIds.push(companyBatchId);
+globalThis.Game.state.finance.BGD.omegaFinance={
+  ledger:[],companyCapitalAccounts:{
+    [buyerCompany]:{companyId:buyerCompany,currency:'USD',availableBalance:50000,
+      reservedBalance:0,capitalRaised:50000,capitalSpent:0,revision:1}
+  }
+};
+globalThis.Game.state.finance.BGD.currencyCode='USD';
+globalThis.Game.state.finance.SAU.currencyCode='USD';
+globalThis.OmegaGovernmentBanking={
+  getCountryPolicy(countryId){return{countryCode:countryId,importTariffPct:2.5};}
+};
+for(const bucket of Object.values(globalThis.Game.state.trade||{})){
+  for(const request of Array.isArray(bucket?.importRequests)?bucket.importRequests:[]){
+    if(request&&request.resourceId==='crude_oil'&&['SENT','COUNTER_OFFERED','ACCEPTED'].includes(String(request.status||'').toUpperCase())){
+      request.status='REJECTED';request.stage='TEST_ISOLATION';
+    }
+  }
+}
+globalThis.Game.state.trade.BGD.importRequests.push({
+  requestId:'PRIVATE-MARKET-BID-E2E',countryId:'BGD',targetCountryId:'SAU',
+  resourceId:'crude_oil',quantity:100,unitPrice:100,status:'SENT',stage:'OPEN'
+});
+globalThis.Game.state.trade.SAU.offerBook=[{
+  offerId:'PRIVATE-MARKET-ASK-E2E',countryId:'SAU',resourceId:'crude_oil',
+  quantity:500,unitPrice:100,status:'ACTIVE'
+}];
+await import('../omega_global_market_system.js');
+const realMarket=globalThis.OmegaGlobalMarket;
+const realMarketRebuild=realMarket.rebuild();
+const realMarketQuote=realMarket.quote('crude_oil');
+assert.equal(realMarketQuote.status,'CLEARED',JSON.stringify({realMarketRebuild,realMarketQuote}));
+assert.equal(realMarketQuote.clearingPriceUsd,100);
+assert.equal(realMarketQuote.matchedQuantity,100);
+assert.ok(realMarketQuote.matches.some(match=>match.buyerCountryId==='BD'&&match.sellerCountryId==='SA'&&match.quantity===100),
+  'the executable quote must originate from the buyer bid crossing the seller ask: '+JSON.stringify({
+    matches:realMarketQuote.matches,bids:realMarketRebuild.crude_oil?.orders?.bids,asks:realMarketRebuild.crude_oil?.orders?.asks
+  }));
+const marketOnlyBid=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='PRIVATE-MARKET-BID-E2E');
+assert.ok(marketOnlyBid,'the real order-book bid must have a matching request row');
+marketOnlyBid.status='REJECTED';
+marketOnlyBid.stage='MARKET_QUOTE_EVIDENCE_ONLY';
+marketOnlyBid.rejectionReason='ORDER_BOOK_QUOTE_ALREADY_CAPTURED';
+assert.equal(realMarket.quote('crude_oil').matchedQuantity,100,
+  'rejecting the market-only request after quote capture must not rewrite the observed market quote');
+const discoveredPrivateSuppliers=realMarket.privateCompanySuppliers('crude_oil',100,'BGD',sellerCompany,'SAU');
+assert.ok(discoveredPrivateSuppliers.some(row=>row.countryId==='SA'&&row.companyId===sellerCompany&&
+  row.available===500&&row.sourceBatchIds.includes(companyBatchId)),JSON.stringify(discoveredPrivateSuppliers));
+const buyerTreasuryBeforePrivate=globalThis.Game.state.finance.BGD.available;
+const sellerTreasuryBeforePrivate=globalThis.Game.state.finance.SAU.available;
+const buyerPrivateCashBefore=globalThis.Game.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyerCompany].availableBalance;
+const sellerPrivateAccountBefore=globalThis.Game.state.economy.SAU.companyAccounts?.[sellerCompany]||null;
+const sellerGrossRevenueBefore=Number(sellerPrivateAccountBefore?.grossRevenue)||0;
+const sellerPaymentsReceivedBefore=Number(sellerPrivateAccountBefore?.paymentsReceived)||0;
+const sellerGenericSaleCountBefore=(sellerPrivateAccountBefore?.cashFlowEntries||[]).filter(row=>row.category==='SUPPLIER_SALE').length;
+const privateRequest=trade.createPrivateCompanyImportRequest('BGD',{
+  requestId:'PRIVATE-CO-PROCUREMENT-E2E',targetCountryId:'SAU',resourceId:'crude_oil',
+  quantity:100,unitPrice:100,buyerCompanyId:buyerCompany,sellerCompanyId:sellerCompany
+});
+assert.equal(privateRequest?.accepted,true,JSON.stringify(privateRequest));
+assert.equal(privateRequest.request?.procurementType,'PRIVATE_COMPANY_TO_COMPANY');
+assert.equal(privateRequest.request?.buyerCompanyId,buyerCompany);
+assert.equal(privateRequest.request?.sellerCompanyId,sellerCompany);
+const privateProcessed=trade.processCountry('BGD');
+assert.equal(privateProcessed.status,'COMPLETED',JSON.stringify(privateProcessed));
+const privateSettledRequest=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='PRIVATE-CO-PROCUREMENT-E2E');
+assert.equal(privateSettledRequest?.status,'SETTLED',JSON.stringify({
+  request:privateSettledRequest,trace:globalThis.__OMEGA_LAST_TRADE_PROCESS_TRACE,
+  settlement:globalThis.__OMEGA_SETTLEMENT_TRACE
+}));
+assert.equal(privateSettledRequest?.procurementType,'PRIVATE_COMPANY_TO_COMPANY');
+const privateImportLedger=globalThis.Game.state.resource.BGD.inventoryLedger.find(x=>
+  x.type==='INTERNATIONAL_TRADE_IMPORT'&&x.settlementId===privateSettledRequest.settlementId);
+assert(privateImportLedger,'the company order must end in a committed import inventory ledger');
+const privateImportedBatch=globalThis.Game.state.resource.BGD.batches.find(x=>
+  x.batchId===privateImportLedger.createdBatchIds[0]);
+assert.equal(privateImportedBatch.ownerCompanyId,buyerCompany);
+assert.equal(privateImportedBatch.operatorCompanyId,buyerCompany);
+assert.equal(privateImportedBatch.sourceSellerCompanyId,sellerCompany);
+assert.equal(privateImportedBatch.provenance.sourceOwnerCompanyId,sellerCompany);
+assert(globalThis.Game.state.resource.BGD.warehouse.receipts.some(x=>
+  x.batchId===privateImportedBatch.batchId&&x.status==='RECEIVED'&&x.sourceCountryId==='SAU'));
+assert.equal(sellerResource.batches.find(x=>x.batchId===companyBatchId).remainingQuantity,400);
+assert.equal(sellerResource.inventoryLots[companyBatchId].remainingQuantity,400);
+assert.equal(globalThis.Game.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyerCompany].availableBalance,39750);
+assert.equal(globalThis.Game.state.finance.SAU.omegaFinance.companyCapitalAccounts[sellerCompany].availableBalance,10000);
+assert.equal(globalThis.Game.state.finance.BGD.available,buyerTreasuryBeforePrivate+250,
+  'private buyer Treasury delta mismatch: '+JSON.stringify({
+    before:buyerTreasuryBeforePrivate,after:globalThis.Game.state.finance.BGD.available,
+    financeHistory:globalThis.Game.state.finance.BGD.tradeSettlementHistory,
+    trace:globalThis.__OMEGA_SETTLEMENT_TRACE,
+    request:privateSettledRequest,
+    buyerLedger:globalThis.Game.state.finance.BGD.omegaFinance.ledger,
+    sellerFinanceHistory:globalThis.Game.state.finance.SAU.tradeSettlementHistory
+  }));
+assert.equal(globalThis.Game.state.finance.SAU.available,sellerTreasuryBeforePrivate,
+  'private seller revenue must not be credited to the sovereign Treasury');
+const buyerPrivateJournal=globalThis.Game.state.economy.BGD.companyAccounts[buyerCompany].cashFlowEntries;
+const sellerPrivateJournal=globalThis.Game.state.economy.SAU.companyAccounts[sellerCompany].cashFlowEntries;
+assert(buyerPrivateJournal.some(x=>x.category==='FACTORY_INPUT_PURCHASE'&&x.amount===10000&&x.sourceId===privateSettledRequest.settlementId&&x.status==='POSTED'));
+assert(buyerPrivateJournal.some(x=>x.category==='IMPORT_TARIFF'&&x.amount===250&&x.sourceId===privateSettledRequest.settlementId&&x.status==='POSTED'));
+assert(sellerPrivateJournal.some(x=>x.category==='PRIVATE_COMPANY_EXPORT_SALE'&&x.amount===10000&&x.sourceId===privateSettledRequest.settlementId&&x.status==='POSTED'));
+const sellerPrivateAccount=globalThis.Game.state.economy.SAU.companyAccounts[sellerCompany];
+assert.equal(sellerPrivateAccount.grossRevenue,sellerGrossRevenueBefore+10000,
+  'the seller company must recognize the trade value exactly once');
+assert.equal(sellerPrivateAccount.paymentsReceived,sellerPaymentsReceivedBefore+10000,
+  'the seller company wallet receives the buyer payment exactly once');
+assert.equal(sellerPrivateJournal.filter(row=>row.category==='SUPPLIER_SALE').length,sellerGenericSaleCountBefore,
+  'generic trade fiscalization must not issue a second seller revenue credit');
+const privateProcurementRecord=globalThis.Game.state.economy.BGD.privateEnterpriseLifecycle.privateCompanyProcurementRecords.find(x=>
+  x.settlementId===privateSettledRequest.settlementId);
+assert.equal(privateProcurementRecord.status,'SETTLED');
+assert(privateProcurementRecord.createdBatchIds.includes(privateImportedBatch.batchId));
+assert.equal(globalThis.Game.state.trade.BGD.importValue,105000);
+assert.equal(globalThis.Game.state.trade.SAU.exportValue,105000);
+console.log('OMEGA PRIVATE COMPANY PROCUREMENT AND IMPORT DELIVERY E2E PASSED');

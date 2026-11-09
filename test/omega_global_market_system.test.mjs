@@ -65,6 +65,17 @@ assert.equal(blockedByNavalBlockade.crude_oil.clearing.matchedQuantity,0);
 assert.equal(blockedByNavalBlockade.crude_oil.clearing.blockedTradePairs.some(x=>x.reason==='RESOURCE_ROUTE_BLOCKADE_ACTIVE'),true);
 assert.equal(market.suppliers('crude_oil',1,'BDG').some(x=>x.countryId==='SAU'),false,'a blockaded seller must not appear in eligible suppliers');
 assert.equal(policy.liftBlockade('BDG',{policyId:'MARKET-BLOCKADE-TEST'}).accepted,true);
+const domesticOnly=policy.setSupplyDirective('SAU',{directive:'DOMESTIC_ONLY',resourceId:'crude_oil',
+  policyId:'MARKET-DOMESTIC-ONLY-TEST',reason:'Domestic supply shortage'});
+assert.equal(domesticOnly.accepted,true,JSON.stringify(domesticOnly));
+const stateRestrictedBooks=market.rebuild();
+assert.equal(stateRestrictedBooks.crude_oil.clearing.matchedQuantity,0,
+  'state domestic-only instruction must prevent an otherwise price-eligible cross-border market match');
+assert.equal(stateRestrictedBooks.crude_oil.clearing.blockedTradePairs.some(x=>
+  x.reason==='STATE_DIRECTIVE_DOMESTIC_ONLY'),true);
+assert.equal(market.suppliers('crude_oil',1,'BDG').some(x=>x.countryId==='SAU'),false,
+  'state-restricted exports must not appear in the eligible supplier list');
+assert.equal(policy.liftSupplyDirective('SAU',{policyId:'MARKET-DOMESTIC-ONLY-TEST'}).accepted,true);
 const books=market.rebuild();
 assert(books.crude_oil);
 const q=market.quote('crude_oil');
@@ -72,6 +83,78 @@ assert.equal(q.status,'CLEARED');
 assert.equal(q.matchedQuantity,100);
 assert.equal(q.clearingPriceUsd,100);
 assert.equal(market.localPrice('BDG','crude_oil'),100);
+
+// Private company supply must be attributed to exact owner batches and available warehouse stock.
+globalThis.OmegaPrivateEnterpriseLifecycleV1={
+  companyIds:['AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP'],
+  companyNames:{AURORA_INDUSTRIAL_GROUP:'Aurora Industrial Group',
+    MERIDIAN_ENGINEERING_GROUP:'Meridian Engineering Group'}
+};
+globalThis.Game.state.resource.SAU.batches=[{
+  batchId:'SAU-PRIVATE-CRUDE-MARKET-1',resourceId:'crude_oil',quantity:150,remainingQuantity:150,
+  stage:'RAW_EXTRACTED',status:'AVAILABLE',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP',
+  operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+  sourceFactoryId:'SAU-PRIVATE-OIL-FAC-1'
+},{
+  batchId:'SAU-UNKNOWN-CRUDE-MARKET-1',resourceId:'crude_oil',quantity:900,remainingQuantity:900,
+  stage:'RAW_EXTRACTED',status:'AVAILABLE',ownerCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+  operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'UNKNOWN_SOURCE',
+  sourceFactoryId:'SAU-UNKNOWN-OIL-FAC'
+}];
+globalThis.Game.state.resource.SAU.inventoryLots={
+  'SAU-PRIVATE-CRUDE-MARKET-1':{batchId:'SAU-PRIVATE-CRUDE-MARKET-1',resourceId:'crude_oil',
+    quantity:150,remainingQuantity:150,status:'AVAILABLE'},
+  'SAU-UNKNOWN-CRUDE-MARKET-1':{batchId:'SAU-UNKNOWN-CRUDE-MARKET-1',resourceId:'crude_oil',
+    quantity:900,remainingQuantity:900,status:'AVAILABLE'}
+};
+globalThis.Game.state.resource.SAU.warehouse={
+  availableByResource:{crude_oil:150},reservedByResource:{crude_oil:10}
+};
+globalThis.Game.state.resource.SAU.processedWarehouse={availableByResource:{},reservedByResource:{}};
+globalThis.Game.state.economy.SAU={
+  privateEnterpriseLifecycle:{companyStatuses:{AURORA_INDUSTRIAL_GROUP:'ACTIVE',
+    MERIDIAN_ENGINEERING_GROUP:'ACTIVE'}}
+};
+const exactPrivateSupplier=market.privateCompanySuppliers('crude_oil',100,'BDG',
+  'AURORA_INDUSTRIAL_GROUP','SAU');
+assert.equal(exactPrivateSupplier.length,1);
+assert.equal(exactPrivateSupplier[0].companyId,'AURORA_INDUSTRIAL_GROUP');
+assert.equal(exactPrivateSupplier[0].available,140,'reserved warehouse stock must not be offerable');
+assert.deepEqual(exactPrivateSupplier[0].sourceBatchIds,['SAU-PRIVATE-CRUDE-MARKET-1']);
+assert.deepEqual(exactPrivateSupplier[0].sourceFactoryIds,['SAU-PRIVATE-OIL-FAC-1']);
+assert.equal(market.privateCompanySuppliers('crude_oil',145,'BDG','AURORA_INDUSTRIAL_GROUP','SAU').length,0,
+  'a private supplier cannot offer more than its verified available quantity');
+globalThis.Game.state.resource.SAU.industrialNetwork={shipments:[{
+  shipmentId:'IN-TRANSIT-PRIVATE-1',batchId:'SAU-PRIVATE-CRUDE-MARKET-1',
+  resourceId:'crude_oil',quantity:20,status:'IN_TRANSIT'
+}]};
+assert.equal(market.privateCompanySuppliers('crude_oil',131,'BDG','AURORA_INDUSTRIAL_GROUP','SAU').length,0,
+  'stock already in transit cannot be promised again');
+globalThis.Game.state.resource.SAU.industrialNetwork.shipments=[];
+globalThis.Game.state.economy.SAU.privateEnterpriseLifecycle.companyStatuses.AURORA_INDUSTRIAL_GROUP='CLOSED';
+assert.equal(market.privateCompanySuppliers('crude_oil',1,'BDG','AURORA_INDUSTRIAL_GROUP','SAU').length,0,
+  'closed companies cannot publish supplier stock');
+globalThis.Game.state.economy.SAU.privateEnterpriseLifecycle.companyStatuses.AURORA_INDUSTRIAL_GROUP='ACTIVE';
+// Multiple private owners share one aggregate warehouse ceiling; the same free stock
+// cannot be advertised independently by each company.
+globalThis.Game.state.resource.SAU.batches.push({
+  batchId:'SAU-MERIDIAN-CRUDE-MARKET-2',resourceId:'crude_oil',
+  quantity:100,remainingQuantity:100,stage:'RAW_EXTRACTED',status:'AVAILABLE',
+  ownerCompanyId:'MERIDIAN_ENGINEERING_GROUP',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+  ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'SAU-MERIDIAN-OIL-FAC-2'
+});
+globalThis.Game.state.resource.SAU.inventoryLots['SAU-MERIDIAN-CRUDE-MARKET-2']={
+  batchId:'SAU-MERIDIAN-CRUDE-MARKET-2',resourceId:'crude_oil',
+  quantity:100,remainingQuantity:100,status:'AVAILABLE'
+};
+globalThis.Game.state.resource.SAU.warehouse.availableByResource.crude_oil=150;
+globalThis.Game.state.resource.SAU.warehouse.reservedByResource.crude_oil=0;
+const allPrivateSuppliers=market.privateCompanySuppliers('crude_oil',1,'BDG',null,'SAU');
+assert.equal(allPrivateSuppliers.length,2);
+assert.equal(allPrivateSuppliers.reduce((sum,row)=>sum+Math.round(row.available*1e6),0),150000000,
+  'all private suppliers together must not exceed the 150-unit warehouse free balance');
+assert.equal(allPrivateSuppliers.find(row=>row.companyId==='AURORA_INDUSTRIAL_GROUP').available,90);
+assert.equal(allPrivateSuppliers.find(row=>row.companyId==='MERIDIAN_ENGINEERING_GROUP').available,60);
 
 // Removing the actual seller offer leaves only inventory-derived reference liquidity.
 // It must inform the quote but must not count as an executable market trade.
@@ -87,4 +170,61 @@ assert.equal(referenceOnly.bestAskUsd,null,'reference ask must not be presented 
 assert.equal(referenceOnly.askDepth,0);
 assert.equal(referenceOnly.referenceAskDepth>0,true);
 assert.equal(referenceOnly.matches.some(x=>x.referenceLiquidity),false);
+// Canonical Forex simulation rates are the authoritative fallback when legacy
+// Finance exchange_rate_usd fields are absent. Both sides must remain executable.
+// Deliberately omit per-country Finance currency snapshots. The canonical
+// Forex profile registry remains the authority for both currency identity and rate.
+// Remove the legacy misspelled buyer identity before this focused FX test.
+// The earlier policy scenarios intentionally retain their original fixture keys.
+for(const domain of ['finance','economy','resource','trade','foreign']){
+  if(globalThis.Game.state[domain])delete globalThis.Game.state[domain].BDG;
+}
+globalThis.Game.state.finance.BGD={};
+globalThis.Game.state.finance.SAU={};
+globalThis.Game.state.economy.BGD={};
+globalThis.Game.state.economy.SAU={};
+globalThis.Game.state.trade.BGD={importRequests:[]};
+globalThis.Game.state.trade.SAU=globalThis.Game.state.trade.SAU||{offerBook:[]};
+globalThis.OmegaForexMonetaryEngine={
+  getCountryQuotes(mode){
+    assert.equal(mode,'SIMULATION');
+    return[
+      {countryCode:'BD',iso3:'BGD',currencyCode:'BDT',localPerUsd:77},
+      {countryCode:'SA',iso3:'SAU',currencyCode:'SAR',localPerUsd:3.75}
+    ];
+  },
+  getProfiles(){return[
+    {countryCode:'BD',iso3:'BGD',currencyCode:'BDT'},
+    {countryCode:'SA',iso3:'SAU',currencyCode:'SAR'}
+  ];},
+  getCurrencyCode(profile){return profile.currencyCode;},
+  getRate(code,mode){
+    assert.equal(mode,'SIMULATION');
+    return ({BDT:77,SAR:3.75,USD:1})[String(code||'').toUpperCase()]??null;
+  }
+};
+globalThis.Game.state.trade.BGD.importRequests=[{
+  requestId:'FOREX-RATE-FALLBACK-BID',resourceId:'crude_oil',
+  quantity:100,unitPrice:2566.666667,status:'SENT'
+}];
+globalThis.Game.state.trade.SAU.offerBook=[{
+  offerId:'FOREX-RATE-FALLBACK-ASK',resourceId:'crude_oil',
+  quantity:500,unitPrice:100,status:'ACTIVE'
+}];
+const forexFallbackBooks=market.rebuild();
+const forexFallbackQuote=market.quote('crude_oil');
+assert.equal(forexFallbackBooks.crude_oil.orders.bids[0]?.priceUsd,33.33333333766234,JSON.stringify({
+  countryIds:Object.keys(globalThis.Game.state.trade),
+  buyerRequests:globalThis.Game.state.trade.BGD?.importRequests,
+  financeKeys:Object.keys(globalThis.Game.state.finance||{}),
+  buyerFinance:globalThis.Game.state.finance?.BDG,
+  forexQuotes:globalThis.OmegaForexMonetaryEngine.getCountryQuotes('SIMULATION'),
+  marketOrders:forexFallbackBooks.crude_oil?.orders||null
+}));
+assert.equal(forexFallbackBooks.crude_oil.orders.asks.find(row=>!row.referenceOnly)?.priceUsd,100/3.75);
+assert.equal(forexFallbackQuote.status,'CLEARED',JSON.stringify({forexFallbackBooks,forexFallbackQuote}));
+assert.equal(forexFallbackQuote.matchedQuantity,100);
+assert.equal(forexFallbackQuote.matches.some(row=>row.buyerCountryId==='BD'&&row.sellerCountryId==='SA'&&row.quantity===100),true);
+delete globalThis.OmegaForexMonetaryEngine;
+
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');

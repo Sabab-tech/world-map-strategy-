@@ -25,20 +25,27 @@
   }
 
   function canonicalCountry(value){
-    const raw=String(value??'').trim();
-    if(!raw)return null;
+    const raw=value&&typeof value==='object'
+      ?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.name||value.id||value.canonicalId)
+      :String(value??'').trim();
+    const direct=id(raw);if(!direct)return null;
+    if(/^[A-Z]{3}$/.test(direct))return direct;
     try{
       const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
       const hit=bridge?.resolveCountry?.(raw);
-      if(hit?.id)return id(hit.id);
-      if(hit?.canonicalId)return id(hit.canonicalId);
+      const source=hit?.raw?.raw||hit?.raw?.datasets?.['countries.json']||hit?.raw||hit||{};
+      const iso3=source.iso3||source.iso3Code||hit?.iso3||hit?.iso3Code||
+        (String(source.countryCode||'').trim().length===3?source.countryCode:null)||
+        (String(hit?.countryCode||'').trim().length===3?hit.countryCode:null)||
+        (String(source.countryId||'').trim().length===3?source.countryId:null)||
+        (String(hit?.countryId||'').trim().length===3?hit.countryId:null);
+      if(iso3&&/^[A-Z]{3}$/.test(id(iso3)))return id(iso3);
     }catch(_){}
     try{
-      const engine=g.ResourceMinistryEngine;
-      const resolved=engine?.normalizeCountryCode?.(raw);
-      if(resolved)return id(resolved);
+      const resolved=g.ResourceMinistryEngine?.normalizeCountryCode?.(raw);
+      if(resolved&&/^[A-Z]{3}$/.test(id(resolved)))return id(resolved);
     }catch(_){}
-    return id(raw).replace(/\s+/g,'_');
+    return direct.replace(/\s+/g,'_');
   }
 
   function countryFromWarehouse(warehouseId){

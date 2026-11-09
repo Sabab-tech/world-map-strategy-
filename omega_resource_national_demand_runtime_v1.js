@@ -46,13 +46,28 @@
   }
   function state() { return g.Game && g.Game.state ? g.Game.state : (g.gameState || {}); }
   function canonical(value) {
+    var raw=value&&typeof value==='object'
+      ?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.name||value.id||value.canonicalId)
+      :value;
+    var direct=id(raw);
+    if(/^[A-Z]{3}$/.test(direct))return direct;
     var bridge = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge ||
       (g.Omega && g.Omega.CanonicalIdentity);
     try {
-      var row = bridge && typeof bridge.resolveCountry === 'function' ? bridge.resolveCountry(value) : null;
-      if (row && (row.id || row.canonicalId)) return id(row.id || row.canonicalId);
+      var row = bridge && typeof bridge.resolveCountry === 'function' ? bridge.resolveCountry(raw) : null;
+      var source=row&&row.raw&&row.raw.raw||row&&row.raw&&row.raw.datasets&&row.raw.datasets['countries.json']||row&&row.raw||row||{};
+      var iso3=source.iso3||source.iso3Code||row&&row.iso3||row&&row.iso3Code||
+        (String(source.countryCode||'').trim().length===3?source.countryCode:null)||
+        (String(row&&row.countryCode||'').trim().length===3?row.countryCode:null)||
+        (String(source.countryId||'').trim().length===3?source.countryId:null)||
+        (String(row&&row.countryId||'').trim().length===3?row.countryId:null);
+      if(iso3&&/^[A-Z]{3}$/.test(id(iso3)))return id(iso3);
+      var engineCountry=g.ResourceMinistryEngine?.normalizeCountryCode?.(raw);
+      if(engineCountry&&/^[A-Z]{3}$/.test(id(engineCountry)))return id(engineCountry);
+      if(row&&/^[A-Z]{3}$/.test(id(row.id)))return id(row.id);
+      if(row&&/^[A-Z]{3}$/.test(id(row.canonicalId)))return id(row.canonicalId);
     } catch (_) {}
-    return id(value);
+    return direct;
   }
   function currentTurn() {
     var s = state();

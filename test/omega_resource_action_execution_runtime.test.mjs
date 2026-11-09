@@ -50,6 +50,7 @@ function makeHarness(turn=1){
   };
 
   const handlers=new Map();
+  const commandCalls=[];
   const makeTx=(owner,country)=>{
     const paths=[
       ['resource',state.resource[country]||={}],
@@ -88,6 +89,12 @@ function makeHarness(turn=1){
   };
 
   function dispatch(owner,action,country,payload={}){
+    commandCalls.push({owner,action,country,payload:structuredClone(payload)});
+    if(action==='OMEGA_RESOURCE_ECON_PUBLISH_CAPACITY_UPGRADE_REQUESTS'){
+      if(owner!=='economy')return{status:'REJECTED',reason:'CAPACITY_REQUEST_ECONOMY_OWNER_REQUIRED'};
+      state.economy[country].capacityUpgradeRequests=structuredClone(payload.requests||[]);
+      return{status:'APPLIED',requestCount:state.economy[country].capacityUpgradeRequests.length};
+    }
     if(action==='OMEGA_AUTO_RESERVE'){
       state.cabinet??= {};
       state.cabinet[country]??= {};
@@ -181,7 +188,7 @@ function makeHarness(turn=1){
   };
   globalThis.OmegaResourceActionExecutionRuntime=undefined;
   globalThis.__omegaResourceActionExecutionHandlers=false;
-  return {state,handlers,makeTx,dispatch};
+  return {state,handlers,makeTx,dispatch,commandCalls};
 }
 
 async function loadRuntime(){
@@ -222,6 +229,13 @@ test('capacity expansion becomes a real project and preserves factory blueprint'
   h.dispatch('resource','OMEGA_RESOURCE_ACTION_TICK','BGD',{});
   const req=h.state.economy.BGD.capacityUpgradeRequests[0];
   assert.equal(req.status,'UNDER_CONSTRUCTION');
+  const requestPublication=h.commandCalls.find(row =>
+    row.action==='OMEGA_RESOURCE_ECON_PUBLISH_CAPACITY_UPGRADE_REQUESTS');
+  assert.ok(requestPublication,'capacity expansion must publish its changed request list');
+  assert.equal(requestPublication.owner,'economy',
+    'economy-owned capacity requests must never be written by the resource ministry transaction');
+  assert.equal(requestPublication.country,'BGD');
+  assert.equal(requestPublication.payload.requests[0].status,'UNDER_CONSTRUCTION');
   assert.equal(req.capacityBefore,100);
   assert.equal(req.capacityDelta,25);
   assert.equal(req.projectId!=null,true);

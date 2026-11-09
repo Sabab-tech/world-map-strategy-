@@ -45,6 +45,16 @@ function factoryDateOnly(value){
   return m[1]+'-'+m[2]+'-'+m[3];
 }
 function factoryCurrentGameDate(){
+  // The simulation clock is the authoritative calendar. Game.state.simulation.date
+  // is a compatibility mirror and can lag behind a committed turn while older
+  // browser listeners reconcile their own state. Preferring that mirror can leave
+  // an otherwise due factory cycle IN_PROGRESS forever even after its finishTurn.
+  const simulation=g.Omega?.Simulation||g.OmegaSimulationRuntime||null;
+  try{
+    const clockDate=typeof simulation?.clock?.simulationDate==='function'
+      ?factoryDateOnly(simulation.clock.simulationDate()):null;
+    if(clockDate)return clockDate;
+  }catch(_){}
   const s=state()||{},sim=s.simulation||{};
   const direct=factoryDateOnly(sim.date||sim.currentDate||sim.gameDate||s.gameDate||s.date);
   if(direct)return direct;
@@ -82,15 +92,44 @@ const canonicalCountry=v=>{
   // Runtime country buckets use ISO-3. Never resolve an incoming ISO-3 through a name/alias
   // index first: the resolver may return the ISO-2 display identity (e.g. KWT -> KW).
   if(/^[A-Z]{3}$/i.test(raw))return id(raw);
+  // Country-profile identities carry both alpha-2 and alpha-3 fields. Prefer the
+  // explicit ISO-3 profile identity over a public registry/display id (e.g. BD).
+  try{
+    const profiles=g.ResourceMinistryEngine?.countryProfiles;
+    if(profiles&&typeof profiles==='object'){
+      const wanted=id(raw);
+      for(const [profileKey,profile] of Object.entries(profiles)){
+        const identity=profile?.identity||profile?.countryIdentity||profile||{};
+        const aliases=[
+          profileKey,identity.iso2,identity.countryCode,identity.country_code,
+          identity.code,identity.id,identity.countryId,identity.countryName,
+          identity.name,profile?.iso2,profile?.countryCode,profile?.code,profile?.id
+        ];
+        if(!aliases.some(value=>id(value)===wanted))continue;
+        const candidates=[
+          identity.iso3,identity.iso3Code,identity.iso_a3,identity.ISO_A3,
+          identity.countryIso3,profile?.iso3,profile?.iso3Code,profile?.countryIso3,
+          /^[A-Z]{3}$/i.test(String(profileKey||''))?profileKey:null
+        ];
+        const iso3=candidates.find(value=>/^[A-Z]{3}$/i.test(String(value||'').trim()));
+        if(iso3)return id(iso3);
+      }
+    }
+  }catch(_){}
   try{
     const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
     const r=b?.resolveCountry?.(raw);
     const source=r?.raw?.raw||r?.raw?.datasets?.['countries.json']||r?.raw||{};
-    const iso3=source?.iso3||source?.iso3Code||source?.countryCode||source?.countryId||
-      r?.iso3||r?.iso3Code||r?.countryCode||r?.countryId;
-    if(iso3&&/^[A-Z]{3}$/i.test(String(iso3).trim()))return id(iso3);
-    if(r?.id)return id(r.id);
+    const iso3Candidates=[
+      source?.iso3,source?.iso3Code,source?.ISO_A3,source?.iso_a3,
+      r?.iso3,r?.iso3Code,r?.ISO_A3,r?.iso_a3,
+      source?.countryId,r?.countryId,source?.countryCode,r?.countryCode
+    ];
+    const iso3=iso3Candidates.find(value=>/^[A-Z]{3}$/i.test(String(value||'').trim()));
+    if(iso3)return id(iso3);
   }catch(_){}
+  // The identity registry's public id may be ISO-2 (BD/KW). ResourceMinistryEngine
+  // owns the repository's ISO-3 mapping and must run before any display-id fallback.
   try{
     const normalized=g.ResourceMinistryEngine?.normalizeCountryCode?.(raw);
     if(normalized&&/^[A-Z]{3}$/i.test(String(normalized).trim()))return id(normalized);
@@ -103,6 +142,7 @@ const frac=s=>h32(s)/4294967296;
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,Number(v)||0));
 
 let catalog=null, catalogPromise=null;
+let masterSiteCache=null,masterSiteCacheSources=null,masterSiteIndex=new Map();
 let siteLogisticsManifest=null,siteLogisticsManifestPromise=null;
 let siteLogisticsActiveCountry=null,siteLogisticsRouteMap=new Map(),siteLogisticsCountryLoadPromise=null;
 const pendingSiteLogisticsBatches=new Set();
@@ -404,9 +444,11 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   legs=finalizedMetrics.status==='READY'?finalizedMetrics.legs:legs;
   const days=Math.max(0,num(finalizedMetrics.travelTimeDays)||0);
   const etaTurns=Math.max(1,Math.ceil(days/dayWindow)),etaTurn=turn()+etaTurns;
-  // Arrival dates align to the game's discrete turn cadence, not a sub-turn date that
-  // the simulation cannot actually process while its clock jumps multiple days per turn.
-  const etaDate=factoryAddGameDays(factoryCurrentGameDate(),etaTurns*dayWindow);
+  // Keep the calendar ETA tied to the route's actual travel duration. A construction
+  // fast-forward can temporarily make this dispatch turn 180 days long even though
+  // the next normal turn is 30 days; multiplying the route ETA by that temporary
+  // turn window would strand a 1.7-day shipment for six game months.
+  const etaDate=factoryAddGameDays(factoryCurrentGameDate(),Math.max(1,Math.ceil(days)));
   const shipmentId='MINEHAUL:'+h32(JSON.stringify({cid,siteId,batchId,turn:turn(),sequence:network.shipments.length+1,quantity}));
   const route={status:'PLANNED',routeId:routeProfile.routeId,countryId:cid,siteId,sourceSiteId:siteId,sourceNode:siteId,
     destinationNode:warehouseId,destinationWarehouseId:warehouseId,resourceId:rid,requestedQuantity:remaining,
@@ -471,21 +513,27 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
 function dispatchResidualMineHauls(countryId){
   const cid=canonicalCountry(countryId),player=playerSimulationCountryId();
   if(!cid||!player||player!==cid)return;
-  const network=netState(cid),rows=siteFlowRows(cid).slice();
+  const network=netState(cid),rows=siteFlowRows(cid).slice(),resource=resourceState(cid);
+  const batchesById=new Map();
+  for(const batch of Array.isArray(resource.batches)?resource.batches:[]){
+    const id=String(batch?.batchId||'');if(id&&!batchesById.has(id))batchesById.set(id,batch);
+  }
+  const activeMineHaulBatchIds=new Set(),activeStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH']);
+  for(const shipment of Array.isArray(network.shipments)?network.shipments:[]){
+    if(String(shipment?.shipmentType||'')!=='MINE_TO_WAREHOUSE'||!activeStatuses.has(String(shipment?.status||'')))continue;
+    const batchId=String(shipment?.batchId||'');if(batchId)activeMineHaulBatchIds.add(batchId);
+  }
   for(const flow of rows){
     if(!flow?.mineLogisticsRouteId)continue;
     // Mine-haul and factory-haul legs have independent per-turn dispatch limits.
     const batchId=String(flow.batchId||'');if(!batchId||Number(flow.lastMineResidualDispatchTurn)===turn())continue;
     const route=siteLogisticsRouteFor(cid,flow.siteId);
     if(!route)continue;
-    const source=(Array.isArray(resourceState(cid).batches)?resourceState(cid).batches:[]).find(batch=>String(batch?.batchId||'')===batchId);
+    const source=batchesById.get(batchId);
     if(!source)continue;
     // Only an existing mine-to-warehouse leg blocks another mine dispatch.
     // A parallel factory leg can be in transit while residual cargo is still hauled.
-    const activeMineHaul=network.shipments.some(item=>String(item?.batchId||'')===batchId&&
-      String(item?.shipmentType||'')==='MINE_TO_WAREHOUSE'&&
-      ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH'].includes(String(item?.status||'')));
-    if(activeMineHaul)continue;
+    if(activeMineHaulBatchIds.has(batchId))continue;
     const total=Math.max(0,num(source.quantity)||num(source.remainingQuantity)||0);
     const alreadyDispatched=Math.max(0,num(flow.mineWarehouseDispatchedQuantity)||0);
     const sourceRemaining=Math.max(0,num(source.remainingQuantity!=null?source.remainingQuantity:source.quantity)||0);
@@ -495,6 +543,7 @@ function dispatchResidualMineHauls(countryId){
     const sent=dispatchMineToWarehouse(cid,site,flow,source,route);
     flow.lastMineResidualDispatchTurn=turn();
     if(sent.status==='DISPATCHED'){
+      activeMineHaulBatchIds.add(batchId);
       flow.mineLogisticsStatus='IN_TRANSIT_TO_WAREHOUSE';flow.transportQueueReason=null;flow.blockReason=null;
       addFlowStage(flow,'TRANSPORT','IN_TRANSIT_TO_RAW_WAREHOUSE',{shipmentId:sent.shipment.shipmentId,
         dispatchQuantity:sent.quantity,etaTurn:sent.shipment.etaTurn,etaDate:sent.shipment.etaDate,routeId:route.routeId});
@@ -795,20 +844,29 @@ function quantitativeEngineAdapter(site, quantitative){
 function masterSites(){
   const x=g.OmegaResourceSiteMasterResearchData||g.Omega?.ResourceSiteMasterResearchData;
   const catalog=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
+  const expansion=g.OmegaResourceSiteCountryExpansionData||g.Omega?.ResourceSiteCountryExpansionData;
+  const contract=g.OmegaResourceSiteDataContract||null,industrialCatalog=cat();
+  const masterRows=Array.isArray(x?.sites)?x.sites:[];
   const canonicalRows=Array.isArray(catalog?.sites)?catalog.sites:[];
+  const expansionRows=Array.isArray(expansion?.records)?expansion.records:[];
+  const cachedSources=masterSiteCacheSources;
+  if(masterSiteCache&&cachedSources&&cachedSources.master===x&&cachedSources.masterRows===masterRows&&
+     cachedSources.canonical===catalog&&cachedSources.canonicalRows===canonicalRows&&
+     cachedSources.expansion===expansion&&cachedSources.expansionRows===expansionRows&&
+     cachedSources.contract===contract&&cachedSources.industrialCatalog===industrialCatalog)
+    return masterSiteCache;
   const canonicalById=new Map(canonicalRows.map(row=>[String(row?.siteId||''),row]));
   // Preserve master research records, but attach the exact same canonical quantitative contract by site ID.
   const base=Array.isArray(x?.sites)?x.sites.map(site=>{
     const canonical=canonicalById.get(String(site?.siteId||''))||null;
     if(!canonical)return site;
-    const normalized=g.OmegaResourceSiteDataContract?.normalizeSiteRecord?.(canonical)||canonical;
+    const normalized=contract?.normalizeSiteRecord?.(canonical)||canonical;
     return quantitativeEngineAdapter({...site,canonicalSiteRecord:clone(normalized),identity:clone(normalized.identity||site.identity||{}),
       quantitativeProvenance:clone(normalized.quantitative?.quantitativeProvenance||site.quantitativeProvenance||{}),
       map:clone(normalized.map||site.map||{}),location:clone(site.location||normalized.location||{}),
       sourceReference:clone(normalized.sourceReference||site.sourceReference||{})},normalized.quantitative||site.quantitative||{});
   }):[];
-  const expansion=g.OmegaResourceSiteCountryExpansionData||g.Omega?.ResourceSiteCountryExpansionData;
-  const extra=Array.isArray(expansion?.records)?expansion.records.map(row=>{
+  const extra=expansionRows.map(row=>{
     const resourceId=String(row?.identity?.resourceTypeId||'').trim();
     const method=String(row?.operation?.extractionMethod||'').trim();
     const siteType=String(row?.identity?.siteType||'RESOURCE_SITE').trim();
@@ -836,7 +894,7 @@ function masterSites(){
           countryIsolationKey:countryId
         }]}
     };
-  }).filter(Boolean).map(site=>quantitativeEngineAdapter(site,site.quantitative)):[];
+  }).filter(Boolean).map(site=>quantitativeEngineAdapter(site,site.quantitative));
   const byId=new Map(base.map(site=>[String(site?.siteId||''),site]));
   // Append eligible sites from the in-memory canonical catalog so map-visible legacy
   // sites are also discoverable by the industrial runtime. Keep existing records first.
@@ -885,7 +943,11 @@ function masterSites(){
   });
   for(const site of canonicalExtras)if(!byId.has(site.siteId))byId.set(site.siteId,site);
   for(const site of extra)if(!byId.has(site.siteId))byId.set(site.siteId,site);
-  return [...byId.values()];
+  const rows=[...byId.values()];
+  masterSiteCache=rows;
+  masterSiteIndex=new Map(rows.map(site=>[String(site?.siteId||''),site]));
+  masterSiteCacheSources={master:x,masterRows,canonical:catalog,canonicalRows,expansion,expansionRows,contract,industrialCatalog};
+  return rows;
 }
 function runtimeCountryIds(){
   const ids=new Set(masterSites().map(site=>canonicalCountry(site.countryId)).filter(Boolean));
@@ -909,13 +971,14 @@ function playerSimulationCountryId(){
   for(const value of candidates){
     const raw=value&&typeof value==='object'?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.code||value.id||value.name):value;
     const cid=canonicalCountry(raw);
-    if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z0-9]{2,3}$/.test(cid))return cid;
+    if(cid&&cid!=='GLOBAL'&&cid!=='WORLD'&&/^[A-Z]{3}$/.test(cid))return cid;
   }
   return null;
 }
 function siteById(siteId){
   const key=String(siteId||'').trim();
-  const site=masterSites().find(x=>String(x?.siteId||'')===key)||null;
+  masterSites();
+  const site=masterSiteIndex.get(key)||null;
   if(!site)return null;
   const cid=canonicalCountry(site.countryId||site.sourceSiteRecord?.countryCode);
   const assets=Array.isArray(state()?.resource?.[cid]?.mineAssets)?state().resource[cid].mineAssets:[];
@@ -1090,7 +1153,7 @@ function onExtractionCommitted(evt){
     row.blockReason='NON_COMMERCIAL_SITE';saveSiteFlow(cid,row);return;
   }
   if(routeProfileAtExtraction){
-    const routeCompatible=candidateFactories(cid,rid);
+    const routeCompatible=candidateFactories(cid,rid,site?.siteId||null);
     const routeFactory=routeCompatible.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||routeCompatible[0]?.asset||null;
     if(routeFactory)row.factoryId=String(routeFactory.id||routeFactory.assetId||routeFactory.projectId||'');
     row.mineLogisticsRouteId=routeProfileAtExtraction.routeId;row.mineLogisticsStatus='PENDING';
@@ -1123,7 +1186,7 @@ function onExtractionCommitted(evt){
       return;
     }
   }
-  const compatible=candidateFactories(cid,rid);
+  const compatible=candidateFactories(cid,rid,site?.siteId||null);
   let factoryChoice=compatible.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||compatible[0]?.asset||null,bootstrap=null;
   // Extraction commit callbacks receive the normalized event payload, not executeSitePipeline's local input.
   // Requiring an explicit event flag keeps ordinary extraction from inventing a factory and avoids a stale global reference.
@@ -1208,16 +1271,22 @@ function onExtractionFiscalPosted(evt){
 function onTreasurySettlement(evt){
   const p=normalizedEventPayload(evt),cid=canonicalCountry(p.sellerCountryId||p.targetCountryId||p.sourceCountryId||p.countryId);
   if(!cid)return;
+  // Site-flow lineage is keyed only by original committed extraction batches.
+  // Downstream factory-input and finished-goods batch IDs are not additional mine roots.
+  const siteFlowRoots=new Set(siteFlowRows(cid).map(row=>String(row?.batchId||'').trim()).filter(Boolean));
+  const resolveSiteRoots=values=>[...new Set((Array.isArray(values)?values:[]).filter(Boolean).map(String))]
+    .filter(id=>siteFlowRoots.has(id));
   const inputTransfers=Array.isArray(p.batchTransfers)?p.batchTransfers:[],
     transferRows=inputTransfers.map(transfer=>{
-      const roots=[...new Set([transfer?.sourceBatchId,...(transfer?.sourceBatchIds||[])].filter(Boolean).map(String))],
+      const declaredRoots=Array.isArray(transfer?.sourceBatchIds)?transfer.sourceBatchIds:[],
+        roots=resolveSiteRoots(declaredRoots.length?declaredRoots:[transfer?.sourceBatchId]),
         quantity=num(transfer?.quantity);
       let value=num(transfer?.totalValue);
       const unitPrice=num(transfer?.unitPrice);
       if(value===null&&quantity!==null&&unitPrice!==null)value=quantity*unitPrice;
       return{roots,quantity,value,transfer};
     }).filter(item=>item.roots.length);
-  const topLevelRoots=[...new Set((Array.isArray(p.sourceBatchIds)?p.sourceBatchIds:[]).filter(Boolean).map(String))];
+  const topLevelRoots=resolveSiteRoots(p.sourceBatchIds);
   // Older settlement events may include only sourceBatchIds, not batchTransfers.
   if(!transferRows.length&&topLevelRoots.length)
     transferRows.push({roots:topLevelRoots,quantity:num(p.quantity),value:num(p.totalValue),transfer:null});
@@ -1467,11 +1536,43 @@ function recipeFor(resourceId,asset={}){
 function assetCanAccept(asset,resourceId){
   const status=String(asset?.status||'OPERATIONAL').toUpperCase();
   if(!asset||['CLOSED','DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION','BLOCKED','TECHNOLOGY_LOCKED','MAINTENANCE'].includes(status))return false;
+  const privateAsset=String(asset.ownerType||asset.ownershipModel||'').toUpperCase()==='PRIVATE_ENTERPRISE';
+  // A stale OPERATIONAL status must never make an unverified private asset a
+  // mine-shipment destination. Private routing requires the explicit lifecycle gate.
+  if(privateAsset&&(asset.productionEnabled!==true||status!=='OPERATIONAL'))return false;
   const recipe=recipeFor(resourceId,asset),ks=Object.keys(recipe.inputs);
   return ks.some(k=>tok(k)===tok(resourceId));
 }
-function candidateFactories(c,resourceId){
-  return factoryAssets(c).filter(a=>assetCanAccept(a,resourceId)).map((asset,index)=>({asset,index,recipe:recipeFor(resourceId,asset)}));
+function candidateFactories(c,resourceId,requestedSiteId=null){
+  const siteId=String(requestedSiteId||'').trim();
+  return factoryAssets(c).filter(a=>assetCanAccept(a,resourceId))
+    .map((asset,index)=>({asset,index,recipe:recipeFor(resourceId,asset)}))
+    // A verified private operator remains first for live production. An explicit
+    // site binding is next, then a purpose-built factory commissioned from a
+    // construction project. Country starting-baseline facilities remain eligible
+    // as the fallback; they must not shadow a newly built compatible plant merely
+    // because they were registered earlier in productionAssets.
+    .sort((left,right)=>{
+      function privatePriority(row){
+        const asset=row?.asset||{};
+        return String(asset.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE' &&
+          String(asset.operatorType||'').toUpperCase()==='PRIVATE_COMPANY_OPERATOR' &&
+          asset.productionEnabled===true &&
+          String(asset.status||'').toUpperCase()==='OPERATIONAL' ? 1 : 0;
+      }
+      function sitePriority(row){
+        const asset=row?.asset||{};
+        return siteId && String(asset.sourceSiteId||asset.siteId||'').trim()===siteId ? 1 : 0;
+      }
+      function commissionedPriority(row){
+        const asset=row?.asset||{};
+        return String(asset.constructionProjectId||'').trim() ? 1 : 0;
+      }
+      return privatePriority(right)-privatePriority(left)||
+        sitePriority(right)-sitePriority(left)||
+        commissionedPriority(right)-commissionedPriority(left)||
+        left.index-right.index;
+    });
 }
 
 function nodeToken(type,c,idv){return type+':'+canonicalCountry(c)+':'+String(idv||'').replace(/[^A-Za-z0-9_-]/g,'_')}
@@ -2078,7 +2179,7 @@ function planShipment(input={}){
   const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
   const siteGate=warehouseSource?null:strategicPolicy?.siteAvailableForExtraction?.(cid,site.siteId,site);
   if(siteGate&&!siteGate.allowed)return{status:'BLOCKED',reason:siteGate.reason||'SITE_EXPLORATION_GATE_BLOCKED',siteId:site.siteId,countryId:cid,resourceId:rid};
-  let candidates=candidateFactories(cid,rid);
+  let candidates=candidateFactories(cid,rid,site?.siteId||null);
   const sourceSiteId=String(site?.siteId||'').trim();
   const sourceSiteFactories=candidates.filter(({asset})=>
     String(asset?.sourceSiteId||asset?.siteId||'').trim()===sourceSiteId);
@@ -2283,7 +2384,7 @@ function dispatchShipment(input={}){
   if(quantity<plannedQuantity)route.quantityAdjustment={reason:quantityAdjustmentReason||'SOURCE_BATCH_OR_LOT_ROUNDING_CAP',plannedQuantity,actualQuantity:quantity};
   const shipmentTravelDays=Math.max(0,num(route.travelTimeDays)||0);
   const shipmentEtaTurns=Math.max(1,num(route.etaTurn)-turn());
-  const shipmentEtaDate=factoryAddGameDays(factoryCurrentGameDate(),shipmentEtaTurns*daysPerTurn());
+  const shipmentEtaDate=factoryAddGameDays(factoryCurrentGameDate(),Math.max(1,Math.ceil(shipmentTravelDays)));
   const s={shipmentId,shipmentType,countryId:cid,siteId:warehouseShipment?null:plan.siteId,resourceId:plan.resourceId,
     factoryId:plan.factoryId,quantity,unit:input.unit||sourceBatch?.unit||'TONNES',
     batchId:sourceBatchId||null,occurrenceKey:input.occurrenceKey||sourceBatch?.occurrenceKey||null,
@@ -2333,6 +2434,19 @@ function dispatchShipment(input={}){
 function dispatchResidualSiteBatches(c){
   const cid=canonicalCountry(c),rs=resourceState(cid),network=netState(cid);
   const selectedPlayer=playerSimulationCountryId();
+  const sourceBatchesById=new Map();
+  for(const batch of Array.isArray(rs.batches)?rs.batches:[]){
+    const id=String(batch?.batchId||'');if(id&&!sourceBatchesById.has(id))sourceBatchesById.set(id,batch);
+  }
+  const activeStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
+    'BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING']);
+  const activeFactoryLegBatchIds=new Set(),activeRawToFactoryBatchIds=new Set();
+  for(const shipment of Array.isArray(network.shipments)?network.shipments:[]){
+    if(!activeStatuses.has(String(shipment?.status||'')))continue;
+    const batchId=String(shipment?.batchId||'');if(!batchId)continue;
+    activeFactoryLegBatchIds.add(batchId);
+    if(String(shipment?.shipmentType||'')==='RAW_TO_FACTORY')activeRawToFactoryBatchIds.add(batchId);
+  }
   for(const flow of siteFlowRows(cid).slice()){
     if(flow?.mineLogisticsRouteId&&selectedPlayer!==cid)continue;
     const batchId=String(flow.batchId||'').trim();
@@ -2342,7 +2456,7 @@ function dispatchResidualSiteBatches(c){
     // A mine haul in transit does not make the already-received warehouse portion unavailable.
     // The received-minus-factory-dispatched balance below decides if a factory leg can start.
     if(['PENDING_ROUTE_PROFILE','MINE_LOGISTICS_BLOCKED'].includes(String(flow.mineLogisticsStatus||'')))continue;
-    const source=Array.isArray(rs.batches)?rs.batches.find(x=>String(x?.batchId||'')===batchId):null;
+    const source=sourceBatchesById.get(batchId);
     if(!source)continue;
     let remaining=Math.max(0,num(source.remainingQuantity!=null?source.remainingQuantity:source.quantity)||0);
     if(flow.mineLogisticsRouteId){
@@ -2357,10 +2471,8 @@ function dispatchResidualSiteBatches(c){
     // Mine-logistics batches can have a received portion in the warehouse while a
     // residual portion is still moving from the mine. Only an active factory-bound leg
     // may block another factory dispatch; a mine-haul leg must not strand received cargo.
-    const activeFactoryLeg=network.shipments.some(x=>String(x?.batchId||'')===batchId&&
-      ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH','BLOCKED_BATCH_LEDGER_MISMATCH',
-        'BLOCKED_FACTORY_MISSING'].includes(String(x?.status||''))&&
-      (!flow.mineLogisticsRouteId||String(x?.shipmentType||'')==='RAW_TO_FACTORY'));
+    const activeFactoryLeg=flow.mineLogisticsRouteId
+      ?activeRawToFactoryBatchIds.has(batchId):activeFactoryLegBatchIds.has(batchId);
     if(activeFactoryLeg)continue;
     const site=siteById(flow.siteId)||flow.siteSnapshot||{
       siteId:flow.siteId,countryId:cid,siteName:flow.siteName,real:{resourceId:flow.resourceId},
@@ -2375,6 +2487,8 @@ function dispatchResidualSiteBatches(c){
     if(flow.mineLogisticsRouteId)flow.lastFactoryResidualDispatchTurn=turn();
     else flow.lastResidualDispatchTurn=turn();
     if(sent.status==='DISPATCHED'){
+      activeFactoryLegBatchIds.add(batchId);
+      activeRawToFactoryBatchIds.add(batchId);
       flow.shipmentId=sent.shipment.shipmentId;
       flow.shipmentIds=[...new Set([...(flow.shipmentIds||[]),sent.shipment.shipmentId])];
       if(flow.mineLogisticsRouteId){
@@ -2409,7 +2523,6 @@ function dispatchResidualSiteBatches(c){
     saveSiteFlow(cid,flow);
   }
 }
-
 
 function factoryUnitBridge(sourceUnit,targetUnit){
   const source=String(sourceUnit||'').trim(),target=String(targetUnit||'').trim();
@@ -2526,29 +2639,48 @@ function dispatchResidualFactoryOutputs(countryId){
   const cid=canonicalCountry(countryId),rs=resourceState(cid),network=netState(cid);
   const warehouse=rs.processedWarehouse||{},batches=Array.isArray(rs.batches)?rs.batches:[];
   const dispatched=[],blocked=[];
-  for(const batch of batches.slice().sort((a,b)=>(Number(a?.createdTurn)||0)-(Number(b?.createdTurn)||0))){
+  const activeStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE']);
+  const activeFactoryInputBatchIds=new Set(),inboundByFactoryResource=new Map();
+  for(const shipment of Array.isArray(network.shipments)?network.shipments:[]){
+    if(String(shipment?.shipmentType||'')!=='FACTORY_INPUT'||!activeStatuses.has(String(shipment?.status||'')))continue;
+    const batchId=String(shipment?.batchId||'');if(batchId)activeFactoryInputBatchIds.add(batchId);
+    const key=String(shipment?.factoryId||'')+'\\u0000'+tok(shipment?.resourceId);
+    inboundByFactoryResource.set(key,(inboundByFactoryResource.get(key)||0)+Math.max(0,num(shipment?.targetQuantity)||0));
+  }
+  const assets=factoryAssets(cid),candidatesByResource=new Map();
+  function candidatesFor(resourceId){
+    const rid=tok(resourceId);
+    if(candidatesByResource.has(rid))return candidatesByResource.get(rid);
+    const candidates=[];
+    for(let index=0;index<assets.length;index++){
+      const asset=assets[index],status=String(asset?.status||'OPERATIONAL').toUpperCase();
+      if(['CLOSED','DECOMMISSIONED','TECHNOLOGY_LOCKED','BLOCKED','UNDER_CONSTRUCTION'].includes(status))continue;
+      if(canonicalCountry(asset?.countryId||cid)!==cid)continue;
+      const recipe=recipeFor(rid,asset);
+      if(Object.keys(recipe.inputs||{}).length<=1||recipe.requiresAllInputs!==true||
+        !Object.keys(recipe.inputs).some(key=>tok(key)===rid))continue;
+      candidates.push({asset,index,recipe});
+    }
+    candidates.sort((a,b)=>(Number(a.asset.priority)||0)-(Number(b.asset.priority)||0)||a.index-b.index);
+    candidatesByResource.set(rid,candidates);
+    return candidates;
+  }
+  const finishedBatches=batches.filter(batch=>String(batch?.stage||'').toUpperCase()==='FINISHED'&&
+    String(batch?.batchId||'').trim()&&String(batch?.resourceId||batch?.materialIdentity||'').trim()&&
+    Math.max(0,num(batch?.remainingQuantity!=null?batch.remainingQuantity:batch?.quantity)||0)>1e-9)
+    .slice().sort((a,b)=>(Number(a?.createdTurn)||0)-(Number(b?.createdTurn)||0));
+  for(const batch of finishedBatches){
     const batchId=String(batch?.batchId||'').trim(),rid=tok(batch?.resourceId||batch?.materialIdentity);
-    if(!batchId||!rid||String(batch?.stage||'').toUpperCase()!=='FINISHED')continue;
+    if(!batchId||!rid)continue;
     const remaining=Math.max(0,num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0);
-    if(remaining<=1e-9)continue;
-    if(network.shipments.some(row=>String(row?.batchId||'')===batchId&&String(row?.shipmentType||'')==='FACTORY_INPUT'&&
-      ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(row?.status||''))))continue;
+    if(remaining<=1e-9||activeFactoryInputBatchIds.has(batchId))continue;
     const availableKey=quantityObjectKey(warehouse.availableByResource||{},rid);
     const reservedKey=quantityObjectKey(warehouse.reservedByResource||{},rid);
     if(availableKey===null)continue;
     const available=Math.max(0,num(warehouse.availableByResource[availableKey])||0);
     const reserved=reservedKey===null?0:Math.max(0,num(warehouse.reservedByResource[reservedKey])||0);
     if(available-reserved<=1e-9)continue;
-    const candidates=factoryAssets(cid).filter(asset=>{
-      const status=String(asset?.status||'OPERATIONAL').toUpperCase();
-      if(['CLOSED','DECOMMISSIONED','TECHNOLOGY_LOCKED','BLOCKED','UNDER_CONSTRUCTION'].includes(status))return false;
-      if(canonicalCountry(asset?.countryId||cid)!==cid)return false;
-      const recipe=recipeFor(rid,asset);
-      return Object.keys(recipe.inputs||{}).length>1&&recipe.requiresAllInputs===true&&
-        Object.keys(recipe.inputs).some(key=>tok(key)===rid);
-    }).map((asset,index)=>({asset,index,recipe:recipeFor(rid,asset)}))
-      .sort((a,b)=>(Number(a.asset.priority)||0)-(Number(b.asset.priority)||0)||a.index-b.index);
-    for(const candidate of candidates){
+    for(const candidate of candidatesFor(rid)){
       const asset=candidate.asset,recipe=candidate.recipe;
       const key=Object.keys(recipe.inputs||{}).find(inputId=>tok(inputId)===rid);
       const coefficient=num(recipe.inputs[key]);
@@ -2556,9 +2688,8 @@ function dispatchResidualFactoryOutputs(countryId){
       if(!bridge){blocked.push({batchId,resourceId:rid,factoryId:asset.id,reason:'FACTORY_INPUT_UNIT_BRIDGE_NOT_DECLARED'});continue;}
       if(!(coefficient>0))continue;
       const stock=Math.max(0,num(asset.inputInventory?.[rid])||0);
-      const inbound=network.shipments.filter(row=>String(row?.shipmentType||'')==='FACTORY_INPUT'&&String(row?.factoryId||'')===String(asset.id)&&
-        tok(row?.resourceId)===rid&&['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(row?.status||'')))
-        .reduce((sum,row)=>sum+Math.max(0,num(row?.targetQuantity)||0),0);
+      const inboundKey=String(asset.id)+'\\u0000'+rid;
+      const inbound=inboundByFactoryResource.get(inboundKey)||0;
       const capacity=Math.max(0,num(asset.capacityPerDay??asset.capacity??asset.productionCapacity??asset.throughput)||0);
       const targetDemand=Math.max(0,capacity*coefficient-stock-inbound);
       if(targetDemand<=1e-9)continue;
@@ -2567,7 +2698,12 @@ function dispatchResidualFactoryOutputs(countryId){
       if(sourceQuantity<=1e-9)continue;
       const sent=dispatchFactoryInputShipment({countryId:cid,batchId,factoryId:asset.id,resourceId:rid,
         targetQuantity:sourceQuantity*bridge.factor,transportMode:rules()[rid]?.preferredModes?.[0]||'truck'});
-      if(sent.status==='DISPATCHED'){dispatched.push({batchId,factoryId:asset.id,resourceId:rid,quantity:sent.shipment.quantity,targetQuantity:sent.shipment.targetQuantity,shipmentId:sent.shipment.shipmentId});break;}
+      if(sent.status==='DISPATCHED'){
+        dispatched.push({batchId,factoryId:asset.id,resourceId:rid,quantity:sent.shipment.quantity,targetQuantity:sent.shipment.targetQuantity,shipmentId:sent.shipment.shipmentId});
+        activeFactoryInputBatchIds.add(batchId);
+        inboundByFactoryResource.set(inboundKey,inbound+Math.max(0,num(sent.shipment.targetQuantity)||0));
+        break;
+      }
       blocked.push({batchId,factoryId:asset.id,resourceId:rid,reason:sent.reason||sent.status});
     }
   }
@@ -2745,7 +2881,7 @@ function advanceShipments(c){
     if(s.status==='BLOCKED_ROUTE_BLOCKADE'){
       s.status='IN_TRANSIT';s.blockReason=null;s.blockadePolicies=[];s.blockedTransportModes=[];
       s.resumedTurn=turn();s.etaTurn=Math.max(turn()+1,num(s.etaTurn)||turn()+1);
-      s.etaDate=factoryAddGameDays(factoryCurrentGameDate(),Math.max(1,s.etaTurn-turn())*daysPerTurn());
+      s.etaDate=factoryAddGameDays(factoryCurrentGameDate(),Math.max(1,Math.ceil(num(s.route?.travelTimeDays)||0)));
       if(s.route){s.route.etaTurn=s.etaTurn;s.route.etaDate=s.etaDate;}
       if(['MINE_TO_WAREHOUSE','RAW_TO_FACTORY'].includes(String(s.shipmentType||''))){
         const rt=siteLogisticsState(cid,s.siteId,siteLogisticsRouteFor(cid,s.siteId));
@@ -2769,8 +2905,13 @@ function advanceShipments(c){
       s.status='DELIVERED';s.deliveryStatus='DELIVERED_TO_RAW_WAREHOUSE';s.destinationStatus='RAW_WAREHOUSE_RECEIVED';
       s.deliveredTurn=turn();s.deliveredDate=factoryCurrentGameDate();s.deliveryEventId='MINE-WH-DELIVERY:'+s.shipmentId;
       mineDelivered.push(clone(s));
+      const haulBatch=(Array.isArray(resourceState(cid).batches)?resourceState(cid).batches:[])
+        .find(row=>String(row?.batchId||'')===String(s.batchId||''))||null;
       emit('OMEGA_RESOURCE_MINE_HAUL_DELIVERED',cid,{shipmentId:s.shipmentId,batchId:s.batchId,siteId:s.siteId,
         resourceId:s.resourceId,quantity:s.quantity,warehouseId:s.warehouseId,receiptId:receipt.receiptId,
+        ownerCompanyId:haulBatch?.ownerCompanyId||null,operatorCompanyId:haulBatch?.operatorCompanyId||haulBatch?.ownerCompanyId||null,
+        freightCost:num(s.route?.totalCost),freightCostAuthority:'SIMULATED_ROUTE_TOTAL_COST',
+        freightCurrency:'GAME_CURRENCY_UNITS',
         status:'DELIVERED_TO_RAW_WAREHOUSE',turn:turn(),date:factoryCurrentGameDate()});
       continue;
     }
@@ -2832,8 +2973,14 @@ function advanceShipments(c){
           peer.processingStatus='PROCESSED';peer.processingTransactionId=processing.transactionId;peer.processing=clone(processing);
         }
       }
+      const deliveredSourceBatch=(Array.isArray(resourceState(cid).batches)?resourceState(cid).batches:[])
+        .find(row=>String(row?.batchId||'')===String(s.batchId||''))||null;
       emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,factoryId:s.factoryId,resourceId:received.resourceId,
         quantity:received.targetQuantity,unit:received.unitBridge.targetUnit,sourceBatchId:s.batchId,
+        ownerCompanyId:deliveredSourceBatch?.ownerCompanyId||null,
+        operatorCompanyId:destination.operatorCompanyId||destination.operatorId||destination.companyId||null,
+        freightCost:num(s.route?.totalCost),freightCostAuthority:'SIMULATED_ROUTE_TOTAL_COST',
+        freightCurrency:'GAME_CURRENCY_UNITS',shipmentType:s.shipmentType,
         status:'DELIVERED_TO_FACTORY',processingStatus:s.processingStatus,processingTransactionId:s.processingTransactionId});
       continue;
     }
@@ -2845,8 +2992,26 @@ function advanceShipments(c){
     const available=warehouseKey===null?0:Math.max(0,num(warehouse.availableByResource[warehouseKey])||0);
     const reserved=Math.max(0,num(warehouse.reservedByResource?.[reservedKey])||0);
     if(quantity<=0||available+1e-9<quantity||reserved+1e-9<quantity){
+      const sourceBatchId=String(s.batchId||'').trim();
+      const sourceBatch=sourceBatchId?(Array.isArray(r.batches)?r.batches:[]).find(row=>String(row?.batchId||'')===sourceBatchId):null;
+      const sourceLot=sourceBatchId?r.inventoryLots?.[sourceBatchId]||null:null;
+      const inventoryKey=quantityObjectKey(r.inventory||{},rid);
+      const reservation=n.reservations?.[String(s.reservationId||s.shipmentId||'')]||null;
+      s.deliveryLedgerSnapshot={
+        countryId:cid,turn:turn(),warehouseId:sourceWarehouse.warehouseId,warehouseKind:sourceWarehouse.kind,
+        resourceId:rid,quantity,availableKey:warehouseKey,reservedKey,available,reserved,
+        reservation:clone(reservation),
+        countryInventoryKey:inventoryKey,
+        countryInventory:inventoryKey===null?null:Math.max(0,num(r.inventory[inventoryKey])||0),
+        sourceBatchId:sourceBatchId||null,
+        sourceBatchRemaining:sourceBatch?Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0):null,
+        sourceLotRemaining:sourceLot?Math.max(0,num(sourceLot.remainingQuantity!=null?sourceLot.remainingQuantity:sourceLot.quantity)||0):null,
+        storedBatchPresent:Array.isArray(warehouse.storedBatchIds)&&sourceBatchId
+          ?warehouse.storedBatchIds.some(value=>String(value)===sourceBatchId):null
+      };
       s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='WAREHOUSE_AVAILABLE_OR_RESERVATION_MISMATCH';s.blockedTurn=turn();markShipmentDeliveryAttempt(s);
-      emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,resourceId:rid,quantity,available,reserved,reason:s.blockReason});
+      emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,resourceId:rid,quantity,
+        available,reserved,ledgerSnapshot:clone(s.deliveryLedgerSnapshot),reason:s.blockReason});
       continue;
     }
     const factory=factoryAssets(cid).find(a=>String(a?.id||a?.assetId||a?.projectId)===String(s.factoryId));
@@ -3032,6 +3197,10 @@ function advanceShipments(c){
     n.deliveries.push(clone(s));delivered.push(clone(s));const res=n.reservations?.[s.reservationId];if(res)res.status='DELIVERED';
     emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,factoryId:s.factoryId,resourceId:rid,
       quantity:factoryInputQuantity,unit:factoryInputUnit,sourceQuantity:quantity,sourceUnit:s.unit,
+      ownerCompanyId:sourceBatch?.ownerCompanyId||null,
+      operatorCompanyId:factory.operatorCompanyId||factory.operatorId||factory.companyId||null,
+      freightCost:num(s.route?.totalCost),freightCostAuthority:'SIMULATED_ROUTE_TOTAL_COST',
+      freightCurrency:'GAME_CURRENCY_UNITS',shipmentType:s.shipmentType,
       travelTimeDays:s.route.travelTimeDays,transport:s.route.transportMode,status:'DELIVERED_TO_FACTORY',processingStatus:s.processingStatus,
       processingTransactionId:s.processingTransactionId,batchId:sourceBatchId||null});
     if(sourceBatchId){
@@ -3133,8 +3302,8 @@ function factoryConstructionMaterialQuote(c,profile){
     unit:profile.constructionMaterialUnit||'SIMULATION_RESOURCE_UNIT',authority:profile.constructionMaterialsAuthority||'UNDECLARED',
     materials,missingMaterials:missing,ready:missing.length===0,simulationOnly:true};
 }
-function consumeFactoryConstructionMaterial(c,material,quantity,projectId,unit='SIMULATION_RESOURCE_UNIT'){
-  const allocations=consumeMineConstructionMaterial(c,material,quantity,projectId,'FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION',unit);
+function consumeFactoryConstructionMaterial(c,material,quantity,projectId,unit='SIMULATION_RESOURCE_UNIT',batchIndex=null){
+  const allocations=consumeMineConstructionMaterial(c,material,quantity,projectId,'FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION',unit,batchIndex);
   return allocations.map(row=>({...row,unit,sourceUnit:row.sourceUnit||row.unit||'NOT_RECORDED',
     unitBridge:{sourceUnit:row.sourceUnit||row.unit||'NOT_RECORDED',targetUnit:unit,factor:1,simulationOnly:true,
       authority:'SIMULATED_FACTORY_CONSTRUCTION_UNIT_BRIDGE'},projectId,movementType:'FACTORY_CONSTRUCTION_MATERIAL_CONSUMPTION',
@@ -3186,13 +3355,25 @@ function quoteMineProject(input={}){
       reserveAuthority:site.quantitative?.reserve?.status||site.reserve?.status||'UNOBSERVED',coordinateAuthority:site.location?.coordinatePrecision||site.location?.coordinateStatus||'UNOBSERVED',realWorldStatusIsNotChangedByPlayerCommissioning:true},
     ready:treasury.value!==null&&treasury.value+1e-9>=costUsd&&materials.every(x=>x.sufficient)&&assignedWorkers!==null&&assignedWorkers>=workersRequired&&!activeProject};
 }
-function consumeMineConstructionMaterial(c,material,quantity,projectId,movementType='MINE_CONSTRUCTION_MATERIAL_CONSUMPTION',unitOverride=null){
+function indexConstructionBatchesByResource(batches){
+  const index=new Map();
+  for(const batch of Array.isArray(batches)?batches:[]){
+    const resourceId=tok(batch?.resourceId||batch?.materialIdentity);
+    if(!resourceId)continue;
+    let rows=index.get(resourceId);
+    if(!rows){rows=[];index.set(resourceId,rows);}
+    rows.push(batch);
+  }
+  return index;
+}
+function consumeMineConstructionMaterial(c,material,quantity,projectId,movementType='MINE_CONSTRUCTION_MATERIAL_CONSUMPTION',unitOverride=null,batchIndex=null){
   const cid=canonicalCountry(c),rs=resourceState(cid),stock=mineConstructionStock(cid,material),inv=rs.inventory||(rs.inventory={});
   const warehouse=rs.warehouse||(rs.warehouse={warehouseId:'WH-'+cid+'-RAW',countryId:cid,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',availableByResource:{},reservedByResource:{}});
   warehouse.availableByResource=warehouse.availableByResource||{};warehouse.reservedByResource=warehouse.reservedByResource||{};
   const batches=Array.isArray(rs.batches)?rs.batches:[],lots=rs.inventoryLots&&typeof rs.inventoryLots==='object'?rs.inventoryLots:{};
+  const candidateBatches=batchIndex instanceof Map?(batchIndex.get(tok(material))||[]):batches;
   let remaining=quantity;const allocations=[];
-  for(const batch of batches){
+  for(const batch of candidateBatches){
     if(remaining<=1e-9)break;
     if(tok(batch?.resourceId||batch?.materialIdentity)!==tok(material))continue;
     if(['FACTORY_INPUT','CONSUMED','TRANSFERRED_TO_FACTORY','SOLD','EXHAUSTED'].includes(String(batch?.stage||batch?.status||'').toUpperCase()))continue;
@@ -3238,8 +3419,9 @@ function startMineProject(input={}){
   if(short.length)return{status:'BLOCKED',reason:'INSUFFICIENT_CONSTRUCTION_MATERIALS',materials:short,quote};
   if(!quote.commissioningReady)return{status:'BLOCKED',reason:'MINE_CONSTRUCTION_ALREADY_IN_PROGRESS',projectId:quote.activeProjectId,quote};
   const account=countryFinanceBucket(cid),treasuryBefore=account.value;
+  const constructionBatchIndex=indexConstructionBatchesByResource(resourceState(cid).batches);
   const materialAllocations=[];
-  for(const item of quote.materials)materialAllocations.push(...consumeMineConstructionMaterial(cid,item.resourceId,item.required,'MINE_BUILD:'+siteId));
+  for(const item of quote.materials)materialAllocations.push(...consumeMineConstructionMaterial(cid,item.resourceId,item.required,'MINE_BUILD:'+siteId,'MINE_CONSTRUCTION_MATERIAL_CONSUMPTION',null,constructionBatchIndex));
   const treasuryAfter=treasuryBefore-quote.costUsd;
   if(account.field==='available')account.bucket.available=treasuryAfter;
   else if(account.field==='treasury')account.bucket.treasury=treasuryAfter;
@@ -3324,6 +3506,22 @@ function commissionMineProject(cid,p){
 function startFactoryProject(input={}){
   const cid=canonicalCountry(input.countryId);
   if(!cid)return{status:'BLOCKED',reason:'FACTORY_COUNTRY_INVALID'};
+  const privateCompanyIds=['AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP','NOVA_CONSUMER_INDUSTRIES','ATLAS_TECHNOLOGY_CORPORATION','TERRA_INFRASTRUCTURE_GROUP'];
+  const requestedOwnerCompanyId=String(input.ownerCompanyId||input.ownerId||'').trim().toUpperCase();
+  const requestedOperatorCompanyId=String(input.operatorCompanyId||input.operatorId||'').trim().toUpperCase();
+  const requestedOwnerType=String(input.ownerType||'').trim().toUpperCase();
+  const requestedOperatorType=String(input.operatorType||'').trim().toUpperCase();
+  const privateOwnership=String(input.ownershipModel||requestedOwnerType||'').trim().toUpperCase()==='PRIVATE_ENTERPRISE'||
+    !!requestedOwnerCompanyId||!!requestedOperatorCompanyId;
+  const privateOwnerCompanyId=requestedOwnerCompanyId||requestedOperatorCompanyId;
+  const privateOperatorCompanyId=requestedOperatorCompanyId||requestedOwnerCompanyId;
+  if(privateOwnership&&(!privateCompanyIds.includes(privateOwnerCompanyId)||!privateCompanyIds.includes(privateOperatorCompanyId)))
+    return{status:'BLOCKED',reason:'PRIVATE_FACTORY_OWNER_OPERATOR_MUST_BE_REGISTERED_COMPANIES',
+      ownerCompanyId:privateOwnerCompanyId||null,operatorCompanyId:privateOperatorCompanyId||null};
+  if(privateOwnership&&(requestedOwnerType==='STATE_OWNED_ENTERPRISE'||
+      requestedOperatorType==='STATE_ENTERPRISE_OPERATOR'||
+      String(input.stateControlRights&&input.stateControlRights.operationalControl||'').toUpperCase()==='STATE_OPERATOR'))
+    return{status:'BLOCKED',reason:'PRIVATE_FACTORY_CANNOT_ASSIGN_STATE_AS_OWNER_OR_DAILY_OPERATOR'};
   const n=netState(cid);
   if(input.requestId){const prior=n.projects.find(row=>row.projectType==='FACTORY_CONSTRUCTION'&&String(row.requestId||'')===String(input.requestId));if(prior)return{...clone(prior),idempotent:true};}
   if(input.factoryId){const prior=n.projects.find(row=>row.projectType==='FACTORY_CONSTRUCTION'&&String(row.factoryId||'')===String(input.factoryId)&&['UNDER_CONSTRUCTION','COMPLETED'].includes(String(row.status||'')));if(prior)return{...clone(prior),idempotent:true};}
@@ -3361,6 +3559,29 @@ function startFactoryProject(input={}){
   const factoryType=String(rule.factoryType||requestedType||'').trim().toUpperCase();
   const typeProfile=profiles[factoryType]||profile||{};
   const catalogProfile=Object.prototype.hasOwnProperty.call(profiles,factoryType);
+  let privateAuthorization=null;
+  if(privateOwnership){
+    const lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||g.Omega?.PrivateEnterpriseLifecycleV1;
+    if(!lifecycle||typeof lifecycle.authorizeFactoryProjectConstruction!=='function')
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_CONSTRUCTION_AUTHORIZATION_RUNTIME_UNAVAILABLE'};
+    const authorizationCost=Math.max(1,num(input.cost)||num(typeProfile.constructionCost)||1000);
+    privateAuthorization=lifecycle.authorizeFactoryProjectConstruction({
+      countryId:cid,requestId:String(input.requestId||''),factoryType,
+      resourceId:rid||null,recipeId:rule.recipeId||requestedRecipeId||null,
+      ownerCompanyId:privateOwnerCompanyId,operatorCompanyId:privateOperatorCompanyId,
+      companyId:String(input.companyId||''),privateCompanyId:String(input.privateCompanyId||''),
+      ownerType:requestedOwnerType,operatorType:requestedOperatorType,
+      stateControlRights:input.stateControlRights,
+      requirePrivateCommissioningGate:input.requirePrivateCommissioningGate===true,
+      permitId:input.permitId,permitAuthority:input.permitAuthority,permitExpiryTurn:input.permitExpiryTurn,
+      sourcePrivateProposalId:input.sourcePrivateProposalId,sourcePrivateDecisionId:input.sourcePrivateDecisionId,
+      sourcePrivateFundingId:input.sourcePrivateFundingId,
+      constructionFinanceAuthority:input.constructionFinanceAuthority,cost:authorizationCost
+    });
+    if(privateAuthorization?.status!=='AUTHORIZED')
+      return{status:'BLOCKED',reason:privateAuthorization?.reason||'PRIVATE_FACTORY_CONSTRUCTION_AUTHORIZATION_REQUIRED',
+        authorization:clone(privateAuthorization||{status:'UNAVAILABLE'})};
+  }
   let constructionMaterialQuote=null;
   if(catalogProfile){
     constructionMaterialQuote=factoryConstructionMaterialQuote(cid,typeProfile);
@@ -3399,11 +3620,42 @@ function startFactoryProject(input={}){
     materialsRequired:constructionMaterialQuote?clone(constructionMaterialQuote.materials.map(row=>({resourceId:row.resourceId,quantity:row.required,unit:row.unit}))):[],
     materialAllocations:[],constructionMaterialsStatus:constructionMaterialQuote?'PENDING_CONSUMPTION':'NOT_APPLICABLE',
     employmentProfile:clone(typeProfile.employment||null),requestId:String(input.requestId||''),
+    ownershipModel:privateOwnership?'PRIVATE_ENTERPRISE':'STATE_OWNED_ENTERPRISE',
+    ownerId:privateOwnership?privateOwnerCompanyId:'STATE_INDUSTRY_'+cid,
+    ownerCompanyId:privateOwnership?privateOwnerCompanyId:'STATE_INDUSTRY_'+cid,
+    ownerType:privateOwnership?'PRIVATE_ENTERPRISE':'STATE_OWNED_ENTERPRISE',
+    operatorId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
+    operatorCompanyId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
+    operatorType:privateOwnership?'PRIVATE_COMPANY_OPERATOR':'STATE_ENTERPRISE_OPERATOR',
+    companyId:privateOwnership?privateOperatorCompanyId:'STATE_INDUSTRY_'+cid,
+    permitId:privateOwnership?String(input.permitId||''):null,
+    privatePermitId:privateOwnership?String(input.permitId||''):null,
+    privatePermitStatus:privateOwnership?'ACTIVE':null,
+    privatePermitAuthority:privateOwnership?String(input.permitAuthority||''):null,
+    permitExpiryTurn:privateOwnership?num(input.permitExpiryTurn):null,
+    sourcePrivateProposalId:privateOwnership?String(input.sourcePrivateProposalId||''):null,
+    sourcePrivateDecisionId:privateOwnership?String(input.sourcePrivateDecisionId||''):null,
+    sourcePrivateFundingId:privateOwnership?String(input.sourcePrivateFundingId||''):null,
+    privateCompanyId:privateOwnership?privateOwnerCompanyId:null,
+    requirePrivateCommissioningGate:privateOwnership?true:false,
+    // Preserve the complete rights record already authorized by the private
+    // enterprise lifecycle. Rebuilding a shorter local object silently dropped
+    // strategicSupplyOversight and foreignOwnershipReview, which prevented a
+    // correctly funded and permitted project from passing commissioning.
+    stateControlRights:privateOwnership?clone(input.stateControlRights||{}):{
+      strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
+      labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,operationalControl:'STATE_OPERATOR',
+      authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',simulationOnly:true
+    },
     authority:'SIMULATED_FACTORY_CONSTRUCTION_PROJECT',simulationOnly:true};
   if(constructionMaterialQuote){
+    // Build the per-resource view once. Re-scanning every country batch for each
+    // BOM line made a second project scale as O(materials × all batches) and could
+    // block the Chromium main thread during commissioning on a populated save.
+    const constructionBatchIndex=indexConstructionBatchesByResource(resourceState(cid).batches);
     const materialAllocations=[];
     for(const material of constructionMaterialQuote.materials)
-      materialAllocations.push(...consumeFactoryConstructionMaterial(cid,material.resourceId,material.required,project.projectId,constructionMaterialQuote.unit));
+      materialAllocations.push(...consumeFactoryConstructionMaterial(cid,material.resourceId,material.required,project.projectId,constructionMaterialQuote.unit,constructionBatchIndex));
     project.materialAllocations=clone(materialAllocations);project.constructionMaterialsStatus='CONSUMED';project.constructionMaterialsConsumedTurn=turn();
   }
   n.projects.push(project);n.projects=n.projects.slice(-MAX_PROJECTS);
@@ -3464,12 +3716,24 @@ function advanceProjects(c){
     }else if(p.projectType==='FACTORY_CONSTRUCTION'){
       const econ=econState(cid);econ.productionAssets=Array.isArray(econ.productionAssets)?econ.productionAssets:[];
       const techReady=(p.requiredTechnologyIds||[]).every(t=>resourceState(cid).technologyCapabilities?.some(x=>tok(x?.technologyId).toUpperCase()===tok(t)));
-      const assetStatus=techReady?'OPERATIONAL':'TECHNOLOGY_LOCKED';
       const factoryProfile=p.factoryProfile||cat()?.factoryProfiles?.[normalizeFactoryType(p.factoryType)]||{};
+      const isPrivateFactory=String(p.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE';
+      const commissionedStatus=techReady?'OPERATIONAL':'TECHNOLOGY_LOCKED';
+      const assetStatus=isPrivateFactory?'BLOCKED':commissionedStatus;
       econ.productionAssets.push({id:p.factoryId,countryId:cid,stage:'PROCESSING',factoryType:p.factoryType,
         recipeId:p.recipeId||p.recipe?.recipeId||null,recipeMode:p.recipeMode||p.recipe?.recipeMode||'SINGLE_INPUT',
         recipeAuthority:p.recipeAuthority||p.recipe?.recipeAuthority||'INDUSTRIAL_CATALOG_RULE',
         capacity:inputCapacityFromFactory(p),capacityPerDay:inputCapacityFromFactory(p),locationNodeKey:p.targetLocationNodeKey,status:assetStatus,
+        privateCommissionedStatus:isPrivateFactory?commissionedStatus:null,
+        productionEnabled:isPrivateFactory?false:undefined,
+        productionStatus:isPrivateFactory?'STRATEGIC_SUPPLY_PIPELINE_PROOF_REQUIRED':undefined,
+        blockedReason:isPrivateFactory?'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE':null,
+        privatePermitId:p.privatePermitId||null,privatePermitStatus:p.privatePermitStatus||null,
+        privatePermitAuthority:p.privatePermitAuthority||null,permitExpiryTurn:p.permitExpiryTurn??null,
+        sourcePrivateProposalId:p.sourcePrivateProposalId||null,sourcePrivateDecisionId:p.sourcePrivateDecisionId||null,
+        sourcePrivateFundingId:p.sourcePrivateFundingId||null,privateCompanyId:p.privateCompanyId||null,
+        requirePrivateCommissioningGate:p.requirePrivateCommissioningGate===true,
+        constructionProjectId:p.projectId,
         inputCoefficients:p.recipe.inputs,outputProfile:p.recipe.outputs,cycleDays:p.recipe.cycleDays,
         inputInventory:{},inputBatchLots:[],inputUnit:p.recipe?.inputUnit||factoryProfile.inputUnit||null,
         productionHealth:{status:'STOPPED',productivityPct:0,reason:'NO_FACTORY_INPUTS',missingInputs:Object.keys(p.recipe?.inputs||{}),updatedTurn:turn(),authority:'OMEGA_FACTORY_PRODUCTION_SCHEDULER_V1'},
@@ -3477,7 +3741,22 @@ function advanceProjects(c){
         requireTrackedInputs:p.recipeMode==='MULTI_INPUT'||factoryProfile.requireTrackedInputs===true,
         workforce:clone(factoryProfile.workforce||{}),employmentProfile:clone(factoryProfile.employment||p.employmentProfile||null),
         utilityRequirements:clone(factoryProfile.utilities||{}),
-        requiredInfrastructure:clone(factoryProfile.requiredInfrastructure||[]),companyId:'EPC_FACTORY_OWNER',
+        requiredInfrastructure:clone(factoryProfile.requiredInfrastructure||[]),
+        // The EPC contractor builds the asset; the project ownership record decides who owns and operates it.
+        // A private asset remains privately owned and privately operated; the State retains policy rights.
+        ownershipModel:p.ownershipModel||'STATE_OWNED_ENTERPRISE',
+        ownerId:p.ownerCompanyId||'STATE_INDUSTRY_'+cid,ownerCompanyId:p.ownerCompanyId||'STATE_INDUSTRY_'+cid,
+        ownerType:p.ownerType||'STATE_OWNED_ENTERPRISE',
+        operatorId:p.operatorCompanyId||'STATE_INDUSTRY_'+cid,operatorCompanyId:p.operatorCompanyId||'STATE_INDUSTRY_'+cid,
+        operatorType:p.operatorType||'STATE_ENTERPRISE_OPERATOR',
+        companyId:p.operatorCompanyId||'STATE_INDUSTRY_'+cid,
+        stateControlRights:clone(p.stateControlRights||{
+          strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
+          labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,
+          operationalControl:'STATE_OPERATOR',authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',simulationOnly:true
+        }),
+        constructionContractorType:p.contractorType||'DOMESTIC_EPC',
+        constructionContractorCountryId:p.contractorCountryId||cid,
         simulationOnly:true,authority:'SIMULATED_FACTORY_ASSET',transportAccess:['road','rail','ship'],commissionedTurn:turn(),
         requiredTechnologyIds:clone(p.requiredTechnologyIds||[])});
       emit('OMEGA_FACTORY_CAPACITY_CHANGED',cid,{factoryId:p.factoryId,capacity:inputCapacityFromFactory(p),projectId:p.projectId,status:assetStatus});
@@ -3719,9 +3998,14 @@ function commitFactoryUtilityUse(countryId,asset,preview,transactionId){
   const cid=canonicalCountry(countryId),bucket=utilityTurnBucket(cid);
   bucket.used.electricityMWh=Number((bucket.used.electricityMWh+preview.required.electricityMWh).toFixed(6));
   bucket.used.waterM3=Number((bucket.used.waterM3+preview.required.waterM3).toFixed(6));
+  const ownership=factoryOwnershipParties(asset,cid);
   const row={transactionId:String(transactionId),factoryId:String(asset?.id||asset?.assetId||asset?.factoryId||asset?.projectId||''),
+    factoryType:String(asset?.factoryType||asset?.type||asset?.facilityType||'').toUpperCase(),
     countryId:cid,turn:turn(),electricityMWh:preview.required.electricityMWh,waterM3:preview.required.waterM3,
-    electricityUnit:'MWh',waterUnit:'M3',authority:'SIMULATED_UTILITY_CONSUMPTION_LEDGER',
+    electricityUnit:'MWh',waterUnit:'M3',
+    ownerCompanyId:ownership.ownerCompanyId,operatorCompanyId:ownership.operatorCompanyId,
+    ownerAttributionStatus:ownership.ownerAttributionStatus,operatorAttributionStatus:ownership.operatorAttributionStatus,
+    authority:'SIMULATED_UTILITY_CONSUMPTION_LEDGER',
     supplyAuthority:preview.supplyAuthority||'COMPLETED_UTILITY_PROJECTS_OR_EXPLICIT_GAME_STATE'};
   bucket.transactions.push(row);while(bucket.transactions.length>1024)bucket.transactions.shift();
   asset.lastUtilityConsumptionTurn=turn();asset.lastUtilityConsumptionTransactionId=String(transactionId);
@@ -3796,6 +4080,31 @@ function factoryUtilityDiagnostics(countryId){
 function factoryOperationGate(countryId,asset,employmentSnapshot){
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
   const cid=canonicalCountry(countryId),factoryId=String(asset.id||asset.assetId||asset.factoryId||asset.projectId||'');
+  if(String(asset.ownerType||'').toUpperCase()==='PRIVATE_ENTERPRISE'){
+    const lifecycle=g.OmegaPrivateEnterpriseLifecycleV1||(g.Omega&&g.Omega.PrivateEnterpriseLifecycleV1);
+    if(!lifecycle||typeof lifecycle.productionProofReady!=='function'||
+       typeof lifecycle.refreshCommissionedProductionGate!=='function'||!lifecycle.productionProofReady()){
+      const gateReason=typeof lifecycle?.productionGateReason==='function'
+        ?lifecycle.productionGateReason():'PRIVATE_FACTORY_PRODUCTION_RUNTIME_UNAVAILABLE';
+      asset.productionEnabled=false;asset.blockedReason=gateReason;
+      if(String(asset.status||'').toUpperCase()!=='DECOMMISSIONED'&&String(asset.status||'').toUpperCase()!=='DESTROYED')
+        asset.status='BLOCKED';
+      return{status:'BLOCKED',reason:gateReason,factoryId,authority:'OMEGA_PRIVATE_ENTERPRISE_PIPELINE_GATE'};
+    }
+    // Re-check permit, financing, construction-project provenance and proposal
+    // ownership on every operation. A saved asset flag is not an authorization.
+    const refreshed=lifecycle.refreshCommissionedProductionGate(cid,factoryId);
+    if(!refreshed||!['READY','PARTIALLY_READY'].includes(refreshed.status))
+      return{status:'BLOCKED',reason:refreshed?.reason||'PRIVATE_FACTORY_AUTHORIZATION_NOT_VERIFIED',factoryId,detail:clone(refreshed||{})};
+    const owner=String(asset.ownerCompanyId||asset.ownerId||'').trim().toUpperCase();
+    const operator=String(asset.operatorCompanyId||asset.operatorId||asset.companyId||'').trim().toUpperCase();
+    const registeredCompanies=Array.isArray(lifecycle.companyIds)
+      ?lifecycle.companyIds.map(value=>String(value||'').trim().toUpperCase()):[];
+    if(!registeredCompanies.length||!registeredCompanies.includes(owner)||!registeredCompanies.includes(operator)||
+       asset.productionEnabled!==true||asset.privatePermitStatus!=='ACTIVE'||!asset.privatePermitId||
+       !asset.sourcePrivateProposalId||asset.stateControlRights?.operationalControl!=='STATE_POLICY_ONLY')
+      return{status:'BLOCKED',reason:'PRIVATE_FACTORY_AUTHORIZATION_NOT_VERIFIED',factoryId,authority:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1'};
+  }
   const status=String(asset.status||'OPERATIONAL').toUpperCase();
   if(['CLOSED','DECOMMISSIONED','DESTROYED','TECHNOLOGY_LOCKED','BLOCKED','UNDER_CONSTRUCTION','MAINTENANCE'].includes(status))
     return{status:'BLOCKED',reason:'FACTORY_NOT_OPERATIONAL',factoryId,factoryStatus:status};
@@ -3857,6 +4166,23 @@ function factoryOutputUnit(recipe,asset,productId,resource){
     if(entry.unit)return entry.unit;
   }
   return String(recipe?.outputUnit||asset?.outputUnit||'SIMULATION_RESOURCE_UNIT').trim();
+}
+function factoryOwnershipParties(asset,countryId){
+  const row=asset&&typeof asset==='object'?asset:{},cid=canonicalCountry(countryId);
+  const explicitOwnerCompanyId=String(row.ownerCompanyId||row.ownerId||'').trim();
+  const legacyCompanyId=String(row.companyId||row.company||'').trim();
+  const explicitOperatorCompanyId=String(row.operatorCompanyId||row.operatorId||'').trim();
+  const operatorCompanyId=explicitOperatorCompanyId||legacyCompanyId||explicitOwnerCompanyId||('STATE_INDUSTRY_'+cid);
+  const ownerCompanyId=explicitOwnerCompanyId||legacyCompanyId||null;
+  const ownerAttributionStatus=explicitOwnerCompanyId?'EXPLICIT_ASSET_OWNER':
+    legacyCompanyId?'LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED':'UNASSIGNED';
+  return{
+    ownerCompanyId:ownerCompanyId||null,
+    operatorCompanyId:operatorCompanyId,
+    ownerAttributionStatus:ownerAttributionStatus,
+    operatorAttributionStatus:explicitOperatorCompanyId?'EXPLICIT_ASSET_OPERATOR':
+      legacyCompanyId?'LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED':'STATE_OPERATOR_FALLBACK'
+  };
 }
 function factoryOutputUnitPlan(resource,recipe,asset,productIds){
   const state=resource&&typeof resource==='object'?resource:{};
@@ -3961,7 +4287,10 @@ function commitFactoryCycleImmediately(input={}){
         lot.lastMovementType='PROCESSING_CONSUMPTION';lot.lastMovementTurn=turn();
         const roots=Array.isArray(lot.sourceBatchIds)&&lot.sourceBatchIds.length?lot.sourceBatchIds:(String(lot?.authority||lot?.provenance?.authority||'').includes('UNOBSERVED')||String(lot?.batchId||'').startsWith('CYCLE-LEGACY:')?[]:[lot.batchId]);
         roots.filter(Boolean).forEach(x=>sourceBatchIds.push(String(x)));
-        consumedInputs.push({batchId:lot.batchId,quantity:take,sourceBatchIds:roots.filter(Boolean),stage:'FACTORY_INPUT'});remaining-=take;
+        consumedInputs.push({batchId:lot.batchId,resourceId:rid,quantity:take,sourceBatchIds:roots.filter(Boolean),
+          stage:'FACTORY_INPUT',ownerCompanyId:lot.ownerCompanyId||'UNKNOWN_SOURCE',
+          operatorCompanyId:lot.operatorCompanyId||null,
+          ownerAttributionStatus:lot.ownerAttributionStatus||'UNASSIGNED'});remaining-=take;
       }
       if(remaining>1e-9)return{status:'BLOCKED',reason:'FACTORY_INPUT_BATCH_LEDGER_MISMATCH',required:need,unallocated:remaining};
     }
@@ -3977,13 +4306,21 @@ function commitFactoryCycleImmediately(input={}){
       batch.status=batch.remainingQuantity>1e-9?'PARTIALLY_CONSUMED':'CONSUMED';batch.lastMovementType='PROCESSING_CONSUMPTION';batch.lastMovementTurn=turn();
       if(['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(stage))processedDebit+=take;else rawDebit+=take;
       const lot=lots[batch.batchId];if(lot){lot.remainingQuantity=batch.remainingQuantity;lot.status=batch.remainingQuantity>1e-9?'PARTIALLY_CONSUMED':'CONSUMED';lot.lastMovementType='PROCESSING_CONSUMPTION';lot.lastMovementTurn=turn();}
-      if(batch.batchId)sourceBatchIds.push(String(batch.batchId));consumedInputs.push({batchId:batch.batchId,quantity:take,sourceBatchIds:[batch.batchId].filter(Boolean),stage:stage});remaining-=take;
+      if(batch.batchId)sourceBatchIds.push(String(batch.batchId));
+      consumedInputs.push({batchId:batch.batchId,resourceId:rid,quantity:take,
+        sourceBatchIds:[batch.batchId].filter(Boolean),stage:stage,
+        ownerCompanyId:batch.ownerCompanyId||'UNKNOWN_SOURCE',operatorCompanyId:batch.operatorCompanyId||null,
+        ownerAttributionStatus:batch.ownerAttributionStatus||
+          (batch.ownerCompanyId?'EXPLICIT_ASSET_OWNER':'UNASSIGNED')});remaining-=take;
     }
     if(remaining>1e-9){
       inputTrackingStatus='PARTIAL_TRACKING_WITH_LEGACY_BALANCE';
       const rawAvailable=Math.max(0,num(r.warehouse?.availableByResource?.[rid])||0),rawTake=Math.min(rawAvailable,remaining);rawDebit+=rawTake;remaining-=rawTake;
       const processedAvailable=Math.max(0,num(r.processedWarehouse?.availableByResource?.[rid])||0),processedTake=Math.min(processedAvailable,remaining);processedDebit+=processedTake;remaining-=processedTake;
-      if(remaining>1e-9)consumedInputs.push({batchId:null,quantity:remaining,stage:'LEGACY_UNALLOCATED',sourceBatchIds:[]});
+      if(remaining>1e-9)consumedInputs.push({batchId:null,resourceId:rid,quantity:remaining,
+        stage:'LEGACY_UNALLOCATED',sourceBatchIds:[],ownerCompanyId:'UNKNOWN_SOURCE',
+        operatorCompanyId:factoryOwnershipParties(asset,cid).operatorCompanyId,
+        ownerAttributionStatus:'UNASSIGNED'});
     }
     const rawWarehouse=r.warehouse||{};if(rawWarehouse.availableByResource)rawWarehouse.availableByResource[rid]=Math.max(0,(num(rawWarehouse.availableByResource[rid])||0)-rawDebit);
     if(r.processedWarehouse?.availableByResource)r.processedWarehouse.availableByResource[rid]=Math.max(0,(num(r.processedWarehouse.availableByResource[rid])||0)-processedDebit);
@@ -3992,6 +4329,7 @@ function commitFactoryCycleImmediately(input={}){
   asset.inputInventory=factoryStock;
   const sequence=Math.max(0,Number(n.factoryRunSequence)||0)+1;n.factoryRunSequence=sequence;
   const transactionId='FACTORYRUN:'+cid+':'+fid+':T'+turn()+':'+sequence;
+  const ownershipParties=factoryOwnershipParties(asset,cid);
   const finishedWarehouse=r.processedWarehouse||(r.processedWarehouse={warehouseId:'WH-'+cid+'-PROCESSED',countryId:cid,type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]});
   finishedWarehouse.availableByResource=finishedWarehouse.availableByResource||{};finishedWarehouse.storedBatchIds=Array.isArray(finishedWarehouse.storedBatchIds)?finishedWarehouse.storedBatchIds:[];
   finishedWarehouse.receipts=Array.isArray(finishedWarehouse.receipts)?finishedWarehouse.receipts:[];
@@ -4000,30 +4338,45 @@ function commitFactoryCycleImmediately(input={}){
     const outQty=output[outputId];if(!(outQty>0))continue;
     r.inventory[outputId]=(num(r.inventory[outputId])||0)+outQty;
     const batchId='OUTPUT:'+transactionId+':'+outputId,roots=[...new Set(sourceBatchIds.filter(Boolean))],unit=outputUnitPlan.units[outputId];
-    const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',countryId:cid,
-      sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,ownerCompanyId:String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid)),
+    const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',status:'AVAILABLE',countryId:cid,
+      sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
+      ownerCompanyId:ownershipParties.ownerCompanyId,operatorCompanyId:ownershipParties.operatorCompanyId,
+      ownerAttributionStatus:ownershipParties.ownerAttributionStatus,
       sourceBatchIds:roots,sourceFactoryId:fid,warehouseId:'WH-'+cid+'-PROCESSED',locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',processId:transactionId,
-      provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'SIMULATED_PROCESSING_YIELD',processingAuthority:'SIMULATED',status:'FINISHED_GOODS_CREATED',transactionId,sourceBatchIds:roots,simulationTurn:turn()}};
+      sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourcePrivateDecisionId:asset.sourcePrivateDecisionId||null,
+      sourcePrivateFundingId:asset.sourcePrivateFundingId||null,sourcePrivatePermitId:asset.privatePermitId||null,
+      provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'SIMULATED_PROCESSING_YIELD',processingAuthority:'SIMULATED',status:'FINISHED_GOODS_CREATED',transactionId,factoryId:fid,sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourcePrivatePermitId:asset.privatePermitId||null,sourceBatchIds:roots,simulationTurn:turn()}};
     batches.push(row);created.push(row);
     inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',countryId:cid,warehouseId:row.warehouseId,
-      locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,sourceBatchIds:roots,status:'AVAILABLE',provenance:clone(row.provenance),createdTurn:turn()};
+      locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,operatorCompanyId:row.operatorCompanyId,
+      ownerAttributionStatus:row.ownerAttributionStatus,sourceFactoryId:fid,
+      sourcePrivateProposalId:row.sourcePrivateProposalId,sourcePrivateDecisionId:row.sourcePrivateDecisionId,
+      sourcePrivateFundingId:row.sourcePrivateFundingId,sourcePrivatePermitId:row.sourcePrivatePermitId,sourceBatchIds:roots,status:'AVAILABLE',
+      provenance:clone(row.provenance),createdTurn:turn()};
     finishedWarehouse.availableByResource[outputId]=(num(finishedWarehouse.availableByResource[outputId])||0)+outQty;
     writeFactoryOutputUnit(r,finishedWarehouse,outputId,unit);
     if(!finishedWarehouse.storedBatchIds.includes(batchId))finishedWarehouse.storedBatchIds.push(batchId);
     finishedWarehouse.receipts.push({receiptId:'WH-REC-'+batchId,warehouseId:row.warehouseId,countryId:cid,batchId,resourceId:outputId,quantity:outQty,unit,simulationTurn:turn(),status:'RECEIVED'});
   }
   while(finishedWarehouse.receipts.length>2048)finishedWarehouse.receipts.shift();while(batches.length>8192)batches.shift();
-  const record={transactionId,countryId:cid,factoryId:fid,companyId:String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid)),resourceId:rid,
+  const record={transactionId,countryId:cid,factoryId:fid,companyId:ownershipParties.operatorCompanyId,
+    operatorCompanyId:ownershipParties.operatorCompanyId,ownerCompanyId:ownershipParties.ownerCompanyId,
+    ownerAttributionStatus:ownershipParties.ownerAttributionStatus,resourceId:rid,
     inputQuantity:need,inputQuantities:{[rid]:need},requestedProduction:requested,outputs:output,outputQuantities:clone(output),recipe:clone(recipe),
     productionConstraints:clone(productionConstraints),
     cycleDays:recipe.cycleDays,turn:turn(),authority:'INDUSTRIAL_NETWORK_SIMULATION',status:'COMPLETED',inputSource:fromFactoryInput?'DELIVERED_SHIPMENT':'CENTRAL_INVENTORY',
-    inputTrackingStatus,consumedInputs:clone(consumedInputs),sourceBatchIds:[...new Set(sourceBatchIds.filter(Boolean))],createdBatchIds:created.map(x=>x.batchId)};
+    inputTrackingStatus,consumedInputs:clone(consumedInputs),sourceBatchIds:[...new Set(sourceBatchIds.filter(Boolean))],createdBatchIds:created.map(x=>x.batchId),
+    factoryType:String(asset.factoryType||asset.type||asset.facilityType||'').toUpperCase(),
+    privateCapitalCost:num(asset.privateCapitalCost??asset.constructionCost),
+    privateCapitalCostCurrency:asset.privateCapitalCostCurrency||asset.currency||'GAME_CURRENCY_UNITS'};
   record.utilityConsumption=input.prepaidUtilityConsumption?clone(input.prepaidUtilityConsumption):commitFactoryUtilityUse(cid,asset,utilityPreview,transactionId);
   asset.lastProductionTurn=turn();asset.lastProductionTransactionId=transactionId;
   r.batches=batches;r.inventoryLots=inventoryLots;r.processedWarehouse=finishedWarehouse;
   processedTurns[fid]=turn();n.factoryProcessingTurns=processedTurns;
   r.finishedGoodsLedger=Array.isArray(r.finishedGoodsLedger)?r.finishedGoodsLedger:[];
-  r.finishedGoodsLedger.push({transactionId,countryId:cid,factoryId:fid,companyId:record.companyId,sourceBatchIds:record.sourceBatchIds,outputQuantities:clone(output),
+  r.finishedGoodsLedger.push({transactionId,countryId:cid,factoryId:fid,companyId:record.companyId,
+    operatorCompanyId:record.operatorCompanyId,ownerCompanyId:record.ownerCompanyId,ownerAttributionStatus:record.ownerAttributionStatus,
+    sourceBatchIds:record.sourceBatchIds,outputQuantities:clone(output),
     createdBatchIds:record.createdBatchIds,turn:turn(),authority:'SIMULATED_PROCESSING_YIELD',status:'AVAILABLE_TO_ECONOMY'});
   while(r.finishedGoodsLedger.length>2048)r.finishedGoodsLedger.shift();
   const inventoryLedger=Array.isArray(r.inventoryLedger)?r.inventoryLedger:[];
@@ -4033,7 +4386,8 @@ function commitFactoryCycleImmediately(input={}){
   factorySetProductionHealth(asset,requested+1e-6<ratedCapacity?'REDUCED':'RUNNING',requested,ratedCapacity,
     {transactionId,constraints:clone(productionConstraints)});
   emit('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',cid,record);
-  emit('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',cid,{transactionId,countryId:cid,factoryId:fid,companyId:record.companyId,outputs:clone(output),
+  emit('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',cid,{transactionId,countryId:cid,factoryId:fid,companyId:record.companyId,
+    operatorCompanyId:record.operatorCompanyId,ownerCompanyId:record.ownerCompanyId,ownerAttributionStatus:record.ownerAttributionStatus,outputs:clone(output),
     outputQuantities:clone(output),sourceBatchIds:record.sourceBatchIds,createdBatchIds:record.createdBatchIds,turn:turn(),
     authority:'SIMULATED_PROCESSING_YIELD',status:'AVAILABLE'});
   return record;
@@ -4181,11 +4535,14 @@ function commitMultiInputFactoryCycleImmediately(input={}){
       lineage.filter(Boolean).forEach(x=>sourceBatchIds.push(String(x)));
       (Array.isArray(lot.sourceSiteIds)?lot.sourceSiteIds:[]).filter(Boolean).forEach(x=>sourceSiteIds.push(String(x)));
       consumedInputs.push({batchId:lot.batchId||null,resourceId:need.resourceId,quantity:take,
-        sourceBatchIds:lineage.filter(Boolean).map(String),stage:'FACTORY_INPUT'});
+        sourceBatchIds:lineage.filter(Boolean).map(String),stage:'FACTORY_INPUT',
+        ownerCompanyId:lot.ownerCompanyId||'UNKNOWN_SOURCE',operatorCompanyId:lot.operatorCompanyId||null,
+        ownerAttributionStatus:lot.ownerAttributionStatus||(lot.ownerCompanyId?'EXPLICIT_ASSET_OWNER':'UNASSIGNED')});
     }
   }
   const sequence=Math.max(0,Number(n.factoryRunSequence)||0)+1;n.factoryRunSequence=sequence;
   const transactionId='FACTORYRUN:'+cid+':'+fid+':T'+turn()+':'+sequence;
+  const ownershipParties=factoryOwnershipParties(asset,cid);
   const finished=r.processedWarehouse||(r.processedWarehouse={warehouseId:'WH-'+cid+'-PROCESSED',countryId:cid,
     type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',status:'OPERATIONAL',
     availableByResource:{},storedBatchIds:[],receipts:[]});
@@ -4195,22 +4552,30 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   const batches=Array.isArray(r.batches)?r.batches:(r.batches=[]);
   const inventoryLots=r.inventoryLots&&typeof r.inventoryLots==='object'?r.inventoryLots:(r.inventoryLots={});
   const roots=[...new Set(sourceBatchIds.filter(Boolean))],sites=[...new Set(sourceSiteIds.filter(Boolean))],created=[];
-  const companyId=String(asset.companyId||asset.ownerCompanyId||('SIM-COMPANY:'+cid));
+  const companyId=ownershipParties.operatorCompanyId;
   for(const [outputId,outQty] of Object.entries(output)){
     if(!(outQty>1e-9))continue;
     const inventoryKey=outputInventoryKeys[outputId]||outputId;
     r.inventory[inventoryKey]=(num(r.inventory[inventoryKey])||0)+outQty;
     const batchId='OUTPUT:'+transactionId+':'+outputId;
     const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnitPlan.units[outputId],
-      stage:'FINISHED',countryId:cid,sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
-      ownerCompanyId:companyId,sourceBatchIds:roots,sourceSiteIds:sites,sourceFactoryId:fid,warehouseId:'WH-'+cid+'-PROCESSED',
+      stage:'FINISHED',status:'AVAILABLE',countryId:cid,sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
+      ownerCompanyId:ownershipParties.ownerCompanyId,operatorCompanyId:ownershipParties.operatorCompanyId,
+      ownerAttributionStatus:ownershipParties.ownerAttributionStatus,
+      sourceBatchIds:roots,sourceSiteIds:sites,sourceFactoryId:fid,warehouseId:'WH-'+cid+'-PROCESSED',
       locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',processId:transactionId,
+      sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourcePrivateDecisionId:asset.sourcePrivateDecisionId||null,
+      sourcePrivateFundingId:asset.sourcePrivateFundingId||null,sourcePrivatePermitId:asset.privatePermitId||null,
       provenance:{source:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',authority:'SIMULATED_DOWNSTREAM_RECIPE',status:'FINISHED_GOODS_CREATED',
-        transactionId,recipeId:recipe.recipeId||null,factoryType:asset.factoryType,sourceBatchIds:roots,sourceSiteIds:sites,simulationTurn:turn()}};
+        transactionId,factoryId:fid,recipeId:recipe.recipeId||null,factoryType:asset.factoryType,
+        sourcePrivateProposalId:asset.sourcePrivateProposalId||null,sourcePrivatePermitId:asset.privatePermitId||null,sourceBatchIds:roots,sourceSiteIds:sites,simulationTurn:turn()}};
     batches.push(row);created.push(row);
     inventoryLots[batchId]={batchId,resourceId:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnitPlan.units[outputId],stage:'FINISHED',
-      countryId:cid,warehouseId:row.warehouseId,locationNodeKey:row.locationNodeKey,ownerCompanyId:companyId,
-      sourceBatchIds:roots,sourceSiteIds:sites,status:'AVAILABLE',provenance:clone(row.provenance),createdTurn:turn()};
+      countryId:cid,warehouseId:row.warehouseId,locationNodeKey:row.locationNodeKey,ownerCompanyId:row.ownerCompanyId,
+      operatorCompanyId:row.operatorCompanyId,ownerAttributionStatus:row.ownerAttributionStatus,sourceFactoryId:fid,
+      sourcePrivateProposalId:row.sourcePrivateProposalId,sourcePrivateDecisionId:row.sourcePrivateDecisionId,
+      sourcePrivateFundingId:row.sourcePrivateFundingId,sourcePrivatePermitId:row.sourcePrivatePermitId,sourceBatchIds:roots,sourceSiteIds:sites,status:'AVAILABLE',
+      provenance:clone(row.provenance),createdTurn:turn()};
     const warehouseKey=outputWarehouseKeys[outputId]||outputId;
     finished.availableByResource[warehouseKey]=(num(finished.availableByResource[warehouseKey])||0)+outQty;
     writeFactoryOutputUnit(r,finished,outputId,outputUnitPlan.units[outputId]);
@@ -4223,18 +4588,25 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   const inputQuantities=Object.fromEntries(needs.map(x=>[x.resourceId,x.required]));
   const totalInput=needs.reduce((sum,x)=>sum+x.required,0);
   const record={transactionId,countryId:cid,factoryId:fid,factoryType:asset.factoryType||recipe.factoryType||null,
-    recipeId:recipe.recipeId||asset.recipeId||null,recipeMode:'MULTI_INPUT',companyId,resourceId:requestedResource,
+    recipeId:recipe.recipeId||asset.recipeId||null,recipeMode:'MULTI_INPUT',companyId,
+    operatorCompanyId:ownershipParties.operatorCompanyId,ownerCompanyId:ownershipParties.ownerCompanyId,
+    ownerAttributionStatus:ownershipParties.ownerAttributionStatus,resourceId:requestedResource,
     inputQuantity:totalInput,inputQuantities,requestedProduction:productionQuantity,outputs:clone(output),outputQuantities:clone(output),
     recipe:clone(recipe),productionConstraints:clone(productionConstraints),
     cycleDays:recipe.cycleDays,turn:turn(),authority:'SIMULATED_DOWNSTREAM_PRODUCTION',status:'COMPLETED',
     inputSource:'TRACKED_FACTORY_INPUT',inputTrackingStatus:'TRACKED_FACTORY_INPUT_LOTS',
-    consumedInputs:clone(consumedInputs),sourceBatchIds:roots,sourceSiteIds:sites,createdBatchIds:created.map(x=>x.batchId)};
+    consumedInputs:clone(consumedInputs),sourceBatchIds:roots,sourceSiteIds:sites,createdBatchIds:created.map(x=>x.batchId),
+    factoryType:String(asset.factoryType||asset.type||asset.facilityType||'').toUpperCase(),
+    privateCapitalCost:num(asset.privateCapitalCost??asset.constructionCost),
+    privateCapitalCostCurrency:asset.privateCapitalCostCurrency||asset.currency||'GAME_CURRENCY_UNITS'};
   record.utilityConsumption=input.prepaidUtilityConsumption?clone(input.prepaidUtilityConsumption):commitFactoryUtilityUse(cid,asset,utilityPreview,transactionId);
   asset.inputInventory=factoryStock;asset.lastProductionTurn=turn();asset.lastProductionTransactionId=transactionId;
   r.batches=batches;r.inventoryLots=inventoryLots;r.processedWarehouse=finished;
   processedTurns[fid]=turn();n.factoryProcessingTurns=processedTurns;
   r.finishedGoodsLedger=Array.isArray(r.finishedGoodsLedger)?r.finishedGoodsLedger:[];
-  r.finishedGoodsLedger.push({transactionId,countryId:cid,factoryId:fid,companyId,sourceBatchIds:roots,sourceSiteIds:sites,
+  r.finishedGoodsLedger.push({transactionId,countryId:cid,factoryId:fid,companyId,
+    operatorCompanyId:record.operatorCompanyId,ownerCompanyId:record.ownerCompanyId,ownerAttributionStatus:record.ownerAttributionStatus,
+    sourceBatchIds:roots,sourceSiteIds:sites,
     outputQuantities:clone(output),createdBatchIds:record.createdBatchIds,turn:turn(),authority:'SIMULATED_DOWNSTREAM_PRODUCTION',
     recipeId:record.recipeId,status:'AVAILABLE_TO_ECONOMY'});
   while(r.finishedGoodsLedger.length>2048)r.finishedGoodsLedger.shift();
@@ -4247,7 +4619,9 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   factorySetProductionHealth(asset,productionQuantity+1e-6<capacity?'REDUCED':'RUNNING',productionQuantity,capacity,
     {transactionId,constraints:clone(productionConstraints)});
   emit('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',cid,record);
-  emit('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',cid,{transactionId,countryId:cid,factoryId:fid,companyId,outputs:clone(output),
+  emit('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',cid,{transactionId,countryId:cid,factoryId:fid,companyId,
+    operatorCompanyId:record.operatorCompanyId,ownerCompanyId:record.ownerCompanyId,ownerAttributionStatus:record.ownerAttributionStatus,
+    outputs:clone(output),
     outputQuantities:clone(output),sourceBatchIds:roots,sourceSiteIds:sites,createdBatchIds:record.createdBatchIds,turn:turn(),
     authority:'SIMULATED_DOWNSTREAM_PRODUCTION',status:'AVAILABLE'});
   return record;
@@ -4842,7 +5216,10 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
       reason:cycle.lastBlockedReason,detail:result,turn:turn()});
     return{status:'PAUSED',countryId:cid,factoryId:String(cycle.factoryId||asset?.id||asset?.assetId||asset?.projectId||''),cycleId:cycle.cycleId,reason:cycle.lastBlockedReason,detail:result};
   }
-  cycle.status='COMPLETED';cycle.completedTurn=turn();cycle.actualCompletionDate=factoryCurrentGameDate()||cycle.finishDate;
+  cycle.status='COMPLETED';cycle.completedTurn=turn();
+  const completionDate=factoryCurrentGameDate();
+  cycle.actualCompletionDate=cycle.finishDate&&(!completionDate||!factoryDateReached(completionDate,cycle.finishDate))
+    ?cycle.finishDate:(completionDate||cycle.finishDate);
   const actualProduction=Math.max(0,num(result.requestedProduction)||cycle.productionQuantity);
   cycle.actualProductionQuantity=Number(actualProduction.toFixed(6));
   cycle.productivityPct=cycle.capacityPerDay>0?Number((actualProduction/cycle.capacityPerDay*100).toFixed(2)):0;
@@ -4901,8 +5278,13 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
       batchId:sourceBatchId,resourceId:cycle.primaryInputResourceId,transactionId:result.transactionId,
       createdBatchIds:result.createdBatchIds||[],outputQuantities:result.outputQuantities||{},turn:turn(),status:'PROCESSED'});
   }
+  const completionOwnership=factoryOwnershipParties(asset,cid);
   emit('OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',cid,{cycleId:cycle.cycleId,transactionId:result.transactionId,
-    factoryId:cycle.factoryId,outputQuantities:cycle.outputQuantities,finishDate:cycle.finishDate,actualCompletionDate:cycle.actualCompletionDate});
+    countryId:cid,factoryId:cycle.factoryId,ownerCompanyId:completionOwnership.ownerCompanyId,
+    operatorCompanyId:completionOwnership.operatorCompanyId,cycleDays:cycle.cycleDays,
+    actualProductionQuantity:cycle.actualProductionQuantity,outputQuantities:cycle.outputQuantities,
+    finishDate:cycle.finishDate,actualCompletionDate:cycle.actualCompletionDate,turn:turn(),
+    authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK'});
   return{status:'COMPLETED',countryId:cid,factoryId:String(cycle.factoryId||asset?.id||asset?.assetId||asset?.projectId||''),
     factoryType:String(asset?.factoryType||asset?.type||'').toUpperCase(),
     companyId:asset?.companyId||asset?.ownerCompanyId||asset?.operatorCompanyId||null,
@@ -4911,6 +5293,7 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
     productivityPct:cycle.productivityPct||0,inputQuantities:clone(cycle.inputQuantities||{}),
     outputQuantities:clone(cycle.outputQuantities||{}),sourceBatchIds:clone(result.sourceBatchIds||[]),
     createdBatchIds:clone(cycle.createdBatchIds||[]),finishDate:cycle.finishDate,
+    actualCompletionDate:cycle.actualCompletionDate||null,
     authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK'};
 }
 function selectFactoryProductionRecipeForTurn(countryId,asset){
@@ -5152,7 +5535,7 @@ function ensureSimulationFactory(cid,site,resourceId,quantity,options={}){
   const economy=econState(cid);if(!Array.isArray(economy.productionAssets))economy.productionAssets=[];
   const assets=economy.productionAssets,siteId=String(site?.siteId||'');
   const factoryId='FAC-SIM:'+cid+':'+String(siteId).replace(/[^A-Za-z0-9_-]/g,'_')+':'+tok(resourceId);
-  const compatible=candidateFactories(cid,resourceId);
+  const compatible=candidateFactories(cid,resourceId,siteId);
   // Explicit auto-commissioning binds a new deposit to a source-site factory when possible.
   // Otherwise retain the legacy shared-factory fallback for callers that do not request it.
   const siteFactory=compatible.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===siteId);
@@ -5255,11 +5638,79 @@ async function executeSitePipeline(input={}){
     preparedFactory=preparedFactoryBootstrap.factory||null;
     if(!preparedFactory)return{status:'BLOCKED',reason:'SITE_FACTORY_BOOTSTRAP_BLOCKED',detail:preparedFactoryBootstrap};
   }
+  // Capture the eligible destination before extraction emits its synchronous event.
+  // The event observer may commit the mine-to-warehouse leg before candidate discovery
+  // has completed; this API still owns the selected site request and must persist its
+  // real factory destination for the later warehouse-to-factory leg.
+  const factoryCandidatesBeforeExtraction=candidateFactories(cid,rid,site.siteId);
+  const requestedFactoryId=String(input.factoryId||input.selectedFactoryId||'').trim();
+  const requestedFactoryCandidate=requestedFactoryId
+    ?factoryCandidatesBeforeExtraction.find(({asset})=>String(
+      asset?.id||asset?.assetId||asset?.projectId||'').trim()===requestedFactoryId)||null
+    :null;
+  // An explicit destination must be eligible for this commodity and country before
+  // extraction commits. Never silently substitute a different factory for a user choice.
+  if(requestedFactoryId&&!requestedFactoryCandidate){
+    return{status:'BLOCKED',reason:'FACTORY_NOT_ELIGIBLE_FOR_SITE',countryId:cid,
+      siteId:site.siteId,resourceId:rid,factoryId:requestedFactoryId,
+      candidateFactoryIds:factoryCandidatesBeforeExtraction.map(({asset})=>String(
+        asset?.id||asset?.assetId||asset?.projectId||'').trim()).filter(Boolean)};
+  }
+  const selectedFactoryBeforeExtraction=requestedFactoryCandidate?.asset||preparedFactory||
+    factoryCandidatesBeforeExtraction.find(({asset})=>
+      String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
+    factoryCandidatesBeforeExtraction[0]?.asset||null;
+  const selectedFactoryIdBeforeExtraction=String(selectedFactoryBeforeExtraction?.id||
+    selectedFactoryBeforeExtraction?.assetId||selectedFactoryBeforeExtraction?.projectId||'').trim();
   const extraction=await endowment.extractCountry(cid,keys);
-  const records=extraction?.result?.records||extraction?.records||[];
+  const extractionResult=extraction?.result||extraction||{};
+  const records=Array.isArray(extractionResult?.records)?extractionResult.records:[];
   const record=records.find(x=>keys.includes(String(x?.occurrenceKey||''))&&canonicalCountry(x?.countryId||cid)===cid&&x?.producedBatch);
-  if(extraction?.status!=='APPLIED'||extraction?.result?.accepted===false||!record){
-    return{status:'BLOCKED',reason:'SITE_EXTRACTION_NOT_COMMITTED',siteId:site.siteId,occurrenceKeys:keys,extractionStatus:extraction?.status||null,detail:extraction?.reason||extraction?.detail||extraction?.result?.error||extraction?.result?.blocked||extraction?.result?.reason||null};
+  if(extraction?.status!=='APPLIED'||extractionResult?.accepted===false||!record){
+    const countryResource=state()?.resource?.[cid]||{};
+    const reserveRegistry=g.__OmegaResourceReserveRegistry||g.OmegaResourceReserveRegistry;
+    const occurrenceDiagnostics=keys.map(key=>{
+      const mine=countryResource.mineStates?.[key]||null;
+      const output=countryResource.mineOutputs?.[key]||null;
+      const path=countryResource.minePaths?.[key]||null;
+      const reserve=reserveRegistry?.getReserveState?.(key)||mine;
+      const capacity=reserveRegistry?.getCapacityForOccurrence?.(key)||null;
+      return{
+        occurrenceKey:key,siteReferenceKey:mine?.siteReferenceKey||mine?.siteId||null,
+        resourceId:mine?.resourceId||mine?.resourceTypeId||null,
+        reserve:reserve?{residualQuantity:num(reserve.residualQuantity),unit:reserve.unit||null,
+          operationalStatus:reserve.operationalStatus||null,stateVersion:num(reserve.stateVersion)}:null,
+        capacity:capacity?{activeRate:num(capacity.activeRate),dailyRate:num(capacity.dailyRate),
+          nominalRate:num(capacity.nominalRate),unit:capacity.unit||null,authority:capacity.authority||null}:null,
+        output:output?{status:output.status||null,blockReason:output.blockReason||null,
+          producedQuantity:num(output.producedQuantity??output.approvedQuantity??output.quantity),
+          simulationTurn:num(output.simulationTurn??output.turn)}:null,
+        path:path?{status:path.status||null,blockReason:path.blockReason||null,
+          lastStages:(Array.isArray(path.stages)?path.stages.slice(-4):[]).map(stage=>({
+            stage:stage.stage||null,status:stage.status||null,reason:stage.reason||null,turn:num(stage.turn)
+          }))}:null
+      };
+    });
+    const blocked=extractionResult?.blocked;
+    const detail={
+      reason:extractionResult?.reason||extraction?.reason||null,
+      accepted:extractionResult?.accepted??null,
+      extractedCount:num(extractionResult?.extracted),
+      blockedCount:Array.isArray(blocked)?blocked.length:num(blocked),
+      blockedRows:Array.isArray(blocked)?blocked.slice(0,12).map(row=>({
+        occurrenceKey:row.occurrenceKey||null,siteId:row.siteId||null,resourceId:row.resourceId||null,
+        reason:row.reason||null
+      })):[],
+      records:records.slice(0,12).map(row=>({
+        occurrenceKey:row.occurrenceKey||null,siteReferenceKey:row.siteReferenceKey||null,
+        resourceId:row.resourceId||null,approvedQuantity:num(row.approvedQuantity),
+        batchId:row.producedBatch?.batchId||null
+      })),
+      occurrenceDiagnostics,
+      commandId:extraction?.commandId||extractionResult?.commandId||null
+    };
+    return{status:'BLOCKED',reason:'SITE_EXTRACTION_NOT_COMMITTED',siteId:site.siteId,countryId:cid,
+      occurrenceKeys:keys,extractionStatus:extraction?.status||null,detail};
   }
   const batch=record.producedBatch,quantity=Math.max(0,num(record.approvedQuantity)||num(batch.quantity)||num(record.quantity)||0);
   if(quantity<=0)return{status:'BLOCKED',reason:'EXTRACTION_BATCH_QUANTITY_INVALID',siteId:site.siteId,occurrenceKey:record.occurrenceKey};
@@ -5267,11 +5718,46 @@ async function executeSitePipeline(input={}){
   if(existingFlow?.mineLogisticsRouteId){
     const network=netState(cid),mineShipment=network.shipments.find(shipment=>String(shipment.batchId||'')===String(batch.batchId||'')&&
       shipment.shipmentType==='MINE_TO_WAREHOUSE'&&['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(shipment.status||'')));
+    const currentCandidates=candidateFactories(cid,rid,site.siteId);
+    const currentCandidateIds=new Set(currentCandidates.map(({asset})=>String(
+      asset?.id||asset?.assetId||asset?.projectId||'').trim()).filter(Boolean));
+    const requestedFactory=currentCandidates.find(({asset})=>String(
+      asset?.id||asset?.assetId||asset?.projectId||'').trim()===requestedFactoryId)||null;
+    const preferredFactory=requestedFactory?.asset||preparedFactory||
+      currentCandidates.find(({asset})=>
+        String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
+      currentCandidates[0]?.asset||null;
+    const preferredFactoryId=String(preferredFactory?.id||
+      preferredFactory?.assetId||preferredFactory?.projectId||'').trim();
+    const priorFactoryId=String(existingFlow.factoryId||'').trim();
+    // The event observer may have recorded an older destination before this API call
+    // completed. An explicit user choice wins; otherwise keep the canonical site-bound
+    // candidate ahead of a stale-but-still-eligible prior destination.
+    const resolvedFactoryId=currentCandidateIds.has(requestedFactoryId)
+      ?requestedFactoryId
+      :(currentCandidateIds.has(preferredFactoryId)
+        ?preferredFactoryId
+        :(currentCandidateIds.has(priorFactoryId)
+          ?priorFactoryId
+          :(selectedFactoryIdBeforeExtraction||'')));
+    if(resolvedFactoryId&&priorFactoryId!==resolvedFactoryId){
+      existingFlow.factoryId=resolvedFactoryId;
+      existingFlow.factorySelectionAuthority=(requestedFactoryId||preparedFactory)
+        ?'EXPLICIT_SITE_FACTORY_SELECTION'
+        :'CANONICAL_COMPATIBLE_FACTORY_CANDIDATE';
+      existingFlow.factorySelectedAtTurn=turn();
+      addFlowStage(existingFlow,'FACTORY','DESTINATION_SELECTED',{
+        factoryId:resolvedFactoryId,
+        authority:existingFlow.factorySelectionAuthority,
+        selectedBeforeExtraction:Boolean(selectedFactoryIdBeforeExtraction)
+      });
+      saveSiteFlow(cid,existingFlow);
+    }
     const status=mineShipment?'IN_TRANSIT':String(existingFlow.mineLogisticsStatus||'')==='WAREHOUSE_RECEIVED'?'WAREHOUSE_RECEIVED':
       String(existingFlow.mineLogisticsStatus||'')==='AWAITING_CAPACITY'?'AWAITING_TRANSPORT_CAPACITY':'BLOCKED';
     const execution={executionId:'SITE-PIPELINE:'+cid+':'+site.siteId+':T'+turn(),siteId:site.siteId,countryId:cid,resourceId:rid,
       occurrenceKey:record.occurrenceKey,batchId:batch.batchId,quantity:mineShipment?.quantity||0,extractedQuantity:quantity,
-      unit:batch.unit||'TONNES',turn:turn(),factoryId:existingFlow.factoryId||null,factoryBootstrapStatus:preparedFactoryBootstrap?.status||'EXISTING',
+      unit:batch.unit||'TONNES',turn:turn(),factoryId:resolvedFactoryId||null,factoryBootstrapStatus:preparedFactoryBootstrap?.status||'EXISTING',
       extractionStatus:'COMMITTED',extractionPlanId:extractionPlan.planId,shipmentStatus:mineShipment?'DISPATCHED':status,
       shipmentId:mineShipment?.shipmentId||existingFlow.mineHaulShipmentId||null,
       route:clone(mineShipment?.route||existingFlow.routeProfile||null),mineLogisticsStatus:existingFlow.mineLogisticsStatus,status};
@@ -5280,9 +5766,11 @@ async function executeSitePipeline(input={}){
     if(mineShipment)emit('OMEGA_RESOURCE_SITE_PIPELINE_STARTED',cid,execution);
     return{...execution,shipment:mineShipment?clone(mineShipment):null};
   }
-  const candidates=candidateFactories(cid,rid);
+  const candidates=candidateFactories(cid,rid,site.siteId);
   let factoryBootstrap=preparedFactoryBootstrap||null;
-  let factoryChoice=preparedFactory||
+  const requestedFactory=candidates.find(({asset})=>String(
+    asset?.id||asset?.assetId||asset?.projectId||'').trim()===requestedFactoryId)||null;
+  let factoryChoice=requestedFactory?.asset||preparedFactory||
     candidates.find(({asset})=>String(asset?.sourceSiteId||asset?.siteId||'')===String(site.siteId))?.asset||
     candidates[0]?.asset||null;
   // A missing factory must never be silently fabricated during normal gameplay.
@@ -5595,6 +6083,42 @@ function registerStartingFactoryAssets(input={}){
   const registryKey=datasetVersion+':'+(sessionId||cid);
   const prior=network.startingFactoryAssetRegistrations[registryKey];
   const assets=factoryAssets(cid);
+  const ensureStateFactoryOwnership=asset=>{
+    if(!asset||typeof asset!=='object')return asset;
+    const stateEntityId='STATE_INDUSTRY_'+cid;
+    if(!asset.ownerId&&!asset.ownerCompanyId){
+      asset.ownerId=stateEntityId;asset.ownerCompanyId=stateEntityId;asset.ownerType='STATE_OWNED_ENTERPRISE';
+    }
+    if(!asset.operatorId&&!asset.operatorCompanyId){
+      asset.operatorId=stateEntityId;asset.operatorCompanyId=stateEntityId;asset.operatorType='STATE_ENTERPRISE_OPERATOR';
+    }
+    const legacyEpcSentinel=String(asset.authority||'')==='SIMULATED_FACTORY_ASSET'&&
+      String(asset.companyId||'').trim()==='EPC_FACTORY_OWNER';
+    if(legacyEpcSentinel){
+      asset.legacyCompanyAttributionId=asset.legacyCompanyAttributionId||asset.companyId;
+      asset.companyId=asset.operatorCompanyId||asset.operatorId||stateEntityId;
+    }else if(!asset.companyId){
+      asset.companyId=asset.operatorCompanyId||asset.operatorId||asset.ownerCompanyId||asset.ownerId||stateEntityId;
+    }
+    if(!asset.stateControlRights||typeof asset.stateControlRights!=='object'){
+      asset.stateControlRights={
+        strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
+        labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,
+        operationalControl:'STATE_OPERATOR',authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',simulationOnly:true
+      };
+    }
+    asset.ownershipMetadataAuthority=asset.ownershipMetadataAuthority||'OMEGA_STATE_FACTORY_OWNERSHIP_V1';
+    return asset;
+  };
+  // Additive legacy-save repair runs before the idempotent early return, but only
+  // for assets explicitly created from the government starting-factory baseline.
+  assets.forEach(asset=>{
+    const baselineStateAsset=String(asset?.sourceType||'').toUpperCase()==='COUNTRY_STARTING_FACTORY_BASELINE';
+    const legacyEpcStateAsset=String(asset?.authority||'')==='SIMULATED_FACTORY_ASSET'&&
+      String(asset?.companyId||'').trim()==='EPC_FACTORY_OWNER'&&
+      !asset?.ownerId&&!asset?.ownerCompanyId&&!asset?.operatorId&&!asset?.operatorCompanyId;
+    if(baselineStateAsset||legacyEpcStateAsset)ensureStateFactoryOwnership(asset);
+  });
   const activeFactoryAssets=()=>assets.filter(asset=>{
     const type=normalizeFactoryType(asset?.factoryType||asset?.type||asset?.facilityType||'');
     return types.includes(type)&&!['DECOMMISSIONED','DESTROYED','UNDER_CONSTRUCTION'].includes(String(asset?.status||'').toUpperCase());
@@ -5693,6 +6217,15 @@ function registerStartingFactoryAssets(input={}){
           missingInputs:[],reason:'NO_FACTORY_INPUTS',updatedTurn:turn(),authority:'OMEGA_FACTORY_PRODUCTION_SCHEDULER_V1'},
         ...((dynamicProcessing||dynamicRecipeSet)?{}:{inputCoefficients,outputProfile}),
         sourceType:'COUNTRY_STARTING_FACTORY_BASELINE',sourceAuthority:'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
+        ownerId:'STATE_INDUSTRY_'+cid,ownerCompanyId:'STATE_INDUSTRY_'+cid,ownerType:'STATE_OWNED_ENTERPRISE',
+        operatorId:'STATE_INDUSTRY_'+cid,operatorCompanyId:'STATE_INDUSTRY_'+cid,operatorType:'STATE_ENTERPRISE_OPERATOR',
+        companyId:'STATE_INDUSTRY_'+cid,
+        stateControlRights:{
+          strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,competitionOversight:true,
+          labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,
+          operationalControl:'STATE_OPERATOR',authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',simulationOnly:true
+        },
+        ownershipMetadataAuthority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1',
         baselineSessionId:sessionId||null,baselineOrdinal:ordinal,simulationOnly:true,realWorldFacilityCounts:false
       };
       assets.push(asset);

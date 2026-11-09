@@ -5425,14 +5425,17 @@ body.modal-open .ui-bottom-navigation {
 #render-engine-root[data-omega-map-suspended="true"] { display:none !important; }
 #render-engine-root[data-omega-map-loading="true"] { z-index:2000 !important; pointer-events:auto !important; }
 
+/* Keep map progress visible without placing a full-screen click shield above
+   real Leaflet site markers. The retry control remains the only interactive child. */
 .omega-map-load-overlay {
-  align-items:center;
-  background:rgba(4,13,25,.96);
+  align-items:flex-start;
+  background:transparent;
   color:#edf5ff;
   display:flex;
   inset:0;
-  justify-content:center;
-  padding:24px;
+  justify-content:flex-start;
+  padding:12px;
+  pointer-events:none;
   position:absolute;
   z-index:1400;
 }
@@ -5442,9 +5445,10 @@ body.modal-open .ui-bottom-navigation {
   border:1px solid #36526e;
   border-radius:14px;
   box-shadow:0 14px 40px rgba(0,0,0,.32);
-  max-width:440px;
-  padding:24px;
-  width:min(100%,440px);
+  max-width:360px;
+  padding:16px;
+  pointer-events:none;
+  width:min(100%,360px);
 }
 .omega-map-load-kicker { color:#8dc9f4; font-size:10px; font-weight:800; letter-spacing:.16em; }
 .omega-map-load-card h1 { font:700 20px/1.25 system-ui,sans-serif; margin:12px 0 8px; }
@@ -5454,9 +5458,78 @@ body.modal-open .ui-bottom-navigation {
 .omega-map-load-footer { align-items:center; color:#91a7bd; display:flex; font-size:9px; font-weight:800; justify-content:space-between; letter-spacing:.12em; margin-top:10px; }
 .omega-map-load-footer strong { color:#e7f4ff; font-size:12px; letter-spacing:0; }
 .omega-map-load-overlay[data-state="error"] .omega-map-load-track span { background:#e68d8d; }
-#omega-map-load-retry { background:#142f48; border:1px solid #5484aa; border-radius:8px; color:#edf5ff; cursor:pointer; margin-top:18px; min-height:40px; padding:8px 14px; }
+#omega-map-load-retry { background:#142f48; border:1px solid #5484aa; border-radius:8px; color:#edf5ff; cursor:pointer; margin-top:18px; min-height:40px; padding:8px 14px; pointer-events:auto; }
 #omega-map-load-retry[hidden] { display:none !important; }
 @media (prefers-reduced-motion:reduce) {
   .omega-map-load-track span { transition:none; }
 }
 
+
+/* Active resource-site interaction surface.
+   The detailed presentation stylesheet is intentionally not linked by the current app shell.
+   Keep this layout contract in the loaded stylesheet so the map-site controls sit above the
+   active UI v2 cabinet stacking context as well as the country information card. */
+#omega-individual-resource-panel.omega-resource-site-panel {
+    box-sizing: border-box !important;
+    display: none;
+    position: fixed !important;
+    left: 12px !important;
+    bottom: 64px !important;
+    z-index: 2147483200 !important;
+    width: min(430px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: 78vh !important;
+    overflow: auto !important;
+    overscroll-behavior: contain;
+    padding: 16px !important;
+    border: 1px solid #34465c;
+    border-radius: 15px;
+    background: rgba(16, 25, 35, 0.98);
+    color: #e8edf2;
+    box-shadow: 0 14px 42px rgba(0, 0, 0, 0.44);
+    pointer-events: auto !important;
+    isolation: isolate;
+}
+#omega-individual-resource-panel .omega-site-actions {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    margin-top: 13px;
+    padding-top: 12px;
+    border-top: 1px solid #34465c;
+}
+#omega-individual-resource-panel .omega-site-action {
+    position: relative;
+    z-index: 2;
+    min-width: 0;
+    min-height: 40px;
+    padding: 10px 9px;
+    border: 1px solid #43566a;
+    border-radius: 9px;
+    color: #e8edf2;
+    background: #162332;
+    font: 650 12px/1.25 system-ui, -apple-system, "Segoe UI", sans-serif;
+    cursor: pointer;
+    pointer-events: auto;
+}
+#omega-individual-resource-panel .omega-site-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+#omega-individual-resource-panel button:focus-visible,
+#omega-individual-resource-panel select:focus-visible {
+    outline: 2px solid #76b7d8;
+    outline-offset: 2px;
+}
+@media (max-width: 480px) {
+    #omega-individual-resource-panel.omega-resource-site-panel {
+        left: 8px !important;
+        bottom: 58px !important;
+        width: calc(100vw - 16px) !important;
+        max-width: calc(100vw - 16px) !important;
+        max-height: 78vh !important;
+        padding: 13px !important;
+    }
+}

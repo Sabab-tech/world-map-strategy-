@@ -1482,12 +1482,36 @@ Game.Map.setUiActive = function(active) {
                 resumeCachedMap();
             }
         } else if (Game.DataLoader && typeof Game.DataLoader.loadWorldMap === 'function') {
-            window.setTimeout(function () {
-                if (Game.Map.__omegaMapUiActive !== false &&
-                    !Game.Map.countryGeoJSON && !Game.Map.__omegaWorldMapAbortController) {
-                    Game.DataLoader.loadWorldMap();
+            const loader = Game.DataLoader;
+            const pendingWorldLoad = loader.__worldLoadPromise;
+            const abortedWorldController = this.__omegaWorldMapAbortController;
+            const retryWorldMapAfterAbort = function () {
+                if (Game.Map.__omegaMapUiActive === false || Game.__omegaGeoJSONRenderComplete === true) return;
+                if (loader.__worldLoadPromise || Game.Map.__omegaWorldMapAbortController) return;
+
+                // The request may have returned its GeoJSON while the map was hidden.
+                // Reuse that payload and resume the existing feature cursor when available.
+                if (Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData) {
+                    if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
+                        Game.__omegaGeoJSONResumeRender();
+                        return;
+                    }
+                    if (!Game.geojsonLayer || Game.__omegaGeoJSONRenderComplete !== true) {
+                        loader.loadWorldMap();
+                    }
+                    return;
                 }
-            }, 0);
+
+                // A map request aborted while a ministry was opening is settled before
+                // its controller is cleared. Retry only after that cleanup has completed.
+                loader.loadWorldMap();
+            };
+
+            if (pendingWorldLoad && abortedWorldController?.signal?.aborted === true) {
+                pendingWorldLoad.then(retryWorldMapAfterAbort, retryWorldMapAfterAbort);
+            } else {
+                window.setTimeout(retryWorldMapAfterAbort, 0);
+            }
         }
     }
     return true;

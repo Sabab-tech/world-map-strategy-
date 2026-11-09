@@ -20,6 +20,7 @@ function harness(){
   const state={
     simulation:{turn:1,date:'2015-01-01'},
     resource:{BGD:{},AAA:{},SAU:{}},
+    economy:{},
     trade:{BGD:{},AAA:{},SAU:{}},
     finance:{BGD:{available:10000000,reserves:10000000},AAA:{available:10000000,reserves:10000000},SAU:{available:10000000,reserves:10000000}}
   };
@@ -82,6 +83,17 @@ function harness(){
     ctx.stateTransaction.set('finance.available',current-amount);return{accepted:true,amount};
   });
   return{sandbox,state,handlers,interop,events,txFactory};
+}
+
+function fullPrivateStateControlRights(){
+  return{
+    strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,
+    labourSafetyEnvironmentalRegulation:true,strategicSupplyOversight:true,
+    strategicContracts:true,domesticSupplyDirection:true,exportControl:true,
+    publicProcurement:true,competitionOversight:true,foreignOwnershipReview:true,
+    emergencyIntervention:true,operationalControl:'STATE_POLICY_ONLY',
+    authority:'OMEGA_STATE_CONTROL_RIGHTS_V1'
+  };
 }
 
 test('embargo and blockade policies actively block scoped trade and routes, then lift cleanly',()=>{
@@ -240,6 +252,43 @@ test('unknown environmental units are rejected without a fabricated default impa
   assert.equal(preview.reason,'ENVIRONMENTAL_UNIT_SCALE_UNAVAILABLE');
 });
 
+test('simulation resource units accrue game-only environmental impact but never fabricate physical CO2e',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const preview=api.previewCarbonActivity('BGD','coal',1500,'SIMULATION_RESOURCE_UNIT','FACTORY_PROCESSING');
+  assert.equal(preview.allowed,true,JSON.stringify(preview));
+  assert.equal(preview.emissionsKnown,false);
+  assert.equal(preview.emissionsTonnesCo2e,null);
+  assert.equal(preview.reason,'NO_SIMULATED_FACTOR_CONFIGURED');
+
+  const recorded=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_PROCESSING','BGD',{
+    transactionId:'PROCESS-SIMULATION-UNIT-1',siteId:'SITE_BGD_TEST_LOCKED',
+    resourceId:'coal',quantity:1500,unit:'SIMULATION_RESOURCE_UNIT'
+  });
+  assert.equal(recorded.status,'APPLIED',JSON.stringify(recorded));
+  assert.equal(recorded.result.accepted,true,JSON.stringify(recorded));
+  assert.equal(h.state.resource.BGD.environmentalLedger.length,1);
+  assert.equal(h.state.resource.BGD.environmentalLedger[0].unit,'SIMULATION_RESOURCE_UNIT');
+  assert.equal(h.state.resource.BGD.environmentalLedger[0].status,'COMMITTED');
+  assert.equal(h.state.resource.BGD.carbonEmissionsLedger,undefined,
+    'game-only resource units must not be converted into physical tonnes of CO2e');
+
+  const quota=api.setCarbonQuota('BGD',{
+    quotaId:'SIMULATION-UNIT-CARBON-FAIL-CLOSED',allowanceTonnesCo2e:100,periodTurns:10
+  });
+  assert.equal(quota.accepted,true,JSON.stringify(quota));
+  const quotaPreview=api.previewCarbonActivity('BGD','coal',1500,'SIMULATION_RESOURCE_UNIT','FACTORY_PROCESSING');
+  assert.equal(quotaPreview.allowed,false);
+  assert.equal(quotaPreview.reason,'CARBON_EMISSIONS_FACTOR_UNAVAILABLE');
+  const quotaBlocked=h.interop.dispatchCommand('resource','OMEGA_RESOURCE_ENVIRONMENT_RECORD_PROCESSING','BGD',{
+    transactionId:'PROCESS-SIMULATION-UNIT-QUOTA-1',siteId:'SITE_BGD_TEST_LOCKED',
+    resourceId:'coal',quantity:1500,unit:'SIMULATION_RESOURCE_UNIT'
+  });
+  assert.equal(quotaBlocked.status,'FAILED',JSON.stringify(quotaBlocked));
+  assert.equal(quotaBlocked.result.reason,'CARBON_EMISSIONS_FACTOR_UNAVAILABLE');
+  assert.equal(h.state.resource.BGD.environmentalLedger.length,1,
+    'unknown physical emissions must keep the active quota enforcement fail-closed');
+});
+
 
 test('carbon quota tracks CO2e separately from environmental impact indexes and blocks over-quota emissions',()=>{
  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
@@ -390,4 +439,328 @@ test('sovereign wealth fund capitalization debits treasury once and persists con
  assert.equal(conflict.accepted,false);
  assert.equal(conflict.reason,'SWF_TRANSACTION_ID_CONFLICT');
  assert.equal(api.capitalizeSovereignWealthFund('BGD',{transactionId:'SWF-CAP-INVALID',amount:0}).reason,'SWF_AMOUNT_MUST_BE_POSITIVE');
+});
+
+
+
+test('state supply directives enforce domestic-only, quota, export contract and bounded 46/4 factory allocation',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const domesticOnly=api.setSupplyDirective('BGD',{directive:'DOMESTIC_ONLY',resourceId:'iron_ore',
+    policyId:'DOMESTIC-ONLY-IRON',reason:'National shortage'});
+  assert.equal(domesticOnly.accepted,true,JSON.stringify(domesticOnly));
+  const blocked=api.evaluateExportDirective('BGD','SAU','iron_ore',1,null,{iron_ore:100});
+  assert.equal(blocked.allowed,false);
+  assert.equal(blocked.reason,'STATE_DIRECTIVE_DOMESTIC_ONLY');
+
+  const contract=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_EXPORT_CONTRACT',resourceId:'iron_ore',
+    policyId:'GOV-EXPORT-IRON-1',contractId:'GOV-EXPORT-IRON-1',targetCountryId:'SAU',
+    authorizedQuantity:20,companyIds:['AURORA_INDUSTRIAL_GROUP']});
+  assert.equal(contract.accepted,true,JSON.stringify(contract));
+  const approved=api.evaluateExportDirective('BGD','SAU','iron_ore',20,'GOV-EXPORT-IRON-1',{iron_ore:100});
+  assert.equal(approved.allowed,true,JSON.stringify(approved));
+  const wrongContractCompany=api.validateExportBatchAllocation('BGD','iron_ore',[
+    {sourceFactoryId:'FAC-EXPORT-01',ownerCompanyId:'MERIDIAN_ENGINEERING_GROUP'}
+  ],'GOV-EXPORT-IRON-1');
+  assert.equal(wrongContractCompany.allowed,false);
+  assert.equal(wrongContractCompany.reason,'GOVERNMENT_EXPORT_CONTRACT_COMPANY_NOT_AUTHORIZED');
+  const wrongDestination=api.evaluateExportDirective('BGD','IND','iron_ore',1,'GOV-EXPORT-IRON-1',{iron_ore:100});
+  assert.equal(wrongDestination.allowed,false);
+  assert.equal(wrongDestination.reason,'GOVERNMENT_EXPORT_CONTRACT_DESTINATION_MISMATCH');
+  const overContract=api.evaluateExportDirective('BGD','SAU','iron_ore',21,'GOV-EXPORT-IRON-1',{iron_ore:100});
+  assert.equal(overContract.allowed,false);
+  assert.equal(overContract.reason,'GOVERNMENT_EXPORT_CONTRACT_QUANTITY_EXCEEDED');
+
+  const quota=api.setSupplyDirective('BGD',{directive:'DOMESTIC_QUOTA',resourceId:'copper',
+    policyId:'DOMESTIC-COPPER-70',domesticReserveQuantity:70});
+  assert.equal(quota.accepted,true,JSON.stringify(quota));
+  const quotaAllowed=api.evaluateExportDirective('BGD','SAU','copper',30,null,{copper:100});
+  assert.equal(quotaAllowed.allowed,true,JSON.stringify(quotaAllowed));
+  const quotaBlocked=api.evaluateExportDirective('BGD','SAU','copper',31,null,{copper:100});
+  assert.equal(quotaBlocked.allowed,false);
+  assert.equal(quotaBlocked.reason,'DOMESTIC_SUPPLY_PROTECTED');
+
+  const missingStockPolicy=api.setSupplyDirective('BGD',{directive:'STRATEGIC_STOCK_RESERVE',resourceId:'rare_earth',
+    policyId:'UNKNOWN-STOCK-RESERVE',domesticReserveQuantity:10});
+  assert.equal(missingStockPolicy.accepted,true);
+  const unknownStock=api.evaluateExportDirective('BGD','SAU','rare_earth',1,null,{});
+  assert.equal(unknownStock.allowed,false);
+  assert.equal(unknownStock.reason,'STATE_SUPPLY_STOCK_UNOBSERVED');
+
+  const domesticFactoryIds=Array.from({length:46},(_,i)=>'FAC-'+String(i+1).padStart(2,'0'));
+  const exportFactoryIds=Array.from({length:4},(_,i)=>'FAC-'+String(i+47).padStart(2,'0'));
+  const allocation=api.setSupplyDirective('BGD',{directive:'FACTORY_ALLOCATION',resourceId:'finished_goods',
+    policyId:'FACTORY-ALLOCATION-46-4',domesticFactoryIds,exportFactoryIds});
+  assert.equal(allocation.accepted,true,JSON.stringify(allocation));
+  assert.equal(api.allowedExportFactoryIds('BGD','finished_goods').length,4);
+  assert.equal(api.validateExportBatchAllocation('BGD','finished_goods',
+    [{sourceFactoryId:'FAC-47',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP'}]).allowed,true);
+  const forbidden=api.validateExportBatchAllocation('BGD','finished_goods',
+    [{sourceFactoryId:'FAC-46',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP'}]);
+  assert.equal(forbidden.allowed,false);
+  assert.equal(forbidden.reason,'STATE_FACTORY_EXPORT_ALLOCATION_VIOLATION');
+  assert.equal(api.supplyPolicySummary('BGD','finished_goods').domesticFactoryCount,46);
+  assert.equal(api.supplyPolicySummary('BGD','finished_goods').exportFactoryCount,4);
+});
+
+test('government procurement buys privately owned finished batches once and transfers ownership inside shared warehouse',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const companyId='NOVA_CONSUMER_INDUSTRIES';
+  h.state.resource.BGD.inventory={widgets:100};
+  h.state.resource.BGD.batches=[{
+    batchId:'WIDGETS-PRIVATE-BATCH',resourceId:'widgets',quantity:100,remainingQuantity:100,
+    unit:'UNITS',stage:'FINISHED',countryId:'BGD',ownerCompanyId:companyId,
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+    sourceFactoryId:'FAC-PRIVATE-WIDGETS',warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE',
+    sourcePrivateProposalId:'PRIVATE-PROC-PROPOSAL-1',sourcePrivateDecisionId:'PRIVATE-PROC-DECISION-1',
+    sourcePrivateFundingId:'PRIVATE-PROC-FUNDING-1',sourcePrivatePermitId:'PRIVATE-PROC-PERMIT-1'
+  }];
+  h.state.resource.BGD.inventoryLots={'WIDGETS-PRIVATE-BATCH':{
+    batchId:'WIDGETS-PRIVATE-BATCH',resourceId:'widgets',quantity:100,remainingQuantity:100,
+    unit:'UNITS',stage:'FINISHED',countryId:'BGD',warehouseId:'WH-BGD-PROCESSED',
+    ownerCompanyId:companyId,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-PRIVATE-WIDGETS',
+    sourcePrivateProposalId:'PRIVATE-PROC-PROPOSAL-1',sourcePrivateDecisionId:'PRIVATE-PROC-DECISION-1',
+    sourcePrivateFundingId:'PRIVATE-PROC-FUNDING-1',sourcePrivatePermitId:'PRIVATE-PROC-PERMIT-1',status:'AVAILABLE'
+  }};
+  h.state.resource.BGD.processedWarehouse={
+    warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',availableByResource:{widgets:100},
+    storedBatchIds:['WIDGETS-PRIVATE-BATCH'],receipts:[]
+  };
+  const policy=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
+    policyId:'GOV-PROC-POLICY-1',contractId:'GOV-PROC-ORDER-1',
+    companyId,companyIds:[companyId],authorizedQuantity:50,procurementLimit:50});
+  assert.equal(policy.accepted,true,JSON.stringify(policy));
+  h.state.resource.BGD.processedWarehouse.status='OPERATIONAL';
+  h.state.resource.BGD.inventoryLots['WIDGETS-PRIVATE-BATCH'].sourceFactoryId='FAC-PRIVATE-WIDGETS';
+  h.state.economy={BGD:{productionAssets:[{
+    id:'FAC-PRIVATE-WIDGETS',countryId:'BGD',factoryType:'WIDGET_FACTORY',status:'OPERATIONAL',productionEnabled:true,
+    ownerType:'PRIVATE_ENTERPRISE',ownerCompanyId:companyId,operatorType:'PRIVATE_COMPANY_OPERATOR',
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',privatePermitId:'PRIVATE-PROC-PERMIT-1',privatePermitStatus:'ACTIVE',
+    sourcePrivateProposalId:'PRIVATE-PROC-PROPOSAL-1',sourcePrivateDecisionId:'PRIVATE-PROC-DECISION-1',
+    sourcePrivateFundingId:'PRIVATE-PROC-FUNDING-1',
+    stateControlRights:fullPrivateStateControlRights()
+  }]}};
+  const before=h.state.finance.BGD.available;
+  const payload={policyId:'GOV-PROC-POLICY-1',procurementId:'GOV-PROC-ORDER-1',
+    companyId,resourceId:'widgets',quantity:20,totalValue:200,batchIds:['WIDGETS-PRIVATE-BATCH']};
+  const first=api.purchasePrivateStock('BGD',payload);
+  assert.equal(first.accepted,true,JSON.stringify(first));
+  assert.equal(h.state.finance.BGD.available,before-200);
+  assert.ok(h.state.finance.BGD.tradeSettlementHistory.some(x=>x.settlementId==='GOV-PROC-ORDER-1'&&x.type==='DEBIT'&&x.amount===200),
+    'government procurement Treasury debit must be recorded in the shared trade finance settlement journal');
+  assert.equal(h.state.resource.BGD.inventory.widgets,100,'ownership purchase must not create aggregate inventory');
+  assert.equal(h.state.resource.BGD.processedWarehouse.availableByResource.widgets,100,
+    'same processed warehouse stock is transferred; it is not credited a second time');
+  assert.equal(h.state.resource.BGD.batches.find(x=>x.batchId==='WIDGETS-PRIVATE-BATCH').remainingQuantity,80);
+  const governmentBatch=h.state.resource.BGD.batches.find(x=>x.procurementId==='GOV-PROC-ORDER-1');
+  assert.ok(governmentBatch);
+  assert.equal(governmentBatch.ownerCompanyId,'STATE_GOVERNMENT_STOCK_BGD');
+  assert.equal(governmentBatch.sourceTransferBatchId,'WIDGETS-PRIVATE-BATCH');
+  const originalPrivateFactory=h.state.economy.BGD.productionAssets[0];
+  assert.equal(originalPrivateFactory.status,'OPERATIONAL');
+  assert.equal(originalPrivateFactory.ownerType,'PRIVATE_ENTERPRISE');
+  assert.equal(originalPrivateFactory.ownerCompanyId,companyId,
+    'government procurement transfers finished-goods stock, not the factory legal title');
+  assert.equal(originalPrivateFactory.operatorType,'PRIVATE_COMPANY_OPERATOR');
+  assert.equal(originalPrivateFactory.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP',
+    'government procurement must preserve the source factory operating company');
+  assert.ok(h.state.resource.BGD.processedWarehouse.receipts.some(x=>x.batchId===governmentBatch.batchId&&
+    x.status==='OWNERSHIP_TRANSFER_RECEIVED'));
+  assert.equal(h.state.economy.BGD.companyAccounts[companyId].governmentProcurementRevenue,200);
+  assert.equal(h.state.economy.BGD.companyAccounts[companyId].cashAuthority,
+    'AGGREGATE_FLOW_TRACKER_NOT_SPENDABLE_WALLET');
+
+  const replay=api.purchasePrivateStock('BGD',payload);
+  assert.equal(replay.accepted,true);
+  assert.equal(replay.duplicate,true);
+  assert.equal(h.state.finance.BGD.available,before-200,'procurement replay must not debit Treasury twice');
+  assert.equal(h.state.resource.BGD.batches.filter(x=>x.procurementId==='GOV-PROC-ORDER-1').length,1);
+});
+
+test('government procurement honours every company in its allowlist when a default company is also set',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const defaultCompany='NOVA_CONSUMER_INDUSTRIES',allowedCompany='AURORA_INDUSTRIAL_GROUP';
+  const batchId='MULTI-COMPANY-PRIVATE-FINISHED-BATCH';
+  h.state.resource.BGD.inventory={widgets:10};
+  h.state.resource.BGD.batches=[{
+    batchId,resourceId:'widgets',quantity:10,remainingQuantity:10,unit:'UNITS',stage:'FINISHED',
+    countryId:'BGD',ownerCompanyId:allowedCompany,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-AURORA-WIDGETS',
+    warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE',
+    sourcePrivateProposalId:'PRIVATE-MULTI-PROPOSAL',sourcePrivateDecisionId:'PRIVATE-MULTI-DECISION',
+    sourcePrivateFundingId:'PRIVATE-MULTI-FUNDING',sourcePrivatePermitId:'PRIVATE-MULTI-PERMIT'
+  }];
+  h.state.resource.BGD.inventoryLots={[batchId]:{
+    batchId,resourceId:'widgets',quantity:10,remainingQuantity:10,unit:'UNITS',stage:'FINISHED',
+    countryId:'BGD',warehouseId:'WH-BGD-PROCESSED',ownerCompanyId:allowedCompany,
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+    sourceFactoryId:'FAC-AURORA-WIDGETS',sourcePrivateProposalId:'PRIVATE-MULTI-PROPOSAL',
+    sourcePrivateDecisionId:'PRIVATE-MULTI-DECISION',sourcePrivateFundingId:'PRIVATE-MULTI-FUNDING',
+    sourcePrivatePermitId:'PRIVATE-MULTI-PERMIT',status:'AVAILABLE'
+  }};
+  h.state.resource.BGD.processedWarehouse={
+    warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',status:'OPERATIONAL',
+    availableByResource:{widgets:10},reservedByResource:{widgets:0},
+    storedBatchIds:[batchId],receipts:[]
+  };
+  // The strategic-policy harness intentionally starts with only resource,
+  // trade and finance state. This procurement fixture also exercises a
+  // privately owned factory, so create the economy bucket before assigning it.
+  h.state.economy = h.state.economy || {};
+  h.state.economy.BGD={productionAssets:[{
+    id:'FAC-AURORA-WIDGETS',countryId:'BGD',factoryType:'WIDGET_FACTORY',
+    status:'OPERATIONAL',productionEnabled:true,ownerType:'PRIVATE_ENTERPRISE',
+    ownerCompanyId:allowedCompany,operatorType:'PRIVATE_COMPANY_OPERATOR',
+    operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',privatePermitId:'PRIVATE-MULTI-PERMIT',privatePermitStatus:'ACTIVE',
+    sourcePrivateProposalId:'PRIVATE-MULTI-PROPOSAL',sourcePrivateDecisionId:'PRIVATE-MULTI-DECISION',
+    sourcePrivateFundingId:'PRIVATE-MULTI-FUNDING',
+    stateControlRights:fullPrivateStateControlRights()
+  }]};
+  const policy=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
+    policyId:'GOV-PROC-MULTI-COMPANY',contractId:'GOV-PROC-MULTI-COMPANY',
+    companyId:defaultCompany,companyIds:[defaultCompany,allowedCompany],authorizedQuantity:10,procurementLimit:10});
+  assert.equal(policy.accepted,true,JSON.stringify(policy));
+  const result=api.purchasePrivateStock('BGD',{policyId:'GOV-PROC-MULTI-COMPANY',
+    procurementId:'GOV-PROC-MULTI-COMPANY-ORDER',companyId:allowedCompany,resourceId:'widgets',quantity:5,totalValue:50});
+  assert.equal(result.accepted,true,JSON.stringify(result));
+  assert.equal(h.state.resource.BGD.batches.find(x=>x.batchId===batchId).remainingQuantity,5);
+  assert.equal(h.state.finance.BGD.tradeSettlementHistory.filter(x=>x.settlementId==='GOV-PROC-MULTI-COMPANY-ORDER').length,1);
+});
+
+test('government procurement refuses unknown or non-private operator attribution',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const companyId='NOVA_CONSUMER_INDUSTRIES';
+  h.state.resource.BGD.batches=[{
+    batchId:'UNVERIFIED-PRIVATE-BATCH',resourceId:'widgets',quantity:10,remainingQuantity:10,
+    stage:'FINISHED',countryId:'BGD',ownerCompanyId:companyId,operatorCompanyId:'UNKNOWN_OPERATOR',
+    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-UNKNOWN-OPERATOR',
+    sourcePrivateProposalId:'UNKNOWN-OP-PROPOSAL',sourcePrivateDecisionId:'UNKNOWN-OP-DECISION',
+    sourcePrivateFundingId:'UNKNOWN-OP-FUNDING',sourcePrivatePermitId:'UNKNOWN-OP-PERMIT',
+    unit:'UNITS',warehouseId:'WH-BGD-PROCESSED',status:'AVAILABLE'
+  }];
+  h.state.resource.BGD.inventory={widgets:10};
+  h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',status:'OPERATIONAL',
+    availableByResource:{widgets:10},reservedByResource:{widgets:0},storedBatchIds:['UNVERIFIED-PRIVATE-BATCH'],receipts:[]};
+  h.state.resource.BGD.inventoryLots={'UNVERIFIED-PRIVATE-BATCH':{
+    batchId:'UNVERIFIED-PRIVATE-BATCH',resourceId:'widgets',quantity:10,remainingQuantity:10,status:'AVAILABLE',
+    countryId:'BGD',ownerCompanyId:companyId,operatorCompanyId:'UNKNOWN_OPERATOR',
+    ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-UNKNOWN-OPERATOR',
+    sourcePrivateProposalId:'UNKNOWN-OP-PROPOSAL',sourcePrivateDecisionId:'UNKNOWN-OP-DECISION',
+    sourcePrivateFundingId:'UNKNOWN-OP-FUNDING',sourcePrivatePermitId:'UNKNOWN-OP-PERMIT',
+    unit:'UNITS',warehouseId:'WH-BGD-PROCESSED'
+  }};
+  h.state.economy={BGD:{productionAssets:[{
+    id:'FAC-UNKNOWN-OPERATOR',countryId:'BGD',status:'OPERATIONAL',productionEnabled:true,
+    ownerType:'PRIVATE_ENTERPRISE',ownerCompanyId:companyId,operatorType:'PRIVATE_COMPANY_OPERATOR',
+    operatorCompanyId:'UNKNOWN_OPERATOR',privatePermitId:'UNKNOWN-OP-PERMIT',privatePermitStatus:'ACTIVE',
+    sourcePrivateProposalId:'UNKNOWN-OP-PROPOSAL',sourcePrivateDecisionId:'UNKNOWN-OP-DECISION',
+    sourcePrivateFundingId:'UNKNOWN-OP-FUNDING',
+    stateControlRights:fullPrivateStateControlRights()
+  }]}};
+  const policy=api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
+    policyId:'GOV-PROC-UNKNOWN-OPERATOR',contractId:'GOV-PROC-UNKNOWN-OPERATOR',
+    companyId,authorizedQuantity:10,procurementLimit:10});
+  assert.equal(policy.accepted,true,JSON.stringify(policy));
+  const before=h.state.finance.BGD.available;
+  const result=api.purchasePrivateStock('BGD',{policyId:'GOV-PROC-UNKNOWN-OPERATOR',
+    procurementId:'GOV-PROC-UNKNOWN-OPERATOR',companyId,resourceId:'widgets',quantity:5,totalValue:50});
+  assert.equal(result.accepted,false);
+  assert.equal(result.reason,'GOVERNMENT_PROCUREMENT_PRIVATE_STOCK_INSUFFICIENT');
+  assert.equal(h.state.finance.BGD.available,before);
+});
+
+test('government procurement rejects in-transit, unstored, missing-lot and mismatched factory batches before debit',()=>{
+  const scenarios=[
+    {name:'in transit',status:'IN_TRANSIT',stored:true,lot:true,asset:true},
+    {name:'not stored',status:'AVAILABLE',stored:false,lot:true,asset:true},
+    {name:'missing lot',status:'AVAILABLE',stored:true,lot:false,asset:true},
+    {name:'wrong private factory owner',status:'AVAILABLE',stored:true,lot:true,asset:false},
+    {name:'batch from another country',status:'AVAILABLE',stored:true,lot:true,asset:true,batchCountryId:'USA'},
+    {name:'lot from another country',status:'AVAILABLE',stored:true,lot:true,asset:true,lotCountryId:'USA'},
+    {name:'factory asset from another country',status:'AVAILABLE',stored:true,lot:true,asset:true,assetCountryId:'USA'},
+    {name:'lot points to another batch',status:'AVAILABLE',stored:true,lot:true,asset:true,lotBatchId:'DIFFERENT-BATCH-ID'},
+    {name:'warehouse from another country',status:'AVAILABLE',stored:true,lot:true,asset:true,
+      warehouseCountryId:'USA',expectedReason:'GOVERNMENT_PROCUREMENT_WAREHOUSE_COUNTRY_OR_ID_MISMATCH'},
+    {name:'lot unit mismatch',status:'AVAILABLE',stored:true,lot:true,asset:true,lotUnit:'TONNES'},
+    {name:'lot quantity mismatch',status:'AVAILABLE',stored:true,lot:true,asset:true,lotRemainingQuantity:9},
+    {name:'lot is not finished goods',status:'AVAILABLE',stored:true,lot:true,asset:true,lotStage:'INTERMEDIATE'},
+    {name:'batch permit lineage mismatch',status:'AVAILABLE',stored:true,lot:true,asset:true,batchPermitId:'OTHER-PERMIT'},
+    {name:'lot permit lineage mismatch',status:'AVAILABLE',stored:true,lot:true,asset:true,lotPermitId:'OTHER-PERMIT'},
+    {name:'missing sovereign control right',status:'AVAILABLE',stored:true,lot:true,asset:true,missingStateRight:'exportControl'}
+  ];
+  for(const scenario of scenarios){
+    const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime,companyId='NOVA_CONSUMER_INDUSTRIES';
+    h.state.resource.BGD.inventory={widgets:10};
+    const sourceProposalId='PROC-PROPOSAL-'+scenario.name.replaceAll(' ','-');
+    const sourceDecisionId='PROC-DECISION-'+scenario.name.replaceAll(' ','-');
+    const sourceFundingId='PROC-FUNDING-'+scenario.name.replaceAll(' ','-');
+    const privatePermitId='PROC-PERMIT-'+scenario.name.replaceAll(' ','-');
+    const batch={batchId:'PRIVATE-'+scenario.name.replaceAll(' ','-'),resourceId:'widgets',quantity:10,remainingQuantity:10,unit:'UNITS',
+      stage:'FINISHED',countryId:scenario.batchCountryId||'BGD',ownerCompanyId:companyId,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-PRIVATE-WIDGETS',
+      sourcePrivateProposalId:sourceProposalId,sourcePrivateDecisionId:sourceDecisionId,sourcePrivateFundingId:sourceFundingId,
+      sourcePrivatePermitId:scenario.batchPermitId||privatePermitId,warehouseId:'WH-BGD-PROCESSED',status:scenario.status};
+    h.state.resource.BGD.batches=[batch];
+    h.state.resource.BGD.inventoryLots=scenario.lot?{[batch.batchId]:{...batch,
+      batchId:scenario.lotBatchId||batch.batchId,countryId:scenario.lotCountryId||batch.countryId,
+      unit:scenario.lotUnit||batch.unit,stage:scenario.lotStage||batch.stage,
+      remainingQuantity:scenario.lotRemainingQuantity===undefined?batch.remainingQuantity:scenario.lotRemainingQuantity,
+      sourcePrivatePermitId:scenario.lotPermitId||batch.sourcePrivatePermitId}}:{};
+    h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',countryId:scenario.warehouseCountryId||'BGD',status:'OPERATIONAL',
+      availableByResource:{widgets:10},reservedByResource:{widgets:0},
+      storedBatchIds:scenario.stored?[batch.batchId]:[],receipts:[]};
+    h.state.economy={BGD:{productionAssets:scenario.asset?[{
+      id:'FAC-PRIVATE-WIDGETS',countryId:scenario.assetCountryId||'BGD',status:'OPERATIONAL',productionEnabled:true,
+      ownerType:'PRIVATE_ENTERPRISE',ownerCompanyId:companyId,operatorType:'PRIVATE_COMPANY_OPERATOR',
+      operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',privatePermitId,privatePermitStatus:'ACTIVE',
+      sourcePrivateProposalId:sourceProposalId,sourcePrivateDecisionId:sourceDecisionId,sourcePrivateFundingId:sourceFundingId,
+      stateControlRights:(function(){
+        const rights=fullPrivateStateControlRights();
+        if(scenario.missingStateRight)rights[scenario.missingStateRight]=false;
+        return rights;
+      })()
+    }]:[]}};
+    api.setSupplyDirective('BGD',{directive:'GOVERNMENT_PROCUREMENT',resourceId:'widgets',
+      policyId:'PROC-'+scenario.name,contractId:'PROC-'+scenario.name,companyId,
+      companyIds:[companyId],authorizedQuantity:10,procurementLimit:10});
+    const before=h.state.finance.BGD.available;
+    const result=api.purchasePrivateStock('BGD',{policyId:'PROC-'+scenario.name,procurementId:'PROC-'+scenario.name,
+      companyId,resourceId:'widgets',quantity:5,totalValue:50,batchIds:[batch.batchId]});
+    assert.equal(result.accepted,false,scenario.name+': '+JSON.stringify(result));
+    assert.equal(result.reason,scenario.expectedReason||'GOVERNMENT_PROCUREMENT_PRIVATE_STOCK_INSUFFICIENT',scenario.name);
+    assert.equal(h.state.finance.BGD.available,before,scenario.name+' must not debit Treasury');
+    assert.equal(batch.remainingQuantity,10,scenario.name+' must not mutate source batch before validation completes');
+  }
+});
+
+test('export settlement directive idempotency rejects the same ID with a changed transaction',()=>{
+  const h=harness(),api=h.sandbox.Omega.ResourceStrategicPolicyRuntime;
+  const policy=api.setSupplyDirective('BGD',{directive:'FACTORY_ALLOCATION',resourceId:'widgets',
+    policyId:'EXPORT-IDEMPOTENCY-ALLOCATION',domesticFactoryIds:['FAC-DOM-1'],exportFactoryIds:['FAC-EXP-1']});
+  assert.equal(policy.accepted,true);
+  const ctx={countryId:'BGD',stateTransaction:h.txFactory('BGD')};
+  const first=api.commitExportDirectiveTx(ctx,{settlementId:'EXPORT-REPLAY-1',resourceId:'widgets',quantity:5,
+    destinationCountryId:'SAU',batchTransfers:[{sourceBatchId:'B-1',resourceId:'widgets',quantity:5,
+      stage:'FINISHED',ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-EXP-1'}]});
+  assert.equal(first.accepted,true,JSON.stringify(first));
+  const exact=api.commitExportDirectiveTx(ctx,{settlementId:'EXPORT-REPLAY-1',resourceId:'widgets',quantity:5,
+    destinationCountryId:'SAU',batchTransfers:[{sourceBatchId:'B-1',resourceId:'widgets',quantity:5,
+      stage:'FINISHED',ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-EXP-1'}]});
+  assert.equal(exact.duplicate,true);
+  const changed=api.commitExportDirectiveTx(ctx,{settlementId:'EXPORT-REPLAY-1',resourceId:'widgets',quantity:7,
+    destinationCountryId:'IND',batchTransfers:[{sourceBatchId:'B-2',resourceId:'widgets',quantity:7,
+      stage:'FINISHED',ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+      ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'FAC-EXP-1'}]});
+  assert.equal(changed.accepted,false);
+  assert.equal(changed.reason,'STATE_DIRECTIVE_SETTLEMENT_IDEMPOTENCY_COLLISION');
+  const noBatches=api.commitExportDirectiveTx(ctx,{settlementId:'EXPORT-EMPTY-BATCH',resourceId:'widgets',quantity:5,
+    destinationCountryId:'SAU',batchTransfers:[]});
+  assert.equal(noBatches.accepted,false);
+  assert.equal(noBatches.reason,'STATE_DIRECTIVE_BATCH_TRANSFER_SCOPE_INVALID');
+  const quantityMismatch=api.commitExportDirectiveTx(ctx,{settlementId:'EXPORT-QUANTITY-MISMATCH',resourceId:'widgets',quantity:5,
+    destinationCountryId:'SAU',batchTransfers:[{sourceBatchId:'B-3',resourceId:'widgets',quantity:4,sourceFactoryId:'FAC-EXP-1'}]});
+  assert.equal(quantityMismatch.accepted,false);
+  assert.equal(quantityMismatch.reason,'STATE_DIRECTIVE_BATCH_TRANSFER_SCOPE_INVALID');
 });

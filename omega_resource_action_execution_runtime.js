@@ -40,19 +40,27 @@
   const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
 
   function canonicalCountry(v){
-    const raw=String(v??'').trim(),u=raw.toUpperCase();
-    if(!raw)return null;
+    const raw=v&&typeof v==='object'
+      ?(v.iso3||v.iso3Code||v.countryCode||v.countryId||v.code||v.name||v.id||v.canonicalId)
+      :String(v??'').trim();
+    const direct=id(raw);if(!direct)return null;
+    if(/^[A-Z]{3}$/.test(direct))return direct;
     try{
-      const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge;
+      const bridge=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
       const hit=bridge?.resolveCountry?.(raw);
-      if(hit?.id)return id(hit.id);
+      const source=hit?.raw?.raw||hit?.raw?.datasets?.['countries.json']||hit?.raw||hit||{};
+      const iso3=source.iso3||source.iso3Code||hit?.iso3||hit?.iso3Code||
+        (String(source.countryCode||'').trim().length===3?source.countryCode:null)||
+        (String(hit?.countryCode||'').trim().length===3?hit.countryCode:null)||
+        (String(source.countryId||'').trim().length===3?source.countryId:null)||
+        (String(hit?.countryId||'').trim().length===3?hit.countryId:null);
+      if(iso3&&/^[A-Z]{3}$/.test(id(iso3)))return id(iso3);
     }catch(_){}
     try{
-      const e=g.ResourceMinistryEngine;
-      const x=e?.normalizeCountryCode?.(raw);
-      if(x)return id(x);
+      const normalized=g.ResourceMinistryEngine?.normalizeCountryCode?.(raw);
+      if(normalized&&/^[A-Z]{3}$/.test(id(normalized)))return id(normalized);
     }catch(_){}
-    return u.replace(/\s+/g,'_');
+    return direct.replace(/\s+/g,'_');
   }
 
   function rules(){
@@ -429,8 +437,16 @@
         blocked++;
       }
     }
-    ctx.stateTransaction.set('economy.capacityUpgradeRequests',rows.slice(-MAX_REQUESTS));
-    return{processed,started,completed,blocked};
+    const persisted=dispatch('economy','OMEGA_RESOURCE_ECON_PUBLISH_CAPACITY_UPGRADE_REQUESTS',c,{
+      requests:rows.slice(-MAX_REQUESTS),
+      correlationId:'RESOURCE-CAPACITY-UPGRADE-PUBLISH-'+turn()+'-'+c
+    });
+    if(persisted?.status!=='APPLIED'){
+      return{processed,started,completed,blocked,status:'PERSISTENCE_FAILED',
+        reason:persisted?.result?.reason||persisted?.reason||'CAPACITY_UPGRADE_STATE_PUBLISH_FAILED',
+        persistence:persisted};
+    }
+    return{processed,started,completed,blocked,status:'PERSISTED',persistenceStatus:'APPLIED'};
   }
 
   function removeId(arr,idValue){

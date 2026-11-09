@@ -6076,6 +6076,247 @@
 }
 
 
+/* Private-enterprise opening allocation, shown separately from commissioned assets. */
+.omega-v2-industry--factory-home .fp-private-company-overview {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  gap:12px; flex-wrap:wrap; margin:0 0 12px;
+}
+.omega-v2-industry--factory-home .fp-private-company-overview > div { min-width:0; flex:1 1 260px; }
+.omega-v2-industry--factory-home .fp-private-company-overview p {
+  margin:5px 0 0; color:var(--omega-muted,#94a3b8); font-size:12px; line-height:1.5;
+}
+.omega-v2-industry--factory-home .fp-private-company-card {
+  min-width:0; display:flex; flex-direction:column; gap:10px;
+}
+.omega-v2-industry--factory-home .fp-private-company-heading {
+  display:flex; align-items:flex-start; justify-content:space-between; gap:8px; min-width:0;
+}
+.omega-v2-industry--factory-home .fp-private-company-heading > div { min-width:0; }
+.omega-v2-industry--factory-home .fp-private-company-heading .omega-v2-card-title { overflow-wrap:anywhere; }
+.omega-v2-industry--factory-home .fp-private-company-types {
+  display:grid; grid-template-columns:minmax(0,1fr); gap:5px; margin:0; padding:0; list-style:none;
+}
+.omega-v2-industry--factory-home .fp-private-company-types li {
+  display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+  padding:7px 9px; border:1px solid rgba(111,160,205,.16); border-radius:8px;
+  background:rgba(5,22,40,.35); min-width:0;
+}
+.omega-v2-industry--factory-home .fp-private-company-types li span {
+  min-width:0; overflow-wrap:anywhere; color:var(--omega-text,#e2e8f0); font-size:11px;
+}
+.omega-v2-industry--factory-home .fp-private-company-types li strong {
+  flex:0 0 auto; color:var(--omega-accent,#67e8f9); font-size:12px; font-variant-numeric:tabular-nums;
+}
+@media (max-width:520px) {
+  .omega-v2-industry--factory-home .fp-private-company-heading { flex-wrap:wrap; }
+  .omega-v2-industry--factory-home .fp-private-company-card { padding:10px; gap:8px; }
+}
+
+/* The combined factory count lives inside the main Factory card header. */
+.omega-v2-industry--factory-home .fp-top-identity .fp-top-total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  width: max-content;
+  max-width: 100%;
+  margin: 2px 0;
+  padding: 3px 7px;
+  border: 1px solid rgba(87, 190, 255, .42);
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(12, 67, 100, .78), rgba(5, 25, 43, .82));
+}
+.omega-v2-industry--factory-home .fp-top-identity .fp-top-total strong {
+  color: #f2fbff;
+  font-size: 14px;
+  font-weight: 950;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px rgba(49, 178, 255, .36);
+}
+.omega-v2-industry--factory-home .fp-top-identity .fp-top-total small {
+  color: #83ccfa;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+.omega-v2-industry--factory-home .fp-private-ownership {
+  min-width: 0;
+  margin: 12px 0 18px;
+  padding: 12px;
+  border: 1px solid rgba(111, 157, 190, .26);
+  border-radius: 9px;
+  background: rgba(4, 17, 29, .76);
+}
+.omega-v2-industry--factory-home .fp-private-ownership-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.omega-v2-industry--factory-home .fp-private-ownership-heading .omega-v2-section-title {
+  margin: 0 0 4px;
+}
+.omega-v2-industry--factory-home .fp-private-ownership-heading p {
+  margin: 0;
+  color: #9fb9cc;
+  font-size: 10px;
+  line-height: 1.4;
+}
+.omega-v2-industry--factory-home .fp-private-ownership-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border: 1px solid rgba(116, 157, 185, .2);
+  border-radius: 6px;
+}
+.omega-v2-industry--factory-home .fp-private-ownership-table {
+  width: 100%;
+  min-width: 390px;
+  border-collapse: collapse;
+  color: #dcecf7;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.omega-v2-industry--factory-home .fp-private-ownership-table th,
+.omega-v2-industry--factory-home .fp-private-ownership-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(120, 161, 190, .15);
+  text-align: right;
+  white-space: nowrap;
+}
+.omega-v2-industry--factory-home .fp-private-ownership-table thead th {
+  color: #82caff;
+  background: rgba(27, 72, 103, .34);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.omega-v2-industry--factory-home .fp-private-ownership-table th:first-child,
+.omega-v2-industry--factory-home .fp-private-ownership-table td:first-child {
+  text-align: left;
+}
+.omega-v2-industry--factory-home .fp-private-ownership-table tbody th {
+  color: #e7f4fb;
+  font-weight: 750;
+}
+.omega-v2-industry--factory-home .fp-private-ownership-table tbody td {
+  color: #c5e4f5;
+}
+.omega-v2-industry--factory-home .fp-private-ownership-table tfoot th,
+.omega-v2-industry--factory-home .fp-private-ownership-table tfoot td {
+  color: #fff;
+  background: rgba(29, 104, 151, .23);
+  border-bottom: 0;
+  font-weight: 900;
+}
+@media (max-width: 560px) {
+  .omega-v2-industry--factory-home .fp-top-identity .fp-top-total {
+    gap: 5px;
+    padding: 2px 5px;
+  }
+  .omega-v2-industry--factory-home .fp-top-identity .fp-top-total strong { font-size: 12px; }
+  .omega-v2-industry--factory-home .fp-private-ownership {
+    padding: 8px;
+  }
+  .omega-v2-industry--factory-home .fp-private-ownership-heading {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+/* Low-power mobile WebViews: preserve all actions and data without expensive
+   full-screen image filtering or 3D compositing on Android 9-era GPUs. */
+@media (max-width:900px) {
+  .omega-v2-industry--factory-home .fp-stage {
+    background:linear-gradient(145deg,#0a2a4a,#06162b 62%,#030a14) !important;
+  }
+  .omega-v2-industry--factory-home .fp-stage::before { display:none !important; }
+  .omega-v2-industry--factory-home .fp-stage .omega-v2-factory-backdrop {
+    display:none !important;
+    filter:none !important;
+  }
+  .omega-v2-industry--factory-home .fp-card-flip-shell,
+  .omega-v2-industry--factory-home .fp-card-flip-inner {
+    height:auto !important;
+    perspective:none !important;
+    transform:none !important;
+    transform-style:flat !important;
+    transition:none !important;
+  }
+  .omega-v2-industry--factory-home .fp-card-face {
+    position:relative !important;
+    inset:auto !important;
+    width:100% !important;
+    height:auto !important;
+    min-height:0 !important;
+    backface-visibility:visible !important;
+    transform:none !important;
+    box-shadow:none !important;
+  }
+  .omega-v2-industry--factory-home .fp-card-face--back { display:none !important; }
+  .omega-v2-industry--factory-home .omega-v2-factory-type-card.fp-card--flipped .fp-card-face--front {
+    display:none !important;
+  }
+  .omega-v2-industry--factory-home .omega-v2-factory-type-card.fp-card--flipped .fp-card-face--back {
+    display:flex !important;
+  }
+  .omega-v2-industry--factory-home .omega-v2-factory-type-card {
+    box-shadow:0 1px 3px rgba(0,0,0,.22) !important;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-art .omega-v2-factory-svg {
+    filter:none !important;
+  }
+}
+
+/* Portrait phones retain the requested three-column factory catalogue. */
+@media (max-width:680px) and (orientation:portrait) {
+  .omega-v2-industry--factory-home .fp-type-catalog-grid {
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:5px !important;
+  }
+  .omega-v2-industry--factory-home .omega-v2-factory-type-card {
+    min-width:0;
+    padding:4px;
+    gap:4px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-head { flex-wrap:wrap; gap:3px; }
+  .omega-v2-industry--factory-home .fp-type-card-art {
+    flex:0 0 28px;
+    width:28px;
+    height:28px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-art .omega-v2-factory-svg {
+    width:24px;
+    height:24px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-name {
+    flex:1 1 100%;
+    min-width:0;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-name strong {
+    font-size:9px;
+    line-height:1.2;
+    overflow-wrap:anywhere;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-count {
+    flex:1 1 100%;
+    padding:2px 3px;
+    font-size:8px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-actions {
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:3px;
+  }
+  .omega-v2-industry--factory-home .fp-type-card-actions .omega-v2-factory-button {
+    min-height:27px;
+    padding:3px 2px;
+    font-size:8px;
+  }
+}
+
 /* Factory Input table overflow containment: keep long labels and statuses inside their cells. */
 .omega-v2-industry--factory-home .fp-factory-table-wrap {
   display:block;
@@ -6090,6 +6331,11 @@
   width:100%;
   max-width:none;
   table-layout:fixed;
+}
+.omega-v2-industry--factory-home .fp-factory-input-total-table {
+  /* Keep all seven aggregate columns usable on a phone; the parent wrapper
+     supplies the horizontal scroller instead of compressing every cell. */
+  min-width:960px;
 }
 .omega-v2-industry--factory-home .fp-factory-input-table th,
 .omega-v2-industry--factory-home .fp-factory-input-table td {
@@ -6186,6 +6432,381 @@
   overflow-wrap:anywhere;
 }
 
+
+/* SAB-42: phone-first, read-only Production Ministry Lines view.
+   Keep one column and avoid backdrop/photo/3D work on low-memory WebViews. */
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-width:0;
+  background:linear-gradient(160deg,rgba(5,16,29,.98),rgba(8,25,42,.98));
+  background-image:none !important;
+}
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .fp-deck,
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .omega-v2-factory-backdrop {
+  display:none !important;
+}
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .fp-lines {
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  min-width:0;
+  width:100%;
+  padding:0 1px 10px;
+}
+.omega-v2-industry--factory-home .fp-lines-heading {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+  padding:2px 1px 8px;
+  border-bottom:1px solid rgba(104,189,232,.2);
+}
+.omega-v2-industry--factory-home .fp-lines-heading > div { min-width:0; }
+.omega-v2-industry--factory-home .fp-lines-heading > div > span,
+.omega-v2-industry--factory-home .fp-lines-heading > small {
+  color:#7fa9c2;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.omega-v2-industry--factory-home .fp-lines-heading h3 {
+  margin:3px 0 0;
+  color:#eaf6ff;
+  font-size:14px;
+  line-height:1.2;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-lines-summary {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
+.omega-v2-industry--factory-home .fp-lines-summary > div {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:7px;
+  min-width:0;
+  min-height:34px;
+  padding:6px 8px;
+  border:1px solid rgba(104,189,232,.18);
+  border-radius:7px;
+  background:rgba(4,17,31,.8);
+}
+.omega-v2-industry--factory-home .fp-lines-summary span {
+  color:#8aaec5;
+  font-size:8px;
+  line-height:1.2;
+}
+.omega-v2-industry--factory-home .fp-lines-summary strong {
+  color:#f0f8ff;
+  font-size:12px;
+  font-variant-numeric:tabular-nums;
+}
+.omega-v2-industry--factory-home .fp-lines-list {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:8px;
+  min-width:0;
+}
+.omega-v2-industry--factory-home .fp-line-card {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+  padding:9px;
+  border:1px solid rgba(104,189,232,.2);
+  border-radius:9px;
+  background:linear-gradient(155deg,rgba(8,26,43,.96),rgba(4,15,27,.98));
+}
+.omega-v2-industry--factory-home .fp-line-card-head {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+}
+.omega-v2-industry--factory-home .fp-line-card-head > div { min-width:0; }
+.omega-v2-industry--factory-home .fp-line-kicker {
+  display:block;
+  color:#7fb4d3;
+  font-size:8px;
+  font-weight:800;
+  line-height:1.25;
+  text-transform:uppercase;
+}
+.omega-v2-industry--factory-home .fp-line-card h3 {
+  margin:3px 0 2px;
+  color:#eff8ff;
+  font-size:12px;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-card-head small {
+  color:#718fa5;
+  font-size:8px;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-status {
+  flex:0 0 auto;
+  max-width:45%;
+  padding:4px 6px;
+  border:1px solid rgba(109,194,235,.28);
+  border-radius:6px;
+  color:#b7dff4;
+  background:rgba(18,63,88,.35);
+  font-size:8px;
+  font-weight:850;
+  line-height:1.2;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-summary {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
+.omega-v2-industry--factory-home .fp-line-summary > div {
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  min-width:0;
+  padding:6px 7px;
+  border-radius:6px;
+  background:rgba(3,14,25,.72);
+}
+.omega-v2-industry--factory-home .fp-line-summary span,
+.omega-v2-industry--factory-home .fp-line-fact > span {
+  color:#82a6bd;
+  font-size:8px;
+  line-height:1.2;
+}
+.omega-v2-industry--factory-home .fp-line-summary strong {
+  color:#e6f4fd;
+  font-size:10px;
+  line-height:1.25;
+  font-variant-numeric:tabular-nums;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-facts {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:6px;
+}
+.omega-v2-industry--factory-home .fp-line-fact,
+.omega-v2-industry--factory-home .fp-line-input {
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  min-width:0;
+  padding:6px 7px;
+  border-left:2px solid rgba(69,180,231,.45);
+  border-radius:0 5px 5px 0;
+  background:rgba(3,14,25,.68);
+}
+.omega-v2-industry--factory-home .fp-line-fact strong,
+.omega-v2-industry--factory-home .fp-line-input strong {
+  color:#deeff9;
+  font-size:9px;
+  font-weight:850;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-fact small,
+.omega-v2-industry--factory-home .fp-line-input small,
+.omega-v2-industry--factory-home .fp-line-input span {
+  color:#829daf;
+  font-size:8px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-line-inputs {
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  min-width:0;
+}
+.omega-v2-industry--factory-home .fp-line-inputs h4 {
+  margin:0;
+  color:#a5c7dc;
+  font-size:9px;
+  font-weight:850;
+}
+.omega-v2-industry--factory-home .fp-line-record-count,
+.omega-v2-industry--factory-home .fp-lines-sources {
+  color:#64849a;
+  font-size:7px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.omega-v2-industry--factory-home .fp-lines-empty {
+  padding:14px 10px;
+  border:1px dashed rgba(104,189,232,.24);
+  border-radius:8px;
+  color:#93afc2;
+  background:rgba(3,14,25,.55);
+  font-size:10px;
+  line-height:1.4;
+  text-align:center;
+}
+.omega-v2-industry--factory-home .fp-lines-provenance {
+  margin:0;
+  padding:7px 8px;
+  border-left:2px solid rgba(126,164,190,.4);
+  color:#7895a9;
+  background:rgba(4,15,26,.6);
+  font-size:8px;
+  line-height:1.4;
+  overflow-wrap:anywhere;
+}
+@media (min-width:700px) {
+  .omega-v2-industry--factory-home .fp-lines-summary {
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  .omega-v2-industry--factory-home .fp-line-facts {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media (max-width:380px) {
+  .omega-v2-industry--factory-home .fp-lines-summary > div {
+    min-height:32px;
+    padding:5px 6px;
+  }
+  .omega-v2-industry--factory-home .fp-line-card {
+    padding:8px;
+  }
+}
+
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] *,
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] *::before,
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] *::after {
+  animation:none !important;
+  transition:none !important;
+  filter:none !important;
+  backdrop-filter:none !important;
+  perspective:none !important;
+  text-shadow:none !important;
+}
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .fp-lines,
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .fp-line-card,
+.omega-v2-industry--factory-home .fp-stage[data-active-tab="production-lines"] .fp-lines-summary > div {
+  box-shadow:none !important;
+  transform:none !important;
+}
+
+
+/* Country-level policy controls stay inside Production Ministry Lines. */
+.omega-v2-industry--factory-home .fp-state-policy {
+  margin:10px 0;
+  padding:10px;
+  border:1px solid rgba(76,190,230,.22);
+  border-radius:10px;
+  background:rgba(6,18,31,.72);
+  color:var(--omega-text-primary,#dbeaf2);
+  min-width:0;
+}
+.omega-v2-industry--factory-home .fp-state-policy > summary {
+  cursor:pointer;
+  font-size:12px;
+  font-weight:800;
+  color:#a9e6f8;
+  padding:3px 0;
+}
+.omega-v2-industry--factory-home .fp-state-policy p,
+.omega-v2-industry--factory-home .fp-state-policy-empty {
+  color:#88a4b6;
+  font-size:10px;
+  line-height:1.45;
+  margin:7px 0;
+}
+.omega-v2-industry--factory-home .fp-state-policy-form,
+.omega-v2-industry--factory-home .fp-state-procurement {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:10px;
+  min-width:0;
+}
+.omega-v2-industry--factory-home .fp-state-policy label,
+.omega-v2-industry--factory-home .fp-state-procurement label {
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:0;
+  color:#9db7c6;
+  font-size:9px;
+  font-weight:700;
+}
+.omega-v2-industry--factory-home .fp-state-policy input,
+.omega-v2-industry--factory-home .fp-state-policy select,
+.omega-v2-industry--factory-home .fp-state-procurement input,
+.omega-v2-industry--factory-home .fp-state-procurement select {
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  min-height:34px;
+  box-sizing:border-box;
+  padding:6px 8px;
+  border:1px solid rgba(115,174,202,.24);
+  border-radius:6px;
+  background:#071421;
+  color:#e3f3f9;
+  font:inherit;
+  font-size:10px;
+}
+.omega-v2-industry--factory-home .fp-state-policy button,
+.omega-v2-industry--factory-home .fp-state-procurement button {
+  min-height:34px;
+  width:100%;
+  min-width:0;
+  padding:7px 10px;
+  border:1px solid rgba(72,190,230,.4);
+  border-radius:7px;
+  background:#0b3045;
+  color:#d8f4ff;
+  font-size:10px;
+  font-weight:800;
+}
+.omega-v2-industry--factory-home .fp-state-policy button:disabled,
+.omega-v2-industry--factory-home .fp-state-procurement button:disabled {
+  opacity:.45;
+}
+.omega-v2-industry--factory-home .fp-state-policy-active {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+  padding:7px 0;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.omega-v2-industry--factory-home .fp-state-policy-active > div {min-width:0;display:flex;flex-direction:column;gap:3px}
+.omega-v2-industry--factory-home .fp-state-policy-active strong {font-size:10px;color:#d5edf5}
+.omega-v2-industry--factory-home .fp-state-policy-active small {font-size:8px;color:#7895a8;overflow-wrap:anywhere}
+.omega-v2-industry--factory-home .fp-state-policy-active button {width:auto;min-width:48px;min-height:28px;padding:4px 8px}
+.omega-v2-industry--factory-home .fp-state-policy-active-list,
+.omega-v2-industry--factory-home .fp-state-procurement {
+  margin-top:12px;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.omega-v2-industry--factory-home .fp-state-policy-active-list h4,
+.omega-v2-industry--factory-home .fp-state-procurement h4 {
+  grid-column:1/-1;
+  margin:0;
+  color:#a9e6f8;
+  font-size:10px;
+}
+.omega-v2-industry--factory-home .fp-state-procurement p {grid-column:1/-1}
+@media(max-width:560px) {
+  .omega-v2-industry--factory-home .fp-state-policy-form,
+  .omega-v2-industry--factory-home .fp-state-procurement {grid-template-columns:minmax(0,1fr)}
+}
+
 /* Android 9 / legacy WebView paint profile.
    Preserve the same factory data, cards, controls and three-card paging while
    avoiding expensive composited backdrops, gradients, filters and shadows on
@@ -6231,4 +6852,24 @@
 .omega-v2-industry--factory-home[data-omega-v2-render-profile="legacy-android"] .omega-v2-factory-artwell {
   background:#0b2237 !important;
   background-image:none !important;
+}
+
+/* Android 9 WebView: preserve a real horizontal scroll range for the
+   aggregate daily-input table instead of allowing table-layout:fixed to shrink it. */
+.omega-v2-industry--factory-home .fp-factory-plan > .fp-factory-table-wrap {
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow-x:scroll;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
+}
+.omega-v2-industry--factory-home .fp-factory-plan .fp-factory-input-total-table {
+  display:table;
+  width:1120px !important;
+  min-width:1120px !important;
+  max-width:none;
+  table-layout:fixed;
 }

@@ -194,6 +194,28 @@ const mineplayScenario={
 const reserveScenario=JSON.parse(fs.readFileSync(new URL('../resource_site_reserve_simulation_v1.json',import.meta.url),'utf8'));
 assert.equal(reserveScenario.siteCount,250);
 assert.equal(reserveScenario.commercialSiteCount,246);
+// Regression: reserve-only physical sites must receive their independent scenario reserve
+// at the canonical site-binding boundary. Cigar Lake's source reserve/annual output are
+// pounds U3O8; the runtime must normalize both to the uranium commodity's canonical tonnes
+// before creating extraction capacity. This does not promote scenario values to real data.
+const cigarLakeBinding=runtime.normalizeBoundSiteForRuntime({
+  siteId:'SITE_CAN_cigar_lake_uranium_mine',
+  siteReferenceKey:'SITE_CAN_cigar_lake_uranium_mine',
+  countryId:'CAN',countryCode:'CAN',
+  siteName:'Cigar Lake Uranium Mine',resourceId:'uranium',resourceTypeId:'uranium',
+  location:{countryIso3:'CAN',coordinates:{lat:58,lng:-106}},
+  operation:{status:'ACTIVE_PRODUCING',operationalStatus:'ACTIVE_PRODUCING',commercialExtraction:true},
+  commercialExtraction:true,map:{markerEligible:true,countryIsolationKey:'CAN'}
+});
+assert.equal(cigarLakeBinding.status,'READY',JSON.stringify(cigarLakeBinding));
+assert.equal(cigarLakeBinding.site.simulationReserveAuthority,'SCENARIO_SIMULATION_DATA');
+assert.ok(Number(cigarLakeBinding.site.simulationReserveQuantity)>0);
+assert.equal(cigarLakeBinding.site.simulationReserveUnit,'TONNES',
+  'Cigar Lake U3O8 reserve must be normalized before it is used by the uranium extraction engine');
+assert.equal(cigarLakeBinding.site.simulationAnnualOutputUnit,'TONNES');
+assert.ok(Number(cigarLakeBinding.site.simulationAnnualProductionRatePerDay)>0,
+  'Cigar Lake annual-output provenance must normalize to the same canonical unit as its reserve');
+assert.equal(cigarLakeBinding.site.simulationTargetGameplayLifeYears,437);
 
 // Audit every distinct physical/commercial identity through the same runtime normalizer.
 // Simulation defaults never overwrite source values: the source/real view remains separate.

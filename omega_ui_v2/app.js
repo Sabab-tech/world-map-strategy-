@@ -463,7 +463,11 @@
     var countryChoices = Array.isArray(state.options.countryOptions) ? state.options.countryOptions : [];
     var countryControl = countryChoices.length
       ? '<select class="omega-v2-country-select" data-omega-v2-country aria-label="Selected country">' + countryChoices.map(function (item) {
-        var id = canonicalCountry(typeof item === 'string' ? item : item.id || item.iso3 || item.countryCode || item.value);
+        var rawId = typeof item === 'string' ? item : item.id || item.iso3 || item.countryCode || item.value;
+        // Country option records from integration already carry canonical ISO-3 IDs.
+        // Avoid 197 repeated runtime profile lookups during the first cabinet frame.
+        var id = String(rawId == null ? '' : rawId).trim().toUpperCase();
+        if (!/^[A-Z]{3}$/.test(id)) id = canonicalCountry(rawId);
         var label = typeof item === 'string' ? item : item.name || item.label || id;
         return '<option value="' + esc(id) + '"' + (String(id).toUpperCase() === String(state.countryId).toUpperCase() ? ' selected' : '') + '>' + esc(label) + '</option>';
       }).join('') + '</select>'

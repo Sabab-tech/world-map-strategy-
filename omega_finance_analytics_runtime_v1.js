@@ -71,16 +71,78 @@ function currentValues(p){
  const map={gdp:[mi?.gdpUsd,fi?.gdpCurrentUsd],growth:[mi?.gdpGrowthAnnualPct,fi?.gdpGrowthPct],inflation:[mi?.inflationAnnualPct,fi?.inflationRatePct],unemployment:[mi?.unemploymentRatePct,fi?.unemploymentRatePct],debt:[mi?.publicDebtUsd,fi?.publicDebtUsd],balance:[mi?.annualBudgetBalanceUsd,fi?.currentBudgetBalanceUsd,fi?.governmentBudgetBalanceUsd],trade:[fi?.tradeBalanceUsd,raw.rawIndicators?.tradeBalanceUsd],reserves:[mi?.foreignExchangeReservesUsd,fi?.foreignExchangeReservesUsd],stability:[mi?.stabilityScore]};
  for(const m of metrics)out[m.id]=first(...(map[m.id]||[]),baseValue(p,raw,m));return out;
 }
+function appendCountryTurn(p,t){
+ const id=iso(p),values=currentValues(p),byMetric=liveData.get(id)||{};
+ for(const m of metrics){
+  const arr=byMetric[m.id]||(byMetric[m.id]=[]);
+  arr.push({x:t,label:'Turn '+t,value:values[m.id],kind:'LIVE_TURN'});
+  if(arr.length>WINDOW)arr.splice(0,arr.length-WINDOW);
+ }
+ liveData.set(id,byMetric);
+}
+function turnNumber(d){
+ const f=finance();
+ return n(d?.simulationTurn)??n(d?.turn)??n(d?.payload?.turn)??n(f?.diagnostics?.().simulationTurn)??0;
+}
 function handleTurn(d){
  const f=finance();if(!f?.getProfiles)return{ok:false,code:'FINANCE_NOT_READY'};
- const t=n(d?.simulationTurn)??n(d?.turn)??n(d?.payload?.turn)??n(f.diagnostics?.().simulationTurn)??0;
+ const t=turnNumber(d);
  if(lastTurn!==null&&t<=lastTurn)return{ok:true,duplicate:true,turn:t,updated:0};
- gameStarted=true;live=true;lastTurn=t;let updated=0;
- for(const p of profiles){const id=iso(p),values=currentValues(p),byMetric=liveData.get(id)||{};
-  for(const m of metrics){const arr=byMetric[m.id]||(byMetric[m.id]=[]);arr.push({x:t,label:'Turn '+t,value:values[m.id],kind:'LIVE_TURN'});if(arr.length>WINDOW)arr.splice(0,arr.length-WINDOW);}
-  liveData.set(id,byMetric);updated++;
+ gameStarted=true;live=true;let updated=0;
+ for(const p of profiles){appendCountryTurn(p,t);updated++;}
+ lastTurn=t;render();return{ok:true,turn:t,updated,mode:'LIVE_TURNS'};
+}
+
+// Finance Analytics is a presentation consumer, not part of the authoritative turn
+// transaction. Recompute its all-country, 26-metric charts in bounded batches after the
+// commit has returned, so the PUBLISH phase never waits for UI analytics or profile clones.
+const analyticsTurnQueue=[];
+const analyticsTurnQueueKeys=new Set();
+let analyticsTurnQueueRunning=false,analyticsTurnQueueScheduled=false;
+const ANALYTICS_COUNTRY_BATCH_SIZE=8;
+function scheduleAnalyticsQueue(){
+ if(analyticsTurnQueueScheduled||analyticsTurnQueueRunning)return;
+ analyticsTurnQueueScheduled=true;
+ const defer=typeof g.setTimeout==='function'?g.setTimeout.bind(g):setTimeout;
+ defer(function(){analyticsTurnQueueScheduled=false;processAnalyticsTurnQueue();},0);
+}
+async function processAnalyticsTurnQueue(){
+ if(analyticsTurnQueueRunning)return;
+ analyticsTurnQueueRunning=true;
+ try{
+  if(!ready)await init();
+  while(analyticsTurnQueue.length){
+   const job=analyticsTurnQueue.shift();
+   analyticsTurnQueueKeys.delete(job.turn);
+   if(lastTurn!==null&&job.turn<=lastTurn)continue;
+   gameStarted=true;live=true;
+   for(let offset=0;offset<profiles.length;offset+=ANALYTICS_COUNTRY_BATCH_SIZE){
+    const end=Math.min(profiles.length,offset+ANALYTICS_COUNTRY_BATCH_SIZE);
+    for(let index=offset;index<end;index++)appendCountryTurn(profiles[index],job.turn);
+    if(end<profiles.length)await new Promise(resolve=>{
+      const defer=typeof g.setTimeout==='function'?g.setTimeout.bind(g):setTimeout;
+      defer(resolve,0);
+    });
+   }
+   lastTurn=job.turn;
+   render();
+  }
+ }catch(error){
+  try{g.console?.error?.('[OMEGA ANALYTICS QUEUED TURN]',error);}catch(_){}
+ }finally{
+  analyticsTurnQueueRunning=false;
+  if(analyticsTurnQueue.length)scheduleAnalyticsQueue();
  }
- render();return{ok:true,turn:t,updated,mode:'LIVE_TURNS'};
+}
+function queueTurn(d){
+ const f=finance();if(!f?.getProfiles)return{ok:false,code:'FINANCE_NOT_READY'};
+ const t=turnNumber(d);
+ if((lastTurn!==null&&t<=lastTurn)||analyticsTurnQueueKeys.has(t))
+  return{ok:true,duplicate:true,scheduled:false,turn:t,updated:0};
+ analyticsTurnQueue.push({turn:t,detail:d||null});
+ analyticsTurnQueueKeys.add(t);
+ scheduleAnalyticsQueue();
+ return{ok:true,scheduled:true,turn:t,queued:analyticsTurnQueue.length};
 }
 function seriesFor(p,id){const s=liveData.get(iso(p))?.[id];if(live&&s?.length)return s.slice();return(preview.get(iso(p))?.series[id]||[]).slice();}
 function fmt(v,m){
@@ -157,7 +219,7 @@ async function init(){
  try{return await boot;}finally{if(!ready)boot=null;}
 }
 function dispatch(type,detail){try{g.dispatchEvent&&g.CustomEvent&&g.dispatchEvent(new g.CustomEvent(type,{detail}));}catch(_){}}
-function diagnostics(){return{version:VERSION,initialized:ready,countryCount:profiles.length,metricCount:metrics.length,previewCountries:preview.size,previewHorizonDays:DAYS,previewPointsPerMetric:DAYS+1,gameStarted,liveStarted:live,lastTurn,liveCountryCount:liveData.size,selectedCountryCode:chosen,selectedMetric:metricId,previewIsObservedHistory:false};}
+function diagnostics(){return{version:VERSION,initialized:ready,countryCount:profiles.length,metricCount:metrics.length,previewCountries:preview.size,previewHorizonDays:DAYS,previewPointsPerMetric:DAYS+1,gameStarted,liveStarted:live,lastTurn,liveCountryCount:liveData.size,queuedTurnCount:analyticsTurnQueue.length,turnUpdateBatchSize:ANALYTICS_COUNTRY_BATCH_SIZE,selectedCountryCode:chosen,selectedMetric:metricId,previewIsObservedHistory:false};}
 function getCountrySeries(country,id){const p=countryMap.get(String(country||'').toUpperCase());if(!p)return null;const m=metrics.some(m=>m.id===id)?id:'gdp',e=preview.get(iso(p));return{countryCode:iso(p),countryName:p.name,metric:m,mode:live?'LIVE_TURNS':'MODEL_PREVIEW',points:seriesFor(p,m),baseline:e?.values[m],provenance:e?.provenance};}
 function start(){gameStarted=true;render();return diagnostics();}
 const api={VERSION,init,diagnostics,getMetrics:()=>metrics.map(m=>({...m})),getCountrySeries,handleTurn,onGameStarted:start,render,refresh:render,exportCsv};
@@ -167,7 +229,7 @@ if(g.document){
  g.addEventListener&&g.addEventListener('OMEGA_MACRO_STABILITY_RUNTIME_READY',()=>init().catch(e=>g.console?.error?.('[OMEGA ANALYTICS INIT]',e)));
  g.addEventListener&&g.addEventListener('OMEGA_READY',()=>init().catch(e=>g.console?.error?.('[OMEGA ANALYTICS INIT]',e)));
  g.addEventListener&&g.addEventListener('OMEGA_GAME_STARTED',start);g.addEventListener&&g.addEventListener('OMEGA_SIMULATION_STARTED',start);
- g.addEventListener&&g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',e=>init().then(()=>handleTurn(e?.detail||{})).catch(err=>g.console?.error?.('[OMEGA ANALYTICS TURN]',err)));
+ g.addEventListener&&g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',e=>{queueTurn(e?.detail||{});});
  if(g.OmegaFinanceMinistry)Promise.resolve().then(()=>init().catch(e=>g.console?.error?.('[OMEGA ANALYTICS INIT]',e)));
  else g.document.addEventListener&&g.document.addEventListener('DOMContentLoaded',()=>init().catch(e=>g.console?.error?.('[OMEGA ANALYTICS INIT]',e)),{once:true});
 }

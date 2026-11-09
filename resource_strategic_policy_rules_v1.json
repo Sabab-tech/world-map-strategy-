@@ -49,6 +49,7 @@
       "KG": 10000,
       "KILOGRAM": 10000,
       "KILOGRAMS": 10000,
+      "SIMULATION_RESOURCE_UNIT": 10000,
       "DEFAULT": 10000
     },
     "batchImpact": {

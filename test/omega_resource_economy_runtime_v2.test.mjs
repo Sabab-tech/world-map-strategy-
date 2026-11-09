@@ -60,7 +60,9 @@ function createContext(){
           id:'PROC_1',stage:'PROCESSING',capacity:50,
           inputCoefficients:{iron_ore:1},
           outputProfile:{iron_intermediate:0.8},
-          companyId:'PROCESS_CO'
+          companyId:'LEGACY_COMPANY_ATTRIBUTION',
+          ownerCompanyId:'FACTORY_OWNER_CO',
+          operatorCompanyId:'PROCESS_OPERATOR_CO'
         }]
       }
     },
@@ -70,6 +72,9 @@ function createContext(){
   };
 
   const handlers=new Map();
+  const commands=new Map();
+  const commandCollisions=[];
+  let commandSequence=0;
   const stateTx=(countryId)=>({
     get(path){
       const parts=String(path).split('.');
@@ -100,14 +105,26 @@ function createContext(){
     commandHandlers:handlers,
     registerAction(){},
     registerCommandHandler(type,owner,handler){ handlers.set(type,{owner,handler}); },
-    dispatchCommand(owner,type,countryId,payload){
+    dispatchCommand(owner,type,countryId,payload,options={}){
       const item=handlers.get(type);
       if(!item)return {status:'UNAVAILABLE',reason:'HANDLER_NOT_FOUND'};
+      const commandId=String(options.commandId||('TEST-'+type+'-'+(++commandSequence)));
+      const fingerprint=JSON.stringify({owner,type,countryId,payload});
+      const previous=commands.get(commandId);
+      if(previous){
+        if(previous.fingerprint!==fingerprint){
+          commandCollisions.push({commandId,reason:'COMMAND_ID_COLLISION',existingFingerprint:previous.fingerprint,incomingFingerprint:fingerprint});
+          return {status:'FAILED',reason:'COMMAND_ID_COLLISION',commandId};
+        }
+        return {...previous.row,duplicate:true,idempotentReplay:true};
+      }
       const result=item.handler(
-        {commandId:'TEST-'+type,commandType:type,payload},
+        {commandId,commandType:type,payload},
         {countryId, stateTransaction:stateTx(countryId)}
       );
-      return {status:'APPLIED',result};
+      const row={status:result&&result.accepted===false?'FAILED':'APPLIED',result,commandId};
+      commands.set(commandId,{fingerprint,row});
+      return row;
     },
     emitEvent(type,countryId,source,payload,meta){
       events.dispatchEvent(new CustomEventMock(type,{detail:{eventType:type,countryId,payload,source,meta}}));
@@ -179,11 +196,222 @@ function createContext(){
     OmegaGlobalTrade:{processAll(){}}
   };
   context.globalThis=context;
-  return {context,worldState,handlers,events};
+  return {context,worldState,handlers,events,commands,commandCollisions,stateTx};
 }
 
+test('export settlement replay is idempotent across company flows, Treasury clearing and fiscal receipts',async()=>{
+  const {context,worldState,commands,commandCollisions}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+
+  const settlementId='EXPORT-SETTLEMENT-REPLAY-1';
+  const eventFor=totalValue=>new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{
+    detail:{payload:{
+      settlementId,sellerCountryId:'BGD',resourceId:'iron_ore',
+      totalValue,quantity:20,simulationTurn:1,
+      sourceBatchIds:['EXPORT-BATCH-1'],
+      batchTransfers:[{sourceBatchId:'EXPORT-BATCH-1',sourceBatchIds:['EXPORT-BATCH-1'],
+        ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',resourceId:'iron_ore',quantity:20}]
+    }}
+  });
+  context.dispatchEvent(eventFor(200));
+  const availableAfterFirst=worldState.finance.BGD.available;
+  const accountAfterFirst=JSON.stringify(worldState.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES);
+  const workerFlowAfterFirst=worldState.economy.BGD.workerIncome.totalSinceRuntimeStart;
+  const transportAfterFirst=worldState.transport.BGD.resourceRevenue.totalSinceRuntimeStart;
+  const fiscalAfterFirst=worldState.finance.BGD.resourceFiscal.cumulative.total;
+  const clearingAfterFirst=worldState.finance.BGD.resourceSettlementClearing.length;
+  const commandCountAfterFirst=commands.size;
+  const companyJournal=worldState.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES.cashFlowEntries;
+
+  assert.ok(Array.isArray(companyJournal)&&companyJournal.length>=3,'settled receipts and actual operating costs must be journalled');
+  assert.equal(new Set(companyJournal.map(row=>row.entryId)).size,companyJournal.length,'each company cash-flow entry has a unique idempotency key');
+  assert.ok(companyJournal.some(row=>row.direction==='CREDIT'&&row.category==='SUPPLIER_SALE'));
+  assert.ok(companyJournal.some(row=>row.direction==='DEBIT'&&row.category==='WORKER_INCOME'));
+  assert.ok(companyJournal.some(row=>row.direction==='DEBIT'&&row.category==='TRANSPORT'));
+  assert.equal(worldState.finance.BGD.resourceFiscal.cumulative.corporateTax,0,'corporate income tax must not be charged on gross receipts');
+  assert.equal(clearingAfterFirst,1);
+  assert.ok(commandCountAfterFirst>=6,'each payment, cost and receipt uses an authoritative command record');
+
+  // Simulate event replay after reload: the volatile listener guard is intentionally removed.
+  delete context.__OmegaResourceFiscalizedSettlements[settlementId];
+  context.dispatchEvent(eventFor(200));
+  assert.equal(worldState.finance.BGD.available,availableAfterFirst,'Treasury clearing and tax receipt must not post twice');
+  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES),accountAfterFirst,'company income/payroll/freight flows must not post twice');
+  assert.equal(worldState.economy.BGD.workerIncome.totalSinceRuntimeStart,workerFlowAfterFirst);
+  assert.equal(worldState.transport.BGD.resourceRevenue.totalSinceRuntimeStart,transportAfterFirst);
+  assert.equal(worldState.finance.BGD.resourceFiscal.cumulative.total,fiscalAfterFirst);
+  assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,clearingAfterFirst);
+  assert.equal(commands.size,commandCountAfterFirst,'saved stable command identities must be replay-safe');
+
+  // Reusing a settlement identity with a different amount is a collision, not a second payment.
+  delete context.__OmegaResourceFiscalizedSettlements[settlementId];
+  context.dispatchEvent(eventFor(201));
+  assert.equal(worldState.finance.BGD.available,availableAfterFirst);
+  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES),accountAfterFirst);
+  assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,clearingAfterFirst);
+  assert.ok(commandCollisions.some(x=>x.reason==='COMMAND_ID_COLLISION'),'same stable command ID with a changed payload must raise a persisted-command integrity collision');
+});
+test('private-company settlement fiscalization does not credit seller revenue or Treasury twice',async()=>{
+  const {context,worldState,commands}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  const settlementId='PRIVATE-COMPANY-SETTLEMENT-ONCE';
+  const sellerCompany='NOVA_CONSUMER_INDUSTRIES';
+  const buyerCompany='ATLAS_TECHNOLOGY_CORPORATION';
+  const account={
+    companyId:sellerCompany,openingCashStatus:'UNKNOWN',runtimeNetCashFlow:200,
+    grossRevenue:200,paymentsReceived:200,paymentsMade:0,taxPaid:0,
+    workerIncomePaid:0,transportPaid:0,supplierRevenue:200,lastTurn:1,
+    cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,cashFlowEntries:[{
+      entryId:'PE-PRIVATE-IMPORT-RECEIPT:'+settlementId,companyId:sellerCompany,
+      amount:200,direction:'CREDIT',category:'PRIVATE_COMPANY_EXPORT_SALE',
+      currency:'USD',sourceId:settlementId,turn:1,status:'POSTED'
+    }]
+  };
+  worldState.economy.BGD.companyAccounts={[sellerCompany]:account};
+  const treasuryBefore=worldState.finance.BGD.available;
+  const revenueBefore=account.grossRevenue;
+  const receivedBefore=account.paymentsReceived;
+  const send=()=>context.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{
+    detail:{payload:{
+      settlementId,sellerCountryId:'BGD',resourceId:'iron_ore',totalValue:200,quantity:20,
+      buyerCompanyId:buyerCompany,sellerCompanyId:sellerCompany,privateCompanyPurchase:true,
+      sourceBatchIds:['PRIVATE-EXPORT-BATCH'],
+      batchTransfers:[{sourceBatchId:'PRIVATE-EXPORT-BATCH',sourceBatchIds:['PRIVATE-EXPORT-BATCH'],
+        ownerCompanyId:sellerCompany,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+        ownerAttributionStatus:'EXPLICIT_PRIVATE_COMPANY_ASSET_OWNER',resourceId:'iron_ore',quantity:20}]
+    }}
+  }));
+  send();
+  const afterFirst=worldState.economy.BGD.companyAccounts[sellerCompany];
+  assert.equal(afterFirst.grossRevenue,revenueBefore,'private import completion already credited seller revenue');
+  assert.equal(afterFirst.paymentsReceived,receivedBefore,'fiscalization must not post a second seller receipt');
+  const fiscalReceipts=Number(worldState.finance.BGD.resourceFiscal?.cumulative?.total)||0;
+  assert.equal(worldState.finance.BGD.available,treasuryBefore+fiscalReceipts,
+    'only export taxes/royalties may reach Treasury; private company sale proceeds stay in the company wallet');
+  assert.ok(fiscalReceipts<200,"public export receipts must not absorb the private company sale value");
+  assert.equal((worldState.finance.BGD.resourceSettlementClearing||[]).length,0,'private seller proceeds must not be Treasury-cleared');
+  const firstEntries=JSON.stringify(afterFirst.cashFlowEntries);
+  const commandTypes=[...commands.values()].map(row=>JSON.parse(row.fingerprint).type);
+  assert.equal(commandTypes.includes('OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY'),false);
+  delete context.__OmegaResourceFiscalizedSettlements[settlementId];
+  send();
+  const afterReplay=worldState.economy.BGD.companyAccounts[sellerCompany];
+  assert.equal(afterReplay.grossRevenue,revenueBefore,'replayed private settlement must not double-credit revenue');
+  assert.equal(afterReplay.paymentsReceived,receivedBefore,'replayed private settlement must not double-credit cash receipts');
+  assert.equal(JSON.stringify(afterReplay.cashFlowEntries),firstEntries,'replayed private settlement must not duplicate operating costs');
+});
+test('finished-goods material ownership follows explicit owner, never operator or legacy companyId',async()=>{
+  const {context,worldState}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+
+  context.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_PROCESSING_COMPLETED',{
+    detail:{payload:{
+      countryId:'BGD',transactionId:'FACTORYRUN:BGD:OWNER-OPERATOR-1:T1:1',
+      factoryId:'OWNER-OPERATOR-1',companyId:'PROCESS_OPERATOR_CO',
+      ownerCompanyId:'FACTORY_OWNER_CO',operatorCompanyId:'PROCESS_OPERATOR_CO',
+      ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',outputQuantities:{iron_intermediate:25},createdBatchIds:['OUTPUT-1']
+    }}
+  }));
+  assert.equal(worldState.economy.BGD.industrialRuntime.materialOwners.iron_intermediate,'FACTORY_OWNER_CO',
+    'only the explicit asset owner owns the finished product and export material attribution');
+  assert.notEqual(worldState.economy.BGD.industrialRuntime.materialOwners.iron_intermediate,'PROCESS_OPERATOR_CO');
+
+  context.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_PROCESSING_COMPLETED',{
+    detail:{payload:{
+      countryId:'BGD',transactionId:'FACTORYRUN:BGD:LEGACY-OWNER:T1:2',
+      factoryId:'LEGACY-OWNER',companyId:'LEGACY_OPERATOR_CO',
+      ownerCompanyId:'LEGACY_COMPANY_CO',operatorCompanyId:'LEGACY_OPERATOR_CO',
+      ownerAttributionStatus:'LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED',
+      outputQuantities:{unclassified_intermediate:10}
+    }}
+  }));
+  assert.equal(worldState.economy.BGD.industrialRuntime.materialOwners.unclassified_intermediate,undefined,
+    'a legacy companyId must not be promoted into legal finished-goods ownership');
+});
+test('finished-goods economy ledger preserves owner and operator as separate parties',async()=>{
+  const {context,worldState}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  context.dispatchEvent(new CustomEventMock('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',{
+    detail:{payload:{
+      countryId:'BGD',transactionId:'FINISHED-OWNER-OPERATOR-1',factoryId:'OWNER-OPERATOR-1',
+      companyId:'PROCESS_OPERATOR_CO',ownerCompanyId:'FACTORY_OWNER_CO',
+      operatorCompanyId:'PROCESS_OPERATOR_CO',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+      outputQuantities:{iron_intermediate:25},sourceBatchIds:['SOURCE-1'],createdBatchIds:['OUTPUT-1'],
+      authority:'SIMULATED_DOWNSTREAM_PRODUCTION',status:'AVAILABLE'
+    }}
+  }));
+  const row=worldState.economy.BGD.industrialRuntime.finishedGoodsLedger.find(x=>x.transactionId==='FINISHED-OWNER-OPERATOR-1');
+  assert.ok(row);
+  assert.equal(row.companyId,'PROCESS_OPERATOR_CO');
+  assert.equal(row.ownerCompanyId,'FACTORY_OWNER_CO');
+  assert.equal(row.operatorCompanyId,'PROCESS_OPERATOR_CO');
+  assert.equal(row.ownerAttributionStatus,'EXPLICIT_ASSET_OWNER');
+});
+test('export settlement blocks unknown and multiple batch owners instead of guessing a company',async()=>{
+  const {context,worldState}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  const beforeTreasury=worldState.finance.BGD.available;
+  const beforeCompanies=JSON.stringify(worldState.economy.BGD.companyAccounts||{});
+  const send=(payload)=>context.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{payload}}));
+
+  send({
+    settlementId:'EXPORT-UNKNOWN-OWNER',sellerCountryId:'BGD',resourceId:'iron_ore',
+    totalValue:200,quantity:20,sourceBatchIds:['UNKNOWN-BATCH'],
+    batchTransfers:[{sourceBatchId:'UNKNOWN-BATCH',resourceId:'iron_ore',quantity:20,ownerCompanyId:null}]
+  });
+  assert.equal(worldState.finance.BGD.available,beforeTreasury,'unknown batch ownership must not draw public Treasury');
+  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts||{}),beforeCompanies,
+    'unknown batch ownership must not create a company receipt');
+  let blocked=worldState.economy.BGD.industrialRuntime.tradeSettlementOwnershipFailures;
+  assert.equal(blocked.at(-1).settlementId,'EXPORT-UNKNOWN-OWNER');
+  assert.equal(blocked.at(-1).reason,'EXPORT_BATCH_OWNER_UNOBSERVED');
+
+  send({
+    settlementId:'EXPORT-MULTIPLE-OWNERS',sellerCountryId:'BGD',resourceId:'iron_ore',
+    totalValue:300,quantity:30,sourceBatchIds:['OWNER-A-BATCH','OWNER-B-BATCH'],
+    batchTransfers:[
+      {sourceBatchId:'OWNER-A-BATCH',resourceId:'iron_ore',quantity:15,ownerCompanyId:'OWNER_A'},
+      {sourceBatchId:'OWNER-B-BATCH',resourceId:'iron_ore',quantity:15,ownerCompanyId:'OWNER_B'}
+    ]
+  });
+  assert.equal(worldState.finance.BGD.available,beforeTreasury,'multi-owner export must not be credited to an arbitrary company');
+  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts||{}),beforeCompanies);
+  blocked=worldState.economy.BGD.industrialRuntime.tradeSettlementOwnershipFailures;
+  assert.equal(blocked.at(-1).settlementId,'EXPORT-MULTIPLE-OWNERS');
+  assert.equal(blocked.at(-1).reason,'EXPORT_MULTIPLE_BATCH_OWNERS_REQUIRE_ALLOCATION');
+});
+test('domestic factory input transfer does not infer a seller from the mine operator when batch owner is unknown',async()=>{
+  const {context,worldState}=createContext();
+  delete worldState.resource.BGD.batches[0].ownerCompanyId;
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  await context.OmegaResourceEconomy.runTurn();
+
+  const saleRow=worldState.trade.BGD.domesticSales.find(row=>row.sale&&row.sale.resourceId==='iron_ore');
+  assert.ok(saleRow,'the physical factory-input movement must still be recorded');
+  assert.equal(saleRow.sale.status,'PHYSICAL_TRANSFER_COMPLETED');
+  assert.equal(saleRow.sale.paymentStatus,'UNOBSERVED_OWNER_ALLOCATION');
+  assert.equal(saleRow.sale.ownerAllocationStatus,'UNRESOLVED');
+  assert.equal(worldState.economy.BGD.companyAccounts.MINER_CO,undefined,
+    'mine operator is not automatically the legal owner or seller of an unowned batch');
+  assert.equal(worldState.economy.BGD.companyAccounts.PROCESS_OPERATOR_CO,undefined,
+    'buyer-company cash must not be debited when the supplier payee is unknown');
+});
 test('resource economy v2 completes mine-backed processing, domestic settlement and treasury receipt flow', async()=>{
   const {context,worldState}=createContext();
+  // Run the real domestic-sale path with canonical private owner/operator identities.
+  worldState.resource.BGD.batches[0].ownerCompanyId='NOVA_CONSUMER_INDUSTRIES';
+  const privateFactory=worldState.economy.BGD.productionAssets[0];
+  privateFactory.ownerType='PRIVATE_ENTERPRISE';
+  privateFactory.ownerCompanyId='ATLAS_TECHNOLOGY_CORPORATION';
+  privateFactory.operatorType='PRIVATE_COMPANY_OPERATOR';
+  privateFactory.operatorCompanyId='MERIDIAN_ENGINEERING_GROUP';
+  privateFactory.companyId='MERIDIAN_ENGINEERING_GROUP';
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
   vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
   await context.OmegaResourceEconomy.runTurn();
@@ -192,14 +420,28 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
   assert.equal(worldState.resource.BGD.inventory.iron_intermediate,40);
 
   const fiscal=worldState.finance.BGD.resourceFiscal;
-  assert.equal(fiscal.thisTurn.total,115);
-  assert.equal(worldState.finance.BGD.available,1115);
-  assert.equal(worldState.finance.BGD.resourceBudgetContribution,115);
-  assert.equal(worldState.finance.BGD.resourceBudgetContributionThisTurn,115);
+  assert.equal(fiscal.thisTurn.total,15,JSON.stringify(fiscal));
+  assert.equal(fiscal.thisTurn.corporateTax,0,'corporate income tax is assessed on net profit at company period close, not gross mineral receipts');
+  assert.equal(worldState.finance.BGD.available,1015);
+  assert.equal(worldState.finance.BGD.resourceBudgetContribution,15);
+  assert.equal(worldState.finance.BGD.resourceBudgetContributionThisTurn,15);
 
   const accounts=worldState.economy.BGD.companyAccounts;
-  assert.equal(accounts.MINER_CO.runtimeNetCashFlow,415);
-  assert.equal(accounts.PROCESS_CO.runtimeNetCashFlow,-500);
+  assert.equal(accounts.NOVA_CONSUMER_INDUSTRIES.runtimeNetCashFlow,415,
+    'domestic sale revenue must credit the private legal owner of the consumed batch');
+  assert.equal(accounts.MERIDIAN_ENGINEERING_GROUP.runtimeNetCashFlow,-500,
+    'factory input/processing cash flow must be attributed to the explicit private operator');
+  assert.equal(accounts.ATLAS_TECHNOLOGY_CORPORATION,undefined,
+    'factory ownership must not receive operating expenses when a different operator is recorded');
+  assert.equal(accounts.LEGACY_COMPANY_ATTRIBUTION,undefined,
+    'legacy companyId must not override an explicit operator identity');
+  assert.equal(worldState.trade.BGD.domesticSales[0].sale.supplierAllocations.NOVA_CONSUMER_INDUSTRIES,50,
+    'settled domestic sale must retain the exact private-owner revenue allocation');
+  const ownedOutputBatch=worldState.resource.BGD.batches.find(x=>x.resourceId==='iron_intermediate');
+  assert.equal(ownedOutputBatch?.ownerCompanyId,'ATLAS_TECHNOLOGY_CORPORATION',
+    'finished-goods export ownership must follow the asset owner rather than the factory operator');
+  assert.equal(ownedOutputBatch?.operatorCompanyId,'MERIDIAN_ENGINEERING_GROUP',
+    'the operator remains distinct from the legal finished-goods owner');
 
   assert.equal(worldState.trade.BGD.domesticSales.length,1);
   assert.equal(worldState.trade.BGD.domesticSales[0].sale.status,'SETTLED');
@@ -223,13 +465,13 @@ test('resource economy v2 completes mine-backed processing, domestic settlement 
 
   const dashboard=context.OmegaResourceEconomy.getCountryDashboard('BGD');
   assert.equal(dashboard.health.warehouseAuthoritative,true);
-  assert.equal(dashboard.treasury.fiscalThisTurn.total,115);
+  assert.equal(dashboard.treasury.fiscalThisTurn.total,15);
   assert.equal(dashboard.mines.total,1);
 
   assert.equal(typeof context.CountryIOS.renderChapter5_Resources,'function',
     'the existing Resource Ministry UI entrypoint must remain registered');
   assert.equal(dashboard.mines.total,1);
-  assert.equal(dashboard.treasury.fiscalThisTurn.total,115,
+  assert.equal(dashboard.treasury.fiscalThisTurn.total,15,
     'the runtime dashboard must expose the committed fiscal receipt independently of UI rendering');
 });
 
@@ -302,6 +544,33 @@ test('factory input failure does not consume a resource that lacks the other req
   assert.equal(worldState.resource.BGD.inventory.copper,undefined);
 });
 
+test('private factory output keeps legal owner separate from operating company in batches and inventory lots',()=>{
+  const {context,worldState}=createContext();
+  const asset=worldState.economy.BGD.productionAssets[0];
+  asset.ownerType='PRIVATE_ENTERPRISE';
+  asset.ownerCompanyId='AURORA_INDUSTRIAL_GROUP';
+  asset.operatorCompanyId='NOVA_CONSUMER_INDUSTRIES';
+  asset.companyId='NOVA_CONSUMER_INDUSTRIES';
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  const result=context.OmegaResourceEconomy.executeCountryFactories('BGD');
+  assert.equal(result.executed.length,1);
+  const output=worldState.resource.BGD.batches.find(row=>row.resourceId==='iron_intermediate');
+  assert.ok(output);
+  assert.equal(output.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP','finished goods belong to the legal private owner');
+  assert.equal(output.operatorCompanyId,'NOVA_CONSUMER_INDUSTRIES','the operator remains separately recorded');
+  assert.equal(output.ownerAttributionStatus,'EXPLICIT_ASSET_OWNER');
+  const lot=worldState.resource.BGD.inventoryLots[output.batchId];
+  assert.equal(lot.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+  assert.equal(lot.operatorCompanyId,'NOVA_CONSUMER_INDUSTRIES');
+  const ledger=worldState.resource.BGD.inventoryLedger.find(row=>row.type==='PRODUCTION_TRANSACTION_COMMITTED');
+  assert.equal(ledger.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+  assert.equal(ledger.operatorCompanyId,'NOVA_CONSUMER_INDUSTRIES');
+  assert.equal(result.executed[0].companyId,'NOVA_CONSUMER_INDUSTRIES',
+    'operating costs and production execution follow the operator');
+  assert.equal(result.executed[0].ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+});
+
 test('factory production yields between bounded batches without skipping eligible facilities',async()=>{
   const {context,worldState}=createContext();
   let yieldCount=0;
@@ -332,4 +601,71 @@ test('all modeled mine rows are not capped by the removed legacy 512-row limiter
   assert.doesNotMatch(code,/MAX_MINES/);
   assert.doesNotMatch(code,/slice\(0,\s*MAX_MINES\)/);
   assert.match(code,/OMEGA_RESOURCE_EXTRACT_TICK/);
+});
+
+test('capacity upgrade requests persist only through their economy-owned country command',()=>{
+  const {context,worldState,handlers}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+
+  const type='OMEGA_RESOURCE_ECON_PUBLISH_CAPACITY_UPGRADE_REQUESTS';
+  const registration=handlers.get(type);
+  assert.ok(registration,'economy-owned capacity request publisher must be registered');
+  assert.equal(registration.owner,'economy');
+
+  const request={requestId:'CAPACITY-OWNER-1',countryId:'BGD',resourceId:'iron_ore',
+    status:'UNDER_CONSTRUCTION',projectId:'PROJECT-CAPACITY-OWNER-1'};
+  const legacyRequest={requestId:'CAPACITY-OWNER-LEGACY',resourceId:'iron_ore',status:'REQUESTED'};
+  const saved=context.Omega.MinistryInteroperability.dispatchCommand('economy',type,'BGD',{
+    requests:[request,legacyRequest]
+  },{commandId:'CAPACITY-OWNER-SAVE-1'});
+  assert.equal(saved.status,'APPLIED',JSON.stringify(saved));
+  assert.equal(saved.result.accepted,true,JSON.stringify(saved));
+  assert.equal(JSON.stringify(worldState.economy.BGD.capacityUpgradeRequests),
+    JSON.stringify([request,{...legacyRequest,countryId:'BGD'}]),
+    'legacy requests without an explicit country stay scoped to their existing country bucket');
+
+  const rejected=context.Omega.MinistryInteroperability.dispatchCommand('economy',type,'BGD',{
+    requests:[{...request,countryId:'KWT'}]
+  },{commandId:'CAPACITY-OWNER-CROSS-COUNTRY-1'});
+  assert.equal(rejected.status,'FAILED',JSON.stringify(rejected));
+  assert.equal(rejected.result.reason,'CAPACITY_UPGRADE_REQUEST_COUNTRY_MISMATCH');
+  assert.equal(JSON.stringify(worldState.economy.BGD.capacityUpgradeRequests),
+    JSON.stringify([request,{...legacyRequest,countryId:'BGD'}]),
+    'a foreign-country capacity request must never overwrite the BGD economy bucket');
+});
+
+
+test('resource economy resolves Bangladesh ISO2 aliases into the ISO3 BGD state bucket',()=>{
+  const {context,worldState}=createContext();
+  const registry={
+    resolveCountry(value){
+      const raw=value&&typeof value==='object'
+        ?(value.iso3||value.iso3Code||value.countryCode||value.countryId||value.id||value.name)
+        :String(value||'').trim().toUpperCase();
+      if(['BD','BGD','BANGLADESH'].includes(String(raw).toUpperCase()))
+        return{id:'BD',canonicalId:'BD',countryCode:'BD',raw:{countryCode:'BD',iso2:'BD'}};
+      return{id:String(raw).toUpperCase(),raw:{countryCode:String(raw).toUpperCase()}};
+    },
+    list(){return[{id:'BD',countryCode:'BD',iso3:'BGD'}];}
+  };
+  context.OmegaCanonicalIdentityRegistry=registry;
+  context.Omega.CanonicalIdentity=registry;
+  context.ResourceMinistryEngine={
+    normalizeCountryCode(value){
+      const raw=String(value??'').trim().toUpperCase();
+      if(raw==='BD'||raw==='BANGLADESH')return'BGD';
+      return raw;
+    }
+  };
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+
+  const dashboard=context.OmegaResourceEconomy.getCountryDashboard('BD');
+  assert.equal(dashboard.countryId,'BGD');
+  assert.equal(dashboard.mines.total,1);
+  assert.equal(dashboard.inventory.actual.iron_ore,100);
+  assert.equal(worldState.resource.BD,undefined,
+    'an ISO2 display alias must not create a duplicate resource state bucket');
+  assert.equal(context.OmegaResourceEconomy.diagnostics().countryCount,1);
 });

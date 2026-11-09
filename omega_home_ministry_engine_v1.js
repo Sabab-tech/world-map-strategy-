@@ -753,14 +753,14 @@
   function ruleEffectSum(state,key){
     return activePolicePolicyRules(state).reduce(function(sum,rule){return sum+(num(rule[key])||0);},0);
   }
-  function crimeVehicleCapability(state,category,country){
+  function crimeVehicleCapability(state,category,country,sharedFleetCounts){
     const map={
       theft:['patrol','surveillance'],robbery:['response','patrol','protection'],
       streetRobbery:['patrol','response','crowdControl'],drugTrafficking:['counterSmuggling','surveillance','command'],
       contrabandSmuggling:['counterSmuggling','offRoad','surveillance'],assault:['response','crowdControl','protection'],
       homicide:['response','surveillance','command'],cybercrime:['surveillance','command']
     };
-    const keys=map[category]||['patrol','response'],counts=operationalFleetCounts(state,country),units=totalOperationalFleetCount(counts);
+    const counts=sharedFleetCounts||operationalFleetCounts(state,country),units=totalOperationalFleetCount(counts);
     if(!units)return 0;
     let weighted=0;
     VEHICLES.forEach(function(vehicle){
@@ -769,6 +769,40 @@
       weighted+=count*score;
     });
     return weighted/units;
+  }
+  function crimeReductionSharedContext(state,base,country){
+    const currentPopulationValue=num(population(country));
+    const currentPopulation=currentPopulationValue===null?num(base&&base.population):currentPopulationValue;
+    const refPersonnel=Math.max(1,num(base&&base.referencePersonnel)||num(state&&state.baselinePolicePersonnel)||250);
+    const staffingTarget=countryStaffingTarget(country,base,currentPopulation,refPersonnel);
+    const countryFleet=operationalFleetCounts(state,country);
+    const currentCars=totalOperationalFleetCount(countryFleet);
+    const ownedFleetCounts=currentFleetCounts(state);
+    const currentDepartments=normalizePoliceDepartmentPlan(state.policeDepartments);
+    const referenceDepartments=normalizePoliceDepartmentPlan(base&&base.referencePoliceDepartments||DEFAULT_POLICE_DEPARTMENT_PLAN);
+    const currentPatrol=normalizePatrolPlan(state.patrolPlan);
+    const referencePatrol=normalizePatrolPlan(base&&base.referencePatrolPlan);
+    const currentRules=activePolicePolicyRules(state);
+    const currentRulebook=normalizePoliceRulebook(state.policeRulebook);
+    const referenceRulebook=normalizePoliceRulebook(DEFAULT_POLICE_RULEBOOK);
+    const referenceRulebookScore=num(base&&base.referenceRulebookScore)===null
+      ?policeRulebookQuality(DEFAULT_POLICE_RULEBOOK):num(base.referenceRulebookScore);
+    const unresolvedCases=(state.policeCases||[]).filter(function(row){
+      return row&&row.status!=='CLOSED'&&(row.responseDeadlineMissed||row.warrantDeadlineMissed||
+        row.evidenceDeadlineMissed||row.arrestReviewOverdue||row.detentionDeadlineMissed||row.forceReviewOverdue);
+    }).length;
+    return{
+      currentPopulation:currentPopulation,staffingTarget:staffingTarget,
+      countryFleet:countryFleet,currentCars:currentCars,ownedFleetUnits:totalFleetCount(ownedFleetCounts),
+      currentDepartments:currentDepartments,referenceDepartments:referenceDepartments,
+      currentPatrol:currentPatrol,referencePatrol:referencePatrol,
+      currentRules:currentRules,currentRulebook:currentRulebook,
+      currentRulebookScore:policeRulebookQuality(state.policeRulebook),
+      referenceRulebook:referenceRulebook,referenceRulebookScore:referenceRulebookScore,
+      responsePressure:clamp((referenceRulebook.arrestResponseHours-currentRulebook.arrestResponseHours)/
+        referenceRulebook.arrestResponseHours,-2,0.9),
+      unresolvedCases:unresolvedCases
+    };
   }
   function countryStaffingTarget(country,baseline,currentPopulation,referencePersonnel){
     const row=findPoliceBaseline(country)||{},baselinePopulation=Math.max(0,num(baseline&&baseline.population)||0);
@@ -780,11 +814,11 @@
     return{targetRatePer100k:targetRatePer100k,populationScale:populationScale,
       targetPersonnel:Math.max(1,Math.ceil(targetAtBaseline*populationScale))};
   }
-  function crimeReductionForCategory(state,category,crimeBaseline,country){
+  function crimeReductionForCategory(state,category,crimeBaseline,country,shared){
     const base=crimeBaseline||state.crimeBaseline||{},refPersonnel=Math.max(1,num(base.referencePersonnel)||num(state.baselinePolicePersonnel)||250);
     const refEfficiency=num(base.referenceEfficiency)===null?60:num(base.referenceEfficiency);
-    const currentPopulation=num(population(country))===null?num(base.population):num(population(country));
-    const staffingTarget=countryStaffingTarget(country,base,currentPopulation,refPersonnel);
+    const currentPopulation=shared?shared.currentPopulation:(num(population(country))===null?num(base.population):num(population(country)));
+    const staffingTarget=shared?shared.staffingTarget:countryStaffingTarget(country,base,currentPopulation,refPersonnel);
     const populationScale=staffingTarget.populationScale;
     let reduction=Math.log(Math.max(1,num(state.policeCount)||1)/refPersonnel)*0.08;
     reduction+=(Math.max(0,num(state.policeEfficiency)||0)-refEfficiency)*0.0015;
@@ -806,10 +840,10 @@
       const target=Math.ceil(Math.max(minimumFacilityLevels[pair[0]]||1,reference)*facilityDemandScale);
       reduction+=(current-target)*pair[1];
     });
-    const countryFleet=operationalFleetCounts(state,country);
-    const currentCars=totalOperationalFleetCount(countryFleet),refCars=Math.max(1,num(base.referenceFleetUnits)||num(state.baselineFleetUnits)||currentCars||1);
+    const countryFleet=shared?shared.countryFleet:operationalFleetCounts(state,country);
+    const currentCars=shared?shared.currentCars:totalOperationalFleetCount(countryFleet),refCars=Math.max(1,num(base.referenceFleetUnits)||num(state.baselineFleetUnits)||currentCars||1);
     reduction+=Math.log(Math.max(1,currentCars)/refCars)*0.035;
-    const currentQuality=crimeVehicleCapability(state,category,country),refVehicles=base.referenceVehicles||{};
+    const currentQuality=crimeVehicleCapability(state,category,country,countryFleet),refVehicles=base.referenceVehicles||{};
     let refUnits=0,refQuality=0;
     VEHICLES.forEach(function(vehicle){
       const count=Math.max(0,num(refVehicles[vehicle.level])||0),keys=({theft:['patrol','surveillance'],robbery:['response','patrol','protection'],streetRobbery:['patrol','response','crowdControl'],drugTrafficking:['counterSmuggling','surveillance','command'],contrabandSmuggling:['counterSmuggling','offRoad','surveillance'],assault:['response','crowdControl','protection'],homicide:['response','surveillance','command'],cybercrime:['surveillance','command']})[category]||['patrol','response'];
@@ -818,7 +852,7 @@
     });
     refQuality=refUnits?refQuality/refUnits:currentQuality;
     reduction+=(currentQuality-refQuality)*0.0018;
-    const currentDepartments=normalizePoliceDepartmentPlan(state.policeDepartments),refDepartments=normalizePoliceDepartmentPlan(base.referencePoliceDepartments||DEFAULT_POLICE_DEPARTMENT_PLAN);
+    const currentDepartments=shared?shared.currentDepartments:normalizePoliceDepartmentPlan(state.policeDepartments),refDepartments=shared?shared.referenceDepartments:normalizePoliceDepartmentPlan(base.referencePoliceDepartments||DEFAULT_POLICE_DEPARTMENT_PLAN);
     const departmentInfluence={
       theft:{generalPatrol:0.0011,community:0.0007,investigations:0.0003},
       robbery:{generalPatrol:0.0008,rapidResponse:0.0010,investigations:0.0007},
@@ -833,7 +867,7 @@
       const key=entry[0],weight=entry[1];
       reduction+=(currentDepartments[key]-refDepartments[key])*weight;
     });
-    const currentPatrol=normalizePatrolPlan(state.patrolPlan),refPatrol=normalizePatrolPlan(base.referencePatrolPlan);
+    const currentPatrol=shared?shared.currentPatrol:normalizePatrolPlan(state.patrolPlan),refPatrol=shared?shared.referencePatrol:normalizePatrolPlan(base.referencePatrolPlan);
     const patrolInfluence={
       theft:{urban:0.0014,rural:0.0005,community:0.0003},
       robbery:{urban:0.0012,highway:0.0007,community:0.0003},
@@ -849,7 +883,7 @@
       reduction+=(currentPatrol[key]-refPatrol[key])*weight;
     });
     const effects=({theft:'theft',robbery:'robbery',streetRobbery:'streetRobbery',drugTrafficking:'drugTrafficking',contrabandSmuggling:'contrabandSmuggling',assault:'assault',homicide:'homicide',cybercrime:'cybercrime'})[category]||category;
-    activePolicePolicyRules(state).forEach(function(rule){reduction+=Math.max(0,num(rule.crimeEffects&&rule.crimeEffects[effects])||0);});
+    (shared?shared.currentRules:activePolicePolicyRules(state)).forEach(function(rule){reduction+=Math.max(0,num(rule.crimeEffects&&rule.crimeEffects[effects])||0);});
     const tactics=state.tacticsResearched||{};
     if(category==='assault'&&tactics.antiRiot)reduction+=0.025;
     if((category==='drugTrafficking'||category==='contrabandSmuggling')&&tactics.smugglerInterdict)reduction+=0.03;
@@ -862,20 +896,20 @@
     const staffingCoverage=clamp((Math.max(0,num(state.policeCount)||0))/requiredPersonnel,0,2);
     reduction+=Math.log(clamp(staffingCoverage,0.1,2))*0.18;
     const requiredVehicles=Math.max(1,Math.ceil(requiredPersonnel/18));
-    const vehicleCoverage=clamp(totalFleetCount(currentFleetCounts(state))/requiredVehicles,0,2);
+    const vehicleCoverage=clamp((shared?shared.ownedFleetUnits:totalFleetCount(currentFleetCounts(state)))/requiredVehicles,0,2);
     reduction+=Math.log(clamp(vehicleCoverage,0.1,2))*0.12;
     const trainingTarget=3+Math.max(0,Math.log2(Math.max(0.1,populationScale)))*0.25;
     reduction+=(clamp((Math.max(1,num(state.trainingQualityLevel)||1)/trainingTarget),0,1.5)-1)*0.045;
-    const referenceRulebookScore=num(base.referenceRulebookScore)===null?policeRulebookQuality(DEFAULT_POLICE_RULEBOOK):num(base.referenceRulebookScore);
-    reduction+=(policeRulebookQuality(state.policeRulebook)-referenceRulebookScore)*0.002;
-    const currentBook=normalizePoliceRulebook(state.policeRulebook),referenceBook=normalizePoliceRulebook(DEFAULT_POLICE_RULEBOOK);
-    const responsePressure=clamp((referenceBook.arrestResponseHours-currentBook.arrestResponseHours)/referenceBook.arrestResponseHours,-2,0.9);
+    const referenceRulebookScore=shared?shared.referenceRulebookScore:(num(base.referenceRulebookScore)===null?policeRulebookQuality(DEFAULT_POLICE_RULEBOOK):num(base.referenceRulebookScore));
+    reduction+=((shared?shared.currentRulebookScore:policeRulebookQuality(state.policeRulebook))-referenceRulebookScore)*0.002;
+    const currentBook=shared?shared.currentRulebook:normalizePoliceRulebook(state.policeRulebook),referenceBook=shared?shared.referenceRulebook:normalizePoliceRulebook(DEFAULT_POLICE_RULEBOOK);
+    const responsePressure=shared?shared.responsePressure:clamp((referenceBook.arrestResponseHours-currentBook.arrestResponseHours)/referenceBook.arrestResponseHours,-2,0.9);
     const fastResponseCategories={theft:0.025,robbery:0.035,streetRobbery:0.04,drugTrafficking:0.012,contrabandSmuggling:0.015,assault:0.03,homicide:0.025,cybercrime:0.02};
     reduction+=responsePressure*(fastResponseCategories[category]||0.01);
     const fuelReserveDays=clamp(num(state.fuelSupplyDays)===null?14:num(state.fuelSupplyDays),0,180);
     const fuelReadiness=clamp(fuelReserveDays/14,0,1);
     reduction+=(fuelReadiness-1)*0.08;
-    const unresolvedCases=(state.policeCases||[]).filter(function(row){
+    const unresolvedCases=shared?shared.unresolvedCases:(state.policeCases||[]).filter(function(row){
       return row&&row.status!=='CLOSED'&&(row.responseDeadlineMissed||row.warrantDeadlineMissed||row.evidenceDeadlineMissed||row.arrestReviewOverdue||row.detentionDeadlineMissed||row.forceReviewOverdue);
     }).length;
     reduction-=Math.min(0.18,unresolvedCases*0.012);
@@ -884,10 +918,11 @@
   function getCrimeSnapshot(country,suppliedState){
     const cid=normalizeCountry(country||currentCountry()),state=suppliedState||getState(cid),baseline=state&&state.crimeBaseline;
     if(!state||!baseline||!baseline.ratesPer100k)return{available:false,reason:'POLICE_BASELINE_NOT_LOADED',countryId:cid};
+    const sharedCrime=crimeReductionSharedContext(state,baseline,cid);
     const categories=Object.keys(baseline.ratesPer100k),rows={};let baselineIndex=0,currentIndex=0,totalBaseline=0,totalProjected=0;
     categories.forEach(function(category){
       const rate=num(baseline.ratesPer100k[category]);if(rate===null||rate<0)return;
-      const reduction=crimeReductionForCategory(state,category,baseline,cid),projected=Math.max(0,rate*(1-reduction));
+      const reduction=crimeReductionForCategory(state,category,baseline,cid,sharedCrime),projected=Math.max(0,rate*(1-reduction));
       const dynamicPopulation=num(population(cid)),baselinePopulation=num(baseline.population);
       const populationValue=dynamicPopulation!==null&&dynamicPopulation>0?dynamicPopulation:baselinePopulation;
       const annualBaseline=populationValue===null?null:Math.round(populationValue*rate/100000);
@@ -1753,13 +1788,33 @@
     }else VEHICLES.forEach(function(v){total+=(Math.max(0,num(s.vehiclesOwned[v.level])||0)*v.maintenancePerDay*policyWearMultiplier);});
     return Math.round(total*100)/100;
   }
+  function getCrimeSimulationProjection(country,suppliedState,sharedCrimeContext){
+    const cid=normalizeCountry(country||currentCountry()),state=suppliedState||getState(cid),baseline=state&&state.crimeBaseline;
+    if(!state||!baseline||!baseline.ratesPer100k)return{available:false,reason:'POLICE_BASELINE_NOT_LOADED',countryId:cid};
+    const sharedCrime=sharedCrimeContext||crimeReductionSharedContext(state,baseline,cid),rows={};
+    let baselineIndex=0,currentIndex=0;
+    Object.keys(baseline.ratesPer100k).forEach(function(category){
+      const rate=num(baseline.ratesPer100k[category]);if(rate===null||rate<0)return;
+      const reduction=crimeReductionForCategory(state,category,baseline,cid,sharedCrime);
+      const projected=Math.max(0,rate*(1-reduction));
+      const baselinePopulation=num(baseline.population),populationValue=sharedCrime.currentPopulation;
+      rows[category]={projectedAnnualIncidents:populationValue===null?null:Math.round(populationValue*projected/100000)};
+      baselineIndex+=rate;currentIndex+=projected;
+    });
+    return{available:true,countryId:cid,categories:rows,
+      projectedCrimeIndex:baselineIndex?Math.round(currentIndex/baselineIndex*10000)/100:0};
+  }
   function advanceCrimeSimulation(state,country,toDay){
     const last=num(state.lastCrimeSimulationDay);
     if(last===null||last<0){state.lastCrimeSimulationDay=toDay;return false;}
     if(toDay<=last)return false;
     const fromDay=Math.max(0,Math.floor(last)),elapsed=Math.min(365,Math.floor(toDay)-fromDay);
     if(elapsed<=0)return false;
-    const snap=getCrimeSnapshot(country,state);
+    // Police staffing, fleet, departments, patrol plans, policies and rulebook
+    // are stable during this one catch-up pass. Normalize/count them once, rather
+    // than rebuilding the same country context for every simulated day.
+    const sharedCrime=crimeReductionSharedContext(state,state.crimeBaseline,country);
+    const snap=getCrimeSimulationProjection(country,state,sharedCrime);
     if(!snap.available){state.lastCrimeSimulationDay=Math.floor(toDay);return true;}
     const model=state.crimeModel&&typeof state.crimeModel==='object'?state.crimeModel:{};
     const acc=state.crimeAccumulator&&typeof state.crimeAccumulator==='object'?state.crimeAccumulator:{};
@@ -1778,7 +1833,7 @@
     let changed=false;
     let daySnapshot=snap;
     for(let step=1;step<=elapsed;step++){
-      if(step>1)daySnapshot=getCrimeSnapshot(country,state);
+      if(step>1)daySnapshot=getCrimeSimulationProjection(country,state,sharedCrime);
       const day=fromDay+step;let incidents=0,byCategory={};
       Object.keys(daySnapshot.categories).forEach(function(category){
         const row=daySnapshot.categories[category];if(row.projectedAnnualIncidents===null)return;
