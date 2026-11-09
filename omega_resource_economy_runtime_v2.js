@@ -199,13 +199,51 @@
     var flow=flowByBatch&&flowByBatch.get(String(batch&&batch.batchId||''));
     if(flow&&(flow.mineLogisticsRouteId||flow.mineLogisticsStockDebited===true)){
       var received=Math.max(0,num(flow.mineWarehouseReceivedQuantity)||0);
-      // Batch depletion is not proof of a factory transfer: mine dispatch, transit,
-      // and other stock movements also change remainingQuantity. The site-flow ledger
-      // records the actual factory-bound quantity separately.
+      // A mine-flow batch can include mine-held, in-transit, warehouse, and already
+      // dispatched cargo. Only receipts not yet sent to factories or consumed in the
+      // warehouse are physically available to another production transaction.
       var factoryDispatched=Math.max(0,num(flow.factoryDispatchedQuantity)||0);
-      return Math.min(remaining,Math.max(0,received-factoryDispatched));
+      var warehouseConsumed=Math.max(0,num(flow.mineWarehouseConsumedQuantity)||0);
+      return Math.min(remaining,Math.max(0,received-factoryDispatched-warehouseConsumed));
     }
     return remaining;
+  }
+  function warehouseFreeQuantity(warehouse,resourceId){
+    var available=warehouse&&warehouse.availableByResource&&typeof warehouse.availableByResource==='object'
+      ?warehouse.availableByResource:{};
+    var reserved=warehouse&&warehouse.reservedByResource&&typeof warehouse.reservedByResource==='object'
+      ?warehouse.reservedByResource:{};
+    var availableKey=Object.keys(available).find(function(key){return tok(key)===tok(resourceId);});
+    if(availableKey===undefined)return 0;
+    var reservedKey=Object.keys(reserved).find(function(key){return tok(key)===tok(resourceId);});
+    var onHand=Math.max(0,num(available[availableKey])||0);
+    var held=reservedKey===undefined?0:Math.max(0,num(reserved[reservedKey])||0);
+    return Math.max(0,onHand-held);
+  }
+  function consumptionLedgerMaps(network){
+    var flows=new Map(),reservedByBatch={};
+    (Array.isArray(network&&network.siteFlowLedger)?network.siteFlowLedger:[]).forEach(function(flow){
+      if(flow&&flow.batchId)flows.set(String(flow.batchId),flow);
+    });
+    var activeStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
+      'BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING']);
+    (Array.isArray(network&&network.shipments)?network.shipments:[]).forEach(function(shipment){
+      var batchId=String(shipment&&shipment.batchId||'').trim();
+      if(!batchId||!activeStatuses.has(String(shipment.status||'')))return;
+      if(!['MINE_TO_WAREHOUSE','RAW_TO_FACTORY','WAREHOUSE_TO_FACTORY'].includes(String(shipment.shipmentType||'')))return;
+      var flow=flows.get(batchId);
+      // Site-flow factory dispatches are already excluded by batchInventoryQuantity.
+      if(flow&&(flow.mineLogisticsRouteId||flow.mineLogisticsStockDebited===true))return;
+      reservedByBatch[batchId]=(reservedByBatch[batchId]||0)+Math.max(0,num(shipment.quantity)||0);
+    });
+    return{flowByBatch:flows,reservedByBatch:reservedByBatch};
+  }
+  function recordMineWarehouseConsumption(flowByBatch,batchId,quantity){
+    var flow=flowByBatch&&flowByBatch.get(String(batchId||''));
+    if(!flow||!(flow.mineLogisticsRouteId||flow.mineLogisticsStockDebited===true))return false;
+    flow.mineWarehouseConsumedQuantity=(Math.max(0,num(flow.mineWarehouseConsumedQuantity)||0)+Math.max(0,num(quantity)||0));
+    flow.lastMineWarehouseConsumptionTurn=turn();
+    return true;
   }
   function inventoryGaps(inv,rows,flowByBatch){
     var allocated={},g=[];
