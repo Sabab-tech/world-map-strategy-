@@ -414,6 +414,64 @@ Game.Diplomacy = {
 Game.DataLoader = {
     __worldLoadPromise: null,
     __countryConfigPromise: null,
+    __assetsLoadPromise: null,
+    __assetsLoadComplete: false,
+    __assetsLoadResult: null,
+    __assetsLoadingProgress: 0,
+    __assetsLoadingMessage: '',
+    __assetsLoadingStatus: null,
+
+    setStartupProgress(percent, message, status) {
+        this.__assetsLoadingProgress = Math.max(0, Math.min(100, Number(percent) || 0));
+        this.__assetsLoadingMessage = String(message || 'Loading startup data…');
+        this.__assetsLoadingStatus = status || 'loading';
+        if (Game.Map && typeof Game.Map.updateMapLoadingProgress === 'function') {
+            Game.Map.updateMapLoadingProgress(this.__assetsLoadingProgress, this.__assetsLoadingMessage, this.__assetsLoadingStatus);
+        }
+        return this.__assetsLoadingProgress;
+    },
+
+    settleWorldMapRenderWaiters(error, renderToken) {
+        const waiters = Array.isArray(Game.__omegaGeoJSONRenderWaiters) ? Game.__omegaGeoJSONRenderWaiters : [];
+        const remaining = [];
+        waiters.forEach(function (waiter) {
+            if (renderToken !== undefined && renderToken !== null && waiter.renderToken !== renderToken) {
+                remaining.push(waiter);
+                return;
+            }
+            try {
+                if (error) waiter.reject(error);
+                else waiter.resolve(Game.geojsonLayer || null);
+            } catch (_) {}
+        });
+        Game.__omegaGeoJSONRenderWaiters = remaining;
+        return waiters.length - remaining.length;
+    },
+
+    waitForWorldMapRender() {
+        if (Game.__omegaGeoJSONRenderComplete === true && Game.geojsonLayer) {
+            return Promise.resolve(Game.geojsonLayer);
+        }
+        const overlay = document.getElementById('omega-map-load-overlay');
+        if (overlay && overlay.getAttribute('data-state') === 'error') {
+            return Promise.reject(new Error('WORLD_MAP_RENDER_FAILED: ' + (document.getElementById('omega-map-load-status')?.textContent || 'Map rendering failed.')));
+        }
+        if (!Game.Map.countryGeoJSON && !Game.__omegaGeoJSONPendingData && !Game.geojsonLayer) {
+            return Promise.reject(new Error('WORLD_MAP_RENDER_NOT_STARTED: no canonical geography is available.'));
+        }
+        return new Promise((resolve, reject) => {
+            if (!Array.isArray(Game.__omegaGeoJSONRenderWaiters)) Game.__omegaGeoJSONRenderWaiters = [];
+            const renderToken = Number(Game.__omegaGeoJSONRenderToken) || 0;
+            Game.__omegaGeoJSONRenderWaiters.push({ renderToken, resolve, reject });
+            if (Game.__omegaGeoJSONRenderComplete === true && Game.geojsonLayer) {
+                this.settleWorldMapRenderWaiters(null, renderToken);
+                return;
+            }
+            if (overlay && overlay.getAttribute('data-state') === 'error') {
+                this.settleWorldMapRenderWaiters(new Error('WORLD_MAP_RENDER_FAILED'), renderToken);
+            }
+        });
+    },
 
     isConstrainedDevice() {
         const nav = window.navigator || {};
@@ -518,13 +576,16 @@ Game.DataLoader = {
         }
         if (this.__worldLoadPromise) return this.__worldLoadPromise;
 
+        fetcher = fetcher || this.getFetcher();
         const cachedGeometry = Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData;
         if (cachedGeometry && Game.Map.__omegaMapUiActive !== false) {
             const loader = this;
             let cachedPromise;
             Game.Map.ensureMapLoadingOverlay();
-            Game.Map.updateMapLoadingProgress(18, 'Reusing downloaded world geography…', 'loading');
+            Game.Map.updateMapLoadingProgress(2, 'Loading canonical country roster…', 'loading');
             cachedPromise = Promise.resolve().then(function () {
+                return loader.loadCountryConfig(fetcher);
+            }).then(function () {
                 return loader.waitForMapRenderer(null);
             }).then(function () {
                 if (Game.Map.__omegaMapUiActive === false) return cachedGeometry;
@@ -545,25 +606,25 @@ Game.DataLoader = {
             return cachedPromise;
         }
 
-        fetcher = fetcher || this.getFetcher();
         const loader = this;
         const controller = typeof AbortController === 'function' ? new AbortController() : null;
         Game.Map.__omegaWorldMapAbortController = controller;
         Game.Map.ensureMapLoadingOverlay();
-        Game.Map.updateMapLoadingProgress(2, 'Loading world geography…', 'loading');
+        Game.Map.updateMapLoadingProgress(2, 'Loading canonical country roster…', 'loading');
 
-        // Country profiles start in parallel but never block the world geometry itself.
+        // Country identity is a prerequisite for the map stage. Finish it before
+        // requesting world geometry instead of starting two data loads together.
         const countriesPromise = this.loadCountryConfig(fetcher);
         countriesPromise.then(function (rows) {
-            if (!rows) return;
-            Game.Map.__omegaCountryStyleRefreshPending = true;
-            if (Game.Map.__omegaMapUiActive === false) return;
-            if (typeof Game.Map.refreshCountryPolygonStyles === 'function' &&
-                Game.__omegaGeoJSONRenderComplete === true) Game.Map.refreshCountryPolygonStyles();
+            if (rows) Game.Map.__omegaCountryStyleRefreshPending = true;
         }).catch(function () {});
 
         let promise;
-        promise = Promise.resolve().then(function () {
+        promise = Promise.resolve().then(async function () {
+            await countriesPromise;
+            if (Game.Map.__omegaMapUiActive !== false) {
+                Game.Map.updateMapLoadingProgress(4, 'Downloading canonical world geometry…', 'loading');
+            }
             return fetcher('world.json', {
                 signal:controller ? controller.signal : undefined,
                 onProgress:function (ratio, received, total) {
@@ -625,82 +686,164 @@ Game.DataLoader = {
         return promise;
     },
     async loadAssets() {
-        const fetcher = this.getFetcher();
-        // Fetch and begin drawing the world's only canonical GeoJSON immediately.
-        // Economy, relation and minister datasets are independent and must not hold up map borders.
-        const worldTask = this.loadWorldMap(fetcher);
-        const supportTask = (async function () {
-            const fetchOptional = async function (filename) {
-                let controller = null, timer = null;
-                try {
-                    controller = typeof AbortController === 'function' ? new AbortController() : null;
-                    const request = Promise.resolve().then(function () {
-                        return fetcher(filename, { signal:controller ? controller.signal : undefined });
-                    });
-                    const timeout = new Promise(function (resolve, reject) {
-                        timer = window.setTimeout(function () {
-                            try { if (controller) controller.abort(); } catch (_) {}
-                            const error = new Error('STARTUP_DATA_FETCH_TIMEOUT:' + filename);
-                            error.code = 'STARTUP_DATA_FETCH_TIMEOUT';
-                            reject(error);
-                        }, 6500);
-                    });
-                    return await Promise.race([request, timeout]);
-                } catch (error) {
-                    console.warn('[OMEGA DataLoader] Optional startup dataset failed; other datasets will continue:', filename, error);
-                    return null;
-                } finally {
-                    if (timer !== null) window.clearTimeout(timer);
-                }
-            };
+        if (this.__assetsLoadComplete && this.__assetsLoadResult) {
+            return Promise.resolve(this.__assetsLoadResult);
+        }
+        if (this.__assetsLoadPromise) return this.__assetsLoadPromise;
+
+        const loader = this;
+        let promise;
+        promise = (async function () {
+            let failedStage = 'canonical world map';
+            loader.__assetsLoadResult = null;
+            loader.setStartupProgress(2, 'Loading canonical country roster…', 'loading');
             try {
-                // These datasets are independent: one failed response must not discard the other.
-                const [popData, econData] = await Promise.all([
-                    fetchOptional('population.json'),
-                    fetchOptional('economy.json')
-                ]);
-                if (popData && typeof popData === 'object') Game.state.population = popData;
-                if (econData && typeof econData === 'object') Game.state.economy = econData;
+                const fetcher = loader.getFetcher();
 
-                const [rgeData, relData, minData] = await Promise.all([
-                    fetchOptional('relation_generation_engine.json'),
-                    fetchOptional('relations.json'),
-                    fetchOptional('ministers.json')
-                ]);
+                // Stage 1: country roster -> world JSON -> complete incremental boundary render.
+                // The next stage is blocked until the final map frame has finished.
+                const geoData = await loader.loadWorldMap(fetcher);
+                if (!geoData) throw new Error('WORLD_GEOMETRY_NOT_AVAILABLE');
+                failedStage = 'world boundary rendering';
+                await loader.waitForWorldMapRender();
 
-                if (rgeData && rgeData.RELATION_GENERATION_ENGINE) {
-                    Game.state.relationEngine = rgeData;
-                    if (Game.Diplomacy) Game.Diplomacy._rgeEngine = rgeData.RELATION_GENERATION_ENGINE;
-                }
-                if (relData && typeof relData === 'object' && Game.Diplomacy) {
-                    Game.Diplomacy._legacyRelations = relData;
-                }
-                if (minData && minData.ministers_database) {
-                    window.OmegaMinistersDB = minData.ministers_database;
-                    Game.state.ministersDB = minData.ministers_database;
-                    if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.syncMinistersDatabase === 'function') {
-                        window.OmegaCabinetUI.syncMinistersDatabase(minData.ministers_database);
+                const startupDatasets = [
+                    {
+                        filename: 'population.json',
+                        label: 'Population data',
+                        apply: function (data) {
+                            if (data && typeof data === 'object') Game.state.population = data;
+                        }
+                    },
+                    {
+                        filename: 'economy.json',
+                        label: 'Economy data',
+                        apply: function (data) {
+                            if (data && typeof data === 'object') Game.state.economy = data;
+                        }
+                    },
+                    {
+                        filename: 'relation_generation_engine.json',
+                        label: 'Relation generation rules',
+                        apply: function (data) {
+                            if (data && data.RELATION_GENERATION_ENGINE) {
+                                Game.state.relationEngine = data;
+                                if (Game.Diplomacy) Game.Diplomacy._rgeEngine = data.RELATION_GENERATION_ENGINE;
+                            }
+                        }
+                    },
+                    {
+                        filename: 'relations.json',
+                        label: 'Existing diplomatic relations',
+                        apply: function (data) {
+                            if (data && typeof data === 'object' && Game.Diplomacy) {
+                                Game.Diplomacy._legacyRelations = data;
+                            }
+                        }
+                    },
+                    {
+                        filename: 'ministers.json',
+                        label: 'Minister profiles',
+                        apply: function (data) {
+                            if (data && data.ministers_database) {
+                                window.OmegaMinistersDB = data.ministers_database;
+                                Game.state.ministersDB = data.ministers_database;
+                                if (window.OmegaCabinetUI && typeof window.OmegaCabinetUI.syncMinistersDatabase === 'function') {
+                                    window.OmegaCabinetUI.syncMinistersDatabase(data.ministers_database);
+                                }
+                            }
+                        }
                     }
+                ];
+
+                const stageCount = startupDatasets.length + 1;
+                const fetchOptional = async function (item, index) {
+                    let controller = null, timer = null;
+                    const stageStart = (index / stageCount) * 82;
+                    const stageSpan = 82 / stageCount;
+                    try {
+                        controller = typeof AbortController === 'function' ? new AbortController() : null;
+                        const request = Promise.resolve().then(function () {
+                            return fetcher(item.filename, {
+                                signal: controller ? controller.signal : undefined,
+                                onProgress: function (ratio, received, total) {
+                                    if (typeof ratio !== 'number' || !Number.isFinite(ratio)) return;
+                                    const bounded = Math.max(0, Math.min(1, ratio));
+                                    const detail = total > 0
+                                        ? 'Loading ' + item.label + ' (' + Math.round(received / 1024) + ' KB)'
+                                        : 'Loading ' + item.label + '…';
+                                    loader.setStartupProgress(stageStart + bounded * stageSpan, detail, 'loading');
+                                }
+                            });
+                        });
+                        const timeout = new Promise(function (resolve, reject) {
+                            timer = window.setTimeout(function () {
+                                try { if (controller) controller.abort(); } catch (_) {}
+                                const error = new Error('STARTUP_DATA_FETCH_TIMEOUT:' + item.filename);
+                                error.code = 'STARTUP_DATA_FETCH_TIMEOUT';
+                                reject(error);
+                            }, 6500);
+                        });
+                        return await Promise.race([request, timeout]);
+                    } catch (error) {
+                        console.warn('[OMEGA DataLoader] Optional startup dataset failed; the next stage will continue:', item.filename, error);
+                        return null;
+                    } finally {
+                        if (timer !== null) window.clearTimeout(timer);
+                    }
+                };
+
+                // Stage 2: one supporting file at a time. Failed optional files are
+                // recorded and skipped; they never start parallel or nested loads.
+                for (let index = 0; index < startupDatasets.length; index += 1) {
+                    const item = startupDatasets[index];
+                    failedStage = item.label;
+                    loader.setStartupProgress(
+                        (index / stageCount) * 82,
+                        'Loading ' + item.label + ' (' + (index + 1) + '/' + startupDatasets.length + ')…',
+                        'loading'
+                    );
+                    const data = await fetchOptional(item, index);
+                    try {
+                        item.apply(data);
+                    } catch (applyError) {
+                        console.warn('[OMEGA DataLoader] Startup dataset could not be applied; continuing:', item.filename, applyError);
+                    }
+                    loader.setStartupProgress(
+                        ((index + 1) / stageCount) * 82,
+                        data ? item.label + ' ready' : item.label + ' unavailable; continuing',
+                        'loading'
+                    );
                 }
 
-                if (Game.Diplomacy && typeof Game.Diplomacy.generateAllBilateralRelations === 'function') {
-                    // This is simulation/game-state work, not map presentation. It may continue independently.
-                    const relationCountries = Object.keys(Game.state.economy || {});
-                    const RELATION_COUNTRIES_PER_FRAME = this.isConstrainedDevice() ? 1 : 2;
-                    let relationCursor = 0;
+                // Stage 3: relation generation is awaited too. Frame yields let the
+                // browser paint, but each country chunk completes before the next starts.
+                failedStage = 'bilateral relation generation';
+                const relationCountries = Object.keys(Game.state.economy || {});
+                if (Game.Diplomacy && typeof Game.Diplomacy.generateAllBilateralRelations === 'function' && relationCountries.length) {
+                    const relationsPerFrame = loader.isConstrainedDevice() ? 1 : 2;
                     const scheduleRelationChunk = typeof window.requestAnimationFrame === 'function'
-                        ? callback => window.requestAnimationFrame(callback)
-                        : callback => window.setTimeout(callback, 0);
-                    const processRelationChunk = function () {
-                        if (relationCursor >= relationCountries.length) return;
-                        const chunk = relationCountries.slice(relationCursor, relationCursor + RELATION_COUNTRIES_PER_FRAME);
-                        Game.Diplomacy.generateAllBilateralRelations(chunk);
+                        ? function (callback) { window.requestAnimationFrame(callback); }
+                        : function (callback) { window.setTimeout(callback, 0); };
+                    let relationCursor = 0;
+                    while (relationCursor < relationCountries.length) {
+                        await new Promise(function (resolve) { scheduleRelationChunk(resolve); });
+                        const chunk = relationCountries.slice(relationCursor, relationCursor + relationsPerFrame);
+                        await Promise.resolve(Game.Diplomacy.generateAllBilateralRelations(chunk));
                         relationCursor += chunk.length;
-                        if (relationCursor < relationCountries.length) scheduleRelationChunk(processRelationChunk);
-                    };
-                    window.setTimeout(processRelationChunk, 0);
+                        const relationProgress = relationCountries.length
+                            ? relationCursor / relationCountries.length : 1;
+                        loader.setStartupProgress(
+                            82 + relationProgress * 16,
+                            'Preparing diplomatic links (' + relationCursor + '/' + relationCountries.length + ')…',
+                            'loading'
+                        );
+                    }
+                } else {
+                    loader.setStartupProgress(98, 'Diplomatic links skipped; continuing startup…', 'loading');
                 }
 
+                // Stage 4: bind controls only after their source data is available.
                 const relSelector = (Game.dom && Game.dom.relSelector) || document.getElementById('relation-selector');
                 if (relSelector && Game.state.economy) {
                     relSelector.innerHTML = '<option value="NONE">-- Select Target --</option>';
@@ -729,19 +872,43 @@ Game.DataLoader = {
                     });
                 }
 
-                await this.loadCountryConfig(fetcher);
+                const result = {
+                    mapLoaded: Game.__omegaGeoJSONRenderComplete === true,
+                    countryCount: Array.isArray(Game.Map.countryGeoJSON && Game.Map.countryGeoJSON.features)
+                        ? Game.Map.countryGeoJSON.features.length : 0,
+                    supportDataReady: true
+                };
+                loader.__assetsLoadComplete = true;
+                loader.__assetsLoadResult = result;
+                loader.setStartupProgress(100, 'World and supporting data are ready', 'complete');
+                return result;
             } catch (error) {
-                // Failure of supporting data must not prevent an already-started world map from appearing.
-                console.error('[OMEGA DataLoader] Supporting game data failed.', error);
+                const reason = String(error && (error.message || error.code) || error || 'Unknown startup error')
+                    .replace(/\s+/g, ' ').slice(0, 180);
+                const result = {
+                    mapLoaded: Game.__omegaGeoJSONRenderComplete === true,
+                    countryCount: Array.isArray(Game.Map.countryGeoJSON && Game.Map.countryGeoJSON.features)
+                        ? Game.Map.countryGeoJSON.features.length : 0,
+                    supportDataReady: false,
+                    failedStage: failedStage,
+                    error: reason
+                };
+                loader.__assetsLoadComplete = false;
+                loader.__assetsLoadResult = result;
+                console.error('[OMEGA DataLoader] Sequential startup pipeline paused at ' + failedStage + '.', error);
+                loader.setStartupProgress(
+                    loader.__assetsLoadingProgress || 2,
+                    'Startup paused at ' + failedStage + ': ' + reason + '. Retry to resume.',
+                    'error'
+                );
+                return result;
             }
-        }).call(this);
+        })().finally(function () {
+            if (loader.__assetsLoadPromise === promise) loader.__assetsLoadPromise = null;
+        });
 
-        await Promise.allSettled([worldTask, supportTask]);
-        return {
-            mapLoaded:Game.__omegaGeoJSONRenderComplete === true,
-            countryCount:Array.isArray(Game.Map.countryGeoJSON && Game.Map.countryGeoJSON.features)
-                ? Game.Map.countryGeoJSON.features.length : 0
-        };
+        this.__assetsLoadPromise = promise;
+        return promise;
     }
 };
 Game.LabelSystem = {
@@ -1361,6 +1528,9 @@ Game.Map.resetIncompleteWorldRender = function() {
 Game.Map.handleWorldMapRenderFailure = function(error) {
     const reason = String(error && (error.message || error.code) || error || 'Unknown renderer error')
         .replace(/\s+/g, ' ').slice(0, 150);
+    if (Game.DataLoader && typeof Game.DataLoader.settleWorldMapRenderWaiters === 'function') {
+        Game.DataLoader.settleWorldMapRenderWaiters(new Error('WORLD_MAP_RENDER_FAILED: ' + reason), Game.__omegaGeoJSONRenderToken);
+    }
     this.resetIncompleteWorldRender();
     this.updateMapLoadingProgress(
         Math.max(18, Number(this.__omegaMapLoadingProgress) || 18),
@@ -1374,8 +1544,8 @@ Game.Map.ensureMapLoadingOverlay = function() {
         retryButton.__omegaBound = true;
         retryButton.addEventListener('click', function () {
             if (Game.Map.__omegaMapUiActive === false) return;
-            if (Game.DataLoader && typeof Game.DataLoader.loadWorldMap === 'function') {
-                Game.DataLoader.loadWorldMap();
+            if (Game.DataLoader && typeof Game.DataLoader.loadAssets === 'function') {
+                Game.DataLoader.loadAssets();
             }
         });
     }
@@ -1451,14 +1621,32 @@ Game.Map.setUiActive = function(active) {
     }
 
     if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON) {
-        // A cached map returns instantly: do not flash the startup loader on every ministry exit.
-        var readyOverlay = document.getElementById('omega-map-load-overlay');
-        if (readyOverlay) {
-            readyOverlay.classList.add('is-hidden');
-            readyOverlay.setAttribute('aria-hidden', 'true');
-            readyOverlay.setAttribute('aria-busy', 'false');
+        const startupLoader = Game.DataLoader;
+        if (startupLoader && startupLoader.__assetsLoadingStatus === 'loading' &&
+            typeof startupLoader.setStartupProgress === 'function') {
+            startupLoader.setStartupProgress(
+                startupLoader.__assetsLoadingProgress || 0,
+                startupLoader.__assetsLoadingMessage || 'Loading supporting world data…',
+                'loading'
+            );
+        } else if (startupLoader && startupLoader.__assetsLoadingStatus === 'error' &&
+            !startupLoader.__assetsLoadComplete &&
+            typeof startupLoader.setStartupProgress === 'function') {
+            startupLoader.setStartupProgress(
+                startupLoader.__assetsLoadingProgress || 2,
+                startupLoader.__assetsLoadingMessage || 'Startup paused. Retry to resume.',
+                'error'
+            );
+        } else {
+            // A fully initialized cached map does not flash the startup loader on ministry exit.
+            var readyOverlay = document.getElementById('omega-map-load-overlay');
+            if (readyOverlay) {
+                readyOverlay.classList.add('is-hidden');
+                readyOverlay.setAttribute('aria-hidden', 'true');
+                readyOverlay.setAttribute('aria-busy', 'false');
+            }
+            if (root) root.removeAttribute('data-omega-map-loading');
         }
-        if (root) root.removeAttribute('data-omega-map-loading');
     } else {
         this.updateMapLoadingProgress(this.__omegaMapLoadingProgress || 2, 'Preparing world map…', 'loading');
         if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
@@ -1635,6 +1823,10 @@ Game.Map.renderGeoJSON = function(geoData) {
     // Keep only one canonical country layer. Repeated boot/render calls must not
     // leave duplicate world polygons competing for the same pointer events.
     const previousLayer = Game.geojsonLayer;
+    if (Game.DataLoader && typeof Game.DataLoader.settleWorldMapRenderWaiters === 'function' &&
+        Array.isArray(Game.__omegaGeoJSONRenderWaiters) && Game.__omegaGeoJSONRenderWaiters.length) {
+        Game.DataLoader.settleWorldMapRenderWaiters(new Error('WORLD_MAP_RENDER_SUPERSEDED'));
+    }
     const renderToken = (Number(Game.__omegaGeoJSONRenderToken) || 0) + 1;
     Game.__omegaGeoJSONRenderToken = renderToken;
     if (Game.__omegaGeoJSONRenderFrame !== null && Game.__omegaGeoJSONRenderFrame !== undefined &&
@@ -1725,6 +1917,9 @@ Game.Map.renderGeoJSON = function(geoData) {
                 }
             }
         } catch (regionError) { console.warn('[OMEGA Map] Existing region selection could not be restored.', regionError); }
+        if (Game.DataLoader && typeof Game.DataLoader.settleWorldMapRenderWaiters === 'function') {
+            Game.DataLoader.settleWorldMapRenderWaiters(null, renderToken);
+        }
         window.setTimeout(() => {
             if (renderToken !== Game.__omegaGeoJSONRenderToken || Game.geojsonLayer !== layer ||
                 self.__omegaMapUiActive === false) return;
