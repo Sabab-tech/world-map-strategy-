@@ -62,7 +62,10 @@
         (String(source.countryId||'').trim().length===3?source.countryId:null)||
         (String(row&&row.countryId||'').trim().length===3?row.countryId:null);
       if(iso3&&/^[A-Z]{3}$/.test(id(iso3)))return id(iso3);
-      if(row&&(row.id||row.canonicalId))return id(row.id||row.canonicalId);
+      var engineCountry=g.ResourceMinistryEngine?.normalizeCountryCode?.(raw);
+      if(engineCountry&&/^[A-Z]{3}$/.test(id(engineCountry)))return id(engineCountry);
+      if(row&&/^[A-Z]{3}$/.test(id(row.id)))return id(row.id);
+      if(row&&/^[A-Z]{3}$/.test(id(row.canonicalId)))return id(row.canonicalId);
     } catch (_) {}
     return direct;
   }
