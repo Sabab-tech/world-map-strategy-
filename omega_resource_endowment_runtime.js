@@ -158,6 +158,48 @@
     };
     return engineDepositKeySet;
   }
+  // Hot-path indexes are invalidated whenever the canonical site catalog changes.
+  let canonicalSiteIndexSource=null,canonicalSiteIndexDirty=true;
+  let canonicalSitesByCountryResource=new Map(),canonicalSiteMatchCache=new Map();
+  function invalidateCanonicalSiteIndexes(){
+    canonicalSiteIndexDirty=true;
+    canonicalSiteMatchCache.clear();
+  }
+  function canonicalSiteCandidates(countryId,resourceId){
+    const source=canonicalSiteCatalogMap||{};
+    if(canonicalSiteIndexDirty||canonicalSiteIndexSource!==source){
+      const next=new Map();
+      for(const site of Object.values(source)){
+        if(site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||
+           LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')])continue;
+        const country=canonical(site?.countryId||site?.identity?.countryIso3||'');
+        const resource=rid(site?.identity?.resourceTypeId);
+        if(!country||!resource)continue;
+        const key=country+'\\u0000'+resource;
+        let rows=next.get(key);if(!rows){rows=[];next.set(key,rows);}
+        rows.push(site);
+      }
+      canonicalSitesByCountryResource=next;
+      canonicalSiteIndexSource=source;
+      canonicalSiteIndexDirty=false;
+      canonicalSiteMatchCache.clear();
+    }
+    return canonicalSitesByCountryResource.get(canonical(countryId)+'\\u0000'+rid(resourceId))||[];
+  }
+  let engineDepositRowSource=null,engineDepositRowSourceLength=-1,engineDepositRowsByCountryName=new Map();
+  function engineDepositRowIndex(e){
+    const deposits=Array.isArray(e?.deposits)?e.deposits:[];
+    if(engineDepositRowSource===deposits&&engineDepositRowSourceLength===deposits.length)return engineDepositRowsByCountryName;
+    const next=new Map();
+    for(const row of deposits){
+      const key=id(row?.countryCode||row?.country||'')+'\\u0000'+String(row?.name||'').trim().toUpperCase();
+      if(key&&!next.has(key))next.set(key,row);
+    }
+    engineDepositRowSource=deposits;
+    engineDepositRowSourceLength=deposits.length;
+    engineDepositRowsByCountryName=next;
+    return engineDepositRowsByCountryName;
+  }
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
     if(simulationReservePromise)return simulationReservePromise;
@@ -328,6 +370,7 @@
     const existing=canonicalSiteCatalogMap?.[siteId];
     if(existing&&canonical(existing.countryId||existing.identity?.countryIso3)===country){
       canonicalSiteCatalogMap[siteId]=normalizeSiteRecord(applyPlayerMineCommissionOverlay(existing));
+       invalidateCanonicalSiteIndexes();
       const data=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
       if(Array.isArray(data?.sites)){
         const i=data.sites.findIndex(x=>String(x?.siteId||'')===siteId);
@@ -492,6 +535,7 @@
         const map={};
         for(const row of normalizedRows)if(row?.siteId)map[String(row.siteId)]=row;
         canonicalSiteCatalogMap=map;
+         invalidateCanonicalSiteIndexes();
         // The resource runtime can ask for site references before the full canonical
         // catalog finishes loading. Invalidate those earlier profile-only caches so the
         // newly loaded legacy records produce their reserve/extraction occurrences too.
@@ -517,6 +561,7 @@
         return canonicalSiteCatalogLoadReport;
       }catch(e){
         canonicalSiteCatalogMap={};
+         invalidateCanonicalSiteIndexes();
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
       }finally{canonicalSiteCatalogPromise=null;}
     })();
@@ -1037,23 +1082,25 @@
     const normalizeName=v=>String(v||'').toLowerCase().replace(/oilfield/g,'oil field').replace(/[^a-z0-9]+/g,' ').trim();
     const target=normalizeName(rawDeposit?.siteName||rawDeposit?.siteName||depositName||rawDeposit?.name);
     if(!target)return null;
-    const tt=new Set(target.split(/\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
+    const matchKey=wanted+'\\u0000'+ridWanted+'\\u0000'+target;
+    if(canonicalSiteMatchCache.has(matchKey))return canonicalSiteMatchCache.get(matchKey);
+    const tt=new Set(target.split(/\\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
     let best=null,bestScore=0;
-    for(const site of Object.values(canonicalSiteCatalogMap||{})){
-      if(site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')])continue;
-      if(canonical(site?.countryId||site?.identity?.countryIso3||'')!==wanted)continue;
-      if(rid(site?.identity?.resourceTypeId)!==ridWanted)continue;
-      const name=normalizeName(site?.siteName),st=new Set(name.split(/\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
+    for(const site of canonicalSiteCandidates(wanted,ridWanted)){
+      const name=normalizeName(site?.siteName),st=new Set(name.split(/\\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
       let common=0;for(const t of tt)if(st.has(t))common++;
       const score=common/Math.max(tt.size,st.size,1);
       if(score>bestScore){bestScore=score;best=site;}
     }
-    return bestScore>=0.25?String(best?.siteId||''):null;
+    const resolved=bestScore>=0.25?String(best?.siteId||''):null;
+    if(canonicalSiteMatchCache.size>8192)canonicalSiteMatchCache.clear();
+    canonicalSiteMatchCache.set(matchKey,resolved);
+    return resolved;
   }
 
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
-    const wanted=canonical(c),out=[],seen=new Set();
+    const wanted=canonical(c),out=[],seen=new Set(),siteResourceSeen=new Set();
     // Reserve-state membership is stable during this read. Index it once instead of
     // rescanning every reserve for each parent occurrence and each canonical site.
     const reserveKeysByParent=new Map(),reserveBySiteResource=new Map();
@@ -1082,7 +1129,9 @@
         const depositKey=String(occ?.depositKey??'').trim();
         if(!engineDepositKeys.has(depositKey))continue;
         const dep=reg.getDeposit?.(depositKey);if(!dep)continue;
-        const raw=clone(occ.rawDeposit||dep.rawDeposit||((e.deposits||[]).find(x=>String(x?.name||'').trim().toUpperCase()===String(dep.depositRawName||'').trim().toUpperCase()&&id(x?.countryCode||x?.country||'')===wanted)||null));
+        const rawDepositIndex=engineDepositRowIndex(e);
+        const raw=clone(occ.rawDeposit||dep.rawDeposit||
+          rawDepositIndex.get(wanted+'\\u0000'+String(dep.depositRawName||'').trim().toUpperCase())||null);
         const parentKey=String(occ.occurrenceKey||'');
         const keys=[];
         const addKey=k=>{const s=String(k||'');if(s&&!seen.has(s))keys.push(s);};
@@ -1106,6 +1155,7 @@
             commodityKey:child?key:null
           });
           seen.add(key);
+          if(siteId&&resourceId)siteResourceSeen.add(siteId+'\\u0000'+resourceId);
         }
       }
     }catch(_){}
@@ -1113,6 +1163,10 @@
     // executable. Materialize a deterministic, explicitly simulated reserve/capacity
     // contract for each commercial non-alias site missing from the source-deposit registry.
     try{
+      for(const row of out){
+        const siteId=String(row?.siteReferenceKey||'').trim(),resourceId=rid(row?.resourceId);
+        if(siteId&&resourceId)siteResourceSeen.add(siteId+'\\u0000'+resourceId);
+      }
       const canonicalRows=mineSiteReferenceRows(wanted);
       const reserveCtor=(g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine)?.ReserveState;
       const capacityCtor=(g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine)?.Capacity;
@@ -1125,7 +1179,8 @@
           if(!siteId||!siteResource||site.commercialExtraction===false||operation.commercialExtraction===false||
              String(operation.status||rawSite.status||'').toUpperCase()==='NOT_APPLICABLE'||runtime.aliasOfSiteId||
              site.map?.markerEligible===false||map.markerEligible===false)continue;
-          if(out.some(x=>String(x.siteReferenceKey||'')===siteId&&rid(x.resourceId)===siteResource))continue;
+          const siteResourceKey=siteId+'\\u0000'+siteResource;
+          if(siteResourceSeen.has(siteResourceKey))continue;
           const existingReserve=reserveBySiteResource.get(siteId+'\\u0000'+siteResource)||null;
           const occurrenceKey=String(existingReserve?.occurrenceKey||('SITE_RUNTIME:'+wanted+':'+siteId+':'+siteResource));
           let reserve=existingReserve||rr.getReserveState?.(occurrenceKey)||null;
@@ -1286,6 +1341,12 @@ function batchFromExtraction(x,record){
   function buildMineSiteControllers(c,rows,existing={}){
     const refs=mineSiteReferenceRows(c);
     const executableKeys=new Set((rows||[]).map(x=>String(x.occurrenceKey)));
+    const rowsBySite=new Map();
+    for(const row of rows||[]){
+      const siteKey=String(row?.siteReferenceKey||'');if(!siteKey)continue;
+      let attached=rowsBySite.get(siteKey);if(!attached){attached=[];rowsBySite.set(siteKey,attached);}
+      attached.push(row);
+    }
     const old=existing&&typeof existing.mineSiteControllers==='object'&&existing.mineSiteControllers?existing.mineSiteControllers:{};
     const controllers={};
     for(const site of refs){
@@ -1294,7 +1355,7 @@ function batchFromExtraction(x,record){
       const prior=old[siteKey]&&typeof old[siteKey]==='object'?clone(old[siteKey]):{};
       const pathId='MINE_PATH:'+canonical(c)+':'+siteKey;
       const existingLinked=Array.isArray(prior.linkedOccurrenceKeys)?prior.linkedOccurrenceKeys:[];
-      const attachedRows=(rows||[]).filter(x=>String(x?.siteReferenceKey||'')===siteKey);
+      const attachedRows=rowsBySite.get(siteKey)||[];
       const attachedKeys=attachedRows.map(x=>String(x.occurrenceKey||'')).filter(Boolean);
       const linked=[...new Set([...existingLinked,...attachedKeys])].filter(k=>executableKeys.has(String(k)));
       controllers[siteKey]={
@@ -1352,6 +1413,12 @@ function batchFromExtraction(x,record){
       .map(x=>({siteReferenceKey:String(x.siteReferenceKey),resourceId:rid(x.resourceId),occurrenceKey:String(x.occurrenceKey||''),
         depositName:String(x.depositName||x.rawDeposit?.siteName||x.rawDeposit?.name||''),
         directSiteIds:[x.rawDeposit?.siteId,x.rawDeposit?.siteReferenceKey,x.rawDeposit?.resourceSiteId].filter(Boolean).map(String)}));
+    const authoritativeByPhysicalSiteResource=new Map();
+    for(const row of authoritativeStreams){
+      const normalizedName=normalizePhysicalSiteName(row.depositName);if(!normalizedName)continue;
+      const key=row.siteReferenceKey+'\\u0000'+row.resourceId+'\\u0000'+normalizedName;
+      if(!authoritativeByPhysicalSiteResource.has(key))authoritativeByPhysicalSiteResource.set(key,row);
+    }
     const suppressedProfileDuplicates=[];
     const add=(asset,index,explicitResource=null,assetType='MINE_SITE')=>{
       const siteName=String(asset?.siteName||asset?.name||asset?.mineName||asset?.depositName||asset||'').trim();if(!siteName)return;
@@ -1368,11 +1435,9 @@ function batchFromExtraction(x,record){
         // run. A profile site can share a fuzzy canonical reference with a broader deposit
         // (for example, a mineral province) and still need its own simulated extraction path.
         const requestedExplicitly=requestedOccurrenceKeys.has(occurrenceKey);
-        const authoritativeDuplicate=assetType==='MINE_SITE'&&!requestedExplicitly?authoritativeStreams.find(x=>
-          x.resourceId===resolvedResource&&x.siteReferenceKey===siteKey&&
-          normalizePhysicalSiteName(x.depositName)!==''&&
-          normalizePhysicalSiteName(x.depositName)===normalizePhysicalSiteName(siteName)
-        ):null;
+        const normalizedSiteName=normalizePhysicalSiteName(siteName);
+        const authoritativeDuplicate=assetType==='MINE_SITE'&&!requestedExplicitly&&normalizedSiteName
+          ?authoritativeByPhysicalSiteResource.get(siteKey+'\\u0000'+resolvedResource+'\\u0000'+normalizedSiteName)||null:null;
         if(authoritativeDuplicate){
           suppressedProfileDuplicates.push({siteReferenceKey:siteKey,resourceId:resolvedResource,
             canonicalOccurrenceKey:authoritativeDuplicate.occurrenceKey,matchedBy:authoritativeDuplicate.directSiteIds.includes(siteKey)?'DIRECT_SOURCE_ID':'EXACT_NORMALIZED_PHYSICAL_NAME',
@@ -2890,6 +2955,7 @@ function batchFromExtraction(x,record){
       merged.location={...clone(merged.location||{}),coordinates:clone(site.location.coordinates)};
     merged=normalizeSiteRecord(merged);
     canonicalSiteCatalogMap[siteId]=merged;
+     invalidateCanonicalSiteIndexes();
     const data=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
     if(data){
       if(!Array.isArray(data.sites))data.sites=[];
@@ -3169,6 +3235,7 @@ function batchFromExtraction(x,record){
     row.runtime={...(row.runtime||{}),identityAuthority:'CANONICAL_SITE_REGISTRY',quantityAuthority:'SIMULATED',
       productionAuthority:'SIMULATED',requiresFactoryBinding:true,requiresSiteSpecificRoute:true};
     canonicalSiteCatalogMap[siteId]=row;
+     invalidateCanonicalSiteIndexes();
     const data=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
     if(data&&Array.isArray(data.sites)&&!data.sites.some(x=>String(x?.siteId||'')===siteId)){
       data.sites.push(clone(row));
