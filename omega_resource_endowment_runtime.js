@@ -730,6 +730,29 @@
       s.simulationReserveUnit=row.reserve.unit||null;
       s.simulationReserveRecordId=row.siteId;
       s.simulationReserveAuthority='SCENARIO_SIMULATION_DATA';
+      const reserveProvenance=row.provenance&&typeof row.provenance==='object'?row.provenance:{};
+      const annualOutputBasis=n(reserveProvenance.annualOutputBasis);
+      const annualOutputSourceUnit=String(reserveProvenance.annualOutputUnit||'').trim();
+      const quantityNormalizer=g.Omega?.ResourceQuantityNormalization||g.OmegaResourceQuantityNormalization;
+      const normalizedAnnualOutput=annualOutputBasis!==null&&annualOutputBasis>0&&annualOutputSourceUnit&&
+        typeof quantityNormalizer?.normalizeQuantity==='function'
+          ?quantityNormalizer.normalizeQuantity(rid(s.resourceId||s.resourceTypeId||s.resId||row.resourceId),
+            annualOutputBasis,annualOutputSourceUnit,{simulationOnly:true}):null;
+      const normalizedAnnualQuantity=n(normalizedAnnualOutput?.quantity);
+      const annualUnit=String(normalizedAnnualOutput?.unit||'').trim();
+      // Scenario reserve and annual output must reach the same canonical commodity unit.
+      // Do not infer a daily rate from un-normalized or dimensionally incompatible source figures.
+      if(normalizedAnnualQuantity!==null&&normalizedAnnualQuantity>0&&annualUnit&&annualUnit===String(s.simulationReserveUnit||'')){
+        s.simulationAnnualOutputSourceQuantity=annualOutputBasis;
+        s.simulationAnnualOutputSourceUnit=annualOutputSourceUnit;
+        s.simulationAnnualOutputQuantity=normalizedAnnualQuantity;
+        s.simulationAnnualOutputUnit=annualUnit;
+        s.simulationAnnualProductionRatePerDay=Number((normalizedAnnualQuantity/365).toFixed(9));
+        s.simulationAnnualProductionRateUnit=annualUnit;
+        s.simulationAnnualProductionAuthority='SCENARIO_ANNUAL_OUTPUT_BASIS_NORMALIZED_PER_DAY';
+        s.simulationAnnualOutputNormalization=clone(normalizedAnnualOutput);
+        s.simulationTargetGameplayLifeYears=n(reserveProvenance.targetGameplayLifeYears);
+      }
       const legacyOperation=s.operation||s.rawSiteReference?.operation||{};
       const legacyRuntime=s.runtime||s.rawSiteReference?.runtime||{};
       const legacyMap=s.map||s.rawSiteReference?.map||{};
@@ -1225,11 +1248,17 @@
             const reserveAuthority=reserveCandidate!==null&&reserveCandidate>0&&reserveStatus==='OBSERVED'?'OBSERVED':
               reserveCandidate!==null&&reserveCandidate>0?'SIMULATED_SITE_RESERVE':'SIMULATED_400_YEAR_FALLBACK';
             const production=site.quantitative?.production||rawSite.quantitative?.production||{};
+            const unit=String(site.simulationReserveUnit||site.unit||observedReserve.unit||production.unit||'TONNES');
             const candidateRate=n(site.dailyRate??site.productionRate??site.capacity?.activeRate??site.capacity?.nominalCapacity??production.rate);
             const rateStatus=String(production.status||site.productionStatus||site.capacity?.authority||'').toUpperCase();
-            const rateAuthority=candidateRate!==null&&candidateRate>0&&rateStatus==='OBSERVED'?'OBSERVED':'SIMULATED_SITE_CAPACITY';
-            const dailyRate=candidateRate!==null&&candidateRate>0?candidateRate:(0.5+((hash%200)+1)/10);
-            const unit=String(site.simulationReserveUnit||site.unit||observedReserve.unit||production.unit||'TONNES');
+            const scenarioAnnualRate=n(site.simulationAnnualProductionRatePerDay);
+            const scenarioAnnualUnit=String(site.simulationAnnualProductionRateUnit||'').trim();
+            const scenarioAnnualRateValid=scenarioAnnualRate!==null&&scenarioAnnualRate>0&&scenarioAnnualUnit===unit;
+            const observedRate=candidateRate!==null&&candidateRate>0&&rateStatus==='OBSERVED';
+            const useScenarioAnnualRate=!observedRate&&scenarioAnnualRateValid;
+            const rateAuthority=observedRate?'OBSERVED':(useScenarioAnnualRate?'SIMULATED_SCENARIO_ANNUAL_OUTPUT_BASIS':'SIMULATED_SITE_CAPACITY');
+            const dailyRate=observedRate?candidateRate:(useScenarioAnnualRate?scenarioAnnualRate:
+              (candidateRate!==null&&candidateRate>0?candidateRate:(0.5+((hash%200)+1)/10)));
             const reserveQuantity=reserveCandidate!==null&&reserveCandidate>0?reserveCandidate:dailyRate*365*400;
             reserve=reserve||new reserveCtor({
               occurrenceKey,countryId:wanted,siteReferenceKey:siteId,siteId,depositKey:'SIM_SITE:'+siteId,
@@ -1259,6 +1288,36 @@
             rr.lifecycles?.set?.(occurrenceKey,{occurrenceKey,countryId:wanted,siteReferenceKey:siteId,status:'ACTIVE_EXTRACTION',
               mode:'CANONICAL_SITE_SIMULATION_BRIDGE',sourceAuthority:'SIMULATED'});
             rr.accessibilityStates?.set?.(occurrenceKey,{state:'AVAILABLE',sourceAuthority:'SIMULATED'});
+          }
+          // A reserve/capacity pair may have been materialized by an earlier identity pass.
+          // Reconcile only simulated capacities to the site's explicit annual scenario baseline;
+          // preserve the existing reserve balance and never rewrite observed capacity data.
+          const existingScenarioRate=n(site.simulationAnnualProductionRatePerDay);
+          const existingScenarioUnit=String(site.simulationAnnualProductionRateUnit||'').trim();
+          const reserveUnit=String(reserve?.unit||'').trim();
+          if(capacity&&existingScenarioRate!==null&&existingScenarioRate>0&&
+             existingScenarioUnit&&existingScenarioUnit===reserveUnit&&
+             String(capacity.authority||capacity.productionAuthority||capacity.dataStatus||'').toUpperCase()!=='OBSERVED'){
+            Object.assign(capacity,{
+              nominalRate:existingScenarioRate,dailyRate:existingScenarioRate,activeRate:existingScenarioRate,
+              nominalCapacity:existingScenarioRate,minimumCapacity:existingScenarioRate*0.55,
+              maximumCapacity:existingScenarioRate*1.25,unit:existingScenarioUnit,
+              authority:'SIMULATED',productionAuthority:'SIMULATED',stateAuthority:'SIMULATED',
+              dataStatus:'SIMULATED',
+              provenance:{
+                ...(capacity.provenance||{}),
+                sourceAuthority:'SIMULATED',
+                siteReferenceKey:siteId,
+                sourceDatasetId:'resource_site_reserve_simulation_v1.json',
+                simulationRule:'SITE_ANNUAL_OUTPUT_BASIS_NORMALIZED_PER_DAY',
+                sourceAnnualQuantity:site.simulationAnnualOutputSourceQuantity??null,
+                sourceAnnualUnit:site.simulationAnnualOutputSourceUnit??null,
+                normalizedAnnualQuantity:site.simulationAnnualOutputQuantity??null,
+                normalizedAnnualUnit:existingScenarioUnit,
+                targetGameplayLifeYears:site.simulationTargetGameplayLifeYears??null
+              }
+            });
+            rr.capacities?.set?.(occurrenceKey,capacity);
           }
           const rawDeposit={
             ...clone(rawSite),siteId,siteReferenceKey:siteId,siteName:site.siteName||rawSite.siteName||siteId,
