@@ -1380,6 +1380,32 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       if(commissioningTimeoutId!==null)clearTimeout(commissioningTimeoutId);
     }
     metrics.commissioning=commissioning;
+    await page.evaluate(() => {
+      const state=window.Omega?.Simulation?.world?.state;
+      if(!state||state!==window.Game?.state)throw new Error('SAB34_ECONOMY_WRITE_TRACE_REQUIRES_SHARED_WORLD_ROOT');
+      const descriptor=Object.getOwnPropertyDescriptor(state,'economy');
+      if(!descriptor||!Object.prototype.hasOwnProperty.call(descriptor,'value'))
+        throw new Error('SAB34_ECONOMY_WRITE_TRACE_UNEXPECTED_PROPERTY_DESCRIPTOR');
+      let current=descriptor.value;
+      const writes=[];
+      Object.defineProperty(state,'economy',{
+        configurable:descriptor.configurable!==false,
+        enumerable:descriptor.enumerable!==false,
+        get(){return current;},
+        set(next){
+          writes.push({
+            at:Date.now(),
+            oldKeys:current&&typeof current==='object'?Object.keys(current).length:null,
+            nextKeys:next&&typeof next==='object'?Object.keys(next).length:null,
+            nextHasBGD:!!(next&&Object.prototype.hasOwnProperty.call(next,'BGD')),
+            nextBGDAssetCount:Array.isArray(next?.BGD?.productionAssets)?next.BGD.productionAssets.length:null,
+            stack:String(new Error('SAB34_ECONOMY_DOMAIN_REPLACED').stack||'').split('\\n').slice(0,16).join('\\n')
+          });
+          current=next;
+        }
+      });
+      window.__sab34EconomyDomainWriteTrace={writes,initialEconomy:current};
+    });
     metrics.stages.push('PRIVATE_FACTORY_COMMISSIONED_AND_HELD_BEHIND_SAB34_LIVE_BROWSER_PROOF_GATE');
     metrics.stages.push(commissioning.proofAcceptedAtStart
       ?'VERIFIED_SAB34_CERTIFICATE_SELECTED_PRIVATE_FACTORY'
@@ -1719,6 +1745,13 @@ test('real Chromium map marker runs the exact site through a commissioned privat
           worldAssetsSameAsBefore:worldCountry?.productionAssets===ref.worldAssets,
           originalGameArrayStillHasFactory:!!ref.gameAssets?.some(row=>String(row.id||row.assetId||row.projectId)===factoryId),
           originalWorldArrayStillHasFactory:!!ref.worldAssets?.some(row=>String(row.id||row.assetId||row.projectId)===factoryId),
+          economyWriteTrace:(window.__sab34EconomyDomainWriteTrace?.writes||[]).slice(),
+          economyDescriptor:Object.getOwnPropertyDescriptor(state,'economy')?
+            {configurable:Object.getOwnPropertyDescriptor(state,'economy').configurable,
+             enumerable:Object.getOwnPropertyDescriptor(state,'economy').enumerable,
+             getter:typeof Object.getOwnPropertyDescriptor(state,'economy').get==='function',
+             setter:typeof Object.getOwnPropertyDescriptor(state,'economy').set==='function'}:null,
+          economyIsInitialReference:state.economy===window.__sab34EconomyDomainWriteTrace?.initialEconomy,
           currentGameAssetCount:assets.length,currentWorldAssetCount:worldAssets.length,
           currentGameAssetIds:assets.map(row=>String(row.id||row.assetId||row.projectId||'')).filter(Boolean),
           currentWorldAssetIds:worldAssets.map(row=>String(row.id||row.assetId||row.projectId||'')).filter(Boolean),
