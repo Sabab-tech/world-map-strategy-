@@ -1911,6 +1911,7 @@ function batchFromExtraction(x,record){
         String(row?.occurrenceKey||row?.mineId||'')===String(x.occurrenceKey)&&
         (n(row?.quantity)||0)>0&&String(row?.batchId||'').trim()
       );
+      // Replay the already committed extraction event for downstream logistics retries; never re-add its stock.
       if(alreadyExtractedThisTurn){
         const priorRecord=mineProductionLedger.find(row=>
           n(row?.turn??row?.simulationTurn)===turn()&&
