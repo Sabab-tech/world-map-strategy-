@@ -18,7 +18,22 @@
   const clamp=(v,a=0,b=1)=>{const x=n(v);return x===null?null:Math.max(a,Math.min(b,x));};
   const state=()=>g.Game?.state||g.gameState||{};
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
-  const canonical=v=>{try{const r=registry()?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}return id(v);};
+  const canonical=v=>{
+    const raw=v&&typeof v==='object'
+      ?(v.iso3||v.iso3Code||v.countryCode||v.countryId||v.code||v.name||v.id||v.canonicalId):v;
+    const direct=id(raw);if(/^[A-Z]{3}$/.test(direct))return direct;
+    try{
+      const r=registry()?.resolveCountry?.(raw),source=r?.raw?.raw||r?.raw?.datasets?.['countries.json']||r?.raw||r||{};
+      const iso3=source.iso3||source.iso3Code||r?.iso3||r?.iso3Code||
+        (String(source.countryCode||'').trim().length===3?source.countryCode:null)||
+        (String(r?.countryCode||'').trim().length===3?r.countryCode:null)||
+        (String(source.countryId||'').trim().length===3?source.countryId:null)||
+        (String(r?.countryId||'').trim().length===3?r.countryId:null);
+      if(iso3&&/^[A-Z]{3}$/.test(id(iso3)))return id(iso3);
+      if(r?.id)return id(r.id);
+    }catch(_){}
+    return direct;
+  };
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
   const turn=()=>n(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
   // A market rebuild reads one stable world snapshot for every resource. Resolve each
