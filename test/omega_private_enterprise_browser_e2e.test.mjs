@@ -1753,7 +1753,9 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(repeatedExtraction.status, 'APPLIED');
     assert.equal(repeatedExtraction.accepted, true);
     assert.equal(repeatedExtraction.extracted, 0,
-      'repeating a successful site extraction in the same turn must be idempotent');
+      'repeating a successful site extraction in the same turn must not create new stock');
+    assert.equal(repeatedExtraction.replayed, 1,
+      'replaying the committed batch must still allow downstream logistics to resume');
     assert.equal(repeatedExtraction.before.ledgerRows, 1,
       'one successful extraction must map to one production-ledger row for the batch');
     assert.equal(repeatedExtraction.before.batchQuantity, repeatedExtraction.before.lotQuantity,
