@@ -542,6 +542,12 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
     'the full startup retry must wait until the aborted map request releases its single-flight lock');
   assert.ok(map.includes("startupLoader.__assetsLoadingStatus === 'loading'"),
     'map activation must restore the active startup-stage progress after a ministry pause');
+  assert.match(map, /Math\.min\(45, 2 \+ rawPercent \* 0\.43\)/,
+    'map rendering progress must reserve the first 45 percent of the full startup bar');
+  assert.ok(startup.includes('const supportStageStart = 46') && startup.includes('const supportStageSpan = 35'),
+    'sequential supporting datasets must continue the same progress bar after the map stage');
+  assert.ok(startup.includes('82 + relationProgress * 16'),
+    'awaited relation generation must occupy the final pre-completion progress stage');
   assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
   assert.ok(map.includes('this.__omegaWorldMapAbortController.abort()'),
     'leaving the world view must abort an unfinished map-only request');
