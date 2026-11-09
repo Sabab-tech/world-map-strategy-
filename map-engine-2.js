@@ -431,21 +431,15 @@ Game.DataLoader = {
         return this.__assetsLoadingProgress;
     },
 
-    settleWorldMapRenderWaiters(error, renderToken) {
-        const waiters = Array.isArray(Game.__omegaGeoJSONRenderWaiters) ? Game.__omegaGeoJSONRenderWaiters : [];
-        const remaining = [];
+    settleWorldMapRenderWaiters(error) {
+        const waiters = Array.isArray(Game.__omegaGeoJSONRenderWaiters) ? Game.__omegaGeoJSONRenderWaiters.splice(0) : [];
         waiters.forEach(function (waiter) {
-            if (renderToken !== undefined && renderToken !== null && waiter.renderToken !== renderToken) {
-                remaining.push(waiter);
-                return;
-            }
             try {
                 if (error) waiter.reject(error);
                 else waiter.resolve(Game.geojsonLayer || null);
             } catch (_) {}
         });
-        Game.__omegaGeoJSONRenderWaiters = remaining;
-        return waiters.length - remaining.length;
+        return waiters.length;
     },
 
     waitForWorldMapRender() {
@@ -1823,10 +1817,6 @@ Game.Map.renderGeoJSON = function(geoData) {
     // Keep only one canonical country layer. Repeated boot/render calls must not
     // leave duplicate world polygons competing for the same pointer events.
     const previousLayer = Game.geojsonLayer;
-    if (Game.DataLoader && typeof Game.DataLoader.settleWorldMapRenderWaiters === 'function' &&
-        Array.isArray(Game.__omegaGeoJSONRenderWaiters) && Game.__omegaGeoJSONRenderWaiters.length) {
-        Game.DataLoader.settleWorldMapRenderWaiters(new Error('WORLD_MAP_RENDER_SUPERSEDED'));
-    }
     const renderToken = (Number(Game.__omegaGeoJSONRenderToken) || 0) + 1;
     Game.__omegaGeoJSONRenderToken = renderToken;
     if (Game.__omegaGeoJSONRenderFrame !== null && Game.__omegaGeoJSONRenderFrame !== undefined &&
