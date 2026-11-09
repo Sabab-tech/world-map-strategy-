@@ -379,6 +379,8 @@ test('stale market clearing cannot influence a company factory choice or expansi
     row.currentTurnEvidence===false&&row.matchedQuantity===0&&row.bidDepth===0));
   assert.equal(response.proposal.companyStrategy.selectedOpportunity.marketSignals[0].signal,
     'UNOBSERVED_OR_STALE');
+  assert.equal(response.proposal.governmentOfftakeRequested,true,
+    'when current-turn customer/orderbook evidence is missing, the company must disclose that market risk and may request offtake terms');
 });
 
 test('government invitation is a tender only; the autonomous company prepares and submits its response',()=>{
