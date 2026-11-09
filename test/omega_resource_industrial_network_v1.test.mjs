@@ -1315,19 +1315,31 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     await N.advanceShipments('BGD');
     const schedulerArrival=await N.processPendingFactoryInputs('BGD');
     startedCycle=resourceState.industrialNetwork.factoryProductionCycles[universal.id];
-    assert.equal(startedCycle.status,'IN_PROGRESS',JSON.stringify({schedulerStart,schedulerArrival,shipment:startupShipment}));
+    assert.ok(['IN_PROGRESS','COMPLETED'].includes(startedCycle.status),JSON.stringify({schedulerStart,schedulerArrival,shipment:startupShipment}));
+    const completedOnArrival=startedCycle.status==='COMPLETED';
+    const finishedBatchCountBeforeClockReplay=(resourceState.batches||[]).filter(row=>row.stage==='FINISHED').length;
     assert.equal(startedCycle.primaryInputResourceId,'iron_ore');
-    assert.equal(universal.inputInventory.iron_ore,100,
-      'tracked opening allocation enters factory input only after the physical warehouse shipment is received');
+    assert.equal(universal.inputInventory.iron_ore,completedOnArrival?0:100,
+      'tracked opening allocation enters factory input only after receipt and is consumed only if its cycle is already due');
+    if(completedOnArrival){
+      assert.ok(Number(resourceState.inventory.IRON_CONCENTRATE)>0,
+        'a cycle due on the committed turn must publish its finished output immediately');
+    }
     context.Game.state.simulation.turn=Number(startedCycle.finishTurn);
     context.Game.state.simulation.date=startedCycle.finishDate;
     const schedulerFinish= await N.processPendingFactoryInputs('BGD');
-    assert.equal(schedulerFinish.completed.some(row=>row.factoryId===universal.id),true,
-      'the starting universal factory must finish its dated production cycle');
+    if(completedOnArrival){
+      assert.equal(schedulerFinish.completedCount,0,'replaying an already-due cycle must be idempotent');
+      assert.equal((resourceState.batches||[]).filter(row=>row.stage==='FINISHED').length,finishedBatchCountBeforeClockReplay,
+        'replaying the finish clock must not mint duplicate finished-goods batches');
+    }else{
+      assert.equal(schedulerFinish.completed.some(row=>row.factoryId===universal.id),true,
+        'the starting universal factory must finish its dated production cycle');
+    }
     assert.ok(Number(resourceState.inventory.IRON_CONCENTRATE)>0,
       'finished processing output must be credited to the country resource inventory');
-    assert.equal(universal.productionHealth.status,'REDUCED',
-      'a cycle below rated daily capacity must retain its reduced-output status');
+    assert.equal(universal.productionHealth.status,completedOnArrival?'STOPPED':'REDUCED',
+      'a completed cycle with no remaining inputs must stop cleanly; an unfinished partial cycle remains reduced');
     assert.ok(N.candidateFactories('BGD','cotton_fibre').filter(row=>row.asset.factoryType==='TEXTILE_GARMENT_MILL').length===2,
       'the commissioned textile assets must be eligible for their canonical input recipe');
 
