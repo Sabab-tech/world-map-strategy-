@@ -1780,6 +1780,50 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         row.stage === 'FINISHED' && Array.isArray(row.sourceBatchIds) && row.sourceBatchIds.includes(run.batchId));
       const inputBalance = () => Number(factory.inputInventory?.coal) || 0;
       const initialInputBalance = inputBalance();
+      const productionSnapshot = () => {
+        const network = resource.industrialNetwork || {};
+        const factoryId = String(factory.id || factory.assetId || factory.projectId || '');
+        const cycle = network.factoryProductionCycles?.[factoryId] || null;
+        const currentDate = String(simulation.clock?.simulationDate?.() || state.simulation?.date || '').slice(0, 10);
+        const cycleHistory = (Array.isArray(network.factoryProductionCycleHistory)
+          ? network.factoryProductionCycleHistory : [])
+          .filter(row => String(row.factoryId || '') === factoryId).slice(-6).map(row => ({
+            cycleId: row.cycleId || null, status: row.status || null, startTurn: row.startTurn ?? null,
+            finishTurn: row.finishTurn ?? null, startDate: row.startDate || null, finishDate: row.finishDate || null,
+            completedTurn: row.completedTurn ?? null, actualCompletionDate: row.actualCompletionDate || null,
+            lastBlockedReason: row.lastBlockedReason || null, lastBlockedDetail: row.lastBlockedDetail || null
+          }));
+        return {
+          clockTurn: Number(simulation.clock?.turn), stateTurn: Number(state.simulation?.turn),
+          currentDate, factoryStatus: factory.status || null, productionStatus: factory.productionStatus || null,
+          productionHealth: factory.productionHealth || null,
+          activeProductionCycleId: factory.activeProductionCycleId || null,
+          cycle: cycle ? {
+            cycleId: cycle.cycleId, status: cycle.status, startTurn: cycle.startTurn, finishTurn: cycle.finishTurn,
+            startDate: cycle.startDate, finishDate: cycle.finishDate, primaryInputResourceId: cycle.primaryInputResourceId,
+            productionQuantity: cycle.productionQuantity, inputQuantities: cycle.inputQuantities,
+            sourceBatchIds: cycle.sourceBatchIds, inputBatchReservations: cycle.inputBatchReservations,
+            lastBlockedReason: cycle.lastBlockedReason || null, lastBlockedDetail: cycle.lastBlockedDetail || null,
+            turnReached: Number(simulation.clock?.turn) >= Number(cycle.finishTurn),
+            dateReached: !!cycle.finishDate && currentDate >= String(cycle.finishDate)
+          } : null,
+          cycleHistory,
+          inputLots: (Array.isArray(factory.inputBatchLots) ? factory.inputBatchLots : [])
+            .filter(row => String(row.resourceId || row.materialIdentity || '').toLowerCase() === 'coal')
+            .map(row => ({
+              batchId: row.batchId, quantity: row.quantity, remainingQuantity: row.remainingQuantity,
+              status: row.status, cycleReservationId: row.cycleReservationId || null,
+              cycleReservedQuantity: row.cycleReservedQuantity ?? null, sourceBatchIds: row.sourceBatchIds || []
+            })),
+          industrialFacilities: (Array.isArray(state.economy?.BGD?.industrialRuntime?.facilities)
+            ? state.economy.BGD.industrialRuntime.facilities : [])
+            .filter(row => String(row.factoryId || row.facilityId || '') === factoryId),
+          industrialBlockedFacilities: (Array.isArray(state.economy?.BGD?.industrialRuntime?.blockedFacilities)
+            ? state.economy.BGD.industrialRuntime.blockedFacilities : [])
+            .filter(row => String(row.factoryId || row.facilityId || '') === factoryId)
+        };
+      };
+      const productionSnapshots = [];
       // A completed coal cycle creates both COAL_CONCENTRATE and COAL_REJECT.
       // Two attributable finished batches prove processing; draining every tonne of
       // factory stock is a separate long-horizon production scenario, not this
@@ -1790,6 +1834,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
           throw new Error('SAB34_FACTORY_CYCLE_CENTRAL_TURN_FAILED:' + JSON.stringify(advanced));
         }
         turns += 1;
+        productionSnapshots.push(productionSnapshot());
       }
       const finished = finishedRows();
       const offer = (state.trade?.BGD?.offerBook || []).find(row =>
@@ -1804,6 +1849,8 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         initialInputBalance,
         inputConsumed: Number((initialInputBalance - inputBalance()).toFixed(6)),
         inputBalance: inputBalance(),
+        factoryRuntime: productionSnapshot(),
+        productionSnapshots,
         finished: finished.map(row => ({
           batchId: row.batchId,
           resourceId: row.resourceId,
