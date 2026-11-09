@@ -2992,8 +2992,26 @@ function advanceShipments(c){
     const available=warehouseKey===null?0:Math.max(0,num(warehouse.availableByResource[warehouseKey])||0);
     const reserved=Math.max(0,num(warehouse.reservedByResource?.[reservedKey])||0);
     if(quantity<=0||available+1e-9<quantity||reserved+1e-9<quantity){
+      const sourceBatchId=String(s.batchId||'').trim();
+      const sourceBatch=sourceBatchId?(Array.isArray(r.batches)?r.batches:[]).find(row=>String(row?.batchId||'')===sourceBatchId):null;
+      const sourceLot=sourceBatchId?r.inventoryLots?.[sourceBatchId]||null:null;
+      const inventoryKey=quantityObjectKey(r.inventory||{},rid);
+      const reservation=n.reservations?.[String(s.reservationId||s.shipmentId||'')]||null;
+      s.deliveryLedgerSnapshot={
+        countryId:cid,turn:turn(),warehouseId:sourceWarehouse.warehouseId,warehouseKind:sourceWarehouse.kind,
+        resourceId:rid,quantity,availableKey,reservedKey,available,reserved,
+        reservation:clone(reservation),
+        countryInventoryKey:inventoryKey,
+        countryInventory:inventoryKey===null?null:Math.max(0,num(r.inventory[inventoryKey])||0),
+        sourceBatchId:sourceBatchId||null,
+        sourceBatchRemaining:sourceBatch?Math.max(0,num(sourceBatch.remainingQuantity!=null?sourceBatch.remainingQuantity:sourceBatch.quantity)||0):null,
+        sourceLotRemaining:sourceLot?Math.max(0,num(sourceLot.remainingQuantity!=null?sourceLot.remainingQuantity:sourceLot.quantity)||0):null,
+        storedBatchPresent:Array.isArray(warehouse.storedBatchIds)&&sourceBatchId
+          ?warehouse.storedBatchIds.some(value=>String(value)===sourceBatchId):null
+      };
       s.status='BLOCKED_LEDGER_MISMATCH';s.blockReason='WAREHOUSE_AVAILABLE_OR_RESERVATION_MISMATCH';s.blockedTurn=turn();markShipmentDeliveryAttempt(s);
-      emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,resourceId:rid,quantity,available,reserved,reason:s.blockReason});
+      emit('OMEGA_RESOURCE_DELIVERY_BLOCKED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,resourceId:rid,quantity,
+        available,reserved,ledgerSnapshot:clone(s.deliveryLedgerSnapshot),reason:s.blockReason});
       continue;
     }
     const factory=factoryAssets(cid).find(a=>String(a?.id||a?.assetId||a?.projectId)===String(s.factoryId));
