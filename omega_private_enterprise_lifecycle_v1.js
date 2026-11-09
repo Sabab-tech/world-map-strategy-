@@ -794,6 +794,22 @@
     recordEvent(cid,'COMPANY_PROPOSAL_QUANTITY_ADJUSTED',{proposalId:proposal.proposalId,previousQuantity:oldQuantity,approvedQuantity:quantity});
     return{status:'PROPOSED',proposal:clone(proposal),preview:preview};
   }
+  function previewCompanyExpansion(country,companyId,factoryType,quantity,processingResourceId){
+    var cid=canonicalCountry(country||playerCountry()),company=id(companyId),type=id(factoryType),
+      base=baseline(cid),row=base&&Array.isArray(base.companies)?base.companies.find(function(item){
+        return id(item.companyId||item.id)===company;
+      }):null,count=num(row&&row.factoryCounts&&row.factoryCounts[type])||0,
+      c=catalog()||{},profile=c.factoryProfiles&&c.factoryProfiles[type],
+      processing=type==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'?token(processingResourceId||''):null;
+    if(COMPANY_IDS.indexOf(company)<0)return{status:'BLOCKED',reason:'UNKNOWN_CANONICAL_COMPANY'};
+    if(!profile)return{status:'BLOCKED',reason:'FACTORY_PROFILE_NOT_REGISTERED'};
+    if(count<1)return{status:'BLOCKED',reason:'COMPANY_HAS_NO_OPENING_ALLOCATION_FOR_FACTORY_TYPE',companyId:company,factoryType:type};
+    var recipe=recipeFor(type,profile,processing);
+    if(!recipe)return{status:'BLOCKED',reason:'FACTORY_PROFILE_OR_RECIPE_NOT_REGISTERED'};
+    var preview=previewFor({countryId:cid,companyId:company,factoryType:type,quantity:num(quantity)||1,
+      processingResourceId:processing,sourcingPolicy:'MIXED',stateSupportRequested:false});
+    return Object.assign({companyId:company,companyOpeningAllocation:count},preview);
+  }
   function createGovernmentInvitation(input){
     input=input||{};
     var cid=canonicalCountry(input.countryId||playerCountry()),player=playerCountry();
@@ -817,6 +833,7 @@
     var maxContribution=num(input.maxGovernmentContribution);
     if(maxContribution===null)maxContribution=0;
     if(maxContribution<0)return{status:'BLOCKED',reason:'GOVERNMENT_SUPPORT_AMOUNT_INVALID'};
+    if(supportType==='CAPITAL_GRANT'&&maxContribution<=0)return{status:'BLOCKED',reason:'CAPITAL_GRANT_AMOUNT_REQUIRED'};
     var treasury=financeTreasury(cid);
     if(supportType==='CAPITAL_GRANT'&&maxContribution>0&&
        (treasury.balance===null||treasury.balance+1e-9<maxContribution))
@@ -924,7 +941,8 @@
       recordEvent(cid,'GOVERNMENT_RESUMED_COMPANY_PROPOSAL',{proposalId:proposal.proposalId});
       return{status:'PROPOSED',proposal:clone(proposal)};
     }
-    if(proposal.status!=='PROPOSED')return{status:'BLOCKED',reason:'PROPOSAL_ALREADY_DECIDED',currentStatus:proposal.status};
+    if(proposal.status!=='PROPOSED'&&!(proposal.status==='ON_HOLD'&&decision==='DENY'))
+      return{status:'BLOCKED',reason:'PROPOSAL_ALREADY_DECIDED',currentStatus:proposal.status};
     if(decision==='HOLD'){
       proposal.status='ON_HOLD';proposal.updatedTurn=turn();
       proposal.governmentActions=Array.isArray(proposal.governmentActions)?proposal.governmentActions:[];
@@ -3691,7 +3709,7 @@
       else if(action==='fund-grant'){var p2=getProposal(country,proposalId);result=p2?fundProposal({countryId:country,proposalId:proposalId,sourceType:'GOVERNMENT_GRANT',amount:p2.capitalRequired}):{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};}
       else if(action==='construct')result=startConstruction({countryId:country,proposalId:proposalId});
       else return;
-      root.__omegaPrivateEnterpriseMessage=result&&['APPROVED_AWAITING_FUNDING','DENIED','DEFERRED','FUNDED','UNDER_CONSTRUCTION','PARTIALLY_UNDER_CONSTRUCTION','COMMISSIONED_PRODUCTION_GATED'].indexOf(result.status)>=0
+      root.__omegaPrivateEnterpriseMessage=result&&['PROPOSED','ON_HOLD','NEGOTIATION_PENDING_COMPANY','APPROVED_AWAITING_FUNDING','DENIED','DEFERRED','CLOSED','FUNDED','UNDER_CONSTRUCTION','PARTIALLY_UNDER_CONSTRUCTION','COMMISSIONED_PRODUCTION_GATED'].indexOf(result.status)>=0
         ?'Lifecycle updated: '+result.status.replace(/_/g,' ').toLowerCase()+'.'
         :'Action blocked: '+String(result&& (result.reason||result.status)||'UNKNOWN').replace(/_/g,' ').toLowerCase()+'.';
       refresh(root,country);
@@ -3776,7 +3794,7 @@
     getProposal:getProposal,getCountryDashboard:getCountryDashboard,getCompanyCapitalSummary:getCompanyCapitalSummary,
     getCompanyBusinessCase:function(country,proposalId){var p=getProposal(country,proposalId);return p?clone(p.companyCase||companyBusinessCase(p)):null;},
     createGovernmentInvitation:createGovernmentInvitation,closeGovernmentInvitation:closeGovernmentInvitation,
-    respondToGovernmentCounterOffer:respondToGovernmentCounterOffer,
+    previewCompanyExpansion:previewCompanyExpansion,respondToGovernmentCounterOffer:respondToGovernmentCounterOffer,
     getCompanyFinanceSummary:getCompanyFinanceSummary,closeCompanyFinancialPeriod:closeCompanyFinancialPeriod,
     setCompanyOperatingCostPolicy:setCompanyOperatingCostPolicy,getCompanyOperatingCostPolicy:companyOperatingCostPolicy,
     createJointVenture:createJointVenture,decideJointVenture:decideJointVenture,
