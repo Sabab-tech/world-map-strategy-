@@ -1697,7 +1697,7 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
       'the commissioned coal input coefficient must remain authoritative');
     assert.deepEqual(commissioned.outputProfile,{COAL_CONCENTRATE:0.82,COAL_REJECT:0.18});
     assert.ok(N.candidateFactories('BGD','coal').some(row=>row.asset.id===commissioned.id),
-      'a commissioned coal plant must remain eligible for the same mine's RAW_TO_FACTORY destination');
+      'a commissioned coal plant must remain eligible as the selected RAW_TO_FACTORY destination');
     assert.equal(N.recipeFor('coal',commissioned).inputs.coal,1,
       'the live factory recipe must continue to consume coal after baseline registration');
   }finally{
