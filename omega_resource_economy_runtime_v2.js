@@ -510,6 +510,24 @@
     return{accepted:true,turn:turn()};
   }
 
+  function publishCapacityUpgradeRequestsHandler(cmd,ctx){
+    var c=canonical(ctx.countryId),p=cmd&&cmd.payload||{},
+      rows=Array.isArray(p.requests)?p.requests:[];
+    if(!c)return{accepted:false,reason:'CAPACITY_UPGRADE_COUNTRY_REQUIRED'};
+    for(var i=0;i<rows.length;i++){
+      var row=rows[i];
+      if(!row||typeof row!=='object'||Array.isArray(row))
+        return{accepted:false,reason:'CAPACITY_UPGRADE_REQUEST_INVALID',index:i};
+      if(canonical(row.countryId)!==c)
+        return{accepted:false,reason:'CAPACITY_UPGRADE_REQUEST_COUNTRY_MISMATCH',
+          index:i,expectedCountryId:c,requestCountryId:canonical(row.countryId)};
+    }
+    var maximum=Math.max(1,Math.floor(num(rules().runtime.maxLedgerEntries)||2048));
+    ctx.stateTransaction.set('economy.capacityUpgradeRequests',rows.slice(-maximum));
+    return{accepted:true,countryId:c,requestCount:rows.length,turn:turn(),
+      authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'};
+  }
+
   function companyFlowHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},cid=String(p.companyId||'').trim(),a=num(p.amount),key=String(p.idempotencyKey||'').trim();
     if(!cid||a===null||a<0)return{accepted:false,reason:'COMPANY_FLOW_INPUT_INVALID'};
@@ -1343,6 +1361,7 @@
       ['OMEGA_RESOURCE_ECON_APPLY_PRODUCTION','resource',applyProductionHandler],
       ['OMEGA_RESOURCE_ECON_PUBLISH_RESOURCE_RUNTIME','resource',publishResourceRuntimeHandler],
       ['OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY','economy',economyPublishHandler],
+      ['OMEGA_RESOURCE_ECON_PUBLISH_CAPACITY_UPGRADE_REQUESTS','economy',publishCapacityUpgradeRequestsHandler],
       ['OMEGA_RESOURCE_ECON_FACTORY_INPUT_EVENT','economy',factoryInputEventHandler],
       ['OMEGA_RESOURCE_ECON_COMPANY_FLOW','economy',companyFlowHandler],
       ['OMEGA_RESOURCE_ECON_WORKER_FLOW','economy',flowHandler('economy.workerIncome','WORKER')],
