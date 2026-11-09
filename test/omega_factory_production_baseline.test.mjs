@@ -1734,8 +1734,7 @@ test('all canonical factory types have executable catalog recipes and multi-rout
     'finished-goods accounting must keep the recipe identity');
 });
 
-
-test('factory cycle publishes finished goods when the committed turn reaches finish even if the date mirror is stale', async () => {
+ test('factory cycle publishes finished goods when the committed turn reaches finish even if the date mirror is stale', async () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset();
   context.Game.state.simulation.date = '2015-01-01';
@@ -1758,8 +1757,6 @@ test('factory cycle publishes finished goods when the committed turn reaches fin
   assert.equal((context.Game.state.resource.BGD.batches || []).some(row => row.stage === 'FINISHED'), false,
     'finished goods must not be published before the cycle finish turn');
 
-  // Reproduce the browser failure: the committed simulation turn advances, but the
-  // legacy date mirror remains stale. Either authoritative clock view must settle the cycle.
   context.Game.state.simulation.turn = cycle.finishTurn;
   context.Game.state.simulation.date = '2015-01-01';
   const completed = await api.processPendingFactoryInputs('BGD');

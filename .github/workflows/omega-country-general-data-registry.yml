@@ -1,4 +1,8 @@
 name: OMEGA Country General Data Registry
+concurrency:
+  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 
 on:
   workflow_dispatch:
@@ -57,10 +61,6 @@ on:
 
 permissions:
   contents: write
-
-concurrency:
-  group: omega-country-general-data-registry-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
   build-validate:

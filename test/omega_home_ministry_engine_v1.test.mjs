@@ -34,6 +34,41 @@ test('15 fixed vehicle tiers have unique names, SVG identities and progressive s
   assert.ok(api.VEHICLES.every(v => v.specialFeatures.length >= 3 && v.strengths && v.tradeoff));
 });
 
+test('180-day police turn catch-up completes with bounded crime history and projected daily records', () => {
+  const state = setup(100000000000);
+  const countryRows = baselineData.countries;
+  const bangladeshBaseline = countryRows.find(row => row.code === 'BD');
+  assert.ok(bangladeshBaseline, 'the checked-in Bangladesh police baseline must be available');
+  Game.countryId = 'BD';
+  Game.playerCountryId = 'BD';
+  CountryIOS.activeCountry = 'BD';
+  state.economy.BD = { treasury: 100000000000 };
+  state.population.BD = { population: bangladeshBaseline.population.value };
+  state.simulation = { turn: 0, simulationTimeMs: 0 };
+  const boot = api.bootstrapCountryPoliceBaselines(countryRows);
+  assert.equal(boot.ok, true, JSON.stringify(boot));
+  api.getState('BD');
+  const police = state.interior.BD.police;
+  assert.ok(police.crimeBaseline?.ratesPer100k, 'the selected country crime baseline must be loaded');
+  police.lastPayrollDay = 0;
+  police.lastFleetSimulationDay = 0;
+  police.lastCrimeSimulationDay = 0;
+  state.simulation.simulationTimeMs = 180 * DAY;
+  state.simulation.turn = 4320;
+
+  const startedAt = performance.now();
+  api.processTurn({ detail: { payload: { countryId: 'BD', turn: 4320 } } });
+  const elapsedMs = performance.now() - startedAt;
+  const after = api.getState('BD');
+
+  assert.equal(after.lastCrimeSimulationDay, 180);
+  assert.equal(after.crimeModel?.lastUpdatedDay, 180);
+  assert.equal(after.crimeHistory?.length, 90, 'the daily model must retain its bounded 90-day history');
+  assert.ok(after.crimeHistory.every(row => Number.isFinite(row.crimeIndex)));
+  assert.ok(after.crimeHistory.every(row => Number.isFinite(row.incidents) && Number.isFinite(row.clearedCases)));
+  assert.ok(elapsedMs < 15000, 'a 180-day single-turn catch-up must not rebuild full dashboard snapshots per day: ' + elapsedMs + 'ms');
+});
+
 test('recruiting charges upfront cost, increases daily payroll and firing does not charge money', () => {
   const state = setup();
   assert.equal(api.recruitPolice(2, 'AAA').ok, true);

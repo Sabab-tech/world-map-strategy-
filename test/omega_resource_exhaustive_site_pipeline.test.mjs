@@ -155,6 +155,49 @@ assert.equal(allRefs.length,561,
   'the unified runtime must expose all 561 baseline-plus-critical-mineral site reference rows');
 assert.equal(new Set(allRefs.map(x=>x.siteId)).size,561,
   'all 561 runtime reference rows must have unique physical site IDs');
+
+// Site reserve simulation records can specify an annual product-output basis in a
+// source unit different from the runtime's canonical commodity unit. The runtime
+// must normalize that annual figure first, then divide by 365 before building capacity.
+const cigarReserveRecord=reserveSimulation.records.find(row=>row.siteId==='SITE_CAN_cigar_lake_uranium_mine');
+assert.ok(cigarReserveRecord,'Cigar Lake must remain in the per-site simulation reserve dataset');
+const quantityNormalization=globalThis.Omega?.ResourceQuantityNormalization||globalThis.OmegaResourceQuantityNormalization;
+assert.ok(typeof quantityNormalization?.normalizeQuantity==='function',
+  'canonical resource quantity normalization must be available to the site runtime');
+const cigarAnnualOutput=quantityNormalization.normalizeQuantity(
+  cigarReserveRecord.resourceId,cigarReserveRecord.provenance.annualOutputBasis,
+  cigarReserveRecord.provenance.annualOutputUnit,{simulationOnly:true});
+const cigarReserveQuantity=quantityNormalization.normalizeQuantity(
+  cigarReserveRecord.resourceId,cigarReserveRecord.reserve.quantity,
+  cigarReserveRecord.reserve.unit,{simulationOnly:true});
+assert.ok(Number(cigarAnnualOutput.quantity)>0&&cigarAnnualOutput.unit===cigarReserveQuantity.unit,
+  'Cigar Lake annual output and reserve must normalize to the same commodity unit');
+const expectedCigarDailyRate=Number((cigarAnnualOutput.quantity/365).toFixed(9));
+const cigarSiteReference=allRefs.find(row=>row.siteId===cigarReserveRecord.siteId)?.ref;
+assert.ok(cigarSiteReference,'Cigar Lake must be present in the executable site-reference runtime');
+assert.equal(cigarSiteReference.simulationAnnualOutputSourceQuantity,cigarReserveRecord.provenance.annualOutputBasis);
+assert.equal(cigarSiteReference.simulationAnnualOutputSourceUnit,cigarReserveRecord.provenance.annualOutputUnit);
+assert.equal(cigarSiteReference.simulationAnnualProductionRateUnit,cigarAnnualOutput.unit);
+assert.ok(closeEnough(cigarSiteReference.simulationAnnualProductionRatePerDay,expectedCigarDailyRate),
+  'Cigar Lake scenario annual output must become a unit-normalized daily extraction rate');
+const cigarController=world.CAN?.mineSiteControllers?.[cigarReserveRecord.siteId]||
+  Object.values(world.CAN?.mineSiteControllers||{}).find(row=>String(row?.siteReferenceKey||'')===cigarReserveRecord.siteId);
+const cigarReserveRegistry=globalThis.__OmegaResourceReserveRegistry||globalThis.OmegaResourceReserveRegistry;
+const cigarOccurrenceKey=(cigarController?.linkedOccurrenceKeys||[]).map(String).find(key=>
+  cigarReserveRegistry?.getCapacityForOccurrence?.(key));
+assert.ok(cigarOccurrenceKey,'Cigar Lake must bind to a live reserve/capacity occurrence');
+const cigarReserveState=cigarReserveRegistry.getReserveState(cigarOccurrenceKey);
+const cigarCapacity=cigarReserveRegistry.getCapacityForOccurrence(cigarOccurrenceKey);
+assert.ok(cigarReserveState&&cigarCapacity,'Cigar Lake reserve and capacity must be registered');
+assert.equal(cigarReserveState.unit,cigarReserveQuantity.unit,
+  'Cigar Lake runtime reserve must use normalized scenario reserve units');
+assert.equal(cigarCapacity.unit,cigarAnnualOutput.unit,
+  'Cigar Lake runtime capacity must use the same normalized unit as its reserve');
+assert.ok(closeEnough(cigarCapacity.activeRate,expectedCigarDailyRate),
+  'Cigar Lake must use the normalized annual-output basis divided by 365, not the annual total as a daily rate');
+assert.ok(Number(cigarReserveState.residualQuantity)>0,
+  'Cigar Lake reserve must not be exhausted by a single erroneous annual-as-daily capacity');
+
 const allEligibleSites=[...eligibleById.values()].sort((a,b)=>a.countryId.localeCompare(b.countryId)||a.siteId.localeCompare(b.siteId));
 assert.ok(allEligibleSites.length>=400,'runtime audit must cover at least 400 unique executable baseline sites; got '+allEligibleSites.length);
 const eligibleIds=new Set(allEligibleSites.map(x=>x.siteId));

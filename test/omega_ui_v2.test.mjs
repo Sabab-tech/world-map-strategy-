@@ -18,6 +18,11 @@ import '../omega_ui_v2/integration.js';
 import '../omega_ui_v2/world-command-dock.js';
 import { existsSync, readFileSync } from 'node:fs';
 
+function offlineShellCacheVersion(source) {
+  const match = source.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/);
+  return match ? Number(match[1]) : 0;
+}
+
 test('factory product usage notes resolve recipe consumers and preserve the existing SVG identity', () => {
   const catalog = JSON.parse(readFileSync(new URL('../resource_industrial_catalog_v1.json', import.meta.url), 'utf8'));
   const previousGlobalCatalog = globalThis.OmegaResourceIndustrialCatalogData;
@@ -450,6 +455,18 @@ test('Home Affairs budget remains read-only for a non-player country and does no
   }
 });
 
+test('industry source avoids building datasets for inactive tabs', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  assert.match(source, /var activeTab = String\(options\.activeTab \|\| options\.tab \|\| 'factories'\)/);
+  assert.match(source, /lightweightTypeView \|\| activeTab === 'production-lines' \|\| stockSummaryView \? assets\.map/);
+  assert.match(source, /if \(activeTab === 'production-lines'\) \{/);
+  assert.match(source, /var refreshedModel = buildViewModel\(\{ countryId:countryKey, tab:currentTab,/);
+  assert.match(source, /var currentExtraction = optimizedFactoryRead \|\| !\(stockSummaryView \|\| needsMineProduction\)/);
+  assert.match(source, /var production = needsMineProduction \? mineDailyProduction\(site\) : null/);
+  assert.match(source, /var resourceInventoryLedger = stockSummaryView && Array\.isArray\(resource\.inventoryLedger\) \?/);
+  assert.match(source, /activeTab === 'production-lines' \? cyclesList\.length : 0/);
+});
+
 test('industry view reads current country assets, cycles and projects without synthesizing factories', () => {
   globalThis.Game = { state: {
     resource: { BGD: { industrialNetwork: {
@@ -538,6 +555,7 @@ test('industry factory cards show owned factory counts without a separate source
   const previousGame = globalThis.Game;
   const previousCatalog = globalThis.OmegaResourceIndustrialCatalogData;
   const previousFactoryBaseline = globalThis.OmegaCountryFactoryStartingBaselineV1;
+  const previousPrivateEnterpriseRuntime = globalThis.OmegaPrivateEnterpriseRegistryV1;
   globalThis.Game = { state: {
     simulation: { session: { playerCountryId: 'BGD' }, turn: 12 },
     resource: {
@@ -557,6 +575,23 @@ test('industry factory cards show owned factory counts without a separate source
         inputUnit:'tonnes', outputUnit:'tonnes', quantityBasis:'PER_SIMULATION_PRODUCTION_UNIT',
         presentation:{primaryInputs:['iron_ore'],primaryOutputs:['steel'],byProducts:['slag']}
       }
+    }
+  };
+  globalThis.OmegaPrivateEnterpriseRegistryV1 = {
+    getCountryBaseline(countryId) {
+      if (countryId !== 'BGD') return null;
+      return {
+        status:'READY', totalGovernmentFactoryUnits:3, totalPrivateFactoryUnits:2,
+        privateToGovernmentBaselinePercent:66.7,
+        factoryCounts:{STEEL_MILL:2,CEMENT_PLANT:0},
+        companies:[
+          {companyId:'AURORA_INDUSTRIAL_GROUP',companyName:'Aurora Industrial Group',factoryCounts:{STEEL_MILL:1,CEMENT_PLANT:0},totalFactoryUnits:1},
+          {companyId:'MERIDIAN_ENGINEERING_GROUP',companyName:'Meridian Engineering Group',factoryCounts:{STEEL_MILL:1,CEMENT_PLANT:0},totalFactoryUnits:1},
+          {companyId:'NOVA_CONSUMER_INDUSTRIES',companyName:'Nova Consumer Industries',factoryCounts:{STEEL_MILL:0,CEMENT_PLANT:0},totalFactoryUnits:0},
+          {companyId:'ATLAS_TECHNOLOGY_CORPORATION',companyName:'Atlas Technology Corporation',factoryCounts:{STEEL_MILL:0,CEMENT_PLANT:0},totalFactoryUnits:0},
+          {companyId:'TERRA_INFRASTRUCTURE_GROUP',companyName:'Terra Infrastructure Group',factoryCounts:{STEEL_MILL:0,CEMENT_PLANT:0},totalFactoryUnits:0}
+        ]
+      };
     }
   };
   globalThis.OmegaCountryFactoryStartingBaselineV1 = {
@@ -587,6 +622,16 @@ test('industry factory cards show owned factory counts without a separate source
     assert.doesNotMatch(root.innerHTML, /Factory types &amp; country totals|EXISTING FACTORIES IN THIS COUNTRY|FACTORY TYPES NOT PRESENT IN THIS COUNTRY|EXISTING IN THIS COUNTRY|NOT PRESENT IN THIS COUNTRY/);
     assert.doesNotMatch(root.innerHTML, /Modeled build time|Modeled capacity|Modeled construction cost|simulation/i);
     assert.doesNotMatch(root.innerHTML, /class="fp-summary"/);
+    assert.match(root.innerHTML, /data-factory-total/);
+    assert.match(root.innerHTML, /data-factory-total-value>3<\/strong>/);
+    const mainFactoryHeaderStart = root.innerHTML.indexOf('<header class="fp-top"');
+    const mainFactoryHeaderEnd = root.innerHTML.indexOf('</header>', mainFactoryHeaderStart);
+    assert.ok(mainFactoryHeaderStart >= 0 && mainFactoryHeaderEnd > mainFactoryHeaderStart);
+    const mainFactoryHeader = root.innerHTML.slice(mainFactoryHeaderStart, mainFactoryHeaderEnd);
+    assert.match(mainFactoryHeader, /data-factory-total/);
+    assert.match(mainFactoryHeader, /TOTAL FACTORIES/);
+    assert.doesNotMatch(root.innerHTML.slice(mainFactoryHeaderEnd + 9), /data-factory-total/,
+      'the combined count must not render as a separate summary card below the main header');
     assert.match(root.innerHTML, /Factories/);
     assert.match(root.innerHTML, /<strong>3<\/strong>/);
     const steelCardStart = root.innerHTML.indexOf('data-omega-v2-factory-type-card data-factory-type="STEEL_MILL"');
@@ -608,6 +653,21 @@ test('industry factory cards show owned factory counts without a separate source
     assert.match(zeroFactoryCard, /<span>Factories<\/span><strong>0<\/strong>/,
       'zero itself clearly communicates that the selected country has no factory of that type');
     assert.doesNotMatch(root.innerHTML, /UNIDO|Official establishment data|Establishments|Source status/);
+    const manageRoot = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
+    const manageResult = globalThis.OmegaUIV2Industry.render(manageRoot, {
+      countryId:'BGD', tab:'companies'
+    });
+    assert.equal(manageResult.ok, true);
+    assert.equal(manageResult.model.factoryCount, 3,
+      'uncommissioned private opening allocations must not inflate the shared factory total');
+    assert.match(manageRoot.innerHTML, /data-private-ownership-breakdown="v1"/);
+    assert.match(manageRoot.innerHTML, /Factory type ownership breakdown/);
+    assert.match(manageRoot.innerHTML, /SHARED POOL FACTORIES/);
+    assert.match(manageRoot.innerHTML, /PRIVATE OPENING UNITS/);
+    assert.match(manageRoot.innerHTML, /Aurora Industrial Group/);
+    assert.match(manageRoot.innerHTML, /Meridian Engineering Group/);
+    assert.match(manageRoot.innerHTML, /<tfoot><tr><th scope="row">Total<\/th><td>3<\/td><td>2<\/td>/);
+    assert.match(manageRoot.innerHTML, /not commissioned assets/i);
     const foreign = globalThis.OmegaUIV2Industry.buildViewModel({ countryId:'USA' });
     assert.equal(foreign.factoryCount, 0, 'another country does not inherit Bangladesh factory counts');
   } finally {
@@ -616,6 +676,8 @@ test('industry factory cards show owned factory counts without a separate source
     else globalThis.OmegaResourceIndustrialCatalogData = previousCatalog;
     if (previousFactoryBaseline === undefined) delete globalThis.OmegaCountryFactoryStartingBaselineV1;
     else globalThis.OmegaCountryFactoryStartingBaselineV1 = previousFactoryBaseline;
+    if (previousPrivateEnterpriseRuntime === undefined) delete globalThis.OmegaPrivateEnterpriseRegistryV1;
+    else globalThis.OmegaPrivateEnterpriseRegistryV1 = previousPrivateEnterpriseRuntime;
   }
 });
 
@@ -774,7 +836,7 @@ test('industry research and technology records remain isolated to the selected c
     economy:{BGD:{productionAssets:[]},USA:{productionAssets:[]}}
   }};
   try {
-    const model = globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD'});
+    const model = globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD',tab:'research'});
     assert.deepEqual(model.researchProjects.map(row=>row.projectId), ['BGD-TECH-1']);
     assert.deepEqual(model.technologyTransfers.map(row=>row.projectId), ['BGD-IMPORT-1']);
     assert.deepEqual(model.technologyCapabilities.map(row=>row.capabilityId), ['BGD-CAP-1']);
@@ -905,6 +967,72 @@ test('UI v2 integration normalizes map-selected aliases before mounting country 
   }
 });
 
+
+test('UI v2 shell reuses canonical ISO-3 country options without repeated resolver lookups', () => {
+  const previous = {
+    app:globalThis.OmegaUIV2App,
+    runtime:globalThis.OmegaCountryRuntimeData,
+    document:globalThis.document,
+    ministryCountry:globalThis.OmegaMinistryViewCountry,
+    diagnostics:globalThis.__OMEGA_UI_V2_DIAGNOSTICS
+  };
+  let resolveCount = 0;
+  globalThis.OmegaCountryRuntimeData = {
+    resolveCountry(value) {
+      resolveCount += 1;
+      const id = String(value || '').trim().toUpperCase();
+      return /^[A-Z]{3}$/.test(id) ? { iso3:id, officialName:'Country ' + id } : null;
+    }
+  };
+  globalThis.document = {};
+  const main = {
+    innerHTML:'',
+    setAttribute(){},
+    removeAttribute(){}
+  };
+  const root = {
+    innerHTML:'',
+    classList:{add(){}},
+    addEventListener(){},
+    querySelector(selector){ return selector === '[data-omega-v2-main]' ? main : null; },
+    querySelectorAll(){ return []; },
+    setAttribute(){},
+    removeAttribute(){},
+    getAttribute(){ return null; },
+    contains(){ return true; }
+  };
+  function iso3(index) {
+    return String.fromCharCode(
+      65 + Math.floor(index / 676),
+      65 + Math.floor(index / 26) % 26,
+      65 + index % 26
+    );
+  }
+  const countryOptions = Array.from({length:197}, (_, index) => ({
+    id:index === 0 ? 'BGD' : iso3(index),
+    name:index === 0 ? 'Bangladesh (BGD)' : 'Country ' + iso3(index)
+  }));
+  try {
+    const mounted = globalThis.OmegaUIV2App.mount(root, {
+      initialRoute:'map',
+      countryId:'BGD',
+      countryOptions:countryOptions,
+      renderMap(target) { target.innerHTML = '<section>Map ready</section>'; return {ok:true}; }
+    });
+    assert.equal(mounted.mounted, true);
+    assert.equal(countryOptions.length,197);
+    assert.equal(resolveCount,1,
+      'the selected country may resolve once, but canonical ISO-3 dropdown options must not trigger another 197 profile lookups');
+    assert.match(root.innerHTML, /<option value="BGD" selected>/);
+    assert.match(root.innerHTML, /<option value="AAB">Country AAB/);
+  } finally {
+    if(previous.app===undefined)delete globalThis.OmegaUIV2App;else globalThis.OmegaUIV2App=previous.app;
+    if(previous.runtime===undefined)delete globalThis.OmegaCountryRuntimeData;else globalThis.OmegaCountryRuntimeData=previous.runtime;
+    if(previous.document===undefined)delete globalThis.document;else globalThis.document=previous.document;
+    if(previous.ministryCountry===undefined)delete globalThis.OmegaMinistryViewCountry;else globalThis.OmegaMinistryViewCountry=previous.ministryCountry;
+    if(previous.diagnostics===undefined)delete globalThis.__OMEGA_UI_V2_DIAGNOSTICS;else globalThis.__OMEGA_UI_V2_DIAGNOSTICS=previous.diagnostics;
+  }
+});
 
 test('direct Resources route mounts the Resource Ministry without rendering Government first', () => {
   const bridge = globalThis.OmegaUIV2Integration;
@@ -1152,6 +1280,33 @@ test('factory Stock shows committed finished goods and traced use while Input sh
       'the current factory input balance must carry the same resource icon');
     assert.match(inputRoot.innerHTML,/class="fp-factory-input-identity-line"[^]*class="fp-factory-input-id"/,
       'the canonical product code must sit in the same compact identity line as its friendly name');
+
+    // A newly commissioned factory can have a valid recipe before its first
+    // raw-material delivery. Its required inputs must still be visible, with
+    // stock shown as unrecorded rather than hiding the factory entirely.
+    globalThis.Game.state.economy.BGD.productionAssets = [{
+      id:'FACTORY-NO-OPENING-INPUT-STOCK',
+      name:'Commissioned Steel Mill',
+      factoryType:'STEEL_MILL',
+      recipeId:'STEEL-RECIPE',
+      status:'OPERATIONAL',
+      capacityPerDay:10,
+      inputInventory:{},
+      inputBatchLots:[],
+      inputCoefficients:{iron_ore:0.5},
+      outputProfile:{steel:0.4}
+    }];
+    const noStockInputRoot = {classList:{add(){}},addEventListener(){},contains(){return true},innerHTML:''};
+    const noStockInput = globalThis.OmegaUIV2Industry.render(
+      noStockInputRoot,{countryId:'BGD',tab:'inventory'}
+    );
+    assert.equal(noStockInput.ok,true);
+    assert.match(noStockInputRoot.innerHTML,/Commissioned Steel Mill/,
+      'a recipe-ready factory must remain visible before its first input delivery');
+    assert.match(noStockInputRoot.innerHTML,/data-factory-product-identity="iron_ore"/,
+      'the factory must expose required recipe inputs even while its input warehouse is empty');
+    assert.match(noStockInputRoot.innerHTML,/Not recorded|Not verified/,
+      'empty opening stock must be reported as unrecorded, not fabricated as zero or used to hide the factory');
 
     // A country with many live factories must not mount every per-factory
     // table in a single Android WebView frame. All records remain reachable.
@@ -1914,6 +2069,9 @@ test('factory command cards use canonical SVGs, daily production state, type cou
     assert.match(css,/prefers-reduced-motion:\s*reduce/);
     assert.match(css,/FP persistent command view fixes/);
     assert.match(css,/orientation:\s*landscape\) and \(max-height:\s*520px/);
+    assert.ok(css.includes('@media (max-width:900px)') && css.includes('transform-style:flat !important;'), 'mobile cards must avoid expensive 3D compositing');
+    assert.ok(css.includes('.omega-v2-factory-type-card.fp-card--flipped .fp-card-face--front') && css.includes('.omega-v2-factory-type-card.fp-card--flipped .fp-card-face--back') && css.includes('display:flex !important;'), 'mobile Details must swap card faces without 3D transforms');
+    assert.ok(css.includes('@media (max-width:680px) and (orientation:portrait)') && css.includes('grid-template-columns:repeat(3,minmax(0,1fr)) !important;'), 'portrait phones must keep three factory cards per row');
     assert.match(css,/fp-summary/);
     assert.match(css,/@supports not \(width:\s*1cqw\)[\s\S]*?\.fp-badge\s*\{\s*display:\s*grid/);
     assert.match(css,/data-state="stopped"/);
@@ -1953,6 +2111,9 @@ test('factory screen uses canonical local SVG art while fleet screens keep their
   assert.match(industry, /function factorySvgMarkup\(factory\)/);
   assert.match(industry, /assets\/omega-industrial-icons-v1\/factories\//);
   assert.match(industry, /data-omega-v2-factory-svg/);
+  assert.match(industry, /data-omega-v2-factory-src/);
+  assert.match(industry, /function activateFactoryArtwork\(root\)/);
+  assert.match(industry, /IntersectionObserver/);
   assert.match(industry, /factorySvgMarkup\(factory\)/);
   assert.match(fleet, /function fleetHeroPhoto\(\)/);
   assert.match(fleet, /assets\/ui-photos\/bangladesh-police-headquarters\.webp/);
@@ -3336,7 +3497,7 @@ test('factory catalog warm-up timeout releases a never-settling optional load wi
 test('Factory Stock/Input UI assets invalidate the old offline shell cache', () => {
   const sw = readFileSync('omega-offline-map-sw.js','utf8');
   const css = readFileSync('omega_ui_v2/factory-production-command.css','utf8');
-  assert.ok(sw.includes('omega-offline-atlas-shell-v98'),
+  assert.ok(offlineShellCacheVersion(sw) > 100,
     'the offline shell must activate the new JS/CSS rather than retaining the old Stock/Input renderer');
   assert.ok(css.includes('flex:0 0 20px'),'compact recipe product SVGs must stay small on desktop cards');
   assert.ok(css.includes('flex-basis:18px'),'compact recipe product SVGs must stay small on mobile cards');
@@ -3396,7 +3557,7 @@ test('factory Details is an in-card flip with three independent product tabs', (
   assert.match(css,/fp-detail-status\[data-state="stable"\]/);
   assert.match(css,/fp-detail-status\[data-state="risk"\]/);
   assert.match(css,/fp-detail-status\[data-state="critical"\]/);
-  assert.match(sw,/omega-offline-atlas-shell-v98/);
+  assert.ok(offlineShellCacheVersion(sw) > 100);
 });
 
 test('factory cards retain three landscape columns and constrain text to the card face', () => {
@@ -3414,7 +3575,7 @@ test('factory cards retain three landscape columns and constrain text to the car
   assert.match(css,/@media \(orientation:landscape\) and \(max-width:899px\)/);
   assert.match(css,/@media \(orientation:portrait\) and \(max-width:899px\)[\s\S]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\) !important/);
   assert.match(css,/\.fp-card-detail-row \.fp-card-detail-product\s*\{[^}]*grid-column:1 \/ -1/s);
-  assert.match(sw,/omega-offline-atlas-shell-v98/);
+  assert.ok(offlineShellCacheVersion(sw) > 100);
 });
 
 test('Factory Type identity header aligns icon, name and owned count in one row', () => {
@@ -3428,7 +3589,6 @@ test('Factory Type identity header aligns icon, name and owned count in one row'
   assert.match(css, /\.fp-type-card-head \{[\s\S]*?grid-template-columns:30px minmax\(0,1fr\) auto/);
   assert.match(css, /\.fp-type-card-count \{[\s\S]*?flex-direction:column/);
 });
-
 
 test('Factory Input tables contain long cell content without changing factory cards', () => {
   const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
@@ -3449,9 +3609,216 @@ test('Factory Input tables contain long cell content without changing factory ca
     'stock icons and quantities must wrap inside their cell');
   assert.match(fix, /\.fp-factory-input-total-table th:nth-child\(3\)\s*\{\s*width:\s*24%;\s*\}/,
     'aggregate daily-use breakdown must keep enough column width');
+  assert.match(fix, /\.fp-factory-input-total-table\s*\{[^}]*min-width:\s*960px;/s,
+    'the seven-column aggregate Input table must overflow its constrained wrapper on narrow screens');
   assert.doesNotMatch(fix, /\.fp-card|\.fp-type-card/,
     'the separate Input table fix must not alter factory cards');
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
-  assert.equal(Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\d+)"/)?.[1] || 0), 98,
+  assert.ok(offlineShellCacheVersion(serviceWorker) > 100,
     'offline clients must fetch the updated Factory Input stylesheet');
+});
+
+test('Industry view pre-indexes non-baseline factory assets instead of rescanning the entire asset list per category', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  assert.match(source, /var nonBaselineActiveCountsByType = Object\.create\(null\)/);
+  assert.match(source, /nonBaselineActiveCountsByType\[key\] = \(Number\(nonBaselineActiveCountsByType\[key\]\) \|\| 0\) \+ 1/);
+  assert.match(source, /var nonBaselineActiveCount = Number\(nonBaselineActiveCountsByType\[typeKey\]\) \|\| 0/);
+  assert.doesNotMatch(source, /var nonBaselineActiveCount = mappedAssets\.filter/);
+});
+
+test('Factory type overview skips heavy inventory and production-ledger mapping until a card is opened', () => {
+  const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
+  assert.match(source, /var lightweightTypeView = options\.lightweightFactoryTypeView === true/);
+  assert.match(source, /!lightweightTypeView && \(inputDetailView \|\| stockSummaryView\) && context\.countryId && inventoryRuntime/);
+  assert.match(source, /var needsBatchRows = activeTab === 'inventory' \|\| stockSummaryView \|\| activeTab === 'factories' && !lightweightTypeView/);
+  assert.match(source, /var lightweightTypeView = active === 'factories' && requestedFactoryView === 'types' && !managePanelOpen && !factoryDetailsOpen/);
+  assert.match(source, /lightweightFactoryTypeView:currentTab === 'factories' && currentView === 'types' && !currentManageOpen && !currentDetailsOpen/);
+  assert.ok(source.includes("options.loadPrivateEnterpriseBaseline === true && context.countryId"));
+  assert.ok(source.includes("loadPrivateEnterpriseBaseline:active === 'companies' || active === 'production-lines' || managePanelOpen"),
+    'the lightweight Factory overview stays lazy, while Production Lines loads its private opening baseline');
+  assert.ok(source.includes("requestedTab === 'companies' || requestedTab === 'production-lines' || factoryManageOpened"),
+    'the detailed private baseline is requested only for the Companies or Production Lines tabs, or an opened Manage panel');
+  assert.ok(source.includes("var production = needsMineProduction ? mineDailyProduction(site) : null;"));
+  assert.ok(source.includes("var dailyProductionKnownCount = lightweightTypeView ? 0 :"));
+  assert.ok(source.includes("var flows = !optimizedFactoryRead && activeTab === 'factories' && !lightweightTypeView ?"));
+});
+
+test('Production Lines joins exact selected-country cycles and committed logistics without inventing routes or owners',()=>{
+  const keys=['Game','OmegaResourceIndustrialCatalogData','Omega','currentActiveCountry','OmegaResourceIndustrialNetwork',
+    'OmegaResourceCommandCenterUI','OmegaCountryFactoryStartingBaselineV1','OmegaPrivateEnterpriseRegistryV1'];
+  const previous=Object.fromEntries(keys.map(key=>[key,globalThis[key]]));
+  globalThis.Omega={ResourceStrategicPolicyRuntime:{
+    supplyPolicySummary(countryId,resourceId){
+      return{countryId,resourceId,activeDirectives:resourceId==='steel_product'?[{directive:'DOMESTIC_ONLY'}]:[]};
+    }
+  }};
+  globalThis.currentActiveCountry='BGD';
+  globalThis.OmegaResourceIndustrialCatalogData={
+    factoryProfiles:{STEEL_AND_ALLOY_WORKS:{name:'Steel and Alloy Works'}},
+    factoryTypeAliases:{},downstreamFactoryRecipes:{},processingRules:{}
+  };
+  globalThis.OmegaCountryFactoryStartingBaselineV1=null;
+  globalThis.OmegaPrivateEnterpriseRegistryV1=null;
+  globalThis.Game={state:{
+    simulation:{session:{playerCountryId:'BGD'},turn:12,daysPerTurn:1},
+    resource:{BGD:{industrialNetwork:{
+      projects:[],
+      factoryProductionCycles:{
+        'FAC-LINE-1':{status:'IN_PROGRESS',productionQuantity:120,startDate:'2026-11-05',finishDate:'2026-11-07',sourceBatchIds:['BATCH-01']},
+        'FAC-LINE-2':{status:'PAUSED',productionQuantity:0},
+        'FAC-LINE-3':{status:'IDLE',productionQuantity:0}
+      },
+      shipments:[
+        {shipmentId:'SHIP-FACTORY-01',shipmentType:'WAREHOUSE_TO_FACTORY',countryId:'BGD',factoryId:'FAC-LINE-1',
+          resourceId:'iron_ore',quantity:50,targetQuantity:45,unit:'tonnes',targetUnit:'tonnes',batchId:'BATCH-01',
+          status:'IN_TRANSIT',etaTurn:14,etaDate:'2026-11-08',createdTurn:11,
+          route:{routeId:'ROUTE-01',sourceNode:'WH-BGD-RAW',destinationNode:'FACTORY:BGD:FAC-LINE-1',
+            destinationFactoryId:'FAC-LINE-1',transportMode:'truck',legs:[{transportMode:'truck',distanceKm:12}]}},
+        {shipmentId:'MINE-HAUL-ONLY',shipmentType:'MINE_TO_WAREHOUSE',countryId:'BGD',resourceId:'iron_ore',
+          quantity:50,status:'IN_TRANSIT',createdTurn:11,route:{sourceNode:'MINE:SITE-01',destinationNode:'WH-BGD-RAW'}},
+        {shipmentId:'BLOCKED-FACTORY-SHIP',shipmentType:'WAREHOUSE_TO_FACTORY',countryId:'BGD',factoryId:'FAC-LINE-2',
+          resourceId:'iron_ore',quantity:20,status:'BLOCKED_LEDGER_MISMATCH',dispatchCommitted:true,createdTurn:13,
+          route:{routeId:'BLOCKED-ROUTE',destinationFactoryId:'FAC-LINE-2'}},
+        {shipmentId:'PREVIEW-SHIP',shipmentType:'WAREHOUSE_TO_FACTORY',countryId:'BGD',factoryId:'FAC-LINE-1',
+          resourceId:'iron_ore',quantity:999,status:'ROUTE_PREVIEW_ONLY',dispatchCommitted:false,createdTurn:12,
+          route:{routeId:'PREVIEW-SHIP-ROUTE',destinationFactoryId:'FAC-LINE-1',totalDistanceKm:999}}
+      ],
+      factoryInputRequests:[{
+        requestId:'REQ-01',countryId:'BGD',factoryId:'FAC-LINE-1',resourceId:'iron_ore',status:'PARTIALLY_FULFILLED',
+        deliveryStatus:'IN_TRANSIT',requestedQuantity:80,allocatedQuantity:50,fulfilledQuantity:0,inTransitQuantity:45,
+        unfulfilledQuantity:35,unit:'tonnes',transferIds:['SHIP-FACTORY-01'],updatedTurn:11
+      }],
+      warehouseFactoryDispatches:[{
+        dispatchId:'SHIP-FACTORY-01',shipmentId:'SHIP-FACTORY-01',countryId:'BGD',destinationFactoryId:'FAC-LINE-1',
+        resourceId:'iron_ore',quantity:50,targetQuantity:45,unit:'tonnes',targetUnit:'tonnes',batchId:'BATCH-01',
+        inputBatchId:'INPUT:SHIP-FACTORY-01',status:'IN_TRANSIT',createdTurn:11,
+        route:{routeId:'ROUTE-01',sourceNode:'WH-BGD-RAW',destinationNode:'FACTORY:BGD:FAC-LINE-1',
+          destinationFactoryId:'FAC-LINE-1',transportMode:'truck',legs:[{transportMode:'truck',distanceKm:12}]}
+      }],
+      routePreviews:[{status:'ROUTE_PREVIEW_ONLY',routeId:'PREVIEW-ONLY',factoryId:'FAC-LINE-1',distanceKm:999}]
+    } }},
+    economy:{BGD:{productionAssets:[
+      {id:'FAC-LINE-1',name:'National steel works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',
+        outputProfile:{steel_product:1},
+        companyId:'AURORA_INDUSTRIAL_GROUP',ownerCompanyId:'AURORA_INDUSTRIAL_GROUP',ownerType:'PRIVATE_ENTERPRISE',
+        operatorCompanyId:'ATLAS_TECHNOLOGY_CORPORATION',operatorType:'PRIVATE_OPERATOR',
+        stateControlRights:{strategicOversight:true,licensingAndPermits:true,emergencyIntervention:true,authority:'TEST_CONTROL_RIGHTS'}},
+      {id:'FAC-LINE-2',name:'Unmapped operator works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',companyId:'UNKNOWN_SIM_COMPANY'},
+      {id:'FAC-LINE-3',name:'State-owned auxiliary works',factoryType:'STEEL_AND_ALLOY_WORKS',status:'OPERATIONAL',
+        companyId:'STATE_INDUSTRY_BGD',ownerId:'STATE_INDUSTRY_BGD',ownerType:'STATE_OWNED_ENTERPRISE',
+        operatorId:'STATE_INDUSTRY_BGD',operatorType:'STATE_ENTERPRISE_OPERATOR',
+        stateControlRights:{strategicOversight:true,licensingAndPermits:true,fiscalRegulation:true,
+          competitionOversight:true,labourSafetyEnvironmentalRegulation:true,emergencyIntervention:true,
+          operationalControl:'STATE_OPERATOR',authority:'OMEGA_STATE_FACTORY_OWNERSHIP_V1'}}
+    ]}}
+  }};
+  const root={
+    classList:{add(){}},
+    addEventListener(){},
+    contains(){return true;},
+    querySelector(){return null;},
+    querySelectorAll(){return[];},
+    innerHTML:''
+  };
+  try{
+    const result=globalThis.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'production-lines'});
+    assert.equal(result.ok,true);
+    assert.equal(result.model.lineActivity.length,3,'only cycle-backed factories from the selected country are shown');
+    const steel=result.model.lineActivity.find(row=>row.factoryId==='FAC-LINE-1');
+    assert.ok(steel);
+    assert.equal(steel.ownerCompanyId,'AURORA_INDUSTRIAL_GROUP');
+    assert.equal(steel.ownerRecordStatus,'VERIFIED_EXPLICIT_GLOBAL_COMPANY_OWNER');
+    assert.equal(steel.operatorCompanyId,'ATLAS_TECHNOLOGY_CORPORATION');
+    assert.equal(steel.operatorLabel,'Atlas Technology Corporation');
+    assert.match(steel.stateControlRightsStatus,/Strategic oversight/);
+    assert.match(steel.stateControlRightsStatus,/Licensing & permits/);
+    assert.equal(steel.stateSupplyDirectiveStatus,'DOMESTIC ONLY');
+    const stateLine=result.model.lineActivity.find(row=>row.factoryId==='FAC-LINE-3');
+    assert.ok(stateLine);
+    assert.equal(stateLine.ownerLabel,'State-owned enterprise');
+    assert.equal(stateLine.operatorLabel,'State enterprise operator');
+    assert.match(stateLine.stateControlRightsStatus,/Emergency intervention/);
+    assert.match(stateLine.stateControlRightsStatus,/Operations: STATE OPERATOR/);
+    assert.equal(steel.shipments.length,1,'mine-to-warehouse movement and route-preview rows are not shown as committed factory shipments');
+    assert.equal(result.model.lineActivitySourceCounts.committedShipments,2,'only committed shipment rows contribute to the selected-country activity count');
+    assert.match(root.innerHTML,/<span>In transit<\/span><strong>1<\/strong>/,
+      'a blocked shipment must not inflate the in-transit count');
+    assert.match(root.innerHTML,/<span>Blocked<\/span><strong>1<\/strong>/,
+      'a blocked ledger shipment must be visible in the blocked count');
+    assert.equal(steel.shipments[0].shipmentId,'SHIP-FACTORY-01');
+    assert.equal(steel.shipments[0].route.destinationNode,'FACTORY:BGD:FAC-LINE-1');
+    assert.equal(steel.inputRequests[0].requestId,'REQ-01');
+    assert.equal(steel.warehouseDispatches[0].dispatchId,'SHIP-FACTORY-01');
+    assert.match(root.innerHTML,/Production &amp; delivery lines/);
+    assert.match(root.innerHTML,/Aurora Industrial Group/);
+    assert.match(root.innerHTML,/Atlas Technology Corporation/);
+    assert.match(root.innerHTML,/State-owned enterprise/);
+    assert.match(root.innerHTML,/State enterprise operator/);
+    assert.match(root.innerHTML,/State control rights/);
+    assert.match(root.innerHTML,/State supply directives/);
+    assert.match(root.innerHTML,/DOMESTIC ONLY/);
+    assert.match(root.innerHTML,/National supply controls/);
+    assert.match(root.innerHTML,/data-state-policy-apply/);
+    assert.match(root.innerHTML,/Issue state directive/);
+    assert.match(root.innerHTML,/data-state-policy-lift/);
+    assert.match(root.innerHTML,/Government procurement/);
+    assert.match(root.innerHTML,/Purchase private stock/);
+    assert.match(root.innerHTML,/data-state-procurement-submit/);
+    assert.match(root.innerHTML,/WH-BGD-RAW/);
+    assert.match(root.innerHTML,/FACTORY:BGD:FAC-LINE-1/);
+    assert.match(root.innerHTML,/truck/);
+    assert.match(root.innerHTML,/Distance 12 km/);
+    assert.match(root.innerHTML,/2026-11-08/);
+    assert.match(root.innerHTML,/REQ-01/);
+    assert.match(root.innerHTML,/Recorded owner not mapped to a global company/);
+    assert.doesNotMatch(root.innerHTML,/PREVIEW-ONLY|ROUTE_PREVIEW_ONLY|999/);
+    assert.doesNotMatch(root.innerHTML,/omega-v2-factory-backdrop/,
+      'the Lines view must not render or decode the large decorative factory photograph');
+  }finally{
+    for(const key of keys){if(previous[key]===undefined)delete globalThis[key];else globalThis[key]=previous[key];}
+  }
+});
+
+
+test('factory Input tab avoids loading the canonical mine-site and mine-asset registries',()=>{
+  const keys=['Game','OmegaResourceIndustrialCatalogData','OmegaCountryInventoryRuntime',
+    'OmegaCountryFactoryStartingBaselineV1','OmegaPrivateEnterpriseRegistryV1',
+    'OmegaResourceSiteCanonicalCatalogData','OmegaIndividualResourceSiteBinding',
+    'OmegaResourceSiteCanonicalCatalogData'];
+  const previous=Object.fromEntries(keys.map(key=>[key,globalThis[key]]));
+  let inventoryReads=0;
+  const resource={industrialNetwork:{projects:[],factoryProductionCycles:{},factoryRuntime:{}},batches:[]};
+  Object.defineProperty(resource,'mineAssets',{configurable:true,get(){throw new Error('Input tab must not read mineAssets');}});
+  Object.defineProperty(resource,'mineSiteReferences',{configurable:true,get(){throw new Error('Input tab must not read mineSiteReferences');}});
+  globalThis.Game={state:{
+    simulation:{session:{playerCountryId:'BGD'},turn:4,daysPerTurn:1},
+    resource:{BGD:resource},
+    economy:{BGD:{productionAssets:[{
+      id:'INPUT-FAST-FACTORY',factoryType:'STEEL_MILL',status:'OPERATIONAL',
+      inputCoefficients:{iron_ore:0.5},inputInventory:{iron_ore:20},
+      inputBatchLots:[{batchId:'IRON-LOT-1',resourceId:'iron_ore',quantity:20,remainingQuantity:20}]
+    }]}}
+  }};
+  globalThis.OmegaResourceIndustrialCatalogData={
+    factoryProfiles:{STEEL_MILL:{name:'Steel Mill',defaultCapacityPerDay:12}},
+    processingRules:{},downstreamFactoryRecipes:{}
+  };
+  globalThis.OmegaCountryInventoryRuntime={
+    getInventory(){inventoryReads++;return{status:'READY',items:[]};},
+    getResourceCatalog(){inventoryReads++;return[];}
+  };
+  try{
+    const model=globalThis.OmegaUIV2Industry.buildViewModel({countryId:'BGD',tab:'inventory'});
+    assert.equal(model.factoryCount,1);
+    assert.equal(model.factories.length,1);
+    assert.equal(model.factories[0].id,'INPUT-FAST-FACTORY');
+    assert.deepEqual(model.mineSites,[]);
+    assert.equal(model.registeredMineSiteCount,0);
+    assert.equal(inventoryReads,2,'the Input tab may read its inventory view, but not mine-site history');
+  }finally{
+    for(const key of keys){
+      if(previous[key]===undefined)delete globalThis[key];
+      else globalThis[key]=previous[key];
+    }
+  }
 });

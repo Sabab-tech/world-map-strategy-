@@ -506,6 +506,8 @@ test('world geometry loads before support datasets, shows real progress, caches 
   assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
   assert.ok(map.includes('this.__omegaWorldMapAbortController.abort()'),
     'leaving the world view must abort an unfinished map-only request');
+  assert.ok(map.includes('pendingWorldLoad.then(retryWorldMapAfterAbort, retryWorldMapAfterAbort)'),
+    'returning while the initial world request is aborting must retry after its cleanup releases the controller');
   assert.ok(map.includes('Game.__omegaGeoJSONResumeRender = scheduleFeatureChunk'),
     'incomplete geometry must resume from its existing feature cursor, not restart from zero');
   assert.ok(map.includes('Game.__omegaGeoJSONRenderComplete === true && Game.Map.countryGeoJSON && Game.geojsonLayer'),

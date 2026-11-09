@@ -72,7 +72,11 @@
     const quantityNormalizer=g.Omega?.ResourceQuantityNormalization||g.OmegaResourceQuantityNormalization;
     if(typeof quantityNormalizer?.normalizeSiteRecord==='function')row=quantityNormalizer.normalizeSiteRecord(row)||row;
     else if(typeof quantityNormalizer?.normalizeSiteQuantities==='function')row=quantityNormalizer.normalizeSiteQuantities(row)||row;
-    return row;
+    // Attach per-site simulation reserves after quantity normalization. The reserve
+    // dataset is a separate authority from the canonical physical-site catalog, so
+    // reserve-only sites (for example Cigar Lake) must be enriched at the binding
+    // boundary instead of silently receiving no extractable reserve/capacity.
+    return enrichSimulationReserve(row);
   }
   g.OmegaResourceSiteDataContract={version:'1.0.0',normalizeSiteRecord,normalizeSiteQuantitative};
   const id=v=>String(v??'').trim().toUpperCase();
@@ -135,6 +139,8 @@
   const mineSiteReferenceCache=new Map();
   const siteExecutionRowsCache=new Map();
   let siteExecutionRowsCacheTurn=null;
+  const occurrenceRowsCache=new Map();
+  let occurrenceRowsCacheTurn=null;
   let mineSiteReferenceCacheYear=null;
   let engineDepositKeySource=null,engineDepositKeySourceLength=-1,engineDepositKeySet=new Set(),engineDepositKeyBuildCount=0;
   // ResourceMinistryEngine publishes its deposit array as a stable data snapshot. Build
@@ -157,6 +163,47 @@
       buildCount:engineDepositKeyBuildCount,depositCount:deposits.length,indexedIdCount:next.size
     };
     return engineDepositKeySet;
+  }
+  // Index by country only: the resource predicate remains in the original matcher,
+  // so legacy rows with late or alternate resource overlays cannot be dropped.
+  let canonicalSiteIndexSource=null,canonicalSiteIndexDirty=true;
+  let canonicalSitesByCountry=new Map(),canonicalSiteMatchCache=new Map();
+  function invalidateCanonicalSiteIndexes(){
+    canonicalSiteIndexDirty=true;
+    canonicalSiteMatchCache.clear();
+  }
+  function canonicalSiteCandidates(countryId){
+    const source=canonicalSiteCatalogMap||{};
+    if(canonicalSiteIndexDirty||canonicalSiteIndexSource!==source){
+      const next=new Map();
+      for(const site of Object.values(source)){
+        if(site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||
+           LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')])continue;
+        const country=canonical(site?.countryId||site?.identity?.countryIso3||'');
+        if(!country)continue;
+        let rows=next.get(country);if(!rows){rows=[];next.set(country,rows);}
+        rows.push(site);
+      }
+      canonicalSitesByCountry=next;
+      canonicalSiteIndexSource=source;
+      canonicalSiteIndexDirty=false;
+      canonicalSiteMatchCache.clear();
+    }
+    return canonicalSitesByCountry.get(canonical(countryId))||[];
+  }
+  let engineDepositRowSource=null,engineDepositRowSourceLength=-1,engineDepositRowsByCountryName=new Map();
+  function engineDepositRowIndex(e){
+    const deposits=Array.isArray(e?.deposits)?e.deposits:[];
+    if(engineDepositRowSource===deposits&&engineDepositRowSourceLength===deposits.length)return engineDepositRowsByCountryName;
+    const next=new Map();
+    for(const row of deposits){
+      const key=id(row?.countryCode||row?.country||'')+'\\u0000'+String(row?.name||'').trim().toUpperCase();
+      if(key&&!next.has(key))next.set(key,row);
+    }
+    engineDepositRowSource=deposits;
+    engineDepositRowSourceLength=deposits.length;
+    engineDepositRowsByCountryName=next;
+    return engineDepositRowsByCountryName;
   }
   async function loadSimulationReserveData(){
     if(simulationReserveMap)return{status:'READY',count:Object.keys(simulationReserveMap).length,reused:true};
@@ -328,6 +375,7 @@
     const existing=canonicalSiteCatalogMap?.[siteId];
     if(existing&&canonical(existing.countryId||existing.identity?.countryIso3)===country){
       canonicalSiteCatalogMap[siteId]=normalizeSiteRecord(applyPlayerMineCommissionOverlay(existing));
+       invalidateCanonicalSiteIndexes();
       const data=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
       if(Array.isArray(data?.sites)){
         const i=data.sites.findIndex(x=>String(x?.siteId||'')===siteId);
@@ -492,6 +540,7 @@
         const map={};
         for(const row of normalizedRows)if(row?.siteId)map[String(row.siteId)]=row;
         canonicalSiteCatalogMap=map;
+         invalidateCanonicalSiteIndexes();
         // The resource runtime can ask for site references before the full canonical
         // catalog finishes loading. Invalidate those earlier profile-only caches so the
         // newly loaded legacy records produce their reserve/extraction occurrences too.
@@ -517,6 +566,7 @@
         return canonicalSiteCatalogLoadReport;
       }catch(e){
         canonicalSiteCatalogMap={};
+         invalidateCanonicalSiteIndexes();
         return{status:'FAILED',count:0,reason:String(e?.message||e)};
       }finally{canonicalSiteCatalogPromise=null;}
     })();
@@ -684,6 +734,29 @@
       s.simulationReserveUnit=row.reserve.unit||null;
       s.simulationReserveRecordId=row.siteId;
       s.simulationReserveAuthority='SCENARIO_SIMULATION_DATA';
+      const reserveProvenance=row.provenance&&typeof row.provenance==='object'?row.provenance:{};
+      const annualOutputBasis=n(reserveProvenance.annualOutputBasis);
+      const annualOutputSourceUnit=String(reserveProvenance.annualOutputUnit||'').trim();
+      const quantityNormalizer=g.Omega?.ResourceQuantityNormalization||g.OmegaResourceQuantityNormalization;
+      const normalizedAnnualOutput=annualOutputBasis!==null&&annualOutputBasis>0&&annualOutputSourceUnit&&
+        typeof quantityNormalizer?.normalizeQuantity==='function'
+          ?quantityNormalizer.normalizeQuantity(rid(s.resourceId||s.resourceTypeId||s.resId||row.resourceId),
+            annualOutputBasis,annualOutputSourceUnit,{simulationOnly:true}):null;
+      const normalizedAnnualQuantity=n(normalizedAnnualOutput?.quantity);
+      const annualUnit=String(normalizedAnnualOutput?.unit||'').trim();
+      // Scenario reserve and annual output must reach the same canonical commodity unit.
+      // Do not infer a daily rate from un-normalized or dimensionally incompatible source figures.
+      if(normalizedAnnualQuantity!==null&&normalizedAnnualQuantity>0&&annualUnit&&annualUnit===String(s.simulationReserveUnit||'')){
+        s.simulationAnnualOutputSourceQuantity=annualOutputBasis;
+        s.simulationAnnualOutputSourceUnit=annualOutputSourceUnit;
+        s.simulationAnnualOutputQuantity=normalizedAnnualQuantity;
+        s.simulationAnnualOutputUnit=annualUnit;
+        s.simulationAnnualProductionRatePerDay=Number((normalizedAnnualQuantity/365).toFixed(9));
+        s.simulationAnnualProductionRateUnit=annualUnit;
+        s.simulationAnnualProductionAuthority='SCENARIO_ANNUAL_OUTPUT_BASIS_NORMALIZED_PER_DAY';
+        s.simulationAnnualOutputNormalization=clone(normalizedAnnualOutput);
+        s.simulationTargetGameplayLifeYears=n(reserveProvenance.targetGameplayLifeYears);
+      }
       const legacyOperation=s.operation||s.rawSiteReference?.operation||{};
       const legacyRuntime=s.runtime||s.rawSiteReference?.runtime||{};
       const legacyMap=s.map||s.rawSiteReference?.map||{};
@@ -903,6 +976,7 @@
     const currentYear=simulationYear();
     if(mineSiteReferenceCacheYear!==currentYear){
       mineSiteReferenceCache.clear();
+      occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;
       mineSiteReferenceCacheYear=currentYear;
     }
     const cached=mineSiteReferenceCache.get(wanted);
@@ -1037,23 +1111,75 @@
     const normalizeName=v=>String(v||'').toLowerCase().replace(/oilfield/g,'oil field').replace(/[^a-z0-9]+/g,' ').trim();
     const target=normalizeName(rawDeposit?.siteName||rawDeposit?.siteName||depositName||rawDeposit?.name);
     if(!target)return null;
-    const tt=new Set(target.split(/\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
+    const matchKey=wanted+'\\u0000'+ridWanted+'\\u0000'+target;
+    if(canonicalSiteMatchCache.has(matchKey))return canonicalSiteMatchCache.get(matchKey);
+    const tt=new Set(target.split(/\\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
     let best=null,bestScore=0;
-    for(const site of Object.values(canonicalSiteCatalogMap||{})){
-      if(site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')])continue;
-      if(canonical(site?.countryId||site?.identity?.countryIso3||'')!==wanted)continue;
-      if(rid(site?.identity?.resourceTypeId)!==ridWanted)continue;
-      const name=normalizeName(site?.siteName),st=new Set(name.split(/\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
-      let common=0;for(const t of tt)if(st.has(t))common++;
-      const score=common/Math.max(tt.size,st.size,1);
-      if(score>bestScore){bestScore=score;best=site;}
-    }
-    return bestScore>=0.25?String(best?.siteId||''):null;
+    const scoreCandidates=rows=>{
+      for(const site of rows){
+        if(site?.map?.markerEligible===false||site?.runtime?.aliasOfSiteId||
+           LEGACY_CANONICAL_ALIAS_IDS[String(site?.siteId||'')])continue;
+        if(canonical(site?.countryId||site?.identity?.countryIso3||'')!==wanted||
+           rid(site?.identity?.resourceTypeId)!==ridWanted)continue;
+        const name=normalizeName(site?.siteName),st=new Set(name.split(/\\s+/).filter(x=>x.length>2&&!['site','mine','field','area','zone','facility','complex'].includes(x)));
+        let common=0;for(const t of tt)if(st.has(t))common++;
+        const score=common/Math.max(tt.size,st.size,1);
+        if(score>bestScore){bestScore=score;best=site;}
+      }
+    };
+    scoreCandidates(canonicalSiteCandidates(wanted));
+    // Some legacy catalog rows are hydrated through alias/identity overlays after the
+    // country-resource index is first built. Preserve the original full-catalog match
+    // as a correctness fallback when the narrow candidate set cannot resolve a site.
+    if(bestScore<0.25)scoreCandidates(Object.values(canonicalSiteCatalogMap||{}));
+    const resolved=bestScore>=0.25?String(best?.siteId||''):null;
+    if(canonicalSiteMatchCache.size>8192)canonicalSiteMatchCache.clear();
+    canonicalSiteMatchCache.set(matchKey,resolved);
+    return resolved;
   }
 
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
-    const wanted=canonical(c),out=[],seen=new Set();
+    const wanted=canonical(c),siteReferences=mineSiteReferenceRows(wanted),currentTurn=turn();
+    if(occurrenceRowsCacheTurn!==currentTurn){
+      occurrenceRowsCache.clear();occurrenceRowsCacheTurn=currentTurn;
+    }
+    const reserveStates=rr.reserveStates||null,cached=occurrenceRowsCache.get(wanted);
+    if(cached&&cached.registry===reg&&cached.engine===e&&cached.reserveStates===reserveStates&&
+       cached.reserveSize===(reserveStates?.size??null)&&cached.siteReferences===siteReferences){
+      return cached.rows.map(row=>{
+        const key=String(row?.occurrenceKey||'');
+        return{
+          ...row,
+          reserveState:rr.getReserveState?.(key)||row.reserveState,
+          capacity:rr.getCapacityForOccurrence?.(key)||row.capacity,
+          lifecycle:rr.lifecycles?.get?.(key)||row.lifecycle,
+          accessibility:rr.accessibilityStates?.get?.(key)||row.accessibility
+        };
+      });
+    }
+    const out=[],seen=new Set(),siteResourceSeen=new Set();
+    // Reserve-state membership is stable during this read. Index it once instead of
+    // rescanning every reserve for each parent occurrence and each canonical site.
+    const reserveKeysByParent=new Map(),reserveBySiteResource=new Map();
+    const reserveEntries=rr.reserveStates?.entries?.();
+    if(reserveEntries){
+      for(const [rawKey,reserve] of reserveEntries){
+        const reserveKey=String(rawKey||'');
+        const parentKey=String(reserve?.parentOccurrenceKey||'').trim();
+        if(parentKey){
+          let keys=reserveKeysByParent.get(parentKey);
+          if(!keys){keys=[];reserveKeysByParent.set(parentKey,keys);}
+          keys.push(reserveKey);
+        }
+        const siteId=String(reserve?.siteReferenceKey||reserve?.siteId||'').trim();
+        const resourceId=rid(reserve?.resourceId);
+        if(siteId&&resourceId){
+          const indexKey=siteId+'\\u0000'+resourceId;
+          if(!reserveBySiteResource.has(indexKey))reserveBySiteResource.set(indexKey,reserve);
+        }
+      }
+    }
     try{
       const engineDepositKeys=engineDepositKeyIndex(e);
       const occurrences=reg.getOccurrencesByCountry?.(wanted)||[];
@@ -1061,12 +1187,14 @@
         const depositKey=String(occ?.depositKey??'').trim();
         if(!engineDepositKeys.has(depositKey))continue;
         const dep=reg.getDeposit?.(depositKey);if(!dep)continue;
-        const raw=clone(occ.rawDeposit||dep.rawDeposit||((e.deposits||[]).find(x=>String(x?.name||'').trim().toUpperCase()===String(dep.depositRawName||'').trim().toUpperCase()&&id(x?.countryCode||x?.country||'')===wanted)||null));
+        const rawDepositIndex=engineDepositRowIndex(e);
+        const raw=clone(occ.rawDeposit||dep.rawDeposit||
+          rawDepositIndex.get(wanted+'\\u0000'+String(dep.depositRawName||'').trim().toUpperCase())||null);
         const parentKey=String(occ.occurrenceKey||'');
         const keys=[];
         const addKey=k=>{const s=String(k||'');if(s&&!seen.has(s))keys.push(s);};
         addKey(parentKey);
-        for(const k of rr.reserveStates?.keys?.()||[])if(String(k)===parentKey||String(rr.reserveStates.get(k)?.parentOccurrenceKey||'')===parentKey)addKey(k);
+        for(const key of reserveKeysByParent.get(parentKey)||[])addKey(key);
         for(const key of keys){
           const reserve=rr.getReserveState?.(key),capacity=rr.getCapacityForOccurrence?.(key);if(!reserve)continue;
           const resourceId=rid(reserve.resourceId||occ.resourceTypeId||occ.resourceTypeKey);if(!resourceId)continue;
@@ -1092,7 +1220,11 @@
     // executable. Materialize a deterministic, explicitly simulated reserve/capacity
     // contract for each commercial non-alias site missing from the source-deposit registry.
     try{
-      const canonicalRows=mineSiteReferenceRows(wanted);
+      for(const row of out){
+        const siteId=String(row?.siteReferenceKey||'').trim(),resourceId=rid(row?.resourceId);
+        if(siteId&&resourceId)siteResourceSeen.add(siteId+'\\u0000'+resourceId);
+      }
+      const canonicalRows=siteReferences;
       const reserveCtor=(g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine)?.ReserveState;
       const capacityCtor=(g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine)?.Capacity;
       if(reserveCtor&&capacityCtor){
@@ -1104,9 +1236,9 @@
           if(!siteId||!siteResource||site.commercialExtraction===false||operation.commercialExtraction===false||
              String(operation.status||rawSite.status||'').toUpperCase()==='NOT_APPLICABLE'||runtime.aliasOfSiteId||
              site.map?.markerEligible===false||map.markerEligible===false)continue;
-          if(out.some(x=>String(x.siteReferenceKey||'')===siteId&&rid(x.resourceId)===siteResource))continue;
-          const existingReserve=[...(rr.reserveStates?.values?.()||[])].find(x=>
-            String(x?.siteReferenceKey||x?.siteId||'')===siteId&&rid(x?.resourceId)===siteResource);
+          const siteResourceKey=siteId+'\\u0000'+siteResource;
+          if(siteResourceSeen.has(siteResourceKey))continue;
+          const existingReserve=reserveBySiteResource.get(siteId+'\\u0000'+siteResource)||null;
           const occurrenceKey=String(existingReserve?.occurrenceKey||('SITE_RUNTIME:'+wanted+':'+siteId+':'+siteResource));
           let reserve=existingReserve||rr.getReserveState?.(occurrenceKey)||null;
           let capacity=rr.getCapacityForOccurrence?.(occurrenceKey)||null;
@@ -1120,17 +1252,24 @@
             const reserveAuthority=reserveCandidate!==null&&reserveCandidate>0&&reserveStatus==='OBSERVED'?'OBSERVED':
               reserveCandidate!==null&&reserveCandidate>0?'SIMULATED_SITE_RESERVE':'SIMULATED_400_YEAR_FALLBACK';
             const production=site.quantitative?.production||rawSite.quantitative?.production||{};
+            const unit=String(site.simulationReserveUnit||site.unit||observedReserve.unit||production.unit||'TONNES');
             const candidateRate=n(site.dailyRate??site.productionRate??site.capacity?.activeRate??site.capacity?.nominalCapacity??production.rate);
             const rateStatus=String(production.status||site.productionStatus||site.capacity?.authority||'').toUpperCase();
-            const rateAuthority=candidateRate!==null&&candidateRate>0&&rateStatus==='OBSERVED'?'OBSERVED':'SIMULATED_SITE_CAPACITY';
-            const dailyRate=candidateRate!==null&&candidateRate>0?candidateRate:(0.5+((hash%200)+1)/10);
-            const unit=String(site.simulationReserveUnit||site.unit||observedReserve.unit||production.unit||'TONNES');
+            const scenarioAnnualRate=n(site.simulationAnnualProductionRatePerDay);
+            const scenarioAnnualUnit=String(site.simulationAnnualProductionRateUnit||'').trim();
+            const scenarioAnnualRateValid=scenarioAnnualRate!==null&&scenarioAnnualRate>0&&scenarioAnnualUnit===unit;
+            const observedRate=candidateRate!==null&&candidateRate>0&&rateStatus==='OBSERVED';
+            const useScenarioAnnualRate=!observedRate&&scenarioAnnualRateValid;
+            const rateAuthority=observedRate?'OBSERVED':(useScenarioAnnualRate?'SIMULATED_SCENARIO_ANNUAL_OUTPUT_BASIS':'SIMULATED_SITE_CAPACITY');
+            const dailyRate=observedRate?candidateRate:(useScenarioAnnualRate?scenarioAnnualRate:
+              (candidateRate!==null&&candidateRate>0?candidateRate:(0.5+((hash%200)+1)/10)));
             const reserveQuantity=reserveCandidate!==null&&reserveCandidate>0?reserveCandidate:dailyRate*365*400;
             reserve=reserve||new reserveCtor({
               occurrenceKey,countryId:wanted,siteReferenceKey:siteId,siteId,depositKey:'SIM_SITE:'+siteId,
               resourceId:siteResource,geologicalQuantity:reserveQuantity,recoverableQuantity:reserveQuantity,residualQuantity:reserveQuantity,
               unit,operationalStatus:'ACTIVE_EXTRACTION',stateVersion:1,simulationOnly:reserveAuthority!=='OBSERVED',
               provenance:{sourceAuthority:reserveAuthority==='OBSERVED'?'OBSERVED':'SIMULATED',
+                stateAuthority:reserveAuthority==='OBSERVED'?'OBSERVED':'SIMULATED',
                 quantityAuthority:reserveAuthority==='OBSERVED'?'OBSERVED':'SIMULATED',authorityDetail:reserveAuthority,
                 sourceDatasetId:site.sourceDatasetId||rawSite.sourceDatasetId||'resource_site_canonical_catalog_v1.json',
                 siteReferenceKey:siteId,simulationExtractionHorizonYears:reserveAuthority==='SIMULATED_400_YEAR_FALLBACK'?400:null,
@@ -1154,6 +1293,36 @@
               mode:'CANONICAL_SITE_SIMULATION_BRIDGE',sourceAuthority:'SIMULATED'});
             rr.accessibilityStates?.set?.(occurrenceKey,{state:'AVAILABLE',sourceAuthority:'SIMULATED'});
           }
+          // A reserve/capacity pair may have been materialized by an earlier identity pass.
+          // Reconcile only simulated capacities to the site's explicit annual scenario baseline;
+          // preserve the existing reserve balance and never rewrite observed capacity data.
+          const existingScenarioRate=n(site.simulationAnnualProductionRatePerDay);
+          const existingScenarioUnit=String(site.simulationAnnualProductionRateUnit||'').trim();
+          const reserveUnit=String(reserve?.unit||'').trim();
+          if(capacity&&existingScenarioRate!==null&&existingScenarioRate>0&&
+             existingScenarioUnit&&existingScenarioUnit===reserveUnit&&
+             String(capacity.authority||capacity.productionAuthority||capacity.dataStatus||'').toUpperCase()!=='OBSERVED'){
+            Object.assign(capacity,{
+              nominalRate:existingScenarioRate,dailyRate:existingScenarioRate,activeRate:existingScenarioRate,
+              nominalCapacity:existingScenarioRate,minimumCapacity:existingScenarioRate*0.55,
+              maximumCapacity:existingScenarioRate*1.25,unit:existingScenarioUnit,
+              authority:'SIMULATED',productionAuthority:'SIMULATED',stateAuthority:'SIMULATED',
+              dataStatus:'SIMULATED',
+              provenance:{
+                ...(capacity.provenance||{}),
+                sourceAuthority:'SIMULATED',
+                siteReferenceKey:siteId,
+                sourceDatasetId:'resource_site_reserve_simulation_v1.json',
+                simulationRule:'SITE_ANNUAL_OUTPUT_BASIS_NORMALIZED_PER_DAY',
+                sourceAnnualQuantity:site.simulationAnnualOutputSourceQuantity??null,
+                sourceAnnualUnit:site.simulationAnnualOutputSourceUnit??null,
+                normalizedAnnualQuantity:site.simulationAnnualOutputQuantity??null,
+                normalizedAnnualUnit:existingScenarioUnit,
+                targetGameplayLifeYears:site.simulationTargetGameplayLifeYears??null
+              }
+            });
+            rr.capacities?.set?.(occurrenceKey,capacity);
+          }
           const rawDeposit={
             ...clone(rawSite),siteId,siteReferenceKey:siteId,siteName:site.siteName||rawSite.siteName||siteId,
             name:site.siteName||rawSite.siteName||siteId,countryId:wanted,countryCode:wanted,
@@ -1174,6 +1343,10 @@
     }catch(error){
       g.__OmegaCanonicalSiteExecutionBridgeError=String(error?.message||error);
     }
+    occurrenceRowsCache.set(wanted,{
+      registry:reg,engine:e,reserveStates,reserveSize:reserveStates?.size??null,
+      siteReferences,rows:out
+    });
     return out;
   }
 
@@ -1266,6 +1439,12 @@ function batchFromExtraction(x,record){
   function buildMineSiteControllers(c,rows,existing={}){
     const refs=mineSiteReferenceRows(c);
     const executableKeys=new Set((rows||[]).map(x=>String(x.occurrenceKey)));
+    const rowsBySite=new Map();
+    for(const row of rows||[]){
+      const siteKey=String(row?.siteReferenceKey||'');if(!siteKey)continue;
+      let attached=rowsBySite.get(siteKey);if(!attached){attached=[];rowsBySite.set(siteKey,attached);}
+      attached.push(row);
+    }
     const old=existing&&typeof existing.mineSiteControllers==='object'&&existing.mineSiteControllers?existing.mineSiteControllers:{};
     const controllers={};
     for(const site of refs){
@@ -1274,7 +1453,7 @@ function batchFromExtraction(x,record){
       const prior=old[siteKey]&&typeof old[siteKey]==='object'?clone(old[siteKey]):{};
       const pathId='MINE_PATH:'+canonical(c)+':'+siteKey;
       const existingLinked=Array.isArray(prior.linkedOccurrenceKeys)?prior.linkedOccurrenceKeys:[];
-      const attachedRows=(rows||[]).filter(x=>String(x?.siteReferenceKey||'')===siteKey);
+      const attachedRows=rowsBySite.get(siteKey)||[];
       const attachedKeys=attachedRows.map(x=>String(x.occurrenceKey||'')).filter(Boolean);
       const linked=[...new Set([...existingLinked,...attachedKeys])].filter(k=>executableKeys.has(String(k)));
       controllers[siteKey]={
@@ -1308,6 +1487,10 @@ function batchFromExtraction(x,record){
       siteExecutionRowsCache.clear();
       siteExecutionRowsCacheTurn=currentTurn;
     }
+    if(occurrenceRowsCacheTurn!==currentTurn){
+      occurrenceRowsCache.clear();
+      occurrenceRowsCacheTurn=currentTurn;
+    }
     const cached=siteExecutionRowsCache.get(cid);
     const requestedOccurrenceKeys=new Set(Array.isArray(existing?.requestedOccurrenceKeys)?existing.requestedOccurrenceKeys.map(String):[]);
     if(cached&&requestedOccurrenceKeys.size===0){
@@ -1332,6 +1515,12 @@ function batchFromExtraction(x,record){
       .map(x=>({siteReferenceKey:String(x.siteReferenceKey),resourceId:rid(x.resourceId),occurrenceKey:String(x.occurrenceKey||''),
         depositName:String(x.depositName||x.rawDeposit?.siteName||x.rawDeposit?.name||''),
         directSiteIds:[x.rawDeposit?.siteId,x.rawDeposit?.siteReferenceKey,x.rawDeposit?.resourceSiteId].filter(Boolean).map(String)}));
+    const authoritativeByPhysicalSiteResource=new Map();
+    for(const row of authoritativeStreams){
+      const normalizedName=normalizePhysicalSiteName(row.depositName);if(!normalizedName)continue;
+      const key=row.siteReferenceKey+'\\u0000'+row.resourceId+'\\u0000'+normalizedName;
+      if(!authoritativeByPhysicalSiteResource.has(key))authoritativeByPhysicalSiteResource.set(key,row);
+    }
     const suppressedProfileDuplicates=[];
     const add=(asset,index,explicitResource=null,assetType='MINE_SITE')=>{
       const siteName=String(asset?.siteName||asset?.name||asset?.mineName||asset?.depositName||asset||'').trim();if(!siteName)return;
@@ -1348,11 +1537,9 @@ function batchFromExtraction(x,record){
         // run. A profile site can share a fuzzy canonical reference with a broader deposit
         // (for example, a mineral province) and still need its own simulated extraction path.
         const requestedExplicitly=requestedOccurrenceKeys.has(occurrenceKey);
-        const authoritativeDuplicate=assetType==='MINE_SITE'&&!requestedExplicitly?authoritativeStreams.find(x=>
-          x.resourceId===resolvedResource&&x.siteReferenceKey===siteKey&&
-          normalizePhysicalSiteName(x.depositName)!==''&&
-          normalizePhysicalSiteName(x.depositName)===normalizePhysicalSiteName(siteName)
-        ):null;
+        const normalizedSiteName=normalizePhysicalSiteName(siteName);
+        const authoritativeDuplicate=assetType==='MINE_SITE'&&!requestedExplicitly&&normalizedSiteName
+          ?authoritativeByPhysicalSiteResource.get(siteKey+'\\u0000'+resolvedResource+'\\u0000'+normalizedSiteName)||null:null;
         if(authoritativeDuplicate){
           suppressedProfileDuplicates.push({siteReferenceKey:siteKey,resourceId:resolvedResource,
             canonicalOccurrenceKey:authoritativeDuplicate.occurrenceKey,matchedBy:authoritativeDuplicate.directSiteIds.includes(siteKey)?'DIRECT_SOURCE_ID':'EXACT_NORMALIZED_PHYSICAL_NAME',
@@ -1403,7 +1590,28 @@ function batchFromExtraction(x,record){
         });
       }
     };
-    mineSiteReferenceRows(c).forEach(ref=>{if(ref.commercialExtraction===false)return;add(ref,null,ref.resourceId||ref.resourceTypeId||ref.resourceTypeKey||null,'MINE_SITE');});
+    const requestedSiteReferenceKeys=new Set();
+    if(requestedOccurrenceKeys.size){
+      for(const key of requestedOccurrenceKeys){
+        const mine=existing?.mineStates?.[key]||{};
+        const siteId=String(mine.siteReferenceKey||mine.siteId||mine.sourceSiteId||'').trim();
+        if(siteId)requestedSiteReferenceKeys.add(siteId);
+      }
+      const controllers=state()?.resource?.[cid]?.mineSiteControllers||{};
+      for(const [controllerKey,controller] of Object.entries(controllers)){
+        const linked=Array.isArray(controller?.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys:[];
+        if(linked.some(key=>requestedOccurrenceKeys.has(String(key)))){
+          const siteId=String(controller?.siteReferenceKey||controllerKey||'').trim();
+          if(siteId)requestedSiteReferenceKeys.add(siteId);
+        }
+      }
+    }
+    mineSiteReferenceRows(c).forEach(ref=>{
+      const siteId=String(ref?.siteReferenceKey||ref?.siteId||'').trim();
+      if(requestedSiteReferenceKeys.size&&!requestedSiteReferenceKeys.has(siteId))return;
+      if(ref.commercialExtraction===false)return;
+      add(ref,null,ref.resourceId||ref.resourceTypeId||ref.resourceTypeKey||null,'MINE_SITE');
+    });
     g.__OmegaResourceSiteIdentityDiagnostics=g.__OmegaResourceSiteIdentityDiagnostics||{};
     g.__OmegaResourceSiteIdentityDiagnostics[c]={turn:turn(),canonicalRegistryOccurrenceCount:authoritativeStreams.length,
       suppressedProfileDuplicateCount:suppressedProfileDuplicates.length,suppressedProfileDuplicates:suppressedProfileDuplicates.slice(0,256)};
@@ -2181,7 +2389,7 @@ function batchFromExtraction(x,record){
       };
       // A failed optional reference load remains retryable instead of becoming an empty READY cache.
       supplementalResourceDataReport=report.status==='READY'?report:null;
-      try{profileCache.clear();mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;}catch(_){}
+      try{profileCache.clear();mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;}catch(_){}
       g.OmegaResourceSupplementalDataReport=clone(report);
       g.Omega=g.Omega||{};
       g.Omega.ResourceSupplementalDataReport=g.OmegaResourceSupplementalDataReport;
@@ -2870,6 +3078,7 @@ function batchFromExtraction(x,record){
       merged.location={...clone(merged.location||{}),coordinates:clone(site.location.coordinates)};
     merged=normalizeSiteRecord(merged);
     canonicalSiteCatalogMap[siteId]=merged;
+     invalidateCanonicalSiteIndexes();
     const data=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
     if(data){
       if(!Array.isArray(data.sites))data.sites=[];
@@ -2882,7 +3091,7 @@ function batchFromExtraction(x,record){
     const serializedAfter=JSON.stringify(merged);
     const changed=!existing||serializedBefore!==serializedAfter;
     const becameExecutable=!wasExecutable;
-    if(changed){mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;}
+    if(changed){mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;}
     return{status:!existing?'REGISTERED':changed?'ENRICHED':'EXISTS',siteId,countryId,resourceId,
       changed,executionRequired:!existing||becameExecutable};
   }
@@ -3149,13 +3358,14 @@ function batchFromExtraction(x,record){
     row.runtime={...(row.runtime||{}),identityAuthority:'CANONICAL_SITE_REGISTRY',quantityAuthority:'SIMULATED',
       productionAuthority:'SIMULATED',requiresFactoryBinding:true,requiresSiteSpecificRoute:true};
     canonicalSiteCatalogMap[siteId]=row;
+     invalidateCanonicalSiteIndexes();
     const data=g.OmegaResourceSiteCanonicalCatalogData||g.Omega?.ResourceSiteCanonicalCatalogData;
     if(data&&Array.isArray(data.sites)&&!data.sites.some(x=>String(x?.siteId||'')===siteId)){
       data.sites.push(clone(row));
       data.totalSiteCount=data.sites.length;
       data.dynamicSimulationSiteCount=Math.max(0,n(data.dynamicSimulationSiteCount)||0)+1;
     }
-    mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;
+    mineSiteReferenceCache.clear();siteExecutionRowsCache.clear();siteExecutionRowsCacheTurn=-1;occurrenceRowsCache.clear();occurrenceRowsCacheTurn=null;
     return{status:'REGISTERED',siteId,countryId,resourceId,identityAuthority:'CANONICAL_SITE_REGISTRY',
       quantityAuthority:'SIMULATED',productionAuthority:'SIMULATED'};
   }
