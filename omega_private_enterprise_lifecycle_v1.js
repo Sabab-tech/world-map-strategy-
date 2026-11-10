@@ -433,9 +433,9 @@
       matchedQuantity:current?matched:null,bidDepth:bidDepth,askDepth:askDepth,
       globalUnmatchedBidDepth:unmatchedBidDepth,globalUnmatchedAskDepth:unmatchedAskDepth,
       globalUnmatchedDemandSupplyGap:unmatchedDemandSupplyGap,
-      foreignBuyerMatchedQuantity:current?foreignBuyerMatches:null,
-      matchedExportsFromCountry:current?foreignExports:null,
-      matchedImportsIntoCountry:current?foreignImports:null,
+      foreignBuyerMatchedQuantity:current&&Array.isArray(quote.matches)?foreignBuyerMatches:null,
+      matchedExportsFromCountry:current&&Array.isArray(quote.matches)?foreignExports:null,
+      matchedImportsIntoCountry:current&&Array.isArray(quote.matches)?foreignImports:null,
       demandPressureStatus:!current?'UNOBSERVED':unmatchedBidDepth===null?'UNOBSERVED':
         unmatchedBidDepth>0?'GLOBAL_UNMATCHED_BUY_ORDERS':'NO_UNMATCHED_BUY_ORDERS_OBSERVED',
       quoteAuthority:'OMEGA_GLOBAL_MARKET_CURRENT_TURN_ORDER_BOOK',
@@ -529,7 +529,8 @@
       processing.push({resourceId:row.resourceId,required30Day:num(row.forecast30Day),
         domesticUncommittedAvailable:num(row.available),matchedRawMaterialExportsFromCountry:market.matchedExportsFromCountry,
         internationalBuyerMatches:market.foreignBuyerMatchedQuantity,
-        status:!market.currentTurn?'UNOBSERVED_OR_STALE':
+        status:!market.currentTurn||!market.matchesObserved||market.matchedExportsFromCountry===null
+          ?'UNOBSERVED_OR_STALE':
           market.matchedExportsFromCountry>0?'CURRENT_TURN_DOMESTIC_RAW_EXPORTS_OBSERVED':'NO_MATCHED_RAW_EXPORTS_IN_CURRENT_SNAPSHOT',
         opportunity:'A processing company may add domestic value before export; matched export quantity is evidence of trade, not a secured input contract.',
         marketTurn:market.generatedTurn});
