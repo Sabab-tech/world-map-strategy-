@@ -1090,8 +1090,9 @@
     var alternatives=specs.map(build),
       domestic=alternatives[0],mixed=alternatives[1],imports=alternatives[2],
       domesticReady=domestic.status==='DOMESTIC_SUPPLY_COVERS_REQUIREMENT',
-      mixedReady=mixed.status==='POTENTIAL_IMPORT_CAPACITY_NOT_CONTRACTED'||
-        mixed.status==='DOMESTIC_SUPPLY_COVERS_REQUIREMENT',
+      mixedHasDomesticInput=(mixed.inputs||[]).some(function(row){return num(row.domesticQuantity)>0;}),
+      mixedReady=mixedHasDomesticInput&&(mixed.status==='POTENTIAL_IMPORT_CAPACITY_NOT_CONTRACTED'||
+        mixed.status==='DOMESTIC_SUPPLY_COVERS_REQUIREMENT'),
       importReady=imports.status==='POTENTIAL_IMPORT_CAPACITY_NOT_CONTRACTED',
       recommendation=domesticReady?'DOMESTIC_ONLY':
         mixedReady?'MIXED':importReady?'COMPANY_FUNDED_IMPORTS':'MANUAL_REVIEW',
@@ -1126,10 +1127,9 @@
       inputCostsComplete=inputRows.length>0&&inputRows.every(function(row){
         var domesticOk=num(row.domesticQuantity)===0||num(row.domesticCost)!==null,
           importOk=num(row.importQuantity)===0||num(row.importCommodityCost)!==null;
-        if(domesticOk&&importOk){
-          observedInputCostSubtotal+=(num(row.domesticCost)||0)+(num(row.importCommodityCost)||0);
-          knownInputCostRows++;
-        }
+        if(domesticOk&&importOk)knownInputCostRows++;
+        if(domesticOk)observedInputCostSubtotal+=(num(row.domesticCost)||0);
+        if(importOk)observedInputCostSubtotal+=(num(row.importCommodityCost)||0);
         return domesticOk&&importOk;
       }),
       operatingCost=num(unitEconomics&&unitEconomics.domesticProduction&&unitEconomics.domesticProduction.operatingCost),
@@ -1165,9 +1165,10 @@
       constructionPerFactory=num(profile&&profile.constructionCost),
       fullWorkingCapitalPerFactory=completeWorkingCapitalRequirement!==null&&num(proposal.quantity)>0
         ?completeWorkingCapitalRequirement/num(proposal.quantity):null,
-      maximumAffordableAllInFactoryUnits=cash===null||constructionPerFactory===null||
-        fullWorkingCapitalPerFactory===null?null:
-          Math.max(0,Math.floor((cash+1e-9)/(constructionPerFactory+fullWorkingCapitalPerFactory))),
+      allInCapitalPerFactory=constructionPerFactory===null||fullWorkingCapitalPerFactory===null
+        ?null:constructionPerFactory+fullWorkingCapitalPerFactory,
+      maximumAffordableAllInFactoryUnits=cash===null||allInCapitalPerFactory===null||!Number.isFinite(allInCapitalPerFactory)||allInCapitalPerFactory<=0?null:
+          Math.max(0,Math.floor((cash+1e-9)/allInCapitalPerFactory)),
       status=cash===null?'COMPANY_CASH_UNOBSERVED':
         completeStartupCapitalRequired===null
           ?(constructionRequired!==null&&cash+1e-9>=constructionRequired
@@ -1204,8 +1205,9 @@
         availableAmount:cash,requiredAmount:budget.completeStartupCapitalRequired,
         constructionOnlyFundingGap:budget.constructionOnlyFundingGap},
       {id:'PRIVATE_EQUITY_PARTNER',label:'Private equity / strategic partner',
-        status:privateShareRequested?'REQUESTED_NOT_COMMITTED':
-          (num(budget.constructionOnlyFundingGap)>0?'POTENTIAL_OPTION_NOT_REQUESTED':'NOT_REQUIRED_FOR_CONSTRUCTION_GAP'),
+        status:preference==='JOINT_VENTURE'?'NOT_SELECTED':privateShareRequested?'REQUESTED_NOT_COMMITTED':
+          budget.completeStartupFundingGap===null&&budget.minimumKnownStartupFundingGap===null?'FUNDING_NEED_UNRESOLVED':
+            (Math.max(budget.completeStartupFundingGap||0,budget.minimumKnownStartupFundingGap||0)>0?'POTENTIAL_OPTION_NOT_REQUESTED':'NOT_REQUIRED_FOR_OBSERVED_BUDGET'),
         indicativeProjectSharePct:sharePct,
         settlementStatus:'NO_INVESTOR_COMMITMENT_OR_SHAREHOLDER_REGISTER_RECORDED'},
       {id:'JOINT_VENTURE',label:'Joint venture',status:'NEGOTIATION_OPTION_NOT_ESTABLISHED',
@@ -1230,7 +1232,8 @@
     ];
     rows.forEach(function(row){row.selected=(
       (row.id==='COMPANY_CASH'&&preference==='PRIVATE_COMPANY_CAPITAL')||
-      (row.id==='PRIVATE_EQUITY_PARTNER'&&privateShareRequested)||
+      (row.id==='PRIVATE_EQUITY_PARTNER'&&privateShareRequested&&preference!=='JOINT_VENTURE')||
+      (row.id==='JOINT_VENTURE'&&preference==='JOINT_VENTURE')||
       (row.id==='GOVERNMENT_GRANT'&&num(governmentGrant)>0)||
       (row.id==='GOVERNMENT_EQUITY'&&num(governmentEquity)>0)||
       (row.id==='LOAN_GUARANTEE'&&loanGuarantee===true)
@@ -1307,7 +1310,9 @@
       startupBudget=buildCompanyStartupBudget(proposal,cash,required,unitEconomics),
       financingAlternatives=buildCompanyFinancingAlternatives(preference,partnerEquityRequested,
         requestedPartnerShareBps===null?null:Number((requestedPartnerShareBps/100).toFixed(2)),cash,startupBudget,
-        proposal.requestedGovernmentGrantAmount,proposal.requestedGovernmentEquityBps,proposal.requestedLoanGuarantee===true);
+        proposal.stateSupportRequested===true&&preference==='GOVERNMENT_GRANT'
+          ?(num(proposal.requestedGovernmentGrantAmount)??(fundingGap??required??0)):0,
+        proposal.requestedGovernmentEquityBps,proposal.requestedLoanGuarantee===true);
     return{
       schemaVersion:1,submittedBy:proposal.companyId,companyName:proposal.companyName,
       submittedTurn:proposal.createdTurn,proposalOrigin:proposal.proposalOrigin||'COMPANY_INITIATED',
