@@ -1898,7 +1898,10 @@
         ].filter(function(value){return num(value)!==null;}).map(function(value){
           return capitalRequired!==null&&capitalRequired>0?Number((num(value)/capitalRequired*100).toFixed(2)):null;
         }).filter(function(value){return value!==null;}),
-        bestObserved30DayReturnOnProjectCapitalPct=returnCandidates.length?Math.max.apply(null,returnCandidates):null,
+        matrixObservedReturn=num(unitEconomics.scenarioMatrix&&unitEconomics.scenarioMatrix.bestObserved30DayReturnOnProjectCapitalPct),
+        bestObserved30DayReturnOnProjectCapitalPct=matrixObservedReturn===null
+          ?(returnCandidates.length?Math.max.apply(null,returnCandidates):null)
+          :Math.max.apply(null,returnCandidates.concat([matrixObservedReturn])),
         profitabilityScore=bestObserved30DayReturnOnProjectCapitalPct===null?-3:
           Math.max(-20,Math.min(20,bestObserved30DayReturnOnProjectCapitalPct/5)),
         totalScore=marketScore+supplyScore+operationalScore+capitalScore+durationScore+invitationScore+
