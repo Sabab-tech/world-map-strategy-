@@ -425,3 +425,17 @@ Every company-originated proposal now sends a structured 30-day market-research 
 - The trade-owned market queue validates, stores and idempotently replays these quantity-bearing requests. The queue may remain awaiting market evidence until a market response provider is implemented.
 
 This enriches the market handoff without introducing a new market engine or hardcoded market values.
+
+
+## Bounded multi-option company investment scenarios — 2026-11-11
+
+The company business case now compares a fixed, bounded set of **15 runtime alternatives** instead of relying only on separate domestic and export ceilings:
+
+- **Sales allocation:** domestic-only, export-only, domestic-first with export of remaining capacity, export-first with domestic sale of remaining capacity, and a balanced split based on observed domestic unmet demand and current unmatched international buyer demand.
+- **Input sourcing:** domestic-only, domestic-first with an import gap, and import-only. Each input line records required quantity, domestic availability, planned domestic/import quantity, commodity cost and whether landed import cost is still unobserved.
+- Every sales allocation shares the same per-product production capacity. Domestic and export quantities cannot exceed that product's 30-day output or their respective observed demand ceilings; unsold capacity remains explicit. The alternatives do not treat the same output as two separate sales.
+- A scenario reports final profit/loss and margin only when demand, selling prices, input prices, operating costs and currency reconcile and all required inputs are physically covered. Import-dependent scenarios may show a clearly labelled pre-landed result, but cannot win the recommendation or claim final profit until freight, route, insurance and tariff/landed costs are observed.
+- The engine recommends only the highest net result among fully calculated scenarios. Where evidence is missing, the recommendation remains empty and the individual scenario explains the missing evidence; the company still submits its proposal and research request.
+- The calculation is synchronous, read-only and bounded to 15 combinations per business case. It adds no frame loop, external fetch, wait, reservation, purchase, stock mutation, cash movement, project or factory. It works when the global market provider is absent; missing market observations stay null/UNOBSERVED.
+
+The Production Lines company case exposes the alternative set in an expandable comparison area. The values remain planning evidence, not guaranteed demand, signed supply, settled sale or an approval.
