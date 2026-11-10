@@ -15,6 +15,7 @@
     TERRA_INFRASTRUCTURE_GROUP:'Terra Infrastructure Group'
   };
   var MAX_PROPOSALS=250,MAX_EVENTS=600,MAX_PROJECTS_PER_PROPOSAL=25,MAX_TRADE_HISTORY=4096;
+  var MAX_UNIVERSAL_RESOURCE_EVALUATIONS_PER_COMPANY_TURN=8;
   var NETWORK_EVENT='OMEGA_FACTORY_CAPACITY_CHANGED';
   function obj(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
   function clone(v){if(v===null||typeof v!=='object')return v;if(Array.isArray(v))return v.map(clone);var o={};Object.keys(v).forEach(function(k){if(k!=='__proto__'&&k!=='constructor')o[k]=clone(v[k]);});return o;}
@@ -611,13 +612,16 @@
         domesticCost=domesticQuantity===null?null:domesticQuantity<=0?0:
           domesticPrice.unitPrice===null?null:Number((domesticQuantity*domesticPrice.unitPrice).toFixed(2)),
         importCommodityCost=importQuantity===null?null:importQuantity<=0?0:
-          importPrice.unitPrice===null?null:Number((importQuantity*importPrice.unitPrice).toFixed(2));
+          importPrice.unitPrice===null?null:Number((importQuantity*importPrice.unitPrice).toFixed(2)),
+        totalSourced=required===null||domesticQuantity===null||importQuantity===null?null:domesticQuantity+importQuantity;
       return{resourceId:row.resourceId,required30Day:required,domesticAvailable:available,
         domesticQuantity:domesticQuantity,importQuantity:importQuantity,
         domesticUnitPrice:domesticPrice.unitPrice,domesticPriceSource:domesticPrice.source,
         domesticCurrency:domesticPrice.currency,domesticCost:domesticCost,
         importUnitPrice:importPrice.unitPrice,importPriceSource:importPrice.source,
         importCurrency:importPrice.currency,importCommodityCost:importCommodityCost,
+        domesticSharePct:totalSourced===null||totalSourced<=0?null:Number((domesticQuantity/totalSourced*100).toFixed(2)),
+        importSharePct:totalSourced===null||totalSourced<=0?null:Number((importQuantity/totalSourced*100).toFixed(2)),
         importLandedCost:null,
         importLandedCostStatus:importQuantity===null?'UNOBSERVED':
           importQuantity>0?'FREIGHT_TARIFF_AND_INSURANCE_UNOBSERVED':'NOT_REQUIRED',
@@ -1020,6 +1024,88 @@
           Math.max(0,Math.min(10000,Math.round(fundingGap/required*10000))):null),
       affordableFactoryUnits=num(profile&&profile.constructionCost)===null||cash===null?null:
         Math.max(0,Math.floor((cash+1e-9)/num(profile.constructionCost)));
+    var maximumAdditionalUnits=num(preview.maximumAdditionalUnits),
+      expansionLimit=maximumAdditionalUnits===null?null:Math.min(MAX_PROJECTS_PER_PROPOSAL,Math.max(0,Math.floor(maximumAdditionalUnits))),
+      constructionCostPerFactory=num(profile&&profile.constructionCost),scaleQuantities=[];
+    function addScaleQuantity(value){
+      var quantity=num(value);
+      if(quantity===null||!Number.isInteger(quantity)||quantity<1||quantity>MAX_PROJECTS_PER_PROPOSAL||
+         expansionLimit===null||quantity>expansionLimit||scaleQuantities.indexOf(quantity)>=0)return;
+      scaleQuantities.push(quantity);
+    }
+    addScaleQuantity(1);
+    addScaleQuantity(Math.floor((num(proposal.quantity)||1)/2));
+    addScaleQuantity(proposal.quantity);
+    addScaleQuantity(affordableFactoryUnits===null?null:Math.min(expansionLimit,affordableFactoryUnits));
+    addScaleQuantity(expansionLimit);
+    scaleQuantities.sort(function(a,b){return a-b;});
+    var scaleAlternatives=scaleQuantities.map(function(quantity){
+      var capital=constructionCostPerFactory===null?null:Number((constructionCostPerFactory*quantity).toFixed(2)),
+        gap=capital===null||cash===null?null:Math.max(0,Number((capital-cash).toFixed(2))),
+        dailyCapacity=num(profile&&profile.defaultCapacityPerDay);
+      return{factoryCount:quantity,
+        dailyCapacityForecast:dailyCapacity===null?null:Number((dailyCapacity*quantity).toFixed(6)),
+        thirtyDayCapacityCeiling:dailyCapacity===null?null:Number((dailyCapacity*quantity*30).toFixed(6)),
+        constructionCapitalRequired:capital,companyCashAvailable:cash,fundingGap:gap,
+        canSelfFinance:capital===null||cash===null?null:cash+1e-9>=capital,
+        withinCurrentExpansionCeiling:true,selected:quantity===num(proposal.quantity),
+        authority:'CANONICAL_FACTORY_PROFILE_AND_RECORDED_COMPANY_CAPITAL'};
+    });
+    var equitySharePct=requestedPartnerShareBps===null?null:Number((requestedPartnerShareBps/100).toFixed(2)),
+      grantRequest=proposal.stateSupportRequested===true&&preference==='GOVERNMENT_GRANT'
+        ?Math.min(fundingGap===null?(required||0):fundingGap,
+          num(proposal.requestedGovernmentGrantAmount)===null?(fundingGap===null?(required||0):fundingGap):num(proposal.requestedGovernmentGrantAmount)):0,
+      financingAlternatives=[
+        {structure:'COMPANY_CAPITAL',status:cash===null||required===null?'UNOBSERVED':
+          cash+1e-9>=required?'SUFFICIENT_RECORDED_CASH':'INSUFFICIENT_RECORDED_CASH',
+          companyCashAvailable:cash,projectCapitalRequired:required,fundingGap:fundingGap},
+        {structure:'PRIVATE_EQUITY_PARTNER',status:fundingGap===null?'UNOBSERVED':
+          fundingGap>0?'PARTNER_AND_VALUATION_REQUIRED':'NOT_REQUIRED',
+          requestedSharePct:equitySharePct,fundingGap:fundingGap,binding:false},
+        {structure:'JOINT_VENTURE',status:'COUNTERPARTY_AND_SEPARATE_APPROVED_CHARTER_REQUIRED',
+          binding:false},
+        {structure:'CORPORATE_LOAN',status:'LENDER_CREDIT_CAPACITY_AND_INTEREST_TERMS_UNOBSERVED',
+          requestedAmount:fundingGap,binding:false},
+        {structure:'GOVERNMENT_GRANT',status:grantRequest>0?'REQUESTED_NOT_APPROVED':
+          proposal.stateSupportRequested===true?'PUBLIC_SUPPORT_TYPE_NOT_A_GRANT':'NOT_REQUESTED',
+          requestedAmount:grantRequest,binding:false},
+        {structure:'PHASED_INVESTMENT',status:scaleAlternatives.length>1
+          ?'ALTERNATIVE_SCALES_CALCULATED':'NO_ADDITIONAL_SCALE_VERIFIED',binding:false}
+      ],
+      domesticRows=opportunityAnalysis.domesticDemand||[],
+      internationalRows=opportunityAnalysis.internationalDemand||[],
+      exportRows=opportunityAnalysis.exportProcessingOpportunities||[],
+      orderBookObserved=internationalRows.filter(function(row){return row.evidenceStatus==='CURRENT_TURN_ORDER_BOOK';}).length,
+      domesticObserved=domesticRows.filter(function(row){
+        return row.demandEvidenceStatus==='CURRENT_TURN'&&
+          (row.outputEvidenceStatus==='OBSERVED_ACTIVE_FACTORY_OUTPUT'||row.outputEvidenceStatus==='NO_ACTIVE_OUTPUT_RECORDS')&&
+          row.stockEvidenceStatus==='OBSERVED';
+      }).length,
+      exportObserved=exportRows.filter(function(row){
+        return row.status==='CURRENT_TURN_DOMESTIC_RAW_EXPORTS_OBSERVED'||
+          row.status==='NO_MATCHED_RAW_EXPORTS_IN_CURRENT_SNAPSHOT';
+      }).length,
+      inputAvailabilityObserved=inputs.filter(function(row){return row.domesticCoverage!=='UNVERIFIED';}).length,
+      priceObserved=(unitEconomics.outputs||[]).filter(function(row){
+        return row.domesticUnitPrice!==null||row.internationalUnitPrice!==null;
+      }).length+(unitEconomics.inputs||[]).filter(function(row){
+        return row.domesticUnitPrice!==null||row.importUnitPrice!==null;
+      }).length,
+      evidenceObserved=orderBookObserved+domesticObserved+exportObserved+inputAvailabilityObserved+priceObserved,
+      evidenceTotal=internationalRows.length+domesticRows.length+exportRows.length+inputs.length+
+        (unitEconomics.outputs||[]).length+(unitEconomics.inputs||[]).length,
+      evidenceCoveragePct=evidenceTotal?Number((evidenceObserved/evidenceTotal*100).toFixed(2)):null,
+      confidenceStatus=evidenceCoveragePct===null?'NO_EVIDENCE':evidenceCoveragePct>=75?'HIGH':
+        evidenceCoveragePct>=40?'MODERATE':'LIMITED',
+      dataConfidence={status:confidenceStatus,observedEvidenceCount:evidenceObserved,
+        possibleEvidenceCount:evidenceTotal,coveragePct:evidenceCoveragePct,
+        currentTurnOrderBook:{observed:orderBookObserved,total:internationalRows.length},
+        domesticDemandAndSupply:{observed:domesticObserved,total:domesticRows.length},
+        rawMaterialExportSignals:{observed:exportObserved,total:exportRows.length},
+        inputAvailability:{observed:inputAvailabilityObserved,total:inputs.length},
+        currentPriceObservations:{observed:priceObserved,
+          total:(unitEconomics.outputs||[]).length+(unitEconomics.inputs||[]).length},
+        policy:'DATA_COVERAGE_ONLY; UNKNOWN_EVIDENCE_IS_NOT_ZERO_AND_DOES_NOT_BLOCK_SUBMISSION'};
     return{
       schemaVersion:1,submittedBy:proposal.companyId,companyName:proposal.companyName,
       submittedTurn:proposal.createdTurn,proposalOrigin:proposal.proposalOrigin||'COMPANY_INITIATED',
@@ -1089,6 +1175,16 @@
         supportRequestStatus:proposal.publicInfrastructureRequested||proposal.utilitySupportRequested||
           proposal.governmentOfftakeRequested?'COMPANY_REQUESTS_PUBLIC_SUPPORT':'NO_ADDITIONAL_PUBLIC_SUPPORT_REQUESTED'},
       unitEconomics:unitEconomics,
+      investmentOptions:{proposedFactoryCount:proposal.quantity,
+        maximumPolicyCompliantFactoryCount:expansionLimit,
+        maximumAffordableFactoryCount:affordableFactoryUnits,
+        maximumSelfFinancedFactoryCount:affordableFactoryUnits===null||expansionLimit===null?null:
+          Math.min(affordableFactoryUnits,expansionLimit),
+        scaleAlternatives:scaleAlternatives,financingAlternatives:financingAlternatives,
+        selectedFinancingStructure:preference,
+        requestedPrivateShareholdingPct:equitySharePct,
+        authority:'RUNTIME_COMPANY_BUDGET_AND_CANONICAL_FACTORY_CAPITAL'},
+      dataConfidence:dataConfidence,
       companyDecision:clone(proposal.companyStrategy||null),
       governmentInvitationId:proposal.governmentInvitationId||null,
       authority:'OMEGA_COMPANY_ORIGINATED_BUSINESS_CASE_V1',simulationOnly:true
@@ -1526,12 +1622,39 @@
   function advanceAutonomousProposalCycle(){
     var cid=playerCountry(),period=Math.floor(turn()/30);
     if(!cid||period<1)return{status:'WAITING',reason:'AUTONOMOUS_PROPOSAL_REVIEW_NOT_DUE'};
-    var r=runtime(cid,true);
-    if(r.lastAutonomousProposalPeriod===period)return{status:'DUPLICATE',period:period};
+    var r=runtime(cid,true),cycle=r.autonomousProposalCycle;
+    if(!obj(cycle)||num(cycle.period)!==period){
+      // Saves created by the previous one-company-per-month scheduler used this
+      // marker to mean "the entire period is consumed". Preserve that meaning once
+      // during migration; new cycles use the explicit cursor below.
+      if(num(r.lastAutonomousProposalPeriod)===period)return{status:'DUPLICATE',period:period};
+      cycle={schemaVersion:1,period:period,nextCompanyIndex:0,lastProcessedTurn:null,
+        processedCompanyIds:[],status:'RUNNING',startedTurn:turn(),completedTurn:null};
+      r.autonomousProposalCycle=cycle;
+    }
+    if(cycle.status==='COMPLETE'||num(cycle.nextCompanyIndex)>=COMPANY_IDS.length){
+      cycle.status='COMPLETE';cycle.completedTurn=cycle.completedTurn||turn();
+      r.lastAutonomousProposalPeriod=period;
+      return{status:'DUPLICATE',period:period,reason:'AUTONOMOUS_COMPANY_CYCLE_COMPLETE'};
+    }
+    if(num(cycle.lastProcessedTurn)===turn())
+      return{status:'DUPLICATE',period:period,reason:'COMPANY_ALREADY_REVIEWED_THIS_TURN'};
     var base=baseline(cid);
     if(!base||base.status!=='READY')return{status:'WAITING',reason:'PRIVATE_BASELINE_NOT_READY',period:period};
-    r.lastAutonomousProposalPeriod=period;
-    var companyIndex=(period-1)%COMPANY_IDS.length,company=COMPANY_IDS[companyIndex];
+    var companyIndex=Math.max(0,Math.min(COMPANY_IDS.length-1,Math.floor(num(cycle.nextCompanyIndex)||0))),
+      company=COMPANY_IDS[(period-1+companyIndex)%COMPANY_IDS.length];
+    // The cursor is durable and advances before the company is evaluated. A failed
+    // opportunity is not rescanned repeatedly, and no turn evaluates more than one
+    // company's portfolio. This bounds main-thread work and makes event replay safe.
+    cycle.lastProcessedTurn=turn();
+    cycle.nextCompanyIndex=companyIndex+1;
+    if(!Array.isArray(cycle.processedCompanyIds))cycle.processedCompanyIds=[];
+    cycle.processedCompanyIds.push(company);
+    if(cycle.processedCompanyIds.length>COMPANY_IDS.length)
+      cycle.processedCompanyIds.splice(0,cycle.processedCompanyIds.length-COMPANY_IDS.length);
+    if(cycle.nextCompanyIndex>=COMPANY_IDS.length){
+      cycle.status='COMPLETE';cycle.completedTurn=turn();r.lastAutonomousProposalPeriod=period;
+    }else cycle.status='RUNNING';
     var pendingNegotiation=r.proposals.find(function(row){return row&&row.companyId===company&&row.status==='NEGOTIATION_PENDING_COMPANY';});
     if(pendingNegotiation){
       var counter=pendingNegotiation.governmentCounterOffer||{},
@@ -1570,20 +1693,34 @@
     }
     var selectionOrder=Object.create(null);
     eligible.forEach(function(type,index){selectionOrder[type]=index;});
-    var marketApi=g.Omega&&(g.Omega.GlobalMarket||g.Omega.globalMarket)||g.OmegaGlobalMarket||null;
+    var marketSource=g.Omega&&(g.Omega.GlobalMarket||g.Omega.globalMarket)||g.OmegaGlobalMarket||null,
+      marketQuoteCache=Object.create(null),marketApi=marketSource?Object.create(null):null;
+    if(marketApi){
+      // A cycle evaluates a bounded number of categories/resources. Reuse each
+      // current-turn quote rather than querying the order book once per scenario.
+      marketApi.quote=function(resourceId){
+        var key=token(resourceId);
+        if(!Object.prototype.hasOwnProperty.call(marketQuoteCache,key)){
+          try{marketQuoteCache[key]=typeof marketSource.quote==='function'
+            ?marketSource.quote(resourceId)||{}:{};}catch(_){marketQuoteCache[key]={};}
+        }
+        return marketQuoteCache[key];
+      };
+      ['localPrice','suppliers','privateCompanySuppliers'].forEach(function(method){
+        if(typeof marketSource[method]==='function')
+          marketApi[method]=function(){return marketSource[method].apply(marketSource,arguments);};
+      });
+    }
     function quote(resourceId){
       try{return marketApi&&typeof marketApi.quote==='function'?marketApi.quote(resourceId)||{}:{};}catch(_){return{};}
     }
-    function evaluate(type){
+    function evaluate(type,requestedProcessingResourceId){
       var profile=(catalog()||{}).factoryProfiles&&catalog().factoryProfiles[type];
       if(!profile)return null;
       var processingResourceId=null;
       if(type==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'){
-        processingResourceId=invitation&&invitation.processingResourceId||null;
-        if(!processingResourceId){
-          var universal=listUniversalProcessingResources();
-          processingResourceId=universal.length?universal[0].id:null;
-        }
+        processingResourceId=invitation&&invitation.processingResourceId||requestedProcessingResourceId||null;
+        if(!processingResourceId)return null;
       }
       var recipe=recipeFor(type,profile,processingResourceId);
       if(!recipe)return null;
@@ -1604,22 +1741,43 @@
           referencePrice=num(row.referencePriceUsd===undefined?row.referencePrice:row.referencePriceUsd),
           perUnit=num(outputs[resourceId]),
           oneFactoryTurn=perUnit===null?null:perUnit*dailyCapacity*daysPerTurn,
+          oneFactory30Day=perUnit===null?null:perUnit*dailyCapacity*30,
+          domesticDemand=currentDomesticDemandEvidence(cid,resourceId),
+          domesticOutput=currentDomesticOutputEvidence(cid,resourceId),
+          domesticStock=currentProcessedStockEvidence(cid,resourceId),
+          domesticNeed30=domesticDemand.status==='CURRENT_TURN'?domesticDemand.demandPerDay*30:null,
+          domesticSupply30=domesticOutput.existingOutputPerDay===null?null:domesticOutput.existingOutputPerDay*30,
+          unmetDomesticDemand30=domesticNeed30===null||domesticSupply30===null||domesticStock.free===null
+            ?null:Math.max(0,domesticNeed30-domesticSupply30-domesticStock.free),
+          unmatchedBuyerOrderDepth=currentTurnEvidence&&bidDepth!==null&&matched!==null
+            ?Math.max(0,bidDepth-matched):null,
+          domesticScaleUnits=unmetDomesticDemand30===null||oneFactory30Day===null||oneFactory30Day<=0
+            ?0:Math.ceil(unmetDomesticDemand30/oneFactory30Day),
+          orderBookScaleUnits=unmatchedBuyerOrderDepth===null||oneFactoryTurn===null||oneFactoryTurn<=0
+            ?0:Math.ceil(unmatchedBuyerOrderDepth/oneFactoryTurn),
+          matchedScaleUnits=currentTurnEvidence&&oneFactoryTurn!==null&&oneFactoryTurn>0
+            ?Math.ceil(matched/oneFactoryTurn):0,
           signal='UNOBSERVED_OR_STALE',score=-5;
+        demandSupportedUnits=Math.max(demandSupportedUnits,domesticScaleUnits,orderBookScaleUnits,matchedScaleUnits);
         if(currentTurnEvidence&&matched>0){
           signal='CURRENT_TURN_MATCHED_ORDER_VOLUME';score=32;
-          if(oneFactoryTurn!==null&&oneFactoryTurn>0)
-            demandSupportedUnits=Math.max(demandSupportedUnits,Math.ceil(matched/oneFactoryTurn));
-        }else if(currentTurnEvidence&&bidDepth>0){signal='CURRENT_TURN_OPEN_BUY_ORDER_DEPTH';score=22;}
-        else if(currentTurnEvidence&&((price&&price.unitPrice>0)||(referencePrice!==null&&referencePrice>0))){
+        }else if(currentTurnEvidence&&unmatchedBuyerOrderDepth!==null&&unmatchedBuyerOrderDepth>0){
+          signal='CURRENT_TURN_OPEN_BUY_ORDER_DEPTH';score=22;
+        }else if(currentTurnEvidence&&((price&&price.unitPrice>0)||(referencePrice!==null&&referencePrice>0))){
           signal='CURRENT_TURN_REFERENCE_PRICE_ONLY';score=8;
         }
         else if(currentTurnEvidence){signal='NO_VERIFIED_MARKET_SIGNAL';score=-4;}
         marketSignals.push({resourceId:resourceId,signal:signal,marketStatus:row.status||'UNAVAILABLE',
           priceDiscovery:row.priceDiscovery||'UNAVAILABLE',generatedTurn:num(row.generatedTurn),
           evaluatedTurn:turn(),currentTurnEvidence:currentTurnEvidence,matchedQuantity:matched,bidDepth:bidDepth,
-          askDepth:askDepth,bestBidUsd:num(row.bestBidUsd),bestAskUsd:num(row.bestAskUsd),
+          askDepth:askDepth,unmatchedBuyerOrderDepth:unmatchedBuyerOrderDepth,
+          unmetDomesticDemand30Day:unmetDomesticDemand30,domesticDemandEvidenceStatus:domesticDemand.status,
+          domesticOutputEvidenceStatus:domesticOutput.status,processedStockEvidenceStatus:domesticStock.status,
+          domesticScaleUnits:domesticScaleUnits,orderBookScaleUnits:orderBookScaleUnits,
+          bestBidUsd:num(row.bestBidUsd),bestAskUsd:num(row.bestAskUsd),
           referencePriceUsd:referencePrice,localMarketPrice:price,score:score,
-          capacityPerFactoryPerTurn:oneFactoryTurn,gameDaysPerTurn:daysPerTurn});
+          capacityPerFactoryPerTurn:oneFactoryTurn,capacityPerFactory30Day:oneFactory30Day,
+          gameDaysPerTurn:daysPerTurn});
       });
       var quantity=Math.min(maximum,Math.max(1,Math.floor(demandSupportedUnits)));
       var firstInputs=inputForecast(cid,profile,recipe,quantity),
@@ -1699,10 +1857,33 @@
         assessment:assessment,sourcingPolicy:sourcingPolicy,
         demandSupportedUnits:demandSupportedUnits};
     }
-    var candidates=eligible.map(evaluate).filter(Boolean);
+    var candidates=[],candidateOrder=0,universalEvaluated=0;
+    eligible.forEach(function(type){
+      if(type==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'){
+        var resources=listUniversalProcessingResources();
+        if(invitation&&invitation.processingResourceId){
+          resources=resources.filter(function(row){return id(row.id)===id(invitation.processingResourceId);});
+        }else if(resources.length>MAX_UNIVERSAL_RESOURCE_EVALUATIONS_PER_COMPANY_TURN){
+          var offset=((period-1)*MAX_UNIVERSAL_RESOURCE_EVALUATIONS_PER_COMPANY_TURN+companyIndex)%resources.length,
+            bounded=[];
+          for(var ri=0;ri<MAX_UNIVERSAL_RESOURCE_EVALUATIONS_PER_COMPANY_TURN;ri++)
+            bounded.push(resources[(offset+ri)%resources.length]);
+          resources=bounded;
+        }
+        resources.forEach(function(resource){
+          universalEvaluated++;
+          var candidate=evaluate(type,resource.id);
+          if(candidate){candidate.evaluationOrder=candidateOrder++;candidates.push(candidate);}
+        });
+      }else{
+        var candidate=evaluate(type,null);
+        if(candidate){candidate.evaluationOrder=candidateOrder++;candidates.push(candidate);}
+      }
+    });
     if(!candidates.length)return{status:invitation?'INVITATION_NOT_FEASIBLE':'NO_FEASIBLE_COMPANY_INVESTMENT',
-      companyId:company,period:period,invitationId:invitation&&invitation.invitationId||null};
-    candidates.sort(function(a,b){return b.totalScore-a.totalScore||selectionOrder[a.factoryType]-selectionOrder[b.factoryType];});
+      companyId:company,period:period,invitationId:invitation&&invitation.invitationId||null,
+      cycleProgress:{processedCompanies:cycle.processedCompanyIds.slice(),remainingCompanies:Math.max(0,COMPANY_IDS.length-cycle.nextCompanyIndex)}};
+    candidates.sort(function(a,b){return b.totalScore-a.totalScore||a.evaluationOrder-b.evaluationOrder;});
     var selected=candidates[0],selectedProfile=(catalog()||{}).factoryProfiles[selected.factoryType],
       capital=capitalAccount(cid,company,false),cash=capital?num(capital.availableBalance):null,
       required=selected.capitalRequired,fundingGap=cash===null?null:Math.max(0,(required||0)-cash),
@@ -1762,6 +1943,7 @@
         decisionTurn:turn(),selectionMethod:'HIGHEST_CURRENT_MARKET_SUPPLY_OPERATIONAL_AND_CAPITAL_SCORE_WITH_DOMESTIC_DEMAND_GAP_EXPORT_PROCESSING_INTERNATIONAL_ORDER_BOOK_FINANCIAL_FEASIBILITY_AND_PROFITABILITY_EVIDENCE',
         confidence:selected.totalScore>=45?'HIGH':selected.totalScore>=20?'MEDIUM':'LOW',
         horizonDays:30,selectedOpportunity:{factoryType:selected.factoryType,factoryName:selected.factoryName,
+          processingResourceId:selected.processingResourceId||null,
           requestedFactoryCount:selected.quantity,totalScore:selected.totalScore,
           marketScore:selected.marketScore,supplyScore:selected.supplyScore,
           domesticDemandScore:selected.domesticDemandScore,internationalDemandScore:selected.internationalDemandScore,
@@ -1773,7 +1955,12 @@
           marketSignals:clone(selected.marketSignals),marketOpportunity:clone(selected.marketOpportunity),supplyStatus:selected.supplyStatus,
           operationalStatus:selected.operationalStatus,capitalRequired:selected.capitalRequired,
           companyCashAvailable:selected.companyCashAvailable},
+        alternativesEvaluated:{factoryCategoryCount:eligible.length,
+          universalProcessingResourceCount:universalEvaluated,
+          universalProcessingResourceLimit:MAX_UNIVERSAL_RESOURCE_EVALUATIONS_PER_COMPANY_TURN,
+          totalCandidateCount:candidates.length},
         alternativesConsidered:candidates.map(function(row){return{factoryType:row.factoryType,
+          processingResourceId:row.processingResourceId||null,
           requestedFactoryCount:row.quantity,totalScore:row.totalScore,marketScore:row.marketScore,
           supplyScore:row.supplyScore,domesticDemandScore:row.domesticDemandScore,
           internationalDemandScore:row.internationalDemandScore,processingOpportunityScore:row.processingOpportunityScore,
@@ -1877,19 +2064,29 @@
     var cid=playerCountry(),period=Math.floor(turn()/30);
     if(!cid||period<1)return;
     var r=runtime(cid,true);
-    if(r.lastAutonomousProposalPeriod===period||r.pendingAutonomousProposalPeriod===period)return;
-    r.pendingAutonomousProposalPeriod=period;
+    var r=runtime(cid,true),cycle=r.autonomousProposalCycle,scheduledTurn=turn();
+    if(r.lastAutonomousProposalPeriod===period||
+       (obj(cycle)&&num(cycle.period)===period&&
+        (cycle.status==='COMPLETE'||num(cycle.nextCompanyIndex)>=COMPANY_IDS.length||
+         num(cycle.lastProcessedTurn)===scheduledTurn))||
+       num(r.pendingAutonomousProposalTurn)===scheduledTurn)return;
+    r.pendingAutonomousProposalTurn=scheduledTurn;
+    // Clear the old period-scoped marker when migrating a saved session from the
+    // previous scheduler. The new in-flight guard is turn-scoped.
+    if(num(r.pendingAutonomousProposalPeriod)===period)r.pendingAutonomousProposalPeriod=null;
     var registry=g.OmegaPrivateEnterpriseRegistryV1||(g.Omega&&g.Omega.PrivateEnterpriseRegistryV1);
     var ready;
     try{ready=registry&&registry.ready;}catch(error){ready=Promise.reject(error);}
     Promise.resolve(ready).then(function(){
       var current=runtime(cid,true);
-      if(current&&current.pendingAutonomousProposalPeriod===period)current.pendingAutonomousProposalPeriod=null;
-      if(playerCountry()!==cid||Math.floor(turn()/30)!==period)return;
+      if(current&&num(current.pendingAutonomousProposalTurn)===scheduledTurn)
+        current.pendingAutonomousProposalTurn=null;
+      if(playerCountry()!==cid||turn()!==scheduledTurn||Math.floor(turn()/30)!==period)return;
       advanceAutonomousProposalCycle();
     }).catch(function(){
       var current=runtime(cid,true);
-      if(current&&current.pendingAutonomousProposalPeriod===period)current.pendingAutonomousProposalPeriod=null;
+      if(current&&num(current.pendingAutonomousProposalTurn)===scheduledTurn)
+        current.pendingAutonomousProposalTurn=null;
     });
   }
   function onCommittedSimulationTurn(event){
@@ -4121,7 +4318,7 @@
         '<small>The company must provide supplier contracts, deliverable volumes, sourcing routes and logistics evidence. The government independently verifies the supplier evidence submitted by the company. Potential suppliers are not secured supply; no signed contract or reserved supply is recorded in this proposal.</small></div>';
       var economics=companyCase.unitEconomics||{},domesticEconomics=economics.domesticProduction||{},
         importedEconomics=economics.importedInputProduction||{};
-      var economicsInputMarkup=(economics.inputs||[]).map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b><br>30-day need '+caseAmount(row.required30Day)+'</span><span>Domestic quantity<br><b>'+caseAmount(row.domesticQuantity)+'</b></span><span>Imported quantity<br><b>'+caseAmount(row.importQuantity)+'</b></span><span>Domestic input cost<br><b>'+caseAmount(row.domesticCost)+'</b></span><span>Import commodity cost<br><b>'+caseAmount(row.importCommodityCost)+'</b></span><span>Import landed cost<br><b>'+escapeHtml(row.importLandedCostStatus||'UNOBSERVED')+'</b></span></div>';}).join('');
+      var economicsInputMarkup=(economics.inputs||[]).map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b><br>30-day need '+caseAmount(row.required30Day)+'</span><span>Domestic quantity<br><b>'+caseAmount(row.domesticQuantity)+'</b></span><span>Imported quantity<br><b>'+caseAmount(row.importQuantity)+'</b></span><span>Source mix<br><b>'+caseAmount(row.domesticSharePct)+'% / '+caseAmount(row.importSharePct)+'%</b></span><span>Domestic input cost<br><b>'+caseAmount(row.domesticCost)+'</b></span><span>Import commodity cost<br><b>'+caseAmount(row.importCommodityCost)+'</b></span><span>Import landed cost<br><b>'+escapeHtml(row.importLandedCostStatus||'UNOBSERVED')+'</b></span><span>Sourcing decision<br><b>'+escapeHtml(row.sourcingDecision||'UNOBSERVED')+'</b></span></div>';}).join('');
       var companyUnitEconomicsMarkup='<div class="pe-input-forecast"><strong>Company profitability scenarios · '+escapeHtml(economics.horizonDays||30)+' days</strong>'+
         '<div class="pe-facts"><span>Domestic input scenario · gross sales <b>'+caseAmount(domesticEconomics.grossSalesCeiling)+'</b></span>'+
         '<span>Domestic input cost <b>'+caseAmount(domesticEconomics.domesticInputCost)+'</b></span>'+
@@ -4141,6 +4338,37 @@
         '<small>'+escapeHtml(importedEconomics.limitation||'Profit/loss remains unresolved where input prices or landed import costs are unavailable.')+'</small>'+
         '<small>All figures are runtime scenarios using observed prices and the configured operating-cost policy. Full-capacity sell-through is not a guaranteed sale; unknown values are not estimated.</small></div>';
       var financing=companyCase.financingOffer||{};
+      var investmentOptions=companyCase.investmentOptions||{},dataConfidence=companyCase.dataConfidence||{};
+      var scaleOptionMarkup=(investmentOptions.scaleAlternatives||[]).map(function(row){
+        return'<div class="pe-input-row"><span><b>'+Number(row.factoryCount||0).toLocaleString('en-US')+' factories</b>'+
+          (row.selected?' · proposed':'')+'</span><span>Daily capacity<br><b>'+caseAmount(row.dailyCapacityForecast)+'</b></span>'+
+          '<span>Construction capital<br><b>'+caseAmount(row.constructionCapitalRequired)+'</b></span>'+
+          '<span>Company cash<br><b>'+caseAmount(row.companyCashAvailable)+'</b></span>'+
+          '<span>Funding gap<br><b>'+caseAmount(row.fundingGap)+'</b></span>'+
+          '<span>Self-financed<br><b>'+(row.canSelfFinance===null?'UNOBSERVED':row.canSelfFinance?'YES':'NO')+'</b></span></div>';
+      }).join('');
+      var financingPathMarkup=(investmentOptions.financingAlternatives||[]).map(function(row){
+        return'<div class="pe-input-row"><span><b>'+escapeHtml(row.structure)+'</b></span>'+
+          '<span>Status<br><b>'+escapeHtml(row.status)+'</b></span>'+
+          '<span>Amount / gap<br><b>'+caseAmount(row.requestedAmount!==undefined?row.requestedAmount:row.fundingGap)+'</b></span>'+
+          (row.requestedSharePct!==undefined?'<span>Indicative share<br><b>'+caseAmount(row.requestedSharePct)+'%</b></span>':'')+
+        '</div>';
+      }).join('');
+      var companyOptionsMarkup='<div class="pe-input-forecast"><strong>Flexible investment scale and financing alternatives</strong>'+
+        '<div class="pe-facts"><span>Proposed factories <b>'+caseAmount(investmentOptions.proposedFactoryCount)+'</b></span>'+
+        '<span>Policy expansion ceiling <b>'+caseAmount(investmentOptions.maximumPolicyCompliantFactoryCount)+'</b></span>'+
+        '<span>Budget-affordable factories <b>'+caseAmount(investmentOptions.maximumAffordableFactoryCount)+'</b></span>'+
+        '<span>Maximum self-financed factories <b>'+caseAmount(investmentOptions.maximumSelfFinancedFactoryCount)+'</b></span></div>'+
+        (scaleOptionMarkup||'<span class="pe-info">Alternative scale cannot be calculated from the currently recorded capital/expansion data.</span>')+
+        '<strong>Funding routes the company considered</strong>'+
+        (financingPathMarkup||'<span class="pe-info">No financing alternative could be calculated.</span>')+
+        '<strong>Evidence coverage: '+escapeHtml(dataConfidence.status||'UNOBSERVED')+' · '+caseAmount(dataConfidence.coveragePct)+'%</strong>'+
+        '<div class="pe-facts"><span>Current order books <b>'+caseAmount(dataConfidence.currentTurnOrderBook&&dataConfidence.currentTurnOrderBook.observed)+' / '+caseAmount(dataConfidence.currentTurnOrderBook&&dataConfidence.currentTurnOrderBook.total)+'</b></span>'+
+        '<span>Domestic demand/supply <b>'+caseAmount(dataConfidence.domesticDemandAndSupply&&dataConfidence.domesticDemandAndSupply.observed)+' / '+caseAmount(dataConfidence.domesticDemandAndSupply&&dataConfidence.domesticDemandAndSupply.total)+'</b></span>'+
+        '<span>Raw export signals <b>'+caseAmount(dataConfidence.rawMaterialExportSignals&&dataConfidence.rawMaterialExportSignals.observed)+' / '+caseAmount(dataConfidence.rawMaterialExportSignals&&dataConfidence.rawMaterialExportSignals.total)+'</b></span>'+
+        '<span>Input availability <b>'+caseAmount(dataConfidence.inputAvailability&&dataConfidence.inputAvailability.observed)+' / '+caseAmount(dataConfidence.inputAvailability&&dataConfidence.inputAvailability.total)+'</b></span>'+
+        '<span>Observed prices <b>'+caseAmount(dataConfidence.currentPriceObservations&&dataConfidence.currentPriceObservations.observed)+' / '+caseAmount(dataConfidence.currentPriceObservations&&dataConfidence.currentPriceObservations.total)+'</b></span></div>'+
+        '<small>Evidence coverage describes recorded observations only. Missing prices, demand, supplier capacity or import landed costs stay unresolved; they never become zero or assumed profit.</small></div>';
       var companyFinanceOfferMarkup='<div class="pe-input-forecast"><strong>Company financing offer / request</strong>'+
         '<div class="pe-facts"><span>Preferred structure <b>'+escapeHtml(financing.preferredStructure||'NOT_STATED')+'</b></span>'+
         '<span>Company cash available <b>'+caseAmount(financing.companyCashAvailable)+'</b></span>'+
@@ -4190,7 +4418,7 @@
         '<div><small>Government grant asked</small><strong>'+caseAmount(financing.requestedGovernmentGrant)+' '+escapeHtml(p.capitalUnit||'')+'</strong></div>'+
         '<div><small>Company risk disclosure</small><strong>'+escapeHtml(assessment.riskStatus||'UNRESOLVED')+'</strong></div></div>';
       var companyCaseDetails='<details class="pe-case-details" data-pe-company-case-details><summary>Company business case · market, supply chain, benefits and financing offer</summary><div class="pe-case-body">'+
-        applicationMarkup+companyOpportunityMarkup+companyMarketMarkup+companySupplyMarkup+companyUnitEconomicsMarkup+companyFinanceOfferMarkup+'</div></details>';
+        applicationMarkup+companyOpportunityMarkup+companyMarketMarkup+companySupplyMarkup+companyUnitEconomicsMarkup+companyFinanceOfferMarkup+companyOptionsMarkup+'</div></details>';
       var governmentReviewDetails='<details class="pe-case-details" data-pe-government-review-details><summary>Independent government assessment · market reality, national supply and public risk</summary><div class="pe-case-body">'+
         riskMarkup+readinessMarkup+inputDetails+shortages+unknown+'</div></details>';
       var facts='<div class="pe-facts"><span>Asset owner: '+escapeHtml(COMPANY_NAMES[p.companyId]||p.companyId)+'</span><span>Operator: '+escapeHtml(COMPANY_NAMES[p.operatorCompanyId||p.companyId]||(p.operatorCompanyId||p.companyId))+'</span><span>Factory: '+escapeHtml(p.factoryName)+'</span><span>Quantity: '+p.quantity+'</span><span>Capital: '+(p.capitalRequired===null?'Unquoted':Number(p.capitalRequired).toLocaleString('en-US')+' '+escapeHtml(p.capitalUnit))+'</span><span>Company capital: '+balance.toLocaleString('en-US')+'</span><span>Government factories: '+Number(preview.governmentFactoryCount||0).toLocaleString('en-US')+'</span><span>Private opening allocation: '+Number(preview.openingPrivateAllocation||0).toLocaleString('en-US')+'</span><span>Additional policy ceiling: '+Number(preview.maximumAdditionalUnits||0).toLocaleString('en-US')+'</span><span>Max safe domestic-input factories: '+(preview.maximumSafeDomesticFactoryQuantity===null?'Not observed':Number(preview.maximumSafeDomesticFactoryQuantity).toLocaleString('en-US'))+'</span><span>Daily capacity forecast: '+Number(preview.requestedDailyCapacity||0).toLocaleString('en-US')+'</span><span>Source: '+p.sourcingPolicy.replace(/_/g,' ')+'</span><span>Permit: '+(p.permit?escapeHtml(p.permit.permitId)+' · expires T'+Number(p.permit.expiresAtTurn).toLocaleString('en-US'):'Not issued')+'</span><span>Projects: '+progress+'</span></div>';
