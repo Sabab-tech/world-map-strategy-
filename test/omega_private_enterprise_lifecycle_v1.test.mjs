@@ -273,12 +273,23 @@ test('company investment engine compares eligible factories and submits its own 
     AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',currency:'GAME_CURRENCY_UNITS',
       availableBalance:20,reservedBalance:0,capitalRaised:20,capitalSpent:0,revision:1}
   };
-  h.state.trade={BGD:{marketPrice:{steel:5,copper:11},currencyCode:'GAME_CURRENCY_UNITS'}};
+  h.state.trade={BGD:{marketPrice:{steel:5,copper:11,iron_ore:2},
+    currencyCode:'GAME_CURRENCY_UNITS',settlementCurrency:'GAME_CURRENCY_UNITS'}};
+  h.state.economy.BGD.privateEnterpriseFiscalPolicy={operatingCostPolicy:{
+    currency:'GAME_CURRENCY_UNITS',
+    rates:{electricityPerMWh:1,waterPerM3:1,laborPerWorkerDay:1,
+      maintenancePerFactoryDay:1,overheadPerFactoryDay:1,depreciationPerFactoryDay:1}
+  }};
   h.sandbox.Omega.GlobalMarket={
     quote(resourceId){
       if(resourceId==='copper')return{status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
-        matchedQuantity:15,bidDepth:600,askDepth:80,bestBidUsd:11,bestAskUsd:12,clearingPriceUsd:11,generatedTurn:30};
+        matchedQuantity:15,bidDepth:600,askDepth:80,bestBidUsd:50,bestAskUsd:51,clearingPriceUsd:50,generatedTurn:30};
+      if(resourceId==='iron_ore')return{status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
+        matchedQuantity:2,bidDepth:12,askDepth:8,bestBidUsd:2,bestAskUsd:3,clearingPriceUsd:2,generatedTurn:30};
       return{status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',matchedQuantity:0,bidDepth:0,askDepth:0,generatedTurn:30};
+    },
+    localPrice(countryId,resourceId){
+      return resourceId==='copper'?50:resourceId==='iron_ore'?2:null;
     }
   };
   const beforeInventory=JSON.stringify(h.state.resource.BGD.inventory);
@@ -294,6 +305,16 @@ test('company investment engine compares eligible factories and submits its own 
     'the company proposes scale based on observed matched output-market volume, within the available expansion ceiling');
   assert.equal(proposal.companyStrategy.selectedOpportunity.factoryType,'COPPER_WORKS');
   assert.ok(proposal.companyStrategy.alternativesConsidered.some(row=>row.factoryType==='STEEL_WORKS'));
+  const selectedEconomics=proposal.companyStrategy.selectedOpportunity.unitEconomics;
+  assert.equal(selectedEconomics.importedInputProduction.status,'COMMODITY_COST_ONLY_LANDED_COST_UNOBSERVED');
+  assert.ok(selectedEconomics.importedInputProduction.netBeforeLandedImportCosts>0,
+    'the fixture exposes a positive pre-landed imported-input ceiling');
+  assert.equal(selectedEconomics.importedInputProduction.actualProfitOrLoss,null,
+    'missing freight, insurance, tariff and route costs must keep actual import profit unresolved');
+  assert.equal(proposal.companyStrategy.selectedOpportunity.bestObserved30DayReturnOnProjectCapitalPct,null,
+    'a positive pre-landed ceiling must not be promoted into observed profitability for investment ranking');
+  assert.equal(proposal.companyStrategy.selectedOpportunity.profitabilityScore,-3,
+    'the company receives no positive profitability score until at least one complete scenario is calculated');
   assert.equal(proposal.companyCase.projectOffer.requestedFactoryCount,2);
   assert.equal(proposal.companyCase.projectOffer.constructionDurationDays,90);
   assert.equal(proposal.companyCase.financingOffer.companyCapitalOffer,20);
