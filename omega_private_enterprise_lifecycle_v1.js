@@ -4360,6 +4360,30 @@
   }
   function bindUi(root){
     if(root.__omegaPrivateEnterpriseUiBound||typeof root.addEventListener!=='function')return;
+    // Keep an already-open government Production Lines panel in sync when a
+    // company agent submits or updates a proposal. The proposal and its market
+    // brief are committed before the lifecycle event is emitted; defer one
+    // render so multiple related events coalesce into a single UI refresh.
+    if(typeof g.addEventListener==='function'){
+      g.addEventListener('OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_CHANGED',function(event){
+        var detail=event&&event.detail||{},eventType=String(detail.eventType||'').toUpperCase(),
+          country=canonicalCountry(detail.countryId||''),
+          active=canonicalCountry(root.__omegaV2IndustryCountryId||playerCountry());
+        if(!country||country!==active||active!==playerCountry())return;
+        if(['COMPANY_MARKET_RESEARCH_REQUEST_SUBMITTED','AUTONOMOUS_COMPANY_PROPOSAL_SUBMITTED',
+          'COMPANY_RESPONDED_TO_GOVERNMENT_INVITATION','COMPANY_PROPOSAL_DECIDED'].indexOf(eventType)<0)return;
+        if(root.__omegaV2IndustryTab!=='production-lines'||root.__omegaPrivateLifecycleRefreshPending)return;
+        root.__omegaPrivateLifecycleRefreshPending=true;
+        var schedule=typeof g.setTimeout==='function'?g.setTimeout:function(fn){Promise.resolve().then(fn);};
+        schedule.call(g,function(){
+          root.__omegaPrivateLifecycleRefreshPending=false;
+          if(root.__omegaV2IndustryTab!=='production-lines')return;
+          var current=g.OmegaUIV2Industry,options=root.__omegaV2IndustryOptions||{};
+          if(current&&typeof current.render==='function')current.render(root,Object.assign({},options,{
+            countryId:root.__omegaV2IndustryCountryId||playerCountry(),tab:'production-lines'}));
+        },0);
+      });
+    }
     root.addEventListener('submit',function(event){
       var form=event.target;if(!form||!form.matches)return;
       if(form.matches('[data-pe-capital-form]')){
