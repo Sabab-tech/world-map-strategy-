@@ -1079,22 +1079,24 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         row.operation?.commercialExtraction !== false);
       const scopedSiteId = String(scopedSite?.siteId || '').trim();
       if (!scopedSiteId) throw new Error('SAB34_TEST_SCOPED_COAL_SITE_NOT_FOUND');
-      // The canonical endowment API is Object.freeze()'d, so assigning directly
-      // to startCountryProduction would be ignored. Wrap the public runtime in a
-      // test-only Proxy and bind every other API method back to the frozen target.
-      const scopedEndowment = new Proxy(endowment, {
-        get(target, property) {
-          if (property === 'startCountryProduction') {
-            return function(countryId, siteIds = null, options = {}) {
-              const scope = String(countryId || '').trim().toUpperCase() === 'BGD' &&
-                (!Array.isArray(siteIds) || siteIds.length === 0) ? [scopedSiteId] : siteIds;
-              return target.startCountryProduction.call(target, countryId, scope, options);
-            };
-          }
-          const value = Reflect.get(target, property, target);
-          return typeof value === 'function' ? value.bind(target) : value;
+      // The canonical endowment API is Object.freeze()'d. Build a shallow facade
+      // instead of mutating or proxying that frozen object (whose methods are
+      // non-configurable): keep every public method bound to the original runtime,
+      // replacing only the default all-sites production call for this one-site proof.
+      const scopedEndowment = {};
+      for (const key of Object.keys(endowment)) {
+        const value = endowment[key];
+        if (key === 'startCountryProduction') {
+          scopedEndowment[key] = function(countryId, siteIds = null, options = {}) {
+            const scope = String(countryId || '').trim().toUpperCase() === 'BGD' &&
+              (!Array.isArray(siteIds) || siteIds.length === 0) ? [scopedSiteId] : siteIds;
+            return value.call(endowment, countryId, scope, options);
+          };
+        } else {
+          scopedEndowment[key] = typeof value === 'function' ? value.bind(endowment) : value;
         }
-      });
+      }
+      Object.freeze(scopedEndowment);
       window.OmegaResourceEndowmentRuntime = scopedEndowment;
       window.Omega.ResourceEndowmentRuntime = scopedEndowment;
       window.__sab34ScopedProductionSiteId = scopedSiteId;
