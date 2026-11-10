@@ -1953,8 +1953,8 @@ test('company business case compares bounded sourcing choices and exposes unknow
     'market-data absence must not suppress the company proposal or its research request');
 });
 
-test('fully observed domestic sourcing produces an all-in working-capital budget and caches market reads',()=>{
-  const h=makeHarness(),calls=Object.create(null);
+test('fully observed domestic sourcing produces a conservative startup cost floor when logistics rates are absent',()=>{
+  const h=makeHarness();
   setReadyIronSupply(h,1000);
   h.state.resource.BGD.processedWarehouse={availableByResource:{steel:0},reservedByResource:{}};
   h.state.resource.BGD.demandRuntime.byResource.steel={
@@ -1974,11 +1974,8 @@ test('fully observed domestic sourcing produces an all-in working-capital budget
       availableBalance:5000,reservedBalance:0,capitalRaised:5000,capitalSpent:0,revision:1}
   };
   h.sandbox.Omega.GlobalMarket={
-    quote(resourceId){
-      calls[resourceId]=(calls[resourceId]||0)+1;
-      return{resourceId,status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',
-        generatedTurn:4,matchedQuantity:0,bidDepth:0,askDepth:0,matches:[]};
-    }
+    quote(resourceId){return{resourceId,status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',
+      generatedTurn:4,matchedQuantity:0,bidDepth:0,askDepth:0,matches:[]};}
   };
   const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
     sourcingPolicy:'DOMESTIC_ONLY',requestId:'company-domestic-all-in-budget'});
@@ -1990,17 +1987,23 @@ test('fully observed domestic sourcing produces an all-in working-capital budget
   assert.equal(sourcing.alternatives[0].actualLandedCostTotal,1200);
   assert.equal(sourcing.alternatives[3].recommendedAlternativeId,'DOMESTIC_ONLY');
   const economics=proposal.companyCase.unitEconomics;
-  assert.equal(economics.domesticProduction.status,'CALCULATED');
+  assert.equal(economics.domesticProduction.status,'CALCULATED_BEFORE_LOGISTICS');
   assert.equal(economics.domesticProduction.netOperatingResult,30);
   const budget=proposal.companyCase.financingOffer.startupBudget;
+  assert.equal(budget.selectedSourcingPolicy,'DOMESTIC_ONLY');
+  assert.equal(budget.selectedSourcingAlternativeId,'DOMESTIC_ONLY');
+  assert.equal(budget.observedInputCostSubtotal,1200);
+  assert.equal(budget.operatingCost,270);
   assert.equal(budget.observedWorkingCapitalSubtotal,1470);
-  assert.equal(budget.completeWorkingCapitalRequirement,1470);
-  assert.equal(budget.completeStartupCapitalRequired,1570);
-  assert.equal(budget.completeStartupFundingGap,0);
-  assert.equal(budget.maximumAffordableAllInFactoryUnits,3);
-  assert.equal(budget.status,'FULL_STARTUP_AFFORDABLE');
+  assert.equal(budget.completeWorkingCapitalRequirement,null,
+    'unpriced domestic haul and finished-goods logistics prevent a complete working-capital claim');
+  assert.equal(budget.logisticsCostStatus,'DOMESTIC_INPUT_TRANSPORT_COST_UNOBSERVED');
+  assert.equal(budget.minimumKnownStartupCapitalFloor,1570);
+  assert.equal(budget.minimumKnownStartupFundingGap,0);
+  assert.equal(budget.completeStartupCapitalRequired,null);
+  assert.equal(budget.completeStartupFundingGap,null);
+  assert.equal(budget.maximumAffordableAllInFactoryUnits,null);
+  assert.equal(budget.status,'CONSTRUCTION_ONLY_AFFORDABLE_WORKING_CAPITAL_UNRESOLVED');
   assert.equal(proposal.companyCase.financingOffer.financingAlternatives.find(row=>row.id==='COMPANY_CASH').status,
-    'FULL_STARTUP_AFFORDABLE');
-  assert.deepEqual(calls,{steel:1,iron_ore:1},
-    'each resource quote is read once per proposal business case rather than repeatedly across UI/economics passes');
+    'CONSTRUCTION_ONLY_AFFORDABLE_WORKING_CAPITAL_UNRESOLVED');
 });

@@ -727,19 +727,24 @@
       importsUsed=inputRows.some(function(row){return num(row.importQuantity)>0;});
     return{
       horizonDays:30,currency:policyCurrency||null,outputs:outputRows,inputs:inputRows,
-      domesticProduction:{status:domesticCalculated?'CALCULATED':
+      logisticsCostStatus:'DOMESTIC_INPUT_HAUL_AND_FINISHED_GOODS_TRANSPORT_UNOBSERVED',
+      domesticProduction:{status:domesticCalculated?'CALCULATED_BEFORE_LOGISTICS':
           !domesticDemandComplete?'DOMESTIC_DEMAND_OR_PRICE_UNOBSERVED':
           !domesticInputsFeasible?'DOMESTIC_INPUT_SUPPLY_INSUFFICIENT_OR_UNOBSERVED':
           'INCOMPLETE_DOMESTIC_COST_OR_CURRENCY_DATA',
         grossSalesCeiling:domesticRevenue,domesticInputCost:domesticInputCost,operatingCost:operating,
         netOperatingResult:domesticNet,profitMarginPct:domesticMargin,lossMarginPct:domesticLossMargin,
-        resultType:domesticNet===null?'UNRESOLVED':domesticNet>=0?'PROFIT_ON_OBSERVED_DOMESTIC_DEMAND':'LOSS_ON_OBSERVED_DOMESTIC_DEMAND'},
-      domesticInputExport:{status:domesticInputExportCalculated?'CALCULATED':
+        logisticsCost:null,logisticsCostStatus:'DOMESTIC_INPUT_HAUL_AND_FINISHED_GOODS_TRANSPORT_UNOBSERVED',
+        resultBasis:'PRE_LOGISTICS_ESTIMATE_ONLY',
+        resultType:domesticNet===null?'UNRESOLVED':domesticNet>=0?'PRE_LOGISTICS_POSITIVE_RESULT_NOT_FINAL_PROFIT':'PRE_LOGISTICS_NEGATIVE_RESULT_NOT_FINAL_LOSS'},
+      domesticInputExport:{status:domesticInputExportCalculated?'CALCULATED_BEFORE_LOGISTICS':
           !exportDemandComplete?'INTERNATIONAL_DEMAND_OR_PRICE_UNOBSERVED':
           !domesticInputsFeasible?'DOMESTIC_INPUT_SUPPLY_INSUFFICIENT_OR_UNOBSERVED':
           'INCOMPLETE_EXPORT_COST_OR_CURRENCY_DATA',
         grossExportRevenue:exportRevenue,domesticInputCost:domesticInputCost,operatingCost:operating,
-        netOperatingResult:domesticInputExportNet,profitMarginPct:domesticExportMargin},
+        netOperatingResult:domesticInputExportNet,profitMarginPct:domesticExportMargin,
+        logisticsCost:null,logisticsCostStatus:'DOMESTIC_INPUT_HAUL_AND_FINISHED_GOODS_TRANSPORT_UNOBSERVED',
+        resultBasis:'PRE_LOGISTICS_ESTIMATE_ONLY'},
       importedInputProduction:{status:!importsUsed?'NO_IMPORT_REQUIRED':
           importedInputExportCalculated?'COMMODITY_COST_ONLY_LANDED_COST_UNOBSERVED':
           'INTERNATIONAL_DEMAND_INPUT_PRICE_OR_LANDED_COST_UNOBSERVED',
@@ -753,7 +758,7 @@
         actualProfitOrLoss:null,actualProfitMarginPct:null,
         limitation:'Imported input prices require current cleared international trades. Freight, insurance, tariff, route and delivery charges remain unobserved, so final landed-cost profit/loss is unresolved.'},
       authority:'RUNTIME_COMPANY_MARKET_AND_COST_EVIDENCE',
-      limitation:'Domestic sales are capped by observed unmet national demand. Export sales are capped by the current unmatched international buyer order book. Neither is a sales contract. Missing values remain null.'
+      limitation:'Domestic sales are capped by observed unmet national demand. Export sales are capped by the current unmatched international buyer order book. Neither is a sales contract. Domestic haul, finished-goods transport and delivery costs are also unobserved, so calculated domestic/export net results are pre-logistics estimates, not final profit/loss. Missing values remain null.'
     };
   }
   function submitCompanyMarketResearchRequest(proposal){
@@ -4464,8 +4469,8 @@
         '<div class="pe-facts"><span>Domestic input scenario · gross sales <b>'+caseAmount(domesticEconomics.grossSalesCeiling)+'</b></span>'+
         '<span>Domestic input cost <b>'+caseAmount(domesticEconomics.domesticInputCost)+'</b></span>'+
         '<span>Operating cost <b>'+caseAmount(domesticEconomics.operatingCost)+'</b></span>'+
-        '<span>Net operating result <b>'+caseAmount(domesticEconomics.netOperatingResult)+'</b></span>'+
-        '<span>Profit margin <b>'+caseAmount(domesticEconomics.profitMarginPct)+'%</b></span>'+
+        '<span>Net operating result before logistics <b>'+caseAmount(domesticEconomics.netOperatingResult)+'</b></span>'+
+        '<span>Pre-logistics margin <b>'+caseAmount(domesticEconomics.profitMarginPct)+'%</b></span>'+
         '<span>Loss margin <b>'+caseAmount(domesticEconomics.lossMarginPct)+'%</b></span>'+
         '<span>Domestic scenario status <b>'+escapeHtml(domesticEconomics.status||'UNRESOLVED')+'</b></span>'+
         '<span>Domestic input export result <b>'+caseAmount((economics.domesticInputExport||{}).netOperatingResult)+'</b></span>'+
@@ -4494,6 +4499,7 @@
         '<span>Complete startup capital required <b>'+caseAmount(financing.startupBudget&&financing.startupBudget.completeStartupCapitalRequired)+'</b></span>'+
         '<span>Complete startup funding gap <b>'+caseAmount(financing.startupBudget&&financing.startupBudget.completeStartupFundingGap)+'</b></span>'+
         '<span>All-in affordable factory units <b>'+caseAmount(financing.startupBudget&&financing.startupBudget.maximumAffordableAllInFactoryUnits)+'</b></span>'+
+        '<span>Logistics cost status <b>'+escapeHtml(financing.startupBudget&&financing.startupBudget.logisticsCostStatus||'UNOBSERVED')+'</b></span>'+
         '<span>Startup budget status <b>'+escapeHtml(financing.startupBudget&&financing.startupBudget.status||'UNOBSERVED')+'</b></span>'+
         '<span>Indicative partner share requested <b>'+(financing.requestedPrivateShareholdingPct===null?'Not calculated':caseAmount(financing.requestedPrivateShareholdingPct)+'%')+'</b></span>'+
         '<span>Capital required <b>'+caseAmount(financing.constructionCapitalRequired)+'</b></span>'+
