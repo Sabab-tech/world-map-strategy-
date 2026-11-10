@@ -1,7 +1,7 @@
 name: OMEGA Ministry Runtime
 concurrency:
-  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
 
 
 on:
