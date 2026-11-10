@@ -208,7 +208,7 @@
     ],
     trade:[
       'trade.relations','trade.balance','trade.exports','trade.imports',
-      'trade.policy','trade.negotiations','trade.importRequests','trade.offerBook','trade.marketPrice','trade.marketState','trade.marketMeta','trade.routeCapacity','trade.domesticSales'
+      'trade.policy','trade.negotiations','trade.importRequests','trade.offerBook','trade.marketPrice','trade.marketState','trade.marketMeta','trade.routeCapacity','trade.domesticSales','trade.companyMarketResearchRequests'
     ],
     foreign:[
       'foreign.relations','foreign.treaties','foreign.negotiations',

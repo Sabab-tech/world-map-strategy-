@@ -227,4 +227,36 @@ assert.equal(forexFallbackQuote.matchedQuantity,100);
 assert.equal(forexFallbackQuote.matches.some(row=>row.buyerCountryId==='BD'&&row.sellerCountryId==='SA'&&row.quantity===100),true);
 delete globalThis.OmegaForexMonetaryEngine;
 
+// Company market research is an information request, not a fabricated buy order.
+// It must be accepted even when the requested resource has no current executable quote.
+const requestsBefore=globalThis.Game.state.trade.BGD.importRequests.length;
+const ironQuoteWithoutOrders=market.quote('iron_ore');
+assert.notEqual(ironQuoteWithoutOrders.status,'CLEARED',
+  'this scenario deliberately has no current executable iron-ore market clearing');
+const companyResearchPayload={
+  requestId:'COMPANY-RESEARCH-NO-MARKET-DATA-001',
+  companyId:'AURORA_INDUSTRIAL_GROUP',
+  companyName:'Aurora Industrial Group',
+  factoryType:'STEEL_WORKS',
+  factoryCount:1,
+  outputResources:['steel'],
+  inputResources:['iron_ore'],
+  marketScopes:['DOMESTIC','INTERNATIONAL'],
+  analysisHorizonDays:30,
+  requestPurpose:'Assess demand, domestic input sourcing and international opportunity.'
+};
+const researchSubmission=market.requestCompanyResearch('BGD',companyResearchPayload);
+assert.equal(researchSubmission.accepted,true,JSON.stringify(researchSubmission));
+assert.equal(researchSubmission.request.status,'QUEUED');
+assert.equal(researchSubmission.request.responseStatus,'AWAITING_MARKET_EVIDENCE');
+assert.equal(researchSubmission.request.marketScopes.includes('DOMESTIC'),true);
+assert.equal(researchSubmission.request.marketScopes.includes('INTERNATIONAL'),true);
+assert.equal(globalThis.Game.state.trade.BGD.importRequests.length,requestsBefore,
+  'research submission must not create an import trade order');
+const repeatedResearchSubmission=market.requestCompanyResearch('BGD',companyResearchPayload);
+assert.equal(repeatedResearchSubmission.accepted,true,JSON.stringify(repeatedResearchSubmission));
+assert.equal(repeatedResearchSubmission.duplicate,true,'the same research request must be idempotent');
+assert.equal(market.getCompanyResearchRequests('BGD','AURORA_INDUSTRIAL_GROUP').length,1);
+assert.equal(globalThis.Game.state.trade.BGD.importRequests.length,requestsBefore);
+
 console.log('OMEGA GLOBAL MARKET CLEARING TEST PASSED');

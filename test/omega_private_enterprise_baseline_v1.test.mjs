@@ -116,6 +116,13 @@ test('private enterprise registry defers baseline fetch and JSON parsing until f
    'government may publish a separate tender instead of preparing a company application');
   assert.match(lifecycle,/data-pe-counter-form/,
    'government can negotiate a proposal without becoming the applicant');
+  assert.match(lifecycle,/HIGHEST_CURRENT_MARKET_SUPPLY_OPERATIONAL_AND_CAPITAL_SCORE/,
+   'company agents must compare market, supply, readiness and capital before choosing a project');
+  assert.match(lifecycle,/data-pe-offer-summary/,
+   'the government inbox must show the company offer as a decision card');
+  assert.match(lifecycle,/data-pe-company-case-details/);
+  assert.match(lifecycle,/data-pe-government-review-details/,
+   'company evidence and independent government assessment must remain separate');
   assert.match(lifecycle,/bindUi\(root\);\s*return;/,
    'the retry action must remain connected while company baseline data is waiting');
  assert.match(industry,/privateRuntime\.ready/);

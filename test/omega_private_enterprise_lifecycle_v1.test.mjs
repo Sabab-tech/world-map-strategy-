@@ -234,6 +234,210 @@ test('company proposal includes its own market analysis, supply-chain proof and 
   assert.equal(proposal.companyCase.financingOffer.settlementStatus,'PROPOSAL_ONLY_NOT_SETTLED');
   assert.equal(proposal.companyCase.supplyChainProof.externalSupplierStatus,
     'AVAILABILITY_IS_NOT_A_SIGNED_CONTRACT_OR_DELIVERY');
+  assert.equal(proposal.marketResearchRequest.status,'QUEUED_LOCAL_MARKET_HANDOFF',
+    'the company must submit a research request even when no global market connector is available');
+  assert.equal(proposal.marketResearchRequest.responseStatus,'AWAITING_MARKET_EVIDENCE');
+  assert.deepEqual(JSON.parse(JSON.stringify(proposal.marketResearchRequest.request.marketScopes)),['DOMESTIC','INTERNATIONAL']);
+  assert.equal(proposal.companyCase.marketAnalysis.researchRequest.requestId,proposal.marketResearchRequest.requestId);
+  assert.equal(proposal.companyCase.marketAnalysis.domesticDemand[0].status,'UNOBSERVED',
+    'missing domestic demand evidence must remain unobserved instead of being treated as zero');
+  assert.equal(proposal.companyCase.marketAnalysis.internationalDemand[0].globalMatchedDemand,null,
+    'an aggregate quote without country-level match rows cannot prove a country-specific export quantity');
+  assert.equal(proposal.companyCase.marketAnalysis.exportProcessingOpportunities[0].status,'UNOBSERVED_OR_STALE',
+    'missing country-level export evidence must not be misreported as zero exports');
+  assert.equal(proposal.companyCase.unitEconomics.domesticProduction.netOperatingResult,null);
+  assert.equal(proposal.companyCase.unitEconomics.importedInputProduction.actualProfitOrLoss,null);
+  assert.equal(h.api.getCountryDashboard('BGD').marketResearchRequests.length,1);
+});
+
+
+test('company investment engine compares eligible factories and submits its own scale, construction and financing terms',()=>{
+  const h=makeHarness();
+  const isolatedCatalog=JSON.parse(JSON.stringify(catalog));
+  isolatedCatalog.factoryProfiles.COPPER_WORKS={
+    factoryType:'COPPER_WORKS',name:'Copper Works',defaultRecipeId:'COPPER_ROUTE',
+    constructionCost:30,constructionDays:90,defaultCapacityPerDay:10,
+    constructionMaterials:{construction_aggregate:5},constructionMaterialUnit:'SIMULATION_RESOURCE_UNIT',
+    workforce:{operators:2},utilities:{electricityMWhPerDay:1},unit:'GAME_CURRENCY_UNITS'
+  };
+  isolatedCatalog.downstreamFactoryRecipes.COPPER_ROUTE={
+    recipeId:'COPPER_ROUTE',factoryType:'COPPER_WORKS',inputs:{iron_ore:1},outputs:{copper:1},cycleDays:1
+  };
+  h.sandbox.OmegaResourceIndustrialCatalogData=isolatedCatalog;
+  const registry=h.sandbox.OmegaPrivateEnterpriseRegistryV1;
+  const originalBaseline=registry.getCountryBaseline.bind(registry);
+  registry.getCountryBaseline=function(countryId){
+    const row=originalBaseline(countryId);
+    row.governmentFactoryCounts.COPPER_WORKS=20;
+    row.factoryCounts.COPPER_WORKS=10;
+    row.companies.forEach(company=>{company.factoryCounts.COPPER_WORKS=1;});
+    return row;
+  };
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',currency:'GAME_CURRENCY_UNITS',
+      availableBalance:20,reservedBalance:0,capitalRaised:20,capitalSpent:0,revision:1}
+  };
+  h.state.trade={BGD:{marketPrice:{steel:5,copper:11,iron_ore:2},
+    currencyCode:'GAME_CURRENCY_UNITS',settlementCurrency:'GAME_CURRENCY_UNITS'}};
+  h.state.economy.BGD.privateEnterpriseFiscalPolicy={operatingCostPolicy:{
+    currency:'GAME_CURRENCY_UNITS',
+    rates:{electricityPerMWh:1,waterPerM3:1,laborPerWorkerDay:1,
+      maintenancePerFactoryDay:1,overheadPerFactoryDay:1,depreciationPerFactoryDay:1}
+  }};
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){
+      if(resourceId==='copper')return{status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
+        matchedQuantity:15,bidDepth:600,askDepth:80,bestBidUsd:50,bestAskUsd:51,clearingPriceUsd:50,generatedTurn:30};
+      if(resourceId==='iron_ore')return{status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
+        matchedQuantity:2,bidDepth:12,askDepth:8,bestBidUsd:2,bestAskUsd:3,clearingPriceUsd:2,generatedTurn:30};
+      return{status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',matchedQuantity:0,bidDepth:0,askDepth:0,generatedTurn:30};
+    },
+    localPrice(countryId,resourceId){
+      return resourceId==='copper'?50:resourceId==='iron_ore'?2:null;
+    }
+  };
+  const beforeInventory=JSON.stringify(h.state.resource.BGD.inventory);
+  const beforeTreasury=h.state.finance.BGD.available;
+  h.state.simulation.turn=30;
+  const result=h.api.advanceAutonomousProposalCycle();
+  assert.equal(result.status,'PROPOSED',JSON.stringify(result));
+  const proposal=result.proposal;
+  assert.equal(proposal.companyId,'AURORA_INDUSTRIAL_GROUP');
+  assert.equal(proposal.factoryType,'COPPER_WORKS',
+    'the company must rank all eligible opportunities using market evidence, not choose the first alphabetic category');
+  assert.equal(proposal.quantity,2,
+    'the company proposes scale based on observed matched output-market volume, within the available expansion ceiling');
+  assert.equal(proposal.companyStrategy.selectedOpportunity.factoryType,'COPPER_WORKS');
+  assert.ok(proposal.companyStrategy.alternativesConsidered.some(row=>row.factoryType==='STEEL_WORKS'));
+  const selectedEconomics=proposal.companyStrategy.selectedOpportunity.unitEconomics;
+  assert.equal(selectedEconomics.importedInputProduction.status,'COMMODITY_COST_ONLY_LANDED_COST_UNOBSERVED');
+  assert.ok(selectedEconomics.importedInputProduction.netBeforeLandedImportCosts>0,
+    'the fixture exposes a positive pre-landed imported-input ceiling');
+  assert.equal(selectedEconomics.importedInputProduction.actualProfitOrLoss,null,
+    'missing freight, insurance, tariff and route costs must keep actual import profit unresolved');
+  assert.equal(proposal.companyStrategy.selectedOpportunity.bestObserved30DayReturnOnProjectCapitalPct,null,
+    'a positive pre-landed ceiling must not be promoted into observed profitability for investment ranking');
+  assert.equal(proposal.companyStrategy.selectedOpportunity.profitabilityScore,-3,
+    'the company receives no positive profitability score until at least one complete scenario is calculated');
+  assert.equal(proposal.companyCase.projectOffer.requestedFactoryCount,2);
+  assert.equal(proposal.companyCase.projectOffer.constructionDurationDays,90);
+  assert.equal(proposal.companyCase.financingOffer.companyCapitalOffer,20);
+  assert.equal(proposal.companyCase.financingOffer.fundingGap,40);
+  assert.equal(proposal.companyCase.financingOffer.requestedExternalFundingAmount,40);
+  assert.equal(proposal.companyCase.financingOffer.preferredStructure,'PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE');
+  assert.equal(proposal.companyCase.financingOffer.privateShareholdingRequested,true);
+  assert.equal(proposal.companyCase.financingOffer.requestedPrivateShareholdingBps,6667,
+    'the company expresses its project funding gap as an indicative partner share, rounded to basis points');
+  assert.equal(proposal.companyCase.financingOffer.requestedPrivateShareholdingPct,66.67);
+  assert.equal(proposal.companyCase.financingOffer.privateShareholdingBasis,
+    'FUNDING_GAP_AS_SHARE_OF_PROJECT_CAPITAL_NOT_ENTERPRISE_VALUATION');
+  assert.equal(proposal.companyCase.financingOffer.privateShareholdingTermsStatus,
+    'INDICATIVE_PARTNER_SHARE_REQUIRES_VALUATION_AND_NEGOTIATION');
+  assert.equal(proposal.companyCase.financingOffer.companyCapitalBudget.maximumAffordableFactoryUnits,0);
+  assert.equal(proposal.companyCase.supplyChainProof.securedAtSubmission,false);
+  assert.ok(proposal.companyStrategy.selectedOpportunity.marketSignals.some(row=>
+    row.resourceId==='copper'&&row.currentTurnEvidence===true&&row.matchedQuantity===15),
+    'market order flow must be explicitly tied to the current game turn');
+  assert.ok(proposal.companyCase.marketAnalysis.outputs.some(row=>
+    row.resourceId==='copper'&&row.marketSnapshotCurrent===true));
+  assert.equal(JSON.stringify(h.state.resource.BGD.inventory),beforeInventory);
+  assert.equal(h.state.finance.BGD.available,beforeTreasury);
+  assert.equal(h.projects.length,0);
+  assert.equal(h.state.economy.BGD.productionAssets.length,0);
+});
+
+test('company can accept a government grant covering only the verified funding gap, without settling it',()=>{
+  const h=makeHarness();
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [COMPANY]:{companyId:COMPANY,currency:'GAME_CURRENCY_UNITS',
+      availableBalance:40,reservedBalance:0,capitalRaised:40,capitalSpent:0,revision:1}
+  };
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,
+    factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS',
+    requestId:'partial-government-grant-negotiation'});
+  const treasuryBefore=h.state.finance.BGD.available;
+  const counter=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'COUNTER_OFFER',
+    counterOffer:{quantity:1,supportType:'CAPITAL_GRANT',maxGovernmentContribution:60,
+      reason:'Government offers to cover only the verified capital gap while the company contributes its own capital.'}});
+  assert.equal(counter.status,'NEGOTIATION_PENDING_COMPANY');
+  const accepted=h.api.respondToGovernmentCounterOffer({countryId:'BGD',proposalId:proposal.proposalId,
+    actorCompanyId:COMPANY,response:'ACCEPT'});
+  assert.equal(accepted.status,'PROPOSED');
+  assert.equal(accepted.proposal.negotiatedFundingSource,'GOVERNMENT_GRANT');
+  assert.equal(accepted.proposal.financingPreference,'GOVERNMENT_GRANT');
+  assert.equal(accepted.proposal.companyCase.financingOffer.companyCapitalOffer,40);
+  assert.equal(accepted.proposal.companyCase.financingOffer.requestedGovernmentGrant,60);
+  assert.equal(accepted.proposal.permit,null);
+  assert.equal(h.state.finance.BGD.available,treasuryBefore,
+    'company acceptance is a negotiated term only; public money still needs separate approval and Finance settlement');
+  assert.equal(h.projects.length,0);
+});
+
+
+test('government tender quantity is a requested target, not a ceiling on the company offer',()=>{
+  const h=makeHarness();
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){
+      return{resourceId,status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
+        matchedQuantity:15,bidDepth:20,askDepth:12,bestBidUsd:10,bestAskUsd:9,
+        clearingPriceUsd:9.5,generatedTurn:30};
+    }
+  };
+  const invitation=h.api.createGovernmentInvitation({countryId:'BGD',factoryType:'STEEL_WORKS',
+    quantity:1,supportType:'NO_PUBLIC_FINANCING',requestId:'gov-tender-company-scale-001',
+    governmentRationale:'The state needs additional domestic steel capacity but the private company must determine a viable investment scale.'});
+  assert.equal(invitation.status,'OPEN');
+  h.state.simulation.turn=30;
+  const response=h.api.advanceAutonomousProposalCycle();
+  assert.equal(response.status,'PROPOSED',JSON.stringify(response));
+  assert.equal(invitation.invitation.quantity,1);
+  assert.equal(response.proposal.quantity,2,
+    'the company chooses its offer quantity from current-turn market evidence within its own expansion ceiling');
+  assert.equal(response.proposal.companyStrategy.supplyPlan.governmentTenderRequest.requestedFactoryCount,1);
+  assert.equal(response.proposal.companyStrategy.supplyPlan.companyOfferedFactoryCount,2);
+  const stored=h.api.getCountryDashboard('BGD').governmentInvitations[0];
+  assert.equal(stored.responses[0].requestedQuantity,2,
+    'government receives the company offer, not its own requested tender quantity echoed back');
+});
+
+
+test('reference prices are not treated as proof of customer demand',()=>{
+  const h=makeHarness();
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){
+      return{resourceId,status:'NO_CROSS',priceDiscovery:'REFERENCE_ONLY',
+        matchedQuantity:0,bidDepth:0,askDepth:0,referencePrice:12,generatedTurn:30};
+    }
+  };
+  h.state.simulation.turn=30;
+  const response=h.api.advanceAutonomousProposalCycle();
+  assert.equal(response.status,'PROPOSED',JSON.stringify(response));
+  assert.equal(response.proposal.governmentOfftakeRequested,true);
+  assert.ok(response.proposal.companyStrategy.selectedOpportunity.marketSignals.every(row=>
+    row.signal==='CURRENT_TURN_REFERENCE_PRICE_ONLY'&&row.referencePriceUsd===12));
+  assert.match(response.proposal.riskForecast,/Customer demand and a cleared selling price are not verified/);
+});
+
+test('stale market clearing cannot influence a company factory choice or expansion quantity',()=>{
+  const h=makeHarness();
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){
+      return{resourceId,status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
+        matchedQuantity:600,bidDepth:800,askDepth:500,bestBidUsd:10,bestAskUsd:9,
+        clearingPriceUsd:9.5,generatedTurn:29};
+    }
+  };
+  h.state.simulation.turn=30;
+  const response=h.api.advanceAutonomousProposalCycle();
+  assert.equal(response.status,'PROPOSED',JSON.stringify(response));
+  assert.equal(response.proposal.quantity,1,
+    'a prior-turn market match cannot justify a larger company investment');
+  assert.ok(response.proposal.companyStrategy.selectedOpportunity.marketSignals.every(row=>
+    row.currentTurnEvidence===false&&row.matchedQuantity===0&&row.bidDepth===0));
+  assert.equal(response.proposal.companyStrategy.selectedOpportunity.marketSignals[0].signal,
+    'UNOBSERVED_OR_STALE');
+  assert.equal(response.proposal.governmentOfftakeRequested,true,
+    'when current-turn customer/orderbook evidence is missing, the company must disclose that market risk and may request offtake terms');
 });
 
 test('government invitation is a tender only; the autonomous company prepares and submits its response',()=>{
@@ -289,12 +493,20 @@ test('government counter-offer needs a company response and later separate gover
   assert.equal(h.state.finance.BGD.available,treasuryBefore);
 });
 
-test('government can hold, resume and reject a company-originated proposal',()=>{
+test('government can pause, independently review, resume and reject a company-originated proposal',()=>{
   const h=makeHarness(),proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,
     factoryType:'STEEL_WORKS',quantity:1,requestId:'hold-resume-steel-001'});
-  assert.equal(h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'HOLD'}).status,'ON_HOLD');
-  assert.equal(h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'RESUME'}).status,'PROPOSED');
-  assert.equal(h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'DENY'}).status,'DENIED');
+  const held=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'HOLD'});
+  assert.equal(held.status,'ON_HOLD');
+  assert.equal(held.proposal.governmentReview.reviewer,'PLAYER_GOVERNMENT');
+  assert.equal(held.proposal.governmentReview.outcome,'PAUSED_FOR_FURTHER_REVIEW');
+  assert.equal(held.proposal.governmentReview.assessment.authority,'OMEGA_PRIVATE_ENTERPRISE_APPROVAL_ASSESSMENT_V1');
+  const resumed=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'RESUME'});
+  assert.equal(resumed.status,'PROPOSED');
+  assert.equal(resumed.proposal.governmentReview.outcome,'RESUMED_FOR_REVIEW');
+  const denied=h.api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'DENY'});
+  assert.equal(denied.status,'DENIED');
+  assert.equal(denied.proposal.governmentReview.outcome,'DENY');
 });
 
 test('autonomous company proposals are deterministic, once per 30 turns, and have no asset/stock/cash side effects',()=>{
@@ -836,7 +1048,7 @@ test('Production Lines screen shows capital receipt verification for an approved
   runInNewContext(lifecycleSource,h.sandbox);
   h.sandbox.OmegaUIV2Industry.render(root,{countryId:'BGD',tab:'production-lines'});
   assert.equal(fragments.length,1);
-  assert.match(fragments[0],/Company expansion proposals/);
+  assert.match(fragments[0],/Private Company Investment/);
   assert.doesNotMatch(fragments[0],/data-pe-proposal-form/,
     'the government must not author the company application or its reasoning');
   assert.doesNotMatch(fragments[0],/name="operatorCompanyId"/,
@@ -848,13 +1060,14 @@ test('Production Lines screen shows capital receipt verification for an approved
   assert.match(fragments[0],/Company-authored business case/);
   assert.match(fragments[0],/Company market analysis/);
   assert.match(fragments[0],/Company supply-chain evidence/);
+  assert.match(fragments[0],/The company must provide supplier contracts/);
   assert.match(fragments[0],/Company financing offer/);
-  assert.match(fragments[0],/Government decision queue/);
+  assert.match(fragments[0],/Government decision inbox/);
   assert.match(fragments[0],/data-pe-capital-form/);
   assert.match(fragments[0],/sourceTransactionId/);
   assert.match(fragments[0],/Verify company capital/);
-  assert.match(fragments[0],/Government review/);
-  assert.match(fragments[0],/30-day benefit \/ risk assessment/);
+  assert.match(fragments[0],/Independent government assessment/);
+  assert.match(fragments[0],/30-day benefit \/ risk/);
   assert.match(fragments[0],/Corporate Finance \/ Profit \/ Tax \/ Cost/);
   assert.match(lifecycleSource,/Input materials/);
   assert.match(lifecycleSource,/Worker costs/);
