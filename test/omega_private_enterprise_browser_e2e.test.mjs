@@ -692,6 +692,24 @@ test('real Chromium map marker runs the exact site through a commissioned privat
               sessionCountryBefore: String(window.Game?.state?.simulation?.session?.playerCountryId || '')
             };
             window.__sab34IndustrialTurnCalls = (window.__sab34IndustrialTurnCalls || []).concat(call).slice(-16);
+            let factoryScope = null;
+            const countryIdKey = String(countryId || '').trim().toUpperCase();
+            const targetFactoryId = String(window.__sab34TargetFactoryId || '').trim();
+            if (countryIdKey === 'BGD' && targetFactoryId) {
+              const currentCountry = window.Game?.state?.economy?.BGD;
+              const allAssets = Array.isArray(currentCountry?.productionAssets)
+                ? currentCountry.productionAssets.slice() : null;
+              if (!allAssets) throw new Error('SAB34_FACTORY_SCOPE_ASSET_REGISTRY_NOT_READY');
+              const targetAsset = allAssets.find(row =>
+                String(row?.id || row?.assetId || row?.projectId || '') === targetFactoryId);
+              if (!targetAsset) throw new Error('SAB34_SCOPED_FACTORY_NOT_FOUND:' + targetFactoryId);
+              factoryScope = { targetFactoryId, allAssets };
+              currentCountry.productionAssets = [targetAsset];
+              window.__sab34FactoryScopeCalls = (window.__sab34FactoryScopeCalls || []).concat({
+                turn: call.turnBefore, targetFactoryId, countryFactoryCountBefore: allAssets.length,
+                countryFactoryCountDuring: 1
+              }).slice(-16);
+            }
             try {
               const result = await authoritativeIndustry.runCountryTurn(countryId, ...args);
               window.__sab34LastIndustrialTurnResult = JSON.parse(JSON.stringify(result));
@@ -705,6 +723,26 @@ test('real Chromium map marker runs the exact site through a commissioned privat
               };
               throw error;
             } finally {
+              if (factoryScope) {
+                const latestCountry = window.Game?.state?.economy?.BGD;
+                if (latestCountry && Array.isArray(latestCountry.productionAssets)) {
+                  const liveAssets = latestCountry.productionAssets;
+                  const liveTarget = liveAssets.find(row =>
+                    String(row?.id || row?.assetId || row?.projectId || '') === factoryScope.targetFactoryId);
+                  const originalIds = new Set(factoryScope.allAssets.map(row =>
+                    String(row?.id || row?.assetId || row?.projectId || '')));
+                  const restored = factoryScope.allAssets.map(row =>
+                    String(row?.id || row?.assetId || row?.projectId || '') === factoryScope.targetFactoryId
+                      ? (liveTarget || row) : row);
+                  for (const row of liveAssets) {
+                    const id = String(row?.id || row?.assetId || row?.projectId || '');
+                    if (id && !originalIds.has(id)) restored.push(row);
+                  }
+                  latestCountry.productionAssets = restored;
+                } else {
+                  window.__sab34FactoryScopeRestoreError = 'COUNTRY_ECONOMY_DISAPPEARED_AFTER_TURN';
+                }
+              }
               call.turnAfter = Number(window.Game?.state?.simulation?.turn) || 0;
               call.dateAfter = String(window.Game?.state?.simulation?.date || '');
             }
@@ -1451,6 +1489,8 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     }
     metrics.targetFactorySnapshot=targetFactorySnapshot;
     await page.evaluate(({factoryId}) => {
+      window.__sab34TargetFactoryId = String(factoryId || '');
+      if (!window.__sab34TargetFactoryId) throw new Error('SAB34_TARGET_FACTORY_SCOPE_ID_MISSING');
       const gameState=window.Game?.state;
       const worldState=window.Omega?.Simulation?.world?.state;
       const gameCountry=gameState?.economy?.BGD;
