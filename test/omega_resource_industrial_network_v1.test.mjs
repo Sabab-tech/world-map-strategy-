@@ -576,6 +576,14 @@ assert.equal(builtFactoryRun.status,'IN_TRANSIT',JSON.stringify(builtFactoryRun)
 assert.equal(builtFactoryRun.factoryId,builtFactoryId,
   'normal mine execution must route the batch to the real commissioned compatible factory');
 assert.equal(builtFactoryRun.batchId,'BATCH-E2E-IRON-02');
+const builtFactoryFlow=context.Game.state.resource.BGD.industrialNetwork.siteFlowLedger.find(
+  row=>String(row.batchId||'')===String(builtFactoryRun.batchId));
+assert.ok(builtFactoryFlow,'the explicit factory destination must be persisted on the extracted batch flow');
+assert.equal(builtFactoryFlow.factoryId,builtFactoryId);
+assert.equal(builtFactoryFlow.factorySelectionAuthority,'EXPLICIT_SITE_FACTORY_SELECTION',
+  'an explicit same-ID factory choice must not lose selection provenance when observer pre-populates destination');
+assert.ok(Number.isFinite(Number(builtFactoryFlow.factorySelectedAtTurn)),
+  'the explicit factory choice must be timestamped on the persisted site flow');
 assert.notEqual(builtFactoryRun.factoryBootstrapStatus,'CREATED_SIMULATION_ONLY',
   'using a constructed factory must not silently create a second simulation-only factory');
 assert.equal(builtFactoryRun.shipment.shipmentType,'MINE_TO_WAREHOUSE');
