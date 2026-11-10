@@ -1061,6 +1061,34 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         }));
       }
 
+      // This browser scenario proves one exact map-selected site through its factory.
+      // Every-site mine production is covered by the independent exhaustive pipeline
+      // workflow. Keep this acceptance proof isolated to the same canonical Barapukuria
+      // coal site selected by the map step; otherwise every committed turn re-simulates
+      // all 46 Bangladesh mine occurrences and causes unrelated ledger growth that
+      // dominates the factory-cycle and IndexedDB save/load assertions.
+      const scopedSite = canonicalSites.find(row =>
+        String(row.countryId || row.identity?.countryIso3 || '').toUpperCase() === 'BGD' &&
+        String(row.identity?.resourceTypeId || row.real?.resourceId || row.sourceSiteRecord?.resourceId || '').toLowerCase().includes('coal') &&
+        row.map?.markerEligible !== false && !row.runtime?.aliasOfSiteId &&
+        row.operation?.commercialExtraction !== false && /barapukuria/i.test(String(row.siteName || ''))
+      ) || canonicalSites.find(row =>
+        String(row.countryId || row.identity?.countryIso3 || '').toUpperCase() === 'BGD' &&
+        String(row.identity?.resourceTypeId || row.real?.resourceId || row.sourceSiteRecord?.resourceId || '').toLowerCase().includes('coal') &&
+        row.map?.markerEligible !== false && !row.runtime?.aliasOfSiteId &&
+        row.operation?.commercialExtraction !== false);
+      const scopedSiteId = String(scopedSite?.siteId || '').trim();
+      if (!scopedSiteId) throw new Error('SAB34_TEST_SCOPED_COAL_SITE_NOT_FOUND');
+      const originalStartCountryProduction = endowment.startCountryProduction.bind(endowment);
+      endowment.startCountryProduction = function(countryId, siteIds = null, options = {}) {
+        if (String(countryId || '').trim().toUpperCase() === 'BGD' &&
+            (!Array.isArray(siteIds) || siteIds.length === 0)) {
+          return originalStartCountryProduction(countryId, [scopedSiteId], options);
+        }
+        return originalStartCountryProduction(countryId, siteIds, options);
+      };
+      window.__sab34ScopedProductionSiteId = scopedSiteId;
+
       const foreignSnapshot = JSON.stringify({
         resource: state.resource?.KWT || null,
         economy: state.economy?.KWT || null,
@@ -1076,6 +1104,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         canonicalSiteCount: canonicalSites.length,
         uniqueCanonicalSiteCount: uniqueCanonicalSiteIds.size,
         masterMineSiteReferenceCount,
+        scopedProductionSiteId: scopedSiteId,
         selectedCountryRouteCount: routeLoad.routeCount,
         fixtureBatchIds,
         foreignSnapshot,
@@ -1087,6 +1116,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(preparation.canonicalSiteCount, 607);
     assert.equal(preparation.uniqueCanonicalSiteCount, 607);
     assert.equal(preparation.masterMineSiteReferenceCount, 199);
+    assert.equal(preparation.scopedProductionSiteId, 'SITE_BGD_barapukuria_coal_mine');
     assert.equal(preparation.governmentCountryCount, 197);
     assert.equal(preparation.privateCountryCount, 197);
     assert.equal(preparation.privateFactoryTypeCount, 21);
