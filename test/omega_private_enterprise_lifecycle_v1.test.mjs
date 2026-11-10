@@ -135,6 +135,22 @@ function setIronDemandSnapshot(harness,demandPerDay=0,consumerDemandPerDay=0,act
     'the lifecycle runtime must read the fixture demand row, not an empty stale bucket: '+JSON.stringify(runtimeEvidence));
   return snapshot;
 }
+function setDomesticDemandAndProcessedStock(harness,resourceId,demandPerDay,availableStock=0){
+  const game=harness.sandbox.Game.state,turn=Number(game.simulation.turn)||0;
+  const byResource={
+    [resourceId]:{demandPerDay,consumerDemandPerDay:demandPerDay,activeFactoryInputDemandPerDay:0,pendingImportQuantity:0},
+    iron_ore:{demandPerDay:0,consumerDemandPerDay:0,activeFactoryInputDemandPerDay:0,pendingImportQuantity:0}
+  };
+  const resourceBuckets=[
+    harness.sandbox.Game.state.resource?.BGD,
+    harness.state?.resource?.BGD
+  ].filter(Boolean);
+  for(const resource of new Set(resourceBuckets)){
+    resource.demandRuntime=JSON.parse(JSON.stringify({lastTurn:turn,byResource,authority:'TEST_CURRENT_TURN_DEMAND_SNAPSHOT'}));
+    resource.processedWarehouse={warehouseId:'TEST_PROCESSED_WAREHOUSE',
+      availableByResource:{[resourceId]:availableStock},reservedByResource:{[resourceId]:0}};
+  }
+}
 function setReadyIronSupply(harness,amount=1000){
   const resourceBuckets=[
     harness.sandbox.Game.state.resource?.BGD,
@@ -521,50 +537,162 @@ test('government can pause, independently review, resume and reject a company-or
   assert.equal(denied.proposal.governmentReview.outcome,'DENY');
 });
 
-test('autonomous company proposals are deterministic, once per 30 turns, and have no asset/stock/cash side effects',()=>{
+test('autonomous company review processes one company per committed turn and completes the five-company rotation without economic side effects',()=>{
   const h=makeHarness(),beforeInventory=JSON.stringify(h.state.resource.BGD.inventory);
   const beforeWarehouse=JSON.stringify(h.state.resource.BGD.warehouse);
   const beforeTreasury=h.state.finance.BGD.available;
+  const companies=[
+    'AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP','NOVA_CONSUMER_INDUSTRIES',
+    'ATLAS_TECHNOLOGY_CORPORATION','TERRA_INFRASTRUCTURE_GROUP'
+  ];
   const first=h.api.advanceAutonomousProposalCycle();
   assert.equal(first.status,'WAITING');
   assert.equal(first.reason,'AUTONOMOUS_PROPOSAL_REVIEW_NOT_DUE');
+
   h.state.simulation.turn=30;
-  const proposal=h.api.advanceAutonomousProposalCycle();
-  assert.equal(proposal.status,'PROPOSED');
-  assert.equal(proposal.proposal.companyId,'AURORA_INDUSTRIAL_GROUP');
-  assert.equal(proposal.proposal.submissionMode,'AUTONOMOUS_COMPANY_TURN_CYCLE');
-  assert.equal(proposal.proposal.proposalPeriod,1);
-  assert.equal(proposal.proposal.status,'PROPOSED');
-  assert.equal(h.projects.length,0);
+  const firstProposal=h.api.advanceAutonomousProposalCycle();
+  assert.equal(firstProposal.status,'PROPOSED');
+  assert.equal(firstProposal.proposal.companyId,companies[0]);
+  assert.equal(firstProposal.proposal.submissionMode,'AUTONOMOUS_COMPANY_TURN_CYCLE');
+  assert.equal(firstProposal.proposal.proposalPeriod,1);
+  assert.equal(firstProposal.cycleProgress.completedCompanies,1);
+  assert.equal(firstProposal.cycleProgress.remainingCompanies,4);
+  assert.equal(h.api.advanceAutonomousProposalCycle().status,'DUPLICATE',
+    'replaying the same committed turn must not run the next company');
+
+  for(let index=1;index<companies.length;index++){
+    h.state.simulation.turn=30+index;
+    const result=h.api.advanceAutonomousProposalCycle();
+    assert.equal(result.status,'PROPOSED',JSON.stringify(result));
+    assert.equal(result.proposal.companyId,companies[index],
+      'the persistent cursor advances to exactly one different company per game turn');
+    assert.equal(result.proposal.proposalPeriod,1);
+    assert.equal(result.cycleProgress.completedCompanies,index+1);
+    assert.equal(result.cycleProgress.remainingCompanies,companies.length-index-1);
+  }
+  const dashboard=h.api.getCountryDashboard('BGD');
+  assert.deepEqual(dashboard.proposals.map(row=>row.companyId),companies);
+  assert.ok(dashboard.proposals.every(row=>row.status==='PROPOSED'));
   assert.equal(h.state.economy.BGD.productionAssets.length,0);
+  assert.equal(h.projects.length,0);
   assert.equal(JSON.stringify(h.state.resource.BGD.inventory),beforeInventory);
   assert.equal(JSON.stringify(h.state.resource.BGD.warehouse),beforeWarehouse);
   assert.equal(h.state.finance.BGD.available,beforeTreasury);
   assert.equal(h.api.advanceAutonomousProposalCycle().status,'DUPLICATE');
+
+  // The next 30-day period rotates its starting company. An existing proposal
+  // prevents a duplicate investment, but it does not block other companies' review.
   h.state.simulation.turn=60;
-  const next=h.api.advanceAutonomousProposalCycle();
-  assert.equal(next.status,'PROPOSED');
-  assert.equal(next.proposal.companyId,'MERIDIAN_ENGINEERING_GROUP');
-  assert.equal(next.proposal.proposalPeriod,2);
-  assert.equal(h.projects.length,0);
-  assert.equal(h.state.economy.BGD.productionAssets.length,0);
+  const nextPeriod=h.api.advanceAutonomousProposalCycle();
+  assert.equal(nextPeriod.status,'WAITING');
+  assert.equal(nextPeriod.companyId,'MERIDIAN_ENGINEERING_GROUP');
+  assert.equal(h.api.getCountryDashboard('BGD').proposals.length,5);
 });
 
-test('committed game-turn event schedules the autonomous proposal only once for the selected country',async()=>{
+test('committed game-turn events schedule one autonomous company review per turn and remain replay-safe',async()=>{
   const h=makeHarness();
   h.state.simulation.turn=30;
   emit(h,'OMEGA_SIMULATION_TURN_COMMITTED',{countryId:'BGD',turn:30});
   await Promise.resolve();
   await Promise.resolve();
-  const dashboard=h.api.getCountryDashboard('BGD');
+  let dashboard=h.api.getCountryDashboard('BGD');
   assert.equal(dashboard.proposals.length,1);
   assert.equal(dashboard.proposals[0].submissionMode,'AUTONOMOUS_COMPANY_TURN_CYCLE');
   assert.equal(dashboard.proposals[0].companyId,'AURORA_INDUSTRIAL_GROUP');
-  assert.equal(h.projects.length,0);
-  assert.equal(h.state.economy.BGD.productionAssets.length,0);
   emit(h,'OMEGA_SIMULATION_TURN_COMMITTED',{countryId:'BGD',turn:30});
   await Promise.resolve();
-  assert.equal(h.api.getCountryDashboard('BGD').proposals.length,1);
+  assert.equal(h.api.getCountryDashboard('BGD').proposals.length,1,
+    'a duplicate commit event must not repeat analysis or submit a duplicate request');
+
+  h.state.simulation.turn=31;
+  emit(h,'OMEGA_SIMULATION_TURN_COMMITTED',{countryId:'BGD',turn:31});
+  await Promise.resolve();
+  await Promise.resolve();
+  dashboard=h.api.getCountryDashboard('BGD');
+  assert.equal(dashboard.proposals.length,2);
+  assert.equal(dashboard.proposals[1].companyId,'MERIDIAN_ENGINEERING_GROUP');
+  emit(h,'OMEGA_SIMULATION_TURN_COMMITTED',{countryId:'BGD',turn:31});
+  await Promise.resolve();
+  assert.equal(h.api.getCountryDashboard('BGD').proposals.length,2);
+  assert.equal(h.projects.length,0);
+  assert.equal(h.state.economy.BGD.productionAssets.length,0);
+});
+
+test('observed domestic demand gap can scale a proposal while missing market prices still queue research safely',()=>{
+  const h=makeHarness();
+  h.state.simulation.turn=30;
+  setDomesticDemandAndProcessedStock(h,'steel',20,0);
+  const response=h.api.advanceAutonomousProposalCycle();
+  assert.equal(response.status,'PROPOSED',JSON.stringify(response));
+  assert.equal(response.proposal.quantity,2,
+    'two factories cover the observed 600-unit domestic 30-day gap at 300 units per factory');
+  const signal=response.proposal.companyStrategy.selectedOpportunity.marketSignals
+    .find(row=>row.resourceId==='steel');
+  assert.equal(signal.unmetDomesticDemand30Day,600);
+  assert.equal(signal.domesticScaleUnits,2);
+  assert.equal(response.proposal.companyCase.marketAnalysis.domesticDemand[0].unmetDomesticDemand30Day,600);
+  assert.equal(response.proposal.marketResearchRequest.status,'QUEUED_LOCAL_MARKET_HANDOFF',
+    'a market provider is optional; the company still submits its research request');
+  assert.equal(response.proposal.marketResearchRequest.responseStatus,'AWAITING_MARKET_EVIDENCE');
+  assert.equal(response.proposal.companyCase.unitEconomics.domesticProduction.actualProfitOrLoss,null,
+    'missing prices must not create estimated revenue or profit');
+  assert.ok(response.proposal.companyCase.investmentOptions.scaleAlternatives.some(row=>row.factoryCount===2));
+  assert.ok(response.proposal.companyCase.investmentOptions.financingAlternatives.some(row=>row.structure==='JOINT_VENTURE'));
+  assert.ok(response.proposal.companyCase.dataConfidence);
+});
+
+test('universal processing proposals compare multiple canonical resource routes instead of selecting the first catalog entry',()=>{
+  const h=makeHarness(),factoryType='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT';
+  const expandedCatalog=JSON.parse(JSON.stringify(catalog));
+  expandedCatalog.factoryProfiles[factoryType]={
+    factoryType,name:'Universal Processing',constructionCost:100,constructionDays:60,
+    defaultCapacityPerDay:10,constructionMaterials:{construction_aggregate:10},
+    constructionMaterialUnit:'SIMULATION_RESOURCE_UNIT',workforce:{operators:4},
+    utilities:{electricityMWhPerDay:2},unit:'GAME_CURRENCY_UNITS'
+  };
+  expandedCatalog.processingRules={
+    iron_ore:{factoryType,inputs:{iron_ore:1},outputs:{steel:1},cycleDays:1},
+    copper_ore:{factoryType,inputs:{iron_ore:1},outputs:{copper:1},cycleDays:1}
+  };
+  h.sandbox.OmegaResourceIndustrialCatalogData=expandedCatalog;
+  h.sandbox.OmegaCountryFactoryStartingBaselineV1.getCountryBaseline=()=>({
+    factoryCounts:{STEEL_WORKS:0,[factoryType]:20}
+  });
+  h.sandbox.OmegaPrivateEnterpriseRegistryV1.getCountryBaseline=()=>({
+    status:'READY',countryId:'BGD',governmentFactoryCounts:{STEEL_WORKS:20,[factoryType]:20},
+    factoryCounts:{STEEL_WORKS:0,[factoryType]:10},totalPrivateFactoryUnits:10,
+    companies:[
+      {companyId:'AURORA_INDUSTRIAL_GROUP',factoryCounts:{[factoryType]:2}},
+      {companyId:'MERIDIAN_ENGINEERING_GROUP',factoryCounts:{[factoryType]:2}},
+      {companyId:'NOVA_CONSUMER_INDUSTRIES',factoryCounts:{[factoryType]:2}},
+      {companyId:'ATLAS_TECHNOLOGY_CORPORATION',factoryCounts:{[factoryType]:2}},
+      {companyId:'TERRA_INFRASTRUCTURE_GROUP',factoryCounts:{[factoryType]:2}}
+    ]
+  });
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){
+      if(resourceId==='copper')return{resourceId,status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
+        matchedQuantity:100,bidDepth:200,askDepth:50,bestBidUsd:10,bestAskUsd:9,
+        clearingPriceUsd:9.5,generatedTurn:30};
+      return{resourceId,status:'NO_CROSS',priceDiscovery:'REFERENCE_ONLY',
+        matchedQuantity:0,bidDepth:0,askDepth:0,referencePrice:1,generatedTurn:30};
+    },
+    localPrice(){return 10;},
+    suppliers(){return[];},
+    privateCompanySuppliers(){return[];}
+  };
+  h.state.simulation.turn=30;
+  const response=h.api.advanceAutonomousProposalCycle();
+  assert.equal(response.status,'PROPOSED',JSON.stringify(response));
+  assert.equal(response.proposal.factoryType,factoryType);
+  assert.equal(response.proposal.processingResourceId,'copper_ore',
+    'the later catalog route with stronger current buyer evidence must be considered and selected');
+  assert.equal(response.proposal.companyStrategy.selectedOpportunity.processingResourceId,'copper_ore');
+  assert.equal(response.proposal.companyStrategy.alternativesEvaluated.universalProcessingResourceCount,2);
+  assert.deepEqual(
+    response.proposal.companyStrategy.alternativesConsidered.map(row=>row.processingResourceId).sort(),
+    ['copper_ore','iron_ore']
+  );
 });
 
 test('proposal -> approval -> real Treasury grant -> construction -> private commissioning is replay-safe and uses shared assets',()=>{
