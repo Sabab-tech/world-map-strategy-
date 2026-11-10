@@ -4370,14 +4370,19 @@
           country=canonicalCountry(detail.countryId||''),
           active=canonicalCountry(root.__omegaV2IndustryCountryId||playerCountry());
         if(!country||country!==active||active!==playerCountry())return;
-        if(['COMPANY_MARKET_RESEARCH_REQUEST_SUBMITTED','AUTONOMOUS_COMPANY_PROPOSAL_SUBMITTED',
-          'COMPANY_RESPONDED_TO_GOVERNMENT_INVITATION','COMPANY_PROPOSAL_DECIDED'].indexOf(eventType)<0)return;
-        if(root.__omegaV2IndustryTab!=='production-lines'||root.__omegaPrivateLifecycleRefreshPending)return;
+        if(['COMPANY_MARKET_RESEARCH_REQUEST_SUBMITTED','COMPANY_PROPOSAL_SUBMITTED',
+          'AUTONOMOUS_COMPANY_PROPOSAL_SUBMITTED','COMPANY_RESPONDED_TO_GOVERNMENT_INVITATION',
+          'COMPANY_PROPOSAL_DECIDED'].indexOf(eventType)<0)return;
+        // The mounted private-enterprise panel is authoritative: the tab state can
+        // be temporarily absent while the Industry screen restores its route.
+        // Refresh only while this panel is actually visible, not on hidden screens.
+        if(!root.querySelector('[data-omega-private-company-lifecycle]')||
+           root.__omegaPrivateLifecycleRefreshPending)return;
         root.__omegaPrivateLifecycleRefreshPending=true;
         var schedule=typeof g.setTimeout==='function'?g.setTimeout:function(fn){Promise.resolve().then(fn);};
         schedule.call(g,function(){
           root.__omegaPrivateLifecycleRefreshPending=false;
-          if(root.__omegaV2IndustryTab!=='production-lines')return;
+          if(!root.querySelector('[data-omega-private-company-lifecycle]'))return;
           var current=g.OmegaUIV2Industry,options=root.__omegaV2IndustryOptions||{};
           if(current&&typeof current.render==='function')current.render(root,Object.assign({},options,{
             countryId:root.__omegaV2IndustryCountryId||playerCountry(),tab:'production-lines'}));
