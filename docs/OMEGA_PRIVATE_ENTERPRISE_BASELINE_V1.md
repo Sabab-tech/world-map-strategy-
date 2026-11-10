@@ -439,3 +439,6 @@ The company business case now compares a fixed, bounded set of **15 runtime alte
 - The calculation is synchronous, read-only and bounded to 15 combinations per business case. It adds no frame loop, external fetch, wait, reservation, purchase, stock mutation, cash movement, project or factory. It works when the global market provider is absent; missing market observations stay null/UNOBSERVED.
 
 The Production Lines company case exposes the alternative set in an expandable comparison area. The values remain planning evidence, not guaranteed demand, signed supply, settled sale or an approval.
+
+
+The five sales-allocation plans and three input-sourcing plans are each evaluated once, then referenced by the 15 compact combination summaries. The full line-level plans are stored once in the business case; the autonomous decision record stores only the scenario summary, avoiding repeated nested arrays in save data.
