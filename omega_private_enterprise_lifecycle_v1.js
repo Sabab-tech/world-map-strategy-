@@ -563,6 +563,224 @@
     return{unitPrice:null,currency:null,source:'DOMESTIC_PRICE_UNOBSERVED',
       marketTurn:market.generatedTurn,marketStatus:market.status,marketSnapshotCurrent:market.currentTurn};
   }
+  function buildCompanyScenarioMatrix(proposal,outputRows,inputRows,operating,policyCurrency){
+    // The matrix is deliberately bounded: five sales-allocation policies x three input-sourcing policies.
+    // It is a read-only planning view; it never reserves stock, imports goods, spends cash or creates sales.
+    var salesModes=[
+      'DOMESTIC_ONLY','EXPORT_ONLY','DOMESTIC_FIRST','EXPORT_FIRST','BALANCED_DEMAND_SPLIT'
+    ],sourcingModes=[
+      'DOMESTIC_ONLY','DOMESTIC_FIRST_IMPORT_GAP','IMPORT_ONLY'
+    ],options=[];
+    function rounded(value,digits){
+      if(value===null||value===undefined||!Number.isFinite(Number(value)))return null;
+      var scale=Math.pow(10,digits||6);return Math.round(Number(value)*scale)/scale;
+    }
+    function uniquePush(rows,value){if(rows.indexOf(value)<0)rows.push(value);}
+    function salesPlan(mode){
+      var rows=[],allKnown=outputRows.length>0,domesticRevenue=0,exportRevenue=0,
+        domesticRevenueKnown=true,exportRevenueKnown=true,marketCurrencyKnown=true,
+        capacityConserved=true,totalDomestic=0,totalExport=0,totalUnsold=0;
+      outputRows.forEach(function(row){
+        var capacity=num(row.projected30DayQuantity),domesticNeed=num(row.domesticUnmetDemand30Day),
+          exportNeed=num(row.internationalUnmatchedBuyOrderDepth),domesticQuantity=0,
+          exportQuantity=0,unsold=null,complete=true,reason=null;
+        if(capacity===null||capacity<0){complete=false;reason='OUTPUT_CAPACITY_UNOBSERVED';}
+        else if(capacity>0){
+          if(mode==='DOMESTIC_ONLY'){
+            if(domesticNeed===null){complete=false;reason='DOMESTIC_DEMAND_UNOBSERVED';}
+            else domesticQuantity=Math.min(capacity,Math.max(0,domesticNeed));
+          }else if(mode==='EXPORT_ONLY'){
+            if(exportNeed===null){complete=false;reason='INTERNATIONAL_BUYER_DEMAND_UNOBSERVED';}
+            else exportQuantity=Math.min(capacity,Math.max(0,exportNeed));
+          }else if(mode==='DOMESTIC_FIRST'){
+            if(domesticNeed===null){complete=false;reason='DOMESTIC_DEMAND_UNOBSERVED';}
+            else{
+              domesticQuantity=Math.min(capacity,Math.max(0,domesticNeed));
+              var domesticRemainder=Math.max(0,capacity-domesticQuantity);
+              if(domesticRemainder>1e-9){
+                if(exportNeed===null){complete=false;reason='INTERNATIONAL_BUYER_DEMAND_UNOBSERVED_FOR_REMAINDER';}
+                else exportQuantity=Math.min(domesticRemainder,Math.max(0,exportNeed));
+              }
+            }
+          }else if(mode==='EXPORT_FIRST'){
+            if(exportNeed===null){complete=false;reason='INTERNATIONAL_BUYER_DEMAND_UNOBSERVED';}
+            else{
+              exportQuantity=Math.min(capacity,Math.max(0,exportNeed));
+              var exportRemainder=Math.max(0,capacity-exportQuantity);
+              if(exportRemainder>1e-9){
+                if(domesticNeed===null){complete=false;reason='DOMESTIC_DEMAND_UNOBSERVED_FOR_REMAINDER';}
+                else domesticQuantity=Math.min(exportRemainder,Math.max(0,domesticNeed));
+              }
+            }
+          }else{
+            if(domesticNeed===null||exportNeed===null){
+              complete=false;reason='BOTH_DOMESTIC_AND_INTERNATIONAL_DEMAND_REQUIRED_FOR_BALANCED_SPLIT';
+            }else{
+              var domesticDemand=Math.max(0,domesticNeed),exportDemand=Math.max(0,exportNeed),
+                combinedDemand=domesticDemand+exportDemand,served=Math.min(capacity,combinedDemand);
+              if(combinedDemand>0){
+                domesticQuantity=served*(domesticDemand/combinedDemand);
+                exportQuantity=served-domesticQuantity;
+                if(domesticQuantity>domesticDemand){exportQuantity+=domesticQuantity-domesticDemand;domesticQuantity=domesticDemand;}
+                if(exportQuantity>exportDemand){domesticQuantity+=exportQuantity-exportDemand;exportQuantity=exportDemand;}
+              }
+            }
+          }
+        }
+        if(complete&&capacity!==null){
+          unsold=Math.max(0,capacity-domesticQuantity-exportQuantity);
+          if(domesticQuantity+exportQuantity>capacity+1e-6)capacityConserved=false;
+        }else{
+          allKnown=false;domesticRevenueKnown=false;exportRevenueKnown=false;
+        }
+        var domesticAmount=complete?(domesticQuantity<=1e-9?0:
+            num(row.domesticUnitPrice)===null?null:rounded(domesticQuantity*num(row.domesticUnitPrice),2)):null,
+          exportAmount=complete?(exportQuantity<=1e-9?0:
+            num(row.internationalUnitPrice)===null?null:rounded(exportQuantity*num(row.internationalUnitPrice),2)):null;
+        if(domesticQuantity>1e-9&&(!row.domesticCurrency||row.domesticCurrency!==policyCurrency))marketCurrencyKnown=false;
+        if(exportQuantity>1e-9&&(!row.internationalCurrency||row.internationalCurrency!==policyCurrency))marketCurrencyKnown=false;
+        if(domesticAmount===null)domesticRevenueKnown=false;else domesticRevenue+=domesticAmount;
+        if(exportAmount===null)exportRevenueKnown=false;else exportRevenue+=exportAmount;
+        if(complete&&unsold!==null){totalDomestic+=domesticQuantity;totalExport+=exportQuantity;totalUnsold+=unsold;}
+        rows.push({resourceId:row.resourceId,projected30DayQuantity:capacity,
+          domesticDemandCeiling:domesticNeed,internationalBuyerDemandCeiling:exportNeed,
+          domesticSaleQuantity:complete?rounded(domesticQuantity):null,
+          exportSaleQuantity:complete?rounded(exportQuantity):null,
+          unsoldCapacity:unsold===null?null:rounded(unsold),
+          domesticRevenue:domesticAmount,exportRevenue:exportAmount,
+          totalRevenue:domesticAmount===null||exportAmount===null?null:rounded(domesticAmount+exportAmount,2),
+          allocationComplete:complete,reason:reason});
+      });
+      var gross=allKnown&&domesticRevenueKnown&&exportRevenueKnown&&marketCurrencyKnown
+        ?rounded(domesticRevenue+exportRevenue,2):null;
+      return{rows:rows,complete:allKnown&&domesticRevenueKnown&&exportRevenueKnown,
+        currencyConsistent:marketCurrencyKnown,grossRevenue:gross,
+        domesticRevenue:allKnown&&domesticRevenueKnown?rounded(domesticRevenue,2):null,
+        exportRevenue:allKnown&&exportRevenueKnown?rounded(exportRevenue,2):null,
+        totalDomesticSaleQuantity:allKnown?rounded(totalDomestic):null,
+        totalExportSaleQuantity:allKnown?rounded(totalExport):null,
+        totalUnsoldCapacity:allKnown?rounded(totalUnsold):null,
+        capacityConserved:capacityConserved};
+    }
+    function sourcingPlan(mode){
+      var rows=[],quantityKnown=inputRows.length>0,commodityCostKnown=inputRows.length>0,
+        domesticCost=0,importCost=0,domesticQuantityTotal=0,importQuantityTotal=0,
+        domesticFeasible=true,availabilityUnknown=false,currencyConsistent=!!policyCurrency,
+        reasons=[];
+      inputRows.forEach(function(row){
+        var required=num(row.required30Day),available=num(row.domesticAvailable),
+          domesticQuantity=null,importQuantity=null,uncovered=null;
+        if(required===null||required<0){quantityKnown=false;commodityCostKnown=false;uniquePush(reasons,'INPUT_REQUIREMENT_UNOBSERVED');}
+        else if(mode==='IMPORT_ONLY'){
+          domesticQuantity=0;importQuantity=required;uncovered=0;
+        }else if(available===null||available<0){
+          quantityKnown=false;commodityCostKnown=false;availabilityUnknown=true;domesticFeasible=null;
+          uniquePush(reasons,'DOMESTIC_INPUT_AVAILABILITY_UNOBSERVED');
+        }else if(mode==='DOMESTIC_ONLY'){
+          domesticQuantity=Math.min(required,available);importQuantity=0;
+          uncovered=Math.max(0,required-available);
+          if(uncovered>1e-9){domesticFeasible=false;commodityCostKnown=false;uniquePush(reasons,'DOMESTIC_INPUT_SHORTAGE');}
+        }else{
+          domesticQuantity=Math.min(required,available);importQuantity=Math.max(0,required-domesticQuantity);uncovered=0;
+        }
+        var domesticAmount=domesticQuantity===null?null:domesticQuantity<=1e-9?0:
+            num(row.domesticUnitPrice)===null?null:rounded(domesticQuantity*num(row.domesticUnitPrice),2),
+          importAmount=importQuantity===null?null:importQuantity<=1e-9?0:
+            num(row.importUnitPrice)===null?null:rounded(importQuantity*num(row.importUnitPrice),2);
+        if(domesticAmount===null||importAmount===null)commodityCostKnown=false;
+        if(domesticQuantity>1e-9&&(!row.domesticCurrency||row.domesticCurrency!==policyCurrency))currencyConsistent=false;
+        if(importQuantity>1e-9&&(!row.importCurrency||row.importCurrency!==policyCurrency))currencyConsistent=false;
+        if(domesticAmount!==null)domesticCost+=domesticAmount;
+        if(importAmount!==null)importCost+=importAmount;
+        if(domesticQuantity!==null)domesticQuantityTotal+=domesticQuantity;
+        if(importQuantity!==null)importQuantityTotal+=importQuantity;
+        rows.push({resourceId:row.resourceId,required30Day:required,domesticAvailable:available,
+          plannedDomesticQuantity:domesticQuantity===null?null:rounded(domesticQuantity),
+          plannedImportQuantity:importQuantity===null?null:rounded(importQuantity),
+          uncoveredDomesticRequirement:uncovered===null?null:rounded(uncovered),
+          domesticCommodityCost:domesticAmount,importCommodityCost:importAmount,
+          importedLandedCost:null,landedCostStatus:importQuantity===null?'UNOBSERVED':
+            importQuantity>1e-9?'FREIGHT_TARIFF_INSURANCE_AND_ROUTE_UNOBSERVED':'NOT_REQUIRED'});
+      });
+      var imported=importQuantityTotal>1e-9,feasible=domesticFeasible!==false;
+      return{rows:rows,quantityKnown:quantityKnown,commodityCostKnown:commodityCostKnown&&currencyConsistent,
+        currencyConsistent:currencyConsistent,domesticSupplyFeasible:domesticFeasible,
+        domesticAvailabilityUnobserved:availabilityUnknown,domesticInputQuantity:quantityKnown?rounded(domesticQuantityTotal):null,
+        importInputQuantity:quantityKnown?rounded(importQuantityTotal):null,
+        domesticInputCost:commodityCostKnown&&currencyConsistent?rounded(domesticCost,2):null,
+        importCommodityCost:commodityCostKnown&&currencyConsistent?rounded(importCost,2):null,
+        totalCommodityInputCost:commodityCostKnown&&currencyConsistent?rounded(domesticCost+importCost,2):null,
+        importsRequired:imported,finalLandedCostObserved:!imported,
+        landedCostStatus:imported?'FREIGHT_TARIFF_INSURANCE_AND_ROUTE_UNOBSERVED':'NOT_REQUIRED',
+        feasible:feasible,reasons:reasons};
+    }
+    salesModes.forEach(function(salesMode){
+      var sales=salesPlan(salesMode);
+      sourcingModes.forEach(function(sourcingMode){
+        var sourcing=sourcingPlan(sourcingMode),reasons=sourcing.reasons.slice();
+        if(!sales.complete)uniquePush(reasons,'MARKET_DEMAND_OR_OUTPUT_PRICE_UNOBSERVED');
+        if(!sales.currencyConsistent)uniquePush(reasons,'OUTPUT_PRICE_CURRENCY_UNRECONCILED');
+        if(!sourcing.quantityKnown)uniquePush(reasons,'INPUT_QUANTITY_OR_AVAILABILITY_UNOBSERVED');
+        if(!sourcing.commodityCostKnown)uniquePush(reasons,'INPUT_COMMODITY_PRICE_OR_CURRENCY_UNOBSERVED');
+        if(operating===null)uniquePush(reasons,'OPERATING_COST_UNOBSERVED');
+        if(sourcing.importsRequired)uniquePush(reasons,'IMPORTED_INPUT_LANDED_COST_UNOBSERVED');
+        var preLandedComplete=sales.grossRevenue!==null&&sourcing.totalCommodityInputCost!==null&&
+          operating!==null&&sales.currencyConsistent&&sourcing.currencyConsistent&&sourcing.feasible,
+          preLanded=preLandedComplete?rounded(sales.grossRevenue-sourcing.totalCommodityInputCost-operating,2):null,
+          finalComplete=preLandedComplete&&!sourcing.importsRequired,
+          finalResult=finalComplete?preLanded:null,
+          margin=finalResult!==null&&sales.grossRevenue>0?rounded(finalResult/sales.grossRevenue*100,2):null,
+          preLandedMargin=preLanded!==null&&sales.grossRevenue>0?rounded(preLanded/sales.grossRevenue*100,2):null,
+          capital=num(proposal&&proposal.capitalRequired),
+          returnPct=finalResult!==null&&capital!==null&&capital>0?rounded(finalResult/capital*100,2):null,
+          status=!sourcing.feasible?'INFEASIBLE_DOMESTIC_INPUTS':
+            finalComplete?'CALCULATED':
+            sourcing.importsRequired&&preLanded!==null?'PRE_LANDED_ONLY':
+            !sales.complete?'UNRESOLVED_MARKET_EVIDENCE':
+            !sourcing.quantityKnown?'UNRESOLVED_INPUT_AVAILABILITY':
+            'UNRESOLVED_COST_OR_CURRENCY';
+        options.push({scenarioId:'SALES_'+salesMode+'_SOURCING_'+sourcingMode,
+          salesAllocationMode:salesMode,sourcingMode:sourcingMode,status:status,
+          confidence:finalComplete?'HIGH':preLanded!==null?'MEDIUM_LANDED_COST_PENDING':'LOW',
+          grossRevenue:sales.grossRevenue,domesticRevenue:sales.domesticRevenue,exportRevenue:sales.exportRevenue,
+          domesticInputCost:sourcing.domesticInputCost,importCommodityCost:sourcing.importCommodityCost,
+          totalCommodityInputCost:sourcing.totalCommodityInputCost,operatingCost:operating,
+          preLandedNetOperatingResult:preLanded,preLandedMarginPct:preLandedMargin,
+          netOperatingResult:finalResult,profitMarginPct:margin,
+          lossMarginPct:margin===null?null:Math.max(0,rounded(-margin,2)),
+          resultType:finalResult===null?'UNRESOLVED':finalResult>=0?'PROFIT':'LOSS',
+          domesticInputQuantity:sourcing.domesticInputQuantity,importInputQuantity:sourcing.importInputQuantity,
+          landedCostStatus:sourcing.landedCostStatus,finalLandedCostObserved:sourcing.finalLandedCostObserved,
+          domesticSupplyFeasible:sourcing.domesticSupplyFeasible,
+          salesAllocation:sales.rows,inputSourcing:sourcing.rows,
+          totalDomesticSaleQuantity:sales.totalDomesticSaleQuantity,
+          totalExportSaleQuantity:sales.totalExportSaleQuantity,totalUnsoldCapacity:sales.totalUnsoldCapacity,
+          capacityConserved:sales.capacityConserved,returnOnConstructionCapitalPct:returnPct,
+          reasons:reasons});
+      });
+    });
+    var rankable=options.filter(function(row){return row.status==='CALCULATED'&&row.netOperatingResult!==null;});
+    rankable.sort(function(a,b){return b.netOperatingResult-a.netOperatingResult||
+      salesModes.indexOf(a.salesAllocationMode)-salesModes.indexOf(b.salesAllocationMode)||
+      sourcingModes.indexOf(a.sourcingMode)-sourcingModes.indexOf(b.sourcingMode);});
+    var best=rankable.length?rankable[0]:null;
+    return{schemaVersion:1,horizonDays:30,generatedTurn:turn(),scenarioCount:options.length,
+      maximumScenarioCount:15,status:best?'COMPARABLE_COMPLETE_SCENARIO_AVAILABLE':
+        options.some(function(row){return row.status==='PRE_LANDED_ONLY';})?'PARTIALLY_EVALUATED_LANDED_COST_PENDING':
+        'AWAITING_RUNTIME_MARKET_OR_COST_EVIDENCE',
+      options:options,recommendedScenarioId:best?best.scenarioId:null,
+      recommendedScenario:best?{scenarioId:best.scenarioId,netOperatingResult:best.netOperatingResult,
+        profitMarginPct:best.profitMarginPct,returnOnConstructionCapitalPct:best.returnOnConstructionCapitalPct,
+        basis:'HIGHEST_OBSERVED_NET_RESULT_AMONG_FULLY_CALCULATED_OPTIONS'}:null,
+      bestObserved30DayReturnOnProjectCapitalPct:best?best.returnOnConstructionCapitalPct:null,
+      comparisonRules:{salesCapacityCountedOnce:true,
+        domesticSalesCappedByObservedUnmetDemand:true,
+        exportSalesCappedByCurrentUnmatchedBuyerDemand:true,
+        importsRequireObservedLandedCostsForFinalProfit:true,
+        missingEvidenceRemainsNull:true,
+        source:'RUNTIME_MARKET_DEMAND_STOCK_PRICE_AND_OPERATING_COST_EVIDENCE'}};
+  }
+
   function companyUnitEconomics(proposal,preview,assessment,marketApi){
     var profile=(catalog()||{}).factoryProfiles&&catalog().factoryProfiles[proposal.factoryType],
       recipe=recipeFor(proposal.factoryType,profile,proposal.processingResourceId),
@@ -689,8 +907,9 @@
       importedPreLandedMargin=importedInputExportNet!==null&&exportRevenue>0
         ?Number((importedInputExportNet/exportRevenue*100).toFixed(2)):null,
       importsUsed=inputRows.some(function(row){return num(row.importQuantity)>0;});
+    var scenarioMatrix=buildCompanyScenarioMatrix(proposal,outputRows,inputRows,operating,policyCurrency);
     return{
-      horizonDays:30,currency:policyCurrency||null,outputs:outputRows,inputs:inputRows,
+      horizonDays:30,currency:policyCurrency||null,outputs:outputRows,inputs:inputRows,scenarioMatrix:scenarioMatrix,
       domesticProduction:{status:domesticCalculated?'CALCULATED':
           !domesticDemandComplete?'DOMESTIC_DEMAND_OR_PRICE_UNOBSERVED':
           !domesticInputsFeasible?'DOMESTIC_INPUT_SUPPLY_INSUFFICIENT_OR_UNOBSERVED':
@@ -4122,6 +4341,11 @@
       var economics=companyCase.unitEconomics||{},domesticEconomics=economics.domesticProduction||{},
         importedEconomics=economics.importedInputProduction||{};
       var economicsInputMarkup=(economics.inputs||[]).map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b><br>30-day need '+caseAmount(row.required30Day)+'</span><span>Domestic quantity<br><b>'+caseAmount(row.domesticQuantity)+'</b></span><span>Imported quantity<br><b>'+caseAmount(row.importQuantity)+'</b></span><span>Domestic input cost<br><b>'+caseAmount(row.domesticCost)+'</b></span><span>Import commodity cost<br><b>'+caseAmount(row.importCommodityCost)+'</b></span><span>Import landed cost<br><b>'+escapeHtml(row.importLandedCostStatus||'UNOBSERVED')+'</b></span></div>';}).join('');
+      var scenarioMatrix=economics.scenarioMatrix||{},scenarioOptions=Array.isArray(scenarioMatrix.options)?scenarioMatrix.options:[];
+      var companyScenarioMatrixMarkup='<details class="pe-case-details" data-pe-scenario-matrix><summary>Compare '+caseAmount(scenarioMatrix.scenarioCount||0)+' company investment alternatives · '+escapeHtml(scenarioMatrix.status||'AWAITING_EVIDENCE').replace(/_/g,' ').toLowerCase()+'</summary><div class="pe-case-body">'+
+        (scenarioMatrix.recommendedScenario?'<p>Best fully calculated option: <b>'+escapeHtml(scenarioMatrix.recommendedScenario.scenarioId.replace(/_/g,' ').toLowerCase())+'</b> · net result '+caseAmount(scenarioMatrix.recommendedScenario.netOperatingResult)+' · margin '+caseAmount(scenarioMatrix.recommendedScenario.profitMarginPct)+'%</p>':'<p class="pe-info">No complete option can be ranked yet. Missing market, price or landed-cost evidence is left unresolved; the company proposal is still submitted.</p>')+
+        (scenarioOptions.length?scenarioOptions.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.salesAllocationMode.replace(/_/g,' ').toLowerCase())+'</b><br>'+escapeHtml(row.sourcingMode.replace(/_/g,' ').toLowerCase())+(row.scenarioId===scenarioMatrix.recommendedScenarioId?'<br>Recommended from observed results':'')+'</span><span>Status<br><b>'+escapeHtml(row.status.replace(/_/g,' ').toLowerCase())+'</b><br>'+escapeHtml(row.confidence.replace(/_/g,' ').toLowerCase())+'</span><span>Gross revenue<br><b>'+caseAmount(row.grossRevenue)+'</b></span><span>Input cost<br><b>'+caseAmount(row.totalCommodityInputCost)+'</b></span><span>Net result<br><b>'+caseAmount(row.netOperatingResult)+'</b><br>'+(row.preLandedNetOperatingResult===null?'':'Pre-landed: '+caseAmount(row.preLandedNetOperatingResult))+'</span><span>Margin<br><b>'+caseAmount(row.profitMarginPct)+'%</b><br>Import need '+caseAmount(row.importInputQuantity)+'</span></div>';}).join(''):'<span class="pe-info">No scenario inputs are available.</span>')+
+        '<small>Sales allocation never sells the same output quantity twice. Domestic and export quantities are capped by observed demand. Imported-input results remain pre-landed until freight, route, insurance and tariff costs are recorded. Scenarios are estimates, not orders or cash transactions.</small></div></details>';
       var companyUnitEconomicsMarkup='<div class="pe-input-forecast"><strong>Company profitability scenarios · '+escapeHtml(economics.horizonDays||30)+' days</strong>'+
         '<div class="pe-facts"><span>Domestic input scenario · gross sales <b>'+caseAmount(domesticEconomics.grossSalesCeiling)+'</b></span>'+
         '<span>Domestic input cost <b>'+caseAmount(domesticEconomics.domesticInputCost)+'</b></span>'+
@@ -4190,7 +4414,7 @@
         '<div><small>Government grant asked</small><strong>'+caseAmount(financing.requestedGovernmentGrant)+' '+escapeHtml(p.capitalUnit||'')+'</strong></div>'+
         '<div><small>Company risk disclosure</small><strong>'+escapeHtml(assessment.riskStatus||'UNRESOLVED')+'</strong></div></div>';
       var companyCaseDetails='<details class="pe-case-details" data-pe-company-case-details><summary>Company business case · market, supply chain, benefits and financing offer</summary><div class="pe-case-body">'+
-        applicationMarkup+companyOpportunityMarkup+companyMarketMarkup+companySupplyMarkup+companyUnitEconomicsMarkup+companyFinanceOfferMarkup+'</div></details>';
+        applicationMarkup+companyOpportunityMarkup+companyMarketMarkup+companySupplyMarkup+companyUnitEconomicsMarkup+companyScenarioMatrixMarkup+companyFinanceOfferMarkup+'</div></details>';
       var governmentReviewDetails='<details class="pe-case-details" data-pe-government-review-details><summary>Independent government assessment · market reality, national supply and public risk</summary><div class="pe-case-body">'+
         riskMarkup+readinessMarkup+inputDetails+shortages+unknown+'</div></details>';
       var facts='<div class="pe-facts"><span>Asset owner: '+escapeHtml(COMPANY_NAMES[p.companyId]||p.companyId)+'</span><span>Operator: '+escapeHtml(COMPANY_NAMES[p.operatorCompanyId||p.companyId]||(p.operatorCompanyId||p.companyId))+'</span><span>Factory: '+escapeHtml(p.factoryName)+'</span><span>Quantity: '+p.quantity+'</span><span>Capital: '+(p.capitalRequired===null?'Unquoted':Number(p.capitalRequired).toLocaleString('en-US')+' '+escapeHtml(p.capitalUnit))+'</span><span>Company capital: '+balance.toLocaleString('en-US')+'</span><span>Government factories: '+Number(preview.governmentFactoryCount||0).toLocaleString('en-US')+'</span><span>Private opening allocation: '+Number(preview.openingPrivateAllocation||0).toLocaleString('en-US')+'</span><span>Additional policy ceiling: '+Number(preview.maximumAdditionalUnits||0).toLocaleString('en-US')+'</span><span>Max safe domestic-input factories: '+(preview.maximumSafeDomesticFactoryQuantity===null?'Not observed':Number(preview.maximumSafeDomesticFactoryQuantity).toLocaleString('en-US'))+'</span><span>Daily capacity forecast: '+Number(preview.requestedDailyCapacity||0).toLocaleString('en-US')+'</span><span>Source: '+p.sourcingPolicy.replace(/_/g,' ')+'</span><span>Permit: '+(p.permit?escapeHtml(p.permit.permitId)+' · expires T'+Number(p.permit.expiresAtTurn).toLocaleString('en-US'):'Not issued')+'</span><span>Projects: '+progress+'</span></div>';
