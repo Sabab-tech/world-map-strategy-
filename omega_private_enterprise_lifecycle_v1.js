@@ -1120,8 +1120,21 @@
     };
   }
 
-  function buildCompanyStartupBudget(proposal,cash,constructionRequired,unitEconomics){
-    var inputRows=Array.isArray(unitEconomics&&unitEconomics.inputs)?unitEconomics.inputs:[],
+  function buildCompanyStartupBudget(proposal,cash,constructionRequired,unitEconomics,sourcingAlternatives){
+    var policy=String(proposal.sourcingPolicy||'DOMESTIC_ONLY').toUpperCase(),
+      selectedAlternativeId=policy==='COMPANY_FUNDED_IMPORTS'?'IMPORT_ONLY':
+        policy==='MIXED'?'DOMESTIC_FIRST_WITH_IMPORT_BACKFILL':'DOMESTIC_ONLY',
+      selectedAlternative=(sourcingAlternatives&&sourcingAlternatives.alternatives||[]).find(function(row){return row.strategy===selectedAlternativeId;})||null,
+      economicsByResource=Object.create(null);
+    (Array.isArray(unitEconomics&&unitEconomics.inputs)?unitEconomics.inputs:[]).forEach(function(row){
+      economicsByResource[token(row.resourceId)]=row;
+    });
+    var inputRows=(selectedAlternative&&Array.isArray(selectedAlternative.inputs)?selectedAlternative.inputs:[]).map(function(row){
+      return Object.assign({},row,economicsByResource[token(row.resourceId)]||{} ,{
+        domesticQuantity:row.domesticQuantity,importQuantity:row.importQuantity,
+        domesticCost:row.domesticCost,importCommodityCost:row.importCommodityCost
+      });
+    });
       importsUsed=inputRows.some(function(row){return num(row.importQuantity)>0;}),
       observedInputCostSubtotal=0,knownInputCostRows=0,
       inputCostsComplete=inputRows.length>0&&inputRows.every(function(row){
@@ -1142,17 +1155,25 @@
     var uniqueCurrencies=Array.from(new Set(costCurrencies)),
       currencyConsistent=!!currency&&uniqueCurrencies.every(function(value){return value===currency;}),
       allInputQuantitiesKnown=inputRows.length>0&&inputRows.every(function(row){
-        return num(row.required30Day)!==null&&num(row.domesticQuantity)!==null&&num(row.importQuantity)!==null;
+        return num(row.required30Day)!==null&&num(row.domesticQuantity)!==null&&num(row.importQuantity)!==null&&
+          num(row.domesticQuantity)+num(row.importQuantity)+1e-9>=num(row.required30Day);
       }),
+      selectedSupplierCoverage=inputRows.every(function(row){return num(row.importQuantity)<=0||
+        (num(row.externalPotentialAvailability)!==null&&num(row.externalPotentialAvailability)+1e-9>=num(row.importQuantity));}),
       inputCostKnown=inputCostsComplete&&allInputQuantitiesKnown&&currencyConsistent,
       observedWorkingCapitalSubtotal=observedInputCostSubtotal+(operatingCost===null?0:operatingCost),
-      allWorkingCapitalComponentsObserved=inputCostKnown&&operatingCost!==null,
-      completeWorkingCapitalRequirement=allWorkingCapitalComponentsObserved&&!importsUsed
-        ?Number(observedWorkingCapitalSubtotal.toFixed(2)):null,
-      workingCapitalStatus=!allInputQuantitiesKnown?'INPUT_QUANTITIES_UNOBSERVED':
-        !inputCostKnown?'INPUT_PRICE_OR_CURRENCY_UNOBSERVED':
-          operatingCost===null?'OPERATING_COST_POLICY_UNOBSERVED':
-            importsUsed?'IMPORTED_INPUT_LANDED_COST_UNOBSERVED':'COMPLETE_30_DAY_WORKING_CAPITAL',
+      allWorkingCapitalComponentsObserved=inputCostKnown&&operatingCost!==null&&allInputQuantitiesKnown&&selectedSupplierCoverage,
+      // No authoritative domestic haul, freight, insurance, tariff or port-handling
+      // rate exists in the current company-cost contract. Never silently price it at zero.
+      logisticsCost=null,logisticsCostStatus=importsUsed
+        ?'IMPORTED_FREIGHT_TARIFF_INSURANCE_AND_DOMESTIC_HAUL_UNOBSERVED'
+        :'DOMESTIC_INPUT_TRANSPORT_COST_UNOBSERVED',
+      completeWorkingCapitalRequirement=null,
+      workingCapitalStatus=!allInputQuantitiesKnown?'INPUT_QUANTITIES_OR_SELECTED_SOURCE_UNOBSERVED':
+        !selectedSupplierCoverage?'POTENTIAL_SUPPLIER_CAPACITY_INSUFFICIENT_OR_UNOBSERVED':
+          !inputCostKnown?'INPUT_PRICE_OR_CURRENCY_UNOBSERVED':
+            operatingCost===null?'OPERATING_COST_POLICY_UNOBSERVED':
+              logisticsCost===null?'LOGISTICS_COST_UNOBSERVED':'COMPLETE_30_DAY_WORKING_CAPITAL',
       minimumKnownStartupCapitalFloor=constructionRequired===null?null:
         Number((constructionRequired+observedWorkingCapitalSubtotal).toFixed(2)),
       completeStartupCapitalRequired=constructionRequired===null||completeWorkingCapitalRequirement===null
@@ -1177,7 +1198,11 @@
             constructionRequired!==null&&cash+1e-9>=constructionRequired
               ?'CONSTRUCTION_AFFORDABLE_WORKING_CAPITAL_GAP':'CONSTRUCTION_FUNDING_GAP';
     return{
-      horizonDays:30,currency:currency,constructionCapitalRequired:constructionRequired,
+      horizonDays:30,currency:currency,selectedSourcingPolicy:policy,
+      selectedSourcingAlternativeId:selectedAlternativeId,
+      selectedSourcingAlternativeStatus:selectedAlternative&&selectedAlternative.status||'UNOBSERVED',
+      selectedSourcingSupplyComplete:allInputQuantitiesKnown&&selectedSupplierCoverage,
+      constructionCapitalRequired:constructionRequired,
       constructionOnlyFundingGap:cash===null||constructionRequired===null?null:
         Math.max(0,Number((constructionRequired-cash).toFixed(2))),
       observedInputCostSubtotal:Number(observedInputCostSubtotal.toFixed(2)),
@@ -1185,7 +1210,8 @@
       operatingCost:operatingCost,observedWorkingCapitalSubtotal:Number(observedWorkingCapitalSubtotal.toFixed(2)),
       completeWorkingCapitalRequirement:completeWorkingCapitalRequirement,
       workingCapitalStatus:workingCapitalStatus,importsRequireLandedCost:importsUsed,
-      landedImportCost:null,minimumKnownStartupCapitalFloor:minimumKnownStartupCapitalFloor,
+      landedImportCost:null,logisticsCost:logisticsCost,logisticsCostStatus:logisticsCostStatus,
+      minimumKnownStartupCapitalFloor:minimumKnownStartupCapitalFloor,
       minimumKnownStartupFundingGap:minimumKnownStartupFundingGap,
       completeStartupCapitalRequired:completeStartupCapitalRequired,
       completeStartupFundingGap:completeStartupFundingGap,
@@ -1194,8 +1220,8 @@
         cash===null?null:cash+1e-9>=completeStartupCapitalRequired,
       status:status,
       limitation:importsUsed
-        ?'The observed working-capital subtotal excludes unobserved import freight, route, insurance and tariffs. It is not the complete startup budget.'
-        :'A complete startup requirement is shown only when every 30-day input and operating-cost component is priced and currency-reconciled.'
+        ?'The known-cost floor excludes unobserved imported freight, domestic haul, route, insurance and tariffs. It is not the complete startup budget.'
+        :'The known-cost floor excludes unobserved domestic transport and logistics. It is not the complete startup budget.'
     };
   }
 
@@ -1307,7 +1333,7 @@
       affordableFactoryUnits=num(profile&&profile.constructionCost)===null||cash===null?null:
         Math.max(0,Math.floor((cash+1e-9)/num(profile.constructionCost))),
       sourcingAlternatives=buildCompanySourcingAlternatives(inputs,unitEconomics.inputs,unitEconomics.currency,proposal.sourcingPolicy),
-      startupBudget=buildCompanyStartupBudget(proposal,cash,required,unitEconomics),
+      startupBudget=buildCompanyStartupBudget(proposal,cash,required,unitEconomics,sourcingAlternatives),
       financingAlternatives=buildCompanyFinancingAlternatives(preference,partnerEquityRequested,
         requestedPartnerShareBps===null?null:Number((requestedPartnerShareBps/100).toFixed(2)),cash,startupBudget,
         proposal.stateSupportRequested===true&&preference==='GOVERNMENT_GRANT'
