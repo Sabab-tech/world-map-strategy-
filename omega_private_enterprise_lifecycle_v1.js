@@ -4678,19 +4678,20 @@
           (plan.rows||[]).map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b></span><span>30-day need<br><b>'+caseAmount(row.required30Day)+'</b></span><span>Domestic input<br><b>'+caseAmount(row.plannedDomesticQuantity)+'</b></span><span>Import input<br><b>'+caseAmount(row.plannedImportQuantity)+'</b></span><span>Domestic cost<br><b>'+caseAmount(row.domesticCommodityCost)+'</b></span><span>Import cost<br><b>'+caseAmount(row.importCommodityCost)+'</b></span><span>Landed cost<br><b>'+escapeHtml(row.landedCostStatus||'UNOBSERVED').replace(/_/g,' ').toLowerCase()+'</b></span></div>';}).join('')+'</details>';}).join(''):'<span class="pe-info">No input-sourcing details are currently available.</span>')+'</div>';
       var companyScenarioMatrixMarkup='<details class="pe-case-details" data-pe-scenario-matrix><summary>Compare '+caseAmount(scenarioMatrix.scenarioCount||0)+' company investment alternatives · '+escapeHtml(scenarioMatrix.status||'AWAITING_EVIDENCE').replace(/_/g,' ').toLowerCase()+'</summary><div class="pe-case-body">'+
         (scenarioMatrix.recommendedScenario?'<p>Best fully calculated option: <b>'+escapeHtml(scenarioMatrix.recommendedScenario.scenarioId.replace(/_/g,' ').toLowerCase())+'</b> · net result '+caseAmount(scenarioMatrix.recommendedScenario.netOperatingResult)+' · margin '+caseAmount(scenarioMatrix.recommendedScenario.profitMarginPct)+'%</p>':'<p class="pe-info">No complete option can be ranked yet. Missing market, price or landed-cost evidence is left unresolved; the company proposal is still submitted.</p>')+
-        (scenarioOptions.length?scenarioOptions.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.salesAllocationMode.replace(/_/g,' ').toLowerCase())+'</b><br>'+escapeHtml(row.sourcingMode.replace(/_/g,' ').toLowerCase())+(row.scenarioId===scenarioMatrix.recommendedScenarioId?'<br>Recommended from observed results':'')+'</span><span>Status<br><b>'+escapeHtml(row.status.replace(/_/g,' ').toLowerCase())+'</b><br>'+escapeHtml(row.confidence.replace(/_/g,' ').toLowerCase())+'</span><span>Gross revenue<br><b>'+caseAmount(row.grossRevenue)+'</b></span><span>Input cost<br><b>'+caseAmount(row.totalCommodityInputCost)+'</b></span><span>Net result<br><b>'+caseAmount(row.netOperatingResult)+'</b><br>'+(row.preLandedNetOperatingResult===null?'':'Pre-landed: '+caseAmount(row.preLandedNetOperatingResult))+'</span><span>Margin<br><b>'+caseAmount(row.profitMarginPct)+'%</b><br>Import need '+caseAmount(row.importInputQuantity)+'</span></div>';}).join(''):'<span class="pe-info">No scenario inputs are available.</span>')+
+        (scenarioOptions.length?scenarioOptions.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.salesAllocationMode.replace(/_/g,' ').toLowerCase())+'</b><br>'+escapeHtml(row.sourcingMode.replace(/_/g,' ').toLowerCase())+(row.scenarioId===scenarioMatrix.recommendedScenarioId?'<br>Recommended from observed results':'')+'</span><span>Status<br><b>'+escapeHtml(row.status.replace(/_/g,' ').toLowerCase())+'</b><br>'+escapeHtml(row.confidence.replace(/_/g,' ').toLowerCase())+'</span><span>Gross revenue<br><b>'+caseAmount(row.grossRevenue)+'</b></span><span>Input cost<br><b>'+caseAmount(row.totalCommodityInputCost)+'</b></span><span>Net result<br><b>'+caseAmount(row.netOperatingResult)+'</b><br>'+(row.preLandedNetOperatingResult===null?'':'Pre-logistics / pre-landed estimate: '+caseAmount(row.preLogisticsNetOperatingResult))+'</span><span>Final margin<br><b>'+caseAmount(row.profitMarginPct)+'%</b><br>Import need '+caseAmount(row.importInputQuantity)+'</span></div>';}).join(''):'<span class="pe-info">No scenario inputs are available.</span>')+
         companyScenarioPlanDetailsMarkup+
-        '<small>Sales allocation never sells the same output quantity twice. Domestic and export quantities are capped by observed demand. Imported-input results remain pre-landed until freight, route, insurance and tariff costs are recorded. Scenarios are estimates, not orders or cash transactions.</small></div></details>';
+        '<small>Sales allocation never sells the same output quantity twice. Domestic and export quantities are capped by observed demand. Domestic/export results remain pre-logistics until input haul and finished-goods delivery costs are recorded. Imported-input results additionally require freight, route, insurance and tariff costs. Cost-optimized sourcing stays unresolved until comparable landed costs exist. Scenarios are estimates, not orders or cash transactions.</small></div></details>';
       var companyUnitEconomicsMarkup='<div class="pe-input-forecast"><strong>Company profitability scenarios · '+escapeHtml(economics.horizonDays||30)+' days</strong>'+
         '<div class="pe-facts"><span>Domestic input scenario · gross sales <b>'+caseAmount(domesticEconomics.grossSalesCeiling)+'</b></span>'+
         '<span>Domestic input cost <b>'+caseAmount(domesticEconomics.domesticInputCost)+'</b></span>'+
         '<span>Operating cost <b>'+caseAmount(domesticEconomics.operatingCost)+'</b></span>'+
-        '<span>Net operating result <b>'+caseAmount(domesticEconomics.netOperatingResult)+'</b></span>'+
-        '<span>Profit margin <b>'+caseAmount(domesticEconomics.profitMarginPct)+'%</b></span>'+
+        '<span>Net result before logistics <b>'+caseAmount(domesticEconomics.preLogisticsNetOperatingResult)+'</b></span>'+
+        '<span>Pre-logistics margin <b>'+caseAmount(domesticEconomics.preLogisticsMarginPct)+'%</b></span>'+
+        '<span>Domestic logistics cost <b>'+escapeHtml(domesticEconomics.logisticsCostStatus||'UNOBSERVED')+'</b></span>'+
         '<span>Loss margin <b>'+caseAmount(domesticEconomics.lossMarginPct)+'%</b></span>'+
         '<span>Domestic scenario status <b>'+escapeHtml(domesticEconomics.status||'UNRESOLVED')+'</b></span>'+
-        '<span>Domestic input export result <b>'+caseAmount((economics.domesticInputExport||{}).netOperatingResult)+'</b></span>'+
-        '<span>Domestic-input export margin <b>'+caseAmount((economics.domesticInputExport||{}).profitMarginPct)+'%</b></span>'+
+        '<span>Domestic-input export result before logistics <b>'+caseAmount((economics.domesticInputExport||{}).preLogisticsNetOperatingResult)+'</b></span>'+
+        '<span>Domestic-input export pre-logistics margin <b>'+caseAmount((economics.domesticInputExport||{}).preLogisticsMarginPct)+'%</b></span>'+
         '<span>Imported input commodity cost <b>'+caseAmount(importedEconomics.importedCommodityCost)+'</b></span>'+
         '<span>Import freight / tariff / insurance <b>'+caseAmount(importedEconomics.freightTariffInsuranceCost)+'</b></span>'+
         '<span>Imported-input net before landed costs <b>'+caseAmount(importedEconomics.netBeforeLandedImportCosts)+'</b></span>'+
@@ -4698,8 +4699,8 @@
         '<span>Final imported-input profit/loss <b>'+caseAmount(importedEconomics.actualProfitOrLoss)+'</b></span></div>'+
         (economicsInputMarkup?'<strong>Input sourcing plan and cost by resource</strong>'+economicsInputMarkup:'<span class="pe-info">No recipe input cost rows are available.</span>')+
         '<small>'+escapeHtml(importedEconomics.limitation||'Profit/loss remains unresolved where input prices or landed import costs are unavailable.')+'</small>'+
-        '<small>All figures are runtime scenarios using observed prices and the configured operating-cost policy. Full-capacity sell-through is not a guaranteed sale; unknown values are not estimated.</small></div>';
-      var financing=companyCase.financingOffer||{};
+        '<small>All figures are runtime scenarios using observed prices and the configured operating-cost policy. Domestic haul, finished-goods transport and delivery charges are not priced; displayed domestic/export net amounts are pre-logistics estimates, not final profit/loss. Full-capacity sell-through is not a guaranteed sale; unknown values are not estimated.</small></div>';
+      var financing=companyCase.financingOffer||{},startupBudget=financing.startupBudget||{};
       var investmentOptions=companyCase.investmentOptions||{},dataConfidence=companyCase.dataConfidence||{};
       var scaleOptionMarkup=(investmentOptions.scaleAlternatives||[]).map(function(row){
         return'<div class="pe-input-row"><span><b>'+Number(row.factoryCount||0).toLocaleString('en-US')+' factories</b>'+
@@ -4724,6 +4725,16 @@
         (scaleOptionMarkup||'<span class="pe-info">Alternative scale cannot be calculated from the currently recorded capital/expansion data.</span>')+
         '<strong>Funding routes the company considered</strong>'+
         (financingPathMarkup||'<span class="pe-info">No financing alternative could be calculated.</span>')+
+        '<strong>30-day startup cost floor · not a complete budget</strong>'+
+        '<div class="pe-facts"><span>Selected sourcing route <b>'+escapeHtml(startupBudget.selectedSourcingPolicy||'UNOBSERVED')+'</b></span>'+
+        '<span>Observed input commodity cost <b>'+caseAmount(startupBudget.observedInputCostSubtotal)+'</b></span>'+
+        '<span>Observed operating cost <b>'+caseAmount(startupBudget.operatingCost)+'</b></span>'+
+        '<span>Known startup capital floor <b>'+caseAmount(startupBudget.minimumKnownStartupCapitalFloor)+'</b></span>'+
+        '<span>Minimum known funding gap <b>'+caseAmount(startupBudget.minimumKnownStartupFundingGap)+'</b></span>'+
+        '<span>Complete working capital <b>UNRESOLVED</b></span>'+
+        '<span>Complete startup capital <b>UNRESOLVED</b></span>'+
+        '<span>Logistics cost <b>'+escapeHtml(startupBudget.logisticsCostStatus||'UNOBSERVED')+'</b></span></div>'+
+        '<small>'+escapeHtml(startupBudget.limitation||'Known cost components exclude unobserved logistics.')+'</small>'+
         '<strong>Evidence coverage: '+escapeHtml(dataConfidence.status||'UNOBSERVED')+' · '+caseAmount(dataConfidence.coveragePct)+'%</strong>'+
         '<div class="pe-facts"><span>Current order books <b>'+caseAmount(dataConfidence.currentTurnOrderBook&&dataConfidence.currentTurnOrderBook.observed)+' / '+caseAmount(dataConfidence.currentTurnOrderBook&&dataConfidence.currentTurnOrderBook.total)+'</b></span>'+
         '<span>Domestic demand/supply <b>'+caseAmount(dataConfidence.domesticDemandAndSupply&&dataConfidence.domesticDemandAndSupply.observed)+' / '+caseAmount(dataConfidence.domesticDemandAndSupply&&dataConfidence.domesticDemandAndSupply.total)+'</b></span>'+
