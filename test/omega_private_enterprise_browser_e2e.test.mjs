@@ -2114,6 +2114,8 @@ test('real Chromium map marker routes the exact site to selected factory input a
       const loaded = await probe.loadSlot(slot);
       const restored = probe.world.state;
       const restoredResource = restored.resource.BGD;
+      const restoredSourceBatch = (restoredResource.batches || []).find(row =>
+        String(row.batchId) === String(run.batchId)) || null;
       const restoredFactory = restored.economy.BGD.productionAssets.find(row =>
         String(row.id || row.assetId || row.projectId) === factoryId);
       const restoredInputLot = restoredFactory?.inputBatchLots?.find(row =>
@@ -2127,7 +2129,9 @@ test('real Chromium map marker routes the exact site to selected factory input a
         sentinelCleared: restored.simulation[sentinel] === undefined,
         siteId: (restoredResource.industrialNetwork?.siteFlowLedger || [])
           .find(row => String(row.batchId) === String(run.batchId))?.siteId || null,
-        sourceBatchPresent: (restoredResource.batches || []).some(row => String(row.batchId) === String(run.batchId)),
+        batchId: restoredSourceBatch?.batchId || null,
+        factoryId: String(restoredFactory?.id || restoredFactory?.assetId || restoredFactory?.projectId || ''),
+        sourceBatchPresent: !!restoredSourceBatch,
         factoryPresent: !!restoredFactory,
         inputInventory: copy(restoredFactory?.inputInventory || {}),
         inputLot: copy(restoredInputLot),
