@@ -264,7 +264,8 @@ test('canonical game clock survives 30, 100, 180 and 365 in-game days without ha
   const expectedCompanies = COMPANY_IDS.slice();
   const checkpoints = [
     { day: 30, expectedProposals: 1 },
-    { day: 100, expectedProposals: 3 },
+    { day: 34, expectedProposals: 5 },
+    { day: 100, expectedProposals: 5 },
     { day: 180, expectedProposals: 5 },
     { day: 365, expectedProposals: 5 }
   ];
@@ -295,12 +296,17 @@ test('canonical game clock survives 30, 100, 180 and 365 in-game days without ha
 
     const dashboard = h.api.getCountryDashboard('BGD');
     assert.equal(dashboard.proposals.length, point.expectedProposals,
-      'only one bounded autonomous proposal is allowed per 30-day period at day ' + point.day);
+      'the bounded per-turn company review cursor must process every eligible company by day ' + point.day);
     assert.deepEqual(
       JSON.parse(JSON.stringify(dashboard.proposals.map(row => row.companyId))),
       expectedCompanies.slice(0, point.expectedProposals),
-      'five company identities must rotate deterministically in order'
+      'five company identities must rotate deterministically in order without a whole-world scan'
     );
+    const cycle = h.state.economy.BGD.privateEnterpriseLifecycle.autonomousProposalCycle;
+    assert.ok(cycle && cycle.period === Math.floor(point.day / 30),
+      'the current period must persist its autonomous review cursor');
+    assert.ok(cycle.nextCompanyIndex <= COMPANY_IDS.length,
+      'review cursor must remain inside the fixed five-company bound');
     assert.ok(dashboard.proposals.every(row =>
       row.status === 'PROPOSED' && row.productionEnabled === false &&
       row.submissionMode === 'AUTONOMOUS_COMPANY_TURN_CYCLE'
