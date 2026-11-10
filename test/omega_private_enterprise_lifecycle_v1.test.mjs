@@ -259,6 +259,20 @@ test('company proposal includes its own market analysis, supply-chain proof and 
     'missing country-level export evidence must not be misreported as zero exports');
   assert.equal(proposal.companyCase.unitEconomics.domesticProduction.netOperatingResult,null);
   assert.equal(proposal.companyCase.unitEconomics.importedInputProduction.actualProfitOrLoss,null);
+  const matrix=proposal.companyCase.unitEconomics.scenarioMatrix;
+  assert.equal(matrix.scenarioCount,15,'five sales allocations must be compared against three sourcing policies');
+  assert.equal(matrix.options.length,15);
+  assert.equal(matrix.salesAllocationPlans.length,5);
+  assert.equal(matrix.inputSourcingPlans.length,3);
+  assert.ok(matrix.options.every(row=>!Object.prototype.hasOwnProperty.call(row,'salesAllocation')&&
+    !Object.prototype.hasOwnProperty.call(row,'inputSourcing')),
+    'scenario summaries must reference deduplicated plans rather than serialize repeated row arrays');
+  assert.equal(matrix.recommendedScenarioId,null,
+    'missing market data must not produce a fabricated winning investment scenario');
+  assert.ok(matrix.options.every(row=>row.netOperatingResult===null),
+    'unobserved market and cost data must remain unresolved instead of becoming fake profit');
+  assert.ok(matrix.options.every(row=>row.capacityConserved===true),
+    'all alternatives must preserve the same physical output-capacity ceiling');
   assert.equal(h.api.getCountryDashboard('BGD').marketResearchRequests.length,1);
 });
 
@@ -322,6 +336,11 @@ test('company investment engine compares eligible factories and submits its own 
   assert.equal(proposal.companyStrategy.selectedOpportunity.factoryType,'COPPER_WORKS');
   assert.ok(proposal.companyStrategy.alternativesConsidered.some(row=>row.factoryType==='STEEL_WORKS'));
   const selectedEconomics=proposal.companyStrategy.selectedOpportunity.unitEconomics;
+  assert.equal(selectedEconomics.scenarioMatrix.scenarioCount,15);
+  assert.equal(Object.prototype.hasOwnProperty.call(selectedEconomics.scenarioMatrix,'options'),false,
+    'the strategy stores a compact scenario summary instead of duplicating every alternative');
+  assert.equal(proposal.companyCase.unitEconomics.scenarioMatrix.options.length,15,
+    'the full matrix remains available once in the company business case');
   assert.equal(selectedEconomics.importedInputProduction.status,'COMMODITY_COST_ONLY_LANDED_COST_UNOBSERVED');
   assert.ok(selectedEconomics.importedInputProduction.netBeforeLandedImportCosts>0,
     'the fixture exposes a positive pre-landed imported-input ceiling');
@@ -1923,4 +1942,51 @@ test('private lifecycle merges populated BANGLADESH records into a newly materia
     'legacy alias readers must continue to see the same lifecycle object');
   assert.equal(h.state.economy.BGD.privateEnterpriseLifecycle.procurementRecords.length,1,
     'country-bucket reconciliation must not duplicate or drop procurement records');
+});
+
+
+test('company scenario matrix keeps shared production capacity single-counted across domestic and export sales',()=>{
+  const h=makeHarness();
+  h.state.trade={BGD:{marketPrice:{steel:5,iron_ore:2},
+    currencyCode:'GAME_CURRENCY_UNITS',settlementCurrency:'GAME_CURRENCY_UNITS'}};
+  h.state.resource.BGD.processedWarehouse={availableByResource:{steel:0},reservedByResource:{}};
+  h.state.resource.BGD.demandRuntime={lastTurn:4,byResource:{
+    steel:{demandPerDay:5,consumerDemandPerDay:5,activeFactoryInputDemandPerDay:0},
+    iron_ore:{demandPerDay:0,consumerDemandPerDay:0,activeFactoryInputDemandPerDay:0}
+  },authority:'TEST_CURRENT_TURN_DEMAND_SNAPSHOT'};
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){
+      return{resourceId,status:'CLEARED',priceDiscovery:'ORDER_BOOK_CROSSING',
+        matchedQuantity:0,bidDepth:resourceId==='steel'?80:20,askDepth:0,
+        clearingPriceUsd:resourceId==='steel'?20:2,generatedTurn:4,matches:[]};
+    },
+    localPrice(countryId,resourceId){return resourceId==='steel'?20:2;}
+  };
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,
+    factoryType:'STEEL_WORKS',quantity:1,requestId:'scenario-capacity-conservation'});
+  assert.equal(proposal.status,'PROPOSED',JSON.stringify(proposal));
+  const matrix=proposal.companyCase.unitEconomics.scenarioMatrix;
+  const domesticFirst=matrix.options.find(row=>
+    row.salesAllocationMode==='DOMESTIC_FIRST'&&row.sourcingMode==='DOMESTIC_FIRST_IMPORT_GAP');
+  const balanced=matrix.options.find(row=>
+    row.salesAllocationMode==='BALANCED_DEMAND_SPLIT'&&row.sourcingMode==='DOMESTIC_FIRST_IMPORT_GAP');
+  assert.ok(domesticFirst&&balanced,'the company must receive alternative market/sourcing combinations');
+  for(const scenario of [domesticFirst,balanced]){
+    assert.equal(scenario.capacityConserved,true);
+    const salesPlan=matrix.salesAllocationPlans.find(plan=>plan.mode===scenario.salesAllocationMode);
+    assert.ok(salesPlan,'every option must reference its one stored sales-allocation plan');
+    const output=salesPlan.rows[0];
+    assert.equal(output.projected30DayQuantity,300);
+    assert.equal(output.domesticSaleQuantity,150);
+    assert.equal(output.exportSaleQuantity,80);
+    assert.equal(output.unsoldCapacity,70);
+    assert.ok(output.domesticSaleQuantity+output.exportSaleQuantity<=output.projected30DayQuantity,
+      'domestic and export sales must share, not duplicate, the factory output');
+    assert.ok(output.domesticSaleQuantity<=output.domesticDemandCeiling);
+    assert.ok(output.exportSaleQuantity<=output.internationalBuyerDemandCeiling);
+    assert.equal(scenario.netOperatingResult,null,
+      'an import-dependent case cannot report final profit before landed import costs are available');
+    assert.equal(scenario.finalLandedCostObserved,false);
+  }
+  assert.equal(proposal.marketResearchRequest.status,'QUEUED_LOCAL_MARKET_HANDOFF');
 });
