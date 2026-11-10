@@ -423,13 +423,16 @@
     });
     var bidDepth=current?num(quote.bidDepth):null,askDepth=current?num(quote.askDepth):null,
       matched=num(quote.matchedQuantity),
-      unmatchedBidDepth=bidDepth===null||matched===null?null:Math.max(0,bidDepth-matched);
+      unmatchedBidDepth=bidDepth===null||matched===null?null:Math.max(0,bidDepth-matched),
+      unmatchedAskDepth=askDepth===null||matched===null?null:Math.max(0,askDepth-matched),
+      unmatchedDemandSupplyGap=unmatchedBidDepth===null||unmatchedAskDepth===null?null:unmatchedBidDepth-unmatchedAskDepth;
     return{resourceId:resourceId,generatedTurn:num(quote.generatedTurn),currentTurn:current,
       status:current?String(quote.status||'UNAVAILABLE'):'STALE_OR_UNOBSERVED',
       priceDiscovery:current?String(quote.priceDiscovery||'UNAVAILABLE'):'UNAVAILABLE',
       clearingPriceUsd:cleared?num(quote.clearingPriceUsd):null,
       matchedQuantity:current?matched:null,bidDepth:bidDepth,askDepth:askDepth,
-      globalUnmatchedBidDepth:unmatchedBidDepth,
+      globalUnmatchedBidDepth:unmatchedBidDepth,globalUnmatchedAskDepth:unmatchedAskDepth,
+      globalUnmatchedDemandSupplyGap:unmatchedDemandSupplyGap,
       foreignBuyerMatchedQuantity:current?foreignBuyerMatches:null,
       matchedExportsFromCountry:current?foreignExports:null,
       matchedImportsIntoCountry:current?foreignImports:null,
@@ -510,8 +513,14 @@
         globalMatchedDemand:market.foreignBuyerMatchedQuantity,
         matchedExportsFromCountry:market.matchedExportsFromCountry,
         globalUnmatchedBuyOrderDepth:market.globalUnmatchedBidDepth,
+        globalUnmatchedSellOfferDepth:market.globalUnmatchedAskDepth,
+        unmatchedDemandSupplyGap:market.globalUnmatchedDemandSupplyGap,
         globalBidDepth:market.bidDepth,globalAskDepth:market.askDepth,
-        demandPressureStatus:market.demandPressureStatus,marketTurn:market.generatedTurn,
+        demandPressureStatus:market.demandPressureStatus,
+        demandSupplyStatus:market.globalUnmatchedDemandSupplyGap===null?'UNOBSERVED':
+          market.globalUnmatchedDemandSupplyGap>0?'BUYER_DEMAND_EXCEEDS_SELLER_SUPPLY':
+          market.globalUnmatchedDemandSupplyGap<0?'SELLER_SUPPLY_EXCEEDS_BUYER_DEMAND':'BALANCED_OPEN_ORDER_DEPTH',
+        marketTurn:market.generatedTurn,
         evidenceStatus:market.currentTurn?'CURRENT_TURN_ORDER_BOOK':'UNOBSERVED_OR_STALE',
         note:'Global order-book pressure is not a country-specific sales contract.'});
     });
@@ -914,11 +923,6 @@
         companyCashAvailable:cash,companyCapitalOffer:cash===null||required===null?null:Math.min(cash,required),
         constructionCapitalRequired:required,fundingGap:fundingGap,
         privateShareholdingRequested:['PRIVATE_SHAREHOLDERS','JOINT_VENTURE','PRIVATE_EQUITY','PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE'].indexOf(preference)>=0,
-        requestedPrivateShareholdingBps:num(proposal.requestedPrivateShareholdingBps),
-        privateShareholdingTermsStatus:num(proposal.requestedPrivateShareholdingBps)===null?
-          (['PRIVATE_SHAREHOLDERS','JOINT_VENTURE','PRIVATE_EQUITY','PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE'].indexOf(preference)>=0
-            ?'PRIVATE_SHAREHOLDING_REQUESTED_PERCENTAGE_REQUIRES_VALUATION_AND_NEGOTIATION':'NOT_REQUESTED'):
-          'COMPANY_SHAREHOLDING_TERMS_STATED',
         requestedExternalFundingAmount:fundingGap===null?required:fundingGap,
         fundingGapStatus:fundingGap===null?'COMPANY_CASH_UNOBSERVED_REQUIRES_DUE_DILIGENCE':'CALCULATED_FROM_RECORDED_COMPANY_CAPITAL',
         requestedGovernmentGrant:proposal.stateSupportRequested===true&&preference==='GOVERNMENT_GRANT'
