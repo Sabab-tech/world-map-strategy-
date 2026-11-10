@@ -1698,7 +1698,7 @@
         'The company will not treat forecasts, supplier listings or requested public support as settled commitments.',
       strategy={
         schemaVersion:1,actorCompanyId:company,decision:'SUBMIT_COMPANY_INITIATED_INVESTMENT',
-        decisionTurn:turn(),selectionMethod:'DOMESTIC_DEMAND_GAP_EXPORT_PROCESSING_INTERNATIONAL_DEMAND_AND_FINANCIAL_FEASIBILITY',
+        decisionTurn:turn(),selectionMethod:'HIGHEST_CURRENT_MARKET_SUPPLY_OPERATIONAL_AND_CAPITAL_SCORE_WITH_DOMESTIC_DEMAND_GAP_EXPORT_PROCESSING_INTERNATIONAL_ORDER_BOOK_AND_FINANCIAL_FEASIBILITY',
         confidence:selected.totalScore>=45?'HIGH':selected.totalScore>=20?'MEDIUM':'LOW',
         horizonDays:30,selectedOpportunity:{factoryType:selected.factoryType,factoryName:selected.factoryName,
           requestedFactoryCount:selected.quantity,totalScore:selected.totalScore,
