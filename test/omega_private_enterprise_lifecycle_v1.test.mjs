@@ -690,9 +690,10 @@ test('company budget and requested partner share are calculated from unreserved 
   assert.equal(options.maximumConstructionAffordableFactoryCount,0);
   assert.equal(options.scaleAlternatives[0].canSelfFinanceConstruction,false);
   assert.equal(options.scaleAlternatives[0].constructionFundingGap,60);
-  assert.ok(options.financingAlternatives.some(row=>
+  const financingAlternatives=financing.financingAlternatives||[];
+  assert.ok(financingAlternatives.some(row=>
     row.id==='PRIVATE_EQUITY_PARTNER'&&row.indicativeProjectSharePct===60));
-  assert.ok(options.financingAlternatives.some(row=>
+  assert.ok(financingAlternatives.some(row=>
     row.id==='COMMERCIAL_LOAN'&&row.status==='LENDER_OFFER_UNOBSERVED'));
   assert.equal(response.proposal.status,'PROPOSED',
     'unavailable lenders or equity counterparties must not block a company-originated proposal');
