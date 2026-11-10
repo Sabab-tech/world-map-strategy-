@@ -730,15 +730,17 @@
         var preLandedComplete=sales.grossRevenue!==null&&sourcing.totalCommodityInputCost!==null&&
           operating!==null&&sales.currencyConsistent&&sourcing.currencyConsistent&&sourcing.feasible,
           preLanded=preLandedComplete?rounded(sales.grossRevenue-sourcing.totalCommodityInputCost-operating,2):null,
-          finalComplete=preLandedComplete&&!sourcing.importsRequired,
-          finalResult=finalComplete?preLanded:null,
+          logisticsCost=null,
+          logisticsCostStatus='INPUT_HAUL_AND_FINISHED_GOODS_DELIVERY_COST_UNOBSERVED',
+          finalComplete=preLandedComplete&&!sourcing.importsRequired&&logisticsCost!==null,
+          finalResult=finalComplete?rounded(preLanded-logisticsCost,2):null,
           margin=finalResult!==null&&sales.grossRevenue>0?rounded(finalResult/sales.grossRevenue*100,2):null,
           preLandedMargin=preLanded!==null&&sales.grossRevenue>0?rounded(preLanded/sales.grossRevenue*100,2):null,
           capital=num(proposal&&proposal.capitalRequired),
           returnPct=finalResult!==null&&capital!==null&&capital>0?rounded(finalResult/capital*100,2):null,
           status=!sourcing.feasible?'INFEASIBLE_DOMESTIC_INPUTS':
             finalComplete?'CALCULATED':
-            sourcing.importsRequired&&preLanded!==null?'PRE_LANDED_ONLY':
+            preLanded!==null?(sourcing.importsRequired?'PRE_LANDED_ONLY':'PRE_LOGISTICS_ONLY'):
             !sales.complete?'UNRESOLVED_MARKET_EVIDENCE':
             !sourcing.quantityKnown?'UNRESOLVED_INPUT_AVAILABILITY':
             'UNRESOLVED_COST_OR_CURRENCY';
@@ -748,7 +750,9 @@
           grossRevenue:sales.grossRevenue,domesticRevenue:sales.domesticRevenue,exportRevenue:sales.exportRevenue,
           domesticInputCost:sourcing.domesticInputCost,importCommodityCost:sourcing.importCommodityCost,
           totalCommodityInputCost:sourcing.totalCommodityInputCost,operatingCost:operating,
-          preLandedNetOperatingResult:preLanded,preLandedMarginPct:preLandedMargin,
+          preLandedNetOperatingResult:preLanded,preLogisticsNetOperatingResult:preLanded,
+          preLandedMarginPct:preLandedMargin,logisticsCost:logisticsCost,
+          logisticsCostStatus:logisticsCostStatus,resultBasis:finalComplete?'AFTER_OBSERVED_LOGISTICS':'PRE_LOGISTICS_ESTIMATE_ONLY',
           netOperatingResult:finalResult,profitMarginPct:margin,
           lossMarginPct:margin===null?null:Math.max(0,rounded(-margin,2)),
           resultType:finalResult===null?'UNRESOLVED':finalResult>=0?'PROFIT':'LOSS',
@@ -782,6 +786,7 @@
         domesticSalesCappedByObservedUnmetDemand:true,
         exportSalesCappedByCurrentUnmatchedBuyerDemand:true,
         importsRequireObservedLandedCostsForFinalProfit:true,
+        domesticInputHaulAndFinishedGoodsDeliveryRequireObservedCostsForFinalProfit:true,
         missingEvidenceRemainsNull:true,
         source:'RUNTIME_MARKET_DEMAND_STOCK_PRICE_AND_OPERATING_COST_EVIDENCE'}};
   }
@@ -918,19 +923,23 @@
     var scenarioMatrix=buildCompanyScenarioMatrix(proposal,outputRows,inputRows,operating,policyCurrency);
     return{
       horizonDays:30,currency:policyCurrency||null,outputs:outputRows,inputs:inputRows,scenarioMatrix:scenarioMatrix,
-      domesticProduction:{status:domesticCalculated?'CALCULATED':
+      domesticProduction:{status:domesticCalculated?'CALCULATED_BEFORE_LOGISTICS':
           !domesticDemandComplete?'DOMESTIC_DEMAND_OR_PRICE_UNOBSERVED':
           !domesticInputsFeasible?'DOMESTIC_INPUT_SUPPLY_INSUFFICIENT_OR_UNOBSERVED':
           'INCOMPLETE_DOMESTIC_COST_OR_CURRENCY_DATA',
         grossSalesCeiling:domesticRevenue,domesticInputCost:domesticInputCost,operatingCost:operating,
         netOperatingResult:domesticNet,profitMarginPct:domesticMargin,lossMarginPct:domesticLossMargin,
-        resultType:domesticNet===null?'UNRESOLVED':domesticNet>=0?'PROFIT_ON_OBSERVED_DOMESTIC_DEMAND':'LOSS_ON_OBSERVED_DOMESTIC_DEMAND'},
-      domesticInputExport:{status:domesticInputExportCalculated?'CALCULATED':
+        logisticsCost:null,logisticsCostStatus:'DOMESTIC_INPUT_HAUL_AND_FINISHED_GOODS_TRANSPORT_UNOBSERVED',
+        resultBasis:'PRE_LOGISTICS_ESTIMATE_ONLY',
+        resultType:domesticNet===null?'UNRESOLVED':domesticNet>=0?'PRE_LOGISTICS_POSITIVE_RESULT_NOT_FINAL_PROFIT':'PRE_LOGISTICS_NEGATIVE_RESULT_NOT_FINAL_LOSS'},
+      domesticInputExport:{status:domesticInputExportCalculated?'CALCULATED_BEFORE_LOGISTICS':
           !exportDemandComplete?'INTERNATIONAL_DEMAND_OR_PRICE_UNOBSERVED':
           !domesticInputsFeasible?'DOMESTIC_INPUT_SUPPLY_INSUFFICIENT_OR_UNOBSERVED':
           'INCOMPLETE_EXPORT_COST_OR_CURRENCY_DATA',
         grossExportRevenue:exportRevenue,domesticInputCost:domesticInputCost,operatingCost:operating,
-        netOperatingResult:domesticInputExportNet,profitMarginPct:domesticExportMargin},
+        netOperatingResult:domesticInputExportNet,profitMarginPct:domesticExportMargin,
+        logisticsCost:null,logisticsCostStatus:'DOMESTIC_INPUT_HAUL_AND_FINISHED_GOODS_TRANSPORT_UNOBSERVED',
+        resultBasis:'PRE_LOGISTICS_ESTIMATE_ONLY'},
       importedInputProduction:{status:!importsUsed?'NO_IMPORT_REQUIRED':
           importedInputExportCalculated?'COMMODITY_COST_ONLY_LANDED_COST_UNOBSERVED':
           'INTERNATIONAL_DEMAND_INPUT_PRICE_OR_LANDED_COST_UNOBSERVED',
@@ -944,7 +953,7 @@
         actualProfitOrLoss:null,actualProfitMarginPct:null,
         limitation:'Imported input prices require current cleared international trades. Freight, insurance, tariff, route and delivery charges remain unobserved, so final landed-cost profit/loss is unresolved.'},
       authority:'RUNTIME_COMPANY_MARKET_AND_COST_EVIDENCE',
-      limitation:'Domestic sales are capped by observed unmet national demand. Export sales are capped by the current unmatched international buyer order book. Neither is a sales contract. Missing values remain null.'
+      limitation:'Domestic and export sales are capped by observed demand and current order books. Domestic input haul and finished-goods transport, plus import freight, insurance, tariffs and route charges, remain unobserved; the reported domestic figures are pre-logistics estimates, not final profit/loss. Missing values remain null.'
     };
   }
   function submitCompanyMarketResearchRequest(proposal){
