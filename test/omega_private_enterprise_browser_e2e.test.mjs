@@ -1079,14 +1079,24 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         row.operation?.commercialExtraction !== false);
       const scopedSiteId = String(scopedSite?.siteId || '').trim();
       if (!scopedSiteId) throw new Error('SAB34_TEST_SCOPED_COAL_SITE_NOT_FOUND');
-      const originalStartCountryProduction = endowment.startCountryProduction.bind(endowment);
-      endowment.startCountryProduction = function(countryId, siteIds = null, options = {}) {
-        if (String(countryId || '').trim().toUpperCase() === 'BGD' &&
-            (!Array.isArray(siteIds) || siteIds.length === 0)) {
-          return originalStartCountryProduction(countryId, [scopedSiteId], options);
+      // The canonical endowment API is Object.freeze()'d, so assigning directly
+      // to startCountryProduction would be ignored. Wrap the public runtime in a
+      // test-only Proxy and bind every other API method back to the frozen target.
+      const scopedEndowment = new Proxy(endowment, {
+        get(target, property) {
+          if (property === 'startCountryProduction') {
+            return function(countryId, siteIds = null, options = {}) {
+              const scope = String(countryId || '').trim().toUpperCase() === 'BGD' &&
+                (!Array.isArray(siteIds) || siteIds.length === 0) ? [scopedSiteId] : siteIds;
+              return target.startCountryProduction.call(target, countryId, scope, options);
+            };
+          }
+          const value = Reflect.get(target, property, target);
+          return typeof value === 'function' ? value.bind(target) : value;
         }
-        return originalStartCountryProduction(countryId, siteIds, options);
-      };
+      });
+      window.OmegaResourceEndowmentRuntime = scopedEndowment;
+      window.Omega.ResourceEndowmentRuntime = scopedEndowment;
       window.__sab34ScopedProductionSiteId = scopedSiteId;
 
       const foreignSnapshot = JSON.stringify({
