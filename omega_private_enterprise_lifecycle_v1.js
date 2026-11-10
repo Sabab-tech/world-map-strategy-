@@ -4513,21 +4513,6 @@
       }
       return;
     });
-    if(typeof g.addEventListener==='function'){
-      g.addEventListener('OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_CHANGED',function(event){
-        var detail=event&&event.detail||{},eventType=String(detail.eventType||'').toUpperCase(),
-          options=root.__omegaV2IndustryOptions||{},
-          activeTab=root.__omegaV2IndustryTab||options.tab||'',
-          country=canonicalCountry(root.__omegaV2IndustryCountryId||options.countryId||playerCountry());
-        if(activeTab!=='production-lines')return;
-        if(eventType!=='COMPANY_PROPOSAL_SUBMITTED'&&eventType!=='AUTONOMOUS_COMPANY_PROPOSAL_SUBMITTED')return;
-        if(!country||country!==canonicalCountry(detail.countryId))return;
-        // Autonomous companies submit after the player-government tender or on
-        // their scheduled company turn. Refresh only the active country's inbox
-        // once the proposal's final lifecycle event has been published.
-        refresh(root,country);
-      });
-    }
     root.addEventListener('click',function(event){
       var target=event.target,retry=target&&target.closest?target.closest('[data-pe-baseline-retry]'):null;
       if(retry){
