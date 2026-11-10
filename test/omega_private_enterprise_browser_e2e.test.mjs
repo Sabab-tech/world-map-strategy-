@@ -1054,10 +1054,12 @@ test('real Chromium map marker routes the exact site to selected factory input a
         }));
       }
 
-      const foreignSnapshot = JSON.stringify({
+      // Finance has its own country-wide turn participant and may initialize a non-selected
+      // country's finance bucket when a real global turn is committed. This site-runtime
+      // isolation check therefore compares only the selected-country resource/economy stores.
+      const foreignResourceEconomySnapshot = JSON.stringify({
         resource: state.resource?.KWT || null,
-        economy: state.economy?.KWT || null,
-        finance: state.finance?.KWT || null
+        economy: state.economy?.KWT || null
       });
       return {
         currentTurn: Number(state.simulation.turn) || 0,
@@ -1071,7 +1073,7 @@ test('real Chromium map marker routes the exact site to selected factory input a
         masterMineSiteReferenceCount,
         selectedCountryRouteCount: routeLoad.routeCount,
         fixtureBatchIds,
-        foreignSnapshot,
+        foreignResourceEconomySnapshot,
         legacyTurnListenerDiagnostics: Array.isArray(window.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__)
           ? window.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__.map(row => Object.assign({}, row)) : [],
         startingTreasury: Number(finance.available) || 0
@@ -2019,13 +2021,12 @@ test('real Chromium map marker routes the exact site to selected factory input a
     metrics.stages.push('EXACT_SITE_BATCH_RECEIVED_AS_TRACEABLE_FACTORY_INPUT_LOT');
 
 
-    const foreignAfterPipeline = await page.evaluate(() => JSON.stringify({
+    const foreignResourceEconomyAfterPipeline = await page.evaluate(() => JSON.stringify({
       resource: window.Game.state.resource?.KWT || null,
-      economy: window.Game.state.economy?.KWT || null,
-      finance: window.Game.state.finance?.KWT || null
+      economy: window.Game.state.economy?.KWT || null
     }));
-    assert.equal(foreignAfterPipeline, preparation.foreignSnapshot,
-      'running the selected BGD pipeline must not mutate the non-selected KWT country');
+    assert.equal(foreignResourceEconomyAfterPipeline, preparation.foreignResourceEconomySnapshot,
+      'running the selected BGD resource pipeline must not mutate non-selected KWT resource or economy state');
 
     const saveLoad = await page.evaluate(async ({slot,factoryInputBatchId,shipmentId,sourceBatchId}) => {
       const simulation = window.Omega.Simulation;
@@ -2149,7 +2150,7 @@ test('real Chromium map marker routes the exact site to selected factory input a
         factoryReceiptAndInputLot:factoryArrival.delivery?.status==='DELIVERED'&&!!factoryArrival.inputLot,
         factoryInputLotTraceability:factoryInputReceipt.quantity===1530&&factoryInputReceipt.status==='AVAILABLE_TO_FACTORY'&&
           factoryInputReceipt.sourceBatchIds.includes(extraction.result.batchId)&&saveLoad.inputLot?.batchId===factoryInputReceipt.inputBatchId,
-        selectedCountryIsolation:foreignAfterPipeline===preparation.foreignSnapshot,
+        selectedCountryIsolation:foreignResourceEconomyAfterPipeline===preparation.foreignResourceEconomySnapshot,
         indexedDbSaveLoad:saveLoad.storage==='INDEXEDDB'&&saveLoad.loadIntegrity==='VERIFIED'&&
           saveLoad.inputLot?.sourceBatchIds?.includes(extraction.result.batchId)===true
       }
