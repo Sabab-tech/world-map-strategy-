@@ -1864,7 +1864,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
 
     const factoryEta = Number(mineArrival.factoryShipment.etaTurn);
     assert.ok(Number.isFinite(factoryEta), 'factory-bound shipment must expose its ETA game turn');
-    const factoryArrival = await page.evaluate(async ({eta, etaDate}) => {
+    const factoryArrival = await page.evaluate(async ({eta, etaDate, shipmentId, mineShipmentId}) => {
       const simulation = window.Omega.Simulation;
       const advanced = await window.__sab34AdvanceResourceTurnsToEta(eta, etaDate, 'RAW_TO_FACTORY');
       const state = window.Game.state;
@@ -1872,7 +1872,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       const run = window.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__.result;
       const shipmentRows = (resource.industrialNetwork?.shipments || []).filter(row =>
         String(row.batchId) === String(run.batchId) && row.shipmentType === 'RAW_TO_FACTORY');
-      const shipment = shipmentRows[shipmentRows.length - 1] || null;
+      const shipment = shipmentRows.find(row => String(row.shipmentId || '') === String(shipmentId || '')) || null;
       const factory = state.economy.BGD.productionAssets.find(row =>
         String(row.id || row.assetId || row.projectId) === String(run.factoryId));
       const delivery = shipment?.status === 'DELIVERED' ? shipment : null;
@@ -1918,6 +1918,21 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         } : null,
         sourceFlow: JSON.parse(JSON.stringify((resource.industrialNetwork?.siteFlowLedger || []).find(row =>
           String(row.batchId) === String(run.batchId)) || null)),
+        mineWarehouseReceiptStage: (() => {
+          const flow = (resource.industrialNetwork?.siteFlowLedger || []).find(row => String(row.batchId) === String(run.batchId));
+          return (flow?.stages || []).find(row => row.stage === 'RAW_INVENTORY' && row.status === 'RECEIVED_FROM_MINE' &&
+            String(row.shipmentId || '') === String(mineShipmentId || '')) || null;
+        })(),
+        factoryReceiptStage: (() => {
+          const flow = (resource.industrialNetwork?.siteFlowLedger || []).find(row => String(row.batchId) === String(run.batchId));
+          return (flow?.stages || []).find(row => row.stage === 'FACTORY' && row.status === 'RECEIVED' &&
+            String(row.shipmentId || '') === String(shipmentId || '')) || null;
+        })(),
+        factoryDeliveryStage: (() => {
+          const flow = (resource.industrialNetwork?.siteFlowLedger || []).find(row => String(row.batchId) === String(run.batchId));
+          return (flow?.stages || []).find(row => row.stage === 'TRANSPORT' && row.status === 'DELIVERED' &&
+            String(row.shipmentId || '') === String(shipmentId || '')) || null;
+        })(),
         warehouseCoal: {
           available: Number(rawWarehouse.availableByResource?.coal) || 0,
           reserved: Number(rawWarehouse.reservedByResource?.coal) || 0
@@ -1927,7 +1942,9 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         inputLot: inputLot || null,
         inputInventory: factory?.inputInventory || {}
       };
-    }, {eta:factoryEta,etaDate:String(mineArrival.factoryShipment.etaDate)});
+    }, {eta:factoryEta,etaDate:String(mineArrival.factoryShipment.etaDate),
+      shipmentId:String(mineArrival.factoryShipment.shipmentId || ''),
+      mineShipmentId:String(mineArrival.mineShipment?.shipmentId || '')});
     assert.equal(factoryArrival.delivery?.status, 'DELIVERED', JSON.stringify(factoryArrival));
     assert.equal(factoryArrival.delivery?.destinationStatus, 'FACTORY_RECEIVED');
     assert.equal(factoryArrival.factoryId, commissioning.factoryId);
@@ -1947,10 +1964,16 @@ test('real Chromium map marker runs the exact site through a commissioned privat
       'the source batch must retain its exact committed 30-day extraction quantity');
     assert.equal(Number(factoryArrival.sourceBatch?.remainingQuantity), 145359,
       'the source batch must lose exactly the 1,530 tonnes accepted by the factory');
-    assert.equal(Number(factoryArrival.sourceFlow?.mineWarehouseReceivedQuantity), 1530,
-      'the mine-flow ledger must retain the exact warehouse receipt quantity');
-    assert.equal(Number(factoryArrival.sourceFlow?.factoryDispatchedQuantity), 1530,
-      'the factory-flow ledger must retain the exact completed factory transfer quantity');
+    assert.ok(Number(factoryArrival.sourceFlow?.mineWarehouseReceivedQuantity) >= 1530,
+      'the cumulative mine-flow ledger must include the exact first warehouse receipt and may include later in-transit receipts');
+    assert.ok(Number(factoryArrival.sourceFlow?.factoryDispatchedQuantity) >= 1530,
+      'the cumulative factory-flow ledger must include the target delivery and may include later shipments');
+    assert.equal(Number(factoryArrival.mineWarehouseReceiptStage?.quantity), 1530,
+      'the identified mine shipment must retain its exact 1,530-tonne warehouse receipt');
+    assert.equal(Number(factoryArrival.factoryReceiptStage?.quantity), 1530,
+      'the identified factory shipment must retain its exact 1,530-tonne receipt');
+    assert.equal(Number(factoryArrival.factoryDeliveryStage?.deliveredQuantity), 1530,
+      'the exact target shipment must be delivered without confusing it with later residual shipments');
     assert.equal(Math.max(0,
       Number(factoryArrival.sourceFlow?.mineWarehouseReceivedQuantity||0) -
       Number(factoryArrival.sourceFlow?.factoryDispatchedQuantity||0) -
