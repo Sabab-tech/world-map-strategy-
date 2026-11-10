@@ -45,6 +45,22 @@ permissions:
   contents: read
 
 jobs:
+  lifecycle-unit-tests:
+    name: private-enterprise-lifecycle-unit-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run private-enterprise lifecycle unit tests
+        run: npm run test:private-enterprise-lifecycle
+
   chromium-browser-e2e:
     name: chromium-${{ matrix.scenario }}
     runs-on: ubuntu-24.04
@@ -68,10 +84,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Run private-enterprise lifecycle unit tests
-        run: |
-          timeout --signal=TERM --kill-after=15s 10m npm run test:private-enterprise-lifecycle
 
       - name: Install pinned Playwright browser runner
         run: |
