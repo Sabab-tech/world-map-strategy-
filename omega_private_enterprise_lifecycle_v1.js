@@ -1625,10 +1625,16 @@
           capitalRequired:capitalRequired,capitalUnit:profile.unit||'GAME_CURRENCY_UNITS'},preview),
         unitEconomics=companyUnitEconomics({countryId:cid,factoryType:type,processingResourceId:processingResourceId},
           preview,assessment,marketApi),
+        // Investment ranking may use only fully calculated net operating results.
+        // A pre-landed imported-input ceiling is not profit until freight, insurance,
+        // tariff and route charges are observed and reconciled.
         returnCandidates=[
-          unitEconomics.domesticProduction&&unitEconomics.domesticProduction.netOperatingResult,
-          unitEconomics.domesticInputExport&&unitEconomics.domesticInputExport.netOperatingResult,
-          unitEconomics.importedInputProduction&&unitEconomics.importedInputProduction.netBeforeLandedImportCosts
+          unitEconomics.domesticProduction&&unitEconomics.domesticProduction.status==='CALCULATED'
+            ?unitEconomics.domesticProduction.netOperatingResult:null,
+          unitEconomics.domesticInputExport&&unitEconomics.domesticInputExport.status==='CALCULATED'
+            ?unitEconomics.domesticInputExport.netOperatingResult:null,
+          unitEconomics.importedInputProduction&&unitEconomics.importedInputProduction.status==='CALCULATED'
+            ?unitEconomics.importedInputProduction.actualProfitOrLoss:null
         ].filter(function(value){return num(value)!==null;}).map(function(value){
           return capitalRequired!==null&&capitalRequired>0?Number((num(value)/capitalRequired*100).toFixed(2)):null;
         }).filter(function(value){return value!==null;}),
