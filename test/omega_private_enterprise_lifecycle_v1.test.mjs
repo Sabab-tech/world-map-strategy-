@@ -641,6 +641,41 @@ test('observed domestic demand gap can scale a proposal while missing market pri
   assert.ok(response.proposal.companyCase.dataConfidence);
 });
 
+test('company budget and requested partner share are calculated from unreserved capital without inventing funding',()=>{
+  const h=makeHarness();
+  const company='AURORA_INDUSTRIAL_GROUP';
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [company]:{companyId:company,currency:'GAME_CURRENCY_UNITS',
+      availableBalance:40,reservedBalance:20,capitalRaised:100,capitalSpent:40,revision:3}
+  };
+  h.state.simulation.turn=30;
+  const response=h.api.advanceAutonomousProposalCycle();
+  assert.equal(response.status,'PROPOSED',JSON.stringify(response));
+  assert.equal(response.proposal.companyId,company);
+  const financing=response.proposal.companyCase.financingOffer;
+  assert.equal(financing.companyCashAvailable,40);
+  assert.equal(financing.companyCapitalBudget.totalCapitalRaised,100);
+  assert.equal(financing.companyCapitalBudget.reservedCapital,20);
+  assert.equal(financing.companyCapitalBudget.capitalAlreadySpent,40);
+  assert.equal(financing.companyCapitalBudget.maximumAffordableFactoryUnits,0);
+  assert.equal(financing.fundingGap,60);
+  assert.equal(financing.requestedPrivateShareholdingPct,60);
+  assert.equal(financing.privateShareholdingBasis,
+    'FUNDING_GAP_AS_SHARE_OF_PROJECT_CAPITAL_NOT_ENTERPRISE_VALUATION');
+  const options=response.proposal.companyCase.investmentOptions;
+  assert.equal(options.maximumAffordableFactoryCount,0);
+  assert.equal(options.scaleAlternatives[0].canSelfFinance,false);
+  assert.equal(options.scaleAlternatives[0].fundingGap,60);
+  assert.ok(options.financingAlternatives.some(row=>
+    row.structure==='PRIVATE_EQUITY_PARTNER'&&row.requestedSharePct===60));
+  assert.ok(options.financingAlternatives.some(row=>
+    row.structure==='CORPORATE_LOAN'&&row.status==='LENDER_CREDIT_CAPACITY_AND_INTEREST_TERMS_UNOBSERVED'));
+  assert.equal(response.proposal.status,'PROPOSED',
+    'unavailable lenders or equity counterparties must not block a company-originated proposal');
+  assert.equal(h.projects.length,0);
+  assert.equal(h.state.finance.BGD.available,1000);
+});
+
 test('universal processing proposals compare multiple canonical resource routes instead of selecting the first catalog entry',()=>{
   const h=makeHarness(),factoryType='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT';
   const expandedCatalog=JSON.parse(JSON.stringify(catalog));
