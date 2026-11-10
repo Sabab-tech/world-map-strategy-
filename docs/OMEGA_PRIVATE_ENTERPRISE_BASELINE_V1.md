@@ -427,6 +427,20 @@ Every company-originated proposal now sends a structured 30-day market-research 
 This enriches the market handoff without introducing a new market engine or hardcoded market values.
 
 
+## Autonomous company proposal engine — deep-core extension (2026-11-11)
+
+The company, not the player, owns opportunity discovery and originates its investment proposal. The existing three opportunity classes remain the source of truth: current domestic unmet demand; domestic raw-material exports that may support downstream processing; and international buyer demand versus seller depth. No fourth factory/resource identity is introduced by this extension.
+
+- **Incremental company reviews:** the selected country persists a cycle cursor and reviews at most one company on a committed game turn. Five companies therefore receive separate bounded reviews across the first five eligible turns of a 30-day period. A same-turn replay is idempotent. Existing saves that have the legacy `lastAutonomousProposalPeriod` marker retain its prior consumed-period meaning during migration. No 197-country scan or concurrent five-company burst is added.
+- **Bounded route alternatives:** Universal Materials / Elements Processing evaluates at most eight canonical processing-resource rules per company turn. The examined set rotates deterministically across periods; a government invitation that names a processing resource restricts evaluation to that route. Candidate records preserve the actual `processingResourceId` so the decision can be audited.
+- **Demand-backed scale:** requested factory count may be supported by current-turn matched volume, unmatched buyer orders, or an observed 30-day domestic demand gap. Domestic gap calculation requires a current demand snapshot, a complete active-output observation (or an explicit no-active-output observation), and processed-warehouse free stock. Partially observed production is never silently treated as zero. Every chosen quantity remains inside the existing private expansion and per-proposal policy ceilings.
+- **Budget and financing alternatives:** the proposal business case adds alternative factory scales bounded by recorded construction cost, unreserved company cash and permitted expansion. It compares company capital, private equity partner, joint venture, corporate loan, public grant and phased investment. Missing lender/partner/valuation/settlement evidence remains explicitly unresolved; a funding-gap ratio is an indicative project funding share, not a binding enterprise valuation.
+- **Sourcing disclosure:** recipe input rows show the domestic/import split and its percentage, input costs where observed, and an explicit landed-import-cost state. Unknown freight, tariff, insurance, currency or route charges remain unknown; they are not converted into estimated profit/loss.
+- **Evidence confidence:** the company case reports observed/possible evidence counts and a data-coverage band for order-book, domestic demand/supply, exports, input availability and prices. This is a coverage indicator only, not a fabricated probability of success.
+- **Safe empty-market behavior:** missing/stale market data does not prevent a company from submitting its proposal and queuing a local `DOMESTIC` + `INTERNATIONAL` research request. Missing values remain `null` / `UNOBSERVED`; the queue does not claim that the global-market connector accepted a request when it did not. Proposal analysis does not create inventory, spend Treasury cash, create construction projects or enable private production.
+- **Runtime boundaries:** quote values are cached within a company review, universal route inspection is capped, and the persistent cursor spreads company work across committed turns. The existing active-player-country scope, government permit/funding/construction flow, and SAB-34 fail-closed production gate remain unchanged.
+
+
 ## Bounded multi-option company investment scenarios — 2026-11-11
 
 The company business case now compares a fixed, bounded set of **15 runtime alternatives** instead of relying only on separate domestic and export ceilings:
