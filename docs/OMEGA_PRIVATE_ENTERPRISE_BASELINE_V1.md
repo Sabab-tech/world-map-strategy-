@@ -414,3 +414,14 @@ The lifecycle and market regression tests cover research submission with an unex
 
 
 The autonomous company ranking also includes an evidence-backed profitability component: it compares the best fully calculated 30-day net operating result against the canonical project construction capital. A pre-landed imported-input estimate is display-only and must never count as actual profit or improve the investment score; imported scenarios enter the ranking only when final landed costs and other required evidence are reconciled and `actualProfitOrLoss` is calculated. The ranking contribution is bounded to avoid allowing one extreme projection to overwhelm market, supply, operational and budget evidence. When no comparable return can be calculated, the return remains `UNOBSERVED` and the company still submits its conservative proposal; the UI never substitutes a guessed margin or profit figure.
+
+## Quantity-bearing company market research requests — 2026-11-11
+
+Every company-originated proposal now sends a structured 30-day market-research brief alongside its domestic and international resource scopes.
+
+- Output requirements include each recipe output, modeled 30-day production capacity, observed domestic unmet demand, current global unmatched buyer/seller depth, and the evidence status/turn.
+- Input requirements include each recipe input, required 30-day quantity, currently uncommitted domestic availability, the calculated import gap where supply is known, observed raw-material export matches, and the company sourcing decision.
+- Known recipe quantities are included even when market demand or prices are unobserved. Unknown demand, prices, supply and trade volumes remain null/UNOBSERVED; the request does not create an import order, reserve inventory, or assume a supplier contract.
+- The trade-owned market queue validates, stores and idempotently replays these quantity-bearing requests. The queue may remain awaiting market evidence until a market response provider is implemented.
+
+This enriches the market handoff without introducing a new market engine or hardcoded market values.

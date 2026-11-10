@@ -241,6 +241,22 @@ const companyResearchPayload={
   factoryCount:1,
   outputResources:['steel'],
   inputResources:['iron_ore'],
+  outputRequirements:[{
+    resourceId:'steel',projectedProduction30Day:900,
+    unmetDomesticDemand30Day:null,globalUnmatchedBuyOrderDepth:null,
+    globalUnmatchedSellOfferDepth:null,
+    domesticDemandEvidenceStatus:'UNOBSERVED',
+    internationalMarketEvidenceStatus:'UNOBSERVED_OR_STALE'
+  }],
+  inputRequirements:[{
+    resourceId:'iron_ore',requiredQuantity30Day:120,
+    domesticUncommittedAvailable:20,expectedImportQuantity:100,
+    matchedRawMaterialExportsFromCountry:null,
+    demandEvidenceStatus:'UNOBSERVED',
+    internationalMarketEvidenceStatus:'UNOBSERVED_OR_STALE',
+    sourcingDecision:'DOMESTIC_PLUS_IMPORTED_INPUTS'
+  }],
+  plannedDailyCapacity:30,
   marketScopes:['DOMESTIC','INTERNATIONAL'],
   analysisHorizonDays:30,
   requestPurpose:'Assess demand, domestic input sourcing and international opportunity.'
@@ -251,6 +267,11 @@ assert.equal(researchSubmission.request.status,'QUEUED');
 assert.equal(researchSubmission.request.responseStatus,'AWAITING_MARKET_EVIDENCE');
 assert.equal(researchSubmission.request.marketScopes.includes('DOMESTIC'),true);
 assert.equal(researchSubmission.request.marketScopes.includes('INTERNATIONAL'),true);
+assert.equal(researchSubmission.request.inputRequirements[0].requiredQuantity30Day,120);
+assert.equal(researchSubmission.request.inputRequirements[0].expectedImportQuantity,100);
+assert.equal(researchSubmission.request.outputRequirements[0].projectedProduction30Day,900);
+assert.equal(researchSubmission.request.outputRequirements[0].unmetDomesticDemand30Day,null,
+  'unknown demand must survive queue normalization without becoming zero');
 assert.equal(globalThis.Game.state.trade.BGD.importRequests.length,requestsBefore,
   'research submission must not create an import trade order');
 const repeatedResearchSubmission=market.requestCompanyResearch('BGD',companyResearchPayload);
