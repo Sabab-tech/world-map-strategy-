@@ -1620,11 +1620,23 @@
         marketScore=marketSignals.length?marketSignals.reduce(function(total,row){return total+row.score;},0)/marketSignals.length:-5,
         duration=num(profile.constructionDays)||num(profile.buildDays),durationScore=duration===null?0:duration<=60?5:duration>=240?-5:0,
         invitationScore=invitation?5:0,
-        totalScore=marketScore+supplyScore+operationalScore+capitalScore+durationScore+invitationScore+
-          domesticDemandScore+internationalDemandScore+processingOpportunityScore,
         assessment=proposalDecisionAssessment({countryId:cid,companyId:company,factoryType:type,
           quantity:quantity,processingResourceId:processingResourceId,sourcingPolicy:sourcingPolicy,
-          capitalRequired:capitalRequired,capitalUnit:profile.unit||'GAME_CURRENCY_UNITS'},preview);
+          capitalRequired:capitalRequired,capitalUnit:profile.unit||'GAME_CURRENCY_UNITS'},preview),
+        unitEconomics=companyUnitEconomics({countryId:cid,factoryType:type,processingResourceId:processingResourceId},
+          preview,assessment,marketApi),
+        returnCandidates=[
+          unitEconomics.domesticProduction&&unitEconomics.domesticProduction.netOperatingResult,
+          unitEconomics.domesticInputExport&&unitEconomics.domesticInputExport.netOperatingResult,
+          unitEconomics.importedInputProduction&&unitEconomics.importedInputProduction.netBeforeLandedImportCosts
+        ].filter(function(value){return num(value)!==null;}).map(function(value){
+          return capitalRequired!==null&&capitalRequired>0?Number((num(value)/capitalRequired*100).toFixed(2)):null;
+        }).filter(function(value){return value!==null;}),
+        bestObserved30DayReturnOnProjectCapitalPct=returnCandidates.length?Math.max.apply(null,returnCandidates):null,
+        profitabilityScore=bestObserved30DayReturnOnProjectCapitalPct===null?-3:
+          Math.max(-20,Math.min(20,bestObserved30DayReturnOnProjectCapitalPct/5)),
+        totalScore=marketScore+supplyScore+operationalScore+capitalScore+durationScore+invitationScore+
+          domesticDemandScore+internationalDemandScore+processingOpportunityScore+profitabilityScore;
       return{factoryType:type,factoryName:profile.name||type,processingResourceId:processingResourceId,
         quantity:quantity,maximumAvailableQuantity:maximum,capitalRequired:capitalRequired,
         constructionDurationDays:duration,marketSignals:marketSignals,marketScore:marketScore,
@@ -1634,7 +1646,9 @@
         companyCashAvailable:cash,capitalScore:capitalScore,durationScore:durationScore,
         invitationScore:invitationScore,domesticDemandScore:domesticDemandScore,
         internationalDemandScore:internationalDemandScore,processingOpportunityScore:processingOpportunityScore,
-        marketOpportunity:marketOpportunity,totalScore:totalScore,preview:preview,
+        marketOpportunity:marketOpportunity,unitEconomics:unitEconomics,
+        bestObserved30DayReturnOnProjectCapitalPct:bestObserved30DayReturnOnProjectCapitalPct,
+        profitabilityScore:profitabilityScore,totalScore:totalScore,preview:preview,
         assessment:assessment,sourcingPolicy:sourcingPolicy,
         demandSupportedUnits:demandSupportedUnits};
     }
@@ -1698,7 +1712,7 @@
         'The company will not treat forecasts, supplier listings or requested public support as settled commitments.',
       strategy={
         schemaVersion:1,actorCompanyId:company,decision:'SUBMIT_COMPANY_INITIATED_INVESTMENT',
-        decisionTurn:turn(),selectionMethod:'HIGHEST_CURRENT_MARKET_SUPPLY_OPERATIONAL_AND_CAPITAL_SCORE_WITH_DOMESTIC_DEMAND_GAP_EXPORT_PROCESSING_INTERNATIONAL_ORDER_BOOK_AND_FINANCIAL_FEASIBILITY',
+        decisionTurn:turn(),selectionMethod:'HIGHEST_CURRENT_MARKET_SUPPLY_OPERATIONAL_CAPITAL_AND_PROFITABILITY_SCORE_WITH_DOMESTIC_DEMAND_GAP_EXPORT_PROCESSING_AND_INTERNATIONAL_ORDER_BOOK_EVIDENCE',
         confidence:selected.totalScore>=45?'HIGH':selected.totalScore>=20?'MEDIUM':'LOW',
         horizonDays:30,selectedOpportunity:{factoryType:selected.factoryType,factoryName:selected.factoryName,
           requestedFactoryCount:selected.quantity,totalScore:selected.totalScore,
@@ -1706,6 +1720,9 @@
           domesticDemandScore:selected.domesticDemandScore,internationalDemandScore:selected.internationalDemandScore,
           processingOpportunityScore:selected.processingOpportunityScore,
           operationalScore:selected.operationalScore,capitalScore:selected.capitalScore,
+          profitabilityScore:selected.profitabilityScore,
+          bestObserved30DayReturnOnProjectCapitalPct:selected.bestObserved30DayReturnOnProjectCapitalPct,
+          unitEconomics:clone(selected.unitEconomics),
           marketSignals:clone(selected.marketSignals),marketOpportunity:clone(selected.marketOpportunity),supplyStatus:selected.supplyStatus,
           operationalStatus:selected.operationalStatus,capitalRequired:selected.capitalRequired,
           companyCashAvailable:selected.companyCashAvailable},
@@ -1714,6 +1731,8 @@
           supplyScore:row.supplyScore,domesticDemandScore:row.domesticDemandScore,
           internationalDemandScore:row.internationalDemandScore,processingOpportunityScore:row.processingOpportunityScore,
           operationalScore:row.operationalScore,capitalScore:row.capitalScore,
+          profitabilityScore:row.profitabilityScore,
+          bestObserved30DayReturnOnProjectCapitalPct:row.bestObserved30DayReturnOnProjectCapitalPct,
           marketSignals:clone(row.marketSignals),marketOpportunity:clone(row.marketOpportunity),supplyStatus:row.supplyStatus,
           operationalStatus:row.operationalStatus};}),
         supplyPlan:{policy:selected.sourcingPolicy,inputs:clone(inputs),
@@ -1732,7 +1751,10 @@
           governmentSupportRequested:supportRequested,tenderInvitationId:invitation&&invitation.invitationId||null},
         governmentTender:invitation?{requestedFactoryCount:num(invitation.quantity),companyOfferedFactoryCount:selected.quantity,
           supportOffer:clone(tenderOffer)}:null,
-        reasons:[selected.marketOpportunity.domesticDemand.some(function(row){return row.status==='DOMESTIC_DEMAND_GAP';})
+        reasons:[selected.bestObserved30DayReturnOnProjectCapitalPct===null
+          ?'A comparable 30-day return on project capital is not available from current observed prices, demand and cost policy; the company still submits a conservative proposal.'
+          :'The company compared its best evidence-backed 30-day net operating return against the construction capital required.',
+          selected.marketOpportunity.domesticDemand.some(function(row){return row.status==='DOMESTIC_DEMAND_GAP';})
           ?'The proposal targets an output with an observed domestic demand gap.'
           :'Domestic unmet demand is not fully verified in the current country snapshot.',
           selected.marketOpportunity.exportProcessingOpportunities.some(function(row){return num(row.matchedRawMaterialExportsFromCountry)>0;})
