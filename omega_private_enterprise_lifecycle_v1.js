@@ -723,14 +723,55 @@
   function submitCompanyMarketResearchRequest(proposal){
     var c=catalog()||{},profile=c.factoryProfiles&&c.factoryProfiles[proposal.factoryType],
       recipe=recipeFor(proposal.factoryType,profile,proposal.processingResourceId),
-      outputs=recipe&&obj(recipe.outputs)?Object.keys(recipe.outputs):[],
-      inputs=(proposal.expectedInputRequirements||[]).map(function(row){return row.resourceId;}).filter(Boolean),
+      outputIds=recipe&&obj(recipe.outputs)?Object.keys(recipe.outputs):[],
+      inputRows=Array.isArray(proposal.expectedInputRequirements)?proposal.expectedInputRequirements:[],
+      inputIds=inputRows.map(function(row){return row.resourceId;}).filter(Boolean),
       requestId='PE-MARKET-RESEARCH:'+proposal.proposalId,
-      payload={requestId:requestId,companyId:proposal.companyId,companyName:proposal.companyName,
-        factoryType:proposal.factoryType,factoryCount:proposal.quantity,outputResources:outputs,inputResources:inputs,
-        marketScopes:['DOMESTIC','INTERNATIONAL'],analysisHorizonDays:30,
-        requestPurpose:'Assess domestic unmet demand, domestic input supply and raw-material export-processing opportunities, plus international buyer demand and supplier depth.'},
       marketApi=g.Omega&&(g.Omega.GlobalMarket||g.Omega.globalMarket)||g.OmegaGlobalMarket||null,
+      requestedCapacity=num(profile&&profile.defaultCapacityPerDay)===null?null:
+        num(profile.defaultCapacityPerDay)*Math.max(1,num(proposal.quantity)||1),
+      outputRequirements=outputIds.map(function(resourceId){
+        var coefficient=num(recipe.outputs[resourceId]),
+          projected=coefficient===null||requestedCapacity===null?null:
+            Number((coefficient*requestedCapacity*30).toFixed(6)),
+          demand=currentDomesticDemandEvidence(proposal.countryId,resourceId),
+          supply=currentDomesticOutputEvidence(proposal.countryId,resourceId),
+          stock=currentProcessedStockEvidence(proposal.countryId,resourceId),
+          demand30=demand.status==='CURRENT_TURN'?demand.demandPerDay*30:null,
+          supply30=supply.existingOutputPerDay===null?null:supply.existingOutputPerDay*30,
+          unmet=demand30===null||supply30===null||stock.free===null?null:
+            Math.max(0,demand30-supply30-stock.free),
+          market=currentMarketEvidence(proposal.countryId,resourceId,marketApi);
+        return{resourceId:resourceId,projectedProduction30Day:projected,
+          unmetDomesticDemand30Day:unmet,
+          globalUnmatchedBuyOrderDepth:market.currentTurn?market.globalUnmatchedBidDepth:null,
+          globalUnmatchedSellOfferDepth:market.currentTurn?market.globalUnmatchedAskDepth:null,
+          domesticDemandEvidenceStatus:demand.status,
+          domesticOutputEvidenceStatus:supply.status,
+          processedStockEvidenceStatus:stock.status,
+          internationalMarketEvidenceStatus:market.currentTurn?'CURRENT_TURN':'UNOBSERVED_OR_STALE',
+          marketTurn:market.generatedTurn};
+      }),
+      inputRequirements=inputRows.map(function(row){
+        var required=num(row.forecast30Day),available=num(row.available),
+          gap=required===null||available===null?null:Math.max(0,required-Math.max(0,available)),
+          market=currentMarketEvidence(proposal.countryId,row.resourceId,marketApi);
+        return{resourceId:row.resourceId,requiredQuantity30Day:required,
+          domesticUncommittedAvailable:available,expectedImportQuantity:gap,
+          matchedRawMaterialExportsFromCountry:market.currentTurn?market.matchedExportsFromCountry:null,
+          demandEvidenceStatus:row.demandStatus||'UNOBSERVED',
+          internationalMarketEvidenceStatus:market.currentTurn?'CURRENT_TURN':'UNOBSERVED_OR_STALE',
+          sourcingDecision:gap===null?'SOURCE_AVAILABILITY_UNOBSERVED':
+            gap>0&&available>0?'DOMESTIC_PLUS_IMPORTED_INPUTS':
+            gap>0?'IMPORTED_INPUTS':'DOMESTIC_INPUTS_ONLY'};
+      }),
+      payload={requestId:requestId,companyId:proposal.companyId,companyName:proposal.companyName,
+        factoryType:proposal.factoryType,factoryCount:proposal.quantity,
+        outputResources:outputIds,inputResources:inputIds,
+        outputRequirements:outputRequirements,inputRequirements:inputRequirements,
+        plannedDailyCapacity:requestedCapacity,marketScopes:['DOMESTIC','INTERNATIONAL'],
+        analysisHorizonDays:30,
+        requestPurpose:'Assess quantities for domestic unmet demand, domestic input supply and raw-material export-processing opportunities, plus international buyer demand, seller depth and import sourcing.'},
       result=null,status='QUEUED_LOCAL_MARKET_HANDOFF';
     try{
       if(marketApi&&typeof marketApi.requestCompanyResearch==='function'){
@@ -742,7 +783,7 @@
       countryId:proposal.countryId,submittedTurn:turn(),status:status,
       responseStatus:'AWAITING_MARKET_EVIDENCE',request:payload,
       marketQueueResult:clone(result||null),
-      dataPolicy:'NO_MARKET_DATA_REQUIRED_TO_SUBMIT_THIS_REQUEST'};
+      dataPolicy:'QUANTITIES_ARE_RUNTIME_FORECASTS;MISSING_MARKET_EVIDENCE_REMAINS_NULL'};
     var r=runtime(proposal.countryId,true);
     if(r){
       if(!Array.isArray(r.marketResearchRequests))r.marketResearchRequests=[];
@@ -760,7 +801,6 @@
       g.dispatchEvent(new g.CustomEvent('OMEGA_COMPANY_MARKET_RESEARCH_REQUESTED',{detail:clone(row)}));}catch(_){}
     return clone(row);
   }
-
   function proposalDecisionAssessment(proposal,preview){
     preview=preview||previewFor(proposal);
     var c=catalog()||{},profile=c.factoryProfiles&&c.factoryProfiles[proposal.factoryType],
