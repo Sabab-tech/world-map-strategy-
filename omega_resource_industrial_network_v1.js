@@ -5808,11 +5808,19 @@ async function executeSitePipeline(input={}){
         :(currentCandidateIds.has(priorFactoryId)
           ?priorFactoryId
           :(selectedFactoryIdBeforeExtraction||'')));
-    if(resolvedFactoryId&&priorFactoryId!==resolvedFactoryId){
+    const selectionAuthority=(requestedFactoryId||preparedFactory)
+      ?'EXPLICIT_SITE_FACTORY_SELECTION'
+      :'CANONICAL_COMPATIBLE_FACTORY_CANDIDATE';
+    // The extraction observer can pre-create the flow with the same factory ID that
+    // the player later selects in the site panel. Persist provenance even when the ID
+    // is unchanged: equality does not make an explicit choice an automatic one.
+    const hasSelectionTurn=existingFlow.factorySelectedAtTurn!==undefined&&
+      existingFlow.factorySelectedAtTurn!==null&&Number.isFinite(Number(existingFlow.factorySelectedAtTurn));
+    const selectionAlreadyRecorded=String(existingFlow.factoryId||'')===resolvedFactoryId&&
+      existingFlow.factorySelectionAuthority===selectionAuthority&&hasSelectionTurn;
+    if(resolvedFactoryId&&!selectionAlreadyRecorded){
       existingFlow.factoryId=resolvedFactoryId;
-      existingFlow.factorySelectionAuthority=(requestedFactoryId||preparedFactory)
-        ?'EXPLICIT_SITE_FACTORY_SELECTION'
-        :'CANONICAL_COMPATIBLE_FACTORY_CANDIDATE';
+      existingFlow.factorySelectionAuthority=selectionAuthority;
       existingFlow.factorySelectedAtTurn=turn();
       addFlowStage(existingFlow,'FACTORY','DESTINATION_SELECTED',{
         factoryId:resolvedFactoryId,
