@@ -15,8 +15,6 @@ on:
       - "omega_private_enterprise_lifecycle_v1.js"
       - "omega_global_market_system.js"
       - "omega-offline-map-sw.js"
-      - "omega_global_market_system.js"
-      - "omega-offline-map-sw.js"
       - "omega_sab34_live_browser_proof_v1.js"
       - "country_private_factory_starting_baseline_v1.json"
       - "omega_ui_v2/**"
