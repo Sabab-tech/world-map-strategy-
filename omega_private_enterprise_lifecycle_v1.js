@@ -4410,12 +4410,22 @@
       var companyMarketMarkup='<div class="pe-input-forecast"><strong>Company market analysis · 30-day output scenario</strong>'+
         (caseMarketRows.length?caseMarketRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b><br>Output '+caseAmount(row.projected30DayQuantity)+'</span><span>Market signal<br><b>'+escapeHtml(row.priceDiscovery||'UNAVAILABLE')+'</b></span><span>Clearing price<br><b>'+(row.clearingPriceUsd===null?'Not cleared':caseAmount(row.clearingPriceUsd)+' USD')+'</b></span><span>Matched quantity<br><b>'+caseAmount(row.matchedQuantity)+'</b></span></div><small>Order-book snapshot: turn '+caseAmount(row.marketGeneratedTurn)+' · '+(row.marketSnapshotCurrent?'CURRENT TURN':'STALE / UNVERIFIED')+'</small><small>'+escapeHtml(row.evidenceStatus||'MARKET_EVIDENCE_UNAVAILABLE')+'</small>';}).join(''):'<span class="pe-info">No output market quote is verified.</span>')+
         '<small>Reference prices are not cleared trades. Capacity is not demand, and projected production is not guaranteed sales.</small></div>';
+      var sourcingSummary=companyCase.supplyChainProof&&companyCase.supplyChainProof.sourcingAlternatives||{},
+        sourcingMarkup='<strong>Company sourcing choices · 30-day input plan</strong>'+
+          (sourcingSummary.alternatives||[]).map(function(row){
+            return'<div class="pe-input-row"><span><b>'+escapeHtml(row.label||row.strategy)+'</b></span>'+
+              '<span>Supply<br><b>'+escapeHtml(row.status||'UNOBSERVED')+'</b></span>'+
+              '<span>Commodity cost<br><b>'+caseAmount(row.commodityCostTotal)+'</b></span>'+
+              '<span>Landed import cost<br><b>'+escapeHtml(row.landedCostStatus||'UNOBSERVED')+'</b></span></div>';
+          }).join('')+
+          '<small>Recommended route: '+escapeHtml(sourcingSummary.recommendedPolicy||'MANUAL_REVIEW')+
+          ' · '+escapeHtml(sourcingSummary.recommendationReason||'Current source evidence is incomplete.')+'</small>';
       var companySupplyMarkup='<div class="pe-input-forecast"><strong>Company supply-chain evidence · '+escapeHtml(companyCase.supplyChainProof&&companyCase.supplyChainProof.domesticCoverageStatus||'UNVERIFIED')+'</strong>'+
         (caseSupplyRows.length?caseSupplyRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b><br>30-day need '+caseAmount(row.required30Day)+'</span><span>Domestic surplus<br><b>'+caseAmount(row.domesticUncommittedAvailable)+'</b></span><span>Coverage<br><b>'+escapeHtml(row.domesticCoverage)+'</b></span><span>Gap<br><b>'+caseAmount(row.shortfall)+'</b></span></div>'+
           (row.potentialExternalSuppliers&&row.potentialExternalSuppliers.length?'<small>Potential external sources: '+row.potentialExternalSuppliers.map(function(x){return escapeHtml(x.countryId)+' ('+caseAmount(x.available)+')';}).join(', ')+' · not contracted</small>':'')+
           (row.potentialPrivateCompanySuppliers&&row.potentialPrivateCompanySuppliers.length?'<small>Potential company sources: '+row.potentialPrivateCompanySuppliers.map(function(x){return escapeHtml(x.companyName||x.companyId)+' / '+escapeHtml(x.countryId)+' ('+caseAmount(x.available)+')';}).join(', ')+' · not contracted</small>':'');
         }).join(''):'<span class="pe-info">Input stock or demand evidence has not been verified.</span>')+
-        '<small>The company must provide supplier contracts, deliverable volumes, sourcing routes and logistics evidence. The government independently verifies the supplier evidence submitted by the company. Potential suppliers are not secured supply; no signed contract or reserved supply is recorded in this proposal.</small></div>';
+        sourcingMarkup+'<small>The company must provide supplier contracts, deliverable volumes, sourcing routes and logistics evidence. The government independently verifies the supplier evidence submitted by the company. Potential suppliers are not secured supply; no signed contract or reserved supply is recorded in this proposal.</small></div>';
       var economics=companyCase.unitEconomics||{},domesticEconomics=economics.domesticProduction||{},
         importedEconomics=economics.importedInputProduction||{};
       var economicsInputMarkup=(economics.inputs||[]).map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b><br>30-day need '+caseAmount(row.required30Day)+'</span><span>Domestic quantity<br><b>'+caseAmount(row.domesticQuantity)+'</b></span><span>Imported quantity<br><b>'+caseAmount(row.importQuantity)+'</b></span><span>Domestic input cost<br><b>'+caseAmount(row.domesticCost)+'</b></span><span>Import commodity cost<br><b>'+caseAmount(row.importCommodityCost)+'</b></span><span>Import landed cost<br><b>'+escapeHtml(row.importLandedCostStatus||'UNOBSERVED')+'</b></span></div>';}).join('');
@@ -4446,7 +4456,14 @@
         '<span>Reserved company capital <b>'+caseAmount(financing.companyCapitalBudget&&financing.companyCapitalBudget.reservedCapital)+'</b></span>'+
         '<span>Capital already spent <b>'+caseAmount(financing.companyCapitalBudget&&financing.companyCapitalBudget.capitalAlreadySpent)+'</b></span>'+
         '<span>Maximum affordable factory units <b>'+caseAmount(financing.companyCapitalBudget&&financing.companyCapitalBudget.maximumAffordableFactoryUnits)+'</b></span>'+
-        '<span>Can afford requested project <b>'+escapeHtml(financing.companyCapitalBudget&&financing.companyCapitalBudget.canAffordRequestedProject===null?'UNOBSERVED':financing.companyCapitalBudget&&financing.companyCapitalBudget.canAffordRequestedProject?'YES':'NO')+'</b></span>'+
+        '<span>Can afford construction <b>'+escapeHtml(financing.companyCapitalBudget&&financing.companyCapitalBudget.canAffordRequestedProject===null?'UNOBSERVED':financing.companyCapitalBudget&&financing.companyCapitalBudget.canAffordRequestedProject?'YES':'NO')+'</b></span>'+
+        '<span>Observed 30-day working-capital subtotal <b>'+caseAmount(financing.startupBudget&&financing.startupBudget.observedWorkingCapitalSubtotal)+'</b></span>'+
+        '<span>Complete 30-day working capital <b>'+caseAmount(financing.startupBudget&&financing.startupBudget.completeWorkingCapitalRequirement)+'</b></span>'+
+        '<span>Known minimum startup capital floor <b>'+caseAmount(financing.startupBudget&&financing.startupBudget.minimumKnownStartupCapitalFloor)+'</b></span>'+
+        '<span>Complete startup capital required <b>'+caseAmount(financing.startupBudget&&financing.startupBudget.completeStartupCapitalRequired)+'</b></span>'+
+        '<span>Complete startup funding gap <b>'+caseAmount(financing.startupBudget&&financing.startupBudget.completeStartupFundingGap)+'</b></span>'+
+        '<span>All-in affordable factory units <b>'+caseAmount(financing.startupBudget&&financing.startupBudget.maximumAffordableAllInFactoryUnits)+'</b></span>'+
+        '<span>Startup budget status <b>'+escapeHtml(financing.startupBudget&&financing.startupBudget.status||'UNOBSERVED')+'</b></span>'+
         '<span>Indicative partner share requested <b>'+(financing.requestedPrivateShareholdingPct===null?'Not calculated':caseAmount(financing.requestedPrivateShareholdingPct)+'%')+'</b></span>'+
         '<span>Capital required <b>'+caseAmount(financing.constructionCapitalRequired)+'</b></span>'+
         '<span>Funding gap <b>'+caseAmount(financing.fundingGap)+'</b></span>'+
@@ -4458,6 +4475,8 @@
         '<span>Public infrastructure <b>'+(companyCase.companyExpectations&&companyCase.companyExpectations.publicInfrastructureRequested?'Requested':'Not requested')+'</b></span>'+
         '<span>Utility support <b>'+(companyCase.companyExpectations&&companyCase.companyExpectations.utilitySupportRequested?'Requested':'Not requested')+'</b></span>'+
         '<span>Government offtake <b>'+(companyCase.companyExpectations&&companyCase.companyExpectations.governmentOfftakeRequested?'Requested':'Not requested')+'</b></span></div>'+
+        '<strong>Financing alternatives · no unapproved funds are assumed</strong>'+
+        (financing.financingAlternatives||[]).map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.label||row.id)+'</b></span><span>Status<br><b>'+escapeHtml(row.status||'UNOBSERVED')+'</b></span><span>'+(row.indicativeProjectSharePct!==undefined?'Indicative share<br><b>'+caseAmount(row.indicativeProjectSharePct)+'%</b>':'Settlement<br><b>'+escapeHtml(row.settlementStatus||'NOT_SETTLED')+'</b>')+'</span></div>';}).join('')+
         '<small>Share percentage basis: '+escapeHtml(financing.privateShareholdingBasis||'NOT_STATED')+'. It is an indicative project funding share, not a binding company valuation.</small>'+
         '<small>'+escapeHtml(financing.companyCapitalAccountStatus||'CAPITAL_NOT_VERIFIED')+' · '+escapeHtml(financing.settlementStatus||'PROPOSAL_ONLY_NOT_SETTLED')+'. Requests are not funds until a matching Finance ledger transaction is verified.</small>'+
         '<small>Company-requested conditions: '+escapeHtml((companyCase.companyExpectations&&companyCase.companyExpectations.requestedConditions||[]).join('; ')||'None stated')+'</small></div>';
