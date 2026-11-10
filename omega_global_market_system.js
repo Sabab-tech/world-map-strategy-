@@ -483,7 +483,8 @@
     }
     queue.push(request);
     ctx.stateTransaction.set('trade.companyMarketResearchRequests',queue.slice(-512));
-    emit('OMEGA_MARKET_RESEARCH_REQUEST_QUEUED',cid,request);
+    try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')
+      g.dispatchEvent(new g.CustomEvent('OMEGA_MARKET_RESEARCH_REQUEST_QUEUED',{detail:clone(request)}));}catch(_){}
     return{accepted:true,request:clone(request),queueSize:Math.min(512,queue.length)};
   }
   function requestCompanyResearch(countryId,payload={}){
