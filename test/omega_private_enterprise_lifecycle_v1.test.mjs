@@ -241,6 +241,10 @@ test('company proposal includes its own market analysis, supply-chain proof and 
   assert.equal(proposal.companyCase.marketAnalysis.researchRequest.requestId,proposal.marketResearchRequest.requestId);
   assert.equal(proposal.companyCase.marketAnalysis.domesticDemand[0].status,'UNOBSERVED',
     'missing domestic demand evidence must remain unobserved instead of being treated as zero');
+  assert.equal(proposal.companyCase.marketAnalysis.internationalDemand[0].globalMatchedDemand,null,
+    'an aggregate quote without country-level match rows cannot prove a country-specific export quantity');
+  assert.equal(proposal.companyCase.marketAnalysis.exportProcessingOpportunities[0].status,'UNOBSERVED_OR_STALE',
+    'missing country-level export evidence must not be misreported as zero exports');
   assert.equal(proposal.companyCase.unitEconomics.domesticProduction.netOperatingResult,null);
   assert.equal(proposal.companyCase.unitEconomics.importedInputProduction.actualProfitOrLoss,null);
   assert.equal(h.api.getCountryDashboard('BGD').marketResearchRequests.length,1);
