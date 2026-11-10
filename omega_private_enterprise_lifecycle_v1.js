@@ -2170,12 +2170,34 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
   function advanceAutonomousProposalCycle(){
     var cid=playerCountry(),period=Math.floor(turn()/30);
     if(!cid||period<1)return{status:'WAITING',reason:'AUTONOMOUS_PROPOSAL_REVIEW_NOT_DUE'};
-    var r=runtime(cid,true);
-    if(r.lastAutonomousProposalPeriod===period)return{status:'DUPLICATE',period:period};
+    var r=runtime(cid,true),cycle=r.autonomousProposalCycle;
+    if(!obj(cycle)||num(cycle.period)!==period){
+      // Preserve the consumed-period marker in legacy saves; new sessions use a per-turn cursor.
+      if(num(r.lastAutonomousProposalPeriod)===period)return{status:'DUPLICATE',period:period};
+      cycle={schemaVersion:1,period:period,nextCompanyIndex:0,lastProcessedTurn:null,
+        processedCompanyIds:[],status:'RUNNING',startedTurn:turn(),completedTurn:null};
+      r.autonomousProposalCycle=cycle;
+    }
+    if(cycle.status==='COMPLETE'||num(cycle.nextCompanyIndex)>=COMPANY_IDS.length){
+      cycle.status='COMPLETE';cycle.completedTurn=cycle.completedTurn||turn();
+      r.lastAutonomousProposalPeriod=period;
+      return{status:'DUPLICATE',period:period,reason:'AUTONOMOUS_COMPANY_CYCLE_COMPLETE'};
+    }
+    if(num(cycle.lastProcessedTurn)===turn())
+      return{status:'DUPLICATE',period:period,reason:'COMPANY_ALREADY_REVIEWED_THIS_TURN'};
     var base=baseline(cid);
     if(!base||base.status!=='READY')return{status:'WAITING',reason:'PRIVATE_BASELINE_NOT_READY',period:period};
-    r.lastAutonomousProposalPeriod=period;
-    var companyIndex=(period-1)%COMPANY_IDS.length,company=COMPANY_IDS[companyIndex];
+    var companyIndex=Math.max(0,Math.min(COMPANY_IDS.length-1,Math.floor(num(cycle.nextCompanyIndex)||0))),
+      company=COMPANY_IDS[(period-1+companyIndex)%COMPANY_IDS.length];
+    cycle.lastProcessedTurn=turn();
+    cycle.nextCompanyIndex=companyIndex+1;
+    if(!Array.isArray(cycle.processedCompanyIds))cycle.processedCompanyIds=[];
+    cycle.processedCompanyIds.push(company);
+    if(cycle.processedCompanyIds.length>COMPANY_IDS.length)
+      cycle.processedCompanyIds.splice(0,cycle.processedCompanyIds.length-COMPANY_IDS.length);
+    if(cycle.nextCompanyIndex>=COMPANY_IDS.length){
+      cycle.status='COMPLETE';cycle.completedTurn=turn();r.lastAutonomousProposalPeriod=period;
+    }else cycle.status='RUNNING';
     var pendingNegotiation=r.proposals.find(function(row){return row&&row.companyId===company&&row.status==='NEGOTIATION_PENDING_COMPANY';});
     if(pendingNegotiation){
       var counter=pendingNegotiation.governmentCounterOffer||{},
@@ -2581,20 +2603,26 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
   function scheduleAutonomousProposalCycle(){
     var cid=playerCountry(),period=Math.floor(turn()/30);
     if(!cid||period<1)return;
-    var r=runtime(cid,true);
-    if(r.lastAutonomousProposalPeriod===period||r.pendingAutonomousProposalPeriod===period)return;
-    r.pendingAutonomousProposalPeriod=period;
+    var r=runtime(cid,true),cycle=r.autonomousProposalCycle,scheduledTurn=turn();
+    if(r.lastAutonomousProposalPeriod===period||
+       (obj(cycle)&&num(cycle.period)===period&&
+        (cycle.status==='COMPLETE'||num(cycle.nextCompanyIndex)>=COMPANY_IDS.length||
+         num(cycle.lastProcessedTurn)===scheduledTurn))||
+       num(r.pendingAutonomousProposalTurn)===scheduledTurn)return;
+    r.pendingAutonomousProposalTurn=scheduledTurn;
     var registry=g.OmegaPrivateEnterpriseRegistryV1||(g.Omega&&g.Omega.PrivateEnterpriseRegistryV1);
     var ready;
     try{ready=registry&&registry.ready;}catch(error){ready=Promise.reject(error);}
     Promise.resolve(ready).then(function(){
       var current=runtime(cid,true);
-      if(current&&current.pendingAutonomousProposalPeriod===period)current.pendingAutonomousProposalPeriod=null;
-      if(playerCountry()!==cid||Math.floor(turn()/30)!==period)return;
+      if(current&&num(current.pendingAutonomousProposalTurn)===scheduledTurn)
+        current.pendingAutonomousProposalTurn=null;
+      if(playerCountry()!==cid||turn()!==scheduledTurn||Math.floor(turn()/30)!==period)return;
       advanceAutonomousProposalCycle();
     }).catch(function(){
       var current=runtime(cid,true);
-      if(current&&current.pendingAutonomousProposalPeriod===period)current.pendingAutonomousProposalPeriod=null;
+      if(current&&num(current.pendingAutonomousProposalTurn)===scheduledTurn)
+        current.pendingAutonomousProposalTurn=null;
     });
   }
   function onCommittedSimulationTurn(event){
