@@ -262,6 +262,11 @@ test('company proposal includes its own market analysis, supply-chain proof and 
   const matrix=proposal.companyCase.unitEconomics.scenarioMatrix;
   assert.equal(matrix.scenarioCount,15,'five sales allocations must be compared against three sourcing policies');
   assert.equal(matrix.options.length,15);
+  assert.equal(matrix.salesAllocationPlans.length,5);
+  assert.equal(matrix.inputSourcingPlans.length,3);
+  assert.ok(matrix.options.every(row=>!Object.prototype.hasOwnProperty.call(row,'salesAllocation')&&
+    !Object.prototype.hasOwnProperty.call(row,'inputSourcing')),
+    'scenario summaries must reference deduplicated plans rather than serialize repeated row arrays');
   assert.equal(matrix.recommendedScenarioId,null,
     'missing market data must not produce a fabricated winning investment scenario');
   assert.ok(matrix.options.every(row=>row.netOperatingResult===null),
@@ -331,6 +336,11 @@ test('company investment engine compares eligible factories and submits its own 
   assert.equal(proposal.companyStrategy.selectedOpportunity.factoryType,'COPPER_WORKS');
   assert.ok(proposal.companyStrategy.alternativesConsidered.some(row=>row.factoryType==='STEEL_WORKS'));
   const selectedEconomics=proposal.companyStrategy.selectedOpportunity.unitEconomics;
+  assert.equal(selectedEconomics.scenarioMatrix.scenarioCount,15);
+  assert.equal(Object.prototype.hasOwnProperty.call(selectedEconomics.scenarioMatrix,'options'),false,
+    'the strategy stores a compact scenario summary instead of duplicating every alternative');
+  assert.equal(proposal.companyCase.unitEconomics.scenarioMatrix.options.length,15,
+    'the full matrix remains available once in the company business case');
   assert.equal(selectedEconomics.importedInputProduction.status,'COMMODITY_COST_ONLY_LANDED_COST_UNOBSERVED');
   assert.ok(selectedEconomics.importedInputProduction.netBeforeLandedImportCosts>0,
     'the fixture exposes a positive pre-landed imported-input ceiling');
@@ -1963,7 +1973,9 @@ test('company scenario matrix keeps shared production capacity single-counted ac
   assert.ok(domesticFirst&&balanced,'the company must receive alternative market/sourcing combinations');
   for(const scenario of [domesticFirst,balanced]){
     assert.equal(scenario.capacityConserved,true);
-    const output=scenario.salesAllocation[0];
+    const salesPlan=matrix.salesAllocationPlans.find(plan=>plan.mode===scenario.salesAllocationMode);
+    assert.ok(salesPlan,'every option must reference its one stored sales-allocation plan');
+    const output=salesPlan.rows[0];
     assert.equal(output.projected30DayQuantity,300);
     assert.equal(output.domesticSaleQuantity,150);
     assert.equal(output.exportSaleQuantity,80);
