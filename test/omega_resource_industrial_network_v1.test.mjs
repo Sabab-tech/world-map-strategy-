@@ -578,6 +578,14 @@ assert.equal(builtFactoryRun.factoryId,builtFactoryId,
 assert.equal(builtFactoryRun.batchId,'BATCH-E2E-IRON-02');
 assert.notEqual(builtFactoryRun.factoryBootstrapStatus,'CREATED_SIMULATION_ONLY',
   'using a constructed factory must not silently create a second simulation-only factory');
+const builtFactoryFlow=context.Game.state.resource.BGD.industrialNetwork.siteFlowLedger.find(
+  row=>String(row.batchId||'')===String(builtFactoryRun.batchId));
+assert.ok(builtFactoryFlow,'the explicit factory destination must be persisted on the extracted batch flow');
+assert.equal(builtFactoryFlow.factoryId,builtFactoryId);
+assert.equal(builtFactoryFlow.factorySelectionAuthority,'EXPLICIT_SITE_FACTORY_SELECTION',
+  'an explicit same-ID factory choice must not lose its selection provenance when an observer pre-populates the destination');
+assert.ok(Number.isFinite(Number(builtFactoryFlow.factorySelectedAtTurn)),
+  'the explicit factory choice must be timestamped on the persisted site flow');
 assert.equal(builtFactoryRun.shipment.shipmentType,'MINE_TO_WAREHOUSE');
 assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore),ironRawBefore,
   'newly extracted iron is debited from warehouse availability while physically at the mine');

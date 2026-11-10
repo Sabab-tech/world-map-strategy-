@@ -692,6 +692,24 @@ test('real Chromium map marker runs the exact site through a commissioned privat
               sessionCountryBefore: String(window.Game?.state?.simulation?.session?.playerCountryId || '')
             };
             window.__sab34IndustrialTurnCalls = (window.__sab34IndustrialTurnCalls || []).concat(call).slice(-16);
+            let factoryScope = null;
+            const countryIdKey = String(countryId || '').trim().toUpperCase();
+            const targetFactoryId = String(window.__sab34TargetFactoryId || '').trim();
+            if (countryIdKey === 'BGD' && targetFactoryId) {
+              const currentCountry = window.Game?.state?.economy?.BGD;
+              const allAssets = Array.isArray(currentCountry?.productionAssets)
+                ? currentCountry.productionAssets.slice() : null;
+              if (!allAssets) throw new Error('SAB34_FACTORY_SCOPE_ASSET_REGISTRY_NOT_READY');
+              const targetAsset = allAssets.find(row =>
+                String(row?.id || row?.assetId || row?.projectId || '') === targetFactoryId);
+              if (!targetAsset) throw new Error('SAB34_SCOPED_FACTORY_NOT_FOUND:' + targetFactoryId);
+              factoryScope = { targetFactoryId, allAssets };
+              currentCountry.productionAssets = [targetAsset];
+              window.__sab34FactoryScopeCalls = (window.__sab34FactoryScopeCalls || []).concat({
+                turn: call.turnBefore, targetFactoryId, countryFactoryCountBefore: allAssets.length,
+                countryFactoryCountDuring: 1
+              }).slice(-16);
+            }
             try {
               const result = await authoritativeIndustry.runCountryTurn(countryId, ...args);
               window.__sab34LastIndustrialTurnResult = JSON.parse(JSON.stringify(result));
@@ -705,6 +723,26 @@ test('real Chromium map marker runs the exact site through a commissioned privat
               };
               throw error;
             } finally {
+              if (factoryScope) {
+                const latestCountry = window.Game?.state?.economy?.BGD;
+                if (latestCountry && Array.isArray(latestCountry.productionAssets)) {
+                  const liveAssets = latestCountry.productionAssets;
+                  const liveTarget = liveAssets.find(row =>
+                    String(row?.id || row?.assetId || row?.projectId || '') === factoryScope.targetFactoryId);
+                  const originalIds = new Set(factoryScope.allAssets.map(row =>
+                    String(row?.id || row?.assetId || row?.projectId || '')));
+                  const restored = factoryScope.allAssets.map(row =>
+                    String(row?.id || row?.assetId || row?.projectId || '') === factoryScope.targetFactoryId
+                      ? (liveTarget || row) : row);
+                  for (const row of liveAssets) {
+                    const id = String(row?.id || row?.assetId || row?.projectId || '');
+                    if (id && !originalIds.has(id)) restored.push(row);
+                  }
+                  latestCountry.productionAssets = restored;
+                } else {
+                  window.__sab34FactoryScopeRestoreError = 'COUNTRY_ECONOMY_DISAPPEARED_AFTER_TURN';
+                }
+              }
               call.turnAfter = Number(window.Game?.state?.simulation?.turn) || 0;
               call.dateAfter = String(window.Game?.state?.simulation?.date || '');
             }
@@ -885,6 +923,22 @@ test('real Chromium map marker runs the exact site through a commissioned privat
           committedEtaDate: new Date(targetDateMs).toISOString().slice(0, 10)
         }));
         try {
+          // This browser proof validates one committed site batch and its first mine/factory
+          // shipment legs. The 30-day extraction turn can leave residual cargo at the mine;
+          // when the ETA helper compresses the next turn to one day, normal mine-residual
+          // dispatch would add another 51-tonne mine haul and a second downstream shipment.
+          // Freeze only the selected batch's mine residual dispatch for this ETA turn. Do not
+          // freeze factory residual dispatch: the real mine receipt must still create its first
+          // warehouse-to-factory shipment during this same turn.
+          const activeRun=window.__OMEGA_LAST_INDIVIDUAL_SITE_EXTRACTION__?.result||null;
+          if(activeRun?.batchId){
+            const activeCountry=String(activeRun.countryId||state.simulation?.session?.playerCountryId||'').trim();
+            const activeNetwork=state.resource?.[activeCountry]?.industrialNetwork;
+            const activeFlow=(activeNetwork?.siteFlowLedger||[]).find(row=>
+              String(row?.batchId||'')===String(activeRun.batchId));
+            if(!activeFlow)throw new Error('SAB34_TARGET_SITE_FLOW_MISSING_BEFORE_ETA_ADVANCE:'+String(activeRun.batchId));
+            activeFlow.lastMineResidualDispatchTurn=targetTurn;
+          }
           const advanced = await window.__sab34AdvanceResourceTurns(1);
           if (advanced.status === 'ERROR' || advanced.steps !== 1 || Number(clock.turn) !== targetTurn) {
             throw new Error('SAB34_SHIPMENT_ETA_FAST_FORWARD_FAILED:' + JSON.stringify({advanced, targetTurn, label}));
@@ -1045,6 +1099,46 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         }));
       }
 
+      // This browser scenario proves one exact map-selected site through its factory.
+      // Every-site mine production is covered by the independent exhaustive pipeline
+      // workflow. Keep this acceptance proof isolated to the same canonical Barapukuria
+      // coal site selected by the map step; otherwise every committed turn re-simulates
+      // all 46 Bangladesh mine occurrences and causes unrelated ledger growth that
+      // dominates the factory-cycle and IndexedDB save/load assertions.
+      const scopedSite = canonicalSites.find(row =>
+        String(row.countryId || row.identity?.countryIso3 || '').toUpperCase() === 'BGD' &&
+        String(row.identity?.resourceTypeId || row.real?.resourceId || row.sourceSiteRecord?.resourceId || '').toLowerCase().includes('coal') &&
+        row.map?.markerEligible !== false && !row.runtime?.aliasOfSiteId &&
+        row.operation?.commercialExtraction !== false && /barapukuria/i.test(String(row.siteName || ''))
+      ) || canonicalSites.find(row =>
+        String(row.countryId || row.identity?.countryIso3 || '').toUpperCase() === 'BGD' &&
+        String(row.identity?.resourceTypeId || row.real?.resourceId || row.sourceSiteRecord?.resourceId || '').toLowerCase().includes('coal') &&
+        row.map?.markerEligible !== false && !row.runtime?.aliasOfSiteId &&
+        row.operation?.commercialExtraction !== false);
+      const scopedSiteId = String(scopedSite?.siteId || '').trim();
+      if (!scopedSiteId) throw new Error('SAB34_TEST_SCOPED_COAL_SITE_NOT_FOUND');
+      // The canonical endowment API is Object.freeze()'d. Build a shallow facade
+      // instead of mutating or proxying that frozen object (whose methods are
+      // non-configurable): keep every public method bound to the original runtime,
+      // replacing only the default all-sites production call for this one-site proof.
+      const scopedEndowment = {};
+      for (const key of Object.keys(endowment)) {
+        const value = endowment[key];
+        if (key === 'startCountryProduction') {
+          scopedEndowment[key] = function(countryId, siteIds = null, options = {}) {
+            const scope = String(countryId || '').trim().toUpperCase() === 'BGD' &&
+              (!Array.isArray(siteIds) || siteIds.length === 0) ? [scopedSiteId] : siteIds;
+            return value.call(endowment, countryId, scope, options);
+          };
+        } else {
+          scopedEndowment[key] = typeof value === 'function' ? value.bind(endowment) : value;
+        }
+      }
+      Object.freeze(scopedEndowment);
+      window.OmegaResourceEndowmentRuntime = scopedEndowment;
+      window.Omega.ResourceEndowmentRuntime = scopedEndowment;
+      window.__sab34ScopedProductionSiteId = scopedSiteId;
+
       const foreignSnapshot = JSON.stringify({
         resource: state.resource?.KWT || null,
         economy: state.economy?.KWT || null,
@@ -1060,6 +1154,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
         canonicalSiteCount: canonicalSites.length,
         uniqueCanonicalSiteCount: uniqueCanonicalSiteIds.size,
         masterMineSiteReferenceCount,
+        scopedProductionSiteId: scopedSiteId,
         selectedCountryRouteCount: routeLoad.routeCount,
         fixtureBatchIds,
         foreignSnapshot,
@@ -1071,6 +1166,7 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     assert.equal(preparation.canonicalSiteCount, 607);
     assert.equal(preparation.uniqueCanonicalSiteCount, 607);
     assert.equal(preparation.masterMineSiteReferenceCount, 199);
+    assert.equal(preparation.scopedProductionSiteId, 'SITE_BGD_barapukuria_coal_mine');
     assert.equal(preparation.governmentCountryCount, 197);
     assert.equal(preparation.privateCountryCount, 197);
     assert.equal(preparation.privateFactoryTypeCount, 21);
@@ -1393,6 +1489,8 @@ test('real Chromium map marker runs the exact site through a commissioned privat
     }
     metrics.targetFactorySnapshot=targetFactorySnapshot;
     await page.evaluate(({factoryId}) => {
+      window.__sab34TargetFactoryId = String(factoryId || '');
+      if (!window.__sab34TargetFactoryId) throw new Error('SAB34_TARGET_FACTORY_SCOPE_ID_MISSING');
       const gameState=window.Game?.state;
       const worldState=window.Omega?.Simulation?.world?.state;
       const gameCountry=gameState?.economy?.BGD;
