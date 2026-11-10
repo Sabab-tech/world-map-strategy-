@@ -22,6 +22,7 @@ on:
       - "omega_resource_economy_runtime_v2.js"
       - "omega_simulation_runtime.js"
       - "test/omega_private_enterprise_browser_e2e.test.mjs"
+      - "test/omega_private_enterprise_lifecycle_v1.test.mjs"
       - "package.json"
   push:
     branches: [ main ]
@@ -37,6 +38,7 @@ on:
       - "omega_resource_economy_runtime_v2.js"
       - "omega_simulation_runtime.js"
       - "test/omega_private_enterprise_browser_e2e.test.mjs"
+      - "test/omega_private_enterprise_lifecycle_v1.test.mjs"
       - "package.json"
 
 permissions:
@@ -66,6 +68,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Run private-enterprise lifecycle unit tests
+        run: |
+          timeout --signal=TERM --kill-after=15s 10m npm run test:private-enterprise-lifecycle
 
       - name: Install pinned Playwright browser runner
         run: |
