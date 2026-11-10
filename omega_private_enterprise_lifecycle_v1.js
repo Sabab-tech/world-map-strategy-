@@ -969,7 +969,8 @@
   function companyBusinessCase(proposal){
     var preview=previewFor(proposal),assessment=proposalDecisionAssessment(proposal,preview),
       profile=(catalog()||{}).factoryProfiles&&catalog().factoryProfiles[proposal.factoryType],
-      marketApi=g.Omega&&(g.Omega.GlobalMarket||g.Omega.globalMarket)||g.OmegaGlobalMarket||null,
+      marketSource=g.Omega&&(g.Omega.GlobalMarket||g.Omega.globalMarket)||g.OmegaGlobalMarket||null,
+      marketQuoteCache=Object.create(null),marketApi=marketSource?Object.create(null):null,
       account=capitalAccount(proposal.countryId,proposal.companyId,false),
       cash=account?num(account.availableBalance):null,required=num(proposal.capitalRequired),
       inputs=(preview.inputRequirements||[]).map(function(row){
@@ -1024,6 +1025,20 @@
           Math.max(0,Math.min(10000,Math.round(fundingGap/required*10000))):null),
       affordableFactoryUnits=num(profile&&profile.constructionCost)===null||cash===null?null:
         Math.max(0,Math.floor((cash+1e-9)/num(profile.constructionCost)));
+    if(marketApi){
+      marketApi.quote=function(resourceId){
+        var key=token(resourceId);
+        if(!Object.prototype.hasOwnProperty.call(marketQuoteCache,key)){
+          try{marketQuoteCache[key]=typeof marketSource.quote==='function'
+            ?marketSource.quote(resourceId)||{}:{};}catch(_){marketQuoteCache[key]={};}
+        }
+        return marketQuoteCache[key];
+      };
+      ['localPrice','suppliers','privateCompanySuppliers'].forEach(function(method){
+        if(typeof marketSource[method]==='function')
+          marketApi[method]=function(){return marketSource[method].apply(marketSource,arguments);};
+      });
+    }
     var maximumAdditionalUnits=num(preview.maximumAdditionalUnits),
       expansionLimit=maximumAdditionalUnits===null?null:Math.min(MAX_PROJECTS_PER_PROPOSAL,Math.max(0,Math.floor(maximumAdditionalUnits))),
       constructionCostPerFactory=num(profile&&profile.constructionCost),scaleQuantities=[];
