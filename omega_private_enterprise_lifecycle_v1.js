@@ -1599,7 +1599,8 @@
           return score+(row.status==='DOMESTIC_DEMAND_GAP'?18:row.status==='NO_DOMESTIC_GAP_OBSERVED'?0:-2);
         },0),
         internationalDemandScore=marketOpportunity.internationalDemand.reduce(function(score,row){
-          return score+(num(row.globalUnmatchedBuyOrderDepth)>0?10:0)+(num(row.globalMatchedDemand)>0?4:0);
+          return score+(num(row.globalUnmatchedBuyOrderDepth)>0?10:0)+
+            (num(row.unmatchedDemandSupplyGap)>0?8:0)+(num(row.globalMatchedDemand)>0?4:0);
         },0),
         processingOpportunityScore=marketOpportunity.exportProcessingOpportunities.reduce(function(score,row){
           return score+(num(row.matchedRawMaterialExportsFromCountry)>0?8:0);
@@ -4036,7 +4037,7 @@
       var companyOpportunityMarkup='<div class="pe-input-forecast"><strong>Domestic demand and export-processing opportunities</strong>'+ 
         (domesticOpportunityRows.length?domesticOpportunityRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b></span><span>Domestic demand/day<br><b>'+caseAmount(row.demandPerDay)+'</b></span><span>Existing output/day<br><b>'+caseAmount(row.existingOutputPerDay)+'</b></span><span>30-day unmet demand<br><b>'+caseAmount(row.unmetDomesticDemand30Day)+'</b></span><span>'+escapeHtml(row.status||'UNOBSERVED')+'</span></div>';}).join(''):'<span class="pe-info">No current domestic demand snapshot is available.</span>')+
         '<strong>International demand and supply</strong>'+
-        (internationalOpportunityRows.length?internationalOpportunityRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b></span><span>Global unmatched buy orders<br><b>'+caseAmount(row.globalUnmatchedBuyOrderDepth)+'</b></span><span>Foreign buyer matches<br><b>'+caseAmount(row.globalMatchedDemand)+'</b></span><span>Order-book evidence<br><b>'+escapeHtml(row.evidenceStatus||'UNOBSERVED')+'</b></span></div>';}).join(''):'<span class="pe-info">International buyer-side evidence is not currently available.</span>')+
+        (internationalOpportunityRows.length?internationalOpportunityRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b></span><span>Unmatched buy orders<br><b>'+caseAmount(row.globalUnmatchedBuyOrderDepth)+'</b></span><span>Unmatched sell offers<br><b>'+caseAmount(row.globalUnmatchedSellOfferDepth)+'</b></span><span>Demand vs supply gap<br><b>'+caseAmount(row.unmatchedDemandSupplyGap)+'</b></span><span>'+escapeHtml(row.demandSupplyStatus||'UNOBSERVED')+'</span></div>';}).join(''):'<span class="pe-info">International buyer-side evidence is not currently available.</span>')+
         '<strong>Raw-material export to domestic processing</strong>'+
         (processingOpportunityRows.length?processingOpportunityRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b></span><span>Raw material needed<br><b>'+caseAmount(row.required30Day)+'</b></span><span>Domestic uncommitted supply<br><b>'+caseAmount(row.domesticUncommittedAvailable)+'</b></span><span>Observed export matches<br><b>'+caseAmount(row.matchedRawMaterialExportsFromCountry)+'</b></span><span>'+escapeHtml(row.status||'UNOBSERVED')+'</span></div>';}).join(''):'<span class="pe-info">No input export-processing opportunity is verified.</span>')+
         '<small>Market research request: '+escapeHtml(researchRequest.status||'NOT_RECORDED')+' · '+escapeHtml(researchRequest.responseStatus||'AWAITING_MARKET_EVIDENCE')+' · '+escapeHtml(researchRequest.requestId||'No request ID')+'. Missing market data does not prevent company submission.</small></div>';
@@ -4051,6 +4052,7 @@
         '<small>The company must provide supplier contracts, deliverable volumes, sourcing routes and logistics evidence. The government independently verifies the supplier evidence submitted by the company. Potential suppliers are not secured supply; no signed contract or reserved supply is recorded in this proposal.</small></div>';
       var economics=companyCase.unitEconomics||{},domesticEconomics=economics.domesticProduction||{},
         importedEconomics=economics.importedInputProduction||{};
+      var economicsInputMarkup=(economics.inputs||[]).map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b><br>30-day need '+caseAmount(row.required30Day)+'</span><span>Domestic quantity<br><b>'+caseAmount(row.domesticQuantity)+'</b></span><span>Imported quantity<br><b>'+caseAmount(row.importQuantity)+'</b></span><span>Domestic input cost<br><b>'+caseAmount(row.domesticCost)+'</b></span><span>Import commodity cost<br><b>'+caseAmount(row.importCommodityCost)+'</b></span><span>Import landed cost<br><b>'+escapeHtml(row.importLandedCostStatus||'UNOBSERVED')+'</b></span></div>';}).join('');
       var companyUnitEconomicsMarkup='<div class="pe-input-forecast"><strong>Company profitability scenarios · '+escapeHtml(economics.horizonDays||30)+' days</strong>'+
         '<div class="pe-facts"><span>Domestic input scenario · gross sales <b>'+caseAmount(domesticEconomics.grossSalesCeiling)+'</b></span>'+
         '<span>Domestic input cost <b>'+caseAmount(domesticEconomics.domesticInputCost)+'</b></span>'+
@@ -4059,11 +4061,14 @@
         '<span>Profit margin <b>'+caseAmount(domesticEconomics.profitMarginPct)+'%</b></span>'+
         '<span>Loss margin <b>'+caseAmount(domesticEconomics.lossMarginPct)+'%</b></span>'+
         '<span>Domestic scenario status <b>'+escapeHtml(domesticEconomics.status||'UNRESOLVED')+'</b></span>'+
+        '<span>Domestic input export result <b>'+caseAmount((economics.domesticInputExport||{}).netOperatingResult)+'</b></span>'+
+        '<span>Domestic-input export margin <b>'+caseAmount((economics.domesticInputExport||{}).profitMarginPct)+'%</b></span>'+
         '<span>Imported input commodity cost <b>'+caseAmount(importedEconomics.importedCommodityCost)+'</b></span>'+
         '<span>Import freight / tariff / insurance <b>'+caseAmount(importedEconomics.freightTariffInsuranceCost)+'</b></span>'+
         '<span>Imported-input net before landed costs <b>'+caseAmount(importedEconomics.netBeforeLandedImportCosts)+'</b></span>'+
         '<span>Pre-landed margin ceiling <b>'+caseAmount(importedEconomics.preLandedMarginCeilingPct)+'%</b></span>'+
         '<span>Final imported-input profit/loss <b>'+caseAmount(importedEconomics.actualProfitOrLoss)+'</b></span></div>'+
+        (economicsInputMarkup?'<strong>Input sourcing plan and cost by resource</strong>'+economicsInputMarkup:'<span class="pe-info">No recipe input cost rows are available.</span>')+
         '<small>'+escapeHtml(importedEconomics.limitation||'Profit/loss remains unresolved where input prices or landed import costs are unavailable.')+'</small>'+
         '<small>All figures are runtime scenarios using observed prices and the configured operating-cost policy. Full-capacity sell-through is not a guaranteed sale; unknown values are not estimated.</small></div>';
       var financing=companyCase.financingOffer||{};
