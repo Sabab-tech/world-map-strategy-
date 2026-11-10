@@ -1497,7 +1497,18 @@
         preview=previewFor({countryId:cid,companyId:company,factoryType:type,quantity:quantity,
           processingResourceId:processingResourceId,sourcingPolicy:sourcingPolicy,stateSupportRequested:false});
       if(preview.status!=='READY')return null;
-      var inputRows=preview.inputRequirements||[],covered=inputRows.filter(function(row){
+      var inputRows=preview.inputRequirements||[],marketOpportunity=companyMarketOpportunityAnalysis({countryId:cid},
+        Object.keys(outputs).map(function(resourceId){return{resourceId:resourceId};}),inputRows,marketApi),
+        domesticDemandScore=marketOpportunity.domesticDemand.reduce(function(score,row){
+          return score+(row.status==='DOMESTIC_DEMAND_GAP'?18:row.status==='NO_DOMESTIC_GAP_OBSERVED'?0:-2);
+        },0),
+        internationalDemandScore=marketOpportunity.internationalDemand.reduce(function(score,row){
+          return score+(num(row.globalUnmatchedBuyOrderDepth)>0?10:0)+(num(row.globalMatchedDemand)>0?4:0);
+        },0),
+        processingOpportunityScore=marketOpportunity.exportProcessingOpportunities.reduce(function(score,row){
+          return score+(num(row.matchedRawMaterialExportsFromCountry)>0?8:0);
+        },0),
+        covered=inputRows.filter(function(row){
         return row.available!==null&&row.available+1e-9>=row.forecast30Day;
       }).length,unobserved=inputRows.filter(function(row){return row.available===null||row.nationalDemandPerDay===null;}).length,
         shortfalls=inputRows.filter(function(row){return row.shortfall!==null&&row.shortfall>1e-9;}).length,
@@ -1512,7 +1523,8 @@
         marketScore=marketSignals.length?marketSignals.reduce(function(total,row){return total+row.score;},0)/marketSignals.length:-5,
         duration=num(profile.constructionDays)||num(profile.buildDays),durationScore=duration===null?0:duration<=60?5:duration>=240?-5:0,
         invitationScore=invitation?5:0,
-        totalScore=marketScore+supplyScore+operationalScore+capitalScore+durationScore+invitationScore,
+        totalScore=marketScore+supplyScore+operationalScore+capitalScore+durationScore+invitationScore+
+          domesticDemandScore+internationalDemandScore+processingOpportunityScore,
         assessment=proposalDecisionAssessment({countryId:cid,companyId:company,factoryType:type,
           quantity:quantity,processingResourceId:processingResourceId,sourcingPolicy:sourcingPolicy,
           capitalRequired:capitalRequired,capitalUnit:profile.unit||'GAME_CURRENCY_UNITS'},preview);
@@ -1523,7 +1535,9 @@
           unobserved?'INPUT_DATA_UNOBSERVED':shortfalls?'INPUT_SHORTFALL':'PARTIAL_INPUT_COVERAGE',
         operationalStatus:operational.status||'UNOBSERVED',operationalScore:operationalScore,
         companyCashAvailable:cash,capitalScore:capitalScore,durationScore:durationScore,
-        invitationScore:invitationScore,totalScore:totalScore,preview:preview,
+        invitationScore:invitationScore,domesticDemandScore:domesticDemandScore,
+        internationalDemandScore:internationalDemandScore,processingOpportunityScore:processingOpportunityScore,
+        marketOpportunity:marketOpportunity,totalScore:totalScore,preview:preview,
         assessment:assessment,sourcingPolicy:sourcingPolicy,
         demandSupportedUnits:demandSupportedUnits};
     }
@@ -1587,19 +1601,23 @@
         'The company will not treat forecasts, supplier listings or requested public support as settled commitments.',
       strategy={
         schemaVersion:1,actorCompanyId:company,decision:'SUBMIT_COMPANY_INITIATED_INVESTMENT',
-        decisionTurn:turn(),selectionMethod:'HIGHEST_CURRENT_MARKET_SUPPLY_OPERATIONAL_AND_CAPITAL_SCORE',
+        decisionTurn:turn(),selectionMethod:'DOMESTIC_DEMAND_GAP_EXPORT_PROCESSING_INTERNATIONAL_DEMAND_AND_FINANCIAL_FEASIBILITY',
         confidence:selected.totalScore>=45?'HIGH':selected.totalScore>=20?'MEDIUM':'LOW',
         horizonDays:30,selectedOpportunity:{factoryType:selected.factoryType,factoryName:selected.factoryName,
           requestedFactoryCount:selected.quantity,totalScore:selected.totalScore,
           marketScore:selected.marketScore,supplyScore:selected.supplyScore,
+          domesticDemandScore:selected.domesticDemandScore,internationalDemandScore:selected.internationalDemandScore,
+          processingOpportunityScore:selected.processingOpportunityScore,
           operationalScore:selected.operationalScore,capitalScore:selected.capitalScore,
-          marketSignals:clone(selected.marketSignals),supplyStatus:selected.supplyStatus,
+          marketSignals:clone(selected.marketSignals),marketOpportunity:clone(selected.marketOpportunity),supplyStatus:selected.supplyStatus,
           operationalStatus:selected.operationalStatus,capitalRequired:selected.capitalRequired,
           companyCashAvailable:selected.companyCashAvailable},
         alternativesConsidered:candidates.map(function(row){return{factoryType:row.factoryType,
           requestedFactoryCount:row.quantity,totalScore:row.totalScore,marketScore:row.marketScore,
-          supplyScore:row.supplyScore,operationalScore:row.operationalScore,capitalScore:row.capitalScore,
-          marketSignals:clone(row.marketSignals),supplyStatus:row.supplyStatus,
+          supplyScore:row.supplyScore,domesticDemandScore:row.domesticDemandScore,
+          internationalDemandScore:row.internationalDemandScore,processingOpportunityScore:row.processingOpportunityScore,
+          operationalScore:row.operationalScore,capitalScore:row.capitalScore,
+          marketSignals:clone(row.marketSignals),marketOpportunity:clone(row.marketOpportunity),supplyStatus:row.supplyStatus,
           operationalStatus:row.operationalStatus};}),
         supplyPlan:{policy:selected.sourcingPolicy,inputs:clone(inputs),
           action:'COMPANY_TO_ARRANGE_DOMESTIC_PURCHASES_OR_COMPANY_FUNDED_IMPORTS',
@@ -1611,12 +1629,23 @@
         financingDecision:{preferredStructure:financingPreference,companyCashAvailable:cash,
           capitalRequired:required,fundingGap:fundingGap,externalFundingRequested:requestedExternalFunding,
           privateShareholdingRequested:financingPreference==='PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE',
-          privateShareholdingTerms:'PERCENTAGE_REQUIRES_INDEPENDENT_COMPANY_VALUATION_AND_NEGOTIATION',
+          requestedPrivateShareholdingBps:fundingGap===null||required===null||required<=0?null:
+            Math.max(0,Math.min(10000,Math.round(fundingGap/required*10000))),
+          privateShareholdingTerms:'INDICATIVE_PROJECT_FUNDING_SHARE_SUBJECT_TO_COMPANY_VALUATION_AND_NEGOTIATION',
           governmentSupportRequested:supportRequested,tenderInvitationId:invitation&&invitation.invitationId||null},
         governmentTender:invitation?{requestedFactoryCount:num(invitation.quantity),companyOfferedFactoryCount:selected.quantity,
           supportOffer:clone(tenderOffer)}:null,
-        reasons:[selected.marketSignals.some(function(row){return row.signal==='CURRENT_TURN_MATCHED_ORDER_VOLUME'||row.signal==='CURRENT_TURN_OPEN_BUY_ORDER_DEPTH';})
-          ?'Selected using observed buyer-side order-book activity.':'No strong buyer-side order-book evidence; submitted conservatively at the smallest viable scale.',
+        reasons:[selected.marketOpportunity.domesticDemand.some(function(row){return row.status==='DOMESTIC_DEMAND_GAP';})
+          ?'The proposal targets an output with an observed domestic demand gap.'
+          :'Domestic unmet demand is not fully verified in the current country snapshot.',
+          selected.marketOpportunity.exportProcessingOpportunities.some(function(row){return num(row.matchedRawMaterialExportsFromCountry)>0;})
+            ?'Current-turn raw-material exports indicate a possible domestic downstream-processing opportunity.'
+            :'No current-turn raw-material export-processing signal is verified.',
+          selected.marketOpportunity.internationalDemand.some(function(row){return num(row.globalUnmatchedBuyOrderDepth)>0;})
+            ?'The global order book shows unmatched buyer-side demand pressure for an output.'
+            :'International unmatched buyer demand is unobserved or not material in the current snapshot.',
+          selected.marketSignals.some(function(row){return row.signal==='CURRENT_TURN_MATCHED_ORDER_VOLUME'||row.signal==='CURRENT_TURN_OPEN_BUY_ORDER_DEPTH';})
+          ?'Selected using observed buyer-side order-book activity.':'No strong buyer-side order-book evidence; research is still requested and project scale remains conservative.',
           selected.supplyStatus==='DOMESTIC_INPUTS_COVERED'?'Current domestic input surplus covers the modeled 30-day requirement.':
             'The company identifies supply gaps or unobserved inputs and submits a sourcing plan instead of claiming secured supply.',
           readiness.status==='READY'?'Recorded utility/workforce diagnostics show operational readiness.':
@@ -1630,7 +1659,8 @@
       quantity:selected.quantity,sourcingPolicy:selected.sourcingPolicy,
       requestReason:requestReason,expectedBenefit:expectedBenefit,riskForecast:riskForecast,
       stateSupportRequested:supportRequested,financingPreference:financingPreference,
-      requestedPrivateShareholdingBps:null,
+      requestedPrivateShareholdingBps:fundingGap===null||required===null||required<=0?null:
+        Math.max(0,Math.min(10000,Math.round(fundingGap/required*10000))),
       requestedGovernmentEquityBps:financingPreference==='GOVERNMENT_EQUITY'?
         Math.max(0,num(tenderOffer.governmentEquityBps)||0):0,
       requestedLoanGuarantee:financingPreference==='LOAN_GUARANTEE',
@@ -1659,6 +1689,8 @@
       stored.provenance=Object.assign({},stored.provenance||{},{source:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1',
         actor:'AUTONOMOUS_PRIVATE_COMPANY',period:period,simulationOnly:true});
       stored.companyCase=companyBusinessCase(stored);
+      if(stored.marketResearchRequest&&stored.companyCase.marketAnalysis)
+        stored.companyCase.marketAnalysis.researchRequest=clone(stored.marketResearchRequest);
     }
     if(invitation){
       invitation.responses.push({companyId:company,companyName:COMPANY_NAMES[company],
