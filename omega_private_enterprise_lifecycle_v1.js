@@ -532,7 +532,7 @@
   function scenarioPrice(country,resourceId,kind,marketApi){
     var local=observedMarketPrice(country,resourceId),market=currentMarketEvidence(country,resourceId,marketApi),
       unitPrice=null,currency=null,source='UNOBSERVED';
-    if(kind==='IMPORT'&&market.currentTurn&&market.clearingPriceUsd!==null&&marketApi&&typeof marketApi.localPrice==='function'){
+    if(market.currentTurn&&market.clearingPriceUsd!==null&&marketApi&&typeof marketApi.localPrice==='function'){
       try{unitPrice=num(marketApi.localPrice(country,resourceId));}catch(_){}
       if(unitPrice!==null){currency=observedCompanyCurrency(country)||local&&local.currency||null;source='CURRENT_TURN_GLOBAL_CLEARING_CONVERTED_TO_BUYER_CURRENCY';}
     }
@@ -3934,6 +3934,16 @@
       var caseMarketRows=companyCase.marketAnalysis&&companyCase.marketAnalysis.outputs||[];
       var caseSupplyRows=companyCase.supplyChainProof&&companyCase.supplyChainProof.inputs||[];
       function caseAmount(value){return value===null||value===undefined?'Not verified':Number(value).toLocaleString('en-US',{maximumFractionDigits:2});}
+      var marketOpportunity=companyCase.marketAnalysis||{},domesticOpportunityRows=marketOpportunity.domesticDemand||[],
+        internationalOpportunityRows=marketOpportunity.internationalDemand||[],processingOpportunityRows=marketOpportunity.exportProcessingOpportunities||[],
+        researchRequest=marketOpportunity.researchRequest||p.marketResearchRequest||{};
+      var companyOpportunityMarkup='<div class="pe-input-forecast"><strong>Domestic demand and export-processing opportunities</strong>'+ 
+        (domesticOpportunityRows.length?domesticOpportunityRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b></span><span>Domestic demand/day<br><b>'+caseAmount(row.demandPerDay)+'</b></span><span>Existing output/day<br><b>'+caseAmount(row.existingOutputPerDay)+'</b></span><span>30-day unmet demand<br><b>'+caseAmount(row.unmetDomesticDemand30Day)+'</b></span><span>'+escapeHtml(row.status||'UNOBSERVED')+'</span></div>';}).join(''):'<span class="pe-info">No current domestic demand snapshot is available.</span>')+
+        '<strong>International demand and supply</strong>'+
+        (internationalOpportunityRows.length?internationalOpportunityRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b></span><span>Global unmatched buy orders<br><b>'+caseAmount(row.globalUnmatchedBuyOrderDepth)+'</b></span><span>Foreign buyer matches<br><b>'+caseAmount(row.globalMatchedDemand)+'</b></span><span>Order-book evidence<br><b>'+escapeHtml(row.evidenceStatus||'UNOBSERVED')+'</b></span></div>';}).join(''):'<span class="pe-info">International buyer-side evidence is not currently available.</span>')+
+        '<strong>Raw-material export to domestic processing</strong>'+
+        (processingOpportunityRows.length?processingOpportunityRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b></span><span>Raw material needed<br><b>'+caseAmount(row.required30Day)+'</b></span><span>Domestic uncommitted supply<br><b>'+caseAmount(row.domesticUncommittedAvailable)+'</b></span><span>Observed export matches<br><b>'+caseAmount(row.matchedRawMaterialExportsFromCountry)+'</b></span><span>'+escapeHtml(row.status||'UNOBSERVED')+'</span></div>';}).join(''):'<span class="pe-info">No input export-processing opportunity is verified.</span>')+
+        '<small>Market research request: '+escapeHtml(researchRequest.status||'NOT_RECORDED')+' · '+escapeHtml(researchRequest.responseStatus||'AWAITING_MARKET_EVIDENCE')+' · '+escapeHtml(researchRequest.requestId||'No request ID')+'. Missing market data does not prevent company submission.</small></div>';
       var companyMarketMarkup='<div class="pe-input-forecast"><strong>Company market analysis · 30-day output scenario</strong>'+
         (caseMarketRows.length?caseMarketRows.map(function(row){return'<div class="pe-input-row"><span><b>'+escapeHtml(row.resourceId)+'</b><br>Output '+caseAmount(row.projected30DayQuantity)+'</span><span>Market signal<br><b>'+escapeHtml(row.priceDiscovery||'UNAVAILABLE')+'</b></span><span>Clearing price<br><b>'+(row.clearingPriceUsd===null?'Not cleared':caseAmount(row.clearingPriceUsd)+' USD')+'</b></span><span>Matched quantity<br><b>'+caseAmount(row.matchedQuantity)+'</b></span></div><small>Order-book snapshot: turn '+caseAmount(row.marketGeneratedTurn)+' · '+(row.marketSnapshotCurrent?'CURRENT TURN':'STALE / UNVERIFIED')+'</small><small>'+escapeHtml(row.evidenceStatus||'MARKET_EVIDENCE_UNAVAILABLE')+'</small>';}).join(''):'<span class="pe-info">No output market quote is verified.</span>')+
         '<small>Reference prices are not cleared trades. Capacity is not demand, and projected production is not guaranteed sales.</small></div>';
@@ -3943,11 +3953,34 @@
           (row.potentialPrivateCompanySuppliers&&row.potentialPrivateCompanySuppliers.length?'<small>Potential company sources: '+row.potentialPrivateCompanySuppliers.map(function(x){return escapeHtml(x.companyName||x.companyId)+' / '+escapeHtml(x.countryId)+' ('+caseAmount(x.available)+')';}).join(', ')+' · not contracted</small>':'');
         }).join(''):'<span class="pe-info">Input stock or demand evidence has not been verified.</span>')+
         '<small>The company must provide supplier contracts, deliverable volumes, sourcing routes and logistics evidence. The government independently verifies the supplier evidence submitted by the company. Potential suppliers are not secured supply; no signed contract or reserved supply is recorded in this proposal.</small></div>';
+      var economics=companyCase.unitEconomics||{},domesticEconomics=economics.domesticProduction||{},
+        importedEconomics=economics.importedInputProduction||{};
+      var companyUnitEconomicsMarkup='<div class="pe-input-forecast"><strong>Company profitability scenarios · '+escapeHtml(economics.horizonDays||30)+' days</strong>'+
+        '<div class="pe-facts"><span>Domestic input scenario · gross sales <b>'+caseAmount(domesticEconomics.grossSalesCeiling)+'</b></span>'+
+        '<span>Domestic input cost <b>'+caseAmount(domesticEconomics.domesticInputCost)+'</b></span>'+
+        '<span>Operating cost <b>'+caseAmount(domesticEconomics.operatingCost)+'</b></span>'+
+        '<span>Net operating result <b>'+caseAmount(domesticEconomics.netOperatingResult)+'</b></span>'+
+        '<span>Profit margin <b>'+caseAmount(domesticEconomics.profitMarginPct)+'%</b></span>'+
+        '<span>Loss margin <b>'+caseAmount(domesticEconomics.lossMarginPct)+'%</b></span>'+
+        '<span>Domestic scenario status <b>'+escapeHtml(domesticEconomics.status||'UNRESOLVED')+'</b></span>'+
+        '<span>Imported input commodity cost <b>'+caseAmount(importedEconomics.importedCommodityCost)+'</b></span>'+
+        '<span>Import freight / tariff / insurance <b>'+caseAmount(importedEconomics.freightTariffInsuranceCost)+'</b></span>'+
+        '<span>Imported-input net before landed costs <b>'+caseAmount(importedEconomics.netBeforeLandedImportCosts)+'</b></span>'+
+        '<span>Pre-landed margin ceiling <b>'+caseAmount(importedEconomics.preLandedMarginCeilingPct)+'%</b></span>'+
+        '<span>Final imported-input profit/loss <b>'+caseAmount(importedEconomics.actualProfitOrLoss)+'</b></span></div>'+
+        '<small>'+escapeHtml(importedEconomics.limitation||'Profit/loss remains unresolved where input prices or landed import costs are unavailable.')+'</small>'+
+        '<small>All figures are runtime scenarios using observed prices and the configured operating-cost policy. Full-capacity sell-through is not a guaranteed sale; unknown values are not estimated.</small></div>';
       var financing=companyCase.financingOffer||{};
       var companyFinanceOfferMarkup='<div class="pe-input-forecast"><strong>Company financing offer / request</strong>'+
         '<div class="pe-facts"><span>Preferred structure <b>'+escapeHtml(financing.preferredStructure||'NOT_STATED')+'</b></span>'+
         '<span>Company cash available <b>'+caseAmount(financing.companyCashAvailable)+'</b></span>'+
         '<span>Company capital offered <b>'+caseAmount(financing.companyCapitalOffer)+'</b></span>'+
+        '<span>Total company capital raised <b>'+caseAmount(financing.companyCapitalBudget&&financing.companyCapitalBudget.totalCapitalRaised)+'</b></span>'+
+        '<span>Reserved company capital <b>'+caseAmount(financing.companyCapitalBudget&&financing.companyCapitalBudget.reservedCapital)+'</b></span>'+
+        '<span>Capital already spent <b>'+caseAmount(financing.companyCapitalBudget&&financing.companyCapitalBudget.capitalAlreadySpent)+'</b></span>'+
+        '<span>Maximum affordable factory units <b>'+caseAmount(financing.companyCapitalBudget&&financing.companyCapitalBudget.maximumAffordableFactoryUnits)+'</b></span>'+
+        '<span>Can afford requested project <b>'+escapeHtml(financing.companyCapitalBudget&&financing.companyCapitalBudget.canAffordRequestedProject===null?'UNOBSERVED':financing.companyCapitalBudget&&financing.companyCapitalBudget.canAffordRequestedProject?'YES':'NO')+'</b></span>'+
+        '<span>Indicative partner share requested <b>'+(financing.requestedPrivateShareholdingPct===null?'Not calculated':caseAmount(financing.requestedPrivateShareholdingPct)+'%')+'</b></span>'+
         '<span>Capital required <b>'+caseAmount(financing.constructionCapitalRequired)+'</b></span>'+
         '<span>Funding gap <b>'+caseAmount(financing.fundingGap)+'</b></span>'+
         '<span>Government grant requested <b>'+caseAmount(financing.requestedGovernmentGrant)+'</b></span>'+
@@ -3958,6 +3991,7 @@
         '<span>Public infrastructure <b>'+(companyCase.companyExpectations&&companyCase.companyExpectations.publicInfrastructureRequested?'Requested':'Not requested')+'</b></span>'+
         '<span>Utility support <b>'+(companyCase.companyExpectations&&companyCase.companyExpectations.utilitySupportRequested?'Requested':'Not requested')+'</b></span>'+
         '<span>Government offtake <b>'+(companyCase.companyExpectations&&companyCase.companyExpectations.governmentOfftakeRequested?'Requested':'Not requested')+'</b></span></div>'+
+        '<small>Share percentage basis: '+escapeHtml(financing.privateShareholdingBasis||'NOT_STATED')+'. It is an indicative project funding share, not a binding company valuation.</small>'+
         '<small>'+escapeHtml(financing.companyCapitalAccountStatus||'CAPITAL_NOT_VERIFIED')+' · '+escapeHtml(financing.settlementStatus||'PROPOSAL_ONLY_NOT_SETTLED')+'. Requests are not funds until a matching Finance ledger transaction is verified.</small>'+
         '<small>Company-requested conditions: '+escapeHtml((companyCase.companyExpectations&&companyCase.companyExpectations.requestedConditions||[]).join('; ')||'None stated')+'</small></div>';
       var financial=assessment.financialForecast||{};
@@ -3986,7 +4020,7 @@
         '<div><small>Government grant asked</small><strong>'+caseAmount(financing.requestedGovernmentGrant)+' '+escapeHtml(p.capitalUnit||'')+'</strong></div>'+
         '<div><small>Company risk disclosure</small><strong>'+escapeHtml(assessment.riskStatus||'UNRESOLVED')+'</strong></div></div>';
       var companyCaseDetails='<details class="pe-case-details" data-pe-company-case-details><summary>Company business case · market, supply chain, benefits and financing offer</summary><div class="pe-case-body">'+
-        applicationMarkup+companyMarketMarkup+companySupplyMarkup+companyFinanceOfferMarkup+'</div></details>';
+        applicationMarkup+companyOpportunityMarkup+companyMarketMarkup+companySupplyMarkup+companyUnitEconomicsMarkup+companyFinanceOfferMarkup+'</div></details>';
       var governmentReviewDetails='<details class="pe-case-details" data-pe-government-review-details><summary>Independent government assessment · market reality, national supply and public risk</summary><div class="pe-case-body">'+
         riskMarkup+readinessMarkup+inputDetails+shortages+unknown+'</div></details>';
       var facts='<div class="pe-facts"><span>Asset owner: '+escapeHtml(COMPANY_NAMES[p.companyId]||p.companyId)+'</span><span>Operator: '+escapeHtml(COMPANY_NAMES[p.operatorCompanyId||p.companyId]||(p.operatorCompanyId||p.companyId))+'</span><span>Factory: '+escapeHtml(p.factoryName)+'</span><span>Quantity: '+p.quantity+'</span><span>Capital: '+(p.capitalRequired===null?'Unquoted':Number(p.capitalRequired).toLocaleString('en-US')+' '+escapeHtml(p.capitalUnit))+'</span><span>Company capital: '+balance.toLocaleString('en-US')+'</span><span>Government factories: '+Number(preview.governmentFactoryCount||0).toLocaleString('en-US')+'</span><span>Private opening allocation: '+Number(preview.openingPrivateAllocation||0).toLocaleString('en-US')+'</span><span>Additional policy ceiling: '+Number(preview.maximumAdditionalUnits||0).toLocaleString('en-US')+'</span><span>Max safe domestic-input factories: '+(preview.maximumSafeDomesticFactoryQuantity===null?'Not observed':Number(preview.maximumSafeDomesticFactoryQuantity).toLocaleString('en-US'))+'</span><span>Daily capacity forecast: '+Number(preview.requestedDailyCapacity||0).toLocaleString('en-US')+'</span><span>Source: '+p.sourcingPolicy.replace(/_/g,' ')+'</span><span>Permit: '+(p.permit?escapeHtml(p.permit.permitId)+' · expires T'+Number(p.permit.expiresAtTurn).toLocaleString('en-US'):'Not issued')+'</span><span>Projects: '+progress+'</span></div>';
