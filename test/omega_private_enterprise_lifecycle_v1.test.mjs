@@ -1924,3 +1924,83 @@ test('private lifecycle merges populated BANGLADESH records into a newly materia
   assert.equal(h.state.economy.BGD.privateEnterpriseLifecycle.procurementRecords.length,1,
     'country-bucket reconciliation must not duplicate or drop procurement records');
 });
+
+
+test('company business case compares bounded sourcing choices and exposes unknown import landed costs without blocking submission',()=>{
+  const h=makeHarness();
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+    sourcingPolicy:'MIXED',requestId:'company-sourcing-alternatives-without-market-data'});
+  assert.equal(proposal.status,'PROPOSED',JSON.stringify(proposal));
+  const sourcing=proposal.companyCase.supplyChainProof.sourcingAlternatives;
+  assert.deepEqual(JSON.parse(JSON.stringify(sourcing.alternatives.map(row=>row.strategy))),[
+    'DOMESTIC_ONLY','DOMESTIC_FIRST_WITH_IMPORT_BACKFILL','IMPORT_ONLY','COST_OPTIMIZED'
+  ]);
+  assert.equal(sourcing.selectedPolicy,'MIXED');
+  assert.equal(sourcing.recommendedPolicy,'MANUAL_REVIEW',
+    'missing domestic and international source evidence must not produce a fabricated procurement recommendation');
+  assert.equal(sourcing.alternatives[1].status,'SUPPLY_EVIDENCE_UNOBSERVED');
+  assert.equal(sourcing.alternatives[2].landedCostStatus,'UNOBSERVED_FREIGHT_TARIFF_INSURANCE_AND_ROUTE_COST');
+  assert.equal(sourcing.alternatives[2].actualLandedCostTotal,null);
+  assert.equal(sourcing.alternatives[3].status,'UNRESOLVED_LANDED_COST_OR_PRICE_EVIDENCE');
+  const budget=proposal.companyCase.financingOffer.startupBudget;
+  assert.equal(budget.completeStartupCapitalRequired,null,
+    'missing input prices, operating costs or landed import costs must keep the complete startup requirement unresolved');
+  assert.equal(proposal.companyCase.financingOffer.companyCapitalBudget.maximumAffordableFactoryUnits,null,
+    'the legacy construction-only affordability field remains unobserved when no company account exists');
+  assert.ok(proposal.companyCase.financingOffer.financingAlternatives.some(row=>row.id==='JOINT_VENTURE'));
+  assert.ok(proposal.companyCase.financingOffer.financingAlternatives.some(row=>row.id==='COMMERCIAL_LOAN'));
+  assert.equal(proposal.marketResearchRequest.status,'QUEUED_LOCAL_MARKET_HANDOFF',
+    'market-data absence must not suppress the company proposal or its research request');
+});
+
+test('fully observed domestic sourcing produces an all-in working-capital budget and caches market reads',()=>{
+  const h=makeHarness(),calls=Object.create(null);
+  setReadyIronSupply(h,1000);
+  h.state.resource.BGD.processedWarehouse={availableByResource:{steel:0},reservedByResource:{}};
+  h.state.resource.BGD.demandRuntime.byResource.steel={
+    demandPerDay:10,consumerDemandPerDay:10,activeFactoryInputDemandPerDay:0
+  };
+  h.state.trade={BGD:{
+    marketPrice:{steel:5,iron_ore:2},currencyCode:'GAME_CURRENCY_UNITS',
+    settlementCurrency:'GAME_CURRENCY_UNITS'
+  }};
+  h.state.economy.BGD.privateEnterpriseFiscalPolicy={operatingCostPolicy:{
+    currency:'GAME_CURRENCY_UNITS',
+    rates:{electricityPerMWh:1,waterPerM3:1,laborPerWorkerDay:1,
+      maintenancePerFactoryDay:1,overheadPerFactoryDay:1,depreciationPerFactoryDay:1}
+  }};
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [COMPANY]:{companyId:COMPANY,currency:'GAME_CURRENCY_UNITS',
+      availableBalance:5000,reservedBalance:0,capitalRaised:5000,capitalSpent:0,revision:1}
+  };
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){
+      calls[resourceId]=(calls[resourceId]||0)+1;
+      return{resourceId,status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',
+        generatedTurn:4,matchedQuantity:0,bidDepth:0,askDepth:0,matches:[]};
+    }
+  };
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+    sourcingPolicy:'DOMESTIC_ONLY',requestId:'company-domestic-all-in-budget'});
+  assert.equal(proposal.status,'PROPOSED',JSON.stringify(proposal));
+  const sourcing=proposal.companyCase.supplyChainProof.sourcingAlternatives;
+  assert.equal(sourcing.recommendedPolicy,'DOMESTIC_ONLY');
+  assert.equal(sourcing.alternatives[0].status,'DOMESTIC_SUPPLY_COVERS_REQUIREMENT');
+  assert.equal(sourcing.alternatives[0].importRequired,false);
+  assert.equal(sourcing.alternatives[0].actualLandedCostTotal,1200);
+  assert.equal(sourcing.alternatives[3].recommendedAlternativeId,'DOMESTIC_ONLY');
+  const economics=proposal.companyCase.unitEconomics;
+  assert.equal(economics.domesticProduction.status,'CALCULATED');
+  assert.equal(economics.domesticProduction.netOperatingResult,30);
+  const budget=proposal.companyCase.financingOffer.startupBudget;
+  assert.equal(budget.observedWorkingCapitalSubtotal,1470);
+  assert.equal(budget.completeWorkingCapitalRequirement,1470);
+  assert.equal(budget.completeStartupCapitalRequired,1570);
+  assert.equal(budget.completeStartupFundingGap,0);
+  assert.equal(budget.maximumAffordableAllInFactoryUnits,3);
+  assert.equal(budget.status,'FULL_STARTUP_AFFORDABLE');
+  assert.equal(proposal.companyCase.financingOffer.financingAlternatives.find(row=>row.id==='COMPANY_CASH').status,
+    'FULL_STARTUP_AFFORDABLE');
+  assert.deepEqual(calls,{steel:1,iron_ore:1},
+    'each resource quote is read once per proposal business case rather than repeatedly across UI/economics passes');
+});

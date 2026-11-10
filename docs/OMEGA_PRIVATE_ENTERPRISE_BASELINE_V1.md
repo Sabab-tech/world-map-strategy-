@@ -425,3 +425,18 @@ Every company-originated proposal now sends a structured 30-day market-research 
 - The trade-owned market queue validates, stores and idempotently replays these quantity-bearing requests. The queue may remain awaiting market evidence until a market response provider is implemented.
 
 This enriches the market handoff without introducing a new market engine or hardcoded market values.
+
+
+## Company investment analysis expansion — 2026-11-11
+
+The company-originated proposal engine now exposes four bounded sourcing comparisons for every recipe input set: domestic-only, domestic-first with import backfill, import-only, and cost-optimized. It uses current domestic uncommitted stock and the existing Global Market supplier/route filters where those APIs are available. Foreign stock is labelled as potential, uncontracted availability; it is not reserved, purchased, paid for or treated as received. The recommendation falls back to manual review when source quantities cannot be observed.
+
+The cost-optimized option is deliberately unresolved whenever comparable landed import costs are missing. Domestic commodity prices and international commodity-only prices are not treated as equivalent landed costs. The runtime has no verified freight, route, insurance and tariff quote contract, so imported-input scenarios retain a null final landed cost and null final import-based profit/loss.
+
+Company finance disclosure distinguishes construction-only funding from a 30-day working-capital view. It shows the observed input-cost/operating-cost subtotal, a complete working-capital requirement only when all required components are priced and currency-reconciled, the minimum known startup capital floor, and the full startup funding gap only when the complete startup requirement is measurable. An imported-input commodity subtotal is never presented as the complete working-capital requirement. The legacy construction-only affordability fields remain available for compatibility.
+
+The proposal also presents a financing alternatives matrix: company cash, private equity/strategic partner, joint venture, commercial credit, government grant/equity, loan guarantee, phased/reduced scale, and deferred investment. These are decision options and evidence statuses, not financing offers or settlements. Public support is still separately reviewed and must pass the existing Finance ledger, approval and construction gates.
+
+For responsiveness, market quote, local-price and supplier reads are memoized within one synchronous company analysis/candidate-ranking pass. The company business case is no longer calculated twice merely to attach the market research request; the request is linked to the existing case after the single calculation. The autonomous company turn cadence, selected-country scope, proposal idempotency and existing approval/production gates are unchanged.
+
+Missing market data remains `UNOBSERVED` and does not block an autonomous company proposal or its research request. These additions use existing catalog, inventory, trade, supplier and Finance evidence; they add no resource types, factory types, supplier contracts, stock reservations, payments, production assets or hardcoded market/profit values.
