@@ -702,7 +702,7 @@
           importedLandedCost:null,landedCostStatus:importQuantity===null?'UNOBSERVED':
             importQuantity>1e-9?'FREIGHT_TARIFF_INSURANCE_AND_ROUTE_UNOBSERVED':'NOT_REQUIRED'});
       });
-      var imported=importQuantityTotal>1e-9,feasible=domesticFeasible!==false;
+      var imported=importQuantityTotal>1e-9,landedCostKnown=quantityKnown&&!imported,feasible=domesticFeasible!==false;
       return{rows:rows,quantityKnown:quantityKnown,commodityCostKnown:commodityCostKnown&&currencyConsistent,
         currencyConsistent:currencyConsistent,domesticSupplyFeasible:domesticFeasible,
         domesticAvailabilityUnobserved:availabilityUnknown,domesticInputQuantity:quantityKnown?rounded(domesticQuantityTotal):null,
@@ -710,8 +710,8 @@
         domesticInputCost:commodityCostKnown&&currencyConsistent?rounded(domesticCost,2):null,
         importCommodityCost:commodityCostKnown&&currencyConsistent?rounded(importCost,2):null,
         totalCommodityInputCost:commodityCostKnown&&currencyConsistent?rounded(domesticCost+importCost,2):null,
-        importsRequired:imported,finalLandedCostObserved:!imported,
-        landedCostStatus:imported?'FREIGHT_TARIFF_INSURANCE_AND_ROUTE_UNOBSERVED':'NOT_REQUIRED',
+        importsRequired:imported,finalLandedCostObserved:landedCostKnown,
+        landedCostStatus:!quantityKnown?'INPUT_SOURCE_QUANTITY_UNOBSERVED':imported?'FREIGHT_TARIFF_INSURANCE_AND_ROUTE_UNOBSERVED':'NOT_REQUIRED',
         feasible:feasible,reasons:reasons};
     }
     salesModes.forEach(function(salesMode){
@@ -1883,7 +1883,7 @@
         assessment=proposalDecisionAssessment({countryId:cid,companyId:company,factoryType:type,
           quantity:quantity,processingResourceId:processingResourceId,sourcingPolicy:sourcingPolicy,
           capitalRequired:capitalRequired,capitalUnit:profile.unit||'GAME_CURRENCY_UNITS'},preview),
-        unitEconomics=companyUnitEconomics({countryId:cid,factoryType:type,processingResourceId:processingResourceId},
+        unitEconomics=companyUnitEconomics({countryId:cid,factoryType:type,processingResourceId:processingResourceId,capitalRequired:capitalRequired},
           preview,assessment,marketApi),
         // Investment ranking may use only fully calculated net operating results.
         // A pre-landed imported-input ceiling is not profit until freight, insurance,
