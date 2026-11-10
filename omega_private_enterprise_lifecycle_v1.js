@@ -1140,7 +1140,7 @@
         domesticCost:row.domesticCost,importCommodityCost:row.importCommodityCost
       });
     });
-      importsUsed=inputRows.some(function(row){return num(row.importQuantity)>0;}),
+    var importsUsed=inputRows.some(function(row){return num(row.importQuantity)>0;}),
       observedInputCostSubtotal=0,knownInputCostRows=0,
       inputCostsComplete=inputRows.length>0&&inputRows.every(function(row){
         var domesticOk=num(row.domesticQuantity)===0||num(row.domesticCost)!==null,
@@ -1158,7 +1158,11 @@
       if(num(row.importQuantity)>0&&row.importCurrency)costCurrencies.push(row.importCurrency);
     });
     var uniqueCurrencies=Array.from(new Set(costCurrencies)),
-      currencyConsistent=!!currency&&uniqueCurrencies.every(function(value){return value===currency;}),
+      costCurrencyEvidenceComplete=inputRows.every(function(row){
+        return (num(row.domesticQuantity)<=0||!!row.domesticCurrency)&&
+          (num(row.importQuantity)<=0||!!row.importCurrency);
+      }),
+      currencyConsistent=!!currency&&costCurrencyEvidenceComplete&&uniqueCurrencies.every(function(value){return value===currency;}),
       allInputQuantitiesKnown=inputRows.length>0&&inputRows.every(function(row){
         return num(row.required30Day)!==null&&num(row.domesticQuantity)!==null&&num(row.importQuantity)!==null&&
           num(row.domesticQuantity)+num(row.importQuantity)+1e-9>=num(row.required30Day);
