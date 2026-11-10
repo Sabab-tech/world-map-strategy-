@@ -238,6 +238,18 @@ test('company proposal includes its own market analysis, supply-chain proof and 
     'the company must submit a research request even when no global market connector is available');
   assert.equal(proposal.marketResearchRequest.responseStatus,'AWAITING_MARKET_EVIDENCE');
   assert.deepEqual(JSON.parse(JSON.stringify(proposal.marketResearchRequest.request.marketScopes)),['DOMESTIC','INTERNATIONAL']);
+  assert.ok(proposal.marketResearchRequest.request.inputRequirements.length>0,
+    'the market request must include the company’s per-resource 30-day input quantities');
+  assert.ok(proposal.marketResearchRequest.request.outputRequirements.length>0,
+    'the market request must include projected per-resource output quantities');
+  assert.ok(proposal.marketResearchRequest.request.inputRequirements.every(row=>
+    row.resourceId&&typeof row.requiredQuantity30Day==='number'),
+    'known recipe input quantities must reach the market queue');
+  assert.ok(proposal.marketResearchRequest.request.outputRequirements.every(row=>
+    row.resourceId&&typeof row.projectedProduction30Day==='number'),
+    'known recipe output quantities must reach the market queue');
+  assert.equal(proposal.marketResearchRequest.request.outputRequirements[0].unmetDomesticDemand30Day,null,
+    'missing demand evidence must remain null in the market request');
   assert.equal(proposal.companyCase.marketAnalysis.researchRequest.requestId,proposal.marketResearchRequest.requestId);
   assert.equal(proposal.companyCase.marketAnalysis.domesticDemand[0].status,'UNOBSERVED',
     'missing domestic demand evidence must remain unobserved instead of being treated as zero');
