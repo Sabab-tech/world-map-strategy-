@@ -1314,11 +1314,12 @@ function buildCompanySourcingAlternatives(supplyRows,economicsRows,currency,sele
           !currencyConsistent?'CURRENCY_NOT_RECONCILED':'OBSERVED_COMMODITY_COST_ONLY',
         currency:currencyConsistent?(currency||uniqueCurrencies[0]||null):null,
         landedCostStatus:usesImports?'UNOBSERVED_FREIGHT_TARIFF_INSURANCE_AND_ROUTE_COST':
-          'NOT_REQUIRED_FOR_THIS_DOMESTIC_ONLY_SCENARIO',
-        actualLandedCostTotal:usesImports?null:commodityCost,
+          'DOMESTIC_INPUT_HAUL_AND_FINISHED_GOODS_DELIVERY_UNOBSERVED',
+        actualLandedCostTotal:null,
+        knownDomesticCommodityCostTotal:usesImports?null:commodityCost,
         limitation:usesImports
           ?'Imported supplier capacity is a possibility, not a contract. Commodity cost excludes freight, route, insurance and tariffs; final landed cost and import-based profit/loss remain unresolved.'
-          :'Domestic input cost is based on the observed country price. Customer sales, stock reservation and delivery are not guaranteed by this scenario.'
+          :'Domestic input commodity cost is based on observed country prices, but domestic haul and finished-goods delivery are unobserved. This is not a complete landed cost or final profit/loss.'
       };
     }
     var alternatives=specs.map(build),
@@ -1337,7 +1338,7 @@ function buildCompanySourcingAlternatives(supplyRows,economicsRows,currency,sele
     alternatives[3]={
       strategy:'COST_OPTIMIZED',label:'Lowest comparable landed cost',
       status:domesticReady&&domestic.commodityCostStatus==='OBSERVED_COMMODITY_COST_ONLY'
-        ?'DOMESTIC_ONLY_COST_OBSERVED_IMPORT_COMPARISON_NOT_REQUIRED':
+        ?'DOMESTIC_COMMODITY_COST_OBSERVED_LOGISTICS_UNRESOLVED':
           'UNRESOLVED_LANDED_COST_OR_PRICE_EVIDENCE',
       recommendedAlternativeId:domesticReady?'DOMESTIC_ONLY':null,
       commodityCostTotal:domesticReady?domestic.commodityCostTotal:null,
