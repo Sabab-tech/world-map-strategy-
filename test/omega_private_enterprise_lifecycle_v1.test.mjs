@@ -234,6 +234,16 @@ test('company proposal includes its own market analysis, supply-chain proof and 
   assert.equal(proposal.companyCase.financingOffer.settlementStatus,'PROPOSAL_ONLY_NOT_SETTLED');
   assert.equal(proposal.companyCase.supplyChainProof.externalSupplierStatus,
     'AVAILABILITY_IS_NOT_A_SIGNED_CONTRACT_OR_DELIVERY');
+  assert.equal(proposal.marketResearchRequest.status,'QUEUED_LOCAL_MARKET_HANDOFF',
+    'the company must submit a research request even when no global market connector is available');
+  assert.equal(proposal.marketResearchRequest.responseStatus,'AWAITING_MARKET_EVIDENCE');
+  assert.deepEqual(JSON.parse(JSON.stringify(proposal.marketResearchRequest.request.marketScopes)),['DOMESTIC','INTERNATIONAL']);
+  assert.equal(proposal.companyCase.marketAnalysis.researchRequest.requestId,proposal.marketResearchRequest.requestId);
+  assert.equal(proposal.companyCase.marketAnalysis.domesticDemand[0].status,'UNOBSERVED',
+    'missing domestic demand evidence must remain unobserved instead of being treated as zero');
+  assert.equal(proposal.companyCase.unitEconomics.domesticProduction.netOperatingResult,null);
+  assert.equal(proposal.companyCase.unitEconomics.importedInputProduction.actualProfitOrLoss,null);
+  assert.equal(h.api.getCountryDashboard('BGD').marketResearchRequests.length,1);
 });
 
 
@@ -291,10 +301,14 @@ test('company investment engine compares eligible factories and submits its own 
   assert.equal(proposal.companyCase.financingOffer.requestedExternalFundingAmount,40);
   assert.equal(proposal.companyCase.financingOffer.preferredStructure,'PRIVATE_SHAREHOLDERS_OR_CORPORATE_FINANCE');
   assert.equal(proposal.companyCase.financingOffer.privateShareholdingRequested,true);
-  assert.equal(proposal.companyCase.financingOffer.requestedPrivateShareholdingBps,null,
-    'an equity percentage is not invented without a defensible company valuation');
+  assert.equal(proposal.companyCase.financingOffer.requestedPrivateShareholdingBps,6667,
+    'the company expresses its project funding gap as an indicative partner share, rounded to basis points');
+  assert.equal(proposal.companyCase.financingOffer.requestedPrivateShareholdingPct,66.67);
+  assert.equal(proposal.companyCase.financingOffer.privateShareholdingBasis,
+    'FUNDING_GAP_AS_SHARE_OF_PROJECT_CAPITAL_NOT_ENTERPRISE_VALUATION');
   assert.equal(proposal.companyCase.financingOffer.privateShareholdingTermsStatus,
-    'PRIVATE_SHAREHOLDING_REQUESTED_PERCENTAGE_REQUIRES_VALUATION_AND_NEGOTIATION');
+    'INDICATIVE_PARTNER_SHARE_REQUIRES_VALUATION_AND_NEGOTIATION');
+  assert.equal(proposal.companyCase.financingOffer.companyCapitalBudget.maximumAffordableFactoryUnits,0);
   assert.equal(proposal.companyCase.supplyChainProof.securedAtSubmission,false);
   assert.ok(proposal.companyStrategy.selectedOpportunity.marketSignals.some(row=>
     row.resourceId==='copper'&&row.currentTurnEvidence===true&&row.matchedQuantity===15),
