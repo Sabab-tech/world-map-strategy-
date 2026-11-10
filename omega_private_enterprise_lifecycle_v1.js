@@ -539,92 +539,184 @@
       evidencePolicy:'Only current-turn observed demand, active output capacity, processed stock and executed market matches are quantified. Missing evidence is UNOBSERVED.'};
   }
   function scenarioPrice(country,resourceId,kind,marketApi){
-    var local=observedMarketPrice(country,resourceId),market=currentMarketEvidence(country,resourceId,marketApi),
-      unitPrice=null,currency=null,source='UNOBSERVED';
-    if(market.currentTurn&&market.clearingPriceUsd!==null&&marketApi&&typeof marketApi.localPrice==='function'){
-      try{unitPrice=num(marketApi.localPrice(country,resourceId));}catch(_){}
-      if(unitPrice!==null){currency=observedCompanyCurrency(country)||local&&local.currency||null;source='CURRENT_TURN_GLOBAL_CLEARING_CONVERTED_TO_BUYER_CURRENCY';}
+    var local=observedMarketPrice(country,resourceId),market=currentMarketEvidence(country,resourceId,marketApi);
+    if(kind==='INTERNATIONAL'){
+      var executable=market.currentTurn&&market.status==='CLEARED'&&
+        market.priceDiscovery==='ORDER_BOOK_CROSSING'&&market.clearingPriceUsd!==null&&
+        marketApi&&typeof marketApi.localPrice==='function';
+      if(executable){
+        var converted=null;
+        try{converted=num(marketApi.localPrice(country,resourceId));}catch(_){}
+        if(converted!==null)return{unitPrice:converted,
+          currency:observedCompanyCurrency(country)||null,
+          source:'CURRENT_TURN_CLEARED_INTERNATIONAL_ORDER_BOOK',
+          marketTurn:market.generatedTurn,marketStatus:market.status,marketSnapshotCurrent:true};
+      }
+      return{unitPrice:null,currency:null,
+        source:market.currentTurn?'NO_EXECUTABLE_INTERNATIONAL_CLEARING':'INTERNATIONAL_MARKET_UNOBSERVED_OR_STALE',
+        marketTurn:market.generatedTurn,marketStatus:market.status,marketSnapshotCurrent:market.currentTurn};
     }
-    if(unitPrice===null&&local){unitPrice=local.unitPrice;currency=local.currency;source='COUNTRY_RECORDED_TRADE_PRICE';}
-    return{unitPrice:unitPrice,currency:currency,source:source,
+    if(local)return{unitPrice:local.unitPrice,currency:local.currency,
+      source:'COUNTRY_RECORDED_DOMESTIC_TRADE_PRICE',
+      marketTurn:market.generatedTurn,marketStatus:market.status,marketSnapshotCurrent:market.currentTurn};
+    return{unitPrice:null,currency:null,source:'DOMESTIC_PRICE_UNOBSERVED',
       marketTurn:market.generatedTurn,marketStatus:market.status,marketSnapshotCurrent:market.currentTurn};
   }
   function companyUnitEconomics(proposal,preview,assessment,marketApi){
     var profile=(catalog()||{}).factoryProfiles&&catalog().factoryProfiles[proposal.factoryType],
       recipe=recipeFor(proposal.factoryType,profile,proposal.processingResourceId),
-      outputs=recipe&&obj(recipe.outputs)?recipe.outputs:{},outputRows=Object.keys(outputs).map(function(resourceId){
-        var quantity=num(outputs[resourceId]),projected=num(preview.requestedDailyCapacity);
-        projected=quantity===null||projected===null?null:Number((quantity*projected*30).toFixed(6));
-        var price=scenarioPrice(proposal.countryId,resourceId,'EXPORT',marketApi);
-        return{resourceId:resourceId,projected30DayQuantity:projected,unitPrice:price.unitPrice,
-          currency:price.currency,priceSource:price.source,marketTurn:price.marketTurn,
-          projectedGrossRevenue:projected===null||price.unitPrice===null?null:Number((projected*price.unitPrice).toFixed(2))};
+      outputs=recipe&&obj(recipe.outputs)?recipe.outputs:{},
+      opportunity=companyMarketOpportunityAnalysis(proposal,
+        Object.keys(outputs).map(function(resourceId){return{resourceId:resourceId};}),
+        preview.inputRequirements||[],marketApi),
+      domesticByResource=Object.create(null),internationalByResource=Object.create(null);
+    opportunity.domesticDemand.forEach(function(row){domesticByResource[token(row.resourceId)]=row;});
+    opportunity.internationalDemand.forEach(function(row){internationalByResource[token(row.resourceId)]=row;});
+    var outputRows=Object.keys(outputs).map(function(resourceId){
+      var coefficient=num(outputs[resourceId]),capacity=num(preview.requestedDailyCapacity),
+        projected=coefficient===null||capacity===null?null:Number((coefficient*capacity*30).toFixed(6)),
+        domestic=domesticByResource[token(resourceId)]||{},
+        international=internationalByResource[token(resourceId)]||{},
+        domesticPrice=scenarioPrice(proposal.countryId,resourceId,'DOMESTIC',marketApi),
+        internationalPrice=scenarioPrice(proposal.countryId,resourceId,'INTERNATIONAL',marketApi),
+        domesticDemandQuantity=num(domestic.unmetDomesticDemand30Day),
+        exportDemandQuantity=num(international.globalUnmatchedBuyOrderDepth),
+        domesticSaleQuantity=projected===null||domesticDemandQuantity===null?null:
+          Math.min(projected,Math.max(0,domesticDemandQuantity)),
+        exportSaleQuantity=projected===null||exportDemandQuantity===null?null:
+          Math.min(projected,Math.max(0,exportDemandQuantity)),
+        domesticRevenue=domesticSaleQuantity===null?null:domesticSaleQuantity<=0?0:
+          domesticPrice.unitPrice===null?null:Number((domesticSaleQuantity*domesticPrice.unitPrice).toFixed(2)),
+        exportRevenue=exportSaleQuantity===null?null:exportSaleQuantity<=0?0:
+          internationalPrice.unitPrice===null?null:Number((exportSaleQuantity*internationalPrice.unitPrice).toFixed(2));
+      return{resourceId:resourceId,projected30DayQuantity:projected,
+        domesticUnmetDemand30Day:domesticDemandQuantity,domesticSaleQuantity:domesticSaleQuantity,
+        domesticUnitPrice:domesticPrice.unitPrice,domesticPriceSource:domesticPrice.source,
+        domesticCurrency:domesticPrice.currency,domesticGrossRevenue:domesticRevenue,
+        internationalUnmatchedBuyOrderDepth:exportDemandQuantity,exportSaleQuantity:exportSaleQuantity,
+        internationalUnitPrice:internationalPrice.unitPrice,internationalPriceSource:internationalPrice.source,
+        internationalCurrency:internationalPrice.currency,internationalGrossRevenue:exportRevenue,
+        internationalDemandSupplyGap:num(international.unmatchedDemandSupplyGap),
+        internationalDemandSupplyStatus:international.demandSupplyStatus||'UNOBSERVED',
+        marketTurn:international.marketTurn??domestic.marketTurn,
+        demandEvidenceStatus:domestic.status||'UNOBSERVED'};
+    });
+    var inputRows=(preview.inputRequirements||[]).map(function(row){
+      var required=num(row.forecast30Day),available=num(row.available),
+        domesticQuantity=required===null||available===null?null:Math.min(required,Math.max(0,available)),
+        importQuantity=required===null||available===null?null:Math.max(0,required-domesticQuantity),
+        domesticPrice=scenarioPrice(proposal.countryId,row.resourceId,'DOMESTIC',marketApi),
+        importPrice=scenarioPrice(proposal.countryId,row.resourceId,'INTERNATIONAL',marketApi),
+        domesticCost=domesticQuantity===null?null:domesticQuantity<=0?0:
+          domesticPrice.unitPrice===null?null:Number((domesticQuantity*domesticPrice.unitPrice).toFixed(2)),
+        importCommodityCost=importQuantity===null?null:importQuantity<=0?0:
+          importPrice.unitPrice===null?null:Number((importQuantity*importPrice.unitPrice).toFixed(2));
+      return{resourceId:row.resourceId,required30Day:required,domesticAvailable:available,
+        domesticQuantity:domesticQuantity,importQuantity:importQuantity,
+        domesticUnitPrice:domesticPrice.unitPrice,domesticPriceSource:domesticPrice.source,
+        domesticCurrency:domesticPrice.currency,domesticCost:domesticCost,
+        importUnitPrice:importPrice.unitPrice,importPriceSource:importPrice.source,
+        importCurrency:importPrice.currency,importCommodityCost:importCommodityCost,
+        importLandedCost:null,
+        importLandedCostStatus:importQuantity===null?'UNOBSERVED':
+          importQuantity>0?'FREIGHT_TARIFF_AND_INSURANCE_UNOBSERVED':'NOT_REQUIRED',
+        sourcingDecision:domesticQuantity===null?'SOURCE_AVAILABILITY_UNOBSERVED':
+          importQuantity>0&&domesticQuantity>0?'DOMESTIC_PLUS_IMPORTED_INPUTS':
+          importQuantity>0?'IMPORTED_INPUTS':'DOMESTIC_INPUTS_ONLY'};
+    });
+    function revenueTotal(rows,key){
+      if(!rows.length||rows.some(function(row){return row[key]===null;}))return null;
+      return Number(rows.reduce(function(sum,row){return sum+row[key];},0).toFixed(2));
+    }
+    function currencyOf(rows,key){
+      var values=Array.from(new Set(rows.map(function(row){return row[key];}).filter(Boolean)));
+      return values.length===1?values[0]:null;
+    }
+    var domesticRevenue=revenueTotal(outputRows,'domesticGrossRevenue'),
+      exportRevenue=revenueTotal(outputRows,'internationalGrossRevenue'),
+      domesticCurrency=currencyOf(outputRows,'domesticCurrency'),
+      exportCurrency=currencyOf(outputRows,'internationalCurrency'),
+      domesticDemandComplete=outputRows.length>0&&outputRows.every(function(row){
+        return row.domesticSaleQuantity!==null;
       }),
-      inputRows=(preview.inputRequirements||[]).map(function(row){
-        var required=num(row.forecast30Day),available=num(row.available),
-          domesticQuantity=required===null||available===null?null:Math.min(required,Math.max(0,available)),
-          importQuantity=required===null||available===null?null:Math.max(0,required-domesticQuantity),
-          domesticPrice=scenarioPrice(proposal.countryId,row.resourceId,'DOMESTIC',marketApi),
-          importPrice=scenarioPrice(proposal.countryId,row.resourceId,'IMPORT',marketApi),
-          domesticCost=domesticQuantity===null||domesticQuantity<=0?0:
-            domesticPrice.unitPrice===null?null:Number((domesticQuantity*domesticPrice.unitPrice).toFixed(2)),
-          importCommodityCost=importQuantity===null||importQuantity<=0?0:
-            importPrice.unitPrice===null?null:Number((importQuantity*importPrice.unitPrice).toFixed(2));
-        return{resourceId:row.resourceId,required30Day:required,domesticAvailable:available,
-          domesticQuantity:domesticQuantity,importQuantity:importQuantity,
-          domesticUnitPrice:domesticPrice.unitPrice,domesticPriceSource:domesticPrice.source,
-          domesticCurrency:domesticPrice.currency,domesticCost:domesticCost,
-          importUnitPrice:importPrice.unitPrice,importPriceSource:importPrice.source,
-          importCurrency:importPrice.currency,importCommodityCost:importCommodityCost,
-          importLandedCost:null,
-          importLandedCostStatus:importQuantity===null?'UNOBSERVED':
-            importQuantity>0?'FREIGHT_TARIFF_AND_INSURANCE_UNOBSERVED':'NOT_REQUIRED',
-          sourcingDecision:domesticQuantity===null?'SOURCE_AVAILABILITY_UNOBSERVED':
-            importQuantity>0?'DOMESTIC_PLUS_IMPORTED_INPUTS':'DOMESTIC_INPUTS_ONLY'};
+      exportDemandComplete=outputRows.length>0&&outputRows.every(function(row){
+        return row.exportSaleQuantity!==null;
       }),
-      revenueComplete=outputRows.length>0&&outputRows.every(function(row){return row.projectedGrossRevenue!==null;}),
-      revenueCurrencies=[...new Set(outputRows.map(function(row){return row.currency;}).filter(Boolean))],
-      policy=companyOperatingCostPolicy(proposal.countryId),policyCurrency=String(policy.currency||'').trim(),
-      revenue= revenueComplete&&revenueCurrencies.length===1?Number(outputRows.reduce(function(sum,row){return sum+row.projectedGrossRevenue;},0).toFixed(2)):null,
-      operating=num(assessment&&assessment.financialForecast&&assessment.financialForecast.operatingCostEstimate),
-      domesticFeasible=inputRows.every(function(row){return row.domesticQuantity!==null&&row.importQuantity===0;}),
-      domesticInputsPriced=inputRows.every(function(row){return row.domesticQuantity===0||row.domesticCost!==null;}),
-      importQuantitiesKnown=inputRows.every(function(row){return row.importQuantity!==null;}),
-      imported=inputRows.some(function(row){return num(row.importQuantity)>0;}),
-      importInputsPriced=inputRows.every(function(row){
+      domesticInputsFeasible=inputRows.length>0&&inputRows.every(function(row){
+        return row.domesticQuantity!==null&&row.importQuantity===0;
+      }),
+      inputQuantitiesKnown=inputRows.length>0&&inputRows.every(function(row){
+        return row.domesticQuantity!==null&&row.importQuantity!==null;
+      }),
+      domesticCostsComplete=inputRows.length>0&&inputRows.every(function(row){
+        return row.domesticQuantity===0||row.domesticCost!==null;
+      }),
+      allCommodityCostsComplete=inputRows.length>0&&inputRows.every(function(row){
         return row.domesticCost!==null&&row.importCommodityCost!==null;
       }),
-      domesticCost=domesticInputsPriced?Number(inputRows.reduce(function(sum,row){return sum+(row.domesticCost||0);},0).toFixed(2)):null,
-      combinedCommodityCost=importInputsPriced?Number(inputRows.reduce(function(sum,row){return sum+(row.domesticCost||0)+(row.importCommodityCost||0);},0).toFixed(2)):null,
-      priceCurrencyConsistent=revenueCurrencies.length===1&&!!policyCurrency&&revenueCurrencies[0]===policyCurrency&&
-        inputRows.every(function(row){return (!row.domesticCurrency||row.domesticCurrency===policyCurrency)&&
-          (!row.importCurrency||row.importCurrency===policyCurrency);}),
-      domesticCalculated=domesticFeasible&&domesticInputsPriced&&revenue!==null&&operating!==null&&priceCurrencyConsistent,
-      domesticNet=domesticCalculated?Number((revenue-domesticCost-operating).toFixed(2)):null,
-      importBeforeLanded=imported&&importQuantitiesKnown&&importInputsPriced&&revenue!==null&&operating!==null&&priceCurrencyConsistent
-        ?Number((revenue-combinedCommodityCost-operating).toFixed(2)):null,
-      margin=domesticNet!==null&&revenue>0?Number((domesticNet/revenue*100).toFixed(2)):null,
-      importPreLandedMargin=importBeforeLanded!==null&&revenue>0?Number((importBeforeLanded/revenue*100).toFixed(2)):null;
+      domesticInputCost=domesticCostsComplete?Number(inputRows.reduce(function(sum,row){
+        return sum+(row.domesticCost||0);
+      },0).toFixed(2)):null,
+      combinedCommodityCost=allCommodityCostsComplete?Number(inputRows.reduce(function(sum,row){
+        return sum+(row.domesticCost||0)+(row.importCommodityCost||0);
+      },0).toFixed(2)):null,
+      policy=companyOperatingCostPolicy(proposal.countryId),
+      policyCurrency=String(policy.currency||'').trim(),
+      operating=num(assessment&&assessment.financialForecast&&assessment.financialForecast.operatingCostEstimate),
+      domesticCurrencyConsistent=!!domesticCurrency&&!!policyCurrency&&domesticCurrency===policyCurrency&&
+        inputRows.every(function(row){return row.domesticQuantity===0||row.domesticCurrency===policyCurrency;}),
+      exportCurrencyConsistent=!!exportCurrency&&!!policyCurrency&&exportCurrency===policyCurrency&&
+        inputRows.every(function(row){
+          return (row.domesticQuantity===0||row.domesticCurrency===policyCurrency)&&
+            (row.importQuantity===0||row.importCurrency===policyCurrency);
+        }),
+      domesticCalculated=domesticDemandComplete&&domesticInputsFeasible&&domesticCostsComplete&&
+        domesticRevenue!==null&&operating!==null&&domesticCurrencyConsistent,
+      domesticInputExportCalculated=exportDemandComplete&&domesticInputsFeasible&&domesticCostsComplete&&
+        exportRevenue!==null&&operating!==null&&exportCurrencyConsistent,
+      importedInputExportCalculated=exportDemandComplete&&inputQuantitiesKnown&&allCommodityCostsComplete&&
+        exportRevenue!==null&&operating!==null&&exportCurrencyConsistent,
+      domesticNet=domesticCalculated?Number((domesticRevenue-domesticInputCost-operating).toFixed(2)):null,
+      domesticInputExportNet=domesticInputExportCalculated
+        ?Number((exportRevenue-domesticInputCost-operating).toFixed(2)):null,
+      importedInputExportNet=importedInputExportCalculated
+        ?Number((exportRevenue-combinedCommodityCost-operating).toFixed(2)):null,
+      domesticMargin=domesticNet!==null&&domesticRevenue>0?Number((domesticNet/domesticRevenue*100).toFixed(2)):null,
+      domesticLossMargin=domesticMargin===null?null:Math.max(0,Number((-domesticMargin).toFixed(2))),
+      domesticExportMargin=domesticInputExportNet!==null&&exportRevenue>0
+        ?Number((domesticInputExportNet/exportRevenue*100).toFixed(2)):null,
+      importedPreLandedMargin=importedInputExportNet!==null&&exportRevenue>0
+        ?Number((importedInputExportNet/exportRevenue*100).toFixed(2)):null,
+      importsUsed=inputRows.some(function(row){return num(row.importQuantity)>0;});
     return{
-      horizonDays:30,currency:priceCurrencyConsistent?policyCurrency:null,
-      outputs:outputRows,inputs:inputRows,
+      horizonDays:30,currency:policyCurrency||null,outputs:outputRows,inputs:inputRows,
       domesticProduction:{status:domesticCalculated?'CALCULATED':
-        !domesticFeasible?'NOT_FULLY_SUPPORTED_BY_OBSERVED_DOMESTIC_INPUT_SURPLUS':'INCOMPLETE_MARKET_OR_COST_DATA',
-        grossSalesCeiling:revenue,domesticInputCost:domesticCost,operatingCost:operating,
-        netOperatingResult:domesticNet,profitMarginPct:margin,
-        lossMarginPct:margin===null?null:Math.max(0,Number((-margin).toFixed(2))),
-        resultType:domesticNet===null?'UNRESOLVED':domesticNet>=0?'PROFIT_AT_FULL_SELL_THROUGH':'LOSS_AT_FULL_SELL_THROUGH'},
-      importedInputProduction:{status:!imported?'NO_IMPORT_REQUIRED':
-        importBeforeLanded===null?'IMPORT_COMMODITY_COST_OR_REVENUE_UNOBSERVED':'COMMODITY_COST_ONLY_LANDED_COST_UNOBSERVED',
-        domesticInputCost:inputRows.some(row=>row.domesticCost===null)?null:Number(inputRows.reduce(function(sum,row){return sum+(row.domesticCost||0);},0).toFixed(2)),
-        importedCommodityCost:inputRows.some(row=>row.importCommodityCost===null)?null:Number(inputRows.reduce(function(sum,row){return sum+(row.importCommodityCost||0);},0).toFixed(2)),
+          !domesticDemandComplete?'DOMESTIC_DEMAND_OR_PRICE_UNOBSERVED':
+          !domesticInputsFeasible?'DOMESTIC_INPUT_SUPPLY_INSUFFICIENT_OR_UNOBSERVED':
+          'INCOMPLETE_DOMESTIC_COST_OR_CURRENCY_DATA',
+        grossSalesCeiling:domesticRevenue,domesticInputCost:domesticInputCost,operatingCost:operating,
+        netOperatingResult:domesticNet,profitMarginPct:domesticMargin,lossMarginPct:domesticLossMargin,
+        resultType:domesticNet===null?'UNRESOLVED':domesticNet>=0?'PROFIT_ON_OBSERVED_DOMESTIC_DEMAND':'LOSS_ON_OBSERVED_DOMESTIC_DEMAND'},
+      domesticInputExport:{status:domesticInputExportCalculated?'CALCULATED':
+          !exportDemandComplete?'INTERNATIONAL_DEMAND_OR_PRICE_UNOBSERVED':
+          !domesticInputsFeasible?'DOMESTIC_INPUT_SUPPLY_INSUFFICIENT_OR_UNOBSERVED':
+          'INCOMPLETE_EXPORT_COST_OR_CURRENCY_DATA',
+        grossExportRevenue:exportRevenue,domesticInputCost:domesticInputCost,operatingCost:operating,
+        netOperatingResult:domesticInputExportNet,profitMarginPct:domesticExportMargin},
+      importedInputProduction:{status:!importsUsed?'NO_IMPORT_REQUIRED':
+          importedInputExportCalculated?'COMMODITY_COST_ONLY_LANDED_COST_UNOBSERVED':
+          'INTERNATIONAL_DEMAND_INPUT_PRICE_OR_LANDED_COST_UNOBSERVED',
+        grossExportRevenue:exportRevenue,domesticInputCost:inputRows.some(function(row){return row.domesticCost===null;})?null:
+          Number(inputRows.reduce(function(sum,row){return sum+(row.domesticCost||0);},0).toFixed(2)),
+        importedCommodityCost:inputRows.some(function(row){return row.importCommodityCost===null;})?null:
+          Number(inputRows.reduce(function(sum,row){return sum+(row.importCommodityCost||0);},0).toFixed(2)),
         freightTariffInsuranceCost:null,landedImportCost:null,
-        netBeforeLandedImportCosts:importBeforeLanded,
-        preLandedMarginCeilingPct:importPreLandedMargin,
+        netBeforeLandedImportCosts:importedInputExportNet,
+        preLandedMarginCeilingPct:importedPreLandedMargin,
         actualProfitOrLoss:null,actualProfitMarginPct:null,
-        limitation:'Imported input prices are commodity quotes only. Freight, insurance, tariff, route and delivery charges remain unobserved, so this is not a final landed-cost profit/loss.'},
+        limitation:'Imported input prices require current cleared international trades. Freight, insurance, tariff, route and delivery charges remain unobserved, so final landed-cost profit/loss is unresolved.'},
       authority:'RUNTIME_COMPANY_MARKET_AND_COST_EVIDENCE',
-      limitation:'Capacity-based sell-through scenario, not guaranteed customer demand or settled sales. Missing values remain null.'
+      limitation:'Domestic sales are capped by observed unmet national demand. Export sales are capped by the current unmatched international buyer order book. Neither is a sales contract. Missing values remain null.'
     };
   }
   function submitCompanyMarketResearchRequest(proposal){
