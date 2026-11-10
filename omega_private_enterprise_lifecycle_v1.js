@@ -499,7 +499,7 @@
       var demand=currentDomesticDemandEvidence(cid,row.resourceId),
         supply=currentDomesticOutputEvidence(cid,row.resourceId),stock=currentProcessedStockEvidence(cid,row.resourceId),
         need30=demand.status==='CURRENT_TURN'?demand.demandPerDay*30:null,
-        supply30=supply.existingOutputPerDay===null?null:supply.existingOutputPerDay*30,
+        supply30=(supply.status==='OBSERVED_ACTIVE_FACTORY_OUTPUT'||supply.status==='NO_ACTIVE_OUTPUT_RECORDS')&&supply.existingOutputPerDay!==null?supply.existingOutputPerDay*30:null,
         freeStock=stock.free,
         gap=need30!==null&&supply30!==null&&freeStock!==null?Math.max(0,need30-supply30-freeStock):null,
         market=currentMarketEvidence(cid,row.resourceId,marketApi);
@@ -834,13 +834,16 @@
         domesticCost=domesticQuantity===null?null:domesticQuantity<=0?0:
           domesticPrice.unitPrice===null?null:Number((domesticQuantity*domesticPrice.unitPrice).toFixed(2)),
         importCommodityCost=importQuantity===null?null:importQuantity<=0?0:
-          importPrice.unitPrice===null?null:Number((importQuantity*importPrice.unitPrice).toFixed(2));
+          importPrice.unitPrice===null?null:Number((importQuantity*importPrice.unitPrice).toFixed(2)),
+        totalSourced=required===null||domesticQuantity===null||importQuantity===null?null:domesticQuantity+importQuantity;
       return{resourceId:row.resourceId,required30Day:required,domesticAvailable:available,
         domesticQuantity:domesticQuantity,importQuantity:importQuantity,
         domesticUnitPrice:domesticPrice.unitPrice,domesticPriceSource:domesticPrice.source,
         domesticCurrency:domesticPrice.currency,domesticCost:domesticCost,
         importUnitPrice:importPrice.unitPrice,importPriceSource:importPrice.source,
         importCurrency:importPrice.currency,importCommodityCost:importCommodityCost,
+        domesticSharePct:totalSourced===null||totalSourced<=0?null:Number((domesticQuantity/totalSourced*100).toFixed(2)),
+        importSharePct:totalSourced===null||totalSourced<=0?null:Number((importQuantity/totalSourced*100).toFixed(2)),
         importLandedCost:null,
         importLandedCostStatus:importQuantity===null?'UNOBSERVED':
           importQuantity>0?'FREIGHT_TARIFF_AND_INSURANCE_UNOBSERVED':'NOT_REQUIRED',
@@ -962,7 +965,7 @@
           supply=currentDomesticOutputEvidence(proposal.countryId,resourceId),
           stock=currentProcessedStockEvidence(proposal.countryId,resourceId),
           demand30=demand.status==='CURRENT_TURN'?demand.demandPerDay*30:null,
-          supply30=supply.existingOutputPerDay===null?null:supply.existingOutputPerDay*30,
+          supply30=(supply.status==='OBSERVED_ACTIVE_FACTORY_OUTPUT'||supply.status==='NO_ACTIVE_OUTPUT_RECORDS')&&supply.existingOutputPerDay!==null?supply.existingOutputPerDay*30:null,
           unmet=demand30===null||supply30===null||stock.free===null?null:
             Math.max(0,demand30-supply30-stock.free),
           market=currentMarketEvidence(proposal.countryId,resourceId,marketApi);
@@ -2211,20 +2214,17 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     }
     var selectionOrder=Object.create(null);
     eligible.forEach(function(type,index){selectionOrder[type]=index;});
-    var marketApi=g.Omega&&(g.Omega.GlobalMarket||g.Omega.globalMarket)||g.OmegaGlobalMarket||null;
+    var marketApi=createCompanyMarketReadView(g.Omega&&(g.Omega.GlobalMarket||g.Omega.globalMarket)||g.OmegaGlobalMarket||null);
     function quote(resourceId){
       try{return marketApi&&typeof marketApi.quote==='function'?marketApi.quote(resourceId)||{}:{};}catch(_){return{};}
     }
-    function evaluate(type){
+    function evaluate(type,requestedProcessingResourceId){
       var profile=(catalog()||{}).factoryProfiles&&catalog().factoryProfiles[type];
       if(!profile)return null;
       var processingResourceId=null;
       if(type==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'){
-        processingResourceId=invitation&&invitation.processingResourceId||null;
-        if(!processingResourceId){
-          var universal=listUniversalProcessingResources();
-          processingResourceId=universal.length?universal[0].id:null;
-        }
+        processingResourceId=invitation&&invitation.processingResourceId||requestedProcessingResourceId||null;
+        if(!processingResourceId)return null;
       }
       var recipe=recipeFor(type,profile,processingResourceId);
       if(!recipe)return null;
@@ -2245,22 +2245,47 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
           referencePrice=num(row.referencePriceUsd===undefined?row.referencePrice:row.referencePriceUsd),
           perUnit=num(outputs[resourceId]),
           oneFactoryTurn=perUnit===null?null:perUnit*dailyCapacity*daysPerTurn,
+          oneFactory30Day=perUnit===null?null:perUnit*dailyCapacity*30,
+          domesticDemand=currentDomesticDemandEvidence(cid,resourceId),
+          domesticOutput=currentDomesticOutputEvidence(cid,resourceId),
+          domesticStock=currentProcessedStockEvidence(cid,resourceId),
+          domesticNeed30=domesticDemand.status==='CURRENT_TURN'?domesticDemand.demandPerDay*30:null,
+          domesticSupply30=(domesticOutput.status==='OBSERVED_ACTIVE_FACTORY_OUTPUT'||
+            domesticOutput.status==='NO_ACTIVE_OUTPUT_RECORDS')&&domesticOutput.existingOutputPerDay!==null
+            ?domesticOutput.existingOutputPerDay*30:null,
+          unmetDomesticDemand30=domesticNeed30===null||domesticSupply30===null||domesticStock.free===null
+            ?null:Math.max(0,domesticNeed30-domesticSupply30-domesticStock.free),
+          unmatchedBuyerOrderDepth=currentTurnEvidence&&bidDepth!==null&&matched!==null
+            ?Math.max(0,bidDepth-matched):null,
+          domesticScaleUnits=unmetDomesticDemand30===null||oneFactory30Day===null||oneFactory30Day<=0
+            ?0:Math.ceil(unmetDomesticDemand30/oneFactory30Day),
+          orderBookScaleUnits=unmatchedBuyerOrderDepth===null||oneFactoryTurn===null||oneFactoryTurn<=0
+            ?0:Math.ceil(unmatchedBuyerOrderDepth/oneFactoryTurn),
+          matchedScaleUnits=currentTurnEvidence&&oneFactoryTurn!==null&&oneFactoryTurn>0
+            ?Math.ceil(matched/oneFactoryTurn):0,
           signal='UNOBSERVED_OR_STALE',score=-5;
+        demandSupportedUnits=Math.max(demandSupportedUnits,domesticScaleUnits,orderBookScaleUnits,matchedScaleUnits);
         if(currentTurnEvidence&&matched>0){
           signal='CURRENT_TURN_MATCHED_ORDER_VOLUME';score=32;
-          if(oneFactoryTurn!==null&&oneFactoryTurn>0)
-            demandSupportedUnits=Math.max(demandSupportedUnits,Math.ceil(matched/oneFactoryTurn));
-        }else if(currentTurnEvidence&&bidDepth>0){signal='CURRENT_TURN_OPEN_BUY_ORDER_DEPTH';score=22;}
-        else if(currentTurnEvidence&&((price&&price.unitPrice>0)||(referencePrice!==null&&referencePrice>0))){
+        }else if(currentTurnEvidence&&unmatchedBuyerOrderDepth!==null&&unmatchedBuyerOrderDepth>0){
+          signal='CURRENT_TURN_OPEN_BUY_ORDER_DEPTH';score=22;
+        }else if(currentTurnEvidence&&((price&&price.unitPrice>0)||(referencePrice!==null&&referencePrice>0))){
           signal='CURRENT_TURN_REFERENCE_PRICE_ONLY';score=8;
         }
         else if(currentTurnEvidence){signal='NO_VERIFIED_MARKET_SIGNAL';score=-4;}
         marketSignals.push({resourceId:resourceId,signal:signal,marketStatus:row.status||'UNAVAILABLE',
           priceDiscovery:row.priceDiscovery||'UNAVAILABLE',generatedTurn:num(row.generatedTurn),
           evaluatedTurn:turn(),currentTurnEvidence:currentTurnEvidence,matchedQuantity:matched,bidDepth:bidDepth,
-          askDepth:askDepth,bestBidUsd:num(row.bestBidUsd),bestAskUsd:num(row.bestAskUsd),
+          askDepth:askDepth,unmatchedBuyerOrderDepth:unmatchedBuyerOrderDepth,
+          unmetDomesticDemand30Day:unmetDomesticDemand30,
+          domesticDemandEvidenceStatus:domesticDemand.status,
+          domesticOutputEvidenceStatus:domesticOutput.status,
+          processedStockEvidenceStatus:domesticStock.status,
+          domesticScaleUnits:domesticScaleUnits,orderBookScaleUnits:orderBookScaleUnits,
+          bestBidUsd:num(row.bestBidUsd),bestAskUsd:num(row.bestAskUsd),
           referencePriceUsd:referencePrice,localMarketPrice:price,score:score,
-          capacityPerFactoryPerTurn:oneFactoryTurn,gameDaysPerTurn:daysPerTurn});
+          capacityPerFactoryPerTurn:oneFactoryTurn,capacityPerFactory30Day:oneFactory30Day,
+          gameDaysPerTurn:daysPerTurn});
       });
       var quantity=Math.min(maximum,Math.max(1,Math.floor(demandSupportedUnits)));
       var firstInputs=inputForecast(cid,profile,recipe,quantity),
@@ -2343,10 +2368,31 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
         assessment:assessment,sourcingPolicy:sourcingPolicy,
         demandSupportedUnits:demandSupportedUnits};
     }
-    var candidates=eligible.map(evaluate).filter(Boolean);
+    var candidates=[],candidateOrder=0,universalEvaluated=0;
+    eligible.forEach(function(type){
+      if(type==='UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT'){
+        var resources=listUniversalProcessingResources();
+        if(invitation&&invitation.processingResourceId){
+          resources=resources.filter(function(row){return id(row.id)===id(invitation.processingResourceId);});
+        }else if(resources.length>8){
+          var offset=((period-1)*8+companyIndex)%resources.length,bounded=[];
+          for(var ri=0;ri<8;ri++)bounded.push(resources[(offset+ri)%resources.length]);
+          resources=bounded;
+        }
+        resources.forEach(function(resource){
+          universalEvaluated++;
+          var candidate=evaluate(type,resource.id);
+          if(candidate){candidate.evaluationOrder=candidateOrder++;candidates.push(candidate);}
+        });
+      }else{
+        var candidate=evaluate(type,null);
+        if(candidate){candidate.evaluationOrder=candidateOrder++;candidates.push(candidate);}
+      }
+    });
     if(!candidates.length)return{status:invitation?'INVITATION_NOT_FEASIBLE':'NO_FEASIBLE_COMPANY_INVESTMENT',
-      companyId:company,period:period,invitationId:invitation&&invitation.invitationId||null};
-    candidates.sort(function(a,b){return b.totalScore-a.totalScore||selectionOrder[a.factoryType]-selectionOrder[b.factoryType];});
+      companyId:company,period:period,invitationId:invitation&&invitation.invitationId||null,
+      cycleProgress:{processedCompanies:cycle.processedCompanyIds.slice(),remainingCompanies:Math.max(0,COMPANY_IDS.length-cycle.nextCompanyIndex)}};
+    candidates.sort(function(a,b){return b.totalScore-a.totalScore||a.evaluationOrder-b.evaluationOrder;});
     var selected=candidates[0],selectedProfile=(catalog()||{}).factoryProfiles[selected.factoryType],
       capital=capitalAccount(cid,company,false),cash=capital?num(capital.availableBalance):null,
       required=selected.capitalRequired,fundingGap=cash===null?null:Math.max(0,(required||0)-cash),
@@ -2406,6 +2452,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
         decisionTurn:turn(),selectionMethod:'HIGHEST_CURRENT_MARKET_SUPPLY_OPERATIONAL_AND_CAPITAL_SCORE_WITH_DOMESTIC_DEMAND_GAP_EXPORT_PROCESSING_INTERNATIONAL_ORDER_BOOK_FINANCIAL_FEASIBILITY_AND_PROFITABILITY_EVIDENCE',
         confidence:selected.totalScore>=45?'HIGH':selected.totalScore>=20?'MEDIUM':'LOW',
         horizonDays:30,selectedOpportunity:{factoryType:selected.factoryType,factoryName:selected.factoryName,
+          processingResourceId:selected.processingResourceId||null,
           requestedFactoryCount:selected.quantity,totalScore:selected.totalScore,
           marketScore:selected.marketScore,supplyScore:selected.supplyScore,
           domesticDemandScore:selected.domesticDemandScore,internationalDemandScore:selected.internationalDemandScore,
@@ -2425,7 +2472,11 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
           marketSignals:clone(selected.marketSignals),marketOpportunity:clone(selected.marketOpportunity),supplyStatus:selected.supplyStatus,
           operationalStatus:selected.operationalStatus,capitalRequired:selected.capitalRequired,
           companyCashAvailable:selected.companyCashAvailable},
+        alternativesEvaluated:{factoryCategoryCount:eligible.length,
+          universalProcessingResourceCount:universalEvaluated,universalProcessingResourceLimit:8,
+          totalCandidateCount:candidates.length},
         alternativesConsidered:candidates.map(function(row){return{factoryType:row.factoryType,
+          processingResourceId:row.processingResourceId||null,
           requestedFactoryCount:row.quantity,totalScore:row.totalScore,marketScore:row.marketScore,
           supplyScore:row.supplyScore,domesticDemandScore:row.domesticDemandScore,
           internationalDemandScore:row.internationalDemandScore,processingOpportunityScore:row.processingOpportunityScore,
@@ -2523,6 +2574,8 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
       period:period,invitationId:invitation&&invitation.invitationId||null});
     return{status:'PROPOSED',proposal:getProposal(cid,created.proposalId),period:period,
       invitationId:invitation&&invitation.invitationId||null,companyDecision:clone(strategy),
+      cycleProgress:{processedCompanies:cycle.processedCompanyIds.slice(),completedCompanies:cycle.nextCompanyIndex,
+        remainingCompanies:Math.max(0,COMPANY_IDS.length-cycle.nextCompanyIndex),status:cycle.status},
       authority:'SELECTED_COUNTRY_COMPANY_INVESTMENT_DECISION_ENGINE'};
   }
   function scheduleAutonomousProposalCycle(){
