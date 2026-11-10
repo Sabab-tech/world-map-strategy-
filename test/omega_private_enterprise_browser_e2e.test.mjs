@@ -2048,6 +2048,16 @@ test('real Chromium map marker routes the exact site to selected factory input a
         }));
       }
       const copy = value => value === null || value === undefined ? value : JSON.parse(JSON.stringify(value));
+      const stableValue = value => {
+        if (Array.isArray(value)) return value.map(stableValue);
+        if (!value || typeof value !== 'object') return value;
+        return Object.keys(value).sort().reduce((result,key)=>{
+          result[key]=stableValue(value[key]);
+          return result;
+        },{});
+      };
+      const sameValue = (left,right) =>
+        JSON.stringify(stableValue(left)) === JSON.stringify(stableValue(right));
       const factoryId = String(sourceFactory.id || sourceFactory.assetId || sourceFactory.projectId || '');
       const expected = {
         siteId: run.siteId,
@@ -2162,11 +2172,11 @@ test('real Chromium map marker routes the exact site to selected factory input a
         throw new Error('SAB34_BROWSER_SAVE_LOAD_INTEGRITY_FAILED:' + JSON.stringify(result));
       }
       if (result.siteId !== expected.siteId || !result.sourceBatchPresent || !result.factoryPresent ||
-          JSON.stringify(result.inputInventory) !== JSON.stringify(expected.inputInventory) ||
-          JSON.stringify(result.inputLot) !== JSON.stringify(expected.inputLot) ||
-          JSON.stringify(result.offer) !== JSON.stringify(expected.offer) ||
+          !sameValue(result.inputInventory, expected.inputInventory) ||
+          !sameValue(result.inputLot, expected.inputLot) ||
+          !sameValue(result.offer, expected.offer) ||
           result.treasury !== expected.treasury ||
-          JSON.stringify(result.sourceFlow) !== JSON.stringify(expected.sourceFlow)) {
+          !sameValue(result.sourceFlow, expected.sourceFlow)) {
         throw new Error('SAB34_SITE_PIPELINE_SAVE_LOAD_DATA_DRIFT:' + JSON.stringify({ expected, result }));
       }
       return result;
