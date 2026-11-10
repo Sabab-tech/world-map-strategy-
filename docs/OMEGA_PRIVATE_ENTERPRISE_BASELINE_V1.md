@@ -410,3 +410,6 @@ Company-originated factory proposals carry a market-research request even when t
 - The existing company reasoning, alternatives considered, utility/workforce checks, company-authored rationale, risk disclosure and separate government decision controls remain in place. Missing market evidence cannot suppress the company's scheduled proposal cycle.
 
 The lifecycle and market regression tests cover research submission with an unexecuted quote, idempotent market-request delivery, no duplicate import order, and proposal creation with missing market evidence. Browser/CI results must still be verified on the exact branch head; this design note does not claim those checks have passed.
+
+
+The autonomous company ranking also includes an evidence-backed profitability component: it compares the best calculated 30-day net operating result against the canonical project construction capital. The ranking contribution is bounded to avoid allowing one extreme projection to overwhelm market, supply, operational and budget evidence. When no comparable return can be calculated, the return remains `UNOBSERVED` and the company still submits its conservative proposal; the UI never substitutes a guessed margin or profit figure.
