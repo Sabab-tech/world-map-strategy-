@@ -500,7 +500,7 @@
       var demand=currentDomesticDemandEvidence(cid,row.resourceId),
         supply=currentDomesticOutputEvidence(cid,row.resourceId),stock=currentProcessedStockEvidence(cid,row.resourceId),
         need30=demand.status==='CURRENT_TURN'?demand.demandPerDay*30:null,
-        supply30=supply.existingOutputPerDay===null?null:supply.existingOutputPerDay*30,
+        supply30=(supply.status==='OBSERVED_ACTIVE_FACTORY_OUTPUT'||supply.status==='NO_ACTIVE_OUTPUT_RECORDS')&&supply.existingOutputPerDay!==null?supply.existingOutputPerDay*30:null,
         freeStock=stock.free,
         gap=need30!==null&&supply30!==null&&freeStock!==null?Math.max(0,need30-supply30-freeStock):null,
         market=currentMarketEvidence(cid,row.resourceId,marketApi);
@@ -742,7 +742,7 @@
           supply=currentDomesticOutputEvidence(proposal.countryId,resourceId),
           stock=currentProcessedStockEvidence(proposal.countryId,resourceId),
           demand30=demand.status==='CURRENT_TURN'?demand.demandPerDay*30:null,
-          supply30=supply.existingOutputPerDay===null?null:supply.existingOutputPerDay*30,
+          supply30=(supply.status==='OBSERVED_ACTIVE_FACTORY_OUTPUT'||supply.status==='NO_ACTIVE_OUTPUT_RECORDS')&&supply.existingOutputPerDay!==null?supply.existingOutputPerDay*30:null,
           unmet=demand30===null||supply30===null||stock.free===null?null:
             Math.max(0,demand30-supply30-stock.free),
           market=currentMarketEvidence(proposal.countryId,resourceId,marketApi);
@@ -1746,7 +1746,7 @@
           domesticOutput=currentDomesticOutputEvidence(cid,resourceId),
           domesticStock=currentProcessedStockEvidence(cid,resourceId),
           domesticNeed30=domesticDemand.status==='CURRENT_TURN'?domesticDemand.demandPerDay*30:null,
-          domesticSupply30=domesticOutput.existingOutputPerDay===null?null:domesticOutput.existingOutputPerDay*30,
+          domesticSupply30=(domesticOutput.status==='OBSERVED_ACTIVE_FACTORY_OUTPUT'||domesticOutput.status==='NO_ACTIVE_OUTPUT_RECORDS')&&domesticOutput.existingOutputPerDay!==null?domesticOutput.existingOutputPerDay*30:null,
           unmetDomesticDemand30=domesticNeed30===null||domesticSupply30===null||domesticStock.free===null
             ?null:Math.max(0,domesticNeed30-domesticSupply30-domesticStock.free),
           unmatchedBuyerOrderDepth=currentTurnEvidence&&bidDepth!==null&&matched!==null
@@ -2058,12 +2058,14 @@
       period:period,invitationId:invitation&&invitation.invitationId||null});
     return{status:'PROPOSED',proposal:getProposal(cid,created.proposalId),period:period,
       invitationId:invitation&&invitation.invitationId||null,companyDecision:clone(strategy),
+      cycleProgress:{processedCompanies:cycle.processedCompanyIds.slice(),
+        completedCompanies:cycle.nextCompanyIndex,remainingCompanies:Math.max(0,COMPANY_IDS.length-cycle.nextCompanyIndex),
+        status:cycle.status},
       authority:'SELECTED_COUNTRY_COMPANY_INVESTMENT_DECISION_ENGINE'};
   }
   function scheduleAutonomousProposalCycle(){
     var cid=playerCountry(),period=Math.floor(turn()/30);
     if(!cid||period<1)return;
-    var r=runtime(cid,true);
     var r=runtime(cid,true),cycle=r.autonomousProposalCycle,scheduledTurn=turn();
     if(r.lastAutonomousProposalPeriod===period||
        (obj(cycle)&&num(cycle.period)===period&&
