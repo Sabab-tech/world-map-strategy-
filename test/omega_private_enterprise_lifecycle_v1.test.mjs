@@ -274,12 +274,22 @@ test('company proposal includes its own market analysis, supply-chain proof and 
   assert.equal(proposal.companyCase.marketAnalysis.exportProcessingOpportunities[0].status,'UNOBSERVED_OR_STALE',
     'missing country-level export evidence must not be misreported as zero exports');
   assert.equal(proposal.companyCase.unitEconomics.domesticProduction.netOperatingResult,null);
+  assert.equal(proposal.companyCase.unitEconomics.domesticProduction.logisticsCostStatus,
+    'DOMESTIC_INPUT_HAUL_AND_FINISHED_GOODS_LOGISTICS_COST_UNOBSERVED');
+  assert.equal(proposal.companyCase.unitEconomics.domesticInputExport.resultBasis,'PRE_LOGISTICS_ESTIMATE_ONLY');
   assert.equal(proposal.companyCase.unitEconomics.importedInputProduction.actualProfitOrLoss,null);
+  assert.equal(proposal.companyCase.financingOffer.startupBudget.completeWorkingCapitalRequirement,null,
+    'unknown market and logistics inputs must not create a fictional full startup budget');
   const matrix=proposal.companyCase.unitEconomics.scenarioMatrix;
-  assert.equal(matrix.scenarioCount,15,'five sales allocations must be compared against three sourcing policies');
-  assert.equal(matrix.options.length,15);
+  assert.equal(matrix.scenarioCount,20,'five sales allocations must be compared against four bounded sourcing policies');
+  assert.equal(matrix.maximumScenarioCount,20);
+  assert.equal(matrix.options.length,20);
   assert.equal(matrix.salesAllocationPlans.length,5);
-  assert.equal(matrix.inputSourcingPlans.length,3);
+  assert.equal(matrix.inputSourcingPlans.length,4);
+  const costOptimized=matrix.inputSourcingPlans.find(row=>row.mode==='COST_OPTIMIZED');
+  assert.equal(costOptimized.costOptimizationStatus,'COMPARABLE_LANDED_COST_EVIDENCE_UNAVAILABLE');
+  assert.equal(costOptimized.totalCommodityInputCost,null,
+    'no cheapest sourcing route may be inferred without comparable landed-cost evidence');
   assert.ok(matrix.options.every(row=>!Object.prototype.hasOwnProperty.call(row,'salesAllocation')&&
     !Object.prototype.hasOwnProperty.call(row,'inputSourcing')),
     'scenario summaries must reference deduplicated plans rather than serialize repeated row arrays');
@@ -352,10 +362,10 @@ test('company investment engine compares eligible factories and submits its own 
   assert.equal(proposal.companyStrategy.selectedOpportunity.factoryType,'COPPER_WORKS');
   assert.ok(proposal.companyStrategy.alternativesConsidered.some(row=>row.factoryType==='STEEL_WORKS'));
   const selectedEconomics=proposal.companyStrategy.selectedOpportunity.unitEconomics;
-  assert.equal(selectedEconomics.scenarioMatrix.scenarioCount,15);
+  assert.equal(selectedEconomics.scenarioMatrix.scenarioCount,20);
   assert.equal(Object.prototype.hasOwnProperty.call(selectedEconomics.scenarioMatrix,'options'),false,
     'the strategy stores a compact scenario summary instead of duplicating every alternative');
-  assert.equal(proposal.companyCase.unitEconomics.scenarioMatrix.options.length,15,
+  assert.equal(proposal.companyCase.unitEconomics.scenarioMatrix.options.length,20,
     'the full matrix remains available once in the company business case');
   assert.equal(selectedEconomics.importedInputProduction.status,'COMMODITY_COST_ONLY_LANDED_COST_UNOBSERVED');
   assert.ok(selectedEconomics.importedInputProduction.netBeforeLandedImportCosts>0,
@@ -2150,4 +2160,61 @@ test('company scenario matrix keeps shared production capacity single-counted ac
     assert.equal(scenario.finalLandedCostObserved,false);
   }
   assert.equal(proposal.marketResearchRequest.status,'QUEUED_LOCAL_MARKET_HANDOFF');
+});
+
+
+test('company scenario matrix keeps domestic net results pre-logistics and startup capital as a known-cost floor',()=>{
+  const h=makeHarness();
+  setReadyIronSupply(h,1000);
+  setDomesticDemandAndProcessedStock(h,'steel',10,0);
+  h.state.trade={BGD:{
+    marketPrice:{steel:5,iron_ore:2},currencyCode:'GAME_CURRENCY_UNITS',
+    settlementCurrency:'GAME_CURRENCY_UNITS'
+  }};
+  h.state.economy.BGD.privateEnterpriseFiscalPolicy={operatingCostPolicy:{
+    currency:'GAME_CURRENCY_UNITS',
+    rates:{electricityPerMWh:1,waterPerM3:1,laborPerWorkerDay:1,
+      maintenancePerFactoryDay:1,overheadPerFactoryDay:1,depreciationPerFactoryDay:1}
+  }};
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [COMPANY]:{companyId:COMPANY,currency:'GAME_CURRENCY_UNITS',
+      availableBalance:5000,reservedBalance:0,capitalRaised:5000,capitalSpent:0,revision:1}
+  };
+  h.sandbox.Omega.GlobalMarket={
+    quote(resourceId){return{resourceId,status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',
+      generatedTurn:4,matchedQuantity:0,bidDepth:0,askDepth:0,matches:[]};},
+    localPrice(countryId,resourceId){return resourceId==='steel'?5:resourceId==='iron_ore'?2:null;}
+  };
+  const proposal=submitProposal(h.api,{countryId:'BGD',companyId:COMPANY,factoryType:'STEEL_WORKS',quantity:1,
+    sourcingPolicy:'DOMESTIC_ONLY',requestId:'domestic-profit-requires-logistics-proof'});
+  assert.equal(proposal.status,'PROPOSED',JSON.stringify(proposal));
+  const economics=proposal.companyCase.unitEconomics;
+  assert.equal(economics.scenarioMatrix.scenarioCount,20);
+  const domestic=economics.scenarioMatrix.options.find(row=>
+    row.salesAllocationMode==='DOMESTIC_ONLY'&&row.sourcingMode==='DOMESTIC_ONLY');
+  assert.ok(domestic);
+  assert.equal(domestic.netOperatingResult,null,
+    'domestic sales cannot become final profit while domestic input haul and finished-goods logistics are unpriced');
+  assert.ok(typeof domestic.preLogisticsNetOperatingResult==='number',
+    'the observed pre-logistics estimate remains available for company/government due diligence');
+  assert.equal(domestic.status,'PRE_LOGISTICS_ONLY');
+  assert.equal(domestic.finalLogisticsCostObserved,false);
+  assert.equal(economics.scenarioMatrix.recommendedScenarioId,null,
+    'no final-profit winner may be recommended while logistics cost is unobserved');
+  const budget=proposal.companyCase.financingOffer.startupBudget;
+  assert.equal(budget.selectedSourcingPlan,'DOMESTIC_ONLY');
+  assert.equal(typeof budget.observedInputCostSubtotal,'number');
+  assert.equal(typeof budget.observedWorkingCapitalSubtotal,'number');
+  assert.equal(typeof budget.minimumKnownStartupCapitalFloor,'number');
+  assert.equal(typeof budget.minimumKnownStartupFundingGap,'number');
+  assert.equal(budget.completeWorkingCapitalRequirement,null);
+  assert.equal(budget.completeStartupCapitalRequired,null);
+  assert.equal(budget.completeStartupFundingGap,null);
+  assert.equal(budget.maximumAffordableAllInFactoryUnits,null);
+  assert.equal(budget.logisticsCostStatus,'DOMESTIC_INPUT_HAUL_AND_FINISHED_GOODS_TRANSPORT_UNOBSERVED');
+  const financeRoutes=proposal.companyCase.investmentOptions.financingAlternatives.map(row=>row.structure);
+  assert.ok(financeRoutes.includes('SUPPLIER_CREDIT'));
+  assert.ok(financeRoutes.includes('GOVERNMENT_EQUITY'));
+  assert.ok(financeRoutes.includes('LOAN_GUARANTEE'));
+  assert.ok(financeRoutes.includes('DEFER_AND_ACCUMULATE_CAPITAL'));
 });
