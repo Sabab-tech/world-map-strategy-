@@ -445,11 +445,70 @@
     ctx.stateTransaction.set('trade.marketHistory',h);
     return{accepted:true,resourceCount:Object.keys(snap.resources||{}).length,turn:snap.turn};
   }
+
+  function companyResearchRequestHandler(cmd,ctx){
+    const p=cmd?.payload||{},cid=canonical(ctx.countryId),requestId=String(p.requestId||'').trim(),
+      companyId=id(p.companyId),outputs=Array.isArray(p.outputResources)?p.outputResources.map(x=>token(x)).filter(Boolean):[],
+      inputs=Array.isArray(p.inputResources)?p.inputResources.map(x=>token(x)).filter(Boolean):[],
+      scopes=Array.isArray(p.marketScopes)?p.marketScopes.map(x=>id(x)).filter(Boolean):[];
+    if(!cid||!requestId||!companyId)return{accepted:false,reason:'COMPANY_MARKET_RESEARCH_IDENTITY_REQUIRED'};
+    if(!outputs.length&&!inputs.length)return{accepted:false,reason:'COMPANY_MARKET_RESEARCH_COMMODITIES_REQUIRED'};
+    if(outputs.length>64||inputs.length>64||scopes.length>4)return{accepted:false,reason:'COMPANY_MARKET_RESEARCH_SCOPE_LIMIT'};
+    const unique=rows=>[...new Set(rows)].sort();
+    const request={
+      requestId,companyId,companyName:String(p.companyName||companyId),
+      countryId:cid,factoryType:token(p.factoryType)||null,
+      requestedFactoryCount:Number.isInteger(Number(p.factoryCount))?Math.max(0,Number(p.factoryCount)):null,
+      outputResources:unique(outputs),inputResources:unique(inputs),
+      marketScopes:unique(scopes.length?scopes:['DOMESTIC','INTERNATIONAL']),
+      analysisHorizonDays:Math.max(1,Math.min(3650,Number(p.analysisHorizonDays)||30)),
+      requestPurpose:String(p.requestPurpose||'PRIVATE_FACTORY_INVESTMENT_DUE_DILIGENCE').slice(0,180),
+      source:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_V1',
+      submittedTurn:turn(),status:'QUEUED',responseStatus:'AWAITING_MARKET_EVIDENCE',
+      evidencePolicy:'OBSERVED_ONLY_MISSING_DATA_REMAINS_UNOBSERVED'
+    };
+    const previous=ctx.stateTransaction.get('trade.companyMarketResearchRequests');
+    const queue=Array.isArray(previous)?clone(previous):[];
+    const existing=queue.find(row=>row&&String(row.requestId)===requestId);
+    if(existing){
+      const comparable=row=>JSON.stringify({
+        requestId:row.requestId,companyId:row.companyId,countryId:row.countryId,
+        factoryType:row.factoryType,requestedFactoryCount:row.requestedFactoryCount,
+        outputResources:row.outputResources,inputResources:row.inputResources,
+        marketScopes:row.marketScopes,analysisHorizonDays:row.analysisHorizonDays,requestPurpose:row.requestPurpose
+      });
+      return comparable(existing)===comparable(request)
+        ?{accepted:true,duplicate:true,request:clone(existing)}
+        :{accepted:false,reason:'COMPANY_MARKET_RESEARCH_REQUEST_ID_COLLISION'};
+    }
+    queue.push(request);
+    ctx.stateTransaction.set('trade.companyMarketResearchRequests',queue.slice(-512));
+    emit('OMEGA_MARKET_RESEARCH_REQUEST_QUEUED',cid,request);
+    return{accepted:true,request:clone(request),queueSize:Math.min(512,queue.length)};
+  }
+  function requestCompanyResearch(countryId,payload={}){
+    const mesh=interop(),cid=canonical(countryId||playerSimulationCountryId());
+    if(!cid)return{accepted:false,reason:'PLAYER_COUNTRY_NOT_RESOLVED'};
+    if(!mesh?.dispatchCommand)return{accepted:false,reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
+    install();
+    const requestId=String(payload.requestId||('MARKET-RESEARCH-'+cid+'-'+turn()+'-'+token(payload.companyId)+'-'+token(payload.factoryType)));
+    const result=mesh.dispatchCommand('trade','OMEGA_MARKET_QUEUE_COMPANY_RESEARCH',cid,
+      {...clone(payload),requestId},{turn:turn(),commandType:'OMEGA_MARKET_QUEUE_COMPANY_RESEARCH',correlationId:requestId});
+    return result&&result.status==='APPLIED'&&result.result?result.result:result;
+  }
+  function getCompanyResearchRequests(countryId,companyId){
+    const rows=countryValue(countryId||playerSimulationCountryId(),'trade.companyMarketResearchRequests');
+    const target=id(companyId);
+    return clone((Array.isArray(rows)?rows:[]).filter(row=>!target||id(row.companyId)===target));
+  }
+
   function install(){
     const m=interop();if(!m?.registerCommandHandler)return false;
     try{
       m.registerAction?.('OMEGA_MARKET_PUBLISH_PROJECTION',{actionId:'OMEGA_MARKET_PUBLISH_PROJECTION',stateOwnerMinistry:'trade',authority:'OMEGA_GLOBAL_MARKET'});
       m.registerCommandHandler('OMEGA_MARKET_PUBLISH_PROJECTION','trade',projectionHandler);
+      m.registerAction?.('OMEGA_MARKET_QUEUE_COMPANY_RESEARCH',{actionId:'OMEGA_MARKET_QUEUE_COMPANY_RESEARCH',stateOwnerMinistry:'trade',authority:'OMEGA_GLOBAL_MARKET'});
+      m.registerCommandHandler('OMEGA_MARKET_QUEUE_COMPANY_RESEARCH','trade',companyResearchRequestHandler);
       return true;
     }catch(_){return false;}
   }
@@ -500,7 +559,8 @@
     if(state()?.simulation?.turn!==undefined)rebuild();
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,diagnostics,rebuild,rebuildCountry,quote,localPrice,suppliers,privateCompanySuppliers});
+  const API=Object.freeze({VERSION,diagnostics,rebuild,rebuildCountry,quote,localPrice,suppliers,privateCompanySuppliers,
+    requestCompanyResearch,getCompanyResearchRequests});
   g.Omega=g.Omega||{};g.Omega.GlobalMarket=API;g.OmegaGlobalMarket=API;
   try{init();}catch(e){g.OmegaGlobalMarketError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
