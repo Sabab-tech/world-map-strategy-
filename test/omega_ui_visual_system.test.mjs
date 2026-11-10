@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
-const offlineShellCacheVersion = (source) => Number(source.match(/CACHE_NAME = \"omega-offline-atlas-shell-v(\\d+)\"/)?.[1] || 0);
+const offlineShellCacheVersion = (source) => Number(source.match(/CACHE_NAME = "omega-offline-atlas-shell-v([0-9]+)"/)?.[1] || 0);
 
 test('new UI loads its application-shell and SVG icon stylesheets while retired layout CSS remains inactive', () => {
   const html = read('index.html');
