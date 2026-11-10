@@ -714,10 +714,13 @@
         landedCostStatus:!quantityKnown?'INPUT_SOURCE_QUANTITY_UNOBSERVED':imported?'FREIGHT_TARIFF_INSURANCE_AND_ROUTE_UNOBSERVED':'NOT_REQUIRED',
         feasible:feasible,reasons:reasons};
     }
+    var salesPlanCache=Object.create(null),sourcingPlanCache=Object.create(null);
+    salesModes.forEach(function(mode){salesPlanCache[mode]=salesPlan(mode);});
+    sourcingModes.forEach(function(mode){sourcingPlanCache[mode]=sourcingPlan(mode);});
     salesModes.forEach(function(salesMode){
-      var sales=salesPlan(salesMode);
+      var sales=salesPlanCache[salesMode];
       sourcingModes.forEach(function(sourcingMode){
-        var sourcing=sourcingPlan(sourcingMode),reasons=sourcing.reasons.slice();
+        var sourcing=sourcingPlanCache[sourcingMode],reasons=sourcing.reasons.slice();
         if(!sales.complete)uniquePush(reasons,'MARKET_DEMAND_OR_OUTPUT_PRICE_UNOBSERVED');
         if(!sales.currencyConsistent)uniquePush(reasons,'OUTPUT_PRICE_CURRENCY_UNRECONCILED');
         if(!sourcing.quantityKnown)uniquePush(reasons,'INPUT_QUANTITY_OR_AVAILABILITY_UNOBSERVED');
@@ -752,7 +755,7 @@
           domesticInputQuantity:sourcing.domesticInputQuantity,importInputQuantity:sourcing.importInputQuantity,
           landedCostStatus:sourcing.landedCostStatus,finalLandedCostObserved:sourcing.finalLandedCostObserved,
           domesticSupplyFeasible:sourcing.domesticSupplyFeasible,
-          salesAllocation:sales.rows,inputSourcing:sourcing.rows,
+          salesAllocationPlanId:salesMode,inputSourcingPlanId:sourcingMode,
           totalDomesticSaleQuantity:sales.totalDomesticSaleQuantity,
           totalExportSaleQuantity:sales.totalExportSaleQuantity,totalUnsoldCapacity:sales.totalUnsoldCapacity,
           capacityConserved:sales.capacityConserved,returnOnConstructionCapitalPct:returnPct,
@@ -768,6 +771,8 @@
       maximumScenarioCount:15,status:best?'COMPARABLE_COMPLETE_SCENARIO_AVAILABLE':
         options.some(function(row){return row.status==='PRE_LANDED_ONLY';})?'PARTIALLY_EVALUATED_LANDED_COST_PENDING':
         'AWAITING_RUNTIME_MARKET_OR_COST_EVIDENCE',
+      salesAllocationPlans:salesModes.map(function(mode){return Object.assign({mode:mode},salesPlanCache[mode]);}),
+      inputSourcingPlans:sourcingModes.map(function(mode){return Object.assign({mode:mode},sourcingPlanCache[mode]);}),
       options:options,recommendedScenarioId:best?best.scenarioId:null,
       recommendedScenario:best?{scenarioId:best.scenarioId,netOperatingResult:best.netOperatingResult,
         profitMarginPct:best.profitMarginPct,returnOnConstructionCapitalPct:best.returnOnConstructionCapitalPct,
@@ -1991,7 +1996,15 @@
           operationalScore:selected.operationalScore,capitalScore:selected.capitalScore,
           profitabilityScore:selected.profitabilityScore,
           bestObserved30DayReturnOnProjectCapitalPct:selected.bestObserved30DayReturnOnProjectCapitalPct,
-          unitEconomics:clone(selected.unitEconomics),
+          unitEconomics:(function(){
+          var compact=clone(selected.unitEconomics),matrix=compact&&compact.scenarioMatrix;
+          if(matrix)compact.scenarioMatrix={schemaVersion:matrix.schemaVersion,horizonDays:matrix.horizonDays,
+            scenarioCount:matrix.scenarioCount,maximumScenarioCount:matrix.maximumScenarioCount,
+            status:matrix.status,recommendedScenarioId:matrix.recommendedScenarioId,
+            recommendedScenario:clone(matrix.recommendedScenario),
+            bestObserved30DayReturnOnProjectCapitalPct:matrix.bestObserved30DayReturnOnProjectCapitalPct};
+          return compact;
+        })(),
           marketSignals:clone(selected.marketSignals),marketOpportunity:clone(selected.marketOpportunity),supplyStatus:selected.supplyStatus,
           operationalStatus:selected.operationalStatus,capitalRequired:selected.capitalRequired,
           companyCashAvailable:selected.companyCashAvailable},
