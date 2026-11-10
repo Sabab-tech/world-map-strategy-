@@ -571,7 +571,7 @@ test('autonomous company review processes one company per committed turn and com
     assert.equal(result.cycleProgress.remainingCompanies,companies.length-index-1);
   }
   const dashboard=h.api.getCountryDashboard('BGD');
-  assert.deepEqual(dashboard.proposals.map(row=>row.companyId),companies);
+  assert.deepEqual(JSON.parse(JSON.stringify(dashboard.proposals.map(row=>row.companyId))),companies);
   assert.ok(dashboard.proposals.every(row=>row.status==='PROPOSED'));
   assert.equal(h.state.economy.BGD.productionAssets.length,0);
   assert.equal(h.projects.length,0);
@@ -634,7 +634,7 @@ test('observed domestic demand gap can scale a proposal while missing market pri
   assert.equal(response.proposal.marketResearchRequest.status,'QUEUED_LOCAL_MARKET_HANDOFF',
     'a market provider is optional; the company still submits its research request');
   assert.equal(response.proposal.marketResearchRequest.responseStatus,'AWAITING_MARKET_EVIDENCE');
-  assert.equal(response.proposal.companyCase.unitEconomics.domesticProduction.actualProfitOrLoss,null,
+  assert.equal(response.proposal.companyCase.unitEconomics.domesticProduction.netOperatingResult,null,
     'missing prices must not create estimated revenue or profit');
   assert.ok(response.proposal.companyCase.investmentOptions.scaleAlternatives.some(row=>row.factoryCount===2));
   assert.ok(response.proposal.companyCase.investmentOptions.financingAlternatives.some(row=>row.structure==='JOINT_VENTURE'));
@@ -724,10 +724,8 @@ test('universal processing proposals compare multiple canonical resource routes 
     'the later catalog route with stronger current buyer evidence must be considered and selected');
   assert.equal(response.proposal.companyStrategy.selectedOpportunity.processingResourceId,'copper_ore');
   assert.equal(response.proposal.companyStrategy.alternativesEvaluated.universalProcessingResourceCount,2);
-  assert.deepEqual(
-    response.proposal.companyStrategy.alternativesConsidered.map(row=>row.processingResourceId).sort(),
-    ['copper_ore','iron_ore']
-  );
+  assert.deepEqual(JSON.parse(JSON.stringify(response.proposal.companyStrategy.alternativesConsidered.map(row=>row.processingResourceId).sort())),
+    ['copper_ore','iron_ore']);
 });
 
 test('proposal -> approval -> real Treasury grant -> construction -> private commissioning is replay-safe and uses shared assets',()=>{
