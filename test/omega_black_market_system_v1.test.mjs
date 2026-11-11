@@ -31,8 +31,8 @@ function makeHarness(){
  OmegaGovernmentBanking:{getCountryPolicy(){return{importTariffPct:30};}},
  OmegaMinistryInteroperability:{registerAction(){},registerCommandHandler(t,o,h){handlers.set(t,{owner:o,handler:h});},
  dispatchCommand(o,t,c,p){const r=handlers.get(t);if(!r)return{status:'UNHANDLED',result:{accepted:false,reason:'NO_HANDLER'}};
- const tx={get(path){let v=state[o]?.[c];for(const k of String(path).split('.')){if(v==null)return undefined;v=v[k];}return v;},
- set(path,val){state[o]=state[o]||{};state[o][c]=state[o][c]||{};const ps=String(path).split('.');let v=state[o][c];for(const k of ps.slice(0,-1)){v[k]=v[k]||{};v=v[k];}v[ps.at(-1)]=val;}};
+ const tx={get(path){const ps=String(path).split('.'),domain=ps.shift();let v=state[domain]?.[c];for(const k of ps){if(v==null)return undefined;v=v[k];}return v;},
+ set(path,val){const ps=String(path).split('.'),domain=ps.shift();state[domain]=state[domain]||{};state[domain][c]=state[domain][c]||{};if(!ps.length){state[domain][c]=val;return;}let v=state[domain][c];for(const k of ps.slice(0,-1)){v[k]=v[k]||{};v=v[k];}v[ps.at(-1)]=val;}};
  const result=r.handler({payload:p},{countryId:c,stateTransaction:tx});return{status:result?.accepted===false?'REJECTED':'APPLIED',result};},
  emitEvent(t,c,o,p){for(const fn of listeners.get(t)||[])fn({detail:{eventType:t,countryId:c,payload:p}});}}
  };
