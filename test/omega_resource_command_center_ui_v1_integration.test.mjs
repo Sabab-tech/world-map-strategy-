@@ -326,7 +326,7 @@ test('integrated Production Line panel unifies existing resource, factory, priva
   assert.match(ui, /Finished goods and processing/);
   assert.match(ui, /Market and trade/);
   for (const panel of ['extraction','inventory','logistics','industrial','processing','trade']) {
-    assert.match(ui, new RegExp("manageButton\\\\('" + panel + "'"),
+    assert.match(ui, new RegExp("manageButton\\('" + panel + "'"),
       'the unified view must route management to the existing authoritative ' + panel + ' panel');
   }
   assert.match(ui, /open-production-market/);
