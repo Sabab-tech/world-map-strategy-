@@ -93,11 +93,13 @@ function riskOf(buyer,seller,r,embargoed,restricted,q,available){
  return clamp(risk,.04,.82);
 }
 function makePrice(base,tariffPct,risk,embargoed,restricted,noAgreement,q,available){
- const discount=Math.min(.32,tariffPct/100*.55);
- const premium=.035+risk*.16+(embargoed?.19:0)+(restricted?.11:0)+(noAgreement?.045:0);
- const scarcity=available>0?Math.min(.15,q/available*.08):.15,broker=.035;
- const multiplier=clamp(1-discount+premium+scarcity+broker,.35,2.25),unit=Number((base*multiplier).toFixed(6));
- return{unit,multiplier,expectedUnit:Number((unit*(1+risk*1.15)).toFixed(6))};
+ const discount=Math.min(.32,tariffPct/100*.55),riskPremium=risk*.16;
+ const policyPremium=(embargoed?.19:0)+(restricted?.11:0)+(noAgreement?.045:0);
+ const baseSpread=.035,scarcity=available>0?Math.min(.15,q/available*.08):.15,broker=.035;
+ const multiplier=clamp(1-discount+baseSpread+riskPremium+policyPremium+scarcity+broker,.35,2.25),unit=Number((base*multiplier).toFixed(6));
+ return{unit,multiplier,expectedUnit:Number((unit*(1+risk*1.15)).toFixed(6)),
+  tariffDiscountPct:discount*100,baseSpreadPct:baseSpread*100,riskPremiumPct:riskPremium*100,
+  policyPremiumPct:policyPremium*100,scarcityPremiumPct:scarcity*100,brokerSpreadPct:broker*100};
 }
 function getOffers(buyerValue,ridValue,qValue=1){
  const buyer=country(buyerValue||player()),rid=String(ridValue||'').trim(),q=num(qValue),p=product(rid);
@@ -115,19 +117,41 @@ function getOffers(buyerValue,ridValue,qValue=1){
   const hasAgreement=agreement(r),sanctioned=r.sanctions===true;
   const legalAvailable=!!(hasAgreement&&!emb.blocked&&!sanctioned&&rule.allowed&&legal.some(x=>country(x.countryId)===seller));
   const detection=riskOf(buyer,seller,r,!!emb.blocked,restricted,q,s.available),px=makePrice(quote.value,tariffPct,detection,!!emb.blocked,restricted,!hasAgreement||sanctioned,q,s.available);
-  const legalUnit=legalAvailable?Number((quote.value*(1+tariffPct/100)).toFixed(6)):null;
-  const legalTotal=legalUnit===null?null:Number((legalUnit*q).toFixed(2)),expectedTotal=Number((px.expectedUnit*q).toFixed(2));
+  let sellerCurrency=null,buyerCurrency=null,fx=null;
+  try{sellerCurrency=trade()?.currencyOf?.(seller)||null;buyerCurrency=trade()?.currencyOf?.(buyer)||null;fx=num(trade()?.fxRate?.(buyer,seller));}catch(_){}
+  if(fx===null&&sellerCurrency&&buyerCurrency&&sellerCurrency===buyerCurrency)fx=1;
+  const legalUnit=legalAvailable&&fx!==null?Number((quote.value*fx*(1+tariffPct/100)).toFixed(6)):null;
+  const legalTotal=legalUnit===null?null:Number((legalUnit*q).toFixed(2));
+  const lateDetectionProbability=detection*.18,
+   fineRate=Math.min(.18,ENFORCEMENT.baseFineRate+(emb.blocked?ENFORCEMENT.embargoFineRate:0)+(restricted?ENFORCEMENT.exportRestrictionFineRate:0)),
+   seizureRate=Math.min(.30,ENFORCEMENT.baseSeizureRate+(emb.blocked?ENFORCEMENT.embargoSeizureRate:0)+(restricted?ENFORCEMENT.exportRestrictionSeizureRate:0));
+  const expectedGrossBuyer=fx===null?null:Number((px.expectedUnit*q*fx).toFixed(2)),
+   expectedFineBuyer=fx===null?null:Number((px.unit*q*fx*lateDetectionProbability*fineRate).toFixed(2)),
+   expectedSeizedQuantity=Number((q*lateDetectionProbability*seizureRate).toFixed(6)),
+   expectedDeliveredQuantity=Number(Math.max(0,q-expectedSeizedQuantity).toFixed(6)),
+   expectedCostBuyer=expectedGrossBuyer===null?null:Number((expectedGrossBuyer+expectedFineBuyer).toFixed(2)),
+   expectedDeliveredUnitCost=expectedCostBuyer===null||expectedDeliveredQuantity<=0?null:Number((expectedCostBuyer/expectedDeliveredQuantity).toFixed(6)),
+   expectedLegalCost=legalUnit===null?null:Number((legalUnit*expectedDeliveredQuantity).toFixed(2)),
+   expectedSavings=expectedLegalCost===null||expectedCostBuyer===null?null:Number((expectedLegalCost-expectedCostBuyer).toFixed(2));
+  const foreignPolicyBasis=[emb.blocked?'IMPORT EMBARGO':null,restricted?'EXPORT RESTRICTION':null,
+   sanctioned?'SANCTIONS':null,!hasAgreement?'NO TRADE AGREEMENT':null].filter(Boolean);
+  const whyUse=!legalAvailable?(foreignPolicyBasis.length?'ACCESS DESPITE LEGAL OR DIPLOMATIC RESTRICTIONS':'NO VERIFIED GENERAL-MARKET OFFER'):
+   fx===null?'FX RATE NOT OBSERVED — PRICE ADVANTAGE CANNOT BE CONFIRMED':(expectedSavings>0?'EXPECTED COST ADVANTAGE AFTER RISK':'STRATEGIC ACCESS ONLY — EXPECTED COST IS HIGHER');
   offers.push({offerId:'BM-OFFER:'+buyer+':'+seller+':'+tok(rid),buyerCountryId:buyer,sellerCountryId:seller,resourceId:rid,
    productName:p.name||p.title||rid,productType:p.productType||null,unit:p.unit||null,
-   currency:(()=>{try{return trade()?.currencyOf?.(seller)||'USD';}catch(_){return'USD';}})(),
+   currency:sellerCurrency||'USD',buyerCurrency:buyerCurrency||sellerCurrency||'USD',fxRateToBuyer:fx,
    availableQuantity:Number(s.available.toFixed(6)),requestedQuantity:q,benchmarkUnitPrice:quote.value,benchmarkSource:quote.source,
    unitPrice:px.unit,priceMultiplier:px.multiplier,importTariffPct:tariffPct,legalLandedUnitPrice:legalUnit,
-   expectedUnitCost:px.expectedUnit,legalLandedTotal:legalTotal,expectedBlackMarketTotal:expectedTotal,
-   expectedSavings:legalTotal===null?null:Number((legalTotal-expectedTotal).toFixed(2)),detectionProbability:detection,
+   expectedUnitCost:px.expectedUnit,legalLandedTotal:legalTotal,expectedBlackMarketTotal:Number((px.expectedUnit*q).toFixed(2)),
+   expectedBlackMarketTotalBuyer:expectedCostBuyer,expectedFineCostBuyer:expectedFineBuyer,expectedSeizedQuantity,
+   expectedDeliveredQuantity,expectedDeliveredUnitCost,expectedSavings,detectionProbability:detection,
+   lateDetectionProbability,fineRate,seizureRate,pricingBreakdown:{tariffDiscountPct:px.tariffDiscountPct,baseSpreadPct:px.baseSpreadPct,
+    riskPremiumPct:px.riskPremiumPct,policyPremiumPct:px.policyPremiumPct,scarcityPremiumPct:px.scarcityPremiumPct,brokerSpreadPct:px.brokerSpreadPct},
    embargoed:!!emb.blocked,embargoPolicyIds:(emb.policies||[]).map(x=>String(x.policyId||'')).filter(Boolean),
    sanctionsAtQuote:sanctioned,exportRestrictionReason:restricted?rule.reason:null,
    exportPolicyIds:(rule.policies||[]).map(x=>typeof x==='string'?x:String(x.policyId||'')).filter(Boolean),
-   legalMarketAvailable:legalAvailable,reason:!legalAvailable?'RESTRICTED_OR_UNAVAILABLE_LEGAL_ACCESS':(expectedTotal<legalTotal?'EXPECTED_COST_ADVANTAGE':'STRATEGIC_ACCESS_ONLY'),
+   legalMarketAvailable:legalAvailable,foreignPolicyBasis,whyUse,
+   reason:!legalAvailable?'RESTRICTED_OR_UNAVAILABLE_LEGAL_ACCESS':(expectedSavings!==null&&expectedSavings>0?'EXPECTED_COST_ADVANTAGE':'STRATEGIC_ACCESS_ONLY'),
    stockAuthority:'GAME_STATE_RESOURCE_INVENTORY_RESERVE_AND_WAREHOUSE'});
  }
  offers.sort((a,b)=>(b.expectedSavings??-Infinity)-(a.expectedSavings??-Infinity)||a.detectionProbability-b.detectionProbability||a.sellerCountryId.localeCompare(b.sellerCountryId));
