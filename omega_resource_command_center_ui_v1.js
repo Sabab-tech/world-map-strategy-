@@ -1832,7 +1832,7 @@
       return row && processedStages.includes(String(row.stage || '').toUpperCase()) &&
         Number(row.remainingQuantity != null ? row.remainingQuantity : row.quantity) > 0;
     });
-    const privateOwnerPattern = /PRIVATE|NON[\\s_-]*GOVERNMENT|ENTERPRISE/i;
+    const privateOwnerPattern = /PRIVATE|NON[\s_-]*GOVERNMENT|ENTERPRISE/i;
     const governmentOwnerPattern = /STATE|GOVERNMENT|PUBLIC|SOVEREIGN/i;
     function factoryOwnership(asset) {
       const labels = [asset && asset.ownerType, asset && asset.ownershipType,
@@ -1921,7 +1921,7 @@
       kv('Market offers', offers.length) +
       kv('Domestic sales records', sales.length) +
       '</div>';
-    const cards =
+    const stageCards =
       card('Resource production', mines.length ? mineActive + ' active / ' + mines.length + ' recorded' : 'NO MINE RECORDS',
         '<div class="omega-rescc-grid2">' + kv('Committed mine receipts', mineLedger.length) +
         kv('Current-turn mine receipts', mineLedger.filter(function (row) { return Number(row.turn) === currentTurn; }).length) + '</div>' +
@@ -1971,12 +1971,12 @@
       kv('Production sequence', 'Mine → Raw warehouse → Route → Factory → Finished goods → Market') +
       kv('Private and government runtime', 'Shared inventory, shipment, production and settlement ledgers') +
       '</div><div class="omega-rescc-muted">The line advances on committed simulation turns for the selected player country. Viewing another country does not run its production systems.</div></div></div>' +
-      '<div class="omega-rescc-grid2">' + cards + '</div>' +
+      '<div class="omega-rescc-grid2">' + stageCards + '</div>' +
       '<div class="omega-rescc-card omega-rescc-card--wide"><div class="omega-rescc-cardhead"><strong>End-to-end production state</strong><span class="omega-rescc-pill">' +
       (mineLedger.length || batches.length || shipments.length || factories.length ? 'LIVE RECORDS' : 'NO PRODUCTION RECORDS') +
       '</span></div><div class="omega-rescc-cardbody">' + stageFlow + '</div></div>' +
       marketHost;
-    return cards;
+    return newTail;
   }
 
   function panelValue(country) {
