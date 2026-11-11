@@ -155,12 +155,20 @@
     var portraitSlot = row && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.renderMinisterPortrait === 'function' ? g.OmegaUIV2Government.renderMinisterPortrait(row) : '';
     var visibleSections = id === 'trade' ? SECTIONS : SECTIONS.filter(function (key) { return key !== 'market'; });
     if (id === 'trade' && section === 'market') {
-      root.innerHTML = '<style>.omega-v2-trade-market-page{width:100%;max-width:none!important;min-width:0;box-sizing:border-box}</style>' +
+      root.innerHTML = '<style>.omega-v2-trade-market-page{width:100%;max-width:none!important;min-width:0;box-sizing:border-box}' +
+        '.omega-v2-trade-market-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}' +
+        '.omega-v2-trade-market-tabs button{min-height:36px;padding:7px 13px;border:1px solid rgba(92,164,207,.45);border-radius:8px;background:linear-gradient(145deg,#102c47,#081a30);color:#cfe8f8;font:inherit;font-size:11px;font-weight:800}' +
+        '.omega-v2-trade-market-tabs button[aria-current="page"]{border-color:#29c9ff;background:linear-gradient(145deg,#0c5274,#0a2947);color:#effaff;box-shadow:inset 0 1px rgba(255,255,255,.12),0 0 12px rgba(32,180,240,.16)}' +
+        '.omega-v2-trade-market-tabs button:disabled{opacity:.52;cursor:not-allowed;border-style:dashed}' +
+        '@media(max-width:560px){.omega-v2-trade-market-tabs button{flex:1;min-width:0}}</style>' +
         '<section class="omega-v2-shell omega-v2-ministry-detail omega-v2-trade-market-page">' +
-        '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">TRADE & COMMERCE</div><h1 class="omega-v2-title">Global Commodity Market</h1>' +
-        '<p class="omega-v2-subtitle">Raw resources, factory products, international buy orders, sell offers and recorded price history.</p></div>' +
+        '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">TRADE & COMMERCE</div><h1 class="omega-v2-title">Market Commodities</h1>' +
+        '<p class="omega-v2-subtitle">Raw resources, factory products, food products, international offers and recorded prices.</p></div>' +
         '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-ministry-section="dashboard">Back to Trade & Commerce</button></header>' +
-        '<div class="omega-v2-trade-market-host" data-omega-v2-trade-market-host aria-label="Global Commodity Market"></div></section>';
+        '<nav class="omega-v2-trade-market-tabs" aria-label="Trade market sections">' +
+        '<button type="button" aria-current="page" data-omega-v2-trade-market-tab="commodities">Market Commodities</button>' +
+        '<button type="button" disabled aria-disabled="true" title="Reserved for a future market system." data-omega-v2-trade-market-tab="black-market">Black Market · Coming soon</button></nav>' +
+        '<div class="omega-v2-trade-market-host" data-omega-v2-trade-market-host aria-label="Market Commodities"></div></section>';
     } else {
       root.innerHTML = '<section class="omega-v2-shell omega-v2-ministry-detail">' +
         '<header class="omega-v2-heading"><div class="omega-v2-ministry-detail-mark">' + emblem + '<div><div class="omega-v2-eyebrow">ALL MINISTRIES · ' + esc(id.replace(/[_-]+/g,' ').toUpperCase()) + '</div><h1 class="omega-v2-title">' + esc(row ? row.title : id || 'Ministry') + '</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · registered ministry profile and source-backed domain record</p></div></div><span class="omega-v2-status" data-state="' + (domain && domain.record ? 'operational' : 'unknown') + '">' + (domain && domain.record ? 'DOMAIN RECORD AVAILABLE' : esc(domain.reason || 'DOMAIN RECORD NOT RECORDED')) + '</span></header>' +
