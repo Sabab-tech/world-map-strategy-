@@ -19,7 +19,7 @@ function makeHarness(){
  addEventListener(type,fn){const a=listeners.get(type)||[];a.push(fn);listeners.set(type,a);},
  dispatchEvent(e){for(const fn of listeners.get(e.type)||[])fn(e);return true;},
  OmegaGlobalMarket:{productCatalog(){return[{id:'coal',name:'Coal',productType:'RAW_RESOURCE',unit:'tonne'}];},
- describeProduct(r){return r==='coal'?{id:r,name:'Coal',productType:'RAW_RESOURCE',unit:'tonne'}:null;},
+ describeProduct(r){return r==='coal'?{id:r,name:'Coal',productType:'RAW_RESOURCE',unit:'tonne'}:{id:r,name:r,productType:'UNCLASSIFIED',catalogAuthority:'UNCLASSIFIED_LEGACY_IDENTITY'};},
  localPrice(c,r){return c==='SAU'&&r==='coal'?100:null;},suppliers(){return[];}},
  OmegaGlobalTrade:{inventory(c,r){return c==='SAU'&&r==='coal'?{stock:100,reserve:10,production:0}:{stock:0,reserve:0,production:0};},
  marketPrice(c,r){return c==='SAU'&&r==='coal'?100:null;},currencyOf(){return'USD';},
@@ -94,4 +94,79 @@ test('Global Trade keeps permit verification, interception, route and strategic-
  assert.match(tradeSource,/blackMarketDealFor/);assert.match(tradeSource,/BLACK_MARKET_INTERCEPTED/);
  assert.match(tradeSource,/blackMarketPermitId/);assert.match(tradeSource,/RESOURCE_ROUTE_BLOCKADE_ACTIVE/);
  assert.match(tradeSource,/STRATEGIC_STOCKPILE_PROTECTED/);
+});
+
+test('unclassified fallback identities cannot be used to create Black Market offers',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ const r=api.getOffers('BGD','invented_resource',1);
+ assert.equal(r.status,'UNAVAILABLE');
+ assert.equal(r.reason,'CANONICAL_MARKET_PRODUCT_NOT_FOUND');
+});
+test('post-settlement discovery collects a Treasury fine and seizes only unsold imported warehouse batches',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket,o=api.getOffers('BGD','coal',10).offers[0];
+ const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:o.offerId});
+ assert.equal(made.accepted,true,JSON.stringify(made));
+ const deal=h.state.trade.BGD.blackMarketDeals[0];
+ h.state.resource.BGD.inventory={coal:10};
+ h.state.resource.BGD.warehouse={warehouseId:'WH-BGD-RAW',availableByResource:{coal:10},reservedByResource:{coal:2}};
+ h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',availableByResource:{},reservedByResource:{}};
+ h.state.resource.BGD.batches=[{batchId:'IMPORT-BATCH-1',resourceId:'coal',quantity:10,remainingQuantity:10,
+  stage:'RAW_EXTRACTED',status:'AVAILABLE',warehouseId:'WH-BGD-RAW',transferReference:'SETTLE-1',
+  provenance:{settlementId:'SETTLE-1'}}];
+ h.state.resource.BGD.inventoryLots={'IMPORT-BATCH-1':{batchId:'IMPORT-BATCH-1',resourceId:'coal',quantity:10,
+  remainingQuantity:10,status:'AVAILABLE',warehouseId:'WH-BGD-RAW'}};
+ const result=api.enforcePostSettlement(deal,{settlementId:'SETTLE-1',quantity:10,buyerValue:1000,buyerCurrency:'USD',
+  createdBatchIds:['IMPORT-BATCH-1']},{caseId:'BM-CASE-ENFORCEMENT'});
+ assert.equal(result.accepted,true,JSON.stringify(result));
+ assert.equal(result.enforcement.fineRate,.18);
+ assert.equal(result.enforcement.fineDue,180);
+ assert.equal(result.enforcement.finePaid,180);
+ assert.equal(result.enforcement.fineOutstanding,0);
+ assert.equal(result.enforcement.seizureTargetQuantity,3);
+ assert.equal(result.enforcement.seizureQuantity,3);
+ assert.equal(h.state.finance.BGD.available,999820);
+ assert.equal(h.state.resource.BGD.inventory.coal,7);
+ assert.equal(h.state.resource.BGD.warehouse.availableByResource.coal,7);
+ assert.equal(h.state.resource.BGD.batches[0].remainingQuantity,7);
+ assert.equal(h.state.resource.BGD.inventoryLots['IMPORT-BATCH-1'].remainingQuantity,7);
+ const repeat=api.enforcePostSettlement(deal,{settlementId:'SETTLE-1',quantity:10,buyerValue:1000,buyerCurrency:'USD',
+  createdBatchIds:['IMPORT-BATCH-1']},{caseId:'BM-CASE-ENFORCEMENT'});
+ assert.equal(repeat.seizure.duplicate,true);
+ assert.equal(h.state.finance.BGD.available,999820,'the same fine must never be collected twice');
+ assert.equal(h.state.resource.BGD.inventory.coal,7,'the same cargo must never be seized twice');
+});
+test('unpaid enforcement fines remain outstanding and collect only when later Treasury liquidity exists',()=>{
+ const h=makeHarness(),m=h.ctx.OmegaMinistryInteroperability;
+ h.state.finance.BGD.available=0;
+ const first=m.dispatchCommand('finance','OMEGA_BLACK_MARKET_COLLECT_FINE','BGD',{fine:{
+  fineId:'BM-FINE-DEFERRED',dealId:'BM-DEAL-DEFERRED',amountDue:125,currency:'USD'}});
+ assert.equal(first.status,'APPLIED');
+ assert.equal(first.result.fine.amountPaid,0);
+ assert.equal(first.result.fine.amountOutstanding,125);
+ h.state.finance.BGD.available=50;
+ h.ctx.dispatchEvent(new h.ctx.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED',{detail:{simulationTurn:8}}));
+ const history=h.state.finance.BGD.blackMarketEnforcementHistory;
+ assert.equal(history[0].amountPaid,50);
+ assert.equal(history[0].amountOutstanding,75);
+ assert.equal(h.state.finance.BGD.available,0);
+ h.state.finance.BGD.available=100;
+ h.ctx.dispatchEvent(new h.ctx.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED',{detail:{simulationTurn:9}}));
+ assert.equal(h.state.finance.BGD.blackMarketEnforcementHistory[0].amountPaid,125);
+ assert.equal(h.state.finance.BGD.blackMarketEnforcementHistory[0].amountOutstanding,0);
+ assert.equal(h.state.finance.BGD.blackMarketEnforcementHistory[0].status,'PAID');
+ assert.equal(h.state.finance.BGD.available,25);
+});
+test('export-restriction policy issuers receive a foreign response when a covert shipment is intercepted',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ h.state.trade.SAU.stateSupplyDirectives=[{policyId:'DIR-SAU-COAL',issuerCountryId:'SAU',status:'ACTIVE'}];
+ const o=api.getOffers('BGD','coal',10).offers[0];
+ const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:o.offerId});
+ assert.equal(made.accepted,true,JSON.stringify(made));
+ const deal=h.state.trade.BGD.blackMarketDeals[0];
+ const result=api.handleTradeRejection({blackMarketDealId:deal.dealId,countryId:'BGD',targetCountryId:'SAU',
+  resourceId:'coal',quantity:10,unitPrice:deal.unitPrice,blackMarketPermitId:deal.permitId},{reason:'BLACK_MARKET_INTERCEPTED'});
+ assert.equal(result.status,'INTERCEPTED');
+ assert.equal(h.state.foreign.SAU.blackMarketResponses.length,1);
+ assert.equal(h.state.foreign.SAU.blackMarketResponses[0].policyIds.includes('DIR-SAU-COAL'),true);
+ assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-4);
 });
