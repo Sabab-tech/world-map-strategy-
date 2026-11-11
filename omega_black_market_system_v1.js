@@ -284,6 +284,15 @@ function seizeCargoHandler(cmd,ctx){
   batchIds=Array.isArray(s.createdBatchIds)?[...new Set(s.createdBatchIds.map(String).filter(Boolean))]:[];
  if(!seizureId||!dealId||!settlementId||!rid||requested===null||requested<0||!batchIds.length)
   return{accepted:false,reason:'BLACK_MARKET_SEIZURE_INPUT_INVALID'};
+ const deals=ctx.stateTransaction.get('trade.blackMarketDeals'),deal=Array.isArray(deals)?deals.find(x=>String(x.dealId||'')===dealId):null;
+ if(!deal||String(deal.status||'').toUpperCase()!=='SETTLED_UNDER_INVESTIGATION'||String(deal.settlementId||'')!==settlementId)
+  return{accepted:false,reason:'BLACK_MARKET_SEIZURE_REQUIRES_CONFIRMED_INVESTIGATION'};
+ if(tok(deal.resourceId)!==tok(rid))return{accepted:false,reason:'BLACK_MARKET_SEIZURE_RESOURCE_MISMATCH'};
+ const authorizedBatches=new Set((deal.createdBatchIds||[]).map(String));
+ if(batchIds.some(id=>!authorizedBatches.has(id)))return{accepted:false,reason:'BLACK_MARKET_SEIZURE_BATCH_PROVENANCE_INVALID'};
+ const authorizedRate=Math.min(.30,ENFORCEMENT.baseSeizureRate+(deal.embargoedAtCreation?ENFORCEMENT.embargoSeizureRate:0)+(deal.exportRestrictionReason?ENFORCEMENT.exportRestrictionSeizureRate:0));
+ const maxSeizure=Number(((num(deal.settledQuantity)??num(deal.quantity)??0)*authorizedRate).toFixed(8));
+ if(requested>maxSeizure+1e-7)return{accepted:false,reason:'BLACK_MARKET_SEIZURE_AMOUNT_EXCEEDS_AUTHORIZED_RATE',maxSeizure};
  const oldLedger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
  const prior=oldLedger.find(x=>String(x?.type||'')==='BLACK_MARKET_CARGO_SEIZURE'&&String(x?.seizureId||'')===seizureId);
  if(prior)return{accepted:true,duplicate:true,quantitySeized:num(prior.quantity)||0,seizure:clone(prior)};
