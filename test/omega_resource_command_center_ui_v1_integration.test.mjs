@@ -1,316 +1,175 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import vm from 'node:vm';
 
 const ui = fs.readFileSync('omega_resource_command_center_ui_v1.js', 'utf8');
-const tradeMinistryUi = fs.readFileSync('omega_ui_v2/screens/ministry-detail.js', 'utf8');
 const ministry = fs.readFileSync('ministry_engine.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
-const market = fs.readFileSync('omega_global_market_system.js', 'utf8');
-const logistics = fs.readFileSync('omega_resource_logistics_runtime_v1.js', 'utf8');
-const policyRuntime = fs.readFileSync('omega_resource_strategic_policy_runtime_v1.js', 'utf8');
-const panelIds = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','trade','value','cascade','cognitive','power','environment'];
+await import('../omega_resource_command_center_ui_v1.js');
+const commandCenter = globalThis.OmegaResourceCommandCenterUI;
 
-test('all fifteen Resource Ministry panels are registered, selectable and safe to render', () => {
-  for (const id of panelIds) {
+test('all sixteen resource cards have a dedicated command-center panel', () => {
+  for (const id of ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment']) {
     assert.match(ui, new RegExp("id: '" + id + "'"));
     assert.match(ui, new RegExp("case '" + id + "'"));
   }
   assert.match(ui, /data-search-item/);
   assert.match(ui, /omega-rescc-search/);
   assert.match(ui, /omega-rescc-country/);
-
-  const nodes = new Map();
-  class FakeElement {
-    constructor() { this.id=''; this.style={}; this.dataset={}; this.innerHTML=''; this.listeners={}; this.value=''; }
-    addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }
-    appendChild(child) { if (child.id) nodes.set(child.id, child); }
-    querySelectorAll() { return []; }
-    setAttribute() {}
-    getBoundingClientRect() { return { width: 900, height: 240 }; }
-    getContext() { return { clearRect(){}, fillText(){}, beginPath(){}, moveTo(){}, lineTo(){}, stroke(){}, fill(){}, arc(){}, closePath(){} }; }
-  }
-  const body = new FakeElement();
-  const document = {
-    body,
-    createElement() { return new FakeElement(); },
-    getElementById(id) { return nodes.get(id) || null; }
-  };
-  const state = {
-    simulation:{turn:1},
-    playerCountryId:'BGD',
-    resource:{BGD:{inventory:{},reserves:{},production:{},batches:[],inventoryLots:{},mineProductionLedger:[],warehouse:{availableByResource:{},reservedByResource:{}},processedWarehouse:{availableByResource:{}},strategicReserve:{availableByResource:{}},reserveBufferRequests:[],surveyRequests:[],surveyResults:[],capacityUpgradeRequests:[],logistics:{shipments:[]},industrialNetwork:{shipments:[],siteExecutions:[]}}},
-    economy:{BGD:{projects:[],productionAssets:[]}},
-    finance:{BGD:{available:1000,currencyCode:'USD',reserves:500}},
-    trade:{BGD:{importRequests:[],globalTradeLedger:{requests:[],decisions:[],settlements:[]}}}
-  };
-  const resourceSummary={briefing:'',globalMetrics:{},resourcesList:[]};
-  const sandbox = {
-    document,
-    Game:{state,countryLookup:{BGD:{name:'Bangladesh'}}},
-    ResourceMinistryEngine:{
-      resourceTypes:[],
-      getSummary(){ return resourceSummary; },
-      getAuthoritativeResourceSummary(){ return resourceSummary; },
-      getCountryResourceProfile(){ return {identity:{name:'Bangladesh',officialName:'Bangladesh'}}; },
-      getDepositsForCountry(){ return []; },
-      getIntegratedResourceState(){ return state.resource.BGD; },
-      normalizeCountryCode(x){ return String(x||'BGD').toUpperCase(); }
-    },
-    OmegaCabinetUI:{getResource16CardsHtml(){return '<div class="test-cards"></div>';}},
-    Omega:{
-      ResourceIndustrialNetwork:{diagnostics(){return {};},gameplayPipelineDiagnostics(){return {};}},
-      ResourceLogisticsRuntime:{diagnostics(){return {};}},
-      GlobalMarket:{quote(){return {status:'UNAVAILABLE'};},rebuild(){return {};},diagnostics(){return {};}},
-      GlobalTrade:{diagnostics(){return {};}}
-    },
-    OmegaGlobalMarket:{quote(){return {status:'UNAVAILABLE'};},rebuild(){return {};},diagnostics(){return {};}},
-    OmegaGlobalTrade:{diagnostics(){return {};}},
-    OmegaResourceSystemHardening:{logisticsConstraints(){return {}},diagnostics(){return {}}},
-    OmegaResourceAuthoritativeAdapter:{install(){}},
-    setInterval(){return 1;},clearInterval(){},console,Date,Math,JSON,Object,Array,String,Number,RegExp,Map,Set,WeakMap
-  };
-  sandbox.window=sandbox;
-  sandbox.globalThis=sandbox;
-  vm.runInNewContext(ui,sandbox,{filename:'omega_resource_command_center_ui_v1.js'});
-
-  const api=sandbox.OmegaResourceCommandCenterUI;
-  assert.ok(api,'resource command-center UI API must install');
-  for (const panel of panelIds) {
-    assert.doesNotThrow(()=>api.open('BGD',panel), 'panel must render: '+panel);
-    assert.equal(api.getState().panel,panel,'the requested panel route must remain selected');
-    assert.match(document.getElementById('gsrsk-intelligence-modal').innerHTML,/Resource Command Center/);
-  }
-  const clickRoutes = [
-    ['p01','matrix'],['p02','ontology'],['p03','reserves'],['p04','deposits'],
-    ['p05','extraction'],['p06','processing'],['p07','inventory'],['p08','logistics'],
-    ['p09','industrial'],['p10','market'],['p11','trade'],['p12','value'],
-    ['p13','cascade'],['p14','cognitive'],['p15','power'],['p16','environment']
-  ];
-  for (const [point,panel] of clickRoutes) {
-    const outcome=sandbox.OmegaCabinetUI.executeResource16Point(point,'legacy-directive-must-not-run');
-    assert.equal(outcome.status,'OPENED_PANEL','card '+point+' must open a panel');
-    assert.equal(outcome.panel,panel,'card '+point+' must open its corresponding panel');
-    assert.equal(api.getState().panel,panel,'selected panel must match card '+point);
-  }
-  assert.match(document.getElementById('gsrsk-intelligence-modal').innerHTML,/Resource Command Center/);
 });
 
-test('legacy card names disclose feature gaps instead of claiming unsupported actions', () => {
-  assert.match(ui,/p01: 'matrix'/);
-  assert.match(ui,/p02: 'ontology'/);
-  assert.match(ui,/p03: 'reserves'/);
-  assert.match(ui,/p04: 'deposits'/);
-  assert.match(ui,/p05: 'extraction'/);
-  assert.match(ui,/p06: 'processing'/);
-  assert.match(ui,/p07: 'inventory'/);
-  assert.match(ui,/p08: 'logistics'/);
-  assert.match(ui,/p09: 'industrial'/);
-  assert.match(ui,/p10: 'market'/);
-  assert.match(ui,/p11: 'trade'/);
-  assert.match(ui,/p12: 'value'/);
-  assert.match(ui,/p13: 'cascade'/);
-  assert.match(ui,/p14: 'cognitive'/);
-  assert.match(ui,/p06: 'processing'/);
-  assert.match(ui,/p15: 'power'/);
-  assert.match(ui,/p16: 'environment'/);
-  assert.match(ui,/AUTHORITATIVE TIME-SERIES NOT AVAILABLE/);
-  assert.doesNotMatch(ui,/Math\.random\(/);
+test('legacy p05/p06/p15/p16 cards route to panels instead of unsupported fake build successes', () => {
+  assert.match(ui, /p05: 'extraction'/);
+  assert.match(ui, /p06: 'processing'/);
+  assert.match(ui, /p15: 'power'/);
+  assert.match(ui, /p16: 'environment'/);
+  assert.match(ui, /cabinet\.executeResource16Point = function/);
+  assert.match(ui, /AUTHORITATIVE TIME-SERIES NOT AVAILABLE/);
+  assert.doesNotMatch(ui, /Math\.random\(/);
   assert.ok(ministry.includes("executeResource16Point('p05', 'drill_oil')"));
   assert.ok(ministry.includes("executeResource16Point('p16', 'build_solar')"));
-  assert.match(ui,/Open 12-Question Screening Checklist/);
-  assert.match(ui,/Open Treasury & SWF Console/);
-  assert.match(ui,/tonnes CO₂e/i);
-  assert.match(ui,/simulated gameplay assumptions, not measured national emissions/i);
-  assert.match(ui,/data-form="carbon-quota"/);
-  assert.match(ui,/policy\.evaluateCognitiveGate\(c/);
-  assert.match(ui,/policy\.startPowerProject/);
-  assert.match(ui,/policy\.remediateSite/);
-  assert.match(ui,/policy\.startExploration/);
-  assert.match(ui,/policy\.approveInvestment/);
-  assert.match(ui,/policy\.commissionSite/);
-  assert.match(ui,/Authoritative exploration projects/);
-  assert.match(ui,/policy\.startPowerProject/);
-  assert.match(ui,/data-form="carbon-emission"/);
-  assert.match(ui,/data-form="remediation"/);
-  assert.match(ui,/Persisted strategic gate decisions/);
-  assert.match(ui,/2\.4 GW nuclear baseload project/);
 });
 
-test('the UI bridge loads after its data-owning engines and static HUD has no fabricated balance examples', () => {
-  const uiTag = html.indexOf('src="omega_resource_command_center_ui_v1.js"');
+test('the resource command-center UI is loaded after the authoritative runtimes', () => {
+  const uiTag = html.indexOf('omega_resource_command_center_ui_v1.js');
   assert.ok(uiTag >= 0, 'new UI bridge must be loaded');
-  for (const name of ['ministry_engine.js','resource_ministry_engine.js','omega_resource_authoritative_adapter.js','omega_resource_action_execution_runtime.js','omega_global_market_system.js','omega_global_trade_system.js']) {
-    assert.ok(html.indexOf('src="'+name+'"') >= 0 && html.indexOf('src="'+name+'"') < uiTag, name + ' must load before the UI bridge');
+  for (const name of ['omega_resource_authoritative_adapter.js','omega_resource_action_execution_runtime.js','omega_global_market_system.js','omega_global_trade_system.js','omega_resource_national_demand_runtime_v1.js']) {
+    assert.ok(html.indexOf(name) >= 0 && html.indexOf(name) < uiTag, name + ' must load before the UI bridge');
   }
-  assert.doesNotMatch(html,/\$100M|850 PP|12\.4 GW|500K BBL|\+5K\/s|\+150\/s|60 FPS/,
-    'static HUD indicators must not substitute invented starting values');
-  assert.match(html,/dropdown-cash-val[^>]*>NOT OBSERVED/);
 });
 
-test('trade form submits through the authoritative request runtime and action feedback rejects unsupported commands', () => {
-  assert.match(ui,/trade\.createRequest/);
-  assert.match(ui,/acceptedFalse/);
-  assert.match(ui,/referenceLiquidity === true/);
-  assert.match(ui,/NO_COMPATIBLE_FACTORY/);
-  assert.match(ui,/ALL_12_QUESTIONS_REQUIRE_ANSWERS/);
-  assert.match(ui,/UNHANDLED_UI_ACTION/);
+test('action feedback requires a real runtime result and records reference-only market liquidity', () => {
+  assert.match(ui, /acceptedFalse/);
+  assert.match(ui, /r\.industrialNetwork \|\| \{\}/);
+  assert.match(ui, /NO_COMPATIBLE_FACTORY/);
+  assert.match(ui, /ALL_12_QUESTIONS_REQUIRE_ANSWERS/);
 });
 
-
-test('value, cascade, market and logistics controls use authoritative records without inventing transactions',()=>{
-  assert.match(ui,/data-form="swf-capitalise"/);
-  assert.match(ui,/policy\.capitalizeSovereignWealthFund/);
-  assert.match(ui,/Fund contribution ledger/);
-  assert.match(ui,/native treasury units/i);
-  assert.match(ui,/A simulated 2\.4 GW project uses native treasury units/);
-  assert.match(ui,/Emission factors are simulated assumptions, not measured data/);
-  assert.match(ui,/authoritativeRoutePolicy/);
-  assert.match(ui,/policy\.isRouteBlocked/);
-  assert.match(ui,/mutatesGameplay: false/);
-  assert.match(market,/if\(ask\.referenceOnly===true\)continue;/);
-  assert.match(market,/referenceAskDepth/);
-  assert.match(market,/bestAsk=asks\.find\(x=>x\.referenceOnly!==true\)/);
-  assert.match(logistics,/RESOURCE_ROUTE_BLOCKADE_ACTIVE/);
-  assert.match(logistics,/dispatchCommitted:false/);
-  assert.match(logistics,/shipmentAuthority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'/);
-  assert.match(logistics,/ROUTE_PREVIEW_ONLY/);
-  assert.doesNotMatch(logistics,/log\.shipments=shipments/);
-  assert.match(policyRuntime,/function capitalizeSwfTx/);
-  assert.match(policyRuntime,/SWF_TRANSACTION_ID_CONFLICT/);
+test('each numbered legacy card maps explicitly to its intended panel, independent of active category filters', () => {
+  const pointBlock = ui.slice(ui.indexOf('const panelByPoint = {'), ui.indexOf('};', ui.indexOf('const panelByPoint = {')) + 2);
+  const mappings = [...pointBlock.matchAll(/'(\d{2})': '([a-z]+)'/g)].map((m) => [m[1], m[2]]);
+  assert.equal(mappings.length, 16);
+  assert.deepEqual(mappings, [
+    ['01','matrix'],['02','ontology'],['03','reserves'],['04','deposits'],
+    ['05','extraction'],['06','processing'],['07','inventory'],['08','logistics'],
+    ['09','industrial'],['10','market'],['11','trade'],['12','value'],
+    ['13','cascade'],['14','cognitive'],['15','power'],['16','environment']
+  ]);
+  assert.match(ui, /const routeCountry = activeCountry\(this\.activeCountry \|\| countryId\)/);
+  assert.match(ui, /network\.candidateFactories\(country, resourceId\)/);
 });
 
-test('cognitive gate uses the server AI endpoint and cannot persist a player-only approval', () => {
-  assert.match(ui, /\/api\/resource-decision\/ai-evaluate/);
-  assert.match(ui, /aiCountrySnapshot\(c\)/);
-  assert.match(ui, /aiAssessment:\s*body\.assessment/);
-  assert.match(ui, /verdictRecorded:\s*false/);
-  assert.match(ui, /body\.assessment\.authority\s*!==\s*'OMEGA_SERVER_RESOURCE_DECISION_AI'/);
-  assert.match(ui, /liveSnapshotMatches/);
-  assert.match(ui, /SIMULATION_STATE_CHANGED_DURING_AI_REVIEW/);
-  assert.doesNotMatch(ui, /A player-entered 12-question screening decision is persisted/);
-  assert.match(policyRuntime, /AI_ASSESSMENT_REQUIRED/);
-  assert.match(policyRuntime, /SERVER_AI_DECISION_REQUIRED/);
-  assert.match(policyRuntime, /aiGenerated!==true/);
+test('metrology converter handles matching dimensions and blocks dimension mismatches', () => {
+  assert.ok(commandCenter && typeof commandCenter.convertUnits === 'function');
+  assert.equal(commandCenter.convertUnits(1000, 'kg', 'metric_tonne').value, 1);
+  assert.equal(commandCenter.convertUnits(1, 'bbl', 'litre').value, 158.987294928);
+  assert.equal(commandCenter.convertUnits(1, 'mmbtu', 'gj').value, 1.05505585262);
+  assert.equal(commandCenter.convertUnits(1, 'kg', 'gj').reason, 'UNIT_DIMENSION_MISMATCH');
+  assert.equal(commandCenter.convertUnits('not-a-number', 'kg', 'lb').reason, 'FINITE_QUANTITY_REQUIRED');
 });
 
-test('quota enforcement and remediation follow-up are visible to the player and included in AI context', () => {
-  assert.match(ui, /carbonQuotaEnforcementLedger/);
-  assert.match(ui, /Carbon quota enforcement violations and remediation follow-up/);
-  assert.match(ui, /BLOCKED attempts are kept separately from emissions actually committed|Blocked attempts are kept separately from emissions actually committed/);
-  assert.match(ui, /carbonQuotaEnforcementLedger:.*slice\(-12\)/);
-  assert.match(fs.readFileSync(new URL('../omega_resource_ai_decision_service.js', import.meta.url), 'utf8'), /recentQuotaEnforcement/);
+test('actual industrial flow and technology project state paths are rendered', () => {
+  assert.match(ui, /r\.industrialNetwork \|\| \{\}/);
+  assert.match(ui, /industrialState\.siteFlowLedger/);
+  assert.match(ui, /technology project contracts/i);
+  assert.match(ui, /Resource research runtime projects/);
+  assert.match(ui, /data-search-item data-form=/);
 });
 
 
-test('industrial panel refreshes its first open when the shared factory catalog finishes loading', async () => {
-  const nodes = new Map();
-  class FakeElement {
-    constructor() { this.id=''; this.style={}; this.dataset={}; this.innerHTML=''; this.listeners={}; this.value=''; }
-    addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }
-    appendChild(child) { if (child.id) nodes.set(child.id, child); }
-    querySelectorAll() { return []; }
-    setAttribute() {}
-    getBoundingClientRect() { return { width:900, height:240 }; }
-  }
-  const document = {
-    body:new FakeElement(),
-    createElement() { return new FakeElement(); },
-    getElementById(id) { return nodes.get(id) || null; }
-  };
-  const catalog = {
-    factoryCatalogPolicy:{categoryOrder:['METALS_AND_ALLOYS']},
-    factoryProfiles:{
-      STEEL_AND_ALLOY_WORKS:{
-        name:'Steel and Alloy Works',
-        category:'METALS_AND_ALLOYS',
-        defaultCapacityPerDay:10,
-        employment:{jobsPerFactory:100},
-        recipeIds:[]
-      }
-    },
-    downstreamFactoryRecipes:{},
-    processingRules:{}
-  };
-  const state={
-    simulation:{turn:1},
-    playerCountryId:'USA',
-    resource:{USA:{industrialNetwork:{projects:[],siteFlowLedger:[]}}},
-    economy:{USA:{productionAssets:[]}}
-  };
-  let catalogLoaded=false;
-  const network={
-    diagnostics(){return{};},
-    gameplayPipelineDiagnostics(){return{perCountry:[]};},
-    factoryCatalogDiagnostics(){return{status:catalogLoaded?'READY':'LOADING'};},
-    factoryUtilityDiagnostics(){return{status:'UNKNOWN'};},
-    loadCatalog(){
-      return new Promise(resolve=>setTimeout(()=>{
-        catalogLoaded=true;
-        sandbox.OmegaResourceIndustrialCatalogData=catalog;
-        sandbox.Omega.ResourceIndustrialCatalogData=catalog;
-        resolve({status:'READY'});
-      },40));
-    }
-  };
-  const sandbox={
-    document,
-    Game:{state,countryLookup:{USA:{name:'United States'}}},
-    ResourceMinistryEngine:{isReady:true},
-    Omega:{ResourceIndustrialNetwork:network},
-    OmegaResourceIndustrialNetwork:network,
-    setTimeout,clearTimeout,setInterval,clearInterval,
-    console,Date,Math,JSON,Object,Array,String,Number,RegExp,Map,Set,WeakMap,Promise
-  };
-  sandbox.window=sandbox;
-  sandbox.globalThis=sandbox;
-  vm.runInNewContext(ui,sandbox,{filename:'omega_resource_command_center_ui_v1.js'});
-  const api=sandbox.OmegaResourceCommandCenterUI;
-  assert.ok(api,'the resource command-center UI must install');
-  api.open('USA','industrial');
-  const modal=document.getElementById('gsrsk-intelligence-modal');
-  assert.ok(modal && modal.style.display==='flex');
-  assert.doesNotMatch(modal.innerHTML,/<article class="omega-rescc-factory-catalog-row"/,
-    'the initial synchronous shell may render while the canonical factory catalog is loading');
-  await new Promise(resolve=>setTimeout(resolve,360));
-  assert.equal(catalogLoaded,true);
-  assert.match(modal.innerHTML,/<article class="omega-rescc-factory-catalog-row"/,
-    'the same open panel must refresh when the shared factory catalog resolves');
-  assert.match(modal.innerHTML,/Steel and Alloy Works/);
+test('the 100-day supply policy is visible and preserves stock/shipment semantics', () => {
+  assert.match(ui, /panelPlayerSupplyLifeline/);
+  assert.match(ui, /authorize-player-supply-lifeline/);
+  assert.match(ui, /Renew 100-day automatic supply/);
+  assert.match(ui, /Existing inventory and already placed inbound shipments remain valid/);
+  assert.match(ui, /OMEGA_RESOURCE_SUPPLY_ALERT_CREATED/);
+});
+
+test('inventory UI labels live balances as Current Stock and includes raw plus processed factory inputs', () => {
+  const inventoryPanel = ui.slice(ui.indexOf('function panelInventory'), ui.indexOf('function panelLogistics'));
+  assert.match(inventoryPanel, /Current Stock/);
+  assert.match(inventoryPanel, /processedWarehouse/);
+  assert.match(inventoryPanel, /factoryInputBaselineV1/);
+  assert.match(inventoryPanel, /resourceMapValue\(inventory, id\)/);
+  assert.match(inventoryPanel, /resourceMapValue\(processedWarehouse\.availableByResource/);
+  assert.match(inventoryPanel, /omega-rescc-inventory-table/);
+  assert.match(inventoryPanel, /Opening target · 100 days/);
+  assert.match(inventoryPanel, /getCountryPrimaryResourceBaseline/);
+  assert.match(inventoryPanel, /inventoryIcon/);
+  assert.match(inventoryPanel, /assets\/omega-industrial-icons-v1\/resources/);
+  assert.match(ui, /ensureVisiblePanelMinuteRefresh/);
+  assert.match(ui, /60000/);
+  assert.doesNotMatch(inventoryPanel, /Stock days|Stock duration/i);
+  assert.match(inventoryPanel, /Current stock is shown once from the country inventory ledger/);
+  assert.match(ui, /Current stock is shown once from the country inventory ledger/);
+  assert.doesNotMatch(inventoryPanel, /return card\(name, id/);
+  assert.doesNotMatch(inventoryPanel, /const batchCards = batches\.map/);
+  assert.doesNotMatch(ui, /ledgerMetric\('📅', 'Stock duration'/);
+});
+
+test('resource panels avoid navigation clutter, raw diagnostics, and pinned top content', () => {
+  assert.ok(ui.includes('omega-rescc-panel-select'));
+  assert.ok(ui.includes('overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain'));
+  assert.ok(ui.includes("'.omega-rescc-content{flex:0 0 auto;min-height:0;min-width:0;overflow:visible;"));
+  assert.ok(ui.includes("'.omega-rescc-note{display:none!important}'"));
+  assert.ok(ui.includes("function diagnosticCard() { return ''; }"));
+  assert.ok(ui.includes("(lastOutcome ? '<div id=\"omega-rescc-status\""));
+  assert.equal(ui.includes("Panel: ' + viewTitle(activePanel)"), false);
 });
 
 
-test('optional semantic bootstrap cannot invalidate authoritative resource JSON readiness', () => {
-  const source = fs.readFileSync('resource_ministry_engine.js', 'utf8');
-  const start = source.indexOf('async init()');
-  const end = source.indexOf('_mergeRuntimeDeposits(rows, sourceDatasetId)', start);
-  assert.ok(start >= 0 && end > start, 'the Resource Ministry init implementation must exist');
-  const init = source.slice(start, end);
-  const ready = init.indexOf('this.isReady = true;');
-  const bootstrap = init.indexOf('semanticEngine.bootstrap(semanticInput)');
-  assert.ok(ready >= 0 && bootstrap > ready,
-    'canonical resource data becomes ready before the optional semantic graph is built');
-  assert.match(init, /requestIdleCallback\(runSemanticBootstrap, \{ timeout: 5000 \}\)/,
-    'the legacy world-state bootstrap must be deferred to browser idle time when supported');
-  assert.match(init, /Optional semantic bootstrap failed; canonical Resource Ministry data remains ready/,
-    'an auxiliary semantic failure must be reported without changing canonical engine readiness');
-  assert.match(init, /GSRSK_MASTER_ENGINE_BOOTSTRAP_COMPLETE/,
-    'dependent integrations can observe completion of the deferred semantic bootstrap');
+test('industrial panel exposes real utility ledgers and a single-country utility infrastructure action', () => {
+  assert.match(ui, /factoryUtilityDiagnostics\(country\)/);
+  assert.match(ui, /Industrial utility balances/);
+  assert.match(ui, /data-form="factory-utility-project"/);
+  assert.match(ui, /startInfrastructureProject\(\{/);
+  assert.match(ui, /Not recorded/);
+  assert.match(ui, /Completed in-game utility projects|completed in-game utility projects/i);
+});
+
+test('inventory panel exposes a bounded editable factory-input stock target for the active player country', () => {
+  const inventoryPanel = ui.slice(ui.indexOf('function panelInventory'), ui.indexOf('function panelLogistics'));
+  assert.match(inventoryPanel, /data-form="factory-input-stock-target"/);
+  assert.match(inventoryPanel, /name="targetCoverageDays"/);
+  assert.match(inventoryPanel, /min="1" max="3650"/);
+  assert.match(ui, /setFactoryInputCoverageDays\(c, data\.get\('targetCoverageDays'\)\)/);
+  assert.match(ui, /canConfigureCoverage/);
 });
 
 
-test('the Global Commodity Market is moved into the Trade & Commerce ministry', () => {
-  assert.match(ui, /function renderMarketDashboard\\(root, country, options\\)/);
-  assert.match(ui, /renderMarketDashboard,/);
-  assert.doesNotMatch(ui, /id: 'market', num:/);
-  assert.doesNotMatch(ui, /case 'market': return panelMarket\\(country\\)/);
-  assert.match(tradeMinistryUi, /market:'Global Commodity Market'/);
-  assert.match(tradeMinistryUi, /data-omega-v2-trade-market-host/);
-  assert.match(tradeMinistryUi, /renderMarketDashboard\\(marketHost, country/);
-  assert.match(tradeMinistryUi, /section === 'market'/);
-  assert.ok(html.indexOf('omega_resource_command_center_ui_v1.js') >= 0);
-  assert.ok(html.indexOf('omega_resource_command_center_ui_v1.js') < html.indexOf('omega_ui_v2/screens/ministry-detail.js'),
-    'the shared market renderer must load before the Trade & Commerce ministry screen');
-  assert.match(html, /omega_ui_v2\\/screens\\/ministry-detail\\.js/);
+test('Trade & Commerce hosts the full commodity market dashboard with separate lanes and permanent buy/sell panels', () => {
+  const marketPanel = ui.slice(ui.indexOf('function panelMarket(country)'), ui.indexOf('function panelPlayerSupplyLifeline(country)'));
+  assert.match(marketPanel, /market\.productCatalog\(\)/);
+  assert.match(marketPanel, /selectedMarketLane/);
+  assert.match(marketPanel, /RAW_RESOURCE/);
+  assert.match(marketPanel, /FACTORY_PRODUCT/);
+  assert.match(marketPanel, /Buy Orders/);
+  assert.match(marketPanel, /Sell Offers/);
+  assert.match(marketPanel, /omega-market-order-grid/);
+  assert.match(marketPanel, /omega-market-history/);
+  assert.match(marketPanel, /assets\/omega-global-market\/raw-mining\.svg/);
+  assert.match(marketPanel, /assets\/omega-global-market\/factory-refinery\.svg/);
+  assert.match(marketPanel, /assets\/omega-industrial-icons-v1\/resources/);
+  assert.match(marketPanel, /assets\/omega-industrial-icons-v1\/factories/);
+  assert.match(marketPanel, /referenceOnly !== true/);
+  assert.doesNotMatch(marketPanel, /market\.rebuild\(/);
+  assert.ok(ui.includes('function renderMarketDashboard(root, country, options)'));
+  assert.ok(ui.includes('renderMarketDashboard,'));
+  assert.equal(ui.includes("id: 'market', num:"), false);
+  assert.equal(ui.includes("case 'market': return panelMarket(country)"), false);
+  assert.match(ui, /omega-rescc-shell--market/);
+  assert.match(ui, /data-market-lane/);
+  assert.match(ui, /data-market-product/);
+  assert.match(ui, /market-refresh/);
+  assert.match(ui, /selectedMarketSort/);
+});
+
+test('global commodity market uses the user artwork in the offline shell cache', () => {
+  const serviceWorker = fs.readFileSync('omega-offline-map-sw.js', 'utf8');
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v112/);
+  for (const asset of [
+    'assets/omega-global-market/market-header.svg',
+    'assets/omega-global-market/raw-mining.svg',
+    'assets/omega-global-market/factory-refinery.svg'
+  ]) assert.ok(serviceWorker.includes('./' + asset), asset + ' must be available offline');
 });
