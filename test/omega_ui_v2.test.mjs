@@ -3880,9 +3880,10 @@ test('market presentation keeps raw, factory-role and food lanes separate and us
   assert.match(market,/'<span class="omega-market-product-copy"><strong>' \+ esc\(row\.name \|\| row\.id\) \+ '<\/strong><\/span>'/,
     'the commodity name must be the only text under the product icon');
   assert.match(ministry,/Market Commodities/);
-  assert.match(ministry,/Black Market · Coming soon/);
-  assert.match(ministry,/disabled[^>]*data-omega-v2-trade-market-tab="black-market"/);
-  assert.equal(offlineShellCacheVersion(sw),114);
+  assert.match(ministry,/data-omega-v2-trade-market-tab="black-market"/);
+  assert.doesNotMatch(ministry,/disabled[^>]*data-omega-v2-trade-market-tab="black-market"/);
+  assert.match(ministry,/data-omega-v2-black-market-host/);
+  assert.equal(offlineShellCacheVersion(sw),115);
   assert.match(sw,/assets\/omega-global-market\/food-products\.svg/);
   for (const file of [
     'market-header.svg','raw-mining.svg','factory-refinery.svg','food-products.svg'
