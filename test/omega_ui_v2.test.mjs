@@ -253,7 +253,8 @@ test('executive government overview reuses its ministry rows without loading unu
   globalThis.OmegaCabinetUI = {
     ministriesDatabase: {
       energy_mining: { id:'energy_mining', title:'Energy & Mining', bnTitle:'Energy', category:'agriculture' },
-      interior_security: { id:'interior_security', title:'Interior & Security', bnTitle:'Interior', category:'governance' }
+      interior_security: { id:'interior_security', title:'Interior & Security', bnTitle:'Interior', category:'governance' },
+      trade: { id:'trade', title:'Trade & Commerce', bnTitle:'আন্তর্জাতিক বাণিজ্য', category:'economy' }
     }
   };
   globalThis.OmegaMinisterRecruitment = {
@@ -290,6 +291,13 @@ test('executive government overview reuses its ministry rows without loading unu
       'the executive overview only uses ministry labels and must not read every minister record');
     assert.match(root.innerHTML, /Energy &amp; Mining|Energy & Mining/);
     assert.match(root.innerHTML, /Interior &amp; Security|Interior & Security/);
+    assert.match(root.innerHTML, /Trade &amp; Commerce|Trade & Commerce/,
+      'Trade & Commerce must be visible as a direct Executive Overview shortcut');
+    assert.match(root.innerHTML, /data-omega-v2-open-ministry="trade"/,
+      'the Trade & Commerce shortcut must open the canonical trade ministry');
+    const moreSource = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
+    assert.match(moreSource, /title:'Trade & Commerce'.{0,180}ministry:'trade'/,
+      'the More menu must use the same Trade & Commerce name and destination');
   } finally {
     for (const key of keys) {
       if (previous[key] === undefined) delete globalThis[key];
