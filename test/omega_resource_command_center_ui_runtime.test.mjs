@@ -104,7 +104,7 @@ globalThis.ResourceMinistryEngine = {
   },
   getCountryResourceProfile() { return { identity: { name: 'Bangladesh' } }; }
 };
-const sourceCards = Array.from({ length: 16 }, (_, index) => {
+const sourceCards = Array.from({ length: 15 }, (_, index) => {
   const point = String(index + 1).padStart(2, '0');
   return '<div class="dept-card" style="border-color:#aaa"><span>' + point +
     '. Test Point</span><button onclick="window.ResourceMinistryEngine.openModal(\'BANGLADESH\', \'matrix\');">Open</button></div>';
