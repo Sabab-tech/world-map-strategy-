@@ -85,8 +85,8 @@ test('all fifteen Resource Ministry panels are registered, selectable and safe t
   const clickRoutes = [
     ['p01','matrix'],['p02','ontology'],['p03','reserves'],['p04','deposits'],
     ['p05','extraction'],['p06','processing'],['p07','inventory'],['p08','logistics'],
-    ['p09','industrial'],['p10','market'],['p11','trade'],['p12','value'],
-    ['p13','cascade'],['p14','cognitive'],['p15','power'],['p16','environment']
+    ['p09','industrial'],['p10','trade'],['p11','value'],['p12','cascade'],
+    ['p13','cognitive'],['p14','power'],['p15','environment']
   ];
   for (const [point,panel] of clickRoutes) {
     const outcome=sandbox.OmegaCabinetUI.executeResource16Point(point,'legacy-directive-must-not-run');
