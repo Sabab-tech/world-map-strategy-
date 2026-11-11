@@ -199,9 +199,10 @@
     var shortcutIds = ['trade', 'treasury_finance', 'energy_mining', 'production', 'interior_security', 'foreign_affairs', 'mega_projects'];
     var shortcuts = rows.filter(function (row) { return shortcutIds.indexOf(row.id) >= 0; }).map(function (row) {
       var photoId = PHOTO_BY_MINISTRY[row.id];
+      var buttonLabel = row.id === 'trade' ? 'Open Trade & Commerce' : 'Open ministry';
       return '<article class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(row.title) + '</h3><div class="omega-v2-card-meta">' + esc(row.subtitle || CATEGORY_LABELS[row.category] || 'Ministry') + '</div></div></div>' +
         (photoId ? photoMarkup(photoId, row.title + ' reference photograph') : '') +
-        '<div class="omega-v2-actions"><button class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-ministry="' + esc(row.id) + '">Open ministry</button></div></article>';
+        '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-ministry="' + esc(row.id) + '" aria-label="' + esc(buttonLabel + ': ' + row.title) + '">' + esc(buttonLabel) + '</button></div></article>';
     }).join('');
     return '<section class="omega-v2-overview">' +
       '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">EXECUTIVE MINISTRY · COUNTRY OVERVIEW</div><h1 class="omega-v2-title">' + esc(displayName) + '</h1><p class="omega-v2-subtitle">Country snapshot from registered sources and the current simulation. Missing fields are never displayed as zero.</p></div>' +
