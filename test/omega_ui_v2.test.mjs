@@ -3871,8 +3871,10 @@ test('market presentation keeps raw, factory-role and food lanes separate and us
   assert.match(market,/Negotiate/);
   assert.match(market,/Buy/);
   assert.match(market,/disabled aria-disabled="true"/);
-  assert.doesNotMatch(market,/Raw Resource|Factory Product/,
-    'commodity names must not repeat type labels below product names');
+  assert.doesNotMatch(market,/esc\(row\.productType === 'RAW_RESOURCE'/,
+    'the commodity row must not render raw-resource or factory-product labels below names');
+  assert.match(market,/'<span class="omega-market-product-copy"><strong>' \+ esc\(row\.name \|\| row\.id\) \+ '<\/strong><\/span>'/,
+    'the commodity name must be the only text under the product icon');
   assert.match(ministry,/Market Commodities/);
   assert.match(ministry,/Black Market · Coming soon/);
   assert.match(ministry,/data-omega-v2-trade-market-tab="black-market" disabled/);
