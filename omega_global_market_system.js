@@ -5,7 +5,7 @@
  */
 (function(g){
   'use strict';
-  const VERSION='1.0.0',MAX_ORDERS=2048,MAX_MARKET_HISTORY=128;
+  const VERSION='1.1.0',MAX_ORDERS=2048,MAX_MARKET_HISTORY=128;
   const clone=(v,seen=new WeakMap())=>{
     if(v===null||typeof v!=='object')return v;
     if(seen.has(v))return seen.get(v);
@@ -25,6 +25,7 @@
   // country/domain bucket once so resource-by-resource clearing does not repeatedly scan
   // all country keys and re-resolve the same aliases.
   let activeMarketSnapshot=null;
+  let activeProductIndex=null;
   function createMarketSnapshot(){
     const root=state()||{},countryIds=new Set();
     const resolveRow=row=>{
@@ -169,15 +170,132 @@
     const p=n(row?.basePrice);
     return p===null?null:{price:p,unit:row?.unit||null,source:'ResourceMinistryEngine.resourceTypes.basePrice',referenceOnly:true};
   }
+  function displayProductName(value){
+    const raw=String(value||'').trim();
+    if(!raw)return 'Unknown product';
+    return raw.replace(/[_-]+/g,' ').replace(/\b[a-z]/g,function(ch){return ch.toUpperCase();});
+  }
+  function buildProductIndex(){
+    const rawById=Object.create(null),factoryById=Object.create(null);
+    const resourceRows=g.ResourceMinistryEngine?.resourceTypes;
+    (Array.isArray(resourceRows)?resourceRows:[]).forEach(function(row){
+      const rid=String(row?.id||row?.resourceId||'').trim(),key=token(rid);
+      if(!key)return;
+      rawById[key]={id:rid,productId:rid,name:String(row.name||row.label||displayProductName(rid)),
+        productType:'RAW_RESOURCE',productRole:'RAW_MATERIAL',unit:row.unit||null,
+        referencePrice:n(row.basePrice),sourceFactoryTypes:[],sourceRecipeIds:[],usageClass:'RAW_RESOURCE',
+        endUses:[],catalogAuthority:'RESOURCE_MINISTRY_CANONICAL_CATALOG'};
+    });
+    const catalog=g.OmegaResourceIndustrialCatalogData||g.Omega?.ResourceIndustrialCatalogData||
+      g.OmegaResourceIndustrialNetwork?.catalog||g.Omega?.ResourceIndustrialNetwork?.catalog||{};
+    const productUses=catalog.productUseCatalog?.products||{};
+    const rolePriority={FACTORY_OUTPUT:1,BY_PRODUCT:2,CO_PRODUCT:3,PRIMARY_OUTPUT:4,PROCESSING_OUTPUT:1};
+    function roleOf(rid,presentation,fallback){
+      const wanted=token(rid),primary=Array.isArray(presentation?.primaryOutputs)?presentation.primaryOutputs:[],
+        co=Array.isArray(presentation?.coProducts)?presentation.coProducts:[],
+        by=Array.isArray(presentation?.byProducts)?presentation.byProducts:[];
+      if(primary.some(function(x){return token(x)===wanted;}))return 'PRIMARY_OUTPUT';
+      if(co.some(function(x){return token(x)===wanted;}))return 'CO_PRODUCT';
+      if(by.some(function(x){return token(x)===wanted;}))return 'BY_PRODUCT';
+      return fallback||'FACTORY_OUTPUT';
+    }
+    function addFactoryOutput(rid,recipeId,factoryType,unit,presentation){
+      const productId=String(rid||'').trim(),key=token(productId);
+      if(!key||rawById[key])return;
+      const existing=factoryById[key]||{
+        id:productId,productId:productId,name:displayProductName(productId),
+        productType:'FACTORY_PRODUCT',productRole:'FACTORY_OUTPUT',
+        unit:unit||'SIMULATION_RESOURCE_UNIT',sourceFactoryTypes:[],sourceRecipeIds:[],
+        usageClass:null,endUses:[],catalogAuthority:'OMEGA_RESOURCE_INDUSTRIAL_CATALOG_V1'
+      };
+      const role=roleOf(productId,presentation,recipeId&&String(recipeId).indexOf('PROCESSING_RULE:')===0?'PROCESSING_OUTPUT':'FACTORY_OUTPUT');
+      if((rolePriority[role]||0)>(rolePriority[existing.productRole]||0))existing.productRole=role;
+      if(recipeId&&existing.sourceRecipeIds.indexOf(String(recipeId))<0)existing.sourceRecipeIds.push(String(recipeId));
+      if(factoryType&&existing.sourceFactoryTypes.indexOf(String(factoryType))<0)existing.sourceFactoryTypes.push(String(factoryType));
+      if(unit)existing.unit=unit;
+      const use=productUses[key]||productUses[productId]||{};
+      if(use.usageClass)existing.usageClass=use.usageClass;
+      if(Array.isArray(use.endUses))existing.endUses=use.endUses.slice(0,6);
+      if(use.name||use.displayName||use.label)existing.name=String(use.name||use.displayName||use.label);
+      factoryById[key]=existing;
+    }
+    Object.entries(catalog.processingRules||{}).forEach(function(entry){
+      const inputId=entry[0],rule=entry[1]||{};
+      Object.keys(rule.outputs||{}).forEach(function(rid){
+        addFactoryOutput(rid,rule.recipeId||('PROCESSING_RULE:'+inputId),rule.factoryType,
+          rule.outputUnit||'SIMULATION_RESOURCE_UNIT',rule.presentation||{});
+      });
+    });
+    Object.entries(catalog.downstreamFactoryRecipes||{}).forEach(function(entry){
+      const recipe=entry[1]||{},recipeId=recipe.recipeId||entry[0];
+      Object.keys(recipe.outputs||{}).forEach(function(rid){
+        addFactoryOutput(rid,recipeId,recipe.factoryType,recipe.outputUnit||'SIMULATION_RESOURCE_UNIT',recipe.presentation||{});
+      });
+    });
+    return{rawById:rawById,factoryById:factoryById};
+  }
+  function currentProductIndex(){return activeProductIndex||buildProductIndex();}
+  function describeProduct(resourceId){
+    const key=token(resourceId),index=currentProductIndex();
+    const row=index.rawById[key]||index.factoryById[key];
+    if(row)return clone(row);
+    return{id:String(resourceId||''),productId:String(resourceId||''),name:displayProductName(resourceId),
+      productType:'UNCLASSIFIED',productRole:null,unit:null,sourceFactoryTypes:[],sourceRecipeIds:[],
+      usageClass:null,endUses:[],catalogAuthority:'UNCLASSIFIED_LEGACY_IDENTITY'};
+  }
+  function productCatalog(){
+    const index=currentProductIndex();
+    return clone(Object.values(index.rawById).concat(Object.values(index.factoryById))
+      .sort(function(a,b){
+        if(a.productType!==b.productType)return a.productType==='RAW_RESOURCE'?-1:1;
+        return String(a.name||a.id).localeCompare(String(b.name||b.id));
+      }));
+  }
+  function bookForProduct(resourceId){
+    const books=g.__OmegaMarketBooks||{},key=Object.keys(books).find(function(x){return token(x)===token(resourceId);});
+    return key?books[key]:null;
+  }
+  function marketLanes(){
+    const lanes={rawResources:[],factoryProducts:[],summary:{rawCatalogCount:0,factoryProductCatalogCount:0,
+      activeRawResourceCount:0,activeFactoryProductCount:0,turn:turn()}};
+    const catalogRows=productCatalog();
+    lanes.summary.rawCatalogCount=catalogRows.filter(function(x){return x.productType==='RAW_RESOURCE';}).length;
+    lanes.summary.factoryProductCatalogCount=catalogRows.filter(function(x){return x.productType==='FACTORY_PRODUCT';}).length;
+    const discovered=new Set(resourceIds().map(token));
+    catalogRows.forEach(function(product){
+      if(!discovered.has(token(product.id)))return;
+      const book=bookForProduct(product.id),orders=book?.orders||{bids:[],asks:[]},quoteRow=quote(product.id),
+        bids=(orders.bids||[]).slice(0,5).map(function(x){return{countryId:x.countryId,quantity:x.quantity,price:x.price,
+          currency:x.currency,source:x.source,productType:x.productType,productRole:x.productRole};}),
+        asks=(orders.asks||[]).filter(function(x){return x.referenceOnly!==true;}).slice(0,5).map(function(x){
+          return{countryId:x.countryId,quantity:x.quantity,price:x.price,currency:x.currency,source:x.source,
+            priceAuthority:x.priceAuthority||x.priceAuthorityStatus||null,productType:x.productType,productRole:x.productRole};
+        }),
+        referenceAsks=(orders.asks||[]).filter(function(x){return x.referenceOnly===true;}),
+        active=bids.length>0||asks.length>0||referenceAsks.length>0||Number(quoteRow.matchedQuantity)>0;
+      if(!active)return;
+      const row=Object.assign({},product,{quote:quoteRow,orderBook:{
+        bidCount:(orders.bids||[]).length,executableAskCount:(orders.asks||[]).filter(function(x){return x.referenceOnly!==true;}).length,
+        referenceAskCount:referenceAsks.length,bids:bids,asks:asks,
+        referenceLiquidityQuantity:referenceAsks.reduce(function(sum,x){return sum+(n(x.quantity)||0);},0)
+      }});
+      if(product.productType==='RAW_RESOURCE')lanes.rawResources.push(row);
+      else if(product.productType==='FACTORY_PRODUCT')lanes.factoryProducts.push(row);
+    });
+    lanes.summary.activeRawResourceCount=lanes.rawResources.length;
+    lanes.summary.activeFactoryProductCount=lanes.factoryProducts.length;
+    return clone(lanes);
+  }
+
   function pushOrder(book,order){if(!order.resourceId||order.quantity<=0||order.price===null)return;const key=String(order.resourceId);if(!book[key])book[key]={bids:[],asks:[]};book[key][order.side].push(order);}
   function collectOrders(rid){
-    const book={bids:[],asks:[]};
+    const book={bids:[],asks:[]},product=describeProduct(rid);
     for(const c of countries()){
       const reqs=countryValue(c,'trade.importRequests');
       if(Array.isArray(reqs))for(const q of reqs.slice(-256)){
         if(token(q?.resourceId)!==token(rid)||!['SENT','COUNTER_OFFERED','ACCEPTED'].includes(id(q?.status)))continue;
         const usd=toUsd(c,q.unitPrice);if(usd===null)continue;
-        pushOrder({[rid]:book},{resourceId:rid,side:'bids',countryId:canonical(c),quantity:n(q.quantity)||0,price:n(q.unitPrice),priceUsd:usd,currency:currency(c),source:'TRADE_IMPORT_REQUEST',referenceOnly:false,requestId:q.requestId});
+        pushOrder({[rid]:book},{resourceId:rid,side:'bids',countryId:canonical(c),quantity:n(q.quantity)||0,price:n(q.unitPrice),priceUsd:usd,currency:currency(c),source:'TRADE_IMPORT_REQUEST',referenceOnly:false,requestId:q.requestId,productType:product.productType,productRole:product.productRole,unit:q.unit||product.unit||null});
       }
       const offers=countryValue(c,'trade.offerBook');
       const rows=[];
@@ -191,7 +309,7 @@
       for(const q of rows){
         if(token(q?.resourceId||q?.resource)!==token(rid))continue;
         const usd=toUsd(c,q.unitPrice??q.price);if(usd===null)continue;
-        pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:n(q.quantity)||n(q.available)||0,price:n(q.unitPrice??q.price),priceUsd:usd,currency:currency(c),source:'TRADE_OFFER_BOOK',referenceOnly:false,offerId:q.offerId||q.id||null});
+        pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:n(q.quantity)||n(q.available)||0,price:n(q.unitPrice??q.price),priceUsd:usd,currency:currency(c),source:'TRADE_OFFER_BOOK',referenceOnly:false,offerId:q.offerId||q.id||null,productType:product.productType,productRole:product.productRole,unit:q.unit||product.unit||null,priceAuthority:q.priceAuthority||null});
       }
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),tradeable=countryValue(c,'resource.tradeAvailability');
       const spr=countryValue(c,'resource.strategicReserve'),protectedStock=n(spr?.availableByResource?.[rid])||0;
@@ -199,7 +317,7 @@
       if(available>0){
         const ref=referencePrice(rid);
         const usd=ref?toUsd(c,ref.price):null;
-        if(ref&&usd!==null)pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:available,price:ref.price,priceUsd:usd,currency:currency(c),source:'OBSERVED_RESOURCE_LIQUIDITY_AT_REFERENCE',referenceOnly:true});
+        if(ref&&usd!==null)pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:available,price:ref.price,priceUsd:usd,currency:currency(c),source:'OBSERVED_RESOURCE_LIQUIDITY_AT_REFERENCE',referenceOnly:true,productType:product.productType,productRole:product.productRole,unit:ref.unit||product.unit||null});
       }
     }
     book.bids=book.bids.slice(-MAX_ORDERS);book.asks=book.asks.slice(-MAX_ORDERS);
@@ -238,7 +356,7 @@
           continue;
         }
         matched+=q;lastBid=bid;lastAsk=ask;
-        matches.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,quantity:q,bidPriceUsd:bid.priceUsd,askPriceUsd:ask.priceUsd,bidPrice:bid.price,askPrice:ask.price,referenceLiquidity:!!ask.referenceOnly});
+        matches.push({buyerCountryId:bid.countryId,sellerCountryId:ask.countryId,quantity:q,bidPriceUsd:bid.priceUsd,askPriceUsd:ask.priceUsd,bidPrice:bid.price,askPrice:ask.price,referenceLiquidity:!!ask.referenceOnly,productType:bid.productType||ask.productType||describeProduct(rid).productType,productRole:bid.productRole||ask.productRole||null});
         bid.remaining-=q;ask.remaining-=q;
       }
     }
@@ -254,7 +372,8 @@
     const mean=priceSamples.length?priceSamples.reduce((s,x)=>s+x,0)/priceSamples.length:null;
     const variance=priceSamples.length>1?priceSamples.reduce((s,x)=>s+Math.pow(x-mean,2),0)/priceSamples.length:null;
     const volatilityUsd=variance!==null?Number(Math.sqrt(variance).toFixed(8)):null;
-    return{resourceId:rid,status,numeraire:'USD',clearingPriceUsd:clearing,bestBidUsd:bestBid,bestAskUsd:bestAsk,matchedQuantity:matched,blockedTradePairs:blockedPairs,
+    const product=describeProduct(rid);
+    return{resourceId:rid,productType:product.productType,productRole:product.productRole||null,status,numeraire:'USD',settlementAuthority:'PRICE_DISCOVERY_ONLY',clearingPriceUsd:clearing,bestBidUsd:bestBid,bestAskUsd:bestAsk,matchedQuantity:matched,blockedTradePairs:blockedPairs,
       bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.filter(x=>x.referenceOnly!==true).reduce((s,x)=>s+(n(x.quantity)||0),0),referenceAskDepth:asks.filter(x=>x.referenceOnly===true).reduce((s,x)=>s+(n(x.quantity)||0),0),
       priceDiscovery:clearing!==null?'ORDER_BOOK_CROSSING':(bestBid!==null&&bestAsk!==null?'NEGOTIATION_RANGE':ref?'REFERENCE_ONLY':'UNAVAILABLE'),
       referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,vwapUsd:vwap,spreadUsd:spread,volatilityUsd,
@@ -262,8 +381,9 @@
       generatedTurn:turn(),orderBookDepth:{bid:bids.length,ask:asks.filter(x=>x.referenceOnly!==true).length,referenceAsks:asks.filter(x=>x.referenceOnly===true).length}};
   }
   function rebuild(){
-    const previousSnapshot=activeMarketSnapshot;
+    const previousSnapshot=activeMarketSnapshot,previousProductIndex=activeProductIndex;
     activeMarketSnapshot=createMarketSnapshot();
+    activeProductIndex=buildProductIndex();
     try{
       const markets={};
       const seedCountry=countries()[0];
@@ -278,12 +398,14 @@
       return markets;
     }finally{
       activeMarketSnapshot=previousSnapshot;
+      activeProductIndex=previousProductIndex;
     }
   }
   function quote(rid){
     const key=String(rid||'').trim();
     const row=g.__OmegaMarketBooks?.[key]||g.__OmegaMarketBooks?.[Object.keys(g.__OmegaMarketBooks||{}).find(x=>token(x)===token(key))];
-    const q=row?.clearing||{resourceId:key,status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',clearingPriceUsd:null,bestBidUsd:null,bestAskUsd:null,referencePrice:null};
+    const product=describeProduct(key);
+    const q=row?.clearing||{resourceId:key,productType:product.productType,productRole:product.productRole||null,status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',clearingPriceUsd:null,bestBidUsd:null,bestAskUsd:null,referencePrice:null,settlementAuthority:'PRICE_DISCOVERY_ONLY'};
     return clone(q);
   }
   function localPrice(countryId,rid){
@@ -587,8 +709,8 @@
     return rebuildCountry(selected);
   }
   function diagnostics(){
-    const markets=g.__OmegaMarketBooks||{},rows=Object.values(markets);
-    return{version:VERSION,handlerInstalled:!!interop()?.commandHandlers?.has?.('OMEGA_MARKET_PUBLISH_PROJECTION'),resourceMarkets:rows.length,clearedMarkets:rows.filter(x=>x.clearing?.status==='CLEARED').length,marketOrderCount:rows.reduce((s,x)=>s+(x.orders?.bids?.length||0)+(x.orders?.asks?.length||0),0),numeraire:'USD'};
+    const markets=g.__OmegaMarketBooks||{},rows=Object.values(markets),catalogRows=productCatalog();
+    return{version:VERSION,handlerInstalled:!!interop()?.commandHandlers?.has?.('OMEGA_MARKET_PUBLISH_PROJECTION'),resourceMarkets:rows.length,clearedMarkets:rows.filter(x=>x.clearing?.status==='CLEARED').length,marketOrderCount:rows.reduce((s,x)=>s+(x.orders?.bids?.length||0)+(x.orders?.asks?.length||0),0),rawResourceProducts:catalogRows.filter(x=>x.productType==='RAW_RESOURCE').length,factoryProducts:catalogRows.filter(x=>x.productType==='FACTORY_PRODUCT').length,numeraire:'USD',settlementAuthority:'PRICE_DISCOVERY_ONLY'};
   }
   function init(){
     install();
@@ -602,7 +724,7 @@
     return diagnostics();
   }
   const API=Object.freeze({VERSION,diagnostics,rebuild,rebuildCountry,quote,localPrice,suppliers,privateCompanySuppliers,
-    requestCompanyResearch,getCompanyResearchRequests});
+    describeProduct,productCatalog,marketLanes,requestCompanyResearch,getCompanyResearchRequests});
   g.Omega=g.Omega||{};g.Omega.GlobalMarket=API;g.OmegaGlobalMarket=API;
   try{init();}catch(e){g.OmegaGlobalMarketError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
