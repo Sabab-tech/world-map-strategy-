@@ -22,7 +22,7 @@ function country(v){
  const raw=v&&typeof v==='object'?(v.iso3||v.iso3Code||v.countryCode||v.countryId||v.code||v.id||v.name):v;
  if(raw==null)return'';
  try{const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity,h=b?.resolveCountry?.(raw),x=h?.iso3||h?.iso3Code||h?.raw?.iso3||h?.id;if(x&&/^[A-Z0-9]{2,3}$/i.test(String(x)))return id(x);}catch(_){}
- const s=id(raw);return s.length<=3?s:s.replace(/[^A-Z0-9]/g,'').slice(0,3);
+ const s=id(raw);return /^[A-Z0-9]{2,3}$/.test(s)?s:'';
 }
 function player(){
  const s=state(),sim=g.Omega?.Simulation;let direct=null;try{direct=sim?.getPlayerCountryId?.()||null;}catch(_){}
@@ -139,7 +139,7 @@ function validateAuthorization(dealId,scope={}){
  if(scope.resourceId&&tok(scope.resourceId)!==tok(row.resourceId))return null;
  if(num(scope.quantity)!==null&&Math.abs(num(scope.quantity)-num(row.quantity))>1e-7)return null;
  if(num(scope.unitPrice)!==null&&Math.abs(num(scope.unitPrice)-num(row.unitPrice))>1e-7)return null;
- const supplied=String(scope.blackMarketPermitId||scope.permitId||'').trim();if(supplied&&supplied!==String(row.permitId||''))return null;
+ const supplied=String(scope.blackMarketPermitId||scope.permitId||'').trim();if(!supplied||supplied!==String(row.permitId||''))return null;
  return Object.assign({},clone(row),{verified:true,allowEmbargoBypass:!!row.embargoedAtCreation,
   allowTradeAgreementBypass:!row.tradeAgreementAtCreation,allowSanctionsBypass:!!row.sanctionsAtCreation,
   allowExportRestrictionBypass:['STATE_DIRECTIVE_DOMESTIC_ONLY','STATE_DIRECTIVE_EXPORT_RESTRICTED'].includes(String(row.exportRestrictionReason||''))});
@@ -262,7 +262,7 @@ function recordResponseHandler(cmd,ctx){
  emit('OMEGA_BLACK_MARKET_FOREIGN_RESPONSE',c,r);return{accepted:true,response:clone(r)};
 }
 function getCases(c){const v=bucket('intelligence',c).blackMarketCases;return Array.isArray(v)?v.slice().map(x=>clone(x)):[];}
-function getResponses(c){const v=bucket('foreign',c).blackMarketResponses;return Array.isArray(v)?v.slice().map(clone):[];}
+function getResponses(c){const v=bucket('foreign',c).blackMarketResponses;return Array.isArray(v)?v.slice().map(x=>clone(x)):[];}
 function onTurn(){const c=player();if(!c)return;for(const d of getDeals(c))if(['REQUESTED','SENT','NEGOTIATING','ACCEPTED'].includes(String(d.status||'').toUpperCase())&&turn()>num(d.expiresTurn))updateDeal(d.dealId,{buyerCountryId:c,status:'EXPIRED',failureReason:'BLACK_MARKET_PERMIT_EXPIRED'});}
 function install(){
  const m=mesh();if(!m?.registerCommandHandler)return false;
