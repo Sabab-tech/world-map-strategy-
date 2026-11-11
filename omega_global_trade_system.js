@@ -493,7 +493,7 @@
       needPressure:clamp(p.needPressure)??0.5,settlementStatus:'NOT_STARTED',
       evidencePolicy:'COUNTERPARTY_REVIEW_REQUIRED',
       blackMarketDealId:blackMarketDeal?.dealId||null,blackMarketPermitId:blackMarketDeal?.permitId||null,
-      importTariffPct:blackMarketDeal?0:num(p.importTariffPct),
+      ...(blackMarketDeal?{importTariffPct:0}:(p.importTariffPct===undefined?{}:{importTariffPct:p.importTariffPct})),
       governmentContractId:String(p.governmentContractId||p.contractId||'').trim()||null,
       buyerCompanyId:buyerCompanyId||null,sellerCompanyId:sellerCompanyId||null,
       marketPriceEvidence:privateCompanyPurchase?clone(marketPriceEvidence):null,
