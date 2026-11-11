@@ -216,8 +216,8 @@ test('active-country initialization waits for country registries and submits one
  assert.equal(calls.length,1,'the same country should not be initialized twice in one session');
  assert.equal(generalFetchCount,0,'capital opening should use cached general data or the existing country baseline without forcing an online API fetch');
 });
-test('opening capital stays idle during app boot and activates only after the private baseline is opened',async()=>{
- const rows=baselineFixtures(),calls=[],handlers=new Map();
+test('opening capital waits until game ready, then initializes in an idle slice rather than during map boot',async()=>{
+ const rows=baselineFixtures(),calls=[],handlers=new Map(),idleCallbacks=[];
  let privateReadyReads=0,governmentReadyReads=0;
  const sandbox={
   Game:{state:{simulation:{session:{playerCountryId:'BGD'}}}},
@@ -236,6 +236,7 @@ test('opening capital stays idle during app boot and activates only after the pr
   OmegaCountryRuntimeData:{ready:Promise.resolve(true),getProfile:()=>profile},
   OmegaFinanceMinistry:{init:async()=>({ok:true}),getIndicators:()=>({gdpCurrentUsd:450000000000})},
   OmegaForexMonetaryEngine:{getCurrencyCode:()=> 'BDT',getRate:()=>110},
+  requestIdleCallback(callback,options){idleCallbacks.push({callback,options});return idleCallbacks.length;},
   addEventListener(name,fn){if(!handlers.has(name))handlers.set(name,[]);handlers.get(name).push(fn);},
   dispatchEvent(){},CustomEvent:function(){}
  };
@@ -243,11 +244,16 @@ test('opening capital stays idle during app boot and activates only after the pr
  await new Promise(resolve=>setTimeout(resolve,0));
  assert.equal(privateReadyReads,0,'the 1.5 MB private-country baseline must not be requested during ordinary app boot');
  assert.equal(governmentReadyReads,0,'capital setup must not start the government baseline dependency during ordinary app boot');
- assert.equal(calls.length,0,'company wallets must not be calculated on the map/startup path');
+ assert.equal(calls.length,0,'company wallets must not be calculated on the initial map-render path');
  assert.equal(api.diagnostics().activationRequested,false);
- const onBaselineReady=handlers.get('OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY')?.[0];
- assert.equal(typeof onBaselineReady,'function','the private-company screen readiness event is registered');
- onBaselineReady();
+ const onReady=handlers.get('OMEGA_READY')?.[0];
+ assert.equal(typeof onReady,'function','the runtime waits for game readiness');
+ onReady();
+ assert.equal(api.diagnostics().activationRequested,true);
+ assert.equal(idleCallbacks.length,1,'game-ready initialization is queued rather than run inside the ready event');
+ assert.equal(privateReadyReads,0,'baseline reads wait until the idle callback');
+ assert.ok(idleCallbacks[0].options.timeout>0,'the idle callback has a bounded timeout so it cannot starve');
+ idleCallbacks[0].callback();
  const result=await api.ensureCountryInitialized('BGD');
  assert.equal(result.status,'INITIALIZED',JSON.stringify(result));
  assert.equal(privateReadyReads,1);
@@ -256,6 +262,9 @@ test('opening capital stays idle during app boot and activates only after the pr
  assert.equal(calls[0].countryId,'BGD');
  assert.equal(calls[0].currencyCode,'BDT');
  assert.equal(calls[0].companyAllocations.reduce((sum,row)=>sum+row.amount,0),calls[0].totalCapital);
+ const onPanelReady=handlers.get('OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY')?.[0];
+ onPanelReady();
+ assert.equal(calls.length,1,'opening the company panel again must not duplicate the opening-capital transaction');
  assert.equal(api.diagnostics().activationRequested,true);
 });
 test('opening capital runtime refuses a non-player country without loading any country data',async()=>{
