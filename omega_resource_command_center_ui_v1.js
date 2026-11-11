@@ -1354,6 +1354,9 @@
     function renderProduct(row, laneType) {
       const resourceId = row.id || row.productId || row.resourceId;
       const q = row.quote || market.quote(resourceId);
+      const referenceMatched = (Array.isArray(q.matches) ? q.matches : []).some(function (match) {
+        return match.referenceLiquidity === true;
+      });
       const bookKey = Object.keys(books || {}).find(function (key) {
         return String(key).toLowerCase() === String(resourceId).toLowerCase();
       });
@@ -1381,7 +1384,7 @@
         ' · Order rows: ' + number(orderBook.bidCount ?? ((book.orders && book.orders.bids || []).length)) +
         ' bids / ' + number(orderBook.executableAskCount ?? ((book.orders && book.orders.asks || []).filter(function (x) { return x.referenceOnly !== true; }).length)) +
         ' executable offers · ' + esc(q.settlementAuthority || 'PRICE_DISCOVERY_ONLY') + '</div>' +
-        (q.priceDiscovery === 'REFERENCE_ONLY' || Number(orderBook.referenceAskCount || 0) > 0 ?
+        (referenceMatched || q.priceDiscovery === 'REFERENCE_ONLY' || Number(orderBook.referenceAskCount || 0) > 0 ?
           '<div class="omega-rescc-warning">Reference stock is not an executable sell offer and does not count as a completed sale.</div>' : '') +
         '<p class="omega-rescc-note">A crossed orderbook is a price-discovery signal only. Counterparty approval, stock reservation, transport, delivery and payment are handled by the Trade and Finance systems.</p>';
       return card(row.name || row.id || resourceId, q.status || 'NO MARKET RESULT', body, '');
