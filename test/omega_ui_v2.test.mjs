@@ -1284,8 +1284,10 @@ test('factory Stock shows committed finished goods and traced use while Input sh
     assert.match(inputRoot.innerHTML,/Efficiency reduction/);
     assert.match(inputRoot.innerHTML,/data-factory-product-identity="iron_ore"/,
       'factory input rows must carry the correct resource identity');
-    assert.match(inputRoot.innerHTML,/resources\/iron-ore\.svg/,
-      'raw input resources must use their own canonical dimensional SVG asset');
+    assert.match(inputRoot.innerHTML,/data-icon-source="generated-resource"/,
+      'raw resource identities must use their own generated product-specific 3D SVG asset');
+    assert.match(inputRoot.innerHTML,/data-icon-motif="ore-boulder"/,
+      'iron ore must have its own dimensional ore silhouette');
     assert.match(inputRoot.innerHTML,/data-factory-stock-product="iron_ore"/,
       'the current factory input balance must carry the same resource icon');
     assert.match(inputRoot.innerHTML,/class="fp-factory-input-identity-line"[^]*class="fp-factory-input-id"/,
@@ -3413,7 +3415,11 @@ test('factory cards flip in place and show Input, Output and Byproduct tabs with
     assert.equal(steelCard.details.getAttribute('aria-expanded'),'true');
     assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="input"/);
     assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="output"/);
-    assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="byproduct"/);
+    assert.doesNotMatch(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="byproduct"/);
+    assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-output-role/);
+    assert.match(steelCard.face.innerHTML,/Primary Product/);
+    assert.match(steelCard.face.innerHTML,/Co-product/);
+    assert.match(steelCard.face.innerHTML,/By-product/);
     assert.match(steelCard.face.innerHTML,/aria-selected="true"/);
     assert.match(steelCard.face.innerHTML,/Amount \/ day/);
     assert.match(steelCard.face.innerHTML,/fp-card-detail-row/);
@@ -3432,15 +3438,23 @@ test('factory cards flip in place and show Input, Output and Byproduct tabs with
     assert.match(steelCard.face.innerHTML,/aria-selected="true"/);
     assert.match(steelCard.face.innerHTML,/data-product-id="steel"/i);
 
-    const byproductTab = { getAttribute(name) { return name === 'data-omega-v2-factory-detail-tab' ? 'byproduct' : null; } };
-    listeners.click({target:{closest(selector) {
-      if (selector === '[data-omega-v2-factory-detail-tab]') return byproductTab;
-      return null;
-    }}});
-    assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'byproduct');
-    assert.match(steelCard.face.innerHTML,/fp-card-detail-table--no-status/);
-    assert.doesNotMatch(steelCard.face.innerHTML,/>Status</,
-      'byproduct rows must not create a status column');
+    const coProductSelect = {
+      value:'CO_PRODUCT',
+      matches(selector) { return selector === '[data-omega-v2-factory-output-role]'; }
+    };
+    listeners.change({target:coProductSelect});
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'output');
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsProductRole,'CO_PRODUCT');
+    assert.match(steelCard.face.innerHTML,/value="CO_PRODUCT" selected/);
+    assert.equal(otherCard.details.disabled,true);
+
+    const byProductSelect = {
+      value:'BY_PRODUCT',
+      matches(selector) { return selector === '[data-omega-v2-factory-output-role]'; }
+    };
+    listeners.change({target:byProductSelect});
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsProductRole,'BY_PRODUCT');
+    assert.match(steelCard.face.innerHTML,/value="BY_PRODUCT" selected/);
     assert.equal(otherCard.details.disabled,true);
 
     listeners.click({target:{closest(selector) {
@@ -3449,6 +3463,7 @@ test('factory cards flip in place and show Input, Output and Byproduct tabs with
     }}});
     assert.equal(root.__omegaV2FactoryCardUiState.expandedKey,'');
     assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'input');
+    assert.equal(root.__omegaV2FactoryCardUiState.detailsProductRole,'PRIMARY_OUTPUT');
     assert.equal(steelCard.face.innerHTML,'');
     assert.equal(steelCard.details.getAttribute('aria-expanded'),'false');
     assert.equal(otherCard.getAttribute('data-detail-locked'),null);
@@ -3548,7 +3563,7 @@ test('factory output status stays unknown when no stock or consumption ledger ex
   );
 });
 
-test('factory Details is an in-card flip with three independent product tabs', () => {
+test('factory Details is an in-card flip with a role-filtered product dropdown', () => {
   const source = readFileSync(new URL('../omega_ui_v2/screens/industry.js', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../omega_ui_v2/factory-production-command.css', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
@@ -3557,7 +3572,12 @@ test('factory Details is an in-card flip with three independent product tabs', (
   assert.match(source,/function factoryDetailInputStatus/);
   assert.match(source,/function factoryDetailOutputStatus/);
   assert.match(source,/data-omega-v2-factory-detail-tab/);
+  assert.match(source,/data-omega-v2-factory-output-role/);
+  assert.match(source,/PRIMARY_OUTPUT/);
+  assert.match(source,/CO_PRODUCT/);
+  assert.match(source,/BY_PRODUCT/);
   assert.match(source,/detailsState\.detailsTab = 'input'/);
+  assert.match(css,/\.fp-card-output-role-filter/);
   assert.match(source,/data-omega-v2-factory-details/);
   assert.match(source,/Details <span aria-hidden="true">i<\/span>/);
   assert.match(source,/fp-card--flipped/);
@@ -3830,5 +3850,42 @@ test('factory Input tab avoids loading the canonical mine-site and mine-asset re
       if(previous[key]===undefined)delete globalThis[key];
       else globalThis[key]=previous[key];
     }
+  }
+});
+
+
+test('market presentation keeps raw, factory-role and food lanes separate and uses offline vector art', () => {
+  const market = readFileSync(new URL('../omega_resource_command_center_ui_v1.js', import.meta.url), 'utf8');
+  const ministry = readFileSync(new URL('../omega_ui_v2/screens/ministry-detail.js', import.meta.url), 'utf8');
+  const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  assert.match(market,/FOOD_PRODUCT/);
+  assert.match(market,/PROCESSED_FOOD/);
+  assert.match(market,/data-market-product-role-filter/);
+  assert.match(market,/PRIMARY_OUTPUT/);
+  assert.match(market,/CO_PRODUCT/);
+  assert.match(market,/BY_PRODUCT/);
+  assert.match(market,/omega-market-offer-row/);
+  assert.match(market,/omega-market-offer-country/);
+  assert.match(market,/omega-market-offer-amount/);
+  assert.match(market,/omega-market-offer-price/);
+  assert.match(market,/Negotiate/);
+  assert.match(market,/Buy/);
+  assert.match(market,/disabled aria-disabled="true"/);
+  assert.doesNotMatch(market,/Raw Resource|Factory Product/,
+    'commodity names must not repeat type labels below product names');
+  assert.match(ministry,/Market Commodities/);
+  assert.match(ministry,/Black Market · Coming soon/);
+  assert.match(ministry,/data-omega-v2-trade-market-tab="black-market" disabled/);
+  assert.equal(offlineShellCacheVersion(sw),114);
+  assert.match(sw,/assets\/omega-global-market\/food-products\.svg/);
+  for (const file of [
+    'market-header.svg','raw-mining.svg','factory-refinery.svg','food-products.svg'
+  ]) {
+    const svg = readFileSync(new URL('../assets/omega-global-market/' + file, import.meta.url), 'utf8');
+    assert.match(svg,/^<svg\b/);
+    assert.doesNotMatch(svg,/<image\b|data:image\//,
+      file + ' must be native vector art rather than an embedded blurry photo');
+    assert.doesNotMatch(svg,/https?:\/\//,
+      file + ' must not depend on a remote image URL');
   }
 });
