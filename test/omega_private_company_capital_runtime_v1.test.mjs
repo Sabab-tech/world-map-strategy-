@@ -90,9 +90,9 @@ test('opening capital converts GDP into the country currency and weights the fiv
  assert.ok(plan.companyAllocations.every(row=>row.amount>0));
  assert.ok(new Set(plan.companyAllocations.map(row=>row.amount)).size>1,
   'company budgets must reflect different factory ownership/category mixes');
- assert.ok(plan.companyAllocations.find(row=>row.companyId==='NOVA_CONSUMER_INDUSTRIES').amount>
-  plan.companyAllocations.find(row=>row.companyId==='ATLAS_TECHNOLOGY_CORPORATION').amount,
-  'the textile/food portfolio should receive more than the smaller technology allocation in this fixture');
+ assert.ok(plan.companyAllocations.find(row=>row.companyId==='MERIDIAN_ENGINEERING_GROUP').amount>
+  plan.companyAllocations.find(row=>row.companyId==='TERRA_INFRASTRUCTURE_GROUP').amount,
+  'the machinery/vehicle portfolio should receive more than the smaller infrastructure portfolio in this fixture');
  assert.equal(plan.authority,'OMEGA_PRIVATE_COMPANY_CAPITAL_ALLOCATION_V1');
 });
 test('missing currency and private-sector observations receive a country-scoped fallback plan',()=>{
