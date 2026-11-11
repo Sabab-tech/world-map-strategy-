@@ -329,7 +329,7 @@ var API=Object.freeze({VERSION:VERSION,ensureCountryInitialized:ensureCountryIni
 g.OmegaPrivateCompanyCapitalRuntimeV1=API;g.Omega=g.Omega||{};g.Omega.PrivateCompanyCapitalRuntimeV1=API;
 if(typeof g.addEventListener==='function'){
  ['OMEGA_PLAYER_COUNTRY_CHANGED','COUNTRY_CHANGED','COUNTRY_SELECTED','OMEGA_COUNTRY_SELECTED',
-  'OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_READY','OMEGA_FINANCE_RUNTIME_READY']
+  'OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY','OMEGA_PRIVATE_ENTERPRISE_PANEL_OPENED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_READY','OMEGA_FINANCE_RUNTIME_READY']
   .forEach(function(type){g.addEventListener(type,requestActiveCountry);});
  g.addEventListener('OMEGA_COUNTRY_DATA_INVALIDATED',function(event){
   var detail=event&&event.detail||{};if(id(detail.countryId)===playerCountry())invalidateCountry(detail.countryId);
