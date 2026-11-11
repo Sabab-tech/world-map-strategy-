@@ -53,6 +53,8 @@ test('covert order stores a permit and sends the same quantity, price and zero-t
  assert.equal(h.ctx.OmegaGlobalTrade.lastRequest.payload.importTariffPct,0);
  assert.equal(api.validateAuthorization(d.dealId,{buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,unitPrice:d.unitPrice,blackMarketPermitId:d.permitId}).verified,true);
  assert.equal(api.validateAuthorization(d.dealId,{buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:11,unitPrice:d.unitPrice,blackMarketPermitId:d.permitId}),null);
+ assert.equal(api.validateAuthorization(d.dealId,{buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,unitPrice:d.unitPrice}),null,'permit must be mandatory');
+ assert.equal(api.validateAuthorization(d.dealId,{buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,unitPrice:d.unitPrice,blackMarketPermitId:'FORGED-PERMIT'}),null,'permit must match exact persisted deal');
 });
 test('foreign enforcement response is idempotent and records the issuer diplomatic adjustment',()=>{
  const h=makeHarness(),api=h.ctx.OmegaBlackMarket,o=api.getOffers('BGD','coal',10).offers[0];
