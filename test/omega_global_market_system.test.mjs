@@ -5,11 +5,18 @@ globalThis.Game={state:{
   simulation:{turn:1},
   finance:{BDG:{currencyCode:'USD'},SAU:{currencyCode:'USD'}},
   economy:{BDG:{currency_code:'USD',exchange_rate_usd:1},SAU:{currency_code:'USD',exchange_rate_usd:1}},
-  resource:{BDG:{inventory:{crude_oil:0},production:{crude_oil:0},consumption:{crude_oil:0}},
-            SAU:{inventory:{crude_oil:5000},production:{crude_oil:0},consumption:{crude_oil:0}}},
+  resource:{BDG:{inventory:{crude_oil:0,steel:0},production:{crude_oil:0,steel:0},consumption:{crude_oil:0,steel:0}},
+            SAU:{inventory:{crude_oil:5000,steel:100},production:{crude_oil:0,steel:0},consumption:{crude_oil:0,steel:0},
+              processedWarehouse:{availableByResource:{steel:100},reservedByResource:{steel:10}}}},
   trade:{
-    BDG:{importRequests:[{requestId:'BID-1',resourceId:'crude_oil',quantity:100,unitPrice:110,status:'SENT'}]},
-    SAU:{offerBook:{crude_oil:{offerId:'ASK-1',resourceId:'crude_oil',quantity:100,unitPrice:90}}}
+    BDG:{importRequests:[
+      {requestId:'BID-1',resourceId:'crude_oil',quantity:100,unitPrice:110,status:'SENT'},
+      {requestId:'STEEL-BID-1',resourceId:'steel',quantity:30,unitPrice:120,status:'SENT'}
+    ]},
+    SAU:{offerBook:{
+      crude_oil:{offerId:'ASK-1',resourceId:'crude_oil',quantity:100,unitPrice:90},
+      steel:{offerId:'STEEL-ASK-1',resourceId:'steel',quantity:100,unitPrice:95,unit:'SIMULATION_RESOURCE_UNIT'}
+    }}
   },
   foreign:{BDG:{relations:{SAU:{trade_agreement:true}}},SAU:{relations:{BDG:{trade_agreement:true}}}}
 }};
@@ -43,6 +50,7 @@ await import('../resource_ministry_engine.js');
 await globalThis.ResourceMinistryEngine?._initializationPromise;
 globalThis.fetch=nativeFetch;
 assert.equal(globalThis.ResourceMinistryEngine?.isReady,true,JSON.stringify(globalThis.ResourceMinistryEngine?.getDataLoadReport?.()));
+globalThis.OmegaResourceIndustrialCatalogData=JSON.parse(fs.readFileSync(new URL('../resource_industrial_catalog_v1.json',import.meta.url),'utf8'));
 globalThis.OmegaResourceStrategicPolicyRules=JSON.parse(fs.readFileSync(new URL('../resource_strategic_policy_rules_v1.json',import.meta.url),'utf8'));
 await import('../omega_resource_strategic_policy_runtime_v1.js');
 await import('../omega_global_market_system.js');
@@ -83,6 +91,24 @@ assert.equal(q.status,'CLEARED');
 assert.equal(q.matchedQuantity,100);
 assert.equal(q.clearingPriceUsd,100);
 assert.equal(market.localPrice('BDG','crude_oil'),100);
+assert.equal(books.crude_oil.clearing.productType,'RAW_RESOURCE');
+const steelBook=books.steel;
+assert.ok(steelBook,'factory output commodity must have its own market book');
+assert.equal(steelBook.clearing.productType,'FACTORY_PRODUCT');
+assert.equal(steelBook.clearing.productRole,'PRIMARY_OUTPUT');
+assert.equal(steelBook.clearing.status,'CLEARED');
+assert.equal(steelBook.clearing.matchedQuantity,30);
+assert.equal(steelBook.clearing.settlementAuthority,'PRICE_DISCOVERY_ONLY');
+assert.equal(steelBook.orders.asks.find(row=>!row.referenceOnly)?.productType,'FACTORY_PRODUCT');
+assert.equal(market.describeProduct('crude_oil').productType,'RAW_RESOURCE');
+assert.equal(market.describeProduct('steel').productType,'FACTORY_PRODUCT');
+assert.equal(market.describeProduct('steel').productRole,'PRIMARY_OUTPUT');
+assert.ok(market.productCatalog().some(row=>row.productType==='FACTORY_PRODUCT'&&row.id==='STEEL'),
+  'the canonical factory recipe output catalog must expose factory products without adding new resource IDs');
+const lanes=market.marketLanes();
+assert.ok(lanes.rawResources.some(row=>row.id==='crude_oil'));
+assert.ok(lanes.factoryProducts.some(row=>row.id==='STEEL'));
+assert.equal(lanes.summary.activeFactoryProductCount,lanes.factoryProducts.length);
 
 // Private company supply must be attributed to exact owner batches and available warehouse stock.
 globalThis.OmegaPrivateEnterpriseLifecycleV1={
