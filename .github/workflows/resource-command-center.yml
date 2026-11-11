@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'server.js'
+      - 'ministry_engine.js'
       - 'omega_resource_ai_decision_service.js'
       - 'test/omega_resource_ai_decision_service.test.mjs'
       - 'index.html'
@@ -28,6 +29,7 @@ on:
       - fix/resource-command-center-ui-routing-v2
     paths:
       - 'server.js'
+      - 'ministry_engine.js'
       - 'omega_resource_ai_decision_service.js'
       - 'test/omega_resource_ai_decision_service.test.mjs'
       - 'index.html'
