@@ -295,6 +295,8 @@ test('executive government overview reuses its ministry rows without loading unu
       'Trade & Commerce must be visible as a direct Executive Overview shortcut');
     assert.match(root.innerHTML, /data-omega-v2-open-ministry="trade"/,
       'the Trade & Commerce shortcut must open the canonical trade ministry');
+    assert.match(root.innerHTML, /Open Trade &amp; Commerce/,
+      'the Trade & Commerce card must have a clearly named action button');
     const moreSource = readFileSync(new URL('../omega_ui_v2/app.js', import.meta.url), 'utf8');
     assert.match(moreSource, /title:'Trade & Commerce'.{0,180}ministry:'trade'/,
       'the More menu must use the same Trade & Commerce name and destination');
