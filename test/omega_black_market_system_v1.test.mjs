@@ -75,6 +75,19 @@ test('deal creation never creates stock, treasury cash or new commodity identiti
  assert.equal(JSON.stringify({resource:h.state.resource,finance:h.state.finance}),before);
  assert.deepEqual(h.ctx.OmegaGlobalMarket.productCatalog().map(x=>x.id),ids);
 });
+test('covert permits expire on the game clock and cannot be replayed',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket,offer=api.getOffers('BGD','coal',10).offers[0];
+ const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:offer.offerId});
+ assert.equal(made.accepted,true,JSON.stringify(made));
+ const deal=h.state.trade.BGD.blackMarketDeals[0];
+ const scope={buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,unitPrice:deal.unitPrice,blackMarketPermitId:deal.permitId};
+ assert.equal(api.validateAuthorization(deal.dealId,scope).verified,true);
+ h.state.simulation.turn=deal.expiresTurn+1;
+ assert.equal(api.validateAuthorization(deal.dealId,scope),null);
+ h.ctx.dispatchEvent(new h.ctx.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED',{detail:{simulationTurn:h.state.simulation.turn}}));
+ assert.equal(h.state.trade.BGD.blackMarketDeals[0].status,'EXPIRED');
+ assert.equal(api.validateAuthorization(deal.dealId,scope),null);
+});
 test('Global Trade keeps permit verification, interception, route and strategic-stock guards wired',()=>{
  assert.match(tradeSource,/blackMarketDealFor/);assert.match(tradeSource,/BLACK_MARKET_INTERCEPTED/);
  assert.match(tradeSource,/blackMarketPermitId/);assert.match(tradeSource,/RESOURCE_ROUTE_BLOCKADE_ACTIVE/);
