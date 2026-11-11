@@ -4,7 +4,7 @@
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.3.0';
+  const VERSION = '1.4.0';
   const PANELS = [
     { id: 'matrix', num: '01', title: 'Unit standards & metrology' },
     { id: 'ontology', num: '02', title: 'Commodity ontology' },
@@ -30,6 +30,10 @@
   let lastCascade = null;
   let selectedReserveResourceId = '';
   let selectedReserveCountryId = '';
+  let selectedMarketLane = 'RAW_RESOURCE';
+  let selectedMarketProductId = '';
+  let selectedMarketSearch = '';
+  let selectedMarketSort = 'NAME';
   let selectedFleetSiteId = '';
   let fleetPreviewCache = Object.create(null);
   let fleetPreviewPending = Object.create(null);
@@ -1339,76 +1343,305 @@
   function panelMarket(country) {
     const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
     if (!market || !market.quote) return empty('Global market runtime is unavailable; no price is fabricated.');
-    let books = {};
-    try { books = market.rebuild ? market.rebuild() : g.__OmegaMarketBooks || {}; } catch (_) { books = g.__OmegaMarketBooks || {}; }
+
+    // Read the latest published market snapshot. Opening or changing a UI selection
+    // must never trigger a synchronous world-wide market rebuild.
+    const books = g.__OmegaMarketBooks && typeof g.__OmegaMarketBooks === 'object'
+      ? g.__OmegaMarketBooks : {};
     let lanes = null;
-    try { lanes = typeof market.marketLanes === 'function' ? market.marketLanes() : null; } catch (_) { lanes = null; }
-    function orderMarkup(rows, title, label) {
-      if (!Array.isArray(rows) || !rows.length) return '';
-      return '<h4 class="omega-rescc-section-title">' + esc(title) + '</h4>' +
-        rows.slice(0, 4).map(function (order) {
-          return '<div class="omega-rescc-kv"><span>' + esc(label) + ' · ' + esc(order.countryId || 'Unknown country') +
-            '</span><strong>' + number(order.quantity) + ' @ ' + number(order.price, order.currency ? ' ' + order.currency : '') + '</strong></div>';
-        }).join('');
+    try { lanes = typeof market.marketLanes === 'function' ? market.marketLanes() : null; }
+    catch (_) { lanes = null; }
+
+    const catalog = typeof market.productCatalog === 'function'
+      ? market.productCatalog() : resources(country).map(function (row) {
+          return Object.assign({}, row, { productType: 'RAW_RESOURCE', productRole: 'RAW_MATERIAL' });
+        });
+    const activeById = Object.create(null);
+    if (lanes) {
+      (lanes.rawResources || []).concat(lanes.factoryProducts || []).forEach(function (row) {
+        const key = String(row.id || row.productId || row.resourceId || '').trim().toLowerCase();
+        if (key) activeById[key] = row;
+      });
     }
-    function renderProduct(row, laneType) {
-      const resourceId = row.id || row.productId || row.resourceId;
-      const q = row.quote || market.quote(resourceId);
-      const referenceMatched = (Array.isArray(q.matches) ? q.matches : []).some(function (match) {
-        return match.referenceLiquidity === true;
+
+    const laneNames = {
+      RAW_RESOURCE: { title: 'Raw Resources', subtitle: 'Natural resources from extraction sites', art: 'assets/omega-global-market/raw-mining.svg' },
+      FACTORY_PRODUCT: { title: 'Factory Products', subtitle: 'Processed goods and industrial materials', art: 'assets/omega-global-market/factory-refinery.svg' }
+    };
+    if (!laneNames[selectedMarketLane]) selectedMarketLane = 'RAW_RESOURCE';
+
+    const countryRows = [];
+    try {
+      const registry = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge;
+      const dataset = registry && typeof registry.getDataset === 'function'
+        ? registry.getDataset('countries.json') : null;
+      if (Array.isArray(dataset)) countryRows.push.apply(countryRows, dataset);
+      else if (Array.isArray(dataset && dataset.countries)) countryRows.push.apply(countryRows, dataset.countries);
+      else if (Array.isArray(dataset && dataset.data)) countryRows.push.apply(countryRows, dataset.data);
+    } catch (_) {}
+    const countryIndex = Object.create(null);
+    countryRows.forEach(function (row) {
+      if (!row) return;
+      [row.iso2, row.iso3, row.code, row.countryCode, row.id].forEach(function (key) {
+        const token = String(key || '').trim().toUpperCase();
+        if (token) countryIndex[token] = row;
       });
-      const bookKey = Object.keys(books || {}).find(function (key) {
-        return String(key).toLowerCase() === String(resourceId).toLowerCase();
+    });
+
+    function countryMeta(countryCode) {
+      const key = String(countryCode || '').trim().toUpperCase();
+      let row = countryIndex[key] || null;
+      if (!row) {
+        try {
+          const registry = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge;
+          const resolved = registry && typeof registry.resolveCountry === 'function'
+            ? registry.resolveCountry(key) : null;
+          if (resolved && typeof resolved === 'object') row = resolved;
+        } catch (_) {}
+      }
+      const iso2 = String(row && (row.iso2 || row.code || row.countryCode) ||
+        (key.length === 2 ? key : '')).trim().toUpperCase();
+      let flag = '';
+      if (/^[A-Z]{2}$/.test(iso2)) {
+        flag = String.fromCodePoint(127397 + iso2.charCodeAt(0), 127397 + iso2.charCodeAt(1));
+      }
+      return {
+        code: key,
+        name: String(row && (row.name || row.countryName || row.officialName || row.displayName) || key || 'Unknown country'),
+        flag: flag
+      };
+    }
+
+    function marketNumber(value, suffix) {
+      if (value === null || value === undefined || value === '') return '—';
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return esc(value);
+      return numeric.toLocaleString('en-US', { maximumFractionDigits: 2 }) + (suffix || '');
+    }
+    function historyValues(history) {
+      return (Array.isArray(history) ? history : []).filter(function (point) {
+        return point && point.clearingPriceUsd !== null && point.clearingPriceUsd !== undefined &&
+          Number.isFinite(Number(point.clearingPriceUsd)) &&
+          point.priceDiscovery !== 'REFERENCE_ONLY' && point.referenceLiquidity !== true;
+      }).slice(-48);
+    }
+    function sparkline(history, colour) {
+      const values = historyValues(history).map(function (point) { return Number(point.clearingPriceUsd); });
+      if (values.length < 2) return '<span class="omega-market-no-trend" aria-label="No recorded trend">—</span>';
+      const low = Math.min.apply(null, values), high = Math.max.apply(null, values), span = high - low || 1;
+      const points = values.map(function (value, index) {
+        const x = 3 + index / (values.length - 1) * 92;
+        const y = 25 - ((value - low) / span) * 20;
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      }).join(' ');
+      return '<svg class="omega-market-sparkline" viewBox="0 0 100 28" role="img" aria-label="Recorded price history">' +
+        '<polyline points="' + points + '" fill="none" stroke="' + colour + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>';
+    }
+    function productIcon(row, large) {
+      const isRaw = row.productType === 'RAW_RESOURCE';
+      const slug = String(row.id || row.productId || row.resourceId || '').trim().toLowerCase().replace(/[_\s]+/g, '-');
+      let path = '';
+      if (isRaw && /^[a-z0-9-]+$/.test(slug)) {
+        path = 'assets/omega-industrial-icons-v1/resources/' + slug + '.svg';
+      } else {
+        const routes = Array.isArray(row.sourceFactoryTypes) ? row.sourceFactoryTypes : [];
+        const route = String(routes[0] || '').trim().toLowerCase().replace(/[_\s]+/g, '-');
+        path = route && /^[a-z0-9-]+$/.test(route)
+          ? 'assets/omega-industrial-icons-v1/factories/' + route + '.svg'
+          : 'assets/omega-industrial-icons-v1/factories/generic-resource-processing-plant.svg';
+      }
+      return '<span class="omega-market-product-art' + (large ? ' is-large' : '') + '">' +
+        '<img src="' + esc(path) + '" loading="lazy" decoding="async" alt="" onerror="this.onerror=null;this.src=\'assets/omega-industrial-icons-v1/factories/generic-resource-processing-plant.svg\'">' +
+        '</span>';
+    }
+    function orderRows(rows, side, unit) {
+      const safeRows = (Array.isArray(rows) ? rows : []).filter(function (order) {
+        return order && Number(order.quantity) > 0 && order.referenceOnly !== true;
+      }).slice(0, 5);
+      if (!safeRows.length) {
+        return '<div class="omega-market-order-empty">No ' + (side === 'buy' ? 'buy orders' : 'executable sell offers') +
+          ' are recorded for this commodity.</div>';
+      }
+      return safeRows.map(function (order) {
+        const meta = countryMeta(order.countryId);
+        const price = marketNumber(order.price, order.currency ? ' ' + order.currency : '');
+        return '<div class="omega-market-order-row">' +
+          '<span class="omega-market-flag" aria-label="' + esc(meta.name) + '">' + esc(meta.flag || '◉') + '</span>' +
+          '<span class="omega-market-country">' + esc(meta.name) + '</span>' +
+          '<strong>' + marketNumber(order.quantity, unit ? ' ' + unit : '') + '</strong>' +
+          '<strong class="omega-market-order-price">' + price + '</strong></div>';
+      }).join('');
+    }
+    function historyChart(history) {
+      const points = historyValues(history);
+      if (points.length < 2) {
+        return '<div class="omega-market-history-empty">Historical clearing-price records are not available yet.</div>';
+      }
+      const values = points.map(function (point) { return Number(point.clearingPriceUsd); });
+      const low = Math.min.apply(null, values), high = Math.max.apply(null, values), span = high - low || 1;
+      const coords = values.map(function (value, index) {
+        const x = 12 + index / (values.length - 1) * 776;
+        const y = 88 - ((value - low) / span) * 70;
+        return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
       });
-      const book = books[bookKey] || {};
-      const orderBook = row.orderBook || {};
-      const bids = orderBook.bids || ((book.orders && book.orders.bids) || []).slice(0, 4);
-      const asks = orderBook.asks || ((book.orders && book.orders.asks) || []).filter(function (x) { return x.referenceOnly !== true; }).slice(0, 4);
-      const sourceTypes = Array.isArray(row.sourceFactoryTypes) ? row.sourceFactoryTypes : [];
-      const body = '<div class="omega-rescc-grid2">' +
-        kv('Clearing price (USD)', q.clearingPriceUsd) +
-        kv('Reference quote', q.referencePrice) +
-        kv('Best bid (USD)', q.bestBidUsd) +
-        kv('Best ask (USD)', q.bestAskUsd) +
-        kv('Orderbook crossed quantity', q.matchedQuantity) +
-        kv('Bid / ask depth', (q.bidDepth ?? '—') + ' / ' + (q.askDepth ?? '—')) +
-        kv('Reference-only stock', orderBook.referenceLiquidityQuantity ?? q.referenceAskDepth ?? '—') +
-        kv('Unit', row.unit || q.referenceUnit || 'Not recorded') +
+      const line = coords.map(function (point, index) {
+        return (index ? 'L' : 'M') + point.x + ' ' + point.y;
+      }).join(' ');
+      const circles = coords.filter(function (_, index) {
+        return index === 0 || index === coords.length - 1 || index % Math.max(1, Math.floor(coords.length / 12)) === 0;
+      }).map(function (point) {
+        return '<circle cx="' + point.x + '" cy="' + point.y + '" r="2.8" fill="#25d8ff" stroke="#071a34" stroke-width="1.2"></circle>';
+      }).join('');
+      const area = line + ' L 788 96 L 12 96 Z';
+      return '<svg class="omega-market-history-chart" viewBox="0 0 800 100" preserveAspectRatio="none" role="img" aria-label="Recorded clearing price history">' +
+        '<defs><linearGradient id="omega-market-history-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12bdf5" stop-opacity=".36"></stop><stop offset="1" stop-color="#12bdf5" stop-opacity=".02"></stop></linearGradient></defs>' +
+        '<path d="M0 18H800 M0 43H800 M0 68H800 M0 96H800" stroke="#1b4264" stroke-width=".8" fill="none"></path>' +
+        '<path d="' + area + '" fill="url(#omega-market-history-fill)"></path>' +
+        '<path d="' + line + '" fill="none" stroke="#16cfff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>' +
+        circles + '</svg>';
+    }
+
+    const laneMeta = laneNames[selectedMarketLane];
+    let products = (Array.isArray(catalog) ? catalog : []).filter(function (row) {
+      return row && row.productType === selectedMarketLane && (row.id || row.productId || row.resourceId);
+    }).map(function (base) {
+      const id = String(base.id || base.productId || base.resourceId);
+      const active = activeById[id.toLowerCase()] || {};
+      const row = Object.assign({}, base, active);
+      row.id = id;
+      row.quote = active.quote || market.quote(id);
+      const key = Object.keys(books).find(function (bookId) { return String(bookId).toLowerCase() === id.toLowerCase(); });
+      row._book = key ? books[key] : {};
+      row._history = historyValues(row._book.history);
+      row._orderBook = active.orderBook || {};
+      return row;
+    });
+
+    if (selectedMarketSort === 'BID_DESC') {
+      products.sort(function (a, b) { return (Number(b.quote.bestBidUsd) || -Infinity) - (Number(a.quote.bestBidUsd) || -Infinity); });
+    } else if (selectedMarketSort === 'ASK_ASC') {
+      products.sort(function (a, b) { return (Number(a.quote.bestAskUsd) || Infinity) - (Number(b.quote.bestAskUsd) || Infinity); });
+    } else {
+      products.sort(function (a, b) { return String(a.name || a.id).localeCompare(String(b.name || b.id)); });
+    }
+
+    if (!products.length) {
+      return '<section class="omega-market-dashboard">' +
+        '<header class="omega-market-header" role="img" aria-label="Global Commodity Market · OMEGA World Economy"><h1 class="omega-market-sr-only">Global Commodity Market</h1></header>' +
+        '<div class="omega-market-empty">The canonical ' + esc(laneMeta.title.toLowerCase()) + ' catalog is not available in this session.</div></section>';
+    }
+
+    if (!products.some(function (row) { return row.id === selectedMarketProductId; })) {
+      selectedMarketProductId = products[0].id;
+    }
+    const selected = products.find(function (row) { return row.id === selectedMarketProductId; }) || products[0];
+    const quote = selected.quote || {};
+    const orderBook = selected._orderBook || {};
+    const book = selected._book || {};
+    const bids = Array.isArray(orderBook.bids) ? orderBook.bids :
+      ((book.orders && Array.isArray(book.orders.bids)) ? book.orders.bids.slice().sort(function (a, b) {
+        return (Number(b.priceUsd) || 0) - (Number(a.priceUsd) || 0);
+      }).slice(0, 5) : []);
+    const asks = Array.isArray(orderBook.asks) ? orderBook.asks :
+      ((book.orders && Array.isArray(book.orders.asks)) ? book.orders.asks.filter(function (row) {
+        return row.referenceOnly !== true;
+      }).slice().sort(function (a, b) { return (Number(a.priceUsd) || 0) - (Number(b.priceUsd) || 0); }).slice(0, 5) : []);
+    const trendHistory = selected._history || [];
+    const referenceLiquidityObserved = Array.isArray(quote.matches) &&
+      quote.matches.some(function (match) { return match && match.referenceLiquidity === true; });
+    const rowHtml = products.map(function (row) {
+      const active = row.id === selected.id;
+      const tone = row.productType === 'FACTORY_PRODUCT' ? '#b38cff' : '#18cfff';
+      const role = row.productRole ? String(row.productRole).replace(/_/g, ' ').toLowerCase() : '';
+      return '<button type="button" class="omega-market-product-row' + (active ? ' is-selected' : '') +
+        '" data-market-product="' + esc(row.id) + '" data-search-item data-market-search="' + esc(String(row.name || row.id).toLowerCase()) + '">' +
+        productIcon(row, false) +
+        '<span class="omega-market-product-copy"><strong>' + esc(row.name || row.id) + '</strong>' +
+        '<small>' + esc(row.productType === 'RAW_RESOURCE' ? 'Raw Resource' : 'Factory Product') +
+        (role ? ' · ' + esc(role) : '') + '</small></span>' +
+        '<span class="omega-market-list-trend">' + sparkline(row._history, tone) + '</span>' +
+        '<span class="omega-market-row-chevron" aria-hidden="true">›</span></button>';
+    }).join('');
+
+    const marketStatus = String(quote.status || quote.priceDiscovery || 'UNAVAILABLE').replace(/_/g, ' ');
+    const sourceTypes = Array.isArray(selected.sourceFactoryTypes) ? selected.sourceFactoryTypes : [];
+    const roleLine = selected.productRole
+      ? '<span class="omega-market-product-role">' + esc(String(selected.productRole).replace(/_/g, ' ')) +
+        (sourceTypes.length ? ' · ' + esc(sourceTypes.slice(0, 3).join(', ').replace(/_/g, ' ')) : '') + '</span>' : '';
+    const matchedText = quote.matchedQuantity !== null && quote.matchedQuantity !== undefined
+      ? marketNumber(quote.matchedQuantity, selected.unit ? ' ' + selected.unit : '') : '—';
+    const metrics = [
+      { icon: 'coins', label: 'Clearing Price', value: marketNumber(quote.clearingPriceUsd, ' USD / unit') },
+      { icon: 'chart', label: 'Best Bid', value: marketNumber(quote.bestBidUsd, ' USD / unit') },
+      { icon: 'tag', label: 'Best Ask', value: marketNumber(quote.bestAskUsd, ' USD / unit') },
+      { icon: 'boxes', label: 'Indicative Matched Qty', value: matchedText }
+    ].map(function (metric) {
+      const paths = {
+        coins: '<circle cx="12" cy="7" r="4"></circle><path d="M8 7v3c0 2.2 8 2.2 8 0V7M5 12v3c0 2.2 8 2.2 8 0v-1M3 16v2c0 2.2 8 2.2 8 0v-2"></path>',
+        chart: '<path d="M4 19V10h4v9M10 19V6h4v13M16 19V3h4v16M2 20h20"></path>',
+        tag: '<path d="M3 12V5h7l11 11-6 6L3 12Z"></path><circle cx="7.5" cy="8.5" r="1.2"></circle>',
+        boxes: '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"></path><path d="m4 7.5 8 4.5 8-4.5M12 12v9"></path>'
+      };
+      return '<article class="omega-market-metric"><span class="omega-market-metric-icon"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+        paths[metric.icon] + '</svg></span><span><small>' + esc(metric.label) + '</small><strong>' +
+        esc(metric.value) + '</strong></span></article>';
+    }).join('');
+
+    const buyOrders = orderRows(bids, 'buy', selected.unit || '');
+    const sellOffers = orderRows(asks, 'sell', selected.unit || '');
+    const title = String(selected.name || selected.id);
+    const typeLabel = selected.productType === 'RAW_RESOURCE' ? 'Raw Resource' : 'Factory Processed Product';
+
+    return '<section class="omega-market-dashboard" data-market-lane="' + esc(selectedMarketLane) + '">' +
+      '<header class="omega-market-header" role="img" aria-label="Global Commodity Market · OMEGA World Economy">' +
+        '<h1 class="omega-market-sr-only">Global Commodity Market — OMEGA World Economy</h1>' +
+        '<button type="button" class="omega-market-close" data-action="close" aria-label="Close market dashboard">×</button></header>' +
+      '<div class="omega-market-toolbar">' +
+        '<div class="omega-market-lanes" role="tablist" aria-label="Commodity type">' +
+          '<button type="button" role="tab" aria-selected="' + (selectedMarketLane === 'RAW_RESOURCE' ? 'true' : 'false') +
+            '" class="omega-market-lane-tab is-raw' + (selectedMarketLane === 'RAW_RESOURCE' ? ' is-active' : '') +
+            '" data-market-lane="RAW_RESOURCE"><span class="omega-market-lane-title">Raw Resources</span><small>Natural resources from the earth</small></button>' +
+          '<button type="button" role="tab" aria-selected="' + (selectedMarketLane === 'FACTORY_PRODUCT' ? 'true' : 'false') +
+            '" class="omega-market-lane-tab is-factory' + (selectedMarketLane === 'FACTORY_PRODUCT' ? ' is-active' : '') +
+            '" data-market-lane="FACTORY_PRODUCT"><span class="omega-market-lane-title">Factory Products</span><small>Engineered goods &amp; materials</small></button>' +
         '</div>' +
-        (row.productRole ? '<p class="omega-rescc-note">Output role: ' + esc(String(row.productRole).replace(/_/g, ' ')) +
-          (sourceTypes.length ? ' · Factory route: ' + esc(sourceTypes.slice(0, 3).join(', ')) : '') + '</p>' : '') +
-        (row.usageClass ? '<p class="omega-rescc-note">Product use: ' + esc(String(row.usageClass).replace(/_/g, ' ')) + '</p>' : '') +
-        orderMarkup(bids, 'Buy orders', 'Bid') +
-        orderMarkup(asks, 'Sell offers', 'Ask') +
-        '<div class="omega-rescc-muted">Price discovery: ' + esc(q.priceDiscovery || 'UNAVAILABLE') +
-        ' · Order rows: ' + number(orderBook.bidCount ?? ((book.orders && book.orders.bids || []).length)) +
-        ' bids / ' + number(orderBook.executableAskCount ?? ((book.orders && book.orders.asks || []).filter(function (x) { return x.referenceOnly !== true; }).length)) +
-        ' executable offers · ' + esc(q.settlementAuthority || 'PRICE_DISCOVERY_ONLY') + '</div>' +
-        (referenceMatched || q.priceDiscovery === 'REFERENCE_ONLY' || Number(orderBook.referenceAskCount || 0) > 0 ?
-          '<div class="omega-rescc-warning">Reference stock is not an executable sell offer and does not count as a completed sale.</div>' : '') +
-        '<p class="omega-rescc-note">A crossed orderbook is a price-discovery signal only. Counterparty approval, stock reservation, transport, delivery and payment are handled by the Trade and Finance systems.</p>';
-      return card(row.name || row.id || resourceId, q.status || 'NO MARKET RESULT', body, '');
-    }
-    if (!lanes) {
-      lanes = { rawResources: resources(country).map(function (row) {
-        return Object.assign({}, row, { quote: market.quote(row.id), productType: 'RAW_RESOURCE' });
-      }), factoryProducts: [], summary: { activeRawResourceCount: resources(country).length, activeFactoryProductCount: 0 } };
-    }
-    const rawRows = (lanes.rawResources || []).map(function (row) { return renderProduct(row, 'RAW_RESOURCE'); }).join('');
-    const factoryRows = (lanes.factoryProducts || []).map(function (row) { return renderProduct(row, 'FACTORY_PRODUCT'); }).join('');
-    const summary = '<div class="omega-rescc-metrics">' +
-      '<div><span>Active raw-resource markets</span><strong>' + number(lanes.summary?.activeRawResourceCount ?? (lanes.rawResources || []).length) + '</strong></div>' +
-      '<div><span>Active factory-product markets</span><strong>' + number(lanes.summary?.activeFactoryProductCount ?? (lanes.factoryProducts || []).length) + '</strong></div>' +
-      '</div>';
-    const diag = market.diagnostics ? market.diagnostics() : null;
-    return '<p class="omega-rescc-note">The marketplace has two commodity lanes. Raw-resource supply comes from extractive inventory; factory products come from processing and finished-goods inventory. Cards appear when there is a current bid, sell offer or reference-only raw stock. Missing price evidence stays unavailable.</p>' +
-      summary + (diag ? diagnosticCard('Global market diagnostics', diag) : '') +
-      actionButton('refresh-market', 'Rebuild current market snapshot', {}) +
-      '<h3 class="omega-rescc-section-title">Raw resources</h3>' +
-      (rawRows || empty('No raw-resource bids, offers or available reference stock are currently listed.')) +
-      '<h3 class="omega-rescc-section-title">Factory products</h3>' +
-      (factoryRows || empty('No factory-product bids or inventory-backed sell offers are currently listed.'));
+        '<div class="omega-market-tools">' +
+          '<label class="omega-market-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg>' +
+            '<input id="omega-rescc-market-search" type="search" value="' + esc(selectedMarketSearch) + '" placeholder="Search commodity..." autocomplete="off" aria-label="Search commodity"></label>' +
+          '<label class="omega-market-sort" aria-label="Sort commodities"><span>Sort</span><select id="omega-rescc-market-sort">' +
+            '<option value="NAME"' + (selectedMarketSort === 'NAME' ? ' selected' : '') + '>Name</option>' +
+            '<option value="BID_DESC"' + (selectedMarketSort === 'BID_DESC' ? ' selected' : '') + '>Best bid</option>' +
+            '<option value="ASK_ASC"' + (selectedMarketSort === 'ASK_ASC' ? ' selected' : '') + '>Best ask</option>' +
+          '</select></label>' +
+          '<button type="button" class="omega-market-refresh" data-action="market-refresh" aria-label="Refresh market snapshot" title="Refresh market snapshot">↻</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="omega-market-layout">' +
+        '<aside class="omega-market-list-panel"><div class="omega-market-list-heading"><strong>Commodity Market</strong>' +
+          '<span>' + marketNumber(products.length) + ' listed</span></div>' +
+          '<div class="omega-market-product-list">' + rowHtml + '</div></aside>' +
+        '<main class="omega-market-detail">' +
+          '<section class="omega-market-product-hero ' + (selectedMarketLane === 'RAW_RESOURCE' ? 'is-raw' : 'is-factory') + '">' +
+            productIcon(selected, true) +
+            '<div class="omega-market-product-title"><h2>' + esc(title) + '</h2><span>' + esc(typeLabel) + '</span>' + roleLine + '</div>' +
+            '<span class="omega-market-market-status">' + esc(marketStatus) + '</span></section>' +
+          '<section class="omega-market-metrics">' + metrics + '</section>' +
+          '<section class="omega-market-order-grid">' +
+            '<article class="omega-market-order-panel is-buy"><header><span class="omega-market-order-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 11.1a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 1.9-1.4L22 8H7"></path><circle cx="10" cy="20" r="1.5"></circle><circle cx="18" cy="20" r="1.5"></circle></svg></span><strong>Buy Orders</strong><span>' + marketNumber(bids.length) + '</span></header>' +
+              '<div class="omega-market-order-columns"><span>Buyer</span><span>Quantity</span><span>Price</span></div><div class="omega-market-order-list">' + buyOrders + '</div></article>' +
+            '<article class="omega-market-order-panel is-sell"><header><span class="omega-market-order-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V5h7l11 11-6 6L3 12Z"></path><circle cx="7.5" cy="8.5" r="1.2"></circle></svg></span><strong>Sell Offers</strong><span>' + marketNumber(asks.length) + '</span></header>' +
+              '<div class="omega-market-order-columns"><span>Seller</span><span>Quantity</span><span>Price</span></div><div class="omega-market-order-list">' + sellOffers + '</div></article>' +
+          '</section>' +
+          '<section class="omega-market-history"><header><strong>Price History</strong><span>Recorded clearing prices · USD</span></header>' +
+            '<div class="omega-market-history-plot">' + historyChart(book.history) + '</div>' +
+            '<div class="omega-market-history-foot"><span>' + (trendHistory.length ? marketNumber(trendHistory.length) + ' recorded points' : 'No historical clearing points') +
+            '</span><span>Price discovery only · settlement is handled by Trade &amp; Finance</span></div></section>' +
+          '<p class="omega-market-integrity-note">Orderbook matches are indicative price-discovery signals, not completed sales. Reference-only raw stock is excluded from Sell Offers. Stock reservation, transport, delivery and payment remain with the existing Trade and Finance systems.</p>' +
+      (referenceLiquidityObserved ? '<p class="omega-market-integrity-note">Reference liquidity is informational price evidence only; it is not an executable sell offer.</p>' : '') +
+        '</main>' +
+      '</div></section>';
   }
+
   function panelPlayerSupplyLifeline(country) {
     const runtime = g.OmegaResourceNationalDemandRuntime || g.Omega && g.Omega.ResourceNationalDemandRuntime;
     const apiReady = !!(runtime && typeof runtime.getPlayerSupplyLifeline === 'function' &&
@@ -1784,7 +2017,104 @@
       '.omega-rescc-inventory-resource small{color:#819aaf;font-size:9px}' +
       '.omega-rescc-inventory-icon{display:inline-flex;width:25px;height:25px;flex:0 0 25px;object-fit:contain;align-items:center;justify-content:center}' +
       '.omega-rescc-inventory-icon--fallback{border:1px solid #28516d;border-radius:6px;background:#0a273d;color:#67e8f9;font-weight:800}' +
-      '@media(max-width:600px){.omega-rescc-shell{width:100vw;height:100dvh;max-height:none;border-radius:0}.omega-rescc-heading h2{font-size:13px}.omega-rescc-top{padding:9px}.omega-rescc-content{padding:9px}.omega-rescc-headtools{width:100%}.omega-rescc-search{width:100%;flex-basis:100%}}';
+      '@media(max-width:600px){.omega-rescc-shell{width:100vw;height:100dvh;max-height:none;border-radius:0}.omega-rescc-heading h2{font-size:13px}.omega-rescc-top{padding:9px}.omega-rescc-content{padding:9px}.omega-rescc-headtools{width:100%}.omega-rescc-search{width:100%;flex-basis:100%}}' +
+      '.omega-rescc-shell--market{width:99vw;max-width:1680px;height:96vh;max-height:1120px;overflow:hidden;border:1px solid #1679b9;border-radius:13px;background:#031027;box-shadow:0 0 0 1px rgba(29,179,255,.16),0 18px 68px rgba(0,0,0,.72),0 0 36px rgba(0,145,255,.15);font:14px/1.42 Inter,system-ui,-apple-system,sans-serif;color:#eaf5ff}' +
+      '.omega-rescc-shell--market>.omega-rescc-top,.omega-rescc-shell--market>.omega-rescc-status{display:none!important}' +
+      '.omega-rescc-shell--market>.omega-rescc-content{display:block;flex:1 1 auto;min-height:0;height:100%;overflow:auto;overscroll-behavior:contain;padding:0;background:radial-gradient(ellipse at 70% 5%,rgba(14,78,144,.17),transparent 42%),linear-gradient(180deg,#04152d,#020b1d 72%,#030e22);gap:0}' +
+      '.omega-market-dashboard{display:flex;flex-direction:column;gap:10px;min-height:100%;padding:0 12px 12px;box-sizing:border-box;background:radial-gradient(ellipse at 50% 0%,rgba(14,93,163,.11),transparent 52%)}' +
+      '.omega-market-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}' +
+      '.omega-market-header{height:clamp(74px,7.4vw,112px);min-height:74px;position:relative;flex:0 0 auto;background:#03152e url(\"assets/omega-global-market/market-header.svg\") center/100% 100% no-repeat;border-bottom:1px solid rgba(0,183,255,.42);box-shadow:0 6px 22px rgba(0,0,0,.34);margin:0 -12px}' +
+      '.omega-market-close{position:absolute;right:15px;top:12px;width:34px;height:34px;border:1px solid rgba(112,196,255,.42);border-radius:8px;background:rgba(2,20,44,.62);color:#c9edff;font-size:25px;line-height:1;cursor:pointer;opacity:.18;transition:opacity .18s ease}' +
+      '.omega-market-header:hover .omega-market-close,.omega-market-close:focus-visible{opacity:1}' +
+      '.omega-market-toolbar{display:grid;grid-template-columns:minmax(420px,1.12fr) minmax(300px,.88fr);gap:12px;align-items:center;padding:7px 2px 9px;border-bottom:1px solid rgba(45,144,218,.23)}' +
+      '.omega-market-lanes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0}' +
+      '.omega-market-lane-tab{position:relative;isolation:isolate;min-width:0;min-height:67px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px;padding:10px 15px 10px 18px;border:1px solid rgba(67,152,231,.55);border-radius:11px;background:#071d3b;color:#f1f8ff;text-align:left;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.07),0 5px 14px rgba(0,0,0,.22);transition:border-color .16s ease,box-shadow .16s ease,filter .16s ease}' +
+      '.omega-market-lane-tab:before{content:\"\";position:absolute;z-index:-1;inset:0;background-position:center;background-size:cover;opacity:.68;filter:saturate(1.06)}' +
+      '.omega-market-lane-tab.is-raw:before{background-image:linear-gradient(90deg,rgba(3,18,41,.12),rgba(3,18,41,.88) 70%),url(\"assets/omega-global-market/raw-mining.svg\")}' +
+      '.omega-market-lane-tab.is-factory:before{background-image:linear-gradient(90deg,rgba(3,18,41,.12),rgba(3,18,41,.88) 70%),url(\"assets/omega-global-market/factory-refinery.svg\")}' +
+      '.omega-market-lane-tab.is-active{border:1px solid #24d5ff;box-shadow:inset 0 0 0 1px rgba(67,217,255,.36),0 0 12px rgba(0,184,255,.48),0 6px 18px rgba(0,0,0,.32);filter:brightness(1.13)}' +
+      '.omega-market-lane-title{font-size:clamp(14px,1.5vw,20px);font-weight:780;letter-spacing:.005em;text-shadow:0 2px 8px #000}' +
+      '.omega-market-lane-tab small{font-size:10px;color:#b5d7f5;text-shadow:0 1px 4px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}' +
+      '.omega-market-tools{display:flex;gap:8px;align-items:center;min-width:0}' +
+      '.omega-market-search{display:flex;align-items:center;gap:9px;min-width:0;flex:1;height:44px;padding:0 12px;border:1px solid rgba(83,166,231,.55);border-radius:24px;background:linear-gradient(145deg,rgba(7,32,62,.97),rgba(3,17,39,.98));box-shadow:inset 0 1px rgba(255,255,255,.05),0 4px 12px rgba(0,0,0,.19)}' +
+      '.omega-market-search svg{width:21px;height:21px;flex:0 0 21px;fill:none;stroke:#7bcaff;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}' +
+      '.omega-market-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#eaf7ff;font:inherit;font-size:13px}' +
+      '.omega-market-search input::placeholder{color:#8caaca}' +
+      '.omega-market-sort{display:flex;align-items:center;gap:5px;height:42px;padding:0 8px;border:1px solid rgba(76,150,220,.45);border-radius:9px;background:linear-gradient(145deg,#09284c,#05162f);color:#9dcaf0;font-size:10px}' +
+      '.omega-market-sort select{max-width:86px;border:0;outline:0;background:transparent;color:#d9edff;font:inherit;font-size:11px;cursor:pointer}' +
+      '.omega-market-sort option{background:#06172d;color:#eaf5ff}' +
+      '.omega-market-refresh{width:42px;height:42px;flex:0 0 42px;border:1px solid rgba(75,171,239,.58);border-radius:10px;background:linear-gradient(145deg,#0d3767,#071a39);color:#7bd9ff;font-size:25px;line-height:1;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.08),0 4px 12px rgba(0,0,0,.22)}' +
+      '.omega-market-layout{display:grid;grid-template-columns:minmax(315px,.41fr) minmax(0,.59fr);gap:10px;min-height:590px;align-items:stretch}' +
+      '.omega-market-list-panel,.omega-market-detail{min-width:0;min-height:0;border:1px solid rgba(48,139,211,.6);border-radius:12px;background:linear-gradient(155deg,rgba(7,27,55,.98),rgba(3,13,32,.99));box-shadow:inset 0 1px rgba(255,255,255,.055),0 8px 22px rgba(0,0,0,.3)}' +
+      '.omega-market-list-panel{display:flex;flex-direction:column;overflow:hidden}' +
+      '.omega-market-list-heading{height:45px;flex:0 0 45px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 13px;border-bottom:1px solid rgba(54,126,186,.37);background:linear-gradient(100deg,rgba(10,49,88,.9),rgba(5,24,50,.8));color:#ecf7ff}' +
+      '.omega-market-list-heading strong{font-size:15px;letter-spacing:.01em}' +
+      '.omega-market-list-heading span{font-size:10px;color:#8fc5ef}' +
+      '.omega-market-product-list{display:flex;flex-direction:column;gap:5px;min-height:0;overflow:auto;padding:7px;scrollbar-color:#17619a #06182e;scrollbar-width:thin}' +
+      '.omega-market-product-row{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(54px,88px) 15px;align-items:center;gap:9px;min-height:67px;width:100%;padding:7px 9px;border:1px solid rgba(74,126,174,.38);border-radius:9px;background:linear-gradient(145deg,rgba(8,31,60,.95),rgba(4,17,38,.98));color:#eff8ff;text-align:left;cursor:pointer;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}' +
+      '.omega-market-product-row:hover{border-color:rgba(55,190,255,.8);background:linear-gradient(145deg,rgba(11,46,85,.98),rgba(4,18,40,.99))}' +
+      '.omega-market-product-row.is-selected{border:1px solid #25cfff;background:linear-gradient(105deg,rgba(7,64,111,.95),rgba(5,28,62,.99));box-shadow:inset 0 0 0 1px rgba(44,206,255,.26),0 0 12px rgba(0,172,255,.38)}' +
+      '.omega-market-product-art{display:flex;align-items:center;justify-content:center;width:48px;height:48px;flex:0 0 48px;overflow:hidden;padding:4px;border:1px solid rgba(142,197,226,.82);border-radius:9px;background:linear-gradient(145deg,#e9f4fb,#9ebed1);box-shadow:inset 0 1px rgba(255,255,255,.9),0 0 12px rgba(16,186,255,.16)}' +
+      '.omega-market-product-art img{display:block;width:100%;height:100%;object-fit:contain}' +
+      '.omega-market-product-art.is-large{width:78px;height:78px;flex-basis:78px;border-radius:12px;padding:5px}' +
+      '.omega-market-product-copy{display:flex;flex-direction:column;gap:3px;min-width:0}' +
+      '.omega-market-product-copy strong{font-size:clamp(13px,1.25vw,17px);line-height:1.2;white-space:normal;overflow-wrap:anywhere}' +
+      '.omega-market-product-copy small{font-size:10px;color:#9fc7ed;line-height:1.35;text-transform:capitalize}' +
+      '.omega-market-list-trend{display:flex;align-items:center;justify-content:center;min-width:0;height:31px;border-left:1px solid rgba(55,130,186,.24);padding-left:5px}' +
+      '.omega-market-sparkline{width:100%;height:28px;overflow:visible}' +
+      '.omega-market-no-trend{color:#6d9bbb;font-size:14px;text-align:center;width:100%}' +
+      '.omega-market-row-chevron{color:#83cfff;font-size:31px;line-height:1;text-align:center}' +
+      '.omega-market-detail{display:flex;flex-direction:column;gap:9px;padding:9px;overflow:hidden}' +
+      '.omega-market-product-hero{position:relative;isolation:isolate;display:flex;align-items:center;gap:14px;min-height:122px;overflow:hidden;padding:12px 16px;border:1px solid rgba(54,178,241,.88);border-radius:10px;background-position:center;background-size:cover;box-shadow:inset 0 0 25px rgba(0,147,255,.16),0 0 12px rgba(0,146,255,.12)}' +
+      '.omega-market-product-hero:before{content:\"\";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(3,18,41,.45),rgba(3,17,38,.66) 48%,rgba(2,11,28,.95))}' +
+      '.omega-market-product-hero.is-raw{background-image:url(\"assets/omega-global-market/raw-mining.svg\")}' +
+      '.omega-market-product-hero.is-factory{background-image:url(\"assets/omega-global-market/factory-refinery.svg\")}' +
+      '.omega-market-product-title{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}' +
+      '.omega-market-product-title h2{margin:0;color:#f5fbff;font-size:clamp(24px,2.3vw,34px);font-weight:800;line-height:1.06;text-shadow:0 2px 12px #000}' +
+      '.omega-market-product-title>span{color:#a8d7ff;font-size:14px;font-weight:600;text-shadow:0 1px 5px #000}' +
+      '.omega-market-product-title .omega-market-product-role{font-size:10px;color:#c7eaff;opacity:.88;overflow-wrap:anywhere}' +
+      '.omega-market-market-status{align-self:flex-start;margin-left:auto;padding:5px 9px;border:1px solid rgba(91,197,255,.4);border-radius:6px;background:rgba(2,17,38,.72);color:#a8dcff;font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}' +
+      '.omega-market-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}' +
+      '.omega-market-metric{display:flex;align-items:center;gap:9px;min-width:0;min-height:70px;padding:9px;border:1px solid rgba(55,151,216,.66);border-radius:9px;background:linear-gradient(145deg,rgba(5,29,59,.98),rgba(2,15,34,.98));box-shadow:inset 0 1px rgba(255,255,255,.04),0 4px 12px rgba(0,0,0,.18)}' +
+      '.omega-market-metric-icon{display:flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;border-radius:8px;background:rgba(4,132,210,.2);color:#26c8ff;filter:drop-shadow(0 0 5px rgba(0,184,255,.3))}' +
+      '.omega-market-metric-icon svg{width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}' +
+      '.omega-market-metric>span:last-child{display:flex;flex-direction:column;gap:3px;min-width:0}' +
+      '.omega-market-metric small{font-size:9px;color:#9ebfe0;line-height:1.2}' +
+      '.omega-market-metric strong{font-size:clamp(12px,1.25vw,17px);color:#f0f8ff;line-height:1.2;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}' +
+      '.omega-market-order-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0}' +
+      '.omega-market-order-panel{min-width:0;overflow:hidden;border:1px solid rgba(55,153,224,.73);border-radius:10px;background:linear-gradient(150deg,rgba(3,23,49,.99),rgba(2,13,31,.99));box-shadow:inset 0 1px rgba(255,255,255,.04),0 5px 15px rgba(0,0,0,.2)}' +
+      '.omega-market-order-panel.is-buy{border-color:rgba(45,165,245,.78);box-shadow:inset 0 0 18px rgba(0,116,255,.05),0 0 10px rgba(0,136,255,.1)}' +
+      '.omega-market-order-panel.is-sell{border-color:rgba(33,205,153,.78);box-shadow:inset 0 0 18px rgba(0,186,132,.05),0 0 10px rgba(0,205,145,.1)}' +
+      '.omega-market-order-panel>header{display:flex;align-items:center;gap:9px;min-height:43px;padding:7px 11px;background:linear-gradient(100deg,rgba(9,53,94,.93),rgba(4,29,57,.95));border-bottom:1px solid rgba(54,133,193,.31);color:#eef8ff}' +
+      '.omega-market-order-panel.is-sell>header{background:linear-gradient(100deg,rgba(3,71,65,.85),rgba(3,42,52,.94));border-bottom-color:rgba(33,205,153,.25)}' +
+      '.omega-market-order-panel>header strong{font-size:15px;flex:1}' +
+      '.omega-market-order-panel>header>span:last-child{font-size:10px;color:#92c8ed}' +
+      '.omega-market-order-icon{display:flex;align-items:center;justify-content:center;width:24px;height:24px;color:#49c9ff}' +
+      '.omega-market-order-panel.is-sell .omega-market-order-icon{color:#48e1b0}' +
+      '.omega-market-order-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}' +
+      '.omega-market-order-columns,.omega-market-order-row{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(64px,.8fr) minmax(74px,.75fr);gap:5px;align-items:center;padding:7px 10px}' +
+      '.omega-market-order-columns{background:rgba(2,14,31,.7);color:#7fb2d9;font-size:9px;font-weight:750;text-transform:uppercase;letter-spacing:.045em}' +
+      '.omega-market-order-row{min-height:34px;border-top:1px solid rgba(39,87,126,.35);color:#e1f0ff;font-size:11px;font-variant-numeric:tabular-nums}' +
+      '.omega-market-order-row:nth-child(even){background:rgba(12,39,70,.44)}' +
+      '.omega-market-order-row strong{text-align:right;font-weight:650;white-space:normal;overflow-wrap:anywhere}' +
+      '.omega-market-order-row .omega-market-order-price{color:#caeaff}' +
+      '.omega-market-flag{font-size:18px;line-height:1.1;min-width:22px;grid-column:1;grid-row:1}' +
+      '.omega-market-country{grid-column:1;grid-row:1;padding-left:27px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+      '.omega-market-order-empty{display:flex;align-items:center;justify-content:center;min-height:87px;padding:10px;color:#87a9c8;font-size:11px;text-align:center}' +
+      '.omega-market-history{min-width:0;border:1px solid rgba(53,137,202,.7);border-radius:10px;padding:9px 11px;background:linear-gradient(145deg,rgba(5,29,58,.98),rgba(3,15,35,.99));box-shadow:inset 0 1px rgba(255,255,255,.04),0 5px 15px rgba(0,0,0,.18)}' +
+      '.omega-market-history>header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}' +
+      '.omega-market-history>header strong{font-size:15px;color:#eff8ff}' +
+      '.omega-market-history>header span{font-size:9px;color:#8db8dc}' +
+      '.omega-market-history-plot{height:104px;overflow:hidden;border:1px solid rgba(37,115,174,.48);border-radius:6px;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(12.5% - 1px),rgba(27,89,139,.22) calc(12.5% - 1px),rgba(27,89,139,.22) 12.5%),linear-gradient(180deg,#061a34,#04142c)}' +
+      '.omega-market-history-chart{display:block;width:100%;height:100%;overflow:visible}' +
+      '.omega-market-history-empty{display:flex;align-items:center;justify-content:center;height:100%;padding:10px;color:#799bbd;font-size:11px;text-align:center}' +
+      '.omega-market-history-foot{display:flex;justify-content:space-between;gap:8px;margin-top:6px;color:#789bbd;font-size:9px}' +
+      '.omega-market-integrity-note{margin:0;padding:7px 9px;border-left:2px solid rgba(40,161,219,.65);background:rgba(6,27,51,.48);color:#7f9fbd;font-size:9px;line-height:1.45}' +
+      '.omega-market-empty{margin:12px;padding:30px;border:1px dashed rgba(71,154,216,.55);border-radius:10px;color:#a9ccec;text-align:center}' +
+      '@media(max-width:1120px){.omega-market-toolbar{grid-template-columns:1fr}.omega-market-tools{justify-content:stretch}.omega-market-search{flex:1}.omega-market-layout{grid-template-columns:minmax(285px,.38fr) minmax(0,.62fr)}.omega-market-product-row{grid-template-columns:46px minmax(0,1fr) 60px 12px;gap:6px}.omega-market-product-art{width:43px;height:43px;flex-basis:43px}.omega-market-product-art.is-large{width:68px;height:68px;flex-basis:68px}}' +
+      '@media(max-width:880px){.omega-market-layout{grid-template-columns:1fr;min-height:0}.omega-market-list-panel{max-height:330px}.omega-market-product-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}.omega-market-product-row{min-height:62px}.omega-market-detail{overflow:visible}.omega-rescc-shell--market>.omega-rescc-content{overflow:auto}}' +
+      '@media(max-width:600px){.omega-rescc-shell--market{width:100vw;height:100dvh;max-height:none;border-radius:0;border-left:0;border-right:0}.omega-market-dashboard{padding:0 7px 8px;gap:7px}.omega-market-header{height:64px;min-height:64px;margin:0 -7px}.omega-market-toolbar{gap:7px;padding:6px 0}.omega-market-lane-tab{min-height:58px;padding:8px}.omega-market-lane-title{font-size:12px}.omega-market-lane-tab small{display:none}.omega-market-tools{gap:5px}.omega-market-search{height:39px;padding:0 8px}.omega-market-sort{height:38px}.omega-market-sort span{display:none}.omega-market-sort select{max-width:65px}.omega-market-refresh{width:37px;height:37px;flex-basis:37px}.omega-market-list-heading{height:37px;flex-basis:37px}.omega-market-product-list{grid-template-columns:1fr;max-height:245px}.omega-market-product-row{grid-template-columns:43px minmax(0,1fr) 55px 12px;min-height:56px;padding:5px}.omega-market-product-art{width:40px;height:40px;flex-basis:40px}.omega-market-product-art.is-large{width:52px;height:52px;flex-basis:52px}.omega-market-product-hero{min-height:82px;gap:8px;padding:8px}.omega-market-product-title h2{font-size:21px}.omega-market-market-status{font-size:8px;padding:3px 5px}.omega-market-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.omega-market-metric{min-height:57px;padding:6px;gap:6px}.omega-market-metric-icon{width:28px;height:28px;flex-basis:28px}.omega-market-metric-icon svg{width:21px;height:21px}.omega-market-order-grid{grid-template-columns:1fr;gap:7px}.omega-market-order-panel>header{min-height:37px}.omega-market-order-columns,.omega-market-order-row{padding:6px 8px}.omega-market-history-plot{height:84px}.omega-market-history-foot span:last-child{display:none}.omega-market-integrity-note{font-size:8px}}' +
+      '@media(prefers-reduced-motion:reduce){.omega-market-lane-tab,.omega-market-product-row,.omega-market-close{transition:none}}';
   }
   function ensureModal() {
     if (!g.document) return null;
@@ -1800,6 +2130,19 @@
       modal.addEventListener('click', function (event) {
         const target = event.target && event.target.closest ? event.target.closest('button') : null;
         if (!target) return;
+        if (target.hasAttribute('data-market-lane')) {
+          event.preventDefault();
+          selectedMarketLane = target.getAttribute('data-market-lane') === 'FACTORY_PRODUCT' ? 'FACTORY_PRODUCT' : 'RAW_RESOURCE';
+          selectedMarketProductId = '';
+          render(countryId, 'market');
+          return;
+        }
+        if (target.hasAttribute('data-market-product')) {
+          event.preventDefault();
+          selectedMarketProductId = String(target.getAttribute('data-market-product') || '');
+          render(countryId, 'market');
+          return;
+        }
         if (target.hasAttribute('data-panel')) {
           event.preventDefault();
           openPanel(target.getAttribute('data-panel'));
@@ -1809,7 +2152,7 @@
         if (!action) return;
         event.preventDefault();
         const progress = g.OmegaActionProgress;
-        const simpleActions = ['close', 'refresh-panel', 'focus-map'];
+        const simpleActions = ['close', 'refresh-panel', 'focus-map', 'market-refresh'];
         if (progress && typeof progress.run === 'function' && !simpleActions.includes(action)) {
           const label = String(action || 'resource command').replace(/[-_]+/g, ' ');
           progress.run('Resource command · ' + label, function () {
@@ -1827,9 +2170,24 @@
         }
       });
       modal.addEventListener('input', function (event) {
+        if (event.target && event.target.id === 'omega-rescc-market-search') {
+          selectedMarketSearch = String(event.target.value || '');
+          const query = selectedMarketSearch.trim().toLowerCase();
+          const marketRows = modal.querySelectorAll('[data-market-search]');
+          Array.from(marketRows || []).forEach(function (node) {
+            const haystack = String(node.getAttribute('data-market-search') || node.textContent || '').toLowerCase();
+            node.style.display = !query || haystack.indexOf(query) >= 0 ? '' : 'none';
+          });
+          return;
+        }
         if (event.target && event.target.id === 'omega-rescc-search') applySearch(event.target.value);
       });
       modal.addEventListener('change', function (event) {
+        if (event.target && event.target.id === 'omega-rescc-market-sort') {
+          selectedMarketSort = String(event.target.value || 'NAME');
+          render(countryId, 'market');
+          return;
+        }
         if (event.target && event.target.id === 'omega-rescc-panel-select') {
           openPanel(event.target.value);
           return;
@@ -1953,7 +2311,7 @@
       return '<option value="' + p.id + '"' + (p.id === activePanel ? ' selected' : '') + '>' +
         p.num + ' · ' + esc(p.title) + '</option>';
     }).join('');
-    modal.innerHTML = '<style>' + css() + '</style><div class="omega-rescc-shell" role="dialog" aria-modal="true" aria-label="Resource Command Center">' +
+    modal.innerHTML = '<style>' + css() + '</style><div class="omega-rescc-shell' + (activePanel === 'market' ? ' omega-rescc-shell--market' : '') + '" role="dialog" aria-modal="true" aria-label="Resource Command Center">' +
       '<div class="omega-rescc-top"><div class="omega-rescc-heading"><h2>Resource Command Center</h2>' +
       '<div class="omega-rescc-headtools"><select id="omega-rescc-country" aria-label="Country scope">' + options + '</select>' +
       '<button type="button" class="omega-rescc-button" data-action="refresh-panel">Refresh</button>' +
@@ -2024,6 +2382,15 @@
     try {
       if (action === 'close') { close(); return; }
       if (action === 'refresh-panel') { resourceDataWarmupAttempted = false; render(c, activePanel); ensureResourceDataReady(true); return; }
+      if (action === 'market-refresh') {
+        const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
+        if (market && typeof market.rebuild === 'function') {
+          try { market.rebuild(); }
+          catch (error) { console.error('[OMEGA Market] Snapshot refresh failed.', error); }
+        }
+        render(c, 'market');
+        return;
+      }
       if (action === 'authorize-player-supply-lifeline') {
         const runtime = g.OmegaResourceNationalDemandRuntime || g.Omega && g.Omega.ResourceNationalDemandRuntime;
         if (!runtime || typeof runtime.authorizePlayerSupplyLifeline !== 'function')

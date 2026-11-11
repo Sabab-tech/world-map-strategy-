@@ -135,3 +135,37 @@ test('inventory panel exposes a bounded editable factory-input stock target for 
   assert.match(ui, /setFactoryInputCoverageDays\(c, data\.get\('targetCoverageDays'\)\)/);
   assert.match(ui, /canConfigureCoverage/);
 });
+
+
+test('global commodity market follows the reference dashboard with separate lanes and permanent buy/sell panels', () => {
+  const marketPanel = ui.slice(ui.indexOf('function panelMarket(country)'), ui.indexOf('function panelPlayerSupplyLifeline(country)'));
+  assert.match(marketPanel, /market\.productCatalog\(\)/);
+  assert.match(marketPanel, /selectedMarketLane/);
+  assert.match(marketPanel, /RAW_RESOURCE/);
+  assert.match(marketPanel, /FACTORY_PRODUCT/);
+  assert.match(marketPanel, /Buy Orders/);
+  assert.match(marketPanel, /Sell Offers/);
+  assert.match(marketPanel, /omega-market-order-grid/);
+  assert.match(marketPanel, /omega-market-history/);
+  assert.match(marketPanel, /assets\/omega-global-market\/raw-mining\.svg/);
+  assert.match(marketPanel, /assets\/omega-global-market\/factory-refinery\.svg/);
+  assert.match(marketPanel, /assets\/omega-industrial-icons-v1\/resources/);
+  assert.match(marketPanel, /assets\/omega-industrial-icons-v1\/factories/);
+  assert.match(marketPanel, /referenceOnly !== true/);
+  assert.doesNotMatch(marketPanel, /market\.rebuild\(/);
+  assert.match(ui, /omega-rescc-shell--market/);
+  assert.match(ui, /data-market-lane/);
+  assert.match(ui, /data-market-product/);
+  assert.match(ui, /market-refresh/);
+  assert.match(ui, /selectedMarketSort/);
+});
+
+test('global commodity market uses the user artwork in the offline shell cache', () => {
+  const serviceWorker = fs.readFileSync('omega-offline-map-sw.js', 'utf8');
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v111/);
+  for (const asset of [
+    'assets/omega-global-market/market-header.svg',
+    'assets/omega-global-market/raw-mining.svg',
+    'assets/omega-global-market/factory-refinery.svg'
+  ]) assert.ok(serviceWorker.includes('./' + asset), asset + ' must be available offline');
+});
