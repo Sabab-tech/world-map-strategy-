@@ -190,7 +190,7 @@ test('opening capital refuses a reused transaction ID with a different amount or
  assert.equal(h.api.initializeOpeningCompanyCapital(altered).reason,'OPENING_CAPITAL_IDEMPOTENCY_COLLISION');
 });
 test('active-country initialization waits for country registries and submits one balanced local-currency plan',async()=>{
- const rows=baselineFixtures(),calls=[];
+ const rows=baselineFixtures(),calls=[];let generalFetchCount=0;
  const sandbox={
   Game:{state:{simulation:{session:{playerCountryId:'BGD'}}}},
   Omega:{Simulation:{world:{state:{simulation:{session:{playerCountryId:'BGD'}}}},getPlayerCountryId:()=> 'BGD'}},
@@ -200,7 +200,7 @@ test('active-country initialization waits for country registries and submits one
   OmegaPrivateEnterpriseRegistryV1:{ready:Promise.resolve({status:'READY'}),getCountryBaseline:()=>rows.private},
   OmegaCountryFactoryStartingBaselineV1:{ready:Promise.resolve({status:'READY'}),getCountryBaseline:()=>rows.government},
   OmegaCountryRuntimeData:{ready:Promise.resolve(true),getProfile:()=>profile},
-  OmegaCountryGeneralDataRuntime:{init:async country=>country==='BGD',getCountryRecord:()=>general},
+  OmegaCountryGeneralDataRuntime:{init:async country=>{generalFetchCount++;return country==='BGD';},getCountryRecord:()=>general},
   OmegaFinanceMinistry:{init:async()=>({ok:true}),getIndicators:()=>({gdpCurrentUsd:450000000000})},
   OmegaForexMonetaryEngine:{getCurrencyCode:()=> 'BDT',getRate:()=>110},
   addEventListener(){},dispatchEvent(){},CustomEvent:function(type,options){this.type=type;this.detail=options?.detail||{};}
@@ -214,6 +214,7 @@ test('active-country initialization waits for country registries and submits one
  assert.equal(calls[0].companyAllocations.reduce((sum,row)=>sum+row.amount,0),calls[0].totalCapital);
  assert.equal((await api.ensureCountryInitialized('BGD')).status,'INITIALIZED');
  assert.equal(calls.length,1,'the same country should not be initialized twice in one session');
+ assert.equal(generalFetchCount,0,'capital opening should use cached general data or the existing country baseline without forcing an online API fetch');
 });
 test('opening capital runtime refuses a non-player country before loading global data',async()=>{
  let fetchCount=0;
