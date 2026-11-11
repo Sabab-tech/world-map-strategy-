@@ -1964,7 +1964,7 @@
           ? trade.globalTradeLedger.settlements.length : 0) + '</div>' +
         '<div class="omega-rescc-muted">This view uses the same market runtime as Trade & Commerce. Market actions and prices are not simulated a second time.</div>',
         actionButton('open-production-market','Open Global Commodity Market',{},!marketAvailable) +
-        manageButton('trade','Manage supply contracts')) +
+        manageButton('trade','Manage supply contracts'));
     return '<div class="omega-rescc-card omega-rescc-card--wide"><div class="omega-rescc-cardhead"><strong>Production line execution scope</strong><span class="omega-rescc-pill">TURN ' +
       esc(currentTurn) + '</span></div><div class="omega-rescc-cardbody"><div class="omega-rescc-grid2">' +
       kv('Selected country', selectedCountry) + kv('Simulation scope', scopeLabel) +
