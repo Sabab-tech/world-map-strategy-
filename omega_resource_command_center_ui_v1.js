@@ -1547,6 +1547,8 @@
         return row.referenceOnly !== true;
       }).slice().sort(function (a, b) { return (Number(a.priceUsd) || 0) - (Number(b.priceUsd) || 0); }).slice(0, 5) : []);
     const trendHistory = selected._history || [];
+    const referenceLiquidityObserved = Array.isArray(quote.matches) &&
+      quote.matches.some(function (match) { return match && match.referenceLiquidity === true; });
     const rowHtml = products.map(function (row) {
       const active = row.id === selected.id;
       const tone = row.productType === 'FACTORY_PRODUCT' ? '#b38cff' : '#18cfff';
@@ -1635,6 +1637,7 @@
             '<div class="omega-market-history-foot"><span>' + (trendHistory.length ? marketNumber(trendHistory.length) + ' recorded points' : 'No historical clearing points') +
             '</span><span>Price discovery only · settlement is handled by Trade &amp; Finance</span></div></section>' +
           '<p class="omega-market-integrity-note">Orderbook matches are indicative price-discovery signals, not completed sales. Reference-only raw stock is excluded from Sell Offers. Stock reservation, transport, delivery and payment remain with the existing Trade and Finance systems.</p>' +
+      (referenceLiquidityObserved ? '<p class="omega-market-integrity-note">Reference liquidity is informational price evidence only; it is not an executable sell offer.</p>' : '') +
         '</main>' +
       '</div></section>';
   }
