@@ -272,8 +272,7 @@ function ensureCountryInitialized(country){
     Promise.resolve(deps.governmentRegistry.ready).catch(function(){return null;}),
     Promise.resolve(deps.countryRuntime.ready).catch(function(){return false;}),
     Promise.resolve(deps.finance.init&&deps.finance.init()).catch(function(){return null;}),
-    deps.generalRuntime&&typeof deps.generalRuntime.init==='function'
-     ?Promise.resolve(deps.generalRuntime.init(cid)).catch(function(){return false;}):Promise.resolve(false)
+    Promise.resolve(true)
    ]);
    if(token!==sequence||playerCountry()!==cid)return{status:'STALE_COUNTRY_RESULT',countryId:cid};
    var privateRow=deps.privateRegistry.getCountryBaseline(cid);
