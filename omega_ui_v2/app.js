@@ -277,7 +277,7 @@
       {title:'Industry & Factories',desc:'Production lines, inputs, factory sites and output.',asset:'assets/factories/omega_factory_atlas_01.webp',route:'industry'},
       {title:'Resources & Mining',desc:'Registered sites, extraction, reserves, stock and material flow.',photo:'open-pit-mine',ministry:'energy_mining'},
       {title:'Public Safety',desc:'Police staffing, fleet, operations and incidents.',photo:'bangladesh-police-headquarters',ministry:'interior_security'},
-      {title:'Logistics & Trade',desc:'Shipping, trade, contracts and markets.',photo:'container-ship',ministry:'trade'},
+      {title:'Trade & Commerce',desc:'Global commodity market, international orders, shipping and trade contracts.',photo:'container-ship',ministry:'trade'},
       {title:'Foreign Affairs',desc:'Diplomacy, treaties and international commitments.',photo:'un-assembly-building',ministry:'foreign_affairs'},
       {title:'Defense',desc:'Readiness, assets, procurement and defense logistics.',asset:'assets/images (15).jpeg',ministry:'defense'},
       {title:'Intelligence & Cyber',desc:'Satellite imagery, threat research and strategic reports.',asset:'assets/China_Military_Facilities_What_Satellites_Reveal_f6efe2c1b2.jpg',ministry:'intelligence_cyber'},
