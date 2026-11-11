@@ -78,8 +78,8 @@
     return key;
   }
 
-  // Resource identities use their canonical dimensional SVGs. Factory-only
-  // intermediates and finished goods receive an inline, product-labelled 3D SVG.
+  // Natural resources and factory goods use deterministic, product-specific 3D SVGs.
+  // The 41 canonical resource IDs remain unchanged; only their presentation changes.
   var FACTORY_RAW_RESOURCE_ICON_IDS = [
     'aragonite','basalt','bauxite','boron','chromite','coal','cobalt','construction_aggregate',
     'copper','coral_aggregate','crude_oil','diamond','diatomite','dolomite','gold','granite',
@@ -102,6 +102,7 @@
   }
 
   function factoryProductIconCategory(id) {
+    if (/(gold|silver|copper|iron_ore|bauxite|chromite|cobalt|nickel|tin|tungsten|uranium|zinc|ilmenite|manganese|niobium|platinum)/.test(id)) return 'metal';
     if (/(scrap|waste|residue|slag|dross|dust|cullet|disposal|loss|recovered|recycled)/.test(id)) return 'scrap';
     if (/(battery|cell|pack|lithium_carbonate_or_hydroxide)/.test(id)) return 'battery';
     if (/(semiconductor|silicon|chip|electronic|control_module|switchgear|transformer|power_cable|grid_equipment)/.test(id)) return 'electronics';
@@ -187,8 +188,20 @@
   }
 
   function factoryProductIconMotif(id) {
-    // Finished goods receive a physical object silhouette, not a category-wide
-    // placeholder. Raw resources continue to resolve to their canonical assets.
+    // Give natural resources physical silhouettes too, rather than reusing a flat
+    // category pictogram for every mine commodity.
+    if (FACTORY_RAW_RESOURCE_ICON_IDS.indexOf(id) >= 0) {
+      if (id === 'crude_oil' || id === 'oil_shale') return 'oil-barrel';
+      if (id === 'natural_gas') return 'gas-cylinder';
+      if (id === 'coal') return 'coal-lump';
+      if (id === 'diamond' || id === 'ruby') return 'gemstone';
+      if (id === 'gold' || id === 'silver' || id === 'copper') return 'metal-ingot';
+      if (/^(granite|basalt|dolomite|limestone|marble)$/.test(id)) return 'stone-block';
+      if (/^(aragonite|construction_aggregate|coral_aggregate|diatomite|gypsum|phosphate|potash|silica_sand)$/.test(id)) return 'sand-pile';
+      if (/^(boron|salt|lithium|magnesite|rare_earth|rutile)$/.test(id)) return 'mineral-crystal';
+      return 'ore-boulder';
+    }
+    // Finished goods receive a physical object silhouette, not a category-wide placeholder.
     if (/^(steel|alloy_steel|recovered_steel)$/.test(id)) return 'steel-beam';
     if (/^doré$/.test(id)) return 'precious-metal-ingot';
     if (/^(aluminum_ingot|refined_copper|copper_matte|recovered_copper)$/.test(id)) return 'metal-ingot';
@@ -239,6 +252,21 @@
   function factoryProductShape(motif, mainGradient, topGradient, sideGradient) {
     var outline = '#263b4d';
     var highlight = '#f7fbff';
+    if (motif === 'oil-barrel') {
+      return '<g stroke-linejoin="round"><path d="M42 35c0-7 44-7 44 0v56c0 8-44 8-44 0Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="M42 35c0-7 44-7 44 0v56c0 8-44 8-44 0Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="1.7"/><ellipse cx="64" cy="35" rx="22" ry="7" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.7"/><path d="M43 49c12 5 30 5 42 0M43 78c12 5 30 5 42 0" fill="none" stroke="' + highlight + '" stroke-opacity=".68" stroke-width="3"/><path d="M51 44v39m26-39v39" stroke="' + sideGradient + '" stroke-width="2" opacity=".65"/></g>';
+    }
+    if (motif === 'gas-cylinder') {
+      return '<g stroke-linejoin="round"><path d="M52 39V30h24v9c7 5 10 12 10 22v24c0 8-6 13-18 13h-4c-12 0-18-5-18-13V61c0-10 2-17 6-22Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="M52 39h24l7 9v39c0 5-4 9-10 10V47H52Z" fill="' + sideGradient + '" opacity=".82"/><path d="M52 30h24v-7H52Zm7-7v-7h10v7" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.8"/><path d="M47 63h34M47 79h34" stroke="' + highlight + '" stroke-opacity=".7" stroke-width="2"/></g>';
+    }
+    if (motif === 'coal-lump' || motif === 'ore-boulder') {
+      return '<g stroke-linejoin="round"><path d="m24 73 9-24 22-19 27 5 22 22-5 26-26 16-31-7Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m24 73 9-24 22-19 13 27-17 31Z" fill="' + topGradient + '" stroke="' + highlight + '" stroke-opacity=".62" stroke-width="1.2"/><path d="m68 57 14-22 22 22-5 26-26 16-6-28Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="1.5"/><path d="m37 51 18-13 13 19-25 23Zm47-12 9 11-15 7-10-12Z" fill="' + topGradient + '" fill-opacity=".54"/></g>';
+    }
+    if (motif === 'sand-pile') {
+      return '<g stroke-linejoin="round"><path d="M23 87 44 58l13-20 14 9 34 40-8 9H30Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="M23 87 44 58l13-20 14 9 34 40Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="1.5"/><path d="m44 58 13-20 14 9-8 17Z" fill="' + topGradient + '"/><path d="M34 82c18-8 41-8 69 2M42 70c18-7 33-6 49 1" fill="none" stroke="' + highlight + '" stroke-opacity=".5" stroke-width="2"/></g>';
+    }
+    if (motif === 'mineral-crystal') {
+      return '<g stroke-linejoin="round"><path d="m64 23 25 25-8 48H47l-8-48Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m64 23 25 25-25 8-25-8Z" fill="' + topGradient + '" stroke="' + highlight + '" stroke-opacity=".7" stroke-width="1.2"/><path d="m39 48 25 8v40H47Z" fill="' + sideGradient + '"/><path d="m89 48-25 8v40h17Z" fill="' + mainGradient + '"/><path d="m64 23 4 34-4 39" fill="none" stroke="' + highlight + '" stroke-opacity=".8" stroke-width="1.5"/></g>';
+    }
     if (motif === 'steel-beam') {
       return '<g stroke-linejoin="round"><path d="M27 29h74v15H72v40h29v15H27V84h29V44H27Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/>' +
         '<path d="M27 29h74l-9 7H36Z" fill="' + topGradient + '"/><path d="M72 44v40l-9 7V51Z" fill="' + sideGradient + '"/>' +
@@ -431,11 +459,11 @@
       '<path d="M45 52v42m38-42v42M27 65l37 22 37-22" fill="none" stroke="' + highlight + '" stroke-opacity=".65" stroke-width="2"/></g>';
   }
 
-  function factoryProductIconVisualMarkup(productId, label) {
+  function factoryProductIconVisualMarkup(productId, label, forceThreeDimensional) {
     var id = factoryProductKey(productId);
     var safeLabel = String(label || productId || 'Industrial product');
     var resourcePath = factoryResourceIconPath(id);
-    if (resourcePath) {
+    if (resourcePath && forceThreeDimensional === false) {
       return '<img class="fp-product-icon-visual fp-product-icon-visual--resource" src="' + esc(resourcePath) +
         '" alt="' + esc(safeLabel + ' icon') + '" width="128" height="128" loading="eager" decoding="async" ' +
         'data-factory-product-icon="' + esc(id) + '" data-icon-source="canonical-resource">';
@@ -447,7 +475,7 @@
     var motif = factoryProductIconMotif(id);
     var shape = factoryProductShape(motif, 'url(#' + token + '-main)', 'url(#' + token + '-top)', 'url(#' + token + '-side)');
     return '<svg class="fp-product-icon-visual fp-product-icon-visual--finished" viewBox="0 0 128 128" width="128" height="128" role="img" ' +
-      'aria-label="' + esc(safeLabel + ' icon') + '" data-factory-product-icon="' + esc(id) + '" data-icon-source="generated-product" data-icon-motif="' + esc(motif) + '">' +
+      'aria-label="' + esc(safeLabel + ' icon') + '" data-factory-product-icon="' + esc(id) + '" data-icon-source="' + (resourcePath ? 'generated-resource' : 'generated-product') + '" data-icon-motif="' + esc(motif) + '">' +
       '<title>' + esc(safeLabel) + '</title><defs>' +
       '<linearGradient id="' + token + '-main" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + colors[0] + '"/><stop offset=".55" stop-color="' + colors[1] + '"/><stop offset="1" stop-color="' + colors[2] + '"/></linearGradient>' +
       '<linearGradient id="' + token + '-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".4" stop-color="' + colors[0] + '"/><stop offset="1" stop-color="' + colors[1] + '"/></linearGradient>' +
@@ -3058,8 +3086,9 @@
 
   function factoryCardUiState(model) {
     var state = model && model.factoryCardUiState && typeof model.factoryCardUiState === 'object'
-      ? model.factoryCardUiState : { expandedKey:'', buildKey:'', detailsTab:'input', sections:Object.create(null), buildMaterialsExpanded:false };
-    if (!/^(input|output|byproduct)$/.test(String(state.detailsTab || '').toLowerCase())) state.detailsTab = 'input';
+      ? model.factoryCardUiState : { expandedKey:'', buildKey:'', detailsTab:'input', detailsProductRole:'PRIMARY_OUTPUT', sections:Object.create(null), buildMaterialsExpanded:false };
+    if (!/^(input|output)$/.test(String(state.detailsTab || '').toLowerCase())) state.detailsTab = 'input';
+    if (['PRIMARY_OUTPUT','CO_PRODUCT','BY_PRODUCT'].indexOf(String(state.detailsProductRole || '').toUpperCase()) < 0) state.detailsProductRole = 'PRIMARY_OUTPUT';
     return state;
   }
 
@@ -3403,15 +3432,25 @@
   function factoryRouteFullDetailsMarkup(route, model, asset) {
     var inputs = Object.keys(route.inputs || {});
     var outputs = Object.keys(route.outputs || {});
-    var presentation = route.presentation || {};
     var primary = factoryRouteProductIds(route, 'primaryOutputs', route.outputs || {});
     var co = factoryRouteProductIds(route, 'coProducts', route.outputs || {});
     var by = factoryRouteProductIds(route, 'byProducts', route.outputs || {});
-    var roleMap = Object.create(null);
-    primary.forEach(function (id) { roleMap[id] = 'Primary output'; });
-    co.forEach(function (id) { roleMap[id] = 'Co-product'; });
-    by.forEach(function (id) { roleMap[id] = 'By-product'; });
-    var unclassified = outputs.filter(function (id) { return !roleMap[id]; });
+    var state = factoryCardUiState(model);
+    var selectedRole = state.detailsProductRole;
+    var roleProducts = selectedRole === 'CO_PRODUCT' ? co : selectedRole === 'BY_PRODUCT' ? by : primary;
+    if (selectedRole === 'PRIMARY_OUTPUT' && !primary.length && !co.length && !by.length) roleProducts = outputs;
+    var roleOptions = [
+      { id:'PRIMARY_OUTPUT', label:'Primary Product' },
+      { id:'CO_PRODUCT', label:'Co-product' },
+      { id:'BY_PRODUCT', label:'By-product' }
+    ];
+    var roleSelect = '<label class="fp-card-output-role-filter"><span>Product type</span><select data-omega-v2-factory-output-role data-factory-card-key="' +
+      esc(state.expandedKey || '') + '">' + roleOptions.map(function (item) {
+        return '<option value="' + item.id + '"' + (selectedRole === item.id ? ' selected' : '') + '>' + item.label + '</option>';
+      }).join('') + '</select></label>';
+    var productRows = roleProducts.map(function (id) {
+      return factoryRecipeProductRow(route, id, 'output', model, asset, selectedRole.toLowerCase());
+    }).join('');
     var routeLabel = readableIdentifier(route.name || route.recipeId || 'Production route');
     var html = '<section class="fp-card-route-detail"><header><strong>' + esc(routeLabel) + '</strong>' +
       '<small>' + esc(fmt(route.cycleDays, 'game-days/cycle')) + '</small></header>';
@@ -3419,19 +3458,8 @@
       (inputs.length ? inputs.map(function (id) {
         return factoryRecipeProductRow(route, id, 'input', model, asset, 'input');
       }).join('') : '<p class="fp-card-muted">No input identity recorded.</p>') +
-      '</div><div><h4>Outputs</h4>' +
-      (primary.length ? '<div class="fp-card-role-heading">Primary products</div>' + primary.map(function (id) {
-        return factoryRecipeProductRow(route, id, 'output', model, asset, 'primary');
-      }).join('') : '') +
-      (co.length ? '<div class="fp-card-role-heading">Co-products</div>' + co.map(function (id) {
-        return factoryRecipeProductRow(route, id, 'output', model, asset, 'co-product');
-      }).join('') : '') +
-      (by.length ? '<div class="fp-card-role-heading">By-products</div>' + by.map(function (id) {
-        return factoryRecipeProductRow(route, id, 'output', model, asset, 'by-product');
-      }).join('') : '') +
-      (unclassified.length ? '<div class="fp-card-role-heading">Other outputs · classification not recorded</div>' + unclassified.map(function (id) {
-        return factoryRecipeProductRow(route, id, 'output', model, asset, 'unclassified');
-      }).join('') : '') +
+      '</div><div><h4>Outputs</h4>' + roleSelect +
+      (productRows || '<p class="fp-card-muted">No products are recorded for this output type.</p>') +
       '</div></div>' +
       '<footer><span>Quantity basis: ' + esc(route.quantityBasis === 'PER_SIMULATION_PRODUCTION_UNIT' ? 'Per production unit' : readableIdentifier(route.quantityBasis || 'Not recorded').toLowerCase()) + '</span><span>Cycle: ' + esc(fmt(route.cycleDays, 'game-days')) + '</span>' +
       (route.simulationOnly === true ? '<span>Modeled gameplay recipe</span>' : '') +
@@ -3475,14 +3503,16 @@
       cache = model.__omegaV2FactoryDetailMarkupCache = Object.create(null);
     }
     var key = String(cardKey || '');
-    if (Object.prototype.hasOwnProperty.call(cache, key)) return cache[key];
+    var uiState = factoryCardUiState(model);
+    var cacheKey = key + ':' + uiState.detailsTab + ':' + uiState.detailsProductRole;
+    if (Object.prototype.hasOwnProperty.call(cache, cacheKey)) return cache[cacheKey];
     var context = factoryDetailContext(model, key);
-    if (!context) return (cache[key] = '');
+    if (!context) return (cache[cacheKey] = '');
     var html = '<header class="fp-factory-detail-heading"><div><span>OMEGA / PRODUCTION DETAILS</span><strong>' +
       esc(context.title) + '</strong><small>' + esc(readableIdentifier(context.subtitle)) + '</small></div>' +
       '<button type="button" class="fp-factory-detail-close" data-omega-v2-factory-detail-close aria-label="Close production details">×</button></header>';
-    if (!context.routes.length) return (cache[key] = html + '<p class="fp-card-muted">Canonical production route not recorded.</p>');
-    return (cache[key] = html + '<div class="fp-factory-detail-routes"><div class="fp-card-expanded-heading"><strong>Complete production formula</strong>' +
+    if (!context.routes.length) return (cache[cacheKey] = html + '<p class="fp-card-muted">Canonical production route not recorded.</p>');
+    return (cache[cacheKey] = html + '<div class="fp-factory-detail-routes"><div class="fp-card-expanded-heading"><strong>Complete production formula</strong>' +
       '<span>' + fmt(context.routes.length) + ' route(s)</span></div>' +
       context.routes.map(function (route) {
         return factoryRouteFullDetailsMarkup(route, model, context.asset);
@@ -3789,29 +3819,28 @@
       '<span class="fp-card-live-state" data-state="' + esc(factoryProductionState(factory).key) + '">' + esc(factoryProductionState(factory).label) + '</span></div>';
   }
 
-  function factoryDetailRowsMarkup(model, context, route, tab) {
+  function factoryDetailRowsMarkup(model, context, route, tab, productRole) {
     var inputs = Object.keys(route && route.inputs || {});
     var outputs = Object.keys(route && route.outputs || {});
+    var primary = factoryRouteProductIds(route, 'primaryOutputs', route && route.outputs || {});
+    var co = factoryRouteProductIds(route, 'coProducts', route && route.outputs || {});
     var byProducts = factoryRouteProductIds(route, 'byProducts', route && route.outputs || {});
-    var products = tab === 'input' ? inputs :
-      tab === 'byproduct' ? byProducts :
-      outputs.filter(function (id) { return byProducts.indexOf(id) < 0; });
-    if (!products.length) return '<p class="fp-card-detail-empty">No ' + (tab === 'byproduct' ? 'byproducts' : tab === 'input' ? 'inputs' : 'outputs') + ' are recorded for this route.</p>';
-    var hasStatus = tab !== 'byproduct';
-    return '<div class="fp-card-detail-table' + (hasStatus ? '' : ' fp-card-detail-table--no-status') + '" role="table" aria-label="' + esc(tab) + ' products">' +
-      '<div class="fp-card-detail-table-head" role="row"><span role="columnheader">Product</span><span role="columnheader">Amount / day</span>' +
-      (hasStatus ? '<span role="columnheader">Status</span>' : '') + '</div>' +
+    var role = ['PRIMARY_OUTPUT','CO_PRODUCT','BY_PRODUCT'].indexOf(String(productRole || '').toUpperCase()) >= 0
+      ? String(productRole).toUpperCase() : 'PRIMARY_OUTPUT';
+    var products = tab === 'input' ? inputs : role === 'CO_PRODUCT' ? co : role === 'BY_PRODUCT' ? byProducts : primary;
+    if (tab === 'output' && role === 'PRIMARY_OUTPUT' && !primary.length && !co.length && !byProducts.length) products = outputs;
+    if (!products.length) return '<p class="fp-card-detail-empty">No ' + (tab === 'input' ? 'inputs' : role === 'CO_PRODUCT' ? 'co-products' : role === 'BY_PRODUCT' ? 'by-products' : 'primary products') + ' are recorded for this route.</p>';
+    return '<div class="fp-card-detail-table" role="table" aria-label="' + esc(tab === 'input' ? 'Input products' : role) + '">' +
+      '<div class="fp-card-detail-table-head" role="row"><span role="columnheader">Product</span><span role="columnheader">Amount / day</span><span role="columnheader">Status</span></div>' +
       products.map(function (productId) {
         var label = panelProductLabel(model, productId);
         var status = tab === 'input'
           ? factoryDetailInputStatus(model, context, route, productId)
-          : tab === 'output'
-            ? factoryDetailOutputStatus(model, context, productId)
-            : null;
+          : factoryDetailOutputStatus(model, context, productId);
         return '<div class="fp-card-detail-row" role="row" data-product-id="' + esc(productId) + '">' +
           '<div class="fp-card-detail-product" role="cell">' + factoryProductIdentityMarkup(productId, label) + '</div>' +
           '<div role="cell">' + factoryDetailAmountMarkup(model, context, route, productId, tab === 'input' ? 'input' : 'output') + '</div>' +
-          (hasStatus ? '<div role="cell">' + factoryDetailStatusMarkup(status) + '</div>' : '') +
+          '<div role="cell">' + factoryDetailStatusMarkup(status) + '</div>' +
           '</div>';
       }).join('') + '</div>';
   }
@@ -3820,9 +3849,9 @@
     var context = factoryDetailContext(model, cardKey);
     if (!context) return '<p class="fp-card-detail-empty">Factory detail is not available.</p>';
     var state = factoryCardUiState(model);
-    var activeTab = /^(input|output|byproduct)$/.test(String(state.detailsTab || '').toLowerCase())
+    var activeTab = /^(input|output)$/.test(String(state.detailsTab || '').toLowerCase())
       ? String(state.detailsTab).toLowerCase() : 'input';
-    var labels = [{ id:'input', label:'Input' }, { id:'output', label:'Output' }, { id:'byproduct', label:'Byproduct' }];
+    var labels = [{ id:'input', label:'Input' }, { id:'output', label:'Products' }];
     var tabs = '<nav class="fp-card-detail-tabs" role="tablist" aria-label="Factory product details">' +
       labels.map(function (item) {
         var selected = activeTab === item.id;
@@ -3833,12 +3862,17 @@
     var routes = Array.isArray(context.routes) ? context.routes : [];
     var content = routes.length ? routes.map(function (route, index) {
       return (routes.length > 1 ? '<div class="fp-card-detail-route-title">' + esc(readableIdentifier(route.name || route.recipeId || ('Route ' + (index + 1)))) + '</div>' : '') +
-        factoryDetailRowsMarkup(model, context, route, activeTab);
+        factoryDetailRowsMarkup(model, context, route, activeTab, state.detailsProductRole);
     }).join('') : '<p class="fp-card-detail-empty">Production recipe is not recorded.</p>';
+    var roleFilter = activeTab === 'output'
+      ? '<label class="fp-card-output-role-filter"><span>Product type</span><select data-omega-v2-factory-output-role data-factory-card-key="' + esc(cardKey) + '">' +
+        [{id:'PRIMARY_OUTPUT',label:'Primary Product'},{id:'CO_PRODUCT',label:'Co-product'},{id:'BY_PRODUCT',label:'By-product'}].map(function (item) {
+          return '<option value="' + item.id + '"' + (state.detailsProductRole === item.id ? ' selected' : '') + '>' + item.label + '</option>';
+        }).join('') + '</select></label>' : '';
     return '<div class="fp-card-back-body">' +
       '<div class="fp-card-back-heading">' + factoryDetailHeaderMarkup(model, cardKey) +
         '<button type="button" class="fp-card-back-close" data-omega-v2-factory-detail-close data-factory-card-key="' + esc(cardKey) + '" aria-label="Return to factory card">Back</button></div>' +
-      tabs + '<div class="fp-card-detail-scroll" data-factory-detail-scroll>' + content + '</div>' +
+      tabs + roleFilter + '<div class="fp-card-detail-scroll" data-factory-detail-scroll>' + content + '</div>' +
       '<div class="fp-card-detail-footnote">Per factory · game quantities</div></div>';
   }
 
@@ -3880,7 +3914,7 @@
     var focusProduct = factoryRouteProductIds(route, 'primaryOutputs', route.outputs || {})[0] ||
       Object.keys(route.outputs || {})[0] || '';
     var focus = focusProduct
-      ? '<div class="fp-card-front-focus"><small>PRIMARY OUTPUT</small>' +
+      ? '<div class="fp-card-front-focus">' +
           factoryProductIdentityMarkup(focusProduct, panelProductLabel(model, focusProduct)) + '</div>'
       : '<div class="fp-card-front-focus fp-card-front-focus--empty"><small>PRODUCTION ROUTE</small><strong>Not recorded</strong></div>';
     var flippedClass = state.expandedKey === cardKey ? ' fp-card--flipped' : '';
@@ -3959,7 +3993,7 @@
     var focusProduct = factoryRouteProductIds(route, 'primaryOutputs', route.outputs || {})[0] ||
       Object.keys(route.outputs || {})[0] || '';
     var focus = focusProduct
-      ? '<div class="fp-card-front-focus"><small>PRIMARY OUTPUT</small>' +
+      ? '<div class="fp-card-front-focus">' +
           factoryProductIdentityMarkup(focusProduct, panelProductLabel(model, focusProduct)) + '</div>'
       : '<div class="fp-card-front-focus fp-card-front-focus--empty"><small>PRODUCTION ROUTE</small><strong>Not recorded</strong></div>';
     var flippedClass = state.expandedKey === cardKey ? ' fp-card--flipped' : '';
@@ -4660,6 +4694,7 @@
           });
           detailsState.expandedKey = detailsState.expandedKey === detailsKey ? '' : detailsKey;
           detailsState.detailsTab = 'input';
+          detailsState.detailsProductRole = 'PRIMARY_OUTPUT';
           detailsState.buildKey = '';
           detailsState.sections = Object.create(null);
           detailsState.buildMaterialsExpanded = false;
@@ -4673,7 +4708,7 @@
             expandedKey:'', buildKey:'', detailsTab:'input', sections:Object.create(null), buildMaterialsExpanded:false
           });
           var requestedTab = String(detailTab.getAttribute('data-omega-v2-factory-detail-tab') || 'input').toLowerCase();
-          if (/^(input|output|byproduct)$/.test(requestedTab)) tabState.detailsTab = requestedTab;
+          if (/^(input|output)$/.test(requestedTab)) tabState.detailsTab = requestedTab;
           syncFactoryDetailPanel(root, root.__omegaV2IndustryModel || model);
           return;
         }
@@ -4683,6 +4718,7 @@
           var detailState = root.__omegaV2FactoryCardUiState || {};
           detailState.expandedKey = '';
           detailState.detailsTab = 'input';
+          detailState.detailsProductRole = 'PRIMARY_OUTPUT';
           detailState.sections = Object.create(null);
           syncFactoryDetailPanel(root, root.__omegaV2IndustryModel || model);
           return;
@@ -5156,6 +5192,17 @@
         if (typeof event.preventDefault === 'function') event.preventDefault();
         if (typeof event.stopPropagation === 'function') event.stopPropagation();
         scheduleRender(root, Object.assign({}, root.__omegaV2IndustryOptions || {}, { tab: root.__omegaV2IndustryTab || 'factories' }));
+      });
+      root.addEventListener('change', function (event) {
+        var field = event && event.target;
+        if (!field || !field.matches || !field.matches('[data-omega-v2-factory-output-role]')) return;
+        if (!root.contains(field)) return;
+        var requestedRole = String(field.value || 'PRIMARY_OUTPUT').toUpperCase();
+        var roleState = root.__omegaV2FactoryCardUiState || (root.__omegaV2FactoryCardUiState = {
+          expandedKey:'', buildKey:'', detailsTab:'input', detailsProductRole:'PRIMARY_OUTPUT', sections:Object.create(null), buildMaterialsExpanded:false
+        });
+        roleState.detailsProductRole = ['PRIMARY_OUTPUT','CO_PRODUCT','BY_PRODUCT'].indexOf(requestedRole) >= 0 ? requestedRole : 'PRIMARY_OUTPUT';
+        syncFactoryDetailPanel(root, root.__omegaV2IndustryModel || model);
       });
       root.__omegaV2IndustryBound = true;
     }

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 372 156" role="img" aria-label="Three dimensional food products and grain illustration">
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#244b49"/><stop offset="1" stop-color="#0a252e"/></linearGradient>
+ <linearGradient id="crate" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f1c77d"/><stop offset=".5" stop-color="#b77c3f"/><stop offset="1" stop-color="#6e482d"/></linearGradient>
+ <linearGradient id="grain" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0b7"/><stop offset=".52" stop-color="#d8a64d"/><stop offset="1" stop-color="#8b5d2c"/></linearGradient>
+ <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d1edaa"/><stop offset=".5" stop-color="#7aa65b"/><stop offset="1" stop-color="#3c694c"/></linearGradient>
+ <linearGradient id="bread" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe0a0"/><stop offset=".55" stop-color="#c88743"/><stop offset="1" stop-color="#79472d"/></linearGradient>
+</defs>
+<path d="M0 0h372v156H0Z" fill="url(#bg)"/>
+<path d="M0 123 58 108 116 118 176 103 232 118 301 97 372 111v45H0Z" fill="#103a3b"/>
+<path d="M23 127h326" stroke="#7fbe81" stroke-width="2"/>
+<g stroke="#593d28" stroke-width="1.8" stroke-linejoin="round">
+ <path d="m39 77 69-18 53 26-72 23Z" fill="#81532f"/>
+ <path d="m39 77 50 31v27L39 105Z" fill="url(#crate)"/>
+ <path d="m89 108 72-23v28l-72 22Z" fill="#6c472d"/>
+ <path d="M50 87 90 112M70 80l45 28M92 100l58-18M90 119l67-21" fill="none" stroke="#f5cc8b" stroke-width="4"/>
+</g>
+<g fill="url(#grain)" stroke="#85572b" stroke-width="1.2">
+ <path d="M64 74q-5-12 3-17 10 3 8 15-5 6-11 2Z"/><path d="M78 69q-3-12 6-17 9 5 5 15-6 6-11 2Z"/>
+ <path d="M94 65q-2-11 8-15 9 5 4 15-7 5-12 0Z"/><path d="M110 61q0-11 10-14 8 7 1 16-7 4-11-2Z"/>
+ <path d="M126 64q3-11 14-10 6 9-3 15-8 1-11-5Z"/><path d="M143 70q5-10 15-7 5 10-6 15-7-1-9-8Z"/>
+</g>
+<g transform="translate(186 41)" stroke="#76502d" stroke-width="1.5" stroke-linejoin="round">
+ <path d="M0 55q-8-32 17-45 21-11 40 2 18 12 14 43Z" fill="url(#bread)"/>
+ <path d="M12 25q8-14 22-12m4 18q7-13 17-11m-23 25q7-12 17-11" fill="none" stroke="#ffe9b7" stroke-width="4" stroke-linecap="round"/>
+ <path d="M0 55h71v10H0Z" fill="#9a5d34"/>
+</g>
+<g transform="translate(274 43)" stroke="#31533d" stroke-width="1.5" stroke-linejoin="round">
+ <path d="M28 67C-8 48 2 9 26 3c24 14 32 45 2 64Z" fill="url(#green)"/>
+ <path d="M26 65 23 9" fill="none" stroke="#d0e69b" stroke-width="3"/>
+ <path d="M28 67C49 33 60 19 76 16c10 30-5 49-48 51Z" fill="#8bc16b"/>
+ <path d="M28 67 69 22" fill="none" stroke="#d7e8a4" stroke-width="3"/>
+ <path d="M26 67C2 45-8 38-16 39c-2 25 12 32 42 28Z" fill="#5b9d66"/>
+</g>
+<g fill="none" stroke="#f5d990" stroke-width="2" opacity=".9"><path d="M45 31q-14-16-23-4m35 2q-12-17-19-9m138 7q-7-16-16-14m36 9q-6-16-14-15"/></g>
+</svg>

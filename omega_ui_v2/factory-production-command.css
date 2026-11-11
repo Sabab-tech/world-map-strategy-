@@ -6873,3 +6873,56 @@
   max-width:none;
   table-layout:fixed;
 }
+
+
+/* Factory output role selection: only one authoritative product role is visible at a time. */
+.omega-v2-industry--factory-home .fp-card-output-role-filter {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  min-width:0;
+  margin:7px 0;
+  padding:7px 9px;
+  border:1px solid rgba(69,181,224,.42);
+  border-radius:8px;
+  background:linear-gradient(145deg,rgba(7,35,55,.98),rgba(4,18,32,.98));
+}
+.omega-v2-industry--factory-home .fp-card-output-role-filter > span {
+  color:#8ec4dd;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.045em;
+  text-transform:uppercase;
+}
+.omega-v2-industry--factory-home .fp-card-output-role-filter select {
+  min-width:0;
+  max-width:190px;
+  min-height:32px;
+  padding:5px 9px;
+  border:1px solid rgba(67,196,234,.58);
+  border-radius:6px;
+  outline:0;
+  background:linear-gradient(145deg,#103d59,#071c32);
+  color:#e7f8ff;
+  font:inherit;
+  font-size:10px;
+  font-weight:800;
+}
+.omega-v2-industry--factory-home .fp-card-output-role-filter option {
+  background:#071c32;
+  color:#e7f8ff;
+}
+.omega-v2-industry--factory-home .fp-product-icon-visual--finished {
+  shape-rendering:geometricPrecision;
+  text-rendering:geometricPrecision;
+}
+@media(max-width:560px) {
+  .omega-v2-industry--factory-home .fp-card-output-role-filter {
+    justify-content:space-between;
+    width:100%;
+  }
+  .omega-v2-industry--factory-home .fp-card-output-role-filter select {
+    max-width:68%;
+  }
+}
