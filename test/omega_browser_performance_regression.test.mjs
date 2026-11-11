@@ -316,6 +316,22 @@ test('slow simulation frames and data-heavy ministry panels bound repeated UI wo
 });
 
 
+
+test('UI v2 screen transitions schedule heavy rendering after paint and cancel stale idle work', () => {
+  const app = read('omega_ui_v2/app.js');
+  assert.match(app,/function requestIdleFrame\(callback, timeoutMs\)/);
+  assert.match(app,/g\.requestIdleCallback\(callback, \{ timeout:Math\.max\(50, Number\(timeoutMs\) \|\| 140\) \}\)/);
+  assert.match(app,/handle\.kind === 'idle' && typeof g\.cancelIdleCallback === 'function'/,
+    'a newer navigation must cancel a queued idle render');
+  assert.match(app,/var second = requestIdleFrame\(function \(\)/,
+    'the screen should yield after its loading shell has painted');
+  assert.match(app,/state\.navigationGeneration === generation/,
+    'stale queued renders must not replace a newer destination');
+  assert.match(app,/rotateScreenWork\(state\)/,
+    'leaving a screen must abort its old asynchronous work');
+});
+
+
 test('simulation coordinator throttles asynchronous work and pauses cleanly in the background', () => {
   const root = read('omega_enterprise_composition_root_v10.js');
   assert.match(root, /SIMULATION_FRAME_INTERVAL_MS\s*=\s*100/);
