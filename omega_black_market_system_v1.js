@@ -232,7 +232,7 @@ function detectedCase(deal,detail={}){
    }
   }
  }
- [...new Set(issuers).filter(Boolean)].forEach(issuer=>dispatch('foreign','OMEGA_BLACK_MARKET_RECORD_RESPONSE',issuer,{response:{
+ [...new Set(issuers)].filter(Boolean).forEach(issuer=>dispatch('foreign','OMEGA_BLACK_MARKET_RECORD_RESPONSE',issuer,{response:{
   responseId:'BM-RESPONSE-'+deal.dealId+'-'+issuer,caseId:row.caseId,dealId:deal.dealId,targetCountryId:deal.buyerCountryId,
   sourceCountryId:deal.sellerCountryId,resourceId:deal.resourceId,severity:(deal.embargoedAtCreation||deal.sanctionsAtQuote||deal.exportRestrictionReason)?'HIGH':'MODERATE',
   responseType:'ENHANCED_INSPECTION_AND_DIPLOMATIC_PROTEST',reason:'DETECTED_BLACK_MARKET_TRADE_ATTEMPT',
