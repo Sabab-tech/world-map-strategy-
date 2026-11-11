@@ -13,6 +13,8 @@ on:
       - "index.html"
       - "omega_private_enterprise_registry_v1.js"
       - "omega_private_enterprise_lifecycle_v1.js"
+      - "omega_private_company_capital_runtime_v1.js"
+      - "test/omega_private_company_capital_runtime_v1.test.mjs"
       - "omega_global_market_system.js"
       - "omega-offline-map-sw.js"
       - "omega_sab34_live_browser_proof_v1.js"
