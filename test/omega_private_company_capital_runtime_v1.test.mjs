@@ -228,8 +228,12 @@ test('opening capital runtime refuses a non-player country before loading global
   addEventListener(){},dispatchEvent(){},CustomEvent:function(){}
  };
  const api=runtimeApi(sandbox);
+ // The runtime automatically starts the active BGD country on module load.
+ // Let that boot attempt settle, then measure only the explicit non-player request.
+ await new Promise(resolve=>setTimeout(resolve,0));
+ const fetchesBeforeForeignRequest=fetchCount;
  const result=await api.ensureCountryInitialized('USA');
  assert.equal(result.status,'BLOCKED');
  assert.equal(result.reason,'PLAYER_COUNTRY_SCOPE_ONLY');
- assert.equal(fetchCount,0);
+ assert.equal(fetchCount,fetchesBeforeForeignRequest,'a non-player country request must not fetch or initialize another country');
 });
