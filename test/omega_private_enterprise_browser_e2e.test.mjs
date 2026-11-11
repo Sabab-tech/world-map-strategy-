@@ -269,7 +269,12 @@ test('real Chromium browser verifies company-originated proposals, government te
       const proposals = window.OmegaPrivateEnterpriseLifecycleV1.getCountryDashboard('BGD').proposals || [];
       return {
         inventory:JSON.stringify(resource.inventory || {}),
-        warehouse:JSON.stringify(resource.warehouse || {}),
+        warehouse:JSON.stringify({
+          availableByResource:resource.warehouse?.availableByResource||{},
+          reservedByResource:resource.warehouse?.reservedByResource||{},
+          storedBatchIds:resource.warehouse?.storedBatchIds||[],
+          receipts:resource.warehouse?.receipts||[]
+        }),
         treasury:Number(finance.available ?? finance.omegaFinance?.treasuryBalanceUsd ?? 0),
         assets:(economy.productionAssets || []).length,
         projects:(resource.industrialNetwork?.projects || []).length,
@@ -304,7 +309,12 @@ test('real Chromium browser verifies company-originated proposals, government te
         finance=state.finance?.BGD||{},dashboard=window.OmegaPrivateEnterpriseLifecycleV1.getCountryDashboard('BGD');
       return {
         inventory:JSON.stringify(resource.inventory||{}),
-        warehouse:JSON.stringify(resource.warehouse||{}),
+        warehouse:JSON.stringify({
+          availableByResource:resource.warehouse?.availableByResource||{},
+          reservedByResource:resource.warehouse?.reservedByResource||{},
+          storedBatchIds:resource.warehouse?.storedBatchIds||[],
+          receipts:resource.warehouse?.receipts||[]
+        }),
         treasury:Number(finance.available??finance.omegaFinance?.treasuryBalanceUsd??0),
         assets:(economy.productionAssets||[]).length,
         projects:(resource.industrialNetwork?.projects||[]).length,
@@ -351,7 +361,12 @@ test('real Chromium browser verifies company-originated proposals, government te
         finance=state.finance?.BGD||{},dashboard=window.OmegaPrivateEnterpriseLifecycleV1.getCountryDashboard('BGD');
       return {
         inventory:JSON.stringify(resource.inventory||{}),
-        warehouse:JSON.stringify(resource.warehouse||{}),
+        warehouse:JSON.stringify({
+          availableByResource:resource.warehouse?.availableByResource||{},
+          reservedByResource:resource.warehouse?.reservedByResource||{},
+          storedBatchIds:resource.warehouse?.storedBatchIds||[],
+          receipts:resource.warehouse?.receipts||[]
+        }),
         treasury:Number(finance.available??finance.omegaFinance?.treasuryBalanceUsd??0),
         assets:(economy.productionAssets||[]).length,
         projects:(resource.industrialNetwork?.projects||[]).length,
