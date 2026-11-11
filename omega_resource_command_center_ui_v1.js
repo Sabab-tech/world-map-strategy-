@@ -1496,7 +1496,7 @@
       return '<svg class="omega-market-history-chart" viewBox="0 0 800 100" preserveAspectRatio="none" role="img" aria-label="Recorded clearing price history">' +
         '<defs><linearGradient id="omega-market-history-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12bdf5" stop-opacity=".36"></stop><stop offset="1" stop-color="#12bdf5" stop-opacity=".02"></stop></linearGradient></defs>' +
         '<path d="M0 18H800 M0 43H800 M0 68H800 M0 96H800" stroke="#1b4264" stroke-width=".8" fill="none"></path>' +
-        '<path d="M' + area.slice(1) + '" fill="url(#omega-market-history-fill)"></path>' +
+        '<path d="' + area + '" fill="url(#omega-market-history-fill)"></path>' +
         '<path d="' + line + '" fill="none" stroke="#16cfff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>' +
         circles + '</svg>';
     }
