@@ -1468,21 +1468,24 @@
         '<polyline points="' + points + '" fill="none" stroke="' + colour + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>';
     }
     function productIcon(row, large) {
-      const isRaw = row.productType === 'RAW_RESOURCE';
-      const slug = String(row.id || row.productId || row.resourceId || '').trim().toLowerCase().replace(/[_\s]+/g, '-');
-      let path = '';
-      if (isRaw && /^[a-z0-9-]+$/.test(slug)) {
-        path = 'assets/omega-industrial-icons-v1/resources/' + slug + '.svg';
-      } else {
-        const routes = Array.isArray(row.sourceFactoryTypes) ? row.sourceFactoryTypes : [];
-        const route = String(routes[0] || '').trim().toLowerCase().replace(/[_\s]+/g, '-');
-        path = route && /^[a-z0-9-]+$/.test(route)
-          ? 'assets/omega-industrial-icons-v1/factories/' + route + '.svg'
-          : 'assets/omega-industrial-icons-v1/factories/generic-resource-processing-plant.svg';
+      const id = String(row.id || row.productId || row.resourceId || '').trim();
+      const industry = g.OmegaUIV2Industry;
+      let visual = '';
+      if (industry && typeof industry.productIconVisualMarkup === 'function' && id) {
+        try { visual = industry.productIconVisualMarkup(id, row.name || id, true); } catch (_) { visual = ''; }
       }
-      return '<span class="omega-market-product-art' + (large ? ' is-large' : '') + '">' +
-        '<img src="' + esc(path) + '" loading="lazy" decoding="async" alt="" onerror="this.onerror=null;this.src=\'assets/omega-industrial-icons-v1/factories/generic-resource-processing-plant.svg\'">' +
-        '</span>';
+      if (!visual) {
+        const slug = id.toLowerCase().replace(/[_\\s]+/g, '-');
+        const routes = Array.isArray(row.sourceFactoryTypes) ? row.sourceFactoryTypes : [];
+        const route = String(routes[0] || '').trim().toLowerCase().replace(/[_\\s]+/g, '-');
+        const path = row.productType === 'RAW_RESOURCE' && /^[a-z0-9-]+$/.test(slug)
+          ? 'assets/omega-industrial-icons-v1/resources/' + slug + '.svg'
+          : route && /^[a-z0-9-]+$/.test(route)
+            ? 'assets/omega-industrial-icons-v1/factories/' + route + '.svg'
+            : 'assets/omega-industrial-icons-v1/factories/generic-resource-processing-plant.svg';
+        visual = '<img src="' + esc(path) + '" loading="lazy" decoding="async" alt="" onerror="this.onerror=null;this.src=\'assets/omega-industrial-icons-v1/factories/generic-resource-processing-plant.svg\'">';
+      }
+      return '<span class="omega-market-product-art' + (large ? ' is-large' : '') + '">' + visual + '</span>';
     }
     function offerRows(rows, unit) {
       const safeRows = (Array.isArray(rows) ? rows : []).filter(function (order) {
@@ -2194,7 +2197,7 @@
       '.omega-market-close{position:absolute;right:15px;top:12px;width:34px;height:34px;border:1px solid rgba(112,196,255,.42);border-radius:8px;background:rgba(2,20,44,.62);color:#c9edff;font-size:25px;line-height:1;cursor:pointer;opacity:.18;transition:opacity .18s ease}' +
       '.omega-market-header:hover .omega-market-close,.omega-market-close:focus-visible{opacity:1}' +
       '.omega-market-toolbar{display:grid;grid-template-columns:minmax(420px,1.12fr) minmax(300px,.88fr);gap:12px;align-items:center;padding:7px 2px 9px;border-bottom:1px solid rgba(45,144,218,.23)}' +
-      '.omega-market-lanes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0}' +
+      '.omega-market-lanes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0}' +
       '.omega-market-lane-tab{position:relative;isolation:isolate;min-width:0;min-height:67px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:3px;padding:10px 15px 10px 18px;border:1px solid rgba(67,152,231,.55);border-radius:11px;background:#071d3b;color:#f1f8ff;text-align:left;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.07),0 5px 14px rgba(0,0,0,.22);transition:border-color .16s ease,box-shadow .16s ease,filter .16s ease}' +
       '.omega-market-lane-tab:before{content:\"\";position:absolute;z-index:-1;inset:0;background-position:center;background-size:cover;opacity:.68;filter:saturate(1.06)}' +
       '.omega-market-lane-tab.is-raw:before{background-image:linear-gradient(90deg,rgba(3,18,41,.12),rgba(3,18,41,.88) 70%),url(\"assets/omega-global-market/raw-mining.svg\")}' +
