@@ -404,10 +404,17 @@
     var timer = typeof g.setTimeout === 'function' ? g.setTimeout : setTimeout;
     return { kind:'timeout', id:timer(callback, 16) };
   }
+  function requestIdleFrame(callback, timeoutMs) {
+    if (typeof g.requestIdleCallback === 'function') {
+      return { kind:'idle', id:g.requestIdleCallback(callback, { timeout:Math.max(50, Number(timeoutMs) || 140) }) };
+    }
+    return requestFrame(callback);
+  }
   function cancelFrame(handle) {
     if (!handle) return;
     try {
       if (handle.kind === 'raf' && typeof g.cancelAnimationFrame === 'function') g.cancelAnimationFrame(handle.id);
+      else if (handle.kind === 'idle' && typeof g.cancelIdleCallback === 'function') g.cancelIdleCallback(handle.id);
       else if (handle.kind === 'timeout') {
         var clear = typeof g.clearTimeout === 'function' ? g.clearTimeout : clearTimeout;
         clear(handle.id);
@@ -530,7 +537,7 @@
     var first = requestFrame(function () {
       state.pendingFrames = [];
       if (!isCurrent()) return;
-      var second = requestFrame(function () {
+      var second = requestIdleFrame(function () {
         state.pendingFrames = [];
         if (!isCurrent()) return;
         try {
