@@ -244,23 +244,39 @@ const ENFORCEMENT=Object.freeze({baseFineRate:.06,embargoFineRate:.08,exportRest
 function collectFineHandler(cmd,ctx){
  const f=cmd?.payload?.fine||{},fineId=String(f.fineId||''),dealId=String(f.dealId||''),amountDue=num(f.amountDue);
  if(!fineId||!dealId||amountDue===null||amountDue<0)return{accepted:false,reason:'BLACK_MARKET_FINE_INVALID'};
+ const deals=ctx.stateTransaction.get('trade.blackMarketDeals'),deal=Array.isArray(deals)?deals.find(x=>String(x.dealId||'')===dealId):null;
+ if(!deal||String(deal.status||'').toUpperCase()!=='SETTLED_UNDER_INVESTIGATION'||!deal.settlementId)
+  return{accepted:false,reason:'BLACK_MARKET_FINE_REQUIRES_CONFIRMED_INVESTIGATION'};
+ if(f.settlementId&&String(f.settlementId)!==String(deal.settlementId))return{accepted:false,reason:'BLACK_MARKET_FINE_SETTLEMENT_MISMATCH'};
+ const buyerValue=num(deal.buyerSettlementValue),currency=String(f.currency||deal.buyerCurrency||'').toUpperCase();
+ if(buyerValue===null||buyerValue<=0||!currency||currency!==String(deal.buyerCurrency||currency))
+  return{accepted:false,reason:'BLACK_MARKET_FINE_SETTLEMENT_VALUE_UNOBSERVED'};
+ const expectedRate=Math.min(.18,ENFORCEMENT.baseFineRate+(deal.embargoedAtCreation?ENFORCEMENT.embargoFineRate:0)+(deal.exportRestrictionReason?ENFORCEMENT.exportRestrictionFineRate:0));
+ const expectedDue=Number((buyerValue*expectedRate).toFixed(6));
+ if(Math.abs(amountDue-expectedDue)>Math.max(.00001,expectedDue*.000001))
+  return{accepted:false,reason:'BLACK_MARKET_FINE_AMOUNT_OUTSIDE_AUTHORIZED_PENALTY'};
  const raw=ctx.stateTransaction.get('finance.blackMarketEnforcementHistory'),arr=Array.isArray(raw)?clone(raw):[];
  const index=arr.findIndex(x=>String(x.fineId||'')===fineId),prior=index>=0?arr[index]:null;
- if(prior&&(String(prior.dealId||'')!==dealId||Math.abs((num(prior.amountDue)||0)-amountDue)>1e-7))
+ if(prior&&(String(prior.dealId||'')!==dealId||Math.abs((num(prior.amountDue)||0)-amountDue)>1e-7||
+   String(prior.settlementId||'')!==String(deal.settlementId)))
   return{accepted:false,reason:'BLACK_MARKET_FINE_IDEMPOTENCY_COLLISION'};
  const alreadyPaid=Math.max(0,num(prior?.amountPaid)||0),outstanding=Math.max(0,amountDue-alreadyPaid);
+ const forex=g.OmegaForexMonetaryEngine||g.Omega?.ForexMonetaryEngine;
+ const localPerUsd=currency==='USD'?1:num(forex?.getRate?.(currency,'SIMULATION'));
  const available=num(ctx.stateTransaction.get('finance.available')),reserves=num(ctx.stateTransaction.get('finance.reserves'));
  const balance=available!==null?available:reserves,writePath=available!==null?'finance.available':(reserves!==null?'finance.reserves':null);
- const paid=writePath?Math.min(outstanding,Math.max(0,balance)):0;
- if(writePath&&paid>0)ctx.stateTransaction.set(writePath,Math.max(0,balance-paid));
- const totalPaid=Number((alreadyPaid+paid).toFixed(6)),remaining=Number(Math.max(0,amountDue-totalPaid).toFixed(6));
- const row=Object.assign({},prior||{}, {fineId,dealId,caseId:f.caseId||prior?.caseId||null,
-  amountDue:Number(amountDue.toFixed(6)),amountPaid:totalPaid,amountOutstanding:remaining,currency:String(f.currency||prior?.currency||'').toUpperCase()||null,
-  lastAttemptTurn:turn(),status:remaining<=1e-7?'PAID':(writePath?'PARTIALLY_PAID':'WAITING_LIQUIDITY'),
+ const paidUsd=localPerUsd!==null&&localPerUsd>0&&writePath?Math.min(outstanding/localPerUsd,Math.max(0,balance)):0;
+ const paidLocal=Number((paidUsd*(localPerUsd||0)).toFixed(6));
+ if(writePath&&paidUsd>0)ctx.stateTransaction.set(writePath,Math.max(0,balance-paidUsd));
+ const totalPaid=Number((alreadyPaid+paidLocal).toFixed(6)),remaining=Number(Math.max(0,amountDue-totalPaid).toFixed(6));
+ const row=Object.assign({},prior||{}, {fineId,dealId,caseId:f.caseId||prior?.caseId||null,settlementId:deal.settlementId,
+  amountDue:Number(amountDue.toFixed(6)),amountPaid:totalPaid,amountOutstanding:remaining,
+  amountPaidUsd:Number(((num(prior?.amountPaidUsd)||0)+paidUsd).toFixed(6)),currency,
+  lastAttemptTurn:turn(),status:remaining<=1e-7?'PAID':(localPerUsd===null||localPerUsd<=0?'WAITING_FX':(writePath?'PARTIALLY_PAID':'WAITING_LIQUIDITY')),
   authority:'OMEGA_BLACK_MARKET_ENFORCEMENT'});
  if(index>=0)arr[index]=row;else arr.push(row);
  ctx.stateTransaction.set('finance.blackMarketEnforcementHistory',arr.slice(-MAX_CASES));
- return{accepted:true,fine:clone(row),paidNow:Number(paid.toFixed(6)),amountOutstanding:remaining};
+ return{accepted:true,fine:clone(row),paidNow:paidLocal,paidUsd:Number(paidUsd.toFixed(6)),amountOutstanding:remaining};
 }
 function seizeCargoHandler(cmd,ctx){
  const s=cmd?.payload?.seizure||{},seizureId=String(s.seizureId||''),dealId=String(s.dealId||''),
@@ -328,24 +344,31 @@ function seizeCargoHandler(cmd,ctx){
 function enforcePostSettlement(deal,settlement={},caseRow=null){
  const buyer=country(deal?.buyerCountryId),seller=country(deal?.sellerCountryId),settlementId=String(settlement.settlementId||deal?.settlementId||''),
   quantity=Math.max(0,num(settlement.quantity)??num(deal?.quantity)??0),createdBatchIds=settlement.createdBatchIds||deal?.createdBatchIds||[];
- if(!buyer||buyer!==player()||!settlementId)return{accepted:false,reason:'BLACK_MARKET_ENFORCEMENT_SETTLEMENT_SCOPE_INVALID'};
- const embargoed=!!deal.embargoedAtCreation,restricted=!!deal.exportRestrictionReason;
+ const persisted=buyer?getDeal(deal?.dealId,buyer):null;
+ if(!buyer||buyer!==player()||!persisted||String(persisted.status||'').toUpperCase()!=='SETTLED_UNDER_INVESTIGATION'||
+   !settlementId||String(persisted.settlementId||'')!==settlementId)
+  return{accepted:false,reason:'BLACK_MARKET_ENFORCEMENT_SETTLEMENT_SCOPE_INVALID'};
+ const allowedBatches=new Set((persisted.createdBatchIds||[]).map(String));
+ if(!Array.isArray(createdBatchIds)||createdBatchIds.some(x=>!allowedBatches.has(String(x))))
+  return{accepted:false,reason:'BLACK_MARKET_ENFORCEMENT_BATCH_PROVENANCE_INVALID'};
+ const embargoed=!!persisted.embargoedAtCreation,restricted=!!persisted.exportRestrictionReason;
  const fineRate=Math.min(.18,ENFORCEMENT.baseFineRate+(embargoed?ENFORCEMENT.embargoFineRate:0)+(restricted?ENFORCEMENT.exportRestrictionFineRate:0));
  const seizureRate=Math.min(.30,ENFORCEMENT.baseSeizureRate+(embargoed?ENFORCEMENT.embargoSeizureRate:0)+(restricted?ENFORCEMENT.exportRestrictionSeizureRate:0));
- const buyerValue=num(settlement.buyerValue),fineDue=buyerValue!==null&&buyerValue>0?Number((buyerValue*fineRate).toFixed(6)):null;
+ const buyerValue=num(settlement.buyerValue)??num(persisted.buyerSettlementValue),fineDue=buyerValue!==null&&buyerValue>0?Number((buyerValue*fineRate).toFixed(6)):null;
  const fine=fineDue===null?{accepted:false,reason:'BLACK_MARKET_BUYER_SETTLEMENT_VALUE_UNOBSERVED'}:
-  dispatch('finance','OMEGA_BLACK_MARKET_COLLECT_FINE',buyer,{fine:{fineId:'BM-FINE-'+deal.dealId,dealId:deal.dealId,caseId:caseRow?.caseId||null,
-   amountDue:fineDue,currency:settlement.buyerCurrency||deal.buyerCurrency||null}});
+  dispatch('finance','OMEGA_BLACK_MARKET_COLLECT_FINE',buyer,{fine:{fineId:'BM-FINE-'+persisted.dealId,dealId:persisted.dealId,
+   caseId:caseRow?.caseId||null,settlementId,amountDue:fineDue,currency:settlement.buyerCurrency||persisted.buyerCurrency||null}});
  const seizureTarget=Number((quantity*seizureRate).toFixed(8));
- const seizure=dispatch('resource','OMEGA_BLACK_MARKET_SEIZE_CARGO',buyer,{seizure:{seizureId:'BM-SEIZURE-'+deal.dealId,
-  dealId:deal.dealId,caseId:caseRow?.caseId||null,settlementId,resourceId:deal.resourceId,quantity:seizureTarget,createdBatchIds}});
+ const seizure=dispatch('resource','OMEGA_BLACK_MARKET_SEIZE_CARGO',buyer,{seizure:{seizureId:'BM-SEIZURE-'+persisted.dealId,
+  dealId:persisted.dealId,caseId:caseRow?.caseId||null,settlementId,resourceId:persisted.resourceId,
+  quantity:seizureTarget,createdBatchIds}});
  const fineRow=fine.fine||{},seizureRow=seizure.seizure||{};
- const result={caseId:caseRow?.caseId||null,fineCurrency:settlement.buyerCurrency||deal.buyerCurrency||null,
-  fineRate, fineDue, finePaid:num(fineRow.amountPaid)||0,fineOutstanding:num(fineRow.amountOutstanding)||0,
+ const result={caseId:caseRow?.caseId||null,fineCurrency:settlement.buyerCurrency||persisted.buyerCurrency||null,
+  fineRate,fineDue,finePaid:num(fineRow.amountPaid)||0,fineOutstanding:num(fineRow.amountOutstanding)||0,
   fineStatus:fineRow.status||fine.reason||'NOT_RECORDED',seizureRate,seizureTargetQuantity:seizureTarget,
   seizureQuantity:num(seizure.quantitySeized)||0,seizureStatus:seizureRow.status||seizure.reason||'NOT_RECORDED',settlementId,appliedTurn:turn()};
- updateDeal(deal.dealId,{buyerCountryId:buyer,enforcement:result});
- emit('OMEGA_BLACK_MARKET_ENFORCEMENT_APPLIED',buyer,{dealId:deal.dealId,sellerCountryId:seller,...result});
+ updateDeal(persisted.dealId,{buyerCountryId:buyer,enforcement:result});
+ emit('OMEGA_BLACK_MARKET_ENFORCEMENT_APPLIED',buyer,{dealId:persisted.dealId,sellerCountryId:seller,...result});
  return{accepted:!!(fine.accepted||seizure.accepted),enforcement:result,fine,seizure};
 }
 function handleTradeRejection(request,decision){
