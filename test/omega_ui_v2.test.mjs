@@ -3891,7 +3891,8 @@ test('market presentation keeps raw, factory-role and food lanes separate and us
     assert.match(svg,/^<svg\b/);
     assert.doesNotMatch(svg,/<image\b|data:image\//,
       file + ' must be native vector art rather than an embedded blurry photo');
-    assert.doesNotMatch(svg,/https?:\/\//,
+    const withoutSvgNamespace = svg.replace(/xmlns="http:\/\/www\.w3\.org\/2000\/svg"/g, '');
+    assert.doesNotMatch(withoutSvgNamespace,/https?:\/\//,
       file + ' must not depend on a remote image URL');
   }
 });
