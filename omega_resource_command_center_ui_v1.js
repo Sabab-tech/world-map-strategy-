@@ -4,7 +4,7 @@
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.2.0';
+  const VERSION = '1.3.0';
   const PANELS = [
     { id: 'matrix', num: '01', title: 'Unit standards & metrology' },
     { id: 'ontology', num: '02', title: 'Commodity ontology' },
@@ -1341,27 +1341,73 @@
     if (!market || !market.quote) return empty('Global market runtime is unavailable; no price is fabricated.');
     let books = {};
     try { books = market.rebuild ? market.rebuild() : g.__OmegaMarketBooks || {}; } catch (_) { books = g.__OmegaMarketBooks || {}; }
-    const rows = resources(country).map(function (r) {
-      const q = market.quote(r.id);
-      const book = books[r.id] || {};
-      const matches = Array.isArray(q.matches) ? q.matches : [];
-      const referenceMatched = matches.some(function (m) { return m.referenceLiquidity === true; });
-      const body = '<div class="omega-rescc-grid2">' + kv('Clearing price (USD)', q.clearingPriceUsd) +
-        kv('Reference quote', q.referencePrice) + kv('Best bid (USD)', q.bestBidUsd) +
-        kv('Best ask (USD)', q.bestAskUsd) + kv('Matched quantity', q.matchedQuantity) +
+    let lanes = null;
+    try { lanes = typeof market.marketLanes === 'function' ? market.marketLanes() : null; } catch (_) { lanes = null; }
+    function orderMarkup(rows, title, label) {
+      if (!Array.isArray(rows) || !rows.length) return '';
+      return '<h4 class="omega-rescc-section-title">' + esc(title) + '</h4>' +
+        rows.slice(0, 4).map(function (order) {
+          return '<div class="omega-rescc-kv"><span>' + esc(label) + ' · ' + esc(order.countryId || 'Unknown country') +
+            '</span><strong>' + number(order.quantity) + ' @ ' + number(order.price, order.currency ? ' ' + order.currency : '') + '</strong></div>';
+        }).join('');
+    }
+    function renderProduct(row, laneType) {
+      const resourceId = row.id || row.productId || row.resourceId;
+      const q = row.quote || market.quote(resourceId);
+      const referenceMatched = (Array.isArray(q.matches) ? q.matches : []).some(function (match) {
+        return match.referenceLiquidity === true;
+      });
+      const bookKey = Object.keys(books || {}).find(function (key) {
+        return String(key).toLowerCase() === String(resourceId).toLowerCase();
+      });
+      const book = books[bookKey] || {};
+      const orderBook = row.orderBook || {};
+      const bids = orderBook.bids || ((book.orders && book.orders.bids) || []).slice(0, 4);
+      const asks = orderBook.asks || ((book.orders && book.orders.asks) || []).filter(function (x) { return x.referenceOnly !== true; }).slice(0, 4);
+      const sourceTypes = Array.isArray(row.sourceFactoryTypes) ? row.sourceFactoryTypes : [];
+      const body = '<div class="omega-rescc-grid2">' +
+        kv('Clearing price (USD)', q.clearingPriceUsd) +
+        kv('Reference quote', q.referencePrice) +
+        kv('Best bid (USD)', q.bestBidUsd) +
+        kv('Best ask (USD)', q.bestAskUsd) +
+        kv('Orderbook crossed quantity', q.matchedQuantity) +
         kv('Bid / ask depth', (q.bidDepth ?? '—') + ' / ' + (q.askDepth ?? '—')) +
-        kv('Price discovery', q.priceDiscovery) + kv('Turn', q.generatedTurn) + '</div>' +
-        (referenceMatched || q.priceDiscovery === 'REFERENCE_ONLY' ?
-          '<div class="omega-rescc-warning">Reference-only liquidity contributed to this quote. This is not proof of a completed physical transfer.</div>' : '') +
-        '<div class="omega-rescc-muted">Order rows: ' + number((book.orders && book.orders.bids || []).length) +
-        ' bids / ' + number((book.orders && book.orders.asks || []).length) + ' asks · Discovery status: ' + esc(q.status || 'UNAVAILABLE') + '</div>';
-      return card(r.name || r.id, q.status || 'NO MARKET RESULT', body, '');
-    }).join('');
+        kv('Reference-only stock', orderBook.referenceLiquidityQuantity ?? q.referenceAskDepth ?? '—') +
+        kv('Unit', row.unit || q.referenceUnit || 'Not recorded') +
+        '</div>' +
+        (row.productRole ? '<p class="omega-rescc-note">Output role: ' + esc(String(row.productRole).replace(/_/g, ' ')) +
+          (sourceTypes.length ? ' · Factory route: ' + esc(sourceTypes.slice(0, 3).join(', ')) : '') + '</p>' : '') +
+        (row.usageClass ? '<p class="omega-rescc-note">Product use: ' + esc(String(row.usageClass).replace(/_/g, ' ')) + '</p>' : '') +
+        orderMarkup(bids, 'Buy orders', 'Bid') +
+        orderMarkup(asks, 'Sell offers', 'Ask') +
+        '<div class="omega-rescc-muted">Price discovery: ' + esc(q.priceDiscovery || 'UNAVAILABLE') +
+        ' · Order rows: ' + number(orderBook.bidCount ?? ((book.orders && book.orders.bids || []).length)) +
+        ' bids / ' + number(orderBook.executableAskCount ?? ((book.orders && book.orders.asks || []).filter(function (x) { return x.referenceOnly !== true; }).length)) +
+        ' executable offers · ' + esc(q.settlementAuthority || 'PRICE_DISCOVERY_ONLY') + '</div>' +
+        (referenceMatched || q.priceDiscovery === 'REFERENCE_ONLY' || Number(orderBook.referenceAskCount || 0) > 0 ?
+          '<div class="omega-rescc-warning">Reference stock is not an executable sell offer and does not count as a completed sale.</div>' : '') +
+        '<p class="omega-rescc-note">A crossed orderbook is a price-discovery signal only. Counterparty approval, stock reservation, transport, delivery and payment are handled by the Trade and Finance systems.</p>';
+      return card(row.name || row.id || resourceId, q.status || 'NO MARKET RESULT', body, '');
+    }
+    if (!lanes) {
+      lanes = { rawResources: resources(country).map(function (row) {
+        return Object.assign({}, row, { quote: market.quote(row.id), productType: 'RAW_RESOURCE' });
+      }), factoryProducts: [], summary: { activeRawResourceCount: resources(country).length, activeFactoryProductCount: 0 } };
+    }
+    const rawRows = (lanes.rawResources || []).map(function (row) { return renderProduct(row, 'RAW_RESOURCE'); }).join('');
+    const factoryRows = (lanes.factoryProducts || []).map(function (row) { return renderProduct(row, 'FACTORY_PRODUCT'); }).join('');
+    const summary = '<div class="omega-rescc-metrics">' +
+      '<div><span>Active raw-resource markets</span><strong>' + number(lanes.summary?.activeRawResourceCount ?? (lanes.rawResources || []).length) + '</strong></div>' +
+      '<div><span>Active factory-product markets</span><strong>' + number(lanes.summary?.activeFactoryProductCount ?? (lanes.factoryProducts || []).length) + '</strong></div>' +
+      '</div>';
     const diag = market.diagnostics ? market.diagnostics() : null;
-    return '<p class="omega-rescc-note">Price discovery is read from the existing order-book runtime. Quotes that include reference-only resource availability are labeled and are not treated as trades.</p>' +
-      (diag ? diagnosticCard('Global market diagnostics', diag) : '') +
+    return '<p class="omega-rescc-note">The marketplace has two commodity lanes. Raw-resource supply comes from extractive inventory; factory products come from processing and finished-goods inventory. Cards appear when there is a current bid, sell offer or reference-only raw stock. Missing price evidence stays unavailable.</p>' +
+      summary + (diag ? diagnosticCard('Global market diagnostics', diag) : '') +
       actionButton('refresh-market', 'Rebuild current market snapshot', {}) +
-      (rows || empty('No resource IDs are available to quote.'));
+      '<h3 class="omega-rescc-section-title">Raw resources</h3>' +
+      (rawRows || empty('No raw-resource bids, offers or available reference stock are currently listed.')) +
+      '<h3 class="omega-rescc-section-title">Factory products</h3>' +
+      (factoryRows || empty('No factory-product bids or inventory-backed sell offers are currently listed.'));
   }
   function panelPlayerSupplyLifeline(country) {
     const runtime = g.OmegaResourceNationalDemandRuntime || g.Omega && g.Omega.ResourceNationalDemandRuntime;
@@ -1427,16 +1473,28 @@
     const ledger = bucket('trade', country).globalTradeLedger || {};
     const others = countryList().filter(function (c) { return c !== activeCountry(country); });
     const countries = others.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('');
-    const resourceOpts = resources(country).map(function (r) {
-      return '<option value="' + esc(r.id) + '">' + esc(r.name || r.id) + '</option>';
-    }).join('');
+    const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
+    let productRows = [];
+    try { productRows = market && typeof market.productCatalog === 'function' ? market.productCatalog() : []; } catch (_) { productRows = []; }
+    if (!Array.isArray(productRows) || !productRows.length) {
+      productRows = resources(country).map(function (r) { return Object.assign({}, r, { productType: 'RAW_RESOURCE' }); });
+    }
+    const optionRows = function (type, label) {
+      return productRows.filter(function (row) { return row.productType === type; }).map(function (row) {
+        return '<option value="' + esc(row.id || row.productId) + '">' + esc(row.name || row.id || row.productId) + ' · ' + esc(label) + '</option>';
+      }).join('');
+    };
+    const rawOptions = optionRows('RAW_RESOURCE', 'Raw resource');
+    const factoryOptions = optionRows('FACTORY_PRODUCT', 'Factory product');
+    const resourceOpts = (rawOptions ? '<optgroup label="Raw resources">' + rawOptions + '</optgroup>' : '') +
+      (factoryOptions ? '<optgroup label="Factory products">' + factoryOptions + '</optgroup>' : '');
     const form = '<form class="omega-rescc-form" data-search-item data-form="trade-request">' +
       '<h3>Create bilateral supply request</h3><div class="omega-rescc-formgrid">' +
       '<label>Seller country<select name="targetCountryId" required>' + countries + '</select></label>' +
-      '<label>Resource<select name="resourceId" required>' + resourceOpts + '</select></label>' +
+      '<label>Commodity<select name="resourceId" required>' + resourceOpts + '</select></label>' +
       '<label>Quantity<input name="quantity" type="number" min="0.000001" step="any" required></label>' +
       '<label>Offered unit price<input name="unitPrice" type="number" min="0" step="any" required></label></div>' +
-      '<p class="omega-rescc-note">Submitting records a request as SENT/OPEN. Counterparty review, observed relations, sanctions, price evidence, stock and settlement rules determine what happens next.</p>' +
+      '<p class="omega-rescc-note">Submitting records a request as SENT/OPEN. Choose either a raw resource or a factory product. Counterparty review, sanctions, stock, logistics and settlement rules determine what happens next.</p>' +
       '<button class="omega-rescc-button" type="submit"' + ((!trade || typeof trade.createRequest !== 'function' || !others.length || !resourceOpts) ? ' disabled' : '') +
       '>Submit supply request</button></form>';
     return (trade && trade.diagnostics ? diagnosticCard('Global trade diagnostics', trade.diagnostics()) : empty('Global trade engine is not available.')) +
