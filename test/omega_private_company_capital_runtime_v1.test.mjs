@@ -100,7 +100,8 @@ test('missing currency and private-sector observations receive a country-scoped 
  const api=runtimeApi(context);
  const sparseProfile={countryCode:'BD',iso3:'BGD',name:'Bangladesh',
   sourceValues:{},indicators:{population2015:170000000},populationValues:{population_2015:170000000}};
- const plan=api.buildPlan('BGD',rows.private,rows.government,sparseProfile,{gdpCurrentUsd:null},null,{
+ const sparseGovernment=Object.assign({},rows.government,{economicSectorContext:{valueAddedShares:{}}});
+ const plan=api.buildPlan('BGD',rows.private,sparseGovernment,sparseProfile,{gdpCurrentUsd:null},null,{
   getCurrencyCode:()=>null,getRate:()=>null
  });
  assert.equal(plan.currencyCode,'LOC-BGD');
