@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v113";
+const CACHE_NAME = "omega-offline-atlas-shell-v114";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
@@ -421,6 +421,14 @@ self.addEventListener("install", event => {
         }
       }
     }
+    // These crisp, locally authored market illustrations are shell artwork,
+    // not online photos. Pre-cache them so all three market lanes work offline.
+    for (const asset of [
+      "./assets/omega-global-market/market-header.svg",
+      "./assets/omega-global-market/raw-mining.svg",
+      "./assets/omega-global-market/factory-refinery.svg",
+      "./assets/omega-global-market/food-products.svg"
+    ]) assets.add(new URL(asset, APP_BASE).href);
     const urls = [...assets];
     let cursor = 0;
     const workers = Array.from({ length: 2 }, async () => {
