@@ -56,7 +56,7 @@ var TYPE_OWNER={
  RECYCLING_WASTE_PROCESSING_PLANT:'TERRA_INFRASTRUCTURE_GROUP'
 };
 var CAP_PER_GDP=.0000025,REFERENCE_FACTORY_COST=15500;
-var inflight=new Map(),completed=new Map(),lastError=null,lastPlan=null,sequence=0;
+var inflight=new Map(),completed=new Map(),lastError=null,lastPlan=null,sequence=0,activationRequested=false;
 function obj(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
 function num(v){if(v===null||v===undefined||v==='')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
 function id(v){return String(v==null?'':v).trim().toUpperCase();}
@@ -259,6 +259,7 @@ function getActiveDependencies(){
 function ensureCountryInitialized(country){
  var cid=id(country||playerCountry()),active=playerCountry();
  if(!cid||cid!==active)return Promise.resolve({status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY',countryId:cid||null});
+ activationRequested=true;
  if(completed.has(cid))return Promise.resolve(clone(completed.get(cid)));
  if(inflight.has(cid))return inflight.get(cid);
  var token=++sequence,deps=getActiveDependencies();
@@ -315,17 +316,26 @@ function requestActiveCountry(){
 }
 function diagnostics(){
  return{version:VERSION,status:lastError?'DEGRADED':completed.size?'READY':'IDLE',reason:lastError,
+  activationRequested:activationRequested,startupPolicy:'LAZY_PRIVATE_ENTERPRISE_OPEN',
   initializedCountries:Array.from(completed.keys()),inFlightCountries:Array.from(inflight.keys()),
   lastPlan:clone(lastPlan),currencyPolicy:'COUNTRY_LOCAL_CURRENCY',financeAuthority:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_FINANCE_CAPITAL_ACCOUNTS'};
 }
 var API=Object.freeze({VERSION:VERSION,ensureCountryInitialized:ensureCountryInitialized,
  requestActiveCountry:requestActiveCountry,diagnostics:diagnostics,buildPlan:buildPlan});
 g.OmegaPrivateCompanyCapitalRuntimeV1=API;g.Omega=g.Omega||{};g.Omega.PrivateCompanyCapitalRuntimeV1=API;
-if(typeof g.addEventListener==='function'){
- ['OMEGA_PLAYER_COUNTRY_CHANGED','COUNTRY_CHANGED','COUNTRY_SELECTED','OMEGA_COUNTRY_SELECTED',
-  'OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY','OMEGA_PRIVATE_ENTERPRISE_PANEL_OPENED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_READY','OMEGA_FINANCE_RUNTIME_READY']
-  .forEach(function(type){g.addEventListener(type,requestActiveCountry);});
+function handleRuntimeEvent(type){
+ var activationEvent=type==='OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY'||type==='OMEGA_PRIVATE_ENTERPRISE_PANEL_OPENED';
+ if(activationEvent){activationRequested=true;requestActiveCountry();return;}
+ if(activationRequested&&['OMEGA_PLAYER_COUNTRY_CHANGED','COUNTRY_CHANGED','COUNTRY_SELECTED','OMEGA_COUNTRY_SELECTED','OMEGA_READY']
+  .indexOf(type)>=0)requestActiveCountry();
 }
-if(typeof Promise!=='undefined')Promise.resolve().then(requestActiveCountry);
+if(typeof g.addEventListener==='function'){
+ ['OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY','OMEGA_PRIVATE_ENTERPRISE_PANEL_OPENED',
+  'OMEGA_PLAYER_COUNTRY_CHANGED','COUNTRY_CHANGED','COUNTRY_SELECTED','OMEGA_COUNTRY_SELECTED','OMEGA_READY']
+  .forEach(function(type){g.addEventListener(type,function(){handleRuntimeEvent(type);});});
+}
+// Deliberately do not initialize capital during ordinary app boot. The private
+// baseline is optional and is loaded only after the player opens Companies/Manage.
+
 if(typeof module!=='undefined'&&module.exports)module.exports=API;
 })(typeof globalThis!=='undefined'?globalThis:window);
