@@ -457,3 +457,27 @@ Companies, not the player, originate and submit factory proposals. The existing 
 - **Safe empty-market behaviour:** absence of the global-market provider does not suppress company proposals. A local DOMESTIC + INTERNATIONAL research request is queued with AWAITING_MARKET_EVIDENCE / QUEUED_LOCAL_MARKET_HANDOFF; the lifecycle does not falsely claim that an external global-market request was accepted. Missing market values remain null / unobserved.
 - **No premature economic side effects:** proposal analysis does not consume inventory, reserve stock, debit Treasury, create a construction project, commission an asset or enable private production. Government permit/funding/construction sequence and SAB-34 fail-closed production gate remain unchanged.
 - **Runtime limits:** global quote and supplier reads are memoized inside each company review and business case. Candidate evaluation is bounded to the active country, one company per turn, a maximum of eight universal processing routes and existing per-proposal caps. No unbounded queue, background worker or whole-world simulation is introduced.
+
+## Country private-company opening capital — 2026-11-11
+
+The five existing global companies receive an opening capital allocation for the selected player country. This is separate from the static 197-country × 21-factory opening-allocation registry and is written only when that country becomes the player's active country.
+
+### Country capital envelope
+
+- The allocation uses the country's GDP baseline and country-specific domestic currency. The currency code is resolved from the existing country Finance/Economy record and the Forex monetary profile; the simulation FX rate converts the GDP baseline into that country's local currency.
+- The private-sector contribution estimate uses the available domestic-credit-to-private-sector/GDP indicator as a financing-depth signal, together with same-country services, industry, manufacturing and agriculture-employment context and the existing industrial archetype/factory allocation. Domestic private credit is not treated as a direct measurement of private-sector GDP output.
+- When those observations are unavailable, the runtime uses a conservative country-archetype model. When the national currency identity is unavailable, it uses a country-specific local-unit code rather than borrowing USD or another country's currency.
+- The total opening-capital envelope is the modelled private-sector economic base multiplied by a small bounded opening-capital rate, subject to a minimum factory-capital floor derived from the existing private/government factory baseline. It is not the whole private-sector GDP balance.
+
+### Five-company allocation
+
+The country envelope is divided by the five unchanged company IDs using the company's existing private factory-category mix. More capital-intensive categories carry a higher weight; the existing factory-to-company specialization mapping is used only as a fallback when no private company category allocation is present. The integer local-currency allocations reconcile exactly to the country total, and no equal five-way split is imposed.
+
+### Finance and persistence boundary
+
+- Each opening credit is posted to `finance[country].omegaFinance.companyCapitalAccounts[companyId]`, using the existing Finance-owned company capital account.
+- A stable transaction ID (`PRIVATE-OPENING-CAPITAL-V1:<country>:<company>`) prevents the opening credit from being repeated after save/load or a repeated initialization event.
+- Existing funded/active company accounts are preserved; opening allocation does not overwrite their available, reserved, raised or spent capital.
+- The matching Finance ledger entry records local currency, allocation share, factory-mix evidence and zero public Treasury debit/credit. It does not modify sovereign Treasury, sovereign debt, inventory, factories, production assets, shipments or company sales.
+- The runtime loads through the existing app shell and offline cache. It initializes only the selected player country and is retriggered on the existing country-selection, private-enterprise panel and committed-turn events.
+- `omega_private_company_capital_runtime_v1.js` and `test/omega_private_company_capital_runtime_v1.test.mjs` cover the allocation and Finance boundary. The lifecycle API owns the authoritative capital-account write; no second company-wallet store is introduced.
