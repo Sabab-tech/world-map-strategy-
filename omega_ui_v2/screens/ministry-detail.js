@@ -10,8 +10,8 @@
     intelligence_cyber:'intelligence', agriculture_food:'agriculture', interior_security:'interior',
     health_welfare:'health', treasury_finance:'finance', mega_projects:'projects'
   };
-  var SECTIONS = ['dashboard','operations','assets','budget','reports'];
-  var SECTION_LABELS = { dashboard:'Dashboard', operations:'Operations / Programmes', assets:'People & Assets', budget:'Budget', reports:'Reports' };
+  var SECTIONS = ['dashboard','operations','assets','budget','reports','market'];
+  var SECTION_LABELS = { dashboard:'Dashboard', operations:'Operations / Programmes', assets:'People & Assets', budget:'Budget', reports:'Reports', market:'Global Commodity Market' };
   var PHOTO_BY_MINISTRY = {
     interior_security:'bangladesh-police-headquarters', health_welfare:'chittagong-hospital',
     energy_mining:'open-pit-mine', production:'industrial-production-line',
@@ -86,7 +86,11 @@
       (galleryMarkup ? '<div class="omega-v2-ministry-detail-gallery" aria-label="Additional ministry assets">' + galleryMarkup + '</div>' : '') +
       '</section>';
   }
-  function relatedLinks(id, options) {
+  function relatedLinks(id, options, section) {
+    if (id === 'trade') {
+      if (section === 'market') return '';
+      return '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-ministry-section="market">Open Global Commodity Market</button></div>';
+    }
     var routes = {
       energy_mining:['resources','Open Mines & Fields'],
       production:['industry','Open Factories & Production'],
@@ -120,12 +124,15 @@
     var country = String(options.countryId || g.OmegaMinistryViewCountry || (g.OmegaCabinetUI && g.OmegaCabinetUI.activeCountry) || g.currentActiveCountry || '').trim().toUpperCase();
     var row = getMinistry(id);
     var domain = domainRecord(country, id);
-    var section = SECTIONS.indexOf(options.section) >= 0 ? options.section : 'dashboard';
+    var section = SECTIONS.indexOf(options.section) >= 0 &&
+      (options.section !== 'market' || id === 'trade') ? options.section : 'dashboard';
     var rawRows = scalarRows(domain && domain.record);
     var categories = options.sectionData && Array.isArray(options.sectionData[section]) ? options.sectionData[section] : null;
     var content;
     if (!row) {
       content = '<div class="omega-v2-empty">The selected ID is not present in the current ministry directory. No substitute ministry was created.</div>';
+    } else if (id === 'trade' && section === 'market') {
+      content = '<div class="omega-v2-trade-market-host" data-omega-v2-trade-market-host aria-label="Global Commodity Market"></div>';
     } else if (!domain || !domain.record) {
       content = '<div class="omega-v2-empty">No usable country-domain record is registered for this section yet. Use the owning runtime or source coverage report to see which data is missing.</div>';
     } else if (categories) {
@@ -146,12 +153,13 @@
       : (row && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.ministryEmblem === 'function' ? g.OmegaUIV2Government.ministryEmblem(row) : '');
     var activeMinisterName = row && row.ministerName || 'Minister not recorded';
     var portraitSlot = row && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.renderMinisterPortrait === 'function' ? g.OmegaUIV2Government.renderMinisterPortrait(row) : '';
+    var visibleSections = id === 'trade' ? SECTIONS : SECTIONS.filter(function (key) { return key !== 'market'; });
     root.innerHTML = '<section class="omega-v2-shell omega-v2-ministry-detail">' +
       '<header class="omega-v2-heading"><div class="omega-v2-ministry-detail-mark">' + emblem + '<div><div class="omega-v2-eyebrow">ALL MINISTRIES · ' + esc(id.replace(/[_-]+/g,' ').toUpperCase()) + '</div><h1 class="omega-v2-title">' + esc(row ? row.title : id || 'Ministry') + '</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · registered ministry profile and source-backed domain record</p></div></div><span class="omega-v2-status" data-state="' + (domain && domain.record ? 'operational' : 'unknown') + '">' + (domain && domain.record ? 'DOMAIN RECORD AVAILABLE' : esc(domain.reason || 'DOMAIN RECORD NOT RECORDED')) + '</span></header>' +
       '<div class="omega-v2-card omega-v2-ministry-appointed-minister"><h2 class="omega-v2-card-title">Minister</h2><div class="omega-v2-minister-table-person">' + (portraitSlot || '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot><span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span><small>Image pending</small></div>') + '<strong>' + esc(activeMinisterName) + '</strong></div></div>' +
       ministryVisualMarkup(id, row) +
-      '<div class="omega-v2-filterbar" role="group" aria-label="Ministry page sections">' + SECTIONS.map(function (key) { return '<button type="button" class="omega-v2-button ' + (section === key ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-ministry-section="' + key + '" aria-pressed="' + (section === key ? 'true' : 'false') + '">' + esc(SECTION_LABELS[key]) + '</button>'; }).join('') + '</div>' +
-      relatedLinks(id, options) +
+      '<div class="omega-v2-filterbar" role="group" aria-label="Ministry page sections">' + visibleSections.map(function (key) { return '<button type="button" class="omega-v2-button ' + (section === key ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-ministry-section="' + key + '" aria-pressed="' + (section === key ? 'true' : 'false') + '">' + esc(SECTION_LABELS[key]) + '</button>'; }).join('') + '</div>' +
+      relatedLinks(id, options, section) +
       '<div class="omega-v2-section-title">' + esc(SECTION_LABELS[section]) + '</div>' + content +
       '<p class="omega-v2-source">The current panel is read-only. Procurement, recruitment, resource transfers and project execution must route through an authoritative handler and display a result only after game state confirms it.</p></section>';
     if (!root.__omegaV2MinistryDetailBound && typeof root.addEventListener === 'function') {
@@ -173,7 +181,26 @@
       root.__omegaV2MinistryDetailBound = true;
     }
     root.__omegaV2MinistryDetailOptions = options;
-    return { ok:true, ministryId:id, countryId:country || null, section:section, domainRecordAvailable:!!(domain && domain.record) };
+    var marketMounted = false;
+    if (id === 'trade' && section === 'market') {
+      var marketHost = typeof root.querySelector === 'function'
+        ? root.querySelector('[data-omega-v2-trade-market-host]') : null;
+      var marketUI = g.OmegaResourceCommandCenterUI || (g.Omega && g.Omega.ResourceCommandCenterUI);
+      if (marketHost && marketUI && typeof marketUI.renderMarketDashboard === 'function') {
+        var mountResult = marketUI.renderMarketDashboard(marketHost, country, {
+          onClose:function () {
+            var current = root.__omegaV2MinistryDetailOptions || options;
+            scheduleRender(root, Object.assign({}, current, { section:'dashboard' }), 'Returning to Trade & Commerce');
+          }
+        });
+        marketMounted = !!(mountResult && mountResult.ok !== false);
+        if (!marketMounted) marketHost.textContent = 'The Global Commodity Market could not be mounted. The market runtime and settlement records remain unchanged.';
+      } else if (marketHost) {
+        marketHost.textContent = 'The Global Commodity Market UI is unavailable in this session.';
+      }
+    }
+    return { ok:true, ministryId:id, countryId:country || null, section:section,
+      domainRecordAvailable:!!(domain && domain.record), marketMounted:marketMounted };
   }
   g.OmegaUIV2MinistryDetail = Object.freeze({ version:'1.0.0', render:render, getMinistry:getMinistry, getDomainRecord:domainRecord });
 })(typeof window !== 'undefined' ? window : globalThis);
