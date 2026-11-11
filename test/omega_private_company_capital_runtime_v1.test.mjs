@@ -216,7 +216,49 @@ test('active-country initialization waits for country registries and submits one
  assert.equal(calls.length,1,'the same country should not be initialized twice in one session');
  assert.equal(generalFetchCount,0,'capital opening should use cached general data or the existing country baseline without forcing an online API fetch');
 });
-test('opening capital runtime refuses a non-player country before loading global data',async()=>{
+test('opening capital stays idle during app boot and activates only after the private baseline is opened',async()=>{
+ const rows=baselineFixtures(),calls=[],handlers=new Map();
+ let privateReadyReads=0,governmentReadyReads=0;
+ const sandbox={
+  Game:{state:{simulation:{session:{playerCountryId:'BGD'}}}},
+  Omega:{Simulation:{world:{state:{simulation:{session:{playerCountryId:'BGD'}}}},getPlayerCountryId:()=> 'BGD'}},
+  OmegaPrivateEnterpriseLifecycleV1:{initializeOpeningCompanyCapital(input){
+   calls.push(input);return{status:'INITIALIZED',countryId:input.countryId,currency:input.currencyCode,totalCapital:input.totalCapital};
+  }},
+  OmegaPrivateEnterpriseRegistryV1:{
+   get ready(){privateReadyReads++;return Promise.resolve({status:'READY'});},
+   getCountryBaseline:()=>rows.private
+  },
+  OmegaCountryFactoryStartingBaselineV1:{
+   get ready(){governmentReadyReads++;return Promise.resolve({status:'READY'});},
+   getCountryBaseline:()=>rows.government
+  },
+  OmegaCountryRuntimeData:{ready:Promise.resolve(true),getProfile:()=>profile},
+  OmegaFinanceMinistry:{init:async()=>({ok:true}),getIndicators:()=>({gdpCurrentUsd:450000000000})},
+  OmegaForexMonetaryEngine:{getCurrencyCode:()=> 'BDT',getRate:()=>110},
+  addEventListener(name,fn){if(!handlers.has(name))handlers.set(name,[]);handlers.get(name).push(fn);},
+  dispatchEvent(){},CustomEvent:function(){}
+ };
+ const api=runtimeApi(sandbox);
+ await new Promise(resolve=>setTimeout(resolve,0));
+ assert.equal(privateReadyReads,0,'the 1.5 MB private-country baseline must not be requested during ordinary app boot');
+ assert.equal(governmentReadyReads,0,'capital setup must not start the government baseline dependency during ordinary app boot');
+ assert.equal(calls.length,0,'company wallets must not be calculated on the map/startup path');
+ assert.equal(api.diagnostics().activationRequested,false);
+ const onBaselineReady=handlers.get('OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY')?.[0];
+ assert.equal(typeof onBaselineReady,'function','the private-company screen readiness event is registered');
+ onBaselineReady();
+ const result=await api.ensureCountryInitialized('BGD');
+ assert.equal(result.status,'INITIALIZED',JSON.stringify(result));
+ assert.equal(privateReadyReads,1);
+ assert.equal(governmentReadyReads,1);
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].countryId,'BGD');
+ assert.equal(calls[0].currencyCode,'BDT');
+ assert.equal(calls[0].companyAllocations.reduce((sum,row)=>sum+row.amount,0),calls[0].totalCapital);
+ assert.equal(api.diagnostics().activationRequested,true);
+});
+test('opening capital runtime refuses a non-player country without loading any country data',async()=>{
  let fetchCount=0;
  const sandbox={
   Game:{state:{simulation:{session:{playerCountryId:'BGD'}}}},
@@ -229,12 +271,10 @@ test('opening capital runtime refuses a non-player country before loading global
   addEventListener(){},dispatchEvent(){},CustomEvent:function(){}
  };
  const api=runtimeApi(sandbox);
- // The runtime automatically starts the active BGD country on module load.
- // Let that boot attempt settle, then measure only the explicit non-player request.
  await new Promise(resolve=>setTimeout(resolve,0));
- const fetchesBeforeForeignRequest=fetchCount;
+ assert.equal(fetchCount,0,'ordinary boot must not initialize capital or fetch company baselines');
  const result=await api.ensureCountryInitialized('USA');
  assert.equal(result.status,'BLOCKED');
  assert.equal(result.reason,'PLAYER_COUNTRY_SCOPE_ONLY');
- assert.equal(fetchCount,fetchesBeforeForeignRequest,'a non-player country request must not fetch or initialize another country');
+ assert.equal(fetchCount,0,'a non-player country request must not fetch or initialize another country');
 });
