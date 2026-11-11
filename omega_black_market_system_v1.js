@@ -265,7 +265,11 @@ function collectFineHandler(cmd,ctx){
  const localPerUsd=currency==='USD'?1:num(forex?.getRate?.(currency,'SIMULATION'));
  const available=num(ctx.stateTransaction.get('finance.available')),reserves=num(ctx.stateTransaction.get('finance.reserves'));
  const balance=available!==null?available:reserves,writePath=available!==null?'finance.available':(reserves!==null?'finance.reserves':null);
- const paidUsd=localPerUsd!==null&&localPerUsd>0&&writePath?Math.min(outstanding/localPerUsd,Math.max(0,balance)):0;
+ const bank=g.OmegaGovernmentBanking||g.Omega?.GovernmentBanking;
+ const held=writePath==='finance.available'&&typeof bank?.getReservedTreasuryUsd==='function'?
+  Math.max(0,num(bank.getReservedTreasuryUsd(ctx.countryId,'BLACK_MARKET_FINE'))||0):0;
+ const spendable=Math.max(0,(num(balance)||0)-held);
+ const paidUsd=localPerUsd!==null&&localPerUsd>0&&writePath?Math.min(outstanding/localPerUsd,spendable):0;
  const paidLocal=Number((paidUsd*(localPerUsd||0)).toFixed(6));
  if(writePath&&paidUsd>0)ctx.stateTransaction.set(writePath,Math.max(0,balance-paidUsd));
  const totalPaid=Number((alreadyPaid+paidLocal).toFixed(6)),remaining=Number(Math.max(0,amountDue-totalPaid).toFixed(6));
