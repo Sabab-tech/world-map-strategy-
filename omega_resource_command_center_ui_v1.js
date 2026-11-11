@@ -1,10 +1,10 @@
-/* OMEGA Resource Command Center UI v1.1.0
- * Binds all sixteen Resource Ministry cards to scoped live-data panels.
+/* OMEGA Resource Command Center UI v1.2.0
+ * Binds all fifteen Resource Ministry cards to scoped live-data panels.
  * Actions report authoritative runtime outcomes; unavailable systems never report success.
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.4.0';
+  const VERSION = '1.5.0';
   const PANELS = [
     { id: 'matrix', num: '01', title: 'Unit standards & metrology' },
     { id: 'ontology', num: '02', title: 'Commodity ontology' },
@@ -15,13 +15,12 @@
     { id: 'inventory', num: '07', title: 'Strategic reserve inventory' },
     { id: 'logistics', num: '08', title: 'Transport corridors' },
     { id: 'industrial', num: '09', title: 'Industrial value chain' },
-    { id: 'market', num: '10', title: 'Commodity market' },
-    { id: 'trade', num: '11', title: 'Supply contracts & tariffs' },
-    { id: 'value', num: '12', title: 'Resource rent & sovereign wealth' },
-    { id: 'cascade', num: '13', title: 'Cascade disruption sandbox' },
-    { id: 'cognitive', num: '14', title: 'Cognitive decision gate' },
-    { id: 'power', num: '15', title: 'Power systems & energy projects' },
-    { id: 'environment', num: '16', title: 'Circular industry & environmental controls' }
+    { id: 'trade', num: '10', title: 'Supply contracts & tariffs' },
+    { id: 'value', num: '11', title: 'Resource rent & sovereign wealth' },
+    { id: 'cascade', num: '12', title: 'Cascade disruption sandbox' },
+    { id: 'cognitive', num: '13', title: 'Cognitive decision gate' },
+    { id: 'power', num: '14', title: 'Power systems & energy projects' },
+    { id: 'environment', num: '15', title: 'Circular industry & environmental controls' }
   ];
   const ALIASES = { profile: 'cognitive', inventory: 'inventory', deposits: 'deposits', matrix: 'matrix' };
   let countryId = null;
@@ -1923,7 +1922,6 @@
       case 'inventory': return panelInventory(country);
       case 'logistics': return panelLogistics(country);
       case 'industrial': return panelIndustrial(country);
-      case 'market': return panelMarket(country);
       case 'trade': return panelTrade(country);
       case 'value': return panelValue(country);
       case 'cascade': return panelCascade(country);
@@ -1932,6 +1930,88 @@
       case 'environment': return panelEnvironment(country);
       default: return panelMatrix(country);
     }
+  }
+  function renderMarketDashboard(root, country, options) {
+    options = options || {};
+    if (!root || typeof root.addEventListener !== 'function') {
+      return { ok:false, code:'MARKET_DASHBOARD_ROOT_REQUIRED' };
+    }
+    const selectedCountry = activeCountry(country || options.countryId || countryId);
+    root.__omegaMarketDashboardOptions = {
+      countryId: selectedCountry,
+      onClose: typeof options.onClose === 'function' ? options.onClose : null
+    };
+
+    function renderEmbedded() {
+      const current = root.__omegaMarketDashboardOptions || {};
+      const scopedCountry = activeCountry(current.countryId || selectedCountry);
+      const embeddedCss =
+        '.omega-rescc-market-embedded{width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;min-height:0;min-width:0;box-sizing:border-box;display:block;overflow:visible!important;border:0;border-radius:0;box-shadow:none}' +
+        '.omega-rescc-market-embedded>.omega-rescc-content{display:block;min-width:0;min-height:0;height:auto!important;flex:0 0 auto;overflow:visible!important;padding:0!important}' +
+        '.omega-rescc-market-embedded .omega-market-dashboard{min-height:0;width:100%;padding:0 0 12px}' +
+        '.omega-rescc-market-embedded .omega-market-header{margin:0}';
+      root.innerHTML = '<style>' + css() + embeddedCss + '</style>' +
+        '<div class="omega-rescc-shell omega-rescc-shell--market omega-rescc-market-embedded" role="region" aria-label="Global Commodity Market">' +
+        '<main class="omega-rescc-content">' + panelMarket(scopedCountry) + '</main></div>';
+    }
+
+    if (!root.__omegaMarketDashboardBound) {
+      root.addEventListener('click', function (event) {
+        const target = event.target && event.target.closest ? event.target.closest('button') : null;
+        if (!target || (typeof root.contains === 'function' && !root.contains(target))) return;
+        if (target.hasAttribute('data-market-lane')) {
+          if (event.preventDefault) event.preventDefault();
+          selectedMarketLane = target.getAttribute('data-market-lane') === 'FACTORY_PRODUCT' ? 'FACTORY_PRODUCT' : 'RAW_RESOURCE';
+          selectedMarketProductId = '';
+          renderEmbedded();
+          return;
+        }
+        if (target.hasAttribute('data-market-product')) {
+          if (event.preventDefault) event.preventDefault();
+          selectedMarketProductId = String(target.getAttribute('data-market-product') || '');
+          renderEmbedded();
+          return;
+        }
+        const action = target.getAttribute('data-action');
+        if (action === 'market-refresh') {
+          if (event.preventDefault) event.preventDefault();
+          const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
+          if (market && typeof market.rebuild === 'function') {
+            try { market.rebuild(); }
+            catch (error) { console.error('[OMEGA Market] Snapshot refresh failed.', error); }
+          }
+          renderEmbedded();
+          return;
+        }
+        if (action === 'close') {
+          if (event.preventDefault) event.preventDefault();
+          const current = root.__omegaMarketDashboardOptions || {};
+          if (typeof current.onClose === 'function') current.onClose();
+          else root.innerHTML = '';
+        }
+      });
+      root.addEventListener('input', function (event) {
+        const field = event.target;
+        if (!field || field.id !== 'omega-rescc-market-search') return;
+        selectedMarketSearch = String(field.value || '');
+        const query = selectedMarketSearch.trim().toLowerCase();
+        const rows = typeof root.querySelectorAll === 'function' ? root.querySelectorAll('[data-market-search]') : [];
+        Array.from(rows || []).forEach(function (node) {
+          const haystack = String(node.getAttribute('data-market-search') || node.textContent || '').toLowerCase();
+          node.style.display = !query || haystack.indexOf(query) >= 0 ? '' : 'none';
+        });
+      });
+      root.addEventListener('change', function (event) {
+        const field = event.target;
+        if (!field || field.id !== 'omega-rescc-market-sort') return;
+        selectedMarketSort = String(field.value || 'NAME');
+        renderEmbedded();
+      });
+      root.__omegaMarketDashboardBound = true;
+    }
+
+    renderEmbedded();
+    return { ok:true, countryId:selectedCountry, panel:'market' };
   }
   function css() {
     return '.omega-rescc-shell{width:96vw;max-width:1440px;height:92vh;max-height:980px;display:flex;flex-direction:column;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;background:#07111f;color:#e2e8f0;border:1px solid #1e7890;border-radius:14px;box-shadow:0 18px 64px #000b;font:13px/1.45 system-ui,sans-serif}' +
@@ -2130,19 +2210,6 @@
       modal.addEventListener('click', function (event) {
         const target = event.target && event.target.closest ? event.target.closest('button') : null;
         if (!target) return;
-        if (target.hasAttribute('data-market-lane')) {
-          event.preventDefault();
-          selectedMarketLane = target.getAttribute('data-market-lane') === 'FACTORY_PRODUCT' ? 'FACTORY_PRODUCT' : 'RAW_RESOURCE';
-          selectedMarketProductId = '';
-          render(countryId, 'market');
-          return;
-        }
-        if (target.hasAttribute('data-market-product')) {
-          event.preventDefault();
-          selectedMarketProductId = String(target.getAttribute('data-market-product') || '');
-          render(countryId, 'market');
-          return;
-        }
         if (target.hasAttribute('data-panel')) {
           event.preventDefault();
           openPanel(target.getAttribute('data-panel'));
@@ -2152,7 +2219,7 @@
         if (!action) return;
         event.preventDefault();
         const progress = g.OmegaActionProgress;
-        const simpleActions = ['close', 'refresh-panel', 'focus-map', 'market-refresh'];
+        const simpleActions = ['close', 'refresh-panel', 'focus-map'];
         if (progress && typeof progress.run === 'function' && !simpleActions.includes(action)) {
           const label = String(action || 'resource command').replace(/[-_]+/g, ' ');
           progress.run('Resource command · ' + label, function () {
@@ -2170,24 +2237,9 @@
         }
       });
       modal.addEventListener('input', function (event) {
-        if (event.target && event.target.id === 'omega-rescc-market-search') {
-          selectedMarketSearch = String(event.target.value || '');
-          const query = selectedMarketSearch.trim().toLowerCase();
-          const marketRows = modal.querySelectorAll('[data-market-search]');
-          Array.from(marketRows || []).forEach(function (node) {
-            const haystack = String(node.getAttribute('data-market-search') || node.textContent || '').toLowerCase();
-            node.style.display = !query || haystack.indexOf(query) >= 0 ? '' : 'none';
-          });
-          return;
-        }
         if (event.target && event.target.id === 'omega-rescc-search') applySearch(event.target.value);
       });
       modal.addEventListener('change', function (event) {
-        if (event.target && event.target.id === 'omega-rescc-market-sort') {
-          selectedMarketSort = String(event.target.value || 'NAME');
-          render(countryId, 'market');
-          return;
-        }
         if (event.target && event.target.id === 'omega-rescc-panel-select') {
           openPanel(event.target.value);
           return;
@@ -2311,7 +2363,7 @@
       return '<option value="' + p.id + '"' + (p.id === activePanel ? ' selected' : '') + '>' +
         p.num + ' · ' + esc(p.title) + '</option>';
     }).join('');
-    modal.innerHTML = '<style>' + css() + '</style><div class="omega-rescc-shell' + (activePanel === 'market' ? ' omega-rescc-shell--market' : '') + '" role="dialog" aria-modal="true" aria-label="Resource Command Center">' +
+    modal.innerHTML = '<style>' + css() + '</style><div class="omega-rescc-shell" role="dialog" aria-modal="true" aria-label="Resource Command Center">' +
       '<div class="omega-rescc-top"><div class="omega-rescc-heading"><h2>Resource Command Center</h2>' +
       '<div class="omega-rescc-headtools"><select id="omega-rescc-country" aria-label="Country scope">' + options + '</select>' +
       '<button type="button" class="omega-rescc-button" data-action="refresh-panel">Refresh</button>' +
@@ -2382,15 +2434,6 @@
     try {
       if (action === 'close') { close(); return; }
       if (action === 'refresh-panel') { resourceDataWarmupAttempted = false; render(c, activePanel); ensureResourceDataReady(true); return; }
-      if (action === 'market-refresh') {
-        const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
-        if (market && typeof market.rebuild === 'function') {
-          try { market.rebuild(); }
-          catch (error) { console.error('[OMEGA Market] Snapshot refresh failed.', error); }
-        }
-        render(c, 'market');
-        return;
-      }
       if (action === 'authorize-player-supply-lifeline') {
         const runtime = g.OmegaResourceNationalDemandRuntime || g.Omega && g.Omega.ResourceNationalDemandRuntime;
         if (!runtime || typeof runtime.authorizePlayerSupplyLifeline !== 'function')
@@ -2761,8 +2804,8 @@
           const panelByPoint = {
             '01': 'matrix', '02': 'ontology', '03': 'reserves', '04': 'deposits',
             '05': 'extraction', '06': 'processing', '07': 'inventory', '08': 'logistics',
-            '09': 'industrial', '10': 'market', '11': 'trade', '12': 'value',
-            '13': 'cascade', '14': 'cognitive', '15': 'power', '16': 'environment'
+            '09': 'industrial', '10': 'trade', '11': 'value', '12': 'cascade',
+            '13': 'cognitive', '14': 'power', '15': 'environment'
           };
           html = html.replace(/<div class="dept-card" style=[\s\S]*?(?=<div class="dept-card" style=|$)/g, function (block) {
             const point = block.match(/<span>(\d{2})\.\s/);
@@ -2803,7 +2846,7 @@
         cabinet.__omegaResccCardPatch = true;
       }
       cabinet.executeResource16Point = function (pointKey, directiveType) {
-        const routes = { p01: 'matrix', p02: 'ontology', p03: 'reserves', p04: 'deposits', p05: 'extraction', p06: 'processing', p07: 'inventory', p08: 'logistics', p09: 'industrial', p10: 'market', p11: 'trade', p12: 'value', p13: 'cascade', p14: 'cognitive', p15: 'power', p16: 'environment' };
+        const routes = { p01: 'matrix', p02: 'ontology', p03: 'reserves', p04: 'deposits', p05: 'extraction', p06: 'processing', p07: 'inventory', p08: 'logistics', p09: 'industrial', p10: 'trade', p11: 'value', p12: 'cascade', p13: 'cognitive', p14: 'power', p15: 'environment' };
         const route = routes[String(pointKey || '').toLowerCase()];
         if (route) { render(activeCountry(), route); return { status: 'OPENED_PANEL', panel: route }; }
         if (typeof cabinet.executeResourceDirective === 'function') {
@@ -2851,6 +2894,7 @@
   const API = Object.freeze({
     VERSION,
     install,
+    renderMarketDashboard,
     openPanel: function (panel) { render(countryId, panel); },
     open: function (country, panel) { render(country, panel); },
     close,

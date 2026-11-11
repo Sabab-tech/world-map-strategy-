@@ -8,15 +8,18 @@ on:
     branches: [main]
     paths:
       - 'server.js'
+      - 'ministry_engine.js'
       - 'omega_resource_ai_decision_service.js'
       - 'test/omega_resource_ai_decision_service.test.mjs'
       - 'index.html'
       - 'omega_resource_command_center_ui_v1.js'
+      - 'omega_ui_v2/screens/ministry-detail.js'
       - 'omega_global_trade_system.js'
       - 'omega_global_market_system.js'
       - 'test/omega_global_market_system.test.mjs'
       - 'package.json'
       - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1_integration.test.mjs'
       - 'test/omega_resource_command_center_ui_runtime.test.mjs'
       - 'test/omega_global_trade_system.test.mjs'
       - '.github/workflows/resource-command-center.yml'
@@ -26,15 +29,18 @@ on:
       - fix/resource-command-center-ui-routing-v2
     paths:
       - 'server.js'
+      - 'ministry_engine.js'
       - 'omega_resource_ai_decision_service.js'
       - 'test/omega_resource_ai_decision_service.test.mjs'
       - 'index.html'
       - 'omega_resource_command_center_ui_v1.js'
+      - 'omega_ui_v2/screens/ministry-detail.js'
       - 'omega_global_trade_system.js'
       - 'omega_global_market_system.js'
       - 'test/omega_global_market_system.test.mjs'
       - 'package.json'
       - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1_integration.test.mjs'
       - 'test/omega_resource_command_center_ui_runtime.test.mjs'
       - 'test/omega_global_trade_system.test.mjs'
       - '.github/workflows/resource-command-center.yml'
@@ -64,7 +70,7 @@ jobs:
           node --check omega_global_trade_system.js
       - name: Test server resource decision AI contract
         run: npm run test:resource-ai-decision
-      - name: Test all sixteen panel routes and metrology
+      - name: Test fifteen Resource Ministry panels and the Trade & Commerce market integration
         run: npm run test:ui-visual
       - name: Test bilateral trade request and settlement
         run: npm run test:global-trade

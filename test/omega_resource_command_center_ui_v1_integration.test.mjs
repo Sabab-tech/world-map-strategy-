@@ -4,14 +4,15 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const ui = fs.readFileSync('omega_resource_command_center_ui_v1.js', 'utf8');
+const tradeMinistryUi = fs.readFileSync('omega_ui_v2/screens/ministry-detail.js', 'utf8');
 const ministry = fs.readFileSync('ministry_engine.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
 const market = fs.readFileSync('omega_global_market_system.js', 'utf8');
 const logistics = fs.readFileSync('omega_resource_logistics_runtime_v1.js', 'utf8');
 const policyRuntime = fs.readFileSync('omega_resource_strategic_policy_runtime_v1.js', 'utf8');
-const panelIds = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment'];
+const panelIds = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','trade','value','cascade','cognitive','power','environment'];
 
-test('all sixteen resource panels are registered, selectable and safe to render', () => {
+test('all fifteen Resource Ministry panels are registered, selectable and safe to render', () => {
   for (const id of panelIds) {
     assert.match(ui, new RegExp("id: '" + id + "'"));
     assert.match(ui, new RegExp("case '" + id + "'"));
@@ -84,8 +85,8 @@ test('all sixteen resource panels are registered, selectable and safe to render'
   const clickRoutes = [
     ['p01','matrix'],['p02','ontology'],['p03','reserves'],['p04','deposits'],
     ['p05','extraction'],['p06','processing'],['p07','inventory'],['p08','logistics'],
-    ['p09','industrial'],['p10','market'],['p11','trade'],['p12','value'],
-    ['p13','cascade'],['p14','cognitive'],['p15','power'],['p16','environment']
+    ['p09','industrial'],['p10','trade'],['p11','value'],['p12','cascade'],
+    ['p13','cognitive'],['p14','power'],['p15','environment']
   ];
   for (const [point,panel] of clickRoutes) {
     const outcome=sandbox.OmegaCabinetUI.executeResource16Point(point,'legacy-directive-must-not-run');
@@ -106,18 +107,18 @@ test('legacy card names disclose feature gaps instead of claiming unsupported ac
   assert.match(ui,/p07: 'inventory'/);
   assert.match(ui,/p08: 'logistics'/);
   assert.match(ui,/p09: 'industrial'/);
-  assert.match(ui,/p10: 'market'/);
-  assert.match(ui,/p11: 'trade'/);
-  assert.match(ui,/p12: 'value'/);
-  assert.match(ui,/p13: 'cascade'/);
-  assert.match(ui,/p14: 'cognitive'/);
+  assert.match(ui,/p10: 'trade'/);
+  assert.match(ui,/p11: 'value'/);
+  assert.match(ui,/p12: 'cascade'/);
+  assert.match(ui,/p13: 'cognitive'/);
   assert.match(ui,/p06: 'processing'/);
-  assert.match(ui,/p15: 'power'/);
-  assert.match(ui,/p16: 'environment'/);
+  assert.match(ui,/p14: 'power'/);
+  assert.match(ui,/p15: 'environment'/);
+  assert.doesNotMatch(ui,/p16: 'environment'/);
   assert.match(ui,/AUTHORITATIVE TIME-SERIES NOT AVAILABLE/);
   assert.doesNotMatch(ui,/Math\.random\(/);
   assert.ok(ministry.includes("executeResource16Point('p05', 'drill_oil')"));
-  assert.ok(ministry.includes("executeResource16Point('p16', 'build_solar')"));
+  assert.ok(ministry.includes("executeResource16Point('p15', 'build_solar')"));
   assert.match(ui,/Open 12-Question Screening Checklist/);
   assert.match(ui,/Open Treasury & SWF Console/);
   assert.match(ui,/tonnes CO₂e/i);
@@ -296,4 +297,20 @@ test('optional semantic bootstrap cannot invalidate authoritative resource JSON 
     'an auxiliary semantic failure must be reported without changing canonical engine readiness');
   assert.match(init, /GSRSK_MASTER_ENGINE_BOOTSTRAP_COMPLETE/,
     'dependent integrations can observe completion of the deferred semantic bootstrap');
+});
+
+
+test('the Global Commodity Market is moved into the Trade & Commerce ministry', () => {
+  assert.ok(ui.includes('function renderMarketDashboard(root, country, options)'));
+  assert.ok(ui.includes('renderMarketDashboard,'));
+  assert.equal(ui.includes("id: 'market', num:"), false);
+  assert.equal(ui.includes("case 'market': return panelMarket(country)"), false);
+  assert.ok(tradeMinistryUi.includes("market:'Global Commodity Market'"));
+  assert.ok(tradeMinistryUi.includes('data-omega-v2-trade-market-host'));
+  assert.ok(tradeMinistryUi.includes('renderMarketDashboard(marketHost, country'));
+  assert.ok(tradeMinistryUi.includes("section === 'market'"));
+  assert.ok(html.indexOf('omega_resource_command_center_ui_v1.js') >= 0);
+  assert.ok(html.indexOf('omega_resource_command_center_ui_v1.js') < html.indexOf('omega_ui_v2/screens/ministry-detail.js'),
+    'the shared market renderer must load before the Trade & Commerce ministry screen');
+  assert.ok(html.includes('omega_ui_v2/screens/ministry-detail.js'));
 });
