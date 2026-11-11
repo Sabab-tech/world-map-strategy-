@@ -196,12 +196,13 @@
     ];
     var cards = fields.map(function (entry) { return metricCard(entry[0], field(data, entry[1])); }).join('');
     var rows = Array.isArray(ministryRowCache) ? ministryRowCache : ministryRows(countryId, false);
-    var shortcutIds = ['treasury_finance', 'energy_mining', 'production', 'interior_security', 'foreign_affairs', 'mega_projects'];
+    var shortcutIds = ['trade', 'treasury_finance', 'energy_mining', 'production', 'interior_security', 'foreign_affairs', 'mega_projects'];
     var shortcuts = rows.filter(function (row) { return shortcutIds.indexOf(row.id) >= 0; }).map(function (row) {
       var photoId = PHOTO_BY_MINISTRY[row.id];
+      var buttonLabel = row.id === 'trade' ? 'Open Trade & Commerce' : 'Open ministry';
       return '<article class="omega-v2-card"><div class="omega-v2-card-header"><div><h3 class="omega-v2-card-title">' + esc(row.title) + '</h3><div class="omega-v2-card-meta">' + esc(row.subtitle || CATEGORY_LABELS[row.category] || 'Ministry') + '</div></div></div>' +
         (photoId ? photoMarkup(photoId, row.title + ' reference photograph') : '') +
-        '<div class="omega-v2-actions"><button class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-ministry="' + esc(row.id) + '">Open ministry</button></div></article>';
+        '<div class="omega-v2-actions"><button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-ministry="' + esc(row.id) + '" aria-label="' + esc(buttonLabel + ': ' + row.title) + '">' + esc(buttonLabel) + '</button></div></article>';
     }).join('');
     return '<section class="omega-v2-overview">' +
       '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">EXECUTIVE MINISTRY · COUNTRY OVERVIEW</div><h1 class="omega-v2-title">' + esc(displayName) + '</h1><p class="omega-v2-subtitle">Country snapshot from registered sources and the current simulation. Missing fields are never displayed as zero.</p></div>' +
@@ -209,7 +210,7 @@
       (String(data.countryCode || '').toUpperCase() === 'BGD' ? photoMarkup('bangladesh-parliament', 'Bangladesh parliament building, reference image') : photoMarkup('un-assembly-building', 'United Nations Assembly building, international reference image')) +
       '<h2 class="omega-v2-section-title">National snapshot</h2><div class="omega-v2-kpis">' + cards + '</div>' +
       '<h2 class="omega-v2-section-title">Executive priorities and alerts</h2><div class="omega-v2-note">Only alerts and decisions returned by a registered gameplay source should be placed here. This UI foundation does not invent crisis alerts.</div>' +
-      '<h2 class="omega-v2-section-title">Government, security, resources and industry</h2><div class="omega-v2-grid">' + shortcuts + '</div>' +
+      '<h2 class="omega-v2-section-title">Government, security, trade, resources and industry</h2><div class="omega-v2-grid">' + shortcuts + '</div>' +
       '<h2 class="omega-v2-section-title">Data coverage & missing fields</h2><div class="omega-v2-card"><div class="omega-v2-card-title">' +
       (coverage && coverage.length ? Math.max(0, Object.keys(data.fields || {}).length - coverage.length) + ' recorded field(s) · ' + coverage.length + ' missing field(s)' : Object.keys(data.fields || {}).length + ' field(s) returned by the gateway') +
       '</div>' + (coverage && coverage.length ? '<details><summary>Inspect missing fields</summary><ul>' + coverage.map(function (row) { return '<li>' + esc(typeof row === 'string' ? row : row.field || row.name || JSON.stringify(row)) + '</li>'; }).join('') + '</ul></details>' : '<p class="omega-v2-card-meta">The gateway did not report a missing-field list for this snapshot.</p>') + '</div>' +
