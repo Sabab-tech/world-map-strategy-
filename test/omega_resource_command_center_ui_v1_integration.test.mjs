@@ -10,9 +10,9 @@ const html = fs.readFileSync('index.html', 'utf8');
 const market = fs.readFileSync('omega_global_market_system.js', 'utf8');
 const logistics = fs.readFileSync('omega_resource_logistics_runtime_v1.js', 'utf8');
 const policyRuntime = fs.readFileSync('omega_resource_strategic_policy_runtime_v1.js', 'utf8');
-const panelIds = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','trade','value','cascade','cognitive','power','environment'];
+const panelIds = ['matrix','production-line','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','trade','value','cascade','cognitive','power','environment'];
 
-test('all fifteen Resource Ministry panels are registered, selectable and safe to render', () => {
+test('all sixteen Resource Ministry panels are registered, selectable and safe to render', () => {
   for (const id of panelIds) {
     assert.match(ui, new RegExp("id: '" + id + "'"));
     assert.match(ui, new RegExp("case '" + id + "'"));
@@ -313,4 +313,23 @@ test('the Global Commodity Market is moved into the Trade & Commerce ministry', 
   assert.ok(html.indexOf('omega_resource_command_center_ui_v1.js') < html.indexOf('omega_ui_v2/screens/ministry-detail.js'),
     'the shared market renderer must load before the Trade & Commerce ministry screen');
   assert.ok(html.includes('omega_ui_v2/screens/ministry-detail.js'));
+});
+
+test('integrated Production Line panel unifies existing resource, factory, private enterprise, warehouse, route and market controls', () => {
+  assert.match(ui, /function panelProductionLine\(country\)/);
+  assert.match(ui, /case 'production-line': return panelProductionLine\(country\)/);
+  assert.match(ui, /Resource production/);
+  assert.match(ui, /Raw-material warehouse/);
+  assert.match(ui, /Routes and deliveries/);
+  assert.match(ui, /Government factory production/);
+  assert.match(ui, /Non-government factory production/);
+  assert.match(ui, /Finished goods and processing/);
+  assert.match(ui, /Market and trade/);
+  for (const panel of ['extraction','inventory','logistics','industrial','processing','trade']) {
+    assert.match(ui, new RegExp("manageButton\\('" + panel + "'"),
+      'the unified view must route management to the existing authoritative ' + panel + ' panel');
+  }
+  assert.match(ui, /open-production-market/);
+  assert.match(ui, /renderMarketDashboard\(host, countryId/);
+  assert.match(ui, /line advances on committed simulation turns for the selected player country/);
 });

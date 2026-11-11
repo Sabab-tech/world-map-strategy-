@@ -1131,3 +1131,61 @@ test('player-country turn batches finished-goods and owner publications into one
   assert.equal(registrationEvents, 2,
     'each completed factory transaction must still emit its economy/market registration event');
 });
+
+test('inventory reconciliation appends a new lot when a historical legacy opening batch was consumed', () => {
+  const h = buildContext(), g = h.context, state = h.state;
+  const legacyBatchId = 'LEGACY_OPENING_BGD_COAL';
+  state.resource.BGD = {
+    inventory: { coal: 100 },
+    batches: [{
+      batchId: legacyBatchId, resourceId: 'coal', materialIdentity: 'coal',
+      quantity: 100, remainingQuantity: 0, unit: 'TONNES', stage: 'RAW',
+      status: 'CONSUMED', countryId: 'BGD', ownerCountryCode: 'BGD',
+      warehouseId: 'WH-BGD-RAW', locationNodeKey: 'WAREHOUSE:BGD:RAW'
+    }],
+    inventoryLots: {
+      [legacyBatchId]: {
+        batchId: legacyBatchId, resourceId: 'coal', quantity: 100, remainingQuantity: 0,
+        unit: 'TONNES', stage: 'RAW', status: 'CONSUMED', countryId: 'BGD',
+        warehouseId: 'WH-BGD-RAW', locationNodeKey: 'WAREHOUSE:BGD:RAW'
+      }
+    },
+    inventoryLedger: [],
+    warehouse: {
+      warehouseId: 'WH-BGD-RAW', countryId: 'BGD', type: 'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
+      availableByResource: { coal: 0 }, storedBatchIds: [], receipts: [], reservedByResource: {}
+    },
+    processedWarehouse: {
+      warehouseId: 'WH-BGD-PROCESSED', countryId: 'BGD',
+      type: 'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',
+      availableByResource: {}, storedBatchIds: [], receipts: []
+    },
+    industrialNetwork: { siteFlowLedger: [], shipments: [] }
+  };
+  vm.runInContext(readText('omega_resource_economy_runtime_v2.js'), g,
+    { filename: 'omega_resource_economy_runtime_v2.js' });
+
+  const first = g.Omega.ResourceEconomy.reconcileCountry('BGD');
+  assert.equal(first.status, 'APPLIED', JSON.stringify(first));
+  assert.equal(first.result.status, 'HEALTHY', JSON.stringify(first.result));
+  const created = state.resource.BGD.batches.filter(row =>
+    row.resourceId === 'coal' && Number(row.remainingQuantity) > 0);
+  assert.equal(created.length, 1, 'the unallocated stock must be represented by one new tracked batch');
+  assert.notEqual(created[0].batchId, legacyBatchId,
+    'a consumed historical legacy batch ID must never be reused for newly available stock');
+  assert.equal(created[0].quantity, 100);
+  assert.equal(created[0].remainingQuantity, 100);
+  assert.equal(state.resource.BGD.inventoryLots[created[0].batchId].remainingQuantity, 100);
+  assert.equal(state.resource.BGD.warehouse.availableByResource.coal, 100);
+  assert.ok(state.resource.BGD.warehouse.storedBatchIds.includes(created[0].batchId));
+  assert.ok(state.resource.BGD.warehouse.receipts.some(row => row.batchId === created[0].batchId));
+
+  const batchCount = state.resource.BGD.batches.length;
+  const second = g.Omega.ResourceEconomy.reconcileCountry('BGD');
+  assert.equal(second.status, 'APPLIED', JSON.stringify(second));
+  assert.equal(second.result.status, 'HEALTHY', JSON.stringify(second.result));
+  assert.equal(state.resource.BGD.batches.length, batchCount,
+    'reconciling the same inventory twice must not create duplicate top-up lots');
+  assert.equal(state.resource.BGD.inventory.coal, 100,
+    'the aggregate inventory quantity must remain unchanged by reconciliation');
+});

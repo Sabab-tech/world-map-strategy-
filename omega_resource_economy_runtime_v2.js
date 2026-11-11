@@ -378,14 +378,41 @@
       var q=num(inv[rid]);if(q===null||q<0)return;
       var diff=q-(num(allocated[rid])||0);
       if(diff>0){
-        var legacyBatchId='LEGACY_OPENING_'+c+'_'+String(rid).trim().toUpperCase();
-        if(!bs.some(function(x){return String(x&&x.batchId)===legacyBatchId;})){
-          bs.push({batchId:legacyBatchId,resourceId:rid,materialIdentity:rid,quantity:diff,remainingQuantity:diff,unit:null,stage:'RAW',ownerCountryCode:c,ownerCompanyId:'UNKNOWN_SOURCE',sourceBatchIds:[],purity:null,grade:null,quality:null,qualityState:{purity:null,purityStatus:'UNOBSERVED',source:'PRE_EXISTING_RESOURCE_INVENTORY'},warehouseId:'WH-'+c+'-RAW',locationNodeKey:'WAREHOUSE:'+c+':RAW',provenance:{source:'PRE_EXISTING_RESOURCE_INVENTORY',status:'UNALLOCATED_LEGACY_BALANCE',simulationTurn:turn()}});
+        var legacyBatchBase='LEGACY_OPENING_'+c+'_'+String(rid).trim().toUpperCase();
+        var legacyBatchId=legacyBatchBase;
+        // A legacy opening batch can remain in the ledger after its stock has been
+        // consumed. Never treat that historical ID as proof that a new unallocated
+        // balance is already represented: append a distinct top-up lot instead.
+        if(bs.some(function(x){return String(x&&x.batchId)===legacyBatchBase;})){
+          var topUpSequence=1,topUpCandidate='';
+          do{
+            topUpCandidate=legacyBatchBase+'_TOPUP_T'+turn()+'_'+topUpSequence;
+            topUpSequence+=1;
+          }while(bs.some(function(x){return String(x&&x.batchId)===topUpCandidate;}));
+          legacyBatchId=topUpCandidate;
         }
+        var legacyBatch={batchId:legacyBatchId,resourceId:rid,materialIdentity:rid,
+          quantity:diff,remainingQuantity:diff,unit:null,stage:'RAW',status:'AVAILABLE',
+          countryId:c,sourceCountryId:c,originCountryId:c,ownerCountryCode:c,destinationCountryId:c,
+          ownerCompanyId:'UNKNOWN_SOURCE',sourceBatchIds:[],purity:null,grade:null,quality:null,
+          qualityState:{purity:null,purityStatus:'UNOBSERVED',source:'PRE_EXISTING_RESOURCE_INVENTORY'},
+          warehouseId:'WH-'+c+'-RAW',locationNodeKey:'WAREHOUSE:'+c+':RAW',
+          createdTurn:turn(),lastMovementTurn:turn(),
+          provenance:{source:'PRE_EXISTING_RESOURCE_INVENTORY',status:'UNALLOCATED_LEGACY_BALANCE',
+            simulationTurn:turn(),authority:'RESOURCE_INVENTORY_AUTHORITY'}};
+        bs.push(legacyBatch);
+        inventoryLots[legacyBatchId]=Object.assign({},legacyBatch,{status:'AVAILABLE'});
         warehouse.availableByResource[rid]=(num(warehouse.availableByResource[rid])||0)+diff;
         if(!Array.isArray(warehouse.storedBatchIds))warehouse.storedBatchIds=[];
         if(!warehouse.storedBatchIds.includes(legacyBatchId))warehouse.storedBatchIds.push(legacyBatchId);
-        ledger.push({type:'INVENTORY_RECONCILIATION',resourceId:rid,quantity:diff,policy:'PRESERVE_AND_MARK',status:'LEGACY_UNALLOCATED_BALANCE',batchId:legacyBatchId,turn:turn()});
+        if(!Array.isArray(warehouse.receipts))warehouse.receipts=[];
+        if(!warehouse.receipts.some(function(row){return String(row&&row.batchId)===legacyBatchId;})){
+          warehouse.receipts.push({receiptId:'WH-REC-'+legacyBatchId,warehouseId:'WH-'+c+'-RAW',
+            countryId:c,batchId:legacyBatchId,resourceId:rid,quantity:diff,unit:null,
+            simulationTurn:turn(),receivedFrom:'LEGACY_BALANCE_RECONCILIATION',status:'RECEIVED'});
+        }
+        ledger.push({type:'INVENTORY_RECONCILIATION',resourceId:rid,quantity:diff,
+          policy:'PRESERVE_AND_MARK',status:'LEGACY_UNALLOCATED_BALANCE',batchId:legacyBatchId,turn:turn()});
       }else if(diff<0){
         ledger.push({type:'INVENTORY_RECONCILIATION',resourceId:rid,quantity:-diff,policy:'OBSERVE_MISMATCH',status:'BATCH_LEDGER_EXCEEDS_INVENTORY',turn:turn()});
       }
