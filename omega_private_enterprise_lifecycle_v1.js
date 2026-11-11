@@ -1830,7 +1830,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
       requestReason:requestReason,expectedBenefit:expectedBenefit,riskForecast:riskForecast,
       stateSupportRequested:input.stateSupportRequested===true,
       capitalRequired:num(profile.constructionCost)===null?null:num(profile.constructionCost)*quantity,
-      capitalUnit:profile.unit||'GAME_CURRENCY_UNITS',
+      capitalUnit:companyCapitalCurrency(cid,company,profile),
       workforcePerFactory:clone(profile.workforce||{}),utilitiesPerFactory:clone(profile.utilities||{}),
       forecastOutputPerDay:(num(profile.defaultCapacityPerDay)||0)*quantity,
       expectedInputRequirements:inputForecast(cid,profile,recipe,quantity),
@@ -2361,7 +2361,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
         invitationScore=invitation?5:0,
         assessment=proposalDecisionAssessment({countryId:cid,companyId:company,factoryType:type,
           quantity:quantity,processingResourceId:processingResourceId,sourcingPolicy:sourcingPolicy,
-          capitalRequired:capitalRequired,capitalUnit:profile.unit||'GAME_CURRENCY_UNITS'},preview),
+          capitalRequired:capitalRequired,capitalUnit:companyCapitalCurrency(cid,company,profile)},preview),
         unitEconomics=companyUnitEconomics({countryId:cid,factoryType:type,processingResourceId:processingResourceId,capitalRequired:capitalRequired},
           preview,assessment,marketApi),
         // Investment ranking may use only fully calculated net operating results.
@@ -2714,6 +2714,87 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     if(ledger.length>4096)ledger.splice(0,ledger.length-4096);
     recordEvent(cid,'COMPANY_CAPITAL_RECEIVED',{companyId:company,sourceTransactionId:transactionId,amount:amount});
     return{status:'POSTED',companyId:company,amount:amount,balance:account.availableBalance,sourceTransactionId:transactionId};
+  }
+  function initializeOpeningCompanyCapital(input){
+    input=input||{};
+    var cid=canonicalCountry(input.countryId||playerCountry()),player=playerCountry(),currency=id(input.currencyCode),
+      total=num(input.totalCapital),allocations=Array.isArray(input.companyAllocations)?input.companyAllocations:[],
+      baselineId=String(input.baselineId||'OMEGA_PRIVATE_COMPANY_OPENING_CAPITAL_V1');
+    if(cid!==player||!player)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
+    if(!currency||!Number.isFinite(total)||total<=0||allocations.length!==COMPANY_IDS.length)
+      return{status:'BLOCKED',reason:'OPENING_COMPANY_CAPITAL_FIELDS_INVALID'};
+    var byCompany=new Map(),sum=0;
+    for(var i=0;i<allocations.length;i++){
+      var row=allocations[i]||{},company=id(row.companyId),amount=num(row.amount);
+      if(COMPANY_IDS.indexOf(company)<0||byCompany.has(company)||amount===null||amount<=0)
+        return{status:'BLOCKED',reason:'OPENING_COMPANY_CAPITAL_ALLOCATION_INVALID',companyId:company||null};
+      byCompany.set(company,row);sum+=amount;
+    }
+    if(COMPANY_IDS.some(function(company){return !byCompany.has(company);})||Math.abs(sum-total)>.02)
+      return{status:'BLOCKED',reason:'OPENING_COMPANY_CAPITAL_TOTAL_MISMATCH',expected:total,actual:sum};
+    var ledger=financeLedger(cid,true);if(!ledger)return{status:'BLOCKED',reason:'COMPANY_FINANCE_LEDGER_UNAVAILABLE'};
+    var seeded=[],preserved=[],duplicates=[];
+    for(var j=0;j<COMPANY_IDS.length;j++){
+      var companyId=COMPANY_IDS[j],allocation=byCompany.get(companyId),amount=num(allocation.amount),
+        transactionId='PRIVATE-OPENING-CAPITAL-V1:'+cid+':'+companyId,
+        existing=ledger.find(function(row){return row&&String(row.transactionId||'')===transactionId;}),
+        account=capitalAccount(cid,companyId,true);
+      if(!account)return{status:'BLOCKED',reason:'COMPANY_CAPITAL_ACCOUNT_UNAVAILABLE',companyId:companyId};
+      if(existing){
+        if(id(existing.companyId)!==companyId||id(existing.currency)!==currency||
+           num(existing.amount)===null||Math.abs(num(existing.amount)-amount)>.02)
+          return{status:'BLOCKED',reason:'OPENING_CAPITAL_IDEMPOTENCY_COLLISION',companyId:companyId,transactionId:transactionId};
+        if(Math.abs((num(account.availableBalance)||0)-(num(existing.balanceAfter)||0))>.02&&
+           (num(account.revision)||0)===0)
+          return{status:'BLOCKED',reason:'OPENING_CAPITAL_ACCOUNT_LEDGER_MISMATCH',companyId:companyId};
+        duplicates.push(companyId);continue;
+      }
+      var accountHistory=['availableBalance','reservedBalance','capitalRaised','capitalSpent','retainedEarningsBalance']
+        .some(function(key){return Math.abs(num(account[key])||0)>1e-9;});
+      var priorCompanyFinance=ledger.some(function(row){
+        return row&&id(row.companyId)===companyId&&String(row.status||'').toUpperCase()==='POSTED'&&
+          !/OPENING_CAPITAL/.test(String(row.type||''));
+      });
+      if(accountHistory||priorCompanyFinance){
+        preserved.push(companyId);continue;
+      }
+      var currentCurrency=id(account.currency);
+      if(currentCurrency&&currentCurrency!==currency&&currentCurrency!=='GAME_CURRENCY_UNITS'){
+        return{status:'BLOCKED',reason:'OPENING_COMPANY_CURRENCY_MISMATCH',companyId:companyId,
+          accountCurrency:currentCurrency,expectedCurrency:currency};
+      }
+      account.currency=currency;
+      account.availableBalance=amount;
+      account.capitalRaised=(num(account.capitalRaised)||0)+amount;
+      account.openingCapitalAmount=amount;
+      account.openingCapitalBaselineId=baselineId;
+      account.openingCapitalCountrySharePct=num(input.privateSectorContributionPct);
+      account.openingCapitalTurn=turn();
+      account.revision=(num(account.revision)||0)+1;
+      var entry={
+        transactionId:transactionId,type:'PRIVATE_COMPANY_OPENING_CAPITAL',
+        companyId:companyId,amount:amount,currency:currency,direction:'CREDIT',status:'POSTED',
+        turn:turn(),balanceAfter:account.availableBalance,capitalRaisedAfter:account.capitalRaised,
+        baselineId:baselineId,privateSectorContributionPct:num(input.privateSectorContributionPct),
+        companySharePct:num(allocation.sharePct),privateFactoryUnits:num(allocation.privateFactoryUnits)||0,
+        capitalWeightedFactoryUnits:num(allocation.capitalWeightedFactoryUnits)||0,
+        sourceModel:'COUNTRY_PRIVATE_SECTOR_AND_FACTORY_STRUCTURE',
+        authority:'OMEGA_PRIVATE_COMPANY_CAPITAL_ALLOCATION_V1',
+        publicTreasuryDebit:0,publicTreasuryCredit:0,affectsGovernmentTreasury:false
+      };
+      ledger.push(entry);
+      if(ledger.length>4096)ledger.splice(0,ledger.length-4096);
+      recordEvent(cid,'COMPANY_OPENING_CAPITAL_ALLOCATED',{
+        companyId:companyId,amount:amount,currency:currency,transactionId:transactionId,
+        baselineId:baselineId,privateSectorContributionPct:num(input.privateSectorContributionPct)
+      });
+      seeded.push(companyId);
+    }
+    var status=seeded.length?(preserved.length||duplicates.length?'PARTIALLY_INITIALIZED':'INITIALIZED'):
+      (preserved.length?'ALREADY_INITIALIZED':'ALREADY_INITIALIZED');
+    return{status:status,countryId:cid,currency:currency,totalCapital:total,
+      seededCompanies:seeded,preservedCompanies:preserved,duplicateCompanies:duplicates,
+      companyCount:COMPANY_IDS.length,publicTreasuryChanged:false,authority:'OMEGA_PRIVATE_COMPANY_CAPITAL_ALLOCATION_V1'};
   }
   function fundProposal(input){
     input=input||{};var cid=canonicalCountry(input.countryId||playerCountry()),player=playerCountry(),proposalId=String(input.proposalId||'');
@@ -3216,8 +3297,18 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
   }
 
   function observedCompanyCurrency(country){
-    var finance=financeBucket(country,false)||{},econ=countryBucket('economy',country,false)||{},trade=countryBucket('trade',country,false)||{};
-    return id(trade.settlementCurrency||finance.currencyCode||econ.currency_code||econ.currencyCode||'')||null;
+    var finance=financeBucket(country,false)||{},econ=countryBucket('economy',country,false)||{},trade=countryBucket('trade',country,false)||{},codes=[finance.currencyCode,econ.currency_code,econ.currencyCode,trade.settlementCurrency];
+    for(var i=0;i<codes.length;i++){var code=id(codes[i]);if(code&&code!=='GAME_CURRENCY_UNITS'&&code!=='SIMULATION_RESOURCE_UNIT')return code;}
+    var monetary=g.OmegaForexMonetaryEngine||(g.Omega&&g.Omega.ForexMonetaryEngine),runtime=g.OmegaCountryRuntimeData,profile=null;
+    try{profile=runtime&&typeof runtime.getProfile==='function'?runtime.getProfile(canonicalCountry(country)):null;}catch(_){}
+    try{if(monetary&&typeof monetary.getCurrencyCode==='function'&&profile){var resolved=id(monetary.getCurrencyCode(profile));if(resolved)return resolved;}}catch(_){}
+    return codes.map(id).find(function(code){return !!code;})||null;
+  }
+  function companyCapitalCurrency(country,company,profile){
+    var account=capitalAccount(country,id(company),false);
+    if(account&&['availableBalance','reservedBalance','capitalRaised','capitalSpent','retainedEarningsBalance'].some(function(key){return Math.abs(num(account[key])||0)>1e-9;}))
+      return id(account.currency)||observedCompanyCurrency(country)||profile&&profile.unit||'GAME_CURRENCY_UNITS';
+    return observedCompanyCurrency(country)||id(account&&account.currency)||profile&&profile.unit||'GAME_CURRENCY_UNITS';
   }
   function privateCompanyWallet(country,company,currency,create){
     var expected=id(currency),account=capitalAccount(country,company,create);
@@ -4748,6 +4839,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     if(!shell||!shell.insertAdjacentHTML)return;
     var country=canonicalCountry(options&&options.countryId||root.__omegaV2IndustryCountryId||playerCountry());
     if(country!==playerCountry())return;
+    try{if(g.dispatchEvent&&g.CustomEvent)g.dispatchEvent(new g.CustomEvent('OMEGA_PRIVATE_ENTERPRISE_PANEL_OPENED',{detail:{countryId:country}}));}catch(_){}
     var previousPanel=shell.querySelector('[data-omega-private-company-lifecycle]');
     var financeWasOpen=!!(previousPanel&&previousPanel.querySelector('[data-pe-finance-details]')&&
       previousPanel.querySelector('[data-pe-finance-details]').open);
@@ -5467,7 +5559,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     VERSION:VERSION,companyIds:COMPANY_IDS.slice(),companyNames:clone(COMPANY_NAMES),
     createProposal:createProposal,adjustProposal:adjustProposal,advanceAutonomousProposalCycle:advanceAutonomousProposalCycle,decideProposal:decideProposal,previewProposal:function(country,id){var p=getProposal(country,id);return p?previewFor(p):{status:'BLOCKED',reason:'PROPOSAL_NOT_FOUND'};},
     fundProposal:fundProposal,startConstruction:startConstruction,authorizeFactoryProjectConstruction:authorizeFactoryProjectConstruction,
-    recordCompanyCapitalReceipt:recordCompanyCapitalReceipt,refreshCommissionedProductionGate:refreshCommissionedProductionGate,
+    recordCompanyCapitalReceipt:recordCompanyCapitalReceipt,initializeOpeningCompanyCapital:initializeOpeningCompanyCapital,refreshCommissionedProductionGate:refreshCommissionedProductionGate,
     getProposal:getProposal,getCountryDashboard:getCountryDashboard,getCompanyCapitalSummary:getCompanyCapitalSummary,
     getCompanyBusinessCase:function(country,proposalId){var p=getProposal(country,proposalId);return p?clone(p.companyCase||companyBusinessCase(p)):null;},
     getCompanyMarketResearchRequests:function(country,companyId){var r=runtime(country||playerCountry(),false),rows=r&&Array.isArray(r.marketResearchRequests)?r.marketResearchRequests:[],target=id(companyId);return clone(rows.filter(function(row){return !target||id(row.companyId)===target;}));},
