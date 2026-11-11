@@ -277,11 +277,7 @@ jobs:
           NODE
           echo '--- server log ---'
           tail -n 80 /tmp/omega-server.log || true
-      - name: Independent 17-ministry runtime proof
-        shell: bash
-        run: |
-          set -euo pipefail
-          npm run test:ministries
-
+      # The required independent 17-ministry proof runs in omega-ministry-runtime.yml.
+      # Keep this Language gate focused on language and Deep Core validation.
       # Repository-wide regression is intentionally not part of the Language System gate.
       # Global CI owns npm test so unrelated subsystem timeouts cannot masquerade as language failures.
