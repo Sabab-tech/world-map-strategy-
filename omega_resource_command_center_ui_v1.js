@@ -4,9 +4,10 @@
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.5.0';
+  const VERSION = '1.6.0';
   const PANELS = [
     { id: 'matrix', num: '01', title: 'Unit standards & metrology' },
+    { id: 'production-line', num: '00', title: 'Integrated Production Line' },
     { id: 'ontology', num: '02', title: 'Commodity ontology' },
     { id: 'reserves', num: '03', title: 'Reserves & in-situ ledger' },
     { id: 'deposits', num: '04', title: 'Deposit registry' },
@@ -1801,6 +1802,183 @@
         settlements: Array.isArray(ledger.settlements) ? ledger.settlements.length : 0
       }) + statusRows(Array.isArray(ledger.settlements) ? ledger.settlements : []);
   }
+
+  function panelProductionLine(country) {
+    const selectedCountry = activeCountry(country);
+    const r = resourceBucket(selectedCountry);
+    const econ = bucket('economy', selectedCountry);
+    const trade = bucket('trade', selectedCountry);
+    const network = r.industrialNetwork && typeof r.industrialNetwork === 'object' ? r.industrialNetwork : {};
+    const mines = Array.isArray(r.mines) ? r.mines : [];
+    const mineLedger = Array.isArray(r.mineProductionLedger) ? r.mineProductionLedger : [];
+    const batches = Array.isArray(r.batches) ? r.batches : [];
+    const rawWarehouse = r.warehouse && typeof r.warehouse === 'object' ? r.warehouse : {};
+    const processedWarehouse = r.processedWarehouse && typeof r.processedWarehouse === 'object' ? r.processedWarehouse : {};
+    const rawStock = rawWarehouse.availableByResource && typeof rawWarehouse.availableByResource === 'object'
+      ? rawWarehouse.availableByResource : {};
+    const finishedStock = processedWarehouse.availableByResource && typeof processedWarehouse.availableByResource === 'object'
+      ? processedWarehouse.availableByResource : {};
+    const flows = Array.isArray(network.siteFlowLedger) ? network.siteFlowLedger : [];
+    const shipments = Array.isArray(network.shipments) ? network.shipments : [];
+    const factories = allFactories(selectedCountry);
+    const cycles = network.factoryProductionCycles && typeof network.factoryProductionCycles === 'object'
+      ? network.factoryProductionCycles
+      : (econ.industrialRuntime && econ.industrialRuntime.factoryProductionCycles) || {};
+    const activeCycles = Object.values(cycles).filter(function (row) {
+      return row && ['IN_PROGRESS','RUNNING','PAUSED'].includes(String(row.status || '').toUpperCase());
+    });
+    const processedStages = ['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'];
+    const finishedBatches = batches.filter(function (row) {
+      return row && processedStages.includes(String(row.stage || '').toUpperCase()) &&
+        Number(row.remainingQuantity != null ? row.remainingQuantity : row.quantity) > 0;
+    });
+    const privateOwnerPattern = /PRIVATE|NON[\\s_-]*GOVERNMENT|ENTERPRISE/i;
+    const governmentOwnerPattern = /STATE|GOVERNMENT|PUBLIC|SOVEREIGN/i;
+    function factoryOwnership(asset) {
+      const labels = [asset && asset.ownerType, asset && asset.ownershipType,
+        asset && asset.ownershipModel, asset && asset.ownerCategory].filter(Boolean).join(' ').toUpperCase();
+      if (privateOwnerPattern.test(labels)) return 'PRIVATE';
+      if (governmentOwnerPattern.test(labels)) return 'GOVERNMENT';
+      const owner = String(asset && (asset.ownerCompanyId || asset.ownerId || asset.companyId) || '').trim().toUpperCase();
+      if (/^(PRIVATE|ENTERPRISE|CORPORATE)[_-]/.test(owner)) return 'PRIVATE';
+      if (/^(STATE|GOVERNMENT|PUBLIC|SOVEREIGN)[_-]/.test(owner)) return 'GOVERNMENT';
+      return 'UNVERIFIED';
+    }
+    const privateFactories = factories.filter(function (asset) { return factoryOwnership(asset) === 'PRIVATE'; });
+    const governmentFactories = factories.filter(function (asset) { return factoryOwnership(asset) === 'GOVERNMENT'; });
+    const unverifiedFactories = factories.length - privateFactories.length - governmentFactories.length;
+    const activeStatuses = new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
+      'BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING']);
+    const activeShipments = shipments.filter(function (row) {
+      return row && activeStatuses.has(String(row.status || '').toUpperCase());
+    });
+    const routeIds = new Set();
+    flows.forEach(function (row) {
+      [row && row.mineLogisticsRouteId, row && row.factoryRouteId, row && row.routeId,
+        row && row.routeProfile && row.routeProfile.routeId].forEach(function (value) {
+        if (value) routeIds.add(String(value));
+      });
+    });
+    shipments.forEach(function (row) { if (row && row.routeId) routeIds.add(String(row.routeId)); });
+    const offerBook = trade.offerBook;
+    const offers = Array.isArray(offerBook) ? offerBook :
+      (offerBook && typeof offerBook === 'object' ? Object.keys(offerBook).map(function (key) { return offerBook[key]; }) : []);
+    const sales = Array.isArray(trade.domesticSales) ? trade.domesticSales : [];
+    const market = g.OmegaGlobalMarket || (g.Omega && g.Omega.GlobalMarket) || null;
+    const marketAvailable = !!(market && typeof market.productCatalog === 'function');
+    const rawRows = Object.keys(rawStock).filter(function (id) { return Number(rawStock[id]) > 0; }).sort();
+    const finishedRows = Object.keys(finishedStock).filter(function (id) { return Number(finishedStock[id]) > 0; }).sort();
+    const mineActive = mines.filter(function (row) {
+      return /ACTIVE|DEPLETING|OPERATING|RUNNING/.test(String(row.operationalStatus || row.status || '').toUpperCase());
+    }).length;
+    const currentTurn = Number(state().simulation && state().simulation.turn) || 1;
+    const sim = state().simulation || {};
+    const playerCountry = sim.session && sim.session.playerCountryId || sim.playerCountryId || state().playerCountryId || '';
+    const playerScope = playerCountry ? normaliseCountry(playerCountry) : '';
+    const scopeLabel = playerScope
+      ? (playerScope === selectedCountry ? 'PLAYER COUNTRY · TURN-DRIVEN' : 'COUNTRY VIEW · PLAYER PIPELINE RUNS ONLY FOR ' + playerScope)
+      : 'PLAYER COUNTRY NOT SELECTED';
+    function manageButton(panel, label) {
+      return '<button type="button" class="omega-rescc-button" data-panel="' + esc(panel) + '">' + esc(label) + '</button>';
+    }
+    const extractionRows = mineLedger.slice(-6).reverse().map(function (row) {
+      return '<div class="omega-rescc-line"><span>' + esc(row.mineName || row.mineId || row.siteId || 'Mine') +
+        '<small>' + esc(row.resourceId || 'Resource') + ' · ' + esc(row.batchId || 'Batch not recorded') + '</small></span>' +
+        '<strong>' + number(row.quantity ?? row.producedQuantity) + '</strong><em>' + esc(row.status || 'RECORDED') + '</em></div>';
+    }).join('') || empty('No committed mine-production receipt is recorded for this country.');
+    const shipmentRows = shipments.slice(-6).reverse().map(function (row) {
+      return '<div class="omega-rescc-line"><span>' + esc(row.shipmentId || row.routeId || 'Shipment') +
+        '<small>' + esc(row.shipmentType || 'Transport') + ' · ' + esc(row.batchId || 'Batch not recorded') + '</small></span>' +
+        '<strong>' + number(row.quantity) + '</strong><em>' + esc(row.status || 'STATUS NOT RECORDED') + '</em></div>';
+    }).join('') || empty('No mine or factory shipment is recorded for this country.');
+    const factoryRows = factories.slice(0, 12).map(function (asset) {
+      const id = String(asset.id || asset.assetId || asset.factoryId || asset.projectId || 'FACTORY_ID_NOT_RECORDED');
+      const cycle = cycles[id] || null;
+      return '<div class="omega-rescc-line"><span>' + esc(id) +
+        '<small>' + esc(asset.factoryType || asset.type || asset.facilityType || 'Factory type not recorded') +
+        ' · ' + esc(factoryOwnership(asset)) + ' · ' + esc(asset.ownerCompanyId || asset.companyId || 'Owner not recorded') + '</small></span>' +
+        '<strong>' + esc(asset.status || 'STATUS NOT RECORDED') + '</strong><em>' +
+        esc(cycle && cycle.status || asset.lastProductionTurn || 'No active cycle') + '</em></div>';
+    }).join('') || empty('No commissioned factory asset is recorded for this country.');
+    const finishedRowsHtml = finishedBatches.slice(-6).reverse().map(function (row) {
+      return '<div class="omega-rescc-line"><span>' + esc(row.resourceId || row.productId || 'Finished good') +
+        '<small>' + esc(row.batchId || 'Batch not recorded') + ' · ' + esc(row.stage || 'OUTPUT') + '</small></span>' +
+        '<strong>' + number(row.remainingQuantity != null ? row.remainingQuantity : row.quantity) + '</strong>' +
+        '<em>' + esc(row.ownerCompanyId || row.companyId || 'Owner not recorded') + '</em></div>';
+    }).join('') || empty('No finished-goods batch is recorded yet.');
+    const marketHost = '<div id="omega-rescc-production-market" class="omega-rescc-market-host" style="display:none"></div>';
+    const stageFlow = '<div class="omega-rescc-grid2">' +
+      kv('Resource production', mines.length + ' mine records · ' + mineActive + ' active') +
+      kv('Raw warehouse', rawRows.length + ' stocked resources') +
+      kv('Routes', routeIds.size + ' known route identities') +
+      kv('In-transit / blocked shipments', activeShipments.length) +
+      kv('Government factories', governmentFactories.length) +
+      kv('Non-government factories', privateFactories.length) +
+      kv('Unverified factory ownership', unverifiedFactories) +
+      kv('Running factory cycles', activeCycles.length) +
+      kv('Finished-goods batches', finishedBatches.length) +
+      kv('Processed warehouse', finishedRows.length + ' stocked products') +
+      kv('Market offers', offers.length) +
+      kv('Domestic sales records', sales.length) +
+      '</div>';
+    const cards =
+      card('Resource production', mines.length ? mineActive + ' active / ' + mines.length + ' recorded' : 'NO MINE RECORDS',
+        '<div class="omega-rescc-grid2">' + kv('Committed mine receipts', mineLedger.length) +
+        kv('Current-turn mine receipts', mineLedger.filter(function (row) { return Number(row.turn) === currentTurn; }).length) + '</div>' +
+        '<h4 class="omega-rescc-section-title">Latest resource output</h4>' + extractionRows,
+        manageButton('extraction','Manage resource production')) +
+      card('Raw-material warehouse', rawRows.length ? rawRows.length + ' stocked resources' : 'NO RAW STOCK RECORDED',
+        '<div class="omega-rescc-grid2">' + kv('Warehouse ID', rawWarehouse.warehouseId || 'Not recorded') +
+        kv('Tracked batches', batches.filter(function (row) { return !processedStages.includes(String(row.stage || '').toUpperCase()); }).length) + '</div>' +
+        (rawRows.map(function (id) { return '<div class="omega-rescc-line"><span>' + esc(id) + '</span><strong>' + number(rawStock[id]) + '</strong><em>available</em></div>'; }).join('') ||
+          empty('Raw warehouse availability has not been recorded.')),
+        manageButton('inventory','Manage warehouses and stock')) +
+      card('Routes and deliveries', routeIds.size + ' route identities · ' + activeShipments.length + ' active shipments',
+        '<div class="omega-rescc-grid2">' + kv('Site logistics flows', flows.length) +
+        kv('Recorded shipments', shipments.length) + '</div>' + shipmentRows,
+        manageButton('logistics','Manage routes and shipments')) +
+      card('Government factory production', governmentFactories.length + ' explicitly government-owned factories',
+        '<div class="omega-rescc-grid2">' + kv('Running cycles', activeCycles.length) +
+        kv('Production assets', governmentFactories.length) + '</div>' + factoryRows,
+        manageButton('industrial','Manage government factories')) +
+      card('Non-government factory production', privateFactories.length + ' explicitly private / enterprise-owned factories',
+        '<div class="omega-rescc-grid2">' + kv('Private company factories', privateFactories.length) +
+        kv('Finished batches with recorded company ownership', finishedBatches.filter(function (row) { return factoryOwnership(row) === 'PRIVATE'; }).length) + '</div>' +
+        (privateFactories.map(function (asset) {
+          return '<div class="omega-rescc-line"><span>' + esc(asset.id || asset.assetId || asset.factoryId || 'Private factory') +
+            '<small>' + esc(asset.factoryType || asset.type || 'Factory type not recorded') + ' · ' +
+            esc(asset.ownerCompanyId || asset.companyId || 'Company not recorded') + '</small></span>' +
+            '<strong>' + esc(asset.status || 'STATUS NOT RECORDED') + '</strong><em>' +
+            esc(cycles[String(asset.id || asset.assetId || asset.factoryId || '')]?.status || 'No active cycle') + '</em></div>';
+        }).join('') || empty('No explicitly non-government factory asset is registered for this country.')),
+        manageButton('industrial','Manage private-company factories')) +
+      card('Finished goods and processing', finishedRows.length + ' processed products · ' + finishedBatches.length + ' output batches',
+        '<div class="omega-rescc-grid2">' + kv('Processed warehouse ID', processedWarehouse.warehouseId || 'Not recorded') +
+        kv('Processing cycles in progress', activeCycles.length) + '</div>' +
+        (finishedRows.map(function (id) { return '<div class="omega-rescc-line"><span>' + esc(id) + '</span><strong>' +
+          number(finishedStock[id]) + '</strong><em>stored</em></div>'; }).join('') || '') + finishedRowsHtml,
+        manageButton('processing','Manage factory production')) +
+      card('Market and trade', offers.length + ' recorded offers · ' + sales.length + ' domestic sales records',
+        '<div class="omega-rescc-grid2">' + kv('Global market renderer', marketAvailable ? 'AVAILABLE' : 'NOT AVAILABLE') +
+        kv('Settlement records', Array.isArray(trade.globalTradeLedger && trade.globalTradeLedger.settlements)
+          ? trade.globalTradeLedger.settlements.length : 0) + '</div>' +
+        '<div class="omega-rescc-muted">This view uses the same market runtime as Trade & Commerce. Market actions and prices are not simulated a second time.</div>',
+        actionButton('open-production-market','Open Global Commodity Market',{},!marketAvailable) +
+        manageButton('trade','Manage supply contracts')) +
+      '<div class="omega-rescc-card omega-rescc-card--wide"><div class="omega-rescc-cardhead"><strong>Production line execution scope</strong><span class="omega-rescc-pill">TURN ' +
+      esc(currentTurn) + '</span></div><div class="omega-rescc-cardbody"><div class="omega-rescc-grid2">' +
+      kv('Selected country', selectedCountry) + kv('Simulation scope', scopeLabel) +
+      kv('Production sequence', 'Mine → Raw warehouse → Route → Factory → Finished goods → Market') +
+      kv('Private and government runtime', 'Shared inventory, shipment, production and settlement ledgers') +
+      '</div><div class="omega-rescc-muted">The line advances on committed simulation turns for the selected player country. Viewing another country does not run its production systems.</div></div></div>' +
+      '<div class="omega-rescc-grid2">' + cards + '</div>' +
+      '<div class="omega-rescc-card omega-rescc-card--wide"><div class="omega-rescc-cardhead"><strong>End-to-end production state</strong><span class="omega-rescc-pill">' +
+      (mineLedger.length || batches.length || shipments.length || factories.length ? 'LIVE RECORDS' : 'NO PRODUCTION RECORDS') +
+      '</span></div><div class="omega-rescc-cardbody">' + stageFlow + '</div></div>' +
+      marketHost;
+    return cards;
+  }
+
   function panelValue(country) {
     const fin = bucket('finance', country);
     const econ = bucket('economy', country);
@@ -1977,6 +2155,7 @@
   function panelContent(panel, country) {
     switch (panel) {
       case 'matrix': return panelMatrix(country);
+      case 'production-line': return panelProductionLine(country);
       case 'ontology': return panelOntology(country);
       case 'reserves': return panelReserves(country);
       case 'deposits': return panelDeposits(country);
@@ -2323,9 +2502,29 @@
           openPanel(target.getAttribute('data-panel'));
           return;
         }
+        // The embedded market owns its own controls; do not route its clicks to
+        // the parent Resource Command Center action dispatcher.
+        if (target.closest && target.closest('.omega-rescc-market-embedded')) return;
         const action = target.getAttribute('data-action');
         if (!action) return;
         event.preventDefault();
+        if (action === 'open-production-market') {
+          const host = typeof modal.querySelector === 'function'
+            ? modal.querySelector('#omega-rescc-production-market') : null;
+          if (!host || typeof renderMarketDashboard !== 'function') {
+            lastOutcome = 'Global Commodity Market · NOT AVAILABLE · Market host or renderer is unavailable';
+            render(countryId, activePanel);
+            return;
+          }
+          host.style.display = 'block';
+          const opened = renderMarketDashboard(host, countryId, {
+            onClose: function () { host.style.display = 'none'; host.innerHTML = ''; }
+          });
+          if (!opened || opened.ok !== true) {
+            host.innerHTML = empty('The shared Global Commodity Market view could not be opened.');
+          }
+          return;
+        }
         const progress = g.OmegaActionProgress;
         const simpleActions = ['close', 'refresh-panel', 'focus-map'];
         if (progress && typeof progress.run === 'function' && !simpleActions.includes(action)) {
