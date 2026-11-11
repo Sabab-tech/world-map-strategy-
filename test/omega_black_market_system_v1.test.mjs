@@ -106,9 +106,12 @@ test('post-settlement discovery collects a Treasury fine and seizes only unsold 
  const h=makeHarness(),api=h.ctx.OmegaBlackMarket,o=api.getOffers('BGD','coal',10).offers[0];
  const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:o.offerId});
  assert.equal(made.accepted,true,JSON.stringify(made));
- const deal=h.state.trade.BGD.blackMarketDeals[0];
- Object.assign(deal,{status:'SETTLED_UNDER_INVESTIGATION',settlementId:'SETTLE-1',settledQuantity:10,
-  buyerSettlementValue:1000,buyerCurrency:'USD',createdBatchIds:['IMPORT-BATCH-1']});
+ const pendingDeal=h.state.trade.BGD.blackMarketDeals[0];
+ const transition=h.ctx.OmegaMinistryInteroperability.dispatchCommand('trade','OMEGA_BLACK_MARKET_UPDATE_DEAL','BGD',{
+  dealId:pendingDeal.dealId,patch:{status:'SETTLED_UNDER_INVESTIGATION',settlementId:'SETTLE-1',settledQuantity:10,
+   buyerSettlementValue:1000,buyerCurrency:'USD',createdBatchIds:['IMPORT-BATCH-1']}});
+ assert.equal(transition.status,'APPLIED',JSON.stringify(transition));
+ const deal=api.getDeal(pendingDeal.dealId,'BGD');
  h.state.resource.BGD.inventory={coal:10};
  h.state.resource.BGD.warehouse={warehouseId:'WH-BGD-RAW',availableByResource:{coal:10},reservedByResource:{coal:2}};
  h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',availableByResource:{},reservedByResource:{}};
