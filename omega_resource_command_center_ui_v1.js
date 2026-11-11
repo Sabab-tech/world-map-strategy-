@@ -1965,7 +1965,7 @@
         '<div class="omega-rescc-muted">This view uses the same market runtime as Trade & Commerce. Market actions and prices are not simulated a second time.</div>',
         actionButton('open-production-market','Open Global Commodity Market',{},!marketAvailable) +
         manageButton('trade','Manage supply contracts')) +
-      '<div class="omega-rescc-card omega-rescc-card--wide"><div class="omega-rescc-cardhead"><strong>Production line execution scope</strong><span class="omega-rescc-pill">TURN ' +
+    return '<div class="omega-rescc-card omega-rescc-card--wide"><div class="omega-rescc-cardhead"><strong>Production line execution scope</strong><span class="omega-rescc-pill">TURN ' +
       esc(currentTurn) + '</span></div><div class="omega-rescc-cardbody"><div class="omega-rescc-grid2">' +
       kv('Selected country', selectedCountry) + kv('Simulation scope', scopeLabel) +
       kv('Production sequence', 'Mine → Raw warehouse → Route → Factory → Finished goods → Market') +
@@ -1976,7 +1976,6 @@
       (mineLedger.length || batches.length || shipments.length || factories.length ? 'LIVE RECORDS' : 'NO PRODUCTION RECORDS') +
       '</span></div><div class="omega-rescc-cardbody">' + stageFlow + '</div></div>' +
       marketHost;
-    return newTail;
   }
 
   function panelValue(country) {
