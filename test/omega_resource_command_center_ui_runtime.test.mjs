@@ -168,24 +168,24 @@ test('industrial panel requests scoped diagnostics for the selected country', ()
     'opening a single-country panel must not request a full global ledger scan');
 });
 
-test('all sixteen panels render without runtime exceptions', () => {
-  const panels = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment'];
+test('all fifteen Resource Ministry panels render without runtime exceptions', () => {
+  const panels = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','trade','value','cascade','cognitive','power','environment'];
   for (const panel of panels) {
     ui.open('BGD', panel);
     assert.equal(ui.getState().panel, panel);
     const modal = elements.get('gsrsk-intelligence-modal');
     assert.ok(modal && modal.innerHTML.includes('Resource Command Center'), panel + ' should render the command center shell');
     assert.ok(modal.innerHTML.includes('value="' + panel + '" selected'), panel + ' should be the sole selected section in the compact navigator');
-    assert.equal((modal.innerHTML.match(/<button[^>]*data-panel=/g) || []).length, 0, 'the panel must not duplicate all sixteen points as visible buttons');
+    assert.equal((modal.innerHTML.match(/<button[^>]*data-panel=/g) || []).length, 0, 'the panel must not duplicate all fifteen points as visible buttons');
   }
 });
 
-test('all sixteen legacy card buttons route to their own panel, including filtered cards', () => {
-  const expected = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment'];
+test('all fifteen Resource Ministry card buttons route to their own panel, including filtered cards', () => {
+  const expected = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','trade','value','cascade','cognitive','power','environment'];
   const result = globalThis.OmegaCabinetUI.getResource16CardsHtml();
   assert.equal(typeof result, 'string');
   const blocks = result.split('<div class="dept-card" style=').slice(1);
-  assert.equal(blocks.length, 16);
+  assert.equal(blocks.length, 15);
   blocks.forEach((block, index) => {
     const onclick = (block.match(/onclick="([^"]+)"/) || [])[1];
     assert.ok(onclick, 'point ' + (index + 1) + ' must have an action');
