@@ -173,7 +173,7 @@
   function displayProductName(value){
     const raw=String(value||'').trim();
     if(!raw)return 'Unknown product';
-    return raw.replace(/[_-]+/g,' ').replace(/\b[a-z]/g,function(ch){return ch.toUpperCase();});
+    return raw.toLowerCase().replace(/[_-]+/g,' ').replace(/\b[a-z]/g,function(ch){return ch.toUpperCase();});
   }
   function buildProductIndex(){
     const rawById=Object.create(null),factoryById=Object.create(null);
@@ -265,9 +265,9 @@
     catalogRows.forEach(function(product){
       if(!discovered.has(token(product.id)))return;
       const book=bookForProduct(product.id),orders=book?.orders||{bids:[],asks:[]},quoteRow=quote(product.id),
-        bids=(orders.bids||[]).slice(0,5).map(function(x){return{countryId:x.countryId,quantity:x.quantity,price:x.price,
+        bids=(orders.bids||[]).slice().sort(function(a,b){return (n(b.priceUsd)||0)-(n(a.priceUsd)||0);}).slice(0,5).map(function(x){return{countryId:x.countryId,quantity:x.quantity,price:x.price,
           currency:x.currency,source:x.source,productType:x.productType,productRole:x.productRole};}),
-        asks=(orders.asks||[]).filter(function(x){return x.referenceOnly!==true;}).slice(0,5).map(function(x){
+        asks=(orders.asks||[]).filter(function(x){return x.referenceOnly!==true;}).slice().sort(function(a,b){return (n(a.priceUsd)||0)-(n(b.priceUsd)||0);}).slice(0,5).map(function(x){
           return{countryId:x.countryId,quantity:x.quantity,price:x.price,currency:x.currency,source:x.source,
             priceAuthority:x.priceAuthority||x.priceAuthorityStatus||null,productType:x.productType,productRole:x.productRole};
         }),
