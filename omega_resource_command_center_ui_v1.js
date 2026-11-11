@@ -2804,8 +2804,8 @@
           const panelByPoint = {
             '01': 'matrix', '02': 'ontology', '03': 'reserves', '04': 'deposits',
             '05': 'extraction', '06': 'processing', '07': 'inventory', '08': 'logistics',
-            '09': 'industrial', '10': 'market', '11': 'trade', '12': 'value',
-            '13': 'cascade', '14': 'cognitive', '15': 'power', '16': 'environment'
+            '09': 'industrial', '10': 'trade', '11': 'value', '12': 'cascade',
+            '13': 'cognitive', '14': 'power', '15': 'environment'
           };
           html = html.replace(/<div class="dept-card" style=[\s\S]*?(?=<div class="dept-card" style=|$)/g, function (block) {
             const point = block.match(/<span>(\d{2})\.\s/);
@@ -2846,7 +2846,7 @@
         cabinet.__omegaResccCardPatch = true;
       }
       cabinet.executeResource16Point = function (pointKey, directiveType) {
-        const routes = { p01: 'matrix', p02: 'ontology', p03: 'reserves', p04: 'deposits', p05: 'extraction', p06: 'processing', p07: 'inventory', p08: 'logistics', p09: 'industrial', p10: 'market', p11: 'trade', p12: 'value', p13: 'cascade', p14: 'cognitive', p15: 'power', p16: 'environment' };
+        const routes = { p01: 'matrix', p02: 'ontology', p03: 'reserves', p04: 'deposits', p05: 'extraction', p06: 'processing', p07: 'inventory', p08: 'logistics', p09: 'industrial', p10: 'trade', p11: 'value', p12: 'cascade', p13: 'cognitive', p14: 'power', p15: 'environment' };
         const route = routes[String(pointKey || '').toLowerCase()];
         if (route) { render(activeCountry(), route); return { status: 'OPENED_PANEL', panel: route }; }
         if (typeof cabinet.executeResourceDirective === 'function') {
