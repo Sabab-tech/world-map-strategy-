@@ -1946,8 +1946,8 @@
       const current = root.__omegaMarketDashboardOptions || {};
       const scopedCountry = activeCountry(current.countryId || selectedCountry);
       const embeddedCss =
-        '.omega-rescc-market-embedded{width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;min-height:0;display:block;overflow:visible!important;border:0;border-radius:0;box-shadow:none}' +
-        '.omega-rescc-market-embedded>.omega-rescc-content{display:block;min-height:0;flex:0 0 auto;overflow:visible!important;padding:0!important}' +
+        '.omega-rescc-market-embedded{width:100%!important;max-width:none!important;height:auto!important;max-height:none!important;min-height:0;min-width:0;box-sizing:border-box;display:block;overflow:visible!important;border:0;border-radius:0;box-shadow:none}' +
+        '.omega-rescc-market-embedded>.omega-rescc-content{display:block;min-width:0;min-height:0;height:auto!important;flex:0 0 auto;overflow:visible!important;padding:0!important}' +
         '.omega-rescc-market-embedded .omega-market-dashboard{min-height:0;width:100%;padding:0 0 12px}' +
         '.omega-rescc-market-embedded .omega-market-header{margin:0}';
       root.innerHTML = '<style>' + css() + embeddedCss + '</style>' +
