@@ -56,7 +56,7 @@ var TYPE_OWNER={
  RECYCLING_WASTE_PROCESSING_PLANT:'TERRA_INFRASTRUCTURE_GROUP'
 };
 var CAP_PER_GDP=.0000025,REFERENCE_FACTORY_COST=15500;
-var inflight=new Map(),completed=new Map(),lastError=null,lastPlan=null,sequence=0,activationRequested=false;
+var inflight=new Map(),completed=new Map(),lastError=null,lastPlan=null,sequence=0,activationRequested=false,activationScheduled=false;
 function obj(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
 function num(v){if(v===null||v===undefined||v==='')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
 function id(v){return String(v==null?'':v).trim().toUpperCase();}
@@ -323,19 +323,35 @@ function diagnostics(){
 var API=Object.freeze({VERSION:VERSION,ensureCountryInitialized:ensureCountryInitialized,
  requestActiveCountry:requestActiveCountry,diagnostics:diagnostics,buildPlan:buildPlan});
 g.OmegaPrivateCompanyCapitalRuntimeV1=API;g.Omega=g.Omega||{};g.Omega.PrivateCompanyCapitalRuntimeV1=API;
+function scheduleAfterBootIdle(){
+ if(activationScheduled)return;
+ activationScheduled=true;
+ var run=function(){activationScheduled=false;requestActiveCountry();};
+ if(typeof g.requestIdleCallback==='function'){
+  try{g.requestIdleCallback(run,{timeout:1800});return;}catch(_){}
+ }
+ if(typeof g.setTimeout==='function'){
+  g.setTimeout(run,900);return;
+ }
+ Promise.resolve().then(run);
+}
 function handleRuntimeEvent(type){
- var activationEvent=type==='OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY'||type==='OMEGA_PRIVATE_ENTERPRISE_PANEL_OPENED';
- if(activationEvent){activationRequested=true;requestActiveCountry();return;}
- if(activationRequested&&['OMEGA_PLAYER_COUNTRY_CHANGED','COUNTRY_CHANGED','COUNTRY_SELECTED','OMEGA_COUNTRY_SELECTED','OMEGA_READY']
-  .indexOf(type)>=0)requestActiveCountry();
+ var panelEvent=type==='OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY'||type==='OMEGA_PRIVATE_ENTERPRISE_PANEL_OPENED';
+ if(panelEvent){activationRequested=true;requestActiveCountry();return;}
+ if(type==='OMEGA_READY'||type==='OMEGA_GAME_SESSION_STARTED'){
+  activationRequested=true;scheduleAfterBootIdle();return;
+ }
+ if(activationRequested&&['OMEGA_PLAYER_COUNTRY_CHANGED','COUNTRY_CHANGED','COUNTRY_SELECTED','OMEGA_COUNTRY_SELECTED']
+  .indexOf(type)>=0)scheduleAfterBootIdle();
 }
 if(typeof g.addEventListener==='function'){
  ['OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY','OMEGA_PRIVATE_ENTERPRISE_PANEL_OPENED',
-  'OMEGA_PLAYER_COUNTRY_CHANGED','COUNTRY_CHANGED','COUNTRY_SELECTED','OMEGA_COUNTRY_SELECTED','OMEGA_READY']
+  'OMEGA_READY','OMEGA_GAME_SESSION_STARTED',
+  'OMEGA_PLAYER_COUNTRY_CHANGED','COUNTRY_CHANGED','COUNTRY_SELECTED','OMEGA_COUNTRY_SELECTED']
   .forEach(function(type){g.addEventListener(type,function(){handleRuntimeEvent(type);});});
 }
-// Deliberately do not initialize capital during ordinary app boot. The private
-// baseline is optional and is loaded only after the player opens Companies/Manage.
+// Wait for the game/session-ready signal, then run in an idle slice so the
+// opening map render is not competing with the optional 197-country baseline.
 
 if(typeof module!=='undefined'&&module.exports)module.exports=API;
 })(typeof globalThis!=='undefined'?globalThis:window);
