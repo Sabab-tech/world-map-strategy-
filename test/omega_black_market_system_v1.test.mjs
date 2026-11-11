@@ -106,7 +106,10 @@ test('post-settlement discovery collects a Treasury fine and seizes only unsold 
  const h=makeHarness(),api=h.ctx.OmegaBlackMarket,o=api.getOffers('BGD','coal',10).offers[0];
  const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:o.offerId});
  assert.equal(made.accepted,true,JSON.stringify(made));
- const deal=h.state.trade.BGD.blackMarketDeals[0];
+ const initialDeal=h.state.trade.BGD.blackMarketDeals[0];
+ api.updateDeal(initialDeal.dealId,{buyerCountryId:'BGD',status:'SETTLED_UNDER_INVESTIGATION',settlementId:'SETTLE-1',settledQuantity:10,
+  buyerSettlementValue:1000,buyerCurrency:'USD',createdBatchIds:['IMPORT-BATCH-1']});
+ const deal=api.getDeal(initialDeal.dealId,'BGD');
  h.state.resource.BGD.inventory={coal:10};
  h.state.resource.BGD.warehouse={warehouseId:'WH-BGD-RAW',availableByResource:{coal:10},reservedByResource:{coal:2}};
  h.state.resource.BGD.processedWarehouse={warehouseId:'WH-BGD-PROCESSED',availableByResource:{},reservedByResource:{}};
@@ -138,8 +141,11 @@ test('post-settlement discovery collects a Treasury fine and seizes only unsold 
 test('unpaid enforcement fines remain outstanding and collect only when later Treasury liquidity exists',()=>{
  const h=makeHarness(),m=h.ctx.OmegaMinistryInteroperability;
  h.state.finance.BGD.available=0;
+ h.state.trade.BGD.blackMarketDeals=[{dealId:'BM-DEAL-DEFERRED',buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:1,
+  settledQuantity:1,status:'SETTLED_UNDER_INVESTIGATION',settlementId:'SETTLE-DEFERRED',buyerSettlementValue:1250,buyerCurrency:'USD',
+  embargoedAtCreation:false,exportRestrictionReason:'STATE_DIRECTIVE_EXPORT_RESTRICTED',createdBatchIds:[]}];
  const first=m.dispatchCommand('finance','OMEGA_BLACK_MARKET_COLLECT_FINE','BGD',{fine:{
-  fineId:'BM-FINE-DEFERRED',dealId:'BM-DEAL-DEFERRED',amountDue:125,currency:'USD'}});
+  fineId:'BM-FINE-DEFERRED',dealId:'BM-DEAL-DEFERRED',settlementId:'SETTLE-DEFERRED',amountDue:125,currency:'USD'}});
  assert.equal(first.status,'APPLIED');
  assert.equal(first.result.fine.amountPaid,0);
  assert.equal(first.result.fine.amountOutstanding,125);
