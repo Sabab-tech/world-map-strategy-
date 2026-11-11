@@ -3006,8 +3006,12 @@ test('every canonical factory recipe input and output renders a product-specific
   assert.equal(iconManifest.resources.length,42,'all canonical raw resources must retain their SVG identities');
   for (const resource of iconManifest.resources) {
     const markup = api.productIconVisualMarkup(resource.id,resource.label);
-    assert.ok(markup.includes('assets/omega-industrial-icons-v1/' + resource.file),
-      resource.id + ' must resolve to its own canonical raw-resource SVG');
+    assert.ok(markup.includes('<svg ') && markup.includes('data-icon-source="generated-resource"'),
+      resource.id + ' must render as a sharp, dimensional raw-resource SVG');
+    assert.ok(markup.includes('data-factory-product-icon="' + resource.id + '"'),
+      resource.id + ' must preserve its canonical resource identity in its illustration');
+    assert.ok(markup.includes('data-icon-motif='),
+      resource.id + ' must receive an identified physical-object motif');
   }
   const productIds = new Set();
   for (const recipe of Object.values(catalog.downstreamFactoryRecipes || {})) {
@@ -3026,8 +3030,8 @@ test('every canonical factory recipe input and output renders a product-specific
     assert.ok(markup.includes('aria-label=') || markup.includes('alt='),
       productId + ' icon must have an accessible label');
   }
-  assert.ok(api.productIconVisualMarkup('copper','Copper').includes('resources/copper.svg'),
-    'Copper must resolve to the copper asset rather than a generic drawing');
+  assert.ok(api.productIconVisualMarkup('copper','Copper').includes('data-icon-motif="metal-ingot"'),
+    'Copper must render with its dimensional ingot silhouette rather than a generic flat drawing');
   assert.ok(api.productIconVisualMarkup('steel','Steel').includes('data-icon-source="generated-product"'),
     'Steel must use a finished-product SVG rather than pretending to be raw iron ore');
   const productMotifs = new Set();
@@ -3416,10 +3420,6 @@ test('factory cards flip in place and show Input, Output and Byproduct tabs with
     assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="input"/);
     assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="output"/);
     assert.doesNotMatch(steelCard.face.innerHTML,/data-omega-v2-factory-detail-tab="byproduct"/);
-    assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-output-role/);
-    assert.match(steelCard.face.innerHTML,/Primary Product/);
-    assert.match(steelCard.face.innerHTML,/Co-product/);
-    assert.match(steelCard.face.innerHTML,/By-product/);
     assert.match(steelCard.face.innerHTML,/aria-selected="true"/);
     assert.match(steelCard.face.innerHTML,/Amount \/ day/);
     assert.match(steelCard.face.innerHTML,/fp-card-detail-row/);
@@ -3435,6 +3435,10 @@ test('factory cards flip in place and show Input, Output and Byproduct tabs with
       return null;
     }}});
     assert.equal(root.__omegaV2FactoryCardUiState.detailsTab,'output');
+    assert.match(steelCard.face.innerHTML,/data-omega-v2-factory-output-role/);
+    assert.match(steelCard.face.innerHTML,/Primary Product/);
+    assert.match(steelCard.face.innerHTML,/Co-product/);
+    assert.match(steelCard.face.innerHTML,/By-product/);
     assert.match(steelCard.face.innerHTML,/aria-selected="true"/);
     assert.match(steelCard.face.innerHTML,/data-product-id="steel"/i);
 
@@ -3877,7 +3881,7 @@ test('market presentation keeps raw, factory-role and food lanes separate and us
     'the commodity name must be the only text under the product icon');
   assert.match(ministry,/Market Commodities/);
   assert.match(ministry,/Black Market · Coming soon/);
-  assert.match(ministry,/data-omega-v2-trade-market-tab="black-market" disabled/);
+  assert.match(ministry,/disabled[^>]*data-omega-v2-trade-market-tab="black-market"/);
   assert.equal(offlineShellCacheVersion(sw),114);
   assert.match(sw,/assets\/omega-global-market\/food-products\.svg/);
   for (const file of [
