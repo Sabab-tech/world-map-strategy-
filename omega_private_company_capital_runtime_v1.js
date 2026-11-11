@@ -314,11 +314,6 @@ function requestActiveCountry(){
   }
  }).catch(function(error){lastError=String(error&&error.message||error);});
 }
-function invalidateCountry(country){
- var cid=id(country);if(!cid)return;
- sequence++;
- inflight.delete(cid);completed.delete(cid);
-}
 function diagnostics(){
  return{version:VERSION,status:lastError?'DEGRADED':completed.size?'READY':'IDLE',reason:lastError,
   initializedCountries:Array.from(completed.keys()),inFlightCountries:Array.from(inflight.keys()),
@@ -331,9 +326,6 @@ if(typeof g.addEventListener==='function'){
  ['OMEGA_PLAYER_COUNTRY_CHANGED','COUNTRY_CHANGED','COUNTRY_SELECTED','OMEGA_COUNTRY_SELECTED',
   'OMEGA_PRIVATE_ENTERPRISE_BASELINE_READY','OMEGA_PRIVATE_ENTERPRISE_PANEL_OPENED','OMEGA_SIMULATION_TURN_COMMITTED','OMEGA_READY','OMEGA_FINANCE_RUNTIME_READY']
   .forEach(function(type){g.addEventListener(type,requestActiveCountry);});
- g.addEventListener('OMEGA_COUNTRY_DATA_INVALIDATED',function(event){
-  var detail=event&&event.detail||{};if(id(detail.countryId)===playerCountry())invalidateCountry(detail.countryId);
- });
 }
 if(typeof Promise!=='undefined')Promise.resolve().then(requestActiveCountry);
 if(typeof module!=='undefined'&&module.exports)module.exports=API;
