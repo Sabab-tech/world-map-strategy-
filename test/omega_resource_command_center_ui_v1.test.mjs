@@ -8,8 +8,8 @@ const html = fs.readFileSync('index.html', 'utf8');
 await import('../omega_resource_command_center_ui_v1.js');
 const commandCenter = globalThis.OmegaResourceCommandCenterUI;
 
-test('all sixteen resource cards have a dedicated command-center panel', () => {
-  for (const id of ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment']) {
+test('all fifteen Resource Ministry cards have a dedicated command-center panel', () => {
+  for (const id of ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','trade','value','cascade','cognitive','power','environment']) {
     assert.match(ui, new RegExp("id: '" + id + "'"));
     assert.match(ui, new RegExp("case '" + id + "'"));
   }
@@ -18,16 +18,17 @@ test('all sixteen resource cards have a dedicated command-center panel', () => {
   assert.match(ui, /omega-rescc-country/);
 });
 
-test('legacy p05/p06/p15/p16 cards route to panels instead of unsupported fake build successes', () => {
+test('legacy p05/p06/p14/p15 Resource cards route to panels instead of unsupported fake build successes', () => {
   assert.match(ui, /p05: 'extraction'/);
   assert.match(ui, /p06: 'processing'/);
-  assert.match(ui, /p15: 'power'/);
-  assert.match(ui, /p16: 'environment'/);
+  assert.match(ui, /p14: 'power'/);
+  assert.match(ui, /p15: 'environment'/);
+  assert.doesNotMatch(ui, /p10: 'market'/);
   assert.match(ui, /cabinet\.executeResource16Point = function/);
   assert.match(ui, /AUTHORITATIVE TIME-SERIES NOT AVAILABLE/);
   assert.doesNotMatch(ui, /Math\.random\(/);
   assert.ok(ministry.includes("executeResource16Point('p05', 'drill_oil')"));
-  assert.ok(ministry.includes("executeResource16Point('p16', 'build_solar')"));
+  assert.ok(ministry.includes("executeResource16Point('p15', 'build_solar')"));
 });
 
 test('the resource command-center UI is loaded after the authoritative runtimes', () => {
@@ -48,12 +49,12 @@ test('action feedback requires a real runtime result and records reference-only 
 test('each numbered legacy card maps explicitly to its intended panel, independent of active category filters', () => {
   const pointBlock = ui.slice(ui.indexOf('const panelByPoint = {'), ui.indexOf('};', ui.indexOf('const panelByPoint = {')) + 2);
   const mappings = [...pointBlock.matchAll(/'(\d{2})': '([a-z]+)'/g)].map((m) => [m[1], m[2]]);
-  assert.equal(mappings.length, 16);
+  assert.equal(mappings.length, 15);
   assert.deepEqual(mappings, [
     ['01','matrix'],['02','ontology'],['03','reserves'],['04','deposits'],
     ['05','extraction'],['06','processing'],['07','inventory'],['08','logistics'],
-    ['09','industrial'],['10','market'],['11','trade'],['12','value'],
-    ['13','cascade'],['14','cognitive'],['15','power'],['16','environment']
+    ['09','industrial'],['10','trade'],['11','value'],['12','cascade'],
+    ['13','cognitive'],['14','power'],['15','environment']
   ]);
   assert.match(ui, /const routeCountry = activeCountry\(this\.activeCountry \|\| countryId\)/);
   assert.match(ui, /network\.candidateFactories\(country, resourceId\)/);
@@ -153,10 +154,10 @@ test('Trade & Commerce hosts the full commodity market dashboard with separate l
   assert.match(marketPanel, /assets\/omega-industrial-icons-v1\/factories/);
   assert.match(marketPanel, /referenceOnly !== true/);
   assert.doesNotMatch(marketPanel, /market\.rebuild\(/);
-  assert.match(ui, /function renderMarketDashboard\\(root, country, options\\)/);
-  assert.match(ui, /renderMarketDashboard,/);
-  assert.doesNotMatch(ui, /id: 'market', num:/);
-  assert.doesNotMatch(ui, /case 'market': return panelMarket\\(country\\)/);
+  assert.ok(ui.includes('function renderMarketDashboard(root, country, options)'));
+  assert.ok(ui.includes('renderMarketDashboard,'));
+  assert.equal(ui.includes("id: 'market', num:"), false);
+  assert.equal(ui.includes("case 'market': return panelMarket(country)"), false);
   assert.match(ui, /omega-rescc-shell--market/);
   assert.match(ui, /data-market-lane/);
   assert.match(ui, /data-market-product/);
