@@ -154,14 +154,23 @@
     var activeMinisterName = row && row.ministerName || 'Minister not recorded';
     var portraitSlot = row && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.renderMinisterPortrait === 'function' ? g.OmegaUIV2Government.renderMinisterPortrait(row) : '';
     var visibleSections = id === 'trade' ? SECTIONS : SECTIONS.filter(function (key) { return key !== 'market'; });
-    root.innerHTML = '<section class="omega-v2-shell omega-v2-ministry-detail">' +
-      '<header class="omega-v2-heading"><div class="omega-v2-ministry-detail-mark">' + emblem + '<div><div class="omega-v2-eyebrow">ALL MINISTRIES · ' + esc(id.replace(/[_-]+/g,' ').toUpperCase()) + '</div><h1 class="omega-v2-title">' + esc(row ? row.title : id || 'Ministry') + '</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · registered ministry profile and source-backed domain record</p></div></div><span class="omega-v2-status" data-state="' + (domain && domain.record ? 'operational' : 'unknown') + '">' + (domain && domain.record ? 'DOMAIN RECORD AVAILABLE' : esc(domain.reason || 'DOMAIN RECORD NOT RECORDED')) + '</span></header>' +
-      '<div class="omega-v2-card omega-v2-ministry-appointed-minister"><h2 class="omega-v2-card-title">Minister</h2><div class="omega-v2-minister-table-person">' + (portraitSlot || '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot><span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span><small>Image pending</small></div>') + '<strong>' + esc(activeMinisterName) + '</strong></div></div>' +
-      ministryVisualMarkup(id, row) +
-      '<div class="omega-v2-filterbar" role="group" aria-label="Ministry page sections">' + visibleSections.map(function (key) { return '<button type="button" class="omega-v2-button ' + (section === key ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-ministry-section="' + key + '" aria-pressed="' + (section === key ? 'true' : 'false') + '">' + esc(SECTION_LABELS[key]) + '</button>'; }).join('') + '</div>' +
-      relatedLinks(id, options, section) +
-      '<div class="omega-v2-section-title">' + esc(SECTION_LABELS[section]) + '</div>' + content +
-      '<p class="omega-v2-source">The current panel is read-only. Procurement, recruitment, resource transfers and project execution must route through an authoritative handler and display a result only after game state confirms it.</p></section>';
+    if (id === 'trade' && section === 'market') {
+      root.innerHTML = '<style>.omega-v2-trade-market-page{width:100%;max-width:none!important;min-width:0;box-sizing:border-box}</style>' +
+        '<section class="omega-v2-shell omega-v2-ministry-detail omega-v2-trade-market-page">' +
+        '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">TRADE & COMMERCE</div><h1 class="omega-v2-title">Global Commodity Market</h1>' +
+        '<p class="omega-v2-subtitle">Raw resources, factory products, international buy orders, sell offers and recorded price history.</p></div>' +
+        '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-ministry-section="dashboard">Back to Trade & Commerce</button></header>' +
+        '<div class="omega-v2-trade-market-host" data-omega-v2-trade-market-host aria-label="Global Commodity Market"></div></section>';
+    } else {
+      root.innerHTML = '<section class="omega-v2-shell omega-v2-ministry-detail">' +
+        '<header class="omega-v2-heading"><div class="omega-v2-ministry-detail-mark">' + emblem + '<div><div class="omega-v2-eyebrow">ALL MINISTRIES · ' + esc(id.replace(/[_-]+/g,' ').toUpperCase()) + '</div><h1 class="omega-v2-title">' + esc(row ? row.title : id || 'Ministry') + '</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · registered ministry profile and source-backed domain record</p></div></div><span class="omega-v2-status" data-state="' + (domain && domain.record ? 'operational' : 'unknown') + '">' + (domain && domain.record ? 'DOMAIN RECORD AVAILABLE' : esc(domain.reason || 'DOMAIN RECORD NOT RECORDED')) + '</span></header>' +
+        '<div class="omega-v2-card omega-v2-ministry-appointed-minister"><h2 class="omega-v2-card-title">Minister</h2><div class="omega-v2-minister-table-person">' + (portraitSlot || '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot><span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span><small>Image pending</small></div>') + '<strong>' + esc(activeMinisterName) + '</strong></div></div>' +
+        ministryVisualMarkup(id, row) +
+        '<div class="omega-v2-filterbar" role="group" aria-label="Ministry page sections">' + visibleSections.map(function (key) { return '<button type="button" class="omega-v2-button ' + (section === key ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-ministry-section="' + key + '" aria-pressed="' + (section === key ? 'true' : 'false') + '">' + esc(SECTION_LABELS[key]) + '</button>'; }).join('') + '</div>' +
+        relatedLinks(id, options, section) +
+        '<div class="omega-v2-section-title">' + esc(SECTION_LABELS[section]) + '</div>' + content +
+        '<p class="omega-v2-source">The current panel is read-only. Procurement, recruitment, resource transfers and project execution must route through an authoritative handler and display a result only after game state confirms it.</p></section>';
+    }
     if (!root.__omegaV2MinistryDetailBound && typeof root.addEventListener === 'function') {
       root.addEventListener('click', function (event) {
         var target = event && event.target;
