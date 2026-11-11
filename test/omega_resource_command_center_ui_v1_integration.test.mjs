@@ -4,14 +4,15 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const ui = fs.readFileSync('omega_resource_command_center_ui_v1.js', 'utf8');
+const tradeMinistryUi = fs.readFileSync('omega_ui_v2/screens/ministry-detail.js', 'utf8');
 const ministry = fs.readFileSync('ministry_engine.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
 const market = fs.readFileSync('omega_global_market_system.js', 'utf8');
 const logistics = fs.readFileSync('omega_resource_logistics_runtime_v1.js', 'utf8');
 const policyRuntime = fs.readFileSync('omega_resource_strategic_policy_runtime_v1.js', 'utf8');
-const panelIds = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','market','trade','value','cascade','cognitive','power','environment'];
+const panelIds = ['matrix','ontology','reserves','deposits','extraction','processing','inventory','logistics','industrial','trade','value','cascade','cognitive','power','environment'];
 
-test('all sixteen resource panels are registered, selectable and safe to render', () => {
+test('all fifteen Resource Ministry panels are registered, selectable and safe to render', () => {
   for (const id of panelIds) {
     assert.match(ui, new RegExp("id: '" + id + "'"));
     assert.match(ui, new RegExp("case '" + id + "'"));
@@ -296,4 +297,20 @@ test('optional semantic bootstrap cannot invalidate authoritative resource JSON 
     'an auxiliary semantic failure must be reported without changing canonical engine readiness');
   assert.match(init, /GSRSK_MASTER_ENGINE_BOOTSTRAP_COMPLETE/,
     'dependent integrations can observe completion of the deferred semantic bootstrap');
+});
+
+
+test('the Global Commodity Market is moved into the Trade & Commerce ministry', () => {
+  assert.match(ui, /function renderMarketDashboard\\(root, country, options\\)/);
+  assert.match(ui, /renderMarketDashboard,/);
+  assert.doesNotMatch(ui, /id: 'market', num:/);
+  assert.doesNotMatch(ui, /case 'market': return panelMarket\\(country\\)/);
+  assert.match(tradeMinistryUi, /market:'Global Commodity Market'/);
+  assert.match(tradeMinistryUi, /data-omega-v2-trade-market-host/);
+  assert.match(tradeMinistryUi, /renderMarketDashboard\\(marketHost, country/);
+  assert.match(tradeMinistryUi, /section === 'market'/);
+  assert.ok(html.indexOf('omega_resource_command_center_ui_v1.js') >= 0);
+  assert.ok(html.indexOf('omega_resource_command_center_ui_v1.js') < html.indexOf('omega_ui_v2/screens/ministry-detail.js'),
+    'the shared market renderer must load before the Trade & Commerce ministry screen');
+  assert.match(html, /omega_ui_v2\\/screens\\/ministry-detail\\.js/);
 });
