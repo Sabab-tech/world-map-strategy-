@@ -137,7 +137,7 @@ test('inventory panel exposes a bounded editable factory-input stock target for 
 });
 
 
-test('global commodity market follows the reference dashboard with separate lanes and permanent buy/sell panels', () => {
+test('Trade & Commerce hosts the full commodity market dashboard with separate lanes and permanent buy/sell panels', () => {
   const marketPanel = ui.slice(ui.indexOf('function panelMarket(country)'), ui.indexOf('function panelPlayerSupplyLifeline(country)'));
   assert.match(marketPanel, /market\.productCatalog\(\)/);
   assert.match(marketPanel, /selectedMarketLane/);
@@ -153,6 +153,10 @@ test('global commodity market follows the reference dashboard with separate lane
   assert.match(marketPanel, /assets\/omega-industrial-icons-v1\/factories/);
   assert.match(marketPanel, /referenceOnly !== true/);
   assert.doesNotMatch(marketPanel, /market\.rebuild\(/);
+  assert.match(ui, /function renderMarketDashboard\\(root, country, options\\)/);
+  assert.match(ui, /renderMarketDashboard,/);
+  assert.doesNotMatch(ui, /id: 'market', num:/);
+  assert.doesNotMatch(ui, /case 'market': return panelMarket\\(country\\)/);
   assert.match(ui, /omega-rescc-shell--market/);
   assert.match(ui, /data-market-lane/);
   assert.match(ui, /data-market-product/);
@@ -162,7 +166,7 @@ test('global commodity market follows the reference dashboard with separate lane
 
 test('global commodity market uses the user artwork in the offline shell cache', () => {
   const serviceWorker = fs.readFileSync('omega-offline-map-sw.js', 'utf8');
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v111/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v112/);
   for (const asset of [
     'assets/omega-global-market/market-header.svg',
     'assets/omega-global-market/raw-mining.svg',
