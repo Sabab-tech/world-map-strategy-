@@ -154,12 +154,12 @@ test('covert deal button calls the existing deal API with the requested country,
     'data-bm-resource': 'iron_ore'
   });
   assert.equal(h.calls.deals.length, 1);
-  assert.deepEqual(h.calls.deals[0], {
+  assert.equal(JSON.stringify(h.calls.deals[0]), JSON.stringify({
     buyerCountryId: 'BGD',
     sellerCountryId: '<SAU>',
     resourceId: 'iron_ore',
     offerId: 'OFFER-1',
     quantity: 4
-  });
+  }));
   assert.match(h.root.innerHTML, /Trade request recorded/);
 });
