@@ -382,3 +382,18 @@ test('export dependency prefers completed seller settlements over inferred partn
  assert.equal(shock.exportQuantity,48);
  assert.equal(shock.evidenceSource,'OMEGA_GLOBAL_TRADE_SETTLED_EXPORT_LEDGER');
 });
+
+
+test('state-owned companies in unrelated sectors do not make a different commodity deal state-linked', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ h.state.foreign.IRN.stateTradeNetwork=false;
+ h.state.economy={IRN:{companies:[{companyId:'IRN-ENERGY-1',name:'National Energy Enterprise',
+  ownership:'STATE_OWNED',resourceId:'coal'}]}};
+ const result=api.runTurn();
+ assert.equal(result.status,'COMPLETED');
+ const profile=h.created[0].actorProfile;
+ assert.equal(profile.stateLinkedBuyer,false);
+ assert.equal(profile.buyerGovernmentRole,'STATE_POLICY_CONTEXT_ONLY');
+ assert.ok(!profile.buyerStateEvidence.includes('RECORDED_STATE_OWNED_ENTERPRISE'));
+ assert.equal(profile.buyerCommercialActor.actorIdentityStatus,'NO_PRODUCT_MATCHED_COMPANY_RECORD');
+});
