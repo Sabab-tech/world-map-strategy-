@@ -177,5 +177,5 @@ test('NPC country discovery is bounded per turn and rotates its scan window fair
  assert.equal(second.scannedBuyerCountries.length,6);
  assert.notDeepEqual(second.scannedBuyerCountries,first.scannedBuyerCountries,
   'the next committed turn must advance to another country window');
- assert.ok(second.offerCalls===undefined);
+ assert.ok(h.offerCalls.length<=24,'the two committed turns remain bounded');
 });
