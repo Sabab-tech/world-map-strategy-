@@ -108,8 +108,9 @@
         const policyId = String(row.policyId || row.sanctionId || row.id || '').trim();
         const type = String(row.type || row.measure || row.scope || 'SANCTIONS').toUpperCase();
         const direction = String(row.direction || row.tradeDirection || 'BOTH').toUpperCase();
-        const start = first(row.startTurn, row.effectiveTurn, row.issuedTurn, row.createdTurn) ?? turn();
-        const signature = [issuer, target, policyId || 'NO_ID', type, direction, start,
+        const start = first(row.startTurn, row.effectiveTurn, row.issuedTurn, row.createdTurn);
+        const signature = [issuer, target, policyId || 'NO_ID', type, direction,
+          start === null ? 'UNSPECIFIED_START' : start,
           products.map(token).join(',')].join('|');
         const policyKey = 'SAN-' + hash(signature);
         const old = result.get(policyKey);
@@ -404,7 +405,7 @@
       sanctionsFlag: typeof r.sanctions === 'boolean' ? r.sanctions : null,
       warFlag: typeof r.war_state === 'boolean' ? r.war_state : null };
   }
-  function governmentActors(c) {
+  function governmentActors(c, products = []) {
     const e = bucket('economy', c), f = bucket('finance', c);
     const rows = [...(Array.isArray(e.companies) ? e.companies : []),
       ...(Array.isArray(e.enterprises) ? e.enterprises : []),
@@ -416,6 +417,9 @@
         name: row.name || row.companyName || row.officialName || null,
         ownership: row.ownership || row.ownerType || row.entityType || null,
         sector: row.sector || row.sectorId || null,
+        commodityLinkStatus: products.some(product => product.resourceId &&
+          token(product.resourceId) === token(row.resourceId || row.commodityId))
+          ? 'MATCHED_RESOURCE_RECORD' : 'NOT_ESTABLISHED',
         source: 'EXISTING_COUNTRY_COMPANY_OR_STATE_ENTERPRISE_RECORD'
       }));
   }
@@ -504,7 +508,7 @@
         values.push('PRESERVE_EXPORT_REVENUE_AND_FOREIGN_EXCHANGE');
       if (finance.foreignReserveCoverageDays !== null && finance.foreignReserveCoverageDays < 45)
         values.push('FOREIGN_CURRENCY_LIQUIDITY_PRESSURE');
-      if (products.some(row => row.production?.productionPerDay !== null))
+      if (products.some(row => row.production && row.production.productionPerDay !== null))
         values.push('KEEP_DOMESTIC_INDUSTRY_OPERATING');
     }
     if (!values.length) values.push('POLICY_MONITORING_WITH_INSUFFICIENT_ECONOMIC_EVIDENCE');
@@ -742,36 +746,37 @@
       };
       const savedInv = dispatch('intelligence', 'OMEGA_SANCTION_RECORD_INVESTIGATION', side.c, inv);
       if (savedInv?.accepted) writes++;
+      const options = decisionOptions(policy, productRows, finance, pair, side.role);
+      const selected = options[0];
+      const decision = {
+        decisionId: policy.policyKey + '-' + side.c + '-' + turn(),
+        countryId: side.c, counterpartCountryId: side.partner, role: side.role,
+        policyKey: policy.policyKey, policyId: policy.policyId, decidedTurn: turn(),
+        decisionModel: 'EVIDENCE_WEIGHTED_OPTION_COMPARISON_V1',
+        options, selectedAction: selected.id, selectedActionTitle: selected.title,
+        decisionStatus: selected.feasibility,
+        decisionBasis: side.role === 'TARGET'
+          ? 'COMPARE_OBSERVED_SHORTAGE_EXPORT_EXPOSURE_LEGAL_SUPPLIERS_DIPLOMACY_AND_FISCAL_HEADROOM'
+          : 'COMPARE_POLICY_SCOPE_SETTLED_TRADE_EXPOSURE_AND_DOMESTIC_COMPLIANCE_CAPACITY',
+        governmentMotives: motives(policy, side.role, productRows, finance),
+        governmentActors: governmentActors(side.c, productRows),
+        budgetAvailability: finance.ministryBudgetEvidence,
+        budgetAuthority: finance.ministryBudgetEvidence.length
+          ? 'EXISTING_FINANCE_MINISTRY_APPROPRIATIONS_ONLY' : 'NO_RELEVANT_APPROPRIATION_OBSERVED',
+        budgetAction: 'NO_BUDGET_CREATED_OR_SPENT'
+      };
+      const previous = bucket('foreign', side.c).sanctionNationalDecisions;
+      if (!Array.isArray(previous) || !previous.some(row => row?.decisionId === decision.decisionId)) {
+        const saved = dispatch('foreign', 'OMEGA_SANCTION_RECORD_NATIONAL_DECISION', side.c, decision);
+        if (saved?.accepted) writes++;
+      }
       if (side.role === 'TARGET') {
-        const options = decisionOptions(policy, productRows, finance, pair, side.role);
-        const selected = options[0];
-        const decision = {
-          decisionId: policy.policyKey + '-' + side.c + '-' + turn(),
-          countryId: side.c, counterpartCountryId: side.partner, role: side.role,
-          policyKey: policy.policyKey, policyId: policy.policyId, decidedTurn: turn(),
-          decisionModel: 'EVIDENCE_WEIGHTED_OPTION_COMPARISON_V1',
-          options, selectedAction: selected.id, selectedActionTitle: selected.title,
-          decisionStatus: selected.feasibility,
-          decisionBasis: 'COMPARE_OBSERVED_SHORTAGE_EXPORT_EXPOSURE_LEGAL_SUPPLIERS_DIPLOMACY_AND_FISCAL_HEADROOM',
-          governmentMotives: motives(policy, side.role, productRows, finance),
-          governmentActors: governmentActors(side.c),
-          budgetAvailability: finance.ministryBudgetEvidence,
-          budgetAuthority: finance.ministryBudgetEvidence.length
-            ? 'EXISTING_FINANCE_MINISTRY_APPROPRIATIONS_ONLY' : 'NO_RELEVANT_APPROPRIATION_OBSERVED',
-          budgetAction: 'NO_BUDGET_CREATED_OR_SPENT'
-        };
-        const previous = bucket('foreign', side.c).sanctionNationalDecisions;
-        if (!Array.isArray(previous) || !previous.some(row => row?.decisionId === decision.decisionId)) {
-          const saved = dispatch('foreign', 'OMEGA_SANCTION_RECORD_NATIONAL_DECISION', side.c, decision);
-          if (saved?.accepted) writes++;
-        }
         const plan = recovery(policy, side.c, productRows, decision, finance);
         const savedPlan = dispatch('trade', 'OMEGA_SANCTION_RECORD_MARKET_RECOVERY', side.c, plan);
         if (savedPlan?.accepted) writes++;
-        results.push({ countryId: side.c, role: side.role, selectedAction: decision.selectedAction,
-          productCount: productRows.length });
-      } else results.push({ countryId: side.c, role: side.role,
-        investigationStatus: inv.status, productCount: productRows.length });
+      }
+      results.push({ countryId: side.c, role: side.role,
+        selectedAction: decision.selectedAction, productCount: productRows.length });
     }
     return { policyKey: policy.policyKey, writes, countries: results };
   }
