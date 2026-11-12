@@ -1,4 +1,4 @@
-/* OMEGA BLACK MARKET UI v1.5.0 */
+/* OMEGA BLACK MARKET UI v1.6.0 */
 (function(g){
 'use strict';
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
