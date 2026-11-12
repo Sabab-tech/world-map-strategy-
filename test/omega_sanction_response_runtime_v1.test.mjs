@@ -60,7 +60,8 @@ function makeHarness(options = {}) {
       CHN: {}, BGD: {}
     },
     transport: { IRN: { routes: [{ routeId: 'R-IRN-USA', resourceId: 'copper',
-      originCountryId: 'IRN', destinationCountryId: 'USA', status: 'ACTIVE' }] } }
+      originCountryId: 'IRN', destinationCountryId: 'USA', status: 'ACTIVE' }] } },
+    intelligence: { IRN: {}, USA: {}, BGD: {}, CHN: {} }
   };
   const handlers = new Map(), events = new Map(), writes = [], marketCalls = [];
   const market = {
@@ -230,7 +231,10 @@ test('financial exposure records Treasury, reserve, FX and appropriation evidenc
 
 test('issuer and target receive investigations in their own intelligence case files', () => {
   const h = makeHarness();
-  h.context.OmegaSanctionResponseRuntime.runTurn();
+  const result = h.context.OmegaSanctionResponseRuntime.runTurn();
+  assert.equal(result.results[0].countries.length, 2);
+  assert.deepEqual(h.writes.filter(row => row.command === 'OMEGA_SANCTION_RECORD_INVESTIGATION')
+    .map(row => row.countryId).sort(), ['IRN', 'USA']);
   assert.equal(h.state.intelligence.IRN.sanctionInvestigations.length, 1);
   assert.equal(h.state.intelligence.USA.sanctionInvestigations.length, 1);
   assert.equal(h.state.intelligence.BGD.sanctionInvestigations, undefined);
