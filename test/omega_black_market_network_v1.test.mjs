@@ -54,6 +54,7 @@ function makeHarness(options={}){
   getNetworkReports(countryId){return structuredClone(state.intelligence[countryId]?.blackMarketNetworkReports||[]);},
   getTransits(){return[];},
   createAutonomousDeal(input){
+   input=Object.assign({source:'OMEGA_BLACK_MARKET_NPC_NETWORK',autonomousNetwork:true},input);
    created.push(structuredClone(input));
    const row={dealId:'BM-NPC-IRN-RUS-T25-copper',permitId:'BM-PERMIT-NPC-1',requestId:'BM-NPC-IRN-RUS-T25-copper-TRADE',
     buyerCountryId:input.buyerCountryId,sellerCountryId:input.sellerCountryId,resourceId:input.resourceId,quantity:input.quantity,
