@@ -6,7 +6,7 @@ import fs from 'node:fs';
 const source = fs.readFileSync(new URL('../omega_black_market_ui_v1.js', import.meta.url), 'utf8');
 
 function harness() {
-  const calls = { offers: [], deals: [], batches: [], timers: [] };
+  const calls = { offers: [], deals: [], batches: [], timers: [], negotiation: null, counterAcceptance: null };
   const networkReports = [];
   const offerRows = [];
   const offer = {
@@ -85,6 +85,12 @@ function harness() {
     getOffers(country, resourceId, quantity) {
       calls.offers.push({ country, resourceId, quantity });
       return { status: 'READY', offers: offerRows };
+    },
+    negotiateOffer(input) {
+      return calls.negotiation || { accepted: false, reason: 'NEGOTIATION_STUB_NOT_CONFIGURED' };
+    },
+    acceptCounterOffer(country, negotiationId) {
+      return calls.counterAcceptance || { accepted: false, reason: 'COUNTER_STUB_NOT_CONFIGURED' };
     },
     createDeal(payload) {
       calls.deals.push(payload);
@@ -248,13 +254,12 @@ test('deal action uses the original createDeal API with exact buyer, seller, pro
 test('broker negotiation and counter acceptance remain available in the seller detail row', () => {
   const h = harness();
   h.offer.sellerCountryId = 'SAU';
-  h.api.negotiateOffer = input => ({ accepted: true, decision: 'COUNTERED', negotiation: {
-    ...input, negotiationId: 'NEG-1', status: 'COUNTERED', counterUnitPrice: 120, currency: 'USD'
-  }});
-  h.api.acceptCounterOffer = (_country, negotiationId) => ({ accepted: true, negotiation: {
-    negotiationId, offerId: 'OFFER-1', status: 'ACCEPTED'
-  }});
-  h.api.createDeal = payload => { h.calls.deals.push(payload); return { accepted: true, dealId: 'D-2' }; };
+  h.calls.negotiation = { accepted: true, decision: 'COUNTERED', negotiation: {
+    offerId: 'OFFER-1', negotiationId: 'NEG-1', status: 'COUNTERED', counterUnitPrice: 120, currency: 'USD'
+  }};
+  h.calls.counterAcceptance = { accepted: true, negotiation: {
+    negotiationId: 'NEG-1', offerId: 'OFFER-1', status: 'ACCEPTED', agreedUnitPrice: 120
+  }};
   h.api.render(h.root, 'BGD');
   click(h.root, { 'data-bm-find': '' });
   click(h.root, { 'data-bm-negotiate': 'OFFER-1', 'data-bm-seller': 'SAU', 'data-bm-resource': 'iron_ore' });
