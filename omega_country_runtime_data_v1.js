@@ -299,7 +299,34 @@
 
   function getProfile(value) {
     const p=resolveCountry(value); if (!p) return null;
-    return Object.assign({},p,{flag:flagFor(p),capital:getCapital(p.countryCode),cities:getCities(p.countryCode)});
+    const profile=Object.assign({},p,{flag:flagFor(p),capital:getCapital(p.countryCode),cities:getCities(p.countryCode)});
+    // NPC fiscal/economic turns update the authoritative country-scoped game state.
+    // Surface those committed values to existing map and ministry profile
+    // consumers without changing historical source baselines or player data.
+    try {
+      const gameState=root.Game?.state||root.gameState||root.Omega?.Simulation?.world?.state||{};
+      const economy=gameState?.economy||{};
+      const aliases=[p.countryCode,p.iso3,p.economyKey,p.populationKey].filter(Boolean).map(x=>String(x).toUpperCase());
+      const key=Object.keys(economy).find(candidate=>aliases.includes(String(candidate).toUpperCase()));
+      const live=key?economy[key]:null;
+      if(live?.npcEconomicGovernance?.simulationOnly===true) {
+        const currentGDP=Number(live.gdp),growth=Number(live.gdpGrowthPct);
+        profile.dynamicEconomy={
+          simulationOnly:true,
+          provenance:live.npcEconomicGovernance.gdpProvenance||'SIMULATION_MODEL',
+          lastUpdatedTurn:live.npcEconomicGovernance.lastEconomyTurn??null
+        };
+        if(Number.isFinite(currentGDP)&&currentGDP>0) {
+          profile.sourceValues=Object.assign({},p.sourceValues||{},{gdp:currentGDP});
+          profile.indicators=Object.assign({},p.indicators||{},{gdpCurrentUsd:currentGDP});
+        }
+        if(Number.isFinite(growth)) {
+          profile.sourceValues=Object.assign({},profile.sourceValues||p.sourceValues||{},{gdp_growth:growth});
+          profile.indicators=Object.assign({},profile.indicators||p.indicators||{},{gdpGrowthPct:growth});
+        }
+      }
+    } catch (_) {}
+    return profile;
   }
   function listProfiles() {
     const seen = new Map();
