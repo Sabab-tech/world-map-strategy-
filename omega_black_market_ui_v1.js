@@ -1,132 +1,341 @@
-/* OMEGA BLACK MARKET UI v1.0.0 */
+/* OMEGA BLACK MARKET UI v1.3.0 · Country participation and progressive market scan */
 (function(g){
 'use strict';
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function money(v,c){const n=Number(v);if(!Number.isFinite(n))return'Not available';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:String(c||'USD'),maximumFractionDigits:2}).format(n);}catch(_){return n.toLocaleString('en-US',{maximumFractionDigits:2})+' '+String(c||'');}}
 function num(v){if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;}
-function fmt(v){const n=Number(v);return Number.isFinite(n)?new Intl.NumberFormat('en-US',{maximumFractionDigits:3}).format(n):'Not recorded';}
+function fmt(v){const n=num(v);return n===null?'—':new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(n);}
+function money(v,c){const n=num(v);if(n===null)return'—';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:String(c||'USD'),maximumFractionDigits:2}).format(n);}catch(_){return fmt(n)+' '+String(c||'');}}
+function token(v){return String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
+function gameState(){return g.Game?.state||g.gameState||g.Omega?.Simulation?.world?.state||{};}
+function flagFromIso2(code){
+ const s=String(code||'').trim().toUpperCase();if(!/^[A-Z]{2}$/.test(s))return null;
+ return Array.from(s,c=>String.fromCodePoint(0x1F1E6+c.charCodeAt(0)-65)).join('');
+}
+function countryMeta(value){
+ const code=String(value||'').trim().toUpperCase(),runtime=g.OmegaCountryRuntimeData||g.Omega?.CountryRuntimeData||null;
+ let profile=null;
+ try{profile=runtime?.resolveCountry?.(code)||null;}catch(_){}
+ if(!profile){
+  try{profile=(g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity)?.resolveCountry?.(code)||null;}catch(_){}
+ }
+ const raw=profile?.raw||profile?.profile||profile||{};
+ let name=raw?.name||raw?.officialName||raw?.shortName||profile?.name||profile?.officialName||profile?.displayName||'';
+ if(!name||name===code)name=code;
+ let flag=null;
+ try{flag=runtime?.flagFor?.(code)||null;}catch(_){}
+ if(!flag)flag=flagFromIso2(raw?.countryCode||raw?.iso2||profile?.countryCode||profile?.iso2);
+ return{code,name:String(name),flag:flag||'🏳️'};
+}
+function countryCell(value,sub){
+ const c=countryMeta(value),extra=sub?'<small>'+esc(sub)+'</small>':'';
+ return'<span class="omega-bm-country-cell"><span class="omega-bm-flag" aria-label="'+esc(c.name)+' flag">'+esc(c.flag)+'</span><span class="omega-bm-country-name">'+esc(c.name)+extra+'</span></span>';
+}
+function productName(row){return String(row?.name||row?.title||row?.displayName||row?.id||'Unknown product');}
+function productsFor(root){
+ if(Array.isArray(root.__omegaBmProducts))return root.__omegaBmProducts;
+ const api=g.OmegaGlobalMarket||g.Omega?.GlobalMarket;
+ let rows=[];try{rows=api?.productCatalog?.()||[];}catch(_){}
+ root.__omegaBmProducts=Array.isArray(rows)?rows.filter(x=>x?.id&&['RAW_RESOURCE','FACTORY_PRODUCT','FOOD_PRODUCT'].includes(String(x.productType||'').toUpperCase())):[];
+ return root.__omegaBmProducts;
+}
+function lookup(map,key){
+ if(!map||typeof map!=='object')return undefined;
+ const wanted=token(key),found=Object.keys(map).find(x=>token(x)===wanted);
+ return found===undefined?undefined:map[found];
+}
+function demandSignals(resourceId,playerCountryId){
+ const resources=gameState()?.resource;
+ if(!resources||typeof resources!=='object')return[];
+ const rows=[];
+ for(const [countryId,record] of Object.entries(resources)){
+  const code=String(countryId||'').trim().toUpperCase();if(!/^[A-Z0-9]{2,3}$/.test(code)||code===playerCountryId)continue;
+  const runtime=record?.demandRuntime,by=runtime?.byResource,demand=lookup(by,resourceId);
+  if(!demand||typeof demand!=='object')continue;
+  const unmet=Math.max(0,num(demand.unmetDemand)||0),perDay=Math.max(0,num(demand.demandPerDay??demand.demand)||0),
+   coverage=num(demand.stockCoverageDays),target=num(demand.stockCoverageTargetDays),
+   low=perDay>0&&coverage!==null&&target!==null&&target>coverage;
+  if(unmet<=1e-8&&!low)continue;
+  const gap=low?Math.max(unmet,perDay*(target-coverage)):unmet;if(!(gap>0))continue;
+  const stale=Math.max(0,(num(gameState()?.simulation?.turn??gameState()?.turn)??0)-(num(runtime.lastTurn)??num(gameState()?.simulation?.turn??gameState()?.turn)??0)),
+   freshness=stale>30?.45:(stale>10?.7:1),
+   pressure=Math.max(num(demand.procurementScore)||0,perDay>0?unmet/perDay:0,low?(target-coverage)/Math.max(target,1):0)*freshness;
+  rows.push({countryId:code,quantity:gap,demandPerDay:perDay,coverage,target,pressure,
+   reason:demand.activeFactoryInputDemandPerDay>0?'FACTORY INPUT SHORTAGE':'DOMESTIC SUPPLY GAP',
+   status:String(demand.status||'DEMAND SIGNAL')});
+ }
+ return rows.sort((a,b)=>b.pressure-a.pressure||b.quantity-a.quantity||a.countryId.localeCompare(b.countryId));
+}
+function globalDeals(resourceId){
+ const trade=gameState()?.trade;if(!trade||typeof trade!=='object')return[];
+ const seen=new Set(),rows=[];
+ for(const [scope,record] of Object.entries(trade)){
+  const deals=Array.isArray(record?.blackMarketDeals)?record.blackMarketDeals:[];
+  for(const row of deals){
+   if(!row||token(row.resourceId)!==token(resourceId))continue;
+   const key=String(row.dealId||[row.buyerCountryId,row.sellerCountryId,row.resourceId,row.createdTurn].join(':'));
+   if(seen.has(key))continue;seen.add(key);
+   rows.push({...row,buyerCountryId:row.buyerCountryId||scope});
+  }
+ }
+ return rows.sort((a,b)=>(num(b.createdTurn)||0)-(num(a.createdTurn)||0)).slice(0,24);
+}
+function statusLabel(value){
+ const key=String(value||'UNKNOWN').toUpperCase();
+ const labels={REQUESTED:'REQUEST SENT',SENT:'AWAITING SELLER RESPONSE',NEGOTIATING:'NEGOTIATING',
+  ACCEPTED:'OFFER ACCEPTED',IN_TRANSIT:'IN TRANSIT',ARRIVAL_PENDING:'ARRIVAL PENDING',
+  SETTLED:'SETTLED',SETTLED_UNDER_INVESTIGATION:'UNDER INVESTIGATION',
+  INTERCEPTED:'INTERCEPTED',FAILED:'REJECTED',EXPIRED:'EXPIRED'};
+ return labels[key]||key.replace(/_/g,' ');
+}
 function styles(){return '<style>'+
-'.omega-bm{--bm-bg:#070d13;--bm-panel:#101b25;--bm-panel2:#142330;--bm-line:rgba(119,155,174,.22);--bm-muted:#91a7b5;--bm-text:#edf5f6;--bm-gold:#d7ad68;--bm-cyan:#73d6e3;color:var(--bm-text);background:radial-gradient(ellipse at 8% -8%,rgba(52,116,130,.22),transparent 34%),radial-gradient(ellipse at 100% 18%,rgba(167,111,48,.10),transparent 29%),linear-gradient(150deg,#080f16 0%,#0b141d 56%,#09111a 100%);border:1px solid rgba(135,164,177,.24);border-radius:15px;overflow:hidden;box-shadow:inset 0 1px rgba(255,255,255,.07),0 16px 36px rgba(0,0,0,.28);min-width:0;isolation:isolate;position:relative}'+
-'.omega-bm *{box-sizing:border-box}.omega-bm button,.omega-bm input,.omega-bm select{font:inherit}.omega-bm-head{position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:20px 20px 18px;min-height:142px;background:linear-gradient(105deg,rgba(15,39,50,.97),rgba(9,20,29,.96) 56%,rgba(20,25,29,.98));border-bottom:1px solid rgba(131,170,181,.22)}'+
-'.omega-bm-head:before{content:"";position:absolute;inset:0;z-index:-1;opacity:.38;background-image:linear-gradient(rgba(143,184,190,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(143,184,190,.08) 1px,transparent 1px);background-size:25px 25px;mask-image:linear-gradient(90deg,black,transparent 88%)}'+
-'.omega-bm-head:after{content:"";position:absolute;z-index:-1;width:270px;height:270px;right:8%;top:-152px;border:1px solid rgba(215,173,104,.20);border-radius:50%;box-shadow:0 0 0 22px rgba(215,173,104,.025),0 0 0 46px rgba(215,173,104,.02),inset 0 0 40px rgba(115,214,227,.06)}'+
-'.omega-bm-head-main{min-width:0}.omega-bm-kicker{font-size:9px;font-weight:900;letter-spacing:.21em;color:#a9c5ca;text-transform:uppercase}.omega-bm-head h2{margin:7px 0 5px;font-size:clamp(22px,3.3vw,31px);line-height:1.05;letter-spacing:.12em;color:#f4f5ee;text-transform:uppercase}.omega-bm-sub{max-width:680px;margin:0;color:#a7bac0;font-size:11px;line-height:1.6}.omega-bm-classified{align-self:flex-start;flex:none;padding:7px 10px;border:1px solid rgba(215,173,104,.48);border-radius:4px;color:#efcd8c;background:rgba(94,65,30,.22);font-size:8px;letter-spacing:.15em;font-weight:900;text-align:center}.omega-bm-scope{display:flex;align-items:center;gap:7px;margin-top:11px;color:#a6bbc1;font-size:9px;letter-spacing:.12em;text-transform:uppercase}.omega-bm-scope:before{content:"";width:6px;height:6px;border-radius:50%;background:#7cd6c5;box-shadow:0 0 10px rgba(124,214,197,.7)}'+
-'.omega-bm-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:13px 15px 0}.omega-bm-stat{position:relative;min-width:0;padding:11px 12px 10px;border:1px solid var(--bm-line);border-radius:8px;background:linear-gradient(145deg,rgba(25,42,53,.96),rgba(12,23,32,.98));box-shadow:inset 0 1px rgba(255,255,255,.055),0 7px 16px rgba(0,0,0,.18)}.omega-bm-stat:before{content:"";position:absolute;left:12px;right:12px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(115,214,227,.45),transparent)}.omega-bm-stat small{display:block;color:#91a9b3;font-size:8px;letter-spacing:.13em;text-transform:uppercase;font-weight:800}.omega-bm-stat strong{display:block;margin-top:6px;font-size:21px;line-height:1;color:#f0f4ef;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.omega-bm-stat em{display:block;margin-top:5px;color:#718b98;font-size:8px;font-style:normal;letter-spacing:.04em}'+
-'.omega-bm-body{padding:14px 15px 17px}.omega-bm-brief{display:flex;align-items:flex-start;gap:10px;margin:0 0 13px;padding:10px 12px;border-left:2px solid var(--bm-gold);background:linear-gradient(90deg,rgba(135,97,46,.16),rgba(12,22,30,.18));color:#b8c7c9;font-size:10px;line-height:1.55}.omega-bm-brief strong{color:#e8c991;font-weight:800}.omega-bm-tools{border:1px solid rgba(114,159,174,.25);border-radius:10px;padding:11px;background:linear-gradient(145deg,rgba(17,32,43,.95),rgba(9,19,28,.96));box-shadow:inset 0 1px rgba(255,255,255,.04)}.omega-bm-lanes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.omega-bm-lane{min-height:32px;padding:6px 11px;border:1px solid rgba(115,153,167,.24);border-radius:5px;background:rgba(8,19,28,.85);color:#9fb5bc;font-size:9px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;cursor:pointer}.omega-bm-lane[aria-pressed="true"]{border-color:rgba(215,173,104,.68);background:linear-gradient(145deg,rgba(119,83,39,.46),rgba(44,37,28,.62));color:#f2d59e;box-shadow:inset 0 1px rgba(255,255,255,.08),0 0 13px rgba(204,157,81,.10)}.omega-bm-tool-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,170px) auto;gap:8px;align-items:end}.omega-bm-field{display:flex;flex-direction:column;gap:5px;min-width:0}.omega-bm-field label{font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:#93abb4;font-weight:900}.omega-bm select,.omega-bm input{width:100%;min-width:0;min-height:39px;border-radius:6px;border:1px solid rgba(116,161,178,.37);background:#0a1721;color:#e9f3f3;padding:8px 10px;font-size:11px;outline:none}.omega-bm select:focus,.omega-bm input:focus{border-color:#8bd1d9;box-shadow:0 0 0 2px rgba(115,214,227,.12)}.omega-bm button{min-height:38px;border-radius:6px;border:1px solid rgba(215,173,104,.48);padding:8px 14px;background:linear-gradient(145deg,#76572e,#3c3527);color:#fff0d2;font-size:9px;font-weight:900;letter-spacing:.09em;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.10),0 4px 10px rgba(0,0,0,.18);transition:transform .16s ease,border-color .16s ease,filter .16s ease}.omega-bm button:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.12);border-color:rgba(237,199,129,.8)}.omega-bm button:active:not(:disabled){transform:translateY(0)}.omega-bm button:disabled{opacity:.45;cursor:not-allowed}'+
-'.omega-bm-section{margin:17px 0 9px;display:flex;align-items:center;justify-content:space-between;gap:8px}.omega-bm-section-copy{display:flex;align-items:center;gap:9px;min-width:0}.omega-bm-section-index{color:#c89d5c;font-size:9px;font-weight:900;letter-spacing:.12em}.omega-bm-section h3{margin:0;color:#e6efed;font-size:11px;letter-spacing:.13em;text-transform:uppercase}.omega-bm-section-note{color:#8098a2;font-size:9px;line-height:1.4;text-align:right}.omega-bm-muted{color:#8da4ad;font-size:9px;line-height:1.5}.omega-bm-offers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.omega-bm-offer{position:relative;min-width:0;padding:13px;border:1px solid rgba(112,154,169,.29);border-radius:9px;background:linear-gradient(148deg,rgba(24,40,50,.98),rgba(10,20,29,.99) 72%);box-shadow:inset 0 1px rgba(255,255,255,.075),0 9px 18px rgba(0,0,0,.20);overflow:hidden}.omega-bm-offer:before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,rgba(215,173,104,.9),rgba(115,214,227,.28),transparent)}.omega-bm-offer:after{content:"";position:absolute;right:-48px;top:-66px;width:130px;height:130px;border:1px solid rgba(122,171,183,.10);border-radius:50%;box-shadow:0 0 0 13px rgba(122,171,183,.025)}.omega-bm-offer-top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.omega-bm-seller{display:flex;align-items:center;gap:9px;min-width:0}.omega-bm-node{display:grid;place-items:center;flex:none;width:34px;height:34px;border:1px solid rgba(215,173,104,.44);border-radius:7px;background:linear-gradient(145deg,rgba(126,92,46,.44),rgba(25,35,39,.9));color:#f0d39e;font-size:9px;font-weight:900;letter-spacing:.06em;box-shadow:inset 0 1px rgba(255,255,255,.12),0 4px 9px rgba(0,0,0,.20)}.omega-bm-country{font-weight:900;font-size:12px;color:#eff4ee;letter-spacing:.04em}.omega-bm-tag{flex:none;max-width:48%;font-size:7px;letter-spacing:.09em;text-align:center;border-radius:4px;padding:5px 6px;color:#b8e4df;background:rgba(36,111,101,.17);border:1px solid rgba(91,182,166,.30)}.omega-bm-tag.is-restricted{color:#efca8c;background:rgba(127,83,33,.20);border-color:rgba(215,173,104,.39)}.omega-bm-prices{position:relative;z-index:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0 9px}.omega-bm-price{min-width:0;border-radius:7px;padding:9px;background:rgba(3,11,17,.50);border:1px solid rgba(125,159,170,.15)}.omega-bm-price.is-shadow{border-color:rgba(215,173,104,.25);background:linear-gradient(145deg,rgba(89,63,31,.22),rgba(5,13,19,.64))}.omega-bm-price small{display:block;color:#8da6ad;font-size:7px;letter-spacing:.10em;text-transform:uppercase;line-height:1.45}.omega-bm-price strong{display:block;margin-top:5px;font-size:13px;color:#f3f3e8;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.omega-bm-price.is-shadow strong{color:#efcf97}.omega-bm-price .omega-bm-price-note{margin-top:4px;color:#80959e;font-size:8px;line-height:1.4}.omega-bm-risk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:8px}.omega-bm-risk-cell{min-width:0;padding:7px 8px;border:1px solid rgba(112,151,166,.13);border-radius:6px;background:rgba(5,14,21,.42)}.omega-bm-risk-cell small{display:block;color:#8da3ac;font-size:7px;letter-spacing:.09em;text-transform:uppercase;line-height:1.35}.omega-bm-risk-cell strong{display:block;margin-top:4px;color:#e0ece8;font-size:10px;font-weight:800;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.omega-bm-risk-cell.is-alert strong{color:#e8c184}.omega-bm-riskline{display:flex;justify-content:space-between;gap:8px;padding-top:7px;margin-top:7px;border-top:1px solid rgba(113,155,178,.13);font-size:9px;color:#a7bbc0}.omega-bm-riskline strong{color:#e4c184;text-align:right}.omega-bm-meter{height:4px;margin-top:6px;overflow:hidden;border-radius:4px;background:rgba(148,166,168,.13)}.omega-bm-meter span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#5aa99e,#d5aa62);box-shadow:0 0 9px rgba(116,199,185,.25)}.omega-bm-policy{margin-top:8px;padding:8px 9px;border:1px solid rgba(125,151,153,.15);border-radius:6px;background:rgba(4,12,17,.35)}.omega-bm-policy small{display:block;margin-bottom:4px;color:#8da5ac;font-size:7px;letter-spacing:.10em;text-transform:uppercase}.omega-bm-policy span{color:#bbccca;font-size:8px;line-height:1.5;overflow-wrap:anywhere}.omega-bm-breakdown{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:9px}.omega-bm-breakdown-item{min-width:0;padding:6px;border-radius:5px;background:rgba(6,14,20,.4);border:1px solid rgba(115,150,160,.10)}.omega-bm-breakdown-item small{display:block;color:#7f98a0;font-size:6px;line-height:1.35;letter-spacing:.04em;text-transform:uppercase}.omega-bm-breakdown-item strong{display:block;margin-top:3px;color:#c7d6d2;font-size:8px;font-variant-numeric:tabular-nums}.omega-bm-order{display:grid;grid-template-columns:minmax(70px,105px) auto;gap:7px;margin-top:10px;position:relative;z-index:1}.omega-bm-order input{min-height:36px}.omega-bm-order button{width:100%;min-height:36px}.omega-bm-negotiate{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;margin-top:8px;position:relative;z-index:1}.omega-bm-negotiate button{min-height:36px}.omega-bm-empty{padding:19px;border:1px dashed rgba(127,164,175,.34);border-radius:8px;color:#a2b4b7;text-align:center;font-size:10px;line-height:1.6;background:rgba(7,17,24,.42)}.omega-bm-outcome{margin:10px 0 0;padding:10px 12px;border-left:2px solid #d7ad68;background:rgba(123,83,31,.16);color:#ead5b0;font-size:10px;line-height:1.55}.omega-bm-lower{display:grid;grid-template-columns:1.1fr .9fr;gap:10px;align-items:start}.omega-bm-panel{min-width:0;border:1px solid rgba(112,151,165,.24);border-radius:8px;background:linear-gradient(150deg,rgba(18,32,42,.95),rgba(8,17,25,.98));box-shadow:inset 0 1px rgba(255,255,255,.04),0 6px 14px rgba(0,0,0,.15);overflow:hidden}.omega-bm-panel>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 11px;border-bottom:1px solid rgba(112,151,165,.16);background:linear-gradient(100deg,rgba(33,51,58,.72),rgba(12,22,30,.68))}.omega-bm-panel>header strong{color:#e8efeb;font-size:9px;letter-spacing:.12em;text-transform:uppercase}.omega-bm-panel>header span{color:#8fa5ac;font-size:8px}.omega-bm-panel-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:9px}.omega-bm-deal{min-width:0;padding:9px;border:1px solid rgba(112,151,165,.17);border-radius:6px;background:rgba(5,14,21,.43)}.omega-bm-deal strong{display:block;margin-top:5px;font-size:10px;color:#e9f0eb;overflow-wrap:anywhere}.omega-bm-deal small{display:block;color:#8da4ad;font-size:8px;line-height:1.5;margin-top:4px;overflow-wrap:anywhere}.omega-bm-status{display:inline-block;border-radius:3px;padding:3px 5px;background:rgba(43,126,151,.18);color:#9bd9dc;font-size:7px;font-weight:900;letter-spacing:.08em}.omega-bm-status.is-alert{background:rgba(133,83,34,.20);color:#e8c287}.omega-bm-risknote{margin:12px 0 0;color:#7f969f;font-size:8px;line-height:1.6;border-top:1px solid rgba(108,153,180,.17);padding-top:9px}'+
-'@media(max-width:760px){.omega-bm-offers{grid-template-columns:1fr}.omega-bm-lower{grid-template-columns:1fr}.omega-bm-head{padding:16px;min-height:130px}.omega-bm-grid{padding:10px 11px 0}.omega-bm-body{padding:12px}}'+
-'@media(max-width:520px){.omega-bm-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.omega-bm-stat{padding:9px}.omega-bm-stat strong{font-size:18px}.omega-bm-head{align-items:flex-start;gap:8px}.omega-bm-classified{font-size:7px;padding:6px}.omega-bm-tool-row{grid-template-columns:minmax(0,1fr) minmax(90px,115px)}.omega-bm-tool-row>button{grid-column:1/-1}.omega-bm-lanes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.omega-bm-lane{padding:6px 5px;font-size:7px;letter-spacing:.02em}.omega-bm-breakdown{grid-template-columns:repeat(3,minmax(0,1fr))}.omega-bm-panel-body{grid-template-columns:1fr}.omega-bm-prices{grid-template-columns:1fr 1fr}}'+
-'@media(prefers-reduced-motion:reduce){.omega-bm button{transition:none}}'+
+'.omega-bm{--bm-bg:#06152a;--bm-panel:#0b2241;--bm-panel2:#0d2b50;--bm-line:#245582;--bm-muted:#a8c4df;--bm-text:#f1f8ff;--bm-cyan:#27c9ff;--bm-blue:#167ce5;--bm-green:#36d6b1;color:var(--bm-text);background:linear-gradient(145deg,#06142a,#071d39 55%,#06152c);border:1px solid #1a659d;border-radius:13px;overflow:hidden;box-shadow:0 0 24px rgba(0,149,255,.13),inset 0 1px rgba(255,255,255,.08);font-family:Arial,Helvetica,sans-serif;min-width:0;isolation:isolate}'+
+'.omega-bm *{box-sizing:border-box}.omega-bm button,.omega-bm input,.omega-bm select{font:inherit}.omega-bm-head{position:relative;display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:124px;padding:19px 22px;background:linear-gradient(90deg,rgba(3,18,42,.96),rgba(4,29,64,.80) 56%,rgba(3,17,39,.93)),url("assets/omega-global-market/market-header.svg") center/cover no-repeat;border-bottom:1px solid #218bd0;overflow:hidden}.omega-bm-head:after{content:"";position:absolute;right:8%;top:15px;width:130px;height:94px;border:1px solid rgba(47,196,255,.28);border-radius:50%;box-shadow:0 0 0 15px rgba(47,196,255,.04),0 0 0 31px rgba(47,196,255,.025);pointer-events:none}.omega-bm-kicker{font-size:10px;letter-spacing:.18em;color:#7ddcff;font-weight:900}.omega-bm-head h1{font-size:clamp(22px,3vw,34px);line-height:1.05;margin:7px 0 5px;letter-spacing:.055em;text-transform:uppercase;color:#fff;text-shadow:0 0 15px rgba(39,201,255,.24)}.omega-bm-sub{font-size:12px;line-height:1.5;color:#c5d9ef;margin:0;max-width:680px}.omega-bm-scope{display:inline-flex;align-items:center;gap:7px;margin-top:9px;font-size:11px;color:#e0f4ff;font-weight:700}.omega-bm-scope:before{content:"";width:7px;height:7px;border-radius:50%;background:#42dfb8;box-shadow:0 0 10px #42dfb8}.omega-bm-classified{z-index:1;flex:none;border:1px solid #e5b75d;background:rgba(31,31,35,.82);color:#ffdf9a;padding:9px 12px;border-radius:5px;font-size:10px;line-height:1.4;font-weight:900;letter-spacing:.11em;text-align:center}.omega-bm-lanes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;padding:12px 14px 0}.omega-bm-lane{display:flex;align-items:center;gap:10px;min-width:0;min-height:62px;padding:8px 12px;border:1px solid #28649b;border-radius:8px;background:linear-gradient(120deg,#102e54,#071c37);color:#d5edff;font-weight:800;text-align:left;cursor:pointer}.omega-bm-lane img{width:42px;height:42px;object-fit:contain;flex:none;filter:drop-shadow(0 0 6px rgba(25,169,255,.3))}.omega-bm-lane span{font-size:12px;line-height:1.25}.omega-bm-lane small{display:block;font-size:10px;color:#99c4e5;font-weight:600;margin-top:3px}.omega-bm-lane[aria-pressed="true"]{border-color:#32cfff;background:linear-gradient(120deg,#087ac3,#0b315c);box-shadow:0 0 15px rgba(39,201,255,.24),inset 0 0 14px rgba(39,201,255,.12);color:#fff}.omega-bm-layout{display:grid;grid-template-columns:minmax(210px,285px) minmax(0,1fr);gap:12px;padding:12px 14px 15px;align-items:start}.omega-bm-box{min-width:0;border:1px solid #22598a;border-radius:9px;background:linear-gradient(150deg,rgba(12,39,72,.98),rgba(5,21,44,.98));box-shadow:inset 0 1px rgba(255,255,255,.045),0 7px 18px rgba(0,0,0,.16);overflow:hidden}.omega-bm-box>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 13px;background:linear-gradient(90deg,#123966,#0a2548);border-bottom:1px solid #1d5487}.omega-bm-box>header strong{font-size:12px;letter-spacing:.055em;text-transform:uppercase;color:#eef8ff}.omega-bm-box>header span{font-size:10px;color:#a9c9e5}.omega-bm-product-head{padding:13px}.omega-bm-product-head label{display:block;font-size:10px;color:#a8c8e3;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}.omega-bm-search{width:100%;min-width:0;min-height:38px;padding:8px 10px;border:1px solid #3978a8;border-radius:6px;background:#061a34;color:#fff;font-size:12px;outline:none}.omega-bm-product-list{max-height:490px;overflow:auto;padding:0 8px 9px}.omega-bm-product{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:43px;padding:8px 10px;border:1px solid transparent;border-bottom-color:rgba(91,154,198,.15);border-radius:5px;background:transparent;color:#e1effd;text-align:left;cursor:pointer}.omega-bm-product:hover{background:rgba(22,124,229,.15)}.omega-bm-product[aria-pressed="true"]{background:linear-gradient(90deg,rgba(0,139,224,.44),rgba(10,55,94,.65));border-color:#2dcaff;box-shadow:inset 0 0 9px rgba(39,201,255,.15)}.omega-bm-product strong{font-size:12px;font-weight:800}.omega-bm-product small{font-size:9px;color:#94bce0}.omega-bm-empty-products{padding:16px;color:#aac5df;font-size:12px;line-height:1.5;text-align:center}.omega-bm-main{display:grid;gap:11px;min-width:0}.omega-bm-product-hero{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:1px solid #2369a4;border-radius:9px;background:linear-gradient(105deg,rgba(6,38,77,.98),rgba(5,23,49,.96)),url("assets/omega-global-market/raw-mining.svg") right center/auto 100% no-repeat;min-height:86px}.omega-bm-product-hero small{display:block;color:#8edbff;font-size:10px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}.omega-bm-product-hero h2{font-size:clamp(19px,2.2vw,27px);margin:5px 0 2px;color:#fff}.omega-bm-product-hero p{margin:0;color:#b4d0ea;font-size:11px}.omega-bm-product-hero .omega-bm-product-type{border:1px solid rgba(68,191,255,.48);background:rgba(5,26,49,.8);border-radius:5px;padding:8px 10px;color:#b5e7ff;font-size:10px;font-weight:900;text-align:center}.omega-bm-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.omega-bm-stat{min-width:0;padding:10px 11px;border:1px solid #235b8e;border-radius:7px;background:linear-gradient(145deg,#0c2d55,#071b37)}.omega-bm-stat small{display:block;color:#a6c5e2;font-size:9px;line-height:1.35;font-weight:800;letter-spacing:.075em;text-transform:uppercase}.omega-bm-stat strong{display:block;margin-top:5px;font-size:20px;color:#f6fbff;font-variant-numeric:tabular-nums}.omega-bm-stat em{display:block;margin-top:3px;font-size:9px;color:#82b4dc;font-style:normal}.omega-bm-toolbar{display:grid;grid-template-columns:minmax(90px,150px) auto minmax(120px,1fr);gap:8px;align-items:end;padding:11px;border:1px solid #23649c;border-radius:8px;background:linear-gradient(135deg,#0b2b52,#071b37)}.omega-bm-field{display:flex;flex-direction:column;gap:5px;min-width:0}.omega-bm-field label{font-size:10px;color:#a9cce8;font-weight:800;text-transform:uppercase;letter-spacing:.06em}.omega-bm input{width:100%;min-width:0;min-height:37px;border:1px solid #3678a8;border-radius:5px;padding:8px 9px;background:#06182e;color:#fff;font-size:12px}.omega-bm-btn{min-height:37px;border:1px solid #33c5fa;border-radius:5px;padding:8px 13px;background:linear-gradient(145deg,#087fca,#07519a);color:#fff;font-size:10px;font-weight:900;letter-spacing:.055em;cursor:pointer;box-shadow:0 0 10px rgba(39,201,255,.12)}.omega-bm-btn:hover:not(:disabled){filter:brightness(1.13)}.omega-bm-btn:disabled{opacity:.45;cursor:not-allowed}.omega-bm-btn--quiet{border-color:#5585ad;background:linear-gradient(145deg,#163a5e,#0b2543);color:#d5edff}.omega-bm-btn--green{border-color:#40d9b5;background:linear-gradient(145deg,#097b75,#07534f);color:#ecfffb}.omega-bm-progress{min-width:0;color:#a9d7f5;font-size:11px;line-height:1.5;align-self:center}.omega-bm-outcome{padding:9px 11px;border-left:3px solid #35c7fa;border-radius:4px;background:rgba(20,106,154,.2);color:#d5efff;font-size:11px;line-height:1.5}.omega-bm-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start}.omega-bm-section{min-width:0;border:1px solid #28689e;border-radius:8px;background:linear-gradient(150deg,#0b2a50,#061a35);overflow:hidden}.omega-bm-section>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 11px;background:linear-gradient(90deg,#123e70,#0a2b51);border-bottom:1px solid #28689e}.omega-bm-section>header strong{font-size:11px;color:#f0f9ff;letter-spacing:.06em;text-transform:uppercase}.omega-bm-section>header span{font-size:9px;color:#a9cee9;text-align:right}.omega-bm-note{padding:7px 10px;color:#9fc4e5;font-size:10px;line-height:1.4;border-bottom:1px solid rgba(94,160,203,.16)}.omega-bm-table-wrap{width:100%;overflow:auto}.omega-bm-table{width:100%;border-collapse:collapse;min-width:430px}.omega-bm-table th{padding:8px 9px;background:rgba(5,20,40,.78);color:#a6c9e7;font-size:9px;text-align:left;text-transform:uppercase;letter-spacing:.055em;white-space:nowrap}.omega-bm-table td{padding:8px 9px;border-top:1px solid rgba(90,153,196,.19);color:#e5f2ff;font-size:11px;vertical-align:middle;white-space:nowrap}.omega-bm-table tr:hover td{background:rgba(20,105,173,.13)}.omega-bm-country-cell{display:flex;align-items:center;gap:8px;min-width:0}.omega-bm-flag{display:inline-grid;place-items:center;flex:none;min-width:27px;height:21px;border:1px solid rgba(156,204,244,.32);border-radius:3px;background:rgba(2,13,27,.8);font-size:17px;line-height:1}.omega-bm-country-name{display:block;color:#f2f8ff;font-weight:800;font-size:11px;white-space:normal;line-height:1.25}.omega-bm-country-name small{display:block;margin-top:2px;color:#91b9db;font-size:9px;font-weight:600}.omega-bm-muted{color:#9bb9d7!important;font-size:10px}.omega-bm-value{font-weight:800;font-variant-numeric:tabular-nums;color:#f6fbff!important}.omega-bm-positive{color:#63e5bf!important}.omega-bm-warning{color:#ffd17f!important}.omega-bm-risk{display:inline-block;padding:4px 6px;border:1px solid rgba(255,195,105,.35);border-radius:4px;background:rgba(118,70,16,.24);color:#ffd58b;font-size:9px;font-weight:900}.omega-bm-tag{display:inline-block;padding:4px 6px;border:1px solid rgba(70,201,255,.34);border-radius:4px;background:rgba(9,92,143,.24);color:#a8e6ff;font-size:9px;font-weight:900}.omega-bm-table .omega-bm-btn{min-height:30px;padding:6px 8px;font-size:9px}.omega-bm-inline-input{width:84px!important;min-height:30px!important;padding:5px 6px!important;font-size:10px!important}.omega-bm-offer-actions{display:flex;align-items:center;gap:5px}.omega-bm-detail{margin:8px 9px 9px;border:1px solid rgba(97,158,200,.2);border-radius:5px;background:rgba(3,15,32,.45)}.omega-bm-detail summary{padding:7px 9px;color:#9bdcff;font-size:10px;font-weight:800;cursor:pointer}.omega-bm-detail-body{padding:6px 9px 9px;color:#b7d0e7;font-size:10px;line-height:1.6}.omega-bm-decision{display:grid;gap:3px;min-width:0}.omega-bm-decision strong{color:#f4f9ff;font-size:10px}.omega-bm-decision small{color:#98bbda;font-size:9px}.omega-bm-ledger{padding:9px}.omega-bm-ledger-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(80px,.7fr) minmax(95px,.8fr) minmax(105px,.8fr);gap:8px;align-items:center;padding:9px 7px;border-top:1px solid rgba(90,153,196,.17)}.omega-bm-ledger-row:first-child{border-top:0}.omega-bm-ledger-status{display:inline-block;padding:4px 6px;border-radius:4px;background:rgba(8,131,176,.22);border:1px solid rgba(51,196,243,.35);color:#a6e7ff;font-size:9px;font-weight:900}.omega-bm-ledger-status.is-alert{background:rgba(135,72,18,.25);border-color:rgba(255,186,96,.42);color:#ffd390}.omega-bm-more{display:flex;justify-content:center;padding:8px;border-top:1px solid rgba(90,153,196,.17)}.omega-bm-empty{padding:16px 12px;color:#a9c5df;font-size:11px;line-height:1.55;text-align:center}.omega-bm-lower{display:grid;grid-template-columns:1fr 1fr;gap:10px}.omega-bm-intel{display:grid;gap:7px;padding:10px}.omega-bm-intel-row{padding:8px 9px;border:1px solid rgba(95,157,202,.2);border-radius:5px;background:rgba(2,15,32,.35)}.omega-bm-intel-row strong{display:block;color:#eef8ff;font-size:10px}.omega-bm-intel-row small{display:block;color:#a1c1df;font-size:9px;line-height:1.45;margin-top:4px}.omega-bm-footnote{margin:0;padding:9px 11px;border-top:1px solid rgba(65,135,184,.2);color:#91afca;font-size:9px;line-height:1.55}.omega-bm button:focus-visible,.omega-bm input:focus-visible{outline:2px solid #71dfff;outline-offset:2px}'+
+'@media(max-width:900px){.omega-bm-layout{grid-template-columns:minmax(175px,220px) minmax(0,1fr);gap:9px;padding:10px}.omega-bm-lanes{gap:6px;padding:10px 10px 0}.omega-bm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.omega-bm-section-grid,.omega-bm-lower{grid-template-columns:1fr}.omega-bm-toolbar{grid-template-columns:110px auto}.omega-bm-progress{grid-column:1/-1}}'+
+'@media(max-width:650px){.omega-bm-head{min-height:112px;padding:15px}.omega-bm-head:after{right:-15px}.omega-bm-lanes{grid-template-columns:repeat(3,minmax(0,1fr));padding:8px 8px 0}.omega-bm-lane{display:block;min-height:60px;padding:7px 6px;text-align:center}.omega-bm-lane img{display:block;margin:0 auto 3px;width:27px;height:27px}.omega-bm-lane span{font-size:9px}.omega-bm-lane small{font-size:8px}.omega-bm-layout{grid-template-columns:1fr;padding:9px}.omega-bm-product-list{display:flex;gap:6px;max-height:none;overflow:auto;padding:0 8px 9px}.omega-bm-product{flex:none;min-width:112px;max-width:155px;min-height:50px;border:1px solid #255985;background:#0a2649}.omega-bm-product-head{padding:9px}.omega-bm-main{gap:8px}.omega-bm-product-hero{min-height:78px;padding:11px;background-size:auto 85%}.omega-bm-stats{gap:6px}.omega-bm-stat{padding:8px}.omega-bm-stat strong{font-size:18px}.omega-bm-toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:9px}.omega-bm-toolbar .omega-bm-btn{width:100%}.omega-bm-progress{grid-column:1/-1}.omega-bm-section-grid{grid-template-columns:1fr}.omega-bm-table{min-width:450px}.omega-bm-ledger-row{grid-template-columns:minmax(0,1fr) auto;gap:5px}.omega-bm-ledger-row>div:nth-child(2){display:none}.omega-bm-ledger-row>div:nth-child(3){grid-column:1}.omega-bm-ledger-row>div:nth-child(4){grid-column:2;grid-row:1/3}.omega-bm-country-name{font-size:10px}}'+
+'@media(prefers-reduced-motion:reduce){.omega-bm *{scroll-behavior:auto!important;transition:none!important}}'+
 '</style>';}
 function render(root,countryValue){
- const bm=g.OmegaBlackMarket||g.Omega?.BlackMarket;if(!root||!bm)return{ok:false,reason:'BLACK_MARKET_RUNTIME_UNAVAILABLE'};
+ const bm=g.OmegaBlackMarket||g.Omega?.BlackMarket;
+ if(!root||!bm)return{ok:false,reason:'BLACK_MARKET_RUNTIME_UNAVAILABLE'};
  const c=String(countryValue||g.OmegaMinistryViewCountry||g.OmegaCabinetUI?.activeCountry||g.currentActiveCountry||'').trim().toUpperCase();
  root.__omegaBmCountry=c;
- const selected=String(root.__omegaBmResource||''),lane=String(root.__omegaBmLane||'RAW_RESOURCE');
- const allOffers=Array.isArray(root.__omegaBmOffers)?root.__omegaBmOffers:[];
- const dealRows=bm.getDeals(c),caseRows=bm.getCases(c),responseRows=bm.getResponses(c),
-  networkReports=typeof bm.getNetworkReports==='function'?bm.getNetworkReports(c):[],transits=typeof bm.getTransits==='function'?bm.getTransits(c):[];
- const deals=Array.isArray(dealRows)?dealRows:[],cases=Array.isArray(caseRows)?caseRows:[],responses=Array.isArray(responseRows)?responseRows:[];
- const products=(g.OmegaGlobalMarket||g.Omega?.GlobalMarket)?.productCatalog?.()||[];
- const validLane=['RAW_RESOURCE','FACTORY_PRODUCT','FOOD_PRODUCT'].includes(lane)?lane:'RAW_RESOURCE';
- const laneProducts=products.filter(x=>x?.id&&x.productType===validLane).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id)));
- const selectedProduct=laneProducts.some(x=>x.id===selected)?selected:'';
- if(!selectedProduct&&selected)root.__omegaBmResource='';
- const opts=laneProducts.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===selectedProduct?' selected':'')+'>'+esc(x.name||x.id)+'</option>').join('');
- const offers=selectedProduct?allOffers.filter(x=>!x.resourceId||String(x.resourceId)===selectedProduct):[];
- const active=deals.filter(x=>!['FAILED','EXPIRED'].includes(String(x.status||'').toUpperCase()));
- const settled=deals.filter(x=>['SETTLED','SETTLED_UNDER_INVESTIGATION'].includes(String(x.status||'').toUpperCase())).length;
- const exposed=deals.filter(x=>['INTERCEPTED','SETTLED_UNDER_INVESTIGATION'].includes(String(x.status||'').toUpperCase())).length;
- const count=(v)=>fmt(v);
- const pct=(v)=>Math.max(0,Math.min(100,(Number(v)||0)*100));
- const section=(index,title,note)=>'<div class="omega-bm-section"><div class="omega-bm-section-copy"><span class="omega-bm-section-index">'+esc(index)+'</span><h3>'+esc(title)+'</h3></div><span class="omega-bm-section-note">'+esc(note||'')+'</span></div>';
- const cards=offers.map(x=>{
-  const q=Math.min(num(x.requestedQuantity)||1,num(x.availableQuantity)||1),saving=num(x.expectedSavings),comparisonCurrency=x.buyerCurrency||x.currency;
-  const legalTag=x.legalMarketAvailable?(saving!==null&&saving>0?'COST ADVANTAGE':'STRATEGIC ACCESS'):(x.embargoed?'EMBARGO BYPASS':x.exportRestrictionReason?'EXPORT RESTRICTION':x.sanctionsAtQuote?'SANCTIONS':'NO LEGAL OFFER');
-  const foreignBasis=(Array.isArray(x.foreignPolicyBasis)?x.foreignPolicyBasis:[]).join(' · ')||'No blocking foreign-policy measure observed',math=x.pricingBreakdown||{},
-   negotiation=root.__omegaBmNegotiation&&root.__omegaBmNegotiation.offerId===x.offerId?root.__omegaBmNegotiation:null;
-  const detected=pct(x.detectionProbability),late=pct(x.lateDetectionProbability);
-  const restricted=!x.legalMarketAvailable;
-  const metrics=[
-   ['DETECTION BEFORE DISPATCH',fmt(num(x.detectionProbability)===null?null:num(x.detectionProbability)*100)+'%',true],
-   ['LATE DISCOVERY',fmt(num(x.lateDetectionProbability)===null?null:num(x.lateDetectionProbability)*100)+'%',true],
-   ['EXPECTED DELIVERED',fmt(x.expectedDeliveredQuantity)+' '+(x.unit||'units'),false],
-   ['EXPECTED CARGO LOSS',fmt(x.expectedSeizedQuantity)+' '+(x.unit||'units'),true],
-   ['EXPECTED FINE COST',x.expectedFineCostBuyer===null?'Not priced':money(x.expectedFineCostBuyer,comparisonCurrency),true],
-   ['SELLER STOCK OBSERVED',fmt(x.availableQuantity)+' '+(x.unit||'units'),false]
-  ].map((m,i)=>'<div class="omega-bm-risk-cell'+(m[2]?' is-alert':'')+'"><small>'+m[0]+'</small><strong>'+esc(m[1])+'</strong>'+(i===0?'<div class="omega-bm-meter"><span style="width:'+detected.toFixed(1)+'%"></span></div>':i===1?'<div class="omega-bm-meter"><span style="width:'+late.toFixed(1)+'%"></span></div>':'')+'</div>').join('');
-  const breakdown=[['Tariff discount',math.tariffDiscountPct],['Risk premium',math.riskPremiumPct],['Policy premium',math.policyPremiumPct],['Scarcity premium',math.scarcityPremiumPct],['Broker spread',math.brokerSpreadPct]].map(row=>'<div class="omega-bm-breakdown-item"><small>'+row[0]+'</small><strong>'+fmt(row[1])+'%</strong></div>').join('');
-  return '<article class="omega-bm-offer"><div class="omega-bm-offer-top"><div class="omega-bm-seller"><span class="omega-bm-node">'+esc(String(x.sellerCountryId||'??').slice(0,3))+'</span><div><div class="omega-bm-country">'+esc(x.sellerCountryId||'Unknown seller')+'</div><div class="omega-bm-muted">'+esc(x.productName||x.resourceId)+' · '+fmt(x.availableQuantity)+' '+esc(x.unit||'units')+' available</div></div></div><span class="omega-bm-tag'+(restricted?' is-restricted':'')+'">'+esc(legalTag)+'</span></div>'+
-   '<div class="omega-bm-prices"><div class="omega-bm-price is-shadow"><small>Shadow price / unit · seller currency</small><strong>'+money(x.unitPrice,x.currency)+'</strong><div class="omega-bm-price-note">Expected buyer total '+(x.expectedBlackMarketTotalBuyer===null?'FX not observed':money(x.expectedBlackMarketTotalBuyer,comparisonCurrency))+'</div></div><div class="omega-bm-price"><small>Legal landed / unit · buyer currency</small><strong>'+(x.legalLandedUnitPrice===null?'No comparable quote':money(x.legalLandedUnitPrice,comparisonCurrency))+'</strong><div class="omega-bm-price-note">'+(saving===null?'Legal benchmark unavailable':(saving>=0?'Expected saving ':'Expected extra cost ')+money(Math.abs(saving),comparisonCurrency))+'</div></div></div>'+
-   '<div class="omega-bm-riskline"><span>Strategic rationale</span><strong>'+esc(String(x.whyUse||'').replace(/_/g,' '))+'</strong></div>'+
-   '<div class="omega-bm-riskline"><span>Broker standing</span><strong>'+esc(String(x.brokerType||'PRIVATE_BROKER').replace(/_/g,' '))+' · '+fmt(x.brokerReputation===undefined?50:x.brokerReputation)+'/100</strong></div>'+
-   '<div class="omega-bm-negotiate"><input type="number" min="0.001" step="any" value="'+esc(negotiation?.bidUnitPrice??x.unitPrice)+'" data-bm-bid="'+esc(x.offerId)+'" aria-label="Bid price per unit"><button type="button" data-bm-negotiate="'+esc(x.offerId)+'" data-bm-seller="'+esc(x.sellerCountryId)+'" data-bm-resource="'+esc(x.resourceId)+'">NEGOTIATE</button></div>'+
-   (negotiation?'<div class="omega-bm-outcome">Broker '+esc(negotiation.status||'NEGOTIATION')+': '+(negotiation.status==='COUNTERED'?'counter price '+money(negotiation.counterUnitPrice,x.currency)+' / unit':(negotiation.status==='ACCEPTED'?'agreed price '+money(negotiation.agreedUnitPrice,x.currency)+' / unit':'negotiation recorded'))+'</div>':'')+
-   (negotiation&&negotiation.status==='COUNTERED'?'<button type="button" data-bm-accept-counter="'+esc(negotiation.negotiationId)+'">ACCEPT COUNTER · '+money(negotiation.counterUnitPrice,x.currency)+'</button>':'')+
-   '<div class="omega-bm-risk-grid">'+metrics+'</div>'+
-   '<div class="omega-bm-policy"><small>Foreign-policy exposure / evidence</small><span>'+esc(foreignBasis)+'</span></div>'+
-   '<div class="omega-bm-breakdown">'+breakdown+'</div>'+
-   '<div class="omega-bm-order"><input type="number" min="0.001" max="'+esc(x.availableQuantity)+'" step="any" value="'+esc(q)+'" data-bm-quantity="'+esc(x.offerId)+'" aria-label="Order quantity"><button type="button" data-bm-buy="'+esc(x.offerId)+'" data-bm-seller="'+esc(x.sellerCountryId)+'" data-bm-resource="'+esc(x.resourceId)+'">SEND DEAL REQUEST</button></div></article>';
+ const products=productsFor(root),lane=String(root.__omegaBmLane||'RAW_RESOURCE'),
+  validLane=['RAW_RESOURCE','FACTORY_PRODUCT','FOOD_PRODUCT'].includes(lane)?lane:'RAW_RESOURCE';
+ const laneProducts=products.filter(x=>String(x.productType||'').toUpperCase()===validLane);
+ if(!root.__omegaBmResource||!laneProducts.some(x=>x.id===root.__omegaBmResource))root.__omegaBmResource=laneProducts[0]?.id||'';
+ const rid=String(root.__omegaBmResource||''),selected=laneProducts.find(x=>String(x.id)===rid)||null,
+  allOffers=Array.isArray(root.__omegaBmOffers)?root.__omegaBmOffers:[],
+  offers=rid?allOffers.filter(x=>token(x.resourceId)===token(rid)):[],
+  dealRows=typeof bm.getDeals==='function'?bm.getDeals(c):[],
+  caseRows=typeof bm.getCases==='function'?bm.getCases(c):[],
+  responseRows=typeof bm.getResponses==='function'?bm.getResponses(c):[],
+  reportRows=typeof bm.getNetworkReports==='function'?bm.getNetworkReports(c):[],
+  transitRows=typeof bm.getTransits==='function'?bm.getTransits(c):[];
+ const deals=Array.isArray(dealRows)?dealRows:[],cases=Array.isArray(caseRows)?caseRows:[],
+  responses=Array.isArray(responseRows)?responseRows:[],reports=Array.isArray(reportRows)?reportRows:[],
+  transits=Array.isArray(transitRows)?transitRows:[];
+ const active=deals.filter(x=>!['FAILED','EXPIRED'].includes(String(x.status||'').toUpperCase())),
+  settled=deals.filter(x=>['SETTLED','SETTLED_UNDER_INVESTIGATION'].includes(String(x.status||'').toUpperCase())).length,
+  buyers=rid?demandSignals(rid,c):[],confirmed=rid?globalDeals(rid):[],
+  playerInfo=countryMeta(c),visibleOffers=Math.max(6,Math.min(24,num(root.__omegaBmOfferVisible)||6)),
+  visibleBuyers=Math.max(6,Math.min(24,num(root.__omegaBmBuyerVisible)||8)),
+  productLabel=selected?productName(selected):'No commodity in this category',
+  scanning=!!root.__omegaBmScanning,progress=root.__omegaBmScanProgress||'Ready to scan';
+ const laneMeta=[
+  ['RAW_RESOURCE','RAW RESOURCES','Natural resources','assets/omega-global-market/raw-mining.svg'],
+  ['FACTORY_PRODUCT','FACTORY PRODUCTS','Manufactured goods','assets/omega-global-market/factory-refinery.svg'],
+  ['FOOD_PRODUCT','FOOD PRODUCTS','Agricultural & food','assets/omega-global-market/food-products.svg']
+ ];
+ const laneButtons=laneMeta.map(([id,label,sub,img])=>'<button type="button" class="omega-bm-lane" data-bm-lane="'+id+'" aria-pressed="'+(validLane===id?'true':'false')+'"><img src="'+img+'" alt=""><span>'+label+'<small>'+sub+'</small></span></button>').join('');
+ const productButtons=laneProducts.map(x=>'<button type="button" class="omega-bm-product" data-bm-product="'+esc(x.id)+'" aria-pressed="'+(String(x.id)===rid?'true':'false')+'"><strong>'+esc(productName(x))+'</strong><small>'+esc(x.unit||'—')+'</small></button>').join('');
+ const offersHtml=offers.slice(0,visibleOffers).map(x=>{
+  const seller=countryMeta(x.sellerCountryId),restricted=!x.legalMarketAvailable,
+   tag=x.legalMarketAvailable?(num(x.expectedSavings)>0?'PRICE ADVANTAGE':'ACCESS CHANNEL'):
+    (x.embargoed?'IMPORT EMBARGO':x.exportRestrictionReason?'EXPORT RESTRICTION':x.sanctionsAtQuote?'SANCTIONS':'RESTRICTED SUPPLY'),
+   negotiation=root.__omegaBmNegotiation&&root.__omegaBmNegotiation.offerId===x.offerId?root.__omegaBmNegotiation:null,
+   qty=Math.min(num(x.requestedQuantity)||1,num(x.availableQuantity)||1),
+   risk=Math.max(0,Math.min(100,(num(x.detectionProbability)||0)*100)),
+   comparisonCurrency=x.buyerCurrency||x.currency,
+   foreignBasis=(Array.isArray(x.foreignPolicyBasis)?x.foreignPolicyBasis:[]).join(' · ')||'No blocking policy recorded',
+   math=x.pricingBreakdown||{};
+  const acceptedCounter=negotiation?.status==='COUNTERED'?'<div class="omega-bm-outcome">Broker counteroffer: '+esc(money(negotiation.counterUnitPrice,x.currency))+' / unit <button class="omega-bm-btn omega-bm-btn--green" type="button" data-bm-accept-counter="'+esc(negotiation.negotiationId)+'">ACCEPT COUNTER</button></div>':'';
+  const priceText=money(x.unitPrice,x.currency),
+   compareText=x.legalLandedUnitPrice===null?'No verified legal quote':
+    ((num(x.expectedSavings)||0)>=0?'Expected saving ':'Expected extra cost ')+money(Math.abs(num(x.expectedSavings)||0),comparisonCurrency);
+  const quantityField='<input class="omega-bm-inline-input" type="number" min="0.001" max="'+esc(x.availableQuantity)+'" step="any" value="'+esc(qty)+'" data-bm-quantity="'+esc(x.offerId)+'" aria-label="Quantity from '+esc(seller.name)+'">';
+  const bidField='<input class="omega-bm-inline-input" type="number" min="0.001" step="any" value="'+esc(negotiation?.bidUnitPrice??x.unitPrice)+'" data-bm-bid="'+esc(x.offerId)+'" aria-label="Bid price for '+esc(seller.name)+'">';
+  return'<tr><td>'+countryCell(x.sellerCountryId,x.brokerType==='STATE_LINKED'?'State-linked seller':'Private seller')+'</td>'+
+   '<td class="omega-bm-value">'+fmt(x.availableQuantity)+' '+esc(x.unit||'')+'</td>'+
+   '<td><strong class="omega-bm-value">'+esc(priceText)+'</strong><small class="omega-bm-muted">/ unit</small></td>'+
+   '<td><span class="omega-bm-risk">'+fmt(risk)+'% risk</span></td>'+
+   '<td><span class="omega-bm-tag'+(restricted?' omega-bm-warning':'')+'">'+esc(tag)+'</span></td>'+
+   '<td><div class="omega-bm-offer-actions">'+quantityField+'<button type="button" class="omega-bm-btn" data-bm-buy="'+esc(x.offerId)+'" data-bm-seller="'+esc(x.sellerCountryId)+'" data-bm-resource="'+esc(x.resourceId)+'">BUY</button></div></td></tr>'+
+   '<tr><td colspan="6"><details class="omega-bm-detail"><summary>PRICE, POLICY & INTELLIGENCE DETAILS · '+esc(seller.name)+'</summary><div class="omega-bm-detail-body">'+
+    'Legal landed price: '+esc(x.legalLandedUnitPrice===null?'Not comparable':money(x.legalLandedUnitPrice,comparisonCurrency))+' · '+esc(compareText)+
+    '<br>Expected delivered: '+esc(fmt(x.expectedDeliveredQuantity))+' '+esc(x.unit||'')+
+    ' · Expected cargo loss: '+esc(fmt(x.expectedSeizedQuantity))+' '+esc(x.unit||'')+
+    ' · Expected fine: '+esc(x.expectedFineCostBuyer===null?'Not priced':money(x.expectedFineCostBuyer,comparisonCurrency))+
+    '<br>Policy evidence: '+esc(foreignBasis)+
+    '<br>Price components: tariff '+esc(fmt(math.tariffDiscountPct))+'%, risk '+esc(fmt(math.riskPremiumPct))+'%, policy '+esc(fmt(math.policyPremiumPct))+'%, scarcity '+esc(fmt(math.scarcityPremiumPct))+'%, broker '+esc(fmt(math.brokerSpreadPct))+'%'+
+    '<div class="omega-bm-offer-actions" style="margin-top:8px">'+bidField+'<button type="button" class="omega-bm-btn omega-bm-btn--quiet" data-bm-negotiate="'+esc(x.offerId)+'" data-bm-seller="'+esc(x.sellerCountryId)+'" data-bm-resource="'+esc(x.resourceId)+'">NEGOTIATE PRICE</button></div>'+
+    acceptedCounter+'</div></details></td></tr>';
  }).join('');
- const dealHtml=active.slice(0,8).map(x=>{const e=x.enforcement||{},alert=['INTERCEPTED','SETTLED_UNDER_INVESTIGATION','FAILED'].includes(String(x.status||'').toUpperCase());return '<article class="omega-bm-deal"><span class="omega-bm-status'+(alert?' is-alert':'')+'">'+esc(String(x.status||'UNKNOWN').replace(/_/g,' '))+'</span><strong>'+esc(x.productName||x.resourceId)+'</strong><small>Seller '+esc(x.sellerCountryId)+' · '+fmt(x.quantity)+' '+esc(x.unit||'units')+'</small><small>'+money(x.unitPrice,x.currency)+' / unit · Turn '+fmt(x.createdTurn)+'</small>'+(e.fineDue!==undefined?'<small>Fine paid '+money(e.finePaid,e.fineCurrency)+' / '+money(e.fineDue,e.fineCurrency)+' · outstanding '+money(e.fineOutstanding,e.fineCurrency)+'</small>':'')+(e.seizureTargetQuantity!==undefined?'<small>Cargo seized '+fmt(e.seizureQuantity)+' / '+fmt(e.seizureTargetQuantity)+' '+esc(x.unit||'units')+'</small>':'')+'</article>';}).join('');
- const caseHtml=cases.slice(-6).reverse().map(x=>'<article class="omega-bm-deal"><span class="omega-bm-status is-alert">'+esc(x.status||'CASE')+'</span><strong>'+esc(x.resourceId||'Black Market case')+'</strong><small>'+esc(x.buyerCountryId)+' ↔ '+esc(x.sellerCountryId)+'</small><small>Evidence '+fmt((num(x.evidenceConfidence)||0)*100)+'% · Turn '+fmt(x.detectionTurn)+'</small></article>').join('');
- const respHtml=responses.slice(-4).reverse().map(x=>'<article class="omega-bm-deal"><span class="omega-bm-status">FOREIGN RESPONSE</span><strong>'+esc(String(x.responseType||'Diplomatic response').replace(/_/g,' '))+'</strong><small>Target '+esc(x.targetCountryId)+' · '+esc(x.severity||'UNSPECIFIED')+'</small></article>').join('');
- const transitHtml=transits.filter(x=>['IN_TRANSIT','ARRIVAL_PENDING'].includes(String(x.status||'').toUpperCase())).slice(-8).reverse().map(x=>'<article class="omega-bm-deal"><span class="omega-bm-status">'+esc(String(x.status||'IN_TRANSIT').replace(/_/g,' '))+'</span><strong>'+esc(x.resourceId)+' · '+fmt(x.quantity)+' '+esc(x.unit||'units')+'</strong><small>'+esc(x.sellerCountryId)+' → '+esc(x.buyerCountryId)+'</small><small>'+(Array.isArray(x.route)?x.route.map(y=>esc(y.checkpoint||y.role||y.countryId)).join(' → '):'Route not recorded')+'</small><small>Inspection checkpoints '+fmt((x.timeline||[]).length)+' / '+fmt((x.route||[]).length)+'</small></article>').join('');
- const reportHtml=networkReports.slice(-8).reverse().map(x=>'<article class="omega-bm-deal"><span class="omega-bm-status'+(x.level==='HIGH'?' is-alert':'')+'">'+esc(x.level||'RUMOUR')+' INTELLIGENCE</span><strong>'+esc(x.productName||x.resourceId||'Covert network')+'</strong><small>'+esc(x.summary||'Covert activity observed')+'</small><small>'+(x.buyerCountryId?'Buyer '+esc(x.buyerCountryId)+' · ':'')+(x.sellerCountryId?'Seller '+esc(x.sellerCountryId):'Counterparties unconfirmed')+'</small><small>Government role '+esc(String(x.governmentInvolvement||'NOT_ESTABLISHED').replace(/_/g,' '))+' · Confidence '+fmt((num(x.confidence)||0)*100)+'%</small></article>').join('');
- const laneButtons=[['RAW_RESOURCE','RAW RESOURCES'],['FACTORY_PRODUCT','FACTORY PRODUCTS'],['FOOD_PRODUCT','FOOD PRODUCTS']].map(([id,label])=>'<button type="button" class="omega-bm-lane" data-bm-lane="'+id+'" aria-pressed="'+(validLane===id?'true':'false')+'">'+label+'</button>').join('');
- root.innerHTML=styles()+'<section class="omega-bm"><header class="omega-bm-head"><div class="omega-bm-head-main"><div class="omega-bm-kicker">OMEGA · TRADE & COMMERCE · STRATEGIC ACCESS NETWORK</div><h2>Black Market Operations</h2><p class="omega-bm-sub">A restricted procurement channel where supply access, state policy and enforcement risk shape every transaction.</p><div class="omega-bm-scope">Country command scope · '+esc(c||'COUNTRY NOT SELECTED')+'</div></div><span class="omega-bm-classified">RESTRICTED<br>CHANNEL</span></header>'+
-  '<div class="omega-bm-grid"><div class="omega-bm-stat"><small>Recorded deals</small><strong>'+count(deals.length)+'</strong><em>All recorded requests</em></div><div class="omega-bm-stat"><small>Active pipeline</small><strong>'+count(active.length)+'</strong><em>Not failed or expired</em></div><div class="omega-bm-stat"><small>Investigation files</small><strong>'+count(cases.length)+'</strong><em>Recorded evidence cases</em></div><div class="omega-bm-stat"><small>Foreign responses</small><strong>'+count(responses.length)+'</strong><em>Recorded state reactions</em></div></div>'+
-  '<div class="omega-bm-body"><p class="omega-bm-brief"><span>◆</span><span><strong>Strategic use:</strong> Compare restricted access against legal landed cost, expected delivery, detection probability and post-settlement exposure. Every request remains subject to seller review, inspection and authoritative settlement.</span></p>'+
-  '<div class="omega-bm-tools"><div class="omega-bm-lanes" role="group" aria-label="Commodity categories">'+laneButtons+'</div><div class="omega-bm-tool-row"><div class="omega-bm-field"><label for="omega-bm-resource">Select strategic commodity</label><select id="omega-bm-resource" data-bm-resource>'+opts+'</select></div><div class="omega-bm-field"><label for="omega-bm-quantity">Required quantity</label><input id="omega-bm-quantity" type="number" min="0.001" step="any" value="1" data-bm-find-quantity></div><button type="button" data-bm-find>SCAN SELLER NETWORK</button></div></div>'+
-  (root.__omegaBmOutcome?'<div class="omega-bm-outcome" role="status">'+esc(root.__omegaBmOutcome)+'</div>':'')+
-  section('01','Supply opportunities',count(offers.length)+' executable seller offer(s)')+
-  (offers.length?'<div class="omega-bm-offers">'+cards+'</div>':'<div class="omega-bm-empty">'+(selectedProduct?'No executable seller offer meets the current stock, warehouse and policy checks.':'Select a commodity and scan the network. Only observed stock and evidence-backed routes can appear as offers.')+'</div>')+
-  '<div class="omega-bm-lower">'+
-   '<section class="omega-bm-panel"><header><strong>02 · Covert deal ledger</strong><span>'+count(active.length)+' active · '+count(settled)+' settled</span></header><div class="omega-bm-panel-body">'+(dealHtml||'<div class="omega-bm-empty">No Black Market deal has been recorded for this country.</div>')+'</div></section>'+
-   '<section class="omega-bm-panel"><header><strong>03 · Intelligence & foreign response · Transit</strong><span>'+count(transits.filter(x=>x.status==='IN_TRANSIT').length)+' transit · '+count(cases.length)+' case(s)</span></header><div class="omega-bm-panel-body">'+(transitHtml||'')+(reportHtml||'')+(caseHtml||'')+(respHtml||'')+(!transitHtml&&!reportHtml&&!caseHtml&&!respHtml?'<div class="omega-bm-empty">No detected NPC network or covert shipment exists in this country intelligence file. Network discovery is country-specific; other countries do not receive automatic access to this report.</div>':'')+'</div></section>'+
-  '</div>'+
-  '<p class="omega-bm-risknote">Detection is a gameplay estimate, not a guarantee. Enforcement remains bounded by recorded policy and settlement evidence: fines are capped by observed Treasury liquidity, and cargo seizure is limited to matching imported batches still present in unreserved warehouse stock. No covert permit overrides war, route blockades, protected strategic reserves or missing inventory evidence.</p></div></section>';
+ const buyerHtml=buyers.slice(0,visibleBuyers).map(x=>'<tr><td>'+countryCell(x.countryId,x.reason)+'</td>'+
+  '<td class="omega-bm-value">'+fmt(x.quantity)+'</td><td>'+fmt(x.demandPerDay)+'/day</td>'+
+  '<td>'+ (x.coverage===null?'—':fmt(x.coverage)+' days')+'</td>'+
+  '<td><span class="omega-bm-tag">POTENTIAL BUYER</span></td></tr>').join('');
+ const confirmedHtml=confirmed.slice(0,10).map(x=>{
+  const status=String(x.status||'UNKNOWN').toUpperCase(),
+   alert=['INTERCEPTED','SETTLED_UNDER_INVESTIGATION','FAILED','EXPIRED'].includes(status);
+  return'<div class="omega-bm-ledger-row"><div><div class="omega-bm-decision">'+countryCell(x.buyerCountryId,'BUYER')+'</div><div class="omega-bm-muted">↔</div><div class="omega-bm-decision">'+countryCell(x.sellerCountryId,'SELLER')+'</div></div>'+
+   '<div><strong>'+esc(x.productName||x.resourceId)+'</strong><small class="omega-bm-muted">'+fmt(x.quantity)+' '+esc(x.unit||'units')+'</small></div>'+
+   '<div><span class="omega-bm-ledger-status'+(alert?' is-alert':'')+'">'+esc(statusLabel(status))+'</span></div>'+
+   '<div><strong>'+esc(money(x.unitPrice,x.currency))+'</strong><small class="omega-bm-muted">Turn '+fmt(x.createdTurn)+'</small></div></div>';
+ }).join('');
+ const localDealHtml=active.slice(0,6).map(x=>'<article class="omega-bm-intel-row"><strong>'+esc(x.productName||x.resourceId)+' · '+esc(statusLabel(x.status))+'</strong><small>'+countryCell(x.sellerCountryId,'Seller')+' · '+fmt(x.quantity)+' '+esc(x.unit||'units')+' · '+esc(money(x.unitPrice,x.currency))+' / unit</small></article>').join('');
+ const caseHtml=cases.slice(-5).reverse().map(x=>'<article class="omega-bm-intel-row"><strong>INVESTIGATION · '+esc(x.status||'OPEN')+'</strong><small>'+countryCell(x.buyerCountryId,'Buyer')+' ↔ '+countryCell(x.sellerCountryId,'Seller')+' · '+esc(x.resourceId||'Commodity')+' · Evidence '+fmt((num(x.evidenceConfidence)||0)*100)+'%</small></article>').join('');
+ const responseHtml=responses.slice(-4).reverse().map(x=>'<article class="omega-bm-intel-row"><strong>FOREIGN RESPONSE · '+esc(String(x.responseType||'Response').replace(/_/g,' '))+'</strong><small>'+countryCell(x.sourceCountryId,'Issuing country')+' · Target '+countryMeta(x.targetCountryId).flag+' '+esc(countryMeta(x.targetCountryId).name)+' · '+esc(x.severity||'UNSPECIFIED')+'</small></article>').join('');
+ const transitHtml=transits.filter(x=>['IN_TRANSIT','ARRIVAL_PENDING'].includes(String(x.status||'').toUpperCase())).slice(-5).reverse().map(x=>'<article class="omega-bm-intel-row"><strong>COVERT TRANSIT · '+esc(statusLabel(x.status))+'</strong><small>'+countryMeta(x.sellerCountryId).flag+' '+esc(countryMeta(x.sellerCountryId).name)+' → '+countryMeta(x.buyerCountryId).flag+' '+esc(countryMeta(x.buyerCountryId).name)+' · '+fmt(x.quantity)+' '+esc(x.unit||'units')+'</small></article>').join('');
+ const reportHtml=reports.slice(-5).reverse().map(x=>'<article class="omega-bm-intel-row"><strong>INTELLIGENCE · '+esc(x.level||'UNASSESSED')+' CONFIDENCE</strong><small>'+esc(x.productName||x.resourceId||'Covert channel')+' · '+(x.buyerCountryId?countryMeta(x.buyerCountryId).flag+' '+esc(countryMeta(x.buyerCountryId).name):'Buyer unconfirmed')+' ↔ '+(x.sellerCountryId?countryMeta(x.sellerCountryId).flag+' '+esc(countryMeta(x.sellerCountryId).name):'Seller unconfirmed')+' · '+esc(x.summary||'Activity observed')+'</small></article>').join('');
+ const optionSummary=offers.length?offers.length+' verified seller offer(s)':'No seller scan completed';
+ const countryDeals=confirmed.filter(x=>['ACCEPTED','NEGOTIATING','SENT','REQUESTED','IN_TRANSIT','ARRIVAL_PENDING'].includes(String(x.status||'').toUpperCase()));
+ const productType=validLane.replace(/_/g,' ');
+ const productListSearch=String(root.__omegaBmProductSearch||'').trim().toLowerCase(),
+  visibleProducts=productListSearch?laneProducts.filter(x=>productName(x).toLowerCase().includes(productListSearch)).slice(0,60):laneProducts.slice(0,60);
+ root.innerHTML=styles()+
+ '<section class="omega-bm"><header class="omega-bm-head"><div><div class="omega-bm-kicker">OMEGA WORLD ECONOMY · TRADE INTELLIGENCE DIVISION</div><h1>Black Market Network</h1><p class="omega-bm-sub">Covert supply channels, state-linked trade, buyer demand and seller negotiations. Country participation is shown only when supported by game records.</p><div class="omega-bm-scope">Active country: '+esc(playerInfo.flag)+' '+esc(playerInfo.name)+' · '+esc(c)+'</div></div><span class="omega-bm-classified">CLASSIFIED<br>OFF-GRID TRADE</span></header>'+
+ '<nav class="omega-bm-lanes" aria-label="Commodity categories">'+laneButtons+'</nav>'+
+ '<div class="omega-bm-layout"><aside class="omega-bm-box"><header><strong>Commodity board</strong><span>'+fmt(laneProducts.length)+' products</span></header>'+
+ '<div class="omega-bm-product-head"><label for="omega-bm-product-search">Find a commodity</label><input id="omega-bm-product-search" class="omega-bm-search" type="search" placeholder="Search products..." value="'+esc(root.__omegaBmProductSearch||'')+'" data-bm-product-search></div>'+
+ '<div class="omega-bm-product-list">'+(visibleProducts.length?productButtonsFor(visibleProducts,rid):'<div class="omega-bm-empty-products">No products match this search.</div>')+'</div></aside>'+
+ '<main class="omega-bm-main"><section class="omega-bm-product-hero"><div><small>SELECTED COMMODITY · '+esc(productType)+'</small><h2>'+esc(productLabel)+'</h2><p>'+esc(selected?.unit?('Trading unit: '+selected.unit):'Select an item from the commodity board')+'</p></div><span class="omega-bm-product-type">SHADOW<br>TRADE LANE</span></section>'+
+ '<div class="omega-bm-stats"><div class="omega-bm-stat"><small>Executable seller offers</small><strong>'+fmt(offers.length)+'</strong><em>'+esc(optionSummary)+'</em></div><div class="omega-bm-stat"><small>Potential buyer countries</small><strong>'+fmt(buyers.length)+'</strong><em>Observed shortage signals</em></div><div class="omega-bm-stat"><small>Recorded negotiations / deals</small><strong>'+fmt(countryDeals.length)+'</strong><em>Across visible country ledgers</em></div><div class="omega-bm-stat"><small>Active local pipeline</small><strong>'+fmt(active.length)+'</strong><em>'+fmt(settled)+' settled locally</em></div></div>'+
+ '<div class="omega-bm-toolbar"><div class="omega-bm-field"><label for="omega-bm-find-quantity">Required quantity</label><input id="omega-bm-find-quantity" type="number" min="0.001" step="any" value="'+esc(root.__omegaBmFindQuantity||'1')+'" data-bm-find-quantity></div>'+
+ '<button class="omega-bm-btn" type="button" data-bm-find '+(scanning?'disabled':'')+'>'+(scanning?'SCANNING NETWORK…':'SCAN SELLER NETWORK')+'</button>'+
+ '<div class="omega-bm-progress" data-bm-scan-progress>'+(scanning?esc(progress):'Scan is manual. Opening this screen does not run a world-wide offer search.')+'</div></div>'+
+ (root.__omegaBmOutcome?'<div class="omega-bm-outcome" role="status">'+esc(root.__omegaBmOutcome)+'</div>':'')+
+ '<div class="omega-bm-section-grid"><section class="omega-bm-section"><header><strong>Seller offers</strong><span>'+fmt(offers.length)+' verified offer(s)</span></header><div class="omega-bm-note">Countries with observed available stock, usable routes and an executable seller quote for this player country.</div>'+
+ (offers.length?'<div class="omega-bm-table-wrap"><table class="omega-bm-table"><thead><tr><th>Seller country</th><th>Stock</th><th>Shadow price</th><th>Risk</th><th>Policy</th><th>Order</th></tr></thead><tbody>'+offersHtml+'</tbody></table></div>'+
+ (offers.length>visibleOffers?'<div class="omega-bm-more"><button type="button" class="omega-bm-btn omega-bm-btn--quiet" data-bm-show-more-offers>SHOW MORE SELLERS · '+fmt(offers.length-visibleOffers)+' LEFT</button></div>':''):'<div class="omega-bm-empty">'+(scanning?'Seller scan is running in small country batches.':'Choose a commodity and scan the seller network. No offer is assumed before stock and route checks finish.')+'</div>')+
+ '</section><section class="omega-bm-section"><header><strong>Buyer demand signals</strong><span>'+fmt(buyers.length)+' country signal(s)</span></header><div class="omega-bm-note">Countries showing unmet demand or stock-coverage pressure. This indicates potential buying interest; it is not a confirmed Black Market order or acceptance.</div>'+
+ (buyers.length?'<div class="omega-bm-table-wrap"><table class="omega-bm-table"><thead><tr><th>Potential buyer</th><th>Supply gap</th><th>Demand / day</th><th>Stock cover</th><th>Signal</th></tr></thead><tbody>'+buyerHtml+'</tbody></table></div>'+
+ (buyers.length>visibleBuyers?'<div class="omega-bm-more"><button type="button" class="omega-bm-btn omega-bm-btn--quiet" data-bm-show-more-buyers>SHOW MORE COUNTRIES · '+fmt(buyers.length-visibleBuyers)+' LEFT</button></div>':''):'<div class="omega-bm-empty">No other country has a current, recorded shortage signal for this commodity.</div>')+
+ '</section></div>'+
+ '<section class="omega-bm-section"><header><strong>Confirmed offers, negotiations & acceptances</strong><span>'+fmt(confirmed.length)+' recorded deal(s)</span></header><div class="omega-bm-note">This list is based on persisted Black Market deal records. “Offer accepted” appears only when the deal status is actually ACCEPTED.</div>'+
+ (confirmedHtml?'<div class="omega-bm-ledger">'+confirmedHtml+'</div>':'<div class="omega-bm-empty">No country has a recorded Black Market request, negotiation or accepted offer for this commodity yet.</div>')+
+ '</section>'+
+ '<div class="omega-bm-lower"><section class="omega-bm-section"><header><strong>Country operations ledger</strong><span>'+fmt(active.length)+' local active · '+fmt(cases.length)+' cases</span></header><div class="omega-bm-intel">'+
+ (localDealHtml||'')+(caseHtml||'')+(transitHtml||'')+(reportHtml||'')+(responseHtml||'')+
+ (!localDealHtml&&!caseHtml&&!transitHtml&&!reportHtml&&!responseHtml?'<div class="omega-bm-empty">No local deals, investigations, transit inspections or discovered country-intelligence reports.</div>':'')+
+ '</div></section><section class="omega-bm-section"><header><strong>Participation rules</strong><span>Evidence labels</span></header><div class="omega-bm-intel">'+
+ '<article class="omega-bm-intel-row"><strong>SELLER OFFER · VERIFIED</strong><small>Real seller stock, route and quote passed the Black Market runtime checks.</small></article>'+
+ '<article class="omega-bm-intel-row"><strong>POTENTIAL BUYER · DEMAND SIGNAL</strong><small>National demand data shows a shortage. The country has not necessarily placed or accepted an order.</small></article>'+
+ '<article class="omega-bm-intel-row"><strong>OFFER ACCEPTED · CONFIRMED</strong><small>Only a persisted deal whose status is ACCEPTED is shown as accepted. A demand signal alone never means acceptance.</small></article>'+
+ '<article class="omega-bm-intel-row"><strong>STATE PARTICIPATION · EVIDENCE REQUIRED</strong><small>Government involvement is labelled only when state-owned or state-directed activity is supported by country records. A sanction or embargo alone is not proof.</small></article>'+
+ '</div></section></div>'+
+ '</main></div><p class="omega-bm-footnote">Seller scans run progressively across small country batches; opening the page does not scan the world. Other countries’ shortages are shown as buying-interest signals, not as confirmed covert participation. Pricing, permits, trade requests, cargo inspections, settlement, penalties and intelligence secrecy remain controlled by their existing authoritative runtimes.</p></section>';
  if(!root.__omegaBmBound){
   root.addEventListener('click',function(event){
    const t=event.target?.closest?.('button');if(!t||!root.contains(t))return;
    if(t.hasAttribute('data-bm-lane')){
-    const next=t.getAttribute('data-bm-lane');
+    cancelScan(root);const next=t.getAttribute('data-bm-lane');
     root.__omegaBmLane=['RAW_RESOURCE','FACTORY_PRODUCT','FOOD_PRODUCT'].includes(next)?next:'RAW_RESOURCE';
-    root.__omegaBmResource='';root.__omegaBmOffers=[];root.__omegaBmOutcome='';render(root,root.__omegaBmCountry||c);return;
+    root.__omegaBmResource='';root.__omegaBmOffers=[];root.__omegaBmNegotiation=null;root.__omegaBmOutcome='';
+    root.__omegaBmOfferVisible=6;render(root,root.__omegaBmCountry||c);return;
+   }
+   if(t.hasAttribute('data-bm-product')){
+    cancelScan(root);root.__omegaBmResource=t.getAttribute('data-bm-product')||'';
+    root.__omegaBmOffers=[];root.__omegaBmNegotiation=null;root.__omegaBmOutcome='';
+    root.__omegaBmOfferVisible=6;render(root,root.__omegaBmCountry||c);return;
+   }
+   if(t.hasAttribute('data-bm-show-more-offers')){
+    root.__omegaBmOfferVisible=Math.min(24,(num(root.__omegaBmOfferVisible)||6)+6);render(root,root.__omegaBmCountry||c);return;
+   }
+   if(t.hasAttribute('data-bm-show-more-buyers')){
+    root.__omegaBmBuyerVisible=Math.min(24,(num(root.__omegaBmBuyerVisible)||8)+8);render(root,root.__omegaBmCountry||c);return;
    }
    if(t.hasAttribute('data-bm-negotiate')){
-    const offerId=t.getAttribute('data-bm-negotiate'),seller=t.getAttribute('data-bm-seller'),rid=t.getAttribute('data-bm-resource');
-    const qf=Array.from(root.querySelectorAll('[data-bm-quantity]')).find(x=>x.getAttribute('data-bm-quantity')===offerId),bf=Array.from(root.querySelectorAll('[data-bm-bid]')).find(x=>x.getAttribute('data-bm-bid')===offerId);
-    const result=bm.negotiateOffer({buyerCountryId:root.__omegaBmCountry||c,sellerCountryId:seller,resourceId:rid,offerId,quantity:Number(qf?.value),bidUnitPrice:Number(bf?.value)});
-    root.__omegaBmNegotiation=result.negotiation||null;root.__omegaBmOutcome=result.accepted?(result.decision==='COUNTERED'?'Broker countered at '+money(result.negotiation.counterUnitPrice,result.negotiation.currency||'USD')+' per unit. Accept the counter before ordering.':'Broker accepted the negotiated price. Place the order to continue.'):(result.reason||'NEGOTIATION_REJECTED');render(root,root.__omegaBmCountry||c);return;
+    const offerId=t.getAttribute('data-bm-negotiate'),seller=t.getAttribute('data-bm-seller'),productId=t.getAttribute('data-bm-resource'),
+     qf=Array.from(root.querySelectorAll('[data-bm-quantity]')).find(x=>x.getAttribute('data-bm-quantity')===offerId),
+     bf=Array.from(root.querySelectorAll('[data-bm-bid]')).find(x=>x.getAttribute('data-bm-bid')===offerId);
+    const result=bm.negotiateOffer?.({buyerCountryId:root.__omegaBmCountry||c,sellerCountryId:seller,resourceId:productId,offerId,
+     quantity:Number(qf?.value),bidUnitPrice:Number(bf?.value)})||{accepted:false,reason:'NEGOTIATION_API_UNAVAILABLE'};
+    root.__omegaBmNegotiation=result.negotiation||null;
+    root.__omegaBmOutcome=result.accepted?(result.decision==='COUNTERED'?'Broker countered at '+money(result.negotiation.counterUnitPrice,result.negotiation.currency||'USD')+' per unit. Review and accept the counter before ordering.':'Broker accepted the negotiated price. Place the deal request to continue.'):(result.reason||'NEGOTIATION_REJECTED');
+    render(root,root.__omegaBmCountry||c);return;
    }
    if(t.hasAttribute('data-bm-accept-counter')){
-    const result=bm.acceptCounterOffer(root.__omegaBmCountry||c,t.getAttribute('data-bm-accept-counter'));
-    root.__omegaBmNegotiation=result.negotiation||null;root.__omegaBmOutcome=result.accepted?'Counter offer accepted. Place the order to continue.':(result.reason||'COUNTER_ACCEPTANCE_FAILED');render(root,root.__omegaBmCountry||c);return;
+    const result=bm.acceptCounterOffer?.(root.__omegaBmCountry||c,t.getAttribute('data-bm-accept-counter'))||{accepted:false,reason:'COUNTER_ACCEPTANCE_API_UNAVAILABLE'};
+    root.__omegaBmNegotiation=result.negotiation||null;
+    root.__omegaBmOutcome=result.accepted?'Broker counteroffer accepted. Place the deal request to continue.':(result.reason||'COUNTER_ACCEPTANCE_FAILED');
+    render(root,root.__omegaBmCountry||c);return;
    }
    if(t.hasAttribute('data-bm-find')){
-    const rid=String(root.querySelector('[data-bm-resource]')?.value||''),q=Number(root.querySelector('[data-bm-find-quantity]')?.value);
-    root.__omegaBmResource=rid;root.__omegaBmNegotiation=null;
-    if(!rid||!Number.isFinite(q)||q<=0){root.__omegaBmOffers=[];root.__omegaBmOutcome='Choose a valid commodity and a quantity greater than zero.';render(root,root.__omegaBmCountry||c);return;}
-    const r=bm.getOffers(root.__omegaBmCountry||c,rid,q);root.__omegaBmOffers=r.status==='READY'?(Array.isArray(r.offers)?r.offers:[]):[];
-    root.__omegaBmOutcome=r.status==='READY'?(r.offers.length?'Found '+r.offers.length+' seller offer(s).':'No executable offer meets the current stock and policy checks.'):(r.reason||r.status);
+    const productId=String(root.__omegaBmResource||''),quantity=Number(root.querySelector('[data-bm-find-quantity]')?.value);
+    root.__omegaBmFindQuantity=String(quantity);
+    root.__omegaBmNegotiation=null;root.__omegaBmOffers=[];root.__omegaBmOfferVisible=6;
+    if(!productId||!Number.isFinite(quantity)||quantity<=0){
+     root.__omegaBmScanning=false;root.__omegaBmOutcome='Select a commodity and enter a quantity greater than zero.';render(root,root.__omegaBmCountry||c);return;
+    }
+    cancelScan(root);root.__omegaBmScanning=true;root.__omegaBmScanProgress='Preparing seller-country scan…';
+    root.__omegaBmOutcome='Seller scan started. The screen remains responsive while countries are checked in batches.';
+    render(root,root.__omegaBmCountry||c);
+    const scanToken=root.__omegaBmScanToken;
+    if(typeof bm.beginOfferScan==='function'&&typeof bm.getOfferScanBatch==='function'&&typeof bm.finishOfferScan==='function'){
+     const scan=bm.beginOfferScan(root.__omegaBmCountry||c,productId,quantity);
+     if(scan?.status!=='READY'){
+      root.__omegaBmScanning=false;root.__omegaBmOutcome=scan?.reason||scan?.status||'OFFER_SCAN_UNAVAILABLE';render(root,root.__omegaBmCountry||c);return;
+     }
+     root.__omegaBmScan=scan;
+     const nextBatch=function(){
+      if(scanToken!==root.__omegaBmScanToken||!root.__omegaBmScanning)return;
+      const part=bm.getOfferScanBatch(scan,16);
+      if(part?.status!=='READY'){
+       root.__omegaBmScanning=false;root.__omegaBmOutcome=part?.reason||part?.status||'OFFER_SCAN_FAILED';root.__omegaBmScan=null;render(root,root.__omegaBmCountry||c);return;
+      }
+      root.__omegaBmScanProgress='Scanned '+fmt(part.scanned)+' / '+fmt(part.total)+' seller countries · '+fmt(scan.offers.length)+' executable offer(s)';
+      const label=root.querySelector?.('[data-bm-scan-progress]');if(label)label.textContent=root.__omegaBmScanProgress;
+      if(!part.done){schedule(nextBatch);return;}
+      const final=bm.finishOfferScan(scan);
+      root.__omegaBmOffers=Array.isArray(final?.offers)?final.offers:[];
+      root.__omegaBmScanning=false;root.__omegaBmScan=null;
+      root.__omegaBmOutcome=root.__omegaBmOffers.length?'Network scan complete. '+root.__omegaBmOffers.length+' executable seller offer(s) found.':
+       'Network scan complete. No seller passed the current stock, policy and route checks.';
+      render(root,root.__omegaBmCountry||c);
+     };
+     schedule(nextBatch);return;
+    }
+    const result=bm.getOffers(root.__omegaBmCountry||c,productId,quantity);
+    root.__omegaBmOffers=result.status==='READY'?(Array.isArray(result.offers)?result.offers:[]):[];
+    root.__omegaBmScanning=false;root.__omegaBmOutcome=result.status==='READY'?
+     (root.__omegaBmOffers.length?'Found '+root.__omegaBmOffers.length+' executable seller offer(s).':'No executable seller offer meets the current checks.'):(result.reason||result.status);
     render(root,root.__omegaBmCountry||c);return;
    }
    if(t.hasAttribute('data-bm-buy')){
-    const offerId=t.getAttribute('data-bm-buy'),seller=t.getAttribute('data-bm-seller'),rid=t.getAttribute('data-bm-resource');
-    const f=Array.from(root.querySelectorAll('[data-bm-quantity]')).find(x=>x.getAttribute('data-bm-quantity')===offerId),quantity=Number(f?.value);
-    if(!Number.isFinite(quantity)||quantity<=0){root.__omegaBmOutcome='Enter a valid order quantity greater than zero.';render(root,root.__omegaBmCountry||c);return;}
+    const offerId=t.getAttribute('data-bm-buy'),seller=t.getAttribute('data-bm-seller'),productId=t.getAttribute('data-bm-resource'),
+     field=Array.from(root.querySelectorAll('[data-bm-quantity]')).find(x=>x.getAttribute('data-bm-quantity')===offerId),
+     quantity=Number(field?.value);
+    if(!Number.isFinite(quantity)||quantity<=0){root.__omegaBmOutcome='Enter a quantity greater than zero.';render(root,root.__omegaBmCountry||c);return;}
     const negotiation=root.__omegaBmNegotiation;
-    if(negotiation&&negotiation.offerId===offerId&&negotiation.status==='COUNTERED'){root.__omegaBmOutcome='Accept the broker counteroffer before placing this order.';render(root,root.__omegaBmCountry||c);return;}
-    const r=bm.createDeal({buyerCountryId:root.__omegaBmCountry||c,sellerCountryId:seller,resourceId:rid,offerId,quantity,
+    if(negotiation&&negotiation.offerId===offerId&&negotiation.status==='COUNTERED'){
+     root.__omegaBmOutcome='Accept the broker counteroffer before placing this order.';render(root,root.__omegaBmCountry||c);return;
+    }
+    const result=bm.createDeal({buyerCountryId:root.__omegaBmCountry||c,sellerCountryId:seller,resourceId:productId,offerId,quantity,
      negotiationId:negotiation&&negotiation.offerId===offerId&&negotiation.status==='ACCEPTED'?negotiation.negotiationId:undefined});
-    root.__omegaBmOutcome=r.accepted?'Trade request recorded. Seller review, inspection and authoritative settlement are pending.':(r.reason||'BLACK_MARKET_ORDER_REJECTED');
-    const next=bm.getOffers(root.__omegaBmCountry||c,rid,quantity);root.__omegaBmResource=rid;root.__omegaBmOffers=next.status==='READY'?(Array.isArray(next.offers)?next.offers:[]):[];root.__omegaBmNegotiation=null;render(root,root.__omegaBmCountry||c);return;
+    root.__omegaBmOutcome=result.accepted?'Trade request recorded. Seller review, cargo inspection and authoritative settlement are pending.':
+     (result.reason||'BLACK_MARKET_ORDER_REJECTED');
+    root.__omegaBmNegotiation=null;root.__omegaBmOffers=[];
+    if(typeof bm.getOffers==='function'){
+     const next=bm.getOffers(root.__omegaBmCountry||c,productId,quantity);
+     root.__omegaBmOffers=next.status==='READY'?(Array.isArray(next.offers)?next.offers:[]):[];
+    }
+    render(root,root.__omegaBmCountry||c);return;
+   }
+  });
+  root.addEventListener('input',function(event){
+   const target=event.target;if(!target||!root.contains(target))return;
+   if(target.hasAttribute?.('data-bm-product-search')){
+    root.__omegaBmProductSearch=target.value||'';
+    const list=root.querySelector?.('.omega-bm-product-list');if(list){
+     const filtered=laneProducts.filter(x=>productName(x).toLowerCase().includes(root.__omegaBmProductSearch.toLowerCase())).slice(0,60);
+     list.innerHTML=filtered.length?productButtonsFor(filtered,root.__omegaBmResource):'<div class="omega-bm-empty-products">No products match this search.</div>';
+    }
    }
   });
   root.__omegaBmBound=true;
  }
- return{ok:true,countryId:c,offerCount:offers.length,dealCount:deals.length};
+ return{ok:true,countryId:c,offerCount:offers.length,dealCount:deals.length,buyerSignalCount:buyers.length,
+  confirmedDealCount:confirmed.length,scanning:scanning};
 }
-g.Omega=g.Omega||{};g.Omega.BlackMarketUI=Object.freeze({version:'1.2.0',render});g.OmegaBlackMarketUI=g.Omega.BlackMarketUI;
+function productButtonsFor(rows,selected){
+ return rows.map(x=>'<button type="button" class="omega-bm-product" data-bm-product="'+esc(x.id)+'" aria-pressed="'+(String(x.id)===String(selected)?'true':'false')+'"><strong>'+esc(productName(x))+'</strong><small>'+esc(x.unit||'—')+'</small></button>').join('');
+}
+function cancelScan(root){
+ root.__omegaBmScanToken=(num(root.__omegaBmScanToken)||0)+1;
+ root.__omegaBmScanning=false;root.__omegaBmScan=null;
+}
+function schedule(fn){if(typeof g.setTimeout==='function')g.setTimeout(fn,0);else fn();}
+g.Omega=g.Omega||{};
+g.Omega.BlackMarketUI=Object.freeze({version:'1.3.0',render});
+g.OmegaBlackMarketUI=g.Omega.BlackMarketUI;
 })(typeof window!=='undefined'?window:globalThis);
