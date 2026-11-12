@@ -337,3 +337,15 @@ test('high-confidence intelligence keeps state-actor motives, export shock and p
   assert.match(h.root.innerHTML,/Other countries: Not Observed By Other Countries/);
   assert.doesNotMatch(h.root.innerHTML,/undefined/);
 });
+
+test('mobile country tables switch from wide desktop tables to readable stacked cards',()=>{
+  assert.match(source,/omega-bm-seller-table/);
+  assert.match(source,/omega-bm-buyer-table/);
+  assert.match(source,/omega-bm-local-deal-table/);
+  assert.ok((source.match(/data-label=/g)||[]).length>=15,
+    'seller, buyer and local deal rows must expose labels for compact mobile rendering');
+  assert.ok(source.includes('@media(max-width:520px){.omega-bm-table-wrap{overflow:visible}.omega-bm-board-table{display:block;min-width:0!important;width:100%}'));
+  assert.ok(source.includes('.omega-bm-board-table tbody tr:not(.omega-bm-detail-row){display:grid;grid-template-columns:repeat(2,minmax(0,1fr))'));
+  assert.ok(source.includes('.omega-bm-board-table tbody tr.omega-bm-detail-row{display:block'));
+  assert.ok(source.includes('.omega-bm-board-table .omega-bm-row-action button{width:100%'));
+});
