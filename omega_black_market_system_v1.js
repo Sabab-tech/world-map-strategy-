@@ -705,9 +705,11 @@ function recordCaseHandler(cmd,ctx){
 }
 function recordExportShockHandler(cmd,ctx){
  const r=cmd?.payload?.shock||{},seller=country(ctx.countryId),shockId=String(r.shockId||''),
-  partner=country(r.mainCustomerCountryId),share=num(r.exportShare);
+  partner=country(r.mainCustomerCountryId),share=num(r.exportShare),source=String(r.evidenceSource||'');
+ const supportedSource=['OMEGA_GLOBAL_TRADE_SETTLED_EXPORT_LEDGER','SELLER_BILATERAL_EXPORT_LEDGER','BILATERAL_RELATIONSHIP_EVIDENCE'].includes(source);
  if(!shockId||country(r.sellerCountryId)!==seller||!partner||!Array.isArray(r.sanctioningCountryIds)||!r.sanctioningCountryIds.length||
-   share===null||share<.15||share>1||!r.resourceId)
+   share===null||share<.15||share>1||!r.resourceId||!supportedSource||
+   (num(r.exportValueAtRisk)===null&&num(r.exportQuantityAtRisk)===null))
   return{accepted:false,reason:'BLACK_MARKET_EXPORT_SHOCK_EVIDENCE_INVALID'};
  const raw=ctx.stateTransaction.get('trade.blackMarketExportShockLedger'),arr=Array.isArray(raw)?clone(raw):[],
   prior=arr.find(x=>String(x.shockId||'')===shockId);
