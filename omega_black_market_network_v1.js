@@ -5,9 +5,10 @@
  */
 (function(g){
 'use strict';
-if(g.OmegaBlackMarketNetworkV1&&g.OmegaBlackMarketNetworkV1.VERSION==='1.1.0')return;
-const VERSION='1.1.0',AUTHORITY='OMEGA_BLACK_MARKET_NPC_NETWORK_V1';
-const MAX_DEMAND_ROWS=14,MAX_PENDING_PROCESSES=6,MAX_NEW_DEALS_PER_TURN=1,COOLDOWN_TURNS=8;
+if(g.OmegaBlackMarketNetworkV1&&g.OmegaBlackMarketNetworkV1.VERSION==='1.2.0')return;
+const VERSION='1.2.0',AUTHORITY='OMEGA_BLACK_MARKET_NPC_NETWORK_V1';
+const MAX_DEMAND_ROWS=12,MAX_PENDING_PROCESSES=6,MAX_NEW_DEALS_PER_TURN=1,COOLDOWN_TURNS=8;
+const MAX_BUYER_COUNTRIES_PER_TURN=6,MAX_SELLER_COUNTRIES_PER_SCAN=16,MAX_DEMAND_ROWS_PER_BUYER=2;
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
 const clamp=(v,lo=0,hi=1)=>Math.max(lo,Math.min(hi,num(v)??lo));
 const token=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
@@ -36,6 +37,12 @@ function bucket(domain,c){const root=state()?.[domain],id=country(c);if(!root||t
  const key=Object.keys(root).find(k=>country(k)===id);return key===undefined?{}:(root[key]||{});}
 function countries(domain){const root=state()?.[domain];if(!root||typeof root!=='object'||Array.isArray(root))return[];
  return [...new Set(Object.keys(root).map(country).filter(x=>/^[A-Z0-9]{2,3}$/.test(x)))].sort();}
+function scanWindow(values,limit,offset=0){
+ const list=Array.isArray(values)?values:[],size=Math.max(0,Math.min(list.length,Math.floor(num(limit)||0)));
+ if(!size)return[];
+ const start=((Math.max(0,Math.floor(turn()))*size+Math.max(0,Math.floor(num(offset)||0)))%list.length);
+ return Array.from({length:size},(_,i)=>list[(start+i)%list.length]);
+}
 function field(map,key){if(!map||typeof map!=='object')return undefined;const k=Object.keys(map).find(x=>token(x)===token(key));return k===undefined?undefined:map[k];}
 function relation(a,b){const one=field(bucket('foreign',a).relations,b)||field(bucket('trade',a).relations,b);
  return one||field(bucket('foreign',b).relations,a)||field(bucket('trade',b).relations,a)||null;}
@@ -141,10 +148,10 @@ function legalRouteReason(offer){
  if(num(offer.expectedSavings)>0)return'TARIFF_AND_LANDED_COST_ARBITRAGE';
  return null;
 }
-function makeCandidate(buyer,row){
+function makeCandidate(buyer,row,sellerCountryIds){
  const bm=blackMarket(),catalog=market()?.productCatalog?.()||[],product=catalog.find(x=>token(x.id||x.resourceId||x.productId)===token(row.resourceId));
  if(!product||!['RAW_RESOURCE','FACTORY_PRODUCT','FOOD_PRODUCT'].includes(String(product.productType||'').toUpperCase()))return null;
- const quantity=row.quantity,book=bm?.getOffers?.(buyer,row.resourceId,quantity,{networkAuthority:AUTHORITY});
+ const quantity=row.quantity,book=bm?.getOffers?.(buyer,row.resourceId,quantity,{networkAuthority:AUTHORITY,sellerCountryIds});
  if(!book||book.status!=='READY'||!Array.isArray(book.offers))return null;
  const candidates=[];
  for(const offer of book.offers){
@@ -220,28 +227,38 @@ function maybeDiscover(candidate,deal,route=[]){
  const saved=dispatch('intelligence','OMEGA_BLACK_MARKET_RECORD_NETWORK_REPORT',pc,{report});
  return saved?.accepted===true?report:null;
 }
-function processPending(){
- const api=trade(),bm=blackMarket();if(!api||typeof api.processBlackMarketNetworkRequest!=='function')return{processed:0};
- let processed=0;
- for(const buyer of countries('trade'))for(const deal of (bm?.getDeals?.(buyer)||[])){
-  if(processed>=MAX_PENDING_PROCESSES)return{processed};
-  if(deal.autonomousNetwork!==true||!['SENT','ACCEPTED'].includes(String(deal.status||'').toUpperCase()))continue;
-  const result=api.processBlackMarketNetworkRequest({buyerCountryId:buyer,requestId:deal.requestId,dealId:deal.dealId,permitId:deal.permitId});
-  if(result?.accepted)processed++;
+function processPending(buyerCountries){
+ const api=trade(),bm=blackMarket();if(!api||typeof api.processBlackMarketNetworkRequest!=='function')return{processed:0,scannedCountries:0};
+ let processed=0,scannedCountries=0;
+ for(const buyer of buyerCountries||[]){
+  scannedCountries++;
+  for(const deal of (bm?.getDeals?.(buyer)||[])){
+   if(processed>=MAX_PENDING_PROCESSES)return{processed,scannedCountries};
+   if(deal.autonomousNetwork!==true||!['SENT','ACCEPTED'].includes(String(deal.status||'').toUpperCase()))continue;
+   const result=api.processBlackMarketNetworkRequest({buyerCountryId:buyer,requestId:deal.requestId,dealId:deal.dealId,permitId:deal.permitId});
+   if(result?.accepted)processed++;
+  }
  }
- return{processed};
+ return{processed,scannedCountries};
 }
 function runTurn(){
  const pc=player();if(!pc)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn()};
  if(g.__omegaBlackMarketNetworkProcessedTurn===turn())return{status:'ALREADY_PROCESSED',turn:turn()};
  g.__omegaBlackMarketNetworkProcessedTurn=turn();
- const pending=processPending(),resourceCountries=countries('resource').filter(c=>c!==pc),candidates=[];
- for(const buyer of resourceCountries){
+ const resourceCountries=countries('resource').filter(c=>c!==pc),
+  tradeCountries=countries('trade'),
+  buyerWindow=scanWindow(resourceCountries,MAX_BUYER_COUNTRIES_PER_TURN,0),
+  pendingWindow=scanWindow(tradeCountries,MAX_BUYER_COUNTRIES_PER_TURN,1),
+  sellerWindow=scanWindow(resourceCountries,MAX_SELLER_COUNTRIES_PER_SCAN,2),
+  pending=processPending(pendingWindow),candidates=[];
+ for(const buyer of buyerWindow){
   const existing=blackMarket()?.getDeals?.(buyer)||[];
   const active=existing.some(x=>x.autonomousNetwork===true&&['SENT','ACCEPTED','IN_TRANSIT'].includes(String(x.status||'').toUpperCase()));
   if(active)continue;
-  for(const row of demandCandidates(buyer)){
-   const candidate=makeCandidate(buyer,row);if(candidate)candidates.push(candidate);
+  for(const row of demandCandidates(buyer).slice(0,MAX_DEMAND_ROWS_PER_BUYER)){
+   const eligibleSellers=sellerWindow.filter(seller=>seller!==buyer);
+   const candidate=makeCandidate(buyer,row,eligibleSellers);
+   if(candidate)candidates.push(candidate);
    if(candidates.length>=MAX_DEMAND_ROWS)break;
   }
   if(candidates.length>=MAX_DEMAND_ROWS)break;
@@ -252,22 +269,27 @@ function runTurn(){
   if(created)break;
   const bm=blackMarket(),profile=actorProfile(c),reason=[c.legalReason,c.bmReason.code,c.smReason.code].join(' | ');
   const result=bm?.createAutonomousDeal?.({buyerCountryId:c.buyer,sellerCountryId:c.seller,resourceId:c.row.resourceId,
-   quantity:c.row.quantity,offerId:c.offer.offerId,brokerId:c.sellerState?('STATE-NETWORK:'+c.seller):c.offer.brokerId,brokerType:c.sellerState?'STATE_LINKED':c.offer.brokerType,
-   actorProfile:profile,networkTactic:c.tactic.code,networkRationale:reason});
+   quantity:c.row.quantity,offerId:c.offer.offerId,brokerId:c.sellerState?('STATE-NETWORK:'+c.seller):c.offer.brokerId,
+   brokerType:c.sellerState?'STATE_LINKED':c.offer.brokerType,actorProfile:profile,
+   networkTactic:c.tactic.code,networkRationale:reason});
   if(!result?.accepted)continue;
   created=result.deal||result;
   const process=trade()?.processBlackMarketNetworkRequest?.({buyerCountryId:c.buyer,requestId:created.requestId,dealId:created.dealId,permitId:created.permitId});
-  const latest=bm.getDeal(created.dealId,c.buyer)||created;
-  const route=latest.transitRoute||[];
+  const latest=bm.getDeal(created.dealId,c.buyer)||created,route=latest.transitRoute||[];
   discovery=maybeDiscover(c,latest,route);
-  created={deal:latest,process:process||null,candidate:{buyer:c.buyer,seller:c.seller,resourceId:c.row.resourceId,quantity:c.row.quantity,
-   score:c.score,governmentInvolvement:profile.governmentInvolvement,tactic:c.tactic.code,buyerMotive:c.bmReason.code,sellerMotive:c.smReason.code},intelReport:discovery};
+  created={deal:latest,process:process||null,candidate:{buyer:c.buyer,seller:c.seller,resourceId:c.row.resourceId,
+   quantity:c.row.quantity,score:c.score,governmentInvolvement:profile.governmentInvolvement,tactic:c.tactic.code,
+   buyerMotive:c.bmReason.code,sellerMotive:c.smReason.code},intelReport:discovery};
  }
  return{status:'COMPLETED',turn:turn(),playerCountryId:pc,pendingProcessed:pending.processed||0,
-  candidateCount:candidates.length,newDeal:created,limitPerTurn:MAX_NEW_DEALS_PER_TURN,worldSimulation:'LIGHTWEIGHT_CANDIDATE_SCAN_ONLY'};
+  candidateCount:candidates.length,newDeal:created,limitPerTurn:MAX_NEW_DEALS_PER_TURN,
+  scannedBuyerCountries:buyerWindow,scannedPendingCountries:pendingWindow,scannedSellerCountries:sellerWindow,
+  scanLimits:{buyerCountriesPerTurn:MAX_BUYER_COUNTRIES_PER_TURN,demandRowsPerBuyer:MAX_DEMAND_ROWS_PER_BUYER,
+   sellerCountriesPerEvaluation:MAX_SELLER_COUNTRIES_PER_SCAN,candidateEvaluationsPerTurn:MAX_DEMAND_ROWS},
+  worldSimulation:'BOUNDED_ROTATING_COUNTRY_SCAN'};
 }
 function diagnostics(){const pc=player();return{version:VERSION,ready:!!blackMarket()&&!!trade(),playerCountryId:pc,turn:turn(),
-  playerReports:pc?(blackMarket()?.getNetworkReports?.(pc)||[]).length:0,planner:'ONE_AUTONOMOUS_NPC_DEAL_MAX_PER_PLAYER_TURN',
+  playerReports:pc?(blackMarket()?.getNetworkReports?.(pc)||[]).length:0,planner:'ONE_AUTONOMOUS_NPC_DEAL_MAX_PER_PLAYER_TURN_BOUNDED_ROTATING_COUNTRY_SCAN',
   authority:'OBSERVED_DEMAND_GLOBAL_MARKET_STOCK_GLOBAL_TRADE_AND_PLAYER_COUNTRY_INTELLIGENCE'};}
 function init(){if(!blackMarket()||!trade())return false;if(g.__omegaBlackMarketNetworkHooks)return true;
  g.__omegaBlackMarketNetworkHooks=true;g.addEventListener?.('OMEGA_READY',()=>{if(!blackMarket()||!trade())return;});
