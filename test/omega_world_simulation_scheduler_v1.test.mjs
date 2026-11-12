@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const source=readFileSync(new URL('../omega_world_simulation_scheduler_v1.js',import.meta.url),'utf8');
 function harness(count=197,existingState=null,userAgent=''){
  const ids=[],profiles=[],byId=new Map();
- for(let i=0;i<count;i++){const id=String.fromCharCode(65+Math.floor(i/26))+String.fromCharCode(65+i%26),row={countryCode:id,iso3:'X'+String(i).padStart(2,'0')};ids.push(id);profiles.push(row);byId.set(id,row);}
+ for(let i=0;i<count;i++){const id=String.fromCharCode(65+Math.floor(i/26))+String.fromCharCode(65+i%26),row={countryCode:id,iso3:'X'+String(i).padStart(2,'0')};ids.push(id);profiles.push(row);byId.set(id,row);byId.set(row.iso3,row);}
  const participants=new Map(),listeners=new Set(),evaluations=[],queued=[],handled=[];let yields=0;
  const state=existingState||{simulation:{turn:0,session:{playerCountryId:'AA',status:'RUNNING'}},projects:{BB:{registry:[{projectId:'P1',autonomy:true,status:'UNDER_CONSTRUCTION'}]}},military:{CC:{trainingQueue:[{trainingId:'T1',status:'IN_TRAINING'}]}},trade:{}};
  const simulation={world:{state},clock:{turn:0,stepDurationMs:10000},getPlayerCountryId:()=>state.simulation.session?.playerCountryId||null,registerTurnParticipant(id,handler,options){participants.set(id,{handler,options});return()=>participants.delete(id);},events:{subscribe(type,handler){if(type==='*')listeners.add(handler);return()=>listeners.delete(handler);}}};
@@ -16,7 +16,7 @@ function harness(count=197,existingState=null,userAgent=''){
  const scheduler=sandbox.Omega.WorldSimulationScheduler,participant=participants.get('omega.world-simulation.scheduler.v1');
  assert.ok(participant,'scheduler must register one canonical turn participant');
  scheduler.registerCountryHandler('test.player-active-handler',async(cid,ctx)=>handled.push({countryId:cid,tier:ctx.tier,turn:ctx.turn}),{tiers:['PLAYER','ACTIVE']});
- return{ids,participants,listeners,evaluations,queued,handled,yields:()=>yields,rosterCalls:()=>rosterCalls,state,simulation,scheduler,participant};
+ return{ids,profiles,byId,participants,listeners,evaluations,queued,handled,yields:()=>yields,rosterCalls:()=>rosterCalls,state,simulation,scheduler,participant,sandbox};
 }
 test('100-game-day schedule is bounded and all 196 non-player test countries are evaluated',async()=>{
  const h=harness(197);
@@ -112,4 +112,24 @@ test('concurrent callbacks for one turn share one execution and do not duplicate
    'opponent evaluations must not be doubled');
  assert.equal(h.scheduler.diagnostics().processing,false);
  assert.equal(h.scheduler.diagnostics().inFlightTurn,null);
+});
+
+
+test('production scheduler uses the validated 197-country sovereign baseline instead of the wider map roster',async()=>{
+ const h=harness(249);
+ const coreIds=h.profiles.slice(0,197).map(row=>row.iso3);
+ h.sandbox.OmegaCountryFactoryStartingBaselineV1={
+  ready:Promise.resolve({status:'READY'}),
+  getCountryIds:()=>coreIds.slice()
+ };
+ h.state.simulation.turn=1;h.simulation.clock.turn=1;
+ const result=await h.participant.handler({},{
+  turn:1,countryId:'AA',playerCountryId:'AA',state:h.state,simulation:h.simulation,stepDurationMs:10000
+ });
+ assert.equal(result.status,'COMPLETED');
+ assert.equal(h.scheduler.diagnostics().rosterCount,197);
+ assert.equal(result.macro.selected,8);
+ assert.equal(result.active.selected,4);
+ assert.ok([...h.scheduler.getCountryRoster()].every(countryId=>h.ids.includes(countryId)));
+ assert.equal(h.scheduler.getCountryRoster().length,197);
 });
