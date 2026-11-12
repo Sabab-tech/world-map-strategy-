@@ -107,6 +107,10 @@ function harness() {
       value: '125',
       getAttribute(name) { return name === 'data-bm-bid' ? 'OFFER-1' : null; }
     },
+    bidField: {
+      value: '125',
+      getAttribute(name) { return name === 'data-bm-bid' ? 'OFFER-1' : null; }
+    },
     addEventListener(type, handler) { this.listeners[type] = handler; },
     contains() { return true; },
     querySelector(selector) { return this.fields[selector] || null; },
@@ -254,7 +258,7 @@ test('broker negotiation and counter acceptance remain available in the seller d
   h.api.render(h.root, 'BGD');
   click(h.root, { 'data-bm-find': '' });
   click(h.root, { 'data-bm-negotiate': 'OFFER-1', 'data-bm-seller': 'SAU', 'data-bm-resource': 'iron_ore' });
-  assert.match(h.root.innerHTML, /Broker counteroffer/);
+  assert.match(h.root.innerHTML, /Negotiation: Countered/);
   click(h.root, { 'data-bm-accept-counter': 'NEG-1' });
   assert.match(h.root.innerHTML, /Counter offer accepted/);
 });
