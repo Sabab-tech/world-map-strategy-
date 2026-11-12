@@ -29,7 +29,7 @@
     "test:simulation": "node test/omega_simulation_runtime.test.js && npm run test:opponent-rules && npm run test:world-simulation",
     "test:ministries": "node test/omega_17_ministry_runtime.test.js && node test/omega_ministry_interoperability.test.js && npm run test:minister-intelligence && npm run test:home-ministry",
     "test:opponent-rules": "node test/opponent_country_rules_runtime.test.js",
-    "test:opponent-autonomy": "node test/omega_opponent_autonomy_system.test.mjs",
+    "test:opponent-autonomy": "node test/omega_opponent_autonomy_system.test.mjs && npm run test:npc-economic-governance",
     "test:architecture": "node test/universal_entity_architecture.test.mjs",
     "test:country-roster": "node test/country_roster_completeness.test.mjs",
     "test:real-country-batch": "node test/real_country_batch_runtime.test.mjs",
@@ -94,7 +94,8 @@
     "test:private-enterprise-browser": "node --test test/omega_private_enterprise_browser_e2e.test.mjs",
     "test:private-market-competition": "node --check omega_private_market_competition_runtime_v1.js && node --test test/omega_private_market_competition_runtime_v1.test.mjs",
     "test:private-company-capital": "node --test test/omega_private_company_capital_runtime_v1.test.mjs",
-    "test:black-market": "node --check omega_black_market_system_v1.js && node --check omega_black_market_ui_v1.js && node --check omega_black_market_network_v1.js && node --check omega_sanction_response_runtime_v1.js && node --test test/omega_black_market_system_v1.test.mjs test/omega_black_market_ui_v1.test.mjs test/omega_black_market_network_v1.test.mjs test/omega_sanction_response_runtime_v1.test.mjs"
+    "test:black-market": "node --check omega_black_market_system_v1.js && node --check omega_black_market_ui_v1.js && node --check omega_black_market_network_v1.js && node --check omega_sanction_response_runtime_v1.js && node --test test/omega_black_market_system_v1.test.mjs test/omega_black_market_ui_v1.test.mjs test/omega_black_market_network_v1.test.mjs test/omega_sanction_response_runtime_v1.test.mjs",
+    "test:npc-economic-governance": "node --test test/omega_npc_country_economic_governance_runtime_v1.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
