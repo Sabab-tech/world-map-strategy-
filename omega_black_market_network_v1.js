@@ -126,7 +126,7 @@ function makeCandidate(buyer,row){
  const candidates=[];
  for(const offer of book.offers){
   const reason=legalRouteReason(offer);if(!reason)continue;
-  const seller=country(offer.sellerCountryId);if(!seller||seller===buyer||priorDeal(buyer,seller,row.resourceId))continue;
+  const seller=country(offer.sellerCountryId);if(!seller||seller===buyer||seller===player()||priorDeal(buyer,seller,row.resourceId))continue;
   const buyerState=hasStateLink(buyer,row.resourceId),sellerState=hasStateLink(seller,row.resourceId);
   const bmReason=buyerMotive(buyer,row,row.resourceId),smReason=sellerMotive(seller,row.resourceId,offer);
   const tactic=chooseTactic(buyer,seller,row.resourceId,offer,buyerState,sellerState);
@@ -219,7 +219,7 @@ function runTurn(){
   if(created)break;
   const bm=blackMarket(),profile=actorProfile(c),reason=[c.legalReason,c.bmReason.code,c.smReason.code].join(' | ');
   const result=bm?.createAutonomousDeal?.({buyerCountryId:c.buyer,sellerCountryId:c.seller,resourceId:c.row.resourceId,
-   quantity:c.row.quantity,offerId:c.offer.offerId,brokerId:c.offer.brokerId,brokerType:c.offer.brokerType,
+   quantity:c.row.quantity,offerId:c.offer.offerId,brokerId:c.sellerState?('STATE-NETWORK:'+c.seller):c.offer.brokerId,brokerType:c.sellerState?'STATE_LINKED':c.offer.brokerType,
    actorProfile:profile,networkTactic:c.tactic.code,networkRationale:reason});
   if(!result?.accepted)continue;
   created=result.deal||result;
