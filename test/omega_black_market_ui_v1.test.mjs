@@ -35,6 +35,7 @@ function harness() {
     fineRate: 0.28,
     attemptFineRate: 0.126,
     seizureRate: 0.42,
+    scrutinyThresholds: { sellerStockExposurePct: [1,3,8,15], sellerFreeStockQuantity: [1,3,8,15], unit: 'tonnes' },
     expectedFineCostBuyer: 15,
     expectedSeizedQuantity: 0.8,
     expectedDeliveredQuantity: 3.2,
@@ -56,8 +57,9 @@ function harness() {
       assert.equal(country, 'BGD');
       return [{ status: 'OPEN', severity: 'CRITICAL', resourceId: 'iron_ore', buyerCountryId: 'BGD', sellerCountryId: 'SAU',
         evidenceConfidence: 0.9, detectionTurn: 8, detectionStage: 'ORIGIN_INSPECTION', shipmentSizeBand: 'CRITICAL',
-        sellerStockExposurePct: 18, attemptedValueBuyer: 50000, attemptFineRateAtCreation: 0.12,
-        fineRateAtCreation: 0.30, seizureRateAtCreation: 0.50, cargoDisposition: 'STOPPED_BEFORE_IMPORT_NO_BUYER_STOCK_SEIZED',
+        sellerStockExposurePct: 18, sellerFreeStockQuantityThresholds: [1,3,8,15],
+        attemptedValueBuyer: 50000, attemptFineRateAtCreation: 0.12, fineRateAtCreation: 0.30,
+        seizureRateAtCreation: 0.50, cargoDisposition: 'STOPPED_BEFORE_IMPORT_NO_BUYER_STOCK_SEIZED',
         sanctionPolicyIds: ['SAN-USA-BGD-COAL'], sanctioningCountryIds: ['USA'] }];
     },
     getResponses(country) {
@@ -152,6 +154,8 @@ test('offer scan uses the selected canonical commodity and displays real price a
   assert.match(h.root.innerHTML, /CRITICAL/);
   assert.match(h.root.innerHTML, /Seller stock exposed/);
   assert.match(h.root.innerHTML, /1–3% Small/);
+  assert.match(h.root.innerHTML, /Quantity thresholds from verified free stock/);
+  assert.match(h.root.innerHTML, /1% = 1 tonnes · 3% = 3 tonnes · 8% = 8 tonnes · 15% = 15 tonnes/);
   assert.match(h.root.innerHTML, /Potential penalties/);
   assert.match(h.root.innerHTML, /&lt;SAU&gt;/);
   assert.doesNotMatch(h.root.innerHTML, /<SAU>/);
