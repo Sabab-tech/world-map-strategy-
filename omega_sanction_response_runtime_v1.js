@@ -13,6 +13,10 @@
   const num = v => v === null || v === undefined || v === '' ? null :
     (Number.isFinite(Number(v)) ? Number(v) : null);
   const nn = v => { const n = num(v); return n === null ? null : Math.max(0, n); };
+  const clamp = (value, min = 0, max = 1) => {
+    const n = num(value);
+    return n === null ? min : Math.max(min, Math.min(max, n));
+  };
   const token = v => String(v ?? '').normalize('NFKC').trim().toLowerCase()
     .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
   const clone = v => { try { return v == null ? v : JSON.parse(JSON.stringify(v)); } catch (_) { return null; } };
