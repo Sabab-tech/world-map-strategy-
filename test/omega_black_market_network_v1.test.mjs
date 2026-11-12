@@ -255,3 +255,26 @@ test('NPC deal attribution selects matching existing private and state-owned com
  assert.equal(profile.sellerCommercialActor.companyId,'RUS-EXPORT-2');
  assert.equal(JSON.stringify(h.state.economy),before,'company attribution must not create company records or balances');
 });
+
+
+test('a sanction against the major buyer harms its exporting supplier and opens a market-redirection motive', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ h.state.trade.USA={sanctions:[{policyId:'SAN-USA-IRN-CU',issuerCountryId:'USA',targetCountryId:'IRN',
+  resourceId:'copper',status:'ACTIVE',type:'IMPORT_PROHIBITION'}]};
+ h.state.foreign.USA={};
+ h.state.finance.USA={};
+ h.state.resource.USA={inventory:{}};
+ h.state.trade.RUS.exportDependenceByPartner={IRN:{shareOfSellerExports:0.48,exportValue:480,exportQuantity:140}};
+ const result=api.runTurn();
+ assert.equal(result.status,'COMPLETED');
+ const profile=h.created[0].actorProfile;
+ assert.equal(profile.sellerMotive,'LOST_MAJOR_EXPORT_CUSTOMER');
+ assert.equal(profile.sellerExportShock.active,true);
+ assert.equal(profile.sellerExportShock.mainCustomerCountryId,'IRN');
+ assert.equal(profile.sellerExportShock.sanctionTargetCountryId,'IRN');
+ assert.equal(profile.sellerExportShock.sanctionTargetType,'SANCTIONED_EXPORT_CUSTOMER');
+ assert.deepEqual(profile.sellerExportShock.sanctioningCountryIds,['USA']);
+ assert.equal(profile.sellerExportShock.exportShare,0.48);
+ assert.equal(profile.tactic,'LOST_PRIMARY_EXPORT_MARKET_REDIRECTION');
+ assert.equal(h.state.trade.RUS.blackMarketExportShockLedger[0].sanctionTargetCountryId,'IRN');
+});
