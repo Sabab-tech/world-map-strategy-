@@ -113,7 +113,7 @@ test('strategy console renders country-scoped lanes, operational metrics and int
   assert.match(h.root.innerHTML, /FACTORY PRODUCTS/);
   assert.match(h.root.innerHTML, /FOOD PRODUCTS/);
   assert.match(h.root.innerHTML, /Covert deal ledger/);
-  assert.match(h.root.innerHTML, /Intelligence &amp; foreign response/);
+  assert.match(h.root.innerHTML, /Intelligence & foreign response/);
   assert.match(h.root.innerHTML, /Investigation files/);
   assert.match(h.root.innerHTML, /Country command scope · BGD/);
   assert.doesNotMatch(h.root.innerHTML, /undefined/);
@@ -123,7 +123,7 @@ test('offer scan uses the selected canonical commodity and displays real price a
   const h = harness();
   h.api.render(h.root, 'BGD');
   click(h.root, { 'data-bm-find': '' });
-  assert.deepEqual(h.calls.offers, [{ country: 'BGD', resourceId: 'iron_ore', quantity: 4 }]);
+  assert.equal(JSON.stringify(h.calls.offers), JSON.stringify([{ country: 'BGD', resourceId: 'iron_ore', quantity: 4 }]));
   assert.match(h.root.innerHTML, /SEND DEAL REQUEST/);
   assert.match(h.root.innerHTML, /125\.00/);
   assert.match(h.root.innerHTML, /EMBARGO BYPASS/);
