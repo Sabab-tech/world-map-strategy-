@@ -123,7 +123,8 @@ function shipmentSizeProfile(quantity,available){
  ];
  const band=bands.find(x=>ratio<=x.max)||bands[bands.length-1];
  return{ratio,percent:Number((ratio*100).toFixed(2)),band:band.label,riskAdd:band.risk,
-  fineAdd:band.fine,seizureAdd:band.seizure,thresholds:[1,3,8,15]};
+  fineAdd:band.fine,seizureAdd:band.seizure,thresholds:[1,3,8,15],
+  quantityThresholds:[.01,.03,.08,.15].map(share=>Number((available*share).toFixed(6)))};
 }
 function recentPattern(buyer,seller,rid){
  const history=rows(buyer),recent=history.filter(x=>country(x.sellerCountryId)===seller&&turn()-(num(x.createdTurn)??turn())<=10);
@@ -224,7 +225,8 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
    sellerActorClass:stateBrokerType(seller,rid,rule,emb),
    shipmentSizeBand:size.band,sellerStockExposurePct:size.percent,repeatAttempts10Turns:pattern.attempts10Turns,
    importTariffAvoidedPct:tariffPct,fineRate,attemptFineRate:penalty.attemptFineRate,seizureRate,
-   scrutinyThresholds:{sellerStockExposurePct:[1,3,8,15],interpretation:'share of currently verified seller tradable stock'},
+   scrutinyThresholds:{sellerStockExposurePct:[1,3,8,15],sellerFreeStockQuantity:size.quantityThresholds,
+    unit:p.unit||null,interpretation:'share of currently verified seller free tradable stock'},
    penaltyModel:{tariffAvoidanceRate:penalty.tariffAvoidanceRate,repeatAttempts:pattern.attempts10Turns},
    brokerId:'SHADOW-BROKER:'+seller,brokerType:stateBrokerType(seller,rid,rule,emb),brokerReputation:getBrokerReputation(seller,'SHADOW-BROKER:'+seller),
    stockAuthority:'GAME_STATE_RESOURCE_INVENTORY_RESERVE_AND_WAREHOUSE'});
@@ -329,6 +331,7 @@ function createDeal(input={}){
   expectedSavings:offer.expectedSavings===null?null:Number((offer.expectedSavings*q/offer.requestedQuantity).toFixed(2)),
   importTariffPctAtCreation:offer.importTariffPct,importTariffPct:0,importTariffAvoidedPct:offer.importTariffAvoidedPct,
   detectionProbability:offer.detectionProbability,shipmentSizeBand:offer.shipmentSizeBand,sellerStockExposurePct:offer.sellerStockExposurePct,
+  sellerFreeStockQuantityThresholds:offer.scrutinyThresholds?.sellerFreeStockQuantity||[],
   repeatAttempts10Turns:offer.repeatAttempts10Turns,fineRateAtCreation:offer.fineRate,
   attemptFineRateAtCreation:offer.attemptFineRate,seizureRateAtCreation:offer.seizureRate,
   attemptedValueBuyer:offer.expectedBlackMarketTotalBuyer,attemptCurrency:offer.buyerCurrency,
@@ -363,6 +366,7 @@ function detectedCase(deal,detail={}){
   detectionStage:stage,evidenceConfidence:stage==='POST_SETTLEMENT'?.72:.9,severity,
   shipmentSizeBand:deal.shipmentSizeBand||'UNCLASSIFIED',sellerStockExposurePct:num(deal.sellerStockExposurePct),
   repeatAttempts10Turns:num(deal.repeatAttempts10Turns)||0,attemptedValueBuyer:num(deal.attemptedValueBuyer),
+  sellerFreeStockQuantityThresholds:deal.sellerFreeStockQuantityThresholds||[],
   sanctionPolicyIds:deal.sanctionPolicyIds||[],sanctioningCountryIds:deal.sanctioningCountryIds||[],
   sanctionedBuyerAtCreation:!!deal.sanctionedBuyerAtCreation,sanctionedSellerAtCreation:!!deal.sanctionedSellerAtCreation,
   fineRateAtCreation:num(deal.fineRateAtCreation),attemptFineRateAtCreation:num(deal.attemptFineRateAtCreation),
