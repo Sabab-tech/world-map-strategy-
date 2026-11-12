@@ -350,3 +350,31 @@ test('attempt fine is calculated from quoted trade value, not the risk-adjusted 
  assert.equal(deal.attemptedValueBuyer,deal.expectedBlackMarketTotal*1,
   'USD seller/buyer currency fixture uses the same nominal quote value');
 });
+
+
+test('repeat detected sanction violations escalate the issuer response severity and diplomatic penalty', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ h.state.trade.USA={sanctions:[{policyId:'SAN-USA-BGD-COAL',issuerCountryId:'USA',targetCountryId:'BGD',
+  resourceId:'coal',status:'ACTIVE',type:'IMPORT_PROHIBITION'}]};
+ h.state.foreign.USA={blackMarketResponses:[
+  {responseId:'OLD-1',targetCountryId:'BGD',resourceId:'coal',recordedTurn:2,status:'ACTIVE'},
+  {responseId:'OLD-2',targetCountryId:'BGD',resourceId:'coal',recordedTurn:3,status:'ACTIVE'},
+  {responseId:'OLD-3',targetCountryId:'BGD',resourceId:'coal',recordedTurn:4,status:'ACTIVE'}
+ ]};
+ h.state.finance.USA={available:100000};
+ h.state.resource.USA={inventory:{}};
+ const offer=api.getOffers('BGD','coal',10).offers[0];
+ const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:offer.offerId});
+ assert.equal(made.accepted,true,JSON.stringify(made));
+ const deal=api.getDeal(made.deal.dealId,'BGD');
+ const result=api.handleTradeRejection({countryId:'BGD',buyerCountryId:'BGD',targetCountryId:'SAU',
+  resourceId:'coal',quantity:10,unitPrice:deal.unitPrice,blackMarketDealId:deal.dealId,
+  blackMarketPermitId:deal.permitId},{reason:'BLACK_MARKET_INTERCEPTED',stage:'ORIGIN_INSPECTION'});
+ assert.equal(result.status,'INTERCEPTED');
+ const response=h.state.foreign.USA.blackMarketResponses.find(x=>x.responseId==='BM-RESPONSE-'+deal.dealId+'-USA');
+ assert.equal(response.baseSeverity,'HIGH');
+ assert.equal(response.severity,'CRITICAL');
+ assert.equal(response.priorViolations30Turns,3);
+ assert.equal(h.state.foreign.USA.relationAdjustments.BGD.at(-1).delta,-12);
+ assert.equal(h.state.foreign.USA.relationAdjustments.SAU.at(-1).delta,-4);
+});
