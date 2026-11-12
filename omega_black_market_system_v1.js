@@ -5,7 +5,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='1.0.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12;
+const VERSION='1.0.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12,MAX_TURN_MAINTENANCE=12;
 const clone=(v,seen=new WeakMap())=>{if(v===null||typeof v!=='object')return v;if(seen.has(v))return seen.get(v);if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}const o={};seen.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function'&&v[k]!==undefined)o[k]=clone(v[k]);return o;};
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;},id=v=>String(v??'').trim().toUpperCase();
 const tok=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
@@ -546,12 +546,26 @@ function recordResponseHandler(cmd,ctx){
 function getCases(c){const v=bucket('intelligence',c).blackMarketCases;return Array.isArray(v)?v.slice().map(x=>clone(x)):[];}
 function getResponses(c){const v=bucket('foreign',c).blackMarketResponses;return Array.isArray(v)?v.slice().map(x=>clone(x)):[];}
 function onTurn(){
- const c=player();if(!c)return;
- for(const d of getDeals(c))if(['REQUESTED','SENT','NEGOTIATING','ACCEPTED'].includes(String(d.status||'').toUpperCase())&&turn()>num(d.expiresTurn))
-  updateDeal(d.dealId,{buyerCountryId:c,status:'EXPIRED',failureReason:'BLACK_MARKET_PERMIT_EXPIRED'});
- const fines=bucket('finance',c).blackMarketEnforcementHistory;
- if(Array.isArray(fines))for(const f of fines)if(num(f.amountOutstanding)>1e-7)
-  dispatch('finance','OMEGA_BLACK_MARKET_COLLECT_FINE',c,{fine:{fineId:f.fineId,dealId:f.dealId,caseId:f.caseId,amountDue:f.amountDue,currency:f.currency}});
+ const selected=player();if(!selected)return;
+ const servicedCountries=[selected,...countryKeys('trade').filter(c=>c!==selected&&
+  getDeals(c).some(d=>d.autonomousNetwork===true))];
+ let serviced=0;
+ for(const c of servicedCountries){
+  for(const d of getDeals(c)){
+   if(serviced>=MAX_TURN_MAINTENANCE)return;
+   if(['REQUESTED','SENT','NEGOTIATING','ACCEPTED'].includes(String(d.status||'').toUpperCase())&&turn()>num(d.expiresTurn)){
+    updateDeal(d.dealId,{buyerCountryId:c,status:'EXPIRED',failureReason:'BLACK_MARKET_PERMIT_EXPIRED'});serviced++;
+   }
+  }
+  const fines=bucket('finance',c).blackMarketEnforcementHistory;
+  if(Array.isArray(fines))for(const f of fines){
+   if(serviced>=MAX_TURN_MAINTENANCE)return;
+   if(num(f.amountOutstanding)>1e-7){
+    dispatch('finance','OMEGA_BLACK_MARKET_COLLECT_FINE',c,{fine:{fineId:f.fineId,dealId:f.dealId,caseId:f.caseId,
+     amountDue:f.amountDue,currency:f.currency}});serviced++;
+   }
+  }
+ }
 }
 function install(){
  const m=mesh();if(!m?.registerCommandHandler)return false;
