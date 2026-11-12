@@ -361,3 +361,24 @@ test('an import-side embargo remains a buyer access motive without a stock-short
  assert.equal(result.newDeal.candidate.buyer,'IRN');
  assert.equal(h.created[0].actorProfile.buyerMotive,'SANCTIONS_OR_RESTRICTED_MARKET_ACCESS');
 });
+
+
+test('export dependency prefers completed seller settlements over inferred partner-share maps', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ h.state.trade.USA={sanctions:[{policyId:'SAN-USA-IRN-CU',issuerCountryId:'USA',targetCountryId:'IRN',
+  resourceId:'copper',status:'ACTIVE',type:'IMPORT_PROHIBITION'}]};
+ h.state.foreign.USA={};h.state.finance.USA={};h.state.resource.USA={inventory:{}};
+ h.state.trade.RUS.exportLedger=[
+  {settlementId:'EX-IRN-1',resourceId:'copper',buyerCountryId:'IRN',quantity:48,totalValue:480,turn:20},
+  {settlementId:'EX-CHN-1',resourceId:'copper',buyerCountryId:'CHN',quantity:52,totalValue:520,turn:21},
+  {settlementId:'EX-IRN-GAS',resourceId:'natural_gas',buyerCountryId:'IRN',quantity:100,totalValue:1000,turn:21}
+ ];
+ h.state.trade.RUS.exportDependenceByPartner={IRN:{shareOfSellerExports:0.99,exportValue:9999}};
+ const result=api.runTurn();
+ assert.equal(result.status,'COMPLETED');
+ const shock=h.created[0].actorProfile.sellerExportShock;
+ assert.equal(shock.exportShare,0.48,'the share is calculated from completed copper export settlements, not a stale summary map');
+ assert.equal(shock.exportValue,480);
+ assert.equal(shock.exportQuantity,48);
+ assert.equal(shock.evidenceSource,'OMEGA_GLOBAL_TRADE_SETTLED_EXPORT_LEDGER');
+});
