@@ -136,6 +136,13 @@ function styles(){return \`<style>
 @media(prefers-reduced-motion:reduce){.omega-bm *{scroll-behavior:auto!important;transition:none!important}}
 </style>\`;}
 
+function cancelScan(root){
+ root.__omegaBmScanToken=(Number(root.__omegaBmScanToken)||0)+1;
+ root.__omegaBmScanning=false;root.__omegaBmScan=null;
+}
+function scheduleScan(fn){
+ if(typeof g.setTimeout==='function')g.setTimeout(fn,0);else fn();
+}
 function render(root,countryValue){
  const bm=g.OmegaBlackMarket||g.Omega?.BlackMarket;if(!root||!bm)return{ok:false,reason:'BLACK_MARKET_RUNTIME_UNAVAILABLE'};
  const c=String(countryValue||g.OmegaMinistryViewCountry||g.OmegaCabinetUI?.activeCountry||g.currentActiveCountry||'').trim().toUpperCase();
@@ -286,7 +293,7 @@ function render(root,countryValue){
   root.addEventListener('click',function(event){
    const t=event.target?.closest?.('button');if(!t||!root.contains(t))return;
    if(t.hasAttribute('data-bm-lane')){
-    const next=t.getAttribute('data-bm-lane');
+    cancelScan(root);const next=t.getAttribute('data-bm-lane');
     root.__omegaBmLane=['RAW_RESOURCE','FACTORY_PRODUCT','FOOD_PRODUCT'].includes(next)?next:'RAW_RESOURCE';
     root.__omegaBmResource='';root.__omegaBmOffers=[];root.__omegaBmVisibleOffers=6;root.__omegaBmOutcome='';render(root,root.__omegaBmCountry||c);return;
    }
@@ -304,12 +311,72 @@ function render(root,countryValue){
     root.__omegaBmVisibleOffers=Math.min(24,Math.max(6,Number(root.__omegaBmVisibleOffers)||6)+6);
     render(root,root.__omegaBmCountry||c);return;
    }
+   if(t.hasAttribute('data-bm-show-more-buyers')){
+    root.__omegaBmVisibleBuyers=Math.min(24,Math.max(6,Number(root.__omegaBmVisibleBuyers)||8)+8);
+    render(root,root.__omegaBmCountry||c);return;
+   }
    if(t.hasAttribute('data-bm-find')){
     const rid=String(root.querySelector('[data-bm-resource]')?.value||''),q=Number(root.querySelector('[data-bm-find-quantity]')?.value);
-    root.__omegaBmResource=rid;root.__omegaBmVisibleOffers=6;root.__omegaBmNegotiation=null;
-    if(!rid||!Number.isFinite(q)||q<=0){root.__omegaBmOffers=[];root.__omegaBmOutcome='Choose a valid commodity and a quantity greater than zero.';render(root,root.__omegaBmCountry||c);return;}
-    const r=bm.getOffers(root.__omegaBmCountry||c,rid,q);root.__omegaBmOffers=r.status==='READY'?(Array.isArray(r.offers)?r.offers:[]):[];
-    root.__omegaBmOutcome=r.status==='READY'?(r.offers.length?'Found '+r.offers.length+' seller offer(s).':'No executable offer meets the current stock and policy checks.'):(r.reason||r.status);
+    root.__omegaBmResource=rid;root.__omegaBmFindQuantity=String(q);
+    root.__omegaBmVisibleOffers=6;root.__omegaBmNegotiation=null;root.__omegaBmOffers=[];
+    if(!rid||!Number.isFinite(q)||q<=0){
+     cancelScan(root);root.__omegaBmOutcome='Choose a commodity and a quantity greater than zero.';
+     render(root,root.__omegaBmCountry||c);return;
+    }
+    cancelScan(root);root.__omegaBmScanning=true;
+    root.__omegaBmScanProgress='Preparing a bounded seller-country scan…';
+    root.__omegaBmOutcome='Seller scan started. The market will remain responsive while country batches are checked.';
+    render(root,root.__omegaBmCountry||c);
+    const scanToken=root.__omegaBmScanToken;
+    if(typeof bm.beginOfferScan==='function'&&typeof bm.getOfferScanBatch==='function'&&typeof bm.finishOfferScan==='function'){
+     let scan;
+     try{scan=bm.beginOfferScan(root.__omegaBmCountry||c,rid,q);}catch(error){
+      cancelScan(root);root.__omegaBmOutcome=String(error?.message||error);render(root,root.__omegaBmCountry||c);return;
+     }
+     if(scan?.status!=='READY'){
+      cancelScan(root);root.__omegaBmOutcome=scan?.reason||scan?.status||'OFFER_SCAN_UNAVAILABLE';
+      render(root,root.__omegaBmCountry||c);return;
+     }
+     root.__omegaBmScan=scan;
+     const nextBatch=function(){
+      if(scanToken!==root.__omegaBmScanToken||!root.__omegaBmScanning)return;
+      let part;
+      try{part=bm.getOfferScanBatch(scan,16);}catch(error){
+       cancelScan(root);root.__omegaBmOutcome='Seller scan failed: '+String(error?.message||error);
+       render(root,root.__omegaBmCountry||c);return;
+      }
+      if(part?.status!=='READY'){
+       cancelScan(root);root.__omegaBmOutcome=part?.reason||part?.status||'OFFER_SCAN_FAILED';
+       render(root,root.__omegaBmCountry||c);return;
+      }
+      root.__omegaBmScanProgress='Checked '+fmt(part.scanned)+' / '+fmt(part.total)+' seller countries · '+fmt(scan.offers.length)+' eligible offer(s)';
+      const progress=root.querySelector?.('[data-bm-scan-progress]');
+      if(progress)progress.textContent=root.__omegaBmScanProgress;
+      if(!part.done){scheduleScan(nextBatch);return;}
+      let final;
+      try{final=bm.finishOfferScan(scan);}catch(error){
+       cancelScan(root);root.__omegaBmOutcome='Could not finish seller scan: '+String(error?.message||error);
+       render(root,root.__omegaBmCountry||c);return;
+      }
+      root.__omegaBmOffers=Array.isArray(final?.offers)?final.offers:[];
+      root.__omegaBmScanning=false;root.__omegaBmScan=null;
+      root.__omegaBmScanProgress='Scan complete · '+fmt(part.total)+' seller countries checked';
+      root.__omegaBmOutcome=root.__omegaBmOffers.length?
+       'Network scan complete. '+root.__omegaBmOffers.length+' verified seller offer(s) found.':
+       'Network scan complete. No seller passed the current stock, relationship, route and policy checks.';
+      render(root,root.__omegaBmCountry||c);
+     };
+     scheduleScan(nextBatch);return;
+    }
+    let result;
+    try{result=bm.getOffers(root.__omegaBmCountry||c,rid,q);}catch(error){
+     cancelScan(root);root.__omegaBmOutcome='Seller scan failed: '+String(error?.message||error);
+     render(root,root.__omegaBmCountry||c);return;
+    }
+    root.__omegaBmOffers=result.status==='READY'?(Array.isArray(result.offers)?result.offers:[]):[];
+    root.__omegaBmScanning=false;
+    root.__omegaBmOutcome=result.status==='READY'?
+     (root.__omegaBmOffers.length?'Found '+root.__omegaBmOffers.length+' executable seller offer(s).':'No executable offer meets the current checks.'):(result.reason||result.status);
     render(root,root.__omegaBmCountry||c);return;
    }
    if(t.hasAttribute('data-bm-buy')){
@@ -321,12 +388,12 @@ function render(root,countryValue){
     const r=bm.createDeal({buyerCountryId:root.__omegaBmCountry||c,sellerCountryId:seller,resourceId:rid,offerId,quantity,
      negotiationId:negotiation&&negotiation.offerId===offerId&&negotiation.status==='ACCEPTED'?negotiation.negotiationId:undefined});
     root.__omegaBmOutcome=r.accepted?'Trade request recorded. Seller review, inspection and authoritative settlement are pending.':(r.reason||'BLACK_MARKET_ORDER_REJECTED');
-    const next=bm.getOffers(root.__omegaBmCountry||c,rid,quantity);root.__omegaBmResource=rid;root.__omegaBmVisibleOffers=6;root.__omegaBmOffers=next.status==='READY'?(Array.isArray(next.offers)?next.offers:[]):[];root.__omegaBmNegotiation=null;render(root,root.__omegaBmCountry||c);return;
+    root.__omegaBmResource=rid;root.__omegaBmVisibleOffers=6;root.__omegaBmOffers=[];root.__omegaBmNegotiation=null;root.__omegaBmOutcome+=(r.accepted?' Scan sellers again to refresh live quotes.':'');render(root,root.__omegaBmCountry||c);return;
    }
   });
   root.__omegaBmBound=true;
  }
  return{ok:true,countryId:c,offerCount:offers.length,dealCount:deals.length};
 }
-g.Omega=g.Omega||{};g.Omega.BlackMarketUI=Object.freeze({version:'1.3.0',render});g.OmegaBlackMarketUI=g.Omega.BlackMarketUI;
+g.Omega=g.Omega||{};g.Omega.BlackMarketUI=Object.freeze({version:'1.4.0',render});g.OmegaBlackMarketUI=g.Omega.BlackMarketUI;
 })(typeof window!=='undefined'?window:globalThis);
