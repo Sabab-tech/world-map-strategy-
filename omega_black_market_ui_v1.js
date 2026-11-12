@@ -1,4 +1,4 @@
-/* OMEGA BLACK MARKET UI v1.0.0 */
+/* OMEGA BLACK MARKET UI v1.3.0 */
 (function(g){
 'use strict';
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -165,5 +165,5 @@ function render(root,countryValue){
  }
  return{ok:true,countryId:c,offerCount:offers.length,dealCount:deals.length};
 }
-g.Omega=g.Omega||{};g.Omega.BlackMarketUI=Object.freeze({version:'1.2.0',render});g.OmegaBlackMarketUI=g.Omega.BlackMarketUI;
+g.Omega=g.Omega||{};g.Omega.BlackMarketUI=Object.freeze({version:'1.3.0',render});g.OmegaBlackMarketUI=g.Omega.BlackMarketUI;
 })(typeof window!=='undefined'?window:globalThis);
