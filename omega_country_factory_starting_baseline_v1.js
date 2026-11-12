@@ -524,6 +524,9 @@
       var row = findCountryRow(countryId);
       return row ? clone(row) : null;
     },
+    getCountryIds: function () {
+      return loaded ? loaded.countryIds.slice() : [];
+    },
     getCountryFactoryRegistry: function (countryId) {
       if (!loaded) return { status: loadError ? 'BLOCKED' : 'LOADING', reason: loadError || null, countryId: id(countryId) || null };
       var row = findCountryRow(countryId);
