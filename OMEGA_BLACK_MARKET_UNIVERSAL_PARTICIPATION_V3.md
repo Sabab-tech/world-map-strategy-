@@ -79,7 +79,7 @@ A detected case is shared with the buyer and seller’s own case files. The issu
 - **CRITICAL:** −12 points.
 - **LOW:** −2 points.
 
-Where a second country was directly involved as the supply-side partner, it can also receive a secondary association adjustment equal to 35% of the primary penalty (minimum −1 point). The sanction issuer is not penalized against itself. All adjustments are recorded as evidence-linked foreign-relation entries rather than being represented as an immediate declaration of war. Repeated detections can trigger a stronger response in subsequent decisions.
+Where a second country was directly involved as the supply-side partner, it can also receive a secondary association adjustment equal to 35% of the primary penalty (minimum −1 point). The sanction issuer is not penalized against itself. All adjustments are recorded as evidence-linked foreign-relation entries rather than being represented as an immediate declaration of war. Repeated detections are escalated by issuer and commodity over a rolling 30-game-turn window: one prior detected violation raises the response by one severity tier; three or more prior violations raise it by two tiers, capped at CRITICAL (−12 relation points).
 
 Potential wider effects are represented through persistent case, export-shock and relation-adjustment records. The model does not fabricate a fall in GDP, a company bankruptcy, or a Treasury loss unless the relevant economic runtime records the resulting settlement, company flow or macroeconomic update.
 
