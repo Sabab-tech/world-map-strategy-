@@ -216,7 +216,7 @@ function demandCandidates(c){
   const unmet=Math.max(0,num(row.unmetDemand)||0),perDay=Math.max(0,num(row.demandPerDay??row.demand)||0),
    coverage=num(row.stockCoverageDays),target=num(row.stockCoverageTargetDays),score=Math.max(0,num(row.procurementScore)||0),
    low=coverage!==null&&target!==null&&target>coverage,tariff=tariffRate(c),
-   importDependency=num(row.importDependencyPct??row.importDependency??row.importShare??value(r.importDependencyByResource,rid)),
+   importDependency=num(row.importDependencyPct??row.importDependency??row.importShare??field(r.importDependencyByResource,rid)),
    incomingSanctions=sanctionsAgainst(c,rid),
    buyerImportEmbargo=activePolicyFor(c,rid).embargoes.some(x=>
     (country(x.issuerCountryId)||c)===c&&['IMPORT','BOTH'].includes(String(x.direction||'BOTH').toUpperCase())),
