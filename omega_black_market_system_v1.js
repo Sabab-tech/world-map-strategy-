@@ -215,7 +215,7 @@ function evaluateOfferSeller(scan,seller){
  let sellerCurrency=null,buyerCurrency=null,fx=null;
  try{sellerCurrency=trade()?.currencyOf?.(seller)||null;buyerCurrency=trade()?.currencyOf?.(buyer)||null;fx=num(trade()?.fxRate?.(buyer,seller));}catch(_){}
  if(fx===null&&sellerCurrency&&buyerCurrency&&sellerCurrency===buyerCurrency)fx=1;
- const legalUnit=legalAvailable&&fx!==null?Number((quote.value*fx*(1+scan.tariffPct/100)).toFixed(6)),
+ const legalUnit=legalAvailable&&fx!==null?Number((quote.value*fx*(1+scan.tariffPct/100)).toFixed(6)):null,
   legalTotal=legalUnit===null?null:Number((legalUnit*q).toFixed(2)),
   lateDetectionProbability=detection*.18,
   fineRate=penalty.fineRate,seizureRate=penalty.seizureRate;
