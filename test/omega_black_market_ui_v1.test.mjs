@@ -8,6 +8,7 @@ const source = fs.readFileSync(new URL('../omega_black_market_ui_v1.js', import.
 function harness() {
   const calls = { offers: [], deals: [] };
   const networkReports = [];
+  const offerRows = [];
   const offer = {
     offerId: 'OFFER-1',
     sellerCountryId: '<SAU>',
@@ -39,6 +40,7 @@ function harness() {
       brokerSpreadPct: 3
     }
   };
+  offerRows.push(offer);
   const api = {
     getDeals(country) {
       assert.equal(country, 'BGD');
@@ -58,7 +60,7 @@ function harness() {
     },
     getOffers(country, resourceId, quantity) {
       calls.offers.push({ country, resourceId, quantity });
-      return { status: 'READY', offers: [offer] };
+      return { status: 'READY', offers: offerRows };
     },
     createDeal(payload) {
       calls.deals.push(payload);
@@ -96,7 +98,7 @@ function harness() {
   };
   vm.createContext(context);
   vm.runInContext(source, context, { filename: 'omega_black_market_ui_v1.js' });
-  return { api: context.OmegaBlackMarketUI, root, calls, context, offer, networkReports };
+  return { api: context.OmegaBlackMarketUI, root, calls, context, offer, offerRows, networkReports };
 }
 
 function click(root, attributes) {
@@ -224,4 +226,19 @@ test('high-confidence intelligence explains state-linked participants while pres
   assert.match(h.root.innerHTML, /active state supply directive/i);
   assert.match(h.root.innerHTML, /Other countries: Not Observed By Other Countries/);
   assert.doesNotMatch(h.root.innerHTML, /undefined/);
+});
+
+test('seller offers are progressively rendered in small batches on mobile-oriented UI', () => {
+  const h = harness();
+  for (let i = 2; i <= 12; i++) {
+    h.offerRows.push({ ...h.offer, offerId: 'OFFER-' + i, sellerCountryId: 'SAU' });
+  }
+  h.api.render(h.root, 'BGD');
+  click(h.root, { 'data-bm-find': '' });
+  const countCards = () => (h.root.innerHTML.match(/class="omega-bm-offer"/g) || []).length;
+  assert.equal(countCards(), 6);
+  assert.match(h.root.innerHTML, /SHOW 6 MORE SELLERS/);
+  click(h.root, { 'data-bm-show-more': '' });
+  assert.equal(countCards(), 12);
+  assert.doesNotMatch(h.root.innerHTML, /SHOW .* MORE SELLERS/);
 });
