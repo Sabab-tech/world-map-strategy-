@@ -5,8 +5,8 @@
  */
 (function(g){
 'use strict';
-if(g.OmegaBlackMarketNetworkV1&&g.OmegaBlackMarketNetworkV1.VERSION==='1.0.0')return;
-const VERSION='1.0.0',AUTHORITY='OMEGA_BLACK_MARKET_NPC_NETWORK_V1';
+if(g.OmegaBlackMarketNetworkV1&&g.OmegaBlackMarketNetworkV1.VERSION==='1.1.0')return;
+const VERSION='1.1.0',AUTHORITY='OMEGA_BLACK_MARKET_NPC_NETWORK_V1';
 const MAX_DEMAND_ROWS=14,MAX_PENDING_PROCESSES=6,MAX_NEW_DEALS_PER_TURN=1,COOLDOWN_TURNS=8;
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
 const clamp=(v,lo=0,hi=1)=>Math.max(lo,Math.min(hi,num(v)??lo));
