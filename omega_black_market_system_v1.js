@@ -5,7 +5,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='1.2.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12,MAX_TURN_MAINTENANCE=12;
+const VERSION='1.3.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12,MAX_TURN_MAINTENANCE=12;
 const clone=(v,seen=new WeakMap())=>{if(v===null||typeof v!=='object')return v;if(seen.has(v))return seen.get(v);if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}const o={};seen.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function'&&v[k]!==undefined)o[k]=clone(v[k]);return o;};
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;},id=v=>String(v??'').trim().toUpperCase();
 const tok=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
@@ -41,9 +41,11 @@ function countryKeys(domain){
 function value(map,key){if(!map||typeof map!=='object')return undefined;const k=Object.keys(map).find(x=>tok(x)===tok(key));return k===undefined?undefined:map[k];}
 function relation(buyer,seller){return value(bucket('foreign',buyer).relations,seller)||value(bucket('trade',buyer).relations,seller)||value(bucket('foreign',seller).relations,buyer)||value(bucket('trade',seller).relations,buyer)||null;}
 function agreement(r){return !!r&&(r.trade_agreement===true||/SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(r.status||r.stage||'').toUpperCase()));}
-function sanctionsBetween(buyer,seller,rid){
- const countries=[...new Set([...countryKeys('trade'),...countryKeys('foreign')])],rows=[];
- for(const issuerBucket of countries){
+let sanctionsIndexTurn=-1,sanctionsTargetIndex=new Map();
+function rebuildSanctionsIndex(){
+ if(sanctionsIndexTurn===turn())return;
+ const ids=[...new Set([...countryKeys('trade'),...countryKeys('foreign')])],index=new Map();
+ for(const issuerBucket of ids){
   const roots=[bucket('trade',issuerBucket).sanctions,bucket('foreign',issuerBucket).sanctions];
   for(const list of roots){
    if(!Array.isArray(list))continue;
@@ -53,15 +55,25 @@ function sanctionsBetween(buyer,seller,rid){
     const start=num(policyRow.startTurn??policyRow.effectiveTurn),end=num(policyRow.endTurn??policyRow.expiresTurn);
     if(start!==null&&start>turn()||end!==null&&turn()>end)continue;
     const target=country(policyRow.targetCountryId||policyRow.subjectCountryId||policyRow.countryId||policyRow.targetId);
+    if(!target)continue;
     const resourceId=String(policyRow.resourceId||policyRow.commodityId||'');
-    if(!target||![buyer,seller].includes(target)||resourceId&&tok(resourceId)!==tok(rid))continue;
-    rows.push({issuerCountryId:country(policyRow.issuerCountryId)||issuerBucket,targetCountryId:target,
+    const issuer=country(policyRow.issuerCountryId)||issuerBucket,entry={issuerCountryId:issuer,targetCountryId:target,resourceId,
      policyId:policyRow.policyId||policyRow.sanctionId||null,type:policyRow.type||policyRow.measure||policyRow.scope||'SANCTIONS',
-     secondary:policyRow.secondarySanctions===true||/SECONDARY|EXTRATERRITORIAL/i.test(String(policyRow.scope||policyRow.type||''))});
+     secondary:policyRow.secondarySanctions===true||/SECONDARY|EXTRATERRITORIAL/i.test(String(policyRow.scope||policyRow.type||''))};
+    const rows=index.get(target)||[];
+    const key=[entry.issuerCountryId,entry.policyId,entry.resourceId,entry.type].join('::');
+    if(!rows.some(x=>[x.issuerCountryId,x.policyId,x.resourceId,x.type].join('::')===key))rows.push(entry);
+    index.set(target,rows);
    }
   }
  }
- const rel=relation(buyer,seller),bilateral=rel?.sanctions===true||rel?.embargo===true;
+ sanctionsTargetIndex=index;sanctionsIndexTurn=turn();
+}
+function sanctionsBetween(buyer,seller,rid){
+ rebuildSanctionsIndex();
+ const matches=rows=>(sanctionsTargetIndex.get(rows)||[]).filter(x=>!x.resourceId||tok(x.resourceId)===tok(rid));
+ const rows=[...matches(buyer),...matches(seller)],rel=relation(buyer,seller),
+  bilateral=rel?.sanctions===true||rel?.embargo===true;
  if(bilateral&&!rows.length){
   const issuer=country(rel?.issuerCountryId||rel?.sanctioningCountryId),target=issuer===buyer?seller:(issuer===seller?buyer:null);
   rows.push({issuerCountryId:issuer,targetCountryId:target,policyId:null,type:'BILATERAL_SANCTIONS_RELATION',
