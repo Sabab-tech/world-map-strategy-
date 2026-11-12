@@ -235,3 +235,23 @@ test('lost primary export customer from sanctions creates an export shock and ma
  assert.equal(h.state.trade.RUS.blackMarketExportShockLedger.length,1);
  assert.equal(h.state.trade.RUS.blackMarketExportShockLedger[0].exportShare,0.42);
 });
+
+
+test('NPC deal attribution selects matching existing private and state-owned companies without inventing new companies', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ h.state.economy={
+  IRN:{companies:[{companyId:'IRN-IMPORT-7',name:'Iran Industrial Inputs',ownership:'PRIVATE',
+   resourceId:'copper',inputDemandPerDay:14,importDependencyPct:72}]},
+  RUS:{companies:[{companyId:'RUS-EXPORT-2',name:'Russian Metals Trading',ownership:'STATE_OWNED',
+   resourceId:'copper',exportShare:61}]}
+ };
+ const before=JSON.stringify(h.state.economy);
+ const result=api.runTurn();
+ assert.equal(result.status,'COMPLETED');
+ const profile=h.created[0].actorProfile;
+ assert.equal(profile.buyerCommercialActor.actorType,'PRIVATE_COMPANY');
+ assert.equal(profile.buyerCommercialActor.companyId,'IRN-IMPORT-7');
+ assert.equal(profile.sellerCommercialActor.actorType,'STATE_OWNED_COMPANY');
+ assert.equal(profile.sellerCommercialActor.companyId,'RUS-EXPORT-2');
+ assert.equal(JSON.stringify(h.state.economy),before,'company attribution must not create company records or balances');
+});
