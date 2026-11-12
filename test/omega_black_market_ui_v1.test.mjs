@@ -29,6 +29,12 @@ function harness() {
     foreignPolicyBasis: ['EMBARGO-01', 'STATE_EXPORT_DIRECTIVE'],
     detectionProbability: 0.12,
     lateDetectionProbability: 0.08,
+    shipmentSizeBand: 'CRITICAL',
+    sellerStockExposurePct: 18,
+    repeatAttempts10Turns: 5,
+    fineRate: 0.28,
+    attemptFineRate: 0.126,
+    seizureRate: 0.42,
     expectedFineCostBuyer: 15,
     expectedSeizedQuantity: 0.8,
     expectedDeliveredQuantity: 3.2,
@@ -48,7 +54,10 @@ function harness() {
     },
     getCases(country) {
       assert.equal(country, 'BGD');
-      return [{ status: 'OPEN', resourceId: 'iron_ore', buyerCountryId: 'BGD', sellerCountryId: 'SAU', evidenceConfidence: 0.7, detectionTurn: 8 }];
+      return [{ status: 'OPEN', severity: 'CRITICAL', resourceId: 'iron_ore', buyerCountryId: 'BGD', sellerCountryId: 'SAU',
+        evidenceConfidence: 0.9, detectionTurn: 8, detectionStage: 'ORIGIN_INSPECTION', shipmentSizeBand: 'CRITICAL',
+        sellerStockExposurePct: 18, attemptedValueBuyer: 50000, attemptFineRateAtCreation: 0.12,
+        fineRateAtCreation: 0.30, seizureRateAtCreation: 0.50, cargoDisposition: 'STOPPED_BEFORE_IMPORT_NO_BUYER_STOCK_SEIZED' }];
     },
     getResponses(country) {
       assert.equal(country, 'BGD');
@@ -135,6 +144,10 @@ test('offer scan uses the selected canonical commodity and displays real price a
   assert.match(h.root.innerHTML, /125\.00/);
   assert.match(h.root.innerHTML, /EMBARGO BYPASS/);
   assert.match(h.root.innerHTML, /Foreign-policy exposure \/ evidence/);
+  assert.match(h.root.innerHTML, /CRITICAL/);
+  assert.match(h.root.innerHTML, /Seller stock exposed/);
+  assert.match(h.root.innerHTML, /1–3% Small/);
+  assert.match(h.root.innerHTML, /Potential penalties/);
   assert.match(h.root.innerHTML, /&lt;SAU&gt;/);
   assert.doesNotMatch(h.root.innerHTML, /<SAU>/);
   assert.doesNotMatch(h.root.innerHTML, /undefined/);
@@ -215,7 +228,12 @@ test('high-confidence intelligence explains state-linked participants while pres
       buyerReason: 'Observed industrial input demand exceeds available supply.',
       sellerReason: 'An active state supply directive is recorded for this commodity.',
       tactic: 'STATE_TO_STATE_COVERT_PROCUREMENT',
-      potentialIntermediaryCountryIds: ['SAU']
+      potentialIntermediaryCountryIds: ['SAU'],
+      sellerExportShock: { active: true, mainCustomerCountryId: 'IRN', exportShare: 0.42,
+        exportValue: 420, sanctioningCountryIds: ['IRN'], secondarySanctionsRisk: true },
+      tariffAvoidance: { importTariffPct: 30, importDependency: 0.65 },
+      buyerCompanies: [{ companyId: 'BD-PRIVATE-1', name: 'Bangla Industrial Imports', ownership: 'PRIVATE', exportShare: 0.2 }],
+      sellerCompanies: [{ companyId: 'RU-STATE-1', name: 'Russian State Trading Group', ownership: 'STATE_OWNED' }]
     }
   });
   h.api.render(h.root, 'BGD');
@@ -224,6 +242,12 @@ test('high-confidence intelligence explains state-linked participants while pres
   assert.match(h.root.innerHTML, /State-linked trading network/);
   assert.match(h.root.innerHTML, /State-directed trade channel/);
   assert.match(h.root.innerHTML, /active state supply directive/i);
+  assert.match(h.root.innerHTML, /Major export-customer shock/);
+  assert.match(h.root.innerHTML, /42% of seller exports at risk/);
+  assert.match(h.root.innerHTML, /Secondary sanctions: Yes/);
+  assert.match(h.root.innerHTML, /Buyer import tariff: 30%/);
+  assert.match(h.root.innerHTML, /Bangla Industrial Imports/);
+  assert.match(h.root.innerHTML, /Russian State Trading Group/);
   assert.match(h.root.innerHTML, /Other countries: Not Observed By Other Countries/);
   assert.doesNotMatch(h.root.innerHTML, /undefined/);
 });
