@@ -116,11 +116,16 @@ function render(root,countryValue){
  const products=(g.OmegaGlobalMarket||g.Omega?.GlobalMarket)?.productCatalog?.()||[];
  const validLane=['RAW_RESOURCE','FACTORY_PRODUCT','FOOD_PRODUCT'].includes(lane)?lane:'RAW_RESOURCE';
  const laneProducts=products.filter(x=>x?.id&&x.productType===validLane).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id)));
- const selectedProduct=laneProducts.some(x=>x.id===selected)?selected:'';
- if(!selectedProduct&&selected)root.__omegaBmResource='';
+ const selectedProduct=laneProducts.some(x=>x.id===selected)?selected:(laneProducts[0]?.id||'');
+ root.__omegaBmResource=selectedProduct;
  const opts=laneProducts.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===selectedProduct?' selected':'')+'>'+esc(x.name||x.id)+'</option>').join('');
- const offers=selectedProduct?allOffers.filter(x=>!x.resourceId||String(x.resourceId)===selectedProduct):[];
- const visibleOfferCount=Math.max(6,Math.min(24,Number(root.__omegaBmVisibleOffers)||6));
+ const offers=selectedProduct?allOffers.filter(x=>String(x.resourceId||selectedProduct)===selectedProduct):[];
+ const visibleOfferCount=Math.max(6,Math.min(24,Number(root.__omegaBmVisibleOffers)||6)),
+  visibleBuyerCount=Math.max(8,Math.min(24,Number(root.__omegaBmVisibleBuyers)||8));
+ const buyerSignals=selectedProduct?demandSignals(selectedProduct,c):[],
+  participationDeals=selectedProduct?confirmedParticipationDeals(selectedProduct):[],
+  acceptedDeals=participationDeals.filter(x=>String(x.status||'').toUpperCase()==='ACCEPTED').length,
+  scanning=!!root.__omegaBmScanning;
  const active=deals.filter(x=>!['FAILED','EXPIRED'].includes(String(x.status||'').toUpperCase()));
  const settled=deals.filter(x=>['SETTLED','SETTLED_UNDER_INVESTIGATION'].includes(String(x.status||'').toUpperCase())).length;
  const exposed=deals.filter(x=>['INTERCEPTED','SETTLED_UNDER_INVESTIGATION'].includes(String(x.status||'').toUpperCase())).length;
