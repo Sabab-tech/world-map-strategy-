@@ -645,6 +645,21 @@ function recordCaseHandler(cmd,ctx){
  if(prior)return{accepted:true,duplicate:true,case:clone(prior)};
  arr.push(clone(r));ctx.stateTransaction.set('intelligence.blackMarketCases',arr.slice(-MAX_CASES));return{accepted:true,case:clone(r)};
 }
+function recordExportShockHandler(cmd,ctx){
+ const r=cmd?.payload?.shock||{},seller=country(ctx.countryId),shockId=String(r.shockId||''),
+  partner=country(r.mainCustomerCountryId),share=num(r.exportShare);
+ if(!shockId||country(r.sellerCountryId)!==seller||!partner||!Array.isArray(r.sanctioningCountryIds)||!r.sanctioningCountryIds.length||
+   share===null||share<.15||share>1||!r.resourceId)
+  return{accepted:false,reason:'BLACK_MARKET_EXPORT_SHOCK_EVIDENCE_INVALID'};
+ const raw=ctx.stateTransaction.get('trade.blackMarketExportShockLedger'),arr=Array.isArray(raw)?clone(raw):[],
+  prior=arr.find(x=>String(x.shockId||'')===shockId);
+ if(prior)return{accepted:true,duplicate:true,shock:clone(prior)};
+ const row=Object.assign({},clone(r),{shockId,recordedTurn:turn(),status:'EXPORT_MARKET_ACCESS_SHOCK',
+  authority:'OBSERVED_BILATERAL_EXPORT_DEPENDENCY_AND_SANCTION_POLICY'});
+ arr.push(row);ctx.stateTransaction.set('trade.blackMarketExportShockLedger',arr.slice(-MAX_CASES));
+ emit('OMEGA_BLACK_MARKET_EXPORT_MARKET_SHOCK',seller,row);
+ return{accepted:true,shock:clone(row)};
+}
 function recordResponseHandler(cmd,ctx){
  const r=cmd?.payload?.response||{},responseId=String(r.responseId||''),target=country(r.targetCountryId),c=country(ctx.countryId);
  if(!responseId||!target||!country(r.sourceCountryId))return{accepted:false,reason:'BLACK_MARKET_FOREIGN_RESPONSE_INVALID'};
@@ -695,7 +710,8 @@ function onTurn(){
 function install(){
  const m=mesh();if(!m?.registerCommandHandler)return false;
  const defs=[['OMEGA_BLACK_MARKET_RECORD_DEAL','trade',recordDealHandler],['OMEGA_BLACK_MARKET_UPDATE_DEAL','trade',updateDealHandler],
-  ['OMEGA_BLACK_MARKET_RECORD_CASE','intelligence',recordCaseHandler],['OMEGA_BLACK_MARKET_RECORD_RESPONSE','foreign',recordResponseHandler],
+  ['OMEGA_BLACK_MARKET_RECORD_CASE','intelligence',recordCaseHandler],['OMEGA_BLACK_MARKET_RECORD_EXPORT_SHOCK','trade',recordExportShockHandler],
+  ['OMEGA_BLACK_MARKET_RECORD_RESPONSE','foreign',recordResponseHandler],
   ['OMEGA_BLACK_MARKET_COLLECT_FINE','finance',collectFineHandler],['OMEGA_BLACK_MARKET_SEIZE_CARGO','resource',seizeCargoHandler],
   ['OMEGA_BLACK_MARKET_UPDATE_BROKER_REPUTATION','trade',recordBrokerReputationHandler],['OMEGA_BLACK_MARKET_RECORD_TRANSIT','trade',recordTransitHandler],
   ['OMEGA_BLACK_MARKET_UPDATE_TRANSIT','trade',updateTransitHandler],['OMEGA_BLACK_MARKET_RESERVE_TRANSIT_STOCK','trade',reserveTransitStockHandler],
