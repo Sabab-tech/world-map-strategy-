@@ -565,7 +565,7 @@ function install(){
  report={ready:registered===defs.length,registered,total:defs.length,errors};return report.ready;
 }
 function selectTransitHub(buyer,seller){const candidates=countryKeys('foreign').filter(c=>c!==buyer&&c!==seller);let best=null;
- for(const c of candidates){const a=relation(buyer,c),b=relation(c,seller);if(!a||!b||a.war_state===true||b.war_state===true||a.sanctions===true||b.sanctions===true)continue;
+ for(const c of candidates){const a=relation(buyer,c),b=relation(c,seller);if(!a||!b||a.war_state===true||b.war_state===true||a.sanctions===true||b.sanctions===true||routeBlocked(c,'').blocked)continue;
   const score=(num(a.trade)??num(a.overall)??0)+(num(b.trade)??num(b.overall)??0);if(!best||score>best.score)best={countryId:c,score};}return best?.countryId||null;}
 function startTransit(request={}){
  const buyer=country(request.countryId||request.buyerCountryId),deal=getAuthorizedDeal(request.blackMarketDealId,request);
@@ -587,8 +587,15 @@ function startTransit(request={}){
 function checkpointRisk(deal,checkpoint){const c=country(checkpoint.countryId),interior=bucket('interior',c),intel=bucket('intelligence',c),customs=num(interior.customsInspectionCoverage??interior.borderInspectionCoverage??interior.customsReadiness),surveillance=num(intel.tradeSurveillance??intel.counterSmugglingReadiness??intel.blackMarketDetection),norm=x=>x===null?0:clamp(x>1?x/100:x),base=clamp(num(deal.detectionProbability)??.1),rep=deal.brokerId?getBrokerReputation(deal.sellerCountryId,deal.brokerId):50,roleFactor=checkpoint.role==='TRANSIT_HUB'?.75:(checkpoint.role==='DESTINATION'?1.15:1);return clamp((.025+base*.33+norm(customs)*.16+norm(surveillance)*.12+(50-rep)/1000)*roleFactor,.015,.82);}
 function releaseTransitReservation(transit){if(transit?.reservationId)dispatch('trade','OMEGA_BLACK_MARKET_RESERVE_TRANSIT_STOCK',transit.sellerCountryId,{release:true,reservation:{reservationId:transit.reservationId}});}
 function advanceTransits(){const api=trade();if(!api||typeof api.settleBlackMarketTransit!=='function')return{status:'WAITING_FOR_GLOBAL_TRADE'};let advanced=0,intercepted=0,settled=0;
- for(const buyer of countryKeys('trade'))for(const transit of getTransits(buyer)){if(advanced>=12)return{status:'LIMITED',advanced,intercepted,settled};if(transit.status!=='IN_TRANSIT'||turn()<num(transit.nextTurn))continue;
+ for(const buyer of countryKeys('trade'))for(const transit of getTransits(buyer)){if(advanced>=12)return{status:'LIMITED',advanced,intercepted,settled};if(!['IN_TRANSIT','ARRIVAL_PENDING'].includes(transit.status)||turn()<num(transit.nextTurn))continue;
   const deal=getDeal(transit.dealId,buyer);if(!deal){dispatch('trade','OMEGA_BLACK_MARKET_UPDATE_TRANSIT',buyer,{transitId:transit.transitId,patch:{status:'FAILED',failureReason:'DEAL_RECORD_MISSING'}});releaseTransitReservation(transit);continue;}
+  if(transit.status==='ARRIVAL_PENDING'){
+   const result=api.settleBlackMarketTransit({buyerCountryId:buyer,requestId:transit.requestId,dealId:transit.dealId,permitId:transit.permitId});
+   if(result?.accepted===true){dispatch('trade','OMEGA_BLACK_MARKET_UPDATE_TRANSIT',buyer,{transitId:transit.transitId,patch:{status:'SETTLED',settledTurn:turn()}});releaseTransitReservation(transit);settled++;}
+   else if(['FAILED','INTERCEPTED','EXPIRED'].includes(String(getDeal(transit.dealId,buyer)?.status||'').toUpperCase())){dispatch('trade','OMEGA_BLACK_MARKET_UPDATE_TRANSIT',buyer,{transitId:transit.transitId,patch:{status:'FAILED',settlementFailure:result?.reason||'BLACK_MARKET_SETTLEMENT_FAILED'}});releaseTransitReservation(transit);}
+   else dispatch('trade','OMEGA_BLACK_MARKET_UPDATE_TRANSIT',buyer,{transitId:transit.transitId,patch:{nextTurn:turn()+1,settlementFailure:result?.reason||'BLACK_MARKET_SETTLEMENT_PENDING'}});
+   advanced++;continue;
+  }
   const index=Math.min(transit.route.length-1,(num(transit.currentIndex)??-1)+1),checkpoint=transit.route[index],risk=checkpointRisk(deal,checkpoint),roll=random(transit.transitId+'|'+index+'|'+checkpoint.countryId),event={turn:turn(),countryId:checkpoint.countryId,checkpoint:checkpoint.checkpoint,role:checkpoint.role,risk,roll,detected:roll<risk},timeline=(transit.timeline||[]).concat([event]);advanced++;
   if(event.detected){handleTradeRejection({countryId:buyer,buyerCountryId:buyer,targetCountryId:deal.sellerCountryId,sellerCountryId:deal.sellerCountryId,resourceId:deal.resourceId,quantity:deal.quantity,unitPrice:deal.unitPrice,blackMarketDealId:deal.dealId,blackMarketPermitId:deal.permitId},{reason:'BLACK_MARKET_INTERCEPTED',stage:'IN_TRANSIT:'+checkpoint.checkpoint});
    dispatch('trade','OMEGA_BLACK_MARKET_UPDATE_TRANSIT',buyer,{transitId:transit.transitId,patch:{status:'INTERCEPTED',currentIndex:index,lastCheckpoint:checkpoint,timeline,interceptedTurn:turn()}});releaseTransitReservation(transit);intercepted++;continue;}
