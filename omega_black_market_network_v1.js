@@ -184,13 +184,12 @@ function stateActorEvidence(c,rid){
   evidence.push('RECORDED_STATE_TRADING_NETWORK');linkEvidence.push('RECORDED_STATE_TRADING_NETWORK');
  }
  let directGovernment=false,stateOwnedEnterprise=false;
- for(const list of [economy.companies,economy.enterprises,finance.stateOwnedEnterprises]){
-  if(!Array.isArray(list))continue;
-  for(const row of list){
-   const ownership=String(row?.ownership||row?.ownerType||row?.ownershipType||row?.ownerClass||'').toUpperCase();
-   if(/MINISTRY|GOVERNMENT/.test(ownership)){directGovernment=true;linkEvidence.push('RECORDED_GOVERNMENT_ENTITY');evidence.push('RECORDED_GOVERNMENT_ENTITY');}
-   else if(/STATE|PUBLIC|STATE_OWNED/.test(ownership)){stateOwnedEnterprise=true;linkEvidence.push('RECORDED_STATE_OWNED_ENTERPRISE');evidence.push('RECORDED_STATE_OWNED_ENTERPRISE');}
-  }
+ // Ownership evidence must match the commodity under consideration; a state-owned
+ // company in an unrelated sector cannot sponsor this transaction by association.
+ for(const row of companyEvidence(c,rid)){
+  const ownership=String(row.ownership||'UNKNOWN').toUpperCase();
+  if(/MINISTRY|GOVERNMENT/.test(ownership)){directGovernment=true;linkEvidence.push('RECORDED_GOVERNMENT_ENTITY');evidence.push('RECORDED_GOVERNMENT_ENTITY');}
+  else if(/STATE|PUBLIC|STATE_OWNED/.test(ownership)){stateOwnedEnterprise=true;linkEvidence.push('RECORDED_STATE_OWNED_ENTERPRISE');evidence.push('RECORDED_STATE_OWNED_ENTERPRISE');}
  }
  const linked=linkEvidence.length>0;
  const role=directGovernment?'DIRECT_GOVERNMENT_ENTITY':
