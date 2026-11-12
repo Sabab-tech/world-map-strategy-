@@ -17,7 +17,8 @@ const market=()=>g.OmegaGlobalMarket||g.Omega?.GlobalMarket||null;
 const trade=()=>g.OmegaGlobalTrade||g.Omega?.GlobalTrade||null;
 const policy=()=>g.OmegaResourceStrategicPolicyRuntime||g.Omega?.ResourceStrategicPolicyRuntime||null;
 const bank=()=>g.OmegaGovernmentBanking||g.Omega?.GovernmentBanking||null;
-let report={ready:false,registered:0,total:6,errors:[]},sequence=0;\nconst OFFER_SCAN_SECRET={};
+let report={ready:false,registered:0,total:6,errors:[]},sequence=0;
+const OFFER_SCAN_SECRET={};
 function country(v){
  const raw=v&&typeof v==='object'?(v.iso3||v.iso3Code||v.countryCode||v.countryId||v.code||v.id||v.name):v;
  if(raw==null)return'';
