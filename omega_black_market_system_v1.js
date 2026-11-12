@@ -275,7 +275,7 @@ function createDeal(input={}){
  const autonomousNetwork=input.autonomousNetwork===true&&input.source==='OMEGA_BLACK_MARKET_NPC_NETWORK';
  if(!buyer||(!autonomousNetwork&&buyer!==player()))return{accepted:false,reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
  if(!seller||seller===buyer||!rid||q===null||q<=0)return{accepted:false,reason:'BLACK_MARKET_ORDER_FIELDS_INVALID'};
- const book=getOffers(buyer,rid,q,autonomousNetwork?{networkAuthority:'OMEGA_BLACK_MARKET_NPC_NETWORK_V1'}:{});if(book.status!=='READY')return{accepted:false,reason:book.reason||'BLACK_MARKET_OFFERS_UNAVAILABLE'};
+ const book=getOffers(buyer,rid,q,autonomousNetwork?{networkAuthority:'OMEGA_BLACK_MARKET_NPC_NETWORK_V1',sellerCountryIds:[seller]}:{sellerCountryIds:[seller]});if(book.status!=='READY')return{accepted:false,reason:book.reason||'BLACK_MARKET_OFFERS_UNAVAILABLE'};
  const offer=book.offers.find(x=>x.sellerCountryId===seller&&(!input.offerId||x.offerId===input.offerId));if(!offer)return{accepted:false,reason:'BLACK_MARKET_OFFER_NOT_FOUND_OR_STALE'};
  const rel=relation(buyer,seller);if(!rel||rel.war_state===true)return{accepted:false,reason:'WAR_OR_RELATION_EVIDENCE_REQUIRED'};
  sequence++;const dealId=autonomousNetwork?'BM-NPC-'+buyer+'-'+seller+'-T'+turn()+'-'+tok(rid).slice(0,18):'BM-'+buyer+'-'+seller+'-T'+turn()+'-'+sequence+'-'+tok(rid).slice(0,18);
