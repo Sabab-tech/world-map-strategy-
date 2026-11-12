@@ -20,7 +20,7 @@
   const mesh = () => g.Omega?.MinistryInteroperability || g.OmegaMinistryInteroperability || null;
   const market = () => g.OmegaGlobalMarket || g.Omega?.GlobalMarket || null;
   const bank = () => g.OmegaGovernmentBanking || g.Omega?.GovernmentBanking || null;
-  const transmission = () => g.OmegaEconomicTransmissionRuntime || g.Omega?.EconomicTransmission || null;
+  const transmission = () => g.OmegaEconomicTransmissionRuntime || g.Omega?.EconomicTransmissionRuntime || g.Omega?.EconomicTransmission || null;
   const network = () => g.OmegaBlackMarketNetworkV1 || g.Omega?.BlackMarketNetworkV1 || null;
   const identity = () => g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge || g.Omega?.CanonicalIdentity || null;
 
@@ -179,8 +179,7 @@
       importDependencyPct: first(row.importDependencyPct, row.importDependency, row.importShare),
       procurementScore: num(row.procurementScore), requiredQuantity: required,
       belowTarget: below, status: row.status || null,
-      lastDemandTurn: num(bucket('resource', row.countryId)?.demandRuntime?.lastTurn) ??
-        num(row.lastDemandTurn)
+      lastDemandTurn: num(row.lastDemandTurn)
     };
   }
   function production(c, rid, source) {
@@ -703,9 +702,13 @@
       }
       const productRows = productIds.map(rid =>
         productAssessment(policy, side.c, side.partner, rid, side.role, budget));
-      const firstRisk = productRows[0]?.tradeExposure ||
-        { exportsAtRisk: ledger([], () => false), importsAtRisk: ledger([], () => false) };
-      const finance = financial(side.c, firstRisk);
+      const aggregateRisk = {
+        exportsAtRisk: { value: sumKnown(productRows, row => row.tradeExposure.exportsAtRisk.value),
+          currency: productRows.find(row => row.tradeExposure.exportsAtRisk.currency)?.tradeExposure.exportsAtRisk.currency || null },
+        importsAtRisk: { value: sumKnown(productRows, row => row.tradeExposure.importsAtRisk.value),
+          currency: productRows.find(row => row.tradeExposure.importsAtRisk.currency)?.tradeExposure.importsAtRisk.currency || null }
+      };
+      const finance = financial(side.c, aggregateRisk);
       const impactId = policy.policyKey + '-' + side.c + '-' + turn();
       const previousImpact = bucket('economy', side.c).sanctionEconomicAssessments;
       if (!Array.isArray(previousImpact) || !previousImpact.some(row => row?.impactId === impactId)) {
@@ -781,7 +784,28 @@
     }
     return { policyKey: policy.policyKey, writes, countries: results };
   }
-  let lastProcessedTurn = null, lastMarketQueryCount = 0;
+  let lastProcessedTurn = null, lastMarketQueryCount = 0, policyCursor = 0;
+  function selectPolicies(all) {
+    const fresh = all.filter(policy => {
+      const targetRows = bucket('foreign', policy.targetCountryId).sanctionNotifications;
+      const issuerRows = bucket('foreign', policy.issuerCountryId).sanctionNotifications;
+      const targetId = policy.policyKey + '-' + policy.targetCountryId;
+      const issuerId = policy.policyKey + '-' + policy.issuerCountryId;
+      return !Array.isArray(targetRows) || !targetRows.some(row => row?.notificationId === targetId) ||
+        !Array.isArray(issuerRows) || !issuerRows.some(row => row?.notificationId === issuerId);
+    }).sort((a, b) => (b.startTurn ?? -1) - (a.startTurn ?? -1));
+    const reviewed = all.filter(policy => !fresh.includes(policy));
+    const chosen = fresh.slice(0, MAX_POLICIES);
+    const slots = MAX_POLICIES - chosen.length;
+    if (slots > 0 && reviewed.length) {
+      const offset = policyCursor % reviewed.length;
+      const count = Math.min(slots, reviewed.length);
+      for (let index = 0; index < count; index++)
+        chosen.push(reviewed[(offset + index) % reviewed.length]);
+      policyCursor = (offset + count) % reviewed.length;
+    }
+    return chosen;
+  }
   function runTurn() {
     if (!install()) return { status: 'WAITING_FOR_MINISTRY_INTEROPERABILITY', turn: turn() };
     const now = turn();
@@ -789,7 +813,7 @@
       return { status: 'ALREADY_PROCESSED', turn: now };
     lastProcessedTurn = now;
     g.__omegaSanctionResponseProcessedTurn = now;
-    const all = policies(), chosen = all.slice(0, MAX_POLICIES), budget = { used: 0 };
+    const all = policies(), chosen = selectPolicies(all), budget = { used: 0 };
     const results = [];
     for (const policy of chosen) {
       try { results.push(runPolicy(policy, budget)); }
@@ -809,7 +833,7 @@
     return {
       version: VERSION, ready: registration.ready, registration: clone(registration),
       turn: turn(), activePolicyCount: policies().length, worldCountryCount: worldCountries().length,
-      lastProcessedTurn, lastMarketQueryCount,
+      lastProcessedTurn, lastMarketQueryCount, policyCursor,
       planner: 'POLICY_NOTIFICATION_ECONOMIC_ANALYSIS_NATIONAL_DECISION_MARKET_RECOVERY_INVESTIGATION',
       caps: { policiesPerTurn: MAX_POLICIES, productsPerPolicy: MAX_PRODUCTS,
         marketQueriesPerTurn: MAX_MARKET_QUERIES, tradeLedgerWindowTurns: LEDGER_WINDOW },
