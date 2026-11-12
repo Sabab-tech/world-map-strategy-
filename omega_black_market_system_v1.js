@@ -252,8 +252,9 @@ function buyerMotiveEvidence(c,rid,quantity,sanctionContext={}){
  const embargoes=Array.isArray(tradeState.resourceEmbargoes)?tradeState.resourceEmbargoes:[];
  const sanctions=Array.isArray(tradeState.sanctions)?tradeState.sanctions:[];
  const active=row=>!['EXPIRED','REVOKED','INACTIVE','CANCELLED','LIFTED'].includes(String(row.status||'ACTIVE').toUpperCase());
- const restricted=!!sanctionContext.buyerTargeted||embargoes.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&active(x))||
-  sanctions.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&active(x));
+ const importRestricted=embargoes.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&active(x)&&
+  (country(x.issuerCountryId)||c)===country(c)&&['IMPORT','BOTH'].includes(String(x.direction||'BOTH').toUpperCase()));
+ const restricted=!!sanctionContext.buyerTargeted||importRestricted;
  if(restricted)return{code:'RESTRICTED_INPUT_ACCESS',reason:'The buyer country has an active resource sanction or import restriction affecting the selected commodity.'};
  if(factoryInput>0)return{code:'INDUSTRIAL_INPUT_SHORTAGE',reason:'Recorded active factory input demand exists for this commodity.'};
  if(tariffPct!==null&&tariffPct>=20&&(perDay>0||unmet>0))
