@@ -297,3 +297,44 @@ test('a third-country ban on a major buyer redirects its supplier’s exports in
  assert.equal(profile.sellerExportShock.mainCustomerCountryId,'IRN');
  assert.equal(profile.tactic,'LOST_PRIMARY_EXPORT_MARKET_REDIRECTION');
 });
+
+
+test('all country evidence is inspected while expensive seller-book queries stay bounded and rotate fairly', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ for(let i=0;i<48;i++){
+  const id='A'+String(i).padStart(2,'0');
+  h.state.resource[id]={inventory:{},demandRuntime:{lastTurn:25,byResource:{copper:{
+   resourceId:'copper',unmetDemand:5,demandPerDay:30,stockCoverageDays:4,stockCoverageTargetDays:5,
+   procurementScore:0,activeFactoryInputDemandPerDay:0,unit:'tonnes'
+  }}}};
+  h.state.trade[id]={};h.state.foreign[id]={};h.state.finance[id]={};
+ }
+ const seen=new Set();
+ for(let i=0;i<12;i++){
+  h.state.simulation.turn=25+i;
+  const result=api.runTurn();
+  assert.equal(result.status,'COMPLETED');
+  assert.equal(result.buyerCountriesScanned,result.worldCountryCount-1);
+  assert.ok(result.offerSearches<=24);
+  assert.equal(result.marketQueryBudget,24);
+  assert.equal(result.worldSimulation,'ALL_COUNTRIES_EVIDENCE_SCAN_BOUNDED_ROTATING_MARKET_QUERY');
+  for(const call of h.offerCalls)seen.add(call.countryId);
+ }
+ assert.ok(seen.has('A47'),'the rotating query slots must eventually reach lower-ranked countries');
+ assert.ok(h.offerCalls.length<=12*24);
+});
+
+test('the planner checks more than the priority slots by rotating secondary commodities', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ const demand=h.state.resource.IRN.demandRuntime.byResource;
+ for(let i=1;i<=8;i++)demand['resource_'+i]={resourceId:'resource_'+i,unmetDemand:25-i,demandPerDay:30,
+  stockCoverageDays:1,stockCoverageTargetDays:5,procurementScore:.9-i*.01,activeFactoryInputDemandPerDay:0};
+ h.state.simulation.turn=25;
+ const first=api.runTurn();
+ assert.ok(first.offerSearches<=24);
+ assert.ok(first.potentialOpportunityCount>=8);
+ h.state.simulation.turn=26;
+ const second=api.runTurn();
+ assert.equal(second.status,'COMPLETED');
+ assert.ok(h.offerCalls.some(x=>x.resourceId!=='copper'),'commodity opportunities rotate instead of being locked to a permanent first-three list');
+});
