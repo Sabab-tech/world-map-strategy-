@@ -83,13 +83,19 @@ function render(root,countryValue){
     (x.sellerMotiveReason?'<div><small>Why '+esc(sellerInfo.name)+' sells</small><strong>'+esc(x.sellerMotiveReason)+'</strong></div>':'')+
     (x.buyerMotiveReason?'<div><small>Buyer country motive</small><strong>'+esc(x.buyerMotiveReason)+'</strong></div>':'')+
    '</div>':'';
+  const thresholdAmounts=Array.isArray(x.scrutinyThresholds?.sellerFreeStockQuantity)?x.scrutinyThresholds.sellerFreeStockQuantity:[],
+   thresholdLabels=['1%','3%','8%','15%'],thresholdAmountText=thresholdAmounts.length===4?
+    thresholdAmounts.map((v,i)=>thresholdLabels[i]+' = '+fmt(v)+' '+(x.unit||'units')).join(' · '):'';
   const scrutinyMarkup=x.shipmentSizeBand?
    '<div class="omega-bm-country-context is-impact">'+
     '<div><small>Shipment class</small><strong>'+esc(human(x.shipmentSizeBand))+'</strong></div>'+
     '<div><small>Seller stock exposed</small><strong>'+percent(x.sellerStockExposurePct)+'</strong></div>'+
     '<div><small>Attempts in 10 turns</small><strong>'+fmt(x.repeatAttempts10Turns||0)+'</strong></div>'+
    '</div>'+
-   '<div class="omega-bm-thresholds"><strong>Detection thresholds</strong> · ≤1% Micro · 1–3% Small · 3–8% Moderate · 8–15% Large · &gt;15% Critical of verified seller stock. <strong>Potential penalties</strong>: interception attempt fine '+percent(x.attemptFineRate)+' · completed-trade fine '+percent(x.fineRate)+' · maximum cargo seizure '+percent(x.seizureRate)+'.</div>':'';
+   '<div class="omega-bm-thresholds"><strong>Quantity thresholds from verified free stock</strong>'+
+    (thresholdAmountText?'<br>'+esc(thresholdAmountText):' · 1%, 3%, 8% and 15% of verified free stock')+
+    '<br><strong>Detection bands</strong> · ≤1% Micro · 1–3% Small · 3–8% Moderate · 8–15% Large · &gt;15% Critical.'+
+    ' <strong>Potential penalties</strong>: interception attempt fine '+percent(x.attemptFineRate)+' · completed-trade fine '+percent(x.fineRate)+' · post-settlement cargo seizure '+percent(x.seizureRate)+'.</div>':'';
   return '<article class="omega-bm-offer"><div class="omega-bm-offer-top"><div class="omega-bm-seller"><span class="omega-bm-node">'+esc(sellerInfo.flag||String(x.sellerCountryId||'??').slice(0,3))+'</span><div><div class="omega-bm-country">'+esc(sellerInfo.name)+'</div><div class="omega-bm-muted">'+esc(actorRole(x.sellerActorClass))+' · '+esc(x.productName||x.resourceId)+' · '+fmt(x.availableQuantity)+' '+esc(x.unit||'units')+' available</div></div></div><span class="omega-bm-tag'+(restricted?' is-restricted':'')+'">'+esc(legalTag)+'</span></div>'+
    '<div class="omega-bm-prices"><div class="omega-bm-price is-shadow"><small>Shadow price / unit · seller currency</small><strong>'+money(x.unitPrice,x.currency)+'</strong><div class="omega-bm-price-note">Expected buyer total '+(x.expectedBlackMarketTotalBuyer===null?'FX not observed':money(x.expectedBlackMarketTotalBuyer,comparisonCurrency))+'</div></div><div class="omega-bm-price"><small>Legal landed / unit · buyer currency</small><strong>'+(x.legalLandedUnitPrice===null?'No comparable quote':money(x.legalLandedUnitPrice,comparisonCurrency))+'</strong><div class="omega-bm-price-note">'+(saving===null?'Legal benchmark unavailable':(saving>=0?'Expected saving ':'Expected extra cost ')+money(Math.abs(saving),comparisonCurrency))+'</div></div></div>'+
    '<div class="omega-bm-riskline"><span>Strategic rationale</span><strong>'+esc(String(x.whyUse||'').replace(/_/g,' '))+'</strong></div>'+
@@ -118,7 +124,7 @@ function render(root,countryValue){
   (Array.isArray(x.sanctioningCountryIds)&&x.sanctioningCountryIds.length?'<small>Sanction issuers: '+x.sanctioningCountryIds.map(countryLabel).map(esc).join(' · ')+'</small>':'')+
   (Array.isArray(x.sanctionPolicyIds)&&x.sanctionPolicyIds.length?'<small>Policy evidence: '+x.sanctionPolicyIds.map(esc).join(' · ')+'</small>':'')+
   (x.attemptedValueBuyer!==null&&x.attemptedValueBuyer!==undefined?'<small>Attempt value '+fmt(x.attemptedValueBuyer)+' · attempt fine '+percent(x.attemptFineRateAtCreation)+'</small>':'')+
-  (x.sellerStockExposurePct!==null&&x.sellerStockExposurePct!==undefined?'<small>Shipment size '+esc(human(x.shipmentSizeBand))+' · '+percent(x.sellerStockExposurePct)+' of seller free stock</small>':'')+
+  (x.sellerStockExposurePct!==null&&x.sellerStockExposurePct!==undefined?'<small>Shipment size '+esc(human(x.shipmentSizeBand))+' · '+percent(x.sellerStockExposurePct)+' of seller free stock · quantity thresholds '+(x.sellerFreeStockQuantityThresholds||[]).map(fmt).join(' / ')+' '+esc(x.unit||'units')+'</small>':'')+
   (x.fineRateAtCreation!==null&&x.fineRateAtCreation!==undefined?'<small>Potential completed-trade fine '+percent(x.fineRateAtCreation)+' · cargo seizure '+percent(x.seizureRateAtCreation)+'</small>':'')+
   (x.cargoDisposition?'<small>Cargo outcome '+esc(human(x.cargoDisposition))+'</small>':'')+'</article>').join('');
  const respHtml=responses.slice(-4).reverse().map(x=>{
@@ -209,5 +215,5 @@ function render(root,countryValue){
  }
  return{ok:true,countryId:c,offerCount:offers.length,dealCount:deals.length};
 }
-g.Omega=g.Omega||{};g.Omega.BlackMarketUI=Object.freeze({version:'1.5.0',render});g.OmegaBlackMarketUI=g.Omega.BlackMarketUI;
+g.Omega=g.Omega||{};g.Omega.BlackMarketUI=Object.freeze({version:'1.6.0',render});g.OmegaBlackMarketUI=g.Omega.BlackMarketUI;
 })(typeof window!=='undefined'?window:globalThis);
