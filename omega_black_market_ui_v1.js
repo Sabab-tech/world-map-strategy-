@@ -150,7 +150,7 @@ function render(root,countryValue){
   const motiveMarkup=(x.sellerMotiveReason||x.buyerMotiveReason)?
    '<div class="omega-bm-country-context">'+
     (x.sellerMotiveReason?'<div><small>Why '+esc(sellerInfo.name)+' sells</small><strong>'+esc(x.sellerMotiveReason)+'</strong></div>':'')+
-    (x.buyerMotiveReason?'<div><small>Buyer country motive</small><strong>'+esc(x.buyerMotiveReason)+'</strong></div>':'')+
+    (x.buyerMotiveReason?'<div><small>Why '+esc(countryInfo(c).name)+' wants this commodity</small><strong>'+esc(x.buyerMotiveReason)+'</strong></div>':'')+
    '</div>':'';
   const thresholdAmounts=Array.isArray(x.scrutinyThresholds?.sellerFreeStockQuantity)?x.scrutinyThresholds.sellerFreeStockQuantity:[],
    thresholdLabels=['1%','3%','8%','15%'],thresholdAmountText=thresholdAmounts.length===4?
