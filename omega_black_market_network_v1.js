@@ -463,7 +463,7 @@ function runTurn(){
  const pc=player();if(!pc)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn()};
  if(g.__omegaBlackMarketNetworkProcessedTurn===turn())return{status:'ALREADY_PROCESSED',turn:turn()};
  g.__omegaBlackMarketNetworkProcessedTurn=turn();
- const pending=processPending(),world=worldCountries().filter(c=>c!==pc),candidates=[],potentialRows=[];
+ const pending=processPending(),allCountries=worldCountries(),world=allCountries.filter(c=>c!==pc),candidates=[],potentialRows=[];
  let buyerCountriesScanned=0,buyerCountriesWithEvidence=0,offerSearches=0,activeBuyersSkipped=0;
  for(const buyer of world){
   buyerCountriesScanned++;
@@ -539,7 +539,7 @@ function runTurn(){
    sellerExportShock:profile.sellerExportShock,tariffAvoidance:profile.tariffAvoidance},intelReport:discovery};
  }
  return{status:'COMPLETED',turn:turn(),playerCountryId:pc,pendingProcessed:pending.processed||0,
-  worldCountryCount:world.length,buyerCountriesScanned,buyerCountriesWithEvidence,activeBuyersSkipped,
+  worldCountryCount:allCountries.length,npcCountryCount:world.length,buyerCountriesScanned,buyerCountriesWithEvidence,activeBuyersSkipped,
   potentialOpportunityCount:potentialRows.length,offerSearches,marketQueryBudget:MAX_WORLD_MARKET_QUERIES_PER_TURN,
   candidateCount:candidates.length,newDeal:created,limitPerTurn:MAX_NEW_DEALS_PER_TURN,
   worldSimulation:'ALL_COUNTRIES_EVIDENCE_SCAN_BOUNDED_ROTATING_MARKET_QUERY'};
