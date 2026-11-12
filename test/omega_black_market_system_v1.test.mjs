@@ -294,3 +294,34 @@ test('pre-dispatch interception records an investigation, charges an attempt fin
  assert.equal(h.state.foreign.SAU.blackMarketResponses[0].severity,'HIGH');
  assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-8);
 });
+
+
+test('a third-country sanction against the buyer is attached to the offer and activates issuer-led diplomacy', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ h.state.trade.USA={sanctions:[{policyId:'SAN-USA-BGD-COAL',issuerCountryId:'USA',targetCountryId:'BGD',
+  resourceId:'coal',status:'ACTIVE',type:'IMPORT_PROHIBITION'}]};
+ h.state.foreign.USA={};
+ h.state.finance.USA={available:100000};
+ h.state.resource.USA={inventory:{}};
+ const offer=api.getOffers('BGD','coal',10).offers[0];
+ assert.equal(offer.sanctionsAtQuote,true);
+ assert.equal(offer.sanctionedBuyerAtQuote,true);
+ assert.deepEqual(offer.sanctionPolicyIds,['SAN-USA-BGD-COAL']);
+ assert.equal(offer.legalMarketAvailable,false);
+ assert.equal(offer.buyerMotiveCode,'RESTRICTED_INPUT_ACCESS');
+ const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:offer.offerId});
+ assert.equal(made.accepted,true,JSON.stringify(made));
+ const deal=api.getDeal(made.deal.dealId,'BGD');
+ assert.deepEqual(deal.sanctioningCountryIds,['USA']);
+ assert.equal(deal.sanctionedBuyerAtCreation,true);
+ const result=api.handleTradeRejection({countryId:'BGD',buyerCountryId:'BGD',targetCountryId:'SAU',
+  resourceId:'coal',quantity:10,unitPrice:deal.unitPrice,blackMarketDealId:deal.dealId,
+  blackMarketPermitId:deal.permitId},{reason:'BLACK_MARKET_INTERCEPTED',stage:'ORIGIN_INSPECTION'});
+ assert.equal(result.status,'INTERCEPTED');
+ assert.equal(h.state.foreign.USA.blackMarketResponses.length,1);
+ assert.equal(h.state.foreign.USA.blackMarketResponses[0].targetCountryId,'BGD');
+ assert.equal(h.state.foreign.USA.blackMarketResponses[0].secondaryTargetCountryId,'SAU');
+ assert.equal(h.state.foreign.USA.relationAdjustments.BGD[0].delta,-8);
+ assert.equal(h.state.foreign.USA.relationAdjustments.SAU[0].delta,-3);
+ assert.equal(h.state.intelligence.BGD.blackMarketCases[0].sanctionPolicyIds.includes('SAN-USA-BGD-COAL'),true);
+});
