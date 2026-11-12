@@ -397,3 +397,18 @@ test('state-owned companies in unrelated sectors do not make a different commodi
  assert.ok(!profile.buyerStateEvidence.includes('RECORDED_STATE_OWNED_ENTERPRISE'));
  assert.equal(profile.buyerCommercialActor.actorIdentityStatus,'NO_PRODUCT_MATCHED_COMPANY_RECORD');
 });
+
+
+test('ordinary seller and buyer relationships produce no export-shock profile without sanction-linked customer evidence', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ const profile=api.actorProfile({
+  buyer:'IRN',seller:'RUS',row:{resourceId:'copper',productName:'Copper'},
+  buyerState:false,sellerState:false,
+  bmReason:{code:'DOMESTIC_SUPPLY_GAP',reason:'Observed domestic supply gap'},
+  smReason:{code:'PRIVATE_BROKER_MARGIN',reason:'Private broker margin'},
+  tactic:{code:'COMMERCIAL_BROKERING',intermediaryHubsAvailable:0,intermediaryHubCountryIds:[]},
+  sellerExportShock:{active:false,exposure:null,sanctions:{active:false,issuerCountryIds:[],secondary:false}}
+ });
+ assert.equal(profile.sellerExportShock,null);
+ assert.equal(profile.sellerMotive,'PRIVATE_BROKER_MARGIN');
+});
