@@ -153,6 +153,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_country_behavior_engine_v1.js',
   'omega_opponent_adaptive_strategy_system.js',
   'omega_opponent_autonomy_system.js',
+  'omega_npc_country_economic_governance_runtime_v1.js',
   'omega_global_market_system.js',
   'omega_global_trade_system.js',
   'omega_opponent_treaty_lifecycle_system.js',
