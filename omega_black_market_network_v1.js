@@ -181,7 +181,8 @@ function demandCandidates(c){
    coverage=num(row.stockCoverageDays),target=num(row.stockCoverageTargetDays),score=Math.max(0,num(row.procurementScore)||0),
    low=coverage!==null&&target!==null&&target>coverage,tariff=tariffRate(c),
    importDependency=num(row.importDependencyPct??row.importDependency??row.importShare??value(r.importDependencyByResource,rid)),
-   restricted=activePolicyFor(c,rid).embargoes.length>0||activePolicyFor(c,rid).sanctions.length>0,
+   incomingSanctions=sanctionsAgainst(c,rid),
+   restricted=activePolicyFor(c,rid).embargoes.some(x=>country(x.targetCountryId||x.subjectCountryId)===c)||incomingSanctions.active,
    tariffDriven=tariff!==null&&tariff>=20&&perDay>0,
    importDriven=importDependency!==null&&importDependency>0&&perDay>0,
    hasCommercialDemand=tariffDriven||importDriven||restricted&&perDay>0;
@@ -200,8 +201,9 @@ function demandCandidates(c){
  return rows.sort((a,b)=>b.pressure-a.pressure||b.quantity-a.quantity).slice(0,MAX_DEMAND_ROWS);
 }
 function buyerMotive(c,row,rid){
- const p=activePolicyFor(c,rid),finance=bucket('finance',c),intel=bucket('intelligence',c),tariff=row.tariffPct??tariffRate(c);
- if(p.embargoes.length||p.sanctions.length||p.directives.length)return{code:'SANCTIONS_OR_RESTRICTED_MARKET_ACCESS',reason:'An active country-level sanction, embargo or state trade restriction affects access to this input.'};
+ const p=activePolicyFor(c,rid),finance=bucket('finance',c),intel=bucket('intelligence',c),tariff=row.tariffPct??tariffRate(c),
+  incomingSanctions=sanctionsAgainst(c,rid),incomingEmbargo=p.embargoes.some(x=>country(x.targetCountryId||x.subjectCountryId)===c);
+ if(incomingSanctions.active||incomingEmbargo)return{code:'SANCTIONS_OR_RESTRICTED_MARKET_ACCESS',reason:'This country is the recorded target of an active sanction or import embargo affecting this input.'};
  if(row.factoryInputDemandPerDay>0)return{code:'INDUSTRIAL_INPUT_SHORTAGE',reason:'Recorded active factory input demand exceeds currently fulfilled supply.'};
  if(num(tariff)!==null&&num(tariff)>=20)return{code:'TARIFF_AVOIDANCE_PRESSURE',reason:'The recorded import tariff is '+num(tariff).toFixed(1)+'%; a private buyer may compare the tariff saving with detection and penalty exposure.'};
  if(num(row.importDependency)!==null&&num(row.importDependency)>0)return{code:'IMPORT_DEPENDENCY',reason:'The country has recorded import dependence for this commodity and seeks an alternative source.'};
@@ -259,11 +261,12 @@ function makeCandidate(buyer,row){
  if(!book||book.status!=='READY'||!Array.isArray(book.offers))return null;
  const candidates=[];
  for(const offer of book.offers){
-  const reason=legalRouteReason(offer);if(!reason)continue;
   const seller=country(offer.sellerCountryId);if(!seller||seller===buyer||seller===player()||priorDeal(buyer,seller,row.resourceId))continue;
   const buyerState=hasStateLink(buyer,row.resourceId),sellerState=hasStateLink(seller,row.resourceId);
-  const sanctions=sanctionsAgainst(seller,row.resourceId),exposure=exportExposure(seller,buyer,row.resourceId),
-   shock={active:sanctions.active&&exposure.observed,exposure:Object.assign({partnerCountryId:buyer},exposure),sanctions};
+  const sanctions=sanctionsAgainst(seller,row.resourceId);
+  const exposures=sanctions.issuerCountryIds.map(issuer=>Object.assign({partnerCountryId:issuer},exportExposure(seller,issuer,row.resourceId)));
+  exposures.sort((a,b)=>(b.share??-1)-(a.share??-1)||(b.value??-1)-(a.value??-1));
+  const exposure=exposures[0]||null,shock={active:sanctions.active&&!!exposure?.observed,exposure,sanctions};
   const reason=legalRouteReason(offer,shock);if(!reason)continue;
   const bmReason=buyerMotive(buyer,row,row.resourceId),smReason=sellerMotive(seller,row.resourceId,offer,shock);
   const tactic=chooseTactic(buyer,seller,row.resourceId,offer,buyerState,sellerState,shock);
