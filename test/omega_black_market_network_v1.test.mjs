@@ -47,6 +47,7 @@ function makeHarness(options={}){
   getOffers(countryId,resourceId,quantity,policy){
    offerCalls.push({countryId,resourceId,quantity,policy});
    if(countryId!==buyer||resourceId!=='copper')return{status:'READY',offers:[]};
+   if(Array.isArray(policy?.sellerCountryIds)&&!policy.sellerCountryIds.includes(seller))return{status:'READY',offers:[]};
    return{status:'READY',offers:[{...offer,requestedQuantity:quantity}]};
   },
   getDeals(countryId){return structuredClone(state.trade[countryId]?.blackMarketDeals||[]);},
@@ -411,4 +412,31 @@ test('ordinary seller and buyer relationships produce no export-shock profile wi
  });
  assert.equal(profile.sellerExportShock,null);
  assert.equal(profile.sellerMotive,'PRIVATE_BROKER_MARGIN');
+});
+
+test('NPC seller-country scans are capped at 48 per market query and rotate across turns',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ for(let i=1;i<=80;i++){
+  const code='Z'+String(i).padStart(2,'0');
+  h.state.resource[code]={inventory:{}};
+  h.state.trade[code]={};
+  h.state.foreign[code]={};
+  h.state.finance[code]={};
+ }
+ const first=api.runTurn();
+ assert.equal(first.status,'COMPLETED');
+ assert.ok(first.offerSearches>0);
+ assert.ok(first.sellerCountryEvaluations<=first.offerSearches*48);
+ assert.equal(first.sellerQueryWindows.length,first.offerSearches);
+ for(const call of h.offerCalls){
+  assert.equal(call.policy.sellerCountryIds.length,48,
+   'one market query must not synchronously inspect more than 48 seller countries');
+ }
+ const firstWindow=first.sellerQueryWindows[0];
+ h.state.simulation.turn=26;
+ const second=api.runTurn();
+ assert.equal(second.status,'COMPLETED');
+ assert.notDeepEqual(second.sellerQueryWindows[0],firstWindow,
+  'seller windows rotate with the committed turn so countries are not permanently excluded');
+ assert.equal(api.diagnostics().marketSellerWindowBudget,48);
 });
