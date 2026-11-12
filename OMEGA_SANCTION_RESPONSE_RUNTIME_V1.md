@@ -34,7 +34,7 @@ The runtime turns active sanction records into a country-owned and verifiable de
 
 ## Runtime bounds
 
-Per committed turn the runtime processes at most 6 active policies, 4 product identities per policy, and 12 Global Market supplier queries. Record histories are capped at 256 entries. UI rendering does not run a global scan.
+Per committed turn the runtime prioritizes not-yet-notified policies, rotates reassessment across previously reviewed policies, and processes at most 6 active policies, 4 product identities per policy, and 12 Global Market supplier queries. Record histories are capped at 256 entries. UI rendering does not run a global scan.
 
 ## Verification
 
