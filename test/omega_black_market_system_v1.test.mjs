@@ -164,6 +164,28 @@ test('unpaid enforcement fines remain outstanding and collect only when later Tr
  assert.equal(h.state.finance.BGD.blackMarketEnforcementHistory[0].status,'PAID');
  assert.equal(h.state.finance.BGD.available,25);
 });
+test('outstanding fines for autonomous NPC importers retry on later player-country turns',()=>{
+ const h=makeHarness();
+ h.state.trade.IRN={blackMarketDeals:[{dealId:'BM-NPC-IRN-SAU-T9-coal',buyerCountryId:'IRN',sellerCountryId:'SAU',
+  resourceId:'coal',quantity:2,settledQuantity:2,status:'SETTLED_UNDER_INVESTIGATION',settlementId:'SETTLE-NPC-9',
+  buyerSettlementValue:1000,buyerCurrency:'USD',exportRestrictionReason:'STATE_DIRECTIVE_EXPORT_RESTRICTED',autonomousNetwork:true}]};
+ h.state.finance.IRN={available:40,blackMarketEnforcementHistory:[{fineId:'BM-FINE-NPC-9',dealId:'BM-NPC-IRN-SAU-T9-coal',
+  settlementId:'SETTLE-NPC-9',amountDue:100,amountPaid:0,amountOutstanding:100,currency:'USD',status:'WAITING_LIQUIDITY'}]};
+ h.state.simulation.turn=10;
+ h.ctx.dispatchEvent(new h.ctx.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED',{detail:{simulationTurn:10}}));
+ let fine=h.state.finance.IRN.blackMarketEnforcementHistory[0];
+ assert.equal(fine.amountPaid,40);
+ assert.equal(fine.amountOutstanding,60);
+ assert.equal(h.state.finance.IRN.available,0);
+ h.state.finance.IRN.available=80;h.state.simulation.turn=11;
+ h.ctx.dispatchEvent(new h.ctx.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED',{detail:{simulationTurn:11}}));
+ fine=h.state.finance.IRN.blackMarketEnforcementHistory[0];
+ assert.equal(fine.amountPaid,100);
+ assert.equal(fine.amountOutstanding,0);
+ assert.equal(fine.status,'PAID');
+ assert.equal(h.state.finance.IRN.available,20);
+});
+
 test('export-restriction policy issuers receive a foreign response when a covert shipment is intercepted',()=>{
  const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
  h.state.trade.SAU.stateSupplyDirectives=[{policyId:'DIR-SAU-COAL',issuerCountryId:'SAU',status:'ACTIVE'}];
