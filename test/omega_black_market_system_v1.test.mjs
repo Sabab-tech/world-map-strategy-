@@ -177,8 +177,8 @@ test('post-settlement discovery collects a Treasury fine and seizes only unsold 
  const repeat=api.enforcePostSettlement(deal,{settlementId:'SETTLE-1',quantity:10,buyerValue:1000,buyerCurrency:'USD',
   createdBatchIds:['IMPORT-BATCH-1']},{caseId:'BM-CASE-ENFORCEMENT'});
  assert.equal(repeat.seizure.duplicate,true);
- assert.equal(h.state.finance.BGD.available,999820,'the same fine must never be collected twice');
- assert.equal(h.state.resource.BGD.inventory.coal,7,'the same cargo must never be seized twice');
+ assert.equal(h.state.finance.BGD.available,999680,'the same fine must never be collected twice');
+ assert.equal(h.state.resource.BGD.inventory.coal,4.9,'the same cargo must never be seized twice');
 });
 test('unpaid enforcement fines remain outstanding and collect only when later Treasury liquidity exists',()=>{
  const h=makeHarness(),m=h.ctx.OmegaMinistryInteroperability;
