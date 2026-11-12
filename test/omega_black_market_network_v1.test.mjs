@@ -209,7 +209,7 @@ test('world candidate scan checks every canonical country, not only the first fo
 test('tariff-only commercial demand can enter the network with no recorded stock shortage', () => {
  const h=makeHarness({tariffPct:30}),api=h.ctx.OmegaBlackMarketNetworkV1;
  const row=h.state.resource.IRN.demandRuntime.byResource.copper;
- row.unmetDemand=0;row.stockCoverageDays=10;row.stockCoverageTargetDays=5;row.procurementScore=0;
+ row.unmetDemand=0;row.stockCoverageDays=10;row.stockCoverageTargetDays=5;row.procurementScore=0;row.activeFactoryInputDemandPerDay=0;
  h.state.trade.IRN.resourceEmbargoes=[];
  h.state.foreign.IRN.stateTradeNetwork=false;
  const result=api.runTurn();
