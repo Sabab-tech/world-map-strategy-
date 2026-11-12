@@ -47,29 +47,32 @@ function policyRows(c){const t=bucket('trade',c);return{
  sanctions:Array.isArray(t.sanctions)?t.sanctions:[]};}
 function stateActorEvidence(c,rid){
  const policy=activePolicyFor(c,rid),economy=bucket('economy',c),finance=bucket('finance',c),foreign=bucket('foreign',c);
- const evidence=[];
- if(policy.directives.length)evidence.push('ACTIVE_STATE_SUPPLY_DIRECTIVE');
+ const evidence=[],linkEvidence=[];
+ if(policy.directives.length){evidence.push('ACTIVE_STATE_SUPPLY_DIRECTIVE');linkEvidence.push('ACTIVE_STATE_SUPPLY_DIRECTIVE');}
  if(policy.embargoes.length)evidence.push('ACTIVE_RESOURCE_EMBARGO_POLICY');
- if(foreign.stateTradeNetwork===true||finance.stateTradeNetwork===true||economy.stateTradingNetwork===true)
-  evidence.push('RECORDED_STATE_TRADING_NETWORK');
+ if(foreign.stateTradeNetwork===true||finance.stateTradeNetwork===true||economy.stateTradingNetwork===true){
+  evidence.push('RECORDED_STATE_TRADING_NETWORK');linkEvidence.push('RECORDED_STATE_TRADING_NETWORK');
+ }
  let directGovernment=false,stateOwnedEnterprise=false;
  for(const list of [economy.companies,economy.enterprises,finance.stateOwnedEnterprises]){
   if(!Array.isArray(list))continue;
   for(const row of list){
    const ownership=String(row?.ownership||row?.ownerType||row?.sector||'').toUpperCase();
-   if(/MINISTRY|GOVERNMENT/.test(ownership)){directGovernment=true;evidence.push('RECORDED_GOVERNMENT_ENTITY');}
-   else if(/STATE|PUBLIC|STATE_OWNED/.test(ownership)){stateOwnedEnterprise=true;evidence.push('RECORDED_STATE_OWNED_ENTERPRISE');}
+   if(/MINISTRY|GOVERNMENT/.test(ownership)){directGovernment=true;linkEvidence.push('RECORDED_GOVERNMENT_ENTITY');evidence.push('RECORDED_GOVERNMENT_ENTITY');}
+   else if(/STATE|PUBLIC|STATE_OWNED/.test(ownership)){stateOwnedEnterprise=true;linkEvidence.push('RECORDED_STATE_OWNED_ENTERPRISE');evidence.push('RECORDED_STATE_OWNED_ENTERPRISE');}
   }
  }
- const linked=evidence.length>0;
+ const linked=linkEvidence.length>0;
  const role=directGovernment?'DIRECT_GOVERNMENT_ENTITY':
   (stateOwnedEnterprise?'STATE_OWNED_ENTERPRISE':
-   (policy.directives.length||policy.embargoes.length?'STATE_POLICY_DIRECTED':
-    (linked?'STATE_LINKED_TRADING_NETWORK':'PRIVATE_ACTOR')));
+   (policy.directives.length?'STATE_POLICY_DIRECTED':
+    (linked?'STATE_LINKED_TRADING_NETWORK':
+     (policy.embargoes.length?'STATE_POLICY_CONTEXT_ONLY':'PRIVATE_ACTOR'))));
  const label=role==='DIRECT_GOVERNMENT_ENTITY'?'Government body':
   (role==='STATE_OWNED_ENTERPRISE'?'State-owned enterprise':
    (role==='STATE_POLICY_DIRECTED'?'State-directed trade channel':
-    (linked?'State-linked trading network':'Private actor')));
+    (role==='STATE_POLICY_CONTEXT_ONLY'?'State policy context only':
+     (linked?'State-linked trading network':'Private actor'))));
  return{linked,role,label,evidence:[...new Set(evidence)].slice(0,6)};
 }
 function hasStateLink(c,rid){return stateActorEvidence(c,rid).linked;}
