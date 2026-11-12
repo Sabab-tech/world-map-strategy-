@@ -256,7 +256,7 @@ test('high-confidence intelligence explains state-linked participants while pres
   assert.match(h.root.innerHTML, /State-directed trade channel/);
   assert.match(h.root.innerHTML, /active state supply directive/i);
   assert.match(h.root.innerHTML, /Major export-customer shock/);
-  assert.match(h.root.innerHTML, /42% of seller exports at risk/);
+  assert.match(h.root.innerHTML, /42% of seller’s recorded Copper exports at risk/);
   assert.match(h.root.innerHTML, /Secondary sanctions: Yes/);
   assert.match(h.root.innerHTML, /Sanction target: 🇮🇷 Iran/);
   assert.match(h.root.innerHTML, /Buyer import tariff: 30%/);
