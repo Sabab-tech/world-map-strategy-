@@ -267,7 +267,9 @@ test('issuer and target receive investigations in their own intelligence case fi
 test('third-party supplier receives its own spillover, export exposure, legal buyer decision and capability-gated investigation', () => {
   const h = makeHarness({ supplierExposure: true });
   const result = h.context.OmegaSanctionResponseRuntime.runTurn();
-  const supplier = result.results[0].countries.find(row => row.countryId === 'RUS');
+  const policyResult = result.results?.[0];
+  assert.ok(Array.isArray(policyResult?.countries), 'supplier policy processing failed: ' + JSON.stringify(policyResult));
+  const supplier = policyResult.countries.find(row => row.countryId === 'RUS');
   assert.ok(supplier, 'supplier is confirmed from matching target import and seller export settlements');
   assert.equal(supplier.role, 'SUPPLIER');
   assert.equal(h.state.foreign.RUS.sanctionNotifications[0].role, 'SUPPLIER');
@@ -291,8 +293,10 @@ test('third-party supplier receives its own spillover, export exposure, legal bu
 test('supplier spillover does not open an intelligence case without recorded collection capability', () => {
   const h = makeHarness({ supplierExposure: true });
   delete h.state.intelligence.RUS;
-  h.context.OmegaSanctionResponseRuntime.runTurn();
-  assert.equal(h.state.foreign.RUS.sanctionNationalDecisions.length, 1);
+  const result = h.context.OmegaSanctionResponseRuntime.runTurn();
+  const policyResult = result.results?.[0];
+  assert.ok(Array.isArray(policyResult?.countries), 'supplier policy processing failed: ' + JSON.stringify(policyResult));
+  assert.equal(h.state.foreign.RUS?.sanctionNationalDecisions?.length, 1);
   assert.equal(h.state.intelligence.RUS, undefined);
 });
 

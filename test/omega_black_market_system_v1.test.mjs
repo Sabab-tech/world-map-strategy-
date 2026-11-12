@@ -54,7 +54,7 @@ test('offer book exposes verified legal supplier countries for the NPC decision 
  const book=h.ctx.OmegaBlackMarket.getOffers('BGD','coal',10);
  assert.equal(book.status,'READY');
  assert.equal(book.legalSupplierCount,1);
- assert.deepEqual(book.legalSupplierCountryIds,['SAU']);
+ assert.equal(JSON.stringify(book.legalSupplierCountryIds),JSON.stringify(['SAU']));
 });
 
 test('covert order stores a permit and sends the same quantity, price and zero-tariff instruction into Global Trade',()=>{
