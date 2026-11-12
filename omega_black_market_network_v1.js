@@ -253,7 +253,7 @@ function legalRouteReason(offer,shock=null){
   (offer.exportRestrictionReason?'STATE_EXPORT_RESTRICTION_BLOCKS_VERIFIED_SUPPLY':
    (offer.sanctionsAtQuote?'BILATERAL_SANCTIONS_BLOCKS_VERIFIED_SUPPLY':'NO_VERIFIED_GENERAL_MARKET_SUPPLIER'));
  if(num(offer.expectedSavings)>0)return'TARIFF_AND_LANDED_COST_ARBITRAGE';
- if(shock?.active&&shock.exposure?.share>=.25&&shock.sanctions?.secondary)return'SANCTIONED_PRIMARY_CUSTOMER_AND_SECONDARY_RISK';
+ if(shock?.active&&shock.exposure?.share>=.25)return'SANCTIONED_MAJOR_CUSTOMER_EXPORT_REDIRECTION';
  return null;
 }
 function makeCandidate(buyer,row){
@@ -265,10 +265,18 @@ function makeCandidate(buyer,row){
  for(const offer of book.offers){
   const seller=country(offer.sellerCountryId);if(!seller||seller===buyer||seller===player()||priorDeal(buyer,seller,row.resourceId))continue;
   const buyerState=hasStateLink(buyer,row.resourceId),sellerState=hasStateLink(seller,row.resourceId);
-  const sanctions=sanctionsAgainst(seller,row.resourceId);
-  const exposures=sanctions.issuerCountryIds.map(issuer=>Object.assign({partnerCountryId:issuer},exportExposure(seller,issuer,row.resourceId)));
-  exposures.sort((a,b)=>(b.share??-1)-(a.share??-1)||(b.value??-1)-(a.value??-1));
-  const exposure=exposures[0]||null,shock={active:sanctions.active&&!!exposure?.observed,exposure,sanctions};
+  const buyerSanctions=sanctionsAgainst(buyer,row.resourceId),sellerSanctions=sanctionsAgainst(seller,row.resourceId);
+  const directExposure=Object.assign({partnerCountryId:buyer},exportExposure(seller,buyer,row.resourceId));
+  const sellerSanctionExposures=sellerSanctions.issuerCountryIds.map(issuer=>Object.assign({partnerCountryId:issuer},exportExposure(seller,issuer,row.resourceId)));
+  sellerSanctionExposures.sort((a,b)=>(b.share??-1)-(a.share??-1)||(b.value??-1)-(a.value??-1));
+  const sellerExposure=sellerSanctionExposures[0]||null;
+  const buyerTargetShock=buyerSanctions.active&&directExposure.observed;
+  const sellerTargetShock=sellerSanctions.active&&!!sellerExposure?.observed;
+  const exposure=buyerTargetShock?directExposure:(sellerTargetShock?sellerExposure:null);
+  const sanctions=buyerTargetShock?buyerSanctions:(sellerTargetShock?sellerSanctions:{active:false,rows:[],secondary:false,issuerCountryIds:[]});
+  const shock={active:!!exposure,exposure,sanctions,
+   sanctionTargetCountryId:buyerTargetShock?buyer:(sellerTargetShock?seller:null),
+   sanctionTargetType:buyerTargetShock?'SANCTIONED_EXPORT_CUSTOMER':(sellerTargetShock?'SANCTIONED_EXPORTER':'NONE')};
   const reason=legalRouteReason(offer,shock);if(!reason)continue;
   const bmReason=buyerMotive(buyer,row,row.resourceId),smReason=sellerMotive(seller,row.resourceId,offer,shock);
   const tactic=chooseTactic(buyer,seller,row.resourceId,offer,buyerState,sellerState,shock);
@@ -333,6 +341,7 @@ function actorProfile(candidate){
   stateLinkedBuyer:candidate.buyerState,stateLinkedSeller:candidate.sellerState,
   sellerExportShock:shock?{active:!!shock.active,mainCustomerCountryId:shock.exposure.partnerCountryId,
    exportShare:shock.exposure.share,exportValue:shock.exposure.value,exportQuantity:shock.exposure.volume,
+   sanctionTargetCountryId:shock.sanctionTargetCountryId,sanctionTargetType:shock.sanctionTargetType,
    evidenceSource:shock.exposure.source,sanctioningCountryIds:shock.sanctions.issuerCountryIds,
    secondarySanctionsRisk:shock.sanctions.secondary}:null,
   tariffAvoidance:{importTariffPct:candidate.row.tariffPct??null,importDependency:candidate.row.importDependency??null},
@@ -424,6 +433,8 @@ function runTurn(){
   if(profile.sellerExportShock?.active&&profile.sellerExportShock.exportShare>=.15){
    dispatch('trade','OMEGA_BLACK_MARKET_RECORD_EXPORT_SHOCK',c.seller,{shock:{
     shockId:'BM-EXPORT-SHOCK-'+created.dealId,sellerCountryId:c.seller,mainCustomerCountryId:profile.sellerExportShock.mainCustomerCountryId,
+    sanctionTargetCountryId:profile.sellerExportShock.sanctionTargetCountryId,
+    sanctionTargetType:profile.sellerExportShock.sanctionTargetType,
     resourceId:c.row.resourceId,exportShare:profile.sellerExportShock.exportShare,
     exportValueAtRisk:profile.sellerExportShock.exportValue,exportQuantityAtRisk:profile.sellerExportShock.exportQuantity,
     sanctioningCountryIds:profile.sellerExportShock.sanctioningCountryIds||[],secondarySanctionsRisk:profile.sellerExportShock.secondarySanctionsRisk,
