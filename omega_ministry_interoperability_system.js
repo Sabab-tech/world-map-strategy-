@@ -198,10 +198,10 @@
       'finance.reserves','finance.taxRevenue','finance.revenue','finance.spending',
       'finance.encumbered','finance.capitalExpenditure','finance.operatingExpenditure',
       'finance.emergencyAllocation','finance.mandatoryObligations','finance.required',
-      'finance.ministryAllocations','finance.resourceFiscal','finance.resourceFiscalLedger','finance.resourceSettlementClearing','finance.resourceBudgetContribution','finance.resourceBudgetContributionThisTurn'
+      'finance.ministryAllocations','finance.npcEconomicGovernance','finance.resourceFiscal','finance.resourceFiscalLedger','finance.resourceSettlementClearing','finance.resourceBudgetContribution','finance.resourceBudgetContributionThisTurn'
     ],
     economy:[
-      'economy.gdp','economy.debt','economy.inflation','economy.unemployment',
+      'economy.gdp','economy.gdpGrowthPct','economy.npcEconomicGovernance','economy.debt','economy.inflation','economy.unemployment',
       'economy.production','economy.productionCapacity','economy.revenue','economy.reserves','economy.productionAssets',
       'economy.capacityUpgradeRequests',
       'economy.industrialRuntime','economy.companyAccounts','economy.workerIncome','economy.supplierRevenue','economy.factoryOutput'
