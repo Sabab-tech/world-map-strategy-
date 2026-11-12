@@ -37,7 +37,7 @@
   const num=v=>{if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;};
   const id=v=>String(v??'').trim().toUpperCase();
   const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
-  const state=()=>g.Omega?.Simulation?.world?.state||g.Omega?.SimulationRuntime?.world?.state||g.Game?.state||g.gameState||{};
+  const state=()=>g.Game?.state||g.gameState||g.Omega?.Simulation?.world?.state||g.Omega?.SimulationRuntime?.world?.state||{};
   const turnOf=ctx=>Math.max(0,Math.floor(num(ctx?.turn??ctx?.simulationTurn??ctx?.state?.simulation?.turn??state()?.simulation?.turn??g.Omega?.Simulation?.clock?.turn)??0));
   const runtime=()=>g.OmegaCountryRuntimeData||g.Omega?.CountryRuntimeData||null;
   const factoryBaseline=()=>g.OmegaCountryFactoryStartingBaselineV1||g.Omega?.CountryFactoryStartingBaselineV1||null;
