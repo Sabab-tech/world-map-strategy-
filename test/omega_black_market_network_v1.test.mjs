@@ -36,7 +36,7 @@ function makeHarness(options={}){
  const listenerMap=new Map(),created=[],offerCalls=[],processed=[];
  const relation={overall:22,trade:18,trust:15,trade_agreement:false,sanctions:true,war_state:false};
  const offer={
-  offerId:'BM-OFFER:'+buyer+':'+seller+':copper,buyerCountryId:buyer,sellerCountryId:seller,resourceId:'copper',
+  offerId:'BM-OFFER:'+buyer+':'+seller+':copper',buyerCountryId:buyer,sellerCountryId:seller,resourceId:'copper',
   productName:'Copper',productType:'RAW_RESOURCE',unit:'tonnes',currency:'USD',buyerCurrency:'USD',
   requestedQuantity:25,availableQuantity:180,unitPrice:118,benchmarkUnitPrice:100,expectedSavings:null,
   legalMarketAvailable:false,embargoed:true,exportRestrictionReason:'STATE_DIRECTIVE_EXPORT_RESTRICTED',
