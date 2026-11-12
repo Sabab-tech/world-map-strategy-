@@ -202,7 +202,7 @@ test('world candidate scan checks every canonical country, not only the first fo
  const result=api.runTurn();
  assert.equal(result.status,'COMPLETED');
  assert.ok(result.worldCountryCount>=27);
- assert.equal(result.buyerCountriesScanned,result.worldCountryCount-1);
+ assert.equal(result.npcCountryCount,result.worldCountryCount-1);assert.equal(result.buyerCountriesScanned,result.npcCountryCount);
  assert.equal(result.limitPerTurn,1);
 });
 
@@ -314,7 +314,7 @@ test('all country evidence is inspected while expensive seller-book queries stay
   h.state.simulation.turn=25+i;
   const result=api.runTurn();
   assert.equal(result.status,'COMPLETED');
-  assert.equal(result.buyerCountriesScanned,result.worldCountryCount-1);
+  assert.equal(result.npcCountryCount,result.worldCountryCount-1);assert.equal(result.buyerCountriesScanned,result.npcCountryCount);
   assert.ok(result.offerSearches<=24);
   assert.equal(result.marketQueryBudget,24);
   assert.equal(result.worldSimulation,'ALL_COUNTRIES_EVIDENCE_SCAN_BOUNDED_ROTATING_MARKET_QUERY');
