@@ -165,7 +165,7 @@ function stateActorEvidence(c,rid){
  for(const list of [economy.companies,economy.enterprises,finance.stateOwnedEnterprises]){
   if(!Array.isArray(list))continue;
   for(const row of list){
-   const ownership=String(row?.ownership||row?.ownerType||row?.sector||'').toUpperCase();
+   const ownership=String(row?.ownership||row?.ownerType||row?.ownershipType||row?.ownerClass||'').toUpperCase();
    if(/MINISTRY|GOVERNMENT/.test(ownership)){directGovernment=true;linkEvidence.push('RECORDED_GOVERNMENT_ENTITY');evidence.push('RECORDED_GOVERNMENT_ENTITY');}
    else if(/STATE|PUBLIC|STATE_OWNED/.test(ownership)){stateOwnedEnterprise=true;linkEvidence.push('RECORDED_STATE_OWNED_ENTERPRISE');evidence.push('RECORDED_STATE_OWNED_ENTERPRISE');}
   }
@@ -312,30 +312,51 @@ function countryName(value){
  try{const row=(g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity)?.resolveCountry?.(id);
   return String(row?.raw?.name||row?.name||row?.surface||id);}catch(_){return id;}
 }
-function companyEvidence(c){
- const economy=bucket('economy',c),finance=bucket('finance',c),rows=[...(Array.isArray(economy.companies)?economy.companies:[]),
-  ...(Array.isArray(economy.enterprises)?economy.enterprises:[]),...(Array.isArray(finance.stateOwnedEnterprises)?finance.stateOwnedEnterprises:[])];
- return rows.slice(0,24).map(x=>({companyId:String(x.companyId||x.id||x.code||'').trim()||null,
-  name:String(x.name||x.legalName||x.companyName||'').trim()||null,
-  ownership:String(x.ownership||x.ownerType||x.sector||'PRIVATE').toUpperCase(),
-  exportShare:num(x.exportShare??x.shareOfExports),
-  importDependencyPct:num(x.importDependencyPct??x.importDependency),
-  inputDemandPerDay:num(x.inputDemandPerDay??x.resourceDemandPerDay),
-  sector:String(x.sector||x.industry||'').toUpperCase(),resourceId:x.resourceId||null})).filter(x=>x.companyId||x.name);
+function companyEvidence(c,rid){
+ const economy=bucket('economy',c),finance=bucket('finance',c),sourceRows=[...(Array.isArray(economy.companies)?economy.companies:[]),
+  ...(Array.isArray(economy.enterprises)?economy.enterprises:[]),...(Array.isArray(finance.stateOwnedEnterprises)?finance.stateOwnedEnterprises:[])],rows=[];
+ for(const company of sourceRows){
+  const direct=String(company?.resourceId||company?.commodityId||'');
+  let specific=null;
+  if(direct&&token(direct)===token(rid))specific=company;
+  for(const key of ['resources','imports','exports','inputDemandByResource','exportDependenceByResource','resourceExposureById']){
+   if(specific)break;
+   const map=company?.[key];
+   if(Array.isArray(map))specific=map.find(x=>token(x?.resourceId||x?.commodityId||x?.id)===token(rid))||null;
+   else if(map&&typeof map==='object'){
+    const row=field(map,rid);if(row&&typeof row==='object')specific=row;
+    else if(num(row)!==null)specific={value:num(row)};
+   }
+  }
+  if(!specific)continue;
+  const merged=Object.assign({},company,specific,{resourceId:rid});
+  rows.push({companyId:String(merged.companyId||merged.id||merged.code||'').trim()||null,
+   name:String(merged.name||merged.legalName||merged.companyName||'').trim()||null,
+   ownership:String(merged.ownership||merged.ownerType||merged.ownershipType||merged.ownerClass||'UNKNOWN').toUpperCase(),
+   exportShare:num(merged.exportShare??merged.shareOfExports),
+   importDependencyPct:num(merged.importDependencyPct??merged.importDependency),
+   inputDemandPerDay:num(merged.inputDemandPerDay??merged.resourceDemandPerDay??merged.demandPerDay),
+   sector:String(merged.sector||merged.industry||'').toUpperCase(),resourceId:rid});
+ }
+ return rows.slice(0,24).filter(x=>x.companyId||x.name);
 }
 function selectCompanyActor(c,rid,side,stateLinked){
- const rows=companyEvidence(c).filter(x=>!x.resourceId||token(x.resourceId)===token(rid));
+ const rows=companyEvidence(c,rid);
  rows.sort((a,b)=>side==='SELLER'?(b.exportShare??-1)-(a.exportShare??-1):
   (b.inputDemandPerDay??-1)-(a.inputDemandPerDay??-1));
  const company=rows[0]||null;
- if(company)return{actorType:/STATE|PUBLIC|GOVERNMENT|MINISTRY/.test(company.ownership)?'STATE_OWNED_COMPANY':'PRIVATE_COMPANY',
-  companyId:company.companyId,companyName:company.name,ownership:company.ownership,
-  exportShare:company.exportShare,importDependencyPct:company.importDependencyPct,
-  inputDemandPerDay:company.inputDemandPerDay,sector:company.sector,resourceId:company.resourceId};
+ if(company){
+  const ownership=company.ownership;
+  const actorType=/STATE|PUBLIC|GOVERNMENT|MINISTRY/.test(ownership)?'STATE_OWNED_COMPANY':
+   (/PRIVATE|INDEPENDENT|NON_GOVERNMENT/.test(ownership)?'PRIVATE_COMPANY':'COMPANY_OWNERSHIP_UNVERIFIED');
+  return{actorType,companyId:company.companyId,companyName:company.name,ownership,
+   exportShare:company.exportShare,importDependencyPct:company.importDependencyPct,
+   inputDemandPerDay:company.inputDemandPerDay,sector:company.sector,resourceId:company.resourceId};
+ }
  return{actorType:stateLinked?(side==='BUYER'?'STATE_PROCUREMENT_ENTITY':'STATE_LINKED_EXPORTER'):
   (side==='BUYER'?'PRIVATE_IMPORTER_OR_COMPANY':'PRIVATE_EXPORTER_OR_COMPANY'),
-  companyId:null,companyName:null,ownership:stateLinked?'STATE_LINKED':'PRIVATE',
-  actorIdentityStatus:'NO_MATCHING_COMPANY_RECORD',resourceId:rid};
+  companyId:null,companyName:null,ownership:stateLinked?'STATE_LINKED':'UNKNOWN',
+  actorIdentityStatus:'NO_PRODUCT_MATCHED_COMPANY_RECORD',resourceId:rid};
 }
 function actorProfile(candidate){
  const buyerEvidence=stateActorEvidence(candidate.buyer,candidate.row.resourceId);
@@ -348,7 +369,7 @@ function actorProfile(candidate){
  return{buyerActor,sellerActor,buyerCommercialActor,sellerCommercialActor,governmentInvolvement:governmentLabel(candidate),
   buyerGovernmentRole:buyerEvidence.role,buyerGovernmentLabel:buyerEvidence.label,buyerStateEvidence:buyerEvidence.evidence,
   sellerGovernmentRole:sellerEvidence.role,sellerGovernmentLabel:sellerEvidence.label,sellerStateEvidence:sellerEvidence.evidence,
-  buyerCompanies:companyEvidence(candidate.buyer),sellerCompanies:companyEvidence(candidate.seller),
+  buyerCompanies:companyEvidence(candidate.buyer,candidate.row.resourceId),sellerCompanies:companyEvidence(candidate.seller,candidate.row.resourceId),
   buyerMotive:candidate.bmReason.code,buyerReason:candidate.bmReason.reason,
   sellerMotive:candidate.smReason.code,sellerReason:candidate.smReason.reason,
   stateLinkedBuyer:candidate.buyerState,stateLinkedSeller:candidate.sellerState,
