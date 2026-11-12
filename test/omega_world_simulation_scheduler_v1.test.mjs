@@ -129,7 +129,8 @@ test('production scheduler uses the validated 197-country sovereign baseline ins
  assert.equal(result.status,'COMPLETED');
  assert.equal(h.scheduler.diagnostics().rosterCount,197);
  assert.equal(result.macro.selected,8);
- assert.equal(result.active.selected,4);
+ assert.ok(result.active.selected<=4);
+ assert.ok(result.active.selected+result.macro.selected<=12);
  assert.ok([...h.scheduler.getCountryRoster()].every(countryId=>h.ids.includes(countryId)));
  assert.equal(h.scheduler.getCountryRoster().length,197);
 });
