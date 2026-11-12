@@ -7,7 +7,8 @@
 'use strict';
 if(g.OmegaBlackMarketNetworkV1&&g.OmegaBlackMarketNetworkV1.VERSION==='1.2.0')return;
 const VERSION='1.2.0',AUTHORITY='OMEGA_BLACK_MARKET_NPC_NETWORK_V1';
-const MAX_DEMAND_ROWS=14,MAX_PRODUCTS_PER_BUYER=3,MAX_PENDING_PROCESSES=6,MAX_NEW_DEALS_PER_TURN=1,COOLDOWN_TURNS=8;
+const MAX_DEMAND_ROWS=14,MAX_PRODUCTS_PER_BUYER=3,MAX_WORLD_MARKET_QUERIES_PER_TURN=24,
+ PRIORITY_WORLD_MARKET_QUERIES=12,MAX_PENDING_PROCESSES=6,MAX_NEW_DEALS_PER_TURN=1,COOLDOWN_TURNS=8;
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
 const clamp=(v,lo=0,hi=1)=>Math.max(lo,Math.min(hi,num(v)??lo));
 const token=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
@@ -122,18 +123,29 @@ function exportExposure(seller,buyer,rid){
   totalExports,source:row?'SELLER_BILATERAL_EXPORT_LEDGER':(rel?'BILATERAL_RELATIONSHIP_EVIDENCE':null),
   lastObservedTurn:num(row?.lastUpdatedTurn??row?.turn??rel?.lastTradeTurn)};
 }
-function sanctionsAgainst(target,rid){
- const rows=[];
+let sanctionIndexTurn=-1,sanctionIndex=new Map();
+function buildSanctionIndex(){
+ if(sanctionIndexTurn===turn())return;
+ const index=new Map();
  for(const issuer of worldCountries()){
   for(const row of sanctionRows(issuer)){
    const targetId=country(row.targetCountryId||row.subjectCountryId||row.countryId||row.targetId);
+   if(!targetId)continue;
    const resourceId=String(row.resourceId||row.commodityId||'');
-   if(targetId===target&&(!resourceId||token(resourceId)===token(rid)))
-    rows.push({issuerCountryId:issuer,policyId:row.policyId||row.sanctionId||null,type:row.type||row.measure||row.scope||'SANCTIONS',
-     secondary:row.secondarySanctions===true||/SECONDARY|EXTRATERRITORIAL/i.test(String(row.scope||row.type||''))});
+   const entry={issuerCountryId:country(row.issuerCountryId)||issuer,policyId:row.policyId||row.sanctionId||null,
+    resourceId,type:row.type||row.measure||row.scope||'SANCTIONS',
+    secondary:row.secondarySanctions===true||/SECONDARY|EXTRATERRITORIAL/i.test(String(row.scope||row.type||''))};
+   const rows=index.get(targetId)||[];rows.push(entry);index.set(targetId,rows);
   }
  }
- return{active:rows.length>0,rows,secondary:rows.some(x=>x.secondary),issuerCountryIds:[...new Set(rows.map(x=>x.issuerCountryId))]};
+ sanctionIndex=index;sanctionIndexTurn=turn();
+}
+function sanctionsAgainst(target,rid){
+ buildSanctionIndex();
+ const rows=(sanctionIndex.get(target)||[]).filter(row=>!row.resourceId||token(row.resourceId)===token(rid));
+ return{active:rows.length>0,rows:rows.slice(),secondary:rows.some(x=>x.secondary),
+  issuerCountryIds:[...new Set(rows.map(x=>x.issuerCountryId))],
+  policyIds:[...new Set(rows.map(x=>x.policyId).filter(Boolean))]};
 }
 function normalMetric(v){const n=num(v);return n===null?0:clamp(n>1?n/100:n);}
 function hash(v){let h=2166136261;for(const ch of String(v)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return(h>>>0)/4294967296;}
@@ -406,21 +418,52 @@ function runTurn(){
  const pc=player();if(!pc)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_NOT_SELECTED',turn:turn()};
  if(g.__omegaBlackMarketNetworkProcessedTurn===turn())return{status:'ALREADY_PROCESSED',turn:turn()};
  g.__omegaBlackMarketNetworkProcessedTurn=turn();
- const pending=processPending(),world=worldCountries().filter(c=>c!==pc),candidates=[];
- let buyerCountriesScanned=0,buyerCountriesWithEvidence=0,offerSearches=0;
+ const pending=processPending(),world=worldCountries().filter(c=>c!==pc),candidates=[],potentialRows=[];
+ let buyerCountriesScanned=0,buyerCountriesWithEvidence=0,offerSearches=0,activeBuyersSkipped=0;
  for(const buyer of world){
   buyerCountriesScanned++;
   const existing=blackMarket()?.getDeals?.(buyer)||[];
   const active=existing.some(x=>x.autonomousNetwork===true&&['REQUESTED','SENT','ACCEPTED','IN_TRANSIT'].includes(String(x.status||'').toUpperCase()));
-  if(active)continue;
-  let best=null;
-  for(const row of demandCandidates(buyer).slice(0,MAX_PRODUCTS_PER_BUYER)){
-   offerSearches++;
-   const candidate=makeCandidate(buyer,row);
-   if(candidate&&(!best||candidate.score>best.score))best=candidate;
+  if(active){activeBuyersSkipped++;continue;}
+  const demand=demandCandidates(buyer);
+  if(!demand.length)continue;
+  buyerCountriesWithEvidence++;
+  const selected=[demand[0]],pool=demand.slice(1);
+  if(pool.length){
+   const start=(turn()*2+Math.floor(hash(buyer)*pool.length))%pool.length;
+   for(let i=0;i<Math.min(MAX_PRODUCTS_PER_BUYER-1,pool.length);i++){
+    const row=pool[(start+i)%pool.length];
+    if(!selected.some(x=>token(x.resourceId)===token(row.resourceId)))selected.push(row);
+   }
   }
-  if(best){buyerCountriesWithEvidence++;candidates.push(best);}
+  for(const row of selected){
+   const priority=row.pressure*100+(row.commercialIntent==='TARIFF_OR_IMPORT_DEPENDENCY'?8:0)+
+    (row.factoryInputDemandPerDay>0?5:0)+(row.importDependency>0?3:0);
+   potentialRows.push({buyer,row,priority});
+  }
  }
+ potentialRows.sort((a,b)=>b.priority-a.priority||a.buyer.localeCompare(b.buyer)||token(a.row.resourceId).localeCompare(token(b.row.resourceId)));
+ const chosen=[],priorityBuyerKeys=new Set(),chosenKeys=new Set();
+ for(const item of potentialRows){
+  if(chosen.length>=PRIORITY_WORLD_MARKET_QUERIES)break;
+  if(priorityBuyerKeys.has(item.buyer))continue;
+  chosen.push(item);priorityBuyerKeys.add(item.buyer);chosenKeys.add(item.buyer+'::'+token(item.row.resourceId));
+ }
+ const rest=potentialRows.filter(item=>!chosenKeys.has(item.buyer+'::'+token(item.row.resourceId)));
+ if(rest.length){
+  const count=Math.min(MAX_WORLD_MARKET_QUERIES_PER_TURN-chosen.length,rest.length);
+  const offset=(turn()*count)%rest.length;
+  for(let i=0;i<count;i++)chosen.push(rest[(offset+i)%rest.length]);
+ }
+ const bestByBuyer=new Map();
+ for(const item of chosen){
+  offerSearches++;
+  const candidate=makeCandidate(item.buyer,item.row);
+  if(!candidate)continue;
+  const prior=bestByBuyer.get(item.buyer);
+  if(!prior||candidate.score>prior.score)bestByBuyer.set(item.buyer,candidate);
+ }
+ candidates.push(...bestByBuyer.values());
  candidates.sort((a,b)=>b.score-a.score||a.buyer.localeCompare(b.buyer)||a.seller.localeCompare(b.seller));
  let created=null,discovery=null;
  for(const c of candidates){
@@ -451,18 +494,21 @@ function runTurn(){
    sellerExportShock:profile.sellerExportShock,tariffAvoidance:profile.tariffAvoidance},intelReport:discovery};
  }
  return{status:'COMPLETED',turn:turn(),playerCountryId:pc,pendingProcessed:pending.processed||0,
-  worldCountryCount:world.length,buyerCountriesScanned,buyerCountriesWithEvidence,offerSearches,
-  candidateCount:candidates.length,newDeal:created,limitPerTurn:MAX_NEW_DEALS_PER_TURN,worldSimulation:'ALL_COUNTRIES_EVIDENCE_SCAN_ONLY'};
+  worldCountryCount:world.length,buyerCountriesScanned,buyerCountriesWithEvidence,activeBuyersSkipped,
+  potentialOpportunityCount:potentialRows.length,offerSearches,marketQueryBudget:MAX_WORLD_MARKET_QUERIES_PER_TURN,
+  candidateCount:candidates.length,newDeal:created,limitPerTurn:MAX_NEW_DEALS_PER_TURN,
+  worldSimulation:'ALL_COUNTRIES_EVIDENCE_SCAN_BOUNDED_ROTATING_MARKET_QUERY'};
 }
 function diagnostics(){const pc=player(),world=worldCountries();return{version:VERSION,ready:!!blackMarket()&&!!trade(),playerCountryId:pc,turn:turn(),
   worldCountryCount:world.length,economicCountryCount:countries('resource').length,
-  playerReports:pc?(blackMarket()?.getNetworkReports?.(pc)||[]).length:0,planner:'ALL_COUNTRY_EVIDENCE_SCAN_ONE_NPC_DEAL_PER_PLAYER_TURN',
+  marketQueryBudget:MAX_WORLD_MARKET_QUERIES_PER_TURN,priorityQuerySlots:PRIORITY_WORLD_MARKET_QUERIES,
+  playerReports:pc?(blackMarket()?.getNetworkReports?.(pc)||[]).length:0,planner:'ALL_COUNTRY_EVIDENCE_SCAN_BOUNDED_ROTATING_MARKET_QUERY_ONE_NPC_DEAL_PER_PLAYER_TURN',
   authorities:['CANONICAL_COUNTRY_REGISTRY','OBSERVED_DEMAND_AND_IMPORT_DEPENDENCE','BILATERAL_EXPORT_EXPOSURE','SANCTION_AND_TARIFF_POLICY',
    'GLOBAL_MARKET_STOCK','GLOBAL_TRADE_AND_PLAYER_COUNTRY_INTELLIGENCE']};}
 function init(){if(!blackMarket()||!trade())return false;if(g.__omegaBlackMarketNetworkHooks)return true;
  g.__omegaBlackMarketNetworkHooks=true;g.addEventListener?.('OMEGA_READY',()=>{if(!blackMarket()||!trade())return;});
  g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',runTurn);return true;}
 const API=Object.freeze({VERSION,AUTHORITY,diagnostics,runTurn,demandCandidates,hasStateLink,stateActorEvidence,actorProfile,maybeDiscover,
- worldCountries,sanctionContext,sanctionsAgainst,exportExposure,tariffRate});
+ MAX_WORLD_MARKET_QUERIES_PER_TURN,PRIORITY_WORLD_MARKET_QUERIES,worldCountries,sanctionContext,sanctionsAgainst,exportExposure,tariffRate});
 g.Omega=g.Omega||{};g.Omega.BlackMarketNetworkV1=API;g.OmegaBlackMarketNetworkV1=API;try{init();}catch(e){g.OmegaBlackMarketNetworkError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
