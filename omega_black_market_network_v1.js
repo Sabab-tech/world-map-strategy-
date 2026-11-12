@@ -101,11 +101,13 @@ function exportExposure(seller,buyer,rid){
  }
  if(row&&typeof row==='object'&&row.byResource){
   const specific=field(row.byResource,rid);if(specific&&typeof specific==='object')row=Object.assign({},row,specific);
+ }else if(row&&typeof row==='object'){
+  const direct=field(row,rid);if(direct&&typeof direct==='object')row=Object.assign({},row,direct);
  }
  if(row&&Array.isArray(row.resources)){
   const specific=row.resources.find(x=>token(x.resourceId||x.id)===token(rid));if(specific)row=Object.assign({},row,specific);
  }
- const shareKeys=['shareOfSellerExports','shareOfExports','exportShare','destinationExportShare','partnerExportShare','percentOfExports','exportDependencyShare'];
+ const shareKeys=['shareOfSellerExports','shareOfExports','shareOfTotalExports','exportShare','destinationExportShare','partnerExportShare','percentOfExports','exportDependencyShare','dependenceShare'];
  let share=null;
  for(const key of shareKeys){const n=num(row?.[key]??rel?.[key]);if(n!==null){share=clamp(n>1?n/100:n);break;}}
  const valueKeys=['exportValue','annualExportValue','revenue','tradeValue','bilateralExportValue','value'];
@@ -121,7 +123,7 @@ function exportExposure(seller,buyer,rid){
 }
 function sanctionsAgainst(target,rid){
  const rows=[];
- for(const issuer of countries('trade')){
+ for(const issuer of worldCountries()){
   for(const row of sanctionRows(issuer)){
    const targetId=country(row.targetCountryId||row.subjectCountryId||row.countryId||row.targetId);
    const resourceId=String(row.resourceId||row.commodityId||'');
