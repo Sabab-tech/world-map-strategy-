@@ -69,18 +69,28 @@ function makeHarness(options={}){
    Simulation:{getPlayerCountryId(){return player;}},
    MinistryInteroperability:{
     dispatchCommand(owner,type,c,payload){
-     if(type!=='OMEGA_BLACK_MARKET_RECORD_NETWORK_REPORT')return{status:'UNHANDLED',result:{accepted:false,reason:'NO_HANDLER'}};
-     const report=payload.report;
-     state.intelligence[c]=state.intelligence[c]||{};
-     const rows=state.intelligence[c].blackMarketNetworkReports||[];
-     if(rows.some(x=>x.reportId===report.reportId))return{status:'APPLIED',result:{accepted:true,duplicate:true}};
-     state.intelligence[c].blackMarketNetworkReports=rows.concat([structuredClone(report)]);
-     return{status:'APPLIED',result:{accepted:true,report:structuredClone(report)}};
+     if(type==='OMEGA_BLACK_MARKET_RECORD_NETWORK_REPORT'){
+      const report=payload.report;
+      state.intelligence[c]=state.intelligence[c]||{};
+      const rows=state.intelligence[c].blackMarketNetworkReports||[];
+      if(rows.some(x=>x.reportId===report.reportId))return{status:'APPLIED',result:{accepted:true,duplicate:true}};
+      state.intelligence[c].blackMarketNetworkReports=rows.concat([structuredClone(report)]);
+      return{status:'APPLIED',result:{accepted:true,report:structuredClone(report)}};
+     }
+     if(type==='OMEGA_BLACK_MARKET_RECORD_EXPORT_SHOCK'){
+      const shock=payload.shock;state.trade[c]=state.trade[c]||{};
+      const rows=state.trade[c].blackMarketExportShockLedger||[];
+      if(rows.some(x=>x.shockId===shock.shockId))return{status:'APPLIED',result:{accepted:true,duplicate:true}};
+      state.trade[c].blackMarketExportShockLedger=rows.concat([structuredClone(shock)]);
+      return{status:'APPLIED',result:{accepted:true,shock:structuredClone(shock)}};
+     }
+     return{status:'UNHANDLED',result:{accepted:false,reason:'NO_HANDLER'}};
     }
    }},
   OmegaCanonicalIdentityRegistry:{resolveCountry(v){const id=String(v||'').toUpperCase();return{id,iso3:id};}},
   OmegaGlobalMarket:{productCatalog(){return[{id:'copper',name:'Copper',productType:'RAW_RESOURCE',unit:'tonnes'}];}},
   OmegaGlobalTrade:{processBlackMarketNetworkRequest(input){processed.push(structuredClone(input));return{accepted:true,status:'IN_TRANSIT'};}},
+  OmegaGovernmentBanking:{getCountryPolicy(c){return{importTariffPct:c===buyer?(options.tariffPct??0):0};}},
   OmegaBlackMarket:bm,
   addEventListener(type,fn){const rows=listenerMap.get(type)||[];rows.push(fn);listenerMap.set(type,rows);}
  };
@@ -179,4 +189,49 @@ test('a state-to-state purchase records both policy motive and state-linked acto
  assert.equal(profile.governmentInvolvement,'BOTH_GOVERNMENTS_OR_STATE_LINKED_ENTITIES');
  assert.match(profile.buyerReason,/embargo|state import/i);
  assert.match(profile.sellerReason,/state supply directive/i);
+});
+
+
+test('world candidate scan checks every canonical country, not only the first fourteen demand opportunities', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ for(let i=1;i<=24;i++){
+  const id='C'+String(i).padStart(2,'0');
+  h.state.resource[id]={inventory:{},demandRuntime:{lastTurn:25,byResource:{}}};
+  h.state.trade[id]={};h.state.foreign[id]={};h.state.finance[id]={};
+ }
+ const result=api.runTurn();
+ assert.equal(result.status,'COMPLETED');
+ assert.ok(result.worldCountryCount>=27);
+ assert.equal(result.buyerCountriesScanned,result.worldCountryCount-1);
+ assert.equal(result.limitPerTurn,1);
+});
+
+test('tariff-only commercial demand can enter the network with no recorded stock shortage', () => {
+ const h=makeHarness({tariffPct:30}),api=h.ctx.OmegaBlackMarketNetworkV1;
+ const row=h.state.resource.IRN.demandRuntime.byResource.copper;
+ row.unmetDemand=0;row.stockCoverageDays=10;row.stockCoverageTargetDays=5;row.procurementScore=0;
+ h.state.trade.IRN.resourceEmbargoes=[];
+ h.state.foreign.IRN.stateTradeNetwork=false;
+ const result=api.runTurn();
+ assert.equal(result.status,'COMPLETED');
+ assert.equal(result.newDeal.candidate.buyer,'IRN');
+ assert.equal(h.created[0].actorProfile.buyerMotive,'TARIFF_AVOIDANCE_PRESSURE');
+ assert.equal(result.newDeal.candidate.tariffAvoidance.importTariffPct,30);
+});
+
+test('lost primary export customer from sanctions creates an export shock and market-redirection decision', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ h.state.trade.IRN.sanctions=[{policyId:'SAN-IRN-RUS-CU',targetCountryId:'RUS',resourceId:'copper',
+  status:'ACTIVE',secondarySanctions:true,issuerCountryId:'IRN'}];
+ h.state.trade.RUS.exportDependenceByPartner={IRN:{shareOfSellerExports:0.42,exportValue:420,exportQuantity:120}};
+ const result=api.runTurn();
+ assert.equal(result.status,'COMPLETED');
+ const profile=h.created[0].actorProfile;
+ assert.equal(profile.sellerMotive,'LOST_MAJOR_EXPORT_CUSTOMER');
+ assert.equal(profile.sellerExportShock.active,true);
+ assert.equal(profile.sellerExportShock.mainCustomerCountryId,'IRN');
+ assert.equal(profile.sellerExportShock.exportShare,0.42);
+ assert.equal(profile.tactic,'LOST_PRIMARY_EXPORT_MARKET_REDIRECTION');
+ assert.equal(h.state.trade.RUS.blackMarketExportShockLedger.length,1);
+ assert.equal(h.state.trade.RUS.blackMarketExportShockLedger[0].exportShare,0.42);
 });
