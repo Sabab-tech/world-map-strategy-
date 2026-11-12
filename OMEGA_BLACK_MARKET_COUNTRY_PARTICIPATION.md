@@ -56,7 +56,8 @@ The design is consistent with public descriptions of Iranian shadow-fleet and sh
 4. **LOW confidence:** an unusual covert supply channel is suspected; no counterparties are named.
 5. **MEDIUM confidence:** a corridor or at least one participant may be identified; motives remain broad.
 6. **HIGH confidence:** participant identities, actor class, policy evidence, motive and possible intermediary candidates may be shown.
-7. A country participating in its own transaction knows its own deal. Other countries do not receive automatic omniscient access. They can discover evidence independently through their own customs, trade-surveillance and intelligence capability, or become exposed through a route/checkpoint or investigation.
+7. A country participating in its own transaction knows its own deal. Other countries do not receive the discovering player's intelligence report. Transit checkpoints and authoritative enforcement/investigation events may expose a transaction to the countries involved in that event.
+8. The autonomous planner does not run a separate passive intelligence simulation for every NPC country each player turn. That is intentional: it preserves the player-scoped runtime and avoids simulating every country's intelligence system in the background.
 
 Country flags and full names are presentation only; the underlying canonical country identity and country-scoped state remain authoritative.
 
