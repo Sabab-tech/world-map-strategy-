@@ -172,7 +172,7 @@ test('bright market board renders visible country flags and three commodity lane
  assert.match(h.root.innerHTML,/🇧🇩/);assert.match(h.root.innerHTML,/Bangladesh/);
  assert.match(h.root.innerHTML,/assets\/omega-global-market\/market-header\.svg/);
  assert.match(h.root.innerHTML,/assets\/omega-global-market\/raw-mining\.svg/);
- assert.match(h.root.innerHTML,/Seller country/);assert.match(h.root.innerHTML,/Commodity board/);
+ assert.match(h.root.innerHTML,/Seller offers/);assert.match(h.root.innerHTML,/Commodity board/);
  assert.doesNotMatch(h.root.innerHTML,/undefined/);
 });
 
@@ -181,7 +181,7 @@ test('buyer shortage countries are displayed as potential buyers with flags, not
  assert.match(h.root.innerHTML,/United States/);assert.match(h.root.innerHTML,/🇺🇸/);
  assert.match(h.root.innerHTML,/Iran/);assert.match(h.root.innerHTML,/🇮🇷/);
  assert.match(h.root.innerHTML,/POTENTIAL BUYER/);
- assert.match(h.root.innerHTML,/demand gap or stock coverage below its target/i);
+ assert.match(h.root.innerHTML,/A demand signal means potential buying interest/);
  assert.doesNotMatch(h.root.innerHTML,/United States.{0,120}OFFER ACCEPTED/);
 });
 
@@ -236,7 +236,7 @@ test('deal action calls the authoritative createDeal once and avoids a synchrono
  click(h.root,{'data-bm-buy':'OFFER-1','data-bm-seller':'SAU','data-bm-resource':'iron_ore'});
  assert.equal(h.calls.deals.length,1);
  assert.deepEqual(h.calls.deals[0],{buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'iron_ore',
-  offerId:'OFFER-1',quantity:40});
+  offerId:'OFFER-1',quantity:40,negotiationId:undefined});
  assert.equal(h.calls.offers.length,0,'placing a deal must not immediately run a second full seller scan');
  assert.match(h.root.innerHTML,/Trade request recorded/);
 });
@@ -252,8 +252,8 @@ test('country flags, sanctions, export actor and shipment-risk detail remain rea
 });
 
 test('seller pagination, buyer pagination and product search change only their displayed lists',()=>{
- const h=harness();h.offerRows=[];
- h.api.render(h.root,'BGD');
+ const h=harness();h.api.render(h.root,'BGD');
+ click(h.root,{'data-bm-lane':'FACTORY_PRODUCT'});
  input(h.root,{'data-bm-product-search':''},'steel');
  assert.match(h.root.productList.innerHTML,/Steel Plate/);
  assert.doesNotMatch(h.root.productList.innerHTML,/Iron Ore/);
