@@ -4,10 +4,12 @@
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
   if (g.OmegaSanctionResponseRuntime?.VERSION === VERSION) return;
   const MAX_POLICIES = 6, MAX_PRODUCTS = 4, MAX_MARKET_QUERIES = 12;
   const LEDGER_WINDOW = 30, MAX_HISTORY = 256, MAX_ALTERNATIVES = 5, MAX_BUYER_CHECKS = 3;
+  const MAX_SUPPLIER_COUNTRIES_PER_POLICY = 3, MAX_SUPPLIER_COUNTRIES_PER_TURN = 6;
+  const MAX_SUPPLIER_INVESTIGATIONS_PER_TURN = 6;
   const num = v => v === null || v === undefined || v === '' ? null :
     (Number.isFinite(Number(v)) ? Number(v) : null);
   const nn = v => { const n = num(v); return n === null ? null : Math.max(0, n); };
@@ -95,10 +97,14 @@
   function policies() {
     const result = new Map();
     for (const owner of worldCountries()) {
-      const t = bucket('trade', owner).sanctions, f = bucket('foreign', owner).sanctions;
-      for (const row of [
-        ...(Array.isArray(t) ? t : []), ...(Array.isArray(f) ? f : [])
-      ]) {
+      const tradeState = bucket('trade', owner), foreignState = bucket('foreign', owner);
+      const policyRows = [
+        ...(Array.isArray(tradeState.sanctions) ? tradeState.sanctions : []),
+        ...(Array.isArray(foreignState.sanctions) ? foreignState.sanctions : []),
+        ...(Array.isArray(tradeState.resourceEmbargoes) ? tradeState.resourceEmbargoes : []),
+        ...(Array.isArray(foreignState.resourceEmbargoes) ? foreignState.resourceEmbargoes : [])
+      ];
+      for (const row of policyRows) {
         if (!active(row)) continue;
         const target = country(row.targetCountryId || row.subjectCountryId ||
           row.targetCountry || row.countryId || row.targetId);
@@ -121,7 +127,7 @@
           targetCountryId: target, type, direction, startTurn: start,
           endTurn: first(row.endTurn, row.expiresTurn, row.expiryTurn),
           secondarySanctions: row.secondarySanctions === true ||
-            /SECONDARY|EXTRATERRITORIAL/.test(type + ' ' + direction),
+            /SECONDARY|EXTRATERRITORIAL/.test(type + ' ' + direction + ' ' + String(row.scope || '')),
           resourceIds: products, status: String(row.status || 'ACTIVE').toUpperCase()
         });
       }
@@ -137,15 +143,28 @@
     });
     const dated = selected.filter(row => first(row.turn, row.recordedTurn, row.settlementTurn) !== null);
     const quantities = selected.map(row => nn(row.quantity)).filter(v => v !== null);
-    const values = selected.map(row => nn(row.totalValue ?? row.value ?? row.settlementValue ?? row.amount))
-      .filter(v => v !== null);
+    const valueByCurrency = {}, missingCurrencyValueRows = [];
+    for (const row of selected) {
+      const value = nn(row.totalValue ?? row.value ?? row.settlementValue ?? row.amount);
+      if (value === null) continue;
+      const currency = String(row.currency || row.currencyCode || row.valueCurrency || '').trim().toUpperCase();
+      if (!currency) { missingCurrencyValueRows.push(value); continue; }
+      valueByCurrency[currency] = (valueByCurrency[currency] || 0) + value;
+    }
+    const currencies = Object.keys(valueByCurrency);
+    const oneCurrency = currencies.length === 1 && missingCurrencyValueRows.length === 0;
     return {
       recordCount: selected.length, datedRecordCount: dated.length,
       unscopedRecordCount: selected.length - dated.length,
       quantity: quantities.length ? Number(quantities.reduce((a, b) => a + b, 0).toFixed(6)) : null,
-      value: values.length ? Number(values.reduce((a, b) => a + b, 0).toFixed(6)) : null,
-      currency: selected.find(row => row.currency || row.currencyCode)?.currency ||
-        selected.find(row => row.currencyCode)?.currencyCode || null,
+      value: oneCurrency ? Number(valueByCurrency[currencies[0]].toFixed(6)) : null,
+      currency: oneCurrency ? currencies[0] : null,
+      valueByCurrency: Object.fromEntries(Object.entries(valueByCurrency).map(([key, value]) =>
+        [key, Number(value.toFixed(6))])),
+      currencyStatus: oneCurrency ? 'SINGLE_CURRENCY' :
+        (currencies.length || missingCurrencyValueRows.length ? 'MIXED_OR_UNATTRIBUTED_CURRENCY' : 'NO_VALUE_RECORDED'),
+      unattributedCurrencyValue: missingCurrencyValueRows.length
+        ? Number(missingCurrencyValueRows.reduce((a, b) => a + b, 0).toFixed(6)) : null,
       settlementIds: selected.map(row => row.settlementId || row.id).filter(Boolean).slice(-12)
     };
   }
@@ -158,6 +177,95 @@
       importsAtRisk: ledger(t.importLedger, row =>
         token(row.resourceId || row.commodityId) === token(rid) &&
         country(row.sourceCountryId || row.sellerCountryId || row.originCountryId) === country(partner))
+    };
+  }
+  function supplierCustomerExposure(supplier, target, rid, policy) {
+    const exportRows = bucket('trade', supplier).exportLedger;
+    const importRows = bucket('trade', target).importLedger;
+    const recent = row => {
+      const stamp = first(row?.turn, row?.settlementTurn, row?.recordedTurn);
+      return stamp === null || (stamp >= turn() - LEDGER_WINDOW && stamp <= turn());
+    };
+    const matchesProduct = row => token(row?.resourceId || row?.commodityId) === token(rid);
+    const sellerRows = (Array.isArray(exportRows) ? exportRows : []).filter(row =>
+      row && matchesProduct(row) && recent(row) &&
+      country(row.buyerCountryId || row.destinationCountryId || row.targetCountryId) === target);
+    const buyerRows = (Array.isArray(importRows) ? importRows : []).filter(row =>
+      row && matchesProduct(row) && recent(row) &&
+      country(row.sourceCountryId || row.sellerCountryId || row.originCountryId) === supplier);
+    if (!sellerRows.length || !buyerRows.length) return null;
+    const allProductExports = (Array.isArray(exportRows) ? exportRows : []).filter(row =>
+      row && matchesProduct(row) && recent(row));
+    const customerQuantity = sellerRows.reduce((sum, row) => sum + (nn(row.quantity) || 0), 0);
+    const totalQuantity = allProductExports.reduce((sum, row) => sum + (nn(row.quantity) || 0), 0);
+    const share = totalQuantity > 0 ? clamp(customerQuantity / totalQuantity) : null;
+    const exportLedger = ledger(sellerRows, () => true);
+    const importLedger = ledger(buyerRows, () => true);
+    return {
+      supplierCountryId: supplier, customerCountryId: target, resourceId: rid,
+      policyKey: policy.policyKey, policyId: policy.policyId,
+      secondarySanctions: policy.secondarySanctions === true,
+      exportSettlementCount: sellerRows.length, importSettlementCount: buyerRows.length,
+      exportQuantityToTarget: customerQuantity, totalProductExportQuantity: totalQuantity || null,
+      exportShare: share, exportValue: exportLedger.value,
+      exportValueCurrency: exportLedger.currency, exportValueByCurrency: exportLedger.valueByCurrency,
+      importValueEvidence: importLedger.value, importValueCurrency: importLedger.currency,
+      evidenceStatus: 'TARGET_IMPORT_AND_SUPPLIER_EXPORT_SETTLEMENTS_CORROBORATED',
+      attribution: 'CUSTOMER_EXPOSURE_NOT_PROOF_OF_A_LEGAL_PROHIBITION_ON_THE_SUPPLIER'
+    };
+  }
+  function supplierCountriesFor(policy, productIds) {
+    const imports = bucket('trade', policy.targetCountryId).importLedger;
+    const candidates = new Map();
+    for (const row of Array.isArray(imports) ? imports : []) {
+      const rid = String(row?.resourceId || row?.commodityId || '').trim();
+      const supplier = country(row?.sourceCountryId || row?.sellerCountryId || row?.originCountryId);
+      if (!rid || !supplier || supplier === policy.issuerCountryId ||
+          supplier === policy.targetCountryId ||
+          !productIds.some(id => token(id) === token(rid))) continue;
+      const evidence = supplierCustomerExposure(supplier, policy.targetCountryId, rid, policy);
+      if (!evidence || (evidence.exportShare !== null && evidence.exportShare < 0.05 &&
+          !policy.secondarySanctions)) continue;
+      let group = candidates.get(supplier);
+      if (!group) {
+        group = { supplierCountryId: supplier, targetCountryId: policy.targetCountryId,
+          policyKey: policy.policyKey, policyId: policy.policyId,
+          secondarySanctions: policy.secondarySanctions === true,
+          resourceExposures: [] };
+        candidates.set(supplier, group);
+      }
+      if (!group.resourceExposures.some(item => token(item.resourceId) === token(evidence.resourceId)))
+        group.resourceExposures.push(evidence);
+    }
+    return [...candidates.values()].map(group => {
+      const resourceExposures = group.resourceExposures
+        .sort((a, b) => (b.exportShare ?? -1) - (a.exportShare ?? -1) ||
+          b.exportQuantityToTarget - a.exportQuantityToTarget).slice(0, MAX_PRODUCTS);
+      const lead = resourceExposures[0] || {};
+      return Object.assign({}, group, lead, {
+        supplierCountryId: group.supplierCountryId, targetCountryId: group.targetCountryId,
+        policyKey: group.policyKey, policyId: group.policyId,
+        secondarySanctions: group.secondarySanctions,
+        resourceIds: resourceExposures.map(item => item.resourceId),
+        resourceExposures
+      });
+    }).sort((a, b) =>
+      (b.exportShare ?? -1) - (a.exportShare ?? -1) ||
+      b.exportQuantityToTarget - a.exportQuantityToTarget ||
+      a.supplierCountryId.localeCompare(b.supplierCountryId))
+      .slice(0, MAX_SUPPLIER_COUNTRIES_PER_POLICY);
+  }
+  function intelligenceCapability(c) {
+    const i = bucket('intelligence', c), inside = bucket('interior', c), defence = bucket('defense', c);
+    const raw = [i.tradeSurveillance, i.counterSmugglingReadiness, i.blackMarketDetection,
+      i.foreignIntelligenceCapability, i.collectionCapability, inside.customsInspectionCoverage,
+      inside.borderInspectionCoverage, defence.maritimeAwareness, defence.borderSecurityReadiness];
+    const values = raw.map(num).filter(value => value !== null)
+      .map(value => clamp(value > 1 ? value / 100 : value));
+    return {
+      score: values.length ? Number((values.reduce((a, b) => a + b, 0) / values.length).toFixed(4)) : null,
+      observedIndicators: values.length,
+      status: values.length ? 'EXISTING_CAPABILITY_OBSERVED' : 'CAPABILITY_UNOBSERVED'
     };
   }
   function demandSource(c, rid) {
@@ -277,8 +385,12 @@
     if (rel?.war_state === true || rel?.sanctions === true) return true;
     for (const owner of [a, b]) {
       const t = bucket('trade', owner), f = bucket('foreign', owner);
-      for (const row of [...(Array.isArray(t.sanctions) ? t.sanctions : []),
-        ...(Array.isArray(f.sanctions) ? f.sanctions : [])]) {
+      for (const row of [
+        ...(Array.isArray(t.sanctions) ? t.sanctions : []),
+        ...(Array.isArray(f.sanctions) ? f.sanctions : []),
+        ...(Array.isArray(t.resourceEmbargoes) ? t.resourceEmbargoes : []),
+        ...(Array.isArray(f.resourceEmbargoes) ? f.resourceEmbargoes : [])
+      ]) {
         if (!active(row)) continue;
         const target = country(row.targetCountryId || row.subjectCountryId || row.countryId || row.targetId);
         const product = row.resourceId || row.commodityId;
@@ -299,7 +411,7 @@
       const seller = country(row?.countryId || row?.sellerCountryId);
       const available = nn(row?.available ?? row?.availableQuantity);
       return !!seller && seller !== c && !restrictedPair(c, seller, rid) &&
-        (available === null || available + 1e-8 >= quantity);
+        available !== null && available + 1e-8 >= quantity;
     }).map(row => {
       const seller = country(row.countryId || row.sellerCountryId);
       return {
@@ -333,7 +445,9 @@
       try { budget.used++; rows = market()?.suppliers?.(rid, candidate.quantityNeeded, candidate.buyerCountryId) || []; }
       catch (_) { continue; }
       const verified = (Array.isArray(rows) ? rows : []).find(row =>
-        country(row?.countryId || row?.sellerCountryId) === c);
+        country(row?.countryId || row?.sellerCountryId) === c &&
+        nn(row?.available ?? row?.availableQuantity) !== null &&
+        nn(row?.available ?? row?.availableQuantity) + 1e-8 >= candidate.quantityNeeded);
       if (verified) result.push({
         buyerCountryId: candidate.buyerCountryId, observedDemandQuantity: candidate.quantityNeeded,
         stockCoverageDays: candidate.stockCoverageDays,
@@ -371,7 +485,7 @@
     const price = rid ? localPrice(c, rid) : null;
     const sources = role === 'TARGET' && d?.requiredQuantity > 0
       ? legalSuppliers(c, rid, d.requiredQuantity, budget) : [];
-    const buyers = role === 'TARGET' && tradeRisk.exportsAtRisk.recordCount > 0
+    const buyers = ['TARGET', 'SUPPLIER'].includes(role) && tradeRisk.exportsAtRisk.recordCount > 0
       ? legalAlternativeBuyers(c, rid, budget) : [];
     const shortage = !!d && ((d.unmetDemand !== null && d.unmetDemand > 0) ||
       d.belowTarget || (d.activeFactoryInputDemandPerDay !== null &&
@@ -423,9 +537,29 @@
         source: 'EXISTING_COUNTRY_COMPANY_OR_STATE_ENTERPRISE_RECORD'
       }));
   }
-  function sumKnown(rows, getter) {
-    const values = rows.map(getter).filter(v => num(v) !== null);
-    return values.length ? Number(values.reduce((a, b) => a + b, 0).toFixed(6)) : null;
+  function sumMoney(rows, getter) {
+    const totals = {}, unattributed = [];
+    for (const row of rows) {
+      const ledgerRow = getter(row);
+      if (!ledgerRow || typeof ledgerRow !== 'object') continue;
+      for (const [currency, raw] of Object.entries(ledgerRow.valueByCurrency || {})) {
+        const value = nn(raw);
+        if (value !== null) totals[String(currency).toUpperCase()] =
+          (totals[String(currency).toUpperCase()] || 0) + value;
+      }
+      if (nn(ledgerRow.unattributedCurrencyValue) !== null)
+        unattributed.push(nn(ledgerRow.unattributedCurrencyValue));
+    }
+    const currencies = Object.keys(totals);
+    const single = currencies.length === 1 && unattributed.length === 0;
+    return {
+      value: single ? Number(totals[currencies[0]].toFixed(6)) : null,
+      currency: single ? currencies[0] : null,
+      valueByCurrency: Object.fromEntries(Object.entries(totals).map(([key, value]) =>
+        [key, Number(value.toFixed(6))])),
+      currencyStatus: single ? 'SINGLE_CURRENCY' :
+        (currencies.length || unattributed.length ? 'MIXED_OR_UNATTRIBUTED_CURRENCY' : 'NO_VALUE_RECORDED')
+    };
   }
   function decisionOptions(policy, products, finance, relationRow, role) {
     const options = [], shortage = products.some(row => row.shortageEvidence);
@@ -434,7 +568,32 @@
     const importsAtRisk = products.some(row => row.tradeExposure.importsAtRisk.recordCount);
     const exportsAtRisk = products.some(row => row.tradeExposure.exportsAtRisk.recordCount);
     const restricted = products.some(row => row.policyRestrictsImports || row.policyRestrictsExports);
-    if (role === 'TARGET') {
+    if (role === 'SUPPLIER') {
+      if (exportBuyer) options.push({ id: 'ALTERNATIVE_EXPORT_BUYER_REDIRECTION',
+        title: 'Redirect exposed exports to verified legal buyers', priority: 100,
+        feasibility: 'SUPPORTED_BY_OBSERVED_DEMAND_AND_VERIFIED_SUPPLIER_STOCK',
+        evidence: products.filter(row => row.alternativeExportBuyers.length).map(row => ({
+          resourceId: row.resourceId, buyers: row.alternativeExportBuyers.map(x => ({
+            buyerCountryId: x.buyerCountryId, verifiedAvailableQuantity: x.verifiedAvailableQuantity,
+            stockCoverageDays: x.stockCoverageDays
+          }))
+        })),
+        costEvidence: { exposedExportValue: sumMoney(products, row => row.tradeExposure.exportsAtRisk) },
+        riskEvidence: { newContractsAndFreight: 'NOT_YET_NEGOTIATED' } });
+      if (products.some(row => row.tradeExposure.exportsAtRisk.recordCount))
+        options.push({ id: 'CUSTOMER_CONCENTRATION_REVIEW',
+          title: 'Review dependence on the sanctioned customer', priority: 85,
+          feasibility: 'SUPPLIER_AND_TARGET_SETTLEMENTS_CORROBORATED',
+          evidence: products.filter(row => row.tradeExposure.exportsAtRisk.recordCount).map(row => ({
+            resourceId: row.resourceId, exportsAtRisk: row.tradeExposure.exportsAtRisk,
+            importsAtRisk: row.tradeExposure.importsAtRisk
+          })),
+          costEvidence: {}, riskEvidence: { actualLoss: 'NOT_INFERRED_FROM_HISTORICAL_SETTLEMENTS' } });
+      if (policy.secondarySanctions) options.push({ id: 'SECONDARY_SANCTIONS_COMPLIANCE_REVIEW',
+        title: 'Assess secondary-sanctions, payment and route exposure', priority: 95,
+        feasibility: 'SECONDARY_SANCTIONS_SCOPE_RECORDED', evidence: [policy.policyKey],
+        costEvidence: {}, riskEvidence: { supplierLegalExposure: 'REQUIRES_POLICY_AND_JURISDICTION_REVIEW' } });
+    } else if (role === 'TARGET') {
       if (legalSource) options.push({ id: 'LEGAL_SOURCE_DIVERSIFICATION',
         title: 'Diversify into verified legal suppliers', priority: 100,
         feasibility: 'SUPPORTED_BY_CURRENT_MARKET_STOCK',
@@ -448,8 +607,7 @@
         feasibility: 'SUPPORTED_BY_DEMAND_AND_LEGAL_SUPPLY_CHECK',
         evidence: products.filter(row => row.alternativeExportBuyers.length).map(row => ({
           resourceId: row.resourceId, buyers: row.alternativeExportBuyers.map(x => x.buyerCountryId)
-        })), costEvidence: { recentExportValueAtRisk: sumKnown(products,
-          row => row.tradeExposure.exportsAtRisk.value) },
+        })), costEvidence: { recentExportValueAtRisk: sumMoney(products, row => row.tradeExposure.exportsAtRisk) },
         riskEvidence: { newContractsAndFreight: 'NOT_YET_NEGOTIATED' } });
       if (relationRow.observed) options.push({ id: 'DIPLOMATIC_WAIVER_OR_RENEGOTIATION',
         title: 'Seek clarification, waiver or negotiated terms', priority: 75,
@@ -502,7 +660,15 @@
   function motives(policy, role, products, finance) {
     const values = [];
     if (role === 'ISSUER') values.push('SANCTION_COMPLIANCE_AND_POLICY_ENFORCEMENT');
-    else {
+    else if (role === 'SUPPLIER') {
+      if (products.some(row => row.tradeExposure.exportsAtRisk.recordCount))
+        values.push('PRESERVE_EXPORT_CUSTOMER_REVENUE_AND_FOREIGN_EXCHANGE');
+      if (products.some(row => row.alternativeExportBuyers.length))
+        values.push('REDIRECT_EXPORTS_TO_VERIFIED_LEGAL_BUYERS');
+      if (policy.secondarySanctions) values.push('ASSESS_SECONDARY_SANCTIONS_AND_PAYMENT_ROUTE_RISK');
+      if (finance.foreignReserveCoverageDays !== null && finance.foreignReserveCoverageDays < 45)
+        values.push('FOREIGN_CURRENCY_LIQUIDITY_PRESSURE');
+    } else {
       if (products.some(row => row.shortageEvidence)) values.push('PROTECT_DOMESTIC_INPUT_AND_CONSUMER_SUPPLY');
       if (products.some(row => row.tradeExposure.exportsAtRisk.recordCount))
         values.push('PRESERVE_EXPORT_REVENUE_AND_FOREIGN_EXCHANGE');
@@ -520,10 +686,13 @@
       issuerCountryId: policy.issuerCountryId, targetCountryId: policy.targetCountryId,
       policyType: policy.type, direction: policy.direction, effectiveTurn: policy.startTurn,
       expiryTurn: policy.endTurn, secondarySanctions: policy.secondarySanctions,
-      notifiedTurn: turn(), status: 'DELIVERED_TO_COUNTRY_POLICY_RECORD',
+      notifiedTurn: turn(), status: role === 'SUPPLIER'
+        ? 'SUPPLY_CHAIN_SPILLOVER_RECORDED' : 'DELIVERED_TO_COUNTRY_POLICY_RECORD',
       rationale: role === 'TARGET'
         ? 'An active foreign sanction names this country as its target; economic review has been queued.'
-        : 'This country is recorded as the issuer; compliance and domestic exposure review has been queued.',
+        : (role === 'SUPPLIER'
+          ? 'This country has corroborated settled exports to the sanction target; customer and market exposure review has been queued.'
+          : 'This country is recorded as the issuer; compliance and domestic exposure review has been queued.'),
       source: 'OMEGA_SANCTION_RESPONSE_RUNTIME_V1' };
   }
   function investigation(policy, c, partner, role, products, finance) {
@@ -535,7 +704,12 @@
       reasons.push('OBSERVED_IMPORT_COST_PRESSURE');
     if (finance.foreignReserveCoverageDays !== null && finance.foreignReserveCoverageDays < 45)
       reasons.push('OBSERVED_FOREIGN_RESERVE_PRESSURE');
-    reasons.push(role === 'TARGET' ? 'ACTIVE_INCOMING_SANCTION_POLICY' : 'ISSUED_SANCTION_POLICY');
+    if (role === 'TARGET') reasons.push('ACTIVE_INCOMING_SANCTION_POLICY');
+    else if (role === 'SUPPLIER') reasons.push('RECORDED_EXPORT_CUSTOMER_EXPOSURE_TO_SANCTION_TARGET');
+    else reasons.push('ISSUED_SANCTION_POLICY');
+    if (role === 'SUPPLIER' && policy.secondarySanctions)
+      reasons.push('SECONDARY_SANCTIONS_SCOPE_RECORDED');
+    const capability = intelligenceCapability(c);
     const sources = ['TRADE_SANCTION_POLICY_REGISTER', 'SETTLED_IMPORT_AND_EXPORT_LEDGER',
       'RESOURCE_NATIONAL_DEMAND_AND_STOCK_COVERAGE', 'FINANCE_TREASURY_AND_FX_RECORDS',
       'BILATERAL_FOREIGN_RELATION_RECORDS'];
@@ -543,10 +717,16 @@
     return { investigationId: policy.policyKey + '-' + c, countryId: c,
       counterpartCountryId: partner, role, policyKey: policy.policyKey, policyId: policy.policyId,
       openedTurn: policy.startTurn, lastReviewedTurn: turn(),
-      status: reasons.length > 1 ? 'OPEN' : 'MONITORING',
+      status: reasons.length > 1 && capability.score !== null && capability.score >= 0.25
+        ? 'OPEN' : 'PASSIVE_MONITORING',
       triggerReasons: [...new Set(reasons)], collectionPlan: sources,
       productIds: products.map(row => row.resourceId).filter(Boolean),
       confidence: products.some(row => row.evidenceConfidence.length >= 2) ? 'MEDIUM' : 'LOW',
+      capabilityScore: capability.score, capabilityIndicatorsObserved: capability.observedIndicators,
+      capabilityStatus: capability.status,
+      collectionMode: capability.score !== null && capability.score >= 0.25
+        ? 'EXISTING_CAPABILITY_BOUNDED_REVIEW' : 'PASSIVE_MONITORING_ONLY',
+      activeFieldOperation: false, noAutomaticSpending: true,
       scope: 'COUNTRY_OWNED_CASE_FILE_ONLY', noOmniscientIntelligence: true };
   }
   function upsert(ctx, domain, fieldName, record, key) {
@@ -622,8 +802,12 @@
       countryId: c, counterpartCountryId: partner, role, policyKey: policy.policyKey,
       policyId: policy.policyId, assessedTurn: turn(), windowTurns: LEDGER_WINDOW,
       tradeExposure: rows,
-      aggregateExportsAtRisk: sumKnown(products, row => row.tradeExposure.exportsAtRisk.value),
-      aggregateImportsAtRisk: sumKnown(products, row => row.tradeExposure.importsAtRisk.value),
+      aggregateExportsAtRisk: sumMoney(products, row => row.tradeExposure.exportsAtRisk).value,
+      aggregateExportsAtRiskCurrency: sumMoney(products, row => row.tradeExposure.exportsAtRisk).currency,
+      aggregateExportsAtRiskByCurrency: sumMoney(products, row => row.tradeExposure.exportsAtRisk).valueByCurrency,
+      aggregateImportsAtRisk: sumMoney(products, row => row.tradeExposure.importsAtRisk).value,
+      aggregateImportsAtRiskCurrency: sumMoney(products, row => row.tradeExposure.importsAtRisk).currency,
+      aggregateImportsAtRiskByCurrency: sumMoney(products, row => row.tradeExposure.importsAtRisk).valueByCurrency,
       demandAndIndustry: products.map(row => ({ resourceId: row.resourceId,
         domesticDemand: row.domesticDemand, production: row.production,
         employment: row.employment, shortageEvidence: row.shortageEvidence })),
@@ -643,8 +827,12 @@
       foreignReserveCoverageDays: finance.foreignReserveCoverageDays,
       treasuryAvailable: finance.treasuryAvailable, bankAccountEvidence: finance.bankAccountEvidence,
       ministryBudgetEvidence: finance.ministryBudgetEvidence,
-      exportValueAtRisk: sumKnown(products, row => row.tradeExposure.exportsAtRisk.value),
-      importValueAtRisk: sumKnown(products, row => row.tradeExposure.importsAtRisk.value),
+      exportValueAtRisk: sumMoney(products, row => row.tradeExposure.exportsAtRisk).value,
+      exportValueAtRiskCurrency: sumMoney(products, row => row.tradeExposure.exportsAtRisk).currency,
+      exportValueAtRiskByCurrency: sumMoney(products, row => row.tradeExposure.exportsAtRisk).valueByCurrency,
+      importValueAtRisk: sumMoney(products, row => row.tradeExposure.importsAtRisk).value,
+      importValueAtRiskCurrency: sumMoney(products, row => row.tradeExposure.importsAtRisk).currency,
+      importValueAtRiskByCurrency: sumMoney(products, row => row.tradeExposure.importsAtRisk).valueByCurrency,
       actualDebit: 0, actualCredit: 0, budgetSpent: 0,
       authority: 'OBSERVED_FINANCE_AND_SETTLED_TRADE_EVIDENCE_ONLY'
     };
@@ -675,7 +863,82 @@
       unknownsRemainUnknown: true
     };
   }
-  function runPolicy(policy, budget) {
+  function runSupplierSide(policy, evidence, budget, supplierBudget) {
+    const c = evidence.supplierCountryId, partner = policy.targetCountryId;
+    const exposedProducts = Array.isArray(evidence.resourceExposures) && evidence.resourceExposures.length
+      ? evidence.resourceExposures : [evidence];
+    const productRows = exposedProducts.map(item =>
+      productAssessment(policy, c, partner, item.resourceId, 'SUPPLIER', budget))
+      .filter(row => row.tradeExposure.exportsAtRisk.recordCount > 0);
+    if (!productRows.length) return null;
+    let writes = 0;
+    const notification = notify(policy, c, partner, 'SUPPLIER');
+    const savedNotification = dispatch('foreign', 'OMEGA_SANCTION_RECORD_NOTIFICATION', c, notification);
+    if (savedNotification?.accepted) writes++;
+    const aggregateRisk = {
+      exportsAtRisk: sumMoney(productRows, row => row.tradeExposure.exportsAtRisk),
+      importsAtRisk: sumMoney(productRows, row => row.tradeExposure.importsAtRisk)
+    };
+    const finance = financial(c, aggregateRisk);
+    const impactId = policy.policyKey + '-' + c + '-' + turn();
+    const oldImpact = bucket('economy', c).sanctionEconomicAssessments;
+    if (!Array.isArray(oldImpact) || !oldImpact.some(row => row?.impactId === impactId)) {
+      const saved = dispatch('economy', 'OMEGA_SANCTION_RECORD_ECONOMIC_IMPACT',
+        c, impactRecord(policy, c, partner, 'SUPPLIER', productRows, finance));
+      if (saved?.accepted) writes++;
+    }
+    const exposureId = policy.policyKey + '-' + c + '-' + turn();
+    const oldFinance = bucket('finance', c).sanctionFinancialExposureLedger;
+    if (!Array.isArray(oldFinance) || !oldFinance.some(row => row?.exposureId === exposureId)) {
+      const saved = dispatch('finance', 'OMEGA_SANCTION_RECORD_FINANCIAL_EXPOSURE',
+        c, financeRecord(policy, c, partner, 'SUPPLIER', productRows, finance));
+      if (saved?.accepted) writes++;
+    }
+    const options = decisionOptions(policy, productRows, finance, relationEvidence(policy), 'SUPPLIER');
+    const selected = options[0];
+    const decision = {
+      decisionId: policy.policyKey + '-' + c + '-' + turn(),
+      countryId: c, counterpartCountryId: partner, role: 'SUPPLIER',
+      policyKey: policy.policyKey, policyId: policy.policyId, decidedTurn: turn(),
+      decisionModel: 'EVIDENCE_WEIGHTED_OPTION_COMPARISON_V1',
+      options, selectedAction: selected.id, selectedActionTitle: selected.title,
+      decisionStatus: selected.feasibility,
+      decisionBasis: 'COMPARE_RECORDED_CUSTOMER_EXPORT_SHARE_ALTERNATIVE_LEGAL_BUYERS_SECONDARY_SANCTIONS_AND_FISCAL_CONSTRAINTS',
+      governmentMotives: motives(policy, 'SUPPLIER', productRows, finance),
+      governmentActors: governmentActors(c, productRows),
+      budgetAvailability: finance.ministryBudgetEvidence,
+      budgetAuthority: finance.ministryBudgetEvidence.length
+        ? 'EXISTING_FINANCE_MINISTRY_APPROPRIATIONS_ONLY' : 'NO_RELEVANT_APPROPRIATION_OBSERVED',
+      budgetAction: 'NO_BUDGET_CREATED_OR_SPENT', customerExposure: evidence
+    };
+    const priorDecision = bucket('foreign', c).sanctionNationalDecisions;
+    if (!Array.isArray(priorDecision) || !priorDecision.some(row => row?.decisionId === decision.decisionId)) {
+      const saved = dispatch('foreign', 'OMEGA_SANCTION_RECORD_NATIONAL_DECISION', c, decision);
+      if (saved?.accepted) writes++;
+    }
+    const materialInterest = policy.secondarySanctions === true ||
+      (evidence.exportShare !== null && evidence.exportShare >= 0.15);
+    const capability = intelligenceCapability(c);
+    let investigationRecorded = false;
+    if (materialInterest && capability.score !== null && capability.score >= 0.25 &&
+        supplierBudget.investigations.used < MAX_SUPPLIER_INVESTIGATIONS_PER_TURN) {
+      const inv = investigation(policy, c, partner, 'SUPPLIER', productRows, finance);
+      const saved = dispatch('intelligence', 'OMEGA_SANCTION_RECORD_INVESTIGATION', c, inv);
+      if (saved?.accepted) {
+        writes++; supplierBudget.investigations.used++; investigationRecorded = true;
+      }
+    }
+    const plan = recovery(policy, c, productRows, decision, finance);
+    const priorPlans = bucket('trade', c).sanctionMarketRecoveryPlans;
+    if (!Array.isArray(priorPlans) || !priorPlans.some(row => row?.recoveryId === plan.recoveryId)) {
+      const saved = dispatch('trade', 'OMEGA_SANCTION_RECORD_MARKET_RECOVERY', c, plan);
+      if (saved?.accepted) writes++;
+    }
+    return { countryId: c, role: 'SUPPLIER', selectedAction: decision.selectedAction,
+      productCount: productRows.length, exportShare: evidence.exportShare,
+      investigationRecorded, writes };
+  }
+  function runPolicy(policy, budget, supplierBudget) {
     const ids = productsFor(policy), productIds = ids.length ? ids : [null];
     const pair = relationEvidence(policy), sides = [
       { c: policy.targetCountryId, partner: policy.issuerCountryId, role: 'TARGET' },
@@ -703,10 +966,8 @@
       const productRows = productIds.map(rid =>
         productAssessment(policy, side.c, side.partner, rid, side.role, budget));
       const aggregateRisk = {
-        exportsAtRisk: { value: sumKnown(productRows, row => row.tradeExposure.exportsAtRisk.value),
-          currency: productRows.find(row => row.tradeExposure.exportsAtRisk.currency)?.tradeExposure.exportsAtRisk.currency || null },
-        importsAtRisk: { value: sumKnown(productRows, row => row.tradeExposure.importsAtRisk.value),
-          currency: productRows.find(row => row.tradeExposure.importsAtRisk.currency)?.tradeExposure.importsAtRisk.currency || null }
+        exportsAtRisk: sumMoney(productRows, row => row.tradeExposure.exportsAtRisk),
+        importsAtRisk: sumMoney(productRows, row => row.tradeExposure.importsAtRisk)
       };
       const finance = financial(side.c, aggregateRisk);
       const impactId = policy.policyKey + '-' + side.c + '-' + turn();
@@ -782,6 +1043,21 @@
       results.push({ countryId: side.c, role: side.role,
         selectedAction: decision.selectedAction, productCount: productRows.length });
     }
+    const suppliers = supplierCountriesFor(policy, ids);
+    for (const evidence of suppliers) {
+      if (supplierBudget.used >= MAX_SUPPLIER_COUNTRIES_PER_TURN) break;
+      supplierBudget.used++;
+      try {
+        const supplierResult = runSupplierSide(policy, evidence, budget, supplierBudget);
+        if (supplierResult) {
+          writes += supplierResult.writes;
+          results.push(supplierResult);
+        }
+      } catch (error) {
+        results.push({ countryId: evidence.supplierCountryId, role: 'SUPPLIER',
+          error: String(error?.message || error) });
+      }
+    }
     return { policyKey: policy.policyKey, writes, countries: results };
   }
   function selectPolicies(all) {
@@ -813,15 +1089,20 @@
     lastProcessedTurn = now;
     g.__omegaSanctionResponseProcessedTurn = now;
     const all = policies(), chosen = selectPolicies(all), budget = { used: 0 };
+    const supplierBudget = { used: 0, investigations: { used: 0 } };
     const results = [];
     for (const policy of chosen) {
-      try { results.push(runPolicy(policy, budget)); }
+      try { results.push(runPolicy(policy, budget, supplierBudget)); }
       catch (error) { results.push({ policyKey: policy.policyKey, error: String(error?.message || error) }); }
     }
     lastMarketQueryCount = budget.used;
     const result = { status: 'COMPLETED', turn: now, activePoliciesFound: all.length,
       policiesProcessed: results.length, policyBudget: MAX_POLICIES,
-      marketQueries: budget.used, marketQueryBudget: MAX_MARKET_QUERIES, results };
+      marketQueries: budget.used, marketQueryBudget: MAX_MARKET_QUERIES,
+      supplierCountriesProcessed: supplierBudget.used,
+      supplierCountryBudget: MAX_SUPPLIER_COUNTRIES_PER_TURN,
+      supplierInvestigationsRecorded: supplierBudget.investigations.used,
+      supplierInvestigationBudget: MAX_SUPPLIER_INVESTIGATIONS_PER_TURN, results };
     try {
       if (typeof g.dispatchEvent === 'function' && typeof g.CustomEvent === 'function')
         g.dispatchEvent(new g.CustomEvent('OMEGA_SANCTION_RESPONSE_PIPELINE_COMPLETED', { detail: clone(result) }));
@@ -835,7 +1116,10 @@
       lastProcessedTurn, lastMarketQueryCount, policyCursor,
       planner: 'POLICY_NOTIFICATION_ECONOMIC_ANALYSIS_NATIONAL_DECISION_MARKET_RECOVERY_INVESTIGATION',
       caps: { policiesPerTurn: MAX_POLICIES, productsPerPolicy: MAX_PRODUCTS,
-        marketQueriesPerTurn: MAX_MARKET_QUERIES, tradeLedgerWindowTurns: LEDGER_WINDOW },
+        marketQueriesPerTurn: MAX_MARKET_QUERIES, tradeLedgerWindowTurns: LEDGER_WINDOW,
+        supplierCountriesPerPolicy: MAX_SUPPLIER_COUNTRIES_PER_POLICY,
+        supplierCountriesPerTurn: MAX_SUPPLIER_COUNTRIES_PER_TURN,
+        supplierInvestigationsPerTurn: MAX_SUPPLIER_INVESTIGATIONS_PER_TURN },
       invariants: ['NO_CASH_OR_INVENTORY_CREATION', 'NO_AUTOMATIC_TRADE_OR_TREATY_EXECUTION',
         'NO_COUNTRY_WIDE_OMNISCIENT_INTELLIGENCE', 'UNKNOWN_EVIDENCE_REMAINS_NULL']
     };
@@ -852,7 +1136,10 @@
   }
   const API = Object.freeze({ VERSION, init, install, diagnostics, runTurn, sanctionPolicies: policies,
     resourceIdsForPolicy: productsFor, demandMetrics: demand, tradeExposure: exposure,
-    legalSuppliers, legalAlternativeBuyers, MAX_POLICIES, MAX_PRODUCTS, MAX_MARKET_QUERIES });
+    legalSuppliers, legalAlternativeBuyers, supplierCountriesFor, supplierCustomerExposure,
+    intelligenceCapability, MAX_POLICIES, MAX_PRODUCTS, MAX_MARKET_QUERIES,
+    MAX_SUPPLIER_COUNTRIES_PER_POLICY, MAX_SUPPLIER_COUNTRIES_PER_TURN,
+    MAX_SUPPLIER_INVESTIGATIONS_PER_TURN });
   g.Omega = g.Omega || {};
   g.Omega.SanctionResponseRuntime = API;
   g.OmegaSanctionResponseRuntime = API;

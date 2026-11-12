@@ -63,6 +63,23 @@ function makeHarness(options = {}) {
       originCountryId: 'IRN', destinationCountryId: 'USA', status: 'ACTIVE' }] } },
     intelligence: { IRN: {}, USA: {}, BGD: {}, CHN: {} }
   };
+  if (options.supplierExposure) {
+    state.trade.RUS = { exportLedger: [
+      { settlementId: 'EX-RUS-IRN-01', resourceId: 'copper', buyerCountryId: 'IRN',
+        quantity: 48, totalValue: 480, currency: 'USD', turn: 38 },
+      { settlementId: 'EX-RUS-CHN-01', resourceId: 'copper', buyerCountryId: 'CHN',
+        quantity: 52, totalValue: 520, currency: 'USD', turn: 39 }
+    ] };
+    state.trade.IRN.importLedger.push({ settlementId: 'IM-IRN-RUS-01', resourceId: 'copper',
+      sourceCountryId: 'RUS', quantity: 48, totalValue: 480, currency: 'USD', turn: 38 });
+    state.foreign.RUS = { relations: { IRN: { overall: 35, trade: 30, trust: 35,
+      war_state: false, sanctions: false } } };
+    state.resource.RUS = { inventory: { copper: 100 } };
+    state.economy.RUS = {};
+    state.finance.RUS = { available: 200000, currencyCode: 'RUB', foreignReserveCoverageDays: 90 };
+    state.intelligence.RUS = { tradeSurveillance: 70, foreignIntelligenceCapability: 60,
+      counterSmugglingReadiness: 55 };
+  }
   const handlers = new Map(), events = new Map(), writes = [], marketCalls = [];
   const market = {
     describeProduct(id) { return id === 'copper' ? { id, name: 'Copper' } : null; },
@@ -73,7 +90,10 @@ function makeHarness(options = {}) {
       marketCalls.push({ id, quantity, buyer });
       if (options.noLegalSuppliers) return [];
       if (buyer === 'IRN') return [{ countryId: 'CHN', available: 60, relationObserved: true }];
-      if (buyer === 'CHN') return [{ countryId: 'IRN', available: 80, relationObserved: true }];
+      if (buyer === 'CHN') return [
+        { countryId: 'IRN', available: 80, relationObserved: true },
+        ...(options.supplierExposure ? [{ countryId: 'RUS', available: 100, relationObserved: true }] : [])
+      ];
       return [];
     }
   };
@@ -241,6 +261,71 @@ test('issuer and target receive investigations in their own intelligence case fi
   assert.ok(h.state.intelligence.IRN.sanctionInvestigations[0].triggerReasons
     .includes('COMPLETED_BILATERAL_TRADE_EXPOSURE'));
   assert.equal(h.state.intelligence.IRN.sanctionInvestigations[0].noOmniscientIntelligence, true);
+});
+
+
+test('third-party supplier receives its own spillover, export exposure, legal buyer decision and capability-gated investigation', () => {
+  const h = makeHarness({ supplierExposure: true });
+  const result = h.context.OmegaSanctionResponseRuntime.runTurn();
+  const supplier = result.results[0].countries.find(row => row.countryId === 'RUS');
+  assert.ok(supplier, 'supplier is confirmed from matching target import and seller export settlements');
+  assert.equal(supplier.role, 'SUPPLIER');
+  assert.equal(h.state.foreign.RUS.sanctionNotifications[0].role, 'SUPPLIER');
+  assert.equal(h.state.foreign.RUS.sanctionNotifications[0].status, 'SUPPLY_CHAIN_SPILLOVER_RECORDED');
+  const impact = h.state.economy.RUS.sanctionEconomicAssessments[0];
+  assert.equal(impact.role, 'SUPPLIER');
+  assert.equal(impact.tradeExposure[0].exportsAtRisk.recordCount, 1);
+  assert.equal(impact.tradeExposure[0].exportsAtRisk.quantity, 48);
+  const decision = h.state.foreign.RUS.sanctionNationalDecisions[0];
+  assert.equal(decision.role, 'SUPPLIER');
+  assert.equal(decision.selectedAction, 'ALTERNATIVE_EXPORT_BUYER_REDIRECTION');
+  assert.ok(decision.options.find(row => row.id === 'CUSTOMER_CONCENTRATION_REVIEW'));
+  assert.equal(h.state.intelligence.RUS.sanctionInvestigations.length, 1);
+  assert.equal(h.state.intelligence.RUS.sanctionInvestigations[0].countryId, 'RUS');
+  assert.equal(h.state.intelligence.RUS.sanctionInvestigations[0].noOmniscientIntelligence, true);
+  assert.equal(h.state.intelligence.BGD.sanctionInvestigations, undefined);
+  assert.equal(h.state.trade.RUS.blackMarketDeals, undefined);
+  assert.equal(h.state.finance.RUS.available, 200000);
+});
+
+test('supplier spillover does not open an intelligence case without recorded collection capability', () => {
+  const h = makeHarness({ supplierExposure: true });
+  delete h.state.intelligence.RUS;
+  h.context.OmegaSanctionResponseRuntime.runTurn();
+  assert.equal(h.state.foreign.RUS.sanctionNationalDecisions.length, 1);
+  assert.equal(h.state.intelligence.RUS, undefined);
+});
+
+test('mixed-currency trade exposure is never aggregated into a misleading single-currency loss value', () => {
+  const h = makeHarness();
+  h.state.trade.IRN.exportLedger.push({
+    settlementId: 'EX-IRN-EUR', resourceId: 'copper', buyerCountryId: 'USA',
+    quantity: 10, totalValue: 70, currency: 'EUR', turn: 39
+  });
+  h.context.OmegaSanctionResponseRuntime.runTurn();
+  const impact = h.state.economy.IRN.sanctionEconomicAssessments[0];
+  const exposure = impact.tradeExposure.find(row => row.resourceId === 'copper').exportsAtRisk;
+  assert.equal(exposure.value, null);
+  assert.equal(exposure.currency, null);
+  assert.deepEqual(exposure.valueByCurrency, { USD: 480, EUR: 70 });
+  assert.equal(exposure.currencyStatus, 'MIXED_OR_UNATTRIBUTED_CURRENCY');
+  assert.equal(impact.aggregateExportsAtRisk, null);
+  assert.deepEqual(impact.aggregateExportsAtRiskByCurrency, { USD: 480, EUR: 70 });
+});
+
+test('resource embargo records enter the same policy registry as formal sanctions', () => {
+  const h = makeHarness();
+  h.state.trade.BGD.resourceEmbargoes = [{
+    policyId: 'EMB-USA-BGD-COAL', issuerCountryId: 'USA', targetCountryId: 'BGD',
+    resourceId: 'coal', type: 'RESOURCE_EMBARGO', direction: 'IMPORT',
+    status: 'ACTIVE', startTurn: 40, scope: 'SECONDARY_SANCTIONS'
+  }];
+  const rows = h.context.OmegaSanctionResponseRuntime.sanctionPolicies();
+  const embargo = rows.find(row => row.policyId === 'EMB-USA-BGD-COAL');
+  assert.ok(embargo);
+  assert.equal(embargo.targetCountryId, 'BGD');
+  assert.equal(embargo.direction, 'IMPORT');
+  assert.equal(embargo.secondarySanctions, true);
 });
 
 test('expired sanctions create no notifications or economic assessments', () => {

@@ -304,6 +304,9 @@ function makeCandidate(buyer,row,sellerCountryIds){
  if(!product||!['RAW_RESOURCE','FACTORY_PRODUCT','FOOD_PRODUCT'].includes(String(product.productType||'').toUpperCase()))return null;
  const quantity=row.quantity,book=bm?.getOffers?.(buyer,row.resourceId,quantity,{networkAuthority:AUTHORITY,sellerCountryIds});
  if(!book||book.status!=='READY'||!Array.isArray(book.offers))return null;
+ // A fully verified legal-market supplier can meet this quantity; do not turn
+ // ordinary market access into an autonomous covert order.
+ if((num(book.legalSupplierCount)||0)>0)return null;
  const candidates=[];
  for(const offer of book.offers){
   const seller=country(offer.sellerCountryId);if(!seller||seller===buyer||seller===player()||priorDeal(buyer,seller,row.resourceId))continue;

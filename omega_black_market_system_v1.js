@@ -284,7 +284,8 @@ function finishOfferScan(scan){
  const offers=scan.offers.slice().sort((a,b)=>(b.expectedSavings??-Infinity)-(a.expectedSavings??-Infinity)||
   a.detectionProbability-b.detectionProbability||a.sellerCountryId.localeCompare(b.sellerCountryId));
  return{status:'READY',buyerCountryId:scan.buyerCountryId,resourceId:scan.resourceId,quantity:scan.quantity,
-  offers:offers.slice(0,24),diagnostics:{sellerCountryCount:scan.diagnostics.sellerCountryCount,
+  offers:offers.slice(0,24),legalSupplierCountryIds:[...scan.legalSellerIds].slice(0,24),
+  legalSupplierCount:scan.legalSellerIds.size,diagnostics:{sellerCountryCount:scan.diagnostics.sellerCountryCount,
    scannedSellerCount:scan.cursor,offerCount:offers.length,tariffPct:scan.tariffPct,turn:turn()}};
 }
 function getOffers(buyerValue,ridValue,qValue=1,options={}){

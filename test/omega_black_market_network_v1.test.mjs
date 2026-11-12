@@ -48,7 +48,9 @@ function makeHarness(options={}){
    offerCalls.push({countryId,resourceId,quantity,policy});
    if(countryId!==buyer||resourceId!=='copper')return{status:'READY',offers:[]};
    if(Array.isArray(policy?.sellerCountryIds)&&!policy.sellerCountryIds.includes(seller))return{status:'READY',offers:[]};
-   return{status:'READY',offers:[{...offer,requestedQuantity:quantity}]};
+   return{status:'READY',offers:[{...offer,requestedQuantity:quantity}],
+    legalSupplierCount:Number(options.legalSupplierCount)||0,
+    legalSupplierCountryIds:options.legalSupplierCount?['KAZ']:[]};
   },
   getDeals(countryId){return structuredClone(state.trade[countryId]?.blackMarketDeals||[]);},
   getDeal(dealId,countryId){return structuredClone((state.trade[countryId]?.blackMarketDeals||[]).find(x=>String(x.dealId)===String(dealId))||null);},
@@ -99,6 +101,23 @@ function makeHarness(options={}){
  vm.runInContext(source,ctx,{filename:'omega_black_market_network_v1.js'});
  return{ctx,state,bm,created,offerCalls,processed,listenerMap,player,buyer,seller,relation};
 }
+
+test('NPC planner does not open a covert deal when verified legal market stock can meet the full demand',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ // The market reports one fully checked lawful supplier for the requested quantity.
+ h.bm.getOffers=(countryId,resourceId,quantity,policy)=>{
+  h.offerCalls.push({countryId,resourceId,quantity,policy});
+  if(countryId!==h.buyer||resourceId!=='copper')return{status:'READY',offers:[],legalSupplierCount:0};
+  return{status:'READY',offers:[{...h.offer,requestedQuantity:quantity}],
+   legalSupplierCount:1,legalSupplierCountryIds:['KAZ']};
+ };
+ const result=api.runTurn();
+ assert.equal(result.status,'COMPLETED');
+ assert.equal(result.candidateCount,0);
+ assert.equal(result.newDeal,null);
+ assert.equal(h.created.length,0);
+ assert.equal(h.processed.length,0);
+});
 
 test('autonomous NPC network finds observed demand gaps and creates a state-linked covert deal',()=>{
  const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
