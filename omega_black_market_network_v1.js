@@ -345,7 +345,9 @@ function maybeDiscover(candidate,deal,route=[]){
   actorProfile:level==='HIGH'?actorProfile(candidate):null,brokerId:level==='HIGH'?deal.brokerId:null,
   governmentInvolvement:stateAttribution?governmentLabel(candidate):'NOT_ESTABLISHED',
   confidence,level,source:involved?'DIRECT_COUNTERPARTY_OR_ROUTE_EXPOSURE':'COUNTERINTELLIGENCE_AND_TRADE_SURVEILLANCE',
-  evidence:['OBSERVED_DEMAND_OR_STOCK_SIGNAL','COVERT_TRADE_ACTIVITY'],turn:turn(),
+  evidence:['OBSERVED_DEMAND_OR_STOCK_SIGNAL','COVERT_TRADE_ACTIVITY',
+   ...(candidate.sellerExportShock?.active?['SANCTIONED_MAJOR_CUSTOMER_EXPORT_EXPOSURE']:[]),
+   ...(candidate.row.tariffPct>=20?['HIGH_IMPORT_TARIFF_INCENTIVE']:[])],turn:turn(),
   summary:level==='LOW'?'An unusual covert supply channel is suspected; the counterparties are not yet identified.':
    (level==='MEDIUM'?'A covert shipment corridor and at least one participating country have been identified.':
     'A transaction-linked covert network has been identified with broker and possible state-sponsor evidence.'),
@@ -398,6 +400,15 @@ function runTurn(){
    actorProfile:profile,networkTactic:c.tactic.code,networkRationale:reason});
   if(!result?.accepted)continue;
   created=result.deal||result;
+  if(profile.sellerExportShock?.active&&profile.sellerExportShock.exportShare>=.15){
+   dispatch('trade','OMEGA_BLACK_MARKET_RECORD_EXPORT_SHOCK',c.seller,{shock:{
+    shockId:'BM-EXPORT-SHOCK-'+created.dealId,sellerCountryId:c.seller,mainCustomerCountryId:profile.sellerExportShock.mainCustomerCountryId,
+    resourceId:c.row.resourceId,exportShare:profile.sellerExportShock.exportShare,
+    exportValueAtRisk:profile.sellerExportShock.exportValue,exportQuantityAtRisk:profile.sellerExportShock.exportQuantity,
+    sanctioningCountryIds:profile.sellerExportShock.sanctioningCountryIds||[],secondarySanctionsRisk:profile.sellerExportShock.secondarySanctionsRisk,
+    dealId:created.dealId,evidenceSource:profile.sellerExportShock.evidenceSource,createdTurn:turn(),
+    rationale:'A major customer has imposed or is affected by a recorded sanction; seller is seeking an alternative channel.'}});
+  }
   const process=trade()?.processBlackMarketNetworkRequest?.({buyerCountryId:c.buyer,requestId:created.requestId,dealId:created.dealId,permitId:created.permitId});
   const latest=bm.getDeal(created.dealId,c.buyer)||created;
   const route=latest.transitRoute||[];
