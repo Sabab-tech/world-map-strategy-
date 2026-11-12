@@ -1733,7 +1733,7 @@
         projectId:'AUTO-PROJ-'+turn()+'-'+c+'-'+String(decisionId||a),
         action:a,kind,scenarioId:route.scenarioId,decisionId,
         reservationId,quantity:plan.plan.quantity,cost:plan.plan.cost,labor:plan.plan.labor,materials:plan.plan.materials,
-        durationTurns:plan.plan.durationTurns,currency:null,dependencies:SUBJECT_ROUTES[actionSubject(a)]?.depends||[],
+        durationTurns:plan.plan.durationTurns,facilityType:plan.facilityType||plan.plan?.facilityType||route.facilityType||null,currency:null,dependencies:SUBJECT_ROUTES[actionSubject(a)]?.depends||[],
         linkedMinistries:Object.values(SUBJECT_ROUTES[actionSubject(a)]?.depends||{})
       },decisionId);
     }else if(a==='MILITARY_FACILITY_BUILD'){
@@ -1958,7 +1958,7 @@
       if(scheduler?.registerCountryHandler){
         scheduler.registerCountryHandler('omega.opponent-autonomy.lifecycle',
           countryId=>tickProjectsForCountry(countryId),
-          {tiers:['PLAYER','ACTIVE'],priority:100});
+          {tiers:['PLAYER','ACTIVE','MACRO'],priority:100});
       }else{
         g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>tickProjects());
       }
