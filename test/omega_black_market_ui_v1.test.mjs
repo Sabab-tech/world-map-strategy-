@@ -197,7 +197,7 @@ test('persisted deal records show the correct buyer, seller and exact accepted s
   assert.match(h.root.innerHTML, /🇷🇺/);
   assert.match(h.root.innerHTML, /Russia/);
   assert.match(h.root.innerHTML, /OFFER ACCEPTED/);
-  assert.match(h.root.innerHTML, /1 accepted/);
+  assert.match(h.root.innerHTML, /Persisted ACCEPTED status only/);
 });
 
 test('seller scan uses the selected canonical commodity and displays verified stock, price, policy and flag', () => {
