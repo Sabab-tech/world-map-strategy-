@@ -59,19 +59,10 @@ function demandSignals(resourceId,playerCountryId){
  }
  return rows.sort((a,b)=>b.pressure-a.pressure||b.quantity-a.quantity||a.countryId.localeCompare(b.countryId)).slice(0,24);
 }
-function confirmedParticipationDeals(resourceId){
- const state=g.Game?.state||g.gameState||g.Omega?.Simulation?.world?.state||{},root=state.trade;
- if(!resourceId||!root||typeof root!=='object'||Array.isArray(root))return[];
- const rows=[],seen=new Set();
- for(const [scope,record] of Object.entries(root)){
-  const deals=Array.isArray(record?.blackMarketDeals)?record.blackMarketDeals:[];
-  for(const row of deals){
-   if(!row||dataToken(row.resourceId)!==dataToken(resourceId))continue;
-   const key=String(row.dealId||[row.buyerCountryId||scope,row.sellerCountryId,row.resourceId,row.createdTurn].join(':'));
-   if(seen.has(key))continue;seen.add(key);rows.push({...row,buyerCountryId:row.buyerCountryId||scope});
-  }
- }
- return rows.sort((a,b)=>(Number(b.createdTurn)||0)-(Number(a.createdTurn)||0)).slice(0,24);
+function confirmedParticipationDeals(resourceId,localDeals){
+ const rows=Array.isArray(localDeals)?localDeals:[];
+ return rows.filter(row=>row&&dataToken(row.resourceId)===dataToken(resourceId))
+  .sort((a,b)=>(Number(b.createdTurn)||0)-(Number(a.createdTurn)||0)).slice(0,24);
 }
 function dealStatusLabel(value){
  const key=String(value||'UNKNOWN').toUpperCase();
@@ -123,7 +114,7 @@ function render(root,countryValue){
  const visibleOfferCount=Math.max(6,Math.min(24,Number(root.__omegaBmVisibleOffers)||6)),
   visibleBuyerCount=Math.max(8,Math.min(24,Number(root.__omegaBmVisibleBuyers)||8));
  const buyerSignals=selectedProduct?demandSignals(selectedProduct,c):[],
-  participationDeals=selectedProduct?confirmedParticipationDeals(selectedProduct):[],
+  participationDeals=selectedProduct?confirmedParticipationDeals(selectedProduct,deals):[],
   acceptedDeals=participationDeals.filter(x=>String(x.status||'').toUpperCase()==='ACCEPTED').length,
   scanning=!!root.__omegaBmScanning;
  const active=deals.filter(x=>!['FAILED','EXPIRED'].includes(String(x.status||'').toUpperCase()));
