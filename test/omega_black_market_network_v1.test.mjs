@@ -340,3 +340,24 @@ test('the planner checks more than the priority slots by rotating secondary comm
  assert.equal(second.status,'COMPLETED');
  assert.ok(h.offerCalls.some(x=>x.resourceId!=='copper'),'commodity opportunities rotate instead of being locked to a permanent first-three list');
 });
+
+
+test('an outgoing export-only embargo does not invent buyer import need', () => {
+ const h=makeHarness({shortage:false}),api=h.ctx.OmegaBlackMarketNetworkV1;
+ h.state.trade.IRN.resourceEmbargoes=[{policyId:'EMB-IRN-EXPORT-CU',issuerCountryId:'IRN',
+  targetCountryId:'RUS',resourceId:'copper',direction:'EXPORT',status:'ACTIVE'}];
+ assert.equal(api.demandCandidates('IRN').length,0);
+});
+
+test('an import-side embargo remains a buyer access motive without a stock-shortage record', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ const row=h.state.resource.IRN.demandRuntime.byResource.copper;
+ row.unmetDemand=0;row.stockCoverageDays=10;row.stockCoverageTargetDays=5;row.procurementScore=0;row.activeFactoryInputDemandPerDay=0;
+ h.state.foreign.IRN.stateTradeNetwork=false;
+ h.state.trade.IRN.resourceEmbargoes=[{policyId:'EMB-IRN-IMPORT-CU',issuerCountryId:'IRN',
+  targetCountryId:'RUS',resourceId:'copper',direction:'IMPORT',status:'ACTIVE'}];
+ const result=api.runTurn();
+ assert.equal(result.status,'COMPLETED');
+ assert.equal(result.newDeal.candidate.buyer,'IRN');
+ assert.equal(h.created[0].actorProfile.buyerMotive,'SANCTIONS_OR_RESTRICTED_MARKET_ACCESS');
+});
