@@ -294,18 +294,37 @@ function countryName(value){
 function companyEvidence(c){
  const economy=bucket('economy',c),finance=bucket('finance',c),rows=[...(Array.isArray(economy.companies)?economy.companies:[]),
   ...(Array.isArray(economy.enterprises)?economy.enterprises:[]),...(Array.isArray(finance.stateOwnedEnterprises)?finance.stateOwnedEnterprises:[])];
- return rows.slice(0,12).map(x=>({companyId:String(x.companyId||x.id||x.code||'').trim()||null,
+ return rows.slice(0,24).map(x=>({companyId:String(x.companyId||x.id||x.code||'').trim()||null,
   name:String(x.name||x.legalName||x.companyName||'').trim()||null,
   ownership:String(x.ownership||x.ownerType||x.sector||'PRIVATE').toUpperCase(),
-  exportShare:num(x.exportShare??x.shareOfExports),resourceId:x.resourceId||null})).filter(x=>x.companyId||x.name);
+  exportShare:num(x.exportShare??x.shareOfExports),
+  importDependencyPct:num(x.importDependencyPct??x.importDependency),
+  inputDemandPerDay:num(x.inputDemandPerDay??x.resourceDemandPerDay),
+  sector:String(x.sector||x.industry||'').toUpperCase(),resourceId:x.resourceId||null})).filter(x=>x.companyId||x.name);
+}
+function selectCompanyActor(c,rid,side,stateLinked){
+ const rows=companyEvidence(c).filter(x=>!x.resourceId||token(x.resourceId)===token(rid));
+ rows.sort((a,b)=>side==='SELLER'?(b.exportShare??-1)-(a.exportShare??-1):
+  (b.inputDemandPerDay??-1)-(a.inputDemandPerDay??-1));
+ const company=rows[0]||null;
+ if(company)return{actorType:/STATE|PUBLIC|GOVERNMENT|MINISTRY/.test(company.ownership)?'STATE_OWNED_COMPANY':'PRIVATE_COMPANY',
+  companyId:company.companyId,companyName:company.name,ownership:company.ownership,
+  exportShare:company.exportShare,importDependencyPct:company.importDependencyPct,
+  inputDemandPerDay:company.inputDemandPerDay,sector:company.sector,resourceId:company.resourceId};
+ return{actorType:stateLinked?(side==='BUYER'?'STATE_PROCUREMENT_ENTITY':'STATE_LINKED_EXPORTER'):
+  (side==='BUYER'?'PRIVATE_IMPORTER_OR_COMPANY':'PRIVATE_EXPORTER_OR_COMPANY'),
+  companyId:null,companyName:null,ownership:stateLinked?'STATE_LINKED':'PRIVATE',
+  actorIdentityStatus:'NO_MATCHING_COMPANY_RECORD',resourceId:rid};
 }
 function actorProfile(candidate){
  const buyerEvidence=stateActorEvidence(candidate.buyer,candidate.row.resourceId);
  const sellerEvidence=stateActorEvidence(candidate.seller,candidate.row.resourceId);
  const buyerActor=buyerEvidence.linked?'STATE_PROCUREMENT_OR_STATE_OWNED_ENTERPRISE':'PRIVATE_IMPORTER_OR_BROKER';
  const sellerActor=sellerEvidence.linked?'STATE_TRADING_NETWORK_OR_STATE_LINKED_EXPORTER':'PRIVATE_EXPORTER_OR_BROKER';
+ const buyerCommercialActor=selectCompanyActor(candidate.buyer,candidate.row.resourceId,'BUYER',buyerEvidence.linked);
+ const sellerCommercialActor=selectCompanyActor(candidate.seller,candidate.row.resourceId,'SELLER',sellerEvidence.linked);
  const shock=candidate.sellerExportShock||null;
- return{buyerActor,sellerActor,governmentInvolvement:governmentLabel(candidate),
+ return{buyerActor,sellerActor,buyerCommercialActor,sellerCommercialActor,governmentInvolvement:governmentLabel(candidate),
   buyerGovernmentRole:buyerEvidence.role,buyerGovernmentLabel:buyerEvidence.label,buyerStateEvidence:buyerEvidence.evidence,
   sellerGovernmentRole:sellerEvidence.role,sellerGovernmentLabel:sellerEvidence.label,sellerStateEvidence:sellerEvidence.evidence,
   buyerCompanies:companyEvidence(candidate.buyer),sellerCompanies:companyEvidence(candidate.seller),
