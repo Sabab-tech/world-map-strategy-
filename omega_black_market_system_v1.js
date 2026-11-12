@@ -503,7 +503,7 @@ function negotiateOffer(input={}){
  const accepted=bid>=floor,negotiationId='BM-NEG-'+random([buyer,seller,rid,turn(),q,bid].join('|')).toString(16).slice(2).toUpperCase();
  const row={negotiationId,buyerCountryId:buyer,sellerCountryId:seller,resourceId:rid,offerId:offer.offerId,quantity:q,bidUnitPrice:bid,
   counterUnitPrice:accepted?null:floor,agreedUnitPrice:accepted?Math.min(offer.unitPrice,bid):null,status:accepted?'ACCEPTED':'COUNTERED',expiresTurn:turn()+PERMIT_TTL,
-  brokerId:offer.brokerId,brokerReputation:reputation,maxConcessionPct:concession*100,source:'PLAYER_NEGOTIATION'};
+  brokerId:offer.brokerId,brokerReputation:reputation,currency:offer.currency,maxConcessionPct:concession*100,source:'PLAYER_NEGOTIATION'};
  const saved=dispatch('trade','OMEGA_BLACK_MARKET_RECORD_NEGOTIATION',buyer,{negotiation:row});if(saved?.accepted!==true)return{accepted:false,reason:saved?.reason||'BLACK_MARKET_NEGOTIATION_SAVE_FAILED'};
  return{accepted:true,decision:row.status,negotiation:row};
 }
