@@ -326,6 +326,8 @@ test('all country evidence is inspected while expensive seller-book queries stay
 
 test('the planner checks more than the priority slots by rotating secondary commodities', () => {
  const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ h.ctx.OmegaGlobalMarket.productCatalog=()=>[{id:'copper',name:'Copper',productType:'RAW_RESOURCE',unit:'tonnes'},
+  ...Array.from({length:8},(_,i)=>({id:'resource_'+(i+1),name:'Resource '+(i+1),productType:'RAW_RESOURCE',unit:'tonnes'}))];
  const demand=h.state.resource.IRN.demandRuntime.byResource;
  for(let i=1;i<=8;i++)demand['resource_'+i]={resourceId:'resource_'+i,unmetDemand:25-i,demandPerDay:30,
   stockCoverageDays:1,stockCoverageTargetDays:5,procurementScore:.9-i*.01,activeFactoryInputDemandPerDay:0};
