@@ -50,6 +50,7 @@ function makeHarness(options={}){
    return{status:'READY',offers:[{...offer,requestedQuantity:quantity}]};
   },
   getDeals(countryId){return structuredClone(state.trade[countryId]?.blackMarketDeals||[]);},
+  getDeal(dealId,countryId){return structuredClone((state.trade[countryId]?.blackMarketDeals||[]).find(x=>String(x.dealId)===String(dealId))||null);},
   getNetworkReports(countryId){return structuredClone(state.intelligence[countryId]?.blackMarketNetworkReports||[]);},
   getTransits(){return[];},
   createAutonomousDeal(input){
