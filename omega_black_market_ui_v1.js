@@ -1,4 +1,4 @@
-/* OMEGA BLACK MARKET UI v1.4.0 */
+/* OMEGA BLACK MARKET UI v1.5.0 */
 (function(g){
 'use strict';
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -115,17 +115,23 @@ function render(root,countryValue){
    (x.shipmentSizeBand?'<small>Shipment class '+esc(human(x.shipmentSizeBand))+' · '+percent(x.sellerStockExposurePct)+' of seller free stock · '+fmt(x.repeatAttempts10Turns||0)+' attempts in 10 turns</small>':'')+'</article>';
  }).join('');
  const caseHtml=cases.slice(-6).reverse().map(x=>'<article class="omega-bm-deal"><span class="omega-bm-status is-alert">'+esc(x.severity||x.status||'CASE')+'</span><strong>'+esc(x.resourceId||'Black Market case')+'</strong><small>'+esc(countryLabel(x.buyerCountryId))+' ↔ '+esc(countryLabel(x.sellerCountryId))+' · '+esc(human(x.detectionStage||'DETECTION'))+'</small><small>Evidence '+fmt((num(x.evidenceConfidence)||0)*100)+'% · Turn '+fmt(x.detectionTurn)+'</small>'+
+  (Array.isArray(x.sanctioningCountryIds)&&x.sanctioningCountryIds.length?'<small>Sanction issuers: '+x.sanctioningCountryIds.map(countryLabel).map(esc).join(' · ')+'</small>':'')+
+  (Array.isArray(x.sanctionPolicyIds)&&x.sanctionPolicyIds.length?'<small>Policy evidence: '+x.sanctionPolicyIds.map(esc).join(' · ')+'</small>':'')+
   (x.attemptedValueBuyer!==null&&x.attemptedValueBuyer!==undefined?'<small>Attempt value '+fmt(x.attemptedValueBuyer)+' · attempt fine '+percent(x.attemptFineRateAtCreation)+'</small>':'')+
   (x.sellerStockExposurePct!==null&&x.sellerStockExposurePct!==undefined?'<small>Shipment size '+esc(human(x.shipmentSizeBand))+' · '+percent(x.sellerStockExposurePct)+' of seller free stock</small>':'')+
   (x.fineRateAtCreation!==null&&x.fineRateAtCreation!==undefined?'<small>Potential completed-trade fine '+percent(x.fineRateAtCreation)+' · cargo seizure '+percent(x.seizureRateAtCreation)+'</small>':'')+
   (x.cargoDisposition?'<small>Cargo outcome '+esc(human(x.cargoDisposition))+'</small>':'')+'</article>').join('');
- const respHtml=responses.slice(-4).reverse().map(x=>'<article class="omega-bm-deal"><span class="omega-bm-status">FOREIGN RESPONSE</span><strong>'+esc(human(x.responseType||'Diplomatic response'))+'</strong><small>Target '+esc(countryLabel(x.targetCountryId))+' · Source '+esc(countryLabel(x.sourceCountryId))+' · '+esc(x.severity||'UNSPECIFIED')+'</small></article>').join('');
+ const respHtml=responses.slice(-4).reverse().map(x=>{
+  const impacts=Array.isArray(x.appliedRelationAdjustments)?x.appliedRelationAdjustments.map(a=>countryLabel(a.countryId)+' '+fmt(a.delta)).map(esc).join(' · '):'Not recorded';
+  return '<article class="omega-bm-deal"><span class="omega-bm-status">FOREIGN RESPONSE</span><strong>'+esc(human(x.responseType||'Diplomatic response'))+'</strong><small>Target '+esc(countryLabel(x.targetCountryId))+' · Source '+esc(countryLabel(x.sourceCountryId))+' · '+esc(x.severity||'UNSPECIFIED')+'</small><small>Diplomatic relation impact: '+impacts+'</small></article>';
+ }).join('');
  const transitHtml=transits.filter(x=>['IN_TRANSIT','ARRIVAL_PENDING'].includes(String(x.status||'').toUpperCase())).slice(-8).reverse().map(x=>'<article class="omega-bm-deal"><span class="omega-bm-status">'+esc(human(x.status||'IN_TRANSIT'))+'</span><strong>'+esc(x.resourceId)+' · '+fmt(x.quantity)+' '+esc(x.unit||'units')+'</strong><small>'+esc(countryLabel(x.sellerCountryId))+' → '+esc(countryLabel(x.buyerCountryId))+'</small><small>'+(Array.isArray(x.route)?x.route.map(y=>esc(y.checkpoint||y.role||countryLabel(y.countryId))).join(' → '):'Route not recorded')+'</small><small>Inspection checkpoints '+fmt((x.timeline||[]).length)+' / '+fmt((x.route||[]).length)+'</small></article>').join('');
  const reportHtml=networkReports.slice(-8).reverse().map(x=>{
   const profile=x.actorProfile||{},motive=x.motiveAssessment||{};
   const buyerReason=profile.buyerReason||motive.buyerReason||'';
   const sellerReason=profile.sellerReason||motive.sellerReason||'';
-  const shock=profile.sellerExportShock||{},tariffs=profile.tariffAvoidance||{};
+  const shock=profile.sellerExportShock||{},tariffs=profile.tariffAvoidance||{},
+   buyerCommercial=profile.buyerCommercialActor||{},sellerCommercial=profile.sellerCommercialActor||{};
   const buyerCompanies=compactCompanies(profile.buyerCompanies),sellerCompanies=compactCompanies(profile.sellerCompanies);
   const actorDetails=[
    profile.buyerGovernmentLabel?'<small>Buyer actor: '+esc(profile.buyerGovernmentLabel)+'</small>':'',
@@ -133,7 +139,9 @@ function render(root,countryValue){
    buyerReason?'<small>Why buyer participates: '+esc(buyerReason)+'</small>':(motive.buyerMotive?'<small>Buyer motive: '+esc(human(motive.buyerMotive))+'</small>':''),
    sellerReason?'<small>Why seller participates: '+esc(sellerReason)+'</small>':(motive.sellerMotive?'<small>Seller motive: '+esc(human(motive.sellerMotive))+'</small>':''),
    profile.tactic?'<small>Network type: '+esc(human(profile.tactic))+'</small>':'',
-   shock.active?'<div class="omega-bm-impact"><strong>Major export-customer shock</strong><br>Customer: '+esc(countryLabel(shock.mainCustomerCountryId))+' · '+percent(shock.exportShare)+' of seller exports at risk<br>Export value exposed: '+fmt(shock.exportValue)+' · Sanctioning country: '+(shock.sanctioningCountryIds||[]).map(countryLabel).map(esc).join(', ')+' · Secondary sanctions: '+(shock.secondarySanctionsRisk?'Yes':'Not recorded')+'</div>':'',
+   buyerCommercial.companyName?'<small>Buyer company: '+esc(buyerCommercial.companyName)+' · '+esc(human(buyerCommercial.actorType||'company'))+'</small>':'',
+   sellerCommercial.companyName?'<small>Seller company: '+esc(sellerCommercial.companyName)+' · '+esc(human(sellerCommercial.actorType||'company'))+'</small>':'',
+   shock.active?'<div class="omega-bm-impact"><strong>Major export-customer shock</strong><br>Customer: '+esc(countryLabel(shock.mainCustomerCountryId))+' · '+percent(shock.exportShare)+' of seller exports at risk<br>Sanction target: '+esc(countryLabel(shock.sanctionTargetCountryId||shock.mainCustomerCountryId))+' · '+esc(human(shock.sanctionTargetType||'SANCTIONS'))+'<br>Export value exposed: '+fmt(shock.exportValue)+' · Sanctioning country: '+(shock.sanctioningCountryIds||[]).map(countryLabel).map(esc).join(', ')+' · Secondary sanctions: '+(shock.secondarySanctionsRisk?'Yes':'Not recorded')+'</div>':'',
    tariffs.importTariffPct!==null&&tariffs.importTariffPct!==undefined?'<small>Buyer import tariff: '+percent(tariffs.importTariffPct)+' · import dependency: '+percent(tariffs.importDependency)+'</small>':'',
    buyerCompanies?'<small>Observed buyer companies: '+esc(buyerCompanies)+'</small>':'',
    sellerCompanies?'<small>Observed seller companies: '+esc(sellerCompanies)+'</small>':'',
@@ -201,5 +209,5 @@ function render(root,countryValue){
  }
  return{ok:true,countryId:c,offerCount:offers.length,dealCount:deals.length};
 }
-g.Omega=g.Omega||{};g.Omega.BlackMarketUI=Object.freeze({version:'1.4.0',render});g.OmegaBlackMarketUI=g.Omega.BlackMarketUI;
+g.Omega=g.Omega||{};g.Omega.BlackMarketUI=Object.freeze({version:'1.5.0',render});g.OmegaBlackMarketUI=g.Omega.BlackMarketUI;
 })(typeof window!=='undefined'?window:globalThis);
