@@ -373,6 +373,16 @@ function shouldIntercept(dealId,request){
  const roll=random(row.dealId+'|INSPECTION|'+row.createdTurn);return{detected:roll<row.detectionProbability,reason:roll<row.detectionProbability?'BLACK_MARKET_INTERCEPTED':'INSPECTION_NOT_DETECTED',probability:row.detectionProbability,roll};
 }
 function recordCaseFor(c,row){return dispatch('intelligence','OMEGA_BLACK_MARKET_RECORD_CASE',c,{case:Object.assign({},clone(row),{caseCountryId:country(c)})});}
+function escalationForIssuer(issuer,target,rid,baseSeverity){
+ const history=bucket('foreign',issuer).blackMarketResponses;
+ const prior=(Array.isArray(history)?history:[]).filter(x=>country(x.targetCountryId)===target&&
+  (!x.resourceId||tok(x.resourceId)===tok(rid))&&
+  turn()-(num(x.recordedTurn??x.createdTurn??x.turn)??turn())<=30);
+ const rank={LOW:0,MODERATE:1,HIGH:2,CRITICAL:3},levels=['LOW','MODERATE','HIGH','CRITICAL'];
+ const base=rank[String(baseSeverity||'MODERATE').toUpperCase()]??1,
+  increase=prior.length>=3?2:(prior.length>=1?1:0);
+ return{severity:levels[Math.min(3,base+increase)],priorViolations30Turns:prior.length};
+}
 function detectedCase(deal,detail={}){
  const stage=String(detail.stage||'PRE_DISPATCH'),severity=deal.shipmentSizeBand==='CRITICAL'?'CRITICAL':
   ((deal.embargoedAtCreation||deal.sanctionsAtCreation||deal.exportRestrictionReason||deal.shipmentSizeBand==='LARGE')?'HIGH':'MODERATE');
@@ -407,11 +417,14 @@ function detectedCase(deal,detail={}){
  }
  const unique=[...new Map(issuers.map(x=>[x.issuer+'::'+x.target,x])).values()];
  unique.forEach(({issuer,target})=>{
-  const secondary=target===deal.buyerCountryId?deal.sellerCountryId:deal.buyerCountryId;
+  const secondary=target===deal.buyerCountryId?deal.sellerCountryId:deal.buyerCountryId,
+   escalation=escalationForIssuer(issuer,target,deal.resourceId,severity),responseSeverity=escalation.severity;
   dispatch('foreign','OMEGA_BLACK_MARKET_RECORD_RESPONSE',issuer,{response:{
   responseId:'BM-RESPONSE-'+deal.dealId+'-'+issuer,caseId:row.caseId,dealId:deal.dealId,targetCountryId:target,
   secondaryTargetCountryId:secondary,sourceCountryId:issuer,buyerCountryId:deal.buyerCountryId,sellerCountryId:deal.sellerCountryId,
-  resourceId:deal.resourceId,severity,diplomaticRelationPenalty:severity==='CRITICAL'?-12:(severity==='HIGH'?-8:-5),
+  resourceId:deal.resourceId,baseSeverity:severity,severity:responseSeverity,
+  priorViolations30Turns:escalation.priorViolations30Turns,
+  diplomaticRelationPenalty:responseSeverity==='CRITICAL'?-12:(responseSeverity==='HIGH'?-8:(responseSeverity==='LOW'?-2:-5)),
   responseType:'SANCTIONS_ENFORCEMENT_AND_ENHANCED_INSPECTION',reason:'DETECTED_BLACK_MARKET_TRADE_ATTEMPT',
   policyIds:[...citedPolicies],createdTurn:turn(),evidenceConfidence:row.evidenceConfidence,status:'ACTIVE'}});
  });
