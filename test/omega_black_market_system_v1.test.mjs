@@ -325,3 +325,28 @@ test('a third-country sanction against the buyer is attached to the offer and ac
  assert.equal(h.state.foreign.USA.relationAdjustments.SAU[0].delta,-3);
  assert.equal(h.state.intelligence.BGD.blackMarketCases[0].sanctionPolicyIds.includes('SAN-USA-BGD-COAL'),true);
 });
+
+
+test('buyer motive distinguishes its own import embargo from an outgoing export embargo', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ h.state.trade.BGD.resourceEmbargoes=[{policyId:'EMB-BGD-EXPORT-COAL',issuerCountryId:'BGD',
+  targetCountryId:'SAU',resourceId:'coal',direction:'EXPORT',status:'ACTIVE'}];
+ let offer=api.getOffers('BGD','coal',10).offers[0];
+ assert.notEqual(offer.buyerMotiveCode,'RESTRICTED_INPUT_ACCESS',
+  'a buyer export restriction must not be presented as an import access need');
+ h.state.trade.BGD.resourceEmbargoes=[{policyId:'EMB-BGD-IMPORT-COAL',issuerCountryId:'BGD',
+  targetCountryId:'SAU',resourceId:'coal',direction:'IMPORT',status:'ACTIVE'}];
+ offer=api.getOffers('BGD','coal',10).offers[0];
+ assert.equal(offer.buyerMotiveCode,'RESTRICTED_INPUT_ACCESS');
+});
+
+test('attempt fine is calculated from quoted trade value, not the risk-adjusted expected cost', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket,offer=api.getOffers('BGD','coal',10).offers[0];
+ const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:offer.offerId});
+ assert.equal(made.accepted,true,JSON.stringify(made));
+ const deal=api.getDeal(made.deal.dealId,'BGD');
+ assert.equal(deal.attemptedValueBuyer,offer.quotedTradeValueBuyer);
+ assert.equal(deal.attemptedValueBuyer,Number((offer.unitPrice*10).toFixed(2)));
+ assert.equal(deal.attemptedValueBuyer,deal.expectedBlackMarketTotal*1,
+  'USD seller/buyer currency fixture uses the same nominal quote value');
+});
