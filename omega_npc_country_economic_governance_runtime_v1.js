@@ -378,9 +378,10 @@
   }
   async function processCountry(countryId,ctx={}){
     const c=canonical(countryId),turn=turnOf(ctx),player=playerCountry();
-    if(!c||!roster.has(c))return{status:'SKIPPED',reason:'COUNTRY_NOT_IN_CANONICAL_197_ROSTER',countryId:c||null};
+    if(!c)return{status:'SKIPPED',reason:'COUNTRY_ID_REQUIRED'};
     if(c===player)return{status:'PLAYER_EXEMPT',countryId:c,turn};
     if(!await ensureReady())return{status:'BLOCKED',reason:lastError||'COUNTRY_BASELINE_NOT_READY',countryId:c,turn};
+    if(!roster.has(c))return{status:'SKIPPED',reason:'COUNTRY_NOT_IN_CANONICAL_197_ROSTER',countryId:c};
     const profile=profileFor(c),baseline=baselineFor(profile,c);
     if(!profile||!baseline)return{status:'BLOCKED',reason:'COUNTRY_ECONOMIC_BASELINE_UNAVAILABLE',countryId:c,turn};
     const opening=deriveOpeningGDP(profile,baseline);
@@ -452,7 +453,7 @@
   const API=Object.freeze({
     VERSION,LIMITS,install,processCountry,diagnostics,getCountryEconomy,
     getCountryIds:()=>[...roster].sort(),
-    dispose(){const world=scheduler();world?.unregisterCountryHandler?.('omega.npc-country-economic-governance.v1');installed=false;return true;}
+    isReady:()=>roster.size===LIMITS.CORE_COUNTRIES
   });
   g.Omega=g.Omega||{};g.Omega.NpcCountryEconomicGovernance=API;g.OmegaNpcCountryEconomicGovernance=API;
   try{install();}catch(error){lastError=String(error?.message||error);}
