@@ -164,6 +164,13 @@ function sanctionsAgainst(target,rid){
 }
 function normalMetric(v){const n=num(v);return n===null?0:clamp(n>1?n/100:n);}
 function hash(v){let h=2166136261;for(const ch of String(v)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return(h>>>0)/4294967296;}
+function gcd(a,b){while(b){const t=a%b;a=b;b=t;}return Math.abs(a);}
+function rotatingOffset(turnValue,length){
+ if(length<=1)return 0;
+ let stride=MAX_WORLD_MARKET_QUERIES_PER_TURN+1;
+ while(gcd(stride,length)!==1)stride++;
+ return(turnValue*stride)%length;
+}
 function policyRows(c){const t=bucket('trade',c);return{
  directives:Array.isArray(t.stateSupplyDirectives)?t.stateSupplyDirectives:[],
  embargoes:Array.isArray(t.resourceEmbargoes)?t.resourceEmbargoes:[],
@@ -469,7 +476,7 @@ function runTurn(){
   buyerCountriesWithEvidence++;
   const selected=[demand[0]],pool=demand.slice(1);
   if(pool.length){
-   const start=(turn()*2+Math.floor(hash(buyer)*pool.length))%pool.length;
+   const start=(turn()+Math.floor(hash(buyer)*pool.length))%pool.length;
    for(let i=0;i<Math.min(MAX_PRODUCTS_PER_BUYER-1,pool.length);i++){
     const row=pool[(start+i)%pool.length];
     if(!selected.some(x=>token(x.resourceId)===token(row.resourceId)))selected.push(row);
@@ -491,7 +498,7 @@ function runTurn(){
  const rest=potentialRows.filter(item=>!chosenKeys.has(item.buyer+'::'+token(item.row.resourceId)));
  if(rest.length){
   const count=Math.min(MAX_WORLD_MARKET_QUERIES_PER_TURN-chosen.length,rest.length);
-  const offset=(turn()*count)%rest.length;
+  const offset=rotatingOffset(turn(),rest.length);
   for(let i=0;i<count;i++)chosen.push(rest[(offset+i)%rest.length]);
  }
  const bestByBuyer=new Map();
