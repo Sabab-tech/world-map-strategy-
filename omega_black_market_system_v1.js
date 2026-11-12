@@ -5,7 +5,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='1.0.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12,MAX_TURN_MAINTENANCE=12;
+const VERSION='1.1.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12,MAX_TURN_MAINTENANCE=12;
 const clone=(v,seen=new WeakMap())=>{if(v===null||typeof v!=='object')return v;if(seen.has(v))return seen.get(v);if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}const o={};seen.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function'&&v[k]!==undefined)o[k]=clone(v[k]);return o;};
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;},id=v=>String(v??'').trim().toUpperCase();
 const tok=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
