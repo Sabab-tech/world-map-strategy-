@@ -42,7 +42,8 @@ function worldCountries(){
  for(const domain of ['resource','trade','foreign','finance','economy'])for(const id of countries(domain))out.add(id);
  try{
   const registry=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
-  const rows=registry?.list?.('COUNTRY')||registry?.list?.()||[];
+  const rows=registry?.list?.('COUNTRY')||registry?.list?.()||
+   registry?.getDataset?.('countries.json')||registry?.getDataset?.('./countries.json')||[];
   for(const row of rows){
    const id=country(row);if(id)out.add(id);
   }
