@@ -149,6 +149,9 @@ test('active sanctions deliver formal notifications only to issuer and target re
   assert.equal(h.state.foreign.BGD.sanctionNotifications, undefined);
   assert.equal(h.state.foreign.CHN.sanctionNotifications, undefined);
   assert.equal(h.state.foreign.IRN.sanctionNotifications[0].role, 'TARGET');
+  assert.equal(h.state.foreign.IRN.sanctionNationalDecisions[0].role, 'TARGET');
+  assert.equal(h.state.foreign.USA.sanctionNationalDecisions[0].role, 'ISSUER');
+  assert.equal(h.state.foreign.USA.sanctionNationalDecisions[0].selectedAction, 'SANCTION_COMPLIANCE_REVIEW');
 });
 
 test('economic impact uses settled bilateral ledgers in the rolling window and recorded shortage', () => {
