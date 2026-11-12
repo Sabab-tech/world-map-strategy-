@@ -136,6 +136,7 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
    expectedSavings=expectedLegalCost===null||expectedCostBuyer===null?null:Number((expectedLegalCost-expectedCostBuyer).toFixed(2));
   const foreignPolicyBasis=[emb.blocked?'IMPORT EMBARGO':null,restricted?'EXPORT RESTRICTION':null,
    sanctioned?'SANCTIONS':null,!hasAgreement?'NO TRADE AGREEMENT':null].filter(Boolean);
+  const buyerMotivation=buyerMotiveEvidence(buyer,rid,q),sellerMotivation=sellerMotiveEvidence(seller,rid,rule,emb);
   const whyUse=!legalAvailable?(foreignPolicyBasis.length?'ACCESS DESPITE LEGAL OR DIPLOMATIC RESTRICTIONS':'NO VERIFIED GENERAL-MARKET OFFER'):
    fx===null?'FX RATE NOT OBSERVED — PRICE ADVANTAGE CANNOT BE CONFIRMED':(expectedSavings>0?'EXPECTED COST ADVANTAGE AFTER RISK':'STRATEGIC ACCESS ONLY — EXPECTED COST IS HIGHER');
   offers.push({offerId:'BM-OFFER:'+buyer+':'+seller+':'+tok(rid),buyerCountryId:buyer,sellerCountryId:seller,resourceId:rid,
@@ -153,6 +154,9 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
    exportPolicyIds:(rule.policies||[]).map(x=>typeof x==='string'?x:String(x.policyId||'')).filter(Boolean),
    legalMarketAvailable:legalAvailable,foreignPolicyBasis,whyUse,
    reason:!legalAvailable?'RESTRICTED_OR_UNAVAILABLE_LEGAL_ACCESS':(expectedSavings!==null&&expectedSavings>0?'EXPECTED_COST_ADVANTAGE':'STRATEGIC_ACCESS_ONLY'),
+   buyerMotiveCode:buyerMotivation.code,buyerMotiveReason:buyerMotivation.reason,
+   sellerMotiveCode:sellerMotivation.code,sellerMotiveReason:sellerMotivation.reason,
+   sellerActorClass:stateBrokerType(seller,rid,rule,emb),
    brokerId:'SHADOW-BROKER:'+seller,brokerType:stateBrokerType(seller,rid,rule,emb),brokerReputation:getBrokerReputation(seller,'SHADOW-BROKER:'+seller),
    stockAuthority:'GAME_STATE_RESOURCE_INVENTORY_RESERVE_AND_WAREHOUSE'});
  }
@@ -166,6 +170,36 @@ function getNetworkReports(c){const v=bucket('intelligence',c).blackMarketNetwor
 function stateBrokerType(c,rid,rule,emb){const t=bucket('trade',c),f=bucket('foreign',c),directives=Array.isArray(t.stateSupplyDirectives)?t.stateSupplyDirectives:[],embargoes=Array.isArray(t.resourceEmbargoes)?t.resourceEmbargoes:[];
  const stateLinked=directives.some(x=>!x.resourceId||tok(x.resourceId)===tok(rid))||embargoes.some(x=>!x.resourceId||tok(x.resourceId)===tok(rid))||!!f.stateTradeNetwork;
  return stateLinked?'STATE_LINKED':'PRIVATE_BROKER';}
+function buyerMotiveEvidence(c,rid,quantity){
+ const resource=bucket('resource',c),finance=bucket('finance',c),tradeState=bucket('trade',c);
+ const runtime=resource.demandRuntime||{},demand=value(runtime.byResource,rid)||{};
+ const unmet=Math.max(0,num(demand.unmetDemand)||0),factoryInput=Math.max(0,num(demand.activeFactoryInputDemandPerDay)||0);
+ const coverage=num(demand.stockCoverageDays),target=num(demand.stockCoverageTargetDays);
+ const embargoes=Array.isArray(tradeState.resourceEmbargoes)?tradeState.resourceEmbargoes:[];
+ const restricted=embargoes.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&!/EXPIRED|REVOKED|INACTIVE/.test(String(x.status||'').toUpperCase()));
+ if(restricted)return{code:'RESTRICTED_INPUT_ACCESS',reason:'The buyer country has an active resource restriction affecting the selected commodity.'};
+ if(factoryInput>0)return{code:'INDUSTRIAL_INPUT_SHORTAGE',reason:'Recorded active factory input demand exists for this commodity.'};
+ if(unmet>0||coverage!==null&&target!==null&&coverage<target)
+  return{code:'DOMESTIC_SUPPLY_GAP',reason:'Recorded unmet demand or stock coverage below target indicates a domestic replenishment need.'};
+ if(/coal|oil|gas|uranium|electric|energy/i.test(rid))return{code:'ENERGY_SECURITY_PRESSURE',reason:'The selected input is energy-related; country demand and stock coverage should determine whether it is strategic.'};
+ if(num(finance.foreignReserveCoverageDays)!==null&&num(finance.foreignReserveCoverageDays)<30)
+  return{code:'FOREIGN_EXCHANGE_PRESSURE',reason:'Recorded foreign-reserve coverage is weak, increasing the value of alternative supply access.'};
+ return{code:'PLAYER_SELECTED_NEED_NOT_VERIFIED',reason:'No matching shortage signal was observed; this offer was found from seller stock and policy evidence, not an assumed national shortage.'};
+}
+function sellerMotiveEvidence(c,rid,rule,emb){
+ const t=bucket('trade',c),finance=bucket('finance',c),resource=bucket('resource',c);
+ const directives=Array.isArray(t.stateSupplyDirectives)?t.stateSupplyDirectives:[];
+ const activeDirective=directives.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&!/EXPIRED|REVOKED|INACTIVE/.test(String(x.status||'').toUpperCase()));
+ if(activeDirective||rule?.allowed===false&&['STATE_DIRECTIVE_DOMESTIC_ONLY','STATE_DIRECTIVE_EXPORT_RESTRICTED'].includes(String(rule?.reason||'')))
+  return{code:'STATE_DIRECTED_EXPORT_REVENUE',reason:'An active state supply directive or export restriction is recorded for this commodity.'};
+ if(stateBrokerType(c,rid,rule,emb)==='STATE_LINKED')
+  return{code:'STATE_LINKED_COMMODITY_MONETIZATION',reason:'Recorded state-linked trading capacity can participate in selling exportable stock.'};
+ if(num(finance.foreignReserveCoverageDays)!==null&&num(finance.foreignReserveCoverageDays)<45)
+  return{code:'FOREIGN_CURRENCY_LIQUIDITY',reason:'Recorded foreign-reserve pressure creates an incentive to earn foreign currency.'};
+ if(num(resource.tradeableSurplusByResource?.[rid])>0)
+  return{code:'SURPLUS_MONETIZATION',reason:'Recorded tradeable surplus can be sold without using protected inventory.'};
+ return{code:'PRIVATE_BROKER_MARGIN',reason:'No state mandate or export-surplus signal was observed; a private broker margin is the remaining modeled incentive.'};
+}
 function getDeal(dealId,c){return rows(c).find(x=>String(x.dealId)===String(dealId))||null;}
 function getDeals(c){return rows(c).slice().sort((a,b)=>(num(b.createdTurn)||0)-(num(a.createdTurn)||0)).map(x=>clone(x));}
 function validateAuthorization(dealId,scope={}){
