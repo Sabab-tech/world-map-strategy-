@@ -188,7 +188,7 @@ function render(root,countryValue){
   const info=countryInfo(x.countryId);
   return '<tr><td><div class="omega-bm-country-row"><span class="omega-bm-flag">'+esc(info.flag||'🏳️')+
    '</span><span class="omega-bm-country-copy"><strong>'+esc(info.name)+'</strong><small>'+esc(x.reason)+'</small></span></div></td>'+
-   '<td><span class="omega-bm-number">'+fmt(x.quantity)+'</span> '+esc(selected?.unit||'')+'</td>'+
+   '<td><span class="omega-bm-number">'+fmt(x.quantity)+'</span> '+esc(products.find(p=>p.id===selectedProduct)?.unit||'')+'</td>'+
    '<td>'+fmt(x.demandPerDay)+'/day</td><td>'+(x.coverage===null?'—':fmt(x.coverage)+' days')+'</td>'+
    '<td><span class="omega-bm-tag">POTENTIAL BUYER</span></td></tr>';
  }).join('');
@@ -304,6 +304,7 @@ const dealHtml=active.slice(0,8).map(x=>{
    if(t.hasAttribute('data-bm-product')){
     cancelOfferScan(root);
     root.__omegaBmResource=t.getAttribute('data-bm-product')||'';
+    const productSelect=root.querySelector('[data-bm-resource]');if(productSelect)productSelect.value=root.__omegaBmResource;
     root.__omegaBmOffers=[];root.__omegaBmVisibleOffers=6;root.__omegaBmNegotiation=null;
     root.__omegaBmOutcome='';root.__omegaBmScanProgress='Commodity changed. Scan this product to refresh offers.';
     render(root,root.__omegaBmCountry||c);return;
