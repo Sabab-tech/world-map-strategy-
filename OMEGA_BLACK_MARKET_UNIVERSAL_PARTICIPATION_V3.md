@@ -87,7 +87,7 @@ Potential wider effects are represented through persistent case, export-shock an
 
 - Every country’s demand evidence is scanned, but the engine does **not** simulate every country’s full economy.
 - Up to 24 country/product market queries run per committed player-country turn: 12 priority slots plus 12 rotating slots. This lets lower-ranked countries and commodities enter the market review over successive turns instead of being permanently excluded.
-- At most one autonomous NPC deal is created per player turn; pending network processing is capped at six.
+- At most one autonomous NPC deal is created per player turn; pending network processing is capped at six. Runtime diagnostics distinguish `worldCountryCount` (all canonical countries, including the selected player country) from `npcCountryCount` and `buyerCountriesScanned` (all eligible NPC countries; the player remains on the manual UI path).
 - The market query uses the existing Global Market, verified inventory, policy, stock and route authorities. A deal still needs the existing Global Trade review, inspection and settlement path.
 - Only existing catalog products in `RAW_RESOURCE`, `FACTORY_PRODUCT` or `FOOD_PRODUCT` lanes are eligible.
 - War and active route/blockade constraints remain hard stops. Black Market permits can authorize only the specific policy bypasses supported by the persisted deal; they never create stock or bypass route safety.
