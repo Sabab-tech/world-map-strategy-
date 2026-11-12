@@ -91,8 +91,26 @@ function makeHarness(options = {}) {
       if (!entry || entry.owner !== owner)
         return { status: 'UNHANDLED', result: { accepted: false, reason: 'NO_HANDLER' } };
       const staged = structuredClone(state);
-      const tx = { get(path) { return getPath(staged, path); },
-        set(path, value) { setPath(staged, path, structuredClone(value)); } };
+      const scopedContainer = path => {
+        const parts = String(path).split('.');
+        const domain = parts.shift();
+        const bucket = staged[domain]?.[countryId];
+        return { domain, bucket, parts };
+      };
+      const tx = {
+        get(path) {
+          const ref = scopedContainer(path);
+          return ref.parts.reduce((value, key) => value && value[key], ref.bucket);
+        },
+        set(path, value) {
+          const ref = scopedContainer(path);
+          staged[ref.domain] ||= {};
+          staged[ref.domain][countryId] ||= {};
+          let cursor = staged[ref.domain][countryId];
+          for (const key of ref.parts.slice(0, -1)) cursor = cursor[key] ||= {};
+          cursor[ref.parts.at(-1)] = structuredClone(value);
+        }
+      };
       const result = entry.handler({ payload }, { countryId, stateTransaction: tx });
       if (result?.accepted !== false) {
         for (const key of Object.keys(state)) delete state[key];
