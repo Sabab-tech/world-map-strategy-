@@ -672,7 +672,7 @@ function recordExportShockHandler(cmd,ctx){
 }
 function recordResponseHandler(cmd,ctx){
  const r=cmd?.payload?.response||{},responseId=String(r.responseId||''),target=country(r.targetCountryId),c=country(ctx.countryId);
- if(!responseId||!target||!country(r.sourceCountryId))return{accepted:false,reason:'BLACK_MARKET_FOREIGN_RESPONSE_INVALID'};
+ if(!responseId||!target||country(r.sourceCountryId)!==c)return{accepted:false,reason:'BLACK_MARKET_FOREIGN_RESPONSE_INVALID'};
  const raw=ctx.stateTransaction.get('foreign.blackMarketResponses'),arr=Array.isArray(raw)?clone(raw):[],prior=arr.find(x=>String(x.responseId||'')===responseId);
  if(prior)return{accepted:true,duplicate:true,response:clone(prior)};
  arr.push(clone(r));ctx.stateTransaction.set('foreign.blackMarketResponses',arr.slice(-MAX_RESPONSES));
@@ -682,7 +682,7 @@ function recordResponseHandler(cmd,ctx){
  const rawAdj=ctx.stateTransaction.get('foreign.relationAdjustments'),adj=rawAdj&&typeof rawAdj==='object'?clone(rawAdj):{};
  const targets=[{countryId:target,delta,type:'PRIMARY_SANCTIONS_VIOLATION'}],
   secondary=country(r.secondaryTargetCountryId);
- if(secondary&&secondary!==target)targets.push({countryId:secondary,delta:-Math.max(1,Math.round(Math.abs(delta)*.35)),type:'SECONDARY_TRADE_ASSOCIATION'});
+ if(secondary&&secondary!==target&&secondary!==c)targets.push({countryId:secondary,delta:-Math.max(1,Math.round(Math.abs(delta)*.35)),type:'SECONDARY_TRADE_ASSOCIATION'});
  for(const item of targets){
   const list=Array.isArray(adj[item.countryId])?adj[item.countryId].slice():[];
   list.push({source:'BLACK_MARKET_ENFORCEMENT',type:item.type,delta:item.delta,turn:turn(),caseId:r.caseId||null,
