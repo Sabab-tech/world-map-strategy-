@@ -3,9 +3,9 @@
     "schemaVersion": "1.1.0",
     "datasetId": "OMEGA_COUNTRY_SECTOR_PROFILES_V1",
     "title": "OMEGA Country Sector Profiles",
-    "generatedAt": "2026-11-12T17:33:31.747Z",
+    "generatedAt": "2026-11-12T17:56:39.579Z",
     "generatedFrom": "/home/runner/work/world-map-strategy-/world-map-strategy-/country_general_data_registry_v1.json",
-    "sourceRegistryGeneratedAt": "2026-11-12T17:33:21.569Z",
+    "sourceRegistryGeneratedAt": "2026-11-12T17:56:34.639Z",
     "countryAndTerritoryCount": 249,
     "uniqueIso3Count": 249,
     "duplicateIdentityCount": 0,
@@ -14,24 +14,7 @@
       "requested": true,
       "worldBankIndicatorsLoaded": true,
       "worldBankMetadataLoaded": true,
-      "worldBankIndicatorErrors": [
-        {
-          "indicator": "SE.ADT.LITR.ZS",
-          "error": "Error: HTTP_502 from https://api.worldbank.org/v2/country/all/indicator/SE.ADT.LITR.ZS?format=json&mrnev=1&per_page=20000"
-        },
-        {
-          "indicator": "RL.EST",
-          "error": "Error: HTTP_502 from https://api.worldbank.org/v2/country/all/indicator/RL.EST?format=json&mrnev=1&per_page=20000"
-        },
-        {
-          "indicator": "SP.POP.65UP.TO.ZS",
-          "error": "Error: HTTP_502 from https://api.worldbank.org/v2/country/all/indicator/SP.POP.65UP.TO.ZS?format=json&mrnev=1&per_page=20000"
-        },
-        {
-          "indicator": "ER.H2O.FWST.ZS",
-          "error": "Error: HTTP_502 from https://api.worldbank.org/v2/country/all/indicator/ER.H2O.FWST.ZS?format=json&mrnev=1&per_page=20000"
-        }
-      ],
+      "worldBankIndicatorErrors": [],
       "worldBankMetadataError": null,
       "undpHdi": {
         "loaded": true,
@@ -71,7 +54,7 @@
             "RL.EST": {
               "countriesWithNumericObservation": 0,
               "latestObservationYear": null,
-              "requestError": "Error: HTTP_502 from https://api.worldbank.org/v2/country/all/indicator/RL.EST?format=json&mrnev=1&per_page=20000"
+              "requestError": null
             }
           },
           "countriesWithFreshObservation": 206,
