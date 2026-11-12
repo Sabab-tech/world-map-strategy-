@@ -400,6 +400,7 @@ function detectedCase(deal,detail={}){
   resourceId:deal.resourceId,severity,diplomaticRelationPenalty:severity==='CRITICAL'?-12:(severity==='HIGH'?-8:-5),
   responseType:'SANCTIONS_ENFORCEMENT_AND_ENHANCED_INSPECTION',reason:'DETECTED_BLACK_MARKET_TRADE_ATTEMPT',
   policyIds:[...citedPolicies],createdTurn:turn(),evidenceConfidence:row.evidenceConfidence,status:'ACTIVE'}});
+ });
  emit('OMEGA_BLACK_MARKET_DETECTED',deal.buyerCountryId,row);return row;
 }
 const ENFORCEMENT=Object.freeze({baseFineRate:.06,embargoFineRate:.08,exportRestrictionFineRate:.04,
