@@ -203,7 +203,7 @@ function demandCandidates(c){
 function buyerMotive(c,row,rid){
  const p=activePolicyFor(c,rid),finance=bucket('finance',c),intel=bucket('intelligence',c),tariff=row.tariffPct??tariffRate(c),
   incomingSanctions=sanctionsAgainst(c,rid),incomingEmbargo=p.embargoes.some(x=>country(x.targetCountryId||x.subjectCountryId)===c);
- if(incomingSanctions.active||incomingEmbargo)return{code:'SANCTIONS_OR_RESTRICTED_MARKET_ACCESS',reason:'This country is the recorded target of an active sanction or import embargo affecting this input.'};
+ if(incomingSanctions.active||incomingEmbargo||p.embargoes.length)return{code:'SANCTIONS_OR_RESTRICTED_MARKET_ACCESS',reason:'This country has an active incoming sanction or recorded import-embargo policy restricting access to this input.'};
  if(row.factoryInputDemandPerDay>0)return{code:'INDUSTRIAL_INPUT_SHORTAGE',reason:'Recorded active factory input demand exceeds currently fulfilled supply.'};
  if(num(tariff)!==null&&num(tariff)>=20)return{code:'TARIFF_AVOIDANCE_PRESSURE',reason:'The recorded import tariff is '+num(tariff).toFixed(1)+'%; a private buyer may compare the tariff saving with detection and penalty exposure.'};
  if(num(row.importDependency)!==null&&num(row.importDependency)>0)return{code:'IMPORT_DEPENDENCY',reason:'The country has recorded import dependence for this commodity and seeks an alternative source.'};
