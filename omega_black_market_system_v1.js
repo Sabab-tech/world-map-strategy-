@@ -5,7 +5,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='1.1.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12,MAX_TURN_MAINTENANCE=12;
+const VERSION='1.3.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12,MAX_TURN_MAINTENANCE=12;
 const clone=(v,seen=new WeakMap())=>{if(v===null||typeof v!=='object')return v;if(seen.has(v))return seen.get(v);if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}const o={};seen.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function'&&v[k]!==undefined)o[k]=clone(v[k]);return o;};
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;},id=v=>String(v??'').trim().toUpperCase();
 const tok=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
@@ -41,6 +41,50 @@ function countryKeys(domain){
 function value(map,key){if(!map||typeof map!=='object')return undefined;const k=Object.keys(map).find(x=>tok(x)===tok(key));return k===undefined?undefined:map[k];}
 function relation(buyer,seller){return value(bucket('foreign',buyer).relations,seller)||value(bucket('trade',buyer).relations,seller)||value(bucket('foreign',seller).relations,buyer)||value(bucket('trade',seller).relations,buyer)||null;}
 function agreement(r){return !!r&&(r.trade_agreement===true||/SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(r.status||r.stage||'').toUpperCase()));}
+let sanctionsIndexTurn=-1,sanctionsTargetIndex=new Map();
+function rebuildSanctionsIndex(){
+ if(sanctionsIndexTurn===turn())return;
+ const ids=[...new Set([...countryKeys('trade'),...countryKeys('foreign')])],index=new Map();
+ for(const issuerBucket of ids){
+  const roots=[bucket('trade',issuerBucket).sanctions,bucket('foreign',issuerBucket).sanctions];
+  for(const list of roots){
+   if(!Array.isArray(list))continue;
+   for(const policyRow of list){
+    const status=String(policyRow.status||policyRow.stage||'ACTIVE').toUpperCase();
+    if(/EXPIRED|REVOKED|INACTIVE|CANCELLED|LIFTED/.test(status))continue;
+    const start=num(policyRow.startTurn??policyRow.effectiveTurn),end=num(policyRow.endTurn??policyRow.expiresTurn);
+    if(start!==null&&start>turn()||end!==null&&turn()>end)continue;
+    const target=country(policyRow.targetCountryId||policyRow.subjectCountryId||policyRow.countryId||policyRow.targetId);
+    if(!target)continue;
+    const resourceId=String(policyRow.resourceId||policyRow.commodityId||'');
+    const issuer=country(policyRow.issuerCountryId)||issuerBucket,entry={issuerCountryId:issuer,targetCountryId:target,resourceId,
+     policyId:policyRow.policyId||policyRow.sanctionId||null,type:policyRow.type||policyRow.measure||policyRow.scope||'SANCTIONS',
+     secondary:policyRow.secondarySanctions===true||/SECONDARY|EXTRATERRITORIAL/i.test(String(policyRow.scope||policyRow.type||''))};
+    const rows=index.get(target)||[];
+    const key=[entry.issuerCountryId,entry.policyId,entry.resourceId,entry.type].join('::');
+    if(!rows.some(x=>[x.issuerCountryId,x.policyId,x.resourceId,x.type].join('::')===key))rows.push(entry);
+    index.set(target,rows);
+   }
+  }
+ }
+ sanctionsTargetIndex=index;sanctionsIndexTurn=turn();
+}
+function sanctionsBetween(buyer,seller,rid){
+ rebuildSanctionsIndex();
+ const matches=rows=>(sanctionsTargetIndex.get(rows)||[]).filter(x=>!x.resourceId||tok(x.resourceId)===tok(rid));
+ const rows=[...matches(buyer),...matches(seller)],rel=relation(buyer,seller),
+  bilateral=rel?.sanctions===true||rel?.embargo===true;
+ if(bilateral&&!rows.length){
+  const issuer=country(rel?.issuerCountryId||rel?.sanctioningCountryId),target=issuer===buyer?seller:(issuer===seller?buyer:null);
+  rows.push({issuerCountryId:issuer,targetCountryId:target,policyId:null,type:'BILATERAL_SANCTIONS_RELATION',
+   secondary:rel?.secondarySanctions===true});
+ }
+ return{active:rows.length>0||bilateral,rows,
+  buyerTargeted:rows.some(x=>x.targetCountryId===buyer),sellerTargeted:rows.some(x=>x.targetCountryId===seller),
+  secondary:rows.some(x=>x.secondary),
+  issuerCountryIds:[...new Set(rows.map(x=>x.issuerCountryId).filter(Boolean))],
+  policyIds:[...new Set(rows.map(x=>x.policyId).filter(Boolean))]};
+}
 function dispatch(owner,type,c,p){
  const m=mesh();if(!m?.dispatchCommand)return{accepted:false,reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
  try{const r=m.dispatchCommand(owner,type,country(c),clone(p||{}),{turn:turn(),commandType:type,correlationId:p?.dealId||p?.caseId||p?.responseId||p?.requestId||null});return r&&['APPLIED','FAILED','REJECTED'].includes(String(r.status||''))&&r.result?r.result:r;}
@@ -80,17 +124,45 @@ function stock(c,rid){
 function embargo(b,s,r){try{return policy()?.isResourceEmbargoed?.(b,s,r)||{blocked:false,policies:[]};}catch(_){return{blocked:true,policies:[]};}}
 function routeBlocked(c,r){try{return policy()?.isRouteBlocked?.(c,{resourceId:r,transportMode:'ship'})||{blocked:false};}catch(_){return{blocked:true};}}
 function exportDirective(s,b,r,q,stockValue){try{return policy()?.evaluateExportDirective?.(s,b,r,q,null,{[r]:stockValue})||{allowed:true,policies:[]};}catch(_){return{allowed:false,reason:'EXPORT_POLICY_EVALUATION_FAILED'};}}
-function riskOf(buyer,seller,r,embargoed,restricted,q,available){
- let risk=.055;if(embargoed)risk+=.18;if(restricted)risk+=.13;if(r?.sanctions===true)risk+=.16;if(!agreement(r))risk+=.09;
+function shipmentSizeProfile(quantity,available){
+ const ratio=available>0?clamp(quantity/available,0,1):1;
+ const bands=[
+  {max:.01,label:'MICRO',risk:.00,fine:.00,seizure:.00},
+  {max:.03,label:'SMALL',risk:.02,fine:.00,seizure:.01},
+  {max:.08,label:'MODERATE',risk:.05,fine:.01,seizure:.03},
+  {max:.15,label:'LARGE',risk:.10,fine:.03,seizure:.06},
+  {max:1,label:'CRITICAL',risk:.18,fine:.06,seizure:.10}
+ ];
+ const band=bands.find(x=>ratio<=x.max)||bands[bands.length-1];
+ return{ratio,percent:Number((ratio*100).toFixed(2)),band:band.label,riskAdd:band.risk,
+  fineAdd:band.fine,seizureAdd:band.seizure,thresholds:[1,3,8,15],
+  quantityThresholds:[.01,.03,.08,.15].map(share=>Number((available*share).toFixed(6)))};
+}
+function recentPattern(buyer,seller,rid){
+ const history=rows(buyer),recent=history.filter(x=>country(x.sellerCountryId)===seller&&turn()-(num(x.createdTurn)??turn())<=10);
+ const sameResource=recent.filter(x=>tok(x.resourceId)===tok(rid));
+ const count=recent.length,resourceCount=sameResource.length;
+ return{attempts10Turns:count,resourceAttempts10Turns:resourceCount,
+  riskAdd:Math.min(.16,Math.max(0,count-1)*.025+Math.max(0,resourceCount-1)*.02),
+  fineAdd:count>=5?.05:(count>=3?.03:0),seizureAdd:count>=5?.06:(count>=3?.03:0)};
+}
+function riskOf(buyer,seller,r,embargoed,restricted,q,available,sanctioned=false){
+ let risk=.055;if(embargoed)risk+=.18;if(restricted)risk+=.13;if(sanctioned||r?.sanctions===true)risk+=.16;if(!agreement(r))risk+=.09;
  const relationValue=[num(r?.overall),num(r?.trade),num(r?.trust)].find(x=>x!==null);
  if(relationValue!==undefined&&relationValue!==null&&(relationValue>1?relationValue/100:relationValue)<.3)risk+=.06;
- if(available>0)risk+=Math.min(.06,q/available*.06);
  const intel=bucket('intelligence',buyer),interior=bucket('interior',buyer);
  const surveillance=num(intel.tradeSurveillance??intel.counterSmugglingReadiness??intel.blackMarketDetection);
  const inspection=num(interior.customsInspectionCoverage??interior.borderInspectionCoverage??interior.policeCoverage);
  if(surveillance!==null)risk+=clamp(surveillance>1?surveillance/100:surveillance)*.05;
  if(inspection!==null)risk+=clamp(inspection>1?inspection/100:inspection)*.04;
  return clamp(risk,.04,.82);
+}
+function penaltyProfile(embargoed,restricted,sanctioned,tariffPct,size,pattern){
+ const tariffAdd=tariffPct>=35?.07:(tariffPct>=20?.04:0);
+ const fineRate=clamp(.06+(embargoed?.08:0)+(restricted?.04:0)+(sanctioned?.07:0)+tariffAdd+size.fineAdd+pattern.fineAdd,.06,.35);
+ const attemptFineRate=clamp(fineRate*.45,.025,.16);
+ const seizureRate=clamp(.05+(embargoed?.15:0)+(restricted?.10:0)+(sanctioned?.15:0)+size.seizureAdd+pattern.seizureAdd,.05,.55);
+ return{fineRate,attemptFineRate,seizureRate,tariffAvoidanceRate:tariffAdd};
 }
 function makePrice(base,tariffPct,risk,embargoed,restricted,noAgreement,q,available){
  const discount=Math.min(.32,tariffPct/100*.55),riskPremium=risk*.16;
@@ -115,18 +187,22 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
   const emb=embargo(buyer,seller,rid),rule=exportDirective(seller,buyer,rid,q,s.stock);
   const restricted=!rule.allowed&&['STATE_DIRECTIVE_DOMESTIC_ONLY','STATE_DIRECTIVE_EXPORT_RESTRICTED'].includes(String(rule.reason||''));
   if(!rule.allowed&&!restricted)continue;if(routeBlocked(buyer,rid).blocked||routeBlocked(seller,rid).blocked)continue;
-  const hasAgreement=agreement(r),sanctioned=r.sanctions===true;
+  const hasAgreement=agreement(r),sanctionContext=sanctionsBetween(buyer,seller,rid),
+   sanctioned=r.sanctions===true||sanctionContext.active;
   const legalAvailable=!!(hasAgreement&&!emb.blocked&&!sanctioned&&rule.allowed&&legal.some(x=>country(x.countryId)===seller));
-  const detection=riskOf(buyer,seller,r,!!emb.blocked,restricted,q,s.available),px=makePrice(quote.value,tariffPct,detection,!!emb.blocked,restricted,!hasAgreement||sanctioned,q,s.available);
+  const size=shipmentSizeProfile(q,s.available),pattern=recentPattern(buyer,seller,rid),
+   detection=clamp(riskOf(buyer,seller,r,!!emb.blocked,restricted,q,s.available,sanctioned)+size.riskAdd+pattern.riskAdd,.04,.88),
+   penalty=penaltyProfile(!!emb.blocked,restricted,sanctioned,tariffPct,size,pattern),
+   px=makePrice(quote.value,tariffPct,detection,!!emb.blocked,restricted,!hasAgreement||sanctioned,q,s.available);
   let sellerCurrency=null,buyerCurrency=null,fx=null;
   try{sellerCurrency=trade()?.currencyOf?.(seller)||null;buyerCurrency=trade()?.currencyOf?.(buyer)||null;fx=num(trade()?.fxRate?.(buyer,seller));}catch(_){}
   if(fx===null&&sellerCurrency&&buyerCurrency&&sellerCurrency===buyerCurrency)fx=1;
   const legalUnit=legalAvailable&&fx!==null?Number((quote.value*fx*(1+tariffPct/100)).toFixed(6)):null;
   const legalTotal=legalUnit===null?null:Number((legalUnit*q).toFixed(2));
   const lateDetectionProbability=detection*.18,
-   fineRate=Math.min(.18,ENFORCEMENT.baseFineRate+(emb.blocked?ENFORCEMENT.embargoFineRate:0)+(restricted?ENFORCEMENT.exportRestrictionFineRate:0)),
-   seizureRate=Math.min(.30,ENFORCEMENT.baseSeizureRate+(emb.blocked?ENFORCEMENT.embargoSeizureRate:0)+(restricted?ENFORCEMENT.exportRestrictionSeizureRate:0));
-  const expectedGrossBuyer=fx===null?null:Number((px.expectedUnit*q*fx).toFixed(2)),
+   fineRate=penalty.fineRate,seizureRate=penalty.seizureRate;
+  const quotedGrossBuyer=fx===null?null:Number((px.unit*q*fx).toFixed(2)),
+   expectedGrossBuyer=fx===null?null:Number((px.expectedUnit*q*fx).toFixed(2)),
    expectedFineBuyer=fx===null?null:Number((px.unit*q*fx*lateDetectionProbability*fineRate).toFixed(2)),
    expectedSeizedQuantity=Number((q*lateDetectionProbability*seizureRate).toFixed(6)),
    expectedDeliveredQuantity=Number(Math.max(0,q-expectedSeizedQuantity).toFixed(6)),
@@ -136,7 +212,7 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
    expectedSavings=expectedLegalCost===null||expectedCostBuyer===null?null:Number((expectedLegalCost-expectedCostBuyer).toFixed(2));
   const foreignPolicyBasis=[emb.blocked?'IMPORT EMBARGO':null,restricted?'EXPORT RESTRICTION':null,
    sanctioned?'SANCTIONS':null,!hasAgreement?'NO TRADE AGREEMENT':null].filter(Boolean);
-  const buyerMotivation=buyerMotiveEvidence(buyer,rid,q),sellerMotivation=sellerMotiveEvidence(seller,rid,rule,emb);
+  const buyerMotivation=buyerMotiveEvidence(buyer,rid,q,sanctionContext),sellerMotivation=sellerMotiveEvidence(seller,rid,rule,emb,sanctionContext);
   const whyUse=!legalAvailable?(foreignPolicyBasis.length?'ACCESS DESPITE LEGAL OR DIPLOMATIC RESTRICTIONS':'NO VERIFIED GENERAL-MARKET OFFER'):
    fx===null?'FX RATE NOT OBSERVED — PRICE ADVANTAGE CANNOT BE CONFIRMED':(expectedSavings>0?'EXPECTED COST ADVANTAGE AFTER RISK':'STRATEGIC ACCESS ONLY — EXPECTED COST IS HIGHER');
   offers.push({offerId:'BM-OFFER:'+buyer+':'+seller+':'+tok(rid),buyerCountryId:buyer,sellerCountryId:seller,resourceId:rid,
@@ -145,18 +221,27 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
    availableQuantity:Number(s.available.toFixed(6)),requestedQuantity:q,benchmarkUnitPrice:quote.value,benchmarkSource:quote.source,
    unitPrice:px.unit,priceMultiplier:px.multiplier,importTariffPct:tariffPct,legalLandedUnitPrice:legalUnit,
    expectedUnitCost:px.expectedUnit,legalLandedTotal:legalTotal,expectedBlackMarketTotal:Number((px.expectedUnit*q).toFixed(2)),
-   expectedBlackMarketTotalBuyer:expectedCostBuyer,expectedFineCostBuyer:expectedFineBuyer,expectedSeizedQuantity,
+   expectedBlackMarketTotalBuyer:expectedCostBuyer,quotedTradeValueBuyer:quotedGrossBuyer,
+   expectedFineCostBuyer:expectedFineBuyer,expectedSeizedQuantity,
    expectedDeliveredQuantity,expectedDeliveredUnitCost,expectedSavings,detectionProbability:detection,
    lateDetectionProbability,fineRate,seizureRate,pricingBreakdown:{tariffDiscountPct:px.tariffDiscountPct,baseSpreadPct:px.baseSpreadPct,
     riskPremiumPct:px.riskPremiumPct,policyPremiumPct:px.policyPremiumPct,scarcityPremiumPct:px.scarcityPremiumPct,brokerSpreadPct:px.brokerSpreadPct},
    embargoed:!!emb.blocked,embargoPolicyIds:(emb.policies||[]).map(x=>String(x.policyId||'')).filter(Boolean),
-   sanctionsAtQuote:sanctioned,exportRestrictionReason:restricted?rule.reason:null,
+   sanctionsAtQuote:sanctioned,sanctionPolicyIds:sanctionContext.policyIds,
+   sanctioningCountryIds:sanctionContext.issuerCountryIds,sanctionedBuyerAtQuote:sanctionContext.buyerTargeted,
+   sanctionedSellerAtQuote:sanctionContext.sellerTargeted,secondarySanctionsAtQuote:sanctionContext.secondary,
+   exportRestrictionReason:restricted?rule.reason:null,
    exportPolicyIds:(rule.policies||[]).map(x=>typeof x==='string'?x:String(x.policyId||'')).filter(Boolean),
    legalMarketAvailable:legalAvailable,foreignPolicyBasis,whyUse,
    reason:!legalAvailable?'RESTRICTED_OR_UNAVAILABLE_LEGAL_ACCESS':(expectedSavings!==null&&expectedSavings>0?'EXPECTED_COST_ADVANTAGE':'STRATEGIC_ACCESS_ONLY'),
    buyerMotiveCode:buyerMotivation.code,buyerMotiveReason:buyerMotivation.reason,
    sellerMotiveCode:sellerMotivation.code,sellerMotiveReason:sellerMotivation.reason,
    sellerActorClass:stateBrokerType(seller,rid,rule,emb),
+   shipmentSizeBand:size.band,sellerStockExposurePct:size.percent,repeatAttempts10Turns:pattern.attempts10Turns,
+   importTariffAvoidedPct:tariffPct,fineRate,attemptFineRate:penalty.attemptFineRate,seizureRate,
+   scrutinyThresholds:{sellerStockExposurePct:[1,3,8,15],sellerFreeStockQuantity:size.quantityThresholds,
+    unit:p.unit||null,interpretation:'share of currently verified seller free tradable stock'},
+   penaltyModel:{tariffAvoidanceRate:penalty.tariffAvoidanceRate,repeatAttempts:pattern.attempts10Turns},
    brokerId:'SHADOW-BROKER:'+seller,brokerType:stateBrokerType(seller,rid,rule,emb),brokerReputation:getBrokerReputation(seller,'SHADOW-BROKER:'+seller),
    stockAuthority:'GAME_STATE_RESOURCE_INVENTORY_RESERVE_AND_WAREHOUSE'});
  }
@@ -170,15 +255,26 @@ function getNetworkReports(c){const v=bucket('intelligence',c).blackMarketNetwor
 function stateBrokerType(c,rid,rule,emb){const t=bucket('trade',c),f=bucket('foreign',c),directives=Array.isArray(t.stateSupplyDirectives)?t.stateSupplyDirectives:[],embargoes=Array.isArray(t.resourceEmbargoes)?t.resourceEmbargoes:[];
  const stateLinked=directives.some(x=>!x.resourceId||tok(x.resourceId)===tok(rid))||embargoes.some(x=>!x.resourceId||tok(x.resourceId)===tok(rid))||!!f.stateTradeNetwork;
  return stateLinked?'STATE_LINKED':'PRIVATE_BROKER';}
-function buyerMotiveEvidence(c,rid,quantity){
+function buyerMotiveEvidence(c,rid,quantity,sanctionContext={}){
  const resource=bucket('resource',c),finance=bucket('finance',c),tradeState=bucket('trade',c);
  const runtime=resource.demandRuntime||{},demand=value(runtime.byResource,rid)||{};
- const unmet=Math.max(0,num(demand.unmetDemand)||0),factoryInput=Math.max(0,num(demand.activeFactoryInputDemandPerDay)||0);
- const coverage=num(demand.stockCoverageDays),target=num(demand.stockCoverageTargetDays);
+ const unmet=Math.max(0,num(demand.unmetDemand)||0),perDay=Math.max(0,num(demand.demandPerDay??demand.demand)||0),
+  factoryInput=Math.max(0,num(demand.activeFactoryInputDemandPerDay)||0);
+ const coverage=num(demand.stockCoverageDays),target=num(demand.stockCoverageTargetDays),tariffPct=tariff(c),
+  importRow=value(resource.importDependencyByResource,rid),
+  dependency=num(demand.importDependencyPct??demand.importDependency??demand.importShare??(typeof importRow==='object'?importRow?.share??importRow?.importShare:importRow));
  const embargoes=Array.isArray(tradeState.resourceEmbargoes)?tradeState.resourceEmbargoes:[];
- const restricted=embargoes.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&!/EXPIRED|REVOKED|INACTIVE/.test(String(x.status||'').toUpperCase()));
- if(restricted)return{code:'RESTRICTED_INPUT_ACCESS',reason:'The buyer country has an active resource restriction affecting the selected commodity.'};
+ const sanctions=Array.isArray(tradeState.sanctions)?tradeState.sanctions:[];
+ const active=row=>!['EXPIRED','REVOKED','INACTIVE','CANCELLED','LIFTED'].includes(String(row.status||'ACTIVE').toUpperCase());
+ const importRestricted=embargoes.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&active(x)&&
+  (country(x.issuerCountryId)||c)===country(c)&&['IMPORT','BOTH'].includes(String(x.direction||'BOTH').toUpperCase()));
+ const restricted=!!sanctionContext.buyerTargeted||importRestricted;
+ if(restricted)return{code:'RESTRICTED_INPUT_ACCESS',reason:'The buyer country has an active resource sanction or import restriction affecting the selected commodity.'};
  if(factoryInput>0)return{code:'INDUSTRIAL_INPUT_SHORTAGE',reason:'Recorded active factory input demand exists for this commodity.'};
+ if(tariffPct!==null&&tariffPct>=20&&(perDay>0||unmet>0))
+  return{code:'TARIFF_AVOIDANCE_PRESSURE',reason:'The recorded import tariff is '+tariffPct.toFixed(1)+'%; a commercial buyer may compare the tariff saving with detection and penalty exposure.'};
+ if(dependency!==null&&dependency>0&&(perDay>0||unmet>0))
+  return{code:'IMPORT_DEPENDENCY',reason:'The country has recorded import dependence for this commodity, increasing its incentive to preserve access to external suppliers.'};
  if(unmet>0||coverage!==null&&target!==null&&coverage<target){
   if(/coal|oil|gas|uranium|electric|energy/i.test(rid))return{code:'ENERGY_SECURITY_PRESSURE',reason:'Recorded unmet demand or low stock coverage affects a nationally important energy input.'};
   if(/food|grain|wheat|rice|fertili/i.test(rid))return{code:'FOOD_SECURITY_PRESSURE',reason:'Recorded unmet demand or low stock coverage creates food or agricultural replenishment pressure.'};
@@ -188,10 +284,11 @@ function buyerMotiveEvidence(c,rid,quantity){
   return{code:'FOREIGN_EXCHANGE_PRESSURE',reason:'Recorded foreign-reserve coverage is weak, increasing the value of alternative supply access.'};
  return{code:'PLAYER_SELECTED_NEED_NOT_VERIFIED',reason:'No matching shortage signal was observed; this offer was found from seller stock and policy evidence, not an assumed national shortage.'};
 }
-function sellerMotiveEvidence(c,rid,rule,emb){
+function sellerMotiveEvidence(c,rid,rule,emb,sanctionContext={}){
  const t=bucket('trade',c),finance=bucket('finance',c),resource=bucket('resource',c);
  const directives=Array.isArray(t.stateSupplyDirectives)?t.stateSupplyDirectives:[];
  const activeDirective=directives.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&!/EXPIRED|REVOKED|INACTIVE/.test(String(x.status||'').toUpperCase()));
+ if(sanctionContext.sellerTargeted)return{code:'SANCTIONED_EXPORTER_ACCESS_RESTRICTION',reason:'This exporter is the explicit target of an active sanction policy; its recorded customers may seek a restricted alternative supply channel.'};
  if(activeDirective||rule?.allowed===false&&['STATE_DIRECTIVE_DOMESTIC_ONLY','STATE_DIRECTIVE_EXPORT_RESTRICTED'].includes(String(rule?.reason||'')))
   return{code:'STATE_DIRECTED_EXPORT_REVENUE',reason:'An active state supply directive or export restriction is recorded for this commodity.'};
  if(stateBrokerType(c,rid,rule,emb)==='STATE_LINKED')
@@ -247,9 +344,17 @@ function createDeal(input={}){
   expectedUnitCost:offer.expectedUnitCost,legalLandedTotal:offer.legalLandedTotal,
   expectedBlackMarketTotal:Number((unitPrice*q).toFixed(2)),
   expectedSavings:offer.expectedSavings===null?null:Number((offer.expectedSavings*q/offer.requestedQuantity).toFixed(2)),
-  importTariffPctAtCreation:offer.importTariffPct,importTariffPct:0,detectionProbability:offer.detectionProbability,
+  importTariffPctAtCreation:offer.importTariffPct,importTariffPct:0,importTariffAvoidedPct:offer.importTariffAvoidedPct,
+  detectionProbability:offer.detectionProbability,shipmentSizeBand:offer.shipmentSizeBand,sellerStockExposurePct:offer.sellerStockExposurePct,
+  sellerFreeStockQuantityThresholds:offer.scrutinyThresholds?.sellerFreeStockQuantity||[],
+  repeatAttempts10Turns:offer.repeatAttempts10Turns,fineRateAtCreation:offer.fineRate,
+  attemptFineRateAtCreation:offer.attemptFineRate,seizureRateAtCreation:offer.seizureRate,
+  attemptedValueBuyer:offer.quotedTradeValueBuyer,attemptCurrency:offer.buyerCurrency,
   embargoedAtCreation:offer.embargoed,embargoPolicyIds:offer.embargoPolicyIds,tradeAgreementAtCreation:agreement(rel),
-  sanctionsAtCreation:offer.sanctionsAtQuote,exportRestrictionReason:offer.exportRestrictionReason,exportPolicyIds:offer.exportPolicyIds,
+  sanctionsAtCreation:offer.sanctionsAtQuote,sanctionPolicyIds:offer.sanctionPolicyIds||[],
+  sanctioningCountryIds:offer.sanctioningCountryIds||[],sanctionedBuyerAtCreation:!!offer.sanctionedBuyerAtQuote,
+  sanctionedSellerAtCreation:!!offer.sanctionedSellerAtQuote,secondarySanctionsAtCreation:!!offer.secondarySanctionsAtQuote,
+  exportRestrictionReason:offer.exportRestrictionReason,exportPolicyIds:offer.exportPolicyIds,
   legalMarketAvailable:offer.legalMarketAvailable,commercialReason:offer.reason,createdTurn:turn(),expiresTurn:turn()+PERMIT_TTL,
   status:'REQUESTED',source:'OMEGA_BLACK_MARKET_SHADOW_ECONOMY',authorizationVersion:VERSION};
  const saved=dispatch('trade','OMEGA_BLACK_MARKET_RECORD_DEAL',buyer,{deal:row});if(saved?.accepted!==true)return{accepted:false,reason:saved?.reason||'BLACK_MARKET_DEAL_RECORD_FAILED'};
@@ -268,52 +373,92 @@ function shouldIntercept(dealId,request){
  const roll=random(row.dealId+'|INSPECTION|'+row.createdTurn);return{detected:roll<row.detectionProbability,reason:roll<row.detectionProbability?'BLACK_MARKET_INTERCEPTED':'INSPECTION_NOT_DETECTED',probability:row.detectionProbability,roll};
 }
 function recordCaseFor(c,row){return dispatch('intelligence','OMEGA_BLACK_MARKET_RECORD_CASE',c,{case:Object.assign({},clone(row),{caseCountryId:country(c)})});}
+function escalationForIssuer(issuer,target,rid,baseSeverity){
+ const history=bucket('foreign',issuer).blackMarketResponses;
+ const prior=(Array.isArray(history)?history:[]).filter(x=>country(x.targetCountryId)===target&&
+  (!x.resourceId||tok(x.resourceId)===tok(rid))&&
+  turn()-(num(x.recordedTurn??x.createdTurn??x.turn)??turn())<=30);
+ const rank={LOW:0,MODERATE:1,HIGH:2,CRITICAL:3},levels=['LOW','MODERATE','HIGH','CRITICAL'];
+ const base=rank[String(baseSeverity||'MODERATE').toUpperCase()]??1,
+  increase=prior.length>=3?2:(prior.length>=1?1:0);
+ return{severity:levels[Math.min(3,base+increase)],priorViolations30Turns:prior.length};
+}
 function detectedCase(deal,detail={}){
+ const stage=String(detail.stage||'PRE_DISPATCH'),severity=deal.shipmentSizeBand==='CRITICAL'?'CRITICAL':
+  ((deal.embargoedAtCreation||deal.sanctionsAtCreation||deal.exportRestrictionReason||deal.shipmentSizeBand==='LARGE')?'HIGH':'MODERATE');
  const row={caseId:'BM-CASE-'+deal.dealId,dealId:deal.dealId,buyerCountryId:deal.buyerCountryId,sellerCountryId:deal.sellerCountryId,
   resourceId:deal.resourceId,quantity:deal.quantity,unitPrice:deal.unitPrice,currency:deal.currency,detectionTurn:turn(),
-  detectionStage:detail.stage||'PRE_DISPATCH',evidenceConfidence:detail.stage==='POST_SETTLEMENT'?.72:.9,
+  detectionStage:stage,evidenceConfidence:stage==='POST_SETTLEMENT'?.72:.9,severity,
+  shipmentSizeBand:deal.shipmentSizeBand||'UNCLASSIFIED',sellerStockExposurePct:num(deal.sellerStockExposurePct),
+  repeatAttempts10Turns:num(deal.repeatAttempts10Turns)||0,attemptedValueBuyer:num(deal.attemptedValueBuyer),
+  sellerFreeStockQuantityThresholds:deal.sellerFreeStockQuantityThresholds||[],
+  sanctionPolicyIds:deal.sanctionPolicyIds||[],sanctioningCountryIds:deal.sanctioningCountryIds||[],
+  sanctionedBuyerAtCreation:!!deal.sanctionedBuyerAtCreation,sanctionedSellerAtCreation:!!deal.sanctionedSellerAtCreation,
+  fineRateAtCreation:num(deal.fineRateAtCreation),attemptFineRateAtCreation:num(deal.attemptFineRateAtCreation),
+  seizureRateAtCreation:num(deal.seizureRateAtCreation),
+  cargoDisposition:stage==='POST_SETTLEMENT'?'IMPORTED_CARGO_SUBJECT_TO_PROVENANCE_BOUNDED_SEIZURE':
+   'STOPPED_BEFORE_IMPORT_NO_BUYER_STOCK_SEIZED',
   attributionStatus:'TRANSACTION_LINKED_STATE_SPONSORSHIP_NOT_ESTABLISHED',embargoPolicyIds:deal.embargoPolicyIds||[],
   exportPolicyIds:deal.exportPolicyIds||[],exportRestrictionReason:deal.exportRestrictionReason||null,settlementId:detail.settlementId||null,
-  status:detail.stage==='POST_SETTLEMENT'?'UNDER_INVESTIGATION':'INTERCEPTED',source:'OMEGA_BLACK_MARKET_DETECTION'};
+  status:stage==='POST_SETTLEMENT'?'UNDER_INVESTIGATION':'INTERCEPTED',source:'OMEGA_BLACK_MARKET_DETECTION'};
  [deal.buyerCountryId,deal.sellerCountryId].forEach(c=>recordCaseFor(c,row));
- const issuers=[];
- const citedPolicies=new Set([...(deal.embargoPolicyIds||[]),...(deal.exportPolicyIds||[])] .map(String));
- for(const c of countryKeys('trade')){
-  const t=bucket('trade',c);
-  for(const field of ['resourceEmbargoes','stateSupplyDirectives']){
+ const issuers=[],citedPolicies=new Set([...(deal.embargoPolicyIds||[]),...(deal.exportPolicyIds||[]),...(deal.sanctionPolicyIds||[])] .map(String));
+ for(const domain of ['trade','foreign'])for(const c of countryKeys(domain)){
+  const t=bucket(domain,c);
+  for(const field of ['resourceEmbargoes','stateSupplyDirectives','sanctions']){
    const list=t[field];if(!Array.isArray(list))continue;
    for(const policyRow of list){
-    if(citedPolicies.has(String(policyRow?.policyId||''))&&policyRow?.issuerCountryId)issuers.push(country(policyRow.issuerCountryId));
+    if(!citedPolicies.has(String(policyRow?.policyId||policyRow?.sanctionId||'')))continue;
+    const issuer=country(policyRow.issuerCountryId||c),policyTarget=country(policyRow.targetCountryId||policyRow.subjectCountryId||policyRow.countryId);
+    if(issuer)issuers.push({issuer,target:policyTarget||
+      (issuer===deal.sellerCountryId?deal.buyerCountryId:deal.sellerCountryId)});
    }
   }
  }
- [...new Set(issuers)].filter(Boolean).forEach(issuer=>dispatch('foreign','OMEGA_BLACK_MARKET_RECORD_RESPONSE',issuer,{response:{
-  responseId:'BM-RESPONSE-'+deal.dealId+'-'+issuer,caseId:row.caseId,dealId:deal.dealId,targetCountryId:deal.buyerCountryId,
-  sourceCountryId:deal.sellerCountryId,resourceId:deal.resourceId,severity:(deal.embargoedAtCreation||deal.sanctionsAtQuote||deal.exportRestrictionReason)?'HIGH':'MODERATE',
-  responseType:'ENHANCED_INSPECTION_AND_DIPLOMATIC_PROTEST',reason:'DETECTED_BLACK_MARKET_TRADE_ATTEMPT',
-  policyIds:[...citedPolicies],createdTurn:turn(),evidenceConfidence:row.evidenceConfidence,status:'ACTIVE'}}));
+ const unique=[...new Map(issuers.map(x=>[x.issuer+'::'+x.target,x])).values()];
+ unique.forEach(({issuer,target})=>{
+  const secondary=target===deal.buyerCountryId?deal.sellerCountryId:deal.buyerCountryId,
+   escalation=escalationForIssuer(issuer,target,deal.resourceId,severity),responseSeverity=escalation.severity;
+  dispatch('foreign','OMEGA_BLACK_MARKET_RECORD_RESPONSE',issuer,{response:{
+  responseId:'BM-RESPONSE-'+deal.dealId+'-'+issuer,caseId:row.caseId,dealId:deal.dealId,targetCountryId:target,
+  secondaryTargetCountryId:secondary,sourceCountryId:issuer,buyerCountryId:deal.buyerCountryId,sellerCountryId:deal.sellerCountryId,
+  resourceId:deal.resourceId,baseSeverity:severity,severity:responseSeverity,
+  priorViolations30Turns:escalation.priorViolations30Turns,
+  diplomaticRelationPenalty:responseSeverity==='CRITICAL'?-12:(responseSeverity==='HIGH'?-8:(responseSeverity==='LOW'?-2:-5)),
+  responseType:'SANCTIONS_ENFORCEMENT_AND_ENHANCED_INSPECTION',reason:'DETECTED_BLACK_MARKET_TRADE_ATTEMPT',
+  policyIds:[...citedPolicies],createdTurn:turn(),evidenceConfidence:row.evidenceConfidence,status:'ACTIVE'}});
+ });
  emit('OMEGA_BLACK_MARKET_DETECTED',deal.buyerCountryId,row);return row;
 }
 const ENFORCEMENT=Object.freeze({baseFineRate:.06,embargoFineRate:.08,exportRestrictionFineRate:.04,
- baseSeizureRate:.05,embargoSeizureRate:.15,exportRestrictionSeizureRate:.10});
+ sanctionsFineRate:.07,tariffAvoidanceFineRate:.04,baseAttemptFineRate:.03,
+ baseSeizureRate:.05,embargoSeizureRate:.15,exportRestrictionSeizureRate:.10,
+ sanctionsSeizureRate:.15,maxFineRate:.35,maxSeizureRate:.55});
 function collectFineHandler(cmd,ctx){
  const f=cmd?.payload?.fine||{},fineId=String(f.fineId||''),dealId=String(f.dealId||''),amountDue=num(f.amountDue);
  if(!fineId||!dealId||amountDue===null||amountDue<0)return{accepted:false,reason:'BLACK_MARKET_FINE_INVALID'};
  const deals=ctx.stateTransaction.get('trade.blackMarketDeals'),deal=Array.isArray(deals)?deals.find(x=>String(x.dealId||'')===dealId):null;
- if(!deal||String(deal.status||'').toUpperCase()!=='SETTLED_UNDER_INVESTIGATION'||!deal.settlementId)
-  return{accepted:false,reason:'BLACK_MARKET_FINE_REQUIRES_CONFIRMED_INVESTIGATION'};
- if(f.settlementId&&String(f.settlementId)!==String(deal.settlementId))return{accepted:false,reason:'BLACK_MARKET_FINE_SETTLEMENT_MISMATCH'};
- const buyerValue=num(deal.buyerSettlementValue),currency=String(f.currency||deal.buyerCurrency||'').toUpperCase();
- if(buyerValue===null||buyerValue<=0||!currency||currency!==String(deal.buyerCurrency||currency))
-  return{accepted:false,reason:'BLACK_MARKET_FINE_SETTLEMENT_VALUE_UNOBSERVED'};
- const expectedRate=Math.min(.18,ENFORCEMENT.baseFineRate+(deal.embargoedAtCreation?ENFORCEMENT.embargoFineRate:0)+(deal.exportRestrictionReason?ENFORCEMENT.exportRestrictionFineRate:0));
+ const status=String(deal?.status||'').toUpperCase(),attempt=status==='INTERCEPTED',
+  settled=status==='SETTLED_UNDER_INVESTIGATION';
+ if(!deal||(!attempt&&(!settled||!deal.settlementId)))
+  return{accepted:false,reason:'BLACK_MARKET_FINE_REQUIRES_DETECTED_ATTEMPT_OR_CONFIRMED_INVESTIGATION'};
+ const enforcementKey=settled?String(deal.settlementId):'ATTEMPT:'+dealId;
+ if(f.settlementId&&String(f.settlementId)!==enforcementKey)return{accepted:false,reason:'BLACK_MARKET_FINE_ENFORCEMENT_KEY_MISMATCH'};
+ const buyerValue=settled?num(deal.buyerSettlementValue):num(deal.attemptedValueBuyer),
+  currency=String(f.currency||(settled?deal.buyerCurrency:deal.attemptCurrency)||deal.currency||'').toUpperCase();
+ if(buyerValue===null||buyerValue<=0||!currency)return{accepted:false,reason:'BLACK_MARKET_FINE_VALUE_UNOBSERVED'};
+ if(settled&&currency!==String(deal.buyerCurrency||currency))return{accepted:false,reason:'BLACK_MARKET_FINE_SETTLEMENT_CURRENCY_MISMATCH'};
+ const legacyRate=Math.min(ENFORCEMENT.maxFineRate,ENFORCEMENT.baseFineRate+
+  (deal.embargoedAtCreation?ENFORCEMENT.embargoFineRate:0)+(deal.exportRestrictionReason?ENFORCEMENT.exportRestrictionFineRate:0));
+ const expectedRate=attempt?clamp(num(deal.attemptFineRateAtCreation)??ENFORCEMENT.baseAttemptFineRate,.01,.16):
+  clamp(num(deal.fineRateAtCreation)??legacyRate,.01,ENFORCEMENT.maxFineRate);
  const expectedDue=Number((buyerValue*expectedRate).toFixed(6));
  if(Math.abs(amountDue-expectedDue)>Math.max(.00001,expectedDue*.000001))
   return{accepted:false,reason:'BLACK_MARKET_FINE_AMOUNT_OUTSIDE_AUTHORIZED_PENALTY'};
  const raw=ctx.stateTransaction.get('finance.blackMarketEnforcementHistory'),arr=Array.isArray(raw)?clone(raw):[];
  const index=arr.findIndex(x=>String(x.fineId||'')===fineId),prior=index>=0?arr[index]:null;
  if(prior&&(String(prior.dealId||'')!==dealId||Math.abs((num(prior.amountDue)||0)-amountDue)>1e-7||
-   String(prior.settlementId||'')!==String(deal.settlementId)))
+   String(prior.settlementId||'')!==enforcementKey))
   return{accepted:false,reason:'BLACK_MARKET_FINE_IDEMPOTENCY_COLLISION'};
  const alreadyPaid=Math.max(0,num(prior?.amountPaid)||0),outstanding=Math.max(0,amountDue-alreadyPaid);
  const forex=g.OmegaForexMonetaryEngine||g.Omega?.ForexMonetaryEngine;
@@ -328,7 +473,7 @@ function collectFineHandler(cmd,ctx){
  const paidLocal=Number((paidUsd*(localPerUsd||0)).toFixed(6));
  if(writePath&&paidUsd>0)ctx.stateTransaction.set(writePath,Math.max(0,balance-paidUsd));
  const totalPaid=Number((alreadyPaid+paidLocal).toFixed(6)),remaining=Number(Math.max(0,amountDue-totalPaid).toFixed(6));
- const row=Object.assign({},prior||{}, {fineId,dealId,caseId:f.caseId||prior?.caseId||null,settlementId:deal.settlementId,
+ const row=Object.assign({},prior||{}, {fineId,dealId,caseId:f.caseId||prior?.caseId||null,settlementId:enforcementKey,
   amountDue:Number(amountDue.toFixed(6)),amountPaid:totalPaid,amountOutstanding:remaining,
   amountPaidUsd:Number(((num(prior?.amountPaidUsd)||0)+paidUsd).toFixed(6)),currency,
   lastAttemptTurn:turn(),status:remaining<=1e-7?'PAID':(localPerUsd===null||localPerUsd<=0?'WAITING_FX':(writePath?'PARTIALLY_PAID':'WAITING_LIQUIDITY')),
@@ -349,7 +494,8 @@ function seizeCargoHandler(cmd,ctx){
  if(tok(deal.resourceId)!==tok(rid))return{accepted:false,reason:'BLACK_MARKET_SEIZURE_RESOURCE_MISMATCH'};
  const authorizedBatches=new Set((deal.createdBatchIds||[]).map(String));
  if(batchIds.some(id=>!authorizedBatches.has(id)))return{accepted:false,reason:'BLACK_MARKET_SEIZURE_BATCH_PROVENANCE_INVALID'};
- const authorizedRate=Math.min(.30,ENFORCEMENT.baseSeizureRate+(deal.embargoedAtCreation?ENFORCEMENT.embargoSeizureRate:0)+(deal.exportRestrictionReason?ENFORCEMENT.exportRestrictionSeizureRate:0));
+ const legacyRate=Math.min(.30,ENFORCEMENT.baseSeizureRate+(deal.embargoedAtCreation?ENFORCEMENT.embargoSeizureRate:0)+(deal.exportRestrictionReason?ENFORCEMENT.exportRestrictionSeizureRate:0));
+ const authorizedRate=clamp(num(deal.seizureRateAtCreation)??legacyRate,.01,ENFORCEMENT.maxSeizureRate);
  const maxSeizure=Number(((num(deal.settledQuantity)??num(deal.quantity)??0)*authorizedRate).toFixed(8));
  if(requested>maxSeizure+1e-7)return{accepted:false,reason:'BLACK_MARKET_SEIZURE_AMOUNT_EXCEEDS_AUTHORIZED_RATE',maxSeizure};
  const oldLedger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
@@ -420,8 +566,10 @@ function enforcePostSettlement(deal,settlement={},caseRow=null){
  if(!Array.isArray(createdBatchIds)||createdBatchIds.some(x=>!allowedBatches.has(String(x))))
   return{accepted:false,reason:'BLACK_MARKET_ENFORCEMENT_BATCH_PROVENANCE_INVALID'};
  const embargoed=!!persisted.embargoedAtCreation,restricted=!!persisted.exportRestrictionReason;
- const fineRate=Math.min(.18,ENFORCEMENT.baseFineRate+(embargoed?ENFORCEMENT.embargoFineRate:0)+(restricted?ENFORCEMENT.exportRestrictionFineRate:0));
- const seizureRate=Math.min(.30,ENFORCEMENT.baseSeizureRate+(embargoed?ENFORCEMENT.embargoSeizureRate:0)+(restricted?ENFORCEMENT.exportRestrictionSeizureRate:0));
+ const legacyFineRate=Math.min(.18,ENFORCEMENT.baseFineRate+(embargoed?ENFORCEMENT.embargoFineRate:0)+(restricted?ENFORCEMENT.exportRestrictionFineRate:0));
+ const legacySeizureRate=Math.min(.30,ENFORCEMENT.baseSeizureRate+(embargoed?ENFORCEMENT.embargoSeizureRate:0)+(restricted?ENFORCEMENT.exportRestrictionSeizureRate:0));
+ const fineRate=clamp(num(persisted.fineRateAtCreation)??legacyFineRate,.01,ENFORCEMENT.maxFineRate);
+ const seizureRate=clamp(num(persisted.seizureRateAtCreation)??legacySeizureRate,.01,ENFORCEMENT.maxSeizureRate);
  const buyerValue=num(settlement.buyerValue)??num(persisted.buyerSettlementValue),fineDue=buyerValue!==null&&buyerValue>0?Number((buyerValue*fineRate).toFixed(6)):null;
  const fine=fineDue===null?{accepted:false,reason:'BLACK_MARKET_BUYER_SETTLEMENT_VALUE_UNOBSERVED'}:
   dispatch('finance','OMEGA_BLACK_MARKET_COLLECT_FINE',buyer,{fine:{fineId:'BM-FINE-'+persisted.dealId,dealId:persisted.dealId,
@@ -439,12 +587,26 @@ function enforcePostSettlement(deal,settlement={},caseRow=null){
  emit('OMEGA_BLACK_MARKET_ENFORCEMENT_APPLIED',buyer,{dealId:persisted.dealId,sellerCountryId:seller,...result});
  return{accepted:!!(fine.accepted||seizure.accepted),enforcement:result,fine,seizure};
 }
+function applyAttemptFine(deal,caseRow){
+ const value=num(deal.attemptedValueBuyer),currency=String(deal.attemptCurrency||deal.buyerCurrency||deal.currency||'').toUpperCase(),
+  rate=clamp(num(deal.attemptFineRateAtCreation)??ENFORCEMENT.baseAttemptFineRate,.01,.16);
+ if(value===null||value<=0||!currency)return{accepted:false,reason:'ATTEMPTED_TRANSACTION_VALUE_UNOBSERVED'};
+ const fine=dispatch('finance','OMEGA_BLACK_MARKET_COLLECT_FINE',deal.buyerCountryId,{fine:{fineId:'BM-FINE-ATTEMPT-'+deal.dealId,
+  dealId:deal.dealId,caseId:caseRow?.caseId||null,settlementId:'ATTEMPT:'+deal.dealId,
+  amountDue:Number((value*rate).toFixed(6)),currency}});
+ return{accepted:fine?.accepted===true,rate,amountDue:Number((value*rate).toFixed(6)),
+  amountPaid:num(fine?.fine?.amountPaid)||0,amountOutstanding:num(fine?.fine?.amountOutstanding)||0,status:fine?.fine?.status||fine?.reason||'NOT_RECORDED'};
+}
 function handleTradeRejection(request,decision){
  const deal=getAuthorizedDeal(request?.blackMarketDealId,request);if(!deal)return{accepted:false,reason:'BLACK_MARKET_AUTHORIZATION_INVALID'};
  if(String(decision?.reason||'')==='BLACK_MARKET_INTERCEPTED'){
   updateDeal(deal.dealId,{buyerCountryId:deal.buyerCountryId,status:'INTERCEPTED',detectionTurn:turn(),interceptionStage:decision?.stage||'PRE_DISPATCH'});
   if(deal.brokerId)adjustBrokerReputation(deal.sellerCountryId,deal.brokerId,-7,'INTERCEPTED',String(decision?.stage||'PRE')+':'+deal.dealId);
-  return{accepted:true,status:'INTERCEPTED',case:detectedCase(deal,{stage:decision?.stage||'PRE_DISPATCH'})};
+  const caseRow=detectedCase(deal,{stage:decision?.stage||'PRE_DISPATCH'});
+  const attemptedFine=applyAttemptFine(deal,caseRow);
+  updateDeal(deal.dealId,{buyerCountryId:deal.buyerCountryId,attemptEnforcement:attemptedFine});
+  return{accepted:true,status:'INTERCEPTED',case:caseRow,attemptEnforcement:attemptedFine,
+   cargoDisposition:'STOPPED_BEFORE_IMPORT_NO_BUYER_STOCK_SEIZED'};
  }
  updateDeal(deal.dealId,{buyerCountryId:deal.buyerCountryId,status:'FAILED',failureReason:decision?.reason||'SELLER_DECLINED'});
  return{accepted:true,status:'FAILED',reason:decision?.reason||'SELLER_DECLINED'};
@@ -568,16 +730,45 @@ function recordCaseHandler(cmd,ctx){
  if(prior)return{accepted:true,duplicate:true,case:clone(prior)};
  arr.push(clone(r));ctx.stateTransaction.set('intelligence.blackMarketCases',arr.slice(-MAX_CASES));return{accepted:true,case:clone(r)};
 }
+function recordExportShockHandler(cmd,ctx){
+ const r=cmd?.payload?.shock||{},seller=country(ctx.countryId),shockId=String(r.shockId||''),
+  partner=country(r.mainCustomerCountryId),share=num(r.exportShare),source=String(r.evidenceSource||'');
+ const supportedSource=['OMEGA_GLOBAL_TRADE_SETTLED_EXPORT_LEDGER','SELLER_BILATERAL_EXPORT_LEDGER','BILATERAL_RELATIONSHIP_EVIDENCE'].includes(source);
+ if(!shockId||country(r.sellerCountryId)!==seller||!partner||!Array.isArray(r.sanctioningCountryIds)||!r.sanctioningCountryIds.length||
+   share===null||share<.15||share>1||!r.resourceId||!supportedSource)
+  return{accepted:false,reason:'BLACK_MARKET_EXPORT_SHOCK_EVIDENCE_INVALID'};
+ const raw=ctx.stateTransaction.get('trade.blackMarketExportShockLedger'),arr=Array.isArray(raw)?clone(raw):[],
+  prior=arr.find(x=>String(x.shockId||'')===shockId);
+ if(prior)return{accepted:true,duplicate:true,shock:clone(prior)};
+ const row=Object.assign({},clone(r),{shockId,recordedTurn:turn(),status:'EXPORT_MARKET_ACCESS_SHOCK',
+  authority:'OBSERVED_BILATERAL_EXPORT_DEPENDENCY_AND_SANCTION_POLICY'});
+ arr.push(row);ctx.stateTransaction.set('trade.blackMarketExportShockLedger',arr.slice(-MAX_CASES));
+ emit('OMEGA_BLACK_MARKET_EXPORT_MARKET_SHOCK',seller,row);
+ return{accepted:true,shock:clone(row)};
+}
 function recordResponseHandler(cmd,ctx){
  const r=cmd?.payload?.response||{},responseId=String(r.responseId||''),target=country(r.targetCountryId),c=country(ctx.countryId);
- if(!responseId||!target||!country(r.sourceCountryId))return{accepted:false,reason:'BLACK_MARKET_FOREIGN_RESPONSE_INVALID'};
+ if(!responseId||!target||country(r.sourceCountryId)!==c)return{accepted:false,reason:'BLACK_MARKET_FOREIGN_RESPONSE_INVALID'};
  const raw=ctx.stateTransaction.get('foreign.blackMarketResponses'),arr=Array.isArray(raw)?clone(raw):[],prior=arr.find(x=>String(x.responseId||'')===responseId);
  if(prior)return{accepted:true,duplicate:true,response:clone(prior)};
- arr.push(clone(r));ctx.stateTransaction.set('foreign.blackMarketResponses',arr.slice(-MAX_RESPONSES));
- const rawAdj=ctx.stateTransaction.get('foreign.relationAdjustments'),adj=rawAdj&&typeof rawAdj==='object'?clone(rawAdj):{},list=Array.isArray(adj[target])?adj[target].slice():[];
- list.push({source:'BLACK_MARKET_ENFORCEMENT',type:'DIPLOMATIC_PROTEST',delta:-4,turn:turn(),caseId:r.caseId||null,responseId,reason:r.reason||'BLACK_MARKET_DETECTED'});
- adj[target]=list.slice(-64);ctx.stateTransaction.set('foreign.relationAdjustments',adj);
- emit('OMEGA_BLACK_MARKET_FOREIGN_RESPONSE',c,r);return{accepted:true,response:clone(r)};
+ const severity=String(r.severity||'MODERATE').toUpperCase(),
+  baseDelta=num(r.diplomaticRelationPenalty)??(severity==='CRITICAL'?-12:(severity==='HIGH'?-8:(severity==='LOW'?-2:-5))),
+  delta=Math.max(-12,Math.min(-1,baseDelta));
+ const rawAdj=ctx.stateTransaction.get('foreign.relationAdjustments'),adj=rawAdj&&typeof rawAdj==='object'?clone(rawAdj):{};
+ const targets=[{countryId:target,delta,type:'PRIMARY_SANCTIONS_VIOLATION'}],
+  secondary=country(r.secondaryTargetCountryId);
+ if(secondary&&secondary!==target&&secondary!==c)targets.push({countryId:secondary,delta:-Math.max(1,Math.round(Math.abs(delta)*.35)),type:'SECONDARY_TRADE_ASSOCIATION'});
+ for(const item of targets){
+  const list=Array.isArray(adj[item.countryId])?adj[item.countryId].slice():[];
+  list.push({source:'BLACK_MARKET_ENFORCEMENT',type:item.type,delta:item.delta,turn:turn(),caseId:r.caseId||null,
+   responseId,reason:r.reason||'BLACK_MARKET_DETECTED',severity});
+  adj[item.countryId]=list.slice(-64);
+ }
+ ctx.stateTransaction.set('foreign.relationAdjustments',adj);
+ const response=Object.assign({},clone(r),{appliedRelationAdjustments:clone(targets),diplomaticRelationPenaltyApplied:delta,recordedTurn:turn()});
+ arr.push(response);ctx.stateTransaction.set('foreign.blackMarketResponses',arr.slice(-MAX_RESPONSES));
+ emit('OMEGA_BLACK_MARKET_FOREIGN_RESPONSE',c,response);
+ return{accepted:true,response:clone(response),appliedRelationAdjustments:targets};
 }
 function getCases(c){const v=bucket('intelligence',c).blackMarketCases;return Array.isArray(v)?v.slice().map(x=>clone(x)):[];}
 function getResponses(c){const v=bucket('foreign',c).blackMarketResponses;return Array.isArray(v)?v.slice().map(x=>clone(x)):[];}
@@ -606,7 +797,8 @@ function onTurn(){
 function install(){
  const m=mesh();if(!m?.registerCommandHandler)return false;
  const defs=[['OMEGA_BLACK_MARKET_RECORD_DEAL','trade',recordDealHandler],['OMEGA_BLACK_MARKET_UPDATE_DEAL','trade',updateDealHandler],
-  ['OMEGA_BLACK_MARKET_RECORD_CASE','intelligence',recordCaseHandler],['OMEGA_BLACK_MARKET_RECORD_RESPONSE','foreign',recordResponseHandler],
+  ['OMEGA_BLACK_MARKET_RECORD_CASE','intelligence',recordCaseHandler],['OMEGA_BLACK_MARKET_RECORD_EXPORT_SHOCK','trade',recordExportShockHandler],
+  ['OMEGA_BLACK_MARKET_RECORD_RESPONSE','foreign',recordResponseHandler],
   ['OMEGA_BLACK_MARKET_COLLECT_FINE','finance',collectFineHandler],['OMEGA_BLACK_MARKET_SEIZE_CARGO','resource',seizeCargoHandler],
   ['OMEGA_BLACK_MARKET_UPDATE_BROKER_REPUTATION','trade',recordBrokerReputationHandler],['OMEGA_BLACK_MARKET_RECORD_TRANSIT','trade',recordTransitHandler],
   ['OMEGA_BLACK_MARKET_UPDATE_TRANSIT','trade',updateTransitHandler],['OMEGA_BLACK_MARKET_RESERVE_TRANSIT_STOCK','trade',reserveTransitStockHandler],

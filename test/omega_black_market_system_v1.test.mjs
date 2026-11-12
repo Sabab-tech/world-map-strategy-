@@ -66,7 +66,7 @@ test('foreign enforcement response is idempotent and records the issuer diplomat
  const response={responseId:'BM-RESPONSE-1',caseId:'BM-CASE-1',targetCountryId:'BGD',sourceCountryId:'SAU',responseType:'ENHANCED_INSPECTION_AND_DIPLOMATIC_PROTEST',severity:'HIGH'};
  const m=h.ctx.OmegaMinistryInteroperability;
  assert.equal(m.dispatchCommand('foreign','OMEGA_BLACK_MARKET_RECORD_RESPONSE','SAU',{response}).status,'APPLIED');
- assert.equal(h.state.foreign.SAU.blackMarketResponses.length,1);assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-4);
+ assert.equal(h.state.foreign.SAU.blackMarketResponses.length,1);assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-8);
  assert.equal(m.dispatchCommand('foreign','OMEGA_BLACK_MARKET_RECORD_RESPONSE','SAU',{response}).result.duplicate,true);
 });
 test('war and route blockades remain hard prohibitions',()=>{
@@ -163,22 +163,22 @@ test('post-settlement discovery collects a Treasury fine and seizes only unsold 
  const result=api.enforcePostSettlement(deal,{settlementId:'SETTLE-1',quantity:10,buyerValue:1000,buyerCurrency:'USD',
   createdBatchIds:['IMPORT-BATCH-1']},{caseId:'BM-CASE-ENFORCEMENT'});
  assert.equal(result.accepted,true,JSON.stringify(result));
- assert.equal(result.enforcement.fineRate,.18);
- assert.equal(result.enforcement.fineDue,180);
- assert.equal(result.enforcement.finePaid,180);
+ assert.ok(Math.abs(result.enforcement.fineRate-.32)<1e-9);
+ assert.equal(result.enforcement.fineDue,320);
+ assert.equal(result.enforcement.finePaid,320);
  assert.equal(result.enforcement.fineOutstanding,0);
- assert.equal(result.enforcement.seizureTargetQuantity,3);
- assert.equal(result.enforcement.seizureQuantity,3);
- assert.equal(h.state.finance.BGD.available,999820);
- assert.equal(h.state.resource.BGD.inventory.coal,7);
- assert.equal(h.state.resource.BGD.warehouse.availableByResource.coal,7);
- assert.equal(h.state.resource.BGD.batches[0].remainingQuantity,7);
- assert.equal(h.state.resource.BGD.inventoryLots['IMPORT-BATCH-1'].remainingQuantity,7);
+ assert.equal(result.enforcement.seizureTargetQuantity,5.1);
+ assert.equal(result.enforcement.seizureQuantity,5.1);
+ assert.equal(h.state.finance.BGD.available,999680);
+ assert.equal(h.state.resource.BGD.inventory.coal,4.9);
+ assert.equal(h.state.resource.BGD.warehouse.availableByResource.coal,4.9);
+ assert.equal(h.state.resource.BGD.batches[0].remainingQuantity,4.9);
+ assert.equal(h.state.resource.BGD.inventoryLots['IMPORT-BATCH-1'].remainingQuantity,4.9);
  const repeat=api.enforcePostSettlement(deal,{settlementId:'SETTLE-1',quantity:10,buyerValue:1000,buyerCurrency:'USD',
   createdBatchIds:['IMPORT-BATCH-1']},{caseId:'BM-CASE-ENFORCEMENT'});
  assert.equal(repeat.seizure.duplicate,true);
- assert.equal(h.state.finance.BGD.available,999820,'the same fine must never be collected twice');
- assert.equal(h.state.resource.BGD.inventory.coal,7,'the same cargo must never be seized twice');
+ assert.equal(h.state.finance.BGD.available,999680,'the same fine must never be collected twice');
+ assert.equal(h.state.resource.BGD.inventory.coal,4.9,'the same cargo must never be seized twice');
 });
 test('unpaid enforcement fines remain outstanding and collect only when later Treasury liquidity exists',()=>{
  const h=makeHarness(),m=h.ctx.OmegaMinistryInteroperability;
@@ -238,5 +238,143 @@ test('export-restriction policy issuers receive a foreign response when a covert
  assert.equal(result.status,'INTERCEPTED');
  assert.equal(h.state.foreign.SAU.blackMarketResponses.length,1);
  assert.equal(h.state.foreign.SAU.blackMarketResponses[0].policyIds.includes('DIR-SAU-COAL'),true);
- assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-4);
+ assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-8);
+});
+
+
+test('shipment thresholds scale with the share of verified seller free stock and penalties increase with size', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ const cases=[[0.89,'MICRO'],[2.6,'SMALL'],[7,'MODERATE'],[13,'LARGE'],[14,'CRITICAL']];
+ let previousFine=0,previousSeizure=0,previousDetection=0;
+ for(const [quantity,band] of cases){
+  const offer=api.getOffers('BGD','coal',quantity).offers[0];
+  assert.equal(offer.shipmentSizeBand,band);
+  assert.ok(offer.sellerStockExposurePct>0);
+  assert.ok(offer.fineRate>=previousFine);
+  assert.ok(offer.seizureRate>=previousSeizure);
+  assert.ok(offer.detectionProbability>=previousDetection);
+  previousFine=offer.fineRate;previousSeizure=offer.seizureRate;previousDetection=offer.detectionProbability;
+ }
+ assert.deepEqual(cases.map(x=>x[1]),['MICRO','SMALL','MODERATE','LARGE','CRITICAL']);
+});
+
+test('repeat attempts within ten turns increase scrutiny and penalty rates', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ h.state.trade.BGD.blackMarketDeals=[
+  {dealId:'OLD-1',sellerCountryId:'SAU',resourceId:'coal',createdTurn:2,status:'FAILED'},
+  {dealId:'OLD-2',sellerCountryId:'SAU',resourceId:'coal',createdTurn:3,status:'INTERCEPTED'},
+  {dealId:'OLD-3',sellerCountryId:'SAU',resourceId:'coal',createdTurn:4,status:'EXPIRED'}
+ ];
+ const offer=api.getOffers('BGD','coal',10).offers[0];
+ assert.equal(offer.repeatAttempts10Turns,3);
+ assert.ok(offer.detectionProbability>.2);
+ assert.ok(offer.fineRate>.29);
+ assert.ok(offer.seizureRate>.45);
+});
+
+test('pre-dispatch interception records an investigation, charges an attempt fine and does not seize buyer inventory', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ h.state.trade.SAU.stateSupplyDirectives=[{policyId:'DIR-SAU-COAL',issuerCountryId:'SAU',status:'ACTIVE'}];
+ const offer=api.getOffers('BGD','coal',10).offers[0];
+ const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:offer.offerId});
+ assert.equal(made.accepted,true,JSON.stringify(made));
+ const deal=api.getDeal(made.deal.dealId,'BGD');
+ const before=JSON.stringify(h.state.resource.BGD);
+ const result=api.handleTradeRejection({countryId:'BGD',buyerCountryId:'BGD',targetCountryId:'SAU',
+  resourceId:'coal',quantity:10,unitPrice:deal.unitPrice,blackMarketDealId:deal.dealId,
+  blackMarketPermitId:deal.permitId},{reason:'BLACK_MARKET_INTERCEPTED',stage:'ORIGIN_INSPECTION'});
+ assert.equal(result.status,'INTERCEPTED');
+ assert.equal(result.case.cargoDisposition,'STOPPED_BEFORE_IMPORT_NO_BUYER_STOCK_SEIZED');
+ assert.equal(result.attemptEnforcement.accepted,true);
+ assert.ok(result.attemptEnforcement.amountDue>0);
+ assert.ok(result.attemptEnforcement.amountPaid>0);
+ assert.equal(h.state.trade.BGD.blackMarketDeals[0].status,'INTERCEPTED');
+ assert.equal(h.state.finance.BGD.blackMarketEnforcementHistory[0].status,'PAID');
+ assert.equal(JSON.stringify(h.state.resource.BGD),before,'a shipment stopped before import must not create or seize buyer inventory');
+ assert.equal(h.state.foreign.SAU.blackMarketResponses[0].severity,'HIGH');
+ assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-8);
+});
+
+
+test('a third-country sanction against the buyer is attached to the offer and activates issuer-led diplomacy', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ h.state.trade.USA={sanctions:[{policyId:'SAN-USA-BGD-COAL',issuerCountryId:'USA',targetCountryId:'BGD',
+  resourceId:'coal',status:'ACTIVE',type:'IMPORT_PROHIBITION'}]};
+ h.state.foreign.USA={};
+ h.state.finance.USA={available:100000};
+ h.state.resource.USA={inventory:{}};
+ const offer=api.getOffers('BGD','coal',10).offers[0];
+ assert.equal(offer.sanctionsAtQuote,true);
+ assert.equal(offer.sanctionedBuyerAtQuote,true);
+ assert.equal(JSON.stringify(offer.sanctionPolicyIds),JSON.stringify(['SAN-USA-BGD-COAL']));
+ assert.equal(offer.legalMarketAvailable,false);
+ assert.equal(offer.buyerMotiveCode,'RESTRICTED_INPUT_ACCESS');
+ const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:offer.offerId});
+ assert.equal(made.accepted,true,JSON.stringify(made));
+ const deal=api.getDeal(made.deal.dealId,'BGD');
+ assert.equal(JSON.stringify(deal.sanctioningCountryIds),JSON.stringify(['USA']));
+ assert.equal(deal.sanctionedBuyerAtCreation,true);
+ const result=api.handleTradeRejection({countryId:'BGD',buyerCountryId:'BGD',targetCountryId:'SAU',
+  resourceId:'coal',quantity:10,unitPrice:deal.unitPrice,blackMarketDealId:deal.dealId,
+  blackMarketPermitId:deal.permitId},{reason:'BLACK_MARKET_INTERCEPTED',stage:'ORIGIN_INSPECTION'});
+ assert.equal(result.status,'INTERCEPTED');
+ assert.equal(h.state.foreign.USA.blackMarketResponses.length,1);
+ assert.equal(h.state.foreign.USA.blackMarketResponses[0].targetCountryId,'BGD');
+ assert.equal(h.state.foreign.USA.blackMarketResponses[0].secondaryTargetCountryId,'SAU');
+ assert.equal(h.state.foreign.USA.relationAdjustments.BGD[0].delta,-8);
+ assert.equal(h.state.foreign.USA.relationAdjustments.SAU[0].delta,-3);
+ assert.equal(h.state.intelligence.BGD.blackMarketCases[0].sanctionPolicyIds.includes('SAN-USA-BGD-COAL'),true);
+});
+
+
+test('buyer motive distinguishes its own import embargo from an outgoing export embargo', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ h.state.trade.BGD.resourceEmbargoes=[{policyId:'EMB-BGD-EXPORT-COAL',issuerCountryId:'BGD',
+  targetCountryId:'SAU',resourceId:'coal',direction:'EXPORT',status:'ACTIVE'}];
+ let offer=api.getOffers('BGD','coal',10).offers[0];
+ assert.notEqual(offer.buyerMotiveCode,'RESTRICTED_INPUT_ACCESS',
+  'a buyer export restriction must not be presented as an import access need');
+ h.state.trade.BGD.resourceEmbargoes=[{policyId:'EMB-BGD-IMPORT-COAL',issuerCountryId:'BGD',
+  targetCountryId:'SAU',resourceId:'coal',direction:'IMPORT',status:'ACTIVE'}];
+ offer=api.getOffers('BGD','coal',10).offers[0];
+ assert.equal(offer.buyerMotiveCode,'RESTRICTED_INPUT_ACCESS');
+});
+
+test('attempt fine is calculated from quoted trade value, not the risk-adjusted expected cost', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket,offer=api.getOffers('BGD','coal',10).offers[0];
+ const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:offer.offerId});
+ assert.equal(made.accepted,true,JSON.stringify(made));
+ const deal=api.getDeal(made.deal.dealId,'BGD');
+ assert.equal(deal.attemptedValueBuyer,offer.quotedTradeValueBuyer);
+ assert.equal(deal.attemptedValueBuyer,Number((offer.unitPrice*10).toFixed(2)));
+ assert.equal(deal.attemptedValueBuyer,deal.expectedBlackMarketTotal*1,
+  'USD seller/buyer currency fixture uses the same nominal quote value');
+});
+
+
+test('repeat detected sanction violations escalate the issuer response severity and diplomatic penalty', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ h.state.trade.USA={sanctions:[{policyId:'SAN-USA-BGD-COAL',issuerCountryId:'USA',targetCountryId:'BGD',
+  resourceId:'coal',status:'ACTIVE',type:'IMPORT_PROHIBITION'}]};
+ h.state.foreign.USA={blackMarketResponses:[
+  {responseId:'OLD-1',targetCountryId:'BGD',resourceId:'coal',recordedTurn:2,status:'ACTIVE'},
+  {responseId:'OLD-2',targetCountryId:'BGD',resourceId:'coal',recordedTurn:3,status:'ACTIVE'},
+  {responseId:'OLD-3',targetCountryId:'BGD',resourceId:'coal',recordedTurn:4,status:'ACTIVE'}
+ ]};
+ h.state.finance.USA={available:100000};
+ h.state.resource.USA={inventory:{}};
+ const offer=api.getOffers('BGD','coal',10).offers[0];
+ const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:offer.offerId});
+ assert.equal(made.accepted,true,JSON.stringify(made));
+ const deal=api.getDeal(made.deal.dealId,'BGD');
+ const result=api.handleTradeRejection({countryId:'BGD',buyerCountryId:'BGD',targetCountryId:'SAU',
+  resourceId:'coal',quantity:10,unitPrice:deal.unitPrice,blackMarketDealId:deal.dealId,
+  blackMarketPermitId:deal.permitId},{reason:'BLACK_MARKET_INTERCEPTED',stage:'ORIGIN_INSPECTION'});
+ assert.equal(result.status,'INTERCEPTED');
+ const response=h.state.foreign.USA.blackMarketResponses.find(x=>x.responseId==='BM-RESPONSE-'+deal.dealId+'-USA');
+ assert.equal(response.baseSeverity,'HIGH');
+ assert.equal(response.severity,'CRITICAL');
+ assert.equal(response.priorViolations30Turns,3);
+ assert.equal(h.state.foreign.USA.relationAdjustments.BGD.at(-1).delta,-12);
+ assert.equal(h.state.foreign.USA.relationAdjustments.SAU.at(-1).delta,-4);
 });
