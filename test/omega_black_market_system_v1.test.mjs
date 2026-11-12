@@ -163,7 +163,7 @@ test('post-settlement discovery collects a Treasury fine and seizes only unsold 
  const result=api.enforcePostSettlement(deal,{settlementId:'SETTLE-1',quantity:10,buyerValue:1000,buyerCurrency:'USD',
   createdBatchIds:['IMPORT-BATCH-1']},{caseId:'BM-CASE-ENFORCEMENT'});
  assert.equal(result.accepted,true,JSON.stringify(result));
- assert.equal(result.enforcement.fineRate,.32);
+ assert.ok(Math.abs(result.enforcement.fineRate-.32)<1e-9);
  assert.equal(result.enforcement.fineDue,320);
  assert.equal(result.enforcement.finePaid,320);
  assert.equal(result.enforcement.fineOutstanding,0);
@@ -306,13 +306,13 @@ test('a third-country sanction against the buyer is attached to the offer and ac
  const offer=api.getOffers('BGD','coal',10).offers[0];
  assert.equal(offer.sanctionsAtQuote,true);
  assert.equal(offer.sanctionedBuyerAtQuote,true);
- assert.deepEqual(offer.sanctionPolicyIds,['SAN-USA-BGD-COAL']);
+ assert.equal(JSON.stringify(offer.sanctionPolicyIds),JSON.stringify(['SAN-USA-BGD-COAL']));
  assert.equal(offer.legalMarketAvailable,false);
  assert.equal(offer.buyerMotiveCode,'RESTRICTED_INPUT_ACCESS');
  const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:offer.offerId});
  assert.equal(made.accepted,true,JSON.stringify(made));
  const deal=api.getDeal(made.deal.dealId,'BGD');
- assert.deepEqual(deal.sanctioningCountryIds,['USA']);
+ assert.equal(JSON.stringify(deal.sanctioningCountryIds),JSON.stringify(['USA']));
  assert.equal(deal.sanctionedBuyerAtCreation,true);
  const result=api.handleTradeRejection({countryId:'BGD',buyerCountryId:'BGD',targetCountryId:'SAU',
   resourceId:'coal',quantity:10,unitPrice:deal.unitPrice,blackMarketDealId:deal.dealId,
