@@ -1,0 +1,831 @@
+/* OMEGA SANCTION RESPONSE + NATIONAL DECISION PIPELINE v1.0.0
+ * Records an auditable policy -> notification -> impact -> decision -> recovery -> investigation flow.
+ * Analysis only: no cash, inventory, trade, production, treaty or diplomatic value is mutated here.
+ */
+(function (g) {
+  'use strict';
+  const VERSION = '1.0.0';
+  if (g.OmegaSanctionResponseRuntime?.VERSION === VERSION) return;
+  const MAX_POLICIES = 6, MAX_PRODUCTS = 4, MAX_MARKET_QUERIES = 12;
+  const LEDGER_WINDOW = 30, MAX_HISTORY = 256, MAX_ALTERNATIVES = 5, MAX_BUYER_CHECKS = 3;
+  const num = v => v === null || v === undefined || v === '' ? null :
+    (Number.isFinite(Number(v)) ? Number(v) : null);
+  const nn = v => { const n = num(v); return n === null ? null : Math.max(0, n); };
+  const token = v => String(v ?? '').normalize('NFKC').trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  const clone = v => { try { return v == null ? v : JSON.parse(JSON.stringify(v)); } catch (_) { return null; } };
+  const state = () => g.Game?.state || g.gameState || g.Omega?.Simulation?.world?.state || {};
+  const turn = () => num(state()?.simulation?.turn ?? state()?.turn ??
+    state()?.simulationTurn ?? g.Omega?.Simulation?.clock?.turn) ?? 0;
+  const mesh = () => g.Omega?.MinistryInteroperability || g.OmegaMinistryInteroperability || null;
+  const market = () => g.OmegaGlobalMarket || g.Omega?.GlobalMarket || null;
+  const bank = () => g.OmegaGovernmentBanking || g.Omega?.GovernmentBanking || null;
+  const transmission = () => g.OmegaEconomicTransmissionRuntime || g.Omega?.EconomicTransmission || null;
+  const network = () => g.OmegaBlackMarketNetworkV1 || g.Omega?.BlackMarketNetworkV1 || null;
+  const identity = () => g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge || g.Omega?.CanonicalIdentity || null;
+
+  function country(v) {
+    const raw = v && typeof v === 'object'
+      ? (v.iso3 || v.iso3Code || v.countryCode || v.countryId || v.country_id || v.code || v.id || v.name) : v;
+    if (raw == null) return '';
+    try {
+      const r = identity()?.resolveCountry?.(raw);
+      const resolved = r?.raw?.iso3 || r?.iso3 || r?.iso3Code || r?.id || r?.canonicalId;
+      if (resolved && /^[A-Z0-9]{2,3}$/i.test(String(resolved))) return String(resolved).toUpperCase();
+    } catch (_) {}
+    const id = String(raw).trim().toUpperCase();
+    return /^[A-Z0-9]{2,3}$/.test(id) ? id : '';
+  }
+  function bucket(domain, c) {
+    const root = state()?.[domain], id = country(c);
+    if (!root || typeof root !== 'object' || Array.isArray(root) || !id) return {};
+    const key = Object.keys(root).find(k => country(k) === id);
+    return key === undefined ? {} : (root[key] || {});
+  }
+  function countries(domain) {
+    const root = state()?.[domain];
+    return root && typeof root === 'object' && !Array.isArray(root)
+      ? Object.keys(root).map(country).filter(Boolean) : [];
+  }
+  function worldCountries() {
+    const ids = new Set();
+    for (const domain of ['trade', 'foreign', 'resource', 'finance', 'economy', 'transport'])
+      countries(domain).forEach(id => ids.add(id));
+    try {
+      const rows = identity()?.list?.('COUNTRY') || identity()?.list?.() || [];
+      rows.forEach(row => { const id = country(row); if (id) ids.add(id); });
+    } catch (_) {}
+    return [...ids].sort();
+  }
+  function field(map, id) {
+    if (!map || typeof map !== 'object') return undefined;
+    const key = Object.keys(map).find(k => token(k) === token(id));
+    return key === undefined ? undefined : map[key];
+  }
+  function first(...values) {
+    for (const value of values) { const n = num(value); if (n !== null) return n; }
+    return null;
+  }
+  function relation(a, b) {
+    return field(bucket('foreign', a).relations, b) ||
+      field(bucket('trade', a).relations, b) ||
+      field(bucket('foreign', b).relations, a) ||
+      field(bucket('trade', b).relations, a) || null;
+  }
+  function active(row) {
+    if (!row || typeof row !== 'object') return false;
+    if (/EXPIRED|REVOKED|INACTIVE|CANCELLED|LIFTED|TERMINATED/.test(
+      String(row.status || row.stage || 'ACTIVE').toUpperCase())) return false;
+    const start = first(row.startTurn, row.effectiveTurn, row.issuedTurn, row.createdTurn);
+    const end = first(row.endTurn, row.expiresTurn, row.expiryTurn);
+    return (start === null || start <= turn()) && (end === null || turn() <= end);
+  }
+  function hash(value) {
+    let h = 2166136261;
+    for (const ch of String(value)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+    return (h >>> 0).toString(36).toUpperCase();
+  }
+  function resourceIds(row) {
+    const ids = [];
+    const primary = row?.resourceId || row?.commodityId || row?.productId;
+    if (primary) ids.push(String(primary));
+    for (const id of Array.isArray(row?.resourceIds) ? row.resourceIds : []) if (id) ids.push(String(id));
+    return [...new Map(ids.map(id => [token(id), id])).values()].slice(0, MAX_PRODUCTS);
+  }
+  function policies() {
+    const result = new Map();
+    for (const owner of worldCountries()) {
+      const t = bucket('trade', owner).sanctions, f = bucket('foreign', owner).sanctions;
+      for (const row of [
+        ...(Array.isArray(t) ? t : []), ...(Array.isArray(f) ? f : [])
+      ]) {
+        if (!active(row)) continue;
+        const target = country(row.targetCountryId || row.subjectCountryId ||
+          row.targetCountry || row.countryId || row.targetId);
+        const issuer = country(row.issuerCountryId || row.issuingCountryId || row.sourceCountryId) || owner;
+        if (!issuer || !target || issuer === target) continue;
+        const products = resourceIds(row);
+        const policyId = String(row.policyId || row.sanctionId || row.id || '').trim();
+        const type = String(row.type || row.measure || row.scope || 'SANCTIONS').toUpperCase();
+        const direction = String(row.direction || row.tradeDirection || 'BOTH').toUpperCase();
+        const start = first(row.startTurn, row.effectiveTurn, row.issuedTurn, row.createdTurn) ?? turn();
+        const signature = [issuer, target, policyId || 'NO_ID', type, direction, start,
+          products.map(token).join(',')].join('|');
+        const policyKey = 'SAN-' + hash(signature);
+        const old = result.get(policyKey);
+        if (old) old.resourceIds = [...new Set(old.resourceIds.concat(products))].slice(0, MAX_PRODUCTS);
+        else result.set(policyKey, {
+          policyKey, policyId: policyId || policyKey, issuerCountryId: issuer,
+          targetCountryId: target, type, direction, startTurn: start,
+          endTurn: first(row.endTurn, row.expiresTurn, row.expiryTurn),
+          secondarySanctions: row.secondarySanctions === true ||
+            /SECONDARY|EXTRATERRITORIAL/.test(type + ' ' + direction),
+          resourceIds: products, status: String(row.status || 'ACTIVE').toUpperCase()
+        });
+      }
+    }
+    return [...result.values()].sort((a, b) =>
+      a.startTurn - b.startTurn || a.policyKey.localeCompare(b.policyKey));
+  }
+  function ledger(rows, predicate) {
+    const selected = (Array.isArray(rows) ? rows : []).filter(row => {
+      if (!row || typeof row !== 'object' || !predicate(row)) return false;
+      const t = first(row.turn, row.recordedTurn, row.settlementTurn);
+      return t === null || (t >= turn() - LEDGER_WINDOW && t <= turn());
+    });
+    const dated = selected.filter(row => first(row.turn, row.recordedTurn, row.settlementTurn) !== null);
+    const quantities = selected.map(row => nn(row.quantity)).filter(v => v !== null);
+    const values = selected.map(row => nn(row.totalValue ?? row.value ?? row.settlementValue ?? row.amount))
+      .filter(v => v !== null);
+    return {
+      recordCount: selected.length, datedRecordCount: dated.length,
+      unscopedRecordCount: selected.length - dated.length,
+      quantity: quantities.length ? Number(quantities.reduce((a, b) => a + b, 0).toFixed(6)) : null,
+      value: values.length ? Number(values.reduce((a, b) => a + b, 0).toFixed(6)) : null,
+      currency: selected.find(row => row.currency || row.currencyCode)?.currency ||
+        selected.find(row => row.currencyCode)?.currencyCode || null,
+      settlementIds: selected.map(row => row.settlementId || row.id).filter(Boolean).slice(-12)
+    };
+  }
+  function exposure(c, partner, rid) {
+    const t = bucket('trade', c);
+    return {
+      exportsAtRisk: ledger(t.exportLedger, row =>
+        token(row.resourceId || row.commodityId) === token(rid) &&
+        country(row.buyerCountryId || row.destinationCountryId || row.targetCountryId) === country(partner)),
+      importsAtRisk: ledger(t.importLedger, row =>
+        token(row.resourceId || row.commodityId) === token(rid) &&
+        country(row.sourceCountryId || row.sellerCountryId || row.originCountryId) === country(partner))
+    };
+  }
+  function demandSource(c, rid) {
+    const rows = bucket('resource', c).demandRuntime?.byResource;
+    const row = field(rows, rid);
+    return row && typeof row === 'object' ? row : null;
+  }
+  function demand(row) {
+    if (!row) return null;
+    const unmet = nn(row.unmetDemand), perDay = nn(row.demandPerDay ?? row.demand);
+    const coverage = nn(row.stockCoverageDays), target = nn(row.stockCoverageTargetDays);
+    const factoryInput = nn(row.activeFactoryInputDemandPerDay ?? row.factoryInputDemandPerDay);
+    const below = coverage !== null && target !== null && coverage < target;
+    let required = unmet !== null && unmet > 0 ? unmet : null;
+    if (required === null && below && perDay !== null) required = Number((perDay * (target - coverage)).toFixed(6));
+    return {
+      unmetDemand: unmet, demandPerDay: perDay, stockCoverageDays: coverage,
+      stockCoverageTargetDays: target, activeFactoryInputDemandPerDay: factoryInput,
+      importDependencyPct: first(row.importDependencyPct, row.importDependency, row.importShare),
+      procurementScore: num(row.procurementScore), requiredQuantity: required,
+      belowTarget: below, status: row.status || null,
+      lastDemandTurn: num(bucket('resource', row.countryId)?.demandRuntime?.lastTurn) ??
+        num(row.lastDemandTurn)
+    };
+  }
+  function production(c, rid, source) {
+    const r = bucket('resource', c), e = bucket('economy', c);
+    const p = field(r.productionByResource, rid) || field(r.production, rid) ||
+      field(e.productionByResource, rid) || field(e.industryOutputByResource, rid);
+    const output = first(source?.actualProductionPerDay, source?.domesticProductionPerDay,
+      source?.productionPerDay, p?.actualOutputPerDay, p?.outputPerDay, p?.productionPerDay);
+    const capacity = first(source?.installedCapacityPerDay, p?.installedCapacityPerDay, p?.capacityPerDay);
+    return { productionPerDay: output, installedCapacityPerDay: capacity,
+      outputValue: first(p?.outputValue, source?.outputValue),
+      source: p ? 'RECORDED_RESOURCE_OR_ECONOMY_PRODUCTION' :
+        (output !== null ? 'RECORDED_DEMAND_RUNTIME' : null) };
+  }
+  function logistics(c, partner, rid) {
+    const t = bucket('transport', c), tr = bucket('trade', c), r = bucket('resource', c);
+    const lists = [t.routes, t.shipments, t.corridors, tr.routes, tr.shipments,
+      tr.transitLedger, r.logisticsRoutes, r.routes, r.shipments].filter(Array.isArray).flat();
+    const matches = lists.filter(row => {
+      if (!row || typeof row !== 'object') return false;
+      const product = row.resourceId || row.commodityId;
+      if (product && token(product) !== token(rid)) return false;
+      const parties = [country(row.originCountryId || row.sourceCountryId || row.sellerCountryId),
+        country(row.destinationCountryId || row.targetCountryId || row.buyerCountryId),
+        country(row.partnerCountryId)].filter(Boolean);
+      return !parties.length || parties.includes(country(partner));
+    });
+    return { recordCount: matches.length,
+      routeIds: matches.map(row => row.routeId || row.transitId || row.shipmentId).filter(Boolean).slice(-8),
+      status: matches.length ? 'OBSERVED' : (lists.length ? 'NO_MATCHING_ROUTE_RECORD' : 'UNAVAILABLE') };
+  }
+  function employment(c, rid) {
+    const e = bucket('economy', c), rows = e.employmentBySector || e.workforceBySector;
+    const sector = field(rows, rid);
+    const persons = first(sector?.employedPersons, sector?.workers, sector?.employment,
+      e.employedPersons, e.employmentTotal);
+    return { employedPersons: persons, unemploymentRate: first(sector?.unemploymentRate, e.unemploymentRate),
+      affectedSector: sector?.sector || sector?.sectorId || null,
+      source: sector ? 'RECORDED_SECTOR_EMPLOYMENT' :
+        (persons !== null ? 'RECORDED_NATIONAL_EMPLOYMENT' : null) };
+  }
+  function budgets(c) {
+    const f = bucket('finance', c), map = f.ministryAllocations || f.appropriations || {};
+    const keys = ['foreign', 'foreign_affairs', 'diplomacy', 'trade', 'international_trade',
+      'economy', 'industry', 'transport', 'finance', 'intelligence'];
+    const allocations = [];
+    if (map && typeof map === 'object' && !Array.isArray(map)) {
+      for (const [key, value] of Object.entries(map)) {
+        if (!keys.some(known => token(key) === token(known) || token(key).includes(token(known)))) continue;
+        if (!value || typeof value !== 'object') continue;
+        allocations.push({
+          ministry: key, allocated: first(value.allocatedUsd, value.budgetUsd, value.allocated, value.budget),
+          spent: first(value.spentUsd, value.spent),
+          remaining: first(value.remainingUsd, value.remaining),
+          currency: value.currency || value.currencyCode || 'USD',
+          source: value.source || 'RECORDED_FINANCE_MINISTRY_ALLOCATION'
+        });
+      }
+    }
+    return {
+      availableTreasury: first(f.available, f.availableCash, f.treasuryBalance, f.treasuryBalanceUsd),
+      foreignReserveCoverageDays: first(f.foreignReserveCoverageDays, f.reserveCoverageDays),
+      ministryAllocations: allocations.slice(0, 8),
+      budgetObserved: allocations.some(x => x.allocated !== null || x.remaining !== null)
+    };
+  }
+  function financial(c, tradeRisk) {
+    const f = bucket('finance', c), code = f.currencyCode || f.homeCurrencyCode || f.nationalCurrencyCode || null;
+    let cost = null, stress = null, account = null;
+    try { if (typeof transmission()?.getImportCostMultiplier === 'function')
+      cost = num(transmission().getImportCostMultiplier(c)); } catch (_) {}
+    try { if (code && typeof transmission()?.getMonetaryStress === 'function')
+      stress = clone(transmission().getMonetaryStress(code)); } catch (_) {}
+    try { account = bank()?.getCountryAccount?.(c) || bank()?.getCountryBalances?.(c) || null; } catch (_) {}
+    const budget = budgets(c);
+    return {
+      currencyCode: code, importCostMultiplier: cost, monetaryStress: stress,
+      foreignReserveCoverageDays: budget.foreignReserveCoverageDays,
+      treasuryAvailable: budget.availableTreasury,
+      bankAccountEvidence: account ? {
+        currency: account.homeCurrencyCode || account.currencyCode || code,
+        available: first(account.available, account.availableBalance, account.availableUsd, account.treasuryBalanceUsd),
+        balance: first(account.balance, account.balanceUsd, account.totalBalanceUsd),
+        source: account.openingSource || account.source || 'GOVERNMENT_BANKING_ACCOUNT_SUMMARY'
+      } : null,
+      ministryBudgetEvidence: budget.ministryAllocations,
+      tradeValueAtRisk: {
+        exports: tradeRisk.exportsAtRisk.value, imports: tradeRisk.importsAtRisk.value,
+        currency: tradeRisk.exportsAtRisk.currency || tradeRisk.importsAtRisk.currency || null
+      }
+    };
+  }
+  function restrictedPair(a, b, rid) {
+    const rel = relation(a, b);
+    if (rel?.war_state === true || rel?.sanctions === true) return true;
+    for (const owner of [a, b]) {
+      const t = bucket('trade', owner), f = bucket('foreign', owner);
+      for (const row of [...(Array.isArray(t.sanctions) ? t.sanctions : []),
+        ...(Array.isArray(f.sanctions) ? f.sanctions : [])]) {
+        if (!active(row)) continue;
+        const target = country(row.targetCountryId || row.subjectCountryId || row.countryId || row.targetId);
+        const product = row.resourceId || row.commodityId;
+        if ((target === country(a) || target === country(b)) &&
+          (!product || token(product) === token(rid))) return true;
+      }
+    }
+    return false;
+  }
+  function localPrice(c, rid) {
+    try { return num(market()?.localPrice?.(c, rid)); } catch (_) { return null; }
+  }
+  function legalSuppliers(c, rid, quantity, budget) {
+    if (!(quantity > 0) || budget.used >= MAX_MARKET_QUERIES) return [];
+    let rows = [];
+    try { budget.used++; rows = market()?.suppliers?.(rid, quantity, c) || []; } catch (_) { return []; }
+    return (Array.isArray(rows) ? rows : []).filter(row => {
+      const seller = country(row?.countryId || row?.sellerCountryId);
+      const available = nn(row?.available ?? row?.availableQuantity);
+      return !!seller && seller !== c && !restrictedPair(c, seller, rid) &&
+        (available === null || available + 1e-8 >= quantity);
+    }).map(row => {
+      const seller = country(row.countryId || row.sellerCountryId);
+      return {
+        sellerCountryId: seller, verifiedAvailableQuantity: nn(row.available ?? row.availableQuantity),
+        localPrice: localPrice(seller, rid), marketQuote: clone(row.marketQuote || null),
+        relationObserved: row.relationObserved === true,
+        tradeAgreementObserved: row.tradeAgreementObserved === true,
+        priceComparison: localPrice(seller, rid) === null ? 'UNAVAILABLE' : 'SOURCE_LOCAL_PRICE_ONLY',
+        evidence: 'OMEGA_GLOBAL_MARKET_LEGAL_SUPPLIER'
+      };
+    }).sort((a, b) => (a.localPrice ?? Number.MAX_SAFE_INTEGER) -
+      (b.localPrice ?? Number.MAX_SAFE_INTEGER) || a.sellerCountryId.localeCompare(b.sellerCountryId))
+      .slice(0, MAX_ALTERNATIVES);
+  }
+  function legalAlternativeBuyers(c, rid, budget) {
+    const candidates = [];
+    for (const buyerId of worldCountries()) {
+      if (buyerId === c || restrictedPair(c, buyerId, rid)) continue;
+      const row = field(bucket('resource', buyerId).demandRuntime?.byResource, rid);
+      const d = demand(row);
+      const need = d?.requiredQuantity ?? d?.activeFactoryInputDemandPerDay;
+      if (num(need) > 0) candidates.push({ buyerCountryId: buyerId, quantityNeeded: need,
+        unmetDemand: d.unmetDemand, stockCoverageDays: d.stockCoverageDays });
+    }
+    candidates.sort((a, b) => (b.unmetDemand ?? b.quantityNeeded) -
+      (a.unmetDemand ?? a.quantityNeeded) || a.buyerCountryId.localeCompare(b.buyerCountryId));
+    const result = [];
+    for (const candidate of candidates.slice(0, MAX_BUYER_CHECKS)) {
+      if (budget.used >= MAX_MARKET_QUERIES) break;
+      let rows = [];
+      try { budget.used++; rows = market()?.suppliers?.(rid, candidate.quantityNeeded, candidate.buyerCountryId) || []; }
+      catch (_) { continue; }
+      const verified = (Array.isArray(rows) ? rows : []).find(row =>
+        country(row?.countryId || row?.sellerCountryId) === c);
+      if (verified) result.push({
+        buyerCountryId: candidate.buyerCountryId, observedDemandQuantity: candidate.quantityNeeded,
+        stockCoverageDays: candidate.stockCoverageDays,
+        verifiedAvailableQuantity: nn(verified.available ?? verified.availableQuantity),
+        localPrice: localPrice(c, rid),
+        evidence: 'OBSERVED_BUYER_DEMAND_AND_GLOBAL_MARKET_LEGAL_SUPPLIER'
+      });
+    }
+    return result.slice(0, MAX_ALTERNATIVES);
+  }
+  function productsFor(policy) {
+    if (policy.resourceIds.length) return policy.resourceIds.slice(0, MAX_PRODUCTS);
+    const ids = new Map(), rows = bucket('resource', policy.targetCountryId).demandRuntime?.byResource;
+    if (rows && typeof rows === 'object') Object.keys(rows).forEach(id => ids.set(token(id), id));
+    for (const c of [policy.targetCountryId, policy.issuerCountryId]) {
+      const t = bucket('trade', c);
+      for (const list of [t.exportLedger, t.importLedger]) {
+        if (!Array.isArray(list)) continue;
+        for (const row of list.slice(-MAX_HISTORY)) {
+          const id = row?.resourceId || row?.commodityId;
+          if (id) ids.set(token(id), String(id));
+        }
+      }
+    }
+    return [...ids.values()].slice(0, MAX_PRODUCTS);
+  }
+  function productAssessment(policy, c, partner, rid, role, budget) {
+    const source = rid ? demandSource(c, rid) : null, d = demand(source);
+    const tradeRisk = rid ? exposure(c, partner, rid) : {
+      exportsAtRisk: ledger([], () => false), importsAtRisk: ledger([], () => false)
+    };
+    const productionEvidence = rid ? production(c, rid, source) : null;
+    const employmentEvidence = rid ? employment(c, rid) : null;
+    const logisticsEvidence = rid ? logistics(c, partner, rid) : null;
+    const price = rid ? localPrice(c, rid) : null;
+    const sources = role === 'TARGET' && d?.requiredQuantity > 0
+      ? legalSuppliers(c, rid, d.requiredQuantity, budget) : [];
+    const buyers = role === 'TARGET' && tradeRisk.exportsAtRisk.recordCount > 0
+      ? legalAlternativeBuyers(c, rid, budget) : [];
+    const shortage = !!d && ((d.unmetDemand !== null && d.unmetDemand > 0) ||
+      d.belowTarget || (d.activeFactoryInputDemandPerDay !== null &&
+        d.activeFactoryInputDemandPerDay > 0 && d.stockCoverageDays !== null &&
+        d.stockCoverageDays < (d.stockCoverageTargetDays ?? d.stockCoverageDays)));
+    return {
+      resourceId: rid || null,
+      productName: rid ? (market()?.describeProduct?.(rid)?.name || rid) : null,
+      role, tradeExposure: tradeRisk, domesticDemand: d,
+      production: productionEvidence, employment: employmentEvidence, logistics: logisticsEvidence,
+      observedLocalPrice: price, importAlternatives: sources, alternativeExportBuyers: buyers,
+      shortageEvidence: shortage,
+      policyRestrictsImports: ['IMPORT', 'BOTH', 'ALL'].includes(policy.direction) ||
+        /IMPORT|ALL|TRADE|FINANCIAL|COMPREHENSIVE/.test(policy.type),
+      policyRestrictsExports: ['EXPORT', 'BOTH', 'ALL'].includes(policy.direction) ||
+        /EXPORT|ALL|TRADE|COMPREHENSIVE/.test(policy.type),
+      evidenceConfidence: [
+        tradeRisk.exportsAtRisk.recordCount || tradeRisk.importsAtRisk.recordCount ? 'SETTLED_TRADE_LEDGER' : null,
+        d ? 'NATIONAL_DEMAND_RUNTIME' : null, productionEvidence?.source || null,
+        logisticsEvidence?.recordCount ? 'TRANSPORT_ROUTE_LEDGER' : null,
+        price !== null ? 'LOCAL_MARKET_PRICE' : null
+      ].filter(Boolean)
+    };
+  }
+  function relationEvidence(policy) {
+    const r = relation(policy.targetCountryId, policy.issuerCountryId);
+    if (!r) return { observed: false, overall: null, trade: null, trust: null,
+      sanctionsFlag: null, warFlag: null };
+    return { observed: true, overall: first(r.overall, r.score, r.relationScore),
+      trade: first(r.trade, r.tradeScore), trust: first(r.trust, r.trustScore),
+      sanctionsFlag: typeof r.sanctions === 'boolean' ? r.sanctions : null,
+      warFlag: typeof r.war_state === 'boolean' ? r.war_state : null };
+  }
+  function governmentActors(c) {
+    const e = bucket('economy', c), f = bucket('finance', c);
+    const rows = [...(Array.isArray(e.companies) ? e.companies : []),
+      ...(Array.isArray(e.enterprises) ? e.enterprises : []),
+      ...(Array.isArray(f.stateOwnedEnterprises) ? f.stateOwnedEnterprises : [])];
+    return rows.filter(row => row && /STATE|PUBLIC|GOVERNMENT|MINISTRY/.test(
+      String(row.ownership || row.ownerType || row.entityType || '').toUpperCase()))
+      .slice(0, 8).map(row => ({
+        companyId: row.companyId || row.enterpriseId || row.id || null,
+        name: row.name || row.companyName || row.officialName || null,
+        ownership: row.ownership || row.ownerType || row.entityType || null,
+        sector: row.sector || row.sectorId || null,
+        source: 'EXISTING_COUNTRY_COMPANY_OR_STATE_ENTERPRISE_RECORD'
+      }));
+  }
+  function sumKnown(rows, getter) {
+    const values = rows.map(getter).filter(v => num(v) !== null);
+    return values.length ? Number(values.reduce((a, b) => a + b, 0).toFixed(6)) : null;
+  }
+  function decisionOptions(policy, products, finance, relationRow, role) {
+    const options = [], shortage = products.some(row => row.shortageEvidence);
+    const legalSource = products.some(row => row.importAlternatives.length);
+    const exportBuyer = products.some(row => row.alternativeExportBuyers.length);
+    const importsAtRisk = products.some(row => row.tradeExposure.importsAtRisk.recordCount);
+    const exportsAtRisk = products.some(row => row.tradeExposure.exportsAtRisk.recordCount);
+    const restricted = products.some(row => row.policyRestrictsImports || row.policyRestrictsExports);
+    if (role === 'TARGET') {
+      if (legalSource) options.push({ id: 'LEGAL_SOURCE_DIVERSIFICATION',
+        title: 'Diversify into verified legal suppliers', priority: 100,
+        feasibility: 'SUPPORTED_BY_CURRENT_MARKET_STOCK',
+        evidence: products.filter(row => row.importAlternatives.length).map(row => ({
+          resourceId: row.resourceId, suppliers: row.importAlternatives.map(x => x.sellerCountryId)
+        })), costEvidence: { priceBasis: 'SOURCE_LOCAL_PRICE_ONLY',
+          pricesObserved: products.some(row => row.importAlternatives.some(x => x.localPrice !== null)) },
+        riskEvidence: { freightAndTariff: 'NOT_FULLY_MODELLED' } });
+      if (exportBuyer) options.push({ id: 'EXPORT_MARKET_REDIRECTION',
+        title: 'Redirect exports to verified alternative demand', priority: 95,
+        feasibility: 'SUPPORTED_BY_DEMAND_AND_LEGAL_SUPPLY_CHECK',
+        evidence: products.filter(row => row.alternativeExportBuyers.length).map(row => ({
+          resourceId: row.resourceId, buyers: row.alternativeExportBuyers.map(x => x.buyerCountryId)
+        })), costEvidence: { recentExportValueAtRisk: sumKnown(products,
+          row => row.tradeExposure.exportsAtRisk.value) },
+        riskEvidence: { newContractsAndFreight: 'NOT_YET_NEGOTIATED' } });
+      if (relationRow.observed) options.push({ id: 'DIPLOMATIC_WAIVER_OR_RENEGOTIATION',
+        title: 'Seek clarification, waiver or negotiated terms', priority: 75,
+        feasibility: 'RELATIONSHIP_EVIDENCE_AVAILABLE', evidence: [relationRow],
+        costEvidence: { ministryBudget: finance.ministryBudgetEvidence },
+        riskEvidence: { counterpartDecisionRequired: true } });
+      if (shortage || importsAtRisk) options.push({ id: 'DOMESTIC_STOCK_AND_INPUT_REBALANCING',
+        title: 'Review stock cover, input allocation and domestic substitution', priority: 70,
+        feasibility: 'REQUIRES_RESOURCE_AND_INDUSTRY_MINISTRY_REVIEW',
+        evidence: products.filter(row => row.shortageEvidence || row.tradeExposure.importsAtRisk.recordCount)
+          .map(row => ({ resourceId: row.resourceId, demand: row.domesticDemand, production: row.production })),
+        costEvidence: { treasuryEvidence: finance.treasuryAvailable },
+        riskEvidence: { productionSubstitution: 'UNPROVEN_UNLESS_CAPACITY_IS_RECORDED' } });
+      if (shortage && restricted && !legalSource && network()) options.push({
+        id: 'BLACK_MARKET_EVIDENCE_REVIEW',
+        title: 'Refer restricted shortage to the bounded Black Market evidence planner',
+        priority: 55, feasibility: 'REVIEW_CANDIDATE_NOT_AN_ACCEPTED_ORDER',
+        evidence: products.filter(row => row.shortageEvidence).map(row => row.resourceId),
+        costEvidence: { automaticGovernmentFunding: false },
+        riskEvidence: { stockAndRouteAuthority: 'EXISTING_BLACK_MARKET_RUNTIME',
+          participationCreated: false } });
+      if (restricted) options.push({ id: 'COMPLIANCE_AND_SUPPLY_MONITORING',
+        title: 'Monitor policy scope and supply disruption', priority: 40,
+        feasibility: 'ALWAYS_AVAILABLE', evidence: [policy.policyKey],
+        costEvidence: {}, riskEvidence: { enforcement: 'POLICY_DEPENDENT' } });
+    } else {
+      options.push({ id: 'SANCTION_COMPLIANCE_REVIEW',
+        title: 'Review enforcement scope and domestic exposure', priority: 90,
+        feasibility: 'POLICY_RECORD_OBSERVED', evidence: [policy.policyKey],
+        costEvidence: { ministryBudget: finance.ministryBudgetEvidence },
+        riskEvidence: { diplomaticSpillover: 'RELATIONSHIP_MONITORING_REQUIRED' } });
+      if (exportsAtRisk || importsAtRisk) options.push({ id: 'DOMESTIC_TRADE_EXPOSURE_MONITORING',
+        title: 'Monitor affected exporters, importers and financial exposure', priority: 80,
+        feasibility: 'SETTLED_TRADE_EXPOSURE_OBSERVED',
+        evidence: products.map(row => ({ resourceId: row.resourceId,
+          exports: row.tradeExposure.exportsAtRisk, imports: row.tradeExposure.importsAtRisk })),
+        costEvidence: {}, riskEvidence: { actualLoss: 'NOT_INFERRED_FROM_HISTORICAL_SETTLEMENTS' } });
+      if (relationRow.observed) options.push({ id: 'DIPLOMATIC_CHANNEL_MAINTENANCE',
+        title: 'Maintain a diplomatic channel for clarification and spillovers', priority: 60,
+        feasibility: 'RELATIONSHIP_EVIDENCE_AVAILABLE', evidence: [relationRow],
+        costEvidence: {}, riskEvidence: { counterpartResponse: 'NOT_GUARANTEED' } });
+    }
+    if (!options.length) options.push({ id: 'MONITOR_WITH_DATA_GAPS',
+      title: 'Monitor until relevant trade or demand evidence is available',
+      priority: 10, feasibility: 'INSUFFICIENT_EVIDENCE', evidence: [],
+      costEvidence: {}, riskEvidence: {} });
+    options.sort((a, b) => b.priority - a.priority || a.id.localeCompare(b.id));
+    return options;
+  }
+  function motives(policy, role, products, finance) {
+    const values = [];
+    if (role === 'ISSUER') values.push('SANCTION_COMPLIANCE_AND_POLICY_ENFORCEMENT');
+    else {
+      if (products.some(row => row.shortageEvidence)) values.push('PROTECT_DOMESTIC_INPUT_AND_CONSUMER_SUPPLY');
+      if (products.some(row => row.tradeExposure.exportsAtRisk.recordCount))
+        values.push('PRESERVE_EXPORT_REVENUE_AND_FOREIGN_EXCHANGE');
+      if (finance.foreignReserveCoverageDays !== null && finance.foreignReserveCoverageDays < 45)
+        values.push('FOREIGN_CURRENCY_LIQUIDITY_PRESSURE');
+      if (products.some(row => row.production?.productionPerDay !== null))
+        values.push('KEEP_DOMESTIC_INDUSTRY_OPERATING');
+    }
+    if (!values.length) values.push('POLICY_MONITORING_WITH_INSUFFICIENT_ECONOMIC_EVIDENCE');
+    return [...new Set(values)];
+  }
+  function notify(policy, c, partner, role) {
+    return { notificationId: policy.policyKey + '-' + c, countryId: c,
+      counterpartCountryId: partner, role, policyKey: policy.policyKey, policyId: policy.policyId,
+      issuerCountryId: policy.issuerCountryId, targetCountryId: policy.targetCountryId,
+      policyType: policy.type, direction: policy.direction, effectiveTurn: policy.startTurn,
+      expiryTurn: policy.endTurn, secondarySanctions: policy.secondarySanctions,
+      notifiedTurn: turn(), status: 'DELIVERED_TO_COUNTRY_POLICY_RECORD',
+      rationale: role === 'TARGET'
+        ? 'An active foreign sanction names this country as its target; economic review has been queued.'
+        : 'This country is recorded as the issuer; compliance and domestic exposure review has been queued.',
+      source: 'OMEGA_SANCTION_RESPONSE_RUNTIME_V1' };
+  }
+  function investigation(policy, c, partner, role, products, finance) {
+    const reasons = [];
+    if (products.some(row => row.tradeExposure.exportsAtRisk.recordCount ||
+      row.tradeExposure.importsAtRisk.recordCount)) reasons.push('COMPLETED_BILATERAL_TRADE_EXPOSURE');
+    if (products.some(row => row.shortageEvidence)) reasons.push('RECORDED_DOMESTIC_SHORTAGE_OR_LOW_STOCK_COVERAGE');
+    if (finance.importCostMultiplier !== null && finance.importCostMultiplier > 1)
+      reasons.push('OBSERVED_IMPORT_COST_PRESSURE');
+    if (finance.foreignReserveCoverageDays !== null && finance.foreignReserveCoverageDays < 45)
+      reasons.push('OBSERVED_FOREIGN_RESERVE_PRESSURE');
+    reasons.push(role === 'TARGET' ? 'ACTIVE_INCOMING_SANCTION_POLICY' : 'ISSUED_SANCTION_POLICY');
+    const sources = ['TRADE_SANCTION_POLICY_REGISTER', 'SETTLED_IMPORT_AND_EXPORT_LEDGER',
+      'RESOURCE_NATIONAL_DEMAND_AND_STOCK_COVERAGE', 'FINANCE_TREASURY_AND_FX_RECORDS',
+      'BILATERAL_FOREIGN_RELATION_RECORDS'];
+    if (products.some(row => row.logistics?.recordCount)) sources.push('RECORDED_TRANSPORT_AND_TRANSIT_MANIFESTS');
+    return { investigationId: policy.policyKey + '-' + c, countryId: c,
+      counterpartCountryId: partner, role, policyKey: policy.policyKey, policyId: policy.policyId,
+      openedTurn: policy.startTurn, lastReviewedTurn: turn(),
+      status: reasons.length > 1 ? 'OPEN' : 'MONITORING',
+      triggerReasons: [...new Set(reasons)], collectionPlan: sources,
+      productIds: products.map(row => row.resourceId).filter(Boolean),
+      confidence: products.some(row => row.evidenceConfidence.length >= 2) ? 'MEDIUM' : 'LOW',
+      scope: 'COUNTRY_OWNED_CASE_FILE_ONLY', noOmniscientIntelligence: true };
+  }
+  function upsert(ctx, domain, fieldName, record, key) {
+    const c = country(ctx?.countryId);
+    if (!c || !record || country(record.countryId) !== c || !record[key])
+      return { accepted: false, reason: 'SANCTION_RECORD_COUNTRY_OR_ID_INVALID' };
+    const path = domain + '.' + fieldName;
+    const prior = ctx.stateTransaction.get(path);
+    const rows = Array.isArray(prior) ? clone(prior) : [];
+    const index = rows.findIndex(row => String(row?.[key] || '') === String(record[key]));
+    if (index >= 0 && fieldName === 'sanctionNotifications')
+      return { accepted: true, duplicate: true, record: clone(rows[index]) };
+    const old = index >= 0 ? rows[index] : {};
+    const merged = Object.assign({}, old, clone(record), {
+      createdTurn: old.createdTurn ?? record.createdTurn ?? turn()
+    });
+    if (fieldName === 'sanctionInvestigations') {
+      const history = Array.isArray(old.history) ? old.history.slice() : [];
+      if (history[history.length - 1]?.turn !== record.lastReviewedTurn)
+        history.push({ turn: record.lastReviewedTurn, status: record.status });
+      merged.history = history.slice(-16);
+    }
+    if (index >= 0) rows[index] = merged; else rows.push(merged);
+    ctx.stateTransaction.set(path, rows.slice(-MAX_HISTORY));
+    return { accepted: true, record: clone(merged) };
+  }
+  const HANDLERS = [
+    ['OMEGA_SANCTION_RECORD_NOTIFICATION', 'foreign', 'sanctionNotifications', 'notificationId'],
+    ['OMEGA_SANCTION_RECORD_ECONOMIC_IMPACT', 'economy', 'sanctionEconomicAssessments', 'impactId'],
+    ['OMEGA_SANCTION_RECORD_NATIONAL_DECISION', 'foreign', 'sanctionNationalDecisions', 'decisionId'],
+    ['OMEGA_SANCTION_RECORD_MARKET_RECOVERY', 'trade', 'sanctionMarketRecoveryPlans', 'recoveryId'],
+    ['OMEGA_SANCTION_RECORD_INVESTIGATION', 'intelligence', 'sanctionInvestigations', 'investigationId'],
+    ['OMEGA_SANCTION_RECORD_FINANCIAL_EXPOSURE', 'finance', 'sanctionFinancialExposureLedger', 'exposureId']
+  ];
+  let registration = { ready: false, registered: 0, total: HANDLERS.length, errors: [] };
+  let lastProcessedTurn = null, lastMarketQueries = 0;
+
+  function install() {
+    const api = mesh();
+    if (!api?.registerCommandHandler || !api?.dispatchCommand) return false;
+    if (g.__omegaSanctionResponseHandlersInstalled) return true;
+    let registered = 0;
+    const errors = [];
+    for (const [command, owner, fieldName, key] of HANDLERS) {
+      try {
+        api.registerAction?.(command, { actionId: command,
+          stateOwnerMinistry: owner, authority: 'OMEGA_SANCTION_RESPONSE_RUNTIME_V1' });
+        api.registerCommandHandler(command, owner, (cmd, ctx) =>
+          upsert(ctx, owner, fieldName, cmd?.payload?.record, key));
+        registered++;
+      } catch (error) { errors.push({ command, reason: String(error?.message || error) }); }
+    }
+    registration = { ready: registered === HANDLERS.length, registered,
+      total: HANDLERS.length, errors };
+    if (registration.ready) g.__omegaSanctionResponseHandlersInstalled = true;
+    return registration.ready;
+  }
+  function dispatch(owner, command, c, record) {
+    try {
+      const result = mesh()?.dispatchCommand?.(owner, command, c, { record: clone(record) }, {
+        turn: turn(), commandType: command, correlationId: record?.policyKey || record?.notificationId || null
+      });
+      return result && ['APPLIED', 'FAILED', 'REJECTED'].includes(String(result.status || '')) &&
+        result.result ? result.result : result;
+    } catch (error) { return { accepted: false, reason: String(error?.message || error) }; }
+  }
+  function impactRecord(policy, c, partner, role, products, finances) {
+    const rows = products.map(row => ({ resourceId: row.resourceId,
+      exportsAtRisk: row.tradeExposure.exportsAtRisk, importsAtRisk: row.tradeExposure.importsAtRisk }));
+    const evidence = products.reduce((sum, row) => sum + row.evidenceConfidence.length, 0);
+    return {
+      impactId: policy.policyKey + '-' + c + '-' + turn(),
+      countryId: c, counterpartCountryId: partner, role, policyKey: policy.policyKey,
+      policyId: policy.policyId, assessedTurn: turn(), windowTurns: LEDGER_WINDOW,
+      tradeExposure: rows,
+      aggregateExportsAtRisk: sumKnown(products, row => row.tradeExposure.exportsAtRisk.value),
+      aggregateImportsAtRisk: sumKnown(products, row => row.tradeExposure.importsAtRisk.value),
+      demandAndIndustry: products.map(row => ({ resourceId: row.resourceId,
+        domesticDemand: row.domesticDemand, production: row.production,
+        employment: row.employment, shortageEvidence: row.shortageEvidence })),
+      logisticsExposure: products.map(row => ({ resourceId: row.resourceId, logistics: row.logistics })),
+      fiscalAndFx: finances,
+      evidenceConfidence: evidence >= 4 ? 'MEDIUM' : (evidence > 0 ? 'LOW' : 'INSUFFICIENT'),
+      actualLossAssumed: false,
+      note: 'Recent settled ledger exposure is not a realised loss. Missing evidence remains null.'
+    };
+  }
+  function financeRecord(policy, c, partner, role, products, finance) {
+    return {
+      exposureId: policy.policyKey + '-' + c + '-' + turn(),
+      countryId: c, counterpartCountryId: partner, role, policyKey: policy.policyKey,
+      policyId: policy.policyId, reviewedTurn: turn(), currencyCode: finance.currencyCode,
+      fxImportCostMultiplier: finance.importCostMultiplier, monetaryStress: finance.monetaryStress,
+      foreignReserveCoverageDays: finance.foreignReserveCoverageDays,
+      treasuryAvailable: finance.treasuryAvailable, bankAccountEvidence: finance.bankAccountEvidence,
+      ministryBudgetEvidence: finance.ministryBudgetEvidence,
+      exportValueAtRisk: sumKnown(products, row => row.tradeExposure.exportsAtRisk.value),
+      importValueAtRisk: sumKnown(products, row => row.tradeExposure.importsAtRisk.value),
+      actualDebit: 0, actualCredit: 0, budgetSpent: 0,
+      authority: 'OBSERVED_FINANCE_AND_SETTLED_TRADE_EVIDENCE_ONLY'
+    };
+  }
+  function recovery(policy, c, products, decision, finance) {
+    return {
+      recoveryId: policy.policyKey + '-' + c + '-' + turn(),
+      countryId: c, policyKey: policy.policyKey, policyId: policy.policyId,
+      reviewedTurn: turn(),
+      status: products.some(row => row.importAlternatives.length || row.alternativeExportBuyers.length)
+        ? 'ALTERNATIVES_IDENTIFIED' : 'REVIEW_REQUIRED',
+      importDiversification: products.filter(row => row.importAlternatives.length).map(row => ({
+        resourceId: row.resourceId, requiredQuantity: row.domesticDemand?.requiredQuantity,
+        currentLocalPrice: row.observedLocalPrice, legalSources: row.importAlternatives
+      })),
+      exportRedirection: products.filter(row => row.alternativeExportBuyers.length).map(row => ({
+        resourceId: row.resourceId, historicExportExposure: row.tradeExposure.exportsAtRisk,
+        alternativeBuyers: row.alternativeExportBuyers
+      })),
+      domesticIndustryReview: products.map(row => ({ resourceId: row.resourceId,
+        demand: row.domesticDemand, production: row.production, employment: row.employment })),
+      logisticsReview: products.map(row => ({ resourceId: row.resourceId, routeEvidence: row.logistics })),
+      fiscalAndFxConstraints: { importCostMultiplier: finance.importCostMultiplier,
+        foreignReserveCoverageDays: finance.foreignReserveCoverageDays,
+        budgetEvidence: finance.ministryBudgetEvidence },
+      recommendedDecision: decision.selectedAction,
+      executionStatus: 'PLANNING_ONLY_NO_PURCHASE_NO_PRODUCTION_NO_EXPORT',
+      unknownsRemainUnknown: true
+    };
+  }
+  function runPolicy(policy, budget) {
+    const ids = productsFor(policy), productIds = ids.length ? ids : [null];
+    const pair = relationEvidence(policy), sides = [
+      { c: policy.targetCountryId, partner: policy.issuerCountryId, role: 'TARGET' },
+      { c: policy.issuerCountryId, partner: policy.targetCountryId, role: 'ISSUER' }
+    ];
+    const results = [];
+    let writes = 0;
+    for (const side of sides) {
+      const notificationId = policy.policyKey + '-' + side.c;
+      const oldNotifications = bucket('foreign', side.c).sanctionNotifications;
+      if (!Array.isArray(oldNotifications) || !oldNotifications.some(row => row?.notificationId === notificationId)) {
+        const saved = dispatch('foreign', 'OMEGA_SANCTION_RECORD_NOTIFICATION', side.c,
+          { notificationId, countryId: side.c, counterpartCountryId: side.partner, role: side.role,
+            policyKey: policy.policyKey, policyId: policy.policyId,
+            issuerCountryId: policy.issuerCountryId, targetCountryId: policy.targetCountryId,
+            policyType: policy.type, direction: policy.direction, effectiveTurn: policy.startTurn,
+            expiryTurn: policy.endTurn, secondarySanctions: policy.secondarySanctions,
+            notifiedTurn: turn(), status: 'DELIVERED_TO_COUNTRY_POLICY_RECORD',
+            rationale: side.role === 'TARGET'
+              ? 'Active foreign sanction names this country as its target; economic review is queued.'
+              : 'This country is recorded as the sanction issuer; compliance review is queued.',
+            source: 'OMEGA_SANCTION_RESPONSE_RUNTIME_V1' });
+        if (saved?.accepted) writes++;
+      }
+      const productRows = productIds.map(rid =>
+        productAssessment(policy, side.c, side.partner, rid, side.role, budget));
+      const firstRisk = productRows[0]?.tradeExposure ||
+        { exportsAtRisk: ledger([], () => false), importsAtRisk: ledger([], () => false) };
+      const finance = financial(side.c, firstRisk);
+      const impactId = policy.policyKey + '-' + side.c + '-' + turn();
+      const previousImpact = bucket('economy', side.c).sanctionEconomicAssessments;
+      if (!Array.isArray(previousImpact) || !previousImpact.some(row => row?.impactId === impactId)) {
+        const saved = dispatch('economy', 'OMEGA_SANCTION_RECORD_ECONOMIC_IMPACT',
+          side.c, impactRecord(policy, side.c, side.partner, side.role, productRows, finance));
+        if (saved?.accepted) writes++;
+      }
+      const exposureId = policy.policyKey + '-' + side.c + '-' + turn();
+      const previousFinance = bucket('finance', side.c).sanctionFinancialExposureLedger;
+      if (!Array.isArray(previousFinance) || !previousFinance.some(row => row?.exposureId === exposureId)) {
+        const saved = dispatch('finance', 'OMEGA_SANCTION_RECORD_FINANCIAL_EXPOSURE',
+          side.c, financeRecord(policy, side.c, side.partner, side.role, productRows, finance));
+        if (saved?.accepted) writes++;
+      }
+      const inv = {
+        investigationId: policy.policyKey + '-' + side.c, countryId: side.c,
+        counterpartCountryId: side.partner, role: side.role, policyKey: policy.policyKey,
+        policyId: policy.policyId, openedTurn: policy.startTurn, lastReviewedTurn: turn(),
+        status: productRows.some(row => row.tradeExposure.exportsAtRisk.recordCount ||
+          row.tradeExposure.importsAtRisk.recordCount || row.shortageEvidence) ? 'OPEN' : 'MONITORING',
+        triggerReasons: [
+          ...(productRows.some(row => row.tradeExposure.exportsAtRisk.recordCount ||
+            row.tradeExposure.importsAtRisk.recordCount) ? ['COMPLETED_BILATERAL_TRADE_EXPOSURE'] : []),
+          ...(productRows.some(row => row.shortageEvidence) ? ['RECORDED_DOMESTIC_SHORTAGE_OR_LOW_STOCK_COVERAGE'] : []),
+          ...(finance.importCostMultiplier !== null && finance.importCostMultiplier > 1
+            ? ['OBSERVED_IMPORT_COST_PRESSURE'] : []),
+          ...(finance.foreignReserveCoverageDays !== null && finance.foreignReserveCoverageDays < 45
+            ? ['OBSERVED_FOREIGN_RESERVE_PRESSURE'] : []),
+          side.role === 'TARGET' ? 'ACTIVE_INCOMING_SANCTION_POLICY' : 'ISSUED_SANCTION_POLICY'
+        ],
+        collectionPlan: ['TRADE_SANCTION_POLICY_REGISTER', 'SETTLED_IMPORT_AND_EXPORT_LEDGER',
+          'RESOURCE_NATIONAL_DEMAND_AND_STOCK_COVERAGE', 'FINANCE_TREASURY_AND_FX_RECORDS',
+          'BILATERAL_FOREIGN_RELATION_RECORDS',
+          ...(productRows.some(row => row.logistics?.recordCount)
+            ? ['RECORDED_TRANSPORT_AND_TRANSIT_MANIFESTS'] : [])],
+        productIds: productRows.map(row => row.resourceId).filter(Boolean),
+        confidence: productRows.some(row => row.evidenceConfidence.length >= 2) ? 'MEDIUM' : 'LOW',
+        scope: 'COUNTRY_OWNED_CASE_FILE_ONLY', noOmniscientIntelligence: true
+      };
+      const savedInv = dispatch('intelligence', 'OMEGA_SANCTION_RECORD_INVESTIGATION', side.c, inv);
+      if (savedInv?.accepted) writes++;
+      if (side.role === 'TARGET') {
+        const options = decisionOptions(policy, productRows, finance, pair, side.role);
+        const selected = options[0];
+        const decision = {
+          decisionId: policy.policyKey + '-' + side.c + '-' + turn(),
+          countryId: side.c, counterpartCountryId: side.partner, role: side.role,
+          policyKey: policy.policyKey, policyId: policy.policyId, decidedTurn: turn(),
+          decisionModel: 'EVIDENCE_WEIGHTED_OPTION_COMPARISON_V1',
+          options, selectedAction: selected.id, selectedActionTitle: selected.title,
+          decisionStatus: selected.feasibility,
+          decisionBasis: 'COMPARE_OBSERVED_SHORTAGE_EXPORT_EXPOSURE_LEGAL_SUPPLIERS_DIPLOMACY_AND_FISCAL_HEADROOM',
+          governmentMotives: motives(policy, side.role, productRows, finance),
+          governmentActors: governmentActors(side.c),
+          budgetAvailability: finance.ministryBudgetEvidence,
+          budgetAuthority: finance.ministryBudgetEvidence.length
+            ? 'EXISTING_FINANCE_MINISTRY_APPROPRIATIONS_ONLY' : 'NO_RELEVANT_APPROPRIATION_OBSERVED',
+          budgetAction: 'NO_BUDGET_CREATED_OR_SPENT'
+        };
+        const previous = bucket('foreign', side.c).sanctionNationalDecisions;
+        if (!Array.isArray(previous) || !previous.some(row => row?.decisionId === decision.decisionId)) {
+          const saved = dispatch('foreign', 'OMEGA_SANCTION_RECORD_NATIONAL_DECISION', side.c, decision);
+          if (saved?.accepted) writes++;
+        }
+        const plan = recovery(policy, side.c, productRows, decision, finance);
+        const savedPlan = dispatch('trade', 'OMEGA_SANCTION_RECORD_MARKET_RECOVERY', side.c, plan);
+        if (savedPlan?.accepted) writes++;
+        results.push({ countryId: side.c, role: side.role, selectedAction: decision.selectedAction,
+          productCount: productRows.length });
+      } else results.push({ countryId: side.c, role: side.role,
+        investigationStatus: inv.status, productCount: productRows.length });
+    }
+    return { policyKey: policy.policyKey, writes, countries: results };
+  }
+  let lastProcessedTurn = null, lastMarketQueryCount = 0;
+  function runTurn() {
+    if (!install()) return { status: 'WAITING_FOR_MINISTRY_INTEROPERABILITY', turn: turn() };
+    const now = turn();
+    if (lastProcessedTurn === now || g.__omegaSanctionResponseProcessedTurn === now)
+      return { status: 'ALREADY_PROCESSED', turn: now };
+    lastProcessedTurn = now;
+    g.__omegaSanctionResponseProcessedTurn = now;
+    const all = policies(), chosen = all.slice(0, MAX_POLICIES), budget = { used: 0 };
+    const results = [];
+    for (const policy of chosen) {
+      try { results.push(runPolicy(policy, budget)); }
+      catch (error) { results.push({ policyKey: policy.policyKey, error: String(error?.message || error) }); }
+    }
+    lastMarketQueryCount = budget.used;
+    const result = { status: 'COMPLETED', turn: now, activePoliciesFound: all.length,
+      policiesProcessed: results.length, policyBudget: MAX_POLICIES,
+      marketQueries: budget.used, marketQueryBudget: MAX_MARKET_QUERIES, results };
+    try {
+      if (typeof g.dispatchEvent === 'function' && typeof g.CustomEvent === 'function')
+        g.dispatchEvent(new g.CustomEvent('OMEGA_SANCTION_RESPONSE_PIPELINE_COMPLETED', { detail: clone(result) }));
+    } catch (_) {}
+    return result;
+  }
+  function diagnostics() {
+    return {
+      version: VERSION, ready: registration.ready, registration: clone(registration),
+      turn: turn(), activePolicyCount: policies().length, worldCountryCount: worldCountries().length,
+      lastProcessedTurn, lastMarketQueryCount,
+      planner: 'POLICY_NOTIFICATION_ECONOMIC_ANALYSIS_NATIONAL_DECISION_MARKET_RECOVERY_INVESTIGATION',
+      caps: { policiesPerTurn: MAX_POLICIES, productsPerPolicy: MAX_PRODUCTS,
+        marketQueriesPerTurn: MAX_MARKET_QUERIES, tradeLedgerWindowTurns: LEDGER_WINDOW },
+      invariants: ['NO_CASH_OR_INVENTORY_CREATION', 'NO_AUTOMATIC_TRADE_OR_TREATY_EXECUTION',
+        'NO_COUNTRY_WIDE_OMNISCIENT_INTELLIGENCE', 'UNKNOWN_EVIDENCE_REMAINS_NULL']
+    };
+  }
+  function init() {
+    install();
+    if (!g.__omegaSanctionResponseHooksInstalled) {
+      g.__omegaSanctionResponseHooksInstalled = true;
+      g.addEventListener?.('OMEGA_READY', install);
+      g.addEventListener?.('OMEGA_GAME_SESSION_STARTED', install);
+      g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED', runTurn);
+    }
+    return diagnostics();
+  }
+  const API = Object.freeze({ VERSION, init, install, diagnostics, runTurn, sanctionPolicies: policies,
+    resourceIdsForPolicy: productsFor, demandMetrics: demand, tradeExposure: exposure,
+    legalSuppliers, legalAlternativeBuyers, MAX_POLICIES, MAX_PRODUCTS, MAX_MARKET_QUERIES });
+  g.Omega = g.Omega || {};
+  g.Omega.SanctionResponseRuntime = API;
+  g.OmegaSanctionResponseRuntime = API;
+  try { init(); } catch (error) { g.OmegaSanctionResponseRuntimeError = String(error?.message || error); }
+})(typeof window !== 'undefined' ? window : globalThis);
