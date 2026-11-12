@@ -5,8 +5,8 @@
  */
 (function(g){
 'use strict';
-if(g.OmegaBlackMarketNetworkV1&&g.OmegaBlackMarketNetworkV1.VERSION==='1.2.0')return;
-const VERSION='1.2.0',AUTHORITY='OMEGA_BLACK_MARKET_NPC_NETWORK_V1';
+if(g.OmegaBlackMarketNetworkV1&&g.OmegaBlackMarketNetworkV1.VERSION==='1.3.0')return;
+const VERSION='1.3.0',AUTHORITY='OMEGA_BLACK_MARKET_NPC_NETWORK_V1';
 const MAX_DEMAND_ROWS=14,MAX_PRODUCTS_PER_BUYER=3,MAX_WORLD_MARKET_QUERIES_PER_TURN=24,
  PRIORITY_WORLD_MARKET_QUERIES=12,MAX_PENDING_PROCESSES=6,MAX_NEW_DEALS_PER_TURN=1,COOLDOWN_TURNS=8;
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
