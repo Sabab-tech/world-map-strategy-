@@ -238,8 +238,6 @@ function render(root,countryValue){
    '<td><span class="omega-bm-tag">POTENTIAL BUYER</span></td></tr>';
  }).join('');
  const buyerMore=buyerSignals.length>visibleBuyerCount?
-  '<div class="omega-bm-more"><span>Showing '+count(visibleBuyerCount)+' of '+count(buyerSignals.length)+' demand signals</span><button type="button" data-bm-show-more-buyers>SHOW MORE COUNTRIES</button></div>':'';
- const buyerMore=buyerSignals.length>visibleBuyerCount?
   '<div class="omega-bm-more"><span>Showing '+count(visibleBuyerCount)+' of '+count(buyerSignals.length)+' demand signals</span>'+
   '<button type="button" data-bm-show-more-buyers>SHOW MORE COUNTRIES</button></div>':'';
  const participationRows=participationDeals.slice(0,16).map(x=>{
