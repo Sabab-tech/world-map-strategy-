@@ -564,15 +564,15 @@ function install(){
  let registered=0;const errors=[];for(const [type,owner,handler]of defs)try{m.registerAction?.(type,{actionId:type,stateOwnerMinistry:owner,authority:'OMEGA_BLACK_MARKET_V1'});m.registerCommandHandler(type,owner,handler);registered++;}catch(e){errors.push({type,reason:String(e?.message||e)});}
  report={ready:registered===defs.length,registered,total:defs.length,errors};return report.ready;
 }
-function selectTransitHub(buyer,seller){const candidates=countryKeys('foreign').filter(c=>c!==buyer&&c!==seller);let best=null;
- for(const c of candidates){const a=relation(buyer,c),b=relation(c,seller);if(!a||!b||a.war_state===true||b.war_state===true||a.sanctions===true||b.sanctions===true||routeBlocked(c,'').blocked)continue;
+function selectTransitHub(buyer,seller,rid){const candidates=countryKeys('foreign').filter(c=>c!==buyer&&c!==seller);let best=null;
+ for(const c of candidates){const a=relation(buyer,c),b=relation(c,seller);if(!a||!b||a.war_state===true||b.war_state===true||a.sanctions===true||b.sanctions===true||routeBlocked(c,rid).blocked)continue;
   const score=(num(a.trade)??num(a.overall)??0)+(num(b.trade)??num(b.overall)??0);if(!best||score>best.score)best={countryId:c,score};}return best?.countryId||null;}
 function startTransit(request={}){
  const buyer=country(request.countryId||request.buyerCountryId),deal=getAuthorizedDeal(request.blackMarketDealId,request);
  if(!deal||country(deal.buyerCountryId)!==buyer)return{accepted:false,reason:'BLACK_MARKET_TRANSIT_AUTHORIZATION_INVALID'};
  const existing=getTransits(buyer).find(x=>String(x.dealId)===String(deal.dealId)&&['IN_TRANSIT','ARRIVAL_PENDING'].includes(String(x.status)));
  if(existing)return{accepted:true,duplicate:true,transit:existing};
- const hub=selectTransitHub(deal.buyerCountryId,deal.sellerCountryId),route=[{countryId:deal.sellerCountryId,checkpoint:'EXPORT_CLEARANCE',role:'ORIGIN'}];
+ const hub=selectTransitHub(deal.buyerCountryId,deal.sellerCountryId,deal.resourceId),route=[{countryId:deal.sellerCountryId,checkpoint:'EXPORT_CLEARANCE',role:'ORIGIN'}];
  if(hub)route.push({countryId:hub,checkpoint:'INTERMEDIARY_HANDOFF',role:'TRANSIT_HUB'});route.push({countryId:deal.buyerCountryId,checkpoint:'IMPORT_CLEARANCE',role:'DESTINATION'});
  const reservationId='BM-TRANSIT-RESERVATION-'+deal.dealId,api=trade();
  const reserved=dispatch('trade','OMEGA_BLACK_MARKET_RESERVE_TRANSIT_STOCK',deal.sellerCountryId,{reservation:{reservationId,dealId:deal.dealId,requestId:deal.requestId,sellerCountryId:deal.sellerCountryId,buyerCountryId:deal.buyerCountryId,resourceId:deal.resourceId,quantity:deal.quantity}});
