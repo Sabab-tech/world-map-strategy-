@@ -236,3 +236,27 @@ test('export-restriction policy issuers receive a foreign response when a covert
  assert.equal(h.state.foreign.SAU.blackMarketResponses[0].policyIds.includes('DIR-SAU-COAL'),true);
  assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-4);
 });
+
+test('progressive seller scan returns the same verified offers as the normal full scan',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ const scan=api.beginOfferScan('BGD','coal',10);
+ assert.equal(scan.status,'READY');
+ assert.equal(scan.sellerCountryIds.length,1);
+ const batch=api.getOfferScanBatch(scan,1);
+ assert.equal(batch.status,'READY');
+ assert.equal(batch.scanned,1);
+ assert.equal(batch.total,1);
+ assert.equal(batch.done,true);
+ const progressive=api.finishOfferScan(scan);
+ const direct=api.getOffers('BGD','coal',10);
+ assert.equal(progressive.status,'READY');
+ assert.equal(direct.status,'READY');
+ assert.equal(JSON.stringify(progressive.offers),JSON.stringify(direct.offers));
+ assert.equal(progressive.offers[0].sellerCountryId,'SAU');
+});
+
+test('progressive seller scans reject forged scan contexts',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ assert.equal(api.getOfferScanBatch({status:'READY',sellerCountryIds:['SAU'],cursor:0,offers:[]},1).status,'INVALID_SCAN');
+ assert.equal(api.finishOfferScan({status:'READY',sellerCountryIds:['SAU'],cursor:0,offers:[]}).status,'INVALID_SCAN');
+});
