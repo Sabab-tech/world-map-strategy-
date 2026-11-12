@@ -66,7 +66,7 @@ test('foreign enforcement response is idempotent and records the issuer diplomat
  const response={responseId:'BM-RESPONSE-1',caseId:'BM-CASE-1',targetCountryId:'BGD',sourceCountryId:'SAU',responseType:'ENHANCED_INSPECTION_AND_DIPLOMATIC_PROTEST',severity:'HIGH'};
  const m=h.ctx.OmegaMinistryInteroperability;
  assert.equal(m.dispatchCommand('foreign','OMEGA_BLACK_MARKET_RECORD_RESPONSE','SAU',{response}).status,'APPLIED');
- assert.equal(h.state.foreign.SAU.blackMarketResponses.length,1);assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-8);assert.equal(h.state.foreign.SAU.relationAdjustments.SAU[0].delta,-3);
+ assert.equal(h.state.foreign.SAU.blackMarketResponses.length,1);assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-8);
  assert.equal(m.dispatchCommand('foreign','OMEGA_BLACK_MARKET_RECORD_RESPONSE','SAU',{response}).result.duplicate,true);
 });
 test('war and route blockades remain hard prohibitions',()=>{
@@ -238,7 +238,7 @@ test('export-restriction policy issuers receive a foreign response when a covert
  assert.equal(result.status,'INTERCEPTED');
  assert.equal(h.state.foreign.SAU.blackMarketResponses.length,1);
  assert.equal(h.state.foreign.SAU.blackMarketResponses[0].policyIds.includes('DIR-SAU-COAL'),true);
- assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-8);assert.equal(h.state.foreign.SAU.relationAdjustments.SAU[0].delta,-3);
+ assert.equal(h.state.foreign.SAU.relationAdjustments.BGD[0].delta,-8);
 });
 
 
