@@ -121,58 +121,92 @@ function render(root,countryValue){
  const count=(v)=>fmt(v);
  const pct=(v)=>Math.max(0,Math.min(100,(Number(v)||0)*100));
  const section=(index,title,note)=>'<div class="omega-bm-section"><div class="omega-bm-section-copy"><span class="omega-bm-section-index">'+esc(index)+'</span><h3>'+esc(title)+'</h3></div><span class="omega-bm-section-note">'+esc(note||'')+'</span></div>';
- const cards=offers.slice(0,visibleOfferCount).map(x=>{
-  const q=Math.min(num(x.requestedQuantity)||1,num(x.availableQuantity)||1),saving=num(x.expectedSavings),comparisonCurrency=x.buyerCurrency||x.currency;
-  const legalTag=x.legalMarketAvailable?(saving!==null&&saving>0?'COST ADVANTAGE':'STRATEGIC ACCESS'):(x.embargoed?'EMBARGO BYPASS':x.exportRestrictionReason?'EXPORT RESTRICTION':x.sanctionsAtQuote?'SANCTIONS':'NO LEGAL OFFER');
-  const foreignBasis=(Array.isArray(x.foreignPolicyBasis)?x.foreignPolicyBasis:[]).join(' · ')||'No blocking foreign-policy measure observed',math=x.pricingBreakdown||{},
-   negotiation=root.__omegaBmNegotiation&&root.__omegaBmNegotiation.offerId===x.offerId?root.__omegaBmNegotiation:null;
-  const detected=pct(x.detectionProbability),late=pct(x.lateDetectionProbability);
-  const restricted=!x.legalMarketAvailable;
-  const metrics=[
-   ['DETECTION BEFORE DISPATCH',fmt(num(x.detectionProbability)===null?null:num(x.detectionProbability)*100)+'%',true],
-   ['LATE DISCOVERY',fmt(num(x.lateDetectionProbability)===null?null:num(x.lateDetectionProbability)*100)+'%',true],
-   ['EXPECTED DELIVERED',fmt(x.expectedDeliveredQuantity)+' '+(x.unit||'units'),false],
-   ['EXPECTED CARGO LOSS',fmt(x.expectedSeizedQuantity)+' '+(x.unit||'units'),true],
-   ['EXPECTED FINE COST',x.expectedFineCostBuyer===null?'Not priced':money(x.expectedFineCostBuyer,comparisonCurrency),true],
-   ['SELLER STOCK OBSERVED',fmt(x.availableQuantity)+' '+(x.unit||'units'),false]
-  ].map((m,i)=>'<div class="omega-bm-risk-cell'+(m[2]?' is-alert':'')+'"><small>'+m[0]+'</small><strong>'+esc(m[1])+'</strong>'+(i===0?'<div class="omega-bm-meter"><span style="width:'+detected.toFixed(1)+'%"></span></div>':i===1?'<div class="omega-bm-meter"><span style="width:'+late.toFixed(1)+'%"></span></div>':'')+'</div>').join('');
-  const breakdown=[['Tariff discount',math.tariffDiscountPct],['Risk premium',math.riskPremiumPct],['Policy premium',math.policyPremiumPct],['Scarcity premium',math.scarcityPremiumPct],['Broker spread',math.brokerSpreadPct]].map(row=>'<div class="omega-bm-breakdown-item"><small>'+row[0]+'</small><strong>'+fmt(row[1])+'%</strong></div>').join('');
-  const sellerInfo=countryInfo(x.sellerCountryId);
-  const motiveMarkup=(x.sellerMotiveReason||x.buyerMotiveReason)?
+ const sellerRows=offers.slice(0,visibleOfferCount).map(x=>{
+  const sellerInfo=countryInfo(x.sellerCountryId),saving=num(x.expectedSavings),
+   buyerCurrency=x.buyerCurrency||x.currency,math=x.pricingBreakdown||{},
+   foreignBasis=(Array.isArray(x.foreignPolicyBasis)?x.foreignPolicyBasis:[]).join(' · ')||'No blocking foreign-policy measure observed',
+   sanctions=(Array.isArray(x.sanctioningCountryIds)?x.sanctioningCountryIds:[]).map(countryLabel).map(esc).join(' · '),
+   sanctionPolicies=(Array.isArray(x.sanctionPolicyIds)?x.sanctionPolicyIds:[]).map(esc).join(' · '),
+   negotiation=root.__omegaBmNegotiation&&root.__omegaBmNegotiation.offerId===x.offerId?root.__omegaBmNegotiation:null,
+   legalTag=x.legalMarketAvailable?(saving!==null&&saving>0?'PRICE ADVANTAGE':'LEGAL ACCESS EXISTS'):
+    (x.embargoed?'IMPORT EMBARGO':x.exportRestrictionReason?'EXPORT RESTRICTION':x.sanctionsAtQuote?'SANCTIONS':'RESTRICTED CHANNEL'),
+   risk=Math.max(0,Math.min(100,(num(x.detectionProbability)||0)*100)),
+   quantity=Math.min(num(x.requestedQuantity)||1,num(x.availableQuantity)||1),
+   thresholds=Array.isArray(x.scrutinyThresholds?.sellerFreeStockQuantity)?x.scrutinyThresholds.sellerFreeStockQuantity:[];
+  const motive=(x.sellerMotiveReason||x.buyerMotiveReason)?
    '<div class="omega-bm-country-context">'+
     (x.sellerMotiveReason?'<div><small>Why '+esc(sellerInfo.name)+' sells</small><strong>'+esc(x.sellerMotiveReason)+'</strong></div>':'')+
-    (x.buyerMotiveReason?'<div><small>Buyer country motive</small><strong>'+esc(x.buyerMotiveReason)+'</strong></div>':'')+
-   '</div>':'';
-  const thresholdAmounts=Array.isArray(x.scrutinyThresholds?.sellerFreeStockQuantity)?x.scrutinyThresholds.sellerFreeStockQuantity:[],
-   thresholdLabels=['1%','3%','8%','15%'],thresholdAmountText=thresholdAmounts.length===4?
-    thresholdAmounts.map((v,i)=>thresholdLabels[i]+' = '+fmt(v)+' '+(x.unit||'units')).join(' · '):'';
-  const scrutinyMarkup=x.shipmentSizeBand?
-   '<div class="omega-bm-country-context is-impact">'+
-    '<div><small>Shipment class</small><strong>'+esc(human(x.shipmentSizeBand))+'</strong></div>'+
-    '<div><small>Seller stock exposed</small><strong>'+percent(x.sellerStockExposurePct)+'</strong></div>'+
-    '<div><small>Attempts in 10 turns</small><strong>'+fmt(x.repeatAttempts10Turns||0)+'</strong></div>'+
-   '</div>'+
-   '<div class="omega-bm-thresholds"><strong>Quantity thresholds from verified free stock</strong>'+
-    (thresholdAmountText?'<br>'+esc(thresholdAmountText):' · 1%, 3%, 8% and 15% of verified free stock')+
-    '<br><strong>Detection bands</strong> · ≤1% Micro · 1–3% Small · 3–8% Moderate · 8–15% Large · &gt;15% Critical.'+
-    ' <strong>Potential penalties</strong>: interception attempt fine '+percent(x.attemptFineRate)+' · completed-trade fine '+percent(x.fineRate)+' · post-settlement cargo seizure '+percent(x.seizureRate)+'.</div>':'';
-  return '<article class="omega-bm-offer"><div class="omega-bm-offer-top"><div class="omega-bm-seller"><span class="omega-bm-node">'+esc(sellerInfo.flag||String(x.sellerCountryId||'??').slice(0,3))+'</span><div><div class="omega-bm-country">'+esc(sellerInfo.name)+'</div><div class="omega-bm-muted">'+esc(actorRole(x.sellerActorClass))+' · '+esc(x.productName||x.resourceId)+' · '+fmt(x.availableQuantity)+' '+esc(x.unit||'units')+' available</div></div></div><span class="omega-bm-tag'+(restricted?' is-restricted':'')+'">'+esc(legalTag)+'</span></div>'+
-   '<div class="omega-bm-prices"><div class="omega-bm-price is-shadow"><small>Shadow price / unit · seller currency</small><strong>'+money(x.unitPrice,x.currency)+'</strong><div class="omega-bm-price-note">Expected buyer total '+(x.expectedBlackMarketTotalBuyer===null?'FX not observed':money(x.expectedBlackMarketTotalBuyer,comparisonCurrency))+'</div></div><div class="omega-bm-price"><small>Legal landed / unit · buyer currency</small><strong>'+(x.legalLandedUnitPrice===null?'No comparable quote':money(x.legalLandedUnitPrice,comparisonCurrency))+'</strong><div class="omega-bm-price-note">'+(saving===null?'Legal benchmark unavailable':(saving>=0?'Expected saving ':'Expected extra cost ')+money(Math.abs(saving),comparisonCurrency))+'</div></div></div>'+
-   '<div class="omega-bm-riskline"><span>Strategic rationale</span><strong>'+esc(String(x.whyUse||'').replace(/_/g,' '))+'</strong></div>'+
-   motiveMarkup+
-   scrutinyMarkup+
-   '<div class="omega-bm-riskline"><span>Broker standing</span><strong>'+esc(String(x.brokerType||'PRIVATE_BROKER').replace(/_/g,' '))+' · '+fmt(x.brokerReputation===undefined?50:x.brokerReputation)+'/100</strong></div>'+
-   '<div class="omega-bm-negotiate"><input type="number" min="0.001" step="any" value="'+esc(negotiation?.bidUnitPrice??x.unitPrice)+'" data-bm-bid="'+esc(x.offerId)+'" aria-label="Bid price per unit"><button type="button" data-bm-negotiate="'+esc(x.offerId)+'" data-bm-seller="'+esc(x.sellerCountryId)+'" data-bm-resource="'+esc(x.resourceId)+'">NEGOTIATE</button></div>'+
-   (negotiation?'<div class="omega-bm-outcome">Broker '+esc(negotiation.status||'NEGOTIATION')+': '+(negotiation.status==='COUNTERED'?'counter price '+money(negotiation.counterUnitPrice,x.currency)+' / unit':(negotiation.status==='ACCEPTED'?'agreed price '+money(negotiation.agreedUnitPrice,x.currency)+' / unit':'negotiation recorded'))+'</div>':'')+
-   (negotiation&&negotiation.status==='COUNTERED'?'<button type="button" data-bm-accept-counter="'+esc(negotiation.negotiationId)+'">ACCEPT COUNTER · '+money(negotiation.counterUnitPrice,x.currency)+'</button>':'')+
-   '<div class="omega-bm-risk-grid">'+metrics+'</div>'+
-   '<div class="omega-bm-policy"><small>Foreign-policy exposure / evidence</small><span>'+esc(foreignBasis)+'</span></div>'+
-   '<div class="omega-bm-breakdown">'+breakdown+'</div>'+
-   '<div class="omega-bm-order"><input type="number" min="0.001" max="'+esc(x.availableQuantity)+'" step="any" value="'+esc(q)+'" data-bm-quantity="'+esc(x.offerId)+'" aria-label="Order quantity"><button type="button" data-bm-buy="'+esc(x.offerId)+'" data-bm-seller="'+esc(x.sellerCountryId)+'" data-bm-resource="'+esc(x.resourceId)+'">SEND DEAL REQUEST</button></div></article>';
+    (x.buyerMotiveReason?'<div><small>Why '+esc(countryInfo(c).name)+' wants it</small><strong>'+esc(x.buyerMotiveReason)+'</strong></div>':'')+
+    '<div><small>Seller actor</small><strong>'+esc(actorRole(x.sellerActorClass))+'</strong></div></div>':'';
+  const scrutiny=x.shipmentSizeBand?
+   '<div class="omega-bm-country-context"><div><small>Shipment class</small><strong>'+esc(human(x.shipmentSizeBand))+'</strong></div>'+
+   '<div><small>Seller free stock exposed</small><strong>'+percent(x.sellerStockExposurePct)+'</strong></div>'+
+   '<div><small>Attempts in last 10 turns</small><strong>'+fmt(x.repeatAttempts10Turns||0)+'</strong></div></div>':'';
+  const thresholdText=thresholds.length?
+   '<br>Free-stock thresholds (1% / 3% / 8% / 15%): '+thresholds.map(fmt).join(' / ')+' '+esc(x.unit||'units'):'';
+  const sanctionText=(sanctions||sanctionPolicies)?
+   '<br>Sanctioning countries: '+(sanctions||'Not recorded')+' · Policies: '+(sanctionPolicies||'Not recorded')+
+   ' · Secondary sanctions: '+(x.secondarySanctionsAtQuote?'Yes':'No recorded evidence'):'';
+  const detail='<details class="omega-bm-detail"><summary>STRATEGIC FILE · MOTIVE, SANCTIONS, SHIPMENT & PENALTIES</summary><div class="omega-bm-detail-body">'+
+   'Legal landed price: '+(x.legalLandedUnitPrice===null?'No comparable legal quote':money(x.legalLandedUnitPrice,buyerCurrency))+
+   ' · '+(saving===null?'No verified price comparison':(saving>=0?'Expected saving ':'Expected extra cost ')+money(Math.abs(saving),buyerCurrency))+
+   '<br>Expected delivery: '+fmt(x.expectedDeliveredQuantity)+' '+esc(x.unit||'units')+
+   ' · Expected cargo loss: '+fmt(x.expectedSeizedQuantity)+' '+esc(x.unit||'units')+
+   ' · Expected fine: '+(x.expectedFineCostBuyer===null?'Not priced':money(x.expectedFineCostBuyer,buyerCurrency))+
+   '<br>Detection before dispatch: '+percent(x.detectionProbability)+' · Late discovery: '+percent(x.lateDetectionProbability)+
+   '<br>Policy basis: '+esc(foreignBasis)+sanctionText+
+   '<br>Export policy IDs: '+esc((x.exportPolicyIds||[]).join(' · ')||'Not recorded')+
+   '<br>Price components: tariff '+fmt(math.tariffDiscountPct)+'%, risk '+fmt(math.riskPremiumPct)+'%, policy '+fmt(math.policyPremiumPct)+
+   '%, scarcity '+fmt(math.scarcityPremiumPct)+'%, broker '+fmt(math.brokerSpreadPct)+'%'+
+   '<br>Attempt fine '+percent(x.attemptFineRate)+' · completed-trade fine '+percent(x.fineRate)+' · seizure '+percent(x.seizureRate)+
+   thresholdText+motive+scrutiny+
+   '<div class="omega-bm-row-action" style="margin-top:8px"><input type="number" min="0.001" step="any" value="'+esc(negotiation?.bidUnitPrice??x.unitPrice)+
+   '" data-bm-bid="'+esc(x.offerId)+'" aria-label="Bid price per unit">'+
+   '<button type="button" class="omega-bm-btn omega-bm-btn--quiet" data-bm-negotiate="'+esc(x.offerId)+
+   '" data-bm-seller="'+esc(x.sellerCountryId)+'" data-bm-resource="'+esc(x.resourceId)+'">NEGOTIATE PRICE</button></div>'+
+   (negotiation?'<div class="omega-bm-outcome">Negotiation '+esc(statusText(negotiation.status))+
+    (negotiation.counterUnitPrice!==undefined?' · Counter '+money(negotiation.counterUnitPrice,x.currency):'')+
+    (negotiation.agreedUnitPrice!==undefined?' · Agreed '+money(negotiation.agreedUnitPrice,x.currency):'')+'</div>':'')+
+   (negotiation&&negotiation.status==='COUNTERED'?'<button type="button" class="omega-bm-btn omega-bm-btn--quiet" data-bm-accept-counter="'+esc(negotiation.negotiationId)+'">ACCEPT COUNTER · '+money(negotiation.counterUnitPrice,x.currency)+'</button>':'')+
+   '</div></details>';
+  return '<tr><td><div class="omega-bm-country-row"><span class="omega-bm-flag">'+esc(sellerInfo.flag||'🏳️')+
+   '</span><span class="omega-bm-country-copy"><strong>'+esc(sellerInfo.name)+'</strong><small>'+esc(actorRole(x.sellerActorClass))+'</small></span></div></td>'+
+   '<td><span class="omega-bm-number">'+fmt(x.availableQuantity)+' '+esc(x.unit||'')+'</span></td>'+
+   '<td><span class="omega-bm-number">'+esc(money(x.unitPrice,x.currency))+'</span><small class="omega-bm-muted"> / unit</small></td>'+
+   '<td><span class="omega-bm-risk">'+fmt(risk)+'% RISK</span></td>'+
+   '<td><span class="omega-bm-tag">'+esc(legalTag)+'</span></td>'+
+   '<td><div class="omega-bm-row-action"><input type="number" min="0.001" max="'+esc(x.availableQuantity)+'" step="any" value="'+esc(quantity)+
+   '" data-bm-quantity="'+esc(x.offerId)+'" aria-label="Order quantity from '+esc(sellerInfo.name)+'">'+
+   '<button type="button" class="omega-bm-btn" data-bm-buy="'+esc(x.offerId)+'" data-bm-seller="'+esc(x.sellerCountryId)+
+   '" data-bm-resource="'+esc(x.resourceId)+'">BUY</button></div></td></tr>'+
+   '<tr class="omega-bm-detail-row"><td colspan="6">'+detail+'</td></tr>';
  }).join('');
- const offerMore=offers.length>visibleOfferCount?
-  '<div class="omega-bm-more"><span>Showing '+count(visibleOfferCount)+' of '+count(offers.length)+' seller offers</span><button type="button" data-bm-show-more>SHOW '+count(Math.min(6,offers.length-visibleOfferCount))+' MORE SELLERS</button></div>':'';
- const dealHtml=active.slice(0,8).map(x=>{
+ const sellerMore=offers.length>visibleOfferCount?
+  '<div class="omega-bm-more"><span>Showing '+count(visibleOfferCount)+' / '+count(offers.length)+' verified sellers</span>'+
+  '<button type="button" class="omega-bm-btn omega-bm-btn--quiet" data-bm-show-more>SHOW MORE SELLERS</button></div>':'';
+ const buyerRows=buyerSignals.slice(0,visibleBuyerCount).map(x=>{
+  const info=countryInfo(x.countryId);
+  return '<tr><td><div class="omega-bm-country-row"><span class="omega-bm-flag">'+esc(info.flag||'🏳️')+
+   '</span><span class="omega-bm-country-copy"><strong>'+esc(info.name)+'</strong><small>'+esc(x.reason)+'</small></span></div></td>'+
+   '<td><span class="omega-bm-number">'+fmt(x.quantity)+'</span> '+esc(selected?.unit||'')+'</td>'+
+   '<td>'+fmt(x.demandPerDay)+'/day</td><td>'+(x.coverage===null?'—':fmt(x.coverage)+' days')+'</td>'+
+   '<td><span class="omega-bm-tag">POTENTIAL BUYER</span></td></tr>';
+ }).join('');
+ const buyerMore=buyerSignals.length>visibleBuyerCount?
+  '<div class="omega-bm-more"><span>Showing '+count(visibleBuyerCount)+' / '+count(buyerSignals.length)+' demand signals</span>'+
+  '<button type="button" class="omega-bm-btn omega-bm-btn--quiet" data-bm-show-more-buyers>SHOW MORE COUNTRIES</button></div>':'';
+ const participationRows=participationDeals.slice(0,16).map(x=>{
+  const buyer=countryInfo(x.buyerCountryId),seller=countryInfo(x.sellerCountryId),status=String(x.status||'UNKNOWN').toUpperCase(),
+   isAccepted=status==='ACCEPTED',lead=status==='INTELLIGENCE_LEAD';
+  return '<tr><td><div class="omega-bm-country-row"><span class="omega-bm-flag">'+esc(buyer.flag||'🏳️')+
+   '</span><span class="omega-bm-country-copy"><strong>'+esc(buyer.name)+'</strong><small>BUYER</small></span></div></td>'+
+   '<td><div class="omega-bm-country-row"><span class="omega-bm-flag">'+esc(seller.flag||'🏳️')+
+   '</span><span class="omega-bm-country-copy"><strong>'+esc(seller.name)+'</strong><small>SELLER</small></span></div></td>'+
+   '<td>'+esc(x.productName||x.resourceId)+'</td><td>'+fmt(x.quantity)+' '+esc(x.unit||'')+'</td>'+
+   '<td><span class="omega-bm-status'+(isAccepted?'':(lead?'':' is-alert'))+'">'+esc(statusText(status))+'</span></td>'+
+   '<td>'+esc(money(x.unitPrice,x.currency))+'</td></tr>';
+ }).join('');
+const dealHtml=active.slice(0,8).map(x=>{
   const e=x.enforcement||{},attempt=x.attemptEnforcement||{},alert=['INTERCEPTED','SETTLED_UNDER_INVESTIGATION','FAILED'].includes(String(x.status||'').toUpperCase());
   return '<article class="omega-bm-deal"><span class="omega-bm-status'+(alert?' is-alert':'')+'">'+esc(String(x.status||'UNKNOWN').replace(/_/g,' '))+'</span><strong>'+esc(x.productName||x.resourceId)+'</strong><small>Seller '+esc(countryLabel(x.sellerCountryId))+' · '+fmt(x.quantity)+' '+esc(x.unit||'units')+'</small><small>'+money(x.unitPrice,x.currency)+' / unit · Turn '+fmt(x.createdTurn)+'</small>'+
    (attempt.amountDue!==undefined?'<div class="omega-bm-impact"><strong>Intercepted before delivery</strong><br>Attempt fine '+money(attempt.amountDue,x.attemptCurrency||x.currency)+' · paid '+money(attempt.amountPaid, x.attemptCurrency||x.currency)+' · outstanding '+money(attempt.amountOutstanding,x.attemptCurrency||x.currency)+'<br>Cargo stopped: no buyer inventory seized</div>':'')+
