@@ -191,7 +191,24 @@ function render(root,countryValue){
    '<tr class="omega-bm-detail-row"><td colspan="6">'+detailMarkup+'</td></tr>';
  }).join('');
  const offerMore=offers.length>visibleOfferCount?
-  '<div class="omega-bm-more"><span>Showing '+count(visibleOfferCount)+' of '+count(offers.length)+' seller offers</span><button type="button" data-bm-show-more>SHOW '+count(Math.min(6,offers.length-visibleOfferCount))+' MORE SELLERS</button></div>':'';
+  '<div class="omega-bm-more"><span>Showing '+count(visibleOfferCount)+' of '+count(offers.length)+' seller offers</span><button type="button" data-bm-show-more>SHOW '+count(Math.min(6,offers.length-visibleOfferCount))+' MORE SELLERS</button></div>':''; 
+ const buyerRows=buyerSignals.slice(0,visibleBuyerCount).map(x=>{
+  const info=countryInfo(x.countryId);
+  return '<tr><td><div class="omega-bm-country-row"><span class="omega-bm-flag">'+esc(info.flag||'🏳️')+'</span><span class="omega-bm-country-copy"><strong>'+esc(info.name)+'</strong><small>'+esc(x.reason)+'</small></span></div></td>'+
+   '<td><span class="omega-bm-number">'+fmt(x.quantity)+'</span></td><td>'+fmt(x.demandPerDay)+'/day</td>'+
+   '<td>'+(x.coverage===null?'—':fmt(x.coverage)+' days')+'</td><td><span class="omega-bm-tag">POTENTIAL BUYER</span></td></tr>';
+ }).join('');
+ const buyerMore=buyerSignals.length>visibleBuyerCount?
+  '<div class="omega-bm-more"><span>Showing '+count(visibleBuyerCount)+' of '+count(buyerSignals.length)+' demand signals</span><button type="button" data-bm-show-more-buyers>SHOW MORE COUNTRIES</button></div>':'';
+ const participationRows=participationDeals.slice(0,16).map(x=>{
+  const status=String(x.status||'UNKNOWN').toUpperCase(),alert=['INTERCEPTED','SETTLED_UNDER_INVESTIGATION','FAILED','EXPIRED'].includes(status),
+   buyerInfo=countryInfo(x.buyerCountryId),sellerInfo=countryInfo(x.sellerCountryId);
+  return '<tr><td><div class="omega-bm-country-row"><span class="omega-bm-flag">'+esc(buyerInfo.flag||'🏳️')+'</span><span class="omega-bm-country-copy"><strong>'+esc(buyerInfo.name)+'</strong><small>BUYER</small></span></div></td>'+
+   '<td><div class="omega-bm-country-row"><span class="omega-bm-flag">'+esc(sellerInfo.flag||'🏳️')+'</span><span class="omega-bm-country-copy"><strong>'+esc(sellerInfo.name)+'</strong><small>SELLER</small></span></div></td>'+
+   '<td>'+esc(x.productName||x.resourceId)+'</td><td>'+fmt(x.quantity)+' '+esc(x.unit||'')+'</td>'+
+   '<td><span class="omega-bm-status'+(alert?' is-alert':'')+'">'+esc(dealStatusLabel(status))+'</span></td><td>'+esc(money(x.unitPrice,x.currency))+'</td></tr>';
+ }).join('');
+
  const dealHtml=active.slice(0,8).map(x=>{
   const e=x.enforcement||{},attempt=x.attemptEnforcement||{},alert=['INTERCEPTED','SETTLED_UNDER_INVESTIGATION','FAILED'].includes(String(x.status||'').toUpperCase());
   return '<article class="omega-bm-deal"><span class="omega-bm-status'+(alert?' is-alert':'')+'">'+esc(String(x.status||'UNKNOWN').replace(/_/g,' '))+'</span><strong>'+esc(x.productName||x.resourceId)+'</strong><small>Seller '+esc(countryLabel(x.sellerCountryId))+' · '+fmt(x.quantity)+' '+esc(x.unit||'units')+'</small><small>'+money(x.unitPrice,x.currency)+' / unit · Turn '+fmt(x.createdTurn)+'</small>'+
