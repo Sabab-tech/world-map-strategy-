@@ -115,6 +115,7 @@ function render(root,countryValue){
   participationDeals=selectedProduct?knownParticipationDeals(bm,c,selectedProduct,deals,networkReports):[],
   acceptedDeals=participationDeals.filter(x=>String(x.status||'').toUpperCase()==='ACCEPTED').length,
   playerInfo=countryInfo(c);
+ const scanning=!!root.__omegaBmScanning;
  const active=deals.filter(x=>!['FAILED','EXPIRED'].includes(String(x.status||'').toUpperCase()));
  const settled=deals.filter(x=>['SETTLED','SETTLED_UNDER_INVESTIGATION'].includes(String(x.status||'').toUpperCase())).length;
  const exposed=deals.filter(x=>['INTERCEPTED','SETTLED_UNDER_INVESTIGATION'].includes(String(x.status||'').toUpperCase())).length;
