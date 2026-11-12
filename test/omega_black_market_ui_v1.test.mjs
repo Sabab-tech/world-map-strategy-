@@ -186,6 +186,58 @@ test('blue strategy board renders three commodity lanes and structured market pa
   assert.doesNotMatch(h.root.innerHTML,/undefined/);
 });
 
+test('sanctions and national response panel is visible only from the active country-owned records',()=>{
+ const h=harness();
+ h.gameState.foreign={
+  BGD:{
+   sanctionNotifications:[{notificationId:'SAN-USA-BGD-IRON-BGD',policyKey:'SAN-USA-BGD-IRON',
+    policyId:'SAN-USA-BGD-IRON',issuerCountryId:'USA',targetCountryId:'BGD',
+    policyType:'IMPORT_PROHIBITION',direction:'IMPORT',effectiveTurn:4,expiryTurn:20,role:'TARGET'}],
+   sanctionNationalDecisions:[{decisionId:'SAN-USA-BGD-IRON-BGD-8',policyKey:'SAN-USA-BGD-IRON',
+    role:'TARGET',selectedAction:'LEGAL_SOURCE_DIVERSIFICATION',
+    selectedActionTitle:'Diversify into verified legal suppliers',
+    governmentMotives:['PROTECT_DOMESTIC_INPUT_AND_CONSUMER_SUPPLY'],
+    options:[{id:'LEGAL_SOURCE_DIVERSIFICATION',title:'Diversify into verified legal suppliers',
+      feasibility:'SUPPORTED_BY_CURRENT_MARKET_STOCK'}]}]
+  },
+  IRN:{
+   sanctionNotifications:[{notificationId:'SECRET-IRAN',policyId:'SECRET-IRAN',issuerCountryId:'USA',
+    targetCountryId:'IRN',role:'TARGET'}],
+   sanctionNationalDecisions:[{decisionId:'SECRET-IRAN-DECISION',selectedActionTitle:'SECRET FOREIGN GOVERNMENT PLAN'}]
+  }
+ };
+ h.gameState.economy={
+  BGD:{sanctionEconomicAssessments:[{policyKey:'SAN-USA-BGD-IRON',role:'TARGET',
+   tradeExposure:[{resourceId:'iron_ore',
+    exportsAtRisk:{value:500,currency:'USD',recordCount:2,quantity:10},
+    importsAtRisk:{value:100,currency:'USD',recordCount:1,quantity:3}}],
+   demandAndIndustry:[{resourceId:'iron_ore',domesticDemand:{
+    unmetDemand:30,stockCoverageDays:2,stockCoverageTargetDays:10,unit:'tonnes'}}]}]},
+  IRN:{sanctionEconomicAssessments:[{policyKey:'SECRET-IRAN',tradeExposure:[],
+   demandAndIndustry:[{resourceId:'SECRET-IRAN-RESOURCE'}]}]}
+ };
+ h.gameState.trade.BGD.sanctionMarketRecoveryPlans=[{policyKey:'SAN-USA-BGD-IRON',
+  importDiversification:[{resourceId:'iron_ore',legalSources:[{sellerCountryId:'SAU'}]}],
+  exportRedirection:[]}];
+ h.gameState.intelligence={
+  BGD:{sanctionInvestigations:[{investigationId:'CASE-BGD',role:'TARGET',
+   counterpartCountryId:'USA',status:'OPEN',triggerReasons:['COMPLETED_BILATERAL_TRADE_EXPOSURE'],
+   capabilityScore:.8,collectionMode:'EXISTING_CAPABILITY_BOUNDED_REVIEW'}]},
+  IRN:{sanctionInvestigations:[{investigationId:'SECRET-IRAN-CASE',role:'TARGET',
+   motive:'SECRET FOREIGN INTELLIGENCE PLAN'}]}
+ };
+ h.api.render(h.root,'BGD');
+ assert.match(h.root.innerHTML,/Sanctions, economic exposure & national response/);
+ assert.match(h.root.innerHTML,/United States → Bangladesh/);
+ assert.match(h.root.innerHTML,/Diversify into verified legal suppliers/);
+ assert.match(h.root.innerHTML,/500\.00/);
+ assert.match(h.root.innerHTML,/100\.00/);
+ assert.match(h.root.innerHTML,/Saudi Arabia/);
+ assert.match(h.root.innerHTML,/Existing Capability Bounded Review/);
+ assert.doesNotMatch(h.root.innerHTML,/SECRET FOREIGN GOVERNMENT PLAN/);
+ assert.doesNotMatch(h.root.innerHTML,/SECRET-IRAN-CASE/);
+});
+ 
 test('buyer interest table shows demand-backed countries and flags, not invented participants', () => {
   const h = harness();
   h.api.render(h.root,'BGD');

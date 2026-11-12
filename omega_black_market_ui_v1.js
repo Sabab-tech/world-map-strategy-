@@ -106,6 +106,20 @@ function scheduleScan(fn){
 function render(root,countryValue){
  const bm=g.OmegaBlackMarket||g.Omega?.BlackMarket;if(!root||!bm)return{ok:false,reason:'BLACK_MARKET_RUNTIME_UNAVAILABLE'};
  const c=String(countryValue||g.OmegaMinistryViewCountry||g.OmegaCabinetUI?.activeCountry||g.currentActiveCountry||'').trim().toUpperCase();
+ const appState=g.Game?.state||g.gameState||g.Omega?.Simulation?.world?.state||{};
+ const localBucket=domain=>{
+  const root=appState?.[domain];
+  if(!root||typeof root!=='object'||Array.isArray(root))return{};
+  const key=Object.keys(root).find(value=>String(value||'').trim().toUpperCase()===c);
+  return key===undefined?{}:(root[key]||{});
+ };
+ const localForeign=localBucket('foreign'),localEconomy=localBucket('economy'),
+  localTrade=localBucket('trade'),localIntelligence=localBucket('intelligence');
+ const sanctionNotices=Array.isArray(localForeign.sanctionNotifications)?localForeign.sanctionNotifications:[],
+  sanctionDecisions=Array.isArray(localForeign.sanctionNationalDecisions)?localForeign.sanctionNationalDecisions:[],
+  sanctionImpacts=Array.isArray(localEconomy.sanctionEconomicAssessments)?localEconomy.sanctionEconomicAssessments:[],
+  sanctionRecovery=Array.isArray(localTrade.sanctionMarketRecoveryPlans)?localTrade.sanctionMarketRecoveryPlans:[],
+  sanctionInvestigations=Array.isArray(localIntelligence.sanctionInvestigations)?localIntelligence.sanctionInvestigations:[];
  root.__omegaBmCountry=c;
  const selected=String(root.__omegaBmResource||''),lane=String(root.__omegaBmLane||'RAW_RESOURCE');
  const allOffers=Array.isArray(root.__omegaBmOffers)?root.__omegaBmOffers:[];
@@ -252,6 +266,73 @@ function render(root,countryValue){
   ].join('');
   return '<article class="omega-bm-deal"><span class="omega-bm-status'+(x.level==='HIGH'?' is-alert':'')+'">'+esc(x.level||'RUMOUR')+' INTELLIGENCE</span><strong>'+esc(x.productName||x.resourceId||'Covert network')+'</strong><small>'+esc(x.summary||'Covert activity observed')+'</small><small>'+(x.buyerCountryId?'Buyer '+esc(countryLabel(x.buyerCountryId))+' · ':'')+(x.sellerCountryId?'Seller '+esc(countryLabel(x.sellerCountryId)):'Counterparties unconfirmed')+'</small><small>Government role '+esc(human(x.governmentInvolvement||'NOT_ESTABLISHED'))+' · Confidence '+fmt((num(x.confidence)||0)*100)+'%</small>'+actorDetails+'<small>Other countries: '+esc(human(x.otherCountriesKnow||'NOT_RECORDED'))+'</small></article>';
  }).join('');
+
+ const sanctionMoney = row => {
+  if(!row||typeof row!=='object')return 'Not recorded';
+  if(row.value!==null&&row.value!==undefined&&row.currency)return money(row.value,row.currency);
+  const byCurrency=row.valueByCurrency&&typeof row.valueByCurrency==='object'?row.valueByCurrency:{};
+  const pairs=Object.entries(byCurrency).filter(([,value])=>num(value)!==null);
+  return pairs.length?pairs.map(([currency,value])=>money(value,currency)).join(' · '):
+   (row.currencyStatus==='MIXED_OR_UNATTRIBUTED_CURRENCY'?'Mixed or unattributed currencies':'Not recorded');
+ };
+ const sanctionNoticeHtml=sanctionNotices.slice(-8).reverse().map(notice=>{
+  const issuer=countryInfo(notice.issuerCountryId),target=countryInfo(notice.targetCountryId),
+   impact=sanctionImpacts.find(row=>row.policyKey===notice.policyKey),
+   decision=sanctionDecisions.find(row=>row.policyKey===notice.policyKey),
+   recovery=sanctionRecovery.find(row=>row.policyKey===notice.policyKey);
+  const impactRows=(impact?.tradeExposure||[]).map(item=>{
+   const tradeValue=item.exportsAtRisk||{},importValue=item.importsAtRisk||{},
+    demand=(impact?.demandAndIndustry||[]).find(row=>row.resourceId===item.resourceId)||{},
+    stock=demand.domesticDemand||{};
+   return '<article class="omega-bm-deal"><strong>'+esc(human(item.resourceId))+'</strong>'+
+    '<div class="omega-bm-country-context is-impact">'+
+     '<div><small>Settled exports exposed</small><strong>'+esc(sanctionMoney(tradeValue))+
+      ' · '+fmt(tradeValue.recordCount||0)+' settlement(s)</strong></div>'+
+     '<div><small>Settled imports exposed</small><strong>'+esc(sanctionMoney(importValue))+
+      ' · '+fmt(importValue.recordCount||0)+' settlement(s)</strong></div>'+
+     '<div><small>Domestic shortage / stock</small><strong>'+
+      (stock.unmetDemand===null||stock.unmetDemand===undefined?'Demand not recorded':fmt(stock.unmetDemand)+' unmet')+
+      (stock.stockCoverageDays===null||stock.stockCoverageDays===undefined?'':' · '+fmt(stock.stockCoverageDays)+' days cover')+
+      '</strong></div>'+
+    '</div></article>';
+  }).join('');
+  const optionRows=(decision?.options||[]).slice(0,4).map(option=>
+   '<div class="omega-bm-riskline"><span>'+esc(option.title||human(option.id))+'</span><strong>'+esc(human(option.feasibility||''))+'</strong></div>'
+  ).join('');
+  const recoveryDetails=[];
+  for(const item of recovery?.importDiversification||[])
+   recoveryDetails.push('Import '+human(item.resourceId)+': '+(item.legalSources||[]).map(x=>countryInfo(x.sellerCountryId).name).join(', '));
+  for(const item of recovery?.exportRedirection||[])
+   recoveryDetails.push('Export '+human(item.resourceId)+': '+(item.alternativeBuyers||[]).map(x=>countryInfo(x.buyerCountryId).name).join(', '));
+  return '<article class="omega-bm-deal"><span class="omega-bm-status'+(notice.role==='SUPPLIER'?'':' is-alert')+'">'+
+   esc(notice.role==='SUPPLIER'?'SUPPLY-CHAIN SPILLOVER':notice.role==='ISSUER'?'ISSUER POLICY NOTICE':'SANCTION NOTICE')+
+   '</span><strong>'+esc(issuer.name)+' → '+esc(target.name)+'</strong>'+
+   '<small>Policy '+esc(notice.policyId||notice.policyKey)+' · '+esc(human(notice.policyType||'SANCTIONS'))+
+    ' · '+esc(human(notice.direction||'BOTH'))+' · Effective turn '+fmt(notice.effectiveTurn)+'</small>'+
+   '<small>Country role: '+esc(human(notice.role))+
+    (notice.secondarySanctions?' · Secondary-sanctions scope recorded':'')+
+    (notice.expiryTurn===null||notice.expiryTurn===undefined?'':' · Expiry turn '+fmt(notice.expiryTurn))+'</small>'+
+   (impactRows||'<small>No settled bilateral commodity record matched this policy. Financial loss is not assumed.</small>')+
+   (decision?'<div class="omega-bm-impact"><strong>National response · '+esc(decision.selectedActionTitle||human(decision.selectedAction))+'</strong>'+
+    '<br>'+esc((decision.governmentMotives||[]).map(human).join(' · '))+
+    optionRows+'</div>':'')+
+   (recoveryDetails.length?'<div class="omega-bm-policy"><small>Recovery candidates · planning only</small><span>'+
+    esc(recoveryDetails.join(' · '))+'</span></div>':'')+
+   '</article>';
+ }).join('');
+ const investigationMarkup=sanctionInvestigations.slice(-8).reverse().map(item=>
+  '<article class="omega-bm-deal"><span class="omega-bm-status">'+esc(human(item.status||'MONITORING'))+'</span>'+
+  '<strong>'+esc(human(item.role||'National investigation'))+' · '+esc(countryInfo(item.counterpartCountryId).name)+'</strong>'+
+  '<small>'+esc((item.triggerReasons||[]).map(human).join(' · '))+'</small>'+
+  '<small>Capability '+(item.capabilityScore===null||item.capabilityScore===undefined?'Not observed':fmt(item.capabilityScore*100)+'%')+
+  ' · '+esc(human(item.collectionMode||'PASSIVE MONITORING ONLY'))+
+  ' · No automatic spending</small></article>'
+ ).join('');
+ const sanctionPanel='<section class="omega-bm-panel" style="margin-top:12px"><header><strong>06 · Sanctions, economic exposure & national response</strong>'+
+  '<span>'+fmt(sanctionNotices.length)+' notice(s) · '+fmt(sanctionDecisions.length)+' decision(s) · '+fmt(sanctionInvestigations.length)+' case(s)</span></header>'+
+  '<div class="omega-bm-panel-body">'+(sanctionNoticeHtml||'<div class="omega-bm-empty">No sanction or supply-chain spillover notice is recorded for this country.</div>')+
+   (investigationMarkup||'')+'</div>'+
+  '<p class="omega-bm-risknote">Only this country’s own Foreign Affairs, Economy, Trade and Intelligence records are shown. Exposure uses settled trade evidence; it is not proof of a realised loss or automatic sanction causation. National options are assessments, not executed purchases or covert orders.</p></section>';
  const selectedProductMeta=laneProducts.find(x=>x.id===selectedProduct)||null;
  const laneButtons=[
   ['RAW_RESOURCE','RAW RESOURCES','Natural resources','assets/omega-global-market/raw-mining.svg'],
@@ -275,6 +356,7 @@ function render(root,countryValue){
   '<section class="omega-bm-section"><header><strong>01 · Seller offers</strong><span>'+count(offers.length)+' verified offer(s) · '+esc(selectedProductMeta?.name||selectedProductMeta?.title||selectedProduct||'No selected commodity')+'</span></header><div class="omega-bm-section-note">Seller country, free stock, shadow quote, detection risk and channel are visible at a glance. Expand a row for price breakdown, company/state motive, shipment exposure, penalty and negotiation details.</div>'+sellerTable+'</section>'+
   '<section class="omega-bm-section"><header><strong>02 · Countries interested in buying</strong><span>'+count(buyerSignals.length)+' potential buyer(s)</span></header><div class="omega-bm-section-note">Demand-runtime shortage or stock-cover signals, ordered by current pressure. This is market intelligence, not a confirmed covert order or acceptance.</div>'+buyerTable+'</section>'+
   '<section class="omega-bm-section"><header><strong>03 · Player-country requests & acceptances</strong><span>'+count(participationDeals.length)+' saved deal(s) · '+count(acceptedDeals)+' accepted</span></header><div class="omega-bm-section-note">Only the active country’s saved ledger is shown here. Foreign NPC participation is revealed separately only when the player discovers it.</div>'+localDealTable+'</section>'+
+  sanctionPanel+
   '<div class="omega-bm-lower">'+
    '<section class="omega-bm-panel"><header><strong>04 · Country operations ledger</strong><span>'+count(active.length)+' active · '+count(cases.length)+' investigation file(s)</span></header><div class="omega-bm-panel-body">'+(dealHtml||'<div class="omega-bm-empty">No Black Market deal has been recorded for this country.</div>')+(caseHtml||'')+'</div></section>'+
    '<section class="omega-bm-panel"><header><strong>05 · Discovered intelligence, response & transit</strong><span>'+count(transits.filter(x=>x.status==='IN_TRANSIT').length)+' transit · '+count(responses.length)+' response(s)</span></header><div class="omega-bm-panel-body">'+(transitHtml||'')+(reportHtml||'')+(respHtml||'')+(!transitHtml&&!reportHtml&&!respHtml?'<div class="omega-bm-empty">No discovered NPC network report, foreign response or covert transit exists in this country’s intelligence file.</div>':'')+'</div></section>'+

@@ -48,6 +48,15 @@ test('offers use canonical products and observed stock, warehouse and protected 
  assert.equal(r.offers[0].buyerMotiveCode,'PLAYER_SELECTED_NEED_NOT_VERIFIED',
   'a country must not be assigned an invented shortage motive when demand evidence is absent');
 });
+test('offer book exposes verified legal supplier countries for the NPC decision gate',()=>{
+ const h=makeHarness();
+ h.ctx.OmegaGlobalMarket.suppliers=(_rid,_quantity)=>[{countryId:'SAU',available:90}];
+ const book=h.ctx.OmegaBlackMarket.getOffers('BGD','coal',10);
+ assert.equal(book.status,'READY');
+ assert.equal(book.legalSupplierCount,1);
+ assert.equal(JSON.stringify(book.legalSupplierCountryIds),JSON.stringify(['SAU']));
+});
+
 test('covert order stores a permit and sends the same quantity, price and zero-tariff instruction into Global Trade',()=>{
  const h=makeHarness(),api=h.ctx.OmegaBlackMarket,o=api.getOffers('BGD','coal',10).offers[0];
  const r=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:o.offerId});
