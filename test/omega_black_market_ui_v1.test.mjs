@@ -57,11 +57,16 @@ function harness() {
       return [{ status: 'OPEN', severity: 'CRITICAL', resourceId: 'iron_ore', buyerCountryId: 'BGD', sellerCountryId: 'SAU',
         evidenceConfidence: 0.9, detectionTurn: 8, detectionStage: 'ORIGIN_INSPECTION', shipmentSizeBand: 'CRITICAL',
         sellerStockExposurePct: 18, attemptedValueBuyer: 50000, attemptFineRateAtCreation: 0.12,
-        fineRateAtCreation: 0.30, seizureRateAtCreation: 0.50, cargoDisposition: 'STOPPED_BEFORE_IMPORT_NO_BUYER_STOCK_SEIZED' }];
+        fineRateAtCreation: 0.30, seizureRateAtCreation: 0.50, cargoDisposition: 'STOPPED_BEFORE_IMPORT_NO_BUYER_STOCK_SEIZED',
+        sanctionPolicyIds: ['SAN-USA-BGD-COAL'], sanctioningCountryIds: ['USA'] }];
     },
     getResponses(country) {
       assert.equal(country, 'BGD');
-      return [{ responseType: 'DIPLOMATIC_PROTEST', targetCountryId: 'BGD', severity: 'HIGH', sourceCountryId: 'SAU' }];
+      return [{ responseType: 'SANCTIONS_ENFORCEMENT_AND_ENHANCED_INSPECTION', targetCountryId: 'BGD', severity: 'HIGH',
+        sourceCountryId: 'USA', appliedRelationAdjustments: [
+          { countryId: 'BGD', delta: -8, type: 'PRIMARY_SANCTIONS_VIOLATION' },
+          { countryId: 'SAU', delta: -3, type: 'SECONDARY_TRADE_ASSOCIATION' }
+        ] }];
     },
     getNetworkReports(country) {
       assert.equal(country, 'BGD');
@@ -230,8 +235,11 @@ test('high-confidence intelligence explains state-linked participants while pres
       tactic: 'STATE_TO_STATE_COVERT_PROCUREMENT',
       potentialIntermediaryCountryIds: ['SAU'],
       sellerExportShock: { active: true, mainCustomerCountryId: 'IRN', exportShare: 0.42,
-        exportValue: 420, sanctioningCountryIds: ['IRN'], secondarySanctionsRisk: true },
+        sanctionTargetCountryId: 'IRN', sanctionTargetType: 'SANCTIONED_EXPORT_CUSTOMER',
+        exportValue: 420, sanctioningCountryIds: ['USA'], secondarySanctionsRisk: true },
       tariffAvoidance: { importTariffPct: 30, importDependency: 0.65 },
+      buyerCommercialActor: { actorType: 'PRIVATE_COMPANY', companyName: 'Bangla Industrial Imports' },
+      sellerCommercialActor: { actorType: 'STATE_OWNED_COMPANY', companyName: 'Russian State Trading Group' },
       buyerCompanies: [{ companyId: 'BD-PRIVATE-1', name: 'Bangla Industrial Imports', ownership: 'PRIVATE', exportShare: 0.2 }],
       sellerCompanies: [{ companyId: 'RU-STATE-1', name: 'Russian State Trading Group', ownership: 'STATE_OWNED' }]
     }
@@ -245,7 +253,11 @@ test('high-confidence intelligence explains state-linked participants while pres
   assert.match(h.root.innerHTML, /Major export-customer shock/);
   assert.match(h.root.innerHTML, /42% of seller exports at risk/);
   assert.match(h.root.innerHTML, /Secondary sanctions: Yes/);
+  assert.match(h.root.innerHTML, /Sanction target: 🇮🇷 Iran/);
   assert.match(h.root.innerHTML, /Buyer import tariff: 30%/);
+  assert.match(h.root.innerHTML, /Diplomatic relation impact: 🇧🇩 Bangladesh -8 · 🇸🇦 Saudi Arabia -3/);
+  assert.match(h.root.innerHTML, /Sanction issuers: 🇺🇸 United States/);
+  assert.match(h.root.innerHTML, /SAN-USA-BGD-COAL/);
   assert.match(h.root.innerHTML, /Bangla Industrial Imports/);
   assert.match(h.root.innerHTML, /Russian State Trading Group/);
   assert.match(h.root.innerHTML, /Other countries: Not Observed By Other Countries/);
