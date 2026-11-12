@@ -218,7 +218,7 @@ test('seller scan displays flag, actor motive, policy, shipment exposure and pen
   assert.match(h.root.innerHTML,/125\.00/);
   assert.match(h.root.innerHTML,/IMPORT EMBARGO/);
   assert.match(h.root.innerHTML,/Why Saudi Arabia sells/);
-  assert.match(h.root.innerHTML,/Why the buyer country/);
+  assert.match(h.root.innerHTML,/Why Bangladesh wants this commodity/);
   assert.match(h.root.innerHTML,/Shipment class/);
   assert.match(h.root.innerHTML,/Quantity thresholds from verified free stock/);
   assert.match(h.root.innerHTML,/Potential penalties/);
