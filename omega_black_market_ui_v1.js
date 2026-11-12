@@ -167,19 +167,28 @@ function render(root,countryValue){
     (thresholdAmountText?'<br>'+esc(thresholdAmountText):' · 1%, 3%, 8% and 15% of verified free stock')+
     '<br><strong>Detection bands</strong> · ≤1% Micro · 1–3% Small · 3–8% Moderate · 8–15% Large · &gt;15% Critical.'+
     ' <strong>Potential penalties</strong>: interception attempt fine '+percent(x.attemptFineRate)+' · completed-trade fine '+percent(x.fineRate)+' · post-settlement cargo seizure '+percent(x.seizureRate)+'.</div>':'';
-  return '<article class="omega-bm-offer"><div class="omega-bm-offer-top"><div class="omega-bm-seller"><span class="omega-bm-node">'+esc(sellerInfo.flag||String(x.sellerCountryId||'??').slice(0,3))+'</span><div><div class="omega-bm-country">'+esc(sellerInfo.name)+'</div><div class="omega-bm-muted">'+esc(actorRole(x.sellerActorClass))+' · '+esc(x.productName||x.resourceId)+' · '+fmt(x.availableQuantity)+' '+esc(x.unit||'units')+' available</div></div></div><span class="omega-bm-tag'+(restricted?' is-restricted':'')+'">'+esc(legalTag)+'</span></div>'+
-   '<div class="omega-bm-prices"><div class="omega-bm-price is-shadow"><small>Shadow price / unit · seller currency</small><strong>'+money(x.unitPrice,x.currency)+'</strong><div class="omega-bm-price-note">Expected buyer total '+(x.expectedBlackMarketTotalBuyer===null?'FX not observed':money(x.expectedBlackMarketTotalBuyer,comparisonCurrency))+'</div></div><div class="omega-bm-price"><small>Legal landed / unit · buyer currency</small><strong>'+(x.legalLandedUnitPrice===null?'No comparable quote':money(x.legalLandedUnitPrice,comparisonCurrency))+'</strong><div class="omega-bm-price-note">'+(saving===null?'Legal benchmark unavailable':(saving>=0?'Expected saving ':'Expected extra cost ')+money(Math.abs(saving),comparisonCurrency))+'</div></div></div>'+
-   '<div class="omega-bm-riskline"><span>Strategic rationale</span><strong>'+esc(String(x.whyUse||'').replace(/_/g,' '))+'</strong></div>'+
-   motiveMarkup+
-   scrutinyMarkup+
-   '<div class="omega-bm-riskline"><span>Broker standing</span><strong>'+esc(String(x.brokerType||'PRIVATE_BROKER').replace(/_/g,' '))+' · '+fmt(x.brokerReputation===undefined?50:x.brokerReputation)+'/100</strong></div>'+
-   '<div class="omega-bm-negotiate"><input type="number" min="0.001" step="any" value="'+esc(negotiation?.bidUnitPrice??x.unitPrice)+'" data-bm-bid="'+esc(x.offerId)+'" aria-label="Bid price per unit"><button type="button" data-bm-negotiate="'+esc(x.offerId)+'" data-bm-seller="'+esc(x.sellerCountryId)+'" data-bm-resource="'+esc(x.resourceId)+'">NEGOTIATE</button></div>'+
-   (negotiation?'<div class="omega-bm-outcome">Broker '+esc(negotiation.status||'NEGOTIATION')+': '+(negotiation.status==='COUNTERED'?'counter price '+money(negotiation.counterUnitPrice,x.currency)+' / unit':(negotiation.status==='ACCEPTED'?'agreed price '+money(negotiation.agreedUnitPrice,x.currency)+' / unit':'negotiation recorded'))+'</div>':'')+
-   (negotiation&&negotiation.status==='COUNTERED'?'<button type="button" data-bm-accept-counter="'+esc(negotiation.negotiationId)+'">ACCEPT COUNTER · '+money(negotiation.counterUnitPrice,x.currency)+'</button>':'')+
+  const detailMarkup='<details class="omega-bm-detail"><summary>PRICE, POLICY, MOTIVE & ENFORCEMENT DETAILS · '+esc(sellerInfo.name)+'</summary><div class="omega-bm-detail-body">'+
+   '<div class="omega-bm-prices"><div class="omega-bm-price is-shadow"><small>Quoted trade value · buyer currency</small><strong>'+(x.quotedTradeValueBuyer===null?'FX not observed':money(x.quotedTradeValueBuyer,comparisonCurrency))+'</strong></div>'+
+   '<div class="omega-bm-price"><small>Legal landed cost · buyer currency</small><strong>'+(x.legalLandedUnitPrice===null?'No comparable quote':money(x.legalLandedUnitPrice,comparisonCurrency))+'</strong><div class="omega-bm-price-note">'+(saving===null?'Legal benchmark unavailable':(saving>=0?'Expected saving ':'Expected extra cost ')+money(Math.abs(saving),comparisonCurrency))+'</div></div></div>'+
+   '<div class="omega-bm-riskline"><span>Strategic rationale</span><strong>'+esc(String(x.whyUse||'').replace(/_/g,' '))+'</strong></div>'+motiveMarkup+scrutinyMarkup+
+   '<div class="omega-bm-riskline"><span>Broker standing</span><strong>'+esc(actorRole(x.sellerActorClass))+' · '+esc(String(x.brokerType||'PRIVATE_BROKER').replace(/_/g,' '))+' · '+fmt(x.brokerReputation===undefined?50:x.brokerReputation)+'/100</strong></div>'+
    '<div class="omega-bm-risk-grid">'+metrics+'</div>'+
-   '<div class="omega-bm-policy"><small>Foreign-policy exposure / evidence</small><span>'+esc(foreignBasis)+'</span></div>'+
+   '<div class="omega-bm-policy"><small>Foreign-policy exposure / evidence</small><span>'+esc(foreignBasis)+
+    (Array.isArray(x.sanctioningCountryIds)&&x.sanctioningCountryIds.length?'<br>Sanction issuers: '+esc(x.sanctioningCountryIds.map(countryLabel).join(' · ')):'')+'</span></div>'+
    '<div class="omega-bm-breakdown">'+breakdown+'</div>'+
-   '<div class="omega-bm-order"><input type="number" min="0.001" max="'+esc(x.availableQuantity)+'" step="any" value="'+esc(q)+'" data-bm-quantity="'+esc(x.offerId)+'" aria-label="Order quantity"><button type="button" data-bm-buy="'+esc(x.offerId)+'" data-bm-seller="'+esc(x.sellerCountryId)+'" data-bm-resource="'+esc(x.resourceId)+'">SEND DEAL REQUEST</button></div></article>';
+   '<div class="omega-bm-negotiate"><input type="number" min="0.001" step="any" value="'+esc(negotiation?.bidUnitPrice??x.unitPrice)+'" data-bm-bid="'+esc(x.offerId)+'" aria-label="Bid price per unit">'+
+   '<button type="button" data-bm-negotiate="'+esc(x.offerId)+'" data-bm-seller="'+esc(x.sellerCountryId)+'" data-bm-resource="'+esc(x.resourceId)+'">NEGOTIATE PRICE</button></div>'+
+   (negotiation?'<div class="omega-bm-outcome">Broker '+esc(human(negotiation.status))+': '+(negotiation.status==='COUNTERED'?'counter price '+money(negotiation.counterUnitPrice,x.currency)+' / unit':(negotiation.status==='ACCEPTED'?'agreed price '+money(negotiation.agreedUnitPrice,x.currency)+' / unit':'negotiation recorded'))+'</div>':'')+
+   (negotiation&&negotiation.status==='COUNTERED'?'<button type="button" data-bm-accept-counter="'+esc(negotiation.negotiationId)+'">ACCEPT COUNTER · '+money(negotiation.counterUnitPrice,x.currency)+'</button>':'')+
+   '</div></details>';
+  return '<tr><td><div class="omega-bm-country-row"><span class="omega-bm-flag">'+esc(sellerInfo.flag||String(x.sellerCountryId||'??').slice(0,3))+'</span><span class="omega-bm-country-copy"><strong>'+esc(sellerInfo.name)+'</strong><small>'+esc(actorRole(x.sellerActorClass))+'</small></span></div></td>'+
+   '<td><span class="omega-bm-number">'+fmt(x.availableQuantity)+' '+esc(x.unit||'')+'</span></td>'+
+   '<td><span class="omega-bm-number">'+money(x.unitPrice,x.currency)+'</span><small class="omega-bm-muted"> / unit</small></td>'+
+   '<td><span class="omega-bm-risk">'+fmt(detected)+'% RISK</span></td>'+
+   '<td><span class="omega-bm-tag'+(restricted?' is-restricted':'')+'">'+esc(legalTag)+'</span></td>'+
+   '<td><div class="omega-bm-row-action"><input type="number" min="0.001" max="'+esc(x.availableQuantity)+'" step="any" value="'+esc(q)+'" data-bm-quantity="'+esc(x.offerId)+'" aria-label="Order quantity from '+esc(sellerInfo.name)+'">'+
+   '<button type="button" data-bm-buy="'+esc(x.offerId)+'" data-bm-seller="'+esc(x.sellerCountryId)+'" data-bm-resource="'+esc(x.resourceId)+'">BUY</button></div></td></tr>'+
+   '<tr class="omega-bm-detail-row"><td colspan="6">'+detailMarkup+'</td></tr>';
  }).join('');
  const offerMore=offers.length>visibleOfferCount?
   '<div class="omega-bm-more"><span>Showing '+count(visibleOfferCount)+' of '+count(offers.length)+' seller offers</span><button type="button" data-bm-show-more>SHOW '+count(Math.min(6,offers.length-visibleOfferCount))+' MORE SELLERS</button></div>':'';
