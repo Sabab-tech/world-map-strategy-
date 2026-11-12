@@ -397,7 +397,7 @@ function actorProfile(candidate){
   buyerMotive:candidate.bmReason.code,buyerReason:candidate.bmReason.reason,
   sellerMotive:candidate.smReason.code,sellerReason:candidate.smReason.reason,
   stateLinkedBuyer:candidate.buyerState,stateLinkedSeller:candidate.sellerState,
-  sellerExportShock:shock?{active:!!shock.active,mainCustomerCountryId:shock.exposure.partnerCountryId,
+  sellerExportShock:shock?.active&&shock.exposure?{active:true,mainCustomerCountryId:shock.exposure.partnerCountryId,
    exportShare:shock.exposure.share,exportValue:shock.exposure.value,exportQuantity:shock.exposure.volume,
    sanctionTargetCountryId:shock.sanctionTargetCountryId,sanctionTargetType:shock.sanctionTargetType,
    evidenceSource:shock.exposure.source,sanctioningCountryIds:shock.sanctions.issuerCountryIds,
