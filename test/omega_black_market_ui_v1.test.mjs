@@ -7,6 +7,8 @@ const source = fs.readFileSync(new URL('../omega_black_market_ui_v1.js', import.
 
 function harness() {
   const calls = { offers: [], deals: [] };
+  const networkReports = [];
+  const offerRows = [];
   const offer = {
     offerId: 'OFFER-1',
     sellerCountryId: '<SAU>',
@@ -38,6 +40,7 @@ function harness() {
       brokerSpreadPct: 3
     }
   };
+  offerRows.push(offer);
   const api = {
     getDeals(country) {
       assert.equal(country, 'BGD');
@@ -49,11 +52,15 @@ function harness() {
     },
     getResponses(country) {
       assert.equal(country, 'BGD');
-      return [{ responseType: 'DIPLOMATIC_PROTEST', targetCountryId: 'BGD', severity: 'HIGH' }];
+      return [{ responseType: 'DIPLOMATIC_PROTEST', targetCountryId: 'BGD', severity: 'HIGH', sourceCountryId: 'SAU' }];
+    },
+    getNetworkReports(country) {
+      assert.equal(country, 'BGD');
+      return networkReports;
     },
     getOffers(country, resourceId, quantity) {
       calls.offers.push({ country, resourceId, quantity });
-      return { status: 'READY', offers: [offer] };
+      return { status: 'READY', offers: offerRows };
     },
     createDeal(payload) {
       calls.deals.push(payload);
@@ -91,7 +98,7 @@ function harness() {
   };
   vm.createContext(context);
   vm.runInContext(source, context, { filename: 'omega_black_market_ui_v1.js' });
-  return { api: context.OmegaBlackMarketUI, root, calls };
+  return { api: context.OmegaBlackMarketUI, root, calls, context, offer, offerRows, networkReports };
 }
 
 function click(root, attributes) {
@@ -162,4 +169,76 @@ test('covert deal button calls the existing deal API with the requested country,
     quantity: 4
   }));
   assert.match(h.root.innerHTML, /Trade request recorded/);
+});
+
+test('country cards resolve canonical country names and flags without replacing unknown-code fallback', () => {
+  const h = harness();
+  h.offer.sellerCountryId = 'SAU';
+  h.context.OmegaCanonicalIdentityRegistry = {
+    resolveCountry(value) {
+      const rows = {
+        BGD: { id: 'BD', raw: { iso2: 'BD', iso3: 'BGD', name: 'Bangladesh' } },
+        SAU: { id: 'SA', raw: { iso2: 'SA', iso3: 'SAU', name: 'Saudi Arabia' } }
+      };
+      return rows[String(value || '').toUpperCase()] || null;
+    }
+  };
+  h.api.render(h.root, 'BGD');
+  click(h.root, { 'data-bm-find': '' });
+  assert.match(h.root.innerHTML, /Saudi Arabia/);
+  assert.match(h.root.innerHTML, /🇸🇦/);
+  assert.match(h.root.innerHTML, /Bangladesh/);
+  assert.doesNotMatch(h.root.innerHTML, /undefined/);
+});
+
+test('high-confidence intelligence explains state-linked participants while preserving country-scoped secrecy', () => {
+  const h = harness();
+  h.context.OmegaCanonicalIdentityRegistry = {
+    resolveCountry(value) {
+      const rows = {
+        BGD: { id: 'BD', raw: { iso2: 'BD', iso3: 'BGD', name: 'Bangladesh' } },
+        IRN: { id: 'IR', raw: { iso2: 'IR', iso3: 'IRN', name: 'Iran' } },
+        RUS: { id: 'RU', raw: { iso2: 'RU', iso3: 'RUS', name: 'Russia' } }
+      };
+      return rows[String(value || '').toUpperCase()] || null;
+    }
+  };
+  h.networkReports.push({
+    level: 'HIGH', resourceId: 'copper', productName: 'Copper',
+    summary: 'A transaction-linked covert network was identified.',
+    buyerCountryId: 'IRN', sellerCountryId: 'RUS',
+    governmentInvolvement: 'BOTH_GOVERNMENTS_OR_STATE_LINKED_ENTITIES',
+    confidence: 0.9, otherCountriesKnow: 'NOT_OBSERVED_BY_OTHER_COUNTRIES',
+    actorProfile: {
+      buyerGovernmentLabel: 'State-linked trading network',
+      sellerGovernmentLabel: 'State-directed trade channel',
+      buyerReason: 'Observed industrial input demand exceeds available supply.',
+      sellerReason: 'An active state supply directive is recorded for this commodity.',
+      tactic: 'STATE_TO_STATE_COVERT_PROCUREMENT',
+      potentialIntermediaryCountryIds: ['SAU']
+    }
+  });
+  h.api.render(h.root, 'BGD');
+  assert.match(h.root.innerHTML, /🇮🇷 Iran/);
+  assert.match(h.root.innerHTML, /🇷🇺 Russia/);
+  assert.match(h.root.innerHTML, /State-linked trading network/);
+  assert.match(h.root.innerHTML, /State-directed trade channel/);
+  assert.match(h.root.innerHTML, /active state supply directive/i);
+  assert.match(h.root.innerHTML, /Other countries: Not Observed By Other Countries/);
+  assert.doesNotMatch(h.root.innerHTML, /undefined/);
+});
+
+test('seller offers are progressively rendered in small batches on mobile-oriented UI', () => {
+  const h = harness();
+  for (let i = 2; i <= 12; i++) {
+    h.offerRows.push({ ...h.offer, offerId: 'OFFER-' + i, sellerCountryId: 'SAU' });
+  }
+  h.api.render(h.root, 'BGD');
+  click(h.root, { 'data-bm-find': '' });
+  const countCards = () => (h.root.innerHTML.match(/class="omega-bm-offer"/g) || []).length;
+  assert.equal(countCards(), 6);
+  assert.match(h.root.innerHTML, /SHOW 6 MORE SELLERS/);
+  click(h.root, { 'data-bm-show-more': '' });
+  assert.equal(countCards(), 12);
+  assert.doesNotMatch(h.root.innerHTML, /SHOW .* MORE SELLERS/);
 });

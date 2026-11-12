@@ -5,8 +5,8 @@
  */
 (function(g){
 'use strict';
-if(g.OmegaBlackMarketNetworkV1&&g.OmegaBlackMarketNetworkV1.VERSION==='1.0.0')return;
-const VERSION='1.0.0',AUTHORITY='OMEGA_BLACK_MARKET_NPC_NETWORK_V1';
+if(g.OmegaBlackMarketNetworkV1&&g.OmegaBlackMarketNetworkV1.VERSION==='1.1.0')return;
+const VERSION='1.1.0',AUTHORITY='OMEGA_BLACK_MARKET_NPC_NETWORK_V1';
 const MAX_DEMAND_ROWS=14,MAX_PENDING_PROCESSES=6,MAX_NEW_DEALS_PER_TURN=1,COOLDOWN_TURNS=8;
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
 const clamp=(v,lo=0,hi=1)=>Math.max(lo,Math.min(hi,num(v)??lo));
@@ -22,7 +22,7 @@ function country(v){
  const raw=v&&typeof v==='object'?(v.iso3||v.iso3Code||v.countryCode||v.countryId||v.code||v.id||v.name):v;
  if(raw==null)return'';
  try{const r=(g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity)?.resolveCountry?.(raw);
-  const id=r?.iso3||r?.iso3Code||r?.id;if(id&&/^[A-Z0-9]{2,3}$/i.test(String(id)))return String(id).toUpperCase();}catch(_){}
+  const id=r?.raw?.iso3||r?.iso3||r?.iso3Code||r?.id;if(id&&/^[A-Z0-9]{2,3}$/i.test(String(id)))return String(id).toUpperCase();}catch(_){}
  const id=String(raw).trim().toUpperCase();return/^[A-Z0-9]{2,3}$/.test(id)?id:'';
 }
 function player(){
@@ -45,17 +45,37 @@ function policyRows(c){const t=bucket('trade',c);return{
  directives:Array.isArray(t.stateSupplyDirectives)?t.stateSupplyDirectives:[],
  embargoes:Array.isArray(t.resourceEmbargoes)?t.resourceEmbargoes:[],
  sanctions:Array.isArray(t.sanctions)?t.sanctions:[]};}
-function hasStateLink(c,rid){
- const p=policyRows(c),economy=bucket('economy',c),finance=bucket('finance',c),foreign=bucket('foreign',c);
- const matches=row=>!row.resourceId||token(row.resourceId)===token(rid);
- if(p.directives.some(matches)||p.embargoes.some(matches)||foreign.stateTradeNetwork===true||finance.stateTradeNetwork===true||
-    economy.stateTradingNetwork===true||economy.stateOwnedEnterprise===true)return true;
+function stateActorEvidence(c,rid){
+ const policy=activePolicyFor(c,rid),economy=bucket('economy',c),finance=bucket('finance',c),foreign=bucket('foreign',c);
+ const evidence=[],linkEvidence=[];
+ if(policy.directives.length){evidence.push('ACTIVE_STATE_SUPPLY_DIRECTIVE');linkEvidence.push('ACTIVE_STATE_SUPPLY_DIRECTIVE');}
+ if(policy.embargoes.length)evidence.push('ACTIVE_RESOURCE_EMBARGO_POLICY');
+ if(foreign.stateTradeNetwork===true||finance.stateTradeNetwork===true||economy.stateTradingNetwork===true){
+  evidence.push('RECORDED_STATE_TRADING_NETWORK');linkEvidence.push('RECORDED_STATE_TRADING_NETWORK');
+ }
+ let directGovernment=false,stateOwnedEnterprise=false;
  for(const list of [economy.companies,economy.enterprises,finance.stateOwnedEnterprises]){
   if(!Array.isArray(list))continue;
-  if(list.some(x=>/STATE|GOVERNMENT|MINISTRY|PUBLIC/i.test(String(x?.ownership||x?.ownerType||x?.sector||''))))return true;
+  for(const row of list){
+   const ownership=String(row?.ownership||row?.ownerType||row?.sector||'').toUpperCase();
+   if(/MINISTRY|GOVERNMENT/.test(ownership)){directGovernment=true;linkEvidence.push('RECORDED_GOVERNMENT_ENTITY');evidence.push('RECORDED_GOVERNMENT_ENTITY');}
+   else if(/STATE|PUBLIC|STATE_OWNED/.test(ownership)){stateOwnedEnterprise=true;linkEvidence.push('RECORDED_STATE_OWNED_ENTERPRISE');evidence.push('RECORDED_STATE_OWNED_ENTERPRISE');}
+  }
  }
- return false;
+ const linked=linkEvidence.length>0;
+ const role=directGovernment?'DIRECT_GOVERNMENT_ENTITY':
+  (stateOwnedEnterprise?'STATE_OWNED_ENTERPRISE':
+   (policy.directives.length?'STATE_POLICY_DIRECTED':
+    (linked?'STATE_LINKED_TRADING_NETWORK':
+     (policy.embargoes.length?'STATE_POLICY_CONTEXT_ONLY':'PRIVATE_ACTOR'))));
+ const label=role==='DIRECT_GOVERNMENT_ENTITY'?'Government body':
+  (role==='STATE_OWNED_ENTERPRISE'?'State-owned enterprise':
+   (role==='STATE_POLICY_DIRECTED'?'State-directed trade channel':
+    (role==='STATE_POLICY_CONTEXT_ONLY'?'State policy context only':
+     (linked?'State-linked trading network':'Private actor'))));
+ return{linked,role,label,evidence:[...new Set(evidence)].slice(0,6)};
 }
+function hasStateLink(c,rid){return stateActorEvidence(c,rid).linked;}
 function activePolicyFor(c,rid){
  const p=policyRows(c),match=row=>(!row.resourceId||token(row.resourceId)===token(rid))&&!/EXPIRED|REVOKED|INACTIVE/.test(String(row.status||'').toUpperCase());
  return{directives:p.directives.filter(match),embargoes:p.embargoes.filter(match)};
@@ -102,10 +122,13 @@ function chooseTactic(buyer,seller,rid,offer,buyerState,sellerState){
  const hubCandidates=countries('foreign').filter(c=>c!==buyer&&c!==seller).filter(c=>{
   const x=relation(buyer,c),y=relation(c,seller);return!!x&&!!y&&x.war_state!==true&&y.war_state!==true&&x.sanctions!==true&&y.sanctions!==true;
  });
- if(sellerState&&(sellerPolicy.directives.length||sellerPolicy.embargoes.length))return{code:'STATE_DIRECTED_INTERMEDIARY_NETWORK',intermediaryHubs:hubCandidates.length,level:'STATE_LINKED'};
- if(buyerState&&sellerState&&(buyerPolicy.embargoes.length||r?.sanctions===true))return{code:'STATE_TO_STATE_COVERT_PROCUREMENT',intermediaryHubs:hubCandidates.length,level:'STATE_LINKED'};
- if(hubCandidates.length)return{code:'THIRD_COUNTRY_BROKERAGE',intermediaryHubs:hubCandidates.length,level:'BROKERED'};
- return{code:offer.exportRestrictionReason?'RESTRICTED_EXPORT_BROKERAGE':'PRIVATE_SHADOW_BROKERAGE',intermediaryHubs:0,level:'PRIVATE'};
+ const hubIds=hubCandidates.slice(0,3);
+ if(buyerState&&sellerState&&(buyerPolicy.embargoes.length||r?.sanctions===true))
+  return{code:'STATE_TO_STATE_COVERT_PROCUREMENT',intermediaryHubs:hubCandidates.length,intermediaryHubCountryIds:hubIds,level:'STATE_LINKED'};
+ if(sellerState&&(sellerPolicy.directives.length||sellerPolicy.embargoes.length))
+  return{code:'STATE_DIRECTED_INTERMEDIARY_NETWORK',intermediaryHubs:hubCandidates.length,intermediaryHubCountryIds:hubIds,level:'STATE_LINKED'};
+ if(hubCandidates.length)return{code:'THIRD_COUNTRY_BROKERAGE',intermediaryHubs:hubCandidates.length,intermediaryHubCountryIds:hubIds,level:'BROKERED'};
+ return{code:offer.exportRestrictionReason?'RESTRICTED_EXPORT_BROKERAGE':'PRIVATE_SHADOW_BROKERAGE',intermediaryHubs:0,intermediaryHubCountryIds:[],level:'PRIVATE'};
 }
 function priorDeal(c,seller,rid){
  const rows=blackMarket()?.getDeals?.(c)||[];
@@ -144,13 +167,18 @@ function governmentLabel(candidate){
  return'PRIVATE_ACTORS_ONLY';
 }
 function actorProfile(candidate){
- const buyerActor=candidate.buyerState?'STATE_PROCUREMENT_OR_STATE_OWNED_ENTERPRISE':'PRIVATE_IMPORTER_OR_BROKER';
- const sellerActor=candidate.sellerState?'STATE_TRADING_NETWORK_OR_STATE_LINKED_EXPORTER':'PRIVATE_EXPORTER_OR_BROKER';
+ const buyerEvidence=stateActorEvidence(candidate.buyer,candidate.row.resourceId);
+ const sellerEvidence=stateActorEvidence(candidate.seller,candidate.row.resourceId);
+ const buyerActor=buyerEvidence.linked?'STATE_PROCUREMENT_OR_STATE_OWNED_ENTERPRISE':'PRIVATE_IMPORTER_OR_BROKER';
+ const sellerActor=sellerEvidence.linked?'STATE_TRADING_NETWORK_OR_STATE_LINKED_EXPORTER':'PRIVATE_EXPORTER_OR_BROKER';
  return{buyerActor,sellerActor,governmentInvolvement:governmentLabel(candidate),
+  buyerGovernmentRole:buyerEvidence.role,buyerGovernmentLabel:buyerEvidence.label,buyerStateEvidence:buyerEvidence.evidence,
+  sellerGovernmentRole:sellerEvidence.role,sellerGovernmentLabel:sellerEvidence.label,sellerStateEvidence:sellerEvidence.evidence,
   buyerMotive:candidate.bmReason.code,buyerReason:candidate.bmReason.reason,
   sellerMotive:candidate.smReason.code,sellerReason:candidate.smReason.reason,
   stateLinkedBuyer:candidate.buyerState,stateLinkedSeller:candidate.sellerState,
-  tactic:candidate.tactic.code,intermediaryHubsAvailable:candidate.tactic.intermediaryHubs};
+  tactic:candidate.tactic.code,intermediaryHubsAvailable:candidate.tactic.intermediaryHubs,
+  potentialIntermediaryCountryIds:candidate.tactic.intermediaryHubCountryIds||[]};
 }
 function dispatch(owner,type,c,p){
  const m=mesh();if(!m?.dispatchCommand)return{accepted:false,reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
@@ -183,6 +211,11 @@ function maybeDiscover(candidate,deal,route=[]){
   summary:level==='LOW'?'An unusual covert supply channel is suspected; the counterparties are not yet identified.':
    (level==='MEDIUM'?'A covert shipment corridor and at least one participating country have been identified.':
     'A transaction-linked covert network has been identified with broker and possible state-sponsor evidence.'),
+  motiveAssessment:level==='LOW'?null:{
+   buyerMotive:candidate.bmReason.code,sellerMotive:candidate.smReason.code,
+   buyerReason:level==='HIGH'?candidate.bmReason.reason:null,
+   sellerReason:level==='HIGH'?candidate.smReason.reason:null,
+   stateRoleAttribution:stateAttribution?governmentLabel(candidate):'NOT_ESTABLISHED'},
   otherCountriesKnow:involved?'PARTICIPANTS_ONLY':'NOT_OBSERVED_BY_OTHER_COUNTRIES'};
  const saved=dispatch('intelligence','OMEGA_BLACK_MARKET_RECORD_NETWORK_REPORT',pc,{report});
  return saved?.accepted===true?report:null;
@@ -239,6 +272,6 @@ function diagnostics(){const pc=player();return{version:VERSION,ready:!!blackMar
 function init(){if(!blackMarket()||!trade())return false;if(g.__omegaBlackMarketNetworkHooks)return true;
  g.__omegaBlackMarketNetworkHooks=true;g.addEventListener?.('OMEGA_READY',()=>{if(!blackMarket()||!trade())return;});
  g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',runTurn);return true;}
-const API=Object.freeze({VERSION,AUTHORITY,diagnostics,runTurn,demandCandidates,hasStateLink,actorProfile,maybeDiscover});
+const API=Object.freeze({VERSION,AUTHORITY,diagnostics,runTurn,demandCandidates,hasStateLink,stateActorEvidence,actorProfile,maybeDiscover});
 g.Omega=g.Omega||{};g.Omega.BlackMarketNetworkV1=API;g.OmegaBlackMarketNetworkV1=API;try{init();}catch(e){g.OmegaBlackMarketNetworkError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);

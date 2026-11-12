@@ -97,12 +97,17 @@ test('autonomous NPC network finds observed demand gaps and creates a state-link
  assert.equal(result.newDeal.candidate.seller,'RUS');
  assert.equal(result.newDeal.candidate.resourceId,'copper');
  assert.equal(result.newDeal.candidate.governmentInvolvement,'BOTH_GOVERNMENTS_OR_STATE_LINKED_ENTITIES');
- assert.equal(result.newDeal.candidate.tactic,'STATE_DIRECTED_INTERMEDIARY_NETWORK');
+ assert.equal(result.newDeal.candidate.tactic,'STATE_TO_STATE_COVERT_PROCUREMENT');
  assert.equal(h.created.length,1);
  assert.equal(h.created[0].source,'OMEGA_BLACK_MARKET_NPC_NETWORK');
  assert.equal(h.created[0].autonomousNetwork,true);
  assert.equal(h.created[0].actorProfile.stateLinkedBuyer,true);
  assert.equal(h.created[0].actorProfile.stateLinkedSeller,true);
+ assert.equal(h.created[0].actorProfile.buyerGovernmentRole,'STATE_LINKED_TRADING_NETWORK');
+ assert.equal(h.created[0].actorProfile.sellerGovernmentRole,'STATE_POLICY_DIRECTED');
+ assert.ok(h.created[0].actorProfile.buyerStateEvidence.includes('RECORDED_STATE_TRADING_NETWORK'));
+ assert.ok(h.created[0].actorProfile.sellerStateEvidence.includes('ACTIVE_STATE_SUPPLY_DIRECTIVE'));
+ assert.equal(h.created[0].actorProfile.tactic,'STATE_TO_STATE_COVERT_PROCUREMENT');
  assert.equal(h.created[0].actorProfile.buyerMotive,'SANCTIONED_OR_RESTRICTED_INPUT_ACCESS');
  assert.equal(h.created[0].actorProfile.sellerMotive,'STATE_DIRECTED_EXPORT_REVENUE');
  assert.equal(h.offerCalls[0].policy.networkAuthority,'OMEGA_BLACK_MARKET_NPC_NETWORK_V1');
@@ -149,8 +154,29 @@ test('network intelligence is written only to the discovering player country',()
  assert.ok(report,'the high-capability player customs/intelligence service should identify this exposed transit');
  assert.equal(report.level,'HIGH');
  assert.equal(report.governmentInvolvement,'BOTH_GOVERNMENTS_OR_STATE_LINKED_ENTITIES');
+ assert.equal(report.motiveAssessment.buyerMotive,'STATE_PROCUREMENT');
+ assert.equal(report.motiveAssessment.sellerMotive,'STATE_EXPORT');
+ assert.ok(report.actorProfile.potentialIntermediaryCountryIds);
  assert.equal(h.state.intelligence.BGD.blackMarketNetworkReports.length,1);
  assert.equal(h.state.intelligence.RUS.blackMarketNetworkReports,undefined);
  assert.equal(h.state.intelligence.IRN.blackMarketNetworkReports,undefined);
  assert.equal(h.bm.getNetworkReports('BGD').length,1);
+});
+
+test('an embargo policy by itself does not prove that a government is a covert market participant', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ h.state.foreign.IRN.stateTradeNetwork=false;
+ assert.equal(api.hasStateLink('IRN','copper'),false);
+ assert.equal(api.stateActorEvidence('IRN','copper').role,'STATE_POLICY_CONTEXT_ONLY');
+});
+
+test('a state-to-state purchase records both policy motive and state-linked actor evidence', () => {
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ const result=api.runTurn();
+ const profile=h.created[0].actorProfile;
+ assert.equal(profile.buyerGovernmentRole,'STATE_LINKED_TRADING_NETWORK');
+ assert.equal(profile.sellerGovernmentRole,'STATE_POLICY_DIRECTED');
+ assert.equal(profile.governmentInvolvement,'BOTH_GOVERNMENTS_OR_STATE_LINKED_ENTITIES');
+ assert.match(profile.buyerReason,/embargo|state import/i);
+ assert.match(profile.sellerReason,/state supply directive/i);
 });

@@ -43,6 +43,10 @@ test('offers use canonical products and observed stock, warehouse and protected 
  assert.equal(r.status,'READY');assert.equal(r.offers.length,1);assert.equal(r.offers[0].availableQuantity,90);
  assert.equal(r.offers[0].legalMarketAvailable,false);assert.equal(r.offers[0].legalLandedTotal,null);
  assert.ok(r.offers[0].unitPrice>r.offers[0].benchmarkUnitPrice);
+ assert.equal(r.offers[0].sellerMotiveCode,'STATE_DIRECTED_EXPORT_REVENUE');
+ assert.match(r.offers[0].sellerMotiveReason,/state supply directive or export restriction/i);
+ assert.equal(r.offers[0].buyerMotiveCode,'PLAYER_SELECTED_NEED_NOT_VERIFIED',
+  'a country must not be assigned an invented shortage motive when demand evidence is absent');
 });
 test('covert order stores a permit and sends the same quantity, price and zero-tariff instruction into Global Trade',()=>{
  const h=makeHarness(),api=h.ctx.OmegaBlackMarket,o=api.getOffers('BGD','coal',10).offers[0];
