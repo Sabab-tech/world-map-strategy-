@@ -401,3 +401,37 @@ test('mobile country tables switch from wide desktop tables to readable stacked 
   assert.ok(source.includes('.omega-bm-board-table tbody tr.omega-bm-detail-row{display:block'));
   assert.ok(source.includes('.omega-bm-board-table .omega-bm-row-action button{width:100%'));
 });
+
+test('country runtime supplies canonical names and flags when the identity registry has no match',()=>{
+ const h=harness(),resolve=h.context.OmegaCanonicalIdentityRegistry.resolveCountry;
+ h.context.OmegaCanonicalIdentityRegistry.resolveCountry=value=>
+  String(value||'').toUpperCase()==='RUS'?null:resolve(value);
+ h.context.OmegaCountryRuntimeData={
+  resolveCountry(value){
+   return String(value||'').toUpperCase()==='RUS'?{countryCode:'RU',name:'Russian Federation'}:null;
+  },
+  flagFor(value){return String(value||'').toUpperCase()==='RUS'?'🇷🇺':'';}
+ };
+ h.networkReports.push({level:'HIGH',resourceId:'iron_ore',productName:'Iron Ore',
+  summary:'A country record is available from the country runtime.',buyerCountryId:'BGD',sellerCountryId:'RUS',
+  confidence:.9,otherCountriesKnow:'NOT_OBSERVED_BY_OTHER_COUNTRIES'});
+ h.api.render(h.root,'BGD');
+ assert.match(h.root.innerHTML,/🇷🇺 Russian Federation/);
+});
+
+test('buyer pagination expands only when more than eight recorded demand signals exist',()=>{
+ const h=harness();
+ for(const countryId of ['CAN','DEU','FRA','GBR','JPN','KOR','AUS','MEX','ZAF']){
+  h.gameState.resource[countryId]={demandRuntime:{lastTurn:8,byResource:{iron_ore:{
+   unmetDemand:5,demandPerDay:2,stockCoverageDays:1,stockCoverageTargetDays:3,status:'SHORTAGE'
+  }}}};
+ }
+ h.api.render(h.root,'BGD');
+ assert.match(h.root.innerHTML,/Showing 8 of 11 demand signals/);
+ assert.match(h.root.innerHTML,/SHOW MORE COUNTRIES/);
+ click(h.root,{'data-bm-show-more-buyers':''});
+ assert.equal(h.root.__omegaBmVisibleBuyers,16);
+ assert.doesNotMatch(h.root.innerHTML,/SHOW MORE COUNTRIES/);
+ for(const countryId of ['CAN','DEU','FRA','GBR','JPN','KOR','AUS','MEX','ZAF'])
+  assert.match(h.root.innerHTML,new RegExp('>'+countryId+'<'));
+});
