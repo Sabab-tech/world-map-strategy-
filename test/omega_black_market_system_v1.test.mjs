@@ -77,6 +77,42 @@ test('deal creation never creates stock, treasury cash or new commodity identiti
  assert.equal(JSON.stringify({resource:h.state.resource,finance:h.state.finance}),before);
  assert.deepEqual(h.ctx.OmegaGlobalMarket.productCatalog().map(x=>x.id),ids);
 });
+test('covert settlement waits for origin and destination transit inspections',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket,offer=api.getOffers('BGD','coal',10).offers[0];
+ const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:offer.offerId});
+ assert.equal(made.accepted,true,JSON.stringify(made));
+ const deal=h.state.trade.BGD.blackMarketDeals[0];deal.detectionProbability=0;
+ let settlements=0;
+ h.ctx.OmegaGlobalTrade.settleBlackMarketTransit=input=>{
+  settlements++;
+  h.ctx.dispatchEvent(new h.ctx.CustomEvent('OMEGA_TRADE_SETTLEMENT_COMPLETED',{detail:{payload:{
+   destinationCountryId:'BGD',sourceCountryId:'SAU',buyerCountryId:'BGD',blackMarketDealId:input.dealId,
+   requestId:input.requestId,resourceId:'coal',quantity:10,buyerValue:1000,buyerCurrency:'USD',settlementId:'SETTLE-TRANSIT-1',
+   createdBatchIds:[]
+  }}}));
+  return{accepted:true,status:'SETTLED',settlementId:'SETTLE-TRANSIT-1'};
+ };
+ const started=api.startTransit({countryId:'BGD',buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,
+  unitPrice:deal.unitPrice,requestId:deal.requestId,blackMarketDealId:deal.dealId,blackMarketPermitId:deal.permitId});
+ assert.equal(started.accepted,true,JSON.stringify(started));
+ assert.equal(started.transit.route.length,2);
+ assert.equal(h.state.trade.BGD.blackMarketTransits[0].status,'IN_TRANSIT');
+ assert.equal(h.state.trade.SAU.blackMarketTransitReservations[0].status,'ACTIVE');
+ h.state.simulation.turn=8;
+ const origin=api.advanceTransits();
+ assert.equal(origin.advanced,1);assert.equal(origin.settled,0);
+ assert.equal(settlements,0,'origin clearance cannot settle the cargo');
+ assert.equal(h.state.trade.BGD.blackMarketTransits[0].timeline[0].checkpoint,'EXPORT_CLEARANCE');
+ h.state.simulation.turn=9;
+ const destination=api.advanceTransits();
+ assert.equal(destination.advanced,1);assert.equal(destination.settled,1);
+ assert.equal(settlements,1,'settlement occurs only after the destination checkpoint');
+ assert.equal(h.state.trade.BGD.blackMarketTransits[0].status,'SETTLED');
+ assert.equal(h.state.trade.BGD.blackMarketTransits[0].timeline[1].checkpoint,'IMPORT_CLEARANCE');
+ assert.equal(h.state.trade.BGD.blackMarketDeals[0].status,'SETTLED');
+ assert.equal(h.state.trade.SAU.blackMarketTransitReservations[0].status,'RELEASED');
+});
+
 test('covert permits expire on the game clock and cannot be replayed',()=>{
  const h=makeHarness(),api=h.ctx.OmegaBlackMarket,offer=api.getOffers('BGD','coal',10).offers[0];
  const made=api.createDeal({buyerCountryId:'BGD',sellerCountryId:'SAU',resourceId:'coal',quantity:10,offerId:offer.offerId});
