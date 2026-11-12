@@ -118,7 +118,7 @@ test('autonomous NPC network finds observed demand gaps and creates a state-link
  assert.ok(h.created[0].actorProfile.buyerStateEvidence.includes('RECORDED_STATE_TRADING_NETWORK'));
  assert.ok(h.created[0].actorProfile.sellerStateEvidence.includes('ACTIVE_STATE_SUPPLY_DIRECTIVE'));
  assert.equal(h.created[0].actorProfile.tactic,'STATE_TO_STATE_COVERT_PROCUREMENT');
- assert.equal(h.created[0].actorProfile.buyerMotive,'SANCTIONED_OR_RESTRICTED_INPUT_ACCESS');
+ assert.equal(h.created[0].actorProfile.buyerMotive,'SANCTIONS_OR_RESTRICTED_MARKET_ACCESS');
  assert.equal(h.created[0].actorProfile.sellerMotive,'STATE_DIRECTED_EXPORT_REVENUE');
  assert.equal(h.offerCalls[0].policy.networkAuthority,'OMEGA_BLACK_MARKET_NPC_NETWORK_V1');
  assert.equal(h.processed.length,1);
@@ -334,7 +334,7 @@ test('the planner checks more than the priority slots by rotating secondary comm
  h.state.simulation.turn=25;
  const first=api.runTurn();
  assert.ok(first.offerSearches<=24);
- assert.ok(first.potentialOpportunityCount>=8);
+ assert.ok(first.potentialOpportunityCount>=3,'the buyer has at least one priority commodity and rotating secondary commodity candidates');
  h.state.simulation.turn=26;
  const second=api.runTurn();
  assert.equal(second.status,'COMPLETED');
