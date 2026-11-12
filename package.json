@@ -94,7 +94,7 @@
     "test:private-enterprise-browser": "node --test test/omega_private_enterprise_browser_e2e.test.mjs",
     "test:private-market-competition": "node --check omega_private_market_competition_runtime_v1.js && node --test test/omega_private_market_competition_runtime_v1.test.mjs",
     "test:private-company-capital": "node --test test/omega_private_company_capital_runtime_v1.test.mjs",
-    "test:black-market": "node --check omega_black_market_system_v1.js && node --check omega_black_market_ui_v1.js && node --test test/omega_black_market_system_v1.test.mjs"
+    "test:black-market": "node --check omega_black_market_system_v1.js && node --check omega_black_market_ui_v1.js && node --check omega_black_market_network_v1.js && node --test test/omega_black_market_system_v1.test.mjs && node --test test/omega_black_market_network_v1.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
