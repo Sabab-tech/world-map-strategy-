@@ -374,8 +374,8 @@ function detectedCase(deal,detail={}){
   status:stage==='POST_SETTLEMENT'?'UNDER_INVESTIGATION':'INTERCEPTED',source:'OMEGA_BLACK_MARKET_DETECTION'};
  [deal.buyerCountryId,deal.sellerCountryId].forEach(c=>recordCaseFor(c,row));
  const issuers=[],citedPolicies=new Set([...(deal.embargoPolicyIds||[]),...(deal.exportPolicyIds||[]),...(deal.sanctionPolicyIds||[])] .map(String));
- for(const c of countryKeys('trade')){
-  const t=bucket('trade',c);
+ for(const domain of ['trade','foreign'])for(const c of countryKeys(domain)){
+  const t=bucket(domain,c);
   for(const field of ['resourceEmbargoes','stateSupplyDirectives','sanctions']){
    const list=t[field];if(!Array.isArray(list))continue;
    for(const policyRow of list){
@@ -717,7 +717,6 @@ function recordResponseHandler(cmd,ctx){
  if(!responseId||!target||country(r.sourceCountryId)!==c)return{accepted:false,reason:'BLACK_MARKET_FOREIGN_RESPONSE_INVALID'};
  const raw=ctx.stateTransaction.get('foreign.blackMarketResponses'),arr=Array.isArray(raw)?clone(raw):[],prior=arr.find(x=>String(x.responseId||'')===responseId);
  if(prior)return{accepted:true,duplicate:true,response:clone(prior)};
- arr.push(clone(r));ctx.stateTransaction.set('foreign.blackMarketResponses',arr.slice(-MAX_RESPONSES));
  const severity=String(r.severity||'MODERATE').toUpperCase(),
   baseDelta=num(r.diplomaticRelationPenalty)??(severity==='CRITICAL'?-12:(severity==='HIGH'?-8:(severity==='LOW'?-2:-5))),
   delta=Math.max(-12,Math.min(-1,baseDelta));
@@ -732,8 +731,10 @@ function recordResponseHandler(cmd,ctx){
   adj[item.countryId]=list.slice(-64);
  }
  ctx.stateTransaction.set('foreign.relationAdjustments',adj);
- emit('OMEGA_BLACK_MARKET_FOREIGN_RESPONSE',c,Object.assign({},clone(r),{appliedRelationAdjustments:targets}));
- return{accepted:true,response:clone(r),appliedRelationAdjustments:targets};
+ const response=Object.assign({},clone(r),{appliedRelationAdjustments:clone(targets),diplomaticRelationPenaltyApplied:delta,recordedTurn:turn()});
+ arr.push(response);ctx.stateTransaction.set('foreign.blackMarketResponses',arr.slice(-MAX_RESPONSES));
+ emit('OMEGA_BLACK_MARKET_FOREIGN_RESPONSE',c,response);
+ return{accepted:true,response:clone(response),appliedRelationAdjustments:targets};
 }
 function getCases(c){const v=bucket('intelligence',c).blackMarketCases;return Array.isArray(v)?v.slice().map(x=>clone(x)):[];}
 function getResponses(c){const v=bucket('foreign',c).blackMarketResponses;return Array.isArray(v)?v.slice().map(x=>clone(x)):[];}
