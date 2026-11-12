@@ -4,7 +4,7 @@
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.2.0';
+  const VERSION = '1.3.0';
   const LIMITS = Object.freeze({ MACRO_COUNTRIES_PER_TURN:8, ACTIVE_COUNTRIES_PER_TURN:4, MAX_ACTIVE_COUNTRIES:48, ACTIVE_TTL_TURNS:30, MAX_EVENTS_PER_TURN:16, MAX_EVENT_QUEUE:256, MAX_SEEN_EVENT_IDS:512, MAX_QUEUED_DECISIONS_PER_COUNTRY:1, ROSTER_REFRESH_TURNS:30, COUNTRY_EVALUATIONS_PER_YIELD:2, COUNTRY_BATCH_BUDGET_MS:8, EVENT_BATCH_BUDGET_MS:6, MOBILE_TURN_BUDGET_MS:28, DESKTOP_TURN_BUDGET_MS:52 });
   if (g.Omega?.WorldSimulationScheduler?.VERSION === VERSION) return;
   const EVENT_PATTERN = /TRADE|DIPLOMAC|FOREIGN|TREATY|WAR|SANCTION|CONFLICT|BORDER|PROJECT|MILITARY|IMPORT|EXPORT|SETTLEMENT/i;
@@ -47,10 +47,25 @@
     if(rosterTask)return rosterTask;
     let task;
     task=(async()=>{
-      const rules=g.Omega?.OpponentCountryRules||g.OmegaOpponentCountryRules;let values=[];
-      if(typeof rules?.listCountryIds==='function')try{const rows=await rules.listCountryIds();if(Array.isArray(rows))values=rows;}catch(_){}
-      if(!values.length)try{values=(g.OmegaCountryRuntimeData?.listProfiles?.()||[]).map(x=>x?.countryCode||x?.iso2||x?.iso3);}catch(_){}
+      const coreBaseline=g.OmegaCountryFactoryStartingBaselineV1||g.Omega?.CountryFactoryStartingBaselineV1||null;
+      const countryRuntime=g.OmegaCountryRuntimeData||g.Omega?.CountryRuntimeData||null;
+      let values=[];
+      if(typeof coreBaseline?.getCountryIds==='function'){
+        try{
+          const readiness=await Promise.resolve(coreBaseline.ready);
+          const iso3Ids=coreBaseline.getCountryIds();
+          if(readiness?.status!=='READY'||!Array.isArray(iso3Ids)||iso3Ids.length!==197)return[];
+          if(countryRuntime?.init&&await countryRuntime.init()!==true)return[];
+          values=iso3Ids.map(code=>countryRuntime?.resolveCountry?.(code)?.countryCode||null);
+          if(values.filter(Boolean).length!==197)return[];
+        }catch(_){return[];}
+      }else{
+        const rules=g.Omega?.OpponentCountryRules||g.OmegaOpponentCountryRules;
+        if(typeof rules?.listCountryIds==='function')try{const rows=await rules.listCountryIds();if(Array.isArray(rows))values=rows;}catch(_){}
+        if(!values.length)try{values=(countryRuntime?.listProfiles?.()||[]).map(x=>x?.countryCode||x?.iso2||x?.iso3);}catch(_){}
+      }
       const ids=[...new Set(values.map(countryId).filter(Boolean))].sort();
+      if(typeof coreBaseline?.getCountryIds==='function'&&ids.length!==197)return[];
       if(ids.length){cachedRoster=ids;cachedRosterTurn=turn;}
       return ids;
     })().finally(()=>{if(rosterTask===task)rosterTask=null});
