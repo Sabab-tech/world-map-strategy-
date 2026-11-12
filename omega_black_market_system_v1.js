@@ -5,7 +5,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='1.1.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12,MAX_TURN_MAINTENANCE=12;
+const VERSION='1.2.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12,MAX_TURN_MAINTENANCE=12;
 const clone=(v,seen=new WeakMap())=>{if(v===null||typeof v!=='object')return v;if(seen.has(v))return seen.get(v);if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}const o={};seen.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function'&&v[k]!==undefined)o[k]=clone(v[k]);return o;};
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;},id=v=>String(v??'').trim().toUpperCase();
 const tok=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
@@ -80,17 +80,44 @@ function stock(c,rid){
 function embargo(b,s,r){try{return policy()?.isResourceEmbargoed?.(b,s,r)||{blocked:false,policies:[]};}catch(_){return{blocked:true,policies:[]};}}
 function routeBlocked(c,r){try{return policy()?.isRouteBlocked?.(c,{resourceId:r,transportMode:'ship'})||{blocked:false};}catch(_){return{blocked:true};}}
 function exportDirective(s,b,r,q,stockValue){try{return policy()?.evaluateExportDirective?.(s,b,r,q,null,{[r]:stockValue})||{allowed:true,policies:[]};}catch(_){return{allowed:false,reason:'EXPORT_POLICY_EVALUATION_FAILED'};}}
+function shipmentSizeProfile(quantity,available){
+ const ratio=available>0?clamp(quantity/available,0,1):1;
+ const bands=[
+  {max:.01,label:'MICRO',risk:.00,fine:.00,seizure:.00},
+  {max:.03,label:'SMALL',risk:.02,fine:.00,seizure:.01},
+  {max:.08,label:'MODERATE',risk:.05,fine:.01,seizure:.03},
+  {max:.15,label:'LARGE',risk:.10,fine:.03,seizure:.06},
+  {max:1,label:'CRITICAL',risk:.18,fine:.06,seizure:.10}
+ ];
+ const band=bands.find(x=>ratio<=x.max)||bands[bands.length-1];
+ return{ratio,percent:Number((ratio*100).toFixed(2)),band:band.label,riskAdd:band.risk,
+  fineAdd:band.fine,seizureAdd:band.seizure,thresholds:[1,3,8,15]};
+}
+function recentPattern(buyer,seller,rid){
+ const history=rows(buyer),recent=history.filter(x=>country(x.sellerCountryId)===seller&&turn()-(num(x.createdTurn)??turn())<=10);
+ const sameResource=recent.filter(x=>tok(x.resourceId)===tok(rid));
+ const count=recent.length,resourceCount=sameResource.length;
+ return{attempts10Turns:count,resourceAttempts10Turns:resourceCount,
+  riskAdd:Math.min(.16,Math.max(0,count-1)*.025+Math.max(0,resourceCount-1)*.02),
+  fineAdd:count>=5?.05:(count>=3?.03:0),seizureAdd:count>=5?.06:(count>=3?.03:0)};
+}
 function riskOf(buyer,seller,r,embargoed,restricted,q,available){
  let risk=.055;if(embargoed)risk+=.18;if(restricted)risk+=.13;if(r?.sanctions===true)risk+=.16;if(!agreement(r))risk+=.09;
  const relationValue=[num(r?.overall),num(r?.trade),num(r?.trust)].find(x=>x!==null);
  if(relationValue!==undefined&&relationValue!==null&&(relationValue>1?relationValue/100:relationValue)<.3)risk+=.06;
- if(available>0)risk+=Math.min(.06,q/available*.06);
  const intel=bucket('intelligence',buyer),interior=bucket('interior',buyer);
  const surveillance=num(intel.tradeSurveillance??intel.counterSmugglingReadiness??intel.blackMarketDetection);
  const inspection=num(interior.customsInspectionCoverage??interior.borderInspectionCoverage??interior.policeCoverage);
  if(surveillance!==null)risk+=clamp(surveillance>1?surveillance/100:surveillance)*.05;
  if(inspection!==null)risk+=clamp(inspection>1?inspection/100:inspection)*.04;
  return clamp(risk,.04,.82);
+}
+function penaltyProfile(embargoed,restricted,sanctioned,tariffPct,size,pattern){
+ const tariffAdd=tariffPct>=35?.07:(tariffPct>=20?.04:0);
+ const fineRate=clamp(.06+(embargoed?.08:0)+(restricted?.04:0)+(sanctioned?.07:0)+tariffAdd+size.fineAdd+pattern.fineAdd,.06,.35);
+ const attemptFineRate=clamp(fineRate*.45,.025,.16);
+ const seizureRate=clamp(.05+(embargoed?.15:0)+(restricted?.10:0)+(sanctioned?.15:0)+size.seizureAdd+pattern.seizureAdd,.05,.55);
+ return{fineRate,attemptFineRate,seizureRate,tariffAvoidanceRate:tariffAdd};
 }
 function makePrice(base,tariffPct,risk,embargoed,restricted,noAgreement,q,available){
  const discount=Math.min(.32,tariffPct/100*.55),riskPremium=risk*.16;
@@ -117,15 +144,17 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
   if(!rule.allowed&&!restricted)continue;if(routeBlocked(buyer,rid).blocked||routeBlocked(seller,rid).blocked)continue;
   const hasAgreement=agreement(r),sanctioned=r.sanctions===true;
   const legalAvailable=!!(hasAgreement&&!emb.blocked&&!sanctioned&&rule.allowed&&legal.some(x=>country(x.countryId)===seller));
-  const detection=riskOf(buyer,seller,r,!!emb.blocked,restricted,q,s.available),px=makePrice(quote.value,tariffPct,detection,!!emb.blocked,restricted,!hasAgreement||sanctioned,q,s.available);
+  const size=shipmentSizeProfile(q,s.available),pattern=recentPattern(buyer,seller,rid),
+   detection=clamp(riskOf(buyer,seller,r,!!emb.blocked,restricted,q,s.available)+size.riskAdd+pattern.riskAdd,.04,.88),
+   penalty=penaltyProfile(!!emb.blocked,restricted,sanctioned,tariffPct,size,pattern),
+   px=makePrice(quote.value,tariffPct,detection,!!emb.blocked,restricted,!hasAgreement||sanctioned,q,s.available);
   let sellerCurrency=null,buyerCurrency=null,fx=null;
   try{sellerCurrency=trade()?.currencyOf?.(seller)||null;buyerCurrency=trade()?.currencyOf?.(buyer)||null;fx=num(trade()?.fxRate?.(buyer,seller));}catch(_){}
   if(fx===null&&sellerCurrency&&buyerCurrency&&sellerCurrency===buyerCurrency)fx=1;
   const legalUnit=legalAvailable&&fx!==null?Number((quote.value*fx*(1+tariffPct/100)).toFixed(6)):null;
   const legalTotal=legalUnit===null?null:Number((legalUnit*q).toFixed(2));
   const lateDetectionProbability=detection*.18,
-   fineRate=Math.min(.18,ENFORCEMENT.baseFineRate+(emb.blocked?ENFORCEMENT.embargoFineRate:0)+(restricted?ENFORCEMENT.exportRestrictionFineRate:0)),
-   seizureRate=Math.min(.30,ENFORCEMENT.baseSeizureRate+(emb.blocked?ENFORCEMENT.embargoSeizureRate:0)+(restricted?ENFORCEMENT.exportRestrictionSeizureRate:0));
+   fineRate=penalty.fineRate,seizureRate=penalty.seizureRate;
   const expectedGrossBuyer=fx===null?null:Number((px.expectedUnit*q*fx).toFixed(2)),
    expectedFineBuyer=fx===null?null:Number((px.unit*q*fx*lateDetectionProbability*fineRate).toFixed(2)),
    expectedSeizedQuantity=Number((q*lateDetectionProbability*seizureRate).toFixed(6)),
@@ -157,6 +186,10 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
    buyerMotiveCode:buyerMotivation.code,buyerMotiveReason:buyerMotivation.reason,
    sellerMotiveCode:sellerMotivation.code,sellerMotiveReason:sellerMotivation.reason,
    sellerActorClass:stateBrokerType(seller,rid,rule,emb),
+   shipmentSizeBand:size.band,sellerStockExposurePct:size.percent,repeatAttempts10Turns:pattern.attempts10Turns,
+   importTariffAvoidedPct:tariffPct,fineRate,attemptFineRate:penalty.attemptFineRate,seizureRate,
+   scrutinyThresholds:{sellerStockExposurePct:[1,3,8,15],interpretation:'share of currently verified seller tradable stock'},
+   penaltyModel:{tariffAvoidanceRate:penalty.tariffAvoidanceRate,repeatAttempts:pattern.attempts10Turns},
    brokerId:'SHADOW-BROKER:'+seller,brokerType:stateBrokerType(seller,rid,rule,emb),brokerReputation:getBrokerReputation(seller,'SHADOW-BROKER:'+seller),
    stockAuthority:'GAME_STATE_RESOURCE_INVENTORY_RESERVE_AND_WAREHOUSE'});
  }
@@ -247,7 +280,11 @@ function createDeal(input={}){
   expectedUnitCost:offer.expectedUnitCost,legalLandedTotal:offer.legalLandedTotal,
   expectedBlackMarketTotal:Number((unitPrice*q).toFixed(2)),
   expectedSavings:offer.expectedSavings===null?null:Number((offer.expectedSavings*q/offer.requestedQuantity).toFixed(2)),
-  importTariffPctAtCreation:offer.importTariffPct,importTariffPct:0,detectionProbability:offer.detectionProbability,
+  importTariffPctAtCreation:offer.importTariffPct,importTariffPct:0,importTariffAvoidedPct:offer.importTariffAvoidedPct,
+  detectionProbability:offer.detectionProbability,shipmentSizeBand:offer.shipmentSizeBand,sellerStockExposurePct:offer.sellerStockExposurePct,
+  repeatAttempts10Turns:offer.repeatAttempts10Turns,fineRateAtCreation:offer.fineRate,
+  attemptFineRateAtCreation:offer.attemptFineRate,seizureRateAtCreation:offer.seizureRate,
+  attemptedValueBuyer:offer.expectedBlackMarketTotalBuyer,attemptCurrency:offer.buyerCurrency,
   embargoedAtCreation:offer.embargoed,embargoPolicyIds:offer.embargoPolicyIds,tradeAgreementAtCreation:agreement(rel),
   sanctionsAtCreation:offer.sanctionsAtQuote,exportRestrictionReason:offer.exportRestrictionReason,exportPolicyIds:offer.exportPolicyIds,
   legalMarketAvailable:offer.legalMarketAvailable,commercialReason:offer.reason,createdTurn:turn(),expiresTurn:turn()+PERMIT_TTL,
