@@ -198,7 +198,7 @@ function createDeal(input={}){
  const book=getOffers(buyer,rid,q,autonomousNetwork?{networkAuthority:'OMEGA_BLACK_MARKET_NPC_NETWORK_V1'}:{});if(book.status!=='READY')return{accepted:false,reason:book.reason||'BLACK_MARKET_OFFERS_UNAVAILABLE'};
  const offer=book.offers.find(x=>x.sellerCountryId===seller&&(!input.offerId||x.offerId===input.offerId));if(!offer)return{accepted:false,reason:'BLACK_MARKET_OFFER_NOT_FOUND_OR_STALE'};
  const rel=relation(buyer,seller);if(!rel||rel.war_state===true)return{accepted:false,reason:'WAR_OR_RELATION_EVIDENCE_REQUIRED'};
- sequence++;const dealId='BM-'+buyer+'-'+seller+'-T'+turn()+'-'+sequence+'-'+tok(rid).slice(0,18);
+ sequence++;const dealId=autonomousNetwork?'BM-NPC-'+buyer+'-'+seller+'-T'+turn()+'-'+tok(rid).slice(0,18):'BM-'+buyer+'-'+seller+'-T'+turn()+'-'+sequence+'-'+tok(rid).slice(0,18);
  const permitId='BM-PERMIT-'+random(dealId+'|'+buyer+'|'+seller).toString(16).slice(2).toUpperCase();
  const unitPrice=Number.isFinite(num(input.negotiatedUnitPrice))&&num(input.negotiatedUnitPrice)>0?Math.min(offer.unitPrice,num(input.negotiatedUnitPrice)):offer.unitPrice;
  const row={dealId,permitId,requestId:dealId+'-TRADE',buyerCountryId:buyer,sellerCountryId:seller,resourceId:rid,
@@ -434,6 +434,14 @@ function onTradeEvent(type,event){
   emit('OMEGA_BLACK_MARKET_DEAL_SETTLED',deal.buyerCountryId,{dealId:deal.dealId,settlementId:settlement.settlementId,resourceId:deal.resourceId});
  }else updateDeal(deal.dealId,{buyerCountryId:deal.buyerCountryId,status:'FAILED',failureReason:p.reason||'TRADE_SETTLEMENT_FAILED',failedTurn:turn()});
 }
+function recordNetworkReportHandler(cmd,ctx){
+ const r=cmd?.payload?.report||{},c=country(ctx.countryId),reportId=String(r.reportId||'');
+ if(!reportId||country(r.playerCountryId)!==c||!r.resourceId||!r.confidence)return{accepted:false,reason:'BLACK_MARKET_NETWORK_REPORT_INVALID'};
+ const raw=ctx.stateTransaction.get('intelligence.blackMarketNetworkReports'),arr=Array.isArray(raw)?clone(raw):[],prior=arr.find(x=>String(x.reportId)===reportId);
+ if(prior)return{accepted:true,duplicate:true,report:clone(prior)};
+ arr.push(Object.assign({},clone(r),{recordedTurn:turn(),visibility:'PLAYER_COUNTRY_INTELLIGENCE_ONLY'}));
+ ctx.stateTransaction.set('intelligence.blackMarketNetworkReports',arr.slice(-MAX_CASES));return{accepted:true,report:clone(arr[arr.length-1])};
+}
 function recordBrokerReputationHandler(cmd,ctx){
  const p=cmd?.payload||{},brokerId=String(p.brokerId||''),delta=num(p.delta),eventId=String(p.eventId||'');
  if(!brokerId||delta===null||!eventId)return{accepted:false,reason:'BLACK_MARKET_BROKER_REPUTATION_INVALID'};
@@ -552,7 +560,7 @@ function install(){
   ['OMEGA_BLACK_MARKET_COLLECT_FINE','finance',collectFineHandler],['OMEGA_BLACK_MARKET_SEIZE_CARGO','resource',seizeCargoHandler],
   ['OMEGA_BLACK_MARKET_UPDATE_BROKER_REPUTATION','trade',recordBrokerReputationHandler],['OMEGA_BLACK_MARKET_RECORD_TRANSIT','trade',recordTransitHandler],
   ['OMEGA_BLACK_MARKET_UPDATE_TRANSIT','trade',updateTransitHandler],['OMEGA_BLACK_MARKET_RESERVE_TRANSIT_STOCK','trade',reserveTransitStockHandler],
-  ['OMEGA_BLACK_MARKET_RECORD_NEGOTIATION','trade',recordNegotiationHandler]];
+  ['OMEGA_BLACK_MARKET_RECORD_NEGOTIATION','trade',recordNegotiationHandler],['OMEGA_BLACK_MARKET_RECORD_NETWORK_REPORT','intelligence',recordNetworkReportHandler]];
  let registered=0;const errors=[];for(const [type,owner,handler]of defs)try{m.registerAction?.(type,{actionId:type,stateOwnerMinistry:owner,authority:'OMEGA_BLACK_MARKET_V1'});m.registerCommandHandler(type,owner,handler);registered++;}catch(e){errors.push({type,reason:String(e?.message||e)});}
  report={ready:registered===defs.length,registered,total:defs.length,errors};return report.ready;
 }
