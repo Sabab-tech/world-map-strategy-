@@ -41,6 +41,38 @@ function countryKeys(domain){
 function value(map,key){if(!map||typeof map!=='object')return undefined;const k=Object.keys(map).find(x=>tok(x)===tok(key));return k===undefined?undefined:map[k];}
 function relation(buyer,seller){return value(bucket('foreign',buyer).relations,seller)||value(bucket('trade',buyer).relations,seller)||value(bucket('foreign',seller).relations,buyer)||value(bucket('trade',seller).relations,buyer)||null;}
 function agreement(r){return !!r&&(r.trade_agreement===true||/SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(r.status||r.stage||'').toUpperCase()));}
+function sanctionsBetween(buyer,seller,rid){
+ const countries=[...new Set([...countryKeys('trade'),...countryKeys('foreign')])],rows=[];
+ for(const issuerBucket of countries){
+  const roots=[bucket('trade',issuerBucket).sanctions,bucket('foreign',issuerBucket).sanctions];
+  for(const list of roots){
+   if(!Array.isArray(list))continue;
+   for(const policyRow of list){
+    const status=String(policyRow.status||policyRow.stage||'ACTIVE').toUpperCase();
+    if(/EXPIRED|REVOKED|INACTIVE|CANCELLED|LIFTED/.test(status))continue;
+    const start=num(policyRow.startTurn??policyRow.effectiveTurn),end=num(policyRow.endTurn??policyRow.expiresTurn);
+    if(start!==null&&start>turn()||end!==null&&turn()>end)continue;
+    const target=country(policyRow.targetCountryId||policyRow.subjectCountryId||policyRow.countryId||policyRow.targetId);
+    const resourceId=String(policyRow.resourceId||policyRow.commodityId||'');
+    if(!target||![buyer,seller].includes(target)||resourceId&&tok(resourceId)!==tok(rid))continue;
+    rows.push({issuerCountryId:country(policyRow.issuerCountryId)||issuerBucket,targetCountryId:target,
+     policyId:policyRow.policyId||policyRow.sanctionId||null,type:policyRow.type||policyRow.measure||policyRow.scope||'SANCTIONS',
+     secondary:policyRow.secondarySanctions===true||/SECONDARY|EXTRATERRITORIAL/i.test(String(policyRow.scope||policyRow.type||''))});
+   }
+  }
+ }
+ const rel=relation(buyer,seller),bilateral=rel?.sanctions===true||rel?.embargo===true;
+ if(bilateral&&!rows.length){
+  const issuer=country(rel?.issuerCountryId||rel?.sanctioningCountryId),target=issuer===buyer?seller:(issuer===seller?buyer:null);
+  rows.push({issuerCountryId:issuer,targetCountryId:target,policyId:null,type:'BILATERAL_SANCTIONS_RELATION',
+   secondary:rel?.secondarySanctions===true});
+ }
+ return{active:rows.length>0||bilateral,rows,
+  buyerTargeted:rows.some(x=>x.targetCountryId===buyer),sellerTargeted:rows.some(x=>x.targetCountryId===seller),
+  secondary:rows.some(x=>x.secondary),
+  issuerCountryIds:[...new Set(rows.map(x=>x.issuerCountryId).filter(Boolean))],
+  policyIds:[...new Set(rows.map(x=>x.policyId).filter(Boolean))]};
+}
 function dispatch(owner,type,c,p){
  const m=mesh();if(!m?.dispatchCommand)return{accepted:false,reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
  try{const r=m.dispatchCommand(owner,type,country(c),clone(p||{}),{turn:turn(),commandType:type,correlationId:p?.dealId||p?.caseId||p?.responseId||p?.requestId||null});return r&&['APPLIED','FAILED','REJECTED'].includes(String(r.status||''))&&r.result?r.result:r;}
@@ -101,8 +133,8 @@ function recentPattern(buyer,seller,rid){
   riskAdd:Math.min(.16,Math.max(0,count-1)*.025+Math.max(0,resourceCount-1)*.02),
   fineAdd:count>=5?.05:(count>=3?.03:0),seizureAdd:count>=5?.06:(count>=3?.03:0)};
 }
-function riskOf(buyer,seller,r,embargoed,restricted,q,available){
- let risk=.055;if(embargoed)risk+=.18;if(restricted)risk+=.13;if(r?.sanctions===true)risk+=.16;if(!agreement(r))risk+=.09;
+function riskOf(buyer,seller,r,embargoed,restricted,q,available,sanctioned=false){
+ let risk=.055;if(embargoed)risk+=.18;if(restricted)risk+=.13;if(sanctioned||r?.sanctions===true)risk+=.16;if(!agreement(r))risk+=.09;
  const relationValue=[num(r?.overall),num(r?.trade),num(r?.trust)].find(x=>x!==null);
  if(relationValue!==undefined&&relationValue!==null&&(relationValue>1?relationValue/100:relationValue)<.3)risk+=.06;
  const intel=bucket('intelligence',buyer),interior=bucket('interior',buyer);
@@ -142,10 +174,11 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
   const emb=embargo(buyer,seller,rid),rule=exportDirective(seller,buyer,rid,q,s.stock);
   const restricted=!rule.allowed&&['STATE_DIRECTIVE_DOMESTIC_ONLY','STATE_DIRECTIVE_EXPORT_RESTRICTED'].includes(String(rule.reason||''));
   if(!rule.allowed&&!restricted)continue;if(routeBlocked(buyer,rid).blocked||routeBlocked(seller,rid).blocked)continue;
-  const hasAgreement=agreement(r),sanctioned=r.sanctions===true;
+  const hasAgreement=agreement(r),sanctionContext=sanctionsBetween(buyer,seller,rid),
+   sanctioned=r.sanctions===true||sanctionContext.active;
   const legalAvailable=!!(hasAgreement&&!emb.blocked&&!sanctioned&&rule.allowed&&legal.some(x=>country(x.countryId)===seller));
   const size=shipmentSizeProfile(q,s.available),pattern=recentPattern(buyer,seller,rid),
-   detection=clamp(riskOf(buyer,seller,r,!!emb.blocked,restricted,q,s.available)+size.riskAdd+pattern.riskAdd,.04,.88),
+   detection=clamp(riskOf(buyer,seller,r,!!emb.blocked,restricted,q,s.available,sanctioned)+size.riskAdd+pattern.riskAdd,.04,.88),
    penalty=penaltyProfile(!!emb.blocked,restricted,sanctioned,tariffPct,size,pattern),
    px=makePrice(quote.value,tariffPct,detection,!!emb.blocked,restricted,!hasAgreement||sanctioned,q,s.available);
   let sellerCurrency=null,buyerCurrency=null,fx=null;
@@ -165,7 +198,7 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
    expectedSavings=expectedLegalCost===null||expectedCostBuyer===null?null:Number((expectedLegalCost-expectedCostBuyer).toFixed(2));
   const foreignPolicyBasis=[emb.blocked?'IMPORT EMBARGO':null,restricted?'EXPORT RESTRICTION':null,
    sanctioned?'SANCTIONS':null,!hasAgreement?'NO TRADE AGREEMENT':null].filter(Boolean);
-  const buyerMotivation=buyerMotiveEvidence(buyer,rid,q),sellerMotivation=sellerMotiveEvidence(seller,rid,rule,emb);
+  const buyerMotivation=buyerMotiveEvidence(buyer,rid,q,sanctionContext),sellerMotivation=sellerMotiveEvidence(seller,rid,rule,emb,sanctionContext);
   const whyUse=!legalAvailable?(foreignPolicyBasis.length?'ACCESS DESPITE LEGAL OR DIPLOMATIC RESTRICTIONS':'NO VERIFIED GENERAL-MARKET OFFER'):
    fx===null?'FX RATE NOT OBSERVED — PRICE ADVANTAGE CANNOT BE CONFIRMED':(expectedSavings>0?'EXPECTED COST ADVANTAGE AFTER RISK':'STRATEGIC ACCESS ONLY — EXPECTED COST IS HIGHER');
   offers.push({offerId:'BM-OFFER:'+buyer+':'+seller+':'+tok(rid),buyerCountryId:buyer,sellerCountryId:seller,resourceId:rid,
@@ -179,7 +212,10 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
    lateDetectionProbability,fineRate,seizureRate,pricingBreakdown:{tariffDiscountPct:px.tariffDiscountPct,baseSpreadPct:px.baseSpreadPct,
     riskPremiumPct:px.riskPremiumPct,policyPremiumPct:px.policyPremiumPct,scarcityPremiumPct:px.scarcityPremiumPct,brokerSpreadPct:px.brokerSpreadPct},
    embargoed:!!emb.blocked,embargoPolicyIds:(emb.policies||[]).map(x=>String(x.policyId||'')).filter(Boolean),
-   sanctionsAtQuote:sanctioned,exportRestrictionReason:restricted?rule.reason:null,
+   sanctionsAtQuote:sanctioned,sanctionPolicyIds:sanctionContext.policyIds,
+   sanctioningCountryIds:sanctionContext.issuerCountryIds,sanctionedBuyerAtQuote:sanctionContext.buyerTargeted,
+   sanctionedSellerAtQuote:sanctionContext.sellerTargeted,secondarySanctionsAtQuote:sanctionContext.secondary,
+   exportRestrictionReason:restricted?rule.reason:null,
    exportPolicyIds:(rule.policies||[]).map(x=>typeof x==='string'?x:String(x.policyId||'')).filter(Boolean),
    legalMarketAvailable:legalAvailable,foreignPolicyBasis,whyUse,
    reason:!legalAvailable?'RESTRICTED_OR_UNAVAILABLE_LEGAL_ACCESS':(expectedSavings!==null&&expectedSavings>0?'EXPECTED_COST_ADVANTAGE':'STRATEGIC_ACCESS_ONLY'),
@@ -203,7 +239,7 @@ function getNetworkReports(c){const v=bucket('intelligence',c).blackMarketNetwor
 function stateBrokerType(c,rid,rule,emb){const t=bucket('trade',c),f=bucket('foreign',c),directives=Array.isArray(t.stateSupplyDirectives)?t.stateSupplyDirectives:[],embargoes=Array.isArray(t.resourceEmbargoes)?t.resourceEmbargoes:[];
  const stateLinked=directives.some(x=>!x.resourceId||tok(x.resourceId)===tok(rid))||embargoes.some(x=>!x.resourceId||tok(x.resourceId)===tok(rid))||!!f.stateTradeNetwork;
  return stateLinked?'STATE_LINKED':'PRIVATE_BROKER';}
-function buyerMotiveEvidence(c,rid,quantity){
+function buyerMotiveEvidence(c,rid,quantity,sanctionContext={}){
  const resource=bucket('resource',c),finance=bucket('finance',c),tradeState=bucket('trade',c);
  const runtime=resource.demandRuntime||{},demand=value(runtime.byResource,rid)||{};
  const unmet=Math.max(0,num(demand.unmetDemand)||0),perDay=Math.max(0,num(demand.demandPerDay??demand.demand)||0),
@@ -214,7 +250,7 @@ function buyerMotiveEvidence(c,rid,quantity){
  const embargoes=Array.isArray(tradeState.resourceEmbargoes)?tradeState.resourceEmbargoes:[];
  const sanctions=Array.isArray(tradeState.sanctions)?tradeState.sanctions:[];
  const active=row=>!['EXPIRED','REVOKED','INACTIVE','CANCELLED','LIFTED'].includes(String(row.status||'ACTIVE').toUpperCase());
- const restricted=embargoes.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&active(x))||
+ const restricted=!!sanctionContext.buyerTargeted||embargoes.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&active(x))||
   sanctions.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&active(x));
  if(restricted)return{code:'RESTRICTED_INPUT_ACCESS',reason:'The buyer country has an active resource sanction or import restriction affecting the selected commodity.'};
  if(factoryInput>0)return{code:'INDUSTRIAL_INPUT_SHORTAGE',reason:'Recorded active factory input demand exists for this commodity.'};
@@ -231,10 +267,11 @@ function buyerMotiveEvidence(c,rid,quantity){
   return{code:'FOREIGN_EXCHANGE_PRESSURE',reason:'Recorded foreign-reserve coverage is weak, increasing the value of alternative supply access.'};
  return{code:'PLAYER_SELECTED_NEED_NOT_VERIFIED',reason:'No matching shortage signal was observed; this offer was found from seller stock and policy evidence, not an assumed national shortage.'};
 }
-function sellerMotiveEvidence(c,rid,rule,emb){
+function sellerMotiveEvidence(c,rid,rule,emb,sanctionContext={}){
  const t=bucket('trade',c),finance=bucket('finance',c),resource=bucket('resource',c);
  const directives=Array.isArray(t.stateSupplyDirectives)?t.stateSupplyDirectives:[];
  const activeDirective=directives.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&!/EXPIRED|REVOKED|INACTIVE/.test(String(x.status||'').toUpperCase()));
+ if(sanctionContext.sellerTargeted)return{code:'SANCTIONED_EXPORTER_ACCESS_RESTRICTION',reason:'This exporter is the explicit target of an active sanction policy; its recorded customers may seek a restricted alternative supply channel.'};
  if(activeDirective||rule?.allowed===false&&['STATE_DIRECTIVE_DOMESTIC_ONLY','STATE_DIRECTIVE_EXPORT_RESTRICTED'].includes(String(rule?.reason||'')))
   return{code:'STATE_DIRECTED_EXPORT_REVENUE',reason:'An active state supply directive or export restriction is recorded for this commodity.'};
  if(stateBrokerType(c,rid,rule,emb)==='STATE_LINKED')
@@ -296,7 +333,10 @@ function createDeal(input={}){
   attemptFineRateAtCreation:offer.attemptFineRate,seizureRateAtCreation:offer.seizureRate,
   attemptedValueBuyer:offer.expectedBlackMarketTotalBuyer,attemptCurrency:offer.buyerCurrency,
   embargoedAtCreation:offer.embargoed,embargoPolicyIds:offer.embargoPolicyIds,tradeAgreementAtCreation:agreement(rel),
-  sanctionsAtCreation:offer.sanctionsAtQuote,exportRestrictionReason:offer.exportRestrictionReason,exportPolicyIds:offer.exportPolicyIds,
+  sanctionsAtCreation:offer.sanctionsAtQuote,sanctionPolicyIds:offer.sanctionPolicyIds||[],
+  sanctioningCountryIds:offer.sanctioningCountryIds||[],sanctionedBuyerAtCreation:!!offer.sanctionedBuyerAtQuote,
+  sanctionedSellerAtCreation:!!offer.sanctionedSellerAtQuote,secondarySanctionsAtCreation:!!offer.secondarySanctionsAtQuote,
+  exportRestrictionReason:offer.exportRestrictionReason,exportPolicyIds:offer.exportPolicyIds,
   legalMarketAvailable:offer.legalMarketAvailable,commercialReason:offer.reason,createdTurn:turn(),expiresTurn:turn()+PERMIT_TTL,
   status:'REQUESTED',source:'OMEGA_BLACK_MARKET_SHADOW_ECONOMY',authorizationVersion:VERSION};
  const saved=dispatch('trade','OMEGA_BLACK_MARKET_RECORD_DEAL',buyer,{deal:row});if(saved?.accepted!==true)return{accepted:false,reason:saved?.reason||'BLACK_MARKET_DEAL_RECORD_FAILED'};
@@ -323,6 +363,8 @@ function detectedCase(deal,detail={}){
   detectionStage:stage,evidenceConfidence:stage==='POST_SETTLEMENT'?.72:.9,severity,
   shipmentSizeBand:deal.shipmentSizeBand||'UNCLASSIFIED',sellerStockExposurePct:num(deal.sellerStockExposurePct),
   repeatAttempts10Turns:num(deal.repeatAttempts10Turns)||0,attemptedValueBuyer:num(deal.attemptedValueBuyer),
+  sanctionPolicyIds:deal.sanctionPolicyIds||[],sanctioningCountryIds:deal.sanctioningCountryIds||[],
+  sanctionedBuyerAtCreation:!!deal.sanctionedBuyerAtCreation,sanctionedSellerAtCreation:!!deal.sanctionedSellerAtCreation,
   fineRateAtCreation:num(deal.fineRateAtCreation),attemptFineRateAtCreation:num(deal.attemptFineRateAtCreation),
   seizureRateAtCreation:num(deal.seizureRateAtCreation),
   cargoDisposition:stage==='POST_SETTLEMENT'?'IMPORTED_CARGO_SUBJECT_TO_PROVENANCE_BOUNDED_SEIZURE':
@@ -331,7 +373,7 @@ function detectedCase(deal,detail={}){
   exportPolicyIds:deal.exportPolicyIds||[],exportRestrictionReason:deal.exportRestrictionReason||null,settlementId:detail.settlementId||null,
   status:stage==='POST_SETTLEMENT'?'UNDER_INVESTIGATION':'INTERCEPTED',source:'OMEGA_BLACK_MARKET_DETECTION'};
  [deal.buyerCountryId,deal.sellerCountryId].forEach(c=>recordCaseFor(c,row));
- const issuers=[],citedPolicies=new Set([...(deal.embargoPolicyIds||[]),...(deal.exportPolicyIds||[])] .map(String));
+ const issuers=[],citedPolicies=new Set([...(deal.embargoPolicyIds||[]),...(deal.exportPolicyIds||[]),...(deal.sanctionPolicyIds||[])] .map(String));
  for(const c of countryKeys('trade')){
   const t=bucket('trade',c);
   for(const field of ['resourceEmbargoes','stateSupplyDirectives','sanctions']){
