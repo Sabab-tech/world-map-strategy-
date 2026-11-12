@@ -230,6 +230,8 @@ function render(root,countryValue){
    '<td><span class="omega-bm-tag">POTENTIAL BUYER</span></td></tr>';
  }).join('');
  const buyerMore=buyerSignals.length>visibleBuyerCount?
+  '<div class="omega-bm-more"><span>Showing '+count(visibleBuyerCount)+' of '+count(buyerSignals.length)+' demand signals</span><button type="button" data-bm-show-more-buyers>SHOW MORE COUNTRIES</button></div>':'';
+ const buyerMore=buyerSignals.length>visibleBuyerCount?
   '<div class="omega-bm-more"><span>Showing '+count(visibleBuyerCount)+' of '+count(buyerSignals.length)+' demand signals</span>'+
   '<button type="button" data-bm-show-more-buyers>SHOW MORE COUNTRIES</button></div>':'';
  const participationRows=participationDeals.slice(0,16).map(x=>{
@@ -271,7 +273,7 @@ function render(root,countryValue){
   '<div class="omega-bm-table-wrap"><table class="omega-bm-board-table"><thead><tr><th>Seller country</th><th>Available stock</th><th>Shadow price</th><th>Detection risk</th><th>Channel</th><th>Order</th></tr></thead><tbody>'+cards+'</tbody></table></div>'+offerMore:
   '<div class="omega-bm-empty">'+(scanning?'Seller-country checks are running in small batches.':'Select a commodity and scan. Offers appear only after stock, route, policy and price checks.')+'</div>';
  const buyerTable=buyerSignals.length?
-  '<div class="omega-bm-table-wrap"><table class="omega-bm-board-table"><thead><tr><th>Potential buyer country</th><th>Supply gap</th><th>Demand / day</th><th>Stock coverage</th><th>Evidence</th></tr></thead><tbody>'+buyerRows+'</tbody></table></div>'+buyerMore:
+  '<div class="omega-bm-table-wrap"><table class="omega-bm-board-table"><thead><tr><th>Potential buyer country</th><th>Supply gap</th><th>Demand / day</th><th>Stock coverage</th><th>Evidence</th></tr></thead><tbody>'+buyerRows+'</tbody></table></div>'+buyerMore+buyerMore:
   '<div class="omega-bm-empty">No other country currently has a matching recorded shortage signal for this commodity. This list does not invent buyers from country stereotypes.</div>';
  const confirmedTable=participationRows?
   '<div class="omega-bm-table-wrap"><table class="omega-bm-board-table"><thead><tr><th>Buyer country</th><th>Seller country</th><th>Commodity</th><th>Quantity</th><th>Recorded status</th><th>Unit price</th></tr></thead><tbody>'+participationRows+'</tbody></table></div>':
@@ -309,6 +311,10 @@ function render(root,countryValue){
    }
    if(t.hasAttribute('data-bm-show-more')){
     root.__omegaBmVisibleOffers=Math.min(24,Math.max(6,Number(root.__omegaBmVisibleOffers)||6)+6);
+    render(root,root.__omegaBmCountry||c);return;
+   }
+   if(t.hasAttribute('data-bm-show-more-buyers')){
+    root.__omegaBmVisibleBuyers=Math.min(24,Math.max(8,Number(root.__omegaBmVisibleBuyers)||8)+8);
     render(root,root.__omegaBmCountry||c);return;
    }
    if(t.hasAttribute('data-bm-show-more-buyers')){
