@@ -154,3 +154,28 @@ test('network intelligence is written only to the discovering player country',()
  assert.equal(h.state.intelligence.IRN.blackMarketNetworkReports,undefined);
  assert.equal(h.bm.getNetworkReports('BGD').length,1);
 });
+
+test('NPC country discovery is bounded per turn and rotates its scan window fairly',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ for(let i=1;i<=20;i++){
+  const code='C'+String(i).padStart(2,'0');
+  h.state.resource[code]={inventory:{},demandRuntime:{lastTurn:25,byResource:{copper:{
+   resourceId:'copper',status:'SHORTAGE',unmetDemand:12,demandPerDay:8,stockCoverageDays:1,
+   stockCoverageTargetDays:4,procurementScore:.6,unit:'tonnes'
+  }}}};
+  h.state.trade[code]={};
+  h.state.foreign[code]={relations:{RUS:{overall:40,trade:35,trust:35,trade_agreement:false,sanctions:false,war_state:false}}};
+ }
+ const first=api.runTurn();
+ assert.equal(first.status,'COMPLETED');
+ assert.equal(first.scannedBuyerCountries.length,6);
+ assert.ok(first.scannedPendingCountries.length<=6);
+ assert.ok(h.offerCalls.length<=12,'at most two demand rows are evaluated for each of six buyer countries');
+ h.state.simulation.turn=26;
+ const second=api.runTurn();
+ assert.equal(second.status,'COMPLETED');
+ assert.equal(second.scannedBuyerCountries.length,6);
+ assert.notDeepEqual(second.scannedBuyerCountries,first.scannedBuyerCountries,
+  'the next committed turn must advance to another country window');
+ assert.ok(second.offerCalls===undefined);
+});
