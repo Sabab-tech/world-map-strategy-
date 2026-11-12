@@ -206,12 +206,22 @@ function stateBrokerType(c,rid,rule,emb){const t=bucket('trade',c),f=bucket('for
 function buyerMotiveEvidence(c,rid,quantity){
  const resource=bucket('resource',c),finance=bucket('finance',c),tradeState=bucket('trade',c);
  const runtime=resource.demandRuntime||{},demand=value(runtime.byResource,rid)||{};
- const unmet=Math.max(0,num(demand.unmetDemand)||0),factoryInput=Math.max(0,num(demand.activeFactoryInputDemandPerDay)||0);
- const coverage=num(demand.stockCoverageDays),target=num(demand.stockCoverageTargetDays);
+ const unmet=Math.max(0,num(demand.unmetDemand)||0),perDay=Math.max(0,num(demand.demandPerDay??demand.demand)||0),
+  factoryInput=Math.max(0,num(demand.activeFactoryInputDemandPerDay)||0);
+ const coverage=num(demand.stockCoverageDays),target=num(demand.stockCoverageTargetDays),tariffPct=tariff(c),
+  importRow=value(resource.importDependencyByResource,rid),
+  dependency=num(demand.importDependencyPct??demand.importDependency??demand.importShare??(typeof importRow==='object'?importRow?.share??importRow?.importShare:importRow));
  const embargoes=Array.isArray(tradeState.resourceEmbargoes)?tradeState.resourceEmbargoes:[];
- const restricted=embargoes.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&!/EXPIRED|REVOKED|INACTIVE/.test(String(x.status||'').toUpperCase()));
- if(restricted)return{code:'RESTRICTED_INPUT_ACCESS',reason:'The buyer country has an active resource restriction affecting the selected commodity.'};
+ const sanctions=Array.isArray(tradeState.sanctions)?tradeState.sanctions:[];
+ const active=row=>!['EXPIRED','REVOKED','INACTIVE','CANCELLED','LIFTED'].includes(String(row.status||'ACTIVE').toUpperCase());
+ const restricted=embargoes.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&active(x))||
+  sanctions.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&active(x));
+ if(restricted)return{code:'RESTRICTED_INPUT_ACCESS',reason:'The buyer country has an active resource sanction or import restriction affecting the selected commodity.'};
  if(factoryInput>0)return{code:'INDUSTRIAL_INPUT_SHORTAGE',reason:'Recorded active factory input demand exists for this commodity.'};
+ if(tariffPct!==null&&tariffPct>=20&&(perDay>0||unmet>0))
+  return{code:'TARIFF_AVOIDANCE_PRESSURE',reason:'The recorded import tariff is '+tariffPct.toFixed(1)+'%; a commercial buyer may compare the tariff saving with detection and penalty exposure.'};
+ if(dependency!==null&&dependency>0&&(perDay>0||unmet>0))
+  return{code:'IMPORT_DEPENDENCY',reason:'The country has recorded import dependence for this commodity, increasing its incentive to preserve access to external suppliers.'};
  if(unmet>0||coverage!==null&&target!==null&&coverage<target){
   if(/coal|oil|gas|uranium|electric|energy/i.test(rid))return{code:'ENERGY_SECURITY_PRESSURE',reason:'Recorded unmet demand or low stock coverage affects a nationally important energy input.'};
   if(/food|grain|wheat|rice|fertili/i.test(rid))return{code:'FOOD_SECURITY_PRESSURE',reason:'Recorded unmet demand or low stock coverage creates food or agricultural replenishment pressure.'};
