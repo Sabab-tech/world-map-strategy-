@@ -107,7 +107,8 @@
         const products = resourceIds(row);
         const policyId = String(row.policyId || row.sanctionId || row.id || '').trim();
         const type = String(row.type || row.measure || row.scope || 'SANCTIONS').toUpperCase();
-        const direction = String(row.direction || row.tradeDirection || 'BOTH').toUpperCase();
+        const direction = String(row.direction || row.tradeDirection ||
+          (/EXPORT/.test(type) ? 'EXPORT' : (/IMPORT/.test(type) ? 'IMPORT' : 'BOTH'))).toUpperCase();
         const start = first(row.startTurn, row.effectiveTurn, row.issuedTurn, row.createdTurn);
         const signature = [issuer, target, policyId || 'NO_ID', type, direction,
           start === null ? 'UNSPECIFIED_START' : start,
