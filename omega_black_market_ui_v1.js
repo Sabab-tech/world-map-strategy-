@@ -89,7 +89,7 @@ function dealStatusLabel(value){
   INTERCEPTED:'INTERCEPTED',FAILED:'REJECTED',EXPIRED:'EXPIRED'};
  return labels[key]||human(key);
 }
-function styles(){return \`<style>
+function styles(){return `<style>
 .omega-bm{--bm-bg:#06162d;--bm-panel:#0b2445;--bm-panel2:#0d3159;--bm-line:#28689b;--bm-muted:#b0cce6;--bm-text:#f5faff;--bm-cyan:#35caff;--bm-green:#49e0bd;color:var(--bm-text);background:linear-gradient(145deg,#06152d,#08264b 56%,#061a35);border:1px solid #237fc0;border-radius:13px;overflow:hidden;box-shadow:0 0 26px rgba(0,146,255,.18),inset 0 1px rgba(255,255,255,.09);font-family:Arial,Helvetica,sans-serif;min-width:0}
 .omega-bm *{box-sizing:border-box}.omega-bm button,.omega-bm input,.omega-bm select{font:inherit}
 .omega-bm-head{display:flex;align-items:center;justify-content:space-between;gap:15px;min-height:132px;padding:18px 22px;background:linear-gradient(90deg,rgba(3,18,42,.97),rgba(5,37,77,.83) 58%,rgba(3,17,39,.94)),url('assets/omega-global-market/market-header.svg') center/cover no-repeat;border-bottom:1px solid #228cd7}
@@ -142,7 +142,7 @@ function styles(){return \`<style>
 @media(max-width:900px){.omega-bm-lower{grid-template-columns:1fr}.omega-bm-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.omega-bm-panel-body{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.omega-bm-head{min-height:112px;padding:14px}.omega-bm-classified{font-size:8px;padding:7px}.omega-bm-body{padding:10px}.omega-bm-grid{gap:6px;padding:10px 10px 0}.omega-bm-stat{padding:8px}.omega-bm-stat strong{font-size:19px}.omega-bm-lanes{gap:5px}.omega-bm-lane{display:block;min-height:58px;padding:6px;text-align:center}.omega-bm-lane img{display:block;width:28px;height:28px;margin:0 auto 4px}.omega-bm-lane span{font-size:9px}.omega-bm-lane small{font-size:8px}.omega-bm-tool-row{grid-template-columns:minmax(0,1fr) minmax(95px,.6fr)}.omega-bm-tool-row>button{grid-column:1/-1}.omega-bm-panel-body{grid-template-columns:1fr}.omega-bm-board-table{min-width:570px}.omega-bm-brief{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.omega-bm *{scroll-behavior:auto!important;transition:none!important}}
-</style>\`;}
+</style>`;}
 
 function cancelScan(root){
  root.__omegaBmScanToken=(Number(root.__omegaBmScanToken)||0)+1;
