@@ -6,13 +6,19 @@ function money(v,c){const n=Number(v);if(!Number.isFinite(n))return'Not availabl
 function num(v){if(v===null||v===undefined||v==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;}
 function fmt(v){const n=Number(v);return Number.isFinite(n)?new Intl.NumberFormat('en-US',{maximumFractionDigits:3}).format(n):'Not recorded';}
 function countryInfo(value){
- const code=String(value??'').trim().toUpperCase();let hit=null;
- try{const registry=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
-  hit=registry?.resolveCountry?.(code)||null;}catch(_){}
- const raw=hit?.raw||hit||{},iso2=String(raw.iso2||raw.countryCode||(/^[A-Z]{2}$/.test(code)?code:'')).toUpperCase();
- const name=String(raw.name||raw.officialName||raw.names?.[0]||hit?.surface||code||'Unknown country');
+ const code=String(value??'').trim().toUpperCase();let hit=null,profile=null;
+ try{
+  const registry=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity;
+  hit=registry?.resolveCountry?.(code)||null;
+ }catch(_){}
+ const runtime=g.OmegaCountryRuntimeData||g.Omega?.CountryRuntimeData||null;
+ try{profile=runtime?.resolveCountry?.(code)||null;}catch(_){}
+ const raw=hit?.raw||hit||profile?.raw||profile||{},
+  iso2=String(raw.iso2||raw.countryCode||profile?.countryCode||(/^[A-Z]{2}$/.test(code)?code:'')).toUpperCase(),
+  name=String(raw.name||raw.officialName||raw.names?.[0]||hit?.surface||profile?.name||profile?.officialName||code||'Unknown country');
  let flag='';
- if(/^[A-Z]{2}$/.test(iso2))try{flag=String.fromCodePoint(...Array.from(iso2,ch=>127397+ch.charCodeAt(0)));}catch(_){}
+ try{flag=runtime?.flagFor?.(code)||'';}catch(_){}
+ if(!flag&&/^[A-Z]{2}$/.test(iso2))try{flag=String.fromCodePoint(...Array.from(iso2,ch=>127397+ch.charCodeAt(0)));}catch(_){}
  return{code,name,iso2,flag};
 }
 function countryLabel(value){const info=countryInfo(value);return(info.flag?info.flag+' ':'')+info.name;}
@@ -40,8 +46,10 @@ function demandSignals(resourceId,playerCountryId){
   if(!demand||typeof demand!=='object')continue;
   const unmet=Math.max(0,Number(demand.unmetDemand)||0),
    perDay=Math.max(0,Number(demand.demandPerDay??demand.demand)||0),
-   coverage=Number.isFinite(Number(demand.stockCoverageDays))?Number(demand.stockCoverageDays):null,
-   target=Number.isFinite(Number(demand.stockCoverageTargetDays))?Number(demand.stockCoverageTargetDays):null,
+   coverage=demand.stockCoverageDays==null||demand.stockCoverageDays===''?null:
+    (Number.isFinite(Number(demand.stockCoverageDays))?Number(demand.stockCoverageDays):null),
+   target=demand.stockCoverageTargetDays==null||demand.stockCoverageTargetDays===''?null:
+    (Number.isFinite(Number(demand.stockCoverageTargetDays))?Number(demand.stockCoverageTargetDays):null),
    low=perDay>0&&coverage!==null&&target!==null&&target>coverage;
   if(unmet<=1e-8&&!low)continue;
   const gap=low?Math.max(unmet,perDay*(target-coverage)):unmet;
