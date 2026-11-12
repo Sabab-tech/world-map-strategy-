@@ -205,7 +205,6 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
  if(scan.status!=='READY')return{status:scan.status,reason:scan.reason,offers:[]};
  while(scan.cursor<scan.sellerCountryIds.length)getOfferScanBatch(scan,32);
  return finishOfferScan(scan);
-}th,tariffPct,turn:turn()}};
 }
 function getBrokerReputation(c,brokerId){const book=bucket('trade',c).blackMarketBrokerReputation||{},row=value(book,brokerId);return clamp(num(row?.score)??50,0,100);}
 function rows(c){const v=bucket('trade',c).blackMarketDeals;return Array.isArray(v)?v:[];}
