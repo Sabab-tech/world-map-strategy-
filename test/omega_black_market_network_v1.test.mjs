@@ -180,3 +180,33 @@ test('a state-to-state purchase records both policy motive and state-linked acto
  assert.match(profile.buyerReason,/embargo|state import/i);
  assert.match(profile.sellerReason,/state supply directive/i);
 });
+
+test('autonomous country planner scans a bounded rotating window of buyers, sellers and pending ledgers',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
+ for(let i=1;i<=24;i++){
+  const code='C'+String(i).padStart(2,'0');
+  h.state.resource[code]={inventory:{},demandRuntime:{lastTurn:25,byResource:{copper:{
+   resourceId:'copper',status:'SHORTAGE',unmetDemand:12,demandPerDay:8,stockCoverageDays:1,
+   stockCoverageTargetDays:4,procurementScore:.6,unit:'tonnes'
+  }}}};
+  h.state.trade[code]={};
+  h.state.foreign[code]={relations:{RUS:{overall:40,trade:35,trust:35,trade_agreement:false,sanctions:false,war_state:false}}};
+ }
+ const first=api.runTurn();
+ assert.equal(first.status,'COMPLETED');
+ assert.equal(first.scannedBuyerCountries.length,6);
+ assert.equal(first.scannedPendingCountries.length,6);
+ assert.equal(first.scannedSellerCountries.length,16);
+ assert.ok(h.offerCalls.length<=12,'six countries times two demand rows is the candidate-evaluation ceiling');
+ for(const call of h.offerCalls){
+  assert.ok(call.policy.sellerCountryIds.length<=16,'each candidate checks only the current seller window');
+ }
+ h.state.simulation.turn=26;
+ const second=api.runTurn();
+ assert.equal(second.status,'COMPLETED');
+ assert.equal(second.scannedBuyerCountries.length,6);
+ assert.notDeepEqual(second.scannedBuyerCountries,first.scannedBuyerCountries,
+  'the next committed game turn must rotate the buyer-country window');
+ assert.notDeepEqual(second.scannedSellerCountries,first.scannedSellerCountries,
+  'the next committed game turn must rotate the seller-country window');
+});
