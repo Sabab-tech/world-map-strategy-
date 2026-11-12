@@ -91,6 +91,21 @@ function sanctionContext(buyer,seller,rid){
 }
 function exportExposure(seller,buyer,rid){
  const t=bucket('trade',seller),e=bucket('economy',seller),rel=relation(seller,buyer);
+ // Seller export ledger contains completed settlements, unlike request/offer projections.
+ // Use it first so sanction-driven customer shocks are grounded in executed game trade.
+ const settledExports=Array.isArray(t.exportLedger)?t.exportLedger:[];
+ const productExports=settledExports.filter(x=>token(x.resourceId)===token(rid)&&country(x.buyerCountryId)===country(buyer));
+ if(productExports.length){
+  const productRows=settledExports.filter(x=>token(x.resourceId)===token(rid));
+  const valueAmount=productExports.reduce((sum,x)=>sum+Math.max(0,num(x.totalValue)||0),0);
+  const volume=productExports.reduce((sum,x)=>sum+Math.max(0,num(x.quantity)||0),0);
+  const totalValue=productRows.reduce((sum,x)=>sum+Math.max(0,num(x.totalValue)||0),0);
+  const totalQuantity=productRows.reduce((sum,x)=>sum+Math.max(0,num(x.quantity)||0),0);
+  const share=totalValue>0?clamp(valueAmount/totalValue):(totalQuantity>0?clamp(volume/totalQuantity):null);
+  return{observed:share!==null||valueAmount>0||volume>0,share,value:valueAmount,volume,
+   totalExports:totalValue,source:'OMEGA_GLOBAL_TRADE_SETTLED_EXPORT_LEDGER',
+   lastObservedTurn:Math.max(...productExports.map(x=>num(x.turn)||0))};
+ }
  const maps=[t.exportDependenceByPartner,t.exportExposureByPartner,t.exportsByDestination,t.bilateralExports,t.partnerExports,
   e.exportDependenceByPartner,e.exportExposureByPartner,e.exportsByDestination,e.exportByPartner,e.tradePartners];
  let row=null;
