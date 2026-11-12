@@ -100,7 +100,8 @@ function makePrice(base,tariffPct,risk,embargoed,restricted,noAgreement,q,availa
  const multiplier=clamp(1-discount+baseSpread+riskPremium+policyPremium+scarcity+broker,.35,2.25),unit=Number((base*multiplier).toFixed(6));
  return{unit,multiplier,expectedUnit:Number((unit*(1+risk*1.15)).toFixed(6)),
   tariffDiscountPct:discount*100,baseSpreadPct:baseSpread*100,riskPremiumPct:riskPremium*100,
-  policyPremiumPct:policyPremium*100,scarcityPremiumPct:scarcity*100,brfunction beginOfferScan(buyerValue,ridValue,qValue=1,options={}){
+  policyPremiumPct:policyPremium*100,scarcityPremiumPct:scarcity*100,brokerSpreadPct:broker*100};}
+function beginOfferScan(buyerValue,ridValue,qValue=1,options={}){
  const buyer=country(buyerValue||player()),rid=String(ridValue||'').trim(),q=num(qValue),p=product(rid);
  const networkAuthority=options?.networkAuthority==='OMEGA_BLACK_MARKET_NPC_NETWORK_V1';
  if(!buyer||(!networkAuthority&&buyer!==player()))return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY',offers:[]};
