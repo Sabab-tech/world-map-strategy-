@@ -201,7 +201,8 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
   const legalTotal=legalUnit===null?null:Number((legalUnit*q).toFixed(2));
   const lateDetectionProbability=detection*.18,
    fineRate=penalty.fineRate,seizureRate=penalty.seizureRate;
-  const expectedGrossBuyer=fx===null?null:Number((px.expectedUnit*q*fx).toFixed(2)),
+  const quotedGrossBuyer=fx===null?null:Number((px.unit*q*fx).toFixed(2)),
+   expectedGrossBuyer=fx===null?null:Number((px.expectedUnit*q*fx).toFixed(2)),
    expectedFineBuyer=fx===null?null:Number((px.unit*q*fx*lateDetectionProbability*fineRate).toFixed(2)),
    expectedSeizedQuantity=Number((q*lateDetectionProbability*seizureRate).toFixed(6)),
    expectedDeliveredQuantity=Number(Math.max(0,q-expectedSeizedQuantity).toFixed(6)),
@@ -220,7 +221,8 @@ function getOffers(buyerValue,ridValue,qValue=1,options={}){
    availableQuantity:Number(s.available.toFixed(6)),requestedQuantity:q,benchmarkUnitPrice:quote.value,benchmarkSource:quote.source,
    unitPrice:px.unit,priceMultiplier:px.multiplier,importTariffPct:tariffPct,legalLandedUnitPrice:legalUnit,
    expectedUnitCost:px.expectedUnit,legalLandedTotal:legalTotal,expectedBlackMarketTotal:Number((px.expectedUnit*q).toFixed(2)),
-   expectedBlackMarketTotalBuyer:expectedCostBuyer,expectedFineCostBuyer:expectedFineBuyer,expectedSeizedQuantity,
+   expectedBlackMarketTotalBuyer:expectedCostBuyer,quotedTradeValueBuyer:quotedGrossBuyer,
+   expectedFineCostBuyer:expectedFineBuyer,expectedSeizedQuantity,
    expectedDeliveredQuantity,expectedDeliveredUnitCost,expectedSavings,detectionProbability:detection,
    lateDetectionProbability,fineRate,seizureRate,pricingBreakdown:{tariffDiscountPct:px.tariffDiscountPct,baseSpreadPct:px.baseSpreadPct,
     riskPremiumPct:px.riskPremiumPct,policyPremiumPct:px.policyPremiumPct,scarcityPremiumPct:px.scarcityPremiumPct,brokerSpreadPct:px.brokerSpreadPct},
@@ -347,7 +349,7 @@ function createDeal(input={}){
   sellerFreeStockQuantityThresholds:offer.scrutinyThresholds?.sellerFreeStockQuantity||[],
   repeatAttempts10Turns:offer.repeatAttempts10Turns,fineRateAtCreation:offer.fineRate,
   attemptFineRateAtCreation:offer.attemptFineRate,seizureRateAtCreation:offer.seizureRate,
-  attemptedValueBuyer:offer.expectedBlackMarketTotalBuyer,attemptCurrency:offer.buyerCurrency,
+  attemptedValueBuyer:offer.quotedTradeValueBuyer,attemptCurrency:offer.buyerCurrency,
   embargoedAtCreation:offer.embargoed,embargoPolicyIds:offer.embargoPolicyIds,tradeAgreementAtCreation:agreement(rel),
   sanctionsAtCreation:offer.sanctionsAtQuote,sanctionPolicyIds:offer.sanctionPolicyIds||[],
   sanctioningCountryIds:offer.sanctioningCountryIds||[],sanctionedBuyerAtCreation:!!offer.sanctionedBuyerAtQuote,
