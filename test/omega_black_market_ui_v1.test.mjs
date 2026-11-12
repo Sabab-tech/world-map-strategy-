@@ -216,7 +216,8 @@ test('high-confidence intelligence explains state-linked participants while pres
       const rows = {
         BGD: { id: 'BD', raw: { iso2: 'BD', iso3: 'BGD', name: 'Bangladesh' } },
         IRN: { id: 'IR', raw: { iso2: 'IR', iso3: 'IRN', name: 'Iran' } },
-        RUS: { id: 'RU', raw: { iso2: 'RU', iso3: 'RUS', name: 'Russia' } }
+        RUS: { id: 'RU', raw: { iso2: 'RU', iso3: 'RUS', name: 'Russia' } },
+        USA: { id: 'US', raw: { iso2: 'US', iso3: 'USA', name: 'United States' } }
       };
       return rows[String(value || '').toUpperCase()] || null;
     }
