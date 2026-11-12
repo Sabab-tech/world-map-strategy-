@@ -179,9 +179,11 @@ function buyerMotiveEvidence(c,rid,quantity){
  const restricted=embargoes.some(x=>(!x.resourceId||tok(x.resourceId)===tok(rid))&&!/EXPIRED|REVOKED|INACTIVE/.test(String(x.status||'').toUpperCase()));
  if(restricted)return{code:'RESTRICTED_INPUT_ACCESS',reason:'The buyer country has an active resource restriction affecting the selected commodity.'};
  if(factoryInput>0)return{code:'INDUSTRIAL_INPUT_SHORTAGE',reason:'Recorded active factory input demand exists for this commodity.'};
- if(unmet>0||coverage!==null&&target!==null&&coverage<target)
+ if(unmet>0||coverage!==null&&target!==null&&coverage<target){
+  if(/coal|oil|gas|uranium|electric|energy/i.test(rid))return{code:'ENERGY_SECURITY_PRESSURE',reason:'Recorded unmet demand or low stock coverage affects a nationally important energy input.'};
+  if(/food|grain|wheat|rice|fertili/i.test(rid))return{code:'FOOD_SECURITY_PRESSURE',reason:'Recorded unmet demand or low stock coverage creates food or agricultural replenishment pressure.'};
   return{code:'DOMESTIC_SUPPLY_GAP',reason:'Recorded unmet demand or stock coverage below target indicates a domestic replenishment need.'};
- if(/coal|oil|gas|uranium|electric|energy/i.test(rid))return{code:'ENERGY_SECURITY_PRESSURE',reason:'The selected input is energy-related; country demand and stock coverage should determine whether it is strategic.'};
+ }
  if(num(finance.foreignReserveCoverageDays)!==null&&num(finance.foreignReserveCoverageDays)<30)
   return{code:'FOREIGN_EXCHANGE_PRESSURE',reason:'Recorded foreign-reserve coverage is weak, increasing the value of alternative supply access.'};
  return{code:'PLAYER_SELECTED_NEED_NOT_VERIFIED',reason:'No matching shortage signal was observed; this offer was found from seller stock and policy evidence, not an assumed national shortage.'};
