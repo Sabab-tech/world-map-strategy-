@@ -378,3 +378,34 @@ test('repeat detected sanction violations escalate the issuer response severity 
  assert.equal(h.state.foreign.USA.relationAdjustments.BGD.at(-1).delta,-12);
  assert.equal(h.state.foreign.USA.relationAdjustments.SAU.at(-1).delta,-4);
 });
+
+test('progressive seller scan preserves new sanction, tariff, shipment-size and country-motive evidence',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ const scan=api.beginOfferScan('BGD','coal',10);
+ assert.equal(scan.status,'READY');
+ assert.equal(scan.sellerCountryIds.length,1);
+ const batch=api.getOfferScanBatch(scan,1);
+ assert.equal(batch.status,'READY');
+ assert.equal(batch.scanned,1);
+ assert.equal(batch.total,1);
+ assert.equal(batch.done,true);
+ const progressive=api.finishOfferScan(scan),direct=api.getOffers('BGD','coal',10);
+ assert.equal(progressive.status,'READY');
+ assert.equal(direct.status,'READY');
+ assert.equal(JSON.stringify(progressive.offers),JSON.stringify(direct.offers));
+ const offer=progressive.offers[0];
+ assert.equal(offer.sellerCountryId,'SAU');
+ assert.ok(offer.buyerMotiveCode);
+ assert.ok(offer.sellerMotiveCode);
+ assert.ok(offer.shipmentSizeBand);
+ assert.ok(offer.scrutinyThresholds.sellerFreeStockQuantity.length===4);
+ assert.ok(offer.attemptFineRate!==undefined);
+ assert.ok(offer.sanctionPolicyIds);
+});
+
+test('progressive seller scan rejects forged scan contexts',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ const forged={status:'READY',sellerCountryIds:['SAU'],cursor:0,offers:[]};
+ assert.equal(api.getOfferScanBatch(forged,1).status,'INVALID_SCAN');
+ assert.equal(api.finishOfferScan(forged).status,'INVALID_SCAN');
+});
