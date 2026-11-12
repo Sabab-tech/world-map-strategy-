@@ -582,7 +582,7 @@
     ['OMEGA_SANCTION_RECORD_FINANCIAL_EXPOSURE', 'finance', 'sanctionFinancialExposureLedger', 'exposureId']
   ];
   let registration = { ready: false, registered: 0, total: HANDLERS.length, errors: [] };
-  let lastProcessedTurn = null, lastMarketQueries = 0;
+  let lastProcessedTurn = null, lastMarketQueryCount = 0, policyCursor = 0;
 
   function install() {
     const api = mesh();
@@ -784,7 +784,6 @@
     }
     return { policyKey: policy.policyKey, writes, countries: results };
   }
-  let lastProcessedTurn = null, lastMarketQueryCount = 0, policyCursor = 0;
   function selectPolicies(all) {
     const fresh = all.filter(policy => {
       const targetRows = bucket('foreign', policy.targetCountryId).sanctionNotifications;
