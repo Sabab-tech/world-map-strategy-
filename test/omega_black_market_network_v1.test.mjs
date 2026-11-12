@@ -173,7 +173,7 @@ test('an embargo policy by itself does not prove that a government is a covert m
 test('a state-to-state purchase records both policy motive and state-linked actor evidence', () => {
  const h=makeHarness(),api=h.ctx.OmegaBlackMarketNetworkV1;
  const result=api.runTurn();
- const profile=result.newDeal.deal.actorProfile;
+ const profile=h.created[0].actorProfile;
  assert.equal(profile.buyerGovernmentRole,'STATE_LINKED_TRADING_NETWORK');
  assert.equal(profile.sellerGovernmentRole,'STATE_POLICY_DIRECTED');
  assert.equal(profile.governmentInvolvement,'BOTH_GOVERNMENTS_OR_STATE_LINKED_ENTITIES');
