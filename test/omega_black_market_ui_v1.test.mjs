@@ -191,8 +191,8 @@ test('player intelligence shows identified counterparties while keeping unconfir
  assert.match(h.root.innerHTML,/Russia/);assert.match(h.root.innerHTML,/🇷🇺/);
  assert.match(h.root.innerHTML,/OFFER ACCEPTED/);
  assert.match(h.root.innerHTML,/INTELLIGENCE LEAD/);
- assert.match(h.root.innerHTML,/Other countries know is not recorded/);
- assert.match(h.root.innerHTML,/1 accepted/);
+ assert.match(h.root.innerHTML,/Other countries: Not Observed By Other Countries/);
+ assert.match(h.root.innerHTML,/Accepted offers<\/small><strong>1/);
 });
 
 test('opening the page does not scan the market; seller country scans yield between verified 16-country batches',()=>{
@@ -225,9 +225,9 @@ test('changing category or commodity cancels a pending country scan and clears p
  h.root.resourceSelect.value='iron_ore';
  click(h.root,{'data-bm-find':''});
  assert.equal(h.root.__omegaBmScanning,true);
- click(h.root,{'data-bm-product':'processed_food'});
+ click(h.root,{'data-bm-product':'steel_plate'});
  assert.equal(h.root.__omegaBmScanning,false);
- assert.equal(h.root.resourceSelect.value,'processed_food');
+ assert.equal(h.root.resourceSelect.value,'steel_plate');
 });
 
 test('deal action calls the authoritative createDeal once and avoids a synchronous world refresh',()=>{
@@ -257,7 +257,7 @@ test('seller pagination, buyer pagination and product search change only their d
  input(h.root,{'data-bm-product-search':''},'steel');
  assert.match(h.root.productList.innerHTML,/Steel Plate/);
  assert.doesNotMatch(h.root.productList.innerHTML,/Iron Ore/);
- h.root.__omegaBmBuyerVisible=1;
+ h.root.__omegaBmVisibleBuyers=1;
  h.api.render(h.root,'BGD');
  assert.match(h.root.innerHTML,/SHOW MORE COUNTRIES/);
  click(h.root,{'data-bm-show-more-buyers':''});
