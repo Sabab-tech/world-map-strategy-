@@ -197,7 +197,7 @@ function demandCandidates(c){
    low=coverage!==null&&target!==null&&target>coverage,tariff=tariffRate(c),
    importDependency=num(row.importDependencyPct??row.importDependency??row.importShare??value(r.importDependencyByResource,rid)),
    incomingSanctions=sanctionsAgainst(c,rid),
-   restricted=activePolicyFor(c,rid).embargoes.some(x=>country(x.targetCountryId||x.subjectCountryId)===c)||incomingSanctions.active,
+   restricted=activePolicyFor(c,rid).embargoes.length>0||incomingSanctions.active,
    tariffDriven=tariff!==null&&tariff>=20&&perDay>0,
    importDriven=importDependency!==null&&importDependency>0&&perDay>0,
    hasCommercialDemand=tariffDriven||importDriven||restricted&&perDay>0;
