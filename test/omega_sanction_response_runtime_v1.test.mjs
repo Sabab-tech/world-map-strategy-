@@ -259,3 +259,30 @@ test('missing evidence remains null rather than being represented as zero', () =
   assert.equal(impact.tradeExposure[0].exportsAtRisk.value, null);
   assert.equal(impact.demandAndIndustry[0].domesticDemand, null);
 });
+
+
+test('active sanction processing rotates so every country is notified within the bounded policy budget', () => {
+  const h = makeHarness();
+  for (let index = 0; index < 8; index++) {
+    const target = 'C' + String(index).padStart(2, '0');
+    h.state.trade[target] = {};
+    h.state.foreign[target] = {};
+    h.state.resource[target] = {};
+    h.state.finance[target] = {};
+    h.state.economy[target] = {};
+    h.state.trade.USA.sanctions.push({
+      policyId: 'SAN-USA-' + target, issuerCountryId: 'USA',
+      targetCountryId: target, type: 'FINANCIAL_SANCTIONS',
+      direction: 'BOTH', status: 'ACTIVE', startTurn: 20 + index
+    });
+  }
+  const first = h.context.OmegaSanctionResponseRuntime.runTurn();
+  assert.equal(first.policiesProcessed, 6);
+  h.state.simulation.turn = 41;
+  const second = h.context.OmegaSanctionResponseRuntime.runTurn();
+  assert.equal(second.policiesProcessed, 6);
+  for (let index = 0; index < 8; index++) {
+    const target = 'C' + String(index).padStart(2, '0');
+    assert.equal(h.state.foreign[target].sanctionNotifications.length, 1, target);
+  }
+});
