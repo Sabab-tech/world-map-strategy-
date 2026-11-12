@@ -317,7 +317,7 @@ function render(root,countryValue){
    if(target.hasAttribute?.('data-bm-product-search')){
     root.__omegaBmProductSearch=target.value||'';
     const list=root.querySelector?.('.omega-bm-product-list');if(list){
-     const filtered=laneProducts.filter(x=>productName(x).toLowerCase().includes(root.__omegaBmProductSearch.toLowerCase())).slice(0,60);
+     const activeLane=String(root.__omegaBmLane||'RAW_RESOURCE');\n     const filtered=productsFor(root).filter(x=>String(x.productType||'').toUpperCase()===activeLane&&productName(x).toLowerCase().includes(root.__omegaBmProductSearch.toLowerCase())).slice(0,60);
      list.innerHTML=filtered.length?productButtonsFor(filtered,root.__omegaBmResource):'<div class="omega-bm-empty-products">No products match this search.</div>';
     }
    }
