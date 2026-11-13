@@ -213,13 +213,27 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       });
 
       const existingSession = g.Game.state?.simulation?.session || null;
-      const establishedSession = !!(
+      const baselineMarker = g.Game.state?.simulation?.countryFactoryStartingBaselineV1 || null;
+      const markerCountry = String(baselineMarker?.playerCountryId || '').trim().toUpperCase();
+      const markerSessionId = String(baselineMarker?.sessionId || '').trim();
+      const activeSessionCountry = String(existingSession?.playerCountryId || '').trim().toUpperCase();
+      const existingSessionUsable = !!(
         existingSession?.sessionId &&
         existingSession?.playerCountryId &&
         ['READY', 'RUNNING', 'PAUSED'].includes(String(existingSession.status || '').toUpperCase())
       );
-      const baselineMarker = g.Game.state?.simulation?.countryFactoryStartingBaselineV1 || null;
-      const markerCountry = String(baselineMarker?.playerCountryId || '').trim().toUpperCase();
+      // Lifecycle can create a generic OMEGA-SESSION-N clock shell before the
+      // commissioned country baseline is restored. It is not the saved player
+      // session when the same country's baseline carries its canonical ID.
+      const runtimeBootstrapSessionNeedsAlignment = !!(
+        existingSessionUsable &&
+        markerCountry &&
+        markerCountry === activeSessionCountry &&
+        markerSessionId &&
+        markerSessionId !== String(existingSession.sessionId) &&
+        /^OMEGA-SESSION-\\d+$/i.test(String(existingSession.sessionId))
+      );
+      const establishedSession = existingSessionUsable && !runtimeBootstrapSessionNeedsAlignment;
       const appSelectedCountry = String(
         g.Game.currentActiveCountry || g.Game.playerCountry ||
         g.CountryIOS?.activeCountry || g.Game.state?.playerCountryId || ''
@@ -270,8 +284,17 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const sessionId = establishedSession
         ? String(existingSession.sessionId)
         : (reuseBaselineSession
-          ? String(baselineMarker.sessionId)
+          ? markerSessionId
           : ('MINE-MARKET-TREASURY-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9)));
+      mark('SESSION_IDENTITY_DECISION', {
+        activeSessionId: existingSession?.sessionId || null,
+        activeSessionCountry,
+        baselineSessionId: markerSessionId || null,
+        baselineCountry: markerCountry || null,
+        runtimeBootstrapSessionNeedsAlignment,
+        establishedSession,
+        selectedSessionId: sessionId
+      });
       const liveSession = establishedSession ? existingSession : simulation.createSession({
         playerCountryId: seller,
         sessionId,
