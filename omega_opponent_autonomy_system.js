@@ -1370,7 +1370,7 @@
   function money(value){const n=num(value);return n===null?null:Math.round(n*100)/100;}
   function financeLedger(model,row){
     model.ledger=Array.isArray(model.ledger)?model.ledger:[];
-    model.ledger.push(Object.assign({turn:turn(),countryCode:null,
+    model.ledger.push(Object.assign({turn:turn(),countryCode:model.countryCode||null,
       balanceAfterUsd:Math.max(0,num(model.treasuryBalanceUsd)||0),
       fiscalYearIndex:Math.max(0,Math.floor(num(model.fiscalYearIndex)||0))},row));
     model.ledger=model.ledger.slice(-500);
