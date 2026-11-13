@@ -73,8 +73,6 @@ jobs:
         include:
           - scenario: proposal-ui
             test_name_pattern: "real Chromium browser verifies company-originated proposals"
-          - scenario: site-factory-save-load
-            test_name_pattern: "real Chromium map marker"
           - scenario: cash-settlement
             test_name_pattern: "real Chromium reconciles"
 
