@@ -84,7 +84,7 @@ assert.equal(canonical.id,'BGD');
 assert.equal(canonical.authority,'OMEGA_CANONICAL_COUNTRY_IDENTITY');
 const namedRoute=autonomy.routeSubject('import','Bangladesh','Saudi Arabia');
 assert.equal(namedRoute.countryId,'BGD');
-assert.equal(namedRoute.targetCountryId,'SA');
+assert.equal(namedRoute.targetCountryId,'SAU');
 const kernelEvaluation=await globalThis.Omega.OpponentCountryRules.evaluateCountry('Bangladesh',1);
 assert.equal(kernelEvaluation.countryId,'BGD');
 
@@ -98,7 +98,7 @@ assert.equal(eventRoute.owner,'trade');
 
 const importRoute=autonomy.routeSubject('import','BD','SA');
 assert.equal(importRoute.primary,'trade');
-assert.deepEqual(importRoute.targetCountryId,'SA');
+assert.deepEqual(importRoute.targetCountryId,'SAU');
 assert(importRoute.files.includes('relations.json'));
 
 const evidence=autonomy.collectEvidence('BD',['treasury','labor','materials','debt','housing','military','relations'],'SA');
@@ -121,7 +121,7 @@ const importRequest=autonomy.dispatch('OMEGA_AUTO_RESOURCE_IMPORT_REQUEST','BD',
   targetCountryId:'SA',quantity:1000000,unitPrice:80,reservationId:'TEST-RES-1'
 });
 assert.equal(importRequest.status,'APPLIED');
-assert.equal(globalThis.Game.state.trade.BD.importRequests[0].targetCountryId,'SA');
+assert.equal(globalThis.Game.state.trade.BD.importRequests[0].targetCountryId,'SAU');
 assert.equal(globalThis.Game.state.trade.BD.importRequests[0].status,'SENT');
 assert.equal(globalThis.Game.state.trade.BD.importRequests[0].stage,'COUNTERPARTY_DECISION_PENDING');
 const supplier=autonomy.chooseImportSupplier('Bangladesh',{
@@ -129,7 +129,7 @@ const supplier=autonomy.chooseImportSupplier('Bangladesh',{
   scenarioId:'RESOURCE_DEFICIT',
   runtimeMeasurement:{resourceId:'crude_oil',required:1000000}
 });
-assert.equal(supplier.countryId,'SA');
+assert.equal(supplier.countryId,'SAU');
 assert.equal(supplier.unitPrice,78);
 
 
@@ -212,10 +212,10 @@ const treaty=autonomy.startTreatyNegotiation('BD','SA',{
   decisionId:'TEST-TREATY'
 });
 assert.equal(treaty.status,'APPLIED');
-assert.equal(globalThis.Game.state.foreign.BD.negotiations.SA.counterpartyDecision,'PENDING');
+assert.equal(globalThis.Game.state.foreign.BD.negotiations.SAU.counterpartyDecision,'PENDING');
 
 const threat=autonomy.assessThreat('BD','SA');
-assert.equal(threat.targetCountryId,'SA');
+assert.equal(threat.targetCountryId,'SAU');
 assert('confidence' in threat);
 assert('uncertainty' in threat);
 
