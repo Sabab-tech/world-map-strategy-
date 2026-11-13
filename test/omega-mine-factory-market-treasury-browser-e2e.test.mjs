@@ -179,7 +179,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       });
 
       const existingSession = g.Game.state?.simulation?.session || null;
-      const activePlayerCountry = String(existingSession?.playerCountryId || '').trim().toUpperCase();
+      const establishedSession = !!(
+        existingSession?.sessionId &&
+        existingSession?.playerCountryId &&
+        ['READY', 'RUNNING', 'PAUSED'].includes(String(existingSession.status || '').toUpperCase())
+      );
+      const activePlayerCountry = establishedSession
+        ? String(existingSession.playerCountryId).trim().toUpperCase()
+        : '';
       const chosenCountry = activePlayerCountry
         ? candidateCountries.find(row => row.seller === activePlayerCountry)
         : candidateCountries[0];
@@ -192,11 +199,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       });
       const seller = chosenCountry.seller;
       const buyer = chosenCountry.buyers[0].code;
-      const session = existingSession && activePlayerCountry === seller &&
-        ['READY', 'RUNNING', 'PAUSED'].includes(String(existingSession.status || '').toUpperCase())
-        ? existingSession
-        : null;
-      if (existingSession && !session)
+      const session = establishedSession && activePlayerCountry === seller ? existingSession : null;
+      if (establishedSession && !session)
         fail('ACTIVE_GAME_SESSION_CANNOT_BE_REPLACED_WITH_A_DIFFERENT_PLAYER_COUNTRY', {
           activeSession: existingSession, selectedSeller: seller
         });
