@@ -1422,7 +1422,7 @@
       const donor=allocations[donorId];if(!donor||typeof donor!=='object')continue;
       const donorBudget=Math.max(0,money(donor.budgetUsd)||0);
       const donorSpent=Math.max(0,money(donor.spentUsd)||0);
-      const defaultShare=Math.max(0,num(donor.defaultSharePct)??num(donor.sharePct)||0);
+      const defaultShare=Math.max(0,num(donor.defaultSharePct)??(num(donor.sharePct)||0));
       const baseline=money(donor.baselineBudgetUsd??(envelope*defaultShare/100));
       if(baseline===null)continue;
       const protectedFloor=Math.max(donorSpent,baseline*0.5);
