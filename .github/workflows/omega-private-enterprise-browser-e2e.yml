@@ -9,7 +9,6 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - ".github/workflows/omega-private-enterprise-browser-e2e.yml"
       - "index.html"
       - "omega_private_enterprise_registry_v1.js"
       - "omega_private_enterprise_lifecycle_v1.js"
@@ -24,8 +23,6 @@ on:
       - "omega_resource_economy_runtime_v2.js"
       - "omega_simulation_runtime.js"
       - "test/omega_private_enterprise_browser_e2e.test.mjs"
-      - "test/omega-mine-factory-market-treasury-browser-e2e.test.mjs"
-      - ".github/workflows/omega-mine-factory-market-treasury-browser-e2e.yml"
       - "test/omega_private_enterprise_lifecycle_v1.test.mjs"
       - "package.json"
   push:
@@ -79,9 +76,8 @@ jobs:
           - scenario: cash-settlement
             test_file: test/omega_private_enterprise_browser_e2e.test.mjs
             test_name_pattern: "real Chromium reconciles"
-          - scenario: mine-factory-market-treasury
-            test_file: test/omega-mine-factory-market-treasury-browser-e2e.test.mjs
-            test_name_pattern: "one fresh Chromium gameplay session completes mine extraction"
+          # Mine-to-Treasury acceptance runs in its dedicated workflow; keep this
+          # workflow scoped to the two Private Enterprise browser scenarios.
 
     steps:
       - name: Checkout
