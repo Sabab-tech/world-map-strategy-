@@ -76,9 +76,12 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
   const page = await context.newPage();
   const pageErrors = [];
   const consoleErrors = [];
+  const stageTrace = [];
   page.on('pageerror', error => pageErrors.push(String(error?.stack || error)));
   page.on('console', message => {
-    if (message.type() === 'error') consoleErrors.push(message.text());
+    const text = message.text();
+    if (message.type() === 'error') consoleErrors.push(text);
+    if (text.startsWith('[OMEGA_MMT_E2E_STAGE]')) stageTrace.push(text.slice(0, 1200));
   });
 
   try {
@@ -104,6 +107,32 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         error.details = details;
         throw error;
       };
+      const mark = (stage, details = {}) => {
+        const entry = { stage, at: Date.now(), ...details };
+        g.__omegaMineMarketTreasuryProgress = entry;
+        console.info('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify(entry));
+      };
+      const waitStage = async (stage, task, timeoutMs = 120000) => {
+        mark(stage + '_START');
+        let timer = null;
+        try {
+          const work = Promise.resolve().then(() => typeof task === 'function' ? task() : task);
+          const timeout = new Promise((resolve, reject) => {
+            timer = g.setTimeout(() => reject(new Error(
+              'MINE_MARKET_TREASURY_E2E:' + stage + '_TIMEOUT_AFTER_' + timeoutMs + 'MS'
+            )), timeoutMs);
+          });
+          const value = await Promise.race([work, timeout]);
+          mark(stage + '_COMPLETE');
+          return value;
+        } catch (error) {
+          mark(stage + '_FAILED', { message: String(error?.message || error).slice(0, 500) });
+          throw error;
+        } finally {
+          if (timer !== null) g.clearTimeout(timer);
+        }
+      };
+      mark('SETUP_EVALUATE_ENTERED');
       const token = value => String(value ?? '').trim().toLowerCase()
         .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
       const countryCode = row => String(row?.iso3 || row?.countryCode || row?.code || '').trim().toUpperCase();
@@ -125,13 +154,13 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       if (!finance || !forex || !bank || !baseline || !endowment || !industrial || !market || !trade)
         fail('RUNTIME_REGISTRY_INCOMPLETE');
 
-      await finance.init();
-      await forex.init();
-      await bank.init();
-      await industrial.loadCatalog();
-      await endowment.initialize();
+      await waitStage('FINANCE_INIT', () => finance.init());
+      await waitStage('FOREX_INIT', () => forex.init());
+      await waitStage('BANK_INIT', () => bank.init());
+      await waitStage('INDUSTRIAL_CATALOG_LOAD', () => industrial.loadCatalog());
+      await waitStage('ENDOWMENT_INITIALIZE', () => endowment.initialize());
       if (typeof baseline.waitForPendingInitialization === 'function')
-        await baseline.waitForPendingInitialization();
+        await waitStage('BASELINE_INITIALIZATION_DRAIN', () => baseline.waitForPendingInitialization());
 
       const profiles = finance.getProfiles() || [];
       const sites = g.Omega.IndividualResourceSiteBinding.sites || [];
@@ -173,6 +202,11 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         });
       }
       candidateCountries.sort((a, b) => b.mineSites.length - a.mineSites.length);
+      mark('COUNTRY_CANDIDATES_READY', {
+        profileCount: profileByCountry.size, siteCount: sites.length,
+        candidateCount: candidateCountries.length,
+        topCandidates: candidateCountries.slice(0, 8).map(row => ({ seller: row.seller, mineSiteCount: row.mineSites.length }))
+      });
       if (!candidateCountries.length) fail('NO_COUNTRY_WITH_MINE_BASELINE_FACTORY_AND_FUNDED_SAME_CURRENCY_BUYER', {
         profileCount: profileByCountry.size, siteCount: sites.length, factoryCatalog: catalogDiag,
         currencyGroups: [...currencyGroups.entries()].map(([currency, rows]) => ({ currency, countries: rows.length }))
@@ -261,9 +295,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const bootstrapMode = establishedSession
         ? 'REUSED_EXISTING_ACTIVE_SESSION'
         : (reuseBaselineSession ? 'REHYDRATED_EXISTING_FACTORY_BASELINE_SESSION' : 'CREATED_TEMPORARY_BROWSER_TEST_SESSION');
-      const baselineResult = await baseline.initializeForSession(liveSession);
+      mark('TEMPORARY_SESSION_BOOTSTRAPPED', { seller, sessionId, bootstrapMode });
+      const baselineResult = await waitStage('BASELINE_INITIALIZE_FOR_SESSION', () => baseline.initializeForSession(liveSession));
       if (typeof baseline.waitForPendingInitialization === 'function')
-        await baseline.waitForPendingInitialization();
+        await waitStage('BASELINE_POST_INITIALIZATION_DRAIN', () => baseline.waitForPendingInitialization());
       const baselineRow = baseline.getCountryBaseline(seller);
       if (!baselineRow || baselineRow.countryId !== seller)
         fail('PLAYER_FACTORY_BASELINE_NOT_REGISTERED', { seller, baselineResult, diagnostics: baseline.diagnostics() });
@@ -347,8 +382,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         }
       };
 
-      const hydration = await endowment.hydrateCountry(seller);
-      const routes = await industrial.loadSiteLogisticsRoutes(seller);
+      const hydration = await waitStage('PLAYER_COUNTRY_ENDOWMENT_HYDRATION', () => endowment.hydrateCountry(seller));
+      const routes = await waitStage('PLAYER_COUNTRY_LOGISTICS_ROUTE_LOAD', () => industrial.loadSiteLogisticsRoutes(seller));
       if (routes?.status && !['READY', 'COMPLETED', 'APPLIED', 'INITIALIZED', 'HYDRATED'].includes(String(routes.status).toUpperCase()))
         fail('MINE_LOGISTICS_ROUTE_REGISTRY_NOT_READY', { seller, routes });
       if (!(Number(catalogDiag?.processingRuleCount) > 0))
@@ -356,7 +391,13 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
 
       const mineCandidates = [];
       const rejectedSites = [];
+      let previewAttemptCount = 0;
       for (const site of chosenCountry.mineSites) {
+        mark('MINE_SITE_SCAN', {
+          seller, siteIndex: chosenCountry.mineSites.indexOf(site) + 1,
+          siteCount: chosenCountry.mineSites.length, siteId: site?.siteId || null,
+          candidateCount: mineCandidates.length, previewAttemptCount
+        });
         const resourceId = token(site?.real?.resourceId || site?.sourceSiteRecord?.resourceId ||
           site?.identity?.resourceTypeId || site?.sourceSiteRecord?.resourceTypeId);
         if (!resourceId) continue;
@@ -376,10 +417,12 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
             rejectedSites.push({ siteId: site.siteId, resourceId, reason: plan?.reason || plan?.status || 'EXTRACTION_NOT_PLANNED' });
             continue;
           }
-          const routePreview = await industrial.previewSiteTransport({
-            countryId: seller, siteId: site.siteId,
-            quantity: Number(plan.approvedQuantity), unit: plan.unit
-          });
+          previewAttemptCount += 1;
+          const routePreview = await waitStage('SITE_TRANSPORT_PREVIEW_' + previewAttemptCount, () =>
+            industrial.previewSiteTransport({
+              countryId: seller, siteId: site.siteId,
+              quantity: Number(plan.approvedQuantity), unit: plan.unit
+            }), 60000);
           if (!['READY', 'SIMULATION_ONLY'].includes(String(routePreview?.status || '').toUpperCase())) {
             rejectedSites.push({ siteId: site.siteId, resourceId, reason: routePreview?.reason || routePreview?.status || 'ROUTE_NOT_READY' });
             continue;
@@ -404,6 +447,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         }
       }
       mineCandidates.sort((a, b) => b.expectedOutput - a.expectedOutput);
+      mark('MINE_CANDIDATES_READY', {
+        seller, candidateCount: mineCandidates.length, rejectedSiteCount: rejectedSites.length,
+        previewAttemptCount, selectedSiteId: mineCandidates[0]?.siteId || null
+      });
       if (!mineCandidates.length)
         fail('NO_REAL_MINE_SITE_HAS_A_LIVE_BASELINE_FACTORY_AND_EXECUTABLE_ROUTE', {
           seller, buyer, hydration, routes, rejectedSites: rejectedSites.slice(0, 40),
@@ -416,13 +463,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         fail('PLAYER_RESOURCE_LEDGER_NOT_READY', { seller, hydration });
       const beforeBatchIds = new Set(resourceState.batches.map(row => String(row?.batchId || '')).filter(Boolean));
       const turnBeforeExtraction = Number(g.Game.state.simulation?.turn ?? simulation.turn ?? 0);
-      const pipelineStart = await industrial.executeSitePipeline({
-        countryId: seller,
-        siteId: selected.siteId,
-        resourceId: selected.resourceId,
-        factoryId: selected.factoryId,
-        quantity: Number(selected.plan.approvedQuantity)
-      });
+      const pipelineStart = await waitStage('MINE_TO_FACTORY_EXECUTION', () =>
+        industrial.executeSitePipeline({
+          countryId: seller,
+          siteId: selected.siteId,
+          resourceId: selected.resourceId,
+          factoryId: selected.factoryId,
+          quantity: Number(selected.plan.approvedQuantity)
+        }), 120000);
       const afterExtraction = resourceState.batches.filter(row => {
         const id = String(row?.batchId || '');
         return id && !beforeBatchIds.has(id) && token(row?.resourceId || row?.materialIdentity) === selected.resourceId;
@@ -447,6 +495,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           seller, selected: { ...selected, routePreview: undefined }, pipelineStart, afterExtraction, flow
         });
 
+      mark('MINE_EXTRACTION_COMMITTED', {
+        seller, buyer, siteId: selected.siteId, resourceId: selected.resourceId,
+        originBatchId, pipelineStatus: pipelineStart?.status || null
+      });
       return {
         seller, buyer, currency: chosenCountry.currency, sessionId,
         sessionStatus: liveSession?.status || null,
@@ -879,7 +931,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     const diagnostic = {
       status: 'FAIL', error: String(error?.stack || error),
       details: error?.details || null, pageErrors,
-      consoleErrors: consoleErrors.slice(-80)
+      consoleErrors: consoleErrors.slice(-80),
+      stageTrace: stageTrace.slice(-120)
     };
     try {
       await mkdir(ARTIFACT_DIR, { recursive: true });
