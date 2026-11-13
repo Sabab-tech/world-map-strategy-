@@ -385,7 +385,8 @@ test('sanction decisions activate the affected NPC and execute evidence-backed w
   assert.equal(negotiations[0].targetCountryId, 'USA');
   assert.equal(negotiations[0].details.treatyType, 'SANCTION_WAIVER_OR_SUPPLY_RENEGOTIATION');
   assert.equal(negotiations[0].details.terms.sanctionPolicyKey, decision.policyKey);
-  assert.deepEqual(negotiations[0].details.terms.affectedResources, ['copper']);
+  assert.equal(negotiations[0].details.terms.affectedResources.length, 1);
+  assert.equal(negotiations[0].details.terms.affectedResources[0], 'copper');
   const recovery = h.state.trade.IRN.sanctionMarketRecoveryPlans[0];
   assert.equal(recovery.executionStatus, 'NEGOTIATION_REQUESTED');
 });
