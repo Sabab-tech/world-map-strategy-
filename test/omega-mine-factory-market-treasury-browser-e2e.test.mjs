@@ -185,12 +185,13 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       if (!baselineRow || baselineRow.countryId !== seller)
         fail('PLAYER_FACTORY_BASELINE_NOT_REGISTERED', { seller, baselineResult, diagnostics: baseline.diagnostics() });
 
-      const sellerFactoryAssets = g.Game.state?.economy?.[seller]?.productionAssets || [];
-      const activeStateFactories = sellerFactoryAssets.filter(asset =>
-        String(asset?.ownerType || '').toUpperCase() === 'STATE_OWNED_ENTERPRISE' &&
-        !['DECOMMISSIONED', 'DESTROYED', 'UNDER_CONSTRUCTION'].includes(String(asset?.status || '').toUpperCase()));
-      if (!activeStateFactories.length)
-        fail('FRESH_PLAYER_COUNTRY_HAS_NO_REGISTERED_STATE_FACTORY', { seller, baselineResult });
+      const baselineRuntimeRegistry = baseline.getCountryFactoryRegistry(seller);
+      if (!baselineRuntimeRegistry || baselineRuntimeRegistry.runtimeStatus !== 'REGISTERED' ||
+          baselineRuntimeRegistry.runtimeRegistered !== true) {
+        fail('FRESH_PLAYER_COUNTRY_FACTORY_REGISTRY_NOT_ACTIVE', {
+          seller, baselineResult, baselineRuntimeRegistry
+        });
+      }
 
       const hydration = await endowment.hydrateCountry(seller);
       const routes = await industrial.loadSiteLogisticsRoutes(seller);
@@ -296,7 +297,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         seller, buyer, currency: chosenCountry.currency, sessionId,
         sessionStatus: session?.status || null,
         turnBeforeExtraction,
-        baselineResult: { status: baselineResult?.status || null, activeAssetCount: baselineResult?.activeAssetCount || activeStateFactories.length },
+        baselineResult: { status: baselineResult?.status || null, activeAssetCount: baselineRuntimeRegistry?.liveProductionAssetsCreated || 0 },
         hydrationStatus: hydration?.status || null,
         routeRegistryStatus: routes?.status || null,
         selected: {
