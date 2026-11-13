@@ -266,8 +266,9 @@ globalThis.Game.state.finance.BD.omegaFinance={
   }
 };
 globalThis.Game.state.projects.BD.registry.push({
-  projectId:'AUTO-CAPEX-FACTORY-1',countryId:'BD',kind:'FACTORY',
-  budgetDepartment:'industrial_development',autonomy:true,status:'COMMISSIONING'
+  projectId:'AUTO-CAPEX-FACTORY-1',countryId:'BD',kind:'FACTORY',cost:1200,
+  completionTurn:3,progress:1,budgetDepartment:'industrial_development',
+  autonomy:true,status:'COMMISSIONING'
 });
 const npcCapexPayload={
   amount:1200,kind:'FACTORY',budgetDepartment:'industrial_development',
