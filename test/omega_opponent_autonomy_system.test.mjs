@@ -319,6 +319,43 @@ assert.equal(blockedUnbudgetedProject.status,'FAILED',
   'NPC capital expenditure must be linked to an authoritative autonomous project');
 assert.equal(globalThis.Game.state.finance.BD.available,countryCashBeforeNpcCapex);
 
+const capexFixture=globalThis.Game.state.projects.BD.registry.find(row=>row.projectId==='AUTO-CAPEX-FACTORY-1');
+capexFixture.status='COMPLETED';
+const lifecycleReservation=autonomy.dispatch('OMEGA_AUTO_RESERVE','BD',{
+  reservationId:'NPC-LIFECYCLE-RES',decisionId:'NPC-LIFECYCLE-DECISION',
+  money:500,labor:10,materials:{}
+});
+assert.equal(lifecycleReservation.status,'APPLIED',JSON.stringify(lifecycleReservation));
+const lifecycleProject=autonomy.dispatch('OMEGA_AUTO_PROJECT_CREATE','BD',{
+  projectId:'NPC-LIFECYCLE-FACTORY',action:'DOMESTIC_EXPANSION',kind:'FACTORY',
+  budgetDepartment:'industrial_development',decisionId:'NPC-LIFECYCLE-DECISION',
+  reservationId:'NPC-LIFECYCLE-RES',quantity:10,cost:500,labor:10,
+  materials:{},durationTurns:1
+});
+assert.equal(lifecycleProject.status,'APPLIED',JSON.stringify(lifecycleProject));
+const treasuryBeforeLifecycle=globalThis.Game.state.finance.BD.available;
+const allocationSpentBeforeLifecycle=globalThis.Game.state.finance.BD.omegaFinance.allocations.industrial_development.spentUsd;
+globalThis.Game.state.simulation.turn=4;
+const lifecycleTick=autonomy.dispatch('OMEGA_AUTO_PROJECT_TICK','BD',{});
+assert.equal(lifecycleTick.status,'APPLIED',JSON.stringify(lifecycleTick));
+const lifecycleAsset=globalThis.Game.state.economy.BD.productionAssets.find(row=>row.projectId==='NPC-LIFECYCLE-FACTORY');
+assert.ok(lifecycleAsset,'NPC public factory project must commission into the existing production-asset registry');
+assert.equal(globalThis.Game.state.economy.BD.productionCapacity,660);
+assert.equal(globalThis.Game.state.finance.BD.available,treasuryBeforeLifecycle-500);
+assert.equal(
+  globalThis.Game.state.finance.BD.omegaFinance.allocations.industrial_development.spentUsd,
+  allocationSpentBeforeLifecycle+500
+);
+assert.ok(globalThis.Game.state.projects.BD.registry.some(row=>
+  row.projectId==='NPC-LIFECYCLE-FACTORY'&&row.settlementReady===true));
+const lifecycleFinalize=autonomy.dispatch('OMEGA_AUTO_PROJECT_FINALIZE','BD',{
+  projectId:'NPC-LIFECYCLE-FACTORY',decisionId:'NPC-LIFECYCLE-DECISION',
+  reservationId:'NPC-LIFECYCLE-RES',correlationId:'NPC-LIFECYCLE-DECISION'
+});
+assert.equal(lifecycleFinalize.status,'APPLIED',JSON.stringify(lifecycleFinalize));
+assert.ok(globalThis.Game.state.projects.BD.registry.some(row=>
+  row.projectId==='NPC-LIFECYCLE-FACTORY'&&row.status==='COMPLETED'&&row.phase==='OPERATIONAL'));
+
 console.log('OMEGA OPPONENT AUTONOMY SYSTEM TEST PASSED');
 console.log(JSON.stringify({
   version:autonomy.VERSION,
