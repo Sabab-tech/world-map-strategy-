@@ -1387,6 +1387,11 @@
     if(!project||project.autonomy!==true||String(project.kind||'').toUpperCase()!==kind||
        String(project.budgetDepartment||'').toLowerCase()!==department)
       return{accepted:false,reason:'NPC_AUTONOMOUS_PROJECT_NOT_FOUND'};
+    const projectCost=money(project.cost),completionTurn=num(project.completionTurn);
+    if(projectCost===null||Math.abs(projectCost-amount)>0.01)
+      return{accepted:false,reason:'NPC_PROJECT_COST_MISMATCH'};
+    if(completionTurn===null||completionTurn>turn())
+      return{accepted:false,reason:'NPC_PROJECT_NOT_READY_FOR_SETTLEMENT'};
     const modelRaw=ctx.stateTransaction.get('finance.omegaFinance');
     if(!modelRaw||typeof modelRaw!=='object'||Array.isArray(modelRaw))
       return{accepted:false,reason:'FINANCE_MODEL_UNAVAILABLE'};
