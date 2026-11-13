@@ -185,7 +185,10 @@
       const a=model.allocations[s.id];
       if(!isObject(a))continue;
       const share=Math.max(0,finite(a.sharePct)||0);
+      const defaultShare=Math.max(0,Number(s.defaultSharePct)||0);
       a.sharePct=share;
+      if(finite(a.defaultSharePct)===null)a.defaultSharePct=defaultShare;
+      if(finite(a.baselineBudgetUsd)===null)a.baselineBudgetUsd=Math.max(0,envelope*defaultShare/100);
       a.budgetUsd=Math.max(0,envelope*share/100);
       a.remainingUsd=Math.max(0,a.budgetUsd-(finite(a.spentUsd)||0));
     }
