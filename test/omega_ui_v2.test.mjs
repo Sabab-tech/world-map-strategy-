@@ -3861,6 +3861,7 @@ test('factory Input tab avoids loading the canonical mine-site and mine-asset re
 test('market presentation keeps raw, factory-role and food lanes separate and uses offline vector art', () => {
   const market = readFileSync(new URL('../omega_resource_command_center_ui_v1.js', import.meta.url), 'utf8');
   const ministry = readFileSync(new URL('../omega_ui_v2/screens/ministry-detail.js', import.meta.url), 'utf8');
+  const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
   assert.match(market,/FOOD_PRODUCT/);
   assert.match(market,/PROCESSED_FOOD/);
