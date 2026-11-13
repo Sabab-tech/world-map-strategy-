@@ -250,6 +250,74 @@ assert(decision.selected?.factors?.risk!==null);
 assert.equal(decision.status,'ROUTED');
 assert(decision.candidateEvaluations.length>0);
 
+const countryCashBeforeNpcCapex=globalThis.Game.state.finance.BD.available;
+const otherCountryCashBeforeNpcCapex=globalThis.Game.state.finance.SA.available;
+const budgetEnvelope=100000;
+globalThis.Game.state.finance.BD.omegaFinance={
+  version:'1.0.0',countryCode:'BD',countryName:'Bangladesh',
+  treasuryBalanceUsd:countryCashBeforeNpcCapex,lastSyncedTreasuryBalanceUsd:countryCashBeforeNpcCapex,
+  fiscalModel:{annualSpendingUsd:budgetEnvelope},policy:{minimumReservePctOfAnnualSpending:0},
+  cumulativeSpendingUsd:0,currentYearSpendingUsd:0,fiscalYearIndex:0,revision:0,ledger:[],
+  allocations:{
+    industrial_development:{department:'industrial_development',sharePct:1,budgetUsd:1000,spentUsd:0,remainingUsd:1000,defaultSharePct:3,baselineBudgetUsd:3000},
+    culture:{department:'culture',sharePct:2,budgetUsd:2000,spentUsd:0,remainingUsd:2000,defaultSharePct:1,baselineBudgetUsd:1000},
+    financial_services:{department:'financial_services',sharePct:3,budgetUsd:3000,spentUsd:0,remainingUsd:3000,defaultSharePct:2,baselineBudgetUsd:2000},
+    cabinet:{department:'cabinet',sharePct:4,budgetUsd:4000,spentUsd:0,remainingUsd:4000,defaultSharePct:3,baselineBudgetUsd:3000}
+  }
+};
+globalThis.Game.state.projects.BD.registry.push({
+  projectId:'AUTO-CAPEX-FACTORY-1',countryId:'BD',kind:'FACTORY',
+  budgetDepartment:'industrial_development',autonomy:true,status:'COMMISSIONING'
+});
+const npcCapexPayload={
+  amount:1200,kind:'FACTORY',budgetDepartment:'industrial_development',
+  projectId:'AUTO-CAPEX-FACTORY-1',transactionId:'NPC-CAPEX-BD-AUTO-CAPEX-FACTORY-1-T3',
+  decisionId:'TEST-NPC-CAPEX',correlationId:'AUTO-CAPEX-FACTORY-1'
+};
+const npcCapex=autonomy.dispatch('OMEGA_AUTO_FINANCE_COMMIT','BD',npcCapexPayload);
+assert.equal(npcCapex.status,'APPLIED',JSON.stringify(npcCapex));
+const financeAfterNpcCapex=globalThis.Game.state.finance.BD.omegaFinance;
+assert.equal(globalThis.Game.state.finance.BD.available,countryCashBeforeNpcCapex-1200);
+assert.equal(financeAfterNpcCapex.treasuryBalanceUsd,countryCashBeforeNpcCapex-1200);
+assert.equal(financeAfterNpcCapex.allocations.industrial_development.spentUsd,1200);
+assert.equal(financeAfterNpcCapex.allocations.industrial_development.remainingUsd,0);
+assert.equal(financeAfterNpcCapex.allocations.culture.budgetUsd,1800,
+  'a budget shortfall must be covered by a paired inter-ministry allocation transfer');
+assert.equal(financeAfterNpcCapex.ledger.filter(row=>row.action==='EXPENSE'&&row.transactionId===npcCapexPayload.transactionId).length,1);
+assert.equal(
+  Object.values(financeAfterNpcCapex.allocations).reduce((sum,row)=>sum+row.sharePct,0),
+  10,
+  'a budget transfer must preserve the pre-existing total allocation share'
+);
+const duplicatedNpcCapex=autonomy.dispatch('OMEGA_AUTO_FINANCE_COMMIT','BD',npcCapexPayload);
+assert.equal(duplicatedNpcCapex.status,'APPLIED');
+assert.equal(globalThis.Game.state.finance.BD.available,countryCashBeforeNpcCapex-1200,
+  'replaying one project transaction must never debit Treasury twice');
+assert.equal(globalThis.Game.state.finance.SA.available,otherCountryCashBeforeNpcCapex,
+  'an NPC decision must not touch another country Treasury');
+const npcRefund=autonomy.dispatch('OMEGA_AUTO_FINANCE_REFUND','BD',{
+  amount:1200,kind:'FACTORY',budgetDepartment:'industrial_development',
+  projectId:'AUTO-CAPEX-FACTORY-1',transactionId:npcCapexPayload.transactionId
+});
+assert.equal(npcRefund.status,'APPLIED',JSON.stringify(npcRefund));
+assert.equal(globalThis.Game.state.finance.BD.available,countryCashBeforeNpcCapex);
+assert.equal(globalThis.Game.state.finance.BD.omegaFinance.allocations.industrial_development.spentUsd,0);
+assert.equal(globalThis.Game.state.finance.BD.omegaFinance.cumulativeSpendingUsd,0);
+const duplicateNpcRefund=autonomy.dispatch('OMEGA_AUTO_FINANCE_REFUND','BD',{
+  amount:1200,kind:'FACTORY',budgetDepartment:'industrial_development',
+  projectId:'AUTO-CAPEX-FACTORY-1',transactionId:npcCapexPayload.transactionId
+});
+assert.equal(duplicateNpcRefund.status,'APPLIED');
+assert.equal(globalThis.Game.state.finance.BD.available,countryCashBeforeNpcCapex,
+  'a duplicate commission refund must never credit Treasury twice');
+const blockedUnbudgetedProject=autonomy.dispatch('OMEGA_AUTO_FINANCE_COMMIT','BD',{
+  amount:10,kind:'FACTORY',budgetDepartment:'industrial_development',
+  projectId:'DOES-NOT-EXIST',transactionId:'NPC-CAPEX-INVALID'
+});
+assert.equal(blockedUnbudgetedProject.status,'FAILED',
+  'NPC capital expenditure must be linked to an authoritative autonomous project');
+assert.equal(globalThis.Game.state.finance.BD.available,countryCashBeforeNpcCapex);
+
 console.log('OMEGA OPPONENT AUTONOMY SYSTEM TEST PASSED');
 console.log(JSON.stringify({
   version:autonomy.VERSION,
