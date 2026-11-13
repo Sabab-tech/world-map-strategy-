@@ -1,6 +1,6 @@
 name: OMEGA Mine Factory Market Treasury Real Browser E2E
 concurrency:
-  group: omega-mine-market-treasury-\${{ github.ref }}
+  group: omega-mine-market-treasury-${{ github.ref }}
   cancel-in-progress: false
 
 on:
@@ -73,8 +73,8 @@ jobs:
 
       - name: Execute complete real-browser gameplay flow
         env:
-          NODE_PATH: \${{ runner.temp }}/omega-browser-deps/node_modules
-          OMEGA_BROWSER_TEST_ARTIFACT_DIR: \${{ runner.temp }}/omega-mine-market-treasury-browser
+          NODE_PATH: ${{ runner.temp }}/omega-browser-deps/node_modules
+          OMEGA_BROWSER_TEST_ARTIFACT_DIR: ${{ runner.temp }}/omega-mine-market-treasury-browser
         run: |
           mkdir -p "$OMEGA_BROWSER_TEST_ARTIFACT_DIR"
           timeout --signal=TERM --kill-after=30s 18m node --test --test-reporter=spec test/omega-mine-factory-market-treasury-browser-e2e.test.mjs
@@ -84,6 +84,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: omega-mine-factory-market-treasury-browser-evidence
-          path: \${{ runner.temp }}/omega-mine-market-treasury-browser/**
+          path: ${{ runner.temp }}/omega-mine-market-treasury-browser/**
           if-no-files-found: warn
           retention-days: 14
