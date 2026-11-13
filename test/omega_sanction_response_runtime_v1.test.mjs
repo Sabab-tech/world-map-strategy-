@@ -352,6 +352,61 @@ test('turn processing is idempotent and updates assessments on the next turn', (
   assert.equal(h.state.foreign.IRN.sanctionNotifications.length, 1);
 });
 
+test('sanction decisions activate the affected NPC and execute evidence-backed waiver negotiations', () => {
+  const h = makeHarness({ noLegalSuppliers: true });
+  const activations = [], invalidations = [], negotiations = [];
+  h.context.Omega.WorldSimulationScheduler = {
+    activateCountry(countryId, options) {
+      activations.push({ countryId, options });
+      return { status: 'ACTIVATED', countryId };
+    }
+  };
+  h.context.Omega.OpponentCountryRules = {
+    markDirty(countryId, reasons, source) {
+      invalidations.push({ countryId, reasons, source });
+      return { status: 'INVALIDATED' };
+    }
+  };
+  h.context.Omega.OpponentAutonomy = {
+    startTreatyNegotiation(countryId, targetCountryId, details) {
+      negotiations.push({ countryId, targetCountryId, details });
+      return { status: 'APPLIED', result: { accepted: true } };
+    }
+  };
+  h.context.OmegaSanctionResponseRuntime.runTurn();
+  const decision = h.state.foreign.IRN.sanctionNationalDecisions[0];
+  assert.equal(decision.selectedAction, 'DIPLOMATIC_WAIVER_OR_RENEGOTIATION');
+  assert.equal(decision.execution.status, 'NEGOTIATION_REQUESTED');
+  assert.equal(activations.some(row => row.countryId === 'IRN'), true);
+  assert.equal(invalidations.some(row => row.countryId === 'IRN' &&
+    row.reasons.includes('SANCTION_RESPONSE')), true);
+  assert.equal(negotiations.length, 1);
+  assert.equal(negotiations[0].countryId, 'IRN');
+  assert.equal(negotiations[0].targetCountryId, 'USA');
+  assert.equal(negotiations[0].details.treatyType, 'SANCTION_WAIVER_OR_SUPPLY_RENEGOTIATION');
+  assert.equal(negotiations[0].details.terms.sanctionPolicyKey, decision.policyKey);
+  assert.equal(negotiations[0].details.terms.affectedResources.length, 1);
+  assert.equal(negotiations[0].details.terms.affectedResources[0], 'copper');
+  const recovery = h.state.trade.IRN.sanctionMarketRecoveryPlans[0];
+  assert.equal(recovery.executionStatus, 'NEGOTIATION_REQUESTED');
+});
+
+test('sanction processing never autonomously takes diplomatic control of the player country', () => {
+  const h = makeHarness({ noLegalSuppliers: true });
+  h.state.simulation.session.playerCountryId = 'IRN';
+  const negotiations = [];
+  h.context.Omega.OpponentAutonomy = {
+    startTreatyNegotiation(...args) { negotiations.push(args); return { status: 'APPLIED', result: { accepted: true } }; }
+  };
+  h.context.Omega.WorldSimulationScheduler = {
+    activateCountry() { throw new Error('player country must not be activated as NPC'); }
+  };
+  h.context.OmegaSanctionResponseRuntime.runTurn();
+  const decision = h.state.foreign.IRN.sanctionNationalDecisions[0];
+  assert.equal(decision.execution.status, 'PLAYER_DECISION_REQUIRED');
+  assert.equal(negotiations.length, 0);
+});
+
 test('Global Market query budget is bounded', () => {
   const h = makeHarness();
   h.context.OmegaSanctionResponseRuntime.runTurn();

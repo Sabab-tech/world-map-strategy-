@@ -80,25 +80,25 @@ assert(autonomy,'autonomy API missing');
 assert(autonomy.diagnostics().queueBridgeInstalled===true,'opponent queue bridge not installed');
 
 const canonical=autonomy.canonicalCountry('Bangladesh');
-assert.equal(canonical.id,'BD');
+assert.equal(canonical.id,'BGD');
 assert.equal(canonical.authority,'OMEGA_CANONICAL_COUNTRY_IDENTITY');
 const namedRoute=autonomy.routeSubject('import','Bangladesh','Saudi Arabia');
-assert.equal(namedRoute.countryId,'BD');
-assert.equal(namedRoute.targetCountryId,'SA');
+assert.equal(namedRoute.countryId,'BGD');
+assert.equal(namedRoute.targetCountryId,'SAU');
 const kernelEvaluation=await globalThis.Omega.OpponentCountryRules.evaluateCountry('Bangladesh',1);
-assert.equal(kernelEvaluation.countryId,'BD');
+assert.equal(kernelEvaluation.countryId,'BGD');
 
 const sourceRoute=autonomy.findDataSources('treasury','Bangladesh');
-assert.equal(sourceRoute.countryId,'BD');
+assert.equal(sourceRoute.countryId,'BGD');
 assert.equal(sourceRoute.primaryMinistry,'finance');
 const eventRoute=autonomy.resolveEventRoute('OMEGA_RESOURCE_IMPORT_REQUEST_SENT','Bangladesh');
-assert.equal(eventRoute.countryId,'BD');
+assert.equal(eventRoute.countryId,'BGD');
 assert.equal(eventRoute.owner,'trade');
 
 
 const importRoute=autonomy.routeSubject('import','BD','SA');
 assert.equal(importRoute.primary,'trade');
-assert.deepEqual(importRoute.targetCountryId,'SA');
+assert.deepEqual(importRoute.targetCountryId,'SAU');
 assert(importRoute.files.includes('relations.json'));
 
 const evidence=autonomy.collectEvidence('BD',['treasury','labor','materials','debt','housing','military','relations'],'SA');
@@ -121,7 +121,7 @@ const importRequest=autonomy.dispatch('OMEGA_AUTO_RESOURCE_IMPORT_REQUEST','BD',
   targetCountryId:'SA',quantity:1000000,unitPrice:80,reservationId:'TEST-RES-1'
 });
 assert.equal(importRequest.status,'APPLIED');
-assert.equal(globalThis.Game.state.trade.BD.importRequests[0].targetCountryId,'SA');
+assert.equal(globalThis.Game.state.trade.BD.importRequests[0].targetCountryId,'SAU');
 assert.equal(globalThis.Game.state.trade.BD.importRequests[0].status,'SENT');
 assert.equal(globalThis.Game.state.trade.BD.importRequests[0].stage,'COUNTERPARTY_DECISION_PENDING');
 const supplier=autonomy.chooseImportSupplier('Bangladesh',{
@@ -129,7 +129,7 @@ const supplier=autonomy.chooseImportSupplier('Bangladesh',{
   scenarioId:'RESOURCE_DEFICIT',
   runtimeMeasurement:{resourceId:'crude_oil',required:1000000}
 });
-assert.equal(supplier.countryId,'SA');
+assert.equal(supplier.countryId,'SAU');
 assert.equal(supplier.unitPrice,78);
 
 
@@ -212,10 +212,10 @@ const treaty=autonomy.startTreatyNegotiation('BD','SA',{
   decisionId:'TEST-TREATY'
 });
 assert.equal(treaty.status,'APPLIED');
-assert.equal(globalThis.Game.state.foreign.BD.negotiations.SA.counterpartyDecision,'PENDING');
+assert.equal(globalThis.Game.state.foreign.BD.negotiations.SAU.counterpartyDecision,'PENDING');
 
 const threat=autonomy.assessThreat('BD','SA');
-assert.equal(threat.targetCountryId,'SA');
+assert.equal(threat.targetCountryId,'SAU');
 assert('confidence' in threat);
 assert('uncertainty' in threat);
 
@@ -249,6 +249,112 @@ assert(decision.selected?.factors?.time!==null);
 assert(decision.selected?.factors?.risk!==null);
 assert.equal(decision.status,'ROUTED');
 assert(decision.candidateEvaluations.length>0);
+
+const countryCashBeforeNpcCapex=globalThis.Game.state.finance.BD.available;
+const otherCountryCashBeforeNpcCapex=globalThis.Game.state.finance.SA.available;
+const budgetEnvelope=100000;
+globalThis.Game.state.finance.BD.omegaFinance={
+  version:'1.0.0',countryCode:'BD',countryName:'Bangladesh',
+  treasuryBalanceUsd:countryCashBeforeNpcCapex,lastSyncedTreasuryBalanceUsd:countryCashBeforeNpcCapex,
+  fiscalModel:{annualSpendingUsd:budgetEnvelope},policy:{minimumReservePctOfAnnualSpending:0},
+  cumulativeSpendingUsd:0,currentYearSpendingUsd:0,fiscalYearIndex:0,revision:0,ledger:[],
+  allocations:{
+    industrial_development:{department:'industrial_development',sharePct:1,budgetUsd:1000,spentUsd:0,remainingUsd:1000,defaultSharePct:3,baselineBudgetUsd:3000},
+    culture:{department:'culture',sharePct:2,budgetUsd:2000,spentUsd:0,remainingUsd:2000,defaultSharePct:1,baselineBudgetUsd:1000},
+    financial_services:{department:'financial_services',sharePct:3,budgetUsd:3000,spentUsd:0,remainingUsd:3000,defaultSharePct:2,baselineBudgetUsd:2000},
+    cabinet:{department:'cabinet',sharePct:4,budgetUsd:4000,spentUsd:0,remainingUsd:4000,defaultSharePct:3,baselineBudgetUsd:3000}
+  }
+};
+globalThis.Game.state.projects.BD.registry.push({
+  projectId:'AUTO-CAPEX-FACTORY-1',countryId:'BD',kind:'FACTORY',cost:1200,
+  completionTurn:3,progress:1,budgetDepartment:'industrial_development',
+  autonomy:true,status:'COMMISSIONING'
+});
+const npcCapexPayload={
+  amount:1200,kind:'FACTORY',budgetDepartment:'industrial_development',
+  projectId:'AUTO-CAPEX-FACTORY-1',transactionId:'NPC-CAPEX-BD-AUTO-CAPEX-FACTORY-1-T3',
+  decisionId:'TEST-NPC-CAPEX',correlationId:'AUTO-CAPEX-FACTORY-1'
+};
+const npcCapex=autonomy.dispatch('OMEGA_AUTO_FINANCE_COMMIT','BD',npcCapexPayload);
+assert.equal(npcCapex.status,'APPLIED',JSON.stringify(npcCapex));
+const financeAfterNpcCapex=globalThis.Game.state.finance.BD.omegaFinance;
+assert.equal(globalThis.Game.state.finance.BD.available,countryCashBeforeNpcCapex-1200);
+assert.equal(financeAfterNpcCapex.treasuryBalanceUsd,countryCashBeforeNpcCapex-1200);
+assert.equal(financeAfterNpcCapex.allocations.industrial_development.spentUsd,1200);
+assert.equal(financeAfterNpcCapex.allocations.industrial_development.remainingUsd,0);
+assert.equal(financeAfterNpcCapex.allocations.culture.budgetUsd,1800,
+  'a budget shortfall must be covered by a paired inter-ministry allocation transfer');
+assert.equal(financeAfterNpcCapex.ledger.filter(row=>row.action==='EXPENSE'&&row.transactionId===npcCapexPayload.transactionId).length,1);
+assert.equal(
+  Object.values(financeAfterNpcCapex.allocations).reduce((sum,row)=>sum+row.sharePct,0),
+  10,
+  'a budget transfer must preserve the pre-existing total allocation share'
+);
+const duplicatedNpcCapex=autonomy.dispatch('OMEGA_AUTO_FINANCE_COMMIT','BD',npcCapexPayload);
+assert.equal(duplicatedNpcCapex.status,'APPLIED');
+assert.equal(globalThis.Game.state.finance.BD.available,countryCashBeforeNpcCapex-1200,
+  'replaying one project transaction must never debit Treasury twice');
+assert.equal(globalThis.Game.state.finance.SA.available,otherCountryCashBeforeNpcCapex,
+  'an NPC decision must not touch another country Treasury');
+const npcRefund=autonomy.dispatch('OMEGA_AUTO_FINANCE_REFUND','BD',{
+  amount:1200,kind:'FACTORY',budgetDepartment:'industrial_development',
+  projectId:'AUTO-CAPEX-FACTORY-1',transactionId:npcCapexPayload.transactionId
+});
+assert.equal(npcRefund.status,'APPLIED',JSON.stringify(npcRefund));
+assert.equal(globalThis.Game.state.finance.BD.available,countryCashBeforeNpcCapex);
+assert.equal(globalThis.Game.state.finance.BD.omegaFinance.allocations.industrial_development.spentUsd,0);
+assert.equal(globalThis.Game.state.finance.BD.omegaFinance.cumulativeSpendingUsd,0);
+const duplicateNpcRefund=autonomy.dispatch('OMEGA_AUTO_FINANCE_REFUND','BD',{
+  amount:1200,kind:'FACTORY',budgetDepartment:'industrial_development',
+  projectId:'AUTO-CAPEX-FACTORY-1',transactionId:npcCapexPayload.transactionId
+});
+assert.equal(duplicateNpcRefund.status,'APPLIED');
+assert.equal(globalThis.Game.state.finance.BD.available,countryCashBeforeNpcCapex,
+  'a duplicate commission refund must never credit Treasury twice');
+const blockedUnbudgetedProject=autonomy.dispatch('OMEGA_AUTO_FINANCE_COMMIT','BD',{
+  amount:10,kind:'FACTORY',budgetDepartment:'industrial_development',
+  projectId:'DOES-NOT-EXIST',transactionId:'NPC-CAPEX-INVALID'
+});
+assert.equal(blockedUnbudgetedProject.status,'FAILED',
+  'NPC capital expenditure must be linked to an authoritative autonomous project');
+assert.equal(globalThis.Game.state.finance.BD.available,countryCashBeforeNpcCapex);
+
+const capexFixture=globalThis.Game.state.projects.BD.registry.find(row=>row.projectId==='AUTO-CAPEX-FACTORY-1');
+capexFixture.status='COMPLETED';
+const lifecycleReservation=autonomy.dispatch('OMEGA_AUTO_RESERVE','BD',{
+  reservationId:'NPC-LIFECYCLE-RES',decisionId:'NPC-LIFECYCLE-DECISION',
+  money:500,labor:10,materials:{}
+});
+assert.equal(lifecycleReservation.status,'APPLIED',JSON.stringify(lifecycleReservation));
+const lifecycleProject=autonomy.dispatch('OMEGA_AUTO_PROJECT_CREATE','BD',{
+  projectId:'NPC-LIFECYCLE-FACTORY',action:'DOMESTIC_EXPANSION',kind:'FACTORY',
+  budgetDepartment:'industrial_development',decisionId:'NPC-LIFECYCLE-DECISION',
+  reservationId:'NPC-LIFECYCLE-RES',quantity:10,cost:500,labor:10,
+  materials:{},durationTurns:1
+});
+assert.equal(lifecycleProject.status,'APPLIED',JSON.stringify(lifecycleProject));
+const treasuryBeforeLifecycle=globalThis.Game.state.finance.BD.available;
+const allocationSpentBeforeLifecycle=globalThis.Game.state.finance.BD.omegaFinance.allocations.industrial_development.spentUsd;
+globalThis.Game.state.simulation.turn=4;
+const lifecycleTick=autonomy.dispatch('OMEGA_AUTO_PROJECT_TICK','BD',{});
+assert.equal(lifecycleTick.status,'APPLIED',JSON.stringify(lifecycleTick));
+const lifecycleAsset=globalThis.Game.state.economy.BD.productionAssets.find(row=>row.projectId==='NPC-LIFECYCLE-FACTORY');
+assert.ok(lifecycleAsset,'NPC public factory project must commission into the existing production-asset registry');
+assert.equal(globalThis.Game.state.economy.BD.productionCapacity,660);
+assert.equal(globalThis.Game.state.finance.BD.available,treasuryBeforeLifecycle-500);
+assert.equal(
+  globalThis.Game.state.finance.BD.omegaFinance.allocations.industrial_development.spentUsd,
+  allocationSpentBeforeLifecycle+500
+);
+assert.ok(globalThis.Game.state.projects.BD.registry.some(row=>
+  row.projectId==='NPC-LIFECYCLE-FACTORY'&&row.settlementReady===true));
+const lifecycleFinalize=autonomy.dispatch('OMEGA_AUTO_PROJECT_FINALIZE','BD',{
+  projectId:'NPC-LIFECYCLE-FACTORY',decisionId:'NPC-LIFECYCLE-DECISION',
+  reservationId:'NPC-LIFECYCLE-RES',correlationId:'NPC-LIFECYCLE-DECISION'
+});
+assert.equal(lifecycleFinalize.status,'APPLIED',JSON.stringify(lifecycleFinalize));
+assert.ok(globalThis.Game.state.projects.BD.registry.some(row=>
+  row.projectId==='NPC-LIFECYCLE-FACTORY'&&row.status==='COMPLETED'&&row.phase==='OPERATIONAL'));
 
 console.log('OMEGA OPPONENT AUTONOMY SYSTEM TEST PASSED');
 console.log(JSON.stringify({
