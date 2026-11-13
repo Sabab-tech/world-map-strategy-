@@ -95,7 +95,12 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     const setup = await page.evaluate(async () => {
       const g = window;
       const fail = (stage, details) => {
-        const error = new Error('MINE_MARKET_TREASURY_E2E:' + stage);
+        let diagnostic = '';
+        if (details !== undefined) {
+          try { diagnostic = ':' + JSON.stringify(details); }
+          catch { diagnostic = ':DIAGNOSTICS_SERIALIZATION_FAILED'; }
+        }
+        const error = new Error('MINE_MARKET_TREASURY_E2E:' + stage + diagnostic);
         error.details = details;
         throw error;
       };
@@ -189,7 +194,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       if (!baselineRuntimeRegistry || baselineRuntimeRegistry.runtimeStatus !== 'REGISTERED' ||
           baselineRuntimeRegistry.runtimeRegistered !== true) {
         fail('FRESH_PLAYER_COUNTRY_FACTORY_REGISTRY_NOT_ACTIVE', {
-          seller, baselineResult, baselineRuntimeRegistry
+          seller,
+          simulationSession: g.Game.state?.simulation?.session || null,
+          baselineResult,
+          baselineRuntimeRegistry,
+          baselineDiagnostics: baseline.diagnostics(),
+          baselineSource: baseline.getSourceStatus(),
+          factoryRegistration: g.Game.state?.simulation?.countryFactoryStartingBaselineV1?.playerCountryFactoryRegistration || null,
+          countryFactoryAssetCount: (g.Game.state?.economy?.[seller]?.productionAssets || []).length
         });
       }
 
