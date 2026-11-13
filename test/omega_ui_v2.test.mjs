@@ -3895,7 +3895,7 @@ test('market presentation keeps raw, factory-role and food lanes separate and us
     const tag = '<script src="' + script + '" defer></script>';
     const position = index.indexOf(tag);
     assert.ok(position > previousBlackMarketScriptPosition,
-      index.html + " must load " + script + " in dependency order for static/offline sessions");
+      'index.html must load ' + script + ' in dependency order for static/offline sessions');
     previousBlackMarketScriptPosition = position;
   }
   assert.equal(offlineShellCacheVersion(sw),120,
