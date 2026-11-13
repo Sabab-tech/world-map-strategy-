@@ -178,12 +178,39 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         currencyGroups: [...currencyGroups.entries()].map(([currency, rows]) => ({ currency, countries: rows.length }))
       });
 
-      const chosenCountry = candidateCountries[0];
+      const existingSession = g.Game.state?.simulation?.session || null;
+      const activePlayerCountry = String(existingSession?.playerCountryId || '').trim().toUpperCase();
+      const chosenCountry = activePlayerCountry
+        ? candidateCountries.find(row => row.seller === activePlayerCountry)
+        : candidateCountries[0];
+      if (!chosenCountry) fail('ACTIVE_PLAYER_COUNTRY_HAS_NO_MINE_FACTORY_AND_FUNDED_SAME_CURRENCY_BUYER', {
+        activePlayerCountry: activePlayerCountry || null,
+        activeSession: existingSession,
+        eligibleCountryCodes: candidateCountries.map(row => row.seller),
+        profileCount: profileByCountry.size,
+        mineSiteCount: sites.length
+      });
       const seller = chosenCountry.seller;
       const buyer = chosenCountry.buyers[0].code;
-      const sessionId = 'MINE-MARKET-TREASURY-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
-      const session = simulation.createSession({ playerCountryId: seller, sessionId, startTurn: 0 });
-      const baselineResult = await baseline.initializeForSession(session);
+      const session = existingSession && activePlayerCountry === seller &&
+        ['READY', 'RUNNING', 'PAUSED'].includes(String(existingSession.status || '').toUpperCase())
+        ? existingSession
+        : null;
+      if (existingSession && !session)
+        fail('ACTIVE_GAME_SESSION_CANNOT_BE_REPLACED_WITH_A_DIFFERENT_PLAYER_COUNTRY', {
+          activeSession: existingSession, selectedSeller: seller
+        });
+      if (!session && g.Game.state?.simulation?.countryFactoryStartingBaselineV1?.sessionId)
+        fail('PRIOR_BASELINE_SESSION_MARKER_PREVENTS_A_SAFE_NEW_SESSION', {
+          marker: g.Game.state.simulation.countryFactoryStartingBaselineV1,
+          candidateSeller: seller
+        });
+      const sessionId = session?.sessionId ||
+        ('MINE-MARKET-TREASURY-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9));
+      const liveSession = session || simulation.createSession({
+        playerCountryId: seller, sessionId, startTurn: 0
+      });
+      const baselineResult = await baseline.initializeForSession(liveSession);
       if (typeof baseline.waitForPendingInitialization === 'function')
         await baseline.waitForPendingInitialization();
       const baselineRow = baseline.getCountryBaseline(seller);
@@ -307,7 +334,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
 
       return {
         seller, buyer, currency: chosenCountry.currency, sessionId,
-        sessionStatus: session?.status || null,
+        sessionStatus: liveSession?.status || null,
         turnBeforeExtraction,
         baselineResult: { status: baselineResult?.status || null, activeAssetCount: baselineRuntimeRegistry?.liveProductionAssetsCreated || 0 },
         hydrationStatus: hydration?.status || null,
