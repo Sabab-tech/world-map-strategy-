@@ -80,19 +80,19 @@ assert(autonomy,'autonomy API missing');
 assert(autonomy.diagnostics().queueBridgeInstalled===true,'opponent queue bridge not installed');
 
 const canonical=autonomy.canonicalCountry('Bangladesh');
-assert.equal(canonical.id,'BD');
+assert.equal(canonical.id,'BGD');
 assert.equal(canonical.authority,'OMEGA_CANONICAL_COUNTRY_IDENTITY');
 const namedRoute=autonomy.routeSubject('import','Bangladesh','Saudi Arabia');
-assert.equal(namedRoute.countryId,'BD');
+assert.equal(namedRoute.countryId,'BGD');
 assert.equal(namedRoute.targetCountryId,'SA');
 const kernelEvaluation=await globalThis.Omega.OpponentCountryRules.evaluateCountry('Bangladesh',1);
-assert.equal(kernelEvaluation.countryId,'BD');
+assert.equal(kernelEvaluation.countryId,'BGD');
 
 const sourceRoute=autonomy.findDataSources('treasury','Bangladesh');
-assert.equal(sourceRoute.countryId,'BD');
+assert.equal(sourceRoute.countryId,'BGD');
 assert.equal(sourceRoute.primaryMinistry,'finance');
 const eventRoute=autonomy.resolveEventRoute('OMEGA_RESOURCE_IMPORT_REQUEST_SENT','Bangladesh');
-assert.equal(eventRoute.countryId,'BD');
+assert.equal(eventRoute.countryId,'BGD');
 assert.equal(eventRoute.owner,'trade');
 
 
