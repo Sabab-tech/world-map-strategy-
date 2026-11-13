@@ -3861,6 +3861,7 @@ test('factory Input tab avoids loading the canonical mine-site and mine-asset re
 test('market presentation keeps raw, factory-role and food lanes separate and uses offline vector art', () => {
   const market = readFileSync(new URL('../omega_resource_command_center_ui_v1.js', import.meta.url), 'utf8');
   const ministry = readFileSync(new URL('../omega_ui_v2/screens/ministry-detail.js', import.meta.url), 'utf8');
+  const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   const sw = readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
   assert.match(market,/FOOD_PRODUCT/);
   assert.match(market,/PROCESSED_FOOD/);
@@ -3883,8 +3884,23 @@ test('market presentation keeps raw, factory-role and food lanes separate and us
   assert.match(ministry,/data-omega-v2-trade-market-tab="black-market"/);
   assert.doesNotMatch(ministry,/disabled[^>]*data-omega-v2-trade-market-tab="black-market"/);
   assert.match(ministry,/data-omega-v2-black-market-host/);
-  assert.equal(offlineShellCacheVersion(sw),119,
-    'Black Market runtime and screen updates must invalidate the previously cached v118 shell');
+  const blackMarketScripts = [
+    'omega_global_trade_system.js',
+    'omega_black_market_system_v1.js',
+    'omega_sanction_response_runtime_v1.js',
+    'omega_black_market_network_v1.js',
+    'omega_black_market_ui_v1.js'
+  ];
+  let previousBlackMarketScriptPosition = -1;
+  for (const script of blackMarketScripts) {
+    const tag = '<script src="' + script + '" defer></script>';
+    const position = index.indexOf(tag);
+    assert.ok(position > previousBlackMarketScriptPosition,
+      'index.html must load ' + script + ' in dependency order for static/offline sessions');
+    previousBlackMarketScriptPosition = position;
+  }
+  assert.equal(offlineShellCacheVersion(sw),120,
+    'Black Market runtime shell registration must invalidate the previously cached v119 shell');
   for (const asset of [
     './omega_global_trade_system.js',
     './omega_black_market_system_v1.js',
