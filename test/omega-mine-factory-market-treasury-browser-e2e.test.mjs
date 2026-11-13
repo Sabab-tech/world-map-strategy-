@@ -139,7 +139,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
 
       const currencyGroups = new Map();
       for (const [code, profile] of profileByCountry) {
-        const currency = forex.getCurrencyCode(profile);
+        const currency = trade.currencyOf(code);
         if (!currency) continue;
         if (!currencyGroups.has(currency)) currencyGroups.set(currency, []);
         currencyGroups.get(currency).push(code);
@@ -151,7 +151,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         const factoryCounts = row?.factoryCounts || {};
         const stateFactoryCount = Number(factoryCounts.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT || 0);
         if (!(stateFactoryCount > 0)) continue;
-        const currency = forex.getCurrencyCode(profile);
+        const currency = trade.currencyOf(seller);
         const sameCurrencyBuyers = (currencyGroups.get(currency) || []).filter(code => code !== seller)
           .map(code => ({ code, treasury: bankBalance(code) }))
           .filter(item => item.treasury !== null && item.treasury > 100);
