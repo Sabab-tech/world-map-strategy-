@@ -231,7 +231,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         markerCountry === activeSessionCountry &&
         markerSessionId &&
         markerSessionId !== String(existingSession.sessionId) &&
-        /^OMEGA-SESSION-\\d+$/i.test(String(existingSession.sessionId))
+        /^OMEGA-SESSION-\d+$/i.test(String(existingSession.sessionId))
       );
       const establishedSession = existingSessionUsable && !runtimeBootstrapSessionNeedsAlignment;
       const appSelectedCountry = String(
