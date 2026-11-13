@@ -354,3 +354,18 @@ test('World Bank tab is part of the Finance API and its host is mounted only whe
   assert.ok(html.includes('International Lending Institution'));
   assert.ok(!html.includes('data-ofx-container'),'the FX mount must not leak into the World Bank tab');
 });
+
+test('Finance persists the original allocation baseline for bounded NPC budget transfers',async()=>{
+  const {context}=createRuntime();
+  await context.OmegaFinanceMinistry.init();
+  const model=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  const envelope=model.fiscalModel.annualSpendingUsd;
+  for(const sector of sectorRegistry.budgetSectors){
+    const allocation=model.allocations[sector.id];
+    assert.ok(allocation,'allocation missing for '+sector.id);
+    assert.equal(allocation.defaultSharePct,sector.defaultSharePct);
+    assert.ok(Number.isFinite(allocation.baselineBudgetUsd),'baseline budget missing for '+sector.id);
+    assert.ok(Math.abs(allocation.baselineBudgetUsd-envelope*sector.defaultSharePct/100)<0.02,
+      'baseline budget must be derived from the canonical sector default for '+sector.id);
+  }
+});
