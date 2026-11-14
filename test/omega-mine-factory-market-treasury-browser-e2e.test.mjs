@@ -359,22 +359,37 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const resourceEconomy = g.OmegaResourceEconomy || g.Omega?.ResourceEconomy;
       const globalTrade = g.OmegaGlobalTrade || g.Omega?.GlobalTrade;
       const privateLifecycle = g.OmegaPrivateEnterpriseLifecycleV1 || g.Omega?.PrivateEnterpriseLifecycleV1;
-      if (!turnParticipants.length || typeof resourceEconomy?.runTurn !== 'function' ||
+      const requiredResourceParticipantId = 'omega.resource-economy.player-country';
+      const hasPlayerResourceParticipant = turnParticipants.some(row => row.id === requiredResourceParticipantId);
+      if (!turnParticipants.length || !hasPlayerResourceParticipant ||
+          typeof resourceEconomy?.runTurn !== 'function' ||
           typeof globalTrade?.processCountry !== 'function' ||
           typeof privateLifecycle?.getCountryDashboard !== 'function') {
         fail('RESOURCE_GAMEPLAY_TURN_PARTICIPANTS_NOT_READY', {
           participantCount: turnParticipants.length,
           participantIds: turnParticipants.map(row => row.id),
+          requiredResourceParticipantId,
+          hasPlayerResourceParticipant,
           resourceEconomyReady: typeof resourceEconomy?.runTurn === 'function',
           globalTradeReady: typeof globalTrade?.processCountry === 'function',
           privateLifecycleReady: typeof privateLifecycle?.getCountryDashboard === 'function'
         });
       }
 
-      // The resource acceptance case advances the real ordered turn pipeline while
-      // excluding only the separate global 197-country world tick and 17-ministry pump,
-      // which have independent required workflows. All registered economic/resource
-      // turn participants still execute. Save/load is tested explicitly below.
+      // The world-autonomy scheduler evaluates separate ACTIVE/MACRO countries and
+      // is covered by its own world-simulation workflow. It is not part of this
+      // player-country resource acceptance scenario. Keep the authoritative player
+      // Resource Economy participant and all other registered gameplay participants.
+      const worldSchedulerId = 'omega.world-simulation.scheduler.v1';
+      const worldSchedulerEntry = simulation.turnParticipants?.get?.(worldSchedulerId) || null;
+      if (worldSchedulerEntry) simulation.turnParticipants.delete(worldSchedulerId);
+      g.__omegaMineMarketTreasuryExcludedWorldScheduler = worldSchedulerEntry;
+
+      // This acceptance test advances the real ordered player-country economic turn:
+      // mine extraction, industrial haul/receipts, factory processing, market/trade and
+      // Treasury publication remain active. Only the separate world-autonomy scheduler,
+      // global world tick, and 17-ministry pump are outside this test's scope. Save/load
+      // is still tested explicitly below.
       g.__omegaMineMarketTreasuryAdvanceTurns = async turns => {
         const previousWorldEngine = simulation.worldEngine;
         const previousMinistryPump = simulation.ministryPump;
@@ -539,6 +554,9 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         bootstrapMode,
         autosaveFinalizerSuppressedForTest: true,
         registeredTurnParticipantIds: turnParticipants.map(row => row.id),
+        requiredResourceParticipantId,
+        playerResourceParticipantRetained: hasPlayerResourceParticipant,
+        excludedWorldSchedulerId: worldSchedulerEntry ? worldSchedulerId : null,
         turnBeforeExtraction,
         baselineResult: { status: baselineResult?.status || null, activeAssetCount: baselineRuntimeRegistry?.liveProductionAssetsCreated || 0 },
         hydrationStatus: hydration?.status || null,
@@ -679,6 +697,11 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       }
       } finally {
         for (const [entry, handler] of participantHandlers) entry.handler = handler;
+        if (g.__omegaMineMarketTreasuryExcludedWorldScheduler &&
+            !simulation.turnParticipants.has('omega.world-simulation.scheduler.v1')) {
+          simulation.turnParticipants.set('omega.world-simulation.scheduler.v1',
+            g.__omegaMineMarketTreasuryExcludedWorldScheduler);
+        }
         mark('FACTORY_PRODUCTION_WAIT_END', {
           finished: !!finished,
           turn: Number(g.Game.state.simulation?.turn || 0)
