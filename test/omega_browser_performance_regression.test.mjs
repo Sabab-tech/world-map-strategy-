@@ -539,7 +539,7 @@ test('late economy baseline fills missing values without replacing live factory 
   assert.equal(merged.IND.gdp, 500, 'new country baseline buckets must still be added');
 });
 
-test('world geometry and supporting datasets run as a serialized startup pipeline with resumable progress', () => {
+test('world geometry becomes usable before supporting datasets and resumes without reset', () => {
   const map = read('map-engine-2.js');
   const html = read('index.html');
   const css = read('style.css');
@@ -566,18 +566,20 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
     'country metadata must get its ordered post-map recovery attempt before supporting datasets');
   assert.ok(startup.includes('Game.Map.refreshCountryPolygonStyles()'),
     'successful late country metadata recovery must restyle the already-rendered country polygons');
-  assert.doesNotMatch(startup, /Promise\.(?:all|allSettled)\(/,
-    'startup stages must not fan out into concurrent dataset loads');
-  assert.match(startup, /for \(let index = 0; index < startupDatasets\.length; index \+= 1\)[\s\S]*?await fetchOptional\(item, index\)/,
-    'supporting datasets must be awaited one by one in their declared dependency order');
+  assert.match(startup, /Promise\.all\(startupDatasets\.map\(function \(item, index\)/,
+    'independent supporting files must load concurrently instead of serial network round trips');
+  assert.match(startup, /const startupData = await Promise\.all\([\s\S]*?startupData\[index\]/,
+    'parallel supporting data must be applied deterministically in declared source order');
   assert.match(startup, /await Promise\.resolve\(Game\.Diplomacy\.generateAllBilateralRelations\(chunk\)\)/,
     'relation-generation chunks must finish before the next chunk or finalization starts');
   assert.doesNotMatch(startup, /setTimeout\(processRelationChunk/,
     'relation generation must not escape into an unawaited background task');
   assert.match(startup, /if \(this\.__assetsLoadPromise\) return this\.__assetsLoadPromise/,
     'concurrent startup requests must share one in-flight coordinator');
-  assert.match(worldLoader, /await countriesPromise;[\s\S]*?return fetcher\('world\.json'/,
-    'the canonical country roster must finish before world geometry is requested');
+  assert.match(worldLoader, /const countriesPromise = this\.loadCountryConfig\(fetcher\);[\s\S]*?return fetcher\('world\.json'/,
+    'country identity and world geometry should load concurrently under one shared world loader');
+  assert.doesNotMatch(worldLoader, /await countriesPromise/,
+    'world geometry must not wait for the independent country roster request');
 
   assert.ok(map.includes("return fetcher('world.json', {"),
     'world geometry must use the abortable data loader');
@@ -600,6 +602,15 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
     'the complete startup pipeline must be single-flight and reusable after success');
   assert.ok(map.includes('Game.DataLoader.loadAssets();'),
     'map retry must resume the full staged startup sequence rather than only redrawing the map');
+  const setUiActiveStart = map.indexOf('Game.Map.setUiActive = function(active)');
+  const setUiActiveEnd = map.indexOf('Game.Map.getCountryPolygonStyle = function', setUiActiveStart);
+  const setUiActive = map.slice(setUiActiveStart, setUiActiveEnd);
+  assert.ok(setUiActiveStart >= 0 && setUiActiveEnd > setUiActiveStart);
+  assert.doesNotMatch(setUiActive, /__omegaWorldMapAbortController\.abort\(\)|map\.removeLayer\(/,
+    'switching away from the map must preserve in-flight geometry, Leaflet layers and render cursor');
+  assert.ok(setUiActive.includes('root.style.display = this.__omegaMapRootDisplay') &&
+    setUiActive.includes('Game.__omegaGeoJSONRenderPaused = true'),
+    'map navigation should park the map view and pause only its frame work');
   const abortResumeStart = map.indexOf('const retryWorldMapAfterAbort = function ()');
   const abortResumeEnd = map.indexOf('    return true;', abortResumeStart);
   const abortResume = map.slice(abortResumeStart, abortResumeEnd);
@@ -614,12 +625,24 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
   assert.match(map, /Math\.min\(45, 2 \+ rawPercent \* 0\.43\)/,
     'map rendering progress must reserve the first 45 percent of the full startup bar');
   assert.ok(startup.includes('const supportStageStart = 46') && startup.includes('const supportStageSpan = 35'),
-    'sequential supporting datasets must continue the same progress bar after the map stage');
+    'supporting datasets must retain their weighted startup progress stage');
   assert.ok(startup.includes('82 + relationProgress * 16'),
     'awaited relation generation must occupy the final pre-completion progress stage');
   assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
-  assert.ok(map.includes('this.__omegaWorldMapAbortController.abort()'),
-    'leaving the world view must abort an unfinished map-only request');
+  assert.ok(map.includes('if (Game.__omegaGeoJSONRenderComplete === true) return this.__assetsLoadingProgress;'),
+    'the blocking map loader must close after map geometry is ready while other shared startup work continues');
+  const simulation = read('omega_simulation_runtime.js');
+  const driver = read('omega_enterprise_composition_root_v10.js');
+  const resourceEconomy = read('omega_resource_economy_runtime_v2.js');
+  assert.ok(simulation.includes('const STEP_MS=15000;') && driver.includes('SIMULATION_FRAME_INTERVAL_MS = 250'),
+    'authoritative turns must advance every fifteen real seconds without polling every second');
+  assert.ok(resourceEconomy.includes('function runResourceEconomyTurnParticipant()') &&
+    resourceEconomy.includes('g.Game.Map.__omegaMapUiActive===true)return;'),
+    'economic calculations stay in the committed turn participant while resource UI repaint pauses on the map');
+  assert.ok(map.includes('const cachedGeometry = Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData'),
+    'map activation must reuse already downloaded country geometry');
+  assert.ok(map.includes('if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON)'),
+    'a completed map must remain a reusable cached surface across navigation');
   assert.ok(abortRetryScheduling.includes('pendingWorldLoad.then(function ()'),
     'returning while the initial world request is aborting must defer the full startup retry until request cleanup');
   assert.ok(map.includes('Game.__omegaGeoJSONResumeRender = scheduleFeatureChunk'),
