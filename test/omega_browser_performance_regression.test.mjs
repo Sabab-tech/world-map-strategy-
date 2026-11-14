@@ -647,7 +647,7 @@ test('world geometry becomes usable before supporting datasets and resumes witho
     'economic calculations stay in the committed turn participant while resource UI repaint pauses on the map');
   assert.ok(map.includes('const cachedGeometry = Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData'),
     'map activation must reuse already downloaded country geometry');
-  assert.ok(map.includes('if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON)'),
+  assert.ok(map.includes('Game.__omegaGeoJSONRenderComplete === true && Game.Map.countryGeoJSON && Game.geojsonLayer'),
     'a completed map must remain a reusable cached surface across navigation');
   assert.ok(abortRetryScheduling.includes('pendingWorldLoad.then(function ()'),
     'returning while the initial world request is aborting must defer the full startup retry until request cleanup');
