@@ -40,6 +40,10 @@
   let marketCatalogCacheBooks = null;
   let marketCatalogCacheResources = null;
   let marketCatalogCacheIndustrial = null;
+  let marketCountryIndexDataset = null;
+  let marketCountryIndexCache = null;
+  let marketProductIconRenderSequence = 0;
+  const marketProductIconMarkupCache = new Map();
   let selectedFleetSiteId = '';
   let fleetPreviewCache = Object.create(null);
   let fleetPreviewPending = Object.create(null);
@@ -1401,23 +1405,29 @@
         (/FOOD_PROCESSING_COLD_CHAIN|FOOD_PROCESSING/.test(String(factories).toUpperCase()) && row.productRole === 'PRIMARY_OUTPUT');
     }
 
-    const countryRows = [];
+    const registry = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge;
+    let countryDataset = null;
     try {
-      const registry = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge;
-      const dataset = registry && typeof registry.getDataset === 'function'
+      countryDataset = registry && typeof registry.getDataset === 'function'
         ? registry.getDataset('countries.json') : null;
-      if (Array.isArray(dataset)) countryRows.push.apply(countryRows, dataset);
-      else if (Array.isArray(dataset && dataset.countries)) countryRows.push.apply(countryRows, dataset.countries);
-      else if (Array.isArray(dataset && dataset.data)) countryRows.push.apply(countryRows, dataset.data);
     } catch (_) {}
-    const countryIndex = Object.create(null);
-    countryRows.forEach(function (row) {
-      if (!row) return;
-      [row.iso2, row.iso3, row.code, row.countryCode, row.id].forEach(function (key) {
-        const token = String(key || '').trim().toUpperCase();
-        if (token) countryIndex[token] = row;
+    if (marketCountryIndexDataset !== countryDataset || !marketCountryIndexCache) {
+      const countryRows = [];
+      if (Array.isArray(countryDataset)) countryRows.push.apply(countryRows, countryDataset);
+      else if (Array.isArray(countryDataset && countryDataset.countries)) countryRows.push.apply(countryRows, countryDataset.countries);
+      else if (Array.isArray(countryDataset && countryDataset.data)) countryRows.push.apply(countryRows, countryDataset.data);
+      const nextCountryIndex = Object.create(null);
+      countryRows.forEach(function (row) {
+        if (!row) return;
+        [row.iso2, row.iso3, row.code, row.countryCode, row.id].forEach(function (key) {
+          const token = String(key || '').trim().toUpperCase();
+          if (token) nextCountryIndex[token] = row;
+        });
       });
-    });
+      marketCountryIndexDataset = countryDataset;
+      marketCountryIndexCache = nextCountryIndex;
+    }
+    const countryIndex = marketCountryIndexCache;
 
     function countryMeta(countryCode) {
       const key = String(countryCode || '').trim().toUpperCase();
@@ -1470,10 +1480,27 @@
     }
     function productIcon(row, large) {
       const id = String(row.id || row.productId || row.resourceId || '').trim();
+      const label = String(row.name || id);
+      const cacheKey = id.toLowerCase() + '|' + label;
       const industry = g.OmegaUIV2Industry;
       let visual = '';
       if (industry && typeof industry.productIconVisualMarkup === 'function' && id) {
-        try { visual = industry.productIconVisualMarkup(id, row.name || id, true); } catch (_) { visual = ''; }
+        let template = marketProductIconMarkupCache.get(cacheKey);
+        if (!template) {
+          try {
+            visual = industry.productIconVisualMarkup(id, label, true);
+            const tokenMatch = visual.match(/id="(fp-product-[0-9]+)-main"/);
+            if (tokenMatch) visual = visual.replace(new RegExp(tokenMatch[1], 'g'), '__OMEGA_MARKET_PRODUCT_ICON__');
+            template = visual;
+            if (template) {
+              marketProductIconMarkupCache.set(cacheKey, template);
+              if (marketProductIconMarkupCache.size > 320) marketProductIconMarkupCache.delete(marketProductIconMarkupCache.keys().next().value);
+            }
+          } catch (_) { visual = ''; }
+        } else visual = template;
+        if (visual.indexOf('__OMEGA_MARKET_PRODUCT_ICON__') >= 0) {
+          visual = visual.replace(/__OMEGA_MARKET_PRODUCT_ICON__/g, 'omega-market-product-' + (++marketProductIconRenderSequence));
+        }
       }
       if (!visual) {
         const slug = id.toLowerCase().replace(/[_\\s]+/g, '-');
@@ -1484,9 +1511,9 @@
           : route && /^[a-z0-9-]+$/.test(route)
             ? 'assets/omega-industrial-icons-v1/factories/' + route + '.svg'
             : 'assets/omega-industrial-icons-v1/factories/generic-resource-processing-plant.svg';
-        visual = '<img src="' + esc(path) + '" loading="lazy" decoding="async" alt="" onerror="this.onerror=null;this.src=\'assets/omega-industrial-icons-v1/factories/generic-resource-processing-plant.svg\'">';
+        visual = '<img src="' + esc(path) + '" loading="lazy" decoding="async" alt="' + esc(label + ' icon') + '">';
       }
-      return '<span class="omega-market-product-art' + (large ? ' is-large' : '') + '">' + visual + '</span>';
+      return '<span class="omega-market-product-art' + (large ? ' is-large' : '') + '" role="img" aria-label="' + esc(label) + '">' + visual + '</span>';
     }
     function offerRows(rows, unit) {
       const safeRows = (Array.isArray(rows) ? rows : []).filter(function (order) {
@@ -2398,15 +2425,15 @@
       '.omega-market-list-heading{height:45px;flex:0 0 45px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 13px;border-bottom:1px solid rgba(54,126,186,.37);background:linear-gradient(100deg,rgba(10,49,88,.9),rgba(5,24,50,.8));color:#ecf7ff}' +
       '.omega-market-list-heading strong{font-size:15px;letter-spacing:.01em}' +
       '.omega-market-list-heading span{font-size:10px;color:#8fc5ef}' +
-      '.omega-market-product-list{display:flex;flex-direction:column;gap:5px;min-height:0;overflow:auto;padding:7px;scrollbar-color:#17619a #06182e;scrollbar-width:thin}' +
-      '.omega-market-product-row{display:grid;grid-template-columns:52px minmax(0,1fr) minmax(54px,88px) 15px;align-items:center;gap:9px;min-height:67px;width:100%;padding:7px 9px;border:1px solid rgba(74,126,174,.38);border-radius:9px;background:linear-gradient(145deg,rgba(8,31,60,.95),rgba(4,17,38,.98));color:#eff8ff;text-align:left;cursor:pointer;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}' +
+      '.omega-market-product-list{display:flex;flex-direction:column;gap:5px;min-height:0;overflow:auto;padding:7px;scrollbar-color:#17619a #06182e;scrollbar-width:thin;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}' +
+      '.omega-market-product-row{display:grid;grid-template-columns:60px minmax(0,1fr) minmax(54px,88px) 15px;align-items:center;gap:9px;min-height:76px;width:100%;padding:8px 9px;border:1px solid rgba(74,126,174,.38);border-radius:9px;background:linear-gradient(145deg,rgba(8,31,60,.95),rgba(4,17,38,.98));color:#eff8ff;text-align:left;cursor:pointer;transition:background-color .12s ease;touch-action:pan-y;contain:layout style}' +
       '.omega-market-product-row:hover{border-color:rgba(55,190,255,.8);background:linear-gradient(145deg,rgba(11,46,85,.98),rgba(4,18,40,.99))}' +
       '.omega-market-product-row.is-selected{border:1px solid #25cfff;background:linear-gradient(105deg,rgba(7,64,111,.95),rgba(5,28,62,.99));box-shadow:inset 0 0 0 1px rgba(44,206,255,.26),0 0 12px rgba(0,172,255,.38)}' +
-      '.omega-market-product-art{display:flex;align-items:center;justify-content:center;width:48px;height:48px;flex:0 0 48px;overflow:hidden;padding:4px;border:1px solid rgba(142,197,226,.82);border-radius:9px;background:linear-gradient(145deg,#e9f4fb,#9ebed1);box-shadow:inset 0 1px rgba(255,255,255,.9),0 0 12px rgba(16,186,255,.16)}' +
+      '.omega-market-product-art{display:flex;align-items:center;justify-content:center;width:56px;height:56px;flex:0 0 56px;overflow:hidden;padding:4px;border:1px solid rgba(142,197,226,.82);border-radius:9px;background:linear-gradient(145deg,#e9f4fb,#9ebed1);box-shadow:inset 0 1px rgba(255,255,255,.9),0 0 12px rgba(16,186,255,.16)}' +
       '.omega-market-product-art img,.omega-market-product-art svg{display:block;width:100%;height:100%;object-fit:contain;shape-rendering:geometricPrecision;text-rendering:geometricPrecision}' +
       '.omega-market-product-art.is-large{width:78px;height:78px;flex-basis:78px;border-radius:12px;padding:5px}' +
       '.omega-market-product-copy{display:flex;flex-direction:column;gap:3px;min-width:0}' +
-      '.omega-market-product-copy strong{font-size:clamp(13px,1.25vw,17px);line-height:1.2;white-space:normal;overflow-wrap:anywhere}' +
+      '.omega-market-product-copy strong{font-size:clamp(14px,1.3vw,18px);line-height:1.24;white-space:normal;overflow-wrap:anywhere}' +
       '.omega-market-list-trend{display:flex;align-items:center;justify-content:center;min-width:0;height:31px;border-left:1px solid rgba(55,130,186,.24);padding-left:5px}' +
       '.omega-market-sparkline{width:100%;height:28px;overflow:visible}' +
       '.omega-market-no-trend{color:#6d9bbb;font-size:14px;text-align:center;width:100%}' +
