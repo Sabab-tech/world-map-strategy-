@@ -624,16 +624,28 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       // shipment or factory cycle. Defer it while the real player-country resource
       // pipeline advances, then rebuild once after finished goods exist.
       const scopedGlobalMarket = Object.create(originalGlobalMarket);
-      scopedGlobalMarket.rebuildCountry = countryId => {
-        deferredMarketRebuildCount += 1;
-        return {
-          status: 'DEFERRED_FOR_TEST_PIPELINE',
-          countryId: String(countryId || seller),
-          reason: 'NO_FINISHED_BATCH_REQUIRES_MARKET_REINDEX_YET'
-        };
-      };
+      // The production market API is frozen; assignment to an inherited
+      // non-writable method would silently leave the real 197-country rebuild in
+      // place. Define an own test-only method explicitly.
+      Object.defineProperty(scopedGlobalMarket, 'rebuildCountry', {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: countryId => {
+          deferredMarketRebuildCount += 1;
+          return {
+            status: 'DEFERRED_FOR_TEST_PIPELINE',
+            countryId: String(countryId || seller),
+            reason: 'NO_FINISHED_BATCH_REQUIRES_MARKET_REINDEX_YET'
+          };
+        }
+      });
       g.Omega.GlobalMarket = scopedGlobalMarket;
       g.OmegaGlobalMarket = scopedGlobalMarket;
+      if (g.OmegaGlobalMarket !== scopedGlobalMarket ||
+          g.OmegaGlobalMarket.rebuildCountry !== scopedGlobalMarket.rebuildCountry) {
+        throw new Error('TEST_ONLY_MARKET_REBUILD_DEFER_HOOK_NOT_INSTALLED');
+      }
       g.__omegaMineMarketTreasuryDeferredMarketRebuilds = () => deferredMarketRebuildCount;
       const batchMap = () => new Map((resource.batches || []).map(row => [String(row?.batchId || ''), row]));
       const hasOrigin = (batch, target, map, seen = new Set()) => {
@@ -725,7 +737,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       addArrayScope(resource, 'mineProductionLedger', siteRelated);
       addArrayScope(resource, 'batches', row => batchRelated(row) || siteRelated(row));
       addMapScope(resource, 'inventoryLots', (key, row) =>
-        batchRelated(row) || String(row?.resourceId || row?.materialIdentity || '').toLowerCase() === scopedResourceId);
+        String(key) === originBatchId || batchRelated(row) || siteRelated(row) ||
+        String(row?.resourceId || row?.materialIdentity || '').toLowerCase() === scopedResourceId);
       for (const warehouseName of ['warehouse', 'rawWarehouse']) {
         const warehouse = resource[warehouseName];
         if (!warehouse || typeof warehouse !== 'object') continue;
@@ -766,6 +779,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         selectedBatchLineageIds: [...lineageBatchIds],
         retainedFactoryCount: economy.productionAssets?.length || 0,
         retainedMineStateCount: Object.keys(resource.mineStates || {}).length,
+        retainedOriginBatchPresent: (resource.batches || []).some(row => String(row?.batchId || '') === originBatchId),
+        retainedOriginLotPresent: !!resource.inventoryLots?.[originBatchId],
         retainedShipmentCount: network.shipments?.length || 0,
         retainedSiteFlowCount: network.siteFlowLedger?.length || 0,
         scopedCollectionCount: scopedCollections.length
@@ -791,7 +806,12 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         g.__omegaMineMarketTreasuryRestoreScope = null;
       };
       g.__omegaMineMarketTreasuryScopeDetails = scopeCounts;
-      mark('TEMPORARY_SINGLE_MINE_FACTORY_SCOPE_APPLIED', scopeCounts);
+      mark('TEMPORARY_SINGLE_MINE_FACTORY_SCOPE_APPLIED', {
+        ...scopeCounts,
+        marketRebuildOverrideInstalled:
+          g.OmegaGlobalMarket === scopedGlobalMarket &&
+          g.OmegaGlobalMarket.rebuildCountry === scopedGlobalMarket.rebuildCountry
+      });
       const snapshots = [];
       let finished = null;
       const participantHandlers = new Map();
@@ -859,11 +879,28 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         const receipt = receipts.find(row =>
           String(row?.batchId || '') === originBatchId &&
           completeStatuses.has(String(row?.status || 'RECEIVED').toUpperCase()));
+        const sourceBatch = (resource.batches || []).find(row => String(row?.batchId || '') === originBatchId) || null;
+        const sourceLot = resource.inventoryLots?.[originBatchId] || null;
         const snapshot = {
           turn, simulationStatus: turnResult?.status || null,
           flowStatus: flow?.status || null,
           flowStages: (flow?.stages || []).map(row => String(row.stage) + ':' + String(row.status)),
           shipmentStages: relatedShipments.map(row => String(row.shipmentType) + ':' + String(row.status)),
+          shipmentDetails: relatedShipments.map(row => ({
+            shipmentId: row.shipmentId, shipmentType: row.shipmentType,
+            status: row.status, blockReason: row.blockReason || null,
+            deliveryStatus: row.deliveryStatus || null, quantity: row.quantity,
+            lastDeliveryAttemptTurn: row.lastDeliveryAttemptTurn ?? null,
+            deliveryAttemptCount: row.deliveryAttemptCount ?? null,
+            deliveryRetryCount: row.deliveryRetryCount ?? null,
+            deliveryLedgerSnapshot: row.deliveryLedgerSnapshot || null
+          })),
+          originBatchPresent: !!sourceBatch,
+          originBatchResourceId: sourceBatch?.resourceId || sourceBatch?.materialIdentity || null,
+          originBatchRemaining: Number(sourceBatch?.remainingQuantity ?? sourceBatch?.quantity) || 0,
+          originLotPresent: !!sourceLot,
+          originLotResourceId: sourceLot?.resourceId || sourceLot?.materialIdentity || null,
+          originLotRemaining: Number(sourceLot?.remainingQuantity ?? sourceLot?.quantity) || 0,
           receiptId: receipt?.receiptId || null, finishedBatchId: chosen?.batchId || null
         };
         snapshots.push(snapshot);
