@@ -479,7 +479,11 @@ context.Omega.ResourceEndowmentRuntime={
       stage:'RAW_EXTRACTED',countryId,sourceCountryId:countryId,originCountryId:countryId,ownerCountryCode:countryId,destinationCountryId:countryId,
       warehouseId:'WH-'+countryId+'-RAW',locationNodeKey:'WAREHOUSE:'+countryId+':RAW',occurrenceKey:occurrenceKeys[0],sourceBatchIds:[],
       provenance:{sourceAuthority:'SIMULATED_TEST_FIXTURE'}};
-    rs.batches.push(trackedBatch);rs.inventoryLots[batchId]={...trackedBatch,status:'AVAILABLE'};rs.warehouse.storedBatchIds.push(batchId);
+    rs.batches.push(trackedBatch);
+    // Simulate a pre-lot legacy save for this one mine: the physical batch remains authoritative.
+    if(occurrenceKey!=='SITE_OCC:BGD:SITE_BGD_IRON_01')
+      rs.inventoryLots[batchId]={...trackedBatch,status:'AVAILABLE'};
+    rs.warehouse.storedBatchIds.push(batchId);
     const record={occurrenceKey:occurrenceKeys[0],countryId,resourceId,approvedQuantity:quantity,
       producedBatch:{batchId,quantity,unit:'TONNES',warehouseId:'WH-'+countryId+'-RAW'}};
     context.dispatchEvent(new context.CustomEvent('OMEGA_RESOURCE_EXTRACTION_COMPLETED',{detail:{
@@ -674,6 +678,12 @@ const waitingForFactory=await N.executeSitePipeline({
 assert.equal(waitingForFactory.status,'IN_TRANSIT',JSON.stringify(waitingForFactory));
 assert.equal(waitingForFactory.shipment?.shipmentType,'MINE_TO_WAREHOUSE');
 assert.equal(waitingForFactory.batchId,'BATCH-E2E-IRON');
+const recoveredWaitingLot=context.Game.state.resource.BGD.inventoryLots?.[waitingForFactory.batchId];
+assert.ok(recoveredWaitingLot,'legacy physical batches without lot rows must be reconciled before mine dispatch');
+assert.equal(recoveredWaitingLot.resourceId,'iron_ore');
+assert.equal(Number(recoveredWaitingLot.remainingQuantity),1200);
+assert.equal(recoveredWaitingLot.lotRecovery?.authority,'CANONICAL_SOURCE_BATCH');
+assert.equal(recoveredWaitingLot.lotRecovery?.reason,'MINE_LOGISTICS_SOURCE_LOT_RECONCILIATION');
 assert.equal(Number(context.Game.state.resource.BGD.warehouse.availableByResource.iron_ore),ironWarehouseBefore,
   'raw stock is held at the mine until the first-leg receipt');
 advanceToGameTurn(context.Game.state,waitingForFactory.shipment.etaTurn);

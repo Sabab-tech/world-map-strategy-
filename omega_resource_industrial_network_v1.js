@@ -356,6 +356,53 @@ function recomputeSiteLogisticsTradeAvailability(rs){
   for(const [key,value] of Object.entries(strategic))if(out[key]===undefined)out[key]=Math.max(0,(num(inventory[key])??0)-(num(value)??0));
   rs.tradeAvailability=out;
 }
+function reconcileMineWarehouseSourceLot(rs,countryId,batch,siteId,minimumQuantity=0){
+  const cid=canonicalCountry(countryId),batchId=String(batch?.batchId||'').trim();
+  const resourceId=tok(String(batch?.resourceId||batch?.materialIdentity||'').replace(/^RES_TYPE:/i,''));
+  const batchCountry=canonicalCountry(batch?.countryId||batch?.sourceCountryId||batch?.originCountryId||cid);
+  const originalQuantity=num(batch?.quantity??batch?.remainingQuantity);
+  const remainingQuantity=num(batch?.remainingQuantity??batch?.quantity);
+  const minimum=Math.max(0,num(minimumQuantity)||0);
+  if(!rs||!cid||!batchId||!resourceId||batchCountry!==cid||
+     originalQuantity===null||originalQuantity<=0||remainingQuantity===null||
+     remainingQuantity<=0||remainingQuantity>originalQuantity+1e-6||
+     remainingQuantity+1e-6<minimum){
+    return{status:'BLOCKED',reason:'MINE_WAREHOUSE_SOURCE_BATCH_INVALID',batchId,countryId:cid,
+      resourceId,originalQuantity,remainingQuantity,minimumQuantity:minimum,batchCountry};
+  }
+  if(!rs.inventoryLots||typeof rs.inventoryLots!=='object'||Array.isArray(rs.inventoryLots))rs.inventoryLots={};
+  let lot=rs.inventoryLots[batchId];
+  if(lot){
+    const lotBatchId=String(lot.batchId||batchId);
+    const lotResource=tok(String(lot.resourceId||lot.materialIdentity||resourceId).replace(/^RES_TYPE:/i,''));
+    const lotCountry=canonicalCountry(lot.countryId||lot.sourceCountryId||cid);
+    let lotRemaining=num(lot.remainingQuantity??lot.quantity);
+    if(lotBatchId!==batchId||lotResource!==resourceId||lotCountry!==cid||
+       (lotRemaining!==null&&lotRemaining+1e-6<minimum)||(lotRemaining!==null&&lotRemaining<0)){
+      return{status:'BLOCKED',reason:'MINE_WAREHOUSE_SOURCE_LOT_IDENTITY_OR_QUANTITY_MISMATCH',
+        batchId,resourceId,lotBatchId,lotResource,lotCountry,lotRemaining,minimumQuantity:minimum};
+    }
+    if(lotRemaining===null){
+      lot.quantity=originalQuantity;lot.remainingQuantity=remainingQuantity;
+      lotRemaining=remainingQuantity;
+    }
+    lot.batchId=batchId;lot.resourceId=resourceId;lot.countryId=cid;
+    lot.sourceCountryId=lot.sourceCountryId||cid;lot.originCountryId=lot.originCountryId||cid;
+    return{status:'READY',lot,recovered:false,remainingQuantity:lotRemaining};
+  }
+  lot=clone(batch);
+  lot.batchId=batchId;lot.resourceId=resourceId;
+  lot.materialIdentity=lot.materialIdentity||('RES_TYPE:'+resourceId);
+  lot.countryId=cid;lot.sourceCountryId=canonicalCountry(batch?.sourceCountryId||cid);
+  lot.originCountryId=canonicalCountry(batch?.originCountryId||cid);
+  lot.destinationCountryId=canonicalCountry(batch?.destinationCountryId||cid);
+  lot.quantity=originalQuantity;lot.remainingQuantity=remainingQuantity;
+  lot.stage=lot.stage||'RAW_INVENTORY';lot.status=lot.status||'AVAILABLE';
+  lot.lotRecovery={authority:'CANONICAL_SOURCE_BATCH',reason:'MINE_LOGISTICS_SOURCE_LOT_RECONCILIATION',
+    siteId:String(siteId||batch?.siteReferenceKey||batch?.occurrenceKey||'')||null,turn:turn()};
+  rs.inventoryLots[batchId]=lot;
+  return{status:'RECOVERED',lot,recovered:true,remainingQuantity};
+}
 function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   const cid=canonicalCountry(countryId),rid=tok(routeProfile?.resourceId||flow?.resourceId||sourceBatch?.resourceId),siteId=String(site?.siteId||flow?.siteId||routeProfile?.siteId||'');
   if(!cid||!/^[A-Z]{3}$/.test(cid)||!siteId||canonicalCountry(routeProfile?.countryId)!==cid||String(routeProfile?.siteId||'')!==siteId)
@@ -364,8 +411,13 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   if(!player)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:cid};
   if(player!==cid)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:player};
   const rs=resourceState(cid),network=netState(cid),batchId=String(sourceBatch?.batchId||flow?.batchId||'');
-  if(!batchId||!Array.isArray(rs.batches)||!rs.batches.some(batch=>String(batch?.batchId||'')===batchId))
+  const sourceBatchRow=(Array.isArray(rs.batches)?rs.batches:[]).find(batch=>String(batch?.batchId||'')===batchId)||null;
+  if(!batchId||!sourceBatchRow)
     return{status:'BLOCKED',reason:'SOURCE_BATCH_NOT_FOUND',batchId};
+  const sourceLot=reconcileMineWarehouseSourceLot(rs,cid,sourceBatchRow,siteId);
+  if(sourceLot.status==='BLOCKED')
+    return{status:'BLOCKED',reason:sourceLot.reason,batchId,details:sourceLot};
+  sourceBatch=sourceBatchRow;
   const active=network.shipments.find(item=>String(item?.batchId||'')===batchId&&item.shipmentType==='MINE_TO_WAREHOUSE'&&
     ['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(item?.status||'')));
   if(active)return{status:'DISPATCHED',shipment:active,idempotent:true};
@@ -577,10 +629,14 @@ function receiveMineWarehouseShipment(countryId,shipment){
   const existing=receipts.find(receipt=>String(receipt?.receiptId||'')===receiptId);
   if(existing&&String(existing.status||'')==='RECEIVED')return{status:'DELIVERED',idempotent:true,receiptId,quantity:num(existing.quantity)||0};
   const batch=(Array.isArray(rs.batches)?rs.batches:[]).find(item=>String(item?.batchId||'')===batchId);
-  const lot=rs.inventoryLots?.[batchId];
-  if(!batch||!lot)return{status:'BLOCKED',reason:'MINE_WAREHOUSE_SOURCE_BATCH_OR_LOT_MISSING',batchId};
-  const rid=tok(shipment.resourceId),quantity=Math.max(0,num(shipment.quantity)||0);
-  if(tok(batch.resourceId||batch.materialIdentity)!==rid||tok(lot.resourceId)!==rid)
+  if(!batch)return{status:'BLOCKED',reason:'MINE_WAREHOUSE_SOURCE_BATCH_OR_LOT_MISSING',batchId};
+  const rid=tok(String(shipment.resourceId||'').replace(/^RES_TYPE:/i,''));
+  const quantity=Math.max(0,num(shipment.quantity)||0);
+  const sourceLot=reconcileMineWarehouseSourceLot(rs,cid,batch,shipment.siteId,quantity);
+  if(sourceLot.status==='BLOCKED')return{status:'BLOCKED',reason:sourceLot.reason,batchId,details:sourceLot};
+  const lot=sourceLot.lot;
+  if(tok(String(batch.resourceId||batch.materialIdentity||'').replace(/^RES_TYPE:/i,''))!==rid||
+     tok(String(lot.resourceId||lot.materialIdentity||'').replace(/^RES_TYPE:/i,''))!==rid)
     return{status:'BLOCKED',reason:'MINE_WAREHOUSE_RESOURCE_LEDGER_MISMATCH',batchId,resourceId:rid};
   if(!(quantity>1e-9))
     return{status:'BLOCKED',reason:'MINE_WAREHOUSE_SHIPMENT_QUANTITY_INVALID',batchId,quantity};

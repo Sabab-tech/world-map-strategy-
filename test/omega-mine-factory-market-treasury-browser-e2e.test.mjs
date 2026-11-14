@@ -616,11 +616,23 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         flow?.batchId || afterExtraction[0]?.batchId || ''
       );
       const rawBatch = resourceState.batches.find(row => String(row?.batchId || '') === originBatchId);
+      const originLot = resourceState.inventoryLots?.[originBatchId] || null;
+      const rawBatchQuantity = Number(rawBatch?.remainingQuantity ?? rawBatch?.quantity);
+      const originLotQuantity = Number(originLot?.remainingQuantity ?? originLot?.quantity);
       if (['BLOCKED', 'FAILED', 'WAITING_DEPENDENCIES'].includes(String(pipelineStart?.status || '').toUpperCase()))
         fail('MINE_TO_FACTORY_PIPELINE_REJECTED', { pipelineStart, selected: { ...selected, routePreview: undefined } });
       if (!originBatchId || !rawBatch || !(Number(rawBatch.remainingQuantity ?? rawBatch.quantity) > 0))
         fail('MINE_EXTRACTION_DID_NOT_CREATE_A_NEW_PHYSICAL_BATCH', {
           seller, selected: { ...selected, routePreview: undefined }, pipelineStart, afterExtraction, flow
+        });
+      if (!originLot || token(originLot.resourceId || originLot.materialIdentity) !== selected.resourceId ||
+          !Number.isFinite(originLotQuantity) || originLotQuantity + 1e-6 < rawBatchQuantity)
+        fail('MINE_EXTRACTION_BATCH_LOT_RECONCILIATION_FAILED', {
+          seller, originBatchId, batch: { quantity: rawBatch.quantity, remainingQuantity: rawBatch.remainingQuantity,
+            resourceId: rawBatch.resourceId, countryId: rawBatch.countryId },
+          lot: originLot ? { quantity: originLot.quantity, remainingQuantity: originLot.remainingQuantity,
+            resourceId: originLot.resourceId, countryId: originLot.countryId, recovery: originLot.lotRecovery || null } : null,
+          extractionLedgerAudit
         });
 
       mark('MINE_EXTRACTION_COMMITTED', {
@@ -662,6 +674,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         pipelineStartStatus: pipelineStart?.status || null,
         originBatchId,
         originQuantity: Number(rawBatch.remainingQuantity ?? rawBatch.quantity),
+        originLotRecovered: originLot?.lotRecovery?.reason === 'MINE_LOGISTICS_SOURCE_LOT_RECONCILIATION',
+        originLotQuantity,
         originUnit: rawBatch.unit || selected.plan.unit || null,
         initialFlowStageCount: Array.isArray(flow?.stages) ? flow.stages.length : 0
       };
@@ -893,11 +907,28 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const snapshots = [];
       let finished = null;
       const participantHandlers = new Map();
+      const legacyListenerRows = Array.isArray(g.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__)
+        ? g.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__ : [];
+      const globalMarketListenerIds = new Set(legacyListenerRows
+        .filter(row => /omega_global_market_system\.js/i.test(String(row.registrationScript || '')))
+        .map(row => String(row.id || '')).filter(Boolean));
+      const globalMarketParticipantIds = new Set();
+      let deferredGlobalMarketTurnCount = 0;
       g.__omegaMineMarketTreasuryParticipantTrace = [];
       for (const entry of simulation.turnParticipants?.values?.() || []) {
         if (!entry || typeof entry.handler !== 'function') continue;
         const original = entry.handler;
         participantHandlers.set(entry, original);
+        if (globalMarketListenerIds.has(String(entry.id || ''))) {
+          globalMarketParticipantIds.add(String(entry.id));
+          entry.handler = async function () {
+            deferredGlobalMarketTurnCount++;
+            return { status: 'DEFERRED_BY_MINE_FACTORY_E2E',
+              reason: 'GLOBAL_MARKET_REBUILT_AFTER_FINISHED_GOODS',
+              turn: Number(g.Game.state.simulation?.turn || 0) + 1 };
+          };
+          continue;
+        }
         entry.handler = async function (...args) {
           const startedAt = Date.now();
           const record = {
@@ -923,8 +954,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           }
         };
       }
+      if (!globalMarketParticipantIds.size)
+        fail('GLOBAL_MARKET_TURN_LISTENER_NOT_IDENTIFIED_FOR_SCOPED_E2E_WAIT', {
+          listenerRows: legacyListenerRows.filter(row => /omega_global_market_system\.js/i.test(String(row.registrationScript || ''))),
+          participantIds: [...participantHandlers.keys()].map(entry => entry.id)
+        });
       mark('FACTORY_PRODUCTION_WAIT_BEGIN', {
         seller, originBatchId, participantIds: [...participantHandlers.keys()].map(entry => entry.id),
+        deferredGlobalMarketParticipantIds: [...globalMarketParticipantIds],
         initialTurn: Number(g.Game.state.simulation?.turn || 0)
       });
       try {
@@ -1024,7 +1061,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         mark('FACTORY_PRODUCTION_WAIT_END', {
           finished: !!finished,
           turn: Number(g.Game.state.simulation?.turn || 0),
-          deferredMarketRebuildCount
+          deferredMarketRebuildCount,
+          deferredGlobalMarketTurnCount
         });
       }
       if (finished) {
