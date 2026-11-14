@@ -674,6 +674,14 @@ test('world geometry becomes usable before supporting datasets and resumes witho
   assert.ok(analyticsRuntime.includes('g.Game&&g.Game.Map&&g.Game.Map.__omegaMapUiActive===true)return;') &&
     analyticsRuntime.includes('appendCountryTurn(profiles[index],job.turn);'),
     'country analytics records continue to calculate while hidden graphs stop repainting');
+  const marketRuntime = read('omega_resource_command_center_ui_v1.js');
+  const worldBankUi = read('omega_world_bank_lending_runtime_v1.js');
+  assert.ok(marketRuntime.includes('if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return;') &&
+    marketRuntime.includes('clearInterval(visibleMinuteRefreshTimer)'),
+    'the market/ministry refresh timers must pause while the world map owns the screen');
+  assert.ok(worldBankUi.includes('if (global.Game && global.Game.Map && global.Game.Map.__omegaMapUiActive === true) return;') &&
+    worldBankUi.includes('processTurn(turn, stepDurationMs);'),
+    'World Bank accounting continues but its queued ministry render is not scheduled on the map');
   assert.ok((resourceMinistry.match(/g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true\) return;/g)||[]).length >= 2,
     'Resource Ministry event and minute refreshes must pause while the map is active');
   const overviewUi = read('omega_country_overview_ministry_ui_v1.js');
