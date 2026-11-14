@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DAY_MS = 86400000;
-const STEP_MS = 10000;
+const STEP_MS = 15000;
 const simulationSource = fs.readFileSync(path.join(root, 'omega_simulation_runtime.js'), 'utf8');
 
 function createRuntime() {
@@ -107,7 +107,7 @@ function attachLifecycle(win, sim) {
   return { documentListeners, lifecycle: win.Omega.GameLifecycle };
 }
 
-test('one 10-second real-time interval advances exactly one shared game day', async () => {
+test('one 15-second real-time interval advances exactly one shared game day', async () => {
   const { win, sim, gameState, dispatched, worldTicks } = createRuntime();
   assert.equal(sim.clock.stepDurationMs, DAY_MS);
   assert.equal(sim.clock.turn, 0);

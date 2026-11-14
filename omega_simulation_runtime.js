@@ -21,7 +21,7 @@
   const VERSION='1.0.0';
   const SESSION_VERSION=1;
   const DAY_MS=86400000;
-  const STEP_MS=10000;
+  const STEP_MS=15000;
   const MAX_STEPS_PER_FRAME=8;
   // Bound frame deltas arriving while an asynchronous turn is still running.
   // Otherwise slow turns accumulate an unbounded catch-up burst on low-end devices.

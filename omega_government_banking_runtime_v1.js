@@ -1409,6 +1409,7 @@
     });
   }
   function refreshPanel() {
+    if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return;
     const content = g.document && g.document.getElementById('ministry-dashboard-content');
     const panel = content && content.querySelector('[data-gbank-panel]');
     if (!panel) return;

@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v120";
+const CACHE_NAME = "omega-offline-atlas-shell-v121";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
@@ -146,8 +146,6 @@ const CORE_ASSETS = [
   "./assets/IMG_20260703_180105.jpg",
   "./assets/ministers/health.svg",
   "./assets/ui-photos/education-university.svg",
-  "./assets/omega-industrial-icons-v1/transport/route-mine-origin.svg",
-  "./assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg",
 ];
 
 function isShellAsset(value) {

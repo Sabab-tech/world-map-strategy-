@@ -634,6 +634,7 @@
     legend.innerHTML=series.map(s=>'<span><i style="background:'+s.color+'"></i>'+esc(s.label)+'</span>').join('');
   }
   function refreshPanel() {
+    if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return;
     if (!g.document || !initialized) return;
     const content = g.document.getElementById('ministry-dashboard-content');
     const dashboard = content && content.querySelector('.ofm-dashboard');

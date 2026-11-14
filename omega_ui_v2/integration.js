@@ -238,8 +238,8 @@
     if (!enabled || !root || !g.OmegaUIV2App || typeof g.OmegaUIV2App.mount !== 'function') return { ok:false, code:'UI_V2_INTEGRATION_UNAVAILABLE' };
     var country = canonicalCountry(mountOptions.countryId || selectedCountry() || '');
     try {
-      // A ministry owns the screen: stop map-only rendering, remove its display layers,
-      // and abort an unfinished map-geometry request while keeping the simulation alive.
+      // A ministry owns the screen: suspend map presentation and animation frames.
+      // Keep the geometry request, Leaflet layers and render cursor alive for instant return.
       if (g.Game && g.Game.Map && typeof g.Game.Map.setUiActive === 'function') {
         g.Game.Map.setUiActive(false);
       }

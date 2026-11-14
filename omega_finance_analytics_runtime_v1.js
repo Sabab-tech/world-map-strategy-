@@ -187,6 +187,7 @@ function countriesHTML(){
  return'<section class="ofa-section"><div class="ofa-head"><div><h3>Country-by-country graphs</h3><p>Separate 30-day model trace for every country; search and open any individual graph.</p></div><span>'+all.length+' results</span></div><div class="ofa-search"><label>Find country<input type="search" data-ofa-search value="'+esc(query)+'" placeholder="Country name or ISO code"></label><div><button type="button" data-ofa-page="-1" '+(page===0?'disabled':'')+'>Previous</button><span>Page '+(page+1)+' / '+pages+'</span><button type="button" data-ofa-page="1" '+(page===pages-1?'disabled':'')+'>Next</button></div></div><div class="ofa-country-grid">'+all.slice(page*PAGE,(page+1)*PAGE).map(p=>{const rows=seriesFor(p,m.id),last=rows[rows.length-1];return'<article class="ofa-country-card"><div><strong>'+esc(p.name)+'</strong><small>'+esc(iso(p))+'</small></div>'+spark(rows)+'<span>'+esc(m.label)+'</span><b>'+esc(fmt(last?.value,m))+'</b><button data-ofa-open="'+esc(p.countryCode||p.iso3)+'" type="button">Open graph</button></article>';}).join('')+'</div></section>';
 }
 function render(){
+ if(g.Game&&g.Game.Map&&g.Game.Map.__omegaMapUiActive===true)return;
  const host=g.document?.querySelector?.('[data-ofa-container]');if(!host)return;
  const p=selected();if(!p){host.innerHTML='<div class="ofa-empty">Country data are not available.</div>';return;}
  const m=metrics.find(x=>x.id===metricId)||metrics[0],rows=seriesFor(p,m.id),base=preview.get(iso(p)),v=base?.values||{};

@@ -106,7 +106,7 @@ test('canonical simulation authority owns the clock and ordered turn pipeline',a
   assert.equal(sandbox.Omega.Simulation.diagnostics().authoritativeState.worldStateLinked,true);
 });
 
-test('frame scheduler advances one calendar day per ten-second driver interval',async()=>{
+test('frame scheduler advances one calendar day per fifteen-second driver interval',async()=>{
   const {sandbox,state}=makeSandbox();
   loadScript('omega_simulation_runtime.js',sandbox);
 
@@ -121,16 +121,18 @@ test('frame scheduler advances one calendar day per ten-second driver interval',
   sandbox.Omega.GameSession.createSession({playerCountryId:'BANGLADESH'});
   sandbox.Omega.GameSession.startSession();
 
-  await sandbox.Omega.Simulation.frame(9999);
+  await sandbox.Omega.Simulation.frame(14999);
   assert.equal(steps,0);
 
   await sandbox.Omega.Simulation.frame(1);
   assert.equal(steps,1);
   assert.equal(sandbox.Omega.Simulation.clock.turn,1);
+  assert.equal(sandbox.Omega.Simulation.clock.simulationTimeMs,86400000);
 
-  await sandbox.Omega.Simulation.frame(10000);
+  await sandbox.Omega.Simulation.frame(15000);
   assert.equal(steps,2);
   assert.equal(sandbox.Omega.Simulation.clock.turn,2);
+  assert.equal(sandbox.Omega.Simulation.clock.simulationTimeMs,172800000);
 });
 
 test('save and load restores the canonical session without creating a second state root',async()=>{
@@ -181,10 +183,10 @@ test('slow in-flight frame caps accumulated catch-up work instead of freezing th
   });
   sandbox.Omega.GameSession.createSession({playerCountryId:'BANGLADESH'});
   sandbox.Omega.GameSession.startSession({playerCountryId:'BANGLADESH'});
-  const activeFrame=sandbox.Omega.Simulation.frame(10000);
+  const activeFrame=sandbox.Omega.Simulation.frame(15000);
   await turnStarted;
   for(let i=0;i<50;i++){
-    const pending=sandbox.Omega.Simulation.frame(10000);
+    const pending=sandbox.Omega.Simulation.frame(15000);
     assert.equal((await pending).busy,true,'overlapping frames should only queue bounded time');
   }
   releaseFirstTurn();

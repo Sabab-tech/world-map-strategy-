@@ -130,13 +130,14 @@
                     console.warn("[OMEGA] OmegaMinistry.createRuntime not found.");
                 }
 
-                // The simulation clock advances in 10-second steps. Polling it at display
+                // The simulation clock advances in 15-second steps. Polling it at display
                 // refresh rate repeatedly hydrated world state while no game turn was due.
-                // A 100 ms scheduler is responsive for the day-based clock without tying
-                // simulation work to the screen's 60 Hz paint loop.
-                const SIMULATION_FRAME_INTERVAL_MS = 100;
-                // Preserve bounded catch-up during a slow asynchronous turn.
-                const MAX_FRAME_DELTA_MS = 10000;
+                // A 250 ms scheduler checks the day clock with lower battery/CPU overhead
+                // without tying simulation work to the screen's 60 Hz paint loop.
+                const SIMULATION_FRAME_INTERVAL_MS = 250;
+                // The authoritative simulation commits one in-game day every 15 seconds.
+                // A modest frame cadence keeps UI/battery overhead low without polling each second.
+                const MAX_FRAME_DELTA_MS = 15000;
                 let isPaused = document.hidden === true;
                 let loopTimerId = null;
                 let loopInProgress = false;
@@ -145,7 +146,7 @@
                 let frameTick = 0;
 
                 // The coordinator is dormant unless the authoritative game session is running.
-                // This stops the 100 ms scheduler itself, not just the game-clock's turn work.
+                // This stops the 250 ms scheduler itself, not just the game-clock's turn work.
                 function simulationIsRunning() {
                     const simulation = window.Omega?.Simulation;
                     return !!(simulation && String(simulation.status || "").toUpperCase() === "RUNNING" &&

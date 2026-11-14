@@ -532,6 +532,7 @@
         typeof g.document.visibilityState !== 'string') return false;
     root.__omegaV2MinuteRefreshTimer = g.setInterval(function () {
       if (root.__omegaV2ResourceActive === false || !root.__omegaV2ResourceOptions) return;
+      if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return;
       if (g.document && g.document.visibilityState === 'hidden') return;
       var active = g.document && g.document.activeElement;
       if (active && root.contains && root.contains(active) &&
@@ -611,6 +612,7 @@
       var names = Object.keys(root.__omegaV2ResourceRefreshEvents || {});
       root.__omegaV2ResourceRefreshEvents = Object.create(null);
       if (root.__omegaV2ResourceActive === false || !root.__omegaV2ResourceOptions) return;
+      if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return;
       var latest = Object.assign({}, root.__omegaV2ResourceOptions, {
         countryId: root.__omegaV2CurrentCountryKey || root.__omegaV2ResourceOptions.countryId,
         tab: root.__omegaV2ResourceTab || root.__omegaV2ResourceOptions.tab || 'dashboard'

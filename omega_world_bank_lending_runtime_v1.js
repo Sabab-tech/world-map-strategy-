@@ -1884,6 +1884,7 @@
   }
   function renderPanel(force) {
     const doc = global.document;
+    if (global.Game && global.Game.Map && global.Game.Map.__omegaMapUiActive === true) return false;
     if (!doc || typeof doc.querySelector !== 'function') return false;
     const host = doc.querySelector('[data-owb-container]');
     if (!host) { uiRoot = null; return false; }
@@ -1895,6 +1896,7 @@
     return true;
   }
   function queueRender(force) {
+    if (global.Game && global.Game.Map && global.Game.Map.__omegaMapUiActive === true) return;
     renderForcePending = renderForcePending || !!force;
     if (renderQueued) return;
     if (typeof global.setTimeout === 'function') {

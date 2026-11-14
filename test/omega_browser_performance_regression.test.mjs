@@ -256,8 +256,8 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   assert.match(source, /isConstrainedDevice\(\)/,
     'low-memory and mobile devices should be detected without hardcoding a device model');
   assert.match(renderer, /smoothFactor:\s*constrainedMapDevice\s*\?\s*1\.5\s*:\s*1\.2/);
-  assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*constrainedMapDevice\s*\?\s*1\s*:\s*8/);
-  assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*constrainedMapDevice\s*\?\s*4\s*:\s*7/);
+  assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*constrainedMapDevice\s*\?\s*2\s*:\s*10/);
+  assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*constrainedMapDevice\s*\?\s*6\s*:\s*8/);
   assert.match(renderer, /progressTime\s*-\s*lastProgressAt\s*>=\s*100/,
     'mobile progress updates should be coalesced rather than writing to the DOM every frame');
   assert.match(source, /RELATION_COUNTRIES_PER_FRAME\s*=\s*this\.isConstrainedDevice\(\)\s*\?\s*1\s*:\s*2/);
@@ -334,8 +334,8 @@ test('UI v2 screen transitions schedule heavy rendering after paint and cancel s
 
 test('simulation coordinator throttles asynchronous work and pauses cleanly in the background', () => {
   const root = read('omega_enterprise_composition_root_v10.js');
-  assert.match(root, /SIMULATION_FRAME_INTERVAL_MS\s*=\s*100/);
-  assert.match(root, /MAX_FRAME_DELTA_MS\s*=\s*10000/);
+  assert.match(root, /SIMULATION_FRAME_INTERVAL_MS\s*=\s*250/);
+  assert.match(root, /MAX_FRAME_DELTA_MS\s*=\s*15000/);
   assert.match(root, /async function engineLoop\(\)/);
   assert.match(root, /await simulation\.frame\(dt\)/);
   assert.match(root, /scheduleEngineLoop\(SIMULATION_FRAME_INTERVAL_MS\)/);
@@ -348,7 +348,7 @@ test('simulation coordinator throttles asynchronous work and pauses cleanly in t
   assert.match(root, /simulationRuntime\.events\.subscribe\("OMEGA_GAME_SESSION_RESUMED"/);
   assert.match(root, /simulationRuntime\.events\.subscribe\("OMEGA_GAME_SESSION_PAUSED"/);
   assert.match(root, /if \(simulationIsRunning\(\)\) scheduleEngineLoop\(SIMULATION_FRAME_INTERVAL_MS\)/,
-    'paused sessions must not reschedule the 100 ms coordinator timer');
+    'paused sessions must not reschedule the 250 ms coordinator timer');
   assert.match(root, /window\.clearTimeout\(loopTimerId\)/);
   assert.doesNotMatch(root, /requestAnimationFrame\(engineLoop\)/);
 });
@@ -539,7 +539,7 @@ test('late economy baseline fills missing values without replacing live factory 
   assert.equal(merged.IND.gdp, 500, 'new country baseline buckets must still be added');
 });
 
-test('world geometry and supporting datasets run as a serialized startup pipeline with resumable progress', () => {
+test('world geometry becomes usable before supporting datasets and resumes without reset', () => {
   const map = read('map-engine-2.js');
   const html = read('index.html');
   const css = read('style.css');
@@ -548,6 +548,12 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
   const resourceBinding = read('omega_resource_gameplay_binding_v1.js');
   const worker = read('omega-offline-map-sw.js');
   const coreAssets = worker.slice(worker.indexOf('const CORE_ASSETS'), worker.indexOf('];', worker.indexOf('const CORE_ASSETS')));
+  const coreAssetPaths = Array.from(coreAssets.matchAll(/"([^"]+)"/g), function (match) { return match[1]; });
+  assert.equal(new Set(coreAssetPaths).size, coreAssetPaths.length,
+    'offline install must not fetch the same precache asset twice');
+  const shellScripts = Array.from(html.matchAll(/<script[^>]+src=["']([^"']+)["'][^>]*>/g), function (match) { return match[1]; });
+  assert.equal(new Set(shellScripts).size, shellScripts.length,
+    'the production shell must not register duplicate runtime scripts');
   const loaderStart = map.indexOf('async loadAssets()');
   const loaderEnd = map.indexOf('\n    }\n};\nGame.LabelSystem', loaderStart);
   const startup = map.slice(loaderStart, loaderEnd);
@@ -566,18 +572,20 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
     'country metadata must get its ordered post-map recovery attempt before supporting datasets');
   assert.ok(startup.includes('Game.Map.refreshCountryPolygonStyles()'),
     'successful late country metadata recovery must restyle the already-rendered country polygons');
-  assert.doesNotMatch(startup, /Promise\.(?:all|allSettled)\(/,
-    'startup stages must not fan out into concurrent dataset loads');
-  assert.match(startup, /for \(let index = 0; index < startupDatasets\.length; index \+= 1\)[\s\S]*?await fetchOptional\(item, index\)/,
-    'supporting datasets must be awaited one by one in their declared dependency order');
+  assert.match(startup, /Promise\.all\(startupDatasets\.map\(function \(item, index\)/,
+    'independent supporting files must load concurrently instead of serial network round trips');
+  assert.match(startup, /const startupData = await Promise\.all\([\s\S]*?startupData\[index\]/,
+    'parallel supporting data must be applied deterministically in declared source order');
   assert.match(startup, /await Promise\.resolve\(Game\.Diplomacy\.generateAllBilateralRelations\(chunk\)\)/,
     'relation-generation chunks must finish before the next chunk or finalization starts');
   assert.doesNotMatch(startup, /setTimeout\(processRelationChunk/,
     'relation generation must not escape into an unawaited background task');
   assert.match(startup, /if \(this\.__assetsLoadPromise\) return this\.__assetsLoadPromise/,
     'concurrent startup requests must share one in-flight coordinator');
-  assert.match(worldLoader, /await countriesPromise;[\s\S]*?return fetcher\('world\.json'/,
-    'the canonical country roster must finish before world geometry is requested');
+  assert.match(worldLoader, /const countriesPromise = this\.loadCountryConfig\(fetcher\);[\s\S]*?return fetcher\('world\.json'/,
+    'country identity and world geometry should load concurrently under one shared world loader');
+  assert.doesNotMatch(worldLoader, /await countriesPromise/,
+    'world geometry must not wait for the independent country roster request');
 
   assert.ok(map.includes("return fetcher('world.json', {"),
     'world geometry must use the abortable data loader');
@@ -600,6 +608,15 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
     'the complete startup pipeline must be single-flight and reusable after success');
   assert.ok(map.includes('Game.DataLoader.loadAssets();'),
     'map retry must resume the full staged startup sequence rather than only redrawing the map');
+  const setUiActiveStart = map.indexOf('Game.Map.setUiActive = function(active)');
+  const setUiActiveEnd = map.indexOf('Game.Map.getCountryPolygonStyle = function', setUiActiveStart);
+  const setUiActive = map.slice(setUiActiveStart, setUiActiveEnd);
+  assert.ok(setUiActiveStart >= 0 && setUiActiveEnd > setUiActiveStart);
+  assert.doesNotMatch(setUiActive, /__omegaWorldMapAbortController\.abort\(\)|map\.removeLayer\(/,
+    'switching away from the map must preserve in-flight geometry, Leaflet layers and render cursor');
+  assert.ok(setUiActive.includes('root.style.display = this.__omegaMapRootDisplay') &&
+    setUiActive.includes('Game.__omegaGeoJSONRenderPaused = true'),
+    'map navigation should park the map view and pause only its frame work');
   const abortResumeStart = map.indexOf('const retryWorldMapAfterAbort = function ()');
   const abortResumeEnd = map.indexOf('    return true;', abortResumeStart);
   const abortResume = map.slice(abortResumeStart, abortResumeEnd);
@@ -614,12 +631,67 @@ test('world geometry and supporting datasets run as a serialized startup pipelin
   assert.match(map, /Math\.min\(45, 2 \+ rawPercent \* 0\.43\)/,
     'map rendering progress must reserve the first 45 percent of the full startup bar');
   assert.ok(startup.includes('const supportStageStart = 46') && startup.includes('const supportStageSpan = 35'),
-    'sequential supporting datasets must continue the same progress bar after the map stage');
+    'supporting datasets must retain their weighted startup progress stage');
   assert.ok(startup.includes('82 + relationProgress * 16'),
     'awaited relation generation must occupy the final pre-completion progress stage');
   assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
-  assert.ok(map.includes('this.__omegaWorldMapAbortController.abort()'),
-    'leaving the world view must abort an unfinished map-only request');
+  assert.ok(map.includes('if (Game.__omegaGeoJSONRenderComplete === true) return this.__assetsLoadingProgress;'),
+    'support-stage progress must not reopen the blocking map overlay after geometry is ready');
+  assert.ok(map.includes('const mapGeometryReady = Game.__omegaGeoJSONRenderComplete === true;') &&
+    map.includes("status === 'complete' && !mapGeometryReady ? 'loading' : status"),
+    'map completion must remain complete even while the overall supporting-data coordinator is still active');
+  const simulation = read('omega_simulation_runtime.js');
+  const driver = read('omega_enterprise_composition_root_v10.js');
+  const resourceEconomy = read('omega_resource_economy_runtime_v2.js');
+  assert.ok(simulation.includes('const STEP_MS=15000;') && driver.includes('SIMULATION_FRAME_INTERVAL_MS = 250'),
+    'authoritative turns must advance every fifteen real seconds without polling every second');
+  assert.ok(resourceEconomy.includes('function runResourceEconomyTurnParticipant()') &&
+    resourceEconomy.includes('g.Game&&g.Game.Map&&g.Game.Map.__omegaMapUiActive===true)return;'),
+    'economic calculations stay in the committed turn participant while resource UI repaint pauses on the map');
+  const financeRuntime = read('omega_finance_ministry_runtime_v1.js');
+  const forexRuntime = read('omega_forex_monetary_engine_v1.js');
+  const bankingRuntime = read('omega_government_banking_runtime_v1.js');
+  const transmissionRuntime = read('omega_economic_transmission_runtime_v1.js');
+  const worldBankRuntime = read('omega_world_bank_lending_runtime_v1.js');
+  const analyticsRuntime = read('omega_finance_analytics_runtime_v1.js');
+  const resourceMinistry = read('omega_ui_v2/screens/resource-ministry.js');
+  assert.ok(financeRuntime.includes('global.Game.Map.__omegaMapUiActive === true) return;') &&
+    financeRuntime.includes('advanceTurn(turn,duration);'),
+    'finance calculations continue while hidden Finance Ministry metrics stop repainting');
+  assert.ok(forexRuntime.includes('global.Game.Map.__omegaMapUiActive === true) return;') &&
+    forexRuntime.includes('simulationTick(turn, duration);'),
+    'currency and FX calculations continue while the hidden FX panel stops repainting');
+  assert.ok(bankingRuntime.includes('g.Game.Map.__omegaMapUiActive === true) return;') &&
+    bankingRuntime.includes('processPendingTransfers();') && bankingRuntime.includes('revalueOrReconcileAll();'),
+    'bank transfers and reconciliation continue while the hidden banking panel stops repainting');
+  assert.ok(transmissionRuntime.includes('g.Game.Map.__omegaMapUiActive === true) return;') &&
+    transmissionRuntime.includes('step(t,dt);'),
+    'economic transmission calculations continue while its hidden chart panel stops repainting');
+  assert.ok(worldBankRuntime.includes('global.Game.Map.__omegaMapUiActive === true) return false;') &&
+    worldBankRuntime.includes('processTurn(turn, stepDurationMs);') &&
+    worldBankRuntime.includes('serviceCountryLoansOnTurn(turn, stepDurationMs);'),
+    'World Bank debt service and country loan processing continue while its hidden panel stops repainting');
+  assert.ok(analyticsRuntime.includes('g.Game&&g.Game.Map&&g.Game.Map.__omegaMapUiActive===true)return;') &&
+    analyticsRuntime.includes('appendCountryTurn(profiles[index],job.turn);'),
+    'country analytics records continue to calculate while hidden graphs stop repainting');
+  const marketRuntime = read('omega_resource_command_center_ui_v1.js');
+  const worldBankUi = read('omega_world_bank_lending_runtime_v1.js');
+  assert.ok(marketRuntime.includes('if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return;') &&
+    marketRuntime.includes('clearInterval(visibleMinuteRefreshTimer)'),
+    'the market/ministry refresh timers must pause while the world map owns the screen');
+  assert.ok(worldBankUi.includes('if (global.Game && global.Game.Map && global.Game.Map.__omegaMapUiActive === true) return;') &&
+    worldBankUi.includes('processTurn(turn, stepDurationMs);'),
+    'World Bank accounting continues but its queued ministry render is not scheduled on the map');
+  assert.ok((resourceMinistry.match(/g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true\) return;/g)||[]).length >= 2,
+    'Resource Ministry event and minute refreshes must pause while the map is active');
+  const overviewUi = read('omega_country_overview_ministry_ui_v1.js');
+  assert.ok(overviewUi.includes('g.Game.Map.__omegaMapUiActive === true) return false;') &&
+    overviewUi.includes('g.Game.Map.__omegaMapUiActive === true) return;'),
+    'the hidden government overview must not queue or execute ministry DOM renders while the map is active');
+  assert.ok(map.includes('const cachedGeometry = Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData'),
+    'map activation must reuse already downloaded country geometry');
+  assert.ok(map.includes('Game.__omegaGeoJSONRenderComplete === true && Game.Map.countryGeoJSON && Game.geojsonLayer'),
+    'a completed map must remain a reusable cached surface across navigation');
   assert.ok(abortRetryScheduling.includes('pendingWorldLoad.then(function ()'),
     'returning while the initial world request is aborting must defer the full startup retry until request cleanup');
   assert.ok(map.includes('Game.__omegaGeoJSONResumeRender = scheduleFeatureChunk'),
