@@ -3013,7 +3013,7 @@ test('every canonical factory recipe input and output renders a product-specific
       resource.id + ' must preserve its canonical resource identity in its illustration');
     assert.ok(markup.includes('data-icon-motif='),
       resource.id + ' must receive an identified physical-object motif');
-    assert.doesNotMatch(markup, /<text\\b/i,
+    assert.doesNotMatch(markup, /<text\b/i,
       resource.id + ' must not hide its name in microscopic text inside the illustration');
     rawResourceMotifs.add(markup.match(/data-icon-motif="([^"]+)"/)?.[1]);
   }
