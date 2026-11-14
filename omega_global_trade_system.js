@@ -789,7 +789,34 @@
     processed.storedBatchIds=Array.isArray(processed.storedBatchIds)?processed.storedBatchIds:[];
     const isProcessed=stage=>['PROCESSED','INTERMEDIATE','FINISHED','REFINED','OUTPUT'].includes(String(stage||'').toUpperCase());
     const nonCentral=stage=>['FACTORY_INPUT','CONSUMED','TRANSFERRED_TO_FACTORY','SOLD','TRANSFERRED_OUT'].includes(String(stage||'').toUpperCase());
-    const availableQty=b=>Math.max(0,num(b&&b.remainingQuantity!=null?b.remainingQuantity:b&&b.quantity)||0);
+    // A mine-logistics batch keeps its full remainingQuantity while part of it is still
+    // mine-held or in transit. Only receipted warehouse quantity is eligible for export.
+    // Mirror the Resource Economy inventory authority so trade cannot debit cargo twice.
+    const network=clone(ctx.stateTransaction.get('resource.industrialNetwork')||{});
+    const siteFlows=Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[];
+    const flowByBatch=new Map(siteFlows.filter(flow=>flow&&flow.batchId).map(flow=>[String(flow.batchId),flow]));
+    const activeFactoryShipmentStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
+      'BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING']);
+    const factoryInTransitByBatch=new Map();
+    let mineWarehouseExportFlowChanged=false;
+    (Array.isArray(network.shipments)?network.shipments:[]).forEach(shipment=>{
+      const batchId=String(shipment?.batchId||'').trim();
+      if(!batchId||!activeFactoryShipmentStatuses.has(String(shipment?.status||''))||
+         !['RAW_TO_FACTORY','WAREHOUSE_TO_FACTORY'].includes(String(shipment?.shipmentType||'')))return;
+      factoryInTransitByBatch.set(batchId,(factoryInTransitByBatch.get(batchId)||0)+Math.max(0,num(shipment.quantity)||0));
+    });
+    const batchRemaining=b=>Math.max(0,num(b&&b.remainingQuantity!=null?b.remainingQuantity:b&&b.quantity)||0);
+    const availableQty=b=>{
+      const remaining=batchRemaining(b),batchId=String(b?.batchId||''),flow=flowByBatch.get(batchId);
+      if(!flow||!(flow.mineLogisticsRouteId||flow.mineLogisticsStockDebited===true))return remaining;
+      const received=Math.max(0,num(flow.mineWarehouseReceivedQuantity)||0);
+      const factoryDispatched=Math.max(0,num(flow.factoryDispatchedQuantity)||0);
+      const factoryInTransit=Math.max(0,num(factoryInTransitByBatch.get(batchId))||0);
+      const factoryDelivered=Math.max(0,factoryDispatched-factoryInTransit);
+      const factoryConsumed=Math.max(0,num(flow.mineWarehouseConsumedQuantity)||0);
+      const tradeExported=Math.max(0,num(flow.mineWarehouseExportedQuantity)||0);
+      return Math.min(remaining,Math.max(0,received-factoryDelivered-factoryConsumed-tradeExported));
+    };
     const centralAll=rows.filter(b=>token(b&&(b.resourceId||b.materialIdentity))===token(rid)&&!nonCentral(b&&b.stage)&&availableQty(b)>1e-9);
     const centralAllQty=centralAll.reduce((sum,b)=>sum+availableQty(b),0);
     if(centralAllQty>stock+1e-6)return{accepted:false,reason:'RESOURCE_BATCH_INVENTORY_MISMATCH',inventory:stock,trackedCentralQuantity:centralAllQty};
@@ -836,7 +863,8 @@
       if(privateCompanyTrade&&(String(b.ownerCompanyId||b.ownerId||'').trim().toUpperCase()!==sellerCompanyId||
          !explicitOwnerStatus(b.ownerAttributionStatus)||!companyIds.includes(String(b.operatorCompanyId||b.operatorId||'').trim().toUpperCase())))continue;
       if(Array.isArray(exportFactoryIds)&&(!sourceFactoryId||!exportFactoryIds.includes(sourceFactoryId)))continue;
-      const stage=String(b.stage||'RAW').toUpperCase(),finished=isProcessed(stage),take=Math.min(before,remaining),after=Math.max(0,before-take);
+      const stage=String(b.stage||'RAW').toUpperCase(),finished=isProcessed(stage),take=Math.min(before,remaining),
+        after=Math.max(0,batchRemaining(b)-take),flow=flowByBatch.get(String(b.batchId||''));
       let lot=lots[b.batchId];
       if(!lot)lot={batchId:b.batchId,resourceId:rid,quantity:num(b.quantity)||before,remainingQuantity:before,unit:b.unit||null,stage:b.stage||'RAW',
         countryId:seller,warehouseId:b.warehouseId||(finished?processed.warehouseId:raw.warehouseId),sourceBatchIds:clone(b.sourceBatchIds||[]),status:'AVAILABLE'};
@@ -845,6 +873,10 @@
       b.remainingQuantity=after;b.lastMovementType='INTERNATIONAL_TRADE_EXPORT';b.lastMovementTurn=turn();b.status=after>1e-9?'PARTIALLY_SOLD':'SOLD';
       lot.remainingQuantity=Math.max(0,lotBefore-take);lot.status=lot.remainingQuantity>1e-9?'PARTIALLY_SOLD':'SOLD';
       lot.lastMovementType='INTERNATIONAL_TRADE_EXPORT';lot.lastMovementTurn=turn();lots[b.batchId]=lot;
+      if(flow){
+        flow.mineWarehouseExportedQuantity=(Math.max(0,num(flow.mineWarehouseExportedQuantity)||0)+take);
+        flow.lastMineWarehouseExportTurn=turn();mineWarehouseExportFlowChanged=true;
+      }
       if(finished)processedDebit+=take;else rawDebit+=take;
       const roots=[...new Set([...(Array.isArray(b.sourceBatchIds)?b.sourceBatchIds:[]),String(b.batchId||'')].filter(Boolean).map(String))];
       batchTransfers.push({sourceBatchId:String(b.batchId||''),sourceBatchIds:roots,siteId:b.siteId||b.sourceSiteId||b.siteReferenceKey||null,
@@ -876,6 +908,7 @@
     while(ledger.length>2048)ledger.shift();
     ctx.stateTransaction.set('resource.inventory',next);ctx.stateTransaction.set('resource.batches',rows);ctx.stateTransaction.set('resource.inventoryLots',lots);
     ctx.stateTransaction.set('resource.warehouse',raw);ctx.stateTransaction.set('resource.processedWarehouse',processed);ctx.stateTransaction.set('resource.inventoryLedger',ledger);
+    if(mineWarehouseExportFlowChanged)ctx.stateTransaction.set('resource.industrialNetwork',network);
     return{accepted:true,resourceId:rid,quantity:q,sourceCountryId:seller,destinationCountryId:buyer,transferType:'TRADE',batchTransfers};
   }
   function resourceCreditHandler(cmd,ctx){
