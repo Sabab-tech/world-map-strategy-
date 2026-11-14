@@ -970,6 +970,7 @@
     });
   }
   function refreshVisibleMetrics(){
+    if (global.Game && global.Game.Map && global.Game.Map.__omegaMapUiActive === true) return;
     const content=uiContainer||global.document?.getElementById?.('ministry-dashboard-content');if(!content||!content.querySelectorAll)return;
     const p=viewedCountryProfile();if(!p)return;const m=worldSnapshot().byCode.get(p.countryCode);if(!m)return;
     const vals={gdpCurrentUsd:fmtMoney(m.gdpCurrentUsd),gdpGrowthPct:fmtPct(m.gdpGrowthPct),inflationRatePct:fmtPct(m.inflationRatePct),
