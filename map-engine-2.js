@@ -1530,11 +1530,15 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status, source) {
         startupLoader.__assetsLoadComplete !== true);
     const isStartupProgressUpdate = source === 'startup';
     const rawPercent = Math.max(0, Math.min(100, Number(percent) || 0));
-    const bounded = coordinatedStartupActive && !isStartupProgressUpdate
+    const mapGeometryReady = Game.__omegaGeoJSONRenderComplete === true;
+    const bounded = coordinatedStartupActive && !isStartupProgressUpdate && !mapGeometryReady
         ? Math.min(45, 2 + rawPercent * 0.43)
         : rawPercent;
-    const effectiveStatus = coordinatedStartupActive && !isStartupProgressUpdate && status === 'complete'
-        ? 'loading' : status;
+    // The blocking map overlay belongs to the map geometry stage, not the
+    // independent supporting-data pipeline. Once boundaries are rendered,
+    // preserve the map's complete state and let supporting work continue off-screen.
+    const effectiveStatus = coordinatedStartupActive && !isStartupProgressUpdate &&
+        status === 'complete' && !mapGeometryReady ? 'loading' : status;
     if (coordinatedStartupActive && !isStartupProgressUpdate) {
         startupLoader.__assetsLoadingProgress = bounded;
         startupLoader.__assetsLoadingMessage = String(message || 'Preparing world map…');
