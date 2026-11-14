@@ -134,9 +134,10 @@
                 // refresh rate repeatedly hydrated world state while no game turn was due.
                 // A 100 ms scheduler is responsive for the day-based clock without tying
                 // simulation work to the screen's 60 Hz paint loop.
-                const SIMULATION_FRAME_INTERVAL_MS = 100;
-                // Preserve bounded catch-up during a slow asynchronous turn.
-                const MAX_FRAME_DELTA_MS = 10000;
+                const SIMULATION_FRAME_INTERVAL_MS = 250;
+                // The authoritative simulation commits one in-game day every 15 seconds.
+                // A modest frame cadence keeps UI/battery overhead low without polling each second.
+                const MAX_FRAME_DELTA_MS = 15000;
                 let isPaused = document.hidden === true;
                 let loopTimerId = null;
                 let loopInProgress = false;
