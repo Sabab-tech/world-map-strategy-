@@ -676,6 +676,10 @@ test('world geometry becomes usable before supporting datasets and resumes witho
     'country analytics records continue to calculate while hidden graphs stop repainting');
   assert.ok((resourceMinistry.match(/g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true\) return;/g)||[]).length >= 2,
     'Resource Ministry event and minute refreshes must pause while the map is active');
+  const overviewUi = read('omega_country_overview_ministry_ui_v1.js');
+  assert.ok(overviewUi.includes('g.Game.Map.__omegaMapUiActive === true) return false;') &&
+    overviewUi.includes('g.Game.Map.__omegaMapUiActive === true) return;'),
+    'the hidden government overview must not queue or execute ministry DOM renders while the map is active');
   assert.ok(map.includes('const cachedGeometry = Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData'),
     'map activation must reuse already downloaded country geometry');
   assert.ok(map.includes('Game.__omegaGeoJSONRenderComplete === true && Game.Map.countryGeoJSON && Game.geojsonLayer'),
