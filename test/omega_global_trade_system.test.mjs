@@ -225,6 +225,61 @@ assert.equal(changedExportReplay.status,'FAILED',JSON.stringify(changedExportRep
 assert.equal(changedExportReplay.result?.reason,'TRADE_RESOURCE_DEBIT_IDEMPOTENCY_COLLISION');
 assert.equal(policy.liftEmbargo('SAU',{policyId:'POST-SETTLEMENT-REPLAY-EMBARGO'}).accepted,true);
 
+// Mine-haul regression: 600 units have reached the warehouse and 400 remain in transit.
+// The batch still records all 1,000 units, but only the receipted 600 are exportable.
+const mineLogisticsBatchId='SAU-MINE-LOGISTICS-PARTIAL-RECEIPT-E2E';
+const mineLogisticsSeller=globalThis.Game.state.resource.SAU;
+mineLogisticsSeller.inventory.crude_oil+=600;
+mineLogisticsSeller.batches.push({
+  batchId:mineLogisticsBatchId,resourceId:'crude_oil',materialIdentity:'crude_oil',
+  quantity:1000,remainingQuantity:1000,unit:'BARRELS',stage:'PARTIALLY_IN_RAW_INVENTORY',
+  countryId:'SAU',sourceCountryId:'SAU',originCountryId:'SAU',ownerCountryCode:'SAU',
+  warehouseId:null,locationNodeKey:'MIXED:MINE_RAW_WAREHOUSE_OR_TRANSIT',
+  provenance:{sourceAuthority:'SIMULATED_TEST_FIXTURE',quantityAuthority:'SIMULATED'}
+});
+mineLogisticsSeller.inventoryLots[mineLogisticsBatchId]={
+  batchId:mineLogisticsBatchId,resourceId:'crude_oil',quantity:1000,remainingQuantity:1000,
+  unit:'BARRELS',stage:'PARTIALLY_IN_RAW_INVENTORY',countryId:'SAU',warehouseId:null,
+  status:'PARTIAL_STOCK_ACROSS_MINE_WAREHOUSE_OR_TRANSIT'
+};
+mineLogisticsSeller.warehouse.availableByResource.crude_oil+=600;
+mineLogisticsSeller.warehouse.storedBatchIds.push(mineLogisticsBatchId);
+mineLogisticsSeller.industrialNetwork={
+  schemaVersion:'OMEGA_RESOURCE_SITE_LOGISTICS_V1',
+  shipments:[{shipmentId:'MINE-HAUL-IN-TRANSIT-E2E',batchId:mineLogisticsBatchId,countryId:'SAU',
+    resourceId:'crude_oil',shipmentType:'MINE_TO_WAREHOUSE',quantity:400,status:'IN_TRANSIT'}],
+  siteFlowLedger:[{flowId:'SITE-FLOW-E2E',batchId:mineLogisticsBatchId,siteId:'SITE_SAU_TEST_MINE',
+    resourceId:'crude_oil',mineLogisticsRouteId:'ROUTE-SAU-TEST-MINE',mineLogisticsStockDebited:true,
+    mineWarehouseDispatchedQuantity:1000,mineWarehouseReceivedQuantity:600,mineHeldQuantity:0,
+    factoryDispatchedQuantity:0,mineWarehouseConsumedQuantity:0,mineWarehouseExportedQuantity:0}]
+};
+const beforeMineHaulDebit={
+  stock:mineLogisticsSeller.inventory.crude_oil,
+  warehouse:mineLogisticsSeller.warehouse.availableByResource.crude_oil,
+  mineBatchRemaining:mineLogisticsSeller.batches.find(row=>row.batchId===mineLogisticsBatchId).remainingQuantity
+};
+const mineHaulDebit=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','SAU',{
+  resourceId:'crude_oil',quantity:4000,settlementId:'MINE-HAUL-SELLER-DEBIT-E2E',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'MINE-HAUL-SELLER-DEBIT-E2E',
+    sourceCountryId:'SAU',destinationCountryId:'BGD'}
+});
+assert.equal(mineHaulDebit.status,'APPLIED',JSON.stringify(mineHaulDebit));
+assert.equal(mineHaulDebit.result?.accepted,true);
+assert.equal(mineLogisticsSeller.inventory.crude_oil,beforeMineHaulDebit.stock-4000);
+assert.equal(mineLogisticsSeller.warehouse.availableByResource.crude_oil,beforeMineHaulDebit.warehouse-4000);
+assert.equal(mineLogisticsSeller.batches.find(row=>row.batchId===mineLogisticsBatchId).remainingQuantity,990);
+assert.equal(mineLogisticsSeller.inventoryLots[mineLogisticsBatchId].remainingQuantity,990);
+assert.equal(mineLogisticsSeller.industrialNetwork.siteFlowLedger[0].mineWarehouseExportedQuantity,10,
+  'trade must debit only the received 600 units, not the 400 units still in transit');
+const mineHaulDebitReplay=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','SAU',{
+  resourceId:'crude_oil',quantity:4000,settlementId:'MINE-HAUL-SELLER-DEBIT-E2E',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'MINE-HAUL-SELLER-DEBIT-E2E',
+    sourceCountryId:'SAU',destinationCountryId:'BGD'}
+});
+assert.equal(mineHaulDebitReplay.status,'APPLIED',JSON.stringify(mineHaulDebitReplay));
+assert.equal(mineHaulDebitReplay.result?.duplicate,true,'replayed mine-haul debit must not move stock twice');
+assert.equal(mineLogisticsSeller.inventory.crude_oil,beforeMineHaulDebit.stock-4000);
+
 const invalidUiRequest=trade.createRequest('BGD',{
   requestId:'REQ-UI-INVALID',targetCountryId:'BGD',resourceId:'crude_oil',quantity:100,unitPrice:101,
   source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
