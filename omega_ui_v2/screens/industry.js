@@ -191,15 +191,24 @@
     // Give natural resources physical silhouettes too, rather than reusing a flat
     // category pictogram for every mine commodity.
     if (FACTORY_RAW_RESOURCE_ICON_IDS.indexOf(id) >= 0) {
-      if (id === 'crude_oil' || id === 'oil_shale') return 'oil-barrel';
-      if (id === 'natural_gas') return 'gas-cylinder';
-      if (id === 'coal') return 'coal-lump';
-      if (id === 'diamond' || id === 'ruby') return 'gemstone';
-      if (id === 'gold' || id === 'silver' || id === 'copper') return 'metal-ingot';
-      if (/^(granite|basalt|dolomite|limestone|marble)$/.test(id)) return 'stone-block';
-      if (/^(aragonite|construction_aggregate|coral_aggregate|diatomite|gypsum|phosphate|potash|silica_sand)$/.test(id)) return 'sand-pile';
-      if (/^(boron|salt|lithium|magnesite|rare_earth|rutile)$/.test(id)) return 'mineral-crystal';
-      return 'ore-boulder';
+      // Each natural commodity receives a recognizable physical silhouette.
+      const rawMotifs = {
+        aragonite:'aragonite-crystal', basalt:'basalt-column', bauxite:'bauxite-ore',
+        boron:'borate-crystal', chromite:'chromite-lump', coal:'coal-lump',
+        cobalt:'cobalt-rock', construction_aggregate:'gravel-pile', copper:'metal-ingot',
+        coral_aggregate:'coral-fragment', crude_oil:'oil-barrel', diamond:'gemstone',
+        diatomite:'diatomite-powder', dolomite:'dolomite-crystal', gold:'metal-ingot',
+        granite:'granite-block', graphite:'graphite-flakes', gypsum:'gypsum-crystal',
+        ilmenite:'ilmenite-sand', iron_ore:'ore-boulder', limestone:'limestone-block',
+        lithium:'lithium-crystal', magnesite:'magnesite-rock', manganese:'manganese-nodules',
+        marble:'marble-slab', natural_gas:'gas-cylinder', nickel:'nickel-nugget',
+        niobium:'niobium-prism', oil_shale:'oil-shale-layers', phosphate:'phosphate-rock',
+        platinum:'precious-metal-ingot', potash:'potash-sack', rare_earth:'rare-earth-cluster',
+        ruby:'gemstone', rutile:'rutile-grains', salt:'salt-crystals',
+        silica_sand:'silica-grains', silver:'metal-ingot', tin:'tin-ingot',
+        tungsten:'tungsten-crystal', uranium:'uranium-yellowcake', zinc:'zinc-ingot'
+      };
+      return rawMotifs[id] || 'ore-boulder';
     }
     // Finished goods receive a physical object silhouette, not a category-wide placeholder.
     if (/^(steel|alloy_steel|recovered_steel)$/.test(id)) return 'steel-beam';
@@ -252,6 +261,25 @@
   function factoryProductShape(motif, mainGradient, topGradient, sideGradient) {
     var outline = '#263b4d';
     var highlight = '#f7fbff';
+    if (motif === 'aragonite-crystal') return '<g stroke-linejoin="round"><path d="m38 87 5-48 10-17 10 17-4 48Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m43 39 10-17 10 17-10 9Z" fill="' + topGradient + '"/><path d="m53 48 10-9-4 48H53Z" fill="' + sideGradient + '"/><path d="m64 91 7-57 12-13 11 15-10 56Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m71 34 12-13 11 15-12 9Z" fill="' + topGradient + '"/><path d="m82 45 12-9-10 56h-9Z" fill="' + sideGradient + '"/></g>';
+    if (motif === 'basalt-column') return '<g stroke-linejoin="round"><path d="m29 43 15-12 20 5v55l-18 12-17-9Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m29 43 15-12 20 5-19 13Z" fill="' + topGradient + '"/><path d="m45 49 19-13v55L45 103Z" fill="' + mainGradient + '"/><path d="m72 31 18 7 9 16v43l-18-8V48Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m72 31 18 7-11 13-16-7Z" fill="' + topGradient + '"/><path d="M80 51v40m-34-42v48" stroke="' + highlight + '" stroke-opacity=".42" stroke-width="2"/></g>';
+    if (motif === 'bauxite-ore' || motif === 'chromite-lump' || motif === 'cobalt-rock') {
+      var oreAccent = motif === 'chromite-lump' ? '#dbe8f0' : motif === 'cobalt-rock' ? '#7dd3fc' : '#e78b55';
+      return '<g stroke-linejoin="round"><path d="m23 77 8-25 20-20 17 8 18-7 20 24-4 29-27 17-31-6Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m23 77 8-25 20-20 17 8-14 24-17 29Z" fill="' + mainGradient + '"/><path d="m51 32 17 8-14 24-17 29-10-16Z" fill="' + topGradient + '"/><path d="m68 40 18-7 20 24-4 29-27 17-16-39Z" fill="' + sideGradient + '"/><path d="m39 61 18-12 8 8-16 24m23-28 12-9 10 17-16 7" fill="none" stroke="' + oreAccent + '" stroke-width="3" stroke-linecap="round"/><path d="m30 77 20 7 24-13" fill="none" stroke="' + highlight + '" stroke-opacity=".35" stroke-width="2"/></g>';
+    }
+    if (motif === 'borate-crystal' || motif === 'dolomite-crystal' || motif === 'lithium-crystal') return '<g stroke-linejoin="round"><path d="m33 47 16-21 30-5 17 26-6 42-29 16-28-17Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m33 47 16-21 30-5 17 26-31 9Z" fill="' + topGradient + '" stroke="' + highlight + '" stroke-opacity=".75"/><path d="m64 56 32-9-6 42-29 16Z" fill="' + sideGradient + '"/><path d="m49 26 15 30-2 49-28-17Z" fill="' + mainGradient + '"/><path d="m49 26 15 30 15-35" fill="none" stroke="' + highlight + '" stroke-opacity=".8" stroke-width="2"/></g>';
+    if (motif === 'gravel-pile' || motif === 'ilmenite-sand' || motif === 'rutile-grains' || motif === 'silica-grains') return '<g stroke-linejoin="round"><path d="M22 86q8-15 22-17 8-25 22-22 16-17 29 4 12 6 13 27l-9 15H31Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><ellipse cx="39" cy="73" rx="14" ry="10" fill="' + topGradient + '" stroke="' + outline + '"/><ellipse cx="63" cy="57" rx="15" ry="13" fill="' + mainGradient + '" stroke="' + outline + '"/><ellipse cx="88" cy="73" rx="14" ry="12" fill="' + topGradient + '" stroke="' + outline + '"/><path d="m29 86 17-8 11 7m4-28 10-8m14 35 13-11" fill="none" stroke="' + highlight + '" stroke-opacity=".65" stroke-width="2"/><circle cx="40" cy="70" r="3" fill="' + sideGradient + '"/><circle cx="64" cy="55" r="3" fill="' + topGradient + '"/><circle cx="87" cy="70" r="3" fill="' + sideGradient + '"/></g>';
+    if (motif === 'coral-fragment') return '<g stroke-linecap="round" stroke-linejoin="round"><path d="M63 97 63 72 46 57 45 39m18 33 18-17 1-19M46 57l-17-5m17 5-8 16m43-20 16-7m-16 7 6 16" fill="none" stroke="' + sideGradient + '" stroke-width="15"/><path d="M63 97 63 72 46 57 45 39m18 33 18-17 1-19M46 57l-17-5m17 5-8 16m43-20 16-7m-16 7 6 16" fill="none" stroke="' + mainGradient + '" stroke-width="10"/><path d="m45 39 0-9m-8 0 8 9m37-3 1-10m-8 4 8 6M29 52l-8-5m17 26-2 9m47-45 9-7m-3 27 8 7" stroke="' + topGradient + '" stroke-width="5"/></g>';
+    if (motif === 'diatomite-powder' || motif === 'phosphate-rock' || motif === 'magnesite-rock') return '<g stroke-linejoin="round"><path d="m23 85 13-18 8-23 20-8 17 12 21 26-8 18H32Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m23 85 13-18 8-23 20-8 17 12-23 14-15 28Z" fill="' + topGradient + '"/><path d="m58 62 23-14 21 26-8 18H62Z" fill="' + mainGradient + '"/><path d="m35 66 22-4 7 15-22 4Zm40-15 12 4 8 13-16-5Z" fill="' + topGradient + '" fill-opacity=".55"/><circle cx="46" cy="59" r="2" fill="' + highlight + '"/><circle cx="70" cy="79" r="2" fill="' + highlight + '"/><circle cx="87" cy="67" r="2" fill="' + highlight + '"/></g>';
+    if (motif === 'granite-block' || motif === 'limestone-block' || motif === 'marble-slab') return '<g stroke-linejoin="round"><path d="m26 48 38-20 40 20v40l-40 20-38-20Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m26 48 38 20 40-20-40-20Z" fill="' + topGradient + '" stroke="' + highlight + '" stroke-opacity=".75"/><path d="M64 68v40L26 88V48Z" fill="' + mainGradient + '"/><path d="M64 68v40l40-20V48Z" fill="' + sideGradient + '"/><path d="m37 48 27 14 29-14M37 85l27 14 29-14" fill="none" stroke="' + highlight + '" stroke-opacity=".36" stroke-width="2"/></g>';
+    if (motif === 'graphite-flakes' || motif === 'manganese-nodules' || motif === 'rare-earth-cluster') return '<g stroke-linejoin="round"><path d="m25 83 15-15 13 3 11-18 18 5 21 20-10 18H35Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m28 69 15-24 24 5 8 22-17 13-28-5Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="1.5"/><path d="m44 45 24 5-8 15-24 3Z" fill="' + topGradient + '"/><path d="m68 50 15-15 18 15-13 27-22-7Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="1.5"/><path d="m83 35 18 15-13 27-7-22Z" fill="' + sideGradient + '"/><path d="M37 74 60 65m13 6 12-18" stroke="' + highlight + '" stroke-opacity=".72" stroke-width="2.5"/></g>';
+    if (motif === 'gypsum-crystal' || motif === 'tungsten-crystal') return '<g stroke-linejoin="round"><path d="m38 94 8-61 16-14 15 15-6 60-18 8Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m46 33 16-14 15 15-17 9Z" fill="' + topGradient + '"/><path d="m60 43 17-9-6 60-18 8Z" fill="' + sideGradient + '"/><path d="m77 91 7-48 13-12 12 13-9 51-15 8Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m84 43 13-12 12 13-15 8Z" fill="' + topGradient + '"/><path d="m94 52 15-8-9 51-15 8Z" fill="' + sideGradient + '"/></g>';
+    if (motif === 'nickel-nugget' || motif === 'tin-ingot' || motif === 'zinc-ingot') return '<g stroke-linejoin="round"><path d="m27 74 16-25h42l17 25-13 18H42Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m27 74 16-25h42l17 25-42 13Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-opacity=".7"/><path d="m43 49 11-10h43l-12 10Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.4"/><path d="m53 61 20-7 16 8-24 8Z" fill="' + topGradient + '" opacity=".8"/></g>';
+    if (motif === 'oil-shale-layers') return '<g stroke-linejoin="round"><path d="m20 69 28-28 58 8 2 36-27 15-61-8Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m20 69 28-28 58 8-27 16-48 21Z" fill="' + topGradient + '"/><path d="m20 69 79-4 7 20-27 15-61-8Z" fill="' + mainGradient + '"/><path d="m29 78 67-6m-57 15 60-5m-46-32 31 6" stroke="' + highlight + '" stroke-opacity=".66" stroke-width="2.2"/></g>';
+    if (motif === 'salt-crystals') return '<g stroke-linejoin="round"><path d="M32 47 51 28h28l19 19v36L79 101H51L32 83Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="M32 47 51 28h28l19 19-33 17Z" fill="' + topGradient + '"/><path d="M65 64 98 47v36L79 101H65Z" fill="' + sideGradient + '"/><path d="M51 28v23l14 13 14-13V28M32 47l19 4 14 13-14 18-19 1" fill="none" stroke="' + highlight + '" stroke-opacity=".72" stroke-width="2"/></g>';
+    if (motif === 'potash-sack' || motif === 'uranium-yellowcake') return '<g stroke-linejoin="round"><path d="M42 35h44l-5 11 10 39q-27 18-54 0l10-39Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="M47 46h34l8 37q-25 14-50 0Z" fill="' + mainGradient + '" stroke="' + highlight + '" stroke-opacity=".72" stroke-width="1.4"/><path d="M42 35h44l-8 10H50Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.2"/><path d="M52 63h24m-20 7h16m-13 7h10" stroke="' + highlight + '" stroke-opacity=".7" stroke-width="2"/></g>';
+    if (motif === 'tungsten-crystal') return '<g stroke-linejoin="round"><path d="m36 72 7-34 23-16 27 18-5 40-24 18-28-8Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m43 38 23-16 27 18-28 10Z" fill="' + topGradient + '"/><path d="m65 50 28-10-5 40-24 18Z" fill="' + mainGradient + '"/><path d="m43 38 22 12v48l-28-8Z" fill="' + mainGradient + '"/><path d="m50 39 13 8 16-7" fill="none" stroke="' + highlight + '" stroke-opacity=".7" stroke-width="2"/></g>';
+    if (motif === 'precious-metal-ingot') return '<g stroke-linejoin="round"><path d="m28 71 15-24h42l15 24-13 21H42Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="m28 71 15-24h42l15 24-42 13Z" fill="' + mainGradient + '"/><path d="m43 47 10-12h40L85 47Z" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.5"/><path d="m53 60 21-6 15 6-24 8Z" fill="' + highlight + '" fill-opacity=".24"/></g>';
     if (motif === 'oil-barrel') {
       return '<g stroke-linejoin="round"><path d="M42 35c0-7 44-7 44 0v56c0 8-44 8-44 0Z" fill="' + sideGradient + '" stroke="' + outline + '" stroke-width="2"/><path d="M42 35c0-7 44-7 44 0v56c0 8-44 8-44 0Z" fill="' + mainGradient + '" stroke="' + outline + '" stroke-width="1.7"/><ellipse cx="64" cy="35" rx="22" ry="7" fill="' + topGradient + '" stroke="' + outline + '" stroke-width="1.7"/><path d="M43 49c12 5 30 5 42 0M43 78c12 5 30 5 42 0" fill="none" stroke="' + highlight + '" stroke-opacity=".68" stroke-width="3"/><path d="M51 44v39m26-39v39" stroke="' + sideGradient + '" stroke-width="2" opacity=".65"/></g>';
     }
@@ -471,7 +499,6 @@
     var category = factoryProductIconCategory(id);
     var colors = factoryProductPalette(category, id);
     var token = 'fp-product-' + (++factoryProductIconInstance);
-    var stamp = factoryProductStamp(id);
     var motif = factoryProductIconMotif(id);
     var shape = factoryProductShape(motif, 'url(#' + token + '-main)', 'url(#' + token + '-top)', 'url(#' + token + '-side)');
     return '<svg class="fp-product-icon-visual fp-product-icon-visual--finished" viewBox="0 0 128 128" width="128" height="128" role="img" ' +
@@ -488,8 +515,7 @@
       '<ellipse cx="64" cy="95" rx="42" ry="7" fill="#243849" fill-opacity=".28" stroke="#657b8b" stroke-opacity=".55"/>' +
       shape +
       '<path d="M27 99h74" stroke="' + colors[2] + '" stroke-opacity=".42" stroke-width="1.2"/>' +
-      '<rect x="37" y="100" width="54" height="15" rx="4" fill="#183044" stroke="#f6fbff" stroke-opacity=".76" stroke-width="1"/>' +
-      '<text x="64" y="110.5" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="' + (stamp.length > 5 ? '7' : stamp.length > 3 ? '8' : '10') + '" font-weight="900" letter-spacing=".3" fill="#f5fbff">' + esc(stamp) + '</text>' +
+      // The full product name is shown outside the SVG at readable UI size.
       '<path d="M25 39l.7 2.1 2.1.7-2.1.7L25 45.6l-.7-2.1-2.1-.7 2.1-.7Z" fill="#fff" opacity=".8"/>' +
       '<path d="M101 36l.6 1.8 1.8.6-1.8.6-.6 1.8-.6-1.8-1.8-.6 1.8-.6Z" fill="#fff" opacity=".8"/>' +
       '</svg>';
