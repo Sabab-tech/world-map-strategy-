@@ -146,8 +146,6 @@ const CORE_ASSETS = [
   "./assets/IMG_20260703_180105.jpg",
   "./assets/ministers/health.svg",
   "./assets/ui-photos/education-university.svg",
-  "./assets/omega-industrial-icons-v1/transport/route-mine-origin.svg",
-  "./assets/omega-industrial-icons-v1/transport/route-warehouse-destination.svg",
 ];
 
 function isShellAsset(value) {
