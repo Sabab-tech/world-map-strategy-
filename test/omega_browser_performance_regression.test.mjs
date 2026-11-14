@@ -548,6 +548,12 @@ test('world geometry becomes usable before supporting datasets and resumes witho
   const resourceBinding = read('omega_resource_gameplay_binding_v1.js');
   const worker = read('omega-offline-map-sw.js');
   const coreAssets = worker.slice(worker.indexOf('const CORE_ASSETS'), worker.indexOf('];', worker.indexOf('const CORE_ASSETS')));
+  const coreAssetPaths = Array.from(coreAssets.matchAll(/"([^"]+)"/g), function (match) { return match[1]; });
+  assert.equal(new Set(coreAssetPaths).size, coreAssetPaths.length,
+    'offline install must not fetch the same precache asset twice');
+  const shellScripts = Array.from(html.matchAll(/<script[^>]+src=["']([^"']+)["'][^>]*>/g), function (match) { return match[1]; });
+  assert.equal(new Set(shellScripts).size, shellScripts.length,
+    'the production shell must not register duplicate runtime scripts');
   const loaderStart = map.indexOf('async loadAssets()');
   const loaderEnd = map.indexOf('\n    }\n};\nGame.LabelSystem', loaderStart);
   const startup = map.slice(loaderStart, loaderEnd);
