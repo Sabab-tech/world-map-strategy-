@@ -2067,7 +2067,16 @@
   function scheduleResourceEconomyUiRefresh(){
     if(resourceUiRefreshPending)return;
     resourceUiRefreshPending=true;
-    var refresh=function(){resourceUiRefreshPending=false;ui();refreshUI();};
+    var refresh=function(){
+      resourceUiRefreshPending=false;
+      // Resource production, inventories and treasury calculations run in the
+      // committed turn participant. Only the visual chapter repaint is skipped
+      // while the world map is the active screen.
+      if(g.Game&&g.Game.Map&&g.Game.Map.__omegaMapUiActive===true)return;
+      if(g.document&&g.document.visibilityState==='hidden')return;
+      ui();
+      refreshUI();
+    };
     if(typeof g.requestAnimationFrame==='function')g.requestAnimationFrame(refresh);
     else if(typeof g.setTimeout==='function')g.setTimeout(refresh,0);
     else Promise.resolve().then(refresh);
