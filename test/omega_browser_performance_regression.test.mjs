@@ -256,8 +256,8 @@ test('large world GeoJSON is rendered incrementally rather than monopolizing the
   assert.match(source, /isConstrainedDevice\(\)/,
     'low-memory and mobile devices should be detected without hardcoding a device model');
   assert.match(renderer, /smoothFactor:\s*constrainedMapDevice\s*\?\s*1\.5\s*:\s*1\.2/);
-  assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*constrainedMapDevice\s*\?\s*1\s*:\s*8/);
-  assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*constrainedMapDevice\s*\?\s*4\s*:\s*7/);
+  assert.match(renderer, /MAX_FEATURES_PER_FRAME\s*=\s*constrainedMapDevice\s*\?\s*2\s*:\s*10/);
+  assert.match(renderer, /FRAME_BUDGET_MS\s*=\s*constrainedMapDevice\s*\?\s*6\s*:\s*8/);
   assert.match(renderer, /progressTime\s*-\s*lastProgressAt\s*>=\s*100/,
     'mobile progress updates should be coalesced rather than writing to the DOM every frame');
   assert.match(source, /RELATION_COUNTRIES_PER_FRAME\s*=\s*this\.isConstrainedDevice\(\)\s*\?\s*1\s*:\s*2/);
@@ -334,8 +334,8 @@ test('UI v2 screen transitions schedule heavy rendering after paint and cancel s
 
 test('simulation coordinator throttles asynchronous work and pauses cleanly in the background', () => {
   const root = read('omega_enterprise_composition_root_v10.js');
-  assert.match(root, /SIMULATION_FRAME_INTERVAL_MS\s*=\s*100/);
-  assert.match(root, /MAX_FRAME_DELTA_MS\s*=\s*10000/);
+  assert.match(root, /SIMULATION_FRAME_INTERVAL_MS\s*=\s*250/);
+  assert.match(root, /MAX_FRAME_DELTA_MS\s*=\s*15000/);
   assert.match(root, /async function engineLoop\(\)/);
   assert.match(root, /await simulation\.frame\(dt\)/);
   assert.match(root, /scheduleEngineLoop\(SIMULATION_FRAME_INTERVAL_MS\)/);
@@ -348,7 +348,7 @@ test('simulation coordinator throttles asynchronous work and pauses cleanly in t
   assert.match(root, /simulationRuntime\.events\.subscribe\("OMEGA_GAME_SESSION_RESUMED"/);
   assert.match(root, /simulationRuntime\.events\.subscribe\("OMEGA_GAME_SESSION_PAUSED"/);
   assert.match(root, /if \(simulationIsRunning\(\)\) scheduleEngineLoop\(SIMULATION_FRAME_INTERVAL_MS\)/,
-    'paused sessions must not reschedule the 100 ms coordinator timer');
+    'paused sessions must not reschedule the 250 ms coordinator timer');
   assert.match(root, /window\.clearTimeout\(loopTimerId\)/);
   assert.doesNotMatch(root, /requestAnimationFrame\(engineLoop\)/);
 });
