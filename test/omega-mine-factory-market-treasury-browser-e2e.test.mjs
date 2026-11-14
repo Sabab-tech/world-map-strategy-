@@ -929,6 +929,16 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         String(row?.factoryId || row?.assetId || row?.id || row?.projectId || '') === scopedFactoryId ||
         String(row?.destinationFactoryId || '') === scopedFactoryId;
       const originalBatches = Array.isArray(resource.batches) ? resource.batches : [];
+      const unrelatedSiteBatchRows = originalBatches.filter(row => siteRelated(row) && !batchRelated(row));
+      const excludedSiteBatchSummary = Object.values(unrelatedSiteBatchRows.reduce((groups, row) => {
+        const resourceId = String(row?.resourceId || row?.materialIdentity || 'UNKNOWN');
+        const stage = String(row?.stage || 'RAW').toUpperCase();
+        const key = resourceId + '|' + stage;
+        if (!groups[key]) groups[key] = { resourceId, stage, count: 0, remainingQuantity: 0 };
+        groups[key].count += 1;
+        groups[key].remainingQuantity += Math.max(0, Number(row?.remainingQuantity ?? row?.quantity) || 0);
+        return groups[key];
+      }, {})).sort((a, b) => b.remainingQuantity - a.remainingQuantity).slice(0, 12);
       let lineageChanged = true;
       while (lineageChanged) {
         lineageChanged = false;
@@ -951,7 +961,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       addArrayScope(resource, 'mines', siteRelated);
       addArrayScope(resource, 'mineAssets', siteRelated);
       addArrayScope(resource, 'mineProductionLedger', siteRelated);
-      addArrayScope(resource, 'batches', row => batchRelated(row) || siteRelated(row));
+      addArrayScope(resource, 'batches', row => batchRelated(row));
       addMapScope(resource, 'inventoryLots', (key, row) =>
         String(key) === originBatchId || batchRelated(row) || siteRelated(row) ||
         String(row?.resourceId || row?.materialIdentity || '').toLowerCase() === scopedResourceId);
@@ -993,6 +1003,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         selectedSiteId: scopedSiteId, selectedFactoryId: scopedFactoryId,
         selectedOccurrenceCount: selectedOccurrenceKeys.size,
         selectedBatchLineageIds: [...lineageBatchIds],
+        excludedUnrelatedSiteBatchCount: unrelatedSiteBatchRows.length,
+        excludedUnrelatedSiteBatchSummary: excludedSiteBatchSummary,
         retainedFactoryCount: economy.productionAssets?.length || 0,
         retainedMineStateCount: Object.keys(resource.mineStates || {}).length,
         retainedOriginBatchPresent: (resource.batches || []).some(row => String(row?.batchId || '') === originBatchId),
@@ -1339,6 +1351,63 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const unitPrice = Number(chosenOffer.unitPrice ?? chosenOffer.price);
       if (!(quantity > 0 && unitPrice > 0)) throw new Error('MARKET_ORDER_QUANTITY_OR_PRICE_INVALID');
       const sellerBeforeStock = readStock(seller, productId);
+      const sellerResourceState = g.Game.state.resource?.[seller] || {};
+      const sellerNetwork = sellerResourceState.industrialNetwork || {};
+      const flowByBatch = new Map((sellerNetwork.siteFlowLedger || [])
+        .filter(row => row?.batchId).map(row => [String(row.batchId), row]));
+      const factoryInTransitByBatch = new Map();
+      const activeFactoryShipmentStatuses = new Set([
+        'IN_TRANSIT', 'BLOCKED_ROUTE_BLOCKADE', 'BLOCKED_LEDGER_MISMATCH',
+        'BLOCKED_BATCH_LEDGER_MISMATCH', 'BLOCKED_FACTORY_MISSING'
+      ]);
+      (sellerNetwork.shipments || []).forEach(row => {
+        const id = String(row?.batchId || '');
+        if (!id || !activeFactoryShipmentStatuses.has(String(row.status || '')) ||
+            !['RAW_TO_FACTORY', 'WAREHOUSE_TO_FACTORY'].includes(String(row.shipmentType || ''))) return;
+        factoryInTransitByBatch.set(id, (factoryInTransitByBatch.get(id) || 0) + Math.max(0, Number(row.quantity) || 0));
+      });
+      const nonCentralStages = new Set([
+        'FACTORY_INPUT', 'CONSUMED', 'TRANSFERRED_TO_FACTORY', 'SOLD', 'TRANSFERRED_OUT'
+      ]);
+      const tradeAvailableQuantity = batch => {
+        const remaining = Math.max(0, Number(batch?.remainingQuantity ?? batch?.quantity) || 0);
+        const flow = flowByBatch.get(String(batch?.batchId || ''));
+        if (!flow || !(flow.mineLogisticsRouteId || flow.mineLogisticsStockDebited === true)) return remaining;
+        const received = Math.max(0, Number(flow.mineWarehouseReceivedQuantity) || 0);
+        const dispatched = Math.max(0, Number(flow.factoryDispatchedQuantity) || 0);
+        const inTransit = Math.max(0, Number(factoryInTransitByBatch.get(String(batch.batchId)) || 0));
+        const delivered = Math.max(0, dispatched - inTransit);
+        const consumed = Math.max(0, Number(flow.mineWarehouseConsumedQuantity) || 0);
+        const exported = Math.max(0, Number(flow.mineWarehouseExportedQuantity) || 0);
+        return Math.min(remaining, Math.max(0, received - delivered - consumed - exported));
+      };
+      const sellerProductBatches = (sellerResourceState.batches || []).filter(row =>
+        normalize(row?.resourceId || row?.materialIdentity) === normalize(productId) &&
+        !nonCentralStages.has(String(row?.stage || '').toUpperCase()) &&
+        tradeAvailableQuantity(row) > 1e-9);
+      const sellerTrackedCentralQuantity = sellerProductBatches.reduce(
+        (sum, row) => sum + tradeAvailableQuantity(row), 0
+      );
+      const sellerBatchInventoryAudit = {
+        countryId: seller, resourceId: productId, inventory: sellerBeforeStock,
+        trackedCentralQuantity: sellerTrackedCentralQuantity,
+        rawWarehouseQuantity: Object.entries(sellerResourceState.warehouse?.availableByResource || {})
+          .filter(([key]) => normalize(key) === normalize(productId))
+          .reduce((sum, [, value]) => sum + (Number(value) || 0), 0),
+        processedWarehouseQuantity: Object.entries(sellerResourceState.processedWarehouse?.availableByResource || {})
+          .filter(([key]) => normalize(key) === normalize(productId))
+          .reduce((sum, [, value]) => sum + (Number(value) || 0), 0),
+        rows: sellerProductBatches.slice(0, 20).map(row => ({
+          batchId: row.batchId, stage: row.stage, status: row.status,
+          remainingQuantity: Number(row.remainingQuantity ?? row.quantity) || 0,
+          siteId: row.siteId || row.sourceSiteId || row.siteReferenceKey || null,
+          sourceFactoryId: row.sourceFactoryId || row.factoryId || null,
+          warehouseId: row.warehouseId || null,
+          sourceBatchIds: (row.sourceBatchIds || []).slice(0, 6)
+        }))
+      };
+      if (sellerTrackedCentralQuantity > sellerBeforeStock + 1e-6)
+        throw new Error('SELLER_STOCK_BATCH_LEDGER_PRETRADE_MISMATCH:' + JSON.stringify(sellerBatchInventoryAudit));
       const buyerBeforeTreasury = bank.accountSummary(buyer);
       const sellerBeforeTreasury = bank.accountSummary(seller);
       const buyerBeforeUsd = Number(buyerBeforeTreasury?.treasuryBalanceUsd);
@@ -1351,6 +1420,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       g.__omegaMineMarketTreasurySaleContext = {
         seller, buyer, productId, quantity, unitPrice,
         chosenOffer: JSON.parse(JSON.stringify(chosenOffer)),
+        sellerBatchInventoryAudit: JSON.parse(JSON.stringify(sellerBatchInventoryAudit)),
         buyerOpeningStock, sellerBeforeStock, buyerBeforeUsd, sellerBeforeUsd
       };
       return { seller, buyer, productId, quantity, unitPrice };
