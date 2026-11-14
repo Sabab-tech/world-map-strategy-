@@ -616,6 +616,141 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const currentFlow = () => (resource.industrialNetwork?.siteFlowLedger || [])
         .filter(row => String(row?.batchId || '') === originBatchId).slice(-1)[0] || null;
 
+      // Temporary acceptance-test scope: keep this real player session, real mine,
+      // real commissioned factory and their actual batch lineage. Other USA mine,
+      // factory and logistics rows are restored before save/load verification.
+      const scopedSiteId = String(setup.selected.siteId);
+      const scopedFactoryId = String(setup.selected.factoryId);
+      const scopedResourceId = String(setup.selected.resourceId).toLowerCase();
+      const network = resource.industrialNetwork || (resource.industrialNetwork = {});
+      const economy = g.Game.state.economy?.[seller] || (g.Game.state.economy[seller] = {});
+      const controllerEntry = Object.entries(resource.mineSiteControllers || {}).find(([key, row]) =>
+        String(row?.siteReferenceKey || row?.siteId || key) === scopedSiteId) || null;
+      const selectedOccurrenceKeys = new Set(
+        Array.isArray(controllerEntry?.[1]?.linkedOccurrenceKeys) ? controllerEntry[1].linkedOccurrenceKeys.map(String) : []
+      );
+      const lineageBatchIds = new Set([originBatchId]);
+      const scopedCollections = [];
+      const addArrayScope = (owner, key, predicate) => {
+        if (!owner || !Array.isArray(owner[key])) return;
+        const original = owner[key];
+        owner[key] = original.filter(predicate);
+        scopedCollections.push({ owner, key, original, predicate, kind: 'array' });
+      };
+      const addMapScope = (owner, key, predicate) => {
+        if (!owner || !owner[key] || typeof owner[key] !== 'object' || Array.isArray(owner[key])) return;
+        const original = owner[key];
+        owner[key] = Object.fromEntries(Object.entries(original).filter(predicate));
+        scopedCollections.push({ owner, key, original, predicate, kind: 'map' });
+      };
+      const batchRelated = row => {
+        const id = String(row?.batchId || row?.sourceBatchId || '');
+        if (id && lineageBatchIds.has(id)) return true;
+        const parents = [
+          ...(Array.isArray(row?.sourceBatchIds) ? row.sourceBatchIds : []),
+          ...(Array.isArray(row?.batchAllocations) ? row.batchAllocations.flatMap(x => [x?.batchId, x?.originatingBatchId]) : [])
+        ].filter(Boolean).map(String);
+        if (parents.some(parent => lineageBatchIds.has(parent))) {
+          if (id) lineageBatchIds.add(id);
+          return true;
+        }
+        return false;
+      };
+      const siteRelated = row =>
+        String(row?.siteId || row?.siteReferenceKey || row?.sourceSiteId || '') === scopedSiteId ||
+        selectedOccurrenceKeys.has(String(row?.occurrenceKey || row?.mineId || ''));
+      const factoryRelated = row =>
+        String(row?.factoryId || row?.assetId || row?.id || row?.projectId || '') === scopedFactoryId ||
+        String(row?.destinationFactoryId || '') === scopedFactoryId;
+      const originalBatches = Array.isArray(resource.batches) ? resource.batches : [];
+      let lineageChanged = true;
+      while (lineageChanged) {
+        lineageChanged = false;
+        for (const row of originalBatches) {
+          const id = String(row?.batchId || '');
+          if (id && !lineageBatchIds.has(id) &&
+              (Array.isArray(row?.sourceBatchIds) ? row.sourceBatchIds : []).some(parent => lineageBatchIds.has(String(parent)))) {
+            lineageBatchIds.add(id);
+            lineageChanged = true;
+          }
+        }
+      }
+      addArrayScope(economy, 'productionAssets', factoryRelated);
+      addArrayScope(resource, 'mineSiteReferences', siteRelated);
+      addMapScope(resource, 'mineSiteControllers', (key, row) =>
+        String(row?.siteReferenceKey || row?.siteId || key) === scopedSiteId);
+      addMapScope(resource, 'mineStates', key => selectedOccurrenceKeys.has(String(key)));
+      addMapScope(resource, 'mineOutputs', key => selectedOccurrenceKeys.has(String(key)));
+      addMapScope(resource, 'minePaths', key => String(key) === scopedSiteId || selectedOccurrenceKeys.has(String(key)));
+      addArrayScope(resource, 'mines', siteRelated);
+      addArrayScope(resource, 'mineAssets', siteRelated);
+      addArrayScope(resource, 'mineProductionLedger', siteRelated);
+      addArrayScope(resource, 'batches', row => batchRelated(row) || siteRelated(row));
+      addMapScope(resource, 'inventoryLots', (key, row) =>
+        batchRelated(row) || String(row?.resourceId || row?.materialIdentity || '').toLowerCase() === scopedResourceId);
+      for (const warehouseName of ['warehouse', 'rawWarehouse']) {
+        const warehouse = resource[warehouseName];
+        if (!warehouse || typeof warehouse !== 'object') continue;
+        addArrayScope(warehouse, 'receipts', row => batchRelated(row) || siteRelated(row));
+        addArrayScope(warehouse, 'shipments', row => batchRelated(row) || siteRelated(row));
+        addArrayScope(warehouse, 'lots', row => batchRelated(row) ||
+          String(row?.resourceId || '').toLowerCase() === scopedResourceId);
+      }
+      addArrayScope(resource, 'warehouseReceiptLedger', row => batchRelated(row) || siteRelated(row));
+      addArrayScope(network, 'shipments', row => batchRelated(row) || siteRelated(row) || factoryRelated(row));
+      addArrayScope(network, 'deliveries', row => batchRelated(row) || siteRelated(row) || factoryRelated(row));
+      addArrayScope(network, 'extractions', row => siteRelated(row) || batchRelated(row));
+      addArrayScope(network, 'siteFlowLedger', row => siteRelated(row) || batchRelated(row));
+      addArrayScope(network, 'projects', row => siteRelated(row) || factoryRelated(row));
+      addArrayScope(network, 'factoryInputRequests', factoryRelated);
+      addArrayScope(network, 'factoryInputTransfers', row => factoryRelated(row) || batchRelated(row));
+      addArrayScope(network, 'factoryProductionCycleHistory', factoryRelated);
+      addMapScope(network, 'siteLogisticsBySiteId', key => String(key) === scopedSiteId);
+      addMapScope(network, 'transportFleetBySiteId', key =>
+        String(key) === scopedSiteId || String(key) === 'WH-' + seller + '-RAW' ||
+        String(key) === 'WH-' + seller + '-PROCESSED');
+      addMapScope(network, 'factoryProductionCycles', key => String(key) === scopedFactoryId);
+      addMapScope(network, 'factoryRuntime', key => String(key) === scopedFactoryId);
+      addMapScope(network, 'reservations', key => String(key).includes(originBatchId) || String(key).includes(scopedFactoryId));
+      const sellerTrade = g.Game.state.trade?.[seller];
+      if (sellerTrade?.offerBook && !Array.isArray(sellerTrade.offerBook) && typeof sellerTrade.offerBook === 'object') {
+        addMapScope(sellerTrade, 'offerBook', key =>
+          String(key).toLowerCase() === String(setup.selected.outputProductId).toLowerCase());
+      } else {
+        addArrayScope(sellerTrade, 'offerBook', row =>
+          String(row?.resourceId || '').toLowerCase() === String(setup.selected.outputProductId).toLowerCase());
+      }
+      const scopeCounts = {
+        selectedSiteId: scopedSiteId, selectedFactoryId: scopedFactoryId,
+        selectedOccurrenceCount: selectedOccurrenceKeys.size,
+        selectedBatchLineageIds: [...lineageBatchIds],
+        retainedFactoryCount: economy.productionAssets?.length || 0,
+        retainedMineStateCount: Object.keys(resource.mineStates || {}).length,
+        retainedShipmentCount: network.shipments?.length || 0,
+        retainedSiteFlowCount: network.siteFlowLedger?.length || 0,
+        scopedCollectionCount: scopedCollections.length
+      };
+      g.__omegaMineMarketTreasuryRestoreScope = () => {
+        for (const entry of scopedCollections.reverse()) {
+          const current = entry.owner[entry.key];
+          if (entry.kind === 'array') {
+            const scopedRows = Array.isArray(current) ? current : [];
+            entry.owner[entry.key] = entry.original.filter(row => !entry.predicate(row)).concat(scopedRows);
+          } else {
+            const scopedRows = current && typeof current === 'object' && !Array.isArray(current) ? current : {};
+            entry.owner[entry.key] = Object.assign(
+              Object.fromEntries(Object.entries(entry.original).filter(([key, row]) => !entry.predicate(key, row))),
+              scopedRows
+            );
+          }
+        }
+        scopedCollections.length = 0;
+        mark('TEMPORARY_PLAYER_COUNTRY_PIPELINE_SCOPE_RESTORED', {
+          selectedSiteId: scopedSiteId, selectedFactoryId: scopedFactoryId
+        });
+        g.__omegaMineMarketTreasuryRestoreScope = null;
+      };
+      mark('TEMPORARY_SINGLE_MINE_FACTORY_SCOPE_APPLIED', scopeCounts);
       const snapshots = [];
       let finished = null;
       const participantHandlers = new Map();
@@ -959,7 +1094,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           settlementId, expectedCompany: production.factoryOwnerCompanyId, clearingRows: clearingRows.slice(-8)
         }).slice(0, 4000));
 
-      return {
+      const saleReport = {
         productId, quantity, unitPrice, offerId: chosenOffer.offerId, offerQuantity,
         offerSourceBatchIds: chosenOffer.sourceBatchIds || [],
         marketQuote: {
@@ -982,6 +1117,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           companyReceipt: companyClearing
         }
       };
+      g.__omegaMineMarketTreasuryRestoreScope?.();
+      return saleReport;
     }, { setup, production });
 
     const persistence = await page.evaluate(async ({ setup, production, sale }) => {
@@ -1045,6 +1182,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     t.diagnostic('Full pipeline completed in one Chromium context: ' + setup.seller + ' mine → ' +
       production.outputResourceId + ' → ' + setup.buyer + ' → Treasury.');
   } catch (error) {
+    await page.evaluate(() => window.__omegaMineMarketTreasuryRestoreScope?.()).catch(() => {});
     const legacyTurnListeners = await page.evaluate(() =>
       Array.isArray(window.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__)
         ? window.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__.map(row => ({
