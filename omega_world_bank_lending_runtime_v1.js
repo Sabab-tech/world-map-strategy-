@@ -1896,6 +1896,7 @@
     return true;
   }
   function queueRender(force) {
+    if (global.Game && global.Game.Map && global.Game.Map.__omegaMapUiActive === true) return;
     renderForcePending = renderForcePending || !!force;
     if (renderQueued) return;
     if (typeof global.setTimeout === 'function') {
