@@ -1253,6 +1253,37 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
 
       const requestId = 'MINE-MARKET-' + seller + '-' + buyer + '-' + Date.now() + '-' +
         Math.random().toString(36).slice(2, 8);
+      const settlementDiagnostics = { prepare: [], cancel: [], failures: [] };
+      const settlementId = 'SET-' + buyer + '-' + seller + '-' +
+        requestId.replace(/[^A-Za-z0-9_.:-]/g, '_').slice(0, 180);
+      const originalPrepareTradeSettlement = bank.prepareTradeSettlement;
+      const originalCancelTradeSettlement = bank.cancelTradeSettlement;
+      const onTradeSettlementFailed = event => {
+        const details = event?.detail || {};
+        if (String(details.requestId || '') === requestId)
+          settlementDiagnostics.failures.push({ type: event.type, details: JSON.parse(JSON.stringify(details)) });
+      };
+      g.addEventListener('OMEGA_TRADE_SETTLEMENT_FAILED', onTradeSettlementFailed);
+      bank.prepareTradeSettlement = function (input) {
+        const before = bank.getTransaction(settlementId);
+        const result = originalPrepareTradeSettlement.call(bank, input);
+        if (String(input?.requestId || '') === requestId)
+          settlementDiagnostics.prepare.push({ before, result: JSON.parse(JSON.stringify(result)) });
+        return result;
+      };
+      bank.cancelTradeSettlement = function (id, reason) {
+        if (String(id || '') === settlementId)
+          settlementDiagnostics.cancel.push({
+            reason: String(reason || ''),
+            before: bank.getTransaction(settlementId),
+            pending: bank.getState()?.pendingTradeSettlements?.[settlementId] || null,
+            inFlight: bank.getState()?.inFlightSettlements?.[settlementId] || null
+          });
+        const result = originalCancelTradeSettlement.call(bank, id, reason);
+        if (String(id || '') === settlementId)
+          settlementDiagnostics.cancel[settlementDiagnostics.cancel.length - 1].result = result;
+        return result;
+      };
       const created = trade.createRequest(buyer, {
         requestId, targetCountryId: seller, resourceId: productId, quantity, unitPrice,
         currency: chosenOffer.currency || trade.currencyOf(buyer),
@@ -1281,13 +1312,18 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       }
       const request = (g.Game.state.trade?.[buyer]?.importRequests || [])
         .find(row => String(row.requestId) === requestId);
-      const settlementId = 'SET-' + buyer + '-' + seller + '-' +
-        requestId.replace(/[^A-Za-z0-9_.:-]/g, '_').slice(0, 180);
       if (String(request?.status || '').toUpperCase() !== 'SETTLED')
         throw new Error('MARKET_REQUEST_NOT_SETTLED:' + JSON.stringify({
-          request, settlementTrace: g.__OMEGA_SETTLEMENT_TRACE,
+          request, settlementId, settlementTrace: g.__OMEGA_SETTLEMENT_TRACE,
+          settlementDiagnostics,
+          bankTransaction: bank.getTransaction(settlementId),
+          bankSettlementState: {
+            pending: bank.getState()?.pendingTradeSettlements?.[settlementId] || null,
+            inFlight: bank.getState()?.inFlightSettlements?.[settlementId] || null,
+            idempotency: bank.getState()?.idempotency?.[settlementId] || null
+          },
           buyerTreasury: bank.accountSummary(buyer), sellerTreasury: bank.accountSummary(seller)
-        }).slice(0, 6500));
+        }).slice(0, 10000));
 
       const storedTransaction = bank.getTransaction(settlementId);
       const transaction = storedTransaction?.result || storedTransaction;
