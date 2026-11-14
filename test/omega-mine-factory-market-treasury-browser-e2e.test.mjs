@@ -619,19 +619,32 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const snapshots = [];
       let finished = null;
       const participantHandlers = new Map();
+      g.__omegaMineMarketTreasuryParticipantTrace = [];
       for (const entry of simulation.turnParticipants?.values?.() || []) {
         if (!entry || typeof entry.handler !== 'function') continue;
         const original = entry.handler;
         participantHandlers.set(entry, original);
         entry.handler = async function (...args) {
           const startedAt = Date.now();
-          mark('TURN_PARTICIPANT_START', { id: entry.id, turn: Number(g.Game.state.simulation?.turn || 0) + 1 });
+          const record = {
+            id: entry.id,
+            turn: Number(g.Game.state.simulation?.turn || 0) + 1,
+            status: 'RUNNING',
+            startedAt
+          };
+          g.__omegaMineMarketTreasuryParticipantTrace.push(record);
+          mark('TURN_PARTICIPANT_START', { id: entry.id, turn: record.turn });
           try {
             const value = await original.apply(this, args);
-            mark('TURN_PARTICIPANT_COMPLETE', { id: entry.id, durationMs: Date.now() - startedAt });
+            record.status = 'COMPLETED';
+            record.durationMs = Date.now() - startedAt;
+            mark('TURN_PARTICIPANT_COMPLETE', { id: entry.id, durationMs: record.durationMs });
             return value;
           } catch (error) {
-            mark('TURN_PARTICIPANT_FAILED', { id: entry.id, durationMs: Date.now() - startedAt, message: String(error?.message || error).slice(0, 600) });
+            record.status = 'FAILED';
+            record.durationMs = Date.now() - startedAt;
+            record.error = String(error?.message || error).slice(0, 600);
+            mark('TURN_PARTICIPANT_FAILED', { id: entry.id, durationMs: record.durationMs, message: record.error });
             throw error;
           }
         };
@@ -1032,11 +1045,29 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     t.diagnostic('Full pipeline completed in one Chromium context: ' + setup.seller + ' mine → ' +
       production.outputResourceId + ' → ' + setup.buyer + ' → Treasury.');
   } catch (error) {
+    const legacyTurnListeners = await page.evaluate(() =>
+      Array.isArray(window.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__)
+        ? window.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__.map(row => ({
+            id: row.id, listenerName: row.listenerName,
+            registrationScript: row.registrationScript || null,
+            registrationStack: String(row.registrationStack || '').slice(0, 1800)
+          }))
+        : []
+    ).catch(() => []);
+    const participantTrace = await page.evaluate(() =>
+      (window.__omegaMineMarketTreasuryParticipantTrace || []).slice(-160)
+    ).catch(() => []);
+    const resourceEconomyPhaseProfile = await page.evaluate(() =>
+      window.__OMEGA_RESOURCE_ECONOMY_LAST_TURN_PROFILE || null
+    ).catch(() => null);
     const diagnostic = {
       status: 'FAIL', error: String(error?.stack || error),
       details: error?.details || null, pageErrors,
       consoleErrors: consoleErrors.slice(-80),
-      stageTrace: stageTrace.slice(-120)
+      stageTrace: stageTrace.slice(-120),
+      legacyTurnListeners,
+      participantTrace,
+      resourceEconomyPhaseProfile
     };
     try {
       await mkdir(ARTIFACT_DIR, { recursive: true });
