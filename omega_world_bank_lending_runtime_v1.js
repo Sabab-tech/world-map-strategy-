@@ -1884,6 +1884,7 @@
   }
   function renderPanel(force) {
     const doc = global.document;
+    if (global.Game && global.Game.Map && global.Game.Map.__omegaMapUiActive === true) return false;
     if (!doc || typeof doc.querySelector !== 'function') return false;
     const host = doc.querySelector('[data-owb-container]');
     if (!host) { uiRoot = null; return false; }
