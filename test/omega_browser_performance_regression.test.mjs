@@ -636,7 +636,10 @@ test('world geometry becomes usable before supporting datasets and resumes witho
     'awaited relation generation must occupy the final pre-completion progress stage');
   assert.ok(map.includes('Game.Map.setUiActive = function(active)'));
   assert.ok(map.includes('if (Game.__omegaGeoJSONRenderComplete === true) return this.__assetsLoadingProgress;'),
-    'the blocking map loader must close after map geometry is ready while other shared startup work continues');
+    'support-stage progress must not reopen the blocking map overlay after geometry is ready');
+  assert.ok(map.includes('const mapGeometryReady = Game.__omegaGeoJSONRenderComplete === true;') &&
+    map.includes("status === 'complete' && !mapGeometryReady ? 'loading' : status"),
+    'map completion must remain complete even while the overall supporting-data coordinator is still active');
   const simulation = read('omega_simulation_runtime.js');
   const driver = read('omega_enterprise_composition_root_v10.js');
   const resourceEconomy = read('omega_resource_economy_runtime_v2.js');
