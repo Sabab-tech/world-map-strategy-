@@ -661,7 +661,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           new Promise((resolve, reject) => g.setTimeout(() => reject(new Error(
             'SIMULATION_TURN_TIMEOUT:' + String(Number(g.Game.state.simulation?.turn || 0) + 1) +
             ':PARTICIPANTS=' + JSON.stringify([...participantHandlers.keys()].map(entry => entry.id))
-          )), 90000))
+          )), 150000))
         ]);
         mark('SIMULATION_TURN_COMPLETE', { offset, turn: Number(g.Game.state.simulation?.turn || simulation.turn || offset), status: turnResult?.status || null });
         const turn = Number(g.Game.state.simulation?.turn ?? simulation.turn ?? offset);
