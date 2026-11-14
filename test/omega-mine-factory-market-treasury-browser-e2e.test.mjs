@@ -741,7 +741,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       });
       return {
         seller, buyer, currency: chosenCountry.currency,
-        sessionStatus: liveSession?.status || null,
+        sessionStatus,
         bootstrapMode,
         autosaveFinalizerSuppressedForTest: true,
         registeredTurnParticipantIds: turnParticipants.map(row => row.id),
