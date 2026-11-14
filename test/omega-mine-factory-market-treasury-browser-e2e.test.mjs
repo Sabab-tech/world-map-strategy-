@@ -519,9 +519,6 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const turnBeforeExtraction = Number(g.Game.state.simulation?.turn ?? simulation.turn ?? 0);
       const endowmentOriginal = g.Omega?.ResourceEndowmentRuntime || g.OmegaResourceEndowmentRuntime;
       const interop = g.Omega?.MinistryInteroperability || g.OmegaMinistryInteroperability;
-      const originalEmitEventDescriptor = interop
-        ? Object.getOwnPropertyDescriptor(interop, 'emitEvent') : null;
-      const originalEmitEvent = interop?.emitEvent;
       const extractionLedgerAudit = [];
       const inspectExtractionLedger = (stage, countryId, batchId, command) => {
         const root = g.Game?.state;
@@ -548,29 +545,22 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           inventoryLotOperationBatchCount: operation?.after ? Object.keys(operation.after).length : null
         };
       };
-      if (interop && typeof originalEmitEvent === 'function') {
-        Object.defineProperty(interop, 'emitEvent', {
-          configurable: true,
-          enumerable: true,
-          writable: true,
-          value: function (eventType, countryId, source, payload, options) {
-            if (eventType === 'OMEGA_RESOURCE_EXTRACTION_COMPLETED') {
-              const batchId = String(payload?.batch?.batchId || payload?.batchId || '');
-              extractionLedgerAudit.push(inspectExtractionLedger(
-                'BEFORE_EXTRACTION_COMPLETED_EVENT', String(countryId || seller), batchId, null
-              ));
-            }
-            const emitted = originalEmitEvent.call(this, eventType, countryId, source, payload, options);
-            if (eventType === 'OMEGA_RESOURCE_EXTRACTION_COMPLETED') {
-              const batchId = String(payload?.batch?.batchId || payload?.batchId || '');
-              extractionLedgerAudit.push(inspectExtractionLedger(
-                'AFTER_EXTRACTION_COMPLETED_EVENT', String(countryId || seller), batchId, null
-              ));
-            }
-            return emitted;
-          }
-        });
-      }
+      const extractionAuditListener = event => {
+        const detail = event?.detail || {};
+        const countryId = String(detail.countryId || seller);
+        const payload = detail.payload || detail;
+        const batchId = String(payload?.batch?.batchId || payload?.batchId || '');
+        if (!batchId) return;
+        extractionLedgerAudit.push(inspectExtractionLedger(
+          'CAPTURE_PHASE_BEFORE_EXTRACTION_EVENT_HANDLERS', countryId, batchId, null
+        ));
+        g.setTimeout(() => {
+          extractionLedgerAudit.push(inspectExtractionLedger(
+            'AFTER_EXTRACTION_EVENT_HANDLERS', countryId, batchId, null
+          ));
+        }, 0);
+      };
+      g.addEventListener('OMEGA_RESOURCE_EXTRACTION_COMPLETED', extractionAuditListener, true);
       const observedEndowment = endowmentOriginal && typeof endowmentOriginal.extractCountry === 'function'
         ? Object.assign({}, endowmentOriginal, {
             extractCountry: async function (countryId, occurrenceKeys) {
@@ -606,10 +596,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           g.Omega.ResourceEndowmentRuntime = endowmentOriginal;
           g.OmegaResourceEndowmentRuntime = endowmentOriginal;
         }
-        if (interop) {
-          if (originalEmitEventDescriptor) Object.defineProperty(interop, 'emitEvent', originalEmitEventDescriptor);
-          else delete interop.emitEvent;
-        }
+        g.removeEventListener('OMEGA_RESOURCE_EXTRACTION_COMPLETED', extractionAuditListener, true);
       }
       g.__omegaMineMarketTreasuryExtractionLedgerAudit = extractionLedgerAudit;
       const afterExtraction = resourceState.batches.filter(row => {
