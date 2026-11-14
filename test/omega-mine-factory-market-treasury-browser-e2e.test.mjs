@@ -1277,7 +1277,9 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
             reason: String(reason || ''),
             before: bank.getTransaction(settlementId),
             pending: bank.getState()?.pendingTradeSettlements?.[settlementId] || null,
-            inFlight: bank.getState()?.inFlightSettlements?.[settlementId] || null
+            inFlight: bank.getState()?.inFlightSettlements?.[settlementId] || null,
+            settlementTraceAtCancel: JSON.parse(JSON.stringify(g.__OMEGA_SETTLEMENT_TRACE || {})),
+            tradeProcessTraceAtCancel: JSON.parse(JSON.stringify(g.__OMEGA_LAST_TRADE_PROCESS_TRACE || {}))
           });
         const result = originalCancelTradeSettlement.call(bank, id, reason);
         if (String(id || '') === settlementId)
