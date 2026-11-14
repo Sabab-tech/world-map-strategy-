@@ -81,7 +81,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
   page.on('console', message => {
     const text = message.text();
     if (message.type() === 'error') consoleErrors.push(text);
-    if (text.startsWith('[OMEGA_MMT_E2E_STAGE]')) stageTrace.push(text.slice(0, 1200));
+    if (text.startsWith('[OMEGA_MMT_E2E_STAGE]') || text.startsWith('[SAB34_PROGRESS] RESOURCE_ECONOMY_'))
+      stageTrace.push(text.slice(0, 1200));
   });
 
   try {
@@ -595,6 +596,9 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const originBatchId = setup.originBatchId;
       const resource = g.Game.state.resource[seller];
       const simulation = g.Omega.Simulation;
+      // Phase timers expose the slow player-country subsystem without changing
+      // production logic or removing the Resource Economy turn runner.
+      g.__OMEGA_RESOURCE_ECONOMY_PERF__ = true;
       const finishedStages = new Set(['PROCESSED', 'INTERMEDIATE', 'FINISHED', 'REFINED', 'OUTPUT']);
       const completeStatuses = new Set(['COMPLETED', 'FINISHED', 'PROCESSED', 'AVAILABLE', 'DELIVERED', 'RECEIVED', 'ARRIVED']);
       const batchMap = () => new Map((resource.batches || []).map(row => [String(row?.batchId || ''), row]));
