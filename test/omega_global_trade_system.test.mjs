@@ -225,6 +225,42 @@ assert.equal(changedExportReplay.status,'FAILED',JSON.stringify(changedExportRep
 assert.equal(changedExportReplay.result?.reason,'TRADE_RESOURCE_DEBIT_IDEMPOTENCY_COLLISION');
 assert.equal(policy.liftEmbargo('SAU',{policyId:'POST-SETTLEMENT-REPLAY-EMBARGO'}).accepted,true);
 
+const invalidUiRequest=trade.createRequest('BGD',{
+  requestId:'REQ-UI-INVALID',targetCountryId:'BGD',resourceId:'crude_oil',quantity:100,unitPrice:101,
+  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
+});
+assert.equal(invalidUiRequest?.accepted,false,'same-country trade must be rejected');
+
+const uiCreated=trade.createRequest('BGD',{
+  requestId:'REQ-UI-CREATE',targetCountryId:'SAU',resourceId:'crude_oil',quantity:100,unitPrice:101,
+  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
+});
+assert.equal(uiCreated?.accepted,true,JSON.stringify(uiCreated));
+const uiCreatedRequest=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-UI-CREATE');
+assert.equal(uiCreatedRequest?.status,'SENT');
+assert.equal(uiCreatedRequest?.stage,'OPEN');
+assert.equal(uiCreatedRequest?.quantity,100);
+assert.equal(uiCreatedRequest?.targetCountryId,'SAU');
+assert(globalThis.Game.state.trade.BGD.globalTradeLedger.requests.some(x=>x.requestId==='REQ-UI-CREATE'));
+
+const duplicateUiRequest=trade.createRequest('BGD',{
+  requestId:'REQ-UI-CREATE',targetCountryId:'SAU',resourceId:'crude_oil',quantity:100,unitPrice:101,
+  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
+});
+assert.equal(duplicateUiRequest?.duplicate,true,'identical request retries must be idempotent');
+const conflictingUiRequest=trade.createRequest('BGD',{
+  requestId:'REQ-UI-CREATE',targetCountryId:'SAU',resourceId:'crude_oil',quantity:101,unitPrice:101,
+  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
+});
+assert.equal(conflictingUiRequest?.accepted,false,'conflicting request ID reuse must fail');
+assert.equal(conflictingUiRequest?.reason,'TRADE_REQUEST_ID_CONFLICT');
+console.log('OMEGA GLOBAL TRADE TEST PASSED');
+
+// The preceding public-trade regressions deliberately left State export limits active.
+// Remove those test policies before exercising a company-owned commercial export.
+assert.equal(policy.liftSupplyDirective('SAU',{policyId:'TRADE-DOMESTIC-ONLY-E2E'}).accepted,true);
+assert.equal(policy.liftSupplyDirective('SAU',{policyId:'TRADE-EXPORT-CONTRACT-E2E'}).accepted,true);
+
 // Mine-haul regression: 600 units have reached the warehouse and 400 remain in transit.
 // The batch still records all 1,000 units, but only the receipted 600 are exportable.
 const mineLogisticsBatchId='SAU-MINE-LOGISTICS-PARTIAL-RECEIPT-E2E';
@@ -279,42 +315,6 @@ const mineHaulDebitReplay=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_
 assert.equal(mineHaulDebitReplay.status,'APPLIED',JSON.stringify(mineHaulDebitReplay));
 assert.equal(mineHaulDebitReplay.result?.duplicate,true,'replayed mine-haul debit must not move stock twice');
 assert.equal(mineLogisticsSeller.inventory.crude_oil,beforeMineHaulDebit.stock-4000);
-
-const invalidUiRequest=trade.createRequest('BGD',{
-  requestId:'REQ-UI-INVALID',targetCountryId:'BGD',resourceId:'crude_oil',quantity:100,unitPrice:101,
-  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
-});
-assert.equal(invalidUiRequest?.accepted,false,'same-country trade must be rejected');
-
-const uiCreated=trade.createRequest('BGD',{
-  requestId:'REQ-UI-CREATE',targetCountryId:'SAU',resourceId:'crude_oil',quantity:100,unitPrice:101,
-  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
-});
-assert.equal(uiCreated?.accepted,true,JSON.stringify(uiCreated));
-const uiCreatedRequest=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-UI-CREATE');
-assert.equal(uiCreatedRequest?.status,'SENT');
-assert.equal(uiCreatedRequest?.stage,'OPEN');
-assert.equal(uiCreatedRequest?.quantity,100);
-assert.equal(uiCreatedRequest?.targetCountryId,'SAU');
-assert(globalThis.Game.state.trade.BGD.globalTradeLedger.requests.some(x=>x.requestId==='REQ-UI-CREATE'));
-
-const duplicateUiRequest=trade.createRequest('BGD',{
-  requestId:'REQ-UI-CREATE',targetCountryId:'SAU',resourceId:'crude_oil',quantity:100,unitPrice:101,
-  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
-});
-assert.equal(duplicateUiRequest?.duplicate,true,'identical request retries must be idempotent');
-const conflictingUiRequest=trade.createRequest('BGD',{
-  requestId:'REQ-UI-CREATE',targetCountryId:'SAU',resourceId:'crude_oil',quantity:101,unitPrice:101,
-  source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
-});
-assert.equal(conflictingUiRequest?.accepted,false,'conflicting request ID reuse must fail');
-assert.equal(conflictingUiRequest?.reason,'TRADE_REQUEST_ID_CONFLICT');
-console.log('OMEGA GLOBAL TRADE TEST PASSED');
-
-// The preceding public-trade regressions deliberately left State export limits active.
-// Remove those test policies before exercising a company-owned commercial export.
-assert.equal(policy.liftSupplyDirective('SAU',{policyId:'TRADE-DOMESTIC-ONLY-E2E'}).accepted,true);
-assert.equal(policy.liftSupplyDirective('SAU',{policyId:'TRADE-EXPORT-CONTRACT-E2E'}).accepted,true);
 
 // End-to-end private-company purchase: executable market quote -> exact private batch
 // -> company cash settlement -> import batch / warehouse receipt. The seller's national
