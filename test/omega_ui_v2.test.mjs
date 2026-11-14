@@ -3004,6 +3004,7 @@ test('every canonical factory recipe input and output renders a product-specific
   assert.ok(api && typeof api.productIconVisualMarkup === 'function');
   const iconManifest = JSON.parse(readFileSync('assets/omega-industrial-icons-v1/manifest.json','utf8'));
   assert.equal(iconManifest.resources.length,42,'all canonical raw resources must retain their SVG identities');
+  const rawResourceMotifs = new Set();
   for (const resource of iconManifest.resources) {
     const markup = api.productIconVisualMarkup(resource.id,resource.label);
     assert.ok(markup.includes('<svg ') && markup.includes('data-icon-source="generated-resource"'),
@@ -3012,7 +3013,12 @@ test('every canonical factory recipe input and output renders a product-specific
       resource.id + ' must preserve its canonical resource identity in its illustration');
     assert.ok(markup.includes('data-icon-motif='),
       resource.id + ' must receive an identified physical-object motif');
+    assert.doesNotMatch(markup, /<text\\b/i,
+      resource.id + ' must not hide its name in microscopic text inside the illustration');
+    rawResourceMotifs.add(markup.match(/data-icon-motif="([^"]+)"/)?.[1]);
   }
+  assert.ok(rawResourceMotifs.size >= 34,
+    'raw commodities must use materially distinct physical silhouettes rather than a small repeated icon set');
   const productIds = new Set();
   for (const recipe of Object.values(catalog.downstreamFactoryRecipes || {})) {
     for (const productId of [
@@ -3034,6 +3040,10 @@ test('every canonical factory recipe input and output renders a product-specific
     'Copper must render with its dimensional ingot silhouette rather than a generic flat drawing');
   assert.ok(api.productIconVisualMarkup('steel','Steel').includes('data-icon-source="generated-product"'),
     'Steel must use a finished-product SVG rather than pretending to be raw iron ore');
+  assert.ok(api.productIconVisualMarkup('tungsten','Tungsten').includes('data-icon-motif="tungsten-crystal"'),
+    'Tungsten needs its own crystalline physical silhouette');
+  assert.ok(api.productIconVisualMarkup('niobium','Niobium').includes('data-icon-motif="niobium-prism"'),
+    'Niobium needs its own mineral prism silhouette');
   const productMotifs = new Set();
   for (const productId of productIds) {
     const label = productId.split(/[_-]+/).map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
