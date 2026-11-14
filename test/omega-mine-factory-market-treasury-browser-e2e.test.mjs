@@ -517,14 +517,101 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         fail('PLAYER_RESOURCE_LEDGER_NOT_READY', { seller, hydration });
       const beforeBatchIds = new Set(resourceState.batches.map(row => String(row?.batchId || '')).filter(Boolean));
       const turnBeforeExtraction = Number(g.Game.state.simulation?.turn ?? simulation.turn ?? 0);
-      const pipelineStart = await waitStage('MINE_TO_FACTORY_EXECUTION', () =>
-        industrial.executeSitePipeline({
-          countryId: seller,
-          siteId: selected.siteId,
-          resourceId: selected.resourceId,
-          factoryId: selected.factoryId,
-          quantity: Number(selected.plan.approvedQuantity)
-        }), 120000);
+      const endowmentOriginal = g.Omega?.ResourceEndowmentRuntime || g.OmegaResourceEndowmentRuntime;
+      const interop = g.Omega?.MinistryInteroperability || g.OmegaMinistryInteroperability;
+      const originalEmitEventDescriptor = interop
+        ? Object.getOwnPropertyDescriptor(interop, 'emitEvent') : null;
+      const originalEmitEvent = interop?.emitEvent;
+      const extractionLedgerAudit = [];
+      const inspectExtractionLedger = (stage, countryId, batchId, command) => {
+        const root = g.Game?.state;
+        const simRoot = simulation.world?.state;
+        const bucket = root?.resource?.[countryId] || null;
+        const simBucket = simRoot?.resource?.[countryId] || null;
+        const operation = command?.transaction?.operations?.find(row =>
+          row?.path === 'resource.inventoryLots' && row?.op === 'SET') || null;
+        return {
+          stage, countryId, batchId,
+          gameAndSimulationRootSame: root === simRoot,
+          gameAndSimulationCountryBucketSame: bucket === simBucket,
+          gameBucketOwnsInventoryLots: !!bucket && Object.prototype.hasOwnProperty.call(bucket, 'inventoryLots'),
+          gameLotPresent: !!(batchId && bucket?.inventoryLots?.[batchId]),
+          simulationLotPresent: !!(batchId && simBucket?.inventoryLots?.[batchId]),
+          gameBatchPresent: !!(batchId && bucket?.batches?.some(row => String(row?.batchId || '') === batchId)),
+          simulationBatchPresent: !!(batchId && simBucket?.batches?.some(row => String(row?.batchId || '') === batchId)),
+          commandId: command?.commandId || null,
+          commandStatus: command?.status || null,
+          commandStateWriteCount: command?.stateWriteCount ?? null,
+          transactionPaths: (command?.transaction?.operations || []).map(row => row.path),
+          inventoryLotOperationIncludesBatch: !!operation &&
+            !!operation.after && Object.prototype.hasOwnProperty.call(operation.after, batchId),
+          inventoryLotOperationBatchCount: operation?.after ? Object.keys(operation.after).length : null
+        };
+      };
+      if (interop && typeof originalEmitEvent === 'function') {
+        Object.defineProperty(interop, 'emitEvent', {
+          configurable: true,
+          enumerable: true,
+          writable: true,
+          value: function (eventType, countryId, source, payload, options) {
+            if (eventType === 'OMEGA_RESOURCE_EXTRACTION_COMPLETED') {
+              const batchId = String(payload?.batch?.batchId || payload?.batchId || '');
+              extractionLedgerAudit.push(inspectExtractionLedger(
+                'BEFORE_EXTRACTION_COMPLETED_EVENT', String(countryId || seller), batchId, null
+              ));
+            }
+            const emitted = originalEmitEvent.call(this, eventType, countryId, source, payload, options);
+            if (eventType === 'OMEGA_RESOURCE_EXTRACTION_COMPLETED') {
+              const batchId = String(payload?.batch?.batchId || payload?.batchId || '');
+              extractionLedgerAudit.push(inspectExtractionLedger(
+                'AFTER_EXTRACTION_COMPLETED_EVENT', String(countryId || seller), batchId, null
+              ));
+            }
+            return emitted;
+          }
+        });
+      }
+      const observedEndowment = endowmentOriginal && typeof endowmentOriginal.extractCountry === 'function'
+        ? Object.assign({}, endowmentOriginal, {
+            extractCountry: async function (countryId, occurrenceKeys) {
+              const result = await endowmentOriginal.extractCountry(countryId, occurrenceKeys);
+              const row = result?.result || result || {};
+              const produced = (Array.isArray(row.records) ? row.records : [])
+                .find(record => record?.producedBatch?.batchId) || null;
+              const batchId = String(produced?.producedBatch?.batchId || '');
+              const command = result?.commandId ? interop?.getCommand?.(result.commandId) : null;
+              extractionLedgerAudit.push(inspectExtractionLedger(
+                'AFTER_EXTRACTION_COMMAND_RETURN', String(countryId || seller), batchId, command
+              ));
+              return result;
+            }
+          })
+        : endowmentOriginal;
+      if (observedEndowment) {
+        g.Omega.ResourceEndowmentRuntime = observedEndowment;
+        g.OmegaResourceEndowmentRuntime = observedEndowment;
+      }
+      let pipelineStart;
+      try {
+        pipelineStart = await waitStage('MINE_TO_FACTORY_EXECUTION', () =>
+          industrial.executeSitePipeline({
+            countryId: seller,
+            siteId: selected.siteId,
+            resourceId: selected.resourceId,
+            factoryId: selected.factoryId,
+            quantity: Number(selected.plan.approvedQuantity)
+          }), 120000);
+      } finally {
+        if (endowmentOriginal) {
+          g.Omega.ResourceEndowmentRuntime = endowmentOriginal;
+          g.OmegaResourceEndowmentRuntime = endowmentOriginal;
+        }
+        if (interop) {
+          if (originalEmitEventDescriptor) Object.defineProperty(interop, 'emitEvent', originalEmitEventDescriptor);
+          else delete interop.emitEvent;
+        }
+      }
+      g.__omegaMineMarketTreasuryExtractionLedgerAudit = extractionLedgerAudit;
       const afterExtraction = resourceState.batches.filter(row => {
         const id = String(row?.batchId || '');
         return id && !beforeBatchIds.has(id) && token(row?.resourceId || row?.materialIdentity) === selected.resourceId;
@@ -553,8 +640,12 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         seller, buyer, siteId: selected.siteId, resourceId: selected.resourceId,
         originBatchId, pipelineStatus: pipelineStart?.status || null
       });
+      mark('EXTRACTION_INVENTORY_LOT_COMMIT_AUDIT', {
+        batchId: originBatchId,
+        audit: extractionLedgerAudit
+      });
       return {
-        seller, buyer, currency: chosenCountry.currency, sessionId,
+        seller, buyer, currency: chosenCountry.currency,
         sessionStatus: liveSession?.status || null,
         bootstrapMode,
         autosaveFinalizerSuppressedForTest: true,
@@ -1308,6 +1399,9 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       temporaryPipelineScope: await page.evaluate(() =>
         window.__omegaMineMarketTreasuryScopeDetails || null
       ).catch(() => null),
+      extractionInventoryLotAudit: await page.evaluate(() =>
+        window.__omegaMineMarketTreasuryExtractionLedgerAudit || []
+      ).catch(() => []),
       deferredMarketRebuildCount: await page.evaluate(() =>
         window.__omegaMineMarketTreasuryDeferredMarketRebuilds?.() ?? null
       ).catch(() => null)
