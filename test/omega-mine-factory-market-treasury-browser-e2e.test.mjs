@@ -629,6 +629,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const selectedOccurrenceKeys = new Set(
         Array.isArray(controllerEntry?.[1]?.linkedOccurrenceKeys) ? controllerEntry[1].linkedOccurrenceKeys.map(String) : []
       );
+      for (const [key, row] of Object.entries(resource.mineStates || {})) {
+        if (String(row?.siteReferenceKey || row?.siteId || row?.sourceSiteId || '') === scopedSiteId)
+          selectedOccurrenceKeys.add(String(key));
+      }
       const lineageBatchIds = new Set([originBatchId]);
       const scopedCollections = [];
       const addArrayScope = (owner, key, predicate) => {
@@ -711,7 +715,9 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         String(key) === 'WH-' + seller + '-PROCESSED');
       addMapScope(network, 'factoryProductionCycles', key => String(key) === scopedFactoryId);
       addMapScope(network, 'factoryRuntime', key => String(key) === scopedFactoryId);
-      addMapScope(network, 'reservations', key => String(key).includes(originBatchId) || String(key).includes(scopedFactoryId));
+      addMapScope(network, 'reservations', (key, row) =>
+        String(key).includes(originBatchId) || String(key).includes(scopedFactoryId) ||
+        batchRelated(row) || siteRelated(row) || factoryRelated(row));
       const sellerTrade = g.Game.state.trade?.[seller];
       if (sellerTrade?.offerBook && !Array.isArray(sellerTrade.offerBook) && typeof sellerTrade.offerBook === 'object') {
         addMapScope(sellerTrade, 'offerBook', key =>
@@ -750,6 +756,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         });
         g.__omegaMineMarketTreasuryRestoreScope = null;
       };
+      g.__omegaMineMarketTreasuryScopeDetails = scopeCounts;
       mark('TEMPORARY_SINGLE_MINE_FACTORY_SCOPE_APPLIED', scopeCounts);
       const snapshots = [];
       let finished = null;
@@ -1205,7 +1212,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       stageTrace: stageTrace.slice(-120),
       legacyTurnListeners,
       participantTrace,
-      resourceEconomyPhaseProfile
+      resourceEconomyPhaseProfile,
+      temporaryPipelineScope: await page.evaluate(() =>
+        window.__omegaMineMarketTreasuryScopeDetails || null
+      ).catch(() => null)
     };
     try {
       await mkdir(ARTIFACT_DIR, { recursive: true });
