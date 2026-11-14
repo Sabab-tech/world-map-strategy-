@@ -448,6 +448,10 @@ Game.DataLoader = {
         this.__assetsLoadingProgress = Math.max(0, Math.min(100, Number(percent) || 0));
         this.__assetsLoadingMessage = String(message || 'Loading startup data…');
         this.__assetsLoadingStatus = status || 'loading';
+        // The map becomes interactive as soon as its own geometry is drawn.
+        // Supporting economy/diplomacy data continues without keeping a blocking
+        // world-map loader over the already-usable map.
+        if (Game.__omegaGeoJSONRenderComplete === true) return this.__assetsLoadingProgress;
         if (Game.Map && typeof Game.Map.updateMapLoadingProgress === 'function') {
             Game.Map.updateMapLoadingProgress(
                 this.__assetsLoadingProgress,
@@ -605,9 +609,15 @@ Game.DataLoader = {
             let cachedPromise;
             Game.Map.ensureMapLoadingOverlay();
             Game.Map.updateMapLoadingProgress(2, 'Loading canonical country roster…', 'loading');
+            const countriesPromise = loader.loadCountryConfig(fetcher);
+            countriesPromise.then(function (rows) {
+                if (rows) {
+                    Game.Map.__omegaCountryStyleRefreshPending = true;
+                    if (Game.__omegaGeoJSONRenderComplete === true && Game.Map.__omegaMapUiActive !== false &&
+                        typeof Game.Map.refreshCountryPolygonStyles === 'function') Game.Map.refreshCountryPolygonStyles();
+                }
+            }).catch(function () {});
             cachedPromise = Promise.resolve().then(function () {
-                return loader.loadCountryConfig(fetcher);
-            }).then(function () {
                 return loader.waitForMapRenderer(null);
             }).then(function () {
                 if (Game.Map.__omegaMapUiActive === false) return cachedGeometry;
@@ -634,16 +644,19 @@ Game.DataLoader = {
         Game.Map.ensureMapLoadingOverlay();
         Game.Map.updateMapLoadingProgress(2, 'Loading canonical country roster…', 'loading');
 
-        // Country identity is a prerequisite for the map stage. Finish it before
-        // requesting world geometry instead of starting two data loads together.
+        // The country roster and large geometry payload are independent. Start
+        // both together; render the map as soon as the geometry arrives, then
+        // refresh country labels/styles when canonical identity data is ready.
         const countriesPromise = this.loadCountryConfig(fetcher);
         countriesPromise.then(function (rows) {
-            if (rows) Game.Map.__omegaCountryStyleRefreshPending = true;
+            if (!rows) return;
+            Game.Map.__omegaCountryStyleRefreshPending = true;
+            if (Game.__omegaGeoJSONRenderComplete === true && Game.Map.__omegaMapUiActive !== false &&
+                typeof Game.Map.refreshCountryPolygonStyles === 'function') Game.Map.refreshCountryPolygonStyles();
         }).catch(function () {});
 
         let promise;
-        promise = Promise.resolve().then(async function () {
-            await countriesPromise;
+        promise = Promise.resolve().then(function () {
             if (Game.Map.__omegaMapUiActive !== false) {
                 Game.Map.updateMapLoadingProgress(4, 'Downloading canonical world geometry…', 'loading');
             }
@@ -827,11 +840,8 @@ Game.DataLoader = {
                         return await Promise.race([request, timeout]);
                     } catch (error) {
                         try { if (controller) controller.abort(); } catch (_) {}
-                        // Do not advance the serial queue while an aborted request is
-                        // still settling; otherwise a slow transport can overlap the next file.
-                        if (request) {
-                            try { await request; } catch (_) {}
-                        }
+                        // The timed-out request is already aborted. Do not wait for a
+                        // transport that ignores AbortSignal before continuing startup.
                         console.warn('[OMEGA DataLoader] Optional startup dataset failed; the next stage will continue:', item.filename, error);
                         return null;
                     } finally {
@@ -839,24 +849,28 @@ Game.DataLoader = {
                     }
                 };
 
-                // Stage 2: one supporting file at a time. Failed optional files are
-                // recorded and skipped; they never start parallel or nested loads.
-                for (let index = 0; index < startupDatasets.length; index += 1) {
-                    const item = startupDatasets[index];
-                    failedStage = item.label;
+                // Stage 2: these datasets have no ordering dependency. Load them
+                // concurrently so five network round trips cannot serialize startup.
+                failedStage = 'supporting world datasets';
+                const startupData = await Promise.all(startupDatasets.map(function (item, index) {
                     loader.setStartupProgress(
                         46 + (index / stageCount) * 35,
-                        'Loading ' + item.label + ' (' + (index + 1) + '/' + startupDatasets.length + ')…',
+                        'Loading supporting data (' + (index + 1) + '/' + stageCount + ')…',
                         'loading'
                     );
-                    const data = await fetchOptional(item, index);
+                    return fetchOptional(item, index);
+                }));
+                for (let index = 0; index < startupDatasets.length; index += 1) {
+                    const item = startupDatasets[index];
+                    const data = startupData[index];
+                    failedStage = item.label;
                     try {
                         item.apply(data);
                     } catch (applyError) {
                         console.warn('[OMEGA DataLoader] Startup dataset could not be applied; continuing:', item.filename, applyError);
                     }
                     loader.setStartupProgress(
-                        ((index + 1) / stageCount) * 82,
+                        46 + ((index + 1) / stageCount) * 35,
                         data ? item.label + ' ready' : item.label + ' unavailable; continuing',
                         'loading'
                     );
@@ -1631,23 +1645,10 @@ Game.Map.setUiActive = function(active) {
         Game.__omegaGeoJSONRenderFrame = null;
         if (Game.__omegaGeoJSONRenderComplete !== true) Game.__omegaGeoJSONRenderPaused = true;
 
-        // If the large map JSON is still downloading, stop that map-only request.
-        // Game simulation and shared country/resource systems remain untouched.
-        if (!this.countryGeoJSON && this.__omegaWorldMapAbortController &&
-            typeof this.__omegaWorldMapAbortController.abort === 'function') {
-            try { this.__omegaWorldMapAbortController.abort(); } catch (_) {}
-        }
-
-        if (map && typeof map.eachLayer === 'function' && typeof map.removeLayer === 'function') {
-            const layers = [];
-            map.eachLayer(function (layer) { layers.push(layer); });
-            layers.forEach(function (layer) {
-                if (map.hasLayer && map.hasLayer(layer)) {
-                    try { map.removeLayer(layer); } catch (_) {}
-                }
-            });
-            this.__omegaDetachedLayers = layers;
-        }
+        // Suspend only the map container and its animation frame. Keep the
+        // request, GeoJSON object, Leaflet layers and feature cursor alive so
+        // returning from a ministry resumes instead of downloading/rebuilding.
+        this.__omegaDetachedLayers = this.__omegaDetachedLayers || [];
         if (root) {
             if (this.__omegaMapRootDisplay === null) this.__omegaMapRootDisplay = root.style.display || '';
             root.setAttribute('data-omega-map-suspended', 'true');
@@ -1661,11 +1662,7 @@ Game.Map.setUiActive = function(active) {
         root.removeAttribute('data-omega-map-suspended');
     }
     if (map) {
-        (this.__omegaDetachedLayers || []).forEach(function (layer) {
-            try {
-                if (!map.hasLayer || !map.hasLayer(layer)) map.addLayer(layer);
-            } catch (_) {}
-        });
+        // Existing Leaflet layers were deliberately left attached while hidden.
         this.__omegaDetachedLayers = [];
         if (Game.__omegaGeoJSONRenderComplete === true &&
             Game.Map.__omegaCountryStyleRefreshPending === true &&
@@ -1995,8 +1992,8 @@ Game.Map.renderGeoJSON = function(geoData) {
     // Large world collections are added in short frame-budgeted slices so map
     // construction cannot monopolize the browser's main thread.
     const CHUNK_THRESHOLD = 24;
-    const MAX_FEATURES_PER_FRAME = constrainedMapDevice ? 1 : 8;
-    const FRAME_BUDGET_MS = constrainedMapDevice ? 4 : 7;
+    const MAX_FEATURES_PER_FRAME = constrainedMapDevice ? 2 : 10;
+    const FRAME_BUDGET_MS = constrainedMapDevice ? 6 : 8;
     if (!featureCollection || featureCollection.length <= CHUNK_THRESHOLD ||
         typeof window.requestAnimationFrame !== "function") {
         if (featureCollection) {
