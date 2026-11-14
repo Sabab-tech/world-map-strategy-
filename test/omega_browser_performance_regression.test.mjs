@@ -637,7 +637,7 @@ test('world geometry becomes usable before supporting datasets and resumes witho
   assert.ok(simulation.includes('const STEP_MS=15000;') && driver.includes('SIMULATION_FRAME_INTERVAL_MS = 250'),
     'authoritative turns must advance every fifteen real seconds without polling every second');
   assert.ok(resourceEconomy.includes('function runResourceEconomyTurnParticipant()') &&
-    resourceEconomy.includes('g.Game.Map.__omegaMapUiActive===true)return;'),
+    resourceEconomy.includes('g.Game&&g.Game.Map&&g.Game.Map.__omegaMapUiActive===true)return;'),
     'economic calculations stay in the committed turn participant while resource UI repaint pauses on the map');
   assert.ok(map.includes('const cachedGeometry = Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData'),
     'map activation must reuse already downloaded country geometry');
