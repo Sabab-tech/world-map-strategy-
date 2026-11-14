@@ -747,7 +747,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         registeredTurnParticipantIds: turnParticipants.map(row => row.id),
         requiredResourceParticipantId,
         playerResourceParticipantRetained: hasPlayerResourceParticipant,
-        excludedWorldSchedulerId: worldSchedulerEntry ? worldSchedulerId : null,
+        excludedWorldSchedulerId: worldSchedulerId,
         turnBeforeExtraction,
         baselineResult: { status: baselineResult?.status || null, activeAssetCount: baselineRuntimeRegistry?.liveProductionAssetsCreated || 0 },
         hydrationStatus: hydration?.status || null,
