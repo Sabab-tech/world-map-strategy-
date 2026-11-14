@@ -207,7 +207,8 @@
       var factoryInTransit=Math.max(0,num(factoryInTransitByBatch&&factoryInTransitByBatch[batchId])||0);
       var factoryDelivered=Math.max(0,factoryDispatched-factoryInTransit);
       var warehouseConsumed=Math.max(0,num(flow.mineWarehouseConsumedQuantity)||0);
-      return Math.min(remaining,Math.max(0,received-factoryDelivered-warehouseConsumed));
+      var warehouseExported=Math.max(0,num(flow.mineWarehouseExportedQuantity)||0);
+      return Math.min(remaining,Math.max(0,received-factoryDelivered-warehouseConsumed-warehouseExported));
     }
     return remaining;
   }
