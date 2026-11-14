@@ -183,10 +183,10 @@ test('slow in-flight frame caps accumulated catch-up work instead of freezing th
   });
   sandbox.Omega.GameSession.createSession({playerCountryId:'BANGLADESH'});
   sandbox.Omega.GameSession.startSession({playerCountryId:'BANGLADESH'});
-  const activeFrame=sandbox.Omega.Simulation.frame(10000);
+  const activeFrame=sandbox.Omega.Simulation.frame(15000);
   await turnStarted;
   for(let i=0;i<50;i++){
-    const pending=sandbox.Omega.Simulation.frame(10000);
+    const pending=sandbox.Omega.Simulation.frame(15000);
     assert.equal((await pending).busy,true,'overlapping frames should only queue bounded time');
   }
   releaseFirstTurn();
