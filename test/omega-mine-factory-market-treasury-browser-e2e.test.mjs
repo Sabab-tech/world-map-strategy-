@@ -699,6 +699,34 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         g.__omegaMineMarketTreasuryProgress = entry;
         console.info('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify(entry));
       };
+      const fail = (stage, details) => {
+        let diagnostic = '';
+        if (details !== undefined) {
+          try { diagnostic = ':' + JSON.stringify(details); }
+          catch { diagnostic = ':DIAGNOSTICS_SERIALIZATION_FAILED'; }
+        }
+        throw new Error('MINE_MARKET_TREASURY_E2E:' + stage + diagnostic);
+      };
+      const waitStage = async (stage, task, timeoutMs = 120000) => {
+        mark(stage + '_START');
+        let timer = null;
+        try {
+          const work = Promise.resolve().then(() => typeof task === 'function' ? task() : task);
+          const timeout = new Promise((resolve, reject) => {
+            timer = g.setTimeout(() => reject(new Error(
+              'MINE_MARKET_TREASURY_E2E:' + stage + '_TIMEOUT_AFTER_' + timeoutMs + 'MS'
+            )), timeoutMs);
+          });
+          const value = await Promise.race([work, timeout]);
+          mark(stage + '_COMPLETE');
+          return value;
+        } catch (error) {
+          mark(stage + '_FAILED', { message: String(error?.message || error).slice(0, 500) });
+          throw error;
+        } finally {
+          if (timer !== null) g.clearTimeout(timer);
+        }
+      };
       const seller = setup.seller;
       const originBatchId = setup.originBatchId;
       const resource = g.Game.state.resource[seller];
@@ -782,7 +810,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const addMapScope = (owner, key, predicate) => {
         if (!owner || !owner[key] || typeof owner[key] !== 'object' || Array.isArray(owner[key])) return;
         const original = owner[key];
-        owner[key] = Object.fromEntries(Object.entries(original).filter(predicate));
+        owner[key] = Object.fromEntries(Object.entries(original).filter(([mapKey,row]) => predicate(mapKey,row)));
         scopedCollections.push({ owner, key, original, predicate, kind: 'map' });
       };
       const batchRelated = row => {
@@ -897,6 +925,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         });
         g.__omegaMineMarketTreasuryRestoreScope = null;
       };
+      if (!scopeCounts.retainedOriginLotPresent)
+        fail('TEMPORARY_PIPELINE_SCOPE_DROPPED_ORIGIN_INVENTORY_LOT', scopeCounts);
       g.__omegaMineMarketTreasuryScopeDetails = scopeCounts;
       mark('TEMPORARY_SINGLE_MINE_FACTORY_SCOPE_APPLIED', {
         ...scopeCounts,
