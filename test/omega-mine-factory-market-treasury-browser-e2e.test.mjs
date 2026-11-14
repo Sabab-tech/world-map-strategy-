@@ -133,6 +133,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         }
       };
       mark('SETUP_EVALUATE_ENTERED');
+      g.__omegaMineMarketTreasuryMark = mark;
       const token = value => String(value ?? '').trim().toLowerCase()
         .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
       const countryCode = row => String(row?.iso3 || row?.countryCode || row?.code || '').trim().toUpperCase();
@@ -425,6 +426,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           site?.identity?.resourceTypeId || site?.sourceSiteRecord?.resourceTypeId);
         if (!resourceId) continue;
         const factories = industrial.candidateFactories(seller, resourceId, site.siteId);
+        const compatibleFactories = [];
         for (const candidate of factories) {
           const asset = candidate.asset;
           const recipe = industrial.recipeFor(resourceId, asset);
@@ -434,22 +436,31 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
             .filter(row => row.id && Number.isFinite(row.ratio) && row.ratio > 0)
             .sort((a, b) => b.ratio - a.ratio);
           if (inputs.length !== 1 || token(inputs[0][0]) !== resourceId || !outputs.length) continue;
+          compatibleFactories.push({ asset, recipe, inputCoefficient: Number(inputs[0][1]), output: outputs[0] });
+        }
+        if (!compatibleFactories.length) continue;
 
-          const plan = industrial.planExtraction({ countryId: seller, siteId: site.siteId, resourceId });
-          if (plan?.status !== 'PLANNED' || !(Number(plan.approvedQuantity) > 0)) {
-            rejectedSites.push({ siteId: site.siteId, resourceId, reason: plan?.reason || plan?.status || 'EXTRACTION_NOT_PLANNED' });
-            continue;
-          }
-          previewAttemptCount += 1;
-          const routePreview = await waitStage('SITE_TRANSPORT_PREVIEW_' + previewAttemptCount, () =>
-            industrial.previewSiteTransport({
-              countryId: seller, siteId: site.siteId,
-              quantity: Number(plan.approvedQuantity), unit: plan.unit
-            }), 60000);
-          if (!['READY', 'SIMULATION_ONLY'].includes(String(routePreview?.status || '').toUpperCase())) {
-            rejectedSites.push({ siteId: site.siteId, resourceId, reason: routePreview?.reason || routePreview?.status || 'ROUTE_NOT_READY' });
-            continue;
-          }
+        // Extraction approval and the mine-to-warehouse route are site/resource
+        // properties. Previewing them once per candidate factory duplicated the
+        // same work up to hundreds of times without changing the selected route.
+        const plan = industrial.planExtraction({ countryId: seller, siteId: site.siteId, resourceId });
+        if (plan?.status !== 'PLANNED' || !(Number(plan.approvedQuantity) > 0)) {
+          rejectedSites.push({ siteId: site.siteId, resourceId, reason: plan?.reason || plan?.status || 'EXTRACTION_NOT_PLANNED' });
+          continue;
+        }
+        previewAttemptCount += 1;
+        const routePreview = await waitStage('SITE_TRANSPORT_PREVIEW_' + previewAttemptCount, () =>
+          industrial.previewSiteTransport({
+            countryId: seller, siteId: site.siteId,
+            quantity: Number(plan.approvedQuantity), unit: plan.unit
+          }), 60000);
+        if (!['READY', 'SIMULATION_ONLY'].includes(String(routePreview?.status || '').toUpperCase())) {
+          rejectedSites.push({ siteId: site.siteId, resourceId, reason: routePreview?.reason || routePreview?.status || 'ROUTE_NOT_READY' });
+          continue;
+        }
+
+        for (const compatible of compatibleFactories) {
+          const { asset, recipe, inputCoefficient, output } = compatible;
           mineCandidates.push({
             siteId: String(site.siteId),
             siteName: String(site.siteName || site.siteId),
@@ -460,10 +471,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
             recipeId: recipe.recipeId || null,
             recipeAuthority: recipe.recipeAuthority || null,
             cycleDays: Number(recipe.cycleDays) || 1,
-            inputCoefficient: Number(inputs[0][1]),
-            outputProductId: outputs[0].id,
-            outputRatio: outputs[0].ratio,
-            expectedOutput: Number(plan.approvedQuantity) * outputs[0].ratio,
+            inputCoefficient,
+            outputProductId: output.id,
+            outputRatio: output.ratio,
+            expectedOutput: Number(plan.approvedQuantity) * output.ratio,
             plan,
             routePreview
           });
@@ -557,6 +568,11 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
 
     const production = await page.evaluate(async (setup) => {
       const g = window;
+      const mark = (stage, details = {}) => {
+        const entry = { stage, at: Date.now(), ...details };
+        g.__omegaMineMarketTreasuryProgress = entry;
+        console.info('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify(entry));
+      };
       const seller = setup.seller;
       const originBatchId = setup.originBatchId;
       const resource = g.Game.state.resource[seller];
@@ -580,8 +596,39 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
 
       const snapshots = [];
       let finished = null;
+      const participantHandlers = new Map();
+      for (const entry of simulation.turnParticipants?.values?.() || []) {
+        if (!entry || typeof entry.handler !== 'function') continue;
+        const original = entry.handler;
+        participantHandlers.set(entry, original);
+        entry.handler = async function (...args) {
+          const startedAt = Date.now();
+          mark('TURN_PARTICIPANT_START', { id: entry.id, turn: Number(g.Game.state.simulation?.turn || 0) + 1 });
+          try {
+            const value = await original.apply(this, args);
+            mark('TURN_PARTICIPANT_COMPLETE', { id: entry.id, durationMs: Date.now() - startedAt });
+            return value;
+          } catch (error) {
+            mark('TURN_PARTICIPANT_FAILED', { id: entry.id, durationMs: Date.now() - startedAt, message: String(error?.message || error).slice(0, 600) });
+            throw error;
+          }
+        };
+      }
+      mark('FACTORY_PRODUCTION_WAIT_BEGIN', {
+        seller, originBatchId, participantIds: [...participantHandlers.keys()].map(entry => entry.id),
+        initialTurn: Number(g.Game.state.simulation?.turn || 0)
+      });
+      try {
       for (let offset = 1; offset <= 64; offset++) {
-        const turnResult = await g.__omegaMineMarketTreasuryAdvanceTurns(1);
+        mark('SIMULATION_TURN_START', { offset, turn: Number(g.Game.state.simulation?.turn || 0) + 1 });
+        const turnResult = await Promise.race([
+          g.__omegaMineMarketTreasuryAdvanceTurns(1),
+          new Promise((resolve, reject) => g.setTimeout(() => reject(new Error(
+            'SIMULATION_TURN_TIMEOUT:' + String(Number(g.Game.state.simulation?.turn || 0) + 1) +
+            ':PARTICIPANTS=' + JSON.stringify([...participantHandlers.keys()].map(entry => entry.id))
+          )), 90000))
+        ]);
+        mark('SIMULATION_TURN_COMPLETE', { offset, turn: Number(g.Game.state.simulation?.turn || simulation.turn || offset), status: turnResult?.status || null });
         const turn = Number(g.Game.state.simulation?.turn ?? simulation.turn ?? offset);
         const map = batchMap();
         const candidates = (resource.batches || []).filter(row =>
@@ -629,6 +676,13 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           flow: currentFlow(), snapshots: snapshots.slice(-20),
           mineShipments: (resource.industrialNetwork?.shipments || []).filter(row => String(row?.batchId || '') === originBatchId)
         }).slice(0, 10000));
+      }
+      } finally {
+        for (const [entry, handler] of participantHandlers) entry.handler = handler;
+        mark('FACTORY_PRODUCTION_WAIT_END', {
+          finished: !!finished,
+          turn: Number(g.Game.state.simulation?.turn || 0)
+        });
       }
 
       const output = finished.batch;
