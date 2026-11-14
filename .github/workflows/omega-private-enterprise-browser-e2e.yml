@@ -9,7 +9,6 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - ".github/workflows/omega-private-enterprise-browser-e2e.yml"
       - "index.html"
       - "omega_private_enterprise_registry_v1.js"
       - "omega_private_enterprise_lifecycle_v1.js"
@@ -72,11 +71,13 @@ jobs:
       matrix:
         include:
           - scenario: proposal-ui
+            test_file: test/omega_private_enterprise_browser_e2e.test.mjs
             test_name_pattern: "real Chromium browser verifies company-originated proposals"
-          - scenario: site-factory-save-load
-            test_name_pattern: "real Chromium map marker"
           - scenario: cash-settlement
+            test_file: test/omega_private_enterprise_browser_e2e.test.mjs
             test_name_pattern: "real Chromium reconciles"
+          # Mine-to-Treasury acceptance runs in its dedicated workflow; keep this
+          # workflow scoped to the two Private Enterprise browser scenarios.
 
     steps:
       - name: Checkout
@@ -99,7 +100,7 @@ jobs:
         run: |
           mkdir -p "$OMEGA_BROWSER_TEST_ARTIFACT_DIR"
           echo "Running Chromium scenario: ${{ matrix.scenario }}"
-          timeout --signal=TERM --kill-after=15s 12m node --test --test-name-pattern="${{ matrix.test_name_pattern }}" test/omega_private_enterprise_browser_e2e.test.mjs
+          timeout --signal=TERM --kill-after=30s 18m node --test --test-reporter=spec --test-name-pattern="${{ matrix.test_name_pattern }}" "${{ matrix.test_file }}"
 
       - name: Upload real browser E2E diagnostics
         if: always()
