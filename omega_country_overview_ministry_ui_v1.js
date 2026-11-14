@@ -573,7 +573,8 @@
 
   function isExecutiveMinistryView() {
     // The overview belongs to the Executive Ministry view only. Never mount it
-    // alongside the separate All Ministries list.
+    // alongside the separate All Ministries list or repaint it while the map owns the screen.
+    if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return false;
     return g.OmegaCabinetUI?.mainCabinetView !== 'ministries';
   }
 
@@ -642,6 +643,7 @@
   }
 
   function scheduleOverviewRender() {
+    if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return;
     if (overviewRenderTimer !== null) return;
     overviewRenderTimer = g.setTimeout(() => {
       overviewRenderTimer = null;
