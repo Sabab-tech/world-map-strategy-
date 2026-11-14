@@ -2622,6 +2622,11 @@
         !g.document || typeof g.document.addEventListener !== 'function' ||
         typeof g.document.visibilityState !== 'string') return;
     visibleMinuteRefreshTimer = g.setInterval(function () {
+      if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) {
+        if (visibleMinuteRefreshTimer !== null && typeof g.clearInterval === 'function') g.clearInterval(visibleMinuteRefreshTimer);
+        visibleMinuteRefreshTimer = null;
+        return;
+      }
       const modal = visibleModal();
       if (!modal || !modal.style || modal.style.display === 'none') {
         if (visibleMinuteRefreshTimer !== null && typeof g.clearInterval === 'function') g.clearInterval(visibleMinuteRefreshTimer);
@@ -2634,6 +2639,7 @@
     }, 60000);
   }
   function refreshVisiblePanel() {
+    if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return;
     const modal = visibleModal();
     if (!modal || !modal.style || modal.style.display === 'none') return;
     const shell = modal.querySelector ? modal.querySelector('.omega-rescc-shell') : null;
@@ -2643,6 +2649,7 @@
     if (currentShell) { currentShell.scrollTop = scrollTop; currentShell.scrollLeft = scrollLeft; }
   }
   function scheduleVisiblePanelRefresh() {
+    if (g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true) return;
     if (visibleRefreshTimer !== null) return;
     visibleRefreshTimer = g.setTimeout(function () {
       visibleRefreshTimer = null;
