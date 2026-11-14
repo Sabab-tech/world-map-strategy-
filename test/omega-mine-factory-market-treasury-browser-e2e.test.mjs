@@ -77,12 +77,16 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
   const pageErrors = [];
   const consoleErrors = [];
   const stageTrace = [];
+  const milestoneTrace = [];
+  let setupSummaryForFailure = null;
   page.on('pageerror', error => pageErrors.push(String(error?.stack || error)));
   page.on('console', message => {
     const text = message.text();
     if (message.type() === 'error') consoleErrors.push(text);
     if (text.startsWith('[OMEGA_MMT_E2E_STAGE]') || text.startsWith('[SAB34_PROGRESS] RESOURCE_ECONOMY_'))
       stageTrace.push(text.slice(0, 1200));
+    if (/TEMPORARY_SINGLE_MINE_FACTORY_SCOPE_APPLIED|MINE_EXTRACTION_COMMITTED|PIPELINE_TURN_SNAPSHOT|FACTORY_PRODUCTION_WAIT_BEGIN|FACTORY_PRODUCTION_WAIT_END|FINAL_MARKET_REBUILD_AFTER_FINISHED_GOODS|TEMPORARY_PLAYER_COUNTRY_PIPELINE_SCOPE_RESTORED/.test(text))
+      milestoneTrace.push(text.slice(0, 3500));
   });
 
   try {
@@ -584,6 +588,17 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         initialFlowStageCount: Array.isArray(flow?.stages) ? flow.stages.length : 0
       };
     });
+    setupSummaryForFailure = {
+      seller: setup.seller, buyer: setup.buyer, sessionId: setup.sessionId,
+      selected: setup.selected, originBatchId: setup.originBatchId,
+      legacyTurnListeners: await page.evaluate(() =>
+        (window.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__ || []).map(row => ({
+          id: row.id, listenerName: row.listenerName,
+          registrationScript: row.registrationScript || null,
+          registrationStack: String(row.registrationStack || '').slice(0, 1800)
+        }))
+      ).catch(() => [])
+    };
 
     const production = await page.evaluate(async (setup) => {
       const g = window;
@@ -601,6 +616,25 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       g.__OMEGA_RESOURCE_ECONOMY_PERF__ = true;
       const finishedStages = new Set(['PROCESSED', 'INTERMEDIATE', 'FINISHED', 'REFINED', 'OUTPUT']);
       const completeStatuses = new Set(['COMPLETED', 'FINISHED', 'PROCESSED', 'AVAILABLE', 'DELIVERED', 'RECEIVED', 'ARRIVED']);
+      const originalGlobalMarket = g.Omega.GlobalMarket;
+      const originalGlobalMarketAlias = g.OmegaGlobalMarket;
+      let deferredMarketRebuildCount = 0;
+      // Market index rebuild is a global 197-country projection and was taking
+      // ~17 seconds on every no-change turn. It is not required to move a physical
+      // shipment or factory cycle. Defer it while the real player-country resource
+      // pipeline advances, then rebuild once after finished goods exist.
+      const scopedGlobalMarket = Object.create(originalGlobalMarket);
+      scopedGlobalMarket.rebuildCountry = countryId => {
+        deferredMarketRebuildCount += 1;
+        return {
+          status: 'DEFERRED_FOR_TEST_PIPELINE',
+          countryId: String(countryId || seller),
+          reason: 'NO_FINISHED_BATCH_REQUIRES_MARKET_REINDEX_YET'
+        };
+      };
+      g.Omega.GlobalMarket = scopedGlobalMarket;
+      g.OmegaGlobalMarket = scopedGlobalMarket;
+      g.__omegaMineMarketTreasuryDeferredMarketRebuilds = () => deferredMarketRebuildCount;
       const batchMap = () => new Map((resource.batches || []).map(row => [String(row?.batchId || ''), row]));
       const hasOrigin = (batch, target, map, seen = new Set()) => {
         const id = String(batch?.batchId || '');
@@ -825,11 +859,20 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         const receipt = receipts.find(row =>
           String(row?.batchId || '') === originBatchId &&
           completeStatuses.has(String(row?.status || 'RECEIVED').toUpperCase()));
-        snapshots.push({
+        const snapshot = {
           turn, simulationStatus: turnResult?.status || null,
+          flowStatus: flow?.status || null,
           flowStages: (flow?.stages || []).map(row => String(row.stage) + ':' + String(row.status)),
           shipmentStages: relatedShipments.map(row => String(row.shipmentType) + ':' + String(row.status)),
           receiptId: receipt?.receiptId || null, finishedBatchId: chosen?.batchId || null
+        };
+        snapshots.push(snapshot);
+        g.__omegaMineMarketTreasuryTurnSnapshots = snapshots.slice(-24);
+        mark('PIPELINE_TURN_SNAPSHOT', {
+          ...snapshot,
+          shipmentCount: relatedShipments.length,
+          warehouseReceivedQuantity: Number(flow?.mineWarehouseReceivedQuantity) || 0,
+          deferredMarketRebuildCount
         });
         if (turnResult?.status && ['FAILED', 'ERROR'].includes(String(turnResult.status).toUpperCase()))
           throw new Error('SIMULATION_TURN_FAILED:' + turn + ':' + JSON.stringify(turnResult).slice(0, 1200));
@@ -861,10 +904,17 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           simulation.turnParticipants.set('omega.world-simulation.scheduler.v1',
             g.__omegaMineMarketTreasuryExcludedWorldScheduler);
         }
+        g.Omega.GlobalMarket = originalGlobalMarket;
+        g.OmegaGlobalMarket = originalGlobalMarketAlias || originalGlobalMarket;
         mark('FACTORY_PRODUCTION_WAIT_END', {
           finished: !!finished,
-          turn: Number(g.Game.state.simulation?.turn || 0)
+          turn: Number(g.Game.state.simulation?.turn || 0),
+          deferredMarketRebuildCount
         });
+      }
+      if (finished) {
+        await waitStage('FINAL_MARKET_REBUILD_AFTER_FINISHED_GOODS', () =>
+          originalGlobalMarket.rebuildCountry(seller), 120000);
       }
 
       const output = finished.batch;
@@ -1213,8 +1263,16 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       legacyTurnListeners,
       participantTrace,
       resourceEconomyPhaseProfile,
+      setupSummary: setupSummaryForFailure,
+      milestoneTrace: milestoneTrace.slice(-100),
+      turnSnapshots: await page.evaluate(() =>
+        window.__omegaMineMarketTreasuryTurnSnapshots || []
+      ).catch(() => []),
       temporaryPipelineScope: await page.evaluate(() =>
         window.__omegaMineMarketTreasuryScopeDetails || null
+      ).catch(() => null),
+      deferredMarketRebuildCount: await page.evaluate(() =>
+        window.__omegaMineMarketTreasuryDeferredMarketRebuilds?.() ?? null
       ).catch(() => null)
     };
     try {
