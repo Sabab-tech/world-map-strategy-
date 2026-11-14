@@ -1217,6 +1217,7 @@
     }).join('');
   }
   function refreshPanelMetrics() {
+    if (global.Game && global.Game.Map && global.Game.Map.__omegaMapUiActive === true) return;
     if (!global.document || !state) return;
     const content = global.document.getElementById('ministry-dashboard-content');
     const panel = content && content.querySelector('[data-ofx-panel]');
