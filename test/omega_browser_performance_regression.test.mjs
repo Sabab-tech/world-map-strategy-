@@ -648,6 +648,34 @@ test('world geometry becomes usable before supporting datasets and resumes witho
   assert.ok(resourceEconomy.includes('function runResourceEconomyTurnParticipant()') &&
     resourceEconomy.includes('g.Game&&g.Game.Map&&g.Game.Map.__omegaMapUiActive===true)return;'),
     'economic calculations stay in the committed turn participant while resource UI repaint pauses on the map');
+  const financeRuntime = read('omega_finance_ministry_runtime_v1.js');
+  const forexRuntime = read('omega_forex_monetary_engine_v1.js');
+  const bankingRuntime = read('omega_government_banking_runtime_v1.js');
+  const transmissionRuntime = read('omega_economic_transmission_runtime_v1.js');
+  const worldBankRuntime = read('omega_world_bank_lending_runtime_v1.js');
+  const analyticsRuntime = read('omega_finance_analytics_runtime_v1.js');
+  const resourceMinistry = read('omega_ui_v2/screens/resource-ministry.js');
+  assert.ok(financeRuntime.includes('global.Game.Map.__omegaMapUiActive === true) return;') &&
+    financeRuntime.includes('advanceTurn(turn,duration);'),
+    'finance calculations continue while hidden Finance Ministry metrics stop repainting');
+  assert.ok(forexRuntime.includes('global.Game.Map.__omegaMapUiActive === true) return;') &&
+    forexRuntime.includes('simulationTick(turn, duration);'),
+    'currency and FX calculations continue while the hidden FX panel stops repainting');
+  assert.ok(bankingRuntime.includes('g.Game.Map.__omegaMapUiActive === true) return;') &&
+    bankingRuntime.includes('processPendingTransfers();') && bankingRuntime.includes('revalueOrReconcileAll();'),
+    'bank transfers and reconciliation continue while the hidden banking panel stops repainting');
+  assert.ok(transmissionRuntime.includes('g.Game.Map.__omegaMapUiActive === true) return;') &&
+    transmissionRuntime.includes('step(t,dt);'),
+    'economic transmission calculations continue while its hidden chart panel stops repainting');
+  assert.ok(worldBankRuntime.includes('global.Game.Map.__omegaMapUiActive === true) return false;') &&
+    worldBankRuntime.includes('processTurn(turn, stepDurationMs);') &&
+    worldBankRuntime.includes('serviceCountryLoansOnTurn(turn, stepDurationMs);'),
+    'World Bank debt service and country loan processing continue while its hidden panel stops repainting');
+  assert.ok(analyticsRuntime.includes('g.Game&&g.Game.Map&&g.Game.Map.__omegaMapUiActive===true)return;') &&
+    analyticsRuntime.includes('appendCountryTurn(profiles[index],job.turn);'),
+    'country analytics records continue to calculate while hidden graphs stop repainting');
+  assert.ok((resourceMinistry.match(/g.Game && g.Game.Map && g.Game.Map.__omegaMapUiActive === true\) return;/g)||[]).length >= 2,
+    'Resource Ministry event and minute refreshes must pause while the map is active');
   assert.ok(map.includes('const cachedGeometry = Game.Map.countryGeoJSON || Game.__omegaGeoJSONPendingData'),
     'map activation must reuse already downloaded country geometry');
   assert.ok(map.includes('Game.__omegaGeoJSONRenderComplete === true && Game.Map.countryGeoJSON && Game.geojsonLayer'),
