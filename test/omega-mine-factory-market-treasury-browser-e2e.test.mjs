@@ -99,6 +99,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         g.OmegaCountryFactoryStartingBaselineV1 &&
         g.Omega?.IndividualResourceSiteBinding?.sites?.length);
     }, { timeout: 240000 });
+    await page.waitForFunction(() => {
+      const g = window, sim = g.Omega?.Simulation;
+      const session = g.Game?.state?.simulation?.session;
+      const country = String(session?.playerCountryId || '').trim().toUpperCase();
+      return !!(session?.sessionId && country &&
+        ['READY', 'RUNNING', 'PAUSED'].includes(String(session.status || '').toUpperCase()) &&
+        sim?.getPlayerCountryId?.() === country && sim?.world?.state === g.Game?.state);
+    }, { timeout: 240000 });
 
     const prepared = await page.evaluate(async () => {
       const g = window;
@@ -219,115 +227,80 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       });
 
       const existingSession = g.Game.state?.simulation?.session || null;
-      const baselineMarker = g.Game.state?.simulation?.countryFactoryStartingBaselineV1 || null;
-      const markerCountry = String(baselineMarker?.playerCountryId || '').trim().toUpperCase();
-      const markerSessionId = String(baselineMarker?.sessionId || '').trim();
-      const activeSessionCountry = String(existingSession?.playerCountryId || '').trim().toUpperCase();
       const existingSessionUsable = !!(
         existingSession?.sessionId &&
         existingSession?.playerCountryId &&
         ['READY', 'RUNNING', 'PAUSED'].includes(String(existingSession.status || '').toUpperCase())
       );
-      // Lifecycle can create a generic OMEGA-SESSION-N clock shell before the
-      // commissioned country baseline is restored. It is not the saved player
-      // session when the same country's baseline carries its canonical ID.
-      const runtimeBootstrapSessionNeedsAlignment = !!(
-        existingSessionUsable &&
-        markerCountry &&
-        markerCountry === activeSessionCountry &&
-        markerSessionId &&
-        markerSessionId !== String(existingSession.sessionId) &&
-        /^OMEGA-SESSION-\d+$/i.test(String(existingSession.sessionId))
-      );
-      const establishedSession = existingSessionUsable && !runtimeBootstrapSessionNeedsAlignment;
-      const appSelectedCountry = String(
-        g.Game.currentActiveCountry || g.Game.playerCountry ||
-        g.CountryIOS?.activeCountry || g.Game.state?.playerCountryId || ''
-      ).trim().toUpperCase();
-      // Temporary test-only bootstrap: the current game-start/session UI does not yet
-      // guarantee a complete session object before this browser acceptance test runs.
-      // Reuse the country's already-commissioned baseline marker when it exists; never
-      // replace its active country with an unrelated country picked by mine-site count.
-      const preferredCountry = establishedSession
-        ? String(existingSession.playerCountryId).trim().toUpperCase()
-        : (markerCountry || appSelectedCountry);
-      const chosenCountry = preferredCountry
-        ? candidateCountries.find(row => row.seller === preferredCountry)
-        : candidateCountries[0];
-      if (!chosenCountry) fail('BOOTSTRAP_PLAYER_COUNTRY_HAS_NO_MINE_FACTORY_AND_FUNDED_SAME_CURRENCY_BUYER', {
-        preferredCountry: preferredCountry || null,
-        existingSession,
-        baselineMarker: baselineMarker ? {
-          sessionId: baselineMarker.sessionId || null,
-          playerCountryId: baselineMarker.playerCountryId || null,
-          status: baselineMarker.status || null,
-          factoryRegistryStatus: baselineMarker.factoryRegistryStatus || null,
-          productionAssetsAreCommissioned: baselineMarker.productionAssetsAreCommissioned === true
-        } : null,
+      if (!existingSessionUsable) fail('CANONICAL_PLAYER_GAME_SESSION_NOT_AVAILABLE', {
+        session: existingSession,
+        playerCountryId: simulation.getPlayerCountryId?.() || null,
+        lifecycleStatus: g.document.querySelector('[data-omega-save]')?.textContent || null
+      });
+      const seller = String(existingSession.playerCountryId).trim().toUpperCase();
+      const canonicalPlayerCountry = String(simulation.getPlayerCountryId?.() || '').trim().toUpperCase();
+      if (canonicalPlayerCountry !== seller)
+        fail('CANONICAL_PLAYER_COUNTRY_IDENTITY_MISMATCH', {
+          sessionCountry: seller, simulationCountry: canonicalPlayerCountry,
+          sessionId: existingSession.sessionId
+        });
+      const chosenCountry = candidateCountries.find(row => row.seller === seller);
+      if (!chosenCountry) fail('SAVED_PLAYER_COUNTRY_HAS_NO_MINE_FACTORY_AND_FUNDED_SAME_CURRENCY_BUYER', {
+        seller, sessionId: existingSession.sessionId,
         eligibleCountryCodes: candidateCountries.map(row => row.seller),
-        profileCount: profileByCountry.size,
-        mineSiteCount: sites.length
+        profileCount: profileByCountry.size, mineSiteCount: sites.length
       });
-      const seller = chosenCountry.seller;
-      const buyer = chosenCountry.buyers[0].code;
-      if (establishedSession && String(existingSession.playerCountryId).trim().toUpperCase() !== seller)
-        fail('ACTIVE_GAME_SESSION_CANNOT_BE_REPLACED_WITH_A_DIFFERENT_PLAYER_COUNTRY', {
-          activeSession: existingSession, selectedSeller: seller
-        });
-      const reuseBaselineSession = !establishedSession &&
-        markerCountry === seller && String(baselineMarker?.sessionId || '').trim();
-      if (establishedSession && markerCountry &&
-          (markerCountry !== seller || String(baselineMarker?.sessionId || '') !== String(existingSession.sessionId || ''))) {
-        fail('ACTIVE_SESSION_DOES_NOT_MATCH_COMMISSIONED_FACTORY_BASELINE', {
-          activeSession: existingSession,
-          baselineMarker: {
-            sessionId: baselineMarker.sessionId || null,
-            playerCountryId: baselineMarker.playerCountryId || null
-          }
-        });
-      }
-      const startTurn = Math.max(0, Number(g.Game.state.simulation?.turn ?? simulation.clock?.turn ?? 0) || 0);
-      const sessionId = establishedSession
-        ? String(existingSession.sessionId)
-        : (reuseBaselineSession
-          ? markerSessionId
-          : ('MINE-MARKET-TREASURY-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9)));
-      mark('SESSION_IDENTITY_DECISION', {
-        activeSessionId: existingSession?.sessionId || null,
-        activeSessionCountry,
-        baselineSessionId: markerSessionId || null,
-        baselineCountry: markerCountry || null,
-        runtimeBootstrapSessionNeedsAlignment,
-        establishedSession,
-        selectedSessionId: sessionId
+      const buyer = chosenCountry.buyers[0]?.code || null;
+      if (!buyer) fail('SAVED_PLAYER_COUNTRY_HAS_NO_FUNDED_SAME_CURRENCY_BUYER', {
+        seller, currency: chosenCountry.currency
       });
-      const liveSession = establishedSession ? existingSession : simulation.createSession({
-        playerCountryId: seller,
-        sessionId,
-        startTurn,
-        simulationTimeMs: Number(simulation.clock?.simulationTimeMs) || 0
+      const sessionId = String(existingSession.sessionId);
+      let liveSession = existingSession;
+      mark('CANONICAL_PLAYER_SESSION_SELECTED', {
+        seller, buyer, sessionId, sessionStatus: existingSession.status,
+        simulationCountry: canonicalPlayerCountry, source: 'GAME_LIFECYCLE'
       });
-      if (!liveSession || String(liveSession.playerCountryId || '').trim().toUpperCase() !== seller ||
-          String(liveSession.sessionId || '') !== sessionId)
-        fail('TEMPORARY_BROWSER_TEST_SESSION_BOOTSTRAP_FAILED', {
-          seller, expectedSessionId: sessionId, actualSession: liveSession
-        });
-      // Keep every legacy country-selection authority aligned with the temporary
-      // session so session-aware runtimes resolve the same player country.
-      g.Game.currentActiveCountry = seller;
-      g.Game.selectedCountryId = seller;
-      g.Game.playerCountry = seller;
-      g.Game.state.playerCountryId = seller;
-      if (g.CountryIOS) g.CountryIOS.activeCountry = seller;
-      if (g.OmegaCabinetUI) g.OmegaCabinetUI.activeCountry = seller;
-      g.OmegaMinistryViewCountry = seller;
-      const bootstrapMode = establishedSession
-        ? 'REUSED_EXISTING_ACTIVE_SESSION'
-        : (reuseBaselineSession ? 'REHYDRATED_EXISTING_FACTORY_BASELINE_SESSION' : 'CREATED_TEMPORARY_BROWSER_TEST_SESSION');
-      mark('TEMPORARY_SESSION_BOOTSTRAPPED', { seller, sessionId, bootstrapMode });
-      const baselineResult = await waitStage('BASELINE_INITIALIZE_FOR_SESSION', () => baseline.initializeForSession(liveSession));
+      const baselineResult = await waitStage('BASELINE_INITIALIZE_FOR_CANONICAL_SESSION', () => baseline.initializeForSession(liveSession));
       if (typeof baseline.waitForPendingInitialization === 'function')
         await waitStage('BASELINE_POST_INITIALIZATION_DRAIN', () => baseline.waitForPendingInitialization());
+      const baselineMarker = g.Game.state?.simulation?.countryFactoryStartingBaselineV1 || null;
+      const markerCountry = String(baselineMarker?.playerCountryId || '').trim().toUpperCase();
+      const markerSessionId = String(baselineMarker?.sessionId || '').trim();
+      if (markerCountry && markerCountry !== seller)
+        fail('PLAYER_FACTORY_BASELINE_COUNTRY_DOES_NOT_MATCH_SAVED_PLAYER', {
+          seller, baselineCountry: markerCountry, baselineSessionId: markerSessionId
+        });
+      if (markerSessionId && markerSessionId !== sessionId)
+        fail('PLAYER_FACTORY_BASELINE_SESSION_DOES_NOT_MATCH_SAVED_PLAYER', {
+          seller, sessionId, baselineSessionId: markerSessionId
+        });
+
+      const realPlayerSaveSlot = 'OMEGA-MINE-MARKET-REAL-PLAYER-' + seller;
+      const playerSave = await waitStage('REAL_PLAYER_SAVE_WRITE', () => simulation.saveSlot(realPlayerSaveSlot));
+      if (!playerSave?.ok) fail('REAL_PLAYER_SAVE_WRITE_FAILED', {
+        realPlayerSaveSlot, playerSave, session: g.Game.state?.simulation?.session || null
+      });
+      const playerSaveRestore = await waitStage('REAL_PLAYER_SAVE_RESTORE', () => simulation.loadSlot(realPlayerSaveSlot));
+      if (simulation.lastLoadIntegrity !== 'VERIFIED' ||
+          playerSaveRestore?.authoritativeState?.worldStateLinked !== true)
+        fail('REAL_PLAYER_SAVE_RESTORE_INTEGRITY_FAILED', {
+          realPlayerSaveSlot, playerSave, playerSaveRestore,
+          loadIntegrity: simulation.lastLoadIntegrity
+        });
+      liveSession = g.Game.state?.simulation?.session || null;
+      if (!liveSession || String(liveSession.sessionId || '') !== sessionId ||
+          String(liveSession.playerCountryId || '').trim().toUpperCase() !== seller ||
+          String(simulation.getPlayerCountryId?.() || '').trim().toUpperCase() !== seller)
+        fail('REAL_PLAYER_SAVE_RESTORE_CHANGED_PLAYER_IDENTITY', {
+          expected: { seller, sessionId }, restoredSession: liveSession,
+          simulationCountry: simulation.getPlayerCountryId?.() || null
+        });
+      const realPlayerSaveSummary = {
+        slot: realPlayerSaveSlot, storage: playerSave.storage || null,
+        saveTurn: playerSave.turn, loadIntegrity: simulation.lastLoadIntegrity,
+        restoredSessionId: liveSession.sessionId, restoredPlayerCountryId: liveSession.playerCountryId
+      };
+      mark('REAL_PLAYER_SAVE_ROUND_TRIP_VERIFIED', realPlayerSaveSummary);
       const baselineRow = baseline.getCountryBaseline(seller);
       if (!baselineRow || baselineRow.countryId !== seller)
         fail('PLAYER_FACTORY_BASELINE_NOT_REGISTERED', { seller, baselineResult, diagnostics: baseline.diagnostics() });
@@ -347,18 +320,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         });
       }
 
-      // This is a test-only storage isolation, not a production save-system change.
-      // The lifecycle autosave finalizer writes an oversized legacy snapshot on every
-      // turn and fails in the isolated CI browser storage quota. The explicit canonical
-      // Simulation saveSlot/loadSlot round-trip at the end of this test remains required.
+      const sessionOrigin = 'CANONICAL_GAME_LIFECYCLE_SESSION';
       const autosaveFinalizerId = 'omega.game-lifecycle.autosave';
       const autosaveFinalizer = simulation.turnFinalizers?.get?.(autosaveFinalizerId);
       if (!autosaveFinalizer)
         fail('CANONICAL_LIFECYCLE_AUTOSAVE_FINALIZER_NOT_REGISTERED', {
           finalizers: simulation.finalizerDiagnostics?.() || []
         });
-      simulation.turnFinalizers.delete(autosaveFinalizerId);
-      g.__omegaMineMarketTreasuryRemovedAutosaveFinalizer = autosaveFinalizer;
+      mark('CANONICAL_AUTOSAVE_FINALIZER_RETAINED', { id: autosaveFinalizerId });
 
       const turnParticipants = simulation.participantDiagnostics?.() || [];
       const resourceEconomy = g.OmegaResourceEconomy || g.Omega?.ResourceEconomy;
@@ -601,13 +570,9 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       mapApi.resourceState.enabled = true;
       mapApi.resourceState.scope = 'NATION';
       mapApi.resourceState.selectedResources = new Set(['all']);
-      g.Game.currentActiveCountry = seller;
-      g.Game.selectedCountryId = seller;
-      g.Game.playerCountry = seller;
-      g.Game.state.playerCountryId = seller;
-      if (g.CountryIOS) g.CountryIOS.activeCountry = seller;
-      if (g.OmegaCabinetUI) g.OmegaCabinetUI.activeCountry = seller;
-      g.OmegaMinistryViewCountry = seller;
+      const mapPreparationPlayerCountry = String(simulation.getPlayerCountryId?.() || '').trim().toUpperCase();
+      if (mapPreparationPlayerCountry !== seller)
+        fail('PLAYER_COUNTRY_CHANGED_DURING_MAP_PREPARATION', { seller, mapPreparationPlayerCountry, sessionId });
       map.invalidateSize?.({ pan: false });
       map.setView([latitude, longitude], Math.max(8, Number(map.getZoom?.() || 4)), { animate: false });
       g.__omegaMineMarketTreasurySiteSelectionEvents = [];
@@ -615,7 +580,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       g.addEventListener('OMEGA_RESOURCE_SITE_SELECTED', siteSelectionListener);
       g.__omegaMineMarketTreasuryUiContext = {
         seller, buyer, sessionId, currency: chosenCountry.currency,
-        sessionStatus: liveSession?.status || null, bootstrapMode,
+        sessionStatus: liveSession?.status || null, sessionOrigin, realPlayerSave: realPlayerSaveSummary,
         turnParticipants: turnParticipants.map(row => Object.assign({}, row)),
         requiredResourceParticipantId, hasPlayerResourceParticipant,
         worldSchedulerId: worldSchedulerEntry ? worldSchedulerId : null,
@@ -668,7 +633,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       if (!ctx) throw new Error('REAL_UI_EXTRACTION_CONTEXT_MISSING');
       const seller = ctx.seller, buyer = ctx.buyer, selected = ctx.selected;
       const currency = ctx.currency, sessionId = ctx.sessionId;
-      const sessionStatus = ctx.sessionStatus, bootstrapMode = ctx.bootstrapMode;
+      const sessionStatus = ctx.sessionStatus, sessionOrigin = ctx.sessionOrigin;
+      const realPlayerSave = ctx.realPlayerSave;
       const turnParticipants = ctx.turnParticipants;
       const requiredResourceParticipantId = ctx.requiredResourceParticipantId;
       const hasPlayerResourceParticipant = ctx.hasPlayerResourceParticipant;
@@ -742,8 +708,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       return {
         seller, buyer, currency: chosenCountry.currency,
         sessionStatus,
-        bootstrapMode,
-        autosaveFinalizerSuppressedForTest: true,
+        sessionOrigin,
+        realPlayerSave,
         registeredTurnParticipantIds: turnParticipants.map(row => row.id),
         requiredResourceParticipantId,
         playerResourceParticipantRetained: hasPlayerResourceParticipant,
@@ -1277,8 +1243,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
       const readStock = (country, id) => {
         const inventory = g.Game.state.resource?.[country]?.inventory || {};
-        const key = Object.keys(inventory).find(candidate => normalize(candidate) === normalize(id));
-        return key === undefined ? 0 : Math.max(0, Number(inventory[key]) || 0);
+        return Object.keys(inventory).filter(candidate => normalize(candidate) === normalize(id))
+          .reduce((sum, key) => sum + Math.max(0, Number(inventory[key]) || 0), 0);
       };
       const openingKeys = Object.keys(buyerResource.inventory).filter(key => normalize(key) === normalize(productId));
       if (openingKeys.length > 1) throw new Error('BUYER_PRODUCT_STOCK_KEYS_AMBIGUOUS:' + openingKeys.join(','));
@@ -1390,6 +1356,9 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       );
       const sellerBatchInventoryAudit = {
         countryId: seller, resourceId: productId, inventory: sellerBeforeStock,
+        inventoryKeys: Object.entries(sellerResourceState.inventory || {})
+          .filter(([key]) => normalize(key) === normalize(productId))
+          .map(([key, value]) => ({ key, quantity: Number(value) || 0 })),
         trackedCentralQuantity: sellerTrackedCentralQuantity,
         rawWarehouseQuantity: Object.entries(sellerResourceState.warehouse?.availableByResource || {})
           .filter(([key]) => normalize(key) === normalize(productId))
@@ -1406,8 +1375,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           sourceBatchIds: (row.sourceBatchIds || []).slice(0, 6)
         }))
       };
-      if (sellerTrackedCentralQuantity > sellerBeforeStock + 1e-6)
-        throw new Error('SELLER_STOCK_BATCH_LEDGER_PRETRADE_MISMATCH:' + JSON.stringify(sellerBatchInventoryAudit));
+      const warehouseBeforeStock = sellerBatchInventoryAudit.rawWarehouseQuantity + sellerBatchInventoryAudit.processedWarehouseQuantity;
+      if (Math.abs(sellerTrackedCentralQuantity - sellerBeforeStock) > 1e-6 ||
+          Math.abs(warehouseBeforeStock - sellerBeforeStock) > 1e-6)
+        throw new Error('SELLER_STOCK_BATCH_WAREHOUSE_PRETRADE_MISMATCH:' + JSON.stringify(sellerBatchInventoryAudit));
       const buyerBeforeTreasury = bank.accountSummary(buyer);
       const sellerBeforeTreasury = bank.accountSummary(seller);
       const buyerBeforeUsd = Number(buyerBeforeTreasury?.treasuryBalanceUsd);
@@ -1475,8 +1446,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const normalize = value => String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
       const readStock = (country, id) => {
         const inventory = g.Game.state.resource?.[country]?.inventory || {};
-        const key = Object.keys(inventory).find(candidate => normalize(candidate) === normalize(id));
-        return key === undefined ? 0 : Math.max(0, Number(inventory[key]) || 0);
+        return Object.keys(inventory).filter(candidate => normalize(candidate) === normalize(id))
+          .reduce((sum, key) => sum + Math.max(0, Number(inventory[key]) || 0), 0);
       };
       const bank = g.OmegaGovernmentBanking, market = g.Omega.GlobalMarket, trade = g.OmegaGlobalTrade;
       const uiRequest = (g.Game.state.trade?.[buyer]?.importRequests || [])
