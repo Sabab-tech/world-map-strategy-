@@ -7,20 +7,35 @@
   var DB_NAME = 'omega-game-save-db-v1';
   var DB_STORE = 'slots';
   var DAY_MS = 86400000;
+  var STATE_SAVE_DEBOUNCE_MS = 1200;
+  var STATE_SAVE_MAX_WAIT_MS = 8000;
+  var TURN_SAVE_INTERVAL_MS = 10000;
   var lastSavedTurn = -1;
   var lastSavedAt = 0;
-  var lastSavedSerialized = '';
   var stateSaveTimer = null;
+  var stateSaveFirstAt = 0;
+  var mutationRevision = 0;
+  var persistedRevision = 0;
   var saveInProgress = false;
+  var saveInFlightPromise = null;
+  var saveQueued = false;
+  var saveQueuedForce = false;
+  var saveQueuedCommittedTurn = false;
+  var pendingExitFlush = false;
+  var exitSaveStarted = false;
+  var saveCount = 0;
+  var lastSavedChecksum = null;
+  var lastSavedStorage = null;
+  var lastSaveError = null;
+  var storagePersistence = 'UNKNOWN';
+  var hasSavedCommittedTurn = false;
   var lifecycleFinalizerUnregister = null;
   var lastKnownSpeed = 1;
   var hiddenWasRunning = false;
   var hiddenSnapshotSaved = false;
   var restoreFailed = false;
   var restoreFinished = false;
-  var dbWriteChain = Promise.resolve();
   var saveStatus = 'AUTOSAVE READY';
-  var tickSaveQueued = false;
   // Gameplay automation is opt-in after every boot and remains paused in the background.
   var backgroundRunsEnabled = false;
 
@@ -258,138 +273,120 @@
     });
   }
 
-  function writeIndexedSave(snapshot) {
-    return openDb().then(function (db) {
-      return new Promise(function (resolve, reject) {
-        var tx = db.transaction(DB_STORE, 'readwrite');
-        tx.objectStore(DB_STORE).put({ slot: SLOT, snapshot: snapshot, savedAt: Date.now() });
-        tx.oncomplete = function () { db.close(); resolve(true); };
-        tx.onerror = function () { db.close(); reject(tx.error || new Error('INDEXED_DB_WRITE_FAILED')); };
-        tx.onabort = function () { db.close(); reject(tx.error || new Error('INDEXED_DB_WRITE_ABORTED')); };
-      });
-    });
-  }
-
-  function persistBackup(snapshot) {
-    dbWriteChain = dbWriteChain.catch(function () { return null; }).then(function () { return writeIndexedSave(snapshot); });
-    return dbWriteChain;
+  // Legacy lifecycle IndexedDB is read-only from this version onward. New saves
+  // use Simulation.saveSlot(), which owns the canonical IndexedDB slot and checksum.
+  function isSimulationRunning(sim) {
+    return !!(sim && String(sim.status || '').toUpperCase() === 'RUNNING' &&
+      !(sim.clock && sim.clock.paused));
   }
 
   function writeSnapshotNow(options) {
     options = options || {};
     var sim = runtime();
-    if (!sim || typeof sim.saveState !== 'function') return false;
-    if (restoreFailed && !options.force) return false;
-    if (!playerCountry(sim)) return false;
+    if (!sim || typeof sim.saveSlot !== 'function') return Promise.resolve(false);
+    if (restoreFailed && !options.force) return Promise.resolve(false);
+    if (!playerCountry(sim)) return Promise.resolve(false);
     if (String(sim.status || '').toUpperCase() === 'ERROR' && !options.allowErrorCheckpoint) {
       setSaveStatus('GAME ERROR · LAST COMPLETE SAVE PRESERVED');
-      return false;
+      return Promise.resolve(false);
     }
-    // Do not overwrite the last coherent checkpoint with a half-applied day if
-    // the OS backgrounds or terminates the app midway through an awaited turn.
-    // The pipeline's final autosave uses committedTurn=true after all sectors finish.
+    // A snapshot must represent a coherent turn. Exit requests made mid-turn are
+    // remembered and flushed by the finalizer after every sector has completed.
     if (sim.stepInProgress && !options.committedTurn) {
-      setSaveStatus(lastSavedSerialized ? 'LAST COMPLETE TURN PRESERVED' : 'SAVE DEFERRED · TURN IN PROGRESS');
-      return false;
+      if (options.force) pendingExitFlush = true;
+      setSaveStatus(lastSavedAt ? 'LAST COMPLETE TURN PRESERVED' : 'SAVE DEFERRED · TURN IN PROGRESS');
+      return Promise.resolve(false);
     }
+
+    var revisionAtStart = mutationRevision;
     var turn = Math.max(0, Math.floor(number(sim.clock && sim.clock.turn) || 0));
-    // Reconcile the displayed treasury/resources before taking the durable snapshot.
-    // Rendering is best-effort and must never be allowed to block a save on exit.
-    try { updateHud(); } catch (_) {}
-    var snapshot;
+    var operation;
     try {
-      snapshot = sim.saveState({
-        includeDiagnostics: options.committedTurn !== true && options.includeDiagnostics !== false
-      });
+      // The canonical API serializes once and writes asynchronously to IndexedDB.
+      // It avoids the previous deep-clone + JSON.stringify + synchronous localStorage
+      // sequence on every small domain event.
+      saveInProgress = true;
+      operation = sim.saveSlot(SLOT);
     } catch (error) {
-      setSaveStatus('SAVE FAILED');
-      return false;
+      lastSaveError = String(error && error.message || error);
+      setSaveStatus('SAVE FAILED · LAST COMPLETE SAVE PRESERVED');
+      return Promise.resolve(false);
+    } finally {
+      saveInProgress = false;
     }
 
-    // A committed game turn is saved asynchronously to IndexedDB. This avoids
-    // serializing the full world to JSON and synchronously writing localStorage
-    // on the UI thread every time the in-game clock advances.
-    if (options.committedTurn && g.indexedDB) {
-      saveNow.lastLocalSaved = false;
-      var backupPromise = persistBackup(snapshot).then(function () {
-        lastSavedTurn = turn;
-        lastSavedAt = Date.now();
-        lastSavedSerialized = '';
-        setSaveStatus('AUTO-SAVED · DAY ' + (turn + 1));
-        return true;
-      }).catch(function () {
-        // Preserve a durable fallback for WebViews whose IndexedDB transaction fails.
-        try {
-          var fallbackSerialized = JSON.stringify(snapshot);
-          if (!g.localStorage) throw new Error('LOCAL_STORAGE_UNAVAILABLE');
-          g.localStorage.setItem(SAVE_KEY, fallbackSerialized);
-          saveNow.lastLocalSaved = true;
-          lastSavedTurn = turn;
-          lastSavedAt = Date.now();
-          lastSavedSerialized = fallbackSerialized;
-          setSaveStatus('AUTO-SAVED · DAY ' + (turn + 1));
-          return true;
-        } catch (_) {
-          setSaveStatus('SAVE FAILED · LAST COMPLETE SAVE PRESERVED');
-          return false;
-        }
-      });
-      saveNow.lastBackupPromise = backupPromise;
-      setSaveStatus('SAVING DEVICE BACKUP…');
+    setSaveStatus('SAVING DEVICE SAVE…');
+    var flight;
+    flight = Promise.resolve(operation).then(function (result) {
+      if (!result || result.ok !== true) throw new Error('CANONICAL_SAVE_NOT_CONFIRMED');
+      lastSavedTurn = Math.max(0, Math.floor(number(result.turn) === null ? turn : number(result.turn)));
+      lastSavedAt = Date.now();
+      persistedRevision = Math.max(persistedRevision, revisionAtStart);
+      lastSavedStorage = result.storage || 'CANONICAL';
+      lastSavedChecksum = result.checksum || null;
+      lastSaveError = null;
+      saveCount += 1;
+      if (options.committedTurn) hasSavedCommittedTurn = true;
+      if (persistedRevision >= mutationRevision) {
+        pendingExitFlush = false;
+        stateSaveFirstAt = 0;
+      }
+      setSaveStatus('AUTO-SAVED · DAY ' + (lastSavedTurn + 1));
       return true;
-    }
-
-    var serialized;
-    try { serialized = JSON.stringify(snapshot); }
-    catch (_) {
-      setSaveStatus('SAVE FAILED · SNAPSHOT NOT SERIALIZABLE');
+    }).catch(function (error) {
+      lastSaveError = String(error && error.message || error);
+      setSaveStatus('SAVE FAILED · LAST COMPLETE SAVE PRESERVED');
       return false;
-    }
-    if (!options.force && serialized === lastSavedSerialized) return true;
+    }).then(function (saved) {
+      if (saveInFlightPromise === flight) saveInFlightPromise = null;
+      if (!saved) {
+        // Do not spin on a failing storage device. A later mutation, explicit
+        // pause, or exit will retry without risking the previous good checkpoint.
+        saveQueued = false;
+        saveQueuedForce = false;
+        saveQueuedCommittedTurn = false;
+        return false;
+      }
 
-    var localSaved = false;
-    try {
-      if (!g.localStorage) throw new Error('LOCAL_STORAGE_UNAVAILABLE');
-      g.localStorage.setItem(SAVE_KEY, serialized);
-      localSaved = true;
-    } catch (_) {
-      localSaved = false;
-    }
-    saveNow.lastLocalSaved = localSaved;
-    var backupPromise = persistBackup(snapshot).then(function () {
-      if (!localSaved) {
-        lastSavedTurn = turn;
-        lastSavedAt = Date.now();
-        lastSavedSerialized = serialized;
-        setSaveStatus('DEVICE BACKUP SAVED · DAY ' + (turn + 1));
+      var needsLatest = saveQueued || mutationRevision > persistedRevision || pendingExitFlush;
+      var forceLatest = saveQueuedForce || pendingExitFlush;
+      var committedLatest = saveQueuedCommittedTurn || !!options.committedTurn;
+      saveQueued = false;
+      saveQueuedForce = false;
+      saveQueuedCommittedTurn = false;
+      if (needsLatest) {
+        if (sim.stepInProgress && !committedLatest) {
+          if (forceLatest) pendingExitFlush = true;
+          return true;
+        }
+        return writeSnapshotNow({ force: forceLatest, committedTurn: committedLatest });
       }
       return true;
-    }).catch(function () {
-      if (!localSaved) setSaveStatus('SAVE FAILED · LAST COMPLETE SAVE PRESERVED');
-      return false;
     });
-
-    if (localSaved) {
-      lastSavedTurn = turn;
-      lastSavedAt = Date.now();
-      lastSavedSerialized = serialized;
-      setSaveStatus('AUTO-SAVED · DAY ' + (turn + 1));
-    } else {
-      setSaveStatus('SAVING DEVICE BACKUP…');
-    }
-    // Exposed promise lets diagnostics and tests observe IndexedDB completion when available.
-    saveNow.lastBackupPromise = backupPromise;
-    return localSaved || !!g.indexedDB;
+    saveInFlightPromise = flight;
+    return flight;
   }
 
   function saveNow(options) {
-    if (saveInProgress) return true;
-    saveInProgress = true;
-    try { return writeSnapshotNow(options); }
-    finally { saveInProgress = false; }
+    options = options || {};
+    var sim = runtime();
+    if (!sim || typeof sim.saveSlot !== 'function') return Promise.resolve(false);
+    if (saveInProgress) return saveInFlightPromise || Promise.resolve(true);
+    if (sim.stepInProgress && !options.committedTurn) {
+      if (options.force) pendingExitFlush = true;
+      return Promise.resolve(false);
+    }
+    if (!options.force && mutationRevision <= persistedRevision) return Promise.resolve(true);
+    if (saveInFlightPromise) {
+      saveQueued = true;
+      if (options.force) saveQueuedForce = true;
+      if (options.committedTurn) saveQueuedCommittedTurn = true;
+      return saveInFlightPromise;
+    }
+    return writeSnapshotNow(options);
   }
-  saveNow.lastBackupPromise = Promise.resolve(false);
   saveNow.lastLocalSaved = false;
+  saveNow.lastBackupPromise = Promise.resolve(false);
 
   function parseLocalSave() {
     try {
@@ -436,33 +433,54 @@
   async function restoreOnReady() {
     if (restoreFinished) return;
     var sim = runtime();
-    if (!sim || !sim.clock || typeof sim.loadState !== 'function') return;
-    // Do not restore into a temporary boot state before Game.state is linked.
-    // The fallback timer may fire before window.load on slow Android devices.
+    if (!sim || !sim.clock || typeof sim.loadSlot !== 'function') return;
     var authoritativeState = (g.Game && g.Game.state) || g.gameState;
     if (!g.Omega || !g.Omega.App || !authoritativeState || sim.world.state !== authoritativeState) return;
     restoreFinished = true;
 
-    var local = parseLocalSave();
-    var indexed = null;
-    try { indexed = await readIndexedSave(); } catch (_) {}
-    var candidates = [];
-    if (local) candidates.push(local);
-    if (indexed && indexed.snapshot) candidates.push(indexed);
-    candidates.sort(function (a, b) {
-      var turnDifference = savedTurn(b) - savedTurn(a);
-      if (turnDifference) return turnDifference;
-      // Prefer localStorage on equal turns because page-exit snapshots are synchronous.
-      if (a.slot === 'local' && b.slot !== 'local') return -1;
-      if (b.slot === 'local' && a.slot !== 'local') return 1;
-      return (number(b.savedAt) || 0) - (number(a.savedAt) || 0);
-    });
-
     var restored = false;
-    for (var i = 0; i < candidates.length; i++) {
-      if (loadCandidate(sim, candidates[i])) { restored = true; break; }
+    var canonicalError = null;
+    var candidates = [];
+    try {
+      await sim.loadSlot(SLOT);
+      var canonicalCountry = playerCountry(sim);
+      if (!canonicalCountry) throw new Error('SAVED_PLAYER_COUNTRY_MISSING');
+      syncSelectedCountry(canonicalCountry);
+      lastSavedTurn = Math.max(0, Math.floor(number(sim.clock && sim.clock.turn) || 0));
+      lastSavedAt = Date.now();
+      persistedRevision = mutationRevision;
+      lastSavedStorage = 'CANONICAL';
+      restored = true;
+    } catch (error) {
+      canonicalError = error;
     }
-    if (candidates.length && !restored) {
+
+    // Compatibility migration: the former lifecycle runtime stored an envelope
+    // in omega-game-save-db-v1. Existing localStorage saves share the canonical
+    // slot key and are already handled by Simulation.loadSlot().
+    if (!restored) {
+      // Keep the legacy localStorage record as a recovery candidate too:
+      // an unreadable newer IndexedDB slot must not prevent restoring an older
+      // valid local checkpoint.
+      var local = parseLocalSave();
+      if (local) candidates.push(local);
+      var indexed = null;
+      try { indexed = await readIndexedSave(); } catch (_) {}
+      if (indexed && indexed.snapshot) candidates.push(indexed);
+      candidates.sort(function (a, b) {
+        var turnDifference = savedTurn(b) - savedTurn(a);
+        if (turnDifference) return turnDifference;
+        return (number(b.savedAt) || 0) - (number(a.savedAt) || 0);
+      });
+      for (var i = 0; i < candidates.length; i++) {
+        if (loadCandidate(sim, candidates[i])) { restored = true; break; }
+      }
+    }
+
+    var canonicalMissing = canonicalError &&
+      /^SAVE_SLOT_NOT_FOUND:/.test(String(canonicalError.message || canonicalError)) &&
+      !/INDEXEDDB:/.test(String(canonicalError.message || canonicalError));
+    if (!restored && (candidates.length || (canonicalError && !canonicalMissing))) {
       restoreFailed = true;
       setSaveStatus('SAVE RESTORE FAILED · PRESERVED');
       updateHud();
@@ -479,7 +497,6 @@
         return;
       }
       if (savedSpeed !== null && savedSpeed > 0) lastKnownSpeed = savedSpeed;
-      // Restore the player's world, but never restart autonomous simulation on boot.
       backgroundRunsEnabled = false;
       try { sim.clock.setSpeed(0); } catch (_) {}
       try {
@@ -487,8 +504,9 @@
         else sim.status = 'PAUSED';
       } catch (_) { sim.status = 'PAUSED'; }
       updateHud();
-      saveNow({ force: true });
-      setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');
+      var restoredSave = await saveNow({ force: true });
+      if (!restoredSave) setSaveStatus('SAVE FAILED · LAST COMPLETE SAVE PRESERVED');
+      else setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');
       return;
     }
 
@@ -501,15 +519,16 @@
         if ((!session || !session.playerCountryId) && typeof sim.createSession === 'function') {
           sim.createSession({ playerCountryId: country });
         }
-        // Create/select the session without allowing unattended country/resource ticks.
         try { sim.clock.setSpeed(0); } catch (_) {}
         if (typeof sim.pauseSession === 'function') sim.pauseSession();
         else sim.status = 'PAUSED';
         backgroundRunsEnabled = false;
         lastKnownSpeed = 1;
         updateHud();
-        saveNow({ force: true });
-        setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');
+        var initialSave = await saveNow({ force: true });
+        setSaveStatus(initialSave
+          ? 'BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME'
+          : 'SAVE FAILED · LAST COMPLETE SAVE PRESERVED');
       } catch (error) {
         backgroundRunsEnabled = false;
         setSaveStatus('CLOCK READY · SELECT COUNTRY');
@@ -571,27 +590,48 @@
   }
 
   function queueTurnSave() {
-    // This listener runs inside the canonical pipeline; the high-priority save
-    // participant persists after every sector participant has completed.
     updateHud();
   }
 
-  function scheduleStateSave() {
-    if (saveInProgress) return; // The outer save snapshots after its reconciliation work.
-    var sim = runtime();
-    // Avoid persisting a half-applied sector turn. The committed-turn finalizer
-    // will save synchronously once the ordered pipeline finishes.
-    if (sim && sim.stepInProgress) return;
+  function armStateSaveTimer() {
     if (stateSaveTimer !== null) {
       try { g.clearTimeout(stateSaveTimer); } catch (_) {}
       stateSaveTimer = null;
     }
-    // Collapse bursts of domain events into one synchronous snapshot. pagehide,
-    // freeze and visibilitychange still flush immediately if the app exits first.
+    var sim = runtime();
+    if (!sim || mutationRevision <= persistedRevision || restoreFailed) return;
+    var now = Date.now();
+    if (!stateSaveFirstAt) stateSaveFirstAt = now;
+    var dueAt = Math.min(now + STATE_SAVE_DEBOUNCE_MS, stateSaveFirstAt + STATE_SAVE_MAX_WAIT_MS);
+    if (isSimulationRunning(sim) && lastSavedAt) {
+      dueAt = Math.max(dueAt, lastSavedAt + TURN_SAVE_INTERVAL_MS);
+    }
     stateSaveTimer = g.setTimeout(function () {
       stateSaveTimer = null;
+      var current = runtime();
+      if (!current || mutationRevision <= persistedRevision || restoreFailed) {
+        stateSaveFirstAt = 0;
+        return;
+      }
+      if (current.stepInProgress) return; // The committed-turn finalizer owns this checkpoint.
+      if (isSimulationRunning(current) && lastSavedAt &&
+          Date.now() - lastSavedAt < TURN_SAVE_INTERVAL_MS) {
+        armStateSaveTimer();
+        return;
+      }
+      stateSaveFirstAt = 0;
       saveNow();
-    }, 80);
+    }, Math.max(0, dueAt - now));
+  }
+
+  function scheduleStateSave() {
+    if (saveInProgress) return;
+    mutationRevision += 1;
+    var sim = runtime();
+    // Preserve revisions during a turn; only the finalizer may snapshot a
+    // fully-applied day. A timer is armed after the pipeline releases its lock.
+    if (sim && sim.stepInProgress) return;
+    armStateSaveTimer();
   }
 
   function installMutationEventSaveBridge() {
@@ -615,21 +655,23 @@
       lifecycleFinalizerUnregister = null;
     }
     lifecycleFinalizerUnregister = sim.registerTurnFinalizer('omega.game-lifecycle.autosave', async function (context) {
-      // A failed sector turn is not a coherent checkpoint. Preserve the last known-good
-      // save instead of writing a partially applied day over it.
       if (context && context.simulation && String(context.simulation.status || '').toUpperCase() === 'ERROR') {
         setSaveStatus('TURN FAILED · LAST COMPLETE SAVE PRESERVED');
         throw new Error('FAILED_TURN_NOT_SAVED');
       }
-      // Runs after all sector participants, the publish hook, and the checkpoint phase.
-      // Never report success unless localStorage or the IndexedDB transaction completed.
-      var started = saveNow({ force: true, committedTurn: true });
-      if (!started) throw new Error('NO_DURABLE_SAVE_TARGET');
-      if (!saveNow.lastLocalSaved) {
-        var backupSaved = await saveNow.lastBackupPromise;
-        if (!backupSaved) throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED');
+      mutationRevision += 1;
+      var turn = Math.max(0, Math.floor(number(context && context.turn) || number(sim.clock && sim.clock.turn) || 0));
+      var shouldPersist = !hasSavedCommittedTurn || pendingExitFlush ||
+        !lastSavedAt || Date.now() - lastSavedAt >= TURN_SAVE_INTERVAL_MS;
+      if (!shouldPersist) {
+        // The pipeline releases stepInProgress after its finalizer phase; defer
+        // timer arming by one task so the next snapshot cannot capture a partial day.
+        g.setTimeout(function () { armStateSaveTimer(); }, 0);
+        return { turn: turn, durableTarget: lastSavedStorage || 'PENDING', savedTurn: lastSavedTurn, deferred: true };
       }
-      return { turn: context && context.turn, durableTarget: saveNow.lastLocalSaved ? 'localStorage' : 'IndexedDB', savedTurn: lastSavedTurn };
+      var saved = await saveNow({ force: true, committedTurn: true });
+      if (!saved) throw new Error('CANONICAL_GAME_SAVE_FAILED');
+      return { turn: turn, durableTarget: lastSavedStorage || 'CANONICAL', savedTurn: lastSavedTurn };
     }, { priority: Number.MAX_SAFE_INTEGER });
     return true;
   }
@@ -660,24 +702,34 @@
     if (!g.document) return;
     if (g.document.visibilityState === 'hidden') {
       var sim = runtime();
-      hiddenWasRunning = !!(sim && String(sim.status || '').toUpperCase() === 'RUNNING' &&
-        !(sim.clock && sim.clock.paused));
+      hiddenWasRunning = isSimulationRunning(sim);
       if (hiddenWasRunning && sim && String(sim.status || '').toUpperCase() !== 'ERROR') {
         var speed = number(sim.clock && sim.clock.speed);
         if (speed !== null && speed > 0) lastKnownSpeed = speed;
         backgroundRunsEnabled = false;
-        // Pause before saving, so the persisted session cannot auto-resume in the background.
         try { sim.clock.setSpeed(0); } catch (_) {}
         try { if (typeof sim.pauseSession === 'function') sim.pauseSession(); } catch (_) {}
       }
-      hiddenSnapshotSaved = saveNow({ force: true });
+      pendingExitFlush = true;
+      hiddenSnapshotSaved = false;
+      if (stateSaveTimer !== null) {
+        try { g.clearTimeout(stateSaveTimer); } catch (_) {}
+        stateSaveTimer = null;
+      }
+      var flush = saveNow({ force: true });
+      Promise.resolve(flush).then(function (saved) {
+        hiddenSnapshotSaved = !!saved;
+        if (hiddenWasRunning && sim && String(sim.status || '').toUpperCase() !== 'ERROR' && saved) {
+          setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');
+        }
+      });
       if (hiddenWasRunning && sim && String(sim.status || '').toUpperCase() !== 'ERROR') {
-        setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');
+        setSaveStatus('BACKGROUND SYSTEMS PAUSED · SAVING');
       }
     } else {
-      // Returning to the foreground never restarts gameplay automatically.
       hiddenWasRunning = false;
       hiddenSnapshotSaved = false;
+      exitSaveStarted = false;
       var current = runtime();
       updateHud();
       if (current && String(current.status || '').toUpperCase() === 'PAUSED') {
@@ -687,8 +739,13 @@
   }
 
   function onPageExit() {
-    // visibilitychange has already written the running state before pausing the live page.
-    if (hiddenWasRunning && hiddenSnapshotSaved && g.document && g.document.visibilityState === 'hidden') return;
+    if (exitSaveStarted) return;
+    // visibilitychange normally starts this flush first. Its promise is already
+    // writing the same canonical slot, so do not start a duplicate exit write.
+    if (g.document && g.document.visibilityState === 'hidden' &&
+        (hiddenSnapshotSaved || saveInFlightPromise)) return;
+    exitSaveStarted = true;
+    pendingExitFlush = true;
     if (stateSaveTimer !== null) {
       try { g.clearTimeout(stateSaveTimer); } catch (_) {}
       stateSaveTimer = null;
@@ -696,9 +753,32 @@
     saveNow({ force: true });
   }
 
+  function requestPersistentStorage() {
+    var storage = g.navigator && g.navigator.storage;
+    if (!storage) { storagePersistence = 'UNSUPPORTED'; return; }
+    var request;
+    try {
+      request = typeof storage.persist === 'function' ? storage.persist() :
+        (typeof storage.persisted === 'function' ? storage.persisted() : null);
+    } catch (_) {
+      storagePersistence = 'UNKNOWN';
+      return;
+    }
+    if (!request || typeof request.then !== 'function') {
+      storagePersistence = 'UNSUPPORTED';
+      return;
+    }
+    Promise.resolve(request).then(function (granted) {
+      storagePersistence = granted ? 'GRANTED' : 'DENIED';
+    }).catch(function () {
+      storagePersistence = 'UNKNOWN';
+    });
+  }
+
   function init() {
     if (!g.document) return;
     registerLifecycleFinalizer();
+    requestPersistentStorage();
     installMutationEventSaveBridge();
     g.document.addEventListener('click', clickHandler, true);
     g.document.addEventListener('visibilitychange', onVisibilityChange);
@@ -754,8 +834,17 @@
         slot: SLOT,
         saveKey: SAVE_KEY,
         savedTurn: lastSavedTurn,
-        savedChecksum: lastSavedSerialized ? (sim && sim.saveState ? safeCall(function () { return sim.saveState().checksum; }) : null) : null,
+        savedChecksum: lastSavedChecksum,
         status: saveStatus,
+        savedStorage: lastSavedStorage,
+        lastSaveError: lastSaveError,
+        storagePersistence: storagePersistence,
+        saveCount: saveCount,
+        dirty: mutationRevision > persistedRevision,
+        mutationRevision: mutationRevision,
+        persistedRevision: persistedRevision,
+        savePending: !!saveInFlightPromise || !!saveQueued,
+        pendingExitFlush: pendingExitFlush,
         participantCount: sim && typeof sim.participantDiagnostics === 'function' ? sim.participantDiagnostics().length : null,
         restoreFinished: restoreFinished,
         restoreFailed: restoreFailed,

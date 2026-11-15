@@ -327,7 +327,21 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(core, /TURN_PARTICIPANT_FAILED/);
   assert.match(lifecycle, /priority: Number\.MAX_SAFE_INTEGER/);
   assert.match(lifecycle, /registerTurnFinalizer\('omega\.game-lifecycle\.autosave'/);
-  assert.match(lifecycle, /LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED/);
+  assert.match(lifecycle, /sim\.saveSlot\(SLOT\)/,
+    'routine lifecycle persistence must use the canonical Simulation.saveSlot API');
+  assert.match(lifecycle, /await sim\.loadSlot\(SLOT\)/,
+    'startup must restore from the same canonical save slot');
+  assert.match(lifecycle, /STATE_SAVE_DEBOUNCE_MS = 1200/);
+  assert.match(lifecycle, /STATE_SAVE_MAX_WAIT_MS = 8000/);
+  assert.match(lifecycle, /TURN_SAVE_INTERVAL_MS = 10000/);
+  assert.match(lifecycle, /storage\.persist\(\)/,
+    'the browser should be asked to protect the local save from automatic eviction');
+  assert.doesNotMatch(lifecycle, /function writeIndexedSave\(/,
+    'the retired lifecycle database must not receive a second independent copy of each save');
+  const diagnosticsStart = lifecycle.indexOf('getDiagnostics: function () {');
+  const diagnosticsEnd = lifecycle.indexOf('\n    }\n  };', diagnosticsStart);
+  assert.doesNotMatch(lifecycle.slice(diagnosticsStart, diagnosticsEnd), /sim\.saveState\(/,
+    'reading save diagnostics must not clone the full world on the UI thread');
   assert.match(lifecycle, /installMutationEventSaveBridge/);
   assert.match(lifecycle, /_STATE_UPDATED|_APPLIED|_COMPLETED/);
   assert.match(lifecycle, /GAME ERROR · LAST COMPLETE SAVE PRESERVED/);
@@ -550,6 +564,49 @@ test('lifecycle autosaves only after async sector work and catches pagehide with
   assert.equal(saved.worldState.economy.BGD.treasury, 999999,
     'a failed turn must not overwrite the last complete durable checkpoint');
   assert.ok(win.Omega.GameLifecycle.getDiagnostics().savedTurn >= 1);
+});
+
+test('lifecycle coalesces rapid mutations into one canonical save and flushes player exit', async () => {
+  const { win, sim, gameState, storage } = createRuntime();
+  const { lifecycle } = attachLifecycle(win, sim);
+  await lifecycle.restore();
+
+  const originalSaveSlot = sim.saveSlot.bind(sim);
+  const saveCalls = [];
+  sim.saveSlot = async slot => {
+    saveCalls.push(slot);
+    return originalSaveSlot(slot);
+  };
+  saveCalls.length = 0;
+
+  gameState.economy.BGD.treasury = 1234567;
+  for (let index = 0; index < 12; index += 1) {
+    win.dispatchEvent(new win.CustomEvent('MINISTRY_STATE_CHANGED'));
+    win.dispatchEvent(new win.CustomEvent('OMEGA_COMMAND_APPLIED'));
+  }
+  await new Promise(resolve => setTimeout(resolve, 1450));
+
+  assert.equal(saveCalls.length, 1,
+    'a burst of domain events must create one durable snapshot, not one storage write per event');
+  assert.ok(saveCalls.every(slot => slot === 'default'),
+    'all lifecycle saves must use the one canonical default slot');
+  let saved = JSON.parse(storage.get('omega.game.save.default'));
+  assert.equal(saved.worldState.economy.BGD.treasury, 1234567,
+    'the coalesced snapshot must contain the latest mutation in the burst');
+
+  gameState.economy.BGD.treasury = 7654321;
+  win.dispatchEvent(new win.CustomEvent('pagehide'));
+  win.dispatchEvent(new win.CustomEvent('beforeunload'));
+  await new Promise(resolve => setTimeout(resolve, 0));
+
+  assert.equal(saveCalls.length, 2,
+    'leaving the page must flush the latest state once even when pagehide and beforeunload both fire');
+  saved = JSON.parse(storage.get('omega.game.save.default'));
+  assert.equal(saved.worldState.economy.BGD.treasury, 7654321,
+    'the exit checkpoint must contain the final player state');
+  assert.equal(lifecycle.getDiagnostics().dirty, false);
+  assert.equal(lifecycle.getDiagnostics().saveCount >= 3, true,
+    'startup, coalesced mutation and exit snapshots must all be counted');
 });
 
 test('internal Simulation.events subscribers are awaited and ordered with legacy window listeners', async () => {
