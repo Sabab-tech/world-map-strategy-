@@ -459,6 +459,11 @@
     // in omega-game-save-db-v1. Existing localStorage saves share the canonical
     // slot key and are already handled by Simulation.loadSlot().
     if (!restored) {
+      // Keep the legacy localStorage record as a recovery candidate too:
+      // an unreadable newer IndexedDB slot must not prevent restoring an older
+      // valid local checkpoint.
+      var local = parseLocalSave();
+      if (local) candidates.push(local);
       var indexed = null;
       try { indexed = await readIndexedSave(); } catch (_) {}
       if (indexed && indexed.snapshot) candidates.push(indexed);
