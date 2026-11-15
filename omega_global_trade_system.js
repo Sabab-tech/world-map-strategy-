@@ -764,9 +764,14 @@
     const sellerBlockade=strategicPolicy?.isRouteBlocked?.(seller,{resourceId:rid,transportMode:routeMode,routeId:p.routeId||auth.routeId,siteId:p.siteId||auth.siteId});
     if(buyerBlockade?.blocked||sellerBlockade?.blocked)return{accepted:false,reason:'RESOURCE_ROUTE_BLOCKADE_ACTIVE',blockades:[...(buyerBlockade?.blockades||[]),...(sellerBlockade?.blockades||[])]};
     if(!inv||typeof inv!=='object')return{accepted:false,reason:'RESOURCE_INVENTORY_NOT_OBSERVED'};
-    const k=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(x=>token(x)===token(rid));
-    if(!k)return{accepted:false,reason:'RESOURCE_NOT_OBSERVED'};
-    const stock=num(inv[k]);if(stock===null||stock+1e-9<q)return{accepted:false,reason:'RESOURCE_STOCK_INSUFFICIENT'};
+    const inventoryKeys=Object.keys(inv).filter(key=>token(key)===token(rid));
+    if(!inventoryKeys.length)return{accepted:false,reason:'RESOURCE_NOT_OBSERVED'};
+    const invalidInventoryKeys=inventoryKeys.filter(key=>num(inv[key])===null||num(inv[key])<0);
+    if(invalidInventoryKeys.length)return{accepted:false,reason:'RESOURCE_INVENTORY_KEY_VALUE_INVALID',resourceId:rid,keys:invalidInventoryKeys};
+    const k=Object.prototype.hasOwnProperty.call(inv,rid)?rid:inventoryKeys[0];
+    const inventoryStock=inventoryKeys.reduce((sum,key)=>sum+(num(inv[key])||0),0);
+    let stock=inventoryStock;
+    if(stock+1e-9<q)return{accepted:false,reason:'RESOURCE_STOCK_INSUFFICIENT'};
     const supplyDirective=strategicPolicy?.evaluateExportDirective?.(seller,buyer,rid,q,auth.governmentContractId,inv);
     if(supplyDirective&&supplyDirective.allowed===false&&!blackMarketMayReleaseExport(blackMarketDeal,supplyDirective.reason))
       return{accepted:false,reason:supplyDirective.reason||'STATE_SUPPLY_DIRECTIVE_BLOCKED',stateSupplyDirective:supplyDirective};
@@ -819,7 +824,25 @@
     };
     const centralAll=rows.filter(b=>token(b&&(b.resourceId||b.materialIdentity))===token(rid)&&!nonCentral(b&&b.stage)&&availableQty(b)>1e-9);
     const centralAllQty=centralAll.reduce((sum,b)=>sum+availableQty(b),0);
-    if(centralAllQty>stock+1e-6)return{accepted:false,reason:'RESOURCE_BATCH_INVENTORY_MISMATCH',inventory:stock,trackedCentralQuantity:centralAllQty};
+    const rawObservedKeys=Object.keys(raw.availableByResource).filter(key=>token(key)===token(rid));
+    const processedObservedKeys=Object.keys(processed.availableByResource).filter(key=>token(key)===token(rid));
+    const warehouseObserved=rawObservedKeys.length>0||processedObservedKeys.length>0;
+    const sumMatching=(book,keys)=>keys.reduce((sum,key)=>sum+Math.max(0,num(book[key])||0),0);
+    const rawWarehouseQuantity=sumMatching(raw.availableByResource,rawObservedKeys);
+    const processedWarehouseQuantity=sumMatching(processed.availableByResource,processedObservedKeys);
+    const warehouseQuantity=rawWarehouseQuantity+processedWarehouseQuantity;
+    if(warehouseObserved){
+      // The country inventory map is a compatibility mirror. It may lag after a
+      // factory run; export is safe only when raw + processed warehouse balances
+      // independently agree with the receipted, unconsumed batch ledger.
+      if(Math.abs(warehouseQuantity-centralAllQty)>1e-6)
+        return{accepted:false,reason:'RESOURCE_WAREHOUSE_BATCH_LEDGER_MISMATCH',resourceId:rid,
+          inventory:inventoryStock,warehouseQuantity,trackedCentralQuantity:centralAllQty,
+          rawWarehouseQuantity,processedWarehouseQuantity};
+      stock=Math.max(stock,warehouseQuantity);
+    }else if(centralAllQty>stock+1e-6){
+      return{accepted:false,reason:'RESOURCE_BATCH_INVENTORY_MISMATCH',inventory:stock,trackedCentralQuantity:centralAllQty};
+    }
     const explicitOwnerStatus=value=>!['NOT_RECORDED','OWNER_NOT_RECORDED','UNASSIGNED','UNKNOWN_SOURCE','LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED'].includes(String(value||'').toUpperCase());
     const central=privateCompanyTrade?centralAll.filter(b=>String(b.ownerCompanyId||b.ownerId||'').trim().toUpperCase()===sellerCompanyId&&
       explicitOwnerStatus(b.ownerAttributionStatus)&&companyIds.includes(String(b.operatorCompanyId||b.operatorId||'').trim().toUpperCase())):centralAll;
@@ -845,13 +868,27 @@
     }
     const rawRows=rows.filter(b=>token(b&&(b.resourceId||b.materialIdentity))===token(rid)&&!nonCentral(b&&b.stage)&&!isProcessed(b&&b.stage)&&availableQty(b)>1e-9);
     const processedRows=rows.filter(b=>token(b&&(b.resourceId||b.materialIdentity))===token(rid)&&!nonCentral(b&&b.stage)&&isProcessed(b&&b.stage)&&availableQty(b)>1e-9);
-    raw.availableByResource[rid]=rawRows.reduce((sum,b)=>sum+availableQty(b),0);
-    processed.availableByResource[rid]=processedRows.reduce((sum,b)=>sum+availableQty(b),0);
+    const rawKeys=Object.keys(raw.availableByResource).filter(key=>token(key)===token(rid));
+    const processedKeys=Object.keys(processed.availableByResource).filter(key=>token(key)===token(rid));
+    const rawKey=rawKeys.find(key=>key===rid)||rawKeys[0]||rid;
+    const processedKey=processedKeys.find(key=>key===rid)||processedKeys[0]||rid;
+    const rawTargetQuantity=rawRows.reduce((sum,b)=>sum+availableQty(b),0);
+    const processedTargetQuantity=processedRows.reduce((sum,b)=>sum+availableQty(b),0);
+    // Preserve legacy key aliases for old saves, but keep only one authoritative
+    // balance per normalized resource identity. Zero is retained as a value; keys
+    // are never deleted as part of a trade.
+    rawKeys.forEach(key=>{raw.availableByResource[key]=0;});
+    processedKeys.forEach(key=>{processed.availableByResource[key]=0;});
+    raw.availableByResource[rawKey]=rawTargetQuantity;
+    processed.availableByResource[processedKey]=processedTargetQuantity;
     raw.storedBatchIds=[...new Set(rawRows.map(b=>String(b.batchId||'')).filter(Boolean))];
     processed.storedBatchIds=[...new Set(processedRows.map(b=>String(b.batchId||'')).filter(Boolean))];
-    const rawReserved=Math.max(0,num(raw.reservedByResource[rid])||0),processedReserved=Math.max(0,num(processed.reservedByResource[rid])||0);
-    if(raw.availableByResource[rid]-rawReserved+processed.availableByResource[rid]-processedReserved+1e-6<q){
-      return{accepted:false,reason:'WAREHOUSE_STOCK_INSUFFICIENT',available:Math.max(0,raw.availableByResource[rid]-rawReserved)+Math.max(0,processed.availableByResource[rid]-processedReserved),requested:q};
+    const sumReserved=book=>Object.keys(book||{}).filter(key=>token(key)===token(rid))
+      .reduce((sum,key)=>sum+Math.max(0,num(book[key])||0),0);
+    const rawReserved=sumReserved(raw.reservedByResource),processedReserved=sumReserved(processed.reservedByResource);
+    const rawOnHand=raw.availableByResource[rawKey],processedOnHand=processed.availableByResource[processedKey];
+    if(rawOnHand-rawReserved+processedOnHand-processedReserved+1e-6<q){
+      return{accepted:false,reason:'WAREHOUSE_STOCK_INSUFFICIENT',available:Math.max(0,rawOnHand-rawReserved)+Math.max(0,processedOnHand-processedReserved),requested:q};
     }
     const fifo=central.concat(privateCompanyTrade?[]:rows.filter(b=>String(b?.batchId||'')==='LEGACY-TRADE-STOCK:'+seller+':'+token(rid))).filter((b,i,a)=>a.findIndex(x=>String(x?.batchId)===String(b?.batchId))===i);
     let remaining=q;const batchTransfers=[];let rawDebit=0,processedDebit=0;
@@ -894,9 +931,11 @@
     const directiveCommit=strategicPolicy?.commitExportDirectiveTx?.(ctx,{settlementId:settlementId,resourceId:rid,
       quantity:q,destinationCountryId:buyer,governmentContractId:auth.governmentContractId,batchTransfers});
     if(directiveCommit&&directiveCommit.accepted===false)return{accepted:false,reason:directiveCommit.reason||'STATE_SUPPLY_DIRECTIVE_COMMIT_FAILED',stateSupplyDirective:directiveCommit};
-    const next=clone(inv);next[k]=Math.max(0,stock-q);
-    raw.availableByResource[rid]=Math.max(0,raw.availableByResource[rid]-rawDebit);
-    processed.availableByResource[rid]=Math.max(0,processed.availableByResource[rid]-processedDebit);
+    const next=clone(inv);
+    const inventoryMirrorAdjustment=Math.max(0,stock-inventoryStock);
+    next[k]=Math.max(0,(num(next[k])||0)+inventoryMirrorAdjustment-q);
+    raw.availableByResource[rawKey]=Math.max(0,rawOnHand-rawDebit);
+    processed.availableByResource[processedKey]=Math.max(0,processedOnHand-processedDebit);
     raw.storedBatchIds=raw.storedBatchIds.filter(id=>availableQty(rows.find(b=>String(b.batchId)===String(id)))>1e-9);
     processed.storedBatchIds=processed.storedBatchIds.filter(id=>availableQty(rows.find(b=>String(b.batchId)===String(id)))>1e-9);
     const ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
