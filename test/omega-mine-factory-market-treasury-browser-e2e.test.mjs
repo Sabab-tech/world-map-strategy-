@@ -189,15 +189,9 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     await searchInput.waitFor({ state:'visible', timeout:30000 });
     await searchInput.fill(playerBootstrap.searchName);
     const countryResult = page.locator('#search-results-container .search-item')
-      .filter({ hasText:new RegExp(playerBootstrap.searchName.replace(/[.*+?^${}()|[\]\\]/g, '\\\\    await page.waitForFunction(() => {
-      const g = window, sim = g.Omega?.Simulation;
-      const session = g.Game?.state?.simulation?.session;
-      const country = String(session?.playerCountryId || '').trim().toUpperCase();
-      return !!(session?.sessionId && country &&
-        ['READY', 'RUNNING', 'PAUSED'].includes(String(session.status || '').toUpperCase()) &&
-        sim?.getPlayerCountryId?.() === country && sim?.world?.state === g.Game?.state);
-    }, { timeout: 240000 });'), 'i') })
-      .filter({ hasText:/COUNTRY/i }).first();
+      .filter({ hasText:playerBootstrap.searchName })
+      .filter({ hasText:'COUNTRY' }).first();
+
     await countryResult.waitFor({ state:'visible', timeout:30000 });
     await countryResult.click();
     await page.waitForFunction(seller => {
