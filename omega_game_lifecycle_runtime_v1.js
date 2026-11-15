@@ -743,7 +743,7 @@
     // visibilitychange normally starts this flush first. Its promise is already
     // writing the same canonical slot, so do not start a duplicate exit write.
     if (g.document && g.document.visibilityState === 'hidden' &&
-        (hiddenSnapshotSaved || saveInFlightPromise || pendingExitFlush)) return;
+        (hiddenSnapshotSaved || saveInFlightPromise)) return;
     exitSaveStarted = true;
     pendingExitFlush = true;
     if (stateSaveTimer !== null) {
