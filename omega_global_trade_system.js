@@ -771,14 +771,6 @@
     const k=Object.prototype.hasOwnProperty.call(inv,rid)?rid:inventoryKeys[0];
     const inventoryStock=inventoryKeys.reduce((sum,key)=>sum+(num(inv[key])||0),0);
     let stock=inventoryStock;
-    if(stock+1e-9<q)return{accepted:false,reason:'RESOURCE_STOCK_INSUFFICIENT'};
-    const supplyDirective=strategicPolicy?.evaluateExportDirective?.(seller,buyer,rid,q,auth.governmentContractId,inv);
-    if(supplyDirective&&supplyDirective.allowed===false&&!blackMarketMayReleaseExport(blackMarketDeal,supplyDirective.reason))
-      return{accepted:false,reason:supplyDirective.reason||'STATE_SUPPLY_DIRECTIVE_BLOCKED',stateSupplyDirective:supplyDirective};
-    const exportFactoryIds=strategicPolicy?.allowedExportFactoryIds?.(seller,rid,auth.governmentContractId)||null;
-    const strategic=ctx.stateTransaction.get('resource.strategicReserve')||{};
-    const reservedStrategic=strategic.availableByResource&&typeof strategic.availableByResource==='object'?num(strategic.availableByResource[k]??strategic.availableByResource[rid])||0:0;
-    if(stock-reservedStrategic+1e-9<q)return{accepted:false,reason:'STRATEGIC_STOCKPILE_PROTECTED',available:Math.max(0,stock-reservedStrategic),requested:q};
 
     const rows=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[];
     const lots=clone(ctx.stateTransaction.get('resource.inventoryLots')||{});
@@ -843,6 +835,20 @@
     }else if(centralAllQty>stock+1e-6){
       return{accepted:false,reason:'RESOURCE_BATCH_INVENTORY_MISMATCH',inventory:stock,trackedCentralQuantity:centralAllQty};
     }
+    if(stock+1e-9<q)return{accepted:false,reason:'RESOURCE_STOCK_INSUFFICIENT'};
+    // Export policy evaluates the same reconciled aggregate used by the final debit,
+    // while the stored country state remains untouched until the transaction commits.
+    const directiveInventory=Object.assign({},inv,{[rid]:stock});
+    const supplyDirective=strategicPolicy?.evaluateExportDirective?.(seller,buyer,rid,q,auth.governmentContractId,directiveInventory);
+    if(supplyDirective&&supplyDirective.allowed===false&&!blackMarketMayReleaseExport(blackMarketDeal,supplyDirective.reason))
+      return{accepted:false,reason:supplyDirective.reason||'STATE_SUPPLY_DIRECTIVE_BLOCKED',stateSupplyDirective:supplyDirective};
+    const exportFactoryIds=strategicPolicy?.allowedExportFactoryIds?.(seller,rid,auth.governmentContractId)||null;
+    const strategic=ctx.stateTransaction.get('resource.strategicReserve')||{};
+    const strategicBook=strategic.availableByResource&&typeof strategic.availableByResource==='object'?strategic.availableByResource:{};
+    const reservedStrategic=Object.keys(strategicBook).filter(key=>token(key)===token(rid))
+      .reduce((sum,key)=>sum+Math.max(0,num(strategicBook[key])||0),0);
+    if(stock-reservedStrategic+1e-9<q)
+      return{accepted:false,reason:'STRATEGIC_STOCKPILE_PROTECTED',available:Math.max(0,stock-reservedStrategic),requested:q};
     const explicitOwnerStatus=value=>!['NOT_RECORDED','OWNER_NOT_RECORDED','UNASSIGNED','UNKNOWN_SOURCE','LEGACY_COMPANY_ATTRIBUTION_ROLE_UNCLASSIFIED'].includes(String(value||'').toUpperCase());
     const central=privateCompanyTrade?centralAll.filter(b=>String(b.ownerCompanyId||b.ownerId||'').trim().toUpperCase()===sellerCompanyId&&
       explicitOwnerStatus(b.ownerAttributionStatus)&&companyIds.includes(String(b.operatorCompanyId||b.operatorId||'').trim().toUpperCase())):centralAll;
