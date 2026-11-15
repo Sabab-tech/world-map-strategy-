@@ -94,7 +94,7 @@ const context={
   Game:{
     state:{
       simulation:{turn:1,startYear:2015,date:'2015-01-01',daysPerTurn:30,playerCountryId:'BGD'},
-      resource:{BGD:{inventory:{coal:50000,iron_ore:50000},warehouse:{availableByResource:{coal:50000,iron_ore:50000},reservedByResource:{}},technologyCapabilities:[]}},
+      resource:{BGD:{inventory:{coal:50000,iron_ore:50000,coal_concentrate:228625},warehouse:{availableByResource:{coal:50000,iron_ore:50000},reservedByResource:{}},technologyCapabilities:[]}},
       economy:{BGD:{unemploymentCount:600000,laborForce:6000000,unemployment_rate:10,productionAssets:[]}},
       transport:{BGD:{infrastructure:{roads:{capacityPerDay:50000,quality:.9},rail:{capacityPerDay:120000,quality:.8},ports:{capacityPerDay:200000,quality:.9},bridges:{capacityPerDay:50000,quality:.8},pipelines:{capacityPerDay:400000,quality:.8},
         utilitySupply:{electricityMWhPerDay:1000000,waterM3PerDay:1000000,authority:'TEST_FIXTURE',status:'AVAILABLE',simulationOnly:true,assets:[]}}}},
@@ -277,11 +277,25 @@ const factory=context.Game.state.economy.BGD.productionAssets[0];
 const cycle=context.Game.state.resource.BGD.industrialNetwork.factoryProductionCycles[factory.id];
 assert.ok(cycle&&cycle.status==='IN_PROGRESS','factory receipt must create a dated production cycle');
 assert.ok(cycle.finishDate,'factory cycle must expose its authoritative finish date');
-assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE||0,0,'finished goods must not exist on the delivery tick');
+const normalizedResourceKey = value => String(value||'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+const normalizedResourceEntries = (map,resourceId) => Object.entries(map||{}).filter(([key])=>
+  normalizedResourceKey(key)===normalizedResourceKey(resourceId));
+const normalizedResourceQuantity = (map,resourceId) => normalizedResourceEntries(map,resourceId)
+  .reduce((sum,[,quantity])=>sum+(Number(quantity)||0),0);
+assert.equal(normalizedResourceEntries(context.Game.state.resource.BGD.inventory,'COAL_CONCENTRATE').length,1,
+  'pre-existing finished-good stock must have one normalized inventory key');
+assert.equal(normalizedResourceQuantity(context.Game.state.resource.BGD.inventory,'COAL_CONCENTRATE'),228625,
+  'the opening finished-good aggregate remains readable before processing');
 assert.equal(context.Game.state.resource.BGD.inventory.COAL_REJECT||0,0,'processing coproduct must not exist before cycle completion');
 assert.equal(factory.inputInventory.coal,5000,'all delivered material stays recorded at the factory until the cycle finishes');
 assert.equal(context.Game.state.resource.BGD.processedWarehouse,undefined,
   'the processed warehouse must not be fabricated before there is production output');
+// A save may already have an empty product key in its processed warehouse. The
+// single-input path must credit that normalized key rather than creating an alias.
+context.Game.state.resource.BGD.processedWarehouse={
+  warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',
+  availableByResource:{coal_concentrate:0},storedBatchIds:[],receipts:[]
+};
 
 context.Game.state.simulation.turn=Math.max(Number(context.Game.state.simulation.turn)||0,Number(cycle.finishTurn)||0);
 // The committed central turn can be due while both legacy and central date mirrors
@@ -297,11 +311,17 @@ assert.equal(completed.completed[0].actualCompletionDate,cycle.finishDate,
   'turn-based recovery must not record a completion date before the scheduled factory finish date');
 assert.equal(completed.completedCount,1,JSON.stringify(completed));
 assert.equal(completed.completed[0].status,'COMPLETED');
-assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE,820,'completed factory output must enter the resource inventory');
-assert.equal(context.Game.state.resource.BGD.inventory.COAL_REJECT,180,'processing coproduct must be recorded on completion');
+assert.equal(normalizedResourceEntries(context.Game.state.resource.BGD.inventory,'COAL_CONCENTRATE').length,1,
+  'single-input production must not create a duplicate normalized inventory key');
+assert.equal(normalizedResourceQuantity(context.Game.state.resource.BGD.inventory,'COAL_CONCENTRATE'),228625+820,
+  'finished output must credit the existing normalized inventory balance');
+assert.equal(normalizedResourceQuantity(context.Game.state.resource.BGD.inventory,'COAL_REJECT'),180,
+  'processing coproduct must be recorded on completion');
 assert.equal(factory.inputInventory.coal,4000,'only the completed cycle input should be debited from factory input stock');
-assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_CONCENTRATE,820);
-assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_REJECT,180);
+assert.equal(normalizedResourceEntries(context.Game.state.resource.BGD.processedWarehouse.availableByResource,'COAL_CONCENTRATE').length,1,
+  'single-input production must not create a duplicate normalized processed-warehouse key');
+assert.equal(normalizedResourceQuantity(context.Game.state.resource.BGD.processedWarehouse.availableByResource,'COAL_CONCENTRATE'),820);
+assert.equal(normalizedResourceQuantity(context.Game.state.resource.BGD.processedWarehouse.availableByResource,'COAL_REJECT'),180);
 assert.ok(context.Game.state.resource.BGD.batches.some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_CONCENTRATE'));
 assert.ok(Object.values(context.Game.state.resource.BGD.inventoryLots).some(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_REJECT'));
 const coalFinishedBatch=context.Game.state.resource.BGD.batches.find(x=>x.stage==='FINISHED'&&x.resourceId==='COAL_CONCENTRATE');
