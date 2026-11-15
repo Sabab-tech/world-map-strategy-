@@ -526,6 +526,61 @@ test('legacy opening inventory reconciliation creates a warehouse-backed unobser
   assert.ok(worldState.resource.BGD.warehouse.storedBatchIds.includes(legacy.batchId));
 });
 
+test('normalized legacy inventory keys reconcile against canonical batch IDs without duplicate stock',()=>{
+  const {context,worldState}=createContext();
+  const resource=worldState.resource.BGD;
+  resource.inventory={coal_concentrate:100};
+  resource.batches=[{
+    batchId:'OUTPUT-COAL-CONCENTRATE-NORMALIZED-RECON',
+    resourceId:'COAL_CONCENTRATE',materialIdentity:'COAL_CONCENTRATE',
+    quantity:20,remainingQuantity:20,unit:'TONNES',stage:'FINISHED',status:'AVAILABLE',
+    countryId:'BGD',sourceCountryId:'BGD',originCountryId:'BGD',ownerCountryCode:'BGD',
+    destinationCountryId:'BGD',sourceBatchIds:[],createdTurn:1
+  }];
+  resource.inventoryLots={
+    'OUTPUT-COAL-CONCENTRATE-NORMALIZED-RECON':{
+      batchId:'OUTPUT-COAL-CONCENTRATE-NORMALIZED-RECON',resourceId:'COAL_CONCENTRATE',
+      quantity:20,remainingQuantity:20,unit:'TONNES',stage:'FINISHED',countryId:'BGD',status:'AVAILABLE'
+    }
+  };
+  resource.warehouse={
+    warehouseId:'WH-BGD-RAW',countryId:'BGD',type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
+    locationNodeKey:'WAREHOUSE:BGD:RAW',status:'OPERATIONAL',
+    availableByResource:{},storedBatchIds:[],receipts:[]
+  };
+  resource.processedWarehouse={
+    warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',
+    locationNodeKey:'WAREHOUSE:BGD:PROCESSED',status:'OPERATIONAL',
+    availableByResource:{COAL_CONCENTRATE:20},storedBatchIds:['OUTPUT-COAL-CONCENTRATE-NORMALIZED-RECON'],receipts:[]
+  };
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  const result=context.OmegaResourceEconomy.reconcileCountry('BGD');
+  assert.equal(result.status,'APPLIED');
+  const normalized=value=>String(value||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  const inventoryKeys=Object.keys(resource.inventory).filter(key=>normalized(key)==='coal_concentrate');
+  assert.deepEqual(inventoryKeys,['coal_concentrate'],
+    'legacy inventory aliases must not be split into a second logical stock key');
+  assert.equal(resource.inventory.coal_concentrate,100,
+    'reconciliation must preserve the complete pre-existing aggregate stock');
+  const batches=resource.batches.filter(row=>normalized(row.resourceId||row.materialIdentity)==='coal_concentrate');
+  assert.equal(batches.reduce((sum,row)=>sum+Math.max(0,Number(row.remainingQuantity??row.quantity)||0),0),100,
+    'the canonical finished batch and legacy opening balance must reconcile to the same aggregate');
+  const warehouseQuantity=map=>Object.entries(map||{}).filter(([key])=>normalized(key)==='coal_concentrate')
+    .reduce((sum,[,quantity])=>sum+Math.max(0,Number(quantity)||0),0);
+  assert.equal(warehouseQuantity(resource.warehouse.availableByResource),80,
+    'unallocated legacy stock must receive one raw-warehouse-backed batch');
+  assert.equal(warehouseQuantity(resource.processedWarehouse.availableByResource),20,
+    'the canonical finished batch must remain in the processed warehouse');
+  assert.equal(resource.inventoryIntegrity.status,'HEALTHY',
+    'normalized inventory, batch and warehouse ledgers must finish in a healthy state');
+  const batchCount=resource.batches.length;
+  context.OmegaResourceEconomy.reconcileCountry('BGD');
+  assert.equal(resource.batches.length,batchCount,
+    'replaying normalized reconciliation must not create another legacy top-up batch');
+  assert.equal(resource.inventory.coal_concentrate,100);
+});
+
 test('factory input failure does not consume a resource that lacks the other required input', async()=>{
   const {context,worldState}=createContext();
   worldState.economy.BGD.productionAssets.push({
