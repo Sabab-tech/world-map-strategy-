@@ -455,3 +455,90 @@ assert(privateProcurementRecord.createdBatchIds.includes(privateImportedBatch.ba
 assert.equal(globalThis.Game.state.trade.BGD.importValue,105000);
 assert.equal(globalThis.Game.state.trade.SAU.exportValue,105000);
 console.log('OMEGA PRIVATE COMPANY PROCUREMENT AND IMPORT DELIVERY E2E PASSED');
+
+
+// Seller stock authority regression: factory output can leave the legacy aggregate
+// inventory mirror stale while its raw/processed warehouses and tracked batches agree.
+// Trade may repair that mirror only from the independently matching physical ledgers.
+const sellerLedgerResource={
+  inventory:{coal_concentrate:12.3,'coal-concentrate':0},
+  reserves:{},production:{},strategicReserve:{availableByResource:{}},
+  batches:[
+    {batchId:'IND-COAL-CONCENTRATE-RAW-LEDGER',resourceId:'COAL_CONCENTRATE',materialIdentity:'COAL_CONCENTRATE',
+      quantity:128637.3,remainingQuantity:128637.3,stage:'RAW_EXTRACTED',status:'AVAILABLE',
+      countryId:'IND',sourceCountryId:'IND',originCountryId:'IND',ownerCountryCode:'IND',
+      warehouseId:'WH-IND-RAW',provenance:{sourceAuthority:'SIMULATED_TEST_FIXTURE'}},
+    {batchId:'IND-COAL-CONCENTRATE-FINISHED-LEDGER',resourceId:'coal_concentrate',materialIdentity:'coal_concentrate',
+      quantity:100000,remainingQuantity:100000,stage:'FINISHED',status:'AVAILABLE',
+      countryId:'IND',sourceCountryId:'IND',originCountryId:'IND',ownerCountryCode:'IND',
+      warehouseId:'WH-IND-PROCESSED',provenance:{sourceAuthority:'SIMULATED_TEST_FIXTURE'}}
+  ],
+  inventoryLots:{
+    'IND-COAL-CONCENTRATE-RAW-LEDGER':{batchId:'IND-COAL-CONCENTRATE-RAW-LEDGER',resourceId:'COAL_CONCENTRATE',
+      quantity:128637.3,remainingQuantity:128637.3,stage:'RAW_EXTRACTED',status:'AVAILABLE',
+      countryId:'IND',warehouseId:'WH-IND-RAW'},
+    'IND-COAL-CONCENTRATE-FINISHED-LEDGER':{batchId:'IND-COAL-CONCENTRATE-FINISHED-LEDGER',resourceId:'coal_concentrate',
+      quantity:100000,remainingQuantity:100000,stage:'FINISHED',status:'AVAILABLE',
+      countryId:'IND',warehouseId:'WH-IND-PROCESSED'}
+  },
+  warehouse:{warehouseId:'WH-IND-RAW',countryId:'IND',type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
+    locationNodeKey:'WAREHOUSE:IND:RAW',status:'OPERATIONAL',
+    availableByResource:{coal_concentrate:128637.3,'coal-concentrate':0},
+    reservedByResource:{},storedBatchIds:['IND-COAL-CONCENTRATE-RAW-LEDGER'],receipts:[]},
+  processedWarehouse:{warehouseId:'WH-IND-PROCESSED',countryId:'IND',type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',
+    locationNodeKey:'WAREHOUSE:IND:PROCESSED',status:'OPERATIONAL',
+    availableByResource:{COAL_CONCENTRATE:100000},reservedByResource:{},
+    storedBatchIds:['IND-COAL-CONCENTRATE-FINISHED-LEDGER'],receipts:[]},
+  industrialNetwork:{shipments:[],siteFlowLedger:[]},inventoryLedger:[]
+};
+globalThis.Game.state.resource.IND=sellerLedgerResource;
+globalThis.Game.state.trade.IND=globalThis.Game.state.trade.IND||{};
+globalThis.Game.state.foreign.IND=globalThis.Game.state.foreign.IND||{relations:{}};
+globalThis.Game.state.foreign.IND.relations.BGD={overall:80,trade:90,political:75,trust:70,trade_agreement:true,sanctions:false,war_state:false};
+const inventoryKeysBeforeSellerLedgerDebit=Object.keys(sellerLedgerResource.inventory).sort();
+const sellerLedgerDebit=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','IND',{
+  resourceId:'COAL_CONCENTRATE',quantity:1,settlementId:'SELLER-STOCK-WAREHOUSE-AUTHORITY-REGRESSION',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'SELLER-STOCK-WAREHOUSE-AUTHORITY-REGRESSION',
+    sourceCountryId:'IND',destinationCountryId:'BGD'}
+});
+assert.equal(sellerLedgerDebit.status,'APPLIED',JSON.stringify(sellerLedgerDebit));
+assert.equal(sellerLedgerDebit.result?.accepted,true,JSON.stringify(sellerLedgerDebit.result));
+const sellerLedgerAfter=globalThis.Game.state.resource.IND;
+assert.deepEqual(Object.keys(sellerLedgerAfter.inventory).sort(),inventoryKeysBeforeSellerLedgerDebit,
+  'inventory aliases must be preserved; reconciliation must not delete existing resource keys');
+assert.equal(Object.values(sellerLedgerAfter.inventory).reduce((sum,value)=>sum+Number(value||0),0),228636.3,
+  'the aggregate inventory mirror must equal the two warehouses after the export');
+assert.equal(sellerLedgerAfter.inventory['coal-concentrate'],0);
+assert.equal(sellerLedgerAfter.batches.find(row=>row.batchId==='IND-COAL-CONCENTRATE-RAW-LEDGER').remainingQuantity,128636.3);
+assert.equal(sellerLedgerAfter.inventoryLots['IND-COAL-CONCENTRATE-RAW-LEDGER'].remainingQuantity,128636.3);
+assert.equal(sellerLedgerAfter.warehouse.availableByResource.coal_concentrate,128636.3);
+assert.equal(sellerLedgerAfter.warehouse.availableByResource['coal-concentrate'],0);
+assert.equal(sellerLedgerAfter.processedWarehouse.availableByResource.COAL_CONCENTRATE,100000);
+assert.equal(sellerLedgerAfter.inventoryLedger.some(row=>
+  row.type==='INTERNATIONAL_TRADE_EXPORT'&&row.settlementId==='SELLER-STOCK-WAREHOUSE-AUTHORITY-REGRESSION'),true);
+
+// A warehouse/batch disagreement is not a stale aggregate mirror. It remains a hard
+// pre-trade block, and the debit must not mutate any stock ledger.
+globalThis.Game.state.resource.IND.inventory.iron_ore=500;
+globalThis.Game.state.resource.IND.batches.push({
+  batchId:'IND-IRON-ORE-WAREHOUSE-MISMATCH',resourceId:'iron_ore',materialIdentity:'iron_ore',
+  quantity:100,remainingQuantity:100,stage:'RAW_EXTRACTED',status:'AVAILABLE',
+  countryId:'IND',sourceCountryId:'IND',originCountryId:'IND',warehouseId:'WH-IND-RAW'
+});
+globalThis.Game.state.resource.IND.inventoryLots['IND-IRON-ORE-WAREHOUSE-MISMATCH']={
+  batchId:'IND-IRON-ORE-WAREHOUSE-MISMATCH',resourceId:'iron_ore',quantity:100,remainingQuantity:100,
+  stage:'RAW_EXTRACTED',status:'AVAILABLE',countryId:'IND',warehouseId:'WH-IND-RAW'
+};
+globalThis.Game.state.resource.IND.warehouse.availableByResource.iron_ore=90;
+const blockedMismatchDebit=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','IND',{
+  resourceId:'iron_ore',quantity:1,settlementId:'SELLER-STOCK-WAREHOUSE-MISMATCH-REGRESSION',
+  transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'SELLER-STOCK-WAREHOUSE-MISMATCH-REGRESSION',
+    sourceCountryId:'IND',destinationCountryId:'BGD'}
+});
+assert.equal(blockedMismatchDebit.status,'FAILED',JSON.stringify(blockedMismatchDebit));
+assert.equal(blockedMismatchDebit.result?.reason,'RESOURCE_WAREHOUSE_BATCH_LEDGER_MISMATCH',
+  JSON.stringify(blockedMismatchDebit.result));
+assert.equal(globalThis.Game.state.resource.IND.inventory.iron_ore,500);
+assert.equal(globalThis.Game.state.resource.IND.batches.find(row=>row.batchId==='IND-IRON-ORE-WAREHOUSE-MISMATCH').remainingQuantity,100);
+assert.equal(globalThis.Game.state.resource.IND.warehouse.availableByResource.iron_ore,90);
+console.log('OMEGA SELLER STOCK / WAREHOUSE / BATCH LEDGER REGRESSION PASSED');
