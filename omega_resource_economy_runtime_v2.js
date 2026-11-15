@@ -389,8 +389,10 @@
       if(current+1e-9>=onHand)return;
       var rid=group?(group.keys.find(function(value){return value===allocatedResourceIds[key];})||group.keys[0]):allocatedResourceIds[key];
       if(!rid)return;
-      var currentAtKey=num(inv[rid]);
-      inv[rid]=(currentAtKey===null?0:currentAtKey)+(onHand-current);
+      var restored=onHand-current,currentAtKey=num(inv[rid]);
+      inv[rid]=(currentAtKey===null?0:currentAtKey)+restored;
+      ledger.push({type:'INVENTORY_RECONCILIATION',resourceId:rid,quantity:restored,
+        policy:'RESTORE_FROM_RECEIVED_BATCH_LEDGER',status:'INVENTORY_RESTORED_FROM_BATCH_LEDGER',turn:turn()});
     });
     inventoryGroups=inventoryResourceGroups(inv);
     // Received source-batch balances and their mine-flow receipts are the physical
