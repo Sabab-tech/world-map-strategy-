@@ -497,7 +497,7 @@ globalThis.Game.state.foreign.IND=globalThis.Game.state.foreign.IND||{relations:
 globalThis.Game.state.foreign.IND.relations.BGD={overall:80,trade:90,political:75,trust:70,trade_agreement:true,sanctions:false,war_state:false};
 const inventoryKeysBeforeSellerLedgerDebit=Object.keys(sellerLedgerResource.inventory).sort();
 const sellerLedgerDebit=mesh.dispatchCommand('resource','OMEGA_TRADE_RESOURCE_DEBIT','IND',{
-  resourceId:'COAL_CONCENTRATE',quantity:1,settlementId:'SELLER-STOCK-WAREHOUSE-AUTHORITY-REGRESSION',
+  resourceId:'COAL_CONCENTRATE',quantity:20,settlementId:'SELLER-STOCK-WAREHOUSE-AUTHORITY-REGRESSION',
   transferAuthorization:{type:'TRADE_SETTLEMENT',settlementId:'SELLER-STOCK-WAREHOUSE-AUTHORITY-REGRESSION',
     sourceCountryId:'IND',destinationCountryId:'BGD'}
 });
@@ -506,12 +506,12 @@ assert.equal(sellerLedgerDebit.result?.accepted,true,JSON.stringify(sellerLedger
 const sellerLedgerAfter=globalThis.Game.state.resource.IND;
 assert.deepEqual(Object.keys(sellerLedgerAfter.inventory).sort(),inventoryKeysBeforeSellerLedgerDebit,
   'inventory aliases must be preserved; reconciliation must not delete existing resource keys');
-assert.equal(Object.values(sellerLedgerAfter.inventory).reduce((sum,value)=>sum+Number(value||0),0),228636.3,
+assert.equal(Object.values(sellerLedgerAfter.inventory).reduce((sum,value)=>sum+Number(value||0),0),228617.3,
   'the aggregate inventory mirror must equal the two warehouses after the export');
 assert.equal(sellerLedgerAfter.inventory['coal-concentrate'],0);
-assert.equal(sellerLedgerAfter.batches.find(row=>row.batchId==='IND-COAL-CONCENTRATE-RAW-LEDGER').remainingQuantity,128636.3);
-assert.equal(sellerLedgerAfter.inventoryLots['IND-COAL-CONCENTRATE-RAW-LEDGER'].remainingQuantity,128636.3);
-assert.equal(sellerLedgerAfter.warehouse.availableByResource.coal_concentrate,128636.3);
+assert.equal(sellerLedgerAfter.batches.find(row=>row.batchId==='IND-COAL-CONCENTRATE-RAW-LEDGER').remainingQuantity,128617.3);
+assert.equal(sellerLedgerAfter.inventoryLots['IND-COAL-CONCENTRATE-RAW-LEDGER'].remainingQuantity,128617.3);
+assert.equal(sellerLedgerAfter.warehouse.availableByResource.coal_concentrate,128617.3);
 assert.equal(sellerLedgerAfter.warehouse.availableByResource['coal-concentrate'],0);
 assert.equal(sellerLedgerAfter.processedWarehouse.availableByResource.COAL_CONCENTRATE,100000);
 assert.equal(sellerLedgerAfter.inventoryLedger.some(row=>
