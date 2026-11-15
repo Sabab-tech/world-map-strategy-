@@ -11,6 +11,7 @@ on:
       - ".github/workflows/omega-mine-factory-market-treasury-browser-e2e.yml"
       - ".github/workflows/omega-private-enterprise-browser-e2e.yml"
       - "index.html"
+      - "map-engine-1.js"
       - "resources*.json"
       - "resource_*.json"
       - "country_factory_starting_baseline_v1.json"
