@@ -282,6 +282,10 @@ assert.equal(context.Game.state.resource.BGD.inventory.COAL_REJECT||0,0,'process
 assert.equal(factory.inputInventory.coal,5000,'all delivered material stays recorded at the factory until the cycle finishes');
 assert.equal(context.Game.state.resource.BGD.processedWarehouse,undefined,
   'the processed warehouse must not be fabricated before there is production output');
+const outputInventory=context.Game.state.resource.BGD.inventory;
+assert.equal(Object.keys(outputInventory).filter(key=>key.toLowerCase().replace(/[^a-z0-9]+/g,'_')==='coal_concentrate').length,0,
+  'the regression fixture starts without an existing finished-goods inventory key');
+outputInventory.coal_concentrate=0;
 
 context.Game.state.simulation.turn=Math.max(Number(context.Game.state.simulation.turn)||0,Number(cycle.finishTurn)||0);
 // The committed central turn can be due while both legacy and central date mirrors
@@ -297,8 +301,18 @@ assert.equal(completed.completed[0].actualCompletionDate,cycle.finishDate,
   'turn-based recovery must not record a completion date before the scheduled factory finish date');
 assert.equal(completed.completedCount,1,JSON.stringify(completed));
 assert.equal(completed.completed[0].status,'COMPLETED');
-assert.equal(context.Game.state.resource.BGD.inventory.COAL_CONCENTRATE,820,'completed factory output must enter the resource inventory');
-assert.equal(context.Game.state.resource.BGD.inventory.COAL_REJECT,180,'processing coproduct must be recorded on completion');
+const finishedInventory=context.Game.state.resource.BGD.inventory;
+const concentrateInventoryKeys=Object.keys(finishedInventory).filter(key=>key.toLowerCase().replace(/[^a-z0-9]+/g,'_')==='coal_concentrate');
+assert.deepEqual(concentrateInventoryKeys,['coal_concentrate'],
+  'single-input production must reuse the existing normalized inventory key instead of creating a duplicate');
+assert.equal(finishedInventory.coal_concentrate,820,'completed factory output must enter the existing normalized inventory entry');
+assert.equal(finishedInventory.COAL_REJECT,180,'processing coproduct must be recorded on completion');
+const normalizedWarehouseQuantity=map=>Object.entries(map||{}).filter(([key])=>key.toLowerCase().replace(/[^a-z0-9]+/g,'_')==='coal_concentrate')
+  .reduce((sum,[,value])=>sum+(Number(value)||0),0);
+assert.equal(finishedInventory.coal_concentrate,
+  normalizedWarehouseQuantity(context.Game.state.resource.BGD.warehouse?.availableByResource)+
+  normalizedWarehouseQuantity(context.Game.state.resource.BGD.processedWarehouse?.availableByResource),
+  'the national aggregate must equal the raw plus processed warehouse quantity for the same resource identity');
 assert.equal(factory.inputInventory.coal,4000,'only the completed cycle input should be debited from factory input stock');
 assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_CONCENTRATE,820);
 assert.equal(context.Game.state.resource.BGD.processedWarehouse.availableByResource.COAL_REJECT,180);
