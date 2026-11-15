@@ -282,17 +282,41 @@
     flow.lastMineWarehouseConsumptionTurn=turn();
     return true;
   }
-  function inventoryGaps(inv,rows,flowByBatch,factoryInTransitByBatch){
-    var allocated={},g=[];
-    (rows||[]).forEach(function(b){
-      var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=batchInventoryQuantity(b,flowByBatch,factoryInTransitByBatch);
-      if(rid&&q>0)allocated[rid]=(allocated[rid]||0)+q;
-    });
+  function inventoryResourceGroups(inv){
+    var groups=Object.create(null);
     Object.keys(inv||{}).forEach(function(rid){
+      var key=tok(rid);if(!key)return;
+      var group=groups[key]||(groups[key]={resourceId:rid,keys:[],quantity:0,invalidKeys:[]});
+      group.keys.push(rid);
       var actual=num(inv[rid]);
-      if(actual===null||actual<0){g.push({resourceId:rid,type:'INVALID_INVENTORY_VALUE',value:inv[rid]});return;}
-      var a=num(allocated[rid])||0;
-      if(Math.abs(actual-a)>1e-9)g.push({resourceId:rid,type:actual>a?'UNALLOCATED_INVENTORY':'OVERALLOCATED_BATCH_LEDGER',inventory:actual,batchAllocated:a,delta:actual-a});
+      if(actual===null||actual<0)group.invalidKeys.push({resourceId:rid,value:inv[rid]});
+      else group.quantity+=actual;
+    });
+    return groups;
+  }
+  function inventoryGaps(inv,rows,flowByBatch,factoryInTransitByBatch){
+    var allocated=Object.create(null),resourceIds=Object.create(null),g=[];
+    (rows||[]).forEach(function(b){
+      var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),key=tok(rid),
+        q=batchInventoryQuantity(b,flowByBatch,factoryInTransitByBatch);
+      if(!key||q<=0)return;
+      allocated[key]=(allocated[key]||0)+q;
+      if(!resourceIds[key])resourceIds[key]=rid;
+    });
+    var inventoryGroups=inventoryResourceGroups(inv),keys=new Set(Object.keys(inventoryGroups).concat(Object.keys(allocated)));
+    keys.forEach(function(key){
+      var group=inventoryGroups[key],actual=group?group.quantity:0,batchAllocated=allocated[key]||0,
+        resourceId=resourceIds[key]||(group&&group.resourceId)||key;
+      if(group&&group.invalidKeys.length)group.invalidKeys.forEach(function(row){
+        g.push({resourceId:row.resourceId,normalizedResourceId:key,type:'INVALID_INVENTORY_VALUE',value:row.value});
+      });
+      if(group&&group.invalidKeys.length)return;
+      if(Math.abs(actual-batchAllocated)>1e-9)g.push({
+        resourceId:resourceId,normalizedResourceId:key,
+        type:actual>batchAllocated?'UNALLOCATED_INVENTORY':'OVERALLOCATED_BATCH_LEDGER',
+        inventory:actual,batchAllocated:batchAllocated,delta:actual-batchAllocated,
+        inventoryKeys:group?group.keys.slice():[]
+      });
     });
     return g;
   }
@@ -345,22 +369,33 @@
       emit('OMEGA_RESOURCE_COUNTRY_BOUNDARY_VIOLATION',c,{violations:[clone(processedWarehouseBoundary)],turn:turn()});
       return{accepted:false,status:'DEGRADED',countryId:c,reason:'CROSS_COUNTRY_PROCESSED_WAREHOUSE_BREACH',violations:[clone(processedWarehouseBoundary)]};
     }
-    var before=inventoryGaps(inv,bs,flowByBatch,factoryInTransitByBatch),allocated={};
-    bs.forEach(function(b){var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),q=batchInventoryQuantity(b,flowByBatch,factoryInTransitByBatch);if(rid&&q>0)allocated[rid]=(allocated[rid]||0)+q;});
-    // Received source-batch balances and their mine-flow receipts are the physical
-    // on-hand authority. Keep aggregate inventory aligned before rebuilding the
-    // warehouse view, otherwise delivery sees stock in one ledger but zero in another.
-    Object.keys(allocated).forEach(function(rid){
-      var hasInventory=Object.prototype.hasOwnProperty.call(inv,rid);
-      var current=hasInventory?num(inv[rid]):0;
-      if(current===null||current<0)return;
-      var onHand=Math.max(0,num(allocated[rid])||0);
-      if(current+1e-9>=onHand)return;
-      var restored=onHand-current;
-      inv[rid]=onHand;
-      ledger.push({type:'INVENTORY_RECONCILIATION',resourceId:rid,quantity:restored,
-        policy:'RESTORE_FROM_RECEIVED_BATCH_LEDGER',status:'INVENTORY_RESTORED_FROM_BATCH_LEDGER',turn:turn()});
+    var before=inventoryGaps(inv,bs,flowByBatch,factoryInTransitByBatch),
+      allocated=Object.create(null),allocatedResourceIds=Object.create(null);
+    bs.forEach(function(b){
+      var rid=String((b&&(b.resourceId||b.materialIdentity))||'').trim(),key=tok(rid),
+        q=batchInventoryQuantity(b,flowByBatch,factoryInTransitByBatch);
+      if(!key||q<=0)return;
+      allocated[key]=(allocated[key]||0)+q;
+      if(!allocatedResourceIds[key])allocatedResourceIds[key]=rid;
     });
+    var inventoryGroups=inventoryResourceGroups(inv);
+    // Inventory keys are legacy presentation aliases, not separate resource
+    // identities. Reconcile their combined quantity against batches by normalized
+    // resource identity so lowercase saves cannot be duplicated by uppercase output IDs.
+    Object.keys(allocated).forEach(function(key){
+      var group=inventoryGroups[key];
+      if(group&&group.invalidKeys.length)return;
+      var current=group?group.quantity:0,onHand=Math.max(0,num(allocated[key])||0);
+      if(current+1e-9>=onHand)return;
+      var rid=group?(group.keys.find(function(value){return value===allocatedResourceIds[key];})||group.keys[0]):allocatedResourceIds[key];
+      if(!rid)return;
+      var currentAtKey=num(inv[rid]);
+      inv[rid]=(currentAtKey===null?0:currentAtKey)+(onHand-current);
+    });
+    inventoryGroups=inventoryResourceGroups(inv);
+    // Received source-batch balances and their mine-flow receipts are the physical
+    // on-hand authority. Preserve pre-existing unallocated stock as a distinct,
+    // warehouse-backed legacy batch without counting aliases as separate balances.
     bs.forEach(function(b){
       var batchId=String(b&&b.batchId||''),lot=batchId?inventoryLots[batchId]:null;
       if(!lot)return;
@@ -375,9 +410,13 @@
         quantity:Math.abs((num(lot.quantity)||0)-quantity),policy:'MATCH_BATCH_LEDGER',
         status:'LOT_BALANCE_RESTORED_FROM_BATCH_LEDGER',turn:turn()});
     });
-    Object.keys(inv).forEach(function(rid){
-      var q=num(inv[rid]);if(q===null||q<0)return;
-      var diff=q-(num(allocated[rid])||0);
+    Object.keys(inventoryGroups).forEach(function(key){
+      var group=inventoryGroups[key];
+      if(!group||group.invalidKeys.length)return;
+      var q=group.quantity,diff=q-(num(allocated[key])||0);
+      if(Math.abs(diff)<=1e-9)return;
+      var rid=group.keys.find(function(value){return value===allocatedResourceIds[key];})||
+        group.keys[0]||allocatedResourceIds[key]||key;
       if(diff>0){
         var legacyBatchBase='LEGACY_OPENING_'+c+'_'+String(rid).trim().toUpperCase();
         var legacyBatchId=legacyBatchBase;
