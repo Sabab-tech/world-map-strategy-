@@ -307,15 +307,23 @@ test('durable save slots checksum the canonical serialized world without a secon
     'single-pass serialized saves must restore the authoritative world state');
 });
 
-test('turn autosave uses IndexedDB first and keeps localStorage as a recovery fallback',()=>{
+test('turn autosave uses the canonical IndexedDB slot and retains legacy recovery',()=>{
   const lifecycle=fs.readFileSync(new URL('../omega_game_lifecycle_runtime_v1.js',import.meta.url),'utf8');
-  assert.match(lifecycle,/includeDiagnostics:\s*options\.committedTurn !== true && options\.includeDiagnostics !== false/);
-  const indexedStart=lifecycle.indexOf('if (options.committedTurn && g.indexedDB)');
-  const serializedStart=lifecycle.indexOf('var serialized;',indexedStart);
-  assert.ok(indexedStart>=0&&serializedStart>indexedStart,'committed-turn IndexedDB branch must precede synchronous JSON serialization');
-  const indexedBranch=lifecycle.slice(indexedStart,serializedStart);
-  assert.ok(indexedBranch.includes('persistBackup(snapshot)'),'committed turns must wait for the IndexedDB snapshot');
-  assert.ok(indexedBranch.indexOf('persistBackup(snapshot)')<indexedBranch.indexOf('g.localStorage.setItem(SAVE_KEY, fallbackSerialized)'),
-    'localStorage may only be written from the IndexedDB-failure fallback');
-  assert.ok(indexedBranch.includes('JSON.stringify(snapshot)'),'the fallback must retain a durable save path');
+  const runtime=fs.readFileSync(new URL('../omega_simulation_runtime.js',import.meta.url),'utf8');
+
+  assert.match(lifecycle,/operation = sim\.saveSlot\(SLOT\)/,
+    'the lifecycle must persist through the canonical Simulation save API');
+  assert.match(lifecycle,/await sim\.loadSlot\(SLOT\)/,
+    'the lifecycle must restore through the same canonical slot');
+  assert.match(runtime,/async saveSlot\(slot='default'\)/);
+  assert.match(runtime,/indexedDbSaveRequest\(global\.indexedDB,'put',key,serialized\)/,
+    'the canonical save API must write its checksummed snapshot to IndexedDB first');
+  assert.match(runtime,/LOCAL_STORAGE_FALLBACK/,
+    'the canonical slot must retain a localStorage fallback when IndexedDB is unavailable');
+  assert.match(lifecycle,/function readIndexedSave\(/,
+    'old lifecycle IndexedDB saves remain available for migration');
+  assert.match(lifecycle,/var local = parseLocalSave\(\)/,
+    'legacy localStorage saves remain available when the canonical slot cannot be restored');
+  assert.doesNotMatch(lifecycle,/function writeIndexedSave\(/,
+    'the retired lifecycle database must not receive a duplicate write for each canonical save');
 });
