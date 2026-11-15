@@ -410,7 +410,11 @@
         if (typeof g.Game.playerCountry === 'string' || g.Game.playerCountry == null) g.Game.playerCountry = country;
       }
     } catch (_) {}
+    // A single canonical player country must drive both the simulation session
+    // and every ministry view; never leave a previous ministry country selected.
     try { if (g.CountryIOS) g.CountryIOS.activeCountry = country; } catch (_) {}
+    try { g.OmegaMinistryViewCountry = country; } catch (_) {}
+    try { if (g.OmegaCabinetUI) g.OmegaCabinetUI.activeCountry = country; } catch (_) {}
     try { g.currentActiveCountry = country; } catch (_) {}
   }
 
