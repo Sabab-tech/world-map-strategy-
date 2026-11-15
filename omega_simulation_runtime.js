@@ -127,8 +127,16 @@
         catch(error){finish(error);return;}
         let request,result=null;
         transaction.oncomplete=()=>finish(null,result);
-        transaction.onerror=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_FAILED'));
-        transaction.onabort=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_ABORTED'));
+        transaction.onerror=(event)=>{
+          // Request errors bubble to the transaction. Preserve the request/DOM
+          // exception when the browser does not populate transaction.error.
+          const detail=transaction.error||request?.error||event?.target?.error||null;
+          finish(detail||new Error('SAVE_DATABASE_TRANSACTION_FAILED'));
+        };
+        transaction.onabort=(event)=>{
+          const detail=transaction.error||request?.error||event?.target?.error||null;
+          finish(detail||new Error('SAVE_DATABASE_TRANSACTION_ABORTED'));
+        };
         try{
           const store=transaction.objectStore('slots');
           request=operation==='put'?store.put(String(value),String(key)):store.get(String(key));
@@ -1085,9 +1093,10 @@
               return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
             }
           }catch(localStorageError){
-            throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; INDEXEDDB:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
+            const indexedDbDetail=String(indexedDbError?.name||'IndexedDBError')+':'+String(indexedDbError?.message||indexedDbError);
+            throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; SNAPSHOT_CHARS:'+serialized.length+'; INDEXEDDB:'+indexedDbDetail);
           }
-          throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
+          throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(indexedDbError?.name||'IndexedDBError')+':'+String(indexedDbError&&indexedDbError.message||indexedDbError)+'; SNAPSHOT_CHARS:'+serialized.length);
         }
       }
       if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
