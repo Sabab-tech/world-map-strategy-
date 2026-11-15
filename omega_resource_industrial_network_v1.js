@@ -4268,8 +4268,18 @@ function commitFactoryCycleImmediately(input={}){
   const n=netState(cid),processedTurns=n.factoryProcessingTurns&&typeof n.factoryProcessingTurns==='object'?n.factoryProcessingTurns:(n.factoryProcessingTurns={});
   if(Number(processedTurns[fid])===turn())return{status:'BLOCKED',reason:'FACTORY_TURN_CAPACITY_ALREADY_USED',factoryId:fid,turn:turn()};
   const rid=tok(input.resourceId),recipe=recipeFor(rid,recipeAsset),r=resourceState(cid);r.inventory=r.inventory||{};
+  const inventoryInputKeys=Object.keys(r.inventory).filter(key=>tok(key)===rid);
+  if(inventoryInputKeys.length>1)return{status:'BLOCKED',reason:'DUPLICATE_NORMALIZED_INVENTORY_KEYS',resourceId:rid,keys:inventoryInputKeys};
+  const inventoryInputKey=inventoryInputKeys[0]||rid;
+  const rawInputMap=r.warehouse?.availableByResource&&typeof r.warehouse.availableByResource==='object'?r.warehouse.availableByResource:{};
+  const processedInputMap=r.processedWarehouse?.availableByResource&&typeof r.processedWarehouse.availableByResource==='object'?r.processedWarehouse.availableByResource:{};
+  const rawInputKeys=Object.keys(rawInputMap).filter(key=>tok(key)===rid);
+  const processedInputKeys=Object.keys(processedInputMap).filter(key=>tok(key)===rid);
+  if(rawInputKeys.length>1)return{status:'BLOCKED',reason:'DUPLICATE_NORMALIZED_RAW_WAREHOUSE_KEYS',resourceId:rid,keys:rawInputKeys};
+  if(processedInputKeys.length>1)return{status:'BLOCKED',reason:'DUPLICATE_NORMALIZED_PROCESSED_WAREHOUSE_KEYS',resourceId:rid,keys:processedInputKeys};
+  const rawInputKey=rawInputKeys[0]||rid,processedInputKey=processedInputKeys[0]||rid;
   const factoryStock=asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:{};
-  const factoryAvailable=Math.max(0,num(factoryStock[rid])||0),countryAvailable=Math.max(0,num(r.inventory[rid])||0);
+  const factoryAvailable=Math.max(0,num(factoryStock[rid])||0),countryAvailable=Math.max(0,num(r.inventory[inventoryInputKey])||0);
   const inputCoefficient=Math.max(1e-9,num(recipe.inputs[rid])||1);
   const ratedCapacity=Math.max(0,num(asset.capacityPerDay??asset.capacity??asset.productionCapacity??asset.throughput)||0);
   const cycleCapacity=Math.max(0,num(input.maxCycleQuantity)||ratedCapacity);
@@ -4312,6 +4322,15 @@ function commitFactoryCycleImmediately(input={}){
   const output={};for(const k of Object.keys(recipe.outputs))output[k]=requested*(num(recipe.outputs[k])||0);
   const outputUnitPlan=factoryOutputUnitPlan(r,recipe,asset,Object.keys(output));
   if(outputUnitPlan.status!=='READY')return outputUnitPlan;
+  const outputInventoryKeys={},outputWarehouseKeys={};
+  for(const outputId of Object.keys(output)){
+    const inventoryKeys=Object.keys(r.inventory).filter(key=>tok(key)===tok(outputId));
+    const warehouseKeys=Object.keys(r.processedWarehouse?.availableByResource||{}).filter(key=>tok(key)===tok(outputId));
+    if(inventoryKeys.length>1)return{status:'BLOCKED',reason:'DUPLICATE_NORMALIZED_INVENTORY_KEYS',resourceId:outputId,keys:inventoryKeys};
+    if(warehouseKeys.length>1)return{status:'BLOCKED',reason:'DUPLICATE_NORMALIZED_PROCESSED_WAREHOUSE_KEYS',resourceId:outputId,keys:warehouseKeys};
+    outputInventoryKeys[outputId]=inventoryKeys[0]||outputId;
+    outputWarehouseKeys[outputId]=warehouseKeys[0]||outputId;
+  }
   const sourceBatchIds=[],consumedInputs=[];let inputTrackingStatus='UNTRACKED_LEGACY_INPUT';
   if(fromFactoryInput){
     factoryStock[rid]=Math.max(0,factoryAvailable-need);
@@ -4353,16 +4372,16 @@ function commitFactoryCycleImmediately(input={}){
     }
     if(remaining>1e-9){
       inputTrackingStatus='PARTIAL_TRACKING_WITH_LEGACY_BALANCE';
-      const rawAvailable=Math.max(0,num(r.warehouse?.availableByResource?.[rid])||0),rawTake=Math.min(rawAvailable,remaining);rawDebit+=rawTake;remaining-=rawTake;
-      const processedAvailable=Math.max(0,num(r.processedWarehouse?.availableByResource?.[rid])||0),processedTake=Math.min(processedAvailable,remaining);processedDebit+=processedTake;remaining-=processedTake;
+      const rawAvailable=Math.max(0,num(r.warehouse?.availableByResource?.[rawInputKey])||0),rawTake=Math.min(rawAvailable,remaining);rawDebit+=rawTake;remaining-=rawTake;
+      const processedAvailable=Math.max(0,num(r.processedWarehouse?.availableByResource?.[processedInputKey])||0),processedTake=Math.min(processedAvailable,remaining);processedDebit+=processedTake;remaining-=processedTake;
       if(remaining>1e-9)consumedInputs.push({batchId:null,resourceId:rid,quantity:remaining,
         stage:'LEGACY_UNALLOCATED',sourceBatchIds:[],ownerCompanyId:'UNKNOWN_SOURCE',
         operatorCompanyId:factoryOwnershipParties(asset,cid).operatorCompanyId,
         ownerAttributionStatus:'UNASSIGNED'});
     }
-    const rawWarehouse=r.warehouse||{};if(rawWarehouse.availableByResource)rawWarehouse.availableByResource[rid]=Math.max(0,(num(rawWarehouse.availableByResource[rid])||0)-rawDebit);
-    if(r.processedWarehouse?.availableByResource)r.processedWarehouse.availableByResource[rid]=Math.max(0,(num(r.processedWarehouse.availableByResource[rid])||0)-processedDebit);
-    r.warehouse=rawWarehouse;r.batches=batches;r.inventoryLots=lots;r.inventory[rid]=Math.max(0,countryAvailable-need);
+    const rawWarehouse=r.warehouse||{};if(rawWarehouse.availableByResource&&rawDebit>0)rawWarehouse.availableByResource[rawInputKey]=Math.max(0,(num(rawWarehouse.availableByResource[rawInputKey])||0)-rawDebit);
+    if(r.processedWarehouse?.availableByResource&&processedDebit>0)r.processedWarehouse.availableByResource[processedInputKey]=Math.max(0,(num(r.processedWarehouse.availableByResource[processedInputKey])||0)-processedDebit);
+    r.warehouse=rawWarehouse;r.batches=batches;r.inventoryLots=lots;r.inventory[inventoryInputKey]=Math.max(0,countryAvailable-need);
   }
   asset.inputInventory=factoryStock;
   const sequence=Math.max(0,Number(n.factoryRunSequence)||0)+1;n.factoryRunSequence=sequence;
@@ -4374,7 +4393,8 @@ function commitFactoryCycleImmediately(input={}){
   const batches=Array.isArray(r.batches)?r.batches:[],inventoryLots=r.inventoryLots&&typeof r.inventoryLots==='object'?r.inventoryLots:{},created=[];
   for(const outputId of Object.keys(output)){
     const outQty=output[outputId];if(!(outQty>0))continue;
-    r.inventory[outputId]=(num(r.inventory[outputId])||0)+outQty;
+    const inventoryOutputKey=outputInventoryKeys[outputId]||outputId;
+    r.inventory[inventoryOutputKey]=(num(r.inventory[inventoryOutputKey])||0)+outQty;
     const batchId='OUTPUT:'+transactionId+':'+outputId,roots=[...new Set(sourceBatchIds.filter(Boolean))],unit=outputUnitPlan.units[outputId];
     const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',status:'AVAILABLE',countryId:cid,
       sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
@@ -4391,7 +4411,8 @@ function commitFactoryCycleImmediately(input={}){
       sourcePrivateProposalId:row.sourcePrivateProposalId,sourcePrivateDecisionId:row.sourcePrivateDecisionId,
       sourcePrivateFundingId:row.sourcePrivateFundingId,sourcePrivatePermitId:row.sourcePrivatePermitId,sourceBatchIds:roots,status:'AVAILABLE',
       provenance:clone(row.provenance),createdTurn:turn()};
-    finishedWarehouse.availableByResource[outputId]=(num(finishedWarehouse.availableByResource[outputId])||0)+outQty;
+    const warehouseOutputKey=outputWarehouseKeys[outputId]||outputId;
+    finishedWarehouse.availableByResource[warehouseOutputKey]=(num(finishedWarehouse.availableByResource[warehouseOutputKey])||0)+outQty;
     writeFactoryOutputUnit(r,finishedWarehouse,outputId,unit);
     if(!finishedWarehouse.storedBatchIds.includes(batchId))finishedWarehouse.storedBatchIds.push(batchId);
     finishedWarehouse.receipts.push({receiptId:'WH-REC-'+batchId,warehouseId:row.warehouseId,countryId:cid,batchId,resourceId:outputId,quantity:outQty,unit,simulationTurn:turn(),status:'RECEIVED'});
