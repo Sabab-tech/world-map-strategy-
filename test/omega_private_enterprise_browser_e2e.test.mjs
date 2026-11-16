@@ -426,7 +426,7 @@ test('real Chromium browser verifies company-originated proposals, government te
       };
       try { window.localStorage.removeItem(saved.key); } catch (_) {}
       if (previousStatus === 'RUNNING' && typeof runtime.resumeSession === 'function') runtime.resumeSession();
-      if (!result.saveOk || result.storage !== 'INDEXEDDB' || !result.localStorageSaveAbsent || result.loadIntegrity !== 'VERIFIED' || !result.sameAuthoritativeRoot ||
+      if (!result.saveOk || !['INDEXEDDB','INDEXEDDB_CHUNKED'].includes(result.storage) || !result.localStorageSaveAbsent || result.loadIntegrity !== 'VERIFIED' || !result.sameAuthoritativeRoot ||
           !result.worldStateLinked || !result.sentinelCleared || !result.proposalIdsPreserved) {
         throw new Error('BROWSER_SAVE_LOAD_INTEGRITY_FAILED:' + JSON.stringify(result));
       }
@@ -2182,7 +2182,7 @@ test('real Chromium map marker routes the exact site to selected factory input a
           };
         });
       } catch (_) {}
-      if (!result.saveOk || result.storage !== 'INDEXEDDB' || !result.localStorageSaveAbsent ||
+      if (!result.saveOk || !['INDEXEDDB','INDEXEDDB_CHUNKED'].includes(result.storage) || !result.localStorageSaveAbsent ||
           result.loadIntegrity !== 'VERIFIED' || !result.sameAuthoritativeRoot || !result.sentinelCleared) {
         throw new Error('SAB34_BROWSER_SAVE_LOAD_INTEGRITY_FAILED:' + JSON.stringify(result));
       }
@@ -2226,7 +2226,7 @@ test('real Chromium map marker routes the exact site to selected factory input a
         factoryInputLotTraceability:factoryInputReceipt.quantity===1530&&factoryInputReceipt.status==='AVAILABLE_TO_FACTORY'&&
           factoryInputReceipt.sourceBatchIds.includes(extraction.result.batchId)&&saveLoad.inputLot?.batchId===factoryInputReceipt.inputBatchId,
         selectedCountryIsolation:foreignResourceEconomyAfterPipeline===preparation.foreignResourceEconomySnapshot,
-        indexedDbSaveLoad:saveLoad.storage==='INDEXEDDB'&&saveLoad.loadIntegrity==='VERIFIED'&&
+        indexedDbSaveLoad:['INDEXEDDB','INDEXEDDB_CHUNKED'].includes(saveLoad.storage)&&saveLoad.loadIntegrity==='VERIFIED'&&
           saveLoad.inputLot?.sourceBatchIds?.includes(extraction.result.batchId)===true
       }
     };
@@ -2918,7 +2918,7 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         dividendAggregateCurrency: restoredDividendAggregate?.currency || null,
         jvBalance: Number(restoredJV?.retainedEarningsBalance)
       };
-      if (!restoredResult.sameAuthoritativeRoot || restoredResult.storage !== 'INDEXEDDB' ||
+      if (!restoredResult.sameAuthoritativeRoot || !['INDEXEDDB','INDEXEDDB_CHUNKED'].includes(restoredResult.storage) ||
           !restoredResult.localStorageSaveAbsent || restoredResult.loadIntegrity !== 'VERIFIED' ||
           !restoredResult.sentinelCleared || restoredResult.buyerPaymentCount !== 1 ||
           restoredResult.sellerReceiptCount !== 1 || restoredResult.taxRows !== 1 ||
