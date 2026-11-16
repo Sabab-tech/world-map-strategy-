@@ -1437,9 +1437,9 @@ test('real Chromium map marker routes the exact site to selected factory input a
     metrics.stages.push('REAL_MAP_MARKER_READY:' + targetSite.siteId);
     metrics.stages.push('OPERATIONAL_FACTORY_TARGET_SELECTED_WITHOUT_SYNTHETIC_SITE_BINDING');
 
-    const marker = page.locator('.omega-individual-site-marker').filter({
-      has:page.locator('[data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']')
-    }).first();
+    // Target the exact visible site glyph. Its click bubbles to Leaflet's marker icon,
+    // while avoiding a zero-sized outer icon wrapper in some Chromium map layouts.
+    const marker = page.locator('[data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']').first();
     try {
       await page.waitForFunction(siteId => {
         const node=Array.from(document.querySelectorAll('.omega-individual-site-marker'))
@@ -1492,7 +1492,8 @@ test('real Chromium map marker routes the exact site to selected factory input a
         const card=overlay?.querySelector('.omega-map-load-card');
         const retry=overlay?.querySelector('#omega-map-load-retry');
         return{
-          hitTarget:!!hit&&(hit===element||element.contains(hit)),
+          const icon=element.closest('.omega-individual-site-marker');
+          hitTarget:!!hit&&(hit===element||element.contains(hit)||hit===icon||!!icon?.contains(hit)),
           hitElement:hit?(hit.tagName+(hit.id?'#'+hit.id:'')):null,
           overlayVisible:!!overlay&&!overlay.classList.contains('is-hidden'),
           overlayPointerEvents:overlay?getComputedStyle(overlay).pointerEvents:null,
