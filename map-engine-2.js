@@ -1583,15 +1583,25 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status, source) {
                 if (Game.Map.__omegaMapUiActive !== false) map.invalidateSize({ pan:false, debounceMoveend:true });
             }, 0);
         }
-        window.setTimeout(function () {
-            if (Game.Map.__omegaMapUiActive !== false &&
-                Game.__omegaGeoJSONRenderComplete === true && overlay.getAttribute('data-state') === 'complete') {
-                overlay.classList.add('is-hidden');
-                overlay.setAttribute('aria-hidden', 'true');
-                const mapRoot = document.getElementById('render-engine-root');
-                if (mapRoot) mapRoot.removeAttribute('data-omega-map-loading');
-            }
-        }, 260);
+        if (mapGeometryReady) {
+            // The boundaries are already interactive; do not leave the page
+            // behind a 260ms completion timer that later progress can invalidate.
+            overlay.classList.add('is-hidden');
+            overlay.setAttribute('aria-hidden', 'true');
+            overlay.setAttribute('aria-busy', 'false');
+            if (mapRoot) mapRoot.removeAttribute('data-omega-map-loading');
+        } else {
+            window.setTimeout(function () {
+                if (Game.Map.__omegaMapUiActive !== false &&
+                    Game.__omegaGeoJSONRenderComplete === true && overlay.getAttribute('data-state') === 'complete') {
+                    overlay.classList.add('is-hidden');
+                    overlay.setAttribute('aria-hidden', 'true');
+                    overlay.setAttribute('aria-busy', 'false');
+                    const currentMapRoot = document.getElementById('render-engine-root');
+                    if (currentMapRoot) currentMapRoot.removeAttribute('data-omega-map-loading');
+                }
+            }, 260);
+        }
     }
 };
 Game.Map.resetIncompleteWorldRender = function() {
