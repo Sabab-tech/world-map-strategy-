@@ -437,6 +437,13 @@ var Game = window.Game = {
         const selectedContextCode = identity && (identity.iso3 || identity.alpha3 || identity.cca3 || identity.countryIso3 || identity.countryCode) || null;
         if (selectedContextCode) {
             const previousContext = window.OmegaMinistryViewCountry || '';
+            // A polygon click is the explicit player-country selection action.
+            // Keep the game/session identity aligned with the visible map context.
+            if (window.Game) {
+                window.Game.currentActiveCountry = selectedContextCode;
+                window.Game.playerCountry = selectedContextCode;
+            }
+            window.currentActiveCountry = selectedContextCode;
             window.OmegaMinistryViewCountry = selectedContextCode;
             if (window.OmegaCabinetUI) window.OmegaCabinetUI.activeCountry = selectedContextCode;
             if (window.CountryIOS) window.CountryIOS.activeCountry = selectedContextCode;

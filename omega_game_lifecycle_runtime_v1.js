@@ -38,6 +38,8 @@
   var saveStatus = 'AUTOSAVE READY';
   // Gameplay automation is opt-in after every boot and remains paused in the background.
   var backgroundRunsEnabled = false;
+  // Explicit map polygon selection is player intent; ministry-only view changes are not.
+  var mapSelectedPlayerCountry = null;
 
   function runtime() {
     return (g.Omega && (g.Omega.SimulationRuntime || g.Omega.Simulation)) || null;
@@ -61,10 +63,13 @@
     var session = sim && sim.world && sim.world.state && sim.world.state.simulation &&
       sim.world.state.simulation.session;
     var candidates = [
+      mapSelectedPlayerCountry,
+      // Map polygon selection updates Game.currentActiveCountry. It represents
+      // explicit player intent and must beat a session left by the previous map.
+      g.Game && g.Game.currentActiveCountry,
       session && session.playerCountryId,
       sim && typeof sim.getPlayerCountryId === 'function' ? safeCall(function () { return sim.getPlayerCountryId(); }) : null,
       g.CountryIOS && g.CountryIOS.activeCountry,
-      g.Game && g.Game.currentActiveCountry,
       g.Game && g.Game.playerCountry,
       g.Game && g.Game.state && (g.Game.state.playerCountryId || g.Game.state.countryId || g.Game.state.countryCode),
       g.currentActiveCountry
@@ -410,7 +415,11 @@
         if (typeof g.Game.playerCountry === 'string' || g.Game.playerCountry == null) g.Game.playerCountry = country;
       }
     } catch (_) {}
+    // A single canonical player country must drive both the simulation session
+    // and every ministry view; never leave a previous ministry country selected.
     try { if (g.CountryIOS) g.CountryIOS.activeCountry = country; } catch (_) {}
+    try { g.OmegaMinistryViewCountry = country; } catch (_) {}
+    try { if (g.OmegaCabinetUI) g.OmegaCabinetUI.activeCountry = country; } catch (_) {}
     try { g.currentActiveCountry = country; } catch (_) {}
   }
 
@@ -572,8 +581,14 @@
     syncSelectedCountry(country);
     try {
       var status = String(sim.status || '').toUpperCase();
-      if (status === 'PAUSED') sim.resumeSession();
-      else if (status !== 'RUNNING' || explicitStart) sim.startSession({ playerCountryId: country });
+      var sessionCountry = countryCode(sim.world && sim.world.state && sim.world.state.simulation &&
+        sim.world.state.simulation.session && sim.world.state.simulation.session.playerCountryId);
+      if (status === 'PAUSED' && sessionCountry && sessionCountry !== country) {
+        // A real map selection starts a new player session at the current game
+        // turn; resumeSession alone would keep running the previous country.
+        sim.startSession({ playerCountryId: country, startTurn: sim.clock.turn });
+      } else if (status === 'PAUSED') sim.resumeSession();
+      else if (status !== 'RUNNING' || explicitStart) sim.startSession({ playerCountryId: country, startTurn: sim.clock.turn });
       if (sim.clock.speed !== speed) sim.clock.setSpeed(speed);
       backgroundRunsEnabled = true;
       setSaveStatus('GAME RUNNING · AUTOSAVE ON');
@@ -780,6 +795,15 @@
     registerLifecycleFinalizer();
     requestPersistentStorage();
     installMutationEventSaveBridge();
+    g.addEventListener && g.addEventListener('OMEGA_COUNTRY_CONTEXT_CHANGED', function (event) {
+      var detail = event && event.detail || {};
+      if (String(detail.source || '') !== 'map-country-selection') return;
+      var country = countryCode(detail.countryId || detail.country);
+      if (!country) return;
+      mapSelectedPlayerCountry = country;
+      syncSelectedCountry(country);
+      updateHud();
+    });
     g.document.addEventListener('click', clickHandler, true);
     g.document.addEventListener('visibilitychange', onVisibilityChange);
     g.document.addEventListener('freeze', onPageExit);
