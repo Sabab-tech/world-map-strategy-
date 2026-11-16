@@ -323,7 +323,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       stage:'FRESH_PLAYER_SESSION_ESTABLISHED_THROUGH_REAL_MAP_AND_CLOCK_CONTROLS',
       seller:playerCountrySelection.seller,buyer:playerCountrySelection.buyer,
       countryName:playerCountrySelection.countryName,mineSiteCount:playerCountrySelection.mineSiteCount,
-      currency:playerCountrySelection.currency,sessionId:window.Game?.state?.simulation?.session?.sessionId
+      currency:playerCountrySelection.currency,sessionId:playerSessionDiagnostics.session?.sessionId || null
     }));
 
     await page.waitForFunction(() => {
