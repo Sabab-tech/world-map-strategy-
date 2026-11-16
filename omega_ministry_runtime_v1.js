@@ -487,19 +487,23 @@
 
     function getEngine(id){ return getEngineRegistry()?.get?.(String(id))||null; }
 
-    function saveState(){
+    function saveState(options={}){
       const engineStates={};
       for(const id of IDS){
         const engine=getEngineRegistry()?.get?.(id);
         if(engine&&typeof engine.exportState==='function')engineStates[id]=engine.exportState();
       }
-      return {
+      const snapshot={
         schemaVersion:2,
         version:VERSION,
         ministries:Object.fromEntries([...states.entries()].map(([id,state])=>[id,clone(state)])),
-        engines:engineStates,
-        interoperability:interoperability?.saveState?.()||null
+        engines:engineStates
       };
+      // The canonical Simulation save envelope persists interoperability exactly
+      // once at its top level. Keep the legacy nested copy for standalone callers.
+      if(options.includeInteroperability!==false)
+        snapshot.interoperability=interoperability?.saveState?.()||null;
+      return snapshot;
     }
 
     function loadState(snapshot){
