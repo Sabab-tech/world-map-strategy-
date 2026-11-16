@@ -107,6 +107,24 @@ function attachLifecycle(win, sim) {
   return { documentListeners, lifecycle: win.Omega.GameLifecycle };
 }
 
+test('explicit map country selection replaces a stale paused player session before Play',async()=>{
+  const {win,sim}=createRuntime();
+  const {lifecycle}=attachLifecycle(win,sim);
+  await lifecycle.restore();
+  assert.equal(sim.getPlayerCountryId(),'BGD');
+
+  win.dispatchEvent(new win.CustomEvent('OMEGA_COUNTRY_CONTEXT_CHANGED',{
+    detail:{countryId:'AUS',source:'map-country-selection'}
+  }));
+  assert.equal(win.CountryIOS?.activeCountry || win.OmegaMinistryViewCountry,'AUS');
+  assert.equal(lifecycle.setSpeed(1,true),true);
+  assert.equal(sim.getPlayerCountryId(),'AUS',
+    'Play after a real map selection must create a new session for the selected country');
+  assert.equal(sim.world.state.simulation.session.playerCountryId,'AUS');
+  assert.equal(win.OmegaMinistryViewCountry,'AUS');
+  lifecycle.setSpeed(0);
+});
+
 test('one 15-second real-time interval advances exactly one shared game day', async () => {
   const { win, sim, gameState, dispatched, worldTicks } = createRuntime();
   assert.equal(sim.clock.stepDurationMs, DAY_MS);

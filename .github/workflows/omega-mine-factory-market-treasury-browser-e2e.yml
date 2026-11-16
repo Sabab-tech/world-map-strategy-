@@ -1,0 +1,89 @@
+name: OMEGA Mine Factory Market Treasury Real Browser E2E
+concurrency:
+  group: omega-mine-market-treasury-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/omega-mine-factory-market-treasury-browser-e2e.yml"
+      - ".github/workflows/omega-private-enterprise-browser-e2e.yml"
+      - "index.html"
+      - "resources*.json"
+      - "resource_*.json"
+      - "country_factory_starting_baseline_v1.json"
+      - "economy_global_profiles_v1.json"
+      - "omega_simulation_runtime.js"
+      - "omega_resource_endowment_runtime.js"
+      - "omega_resource_gameplay_binding_v1.js"
+      - "omega_resource_industrial_network_v1.js"
+      - "omega_resource_economy_runtime_v2.js"
+      - "omega_global_market_system.js"
+      - "omega_global_trade_system.js"
+      - "omega_government_banking_runtime_v1.js"
+      - "omega_forex_monetary_engine_v1.js"
+      - "test/omega-mine-factory-market-treasury-browser-e2e.test.mjs"
+  push:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/omega-mine-factory-market-treasury-browser-e2e.yml"
+      - ".github/workflows/omega-private-enterprise-browser-e2e.yml"
+      - "index.html"
+      - "resources*.json"
+      - "resource_*.json"
+      - "country_factory_starting_baseline_v1.json"
+      - "economy_global_profiles_v1.json"
+      - "omega_simulation_runtime.js"
+      - "omega_resource_endowment_runtime.js"
+      - "omega_resource_gameplay_binding_v1.js"
+      - "omega_resource_industrial_network_v1.js"
+      - "omega_resource_economy_runtime_v2.js"
+      - "omega_global_market_system.js"
+      - "omega_global_trade_system.js"
+      - "omega_government_banking_runtime_v1.js"
+      - "omega_forex_monetary_engine_v1.js"
+      - "test/omega-mine-factory-market-treasury-browser-e2e.test.mjs"
+
+permissions:
+  contents: read
+
+jobs:
+  mine-factory-market-treasury:
+    name: one-session-mine-to-treasury
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pinned Playwright and Chromium
+        run: |
+          npm install --prefix "$RUNNER_TEMP/omega-browser-deps" --no-save --package-lock=false --ignore-scripts playwright@1.65.0
+          "$RUNNER_TEMP/omega-browser-deps/node_modules/.bin/playwright" install --with-deps chromium
+
+      - name: Syntax-check independent browser test
+        run: node --check test/omega-mine-factory-market-treasury-browser-e2e.test.mjs
+
+      - name: Execute complete real-browser gameplay flow
+        env:
+          NODE_PATH: ${{ runner.temp }}/omega-browser-deps/node_modules
+          OMEGA_BROWSER_TEST_ARTIFACT_DIR: ${{ runner.temp }}/omega-mine-market-treasury-browser
+        run: |
+          mkdir -p "$OMEGA_BROWSER_TEST_ARTIFACT_DIR"
+          timeout --signal=TERM --kill-after=30s 18m node --test --test-reporter=spec test/omega-mine-factory-market-treasury-browser-e2e.test.mjs
+
+      - name: Upload full pipeline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-mine-factory-market-treasury-browser-evidence
+          path: ${{ runner.temp }}/omega-mine-market-treasury-browser/**
+          if-no-files-found: warn
+          retention-days: 14
