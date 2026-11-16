@@ -92,7 +92,7 @@
       worldState:referenceWorldState?runtime.world.state:runtime.world.snapshot(),
       commands:runtime.commandQueue.snapshot(),
       events:runtime.events.snapshot(),
-      ministryRuntime:runtime.ministryRuntime?.saveState?.()||null,
+      ministryRuntime:runtime.ministryRuntime?.saveState?.({includeInteroperability:false})||null,
       interoperability:runtime.interoperability?.saveState?.()||null,
       worldEngine:runtime.worldEngine?.exportSaveState?.({authoritativeState:true})||null
     };
@@ -101,6 +101,10 @@
     if(options.includeDiagnostics!==false)snapshot.diagnostics=runtime.diagnostics();
     return snapshot;
   }
+
+  const SAVE_SINGLE_RECORD_MAX_CHARS=8*1024*1024;
+  const SAVE_CHUNK_CHARS=2*1024*1024;
+  const SAVE_CHUNKS_PER_BATCH=8;
 
   function indexedDbSaveRequest(indexedDB,operation,key,value){
     return new Promise((resolve,reject)=>{
@@ -123,20 +127,105 @@
       opening.onsuccess=()=>{
         database=opening.result;
         let transaction;
-        try{transaction=database.transaction('slots',operation==='put'?'readwrite':'readonly');}
+        try{transaction=database.transaction('slots',operation==='get'||operation==='getMany'||operation==='keys'?'readonly':'readwrite');}
         catch(error){finish(error);return;}
-        let request,result=null;
+        let result=null;
+        const requests=[];
+        const store=transaction.objectStore('slots');
+        const failRequest=(request,event)=>{
+          const detail=transaction.error||request?.error||event?.target?.error||null;
+          finish(detail||new Error('SAVE_DATABASE_REQUEST_FAILED'));
+        };
         transaction.oncomplete=()=>finish(null,result);
-        transaction.onerror=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_FAILED'));
-        transaction.onabort=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_ABORTED'));
+        transaction.onerror=(event)=>{
+          const failed=requests.find(request=>request?.error);
+          const detail=transaction.error||failed?.error||event?.target?.error||null;
+          finish(detail||new Error('SAVE_DATABASE_TRANSACTION_FAILED'));
+        };
+        transaction.onabort=(event)=>{
+          const failed=requests.find(request=>request?.error);
+          const detail=transaction.error||failed?.error||event?.target?.error||null;
+          finish(detail||new Error('SAVE_DATABASE_TRANSACTION_ABORTED'));
+        };
         try{
-          const store=transaction.objectStore('slots');
-          request=operation==='put'?store.put(String(value),String(key)):store.get(String(key));
-          request.onsuccess=()=>{result=request.result===undefined?null:request.result;};
-          request.onerror=()=>finish(request.error||new Error('SAVE_DATABASE_REQUEST_FAILED'));
-        }catch(error){try{transaction.abort();}catch(_){}finish(error);}
+          if(operation==='put'){
+            requests.push(store.put(value,String(key)));
+          }else if(operation==='get'){
+            const request=store.get(String(key));
+            request.onsuccess=()=>{result=request.result===undefined?null:request.result;};
+            requests.push(request);
+          }else if(operation==='putMany'){
+            for(const row of Array.isArray(value)?value:[]){
+              requests.push(store.put(row.value,String(row.key)));
+            }
+          }else if(operation==='getMany'){
+            const keys=Array.isArray(value)?value:[];
+            result=new Array(keys.length);
+            keys.forEach((item,index)=>{
+              const request=store.get(String(item));
+              request.onsuccess=()=>{result[index]=request.result===undefined?null:request.result;};
+              requests.push(request);
+            });
+          }else if(operation==='deleteMany'){
+            for(const item of Array.isArray(value)?value:[])requests.push(store.delete(String(item)));
+          }else if(operation==='keys'){
+            if(typeof store.getAllKeys!=='function')throw new Error('SAVE_DATABASE_KEY_ENUMERATION_UNSUPPORTED');
+            const request=store.getAllKeys();
+            request.onsuccess=()=>{result=Array.from(request.result||[]);};
+            requests.push(request);
+          }else{
+            throw new Error('SAVE_DATABASE_OPERATION_UNSUPPORTED:'+String(operation));
+          }
+          requests.forEach(request=>{request.onerror=event=>failRequest(request,event);});
+        }catch(error){
+          try{transaction.abort();}catch(_){}
+          finish(error);
+        }
       };
     });
+  }
+
+  async function cleanupStaleSaveChunks(indexedDB,key,keepPrefix){
+    try{
+      const allKeys=await indexedDbSaveRequest(indexedDB,'keys');
+      const prefix=String(key)+'.chunk.';
+      const stale=(Array.isArray(allKeys)?allKeys:[])
+        .filter(item=>typeof item==='string'&&item.startsWith(prefix)&&
+          (!keepPrefix||!item.startsWith(keepPrefix)));
+      for(let index=0;index<stale.length;index+=128){
+        await indexedDbSaveRequest(indexedDB,'deleteMany',null,stale.slice(index,index+128));
+      }
+    }catch(_){
+      // The committed manifest remains valid if best-effort orphan cleanup fails.
+    }
+  }
+
+  async function writeChunkedIndexedDbSave(indexedDB,key,canonical,checksum,turn){
+    const prefix=String(key)+'.chunk.'+String(checksum)+'.';
+    const chunkCount=Math.ceil(canonical.length/SAVE_CHUNK_CHARS);
+    for(let first=0;first<chunkCount;first+=SAVE_CHUNKS_PER_BATCH){
+      const records=[];
+      const end=Math.min(chunkCount,first+SAVE_CHUNKS_PER_BATCH);
+      for(let index=first;index<end;index++){
+        const start=index*SAVE_CHUNK_CHARS;
+        records.push({key:prefix+String(index),value:canonical.slice(start,start+SAVE_CHUNK_CHARS)});
+      }
+      await indexedDbSaveRequest(indexedDB,'putMany',null,records);
+    }
+    // Commit pointer last. Until this manifest lands, the previous save slot
+    // remains readable even when a chunk batch fails or the app is interrupted.
+    const manifest={
+      __omegaSaveManifest:'OMEGA_CHUNKED_SAVE_V1',
+      version:1,
+      checksum,
+      chunkCount,
+      chunkChars:SAVE_CHUNK_CHARS,
+      serializedLength:canonical.length,
+      turn
+    };
+    await indexedDbSaveRequest(indexedDB,'put',key,manifest);
+    await cleanupStaleSaveChunks(indexedDB,key,prefix);
+    return manifest;
   }
 
   function validateWorldSaveState(root){
@@ -1068,29 +1157,40 @@
       const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},true);
       const canonical=stableStringify(snapshot,true);
       const checksum=checksumText(canonical);
-      snapshot.checksum=checksum;
-      const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
-        (canonical.length>2?',':'')+canonical.slice(1);
+      let serialized=null;
       if(global.indexedDB&&typeof global.indexedDB.open==='function'){
         try{
+          if(canonical.length>SAVE_SINGLE_RECORD_MAX_CHARS){
+            await writeChunkedIndexedDbSave(global.indexedDB,key,canonical,checksum,this.clock.turn);
+            return {ok:true,key,turn:this.clock.turn,storage:'INDEXEDDB_CHUNKED',checksum};
+          }
+          snapshot.checksum=checksum;
+          serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
+            (canonical.length>2?',':'')+canonical.slice(1);
           await indexedDbSaveRequest(global.indexedDB,'put',key,serialized);
+          await cleanupStaleSaveChunks(global.indexedDB,key,null);
           return {ok:true,key,turn:this.clock.turn,storage:'INDEXEDDB'};
         }catch(indexedDbError){
-          // Preserve compatibility with browsers where IndexedDB is disabled
-          // or unavailable. The fallback may still fail on large saves, in
-          // which case the original storage error is included in the message.
-          try{
-            if(typeof global.localStorage!=='undefined'){
-              global.localStorage.setItem(key,serialized);
-              return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
+          // The localStorage fallback is only viable when the complete snapshot
+          // fits in a single record. Large saves must fail closed, not be truncated.
+          if(serialized!==null){
+            try{
+              if(typeof global.localStorage!=='undefined'){
+                global.localStorage.setItem(key,serialized);
+                return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
+              }
+            }catch(localStorageError){
+              const indexedDbDetail=String(indexedDbError?.name||'IndexedDBError')+':'+String(indexedDbError?.message||indexedDbError);
+              throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; SNAPSHOT_CHARS:'+canonical.length+'; INDEXEDDB:'+indexedDbDetail);
             }
-          }catch(localStorageError){
-            throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; INDEXEDDB:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
           }
-          throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
+          throw new Error('INDEXEDDB_SAVE_FAILED:'+String(indexedDbError?.name||'IndexedDBError')+':'+String(indexedDbError&&indexedDbError.message||indexedDbError)+'; SNAPSHOT_CHARS:'+canonical.length);
         }
       }
       if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
+      snapshot.checksum=checksum;
+      serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
+        (canonical.length>2?',':'')+canonical.slice(1);
       global.localStorage.setItem(key,serialized);
       return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
     }
@@ -1111,6 +1211,34 @@
         if(indexedDbError)throw new Error('SAVE_SLOT_NOT_FOUND:'+key+'; INDEXEDDB:'+String(indexedDbError.message||indexedDbError));
         throw new Error('SAVE_SLOT_NOT_FOUND:'+key);
       }
+      if(raw&&typeof raw==='object'&&raw.__omegaSaveManifest==='OMEGA_CHUNKED_SAVE_V1'){
+        const count=Math.floor(Number(raw.chunkCount));
+        const chunkChars=Math.floor(Number(raw.chunkChars));
+        const length=Math.floor(Number(raw.serializedLength));
+        if(raw.version!==1||!Number.isSafeInteger(count)||count<1||count>100000||
+           !Number.isSafeInteger(chunkChars)||chunkChars<1||!Number.isSafeInteger(length)||length<1||
+           !/^[0-9a-f]{8}$/i.test(String(raw.checksum||''))){
+          throw new Error('SAVE_CHUNK_MANIFEST_INVALID:'+key);
+        }
+        const prefix=key+'.chunk.'+String(raw.checksum)+'.';
+        const parts=[];
+        for(let first=0;first<count;first+=SAVE_CHUNKS_PER_BATCH){
+          const keys=[];
+          for(let index=first;index<Math.min(count,first+SAVE_CHUNKS_PER_BATCH);index++)keys.push(prefix+String(index));
+          const rows=await indexedDbSaveRequest(global.indexedDB,'getMany',null,keys);
+          for(let index=0;index<rows.length;index++){
+            if(typeof rows[index]!=='string')throw new Error('SAVE_CHUNK_MISSING:'+keys[index]);
+            parts.push(rows[index]);
+          }
+        }
+        const canonical=parts.join('');
+        if(canonical.length!==length)throw new Error('SAVE_CHUNK_LENGTH_MISMATCH:'+key);
+        if(checksumText(canonical)!==String(raw.checksum))throw new Error('SAVE_CHUNK_CHECKSUM_MISMATCH:'+key);
+        const snapshot=JSON.parse(canonical);
+        snapshot.checksum=raw.checksum;
+        return this.loadState(snapshot);
+      }
+      if(typeof raw!=='string')throw new Error('SAVE_SLOT_FORMAT_INVALID:'+key);
       return this.loadState(JSON.parse(raw));
     }
 
