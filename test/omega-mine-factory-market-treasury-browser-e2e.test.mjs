@@ -243,9 +243,12 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     // changing the turn pipeline or bypassing the player's UI.
     await page.locator('[data-omega-speed="3"]').click({ timeout: 60000 });
     await page.waitForFunction(() => {
-      const sim = window.Omega?.Simulation;
-      return !!(sim && Number(sim.clock?.turn || 0) > 0 && !sim.stepInProgress &&
-        ['RUNNING','ERROR','PAUSED'].includes(String(sim.status || '').toUpperCase()));
+      const g = window, sim = g.Omega?.Simulation;
+      const lifecycle = g.Omega?.GameLifecycle?.getDiagnostics?.() || null;
+      return !!(sim && Number(sim.clock?.turn || 0) > 0 &&
+        Number(lifecycle?.savedTurn || 0) >= 1 &&
+        lifecycle?.savePending !== true && lifecycle?.dirty === false &&
+        String(sim.status || '').toUpperCase() === 'RUNNING');
     }, undefined, { timeout: 240000 });
     const playerSessionDiagnostics = await page.evaluate(async (selectedPlayerCountry) => {
       const g = window, sim = g.Omega?.Simulation;
@@ -315,10 +318,16 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     await playControl.click({ timeout: 60000 });
     await page.waitForFunction(seller => {
       const g = window, sim = g.Omega?.Simulation, session = g.Game?.state?.simulation?.session;
+      const lifecycle = g.Omega?.GameLifecycle?.getDiagnostics?.() || null;
       return !!(session?.sessionId && String(session.playerCountryId || '').trim().toUpperCase() === seller &&
         String(session.status || '').toUpperCase() === 'PAUSED' &&
+        String(sim?.status || '').toUpperCase() === 'PAUSED' &&
+        sim?.clock?.paused === true && sim?.clock?.running === false &&
+        !sim?.stepInProgress &&
+        Number(lifecycle?.savedTurn || 0) >= 1 &&
+        lifecycle?.savePending !== true && lifecycle?.dirty === false &&
         sim?.getPlayerCountryId?.() === seller && sim?.world?.state === g.Game?.state);
-    }, playerCountrySelection.seller, { timeout: 60000 });
+    }, playerCountrySelection.seller, { timeout: 240000 });
     console.info('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({
       stage:'FRESH_PLAYER_SESSION_ESTABLISHED_THROUGH_REAL_MAP_AND_CLOCK_CONTROLS',
       seller:playerCountrySelection.seller,buyer:playerCountrySelection.buyer,
