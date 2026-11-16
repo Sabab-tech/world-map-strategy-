@@ -1534,6 +1534,17 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status, source) {
     const bounded = coordinatedStartupActive && !isStartupProgressUpdate && !mapGeometryReady
         ? Math.min(45, 2 + rawPercent * 0.43)
         : rawPercent;
+    // Once the actual GeoJSON geometry is rendered, late supporting-data progress
+    // must never reopen the blocking startup overlay or restore its click shield.
+    if (mapGeometryReady && status !== 'complete') {
+        this.__omegaMapLoadingProgress = rawPercent;
+        if (coordinatedStartupActive && !isStartupProgressUpdate) {
+            startupLoader.__assetsLoadingProgress = bounded;
+            startupLoader.__assetsLoadingMessage = String(message || 'Preparing world map…');
+            startupLoader.__assetsLoadingStatus = String(status || 'loading');
+        }
+        return this.__assetsLoadingProgress;
+    }
     // The blocking map overlay belongs to the map geometry stage, not the
     // independent supporting-data pipeline. Once boundaries are rendered,
     // preserve the map's complete state and let supporting work continue off-screen.
