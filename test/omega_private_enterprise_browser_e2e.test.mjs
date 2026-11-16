@@ -1492,8 +1492,9 @@ test('real Chromium map marker routes the exact site to selected factory input a
         const card=overlay?.querySelector('.omega-map-load-card');
         const retry=overlay?.querySelector('#omega-map-load-retry');
         return{
-          const icon=element.closest('.omega-individual-site-marker');
-          hitTarget:!!hit&&(hit===element||element.contains(hit)||hit===icon||!!icon?.contains(hit)),
+          hitTarget:!!hit&&(hit===element||element.contains(hit)||
+            hit===element.closest('.omega-individual-site-marker')||
+            !!element.closest('.omega-individual-site-marker')?.contains(hit)),
           hitElement:hit?(hit.tagName+(hit.id?'#'+hit.id:'')):null,
           overlayVisible:!!overlay&&!overlay.classList.contains('is-hidden'),
           overlayPointerEvents:overlay?getComputedStyle(overlay).pointerEvents:null,
