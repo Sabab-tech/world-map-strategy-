@@ -1358,13 +1358,16 @@ test('real Chromium map marker routes the exact site to selected factory input a
       // cabinet and country overlays mount. Recalculate the viewport before
       // rebuilding the marker layer so the selected canonical site is renderable.
       map.invalidateSize?.({pan:false});
-      map.setView([lat, lng], Math.max(8, Number(map.getZoom?.() || 4)), {animate:false});
       window.__sab34SiteSelectionEvents = [];
       window.__sab34ExpectedSiteId = String(site.siteId);
       window.addEventListener('OMEGA_RESOURCE_SITE_SELECTED', event => {
         window.__sab34SiteSelectionEvents.push(event.detail || {});
       });
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      // Recalculate Leaflet's viewport after the map root has completed its
+      // visible-layout frame; then refresh the marker layer against that size.
+      map.invalidateSize?.({pan:false});
+      map.setView([lat, lng], Math.max(8, Number(map.getZoom?.() || 4)), {animate:false});
       binding.refresh();
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       return {
@@ -1437,26 +1440,49 @@ test('real Chromium map marker routes the exact site to selected factory input a
     metrics.stages.push('REAL_MAP_MARKER_READY:' + targetSite.siteId);
     metrics.stages.push('OPERATIONAL_FACTORY_TARGET_SELECTED_WITHOUT_SYNTHETIC_SITE_BINDING');
 
-    // Target the exact visible site glyph. Its click bubbles to Leaflet's marker icon,
-    // while avoiding a zero-sized outer icon wrapper in some Chromium map layouts.
-    const marker = page.locator('[data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']').first();
+    // Target the exact non-zero visible site glyph rather than an earlier hidden
+    // duplicate left by a Leaflet layer refresh during the map's layout transition.
+    const markerSelector='[data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']';
+    const marker = page.locator(markerSelector + ':visible').first();
     try {
       await page.waitForFunction(siteId => {
-        const node=Array.from(document.querySelectorAll('.omega-individual-site-marker'))
-          .find(element=>element.querySelector('[data-omega-site-id]')?.getAttribute('data-omega-site-id')===siteId);
+        const nodes=Array.from(document.querySelectorAll('[data-omega-site-id]'))
+          .filter(element=>element.getAttribute('data-omega-site-id')===siteId);
+        const visible=nodes.find(element=>{
+          const rect=element.getBoundingClientRect();
+          const icon=element.closest('.leaflet-marker-icon');
+          const iconRect=icon?.getBoundingClientRect();
+          const map=window.Game?.Map?.map||window.map;
+          const size=map?.getSize?.();
+          return element.isConnected && rect.width>0 && rect.height>0 &&
+            !!iconRect && iconRect.width>0 && iconRect.height>0 &&
+            Number(size?.x)>0 && Number(size?.y)>0;
+        });
         const render=window.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__;
-        return !!node && !!render && Number(render.renderedMarkerCount)>0;
+        return !!visible && !!render && Number(render.renderedMarkerCount)>0;
       },targetSite.siteId,{timeout:60000});
     } catch (error) {
-      const markerDiagnostics=await page.evaluate(siteId=>({
-        targetFound:!!Array.from(document.querySelectorAll('.omega-individual-site-marker'))
-          .find(element=>element.querySelector('[data-omega-site-id]')?.getAttribute('data-omega-site-id')===siteId),
+      const markerDiagnostics=await page.evaluate(siteId=>{
+        const nodes=Array.from(document.querySelectorAll('[data-omega-site-id]'))
+          .filter(element=>element.getAttribute('data-omega-site-id')===siteId);
+        const map=window.Game?.Map?.map||window.map;
+        return {
+        targetFound:nodes.length>0,
+        targetMarkers:nodes.map(element=>{
+          const rect=element.getBoundingClientRect();
+          const icon=element.closest('.leaflet-marker-icon');
+          const iconRect=icon?.getBoundingClientRect();
+          return {connected:element.isConnected,rect:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},
+            iconRect:iconRect?{x:iconRect.x,y:iconRect.y,width:iconRect.width,height:iconRect.height}:null,
+            display:getComputedStyle(element).display,visibility:getComputedStyle(element).visibility};
+        }),
         markerCount:document.querySelectorAll('.omega-individual-site-marker').length,
         markerRender:window.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__||null,
         binding:window.Omega?.IndividualResourceSiteBinding?.diagnostics?.()||null,
-        mapSize:(window.Game?.Map?.map||window.map)?.getSize?.()||null,
-        mapBounds:(()=>{try{return (window.Game?.Map?.map||window.map)?.getBounds?.()?.toBBoxString?.()||null;}catch(_){return null;}})()
-      }),targetSite.siteId);
+        mapSize:map?.getSize?.()||null,
+        mapContainerRect:(()=>{const r=map?.getContainer?.()?.getBoundingClientRect();return r?{x:r.x,y:r.y,width:r.width,height:r.height}:null;})(),
+        mapBounds:(()=>{try{return map?.getBounds?.()?.toBBoxString?.()||null;}catch(_){return null;}})()
+      };},targetSite.siteId);
       throw new Error('SAB34_CANONICAL_SITE_MARKER_NOT_RENDERED:'+JSON.stringify(markerDiagnostics)+
         '; original='+String(error&&error.message||error));
     }
