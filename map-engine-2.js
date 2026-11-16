@@ -1719,7 +1719,13 @@ Game.Map.setUiActive = function(active) {
             if (root) root.removeAttribute('data-omega-map-loading');
         }
     } else {
-        this.updateMapLoadingProgress(this.__omegaMapLoadingProgress || 2, 'Preparing world map…', 'loading');
+        // Re-entering the map after a ministry visit must not resurrect the blocking
+        // loader when its country geometry is already rendered and interactive.
+        if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON && Game.geojsonLayer) {
+            this.updateMapLoadingProgress(100, 'World map ready', 'complete');
+        } else {
+            this.updateMapLoadingProgress(this.__omegaMapLoadingProgress || 2, 'Preparing world map…', 'loading');
+        }
         if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
             Game.__omegaGeoJSONResumeRender();
         } else if (this.countryGeoJSON && !Game.geojsonLayer &&
