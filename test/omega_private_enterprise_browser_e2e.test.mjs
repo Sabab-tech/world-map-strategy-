@@ -2226,7 +2226,7 @@ test('real Chromium map marker routes the exact site to selected factory input a
         factoryInputLotTraceability:factoryInputReceipt.quantity===1530&&factoryInputReceipt.status==='AVAILABLE_TO_FACTORY'&&
           factoryInputReceipt.sourceBatchIds.includes(extraction.result.batchId)&&saveLoad.inputLot?.batchId===factoryInputReceipt.inputBatchId,
         selectedCountryIsolation:foreignResourceEconomyAfterPipeline===preparation.foreignResourceEconomySnapshot,
-        indexedDbSaveLoad:saveLoad.storage==='INDEXEDDB'&&saveLoad.loadIntegrity==='VERIFIED'&&
+        indexedDbSaveLoad:['INDEXEDDB','INDEXEDDB_CHUNKED'].includes(saveLoad.storage)&&saveLoad.loadIntegrity==='VERIFIED'&&
           saveLoad.inputLot?.sourceBatchIds?.includes(extraction.result.batchId)===true
       }
     };
