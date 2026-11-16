@@ -1483,6 +1483,7 @@ test('real Chromium map marker routes the exact site to selected factory input a
       mapRoot.setAttribute('data-omega-map-loading','true');
       return snapshot;
     });
+    metrics.overlayStateBeforePointerTest=previousOverlayState;
     let markerHitTest=null;
     try {
       markerHitTest=await marker.evaluate(element=>{
@@ -1538,21 +1539,42 @@ test('real Chromium map marker routes the exact site to selected factory input a
         throw selectionError;
       }
     } finally {
-      await page.evaluate(snapshot => {
+      metrics.overlayStateAfterPointerTestRestore=await page.evaluate(snapshot => {
         const overlay=document.getElementById('omega-map-load-overlay');
         const mapRoot=document.getElementById('render-engine-root');
-        if(!overlay||!mapRoot)return;
-        overlay.className=snapshot.className;
-        for(const [name,value] of [
-          ['data-state',snapshot.dataState],
-          ['aria-hidden',snapshot.ariaHidden],
-          ['aria-busy',snapshot.ariaBusy]
-        ]){
-          if(value?.present)overlay.setAttribute(name,value.value);
-          else overlay.removeAttribute(name);
+        const game=window.Game;
+        const map=game?.Map;
+        if(!overlay||!mapRoot)return {restored:false,reason:'MAP_OVERLAY_OR_ROOT_MISSING'};
+        const geometryReady=game?.__omegaGeoJSONRenderComplete===true &&
+          !!map?.countryGeoJSON && !!game?.geojsonLayer;
+        if(geometryReady) {
+          // The test's pre-click snapshot can become stale while the real map
+          // finishes rendering. Restore the live ready state, not old loading attrs.
+          overlay.classList.add('is-hidden');
+          overlay.setAttribute('aria-hidden','true');
+          overlay.setAttribute('aria-busy','false');
+          mapRoot.removeAttribute('data-omega-map-loading');
+        } else {
+          overlay.className=snapshot.className;
+          for(const [name,value] of [
+            ['data-state',snapshot.dataState],
+            ['aria-hidden',snapshot.ariaHidden],
+            ['aria-busy',snapshot.ariaBusy]
+          ]){
+            if(value?.present)overlay.setAttribute(name,value.value);
+            else overlay.removeAttribute(name);
+          }
+          if(snapshot.mapRootLoading?.present)mapRoot.setAttribute('data-omega-map-loading',snapshot.mapRootLoading.value);
+          else mapRoot.removeAttribute('data-omega-map-loading');
         }
-        if(snapshot.mapRootLoading?.present)mapRoot.setAttribute('data-omega-map-loading',snapshot.mapRootLoading.value);
-        else mapRoot.removeAttribute('data-omega-map-loading');
+        return {
+          geometryReady,
+          className:overlay.className,
+          dataState:overlay.getAttribute('data-state'),
+          ariaHidden:overlay.getAttribute('aria-hidden'),
+          ariaBusy:overlay.getAttribute('aria-busy'),
+          mapRootLoading:mapRoot.getAttribute('data-omega-map-loading')
+        };
       },previousOverlayState);
     }
     metrics.markerHitTest=markerHitTest;
