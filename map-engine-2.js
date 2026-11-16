@@ -1699,9 +1699,26 @@ Game.Map.setUiActive = function(active) {
     }
 
     if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON) {
-        // Country geometry is the blocking prerequisite for map interaction.
-        // Supporting startup data may still be loading (or may have failed), but
-        // that must never keep a 100%-ready world map covered by a stale overlay.
+        const startupLoader = Game.DataLoader;
+        if (startupLoader && startupLoader.__assetsLoadingStatus === 'loading' &&
+            typeof startupLoader.setStartupProgress === 'function') {
+            startupLoader.setStartupProgress(
+                startupLoader.__assetsLoadingProgress || 0,
+                startupLoader.__assetsLoadingMessage || 'Loading supporting world data…',
+                'loading'
+            );
+        } else if (startupLoader && startupLoader.__assetsLoadingStatus === 'error' &&
+            !startupLoader.__assetsLoadComplete &&
+            typeof startupLoader.setStartupProgress === 'function') {
+            startupLoader.setStartupProgress(
+                startupLoader.__assetsLoadingProgress || 2,
+                startupLoader.__assetsLoadingMessage || 'Startup paused. Retry to resume.',
+                'error'
+            );
+        }
+        // setStartupProgress preserves the supporting-data progress internally and
+        // deliberately returns early once geometry is ready. Regardless of that
+        // coordinator state, the completed map must never keep a stale overlay.
         var readyOverlay = document.getElementById('omega-map-load-overlay');
         if (readyOverlay) {
             readyOverlay.classList.add('is-hidden');
