@@ -3,6 +3,62 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import test from 'node:test';
 
+function makeIndexedDbMemory(){
+  const records=new Map();
+  const database={
+    objectStoreNames:{contains(){return true;}},
+    transaction(){
+      const callbacks=[];
+      const transaction={error:null,objectStore(){
+        return {
+          put(value,key){
+            records.set(String(key),value);
+            const request={};
+            callbacks.push(()=>request.onsuccess?.());
+            return request;
+          },
+          get(key){
+            const request={};
+            callbacks.push(()=>{
+              request.result=records.has(String(key))?records.get(String(key)):undefined;
+              request.onsuccess?.();
+            });
+            return request;
+          },
+          delete(key){
+            records.delete(String(key));
+            const request={};
+            callbacks.push(()=>request.onsuccess?.());
+            return request;
+          },
+          getAllKeys(){
+            const request={};
+            callbacks.push(()=>{
+              request.result=[...records.keys()];
+              request.onsuccess?.();
+            });
+            return request;
+          }
+        };
+      }};
+      setTimeout(()=>{
+        for(const callback of callbacks)callback();
+        setTimeout(()=>transaction.oncomplete?.(),0);
+      },0);
+      return transaction;
+    },
+    close(){}
+  };
+  return {
+    records,
+    indexedDB:{open(){
+      const request={};
+      setTimeout(()=>{request.result=database;request.onsuccess?.();},0);
+      return request;
+    }}
+  };
+}
+
 function loadScript(path,sandbox){
   const source=fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
   vm.runInNewContext(source,sandbox,{filename:path});
@@ -280,6 +336,28 @@ test('compact autosave snapshots retain gameplay state and deterministic integri
   assert.equal(runtime.world.state.resource.BGD.inventory.coal,50);
 });
 
+test('streamed save checksum matches the canonical sorted JSON checksum without materializing it',()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  state.resource={BGD:{inventory:{coal:50},batches:[{batchId:'STREAM-CHECKSUM',quantity:20}]}};
+  const runtime=sandbox.Omega.Simulation;
+  const snapshot=runtime.saveState({includeDiagnostics:false});
+  const stable=value=>{
+    if(value===null)return 'null';
+    if(value===undefined)return 'null';
+    if(value instanceof Date)return JSON.stringify(value.toISOString());
+    if(typeof value!=='object')return JSON.stringify(value);
+    if(Array.isArray(value))return '['+value.map(stable).join(',')+']';
+    return '{'+Object.keys(value).filter(key=>key!=='__proto__'&&key!=='constructor'&&key!=='checksum'&&
+      typeof value[key]!=='function'&&value[key]!==undefined).sort()
+      .map(key=>JSON.stringify(key)+':'+stable(value[key])).join(',')+'}';
+  };
+  let hash=2166136261;
+  const textValue=stable(snapshot);
+  for(let i=0;i<textValue.length;i++){hash^=textValue.charCodeAt(i);hash=Math.imul(hash,16777619);}
+  assert.equal(snapshot.checksum,(hash>>>0).toString(16).padStart(8,'0'));
+});
+
 test('durable save slots checksum the canonical serialized world without a second JSON traversal',async()=>{
   const {sandbox,state}=makeSandbox();
   loadScript('omega_simulation_runtime.js',sandbox);
@@ -305,6 +383,76 @@ test('durable save slots checksum the canonical serialized world without a secon
   assert.equal(runtime.world.state,state,'loadSlot must preserve the single authoritative Game.state root');
   assert.equal(state.resource.BGD.inventory.coal,50,
     'single-pass serialized saves must restore the authoritative world state');
+});
+
+test('large canonical save slots are chunked, committed by manifest and restored intact',async()=>{
+  const {sandbox,state}=makeSandbox();
+  const memory=makeIndexedDbMemory();
+  sandbox.indexedDB=memory.indexedDB;
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  const payload='x'.repeat(9*1024*1024);
+  state.resource={BGD:{inventory:{coal:50},largePayload:payload,batches:[]}};
+  const saved=await runtime.saveSlot('large-chunked-save');
+  assert.equal(saved.ok,true);
+  assert.equal(saved.storage,'INDEXEDDB_CHUNKED');
+  const manifest=memory.records.get(saved.key);
+  assert.equal(manifest.__omegaSaveManifest,'OMEGA_CHUNKED_SAVE_V1');
+  assert.ok(manifest.chunkCount>1);
+  const chunkPrefix=manifest.chunkPrefix;
+  assert.equal(typeof chunkPrefix,'string');
+  assert.ok(chunkPrefix.startsWith(saved.key+'.stage.'));
+  const chunkKeys=[...memory.records.keys()].filter(key=>key.startsWith(chunkPrefix));
+  assert.equal(chunkKeys.length,manifest.chunkCount);
+  assert.ok(chunkKeys.every(key=>memory.records.get(key).length<=2*1024*1024));
+
+  state.resource.BGD.largePayload='changed';
+  const loaded=await runtime.loadSlot('large-chunked-save');
+  assert.equal(loaded.lastLoadIntegrity,'VERIFIED');
+  assert.equal(state.resource.BGD.largePayload,payload,
+    'the chunk manifest must restore the exact canonical world payload');
+  assert.strictEqual(runtime.world.state,state);
+});
+
+test('a compact replacement save removes stale chunks only after the new slot is committed',async()=>{
+  const {sandbox,state}=makeSandbox();
+  const memory=makeIndexedDbMemory();
+  sandbox.indexedDB=memory.indexedDB;
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  state.resource={BGD:{largePayload:'x'.repeat(9*1024*1024)}};
+  const first=await runtime.saveSlot('replace-chunked-save');
+  assert.equal(first.storage,'INDEXEDDB_CHUNKED');
+  state.resource.BGD.largePayload='compact';
+  const second=await runtime.saveSlot('replace-chunked-save');
+  assert.equal(second.storage,'INDEXEDDB');
+  assert.equal(memory.records.get(second.key).startsWith('{'),true);
+  assert.equal([...memory.records.keys()].filter(key=>
+    key.startsWith(second.key+'.chunk.')||key.startsWith(second.key+'.stage.')).length,0);
+  state.resource.BGD.largePayload='mutated';
+  await runtime.loadSlot('replace-chunked-save');
+  assert.equal(state.resource.BGD.largePayload,'compact');
+});
+
+test('the canonical save envelope stores ministry interoperability only once',()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  let optionsSeen=null;
+  sandbox.Omega.Simulation.configure({
+    state,
+    ministryRuntime:{
+      saveState(options){optionsSeen=options;return {ministries:{finance:{ticks:1}}};},
+      loadState(){return true;}
+    },
+    interoperability:{
+      saveState(){return {deliveryLedger:{one:{status:'DELIVERED'}}};},
+      loadState(){return true;}
+    }
+  });
+  const snapshot=sandbox.Omega.Simulation.saveState({includeDiagnostics:false});
+  assert.equal(optionsSeen.includeInteroperability,false);
+  assert.equal(snapshot.ministryRuntime.interoperability,undefined);
+  assert.deepEqual(JSON.parse(JSON.stringify(snapshot.interoperability)),{deliveryLedger:{one:{status:'DELIVERED'}}});
 });
 
 test('turn autosave uses the canonical IndexedDB slot and retains legacy recovery',()=>{
