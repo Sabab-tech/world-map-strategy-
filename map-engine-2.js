@@ -1543,6 +1543,15 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status, source) {
             startupLoader.__assetsLoadingMessage = String(message || 'Preparing world map…');
             startupLoader.__assetsLoadingStatus = String(status || 'loading');
         }
+        // A late supporting-data update must not only avoid reopening the loader;
+        // it must also dismiss any stale loading state left from before geometry
+        // completed. Map interaction is ready independently of those datasets.
+        if (overlay && this.__omegaMapUiActive !== false) {
+            overlay.classList.add('is-hidden');
+            overlay.setAttribute('aria-hidden', 'true');
+            overlay.setAttribute('aria-busy', 'false');
+        }
+        if (mapRoot) mapRoot.removeAttribute('data-omega-map-loading');
         return this.__assetsLoadingProgress;
     }
     // The blocking map overlay belongs to the map geometry stage, not the
