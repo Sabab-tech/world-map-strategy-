@@ -15,15 +15,25 @@
   let unregisterSchedulerHandler=null;
   const processedCountryTurns=new Set();
   const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
+  function countryEntry(rows,countryValue){
+    if(!rows||typeof rows!=='object'||Array.isArray(rows))return null;
+    const countryId=canonical(countryValue);
+    if(!countryId)return null;
+    if(Object.prototype.hasOwnProperty.call(rows,countryId))return rows[countryId];
+    const key=Object.keys(rows).find(value=>id(value)===countryId||canonical(value)===countryId);
+    return key===undefined?null:rows[key];
+  }
   function bucket(c,domain='foreign'){
     const cid=canonical(c),s=state(),d=s?.[domain];
-    if(!d||typeof d!=='object')return null;
-    const k=d[cid]!==undefined?cid:Object.keys(d).find(x=>id(x)===cid);
-    return k===undefined?null:d[k];
+    if(!d||typeof d!=='object'||Array.isArray(d))return null;
+    if(Object.prototype.hasOwnProperty.call(d,cid))return d[cid];
+    const key=Object.keys(d).find(value=>id(value)===cid||canonical(value)===cid);
+    return key===undefined?null:d[key];
   }
   function relation(a,b){
     const x=canonical(a),y=canonical(b);
-    return bucket(x,'foreign')?.relations?.[y]??bucket(x,'relations')?.[y]??bucket(y,'foreign')?.relations?.[x]??bucket(y,'relations')?.[x]??null;
+    return countryEntry(bucket(x,'foreign')?.relations,y)??countryEntry(bucket(x,'relations'),y)??
+      countryEntry(bucket(y,'foreign')?.relations,x)??countryEntry(bucket(y,'relations'),x)??null;
   }
   function relationScore(r){
     if(!r)return null;if(r.war_state===true||r.sanctions===true)return 0;
