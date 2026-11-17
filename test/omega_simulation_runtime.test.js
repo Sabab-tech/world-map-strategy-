@@ -407,7 +407,25 @@ test('large canonical save slots are chunked, committed by manifest and restored
   assert.ok(chunkKeys.every(key=>memory.records.get(key).length<=2*1024*1024));
 
   state.resource.BGD.largePayload='changed';
-  const loaded=await runtime.loadSlot('large-chunked-save');
+  const sandboxArray=vm.runInNewContext('Array',sandbox);
+  const originalJoin=sandboxArray.prototype.join;
+  let fullSaveJoinAttempted=false;
+  sandboxArray.prototype.join=function(separator){
+    if(separator===''&&this.length>1&&this.every(value=>
+      typeof value==='string'&&value.length>1024*1024)){
+      fullSaveJoinAttempted=true;
+      throw new Error('CHUNKED_SAVE_RESTORE_MUST_NOT_JOIN_FULL_PAYLOAD');
+    }
+    return originalJoin.call(this,separator);
+  };
+  let loaded;
+  try{
+    loaded=await runtime.loadSlot('large-chunked-save');
+  }finally{
+    sandboxArray.prototype.join=originalJoin;
+  }
+  assert.equal(fullSaveJoinAttempted,false,
+    'chunked restore must parse/checksum the chunks without joining the whole save string');
   assert.equal(loaded.lastLoadIntegrity,'VERIFIED');
   assert.equal(state.resource.BGD.largePayload,payload,
     'the chunk manifest must restore the exact canonical world payload');
