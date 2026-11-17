@@ -65,3 +65,23 @@ Opponent autonomy project and training ticks use player/active country handlers.
 The 100-game-day test uses 197 synthetic identities and verifies that every non-player test country receives at least one evaluation through either the active or macro tier, the player never enters opponent AI, budgets stay within limits, counterparties activate, turns are idempotent, and active/event queues are bounded. Additional tests cover country-data coalescing, release of in-flight loads, early due-gating before snapshot hydration, dirty-cache invalidation, compact autosaves and the offline cache's online refresh, offline fallback, deletion and size limits.
 
 This is a deterministic engine regression test, not evidence that a physical Android 9 device has completed a 100-day gameplay soak. Browser JavaScript remains single-threaded for these evaluations: this change bounds work at turn boundaries and yields cooperatively to the browser after at most two evaluations on standard devices or one on constrained mobile, using an 8 ms country-slice target and 52 ms/28 ms scheduler budgets. This remains cooperative single-threaded work, not a Web Worker claim. The macro evaluation produces evidence-backed decisions and queues commands; it does not claim that every country changes GDP or inventory every day. Resource and factory production continue through existing domain runtimes and their current player-country scope. A separate low-frequency authoritative macro-economy ledger for non-player GDP, resource inventories and industrial output is still future work; this scheduler does not fabricate those values.
+
+
+## Country-scoped national macro and Finance execution (2026-11-17)
+
+The existing world scheduler now runs the selected country's macro/fiscal pipeline through ordered country handlers. It does not start a second clock or run every profile in one committed-turn callback.
+
+| Handler | Priority | Tiers | Responsibility |
+|---|---:|---|---|
+| Macro Stability | 10 | PLAYER / ACTIVE / MACRO | Apply the existing country macro-stability policy and automatic stabilizer calculation |
+| Finance Ministry | 15 | PLAYER / ACTIVE / MACRO | Apply the existing per-country GDP compounding, Treasury/tax accrual, debt interest, fiscal-year rollover, Finance ledger and state synchronization |
+| Economic Transmission | 20 | PLAYER / ACTIVE / MACRO | Update existing country CPI, cost, wages and purchasing-power projections from the country profile/runtime inputs |
+| NPC National Macro checkpoint | 30 | ACTIVE / MACRO | Record the source-backed country economic checkpoint after the existing macro and fiscal state have advanced |
+
+The two original macro runtimes retain explicit batch APIs for maintenance and compatibility, but their old automatic all-profile committed-turn loops are not attached. Finance likewise retains `advanceTurn()` for explicit maintenance/tests while normal committed turns call `advanceCountry()` only for scheduler-selected country IDs.
+
+Economic Transmission calculates the read-only world inflation median once per turn. Its currency stress projection is rebuilt once by the canonical Simulation turn finalizer (priority 80), after all country handlers and before the durable autosave finalizer. This prevents both per-country duplicate aggregation and stale pre-update currency stress.
+
+Per-country `lastProcessedTurn` checks remain the idempotency authority, so processing one country does not block a different country from being processed in the same turn. The scheduler supplies `stepDurationMs` from the canonical simulation clock; wall-clock 15-second frame pacing is not used for annualization. PLAYER work remains isolated to the selected player country, while NPC work remains bounded to existing ACTIVE/MACRO selections and existing device budgets.
+
+These integrations reuse existing country profile data and state owners. They do not add country-specific economic constants, a duplicate Finance/Treasury ledger, an inventory or trade authority, a new scheduler, or a new clock.
