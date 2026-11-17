@@ -127,9 +127,11 @@
     const originalBytes=typeof global.Blob==='function'
       ? new global.Blob([serialized]).size : String(serialized).length;
     if(typeof global.CompressionStream!=='function'||
+       typeof global.DecompressionStream!=='function'||
        typeof global.Blob!=='function'||
        typeof global.Response!=='function'||
-       typeof global.btoa!=='function'){
+       typeof global.btoa!=='function'||
+       typeof global.atob!=='function'){
       return {
         value:serialized,
         compression:'NONE',
