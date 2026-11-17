@@ -183,7 +183,7 @@ test('only the canonical session player receives live turn history while other c
   await r.engine.init();
 
   r.setDay(1);
-  const first=r.engine.advanceTurn(1,DAY_MS);
+  const first=r.engine.advanceTurn(1,31536000000);
   assert.equal(first.ok,true);
   assert.equal(first.playerCountryId,'BGD');
   assert.equal(first.processed,1);
@@ -195,7 +195,7 @@ test('only the canonical session player receives live turn history while other c
   // A canonical session takes precedence over the older root-level selection.
   r.state.simulation.session={sessionId:'ACTIVE-NGA',playerCountryId:'NGA',status:'PAUSED'};
   r.setDay(2);
-  const second=r.engine.advanceTurn(2,DAY_MS);
+  const second=r.engine.advanceTurn(2,31536000000);
   assert.equal(second.ok,true);
   assert.equal(second.playerCountryId,'NGA');
   assert.equal(second.processed,1);
