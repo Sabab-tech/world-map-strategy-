@@ -203,11 +203,15 @@
         availability: fallback === 'UNAVAILABLE' ? 'UNAVAILABLE' : 'UNOBSERVED',
         unit: metadata.unit || null,
         currency: metadata.currency || null,
-        authority: 'UNOBSERVED',
-        source: null,
-        year: null,
-        confidence: null,
-        note: null
+        authority: metadata.authority || (fallback === 'UNAVAILABLE' ? 'UNAVAILABLE' : 'UNOBSERVED'),
+        source: metadata.source || null,
+        sourceUrl: metadata.sourceUrl || null,
+        method: metadata.method || null,
+        sourceStatus: metadata.sourceStatus || null,
+        freshness: finite(metadata.freshness),
+        year: metadata.year ?? null,
+        confidence: finite(metadata.confidence),
+        note: metadata.note || null
       };
     }
     return {
@@ -217,6 +221,10 @@
       currency: metadata.currency || null,
       authority: metadata.authority || 'SOURCE_OBSERVATION',
       source: metadata.source || null,
+      sourceUrl: metadata.sourceUrl || null,
+      method: metadata.method || null,
+      sourceStatus: metadata.sourceStatus || null,
+      freshness: finite(metadata.freshness),
       year: metadata.year ?? null,
       confidence: finite(metadata.confidence),
       note: metadata.note || null
