@@ -1238,6 +1238,50 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           completeStatuses.has(String(row?.status || 'RECEIVED').toUpperCase()));
         const sourceBatch = (resource.batches || []).find(row => String(row?.batchId || '') === originBatchId) || null;
         const sourceLot = resource.inventoryLots?.[originBatchId] || null;
+        const selectedFactory = (g.Game.state.economy?.[seller]?.productionAssets || [])
+          .find(row => String(row?.id || row?.assetId || row?.projectId || '') === setup.factoryId) || null;
+        const factoryCycle = resource.industrialNetwork?.factoryProductionCycles?.[setup.factoryId] || null;
+        const factoryEmployment = g.Game.state.economy?.[seller]?.factoryEmployment?.factories?.[setup.factoryId] ||
+          selectedFactory?.employment || null;
+        const inputWarehouse = resource.warehouse || resource.rawWarehouse || {};
+        const goldStockKey = Object.keys(selectedFactory?.inputInventory || {})
+          .find(key => String(key).toLowerCase() === String(setup.resourceId).toLowerCase()) || setup.resourceId;
+        const factoryDiagnostics = selectedFactory ? {
+          factoryId: setup.factoryId,
+          status: selectedFactory.status || null,
+          productionEnabled: selectedFactory.productionEnabled ?? null,
+          recipeId: selectedFactory.recipeId || null,
+          recipeMode: selectedFactory.recipeMode || null,
+          inputCoefficients: selectedFactory.inputCoefficients || selectedFactory.inputs || null,
+          productionHealth: selectedFactory.productionHealth || null,
+          employment: factoryEmployment,
+          cycle: factoryCycle,
+          inputInventory: selectedFactory.inputInventory || null,
+          inputBatchLots: (selectedFactory.inputBatchLots || []).slice(-12).map(lot => ({
+            batchId: lot.batchId || null,
+            resourceId: lot.resourceId || null,
+            quantity: lot.quantity ?? null,
+            remainingQuantity: lot.remainingQuantity ?? null,
+            status: lot.status || null,
+            unit: lot.unit || null,
+            cycleReservationId: lot.cycleReservationId || null,
+            sourceBatchIds: lot.sourceBatchIds || null
+          })),
+          warehouseAvailable: inputWarehouse.availableByResource?.[goldStockKey] ?? null,
+          warehouseReserved: inputWarehouse.reservedByResource?.[goldStockKey] ?? null,
+          inputShipments: shipments.filter(row => String(row.factoryId || '') === setup.factoryId)
+            .slice(-12).map(row => ({
+              shipmentId: row.shipmentId || null,
+              shipmentType: row.shipmentType || null,
+              resourceId: row.resourceId || null,
+              quantity: row.quantity ?? null,
+              targetQuantity: row.targetQuantity ?? null,
+              status: row.status || null,
+              blockReason: row.blockReason || null,
+              createdTurn: row.createdTurn ?? null,
+              etaTurn: row.etaTurn ?? null
+            }))
+        } : null;
         const snapshot = {
           turn, simulationStatus: turnResult?.status || null,
           flowStatus: flow?.status || null,
@@ -1258,7 +1302,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           originLotPresent: !!sourceLot,
           originLotResourceId: sourceLot?.resourceId || sourceLot?.materialIdentity || null,
           originLotRemaining: Number(sourceLot?.remainingQuantity ?? sourceLot?.quantity) || 0,
-          receiptId: receipt?.receiptId || null, finishedBatchId: chosen?.batchId || null
+          receiptId: receipt?.receiptId || null, finishedBatchId: chosen?.batchId || null,
+          factoryDiagnostics
         };
         snapshots.push(snapshot);
         g.__omegaMineMarketTreasuryTurnSnapshots = snapshots.slice(-24);
@@ -1266,7 +1311,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           ...snapshot,
           shipmentCount: relatedShipments.length,
           warehouseReceivedQuantity: Number(flow?.mineWarehouseReceivedQuantity) || 0,
-          deferredMarketRebuildCount
+          deferredMarketRebuildCount,
+          factoryDiagnostics
         });
         if (turnResult?.status && ['FAILED', 'ERROR'].includes(String(turnResult.status).toUpperCase()))
           throw new Error('SIMULATION_TURN_FAILED:' + turn + ':' + JSON.stringify(turnResult).slice(0, 1200));
