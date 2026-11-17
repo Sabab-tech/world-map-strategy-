@@ -26,7 +26,8 @@ test('raw financial registry has all 249 country profiles, common fields and exp
 });
 
 function createRuntime(){
- const handlers=new Map(),elements=new Map();
+ const handlers=new Map(),elements=new Map(),scheduledHandlers=new Map();
+ const scheduler={registerCountryHandler(id,handler,options={}){scheduledHandlers.set(id,{handler,options});return()=>scheduledHandlers.delete(id);}};
  const document={readyState:'loading',addEventListener(type,fn){const k='doc:'+type;handlers.set(k,[...(handlers.get(k)||[]),fn]);},
   getElementById(id){return elements.get(id)||null;}};
  elements.set('ministry-dashboard-content',{innerHTML:'',listeners:{},addEventListener(type,fn){this.listeners[type]=fn;}});
@@ -43,15 +44,15 @@ function createRuntime(){
    if(s.includes('economy_raw_financial_data_v2.json'))return{ok:true,json:async()=>raw};
    if(s.includes('finance_macro_stability_rules_v1.json'))return{ok:true,json:async()=>macroRules};
    return Promise.reject(new Error('Unexpected fetch '+s));},
-  Omega:{Simulation:{world:{state},clock:{turn:1,stepDurationMs:3600000},getPlayerCountryId(){return 'BGD';}}},
+  Omega:{Simulation:{world:{state},clock:{turn:1,stepDurationMs:3600000},getPlayerCountryId(){return 'BGD';}},WorldSimulationScheduler:scheduler},
   Game:{state:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},simulation:{turn:1}},currentActiveCountry:'BGD'},
   gameState:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},population:{},simulation:{turn:1}},
   CountryIOS:{activeCountry:'BGD'}};
  context.window=context;context.globalThis=context;
  vm.runInNewContext(financeRuntime,context,{filename:'omega_finance_ministry_runtime_v1.js'});
- return{context,state};
+ return{context,state,scheduler:scheduledHandlers,handlers};
 }
-test('macro runtime starts for all countries and preserves existing finance keys',async()=>{
+test('macro runtime resolves the source roster lazily and registers with the bounded scheduler',async()=>{
  const {context,state}=createRuntime();
  await context.OmegaFinanceMinistry.init();
  vm.runInNewContext(macroRuntime,context,{filename:'omega_macro_stability_runtime_v1.js'});
@@ -61,6 +62,10 @@ test('macro runtime starts for all countries and preserves existing finance keys
  assert.equal(context.OmegaMacroStabilityRuntime.getRawProfile('BGD').iso3,'BGD');
  assert.ok(context.OmegaMacroStabilityRuntime.getIndicators('BGD').gdpUsd>0);
  assert.equal(state.finance.BGD.reserves,456);
+ assert.equal(diag.schedulerHandlerRegistered,true);
+ const registered=scheduler.get('omega-macro-stability');
+ assert.ok(registered);
+ assert.deepEqual(Array.from(registered.options.tiers),['PLAYER','ACTIVE','MACRO']);
 });
 test('player macro controls affect a later simulation turn, reject foreign control and ignore duplicate turns',async()=>{
  const {context,state}=createRuntime();await context.OmegaFinanceMinistry.init();
@@ -75,6 +80,33 @@ test('player macro controls affect a later simulation turn, reject foreign contr
  assert.equal(state.economy.BANGLADESH.gdp_growth,changed);
  assert.equal(context.OmegaMacroStabilityRuntime.applyAction({type:'set-policy',countryId:'USA',policy:'austerity'}).code,'PLAYER_COUNTRY_SCOPE_VIOLATION');
  assert.equal(context.OmegaMacroStabilityRuntime.applyAction({type:'set-controls',countryId:'BGD',growthAdjustmentPct:50}).code,'MACRO_CONTROL_OUT_OF_RANGE');
+});
+
+
+test('macro stability processes only scheduler-selected countries and is idempotent per country/turn',async()=>{
+ const {context,state,scheduler}=createRuntime();
+ await context.OmegaFinanceMinistry.init();
+ vm.runInNewContext(macroRuntime,context,{filename:'omega_macro_stability_runtime_v1.js'});
+ await context.OmegaMacroStabilityRuntime.init();
+ const registered=scheduler.get('omega-macro-stability');
+ assert.ok(registered,'Macro Stability must register one country handler');
+ const handler=registered.handler;
+ const duration=Number(macroRules.annualizationMs);
+ const beforeBdg=Number(state.economy.BANGLADESH.gdp_growth);
+ const first=await handler('BGD',{turn:25,stepDurationMs:duration,tier:'PLAYER'});
+ assert.equal(first.processed,1,JSON.stringify(first));
+ assert.ok(Number(state.economy.BANGLADESH.gdp_growth)>beforeBdg);
+ const afterBdg=Number(state.economy.BANGLADESH.gdp_growth);
+ const replay=await handler('BGD',{turn:25,stepDurationMs:duration,tier:'PLAYER'});
+ assert.equal(replay.processed,0);
+ assert.equal(replay.duplicate,true);
+ assert.equal(state.economy.BANGLADESH.gdp_growth,afterBdg);
+ const usaBefore=raw.countries.find(p=>p.iso3==='USA').rawIndicators.gdpGrowthAnnualPct;
+ const usa=await handler('USA',{turn:25,stepDurationMs:duration,tier:'MACRO'});
+ assert.equal(usa.processed,1,JSON.stringify(usa));
+ assert.notEqual(state.economy.UNITED_STATES,undefined);
+ assert.ok(Number(state.economy.UNITED_STATES.gdp_growth)>=Number(usaBefore));
+ assert.equal(context.OmegaMacroStabilityRuntime.diagnostics().schedulerHandlerRegistered,true);
 });
 
 test('Macro Stability panel mounts only inside the dedicated Finance tab host',()=>{
