@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - "omega_npc_national_macro_economy_runtime_v1.js"
+      - "omega_national_accounts_runtime_v1.js"
+      - "national_accounts_rules_v1.json"
+      - "test/omega_national_accounts_runtime_v1.test.mjs"
+      - "docs/OMEGA_PHASE4A_NATIONAL_ACCOUNTS_FOUNDATION.md"
       - "npc_national_macro_economy_rules_v1.json"
       - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
       - "omega_global_trade_system.js"
@@ -29,6 +33,10 @@ on:
     branches: [main]
     paths:
       - "omega_npc_national_macro_economy_runtime_v1.js"
+      - "omega_national_accounts_runtime_v1.js"
+      - "national_accounts_rules_v1.json"
+      - "test/omega_national_accounts_runtime_v1.test.mjs"
+      - "docs/OMEGA_PHASE4A_NATIONAL_ACCOUNTS_FOUNDATION.md"
       - "npc_national_macro_economy_rules_v1.json"
       - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
       - "omega_global_trade_system.js"
@@ -73,3 +81,5 @@ jobs:
         run: npm run test:bounded-macro-runtime
       - name: Verify bounded national-economy Finance integration
         run: npm run test:bounded-national-economy
+      - name: Verify Phase 4A national accounts invariants
+        run: npm run test:national-accounts
