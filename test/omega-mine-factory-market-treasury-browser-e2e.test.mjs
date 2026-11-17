@@ -690,6 +690,27 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       if (!(Number(catalogDiag?.processingRuleCount) > 0))
         fail('PROCESSING_RULE_CATALOG_EMPTY', catalogDiag);
 
+      // The industrial catalog presentation metadata distinguishes finished
+      // primary goods from co-products and by-products. A higher physical ratio
+      // does not make tailings a primary product (for example, GOLD -> DORÉ).
+      const processingCatalogResponse = await g.fetch('./resource_industrial_catalog_v1.json', { cache: 'force-cache' });
+      if (!processingCatalogResponse?.ok)
+        fail('PROCESSING_PRESENTATION_CATALOG_UNAVAILABLE', { status:processingCatalogResponse?.status || null });
+      const processingPresentationCatalog = await processingCatalogResponse.json();
+      const outputRole = (resourceId, recipeId, outputId) => {
+        const processing = processingPresentationCatalog.processingRules?.[resourceId] || {};
+        const downstream = processingPresentationCatalog.downstreamFactoryRecipes?.[recipeId] || {};
+        const presentation = processing.presentation || downstream.presentation || {};
+        const product = token(outputId);
+        const has = key => (Array.isArray(presentation[key]) ? presentation[key] : [])
+          .some(value => token(value) === product);
+        if (has('primaryOutputs')) return 'PRIMARY';
+        if (has('coProducts')) return 'CO_PRODUCT';
+        if (has('byProducts')) return 'BY_PRODUCT';
+        return 'UNCLASSIFIED';
+      };
+      const outputRolePriority = role => role === 'PRIMARY' ? 0 :
+        role === 'CO_PRODUCT' ? 1 : role === 'UNCLASSIFIED' ? 2 : 3;
       const mineCandidates = [];
       const rejectedSites = [];
       let previewAttemptCount = 0;
@@ -709,9 +730,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           const recipe = industrial.recipeFor(resourceId, asset);
           const inputs = Object.entries(recipe?.inputs || {});
           const outputs = Object.entries(recipe?.outputs || {})
-            .map(([id, ratio]) => ({ id, ratio: Number(ratio) }))
+            .map(([id, ratio]) => ({ id, ratio: Number(ratio), role:outputRole(resourceId,recipe?.recipeId,id) }))
             .filter(row => row.id && Number.isFinite(row.ratio) && row.ratio > 0)
-            .sort((a, b) => b.ratio - a.ratio);
+            .sort((a, b) => outputRolePriority(a.role) - outputRolePriority(b.role) ||
+              b.ratio - a.ratio || String(a.id).localeCompare(String(b.id)));
           if (inputs.length !== 1 || token(inputs[0][0]) !== resourceId || !outputs.length) continue;
           compatibleFactories.push({ asset, recipe, inputCoefficient: Number(inputs[0][1]), output: outputs[0] });
         }
@@ -750,6 +772,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
             cycleDays: Number(recipe.cycleDays) || 1,
             inputCoefficient,
             outputProductId: output.id,
+            outputRole: output.role,
             outputRatio: output.ratio,
             expectedOutput: Number(plan.approvedQuantity) * output.ratio,
             plan,
@@ -1011,7 +1034,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           factoryId: selected.factoryId, factoryType: selected.factoryType,
           factoryOwnerCompanyId: selected.factoryOwnerCompanyId, recipeId: selected.recipeId,
           recipeAuthority: selected.recipeAuthority, cycleDays: selected.cycleDays,
-          outputProductId: selected.outputProductId, outputRatio: selected.outputRatio,
+          outputProductId: selected.outputProductId, outputRole:selected.outputRole || null,
+          outputRatio: selected.outputRatio,
           expectedOutput: selected.expectedOutput, plan: selected.plan,
           routePreview: {
             status: selected.routePreview.status, routeId: selected.routePreview.routeId || null,
@@ -1388,10 +1412,41 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           completeStatuses.has(String(row?.status || 'RECEIVED').toUpperCase()));
         const sourceBatch = (resource.batches || []).find(row => String(row?.batchId || '') === originBatchId) || null;
         const sourceLot = resource.inventoryLots?.[originBatchId] || null;
+        const factoryAssetsForSnapshot = g.Game.state.economy?.[seller]?.productionAssets || [];
+        const selectedFactoryForSnapshot = factoryAssetsForSnapshot.find(asset =>
+          String(asset?.id || asset?.assetId || asset?.projectId || '') === String(setup.selected.factoryId)) || null;
+        const productionCycleForSnapshot = resource.industrialNetwork?.factoryProductionCycles?.[setup.selected.factoryId] || null;
+        const factoryUtilitySupply = g.Game.state.transport?.[seller]?.infrastructure?.utilitySupply || null;
+        const factoryEmployment = g.Game.state.economy?.[seller]?.factoryEmployment || null;
         const snapshot = {
           turn, simulationStatus: turnResult?.status || null,
           flowStatus: flow?.status || null,
           flowStages: (flow?.stages || []).map(row => String(row.stage) + ':' + String(row.status)),
+          flowStageDetails: (flow?.stages || []).slice(-18).map(row => ({
+            stage:row.stage || null, status:row.status || null, turn:row.turn ?? null,
+            reason:row.reason || row.blockReason || row.detail?.reason || null,
+            factoryId:row.factoryId || null, transactionId:row.transactionId || null
+          })),
+          factoryGate: {
+            factoryId:setup.selected.factoryId,
+            factoryStatus:selectedFactoryForSnapshot?.status || null,
+            productionHealth:selectedFactoryForSnapshot?.productionHealth || null,
+            utilityRequirements:selectedFactoryForSnapshot?.utilityRequirements || null,
+            utilitySupply:factoryUtilitySupply ? {
+              electricityMWhPerDay:factoryUtilitySupply.electricityMWhPerDay ?? null,
+              waterM3PerDay:factoryUtilitySupply.waterM3PerDay ?? null,
+              authority:factoryUtilitySupply.authority || null,
+              simulationOnly:factoryUtilitySupply.simulationOnly === true
+            } : null,
+            employment:factoryEmployment?.factories?.[setup.selected.factoryId] || null,
+            factoryProductionCycle:productionCycleForSnapshot ? {
+              status:productionCycleForSnapshot.status || null,
+              lastBlockedReason:productionCycleForSnapshot.lastBlockedReason || null,
+              productionQuantity:productionCycleForSnapshot.productionQuantity ?? null,
+              finishTurn:productionCycleForSnapshot.finishTurn ?? null,
+              productivityPct:productionCycleForSnapshot.productivityPct ?? null
+            } : null
+          },
           shipmentStages: relatedShipments.map(row => String(row.shipmentType) + ':' + String(row.status)),
           shipmentDetails: relatedShipments.map(row => ({
             shipmentId: row.shipmentId, shipmentType: row.shipmentType,
