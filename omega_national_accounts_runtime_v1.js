@@ -9,8 +9,9 @@
     coreCountryIds:new Set(),profilesByIso3:new Map(),profileMetadata:null,commandHandlerRegistered:false,
     unregisterCountryHandler:null,processedCountries:0,skippedCountries:0,deferredCountries:0,
     failedCountries:0,lastProcessedTurn:null,lastCountryId:null,rootStateRef:null,
-    initializedCountryIds:new Set(),dirtyCountryIds:new Set(),eventListeners:[],
-    rootResets:0,sourceInvalidations:0,globalInvalidations:0,unchangedCountries:0,
+    initializedCountryIds:new Set(),dirtyCountryIds:new Set(),countrySourceVersions:new Map(),eventListeners:[],
+    rootResets:0,sourceInvalidations:0,globalInvalidations:0,globalSourceVersion:0,unchangedCountries:0,
+    yieldCount:0,lastSyncSegmentMs:null,maxSyncSegmentMs:0,
     lastCountryElapsedMs:null,maxCountryElapsedMs:0,totalCountryElapsedMs:0,
     lastSourceRowsScanned:0,maxSourceRowsScanned:0};
   const isObject=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
@@ -34,6 +35,21 @@
   const near=(a,b,abs,rel)=>Math.abs(a-b)<=Math.max(abs,Math.max(Math.abs(a),Math.abs(b))*rel);
   const bounded=(v,fallback,max)=>Math.max(1,Math.min(max,Math.floor(finite(v)??fallback)));
   const clockNow=()=>{try{const n=Number(g.performance?.now?.());if(Number.isFinite(n))return n;}catch(_){}return Date.now();};
+  const MAX_ROWS_PER_SYNC_SLICE=512;
+  function recordSyncSegment(startedAt){
+    const elapsed=Math.max(0,clockNow()-startedAt);
+    runtime.lastSyncSegmentMs=elapsed;runtime.maxSyncSegmentMs=Math.max(runtime.maxSyncSegmentMs,elapsed);
+  }
+  function yieldToBrowser(){
+    runtime.yieldCount++;
+    return new Promise(resolve=>{
+      if(typeof g.requestIdleCallback==='function'){
+        try{g.requestIdleCallback(()=>resolve(),{timeout:60});return;}catch(_){}
+      }
+      if(typeof g.setTimeout==='function'){g.setTimeout(resolve,0);return;}
+      Promise.resolve().then(resolve);
+    });
+  }
   const SOURCE_CHANGE_EVENTS=Object.freeze([
     'OMEGA_FINANCE_STATE_UPDATED',
     'OMEGA_TRADE_REQUEST_CREATED','OMEGA_TRADE_REQUEST_ACCEPTED','OMEGA_TRADE_REQUEST_REJECTED',
@@ -68,9 +84,13 @@
     const ids=eventCountryIds(event);
     if(!ids.length){
       runtime.initializedCountryIds.clear();runtime.dirtyCountryIds.clear();runtime.globalInvalidations++;
-      return;
+      runtime.globalSourceVersion++;return;
     }
-    for(const id of ids){runtime.dirtyCountryIds.add(id);runtime.sourceInvalidations++;}
+    for(const id of ids){
+      runtime.dirtyCountryIds.add(id);
+      runtime.countrySourceVersions.set(id,(runtime.countrySourceVersions.get(id)||0)+1);
+      runtime.sourceInvalidations++;
+    }
   }
   function installSourceInvalidationListeners(){
     if(typeof g.addEventListener!=='function'||runtime.eventListeners.length)return;
@@ -232,23 +252,36 @@
       pendingRequestWindowTruncated:Array.isArray(bucket?.importRequests)&&bucket.importRequests.length>requests.length,
       rowsScanned:rows.length+imports.length+exports.length+requests.length};
   }
-  function summarizeInventory(bucket,maxBatches,maxItems){
+  async function summarizeInventory(bucket,maxBatches,maxItems){
     const batches=Array.isArray(bucket?.batches)?bucket.batches.slice(-maxBatches):[];
     const groups=new Map(),seen=new Set();let missingIdentityCount=0,duplicateBatchCount=0;
-    for(const batch of batches){if(!isObject(batch))continue;const id=String(batch.batchId||'').trim();
-      if(id&&seen.has(id)){duplicateBatchCount++;continue;}if(id)seen.add(id);
-      const resourceId=String(batch.resourceId||batch.materialIdentity||'').trim(),unit=String(batch.unit||'').trim();
-      const quantity=finite(batch.remainingQuantity??batch.quantity);
-      if(!resourceId||!unit||quantity===null||quantity<0){missingIdentityCount++;continue;}
-      const key=resourceId+'\u0000'+unit,group=groups.get(key)||{resourceId,unit,closingQuantity:0,batchCount:0};
-      group.closingQuantity+=quantity;group.batchCount++;groups.set(key,group);
+    let segmentStartedAt=clockNow();
+    for(let index=0;index<batches.length;index++){
+      const batch=batches[index];
+      if(isObject(batch)){const id=String(batch.batchId||'').trim();
+        if(id&&seen.has(id))duplicateBatchCount++;
+        else{
+          if(id)seen.add(id);
+          const resourceId=String(batch.resourceId||batch.materialIdentity||'').trim(),unit=String(batch.unit||'').trim();
+          const quantity=finite(batch.remainingQuantity??batch.quantity);
+          if(!resourceId||!unit||quantity===null||quantity<0)missingIdentityCount++;
+          else{
+            const key=resourceId+'\u0000'+unit,group=groups.get(key)||{resourceId,unit,closingQuantity:0,batchCount:0};
+            group.closingQuantity+=quantity;group.batchCount++;groups.set(key,group);
+          }
+        }
+      }
+      if((index+1)%MAX_ROWS_PER_SYNC_SLICE===0&&index+1<batches.length){
+        recordSyncSegment(segmentStartedAt);await yieldToBrowser();segmentStartedAt=clockNow();
+      }
     }
+    recordSyncSegment(segmentStartedAt);
     const all=[...groups.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit));
     return{sourceBatchCount:batches.length,identifiedBatchCount:all.reduce((n,row)=>n+row.batchCount,0),
       missingIdentityCount,duplicateBatchCount,closingStockByIdentity:all.slice(0,maxItems).map(row=>({...row,status:'CLOSING_STOCK_ONLY'})),
       truncatedIdentityCount:Math.max(0,all.length-maxItems),stockFlowStatus:all.length?'CLOSING_STOCK_ONLY':'UNOBSERVED'};
   }
-  function buildStatement(countryId,profile,root,turn){
+  async function buildStatement(countryId,profile,root,turn){
     const finance=countryRecord(root,'finance',profile,countryId)||{};
     const tradeCountry=countryRecord(root,'trade',profile,countryId)||{};
     const resource=countryRecord(root,'resource',profile,countryId)||{};
@@ -258,11 +291,18 @@
     const financeRows=Array.isArray(financeState.ledger)?financeState.ledger.slice(-bounded(limits.financeLedgerRows,500,500)):[];
     const trade=summarizeTrade(tradeCountry,bounded(limits.tradeLedgerRows,512,512),
       bounded(limits.pendingImportRequestRows,512,512));
-    const inventory=summarizeInventory(resource,bounded(limits.inventoryBatchRows,4096,4096),bounded(limits.maxStockIdentityRows,96,256));
+    const inventory=await summarizeInventory(resource,bounded(limits.inventoryBatchRows,4096,4096),bounded(limits.maxStockIdentityRows,96,256));
     const industry=isObject(economy.industrialRuntime)?economy.industrialRuntime:{};
     const productionRows=Array.isArray(industry.productionLedger)?
       industry.productionLedger.slice(-bounded(limits.productionLedgerRows,2048,2048)):[];
-    const completed=productionRows.filter(row=>String(row?.status||'').toUpperCase()==='COMPLETED');
+    const completed=[];let productionSegmentStartedAt=clockNow();
+    for(let index=0;index<productionRows.length;index++){
+      if(String(productionRows[index]?.status||'').toUpperCase()==='COMPLETED')completed.push(productionRows[index]);
+      if((index+1)%MAX_ROWS_PER_SYNC_SLICE===0&&index+1<productionRows.length){
+        recordSyncSegment(productionSegmentStartedAt);await yieldToBrowser();productionSegmentStartedAt=clockNow();
+      }
+    }
+    recordSyncSegment(productionSegmentStartedAt);
     const balance=finite(financeState.treasuryBalanceUsd),available=finite(finance.available);
     const cashSource=balance!==null?String(financeState.treasurySource||'FINANCE_MINISTRY_RUNTIME'):'UNOBSERVED';
     const treasuryStatus=balance===null?'UNOBSERVED':
@@ -362,9 +402,10 @@
       runtime.skippedCountries++;runtime.unchangedCountries++;
       return{status:'UNCHANGED',countryId,turn,lastProcessedTurn:finite(previous?.lastProcessedTurn),
         sourceFingerprint:previous?.sourceFingerprint||null,sourceRowsScanned:0};}
-    const startedAt=clockNow();
+    const startedAt=clockNow(),sourceVersion=runtime.countrySourceVersions.get(countryId)||0,
+      globalSourceVersion=runtime.globalSourceVersion;
     let statement;
-    try{statement=buildStatement(countryId,profile,root,turn);}catch(error){
+    try{statement=await buildStatement(countryId,profile,root,turn);}catch(error){
       const elapsed=Math.max(0,clockNow()-startedAt);
       runtime.lastCountryElapsedMs=elapsed;runtime.maxCountryElapsedMs=Math.max(runtime.maxCountryElapsedMs,elapsed);
       runtime.totalCountryElapsedMs+=elapsed;
@@ -380,7 +421,10 @@
     runtime.maxSourceRowsScanned=Math.max(runtime.maxSourceRowsScanned,rowsScanned);
     if(result?.status!=='APPLIED'||result?.result?.accepted===false){
       runtime.failedCountries++;return{status:'FAILED',reason:result?.reason||result?.result?.reason||result?.status||'NATIONAL_ACCOUNTS_CHECKPOINT_COMMIT_FAILED',countryId,turn};}
-    runtime.initializedCountryIds.add(countryId);runtime.dirtyCountryIds.delete(countryId);
+    runtime.initializedCountryIds.add(countryId);
+    if(sourceVersion===(runtime.countrySourceVersions.get(countryId)||0)&&globalSourceVersion===runtime.globalSourceVersion)
+      runtime.dirtyCountryIds.delete(countryId);
+    else runtime.dirtyCountryIds.add(countryId);
     runtime.processedCountries++;runtime.lastProcessedTurn=turn;runtime.lastCountryId=countryId;
     return{status:'CHECKPOINTED',countryId,turn,sourceFingerprint:statement.sourceFingerprint,
       gdpStatus:statement.gdp.status,treasuryStatus:statement.treasury.status,
@@ -409,7 +453,8 @@
     lastProcessedTurn:runtime.lastProcessedTurn,lastCountryId:runtime.lastCountryId,
     initializedCountryCount:runtime.initializedCountryIds.size,dirtyCountryCount:runtime.dirtyCountryIds.size,
     sourceInvalidations:runtime.sourceInvalidations,globalInvalidations:runtime.globalInvalidations,rootResets:runtime.rootResets,
-    invalidationListenerCount:runtime.eventListeners.length,
+    invalidationListenerCount:runtime.eventListeners.length,yieldCount:runtime.yieldCount,
+    lastSyncSegmentMs:runtime.lastSyncSegmentMs,maxSyncSegmentMs:runtime.maxSyncSegmentMs,
     lastCountryElapsedMs:runtime.lastCountryElapsedMs,maxCountryElapsedMs:runtime.maxCountryElapsedMs,
     totalCountryElapsedMs:Number(runtime.totalCountryElapsedMs.toFixed(3)),
     lastSourceRowsScanned:runtime.lastSourceRowsScanned,maxSourceRowsScanned:runtime.maxSourceRowsScanned,

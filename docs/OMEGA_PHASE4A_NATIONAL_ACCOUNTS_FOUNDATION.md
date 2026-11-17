@@ -36,6 +36,7 @@ GDP is reconciled only when production, expenditure and income approaches are co
 - Same-country, same-turn processing remains idempotent. Source changes after a committed checkpoint remain dirty and are applied on the next committed turn, never by replaying the same turn.
 - Reads remain capped: Finance ledger 500 rows; Trade settlements/import/export ledgers 512 rows each; pending import requests 512 rows; inventory batches 4,096 rows; factory production ledger 2,048 rows; stock identities 96 rows. Truncated pending-request counts explicitly report their bounded coverage.
 - A checkpoint records the number of source rows examined and elapsed processing time in runtime diagnostics. These are workload measurements, not claims of a physical-device benchmark.
+- Large inventory and production scans cooperatively yield to the browser after each 512-row synchronous slice. A source-version check ensures events received during a yield remain dirty for the next committed turn.
 - Checkpoint history is capped at 12 compact snapshots. Raw source ledgers are not copied into Economy state.
 - No DOM work or cross-country aggregation. Cadence comes only from game turns. Runtime and rules are included in the offline shell, with its cache version advanced.
 

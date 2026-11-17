@@ -271,6 +271,32 @@ test('pending import request summarization is capped and reports truncation',asy
   assert.equal(trade.pendingRequestCoverage,'BOUNDED_LAST_N_RECORDS');
 });
 
+
+test('source invalidations arriving during cooperative browser yields remain dirty until refreshed',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  h.state.resource.BGD.batches=Array.from({length:600},(_,index)=>({
+    batchId:'YIELD-BATCH-'+index,resourceId:'IRON_ORE',unit:'TONNE',remainingQuantity:1
+  }));
+  let injected=false;
+  h.window.requestIdleCallback=callback=>{
+    if(!injected){
+      injected=true;
+      h.dispatch('OMEGA_RESOURCE_INVENTORY_CHANGED',{countryId:'BGD',resourceId:'IRON_ORE',delta:1});
+    }
+    callback();
+  };
+  await api.init();
+  const first=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(first.status,'CHECKPOINTED');
+  assert.equal(api.diagnostics().yieldCount,1);
+  assert.equal(api.diagnostics().dirtyCountryCount,1,
+    'an event received while a sliced read is yielding must not be cleared by the checkpoint commit');
+  assert.equal((await api.processCountry('BGD',{turn:8,state:h.state})).status,'ALREADY_PROCESSED');
+  assert.equal(api.diagnostics().dirtyCountryCount,1);
+  assert.equal((await api.processCountry('BGD',{turn:9,state:h.state})).status,'CHECKPOINTED');
+  assert.equal(api.diagnostics().dirtyCountryCount,0);
+});
+
 test('replacing the authoritative world-state root forces a safe rehydration',async()=>{
   const h=harness(),api=h.window.Omega.NationalAccounts;
   await api.init();
@@ -322,4 +348,6 @@ test('large ledger inputs remain hard-bounded to the configured accounting workl
   });
   assert.equal(api.diagnostics().lastSourceRowsScanned,8692);
   assert.equal(api.diagnostics().maxSourceRowsScanned,8692);
+  assert.ok(api.diagnostics().yieldCount>=10,
+    'large inventory and production ledger reads must yield between bounded 512-row synchronous slices');
 });
