@@ -835,11 +835,15 @@
     var added = [];
     var profilePopulation = positive(profile.populationValues && profile.populationValues.population_2015);
     var profileUnemployment = finite(profile.sourceValues && profile.sourceValues.unemployment_rate);
-    if (!own(economy, 'population_2015') && profilePopulation !== null) {
+    // Saves may serialize an unavailable country-context field as null.
+    // Treat null/undefined as missing, while preserving explicit numeric values
+    // (including a deliberately recorded zero unemployment rate).
+    if ((!own(economy, 'population_2015') || economy.population_2015 == null) && profilePopulation !== null) {
       economy.population_2015 = profilePopulation;
       added.push('population_2015');
     }
-    if (!own(economy, 'unemployment_rate') && profileUnemployment !== null && profileUnemployment >= 0 && profileUnemployment <= 100) {
+    if ((!own(economy, 'unemployment_rate') || economy.unemployment_rate == null) &&
+        profileUnemployment !== null && profileUnemployment >= 0 && profileUnemployment <= 100) {
       economy.unemployment_rate = profileUnemployment;
       added.push('unemployment_rate');
     }
