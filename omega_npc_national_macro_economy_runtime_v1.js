@@ -559,7 +559,7 @@
     const baseUnemployment = currentMetric('currentUnemploymentPct') ?? metric('unemploymentRatePct');
     const tradeEvidence = live?.settledTradeActivity?.availability === 'AVAILABLE' ? live.settledTradeActivity.value : null;
     const diplomacy = live?.diplomaticPolicyContext?.availability === 'AVAILABLE' ? live.diplomaticPolicyContext.value : null;
-    const policyEffects = rules.policyEffects || {};
+    const policyEffects = runtime.rules.policyEffects || {};
     const policyToken = value => String(value || '').trim().toUpperCase().replace(/\s+/g, '_').replace(/-/g, '_');
     const policyFactor = (table, value) => {
       const raw = value ? finite(table?.[policyToken(value)]) : null;
