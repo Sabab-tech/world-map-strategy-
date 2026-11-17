@@ -297,6 +297,18 @@ test('source invalidations arriving during cooperative browser yields remain dir
   assert.equal(api.diagnostics().dirtyCountryCount,0);
 });
 
+
+test('resource economy publication invalidates the country from its dashboard snapshot',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  await api.init();
+  assert.equal((await api.processCountry('BGD',{turn:8,state:h.state})).status,'CHECKPOINTED');
+  h.dispatch('OMEGA_RESOURCE_ECONOMY_UPDATED',{countryId:'BGD',turn:8,inventoryDelta:{IRON_ORE:2}});
+  assert.equal(api.diagnostics().dirtyCountryCount,1);
+  assert.equal(api.diagnostics().sourceInvalidations,1);
+  assert.equal((await api.processCountry('BGD',{turn:9,state:h.state})).status,'CHECKPOINTED');
+  assert.equal(api.diagnostics().dirtyCountryCount,0);
+});
+
 test('replacing the authoritative world-state root forces a safe rehydration',async()=>{
   const h=harness(),api=h.window.Omega.NationalAccounts;
   await api.init();
