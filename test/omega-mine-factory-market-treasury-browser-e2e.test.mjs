@@ -76,10 +76,16 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
   const page = await context.newPage();
   const pageErrors = [];
   const consoleErrors = [];
+  const failedResponses = [];
   const stageTrace = [];
   const milestoneTrace = [];
   let setupSummaryForFailure = null;
   page.on('pageerror', error => pageErrors.push(String(error?.stack || error)));
+  page.on('response', response => {
+    if (response.status() >= 400) failedResponses.push({
+      status:response.status(),url:response.url(),method:response.request().method()
+    });
+  });
   page.on('console', message => {
     const text = message.text();
     if (message.type() === 'error') consoleErrors.push(text);
@@ -242,21 +248,26 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     // Use the visible 3x clock control to complete the first real turn without
     // changing the turn pipeline or bypassing the player's UI.
     await page.locator('[data-omega-speed="3"]').click({ timeout: 60000 });
-    await page.waitForFunction(() => {
+    await page.waitForFunction(seller => {
       const g = window, sim = g.Omega?.Simulation;
-      const lifecycle = g.Omega?.GameLifecycle?.getDiagnostics?.() || null;
-      return !!(sim && Number(sim.clock?.turn || 0) > 0 &&
-        Number(lifecycle?.savedTurn || 0) >= 1 &&
-        lifecycle?.savePending !== true && lifecycle?.dirty === false &&
-        String(sim.status || '').toUpperCase() === 'RUNNING');
-    }, undefined, { timeout: 240000 });
-    // Pause immediately after the first committed turn is durably saved. At 3x,
-    // the next turn can already be in flight by the time the save gate is observed;
-    // do not wait for the brief stepInProgress=false window before clicking Pause.
-    // The post-pause gate below waits for that in-flight step and save to finish.
+      const session = g.Game?.state?.simulation?.session || null;
+      const committedTurn = Math.max(
+        Number(sim?.lastStepSummary?.turn || 0),
+        Number(session?.lastCommittedTurn || 0)
+      );
+      return !!(sim && committedTurn >= 1 &&
+        String(session?.playerCountryId || '').trim().toUpperCase() === seller &&
+        String(session?.status || '').toUpperCase() === 'RUNNING' &&
+        String(sim.status || '').toUpperCase() === 'RUNNING' &&
+        sim?.getPlayerCountryId?.() === seller &&
+        sim?.world?.state === g.Game?.state);
+    }, playerCountrySelection.seller, { timeout: 240000 });
+    // Pause as soon as the first turn commit is observable. Its lifecycle
+    // finalizer may still be flushing the canonical save. A visible Pause click
+    // stops the clock and the post-pause gate waits for that in-flight turn/save.
     // Do not serialize large world/interoperability diagnostics while the clock runs.
     console.info('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({
-      stage:'FIRST_COMMITTED_TURN_SAVE_CONFIRMED',
+      stage:'FIRST_COMMITTED_TURN_OBSERVED',
       seller:playerCountrySelection.seller
     }));
     await playControl.click({ timeout: 60000 });
@@ -1929,6 +1940,40 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       production.outputResourceId + ' → ' + setup.buyer + ' → Treasury.');
   } catch (error) {
     await page.evaluate(() => window.__omegaMineMarketTreasuryRestoreScope?.()).catch(() => {});
+    const sessionRuntimeDiagnostics = await page.evaluate(() => {
+      const g = window, sim = g.Omega?.Simulation;
+      const session = g.Game?.state?.simulation?.session || null;
+      const lifecycle = g.Omega?.GameLifecycle?.getDiagnostics?.() || null;
+      const compactResult = row => ({
+        id:row?.id || null,status:row?.status || null,error:row?.error || null,
+        turn:row?.turn,resultStatus:row?.result?.status || null,
+        countryId:row?.result?.countryId || null,reason:row?.result?.reason || null
+      });
+      return {
+        simStatus:sim?.status || null,simLastError:sim?.lastError || null,
+        clockTurn:sim?.clock?.turn ?? null,stepInProgress:!!sim?.stepInProgress,
+        frameInProgress:!!sim?.frameInProgress,lastStepTurn:sim?.lastStepSummary?.turn ?? null,
+        session:session ? {
+          sessionId:session.sessionId || null,playerCountryId:session.playerCountryId || null,
+          status:session.status || null,lastCommittedTurn:session.lastCommittedTurn ?? null,
+          failedParticipant:session.failedParticipant || null,failedFinalizer:session.failedFinalizer || null
+        } : null,
+        lifecycle:lifecycle ? {
+          savedTurn:lifecycle.savedTurn,savedStorage:lifecycle.savedStorage,
+          savePending:lifecycle.savePending,dirty:lifecycle.dirty,
+          mutationRevision:lifecycle.mutationRevision,persistedRevision:lifecycle.persistedRevision,
+          lastSaveError:lifecycle.lastSaveError,status:lifecycle.status,
+          clock:lifecycle.clock
+        } : null,
+        participantIds:typeof sim?.participantDiagnostics === 'function'
+          ? sim.participantDiagnostics().map(row=>row.id) : [],
+        finalizerIds:typeof sim?.finalizerDiagnostics === 'function'
+          ? sim.finalizerDiagnostics().map(row=>row.id) : [],
+        lastTurnParticipantResults:(sim?.lastTurnParticipantResults || []).map(compactResult),
+        lastTurnFinalizerResults:(sim?.lastTurnFinalizerResults || []).map(compactResult),
+        saveStatus:g.document.querySelector('[data-omega-save]')?.textContent || null
+      };
+    }).catch(error => ({error:String(error?.message || error)}));
     const legacyTurnListeners = await page.evaluate(() =>
       Array.isArray(window.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__)
         ? window.__OMEGA_LEGACY_TURN_LISTENER_DIAGNOSTICS__.map(row => ({
@@ -1948,6 +1993,8 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       status: 'FAIL', error: String(error?.stack || error),
       details: error?.details || null, pageErrors,
       consoleErrors: consoleErrors.slice(-80),
+      failedResponses: failedResponses.slice(-80),
+      sessionRuntimeDiagnostics,
       stageTrace: stageTrace.slice(-120),
       legacyTurnListeners,
       participantTrace,
