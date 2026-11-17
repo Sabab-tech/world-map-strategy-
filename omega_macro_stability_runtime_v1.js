@@ -6,7 +6,7 @@
 'use strict';
 const VERSION='1.0.0';
 if(global.OmegaMacroStabilityRuntime&&global.OmegaMacroStabilityRuntime.VERSION===VERSION)return;
-let registry=null,rules=null,profiles=[],initialized=false,initPromise=null,observer=null,uiBound=false,lastTurn=null;
+let registry=null,rules=null,profiles=[],initialized=false,initPromise=null,observer=null,uiBound=false,lastTurn=null,unregisterSchedulerHandler=null;
 const rawByIso=new Map(),rawByCode=new Map();
 const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const own=(o,k)=>!!o&&Object.prototype.hasOwnProperty.call(o,k);
@@ -79,58 +79,83 @@ function applyAction(action){
  m.revision=(num(m.revision)||0)+1;dispatch('OMEGA_MACRO_STABILITY_STATE_UPDATED',{countryCode:p.iso3||p.countryCode,action:type,revision:m.revision});refreshPanel();
  return{ok:true,code:'MACRO_STATE_UPDATED',countryCode:p.iso3||p.countryCode,policy:copy(m.policy),automaticStabilizersEnabled:m.automatic.enabled};
 }
+function advanceProfile(p,t,dt,years,root){
+ const x=ensureModel(p,root);if(!x)return{processed:0,unavailable:0,duplicate:false,updatedCountryCode:null};
+ const m=x.state,e=x.economy,raw=x.rawIndicators,fm=x.finance;
+ if(num(m.lastProcessedTurn)!==null&&t<=num(m.lastProcessedTurn))return{processed:0,unavailable:0,duplicate:true,updatedCountryCode:null};
+ if(!e||num(e.gdp)===null||num(e.gdp)<=0||num(raw.nominalGdpUsd)===null){m.dataStatus='DATA_UNAVAILABLE';m.lastProcessedTurn=t;return{processed:0,unavailable:1,duplicate:false,updatedCountryCode:null};}
+ if(years<=0){m.lastProcessedTurn=t;return{processed:0,unavailable:0,duplicate:false,updatedCountryCode:null};}
+ const preset=rules.policies[m.policy.stance]||rules.policies.neutral;
+ let baselineGrowth=num(m.baseline.gdpGrowthAnnualPct)??num(raw.gdpGrowthAnnualPct)??num(e.gdp_growth)??0;
+ const previous=num(m.lastAppliedGrowthPct),current=num(e.gdp_growth);
+ if(previous!==null&&current!==null&&Math.abs(current-previous)>0.00001){baselineGrowth=current-(num(m.lastAppliedGrowthAdjustmentPct)||0);m.baseline.gdpGrowthAnnualPct=baselineGrowth;}
+ const policyGrowth=(num(preset.growthAdjustmentPct)||0)+(num(m.policy.growthAdjustmentPct)||0),autoGrowth=m.automatic.enabled?(num(m.automatic.growthAdjustmentPct)||0):0;
+ const growth=clamp(baselineGrowth+policyGrowth+autoGrowth,Number(rules.minimumEffectiveGrowthPct||-25),Number(rules.maximumEffectiveGrowthPct||25));
+ e.gdp_growth=growth;m.lastAppliedGrowthPct=growth;m.lastAppliedGrowthAdjustmentPct=policyGrowth+autoGrowth;
+ const oldUnemployment=num(e.unemployment_rate)??num(m.baseline.unemploymentRatePct)??num(raw.unemploymentRatePct);
+ if(oldUnemployment!==null){const response=-(growth-baselineGrowth)*Number(rules.model.unemploymentGrowthSensitivity||0),change=clamp((num(preset.unemploymentChangePpPerYear)||0)+response,-Number(rules.model.maximumUnemploymentChangePpPerYear||2),Number(rules.model.maximumUnemploymentChangePpPerYear||2))*years;e.unemployment_rate=clamp(oldUnemployment+change,0,100);}
+ const gdp=num(e.gdp),debt=num(e.debt)??num(raw.publicDebtUsd),inflation=num(e.inflation)??num(raw.inflationAnnualPct),unemployment=num(e.unemployment_rate)??oldUnemployment,
+   debtPct=debt!==null&&gdp>0?debt/gdp*100:null,targetInfl=fxData(p).inflationTargetPct??num(m.policy.targetInflationPct),
+   targetDebt=num(m.policy.targetDebtToGdpPct),targetU=num(m.policy.targetUnemploymentPct),mod=rules.model;
+ if(m.automatic.enabled){
+  const spendStep=Number(mod.automaticStabilizerSpendingStepPctGdpPerYear||0)*years,weakGrowth=growth<=Number(mod.recessionGrowthTriggerPct||-1),
+   highUnemployment=unemployment!==null&&targetU!==null&&unemployment>=targetU+Number(mod.automaticUnemploymentGapPp||2),
+   inflationSafe=inflation===null||targetInfl===null||inflation<=targetInfl+Number(mod.inflationHeadroomPp||2),
+   fiscalSafe=debtPct===null||targetDebt===null||debtPct<=targetDebt*1.5;
+  if((weakGrowth||highUnemployment)&&inflationSafe&&fiscalSafe){
+   m.automatic.spendingAdjustmentPct=clamp((num(m.automatic.spendingAdjustmentPct)||0)+spendStep,0,Number(mod.maximumAutomaticSpendingAdjustmentPctGdp||3));
+   m.automatic.growthAdjustmentPct=clamp((num(m.automatic.growthAdjustmentPct)||0)+Number(mod.automaticStabilizerGrowthStepPpPerYear||0)*years,0,Number(mod.maximumAutomaticGrowthAdjustmentPct||2));
+  }else if((inflation!==null&&targetInfl!==null&&inflation>targetInfl+Number(mod.inflationHeadroomPp||2))||(debtPct!==null&&targetDebt!==null&&debtPct>targetDebt*1.5)){
+   m.automatic.spendingAdjustmentPct=clamp((num(m.automatic.spendingAdjustmentPct)||0)-spendStep,-Number(mod.maximumAutomaticSpendingAdjustmentPctGdp||3),0);
+   m.automatic.growthAdjustmentPct=clamp((num(m.automatic.growthAdjustmentPct)||0)-Number(mod.automaticStabilizerGrowthStepPpPerYear||0)*years,-Number(mod.maximumAutomaticGrowthAdjustmentPct||2),Number(mod.maximumAutomaticGrowthAdjustmentPct||2));
+  }else{const decay=Math.max(0,1-Number(mod.recoveryDecayPerYear||0)*years);m.automatic.spendingAdjustmentPct=(num(m.automatic.spendingAdjustmentPct)||0)*decay;m.automatic.growthAdjustmentPct=(num(m.automatic.growthAdjustmentPct)||0)*decay;}
+ }
+ if(fm&&isObj(fm.fiscalModel)){
+  const oldShare=num(fm.fiscalModel.spendingToGdpPct);
+  if(num(m.lastAppliedSpendingSharePct)!==null&&oldShare!==null&&Math.abs(oldShare-num(m.lastAppliedSpendingSharePct))>0.001)m.baseline.spendingToGdpPct=clamp(oldShare-(num(m.lastAppliedSpendingAdjustmentPct)||0),0,100);
+  const baseSpend=num(m.baseline.spendingToGdpPct);
+  if(baseSpend!==null){const adjustment=(num(preset.spendingAdjustmentPct)||0)+(num(m.policy.spendingAdjustmentPct)||0)+(m.automatic.enabled?(num(m.automatic.spendingAdjustmentPct)||0):0),
+     share=clamp(baseSpend+adjustment,0,100),currentGdp=num(e.gdp)??num(raw.nominalGdpUsd);
+   fm.fiscalModel.spendingToGdpPct=share;
+   if(currentGdp!==null&&currentGdp>0){fm.fiscalModel.annualSpendingUsd=currentGdp*share/100;
+    const revenue=num(fm.fiscalModel.annualRevenueUsd)??currentGdp*(num(fm.policy&&fm.policy.taxRatePct)??18)/100;
+    fm.fiscalModel.annualRevenueUsd=revenue;fm.fiscalModel.annualBudgetBalanceUsd=revenue-fm.fiscalModel.annualSpendingUsd;
+    fm.fiscalModel.macroStabilityAdjustmentPctGdp=share-baseSpend;e.budget_balance=fm.fiscalModel.annualBudgetBalanceUsd;}
+   m.lastAppliedSpendingSharePct=share;m.lastAppliedSpendingAdjustmentPct=adjustment;
+  }
+ }
+ m.dataStatus='ACTIVE_SIMULATION';m.lastProcessedTurn=t;m.revision=(num(m.revision)||0)+1;m.lastMetrics=indicators(p);
+ return{processed:1,unavailable:0,duplicate:false,updatedCountryCode:p.iso3||p.countryCode};
+}
+function advanceCountry(countryValue,turn,stepMs){
+ if(!initialized)return{ok:false,code:'MACRO_RUNTIME_NOT_INITIALIZED',processed:0};
+ const p=resolveProfile(countryValue);if(!p)return{ok:false,code:'COUNTRY_NOT_FOUND',processed:0,countryId:countryValue||null};
+ const t=num(turn)??currentTurn()+1,dt=Math.max(0,num(stepMs)??Number(rules.simulationTurnDurationMs||86400000)),
+   years=dt/Number(rules.annualizationMs||31536000000),result=advanceProfile(p,t,dt,years,rootState());
+ lastTurn=lastTurn===null?t:Math.max(lastTurn,t);
+ if(result.updatedCountryCode)dispatch('OMEGA_MACRO_STABILITY_TURN_PROCESSED',{turn:t,processed:result.processed,unavailable:result.unavailable,playerCountryCode:playerCode(),updatedCountryCodes:[result.updatedCountryCode]});
+ if(String(p.iso3||p.countryCode).toUpperCase()===playerCode())refreshPanel();
+ return{ok:true,turn:t,processed:result.processed,unavailable:result.unavailable,duplicate:result.duplicate,countryCode:p.iso3||p.countryCode};
+}
+// Compatibility batch API for explicit maintenance/tests only. Normal committed turns
+// are scheduled per country through WorldSimulationScheduler below.
 function advanceTurn(turn,stepMs){
  if(!initialized)return{ok:false,code:'MACRO_RUNTIME_NOT_INITIALIZED',processed:0};
- const t=num(turn)??currentTurn()+1,dt=Math.max(0,num(stepMs)??Number(rules.simulationTurnDurationMs||86400000)),years=dt/Number(rules.annualizationMs||31536000000),root=rootState();let processed=0,unavailable=0;const updated=[];
- for(const p of profiles){
-  const x=ensureModel(p,root);if(!x)continue;const m=x.state,e=x.economy,raw=x.rawIndicators,fm=x.finance;
-  if(num(m.lastProcessedTurn)!==null&&t<=num(m.lastProcessedTurn))continue;
-  if(!e||num(e.gdp)===null||num(e.gdp)<=0||num(raw.nominalGdpUsd)===null){m.dataStatus='DATA_UNAVAILABLE';m.lastProcessedTurn=t;unavailable++;continue;}
-  if(years<=0){m.lastProcessedTurn=t;continue;}
-  const preset=rules.policies[m.policy.stance]||rules.policies.neutral;
-  let baselineGrowth=num(m.baseline.gdpGrowthAnnualPct)??num(raw.gdpGrowthAnnualPct)??num(e.gdp_growth)??0;
-  const previous=num(m.lastAppliedGrowthPct),current=num(e.gdp_growth);
-  if(previous!==null&&current!==null&&Math.abs(current-previous)>0.00001){baselineGrowth=current-(num(m.lastAppliedGrowthAdjustmentPct)||0);m.baseline.gdpGrowthAnnualPct=baselineGrowth;}
-  const policyGrowth=(num(preset.growthAdjustmentPct)||0)+(num(m.policy.growthAdjustmentPct)||0),autoGrowth=m.automatic.enabled?(num(m.automatic.growthAdjustmentPct)||0):0;
-  const growth=clamp(baselineGrowth+policyGrowth+autoGrowth,Number(rules.minimumEffectiveGrowthPct||-25),Number(rules.maximumEffectiveGrowthPct||25));
-  e.gdp_growth=growth;m.lastAppliedGrowthPct=growth;m.lastAppliedGrowthAdjustmentPct=policyGrowth+autoGrowth;
-  const oldUnemployment=num(e.unemployment_rate)??num(m.baseline.unemploymentRatePct)??num(raw.unemploymentRatePct);
-  if(oldUnemployment!==null){const response=-(growth-baselineGrowth)*Number(rules.model.unemploymentGrowthSensitivity||0),change=clamp((num(preset.unemploymentChangePpPerYear)||0)+response,-Number(rules.model.maximumUnemploymentChangePpPerYear||2),Number(rules.model.maximumUnemploymentChangePpPerYear||2))*years;e.unemployment_rate=clamp(oldUnemployment+change,0,100);}
-  const gdp=num(e.gdp),debt=num(e.debt)??num(raw.publicDebtUsd),inflation=num(e.inflation)??num(raw.inflationAnnualPct),unemployment=num(e.unemployment_rate)??oldUnemployment,
-    debtPct=debt!==null&&gdp>0?debt/gdp*100:null,targetInfl=fxData(p).inflationTargetPct??num(m.policy.targetInflationPct),
-    targetDebt=num(m.policy.targetDebtToGdpPct),targetU=num(m.policy.targetUnemploymentPct),mod=rules.model;
-  if(m.automatic.enabled){
-   const spendStep=Number(mod.automaticStabilizerSpendingStepPctGdpPerYear||0)*years,weakGrowth=growth<=Number(mod.recessionGrowthTriggerPct||-1),
-    highUnemployment=unemployment!==null&&targetU!==null&&unemployment>=targetU+Number(mod.automaticUnemploymentGapPp||2),
-    inflationSafe=inflation===null||targetInfl===null||inflation<=targetInfl+Number(mod.inflationHeadroomPp||2),
-    fiscalSafe=debtPct===null||targetDebt===null||debtPct<=targetDebt*1.5;
-   if((weakGrowth||highUnemployment)&&inflationSafe&&fiscalSafe){
-    m.automatic.spendingAdjustmentPct=clamp((num(m.automatic.spendingAdjustmentPct)||0)+spendStep,0,Number(mod.maximumAutomaticSpendingAdjustmentPctGdp||3));
-    m.automatic.growthAdjustmentPct=clamp((num(m.automatic.growthAdjustmentPct)||0)+Number(mod.automaticStabilizerGrowthStepPpPerYear||0)*years,0,Number(mod.maximumAutomaticGrowthAdjustmentPct||2));
-   }else if((inflation!==null&&targetInfl!==null&&inflation>targetInfl+Number(mod.inflationHeadroomPp||2))||(debtPct!==null&&targetDebt!==null&&debtPct>targetDebt*1.5)){
-    m.automatic.spendingAdjustmentPct=clamp((num(m.automatic.spendingAdjustmentPct)||0)-spendStep,-Number(mod.maximumAutomaticSpendingAdjustmentPctGdp||3),0);
-    m.automatic.growthAdjustmentPct=clamp((num(m.automatic.growthAdjustmentPct)||0)-Number(mod.automaticStabilizerGrowthStepPpPerYear||0)*years,-Number(mod.maximumAutomaticGrowthAdjustmentPct||2),Number(mod.maximumAutomaticGrowthAdjustmentPct||2));
-   }else{const decay=Math.max(0,1-Number(mod.recoveryDecayPerYear||0)*years);m.automatic.spendingAdjustmentPct=(num(m.automatic.spendingAdjustmentPct)||0)*decay;m.automatic.growthAdjustmentPct=(num(m.automatic.growthAdjustmentPct)||0)*decay;}
-  }
-  if(fm&&isObj(fm.fiscalModel)){
-   const oldShare=num(fm.fiscalModel.spendingToGdpPct);
-   if(num(m.lastAppliedSpendingSharePct)!==null&&oldShare!==null&&Math.abs(oldShare-num(m.lastAppliedSpendingSharePct))>0.001)m.baseline.spendingToGdpPct=clamp(oldShare-(num(m.lastAppliedSpendingAdjustmentPct)||0),0,100);
-   const baseSpend=num(m.baseline.spendingToGdpPct);
-   if(baseSpend!==null){const adjustment=(num(preset.spendingAdjustmentPct)||0)+(num(m.policy.spendingAdjustmentPct)||0)+(m.automatic.enabled?(num(m.automatic.spendingAdjustmentPct)||0):0),
-      share=clamp(baseSpend+adjustment,0,100),currentGdp=num(e.gdp)??num(raw.nominalGdpUsd);
-    fm.fiscalModel.spendingToGdpPct=share;
-    if(currentGdp!==null&&currentGdp>0){fm.fiscalModel.annualSpendingUsd=currentGdp*share/100;
-     const revenue=num(fm.fiscalModel.annualRevenueUsd)??currentGdp*(num(fm.policy&&fm.policy.taxRatePct)??18)/100;
-     fm.fiscalModel.annualRevenueUsd=revenue;fm.fiscalModel.annualBudgetBalanceUsd=revenue-fm.fiscalModel.annualSpendingUsd;
-     fm.fiscalModel.macroStabilityAdjustmentPctGdp=share-baseSpend;e.budget_balance=fm.fiscalModel.annualBudgetBalanceUsd;}
-    m.lastAppliedSpendingSharePct=share;m.lastAppliedSpendingAdjustmentPct=adjustment;
-   }
-  }
-  m.dataStatus='ACTIVE_SIMULATION';m.lastProcessedTurn=t;m.revision=(num(m.revision)||0)+1;m.lastMetrics=indicators(p);updated.push(p.iso3||p.countryCode);processed++;
- }
- lastTurn=t;const fx=global.OmegaForexMonetaryEngine;if(fx&&typeof fx.syncGovernmentBanking==='function'){try{fx.syncGovernmentBanking();}catch(_){}}
- dispatch('OMEGA_MACRO_STABILITY_TURN_PROCESSED',{turn:t,processed,unavailable,playerCountryCode:playerCode(),updatedCountryCodes:updated});refreshPanel();
- return{ok:true,turn:t,processed,unavailable};
+ const t=num(turn)??currentTurn()+1,dt=Math.max(0,num(stepMs)??Number(rules.simulationTurnDurationMs||86400000)),
+   years=dt/Number(rules.annualizationMs||31536000000),root=rootState();let processed=0,unavailable=0;const updated=[];
+ for(const p of profiles){const result=advanceProfile(p,t,dt,years,root);processed+=result.processed;unavailable+=result.unavailable;if(result.updatedCountryCode)updated.push(result.updatedCountryCode);}
+ lastTurn=lastTurn===null?t:Math.max(lastTurn,t);
+ const fx=global.OmegaForexMonetaryEngine;if(fx&&typeof fx.syncGovernmentBanking==='function'){try{fx.syncGovernmentBanking();}catch(_){}}
+ dispatch('OMEGA_MACRO_STABILITY_TURN_PROCESSED',{turn:t,processed,unavailable,playerCountryCode:playerCode(),updatedCountryCodes:updated});
+ refreshPanel();return{ok:true,turn:t,processed,unavailable};
+}
+function registerSchedulerHandler(){
+ const scheduler=global.Omega&&global.Omega.WorldSimulationScheduler||global.OmegaWorldSimulationScheduler||null;
+ if(typeof scheduler?.registerCountryHandler!=='function')return false;
+ if(unregisterSchedulerHandler)return true;
+ unregisterSchedulerHandler=scheduler.registerCountryHandler('omega-macro-stability',async(countryId,context={})=>
+   advanceCountry(countryId,context.turn,context.stepDurationMs),{tiers:['PLAYER','ACTIVE','MACRO'],priority:10});
+ return typeof unregisterSchedulerHandler==='function';
 }
 function money(v){
   const n=num(v);if(n===null)return'N/A';
@@ -165,9 +190,9 @@ function panelHTML(p){
 function injectPanel(){const doc=global.document,host=doc&&doc.getElementById&&doc.getElementById('ministry-dashboard-content');if(!host||typeof host.querySelector!=='function')return;const dashboard=host.querySelector('.ofm-dashboard'),mount=dashboard&&dashboard.querySelector('[data-omss-container]');if(!dashboard||!mount)return;const sel=host.querySelector('#ofm-country-select'),p=(sel&&resolveProfile(sel.value))||playerProfile();if(!p)return;const old=mount.querySelector('#omss-panel'),code=String(p.iso3||p.countryCode);if(old&&old.getAttribute('data-country-code')===code)return;if(old&&old.parentNode)old.parentNode.removeChild(old);const el=doc.createElement('div');el.innerHTML=panelHTML(p);if(el.firstElementChild)mount.appendChild(el.firstElementChild);}
 function refreshPanel(){const doc=global.document,host=doc&&doc.getElementById&&doc.getElementById('ministry-dashboard-content');if(!host||typeof host.querySelector!=='function')return;const dashboard=host.querySelector('.ofm-dashboard'),mount=dashboard&&dashboard.querySelector('[data-omss-container]');if(!mount)return;const old=mount.querySelector('#omss-panel');if(!old){injectPanel();return;}const p=resolveProfile(old.getAttribute('data-country-code'));if(!p)return;const el=doc.createElement('div');el.innerHTML=panelHTML(p);if(el.firstElementChild&&old.parentNode)old.parentNode.replaceChild(el.firstElementChild,old);}
 function attachUI(){if(uiBound)return;uiBound=true;const doc=global.document,host=doc&&doc.getElementById&&doc.getElementById('ministry-dashboard-content');if(host&&host.addEventListener)host.addEventListener('submit',function(event){const form=event.target,action=form&&form.getAttribute&&form.getAttribute('data-omss-action');if(!action)return;event.preventDefault();const p=selectedProfile(),payload={type:action,countryId:p&&p.iso3};for(const input of Array.from(form.elements||[])){if(!input.name)continue;if(String(input.type).toLowerCase()==='checkbox'&&!input.checked)continue;payload[input.name]=input.value;}const result=applyAction(payload);if(!result.ok&&global.console&&global.console.warn)global.console.warn('[OMEGA MACRO STABILITY]',result.code);refreshPanel();});global.addEventListener&&global.addEventListener('OMEGA_MACRO_STABILITY_STATE_UPDATED',refreshPanel);global.addEventListener&&global.addEventListener('OMEGA_FINANCE_STATE_UPDATED',refreshPanel);if(doc&&typeof global.MutationObserver==='function'){const target=doc.getElementById('ministry-dashboard-content');if(target){observer=new global.MutationObserver(()=>injectPanel());observer.observe(target,{childList:true,subtree:true});}}injectPanel();}
-async function init(){if(initialized)return diagnostics();if(initPromise)return initPromise;initPromise=(async function(){const finance=financeApi();if(finance&&typeof finance.init==='function')await finance.init();const v=await Promise.all([fetchJSON('economy_raw_financial_data_v2.json'),fetchJSON('finance_macro_stability_rules_v1.json')]);registry=v[0];rules=v[1];if(!Array.isArray(registry.countries)||!registry.countries.length)throw new Error('RAW_FINANCIAL_REGISTRY_INVALID');const real=finance&&typeof finance.getProfiles==='function'?finance.getProfiles():[];profiles=real.length?real:registry.countries.map(r=>({countryCode:r.countryCode,iso3:r.iso3,numericCode:r.numericCode,name:r.name,economyKey:r.economyKey,profileStatus:r.profileStatus,sourceValues:r.rawSourceRecords.economy,indicators:{gdpCurrentUsd:r.rawIndicators.nominalGdpUsd}}));for(const r of registry.countries){rawByIso.set(String(r.iso3||'').toUpperCase(),r);rawByCode.set(String(r.countryCode||'').toUpperCase(),r);rawByCode.set(String(r.numericCode||'').toUpperCase(),r);}for(const p of profiles)ensureModel(p,rootState());initialized=true;attachUI();global.Omega=global.Omega||{};global.Omega.MacroStabilityRuntime=api;dispatch('OMEGA_MACRO_STABILITY_RUNTIME_READY',diagnostics());return diagnostics();})();try{return await initPromise;}finally{if(!initialized)initPromise=null;}}
-function diagnostics(){const rows=registry&&registry.countries||[];return{version:VERSION,initialized,countryCount:rows.length,profileCount:profiles.length,sourceEconomyRecordCount:rows.filter(r=>!!r.rawSourceRecords.economy).length,sourcePopulationRecordCount:rows.filter(r=>!!r.rawSourceRecords.population).length,profilesWithGDP:rows.filter(r=>num(r.rawIndicators.nominalGdpUsd)!==null).length,unavailableGDPProfiles:rows.filter(r=>num(r.rawIndicators.nominalGdpUsd)===null).length,rawFieldCount:registry&&registry.metadata&&registry.metadata.rawFieldCount||0,simulationTurn:lastTurn,playerCountryCode:playerCode(),actions:['set-policy','set-controls','enable-stabilizers','disable-stabilizers']};}
-const api={VERSION,init,diagnostics,resolveCountry:resolveProfile,getRawProfile:v=>copy(resolveRaw(resolveProfile(v))),getMacroState:v=>{const p=resolveProfile(v)||playerProfile(),x=ensureModel(p,rootState());return x?copy(x.state):null;},getIndicators:v=>{const p=resolveProfile(v)||playerProfile();return p?copy(indicators(p)):null;},applyAction,advanceTurn,refreshPanel};
+async function init(){if(initialized)return diagnostics();if(initPromise)return initPromise;initPromise=(async function(){const finance=financeApi();if(finance&&typeof finance.init==='function')await finance.init();const v=await Promise.all([fetchJSON('economy_raw_financial_data_v2.json'),fetchJSON('finance_macro_stability_rules_v1.json')]);registry=v[0];rules=v[1];if(!Array.isArray(registry.countries)||!registry.countries.length)throw new Error('RAW_FINANCIAL_REGISTRY_INVALID');const real=finance&&typeof finance.getProfiles==='function'?finance.getProfiles():[];profiles=real.length?real:registry.countries.map(r=>({countryCode:r.countryCode,iso3:r.iso3,numericCode:r.numericCode,name:r.name,economyKey:r.economyKey,profileStatus:r.profileStatus,sourceValues:r.rawSourceRecords.economy,indicators:{gdpCurrentUsd:r.rawIndicators.nominalGdpUsd}}));for(const r of registry.countries){rawByIso.set(String(r.iso3||'').toUpperCase(),r);rawByCode.set(String(r.countryCode||'').toUpperCase(),r);rawByCode.set(String(r.numericCode||'').toUpperCase(),r);}initialized=true;attachUI();global.Omega=global.Omega||{};global.Omega.MacroStabilityRuntime=api;registerSchedulerHandler();dispatch('OMEGA_MACRO_STABILITY_RUNTIME_READY',diagnostics());return diagnostics();})();try{return await initPromise;}finally{if(!initialized)initPromise=null;}}
+function diagnostics(){const rows=registry&&registry.countries||[];return{version:VERSION,initialized,countryCount:rows.length,profileCount:profiles.length,sourceEconomyRecordCount:rows.filter(r=>!!r.rawSourceRecords.economy).length,sourcePopulationRecordCount:rows.filter(r=>!!r.rawSourceRecords.population).length,profilesWithGDP:rows.filter(r=>num(r.rawIndicators.nominalGdpUsd)!==null).length,unavailableGDPProfiles:rows.filter(r=>num(r.rawIndicators.nominalGdpUsd)===null).length,rawFieldCount:registry&&registry.metadata&&registry.metadata.rawFieldCount||0,simulationTurn:lastTurn,playerCountryCode:playerCode(),schedulerHandlerRegistered:typeof unregisterSchedulerHandler==='function',actions:['set-policy','set-controls','enable-stabilizers','disable-stabilizers']};}
+const api={VERSION,init,diagnostics,resolveCountry:resolveProfile,getRawProfile:v=>copy(resolveRaw(resolveProfile(v))),getMacroState:v=>{const p=resolveProfile(v)||playerProfile(),x=p&&ensureModel(p,rootState());return x?copy(x.state):null;},getIndicators:v=>{const p=resolveProfile(v);return p?copy(indicators(p)):null;},applyAction,advanceCountry,advanceTurn,refreshPanel};
 global.OmegaMacroStabilityRuntime=api;
-if(global.document){global.addEventListener&&global.addEventListener('OMEGA_FINANCE_RUNTIME_READY',()=>init().catch(e=>global.console&&global.console.error&&global.console.error('[OMEGA MACRO INIT]',e)));global.addEventListener&&global.addEventListener('OMEGA_FX_MONETARY_RUNTIME_READY',()=>init().catch(e=>global.console&&global.console.error&&global.console.error('[OMEGA MACRO INIT]',e)));global.addEventListener&&global.addEventListener('OMEGA_READY',()=>init().catch(e=>global.console&&global.console.error&&global.console.error('[OMEGA MACRO INIT]',e)));if(global.OmegaFinanceMinistry)Promise.resolve().then(()=>init().catch(e=>global.console&&global.console.error&&global.console.error('[OMEGA MACRO INIT]',e)));else global.document.addEventListener&&global.document.addEventListener('DOMContentLoaded',()=>init().catch(e=>global.console&&global.console.error&&global.console.error('[OMEGA MACRO INIT]',e)),{once:true});global.addEventListener&&global.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',event=>{const d=event&&event.detail||{},turn=num(d.simulationTurn)??num(d.payload&&d.payload.turn)??num(d.turn),duration=num(global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.clock&&global.Omega.Simulation.clock.stepDurationMs)??Number(rules&&rules.simulationTurnDurationMs||86400000);return init().then(()=>advanceTurn(turn,duration)).catch(e=>{global.console&&global.console.error&&global.console.error('[OMEGA MACRO TURN]',e);throw e;});});}
+if(global.document){global.addEventListener&&global.addEventListener('OMEGA_FINANCE_RUNTIME_READY',()=>init().catch(e=>global.console&&global.console.error&&global.console.error('[OMEGA MACRO INIT]',e)));global.addEventListener&&global.addEventListener('OMEGA_FX_MONETARY_RUNTIME_READY',()=>init().catch(e=>global.console&&global.console.error&&global.console.error('[OMEGA MACRO INIT]',e)));global.addEventListener&&global.addEventListener('OMEGA_READY',()=>init().catch(e=>global.console&&global.console.error&&global.console.error('[OMEGA MACRO INIT]',e)));if(global.OmegaFinanceMinistry)Promise.resolve().then(()=>init().catch(e=>global.console&&global.console.error&&global.console.error('[OMEGA MACRO INIT]',e)));else global.document.addEventListener&&global.document.addEventListener('DOMContentLoaded',()=>init().catch(e=>global.console&&global.console.error&&global.console.error('[OMEGA MACRO INIT]',e)),{once:true});}
 })(typeof window!=='undefined'?window:globalThis);
