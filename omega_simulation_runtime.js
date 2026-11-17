@@ -1484,21 +1484,21 @@
         const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
           (canonical.length>2?',':'')+canonical.slice(1);
         global.localStorage.setItem(key,serialized);
-        return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK',checksum};
+        return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK',checksum,serializedLength:totalLength};
       }
       try{
         const saved=await persistCanonicalSave(global.indexedDB,key,snapshot,this.clock.turn);
         if(saved.storage==='LOCAL_STORAGE_FALLBACK'){
           if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
           global.localStorage.setItem(key,saved.serialized);
-          return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK',checksum:saved.checksum};
+          return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK',checksum:saved.checksum,serializedLength:saved.serializedLength};
         }
-        return {ok:true,key,turn:this.clock.turn,storage:saved.storage,checksum:saved.checksum};
+        return {ok:true,key,turn:this.clock.turn,storage:saved.storage,checksum:saved.checksum,serializedLength:saved.serializedLength};
       }catch(error){
         if(error&&typeof error.smallSerialized==='string'&&typeof global.localStorage!=='undefined'){
           try{
             global.localStorage.setItem(key,error.smallSerialized);
-            return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
+            return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK',serializedLength:error.smallSerialized.length};
           }catch(localStorageError){
             throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError?.message||localStorageError)+
               '; INDEXEDDB:'+String(error?.name||'IndexedDBError')+':'+String(error?.message||error));
