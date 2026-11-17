@@ -1534,26 +1534,6 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status, source) {
     const bounded = coordinatedStartupActive && !isStartupProgressUpdate && !mapGeometryReady
         ? Math.min(45, 2 + rawPercent * 0.43)
         : rawPercent;
-    // Supporting data continues after the country geometry is ready. Its later
-    // progress/errors must not reopen the blocking map overlay or restore the
-    // map-root click shield after the real map has become interactive.
-    if (mapGeometryReady && status !== 'complete') {
-        this.__omegaMapLoadingProgress = rawPercent;
-        if (coordinatedStartupActive && !isStartupProgressUpdate) {
-            startupLoader.__assetsLoadingProgress = bounded;
-            startupLoader.__assetsLoadingMessage = String(message || 'Preparing world map…');
-            startupLoader.__assetsLoadingStatus = String(status || 'loading');
-        }
-        if (overlay && this.__omegaMapUiActive !== false) {
-            overlay.classList.add('is-hidden');
-            overlay.setAttribute('aria-hidden', 'true');
-            overlay.setAttribute('aria-busy', 'false');
-            overlay.setAttribute('data-state', 'complete');
-        }
-        if (retryButton) retryButton.hidden = true;
-        if (mapRoot) mapRoot.removeAttribute('data-omega-map-loading');
-        return rawPercent;
-    }
     // The blocking map overlay belongs to the map geometry stage, not the
     // independent supporting-data pipeline. Once boundaries are rendered,
     // preserve the map's complete state and let supporting work continue off-screen.
