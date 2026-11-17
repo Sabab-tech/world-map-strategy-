@@ -99,6 +99,13 @@ function makeRuntime() {
   };
   const eventHandlers = new Map();
   const scheduledHandlers = new Map();
+  const finalizers = new Map();
+  const simulation = {
+    registerTurnFinalizer(id, handler, options = {}) {
+      finalizers.set(id, { handler, options });
+      return () => finalizers.delete(id);
+    }
+  };
   const scheduler = {
     registerCountryHandler(id, handler, options = {}) {
       scheduledHandlers.set(id, { handler, options });
@@ -118,6 +125,7 @@ function makeRuntime() {
     },
     fetchResilient: async () => rules
   });
+  context.Omega = { Simulation: simulation };
   context.gameState = state;
   context.Game = { state };
   context.OmegaFinanceMinistry = finance;
@@ -125,7 +133,7 @@ function makeRuntime() {
   context.OmegaMacroStabilityRuntime = macro;
   context.OmegaWorldSimulationScheduler = scheduler;
   vm.runInContext(source, context, { filename: 'omega_economic_transmission_runtime_v1.js' });
-  return { context, state, profiles, fx, rates, scheduler: scheduledHandlers, eventHandlers, setDay: d => { simulationDay = d; }, engine: context.OmegaEconomicTransmissionRuntime };
+  return { context, state, profiles, fx, rates, scheduler: scheduledHandlers, finalizers, eventHandlers, setDay: d => { simulationDay = d; }, engine: context.OmegaEconomicTransmissionRuntime };
 }
 
 test('turn advancement computes real wages, CPI and producer/import costs with tagged assumptions', async () => {
@@ -175,6 +183,7 @@ test('transmission advances only scheduler-selected countries, allows same-turn 
   const registered = r.scheduler.get('omega-economic-transmission');
   assert.ok(registered, 'Economic Transmission must register with the world country scheduler');
   assert.deepEqual(Array.from(registered.options.tiers), ['PLAYER', 'ACTIVE', 'MACRO']);
+  assert.equal(r.engine.diagnostics().currencyStressFinalizerRegistered, true);
   const duration = 86400000;
   const bgd = await registered.handler('BGD', { turn: 7, stepDurationMs: duration, tier: 'PLAYER' });
   assert.equal(bgd.processed, 1, JSON.stringify(bgd));
@@ -188,12 +197,16 @@ test('transmission advances only scheduler-selected countries, allows same-turn 
   assert.equal(replay.duplicate, true);
   assert.equal(r.engine.getHistory('BGD').length, bgdHistory);
   assert.equal(Object.keys(r.state.governmentBanking.monetaryStressByCurrency || {}).length, 0);
-  r.context.__OMEGA_SIMULATION_PIPELINE_DISPATCH__ = true;
-  r.context.dispatchEvent({ type: 'OMEGA_SIMULATION_TURN_COMMITTED', detail: { turn: 7 } });
-  r.context.__OMEGA_SIMULATION_PIPELINE_DISPATCH__ = false;
+  const finalizer = r.finalizers.get('omega-economic-transmission.currency-stress');
+  assert.ok(finalizer, 'the read-only currency stress projection must be registered as a post-turn finalizer');
+  assert.equal(finalizer.options.priority, 80);
+  const projection = await finalizer.handler({ turn: 7 });
+  assert.equal(projection.ok, true);
   assert.ok(r.state.governmentBanking.monetaryStressByCurrency);
   assert.ok(r.state.governmentBanking.monetaryStressByCurrency.BDT);
   assert.ok(r.state.governmentBanking.monetaryStressByCurrency.NGN);
+  const replayProjection = await finalizer.handler({ turn: 7 });
+  assert.equal(replayProjection.duplicate, true, 'the same turn must not rebuild currency stress twice');
   assert.equal(r.engine.getHistory('BGD').length, bgdHistory, 'post-turn aggregation must not replay country progression');
 });
 
