@@ -656,8 +656,10 @@ test('world geometry becomes usable before supporting datasets and resumes witho
   const analyticsRuntime = read('omega_finance_analytics_runtime_v1.js');
   const resourceMinistry = read('omega_ui_v2/screens/resource-ministry.js');
   assert.ok(financeRuntime.includes('global.Game.Map.__omegaMapUiActive === true) return;') &&
-    financeRuntime.includes('advanceTurn(turn,duration);'),
-    'finance calculations continue while hidden Finance Ministry metrics stop repainting');
+    financeRuntime.includes("registerCountryHandler('omega-finance-ministry',advanceCountry") &&
+    financeRuntime.includes('advanceFinanceProfile(p,root,turnNumber,dt,years,newYearIndex)') &&
+    !financeRuntime.includes("global.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED'"),
+    'Finance calculations continue through scheduler-selected countries while hidden Finance Ministry metrics stop repainting');
   assert.ok(forexRuntime.includes('global.Game.Map.__omegaMapUiActive === true) return;') &&
     forexRuntime.includes('simulationTick(turn, duration);'),
     'currency and FX calculations continue while the hidden FX panel stops repainting');
