@@ -664,9 +664,10 @@ test('world geometry becomes usable before supporting datasets and resumes witho
   assert.ok(bankingRuntime.includes('g.Game.Map.__omegaMapUiActive === true) return;') &&
     bankingRuntime.includes('processPendingTransfers();') && bankingRuntime.includes('revalueOrReconcileAll();'),
     'bank transfers and reconciliation continue while the hidden banking panel stops repainting');
-  assert.ok(transmissionRuntime.includes('g.Game.Map.__omegaMapUiActive === true) return;') &&
-    transmissionRuntime.includes('step(t,dt);'),
-    'economic transmission calculations continue while its hidden chart panel stops repainting');
+  assert.ok(transmissionRuntime.includes("registerCountryHandler('omega-economic-transmission'") &&
+    transmissionRuntime.includes('stepCountry(countryId, context.turn, context.stepDurationMs)') &&
+    !transmissionRuntime.includes("OMEGA_SIMULATION_TURN_COMMITTED',function(event)"),
+    'economic transmission progresses through selected scheduler countries while the hidden chart panel remains a presentation-only concern');
   assert.ok(worldBankRuntime.includes('global.Game.Map.__omegaMapUiActive === true) return false;') &&
     worldBankRuntime.includes('processTurn(turn, stepDurationMs);') &&
     worldBankRuntime.includes('serviceCountryLoansOnTurn(turn, stepDurationMs);'),
