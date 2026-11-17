@@ -631,6 +631,73 @@
     });
   }
 
+  function syncCountryRecord(profile, root, bank, countries) {
+    if (!profile) return null;
+    const id = getProfileId(profile);
+    const code = getCountryCurrency(profile);
+    const source = sourceValues(profile);
+    const econ = getEconomyRecord(profile) || {};
+    const macro = getMacro(profile);
+    const simulated = code ? rateFor(code, 'SIMULATION') : null;
+    const reference = code ? rateFor(code, 'REFERENCE') : null;
+    const currencyName = getCountryCurrencyName(profile, code);
+    const fm = finance && typeof finance.getFinanceState === 'function'
+      ? finance.getFinanceState(profile.countryCode || profile.iso3) : null;
+    const record = {
+      countryCode: profile.countryCode || profile.code || profile.iso2 || null,
+      iso3: profile.iso3 || null,
+      countryName: profile.name || 'Unknown',
+      currencyCode: code,
+      currencyName: currencyName,
+      localPerUsd: state.viewMode === 'REFERENCE' ? reference : simulated,
+      usdPerLocalUnit: state.viewMode === 'REFERENCE'
+        ? (reference ? 1 / reference : null) : (simulated ? 1 / simulated : null),
+      referenceLocalPerUsd: reference,
+      simulationLocalPerUsd: simulated,
+      rateSource: state.viewMode === 'REFERENCE'
+        ? (reference !== null ? state.referenceStatus : 'REFERENCE_RATE_UNAVAILABLE')
+        : (state.simulationRates[code] && state.simulationRates[code].source || 'SIMULATION_RATE_UNAVAILABLE'),
+      inflationPct: finite(econ.inflation) ?? finite(macro.inflation),
+      policyInterestRatePct: finite(fm && fm.policy && fm.policy.interestRateAnnualPct) ?? finite(macro.policyRatePct),
+      gdpUsd: finite(econ.gdp) ?? finite(macro.gdp),
+      debtUsd: finite(econ.debt) ?? finite(macro.debt),
+      debtToGdpPct: macro.gdp > 0 && macro.debt !== null ? macro.debt / macro.gdp * 100 : null,
+      foreignExchangeReservesUsd: finite(econ.reserves) ?? finite(macro.reserves),
+      treasuryBalanceUsd: finite(fm && fm.treasuryBalanceUsd),
+      dataStatus: profile.profileStatus || (source.currency_code ? 'PARTIAL_LOCAL_BASELINE' : 'CURRENCY_ONLY')
+    };
+    if (id) countries[id] = record;
+    if (profile.iso3) {
+      const financeRoot = ensureObject(root, 'finance');
+      const financeCountry = ensureObject(financeRoot, profile.iso3);
+      financeCountry.governmentBanking = record;
+    }
+    if (profile.economyKey && state.viewMode !== 'REFERENCE' && simulated !== null) {
+      const economy = ensureObject(root, 'economy');
+      const current = ensureObject(economy, profile.economyKey);
+      current.exchange_rate_usd = simulated;
+    }
+    return record;
+  }
+
+  function syncCountry(countryValue) {
+    if (!state || !finance || !countryValue) return null;
+    const key = normalizeCode(countryValue);
+    const profile = profileByCode.get(key) || null;
+    if (!profile) return null;
+    const root = rootState();
+    const bank = bankingRoot();
+    const countries = ensureObject(bank, 'countries');
+    const record = syncCountryRecord(profile, root, bank, countries);
+    if (record) {
+      dispatch('OMEGA_GOVERNMENT_BANKING_FX_SYNCED', {
+        countryAreaCount: 1, currencyCount: currencies.size,
+        countryCode: record.countryCode, iso3: record.iso3, partial: true
+      });
+    }
+    return record;
+  }
+
   function syncAllCountries() {
     if (!state || !finance) return;
     const root = rootState();
@@ -651,50 +718,7 @@
       if (r !== null) fxMarket.simulationRates[code] = r;
     });
     profiles.forEach(function (profile) {
-      const id = getProfileId(profile);
-      const code = getCountryCurrency(profile);
-      const source = sourceValues(profile);
-      const econ = getEconomyRecord(profile) || {};
-      const macro = getMacro(profile);
-      const simulated = code ? rateFor(code, 'SIMULATION') : null;
-      const reference = code ? rateFor(code, 'REFERENCE') : null;
-      const currencyName = getCountryCurrencyName(profile, code);
-      const fm = finance && typeof finance.getFinanceState === 'function'
-        ? finance.getFinanceState(profile.countryCode || profile.iso3) : null;
-      const record = {
-        countryCode: profile.countryCode || profile.code || profile.iso2 || null,
-        iso3: profile.iso3 || null,
-        countryName: profile.name || 'Unknown',
-        currencyCode: code,
-        currencyName: currencyName,
-        localPerUsd: state.viewMode === 'REFERENCE' ? reference : simulated,
-        usdPerLocalUnit: state.viewMode === 'REFERENCE'
-          ? (reference ? 1 / reference : null) : (simulated ? 1 / simulated : null),
-        referenceLocalPerUsd: reference,
-        simulationLocalPerUsd: simulated,
-        rateSource: state.viewMode === 'REFERENCE'
-          ? (reference !== null ? state.referenceStatus : 'REFERENCE_RATE_UNAVAILABLE')
-          : (state.simulationRates[code] && state.simulationRates[code].source || 'SIMULATION_RATE_UNAVAILABLE'),
-        inflationPct: finite(econ.inflation) ?? finite(macro.inflation),
-        policyInterestRatePct: finite(fm && fm.policy && fm.policy.interestRateAnnualPct) ?? finite(macro.policyRatePct),
-        gdpUsd: finite(econ.gdp) ?? finite(macro.gdp),
-        debtUsd: finite(econ.debt) ?? finite(macro.debt),
-        debtToGdpPct: macro.gdp > 0 && macro.debt !== null ? macro.debt / macro.gdp * 100 : null,
-        foreignExchangeReservesUsd: finite(econ.reserves) ?? finite(macro.reserves),
-        treasuryBalanceUsd: finite(fm && fm.treasuryBalanceUsd),
-        dataStatus: profile.profileStatus || (source.currency_code ? 'PARTIAL_LOCAL_BASELINE' : 'CURRENCY_ONLY')
-      };
-      if (id) countries[id] = record;
-      if (profile.iso3) {
-        const financeRoot = ensureObject(root, 'finance');
-        const financeCountry = ensureObject(financeRoot, profile.iso3);
-        financeCountry.governmentBanking = record;
-      }
-      if (profile.economyKey && state.viewMode !== 'REFERENCE' && simulated !== null) {
-        const economy = ensureObject(root, 'economy');
-        const current = ensureObject(economy, profile.economyKey);
-        current.exchange_rate_usd = simulated;
-      }
+      syncCountryRecord(profile, root, bank, countries);
     });
     bank.forexSummary = {
       version: VERSION, countryAreaCount: profiles.length, currencyCount: currencies.size,
@@ -1523,8 +1547,14 @@
         && global.Omega.Simulation.clock.stepDurationMs) ?? DAY_MS;
       simulationTick(turn, duration);
     });
-    global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function () {
-      syncAllCountries();
+    global.addEventListener && global.addEventListener('OMEGA_FINANCE_STATE_UPDATED', function (event) {
+      const detail = event && event.detail || {};
+      const countryCode = detail.countryCode || detail.iso3 || detail.countryId || null;
+      // Finance is now country-scoped under the bounded world scheduler. Refresh only
+      // the affected FX/Government Banking projection instead of rewriting every
+      // country's snapshot for each scheduler-selected Finance handler.
+      if (countryCode && !syncCountry(countryCode)) syncAllCountries();
+      else if (!countryCode) syncAllCountries();
       refreshPanelMetrics();
     });
     global.addEventListener && global.addEventListener('visibilitychange', function () {
