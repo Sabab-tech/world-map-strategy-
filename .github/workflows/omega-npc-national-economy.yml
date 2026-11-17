@@ -51,3 +51,5 @@ jobs:
         run: npm run test:npc-macro-economy
       - name: Verify bounded macro country execution
         run: npm run test:bounded-macro-runtime
+      - name: Verify bounded national-economy Finance integration
+        run: npm run test:bounded-national-economy
