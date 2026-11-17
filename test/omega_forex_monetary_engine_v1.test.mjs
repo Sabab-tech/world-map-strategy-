@@ -157,6 +157,18 @@ test('all canonical country profiles resolve currency metadata and honest simula
 });
 
 test('runtime syncs country finance into Government Banking and settles FX with turn idempotency', async () => {
+  const eventHandlers = new Map();
+  context.addEventListener = (type, handler) => {
+    eventHandlers.set(type, [...(eventHandlers.get(type) || []), handler]);
+  };
+  context.dispatchEvent = event => {
+    for (const handler of eventHandlers.get(event.type) || []) handler(event);
+    return true;
+  };
+  context.CustomEvent = function (type, init = {}) {
+    this.type = type;
+    this.detail = init.detail || {};
+  };
   const profiles = [
     {
       name: 'Bangladesh', countryCode: 'BD', iso2: 'BD', iso3: 'BGD',
@@ -209,6 +221,7 @@ test('runtime syncs country finance into Government Banking and settles FX with 
     NG: { treasuryBalanceUsd: 2000000000, policy: { interestRateAnnualPct: 12 }, fiscalModel: {} },
     US: { treasuryBalanceUsd: 100000000000, policy: { interestRateAnnualPct: 3 }, fiscalModel: {} }
   };
+  const financeStateReads = [];
   const actions = [];
   context.gameState = {
     simulation: { turn: 0, playerCountryId: 'BD' },
@@ -229,6 +242,7 @@ test('runtime syncs country finance into Government Banking and settles FX with 
     getProfiles: () => profiles,
     getPlayerCountry: () => profiles[0],
     getFinanceState: id => {
+      financeStateReads.push(id);
       const p = profiles.find(row => row.countryCode === id || row.iso3 === id);
       return p ? financeStates[p.countryCode] : null;
     },
@@ -248,6 +262,23 @@ test('runtime syncs country finance into Government Banking and settles FX with 
   assert.equal(context.gameState.governmentBanking.countries.BD.currencyCode, 'BDT');
   assert.equal(context.gameState.governmentBanking.countries.NG.currencyCode, 'NGN');
   assert.equal(context.gameState.finance.BGD.governmentBanking.currencyCode, 'BDT');
+
+  // A country-scoped Finance update must refresh only that country's FX projection.
+  const beforeBangladesh = context.gameState.governmentBanking.countries.BD;
+  const beforeUnitedStates = context.gameState.governmentBanking.countries.US;
+  financeStates.NG.treasuryBalanceUsd = 2500000000;
+  financeStateReads.length = 0;
+  context.dispatchEvent(new context.CustomEvent('OMEGA_FINANCE_STATE_UPDATED', {
+    detail: { countryCode: 'NG', turn: 12, processed: 1 }
+  }));
+  assert.deepEqual(financeStateReads, ['NG'],
+    'a country Finance update must not re-read all country Finance profiles');
+  assert.equal(context.gameState.governmentBanking.countries.NG.treasuryBalanceUsd, 2500000000);
+  assert.equal(context.gameState.governmentBanking.countries.BD, beforeBangladesh);
+  assert.equal(context.gameState.governmentBanking.countries.US, beforeUnitedStates);
+  assert.equal(context.gameState.finance.NGA.governmentBanking.treasuryBalanceUsd, 2500000000);
+  assert.equal(context.gameState.governmentBanking.forexSummary.countryAreaCount, 3,
+    'a partial country projection must preserve the world FX registry summary');
 
   const bankingConversions = [];
   context.OmegaGovernmentBanking = {
