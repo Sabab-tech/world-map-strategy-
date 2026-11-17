@@ -168,6 +168,9 @@ test('Trade & Commerce hosts the full commodity market dashboard with separate l
   assert.match(ui, /data-market-view="transactions"/);
   assert.match(ui, /World market transactions/);
   assert.match(ui, /omega-market-activity-table-wrap/);
+  assert.ok(ui.includes('<th>Foreign policy</th><th>Trade policy</th>'));
+  assert.ok(ui.includes('cell(policy.foreignPolicy)'));
+  assert.ok(ui.includes('cell(policy.tradePolicy)'));
   assert.match(ui, /deduplicated actions/);
   assert.match(ui, /activityLimit \|\| 249/);
   assert.match(ui, /world-activity-refresh/);

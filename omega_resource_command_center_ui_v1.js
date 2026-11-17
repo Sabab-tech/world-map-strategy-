@@ -1781,8 +1781,9 @@
         '<td>' + esc(String(row.settledRequestCount || 0)) + ' settled / ' + esc(String(row.pendingRequestCount || 0)) + ' pending</td>' +
         '<td>' + cell(playerRelation) + '</td><td>' + esc(treaty) + '</td><td>' + esc(conflict) + '</td>' +
         '<td>' + cell(policy.importTariffPct == null ? null : Number(policy.importTariffPct).toFixed(1) + '%') + '</td>' +
+        '<td>' + cell(policy.foreignPolicy) + '</td><td>' + cell(policy.tradePolicy) + '</td>' +
         '<td>' + cell(last) + '</td><td>' + esc(status) + '</td></tr>';
-    }).join('') || '<tr><td colspan="8">No country trade records are available.</td></tr>';
+    }).join('') || '<tr><td colspan="10">No country trade records are available.</td></tr>';
     const activityRows = rows.map(function (row) {
       const buyerName = countryName(row.buyerCountryId);
       const sellerName = countryName(row.sellerCountryId);
@@ -1807,7 +1808,7 @@
       '<article><small>Settled requests</small><strong>' + activityNumber(summary.settledRequests || 0) + '</strong></article></div>' +
       '<p class="omega-market-activity-note">Country status is read for up to 249 registered countries and 12 recent records per country. The country list includes every registered identity; the transaction feed shows the latest ' +
         activityNumber(summary.activityLimit || 249) + ' deduplicated actions. Opening this tab reads cached state only and never rebuilds the market or advances the simulation.</p>' +
-      '<h3>Country participation and player-country policy</h3><div class="omega-market-activity-table-wrap omega-market-country-table"><table><thead><tr><th>Country</th><th>Settled / pending</th><th>Player relation</th><th>Trade treaty</th><th>War / sanctions</th><th>Import tariff</th><th>Latest action</th><th>Last activity</th></tr></thead><tbody>' + countryRows +
+      '<h3>Country participation and player-country policy</h3><div class="omega-market-activity-table-wrap omega-market-country-table"><table><thead><tr><th>Country</th><th>Settled / pending</th><th>Player relation</th><th>Trade treaty</th><th>War / sanctions</th><th>Import tariff</th><th>Foreign policy</th><th>Trade policy</th><th>Latest action</th><th>Last activity</th></tr></thead><tbody>' + countryRows +
       '</tbody></table></div><h3>Recent world transactions</h3>' +
       '<div class="omega-market-activity-table-wrap"><table><thead><tr><th>Turn</th><th>Action / status</th><th>Buyer</th><th>Seller</th><th>Commodity</th><th>Quantity</th><th>Recorded value</th><th>Policy constraints</th></tr></thead><tbody>' +
       activityRows + '</tbody></table></div></section>';
