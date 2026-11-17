@@ -438,9 +438,12 @@
     const bankStore = rootTransmissionStore();
     store = bankStore;
     bankStore.lastProcessedTurn = Math.max(num(bankStore.lastProcessedTurn) ?? -1, t);
-    bankStore.economicTransmissionDiagnostics = Object.assign({}, bankStore.economicTransmissionDiagnostics || {}, {
+    const priorDiagnostics = bankStore.economicTransmissionDiagnostics || {};
+    const sameTurnDiagnostics = num(priorDiagnostics.turn) === t;
+    bankStore.economicTransmissionDiagnostics = Object.assign({}, priorDiagnostics, {
       version: VERSION, turn: t,
-      processedCountryCount: num(bankStore.economicTransmissionDiagnostics?.processedCountryCount) || 0,
+      processedCountryCount: (sameTurnDiagnostics ? num(priorDiagnostics.processedCountryCount) || 0 : 0) + row.processed,
+      unavailableCountryCount: (sameTurnDiagnostics ? num(priorDiagnostics.unavailableCountryCount) || 0 : 0) + row.unavailable,
       lastCountryCode: profileId(profile), historyDay: simDay
     });
     dispatch('OMEGA_ECONOMIC_TRANSMISSION_UPDATED', {
@@ -506,36 +509,6 @@
     bankStore.monetaryStressUpdatedTurn = turn;
   }
 
-    if (!initialized) return { ok: false, code: 'NOT_INITIALIZED' };
-    const t = num(turnNumber) ?? currentTurn() + 1;
-    if (store && num(store.lastProcessedTurn) !== null && t <= store.lastProcessedTurn)
-      return { ok: true, duplicate: true, turn: t, processed: 0 };
-    const dt = clamp(num(durationMs) ?? DAY_MS, 0, 7 * DAY_MS);
-    if (dt <= 0) return { ok: true, turn: t, processed: 0 };
-    const averageInflation = globalInflationMean();
-    const simDay = currentSimulationDay();
-    const failures = [];
-    let processed = 0;
-    for (const p of profiles) {
-      if (!p || !p.economyKey) continue;
-      try {
-        const result = updateOne(p, t, dt, averageInflation, simDay);
-        if (result) processed++;
-      } catch (error) {
-        failures.push({ countryCode: profileId(p), error: String(error && error.message || error) });
-      }
-    }
-    const bankStore = rootTransmissionStore();
-    store = bankStore;
-    bankStore.lastProcessedTurn = t;
-    bankStore.economicTransmissionDiagnostics = {
-      version: VERSION, turn: t, processedCountryCount: processed,
-      failureCount: failures.length, errors: failures.slice(-16), historyDay: currentSimulationDay()
-    };
-    dispatch('OMEGA_ECONOMIC_TRANSMISSION_UPDATED', { version: VERSION, turn: t, processed, failureCount: failures.length });
-    refreshPanel();
-    return { ok: failures.length === 0, turn: t, processed, failureCount: failures.length, failures: failures.slice(0, 8) };
-  }
   function getState(countryValue) {
     const p = resolveProfile(countryValue) || activePlayer();
     if (!p) return null;
