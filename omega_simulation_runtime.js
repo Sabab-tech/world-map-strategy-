@@ -291,12 +291,6 @@
   const SAVE_SINGLE_RECORD_MAX_CHARS=8*1024*1024;
   const SAVE_CHUNK_CHARS=2*1024*1024;
   const SAVE_CHUNKS_PER_BATCH=8;
-  // IndexedDB chunks remain the compact durable format for ordinary large saves.
-  // Above this threshold, keep the canonical snapshot as a structured-clone record:
-  // loadSlot must not join hundreds of megabytes into one JavaScript string.
-  const SAVE_STRUCTURED_RECORD_THRESHOLD_CHARS=16*1024*1024;
-  const SAVE_STRUCTURED_YIELD_INTERVAL_CHARS=2*1024*1024;
-
   function indexedDbSaveRequest(indexedDB,operation,key,value){
     return new Promise((resolve,reject)=>{
       let database=null,settled=false;
@@ -424,7 +418,7 @@
 
   async function persistCanonicalSave(indexedDB,key,snapshot,turn){
     let hash=2166136261,totalLength=0;
-    let smallParts=[],chunkMode=false,structuredMode=false,nextStructuredYieldLength=0;
+    let smallParts=[],chunkMode=false;
     let chunkPrefix='',chunkIndex=0,buffer='',batch=[];
     const generation=Date.now().toString(36)+'-'+(++saveChunkGeneration).toString(36);
 
@@ -442,14 +436,11 @@
         if(batch.length>=SAVE_CHUNKS_PER_BATCH)await flushBatch();
       }
     }
-    async function yieldStructuredSerialization(){
-      if(typeof global.setTimeout==='function'){
-        await new Promise(resolve=>global.setTimeout(resolve,0));
-      }else{
-        await Promise.resolve();
-      }
-    }
 
+    // Hash and write canonical JSON incrementally. Each IndexedDB value is capped
+    // at SAVE_CHUNK_CHARS (2 MiB), even when the complete world snapshot exceeds
+    // Chromium's per-record IndexedDB limit. The load path parses these parts
+    // incrementally and never joins the whole save into one JavaScript string.
     for(const part of stableStringifyParts(snapshot,true)){
       hash=checksumUpdate(hash,part);
       totalLength+=part.length;
@@ -465,43 +456,10 @@
         buffer=smallParts.join('');
         smallParts=[];
       }
-      if(!structuredMode&&totalLength>SAVE_STRUCTURED_RECORD_THRESHOLD_CHARS){
-        // Do not attempt to reconstruct this save from one giant JSON string on
-        // restore. Switch the authoritative slot to a structured-clone record.
-        // Any earlier staging chunks remain unpublished and are removed after
-        // the structured record commits successfully.
-        structuredMode=true;
-        buffer='';
-        batch=[];
-        nextStructuredYieldLength=totalLength;
-      }
-      if(structuredMode){
-        if(totalLength-nextStructuredYieldLength>=SAVE_STRUCTURED_YIELD_INTERVAL_CHARS){
-          nextStructuredYieldLength=totalLength;
-          await yieldStructuredSerialization();
-        }
-        continue;
-      }
       await appendChunkText(part);
     }
 
     const checksum=(hash>>>0).toString(16).padStart(8,'0');
-    if(structuredMode){
-      const record={
-        __omegaSaveSnapshot:'OMEGA_STRUCTURED_SAVE_V1',
-        version:1,
-        checksum,
-        serializedLength:totalLength,
-        turn,
-        snapshot
-      };
-      // The slot record is the commit pointer: write it only after the full
-      // detached snapshot and its streamed checksum are ready. Existing saves
-      // remain readable if this structured-clone transaction fails.
-      await indexedDbSaveRequest(indexedDB,'put',key,record);
-      await cleanupStaleSaveChunks(indexedDB,key,null);
-      return {ok:true,key,turn,storage:'INDEXEDDB_STRUCTURED',checksum,serializedLength:totalLength};
-    }
     if(!chunkMode){
       const canonical=smallParts.join('');
       const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
