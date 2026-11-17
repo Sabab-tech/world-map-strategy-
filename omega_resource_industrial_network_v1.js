@@ -1538,6 +1538,7 @@ function recipeFor(resourceId,asset={}){
     inputs:normalizedInputs,outputs:clone(outputs),
     cycleDays:dynamicRecipe?(num(base.cycleDays)||1):(num(asset?.cycleDays)||num(base.cycleDays)||1),
     recipeAuthority,recipeMode:asset?.recipeMode||(Object.keys(normalizedInputs).length>1?'MULTI_INPUT':'SINGLE_INPUT'),
+    presentation:clone(base.presentation||{}),
     inputUnit:base.inputUnit||asset?.inputUnit||null,outputUnit:base.outputUnit||asset?.outputUnit||null,
     requiresAllInputs:base.requiresAllInputs===true,requiresTrackedInputs:asset?.requireTrackedInputs===true
   };
