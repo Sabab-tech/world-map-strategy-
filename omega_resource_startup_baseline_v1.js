@@ -156,15 +156,26 @@
       if (!create) return { key: null, value: null };
       return { key: null, value: null, invalid: true };
     }
-    var aliases = profileAliases(profile);
+    var iso3 = id(profile && profile.iso3);
+    var iso3Token = token(iso3);
     var keys = Object.keys(table);
-    for (var i = 0; i < keys.length; i++) {
-      if (aliases.indexOf(token(keys[i])) >= 0 && object(table[keys[i]])) {
-        return { key: keys[i], value: table[keys[i]] };
+    // Gameplay runtimes address country buckets by canonical ISO3. A save may
+    // also retain legacy aliases such as AUSTRALIA or BANGLADESH; those keys
+    // must not shadow an existing canonical player bucket merely because they
+    // appear earlier in object insertion order.
+    if (iso3Token) {
+      for (var i = 0; i < keys.length; i++) {
+        if (token(keys[i]) === iso3Token && object(table[keys[i]])) {
+          return { key: keys[i], value: table[keys[i]] };
+        }
       }
     }
-    var iso3 = id(profile && profile.iso3);
-    if (iso3 && object(table[iso3])) return { key: iso3, value: table[iso3] };
+    var aliases = profileAliases(profile);
+    for (var j = 0; j < keys.length; j++) {
+      if (aliases.indexOf(token(keys[j])) >= 0 && object(table[keys[j]])) {
+        return { key: keys[j], value: table[keys[j]] };
+      }
+    }
     if (!create || !iso3) return { key: null, value: null };
     table[iso3] = {};
     return { key: iso3, value: table[iso3], created: true };
