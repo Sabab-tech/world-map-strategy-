@@ -105,7 +105,7 @@
       if(hasPendingChar)throw new Error('SAVE_CHUNK_JSON_READER_LOOKAHEAD_OVERFLOW');
       pendingChar=value;hasPendingChar=true;
     }
-    function isWhitespace(value){return value===' '||value==='\\t'||value==='\\n'||value==='\\r';}
+    function isWhitespace(value){return value===' '||value.charCodeAt(0)===9||value.charCodeAt(0)===10||value.charCodeAt(0)===13;}
     function nextToken(){
       let character=readChar();
       while(character!==null&&isWhitespace(character))character=readChar();
