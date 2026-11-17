@@ -359,7 +359,9 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         String(playerSessionDiagnostics.session?.status || '').toUpperCase() !== 'PAUSED' ||
         String(playerSessionDiagnostics.session?.playerCountryId || '').toUpperCase() !== playerCountrySelection.seller ||
         playerSessionDiagnostics.runtimePlayerCountry !== playerCountrySelection.seller ||
-        !playerSessionDiagnostics.worldStateLinked) {
+        !playerSessionDiagnostics.worldStateLinked ||
+        playerSessionDiagnostics.stepInProgress ||
+        playerSessionDiagnostics.lifecycle?.clock?.paused !== true) {
       throw new Error('MINE_MARKET_TREASURY_PLAYER_SESSION_START_FAILED:' + JSON.stringify(playerSessionDiagnostics));
     }
     console.info('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({
