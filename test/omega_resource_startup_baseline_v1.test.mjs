@@ -524,16 +524,16 @@ test('an already-initialized existing save recovers only missing player context 
 
   // Simulate an older persisted save: all stock/factory markers survived, but
   // non-player-controlled country context and the utility values were absent.
-  economy.population_2015 = null;
-  economy.unemployment_rate = null;
+  economy.population_2015 = '';
+  economy.unemployment_rate = 'NOT_RECORDED';
   delete state.transport.BGD.infrastructure.utilitySupply.electricityMWhPerDay;
   delete state.transport.BGD.infrastructure.utilitySupply.waterM3PerDay;
 
   const recovered = await api.initializeForSession(session);
   assert.equal(recovered.status, 'ALREADY_INITIALIZED');
-  assert.ok(economy.population_2015 > 0, 'null population context is restored from the selected country profile');
+  assert.ok(economy.population_2015 > 0, 'an invalid blank population field is restored from the selected country profile');
   assert.ok(economy.unemployment_rate >= 0 && economy.unemployment_rate <= 100,
-    'null unemployment context is restored from the selected country profile');
+    'a nonnumeric unemployment sentinel is restored from the selected country profile');
   const supply = state.transport.BGD.infrastructure.utilitySupply;
   assert.ok(supply.electricityMWhPerDay > 0, 'missing electricity capacity is restored from canonical starter-factory requirements');
   assert.ok(supply.waterM3PerDay > 0, 'missing industrial-water capacity is restored from canonical starter-factory requirements');
