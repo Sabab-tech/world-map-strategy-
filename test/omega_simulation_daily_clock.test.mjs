@@ -389,7 +389,7 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
 
   assert.equal(transmissionRules.simulationTurnDurationMs, DAY_MS);
   assert.equal(macroRules.simulationTurnDurationMs, DAY_MS);
-  assert.match(finance, /registerCountryHandler\('omega-finance-ministry',advanceCountry,[\s\S]*?priority:15\)/,
+  assert.match(finance, /registerCountryHandler\('omega-finance-ministry',advanceCountry,[\s\S]*?priority:15\}\)/,
     'Finance must run as the second scheduler-scoped national progression handler');
   assert.doesNotMatch(finance, /OMEGA_SIMULATION_TURN_COMMITTED/,
     'Finance must not retain its former all-profile committed-turn loop');
