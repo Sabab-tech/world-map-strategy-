@@ -1,0 +1,38 @@
+name: OMEGA NPC National Macro-Economy Runtime
+
+on:
+  pull_request:
+    paths:
+      - "omega_npc_national_macro_economy_runtime_v1.js"
+      - "npc_national_macro_economy_rules_v1.json"
+      - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
+      - "omega_finance_ministry_runtime_v1.js"
+      - "test/omega_finance_ministry_runtime_v1.test.mjs"
+      - "omega_ministry_state_transaction.js"
+      - ".github/workflows/omega-npc-national-economy.yml"
+  push:
+    branches: [main]
+    paths:
+      - "omega_npc_national_macro_economy_runtime_v1.js"
+      - "npc_national_macro_economy_rules_v1.json"
+      - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
+      - "omega_finance_ministry_runtime_v1.js"
+      - "test/omega_finance_ministry_runtime_v1.test.mjs"
+      - "omega_ministry_state_transaction.js"
+      - ".github/workflows/omega-npc-national-economy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify NPC macro-economy runtime
+        run: npm run test:npc-macro-economy
