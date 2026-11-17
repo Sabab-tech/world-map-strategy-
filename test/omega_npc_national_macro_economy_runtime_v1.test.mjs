@@ -6,6 +6,9 @@ import vm from 'node:vm';
 const runtimeSource = readFileSync('omega_npc_national_macro_economy_runtime_v1.js', 'utf8');
 const transactionSource = readFileSync('omega_ministry_state_transaction.js', 'utf8');
 const rules = JSON.parse(readFileSync('npc_national_macro_economy_rules_v1.json', 'utf8'));
+const indexHtml = readFileSync('index.html', 'utf8');
+const serverBootstrap = readFileSync('server_bootstrap.js', 'utf8');
+const offlineShell = readFileSync('omega-offline-map-sw.js', 'utf8');
 
 function createHarness(options = {}) {
   const state = options.state || {
@@ -225,6 +228,8 @@ test('general-data observations override local baseline only with metric-level p
   assert.equal(metric.year, 2024);
   assert.equal(metric.source, 'World Bank API');
   assert.match(metric.authority, /WORLD_BANK_API_OBSERVATION/);
+  assert.equal(metric.sourceUrl, 'https://example.invalid/source');
+  assert.equal(metric.method, null);
 });
 
 test('checkpoint deltas never aggregate different resource or physical units', async () => {
@@ -235,3 +240,19 @@ test('checkpoint deltas never aggregate different resource or physical units', a
   assert.equal(Object.keys(first.liveActivity).some(key => /inventory|commodityTotal|resourceTotal/i.test(key)), false);
   assert.equal(first.liveActivity.recordedProductionCapacity.unit, null);
 });
+
+
+test('static shell, server bootstrap and offline cache load the same runtime/config',()=>{
+  const staticIndex=indexHtml.indexOf('omega_npc_national_macro_economy_runtime_v1.js');
+  const staticTrade=indexHtml.indexOf('omega_global_trade_system.js');
+  const serverRuntime=serverBootstrap.indexOf("'omega_npc_national_macro_economy_runtime_v1.js'");
+  const serverTrade=serverBootstrap.indexOf("'omega_global_trade_system.js'");
+  assert.ok(staticRuntimeAfterTrade(staticIndex,staticTrade));
+  assert.ok(serverRuntime>serverTrade);
+  assert.match(offlineShell,/omega-offline-atlas-shell-v122/);
+  assert.match(offlineShell,/\.\/npc_national_macro_economy_rules_v1\.json/);
+  assert.match(offlineShell,/\.\/omega_npc_national_macro_economy_runtime_v1\.js/);
+  assert.match(runtimeSource,/registerCountryHandler/);
+  assert.doesNotMatch(runtimeSource,/setInterval|requestAnimationFrame|new Worker\s*\(/);
+});
+function staticRuntimeAfterTrade(runtimeIndex,tradeIndex){return runtimeIndex>tradeIndex&&runtimeIndex>=0&&tradeIndex>=0;}
