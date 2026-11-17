@@ -1,12 +1,20 @@
 import assert from 'node:assert/strict';
 
+const scheduledTreatyHandlers = new Map();
+globalThis.Omega = globalThis.Omega || {};
+globalThis.Omega.WorldSimulationScheduler = {
+  registerCountryHandler(id, handler, options) {
+    scheduledTreatyHandlers.set(id, { handler, options });
+    return () => scheduledTreatyHandlers.delete(id);
+  }
+};
 globalThis.Game={state:{
   simulation:{turn:1},
-  finance:{BD:{available:100000},SA:{available:100000}},
-  economy:{BD:{gdp:100000,debt:10000},SA:{gdp:200000,debt:10000}},
+  finance:{BGD:{available:100000},SAU:{available:100000}},
+  economy:{BGD:{gdp:100000,debt:10000},SAU:{gdp:200000,debt:10000}},
   foreign:{
-    BD:{relations:{SA:{overall:80,trust:75,political:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{},negotiations:{SA:{status:'REQUESTED',stage:'NEGOTIATION_OPENED',targetCountryId:'SA',treatyType:'ENERGY_SUPPLY',terms:{resourceId:'crude_oil',quantity:1000},createdTurn:1,decisionId:'NEG-1'}}},
-    SA:{relations:{BD:{overall:80,trust:75,political:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{},negotiations:{}}
+    BGD:{relations:{SAU:{overall:80,trust:75,political:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{},negotiations:{SAU:{status:'REQUESTED',stage:'NEGOTIATION_OPENED',targetCountryId:'SAU',treatyType:'ENERGY_SUPPLY',terms:{resourceId:'crude_oil',quantity:1000},createdTurn:1,decisionId:'NEG-1'}}},
+    SAU:{relations:{BGD:{overall:80,trust:75,political:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{},negotiations:{}}
   }
 }};
 globalThis.CustomEvent=globalThis.CustomEvent||class{constructor(type,init={}){this.type=type;this.detail=init.detail;}};
@@ -24,11 +32,25 @@ await import('../omega_ministry_interoperability_system.js');
 await import('../omega_opponent_treaty_lifecycle_system.js');
 
 const treaty=globalThis.OmegaOpponentTreatyLifecycle;
-assert(treaty.diagnostics().handlerInstalled);
+assert(treaty.diagnostics().handlerInstalled, JSON.stringify(treaty.diagnostics()));
+assert.equal(treaty.diagnostics().automaticWorldRosterScan,false);
+const scheduled = scheduledTreatyHandlers.get('omega.opponent-treaty-lifecycle');
+assert.ok(scheduled,'treaty lifecycle must register on the existing country scheduler');
+assert.deepEqual(scheduled.options.tiers,['PLAYER','ACTIVE','MACRO']);
+assert.equal(scheduled.options.priority,25);
+assert.equal(treaty.diagnostics().maxPendingReviewsPerCountryPerTurn,2);
 globalThis.Game.state.simulation.turn=2;
-treaty.processAll();
-assert.equal(globalThis.Game.state.foreign.BD.treaties.SA.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.SA.treaties.BD.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.BD.negotiations.SA.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.SA.negotiations.BD.status,'ACTIVE');
+const treatyPreview = treaty.review({countryId:'BGD',targetCountryId:'SAU',treatyType:'ENERGY_SUPPLY',
+  terms:{resourceId:'crude_oil',quantity:1000}},'SAU');
+const scheduledResult = scheduled.handler('BGD',{turn:2,state:globalThis.Game.state});
+assert.equal(treatyPreview.decision,'ACCEPT');
+assert.equal(scheduledResult.status,'COMPLETED',JSON.stringify(scheduledResult));
+assert.equal(scheduledResult.scanned,1,JSON.stringify(scheduledResult));
+assert.equal(scheduledResult.accepted,1,JSON.stringify(scheduledResult));
+assert.equal(treaty.processCountry('BGD').status,'ALREADY_PROCESSED',
+  'repeated scheduler callbacks for one country/turn must not process a treaty twice');
+assert.equal(globalThis.Game.state.foreign.BGD.treaties.SA.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.SAU.treaties.BD.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.BGD.negotiations.SA.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.SAU.negotiations.BD.status,'ACTIVE');
 console.log('OMEGA TREATY LIFECYCLE TEST PASSED');

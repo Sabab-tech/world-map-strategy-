@@ -1,11 +1,11 @@
-/* OMEGA NPC NATIONAL MACRO-ECONOMY RUNTIME v1.0.0
- * Data-driven country checkpoints. This first slice records evidence only:
- * it does not calculate GDP growth, national output value, inflation or unemployment changes.
+/* OMEGA NPC NATIONAL MACRO-ECONOMY RUNTIME v1.1.0
+ * Evidence-calibrated NPC progression. All country writes remain inside the existing
+ * Finance-owned country checkpoint; no parallel national accounts or per-frame work.
  */
 (function (g) {
   'use strict';
 
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
   const HANDLER_ID = 'omega.npc-national-macro-economy.v1';
   const RULES_URL = 'npc_national_macro_economy_rules_v1.json';
   const runtime = {
@@ -24,7 +24,10 @@
     skippedCountries: 0,
     deferredCountries: 0,
     failedCountries: 0,
-    lastProcessedTurn: null
+    lastProcessedTurn: null,
+    macroProgressedCountries: 0,
+    lastProgressionTurn: null,
+    lastProgressionStatus: null
   };
 
   const isObject = value => !!value && typeof value === 'object' && !Array.isArray(value);
@@ -314,9 +317,12 @@
     };
   }
 
-  function buildLiveActivity(root, profile, countryId) {
+  function buildLiveActivity(root, profile, countryId, baseline, previousTurn, currentTurnValue) {
     const live = {};
     for (const rule of runtime.rules.liveSignals) live[rule.id] = readLiveSignal(root, profile, countryId, rule);
+    live.industrialOutputByResourceUnit = buildIndustrialOutputEvidence(root, profile, countryId);
+    live.settledTradeActivity = buildSettledTradeEvidence(root, profile, countryId, baseline, previousTurn, currentTurnValue);
+    live.diplomaticPolicyContext = buildDiplomacyEvidence(root, profile, countryId);
     return live;
   }
 
@@ -331,6 +337,366 @@
       if (before !== null && after !== null) deltas[key] = { value: after - before, unit: next.unit || null, authority: 'TURN_TO_TURN_SOURCE_SIGNAL_DELTA' };
     }
     return deltas;
+  }
+
+
+  function currencyAndFx(profile, baseline) {
+    const forex = g.OmegaForexMonetaryEngine || g.Omega?.ForexMonetaryEngine;
+    let currency = null, localPerUsd = null;
+    try { currency = forex?.getCurrencyCode?.(profile) || profile?.currencyCode || profile?.currency || null; } catch (_) {}
+    const currencyCode = String(currency || '').trim().toUpperCase() || null;
+    if (currencyCode === 'USD') localPerUsd = 1;
+    if (localPerUsd === null && currencyCode) {
+      try { localPerUsd = finite(forex?.getRate?.(currencyCode, 'SIMULATION')); } catch (_) {}
+    }
+    if (localPerUsd === null) localPerUsd = finite(baseline?.metrics?.exchangeRateLocalPerUsd?.value);
+    return { currencyCode, localPerUsd: localPerUsd !== null && localPerUsd > 0 ? localPerUsd : null };
+  }
+
+  function buildIndustrialOutputEvidence(root, profile, countryId) {
+    const resource = countryRecord(root, 'resource', profile, countryId);
+    const ledger = Array.isArray(resource?.finishedGoodsLedger) ? resource.finishedGoodsLedger : null;
+    const batches = Array.isArray(resource?.batches) ? resource.batches.slice(-4096) : [];
+    if (!ledger) return {
+      value: null, availability: 'UNOBSERVED', unit: 'RESOURCE_ID_AND_DECLARED_UNIT',
+      authority: 'COUNTRY_FINISHED_GOODS_LEDGER', source: 'resource.finishedGoodsLedger',
+      note: 'No authoritative finished-goods ledger is registered for this country.'
+    };
+    const byId = new Map();
+    for (const row of batches.slice(-8192)) {
+      const batchId = String(row?.batchId || '').trim();
+      if (batchId) byId.set(batchId, row);
+    }
+    const rows = {};
+    const seen = new Set();
+    for (const record of ledger.slice(-256)) {
+      const status = String(record?.status || '').toUpperCase();
+      if (!['AVAILABLE_TO_ECONOMY', 'AVAILABLE', 'COMPLETED'].includes(status)) continue;
+      const batchIds = Array.isArray(record?.createdBatchIds) ? record.createdBatchIds : [];
+      for (const batchIdValue of batchIds) {
+        const batchId = String(batchIdValue || '').trim();
+        if (!batchId || seen.has(batchId)) continue;
+        seen.add(batchId);
+        const batch = byId.get(batchId);
+        if (!batch) continue;
+        const resourceId = String(batch.resourceId || batch.materialIdentity || '').trim().toLowerCase();
+        const unit = String(batch.unit || '').trim();
+        const quantity = finite(batch.quantity);
+        if (!resourceId || !unit || quantity === null || quantity <= 0) continue;
+        const key = resourceId + '|' + unit;
+        if (!rows[key]) rows[key] = { resourceId, unit, quantity: 0, batchCount: 0 };
+        rows[key].quantity += quantity;
+        rows[key].batchCount += 1;
+      }
+    }
+    return {
+      value: { rows, sourceRecordCount: ledger.length, sampledRecordCount: Math.min(ledger.length, 256), sampledBatchCount: batches.length },
+      availability: 'AVAILABLE', unit: 'RESOURCE_ID_AND_DECLARED_UNIT',
+      authority: 'COUNTRY_FINISHED_GOODS_LEDGER', source: 'resource.finishedGoodsLedger',
+      note: 'Quantities remain separated by canonical resource identity and declared unit; no unlike commodities are summed.'
+    };
+  }
+
+  function buildSettledTradeEvidence(root, profile, countryId, baseline, previousTurn, turn) {
+    const trade = countryRecord(root, 'trade', profile, countryId);
+    const imports = Array.isArray(trade?.importLedger) ? trade.importLedger : null;
+    const exports = Array.isArray(trade?.exportLedger) ? trade.exportLedger : null;
+    if (!imports || !exports) return {
+      value: null, availability: 'UNOBSERVED', unit: 'USD_PER_CHECKPOINT_INTERVAL',
+      authority: 'GLOBAL_TRADE_SETTLEMENT_LEDGER', source: 'trade.importLedger+trade.exportLedger',
+      note: 'Settled import/export value ledgers are not both available.'
+    };
+    const fx = currencyAndFx(profile, baseline);
+    if (fx.localPerUsd === null) return {
+      value: null, availability: 'UNOBSERVED', unit: 'USD_PER_CHECKPOINT_INTERVAL',
+      authority: 'GLOBAL_TRADE_SETTLEMENT_LEDGER_WITHOUT_FX', source: 'trade.importLedger+trade.exportLedger',
+      note: 'Settled values are recorded but no usable country currency-to-USD rate is available.'
+    };
+    const inPeriod = rows => rows.filter(row => {
+      const rowTurn = finite(row?.turn);
+      return rowTurn !== null && rowTurn > previousTurn && rowTurn <= turn;
+    });
+    const importRows = inPeriod(imports), exportRows = inPeriod(exports);
+    const sum = rows => {
+      let value = 0, count = 0, currency = null, valid = true;
+      for (const row of rows) {
+        const amount = finite(row?.totalValue);
+        if (amount === null || amount < 0) { valid = false; continue; }
+        const code = String(row?.currency || fx.currencyCode || '').trim().toUpperCase() || null;
+        if (currency && code && currency !== code) valid = false;
+        currency = currency || code;
+        value += amount;
+        count += 1;
+      }
+      return { value, count, currency, valid };
+    };
+    const imported = sum(importRows), exported = sum(exportRows);
+    if (!imported.valid || !exported.valid ||
+        (imported.currency && exported.currency && imported.currency !== exported.currency)) return {
+      value: null, availability: 'UNOBSERVED', unit: 'USD_PER_CHECKPOINT_INTERVAL',
+      authority: 'GLOBAL_TRADE_SETTLEMENT_LEDGER_CURRENCY_MISMATCH',
+      source: 'trade.importLedger+trade.exportLedger',
+      note: 'Mixed or invalid native currency amounts were excluded from macro aggregation.'
+    };
+    const importUsd = imported.value / fx.localPerUsd;
+    const exportUsd = exported.value / fx.localPerUsd;
+    return {
+      value: {
+        importValueUsd: Number(importUsd.toFixed(4)),
+        exportValueUsd: Number(exportUsd.toFixed(4)),
+        netTradeValueUsd: Number((exportUsd - importUsd).toFixed(4)),
+        grossTradeValueUsd: Number((exportUsd + importUsd).toFixed(4)),
+        importSettlementCount: imported.count,
+        exportSettlementCount: exported.count,
+        currencyCode: fx.currencyCode || imported.currency || exported.currency || null,
+        localPerUsd: fx.localPerUsd
+      },
+      availability: 'AVAILABLE', unit: 'USD_PER_CHECKPOINT_INTERVAL',
+      authority: 'SETTLED_TRADE_LEDGER_USD_NORMALIZED',
+      source: 'trade.importLedger+trade.exportLedger',
+      note: 'Only completed import/export settlement ledger values in one known country currency are normalized; order-book matches and pending requests are excluded.'
+    };
+  }
+
+  function playerCountryId(root) {
+    const candidates = [
+      root?.simulation?.session?.playerCountryId,
+      root?.simulation?.playerCountryId,
+      g.Omega?.Simulation?.getPlayerCountryId?.()
+    ];
+    for (const value of candidates) {
+      const resolved = canonicalIso3(value);
+      if (resolved) return resolved;
+    }
+    return null;
+  }
+
+  function buildDiplomacyEvidence(root, profile, countryId) {
+    const foreign = countryRecord(root, 'foreign', profile, countryId);
+    const trade = countryRecord(root, 'trade', profile, countryId);
+    const relations = isObject(foreign?.relations) ? foreign.relations : null;
+    const treaties = isObject(foreign?.treaties) ? foreign.treaties : {};
+    if (!relations) return {
+      value: null, availability: 'UNOBSERVED', unit: 'BILATERAL_POLICY_SNAPSHOT',
+      authority: 'FOREIGN_MINISTRY_STATE', source: 'foreign.relations+foreign.treaties',
+      note: 'No country-owned foreign-relations register is available.'
+    };
+    const relationRows = Object.entries(relations).filter(([, row]) => isObject(row));
+    const treatyRows = Object.entries(treaties).filter(([, row]) => isObject(row));
+    const activeTreaties = treatyRows.filter(([, row]) =>
+      /SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(row.status || row.stage || '').toUpperCase()));
+    const warRows = relationRows.filter(([, row]) => row.war_state === true);
+    const sanctionRows = relationRows.filter(([, row]) => row.sanctions === true);
+    const disruptionRows = relationRows.filter(([, row]) => row.war_state === true || row.sanctions === true);
+    const tradeAgreements = relationRows.filter(([, row]) => row.trade_agreement === true);
+    const tradeTreaties = activeTreaties.filter(([, row]) =>
+      /TRADE|ECONOMY|COMMERCE|SUPPLY|ENERGY|RESOURCE|CUSTOMS|MARKET|INVESTMENT/.test(
+        String(row.treatyType || '') + ' ' + JSON.stringify(row.terms || {})
+      ));
+    const tradePartnerIds = new Set();
+    for (const [partnerId] of tradeAgreements) tradePartnerIds.add(canonicalIso3(partnerId) || partnerId);
+    for (const [partnerId] of tradeTreaties) tradePartnerIds.add(canonicalIso3(partnerId) || partnerId);
+    const playerId = playerCountryId(root);
+    const playerRelation = playerId ? (relations[playerId] ||
+      relationRows.find(([key]) => canonicalIso3(key) === playerId)?.[1] || null) : null;
+    const playerTreaty = playerId ? (treaties[playerId] ||
+      treatyRows.find(([key]) => canonicalIso3(key) === playerId)?.[1] || null) : null;
+    const bank = g.OmegaGovernmentBanking || g.Omega?.GovernmentBanking;
+    let importTariffPct = finite(trade?.importTariffPct ?? trade?.policy?.importTariffPct ?? trade?.tradePolicy?.importTariffPct);
+    try {
+      const bankPolicy = bank?.getCountryPolicy?.(countryId);
+      if (finite(bankPolicy?.importTariffPct) !== null) importTariffPct = finite(bankPolicy.importTariffPct);
+    } catch (_) {}
+    const foreignPolicy = foreign?.policy || foreign?.foreignPolicy || null;
+    const tradePolicy = trade?.policy || trade?.tradePolicy || null;
+    return {
+      value: {
+        observedRelationCount: relationRows.length,
+        activeTreatyCount: activeTreaties.length,
+        activeTradeTreatyCount: tradeTreaties.length,
+        activeTradePartnerCount: tradePartnerIds.size,
+        explicitTradeAgreementCount: tradeAgreements.length,
+        warCountryCount: warRows.length,
+        sanctionedCountryCount: sanctionRows.length,
+        tradeDisruptionCountryCount: disruptionRows.length,
+        playerCountryId: playerId,
+        playerRelationObserved: !!playerRelation,
+        playerRelationScore: finite(playerRelation?.overall ?? playerRelation?.trade ?? playerRelation?.trust),
+        playerTradeAgreement: playerRelation?.trade_agreement === true ||
+          !!playerTreaty && /SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(playerTreaty.status || playerTreaty.stage || '').toUpperCase()),
+        playerWarState: playerRelation?.war_state === true,
+        playerSanctions: playerRelation?.sanctions === true,
+        importTariffPct,
+        foreignPolicy: typeof foreignPolicy === 'string' ? foreignPolicy : (foreignPolicy?.stance || foreignPolicy?.type || null),
+        tradePolicy: typeof tradePolicy === 'string' ? tradePolicy : (tradePolicy?.stance || tradePolicy?.mode || null)
+      },
+      availability: 'AVAILABLE', unit: 'BILATERAL_POLICY_SNAPSHOT',
+      authority: 'FOREIGN_AND_TRADE_MINISTRY_STATE',
+      source: 'foreign.relations+foreign.treaties+trade.policy',
+      note: 'Only this country’s observed relations, treaty records and recorded trade policy are used; missing policy fields remain null.'
+    };
+  }
+
+  function liveValue(live, key) {
+    const row = live?.[key];
+    return row?.availability === 'AVAILABLE' ? row.value : null;
+  }
+
+  function deriveProgression(baseline, live, previous, turn, stepDurationMs) {
+    const rules = runtime.rules.progression || {};
+    const priorLive = previous?.liveActivity || {};
+    const priorProgression = previous?.progression || null;
+    const elapsedTurns = Math.max(1, turn - (finite(previous?.lastProcessedTurn) ?? (turn - 1)));
+    const durationMs = Math.max(0, finite(stepDurationMs) ?? finite(rules.simulationTurnDurationMs) ?? 86400000) * elapsedTurns;
+    const years = durationMs / (finite(rules.annualizationMs) ?? 31536000000);
+    const maxAnnualGrowth = Math.max(0.1, finite(rules.maxAnnualIndustryGrowthPct) ?? 18);
+    const maxGrowthPp = Math.max(0.1, finite(rules.maxGrowthContributionPp) ?? 2.5);
+    const metric = key => finite(baseline?.metrics?.[key]?.value);
+    const currentMetric = key => liveValue(live, key);
+    const baseGdp = currentMetric('currentNominalGdpUsd') ?? metric('gdpCurrentUsd');
+    const baseGrowth = currentMetric('currentGdpGrowthPct') ?? metric('gdpGrowthPct');
+    const baseInflation = currentMetric('currentInflationPct') ?? metric('inflationRatePct');
+    const baseUnemployment = currentMetric('currentUnemploymentPct') ?? metric('unemploymentRatePct');
+    const tradeEvidence = live?.settledTradeActivity?.availability === 'AVAILABLE' ? live.settledTradeActivity.value : null;
+    const diplomacy = live?.diplomaticPolicyContext?.availability === 'AVAILABLE' ? live.diplomaticPolicyContext.value : null;
+    const policyEffects = runtime.rules.policyEffects || {};
+    const policyToken = value => String(value || '').trim().toUpperCase().replace(/\s+/g, '_').replace(/-/g, '_');
+    const policyFactor = (table, value) => {
+      const raw = value ? finite(table?.[policyToken(value)]) : null;
+      return raw !== null && raw > 0 ? raw : 1;
+    };
+    const tradePolicyFactor = policyFactor(policyEffects.tradePolicyFactors, diplomacy?.tradePolicy);
+    const foreignPolicyFactor = policyFactor(policyEffects.foreignPolicyFactors, diplomacy?.foreignPolicy);
+    const relationRaw = finite(diplomacy?.playerRelationScore);
+    const relationNormalized = relationRaw === null ? null : (relationRaw > 1 ? relationRaw / 100 : relationRaw);
+    const playerRelationFactor = relationNormalized === null ? 1 :
+      Math.max(finite(policyEffects.minimumPlayerRelationFactor) ?? 0.85,
+        Math.min(finite(policyEffects.maximumPlayerRelationFactor) ?? 1.15,
+          (finite(policyEffects.playerRelationFactorBase) ?? 0.85) +
+          relationNormalized * (finite(policyEffects.playerRelationFactorRange) ?? 0.30)));
+    const policyAccessMultiplier = Math.max(finite(policyEffects.minimumCombinedFactor) ?? 0.60,
+      Math.min(finite(policyEffects.maximumCombinedFactor) ?? 1.25,
+        tradePolicyFactor * foreignPolicyFactor * playerRelationFactor));
+    const projects = live?.autonomousProjectStatusCounts?.value || null;
+    const priorProjects = priorLive?.autonomousProjectStatusCounts?.value || null;
+    const projectDelta = projects && priorProjects
+      ? Math.max(0, (finite(projects.completed) || 0) - (finite(priorProjects.completed) || 0)) : 0;
+    const outputNow = live?.industrialOutputByResourceUnit?.availability === 'AVAILABLE'
+      ? live.industrialOutputByResourceUnit.value?.rows || {} : null;
+    const outputPrior = priorLive?.industrialOutputByResourceUnit?.availability === 'AVAILABLE'
+      ? priorLive.industrialOutputByResourceUnit.value?.rows || {} : null;
+    let outputGrowthRates = [];
+    if (outputNow && outputPrior && years > 0) {
+      for (const [key, row] of Object.entries(outputNow)) {
+        const prior = outputPrior[key];
+        const before = finite(prior?.quantity), after = finite(row?.quantity);
+        if (!prior || prior.unit !== row.unit || before === null || after === null || before <= 0 || after <= 0) continue;
+        const annualized = (Math.log(after / before) / years) * 100;
+        if (Number.isFinite(annualized)) outputGrowthRates.push(Math.max(-maxAnnualGrowth, Math.min(maxAnnualGrowth, annualized)));
+      }
+    }
+    const industrialOutputGrowthPct = outputGrowthRates.length
+      ? outputGrowthRates.reduce((sum, value) => sum + value, 0) / outputGrowthRates.length : null;
+    const industrySensitivity = finite(rules.industryGrowthSensitivity) ?? 0.20;
+    const industryContributionPp = industrialOutputGrowthPct === null ? null :
+      Math.max(-maxGrowthPp, Math.min(maxGrowthPp, industrialOutputGrowthPct * industrySensitivity));
+    const tradeSensitivity = finite(rules.tradeBalanceToGdpSensitivity) ?? 0.08;
+    let tradeContributionPp = null, tradeBalanceToGdpPct = null;
+    if (tradeEvidence && baseGdp !== null && baseGdp > 0 && years > 0) {
+      tradeBalanceToGdpPct = (finite(tradeEvidence.netTradeValueUsd) || 0) / (baseGdp * years) * 100;
+      const treatyBoost = diplomacy
+        ? 1 + Math.min(1, (finite(diplomacy.activeTradePartnerCount) ??
+          finite(diplomacy.activeTradeTreatyCount) ?? 0) /
+          Math.max(1, diplomacy.observedRelationCount)) *
+          (finite(rules.treatyTradeAccessSensitivity) ?? 0.15) : 1;
+      const disruption = diplomacy
+        ? Math.max(0, 1 - (finite(diplomacy.tradeDisruptionCountryCount) ??
+          (diplomacy.warCountryCount + diplomacy.sanctionedCountryCount)) *
+          (finite(rules.tradeDisruptionPerCountry) ?? 0.12)) : 1;
+      tradeContributionPp = Math.max(-maxGrowthPp, Math.min(maxGrowthPp,
+        tradeBalanceToGdpPct * tradeSensitivity * treatyBoost * disruption * policyAccessMultiplier));
+    }
+    const grossCapitalFormationPctGdp = metric('grossCapitalFormationPctGdp');
+    const investmentIndexPrior = finite(priorProgression?.investmentActivityIndex);
+    const projectIndexStep = finite(rules.investmentIndexPointsPerCompletedProject) ?? 0.8;
+    const maxInvestmentIndex = finite(rules.maximumInvestmentActivityIndex) ?? 250;
+    const investmentActivityIndex = grossCapitalFormationPctGdp !== null
+      ? Math.min(maxInvestmentIndex, (investmentIndexPrior ?? 100) + projectDelta * projectIndexStep)
+      : (projects ? Math.min(maxInvestmentIndex, (investmentIndexPrior ?? 100) + projectDelta * projectIndexStep) : null);
+    const investmentStatus = grossCapitalFormationPctGdp !== null
+      ? (projects ? 'SOURCE_BASELINE_PLUS_RECORDED_PROJECT_ACTIVITY' : 'SOURCE_BASELINE_ONLY')
+      : (projects ? 'PROJECT_COUNT_PROXY_ONLY_NO_MONETARY_CAPEX' : 'UNOBSERVED');
+    const investmentContributionPp = grossCapitalFormationPctGdp !== null && projectDelta > 0 && years > 0
+      ? Math.min(maxGrowthPp, projectDelta * (finite(rules.investmentGrowthPpPerCompletedProject) ?? 0.04) / years)
+      : null;
+    const tariffPct = finite(diplomacy?.importTariffPct);
+    const tariffInflationPp = tariffPct === null ? null :
+      Math.max(0, Math.min(finite(rules.maximumTariffInflationPp) ?? 2, tariffPct * (finite(rules.tariffInflationSensitivity) ?? 0.025)));
+    const warExposure = diplomacy ? (finite(diplomacy.tradeDisruptionCountryCount) ??
+      (diplomacy.warCountryCount + diplomacy.sanctionedCountryCount)) : null;
+    const warInflationPp = warExposure === null ? null :
+      Math.min(finite(rules.maximumWarInflationPp) ?? 1.5, warExposure * (finite(rules.warInflationPpPerCountry) ?? 0.08));
+    const producerNow = currentMetric('producerCostIndex');
+    const producerBefore = finite(priorLive?.producerCostIndex?.value);
+    const producerCostGrowthPct = producerNow !== null && producerBefore !== null && producerBefore > 0 && years > 0
+      ? (Math.log(producerNow / producerBefore) / years) * 100 : null;
+    const producerCostInflationPp = producerCostGrowthPct === null ? null :
+      Math.max(-1, Math.min(3, producerCostGrowthPct * (finite(rules.producerCostInflationSensitivity) ?? 0.25)));
+    const baseGrowthParts = [industryContributionPp, tradeContributionPp, investmentContributionPp].filter(value => value !== null);
+    const totalGrowthContributionPp = baseGrowthParts.length
+      ? Math.max(-maxGrowthPp, Math.min(maxGrowthPp, baseGrowthParts.reduce((sum, value) => sum + value, 0))) : null;
+    const projectedGrowth = baseGrowth === null ? null : Math.max(
+      finite(rules.minimumProjectedGrowthPct) ?? -25,
+      Math.min(finite(rules.maximumProjectedGrowthPct) ?? 25, baseGrowth + (totalGrowthContributionPp || 0))
+    );
+    const gdpProjectionUsd = baseGdp === null || baseGdp <= 0 || projectedGrowth === null
+      ? null : baseGdp * Math.pow(Math.max(0.01, 1 + projectedGrowth / 100), years);
+    const outputIndexPrior = finite(priorProgression?.industrialOutputIndex);
+    const industrialOutputIndex = outputNow && Object.keys(outputNow).length
+      ? (outputIndexPrior === null ? 100 : industrialOutputGrowthPct === null ? outputIndexPrior :
+        outputIndexPrior * Math.pow(Math.max(0.01, 1 + industrialOutputGrowthPct / 100), years))
+      : null;
+    const inflParts = [tariffInflationPp, warInflationPp, producerCostInflationPp].filter(value => value !== null);
+    const inflationContributionPp = inflParts.length
+      ? Math.max(-3, Math.min(4, inflParts.reduce((sum, value) => sum + value, 0))) : null;
+    const inflationProjectionPct = baseInflation === null ? null :
+      Math.max(0, Math.min(finite(rules.maximumProjectedInflationPct) ?? 100,
+        baseInflation + (inflationContributionPp || 0)));
+    const unemploymentSensitivity = finite(rules.unemploymentGrowthSensitivity) ?? 0.12;
+    const unemploymentChangePp = baseUnemployment === null || projectedGrowth === null || baseGrowth === null
+      ? null : Math.max(-finite(rules.maximumAnnualUnemploymentChangePp) || -2,
+        Math.min(finite(rules.maximumAnnualUnemploymentChangePp) || 2,
+          -(projectedGrowth - baseGrowth) * unemploymentSensitivity * years));
+    const unemploymentProjectionPct = baseUnemployment === null ? null :
+      Math.max(0, Math.min(100, baseUnemployment + (unemploymentChangePp || 0)));
+    const status = baseGdp !== null && baseGrowth !== null ? 'PROGRESSION_CALIBRATED' :
+      (industrialOutputGrowthPct !== null || tradeContributionPp !== null ? 'PARTIAL_EVIDENCE_MODEL' : 'BASELINE_ONLY_OR_UNOBSERVED');
+    return {
+      status, modelVersion: String(runtime.rules.modelVersion || VERSION),
+      interval: { fromTurn: finite(previous?.lastProcessedTurn) ?? Math.max(0, turn - 1), toTurn: turn, elapsedTurns, elapsedYears: years },
+      gdpBaselineUsd: baseGdp, gdpProjectionUsd, gdpGrowthBaselinePct: baseGrowth, gdpGrowthProjectionPct: projectedGrowth,
+      industrialOutputGrowthPct, industrialOutputIndex,
+      tradeBalanceToGdpAnnualizedPct: tradeBalanceToGdpPct, tradeGrowthContributionPp: tradeContributionPp,
+      investmentBaselineGrossCapitalFormationPctGdp: grossCapitalFormationPctGdp,
+      investmentActivityIndex, investmentProgressionStatus: investmentStatus,
+      inflationBaselinePct: baseInflation, inflationProjectionPct, inflationContributionPp,
+      unemploymentBaselinePct: baseUnemployment, unemploymentProjectionPct, unemploymentChangePp,
+      observedPolicy: diplomacy ? clone(diplomacy) : null,
+      policyEffects: {
+        tradePolicyFactor, foreignPolicyFactor, playerRelationFactor, policyAccessMultiplier,
+        authority: 'GLOBAL_RULESET_POLICY_MULTIPLIERS_APPLIED_TO_OBSERVED_COUNTRY_POLICY'
+      },
+      evidenceAvailability: {
+        gdp: baseGdp === null ? 'UNOBSERVED' : 'AVAILABLE',
+        gdpGrowth: baseGrowth === null ? 'UNOBSERVED' : 'AVAILABLE',
+        industrialOutput: outputNow === null ? 'UNOBSERVED' : 'AVAILABLE',
+        settledTrade: tradeEvidence ? 'AVAILABLE' : 'UNOBSERVED',
+        grossCapitalFormation: grossCapitalFormationPctGdp === null ? 'UNOBSERVED' : 'AVAILABLE',
+        inflation: baseInflation === null ? 'UNOBSERVED' : 'AVAILABLE',
+        unemployment: baseUnemployment === null ? 'UNOBSERVED' : 'AVAILABLE'
+      },
+      authority: 'EVIDENCE_BACKED_MODELLED_PROJECTION_NOT_OFFICIAL_NATIONAL_ACCOUNTS'
+    };
   }
 
   function checkpointHandler(command, context) {
@@ -398,15 +764,18 @@
     }
 
     const baseline = buildBaseline(countryId, profile);
-    const liveActivity = buildLiveActivity(root, profile, countryId);
+    const previousTurn = finite(previous?.lastProcessedTurn) ?? Math.max(0, turn - 1);
+    const liveActivity = buildLiveActivity(root, profile, countryId, baseline, previousTurn, turn);
+    const progression = deriveProgression(baseline, liveActivity, previous, turn, context.stepDurationMs);
     const baselineFingerprint = fingerprint(baseline);
-    const sourceFingerprint = fingerprint({ baseline, liveActivity, modelVersion: runtime.rules.modelVersion });
+    const sourceFingerprint = fingerprint({ baseline, liveActivity, progression, modelVersion: runtime.rules.modelVersion });
     const history = Array.isArray(previous?.snapshots) ? previous.snapshots.slice() : [];
     const previousSnapshot = history.length ? history[history.length - 1] : null;
     const snapshot = {
       turn,
       sourceFingerprint,
       liveActivity: clone(liveActivity),
+      progression: clone(progression),
       deltasFromPrevious: buildDeltas(previousSnapshot?.liveActivity, liveActivity)
     };
     const historyLimit = Math.max(1, Math.floor(finite(runtime.rules.persistence.historyLimit) ?? 24));
@@ -420,6 +789,7 @@
       baselineFingerprint,
       baseline,
       liveActivity,
+      progression,
       snapshots: history.slice(-historyLimit),
       provenance: {
         rosterManifest: runtime.rules.roster.manifestPath,
@@ -427,7 +797,9 @@
         baselineRegistry: runtime.rules.baseline?.source || null,
         baselineMetadata: clone(runtime.profileMetadata?.provenance || {}),
         lastCheckpointAuthority: 'OMEGA_NPC_NATIONAL_MACRO_ECONOMY_RUNTIME',
-        progressionStatus: 'EVIDENCE_CHECKPOINT_ONLY_NO_MACRO_PROGRESSION_FORMULA'
+        progressionStatus: progression.status,
+        progressionAuthority: progression.authority,
+        progressionModelVersion: progression.modelVersion
       }
     };
     const interop = g.Omega?.MinistryInteroperability || g.OmegaMinistryInteroperability;
@@ -447,8 +819,11 @@
       return { status: 'FAILED', reason: result?.reason || result?.result?.reason || result?.status || 'NPC_MACRO_CHECKPOINT_COMMIT_FAILED', countryId, turn };
     }
     runtime.processedCountries += 1;
+    runtime.macroProgressedCountries += progression.status === 'PROGRESSION_CALIBRATED' || progression.status === 'PARTIAL_EVIDENCE_MODEL' ? 1 : 0;
     runtime.lastProcessedTurn = turn;
-    return { status: 'CHECKPOINTED', countryId, turn, sourceFingerprint, baselineMetricCount: Object.keys(baseline.metrics).length, liveSignalCount: Object.keys(liveActivity).length, commandId };
+    runtime.lastProgressionTurn = turn;
+    runtime.lastProgressionStatus = progression.status;
+    return { status: 'CHECKPOINTED', countryId, turn, sourceFingerprint, baselineMetricCount: Object.keys(baseline.metrics).length, liveSignalCount: Object.keys(liveActivity).length, progressionStatus: progression.status, commandId };
   }
 
   async function init() {
@@ -501,11 +876,17 @@
       skippedCountries: runtime.skippedCountries,
       deferredCountries: runtime.deferredCountries,
       failedCountries: runtime.failedCountries,
-      lastProcessedTurn: runtime.lastProcessedTurn
+      lastProcessedTurn: runtime.lastProcessedTurn,
+      macroProgressedCountries: runtime.macroProgressedCountries,
+      lastProgressionTurn: runtime.lastProgressionTurn,
+      lastProgressionStatus: runtime.lastProgressionStatus,
+      progressionModelVersion: runtime.rules?.modelVersion || null,
+      progressionMode: 'EVIDENCE_BACKED_BOUNDED_PER_COUNTRY'
     };
   }
 
-  const API = Object.freeze({ VERSION, init, processCountry, getSnapshot, diagnostics });
+  const API = Object.freeze({ VERSION, init, processCountry, getSnapshot,
+    getProgression: countryValue => getSnapshot(countryValue)?.progression || null, diagnostics });
   g.Omega = g.Omega || {};
   g.Omega.NpcNationalMacroEconomy = API;
   g.OmegaNpcNationalMacroEconomy = API;

@@ -40,11 +40,29 @@ await import('../omega_ministry_interoperability_system.js');
 await import('../omega_opponent_deep_memory_system.js');
 globalThis.OmegaResourceStrategicPolicyRules=JSON.parse(fs.readFileSync(new URL('../resource_strategic_policy_rules_v1.json',import.meta.url),'utf8'));
 await import('../omega_resource_strategic_policy_runtime_v1.js');
+globalThis.Omega = globalThis.Omega || {};
+const scheduledTradeHandlers = new Map();
+globalThis.Omega.WorldSimulationScheduler = {
+  registerCountryHandler(id, handler, options) {
+    scheduledTradeHandlers.set(id, { handler, options });
+    return () => scheduledTradeHandlers.delete(id);
+  }
+};
 await import('../omega_global_trade_system.js');
 await import('../omega_opponent_second_order_consequence_system.js');
 
 const trade=globalThis.OmegaGlobalTrade;
 assert.equal(trade.diagnostics().handlerInstalled,true,JSON.stringify(trade.diagnostics()));
+assert.equal(trade.diagnostics().schedulerHandlerRegistered,true,JSON.stringify(trade.diagnostics()));
+assert.equal(trade.diagnostics().autonomousCountryRequestCap,24);
+const scheduledTrade = scheduledTradeHandlers.get('omega.global-trade.country-autonomy');
+assert.ok(scheduledTrade,'NPC trade processing must use the shared country scheduler');
+assert.deepEqual(scheduledTrade.options.tiers,['ACTIVE','MACRO']);
+assert.equal(scheduledTrade.options.priority,80);
+const scheduledNpcTrade = scheduledTrade.handler('SAU',{turn:1,state:globalThis.Game.state});
+assert.equal(scheduledNpcTrade.status,'COMPLETED');
+assert.equal(scheduledNpcTrade.requestLimit,24);
+assert.equal(scheduledTrade.handler('SAU',{turn:1,state:globalThis.Game.state}).status,'ALREADY_UPDATED');
 trade.processAll();
 const req=globalThis.Game.state.trade.BGD.importRequests[0];
 assert.equal(req.status,'SETTLED',JSON.stringify({processTrace:globalThis.__OMEGA_LAST_TRADE_PROCESS_TRACE,settlementTrace:globalThis.__OMEGA_SETTLEMENT_TRACE,request:req,resource:globalThis.Game.state.resource,finance:globalThis.Game.state.finance}));
@@ -542,3 +560,27 @@ assert.equal(globalThis.Game.state.resource.IND.inventory.iron_ore,500);
 assert.equal(globalThis.Game.state.resource.IND.batches.find(row=>row.batchId==='IND-IRON-ORE-WAREHOUSE-MISMATCH').remainingQuantity,100);
 assert.equal(globalThis.Game.state.resource.IND.warehouse.availableByResource.iron_ore,90);
 console.log('OMEGA SELLER STOCK / WAREHOUSE / BATCH LEDGER REGRESSION PASSED');
+
+
+// World activity feed is read-only, bounded, cached per turn, and reflects actual
+// request/decision/settlement ledgers rather than order-book price discovery.
+const worldActivityBefore = JSON.stringify({
+  buyer:globalThis.Game.state.trade.BGD,
+  seller:globalThis.Game.state.trade.SAU
+});
+const worldActivity = trade.getWorldActivity({limit:80,perCountry:12,refresh:true});
+assert.equal(worldActivity.summary.countryCount <= 249,true);
+assert.equal(worldActivity.summary.activityLimit,80);
+assert.ok(worldActivity.countries.some(row=>row.countryId==='BGD'));
+assert.ok(worldActivity.countries.some(row=>row.countryId==='SAU'));
+assert.ok(worldActivity.records.some(row=>row.activityType==='SETTLEMENT'&&row.status==='SETTLED'),
+  'world feed must include completed settlement rows');
+assert.ok(worldActivity.records.some(row=>row.activityType==='TRADE_REQUEST'),
+  'world feed must expose import requests');
+const cachedWorldActivity = trade.getWorldActivity({limit:80,perCountry:12});
+assert.deepEqual(cachedWorldActivity,worldActivity);
+assert.equal(JSON.stringify({
+  buyer:globalThis.Game.state.trade.BGD,
+  seller:globalThis.Game.state.trade.SAU
+}),worldActivityBefore,'reading global activity must not mutate trade state');
+console.log('OMEGA GLOBAL WORLD TRADE ACTIVITY FEED REGRESSION PASSED');

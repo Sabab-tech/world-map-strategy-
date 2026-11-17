@@ -163,6 +163,14 @@ test('Trade & Commerce hosts the full commodity market dashboard with separate l
   assert.match(ui, /data-market-product/);
   assert.match(ui, /market-refresh/);
   assert.match(ui, /selectedMarketSort/);
+  assert.match(ui, /function panelMarketTransactions\(country\)/);
+  assert.match(ui, /getWorldActivity\(\{ limit:249, perCountry:12 \}\)/);
+  assert.match(ui, /data-market-view="transactions"/);
+  assert.match(ui, /World market transactions/);
+  assert.match(ui, /omega-market-activity-table-wrap/);
+  assert.match(ui, /deduplicated actions/);
+  assert.match(ui, /activityLimit \|\| 249/);
+  assert.match(ui, /world-activity-refresh/);
 });
 
 test('global commodity market uses the user artwork in the offline shell cache', () => {
