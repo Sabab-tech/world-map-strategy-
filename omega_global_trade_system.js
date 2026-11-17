@@ -1850,9 +1850,12 @@
       scannedRecordsPerCountry:perCountry, returnedActivityCount:ordered.length,
       activityLimit:limit
     };
-    const value = { summary, countries:summaries, records:ordered };
-    worldActivityCache = { root, turn:currentTurn, limit, perCountry, value:clone(value) };
-    return value;
+    // Normalize undefined fields before the first response and the cached response.
+    // JSON-backed persistence drops undefined object members; both reads must return
+    // the exact same stable shape without mutating any country ledger.
+    const value = clone({ summary, countries:summaries, records:ordered });
+    worldActivityCache = { root, turn:currentTurn, limit, perCountry, value };
+    return clone(value);
   }
 
   function diagnostics(){
