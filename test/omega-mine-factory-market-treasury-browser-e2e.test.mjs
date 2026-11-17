@@ -248,8 +248,38 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       return !!(sim && Number(sim.clock?.turn || 0) > 0 &&
         Number(lifecycle?.savedTurn || 0) >= 1 &&
         lifecycle?.savePending !== true && lifecycle?.dirty === false &&
+        !sim.stepInProgress &&
         String(sim.status || '').toUpperCase() === 'RUNNING');
     }, undefined, { timeout: 240000 });
+    // Pause immediately after the first committed turn has fully released its step.
+    // Do not serialize the large world/interoperability diagnostics while the live
+    // clock is running: that work previously allowed a second turn to start before
+    // the Play/Pause control was clicked, leaving the pause gate waiting on that turn.
+    console.info('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({
+      stage:'FIRST_TURN_COMMITTED_AND_IDLE',
+      seller:playerCountrySelection.seller
+    }));
+    await playControl.click({ timeout: 60000 });
+    console.info('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({
+      stage:'PLAYER_PAUSE_REQUESTED',
+      seller:playerCountrySelection.seller
+    }));
+    await page.waitForFunction(seller => {
+      const g = window, sim = g.Omega?.Simulation, session = g.Game?.state?.simulation?.session;
+      const lifecycle = g.Omega?.GameLifecycle?.getDiagnostics?.() || null;
+      return !!(session?.sessionId && String(session.playerCountryId || '').trim().toUpperCase() === seller &&
+        String(session.status || '').toUpperCase() === 'PAUSED' &&
+        String(sim?.status || '').toUpperCase() === 'PAUSED' &&
+        sim?.clock?.paused === true && sim?.clock?.running === false &&
+        !sim?.stepInProgress &&
+        Number(lifecycle?.savedTurn || 0) >= 1 &&
+        lifecycle?.savePending !== true && lifecycle?.dirty === false &&
+        sim?.getPlayerCountryId?.() === seller && sim?.world?.state === g.Game?.state);
+    }, playerCountrySelection.seller, { timeout: 240000 });
+    console.info('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({
+      stage:'PLAYER_PAUSE_CONFIRMED',
+      seller:playerCountrySelection.seller
+    }));
     const playerSessionDiagnostics = await page.evaluate(async (selectedPlayerCountry) => {
       const g = window, sim = g.Omega?.Simulation;
       const session = g.Game?.state?.simulation?.session || null;
@@ -257,25 +287,42 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       try { lifecycle = g.Omega?.GameLifecycle?.getDiagnostics?.() || null; } catch (error) {
         lifecycle = { error:String(error?.message || error) };
       }
-      try { simulation = sim?.diagnostics?.() || null; } catch (error) {
-        simulation = { error:String(error?.message || error) };
-      }
-      let snapshotBytes=null, worldStateBytes=null, storageEstimate=null, largestStateFields=[],snapshotTopLevelFields=[];
       try {
-        worldStateBytes = new TextEncoder().encode(JSON.stringify(sim?.world?.state || {})).length;
-        largestStateFields = Object.entries(sim?.world?.state || {}).map(([key,value]) => {
-          try { return {key,bytes:new TextEncoder().encode(JSON.stringify(value)).length}; }
-          catch (error) { return {key,error:String(error?.message || error)}; }
-        }).sort((a,b)=>(b.bytes||0)-(a.bytes||0)).slice(0,12);
-      } catch (error) { worldStateBytes = 'ERROR:' + String(error?.message || error); }
-      try {
-        const snapshot = sim?.saveState?.({includeDiagnostics:false});
-        snapshotTopLevelFields=Object.entries(snapshot||{}).map(([key,value])=>{
-          try{return {key,bytes:new TextEncoder().encode(JSON.stringify(value)).length};}
-          catch(error){return {key,error:String(error?.message||error)};}
-        }).sort((a,b)=>(b.bytes||0)-(a.bytes||0));
-        snapshotBytes = new TextEncoder().encode(JSON.stringify(snapshot)).length;
-      } catch (error) { snapshotBytes = 'ERROR:' + String(error?.message || error); }
+        const participants = typeof sim?.participantDiagnostics === 'function' ? sim.participantDiagnostics() : [];
+        const finalizers = typeof sim?.finalizerDiagnostics === 'function' ? sim.finalizerDiagnostics() : [];
+        simulation = {
+          lastError:sim?.lastError || null,
+          status:sim?.status || null,
+          stepInProgress:!!sim?.stepInProgress,
+          participantIds:participants.map(row=>row.id),
+          finalizerIds:finalizers.map(row=>row.id),
+          lastTurnFinalizerResults:(sim?.lastTurnFinalizerResults || []).map(row=>({
+            id:row.id,status:row.status,error:row.error || null,
+            turn:row.turn,savedTurn:row.result?.savedTurn
+          })),
+          lastTurnParticipantResults:(sim?.lastTurnParticipantResults || []).map(row=>({
+            id:row.id,status:row.status,error:row.error || null,
+            turn:row.turn,resultStatus:row.result?.status || null,
+            countryId:row.result?.countryId || null,
+            reason:row.result?.reason || null
+          })),
+          lastStepTurn:sim?.lastStepSummary?.turn ?? null
+        };
+      } catch (error) { simulation = { error:String(error?.message || error) }; }
+      // Keep diagnostics lightweight and read-only. A second detached saveState()
+      // snapshot duplicated the ~39 MB world and failed on the interoperability
+      // projection with "Invalid string length"; the canonical saveSlot path is
+      // already verified independently by lifecycle diagnostics.
+      const worldState = sim?.world?.state || {};
+      const largestStateFields = Object.entries(worldState).map(([key,value]) => ({
+        key,
+        kind:Array.isArray(value) ? 'array' : typeof value,
+        entries:value && typeof value === 'object' ? Object.keys(value).length : 0
+      })).sort((a,b)=>b.entries-a.entries).slice(0,12);
+      const worldStateBytes='NOT_SERIALIZED_DIAGNOSTIC';
+      const snapshotBytes='NOT_DUPLICATED_CANONICAL_SAVE_SLOT';
+      const snapshotTopLevelFields=[];
+      let storageEstimate=null;
       try { storageEstimate = await g.navigator?.storage?.estimate?.() || null; }
       catch (error) { storageEstimate = {error:String(error?.message || error)}; }
       return {
@@ -308,26 +355,13 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       };
     }, playerCountrySelection.seller);
     console.info('[OMEGA_MMT_E2E_PLAYER_SESSION_DIAGNOSTICS]' + JSON.stringify(playerSessionDiagnostics));
-    if (playerSessionDiagnostics.simStatus !== 'RUNNING' ||
-        String(playerSessionDiagnostics.session?.status || '').toUpperCase() !== 'RUNNING' ||
+    if (playerSessionDiagnostics.simStatus !== 'PAUSED' ||
+        String(playerSessionDiagnostics.session?.status || '').toUpperCase() !== 'PAUSED' ||
         String(playerSessionDiagnostics.session?.playerCountryId || '').toUpperCase() !== playerCountrySelection.seller ||
         playerSessionDiagnostics.runtimePlayerCountry !== playerCountrySelection.seller ||
         !playerSessionDiagnostics.worldStateLinked) {
       throw new Error('MINE_MARKET_TREASURY_PLAYER_SESSION_START_FAILED:' + JSON.stringify(playerSessionDiagnostics));
     }
-    await playControl.click({ timeout: 60000 });
-    await page.waitForFunction(seller => {
-      const g = window, sim = g.Omega?.Simulation, session = g.Game?.state?.simulation?.session;
-      const lifecycle = g.Omega?.GameLifecycle?.getDiagnostics?.() || null;
-      return !!(session?.sessionId && String(session.playerCountryId || '').trim().toUpperCase() === seller &&
-        String(session.status || '').toUpperCase() === 'PAUSED' &&
-        String(sim?.status || '').toUpperCase() === 'PAUSED' &&
-        sim?.clock?.paused === true && sim?.clock?.running === false &&
-        !sim?.stepInProgress &&
-        Number(lifecycle?.savedTurn || 0) >= 1 &&
-        lifecycle?.savePending !== true && lifecycle?.dirty === false &&
-        sim?.getPlayerCountryId?.() === seller && sim?.world?.state === g.Game?.state);
-    }, playerCountrySelection.seller, { timeout: 240000 });
     console.info('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({
       stage:'FRESH_PLAYER_SESSION_ESTABLISHED_THROUGH_REAL_MAP_AND_CLOCK_CONTROLS',
       seller:playerCountrySelection.seller,buyer:playerCountrySelection.buyer,
