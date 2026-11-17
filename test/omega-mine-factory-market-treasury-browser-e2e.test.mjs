@@ -1646,7 +1646,12 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         if (!Number.isFinite(actual) || !Number.isFinite(expected) || Math.abs(actual - expected) > tolerance)
           throw new Error('LEDGER_RECONCILIATION_FAILED:' + label + ':actual=' + actual + ':expected=' + expected);
       };
-      close(buyerAfterUsd, buyerBeforeUsd - buyerDebitUsd, 'BUYER_TREASURY_DEBIT');
+      // Treasury receives import tariff revenue back after the gross buyer debit.
+      // Therefore the buyer's net Treasury outflow equals seller credit, not gross debit.
+      const buyerTariffRevenueUsd = Math.max(0, Number(transaction.tariffUsd) || 0);
+      const buyerNetTreasuryDebitUsd = buyerDebitUsd - buyerTariffRevenueUsd;
+      close(buyerNetTreasuryDebitUsd, sellerCreditUsd, 'BUYER_NET_PAYMENT_AFTER_IMPORT_TARIFF');
+      close(buyerAfterUsd, buyerBeforeUsd - buyerNetTreasuryDebitUsd, 'BUYER_TREASURY_NET_DEBIT');
       close(sellerAfterUsd, sellerBeforeUsd + sellerCreditUsd, 'SELLER_TREASURY_CREDIT');
       close(buyerAfterStock - buyerOpeningStock, quantity, 'BUYER_FINISHED_GOODS_RECEIPT', 1e-5);
       close(sellerBeforeStock - sellerAfterStock, quantity, 'SELLER_FINISHED_GOODS_DEBIT', 1e-5);
@@ -1683,7 +1688,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         treasuryTransaction: {
           transactionId: transaction.transactionId || transaction.id || settlementId,
           status: storedTransaction.status,
-          buyerDebitUsd, sellerCreditUsd,
+          buyerDebitUsd, buyerTariffRevenueUsd, buyerNetTreasuryDebitUsd, sellerCreditUsd,
           buyerTreasuryBeforeUsd: buyerBeforeUsd, buyerTreasuryAfterUsd: buyerAfterUsd,
           sellerTreasuryBeforeUsd: sellerBeforeUsd, sellerTreasuryAfterUsd: sellerAfterUsd
         },
