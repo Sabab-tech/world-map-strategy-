@@ -1152,8 +1152,9 @@
       projectId:String(p.projectId||('AUTO-PROJ-'+turn()+'-'+c)),
       countryId:c,actionType:String(p.action||''),
       scenarioId:p.scenarioId||null,decisionId:p.decisionId||null,reservationId,
-      kind:String(p.kind||'GENERAL').toUpperCase(),status:'UNDER_CONSTRUCTION',
-      phase:'CONSTRUCTION',progress:0,createdTurn:turn(),startTurn:turn(),
+      kind:String(p.kind||'GENERAL').toUpperCase(),
+      budgetDepartment:String(p.budgetDepartment||'').trim().toLowerCase()||null,
+      status:'UNDER_CONSTRUCTION',phase:'CONSTRUCTION',progress:0,createdTurn:turn(),startTurn:turn(),
       quantity,cost,spent:0,currency:p.currency||null,
       laborRequired:num(p.labor)||0,materials:clone(p.materials||{}),
       durationTurns:Math.floor(duration),
@@ -1218,12 +1219,16 @@
         if(resourceResult?.status!=='APPLIED'){
           q.status='COMMISSIONING';q.phase='SETTLEMENT_BLOCKED';q.blocker=resourceResult?.reason||'RESOURCE_SETTLEMENT_FAILED';return q;
         }
-        const financeResult=q.cost>0?dispatch('finance','OMEGA_AUTO_FINANCE_COMMIT',c,{amount:q.cost,decisionId:q.decisionId,correlationId:q.projectId},q.projectId):{status:'APPLIED',skipped:true};
+        const financeTransactionId='NPC-CAPEX-'+c+'-'+String(q.projectId)+'-T'+turn();
+        const financePayload={amount:q.cost,decisionId:q.decisionId,correlationId:q.projectId,
+          budgetDepartment:q.budgetDepartment,projectId:q.projectId,transactionId:financeTransactionId,kind:q.kind};
+        const financeResult=q.cost>0?dispatch('finance','OMEGA_AUTO_FINANCE_COMMIT',c,financePayload,q.projectId):{status:'APPLIED',skipped:true};
         if(financeResult?.status!=='APPLIED'){
           if(Object.keys(materials).length)dispatch('resource','OMEGA_AUTO_RESOURCE_RESTORE',c,{materials,correlationId:q.projectId},q.projectId);
-          q.status='COMMISSIONING';q.phase='SETTLEMENT_BLOCKED';q.blocker=financeResult?.reason||'FINANCE_SETTLEMENT_FAILED';return q;
+          q.status='COMMISSIONING';q.phase='SETTLEMENT_BLOCKED';q.blocker=financeResult?.reason||financeResult?.result?.reason||'FINANCE_SETTLEMENT_FAILED';return q;
         }
-        q.spent=q.cost;q.status='COMMISSIONING';q.phase='SETTLEMENT_READY';q.settlementReady=true;completed.push(q);
+        q.spent=q.cost;q.financeTransactionId=q.cost>0?financeTransactionId:null;
+        q.status='COMMISSIONING';q.phase='SETTLEMENT_READY';q.settlementReady=true;completed.push(q);
       }
       return q;
     });
@@ -1240,7 +1245,11 @@
         commission=dispatch(owner,action,c,{project:p,reservationId:p.reservationId,decisionId:p.decisionId,correlationId:p.decisionId||p.projectId},p.decisionId||p.projectId);
       }
       if(commission?.status!=='APPLIED'){
-        if(p.cost>0)dispatch('finance','OMEGA_AUTO_FINANCE_REFUND',c,{amount:p.cost,decisionId:p.decisionId,correlationId:p.projectId},p.projectId);
+        if(p.cost>0)dispatch('finance','OMEGA_AUTO_FINANCE_REFUND',c,{
+          amount:p.cost,decisionId:p.decisionId,correlationId:p.projectId,
+          budgetDepartment:p.budgetDepartment,projectId:p.projectId,
+          transactionId:p.financeTransactionId||null,kind:p.kind
+        },p.projectId);
         if(p.materials&&Object.keys(p.materials).length)dispatch('resource','OMEGA_AUTO_RESOURCE_RESTORE',c,{materials:p.materials,correlationId:p.projectId},p.projectId);
         p.settlementReady=false;
         p.phase='COMMISSIONING_BLOCKED';
@@ -1353,9 +1362,124 @@
     return{accepted:true,facility:row,stateMutationAuthority:true};
   }
 
+  const NPC_PROJECT_BUDGET_DEPARTMENTS=Object.freeze({
+    HOUSING:'construction',FACTORY:'industrial_development',
+    INFRASTRUCTURE:'transport',MILITARY_FACILITY:'defense'
+  });
+  const NPC_REALLOCATION_DONORS=Object.freeze(['culture','financial_services','cabinet','environment']);
+  function money(value){const n=num(value);return n===null?null:Math.round(n*100)/100;}
+  function financeLedger(model,row){
+    model.ledger=Array.isArray(model.ledger)?model.ledger:[];
+    model.ledger.push(Object.assign({turn:turn(),countryCode:model.countryCode||null,
+      balanceAfterUsd:Math.max(0,num(model.treasuryBalanceUsd)||0),
+      fiscalYearIndex:Math.max(0,Math.floor(num(model.fiscalYearIndex)||0))},row));
+    model.ledger=model.ledger.slice(-500);
+  }
+  function budgetedNpcProjectCommit(payload,ctx,amount){
+    const country=id(ctx.countryId),department=String(payload.budgetDepartment||'').trim().toLowerCase();
+    const projectId=String(payload.projectId||'').trim(),transactionId=String(payload.transactionId||'').trim();
+    const kind=String(payload.kind||'').trim().toUpperCase();
+    if(!projectId||!transactionId)return{accepted:false,reason:'NPC_PROJECT_FINANCE_ID_REQUIRED'};
+    if(NPC_PROJECT_BUDGET_DEPARTMENTS[kind]!==department)
+      return{accepted:false,reason:'NPC_PROJECT_BUDGET_DEPARTMENT_MISMATCH'};
+    const projects=ctx.stateTransaction.get('projects.registry');
+    const project=(Array.isArray(projects)?projects:[]).find(row=>String(row?.projectId||'')===projectId);
+    if(!project||project.autonomy!==true||String(project.kind||'').toUpperCase()!==kind||
+       String(project.budgetDepartment||'').toLowerCase()!==department)
+      return{accepted:false,reason:'NPC_AUTONOMOUS_PROJECT_NOT_FOUND'};
+    const projectCost=money(project.cost),completionTurn=num(project.completionTurn);
+    if(projectCost===null||Math.abs(projectCost-amount)>0.01)
+      return{accepted:false,reason:'NPC_PROJECT_COST_MISMATCH'};
+    if(completionTurn===null||completionTurn>turn())
+      return{accepted:false,reason:'NPC_PROJECT_NOT_READY_FOR_SETTLEMENT'};
+    const modelRaw=ctx.stateTransaction.get('finance.omegaFinance');
+    if(!modelRaw||typeof modelRaw!=='object'||Array.isArray(modelRaw))
+      return{accepted:false,reason:'FINANCE_MODEL_UNAVAILABLE'};
+    const model=clone(modelRaw);
+    if(!model.allocations||typeof model.allocations!=='object'||!model.fiscalModel)
+      return{accepted:false,reason:'FINANCE_BUDGET_MODEL_UNAVAILABLE'};
+    const prior=Array.isArray(model.ledger)?model.ledger.find(row=>
+      row?.action==='EXPENSE'&&String(row.transactionId||'')===transactionId):null;
+    if(prior){
+      const refunded=Math.max(0,num(prior.refundedAmount)||0);
+      if(refunded+0.01>=amount)return{accepted:false,reason:'NPC_PROJECT_FINANCE_TRANSACTION_ALREADY_REFUNDED'};
+      return{accepted:true,duplicate:true,transactionId,spent:amount,department,budgetTransferCount:0};
+    }
+    const envelope=money(model.fiscalModel.annualSpendingUsd);
+    if(envelope===null||envelope<=0)return{accepted:false,reason:'ANNUAL_BUDGET_ENVELOPE_UNAVAILABLE'};
+    const available=scalar(ctx.stateTransaction.get('finance.available'));
+    const cash=money(available!==null?available:model.treasuryBalanceUsd);
+    if(cash===null)return{accepted:false,reason:'FINANCE_TREASURY_UNAVAILABLE'};
+    if(cash<amount)return{accepted:false,reason:'INSUFFICIENT_TREASURY'};
+    const reservePct=Math.max(0,num(model.policy?.minimumReservePctOfAnnualSpending)||0);
+    const reserveFloor=envelope*reservePct/100;
+    if(cash-amount+0.01<reserveFloor)return{accepted:false,reason:'MINIMUM_RESERVE_FLOOR'};
+    const allocations=model.allocations,target=allocations[department];
+    if(!target||typeof target!=='object')return{accepted:false,reason:'NPC_PROJECT_BUDGET_ALLOCATION_MISSING'};
+    target.spentUsd=Math.max(0,money(target.spentUsd)||0);
+    target.budgetUsd=Math.max(0,money(target.budgetUsd)||0);
+    target.remainingUsd=Math.max(0,target.budgetUsd-target.spentUsd);
+    const transfers=[];
+    let deficit=Math.max(0,money(amount-target.remainingUsd)||0);
+    for(const donorId of NPC_REALLOCATION_DONORS){
+      if(deficit<=0.009)break;
+      if(donorId===department)continue;
+      const donor=allocations[donorId];if(!donor||typeof donor!=='object')continue;
+      const donorBudget=Math.max(0,money(donor.budgetUsd)||0);
+      const donorSpent=Math.max(0,money(donor.spentUsd)||0);
+      const defaultShare=Math.max(0,num(donor.defaultSharePct)??(num(donor.sharePct)||0));
+      const baseline=money(donor.baselineBudgetUsd??(envelope*defaultShare/100));
+      if(baseline===null)continue;
+      const protectedFloor=Math.max(donorSpent,baseline*0.5);
+      const movable=Math.max(0,money(donorBudget-protectedFloor)||0);
+      const moved=Math.min(deficit,movable);
+      if(moved<=0.009)continue;
+      donor.budgetUsd=money(donorBudget-moved);
+      donor.remainingUsd=Math.max(0,money(donor.budgetUsd-donorSpent)||0);
+      donor.sharePct=Number((donor.budgetUsd/envelope*100).toFixed(8));
+      donor.updatedTurn=turn();donor.source='NPC_AUTONOMOUS_BUDGET_REALLOCATION';
+      target.budgetUsd=money(target.budgetUsd+moved);
+      target.remainingUsd=Math.max(0,money(target.budgetUsd-target.spentUsd)||0);
+      target.sharePct=Number((target.budgetUsd/envelope*100).toFixed(8));
+      target.updatedTurn=turn();target.source='NPC_AUTONOMOUS_BUDGET_REALLOCATION';
+      const transferId='NPC-BUDGET-XFER-'+country+'-'+transactionId+'-'+donorId;
+      transfers.push({transferId,sourceDepartment:donorId,targetDepartment:department,amountUsd:moved});
+      const common={category:'inter_ministry_budget_transfer',transferId,idempotencyKey:transactionId,
+        counterpartyDepartment:department,projectId,source:'OMEGA_NPC_AUTONOMOUS_PROJECT_EXECUTION'};
+      financeLedger(model,{transactionId:transferId+'-OUT',department:donorId,action:'BUDGET_TRANSFER_OUT',
+        amountUsd:moved,description:'Autonomous national investment appropriation transfer',...common});
+      financeLedger(model,{transactionId:transferId+'-IN',department,action:'BUDGET_TRANSFER_IN',
+        amountUsd:moved,description:'Autonomous national investment appropriation receipt',
+        ...common,counterpartyDepartment:donorId});
+      deficit=Math.max(0,money(amount-target.remainingUsd)||0);
+    }
+    if(deficit>0.009)return{accepted:false,reason:'NPC_PROJECT_BUDGET_ALLOCATION_LIMIT_EXCEEDED',
+      department,requiredUsd:amount,remainingUsd:target.remainingUsd,shortfallUsd:deficit};
+    target.spentUsd=money(target.spentUsd+amount);
+    target.remainingUsd=Math.max(0,money(target.budgetUsd-target.spentUsd)||0);
+    target.updatedTurn=turn();target.source='OMEGA_NPC_AUTONOMOUS_PROJECT_EXECUTION';
+    const nextCash=money(cash-amount);
+    model.treasuryBalanceUsd=nextCash;model.lastSyncedTreasuryBalanceUsd=nextCash;
+    model.cumulativeSpendingUsd=Math.max(0,num(model.cumulativeSpendingUsd)||0)+amount;
+    model.currentYearSpendingUsd=Math.max(0,num(model.currentYearSpendingUsd)||0)+amount;
+    model.revision=Math.max(0,num(model.revision)||0)+1;
+    financeLedger(model,{transactionId,projectId,department,action:'EXPENSE',category:'investment',
+      amountUsd:amount,description:'Autonomous national development project: '+kind,
+      source:'OMEGA_NPC_AUTONOMOUS_PROJECT_EXECUTION'});
+    ctx.stateTransaction.set('finance.omegaFinance',model);
+    ctx.stateTransaction.set('finance.available',nextCash);
+    ctx.stateTransaction.set('finance.committed',Math.max(0,num(ctx.stateTransaction.get('finance.committed'))||0)+amount);
+    ctx.stateTransaction.set('finance.spending',Math.max(0,num(ctx.stateTransaction.get('finance.spending'))||0)+amount);
+    ctx.stateTransaction.set('finance.operatingExpenditure',Math.max(0,num(ctx.stateTransaction.get('finance.operatingExpenditure'))||0)+amount);
+    ctx.stateTransaction.set('finance.capitalExpenditure',Math.max(0,num(ctx.stateTransaction.get('finance.capitalExpenditure'))||0)+amount);
+    return{accepted:true,spent:amount,transactionId,projectId,department,treasuryAfterUsd:nextCash,
+      budgetTransferCount:transfers.length,budgetTransfers:transfers,stateMutationAuthority:true};
+  }
   function financeCommitHandler(cmd,ctx){
-    const amount=num(cmd?.payload?.amount);
+    const amount=money(cmd?.payload?.amount);
     if(amount===null||amount<0)return{accepted:false,reason:'FINANCE_AMOUNT_INVALID'};
+    const payload=cmd?.payload||{};
+    if(payload.budgetDepartment)return budgetedNpcProjectCommit(payload,ctx,amount);
     const available=scalar(ctx.stateTransaction.get('finance.available'));
     const reserves=scalar(ctx.stateTransaction.get('finance.reserves'));
     const base=available!==null?available:reserves;
@@ -1368,9 +1492,52 @@
     return{accepted:true,spent:amount,stateMutationAuthority:true};
   }
 
+  function budgetedNpcProjectRefund(payload,ctx,amount){
+    const country=id(ctx.countryId),department=String(payload.budgetDepartment||'').trim().toLowerCase();
+    const projectId=String(payload.projectId||'').trim(),transactionId=String(payload.transactionId||'').trim();
+    if(!projectId||!transactionId)return{accepted:false,reason:'NPC_PROJECT_REFUND_ID_REQUIRED'};
+    const modelRaw=ctx.stateTransaction.get('finance.omegaFinance');
+    if(!modelRaw||typeof modelRaw!=='object'||Array.isArray(modelRaw))return{accepted:false,reason:'FINANCE_MODEL_UNAVAILABLE'};
+    const model=clone(modelRaw),ledger=Array.isArray(model.ledger)?model.ledger:[];
+    const original=ledger.find(row=>row?.action==='EXPENSE'&&String(row.transactionId||'')===transactionId);
+    if(!original||String(original.projectId||'')!==projectId||String(original.department||'')!==department)
+      return{accepted:false,reason:'NPC_PROJECT_EXPENSE_NOT_FOUND'};
+    const refunded=Math.max(0,num(original.refundedAmount)||0);
+    if(refunded+0.01>=amount)return{accepted:true,duplicate:true,transactionId,refunded:amount};
+    const originalAmount=Math.max(0,num(original.amountUsd)||0);
+    if(amount<=0||amount>originalAmount-refunded+0.01)return{accepted:false,reason:'NPC_PROJECT_REFUND_EXCEEDS_EXPENSE'};
+    const allocation=model.allocations?.[department];
+    if(!allocation||typeof allocation!=='object')return{accepted:false,reason:'NPC_PROJECT_BUDGET_ALLOCATION_MISSING'};
+    const cash=money(scalar(ctx.stateTransaction.get('finance.available'))??model.treasuryBalanceUsd);
+    if(cash===null)return{accepted:false,reason:'FINANCE_TREASURY_UNAVAILABLE'};
+    const nextCash=money(cash+amount);
+    allocation.spentUsd=Math.max(0,money((num(allocation.spentUsd)||0)-amount)||0);
+    allocation.remainingUsd=Math.max(0,money((num(allocation.budgetUsd)||0)-allocation.spentUsd)||0);
+    allocation.updatedTurn=turn();allocation.source='OMEGA_NPC_AUTONOMOUS_PROJECT_REFUND';
+    original.refundedAmount=money(refunded+amount);
+    original.refundTransactionId='NPC-CAPEX-REFUND-'+transactionId;
+    original.refundedTurn=turn();
+    model.treasuryBalanceUsd=nextCash;model.lastSyncedTreasuryBalanceUsd=nextCash;
+    model.cumulativeSpendingUsd=Math.max(0,(num(model.cumulativeSpendingUsd)||0)-amount);
+    model.currentYearSpendingUsd=Math.max(0,(num(model.currentYearSpendingUsd)||0)-amount);
+    model.revision=Math.max(0,num(model.revision)||0)+1;
+    financeLedger(model,{transactionId:original.refundTransactionId,originalTransactionId:transactionId,
+      projectId,department,action:'EXPENSE_REFUND',category:'investment_refund',amountUsd:amount,
+      description:'Refund for failed autonomous national development project',
+      source:'OMEGA_NPC_AUTONOMOUS_PROJECT_REFUND'});
+    ctx.stateTransaction.set('finance.omegaFinance',model);
+    ctx.stateTransaction.set('finance.available',nextCash);
+    ctx.stateTransaction.set('finance.committed',Math.max(0,(num(ctx.stateTransaction.get('finance.committed'))||0)-amount));
+    ctx.stateTransaction.set('finance.spending',Math.max(0,(num(ctx.stateTransaction.get('finance.spending'))||0)-amount));
+    ctx.stateTransaction.set('finance.operatingExpenditure',Math.max(0,(num(ctx.stateTransaction.get('finance.operatingExpenditure'))||0)-amount));
+    ctx.stateTransaction.set('finance.capitalExpenditure',Math.max(0,(num(ctx.stateTransaction.get('finance.capitalExpenditure'))||0)-amount));
+    return{accepted:true,refunded:amount,transactionId,projectId,department,treasuryAfterUsd:nextCash,stateMutationAuthority:true};
+  }
   function financeRefundHandler(cmd,ctx){
-    const amount=num(cmd?.payload?.amount);
+    const amount=money(cmd?.payload?.amount);
     if(amount===null||amount<0)return{accepted:false,reason:'FINANCE_REFUND_AMOUNT_INVALID'};
+    const payload=cmd?.payload||{};
+    if(payload.budgetDepartment)return budgetedNpcProjectRefund(payload,ctx,amount);
     const available=scalar(ctx.stateTransaction.get('finance.available'));
     const reserves=scalar(ctx.stateTransaction.get('finance.reserves'));
     if(available===null&&reserves===null)return{accepted:false,reason:'FINANCE_STATE_UNAVAILABLE'};
@@ -1729,15 +1896,16 @@
       },decisionId);
     }else if(['HOUSING_BUILD','INDUSTRY_BUILD','DOMESTIC_EXPANSION','PROCESSING_EXPANSION','INFRASTRUCTURE_EXPANSION'].includes(a)){
       const kind=a==='HOUSING_BUILD'?'HOUSING':a.includes('INDUSTRY')||a==='DOMESTIC_EXPANSION'||a==='PROCESSING_EXPANSION'?'FACTORY':'INFRASTRUCTURE';
+      const budgetDepartment=kind==='HOUSING'?'construction':kind==='FACTORY'?'industrial_development':'transport';
       result=dispatch('projects','OMEGA_AUTO_PROJECT_CREATE',c,{
         projectId:'AUTO-PROJ-'+turn()+'-'+c+'-'+String(decisionId||a),
-        action:a,kind,scenarioId:route.scenarioId,decisionId,
+        action:a,kind,budgetDepartment,scenarioId:route.scenarioId,decisionId,
         reservationId,quantity:plan.plan.quantity,cost:plan.plan.cost,labor:plan.plan.labor,materials:plan.plan.materials,
         durationTurns:plan.plan.durationTurns,currency:null,dependencies:SUBJECT_ROUTES[actionSubject(a)]?.depends||[],
         linkedMinistries:Object.values(SUBJECT_ROUTES[actionSubject(a)]?.depends||{})
       },decisionId);
     }else if(a==='MILITARY_FACILITY_BUILD'){
-      result=dispatch('projects','OMEGA_AUTO_PROJECT_CREATE',c,{projectId:'AUTO-MILFAC-'+turn()+'-'+c+'-'+String(decisionId||a),action:a,kind:'MILITARY_FACILITY',scenarioId:route.scenarioId,decisionId,reservationId,quantity:plan.plan.quantity,cost:plan.plan.cost,labor:plan.plan.labor,materials:plan.plan.materials,durationTurns:plan.plan.durationTurns,dependencies:SUBJECT_ROUTES.military.depends,linkedMinistries:SUBJECT_ROUTES.military.depends},decisionId);
+      result=dispatch('projects','OMEGA_AUTO_PROJECT_CREATE',c,{projectId:'AUTO-MILFAC-'+turn()+'-'+c+'-'+String(decisionId||a),action:a,kind:'MILITARY_FACILITY',budgetDepartment:'defense',scenarioId:route.scenarioId,decisionId,reservationId,quantity:plan.plan.quantity,cost:plan.plan.cost,labor:plan.plan.labor,materials:plan.plan.materials,durationTurns:plan.plan.durationTurns,dependencies:SUBJECT_ROUTES.military.depends,linkedMinistries:SUBJECT_ROUTES.military.depends},decisionId);
     }else if(a==='MILITARY_RECRUIT'){
       result=dispatch('military','OMEGA_AUTO_MILITARY_RECRUIT',c,{quantity:plan.plan.quantity,reservationId,decisionId,correlationId:decisionId},decisionId);
     }else if(a==='MILITARY_ORGANIZE'){
@@ -1747,7 +1915,11 @@
     }else if(a==='MILITARY_EQUIP'){
       result=dispatch('military','OMEGA_AUTO_MILITARY_EQUIP',c,{quantity:plan.plan.quantity,item:plan.plan.item,cost:plan.plan.cost,materials:plan.plan.materials,reservationId,decisionId,correlationId:decisionId},decisionId);
     }else if(a==='TREATY_NEGOTIATION'){
-      result=dispatch('foreign','OMEGA_AUTO_TREATY_NEGOTIATION_START',c,{targetCountryId:plan.targetCountryId,reservationId,decisionId},decisionId);
+      result=dispatch('foreign','OMEGA_AUTO_TREATY_NEGOTIATION_START',c,{
+        targetCountryId:plan.targetCountryId,reservationId,decisionId,
+        treatyType:plan.plan?.treatyType||plan.treatyType||'BILATERAL_AGREEMENT',
+        terms:clone(plan.plan?.terms||plan.terms||{})
+      },decisionId);
     }else{
       result={status:'FAILED',reason:'NO_AUTONOMY_EXECUTOR_FOR_ACTION:'+a};
     }
@@ -1958,7 +2130,7 @@
       if(scheduler?.registerCountryHandler){
         scheduler.registerCountryHandler('omega.opponent-autonomy.lifecycle',
           countryId=>tickProjectsForCountry(countryId),
-          {tiers:['PLAYER','ACTIVE'],priority:100});
+          {tiers:['PLAYER','ACTIVE','MACRO'],priority:100});
       }else{
         g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',()=>tickProjects());
       }

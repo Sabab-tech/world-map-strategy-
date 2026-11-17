@@ -1,10 +1,10 @@
-/* OMEGA SANCTION RESPONSE + NATIONAL DECISION PIPELINE v1.0.0
- * Records an auditable policy -> notification -> impact -> decision -> recovery -> investigation flow.
- * Analysis only: no cash, inventory, trade, production, treaty or diplomatic value is mutated here.
+/* OMEGA SANCTION RESPONSE + NATIONAL DECISION PIPELINE v1.2.0
+ * Records policy evidence and delegates executable national responses to country-owned runtimes.
+ * Cash, project, trade and diplomatic mutations remain inside their existing ministry executors.
  */
 (function (g) {
   'use strict';
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
   if (g.OmegaSanctionResponseRuntime?.VERSION === VERSION) return;
   const MAX_POLICIES = 6, MAX_PRODUCTS = 4, MAX_MARKET_QUERIES = 12;
   const LEDGER_WINDOW = 30, MAX_HISTORY = 256, MAX_ALTERNATIVES = 5, MAX_BUYER_CHECKS = 3;
@@ -863,8 +863,71 @@
         foreignReserveCoverageDays: finance.foreignReserveCoverageDays,
         budgetEvidence: finance.ministryBudgetEvidence },
       recommendedDecision: decision.selectedAction,
-      executionStatus: 'PLANNING_ONLY_NO_PURCHASE_NO_PRODUCTION_NO_EXPORT',
+      executionStatus: decision.execution?.status || 'COUNTRY_EXECUTION_NOT_REQUESTED',
+      executionAuthority: decision.execution?.authority || 'COUNTRY_OWNED_AUTONOMY_RUNTIME',
       unknownsRemainUnknown: true
+    };
+  }
+  function executeNationalDecision(policy, c, partner, role, decision, productRows) {
+    const session = state()?.simulation?.session || {};
+    const playerCandidates = [session.playerCountryId, state()?.playerCountryId,
+      g.Omega?.Simulation?.getPlayerCountryId?.()];
+    const player = playerCandidates.map(country).find(Boolean) || null;
+    if (player === c) return { status: 'PLAYER_DECISION_REQUIRED',
+      authority: 'PLAYER_COUNTRY_REMAINS_MANUALLY_CONTROLLED', automaticExecution: false };
+    const scheduler = g.Omega?.WorldSimulationScheduler || g.OmegaWorldSimulationScheduler || null;
+    let activation = null, invalidation = null;
+    try {
+      activation = scheduler?.activateCountry?.(c, {
+        turn: turn(), reason: 'SANCTION_RESPONSE_' + String(decision.selectedAction || 'REVIEW'),
+        priority: 92, ttlTurns: 60
+      }) || null;
+    } catch (error) { activation = { status: 'FAILED', reason: String(error?.message || error) }; }
+    try {
+      const rules = g.Omega?.OpponentCountryRules || g.OmegaOpponentCountryRules || null;
+      invalidation = rules?.markDirty?.(c,
+        ['SANCTION_RESPONSE', 'TRADE_EXPOSURE', 'DOMESTIC_SUPPLY', 'INDUSTRIAL_CAPACITY'],
+        'OMEGA_SANCTION_RESPONSE_RUNTIME_V1') || null;
+    } catch (error) { invalidation = { status: 'FAILED', reason: String(error?.message || error) }; }
+    if (role === 'TARGET' && decision.selectedAction === 'DIPLOMATIC_WAIVER_OR_RENEGOTIATION') {
+      const prior = field(bucket('foreign', c).negotiations, partner);
+      const priorTerms = prior?.terms || {};
+      if (priorTerms.sanctionPolicyKey === policy.policyKey) {
+        return { status: 'NEGOTIATION_ALREADY_RECORDED', authority: 'OMEGA_OPPONENT_TREATY_LIFECYCLE',
+          negotiationStatus: prior.status || 'UNKNOWN', activation, invalidation };
+      }
+      const autonomy = g.Omega?.OpponentAutonomy || g.OmegaOpponentAutonomy || null;
+      if (!autonomy?.startTreatyNegotiation)
+        return { status: 'NEGOTIATION_EXECUTOR_UNAVAILABLE', authority: 'OMEGA_OPPONENT_AUTONOMY',
+          activation, invalidation };
+      const decisionId = 'SANCTION-NEGOTIATION-' + policy.policyKey + '-' + c;
+      const terms = {
+        negotiationPurpose: 'SANCTION_WAIVER_OR_SCOPE_RENEGOTIATION',
+        sanctionPolicyKey: policy.policyKey, sanctionPolicyId: policy.policyId,
+        sanctionType: policy.type, direction: policy.direction,
+        requestedRelief: 'TARGETED_WAIVER_OR_STAGED_COMPLIANCE',
+        affectedResources: productRows.map(row => row.resourceId).filter(Boolean),
+        observedShortage: productRows.some(row => row.shortageEvidence),
+        settledImportExposure: productRows.some(row => row.tradeExposure.importsAtRisk.recordCount > 0)
+      };
+      const result = autonomy.startTreatyNegotiation(c, partner, {
+        treatyType: 'SANCTION_WAIVER_OR_SUPPLY_RENEGOTIATION', terms, decisionId,
+        correlationId: decisionId
+      });
+      const accepted = result?.status === 'APPLIED' && result?.result?.accepted !== false;
+      return { status: accepted ? 'NEGOTIATION_REQUESTED' : 'NEGOTIATION_REQUEST_BLOCKED',
+        authority: 'OMEGA_OPPONENT_TREATY_LIFECYCLE', decisionId,
+        commandStatus: result?.status || 'UNKNOWN',
+        reason: result?.result?.reason || result?.reason || null, activation, invalidation };
+    }
+    return {
+      status: activation?.status === 'ACTIVATED' || activation?.status === 'REFRESHED'
+        ? 'NPC_COUNTRY_REEVALUATION_SCHEDULED'
+        : (invalidation ? 'NPC_COUNTRY_DECISION_INVALIDATED' : 'NPC_AUTONOMY_HANDOFF_UNAVAILABLE'),
+      authority: 'OMEGA_WORLD_SIMULATION_SCHEDULER_AND_OPPONENT_COUNTRY_RULES',
+      activationStatus: activation?.status || 'UNAVAILABLE',
+      invalidationStatus: invalidation?.status || (invalidation ? 'RECORDED' : 'UNAVAILABLE'),
+      nextEvaluation: 'BOUNDED_COUNTRY_TURN_WITH_EXISTING_MARKET_AND_PROJECT_EXECUTORS'
     };
   }
   function runSupplierSide(policy, evidence, budget, supplierBudget) {
@@ -913,8 +976,10 @@
       budgetAvailability: finance.ministryBudgetEvidence,
       budgetAuthority: finance.ministryBudgetEvidence.length
         ? 'EXISTING_FINANCE_MINISTRY_APPROPRIATIONS_ONLY' : 'NO_RELEVANT_APPROPRIATION_OBSERVED',
-      budgetAction: 'NO_BUDGET_CREATED_OR_SPENT', customerExposure: evidence
+      budgetAction: 'COUNTRY_OWNED_APPROPRIATION_AND_TREASURY_EXECUTION_ENABLED',
+      customerExposure: evidence
     };
+    decision.execution = executeNationalDecision(policy, c, partner, 'SUPPLIER', decision, productRows);
     const priorDecision = bucket('foreign', c).sanctionNationalDecisions;
     if (!Array.isArray(priorDecision) || !priorDecision.some(row => row?.decisionId === decision.decisionId)) {
       const saved = dispatch('foreign', 'OMEGA_SANCTION_RECORD_NATIONAL_DECISION', c, decision);
@@ -1032,8 +1097,9 @@
         budgetAvailability: finance.ministryBudgetEvidence,
         budgetAuthority: finance.ministryBudgetEvidence.length
           ? 'EXISTING_FINANCE_MINISTRY_APPROPRIATIONS_ONLY' : 'NO_RELEVANT_APPROPRIATION_OBSERVED',
-        budgetAction: 'NO_BUDGET_CREATED_OR_SPENT'
+        budgetAction: 'COUNTRY_OWNED_APPROPRIATION_AND_TREASURY_EXECUTION_ENABLED'
       };
+      decision.execution = executeNationalDecision(policy, side.c, side.partner, side.role, decision, productRows);
       const previous = bucket('foreign', side.c).sanctionNationalDecisions;
       if (!Array.isArray(previous) || !previous.some(row => row?.decisionId === decision.decisionId)) {
         const saved = dispatch('foreign', 'OMEGA_SANCTION_RECORD_NATIONAL_DECISION', side.c, decision);
@@ -1124,8 +1190,9 @@
         supplierCountriesPerPolicy: MAX_SUPPLIER_COUNTRIES_PER_POLICY,
         supplierCountriesPerTurn: MAX_SUPPLIER_COUNTRIES_PER_TURN,
         supplierInvestigationsPerTurn: MAX_SUPPLIER_INVESTIGATIONS_PER_TURN },
-      invariants: ['NO_CASH_OR_INVENTORY_CREATION', 'NO_AUTOMATIC_TRADE_OR_TREATY_EXECUTION',
-        'NO_COUNTRY_WIDE_OMNISCIENT_INTELLIGENCE', 'UNKNOWN_EVIDENCE_REMAINS_NULL']
+      invariants: ['NO_SYNTHETIC_CASH_OR_INVENTORY', 'PROJECT_EXPENSES_REQUIRE_COUNTRY_APPROPRIATIONS',
+        'DIPLOMACY_REQUIRES_COUNTERPARTY_TREATY_LIFECYCLE', 'NO_COUNTRY_WIDE_OMNISCIENT_INTELLIGENCE',
+        'PLAYER_COUNTRY_REMAINS_PLAYER_CONTROLLED', 'UNKNOWN_EVIDENCE_REMAINS_NULL']
     };
   }
   function init() {

@@ -5,7 +5,25 @@ import { fileURLToPath } from 'node:url';
 
 globalThis.Game={state:{
   simulation:{turn:1,simulationTurn:1},
-  finance:{BD:{available:100000,reserves:120000,committed:0}},
+  finance:{BD:{
+    available:100000,reserves:120000,committed:0,
+    omegaFinance:{
+      version:'1.0.0',countryCode:'BD',countryName:'Bangladesh',
+      treasuryBalanceUsd:100000,lastSyncedTreasuryBalanceUsd:100000,
+      fiscalModel:{annualSpendingUsd:100000},policy:{minimumReservePctOfAnnualSpending:0},
+      cumulativeSpendingUsd:0,currentYearSpendingUsd:0,fiscalYearIndex:0,revision:0,ledger:[],
+      allocations:{
+        construction:{department:'construction',sharePct:2,budgetUsd:2000,
+          spentUsd:0,remainingUsd:2000,defaultSharePct:2,baselineBudgetUsd:2000},
+        culture:{department:'culture',sharePct:1,budgetUsd:1000,
+          spentUsd:0,remainingUsd:1000,defaultSharePct:1,baselineBudgetUsd:1000},
+        financial_services:{department:'financial_services',sharePct:1,budgetUsd:1000,
+          spentUsd:0,remainingUsd:1000,defaultSharePct:1,baselineBudgetUsd:1000},
+        cabinet:{department:'cabinet',sharePct:1,budgetUsd:1000,
+          spentUsd:0,remainingUsd:1000,defaultSharePct:1,baselineBudgetUsd:1000}
+      }
+    }
+  }},
   economy:{BD:{gdp:1000000,debt:100000,productionCapacity:500}},
   population:{BD:{labor:{available:10000}}},
   resource:{BD:{inventory:{steel:10000},production:{steel:100},consumption:{steel:50},reserves:{steel:20000}}},

@@ -133,6 +133,7 @@ jobs:
           npm run test:real-country-batch
           npm run test:ministries
           npm run test:simulation
+          npm run test:opponent-autonomy
 
       - name: Resource action execution proof
         run: |
