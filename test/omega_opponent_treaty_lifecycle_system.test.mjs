@@ -10,11 +10,11 @@ globalThis.Omega.WorldSimulationScheduler = {
 };
 globalThis.Game={state:{
   simulation:{turn:1},
-  finance:{BD:{available:100000},SA:{available:100000}},
-  economy:{BD:{gdp:100000,debt:10000},SA:{gdp:200000,debt:10000}},
+  finance:{BGD:{available:100000},SAU:{available:100000}},
+  economy:{BGD:{gdp:100000,debt:10000},SAU:{gdp:200000,debt:10000}},
   foreign:{
-    BD:{relations:{SA:{overall:80,trust:75,political:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{},negotiations:{SA:{status:'REQUESTED',stage:'NEGOTIATION_OPENED',targetCountryId:'SA',treatyType:'ENERGY_SUPPLY',terms:{resourceId:'crude_oil',quantity:1000},createdTurn:1,decisionId:'NEG-1'}}},
-    SA:{relations:{BD:{overall:80,trust:75,political:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{},negotiations:{}}
+    BGD:{relations:{SAU:{overall:80,trust:75,political:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{},negotiations:{SAU:{status:'REQUESTED',stage:'NEGOTIATION_OPENED',targetCountryId:'SAU',treatyType:'ENERGY_SUPPLY',terms:{resourceId:'crude_oil',quantity:1000},createdTurn:1,decisionId:'NEG-1'}}},
+    SAU:{relations:{BGD:{overall:80,trust:75,political:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{},negotiations:{}}
   }
 }};
 globalThis.CustomEvent=globalThis.CustomEvent||class{constructor(type,init={}){this.type=type;this.detail=init.detail;}};
@@ -40,14 +40,14 @@ assert.deepEqual(scheduled.options.tiers,['PLAYER','ACTIVE','MACRO']);
 assert.equal(scheduled.options.priority,25);
 assert.equal(treaty.diagnostics().maxPendingReviewsPerCountryPerTurn,2);
 globalThis.Game.state.simulation.turn=2;
-const scheduledResult = scheduled.handler('BD',{turn:2,state:globalThis.Game.state});
+const scheduledResult = scheduled.handler('BGD',{turn:2,state:globalThis.Game.state});
 assert.equal(scheduledResult.status,'COMPLETED');
 assert.equal(scheduledResult.scanned,1);
 assert.equal(scheduledResult.accepted,1);
-assert.equal(treaty.processCountry('BD').status,'ALREADY_PROCESSED',
+assert.equal(treaty.processCountry('BGD').status,'ALREADY_PROCESSED',
   'repeated scheduler callbacks for one country/turn must not process a treaty twice');
-assert.equal(globalThis.Game.state.foreign.BD.treaties.SA.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.SA.treaties.BD.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.BD.negotiations.SA.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.SA.negotiations.BD.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.BGD.treaties.SAU.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.SAU.treaties.BGD.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.BGD.negotiations.SAU.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.SAU.negotiations.BGD.status,'ACTIVE');
 console.log('OMEGA TREATY LIFECYCLE TEST PASSED');
