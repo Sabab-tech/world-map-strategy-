@@ -187,13 +187,13 @@ test('transmission advances only scheduler-selected countries, allows same-turn 
   assert.equal(replay.processed, 0);
   assert.equal(replay.duplicate, true);
   assert.equal(r.engine.getHistory('BGD').length, bgdHistory);
-  assert.equal(r.state.finance.monetaryStressByCurrency, undefined);
+  assert.equal(r.state.governmentBanking.monetaryStressByCurrency, undefined);
   r.context.__OMEGA_SIMULATION_PIPELINE_DISPATCH__ = true;
   r.context.dispatchEvent({ type: 'OMEGA_SIMULATION_TURN_COMMITTED', detail: { turn: 7 } });
   r.context.__OMEGA_SIMULATION_PIPELINE_DISPATCH__ = false;
-  assert.ok(r.state.finance.monetaryStressByCurrency);
-  assert.ok(r.state.finance.monetaryStressByCurrency.BDT);
-  assert.ok(r.state.finance.monetaryStressByCurrency.NGN);
+  assert.ok(r.state.governmentBanking.monetaryStressByCurrency);
+  assert.ok(r.state.governmentBanking.monetaryStressByCurrency.BDT);
+  assert.ok(r.state.governmentBanking.monetaryStressByCurrency.NGN);
   assert.equal(r.engine.getHistory('BGD').length, bgdHistory, 'post-turn aggregation must not replay country progression');
 });
 
