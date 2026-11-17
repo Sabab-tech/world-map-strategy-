@@ -1540,6 +1540,22 @@ test('real Chromium map marker routes the exact site to selected factory input a
         const overlay=document.getElementById('omega-map-load-overlay');
         const mapRoot=document.getElementById('render-engine-root');
         if(!overlay||!mapRoot)return;
+        const game=window.Game;
+        const mapReady=game?.__omegaGeoJSONRenderComplete===true &&
+          !!game?.Map?.countryGeoJSON && !!game?.geojsonLayer;
+        if(mapReady){
+          // The click-through check temporarily forced a loading overlay. Once the
+          // real map is rendered, restore its canonical ready state rather than a
+          // stale pre-click snapshot that may still contain the pointer shield.
+          overlay.classList.add('is-hidden');
+          overlay.setAttribute('data-state','complete');
+          overlay.setAttribute('aria-hidden','true');
+          overlay.setAttribute('aria-busy','false');
+          mapRoot.removeAttribute('data-omega-map-loading');
+          const retry=overlay.querySelector('#omega-map-load-retry');
+          if(retry)retry.hidden=true;
+          return;
+        }
         overlay.className=snapshot.className;
         for(const [name,value] of [
           ['data-state',snapshot.dataState],
