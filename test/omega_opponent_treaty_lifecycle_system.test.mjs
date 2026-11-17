@@ -32,7 +32,7 @@ await import('../omega_ministry_interoperability_system.js');
 await import('../omega_opponent_treaty_lifecycle_system.js');
 
 const treaty=globalThis.OmegaOpponentTreatyLifecycle;
-assert(treaty.diagnostics().handlerInstalled);
+assert(treaty.diagnostics().handlerInstalled, JSON.stringify(treaty.diagnostics()));
 assert.equal(treaty.diagnostics().automaticWorldRosterScan,false);
 const scheduled = scheduledTreatyHandlers.get('omega.opponent-treaty-lifecycle');
 assert.ok(scheduled,'treaty lifecycle must register on the existing country scheduler');
