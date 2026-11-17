@@ -102,16 +102,6 @@
             pointer-events: none; display: flex; flex-direction: column;
             padding-top: var(--safe-top); padding-bottom: var(--safe-bottom);
         }
-        /* The global game clock is interactive even though its UI root is click-through. */
-        #omega-global-time-hud {
-            position: relative;
-            z-index: 102;
-            pointer-events: auto !important;
-        }
-        #omega-global-time-hud * {
-            pointer-events: auto !important;
-        }
-
 
         .ui-top-hud {
             position: absolute; top: 0; left: 50%; transform: translateX(-50%);
