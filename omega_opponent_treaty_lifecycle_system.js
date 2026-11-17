@@ -131,7 +131,8 @@
     const negotiations=next.negotiations&&typeof next.negotiations==='object'?clone(next.negotiations):{};
     negotiations[target]={...(negotiations[target]||{}),status:'ACTIVE',stage:'IMPLEMENTED',counterpartyDecision:'ACCEPT',implementedTurn:turn()};
     next.negotiations=negotiations;
-    ctx.stateTransaction.set('foreign',next);
+    ctx.stateTransaction.set('foreign.treaties',treaties);
+    ctx.stateTransaction.set('foreign.negotiations',negotiations);
     emit('OMEGA_TREATY_RATIFIED',c,{targetCountryId:target,treaty:treaties[target]});
     emit('OMEGA_TREATY_IMPLEMENTED',c,{targetCountryId:target,treaty:treaties[target]});
     return{accepted:true,status:'ACTIVE',treaty:treaties[target]};
@@ -140,7 +141,8 @@
     const p=cmd?.payload||{},target=canonical(p.targetCountryId),c=canonical(ctx.countryId);
     const foreign=ctx.stateTransaction.get('foreign'),next=foreign&&typeof foreign==='object'?clone(foreign):{},treaties=next.treaties&&typeof next.treaties==='object'?clone(next.treaties):{};
     const old=treaties[target];if(!old)return{accepted:false,reason:'TREATY_NOT_FOUND'};
-    treaties[target]={...old,status,stage:status,changedTurn:turn()};next.treaties=treaties;ctx.stateTransaction.set('foreign',next);
+    treaties[target]={...old,status,stage:status,changedTurn:turn()};
+    ctx.stateTransaction.set('foreign.treaties',treaties);
     emit(status==='SUSPENDED'?'OMEGA_TREATY_SUSPENDED':'OMEGA_TREATY_TERMINATED',c,{targetCountryId:target,treaty:treaties[target]});
     return{accepted:true,status};
   }
