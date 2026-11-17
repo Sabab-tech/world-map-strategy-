@@ -90,6 +90,7 @@ test('macro stability processes only scheduler-selected countries and is idempot
  await context.OmegaMacroStabilityRuntime.init();
  const registered=scheduler.get('omega-macro-stability');
  assert.ok(registered,'Macro Stability must register one country handler');
+ assert.equal(context.OmegaMacroStabilityRuntime.applyAction({type:'set-policy',countryId:'BGD',policy:'growth'}).ok,true);
  const handler=registered.handler;
  const duration=Number(macroRules.annualizationMs);
  const beforeBdg=Number(state.economy.BANGLADESH.gdp_growth);
