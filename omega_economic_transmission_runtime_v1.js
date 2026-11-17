@@ -401,6 +401,27 @@
     }
     bankStore.monetaryStressByCurrency = out;
   }
+  function playerTurnProfile() {
+    const root = rootState();
+    const simulation = g.Omega && g.Omega.Simulation;
+    const session = root.simulation && root.simulation.session;
+    const candidates = [
+      session && session.playerCountryId,
+      simulation && typeof simulation.getPlayerCountryId === 'function'
+        ? (() => { try { return simulation.getPlayerCountryId(); } catch (_) { return null; } })()
+        : null,
+      root.simulation && root.simulation.playerCountryId,
+      root.playerCountryId,
+      g.CountryIOS && g.CountryIOS.activeCountry,
+      g.Game && g.Game.currentActiveCountry
+    ];
+    for (const candidate of candidates) {
+      const profile = resolveProfile(candidate);
+      if (profile && profile.economyKey) return profile;
+    }
+    return activePlayer();
+  }
+
   function step(turnNumber, durationMs) {
     if (!initialized) return { ok: false, code: 'NOT_INITIALIZED' };
     const t = num(turnNumber) ?? currentTurn() + 1;
@@ -412,7 +433,13 @@
     const simDay = currentSimulationDay();
     const failures = [];
     let processed = 0;
-    for (const p of profiles) {
+    const player = playerTurnProfile();
+    // Detailed transmission/history is a player-country runtime. Keep the other
+    // countries' last recorded models as the world baseline and aggregate their
+    // stored currency data, but do not rebuild 197 full country histories on each
+    // local game turn.
+    const turnProfiles = player ? [player] : [];
+    for (const p of turnProfiles) {
       if (!p || !p.economyKey) continue;
       try {
         const result = updateOne(p, t, dt, averageInflation, simDay);
@@ -424,13 +451,26 @@
     const bankStore = rootTransmissionStore();
     store = bankStore;
     bankStore.lastProcessedTurn = t;
+    bankStore.lastTransmissionPlayerCountryId = player ? profileId(player) : null;
     bankStore.economicTransmissionDiagnostics = {
       version: VERSION, turn: t, processedCountryCount: processed,
+      playerCountryId: player ? profileId(player) : null,
+      processingScope: player ? 'ACTIVE_PLAYER_COUNTRY' : 'NO_PLAYER_COUNTRY',
+      baselineCountryCount: profiles.length,
       failureCount: failures.length, errors: failures.slice(-16), historyDay: currentSimulationDay()
     };
-    dispatch('OMEGA_ECONOMIC_TRANSMISSION_UPDATED', { version: VERSION, turn: t, processed, failureCount: failures.length });
+    dispatch('OMEGA_ECONOMIC_TRANSMISSION_UPDATED', {
+      version: VERSION, turn: t, processed, playerCountryId: player ? profileId(player) : null,
+      processingScope: player ? 'ACTIVE_PLAYER_COUNTRY' : 'NO_PLAYER_COUNTRY',
+      failureCount: failures.length
+    });
     refreshPanel();
-    return { ok: failures.length === 0, turn: t, processed, failureCount: failures.length, failures: failures.slice(0, 8) };
+    return {
+      ok: failures.length === 0, turn: t, processed,
+      playerCountryId: player ? profileId(player) : null,
+      processingScope: player ? 'ACTIVE_PLAYER_COUNTRY' : 'NO_PLAYER_COUNTRY',
+      failureCount: failures.length, failures: failures.slice(0, 8)
+    };
   }
   function getState(countryValue) {
     const p = resolveProfile(countryValue) || activePlayer();

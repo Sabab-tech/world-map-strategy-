@@ -118,7 +118,13 @@ test('turn advancement computes real wages, CPI and producer/import costs with t
   r.setDay(1);
   const first = r.engine.advanceTurn(1, 31536000000);
   assert.equal(first.ok, true, JSON.stringify(first));
-  assert.equal(first.processed, 3);
+  assert.equal(first.processed, 1,
+    'one player turn must recalculate only the active country rather than rebuilding every country history');
+  assert.equal(first.processingScope, 'ACTIVE_PLAYER_COUNTRY');
+  assert.equal(first.playerCountryId, 'BGD');
+  assert.equal(r.engine.getLatest('NGA'), null,
+    'non-player country baselines must remain available without a live per-turn transmission model');
+  assert.equal(r.engine.getLatest('USA'), null);
   const bg = r.engine.getLatest('BGD');
   assert.ok(bg.cpiIndex > 100);
   assert.ok(bg.realWageIndex < 100);
@@ -167,7 +173,40 @@ test('currency stress aggregate and counterfactual scenarios are transparent and
   assert.equal(capitalFlight.assumption, 'COUNTERFACTUAL_GAME_MODEL_ONLY_NO_STATE_MUTATION');
   assert.equal(r.fx.getRate('BDT', 'SIMULATION'), rateBefore);
   assert.equal(JSON.stringify(r.state.finance), bankBefore);
-  assert.ok(r.engine.diagnostics().currencyStressCount >= 2);
+  assert.equal(r.engine.diagnostics().currencyStressCount, 1,
+    'currency stress aggregates from the stored transmission rows without recalculating non-player countries');
+  assert.ok(r.engine.getMonetaryStress('BDT'));
+});
+
+test('only the canonical session player receives live turn history while other country baselines remain unchanged', async () => {
+  const r=makeRuntime();
+  await r.engine.init();
+
+  r.setDay(1);
+  const first=r.engine.advanceTurn(1,31536000000);
+  assert.equal(first.ok,true);
+  assert.equal(first.playerCountryId,'BGD');
+  assert.equal(first.processed,1);
+  const bangladeshTurnOne=r.engine.getState('BGD');
+  assert.equal(bangladeshTurnOne.lastProcessedTurn,1);
+  assert.equal(r.engine.getState('NGA'),null);
+  assert.equal(r.engine.getState('USA'),null);
+
+  // A canonical session takes precedence over the older root-level selection.
+  r.state.simulation.session={sessionId:'ACTIVE-NGA',playerCountryId:'NGA',status:'PAUSED'};
+  r.setDay(2);
+  const second=r.engine.advanceTurn(2,31536000000);
+  assert.equal(second.ok,true);
+  assert.equal(second.playerCountryId,'NGA');
+  assert.equal(second.processed,1);
+  assert.equal(r.engine.getState('NGA').lastProcessedTurn,2);
+  assert.equal(r.engine.getHistory('NGA').length,1);
+
+  // The non-player country's previous snapshot/history is not rewritten.
+  assert.equal(r.engine.getState('BGD').lastProcessedTurn,1);
+  assert.equal(r.engine.getHistory('BGD').length,1);
+  assert.equal(r.engine.getHistory('BGD')[0].turn,1);
+  assert.equal(r.engine.diagnostics().modeledCountryCount,2);
 });
 
 test('unknown GDP remains unavailable instead of generating an invented country model', async () => {

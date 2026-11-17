@@ -304,8 +304,23 @@
             currentGlobalMarker.sessionId !== sessionId &&
             isObject(currentGlobalMarker.countries) &&
             Object.keys(currentGlobalMarker.countries).length >= loaded.countryIds.length) {
-          lastReport = clone(currentGlobalMarker);
-          return { version: VERSION, status: 'EXISTING_BASELINE_PRESERVED', reason: 'PRIOR_SESSION_BASELINE_NOT_OVERWRITTEN' };
+          var sessionStatus = id(effectiveSession.status);
+          var lastCommittedTurn = finite(effectiveSession.lastCommittedTurn);
+          var createdTurn = finite(effectiveSession.createdTurn);
+          var startedTurn = finite(effectiveSession.startedTurn);
+          var pausedTurn = finite(effectiveSession.pausedTurn);
+          var priorBaselineTurn = finite(currentGlobalMarker.initializedAtTurn);
+          var unplayedSessionHandoff = priorBaselineTurn === 0 &&
+            currentTurn(state) === 0 &&
+            ['READY', 'PAUSED'].indexOf(sessionStatus) >= 0 &&
+            (lastCommittedTurn === null || lastCommittedTurn === 0) &&
+            (createdTurn === null || createdTurn === 0) &&
+            (startedTurn === null || startedTurn === 0) &&
+            (pausedTurn === null || pausedTurn === 0);
+          if (!unplayedSessionHandoff) {
+            lastReport = clone(currentGlobalMarker);
+            return { version: VERSION, status: 'EXISTING_BASELINE_PRESERVED', reason: 'PRIOR_SESSION_BASELINE_NOT_OVERWRITTEN' };
+          }
         }
         var playerCountryId = id(effectiveSession.playerCountryId);
         var playerBaseline = loaded.baseline.countries[playerCountryId];
@@ -337,9 +352,14 @@
         var playerAssetsRegistered = factoryRegistrationStatus === 'COMPLETED' ||
           factoryRegistrationStatus === 'ALREADY_REGISTERED';
         var countryAllocations = Object.create(null);
+        var preservedCountryCount = 0;
         loaded.countryIds.forEach(function (countryId) {
           var row = loaded.baseline.countries[countryId];
-          countryAllocations[countryId] = {
+          var previousCountryAllocation = currentGlobalMarker && currentGlobalMarker.countries &&
+            isObject(currentGlobalMarker.countries[countryId])
+              ? clone(currentGlobalMarker.countries[countryId]) : {};
+          if (Object.keys(previousCountryAllocation).length) preservedCountryCount += 1;
+          countryAllocations[countryId] = Object.assign(previousCountryAllocation, {
             countryId: countryId,
             countryName: row.countryName,
             industryArchetype: row.industryArchetype,
@@ -362,7 +382,7 @@
               : 'NOT_ACTIVE_PLAYER_COUNTRY',
             runtimeActivationScope: countryId === playerCountryId
               ? 'ACTIVE_PLAYER_COUNTRY' : 'STATIC_COUNTRY_BASELINE'
-          };
+          });
         });
         var summary = {
           version: VERSION,
@@ -383,8 +403,8 @@
           playerCountryLiveAssetCount: Number(factoryAssetRegistration.activeAssetCount) || 0,
           playerCountryFactoryRegistration: clone(factoryAssetRegistration),
           factoryRegistrationScope: 'ACTIVE_PLAYER_COUNTRY_ONLY',
-          countriesCreated: loaded.countryIds.length,
-          countriesPreserved: 0,
+          countriesCreated: loaded.countryIds.length - preservedCountryCount,
+          countriesPreserved: preservedCountryCount,
           countriesBlocked: playerAssetsRegistered ? 0 : 1,
           countryFailures: Array.isArray(factoryAssetRegistration.blockedTypes) && factoryAssetRegistration.blockedTypes.length
             ? [{ countryId: playerCountryId, blockedTypes: clone(factoryAssetRegistration.blockedTypes) }] : [],

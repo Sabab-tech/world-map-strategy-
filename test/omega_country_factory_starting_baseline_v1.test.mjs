@@ -313,6 +313,130 @@ test('a stale completed marker restores starting factory records that disappeare
   assert.equal(state.economy.BGD.productionAssets.length, 100);
 });
 
+test('an unplayed turn-zero country handoff rebinds only the active factory registry and preserves all country baseline rows', async () => {
+  const state = makeState(0);
+  state.simulation.session = {
+    sessionId: 'PLAYER-COUNTRY-USA',
+    playerCountryId: 'USA',
+    status: 'PAUSED',
+    createdTurn: 0,
+    startedTurn: 0,
+    pausedTurn: 0,
+    lastCommittedTurn: 0
+  };
+  state.economy.USA = {
+    productionAssets: [{ id: 'PREEXISTING-USA-FACTORY', factoryType: 'STEEL_AND_ALLOY_WORKS', status: 'OPERATIONAL' }],
+    customPreservedState: { treasuryNote: 'keep' }
+  };
+  state.resource.USA = {
+    inventory: { copper_ore: 13 },
+    batches: [{ batchId: 'USA-EXISTING-BATCH', resourceId: 'copper_ore', quantity: 13 }]
+  };
+  const resourceBefore = JSON.stringify(state.resource);
+  const { api } = makeHarness(state);
+
+  assert.equal((await api.ready).status, 'READY');
+  const initial = await api.initializeForSession(state.simulation.session);
+  assert.equal(initial.status, 'COMPLETED');
+  const firstMarker = state.simulation.countryFactoryStartingBaselineV1;
+  assert.equal(firstMarker.playerCountryId, 'USA');
+  assert.equal(firstMarker.sessionId, 'PLAYER-COUNTRY-USA');
+  assert.equal(firstMarker.initializedAtTurn, 0);
+  assert.equal(firstMarker.initializedCountryCount, 197);
+  const originalCountryRows = structuredCloneSafe(firstMarker.countries);
+  const originalUsaAssets = structuredCloneSafe(state.economy.USA.productionAssets);
+
+  state.simulation.session = {
+    sessionId: 'OMEGA-SESSION-1',
+    playerCountryId: 'AUS',
+    status: 'PAUSED',
+    createdTurn: 0,
+    startedTurn: 0,
+    pausedTurn: 0,
+    lastCommittedTurn: 0
+  };
+
+  const rebound = await api.initializeForSession(state.simulation.session);
+  assert.equal(rebound.status, 'COMPLETED',
+    'the USA boot placeholder baseline must not block a fresh, unplayed Australia player session');
+  const marker = state.simulation.countryFactoryStartingBaselineV1;
+  assert.equal(marker.playerCountryId, 'AUS');
+  assert.equal(marker.sessionId, 'OMEGA-SESSION-1');
+  assert.equal(marker.initializedAtTurn, 0);
+  assert.equal(marker.initializedCountryCount, 197);
+  assert.equal(marker.countriesPreserved, 197);
+  assert.equal(marker.countriesCreated, 0);
+  assert.equal(marker.factoryRegistrationScope, 'ACTIVE_PLAYER_COUNTRY_ONLY');
+  assert.equal(marker.countries.AUS.runtimeActivationScope, 'ACTIVE_PLAYER_COUNTRY');
+  assert.equal(marker.countries.AUS.liveProductionAssetRegistryStatus, 'REGISTERED');
+  assert.equal(marker.countries.USA.runtimeActivationScope, 'STATIC_COUNTRY_BASELINE');
+  assert.equal(marker.countries.USA.liveProductionAssetRegistryStatus, 'NOT_ACTIVE_PLAYER_COUNTRY');
+
+  for (const countryId of coreCountryIds) {
+    assert.equal(marker.countries[countryId].countryId, countryId);
+    assert.equal(JSON.stringify(marker.countries[countryId].factoryCounts),
+      JSON.stringify(originalCountryRows[countryId].factoryCounts),
+      countryId + ' factory starting counts must survive the active-session handoff');
+    assert.equal(marker.countries[countryId].authority,
+      originalCountryRows[countryId].authority,
+      countryId + ' provenance must survive the active-session handoff');
+  }
+  assert.ok(state.economy.USA.productionAssets.some(asset => asset.id === 'PREEXISTING-USA-FACTORY'),
+    'the old view-country economy assets must remain untouched');
+  assert.deepEqual(state.economy.USA.productionAssets.filter(asset =>
+    originalUsaAssets.some(original => original.id === asset.id)), originalUsaAssets);
+  assert.deepEqual(state.economy.USA.customPreservedState, { treasuryNote: 'keep' });
+  assert.ok(Array.isArray(state.economy.AUS.productionAssets));
+  assert.equal(state.economy.AUS.productionAssets.filter(asset =>
+    !['DECOMMISSIONED', 'DESTROYED'].includes(String(asset.status || '').toUpperCase())).length,
+    baseline.countries.AUS.totalStartingFactoryUnits);
+  assert.equal(JSON.stringify(state.resource), resourceBefore,
+    'factory baseline handoff must not mutate any country resource inventory or batches');
+
+  const stableMarker = JSON.stringify(marker);
+  const stableAustraliaAssets = JSON.stringify(state.economy.AUS.productionAssets);
+  const repeated = await api.initializeForSession(state.simulation.session);
+  assert.equal(repeated.status, 'ALREADY_INITIALIZED');
+  assert.equal(JSON.stringify(state.simulation.countryFactoryStartingBaselineV1), stableMarker);
+  assert.equal(JSON.stringify(state.economy.AUS.productionAssets), stableAustraliaAssets,
+    'repeated baseline checks must not duplicate the newly active player factory assets');
+});
+
+test('a progressed prior factory baseline cannot be rebound to a different player session', async () => {
+  const state = makeState(1);
+  state.simulation.session = {
+    sessionId: 'PROGRESSED-USA-SESSION',
+    playerCountryId: 'USA',
+    status: 'PAUSED',
+    createdTurn: 0,
+    startedTurn: 1,
+    pausedTurn: 1,
+    lastCommittedTurn: 1
+  };
+  const { api } = makeHarness(state);
+  assert.equal((await api.ready).status, 'READY');
+  const initial = await api.initializeForSession(state.simulation.session);
+  assert.equal(initial.status, 'COMPLETED');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.initializedAtTurn, 1);
+
+  state.simulation.session = {
+    sessionId: 'LATER-AUS-SESSION',
+    playerCountryId: 'AUS',
+    status: 'PAUSED',
+    createdTurn: 0,
+    startedTurn: 0,
+    pausedTurn: 0,
+    lastCommittedTurn: 1
+  };
+  const before = JSON.stringify(state.simulation.countryFactoryStartingBaselineV1);
+  const preserved = await api.initializeForSession(state.simulation.session);
+  assert.equal(preserved.status, 'EXISTING_BASELINE_PRESERVED');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.playerCountryId, 'USA');
+  assert.equal(JSON.stringify(state.simulation.countryFactoryStartingBaselineV1), before);
+  assert.equal(state.economy.AUS, undefined,
+    'a progressed baseline must not silently switch player factory ownership');
+});
+
 test('runtime blocks an incomplete or mismatched canonical factory catalog', async () => {
   const corruptDocuments = Object.assign({}, sourceDocuments, {
     'resource_industrial_catalog_v1.json': { factoryProfiles: { ONLY_ONE_FACTORY: {} } }

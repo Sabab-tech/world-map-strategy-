@@ -5533,3 +5533,14 @@ body.modal-open .ui-bottom-navigation {
         padding: 13px !important;
     }
 }
+
+
+/* Keep the global game clock interactive above the click-through UI root and Leaflet canvas. */
+#omega-global-time-hud {
+  position: relative;
+  z-index: 102;
+  pointer-events: auto !important;
+}
+#omega-global-time-hud * {
+  pointer-events: auto !important;
+}

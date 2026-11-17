@@ -307,6 +307,61 @@ test('durable save slots checksum the canonical serialized world without a secon
     'single-pass serialized saves must restore the authoritative world state');
 });
 
+test('canonical save slots gzip large snapshots and restore them without changing integrity or the save key',async()=>{
+  const {sandbox,state}=makeSandbox();
+  Object.assign(sandbox,{
+    Blob,Response,CompressionStream,DecompressionStream,Uint8Array,btoa,atob
+  });
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  state.simulation.session={sessionId:'COMPRESSED-SAVE-SESSION',playerCountryId:'AUS',status:'PAUSED'};
+  state.resource={
+    AUS:{
+      inventory:{gold:125.5,iron_ore:900},
+      batches:[{
+        batchId:'COMPRESSED-SAVE-BATCH',countryId:'AUS',ownerCountryCode:'AUS',
+        resourceId:'gold',quantity:125.5,remainingQuantity:125.5,stage:'RAW_EXTRACTED'
+      }]
+    }
+  };
+  state.worldEcosystem={countryProfiles:{}};
+  for(let index=0;index<2500;index++){
+    state.worldEcosystem.countryProfiles['COUNTRY-'+String(index).padStart(4,'0')]={
+      countryId:'AUS',
+      industryArchetype:'MINING_AND_INDUSTRIAL_PROCESSING',
+      source:'CANONICAL_COUNTRY_STARTING_PROFILE',
+      description:'Repeated canonical country factory baseline and industrial production profile.',
+      startingFactories:{TEXTILE_GARMENT_MILL:10,FOOD_PROCESSING_COLD_CHAIN:20,STEEL_AND_ALLOY_WORKS:5}
+    };
+  }
+
+  const expectedProfileCount=Object.keys(state.worldEcosystem.countryProfiles).length;
+  const result=await runtime.saveSlot('compressed-save');
+  assert.equal(result.ok,true);
+  assert.equal(result.storage,'LOCAL_STORAGE_FALLBACK');
+  assert.equal(result.compression,'GZIP_BASE64');
+  assert.ok(result.originalBytes>100000,'fixture should exercise a large world save');
+  assert.ok(result.storedBytes<result.originalBytes*0.35,
+    'gzip should materially reduce the large canonical save payload');
+  assert.equal(result.key,'omega.game.save.compressed-save');
+
+  const stored=sandbox.localStorage.getItem(result.key);
+  assert.ok(stored.startsWith('OMEGA_SIM_SAVE_GZIP_V1:'),
+    'compressed saves must use a recognizable envelope inside the existing canonical slot');
+  assert.equal(stored.length,result.storedBytes);
+  state.resource.AUS.inventory.gold=999999;
+  delete state.worldEcosystem.countryProfiles['COUNTRY-0000'];
+
+  const restored=await runtime.loadSlot('compressed-save');
+  assert.equal(restored.lastLoadIntegrity,'VERIFIED',
+    'checksum is still calculated and validated against the canonical uncompressed JSON snapshot');
+  assert.equal(runtime.world.state,state,'compressed load must keep the single authoritative Game.state root');
+  assert.equal(state.resource.AUS.inventory.gold,125.5);
+  assert.equal(state.resource.AUS.batches[0].batchId,'COMPRESSED-SAVE-BATCH');
+  assert.equal(Object.keys(state.worldEcosystem.countryProfiles).length,expectedProfileCount);
+  assert.equal(state.worldEcosystem.countryProfiles['COUNTRY-0000'].countryId,'AUS');
+});
+
 test('turn autosave uses the canonical IndexedDB slot and retains legacy recovery',()=>{
   const lifecycle=fs.readFileSync(new URL('../omega_game_lifecycle_runtime_v1.js',import.meta.url),'utf8');
   const runtime=fs.readFileSync(new URL('../omega_simulation_runtime.js',import.meta.url),'utf8');
@@ -316,7 +371,7 @@ test('turn autosave uses the canonical IndexedDB slot and retains legacy recover
   assert.match(lifecycle,/await sim\.loadSlot\(SLOT\)/,
     'the lifecycle must restore through the same canonical slot');
   assert.match(runtime,/async saveSlot\(slot='default'\)/);
-  assert.match(runtime,/indexedDbSaveRequest\(global\.indexedDB,'put',key,serialized\)/,
+  assert.match(runtime,/indexedDbSaveRequest\(global\.indexedDB,'put',key,stored\.value\)/,
     'the canonical save API must write its checksummed snapshot to IndexedDB first');
   assert.match(runtime,/LOCAL_STORAGE_FALLBACK/,
     'the canonical slot must retain a localStorage fallback when IndexedDB is unavailable');

@@ -639,7 +639,7 @@ var Game = window.Game = {
                 const accent = isOcean ? '#55d8ff' : '#8be0b1';
                 const symbol = isOcean ? '≈' : '◉';
                 const label = isOcean ? 'OCEAN BASIN' : 'CONTINENT';
-                html += `<button type="button" class="search-item omega-region-search-item" onclick="window.GameEngine.handleSearchSelect('region', '${region.value}', null, null, null, event)" style="width:100%; box-sizing:border-box; cursor:pointer; padding:9px 10px; background:rgba(8,36,52,0.94); border:0; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:9px; color:#e5f7ff; text-align:left;">
+                html += `<button type="button" class="search-item omega-region-search-item" onclick="window.Game.handleSearchSelect('region', '${region.value}', null, null, null, event)" style="width:100%; box-sizing:border-box; cursor:pointer; padding:9px 10px; background:rgba(8,36,52,0.94); border:0; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:9px; color:#e5f7ff; text-align:left;">
                     <span style="font-size:21px; line-height:1; color:${accent}; width:25px; text-align:center;">${symbol}</span>
                     <span style="flex:1; min-width:0;"><strong style="display:block; font-family:var(--font-mono); color:${accent}; font-size:12px;">${region.label}</strong><small style="display:block; color:#93a9b8; font-size:9px; letter-spacing:1px; margin-top:3px;">${label}</small></span>
                     <span style="font-size:9px; white-space:nowrap; padding:4px 6px; border:1px solid ${accent}; border-radius:4px; color:${accent};">HIGHLIGHT</span>
@@ -673,7 +673,7 @@ var Game = window.Game = {
             const quickList = ["Bangladesh", "USA", "India", "China", "Russia", "Saudi_Arabia", "United_Kingdom", "Germany", "Japan"];
             quickList.forEach(name => {
                 const bn = bnCountryMap[name.toLowerCase()] || name;
-                html += `<button onclick="window.GameEngine.handleSearchSelect('country', '${name}', null, null, null, event)" style="padding:6px 10px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono);">
+                html += `<button onclick="window.Game.handleSearchSelect('country', '${name}', null, null, null, event)" style="padding:6px 10px; background:rgba(0,229,255,0.15); border:1px solid #00e5ff; color:#00e5ff; font-size:11px; font-weight:bold; border-radius:6px; cursor:pointer; font-family:var(--font-mono);">
                     🌐 ${name.replace(/_/g, " ")} (${bn})
                 </button>`;
             });
@@ -741,7 +741,7 @@ var Game = window.Game = {
         countryMatches.forEach(name => {
             const displayName = name.replace(/_/g, " ").toUpperCase();
             const bn = bnCountryMap[name.toLowerCase()] || "";
-            html += `<div class="search-item" onclick="window.GameEngine.handleSearchSelect('country', '${name}', null, null, null, event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+            html += `<div class="search-item" onclick="window.Game.handleSearchSelect('country', '${name}', null, null, null, event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <strong style="color:#00e5ff; font-family:var(--font-mono);">🌐 ${displayName}</strong>
                     ${bn ? `<span style="font-size:10px; color:#ffd700; margin-left:6px; font-family:var(--font-mono);">(${bn})</span>` : ''}
@@ -752,7 +752,7 @@ var Game = window.Game = {
 
         // Render City Matches
         cityMatches.slice(0, 6).forEach(city => {
-            html += `<div class="search-item" onclick="window.GameEngine.handleSearchSelect('city', '${city.name}', ${city.lat}, ${city.lng}, '${city.country}', event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+            html += `<div class="search-item" onclick="window.Game.handleSearchSelect('city', '${city.name}', ${city.lat}, ${city.lng}, '${city.country}', event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <strong style="color:#ffd700; font-family:var(--font-mono);">🏙️ ${city.name.toUpperCase()}</strong>
                     <span style="font-size:10px; color:#cbd5e1; margin-left:6px; font-family:var(--font-mono);">(${city.country})</span>
@@ -763,7 +763,7 @@ var Game = window.Game = {
 
         // Render Deposit Matches
         depositMatches.slice(0, 6).forEach(dep => {
-            html += `<div class="search-item" onclick="window.GameEngine.handleSearchSelect('deposit', '${dep.name}', ${dep.lat}, ${dep.lng}, '${dep.country}', event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
+            html += `<div class="search-item" onclick="window.Game.handleSearchSelect('deposit', '${dep.name}', ${dep.lat}, ${dep.lng}, '${dep.country}', event)" style="cursor:pointer; padding:8px 10px; background:rgba(15,23,42,0.8); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center;">
                 <div>
                     <strong style="color:#22c55e; font-family:var(--font-mono);">⛏️ ${dep.name.toUpperCase()}</strong>
                     <span style="font-size:10px; color:#a855f7; margin-left:6px; font-family:var(--font-mono);">(${dep.country})</span>
