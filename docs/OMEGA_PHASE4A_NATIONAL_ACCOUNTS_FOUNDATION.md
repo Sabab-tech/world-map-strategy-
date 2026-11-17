@@ -30,7 +30,12 @@ GDP is reconciled only when production, expenditure and income approaches are co
 
 - Uses the existing World Simulation Scheduler; no wall-clock interval, worker, polling, background browser loop or full-world per-turn scan.
 - One selected country handler executes at a time in the existing PLAYER, ACTIVE or MACRO tier, after existing financial and NPC macro handlers at priority 40.
-- Reads are bounded: Finance ledger 500 rows, Trade ledger 512 rows, inventory batches 4,096 rows, factory production ledger 2,048 rows and stock identities 96 rows.
+- Country state lookup uses direct canonical registry keys first; normalized full-section enumeration remains only as a compatibility fallback for legacy keys.
+- A successful account is not rebuilt on every later turn. Authoritative Finance, Trade, Resource, Inventory and Factory mutation events mark only affected countries dirty; the next eligible country selection refreshes that account once.
+- If an event cannot identify its country, the runtime invalidates its in-memory initialized-country set so each country is safely refreshed on its next scheduled selection.
+- Same-country, same-turn processing remains idempotent. Source changes after a committed checkpoint remain dirty and are applied on the next committed turn, never by replaying the same turn.
+- Reads remain capped: Finance ledger 500 rows; Trade settlements/import/export ledgers 512 rows each; pending import requests 512 rows; inventory batches 4,096 rows; factory production ledger 2,048 rows; stock identities 96 rows. Truncated pending-request counts explicitly report their bounded coverage.
+- A checkpoint records the number of source rows examined and elapsed processing time in runtime diagnostics. These are workload measurements, not claims of a physical-device benchmark.
 - Checkpoint history is capped at 12 compact snapshots. Raw source ledgers are not copied into Economy state.
 - No DOM work or cross-country aggregation. Cadence comes only from game turns. Runtime and rules are included in the offline shell, with its cache version advanced.
 

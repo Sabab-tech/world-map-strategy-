@@ -27,10 +27,11 @@
   },
   "limits": {
     "financeLedgerRows": 500,
-    "tradeLedgerRows": 512,
     "inventoryBatchRows": 4096,
+    "maxStockIdentityRows": 96,
+    "pendingImportRequestRows": 512,
     "productionLedgerRows": 2048,
-    "maxStockIdentityRows": 96
+    "tradeLedgerRows": 512
   },
   "accounting": {
     "currencyPolicy": "NEVER_SUM_ACROSS_CURRENCIES",

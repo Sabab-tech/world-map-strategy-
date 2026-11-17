@@ -74,10 +74,17 @@ function harness(){
     const code=alphaCode(i);if(code!=='BGD')countryRows[code]={countryCode:code};
   }
   const manifest={scope:'TEST',countries:countryRows};
+  const eventHandlers=new Map();
   const window={
     Omega:{FinanceMinistry:finance,MinistryInteroperability:interop,WorldSimulationScheduler:scheduler,
       Simulation:{world:{state},clock:{turn:8}}},
-    addEventListener(){},
+    addEventListener(type,handler){
+      const set=eventHandlers.get(type)||new Set();set.add(handler);eventHandlers.set(type,set);
+    },
+    removeEventListener(type,handler){eventHandlers.get(type)?.delete(handler);},
+    dispatch(type,detail){
+      for(const handler of eventHandlers.get(type)||[])handler({type,detail});
+    },
     fetch:async input=>{
       const file=String(input).split('/').pop();
       const data=file==='national_accounts_rules_v1.json'?rules:manifest;
@@ -85,7 +92,7 @@ function harness(){
     }
   };
   vm.runInNewContext(source,{window,console,Promise,Map,Set,WeakMap,Number,String,Math,Object,Array,JSON,Error});
-  return{window,state,getScheduler:()=>schedulerHandler};
+  return{window,state,getScheduler:()=>schedulerHandler,dispatch:(type,detail)=>window.dispatch(type,detail)};
 }
 
 test('Treasury reconciliation detects exact balance, mismatch and missing evidence',()=>{
@@ -186,4 +193,133 @@ test('local available liquidity is never substituted for Treasury cash',async()=
   assert.equal(treasury.currency,null);
   assert.equal(treasury.availableLiquidity,250);
   assert.equal(treasury.availableLiquidityCurrency,'BDT');
+});
+
+
+test('unchanged country turns skip ledger scans until an authoritative source event invalidates the account',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  await api.init();
+  const first=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(first.status,'CHECKPOINTED');
+  assert.ok(first.sourceRowsScanned>0);
+  const revision=h.state.economy.BGD.nationalAccounts.revision;
+  const unchanged=await api.processCountry('BGD',{turn:9,state:h.state});
+  assert.equal(unchanged.status,'UNCHANGED');
+  assert.equal(unchanged.sourceRowsScanned,0);
+  assert.equal(h.state.economy.BGD.nationalAccounts.revision,revision);
+  assert.equal(api.diagnostics().unchangedCountries,1);
+  h.dispatch('OMEGA_FINANCE_STATE_UPDATED',{countryCode:'BD',revision:revision+1});
+  assert.equal(api.diagnostics().dirtyCountryCount,1);
+  const refreshed=await api.processCountry('BGD',{turn:9,state:h.state});
+  assert.equal(refreshed.status,'CHECKPOINTED');
+  assert.ok(refreshed.sourceRowsScanned>0);
+  assert.equal(api.diagnostics().dirtyCountryCount,0);
+  assert.ok(api.diagnostics().sourceInvalidations>=1);
+  assert.equal(h.state.economy.BGD.nationalAccounts.revision,revision+1);
+});
+
+test('trade events invalidate both recorded counterparty countries',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  await api.init();
+  h.dispatch('OMEGA_TRADE_SETTLEMENT_COMPLETED',{
+    countryId:'BGD',targetCountryId:'AAB',settlementId:'SETTLEMENT-1'
+  });
+  assert.equal(api.diagnostics().dirtyCountryCount,2);
+  assert.equal(api.diagnostics().sourceInvalidations,2);
+});
+
+test('same-turn source changes remain dirty and are applied on the next committed turn',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  await api.init();
+  assert.equal((await api.processCountry('BGD',{turn:8,state:h.state})).status,'CHECKPOINTED');
+  h.dispatch('OMEGA_RESOURCE_INVENTORY_CHANGED',{countryId:'BGD',resourceId:'IRON_ORE',delta:1});
+  const replay=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(replay.status,'ALREADY_PROCESSED');
+  assert.equal(api.diagnostics().dirtyCountryCount,1);
+  const next=await api.processCountry('BGD',{turn:9,state:h.state});
+  assert.equal(next.status,'CHECKPOINTED');
+  assert.equal(api.diagnostics().dirtyCountryCount,0);
+});
+
+test('country lookup uses direct canonical keys without enumerating country registries',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  const enumerations={finance:0,trade:0,resource:0,economy:0};
+  for(const domain of Object.keys(enumerations)){
+    const target=h.state[domain];
+    h.state[domain]=new Proxy(target,{
+      ownKeys(object){enumerations[domain]++;return Reflect.ownKeys(object);}
+    });
+  }
+  await api.init();
+  const result=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(result.status,'CHECKPOINTED');
+  assert.deepEqual(enumerations,{finance:0,trade:0,resource:0,economy:0});
+});
+
+test('pending import request summarization is capped and reports truncation',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  h.state.trade.BGD.importRequests=Array.from({length:1000},(_,index)=>({
+    requestId:'REQ-'+index,status:index<988?'REJECTED':'PENDING'
+  }));
+  await api.init();
+  const result=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(result.status,'CHECKPOINTED');
+  const trade=h.state.economy.BGD.nationalAccounts.trade;
+  assert.equal(trade.pendingRequestCount,12);
+  assert.equal(trade.pendingRequestRowsObserved,512);
+  assert.equal(trade.pendingRequestWindowTruncated,true);
+  assert.equal(trade.pendingRequestCoverage,'BOUNDED_LAST_N_RECORDS');
+});
+
+test('replacing the authoritative world-state root forces a safe rehydration',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  await api.init();
+  assert.equal((await api.processCountry('BGD',{turn:8,state:h.state})).status,'CHECKPOINTED');
+  const restoredState=structuredClone(h.state);
+  restoredState.simulation.turn=9;
+  const refreshed=await api.processCountry('BGD',{turn:9,state:restoredState});
+  assert.equal(refreshed.status,'CHECKPOINTED');
+  assert.equal(api.diagnostics().rootResets,1);
+  assert.equal(api.diagnostics().initializedCountryCount,1);
+});
+
+
+test('large ledger inputs remain hard-bounded to the configured accounting workload',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  const make=(count,fn)=>Array.from({length:count},(_,index)=>fn(index));
+  h.state.finance.BGD.omegaFinance.ledger=make(1500,index=>({
+    transactionId:'FIN-'+index,action:'EXPENSE',amountUsd:1
+  }));
+  h.state.trade.BGD.globalTradeLedger.settlements=make(1400,index=>({
+    settlementId:'SETTLED-'+index,status:'SETTLED',turn:8
+  }));
+  h.state.trade.BGD.importLedger=make(1600,index=>({
+    settlementId:'SETTLED-'+index,totalValue:1,currency:'BDT'
+  }));
+  h.state.trade.BGD.exportLedger=make(1600,index=>({
+    settlementId:'SETTLED-'+index,totalValue:1,currency:'USD'
+  }));
+  h.state.trade.BGD.importRequests=make(1200,index=>({
+    requestId:'REQUEST-'+index,status:'PENDING'
+  }));
+  h.state.resource.BGD.batches=make(9000,index=>({
+    batchId:'BATCH-'+index,resourceId:'IRON_ORE',unit:'TONNE',remainingQuantity:1
+  }));
+  h.state.economy.BGD.industrialRuntime.productionLedger=make(4000,index=>({
+    transactionId:'PRODUCTION-'+index,status:'COMPLETED',outputQuantities:{IRON:1}
+  }));
+  await api.init();
+  const result=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(result.status,'CHECKPOINTED');
+  assert.equal(result.sourceRowsScanned,8692);
+  const workload=h.state.economy.BGD.nationalAccounts.workload;
+  assert.deepEqual(workload,{
+    financeLedgerRowsObserved:500,
+    tradeRowsObserved:2048,
+    inventoryBatchRowsObserved:4096,
+    productionLedgerRowsObserved:2048,
+    sourceRowsScanned:8692
+  });
+  assert.equal(api.diagnostics().lastSourceRowsScanned,8692);
+  assert.equal(api.diagnostics().maxSourceRowsScanned,8692);
 });
