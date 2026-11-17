@@ -299,7 +299,6 @@
           }
           state.simulation = {};
         }
-        var currentGlobalMarker = state.simulation.countryFactoryStartingBaselineV1;
         // The 197-country baseline roster is shared across player sessions; its
         // previous session stamp must not lock the live factory registry to the
         // country that happened to be selected during startup. A later map-selected
