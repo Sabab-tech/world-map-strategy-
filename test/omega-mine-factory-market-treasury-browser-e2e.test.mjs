@@ -495,10 +495,26 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         try {
           const result = await simulation.advance(requestedTurns);
           if (result?.status === 'ERROR' || result?.steps !== requestedTurns) {
+            const lifecycleDiagnostics = g.Omega?.GameLifecycle?.getDiagnostics?.() || null;
+            const failedSession = simulation.world?.state?.simulation?.session || null;
+            const finalizerResults = (simulation.lastTurnFinalizerResults || []).slice(-12);
+            const participantFailures = (simulation.lastTurnParticipantResults || [])
+              .filter(row => String(row.status || '').toUpperCase() !== 'COMPLETED').slice(-12);
             throw new Error('RESOURCE_GAMEPLAY_TURN_ADVANCE_FAILED:' + JSON.stringify({
-              requestedTurns, result, lastError: simulation.lastError || null,
-              participantResults: simulation.lastTurnParticipantResults || []
-            }).slice(0, 8000));
+              requestedTurns,
+              result: { turn: result?.turn ?? null, steps: result?.steps ?? null, status: result?.status ?? null },
+              lastError: simulation.lastError || null,
+              failedSession: failedSession ? {
+                sessionId: failedSession.sessionId || null,
+                playerCountryId: failedSession.playerCountryId || null,
+                status: failedSession.status || null,
+                failedFinalizer: failedSession.failedFinalizer || null,
+                lastError: failedSession.lastError || null
+              } : null,
+              finalizerResults,
+              participantFailures,
+              lifecycleDiagnostics
+            }).slice(0, 12000));
           }
           return result;
         } finally {
