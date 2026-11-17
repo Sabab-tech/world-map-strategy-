@@ -107,6 +107,61 @@ function attachLifecycle(win, sim) {
   return { documentListeners, lifecycle: win.Omega.GameLifecycle };
 }
 
+test('fresh map country selection updates only the unplayed boot session before Play', async () => {
+  const { win, sim, gameState } = createRuntime();
+  // Simulate the default view-country context that the first boot used to
+  // mistake for the player's explicit country choice.
+  win.CountryIOS = { activeCountry: 'USA' };
+  win.OmegaCabinetUI = { activeCountry: 'USA' };
+  sim.createSession({ playerCountryId: 'USA' });
+
+  const { lifecycle } = attachLifecycle(win, sim);
+  await lifecycle.restore();
+  assert.equal(sim.status, 'PAUSED');
+  assert.equal(sim.getPlayerCountryId(), 'USA');
+
+  win.dispatchEvent(new win.CustomEvent('OMEGA_COUNTRY_CONTEXT_CHANGED', {
+    detail: { countryId: 'AUS', source: 'map-country-selection' }
+  }));
+
+  assert.equal(sim.getPlayerCountryId(), 'AUS',
+    'the visible map choice must replace the boot placeholder in the canonical session');
+  assert.equal(gameState.simulation.session.playerCountryId, 'AUS');
+  assert.equal(sim.status, 'PAUSED',
+    'country selection must not start gameplay before the visible Play control is pressed');
+  assert.equal(win.Game.currentActiveCountry, 'AUS');
+  assert.equal(win.CountryIOS.activeCountry, 'AUS');
+  assert.equal(lifecycle.startAllBackgroundRuns(), true,
+    'the visible Play action must start the selected country session');
+  assert.equal(sim.status, 'RUNNING');
+  assert.equal(gameState.simulation.session.playerCountryId, 'AUS');
+});
+
+test('map country browsing cannot replace a restored save or a session after gameplay starts', async () => {
+  const { win, sim, gameState, storage } = createRuntime();
+  sim.startSession({ playerCountryId: 'BGD' });
+  await sim.advance(1);
+  await sim.saveSlot('default');
+  const { lifecycle } = attachLifecycle(win, sim);
+  await lifecycle.restore();
+
+  win.dispatchEvent(new win.CustomEvent('OMEGA_COUNTRY_CONTEXT_CHANGED', {
+    detail: { countryId: 'AUS', source: 'map-country-selection' }
+  }));
+  assert.equal(sim.getPlayerCountryId(), 'BGD',
+    'a restored save remains authoritative when the player browses another country');
+  assert.equal(gameState.simulation.session.playerCountryId, 'BGD');
+
+  sim.pauseSession();
+  const priorSessionId = gameState.simulation.session.sessionId;
+  win.dispatchEvent(new win.CustomEvent('OMEGA_COUNTRY_CONTEXT_CHANGED', {
+    detail: { countryId: 'CAN', source: 'country-ios' }
+  }));
+  assert.equal(gameState.simulation.session.sessionId, priorSessionId,
+    'opening another country ministry is a view-only action');
+  assert.equal(sim.getPlayerCountryId(), 'BGD');
+});
+
 test('one 15-second real-time interval advances exactly one shared game day', async () => {
   const { win, sim, gameState, dispatched, worldTicks } = createRuntime();
   assert.equal(sim.clock.stepDurationMs, DAY_MS);
