@@ -97,19 +97,43 @@ function makeRuntime() {
     getIndicators: () => null,
     getMacroState: () => ({ targetInflationPct: 3 })
   };
+  const eventHandlers = new Map();
+  const scheduledHandlers = new Map();
+  const finalizers = new Map();
+  const simulation = {
+    registerTurnFinalizer(id, handler, options = {}) {
+      finalizers.set(id, { handler, options });
+      return () => finalizers.delete(id);
+    }
+  };
+  const scheduler = {
+    registerCountryHandler(id, handler, options = {}) {
+      scheduledHandlers.set(id, { handler, options });
+      return () => scheduledHandlers.delete(id);
+    }
+  };
   const context = vm.createContext({
     console,
     setTimeout,
     clearTimeout,
+    addEventListener(type, handler) {
+      eventHandlers.set(type, [...(eventHandlers.get(type) || []), handler]);
+    },
+    dispatchEvent(event) {
+      for (const handler of eventHandlers.get(event.type) || []) handler(event);
+      return true;
+    },
     fetchResilient: async () => rules
   });
+  context.Omega = { Simulation: simulation };
   context.gameState = state;
   context.Game = { state };
   context.OmegaFinanceMinistry = finance;
   context.OmegaForexMonetaryEngine = fx;
   context.OmegaMacroStabilityRuntime = macro;
+  context.OmegaWorldSimulationScheduler = scheduler;
   vm.runInContext(source, context, { filename: 'omega_economic_transmission_runtime_v1.js' });
-  return { context, state, profiles, fx, rates, setDay: d => { simulationDay = d; }, engine: context.OmegaEconomicTransmissionRuntime };
+  return { context, state, profiles, fx, rates, scheduler: scheduledHandlers, finalizers, eventHandlers, setDay: d => { simulationDay = d; }, engine: context.OmegaEconomicTransmissionRuntime };
 }
 
 test('turn advancement computes real wages, CPI and producer/import costs with tagged assumptions', async () => {
@@ -150,6 +174,40 @@ test('depreciation feeds import-cost index and repeat turn calls cannot compound
   const again = r.engine.advanceTurn(2, 31536000000);
   assert.equal(again.duplicate, true);
   assert.equal(r.engine.getHistory('BGD').length, 2);
+});
+
+test('transmission advances only scheduler-selected countries, allows same-turn country peers and aggregates projections after commit', async () => {
+  const r = makeRuntime();
+  await r.engine.init();
+  r.setDay(1);
+  const registered = r.scheduler.get('omega-economic-transmission');
+  assert.ok(registered, 'Economic Transmission must register with the world country scheduler');
+  assert.deepEqual(Array.from(registered.options.tiers), ['PLAYER', 'ACTIVE', 'MACRO']);
+  assert.equal(r.engine.diagnostics().currencyStressFinalizerRegistered, true);
+  const duration = 86400000;
+  const bgd = await registered.handler('BGD', { turn: 7, stepDurationMs: duration, tier: 'PLAYER' });
+  assert.equal(bgd.processed, 1, JSON.stringify(bgd));
+  const nga = await registered.handler('NGA', { turn: 7, stepDurationMs: duration, tier: 'MACRO' });
+  assert.equal(nga.processed, 1, JSON.stringify(nga));
+  assert.ok(r.engine.getLatest('BGD'));
+  assert.ok(r.engine.getLatest('NGA'));
+  const bgdHistory = r.engine.getHistory('BGD').length;
+  const replay = await registered.handler('BGD', { turn: 7, stepDurationMs: duration, tier: 'PLAYER' });
+  assert.equal(replay.processed, 0);
+  assert.equal(replay.duplicate, true);
+  assert.equal(r.engine.getHistory('BGD').length, bgdHistory);
+  assert.equal(Object.keys(r.state.governmentBanking.monetaryStressByCurrency || {}).length, 0);
+  const finalizer = r.finalizers.get('omega-economic-transmission.currency-stress');
+  assert.ok(finalizer, 'the read-only currency stress projection must be registered as a post-turn finalizer');
+  assert.equal(finalizer.options.priority, 80);
+  const projection = await finalizer.handler({ turn: 7 });
+  assert.equal(projection.ok, true);
+  assert.ok(r.state.governmentBanking.monetaryStressByCurrency);
+  assert.ok(r.state.governmentBanking.monetaryStressByCurrency.BDT);
+  assert.ok(r.state.governmentBanking.monetaryStressByCurrency.NGN);
+  const replayProjection = await finalizer.handler({ turn: 7 });
+  assert.equal(replayProjection.duplicate, true, 'the same turn must not rebuild currency stress twice');
+  assert.equal(r.engine.getHistory('BGD').length, bgdHistory, 'post-turn aggregation must not replay country progression');
 });
 
 test('currency stress aggregate and counterfactual scenarios are transparent and non-mutating', async () => {

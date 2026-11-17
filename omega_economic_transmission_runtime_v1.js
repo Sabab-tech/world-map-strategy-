@@ -9,7 +9,8 @@
   if (g.OmegaEconomicTransmissionRuntime && g.OmegaEconomicTransmissionRuntime.VERSION === VERSION) return;
 
   let finance = null, fx = null, banking = null, macro = null, profiles = [], byId = new Map(), rules = {}, rawCache = new Map();
-  let store = null, initialized = false, initPromise = null, observer = null, renderQueued = false, eventBound = false;
+  let store = null, initialized = false, initPromise = null, observer = null, renderQueued = false, eventBound = false, unregisterSchedulerHandler = null, unregisterCurrencyStressFinalizer = null;
+  let cachedInflationTurn = null, cachedInflationValue = null, lastCurrencyStressTurn = null;
 
   const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
   const obj = v => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -318,7 +319,6 @@
     if (profile.economyKey && obj(root.economy) && obj(root.economy[profile.economyKey]))
       root.economy[profile.economyKey].financialTransmission = clone(model.latest);
     appendHistory(model, simDay, turnNumber);
-    aggregateCurrencyStress(bankStore);
     return model.latest;
   }
   function appendHistory(model, simDay, turnNumber) {
@@ -401,37 +401,127 @@
     }
     bankStore.monetaryStressByCurrency = out;
   }
+  function inflationMeanForTurn(turnNumber) {
+    const t = num(turnNumber) ?? currentTurn();
+    if (cachedInflationTurn === t) return cachedInflationValue;
+    cachedInflationTurn = t;
+    cachedInflationValue = globalInflationMean();
+    return cachedInflationValue;
+  }
+  function advanceProfile(profile, turnNumber, durationMs, averageInflation, simDay) {
+    if (!profile || !profile.economyKey) return { processed: 0, unavailable: 0, duplicate: false, countryCode: null };
+    const id = profileId(profile), bankStore = rootTransmissionStore();
+    const previous = bankStore.economicTransmissionByCountry[id];
+    if (previous && num(previous.lastProcessedTurn) !== null && turnNumber <= num(previous.lastProcessedTurn)) {
+      return { processed: 0, unavailable: previous.dataStatus === 'BASELINE_UNAVAILABLE' ? 1 : 0, duplicate: true, countryCode: id };
+    }
+    const result = updateOne(profile, turnNumber, durationMs, averageInflation, simDay);
+    if (!result) {
+      const current = bankStore.economicTransmissionByCountry[id] || modelTemplate(profile, factRows(profile), null);
+      current.dataStatus = 'BASELINE_UNAVAILABLE';
+      current.lastProcessedTurn = turnNumber;
+      bankStore.economicTransmissionByCountry[id] = clone(current);
+      return { processed: 0, unavailable: 1, duplicate: false, countryCode: id };
+    }
+    return { processed: 1, unavailable: 0, duplicate: false, countryCode: id };
+  }
+  function stepCountry(countryValue, turnNumber, durationMs) {
+    if (!initialized) return { ok: false, code: 'NOT_INITIALIZED', processed: 0 };
+    const profile = resolveProfile(countryValue);
+    if (!profile || !profile.economyKey) return { ok: false, code: 'COUNTRY_NOT_FOUND', processed: 0, countryId: countryValue ?? null };
+    const t = num(turnNumber) ?? currentTurn() + 1;
+    const dt = clamp(num(durationMs) ?? DAY_MS, 0, 7 * DAY_MS);
+    if (dt <= 0) return { ok: true, turn: t, processed: 0, countryCode: profileId(profile) };
+    const simDay = currentSimulationDay();
+    const mean = inflationMeanForTurn(t);
+    const row = advanceProfile(profile, t, dt, mean, simDay);
+    const bankStore = rootTransmissionStore();
+    store = bankStore;
+    bankStore.lastProcessedTurn = Math.max(num(bankStore.lastProcessedTurn) ?? -1, t);
+    const priorDiagnostics = bankStore.economicTransmissionDiagnostics || {};
+    const sameTurnDiagnostics = num(priorDiagnostics.turn) === t;
+    bankStore.economicTransmissionDiagnostics = Object.assign({}, priorDiagnostics, {
+      version: VERSION, turn: t,
+      processedCountryCount: (sameTurnDiagnostics ? num(priorDiagnostics.processedCountryCount) || 0 : 0) + row.processed,
+      unavailableCountryCount: (sameTurnDiagnostics ? num(priorDiagnostics.unavailableCountryCount) || 0 : 0) + row.unavailable,
+      lastCountryCode: profileId(profile), historyDay: simDay
+    });
+    dispatch('OMEGA_ECONOMIC_TRANSMISSION_UPDATED', {
+      version: VERSION, turn: t, processed: row.processed, unavailable: row.unavailable,
+      countryCode: profileId(profile)
+    });
+    if (profileId(profile) === profileId(activePlayer())) refreshPanel();
+    return { ok: true, turn: t, processed: row.processed, unavailable: row.unavailable, duplicate: row.duplicate, countryCode: row.countryCode };
+  }
   function step(turnNumber, durationMs) {
     if (!initialized) return { ok: false, code: 'NOT_INITIALIZED' };
     const t = num(turnNumber) ?? currentTurn() + 1;
-    if (store && num(store.lastProcessedTurn) !== null && t <= store.lastProcessedTurn)
+    if (store && num(store.lastBatchProcessedTurn) !== null && t <= store.lastBatchProcessedTurn)
       return { ok: true, duplicate: true, turn: t, processed: 0 };
     const dt = clamp(num(durationMs) ?? DAY_MS, 0, 7 * DAY_MS);
     if (dt <= 0) return { ok: true, turn: t, processed: 0 };
-    const averageInflation = globalInflationMean();
+    const averageInflation = inflationMeanForTurn(t);
     const simDay = currentSimulationDay();
     const failures = [];
-    let processed = 0;
+    let processed = 0, unavailable = 0;
     for (const p of profiles) {
       if (!p || !p.economyKey) continue;
       try {
-        const result = updateOne(p, t, dt, averageInflation, simDay);
-        if (result) processed++;
+        const row = advanceProfile(p, t, dt, averageInflation, simDay);
+        processed += row.processed;
+        unavailable += row.unavailable;
       } catch (error) {
         failures.push({ countryCode: profileId(p), error: String(error && error.message || error) });
       }
     }
     const bankStore = rootTransmissionStore();
     store = bankStore;
-    bankStore.lastProcessedTurn = t;
+    bankStore.lastBatchProcessedTurn = t;
+    bankStore.lastProcessedTurn = Math.max(num(bankStore.lastProcessedTurn) ?? -1, t);
+    aggregateCurrencyStress(bankStore);
+    lastCurrencyStressTurn = t;
     bankStore.economicTransmissionDiagnostics = {
       version: VERSION, turn: t, processedCountryCount: processed,
-      failureCount: failures.length, errors: failures.slice(-16), historyDay: currentSimulationDay()
+      unavailableCountryCount: unavailable, failureCount: failures.length,
+      errors: failures.slice(-16), historyDay: currentSimulationDay()
     };
-    dispatch('OMEGA_ECONOMIC_TRANSMISSION_UPDATED', { version: VERSION, turn: t, processed, failureCount: failures.length });
+    dispatch('OMEGA_ECONOMIC_TRANSMISSION_UPDATED', { version: VERSION, turn: t, processed, unavailable, failureCount: failures.length });
     refreshPanel();
-    return { ok: failures.length === 0, turn: t, processed, failureCount: failures.length, failures: failures.slice(0, 8) };
+    return { ok: failures.length === 0, turn: t, processed, unavailable, failureCount: failures.length, failures: failures.slice(0, 8) };
   }
+  function registerSchedulerHandler() {
+    const scheduler = g.Omega?.WorldSimulationScheduler || g.OmegaWorldSimulationScheduler || null;
+    if (typeof scheduler?.registerCountryHandler !== 'function') return false;
+    if (unregisterSchedulerHandler) return true;
+    unregisterSchedulerHandler = scheduler.registerCountryHandler('omega-economic-transmission',
+      (countryId, context = {}) => stepCountry(countryId, context.turn, context.stepDurationMs),
+      { tiers: ['PLAYER', 'ACTIVE', 'MACRO'], priority: 20 });
+    return typeof unregisterSchedulerHandler === 'function';
+  }
+  function refreshCurrencyStressAfterTurn(context = {}) {
+    if (!initialized) return { ok: false, code: 'NOT_INITIALIZED' };
+    const turn = num(context.turn) ?? currentTurn();
+    if (lastCurrencyStressTurn !== null && turn <= lastCurrencyStressTurn) {
+      return { ok: true, duplicate: true, turn };
+    }
+    const bankStore = rootTransmissionStore();
+    aggregateCurrencyStress(bankStore);
+    lastCurrencyStressTurn = turn;
+    bankStore.monetaryStressUpdatedTurn = turn;
+    return { ok: true, turn, currencyCount: Object.keys(bankStore.monetaryStressByCurrency || {}).length };
+  }
+  function registerCurrencyStressFinalizer() {
+    const simulation = g.Omega?.Simulation || g.Omega?.SimulationRuntime || g.OmegaSimulationRuntime || null;
+    if (typeof simulation?.registerTurnFinalizer !== 'function') return false;
+    if (unregisterCurrencyStressFinalizer) return true;
+    unregisterCurrencyStressFinalizer = simulation.registerTurnFinalizer(
+      'omega-economic-transmission.currency-stress',
+      context => refreshCurrencyStressAfterTurn(context || {}),
+      { priority: 80 }
+    );
+    return typeof unregisterCurrencyStressFinalizer === 'function';
+  }
+
   function getState(countryValue) {
     const p = resolveProfile(countryValue) || activePlayer();
     if (!p) return null;
@@ -705,7 +795,10 @@
       for(const p of profiles){const key=profileId(p);try{rawCache.set(key,macro&&macro.getRawProfile?macro.getRawProfile(p.iso3||p.countryCode):null);}catch(_){rawCache.set(key,null);}}
       await fetchRules();
       store=rootTransmissionStore();
+      lastCurrencyStressTurn = num(store.monetaryStressUpdatedTurn);
       initialized=true;
+      registerSchedulerHandler();
+      registerCurrencyStressFinalizer();
       attachEvents();installObserver();queueRender();
       const result=diagnostics();dispatch('OMEGA_ECONOMIC_TRANSMISSION_READY',result);
       return result;
@@ -714,12 +807,6 @@
   }
   function attachEvents(){
     if(eventBound)return;eventBound=true;
-    g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',function(event){
-      const d=event&&event.detail||{};
-      const t=num(d.simulationTurn)??num(d.payload&&d.payload.turn)??num(d.turn)??currentTurn()+1;
-      const dt=num(d.stepDurationMs)??num(d.durationMs)??num(g.Omega&&g.Omega.Simulation&&g.Omega.Simulation.clock&&g.Omega.Simulation.clock.stepDurationMs)??DAY_MS;
-      step(t,dt);
-    });
     g.addEventListener?.('OMEGA_FINANCE_RUNTIME_READY',function(){initialize().catch(()=>{});});
     g.addEventListener?.('OMEGA_FX_MONETARY_RUNTIME_READY',function(){initialize().catch(()=>{});});
     g.addEventListener?.('OMEGA_MACRO_STABILITY_READY',function(){initialize().catch(()=>{});});
@@ -732,13 +819,13 @@
   function diagnostics(){
     const bankStore=rootTransmissionStore(),rows=Object.values(bankStore.economicTransmissionByCountry||{});
     return {version:VERSION,initialized,profileCount:profiles.length,modeledCountryCount:rows.filter(x=>x&&x.latest).length,
-      latestTurn:num(bankStore.lastProcessedTurn),currencyStressCount:Object.keys(bankStore.monetaryStressByCurrency||{}).length,
+      latestTurn:num(bankStore.lastProcessedTurn),currencyStressUpdatedTurn:num(bankStore.monetaryStressUpdatedTurn),schedulerHandlerRegistered:typeof unregisterSchedulerHandler==='function',currencyStressFinalizerRegistered:typeof unregisterCurrencyStressFinalizer==='function',currencyStressCount:Object.keys(bankStore.monetaryStressByCurrency||{}).length,
       historyPointCount:rows.reduce((sum,x)=>sum+(Array.isArray(x&&x.history)?x.history.length:0),0),
       scenarios:Object.keys(rules.scenarios||{}),missingRawFieldsRemainNull:true,
       downstreamConnections:['GLOBAL_TRADE_PRODUCER_COST','NATIONAL_DEMAND_PURCHASING_POWER','FX_CURRENCY_STRESS']};
   }
   const api={
-    VERSION,init:initialize,diagnostics,advanceTurn:step,getState,getLatest,getHistory,
+    VERSION,init:initialize,diagnostics,advanceTurn:step,advanceCountry:stepCountry,getState,getLatest,getHistory,
     getProducerCostMultiplier,getImportCostMultiplier,getHouseholdPurchasingPowerMultiplier,getPublicPurchasingPowerMultiplier,
     getMonetaryStress,runStressScenario,refreshPanel
   };
