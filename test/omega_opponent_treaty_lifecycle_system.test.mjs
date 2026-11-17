@@ -40,10 +40,19 @@ assert.deepEqual(scheduled.options.tiers,['PLAYER','ACTIVE','MACRO']);
 assert.equal(scheduled.options.priority,25);
 assert.equal(treaty.diagnostics().maxPendingReviewsPerCountryPerTurn,2);
 globalThis.Game.state.simulation.turn=2;
+const treatyPreview = treaty.review({countryId:'BGD',targetCountryId:'SAU',treatyType:'ENERGY_SUPPLY',
+  terms:{resourceId:'crude_oil',quantity:1000}},'SAU');
 const scheduledResult = scheduled.handler('BGD',{turn:2,state:globalThis.Game.state});
-assert.equal(scheduledResult.status,'COMPLETED');
-assert.equal(scheduledResult.scanned,1);
-assert.equal(scheduledResult.accepted,1);
+console.log('[OMEGA TREATY TRACE]',JSON.stringify({
+  resolvedRequester:bridge.resolveCountry('BGD')?.id,
+  resolvedCounterparty:bridge.resolveCountry('SAU')?.id,
+  treatyPreview,scheduledResult,
+  requesterRelations:globalThis.Game.state.foreign.BGD?.relations,
+  counterpartyRelations:globalThis.Game.state.foreign.SAU?.relations
+}));
+assert.equal(scheduledResult.status,'COMPLETED',JSON.stringify(scheduledResult));
+assert.equal(scheduledResult.scanned,1,JSON.stringify(scheduledResult));
+assert.equal(scheduledResult.accepted,1,JSON.stringify(scheduledResult));
 assert.equal(treaty.processCountry('BGD').status,'ALREADY_PROCESSED',
   'repeated scheduler callbacks for one country/turn must not process a treaty twice');
 assert.equal(globalThis.Game.state.foreign.BGD.treaties.SAU.status,'ACTIVE');
