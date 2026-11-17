@@ -704,19 +704,11 @@
       // availableProducts. A planned/idle factory is not a delivered producer.
     });
 
-    var utilityTarget = { electricityMWhPerDay: 0, waterM3PerDay: 0 };
-    // If national utility capacity is absent, ensure a scenario opening allowance
-    // for all already-built and newly-seeded operational assets, not only new ones.
-    assets.forEach(function (asset) {
-      if (!asset || id(asset.status || 'OPERATIONAL') !== 'OPERATIONAL') return;
-      var assetTypeKey = assetType(asset);
-      var typeProfile = factoryProfiles[assetTypeKey] || {};
-      var recordedUtility = object(asset.utilityRequirements);
-      var utility = recordedUtility || object(typeProfile.utilities) || {};
-      utilityTarget.electricityMWhPerDay += Math.max(0, finite(utility.electricityMWhPerDay) || 0);
-      utilityTarget.waterM3PerDay += Math.max(0, finite(utility.waterM3PerDay) || 0);
-    });
-    var utilityResult = ensureStartupUtilitySupply(state, profile, utilityTarget, turn);
+    // Existing and newly-created operational factories share one additive
+    // opening utility allowance. The helper is also used by existing-save
+    // recovery, so the ALREADY_INITIALIZED path cannot leave starter factories
+    // without the utility capacity their catalog profiles require.
+    var utilityResult = ensureCountryFactoryUtilitySupply(state, profile, economy, turn);
     var profilePop = positive(profile.populationValues && profile.populationValues.population_2015);
     var sourceUnemployment = finite(profile.sourceValues && profile.sourceValues.unemployment_rate);
     var populationKnown = positive(economy.population_2015) !== null || profilePop !== null;
@@ -782,11 +774,14 @@
     var created = !supply;
     if (!supply) supply = {};
     var seededFields = [];
-    if (!own(supply, 'electricityMWhPerDay') && neededPower > 0) {
+    // Existing saves can contain a utilitySupply object whose values were
+    // never materialized. Treat null/invalid values as absent, but preserve an
+    // explicit finite zero or any recorded positive capacity.
+    if ((!own(supply, 'electricityMWhPerDay') || finite(supply.electricityMWhPerDay) === null) && neededPower > 0) {
       supply.electricityMWhPerDay = Number(neededPower.toFixed(6));
       seededFields.push('electricityMWhPerDay');
     }
-    if (!own(supply, 'waterM3PerDay') && neededWater > 0) {
+    if ((!own(supply, 'waterM3PerDay') || finite(supply.waterM3PerDay) === null) && neededWater > 0) {
       supply.waterM3PerDay = Number(neededWater.toFixed(6));
       seededFields.push('waterM3PerDay');
     }
@@ -817,6 +812,25 @@
       authority: supply.authority || 'EXISTING_GAME_STATE'
     };
   }
+  function factoryUtilityTarget(assets) {
+    var target = { electricityMWhPerDay: 0, waterM3PerDay: 0 };
+    var profiles = data && data.factoryProfiles || {};
+    (Array.isArray(assets) ? assets : []).forEach(function (asset) {
+      if (!asset || id(asset.status || 'OPERATIONAL') !== 'OPERATIONAL') return;
+      var type = assetType(asset);
+      var profile = profiles[type] || {};
+      var recorded = object(asset.utilityRequirements);
+      var utilities = recorded || object(profile.utilities) || {};
+      target.electricityMWhPerDay += Math.max(0, finite(utilities.electricityMWhPerDay) || 0);
+      target.waterM3PerDay += Math.max(0, finite(utilities.waterM3PerDay) || 0);
+    });
+    return target;
+  }
+  function ensureCountryFactoryUtilitySupply(state, profile, economy, turn) {
+    var assets = economy && Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
+    return ensureStartupUtilitySupply(state, profile, factoryUtilityTarget(assets), turn);
+  }
+
   function populateMissingCountryContext(state, profile, economy) {
     var added = [];
     var profilePopulation = positive(profile.populationValues && profile.populationValues.population_2015);
@@ -1866,8 +1880,25 @@
     var factoriesReady = economyMarker && (economyMarker.version === VERSION ||
       economyMarker.version === LEGACY_STARTUP_BASELINE_VERSION) && economyMarker.factoryAssetsInitialized === true;
     if (stockReady && factoryInputReady && factoriesReady) {
+      // An older save may have all opening-stock and factory markers while the
+      // country context or catalog-derived utility allowance is missing. Reconcile
+      // only those absent fields; never replenish stock, recreate factories, or
+      // overwrite a recorded utility capacity (including an explicit zero).
+      var recoveredContext = seedCountryContext(state, profile);
+      var utilityResult = ensureCountryFactoryUtilitySupply(state, profile, economy, currentTurn(state));
+      if (economyMarker && typeof economyMarker === 'object') {
+        economyMarker.utilitySupply = clone(utilityResult);
+        economyMarker.utilityBaselineReconciledTurn = currentTurn(state);
+      }
+      if (utilityResult.status === 'BLOCKED') {
+        return { status: 'BLOCKED', countryId: countryId, sessionId: String(session.sessionId || ''),
+          reason: utilityResult.reason || 'PLAYER_COUNTRY_UTILITY_BASELINE_BLOCKED',
+          utilitySupply: utilityResult, countryContext: recoveredContext };
+      }
       return { status: 'ALREADY_INITIALIZED', countryId: countryId, sessionId: String(session.sessionId || ''),
-        reason: 'PLAYER_COUNTRY_STARTUP_BASELINE_ALREADY_PRESENT' };
+        reason: 'PLAYER_COUNTRY_STARTUP_BASELINE_ALREADY_PRESENT',
+        countryContext: recoveredContext, utilitySupply: utilityResult,
+        existingSaveDataOverwritten: false, openingStockReplenished: false, factoryAssetsRecreated: false };
     }
     var key = String(session.sessionId || countryId) + ':PLAYER_COUNTRY_RECOVERY';
     if (running[key]) return running[key];
