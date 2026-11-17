@@ -496,6 +496,35 @@ test('mid-game existing save receives one additive player-country inventory reco
 });
 
 
+test('country startup writes player workforce context to canonical ISO3 before legacy aliases', async () => {
+  const state = makeState();
+  const { api } = makeHarness(state);
+  await api.ready;
+  const session = JSON.parse(JSON.stringify(state.simulation.session));
+  const initial = await api.initializeForSession(session);
+  assert.ok(['COMPLETED', 'COMPLETED_WITH_REPORTED_GAPS', 'ALREADY_INITIALIZED'].includes(initial.status));
+
+  const canonical = state.economy.BGD;
+  const alias = plain(canonical);
+  const aliasPopulation = alias.population_2015;
+  const aliasUnemployment = alias.unemployment_rate;
+  canonical.population_2015 = '';
+  canonical.unemployment_rate = 'NOT_RECORDED';
+
+  // Insert the legacy country-name key before ISO3, matching older save shapes.
+  state.economy = { BANGLADESH: alias, BGD: canonical };
+  const recovered = await api.initializeForSession(session);
+  assert.equal(recovered.status, 'ALREADY_INITIALIZED');
+  assert.equal(canonical.population_2015, profileFor('BGD').populationValues.population_2015,
+    'the canonical BGD bucket receives the population context used by the live industry runtime');
+  assert.equal(canonical.unemployment_rate, profileFor('BGD').sourceValues.unemployment_rate,
+    'the canonical BGD bucket receives unemployment context used by factory workforce reconciliation');
+  assert.equal(alias.population_2015, aliasPopulation,
+    'legacy alias state is preserved and must not shadow the ISO3 player bucket');
+  assert.equal(alias.unemployment_rate, aliasUnemployment,
+    'the country alias is not modified when a canonical ISO3 bucket already exists');
+});
+
 test('an already-initialized existing save recovers only missing player context and factory utilities', async () => {
   const state = makeState({
     transport: {
