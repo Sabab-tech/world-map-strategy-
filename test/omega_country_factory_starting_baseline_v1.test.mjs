@@ -260,6 +260,54 @@ test('runtime registers the active player country as live factory assets and pre
     'repeated initialization must not duplicate starting production assets');
 });
 
+test('a new player-country session activates its own factory baseline and preserves prior country assets', async () => {
+  const state = makeState();
+  const { api } = makeHarness(state);
+  assert.equal((await api.ready).status, 'READY');
+
+  const firstSession = structuredCloneSafe(state.simulation.session);
+  const firstResult = await api.initializeForSession(firstSession);
+  assert.equal(firstResult.status, 'COMPLETED');
+  assert.equal(state.simulation.countryFactoryStartingBaselineV1.playerCountryId, 'BGD');
+
+  const previousBangladeshAssets = state.economy.BGD.productionAssets.map(asset => asset.id).sort();
+  assert.equal(previousBangladeshAssets.length, baseline.countries.BGD.totalStartingFactoryUnits);
+
+  const nextSession = {
+    sessionId: 'OMEGA-FACTORY-STARTING-BASELINE-SECOND-SESSION',
+    playerCountryId: 'USA',
+    status: 'PAUSED',
+    createdTurn: state.simulation.turn,
+    lastCommittedTurn: state.simulation.turn
+  };
+  state.simulation.session = nextSession;
+
+  const secondResult = await api.initializeForSession(nextSession);
+  assert.equal(secondResult.status, 'COMPLETED',
+    'a previous 197-country baseline marker must not block registration for a new player session');
+  const marker = state.simulation.countryFactoryStartingBaselineV1;
+  assert.equal(marker.playerCountryId, 'USA');
+  assert.equal(marker.sessionId, nextSession.sessionId);
+  assert.equal(marker.initializedCountryCount, 197);
+  assert.equal(marker.countries.USA.runtimeActivationScope, 'ACTIVE_PLAYER_COUNTRY');
+  assert.equal(marker.countries.BGD.runtimeActivationScope, 'STATIC_COUNTRY_BASELINE');
+
+  assert.equal(state.economy.USA.productionAssets.length, baseline.countries.USA.totalStartingFactoryUnits);
+  assert.deepEqual(state.economy.BGD.productionAssets.map(asset => asset.id).sort(), previousBangladeshAssets,
+    'switching the active player must preserve the previous country asset records without duplicating them');
+  assert.equal(api.getCountryFactoryRegistry('USA').runtimeStatus, 'REGISTERED');
+  assert.equal(api.getCountryFactoryRegistry('BGD').runtimeStatus, 'STATIC_BASELINE_NOT_ACTIVE_PLAYER_COUNTRY');
+  assert.equal(Object.keys(state.economy).length, 2,
+    'only the prior and current player countries have live economy asset buckets');
+
+  const usaAssetIds = state.economy.USA.productionAssets.map(asset => asset.id).sort();
+  const repeated = await api.initializeForSession(nextSession);
+  assert.equal(repeated.status, 'ALREADY_INITIALIZED',
+    'repeating the same player session must remain idempotent');
+  assert.deepEqual(state.economy.USA.productionAssets.map(asset => asset.id).sort(), usaAssetIds);
+  assert.deepEqual(state.economy.BGD.productionAssets.map(asset => asset.id).sort(), previousBangladeshAssets);
+});
+
 test('an existing save missing its starting factory baseline receives one safe additive registration', async () => {
   const state = makeState(5);
   state.simulation.session.createdTurn = 5;
