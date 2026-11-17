@@ -838,11 +838,11 @@
     // Saves may serialize an unavailable country-context field as null.
     // Treat null/undefined as missing, while preserving explicit numeric values
     // (including a deliberately recorded zero unemployment rate).
-    if ((!own(economy, 'population_2015') || economy.population_2015 == null) && profilePopulation !== null) {
+    if ((!own(economy, 'population_2015') || finite(economy.population_2015) === null) && profilePopulation !== null) {
       economy.population_2015 = profilePopulation;
       added.push('population_2015');
     }
-    if ((!own(economy, 'unemployment_rate') || economy.unemployment_rate == null) &&
+    if ((!own(economy, 'unemployment_rate') || finite(economy.unemployment_rate) === null) &&
         profileUnemployment !== null && profileUnemployment >= 0 && profileUnemployment <= 100) {
       economy.unemployment_rate = profileUnemployment;
       added.push('unemployment_rate');
