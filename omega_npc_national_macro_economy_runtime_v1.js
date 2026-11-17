@@ -7,9 +7,7 @@
 
   const VERSION = '1.0.0';
   const HANDLER_ID = 'omega.npc-national-macro-economy.v1';
-  const COMMAND_TYPE = 'OMEGA_NPC_MACRO_ECONOMY_CHECKPOINT';
   const RULES_URL = 'npc_national_macro_economy_rules_v1.json';
-  const MANIFEST_URL = 'minister_country_roster_manifest_v1.json';
   const runtime = {
     initialized: false,
     initPromise: null,
@@ -127,9 +125,11 @@
 
   async function loadInputs() {
     const fixtures = g.__OMEGA_NPC_MACRO_FIXTURES__ || null;
-    const manifest = fixtures?.manifest || await fetchJson(MANIFEST_URL);
     const rules = fixtures?.rules || await fetchJson(RULES_URL);
-    if (!isObject(manifest?.countries) || !isObject(rules?.persistence) || !Array.isArray(rules?.baseline?.metrics) || !Array.isArray(rules?.liveSignals)) {
+    const manifestPath = rules?.roster?.manifestPath;
+    if (typeof manifestPath !== 'string' || !manifestPath.trim()) throw new Error('NPC_MACRO_ROSTER_MANIFEST_PATH_MISSING');
+    const manifest = fixtures?.manifest || await fetchJson(manifestPath);
+    if (!isObject(manifest?.countries) || !isObject(rules?.persistence) || typeof rules.persistence.commandType !== 'string' || !rules.persistence.commandType.trim() || typeof rules.persistence.ownerMinistry !== 'string' || !rules.persistence.ownerMinistry.trim() || !Array.isArray(rules?.baseline?.metrics) || !Array.isArray(rules?.liveSignals)) {
       throw new Error('NPC_MACRO_REGISTRY_OR_RULES_INVALID');
     }
     const coreIds = Object.keys(manifest.countries).map(value => String(value).trim().toUpperCase()).filter(Boolean).sort();
@@ -243,7 +243,11 @@
             unit: rule.unit,
             currency: rule.currency || null,
             authority: generalMeta?.status ? 'COUNTRY_GENERAL_DATA_' + String(generalMeta.status).toUpperCase() : 'COUNTRY_GENERAL_DATA_OBSERVATION',
-            source: generalMeta?.sourceName || generalMeta?.sourceId || generalMeta?.sourceUrl || general?.datasetId || null,
+            source: generalMeta?.sourceName || generalMeta?.sourceId || general?.datasetId || null,
+            sourceUrl: generalMeta?.sourceUrl || null,
+            method: generalMeta?.method || null,
+            sourceStatus: generalMeta?.status || null,
+            freshness: generalMeta?.freshness ?? null,
             year: generalMeta?.year ?? null,
             confidence: generalMeta?.confidence ?? generalMeta?.sourceConfidence ?? null,
             note: generalMeta?.dataGap || generalMeta?.note || null
@@ -323,9 +327,9 @@
 
   function checkpointHandler(command, context) {
     const payload = command?.payload || {};
-    const countryId = String(context?.countryId || payload.countryId || '').trim().toUpperCase();
+    const countryId = canonicalIso3(context?.countryId || payload.countryId);
     const checkpoint = payload.checkpoint;
-    if (!runtime.coreCountryIds.has(countryId) || !isObject(checkpoint) || checkpoint.countryId !== countryId) {
+    if (!countryId || !runtime.coreCountryIds.has(countryId) || !isObject(checkpoint) || checkpoint.countryId !== countryId) {
       return { accepted: false, reason: 'NPC_MACRO_CHECKPOINT_COUNTRY_OR_PAYLOAD_INVALID' };
     }
     const current = context.stateTransaction.get(runtime.rules.persistence.statePath);
@@ -344,7 +348,7 @@
     }
     if (!scheduler || typeof scheduler.registerCountryHandler !== 'function') throw new Error('NPC_MACRO_WORLD_SCHEDULER_UNAVAILABLE');
     if (!runtime.commandHandlerRegistered) {
-      interop.registerCommandHandler(COMMAND_TYPE, 'economy', checkpointHandler);
+      interop.registerCommandHandler(runtime.rules.persistence.commandType, runtime.rules.persistence.ownerMinistry, checkpointHandler);
       runtime.commandHandlerRegistered = true;
     }
     if (!runtime.unregisterCountryHandler) {
@@ -410,7 +414,7 @@
       liveActivity,
       snapshots: history.slice(-historyLimit),
       provenance: {
-        rosterManifest: MANIFEST_URL,
+        rosterManifest: runtime.rules.roster.manifestPath,
         rosterScope: runtime.manifest.scope || null,
         baselineRegistry: runtime.rules.baseline?.source || null,
         baselineMetadata: clone(runtime.profileMetadata?.provenance || {}),
@@ -420,11 +424,13 @@
     };
     const interop = g.Omega?.MinistryInteroperability || g.OmegaMinistryInteroperability;
     const commandId = 'NPC-MACRO-CHECKPOINT-' + countryId + '-T' + turn;
-    const result = interop.dispatchCommand('economy', COMMAND_TYPE, countryId, { countryId, checkpoint }, {
+    const ownerMinistry = runtime.rules.persistence.ownerMinistry;
+    const commandType = runtime.rules.persistence.commandType;
+    const result = interop.dispatchCommand(ownerMinistry, commandType, countryId, { countryId, checkpoint }, {
       turn,
       commandId,
-      commandType: COMMAND_TYPE,
-      ownerMinistry: 'economy',
+      commandType,
+      ownerMinistry,
       correlationId: commandId,
       provenance: { source: HANDLER_ID, modelVersion: runtime.rules.modelVersion }
     });
