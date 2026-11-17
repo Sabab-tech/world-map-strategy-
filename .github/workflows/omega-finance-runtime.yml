@@ -61,6 +61,9 @@ jobs:
       - name: Macro stability raw-data and runtime tests
         run: node --test test/omega_macro_stability_runtime_v1.test.mjs
 
+      - name: Bounded national-economy scheduler integration
+        run: npm run test:bounded-national-economy
+
       - name: Validate Finance analytics runtime and tests
         run: node --check omega_finance_analytics_runtime_v1.js && node --check test/omega_finance_analytics_runtime_v1.test.mjs
       - name: Finance analytics preview and live-turn tests
