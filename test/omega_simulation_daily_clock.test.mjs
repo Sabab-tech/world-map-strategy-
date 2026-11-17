@@ -393,8 +393,8 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
     'Finance must run as the second scheduler-scoped national progression handler');
   assert.doesNotMatch(finance, /OMEGA_SIMULATION_TURN_COMMITTED/,
     'Finance must not retain its former all-profile committed-turn loop');
-  assert.match(macro, /registerCountryHandler\('omega-macro-stability',[\s\S]*?priority:10\)/);
-  assert.match(transmission, /registerCountryHandler\('omega-economic-transmission',[\s\S]*?priority:20\)/);
+  assert.match(macro, /registerCountryHandler\('omega-macro-stability',[\s\S]*?priority:10\}\)/);
+  assert.match(transmission, /registerCountryHandler\('omega-economic-transmission',[\s\S]*?priority:\s*20\s*\}\)/);
   assert.match(npcMacro, /priority: finite\(runtime\.rules\.scheduler\?\.priority\) \?\? 30/,
     'the evidence checkpoint must observe the country Finance and transmission updates later in the same handler order');
   assert.match(transmission, /num\(durationMs\)\s*\?\?\s*DAY_MS/,
