@@ -378,6 +378,8 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
   const macroRules = JSON.parse(fs.readFileSync(path.join(root, 'finance_macro_stability_rules_v1.json'), 'utf8'));
   const transmission = fs.readFileSync(path.join(root, 'omega_economic_transmission_runtime_v1.js'), 'utf8');
   const fx = fs.readFileSync(path.join(root, 'omega_forex_monetary_engine_v1.js'), 'utf8');
+  const finance = fs.readFileSync(path.join(root, 'omega_finance_ministry_runtime_v1.js'), 'utf8');
+  const npcMacro = fs.readFileSync(path.join(root, 'omega_npc_national_macro_economy_runtime_v1.js'), 'utf8');
   const macro = fs.readFileSync(path.join(root, 'omega_macro_stability_runtime_v1.js'), 'utf8');
   const home = fs.readFileSync(path.join(root, 'omega_home_ministry_engine_v1.js'), 'utf8');
   const military = fs.readFileSync(path.join(root, 'omega_battlefield_command_runtime_v1.js'), 'utf8');
@@ -387,6 +389,14 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
 
   assert.equal(transmissionRules.simulationTurnDurationMs, DAY_MS);
   assert.equal(macroRules.simulationTurnDurationMs, DAY_MS);
+  assert.match(finance, /registerCountryHandler\('omega-finance-ministry',advanceCountry,[\s\S]*?priority:15\)/,
+    'Finance must run as the second scheduler-scoped national progression handler');
+  assert.doesNotMatch(finance, /OMEGA_SIMULATION_TURN_COMMITTED/,
+    'Finance must not retain its former all-profile committed-turn loop');
+  assert.match(macro, /registerCountryHandler\('omega-macro-stability',[\s\S]*?priority:10\)/);
+  assert.match(transmission, /registerCountryHandler\('omega-economic-transmission',[\s\S]*?priority:20\)/);
+  assert.match(npcMacro, /priority: finite\(runtime\.rules\.scheduler\?\.priority\) \?\? 30/,
+    'the evidence checkpoint must observe the country Finance and transmission updates later in the same handler order');
   assert.match(transmission, /num\(durationMs\)\s*\?\?\s*DAY_MS/,
     'Economic Transmission must fall back to one simulated day when no authoritative duration is supplied');
   assert.match(transmission, /registerCountryHandler\('omega-economic-transmission'/);
