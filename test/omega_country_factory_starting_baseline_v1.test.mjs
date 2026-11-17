@@ -374,7 +374,8 @@ test('an unplayed turn-zero country handoff rebinds only the active factory regi
 
   for (const countryId of coreCountryIds) {
     assert.equal(marker.countries[countryId].countryId, countryId);
-    assert.deepEqual(marker.countries[countryId].factoryCounts, originalCountryRows[countryId].factoryCounts,
+    assert.equal(JSON.stringify(marker.countries[countryId].factoryCounts),
+      JSON.stringify(originalCountryRows[countryId].factoryCounts),
       countryId + ' factory starting counts must survive the active-session handoff');
     assert.equal(marker.countries[countryId].authority,
       originalCountryRows[countryId].authority,
