@@ -123,3 +123,20 @@ A focused Finance FX runtime regression asserts that one Nigeria Finance update 
 - Industrial output quantities retain product-specific units and authority. Simulated factory output, capacity, planned projects and shipment legs cannot be converted into observed GDP or summed across tonnes, energy, water and unit products.
 - National Demand's observed, modeled, simulated-capacity and unavailable demand states remain distinct. Unknown must never silently become zero.
 - No new NPC GDP/output/inflation equation should be implemented until a separate versioned model contract documents coverage, units, time basis, calibration basis and null semantics for every input.
+
+
+### Turn-phase ordering (verified against the Simulation coordinator)
+
+The Simulation coordinator sorts turn participants by explicit numeric priority, defaulting legacy `OMEGA_SIMULATION_TURN_COMMITTED` listeners to priority 0. The existing world scheduler participant is priority 9000. Consequently, the turn's central FX currency tick and global-market order-book projection run as turn-start/world snapshots **before** the selected-country macro/Finance/production work for that committed turn. They consume the last committed country state; new country results become inputs to the next global snapshot. This is a deliberate turn-boundary model, not evidence that all countries have run detailed production in the current turn.
+
+Inside the bounded world scheduler, country progression is ordered:
+1. Macro Stability (10)
+2. Finance Ministry (15)
+3. Economic Transmission (20)
+4. NPC evidence checkpoint (30; ACTIVE/MACRO only)
+
+The Economic Transmission monetary-stress projection is a turn finalizer at priority 80, after country handlers and before durable autosave. The full FX global rate tick remains the central pre-scheduler monetary phase. After an individual Finance country handler emits `OMEGA_FINANCE_STATE_UPDATED`, FX now refreshes only the affected country's Government Banking snapshot; it no longer repeats a 249-profile sync for each selected Finance country.
+
+Global Market is an intentional whole-world order-book read aggregation: the single per-turn rebuild needs offers/bids across countries to construct one globally comparable book. It does not run each country's mines/factories, mutate their production, or settle trade. The player-facing country projection is then scoped to the selected player country. Market crossing remains `PRICE_DISCOVERY_ONLY`, never a stock/cash settlement.
+
+National Demand is invoked through explicit `processCountry(countryId, completedFactoryRows)` from the Resource Economy country finalization path. It has no all-profile committed-turn listener. Its demand records remain country-scoped and retain their observed/modelled/unavailable source statuses.
