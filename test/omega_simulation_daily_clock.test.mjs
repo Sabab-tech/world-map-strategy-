@@ -113,6 +113,11 @@ test('fresh map country selection updates only the unplayed boot session before 
   // mistake for the player's explicit country choice.
   win.CountryIOS = { activeCountry: 'USA' };
   win.OmegaCabinetUI = { activeCountry: 'USA' };
+  win.Game.currentActiveCountry = 'USA';
+  win.Game.playerCountry = 'USA';
+  win.currentActiveCountry = 'USA';
+  gameState.playerCountryId = 'USA';
+  sim.configure({ playerCountryResolver: () => win.Game.currentActiveCountry });
   sim.createSession({ playerCountryId: 'USA' });
 
   const { lifecycle } = attachLifecycle(win, sim);
