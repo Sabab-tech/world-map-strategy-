@@ -414,6 +414,36 @@ test('large canonical save slots are chunked, committed by manifest and restored
   assert.strictEqual(runtime.world.state,state);
 });
 
+test('very large canonical save slots use structured IndexedDB snapshots and restore without joining one JSON string',async()=>{
+  const {sandbox,state}=makeSandbox();
+  const memory=makeIndexedDbMemory();
+  sandbox.indexedDB=memory.indexedDB;
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  const payload='y'.repeat(17*1024*1024);
+  state.resource={BGD:{inventory:{coal:50},largePayload:payload,batches:[]}};
+
+  const saved=await runtime.saveSlot('large-structured-save');
+  assert.equal(saved.ok,true);
+  assert.equal(saved.storage,'INDEXEDDB_STRUCTURED');
+  assert.ok(saved.serializedLength>16*1024*1024);
+  const record=memory.records.get(saved.key);
+  assert.equal(record.__omegaSaveSnapshot,'OMEGA_STRUCTURED_SAVE_V1');
+  assert.equal(record.checksum,saved.checksum);
+  assert.equal(record.turn,runtime.clock.turn);
+  assert.equal(record.snapshot.worldState.resource.BGD.largePayload,payload);
+  assert.equal([...memory.records.keys()].filter(key=>
+    key.startsWith(saved.key+'.chunk.')||key.startsWith(saved.key+'.stage.')).length,0,
+    'staged chunks must be removed only after the structured snapshot record commits');
+
+  state.resource.BGD.largePayload='changed-before-restore';
+  const loaded=await runtime.loadSlot('large-structured-save');
+  assert.equal(loaded.lastLoadIntegrity,'VERIFIED');
+  assert.equal(state.resource.BGD.largePayload,payload,
+    'structured snapshots restore the exact canonical payload without a giant JSON join');
+  assert.strictEqual(runtime.world.state,state);
+});
+
 test('a compact replacement save removes stale chunks only after the new slot is committed',async()=>{
   const {sandbox,state}=makeSandbox();
   const memory=makeIndexedDbMemory();
