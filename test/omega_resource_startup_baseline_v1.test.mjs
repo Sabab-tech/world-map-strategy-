@@ -496,6 +496,67 @@ test('mid-game existing save receives one additive player-country inventory reco
 });
 
 
+test('an already-initialized existing save recovers only missing player context and factory utilities', async () => {
+  const state = makeState({
+    transport: {
+      BGD: { infrastructure: {
+        utilitySupply: {
+          electricityMWhPerDay: 0,
+          waterM3PerDay: 0,
+          authority: 'EXISTING_EXPLICIT_ZERO_CAPACITY',
+          status: 'AVAILABLE'
+        }
+      } }
+    }
+  });
+  const { api } = makeHarness(state);
+  await api.ready;
+  const session = JSON.parse(JSON.stringify(state.simulation.session));
+  const initialized = await api.initializeForSession(session);
+  assert.ok(['COMPLETED', 'COMPLETED_WITH_REPORTED_GAPS', 'ALREADY_INITIALIZED'].includes(initialized.status));
+
+  const economy = state.economy.BGD;
+  const resource = state.resource.BGD;
+  const factoryIds = economy.productionAssets.map(asset => asset.id).sort();
+  const inventoryBeforeRecovery = JSON.stringify(resource.inventory);
+  const inputMarkerBeforeRecovery = JSON.stringify(resource.factoryInputBaselineV1);
+  const startupMarkerBeforeRecovery = JSON.stringify(resource.startupBaselineV1);
+
+  // Simulate an older persisted save: all stock/factory markers survived, but
+  // non-player-controlled country context and the utility values were absent.
+  delete economy.population_2015;
+  delete economy.unemployment_rate;
+  delete state.transport.BGD.infrastructure.utilitySupply.electricityMWhPerDay;
+  delete state.transport.BGD.infrastructure.utilitySupply.waterM3PerDay;
+
+  const recovered = await api.initializeForSession(session);
+  assert.equal(recovered.status, 'ALREADY_INITIALIZED');
+  assert.ok(economy.population_2015 > 0, 'missing population context is restored from the selected country profile');
+  assert.ok(economy.unemployment_rate >= 0 && economy.unemployment_rate <= 100,
+    'missing unemployment context is restored from the selected country profile');
+  const supply = state.transport.BGD.infrastructure.utilitySupply;
+  assert.ok(supply.electricityMWhPerDay > 0, 'missing electricity capacity is restored from canonical starter-factory requirements');
+  assert.ok(supply.waterM3PerDay > 0, 'missing industrial-water capacity is restored from canonical starter-factory requirements');
+  assert.equal(supply.authority, 'EXISTING_EXPLICIT_ZERO_CAPACITY',
+    'an existing utility authority is preserved while only absent numeric capacities are materialized');
+  assert.equal(supply.simulationOnly, true);
+  assert.equal(supply.authority === 'SIMULATED_STARTUP_UTILITY_BASELINE_V1', false);
+  assert.equal(JSON.stringify(resource.inventory), inventoryBeforeRecovery,
+    'existing-save utility/context recovery never replenishes opening stock');
+  assert.equal(JSON.stringify(resource.factoryInputBaselineV1), inputMarkerBeforeRecovery);
+  assert.equal(JSON.stringify(resource.startupBaselineV1), startupMarkerBeforeRecovery);
+  assert.deepEqual(economy.productionAssets.map(asset => asset.id).sort(), factoryIds,
+    'existing factory assets are preserved without duplication');
+
+  const recoveredSupply = JSON.stringify(supply);
+  const repeated = await api.initializeForSession(session);
+  assert.equal(repeated.status, 'ALREADY_INITIALIZED');
+  assert.equal(JSON.stringify(state.transport.BGD.infrastructure.utilitySupply), recoveredSupply,
+    'reopening the save does not increase or replace already-materialized utility capacity');
+  assert.equal(JSON.stringify(resource.inventory), inventoryBeforeRecovery);
+  assert.deepEqual(economy.productionAssets.map(asset => asset.id).sort(), factoryIds);
+});
+
 test('configured factory input coverage changes top up only the shortfall and stay idempotent', async () => {
   const state = makeState();
   const { api, emitSimulationEvent } = makeHarness(state);
