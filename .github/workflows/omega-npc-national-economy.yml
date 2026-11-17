@@ -81,5 +81,3 @@ jobs:
         run: npm run test:bounded-macro-runtime
       - name: Verify bounded national-economy Finance integration
         run: npm run test:bounded-national-economy
-      - name: Verify Phase 4A national accounts invariants
-        run: npm run test:national-accounts

@@ -164,7 +164,7 @@
   function summarizeTrade(bucket,maxRows){
     const ledger=isObject(bucket?.globalTradeLedger)?bucket.globalTradeLedger:{};
     const rows=Array.isArray(ledger.settlements)?ledger.settlements.slice(-maxRows):[];
-    const settled=rows.filter(row=>String(row?.status||'').toUpperCase()==='SETTLED');
+    const settled=rows.filter(row=>String(row?.status||'').toUpperCase()==='SETTLED' && String(row?.settlementId||'').trim());
     const ids=new Set(settled.map(row=>String(row?.settlementId||'').trim()).filter(Boolean));
     const imports=Array.isArray(bucket?.importLedger)?bucket.importLedger.slice(-maxRows):[];
     const exports=Array.isArray(bucket?.exportLedger)?bucket.exportLedger.slice(-maxRows):[];
@@ -206,9 +206,9 @@
       industry.productionLedger.slice(-bounded(limits.productionLedgerRows,2048,2048)):[];
     const completed=productionRows.filter(row=>String(row?.status||'').toUpperCase()==='COMPLETED');
     const balance=finite(financeState.treasuryBalanceUsd),available=finite(finance.available);
-    const closing=balance!==null?balance:available;
-    const cashSource=balance!==null?String(financeState.treasurySource||'FINANCE_MINISTRY_RUNTIME'):
-      available!==null?'FINANCE_AVAILABLE':'UNOBSERVED';
+    const cashSource=balance!==null?String(financeState.treasurySource||'FINANCE_MINISTRY_RUNTIME'):'UNOBSERVED';
+    const treasuryStatus=balance===null?'UNOBSERVED':
+      /ESTIMATE/i.test(cashSource)?'MODELLED_CLOSING_BALANCE_ONLY':'CLOSING_BALANCE_ONLY';
     const currentGdp=finite(economy.gdp)??finite(profile?.indicators?.gdpCurrentUsd);
     const gdpSource=finite(economy.gdp)!==null?'FINANCE_OWNED_GAMEPLAY_ECONOMY_STATE':
       currentGdp!==null?'COUNTRY_ECONOMIC_BASELINE_PROFILE':'UNOBSERVED';
@@ -221,10 +221,10 @@
         production:{status:'UNOBSERVED',missing:['gross-output-value','intermediate-consumption','product-taxes','subsidies']},
         expenditure:{status:'UNOBSERVED',missing:['household-consumption','actual-gross-capital-formation','government-final-consumption','exports','imports']},
         income:{status:'UNOBSERVED',missing:['employee-compensation','gross-operating-surplus','mixed-income','production-taxes','subsidies']}},
-        modelledReference:{value:currentGdp,source:gdpSource,
+        modelledReference:{value:currentGdp,currency:currentGdp===null?null:'USD',source:gdpSource,
           status:currentGdp===null?'UNOBSERVED':'MODELLED_REFERENCE_NOT_RECONCILED_NATIONAL_ACCOUNTS'}},
-      treasury:{status:closing===null?'UNOBSERVED':'CLOSING_BALANCE_ONLY',closingBalance:closing,
-        source:cashSource,currency:profile?.currencyCode||profile?.currency||null,
+      treasury:{status:treasuryStatus,closingBalance:balance,source:cashSource,currency:balance===null?null:'USD',
+        availableLiquidity:available,availableLiquidityCurrency:profile?.currencyCode||profile?.currency||null,
         openingBalance:null,inflows:null,outflows:null,reconciliation:reconcileTreasury({}),
         financeLedger:classifyFinanceLedger(financeRows),financeLedgerWindow:financeRows.length?'LAST_N_RECORDS':'UNOBSERVED'},
       trade:{status:trade.settlementCount?'SETTLED_TRANSACTIONS_OBSERVED':'UNOBSERVED',

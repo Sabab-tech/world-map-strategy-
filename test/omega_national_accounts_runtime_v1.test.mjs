@@ -23,7 +23,8 @@ function harness(){
     ]}}},
     trade:{BGD:{globalTradeLedger:{settlements:[
       {settlementId:'S-SETTLED',status:'SETTLED',turn:8},
-      {settlementId:'S-PENDING',status:'PENDING',turn:8}
+      {settlementId:'S-PENDING',status:'PENDING',turn:8},
+      {status:'SETTLED',turn:8}
     ]},importRequests:[{status:'PENDING'}],
       importLedger:[{settlementId:'S-SETTLED',totalValue:25,currency:'BDT'},
         {settlementId:'S-PENDING',totalValue:90,currency:'BDT'}],
@@ -144,7 +145,12 @@ test('Checkpoint reads existing authority and writes only Economy-owned national
   assert.equal(statement.goods.inventory.closingStockByIdentity.find(row=>row.unit==='TONNE').closingQuantity,11);
   assert.equal(statement.goods.inventory.closingStockByIdentity.find(row=>row.unit==='KG').closingQuantity,700);
   assert.equal(statement.industry.completedProductionRecords,1);
+  assert.equal(statement.treasury.status,'MODELLED_CLOSING_BALANCE_ONLY');
   assert.equal(statement.treasury.closingBalance,100000);
+  assert.equal(statement.treasury.currency,'USD');
+  assert.equal(statement.treasury.availableLiquidity,250);
+  assert.equal(statement.treasury.availableLiquidityCurrency,'BDT');
+  assert.equal(statement.gdp.modelledReference.currency,'USD');
   assert.deepEqual(h.state.finance,before.finance);
   assert.deepEqual(h.state.trade,before.trade);
   assert.deepEqual(h.state.resource,before.resource);
@@ -166,4 +172,18 @@ test('Non-roster identity is skipped without fabricating a country record',async
   const h=harness();await h.window.Omega.NationalAccounts.init();
   assert.equal((await h.window.Omega.NationalAccounts.processCountry('ZZZ',{turn:8,state:h.state})).status,'SKIPPED');
   assert.equal(h.state.economy.BGD.nationalAccounts,undefined);
+});
+
+test('local available liquidity is never substituted for Treasury cash',async()=>{
+  const h=harness();
+  delete h.state.finance.BGD.omegaFinance.treasuryBalanceUsd;
+  await h.window.Omega.NationalAccounts.init();
+  const result=await h.window.Omega.NationalAccounts.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(result.status,'CHECKPOINTED');
+  const treasury=h.state.economy.BGD.nationalAccounts.treasury;
+  assert.equal(treasury.status,'UNOBSERVED');
+  assert.equal(treasury.closingBalance,null);
+  assert.equal(treasury.currency,null);
+  assert.equal(treasury.availableLiquidity,250);
+  assert.equal(treasury.availableLiquidityCurrency,'BDT');
 });
