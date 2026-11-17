@@ -1454,9 +1454,9 @@ console.log('OMEGA RESOURCE INDUSTRIAL NETWORK V1 TEST PASSED');
     const ironRecipe=N.recipeFor('iron_ore',universal);
     const bauxiteRecipe=N.recipeFor('bauxite',universal);
     const goldRecipe=N.recipeFor('gold',universal);
-    assert.deepEqual(goldRecipe.presentation.primaryOutputs,['DORÉ'],
+    assert.equal(JSON.stringify(goldRecipe.presentation.primaryOutputs),JSON.stringify(['DORÉ']),
       'the catalog must expose the marketable primary gold output separately from its by-product');
-    assert.deepEqual(goldRecipe.presentation.byProducts,['TAILINGS'],
+    assert.equal(JSON.stringify(goldRecipe.presentation.byProducts),JSON.stringify(['TAILINGS']),
       'gold tailings must remain a by-product, not the finished market product');
     assert.ok(ironRecipe.inputs.iron_ore>0);
     assert.equal(ironRecipe.inputs.bauxite,undefined);
