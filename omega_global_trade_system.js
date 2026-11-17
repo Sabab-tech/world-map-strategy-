@@ -1,13 +1,17 @@
-/* OMEGA GLOBAL TRADE AUTONOMY SYSTEM v1.0.0
+/* OMEGA GLOBAL TRADE AUTONOMY SYSTEM v1.1.0
  * One deterministic world trade coordinator. Every country uses the same pipeline:
  * request -> counterparty review -> negotiation -> pressure/retry -> settlement.
  * Cross-country writes are split into owner-ministry transactions.
  */
 (function(g){
   'use strict';
-  const VERSION='1.0.0';
+  const VERSION='1.1.0';
   const MAX_HISTORY=256, RETRY_COOLDOWN=2, MILITARY_ESCALATION_AFTER=3;
+  const MAX_AUTONOMOUS_REQUESTS_PER_COUNTRY_PER_TURN=24;
+  let unregisterSchedulerHandler=null;
+  const scheduledCountryTurns=new Map();
   let handlerInstallReport={ready:false,registered:0,total:0,actionRegistrationWarnings:[],errors:[]};
+  let worldActivityCache=null;
   const TYPES=Object.freeze({
     SENT:'SENT',COUNTER_OFFERED:'COUNTER_OFFERED',ACCEPTED:'ACCEPTED',REJECTED:'REJECTED',
     SETTLEMENT_PREPARING:'SETTLEMENT_PREPARING',SETTLED:'SETTLED',FAILED:'FAILED',
@@ -315,6 +319,7 @@
   }
 
   function emit(type,c,payload={},source='trade'){
+    if(String(type||'').toUpperCase().startsWith('OMEGA_TRADE_'))worldActivityCache=null;
     const mesh=interop();
     try{
       if(mesh?.emitEvent)return mesh.emitEvent(type,canonical(c),source,{countryId:canonical(c),...clone(payload)},{turn:turn()});
@@ -1583,15 +1588,20 @@
     }
     return null;
   }
-  function processCountryRequests(countryId){
+  function processCountryRequests(countryId,maxRequests=MAX_HISTORY){
     const c=canonical(countryId),reqs=countryValue(c,'trade.importRequests');
     if(!c||!Array.isArray(reqs))return{status:'COMPLETED',countryId:c||null,requestCount:0};
     if(g.__omegaGlobalTradeProcessing)return{status:'SKIPPED',reason:'TRADE_PROCESSING_ALREADY_ACTIVE',countryId:c};
     g.__omegaGlobalTradeProcessing=true;
     let processed=0;
     try{
-      const seen=new Set();
-      for(const req of reqs.slice(-MAX_HISTORY)){
+      const seen=new Set(),eligible=reqs.slice(-MAX_HISTORY).filter(req=>{
+        const status=String(req?.status||'').toUpperCase(),stage=String(req?.stage||'').toUpperCase();
+        if(status==='ACCEPTED')return true;
+        if(status==='REJECTED'&&num(req?.nextRetryTurn)!==null&&turn()>=num(req.nextRetryTurn))return true;
+        return status==='SENT'&&(/PENDING|OPEN|RETRY|PRESSURE/.test(stage)||stage==='COUNTERPARTY_DATA_PENDING');
+      }).slice(0,Math.max(1,Math.min(MAX_HISTORY,Math.floor(num(maxRequests)||MAX_HISTORY))));
+      for(const req of eligible){
         const key=String(c)+'::'+String(req.requestId);
         if(seen.has(key))continue;
         seen.add(key);
@@ -1599,7 +1609,29 @@
         processed++;
       }
     }finally{g.__omegaGlobalTradeProcessing=false;}
-    return{status:'COMPLETED',countryId:c,turn:turn(),requestCount:processed};
+    return{status:'COMPLETED',countryId:c,turn:turn(),requestCount:processed,
+      eligibleCount:processed,requestLimit:Math.max(1,Math.min(MAX_HISTORY,Math.floor(num(maxRequests)||MAX_HISTORY)))};
+  }
+  function processScheduledCountry(countryId,context={}){
+    const c=canonical(countryId),player=playerSimulationCountryId();
+    if(!c)return{status:'SKIPPED',reason:'NPC_TRADE_COUNTRY_REQUIRED'};
+    if(player&&c===player)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_HANDLED_BY_TRADE_TURN'};
+    const token=String(num(context.turn)??turn())+':'+c;
+    if(scheduledCountryTurns.has(token))return{status:'ALREADY_UPDATED',countryId:c,turn:turn(),requestCount:0};
+    const result=processCountryRequests(c,MAX_AUTONOMOUS_REQUESTS_PER_COUNTRY_PER_TURN);
+    if(result.status==='COMPLETED'){
+      scheduledCountryTurns.set(token,true);
+      if(scheduledCountryTurns.size>512)scheduledCountryTurns.delete(scheduledCountryTurns.keys().next().value);
+    }
+    return{...result,scheduled:true,playerCountryId:player,requestLimit:MAX_AUTONOMOUS_REQUESTS_PER_COUNTRY_PER_TURN};
+  }
+  function installSchedulerHandler(){
+    const scheduler=g.Omega?.WorldSimulationScheduler||g.OmegaWorldSimulationScheduler||null;
+    if(!scheduler||typeof scheduler.registerCountryHandler!=='function')return false;
+    if(unregisterSchedulerHandler)return true;
+    unregisterSchedulerHandler=scheduler.registerCountryHandler('omega.global-trade.country-autonomy',processScheduledCountry,
+      {tiers:['ACTIVE','MACRO'],priority:80});
+    return typeof unregisterSchedulerHandler==='function';
   }
   function processCountry(countryId){
     const selected=playerSimulationCountryId(),target=canonical(countryId||selected);
@@ -1633,6 +1665,196 @@
     }finally{g.__omegaGlobalTradeProcessing=false;}
   }
 
+
+  function policySnapshotForPair(buyerCountryId, sellerCountryId) {
+    const buyer = canonical(buyerCountryId), seller = canonical(sellerCountryId);
+    const relationRow = relation(buyer, seller);
+    const treaty = countryEntry(countryValue(buyer, 'foreign.treaties'), seller);
+    const bank = g.OmegaGovernmentBanking || g.Omega?.GovernmentBanking;
+    let importTariffPct = num(countryValue(buyer, 'trade.importTariffPct') ??
+      countryValue(buyer, 'trade.policy.importTariffPct') ??
+      countryValue(buyer, 'trade.tradePolicy.importTariffPct'));
+    try {
+      const policy = bank?.getCountryPolicy?.(buyer);
+      if (num(policy?.importTariffPct) !== null) importTariffPct = num(policy.importTariffPct);
+    } catch (_) {}
+    const foreignPolicy = countryValue(buyer, 'foreign.policy') ?? countryValue(buyer, 'foreign.foreignPolicy');
+    const tradePolicy = countryValue(buyer, 'trade.policy') ?? countryValue(buyer, 'trade.tradePolicy');
+    const activeTreaty = !!treaty && /SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(
+      String(treaty.status || treaty.stage || '').toUpperCase());
+    return {
+      relationObserved: !!relationRow,
+      relationScore: relationScore(relationRow),
+      tradeAgreementActive: relationRow?.trade_agreement === true || activeTreaty,
+      treatyType: treaty?.treatyType || null,
+      treatyStatus: treaty?.status || treaty?.stage || null,
+      warState: relationRow?.war_state === true,
+      sanctions: relationRow?.sanctions === true,
+      importTariffPct,
+      foreignPolicy: typeof foreignPolicy === 'string' ? foreignPolicy : (foreignPolicy?.stance || foreignPolicy?.type || null),
+      tradePolicy: typeof tradePolicy === 'string' ? tradePolicy : (tradePolicy?.stance || tradePolicy?.mode || null)
+    };
+  }
+
+  function getWorldActivity(options={}) {
+    const root = state() || {};
+    const currentTurn = turn();
+    const requestedLimit = Math.floor(num(options.limit) || 48);
+    const requestedPerCountry = Math.floor(num(options.perCountry) || 12);
+    const limit = Math.max(1, Math.min(249, requestedLimit));
+    const perCountry = Math.max(1, Math.min(16, requestedPerCountry));
+    if (!options.refresh && worldActivityCache && worldActivityCache.root === root &&
+        worldActivityCache.turn === currentTurn && worldActivityCache.limit === limit &&
+        worldActivityCache.perCountry === perCountry) return clone(worldActivityCache.value);
+
+    const countryIds = ids().slice(0, 249);
+    const summaries = [], records = [];
+    let totalRequests = 0, totalDecisions = 0, totalSettlements = 0, countriesWithActivity = 0;
+    for (const countryId of countryIds) {
+      const requestsRaw = countryValue(countryId, 'trade.importRequests');
+      const requests = Array.isArray(requestsRaw) ? requestsRaw.slice(-perCountry) : [];
+      const ledger = countryValue(countryId, 'trade.globalTradeLedger') || {};
+      const decisions = Array.isArray(ledger.decisions) ? ledger.decisions.slice(-perCountry) : [];
+      const settlements = Array.isArray(ledger.settlements) ? ledger.settlements.slice(-perCountry) : [];
+      const relations = countryValue(countryId, 'foreign.relations');
+      const summary = {
+        countryId,
+        requestCount: Array.isArray(requestsRaw) ? requestsRaw.length : 0,
+        decisionCount: Array.isArray(ledger.decisions) ? ledger.decisions.length : 0,
+        settlementLedgerCount: Array.isArray(ledger.settlements) ? ledger.settlements.length : 0,
+        requestSampleCount: requests.length,
+        pendingRequestCount: requests.filter(row =>
+          ['SENT','COUNTER_OFFERED','ACCEPTED','SETTLEMENT_PREPARING','PENDING_SETTLEMENT'].includes(String(row?.status || '').toUpperCase())).length,
+        settledRequestCount: requests.filter(row =>
+          String(row?.status || '').toUpperCase() === 'SETTLED').length,
+        observedRelationCount: relations && typeof relations === 'object' ? Object.keys(relations).length : 0,
+        lastActivityTurn: null,
+        lastActivity: null,
+        policy: null
+      };
+      totalRequests += summary.requestCount;
+      totalDecisions += summary.decisionCount;
+      totalSettlements += summary.settlementLedgerCount;
+      let lastTurn = -1;
+      const addRecord = (record, action) => {
+        const recordTurn = num(record?.simulationTurn ?? record?.turn ?? record?.settledTurn ?? record?.createdTurn);
+        if (recordTurn !== null && recordTurn >= lastTurn) {
+          lastTurn = recordTurn;
+          summary.lastActivityTurn = recordTurn;
+          summary.lastActivity = action;
+        }
+      };
+      for (const row of requests) {
+        const status = String(row?.status || '').toUpperCase();
+        if (!row || !row.requestId || ['CANCELLED','EXPIRED'].includes(status)) continue;
+        const buyer = canonical(row.countryId || row.buyerCountryId || countryId);
+        const seller = canonical(row.targetCountryId || row.sellerCountryId);
+        const recordTurn = num(row.settledTurn ?? row.createdTurn ?? row.requestedTurn) ?? currentTurn;
+        records.push({
+          key: 'REQUEST:' + buyer + ':' + String(row.requestId),
+          activityType:'TRADE_REQUEST', action:'IMPORT_REQUEST',
+          status, turn:recordTurn, requestId:String(row.requestId),
+          buyerCountryId:buyer, sellerCountryId:seller,
+          countryId:buyer, counterpartyCountryId:seller,
+          resourceId:row.resourceId || null, quantity:num(row.quantity),
+          totalValue:num(row.totalValue), currency:row.currency || null,
+          reason:row.rejectionReason || row.reason || null
+        });
+        addRecord({ ...row, turn:recordTurn }, 'IMPORT_REQUEST · ' + status);
+      }
+      for (const row of decisions) {
+        if (!row || !row.requestId) continue;
+        const buyer = canonical(row.buyerCountryId || row.countryId);
+        const seller = countryId;
+        const decision = String(row.decision || row.status || 'UNKNOWN').toUpperCase();
+        const recordTurn = num(row.simulationTurn ?? row.turn) ?? currentTurn;
+        records.push({
+          key:'DECISION:' + seller + ':' + String(row.requestId) + ':' + recordTurn,
+          activityType:'COUNTERPARTY_DECISION', action:'COUNTERPARTY_REVIEW',
+          status:decision, turn:recordTurn, requestId:String(row.requestId),
+          buyerCountryId:buyer, sellerCountryId:seller,
+          countryId:seller, counterpartyCountryId:buyer,
+          resourceId:row.resourceId || null, quantity:num(row.quantityApproved ?? row.quantity),
+          totalValue:num(row.unitPrice) !== null && num(row.quantityApproved ?? row.quantity) !== null
+            ? num(row.unitPrice) * num(row.quantityApproved ?? row.quantity) : null,
+          currency:row.sellerCurrency || null, reason:row.reason || null
+        });
+        addRecord({ ...row, turn:recordTurn }, 'COUNTERPARTY_REVIEW · ' + decision);
+      }
+      for (const row of settlements) {
+        if (!row || !row.settlementId) continue;
+        const sellerSide = String(row.ledgerType || '').toUpperCase() === 'SELLER_SETTLEMENT' || !!row.buyerCountryId;
+        const buyer = sellerSide ? canonical(row.buyerCountryId) : countryId;
+        const seller = sellerSide ? countryId : canonical(row.supplier || row.sellerCountryId || row.targetCountryId);
+        const recordTurn = num(row.turn ?? row.settledTurn ?? row.simulationTurn) ?? currentTurn;
+        const status = String(row.status || 'UNKNOWN').toUpperCase();
+        records.push({
+          key:'SETTLEMENT:' + String(row.settlementId),
+          activityType:'SETTLEMENT', action:sellerSide?'EXPORT_SETTLEMENT':'IMPORT_SETTLEMENT',
+          status, turn:recordTurn, requestId:row.requestId || null,
+          settlementId:String(row.settlementId),
+          buyerCountryId:buyer, sellerCountryId:seller,
+          countryId:sellerSide?seller:buyer, counterpartyCountryId:sellerSide?buyer:seller,
+          resourceId:row.resourceId || null, quantity:num(row.quantity),
+          totalValue:num(row.totalValue ?? row.buyerValue), buyerValue:num(row.buyerValue),
+          currency:row.currency || row.sellerCurrency || row.buyerCurrency || null,
+          reason:row.reason || null
+        });
+        addRecord({ ...row, turn:recordTurn }, 'SETTLEMENT · ' + status);
+      }
+      if (summary.requestCount || summary.decisionCount || summary.settlementLedgerCount) countriesWithActivity += 1;
+      const player = playerSimulationCountryId();
+      summary.policy = player && player !== countryId
+        ? policySnapshotForPair(countryId, player)
+        : {
+            observedRelationCount: summary.observedRelationCount,
+            importTariffPct: num(countryValue(countryId, 'trade.importTariffPct') ??
+              countryValue(countryId, 'trade.policy.importTariffPct') ??
+              countryValue(countryId, 'trade.tradePolicy.importTariffPct')),
+            foreignPolicy: countryValue(countryId, 'foreign.policy')?.stance || countryValue(countryId, 'foreign.policy') || null,
+            tradePolicy: countryValue(countryId, 'trade.policy')?.stance || countryValue(countryId, 'trade.policy') || null
+          };
+      summaries.push(summary);
+    }
+    const deduped = new Map();
+    for (const row of records) {
+      const old = deduped.get(row.key);
+      if (!old) deduped.set(row.key, row);
+      else deduped.set(row.key, {
+        ...old, totalValue:old.totalValue ?? row.totalValue, buyerValue:old.buyerValue ?? row.buyerValue,
+        currency:old.currency || row.currency, buyerCountryId:old.buyerCountryId || row.buyerCountryId,
+        sellerCountryId:old.sellerCountryId || row.sellerCountryId,
+        status:old.status === 'SETTLED' || row.status !== 'SETTLED' ? old.status : row.status
+      });
+    }
+    const byRecency = [...deduped.values()].sort((a,b)=>b.turn-a.turn||String(a.key).localeCompare(String(b.key)));
+    const countryCovered = new Set(), countryFirstRows = [];
+    for (const row of byRecency) {
+      const buyer = canonical(row.buyerCountryId), seller = canonical(row.sellerCountryId);
+      if ((buyer && !countryCovered.has(buyer)) || (seller && !countryCovered.has(seller))) {
+        countryFirstRows.push(row);
+        if (buyer) countryCovered.add(buyer);
+        if (seller) countryCovered.add(seller);
+      }
+    }
+    const firstRowKeys = new Set(countryFirstRows.map(row=>row.key));
+    const fairActivity = countryFirstRows.concat(byRecency.filter(row=>!firstRowKeys.has(row.key)));
+    const ordered = fairActivity.slice(0,limit)
+      .map(row=>({...row,policy:policySnapshotForPair(row.buyerCountryId,row.sellerCountryId)}));
+    summaries.sort((a,b)=>(b.lastActivityTurn ?? -1)-(a.lastActivityTurn ?? -1)||a.countryId.localeCompare(b.countryId));
+    const summary = {
+      turn:currentTurn, countryCount:countryIds.length, countriesWithActivity,
+      totalRequests, totalDecisions, totalSettlementLedgerRows:totalSettlements,
+      pendingRequests:summaries.reduce((sum,row)=>sum+row.pendingRequestCount,0),
+      settledRequests:summaries.reduce((sum,row)=>sum+row.settledRequestCount,0),
+      scannedRecordsPerCountry:perCountry, returnedActivityCount:ordered.length,
+      activityLimit:limit
+    };
+    const value = { summary, countries:summaries, records:ordered };
+    worldActivityCache = { root, turn:currentTurn, limit, perCountry, value:clone(value) };
+    return value;
+  }
+
   function diagnostics(){
     let requests=0,pending=0,settled=0;
     for(const c of ids()){
@@ -1643,15 +1865,19 @@
     return{version:VERSION,handlerInstalled:handlerInstallReport.ready,commandHandlersInstalled:handlerInstallReport.registered,
       commandHandlerCount:handlerInstallReport.total,handlerInstallErrors:clone(handlerInstallReport.errors),
       actionRegistrationWarnings:clone(handlerInstallReport.actionRegistrationWarnings),eventHooksInstalled:!!g.__omegaGlobalTradeTurnHook,
-      worldCountryCount:ids().length,requests,pending,settled,settlementModel:'CROSS_MINISTRY_TWO_PHASE_COMPENSATING_LEDGER'};
+      worldCountryCount:ids().length,requests,pending,settled,settlementModel:'CROSS_MINISTRY_TWO_PHASE_COMPENSATING_LEDGER',
+      schedulerHandlerRegistered:typeof unregisterSchedulerHandler==='function',
+      autonomousCountryRequestCap:MAX_AUTONOMOUS_REQUESTS_PER_COUNTRY_PER_TURN,
+      autonomousCountryTiers:['ACTIVE','MACRO']};
   }
   function init(){
     installHandlers();
+    installSchedulerHandler();
     if(!g.__omegaGlobalTradeTurnHook){
       g.__omegaGlobalTradeTurnHook=true;
       g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',onTurn);
-      g.addEventListener?.('OMEGA_READY',()=>{installHandlers();});
-      g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',()=>{installHandlers();});
+      g.addEventListener?.('OMEGA_READY',()=>{installHandlers();installSchedulerHandler();});
+      g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',()=>{installHandlers();installSchedulerHandler();});
     }
     return diagnostics();
   }
@@ -1726,8 +1952,8 @@
         sourceBatchIds:supplier.sourceBatchIds,authority:'OMEGA_GLOBAL_MARKET_EXECUTABLE_CLEARING'
       }});
   }
-  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,processCountry,reviewRequest:sellerReviewDecision,
-    processBlackMarketNetworkRequest,settleBlackMarketTransit,createRequest,createPrivateCompanyImportRequest,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
+  const API=Object.freeze({VERSION,TYPES,diagnostics,processAll,processCountry,processScheduledCountry,reviewRequest:sellerReviewDecision,
+    getWorldActivity,processBlackMarketNetworkRequest,settleBlackMarketTransit,createRequest,createPrivateCompanyImportRequest,relationScore,marketPrice,inventory,currencyOf,fxRate,settlementValues});
   g.Omega=g.Omega||{};g.Omega.GlobalTrade=API;g.OmegaGlobalTrade=API;
   try{init();}catch(e){g.OmegaGlobalTradeError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);

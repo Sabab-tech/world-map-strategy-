@@ -3,7 +3,7 @@
  */
 (function(g){
   'use strict';
-  const VERSION='1.0.0',MAX=256;
+  const VERSION='1.1.0',MAX=256,MAX_PENDING_REVIEWS_PER_COUNTRY=2;
   const clone=(v,seen=new WeakMap())=>{if(v===null||typeof v!=='object')return v;if(seen.has(v))return seen.get(v);if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}const o={};seen.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function'&&v[k]!==undefined)o[k]=clone(v[k]);return o;};
   const id=v=>String(v??'').trim().toUpperCase();
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
@@ -12,6 +12,8 @@
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
   const canonical=v=>{try{const r=registry()?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}return id(v);};
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
+  let unregisterSchedulerHandler=null;
+  const processedCountryTurns=new Set();
   const turn=()=>num(state()?.simulation?.turn??state()?.turn??state()?.simulationTurn??g.Omega?.Simulation?.clock?.turn)??0;
   function bucket(c,domain='foreign'){
     const cid=canonical(c),s=state(),d=s?.[domain];
@@ -113,29 +115,58 @@
     emit(status==='SUSPENDED'?'OMEGA_TREATY_SUSPENDED':'OMEGA_TREATY_TERMINATED',c,{targetCountryId:target,treaty:treaties[target]});
     return{accepted:true,status};
   }
-  function processAll(){
-    for(const c of ids()){
-      const f=bucket(c,'foreign');const neg=f?.negotiations;
-      if(!neg||typeof neg!=='object')continue;
-      for(const [targetKey,n] of Object.entries(neg)){
-        const target=canonical(targetKey);
-        if(String(n.status||'').toUpperCase()==='REQUESTED'&&num(n.createdTurn)!==turn()){
-          const req={...clone(n),countryId:canonical(c),targetCountryId:target,negotiationId:n.negotiationId||n.decisionId||'NEG-'+turn()+'-'+c+'-'+target};
-          const reviewResult=command('foreign','OMEGA_TREATY_REVIEW_NEGOTIATION',target,{request:req});
-          if(reviewResult?.status!=='APPLIED')continue;
-          const d=reviewResult.result?.decision;
-          if(!d||d.decision==='WAITING_DATA')continue;
-          const requesterResult=command('foreign','OMEGA_TREATY_APPLY_NEGOTIATION_RESPONSE',c,{targetCountryId:target,decision:d.decision,terms:d.terms||n.terms||{},negotiationId:req.negotiationId});
-          if(d.decision==='ACCEPT'&&requesterResult?.status==='APPLIED'){
-            const terms=d.terms||n.terms||{},treatyType=n.treatyType||'BILATERAL_AGREEMENT';
-            command('foreign','OMEGA_TREATY_ACTIVATE',c,{negotiationId:req.negotiationId,targetCountryId:target,terms,treatyType});
-            command('foreign','OMEGA_TREATY_ACTIVATE',target,{negotiationId:req.negotiationId,targetCountryId:c,terms,treatyType});
-          } else if(d.decision==='COUNTER') {
-            emit('OMEGA_TREATY_COUNTER_OFFERED',c,{targetCountryId:target,terms:d.terms||{},negotiationId:req.negotiationId});
-          }
-        }
-      }
+  function processCountry(countryValue, context={}) {
+    const countryId=canonical(countryValue);
+    if(!countryId)return{status:'SKIPPED',reason:'TREATY_COUNTRY_ID_REQUIRED'};
+    const token=countryId+':'+turn();
+    if(processedCountryTurns.has(token))return{status:'ALREADY_PROCESSED',countryId,turn:turn(),processed:0};
+    const foreign=bucket(countryId,'foreign'),negotiations=foreign?.negotiations;
+    if(!negotiations||typeof negotiations!=='object'){
+      processedCountryTurns.add(token);
+      if(processedCountryTurns.size>512)processedCountryTurns.delete(processedCountryTurns.values().next().value);
+      return{status:'COMPLETED',countryId,turn:turn(),processed:0};
     }
+    const pending=Object.entries(negotiations).slice(-MAX).filter(([,row])=>
+      String(row?.status||'').toUpperCase()==='REQUESTED'&&
+      num(row?.createdTurn)!==null&&num(row.createdTurn)<turn()
+    ).slice(0,MAX_PENDING_REVIEWS_PER_COUNTRY);
+    let processed=0,accepted=0,countered=0,rejected=0,waiting=0,failed=0;
+    for(const [targetKey,row] of pending){
+      const target=canonical(targetKey);
+      if(!target||target===countryId){failed++;continue;}
+      const req={...clone(row),countryId,targetCountryId:target,
+        negotiationId:row.negotiationId||row.decisionId||'NEG-'+turn()+'-'+countryId+'-'+target};
+      const reviewResult=command('foreign','OMEGA_TREATY_REVIEW_NEGOTIATION',target,{request:req});
+      if(reviewResult?.status!=='APPLIED'){failed++;continue;}
+      const decision=reviewResult.result?.decision;
+      if(!decision||decision.decision==='WAITING_DATA'){waiting++;continue;}
+      const requesterResult=command('foreign','OMEGA_TREATY_APPLY_NEGOTIATION_RESPONSE',countryId,{
+        targetCountryId:target,decision:decision.decision,terms:decision.terms||row.terms||{},negotiationId:req.negotiationId
+      });
+      if(requesterResult?.status!=='APPLIED'){failed++;continue;}
+      processed++;
+      if(decision.decision==='ACCEPT'){
+        const terms=decision.terms||row.terms||{},treatyType=row.treatyType||'BILATERAL_AGREEMENT';
+        const left=command('foreign','OMEGA_TREATY_ACTIVATE',countryId,{negotiationId:req.negotiationId,targetCountryId:target,terms,treatyType});
+        const right=command('foreign','OMEGA_TREATY_ACTIVATE',target,{negotiationId:req.negotiationId,targetCountryId:countryId,terms,treatyType});
+        if(left?.status==='APPLIED'&&right?.status==='APPLIED')accepted++;else failed++;
+      }else if(decision.decision==='COUNTER'){
+        countered++;
+        emit('OMEGA_TREATY_COUNTER_OFFERED',countryId,{targetCountryId:target,terms:decision.terms||{},negotiationId:req.negotiationId});
+      }else if(decision.decision==='REJECT')rejected++;
+    }
+    processedCountryTurns.add(token);
+    if(processedCountryTurns.size>512)processedCountryTurns.delete(processedCountryTurns.values().next().value);
+    return{status:'COMPLETED',countryId,turn:turn(),scanned:pending.length,processed,accepted,countered,rejected,waiting,failed,
+      limit:MAX_PENDING_REVIEWS_PER_COUNTRY,scope:'SCHEDULED_COUNTRY_ONLY'};
+  }
+
+  // Explicit maintenance/test entry point only. Normal committed turns never scan the world roster.
+  function processAll(){
+    const rows=[];
+    for(const countryId of ids())rows.push(processCountry(countryId));
+    return{status:'COMPLETED',turn:turn(),countriesScanned:rows.length,
+      processed:rows.reduce((sum,row)=>sum+(num(row.processed)||0),0),countryResults:rows};
   }
   function ids(){try{return[...new Set((registry()?.list?.('COUNTRY')||registry()?.list?.()||[]).map(canonical).filter(Boolean))];}catch(_){return Object.keys(state()?.foreign||{}).map(canonical);}}
   function install(){
@@ -149,8 +180,31 @@
     ];
     try{for(const [t,o,h] of defs){mesh.registerAction?.(t,{actionId:t,stateOwnerMinistry:o,authority:'OMEGA_TREATY_LIFECYCLE'});mesh.registerCommandHandler(t,o,h);}return true;}catch(_){return false;}
   }
-  function init(){install();if(!g.__omegaTreatyTurnHook){g.__omegaTreatyTurnHook=true;g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',processAll);g.addEventListener?.('OMEGA_READY',install);g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',install);}return diagnostics();}
-  function diagnostics(){return{version:VERSION,handlerInstalled:true,worldCountryCount:ids().length};}
-  const API=Object.freeze({VERSION,TYPES:['REQUESTED','COUNTER_OFFERED','ACCEPTED','ACTIVE','SUSPENDED','TERMINATED'],diagnostics,processAll,review});
+  function installScheduler(){
+    const scheduler=g.Omega?.WorldSimulationScheduler||g.OmegaWorldSimulationScheduler||null;
+    if(!scheduler||typeof scheduler.registerCountryHandler!=='function')return false;
+    if(unregisterSchedulerHandler)return true;
+    unregisterSchedulerHandler=scheduler.registerCountryHandler('omega.opponent-treaty-lifecycle',processCountry,
+      {tiers:['PLAYER','ACTIVE','MACRO'],priority:25});
+    return typeof unregisterSchedulerHandler==='function';
+  }
+  function init(){
+    const handlersReady=install();
+    installScheduler();
+    if(!g.__omegaTreatyLifecycleInstallHook){
+      g.__omegaTreatyLifecycleInstallHook=true;
+      g.addEventListener?.('OMEGA_READY',()=>{install();installScheduler();});
+      g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',()=>{install();installScheduler();});
+    }
+    return diagnostics(handlersReady);
+  }
+  function diagnostics(handlersReady=true){
+    return{version:VERSION,handlerInstalled:!!handlersReady,worldCountryCount:ids().length,
+      schedulerHandlerRegistered:typeof unregisterSchedulerHandler==='function',
+      scheduledTiers:['PLAYER','ACTIVE','MACRO'],maxPendingReviewsPerCountryPerTurn:MAX_PENDING_REVIEWS_PER_COUNTRY,
+      automaticWorldRosterScan:false};
+  }
+  const API=Object.freeze({VERSION,TYPES:['REQUESTED','COUNTER_OFFERED','ACCEPTED','ACTIVE','SUSPENDED','TERMINATED'],
+    diagnostics,processCountry,processAll,review});
   g.Omega=g.Omega||{};g.Omega.OpponentTreatyLifecycle=API;g.OmegaOpponentTreatyLifecycle=API;try{init();}catch(e){g.OmegaOpponentTreatyLifecycleError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);

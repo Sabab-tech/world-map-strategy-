@@ -6,6 +6,12 @@ on:
       - "omega_npc_national_macro_economy_runtime_v1.js"
       - "npc_national_macro_economy_rules_v1.json"
       - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
+      - "omega_global_trade_system.js"
+      - "test/omega_global_trade_system.test.mjs"
+      - "omega_opponent_treaty_lifecycle_system.js"
+      - "test/omega_opponent_treaty_lifecycle_system.test.mjs"
+      - "omega_resource_command_center_ui_v1.js"
+      - "test/omega_resource_command_center_ui_v1.test.mjs"
       - "omega_finance_ministry_runtime_v1.js"
       - "test/omega_finance_ministry_runtime_v1.test.mjs"
       - "omega_macro_stability_runtime_v1.js"
@@ -25,6 +31,12 @@ on:
       - "omega_npc_national_macro_economy_runtime_v1.js"
       - "npc_national_macro_economy_rules_v1.json"
       - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
+      - "omega_global_trade_system.js"
+      - "test/omega_global_trade_system.test.mjs"
+      - "omega_opponent_treaty_lifecycle_system.js"
+      - "test/omega_opponent_treaty_lifecycle_system.test.mjs"
+      - "omega_resource_command_center_ui_v1.js"
+      - "test/omega_resource_command_center_ui_v1.test.mjs"
       - "omega_finance_ministry_runtime_v1.js"
       - "test/omega_finance_ministry_runtime_v1.test.mjs"
       - "omega_macro_stability_runtime_v1.js"
@@ -53,6 +65,10 @@ jobs:
           node-version: 24
       - name: Verify NPC macro-economy runtime
         run: npm run test:npc-macro-economy
+      - name: Verify world trade and bounded treaty autonomy
+        run: npm run test:global-trade && npm run test:treaty-lifecycle
+      - name: Verify world market activity UI
+        run: node --test test/omega_resource_command_center_ui_v1.test.mjs
       - name: Verify bounded macro country execution
         run: npm run test:bounded-macro-runtime
       - name: Verify bounded national-economy Finance integration

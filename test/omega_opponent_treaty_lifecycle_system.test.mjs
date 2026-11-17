@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict';
 
+const scheduledTreatyHandlers = new Map();
+globalThis.Omega = globalThis.Omega || {};
+globalThis.Omega.WorldSimulationScheduler = {
+  registerCountryHandler(id, handler, options) {
+    scheduledTreatyHandlers.set(id, { handler, options });
+    return () => scheduledTreatyHandlers.delete(id);
+  }
+};
 globalThis.Game={state:{
   simulation:{turn:1},
   finance:{BD:{available:100000},SA:{available:100000}},
@@ -25,8 +33,19 @@ await import('../omega_opponent_treaty_lifecycle_system.js');
 
 const treaty=globalThis.OmegaOpponentTreatyLifecycle;
 assert(treaty.diagnostics().handlerInstalled);
+assert.equal(treaty.diagnostics().automaticWorldRosterScan,false);
+const scheduled = scheduledTreatyHandlers.get('omega.opponent-treaty-lifecycle');
+assert.ok(scheduled,'treaty lifecycle must register on the existing country scheduler');
+assert.deepEqual(scheduled.options.tiers,['PLAYER','ACTIVE','MACRO']);
+assert.equal(scheduled.options.priority,25);
+assert.equal(treaty.diagnostics().maxPendingReviewsPerCountryPerTurn,2);
 globalThis.Game.state.simulation.turn=2;
-treaty.processAll();
+const scheduledResult = scheduled.handler('BD',{turn:2,state:globalThis.Game.state});
+assert.equal(scheduledResult.status,'COMPLETED');
+assert.equal(scheduledResult.scanned,1);
+assert.equal(scheduledResult.accepted,1);
+assert.equal(treaty.processCountry('BD').status,'ALREADY_PROCESSED',
+  'repeated scheduler callbacks for one country/turn must not process a treaty twice');
 assert.equal(globalThis.Game.state.foreign.BD.treaties.SA.status,'ACTIVE');
 assert.equal(globalThis.Game.state.foreign.SA.treaties.BD.status,'ACTIVE');
 assert.equal(globalThis.Game.state.foreign.BD.negotiations.SA.status,'ACTIVE');

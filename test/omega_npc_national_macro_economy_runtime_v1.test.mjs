@@ -15,19 +15,49 @@ function createHarness(options = {}) {
     simulation: { turn: 3, session: { playerCountryId: 'AAA' } },
     economy: {
       AAA: { productionCapacity: 100, productionAssets: [] },
-      BBB: { productionCapacity: 275, productionAssets: [{ id: 'asset-1' }, { id: 'asset-2' }] },
+      BBB: { gdp: 2500000, gdp_growth: 3, inflation: 5, unemployment_rate: 7,
+        financialTransmission: { producerCostIndex: 102, cpiIndex: 104 },
+        productionCapacity: 275, productionAssets: [{ id: 'asset-1' }, { id: 'asset-2' }] },
       CCC: { productionCapacity: null, productionAssets: [] }
     },
     projects: {
       BBB: { registry: [{ status: 'UNDER_CONSTRUCTION' }, { status: 'COMPLETED' }, { status: 'BLOCKED' }] },
       CCC: { registry: [] }
     },
+    resource: {
+      BBB: {
+        batches: [
+          { batchId:'OUTPUT-IRON-1', resourceId:'iron_ore', quantity:10, unit:'TONNES' },
+          { batchId:'OUTPUT-COTTON-1', resourceId:'cotton', quantity:500, unit:'KG' }
+        ],
+        finishedGoodsLedger: [
+          { transactionId:'FACTORY-1', status:'AVAILABLE_TO_ECONOMY',
+            createdBatchIds:['OUTPUT-IRON-1','OUTPUT-COTTON-1'], turn:3 }
+        ]
+      }
+    },
+    foreign: {
+      BBB: {
+        relations: {
+          AAA: { overall:80, trade:90, trust:80, political:75, trade_agreement:true, war_state:false, sanctions:false },
+          CCC: { overall:10, trade:5, trust:10, political:5, war_state:true, sanctions:true }
+        },
+        treaties: { AAA: { status:'ACTIVE', treatyType:'TRADE', activatedTurn:2 } },
+        policy: { stance:'COOPERATIVE' }
+      }
+    },
     trade: {
-      BBB: { globalTradeLedger: { settlements: [
-        { status: 'SETTLED', settlementId: 'SET-1' },
-        { status: 'PENDING', settlementId: 'PENDING-1' },
-        { status: 'SETTLED', settlementId: 'SET-2' }
-      ] } }
+      BBB: {
+        importTariffPct:10,
+        policy: { stance:'OPEN_MARKET' },
+        importLedger:[{settlementId:'IMPORT-1',requestId:'IMPORT-1',resourceId:'iron_ore',quantity:2,totalValue:200,currency:'LCU',sourceCountryId:'AAA',turn:3}],
+        exportLedger:[{settlementId:'EXPORT-1',requestId:'EXPORT-1',resourceId:'cotton',quantity:3,totalValue:300,currency:'LCU',buyerCountryId:'AAA',turn:3}],
+        globalTradeLedger: { settlements: [
+          { status: 'SETTLED', settlementId: 'SET-1' },
+          { status: 'PENDING', settlementId: 'PENDING-1' },
+          { status: 'SETTLED', settlementId: 'SET-2' }
+        ] }
+      }
     },
     finance: {
       BBB: { available: 4000, omegaFinance: { ledger: [{ action: 'EXPENSE' }, { action: 'EXPENSE_REFUND' }] } }
@@ -38,7 +68,10 @@ function createHarness(options = {}) {
       indicators: { gdpCurrentUsd: 1000000, gdpGrowthPct: 2 }, metricAvailability: { gdpCurrentUsd: true, gdpGrowthPct: true },
       provenance: { economicSource: 'economy.json' } },
     { iso3: 'BBB', countryCode: 'BB', name: 'Beta', economyKey: 'BETA', profileStatus: 'OBSERVED_LOCAL_BASELINE',
-      indicators: { gdpCurrentUsd: 2500000, gdpGrowthPct: null }, metricAvailability: { gdpCurrentUsd: true, gdpGrowthPct: false },
+      indicators: { gdpCurrentUsd: 2500000, gdpGrowthPct: null, inflationRatePct:5,
+        unemploymentRatePct:7, grossCapitalFormationPctGdp:25, exchangeRateLocalPerUsd:100 },
+      metricAvailability: { gdpCurrentUsd:true, gdpGrowthPct:false, inflationRatePct:true,
+        unemploymentRatePct:true, grossCapitalFormationPctGdp:true, exchangeRateLocalPerUsd:true },
       provenance: { economicSource: 'economy.json' } },
     { iso3: 'CCC', countryCode: 'CC', name: 'Gamma', economyKey: 'GAMMA', profileStatus: 'UNAVAILABLE',
       indicators: { gdpCurrentUsd: null, gdpGrowthPct: null }, metricAvailability: { gdpCurrentUsd: false, gdpGrowthPct: false },
@@ -153,6 +186,18 @@ test('NPC macro checkpoint uses live country state and records only SETTLED trad
   assert.equal(checkpoint.liveActivity.settledInternationalTradeCount.value, 2);
   assert.equal(checkpoint.liveActivity.financeLedgerEntryCount.value, 2);
   assert.equal(checkpoint.liveActivity.treasuryBalanceAvailability.value, true);
+  assert.equal(checkpoint.liveActivity.industrialOutputByResourceUnit.availability, 'AVAILABLE');
+  assert.deepEqual(Object.keys(checkpoint.liveActivity.industrialOutputByResourceUnit.value.rows).sort(),
+    ['cotton|KG','iron_ore|TONNES']);
+  assert.equal(checkpoint.liveActivity.settledTradeActivity.value.importSettlementCount, 1);
+  assert.equal(checkpoint.liveActivity.settledTradeActivity.value.exportSettlementCount, 1);
+  assert.equal(checkpoint.liveActivity.diplomaticPolicyContext.value.playerTradeAgreement, true);
+  assert.equal(checkpoint.liveActivity.diplomaticPolicyContext.value.activeTradeTreatyCount, 1);
+  assert.equal(checkpoint.liveActivity.diplomaticPolicyContext.value.importTariffPct, 10);
+  assert.equal(checkpoint.progression.status, 'PROGRESSION_CALIBRATED');
+  assert.equal(checkpoint.progression.industrialOutputIndex, 100);
+  assert.equal(checkpoint.progression.investmentBaselineGrossCapitalFormationPctGdp, 25);
+  assert.ok(checkpoint.progression.gdpProjectionUsd > 0);
   assert.equal(Object.hasOwn(checkpoint, 'treasuryBalanceUsd'), false);
   assert.equal(Object.keys(checkpoint).some(key => /inventory|batches|shipment/i.test(key)), false);
 });
@@ -177,7 +222,9 @@ test('unavailable baseline fields remain null and no modelled value is invented'
   assert.equal(checkpoint.baseline.metrics.gdpCurrentUsd.availability, 'UNAVAILABLE');
   assert.equal(checkpoint.baseline.metrics.gdpGrowthPct.value, null);
   assert.equal(checkpoint.baseline.metrics.gdpGrowthPct.availability, 'UNAVAILABLE');
-  assert.equal(checkpoint.provenance.progressionStatus, 'EVIDENCE_CHECKPOINT_ONLY_NO_MACRO_PROGRESSION_FORMULA');
+  assert.equal(checkpoint.progression.gdpProjectionUsd, null);
+  assert.equal(checkpoint.progression.gdpGrowthProjectionPct, null);
+  assert.equal(checkpoint.provenance.progressionStatus, checkpoint.progression.status);
 });
 
 test('same-turn replay is idempotent and a later turn persists deterministic deltas', async () => {
@@ -196,6 +243,60 @@ test('same-turn replay is idempotent and a later turn persists deterministic del
   assert.equal(checkpoint.snapshots.length, 2);
   assert.equal(checkpoint.snapshots[1].deltasFromPrevious.recordedProductionCapacity.value, 25);
   assert.equal(checkpoint.lastProcessedTurn, 4);
+});
+
+
+test('NPC macro progression uses same-unit output, settled trade, investment and observed bilateral policy without mutating Finance accounts', async () => {
+  const h = createHarness();
+  await h.context.Omega.NpcNationalMacroEconomy.init();
+  await h.context.Omega.NpcNationalMacroEconomy.processCountry('BBB', { turn:3, state:h.state, stepDurationMs:86400000 });
+  const first = h.state.economy.BBB.npcMacroEconomy.progression;
+  assert.equal(first.industrialOutputIndex, 100);
+  assert.equal(first.evidenceAvailability.settledTrade, 'AVAILABLE');
+  assert.equal(first.observedPolicy.playerTradeAgreement, true);
+  assert.equal(first.observedPolicy.importTariffPct, 10);
+  assert.equal(first.observedPolicy.tradeDisruptionCountryCount, 1,
+    'a country at war and under sanctions is counted once in exposure');
+  assert.equal(first.observedPolicy.activeTradePartnerCount, 1);
+  assert.equal(first.observedPolicy.tradePolicy, 'OPEN_MARKET');
+  assert.ok(first.policyEffects.tradePolicyFactor > 1);
+  assert.ok(first.policyEffects.foreignPolicyFactor > 1);
+  assert.ok(first.policyEffects.policyAccessMultiplier <= 1.25);
+  assert.ok(first.gdpProjectionUsd > 0);
+  assert.equal(first.investmentActivityIndex, 100);
+
+  h.state.simulation.turn = 4;
+  h.state.resource.BBB.batches.push({ batchId:'OUTPUT-IRON-2', resourceId:'iron_ore', quantity:2, unit:'TONNES' });
+  h.state.resource.BBB.finishedGoodsLedger.push({
+    transactionId:'FACTORY-2', status:'AVAILABLE_TO_ECONOMY', createdBatchIds:['OUTPUT-IRON-2'], turn:4
+  });
+  h.state.trade.BBB.importLedger.push({
+    settlementId:'IMPORT-2', requestId:'IMPORT-2', resourceId:'iron_ore', quantity:1,
+    totalValue:250, currency:'LCU', sourceCountryId:'AAA', turn:4
+  });
+  h.state.trade.BBB.exportLedger.push({
+    settlementId:'EXPORT-2', requestId:'EXPORT-2', resourceId:'cotton', quantity:2,
+    totalValue:400, currency:'LCU', buyerCountryId:'AAA', turn:4
+  });
+  h.state.projects.BBB.registry.push({ status:'COMPLETED' });
+  h.state.economy.BBB.financialTransmission.producerCostIndex = 104;
+  const result = await h.context.Omega.NpcNationalMacroEconomy.processCountry('BBB', {
+    turn:4, state:h.state, stepDurationMs:86400000
+  });
+  assert.equal(result.status, 'CHECKPOINTED');
+  const next = h.state.economy.BBB.npcMacroEconomy.progression;
+  assert.ok(next.industrialOutputGrowthPct > 0);
+  assert.ok(next.industrialOutputGrowthPct <= 18);
+  assert.ok(next.industrialOutputIndex > first.industrialOutputIndex);
+  assert.ok(next.investmentActivityIndex > first.investmentActivityIndex);
+  assert.ok(next.gdpProjectionUsd > first.gdpProjectionUsd);
+  assert.ok(next.inflationProjectionPct > next.inflationBaselinePct);
+  assert.ok(next.unemploymentProjectionPct !== null);
+  assert.equal(next.evidenceAvailability.industrialOutput, 'AVAILABLE');
+  assert.equal(h.state.economy.BBB.gdp, 2500000,
+    'NPC projection must not mutate Finance-owned nominal GDP');
+  assert.equal(h.state.finance.BBB.available, 4000,
+    'NPC progression must not create, debit or credit Treasury funds');
 });
 
 test('save/load round-trip retains checkpoint and prevents replaying a committed turn', async () => {

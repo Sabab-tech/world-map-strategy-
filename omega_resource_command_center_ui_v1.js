@@ -31,6 +31,7 @@
   let selectedReserveResourceId = '';
   let selectedReserveCountryId = '';
   let selectedMarketLane = 'RAW_RESOURCE';
+  let selectedMarketView = 'commodities';
   let selectedMarketProductId = '';
   let selectedMarketProductRole = 'PRIMARY_OUTPUT';
   let selectedMarketSearch = '';
@@ -1732,6 +1733,86 @@
       '</div></section>';
   }
 
+
+  function panelMarketTransactions(country) {
+    const trade = g.OmegaGlobalTrade || g.Omega && g.Omega.GlobalTrade;
+    if (!trade || typeof trade.getWorldActivity !== 'function')
+      return '<section class="omega-market-activity"><div class="omega-market-empty">World trade activity runtime is unavailable.</div></section>';
+    const activity = trade.getWorldActivity({ limit:249, perCountry:12 });
+    const summary = activity?.summary || {};
+    const rows = Array.isArray(activity?.records) ? activity.records : [];
+    const countries = Array.isArray(activity?.countries) ? activity.countries : [];
+    function countryName(code) {
+      const key = String(code || '').trim().toUpperCase();
+      try {
+        const identity = (g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge)?.resolveCountry?.(key);
+        const raw = identity?.raw?.raw || identity?.raw || identity || {};
+        return String(raw.name || raw.countryName || raw.officialName || raw.displayName || key || 'Unknown');
+      } catch (_) { return key || 'Unknown'; }
+    }
+    function activityNumber(value) {
+      if (value === null || value === undefined || value === '') return '—';
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric.toLocaleString('en-US', { maximumFractionDigits:2 }) : esc(value);
+    }
+    function cell(value) { return value === null || value === undefined || value === '' ? '—' : esc(value); }
+    function policyText(policy) {
+      if (!policy || typeof policy !== 'object') return 'Policy data not observed';
+      const parts = [];
+      if (policy.warState) parts.push('WAR');
+      if (policy.sanctions) parts.push('SANCTIONS');
+      if (policy.tradeAgreementActive) parts.push('Trade treaty active');
+      else if (policy.relationObserved) parts.push('No active trade treaty');
+      if (Number.isFinite(Number(policy.importTariffPct))) parts.push('Import tariff ' + Number(policy.importTariffPct).toFixed(1) + '%');
+      if (policy.foreignPolicy) parts.push('Foreign: ' + policy.foreignPolicy);
+      if (policy.tradePolicy) parts.push('Trade: ' + policy.tradePolicy);
+      return parts.length ? parts.join(' · ') : 'No recorded policy constraints';
+    }
+    const countryRows = countries.map(function (row) {
+      const last = row.lastActivity || 'No recorded trade action';
+      const status = row.lastActivityTurn == null ? 'NO RECENT ACTIVITY' : 'TURN ' + row.lastActivityTurn;
+      const policy = row.policy || {};
+      const playerRelation = policy.relationScore == null ? 'Not observed' : Number(policy.relationScore * 100).toFixed(0) + '/100';
+      const treaty = policy.tradeAgreementActive ? 'ACTIVE' : policy.relationObserved ? 'NONE' : '—';
+      const conflict = policy.warState || policy.sanctions
+        ? [policy.warState ? 'WAR' : '', policy.sanctions ? 'SANCTIONS' : ''].filter(Boolean).join(' / ')
+        : 'No recorded conflict';
+      return '<tr><td><strong>' + esc(countryName(row.countryId)) + '</strong><small>' + esc(row.countryId) + '</small></td>' +
+        '<td>' + esc(String(row.settledRequestCount || 0)) + ' settled / ' + esc(String(row.pendingRequestCount || 0)) + ' pending</td>' +
+        '<td>' + cell(playerRelation) + '</td><td>' + esc(treaty) + '</td><td>' + esc(conflict) + '</td>' +
+        '<td>' + cell(policy.importTariffPct == null ? null : Number(policy.importTariffPct).toFixed(1) + '%') + '</td>' +
+        '<td>' + cell(last) + '</td><td>' + esc(status) + '</td></tr>';
+    }).join('') || '<tr><td colspan="8">No country trade records are available.</td></tr>';
+    const activityRows = rows.map(function (row) {
+      const buyerName = countryName(row.buyerCountryId);
+      const sellerName = countryName(row.sellerCountryId);
+      const amount = row.totalValue == null ? '—' : activityNumber(row.totalValue) +
+        (row.currency ? ' ' + esc(row.currency) : '');
+      const quantity = row.quantity == null ? '—' : activityNumber(row.quantity);
+      const reason = row.reason ? '<small>' + esc(row.reason) + '</small>' : '';
+      return '<tr><td>' + esc(String(row.turn ?? '—')) + '</td><td><strong>' + esc(row.action || row.activityType) +
+        '</strong><small>' + esc(row.status || 'UNKNOWN') + '</small></td><td>' + esc(buyerName) + '<small>' + esc(row.buyerCountryId || '') +
+        '</small></td><td>' + esc(sellerName) + '<small>' + esc(row.sellerCountryId || '') +
+        '</small></td><td>' + cell(row.resourceId) + '</td><td>' + quantity + '</td><td>' + amount + '</td><td>' +
+        policyText(row.policy) + reason + '</td></tr>';
+    }).join('') || '<tr><td colspan="8">No import requests, counterparty decisions or settled transactions have been recorded.</td></tr>';
+    return '<section class="omega-market-activity">' +
+      '<header class="omega-market-activity-heading"><div><h2>World market transactions</h2>' +
+      '<p>Country requests, counterparty decisions and completed settlements. This is a read-only ledger view; prices and orders are not treated as completed trades.</p></div>' +
+      '<button type="button" data-action="world-activity-refresh">Refresh activity</button></header>' +
+      '<div class="omega-market-activity-metrics">' +
+      '<article><small>Countries in registry</small><strong>' + activityNumber(summary.countryCount || 0) + '</strong></article>' +
+      '<article><small>Countries with trade activity</small><strong>' + activityNumber(summary.countriesWithActivity || 0) + '</strong></article>' +
+      '<article><small>Pending requests</small><strong>' + activityNumber(summary.pendingRequests || 0) + '</strong></article>' +
+      '<article><small>Settled requests</small><strong>' + activityNumber(summary.settledRequests || 0) + '</strong></article></div>' +
+      '<p class="omega-market-activity-note">Country status is read for up to 249 registered countries and 12 recent records per country. The country list includes every registered identity; the transaction feed shows the latest ' +
+        activityNumber(summary.activityLimit || 249) + ' deduplicated actions. Opening this tab reads cached state only and never rebuilds the market or advances the simulation.</p>' +
+      '<h3>Country participation and player-country policy</h3><div class="omega-market-activity-table-wrap omega-market-country-table"><table><thead><tr><th>Country</th><th>Settled / pending</th><th>Player relation</th><th>Trade treaty</th><th>War / sanctions</th><th>Import tariff</th><th>Latest action</th><th>Last activity</th></tr></thead><tbody>' + countryRows +
+      '</tbody></table></div><h3>Recent world transactions</h3>' +
+      '<div class="omega-market-activity-table-wrap"><table><thead><tr><th>Turn</th><th>Action / status</th><th>Buyer</th><th>Seller</th><th>Commodity</th><th>Quantity</th><th>Recorded value</th><th>Policy constraints</th></tr></thead><tbody>' +
+      activityRows + '</tbody></table></div></section>';
+  }
+
   function panelPlayerSupplyLifeline(country) {
     const runtime = g.OmegaResourceNationalDemandRuntime || g.Omega && g.Omega.ResourceNationalDemandRuntime;
     const apiReady = !!(runtime && typeof runtime.getPlayerSupplyLifeline === 'function' &&
@@ -2218,9 +2299,32 @@
         '.omega-rescc-market-embedded>.omega-rescc-content{display:block;min-width:0;min-height:0;height:auto!important;flex:0 0 auto;overflow:visible!important;padding:0!important}' +
         '.omega-rescc-market-embedded .omega-market-dashboard{min-height:0;width:100%;padding:0 0 12px}' +
         '.omega-rescc-market-embedded .omega-market-header{margin:0}';
-      const rendered = '<style>' + css() + embeddedCss + '</style>' +
+      const marketViewTabs = '<nav class="omega-market-view-tabs" aria-label="World market views">' +
+        '<button type="button" data-market-view="commodities" aria-current="' + (selectedMarketView === 'commodities' ? 'page' : 'false') + '">Market Commodities</button>' +
+        '<button type="button" data-market-view="transactions" aria-current="' + (selectedMarketView === 'transactions' ? 'page' : 'false') + '">Market Transactions</button></nav>';
+      const marketBody = selectedMarketView === 'transactions'
+        ? panelMarketTransactions(scopedCountry) : panelMarket(scopedCountry);
+      const activityCss = '.omega-market-view-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}' +
+        '.omega-market-view-tabs button{min-height:36px;padding:7px 12px;border:1px solid #28516d;border-radius:8px;background:#0b2034;color:#d5edf8;font:inherit;font-size:11px;font-weight:800}' +
+        '.omega-market-view-tabs button[aria-current="page"]{border-color:#22c9ff;background:#0b4260;color:#f0fbff}' +
+        '.omega-market-activity{display:flex;flex-direction:column;gap:12px;min-width:0;color:#dbeafe}' +
+        '.omega-market-activity-heading{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}' +
+        '.omega-market-activity-heading h2{margin:0;font-size:18px;color:#e0f7ff}.omega-market-activity-heading p,.omega-market-activity-note{color:#9fb8ca;font-size:11px;line-height:1.5;margin:5px 0}' +
+        '.omega-market-activity-heading button{border:1px solid #27739a;border-radius:7px;background:#0b2d48;color:#e0f2fe;padding:8px 12px;font:inherit;font-weight:700}' +
+        '.omega-market-activity-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}' +
+        '.omega-market-activity-metrics article{border:1px solid #23445e;background:#0a1b2b;border-radius:8px;padding:10px;min-width:0}' +
+        '.omega-market-activity-metrics small{display:block;color:#9fb8ca;font-size:10px}.omega-market-activity-metrics strong{display:block;color:#7dd3fc;font-size:18px;margin-top:4px}' +
+        '.omega-market-activity h3{font-size:13px;color:#bae6fd;margin:10px 0 0}' +
+        '.omega-market-activity-table-wrap{max-height:430px;overflow:auto;border:1px solid #203c54;border-radius:8px;background:#071522;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}' +
+        '.omega-market-country-table{max-height:280px}' +
+        '.omega-market-activity table{width:100%;border-collapse:collapse;min-width:850px;font-size:11px}' +
+        '.omega-market-activity th,.omega-market-activity td{padding:8px;border-bottom:1px solid #1d3448;text-align:left;vertical-align:top;white-space:normal}' +
+        '.omega-market-activity th{position:sticky;top:0;background:#102b42;color:#bae6fd;z-index:1}' +
+        '.omega-market-activity td small{display:block;color:#8ba8bb;font-size:10px;margin-top:3px}' +
+        '@media(max-width:600px){.omega-market-activity-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.omega-market-activity-heading{align-items:stretch}}';
+      const rendered = '<style>' + css() + embeddedCss + activityCss + '</style>' +
         '<div class="omega-rescc-shell omega-rescc-shell--market omega-rescc-market-embedded" role="region" aria-label="Global Commodity Market">' +
-        '<main class="omega-rescc-content">' + panelMarket(scopedCountry) + '</main></div>';
+        marketViewTabs + '<main class="omega-rescc-content">' + marketBody + '</main></div>';
       if (updateMode === 'detail') {
         const detailStart = rendered.indexOf('<main class="omega-market-detail">');
         const detailBodyStart = detailStart >= 0 ? rendered.indexOf('>', detailStart) + 1 : -1;
@@ -2244,6 +2348,12 @@
       root.addEventListener('click', function (event) {
         const target = event.target && event.target.closest ? event.target.closest('button') : null;
         if (!target || (typeof root.contains === 'function' && !root.contains(target))) return;
+        if (target.hasAttribute('data-market-view')) {
+          if (event.preventDefault) event.preventDefault();
+          selectedMarketView = target.getAttribute('data-market-view') === 'transactions' ? 'transactions' : 'commodities';
+          renderEmbedded();
+          return;
+        }
         if (target.hasAttribute('data-market-lane')) {
           if (event.preventDefault) event.preventDefault();
           const nextLane = target.getAttribute('data-market-lane');
@@ -2260,6 +2370,14 @@
           return;
         }
         const action = target.getAttribute('data-action');
+        if (action === 'world-activity-refresh') {
+          if (event.preventDefault) event.preventDefault();
+          selectedMarketView = 'transactions';
+          const trade = g.OmegaGlobalTrade || g.Omega && g.Omega.GlobalTrade;
+          if (trade && typeof trade.getWorldActivity === 'function') trade.getWorldActivity({limit:80,perCountry:12,refresh:true});
+          renderEmbedded();
+          return;
+        }
         if (action === 'market-refresh') {
           if (event.preventDefault) event.preventDefault();
           const market = g.OmegaGlobalMarket || g.Omega && g.Omega.GlobalMarket;
