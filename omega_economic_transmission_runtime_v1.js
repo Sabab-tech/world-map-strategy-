@@ -9,7 +9,7 @@
   if (g.OmegaEconomicTransmissionRuntime && g.OmegaEconomicTransmissionRuntime.VERSION === VERSION) return;
 
   let finance = null, fx = null, banking = null, macro = null, profiles = [], byId = new Map(), rules = {}, rawCache = new Map();
-  let store = null, initialized = false, initPromise = null, observer = null, renderQueued = false, eventBound = false, unregisterSchedulerHandler = null;
+  let store = null, initialized = false, initPromise = null, observer = null, renderQueued = false, eventBound = false, unregisterSchedulerHandler = null, unregisterCurrencyStressFinalizer = null;
   let cachedInflationTurn = null, cachedInflationValue = null, lastCurrencyStressTurn = null;
 
   const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
@@ -498,15 +498,28 @@
       { tiers: ['PLAYER', 'ACTIVE', 'MACRO'], priority: 20 });
     return typeof unregisterSchedulerHandler === 'function';
   }
-  function refreshCurrencyStressAfterTurn(event) {
-    if (!initialized || g.__OMEGA_SIMULATION_PIPELINE_DISPATCH__ !== true) return;
-    const detail = event && event.detail || {};
-    const turn = num(detail.simulationTurn) ?? num(detail.turn) ?? currentTurn();
-    if (lastCurrencyStressTurn !== null && turn <= lastCurrencyStressTurn) return;
+  function refreshCurrencyStressAfterTurn(context = {}) {
+    if (!initialized) return { ok: false, code: 'NOT_INITIALIZED' };
+    const turn = num(context.turn) ?? currentTurn();
+    if (lastCurrencyStressTurn !== null && turn <= lastCurrencyStressTurn) {
+      return { ok: true, duplicate: true, turn };
+    }
     const bankStore = rootTransmissionStore();
     aggregateCurrencyStress(bankStore);
     lastCurrencyStressTurn = turn;
     bankStore.monetaryStressUpdatedTurn = turn;
+    return { ok: true, turn, currencyCount: Object.keys(bankStore.monetaryStressByCurrency || {}).length };
+  }
+  function registerCurrencyStressFinalizer() {
+    const simulation = g.Omega?.Simulation || g.Omega?.SimulationRuntime || g.OmegaSimulationRuntime || null;
+    if (typeof simulation?.registerTurnFinalizer !== 'function') return false;
+    if (unregisterCurrencyStressFinalizer) return true;
+    unregisterCurrencyStressFinalizer = simulation.registerTurnFinalizer(
+      'omega-economic-transmission.currency-stress',
+      context => refreshCurrencyStressAfterTurn(context || {}),
+      { priority: 80 }
+    );
+    return typeof unregisterCurrencyStressFinalizer === 'function';
   }
 
   function getState(countryValue) {
@@ -782,8 +795,10 @@
       for(const p of profiles){const key=profileId(p);try{rawCache.set(key,macro&&macro.getRawProfile?macro.getRawProfile(p.iso3||p.countryCode):null);}catch(_){rawCache.set(key,null);}}
       await fetchRules();
       store=rootTransmissionStore();
+      lastCurrencyStressTurn = num(store.monetaryStressUpdatedTurn);
       initialized=true;
       registerSchedulerHandler();
+      registerCurrencyStressFinalizer();
       attachEvents();installObserver();queueRender();
       const result=diagnostics();dispatch('OMEGA_ECONOMIC_TRANSMISSION_READY',result);
       return result;
@@ -792,7 +807,6 @@
   }
   function attachEvents(){
     if(eventBound)return;eventBound=true;
-    g.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',refreshCurrencyStressAfterTurn);
     g.addEventListener?.('OMEGA_FINANCE_RUNTIME_READY',function(){initialize().catch(()=>{});});
     g.addEventListener?.('OMEGA_FX_MONETARY_RUNTIME_READY',function(){initialize().catch(()=>{});});
     g.addEventListener?.('OMEGA_MACRO_STABILITY_READY',function(){initialize().catch(()=>{});});
@@ -805,7 +819,7 @@
   function diagnostics(){
     const bankStore=rootTransmissionStore(),rows=Object.values(bankStore.economicTransmissionByCountry||{});
     return {version:VERSION,initialized,profileCount:profiles.length,modeledCountryCount:rows.filter(x=>x&&x.latest).length,
-      latestTurn:num(bankStore.lastProcessedTurn),currencyStressUpdatedTurn:num(bankStore.monetaryStressUpdatedTurn),schedulerHandlerRegistered:typeof unregisterSchedulerHandler==='function',currencyStressCount:Object.keys(bankStore.monetaryStressByCurrency||{}).length,
+      latestTurn:num(bankStore.lastProcessedTurn),currencyStressUpdatedTurn:num(bankStore.monetaryStressUpdatedTurn),schedulerHandlerRegistered:typeof unregisterSchedulerHandler==='function',currencyStressFinalizerRegistered:typeof unregisterCurrencyStressFinalizer==='function',currencyStressCount:Object.keys(bankStore.monetaryStressByCurrency||{}).length,
       historyPointCount:rows.reduce((sum,x)=>sum+(Array.isArray(x&&x.history)?x.history.length:0),0),
       scenarios:Object.keys(rules.scenarios||{}),missingRawFieldsRemainNull:true,
       downstreamConnections:['GLOBAL_TRADE_PRODUCER_COST','NATIONAL_DEMAND_PURCHASING_POWER','FX_CURRENCY_STRESS']};
