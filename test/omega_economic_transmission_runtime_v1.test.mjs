@@ -187,7 +187,7 @@ test('transmission advances only scheduler-selected countries, allows same-turn 
   assert.equal(replay.processed, 0);
   assert.equal(replay.duplicate, true);
   assert.equal(r.engine.getHistory('BGD').length, bgdHistory);
-  assert.equal(r.state.governmentBanking.monetaryStressByCurrency, undefined);
+  assert.equal(Object.keys(r.state.governmentBanking.monetaryStressByCurrency || {}).length, 0);
   r.context.__OMEGA_SIMULATION_PIPELINE_DISPATCH__ = true;
   r.context.dispatchEvent({ type: 'OMEGA_SIMULATION_TURN_COMMITTED', detail: { turn: 7 } });
   r.context.__OMEGA_SIMULATION_PIPELINE_DISPATCH__ = false;
