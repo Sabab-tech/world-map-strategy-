@@ -155,6 +155,11 @@
   const SAVE_SINGLE_RECORD_MAX_CHARS=8*1024*1024;
   const SAVE_CHUNK_CHARS=2*1024*1024;
   const SAVE_CHUNKS_PER_BATCH=8;
+  // IndexedDB chunks remain the compact durable format for ordinary large saves.
+  // Above this threshold, keep the canonical snapshot as a structured-clone record:
+  // loadSlot must not join hundreds of megabytes into one JavaScript string.
+  const SAVE_STRUCTURED_RECORD_THRESHOLD_CHARS=16*1024*1024;
+  const SAVE_STRUCTURED_YIELD_INTERVAL_CHARS=2*1024*1024;
 
   function indexedDbSaveRequest(indexedDB,operation,key,value){
     return new Promise((resolve,reject)=>{
@@ -283,7 +288,7 @@
 
   async function persistCanonicalSave(indexedDB,key,snapshot,turn){
     let hash=2166136261,totalLength=0;
-    let smallParts=[],smallLength=0,chunkMode=false;
+    let smallParts=[],chunkMode=false,structuredMode=false,nextStructuredYieldLength=0;
     let chunkPrefix='',chunkIndex=0,buffer='',batch=[];
     const generation=Date.now().toString(36)+'-'+(++saveChunkGeneration).toString(36);
 
@@ -301,13 +306,19 @@
         if(batch.length>=SAVE_CHUNKS_PER_BATCH)await flushBatch();
       }
     }
+    async function yieldStructuredSerialization(){
+      if(typeof global.setTimeout==='function'){
+        await new Promise(resolve=>global.setTimeout(resolve,0));
+      }else{
+        await Promise.resolve();
+      }
+    }
 
     for(const part of stableStringifyParts(snapshot,true)){
       hash=checksumUpdate(hash,part);
       totalLength+=part.length;
       if(!chunkMode&&totalLength<=SAVE_SINGLE_RECORD_MAX_CHARS){
         smallParts.push(part);
-        smallLength+=part.length;
         continue;
       }
       if(!indexedDB||typeof indexedDB.open!=='function')
@@ -317,12 +328,44 @@
         chunkPrefix=String(key)+'.stage.'+generation+'.';
         buffer=smallParts.join('');
         smallParts=[];
-        smallLength=0;
+      }
+      if(!structuredMode&&totalLength>SAVE_STRUCTURED_RECORD_THRESHOLD_CHARS){
+        // Do not attempt to reconstruct this save from one giant JSON string on
+        // restore. Switch the authoritative slot to a structured-clone record.
+        // Any earlier staging chunks remain unpublished and are removed after
+        // the structured record commits successfully.
+        structuredMode=true;
+        buffer='';
+        batch=[];
+        nextStructuredYieldLength=totalLength;
+      }
+      if(structuredMode){
+        if(totalLength-nextStructuredYieldLength>=SAVE_STRUCTURED_YIELD_INTERVAL_CHARS){
+          nextStructuredYieldLength=totalLength;
+          await yieldStructuredSerialization();
+        }
+        continue;
       }
       await appendChunkText(part);
     }
 
     const checksum=(hash>>>0).toString(16).padStart(8,'0');
+    if(structuredMode){
+      const record={
+        __omegaSaveSnapshot:'OMEGA_STRUCTURED_SAVE_V1',
+        version:1,
+        checksum,
+        serializedLength:totalLength,
+        turn,
+        snapshot
+      };
+      // The slot record is the commit pointer: write it only after the full
+      // detached snapshot and its streamed checksum are ready. Existing saves
+      // remain readable if this structured-clone transaction fails.
+      await indexedDbSaveRequest(indexedDB,'put',key,record);
+      await cleanupStaleSaveChunks(indexedDB,key,null);
+      return {ok:true,key,turn,storage:'INDEXEDDB_STRUCTURED',checksum,serializedLength:totalLength};
+    }
     if(!chunkMode){
       const canonical=smallParts.join('');
       const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
@@ -345,8 +388,8 @@
       buffer='';
     }
     await flushBatch();
-    // Publish the pointer only after every generation chunk has committed.
-    // A failed/interrupted write leaves the previous slot manifest untouched.
+    // Commit pointer last. Until this manifest lands, the previous save slot
+    // remains readable even when a chunk batch fails or the app is interrupted.
     const manifest={
       __omegaSaveManifest:'OMEGA_CHUNKED_SAVE_V1',
       version:1,
@@ -1344,6 +1387,19 @@
       if(!raw){
         if(indexedDbError)throw new Error('SAVE_SLOT_NOT_FOUND:'+key+'; INDEXEDDB:'+String(indexedDbError.message||indexedDbError));
         throw new Error('SAVE_SLOT_NOT_FOUND:'+key);
+      }
+      if(raw&&typeof raw==='object'&&raw.__omegaSaveSnapshot==='OMEGA_STRUCTURED_SAVE_V1'){
+        const length=Number(raw.serializedLength);
+        if(raw.version!==1||!Number.isSafeInteger(length)||length<1||
+           !/^[0-9a-f]{8}$/i.test(String(raw.checksum||''))||
+           !raw.snapshot||typeof raw.snapshot!=='object'||Array.isArray(raw.snapshot)){
+          throw new Error('SAVE_STRUCTURED_RECORD_INVALID:'+key);
+        }
+        // The snapshot is returned by IndexedDB structured clone, so restoring
+        // it does not need to concatenate or parse the entire serialized world.
+        // loadState verifies the same canonical checksum before mutating live state.
+        raw.snapshot.checksum=String(raw.checksum).toLowerCase();
+        return this.loadState(raw.snapshot);
       }
       if(raw&&typeof raw==='object'&&raw.__omegaSaveManifest==='OMEGA_CHUNKED_SAVE_V1'){
         const count=Math.floor(Number(raw.chunkCount));
