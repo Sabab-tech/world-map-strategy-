@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v121";
+const CACHE_NAME = "omega-offline-atlas-shell-v122";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
@@ -104,6 +104,7 @@ const CORE_ASSETS = [
   "./resource_site_logistics_routes_v1_part_05.json",
   "./resource_site_logistics_routes_v1_part_06.json",
   "./omega_minister_identity_pool_v1.js", "./minister_country_roster_manifest_v1.json", "./ministers.json",
+  "./npc_national_macro_economy_rules_v1.json", "./omega_npc_national_macro_economy_runtime_v1.js",
   "./omega_ui_v2/omega-ui-v2.css",
   "./omega_ui_v2/ministry-visual-refresh.css",
   "./omega_ui_v2/atlas-command-polish.css",

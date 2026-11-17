@@ -354,3 +354,16 @@ test('World Bank tab is part of the Finance API and its host is mounted only whe
   assert.ok(html.includes('International Lending Institution'));
   assert.ok(!html.includes('data-ofx-container'),'the FX mount must not leak into the World Bank tab');
 });
+
+
+test('Finance exposes source baseline metadata through a read-only profile metadata API',async()=>{
+  const {context}=createRuntime();
+  await context.OmegaFinanceMinistry.init();
+  const metadata=context.OmegaFinanceMinistry.getProfileMetadata();
+  assert.equal(metadata.baselineYear,profileData.metadata.baselineYear);
+  assert.equal(metadata.countryCount,profileData.metadata.countryCount);
+  assert.equal(metadata.provenanceWarning,profileData.metadata.provenanceWarning);
+  metadata.baselineYear=-1;
+  assert.equal(context.OmegaFinanceMinistry.getProfileMetadata().baselineYear,profileData.metadata.baselineYear,
+    'metadata accessor returns a clone rather than mutable Finance runtime state');
+});
