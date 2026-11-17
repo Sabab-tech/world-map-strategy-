@@ -53,7 +53,7 @@ function createRuntime(){
  return{context,state,scheduler:scheduledHandlers,handlers};
 }
 test('macro runtime resolves the source roster lazily and registers with the bounded scheduler',async()=>{
- const {context,state}=createRuntime();
+ const {context,state,scheduler}=createRuntime();
  await context.OmegaFinanceMinistry.init();
  vm.runInNewContext(macroRuntime,context,{filename:'omega_macro_stability_runtime_v1.js'});
  const diag=await context.OmegaMacroStabilityRuntime.init();
@@ -102,11 +102,14 @@ test('macro stability processes only scheduler-selected countries and is idempot
  assert.equal(replay.processed,0);
  assert.equal(replay.duplicate,true);
  assert.equal(state.economy.BANGLADESH.gdp_growth,afterBdg);
+ const usaProfile=context.OmegaFinanceMinistry.resolveCountry('USA');
+ assert.ok(usaProfile&&usaProfile.economyKey,'USA identity must resolve through the Finance country registry');
  const usaBefore=raw.countries.find(p=>p.iso3==='USA').rawIndicators.gdpGrowthAnnualPct;
- const usa=await handler('USA',{turn:25,stepDurationMs:duration,tier:'MACRO'});
+ const usa=await handler(usaProfile.iso3,{turn:25,stepDurationMs:duration,tier:'MACRO'});
  assert.equal(usa.processed,1,JSON.stringify(usa));
- assert.notEqual(state.economy.UNITED_STATES,undefined);
- assert.ok(Number(state.economy.UNITED_STATES.gdp_growth)>=Number(usaBefore));
+ const usaEconomy=state.economy[usaProfile.economyKey];
+ assert.ok(usaEconomy,'The country-owned economy state must be resolved from the canonical profile key');
+ assert.ok(Number(usaEconomy.gdp_growth)>=Number(usaBefore));
  assert.equal(context.OmegaMacroStabilityRuntime.diagnostics().schedulerHandlerRegistered,true);
 });
 
