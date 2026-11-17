@@ -195,6 +195,14 @@
   let handlerInstallReport={ready:false,registered:0,total:5,actionRegistrationWarnings:[],errors:[]};
   function install(){
     const mesh=interop();
+    if(mesh?.instance && (!Array.isArray(mesh.instance.ids)||mesh.instance.ids.length===0) &&
+       typeof mesh.configure==='function'){
+      try{mesh.configure({});}catch(e){
+        handlerInstallReport={ready:false,registered:0,total:5,actionRegistrationWarnings:[],
+          errors:[{type:'MINISTRY_REGISTRY_BOOTSTRAP',reason:String(e?.message||e)}]};
+        return false;
+      }
+    }
     if(!mesh?.registerCommandHandler){
       handlerInstallReport={ready:false,registered:0,total:5,actionRegistrationWarnings:[],errors:['MINISTRY_COMMAND_REGISTRY_UNAVAILABLE']};
       return false;
