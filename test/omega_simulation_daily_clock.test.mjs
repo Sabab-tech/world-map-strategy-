@@ -364,7 +364,12 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
     'the economy must invoke extraction through the selected player-country ID');
   assert.match(resourceEconomy, /function runTurn\(\)[\s\S]*?return task;/, 'the selected-country turn wrapper must return its serialized async task');
   assert.match(resourceEconomy, /then\(function\(\)\{return runTurnCore\(cid\);\}\)/, 'the turn wrapper must serialize the country core without duplicating the simulation clock');
-  assert.match(macro, /return init\(\)\.then\(\(\)=>advanceTurn\(turn,duration\)\)/);
+  assert.match(macro, /registerCountryHandler\('omega-macro-stability'/,
+    'Macro Stability must register with the bounded country scheduler');
+  assert.match(macro, /advanceCountry\(countryId,context\.turn,context\.stepDurationMs\)/,
+    'Macro Stability must consume the scheduler-selected country and authoritative simulation duration');
+  assert.doesNotMatch(macro, /OMEGA_SIMULATION_TURN_COMMITTED/,
+    'Macro Stability must not auto-run its legacy all-profile batch on every committed turn');
 });
 
 
@@ -382,7 +387,12 @@ test('finance, FX, macro and ministry time fallbacks treat one turn as one day',
 
   assert.equal(transmissionRules.simulationTurnDurationMs, DAY_MS);
   assert.equal(macroRules.simulationTurnDurationMs, DAY_MS);
-  assert.match(transmission, /\?\?DAY_MS/);
+  assert.match(transmission, /num\(durationMs\)\s*\?\?\s*DAY_MS/,
+    'Economic Transmission must fall back to one simulated day when no authoritative duration is supplied');
+  assert.match(transmission, /registerCountryHandler\('omega-economic-transmission'/);
+  assert.match(transmission, /stepCountry\(countryId, context\.turn, context\.stepDurationMs\)/);
+  assert.doesNotMatch(transmission, /OMEGA_SIMULATION_TURN_COMMITTED',function\(event\)/,
+    'Economic Transmission must not restore the legacy all-profile turn listener');
   assert.doesNotMatch(transmission, /Math\.floor\(currentTurn\(\)\s*\/\s*24\)/);
   assert.match(fx, /finite\(durationMs\) \?\? DAY_MS/);
   assert.match(fx, /Math\.floor\(turnNumber\) % 3 === 0/);
