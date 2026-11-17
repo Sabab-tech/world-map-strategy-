@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "modelVersion": "1.0.0",
+  "title": "OMEGA NPC National Macro-Economy Checkpoint Rules",
+  "purpose": "Capture source-backed country macro baselines and live activity evidence. This ruleset does not calculate GDP growth, output value, inflation change, unemployment change or any other macroeconomic progression.",
+  "roster": {
+    "manifestPath": "minister_country_roster_manifest_v1.json",
+    "identityField": "ISO3",
+    "manifestCountryMap": "countries"
+  },
+  "baseline": {
+    "source": "economy_global_profiles_v1.json",
+    "metadataSource": "FinanceMinistry.getProfileMetadata",
+    "generalDataCacheApi": "Omega.CountryGeneralData.getCountryRecord",
+    "missingValuePolicy": "NULL_REMAINS_UNOBSERVED",
+    "metrics": [
+      {
+        "id": "gdpCurrentUsd",
+        "profileMetric": "gdpCurrentUsd",
+        "generalDataMetric": "gdpCurrentUsd",
+        "unit": "USD_CURRENT",
+        "currency": "USD"
+      },
+      {
+        "id": "gdpGrowthPct",
+        "profileMetric": "gdpGrowthPct",
+        "generalDataMetric": "gdpGrowthPct",
+        "unit": "PERCENT_PER_YEAR"
+      },
+      {
+        "id": "inflationRatePct",
+        "profileMetric": "inflationRatePct",
+        "generalDataMetric": "inflationPct",
+        "unit": "PERCENT_PER_YEAR"
+      },
+      {
+        "id": "unemploymentRatePct",
+        "profileMetric": "unemploymentRatePct",
+        "generalDataMetric": "unemploymentRatePct",
+        "unit": "PERCENT"
+      },
+      {
+        "id": "governmentBudgetBalanceUsd",
+        "profileMetric": "governmentBudgetBalanceUsd",
+        "generalDataMetric": "budgetBalanceUsd",
+        "unit": "USD_CURRENT",
+        "currency": "USD"
+      },
+      {
+        "id": "publicDebtUsd",
+        "profileMetric": "publicDebtUsd",
+        "generalDataMetric": "publicDebtUsd",
+        "unit": "USD_CURRENT",
+        "currency": "USD"
+      },
+      {
+        "id": "tradeBalanceUsd",
+        "profileMetric": "tradeBalanceUsd",
+        "generalDataMetric": "tradeBalanceUsd",
+        "unit": "USD_CURRENT",
+        "currency": "USD"
+      },
+      {
+        "id": "foreignExchangeReservesUsd",
+        "profileMetric": "foreignExchangeReservesUsd",
+        "generalDataMetric": "fxReservesUsd",
+        "unit": "USD_CURRENT",
+        "currency": "USD"
+      },
+      {
+        "id": "exchangeRateLocalPerUsd",
+        "profileMetric": "exchangeRateLocalPerUsd",
+        "generalDataMetric": "exchangeRateLocalPerUsd",
+        "unit": "LOCAL_CURRENCY_PER_USD"
+      }
+    ]
+  },
+  "liveSignals": [
+    {
+      "id": "recordedProductionCapacity",
+      "path": "economy.productionCapacity",
+      "type": "number",
+      "unit": null,
+      "authority": "COUNTRY_ECONOMY_STATE",
+      "meaning": "Recorded game production capacity; unit is unavailable unless separately declared."
+    },
+    {
+      "id": "recordedProductionAssetCount",
+      "path": "economy.productionAssets",
+      "type": "array-count",
+      "unit": "GAME_ASSET_RECORDS",
+      "authority": "COUNTRY_ECONOMY_STATE",
+      "meaning": "Count of recorded game production asset rows; not a real-world facility census."
+    },
+    {
+      "id": "autonomousProjectStatusCounts",
+      "path": "projects.registry",
+      "type": "status-counts",
+      "unit": "PROJECT_RECORDS",
+      "authority": "COUNTRY_PROJECT_LIFECYCLE",
+      "statusGroups": {
+        "active": [
+          "REQUESTED",
+          "APPROVED",
+          "UNDER_CONSTRUCTION",
+          "COMMISSIONING",
+          "IN_PROGRESS"
+        ],
+        "completed": [
+          "COMPLETED",
+          "OPERATIONAL"
+        ],
+        "blocked": [
+          "BLOCKED",
+          "SETTLEMENT_BLOCKED",
+          "COMMISSIONING_BLOCKED",
+          "FAILED"
+        ],
+        "cancelled": [
+          "CANCELLED",
+          "REJECTED"
+        ]
+      }
+    },
+    {
+      "id": "settledInternationalTradeCount",
+      "path": "trade.globalTradeLedger.settlements",
+      "type": "settled-record-count",
+      "unit": "SETTLED_TRADE_RECORDS",
+      "authority": "GLOBAL_TRADE_SETTLEMENT_LEDGER",
+      "requiredStatus": "SETTLED",
+      "meaning": "Counts only actual SETTLED ledger records; offers, bids and market matches are excluded."
+    },
+    {
+      "id": "financeLedgerEntryCount",
+      "path": "finance.omegaFinance.ledger",
+      "type": "array-count",
+      "unit": "FINANCE_LEDGER_RECORDS",
+      "authority": "FINANCE_MINISTRY_LEDGER",
+      "meaning": "Record count only; Finance remains the sole cash and expenditure authority."
+    },
+    {
+      "id": "treasuryBalanceAvailability",
+      "path": "finance.available",
+      "type": "presence",
+      "unit": "BOOLEAN",
+      "authority": "FINANCE_MINISTRY_TREASURY",
+      "meaning": "Indicates whether an authoritative Treasury balance is recorded; the macro checkpoint does not mirror the balance."
+    },
+    {
+      "id": "financialTransmissionRealGdpIndex",
+      "path": "economy.financialTransmission.realGDPIndex",
+      "type": "number",
+      "unit": "INDEX",
+      "authority": "MODELLED_DERIVED_FINANCIAL_TRANSMISSION",
+      "meaning": "Existing derived projection; never treated as observed GDP."
+    },
+    {
+      "id": "financialTransmissionHouseholdPurchasingPowerIndex",
+      "path": "economy.financialTransmission.householdPurchasingPowerIndex",
+      "type": "number",
+      "unit": "INDEX",
+      "authority": "MODELLED_DERIVED_FINANCIAL_TRANSMISSION",
+      "meaning": "Existing derived projection; not a direct household survey observation."
+    }
+  ],
+  "persistence": {
+    "ownerMinistry": "economy",
+    "statePath": "economy.npcMacroEconomy",
+    "commandType": "OMEGA_NPC_MACRO_ECONOMY_CHECKPOINT",
+    "historyLimit": 24,
+    "sameTurnPolicy": "ONE_CHECKPOINT_PER_COUNTRY_PER_COMMITTED_TURN",
+    "fingerprint": "STABLE_JSON_FNV1A32"
+  },
+  "scheduler": {
+    "existingSchedulerOnly": true,
+    "tiers": [
+      "ACTIVE",
+      "MACRO"
+    ],
+    "playerCountryAutomation": false,
+    "perTurnNetworkIo": false
+  }
+}
