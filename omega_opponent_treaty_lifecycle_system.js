@@ -141,25 +141,38 @@
       num(row?.createdTurn)!==null&&num(row.createdTurn)<turn()
     ).slice(0,MAX_PENDING_REVIEWS_PER_COUNTRY);
     let processed=0,accepted=0,countered=0,rejected=0,waiting=0,failed=0;
+    const failureStages=[];
     for(const [targetKey,row] of pending){
       const target=canonical(targetKey);
       if(!target||target===countryId){failed++;continue;}
       const req={...clone(row),countryId,targetCountryId:target,
         negotiationId:row.negotiationId||row.decisionId||'NEG-'+turn()+'-'+countryId+'-'+target};
       const reviewResult=command('foreign','OMEGA_TREATY_REVIEW_NEGOTIATION',target,{request:req});
-      if(reviewResult?.status!=='APPLIED'){failed++;continue;}
+      if(reviewResult?.status!=='APPLIED'){
+        failed++;failureStages.push({targetCountryId:target,stage:'COUNTERPARTY_REVIEW',
+          status:reviewResult?.status||null,reason:reviewResult?.reason||reviewResult?.result?.reason||null});continue;
+      }
       const decision=reviewResult.result?.decision;
       if(!decision||decision.decision==='WAITING_DATA'){waiting++;continue;}
       const requesterResult=command('foreign','OMEGA_TREATY_APPLY_NEGOTIATION_RESPONSE',countryId,{
         targetCountryId:target,decision:decision.decision,terms:decision.terms||row.terms||{},negotiationId:req.negotiationId
       });
-      if(requesterResult?.status!=='APPLIED'){failed++;continue;}
+      if(requesterResult?.status!=='APPLIED'){
+        failed++;failureStages.push({targetCountryId:target,stage:'REQUESTER_RESPONSE',
+          status:requesterResult?.status||null,reason:requesterResult?.reason||requesterResult?.result?.reason||null});continue;
+      }
       processed++;
       if(decision.decision==='ACCEPT'){
         const terms=decision.terms||row.terms||{},treatyType=row.treatyType||'BILATERAL_AGREEMENT';
         const left=command('foreign','OMEGA_TREATY_ACTIVATE',countryId,{negotiationId:req.negotiationId,targetCountryId:target,terms,treatyType});
         const right=command('foreign','OMEGA_TREATY_ACTIVATE',target,{negotiationId:req.negotiationId,targetCountryId:countryId,terms,treatyType});
-        if(left?.status==='APPLIED'&&right?.status==='APPLIED')accepted++;else failed++;
+        if(left?.status==='APPLIED'&&right?.status==='APPLIED')accepted++;
+        else {
+          failed++;failureStages.push({targetCountryId:target,stage:'BILATERAL_ACTIVATION',
+            requesterStatus:left?.status||null,counterpartyStatus:right?.status||null,
+            requesterReason:left?.reason||left?.result?.reason||null,
+            counterpartyReason:right?.reason||right?.result?.reason||null});
+        }
       }else if(decision.decision==='COUNTER'){
         countered++;
         emit('OMEGA_TREATY_COUNTER_OFFERED',countryId,{targetCountryId:target,terms:decision.terms||{},negotiationId:req.negotiationId});
@@ -168,7 +181,7 @@
     processedCountryTurns.add(token);
     if(processedCountryTurns.size>512)processedCountryTurns.delete(processedCountryTurns.values().next().value);
     return{status:'COMPLETED',countryId,turn:turn(),scanned:pending.length,processed,accepted,countered,rejected,waiting,failed,
-      limit:MAX_PENDING_REVIEWS_PER_COUNTRY,scope:'SCHEDULED_COUNTRY_ONLY'};
+      limit:MAX_PENDING_REVIEWS_PER_COUNTRY,scope:'SCHEDULED_COUNTRY_ONLY',failureStages};
   }
 
   // Explicit maintenance/test entry point only. Normal committed turns never scan the world roster.
