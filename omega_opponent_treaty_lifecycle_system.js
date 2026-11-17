@@ -68,17 +68,36 @@
     return{decision:'REJECT',reason:'BILATERAL_RELATION_BELOW_ACCEPTANCE_THRESHOLD',confidence:.86};
   }
   function reviewHandler(cmd,ctx){
-    const req=clone(cmd?.payload?.request||{}),target=canonical(ctx.countryId),d=review(req,target);
+    const req=clone(cmd?.payload?.request||{}),target=canonical(ctx.countryId),requester=canonical(req.countryId),d=review(req,target);
+    if(!requester||!target)return{accepted:false,reason:'TREATY_REVIEW_COUNTRY_SCOPE_INVALID'};
     const negotiations=ctx.stateTransaction.get('foreign.negotiations');
     const next=negotiations&&typeof negotiations==='object'?clone(negotiations):{};
+    const existing=next[requester]&&typeof next[requester]==='object'?next[requester]:{};
+    const status=d.decision==='ACCEPT'?'ACCEPTED':
+      d.decision==='COUNTER'?'COUNTER_OFFERED':
+      d.decision==='REJECT'?'REJECTED':'REQUESTED';
+    const stage=d.decision==='ACCEPT'?'COUNTERPARTY_ACCEPTED':
+      d.decision==='COUNTER'?'COUNTER_OFFERED':
+      d.decision==='REJECT'?'COUNTERPARTY_REJECTED':'COUNTERPARTY_REVIEW_WAITING_DATA';
+    next[requester]={
+      ...existing,status,stage,targetCountryId:requester,counterpartyCountryId:target,
+      treatyType:req.treatyType||existing.treatyType||'BILATERAL_AGREEMENT',
+      terms:clone(d.terms||req.terms||existing.terms||{}),
+      counterTerms:d.decision==='COUNTER'?clone(d.terms||{}):(existing.counterTerms||null),
+      counterpartyDecision:d.decision,lastReviewReason:d.reason||null,
+      lastReviewedTurn:turn(),negotiationId:req.negotiationId||req.decisionId||existing.negotiationId||null
+    };
+    ctx.stateTransaction.set('foreign.negotiations',next);
     if(d.decision==='COUNTER'){
-      next[canonical(req.countryId)]={status:'COUNTER_OFFERED',stage:'COUNTER_OFFERED',targetCountryId:canonical(req.countryId),treatyType:req.treatyType||'BILATERAL_AGREEMENT',terms:d.terms||{},counterTerms:d.terms||{},createdTurn:turn(),counterpartyDecision:'COUNTER'};
-      ctx.stateTransaction.set('foreign.negotiations',next);
-      emit('OMEGA_TREATY_COUNTER_OFFERED',target,{requesterCountryId:canonical(req.countryId),targetCountryId:target,terms:d.terms||{},negotiationId:req.negotiationId||req.decisionId||null});
-      return{accepted:true,decision:d,negotiation:next[canonical(req.countryId)]};
+      emit('OMEGA_TREATY_COUNTER_OFFERED',target,{requesterCountryId:requester,targetCountryId:target,
+        terms:d.terms||{},negotiationId:req.negotiationId||req.decisionId||null});
+    }else{
+      emit(d.decision==='ACCEPT'?'OMEGA_TREATY_ACCEPTED':'OMEGA_TREATY_REJECTED',target,{
+        requesterCountryId:requester,targetCountryId:target,negotiationId:req.negotiationId||req.decisionId||null,
+        reason:d.reason||null,decision:d.decision
+      });
     }
-    emit(d.decision==='ACCEPT'?'OMEGA_TREATY_ACCEPTED':'OMEGA_TREATY_REJECTED',target,{requesterCountryId:canonical(req.countryId),targetCountryId:target,negotiationId:req.negotiationId||req.decisionId||null,reason:d.reason});
-    return{accepted:true,decision:d};
+    return{accepted:true,decision:d,negotiation:clone(next[requester])};
   }
   function applyRequesterHandler(cmd,ctx){
     const p=cmd?.payload||{},c=canonical(ctx.countryId),target=canonical(p.targetCountryId),decision=String(p.decision||'').toUpperCase();
