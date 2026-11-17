@@ -192,8 +192,13 @@
       processed:rows.reduce((sum,row)=>sum+(num(row.processed)||0),0),countryResults:rows};
   }
   function ids(){try{return[...new Set((registry()?.list?.('COUNTRY')||registry()?.list?.()||[]).map(canonical).filter(Boolean))];}catch(_){return Object.keys(state()?.foreign||{}).map(canonical);}}
+  let handlerInstallReport={ready:false,registered:0,total:5,actionRegistrationWarnings:[],errors:[]};
   function install(){
-    const mesh=interop();if(!mesh?.registerCommandHandler)return false;
+    const mesh=interop();
+    if(!mesh?.registerCommandHandler){
+      handlerInstallReport={ready:false,registered:0,total:5,actionRegistrationWarnings:[],errors:['MINISTRY_COMMAND_REGISTRY_UNAVAILABLE']};
+      return false;
+    }
     const defs=[
       ['OMEGA_TREATY_REVIEW_NEGOTIATION','foreign',reviewHandler],
       ['OMEGA_TREATY_APPLY_NEGOTIATION_RESPONSE','foreign',applyRequesterHandler],
@@ -201,7 +206,19 @@
       ['OMEGA_TREATY_SUSPEND','foreign',(c,x)=>stateChangeHandler(c,x,'SUSPENDED')],
       ['OMEGA_TREATY_TERMINATE','foreign',(c,x)=>stateChangeHandler(c,x,'TERMINATED')]
     ];
-    try{for(const [t,o,h] of defs){mesh.registerAction?.(t,{actionId:t,stateOwnerMinistry:o,authority:'OMEGA_TREATY_LIFECYCLE'});mesh.registerCommandHandler(t,o,h);}return true;}catch(_){return false;}
+    const report={ready:false,registered:0,total:defs.length,actionRegistrationWarnings:[],errors:[]};
+    for(const [type,owner,handler] of defs){
+      try{mesh.registerAction?.(type,{actionId:type,stateOwnerMinistry:owner,authority:'OMEGA_TREATY_LIFECYCLE'});}
+      catch(e){report.actionRegistrationWarnings.push({type,reason:String(e?.message||e)});}
+      // The authoritative command handler is independent of optional action metadata.
+      // Never skip registration of a real state-mutating handler because its UI/action
+      // descriptor could not be registered.
+      try{mesh.registerCommandHandler(type,owner,handler);report.registered++;}
+      catch(e){report.errors.push({type,reason:String(e?.message||e)});}
+    }
+    report.ready=report.registered===report.total;
+    handlerInstallReport=report;
+    return report.ready;
   }
   function installScheduler(){
     const scheduler=g.Omega?.WorldSimulationScheduler||g.OmegaWorldSimulationScheduler||null;
@@ -221,9 +238,12 @@
     }
     return diagnostics(handlersReady);
   }
-  function diagnostics(handlersReady=true){
-    return{version:VERSION,handlerInstalled:!!handlersReady,worldCountryCount:ids().length,
-      schedulerHandlerRegistered:typeof unregisterSchedulerHandler==='function',
+  function diagnostics(handlersReady){
+    const ready=handlersReady===undefined?handlerInstallReport.ready:!!handlersReady;
+    return{version:VERSION,handlerInstalled:ready,registeredCommandHandlers:handlerInstallReport.registered,
+      commandHandlerCount:handlerInstallReport.total,registrationErrors:clone(handlerInstallReport.errors),
+      actionRegistrationWarnings:clone(handlerInstallReport.actionRegistrationWarnings),
+      worldCountryCount:ids().length,schedulerHandlerRegistered:typeof unregisterSchedulerHandler==='function',
       scheduledTiers:['PLAYER','ACTIVE','MACRO'],maxPendingReviewsPerCountryPerTurn:MAX_PENDING_REVIEWS_PER_COUNTRY,
       automaticWorldRosterScan:false};
   }
