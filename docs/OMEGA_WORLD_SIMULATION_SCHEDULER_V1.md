@@ -85,3 +85,41 @@ Economic Transmission calculates the read-only world inflation median once per t
 Per-country `lastProcessedTurn` checks remain the idempotency authority, so processing one country does not block a different country from being processed in the same turn. The scheduler supplies `stepDurationMs` from the canonical simulation clock; wall-clock 15-second frame pacing is not used for annualization. PLAYER work remains isolated to the selected player country, while NPC work remains bounded to existing ACTIVE/MACRO selections and existing device budgets.
 
 These integrations reuse existing country profile data and state owners. They do not add country-specific economic constants, a duplicate Finance/Treasury ledger, an inventory or trade authority, a new scheduler, or a new clock.
+
+
+## Remaining world-wide economic projections and Finance-triggered FX sync (2026-11-17)
+
+A current-main audit classified the remaining major economic turn paths:
+
+| Runtime | Turn path | Scope / effect | Decision |
+|---|---|---|---|
+| Macro Stability | Existing country handler, priority 10 | Mutates only the scheduler-selected country's macro policy/stability and economy state | Country-scoped; already integrated |
+| Finance Ministry | Existing country handler, priority 15 | Mutates selected-country fiscal, Treasury and Finance state | Country-scoped; already integrated |
+| Economic Transmission | Existing country handler, priority 20 | Mutates selected-country CPI/cost/wage/purchasing-power projections | Country-scoped; already integrated |
+| NPC Macro checkpoint | Existing country handler, priority 30 | Stores selected NPC country evidence checkpoint | Country-scoped; already integrated |
+| FX / Forex | Currency-level simulation tick once per committed turn; global rate/registry projection | Advances shared currency monetary state once per currency and refreshes country FX/Banking projections; it is not a second detailed country economy | Keep the central monetary tick global, but do not invoke a full-country projection for each country Finance update. Finance-triggered refresh now calls `syncCountry(countryCode)`; full `syncAllCountries()` remains for initialization, whole-world rate/mode changes and the once-per-turn FX projection |
+| Global Commodity Market | One turn-driven world order-book rebuild, followed by selected player-country projection | Reads cross-country bids/asks/offer and available-stock projections; produces `PRICE_DISCOVERY_ONLY` market snapshots. It does not settle stock or cash | Keep the market book as a single world-wide read aggregation; never run a full order-book rebuild once per country handler |
+| National Demand | Explicit `processCountry(countryId, ...)` from the resource/economy country processing path | Builds demand/consumption projection for the supplied country; no global committed-turn profile loop | Preserve explicit country scope |
+| Opponent Autonomy | Existing bounded World Simulation Scheduler | Uses event-driven ACTIVE and round-robin MACRO decisions | Preserve existing scheduler tiers and budgets |
+
+### FX targeted-sync regression
+
+Finance now emits `OMEGA_FINANCE_STATE_UPDATED` with the updated `countryCode`. The FX runtime uses that value to refresh only that country's Government Banking and Finance FX snapshot. It no longer loops all 249 country/territory profiles for every scheduler-selected Finance update. If a legacy Finance event omits country identity, the FX runtime retains a full-sync compatibility fallback.
+
+The full FX synchronization still:
+- initializes the 249-profile/available-currency index;
+- publishes the current shared simulation/reference rate tables;
+- projects all country-specific currency and macro display fields once after the central FX/rate update;
+- preserves the existing world FX summary and settlement/banking authority.
+
+A focused Finance FX runtime regression asserts that one Nigeria Finance update reads only the Nigeria profile from Finance and updates only Nigeria's Banking/Finance projection; Bangladesh and United States records remain unchanged and the global 3-country summary remains intact. This is a country projection optimisation, not a currency rate or Treasury accounting change.
+
+### Data/provenance constraints for NPC progression
+
+- `economy_global_profiles_v1.json` is a local model baseline with baseline year 2015; it covers 249 country/territory identities, 230 with available local economic profile data and 19 unavailable. It is not automatically a current, externally revalidated national accounts series.
+- `omega_economic_transmission_runtime_v1.js` publishes modeled macro indicators. Its `realGDPIndex` is a derived index and is not nominal GDP or observed production value.
+- Global Market order-book crossing has `PRICE_DISCOVERY_ONLY` authority. It is neither a completed sale nor a cash receipt.
+- Global Trade settlement buyer/seller counterpart rows must be deduplicated by settlement/transaction identity before any world-flow aggregation; amounts from unlike local currencies cannot be summed without the existing FX conversion authority.
+- Industrial output quantities retain product-specific units and authority. Simulated factory output, capacity, planned projects and shipment legs cannot be converted into observed GDP or summed across tonnes, energy, water and unit products.
+- National Demand's observed, modeled, simulated-capacity and unavailable demand states remain distinct. Unknown must never silently become zero.
+- No new NPC GDP/output/inflation equation should be implemented until a separate versioned model contract documents coverage, units, time basis, calibration basis and null semantics for every input.
