@@ -28,6 +28,8 @@ test('all map country and area identities exist, and unknown values are explicit
 });
 function createRuntime(){
   const handlers=new Map();
+  const schedulerHandlers=new Map();
+  const scheduler={registerCountryHandler(id,handler,options={}){schedulerHandlers.set(id,{handler,options});return()=>schedulerHandlers.delete(id);}};
   const elements=new Map();
   const document={readyState:'loading',addEventListener(type,fn){const k='doc:'+type;handlers.set(k,[...(handlers.get(k)||[]),fn]);},getElementById(id){return elements.get(id)||null;}};
   elements.set('ministry-dashboard-view',{className:'',style:{display:'none'}});
@@ -44,13 +46,13 @@ function createRuntime(){
     fetch:async url=>String(url).includes('economy_global_profiles_v1.json')?{ok:true,json:async()=>profileData}:
       String(url).includes('finance_runtime_rules_v1.json')?{ok:true,json:async()=>financeRules}:
       String(url).includes('finance_sector_registry_v1.json')?{ok:true,json:async()=>sectorRegistry}:Promise.reject(new Error('Unexpected fetch '+url)),
-    Omega:{Simulation:{world:{state},clock:{turn:1,stepDurationMs:3600000},getPlayerCountryId(){return 'BGD';}}},
+    Omega:{Simulation:{world:{state},clock:{turn:1,stepDurationMs:3600000},getPlayerCountryId(){return 'BGD';}},WorldSimulationScheduler:scheduler},
     Game:{state:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},simulation:{turn:1}},currentActiveCountry:'BGD'},
     gameState:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},population:{},simulation:{turn:1}},
     CountryIOS:{activeCountry:'BGD'},OmegaCabinetUI:{renderMinistryDashboard(id){this.legacyMinistryId=id;return 'legacy';}}};
   context.window=context;context.globalThis=context;
   vm.runInNewContext(runtime,context,{filename:'omega_finance_ministry_runtime_v1.js'});
-  return {context,state,document,elements};
+  return {context,state,document,elements,schedulerHandlers,handlers};
 }
 test('Finance preserves existing finance data and enforces allocation, treasury and tax rules',async()=>{
   const {context,state}=createRuntime();const boot=await context.OmegaFinanceMinistry.init();
@@ -78,6 +80,48 @@ test('Finance advances GDP and debt using simulation duration and ignores duplic
   assert.ok(e.gdp>gdp);assert.ok(e.debt>debt);
   const gdpAfter=e.gdp;const repeat=context.OmegaFinanceMinistry.advanceTurn(25,financeRules.annualizationMs);
   assert.equal(repeat.processed,0);assert.equal(e.gdp,gdpAfter);
+});
+test('Finance advances only scheduler-selected countries, preserves same-turn peers and is idempotent per country',async()=>{
+  const {context,state,schedulerHandlers,handlers}=createRuntime();
+  const boot=await context.OmegaFinanceMinistry.init();
+  assert.equal(boot.schedulerHandlerRegistered,true);
+  const registered=schedulerHandlers.get('omega-finance-ministry');
+  assert.ok(registered,'Finance must register with the existing bounded world scheduler');
+  assert.deepEqual(Array.from(registered.options.tiers),['PLAYER','ACTIVE','MACRO']);
+  assert.equal(registered.options.priority,15);
+  assert.equal(handlers.has('OMEGA_SIMULATION_TURN_COMMITTED'),false,
+    'Finance must not retain its automatic all-profile committed-turn listener');
+
+  const profiles=context.OmegaFinanceMinistry.getProfiles();
+  const bgd=profiles.find(p=>p.iso3==='BGD'&&p.profileStatus!=='UNAVAILABLE');
+  const nga=profiles.find(p=>p.iso3==='NGA'&&p.profileStatus!=='UNAVAILABLE');
+  assert.ok(bgd?.economyKey&&nga?.economyKey,'Both test countries must resolve from the canonical Finance registry');
+  const bgdEconomy=state.economy[bgd.economyKey],ngaEconomy=state.economy[nga.economyKey];
+  const bgdGdp=bgdEconomy.gdp,ngaGdp=ngaEconomy.gdp;
+  const turn=25,duration=financeRules.annualizationMs;
+  const player=await registered.handler('BGD',{turn,stepDurationMs:duration,tier:'PLAYER',playerCountryId:'BGD'});
+  assert.equal(player.processed,1,JSON.stringify(player));
+  assert.ok(bgdEconomy.gdp>bgdGdp);
+  const bgdAfter=bgdEconomy.gdp;
+  const replay=await registered.handler('BGD',{turn,stepDurationMs:duration,tier:'PLAYER',playerCountryId:'BGD'});
+  assert.equal(replay.processed,0);
+  assert.equal(replay.duplicate,true);
+  assert.equal(bgdEconomy.gdp,bgdAfter);
+
+  const npc=await registered.handler('NGA',{turn,stepDurationMs:duration,tier:'MACRO',playerCountryId:'BGD'});
+  assert.equal(npc.processed,1,JSON.stringify(npc));
+  assert.ok(ngaEconomy.gdp>ngaGdp,'A different scheduler-selected NPC must advance during the same committed turn');
+  assert.equal(context.OmegaFinanceMinistry.getFinanceState('NGA').lastProcessedTurn,turn);
+
+  const beforeWrongTier=ngaEconomy.gdp;
+  const wrongPlayerTier=await registered.handler('NGA',{turn:turn+1,stepDurationMs:duration,tier:'PLAYER',playerCountryId:'BGD'});
+  assert.equal(wrongPlayerTier.skipped,true);
+  assert.equal(wrongPlayerTier.reason,'PLAYER_TIER_COUNTRY_MISMATCH');
+  assert.equal(ngaEconomy.gdp,beforeWrongTier);
+  const wrongNpcTier=await registered.handler('BGD',{turn:turn+1,stepDurationMs:duration,tier:'MACRO',playerCountryId:'BGD'});
+  assert.equal(wrongNpcTier.skipped,true);
+  assert.equal(wrongNpcTier.reason,'PLAYER_COUNTRY_OUTSIDE_NPC_TIERS');
+  assert.equal(bgdEconomy.gdp,bgdAfter);
 });
 test('Finance commands cannot change a non-player country',async()=>{
   const {context}=createRuntime();await context.OmegaFinanceMinistry.init();
