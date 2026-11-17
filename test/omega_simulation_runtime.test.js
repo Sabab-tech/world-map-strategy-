@@ -444,6 +444,8 @@ test('very large canonical save slots use structured IndexedDB snapshots and res
   const saved=await runtime.saveSlot('large-structured-save');
   assert.equal(saved.ok,true);
   assert.equal(saved.storage,'INDEXEDDB_STRUCTURED');
+  assert.ok(saved.serializedLength>16*1024*1024,
+    'saveSlot must return the canonical serialized snapshot length');
   const record=memory.records.get(saved.key);
   assert.ok(record.serializedLength>16*1024*1024);
   assert.equal(record.__omegaSaveSnapshot,'OMEGA_STRUCTURED_SAVE_V1');
