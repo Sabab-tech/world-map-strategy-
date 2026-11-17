@@ -631,7 +631,7 @@
     });
   }
 
-  function syncCountryRecord(profile, root, bank, countries) {
+  function syncCountryRecord(profile, root, countries) {
     if (!profile) return null;
     const id = getProfileId(profile);
     const code = getCountryCurrency(profile);
@@ -688,7 +688,7 @@
     const root = rootState();
     const bank = bankingRoot();
     const countries = ensureObject(bank, 'countries');
-    const record = syncCountryRecord(profile, root, bank, countries);
+    const record = syncCountryRecord(profile, root, countries);
     if (record) {
       dispatch('OMEGA_GOVERNMENT_BANKING_FX_SYNCED', {
         countryAreaCount: 1, currencyCount: currencies.size,
@@ -718,7 +718,7 @@
       if (r !== null) fxMarket.simulationRates[code] = r;
     });
     profiles.forEach(function (profile) {
-      syncCountryRecord(profile, root, bank, countries);
+      syncCountryRecord(profile, root, countries);
     });
     bank.forexSummary = {
       version: VERSION, countryAreaCount: profiles.length, currencyCount: currencies.size,
