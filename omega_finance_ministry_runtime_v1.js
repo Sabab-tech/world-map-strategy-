@@ -16,7 +16,7 @@
     ['statistics','Statistics'],['culture','Culture'],['finance','Finance']
   ];
   let sectorRegistry={schemaVersion:'0.0.0',budgetSectors:[],economicSectors:[],revenueStreams:[]};
-  let profiles=[],byCountryId=new Map(),rules=JSON.parse(JSON.stringify(BASE_RULES)),initialized=false,initPromise=null;
+  let profiles=[],byCountryId=new Map(),profileDatasetMetadata=null,rules=JSON.parse(JSON.stringify(BASE_RULES)),initialized=false,initPromise=null;
   let selectedCountryCode=null,uiHooksAttached=false,uiContainer=null,activeTab='overview';
   const isObject=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
   const own=(o,k)=>!!o&&Object.prototype.hasOwnProperty.call(o,k);
@@ -1006,6 +1006,7 @@
       const data=await fetchJSON('economy_global_profiles_v1.json');
       if(!Array.isArray(data?.countries)||!data.countries.length)throw new Error('ECONOMIC_PROFILE_REGISTRY_INVALID');
       profiles=data.countries;
+      profileDatasetMetadata=clone(data.metadata||{});
       const loadedRules=await fetchJSON('finance_runtime_rules_v1.json').catch(()=>null);
       if(isObject(loadedRules))rules=Object.assign({},JSON.parse(JSON.stringify(BASE_RULES)),loadedRules);
       const loadedSectors=await fetchJSON('finance_sector_registry_v1.json').catch(()=>null);
@@ -1041,7 +1042,7 @@
     if(!homeExpense&&!militaryExpense)return{ok:false,code:'SIMULATION_EXPENSE_AUTHORITY_NOT_ALLOWED'};
     return applyAction(Object.assign({},action,{__omegaSimulationPipelineAuthority:true}));
   }
-  const api={VERSION,init,diagnostics,resolveCountry:resolveProfile,getProfiles:()=>profiles.slice(),getPlayerCountry:playerCountryProfile,
+  const api={VERSION,init,diagnostics,resolveCountry:resolveProfile,getProfiles:()=>profiles.slice(),getProfileMetadata:()=>clone(profileDatasetMetadata),getPlayerCountry:playerCountryProfile,
      applySimulationAction,
     getIndicators:function(v){const p=resolveProfile(v)||playerCountryProfile();return p?worldSnapshot().byCode.get(p.countryCode)||null:null;},
     getFinanceState:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const root=rootState(),fm=ensureFinanceState(p,root);if(reconcileExternalTreasury(p,fm,root))syncEconomyRecord(p,fm,root);return clone(fm);},
