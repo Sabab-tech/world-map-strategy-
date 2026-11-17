@@ -18,6 +18,7 @@
   let sectorRegistry={schemaVersion:'0.0.0',budgetSectors:[],economicSectors:[],revenueStreams:[]};
   let profiles=[],byCountryId=new Map(),profileDatasetMetadata=null,rules=JSON.parse(JSON.stringify(BASE_RULES)),initialized=false,initPromise=null;
   let selectedCountryCode=null,uiHooksAttached=false,uiContainer=null,activeTab='overview';
+  let unregisterSchedulerHandler=null;
   const isObject=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
   const own=(o,k)=>!!o&&Object.prototype.hasOwnProperty.call(o,k);
   function finite(v){if(typeof v==='number'&&Number.isFinite(v))return v;if(typeof v==='string'&&v.trim()!==''&&Number.isFinite(Number(v)))return Number(v);return null;}
@@ -660,76 +661,122 @@
     fm.fiscalModel.annualBudgetBalanceUsd=fm.fiscalModel.annualRevenueUsd-fm.fiscalModel.annualSpendingUsd;
     initializeSectorAllocations(fm);
   }
+  function advanceFinanceProfile(p,root,turnNumber,dt,years,newYearIndex){
+    if(!isPlayable(p))return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged:false};
+    const fm=ensureFinanceState(p,root);
+    const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
+    if(finite(fm.lastProcessedTurn)!==null&&turnNumber<=fm.lastProcessedTurn){
+      if(externalTreasuryChanged)syncEconomyRecord(p,fm,root);
+      return{processed:0,unavailable:false,duplicate:true,externalTreasuryChanged};
+    }
+    const e=root.economy?.[p.economyKey]||getEconomyRecord(p);
+    if(!isObject(e))return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged};
+    if(newYearIndex>(finite(fm.fiscalYearIndex)||0)){
+      fm.fiscalYearIndex=newYearIndex;
+      fm.currentYearTaxRevenueUsd=0;fm.currentYearSpendingUsd=0;fm.currentYearInterestUsd=0;fm.currentYearDebtPrincipalRepaymentUsd=0;
+      fm.currentYearExternalInflowUsd=0;fm.currentYearExternalOutflowUsd=0;
+      fm.currentYearSectorReceiptsUsd={};
+      for(const sector of sectorRegistry.economicSectors||[])fm.currentYearSectorReceiptsUsd[sector.id]=0;
+      for(const s of sectorRegistry.budgetSectors||[]){
+        const a=fm.allocations?.[s.id];if(!isObject(a))continue;
+        a.spentUsd=0;a.remainingUsd=Math.max(0,finite(a.budgetUsd)||0);a.updatedTurn=turnNumber;
+      }
+      postLedger(fm,p,{department:'finance',action:'FISCAL_YEAR_ROLLOVER',category:'fiscal_year',
+        amountUsd:0,description:'New modeled fiscal year: '+(Number(rules.baselineYear||2015)+newYearIndex)});
+    }
+    const gdpBefore=finite(e.gdp)??finite(p.indicators?.gdpCurrentUsd);
+    if(gdpBefore===null||gdpBefore<=0)return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged};
+    const growth=clamp(finite(e.gdp_growth)??finite(p.indicators?.gdpGrowthPct)??0,-99,100);
+    const gdpAfter=Math.max(0,gdpBefore*Math.pow(1+growth/100,years));e.gdp=gdpAfter;
+    const debtBefore=Math.max(0,finite(e.debt)??finite(p.indicators?.publicDebtUsd)??0);
+    const rate=clamp(finite(fm.policy?.interestRateAnnualPct)??Number(rules.defaultPolicyInterestRatePct||3),0,100);
+    // World Bank contract principal/interest are handled by the separate loan ledger.
+    // Do not apply the general policy rate to the same principal a second time.
+    let worldBankBalance=0,worldBankInterest=0;
+    const worldBankApi=global.OmegaWorldBankLending||(global.Omega&&global.Omega.WorldBankLending);
+    try{
+      const state=worldBankApi&&typeof worldBankApi.diagnostics==='function'?worldBankApi.diagnostics():null;
+      if(state?.initialized&&typeof worldBankApi.getOutstandingBalance==='function'&&typeof worldBankApi.accrueInterest==='function'){
+        worldBankBalance=Math.min(debtBefore,Math.max(0,finite(worldBankApi.getOutstandingBalance(p.countryCode))||0));
+        worldBankInterest=Math.max(0,finite(worldBankApi.accrueInterest(p.countryCode,years,turnNumber))||0);
+      }
+    }catch(_){}
+    const nonWorldBankDebt=Math.max(0,debtBefore-worldBankBalance);
+    const interest=nonWorldBankDebt*(Math.pow(1+rate/100,years)-1);
+    const debtAfter=debtBefore+interest+worldBankInterest;
+    recalculateFiscal(p,fm,e);
+    const income=(finite(fm.fiscalModel.annualRevenueUsd)||0)*years;
+    fm.treasuryBalanceUsd=Math.max(0,(finite(fm.treasuryBalanceUsd)||0)+income-interest);
+    fm.cumulativeRevenueUsd=(finite(fm.cumulativeRevenueUsd)||0)+income;
+    fm.cumulativeInterestUsd=(finite(fm.cumulativeInterestUsd)||0)+interest;
+    fm.currentYearTaxRevenueUsd=(finite(fm.currentYearTaxRevenueUsd)||0)+income;
+    fm.currentYearInterestUsd=(finite(fm.currentYearInterestUsd)||0)+interest;
+    if(!isObject(fm.currentYearSectorReceiptsUsd))fm.currentYearSectorReceiptsUsd={};
+    for(const sector of sectorRegistry.economicSectors||[]){
+      const receipt=income*(Number(sector.taxReceiptSharePct)||0)/100;
+      fm.currentYearSectorReceiptsUsd[sector.id]=(finite(fm.currentYearSectorReceiptsUsd[sector.id])||0)+receipt;
+    }
+    const fb=financeBucketFor(root,p,true);
+    fb.taxRevenue=(finite(fb.taxRevenue)||0)+income;
+    fb.revenue=(finite(fb.revenue)||0)+income;
+    const inflation=finite(e.inflation)??finite(p.indicators?.inflationRatePct)??0;
+    fm.priceIndex=(finite(fm.priceIndex)||100)*Math.pow(Math.max(.0001,1+inflation/100),years);
+    fm.lastProcessedTurn=turnNumber;fm.revision=(finite(fm.revision)||0)+1;
+    e.debt=debtAfter;e.budget_balance=fm.fiscalModel.annualBudgetBalanceUsd;
+    e.revenue=finite(fb.revenue)??fm.fiscalModel.annualRevenueUsd;
+    e.expenditure=finite(fb.spending)??fm.fiscalModel.annualSpendingUsd;
+    syncEconomyRecord(p,fm,root);
+    return{processed:1,unavailable:false,duplicate:false,externalTreasuryChanged,revision:fm.revision};
+  }
+  function advanceCountry(countryValue,context={}){
+    if(!initialized)return{ok:false,reason:'NOT_INITIALIZED',processed:0};
+    const p=resolveProfile(countryValue);
+    if(!p)return{ok:false,reason:'COUNTRY_NOT_FOUND',processed:0,countryId:countryValue||null};
+    const turnNumber=finite(context.turn)??currentTurn()+1;
+    const dt=Math.max(0,finite(context.stepDurationMs)??Number(rules.simulationTurnDurationMs||DAY_MS));
+    const years=dt/Number(rules.annualizationMs||YEAR_MS);
+    if(years<=0)return{ok:true,turn:turnNumber,processed:0,countryCode:p.countryCode};
+    const tier=String(context.tier||'').toUpperCase();
+    if(tier){
+      const schedulerPlayer=resolveProfile(context.playerCountryId)||playerCountryProfile();
+      if(schedulerPlayer&&tier==='PLAYER'&&p.countryCode!==schedulerPlayer.countryCode)
+        return{ok:true,turn:turnNumber,processed:0,skipped:true,reason:'PLAYER_TIER_COUNTRY_MISMATCH',countryCode:p.countryCode};
+      if(schedulerPlayer&&tier!=='PLAYER'&&p.countryCode===schedulerPlayer.countryCode)
+        return{ok:true,turn:turnNumber,processed:0,skipped:true,reason:'PLAYER_COUNTRY_OUTSIDE_NPC_TIERS',countryCode:p.countryCode};
+    }
+    const root=rootState(),newYearIndex=fiscalYearIndexFor(turnNumber,dt);
+    const row=advanceFinanceProfile(p,root,turnNumber,dt,years,newYearIndex);
+    if(row.processed||row.externalTreasuryChanged){
+      safeDispatch('OMEGA_FINANCE_STATE_UPDATED',{countryCode:p.countryCode,turn:turnNumber,processed:row.processed,
+        revision:row.revision??finite(ensureFinanceState(p,root)?.revision)??null});
+    }
+    if(p.countryCode===getPlayerCode())refreshVisibleMetrics();
+    return{ok:true,turn:turnNumber,processed:row.processed,unavailable:row.unavailable,duplicate:row.duplicate,
+      externalTreasuryChanged:row.externalTreasuryChanged,countryCode:p.countryCode};
+  }
+  // Explicit whole-roster compatibility API for maintenance and existing offline tests.
+  // Normal committed turns use the bounded country scheduler handler below.
   function advanceTurn(turn,stepDurationMs){
     if(!initialized)return {ok:false,reason:'NOT_INITIALIZED',processed:0};
     const turnNumber=finite(turn)??currentTurn()+1;
     const dt=Math.max(0,finite(stepDurationMs)??Number(rules.simulationTurnDurationMs||DAY_MS));
     const years=dt/Number(rules.annualizationMs||YEAR_MS);if(years<=0)return {ok:true,turn:turnNumber,processed:0};
-    const root=rootState();let processed=0;
+    const root=rootState();let processed=0,unavailable=0;
     const newYearIndex=fiscalYearIndexFor(turnNumber,dt);
     for(const p of profiles){
-      if(!isPlayable(p))continue;
-      const fm=ensureFinanceState(p,root);
-      const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
-      if(finite(fm.lastProcessedTurn)!==null&&turnNumber<=fm.lastProcessedTurn){if(externalTreasuryChanged)syncEconomyRecord(p,fm,root);continue;}
-      const e=root.economy?.[p.economyKey]||getEconomyRecord(p);if(!isObject(e))continue;
-      if(newYearIndex>(finite(fm.fiscalYearIndex)||0)){
-        fm.fiscalYearIndex=newYearIndex;
-        fm.currentYearTaxRevenueUsd=0;fm.currentYearSpendingUsd=0;fm.currentYearInterestUsd=0;fm.currentYearDebtPrincipalRepaymentUsd=0;
-        fm.currentYearExternalInflowUsd=0;fm.currentYearExternalOutflowUsd=0;
-        fm.currentYearSectorReceiptsUsd={};
-        for(const sector of sectorRegistry.economicSectors||[])fm.currentYearSectorReceiptsUsd[sector.id]=0;
-        for(const s of sectorRegistry.budgetSectors||[]){
-          const a=fm.allocations?.[s.id];if(!isObject(a))continue;
-          a.spentUsd=0;a.remainingUsd=Math.max(0,finite(a.budgetUsd)||0);a.updatedTurn=turnNumber;
-        }
-        postLedger(fm,p,{department:'finance',action:'FISCAL_YEAR_ROLLOVER',category:'fiscal_year',
-          amountUsd:0,description:'New modeled fiscal year: '+(Number(rules.baselineYear||2015)+newYearIndex)});
-      }
-      const gdpBefore=finite(e.gdp)??finite(p.indicators?.gdpCurrentUsd);if(gdpBefore===null||gdpBefore<=0)continue;
-      const growth=clamp(finite(e.gdp_growth)??finite(p.indicators?.gdpGrowthPct)??0,-99,100);
-      const gdpAfter=Math.max(0,gdpBefore*Math.pow(1+growth/100,years));e.gdp=gdpAfter;
-      const debtBefore=Math.max(0,finite(e.debt)??finite(p.indicators?.publicDebtUsd)??0);
-      const rate=clamp(finite(fm.policy?.interestRateAnnualPct)??Number(rules.defaultPolicyInterestRatePct||3),0,100);
-      // World Bank contract principal/interest are handled by the separate loan ledger.
-      // Do not apply the general policy rate to the same principal a second time.
-      let worldBankBalance=0,worldBankInterest=0;
-      const worldBankApi=global.OmegaWorldBankLending||(global.Omega&&global.Omega.WorldBankLending);
-      try{
-        const state=worldBankApi&&typeof worldBankApi.diagnostics==='function'?worldBankApi.diagnostics():null;
-        if(state?.initialized&&typeof worldBankApi.getOutstandingBalance==='function'&&typeof worldBankApi.accrueInterest==='function'){
-          worldBankBalance=Math.min(debtBefore,Math.max(0,finite(worldBankApi.getOutstandingBalance(p.countryCode))||0));
-          worldBankInterest=Math.max(0,finite(worldBankApi.accrueInterest(p.countryCode,years,turnNumber))||0);
-        }
-      }catch(_){}
-      const nonWorldBankDebt=Math.max(0,debtBefore-worldBankBalance);
-      const interest=nonWorldBankDebt*(Math.pow(1+rate/100,years)-1);
-      const debtAfter=debtBefore+interest+worldBankInterest;
-      recalculateFiscal(p,fm,e);
-      const income=(finite(fm.fiscalModel.annualRevenueUsd)||0)*years;
-      fm.treasuryBalanceUsd=Math.max(0,(finite(fm.treasuryBalanceUsd)||0)+income-interest);
-      fm.cumulativeRevenueUsd=(finite(fm.cumulativeRevenueUsd)||0)+income;
-      fm.cumulativeInterestUsd=(finite(fm.cumulativeInterestUsd)||0)+interest;
-      fm.currentYearTaxRevenueUsd=(finite(fm.currentYearTaxRevenueUsd)||0)+income;
-      fm.currentYearInterestUsd=(finite(fm.currentYearInterestUsd)||0)+interest;
-      if(!isObject(fm.currentYearSectorReceiptsUsd))fm.currentYearSectorReceiptsUsd={};
-      for(const sector of sectorRegistry.economicSectors||[]){
-        const receipt=income*(Number(sector.taxReceiptSharePct)||0)/100;
-        fm.currentYearSectorReceiptsUsd[sector.id]=(finite(fm.currentYearSectorReceiptsUsd[sector.id])||0)+receipt;
-      }
-      const fb=financeBucketFor(root,p,true);
-      fb.taxRevenue=(finite(fb.taxRevenue)||0)+income;
-      fb.revenue=(finite(fb.revenue)||0)+income;
-      const inflation=finite(e.inflation)??finite(p.indicators?.inflationRatePct)??0;
-      fm.priceIndex=(finite(fm.priceIndex)||100)*Math.pow(Math.max(.0001,1+inflation/100),years);
-      fm.lastProcessedTurn=turnNumber;fm.revision=(finite(fm.revision)||0)+1;
-      e.debt=debtAfter;e.budget_balance=fm.fiscalModel.annualBudgetBalanceUsd;
-      e.revenue=finite(fb.revenue)??fm.fiscalModel.annualRevenueUsd;
-      e.expenditure=finite(fb.spending)??fm.fiscalModel.annualSpendingUsd;
-      syncEconomyRecord(p,fm,root);processed+=1;
+      const row=advanceFinanceProfile(p,root,turnNumber,dt,years,newYearIndex);
+      processed+=row.processed;unavailable+=row.unavailable?1:0;
     }
-    safeDispatch('OMEGA_FINANCE_STATE_UPDATED',{countryCode:getPlayerCode(),turn:turnNumber,processed,revision:VERSION});
-    refreshVisibleMetrics();return {ok:true,turn:turnNumber,processed};
+    safeDispatch('OMEGA_FINANCE_STATE_UPDATED',{countryCode:getPlayerCode(),turn:turnNumber,processed,unavailable,revision:VERSION});
+    refreshVisibleMetrics();return {ok:true,turn:turnNumber,processed,unavailable};
+  }
+  function registerSchedulerHandler(){
+    const scheduler=global.Omega&&global.Omega.WorldSimulationScheduler||global.OmegaWorldSimulationScheduler||null;
+    if(typeof scheduler?.registerCountryHandler!=='function')return false;
+    if(unregisterSchedulerHandler)return true;
+    unregisterSchedulerHandler=scheduler.registerCountryHandler('omega-finance-ministry',advanceCountry,
+      {tiers:['PLAYER','ACTIVE','MACRO'],priority:15});
+    return typeof unregisterSchedulerHandler==='function';
   }
   function departmentOptions(selected){
     const options=(sectorRegistry.budgetSectors&&sectorRegistry.budgetSectors.length)?sectorRegistry.budgetSectors.map(s=>[s.id,s.name]):DEPARTMENTS;
@@ -981,11 +1028,6 @@
   function isFinanceMinistryId(id){return ['finance','treasury_finance','central_bank','taxes','finance_ministry','ministry_of_finance'].includes(String(id||'').toLowerCase().replace(/[\s-]+/g,'_'));}
   function attachUiBridge(){
     if(uiHooksAttached)return;uiHooksAttached=true;
-    global.addEventListener?.('OMEGA_SIMULATION_TURN_COMMITTED',function(event){
-      const d=event?.detail||{},turn=finite(d.simulationTurn)??finite(d.payload?.turn)??finite(d.turn);
-      const duration=finite(global.Omega?.Simulation?.clock?.stepDurationMs)??Number(rules.simulationTurnDurationMs||DAY_MS);
-      advanceTurn(turn,duration);
-    });
     global.addEventListener?.('OMEGA_READY',function(){if(!initialized)init().catch(error=>console.error('[OMEGA FINANCE INIT]',error));});
     global.addEventListener?.('MINISTRY_SELECTED',function(event){const d=event?.detail||{};const id=d.ministryId||d.id||d.ministry;if(isFinanceMinistryId(id))renderDashboard(id);});
     global.document?.addEventListener?.('click',function(event){
@@ -1018,7 +1060,7 @@
       indexProfiles();const player=playerCountryProfile();
       const contextual=resolveProfile(global.OmegaMinistryViewCountry);
       selectedCountryCode=(contextual&&contextual.countryCode)||selectedCountryCode||(player&&player.countryCode)||'US';
-      ensureStateInitialized();initialized=true;attachUiBridge();
+      ensureStateInitialized();initialized=true;attachUiBridge();registerSchedulerHandler();
       global.Omega=global.Omega||{};global.Omega.FinanceMinistry=api;global.OMEGA_FINANCE_DIAGNOSTICS=diagnostics;
       safeDispatch('OMEGA_FINANCE_RUNTIME_READY',diagnostics());return diagnostics();
     })();
@@ -1027,7 +1069,7 @@
   function diagnostics(){const root=rootState();return {version:VERSION,initialized,profileCount:profiles.length,
     economicProfiles:profiles.filter(p=>!!p.sourceValues).length,profilesWithGDP:profiles.filter(p=>finite(p.indicators?.gdpCurrentUsd)!==null).length,
     dataUnavailable:profiles.filter(p=>p.profileStatus==='UNAVAILABLE').length,playerCountryCode:getPlayerCode(),simulationTurn:currentTurn(),
-    activeCountryCode:selectedCountryCode,hasAuthoritativeEconomy:isObject(root.economy),hasFinanceState:isObject(root.finance),
+    activeCountryCode:selectedCountryCode,schedulerHandlerRegistered:typeof unregisterSchedulerHandler==='function',hasAuthoritativeEconomy:isObject(root.economy),hasFinanceState:isObject(root.finance),
     transactionTypes:['set-tax-rate','set-interest-rate','set-allocation','transfer-budget','spend-budget','borrow']};}
   function applySimulationAction(action){
     const type=String(action&&action.type||'').toLowerCase().replace(/_/g,'-');
@@ -1055,7 +1097,7 @@
     selectTab:function(v){const tab=String(v||'overview');if(!['overview','budget','income','treasury','reports','fx','macro','analytics','worldbank'].includes(tab))return {ok:false,code:'FINANCE_TAB_INVALID'};activeTab=tab;renderDashboard('finance');return {ok:true,tab};},
     getBudgetSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState());return {countryCode:p.countryCode,...budgetTotals(fm)};},
     getRevenueSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState()),m=worldSnapshot().byCode.get(p.countryCode)||currentMetrics(p);return revenueState(p,fm,m,rootState());},
-    applyAction,advanceTurn,renderDashboard,isFinanceMinistryId};
+    applyAction,advanceCountry,advanceTurn,renderDashboard,isFinanceMinistryId};
   global.OmegaFinanceMinistry=api;
   if(global.document){
     global.addEventListener?.('load',function(){init().catch(error=>console.error('[OMEGA FINANCE INIT]',error));},{once:true});
