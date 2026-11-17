@@ -248,15 +248,15 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       return !!(sim && Number(sim.clock?.turn || 0) > 0 &&
         Number(lifecycle?.savedTurn || 0) >= 1 &&
         lifecycle?.savePending !== true && lifecycle?.dirty === false &&
-        !sim.stepInProgress &&
         String(sim.status || '').toUpperCase() === 'RUNNING');
     }, undefined, { timeout: 240000 });
-    // Pause immediately after the first committed turn has fully released its step.
-    // Do not serialize the large world/interoperability diagnostics while the live
-    // clock is running: that work previously allowed a second turn to start before
-    // the Play/Pause control was clicked, leaving the pause gate waiting on that turn.
+    // Pause immediately after the first committed turn is durably saved. At 3x,
+    // the next turn can already be in flight by the time the save gate is observed;
+    // do not wait for the brief stepInProgress=false window before clicking Pause.
+    // The post-pause gate below waits for that in-flight step and save to finish.
+    // Do not serialize large world/interoperability diagnostics while the clock runs.
     console.info('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({
-      stage:'FIRST_TURN_COMMITTED_AND_IDLE',
+      stage:'FIRST_COMMITTED_TURN_SAVE_CONFIRMED',
       seller:playerCountrySelection.seller
     }));
     await playControl.click({ timeout: 60000 });
