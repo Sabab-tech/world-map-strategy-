@@ -77,6 +77,142 @@
     return (checksumUpdate(2166136261,String(text||''))>>>0).toString(16).padStart(8,'0');
   }
 
+  function checksumStringParts(parts){
+    let hash=2166136261,totalLength=0;
+    for(const part of parts){
+      if(typeof part!=='string')throw new Error('SAVE_CHUNK_MISSING');
+      totalLength+=part.length;
+      hash=checksumUpdate(hash,part);
+    }
+    return {length:totalLength,checksum:(hash>>>0).toString(16).padStart(8,'0')};
+  }
+
+  // Restore a chunked save without joining the complete JSON document into one
+  // JavaScript string. Large world snapshots can exceed the engine's maximum
+  // string length even though every IndexedDB chunk is individually valid.
+  function parseJsonStringParts(parts){
+    let partIndex=0,partOffset=0,pendingChar=null,hasPendingChar=false;
+    function readChar(){
+      if(hasPendingChar){hasPendingChar=false;const value=pendingChar;pendingChar=null;return value;}
+      while(partIndex<parts.length){
+        const part=parts[partIndex];
+        if(partOffset<part.length)return part.charAt(partOffset++);
+        partIndex++;partOffset=0;
+      }
+      return null;
+    }
+    function unreadChar(value){
+      if(hasPendingChar)throw new Error('SAVE_CHUNK_JSON_READER_LOOKAHEAD_OVERFLOW');
+      pendingChar=value;hasPendingChar=true;
+    }
+    function isWhitespace(value){return value===' '||value==='\\t'||value==='\\n'||value==='\\r';}
+    function nextToken(){
+      let character=readChar();
+      while(character!==null&&isWhitespace(character))character=readChar();
+      if(character===null)return null;
+      if('{}[]:,'.includes(character))return character;
+      if(character==='"'){
+        let encoded='"',escaped=false;
+        while(true){
+          const next=readChar();
+          if(next===null)throw new Error('SAVE_CHUNK_JSON_UNTERMINATED_STRING');
+          encoded+=next;
+          if(escaped){escaped=false;continue;}
+          if(next==='\\'){escaped=true;continue;}
+          if(next==='"')break;
+        }
+        return {kind:'string',value:JSON.parse(encoded)};
+      }
+      let literal=character;
+      while(true){
+        const next=readChar();
+        if(next===null)break;
+        if(isWhitespace(next)||'{}[]:,'.includes(next)){unreadChar(next);break;}
+        literal+=next;
+      }
+      return {kind:'primitive',value:JSON.parse(literal)};
+    }
+
+    let root,rootReady=false;
+    const stack=[];
+    function attach(value){
+      if(!stack.length){
+        if(rootReady)throw new Error('SAVE_CHUNK_JSON_MULTIPLE_ROOT_VALUES');
+        root=value;rootReady=true;return;
+      }
+      const parent=stack[stack.length-1];
+      if(parent.type==='array'){
+        if(parent.state!=='firstValueOrEnd'&&parent.state!=='value')
+          throw new Error('SAVE_CHUNK_JSON_ARRAY_VALUE_UNEXPECTED');
+        parent.value.push(value);parent.state='commaOrEnd';return;
+      }
+      if(parent.type==='object'&&parent.state==='value'){
+        Object.defineProperty(parent.value,parent.key,{
+          value,enumerable:true,writable:true,configurable:true
+        });
+        parent.key=null;parent.state='commaOrEnd';return;
+      }
+      throw new Error('SAVE_CHUNK_JSON_VALUE_UNEXPECTED');
+    }
+    function beginValue(token){
+      if(token==='{'){
+        const value={};attach(value);
+        stack.push({type:'object',state:'firstKeyOrEnd',value,key:null});return;
+      }
+      if(token==='['){
+        const value=[];attach(value);
+        stack.push({type:'array',state:'firstValueOrEnd',value});return;
+      }
+      if(token&&token.kind==='string'){attach(token.value);return;}
+      if(token&&token.kind==='primitive'){attach(token.value);return;}
+      throw new Error('SAVE_CHUNK_JSON_VALUE_INVALID');
+    }
+
+    let token;
+    while((token=nextToken())!==null){
+      if(!stack.length){
+        if(rootReady)throw new Error('SAVE_CHUNK_JSON_TRAILING_DATA');
+        beginValue(token);continue;
+      }
+      const frame=stack[stack.length-1];
+      if(frame.type==='object'){
+        if(frame.state==='firstKeyOrEnd'){
+          if(token==='}'){stack.pop();continue;}
+          if(token&&token.kind==='string'){frame.key=token.value;frame.state='colon';continue;}
+          throw new Error('SAVE_CHUNK_JSON_OBJECT_KEY_INVALID');
+        }
+        if(frame.state==='key'){
+          if(token&&token.kind==='string'){frame.key=token.value;frame.state='colon';continue;}
+          throw new Error('SAVE_CHUNK_JSON_OBJECT_KEY_INVALID');
+        }
+        if(frame.state==='colon'){
+          if(token!==':')throw new Error('SAVE_CHUNK_JSON_OBJECT_COLON_MISSING');
+          frame.state='value';continue;
+        }
+        if(frame.state==='value'){beginValue(token);continue;}
+        if(frame.state==='commaOrEnd'){
+          if(token===','){frame.state='key';continue;}
+          if(token==='}'){stack.pop();continue;}
+          throw new Error('SAVE_CHUNK_JSON_OBJECT_SEPARATOR_INVALID');
+        }
+      }else{
+        if(frame.state==='firstValueOrEnd'){
+          if(token===']'){stack.pop();continue;}
+          beginValue(token);continue;
+        }
+        if(frame.state==='value'){beginValue(token);continue;}
+        if(frame.state==='commaOrEnd'){
+          if(token===','){frame.state='value';continue;}
+          if(token===']'){stack.pop();continue;}
+          throw new Error('SAVE_CHUNK_JSON_ARRAY_SEPARATOR_INVALID');
+        }
+      }
+      throw new Error('SAVE_CHUNK_JSON_STATE_INVALID');
+    }
+    if(stack.length||!rootReady)throw new Error('SAVE_CHUNK_JSON_INCOMPLETE');
+    return root;
+  }
+
   // Deterministic iterative JSON serializer. Unlike stableStringify(), it yields
   // bounded tokens instead of joining the entire world into one giant JS string.
   function* stableStringifyParts(value,omitRootChecksum=false){
@@ -1423,10 +1559,10 @@
             parts.push(rows[index]);
           }
         }
-        const canonical=parts.join('');
-        if(canonical.length!==length)throw new Error('SAVE_CHUNK_LENGTH_MISMATCH:'+key);
-        if(checksumText(canonical)!==String(raw.checksum))throw new Error('SAVE_CHUNK_CHECKSUM_MISMATCH:'+key);
-        const snapshot=JSON.parse(canonical);
+        const integrity=checksumStringParts(parts);
+        if(integrity.length!==length)throw new Error('SAVE_CHUNK_LENGTH_MISMATCH:'+key);
+        if(integrity.checksum!==String(raw.checksum))throw new Error('SAVE_CHUNK_CHECKSUM_MISMATCH:'+key);
+        const snapshot=parseJsonStringParts(parts);
         snapshot.checksum=raw.checksum;
         return this.loadState(snapshot);
       }
