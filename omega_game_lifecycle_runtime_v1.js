@@ -35,6 +35,7 @@
   var hiddenSnapshotSaved = false;
   var restoreFailed = false;
   var restoreFinished = false;
+  var restoredFromSave = false;
   var saveStatus = 'AUTOSAVE READY';
   // Gameplay automation is opt-in after every boot and remains paused in the background.
   var backgroundRunsEnabled = false;
@@ -488,6 +489,7 @@
     }
 
     if (restored) {
+      restoredFromSave = true;
       var savedStatus = String(sim.status || '').toUpperCase();
       var savedSpeed = number(sim.clock.speed);
       if (savedStatus === 'ERROR') {
@@ -676,6 +678,66 @@
     return true;
   }
 
+  function onCountryContextChanged(event) {
+    var detail = event && event.detail || {};
+    // A map selection is the explicit player-country choice during a fresh game.
+    // Opening a ministry is only a view change and must never switch ownership.
+    if (detail.source !== 'map-country-selection') {
+      updateHud();
+      return;
+    }
+    var selectedCountry = countryCode(detail.countryId || detail.country);
+    if (!selectedCountry || !/^[A-Z]{3}$/.test(selectedCountry)) {
+      updateHud();
+      return;
+    }
+    var sim = runtime();
+    if (!sim || !sim.clock || typeof sim.createSession !== 'function') {
+      updateHud();
+      return;
+    }
+
+    var status = String(sim.status || 'READY').toUpperCase();
+    var session = sim.world && sim.world.state && sim.world.state.simulation &&
+      sim.world.state.simulation.session;
+    var turn = Math.max(0, Math.floor(number(sim.clock.turn) || 0));
+    var lastCommittedTurn = number(session && session.lastCommittedTurn);
+    var createdTurn = number(session && session.createdTurn);
+    var gameplayAlreadyStarted = turn > 0 ||
+      (lastCommittedTurn !== null && lastCommittedTurn > 0) ||
+      (createdTurn !== null && createdTurn > 0) ||
+      number(sim.stepCount) > 0;
+
+    // Never replace a restored checkpoint, a running/error/stopped game, or a
+    // session after its first committed day. The default USA context is only a
+    // boot placeholder until the player explicitly chooses a country on the map.
+    if (restoredFromSave || restoreFailed || gameplayAlreadyStarted ||
+        (status !== 'READY' && status !== 'PAUSED')) {
+      updateHud();
+      return;
+    }
+
+    var currentCountry = countryCode(session && session.playerCountryId);
+    if (currentCountry === selectedCountry) {
+      syncSelectedCountry(selectedCountry);
+      updateHud();
+      return;
+    }
+
+    try {
+      sim.createSession({ playerCountryId: selectedCountry, startTurn: turn });
+      if (typeof sim.pauseSession === 'function') sim.pauseSession();
+      else sim.status = 'PAUSED';
+      syncSelectedCountry(selectedCountry);
+      setSaveStatus('PLAYER COUNTRY SELECTED · PRESS PLAY');
+      updateHud();
+      saveNow({ force: true });
+    } catch (error) {
+      setSaveStatus('COUNTRY SELECTION FAILED · ' + String(error && error.message || error).slice(0, 40));
+      updateHud();
+    }
+  }
+
   function clickHandler(event) {
     var target = event.target && event.target.closest ? event.target.closest('[data-omega-action="toggle"], [data-omega-speed], .speed-btn') : null;
     if (!target) return;
@@ -790,6 +852,7 @@
     g.addEventListener && g.addEventListener('pagehide', onPageExit);
     g.addEventListener && g.addEventListener('beforeunload', onPageExit);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', queueTurnSave);
+    g.addEventListener && g.addEventListener('OMEGA_COUNTRY_CONTEXT_CHANGED', onCountryContextChanged);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_STEP_COMPLETED', updateHud);
     g.addEventListener && g.addEventListener('OMEGA_FINANCE_STATE_UPDATED', updateHud);
     [
