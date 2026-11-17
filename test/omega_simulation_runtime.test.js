@@ -432,7 +432,7 @@ test('large canonical save slots are chunked, committed by manifest and restored
   assert.strictEqual(runtime.world.state,state);
 });
 
-test('very large canonical save slots use structured IndexedDB snapshots and restore without joining one JSON string',async()=>{
+test('very large canonical save slots stay in bounded IndexedDB chunks and restore without joining one JSON string',async()=>{
   const {sandbox,state}=makeSandbox();
   const memory=makeIndexedDbMemory();
   sandbox.indexedDB=memory.indexedDB;
@@ -441,26 +441,32 @@ test('very large canonical save slots use structured IndexedDB snapshots and res
   const payload='y'.repeat(17*1024*1024);
   state.resource={BGD:{inventory:{coal:50},largePayload:payload,batches:[]}};
 
-  const saved=await runtime.saveSlot('large-structured-save');
+  const saved=await runtime.saveSlot('large-bounded-chunk-save');
   assert.equal(saved.ok,true);
-  assert.equal(saved.storage,'INDEXEDDB_STRUCTURED');
+  assert.equal(saved.storage,'INDEXEDDB_CHUNKED');
   assert.ok(saved.serializedLength>16*1024*1024,
     'saveSlot must return the canonical serialized snapshot length');
-  const record=memory.records.get(saved.key);
-  assert.ok(record.serializedLength>16*1024*1024);
-  assert.equal(record.__omegaSaveSnapshot,'OMEGA_STRUCTURED_SAVE_V1');
-  assert.equal(record.checksum,saved.checksum);
-  assert.equal(record.turn,runtime.clock.turn);
-  assert.equal(record.snapshot.worldState.resource.BGD.largePayload,payload);
-  assert.equal([...memory.records.keys()].filter(key=>
-    key.startsWith(saved.key+'.chunk.')||key.startsWith(saved.key+'.stage.')).length,0,
-    'staged chunks must be removed only after the structured snapshot record commits');
+  const manifest=memory.records.get(saved.key);
+  assert.equal(manifest.__omegaSaveManifest,'OMEGA_CHUNKED_SAVE_V1');
+  assert.equal(manifest.serializedLength,saved.serializedLength);
+  assert.equal(manifest.checksum,saved.checksum);
+  assert.equal(manifest.chunkChars,2*1024*1024);
+  assert.ok(manifest.chunkCount>8);
+  const chunkKeys=[...memory.records.keys()].filter(key=>key.startsWith(manifest.chunkPrefix));
+  assert.equal(chunkKeys.length,manifest.chunkCount,
+    'the committed manifest must reference every persisted chunk');
+  for(const chunkKey of chunkKeys){
+    const chunk=memory.records.get(chunkKey);
+    assert.equal(typeof chunk,'string');
+    assert.ok(chunk.length<=manifest.chunkChars,
+      'each IndexedDB value must remain below the per-record storage limit');
+  }
 
   state.resource.BGD.largePayload='changed-before-restore';
-  const loaded=await runtime.loadSlot('large-structured-save');
+  const loaded=await runtime.loadSlot('large-bounded-chunk-save');
   assert.equal(loaded.lastLoadIntegrity,'VERIFIED');
   assert.equal(state.resource.BGD.largePayload,payload,
-    'structured snapshots restore the exact canonical payload without a giant JSON join');
+    'streaming restore must recover the exact canonical payload without a giant JSON join');
   assert.strictEqual(runtime.world.state,state);
 });
 
