@@ -548,9 +548,19 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           const asset = candidate.asset;
           const recipe = industrial.recipeFor(resourceId, asset);
           const inputs = Object.entries(recipe?.inputs || {});
-          const outputs = Object.entries(recipe?.outputs || {})
+          const allOutputs = Object.entries(recipe?.outputs || {})
             .map(([id, ratio]) => ({ id, ratio: Number(ratio) }))
-            .filter(row => row.id && Number.isFinite(row.ratio) && row.ratio > 0)
+            .filter(row => row.id && Number.isFinite(row.ratio) && row.ratio > 0);
+          const primaryAndCoProducts = [
+            ...(Array.isArray(recipe?.presentation?.primaryOutputs) ? recipe.presentation.primaryOutputs : []),
+            ...(Array.isArray(recipe?.presentation?.coProducts) ? recipe.presentation.coProducts : [])
+          ].map(id => String(id));
+          const byProducts = new Set((Array.isArray(recipe?.presentation?.byProducts)
+            ? recipe.presentation.byProducts : []).map(id => String(id)));
+          const roleTaggedOutputs = primaryAndCoProducts.length
+            ? allOutputs.filter(row => primaryAndCoProducts.includes(row.id))
+            : (byProducts.size ? allOutputs.filter(row => !byProducts.has(row.id)) : allOutputs);
+          const outputs = (roleTaggedOutputs.length ? roleTaggedOutputs : allOutputs)
             .sort((a, b) => b.ratio - a.ratio);
           if (inputs.length !== 1 || token(inputs[0][0]) !== resourceId || !outputs.length) continue;
           compatibleFactories.push({ asset, recipe, inputCoefficient: Number(inputs[0][1]), output: outputs[0] });
