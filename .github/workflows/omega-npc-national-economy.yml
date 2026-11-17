@@ -3,6 +3,9 @@ name: OMEGA NPC National Macro-Economy Runtime
 on:
   pull_request:
     paths:
+      - "package.json"
+      - "test/omega_npc_national_macro_economy_architecture_v1.test.mjs"
+      - "docs/OMEGA_NPC_NATIONAL_ECONOMY_ARCHITECTURE_AUDIT_V1.md"
       - "omega_npc_national_macro_economy_runtime_v1.js"
       - "npc_national_macro_economy_rules_v1.json"
       - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
@@ -13,6 +16,9 @@ on:
   push:
     branches: [main]
     paths:
+      - "package.json"
+      - "test/omega_npc_national_macro_economy_architecture_v1.test.mjs"
+      - "docs/OMEGA_NPC_NATIONAL_ECONOMY_ARCHITECTURE_AUDIT_V1.md"
       - "omega_npc_national_macro_economy_runtime_v1.js"
       - "npc_national_macro_economy_rules_v1.json"
       - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
