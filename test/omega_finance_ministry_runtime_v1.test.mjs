@@ -693,6 +693,33 @@ test('fiscal rollover archives the old closing balance and opens the next period
   assert.equal(after.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
 });
 
+test('scheduler fiscal rollover uses its committed step duration over a stale UI clock',async()=>{
+  const {context,state}=createRuntime();
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const before=finance.getFinanceState('BGD');
+  const priorClosing=before.treasuryBalanceUsd;
+  // Simulate a stale/hourly UI clock while the scheduler commits a daily turn.
+  context.Omega.Simulation.clock.stepDurationMs=3600000;
+  state.finance.BGD.available=priorClosing+25;
+  state.simulation.turn=365;
+  const result=finance.advanceCountry('BGD',{
+    turn:365,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
+  });
+  assert.equal(result.processed,1);
+  const after=finance.getFinanceState('BGD');
+  assert.equal(after.fiscalPeriodHistory.length,1,
+    'the committed daily turn, not the stale hourly read clock, crosses the fiscal boundary');
+  assert.equal(after.fiscalPeriodHistory[0].closingBalanceUsd,priorClosing);
+  assert.equal(after.fiscalPeriodAccount.periodIndex,1);
+  assert.equal(after.fiscalPeriodAccount.openingBalanceUsd,priorClosing);
+  assert.equal(after.fiscalPeriodAccount.flowComponents.externalCreditsUsd,25);
+  assert.equal(after.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
+  const external=after.ledger.filter(row=>row.action==='EXTERNAL_TREASURY_CREDIT').at(-1);
+  assert.equal(external.turn,365,
+    'the external cash ledger entry records the scheduler committed turn');
+});
+
 test('external Treasury delta on fiscal rollover belongs to the newly opened period exactly once',async()=>{
   const {context,state}=createRuntime();
   state.simulation.turn=0;
