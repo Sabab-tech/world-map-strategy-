@@ -151,6 +151,7 @@ test('Checkpoint reads existing authority and writes only Economy-owned national
   assert.equal(statement.trade.importValueByCurrency[0].totalValue,25);
   assert.equal(statement.goods.inventory.closingStockByIdentity.find(row=>row.unit==='TONNE').closingQuantity,11);
   assert.equal(statement.goods.inventory.closingStockByIdentity.find(row=>row.unit==='KG').closingQuantity,700);
+  assert.equal(statement.goods.inventory.closingStockByIdentity.find(row=>row.unit==='TONNE').status,'CLOSING_STOCK_ONLY');
   assert.equal(statement.industry.completedProductionRecords,1);
   assert.equal(statement.treasury.status,'MODELLED_CLOSING_BALANCE_ONLY');
   assert.equal(statement.treasury.closingBalance,100000);
