@@ -181,8 +181,19 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                 const profile = financeApi.getPlayerCountry && financeApi.getPlayerCountry();
                 const countryId = String(profile && (profile.iso3 || profile.countryCode) || '').toUpperCase();
                 if (!/^[A-Z]{3}$/.test(countryId)) throw new Error('PLAYER_COUNTRY_PROFILE_UNAVAILABLE');
-                const state = window.Omega && window.Omega.Simulation &&
-                  window.Omega.Simulation.world && window.Omega.Simulation.world.state;
+                // Match Finance runtime's canonical root selection: after Finance init,
+                // prefer the candidate with a populated Economy root. Simulation.world.state
+                // is not guaranteed to be the authoritative object when legacy aliases coexist.
+                const stateCandidates = [
+                  window.Omega && window.Omega.Simulation &&
+                    window.Omega.Simulation.world && window.Omega.Simulation.world.state,
+                  window.Omega && window.Omega.World && window.Omega.World.state,
+                  window.Game && window.Game.state,
+                  window.gameState
+                ].filter(value => value && typeof value === 'object');
+                const state = stateCandidates.find(value =>
+                  value.economy && typeof value.economy === 'object' &&
+                  Object.keys(value.economy).length > 0) || stateCandidates[0];
                 if (!state) throw new Error('AUTHORITATIVE_WORLD_STATE_UNAVAILABLE');
                 const slots = [];
                 function replaceSlot(object, key, value) {
