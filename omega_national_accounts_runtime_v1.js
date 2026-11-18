@@ -11,7 +11,7 @@
     failedCountries:0,lastProcessedTurn:null,lastCountryId:null,rootStateRef:null,
     initializedCountryIds:new Set(),dirtyCountryIds:new Set(),countrySourceVersions:new Map(),eventListeners:[],
     rootResets:0,sourceInvalidations:0,globalInvalidations:0,globalSourceVersion:0,unchangedCountries:0,
-    yieldCount:0,lastSyncSegmentMs:null,maxSyncSegmentMs:0,
+    yieldCount:0,lastSyncSegmentMs:null,maxSyncSegmentMs:0,totalSyncSegmentMs:0,
     lastCountryElapsedMs:null,maxCountryElapsedMs:0,totalCountryElapsedMs:0,
     lastSourceRowsScanned:0,maxSourceRowsScanned:0};
   const isObject=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
@@ -39,6 +39,7 @@
   function recordSyncSegment(startedAt){
     const elapsed=Math.max(0,clockNow()-startedAt);
     runtime.lastSyncSegmentMs=elapsed;runtime.maxSyncSegmentMs=Math.max(runtime.maxSyncSegmentMs,elapsed);
+    runtime.totalSyncSegmentMs+=elapsed;
   }
   function yieldToBrowser(){
     runtime.yieldCount++;
@@ -282,6 +283,7 @@
       truncatedIdentityCount:Math.max(0,all.length-maxItems),stockFlowStatus:all.length?'CLOSING_STOCK_ONLY':'UNOBSERVED'};
   }
   async function buildStatement(countryId,profile,root,turn){
+    const sourceLookupStartedAt=clockNow();
     const finance=countryRecord(root,'finance',profile,countryId)||{};
     const tradeCountry=countryRecord(root,'trade',profile,countryId)||{};
     const resource=countryRecord(root,'resource',profile,countryId)||{};
@@ -291,6 +293,7 @@
     const financeRows=Array.isArray(financeState.ledger)?financeState.ledger.slice(-bounded(limits.financeLedgerRows,500,500)):[];
     const trade=summarizeTrade(tradeCountry,bounded(limits.tradeLedgerRows,512,512),
       bounded(limits.pendingImportRequestRows,512,512));
+    recordSyncSegment(sourceLookupStartedAt);
     const inventory=await summarizeInventory(resource,bounded(limits.inventoryBatchRows,4096,4096),bounded(limits.maxStockIdentityRows,96,256));
     const industry=isObject(economy.industrialRuntime)?economy.industrialRuntime:{};
     const productionRows=Array.isArray(industry.productionLedger)?
@@ -303,6 +306,7 @@
       }
     }
     recordSyncSegment(productionSegmentStartedAt);
+    const statementAssemblyStartedAt=clockNow();
     const balance=finite(financeState.treasuryBalanceUsd),available=finite(finance.available);
     const cashSource=balance!==null?String(financeState.treasurySource||'FINANCE_MINISTRY_RUNTIME'):'UNOBSERVED';
     const treasuryStatus=balance===null?'UNOBSERVED':
@@ -354,6 +358,7 @@
     };
     statement.sourceFingerprint=fingerprint({countryId,turn,treasury:statement.treasury,trade:statement.trade,
       industry:statement.industry,goods:statement.goods,gdp:statement.gdp,workload:statement.workload});
+    recordSyncSegment(statementAssemblyStartedAt);
     return statement;
   }
   function checkpointHandler(command,context){
@@ -455,6 +460,7 @@
     sourceInvalidations:runtime.sourceInvalidations,globalInvalidations:runtime.globalInvalidations,rootResets:runtime.rootResets,
     invalidationListenerCount:runtime.eventListeners.length,yieldCount:runtime.yieldCount,
     lastSyncSegmentMs:runtime.lastSyncSegmentMs,maxSyncSegmentMs:runtime.maxSyncSegmentMs,
+    totalSyncSegmentMs:Number(runtime.totalSyncSegmentMs.toFixed(3)),
     lastCountryElapsedMs:runtime.lastCountryElapsedMs,maxCountryElapsedMs:runtime.maxCountryElapsedMs,
     totalCountryElapsedMs:Number(runtime.totalCountryElapsedMs.toFixed(3)),
     lastSourceRowsScanned:runtime.lastSourceRowsScanned,maxSourceRowsScanned:runtime.maxSourceRowsScanned,

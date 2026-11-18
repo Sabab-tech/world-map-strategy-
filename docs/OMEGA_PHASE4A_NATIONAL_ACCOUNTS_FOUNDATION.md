@@ -26,6 +26,13 @@ Goods conservation is Opening stock + production + imports - consumption - expor
 
 GDP is reconciled only when production, expenditure and income approaches are complete for the same currency and period and agree within tolerance. Production measures gross output less intermediate consumption plus product taxes less subsidies. Expenditure measures household consumption + gross capital formation + government final consumption + exports - imports. Income measures employee compensation + gross operating surplus + mixed income + production taxes - subsidies. Current gameplay GDP progression is retained only as a labelled modelled reference, not copied into these three approaches.
 
+
+### Android 9 WebView performance qualification
+
+The GitHub workflow `.github/workflows/omega-android-webview-performance.yml` launches the packaged APK in an API 28 Android emulator and executes an instrumentation workload through the actual Android WebView. It verifies a maximum 8,692-row dirty-country checkpoint, 512-row cooperative yields, zero-row unchanged turns, cumulative synchronous CPU time, maximum synchronous slice, animation-frame gaps and process PSS. The benchmark restores all synthetic source collections and the prior account snapshot before the test Activity closes.
+
+The emulator is a repeatable Android 9 regression environment, not a physical low-end device. Release qualification on a representative physical Android 9 handset remains an additional field measurement; emulator numbers must not be reported as physical-device results.
+
 ### Mobile and execution budget
 
 - Uses the existing World Simulation Scheduler; no wall-clock interval, worker, polling, background browser loop or full-world per-turn scan.
