@@ -81,7 +81,7 @@
       model.currentYearExternalInflowUsd=(finite(model.currentYearExternalInflowUsd)||0)+(incoming?absAmount:0);
       model.currentYearExternalOutflowUsd=(finite(model.currentYearExternalOutflowUsd)||0)+(incoming?0:absAmount);
       if(!Array.isArray(model.ledger))model.ledger=[];
-      model.ledger.push({turn:currentTurn(),countryCode:profile.countryCode,department:'external-runtime',
+      model.ledger.push({turn:finite(turnNumber)??currentTurn(),countryCode:profile.countryCode,department:'external-runtime',
         action:incoming?'EXTERNAL_TREASURY_CREDIT':'EXTERNAL_TREASURY_DEBIT',category:'unclassified_external_cashflow',
         amountUsd:absAmount,balanceAfterUsd:available,source:'EXISTING_GAME_SUBSYSTEM',description:incoming?'Cash received from another game subsystem':'Cash spent by another game subsystem'});
       model.ledger=model.ledger.slice(-Number(rules.maximumLedgerEntries||500));
@@ -914,7 +914,7 @@
       }
       return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged};
     }
-    const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
+    const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root,turnNumber,dt);
     const gdpBefore=finite(e.gdp)??finite(p.indicators?.gdpCurrentUsd);
     if(gdpBefore===null||gdpBefore<=0)return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged};
     const growth=clamp(finite(e.gdp_growth)??finite(p.indicators?.gdpGrowthPct)??0,-99,100);
