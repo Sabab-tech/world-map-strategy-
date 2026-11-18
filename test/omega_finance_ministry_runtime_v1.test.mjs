@@ -574,6 +574,48 @@ test('fiscal rollover archives the old closing balance and opens the next period
   assert.equal(after.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
 });
 
+test('external Treasury delta on fiscal rollover belongs to the newly opened period exactly once',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=0;
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const before=finance.getFinanceState('BGD');
+  const priorClosing=before.treasuryBalanceUsd;
+  state.finance.BGD.available=priorClosing+75;
+  state.simulation.turn=365;
+  const result=finance.advanceCountry('BGD',{
+    turn:365,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
+  });
+  assert.equal(result.processed,1);
+  let after=finance.getFinanceState('BGD');
+  const previous=after.fiscalPeriodHistory[0];
+  assert.equal(previous.periodIndex,0);
+  assert.equal(previous.closingBalanceUsd,priorClosing,
+    'the old period must close at the pre-reconciliation authoritative balance');
+  assert.equal(previous.flowComponents.externalCreditsUsd,0,
+    'the boundary cash delta must not be attributed to the previous period');
+  assert.equal(after.fiscalPeriodAccount.periodIndex,1);
+  assert.equal(after.fiscalPeriodAccount.openingBalanceUsd,priorClosing,
+    'the new period opens from the carried pre-delta closing balance');
+  assert.equal(after.fiscalPeriodAccount.openingBalanceSource,'PREVIOUS_PERIOD_FINANCE_CLOSING');
+  assert.equal(after.currentYearExternalInflowUsd,75);
+  assert.equal(after.fiscalPeriodAccount.flowComponents.externalCreditsUsd,75);
+  assert.ok(after.fiscalPeriodAccount.totalInflowsUsd>=75);
+  assert.equal(after.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
+  assert.equal(after.lastSyncedTreasuryBalanceUsd,priorClosing+75);
+  const duplicate=finance.advanceCountry('BGD',{
+    turn:365,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
+  });
+  assert.equal(duplicate.processed,0);
+  assert.equal(duplicate.duplicate,true);
+  after=finance.getFinanceState('BGD');
+  assert.equal(after.currentYearExternalInflowUsd,75,
+    'replaying the boundary turn must not duplicate its external cash delta');
+  assert.equal(after.fiscalPeriodAccount.flowComponents.externalCreditsUsd,75);
+  assert.equal(after.fiscalPeriodHistory.length,1,
+    'replaying the same turn must not archive the period twice');
+});
+
 test('legacy Finance saves stay PARTIAL until the next trustworthy fiscal-year boundary',async()=>{
   const {context,state}=createRuntime();
   state.simulation.turn=10;
