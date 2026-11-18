@@ -435,7 +435,8 @@
       const elapsed=Math.max(0,clockNow()-startedAt);
       runtime.lastCountryElapsedMs=elapsed;runtime.maxCountryElapsedMs=Math.max(runtime.maxCountryElapsedMs,elapsed);
       runtime.totalCountryElapsedMs+=elapsed;
-      runtime.failedCountries++;return{status:'FAILED',reason:String(error?.message||error),countryId,turn};}
+      runtime.failedCountries++;return{status:'FAILED',reason:String(error?.message||error),
+        errorStack:String(error?.stack||'').slice(0,5000),countryId,turn};}
     const interop=g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability;
     const commandId='NATIONAL-ACCOUNTS-'+countryId+'-T'+turn,owner=runtime.rules.persistence.ownerMinistry||'economy';
     const commitStartedAt=clockNow();
