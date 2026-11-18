@@ -338,6 +338,7 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                       const commandRecord=interopApi && typeof interopApi.getCommand==='function'
                         ?interopApi.getCommand(commandId):null;
                       throw new Error('CHECKPOINT_FAILED:'+checkpoint.status+':'+(checkpoint.reason||'UNKNOWN')+
+                        ':ERROR_STACK:'+String(checkpoint.errorStack||'').slice(0,5000)+
                         ':DIAGNOSTICS:'+JSON.stringify(window.__OMEGA_ANDROID_PERF_DIAGNOSTICS||[])+
                         ':COMMAND:'+JSON.stringify(commandRecord||null));
                     }
