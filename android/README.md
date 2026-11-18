@@ -46,9 +46,10 @@ The benchmark checks:
 
 - A maximum dirty-country source window of 8,692 rows.
 - Cooperative browser yields between 512-row inventory and production slices.
-- The 4 ms maximum synchronous accounting-segment target.
-- The 100 ms renderer animation-frame-gap guard.
-- Zero-row unchanged-turn checkpoints.
-- Country invalidation and refresh after an authoritative resource-economy event.
+- p95 cumulative synchronous accounting CPU of at most 5.6 ms and a maximum synchronous segment of 4 ms.
+- At least five renderer frames and a maximum frame gap of 250 ms.
+- Zero-row unchanged-turn checkpoints across repeated checkpoints.
+- Country invalidation and refresh after an authoritative resource event.
+- Android process PSS before and after the workload, plus the precise Android/WebView provider version.
 
 The workflow stores Gradle instrumentation reports and Android WebView logcat diagnostics as artifacts. Emulator results are Android 9 WebView evidence; they are not a substitute for a physical low-end ARM device benchmark. A physical-device result must identify the device, Android System WebView version, memory state and measured frame/synchronous-slice timings.
