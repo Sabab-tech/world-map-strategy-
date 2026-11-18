@@ -20,6 +20,8 @@
   let profiles=[],byCountryId=new Map(),profileDatasetMetadata=null,rules=JSON.parse(JSON.stringify(BASE_RULES)),initialized=false,initPromise=null;
   let selectedCountryCode=null,uiHooksAttached=false,uiContainer=null,activeTab='overview';
   let unregisterSchedulerHandler=null;
+  let simulationEventUnsubscribe=null,pendingGameSessionCreatedEvent=null,trustedNewGameSession=null;
+  const pristineFinanceModels=new WeakSet();
   const isObject=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
   const own=(o,k)=>!!o&&Object.prototype.hasOwnProperty.call(o,k);
   function finite(v){if(typeof v==='number'&&Number.isFinite(v))return v;if(typeof v==='string'&&v.trim()!==''&&Number.isFinite(Number(v)))return Number(v);return null;}
@@ -119,6 +121,88 @@
     value=value||root?.simulation?.session?.playerCountryId||root?.simulation?.playerCountryId||
       global.CountryIOS?.activeCountry||global.Game?.currentActiveCountry||global.currentActiveCountry||'USA';
     return resolveProfile(value)||resolveProfile('USA')||profiles[0]||null;
+  }
+  function activeSessionFromState(root){
+    return root?.simulation?.session||root?.simulation?.gameSession||null;
+  }
+  function normalizeSessionCreatedPayload(event){
+    let payload=event&&event.detail!==undefined?event.detail:
+      (event&&event.payload!==undefined?event.payload:event||{});
+    if(payload&&payload.payload&&!payload.session&&payload.payload.session)payload=payload.payload;
+    const session=isObject(payload?.session)?payload.session:(isObject(payload)?payload:null);
+    return session?clone(session):null;
+  }
+  function trustedSessionRecord(session){
+    if(!isObject(session))return null;
+    const sessionId=String(session.sessionId||'').trim();
+    const profile=resolveProfile(session.playerCountryId);
+    const root=rootState(),active=activeSessionFromState(root);
+    const createdTurn=finite(session.createdTurn);
+    const committedTurn=finite(active?.lastCommittedTurn)??finite(root?.simulation?.turn);
+    if(!sessionId||!profile||!active||String(session.status||'').toUpperCase()!=='READY'||
+      String(active.status||'').toUpperCase()!=='READY'||
+      String(active.sessionId||'')!==sessionId||
+      resolveProfile(active.playerCountryId)?.countryCode!==profile.countryCode||
+      createdTurn===null||createdTurn<0||committedTurn===null||createdTurn>committedTurn||
+      getPlayerCode()!==profile.countryCode)return null;
+    return{sessionId,countryCode:profile.countryCode,createdTurn,committedTurn};
+  }
+  function trustedSessionMatchesProfile(profile,root){
+    const trusted=trustedNewGameSession;
+    if(!trusted||!profile||trusted.countryCode!==profile.countryCode)return false;
+    const active=activeSessionFromState(root||rootState());
+    return !!active&&String(active.sessionId||'')===trusted.sessionId&&
+      resolveProfile(active.playerCountryId)?.countryCode===trusted.countryCode&&
+      String(active.status||'').toUpperCase()==='READY';
+  }
+  function canCapturePristineOpening(model,profile,root){
+    if(!model||!pristineFinanceModels.has(model))return false;
+    const account=model.fiscalPeriodAccount;
+    if(account&&account.openingBalanceSource!=='LEGACY_OPENING_NOT_RECORDED')return false;
+    if(finite(model.lastProcessedTurn)!==null||finite(model.revision)!==0||
+      (Array.isArray(model.ledger)&&model.ledger.length>0)||
+      (Array.isArray(model.fiscalPeriodHistory)&&model.fiscalPeriodHistory.length>0))return false;
+    const flowKeys=['currentYearTaxRevenueUsd','currentYearSpendingUsd','currentYearBorrowingUsd',
+      'currentYearInterestUsd','currentYearDebtPrincipalRepaymentUsd',
+      'currentYearExternalInflowUsd','currentYearExternalOutflowUsd'];
+    if(flowKeys.some(key=>Math.abs(finite(model[key])||0)>0.0001))return false;
+    const treasury=finite(model.treasuryBalanceUsd),last=finite(model.lastSyncedTreasuryBalanceUsd);
+    const available=finite(financeBucketFor(root,profile,false)?.available);
+    return treasury!==null&&last!==null&&Math.abs(treasury-last)<=0.0001&&
+      (available===null||Math.abs(available-last)<=0.0001);
+  }
+  function acceptGameSessionCreated(event){
+    const session=normalizeSessionCreatedPayload(event);
+    if(!session)return false;
+    if(!profiles.length){pendingGameSessionCreatedEvent=session;return false;}
+    const record=trustedSessionRecord(session);
+    if(!record)return false;
+    trustedNewGameSession=record;
+    if(!initialized)return true;
+    const root=rootState(),profile=resolveProfile(record.countryCode);
+    const model=profile?ensureFinanceState(profile,root):null;
+    if(!canCapturePristineOpening(model,profile,root)||!trustedSessionMatchesProfile(profile,root))return false;
+    const periodIndex=Math.max(0,Math.floor(finite(model.fiscalYearIndex)||0));
+    beginFiscalPeriodAccount(model,periodIndex,record.createdTurn,model.treasuryBalanceUsd,
+      String(model.treasurySource||'NEW_GAME_FINANCE_OPENING'),fiscalOpeningQuality(model),
+      'COMPLETE_FROM_PERIOD_START');
+    pristineFinanceModels.delete(model);
+    safeDispatch('OMEGA_FINANCE_STATE_UPDATED',{countryCode:profile.countryCode,
+      action:'TRUSTED_NEW_GAME_FISCAL_OPENING',turn:record.createdTurn,revision:model.revision});
+    return true;
+  }
+  function attachSimulationEventBus(){
+    if(typeof global.addEventListener==='function'){
+      global.addEventListener('OMEGA_GAME_SESSION_CREATED',acceptGameSessionCreated);
+    }
+    const runtime=global.Omega&&(global.Omega.SimulationRuntime||global.Omega.Simulation);
+    const ledger=runtime&&runtime.events;
+    if(!simulationEventUnsubscribe&&ledger&&typeof ledger.subscribe==='function'){
+      try{
+        simulationEventUnsubscribe=ledger.subscribe('OMEGA_GAME_SESSION_CREATED',row=>
+          acceptGameSessionCreated(row&&row.payload!==undefined?row.payload:row));
+      }catch(_){simulationEventUnsubscribe=null;}
+    }
   }
   function viewedCountryProfile(){
     const contextual=resolveProfile(global.OmegaMinistryViewCountry);
@@ -326,6 +410,7 @@
     const model=ensureObject(bucket,'omegaFinance');
     const hadPersistedFinanceState=!!model.version||finite(model.initializedTurn)!==null||
       finite(model.lastProcessedTurn)!==null||Array.isArray(model.ledger)||finite(model.treasuryBalanceUsd)!==null;
+    if(!hadPersistedFinanceState)pristineFinanceModels.add(model);
     const e=getEconomyRecord(p)||{},gdp=finite(e.gdp)??finite(p.indicators?.gdpCurrentUsd),existingCash=observedFinanceCash(p,root);
     if(model.version!==VERSION){
       model.version=VERSION;model.countryCode=id;model.countryName=p.name;
@@ -367,10 +452,12 @@
     if(!Array.isArray(model.fiscalPeriodHistory))model.fiscalPeriodHistory=[];
     if(!isObject(model.fiscalPeriodAccount)){
       const periodIndex=Math.max(0,Math.floor(finite(model.fiscalYearIndex)||0));
-      if(!hadPersistedFinanceState&&currentTurn()<=1){
-        beginFiscalPeriodAccount(model,periodIndex,currentTurn(),model.treasuryBalanceUsd,
+      if(!hadPersistedFinanceState&&trustedSessionMatchesProfile(p,root)&&
+        trustedNewGameSession&&trustedNewGameSession.createdTurn<=trustedNewGameSession.committedTurn){
+        beginFiscalPeriodAccount(model,periodIndex,trustedNewGameSession.createdTurn,model.treasuryBalanceUsd,
           String(model.treasurySource||'NEW_GAME_FINANCE_OPENING'),
           fiscalOpeningQuality(model),'COMPLETE_FROM_PERIOD_START');
+        pristineFinanceModels.delete(model);
       }else{
         beginFiscalPeriodAccount(model,periodIndex,currentTurn(),null,
           'LEGACY_OPENING_NOT_RECORDED','UNOBSERVED','INCOMPLETE_LEGACY');
@@ -1157,7 +1244,12 @@
         DEPARTMENTS=[...DEPARTMENTS.filter(d=>!sectorRegistry.budgetSectors.some(s=>s.id===d[0])),
           ...sectorRegistry.budgetSectors.map(s=>[s.id,s.name])];
       }
-      indexProfiles();const player=playerCountryProfile();
+      indexProfiles();
+      if(pendingGameSessionCreatedEvent){
+        const pending=pendingGameSessionCreatedEvent;pendingGameSessionCreatedEvent=null;
+        acceptGameSessionCreated({detail:{session:pending}});
+      }
+      const player=playerCountryProfile();
       const contextual=resolveProfile(global.OmegaMinistryViewCountry);
       selectedCountryCode=(contextual&&contextual.countryCode)||selectedCountryCode||(player&&player.countryCode)||'US';
       ensureStateInitialized();initialized=true;attachUiBridge();registerSchedulerHandler();
@@ -1199,6 +1291,7 @@
     getRevenueSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState()),m=worldSnapshot().byCode.get(p.countryCode)||currentMetrics(p);return revenueState(p,fm,m,rootState());},
     applyAction,advanceCountry,advanceTurn,renderDashboard,isFinanceMinistryId};
   global.OmegaFinanceMinistry=api;
+  attachSimulationEventBus();
   if(global.document){
     global.addEventListener?.('load',function(){init().catch(error=>console.error('[OMEGA FINANCE INIT]',error));},{once:true});
     global.addEventListener?.('OMEGA_READY',function(){init().catch(error=>console.error('[OMEGA FINANCE INIT]',error));},{once:true});
