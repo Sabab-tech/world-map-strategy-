@@ -694,7 +694,33 @@
   }
   function lookupFiscalTransaction(model,key){
     if(!key)return null;
-    const index=ensureFiscalTransactionIndex(model),storageKey='
+    const index=ensureFiscalTransactionIndex(model),storageKey='$'+key;
+    return own(index.records,storageKey)?index.records[storageKey]:null;
+  }
+  function rememberFiscalTransaction(model,key,fingerprint,entry,action,result){
+    if(!key)return;
+    const index=ensureFiscalTransactionIndex(model),storageKey='$'+key;
+    if(!own(index.records,storageKey))index.order.push(storageKey);
+    index.records[storageKey]={
+      fingerprint,action:canonicalFinanceActionType(String(action?.type||'').toLowerCase().replace(/_/g,'-')),
+      transactionId:entry?.transactionId||result?.transactionId||null,
+      transferId:entry?.transferId||result?.transferId||null,
+      amountUsd:finite(entry?.amountUsd??action?.amountUsd??action?.amount),
+      sourceDepartment:entry?.department||String(action?.sourceDepartment||action?.fromDepartment||''),
+      targetDepartment:entry?.counterpartyDepartment||String(action?.targetDepartment||action?.toDepartment||''),
+      fiscalYearIndex:index.periodIndex,turn:currentTurn()
+    };
+    const limit=Math.max(128,Math.floor(finite(rules.maximumFiscalTransactionIds)??2048));
+    while(index.order.length>limit){
+      const expired=index.order.shift();
+      if(expired!==storageKey)delete index.records[expired];
+    }
+  }
+  function isFiscalCashAction(type){
+    return ['borrow','take-loan','transfer-budget','transfer-allocation','spend-budget','spend','pay-expense',
+      'repay-debt','world-bank-debt-service'].includes(type);
+  }
+  function applyAction(action){
     action=isObject(action)?action:{};
     const type=String(action.type||'').toLowerCase().replace(/_/g,'-');
     const p=resolveProfile(action.countryId||action.countryCode||selectedCountryCode)||playerCountryProfile();
