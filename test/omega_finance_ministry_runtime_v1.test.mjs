@@ -484,6 +484,19 @@ test('a lifecycle auto-created session at a legacy turn cannot establish a new-g
   assert.equal(account.reconciliationStatus,'PARTIAL');
 });
 
+test('a delayed turn-zero session event cannot retroactively certify an opening after play advances',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=1;
+  state.simulation.session.lastCommittedTurn=1;
+  await context.OmegaFinanceMinistry.init();
+  const account=context.OmegaFinanceMinistry.getFinanceState('BGD').fiscalPeriodAccount;
+  assert.equal(account.openingBalanceUsd,null);
+  assert.equal(account.openingBalanceSource,'LEGACY_OPENING_NOT_RECORDED');
+  assert.equal(account.openingBalanceQuality,'UNOBSERVED');
+  assert.equal(account.flowCoverage,'INCOMPLETE_LEGACY');
+  assert.equal(account.reconciliationStatus,'PARTIAL');
+});
+
 test('low turn without a verified game-session-created event remains PARTIAL and UNOBSERVED',async()=>{
   const {context,state}=createRuntime({emitGameSessionCreated:false});
   state.simulation.turn=0;
