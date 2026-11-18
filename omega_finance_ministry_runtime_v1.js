@@ -139,11 +139,13 @@
     const root=rootState(),active=activeSessionFromState(root);
     const createdTurn=finite(session.createdTurn);
     const committedTurn=finite(active?.lastCommittedTurn)??finite(root?.simulation?.turn);
+    const runtimeTurn=finite(root?.simulation?.turn);
     if(!sessionId||!profile||!active||String(session.status||'').toUpperCase()!=='READY'||
       String(active.status||'').toUpperCase()!=='READY'||
       String(active.sessionId||'')!==sessionId||
       resolveProfile(active.playerCountryId)?.countryCode!==profile.countryCode||
       createdTurn===null||createdTurn<0||committedTurn===null||createdTurn>committedTurn||
+      (runtimeTurn!==null&&runtimeTurn>committedTurn)||
       getPlayerCode()!==profile.countryCode)return null;
     return{sessionId,countryCode:profile.countryCode,createdTurn,committedTurn};
   }
