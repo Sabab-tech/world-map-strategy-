@@ -47,8 +47,10 @@ A period is reconciled only when its opening is trusted, its cash-flow coverage 
 
 ## Opening and legacy-save policy
 
-- A trusted new-game opening can be captured before the first Finance fiscal accrual, including its `GAME_STATE` or `MODELLED` provenance.
-- At a fiscal-year rollover, close and archive the previous Finance period, then capture the next opening from the previous period's Finance closing before the new-period accrual runs.
+- A trusted new-game opening can be captured before the first Finance fiscal accrual, including its `GAME_STATE` or `MODELLED` provenance. Trust requires an authoritative `OMEGA_GAME_SESSION_CREATED` event matching the active session ID, player country, `READY` session state and initial committed turn. A low simulation turn alone is not evidence of a new game.
+- A persisted Finance model is never promoted to a trusted new-game opening by a later session event. A legacy save with no reliable opening remains `PARTIAL/UNOBSERVED`.
+- At a fiscal-year rollover, close and archive the previous Finance period, reset current-period flow counters, then capture the next opening from the pre-reconciliation Finance closing before external cash deltas or new-period accruals are applied.
+- Every entry point that reconciles external cash—including scheduler turns, Finance actions, state getters and dashboard metric reads—uses the same rollover guard. A read path cannot assign a boundary cash delta to the period being closed.
 - An older save without an opening snapshot remains `PARTIAL` / `UNOBSERVED`. Its current balance and bounded ledger are not enough to reconstruct an opening; never back-solve the missing value.
 - If one or more fiscal periods are skipped by the country runtime, record a gap/partial status rather than claiming full coverage.
 - Keep at most 12 compact closed-period snapshots. The current-period summary and bounded history remain under the existing country Finance state.
@@ -74,9 +76,12 @@ National Accounts reads the Finance-owned current period summary and passes its 
 4. Expense and rollback restore Treasury and period expenditure exactly once.
 5. World Bank debt service debits total cash once and reduces public debt by principal only.
 6. External Finance cash delta is recorded once, including on repeated reads.
-7. Fiscal rollover archives the prior period and opens the next at the pre-accrual closing balance.
-8. Legacy save opening remains unknown/partial until a trusted future opening.
-9. Duplicate same-turn country advancement adds no second flow.
-10. History remains capped at 12.
-11. National Accounts reads Finance-owned period evidence without mutating Finance state.
-12. Existing Finance, World Bank, Android, offline, NPC and Resource systems remain connected and pass their exact-head checks.
+7. A fiscal-boundary external cash delta is assigned to the newly opened period even when a Finance getter/dashboard read runs before the scheduler.
+8. Replaying the boundary turn neither duplicates the cash delta nor archives the same period twice.
+9. A low-turn state without a verified session-created event remains `PARTIAL/UNOBSERVED`; persisted Finance state cannot be promoted by a later event.
+10. Fiscal rollover archives the prior period and opens the next at the pre-accrual closing balance.
+11. Legacy save opening remains unknown/partial until a trusted future opening.
+12. Duplicate same-turn country advancement adds no second flow.
+13. History remains capped at 12.
+14. National Accounts reads Finance-owned period evidence without mutating Finance state.
+15. Existing Finance, World Bank, Android, offline, NPC and Resource systems remain connected and pass their exact-head checks.
