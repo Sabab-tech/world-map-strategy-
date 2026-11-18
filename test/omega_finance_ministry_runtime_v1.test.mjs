@@ -59,7 +59,7 @@ function createRuntime(options={}){
       if(requested.includes('finance_sector_registry_v1.json'))return{ok:true,json:async()=>sectorRegistry};
       return Promise.reject(new Error('Unexpected fetch '+url));
     },
-    Omega:{Simulation:{world:{state},clock:{turn:0,stepDurationMs:3600000},getPlayerCountryId(){return 'BGD';}},WorldSimulationScheduler:scheduler},
+    Omega:{Simulation:{world:{state},clock:{turn:0,stepDurationMs:86400000},getPlayerCountryId(){return 'BGD';}},WorldSimulationScheduler:scheduler},
     Game:{state:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},simulation:{turn:1}},currentActiveCountry:'BGD'},
     gameState:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},population:{},simulation:{turn:1}},
     CountryIOS:{activeCountry:'BGD'},OmegaCabinetUI:{renderMinistryDashboard(id){this.legacyMinistryId=id;return 'legacy';}}};
