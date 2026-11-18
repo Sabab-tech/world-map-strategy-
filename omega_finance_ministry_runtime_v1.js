@@ -165,10 +165,12 @@
     if(!trusted||trusted.createdTurn>1||!profile||trusted.countryCode!==profile.countryCode)return false;
     const state=root||rootState(),active=activeSessionFromState(state);
     const runtimeTurn=finite(state?.simulation?.turn);
+    const activeCommittedTurn=finite(active?.lastCommittedTurn);
     return !!active&&String(active.sessionId||'')===trusted.sessionId&&
       resolveProfile(active.playerCountryId)?.countryCode===trusted.countryCode&&
       finite(active.createdTurn)===trusted.createdTurn&&
       ['READY','RUNNING','PAUSED'].includes(String(active.status||'').toUpperCase())&&
+      (activeCommittedTurn===null||activeCommittedTurn<=trusted.committedTurn)&&
       (runtimeTurn===null||runtimeTurn<=trusted.committedTurn);
   }
   function canCapturePristineOpening(model,profile,root){
