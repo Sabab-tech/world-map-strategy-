@@ -151,6 +151,7 @@ test('Checkpoint reads existing authority and writes only Economy-owned national
   assert.equal(statement.trade.importValueByCurrency[0].totalValue,25);
   assert.equal(statement.goods.inventory.closingStockByIdentity.find(row=>row.unit==='TONNE').closingQuantity,11);
   assert.equal(statement.goods.inventory.closingStockByIdentity.find(row=>row.unit==='KG').closingQuantity,700);
+  assert.equal(statement.goods.inventory.closingStockByIdentity.find(row=>row.unit==='TONNE').status,'CLOSING_STOCK_ONLY');
   assert.equal(statement.industry.completedProductionRecords,1);
   assert.equal(statement.treasury.status,'MODELLED_CLOSING_BALANCE_ONLY');
   assert.equal(statement.treasury.closingBalance,100000);
@@ -321,6 +322,24 @@ test('replacing the authoritative world-state root forces a safe rehydration',as
   assert.equal(api.diagnostics().initializedCountryCount,1);
 });
 
+
+
+test('synchronous Ministry checkpoint commit time is included in CPU diagnostics',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  await api.init();
+  const interop=h.window.Omega.MinistryInteroperability;
+  const original=interop.dispatchCommand.bind(interop);
+  interop.dispatchCommand=(...args)=>{
+    const start=Date.now();
+    while(Date.now()-start<20){}
+    return original(...args);
+  };
+  const result=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(result.status,'CHECKPOINTED');
+  assert.ok(api.diagnostics().maxSyncSegmentMs>=18,
+    'the synchronous state-transaction commit must be measured as an accounting segment');
+  assert.ok(api.diagnostics().totalSyncSegmentMs>=18);
+});
 
 test('large ledger inputs remain hard-bounded to the configured accounting workload',async()=>{
   const h=harness(),api=h.window.Omega.NationalAccounts;

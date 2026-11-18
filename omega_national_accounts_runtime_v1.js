@@ -11,7 +11,7 @@
     failedCountries:0,lastProcessedTurn:null,lastCountryId:null,rootStateRef:null,
     initializedCountryIds:new Set(),dirtyCountryIds:new Set(),countrySourceVersions:new Map(),eventListeners:[],
     rootResets:0,sourceInvalidations:0,globalInvalidations:0,globalSourceVersion:0,unchangedCountries:0,
-    yieldCount:0,lastSyncSegmentMs:null,maxSyncSegmentMs:0,
+    yieldCount:0,lastSyncSegmentMs:null,maxSyncSegmentMs:0,totalSyncSegmentMs:0,
     lastCountryElapsedMs:null,maxCountryElapsedMs:0,totalCountryElapsedMs:0,
     lastSourceRowsScanned:0,maxSourceRowsScanned:0};
   const isObject=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
@@ -39,6 +39,7 @@
   function recordSyncSegment(startedAt){
     const elapsed=Math.max(0,clockNow()-startedAt);
     runtime.lastSyncSegmentMs=elapsed;runtime.maxSyncSegmentMs=Math.max(runtime.maxSyncSegmentMs,elapsed);
+    runtime.totalSyncSegmentMs+=elapsed;
   }
   function yieldToBrowser(){
     runtime.yieldCount++;
@@ -127,15 +128,15 @@
     for(const group of groups.values()){
       const totals=Object.fromEntries(fields.map(k=>[k,0])),missing=new Set();
       for(const row of group.rows)for(const field of fields){const value=finite(row[field]);if(value===null)missing.add(field);else totals[field]+=value;}
-      if(missing.size){partialCount++;items.push({resourceId:group.resourceId,unit:group.unit,status:'PARTIAL',
-        missingComponents:[...missing].sort(),expectedClosingQuantity:null,variance:null,...totals});continue;}
-      if(Object.values(totals).some(v=>v<0)){failedCount++;items.push({resourceId:group.resourceId,unit:group.unit,
-        status:'INVALID_INPUT',missingComponents:[],expectedClosingQuantity:null,variance:null,...totals});continue;}
+      if(missing.size){partialCount++;items.push(Object.assign({resourceId:group.resourceId,unit:group.unit,status:'PARTIAL',
+        missingComponents:[...missing].sort(),expectedClosingQuantity:null,variance:null},totals));continue;}
+      if(Object.values(totals).some(v=>v<0)){failedCount++;items.push(Object.assign({resourceId:group.resourceId,unit:group.unit,
+        status:'INVALID_INPUT',missingComponents:[],expectedClosingQuantity:null,variance:null},totals));continue;}
       const expected=totals.openingQuantity+totals.production+totals.imports-totals.consumption-totals.exports-totals.losses;
       const variance=totals.closingQuantity-expected,ok=near(expected,totals.closingQuantity,abs,rel);
       if(ok)reconciledCount++;else failedCount++;
-      items.push({resourceId:group.resourceId,unit:group.unit,status:ok?'RECONCILED':'UNRECONCILED',
-        missingComponents:[],expectedClosingQuantity:expected,variance,...totals});
+      items.push(Object.assign({resourceId:group.resourceId,unit:group.unit,status:ok?'RECONCILED':'UNRECONCILED',
+        missingComponents:[],expectedClosingQuantity:expected,variance},totals));
     }
     if(!items.length)return{status:'UNOBSERVED',items:[],reconciledCount:0,partialCount:0,failedCount:0};
     return{status:failedCount?'UNRECONCILED':partialCount?'PARTIAL':'RECONCILED',
@@ -278,10 +279,11 @@
     recordSyncSegment(segmentStartedAt);
     const all=[...groups.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit));
     return{sourceBatchCount:batches.length,identifiedBatchCount:all.reduce((n,row)=>n+row.batchCount,0),
-      missingIdentityCount,duplicateBatchCount,closingStockByIdentity:all.slice(0,maxItems).map(row=>({...row,status:'CLOSING_STOCK_ONLY'})),
+      missingIdentityCount,duplicateBatchCount,closingStockByIdentity:all.slice(0,maxItems).map(row=>Object.assign({},row,{status:'CLOSING_STOCK_ONLY'})),
       truncatedIdentityCount:Math.max(0,all.length-maxItems),stockFlowStatus:all.length?'CLOSING_STOCK_ONLY':'UNOBSERVED'};
   }
   async function buildStatement(countryId,profile,root,turn){
+    const sourceLookupStartedAt=clockNow();
     const finance=countryRecord(root,'finance',profile,countryId)||{};
     const tradeCountry=countryRecord(root,'trade',profile,countryId)||{};
     const resource=countryRecord(root,'resource',profile,countryId)||{};
@@ -291,6 +293,7 @@
     const financeRows=Array.isArray(financeState.ledger)?financeState.ledger.slice(-bounded(limits.financeLedgerRows,500,500)):[];
     const trade=summarizeTrade(tradeCountry,bounded(limits.tradeLedgerRows,512,512),
       bounded(limits.pendingImportRequestRows,512,512));
+    recordSyncSegment(sourceLookupStartedAt);
     const inventory=await summarizeInventory(resource,bounded(limits.inventoryBatchRows,4096,4096),bounded(limits.maxStockIdentityRows,96,256));
     const industry=isObject(economy.industrialRuntime)?economy.industrialRuntime:{};
     const productionRows=Array.isArray(industry.productionLedger)?
@@ -303,6 +306,7 @@
       }
     }
     recordSyncSegment(productionSegmentStartedAt);
+    const statementAssemblyStartedAt=clockNow();
     const balance=finite(financeState.treasuryBalanceUsd),available=finite(finance.available);
     const cashSource=balance!==null?String(financeState.treasurySource||'FINANCE_MINISTRY_RUNTIME'):'UNOBSERVED';
     const treasuryStatus=balance===null?'UNOBSERVED':
@@ -354,6 +358,7 @@
     };
     statement.sourceFingerprint=fingerprint({countryId,turn,treasury:statement.treasury,trade:statement.trade,
       industry:statement.industry,goods:statement.goods,gdp:statement.gdp,workload:statement.workload});
+    recordSyncSegment(statementAssemblyStartedAt);
     return statement;
   }
   function checkpointHandler(command,context){
@@ -368,8 +373,8 @@
       gdpStatus:statement.gdp.status,treasuryStatus:statement.treasury.status,goodsStatus:statement.goods.status,
       tradeSettlementCount:statement.trade.settlementCount});
     const historyLimit=bounded(runtime.rules.persistence.historyLimit,12,24);
-    const saved={...clone(statement),lastProcessedTurn:statement.turn,
-      revision:(finite(current?.revision)||0)+1,snapshots:history.slice(-historyLimit)};
+    const saved=Object.assign({},clone(statement),{lastProcessedTurn:statement.turn,
+      revision:(finite(current?.revision)||0)+1,snapshots:history.slice(-historyLimit)});
     context.stateTransaction.set(path,saved);
     return{accepted:true,stateMutationAuthority:'OMEGA_MINISTRY_STATE_TRANSACTION',
       countryId,lastProcessedTurn:statement.turn,revision:saved.revision};
@@ -412,9 +417,15 @@
       runtime.failedCountries++;return{status:'FAILED',reason:String(error?.message||error),countryId,turn};}
     const interop=g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability;
     const commandId='NATIONAL-ACCOUNTS-'+countryId+'-T'+turn,owner=runtime.rules.persistence.ownerMinistry||'economy';
-    const result=interop.dispatchCommand(owner,COMMAND_TYPE,countryId,{countryId,statement},{
-      turn,commandId,commandType:COMMAND_TYPE,ownerMinistry:owner,correlationId:commandId,
-      provenance:{source:HANDLER_ID,modelVersion:runtime.rules.modelVersion}});
+    const commitStartedAt=clockNow();
+    let result;
+    try{
+      result=interop.dispatchCommand(owner,COMMAND_TYPE,countryId,{countryId,statement},{
+        turn,commandId,commandType:COMMAND_TYPE,ownerMinistry:owner,correlationId:commandId,
+        provenance:{source:HANDLER_ID,modelVersion:runtime.rules.modelVersion}});
+    }finally{
+      recordSyncSegment(commitStartedAt);
+    }
     const elapsed=Math.max(0,clockNow()-startedAt),rowsScanned=finite(statement.workload?.sourceRowsScanned)??0;
     runtime.lastCountryElapsedMs=elapsed;runtime.maxCountryElapsedMs=Math.max(runtime.maxCountryElapsedMs,elapsed);
     runtime.totalCountryElapsedMs+=elapsed;runtime.lastSourceRowsScanned=rowsScanned;
@@ -455,6 +466,7 @@
     sourceInvalidations:runtime.sourceInvalidations,globalInvalidations:runtime.globalInvalidations,rootResets:runtime.rootResets,
     invalidationListenerCount:runtime.eventListeners.length,yieldCount:runtime.yieldCount,
     lastSyncSegmentMs:runtime.lastSyncSegmentMs,maxSyncSegmentMs:runtime.maxSyncSegmentMs,
+    totalSyncSegmentMs:Number(runtime.totalSyncSegmentMs.toFixed(3)),
     lastCountryElapsedMs:runtime.lastCountryElapsedMs,maxCountryElapsedMs:runtime.maxCountryElapsedMs,
     totalCountryElapsedMs:Number(runtime.totalCountryElapsedMs.toFixed(3)),
     lastSourceRowsScanned:runtime.lastSourceRowsScanned,maxSourceRowsScanned:runtime.maxSourceRowsScanned,

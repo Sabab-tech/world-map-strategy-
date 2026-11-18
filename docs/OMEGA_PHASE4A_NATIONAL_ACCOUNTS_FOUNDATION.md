@@ -26,6 +26,13 @@ Goods conservation is Opening stock + production + imports - consumption - expor
 
 GDP is reconciled only when production, expenditure and income approaches are complete for the same currency and period and agree within tolerance. Production measures gross output less intermediate consumption plus product taxes less subsidies. Expenditure measures household consumption + gross capital formation + government final consumption + exports - imports. Income measures employee compensation + gross operating surplus + mixed income + production taxes - subsidies. Current gameplay GDP progression is retained only as a labelled modelled reference, not copied into these three approaches.
 
+
+### Android 9 WebView performance qualification
+
+The GitHub workflow `.github/workflows/omega-android-webview-performance.yml` launches the packaged APK in an API 28 Android emulator and executes an instrumentation workload through the actual Android WebView. It verifies a maximum 8,692-row dirty-country checkpoint, 512-row cooperative yields, zero-row unchanged turns, cumulative synchronous CPU time, maximum synchronous slice, animation-frame gaps and process PSS. The benchmark restores all synthetic source collections and the prior account snapshot before the test Activity closes.
+
+The emulator is a repeatable Android 9 regression environment, not a physical low-end device. Release qualification on a representative physical Android 9 handset remains an additional field measurement; emulator numbers must not be reported as physical-device results.
+
 ### Mobile and execution budget
 
 - Uses the existing World Simulation Scheduler; no wall-clock interval, worker, polling, background browser loop or full-world per-turn scan.
@@ -35,7 +42,7 @@ GDP is reconciled only when production, expenditure and income approaches are co
 - If an event cannot identify its country, the runtime invalidates its in-memory initialized-country set so each country is safely refreshed on its next scheduled selection.
 - Same-country, same-turn processing remains idempotent. Source changes after a committed checkpoint remain dirty and are applied on the next committed turn, never by replaying the same turn.
 - Reads remain capped: Finance ledger 500 rows; Trade settlements/import/export ledgers 512 rows each; pending import requests 512 rows; inventory batches 4,096 rows; factory production ledger 2,048 rows; stock identities 96 rows. Truncated pending-request counts explicitly report their bounded coverage.
-- A checkpoint records the number of source rows examined and elapsed processing time in runtime diagnostics. These are workload measurements, not claims of a physical-device benchmark.
+- A checkpoint records the number of source rows examined and elapsed processing time in runtime diagnostics. Cumulative synchronous CPU time and max synchronous slice include source reads, inventory/production chunks, statement assembly and the synchronous Ministry State Transaction commit. These are workload measurements, not claims of a physical-device benchmark.
 - Large inventory and production scans cooperatively yield to the browser after each 512-row synchronous slice. A source-version check ensures events received during a yield remain dirty for the next committed turn.
 - Checkpoint history is capped at 12 compact snapshots. Raw source ledgers are not copied into Economy state.
 - No DOM work or cross-country aggregation. Cadence comes only from game turns. Runtime and rules are included in the offline shell, with its cache version advanced.
