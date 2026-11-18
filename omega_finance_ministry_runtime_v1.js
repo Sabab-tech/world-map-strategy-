@@ -63,9 +63,10 @@
     }
     return null;
   }
-  function reconcileExternalTreasury(profile,model,root){
+  function reconcileExternalTreasury(profile,model,root,turnNumber=currentTurn(),stepDurationMs){
     if(!profile||!model)return false;
     root=root||rootState();
+    if(!ensureFiscalPeriodForTurn(profile,model,finite(turnNumber)??currentTurn(),stepDurationMs))return false;
     const available=finite(financeBucketFor(root,profile,false)?.available);
     const last=finite(model.lastSyncedTreasuryBalanceUsd);
     if(available===null||last===null||Math.abs(available-last)<=0.0001)return false;
@@ -405,6 +406,46 @@
   function fiscalYearIndexFor(turn,stepMs){
     const n=Math.max(0,finite(turn)||0),dt=Math.max(0,finite(stepMs)||Number(rules.simulationTurnDurationMs||DAY_MS));
     return Math.floor(n*dt/Number(rules.annualizationMs||YEAR_MS));
+  }
+  function ensureFiscalPeriodForTurn(profile,model,turnNumber=currentTurn(),stepDurationMs){
+    if(!profile||!model)return true;
+    const nextYearIndex=fiscalYearIndexFor(turnNumber,stepDurationMs);
+    const priorFiscalYearIndex=Math.max(0,Math.floor(finite(model.fiscalYearIndex)||0));
+    if(nextYearIndex<=priorFiscalYearIndex)return true;
+    const lastProcessedTurn=finite(model.lastProcessedTurn);
+    if(lastProcessedTurn!==null&&turnNumber<=lastProcessedTurn){
+      const account=model.fiscalPeriodAccount;
+      if(isObject(account)){
+        account.flowCoverage='INCOMPLETE_GAP';
+        account.reconciliationStatus='PARTIAL';
+        account.status='PARTIAL';
+        account.periodGapDetected=true;
+        account.updatedTurn=turnNumber;
+      }
+      return false;
+    }
+    archiveFiscalPeriodAccount(model,turnNumber);
+    model.fiscalYearIndex=nextYearIndex;
+    const missedPeriods=Math.max(0,nextYearIndex-priorFiscalYearIndex-1);
+    model.currentYearTaxRevenueUsd=0;model.currentYearSpendingUsd=0;model.currentYearBorrowingUsd=0;
+    model.currentYearInterestUsd=0;model.currentYearDebtPrincipalRepaymentUsd=0;
+    model.currentYearExternalInflowUsd=0;model.currentYearExternalOutflowUsd=0;
+    model.currentYearSectorReceiptsUsd={};
+    for(const sector of sectorRegistry.economicSectors||[])model.currentYearSectorReceiptsUsd[sector.id]=0;
+    for(const sector of sectorRegistry.budgetSectors||[]){
+      const allocation=model.allocations?.[sector.id];
+      if(!isObject(allocation))continue;
+      allocation.spentUsd=0;
+      allocation.remainingUsd=Math.max(0,finite(allocation.budgetUsd)||0);
+      allocation.updatedTurn=turnNumber;
+    }
+    beginFiscalPeriodAccount(model,nextYearIndex,turnNumber,model.treasuryBalanceUsd,
+      'PREVIOUS_PERIOD_FINANCE_CLOSING',fiscalOpeningQuality(model),
+      missedPeriods>0?'INCOMPLETE_GAP':'COMPLETE_FROM_PERIOD_START');
+    postLedger(model,profile,{turn:turnNumber,department:'finance',action:'FISCAL_YEAR_ROLLOVER',
+      category:'fiscal_year',amountUsd:0,
+      description:'New modeled fiscal year: '+(Number(rules.baselineYear||2015)+nextYearIndex)});
+    return true;
   }
   function ensureFinanceState(p,root){
     if(!p)return null;root=root||rootState();const bucket=financeBucketFor(root,p,true);if(!bucket)return null;
@@ -832,7 +873,7 @@
     const fm=ensureFinanceState(p,root);
     const alreadyProcessed=finite(fm.lastProcessedTurn)!==null&&turnNumber<=fm.lastProcessedTurn;
     if(alreadyProcessed){
-      const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
+      const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root,turnNumber,dt);
       if(externalTreasuryChanged){
         updateFiscalPeriodAccount(fm,turnNumber);
         syncEconomyRecord(p,fm,root);
@@ -848,29 +889,6 @@
       }
       return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged};
     }
-    if(newYearIndex>(finite(fm.fiscalYearIndex)||0)){
-      const priorFiscalYearIndex=Math.max(0,Math.floor(finite(fm.fiscalYearIndex)||0));
-      archiveFiscalPeriodAccount(fm,turnNumber);
-      fm.fiscalYearIndex=newYearIndex;
-      const missedPeriods=Math.max(0,newYearIndex-priorFiscalYearIndex-1);
-      beginFiscalPeriodAccount(fm,newYearIndex,turnNumber,fm.treasuryBalanceUsd,
-        'PREVIOUS_PERIOD_FINANCE_CLOSING',fiscalOpeningQuality(fm),
-        missedPeriods>0?'INCOMPLETE_GAP':'COMPLETE_FROM_PERIOD_START');
-      fm.currentYearTaxRevenueUsd=0;fm.currentYearSpendingUsd=0;fm.currentYearBorrowingUsd=0;
-      fm.currentYearInterestUsd=0;fm.currentYearDebtPrincipalRepaymentUsd=0;
-      fm.currentYearExternalInflowUsd=0;fm.currentYearExternalOutflowUsd=0;
-      fm.currentYearSectorReceiptsUsd={};
-      for(const sector of sectorRegistry.economicSectors||[])fm.currentYearSectorReceiptsUsd[sector.id]=0;
-      for(const s of sectorRegistry.budgetSectors||[]){
-        const a=fm.allocations?.[s.id];if(!isObject(a))continue;
-        a.spentUsd=0;a.remainingUsd=Math.max(0,finite(a.budgetUsd)||0);a.updatedTurn=turnNumber;
-      }
-      postLedger(fm,p,{department:'finance',action:'FISCAL_YEAR_ROLLOVER',category:'fiscal_year',
-        amountUsd:0,description:'New modeled fiscal year: '+(Number(rules.baselineYear||2015)+newYearIndex)});
-    }
-    // A fiscal boundary must be finalized before syncing external cash deltas.
-    // Otherwise, an old-period external adjustment would be archived as though
-    // it belonged to the previous year and the new period would open too late.
     const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
     const gdpBefore=finite(e.gdp)??finite(p.indicators?.gdpCurrentUsd);
     if(gdpBefore===null||gdpBefore<=0)return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged};
