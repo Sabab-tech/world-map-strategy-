@@ -275,57 +275,38 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                       });
                     }
                   }
-                  const originalDefineProperties = Object.defineProperties;
-                  const originalDefineProperty = Object.defineProperty;
-                  Object.defineProperties = function(target, descriptors) {
-                    if (target === null || (typeof target !== 'object' && typeof target !== 'function')) {
-                      recordPerfFailure('Object.defineProperties.invalidTarget', null,
-                        {targetType:typeof target,targetValue:String(target)});
-                    }
-                    try {
-                      return originalDefineProperties.call(Object,target,descriptors);
-                    } catch (error) {
-                      recordPerfFailure('Object.defineProperties.throw',error,
-                        {targetType:typeof target});
-                      throw error;
-                    }
-                  };
-                  Object.defineProperty = function(target, property, descriptor) {
-                    if (target === null || (typeof target !== 'object' && typeof target !== 'function')) {
-                      recordPerfFailure('Object.defineProperty.invalidTarget', null,
-                        {targetType:typeof target,targetValue:String(target),property:String(property)});
-                    }
-                    try {
-                      return originalDefineProperty.call(Object,target,property,descriptor);
-                    } catch (error) {
-                      recordPerfFailure('Object.defineProperty.throw',error,
-                        {targetType:typeof target,property:String(property)});
-                      throw error;
-                    }
-                  };
-                  const interopApi = window.OmegaMinistryInteroperability ||
-                    (window.Omega && window.Omega.MinistryInteroperability);
-                  const interopInstance = interopApi && interopApi.instance;
-                  const originalStateTransactionFactory = interopInstance && interopInstance.stateTransaction;
-                  if (interopInstance && originalStateTransactionFactory &&
-                      typeof originalStateTransactionFactory.create === 'function') {
-                    interopInstance.stateTransaction = {
+                  const globalTxFactoryOriginal = window.OmegaMinistryStateTransaction || null;
+                  const omegaTxFactoryOriginal = window.Omega && window.Omega.MinistryStateTransaction || null;
+                  const selectedTxFactory = globalTxFactoryOriginal || omegaTxFactoryOriginal;
+                  const interopCandidates = [
+                    {name:'window.OmegaMinistryInteroperability',api:window.OmegaMinistryInteroperability},
+                    {name:'window.Omega.MinistryInteroperability',api:window.Omega && window.Omega.MinistryInteroperability},
+                    {name:'window.OmegaMinistryMesh',api:window.OmegaMinistryMesh},
+                    {name:'window.Omega.MinistryMesh',api:window.Omega && window.Omega.MinistryMesh}
+                  ].filter(function(entry,index,all) {
+                    return entry.api && all.findIndex(function(other) { return other.api === entry.api; }) === index;
+                  });
+                  const patchedInteropInstances = [];
+                  function wrapTransactionFactory(factory,label) {
+                    if (!factory || typeof factory.create !== 'function') return null;
+                    return {
+                      VERSION:factory.VERSION,
                       create:function() {
                         let transaction;
                         try {
-                          transaction = originalStateTransactionFactory.create.apply(
-                            originalStateTransactionFactory,arguments);
+                          transaction = factory.create.apply(factory,arguments);
                         } catch (error) {
-                          recordPerfFailure('stateTransaction.create',error);
+                          recordPerfFailure(label+'.create',error);
                           throw error;
                         }
-                        recordPerfFailure('stateTransaction.created',null,{
+                        recordPerfFailure(label+'.created',null,{
                           transactionType:typeof transaction,
                           stateType:typeof (transaction && transaction.state),
                           hasState:!!(transaction && transaction.state),
                           ownerMinistry:transaction && transaction.ownerMinistry,
                           countryId:transaction && transaction.countryId,
-                          turn:transaction && transaction.turn
+                          turn:transaction && transaction.turn,
+                          commandType:transaction && transaction.commandType
                         });
                         ['get','set','commit','rollback'].forEach(function(method) {
                           if (!transaction || typeof transaction[method] !== 'function') return;
@@ -334,7 +315,7 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                             try {
                               return originalMethod.apply(this,arguments);
                             } catch (error) {
-                              recordPerfFailure('stateTransaction.'+method,error);
+                              recordPerfFailure(label+'.'+method,error);
                               throw error;
                             }
                           };
@@ -343,11 +324,66 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                       }
                     };
                   }
+                  const wrappedGlobalTxFactory = wrapTransactionFactory(selectedTxFactory,'globalStateTransaction');
+                  if (wrappedGlobalTxFactory) {
+                    window.OmegaMinistryStateTransaction = wrappedGlobalTxFactory;
+                    if (window.Omega) window.Omega.MinistryStateTransaction = wrappedGlobalTxFactory;
+                  }
+                  interopCandidates.forEach(function(entry) {
+                    const instance = entry.api && entry.api.instance;
+                    if (!instance) return;
+                    const originalInstanceFactory = instance.stateTransaction;
+                    const originalDispatch = instance.dispatchCommand;
+                    if (wrappedGlobalTxFactory) {
+                      instance.stateTransaction = wrapTransactionFactory(
+                        originalInstanceFactory || selectedTxFactory,'instanceStateTransaction'
+                      );
+                    }
+                    if (typeof originalDispatch === 'function') {
+                      instance.dispatchCommand = function() {
+                        try {
+                          const result = originalDispatch.apply(this,arguments);
+                          if (result && result.status === 'FAILED') {
+                            recordPerfFailure('interop.dispatchCommand.failed',
+                              new Error(result.reason || result.result && result.result.reason || 'COMMAND_FAILED'),{
+                                api:entry.name,commandId:result.commandId,commandType:result.commandType,
+                                countryId:result.countryId,status:result.status,reason:result.reason||null,
+                                result:result.result||null
+                              });
+                          }
+                          return result;
+                        } catch (error) {
+                          recordPerfFailure('interop.dispatchCommand.throw',error,{api:entry.name});
+                          throw error;
+                        }
+                      };
+                    }
+                    patchedInteropInstances.push({
+                      instance:instance,
+                      originalInstanceFactory:originalInstanceFactory,
+                      originalDispatch:originalDispatch
+                    });
+                  });
+                  recordPerfFailure('probe.transactionFactory',null,{
+                    globalFactory:!!globalTxFactoryOriginal,
+                    omegaFactory:!!omegaTxFactoryOriginal,
+                    interopApiCount:interopCandidates.length,
+                    patchedInstanceCount:patchedInteropInstances.length
+                  });
                   function restorePerfDiagnostics() {
-                    try { Object.defineProperties = originalDefineProperties; } catch (_) {}
-                    try { Object.defineProperty = originalDefineProperty; } catch (_) {}
+                    patchedInteropInstances.forEach(function(entry) {
+                      try { entry.instance.stateTransaction = entry.originalInstanceFactory; } catch (_) {}
+                      try { entry.instance.dispatchCommand = entry.originalDispatch; } catch (_) {}
+                    });
                     try {
-                      if (interopInstance) interopInstance.stateTransaction = originalStateTransactionFactory;
+                      if (globalTxFactoryOriginal) window.OmegaMinistryStateTransaction = globalTxFactoryOriginal;
+                      else delete window.OmegaMinistryStateTransaction;
+                    } catch (_) {}
+                    try {
+                      if (window.Omega) {
+                        if (omegaTxFactoryOriginal) window.Omega.MinistryStateTransaction = omegaTxFactoryOriginal;
+                        else delete window.Omega.MinistryStateTransaction;
+                      }
                     } catch (_) {}
                   }
                   for (let index=0; index<6; index++) {
@@ -364,9 +400,20 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                       const commandId='NATIONAL-ACCOUNTS-'+countryId+'-T'+nextTurn;
                       const commandRecord=interopApi && typeof interopApi.getCommand==='function'
                         ?interopApi.getCommand(commandId):null;
+                      const instanceCommands=interopCandidates.map(function(entry) {
+                        const instance=entry.api && entry.api.instance;
+                        const commands=instance && instance.commands && typeof instance.commands.values === 'function'
+                          ?Array.from(instance.commands.values()):[];
+                        const latest=commands.slice(-2).map(function(row) {
+                          return {commandId:row.commandId,commandType:row.commandType,status:row.status,
+                            reason:row.reason||null,result:row.result||null};
+                        });
+                        return {api:entry.name,commandCount:commands.length,latest:latest};
+                      });
                       throw new Error('CHECKPOINT_FAILED:'+checkpoint.status+':'+(checkpoint.reason||'UNKNOWN')+
                         ':DIAGNOSTICS:'+JSON.stringify(window.__OMEGA_ANDROID_PERF_DIAGNOSTICS||[])+
-                        ':COMMAND:'+JSON.stringify(commandRecord||null));
+                        ':COMMAND:'+JSON.stringify(commandRecord||null)+
+                        ':INTEROP_INSTANCES:'+JSON.stringify(instanceCommands));
                     }
                     samples.push({
                       wallMs:Number(wallMs.toFixed(3)),
