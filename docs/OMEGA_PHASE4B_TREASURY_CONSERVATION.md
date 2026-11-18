@@ -50,7 +50,7 @@ A period is reconciled only when its opening is trusted, its cash-flow coverage 
 - A trusted new-game opening can be captured before the first Finance fiscal accrual, including its `GAME_STATE` or `MODELLED` provenance. Trust requires an authoritative `OMEGA_GAME_SESSION_CREATED` event emitted while the session is `READY` within the shared startup-policy window of turn `0` or `1`, matching the active session ID, player country and created turn; the event-time `lastCommittedTurn` must equal `createdTurn`, so no gameplay turn may have advanced before delivery. The same turn-0-or-1 session may transition to `RUNNING` or `PAUSED` before Finance's asynchronous profile loading finishes; event-time evidence is preserved only while the active session identity still matches and neither the root simulation turn nor the session's last committed turn has advanced beyond the initial committed turn. A lifecycle-created session for a legacy save beyond turn `1` is not a new-game opening. A low simulation turn alone is not evidence of a new game.
 - A persisted Finance model is never promoted to a trusted new-game opening by a later session event. A legacy save with no reliable opening remains `PARTIAL/UNOBSERVED`.
 - At a fiscal-year rollover, close and archive the previous Finance period, reset current-period flow counters, then capture the next opening from the pre-reconciliation Finance closing before external cash deltas or new-period accruals are applied.
-- Every entry point that reconciles external cash—including scheduler turns, Finance actions, state getters and dashboard metric reads—uses the same rollover guard. Scheduler calls supply their committed step duration; read/action paths use the live Simulation clock duration before falling back to Finance rules. A read path cannot assign a boundary cash delta to the period being closed or calculate it against a different clock.
+- Every entry point that reconciles external cash—including scheduler turns, Finance actions, state getters and dashboard metric reads—uses the same rollover guard. Scheduler calls supply their committed step duration; read/action paths use the live Simulation clock duration before falling back to Finance rules. A stale UI clock cannot override the scheduler's committed step duration, and external cash ledger rows retain the committed turn.
 - An older save without an opening snapshot remains `PARTIAL` / `UNOBSERVED`. Its current balance and bounded ledger are not enough to reconstruct an opening; never back-solve the missing value.
 - If one or more fiscal periods are skipped by the country runtime, record a gap/partial status rather than claiming full coverage.
 - Keep at most 12 compact closed-period snapshots. The current-period summary and bounded history remain under the existing country Finance state.
@@ -77,13 +77,14 @@ National Accounts reads the Finance-owned current period summary and passes its 
 5. World Bank debt service debits total cash once and reduces public debt by principal only.
 6. External Finance cash delta is recorded once, including on repeated reads.
 7. A fiscal-boundary external cash delta is assigned to the newly opened period even when a Finance getter/dashboard read runs before the scheduler.
-8. Replaying the boundary turn neither duplicates the cash delta nor archives the same period twice.
-9. A low-turn state without a verified session-created event remains `PARTIAL/UNOBSERVED`; persisted Finance state cannot be promoted by a later event.
-10. A session-created event arriving between profile data assignment and country-index readiness is retained through the READY→RUNNING transition, but a delayed or replayed event after the first committed turn cannot retroactively certify the opening.
-11. A lifecycle-created session at legacy turn greater than `1` cannot promote an unobserved opening.
-12. Fiscal rollover archives the prior period and opens the next at the pre-accrual closing balance.
-13. Legacy save opening remains unknown/partial until a trusted future opening.
-14. Duplicate same-turn country advancement adds no second flow.
-15. History remains capped at 12.
-16. National Accounts reads Finance-owned period evidence without mutating Finance state.
-17. Existing Finance, World Bank, Android, offline, NPC and Resource systems remain connected and pass their exact-head checks.
+8. A scheduler's committed daily step duration overrides a stale hourly UI clock at fiscal rollover, and the resulting external cash ledger row records the committed scheduler turn.
+9. Replaying the boundary turn neither duplicates the cash delta nor archives the same period twice.
+10. A low-turn state without a verified session-created event remains `PARTIAL/UNOBSERVED`; persisted Finance state cannot be promoted by a later event.
+11. A session-created event arriving between profile data assignment and country-index readiness is retained through the READY→RUNNING transition, but a delayed or replayed event after the first committed turn cannot retroactively certify the opening.
+12. A lifecycle-created session at legacy turn greater than `1` cannot promote an unobserved opening.
+13. Fiscal rollover archives the prior period and opens the next at the pre-accrual closing balance.
+14. Legacy save opening remains unknown/partial until a trusted future opening.
+15. Duplicate same-turn country advancement adds no second flow.
+16. History remains capped at 12.
+17. National Accounts reads Finance-owned period evidence without mutating Finance state.
+18. Existing Finance, World Bank, Android, offline, NPC and Resource systems remain connected and pass their exact-head checks.
