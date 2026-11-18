@@ -152,7 +152,7 @@
       String(activeNow.sessionId||'')!==sessionId||
       resolveProfile(activeAtCreation.playerCountryId)?.countryCode!==profile.countryCode||
       resolveProfile(activeNow.playerCountryId)?.countryCode!==profile.countryCode||
-      createdTurn===null||createdTurn<0||activeCreatedTurn===null||
+      createdTurn!==0||activeCreatedTurn!==0||
       createdTurn!==activeCreatedTurn||finite(activeNow.createdTurn)!==createdTurn||
       committedTurn===null||createdTurn>committedTurn||
       (runtimeTurn!==null&&runtimeTurn>committedTurn)||
@@ -161,7 +161,7 @@
   }
   function trustedSessionMatchesProfile(profile,root){
     const trusted=trustedNewGameSession;
-    if(!trusted||!profile||trusted.countryCode!==profile.countryCode)return false;
+    if(!trusted||trusted.createdTurn!==0||!profile||trusted.countryCode!==profile.countryCode)return false;
     const state=root||rootState(),active=activeSessionFromState(state);
     const runtimeTurn=finite(state?.simulation?.turn);
     return !!active&&String(active.sessionId||'')===trusted.sessionId&&
