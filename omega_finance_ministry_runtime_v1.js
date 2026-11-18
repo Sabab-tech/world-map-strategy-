@@ -154,7 +154,7 @@
       resolveProfile(activeNow.playerCountryId)?.countryCode!==profile.countryCode||
       createdTurn!==0||activeCreatedTurn!==0||
       createdTurn!==activeCreatedTurn||finite(activeNow.createdTurn)!==createdTurn||
-      committedTurn===null||createdTurn>committedTurn||
+      committedTurn!==0||
       (runtimeTurn!==null&&runtimeTurn>committedTurn)||
       getPlayerCode()!==profile.countryCode)return null;
     return{sessionId,countryCode:profile.countryCode,createdTurn,committedTurn};
