@@ -746,10 +746,13 @@
     if(idempotencyKey){
       const prior=lookupFiscalTransaction(fm,idempotencyKey);
       if(prior){
-        if(prior.fingerprint!==idempotencyFingerprint)
+        if(prior.fingerprint!==idempotencyFingerprint){
+          updateFiscalPeriodAccount(fm,currentTurn());
+          syncEconomyRecord(p,fm,root);
           return{ok:false,code:'FINANCE_TRANSACTION_IDEMPOTENCY_CONFLICT',
             message:'This Finance transaction ID was already used for a different country-period cash action. No second transaction was posted.',
             countryCode:p.countryCode,fiscalYearIndex:prior.fiscalYearIndex};
+        }
         updateFiscalPeriodAccount(fm,currentTurn());
         syncEconomyRecord(p,fm,root);
         return{ok:true,duplicate:true,
@@ -971,7 +974,8 @@
       const periodIndex=Math.max(0,Math.floor(finite(fm.fiscalYearIndex)||0));
       let postedEntry=null;
       if(result.transferId){
-        const transferRows=fm.ledger.filter(row=>row&&row.transferId===result.transferId);
+        const last=fm.ledger.length-1;
+        const transferRows=[fm.ledger[last-1],fm.ledger[last]].filter(row=>row&&row.transferId===result.transferId);
         for(const row of transferRows){row.idempotencyKey=idempotencyKey;row.idempotencyFingerprint=idempotencyFingerprint;}
         postedEntry=transferRows.find(row=>row.action==='BUDGET_TRANSFER_OUT')||transferRows[0]||null;
       }else{
