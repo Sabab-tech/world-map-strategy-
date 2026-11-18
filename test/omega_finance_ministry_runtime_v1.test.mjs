@@ -602,10 +602,6 @@ test('external Treasury delta on fiscal rollover belongs to the newly opened per
   const priorClosing=before.treasuryBalanceUsd;
   state.finance.BGD.available=priorClosing+75;
   state.simulation.turn=365;
-  const result=finance.advanceCountry('BGD',{
-    turn:365,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
-  });
-  assert.equal(result.processed,1);
   let after=finance.getFinanceState('BGD');
   const previous=after.fiscalPeriodHistory[0];
   assert.equal(previous.periodIndex,0);
@@ -622,6 +618,15 @@ test('external Treasury delta on fiscal rollover belongs to the newly opened per
   assert.ok(after.fiscalPeriodAccount.totalInflowsUsd>=75);
   assert.equal(after.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
   assert.equal(after.lastSyncedTreasuryBalanceUsd,priorClosing+75);
+  const result=finance.advanceCountry('BGD',{
+    turn:365,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
+  });
+  assert.equal(result.processed,1);
+  after=finance.getFinanceState('BGD');
+  assert.equal(after.currentYearExternalInflowUsd,75,
+    'the scheduler must not replay a cash delta already reconciled by a dashboard read');
+  assert.equal(after.fiscalPeriodAccount.flowComponents.externalCreditsUsd,75);
+  assert.equal(after.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
   const duplicate=finance.advanceCountry('BGD',{
     turn:365,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
   });
