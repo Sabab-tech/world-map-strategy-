@@ -45,16 +45,27 @@ function createRuntime(options={}){
     CustomEvent:class CustomEvent{constructor(type,options={}){this.type=type;this.detail=options.detail;}},
     addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn]);},
     dispatchEvent(event){for(const fn of handlers.get(event.type)||[])fn(event);return true;},
-    fetch:async url=>String(url).includes('economy_global_profiles_v1.json')?{ok:true,json:async()=>profileData}:
-      String(url).includes('finance_runtime_rules_v1.json')?{ok:true,json:async()=>financeRules}:
-      String(url).includes('finance_sector_registry_v1.json')?{ok:true,json:async()=>sectorRegistry}:Promise.reject(new Error('Unexpected fetch '+url)),
+    fetch:async url=>{
+      const requested=String(url);
+      if(options.emitSessionDuringRulesFetch&&requested.includes('finance_runtime_rules_v1.json')){
+        context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED',{
+          detail:{session:JSON.parse(JSON.stringify(session))}
+        }));
+        state.simulation.session.status='RUNNING';
+        state.simulation.session.startedTurn=1;
+      }
+      if(requested.includes('economy_global_profiles_v1.json'))return{ok:true,json:async()=>profileData};
+      if(requested.includes('finance_runtime_rules_v1.json'))return{ok:true,json:async()=>financeRules};
+      if(requested.includes('finance_sector_registry_v1.json'))return{ok:true,json:async()=>sectorRegistry};
+      return Promise.reject(new Error('Unexpected fetch '+url));
+    },
     Omega:{Simulation:{world:{state},clock:{turn:1,stepDurationMs:3600000},getPlayerCountryId(){return 'BGD';}},WorldSimulationScheduler:scheduler},
     Game:{state:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},simulation:{turn:1}},currentActiveCountry:'BGD'},
     gameState:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},population:{},simulation:{turn:1}},
     CountryIOS:{activeCountry:'BGD'},OmegaCabinetUI:{renderMinistryDashboard(id){this.legacyMinistryId=id;return 'legacy';}}};
   context.window=context;context.globalThis=context;
   vm.runInNewContext(runtime,context,{filename:'omega_finance_ministry_runtime_v1.js'});
-  if(options.emitGameSessionCreated!==false){
+  if(options.emitGameSessionCreated!==false&&!options.emitSessionDuringRulesFetch){
     context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED',{
       detail:{session:JSON.parse(JSON.stringify(session))}
     }));
@@ -442,6 +453,19 @@ test('new-game Finance opening cash is captured before the first fiscal flows an
   assert.equal(account.reconciliationStatus,'GAME_STATE_RECONCILED');
 });
 
+
+test('session-created event received between profile load and country indexing keeps trusted opening evidence',async()=>{
+  const {context,state}=createRuntime({emitGameSessionCreated:false,emitSessionDuringRulesFetch:true});
+  const boot=await context.OmegaFinanceMinistry.init();
+  assert.equal(boot.initialized,true);
+  const account=context.OmegaFinanceMinistry.getFinanceState('BGD').fiscalPeriodAccount;
+  assert.equal(state.simulation.session.status,'RUNNING');
+  assert.equal(account.openingTurn,1);
+  assert.equal(account.openingBalanceUsd,4000000000);
+  assert.equal(account.openingBalanceSource,'EXISTING_RUNTIME_FINANCE_AVAILABLE');
+  assert.equal(account.flowCoverage,'COMPLETE_FROM_PERIOD_START');
+  assert.equal(account.reconciliationStatus,'GAME_STATE_RECONCILED');
+});
 
 test('low turn without a verified game-session-created event remains PARTIAL and UNOBSERVED',async()=>{
   const {context,state}=createRuntime({emitGameSessionCreated:false});
