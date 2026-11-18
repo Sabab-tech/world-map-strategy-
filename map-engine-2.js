@@ -1531,20 +1531,22 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status, source) {
     const isStartupProgressUpdate = source === 'startup';
     const rawPercent = Math.max(0, Math.min(100, Number(percent) || 0));
     const mapGeometryReady = Game.__omegaGeoJSONRenderComplete === true;
-    const bounded = coordinatedStartupActive && !isStartupProgressUpdate && !mapGeometryReady
-        ? Math.min(45, 2 + rawPercent * 0.43)
-        : rawPercent;
+    const bounded = mapGeometryReady ? 100 :
+        (coordinatedStartupActive && !isStartupProgressUpdate
+            ? Math.min(45, 2 + rawPercent * 0.43)
+            : rawPercent);
     // The blocking map overlay belongs to the map geometry stage, not the
     // independent supporting-data pipeline. Once boundaries are rendered,
-    // preserve the map's complete state and let supporting work continue off-screen.
-    const effectiveStatus = coordinatedStartupActive && !isStartupProgressUpdate &&
-        status === 'complete' && !mapGeometryReady ? 'loading' : status;
-    if (coordinatedStartupActive && !isStartupProgressUpdate) {
+    // its terminal state must not regress when a late progress callback arrives.
+    const effectiveStatus = mapGeometryReady ? 'complete' :
+        (coordinatedStartupActive && !isStartupProgressUpdate && status === 'complete'
+            ? 'loading' : status);
+    if (coordinatedStartupActive && !isStartupProgressUpdate && !mapGeometryReady) {
         startupLoader.__assetsLoadingProgress = bounded;
         startupLoader.__assetsLoadingMessage = String(message || 'Preparing world map…');
         startupLoader.__assetsLoadingStatus = effectiveStatus || 'loading';
     }
-    this.__omegaMapLoadingProgress = rawPercent;
+    this.__omegaMapLoadingProgress = bounded;
     if (!overlay || this.__omegaMapUiActive === false) return;
     overlay.classList.remove('is-hidden');
     overlay.setAttribute('aria-hidden', 'false');

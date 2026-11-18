@@ -1551,6 +1551,15 @@ test('real Chromium map marker routes the exact site to selected factory input a
         }
         if(snapshot.mapRootLoading?.present)mapRoot.setAttribute('data-omega-map-loading',snapshot.mapRootLoading.value);
         else mapRoot.removeAttribute('data-omega-map-loading');
+        // The real renderer may finish while the test temporarily exposes the
+        // pointer-transparent overlay. Never restore a stale "loading" snapshot
+        // over geometry that is now fully rendered; re-apply the authoritative
+        // terminal state so its normal delayed dismissal can run.
+        const game=window.Game,map=game?.Map;
+        if(game?.__omegaGeoJSONRenderComplete===true&&map?.countryGeoJSON&&game?.geojsonLayer&&
+           typeof map.updateMapLoadingProgress==='function'){
+          map.updateMapLoadingProgress(100,'World map ready','complete');
+        }
       },previousOverlayState);
     }
     metrics.markerHitTest=markerHitTest;
