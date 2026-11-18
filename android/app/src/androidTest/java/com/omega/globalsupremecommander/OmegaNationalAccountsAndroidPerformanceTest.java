@@ -250,7 +250,12 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                         {targetType:typeof target,targetValue:String(target)});
                       recordPerfFailure('Object.defineProperties.callsite', new Error('INVALID_DEFINE_PROPERTIES_TARGET'));
                     }
-                    return originalDefineProperties.call(Object,target,descriptors);
+                    try {
+                      return originalDefineProperties.call(Object,target,descriptors);
+                    } catch (error) {
+                      recordPerfFailure('Object.defineProperties.throw',error,{targetType:typeof target});
+                      throw error;
+                    }
                   };
                   Object.defineProperty = function(target, property, descriptor) {
                     if (target === null || (typeof target !== 'object' && typeof target !== 'function')) {
@@ -258,7 +263,12 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                         {targetType:typeof target,targetValue:String(target),property:String(property)});
                       recordPerfFailure('Object.defineProperty.callsite', new Error('INVALID_DEFINE_PROPERTY_TARGET'));
                     }
-                    return originalDefineProperty.call(Object,target,property,descriptor);
+                    try {
+                      return originalDefineProperty.call(Object,target,property,descriptor);
+                    } catch (error) {
+                      recordPerfFailure('Object.defineProperty.throw',error,{targetType:typeof target,property:String(property)});
+                      throw error;
+                    }
                   };
                   const interopApi = window.OmegaMinistryInteroperability ||
                     (window.Omega && window.Omega.MinistryInteroperability);
@@ -268,8 +278,14 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                       typeof originalStateTransactionFactory.create === 'function') {
                     interopInstance.stateTransaction = {
                       create:function() {
-                        const transaction = originalStateTransactionFactory.create.apply(
-                          originalStateTransactionFactory,arguments);
+                        let transaction;
+                        try {
+                          transaction = originalStateTransactionFactory.create.apply(
+                            originalStateTransactionFactory,arguments);
+                        } catch (error) {
+                          recordPerfFailure('stateTransaction.create',error);
+                          throw error;
+                        }
                         recordPerfFailure('stateTransaction.created',null,{
                           transactionType:typeof transaction,
                           stateType:typeof (transaction && transaction.state),
