@@ -7,7 +7,7 @@
     defaultTaxRatePct:18,defaultPolicyInterestRatePct:3,defaultDeficitPercentOfGDPWhenUnobserved:3,
     minimumTaxRatePct:0,maximumTaxRatePct:60,minimumPolicyInterestRatePct:0,maximumPolicyInterestRatePct:40,
     maximumBorrowTransactionPercentOfGDP:5,maximumDebtToGDPForNewBorrowingPct:300,maximumLedgerEntries:500,
-    maximumFiscalPeriodHistory:12,
+    maximumFiscalPeriodHistory:12,maximumFiscalTransactionIds:2048,
     influenceWeights:{gdp:.55,population:.20,foreignExchangeReserves:.15,tradeBalanceToGDP:.10},
     fiscalRiskBounds:{debtToGDPPercent:300,inflationPercent:25,unemploymentPercent:35,deficitToGDPPercent:20}};
   let DEPARTMENTS=[
