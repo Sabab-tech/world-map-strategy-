@@ -748,7 +748,7 @@
         if(prior.fingerprint!==idempotencyFingerprint){
           updateFiscalPeriodAccount(fm,currentTurn());
           syncEconomyRecord(p,fm,root);
-          return{ok:false,code:'FINANCE_TRANSACTION_IDEMPOTENCY_CONFLICT',
+          return{ok:false,code:canonicalType==='transfer-budget'?'BUDGET_TRANSFER_IDEMPOTENCY_CONFLICT':'FINANCE_TRANSACTION_IDEMPOTENCY_CONFLICT',
             message:'This Finance transaction ID was already used for a different country-period cash action. No second transaction was posted.',
             countryCode:p.countryCode,fiscalYearIndex:prior.fiscalYearIndex};
         }
