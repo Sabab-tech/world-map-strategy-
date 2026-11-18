@@ -94,6 +94,18 @@ function createRuntime(options={}){
   }
   return {context,state,document,elements,schedulerHandlers,handlers};
 }
+test('initial fiscal period index uses the live Simulation clock duration',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=8760;
+  context.Omega.Simulation.clock.turn=8760;
+  context.Omega.Simulation.clock.stepDurationMs=3600000;
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  assert.equal(finance.fiscalYearIndex,1,
+    '8,760 committed hourly turns represent one 365-day fiscal year');
+  assert.equal(finance.fiscalPeriodAccount.periodIndex,1);
+});
+
 test('Finance preserves existing finance data and enforces allocation, treasury and tax rules',async()=>{
   const {context,state}=createRuntime();const boot=await context.OmegaFinanceMinistry.init();
   assert.equal(boot.initialized,true);assert.equal(boot.profileCount,249);assert.equal(state.finance.BGD.available,4000000000);assert.equal(state.finance.BGD.reserves,456);
