@@ -42,7 +42,7 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
         final Intent intent = new Intent(instrumentation.getTargetContext(), MainActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-        final int pssBeforeKb = Debug.getPss();
+        final long pssBeforeKb = Debug.getPss();
         final Activity activity = instrumentation.startActivitySync(intent);
         assertNotNull("MainActivity did not launch", activity);
         try {
@@ -83,7 +83,7 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
             assertTrue("A frame gap exceeded 250 ms: " + timing.optDouble("maxFrameGapMs"),
                     timing.optDouble("maxFrameGapMs") <= 250d);
 
-            final int pssAfterKb = Debug.getPss();
+            final long pssAfterKb = Debug.getPss();
             result.put("android", new JSONObject()
                     .put("sdk", android.os.Build.VERSION.SDK_INT)
                     .put("manufacturer", android.os.Build.MANUFACTURER)
