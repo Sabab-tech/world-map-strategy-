@@ -667,7 +667,7 @@
   function financeActionFingerprint(type,action){
     const canonical=canonicalFinanceActionType(type);
     const amount=finite(action?.amountUsd??action?.amount);
-    const payload={type:canonical,amountUsd:amount===null?null:Number(amount.toFixed(2))};
+    const payload={type:canonical,amountUsd:amount};
     if(canonical==='spend-budget'){
       payload.department=String(action?.department||action?.ministryId||'').toLowerCase().replace(/[\s-]+/g,'_');
       payload.category=String(action?.spendType||action?.category||'general').toLowerCase();
@@ -676,8 +676,8 @@
       payload.targetDepartment=String(action?.targetDepartment||action?.toDepartment||'').toLowerCase().replace(/[\s-]+/g,'_');
     }else if(canonical==='world-bank-debt-service'){
       const principal=finite(action?.principalPaidUsd),interest=finite(action?.interestPaidUsd);
-      payload.principalPaidUsd=principal===null?null:Number(principal.toFixed(2));
-      payload.interestPaidUsd=interest===null?null:Number(interest.toFixed(2));
+      payload.principalPaidUsd=principal;
+      payload.interestPaidUsd=interest;
       payload.authorization=String(action?.authorization||'');
     }
     return JSON.stringify(payload);
@@ -952,8 +952,10 @@
         postedEntry=fm.ledger[fm.ledger.length-1]||null;
         if(postedEntry){postedEntry.idempotencyKey=idempotencyKey;postedEntry.idempotencyFingerprint=idempotencyFingerprint;}
       }
-      if(postedEntry&&Math.floor(finite(postedEntry.fiscalYearIndex)??periodIndex)===periodIndex)
+      if(postedEntry&&Math.floor(finite(postedEntry.fiscalYearIndex)??periodIndex)===periodIndex){
+        if(!result.transactionId&&postedEntry.transactionId)result.transactionId=postedEntry.transactionId;
         rememberFiscalTransaction(fm,idempotencyKey,idempotencyFingerprint,postedEntry,action,result);
+      }
     }
     updateFiscalPeriodAccount(fm,currentTurn());
     syncEconomyRecord(p,fm,root);
