@@ -595,6 +595,65 @@ test('borrowing is counted once as a Treasury inflow while paired budget transfe
   assert.equal(state.finance.BGD.available,cashBeforeTransfer);
 });
 
+test('Finance cash transaction IDs are idempotent within one country and fiscal period',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=0;
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const transactionId='PHASE4B-BORROW-IDEMPOTENCY-01';
+  const first=finance.applyAction({
+    type:'borrow',countryId:'BGD',amountUsd:1000000,transactionId,
+    description:'Fiscal-period idempotency regression'
+  });
+  assert.equal(first.ok,true);
+  const firstState=finance.getFinanceState('BGD');
+  const firstCash=firstState.treasuryBalanceUsd;
+  const firstDebt=state.economy.BANGLADESH.debt;
+  const firstRevision=firstState.revision;
+  assert.equal(firstState.currentYearBorrowingUsd,1000000);
+  assert.equal(firstState.fiscalPeriodAccount.flowComponents.borrowingProceedsUsd,1000000);
+
+  const duplicate=finance.applyAction({
+    type:'borrow',countryId:'BGD',amountUsd:1000000,transactionId,
+    description:'Replayed identical transaction'
+  });
+  assert.equal(duplicate.ok,true);
+  assert.equal(duplicate.duplicate,true);
+  assert.equal(duplicate.transactionId,first.transactionId);
+  let after=finance.getFinanceState('BGD');
+  assert.equal(after.treasuryBalanceUsd,firstCash);
+  assert.equal(state.economy.BANGLADESH.debt,firstDebt);
+  assert.equal(after.currentYearBorrowingUsd,1000000);
+  assert.equal(after.revision,firstRevision);
+
+  const conflict=finance.applyAction({
+    type:'borrow',countryId:'BGD',amountUsd:2000000,transactionId,
+    description:'Same ID with a different principal'
+  });
+  assert.equal(conflict.ok,false);
+  assert.equal(conflict.code,'FINANCE_TRANSACTION_IDEMPOTENCY_CONFLICT');
+  after=finance.getFinanceState('BGD');
+  assert.equal(after.treasuryBalanceUsd,firstCash);
+  assert.equal(state.economy.BANGLADESH.debt,firstDebt);
+
+  state.simulation.turn=365;
+  const rollover=finance.advanceCountry('BGD',{
+    turn:365,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
+  });
+  assert.equal(rollover.processed,1);
+  after=finance.getFinanceState('BGD');
+  assert.equal(after.fiscalPeriodAccount.periodIndex,1);
+  const nextPeriod=finance.applyAction({
+    type:'borrow',countryId:'BGD',amountUsd:1000000,transactionId,
+    description:'Same canonical ID in the next fiscal period'
+  });
+  assert.equal(nextPeriod.ok,true);
+  assert.notEqual(nextPeriod.duplicate,true);
+  after=finance.getFinanceState('BGD');
+  assert.equal(after.currentYearBorrowingUsd,1000000);
+  assert.equal(after.fiscalPeriodAccount.flowComponents.borrowingProceedsUsd,1000000);
+});
+
 test('expense and authorized rollback update the same fiscal cash-flow aggregate exactly once',async()=>{
   const {context,state}=createRuntime();
   state.simulation.turn=0;
