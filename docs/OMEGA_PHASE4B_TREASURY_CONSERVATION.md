@@ -64,6 +64,9 @@ National Accounts reads the Finance-owned current period summary and passes its 
 - Reuse the existing Finance country handler on the existing World Simulation Scheduler.
 - No extra scheduler, turn callback, worker, timer, polling loop, UI repaint or all-country scan.
 - Period-flow updates and summary refresh are O(1) on the existing Finance action/turn path.
+- Finance cash actions accept a canonical transaction ID and use a Finance-owned current-period idempotency index, bounded to 2,048 IDs per country/period. A replay with the same payload returns the original outcome; reusing an ID with a different payload is rejected without a second cash mutation. The index resets at the fiscal-period boundary.
+- The idempotency index is separate from the raw Finance ledger, does not rescan its bounded 500 rows, and does not create a parallel financial ledger.
+- World Bank loan issuance and scheduled debt-service actions pass stable transaction IDs to Finance so duplicated commands cannot re-post the same borrowing or payment.
 - History is bounded to 12 periods; the raw Finance ledger remains bounded by its existing limit.
 - Preserve save/load compatibility. Missing old fields are migrated to explicit unknown/partial state, never zero-as-observed.
 - Use the existing USD Finance cash authority. Other currencies and transaction-time FX remain a later Phase 4D responsibility.
@@ -87,4 +90,6 @@ National Accounts reads the Finance-owned current period summary and passes its 
 15. Duplicate same-turn country advancement adds no second flow.
 16. History remains capped at 12.
 17. National Accounts reads Finance-owned period evidence without mutating Finance state.
-18. Existing Finance, World Bank, Android, offline, NPC and Resource systems remain connected and pass their exact-head checks.
+18. Repeated Finance cash transaction IDs with identical payloads do not mutate Treasury/debt twice; a payload conflict is rejected, and an ID may be reused in a later fiscal period.
+19. World Bank loan issuance and scheduled debt-service retry paths use stable Finance transaction IDs and remain exactly-once.
+20. Existing Finance, World Bank, Android, offline, NPC and Resource systems remain connected and pass their exact-head checks.
