@@ -181,6 +181,60 @@ test('Non-roster identity is skipped without fabricating a country record',async
   assert.equal(h.state.economy.BGD.nationalAccounts,undefined);
 });
 
+
+test('National Accounts reads Finance-owned fiscal period flows without mutating Finance state',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  const financeBucket=h.state.finance.BGD;
+  financeBucket.omegaFinance.treasuryBalanceUsd=130;
+  financeBucket.omegaFinance.treasurySource='EXISTING_RUNTIME_FINANCE_AVAILABLE';
+  financeBucket.omegaFinance.fiscalPeriodAccount={
+    schemaVersion:1,periodIndex:0,periodLabel:'2015',currency:'USD',
+    openingTurn:0,openingBalanceUsd:100,openingBalanceSource:'NEW_GAME_FINANCE_OPENING',
+    openingBalanceQuality:'GAME_STATE',flowCoverage:'COMPLETE_FROM_PERIOD_START',
+    flowComponents:{
+      taxRevenueUsd:20,borrowingProceedsUsd:10,externalCreditsUsd:20,
+      governmentSpendingUsd:5,interestPaidUsd:5,principalRepaymentUsd:5,externalDebitsUsd:5
+    },
+    totalInflowsUsd:50,totalOutflowsUsd:20,closingBalanceUsd:130,
+    expectedClosingBalanceUsd:130,varianceUsd:0,
+    reconciliationStatus:'GAME_STATE_RECONCILED',status:'GAME_STATE_RECONCILED'
+  };
+  const before=structuredClone(h.state.finance);
+  await api.init();
+  const result=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(result.status,'CHECKPOINTED');
+  const statement=h.state.economy.BGD.nationalAccounts;
+  assert.equal(statement.treasury.status,'GAME_STATE_RECONCILED');
+  assert.equal(statement.treasury.openingBalance,100);
+  assert.equal(statement.treasury.inflows,50);
+  assert.equal(statement.treasury.outflows,20);
+  assert.equal(statement.treasury.closingBalance,130);
+  assert.equal(statement.treasury.reconciliation.expectedClosingCash,130);
+  assert.equal(statement.completeness.treasuryOpeningAndFlows,'RECONCILED');
+  assert.equal(statement.provenance.treasuryAuthority,'FINANCE_MINISTRY_FISCAL_PERIOD_ACCOUNT');
+  assert.deepEqual(h.state.finance,before,'National Accounts must only read Finance-owned period snapshots');
+});
+
+test('National Accounts keeps legacy Finance accounts PARTIAL and never guesses a period opening',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  h.state.finance.BGD.omegaFinance.fiscalPeriodAccount={
+    schemaVersion:1,periodIndex:0,periodLabel:'2015',currency:'USD',
+    openingTurn:8,openingBalanceUsd:null,openingBalanceSource:'LEGACY_OPENING_NOT_RECORDED',
+    openingBalanceQuality:'UNOBSERVED',flowCoverage:'INCOMPLETE_LEGACY',
+    flowComponents:{taxRevenueUsd:50,borrowingProceedsUsd:0,externalCreditsUsd:0,
+      governmentSpendingUsd:10,interestPaidUsd:0,principalRepaymentUsd:0,externalDebitsUsd:0},
+    totalInflowsUsd:50,totalOutflowsUsd:10,reconciliationStatus:'PARTIAL',status:'PARTIAL'
+  };
+  await api.init();
+  const result=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(result.status,'CHECKPOINTED');
+  const treasury=h.state.economy.BGD.nationalAccounts.treasury;
+  assert.equal(treasury.status,'PARTIAL');
+  assert.equal(treasury.openingBalance,null);
+  assert.equal(treasury.reconciliation.status,'PARTIAL');
+  assert.equal(h.state.economy.BGD.nationalAccounts.completeness.treasuryOpeningAndFlows,'PARTIAL');
+});
+
 test('local available liquidity is never substituted for Treasury cash',async()=>{
   const h=harness();
   delete h.state.finance.BGD.omegaFinance.treasuryBalanceUsd;

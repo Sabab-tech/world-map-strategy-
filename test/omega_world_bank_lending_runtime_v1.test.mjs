@@ -115,8 +115,8 @@ function makeRuntime() {
         if (!(amount > 0) || principal < 0 || interest < 0 || Math.abs(principal + interest - amount) > 0.02)
           return { ok: false, code: 'WORLD_BANK_DEBT_SERVICE_SPLIT_INVALID' };
         if (amount > cash + 0.01) return { ok: false, code: 'INSUFFICIENT_TREASURY' };
-        if (amount > debt + 0.01) return { ok: false, code: 'REPAY_EXCEEDS_DEBT' };
-        e.debt = debt - amount;
+        if (principal > debt + 0.01) return { ok: false, code: 'REPAY_EXCEEDS_DEBT' };
+        e.debt = debt - principal;
         model.treasuryBalanceUsd = cash - amount;
         bucket.available = model.treasuryBalanceUsd;
         model.cumulativeDebtRepaymentUsd = (Number(model.cumulativeDebtRepaymentUsd) || 0) + principal;
@@ -329,8 +329,8 @@ test('committed game turns automatically service World Bank contracts once and s
   assert.ok(loan.outstandingPrincipalUsd < issue.loan.originalPrincipalUsd, 'scheduled payment reduces contract principal');
   assert.ok(state.finance.BGD.omegaFinance.treasuryBalanceUsd < treasuryBefore, 'repayment debits Treasury cash');
   assert.ok(state.economy.BANGLADESH.debt < debtBefore, 'repayment reduces authoritative public debt');
-  assert.ok(Math.abs((debtBefore - state.economy.BANGLADESH.debt) - settled[0].amountUsd) < 0.02,
-    'the game-state debt reduction equals the settled principal and interest');
+  assert.ok(Math.abs((debtBefore - state.economy.BANGLADESH.debt) - settled[0].principalPaidUsd) < 0.02,
+    'the game-state debt reduction equals principal; cash outflow includes principal and interest');
   const afterDebt = state.economy.BANGLADESH.debt;
   const afterTreasury = state.finance.BGD.omegaFinance.treasuryBalanceUsd;
   context.dispatchEvent(new context.CustomEvent('OMEGA_SIMULATION_TURN_COMMITTED', {

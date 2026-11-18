@@ -20,7 +20,7 @@ The reader does not call mutating Finance reconciliation APIs. It does not post 
 
 ### Accounting contracts
 
-Treasury conservation is Opening cash + inflows - outflows = closing cash. All four components must exist for the same country, currency and game-time period. Current live integration exposes a closing balance and transaction ledger but not a complete period opening-and-flow set; status therefore remains CLOSING_BALANCE_ONLY.
+Treasury conservation is Opening cash + recorded inflows - recorded outflows = closing cash. Phase 4A initially exposed only a closing balance; Phase 4B extends the existing Finance-owned state with a period opening, accumulated tax/borrowing/external inflows, spending/interest/principal/external outflows and a compact reconciliation summary. Legacy saves without a trusted opening remain PARTIAL until the next fiscal-period boundary. Budget transfers are allocation movements, not Treasury cash flows.
 
 Goods conservation is Opening stock + production + imports - consumption - exports - losses = closing stock. Checks are grouped by resource identity and unit. Different units are never added. Missing components yield PARTIAL, absent records yield UNOBSERVED and a failed equation yields UNRECONCILED.
 
@@ -49,9 +49,9 @@ The emulator is a repeatable Android 9 regression environment, not a physical lo
 
 ### Delivered and remaining
 
-Delivered: 197-country roster validation, authority/provenance envelope, read-only evidence snapshot, Finance ledger classification, settled-trade filtering, currency-separated trade values, per-unit closing-stock grouping, idempotent Economy-owned checkpoint, Treasury/goods/GDP invariant helpers, bounded mobile execution and regression tests.
+Delivered: 197-country roster validation, authority/provenance envelope, read-only evidence snapshot, Finance-owned fiscal-period cash-flow summary, explicit legacy PARTIAL policy, settled-trade filtering, currency-separated trade values, per-unit closing-stock grouping, idempotent Economy-owned checkpoint, Treasury/goods/GDP invariant helpers, bounded mobile execution and regression tests.
 
-Not yet delivered: complete Treasury roll-forward; full physical goods flows across mines, factories, households and losses; transaction-time FX conversion and consistent valuation; complete GDP components for all three approaches. These are not guessed or filled with zero. Phase 4B onward must attach evidence to existing authoritative engines before accounts can be marked reconciled.
+Not yet delivered: full physical goods flows across mines, factories, households and losses; transaction-time FX conversion and consistent valuation; complete GDP components for all three approaches. These are not guessed or filled with zero. Phase 4B onward must attach evidence to existing authoritative engines before accounts can be marked reconciled.
 
 ### Quality gates
 

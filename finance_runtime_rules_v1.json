@@ -39,5 +39,6 @@
     "plannedSpending": "Annual budget allocation is a spending ceiling, not an automatic expense. Treasury falls only for actual Finance actions, external runtime outflows, and accrued debt interest.",
     "externalSubsystems": "Cash changes made by other ministries/resource/trade systems are reconciled from finance.available and recorded as externally classified credits/debits when the source action cannot be reliably inferred.",
     "estimates": "Country-sector output and projected tax contributions use finance_sector_registry_v1.json default shares and are game estimates, not observed statistics."
-  }
+  },
+  "maximumFiscalPeriodHistory": 12
 }

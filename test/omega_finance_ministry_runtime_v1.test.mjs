@@ -411,3 +411,242 @@ test('Finance exposes source baseline metadata through a read-only profile metad
   assert.equal(context.OmegaFinanceMinistry.getProfileMetadata().baselineYear,profileData.metadata.baselineYear,
     'metadata accessor returns a clone rather than mutable Finance runtime state');
 });
+
+
+test('new-game Finance opening cash is captured before the first fiscal flows and labelled by provenance',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=0;
+  const boot=await context.OmegaFinanceMinistry.init();
+  assert.equal(boot.initialized,true);
+  const fm=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  const account=fm.fiscalPeriodAccount;
+  assert.equal(account.periodIndex,0);
+  assert.equal(account.openingTurn,0);
+  assert.equal(account.openingBalanceUsd,4000000000);
+  assert.equal(account.openingBalanceQuality,'GAME_STATE');
+  assert.equal(account.openingBalanceSource,'EXISTING_RUNTIME_FINANCE_AVAILABLE');
+  assert.equal(account.flowCoverage,'COMPLETE_FROM_PERIOD_START');
+  assert.equal(account.totalInflowsUsd,0);
+  assert.equal(account.totalOutflowsUsd,0);
+  assert.equal(account.reconciliationStatus,'GAME_STATE_RECONCILED');
+});
+
+
+test('new-game estimated opening cash stays explicitly MODELLED, not observed',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=0;
+  delete state.finance.BGD.available;
+  delete state.economy.BANGLADESH.treasury;
+  await context.OmegaFinanceMinistry.init();
+  const fm=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  assert.ok(fm.treasuryBalanceUsd>0);
+  assert.equal(fm.treasurySource,'GAME_RULE_ESTIMATE');
+  assert.equal(fm.fiscalPeriodAccount.openingBalanceUsd,fm.treasuryBalanceUsd);
+  assert.equal(fm.fiscalPeriodAccount.openingBalanceSource,'GAME_RULE_ESTIMATE');
+  assert.equal(fm.fiscalPeriodAccount.openingBalanceQuality,'MODELLED');
+  assert.equal(fm.fiscalPeriodAccount.reconciliationStatus,'MODELLED_RECONCILED');
+});
+
+test('borrowing is counted once as a Treasury inflow while paired budget transfers remain non-cash reallocation',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=0;
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const borrow=finance.applyAction({type:'borrow',countryId:'BGD',amountUsd:1000000,description:'Phase 4B fiscal test'});
+  assert.equal(borrow.ok,true);
+  let fm=finance.getFinanceState('BGD');
+  assert.equal(fm.currentYearBorrowingUsd,1000000);
+  assert.equal(fm.fiscalPeriodAccount.flowComponents.borrowingProceedsUsd,1000000);
+  assert.equal(fm.fiscalPeriodAccount.totalInflowsUsd,1000000);
+  assert.equal(fm.fiscalPeriodAccount.totalOutflowsUsd,0);
+  const cashBeforeTransfer=fm.treasuryBalanceUsd;
+  const inflowsBeforeTransfer=fm.fiscalPeriodAccount.totalInflowsUsd;
+  const outflowsBeforeTransfer=fm.fiscalPeriodAccount.totalOutflowsUsd;
+  const transfer=finance.applyAction({
+    type:'transfer-budget',countryId:'BGD',sourceDepartment:'defense',
+    targetDepartment:'interior',amountUsd:100,description:'Internal reallocation only',
+    idempotencyKey:'phase4b-no-cash-transfer'
+  });
+  assert.equal(transfer.ok,true);
+  assert.equal(transfer.treasuryCashMoved,false);
+  fm=finance.getFinanceState('BGD');
+  assert.equal(fm.treasuryBalanceUsd,cashBeforeTransfer);
+  assert.equal(fm.fiscalPeriodAccount.totalInflowsUsd,inflowsBeforeTransfer);
+  assert.equal(fm.fiscalPeriodAccount.totalOutflowsUsd,outflowsBeforeTransfer);
+  assert.equal(state.finance.BGD.available,cashBeforeTransfer);
+});
+
+test('expense and authorized rollback update the same fiscal cash-flow aggregate exactly once',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=0;
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const opening=finance.getFinanceState('BGD').treasuryBalanceUsd;
+  const expense=finance.applyAction({
+    type:'spend-budget',countryId:'BGD',department:'interior',amountUsd:1000,
+    spendType:'purchase',description:'OMEGA_HOME_BUDGET:phase4b-rollback-test'
+  });
+  assert.equal(expense.ok,true);
+  let fm=finance.getFinanceState('BGD');
+  assert.equal(fm.currentYearSpendingUsd,1000);
+  assert.equal(fm.fiscalPeriodAccount.totalOutflowsUsd,1000);
+  assert.equal(fm.treasuryBalanceUsd,opening-1000);
+  const rollback=finance.applyAction({
+    type:'rollback-home-ministry-expense',countryId:'BGD',transactionId:expense.transactionId
+  });
+  assert.equal(rollback.ok,true);
+  fm=finance.getFinanceState('BGD');
+  assert.equal(fm.currentYearSpendingUsd,0);
+  assert.equal(fm.fiscalPeriodAccount.totalOutflowsUsd,0);
+  assert.equal(fm.treasuryBalanceUsd,opening);
+  assert.equal(fm.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
+  const duplicate=finance.applyAction({
+    type:'rollback-home-ministry-expense',countryId:'BGD',transactionId:expense.transactionId
+  });
+  assert.equal(duplicate.ok,false);
+});
+
+test('World Bank debt service posts one cash outflow but reduces debt by principal only',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=0;
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const debtBefore=state.economy.BANGLADESH.debt;
+  const cashBefore=finance.getFinanceState('BGD').treasuryBalanceUsd;
+  const result=finance.applyAction({
+    type:'world-bank-debt-service',countryId:'BGD',authorization:'OMEGA_WORLD_BANK_LENDING',
+    amountUsd:100,principalPaidUsd:80,interestPaidUsd:20,description:'Principal and interest split'
+  });
+  assert.equal(result.ok,true);
+  const fm=finance.getFinanceState('BGD');
+  assert.equal(state.economy.BANGLADESH.debt,debtBefore-80);
+  assert.equal(fm.treasuryBalanceUsd,cashBefore-100);
+  assert.equal(fm.currentYearDebtPrincipalRepaymentUsd,80);
+  assert.equal(fm.currentYearInterestUsd,20);
+  assert.equal(fm.fiscalPeriodAccount.totalOutflowsUsd,100);
+  assert.equal(fm.fiscalPeriodAccount.flowComponents.principalRepaymentUsd,80);
+  assert.equal(fm.fiscalPeriodAccount.flowComponents.interestPaidUsd,20);
+  assert.equal(fm.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
+});
+
+test('external Treasury cash deltas are recorded once and never inferred from the bounded Finance ledger',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=0;
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const opening=finance.getFinanceState('BGD').treasuryBalanceUsd;
+  state.finance.BGD.available=opening+75;
+  let fm=finance.getFinanceState('BGD');
+  assert.equal(fm.currentYearExternalInflowUsd,75);
+  assert.equal(fm.fiscalPeriodAccount.flowComponents.externalCreditsUsd,75);
+  assert.equal(fm.fiscalPeriodAccount.totalInflowsUsd,75);
+  assert.equal(fm.treasuryBalanceUsd,opening+75);
+  fm=finance.getFinanceState('BGD');
+  assert.equal(fm.currentYearExternalInflowUsd,75);
+  assert.equal(fm.fiscalPeriodAccount.totalInflowsUsd,75);
+  assert.equal(fm.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
+});
+
+test('fiscal rollover archives the old closing balance and opens the next period before tax and interest accrue',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=0;
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  assert.equal(finance.applyAction({type:'borrow',countryId:'BGD',amountUsd:1000000}).ok,true);
+  const beforeRollover=finance.getFinanceState('BGD');
+  const expectedNewOpening=beforeRollover.treasuryBalanceUsd;
+  state.simulation.turn=365;
+  const result=finance.advanceCountry('BGD',{
+    turn:365,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
+  });
+  assert.equal(result.processed,1);
+  const after=finance.getFinanceState('BGD');
+  assert.equal(after.fiscalPeriodHistory.length,1);
+  assert.equal(after.fiscalPeriodHistory[0].periodIndex,0);
+  assert.equal(after.fiscalPeriodHistory[0].closingBalanceUsd,expectedNewOpening);
+  assert.equal(after.fiscalPeriodHistory[0].reconciliationStatus,'GAME_STATE_RECONCILED');
+  assert.equal(after.fiscalPeriodAccount.periodIndex,1);
+  assert.equal(after.fiscalPeriodAccount.openingTurn,365);
+  assert.equal(after.fiscalPeriodAccount.openingBalanceUsd,expectedNewOpening);
+  assert.equal(after.fiscalPeriodAccount.openingBalanceSource,'PREVIOUS_PERIOD_FINANCE_CLOSING');
+  assert.equal(after.currentYearBorrowingUsd,0);
+  assert.ok(after.currentYearTaxRevenueUsd>0);
+  assert.equal(after.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
+});
+
+test('legacy Finance saves stay PARTIAL until the next trustworthy fiscal-year boundary',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=10;
+  state.finance.BGD.omegaFinance={
+    version:'1.1.0',countryCode:'BGD',countryName:'Bangladesh',
+    treasuryBalanceUsd:4000000000,treasurySource:'EXISTING_RUNTIME_FINANCE_AVAILABLE',
+    lastSyncedTreasuryBalanceUsd:4000000000,fiscalYearIndex:0,lastProcessedTurn:9,
+    currentYearTaxRevenueUsd:1200,currentYearSpendingUsd:500,currentYearInterestUsd:50,
+    currentYearDebtPrincipalRepaymentUsd:0,currentYearExternalInflowUsd:0,currentYearExternalOutflowUsd:0,
+    cumulativeRevenueUsd:1200,cumulativeSpendingUsd:500,cumulativeInterestUsd:50,
+    ledger:[{transactionId:'LEGACY-1',turn:9,action:'EXPENSE',amountUsd:500}]
+  };
+  await context.OmegaFinanceMinistry.init();
+  let fm=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  assert.equal(fm.fiscalPeriodAccount.openingBalanceUsd,null);
+  assert.equal(fm.fiscalPeriodAccount.openingBalanceSource,'LEGACY_OPENING_NOT_RECORDED');
+  assert.equal(fm.fiscalPeriodAccount.flowCoverage,'INCOMPLETE_LEGACY');
+  assert.equal(fm.fiscalPeriodAccount.reconciliationStatus,'PARTIAL');
+  const closingBeforeRollover=fm.treasuryBalanceUsd;
+test('Finance version migration preserves the prior country checkpoint turn and prevents duplicate accrual',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=9;
+  state.finance.BGD.omegaFinance={
+    version:'1.1.0',countryCode:'BGD',countryName:'Bangladesh',
+    treasuryBalanceUsd:4000000000,treasurySource:'EXISTING_RUNTIME_FINANCE_AVAILABLE',
+    lastSyncedTreasuryBalanceUsd:4000000000,initializedTurn:1,lastProcessedTurn:9,
+    fiscalYearIndex:0,currentYearTaxRevenueUsd:1000,currentYearSpendingUsd:0,
+    currentYearInterestUsd:0,currentYearDebtPrincipalRepaymentUsd:0,
+    currentYearExternalInflowUsd:0,currentYearExternalOutflowUsd:0,
+    cumulativeRevenueUsd:1000,cumulativeSpendingUsd:0,cumulativeInterestUsd:0,ledger:[]
+  };
+  await context.OmegaFinanceMinistry.init();
+  const before=state.finance.BGD.omegaFinance.treasuryBalanceUsd;
+  const migrated=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  assert.equal(migrated.lastProcessedTurn,9);
+  assert.equal(migrated.fiscalPeriodAccount.flowCoverage,'INCOMPLETE_LEGACY');
+  const result=context.OmegaFinanceMinistry.advanceCountry('BGD',{
+    turn:9,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
+  });
+  assert.equal(result.processed,0);
+  assert.equal(result.duplicate,true);
+  assert.equal(state.finance.BGD.omegaFinance.treasuryBalanceUsd,before,
+    'migrating Finance schema must not replay tax or interest on an already committed game turn');
+});
+
+  state.simulation.turn=365;
+  const result=context.OmegaFinanceMinistry.advanceCountry('BGD',{
+    turn:365,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
+  });
+  assert.equal(result.processed,1);
+  fm=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  assert.equal(fm.fiscalPeriodHistory[0].reconciliationStatus,'PARTIAL');
+  assert.equal(fm.fiscalPeriodAccount.openingTurn,365);
+  assert.equal(fm.fiscalPeriodAccount.openingBalanceUsd,closingBeforeRollover);
+  assert.equal(fm.fiscalPeriodAccount.flowCoverage,'COMPLETE_FROM_PERIOD_START');
+  assert.equal(fm.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
+});
+
+test('Fiscal period history remains capped at twelve periods',async()=>{
+  const {context,state}=createRuntime();
+  state.simulation.turn=0;
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  for(let period=1;period<=14;period++){
+    const turn=365*period;
+    state.simulation.turn=turn;
+    const result=finance.advanceCountry('BGD',{
+      turn,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
+    });
+    assert.equal(result.processed,1);
+  }
+  const fm=finance.getFinanceState('BGD');
+  assert.equal(fm.fiscalPeriodAccount.periodIndex,14);
+  assert.equal(fm.fiscalPeriodHistory.length,12);
+  assert.equal(fm.fiscalPeriodHistory[0].periodIndex,2);
+});

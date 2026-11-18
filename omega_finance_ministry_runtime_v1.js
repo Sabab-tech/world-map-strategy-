@@ -1,12 +1,13 @@
 /* OMEGA GLOBAL FINANCE MINISTRY + MACROECONOMIC RUNTIME v1.0.0 */
 (function(global){
   'use strict';
-  if(global.OmegaFinanceMinistry&&global.OmegaFinanceMinistry.VERSION==='1.1.0')return;
-  const VERSION='1.1.0', YEAR_MS=31536000000, DAY_MS=86400000;
+  if(global.OmegaFinanceMinistry&&global.OmegaFinanceMinistry.VERSION==='1.2.0')return;
+  const VERSION='1.2.0', YEAR_MS=31536000000, DAY_MS=86400000;
   const BASE_RULES={annualizationMs:YEAR_MS,simulationTurnDurationMs:DAY_MS,startingTreasuryPercentOfGDP:2,
     defaultTaxRatePct:18,defaultPolicyInterestRatePct:3,defaultDeficitPercentOfGDPWhenUnobserved:3,
     minimumTaxRatePct:0,maximumTaxRatePct:60,minimumPolicyInterestRatePct:0,maximumPolicyInterestRatePct:40,
     maximumBorrowTransactionPercentOfGDP:5,maximumDebtToGDPForNewBorrowingPct:300,maximumLedgerEntries:500,
+    maximumFiscalPeriodHistory:12,
     influenceWeights:{gdp:.55,population:.20,foreignExchangeReserves:.15,tradeBalanceToGDP:.10},
     fiscalRiskBounds:{debtToGDPPercent:300,inflationPercent:25,unemploymentPercent:35,deficitToGDPPercent:20}};
   let DEPARTMENTS=[
@@ -252,9 +253,68 @@
       modelRevenueUsd:finite(model?.fiscalModel?.annualRevenueUsd),modelTaxTakePct:finite(model?.policy?.taxRatePct)};
   }
   function actualCashflow(model){
-    return (finite(model?.currentYearTaxRevenueUsd)||0)+(finite(model?.currentYearExternalInflowUsd)||0)
+    return (finite(model?.currentYearTaxRevenueUsd)||0)+(finite(model?.currentYearBorrowingUsd)||0)
+      +(finite(model?.currentYearExternalInflowUsd)||0)
       -(finite(model?.currentYearSpendingUsd)||0)-(finite(model?.currentYearExternalOutflowUsd)||0)
       -(finite(model?.currentYearInterestUsd)||0)-(finite(model?.currentYearDebtPrincipalRepaymentUsd)||0);
+  }
+  function fiscalFlowComponents(model){
+    return{
+      taxRevenueUsd:Math.max(0,finite(model?.currentYearTaxRevenueUsd)||0),
+      borrowingProceedsUsd:Math.max(0,finite(model?.currentYearBorrowingUsd)||0),
+      externalCreditsUsd:Math.max(0,finite(model?.currentYearExternalInflowUsd)||0),
+      governmentSpendingUsd:Math.max(0,finite(model?.currentYearSpendingUsd)||0),
+      interestPaidUsd:Math.max(0,finite(model?.currentYearInterestUsd)||0),
+      principalRepaymentUsd:Math.max(0,finite(model?.currentYearDebtPrincipalRepaymentUsd)||0),
+      externalDebitsUsd:Math.max(0,finite(model?.currentYearExternalOutflowUsd)||0)
+    };
+  }
+  function updateFiscalPeriodAccount(model,turn=currentTurn()){
+    if(!isObject(model?.fiscalPeriodAccount))return null;
+    const account=model.fiscalPeriodAccount,flows=fiscalFlowComponents(model);
+    const inflows=flows.taxRevenueUsd+flows.borrowingProceedsUsd+flows.externalCreditsUsd;
+    const outflows=flows.governmentSpendingUsd+flows.interestPaidUsd+flows.principalRepaymentUsd+flows.externalDebitsUsd;
+    const opening=finite(account.openingBalanceUsd),closing=finite(model.treasuryBalanceUsd);
+    const complete=account.flowCoverage==='COMPLETE_FROM_PERIOD_START'&&opening!==null&&closing!==null;
+    const expected=complete?opening+inflows-outflows:null;
+    const variance=complete?closing-expected:null;
+    const tolerance=Math.max(0.01,Math.max(Math.abs(closing||0),Math.abs(expected||0))*1e-8);
+    const reconciled=complete&&Math.abs(variance)<=tolerance;
+    account.periodLabel=String(Number(rules.baselineYear||2015)+(finite(account.periodIndex)||0));
+    account.currency='USD';
+    account.flowComponents=flows;
+    account.totalInflowsUsd=inflows;
+    account.totalOutflowsUsd=outflows;
+    account.closingBalanceUsd=closing;
+    account.closingBalanceSource=String(model.treasurySource||'FINANCE_MINISTRY_RUNTIME');
+    account.expectedClosingBalanceUsd=expected;
+    account.varianceUsd=variance;
+    account.updatedTurn=turn;
+    account.reconciliationStatus=!complete?'PARTIAL':(reconciled?
+      (account.openingBalanceQuality==='MODELLED'?'MODELLED_RECONCILED':'GAME_STATE_RECONCILED'):'UNRECONCILED');
+    account.status=account.reconciliationStatus;
+    return account;
+  }
+  function beginFiscalPeriodAccount(model,periodIndex,turn,openingCash,openingSource,openingQuality,flowCoverage){
+    model.fiscalPeriodAccount={
+      schemaVersion:1,periodIndex,periodLabel:String(Number(rules.baselineYear||2015)+periodIndex),currency:'USD',
+      openingTurn:turn,openingBalanceUsd:finite(openingCash),openingBalanceSource:openingSource,
+      openingBalanceQuality:openingQuality,flowCoverage,
+      sourceAuthority:'OMEGA_FINANCE_MINISTRY_RUNTIME',updatedTurn:turn
+    };
+    return updateFiscalPeriodAccount(model,turn);
+  }
+  function archiveFiscalPeriodAccount(model,turn){
+    const account=updateFiscalPeriodAccount(model,turn);
+    if(!account)return null;
+    if(!Array.isArray(model.fiscalPeriodHistory))model.fiscalPeriodHistory=[];
+    model.fiscalPeriodHistory.push({...clone(account),closedTurn:turn});
+    const maximum=Math.max(1,Math.min(12,Math.floor(finite(rules.maximumFiscalPeriodHistory)??12)));
+    model.fiscalPeriodHistory=model.fiscalPeriodHistory.slice(-maximum);
+    return account;
+  }
+  function fiscalOpeningQuality(model){
+    return /ESTIMATE|MODELLED/i.test(String(model?.treasurySource||''))?'MODELLED':'GAME_STATE';
   }
   function fiscalYearIndexFor(turn,stepMs){
     const n=Math.max(0,finite(turn)||0),dt=Math.max(0,finite(stepMs)||Number(rules.simulationTurnDurationMs||DAY_MS));
@@ -264,10 +324,12 @@
     if(!p)return null;root=root||rootState();const bucket=financeBucketFor(root,p,true);if(!bucket)return null;
     const id=p.iso3||p.countryCode;
     const model=ensureObject(bucket,'omegaFinance');
+    const hadPersistedFinanceState=!!model.version||finite(model.initializedTurn)!==null||
+      finite(model.lastProcessedTurn)!==null||Array.isArray(model.ledger)||finite(model.treasuryBalanceUsd)!==null;
     const e=getEconomyRecord(p)||{},gdp=finite(e.gdp)??finite(p.indicators?.gdpCurrentUsd),existingCash=observedFinanceCash(p,root);
     if(model.version!==VERSION){
       model.version=VERSION;model.countryCode=id;model.countryName=p.name;
-      model.status=gdp!==null&&gdp>0?'ACTIVE':'DATA_UNAVAILABLE';model.initializedTurn=currentTurn();model.lastProcessedTurn=null;
+      model.status=gdp!==null&&gdp>0?'ACTIVE':'DATA_UNAVAILABLE';model.initializedTurn=finite(model.initializedTurn)??currentTurn();model.lastProcessedTurn=finite(model.lastProcessedTurn);
       model.treasuryBalanceUsd=model.treasuryBalanceUsd!==undefined?finite(model.treasuryBalanceUsd):Math.max(0,existingCash??finite(e.treasury)??(gdp>0?gdp*Number(rules.startingTreasuryPercentOfGDP||2)/100:0));
       if(model.treasuryBalanceUsd===null)model.treasuryBalanceUsd=0;
       model.treasurySource=existingCash!==null?'EXISTING_RUNTIME_FINANCE_AVAILABLE':(finite(e.treasury)!==null?'EXISTING_RUNTIME_TREASURY':'GAME_RULE_ESTIMATE');
@@ -288,7 +350,7 @@
       model.fiscalModel.balanceBaselineSource=observedBalance!==null?'EXISTING_GAME_DATASET':'GAME_RULE_ESTIMATE';
       for(const k of ['cumulativeRevenueUsd','cumulativeSpendingUsd','cumulativeInterestUsd','cumulativeBorrowingUsd',
         'cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
-        'currentYearInterestUsd','currentYearDebtPrincipalRepaymentUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
+        'currentYearBorrowingUsd','currentYearInterestUsd','currentYearDebtPrincipalRepaymentUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
       model.fiscalYearIndex=finite(model.fiscalYearIndex)??fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||DAY_MS));
       model.priceIndex=finite(model.priceIndex)??100;model.allocations=isObject(model.allocations)?model.allocations:{};
       if(!Array.isArray(model.ledger))model.ledger=[];model.revision=finite(model.revision)??0;
@@ -300,8 +362,20 @@
     }
     if(finite(model.lastSyncedTreasuryBalanceUsd)===null)model.lastSyncedTreasuryBalanceUsd=finite(model.treasuryBalanceUsd)??0;
     for(const k of ['cumulativeExternalInflowUsd','cumulativeExternalOutflowUsd','currentYearTaxRevenueUsd','currentYearSpendingUsd',
-      'currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
+      'currentYearBorrowingUsd','currentYearInterestUsd','currentYearExternalInflowUsd','currentYearExternalOutflowUsd'])if(finite(model[k])===null)model[k]=0;
     if(finite(model.fiscalYearIndex)===null)model.fiscalYearIndex=fiscalYearIndexFor(currentTurn(),Number(rules.simulationTurnDurationMs||DAY_MS));
+    if(!Array.isArray(model.fiscalPeriodHistory))model.fiscalPeriodHistory=[];
+    if(!isObject(model.fiscalPeriodAccount)){
+      const periodIndex=Math.max(0,Math.floor(finite(model.fiscalYearIndex)||0));
+      if(!hadPersistedFinanceState&&currentTurn()<=1){
+        beginFiscalPeriodAccount(model,periodIndex,currentTurn(),model.treasuryBalanceUsd,
+          String(model.treasurySource||'NEW_GAME_FINANCE_OPENING'),
+          fiscalOpeningQuality(model),'COMPLETE_FROM_PERIOD_START');
+      }else{
+        beginFiscalPeriodAccount(model,periodIndex,currentTurn(),null,
+          'LEGACY_OPENING_NOT_RECORDED','UNOBSERVED','INCOMPLETE_LEGACY');
+      }
+    }else updateFiscalPeriodAccount(model,currentTurn());
     if(!isObject(model.currentYearSectorReceiptsUsd))model.currentYearSectorReceiptsUsd={};
     for(const s of sectorRegistry.economicSectors||[])if(finite(model.currentYearSectorReceiptsUsd[s.id])===null)model.currentYearSectorReceiptsUsd[s.id]=0;
     initializeSectorAllocations(model);
@@ -366,6 +440,7 @@
   function syncEconomyRecord(p,model,root){
     root=root||rootState();
     reconcileExternalTreasury(p,model,root);
+    updateFiscalPeriodAccount(model,currentTurn());
     const previousSync=finite(model?.lastSyncedTreasuryBalanceUsd);
     const cash=Math.max(0,finite(model?.treasuryBalanceUsd)??0);
     const e=root.economy?.[p.economyKey]||null;
@@ -607,6 +682,7 @@
       if(debt+amount>gdp*Number(rules.maximumDebtToGDPForNewBorrowingPct??300)/100)return {ok:false,code:'DEBT_CEILING_REACHED',message:'Loan rejected by the modeled debt-to-GDP ceiling.'};
       e.debt=debt+amount;fm.treasuryBalanceUsd=(finite(fm.treasuryBalanceUsd)||0)+amount;
       fm.cumulativeBorrowingUsd=(finite(fm.cumulativeBorrowingUsd)||0)+amount;
+      fm.currentYearBorrowingUsd=(finite(fm.currentYearBorrowingUsd)||0)+amount;
       const fb=financeBucketFor(root,p,true);fb.borrowingProceeds=(finite(fb.borrowingProceeds)||0)+amount;
       postLedger(fm,p,{department:'finance',action:'BORROW',category:'sovereign_debt',amountUsd:amount,description:String(action.description||'Sovereign borrowing').slice(0,160)});
       fm.revision+=1;result={ok:true,code:'BORROW_POSTED',message:'Loan posted to treasury and national debt. Interest accrues in future simulation turns.'};
@@ -636,8 +712,8 @@
       if(amount===null||amount<=0||principalPaid===null||interestPaid===null||principalPaid<0||interestPaid<0||Math.abs(principalPaid+interestPaid-amount)>0.02)
         return{ok:false,code:'WORLD_BANK_DEBT_SERVICE_SPLIT_INVALID',message:'Principal and interest must sum to the authorized settlement amount.'};
       if(amount>cash+0.01)return{ok:false,code:'INSUFFICIENT_TREASURY',message:'Treasury cannot cover scheduled World Bank debt service.'};
-      if(amount>debt+0.01)return{ok:false,code:'REPAY_EXCEEDS_DEBT',message:'World Bank debt service exceeds the authoritative public debt balance.'};
-      e.debt=Math.max(0,debt-amount);fm.treasuryBalanceUsd=Math.max(0,cash-amount);
+      if(principalPaid>debt+0.01)return{ok:false,code:'REPAY_EXCEEDS_DEBT',message:'World Bank principal repayment exceeds outstanding public debt.'};
+      e.debt=Math.max(0,debt-principalPaid);fm.treasuryBalanceUsd=Math.max(0,cash-amount);
       fm.cumulativeDebtRepaymentUsd=(finite(fm.cumulativeDebtRepaymentUsd)||0)+principalPaid;
       fm.currentYearDebtPrincipalRepaymentUsd=(finite(fm.currentYearDebtPrincipalRepaymentUsd)||0)+principalPaid;
       fm.cumulativeInterestUsd=(finite(fm.cumulativeInterestUsd)||0)+interestPaid;
@@ -650,6 +726,7 @@
       fm.revision+=1;result={ok:true,code:'WORLD_BANK_DEBT_SERVICE_POSTED',message:'World Bank principal and interest were settled against Treasury and public debt.'};
     }else return {ok:false,code:'UNKNOWN_FINANCE_ACTION',message:'Unknown Finance Ministry command.'};
     fm.ledger=fm.ledger.slice(-Number(rules.maximumLedgerEntries||500));
+    updateFiscalPeriodAccount(fm,currentTurn());
     syncEconomyRecord(p,fm,root);
     safeDispatch('OMEGA_FINANCE_STATE_UPDATED',{countryCode:p.countryCode,action:type,turn:currentTurn(),revision:fm.revision});
     return Object.assign(result,{countryCode:p.countryCode,treasuryBalanceUsd:fm.treasuryBalanceUsd,revision:fm.revision});
@@ -672,8 +749,15 @@
     const e=root.economy?.[p.economyKey]||getEconomyRecord(p);
     if(!isObject(e))return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged};
     if(newYearIndex>(finite(fm.fiscalYearIndex)||0)){
+      const priorFiscalYearIndex=Math.max(0,Math.floor(finite(fm.fiscalYearIndex)||0));
+      archiveFiscalPeriodAccount(fm,turnNumber);
       fm.fiscalYearIndex=newYearIndex;
-      fm.currentYearTaxRevenueUsd=0;fm.currentYearSpendingUsd=0;fm.currentYearInterestUsd=0;fm.currentYearDebtPrincipalRepaymentUsd=0;
+      const missedPeriods=Math.max(0,newYearIndex-priorFiscalYearIndex-1);
+      beginFiscalPeriodAccount(fm,newYearIndex,turnNumber,fm.treasuryBalanceUsd,
+        'PREVIOUS_PERIOD_FINANCE_CLOSING',fiscalOpeningQuality(fm),
+        missedPeriods>0?'INCOMPLETE_GAP':'COMPLETE_FROM_PERIOD_START');
+      fm.currentYearTaxRevenueUsd=0;fm.currentYearSpendingUsd=0;fm.currentYearBorrowingUsd=0;
+      fm.currentYearInterestUsd=0;fm.currentYearDebtPrincipalRepaymentUsd=0;
       fm.currentYearExternalInflowUsd=0;fm.currentYearExternalOutflowUsd=0;
       fm.currentYearSectorReceiptsUsd={};
       for(const sector of sectorRegistry.economicSectors||[])fm.currentYearSectorReceiptsUsd[sector.id]=0;
@@ -722,6 +806,7 @@
     const inflation=finite(e.inflation)??finite(p.indicators?.inflationRatePct)??0;
     fm.priceIndex=(finite(fm.priceIndex)||100)*Math.pow(Math.max(.0001,1+inflation/100),years);
     fm.lastProcessedTurn=turnNumber;fm.revision=(finite(fm.revision)||0)+1;
+    updateFiscalPeriodAccount(fm,turnNumber);
     e.debt=debtAfter;e.budget_balance=fm.fiscalModel.annualBudgetBalanceUsd;
     e.revenue=finite(fb.revenue)??fm.fiscalModel.annualRevenueUsd;
     e.expenditure=finite(fb.spending)??fm.fiscalModel.annualSpendingUsd;

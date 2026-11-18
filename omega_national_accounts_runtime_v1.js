@@ -309,8 +309,21 @@
     const statementAssemblyStartedAt=clockNow();
     const balance=finite(financeState.treasuryBalanceUsd),available=finite(finance.available);
     const cashSource=balance!==null?String(financeState.treasurySource||'FINANCE_MINISTRY_RUNTIME'):'UNOBSERVED';
-    const treasuryStatus=balance===null?'UNOBSERVED':
-      /ESTIMATE/i.test(cashSource)?'MODELLED_CLOSING_BALANCE_ONLY':'CLOSING_BALANCE_ONLY';
+    const fiscalPeriodAccount=isObject(financeState.fiscalPeriodAccount)?financeState.fiscalPeriodAccount:null;
+    const fiscalPeriodComplete=fiscalPeriodAccount?.flowCoverage==='COMPLETE_FROM_PERIOD_START';
+    const treasuryCheck=fiscalPeriodAccount?reconcileTreasury({
+      openingCash:fiscalPeriodComplete?finite(fiscalPeriodAccount.openingBalanceUsd):null,
+      inflows:finite(fiscalPeriodAccount.totalInflowsUsd),
+      outflows:finite(fiscalPeriodAccount.totalOutflowsUsd),
+      closingCash:balance
+    }):reconcileTreasury({});
+    const treasuryStatus=fiscalPeriodAccount?
+      (treasuryCheck.status!=='RECONCILED'?treasuryCheck.status:
+        (fiscalPeriodAccount.openingBalanceQuality==='MODELLED'?'MODELLED_RECONCILED':'GAME_STATE_RECONCILED')):
+      (balance===null?'UNOBSERVED':/ESTIMATE/i.test(cashSource)?'MODELLED_CLOSING_BALANCE_ONLY':'CLOSING_BALANCE_ONLY');
+    const treasuryReconciliation=fiscalPeriodAccount?
+      {...treasuryCheck,financeStatus:treasuryStatus,sourceAuthority:'FINANCE_MINISTRY_FISCAL_PERIOD_ACCOUNT'}:
+      reconcileTreasury({});
     const currentGdp=finite(economy.gdp)??finite(profile?.indicators?.gdpCurrentUsd);
     const gdpSource=finite(economy.gdp)!==null?'FINANCE_OWNED_GAMEPLAY_ECONOMY_STATE':
       currentGdp!==null?'COUNTRY_ECONOMIC_BASELINE_PROFILE':'UNOBSERVED';
@@ -327,7 +340,12 @@
           status:currentGdp===null?'UNOBSERVED':'MODELLED_REFERENCE_NOT_RECONCILED_NATIONAL_ACCOUNTS'}},
       treasury:{status:treasuryStatus,closingBalance:balance,source:cashSource,currency:balance===null?null:'USD',
         availableLiquidity:available,availableLiquidityCurrency:profile?.currencyCode||profile?.currency||null,
-        openingBalance:null,inflows:null,outflows:null,reconciliation:reconcileTreasury({}),
+        openingBalance:fiscalPeriodComplete?finite(fiscalPeriodAccount.openingBalanceUsd):null,
+        inflows:fiscalPeriodAccount?finite(fiscalPeriodAccount.totalInflowsUsd):null,
+        outflows:fiscalPeriodAccount?finite(fiscalPeriodAccount.totalOutflowsUsd):null,
+        fiscalPeriod:fiscalPeriodAccount?clone(fiscalPeriodAccount):null,
+        financePeriodHistoryCount:Array.isArray(financeState.fiscalPeriodHistory)?financeState.fiscalPeriodHistory.length:0,
+        reconciliation:treasuryReconciliation,
         financeLedger:classifyFinanceLedger(financeRows),financeLedgerWindow:financeRows.length?'LAST_N_RECORDS':'UNOBSERVED'},
       trade:{status:trade.settlementCount?'SETTLED_TRANSACTIONS_OBSERVED':'UNOBSERVED',
         settlementCount:trade.settlementCount,settlementRowsObserved:trade.settlementRowsObserved,
@@ -340,12 +358,15 @@
         productionLedgerRowsObserved:productionRows.length,completedProductionRecords:completed.length,
         ledgerWindow:productionRows.length?'LAST_N_RECORDS':'UNOBSERVED'},
       goods:{status:inventory.stockFlowStatus,stockFlowReconciliation:goods,inventory},
-      completeness:{treasuryOpeningAndFlows:'UNOBSERVED',physicalGoodsOpeningProductionConsumptionExportLoss:goods.status,
+      completeness:{treasuryOpeningAndFlows:fiscalPeriodAccount?treasuryReconciliation.status:'UNOBSERVED',physicalGoodsOpeningProductionConsumptionExportLoss:goods.status,
         gdpProductionApproach:'UNOBSERVED',gdpExpenditureApproach:'UNOBSERVED',gdpIncomeApproach:'UNOBSERVED',
         sourceWindowBounded:true},
       provenance:{roster:runtime.rules.roster?.manifestPath||'minister_country_roster_manifest_v1.json',
         baselineYear:runtime.profileMetadata?.baselineYear??null,
         accountingAuthority:'ECONOMY_OWNED_READ_ONLY_EVIDENCE_CHECKPOINT',cashSource,modelledGdpSource:gdpSource,
+        treasuryAuthority:fiscalPeriodAccount?'FINANCE_MINISTRY_FISCAL_PERIOD_ACCOUNT':'FINANCE_MINISTRY_TREASURY_CLOSING_BALANCE_ONLY',
+        treasuryOpeningSource:fiscalPeriodAccount?.openingBalanceSource||'UNOBSERVED',
+        treasuryOpeningQuality:fiscalPeriodAccount?.openingBalanceQuality||'UNOBSERVED',
         tradeAuthority:'COUNTRY_SCOPED_SETTLED_TRADE_LEDGER',
         productionAuthority:'COUNTRY_SCOPED_FACTORY_PRODUCTION_LEDGER',
         stockAuthority:'COUNTRY_SCOPED_RESOURCE_BATCH_REGISTER',
