@@ -286,6 +286,8 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                   ].filter(function(entry,index,all) {
                     return entry.api && all.findIndex(function(other) { return other.api === entry.api; }) === index;
                   });
+                  const interopApi = interopCandidates.map(function(entry) { return entry.api; })
+                    .find(function(api) { return api && typeof api.getCommand === 'function'; }) || null;
                   const patchedInteropInstances = [];
                   function wrapTransactionFactory(factory,label) {
                     if (!factory || typeof factory.create !== 'function') return null;
