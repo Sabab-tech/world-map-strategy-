@@ -48,11 +48,13 @@ function createRuntime(options={}){
     fetch:async url=>{
       const requested=String(url);
       if(options.emitSessionDuringRulesFetch&&requested.includes('finance_runtime_rules_v1.json')){
+        const eventSession=JSON.parse(JSON.stringify(state.simulation.session));
+        eventSession.status='READY';
         context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED',{
-          detail:{session:JSON.parse(JSON.stringify(session))}
+          detail:{session:eventSession}
         }));
         state.simulation.session.status='RUNNING';
-        state.simulation.session.startedTurn=1;
+        state.simulation.session.startedTurn=eventSession.createdTurn;
       }
       if(requested.includes('economy_global_profiles_v1.json'))return{ok:true,json:async()=>profileData};
       if(requested.includes('finance_runtime_rules_v1.json'))return{ok:true,json:async()=>financeRules};
@@ -489,7 +491,7 @@ test('a late turn-one session-created event cannot retroactively certify an open
   state.simulation.turn=2;
   state.simulation.session.createdTurn=1;
   state.simulation.session.lastCommittedTurn=2;
-  state.simulation.session.status='RUNNING';
+  state.simulation.session.status='READY';
   // Re-deliver the old creation payload after the second committed turn.
   context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED',{
     detail:{session:{
