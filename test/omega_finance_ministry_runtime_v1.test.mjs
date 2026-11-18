@@ -691,9 +691,11 @@ test('World Bank debt service posts one cash outflow but reduces debt by princip
   const finance=context.OmegaFinanceMinistry;
   const debtBefore=state.economy.BANGLADESH.debt;
   const cashBefore=finance.getFinanceState('BGD').treasuryBalanceUsd;
+  const transactionId='WB-DEBT-SERVICE-BGD-TEST-1';
   const result=finance.applyAction({
     type:'world-bank-debt-service',countryId:'BGD',authorization:'OMEGA_WORLD_BANK_LENDING',
-    amountUsd:100,principalPaidUsd:80,interestPaidUsd:20,description:'Principal and interest split'
+    amountUsd:100,principalPaidUsd:80,interestPaidUsd:20,transactionId,
+    description:'Principal and interest split'
   });
   assert.equal(result.ok,true);
   const fm=finance.getFinanceState('BGD');
@@ -705,6 +707,21 @@ test('World Bank debt service posts one cash outflow but reduces debt by princip
   assert.equal(fm.fiscalPeriodAccount.flowComponents.principalRepaymentUsd,80);
   assert.equal(fm.fiscalPeriodAccount.flowComponents.interestPaidUsd,20);
   assert.equal(fm.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
+
+  const duplicate=finance.applyAction({
+    type:'world-bank-debt-service',countryId:'BGD',authorization:'OMEGA_WORLD_BANK_LENDING',
+    amountUsd:100,principalPaidUsd:80,interestPaidUsd:20,transactionId,
+    description:'Replayed World Bank settlement'
+  });
+  assert.equal(duplicate.ok,true);
+  assert.equal(duplicate.duplicate,true);
+  assert.equal(duplicate.transactionId,result.transactionId);
+  const afterDuplicate=finance.getFinanceState('BGD');
+  assert.equal(state.economy.BANGLADESH.debt,debtBefore-80);
+  assert.equal(afterDuplicate.treasuryBalanceUsd,cashBefore-100);
+  assert.equal(afterDuplicate.currentYearDebtPrincipalRepaymentUsd,80);
+  assert.equal(afterDuplicate.currentYearInterestUsd,20);
+  assert.equal(afterDuplicate.fiscalPeriodAccount.totalOutflowsUsd,100);
 });
 
 test('external Treasury cash deltas are recorded once and never inferred from the bounded Finance ledger',async()=>{
