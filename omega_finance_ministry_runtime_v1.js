@@ -194,7 +194,7 @@
       active:clone(activeSessionFromState(root)),
       runtimeTurn:finite(root?.simulation?.turn)
     };
-    if(!profiles.length){
+    if(!profiles.length||!byCountryId.size){
       pendingGameSessionCreatedEvent={session:clone(session),evidence:snapshot};
       return false;
     }
