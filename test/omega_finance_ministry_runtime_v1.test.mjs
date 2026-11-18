@@ -484,10 +484,19 @@ test('a lifecycle auto-created session at a legacy turn cannot establish a new-g
   assert.equal(account.reconciliationStatus,'PARTIAL');
 });
 
-test('a delayed turn-zero session event cannot retroactively certify an opening after play advances',async()=>{
-  const {context,state}=createRuntime();
+test('a late turn-zero session-created event cannot retroactively certify an opening after play advances',async()=>{
+  const {context,state}=createRuntime({emitGameSessionCreated:false});
   state.simulation.turn=1;
+  state.simulation.session.createdTurn=0;
   state.simulation.session.lastCommittedTurn=1;
+  state.simulation.session.status='RUNNING';
+  // Re-deliver the old creation payload after the first committed turn.
+  context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED',{
+    detail:{session:{
+      sessionId:state.simulation.session.sessionId,
+      playerCountryId:'BGD',status:'READY',createdTurn:0,lastCommittedTurn:0
+    }}
+  }));
   await context.OmegaFinanceMinistry.init();
   const account=context.OmegaFinanceMinistry.getFinanceState('BGD').fiscalPeriodAccount;
   assert.equal(account.openingBalanceUsd,null);
