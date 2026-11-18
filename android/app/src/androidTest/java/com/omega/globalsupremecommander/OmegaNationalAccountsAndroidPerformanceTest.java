@@ -59,7 +59,7 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                         "(function(){try{var a=window.Omega&&window.Omega.NationalAccounts;" +
                                 "return a&&a.diagnostics&&a.diagnostics().ready?'READY':'WAIT';" +
                                 "}catch(e){return 'WAIT';}})()",
-                        10_000L);
+                        PAGE_READY_TIMEOUT_MS);
                 if ("READY".equals(ready)) break;
                 Thread.sleep(250L);
             }
