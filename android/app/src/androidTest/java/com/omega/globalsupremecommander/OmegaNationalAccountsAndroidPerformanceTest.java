@@ -112,11 +112,20 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                 const state = window.Omega && window.Omega.Simulation &&
                   window.Omega.Simulation.world && window.Omega.Simulation.world.state;
                 if (!state) throw new Error('AUTHORITATIVE_WORLD_STATE_UNAVAILABLE');
+                const slots = [];
+                function replaceSlot(object, key, value) {
+                  slots.push({object, key, had:Object.prototype.hasOwnProperty.call(object,key), value:object[key]});
+                  object[key] = value;
+                }
                 const aliases = [countryId, profile.iso3, profile.countryCode,
                   profile.economyKey, profile.populationKey, profile.name]
                   .filter(Boolean).map(v => String(v).toUpperCase().replace(/[^A-Z0-9]/g,''));
                 function bucket(domain, create) {
-                  const section = state[domain] || (create ? (state[domain] = {}) : null);
+                  let section = state[domain];
+                  if (!section && create) {
+                    replaceSlot(state, domain, {});
+                    section = state[domain];
+                  }
                   if (!section) return null;
                   for (const key of [countryId, profile.iso3, profile.countryCode,
                     profile.economyKey, profile.populationKey, profile.name].filter(Boolean)) {
@@ -126,7 +135,7 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                     aliases.includes(String(k).toUpperCase().replace(/[^A-Z0-9]/g,'')));
                   if (key) return section[key];
                   if (!create) return null;
-                  section[countryId] = {};
+                  replaceSlot(section,countryId,{});
                   return section[countryId];
                 }
                 const finance = bucket('finance', false);
@@ -135,14 +144,9 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                 const economy = bucket('economy', false);
                 if (!finance || !finance.omegaFinance || !economy)
                   throw new Error('AUTHORITATIVE_COUNTRY_BUCKET_UNAVAILABLE');
-                if (!economy.industrialRuntime) economy.industrialRuntime = {};
+                if (!economy.industrialRuntime) replaceSlot(economy,'industrialRuntime',{});
                 const financeModel = finance.omegaFinance;
                 const industrialRuntime = economy.industrialRuntime;
-                const slots = [];
-                function replaceSlot(object, key, value) {
-                  slots.push({object, key, had:Object.prototype.hasOwnProperty.call(object,key), value:object[key]});
-                  object[key] = value;
-                }
                 const oldAccount = economy.nationalAccounts;
                 const turn = Math.max(Number(state.simulation && state.simulation.turn || 0),
                   Number(oldAccount && oldAccount.lastProcessedTurn || 0)) + 1;
