@@ -205,7 +205,7 @@
     if(!record)return false;
     trustedNewGameSession=record;
     if(!initialized)return true;
-    const root=rootState(),profile=resolveProfile(record.countryCode);
+    const profile=resolveProfile(record.countryCode);
     const model=profile?ensureFinanceState(profile,root):null;
     if(!canCapturePristineOpening(model,profile,root)||!trustedSessionMatchesProfile(profile,root))return false;
     const periodIndex=Math.max(0,Math.floor(finite(model.fiscalYearIndex)||0));
