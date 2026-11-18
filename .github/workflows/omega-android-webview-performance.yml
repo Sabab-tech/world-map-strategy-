@@ -14,6 +14,7 @@ on:
       - 'omega_global_trade_system.js'
       - 'index.html'
       - '.github/workflows/omega-android-webview-performance.yml'
+      - 'scripts/run_android_webview_performance.py'
   pull_request:
     branches: [ main ]
     paths:
@@ -66,71 +67,8 @@ jobs:
           emulator-boot-timeout: 600
           disable-animations: true
           script: |
-            set +e
             mkdir -p android-performance-artifacts
-            python3 - <<'PY'
-            import os
-            import signal
-            import subprocess
-            import sys
-            from threading import Thread
-
-            log_path = "android-performance-artifacts/gradle-android9.log"
-            with open(log_path, "w") as log:
-                process = subprocess.Popen(
-                    ["gradle", "-p", "android", "connectedDebugAndroidTest", "--no-daemon"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    bufsize=1,
-                    start_new_session=True,
-                )
-
-                def stream_output():
-                    for line in process.stdout:
-                        log.write(line)
-                        log.flush()
-                        print(line, end="", flush=True)
-
-                reader = Thread(target=stream_output, daemon=True)
-                reader.start()
-                try:
-                    exit_code = process.wait(timeout=1200)
-                except subprocess.TimeoutExpired:
-                    print("OMEGA_ANDROID_GRADLE_TIMEOUT=1200_SECONDS", flush=True)
-                    try:
-                        os.killpg(process.pid, signal.SIGTERM)
-                        process.wait(timeout=10)
-                    except Exception:
-                        try:
-                            os.killpg(process.pid, signal.SIGKILL)
-                        except Exception:
-                            pass
-                    exit_code = 124
-                reader.join(timeout=20)
-
-            # Capture diagnostics while the emulator is still alive, before the
-            # emulator action tears it down.
-            subprocess.run(["adb", "devices", "-l"], stdout=open(
-                "android-performance-artifacts/adb-devices.txt", "w"),
-                stderr=subprocess.STDOUT, timeout=15, check=False)
-            with open("android-performance-artifacts/android9-logcat-raw.log", "w") as log:
-                subprocess.run(
-                    ["adb", "logcat", "-d", "-t", "10000"],
-                    stdout=log, stderr=subprocess.STDOUT, timeout=30, check=False)
-            with open("android-performance-artifacts/android9-logcat-raw.log",
-                      "r", errors="replace") as source:
-                with open("android-performance-artifacts/android9-webview.log", "w") as target:
-                    for line in source:
-                        if any(token in line for token in (
-                            "OMEGA_ANDROID_PERFORMANCE", "OMEGA_ANDROID_TEST_STAGE",
-                            "OMEGA_WEB_DIAGNOSTICS", "AndroidRuntime", "TestRunner",
-                            "INSTRUMENTATION_STATUS", "INSTRUMENTATION_RESULT",
-                        )):
-                            target.write(line)
-
-            sys.exit(exit_code)
-            PY
+            python3 scripts/run_android_webview_performance.py
 
       - name: Verify Android 9 WebView diagnostics bundle
         if: always()
