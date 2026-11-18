@@ -133,19 +133,28 @@
     const session=isObject(payload?.session)?payload.session:(isObject(payload)?payload:null);
     return session?clone(session):null;
   }
-  function trustedSessionRecord(session){
+  function trustedSessionRecord(session,evidence){
     if(!isObject(session))return null;
     const sessionId=String(session.sessionId||'').trim();
     const profile=resolveProfile(session.playerCountryId);
-    const root=rootState(),active=activeSessionFromState(root);
+    const root=rootState(),activeAtCreation=evidence?.active||activeSessionFromState(root);
+    const activeNow=activeSessionFromState(root);
     const createdTurn=finite(session.createdTurn);
-    const committedTurn=finite(active?.lastCommittedTurn)??finite(root?.simulation?.turn);
+    const activeCreatedTurn=finite(activeAtCreation?.createdTurn);
+    const committedTurn=finite(activeAtCreation?.lastCommittedTurn)??finite(evidence?.runtimeTurn);
     const runtimeTurn=finite(root?.simulation?.turn);
-    if(!sessionId||!profile||!active||String(session.status||'').toUpperCase()!=='READY'||
-      String(active.status||'').toUpperCase()!=='READY'||
-      String(active.sessionId||'')!==sessionId||
-      resolveProfile(active.playerCountryId)?.countryCode!==profile.countryCode||
-      createdTurn===null||createdTurn<0||committedTurn===null||createdTurn>committedTurn||
+    const nowStatus=String(activeNow?.status||'').toUpperCase();
+    if(!sessionId||!profile||!activeAtCreation||!activeNow||
+      String(session.status||'').toUpperCase()!=='READY'||
+      String(activeAtCreation.status||'').toUpperCase()!=='READY'||
+      !['READY','RUNNING','PAUSED'].includes(nowStatus)||
+      String(activeAtCreation.sessionId||'')!==sessionId||
+      String(activeNow.sessionId||'')!==sessionId||
+      resolveProfile(activeAtCreation.playerCountryId)?.countryCode!==profile.countryCode||
+      resolveProfile(activeNow.playerCountryId)?.countryCode!==profile.countryCode||
+      createdTurn===null||createdTurn<0||activeCreatedTurn===null||
+      createdTurn!==activeCreatedTurn||finite(activeNow.createdTurn)!==createdTurn||
+      committedTurn===null||createdTurn>committedTurn||
       (runtimeTurn!==null&&runtimeTurn>committedTurn)||
       getPlayerCode()!==profile.countryCode)return null;
     return{sessionId,countryCode:profile.countryCode,createdTurn,committedTurn};
@@ -153,10 +162,13 @@
   function trustedSessionMatchesProfile(profile,root){
     const trusted=trustedNewGameSession;
     if(!trusted||!profile||trusted.countryCode!==profile.countryCode)return false;
-    const active=activeSessionFromState(root||rootState());
+    const state=root||rootState(),active=activeSessionFromState(state);
+    const runtimeTurn=finite(state?.simulation?.turn);
     return !!active&&String(active.sessionId||'')===trusted.sessionId&&
       resolveProfile(active.playerCountryId)?.countryCode===trusted.countryCode&&
-      String(active.status||'').toUpperCase()==='READY';
+      finite(active.createdTurn)===trusted.createdTurn&&
+      ['READY','RUNNING','PAUSED'].includes(String(active.status||'').toUpperCase())&&
+      (runtimeTurn===null||runtimeTurn<=trusted.committedTurn);
   }
   function canCapturePristineOpening(model,profile,root){
     if(!model||!pristineFinanceModels.has(model))return false;
@@ -174,11 +186,19 @@
     return treasury!==null&&last!==null&&Math.abs(treasury-last)<=0.0001&&
       (available===null||Math.abs(available-last)<=0.0001);
   }
-  function acceptGameSessionCreated(event){
+  function acceptGameSessionCreated(event,evidence){
     const session=normalizeSessionCreatedPayload(event);
     if(!session)return false;
-    if(!profiles.length){pendingGameSessionCreatedEvent=session;return false;}
-    const record=trustedSessionRecord(session);
+    const root=rootState();
+    const snapshot=evidence||{
+      active:clone(activeSessionFromState(root)),
+      runtimeTurn:finite(root?.simulation?.turn)
+    };
+    if(!profiles.length){
+      pendingGameSessionCreatedEvent={session:clone(session),evidence:snapshot};
+      return false;
+    }
+    const record=trustedSessionRecord(session,snapshot);
     if(!record)return false;
     trustedNewGameSession=record;
     if(!initialized)return true;
@@ -1267,7 +1287,7 @@
       indexProfiles();
       if(pendingGameSessionCreatedEvent){
         const pending=pendingGameSessionCreatedEvent;pendingGameSessionCreatedEvent=null;
-        acceptGameSessionCreated({detail:{session:pending}});
+        acceptGameSessionCreated({detail:{session:pending.session}},pending.evidence);
       }
       const player=playerCountryProfile();
       const contextual=resolveProfile(global.OmegaMinistryViewCountry);
