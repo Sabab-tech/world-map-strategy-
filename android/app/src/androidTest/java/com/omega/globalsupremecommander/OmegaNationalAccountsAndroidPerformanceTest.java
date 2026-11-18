@@ -33,8 +33,10 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(AndroidJUnit4.class)
 public final class OmegaNationalAccountsAndroidPerformanceTest {
+    private static final long PAGE_LOAD_TIMEOUT_MS = 300_000L;
     private static final long PAGE_READY_TIMEOUT_MS = 120_000L;
     private static final long SCRIPT_TIMEOUT_MS = 120_000L;
+    private static final long PROBE_TIMEOUT_MS = 10_000L;
 
     @Test
     public void androidNineWebViewKeepsNationalAccountsWorkBounded() throws Exception {
@@ -52,18 +54,49 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
             final WebView webView = webViewReference.get();
             assertNotNull("MainActivity did not create its WebView", webView);
 
+            // Activity RESUMED is not the same as the bundled HTML/deferred scripts
+            // having finished loading. Give the packaged page its own bounded startup
+            // window before starting the National Accounts runtime-ready window.
+            final long pageLoadDeadline = SystemClock.elapsedRealtime() + PAGE_LOAD_TIMEOUT_MS;
+            String pageState = "WAIT";
+            while (SystemClock.elapsedRealtime() < pageLoadDeadline) {
+                try {
+                    pageState = evaluateString(webView,
+                            "(function(){try{return location.href.indexOf('" +
+                                    "https://appassets.androidplatform.net/assets/index.html" +
+                                    "')===0?document.readyState:'NAVIGATING';}catch(e){return 'WAIT';}})()",
+                            PROBE_TIMEOUT_MS);
+                } catch (AssertionError evaluationTimeout) {
+                    pageState = "EVALUATION_TIMEOUT";
+                }
+                if ("complete".equals(pageState)) break;
+                Thread.sleep(250L);
+            }
+            assertEquals("Packaged OMEGA page did not finish loading; last state=" + pageState,
+                    "complete", pageState);
+            System.out.println("OMEGA_ANDROID_TEST_STAGE=packaged_page_complete");
+
             final long readyDeadline = SystemClock.elapsedRealtime() + PAGE_READY_TIMEOUT_MS;
             String ready = "WAIT";
             while (SystemClock.elapsedRealtime() < readyDeadline) {
-                ready = evaluateString(webView,
-                        "(function(){try{var a=window.Omega&&window.Omega.NationalAccounts;" +
-                                "return a&&a.diagnostics&&a.diagnostics().ready?'READY':'WAIT';" +
-                                "}catch(e){return 'WAIT';}})()",
-                        PAGE_READY_TIMEOUT_MS);
+                try {
+                    ready = evaluateString(webView,
+                            "(function(){try{var a=window.Omega&&window.Omega.NationalAccounts;" +
+                                    "if(!a||!a.diagnostics)return 'API_MISSING';" +
+                                    "var d=a.diagnostics();" +
+                                    "return d.ready?'READY':'WAIT:'+JSON.stringify({error:d.error," +
+                                    "initialized:d.initialized,coreCountryCount:d.coreCountryCount," +
+                                    "resolvedProfileCount:d.resolvedProfileCount});" +
+                                    "}catch(e){return 'PROBE_ERROR:'+String(e&&e.message||e);}})()",
+                            PROBE_TIMEOUT_MS);
+                } catch (AssertionError evaluationTimeout) {
+                    ready = "EVALUATION_TIMEOUT";
+                }
                 if ("READY".equals(ready)) break;
                 Thread.sleep(250L);
             }
-            assertEquals("Packaged National Accounts runtime did not become ready", "READY", ready);
+            assertEquals("Packaged National Accounts runtime did not become ready; diagnostics=" + ready,
+                    "READY", ready);
 
             final String resultJson = runBenchmark(webView);
             final JSONObject result = new JSONObject(resultJson);
@@ -242,63 +275,40 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                       });
                     }
                   }
-                  const originalDefineProperties = Object.defineProperties;
-                  const originalDefineProperty = Object.defineProperty;
-                  Object.defineProperties = function(target, descriptors) {
-                    const receiver=this;
-                    if (target === null || (typeof target !== 'object' && typeof target !== 'function')) {
-                      recordPerfFailure('Object.defineProperties.invalidTarget', null,
-                        {targetType:typeof target,targetValue:String(target),receiverType:typeof receiver,
-                         receiverIsObjectConstructor:receiver===Object});
-                    }
-                    try {
-                      return originalDefineProperties.apply(receiver,arguments);
-                    } catch (error) {
-                      recordPerfFailure('Object.defineProperties.throw',error,
-                        {targetType:typeof target,receiverType:typeof receiver,
-                         receiverIsObjectConstructor:receiver===Object});
-                      throw error;
-                    }
-                  };
-                  Object.defineProperty = function(target, property, descriptor) {
-                    const receiver=this;
-                    if (target === null || (typeof target !== 'object' && typeof target !== 'function')) {
-                      recordPerfFailure('Object.defineProperty.invalidTarget', null,
-                        {targetType:typeof target,targetValue:String(target),property:String(property),
-                         receiverType:typeof receiver,receiverIsObjectConstructor:receiver===Object});
-                    }
-                    try {
-                      return originalDefineProperty.apply(receiver,arguments);
-                    } catch (error) {
-                      recordPerfFailure('Object.defineProperty.throw',error,
-                        {targetType:typeof target,property:String(property),receiverType:typeof receiver,
-                         receiverIsObjectConstructor:receiver===Object});
-                      throw error;
-                    }
-                  };
-                  const interopApi = window.OmegaMinistryInteroperability ||
-                    (window.Omega && window.Omega.MinistryInteroperability);
-                  const interopInstance = interopApi && interopApi.instance;
-                  const originalStateTransactionFactory = interopInstance && interopInstance.stateTransaction;
-                  if (interopInstance && originalStateTransactionFactory &&
-                      typeof originalStateTransactionFactory.create === 'function') {
-                    interopInstance.stateTransaction = {
+                  const globalTxFactoryOriginal = window.OmegaMinistryStateTransaction || null;
+                  const omegaTxFactoryOriginal = window.Omega && window.Omega.MinistryStateTransaction || null;
+                  const selectedTxFactory = globalTxFactoryOriginal || omegaTxFactoryOriginal;
+                  const interopCandidates = [
+                    {name:'window.OmegaMinistryInteroperability',api:window.OmegaMinistryInteroperability},
+                    {name:'window.Omega.MinistryInteroperability',api:window.Omega && window.Omega.MinistryInteroperability},
+                    {name:'window.OmegaMinistryMesh',api:window.OmegaMinistryMesh},
+                    {name:'window.Omega.MinistryMesh',api:window.Omega && window.Omega.MinistryMesh}
+                  ].filter(function(entry,index,all) {
+                    return entry.api && all.findIndex(function(other) { return other.api === entry.api; }) === index;
+                  });
+                  const interopApi = interopCandidates.map(function(entry) { return entry.api; })
+                    .find(function(api) { return api && typeof api.getCommand === 'function'; }) || null;
+                  const patchedInteropInstances = [];
+                  function wrapTransactionFactory(factory,label) {
+                    if (!factory || typeof factory.create !== 'function') return null;
+                    return {
+                      VERSION:factory.VERSION,
                       create:function() {
                         let transaction;
                         try {
-                          transaction = originalStateTransactionFactory.create.apply(
-                            originalStateTransactionFactory,arguments);
+                          transaction = factory.create.apply(factory,arguments);
                         } catch (error) {
-                          recordPerfFailure('stateTransaction.create',error);
+                          recordPerfFailure(label+'.create',error);
                           throw error;
                         }
-                        recordPerfFailure('stateTransaction.created',null,{
+                        recordPerfFailure(label+'.created',null,{
                           transactionType:typeof transaction,
                           stateType:typeof (transaction && transaction.state),
                           hasState:!!(transaction && transaction.state),
                           ownerMinistry:transaction && transaction.ownerMinistry,
                           countryId:transaction && transaction.countryId,
-                          turn:transaction && transaction.turn
+                          turn:transaction && transaction.turn,
+                          commandType:transaction && transaction.commandType
                         });
                         ['get','set','commit','rollback'].forEach(function(method) {
                           if (!transaction || typeof transaction[method] !== 'function') return;
@@ -307,7 +317,7 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                             try {
                               return originalMethod.apply(this,arguments);
                             } catch (error) {
-                              recordPerfFailure('stateTransaction.'+method,error);
+                              recordPerfFailure(label+'.'+method,error);
                               throw error;
                             }
                           };
@@ -316,11 +326,66 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                       }
                     };
                   }
+                  const wrappedGlobalTxFactory = wrapTransactionFactory(selectedTxFactory,'globalStateTransaction');
+                  if (wrappedGlobalTxFactory) {
+                    window.OmegaMinistryStateTransaction = wrappedGlobalTxFactory;
+                    if (window.Omega) window.Omega.MinistryStateTransaction = wrappedGlobalTxFactory;
+                  }
+                  interopCandidates.forEach(function(entry) {
+                    const instance = entry.api && entry.api.instance;
+                    if (!instance) return;
+                    const originalInstanceFactory = instance.stateTransaction;
+                    const originalDispatch = instance.dispatchCommand;
+                    if (wrappedGlobalTxFactory) {
+                      instance.stateTransaction = wrapTransactionFactory(
+                        originalInstanceFactory || selectedTxFactory,'instanceStateTransaction'
+                      );
+                    }
+                    if (typeof originalDispatch === 'function') {
+                      instance.dispatchCommand = function() {
+                        try {
+                          const result = originalDispatch.apply(this,arguments);
+                          if (result && result.status === 'FAILED') {
+                            recordPerfFailure('interop.dispatchCommand.failed',
+                              new Error(result.reason || result.result && result.result.reason || 'COMMAND_FAILED'),{
+                                api:entry.name,commandId:result.commandId,commandType:result.commandType,
+                                countryId:result.countryId,status:result.status,reason:result.reason||null,
+                                result:result.result||null
+                              });
+                          }
+                          return result;
+                        } catch (error) {
+                          recordPerfFailure('interop.dispatchCommand.throw',error,{api:entry.name});
+                          throw error;
+                        }
+                      };
+                    }
+                    patchedInteropInstances.push({
+                      instance:instance,
+                      originalInstanceFactory:originalInstanceFactory,
+                      originalDispatch:originalDispatch
+                    });
+                  });
+                  recordPerfFailure('probe.transactionFactory',null,{
+                    globalFactory:!!globalTxFactoryOriginal,
+                    omegaFactory:!!omegaTxFactoryOriginal,
+                    interopApiCount:interopCandidates.length,
+                    patchedInstanceCount:patchedInteropInstances.length
+                  });
                   function restorePerfDiagnostics() {
-                    try { Object.defineProperties = originalDefineProperties; } catch (_) {}
-                    try { Object.defineProperty = originalDefineProperty; } catch (_) {}
+                    patchedInteropInstances.forEach(function(entry) {
+                      try { entry.instance.stateTransaction = entry.originalInstanceFactory; } catch (_) {}
+                      try { entry.instance.dispatchCommand = entry.originalDispatch; } catch (_) {}
+                    });
                     try {
-                      if (interopInstance) interopInstance.stateTransaction = originalStateTransactionFactory;
+                      if (globalTxFactoryOriginal) window.OmegaMinistryStateTransaction = globalTxFactoryOriginal;
+                      else delete window.OmegaMinistryStateTransaction;
+                    } catch (_) {}
+                    try {
+                      if (window.Omega) {
+                        if (omegaTxFactoryOriginal) window.Omega.MinistryStateTransaction = omegaTxFactoryOriginal;
+                        else delete window.Omega.MinistryStateTransaction;
+                      }
                     } catch (_) {}
                   }
                   for (let index=0; index<6; index++) {
@@ -337,10 +402,20 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                       const commandId='NATIONAL-ACCOUNTS-'+countryId+'-T'+nextTurn;
                       const commandRecord=interopApi && typeof interopApi.getCommand==='function'
                         ?interopApi.getCommand(commandId):null;
+                      const instanceCommands=interopCandidates.map(function(entry) {
+                        const instance=entry.api && entry.api.instance;
+                        const commands=instance && instance.commands && typeof instance.commands.values === 'function'
+                          ?Array.from(instance.commands.values()):[];
+                        const latest=commands.slice(-2).map(function(row) {
+                          return {commandId:row.commandId,commandType:row.commandType,status:row.status,
+                            reason:row.reason||null,result:row.result||null};
+                        });
+                        return {api:entry.name,commandCount:commands.length,latest:latest};
+                      });
                       throw new Error('CHECKPOINT_FAILED:'+checkpoint.status+':'+(checkpoint.reason||'UNKNOWN')+
-                        ':ERROR_STACK:'+String(checkpoint.errorStack||'').slice(0,5000)+
                         ':DIAGNOSTICS:'+JSON.stringify(window.__OMEGA_ANDROID_PERF_DIAGNOSTICS||[])+
-                        ':COMMAND:'+JSON.stringify(commandRecord||null));
+                        ':COMMAND:'+JSON.stringify(commandRecord||null)+
+                        ':INTEROP_INSTANCES:'+JSON.stringify(instanceCommands));
                     }
                     samples.push({
                       wallMs:Number(wallMs.toFixed(3)),
