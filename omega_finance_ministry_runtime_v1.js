@@ -741,13 +741,24 @@
   function advanceFinanceProfile(p,root,turnNumber,dt,years,newYearIndex){
     if(!isPlayable(p))return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged:false};
     const fm=ensureFinanceState(p,root);
-    const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
-    if(finite(fm.lastProcessedTurn)!==null&&turnNumber<=fm.lastProcessedTurn){
-      if(externalTreasuryChanged)syncEconomyRecord(p,fm,root);
+    const alreadyProcessed=finite(fm.lastProcessedTurn)!==null&&turnNumber<=fm.lastProcessedTurn;
+    if(alreadyProcessed){
+      const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
+      if(externalTreasuryChanged){
+        updateFiscalPeriodAccount(fm,turnNumber);
+        syncEconomyRecord(p,fm,root);
+      }
       return{processed:0,unavailable:false,duplicate:true,externalTreasuryChanged};
     }
     const e=root.economy?.[p.economyKey]||getEconomyRecord(p);
-    if(!isObject(e))return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged};
+    if(!isObject(e)){
+      const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
+      if(externalTreasuryChanged){
+        updateFiscalPeriodAccount(fm,turnNumber);
+        syncEconomyRecord(p,fm,root);
+      }
+      return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged};
+    }
     if(newYearIndex>(finite(fm.fiscalYearIndex)||0)){
       const priorFiscalYearIndex=Math.max(0,Math.floor(finite(fm.fiscalYearIndex)||0));
       archiveFiscalPeriodAccount(fm,turnNumber);
@@ -768,6 +779,10 @@
       postLedger(fm,p,{department:'finance',action:'FISCAL_YEAR_ROLLOVER',category:'fiscal_year',
         amountUsd:0,description:'New modeled fiscal year: '+(Number(rules.baselineYear||2015)+newYearIndex)});
     }
+    // A fiscal boundary must be finalized before syncing external cash deltas.
+    // Otherwise, an old-period external adjustment would be archived as though
+    // it belonged to the previous year and the new period would open too late.
+    const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
     const gdpBefore=finite(e.gdp)??finite(p.indicators?.gdpCurrentUsd);
     if(gdpBefore===null||gdpBefore<=0)return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged};
     const growth=clamp(finite(e.gdp_growth)??finite(p.indicators?.gdpGrowthPct)??0,-99,100);
