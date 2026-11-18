@@ -880,6 +880,7 @@
     const terms = negotiated.terms;
     const financeResult = finance.applyAction({
       type: 'borrow', countryId: codeOf(profile), amountUsd: amount,
+      transactionId: 'WB-LOAN-' + requestId,
       description: 'Simulated institutional ' + terms.program + ' facility / ' + purpose
     });
     if (!financeResult || financeResult.ok !== true)
@@ -1214,6 +1215,7 @@
         amountUsd: payment.paidUsd,
         principalPaidUsd: payment.principalPaidUsd,
         interestPaidUsd: payment.interestPaidUsd,
+        transactionId: 'WB-DEBT-SERVICE-' + countryCode + '-' + turn,
         description: 'World Bank scheduled loan service on game turn ' + turn
       });
       if (!posted || posted.ok !== true) {
