@@ -1,8 +1,8 @@
-/* OMEGA GLOBAL FINANCE MINISTRY + MACROECONOMIC RUNTIME v1.0.0 */
+/* OMEGA GLOBAL FINANCE MINISTRY + MACROECONOMIC RUNTIME v1.3.0 */
 (function(global){
   'use strict';
-  if(global.OmegaFinanceMinistry&&global.OmegaFinanceMinistry.VERSION==='1.2.0')return;
-  const VERSION='1.2.0', YEAR_MS=31536000000, DAY_MS=86400000;
+  if(global.OmegaFinanceMinistry&&global.OmegaFinanceMinistry.VERSION==='1.3.0')return;
+  const VERSION='1.3.0', YEAR_MS=31536000000, DAY_MS=86400000;
   const BASE_RULES={annualizationMs:YEAR_MS,simulationTurnDurationMs:DAY_MS,startingTreasuryPercentOfGDP:2,
     defaultTaxRatePct:18,defaultPolicyInterestRatePct:3,defaultDeficitPercentOfGDPWhenUnobserved:3,
     minimumTaxRatePct:0,maximumTaxRatePct:60,minimumPolicyInterestRatePct:0,maximumPolicyInterestRatePct:40,
