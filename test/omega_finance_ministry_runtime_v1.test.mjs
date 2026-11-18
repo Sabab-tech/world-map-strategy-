@@ -786,6 +786,19 @@ test('legacy Finance saves stay PARTIAL until the next trustworthy fiscal-year b
   assert.equal(fm.fiscalPeriodAccount.flowCoverage,'INCOMPLETE_LEGACY');
   assert.equal(fm.fiscalPeriodAccount.reconciliationStatus,'PARTIAL');
   const closingBeforeRollover=fm.treasuryBalanceUsd;
+  state.simulation.turn=365;
+  const result=context.OmegaFinanceMinistry.advanceCountry('BGD',{
+    turn:365,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
+  });
+  assert.equal(result.processed,1);
+  fm=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  assert.equal(fm.fiscalPeriodHistory[0].reconciliationStatus,'PARTIAL');
+  assert.equal(fm.fiscalPeriodAccount.openingTurn,365);
+  assert.equal(fm.fiscalPeriodAccount.openingBalanceUsd,closingBeforeRollover);
+  assert.equal(fm.fiscalPeriodAccount.flowCoverage,'COMPLETE_FROM_PERIOD_START');
+  assert.equal(fm.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
+});
+
 test('Finance version migration preserves the prior country checkpoint turn and prevents duplicate accrual',async()=>{
   const {context,state}=createRuntime();
   state.simulation.turn=9;
@@ -810,19 +823,6 @@ test('Finance version migration preserves the prior country checkpoint turn and 
   assert.equal(result.duplicate,true);
   assert.equal(state.finance.BGD.omegaFinance.treasuryBalanceUsd,before,
     'migrating Finance schema must not replay tax or interest on an already committed game turn');
-});
-
-  state.simulation.turn=365;
-  const result=context.OmegaFinanceMinistry.advanceCountry('BGD',{
-    turn:365,stepDurationMs:86400000,tier:'PLAYER',playerCountryId:'BGD'
-  });
-  assert.equal(result.processed,1);
-  fm=context.OmegaFinanceMinistry.getFinanceState('BGD');
-  assert.equal(fm.fiscalPeriodHistory[0].reconciliationStatus,'PARTIAL');
-  assert.equal(fm.fiscalPeriodAccount.openingTurn,365);
-  assert.equal(fm.fiscalPeriodAccount.openingBalanceUsd,closingBeforeRollover);
-  assert.equal(fm.fiscalPeriodAccount.flowCoverage,'COMPLETE_FROM_PERIOD_START');
-  assert.equal(fm.fiscalPeriodAccount.reconciliationStatus,'GAME_STATE_RECONCILED');
 });
 
 test('Fiscal period history remains capped at twelve periods',async()=>{
