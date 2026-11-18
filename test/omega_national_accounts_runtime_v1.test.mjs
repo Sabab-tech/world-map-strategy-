@@ -322,6 +322,24 @@ test('replacing the authoritative world-state root forces a safe rehydration',as
 });
 
 
+
+test('synchronous Ministry checkpoint commit time is included in CPU diagnostics',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  await api.init();
+  const interop=h.window.Omega.MinistryInteroperability;
+  const original=interop.dispatchCommand.bind(interop);
+  interop.dispatchCommand=(...args)=>{
+    const start=Date.now();
+    while(Date.now()-start<20){}
+    return original(...args);
+  };
+  const result=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(result.status,'CHECKPOINTED');
+  assert.ok(api.diagnostics().maxSyncSegmentMs>=18,
+    'the synchronous state-transaction commit must be measured as an accounting segment');
+  assert.ok(api.diagnostics().totalSyncSegmentMs>=18);
+});
+
 test('large ledger inputs remain hard-bounded to the configured accounting workload',async()=>{
   const h=harness(),api=h.window.Omega.NationalAccounts;
   const make=(count,fn)=>Array.from({length:count},(_,index)=>fn(index));

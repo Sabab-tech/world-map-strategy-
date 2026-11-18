@@ -1,6 +1,7 @@
 package com.omega.globalsupremecommander;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Intent;
 import android.os.Debug;
 import android.os.SystemClock;
@@ -39,14 +40,16 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
     public void androidNineWebViewKeepsNationalAccountsWorkBounded() throws Exception {
         final android.app.Instrumentation instrumentation =
                 InstrumentationRegistry.getInstrumentation();
-        final Intent intent = new Intent(instrumentation.getTargetContext(), MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
+        final Application application = (Application)
+                instrumentation.getTargetContext().getApplicationContext();
         final long pssBeforeKb = Debug.getPss();
-        final Activity activity = instrumentation.startActivitySync(intent);
+        final Activity activity = launchMainActivity(instrumentation, application);
         assertNotNull("MainActivity did not launch", activity);
         try {
-            final WebView webView = findWebView(activity.findViewById(android.R.id.content));
+            final AtomicReference<WebView> webViewReference = new AtomicReference<>();
+            instrumentation.runOnMainSync(() -> webViewReference.set(
+                    findWebView(activity.findViewById(android.R.id.content))));
+            final WebView webView = webViewReference.get();
             assertNotNull("MainActivity did not create its WebView", webView);
 
             final long readyDeadline = SystemClock.elapsedRealtime() + PAGE_READY_TIMEOUT_MS;
@@ -64,6 +67,7 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
 
             final String resultJson = runBenchmark(webView);
             final JSONObject result = new JSONObject(resultJson);
+            System.out.println("OMEGA_ANDROID_PERFORMANCE_RESULT_RAW=" + result);
             assertEquals("OK", result.optString("status"));
             assertEquals(8_692, result.getJSONObject("workload").getInt("sourceRowsScanned"));
             assertTrue("The dirty-country workload must yield to Android WebView",
@@ -94,6 +98,41 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
             System.out.println("OMEGA_ANDROID_PERFORMANCE_RESULT=" + result);
         } finally {
             instrumentation.runOnMainSync(activity::finish);
+        }
+    }
+
+    private static Activity launchMainActivity(
+            android.app.Instrumentation instrumentation, Application application) throws Exception {
+        final CountDownLatch resumed = new CountDownLatch(1);
+        final AtomicReference<Activity> activityReference = new AtomicReference<>();
+        final Application.ActivityLifecycleCallbacks callbacks = new Application.ActivityLifecycleCallbacks() {
+            @Override public void onActivityCreated(Activity activity, android.os.Bundle state) {}
+            @Override public void onActivityStarted(Activity activity) {}
+            @Override public void onActivityPaused(Activity activity) {}
+            @Override public void onActivityStopped(Activity activity) {}
+            @Override public void onActivitySaveInstanceState(Activity activity, android.os.Bundle state) {}
+            @Override public void onActivityDestroyed(Activity activity) {}
+            @Override public void onActivityResumed(Activity activity) {
+                if (activity instanceof MainActivity) {
+                    activityReference.set(activity);
+                    resumed.countDown();
+                }
+            }
+        };
+        application.registerActivityLifecycleCallbacks(callbacks);
+        try {
+            System.out.println("OMEGA_ANDROID_TEST_STAGE=activity_launch_requested");
+            instrumentation.runOnMainSync(() -> {
+                final Intent intent = new Intent(application, MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                application.startActivity(intent);
+            });
+            assertTrue("MainActivity did not reach RESUMED within the startup timeout",
+                    resumed.await(PAGE_READY_TIMEOUT_MS, TimeUnit.MILLISECONDS));
+            System.out.println("OMEGA_ANDROID_TEST_STAGE=activity_resumed");
+            return activityReference.get();
+        } finally {
+            application.unregisterActivityLifecycleCallbacks(callbacks);
         }
     }
 

@@ -12,8 +12,8 @@ permissions:
 
 jobs:
   android-nine-webview-performance:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    runs-on: macos-15-intel
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -39,19 +39,85 @@ jobs:
         with:
           api-level: 28
           target: google_apis
-          arch: x86
+          arch: x86_64
           profile: pixel_2
           emulator-boot-timeout: 600
           disable-animations: true
-          script: gradle -p android connectedDebugAndroidTest --no-daemon
+          script: |
+            set +e
+            mkdir -p android-performance-artifacts
+            python3 - <<'PY'
+            import os
+            import signal
+            import subprocess
+            import sys
+            from threading import Thread
 
-      - name: Export Android 9 WebView diagnostics
+            log_path = "android-performance-artifacts/gradle-android9.log"
+            with open(log_path, "w") as log:
+                process = subprocess.Popen(
+                    ["gradle", "-p", "android", "connectedDebugAndroidTest", "--no-daemon"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                    start_new_session=True,
+                )
+
+                def stream_output():
+                    for line in process.stdout:
+                        log.write(line)
+                        log.flush()
+                        print(line, end="", flush=True)
+
+                reader = Thread(target=stream_output, daemon=True)
+                reader.start()
+                try:
+                    exit_code = process.wait(timeout=1200)
+                except subprocess.TimeoutExpired:
+                    print("OMEGA_ANDROID_GRADLE_TIMEOUT=1200_SECONDS", flush=True)
+                    try:
+                        os.killpg(process.pid, signal.SIGTERM)
+                        process.wait(timeout=10)
+                    except Exception:
+                        try:
+                            os.killpg(process.pid, signal.SIGKILL)
+                        except Exception:
+                            pass
+                    exit_code = 124
+                reader.join(timeout=20)
+
+            # Capture diagnostics while the emulator is still alive, before the
+            # emulator action tears it down.
+            subprocess.run(["adb", "devices", "-l"], stdout=open(
+                "android-performance-artifacts/adb-devices.txt", "w"),
+                stderr=subprocess.STDOUT, timeout=15, check=False)
+            with open("android-performance-artifacts/android9-logcat-raw.log", "w") as log:
+                subprocess.run(
+                    ["adb", "logcat", "-d", "-t", "10000"],
+                    stdout=log, stderr=subprocess.STDOUT, timeout=30, check=False)
+            with open("android-performance-artifacts/android9-logcat-raw.log",
+                      "r", errors="replace") as source:
+                with open("android-performance-artifacts/android9-webview.log", "w") as target:
+                    for line in source:
+                        if any(token in line for token in (
+                            "OMEGA_ANDROID_PERFORMANCE", "OMEGA_ANDROID_TEST_STAGE",
+                            "OMEGA_WEB_DIAGNOSTICS", "AndroidRuntime", "TestRunner",
+                            "INSTRUMENTATION_STATUS", "INSTRUMENTATION_RESULT",
+                        )):
+                            target.write(line)
+
+            sys.exit(exit_code)
+            PY
+
+      - name: Verify Android 9 WebView diagnostics bundle
         if: always()
         run: |
           mkdir -p android-performance-artifacts
-          adb devices -l > android-performance-artifacts/adb-devices.txt 2>&1 || true
-          timeout 20s adb logcat -d -t 5000 > android-performance-artifacts/android9-logcat-raw.log 2>&1 || true
-          grep -E 'OMEGA_ANDROID_PERFORMANCE|OMEGA_WEB_DIAGNOSTICS|AndroidRuntime|TestRunner|INSTRUMENTATION_STATUS|INSTRUMENTATION_RESULT' android-performance-artifacts/android9-logcat-raw.log > android-performance-artifacts/android9-webview.log || true
+          if [ ! -f android-performance-artifacts/gradle-android9.log ]; then
+            printf 'Emulator action did not reach the Gradle instrumentation script.\n' > android-performance-artifacts/gradle-android9.log
+          fi
+          find android-performance-artifacts -maxdepth 1 -type f -print
 
       - name: Upload Android WebView benchmark results
         if: always()

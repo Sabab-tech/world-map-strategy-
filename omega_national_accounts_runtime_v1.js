@@ -417,9 +417,15 @@
       runtime.failedCountries++;return{status:'FAILED',reason:String(error?.message||error),countryId,turn};}
     const interop=g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability;
     const commandId='NATIONAL-ACCOUNTS-'+countryId+'-T'+turn,owner=runtime.rules.persistence.ownerMinistry||'economy';
-    const result=interop.dispatchCommand(owner,COMMAND_TYPE,countryId,{countryId,statement},{
-      turn,commandId,commandType:COMMAND_TYPE,ownerMinistry:owner,correlationId:commandId,
-      provenance:{source:HANDLER_ID,modelVersion:runtime.rules.modelVersion}});
+    const commitStartedAt=clockNow();
+    let result;
+    try{
+      result=interop.dispatchCommand(owner,COMMAND_TYPE,countryId,{countryId,statement},{
+        turn,commandId,commandType:COMMAND_TYPE,ownerMinistry:owner,correlationId:commandId,
+        provenance:{source:HANDLER_ID,modelVersion:runtime.rules.modelVersion}});
+    }finally{
+      recordSyncSegment(commitStartedAt);
+    }
     const elapsed=Math.max(0,clockNow()-startedAt),rowsScanned=finite(statement.workload?.sourceRowsScanned)??0;
     runtime.lastCountryElapsedMs=elapsed;runtime.maxCountryElapsedMs=Math.max(runtime.maxCountryElapsedMs,elapsed);
     runtime.totalCountryElapsedMs+=elapsed;runtime.lastSourceRowsScanned=rowsScanned;
