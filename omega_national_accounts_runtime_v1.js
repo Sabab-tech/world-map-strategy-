@@ -128,15 +128,15 @@
     for(const group of groups.values()){
       const totals=Object.fromEntries(fields.map(k=>[k,0])),missing=new Set();
       for(const row of group.rows)for(const field of fields){const value=finite(row[field]);if(value===null)missing.add(field);else totals[field]+=value;}
-      if(missing.size){partialCount++;items.push({resourceId:group.resourceId,unit:group.unit,status:'PARTIAL',
-        missingComponents:[...missing].sort(),expectedClosingQuantity:null,variance:null,...totals});continue;}
-      if(Object.values(totals).some(v=>v<0)){failedCount++;items.push({resourceId:group.resourceId,unit:group.unit,
-        status:'INVALID_INPUT',missingComponents:[],expectedClosingQuantity:null,variance:null,...totals});continue;}
+      if(missing.size){partialCount++;items.push(Object.assign({resourceId:group.resourceId,unit:group.unit,status:'PARTIAL',
+        missingComponents:[...missing].sort(),expectedClosingQuantity:null,variance:null},totals));continue;}
+      if(Object.values(totals).some(v=>v<0)){failedCount++;items.push(Object.assign({resourceId:group.resourceId,unit:group.unit,
+        status:'INVALID_INPUT',missingComponents:[],expectedClosingQuantity:null,variance:null},totals));continue;}
       const expected=totals.openingQuantity+totals.production+totals.imports-totals.consumption-totals.exports-totals.losses;
       const variance=totals.closingQuantity-expected,ok=near(expected,totals.closingQuantity,abs,rel);
       if(ok)reconciledCount++;else failedCount++;
-      items.push({resourceId:group.resourceId,unit:group.unit,status:ok?'RECONCILED':'UNRECONCILED',
-        missingComponents:[],expectedClosingQuantity:expected,variance,...totals});
+      items.push(Object.assign({resourceId:group.resourceId,unit:group.unit,status:ok?'RECONCILED':'UNRECONCILED',
+        missingComponents:[],expectedClosingQuantity:expected,variance},totals));
     }
     if(!items.length)return{status:'UNOBSERVED',items:[],reconciledCount:0,partialCount:0,failedCount:0};
     return{status:failedCount?'UNRECONCILED':partialCount?'PARTIAL':'RECONCILED',
@@ -279,7 +279,7 @@
     recordSyncSegment(segmentStartedAt);
     const all=[...groups.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit));
     return{sourceBatchCount:batches.length,identifiedBatchCount:all.reduce((n,row)=>n+row.batchCount,0),
-      missingIdentityCount,duplicateBatchCount,closingStockByIdentity:all.slice(0,maxItems).map(row=>({...row,status:'CLOSING_STOCK_ONLY'})),
+      missingIdentityCount,duplicateBatchCount,closingStockByIdentity:all.slice(0,maxItems).map(row=>Object.assign({},row,{status:'CLOSING_STOCK_ONLY'})),
       truncatedIdentityCount:Math.max(0,all.length-maxItems),stockFlowStatus:all.length?'CLOSING_STOCK_ONLY':'UNOBSERVED'};
   }
   async function buildStatement(countryId,profile,root,turn){
@@ -322,7 +322,7 @@
         (fiscalPeriodAccount.openingBalanceQuality==='MODELLED'?'MODELLED_RECONCILED':'GAME_STATE_RECONCILED')):
       (balance===null?'UNOBSERVED':/ESTIMATE/i.test(cashSource)?'MODELLED_CLOSING_BALANCE_ONLY':'CLOSING_BALANCE_ONLY');
     const treasuryReconciliation=fiscalPeriodAccount?
-      {...treasuryCheck,financeStatus:treasuryStatus,sourceAuthority:'FINANCE_MINISTRY_FISCAL_PERIOD_ACCOUNT'}:
+      Object.assign({},treasuryCheck,{financeStatus:treasuryStatus,sourceAuthority:'FINANCE_MINISTRY_FISCAL_PERIOD_ACCOUNT'}):
       reconcileTreasury({});
     const currentGdp=finite(economy.gdp)??finite(profile?.indicators?.gdpCurrentUsd);
     const gdpSource=finite(economy.gdp)!==null?'FINANCE_OWNED_GAMEPLAY_ECONOMY_STATE':
@@ -394,8 +394,8 @@
       gdpStatus:statement.gdp.status,treasuryStatus:statement.treasury.status,goodsStatus:statement.goods.status,
       tradeSettlementCount:statement.trade.settlementCount});
     const historyLimit=bounded(runtime.rules.persistence.historyLimit,12,24);
-    const saved={...clone(statement),lastProcessedTurn:statement.turn,
-      revision:(finite(current?.revision)||0)+1,snapshots:history.slice(-historyLimit)};
+    const saved=Object.assign({},clone(statement),{lastProcessedTurn:statement.turn,
+      revision:(finite(current?.revision)||0)+1,snapshots:history.slice(-historyLimit)});
     context.stateTransaction.set(path,saved);
     return{accepted:true,stateMutationAuthority:'OMEGA_MINISTRY_STATE_TRANSACTION',
       countryId,lastProcessedTurn:statement.turn,revision:saved.revision};
