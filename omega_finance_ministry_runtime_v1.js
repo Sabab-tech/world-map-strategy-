@@ -424,7 +424,9 @@
     return /ESTIMATE|MODELLED/i.test(String(model?.treasurySource||''))?'MODELLED':'GAME_STATE';
   }
   function fiscalYearIndexFor(turn,stepMs){
-    const n=Math.max(0,finite(turn)||0),dt=Math.max(0,finite(stepMs)||Number(rules.simulationTurnDurationMs||DAY_MS));
+    const n=Math.max(0,finite(turn)||0);
+    const runtimeStepMs=finite(global.Omega?.Simulation?.clock?.stepDurationMs);
+    const dt=Math.max(1,finite(stepMs)??runtimeStepMs??Number(rules.simulationTurnDurationMs||DAY_MS));
     return Math.floor(n*dt/Number(rules.annualizationMs||YEAR_MS));
   }
   function ensureFiscalPeriodForTurn(profile,model,turnNumber=currentTurn(),stepDurationMs){
