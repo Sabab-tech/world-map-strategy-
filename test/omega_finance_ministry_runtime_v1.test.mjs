@@ -58,6 +58,10 @@ function createRuntime(options={}){
     context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED',{
       detail:{session:JSON.parse(JSON.stringify(session))}
     }));
+    // SimulationRuntime emits the creation event while READY, then startSession
+    // moves the same session to RUNNING before asynchronous registries may load.
+    state.simulation.session.status='RUNNING';
+    state.simulation.session.startedTurn=1;
   }
   return {context,state,document,elements,schedulerHandlers,handlers};
 }
