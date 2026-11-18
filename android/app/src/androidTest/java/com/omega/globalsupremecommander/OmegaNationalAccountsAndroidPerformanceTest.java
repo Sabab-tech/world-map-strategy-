@@ -264,6 +264,76 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                 }
                 window.requestAnimationFrame(sampleFrame);
                 try {
+                  window.__OMEGA_ANDROID_PERF_DIAGNOSTICS = [];
+                  function recordPerfFailure(stage, error, detail) {
+                    if (window.__OMEGA_ANDROID_PERF_DIAGNOSTICS.length < 20) {
+                      window.__OMEGA_ANDROID_PERF_DIAGNOSTICS.push({
+                        stage:stage,
+                        detail:detail || null,
+                        error:String(error && error.message || error || ''),
+                        stack:String(error && error.stack || '')
+                      });
+                    }
+                  }
+                  const originalDefineProperties = Object.defineProperties;
+                  const originalDefineProperty = Object.defineProperty;
+                  Object.defineProperties = function(target, descriptors) {
+                    if (target === null || (typeof target !== 'object' && typeof target !== 'function')) {
+                      recordPerfFailure('Object.defineProperties.invalidTarget', null,
+                        {targetType:typeof target,targetValue:String(target)});
+                      recordPerfFailure('Object.defineProperties.callsite', new Error('INVALID_DEFINE_PROPERTIES_TARGET'));
+                    }
+                    return originalDefineProperties.call(Object,target,descriptors);
+                  };
+                  Object.defineProperty = function(target, property, descriptor) {
+                    if (target === null || (typeof target !== 'object' && typeof target !== 'function')) {
+                      recordPerfFailure('Object.defineProperty.invalidTarget', null,
+                        {targetType:typeof target,targetValue:String(target),property:String(property)});
+                      recordPerfFailure('Object.defineProperty.callsite', new Error('INVALID_DEFINE_PROPERTY_TARGET'));
+                    }
+                    return originalDefineProperty.call(Object,target,property,descriptor);
+                  };
+                  const interopApi = window.OmegaMinistryInteroperability ||
+                    (window.Omega && window.Omega.MinistryInteroperability);
+                  const interopInstance = interopApi && interopApi.instance;
+                  const originalStateTransactionFactory = interopInstance && interopInstance.stateTransaction;
+                  if (interopInstance && originalStateTransactionFactory &&
+                      typeof originalStateTransactionFactory.create === 'function') {
+                    interopInstance.stateTransaction = {
+                      create:function() {
+                        const transaction = originalStateTransactionFactory.create.apply(
+                          originalStateTransactionFactory,arguments);
+                        recordPerfFailure('stateTransaction.created',null,{
+                          transactionType:typeof transaction,
+                          stateType:typeof (transaction && transaction.state),
+                          hasState:!!(transaction && transaction.state),
+                          ownerMinistry:transaction && transaction.ownerMinistry,
+                          countryId:transaction && transaction.countryId,
+                          turn:transaction && transaction.turn
+                        });
+                        ['get','set','commit','rollback'].forEach(function(method) {
+                          if (!transaction || typeof transaction[method] !== 'function') return;
+                          const originalMethod = transaction[method];
+                          transaction[method] = function() {
+                            try {
+                              return originalMethod.apply(this,arguments);
+                            } catch (error) {
+                              recordPerfFailure('stateTransaction.'+method,error);
+                              throw error;
+                            }
+                          };
+                        });
+                        return transaction;
+                      }
+                    };
+                  }
+                  function restorePerfDiagnostics() {
+                    try { Object.defineProperties = originalDefineProperties; } catch (_) {}
+                    try { Object.defineProperty = originalDefineProperty; } catch (_) {}
+                    try {
+                      if (interopInstance) interopInstance.stateTransaction = originalStateTransactionFactory;
+                    } catch (_) {}
+                  }
                   for (let index=0; index<6; index++) {
                     const nextTurn = turn + index;
                     window.dispatchEvent(new CustomEvent('OMEGA_RESOURCE_INVENTORY_CHANGED',{
@@ -275,7 +345,12 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                     const wallMs = performance.now() - start;
                     const afterCpu = Number(api.diagnostics().totalSyncSegmentMs || 0);
                     if (checkpoint.status !== 'CHECKPOINTED') {
-                      throw new Error('CHECKPOINT_FAILED:'+checkpoint.status+':'+(checkpoint.reason||'UNKNOWN'));
+                      const commandId='NATIONAL-ACCOUNTS-'+countryId+'-T'+nextTurn;
+                      const commandRecord=interopApi && typeof interopApi.getCommand==='function'
+                        ?interopApi.getCommand(commandId):null;
+                      throw new Error('CHECKPOINT_FAILED:'+checkpoint.status+':'+(checkpoint.reason||'UNKNOWN')+
+                        ':DIAGNOSTICS:'+JSON.stringify(window.__OMEGA_ANDROID_PERF_DIAGNOSTICS||[])+
+                        ':COMMAND:'+JSON.stringify(commandRecord||null));
                     }
                     samples.push({
                       wallMs:Number(wallMs.toFixed(3)),
@@ -315,6 +390,7 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                   }
                   if (oldAccount === undefined) delete economy.nationalAccounts;
                   else economy.nationalAccounts = oldAccount;
+                  restorePerfDiagnostics();
                   window.dispatchEvent(new CustomEvent('OMEGA_RESOURCE_INVENTORY_CHANGED',{
                     detail:{countryId,resourceId:'IRON_ORE',restored:true}
                   }));
