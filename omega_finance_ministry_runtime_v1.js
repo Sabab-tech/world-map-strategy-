@@ -902,7 +902,7 @@
     }
     const e=root.economy?.[p.economyKey]||getEconomyRecord(p);
     if(!isObject(e)){
-      const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root);
+      const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root,turnNumber,dt);
       if(externalTreasuryChanged){
         updateFiscalPeriodAccount(fm,turnNumber);
         syncEconomyRecord(p,fm,root);
