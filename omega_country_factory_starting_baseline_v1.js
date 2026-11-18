@@ -299,14 +299,12 @@
           }
           state.simulation = {};
         }
-        var currentGlobalMarker = state.simulation.countryFactoryStartingBaselineV1;
-        if (isObject(currentGlobalMarker) && currentGlobalMarker.sessionId &&
-            currentGlobalMarker.sessionId !== sessionId &&
-            isObject(currentGlobalMarker.countries) &&
-            Object.keys(currentGlobalMarker.countries).length >= loaded.countryIds.length) {
-          lastReport = clone(currentGlobalMarker);
-          return { version: VERSION, status: 'EXISTING_BASELINE_PRESERVED', reason: 'PRIOR_SESSION_BASELINE_NOT_OVERWRITTEN' };
-        }
+        // The 197-country baseline roster is shared across player sessions; its
+        // previous session stamp must not lock the live factory registry to the
+        // country that happened to be selected during startup. A later map-selected
+        // player receives an additive registration for their own country below.
+        // registerStartingFactoryAssets() reconciles per-type counts against existing
+        // assets, so previously saved country assets remain intact and are not duplicated.
         var playerCountryId = id(effectiveSession.playerCountryId);
         var playerBaseline = loaded.baseline.countries[playerCountryId];
         var industrialNetwork = g.OmegaResourceIndustrialNetwork ||

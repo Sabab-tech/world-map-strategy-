@@ -617,6 +617,11 @@ test('world geometry becomes usable before supporting datasets and resumes witho
   assert.ok(setUiActive.includes('root.style.display = this.__omegaMapRootDisplay') &&
     setUiActive.includes('Game.__omegaGeoJSONRenderPaused = true'),
     'map navigation should park the map view and pause only its frame work');
+  assert.ok(setUiActive.includes('const rootIsSuspended = !!(root && (') &&
+    setUiActive.includes('((nextActive && !rootIsSuspended) || (!nextActive && rootIsSuspended))'),
+    'idempotent map activation must repair a suspended DOM root even when the activity flag already says active');
+  assert.doesNotMatch(setUiActive, /if \(this\.__omegaMapUiActive === nextActive\) return true;/,
+    'map activation must not early-return while the rendered map root remains hidden');
   const abortResumeStart = map.indexOf('const retryWorldMapAfterAbort = function ()');
   const abortResumeEnd = map.indexOf('    return true;', abortResumeStart);
   const abortResume = map.slice(abortResumeStart, abortResumeEnd);
@@ -640,6 +645,9 @@ test('world geometry becomes usable before supporting datasets and resumes witho
   assert.ok(map.includes('const mapGeometryReady = Game.__omegaGeoJSONRenderComplete === true;') &&
     map.includes("status === 'complete' && !mapGeometryReady ? 'loading' : status"),
     'map completion must remain complete even while the overall supporting-data coordinator is still active');
+  assert.ok(map.includes('if (mapGeometryReady && status !== \'complete\')') &&
+    map.includes('return this.__assetsLoadingProgress;'),
+    'late supporting-data progress must not reopen the blocking overlay after GeoJSON geometry is ready');
   const simulation = read('omega_simulation_runtime.js');
   const driver = read('omega_enterprise_composition_root_v10.js');
   const resourceEconomy = read('omega_resource_economy_runtime_v2.js');

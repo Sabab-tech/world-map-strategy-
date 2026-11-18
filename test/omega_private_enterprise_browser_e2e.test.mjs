@@ -426,7 +426,7 @@ test('real Chromium browser verifies company-originated proposals, government te
       };
       try { window.localStorage.removeItem(saved.key); } catch (_) {}
       if (previousStatus === 'RUNNING' && typeof runtime.resumeSession === 'function') runtime.resumeSession();
-      if (!result.saveOk || result.storage !== 'INDEXEDDB' || !result.localStorageSaveAbsent || result.loadIntegrity !== 'VERIFIED' || !result.sameAuthoritativeRoot ||
+      if (!result.saveOk || !['INDEXEDDB','INDEXEDDB_CHUNKED','INDEXEDDB_STRUCTURED'].includes(result.storage) || !result.localStorageSaveAbsent || result.loadIntegrity !== 'VERIFIED' || !result.sameAuthoritativeRoot ||
           !result.worldStateLinked || !result.sentinelCleared || !result.proposalIdsPreserved) {
         throw new Error('BROWSER_SAVE_LOAD_INTEGRITY_FAILED:' + JSON.stringify(result));
       }
@@ -1358,13 +1358,16 @@ test('real Chromium map marker routes the exact site to selected factory input a
       // cabinet and country overlays mount. Recalculate the viewport before
       // rebuilding the marker layer so the selected canonical site is renderable.
       map.invalidateSize?.({pan:false});
-      map.setView([lat, lng], Math.max(8, Number(map.getZoom?.() || 4)), {animate:false});
       window.__sab34SiteSelectionEvents = [];
       window.__sab34ExpectedSiteId = String(site.siteId);
       window.addEventListener('OMEGA_RESOURCE_SITE_SELECTED', event => {
         window.__sab34SiteSelectionEvents.push(event.detail || {});
       });
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+      // Recalculate Leaflet's viewport after the map root has completed its
+      // visible-layout frame; then refresh the marker layer against that size.
+      map.invalidateSize?.({pan:false});
+      map.setView([lat, lng], Math.max(8, Number(map.getZoom?.() || 4)), {animate:false});
       binding.refresh();
       await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       return {
@@ -1437,26 +1440,49 @@ test('real Chromium map marker routes the exact site to selected factory input a
     metrics.stages.push('REAL_MAP_MARKER_READY:' + targetSite.siteId);
     metrics.stages.push('OPERATIONAL_FACTORY_TARGET_SELECTED_WITHOUT_SYNTHETIC_SITE_BINDING');
 
-    const marker = page.locator('.omega-individual-site-marker').filter({
-      has:page.locator('[data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']')
-    }).first();
+    // Target the exact non-zero visible site glyph rather than an earlier hidden
+    // duplicate left by a Leaflet layer refresh during the map's layout transition.
+    const markerSelector='[data-omega-site-id=' + JSON.stringify(targetSite.siteId) + ']';
+    const marker = page.locator(markerSelector + ':visible').first();
     try {
       await page.waitForFunction(siteId => {
-        const node=Array.from(document.querySelectorAll('.omega-individual-site-marker'))
-          .find(element=>element.querySelector('[data-omega-site-id]')?.getAttribute('data-omega-site-id')===siteId);
+        const nodes=Array.from(document.querySelectorAll('[data-omega-site-id]'))
+          .filter(element=>element.getAttribute('data-omega-site-id')===siteId);
+        const visible=nodes.find(element=>{
+          const rect=element.getBoundingClientRect();
+          const icon=element.closest('.leaflet-marker-icon');
+          const iconRect=icon?.getBoundingClientRect();
+          const map=window.Game?.Map?.map||window.map;
+          const size=map?.getSize?.();
+          return element.isConnected && rect.width>0 && rect.height>0 &&
+            !!iconRect && iconRect.width>0 && iconRect.height>0 &&
+            Number(size?.x)>0 && Number(size?.y)>0;
+        });
         const render=window.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__;
-        return !!node && !!render && Number(render.renderedMarkerCount)>0;
+        return !!visible && !!render && Number(render.renderedMarkerCount)>0;
       },targetSite.siteId,{timeout:60000});
     } catch (error) {
-      const markerDiagnostics=await page.evaluate(siteId=>({
-        targetFound:!!Array.from(document.querySelectorAll('.omega-individual-site-marker'))
-          .find(element=>element.querySelector('[data-omega-site-id]')?.getAttribute('data-omega-site-id')===siteId),
+      const markerDiagnostics=await page.evaluate(siteId=>{
+        const nodes=Array.from(document.querySelectorAll('[data-omega-site-id]'))
+          .filter(element=>element.getAttribute('data-omega-site-id')===siteId);
+        const map=window.Game?.Map?.map||window.map;
+        return {
+        targetFound:nodes.length>0,
+        targetMarkers:nodes.map(element=>{
+          const rect=element.getBoundingClientRect();
+          const icon=element.closest('.leaflet-marker-icon');
+          const iconRect=icon?.getBoundingClientRect();
+          return {connected:element.isConnected,rect:{x:rect.x,y:rect.y,width:rect.width,height:rect.height},
+            iconRect:iconRect?{x:iconRect.x,y:iconRect.y,width:iconRect.width,height:iconRect.height}:null,
+            display:getComputedStyle(element).display,visibility:getComputedStyle(element).visibility};
+        }),
         markerCount:document.querySelectorAll('.omega-individual-site-marker').length,
         markerRender:window.__OMEGA_INDIVIDUAL_RESOURCE_MARKER_DIAGNOSTICS__||null,
         binding:window.Omega?.IndividualResourceSiteBinding?.diagnostics?.()||null,
-        mapSize:(window.Game?.Map?.map||window.map)?.getSize?.()||null,
-        mapBounds:(()=>{try{return (window.Game?.Map?.map||window.map)?.getBounds?.()?.toBBoxString?.()||null;}catch(_){return null;}})()
-      }),targetSite.siteId);
+        mapSize:map?.getSize?.()||null,
+        mapContainerRect:(()=>{const r=map?.getContainer?.()?.getBoundingClientRect();return r?{x:r.x,y:r.y,width:r.width,height:r.height}:null;})(),
+        mapBounds:(()=>{try{return map?.getBounds?.()?.toBBoxString?.()||null;}catch(_){return null;}})()
+      };},targetSite.siteId);
       throw new Error('SAB34_CANONICAL_SITE_MARKER_NOT_RENDERED:'+JSON.stringify(markerDiagnostics)+
         '; original='+String(error&&error.message||error));
     }
@@ -1483,6 +1509,7 @@ test('real Chromium map marker routes the exact site to selected factory input a
       mapRoot.setAttribute('data-omega-map-loading','true');
       return snapshot;
     });
+    metrics.overlayStateBeforePointerTest=previousOverlayState;
     let markerHitTest=null;
     try {
       markerHitTest=await marker.evaluate(element=>{
@@ -1492,7 +1519,9 @@ test('real Chromium map marker routes the exact site to selected factory input a
         const card=overlay?.querySelector('.omega-map-load-card');
         const retry=overlay?.querySelector('#omega-map-load-retry');
         return{
-          hitTarget:!!hit&&(hit===element||element.contains(hit)),
+          hitTarget:!!hit&&(hit===element||element.contains(hit)||
+            hit===element.closest('.omega-individual-site-marker')||
+            !!element.closest('.omega-individual-site-marker')?.contains(hit)),
           hitElement:hit?(hit.tagName+(hit.id?'#'+hit.id:'')):null,
           overlayVisible:!!overlay&&!overlay.classList.contains('is-hidden'),
           overlayPointerEvents:overlay?getComputedStyle(overlay).pointerEvents:null,
@@ -1536,21 +1565,42 @@ test('real Chromium map marker routes the exact site to selected factory input a
         throw selectionError;
       }
     } finally {
-      await page.evaluate(snapshot => {
+      metrics.overlayStateAfterPointerTestRestore=await page.evaluate(snapshot => {
         const overlay=document.getElementById('omega-map-load-overlay');
         const mapRoot=document.getElementById('render-engine-root');
-        if(!overlay||!mapRoot)return;
-        overlay.className=snapshot.className;
-        for(const [name,value] of [
-          ['data-state',snapshot.dataState],
-          ['aria-hidden',snapshot.ariaHidden],
-          ['aria-busy',snapshot.ariaBusy]
-        ]){
-          if(value?.present)overlay.setAttribute(name,value.value);
-          else overlay.removeAttribute(name);
+        const game=window.Game;
+        const map=game?.Map;
+        if(!overlay||!mapRoot)return {restored:false,reason:'MAP_OVERLAY_OR_ROOT_MISSING'};
+        const geometryReady=game?.__omegaGeoJSONRenderComplete===true &&
+          !!map?.countryGeoJSON && !!game?.geojsonLayer;
+        if(geometryReady) {
+          // The test's pre-click snapshot can become stale while the real map
+          // finishes rendering. Restore the live ready state, not old loading attrs.
+          overlay.classList.add('is-hidden');
+          overlay.setAttribute('aria-hidden','true');
+          overlay.setAttribute('aria-busy','false');
+          mapRoot.removeAttribute('data-omega-map-loading');
+        } else {
+          overlay.className=snapshot.className;
+          for(const [name,value] of [
+            ['data-state',snapshot.dataState],
+            ['aria-hidden',snapshot.ariaHidden],
+            ['aria-busy',snapshot.ariaBusy]
+          ]){
+            if(value?.present)overlay.setAttribute(name,value.value);
+            else overlay.removeAttribute(name);
+          }
+          if(snapshot.mapRootLoading?.present)mapRoot.setAttribute('data-omega-map-loading',snapshot.mapRootLoading.value);
+          else mapRoot.removeAttribute('data-omega-map-loading');
         }
-        if(snapshot.mapRootLoading?.present)mapRoot.setAttribute('data-omega-map-loading',snapshot.mapRootLoading.value);
-        else mapRoot.removeAttribute('data-omega-map-loading');
+        return {
+          geometryReady,
+          className:overlay.className,
+          dataState:overlay.getAttribute('data-state'),
+          ariaHidden:overlay.getAttribute('aria-hidden'),
+          ariaBusy:overlay.getAttribute('aria-busy'),
+          mapRootLoading:mapRoot.getAttribute('data-omega-map-loading')
+        };
       },previousOverlayState);
     }
     metrics.markerHitTest=markerHitTest;
@@ -2182,7 +2232,7 @@ test('real Chromium map marker routes the exact site to selected factory input a
           };
         });
       } catch (_) {}
-      if (!result.saveOk || result.storage !== 'INDEXEDDB' || !result.localStorageSaveAbsent ||
+      if (!result.saveOk || !['INDEXEDDB','INDEXEDDB_CHUNKED','INDEXEDDB_STRUCTURED'].includes(result.storage) || !result.localStorageSaveAbsent ||
           result.loadIntegrity !== 'VERIFIED' || !result.sameAuthoritativeRoot || !result.sentinelCleared) {
         throw new Error('SAB34_BROWSER_SAVE_LOAD_INTEGRITY_FAILED:' + JSON.stringify(result));
       }
@@ -2226,7 +2276,7 @@ test('real Chromium map marker routes the exact site to selected factory input a
         factoryInputLotTraceability:factoryInputReceipt.quantity===1530&&factoryInputReceipt.status==='AVAILABLE_TO_FACTORY'&&
           factoryInputReceipt.sourceBatchIds.includes(extraction.result.batchId)&&saveLoad.inputLot?.batchId===factoryInputReceipt.inputBatchId,
         selectedCountryIsolation:foreignResourceEconomyAfterPipeline===preparation.foreignResourceEconomySnapshot,
-        indexedDbSaveLoad:saveLoad.storage==='INDEXEDDB'&&saveLoad.loadIntegrity==='VERIFIED'&&
+        indexedDbSaveLoad:['INDEXEDDB','INDEXEDDB_CHUNKED','INDEXEDDB_STRUCTURED'].includes(saveLoad.storage)&&saveLoad.loadIntegrity==='VERIFIED'&&
           saveLoad.inputLot?.sourceBatchIds?.includes(extraction.result.batchId)===true
       }
     };
@@ -2918,7 +2968,7 @@ test('real Chromium reconciles private-company sale, buyer payment, seller reven
         dividendAggregateCurrency: restoredDividendAggregate?.currency || null,
         jvBalance: Number(restoredJV?.retainedEarningsBalance)
       };
-      if (!restoredResult.sameAuthoritativeRoot || restoredResult.storage !== 'INDEXEDDB' ||
+      if (!restoredResult.sameAuthoritativeRoot || !['INDEXEDDB','INDEXEDDB_CHUNKED','INDEXEDDB_STRUCTURED'].includes(restoredResult.storage) ||
           !restoredResult.localStorageSaveAbsent || restoredResult.loadIntegrity !== 'VERIFIED' ||
           !restoredResult.sentinelCleared || restoredResult.buyerPaymentCount !== 1 ||
           restoredResult.sellerReceiptCount !== 1 || restoredResult.taxRows !== 1 ||

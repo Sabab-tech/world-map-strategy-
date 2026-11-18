@@ -1534,6 +1534,26 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status, source) {
     const bounded = coordinatedStartupActive && !isStartupProgressUpdate && !mapGeometryReady
         ? Math.min(45, 2 + rawPercent * 0.43)
         : rawPercent;
+    // Once the actual GeoJSON geometry is rendered, late supporting-data progress
+    // must never reopen the blocking startup overlay or restore its click shield.
+    if (mapGeometryReady && status !== 'complete') {
+        this.__omegaMapLoadingProgress = rawPercent;
+        if (coordinatedStartupActive && !isStartupProgressUpdate) {
+            startupLoader.__assetsLoadingProgress = bounded;
+            startupLoader.__assetsLoadingMessage = String(message || 'Preparing world map…');
+            startupLoader.__assetsLoadingStatus = String(status || 'loading');
+        }
+        // A late supporting-data update must not only avoid reopening the loader;
+        // it must also dismiss any stale loading state left from before geometry
+        // completed. Map interaction is ready independently of those datasets.
+        if (overlay && this.__omegaMapUiActive !== false) {
+            overlay.classList.add('is-hidden');
+            overlay.setAttribute('aria-hidden', 'true');
+            overlay.setAttribute('aria-busy', 'false');
+        }
+        if (mapRoot) mapRoot.removeAttribute('data-omega-map-loading');
+        return this.__assetsLoadingProgress;
+    }
     // The blocking map overlay belongs to the map geometry stage, not the
     // independent supporting-data pipeline. Once boundaries are rendered,
     // preserve the map's complete state and let supporting work continue off-screen.
@@ -1563,15 +1583,25 @@ Game.Map.updateMapLoadingProgress = function(percent, message, status, source) {
                 if (Game.Map.__omegaMapUiActive !== false) map.invalidateSize({ pan:false, debounceMoveend:true });
             }, 0);
         }
-        window.setTimeout(function () {
-            if (Game.Map.__omegaMapUiActive !== false &&
-                Game.__omegaGeoJSONRenderComplete === true && overlay.getAttribute('data-state') === 'complete') {
-                overlay.classList.add('is-hidden');
-                overlay.setAttribute('aria-hidden', 'true');
-                const mapRoot = document.getElementById('render-engine-root');
-                if (mapRoot) mapRoot.removeAttribute('data-omega-map-loading');
-            }
-        }, 260);
+        if (mapGeometryReady) {
+            // The boundaries are already interactive; do not leave the page
+            // behind a 260ms completion timer that later progress can invalidate.
+            overlay.classList.add('is-hidden');
+            overlay.setAttribute('aria-hidden', 'true');
+            overlay.setAttribute('aria-busy', 'false');
+            if (mapRoot) mapRoot.removeAttribute('data-omega-map-loading');
+        } else {
+            window.setTimeout(function () {
+                if (Game.Map.__omegaMapUiActive !== false &&
+                    Game.__omegaGeoJSONRenderComplete === true && overlay.getAttribute('data-state') === 'complete') {
+                    overlay.classList.add('is-hidden');
+                    overlay.setAttribute('aria-hidden', 'true');
+                    overlay.setAttribute('aria-busy', 'false');
+                    const currentMapRoot = document.getElementById('render-engine-root');
+                    if (currentMapRoot) currentMapRoot.removeAttribute('data-omega-map-loading');
+                }
+            }, 260);
+        }
     }
 };
 Game.Map.resetIncompleteWorldRender = function() {
@@ -1629,9 +1659,16 @@ Game.Map.ensureMapLoadingOverlay = function() {
 };
 Game.Map.setUiActive = function(active) {
     const nextActive = active === true;
-    if (this.__omegaMapUiActive === nextActive) return true;
-    this.__omegaMapUiActive = nextActive;
     const root = document.getElementById('render-engine-root');
+    const rootIsSuspended = !!(root && (
+        root.getAttribute('data-omega-map-suspended') === 'true' || root.style.display === 'none'
+    ));
+    // The activity flag and DOM visibility can become temporarily unsynchronised
+    // during overlapping ministry-close/startup callbacks. Treat an already-active
+    // map as a no-op only when its real root is also visible.
+    if (this.__omegaMapUiActive === nextActive &&
+        ((nextActive && !rootIsSuspended) || (!nextActive && rootIsSuspended))) return true;
+    this.__omegaMapUiActive = nextActive;
     const map = this.map || window.map;
 
     if (!nextActive) {
@@ -1697,18 +1734,25 @@ Game.Map.setUiActive = function(active) {
                 startupLoader.__assetsLoadingMessage || 'Startup paused. Retry to resume.',
                 'error'
             );
-        } else {
-            // A fully initialized cached map does not flash the startup loader on ministry exit.
-            var readyOverlay = document.getElementById('omega-map-load-overlay');
-            if (readyOverlay) {
-                readyOverlay.classList.add('is-hidden');
-                readyOverlay.setAttribute('aria-hidden', 'true');
-                readyOverlay.setAttribute('aria-busy', 'false');
-            }
-            if (root) root.removeAttribute('data-omega-map-loading');
         }
+        // setStartupProgress preserves the supporting-data progress internally and
+        // deliberately returns early once geometry is ready. Regardless of that
+        // coordinator state, the completed map must never keep a stale overlay.
+        var readyOverlay = document.getElementById('omega-map-load-overlay');
+        if (readyOverlay) {
+            readyOverlay.classList.add('is-hidden');
+            readyOverlay.setAttribute('aria-hidden', 'true');
+            readyOverlay.setAttribute('aria-busy', 'false');
+        }
+        if (root) root.removeAttribute('data-omega-map-loading');
     } else {
-        this.updateMapLoadingProgress(this.__omegaMapLoadingProgress || 2, 'Preparing world map…', 'loading');
+        // Re-entering the map after a ministry visit must not resurrect the blocking
+        // loader when its country geometry is already rendered and interactive.
+        if (Game.__omegaGeoJSONRenderComplete === true && this.countryGeoJSON && Game.geojsonLayer) {
+            this.updateMapLoadingProgress(100, 'World map ready', 'complete');
+        } else {
+            this.updateMapLoadingProgress(this.__omegaMapLoadingProgress || 2, 'Preparing world map…', 'loading');
+        }
         if (typeof Game.__omegaGeoJSONResumeRender === 'function') {
             Game.__omegaGeoJSONResumeRender();
         } else if (this.countryGeoJSON && !Game.geojsonLayer &&

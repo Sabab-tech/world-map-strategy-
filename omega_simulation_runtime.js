@@ -68,15 +68,201 @@
       .map(key=>JSON.stringify(key)+':'+stableStringify(value[key])).join(',')+'}';
   }
 
-  function checksumText(text){
-    let hash=2166136261;
+  function checksumUpdate(hash,text){
     for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
-    return (hash>>>0).toString(16).padStart(8,'0');
+    return hash;
+  }
+
+  function checksumText(text){
+    return (checksumUpdate(2166136261,String(text||''))>>>0).toString(16).padStart(8,'0');
+  }
+
+  function checksumStringParts(parts){
+    let hash=2166136261,totalLength=0;
+    for(const part of parts){
+      if(typeof part!=='string')throw new Error('SAVE_CHUNK_MISSING');
+      totalLength+=part.length;
+      hash=checksumUpdate(hash,part);
+    }
+    return {length:totalLength,checksum:(hash>>>0).toString(16).padStart(8,'0')};
+  }
+
+  // Restore a chunked save without joining the complete JSON document into one
+  // JavaScript string. Large world snapshots can exceed the engine's maximum
+  // string length even though every IndexedDB chunk is individually valid.
+  function parseJsonStringParts(parts){
+    let partIndex=0,partOffset=0,pendingChar=null,hasPendingChar=false;
+    function readChar(){
+      if(hasPendingChar){hasPendingChar=false;const value=pendingChar;pendingChar=null;return value;}
+      while(partIndex<parts.length){
+        const part=parts[partIndex];
+        if(partOffset<part.length)return part.charAt(partOffset++);
+        partIndex++;partOffset=0;
+      }
+      return null;
+    }
+    function unreadChar(value){
+      if(hasPendingChar)throw new Error('SAVE_CHUNK_JSON_READER_LOOKAHEAD_OVERFLOW');
+      pendingChar=value;hasPendingChar=true;
+    }
+    function isWhitespace(value){return value===' '||value.charCodeAt(0)===9||value.charCodeAt(0)===10||value.charCodeAt(0)===13;}
+    function nextToken(){
+      let character=readChar();
+      while(character!==null&&isWhitespace(character))character=readChar();
+      if(character===null)return null;
+      if('{}[]:,'.includes(character))return character;
+      if(character==='"'){
+        let encoded='"',escaped=false;
+        while(true){
+          const next=readChar();
+          if(next===null)throw new Error('SAVE_CHUNK_JSON_UNTERMINATED_STRING');
+          encoded+=next;
+          if(escaped){escaped=false;continue;}
+          if(next==='\\'){escaped=true;continue;}
+          if(next==='"')break;
+        }
+        return {kind:'string',value:JSON.parse(encoded)};
+      }
+      let literal=character;
+      while(true){
+        const next=readChar();
+        if(next===null)break;
+        if(isWhitespace(next)||'{}[]:,'.includes(next)){unreadChar(next);break;}
+        literal+=next;
+      }
+      return {kind:'primitive',value:JSON.parse(literal)};
+    }
+
+    let root,rootReady=false;
+    const stack=[];
+    function attach(value){
+      if(!stack.length){
+        if(rootReady)throw new Error('SAVE_CHUNK_JSON_MULTIPLE_ROOT_VALUES');
+        root=value;rootReady=true;return;
+      }
+      const parent=stack[stack.length-1];
+      if(parent.type==='array'){
+        if(parent.state!=='firstValueOrEnd'&&parent.state!=='value')
+          throw new Error('SAVE_CHUNK_JSON_ARRAY_VALUE_UNEXPECTED');
+        parent.value.push(value);parent.state='commaOrEnd';return;
+      }
+      if(parent.type==='object'&&parent.state==='value'){
+        Object.defineProperty(parent.value,parent.key,{
+          value,enumerable:true,writable:true,configurable:true
+        });
+        parent.key=null;parent.state='commaOrEnd';return;
+      }
+      throw new Error('SAVE_CHUNK_JSON_VALUE_UNEXPECTED');
+    }
+    function beginValue(token){
+      if(token==='{'){
+        const value={};attach(value);
+        stack.push({type:'object',state:'firstKeyOrEnd',value,key:null});return;
+      }
+      if(token==='['){
+        const value=[];attach(value);
+        stack.push({type:'array',state:'firstValueOrEnd',value});return;
+      }
+      if(token&&token.kind==='string'){attach(token.value);return;}
+      if(token&&token.kind==='primitive'){attach(token.value);return;}
+      throw new Error('SAVE_CHUNK_JSON_VALUE_INVALID');
+    }
+
+    let token;
+    while((token=nextToken())!==null){
+      if(!stack.length){
+        if(rootReady)throw new Error('SAVE_CHUNK_JSON_TRAILING_DATA');
+        beginValue(token);continue;
+      }
+      const frame=stack[stack.length-1];
+      if(frame.type==='object'){
+        if(frame.state==='firstKeyOrEnd'){
+          if(token==='}'){stack.pop();continue;}
+          if(token&&token.kind==='string'){frame.key=token.value;frame.state='colon';continue;}
+          throw new Error('SAVE_CHUNK_JSON_OBJECT_KEY_INVALID');
+        }
+        if(frame.state==='key'){
+          if(token&&token.kind==='string'){frame.key=token.value;frame.state='colon';continue;}
+          throw new Error('SAVE_CHUNK_JSON_OBJECT_KEY_INVALID');
+        }
+        if(frame.state==='colon'){
+          if(token!==':')throw new Error('SAVE_CHUNK_JSON_OBJECT_COLON_MISSING');
+          frame.state='value';continue;
+        }
+        if(frame.state==='value'){beginValue(token);continue;}
+        if(frame.state==='commaOrEnd'){
+          if(token===','){frame.state='key';continue;}
+          if(token==='}'){stack.pop();continue;}
+          throw new Error('SAVE_CHUNK_JSON_OBJECT_SEPARATOR_INVALID');
+        }
+      }else{
+        if(frame.state==='firstValueOrEnd'){
+          if(token===']'){stack.pop();continue;}
+          beginValue(token);continue;
+        }
+        if(frame.state==='value'){beginValue(token);continue;}
+        if(frame.state==='commaOrEnd'){
+          if(token===','){frame.state='value';continue;}
+          if(token===']'){stack.pop();continue;}
+          throw new Error('SAVE_CHUNK_JSON_ARRAY_SEPARATOR_INVALID');
+        }
+      }
+      throw new Error('SAVE_CHUNK_JSON_STATE_INVALID');
+    }
+    if(stack.length||!rootReady)throw new Error('SAVE_CHUNK_JSON_INCOMPLETE');
+    return root;
+  }
+
+  // Deterministic iterative JSON serializer. Unlike stableStringify(), it yields
+  // bounded tokens instead of joining the entire world into one giant JS string.
+  function* stableStringifyParts(value,omitRootChecksum=false){
+    const active=new WeakSet();
+    const stack=[{type:'value',value,root:true}];
+    while(stack.length){
+      const task=stack.pop();
+      if(task.type==='text'){yield task.text;continue;}
+      if(task.type==='leave'){active.delete(task.value);continue;}
+      const current=task.value;
+      if(current===null){yield 'null';continue;}
+      if(current===undefined||typeof current==='function'){yield 'null';continue;}
+      if(current instanceof Date){yield JSON.stringify(current.toISOString());continue;}
+      if(typeof current!=='object'){
+        const encoded=JSON.stringify(current);
+        yield encoded===undefined?'null':encoded;
+        continue;
+      }
+      if(active.has(current))throw new Error('SAVE_STATE_CIRCULAR_REFERENCE');
+      active.add(current);
+      if(Array.isArray(current)){
+        stack.push({type:'leave',value:current});
+        stack.push({type:'text',text:']'});
+        for(let index=current.length-1;index>=0;index--){
+          stack.push({type:'value',value:current[index],root:false});
+          if(index>0)stack.push({type:'text',text:','});
+        }
+        stack.push({type:'text',text:'['});
+        continue;
+      }
+      const keys=Object.keys(current).filter(key=>key!=='__proto__'&&key!=='constructor'&&
+        !(omitRootChecksum&&task.root&&key==='checksum')&&
+        typeof current[key]!=='function'&&current[key]!==undefined).sort();
+      stack.push({type:'leave',value:current});
+      stack.push({type:'text',text:'}'});
+      for(let index=keys.length-1;index>=0;index--){
+        const key=keys[index];
+        stack.push({type:'value',value:current[key],root:false});
+        stack.push({type:'text',text:':'});
+        stack.push({type:'text',text:JSON.stringify(key)});
+        if(index>0)stack.push({type:'text',text:','});
+      }
+      stack.push({type:'text',text:'{'});
+    }
   }
 
   function checksumSnapshot(value){
-    // Exclude only the top-level checksum without cloning the full snapshot.
-    return checksumText(stableStringify(value||{},true));
+    let hash=2166136261;
+    for(const part of stableStringifyParts(value||{},true))hash=checksumUpdate(hash,part);
+    return (hash>>>0).toString(16).padStart(8,'0');
   }
 
   function createSaveSnapshot(runtime,options={},referenceWorldState=false){
@@ -92,7 +278,7 @@
       worldState:referenceWorldState?runtime.world.state:runtime.world.snapshot(),
       commands:runtime.commandQueue.snapshot(),
       events:runtime.events.snapshot(),
-      ministryRuntime:runtime.ministryRuntime?.saveState?.()||null,
+      ministryRuntime:runtime.ministryRuntime?.saveState?.({includeInteroperability:false})||null,
       interoperability:runtime.interoperability?.saveState?.()||null,
       worldEngine:runtime.worldEngine?.exportSaveState?.({authoritativeState:true})||null
     };
@@ -102,6 +288,9 @@
     return snapshot;
   }
 
+  const SAVE_SINGLE_RECORD_MAX_CHARS=8*1024*1024;
+  const SAVE_CHUNK_CHARS=2*1024*1024;
+  const SAVE_CHUNKS_PER_BATCH=8;
   function indexedDbSaveRequest(indexedDB,operation,key,value){
     return new Promise((resolve,reject)=>{
       let database=null,settled=false;
@@ -123,20 +312,191 @@
       opening.onsuccess=()=>{
         database=opening.result;
         let transaction;
-        try{transaction=database.transaction('slots',operation==='put'?'readwrite':'readonly');}
+        try{transaction=database.transaction('slots',operation==='get'||operation==='getMany'||operation==='keys'?'readonly':'readwrite');}
         catch(error){finish(error);return;}
-        let request,result=null;
+        let result=null;
+        const requests=[];
+        const store=transaction.objectStore('slots');
+        const failRequest=(request,event)=>{
+          const detail=transaction.error||request?.error||event?.target?.error||null;
+          finish(detail||new Error('SAVE_DATABASE_REQUEST_FAILED'));
+        };
         transaction.oncomplete=()=>finish(null,result);
-        transaction.onerror=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_FAILED'));
-        transaction.onabort=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_ABORTED'));
+        transaction.onerror=(event)=>{
+          const failed=requests.find(request=>request?.error);
+          const detail=transaction.error||failed?.error||event?.target?.error||null;
+          finish(detail||new Error('SAVE_DATABASE_TRANSACTION_FAILED'));
+        };
+        transaction.onabort=(event)=>{
+          const failed=requests.find(request=>request?.error);
+          const detail=transaction.error||failed?.error||event?.target?.error||null;
+          finish(detail||new Error('SAVE_DATABASE_TRANSACTION_ABORTED'));
+        };
         try{
-          const store=transaction.objectStore('slots');
-          request=operation==='put'?store.put(String(value),String(key)):store.get(String(key));
-          request.onsuccess=()=>{result=request.result===undefined?null:request.result;};
-          request.onerror=()=>finish(request.error||new Error('SAVE_DATABASE_REQUEST_FAILED'));
-        }catch(error){try{transaction.abort();}catch(_){}finish(error);}
+          if(operation==='put'){
+            requests.push(store.put(value,String(key)));
+          }else if(operation==='get'){
+            const request=store.get(String(key));
+            request.onsuccess=()=>{result=request.result===undefined?null:request.result;};
+            requests.push(request);
+          }else if(operation==='putMany'){
+            for(const row of Array.isArray(value)?value:[]){
+              requests.push(store.put(row.value,String(row.key)));
+            }
+          }else if(operation==='getMany'){
+            const keys=Array.isArray(value)?value:[];
+            result=new Array(keys.length);
+            keys.forEach((item,index)=>{
+              const request=store.get(String(item));
+              request.onsuccess=()=>{result[index]=request.result===undefined?null:request.result;};
+              requests.push(request);
+            });
+          }else if(operation==='deleteMany'){
+            for(const item of Array.isArray(value)?value:[])requests.push(store.delete(String(item)));
+          }else if(operation==='keys'){
+            if(typeof store.getAllKeys!=='function')throw new Error('SAVE_DATABASE_KEY_ENUMERATION_UNSUPPORTED');
+            const request=store.getAllKeys();
+            request.onsuccess=()=>{result=Array.from(request.result||[]);};
+            requests.push(request);
+          }else{
+            throw new Error('SAVE_DATABASE_OPERATION_UNSUPPORTED:'+String(operation));
+          }
+          requests.forEach(request=>{request.onerror=event=>failRequest(request,event);});
+        }catch(error){
+          try{transaction.abort();}catch(_){}
+          finish(error);
+        }
       };
     });
+  }
+
+  async function cleanupStaleSaveChunks(indexedDB,key,keepPrefix){
+    try{
+      const allKeys=await indexedDbSaveRequest(indexedDB,'keys');
+      const prefixes=[String(key)+'.chunk.',String(key)+'.stage.'];
+      const stale=(Array.isArray(allKeys)?allKeys:[])
+        .filter(item=>typeof item==='string'&&prefixes.some(prefix=>item.startsWith(prefix))&&
+          (!keepPrefix||!item.startsWith(keepPrefix)));
+      for(let index=0;index<stale.length;index+=128){
+        await indexedDbSaveRequest(indexedDB,'deleteMany',null,stale.slice(index,index+128));
+      }
+    }catch(_){
+      // The committed manifest remains valid if best-effort orphan cleanup fails.
+    }
+  }
+
+  async function writeChunkedIndexedDbSave(indexedDB,key,canonical,checksum,turn){
+    const prefix=String(key)+'.chunk.'+String(checksum)+'.';
+    const chunkCount=Math.ceil(canonical.length/SAVE_CHUNK_CHARS);
+    for(let first=0;first<chunkCount;first+=SAVE_CHUNKS_PER_BATCH){
+      const records=[];
+      const end=Math.min(chunkCount,first+SAVE_CHUNKS_PER_BATCH);
+      for(let index=first;index<end;index++){
+        const start=index*SAVE_CHUNK_CHARS;
+        records.push({key:prefix+String(index),value:canonical.slice(start,start+SAVE_CHUNK_CHARS)});
+      }
+      await indexedDbSaveRequest(indexedDB,'putMany',null,records);
+    }
+    // Commit pointer last. Until this manifest lands, the previous save slot
+    // remains readable even when a chunk batch fails or the app is interrupted.
+    const manifest={
+      __omegaSaveManifest:'OMEGA_CHUNKED_SAVE_V1',
+      version:1,
+      checksum,
+      chunkCount,
+      chunkChars:SAVE_CHUNK_CHARS,
+      serializedLength:canonical.length,
+      turn
+    };
+    await indexedDbSaveRequest(indexedDB,'put',key,manifest);
+    await cleanupStaleSaveChunks(indexedDB,key,prefix);
+    return manifest;
+  }
+
+
+  let saveChunkGeneration=0;
+
+  async function persistCanonicalSave(indexedDB,key,snapshot,turn){
+    let hash=2166136261,totalLength=0;
+    let smallParts=[],chunkMode=false;
+    let chunkPrefix='',chunkIndex=0,buffer='',batch=[];
+    const generation=Date.now().toString(36)+'-'+(++saveChunkGeneration).toString(36);
+
+    async function flushBatch(){
+      if(!batch.length)return;
+      const records=batch;
+      batch=[];
+      await indexedDbSaveRequest(indexedDB,'putMany',null,records);
+    }
+    async function appendChunkText(text){
+      buffer+=text;
+      while(buffer.length>=SAVE_CHUNK_CHARS){
+        batch.push({key:chunkPrefix+String(chunkIndex++),value:buffer.slice(0,SAVE_CHUNK_CHARS)});
+        buffer=buffer.slice(SAVE_CHUNK_CHARS);
+        if(batch.length>=SAVE_CHUNKS_PER_BATCH)await flushBatch();
+      }
+    }
+
+    // Hash and write canonical JSON incrementally. Each IndexedDB value is capped
+    // at SAVE_CHUNK_CHARS (2 MiB), even when the complete world snapshot exceeds
+    // Chromium's per-record IndexedDB limit. The load path parses these parts
+    // incrementally and never joins the whole save into one JavaScript string.
+    for(const part of stableStringifyParts(snapshot,true)){
+      hash=checksumUpdate(hash,part);
+      totalLength+=part.length;
+      if(!chunkMode&&totalLength<=SAVE_SINGLE_RECORD_MAX_CHARS){
+        smallParts.push(part);
+        continue;
+      }
+      if(!indexedDB||typeof indexedDB.open!=='function')
+        throw new Error('LARGE_SAVE_REQUIRES_INDEXEDDB:SNAPSHOT_CHARS:'+totalLength);
+      if(!chunkMode){
+        chunkMode=true;
+        chunkPrefix=String(key)+'.stage.'+generation+'.';
+        buffer=smallParts.join('');
+        smallParts=[];
+      }
+      await appendChunkText(part);
+    }
+
+    const checksum=(hash>>>0).toString(16).padStart(8,'0');
+    if(!chunkMode){
+      const canonical=smallParts.join('');
+      const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
+        (canonical.length>2?',':'')+canonical.slice(1);
+      if(indexedDB&&typeof indexedDB.open==='function'){
+        try{
+          await indexedDbSaveRequest(indexedDB,'put',key,serialized);
+          await cleanupStaleSaveChunks(indexedDB,key,null);
+          return {ok:true,key,turn,storage:'INDEXEDDB',checksum,serializedLength:totalLength};
+        }catch(error){
+          try{error.smallSerialized=serialized;}catch(_){}
+          throw error;
+        }
+      }
+      return {ok:true,key,turn,storage:'LOCAL_STORAGE_FALLBACK',checksum,serialized,serializedLength:totalLength};
+    }
+
+    if(buffer.length){
+      batch.push({key:chunkPrefix+String(chunkIndex++),value:buffer});
+      buffer='';
+    }
+    await flushBatch();
+    // Commit pointer last. Until this manifest lands, the previous save slot
+    // remains readable even when a chunk batch fails or the app is interrupted.
+    const manifest={
+      __omegaSaveManifest:'OMEGA_CHUNKED_SAVE_V1',
+      version:1,
+      checksum,
+      chunkCount:chunkIndex,
+      chunkChars:SAVE_CHUNK_CHARS,
+      serializedLength:totalLength,
+      chunkPrefix,
+      turn
+    };
+    await indexedDbSaveRequest(indexedDB,'put',key,manifest);
+    await cleanupStaleSaveChunks(indexedDB,key,chunkPrefix);
+    return {ok:true,key,turn,storage:'INDEXEDDB_CHUNKED',checksum,serializedLength:totalLength};
   }
 
   function validateWorldSaveState(root){
@@ -1060,39 +1420,50 @@
 
     async saveSlot(slot='default'){
       const key='omega.game.save.'+String(slot||'default');
-      // Volatile diagnostics are not part of the durable game state. Serialize
-      // the canonical snapshot once, then hash and inject its root checksum into
-      // that same JSON string. The previous path walked the entire world twice
-      // (stable checksum serialization + JSON.stringify), blocking the browser
-      // main thread on large country/economy saves.
-      const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},true);
-      const canonical=stableStringify(snapshot,true);
-      const checksum=checksumText(canonical);
-      snapshot.checksum=checksum;
-      const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
-        (canonical.length>2?',':'')+canonical.slice(1);
-      if(global.indexedDB&&typeof global.indexedDB.open==='function'){
-        try{
-          await indexedDbSaveRequest(global.indexedDB,'put',key,serialized);
-          return {ok:true,key,turn:this.clock.turn,storage:'INDEXEDDB'};
-        }catch(indexedDbError){
-          // Preserve compatibility with browsers where IndexedDB is disabled
-          // or unavailable. The fallback may still fail on large saves, in
-          // which case the original storage error is included in the message.
-          try{
-            if(typeof global.localStorage!=='undefined'){
-              global.localStorage.setItem(key,serialized);
-              return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
-            }
-          }catch(localStorageError){
-            throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; INDEXEDDB:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
-          }
-          throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
+      // Capture a detached authoritative snapshot before the first asynchronous
+      // IndexedDB batch, so later UI/domain events cannot alter a save in flight.
+      const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},false);
+      // Without IndexedDB, keep small legacy localStorage writes synchronous.
+      // pagehide/visibilitychange handlers rely on the slot being committed
+      // before the current event task returns.
+      if(!global.indexedDB||typeof global.indexedDB.open!=='function'){
+        let hash=2166136261,totalLength=0;
+        const parts=[];
+        for(const part of stableStringifyParts(snapshot,true)){
+          totalLength+=part.length;
+          if(totalLength>SAVE_SINGLE_RECORD_MAX_CHARS)
+            throw new Error('LARGE_SAVE_REQUIRES_INDEXEDDB:SNAPSHOT_CHARS:'+totalLength);
+          hash=checksumUpdate(hash,part);
+          parts.push(part);
         }
+        if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
+        const canonical=parts.join('');
+        const checksum=(hash>>>0).toString(16).padStart(8,'0');
+        const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
+          (canonical.length>2?',':'')+canonical.slice(1);
+        global.localStorage.setItem(key,serialized);
+        return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK',checksum,serializedLength:totalLength};
       }
-      if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
-      global.localStorage.setItem(key,serialized);
-      return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
+      try{
+        const saved=await persistCanonicalSave(global.indexedDB,key,snapshot,this.clock.turn);
+        if(saved.storage==='LOCAL_STORAGE_FALLBACK'){
+          if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
+          global.localStorage.setItem(key,saved.serialized);
+          return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK',checksum:saved.checksum,serializedLength:saved.serializedLength};
+        }
+        return {ok:true,key,turn:this.clock.turn,storage:saved.storage,checksum:saved.checksum,serializedLength:saved.serializedLength};
+      }catch(error){
+        if(error&&typeof error.smallSerialized==='string'&&typeof global.localStorage!=='undefined'){
+          try{
+            global.localStorage.setItem(key,error.smallSerialized);
+            return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK',serializedLength:error.smallSerialized.length};
+          }catch(localStorageError){
+            throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError?.message||localStorageError)+
+              '; INDEXEDDB:'+String(error?.name||'IndexedDBError')+':'+String(error?.message||error));
+          }
+        }
+        throw new Error('CANONICAL_SAVE_FAILED:'+String(error?.name||'Error')+':'+String(error?.message||error));
+      }
     }
 
     async loadSlot(slot='default'){
@@ -1111,6 +1482,49 @@
         if(indexedDbError)throw new Error('SAVE_SLOT_NOT_FOUND:'+key+'; INDEXEDDB:'+String(indexedDbError.message||indexedDbError));
         throw new Error('SAVE_SLOT_NOT_FOUND:'+key);
       }
+      if(raw&&typeof raw==='object'&&raw.__omegaSaveSnapshot==='OMEGA_STRUCTURED_SAVE_V1'){
+        const length=Number(raw.serializedLength);
+        if(raw.version!==1||!Number.isSafeInteger(length)||length<1||
+           !/^[0-9a-f]{8}$/i.test(String(raw.checksum||''))||
+           !raw.snapshot||typeof raw.snapshot!=='object'||Array.isArray(raw.snapshot)){
+          throw new Error('SAVE_STRUCTURED_RECORD_INVALID:'+key);
+        }
+        // The snapshot is returned by IndexedDB structured clone, so restoring
+        // it does not need to concatenate or parse the entire serialized world.
+        // loadState verifies the same canonical checksum before mutating live state.
+        raw.snapshot.checksum=String(raw.checksum).toLowerCase();
+        return this.loadState(raw.snapshot);
+      }
+      if(raw&&typeof raw==='object'&&raw.__omegaSaveManifest==='OMEGA_CHUNKED_SAVE_V1'){
+        const count=Math.floor(Number(raw.chunkCount));
+        const chunkChars=Math.floor(Number(raw.chunkChars));
+        const length=Math.floor(Number(raw.serializedLength));
+        if(raw.version!==1||!Number.isSafeInteger(count)||count<1||count>100000||
+           !Number.isSafeInteger(chunkChars)||chunkChars<1||!Number.isSafeInteger(length)||length<1||
+           !/^[0-9a-f]{8}$/i.test(String(raw.checksum||''))){
+          throw new Error('SAVE_CHUNK_MANIFEST_INVALID:'+key);
+        }
+        const prefix=typeof raw.chunkPrefix==='string'&&
+          (raw.chunkPrefix.startsWith(key+'.stage.')||raw.chunkPrefix.startsWith(key+'.chunk.'))
+            ?raw.chunkPrefix:key+'.chunk.'+String(raw.checksum)+'.';
+        const parts=[];
+        for(let first=0;first<count;first+=SAVE_CHUNKS_PER_BATCH){
+          const keys=[];
+          for(let index=first;index<Math.min(count,first+SAVE_CHUNKS_PER_BATCH);index++)keys.push(prefix+String(index));
+          const rows=await indexedDbSaveRequest(global.indexedDB,'getMany',null,keys);
+          for(let index=0;index<rows.length;index++){
+            if(typeof rows[index]!=='string')throw new Error('SAVE_CHUNK_MISSING:'+keys[index]);
+            parts.push(rows[index]);
+          }
+        }
+        const integrity=checksumStringParts(parts);
+        if(integrity.length!==length)throw new Error('SAVE_CHUNK_LENGTH_MISMATCH:'+key);
+        if(integrity.checksum!==String(raw.checksum))throw new Error('SAVE_CHUNK_CHECKSUM_MISMATCH:'+key);
+        const snapshot=parseJsonStringParts(parts);
+        snapshot.checksum=raw.checksum;
+        return this.loadState(snapshot);
+      }
+      if(typeof raw!=='string')throw new Error('SAVE_SLOT_FORMAT_INVALID:'+key);
       return this.loadState(JSON.parse(raw));
     }
 
