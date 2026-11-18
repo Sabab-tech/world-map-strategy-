@@ -3,8 +3,30 @@ name: OMEGA Android 9 WebView Performance
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'android/**'
+      - 'omega_national_accounts_runtime_v1.js'
+      - 'national_accounts_rules_v1.json'
+      - 'omega_finance_ministry_runtime_v1.js'
+      - 'omega_world_simulation_scheduler_v1.js'
+      - 'omega_resource_economy_runtime_v2.js'
+      - 'omega_resource_industrial_network_v1.js'
+      - 'omega_global_trade_system.js'
+      - 'index.html'
+      - '.github/workflows/omega-android-webview-performance.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'android/**'
+      - 'omega_national_accounts_runtime_v1.js'
+      - 'national_accounts_rules_v1.json'
+      - 'omega_finance_ministry_runtime_v1.js'
+      - 'omega_world_simulation_scheduler_v1.js'
+      - 'omega_resource_economy_runtime_v2.js'
+      - 'omega_resource_industrial_network_v1.js'
+      - 'omega_global_trade_system.js'
+      - 'index.html'
+      - '.github/workflows/omega-android-webview-performance.yml'
   workflow_dispatch:
 
 permissions:
