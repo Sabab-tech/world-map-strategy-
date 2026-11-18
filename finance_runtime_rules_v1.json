@@ -40,5 +40,6 @@
     "externalSubsystems": "Cash changes made by other ministries/resource/trade systems are reconciled from finance.available and recorded as externally classified credits/debits when the source action cannot be reliably inferred.",
     "estimates": "Country-sector output and projected tax contributions use finance_sector_registry_v1.json default shares and are game estimates, not observed statistics."
   },
-  "maximumFiscalPeriodHistory": 12
+  "maximumFiscalPeriodHistory": 12,
+  "maximumFiscalTransactionIds": 2048
 }
