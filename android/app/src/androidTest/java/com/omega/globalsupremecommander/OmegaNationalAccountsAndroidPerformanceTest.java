@@ -299,8 +299,7 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                       return originalDefineProperty.call(Object,target,property,descriptor);
                     } catch (error) {
                       recordPerfFailure('Object.defineProperty.throw',error,
-                        {targetType:typeof target,property:String(property),receiverType:typeof receiver,
-                         receiverIsObjectConstructor:receiver===Object});
+                        {targetType:typeof target,property:String(property)});
                       throw error;
                     }
                   };
