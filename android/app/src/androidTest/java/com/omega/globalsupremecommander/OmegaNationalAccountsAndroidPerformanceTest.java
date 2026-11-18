@@ -33,8 +33,10 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(AndroidJUnit4.class)
 public final class OmegaNationalAccountsAndroidPerformanceTest {
+    private static final long PAGE_LOAD_TIMEOUT_MS = 300_000L;
     private static final long PAGE_READY_TIMEOUT_MS = 120_000L;
     private static final long SCRIPT_TIMEOUT_MS = 120_000L;
+    private static final long PROBE_TIMEOUT_MS = 10_000L;
 
     @Test
     public void androidNineWebViewKeepsNationalAccountsWorkBounded() throws Exception {
@@ -52,18 +54,49 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
             final WebView webView = webViewReference.get();
             assertNotNull("MainActivity did not create its WebView", webView);
 
+            // Activity RESUMED is not the same as the bundled HTML/deferred scripts
+            // having finished loading. Give the packaged page its own bounded startup
+            // window before starting the National Accounts runtime-ready window.
+            final long pageLoadDeadline = SystemClock.elapsedRealtime() + PAGE_LOAD_TIMEOUT_MS;
+            String pageState = "WAIT";
+            while (SystemClock.elapsedRealtime() < pageLoadDeadline) {
+                try {
+                    pageState = evaluateString(webView,
+                            "(function(){try{return location.href.indexOf('" +
+                                    "https://appassets.androidplatform.net/assets/index.html" +
+                                    "')===0?document.readyState:'NAVIGATING';}catch(e){return 'WAIT';}})()",
+                            PROBE_TIMEOUT_MS);
+                } catch (AssertionError evaluationTimeout) {
+                    pageState = "EVALUATION_TIMEOUT";
+                }
+                if ("complete".equals(pageState)) break;
+                Thread.sleep(250L);
+            }
+            assertEquals("Packaged OMEGA page did not finish loading; last state=" + pageState,
+                    "complete", pageState);
+            System.out.println("OMEGA_ANDROID_TEST_STAGE=packaged_page_complete");
+
             final long readyDeadline = SystemClock.elapsedRealtime() + PAGE_READY_TIMEOUT_MS;
             String ready = "WAIT";
             while (SystemClock.elapsedRealtime() < readyDeadline) {
-                ready = evaluateString(webView,
-                        "(function(){try{var a=window.Omega&&window.Omega.NationalAccounts;" +
-                                "return a&&a.diagnostics&&a.diagnostics().ready?'READY':'WAIT';" +
-                                "}catch(e){return 'WAIT';}})()",
-                        PAGE_READY_TIMEOUT_MS);
+                try {
+                    ready = evaluateString(webView,
+                            "(function(){try{var a=window.Omega&&window.Omega.NationalAccounts;" +
+                                    "if(!a||!a.diagnostics)return 'API_MISSING';" +
+                                    "var d=a.diagnostics();" +
+                                    "return d.ready?'READY':'WAIT:'+JSON.stringify({error:d.error," +
+                                    "initialized:d.initialized,coreCountryCount:d.coreCountryCount," +
+                                    "resolvedProfileCount:d.resolvedProfileCount});" +
+                                    "}catch(e){return 'PROBE_ERROR:'+String(e&&e.message||e);}})()",
+                            PROBE_TIMEOUT_MS);
+                } catch (AssertionError evaluationTimeout) {
+                    ready = "EVALUATION_TIMEOUT";
+                }
                 if ("READY".equals(ready)) break;
                 Thread.sleep(250L);
             }
-            assertEquals("Packaged National Accounts runtime did not become ready", "READY", ready);
+            assertEquals("Packaged National Accounts runtime did not become ready; diagnostics=" + ready,
+                    "READY", ready);
 
             final String resultJson = runBenchmark(webView);
             final JSONObject result = new JSONObject(resultJson);
