@@ -713,6 +713,84 @@ test('world geometry becomes usable before supporting datasets and resumes witho
 
 
 
+test('completed world geometry keeps the blocking map overlay dismissed while supporting startup continues', () => {
+  const source = read('map-engine-2.js');
+  const start = source.indexOf('Game.Map.updateMapLoadingProgress = function(');
+  const end = source.indexOf('\n};', start) + 3;
+  assert.ok(start >= 0 && end > start, 'the production map progress handler must exist');
+
+  const timers = [];
+  const makeElement = () => ({
+    attributes:new Map(),
+    style:{},
+    hidden:false,
+    textContent:'',
+    classList:{
+      values:new Set(),
+      add(name){this.values.add(name);},
+      remove(name){this.values.delete(name);},
+      contains(name){return this.values.has(name);}
+    },
+    setAttribute(name,value){this.attributes.set(name,String(value));},
+    getAttribute(name){return this.attributes.has(name)?this.attributes.get(name):null;},
+    removeAttribute(name){this.attributes.delete(name);},
+    querySelector(){return null;}
+  });
+  const overlay = makeElement();
+  const progress = makeElement();
+  const percentLabel = makeElement();
+  const progressBar = makeElement();
+  const statusLabel = makeElement();
+  const mapRoot = makeElement();
+  const retryButton = makeElement();
+  const elements = {
+    'omega-map-load-overlay':overlay,
+    'omega-map-load-progress':progress,
+    'omega-map-load-percent':percentLabel,
+    'omega-map-load-status':statusLabel,
+    'render-engine-root':mapRoot,
+    'omega-map-load-retry':retryButton
+  };
+  const startupLoader = {
+    __assetsLoadPromise:{},
+    __assetsLoadComplete:false,
+    __assetsLoadingProgress:61,
+    __assetsLoadingMessage:'Loading supporting datasets…',
+    __assetsLoadingStatus:'loading'
+  };
+  const window = {setTimeout(callback){timers.push(callback);return timers.length;}};
+  const document = {
+    getElementById(id){return elements[id]||null;},
+    querySelector(){return progressBar;}
+  };
+  const Game = {
+    DataLoader:startupLoader,
+    __omegaGeoJSONRenderComplete:true,
+    Map:{__omegaMapUiActive:true,__omegaMapLoadingProgress:100,map:null}
+  };
+  const context = {Game,window,document};
+  vm.runInNewContext(source.slice(start,end),context,{filename:'map-engine-2.js#updateMapLoadingProgress'});
+
+  Game.Map.updateMapLoadingProgress(100,'World map ready','complete');
+  Game.Map.updateMapLoadingProgress(61,'Loading supporting datasets…','loading');
+
+  assert.equal(overlay.getAttribute('data-state'),'complete',
+    'late supporting-data progress must not regress completed map geometry to loading');
+  assert.equal(overlay.getAttribute('aria-busy'),'false');
+  assert.equal(percentLabel.textContent,'100%');
+  assert.equal(progress.style.width,'100%');
+  assert.equal(mapRoot.getAttribute('data-omega-map-loading'),'true',
+    'the dismissal timer owns removal of the temporary blocking-root attribute');
+  assert.equal(startupLoader.__assetsLoadingProgress,61,
+    'off-screen supporting-data progress must remain independent from map geometry progress');
+  assert.equal(startupLoader.__assetsLoadingStatus,'loading');
+
+  for(const callback of timers.splice(0))callback();
+  assert.equal(overlay.classList.contains('is-hidden'),true);
+  assert.equal(overlay.getAttribute('aria-hidden'),'true');
+  assert.equal(mapRoot.getAttribute('data-omega-map-loading'),null);
+});
+
 test('universal action progress covers legacy controls, mining actions and resource command center; map retry reuses cached geography', () => {
   const html = read('index.html');
   const worker = read('omega-offline-map-sw.js');
