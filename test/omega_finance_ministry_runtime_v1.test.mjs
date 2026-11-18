@@ -39,8 +39,8 @@ function createRuntime(options={}){
   const profile=profileData.countries.find(p=>p.iso3==='BGD');
   const economy=JSON.parse(JSON.stringify(profile.sourceValues));
   const session={sessionId:'OMEGA-FINANCE-TEST-SESSION',playerCountryId:'BGD',
-    status:'READY',createdTurn:1,lastCommittedTurn:1};
-  const state={economy:{BANGLADESH:economy},finance:{BGD:{available:4000000000,reserves:456}},population:{BGD:{population_2015:profile.indicators.population2015}},simulation:{turn:1,session}};
+    status:'READY',createdTurn:0,lastCommittedTurn:0};
+  const state={economy:{BANGLADESH:economy},finance:{BGD:{available:4000000000,reserves:456}},population:{BGD:{population_2015:profile.indicators.population2015}},simulation:{turn:0,session}};
   const context={console,document,Intl,Math,Number,String,Object,Array,Map,Set,Promise,Date,JSON,WeakMap,WeakSet,
     CustomEvent:class CustomEvent{constructor(type,options={}){this.type=type;this.detail=options.detail;}},
     addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn]);},
@@ -52,14 +52,14 @@ function createRuntime(options={}){
           detail:{session:JSON.parse(JSON.stringify(session))}
         }));
         state.simulation.session.status='RUNNING';
-        state.simulation.session.startedTurn=1;
+        state.simulation.session.startedTurn=0;
       }
       if(requested.includes('economy_global_profiles_v1.json'))return{ok:true,json:async()=>profileData};
       if(requested.includes('finance_runtime_rules_v1.json'))return{ok:true,json:async()=>financeRules};
       if(requested.includes('finance_sector_registry_v1.json'))return{ok:true,json:async()=>sectorRegistry};
       return Promise.reject(new Error('Unexpected fetch '+url));
     },
-    Omega:{Simulation:{world:{state},clock:{turn:1,stepDurationMs:3600000},getPlayerCountryId(){return 'BGD';}},WorldSimulationScheduler:scheduler},
+    Omega:{Simulation:{world:{state},clock:{turn:0,stepDurationMs:3600000},getPlayerCountryId(){return 'BGD';}},WorldSimulationScheduler:scheduler},
     Game:{state:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},simulation:{turn:1}},currentActiveCountry:'BGD'},
     gameState:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},population:{},simulation:{turn:1}},
     CountryIOS:{activeCountry:'BGD'},OmegaCabinetUI:{renderMinistryDashboard(id){this.legacyMinistryId=id;return 'legacy';}}};
@@ -443,7 +443,7 @@ test('new-game Finance opening cash is captured before the first fiscal flows an
   const fm=context.OmegaFinanceMinistry.getFinanceState('BGD');
   const account=fm.fiscalPeriodAccount;
   assert.equal(account.periodIndex,0);
-  assert.equal(account.openingTurn,1);
+  assert.equal(account.openingTurn,0);
   assert.equal(account.openingBalanceUsd,4000000000);
   assert.equal(account.openingBalanceQuality,'GAME_STATE');
   assert.equal(account.openingBalanceSource,'EXISTING_RUNTIME_FINANCE_AVAILABLE');
@@ -465,6 +465,23 @@ test('session-created event received between profile load and country indexing k
   assert.equal(account.openingBalanceSource,'EXISTING_RUNTIME_FINANCE_AVAILABLE');
   assert.equal(account.flowCoverage,'COMPLETE_FROM_PERIOD_START');
   assert.equal(account.reconciliationStatus,'GAME_STATE_RECONCILED');
+});
+
+test('a lifecycle auto-created session at a legacy turn cannot establish a new-game opening',async()=>{
+  const {context,state}=createRuntime({emitGameSessionCreated:false,emitSessionDuringRulesFetch:true});
+  state.simulation.turn=10;
+  state.simulation.session.createdTurn=10;
+  state.simulation.session.lastCommittedTurn=10;
+  // The active session exists, but it represents a legacy save whose session
+  // field was synthesized by the lifecycle runtime rather than a new game.
+  const boot=await context.OmegaFinanceMinistry.init();
+  assert.equal(boot.initialized,true);
+  const account=context.OmegaFinanceMinistry.getFinanceState('BGD').fiscalPeriodAccount;
+  assert.equal(account.openingBalanceUsd,null);
+  assert.equal(account.openingBalanceSource,'LEGACY_OPENING_NOT_RECORDED');
+  assert.equal(account.openingBalanceQuality,'UNOBSERVED');
+  assert.equal(account.flowCoverage,'INCOMPLETE_LEGACY');
+  assert.equal(account.reconciliationStatus,'PARTIAL');
 });
 
 test('low turn without a verified game-session-created event remains PARTIAL and UNOBSERVED',async()=>{
