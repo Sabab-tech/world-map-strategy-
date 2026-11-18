@@ -26,7 +26,7 @@ test('all map country and area identities exist, and unknown values are explicit
   assert.ok(sectorRegistry.economicSectors.every(s=>s.budgetSectorId&&sectorRegistry.budgetSectors.some(b=>b.id===s.budgetSectorId)));
   assert.ok(sectorRegistry.economicSectors.every(s=>s.budgetSectorId&&sectorRegistry.budgetSectors.some(b=>b.id===s.budgetSectorId)));
 });
-function createRuntime(){
+function createRuntime(options={}){
   const handlers=new Map();
   const schedulerHandlers=new Map();
   const scheduler={registerCountryHandler(id,handler,options={}){schedulerHandlers.set(id,{handler,options});return()=>schedulerHandlers.delete(id);}};
@@ -38,8 +38,10 @@ function createRuntime(){
   elements.set('dash-layer-status',{textContent:''});
   const profile=profileData.countries.find(p=>p.iso3==='BGD');
   const economy=JSON.parse(JSON.stringify(profile.sourceValues));
-  const state={economy:{BANGLADESH:economy},finance:{BGD:{available:4000000000,reserves:456}},population:{BGD:{population_2015:profile.indicators.population2015}},simulation:{turn:1,session:{playerCountryId:'BGD'}}};
-  const context={console,document,Intl,Math,Number,String,Object,Array,Map,Set,Promise,Date,JSON,WeakMap,
+  const session={sessionId:'OMEGA-FINANCE-TEST-SESSION',playerCountryId:'BGD',
+    status:'READY',createdTurn:1,lastCommittedTurn:1};
+  const state={economy:{BANGLADESH:economy},finance:{BGD:{available:4000000000,reserves:456}},population:{BGD:{population_2015:profile.indicators.population2015}},simulation:{turn:1,session}};
+  const context={console,document,Intl,Math,Number,String,Object,Array,Map,Set,Promise,Date,JSON,WeakMap,WeakSet,
     CustomEvent:class CustomEvent{constructor(type,options={}){this.type=type;this.detail=options.detail;}},
     addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn]);},
     dispatchEvent(event){for(const fn of handlers.get(event.type)||[])fn(event);return true;},
@@ -52,6 +54,11 @@ function createRuntime(){
     CountryIOS:{activeCountry:'BGD'},OmegaCabinetUI:{renderMinistryDashboard(id){this.legacyMinistryId=id;return 'legacy';}}};
   context.window=context;context.globalThis=context;
   vm.runInNewContext(runtime,context,{filename:'omega_finance_ministry_runtime_v1.js'});
+  if(options.emitGameSessionCreated!==false){
+    context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED',{
+      detail:{session:JSON.parse(JSON.stringify(session))}
+    }));
+  }
   return {context,state,document,elements,schedulerHandlers,handlers};
 }
 test('Finance preserves existing finance data and enforces allocation, treasury and tax rules',async()=>{
@@ -421,7 +428,7 @@ test('new-game Finance opening cash is captured before the first fiscal flows an
   const fm=context.OmegaFinanceMinistry.getFinanceState('BGD');
   const account=fm.fiscalPeriodAccount;
   assert.equal(account.periodIndex,0);
-  assert.equal(account.openingTurn,0);
+  assert.equal(account.openingTurn,1);
   assert.equal(account.openingBalanceUsd,4000000000);
   assert.equal(account.openingBalanceQuality,'GAME_STATE');
   assert.equal(account.openingBalanceSource,'EXISTING_RUNTIME_FINANCE_AVAILABLE');
@@ -431,6 +438,18 @@ test('new-game Finance opening cash is captured before the first fiscal flows an
   assert.equal(account.reconciliationStatus,'GAME_STATE_RECONCILED');
 });
 
+
+test('low turn without a verified game-session-created event remains PARTIAL and UNOBSERVED',async()=>{
+  const {context,state}=createRuntime({emitGameSessionCreated:false});
+  state.simulation.turn=0;
+  await context.OmegaFinanceMinistry.init();
+  const fm=context.OmegaFinanceMinistry.getFinanceState('BGD');
+  assert.equal(fm.fiscalPeriodAccount.openingBalanceUsd,null);
+  assert.equal(fm.fiscalPeriodAccount.openingBalanceSource,'LEGACY_OPENING_NOT_RECORDED');
+  assert.equal(fm.fiscalPeriodAccount.openingBalanceQuality,'UNOBSERVED');
+  assert.equal(fm.fiscalPeriodAccount.flowCoverage,'INCOMPLETE_LEGACY');
+  assert.equal(fm.fiscalPeriodAccount.reconciliationStatus,'PARTIAL');
+});
 
 test('new-game estimated opening cash stays explicitly MODELLED, not observed',async()=>{
   const {context,state}=createRuntime();
