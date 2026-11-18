@@ -278,28 +278,34 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                   const originalDefineProperties = Object.defineProperties;
                   const originalDefineProperty = Object.defineProperty;
                   Object.defineProperties = function(target, descriptors) {
+                    const receiver=this;
                     if (target === null || (typeof target !== 'object' && typeof target !== 'function')) {
                       recordPerfFailure('Object.defineProperties.invalidTarget', null,
-                        {targetType:typeof target,targetValue:String(target)});
-                      recordPerfFailure('Object.defineProperties.callsite', new Error('INVALID_DEFINE_PROPERTIES_TARGET'));
+                        {targetType:typeof target,targetValue:String(target),receiverType:typeof receiver,
+                         receiverIsObjectConstructor:receiver===Object});
                     }
                     try {
-                      return originalDefineProperties.call(Object,target,descriptors);
+                      return originalDefineProperties.apply(receiver,arguments);
                     } catch (error) {
-                      recordPerfFailure('Object.defineProperties.throw',error,{targetType:typeof target});
+                      recordPerfFailure('Object.defineProperties.throw',error,
+                        {targetType:typeof target,receiverType:typeof receiver,
+                         receiverIsObjectConstructor:receiver===Object});
                       throw error;
                     }
                   };
                   Object.defineProperty = function(target, property, descriptor) {
+                    const receiver=this;
                     if (target === null || (typeof target !== 'object' && typeof target !== 'function')) {
                       recordPerfFailure('Object.defineProperty.invalidTarget', null,
-                        {targetType:typeof target,targetValue:String(target),property:String(property)});
-                      recordPerfFailure('Object.defineProperty.callsite', new Error('INVALID_DEFINE_PROPERTY_TARGET'));
+                        {targetType:typeof target,targetValue:String(target),property:String(property),
+                         receiverType:typeof receiver,receiverIsObjectConstructor:receiver===Object});
                     }
                     try {
-                      return originalDefineProperty.call(Object,target,property,descriptor);
+                      return originalDefineProperty.apply(receiver,arguments);
                     } catch (error) {
-                      recordPerfFailure('Object.defineProperty.throw',error,{targetType:typeof target,property:String(property)});
+                      recordPerfFailure('Object.defineProperty.throw',error,
+                        {targetType:typeof target,property:String(property),receiverType:typeof receiver,
+                         receiverIsObjectConstructor:receiver===Object});
                       throw error;
                     }
                   };
