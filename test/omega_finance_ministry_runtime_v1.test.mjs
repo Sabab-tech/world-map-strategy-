@@ -39,8 +39,8 @@ function createRuntime(options={}){
   const profile=profileData.countries.find(p=>p.iso3==='BGD');
   const economy=JSON.parse(JSON.stringify(profile.sourceValues));
   const session={sessionId:'OMEGA-FINANCE-TEST-SESSION',playerCountryId:'BGD',
-    status:'READY',createdTurn:0,lastCommittedTurn:0};
-  const state={economy:{BANGLADESH:economy},finance:{BGD:{available:4000000000,reserves:456}},population:{BGD:{population_2015:profile.indicators.population2015}},simulation:{turn:0,session}};
+    status:'READY',createdTurn:1,lastCommittedTurn:1};
+  const state={economy:{BANGLADESH:economy},finance:{BGD:{available:4000000000,reserves:456}},population:{BGD:{population_2015:profile.indicators.population2015}},simulation:{turn:1,session}};
   const context={console,document,Intl,Math,Number,String,Object,Array,Map,Set,Promise,Date,JSON,WeakMap,WeakSet,
     CustomEvent:class CustomEvent{constructor(type,options={}){this.type=type;this.detail=options.detail;}},
     addEventListener(type,fn){handlers.set(type,[...(handlers.get(type)||[]),fn]);},
@@ -52,14 +52,14 @@ function createRuntime(options={}){
           detail:{session:JSON.parse(JSON.stringify(session))}
         }));
         state.simulation.session.status='RUNNING';
-        state.simulation.session.startedTurn=0;
+        state.simulation.session.startedTurn=1;
       }
       if(requested.includes('economy_global_profiles_v1.json'))return{ok:true,json:async()=>profileData};
       if(requested.includes('finance_runtime_rules_v1.json'))return{ok:true,json:async()=>financeRules};
       if(requested.includes('finance_sector_registry_v1.json'))return{ok:true,json:async()=>sectorRegistry};
       return Promise.reject(new Error('Unexpected fetch '+url));
     },
-    Omega:{Simulation:{world:{state},clock:{turn:0,stepDurationMs:86400000},getPlayerCountryId(){return 'BGD';}},WorldSimulationScheduler:scheduler},
+    Omega:{Simulation:{world:{state},clock:{turn:1,stepDurationMs:86400000},getPlayerCountryId(){return 'BGD';}},WorldSimulationScheduler:scheduler},
     Game:{state:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},simulation:{turn:1}},currentActiveCountry:'BGD'},
     gameState:{economy:{BANGLADESH:JSON.parse(JSON.stringify(economy))},finance:{},population:{},simulation:{turn:1}},
     CountryIOS:{activeCountry:'BGD'},OmegaCabinetUI:{renderMinistryDashboard(id){this.legacyMinistryId=id;return 'legacy';}}};
@@ -443,7 +443,7 @@ test('new-game Finance opening cash is captured before the first fiscal flows an
   const fm=context.OmegaFinanceMinistry.getFinanceState('BGD');
   const account=fm.fiscalPeriodAccount;
   assert.equal(account.periodIndex,0);
-  assert.equal(account.openingTurn,0);
+  assert.equal(account.openingTurn,1);
   assert.equal(account.openingBalanceUsd,4000000000);
   assert.equal(account.openingBalanceQuality,'GAME_STATE');
   assert.equal(account.openingBalanceSource,'EXISTING_RUNTIME_FINANCE_AVAILABLE');
@@ -484,17 +484,17 @@ test('a lifecycle auto-created session at a legacy turn cannot establish a new-g
   assert.equal(account.reconciliationStatus,'PARTIAL');
 });
 
-test('a late turn-zero session-created event cannot retroactively certify an opening after play advances',async()=>{
+test('a late turn-one session-created event cannot retroactively certify an opening after play advances',async()=>{
   const {context,state}=createRuntime({emitGameSessionCreated:false});
-  state.simulation.turn=1;
-  state.simulation.session.createdTurn=0;
-  state.simulation.session.lastCommittedTurn=1;
+  state.simulation.turn=2;
+  state.simulation.session.createdTurn=1;
+  state.simulation.session.lastCommittedTurn=2;
   state.simulation.session.status='RUNNING';
-  // Re-deliver the old creation payload after the first committed turn.
+  // Re-deliver the old creation payload after the second committed turn.
   context.dispatchEvent(new context.CustomEvent('OMEGA_GAME_SESSION_CREATED',{
     detail:{session:{
       sessionId:state.simulation.session.sessionId,
-      playerCountryId:'BGD',status:'READY',createdTurn:0,lastCommittedTurn:0
+      playerCountryId:'BGD',status:'READY',createdTurn:1,lastCommittedTurn:1
     }}
   }));
   await context.OmegaFinanceMinistry.init();
