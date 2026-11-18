@@ -48,7 +48,9 @@ jobs:
         if: always()
         run: |
           mkdir -p android-performance-artifacts
-          adb logcat -d | grep -E 'OMEGA_ANDROID_PERFORMANCE|OMEGA_WEB_DIAGNOSTICS|AndroidRuntime|TestRunner' > android-performance-artifacts/android9-webview.log || true
+          adb devices -l > android-performance-artifacts/adb-devices.txt 2>&1 || true
+          timeout 20s adb logcat -d -t 5000 > android-performance-artifacts/android9-logcat-raw.log 2>&1 || true
+          grep -E 'OMEGA_ANDROID_PERFORMANCE|OMEGA_WEB_DIAGNOSTICS|AndroidRuntime|TestRunner|INSTRUMENTATION_STATUS|INSTRUMENTATION_RESULT' android-performance-artifacts/android9-logcat-raw.log > android-performance-artifacts/android9-webview.log || true
 
       - name: Upload Android WebView benchmark results
         if: always()
