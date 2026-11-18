@@ -79,9 +79,10 @@ National Accounts reads the Finance-owned current period summary and passes its 
 7. A fiscal-boundary external cash delta is assigned to the newly opened period even when a Finance getter/dashboard read runs before the scheduler.
 8. Replaying the boundary turn neither duplicates the cash delta nor archives the same period twice.
 9. A low-turn state without a verified session-created event remains `PARTIAL/UNOBSERVED`; persisted Finance state cannot be promoted by a later event.
-10. Fiscal rollover archives the prior period and opens the next at the pre-accrual closing balance.
-11. Legacy save opening remains unknown/partial until a trusted future opening.
-12. Duplicate same-turn country advancement adds no second flow.
-13. History remains capped at 12.
-14. National Accounts reads Finance-owned period evidence without mutating Finance state.
-15. Existing Finance, World Bank, Android, offline, NPC and Resource systems remain connected and pass their exact-head checks.
+10. A session-created event arriving between profile data assignment and country-index readiness is retained with event-time evidence through the READY→RUNNING transition.
+11. Fiscal rollover archives the prior period and opens the next at the pre-accrual closing balance.
+12. Legacy save opening remains unknown/partial until a trusted future opening.
+13. Duplicate same-turn country advancement adds no second flow.
+14. History remains capped at 12.
+15. National Accounts reads Finance-owned period evidence without mutating Finance state.
+16. Existing Finance, World Bank, Android, offline, NPC and Resource systems remain connected and pass their exact-head checks.
