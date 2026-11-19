@@ -841,6 +841,8 @@ test('storage write-off and mine-haul transport loss commit physical balances an
   assert.equal(transportLoss.result.accepted,true);
   assert.equal(resource.industrialNetwork.shipments[0].quantity,17);
   assert.equal(resource.industrialNetwork.shipments[0].lostQuantity,3);
+  assert.equal(resource.industrialNetwork.shipments[0].lossMeasurementComplete,false,
+    'a partial mine-haul loss is not a terminal cargo receipt');
   assert.equal(resource.industrialNetwork.siteFlowLedger[0].mineHeldQuantity,17);
   assert.equal(resource.batches[0].remainingQuantity,90);
   assert.equal(resource.inventoryLots['MINE-BATCH-1'].remainingQuantity,90);
