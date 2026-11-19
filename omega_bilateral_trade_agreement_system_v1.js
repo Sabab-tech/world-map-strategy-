@@ -1121,6 +1121,30 @@
     updateContract(country, agreementId, patch);
     updateContract(partner, agreementId, patch);
   }
+  function recordTerminationConsent(country, agreementId, agreed) {
+    var c = canonical(country), contract = contractList(c).find(function (row) {
+      return String(row.agreementId) === String(agreementId);
+    });
+    if (!contract) return { accepted: false, reason: 'BILATERAL_CONTRACT_NOT_FOUND' };
+    if (contract.currentRequestId)
+      return { accepted: false, reason: 'TERMINATION_BLOCKED_BY_PENDING_DELIVERY',
+        agreementId: contract.agreementId, requestId: contract.currentRequestId };
+    var partner = canonical(contract.partnerCountryId);
+    if (!partner || c !== canonical(contract.buyerCountryId) && c !== canonical(contract.sellerCountryId))
+      return { accepted: false, reason: 'TERMINATION_CONSENT_PARTY_MISMATCH' };
+    var consents = Array.isArray(contract.terminationConsents) ?
+      contract.terminationConsents.map(canonical).filter(Boolean) : [];
+    consents = consents.filter(function (countryId) { return countryId !== c; });
+    if (agreed === true) consents.push(c);
+    consents = Array.from(new Set(consents)).sort();
+    var saved = updateContract(c, contract.agreementId, {
+      terminationConsents: consents, terminationConsentTurn: turn()
+    });
+    if (!saved || saved.accepted !== true)
+      return { accepted: false, reason: 'TERMINATION_CONSENT_PERSISTENCE_FAILED', detail: saved };
+    return { accepted: true, status: consents.indexOf(partner) >= 0 ? 'MUTUALLY_APPROVED' : agreed ? 'WAITING_FOR_PARTNER_CONSENT' : 'CONSENT_REVOKED',
+      agreementId: contract.agreementId, consentedBy: consents };
+  }
   function findImportRequest(country, requestId) {
     return requestIdList(country).find(function (row) { return String(row.requestId) === String(requestId); }) || null;
   }
@@ -1356,8 +1380,17 @@
     var remainingDeliveries = Math.max(0, (num(contract.plannedDeliveryCount) || 0) - (num(contract.completedDeliveries) || 0));
     var pct = num(contract.terminationPenaltyPct) || 0;
     var penaltyBase = remainingDeliveries * (num(contract.quantityPerDelivery) || 0) * (num(contract.unitPrice) || 0) * pct / 100;
-    var forceMajeure = opts.forceMajeure === true, mutual = opts.mutualAgreement === true;
-    var penalty = { status: 'WAIVED', amount: 0, reason: forceMajeure ? 'FORCE_MAJEURE' : mutual ? 'MUTUAL_TERMINATION' : 'NO_PENALTY_CLAUSE' };
+    var relationship = relationFor(c, partner) || {};
+    var verifiedForceMajeure = relationship.war_state === true || relationship.sanctions === true;
+    if (opts.forceMajeure === true && !verifiedForceMajeure)
+      return { accepted: false, reason: 'FORCE_MAJEURE_EVIDENCE_NOT_VERIFIED' };
+    var consents = Array.isArray(contract.terminationConsents) ? contract.terminationConsents.map(canonical) : [];
+    var mutual = opts.mutualAgreement === true && consents.indexOf(c) >= 0 && consents.indexOf(partner) >= 0;
+    if (opts.mutualAgreement === true && !mutual)
+      return { accepted: false, reason: 'MUTUAL_TERMINATION_REQUIRES_BOTH_PARTY_APPROVALS',
+        agreementId: contract.agreementId, consentedBy: consents };
+    var forceMajeure = opts.forceMajeure === true && verifiedForceMajeure;
+    var penalty = { status: 'WAIVED', amount: 0, reason: forceMajeure ? 'VERIFIED_FORCE_MAJEURE' : mutual ? 'MUTUAL_TERMINATION' : 'NO_PENALTY_CLAUSE' };
     if (!forceMajeure && !mutual && penaltyBase > 0) {
       var trade = globalTrade(), values = settlementValues(buyer, seller, 1, penaltyBase);
       var breakerIsSeller = c === seller;
@@ -1541,6 +1574,7 @@
     acceptCounteroffer: acceptCounteroffer,
     renewContract: renewContract,
     terminateContract: terminateContract,
+    recordTerminationConsent: recordTerminationConsent,
     processCountry: processCountry,
     evaluateProposal: publicEvaluateProposal,
     getProposals: function (country) {
