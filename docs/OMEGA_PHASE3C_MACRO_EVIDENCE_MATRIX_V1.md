@@ -135,7 +135,7 @@ Global loops must be classified rather than blindly removed:
 Phase 5 core runtime remains blocked until all of these are true:
 
 - [ ] **Phase 3C:** every macro input used for progression has source owner, field path, unit, time basis, missing-value semantics, provenance and model/observation classification; disputed formulas are accepted or excluded.
-- [ ] **Phase 4A:** Android 9 packaged WebView instrumentation actually executes the National Accounts test; test count is non-zero, failures are zero and no tests are skipped; all existing p95 synchronous CPU, maximum synchronous segment, frame count and maximum frame-gap assertions pass; no waiver substitutes for measurement.
+- [ ] **Phase 4A:** Android 9 packaged WebView instrumentation actually executes the National Accounts test; test count is non-zero, zero failures and zero skipped tests; all existing p95 synchronous CPU, maximum synchronous segment, frame count and maximum frame-gap assertions pass; no waiver substitutes for measurement.
 - [ ] **Physical-device QA:** at least the supported low-memory Android/WebView target passes startup, dirty-country accounting and unchanged-country cache checks without a frame drop or renderer crash.
 - [ ] **PR #481:** country-scoped FX / Government Banking synchronization passes exact-head Finance, Ministry and regression checks, then merges.
 - [ ] **Authority lock:** Finance remains the sole cash/fiscal writer; Resource Industrial remains the physical output writer; Global Trade remains the settlement writer; FX remains the currency-conversion authority; National Accounts remains read-only until all source-ledger coverage is complete.
