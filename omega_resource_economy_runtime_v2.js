@@ -2144,7 +2144,7 @@ function captureStockFlowPeriod(stateTransaction) {
       if(!network||!Array.isArray(network.shipments)||!Array.isArray(network.deliveries))
         invalid.push('INDUSTRIAL_SHIPMENT_LEDGER_UNAVAILABLE');
       else{
-        if(network.shipments.length>=1024||network.deliveries.length>=1024)
+        if(network.shipments.length>=4096||network.deliveries.length>=4096)
           invalid.push('TRANSPORT_LEDGER_WINDOW_TRUNCATED');
         var shipmentRows=network.shipments.filter(currentTurn),deliveryRows=network.deliveries.filter(currentTurn);
         observedRows=shipmentRows.length+deliveryRows.length;
