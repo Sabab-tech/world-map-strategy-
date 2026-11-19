@@ -1944,7 +1944,7 @@
       return card('Market report · ' + target, result.status || report.freshnessStatus || 'UNKNOWN',
         '<div class="omega-rescc-kv"><span>Generated turn</span><strong>' + esc(report.generatedTurn) + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Evidence</span><strong>' + esc(report.evidenceCounts && (report.evidenceCounts.known || 0)) + ' known · ' + esc(report.evidenceCounts && (report.evidenceCounts.estimated || 0)) + ' estimated · ' + esc(report.evidenceCounts && (report.evidenceCounts.unknown || 0)) + ' unknown</strong></div>' +
-        '<div class="omega-rescc-kv"><span>Counterparty currency capacity</span><strong>' + esc(report.availableForeignCurrency && report.availableForeignCurrency.status === 'KNOWN' ? number(report.availableForeignCurrency.value, report.currency && report.currency.value || '') : report.availableForeignCurrency && report.availableForeignCurrency.status || 'UNKNOWN') + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Counterparty payment capacity</span><strong>' + esc(report.paymentCapacity && report.paymentCapacity.value === 'NOT_DISCLOSED' ? 'Not publicly disclosed' : report.paymentCapacity && report.paymentCapacity.status || 'UNKNOWN') + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Existing bilateral agreements</span><strong>' + esc(report.activeBilateralAgreementCount || 0) + '</strong></div>' +
         needs + surpluses + '<div class="omega-rescc-kv"><span>Alternative buyers / suppliers</span><strong>' + esc(alternativeCount) + '</strong></div>', '');
     }).join('');
@@ -1976,7 +1976,7 @@
     const syncForm = '<form class="omega-rescc-form" data-search-item data-form="bilateral-market-sync">' +
       '<h3>Synchronize target-country market</h3><div class="omega-rescc-formgrid">' +
       '<label>Target country<select name="targetCountryId" required>' + countries + '</select></label></div>' +
-      '<p class="omega-rescc-note">Runs an on-demand market analysis. It labels evidence as Known, Estimated or Unknown and reports demand, surplus, pricing, foreign currency, existing agreements and alternative buyers or suppliers.</p>' +
+      '<p class="omega-rescc-note">Runs an on-demand market analysis. It labels evidence as Known, Estimated or Unknown and reports demand, surplus, pricing, payment-capacity disclosure, existing agreements and alternative buyers or suppliers. Counterparty Treasury balances remain private.</p>' +
       '<button class="omega-rescc-button" type="submit"' + ((!bilateral || typeof bilateral.syncMarket !== 'function' || !others.length) ? ' disabled' : '') + '>Synchronize market</button></form>';
     const proposalForm = '<form class="omega-rescc-form" data-search-item data-form="bilateral-proposal">' +
       '<h3>Negotiate bilateral agreement</h3><div class="omega-rescc-formgrid">' +
