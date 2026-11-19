@@ -386,7 +386,8 @@
     var foreign = bucket(target, 'foreign') || {};
     var relation = mapEntry(foreign.relations, player).value || mapEntry((bucket(player, 'foreign') || {}).relations, target).value || null;
     var treaty = mapEntry(foreign.treaties, player).value || null;
-    var agreements = contractList(target).filter(function (row) { return canonical(row.partnerCountryId) === player; });
+    var targetAgreements = contractList(target);
+    var agreements = targetAgreements.filter(function (row) { return canonical(row.partnerCountryId) === player; });
     var imports = requestIdList(target).filter(function (row) {
       return ['SENT', 'COUNTER_OFFERED', 'ACCEPTED', 'SETTLEMENT_PREPARING', 'PENDING_SETTLEMENT'].includes(id(row.status));
     });
@@ -429,7 +430,8 @@
         tradeAgreement: relation.trade_agreement === true } : null, relation ? 'KNOWN' : 'UNKNOWN', relation ? 'foreign.relations' : null),
       existingTreaty: evidence(treaty ? { status: treaty.status || treaty.stage || 'UNKNOWN', treatyType: treaty.treatyType || null } : null,
         treaty ? 'KNOWN' : 'UNKNOWN', treaty ? 'foreign.treaties' : null),
-      activeBilateralAgreementCount: agreements.filter(function (row) { return id(row.status) === 'ACTIVE'; }).length,
+      activeBilateralAgreementCount: targetAgreements.filter(function (row) { return id(row.status) === 'ACTIVE'; }).length,
+      agreementsWithPlayerCount: agreements.filter(function (row) { return id(row.status) === 'ACTIVE'; }).length,
       pendingImportRequestCount: imports.length,
       catalogProductCount: rows.length,
       evidenceCounts: counts,
