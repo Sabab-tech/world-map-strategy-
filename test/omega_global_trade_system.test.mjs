@@ -93,6 +93,62 @@ const settlementSnapshot={
 };
 const mesh=globalThis.Omega?.MinistryInteroperability||globalThis.OmegaMinistryInteroperability;
 assert.ok(mesh?.dispatchCommand,'ministry command mesh is required for duplicate settlement verification');
+const buyerShipmentLedger=globalThis.Game.state.trade.BGD.internationalShipmentLedger;
+const sellerShipmentLedger=globalThis.Game.state.trade.SAU.internationalShipmentLedger;
+assert.equal(buyerShipmentLedger.length,1,'buyer durable shipment ledger must contain the settled import');
+assert.equal(sellerShipmentLedger.length,1,'seller durable shipment ledger must contain the settled export');
+const buyerShipment=buyerShipmentLedger[0],sellerShipment=sellerShipmentLedger[0];
+assert.equal(buyerShipment.shipmentId,'SHIP-'+req.settlementId);
+assert.equal(buyerShipment.participantRole,'IMPORTER');
+assert.equal(sellerShipment.participantRole,'EXPORTER');
+for(const row of [buyerShipment,sellerShipment]){
+  assert.equal(row.requestId,req.requestId);
+  assert.equal(row.settlementId,req.settlementId);
+  assert.equal(row.resourceId,'crude_oil');
+  assert.equal(row.quantity,1000);
+  assert.equal(row.originCountryId,'SAU');
+  assert.equal(row.destinationCountryId,'BGD');
+  assert.ok(row.dispatchTime,'new shipments retain observed dispatch timestamp');
+  assert.ok(row.arrivalTime,'new shipments retain observed buyer receipt timestamp');
+  assert.equal(row.status,'ARRIVED');
+  assert.equal(row.arrivalStatus,'RECEIVED');
+  assert.equal(row.settlementStatus,'SETTLED');
+  assert.equal(row.estimatedArrivalTime,null,'route ETA must stay unknown until travel-time evidence exists');
+  assert.equal(row.etaStatus,'NOT_ESTIMATED_ROUTE_TRAVEL_TIME_NOT_MODELED');
+}
+assert.equal(buyerShipment.dispatchTurn,1);
+assert.equal(buyerShipment.arrivalTurn,1);
+const duplicateShipment=mesh.dispatchCommand('trade','OMEGA_TRADE_RECORD_INTERNATIONAL_SHIPMENT','BGD',{
+  shipment:buyerShipment
+});
+assert.equal(duplicateShipment.status,'APPLIED',JSON.stringify(duplicateShipment));
+assert.equal(duplicateShipment.result?.duplicate,true,'replaying an identical shipment ID must be idempotent');
+assert.equal(globalThis.Game.state.trade.BGD.internationalShipmentLedger.length,1);
+assert.equal(trade.diagnostics().durableInternationalShipmentLedger,true);
+const futureShipment={
+  schemaVersion:1,shipmentId:'SHIP-FUTURE-LIFECYCLE-TEST',requestId:'REQ-FUTURE-LIFECYCLE',
+  settlementId:'SET-FUTURE-LIFECYCLE',resourceId:'copper',quantity:7,unit:'METRIC_TONS',
+  originCountryId:'CHL',destinationCountryId:'BGD',dispatchTime:'2026-11-20T00:00:00.000Z',
+  dispatchTurn:1,estimatedArrivalTime:'2026-11-22T00:00:00.000Z',etaTurn:3,
+  status:'IN_TRANSIT',arrivalStatus:'PENDING',settlementStatus:'PENDING'
+};
+const createdFutureShipment=mesh.dispatchCommand('trade','OMEGA_TRADE_RECORD_INTERNATIONAL_SHIPMENT','BGD',{
+  shipment:futureShipment
+});
+assert.equal(createdFutureShipment.status,'APPLIED',JSON.stringify(createdFutureShipment));
+assert.equal(createdFutureShipment.result?.accepted,true);
+const arrivedFutureShipment=mesh.dispatchCommand('trade','OMEGA_TRADE_RECORD_INTERNATIONAL_SHIPMENT','BGD',{
+  shipment:{...futureShipment,status:'ARRIVED',arrivalStatus:'RECEIVED',settlementStatus:'SETTLED',
+    arrivalTime:'2026-11-21T14:00:00.000Z',arrivalTurn:2}
+});
+assert.equal(arrivedFutureShipment.status,'APPLIED',JSON.stringify(arrivedFutureShipment));
+assert.equal(arrivedFutureShipment.result?.updated,true,'shipment lifecycle must advance without replacing its immutable identity');
+const persistedFutureShipment=globalThis.Game.state.trade.BGD.internationalShipmentLedger.find(x=>
+  x.shipmentId==='SHIP-FUTURE-LIFECYCLE-TEST');
+assert.equal(persistedFutureShipment.status,'ARRIVED');
+assert.equal(persistedFutureShipment.arrivalStatus,'RECEIVED');
+assert.equal(persistedFutureShipment.settlementStatus,'SETTLED');
+assert.equal(persistedFutureShipment.estimatedArrivalTime,'2026-11-22T00:00:00.000Z');
 const duplicateBuyerClose=mesh.dispatchCommand('trade','OMEGA_TRADE_CLOSE_REQUEST','BGD',{
   requestId:req.requestId,status:'SETTLED',stage:'SETTLED',settlementId:req.settlementId,buyerValue:95000,sellerValue:95000
 });
