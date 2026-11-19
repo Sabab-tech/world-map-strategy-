@@ -640,12 +640,24 @@
         if (pending.length || unmetCandidate !== null && unmetCandidate > 0)
           competing.push({ countryId: candidate, unmetDemand: unmetCandidate, requests: pending.map(function (row) { return { quantity: num(row.quantity), unitPrice: num(row.unitPrice) }; }) });
       });
+      var alternativeBuyerPrices = competing.reduce(function (values, row) {
+        return values.concat((row.requests || []).map(function (request) { return num(request.unitPrice); }).filter(function (value) { return value !== null; }));
+      }, []);
       alternativeEvidence = { status: competing.length ? 'OBSERVED' : 'UNKNOWN', betterSupplierCount: 0, competingBuyerCount: competing.length,
-        bestAlternativePrice: null, buyers: competing.slice(0, 8) };
+        bestAlternativePrice: null, bestAlternativeBuyerPrice: alternativeBuyerPrices.length ? Math.max.apply(null, alternativeBuyerPrices) : null, buyers: competing.slice(0, 8) };
     }
     if (target === buyer && alternativeEvidence.bestAlternativePrice !== null && alternativeEvidence.bestAlternativePrice < proposedPrice * 0.95) {
       proposedPrice = alternativeEvidence.bestAlternativePrice;
       adjustments.push('COUNTERED_TO_BETTER_OBSERVED_ALTERNATIVE_SUPPLIER_PRICE');
+      settlement = settlementValues(buyer, seller, proposedQuantity, proposedPrice);
+      buyerCost = num(settlement && settlement.buyerValue);
+    }
+    if (target === seller && alternativeEvidence.bestAlternativeBuyerPrice !== null && alternativeEvidence.bestAlternativeBuyerPrice > proposedPrice * 1.15) {
+      result.decisionFactors = { exportableSupply: available, buyerAvailableForeignCurrency: funds, buyerSettlementCost: buyerCost,
+        observedSellerMarketPrice: marketPrice, buyerDemandPerInterval: demandNeed, alternativeMarketEvidence: alternativeEvidence,
+        relationshipScore: rel, score: Number(totalScore.toFixed(4)), scoreBasis: 'DETERMINISTIC_MULTI_FACTOR' };
+      result.decision = 'REJECT'; result.reason = 'BETTER_COMPETING_BUYER_OFFER_AVAILABLE'; result.confidence = 0.8;
+      return result;
     }
     result.decisionFactors = {
       exportableSupply: available, buyerAvailableForeignCurrency: funds, buyerSettlementCost: buyerCost,
