@@ -18,6 +18,8 @@ on:
       - 'test/omega_ui_v2.test.mjs'
       - 'test/omega_black_market_ui_v1.test.mjs'
       - 'omega_global_trade_system.js'
+      - 'omega_bilateral_trade_agreement_system_v1.js'
+      - 'test/omega_bilateral_trade_agreement_system_v1.test.mjs'
       - 'omega_black_market_system_v1.js'
       - 'omega_black_market_ui_v1.js'
       - 'omega_black_market_network_v1.js'
@@ -88,6 +90,8 @@ jobs:
           node --check test/omega_resource_ai_decision_service.test.mjs
           node --check omega_resource_command_center_ui_v1.js
           node --check omega_global_trade_system.js
+          node --check omega_bilateral_trade_agreement_system_v1.js
+          node --check test/omega_bilateral_trade_agreement_system_v1.test.mjs
           node --check omega_black_market_system_v1.js
           node --check omega_black_market_ui_v1.js
           node --check omega_black_market_network_v1.js
@@ -102,6 +106,8 @@ jobs:
         run: npm run test:ui-visual
       - name: Test bilateral trade request and settlement
         run: npm run test:global-trade
+      - name: Test on-demand bilateral intelligence, negotiation and agreements
+        run: npm run test:bilateral-trade
       - name: Test market price discovery
         run: npm run test:global-market
       - name: Test Black Market shadow economy and foreign response
