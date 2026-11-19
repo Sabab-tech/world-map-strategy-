@@ -40,6 +40,7 @@
   let initPromise = null;
   let observer = null;
   let renderQueued = false;
+  let runtimeEventsBound = false;
 
   const own = (o, k) => !!o && Object.prototype.hasOwnProperty.call(o, k);
   const isObject = v => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -1443,8 +1444,9 @@
     return out;
   }
   function bindGlobalEvents() {
-    if (!global.document || global.document.__omegaForexEventsBound) return;
-    global.document.__omegaForexEventsBound = true;
+    // DOM-only Finance-panel interactions must not gate simulation event wiring.
+    if (global.document && !global.document.__omegaForexEventsBound) {
+      global.document.__omegaForexEventsBound = true;
     global.document.addEventListener('submit', function (event) {
       const form = event.target;
       const action = form && form.getAttribute && form.getAttribute('data-ofx-action');
@@ -1540,6 +1542,9 @@
       const body = panel && panel.querySelector('[data-ofx-banking-table]');
       if (body) body.innerHTML = renderBankingCountryTable(filter && filter.value, state.viewMode);
     }, true);
+    }
+    if (runtimeEventsBound) return;
+    runtimeEventsBound = true;
     global.addEventListener && global.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', function (event) {
       const detail = event && event.detail || {};
       const turn = finite(detail.simulationTurn) ?? finite(detail.payload && detail.payload.turn) ?? finite(detail.turn);
@@ -1606,6 +1611,7 @@
   }
   async function initialize() {
     if (initialized) {
+      bindGlobalEvents();
       attachDashboardObserver();
       queueRender();
       return diagnostics();
