@@ -722,7 +722,7 @@ test('in-transit international imports remain UNKNOWN when only pending or domes
   assert.equal(summary.inTransitInternationalImports.status, 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE');
   assert.equal(summary.inTransitInternationalImports.quantity, null);
   assert.equal(summary.nationalRequirement.byResource.crude_oil.inTransitInternationalImportQuantity, null);
-  assert.equal(summary.nationalRequirement.byResource.crude_oil.inTransitInternationalImportStatus, 'UNKNOWN');
+  assert.equal(summary.nationalRequirement.byResource.crude_oil.inTransitInternationalImportStatus, 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE');
   assert.equal(summary.nationalRequirement.byResource.crude_oil.pendingImportQuantity, 30);
 });
 
