@@ -438,6 +438,18 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   const forceAgreement = globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.proposalId === 'BTP-FORCE-MAJEURE');
   assert.equal(forceAgreement.priceModel, 'MARKET_LINKED');
   assert.equal(forceAgreement.unitPrice, 110);
+  assert.equal(forceAgreement.paymentSchedule, 'PER_DELIVERY_ON_SETTLEMENT');
+  assert.equal(forceAgreement.paymentCurrency, forceAgreement.buyerCurrency);
+  assert.equal(forceAgreement.invoiceCurrency, forceAgreement.currency);
+  assert.equal(forceAgreement.paymentTiming, 'AT_EACH_DELIVERY_SETTLEMENT');
+
+  const unsupportedPaymentSchedule = bilateral.previewProposal('BGD', {
+    targetCountryId: 'SAU', direction: 'IMPORT', resourceId: 'crude_oil',
+    quantityPerDelivery: 50, unitPrice: 100, durationMonths: 12, intervalDays: 30,
+    paymentSchedule: 'NET_30'
+  });
+  assert.equal(unsupportedPaymentSchedule.status, 'INVALID');
+  assert.equal(unsupportedPaymentSchedule.reason, 'UNSUPPORTED_PAYMENT_SCHEDULE');
   globalThis.Game.state.simulation.turn = forceAgreement.nextDeliveryTurn;
   const linkedDelivery = bilateral.processCountry('BGD');
   assert.equal(linkedDelivery.contracts.find(row => row.agreementId === forceAgreement.agreementId).status, 'DELIVERY_REQUESTED');
