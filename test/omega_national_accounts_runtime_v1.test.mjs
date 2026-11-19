@@ -147,7 +147,7 @@ test('Checkpoint reads existing authority and writes only Economy-owned national
   const h=harness();await h.window.Omega.NationalAccounts.init();
   const before={finance:structuredClone(h.state.finance),trade:structuredClone(h.state.trade),resource:structuredClone(h.state.resource)};
   const result=await h.window.Omega.NationalAccounts.processCountry('BGD',{turn:8,state:h.state});
-  assert.equal(result.status,'CHECKPOINTED');
+  assert.equal(result.status,'CHECKPOINTED',JSON.stringify(result));
   const statement=h.state.economy.BGD.nationalAccounts;
   assert.equal(statement.gdp.status,'UNOBSERVED');
   assert.equal(statement.gdp.modelledReference.value,500000);
