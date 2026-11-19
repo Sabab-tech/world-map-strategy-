@@ -7,7 +7,7 @@ const runtimeSource = fs.readFileSync(new URL('../omega_phase6_national_populati
 const readJson = name => JSON.parse(fs.readFileSync(new URL('../' + name, import.meta.url), 'utf8'));
 const registry = readJson('country_general_data_registry_v1.json');
 const baseline = readJson('country_factory_starting_baseline_v1.json');
-const countryContext = readJson('resource_country_resource_context_index_v1.json');
+const countryContext = readJson('resource_country_resource_context_index.json');
 const economyRules = readJson('resource_economy_rules.json');
 const industrialCatalog = readJson('resource_industrial_catalog_v1.json');
 const factoryTypes = Object.keys(industrialCatalog.factoryProfiles).sort();
@@ -360,7 +360,7 @@ test('overview HTML presents the national summary without claiming simulated fac
   const { api } = makeHarness();
   const summary = await api.getNationalSummary('BGD');
   const html = api.renderSummary(summary);
-  assert.match(html, /National Population &amp; Industrial Capacity/);
+  assert.match(html, /National Population & Industrial Capacity/);
   assert.match(html, /SIMULATION BASELINE/);
   assert.match(html, /Common daily coefficients are simulation rules/);
   assert.doesNotMatch(html, /real-world facility count: 100/i);
