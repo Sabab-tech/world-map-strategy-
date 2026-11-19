@@ -760,13 +760,77 @@
     });
     var treasuryCount = treasuryRows.reduce(function (sum, row) { return sum + row.transactionCount; }, 0);
     var privateCount = privateRows.reduce(function (sum, row) { return sum + row.transactionCount; }, 0);
+    var fiscal = object(finance.fiscalPeriodAccount) || {};
+    var fiscalFlows = object(fiscal.flowComponents) || {};
+    var fiscalComponents = {
+      taxRevenueUsd: finite(fiscalFlows.taxRevenueUsd),
+      borrowingProceedsUsd: finite(fiscalFlows.borrowingProceedsUsd),
+      externalCreditsUsd: finite(fiscalFlows.externalCreditsUsd),
+      governmentSpendingUsd: finite(fiscalFlows.governmentSpendingUsd),
+      interestPaidUsd: finite(fiscalFlows.interestPaidUsd),
+      principalRepaymentUsd: finite(fiscalFlows.principalRepaymentUsd),
+      externalDebitsUsd: finite(fiscalFlows.externalDebitsUsd)
+    };
+    var fiscalValues = Object.keys(fiscalComponents).map(function (key) { return fiscalComponents[key]; });
+    var fiscalInputsComplete = fiscalValues.every(function (value) { return value !== null && value >= 0; });
+    var fiscalOpening = finite(fiscal.openingBalanceUsd);
+    var fiscalClosing = finite(fiscal.closingBalanceUsd);
+    var financeClosing = finite(finance.treasuryBalanceUsd);
+    var fiscalInflows = fiscalComponents.taxRevenueUsd + fiscalComponents.borrowingProceedsUsd + fiscalComponents.externalCreditsUsd;
+    var fiscalOutflows = fiscalComponents.governmentSpendingUsd + fiscalComponents.interestPaidUsd +
+      fiscalComponents.principalRepaymentUsd + fiscalComponents.externalDebitsUsd;
+    var declaredInflows = finite(fiscal.totalInflowsUsd);
+    var declaredOutflows = finite(fiscal.totalOutflowsUsd);
+    var expectedFiscalClosing = fiscalOpening + fiscalInflows - fiscalOutflows;
+    var tolerance = Math.max(0.01, Math.max(Math.abs(fiscalClosing || 0), Math.abs(expectedFiscalClosing || 0)) * 1e-8);
+    var fiscalPeriodReconciled = fiscal.schemaVersion === 1 &&
+      fiscal.sourceAuthority === 'OMEGA_FINANCE_MINISTRY_RUNTIME' &&
+      id(fiscal.currency) === 'USD' &&
+      fiscal.flowCoverage === 'COMPLETE_FROM_PERIOD_START' &&
+      fiscal.openingBalanceQuality === 'GAME_STATE' &&
+      fiscal.reconciliationStatus === 'GAME_STATE_RECONCILED' &&
+      fiscal.status === 'GAME_STATE_RECONCILED' &&
+      fiscal.periodGapDetected !== true &&
+      fiscalInputsComplete && fiscalOpening !== null && fiscalClosing !== null && financeClosing !== null &&
+      fiscalOpening >= 0 && fiscalClosing >= 0 &&
+      declaredInflows !== null && declaredOutflows !== null &&
+      Math.abs(declaredInflows - fiscalInflows) <= 0.01 &&
+      Math.abs(declaredOutflows - fiscalOutflows) <= 0.01 &&
+      Math.abs(fiscalClosing - financeClosing) <= tolerance &&
+      Math.abs(fiscalClosing - expectedFiscalClosing) <= tolerance &&
+      Math.abs((finite(fiscal.expectedClosingBalanceUsd) ?? Number.NaN) - expectedFiscalClosing) <= tolerance &&
+      Math.abs((finite(fiscal.varianceUsd) ?? Number.NaN)) <= tolerance;
+    var reconciledBudgetaryExpense = fiscalPeriodReconciled
+      ? Number((fiscalComponents.governmentSpendingUsd + fiscalComponents.interestPaidUsd).toFixed(2)) : null;
+    var fiscalPeriodEvidence = fiscalPeriodReconciled ? {
+      status: 'GAME_STATE_RECONCILED',
+      period: String(fiscal.periodLabel || ''),
+      currency: 'USD',
+      openingBalance: fiscalOpening,
+      closingBalance: fiscalClosing,
+      governmentSpending: fiscalComponents.governmentSpendingUsd,
+      interestPaid: fiscalComponents.interestPaidUsd,
+      budgetaryExpense: reconciledBudgetaryExpense,
+      principalRepaymentExcludedFromExpense: fiscalComponents.principalRepaymentUsd,
+      externalDebitsExcludedFromExpense: fiscalComponents.externalDebitsUsd,
+      totalCashOutflows: Number(fiscalOutflows.toFixed(2)),
+      sourceAuthority: fiscal.sourceAuthority,
+      updatedTurn: finite(fiscal.updatedTurn)
+    } : null;
     return {
       status: ledger ? 'PARTIAL_SOURCE_WINDOW' : 'UNOBSERVED', turn: turn,
       treasuryActualExpense: {
-        status: treasuryCount ? 'PARTIAL_CURRENT_TURN_POSTED_EXPENSE_EVIDENCE' : 'NOT_ESTABLISHED',
-        amount: null, knownPostedExpenseByCurrency: treasuryRows, postedExpenseTransactionCount: treasuryCount,
+        status: fiscalPeriodReconciled ? 'PERIOD_RECONCILED_GAME_STATE' :
+          (treasuryCount ? 'PARTIAL_CURRENT_TURN_POSTED_EXPENSE_EVIDENCE' : 'NOT_ESTABLISHED'),
+        amount: reconciledBudgetaryExpense,
+        currency: fiscalPeriodReconciled ? 'USD' : null,
+        period: fiscalPeriodReconciled ? String(fiscal.periodLabel || '') : null,
+        periodEvidence: fiscalPeriodEvidence,
+        knownPostedExpenseByCurrency: treasuryRows, postedExpenseTransactionCount: treasuryCount,
         candidateExpenseTransactionCount: treasuryCandidateCount, invalidExpenseJournalCount: invalidTreasuryRows,
-        note: 'Only balanced, posted EXPENSE and EXPENSE_ROLLBACK journals in the retained current-turn Finance window are shown. This is not a complete national Treasury expenditure total.'
+        note: fiscalPeriodReconciled
+          ? 'A complete game-state Finance fiscal-period account reconciles opening cash, all inflows, all outflows and closing Treasury cash. Budgetary expense is government spending plus interest paid; principal repayment and external cash debits are reported separately and excluded.'
+          : 'Only balanced, posted current-turn expense journals in the retained Finance window are shown. A complete game-state fiscal-period account is not available, so the full Treasury expenditure amount remains unestablished.'
       },
       factoryOperatingCost: {
         status: privateCount ? 'PARTIAL_RECORDED_PRIVATE_FACTORY_ACCRUALS' : 'NOT_FINALIZED',
