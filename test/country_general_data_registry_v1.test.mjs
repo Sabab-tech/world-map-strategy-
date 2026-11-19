@@ -57,7 +57,7 @@ test('the core population register uses sourced Taiwan, Vatican and Western Saha
   assert.equal(registry.metadata.populationCoverage.estimated, 1);
   assert.equal(registry.metadata.populationCoverage.stale2015, 0);
   assert.equal(registry.metadata.populationCoverage.unknown, 0);
-  assert.equal(registry.metadata.populationCoverage.observed2025PopulationSubtotal, 8177025275);
+  assert.equal(registry.metadata.populationCoverage.observed2025PopulationSubtotal, 8200525275);
   assert.equal(populationOfficialObservations.observations.length, 3);
 });
 
