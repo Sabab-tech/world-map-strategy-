@@ -491,7 +491,8 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   appendSiteLogisticsStage(siteRuntime,'MINE_TO_WAREHOUSE','IN_TRANSIT_TO_WAREHOUSE',{shipmentId,batchId,quantity,unit:route.unit,
     etaTurn,etaDate,plannedTransitDays:days,quantityUnitBridge:bridge,transportAssetBindingStatus:'UNBOUND_SIMULATED_CAPACITY'});
   const shipment={shipmentId,shipmentType:'MINE_TO_WAREHOUSE',countryId:cid,siteId,resourceId:rid,batchId,
-    quantity:Number(quantity.toFixed(6)),unit:route.unit,warehouseId,sourceWarehouseId:null,
+    quantity:Number(quantity.toFixed(6)),dispatchedQuantity:Number(quantity.toFixed(6)),lostQuantity:0,lossEvents:[],
+    unit:route.unit,warehouseId,sourceWarehouseId:null,
     status:'IN_TRANSIT',deliveryStatus:'IN_TRANSIT_TO_RAW_WAREHOUSE',createdTurn:turn(),createdDate:factoryCurrentGameDate(),
     etaTurn,etaDate,route,transportCapacityReservation:capacityUse,
     provenance:{source:'OMEGA_RESOURCE_SITE_LOGISTICS_RUNTIME',authority:routeProfile.provenance?.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY',
@@ -6886,7 +6887,13 @@ function runCountryTurn(countryValue){
   return task;
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,runCountryTurn,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,registerStartingFactoryAssets,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,allocateFactoryInputProportionally,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,resourceMethod,buildRoute});
+  function recordShipmentLoss(countryValue,payload){
+    const economy=g.Omega?.ResourceEconomy||g.OmegaResourceEconomy;
+    if(!economy||typeof economy.recordShipmentLoss!=='function')
+      return{status:'UNAVAILABLE',reason:'RESOURCE_ECONOMY_LOSS_COMMIT_UNAVAILABLE'};
+    return economy.recordShipmentLoss(countryValue,payload);
+  }
+  return Object.freeze({VERSION,loadCatalog,runCountryTurn,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,recordShipmentLoss,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,registerStartingFactoryAssets,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,allocateFactoryInputProportionally,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 
