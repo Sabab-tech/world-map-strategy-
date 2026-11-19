@@ -29,16 +29,16 @@ test('transpiled helpers stay local while the runtime API remains globally publi
 });
 
 test('later classic assets cannot overwrite Resource Research transpile helpers', () => {
-  const original = '/* runtime banner */\\n(function (global) { global.mergeResearchProject = project => m(M({}, project), { progress: 100 }); })(window);';
+  const original = '/* runtime banner */\n(function (global) { global.mergeResearchProject = project => m(M({}, project), { progress: 100 }); })(window);';
   const compiled = [
     'var M = (target, source) => Object.assign(target, source);',
     'var m = (target, descriptors) => Object.defineProperties(target, Object.getOwnPropertyDescriptors(descriptors));',
     '(function (global) { global.mergeResearchProject = project => m(M({}, project), { progress: 100 }); })(window);'
-  ].join('\\n');
+  ].join('\n');
   const competingAsset = [
     'var M = (target, source) => undefined;',
     'var m = (target, descriptors) => Object.defineProperties(target, Object.getOwnPropertyDescriptors(descriptors));'
-  ].join('\\n');
+  ].join('\n');
 
   const unscoped = vm.createContext({});
   unscoped.window = unscoped;
@@ -62,7 +62,7 @@ test('ordinary top-level scripts retain their intentional global declarations', 
   const context = vm.createContext({});
   context.window = context;
 
-  vm.runInContext(scopeTranspiledAndroidAsset('omega_resource_research_runtime_v1.js', original, compiled), context);
+  vm.runInContext(scopeTranspiledAndroidAsset('legacy-global.js', original, compiled), context);
 
   assert.equal(context.OMEGA_LEGACY_GLOBAL, 42);
   assert.equal(context.OMEGA_LEGACY_BOOT, true);
