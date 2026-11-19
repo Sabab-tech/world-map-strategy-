@@ -549,6 +549,23 @@ function captureStockFlowPeriod(stateTransaction) {
       debtPressure,liquidityPressure,productionBuffer,diplomaticBenefit,willingness};
     const offered=result.offeredUnitPrice;
     if(offered===null){result.reason='REQUESTED_PRICE_NOT_OBSERVED';return result;}
+    if(bilateralContractRequest){
+      // Negotiation ended when both parties ratified the agreement. A due BTA
+      // shipment is fulfillment, not a new Open Market price negotiation.
+      if(approved+1e-8<result.quantity){
+        result.quantityApproved=0;result.decision='REJECT';
+        result.reason='BILATERAL_CONTRACTED_SUPPLY_UNAVAILABLE';result.confidence=1;
+        return result;
+      }
+      result.quantityApproved=result.quantity;
+      result.unitPrice=offered;
+      result.fxRate=fxRate(buyer,seller);
+      if(result.fxRate===null){result.decision='WAITING_DATA';result.reason='SETTLEMENT_FX_NOT_OBSERVED';return result;}
+      result.decision='ACCEPT';
+      result.reason='BILATERAL_AGREEMENT_FULFILLMENT';
+      result.confidence=1;
+      return result;
+    }
     if(approved<result.quantity){
       result.quantityApproved=approved;
       if(approved<=0){result.decision='REJECT';result.reason='INSUFFICIENT_FREE_SUPPLY';return result;}
