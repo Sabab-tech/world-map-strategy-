@@ -935,7 +935,7 @@
       quantityTolerancePct: clamp(terms.quantityTolerancePct ?? 0, 0, 50),
       unitPrice: num(terms.unitPrice), currency: tradeCurrency(seller),
       priceModel: id(terms.priceModel || 'FIXED'), marketAdjustmentPct: clamp(terms.marketAdjustmentPct ?? 0, -50, 100),
-      priceHistory: [{ turn: turn(), unitPrice: num(terms.unitPrice), model: id(terms.priceModel || 'FIXED') }]
+      priceHistory: [{ turn: turn(), unitPrice: num(terms.unitPrice), model: id(terms.priceModel || 'FIXED') }],
       durationMonths: durationMonths, durationTurns: durationTurns,
       intervalDays: intervalDays, intervalTurns: intervalTurns,
       terminationPenaltyPct: clamp(terms.terminationPenaltyPct ?? 0, 0, 100),
