@@ -2204,8 +2204,20 @@ function captureStockFlowPeriod(stateTransaction) {
         });
         losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()==='TRANSPORT';})
           .forEach(function(row){
+            var sourceShipment=network.shipments.find(function(item){
+              return String(item&&item.shipmentId||'')===String(row.sourceEventId||'');
+            });
+            var sourceEvent=Array.isArray(sourceShipment&&sourceShipment.lossEvents)
+              ?sourceShipment.lossEvents.find(function(event){return String(event&&event.eventId||'')===String(row.eventId||'');}):null;
             if(!hasLoss({eventId:row.eventId,resourceId:row.resourceId,quantity:row.quantity,unit:row.unit},row.sourceEventId))
               invalid.push('TRANSPORT_LOSS_LEDGER_ORPHAN:'+row.eventId);
+            if(!sourceShipment||!sourceEvent||
+              String(sourceShipment.resourceId||'').toUpperCase()!==String(row.resourceId||'').toUpperCase()||
+              String(sourceShipment.unit||'').toUpperCase()!==String(row.unit||'').toUpperCase()||
+              String(sourceShipment.countryId||'').toUpperCase()!==country||
+              Math.abs((num(sourceEvent.quantity)||0)-(num(row.quantity)||0))>1e-9)
+              invalid.push('TRANSPORT_LOSS_SOURCE_EVENT_MISSING_OR_MISMATCH:'+row.eventId);
+            else observedRows++;
           });
       }
     }else{
