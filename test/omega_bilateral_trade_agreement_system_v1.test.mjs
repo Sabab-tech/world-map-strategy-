@@ -218,6 +218,17 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(report.report.availableForeignCurrency.status, 'UNKNOWN');
   assert.equal(report.report.paymentCapacity.value, 'NOT_DISCLOSED');
 
+  globalThis.Game.state.trade.SAU.bilateralContracts = [{
+    agreementId: 'SAU-IND-EXISTING', partnerCountryId: 'IND', sellerCountryId: 'SAU',
+    buyerCountryId: 'IND', role: 'SELLER', resourceId: 'crude_oil', status: 'ACTIVE',
+    quantityPerDelivery: 50, unitPrice: 100, nextDeliveryTurn: 9999
+  }];
+  assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
+  const agreementReport = bilateral.getMarketReport('BGD', 'SAU').report;
+  assert.equal(agreementReport.activeBilateralAgreementCount, 1,
+    'market intelligence must account for active agreements with all partners');
+  assert.equal(agreementReport.agreementsWithPlayerCount, 0);
+
   const feasible = bilateral.previewProposal('BGD', {
     targetCountryId: 'SAU', direction: 'IMPORT', resourceId: 'crude_oil',
     quantityPerDelivery: 100, unitPrice: 100, durationMonths: 12, intervalDays: 30
