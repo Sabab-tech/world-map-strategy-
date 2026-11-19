@@ -96,6 +96,12 @@
       interoperability:runtime.interoperability?.saveState?.()||null,
       worldEngine:runtime.worldEngine?.exportSaveState?.({authoritativeState:true})||null
     };
+    // Phase 6 contributes only a compact calculation-provenance snapshot.
+    // It is an optional extension outside the authoritative world tree, so older
+    // saves remain compatible and no country/economy state is mutated.
+    const phase6Api=global.OmegaPhase6NationalCapacity||global.Omega?.Phase6NationalCapacity;
+    const phase6Snapshot=phase6Api?.saveState?.();
+    if(phase6Snapshot)snapshot.phase6NationalCapacity=clone(phase6Snapshot);
     // Volatile diagnostics duplicate large participant results already held in
     // runtime memory. Callers can omit them from routine durable autosaves.
     if(options.includeDiagnostics!==false)snapshot.diagnostics=runtime.diagnostics();
@@ -1052,6 +1058,17 @@
       if(snapshot.worldEngine&&this.worldEngine?.setAuthoritativeState){
         this.worldEngine.setAuthoritativeState(this.world.state);
         if(this.worldEngine.importSaveState)this.worldEngine.importSaveState(snapshot.worldEngine);
+      }
+      // Phase 6 provenance is optional and checksum-covered. Restore it only as
+      // a validation reference; Phase 6 always recalculates from current sources
+      // before accepting the saved fingerprint.
+      const phase6Api=global.OmegaPhase6NationalCapacity||global.Omega?.Phase6NationalCapacity;
+      const phase6Snapshot=Object.prototype.hasOwnProperty.call(snapshot,'phase6NationalCapacity')
+        ?clone(snapshot.phase6NationalCapacity):null;
+      if(phase6Api&&typeof phase6Api.loadState==='function'){
+        try{phase6Api.loadState(phase6Snapshot);}catch(_){}
+      }else{
+        global.__OMEGA_PENDING_PHASE6_NATIONAL_CAPACITY_SAVE__=phase6Snapshot;
       }
       this.status=String(snapshot.status||this.world.state.simulation?.session?.status||'READY');
       this.lastError=null;
