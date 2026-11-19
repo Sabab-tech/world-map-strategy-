@@ -66,13 +66,21 @@ function buildMarketIntelligence(requesterValue,targetValue,options){
  if(!resources.length)return{ok:false,reason:'NO_COMMODITY_IDENTITIES_AVAILABLE'};
  const r=relation(requester,target),score=relationScore(r),t=trade();let targetCurrency=null,buyerCurrency=null,fx=null;
  try{targetCurrency=t?.currencyOf?.(target)||null;buyerCurrency=t?.currencyOf?.(requester)||null;fx=num(t?.fxRate?.(requester,target));}catch(_){}
- const available=num(value(target,'finance','available')),reserves=num(value(target,'finance','reserves')),active=pairAgreements(requester,target).filter(x=>x.status==='ACTIVE');
+ const requesterAvailable=num(value(requester,'finance','available')),requesterTreasuryReserve=num(value(requester,'finance','reserves')),
+  targetAvailable=num(value(target,'finance','available')),targetTreasuryReserve=num(value(target,'finance','reserves')),
+  requesterFxReserve=num(value(requester,'economy','reserves')),targetFxReserve=num(value(target,'economy','reserves')),
+  active=pairAgreements(requester,target).filter(x=>x.status==='ACTIVE');
+ const requesterCash=requesterAvailable??requesterTreasuryReserve,targetCash=targetAvailable??targetTreasuryReserve;
  const treatyMap=value(requester,'foreign','treaties'),treatyKey=treatyMap&&Object.keys(treatyMap).find(k=>canonical(k)===target),legacyTreaty=treatyKey?clone(treatyMap[treatyKey]):null;
  const existingAgreements=active.map(x=>Object.assign({source:'BILATERAL_TRADE_LEDGER'},x));
  if(legacyTreaty&&/SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(id(legacyTreaty.status||legacyTreaty.stage)))existingAgreements.push({source:'FOREIGN_TREATY_LEDGER',status:legacyTreaty.status||legacyTreaty.stage,treatyType:legacyTreaty.treatyType||null,terms:clone(legacyTreaty.terms||{})});
  const report={schemaVersion:1,reportId:'BTR-MI-'+turn()+'-'+requester+'-'+target+'-'+Date.now(),generatedAt:new Date().toISOString(),generatedTurn:turn(),requesterCountryId:requester,targetCountryId:target,dataVersion:null,evidencePolicy:'KNOWN_ESTIMATED_UNKNOWN',countryOverview:{
   currency:field(targetCurrency,'ISO 4217',targetCurrency?'KNOWN':'UNKNOWN','Finance / FX currency authority'),
-  foreignCurrencyPaymentCapacity:field(available!==null?available:reserves,targetCurrency||'local currency',available!==null||reserves!==null?'KNOWN':'UNKNOWN',available!==null?'finance.available':reserves!==null?'finance.reserves':'Finance Treasury','Game Treasury liquidity is not automatically transferable foreign reserves.'),
+  foreignCurrencyPaymentCapacity:field(targetCash,targetCurrency||'local currency',targetCash===null?'UNKNOWN':'KNOWN',targetAvailable!==null?'finance.available':targetTreasuryReserve!==null?'finance.reserves':'Finance Treasury','Counterparty Treasury liquidity in its own currency; not the same as USD FX reserves or freely transferable foreign currency.'),
+  requesterTreasuryLiquidity:field(requesterCash,buyerCurrency||'local currency',requesterCash===null?'UNKNOWN':'KNOWN',requesterAvailable!==null?'requester finance.available':requesterTreasuryReserve!==null?'requester finance.reserves':'requester Finance Treasury','Requesting country Treasury liquidity in its own currency; this is not FX reserves.'),
+  targetTreasuryLiquidity:field(targetCash,targetCurrency||'local currency',targetCash===null?'UNKNOWN':'KNOWN',targetAvailable!==null?'target finance.available':targetTreasuryReserve!==null?'target finance.reserves':'target Finance Treasury','Counterparty Treasury liquidity in its own currency; this is not FX reserves.'),
+  requesterForeignExchangeReservesUsd:field(requesterFxReserve,'USD',requesterFxReserve===null?'UNKNOWN':'KNOWN','requester economy.reserves / FX monetary profile','FX reserve balance is kept separate from Treasury cash; underlying baseline may be modeled or legacy source data.'),
+  targetForeignExchangeReservesUsd:field(targetFxReserve,'USD',targetFxReserve===null?'UNKNOWN':'KNOWN','target economy.reserves / FX monetary profile','FX reserve balance is kept separate from Treasury cash; underlying baseline may be modeled or legacy source data.'),
   buyerCurrency:field(buyerCurrency,'ISO 4217',buyerCurrency?'KNOWN':'UNKNOWN','Finance / FX currency authority'),
   bilateralFxRate:field(fx,'buyer currency per seller currency',fx===null?'UNKNOWN':'KNOWN','OmegaGlobalTrade.fxRate'),
   diplomaticRelation:field(r,'record',r?'KNOWN':'UNKNOWN','foreign.relations'),
