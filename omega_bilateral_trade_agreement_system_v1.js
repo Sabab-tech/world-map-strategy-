@@ -494,6 +494,42 @@
     }
     return { buyerValue: null, sellerValue: null, fx: null, reason: 'FX_SETTLEMENT_EVIDENCE_UNAVAILABLE' };
   }
+  function reservedBuyerCurrency(buyerCountry, intervalTurns) {
+    var buyer = canonical(buyerCountry), total = 0, requestCount = 0, agreementCount = 0, unknownReasons = [], requestIds = new Set();
+    var pendingStatuses = ['SENT', 'COUNTER_OFFERED', 'ACCEPTED', 'SETTLEMENT_PREPARING', 'PENDING_SETTLEMENT', 'IN_TRANSIT'];
+    requestIdList(buyer).forEach(function (request) {
+      if (!request || !pendingStatuses.includes(id(request.status))) return;
+      var requestId = String(request.requestId || '');
+      if (requestId) requestIds.add(requestId);
+      var seller = canonical(request.targetCountryId || request.sellerCountryId), quantity = num(request.quantityApproved ?? request.quantity),
+        price = num(request.unitPrice ?? request.lastCounterpartyDecision && request.lastCounterpartyDecision.unitPrice);
+      if (!seller || quantity === null || price === null) { unknownReasons.push('PENDING_IMPORT_REQUEST_TERMS_UNKNOWN'); return; }
+      var values = settlementValues(buyer, seller, quantity, price), amount = num(values && values.buyerValue);
+      if (amount === null) unknownReasons.push('PENDING_IMPORT_REQUEST_FX_UNKNOWN');
+      else { total += amount; requestCount++; }
+    });
+    contractList(buyer).forEach(function (contract) {
+      if (!contract || id(contract.role) !== 'BUYER' || !['ACTIVE', 'AT_RISK'].includes(id(contract.status)) ||
+          contract.currentRequestId || num(contract.nextDeliveryTurn) === null ||
+          num(contract.nextDeliveryTurn) > turn() + Math.max(1, num(intervalTurns) || 1)) return;
+      var seller = canonical(contract.sellerCountryId || contract.partnerCountryId);
+      if (!seller || !contract.resourceId) { unknownReasons.push('BILATERAL_BUYER_CONTRACT_TERMS_UNKNOWN'); return; }
+      var price = num(contract.unitPrice);
+      if (id(contract.priceModel || 'FIXED') === 'MARKET_LINKED') {
+        var marketPrice = readProduct(seller, { id: contract.resourceId }).expectedPrice;
+        price = marketPrice && marketPrice.status === 'KNOWN' && num(marketPrice.value) !== null
+          ? num(marketPrice.value) * (1 + (num(contract.marketAdjustmentPct) || 0) / 100) : null;
+      }
+      var quantity = num(contract.quantityPerDelivery);
+      if (quantity === null || price === null) { unknownReasons.push('BILATERAL_BUYER_CONTRACT_FX_UNKNOWN'); return; }
+      var values = settlementValues(buyer, seller, quantity, price), amount = num(values && values.buyerValue);
+      if (amount === null) unknownReasons.push('BILATERAL_BUYER_CONTRACT_FX_UNKNOWN');
+      else { total += amount; agreementCount++; }
+    });
+    return { status: unknownReasons.length ? 'UNKNOWN' : 'KNOWN', amount: unknownReasons.length ? null : total,
+      requestCount: requestCount, agreementCount: agreementCount, reasons: unknownReasons };
+  }
+
   function previewProposal(playerCountry, payload) {
     var player = canonical(playerCountry), p = payload || {}, target = canonical(p.targetCountryId);
     var direction = id(p.direction || 'IMPORT');
@@ -534,19 +570,23 @@
       ? clearedPrice * (1 + (marketAdjustmentPct || 0) / 100) : unitPrice;
     var values = settlementValues(buyer, seller, quantity, priceForAgreement);
     var buyerAmount = num(values && values.buyerValue);
-    var availableMoney = finance.available.value;
+    var currencyCommitments = reservedBuyerCurrency(buyer, intervalTurns);
+    var grossAvailableMoney = finance.available.value;
+    var availableMoney = grossAvailableMoney === null || currencyCommitments.status !== 'KNOWN' ? null :
+      Math.max(0, grossAvailableMoney - currencyCommitments.amount);
     var issues = [];
     if (stock === null) issues.push('SELLER_STOCK_UNKNOWN');
     if (reserve === null) issues.push('SELLER_RESERVE_UNKNOWN');
     if (domesticBuffer === null) issues.push('DOMESTIC_DEMAND_UNKNOWN');
     if (finance.available.status !== 'KNOWN') issues.push('BUYER_AVAILABLE_FOREIGN_CURRENCY_UNKNOWN');
+    if (currencyCommitments.status !== 'KNOWN') issues.push('BUYER_FOREIGN_CURRENCY_COMMITMENTS_UNKNOWN');
     if (buyerAmount === null) issues.push('FX_SETTLEMENT_VALUE_UNKNOWN');
     if (quotePrice === null) issues.push('MARKET_PRICE_UNKNOWN');
     if (priceModel === 'MARKET_LINKED' && clearedPrice === null) issues.push('MARKET_LINKED_PRICE_NOT_CLEARED');
     var supplyOK = exportable !== null && exportable + 1e-8 >= quantity;
     var fundsOK = buyerAmount !== null && availableMoney !== null && availableMoney + 1e-8 >= buyerAmount;
-    var hardUnknown = stock === null || reserve === null || finance.available.status !== 'KNOWN' || buyerAmount === null ||
-      priceModel === 'MARKET_LINKED' && clearedPrice === null;
+    var hardUnknown = stock === null || reserve === null || finance.available.status !== 'KNOWN' || currencyCommitments.status !== 'KNOWN' ||
+      buyerAmount === null || priceModel === 'MARKET_LINKED' && clearedPrice === null;
     var status = hardUnknown || domesticBuffer === null ? 'CONDITIONAL' : supplyOK && fundsOK ? 'FEASIBLE' : 'INFEASIBLE';
     var canSend = status === 'FEASIBLE' || status === 'CONDITIONAL' && p.acceptUnknownRisk === true && supplyOK && fundsOK;
     return {
@@ -558,7 +598,9 @@
       indicativeUnitPrice: unitPrice, priceCurrency: tradeCurrency(seller), expectedMarketPrice: quotePrice,
       sellerStock: stock, sellerReserve: reserve, commitments: commitments, acceptedPendingRequests: accepted.quantity,
       domesticRequirementPerInterval: domesticBuffer, exportableSupply: exportable,
-      buyerAvailableForeignCurrency: availableMoney, buyerCurrency: tradeCurrency(buyer), buyerSettlementAmount: buyerAmount,
+      buyerAvailableForeignCurrency: availableMoney, buyerGrossAvailableForeignCurrency: grossAvailableMoney,
+      buyerReservedForeignCurrency: currencyCommitments.amount, buyerCurrencyCommitments: currencyCommitments,
+      buyerCurrency: tradeCurrency(buyer), buyerSettlementAmount: buyerAmount,
       fx: num(values && values.fx), durationMonths: durationMonths, durationTurns: monthsToTurns(durationMonths),
       intervalDays: intervalDays, intervalTurns: intervalTurns, quantityTolerancePct: clamp(p.quantityTolerancePct ?? 0, 0, 50),
       terminationPenaltyPct: clamp(p.terminationPenaltyPct ?? 0, 0, 100), evidenceIssues: issues,
@@ -622,10 +664,12 @@
       ? null : Math.max(0, supplier.stock.value - supplier.reserve.value - obligations - accepted.quantity - domesticBuffer);
     var settlement = settlementValues(buyer, seller, quantity, price);
     var buyerCost = num(settlement && settlement.buyerValue);
-    var funds = buyerFinance.available.value;
+    var currencyCommitments = reservedBuyerCurrency(buyer, num(proposal.intervalTurns) || 1);
+    var grossFunds = buyerFinance.available.value;
+    var funds = grossFunds === null || currencyCommitments.status !== 'KNOWN' ? null : Math.max(0, grossFunds - currencyCommitments.amount);
     if (available === null || funds === null || buyerCost === null) {
       result.reason = available === null ? 'SELLER_EXPORTABLE_STOCK_OR_DOMESTIC_BUFFER_UNKNOWN' :
-        funds === null ? 'BUYER_AVAILABLE_FOREIGN_CURRENCY_UNKNOWN' : 'CROSS_CURRENCY_SETTLEMENT_UNKNOWN';
+        funds === null ? currencyCommitments.status !== 'KNOWN' ? 'BUYER_FOREIGN_CURRENCY_COMMITMENTS_UNKNOWN' : 'BUYER_AVAILABLE_FOREIGN_CURRENCY_UNKNOWN' : 'CROSS_CURRENCY_SETTLEMENT_UNKNOWN';
       return result;
     }
     if (quantity <= 0 || price <= 0) { result.decision = 'REJECT'; result.reason = 'NON_POSITIVE_TRADE_TERMS'; return result; }
@@ -725,7 +769,8 @@
       return result;
     }
     result.decisionFactors = {
-      exportableSupply: available, buyerAvailableForeignCurrency: funds, buyerSettlementCost: buyerCost,
+      exportableSupply: available, buyerAvailableForeignCurrency: funds, buyerGrossAvailableForeignCurrency: grossFunds,
+      buyerReservedForeignCurrency: currencyCommitments.amount, buyerCurrencyCommitments: currencyCommitments, buyerSettlementCost: buyerCost,
       observedSellerMarketPrice: marketPrice, buyerDemandPerInterval: demandNeed,
       alternativeMarketEvidence: alternativeEvidence, relationshipScore: rel,
       existingPartnerAgreementCount: partnerContracts.length, partnerDeliveryReliability: reliabilityScore,
