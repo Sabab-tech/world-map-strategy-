@@ -3566,7 +3566,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     account.cashFlowEntries=entries;account.lastTurn=turn();accounts[co]=account;econ.companyAccounts=accounts;
     return{status:'POSTED',entry:clone(row)};
   }
-    function completePrivateCompanyImport(input){
+  function completePrivateCompanyImport(input){
     input=input||{};
     var buyerCountry=canonicalCountry(input.buyerCountryId||playerCountry()),sellerCountry=canonicalCountry(input.sellerCountryId),
       settlementId=String(input.settlementId||'').trim(),buyerCompany=id(input.buyerCompanyId),sellerCompany=id(input.sellerCompanyId),
@@ -4058,7 +4058,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     var accruedOperatingCosts=costEntries.reduce(function(sum,row){return sum+(num(row.amount)||0);},0);
     var revenue=0,cost=0,tax=0,worker=0,transport=0,inputMaterials=0,other=0,operatingCostSettlementPayments=0;
     runtimeRows.forEach(function(row){
-      if(!row||String(row.status||'').toUpperCase()!=='POSTED')return;
+      if(!row||String(row.status||'').toUpperCase()!=='POSTED'||row.isReversal===true)return;
       var amount=num(row.amount);if(amount===null||amount<0)return;
       var direction=String(row.direction||'').toUpperCase(),category=String(row.category||'OTHER').toUpperCase();
       if(direction==='CREDIT')revenue+=amount;
@@ -4078,7 +4078,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     if(r)for(var i=r.financialPeriods.length-1;i>=0;i--){
       if(r.financialPeriods[i]&&r.financialPeriods[i].companyId===co){lastPeriod=clone(r.financialPeriods[i]);break;}
     }
-    var cashFlowKnown=!!(account&&account.cashFlowJournalVersion===1&&Array.isArray(account.cashFlowEntries)),
+    var cashFlowKnown=!!(account&&(num(account.cashFlowJournalVersion)||0)>=1&&Array.isArray(account.cashFlowEntries)),
       droppedTotal=account?(num(account.cashFlowJournalDroppedEntries)||0):0,
       droppedAtLastClose=capital?(num(capital.cashFlowJournalDroppedEntriesAtClose)||0):0,
       openPeriodDroppedEntries=Math.max(0,droppedTotal-droppedAtLastClose);
@@ -4092,7 +4092,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
       runtimeNetCashFlow:account&&num(account.runtimeNetCashFlow)!==null?num(account.runtimeNetCashFlow):null,
       journal:{status:!cashFlowKnown?'LEGACY_OR_NOT_RECORDED':
           openPeriodDroppedEntries>0?'JOURNAL_TRUNCATED':'VERIFIED_RUNTIME_JOURNAL',
-        version:cashFlowKnown?1:null,startedAtTurn:account&&num(account.cashFlowJournalStartedAtTurn),
+        version:cashFlowKnown?Math.floor(num(account.cashFlowJournalVersion)||1):null,startedAtTurn:account&&num(account.cashFlowJournalStartedAtTurn),
         entryCount:runtimeRows.length,droppedEntryCount:droppedTotal,
         droppedEntriesSinceLastClose:openPeriodDroppedEntries,
         earliestDroppedTurn:account?num(account.cashFlowJournalEarliestDroppedTurn):null,
@@ -4138,7 +4138,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     if(!cid||cid!==playerCountry()||COMPANY_IDS.indexOf(co)<0)
       return{status:'BLOCKED',reason:'PLAYER_COUNTRY_OR_COMPANY_SCOPE_INVALID'};
     var company=companyFlowAccount(cid,co);
-    if(!company||company.cashFlowJournalVersion!==1||!Array.isArray(company.cashFlowEntries))
+    if(!company||(num(company.cashFlowJournalVersion)||0)<1||!Array.isArray(company.cashFlowEntries))
       return{status:'BLOCKED',reason:'COMPANY_CASH_FLOW_JOURNAL_NOT_READY'};
     var capital=capitalAccount(cid,co,true),endTurn=turn(),previousClose=num(capital.lastFinancialCloseTurn),
       startTurn=previousClose===null?num(company.cashFlowJournalStartedAtTurn):previousClose+1;
@@ -4157,7 +4157,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     if(previousClose!==null&&endTurn<=previousClose)
       return{status:'DUPLICATE',reason:'FINANCIAL_PERIOD_ALREADY_CLOSED',periodEndTurn:previousClose};
     var allEntries=company.cashFlowEntries.filter(function(row){
-      var t=num(row&&row.turn);return row&&String(row.status||'').toUpperCase()==='POSTED'&&t!==null&&t>=startTurn&&t<=endTurn;
+      var t=num(row&&row.turn);return row&&String(row.status||'').toUpperCase()==='POSTED'&&row.isReversal!==true&&t!==null&&t>=startTurn&&t<=endTurn;
     });
     var lifecycleRuntime=runtime(cid,true),periodCosts=lifecycleRuntime.operatingCostEntries.filter(function(row){var t=num(row&&row.turn);return row&&row.companyId===co&&row.status==='POSTED'&&t!==null&&t>=startTurn&&t<=endTurn;}),
       periodUnpriced=lifecycleRuntime.unpricedOperatingCostEvents.filter(function(row){var t=num(row&&row.turn);return row&&row.companyId===co&&row.status==='UNPRICED'&&t!==null&&t>=startTurn&&t<=endTurn;});
