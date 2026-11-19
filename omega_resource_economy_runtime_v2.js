@@ -131,7 +131,9 @@ function captureStockFlowPeriod(stateTransaction) {
         previous.lossLedgerClosingCaptured=false;previous.lossLedgerClosingStatus='TURN_GAP_UNOBSERVED';}
     }
     const ledger=stateTransaction.get('resource.inventoryLedger'),
-      lossLedger=stateTransaction.get('resource.stockLossLedger');
+      existingLossLedger=stateTransaction.get('resource.stockLossLedger'),
+      lossLedger=Array.isArray(existingLossLedger)?existingLossLedger:[];
+    if(!Array.isArray(existingLossLedger))stateTransaction.set('resource.stockLossLedger',lossLedger);
     periods.push({schemaVersion:1,periodId,turn:t,periodType:'GAME_TURN',
       openingStockByIdentity:clone(snapshot.identities),openingCoverageComplete:snapshot.complete,
       openingCaptured:true,openingCaptureSource:'BEFORE_FIRST_PHYSICAL_STOCK_MUTATION',
@@ -1972,6 +1974,9 @@ function captureStockFlowPeriod(stateTransaction) {
     if(period){
       period.stockLossLedgerRowsObserved=(num(period.stockLossLedgerRowsObserved)||0)+1;
       period.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+      period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
+      period.lossCoverageBySource[sourceType]=Object.assign({},period.lossCoverageBySource[sourceType]||{},
+        {status:'INVALIDATED_BY_NEW_LOSS_EVENT'});
       ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
     }
     emit('OMEGA_RESOURCE_STOCK_LOSS_RECORDED',country,normalized,'resource-economy');
@@ -2091,7 +2096,10 @@ function captureStockFlowPeriod(stateTransaction) {
     if(!period)return{accepted:false,reason:'STOCK_FLOW_PERIOD_NOT_CAPTURED',periodId:periodId};
     var inventory=ctx.stateTransaction.get('resource.inventoryLedger'),lossLedger=ctx.stateTransaction.get('resource.stockLossLedger'),
       network=ctx.stateTransaction.get('resource.industrialNetwork'),movements=Array.isArray(inventory)?inventory:[],
-      losses=Array.isArray(lossLedger)?lossLedger:[],invalid=[],observedRows=0,lossEventsObserved=0;
+      losses=Array.isArray(lossLedger)?lossLedger:[],invalid=[],observedRows=0,lossEventsObserved=0,
+      ledgerLimit=Math.max(1,num(rules().runtime.maxLedgerEntries)||2048);
+    if(!Array.isArray(lossLedger))invalid.push('STOCK_LOSS_LEDGER_NOT_INITIALIZED');
+    if(losses.length>=ledgerLimit)invalid.push('STOCK_LOSS_LEDGER_WINDOW_TRUNCATED');
     function currentTurn(row){return num(row&&(row.turn??row.simulationTurn??row.deliveredTurn??row.createdTurn))===eventTurn;}
     function hasLoss(event,sourceEventId){
       var id=String(event&&(event.eventId||event.lossEventId)||'').trim();
@@ -2108,12 +2116,15 @@ function captureStockFlowPeriod(stateTransaction) {
     if(sourceType==='STORAGE'){
       if(!Array.isArray(inventory))invalid.push('INVENTORY_LEDGER_UNAVAILABLE');
       else{
+        if(movements.length>=ledgerLimit)invalid.push('INVENTORY_LEDGER_WINDOW_TRUNCATED');
         observedRows=movements.filter(currentTurn).length;
         movements.filter(currentTurn).forEach(function(row){
           var type=String(row&&row.type||'').toUpperCase();
           if(type==='STORAGE_LOSS_COMMITTED'){
             var event={eventId:row.eventId,resourceId:row.resourceId,quantity:row.quantity,unit:row.unit};
             if(!hasLoss(event,row.sourceEventId||row.eventId))invalid.push('STORAGE_LOSS_SOURCE_NOT_RECONCILED:'+String(row.eventId||'MISSING_ID'));
+          }else if(type.includes('LOSS')&&!['TRANSPORT_LOSS_COMMITTED','PRODUCTION_LOSS_COMMITTED'].includes(type)){
+            invalid.push('UNCLASSIFIED_STORAGE_LOSS_EVENT:'+String(row.eventId||'MISSING_ID'));
           }
         });
         losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()==='STORAGE';})
@@ -2133,6 +2144,8 @@ function captureStockFlowPeriod(stateTransaction) {
       if(!network||!Array.isArray(network.shipments)||!Array.isArray(network.deliveries))
         invalid.push('INDUSTRIAL_SHIPMENT_LEDGER_UNAVAILABLE');
       else{
+        if(network.shipments.length>=1024||network.deliveries.length>=1024)
+          invalid.push('TRANSPORT_LEDGER_WINDOW_TRUNCATED');
         var shipmentRows=network.shipments.filter(currentTurn),deliveryRows=network.deliveries.filter(currentTurn);
         observedRows=shipmentRows.length+deliveryRows.length;
         shipmentRows.forEach(function(row){
@@ -2156,6 +2169,7 @@ function captureStockFlowPeriod(stateTransaction) {
     }else{
       if(!Array.isArray(inventory))invalid.push('PRODUCTION_LEDGER_UNAVAILABLE');
       else{
+        if(movements.length>=ledgerLimit)invalid.push('INVENTORY_LEDGER_WINDOW_TRUNCATED');
         var productionRows=movements.filter(function(row){
           return String(row&&row.type||'').toUpperCase()==='PRODUCTION_TRANSACTION_COMMITTED'&&currentTurn(row);
         });
