@@ -954,7 +954,7 @@ test('Phase 5 records balanced Government cash postings inside the existing Fina
   assert.equal(journal.debitTotalMinor,123456);
   assert.equal(journal.creditTotalMinor,123456);
   assert.deepEqual(journal.lines.map(line=>[line.side,line.accountId,line.amountMinor]),[
-    ['DEBIT','GOVERNMENT:EXPENSE:interior:purchase',123456],
+    ['DEBIT','GOVERNMENT:CAPITAL_ASSETS:interior',123456],
     ['CREDIT','GOVERNMENT:TREASURY_CASH',123456]
   ]);
 
@@ -1065,8 +1065,16 @@ test('Phase 5 Government journal API is read-only, bounded and explicitly partia
   const row=journal.transactions.find(item=>item.sourceTransactionType==='EXPENSE');
   assert.ok(row);
   row.journal.lines[0].amountMinor=-1;
-  assert.ok(finance.getFinanceState('BGD').ledger.length===before);
+  assert.equal(finance.getFinanceState('BGD').ledger.length,before);
   const fresh=finance.getSectorJournal('BGD').transactions.find(item=>item.sourceTransactionType==='EXPENSE');
   assert.ok(fresh.journal.lines[0].amountMinor>0,'the accessor returns defensive copies');
+
+  const imprecise=finance.applyAction({type:'spend-budget',countryId:'BGD',department:'interior',
+    amountUsd:1.005,spendType:'general',description:'Phase 5 non-cent amount fixture'});
+  assert.equal(imprecise.ok,true);
+  const impreciseSource=finance.getFinanceState('BGD').ledger.find(item=>item.transactionId===imprecise.transactionId);
+  assert.equal(impreciseSource.sectorJournalV1.status,'UNAVAILABLE',
+    'a source amount that cannot be represented in exact integer cents is not rounded into the journal');
+  assert.equal(impreciseSource.sectorJournalV1.reason,'SOURCE_AMOUNT_MISSING_OR_NOT_CENT_EXACT');
 });
 
