@@ -607,3 +607,33 @@ const forgedContractRequest=trade.reviewRequest({
 });
 assert.equal(forgedContractRequest.decision,'REJECT',JSON.stringify(forgedContractRequest));
 assert.equal(forgedContractRequest.reason,'BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH');
+
+// A valid BTA delivery must fall inside both sides of the agreed tolerance band.
+const toleranceContract=globalThis.Game.state.trade.SAU.bilateralContracts[0];
+toleranceContract.quantityTolerancePct=5;
+toleranceContract.currentRequestId='REQ-BTA-TOLERANCE-LOW';
+const belowToleranceRequest=trade.reviewRequest({
+  requestId:'REQ-BTA-TOLERANCE-LOW',countryId:'BGD',targetCountryId:'SAU',
+  resourceId:'crude_oil',quantity:94,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
+  governmentContractId:'BTA-RESERVE-REGRESSION'
+});
+assert.equal(belowToleranceRequest.reason,'BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH',
+  'delivery below the agreed minus tolerance must not be authorized');
+
+toleranceContract.currentRequestId='REQ-BTA-TOLERANCE-HIGH';
+const aboveToleranceRequest=trade.reviewRequest({
+  requestId:'REQ-BTA-TOLERANCE-HIGH',countryId:'BGD',targetCountryId:'SAU',
+  resourceId:'crude_oil',quantity:106,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
+  governmentContractId:'BTA-RESERVE-REGRESSION'
+});
+assert.equal(aboveToleranceRequest.reason,'BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH',
+  'delivery above the agreed plus tolerance must not be authorized');
+
+toleranceContract.currentRequestId='REQ-BTA-TOLERANCE-WITHIN';
+const withinToleranceRequest=trade.reviewRequest({
+  requestId:'REQ-BTA-TOLERANCE-WITHIN',countryId:'BGD',targetCountryId:'SAU',
+  resourceId:'crude_oil',quantity:97,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
+  governmentContractId:'BTA-RESERVE-REGRESSION'
+});
+assert.equal(withinToleranceRequest.bilateralContractReserve.authorizedAgreement,true,
+  'a delivery inside both agreed tolerance bounds must be recognized as an authorized BTA delivery');
