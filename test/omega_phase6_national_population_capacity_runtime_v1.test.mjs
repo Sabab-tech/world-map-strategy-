@@ -692,6 +692,85 @@ test('durable bilateral shipment ledger reports only inbound in-transit imports 
   assert.equal(summary.dataCoverage.internationalShipmentLedgerAvailable, true);
 });
 
+test('Black Market inbound transit is exposed separately and reconciles against arrived bilateral shipments', async () => {
+  const state = {
+    simulation: { turn: 9, session: { playerCountryId: 'BGD' } },
+    population: {},
+    economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: [], demandRuntime: { byResource: {
+      crude_oil: { pendingImportQuantity: 0, demandPerDay: 40 }
+    } } } },
+    trade: { BGD: {
+      internationalShipmentLedger: [{
+        schemaVersion: 1, shipmentId: 'SHIP-BM-ARRIVED', requestId: 'REQ-BM-ARRIVED',
+        settlementId: 'SET-BM-ARRIVED', resourceId: 'crude_oil', quantity: 90,
+        originCountryId: 'USA', destinationCountryId: 'BGD',
+        status: 'ARRIVED', arrivalStatus: 'RECEIVED', settlementStatus: 'SETTLED'
+      }],
+      blackMarketTransits: [
+        { transitId: 'BM-TRANSIT-OPEN', dealId: 'BM-DEAL-OPEN', requestId: 'REQ-BM-OPEN',
+          buyerCountryId: 'BGD', sellerCountryId: 'USA', resourceId: 'crude_oil', quantity: 20,
+          route: [{ countryId: 'USA' }, { countryId: 'BGD' }], status: 'IN_TRANSIT', nextTurn: 10 },
+        { transitId: 'BM-TRANSIT-ARRIVAL', dealId: 'BM-DEAL-ARRIVAL', requestId: 'REQ-BM-ARRIVAL',
+          buyerCountryId: 'BGD', sellerCountryId: 'CAN', resourceId: 'crude_oil', quantity: 5,
+          route: [{ countryId: 'CAN' }, { countryId: 'BGD' }], status: 'ARRIVAL_PENDING', nextTurn: 9 },
+        { transitId: 'BM-TRANSIT-SETTLED', dealId: 'BM-DEAL-SETTLED', requestId: 'REQ-BM-SETTLED',
+          buyerCountryId: 'BGD', sellerCountryId: 'AUS', resourceId: 'crude_oil', quantity: 100,
+          route: [{ countryId: 'AUS' }, { countryId: 'BGD' }], status: 'SETTLED' },
+        { transitId: 'BM-TRANSIT-ALREADY-ARRIVED', dealId: 'BM-DEAL-ARRIVED',
+          requestId: 'REQ-BM-ARRIVED', buyerCountryId: 'BGD', sellerCountryId: 'USA',
+          resourceId: 'crude_oil', quantity: 90, route: [{ countryId: 'USA' }, { countryId: 'BGD' }],
+          status: 'IN_TRANSIT', nextTurn: 8 }
+      ]
+    } },
+    finance: { BGD: { omegaFinance: { ledger: [] } } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const transit = summary.inTransitInternationalImports;
+  assert.equal(transit.status, 'OBSERVED_DURABLE_SHIPMENT_LEDGER');
+  assert.equal(transit.shipmentCount, 0, 'the arrived generic shipment is not counted as in transit');
+  assert.equal(transit.quantity, 0);
+  assert.equal(transit.blackMarketTransit.status, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
+  assert.equal(transit.blackMarketTransit.ledgerAvailable, true);
+  assert.equal(transit.blackMarketTransit.shipmentCount, 2);
+  assert.equal(transit.blackMarketTransit.byResource.crude_oil.quantity, 25);
+  assert.deepEqual(JSON.parse(JSON.stringify(transit.blackMarketTransit.byResource.crude_oil.transitIds)),
+    ['BM-TRANSIT-ARRIVAL', 'BM-TRANSIT-OPEN']);
+  assert.equal(transit.blackMarketTransit.reconciledCompletedTransitCount, 1,
+    'a stale transit entry is excluded when its request is already present as an arrived importer shipment');
+  const row = summary.nationalRequirement.byResource.crude_oil;
+  assert.equal(row.inTransitInternationalImportQuantity, 0,
+    'the standard bilateral quantity remains separate');
+  assert.equal(row.blackMarketInboundShipmentQuantity, 25);
+  assert.equal(row.blackMarketInboundShipmentEvidenceStatus, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
+  assert.equal(summary.dataCoverage.blackMarketTransitLedgerAvailable, true);
+});
+
+test('Black Market transit can provide a known subset without claiming complete international shipment coverage', async () => {
+  const state = {
+    simulation: { turn: 9, session: { playerCountryId: 'BGD' } },
+    population: {},
+    economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: [], demandRuntime: { byResource: {
+      crude_oil: { pendingImportQuantity: 0, demandPerDay: 40 }
+    } } } },
+    trade: { BGD: { blackMarketTransits: [{
+      transitId: 'BM-TRANSIT-PARTIAL', dealId: 'BM-DEAL-PARTIAL', requestId: 'REQ-BM-PARTIAL',
+      buyerCountryId: 'BGD', sellerCountryId: 'USA', resourceId: 'crude_oil', quantity: 9,
+      route: [{ countryId: 'USA' }, { countryId: 'BGD' }], status: 'IN_TRANSIT', nextTurn: 10
+    }] } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  assert.equal(summary.inTransitInternationalImports.status, 'PARTIAL_BLACK_MARKET_TRANSIT_ONLY');
+  assert.equal(summary.inTransitInternationalImports.quantity, null,
+    'the complete bilateral import total remains unknown without its durable shipment ledger');
+  assert.equal(summary.inTransitInternationalImports.blackMarketTransit.byResource.crude_oil.quantity, 9);
+  assert.equal(summary.nationalRequirement.byResource.crude_oil.blackMarketInboundShipmentQuantity, 9);
+  assert.equal(summary.dataCoverage.inTransitInternationalImportStatus, 'PARTIAL_BLACK_MARKET_TRANSIT_ONLY');
+});
+
 test('an empty durable shipment ledger establishes zero in-transit imports without inventing a shipment', async () => {
   const state = {
     simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
