@@ -44,6 +44,7 @@ on:
       - "country_sector_profile_schema_v1.json"
       - "country_sector_profiles_v1.json"
       - "country_official_index_observations_v1.json"
+      - "population_official_observations_v1.json"
       - "test/country_sector_profiles_v1.test.mjs"
       - "omega_country_sector_profile_ui_v1.js"
       - "omega_country_sector_profile_ui_v1.css"
