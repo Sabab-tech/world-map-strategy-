@@ -440,26 +440,38 @@ function captureStockFlowPeriod(stateTransaction) {
 
   function bilateralContractReserve(seller,resourceId,request={}){
     const rows=countryValue(seller,'trade.bilateralContracts');
-    if(!Array.isArray(rows))return{quantity:0,agreementIds:[],status:'NO_ACTIVE_COMMITMENTS'};
+    if(!Array.isArray(rows))return{quantity:0,agreementIds:[],status:'NO_ACTIVE_COMMITMENTS',authorizedAgreement:false};
     const currentTurn=turn(),excludeAgreement=String(request.governmentContractId||'').trim(),
-      requestId=String(request.requestId||'').trim();
-    let quantity=0;const agreementIds=[];
+      requestId=String(request.requestId||'').trim(),buyerId=canonical(request.countryId);
+    const ledger=countryValue(seller,'trade.globalTradeLedger.settlements');
+    const settledIds=new Set((Array.isArray(ledger)?ledger:[]).filter(row=>String(row.status||'').toUpperCase()==='SETTLED').map(row=>String(row.requestId||'')));
+    let quantity=0,authorizedAgreement=false,authorizationReason=null;const agreementIds=[];
     for(const contract of rows){
       if(!contract||!contract.agreementId||token(contract.resourceId)!==token(resourceId))continue;
       const role=id(contract.role),sellerId=canonical(contract.sellerCountryId||seller),
         status=id(contract.status),agreementId=String(contract.agreementId);
       if(sellerId!==canonical(seller)||role&&role!=='SELLER'||!['ACTIVE','AT_RISK'].includes(status))continue;
-      if(excludeAgreement&&agreementId===excludeAgreement)continue;
       const deliveryRequest=String(contract.currentRequestId||'').trim(),
         due=num(contract.nextDeliveryTurn),deliveryQuantity=num(contract.quantityPerDelivery);
       if(deliveryQuantity===null||deliveryQuantity<=0)continue;
+      if(excludeAgreement&&agreementId===excludeAgreement){
+        const tolerance=Math.max(0,Math.min(50,num(contract.quantityTolerancePct)||0))/100;
+        const allowedMax=deliveryQuantity*(1+tolerance);
+        const dueNow=deliveryRequest===requestId || !deliveryRequest && due!==null && due<=currentTurn+1;
+        if(buyerId&&canonical(contract.partnerCountryId)===buyerId&&deliveryRequest===requestId&&dueNow&&
+          num(request.quantity)!==null&&num(request.quantity)<=allowedMax+1e-8&&status==='ACTIVE'){
+          authorizedAgreement=true;
+        }else authorizationReason='BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH';
+        continue;
+      }
       if(deliveryRequest){
-        if(deliveryRequest===requestId)continue;
+        if(deliveryRequest===requestId||settledIds.has(deliveryRequest))continue;
         quantity+=deliveryQuantity;agreementIds.push(agreementId);continue;
       }
       if(due!==null&&due<=currentTurn+1){quantity+=deliveryQuantity;agreementIds.push(agreementId);}
     }
-    return{quantity:Number(quantity.toFixed(8)),agreementIds:agreementIds,status:agreementIds.length?'RESERVED':'NO_ACTIVE_COMMITMENTS'};
+    return{quantity:Number(quantity.toFixed(8)),agreementIds:agreementIds,
+      status:agreementIds.length?'RESERVED':'NO_ACTIVE_COMMITMENTS',authorizedAgreement:authorizedAgreement,authorizationReason:authorizationReason};
   }
 
   function sellerReviewDecision(request){
@@ -499,6 +511,10 @@ function captureStockFlowPeriod(stateTransaction) {
     if(supply.stock===null){result.reason='SELLER_RESOURCE_STOCK_NOT_OBSERVED';return result;}
     const reserve=Math.max(0,supply.reserve||0);
     const contractReserve=bilateralContractReserve(seller,resourceId,request);
+    if(request.governmentContractId&&!contractReserve.authorizedAgreement){
+      result.decision='REJECT';result.reason=contractReserve.authorizationReason||'BILATERAL_GOVERNMENT_CONTRACT_NOT_ACTIVE_OR_DUE';
+      result.bilateralContractReserve=clone(contractReserve);return result;
+    }
     let free=Math.max(0,supply.stock-reserve-contractReserve.quantity);
     result.bilateralContractReserve=clone(contractReserve);
     if(request.sellerCompanyId){
