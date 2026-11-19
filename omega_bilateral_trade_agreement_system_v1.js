@@ -402,11 +402,19 @@
       });
     });
     var generated = turn();
+    var syncedAt = new Date();
+    var simulatedAt = simulationDate();
+    var sourceVersion = sourceFingerprint(target, player, rows.map(function (r) { return r.resourceId; }));
+    var alternativesVersion = hash(alternatives);
+    var dataVersion = hash([VERSION, sourceVersion, alternativesVersion]);
     var report = {
       schemaVersion: VERSION,
+      dataVersion: dataVersion,
       snapshotId: 'BILAT-MKT-' + player + '-' + target + '-' + generated + '-' + hash(rows.map(function (r) { return [r.resourceId, r.stock.value, r.unmetDemand.value, r.expectedPrice.value]; })),
       playerCountryId: player,
       targetCountryId: target,
+      generatedAt: syncedAt.toISOString(),
+      simulationDate: simulatedAt ? simulatedAt.toISOString() : null,
       generatedTurn: generated,
       maxAgeTurns: MAX_REPORT_AGE_TURNS,
       freshnessStatus: 'CURRENT',
