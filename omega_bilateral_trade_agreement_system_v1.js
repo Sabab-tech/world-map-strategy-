@@ -510,8 +510,12 @@
     });
     contractList(buyer).forEach(function (contract) {
       if (!contract || id(contract.role) !== 'BUYER' || !['ACTIVE', 'AT_RISK'].includes(id(contract.status)) ||
-          contract.currentRequestId || num(contract.nextDeliveryTurn) === null ||
+          num(contract.nextDeliveryTurn) === null ||
           num(contract.nextDeliveryTurn) > turn() + Math.max(1, num(intervalTurns) || 1)) return;
+      if (contract.currentRequestId) {
+        if (!requestIds.has(String(contract.currentRequestId))) unknownReasons.push('BILATERAL_CURRENT_DELIVERY_REQUEST_MISSING');
+        return;
+      }
       var seller = canonical(contract.sellerCountryId || contract.partnerCountryId);
       if (!seller || !contract.resourceId) { unknownReasons.push('BILATERAL_BUYER_CONTRACT_TERMS_UNKNOWN'); return; }
       var price = num(contract.unitPrice);
