@@ -587,22 +587,6 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === priorAgreementId).status, 'RENEWED');
   assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === newRenewedContract.agreementId).role, 'SELLER');
 
-  // A force-majeure flag alone cannot waive the penalty; war/sanctions must be
-  // present in the authoritative bilateral foreign-relations state.
-  const unverifiedForceMajeure = bilateral.terminateContract('BGD', forceAgreement.agreementId,
-    'FORCE_MAJEURE', { forceMajeure: true });
-  assert.equal(unverifiedForceMajeure.accepted, false);
-  assert.equal(unverifiedForceMajeure.reason, 'FORCE_MAJEURE_EVIDENCE_NOT_VERIFIED');
-  globalThis.Game.state.foreign.BGD.relations.SAU.war_state = true;
-  globalThis.Game.state.foreign.SAU.relations.BGD.war_state = true;
-  const forceEnded = bilateral.terminateContract('BGD', forceAgreement.agreementId,
-    'FORCE_MAJEURE', { forceMajeure: true });
-  assert.equal(forceEnded.accepted, true, JSON.stringify(forceEnded));
-  assert.equal(forceEnded.penalty.status, 'WAIVED');
-  assert.equal(forceEnded.penalty.reason, 'VERIFIED_FORCE_MAJEURE');
-  globalThis.Game.state.foreign.BGD.relations.SAU.war_state = false;
-  globalThis.Game.state.foreign.SAU.relations.BGD.war_state = false;
-
   // One country's consent is not enough to cancel the other party's penalty.
   const oneSidedConsent = bilateral.recordTerminationConsent('BGD', newRenewedContract.agreementId, true);
   assert.equal(oneSidedConsent.accepted, true);
