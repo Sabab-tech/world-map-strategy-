@@ -2024,12 +2024,17 @@ function captureStockFlowPeriod(stateTransaction) {
     if(player&&c===player)return{status:'SKIPPED',reason:'PLAYER_COUNTRY_HANDLED_BY_TRADE_TURN'};
     const token=String(num(context.turn)??turn())+':'+c;
     if(scheduledCountryTurns.has(token))return{status:'ALREADY_UPDATED',countryId:c,turn:turn(),requestCount:0};
+    const bilateral=g.OmegaBilateralTrade||g.Omega?.BilateralTrade;
+    let bilateralTradeResult=null;
+    try{bilateralTradeResult=bilateral?.processCountry?.(c,{turn:num(context.turn)??turn()})||null;}
+    catch(error){bilateralTradeResult={status:'FAILED',reason:String(error?.message||error)};}
     const result=processCountryRequests(c,MAX_AUTONOMOUS_REQUESTS_PER_COUNTRY_PER_TURN);
     if(result.status==='COMPLETED'){
       scheduledCountryTurns.set(token,true);
       if(scheduledCountryTurns.size>512)scheduledCountryTurns.delete(scheduledCountryTurns.keys().next().value);
     }
-    return{...result,scheduled:true,playerCountryId:player,requestLimit:MAX_AUTONOMOUS_REQUESTS_PER_COUNTRY_PER_TURN};
+    return{...result,scheduled:true,playerCountryId:player,requestLimit:MAX_AUTONOMOUS_REQUESTS_PER_COUNTRY_PER_TURN,
+      bilateralTrade:bilateralTradeResult};
   }
   function installSchedulerHandler(){
     const scheduler=g.Omega?.WorldSimulationScheduler||g.OmegaWorldSimulationScheduler||null;
