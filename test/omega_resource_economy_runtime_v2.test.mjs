@@ -911,7 +911,7 @@ test('automatic storage deterioration debits free physical stock once and carrie
 });
 
 test('factory-bound transport loss is atomic for raw and processed warehouse shipments',async()=>{
-  for(const shipmentType of ['WAREHOUSE_TO_FACTORY','FACTORY_INPUT']){
+  for(const shipmentType of ['RAW_TO_FACTORY','WAREHOUSE_TO_FACTORY','FACTORY_INPUT']){
     const {context,worldState}=createContext();
     vm.runInNewContext(readFileSync('omega_resource_economy_runtime_v2.js','utf8'),context,
       {filename:'omega_resource_economy_runtime_v2.js'});
