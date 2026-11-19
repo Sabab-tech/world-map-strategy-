@@ -353,9 +353,12 @@
           return canonical(row.targetCountryId || row.sellerCountryId) === canonical(target) &&
             token(row.resourceId) === token(rid) && ['SENT','COUNTER_OFFERED','ACCEPTED','SETTLEMENT_PREPARING','PENDING_SETTLEMENT'].indexOf(id(row.status)) >= 0;
         });
-        candidates.push({ countryId: countryId, observedUnmetDemand: evidence(unmet, unmet === null ? 'UNKNOWN' : 'KNOWN', demand ? 'resource.demandRuntime' : null),
-          demandPerDay: evidence(daily, daily === null ? 'UNKNOWN' : 'KNOWN', demand ? 'resource.demandRuntime' : null),
-          existingRequests: pending.map(function (row) { return { requestId: row.requestId, quantity: num(row.quantity), unitPrice: num(row.unitPrice), status: row.status }; }).slice(0, 4) });
+        // Expose only a potential buyer country. Exact national demand and
+        // pending bid terms are private commercial intelligence and stay inside
+        // the country AI rather than its player-facing market report.
+        candidates.push({ countryId: countryId, status: 'POTENTIAL_BUYER',
+          demandEvidenceStatus: unmet === null && daily === null ? 'UNKNOWN' : 'NOT_DISCLOSED',
+          competingBidDisclosure: 'PRIVATE' });
       });
       output.competingBuyersForExports.push({ resourceId: rid, status: candidates.length ? 'OBSERVED' : 'UNKNOWN', alternatives: candidates.slice(0, 8) });
     });
