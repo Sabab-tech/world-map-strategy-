@@ -2143,6 +2143,17 @@ test('failed private-company receipt collision reverses buyer cash and makes the
   ]);
   assert.equal(buyerAccount.runtimeNetCashFlow,0);
   assert.equal(buyerAccount.paymentsMade,0);
+  const companySummary=api.getCompanyFinanceSummary('BGD',buyer);
+  assert.equal(companySummary.journal.status,'VERIFIED_RUNTIME_JOURNAL',
+    'version 2 journal remains compatible with existing company finance summaries');
+  assert.equal(companySummary.journal.version,2);
+  assert.equal(companySummary.journal.recordedRevenue,0,
+    'append-only reversal rows must not be counted as new sales revenue');
+  assert.equal(companySummary.journal.recordedOperatingCosts,0,
+    'append-only reversal rows must not be counted as new operating costs');
+  const periodClose=api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:buyer});
+  assert.equal(periodClose.status,'WAITING',
+    'a reversed settlement with no other source-backed activity must not become a false financial period');
   const failedReservation=h.state.finance.BGD.omegaFinance.companyTradeReservations[settlementId];
   assert.equal(failedReservation.status,'FAILED');
   const second=api.completePrivateCompanyImport({
