@@ -173,7 +173,7 @@ def capture(command: list[str], destination: Path, timeout: int = 30) -> None:
 def main() -> int:
     if not wait_for_android_package_manager():
         GRADLE_LOG.write_text(
-            "ANDROID_PACKAGE_MANAGER_NOT_READY: instrumentation was not started.\\n",
+            "ANDROID_PACKAGE_MANAGER_NOT_READY: instrumentation was not started.\n",
             encoding="utf-8",
         )
         capture_emulator_diagnostics()
