@@ -139,10 +139,12 @@ assert.equal(unsupportedPayment.reason, 'PAYMENT_TERMS_NOT_SUPPORTED_BY_CURRENT_
 // acceptance activates the same terms version on both sides.
 const offer = bilateral.createAgreementOffer('BGD', 'SAU', 'IMPORT', {
   resourceId: 'crude_oil', quantityPerShipment: 800, unitPrice: 95,
-  currency: 'SAR', durationTurns: 30, deliveryMode: 'SHIP'
+  durationTurns: 30, deliveryMode: 'SHIP'
 });
 assert.equal(offer.accepted, true, JSON.stringify(offer));
 const agreementId = offer.agreement.agreementId;
+assert.equal(offer.agreement.terms.currency, 'SAR',
+  'omitted settlement currency defaults to the seller local currency');
 assert.equal(bilateral.getAgreements('BGD').length, 1);
 assert.equal(bilateral.getAgreements('SAU').length, 1);
 const buyerOfferMirror = globalThis.Game.state.trade.BGD.bilateralAgreementLedger[0];
@@ -173,9 +175,11 @@ assert.equal(procurement.accepted, true, JSON.stringify(procurement));
 assert.equal(procurement.request.bilateralAgreementId, agreementId);
 assert.equal(procurement.request.quantity, 600);
 assert.equal(procurement.request.targetCountryId, 'SAU');
+assert.equal(procurement.request.currency, 'SAR');
 assert.equal(procurement.assessment.status, 'READY');
 const sellerInitiated = bilateral.procureAgreement('SAU', agreementId, 500);
 assert.equal(sellerInitiated.accepted, true, JSON.stringify(sellerInitiated));
+assert.equal(sellerInitiated.request.currency, 'SAR');
 assert.equal(sellerInitiated.request.countryId, 'BGD',
   'seller-side initiation must create the agreed buyer-side request in the buyer country state');
 
