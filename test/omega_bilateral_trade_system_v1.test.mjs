@@ -140,6 +140,11 @@ assert.equal(procurement.accepted, true, JSON.stringify(procurement));
 assert.equal(procurement.request.bilateralAgreementId, agreementId);
 assert.equal(procurement.request.quantity, 600);
 assert.equal(procurement.request.targetCountryId, 'SAU');
+assert.equal(procurement.assessment.status, 'READY');
+const sellerInitiated = bilateral.procureAgreement('SAU', agreementId, 500);
+assert.equal(sellerInitiated.accepted, true, JSON.stringify(sellerInitiated));
+assert.equal(sellerInitiated.request.countryId, 'BGD',
+  'seller-side initiation must create the agreed buyer-side request in the buyer country state');
 
 // A counteroffer increments the terms version and requires acceptance of that
 // version by the original offerer before either mirror becomes active.
