@@ -225,6 +225,24 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
     'the player may see their own available foreign currency');
   assert.equal(feasible.exportableSupply, 28970);
 
+  const buyerPriceReview = bilateral.evaluateProposal('SAU', {
+    proposalId: 'BTP-BUYER-PRICE', requestorCountryId: 'BGD', targetCountryId: 'SAU',
+    buyerCountryId: 'SAU', sellerCountryId: 'BGD', resourceId: 'crude_oil',
+    quantityPerDelivery: 100, unitPrice: 80, priceModel: 'FIXED',
+    intervalDays: 30, intervalTurns: 30
+  });
+  assert.ok(!buyerPriceReview.terms || buyerPriceReview.terms.unitPrice <= 80,
+    'the buyer AI must not counter a lower seller price upward');
+  const sellerPriceReview = bilateral.evaluateProposal('BGD', {
+    proposalId: 'BTP-SELLER-PRICE', requestorCountryId: 'SAU', targetCountryId: 'BGD',
+    buyerCountryId: 'SAU', sellerCountryId: 'BGD', resourceId: 'crude_oil',
+    quantityPerDelivery: 100, unitPrice: 80, priceModel: 'FIXED',
+    intervalDays: 30, intervalTurns: 30
+  });
+  assert.equal(sellerPriceReview.decision, 'COUNTER');
+  assert.equal(sellerPriceReview.terms.unitPrice, 95,
+    'the seller AI must counter a below-market offer upward to its market floor');
+
   const foreignBuyerFeasibility = bilateral.previewProposal('BGD', {
     targetCountryId: 'SAU', direction: 'EXPORT', resourceId: 'crude_oil',
     quantityPerDelivery: 100, unitPrice: 95, durationMonths: 12, intervalDays: 30
