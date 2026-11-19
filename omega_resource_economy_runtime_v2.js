@@ -2165,24 +2165,24 @@ function captureStockFlowPeriod(stateTransaction) {
     var lossLedger=priorLosses.slice();lossLedger.push(canonicalLoss);
     var maxEntries=Math.max(1,num(rules().runtime.maxLedgerEntries)||2048);
     while(ledger.length>maxEntries)ledger.shift();while(lossLedger.length>maxEntries)lossLedger.shift();
-    captureStockFlowPeriod(ctx.stateTransaction);
-    ctx.stateTransaction.set('resource.inventory',inventory);
-    if(isProcessed)ctx.stateTransaction.set('resource.processedWarehouse',warehouse);
-    else ctx.stateTransaction.set('resource.warehouse',warehouse);
-    ctx.stateTransaction.set('resource.batches',batches);
-    ctx.stateTransaction.set('resource.inventoryLots',lots);
-    ctx.stateTransaction.set('resource.industrialNetwork',network);
-    ctx.stateTransaction.set('resource.inventoryLedger',ledger);
-    ctx.stateTransaction.set('resource.stockLossLedger',lossLedger);
-    var periods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))
-      ?ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[],
+    captureStockFlowPeriod(args.ctx.stateTransaction);
+    args.ctx.stateTransaction.set('resource.inventory',inventory);
+    if(isProcessed)args.ctx.stateTransaction.set('resource.processedWarehouse',warehouse);
+    else args.ctx.stateTransaction.set('resource.warehouse',warehouse);
+    args.ctx.stateTransaction.set('resource.batches',batches);
+    args.ctx.stateTransaction.set('resource.inventoryLots',lots);
+    args.ctx.stateTransaction.set('resource.industrialNetwork',network);
+    args.ctx.stateTransaction.set('resource.inventoryLedger',ledger);
+    args.ctx.stateTransaction.set('resource.stockLossLedger',lossLedger);
+    var periods=Array.isArray(args.ctx.stateTransaction.get('resource.stockFlowPeriods'))
+      ?args.ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[],
       period=periods.find(function(row){return String(row&&row.periodId||'')===canonicalLoss.periodId;});
     if(period){
       period.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
       period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
       if(period.lossCoverageBySource.TRANSPORT)
         period.lossCoverageBySource.TRANSPORT=Object.assign({},period.lossCoverageBySource.TRANSPORT,{status:'INVALIDATED_BY_NEW_LOSS_EVENT'});
-      ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
+      args.ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
     }
     emit('OMEGA_RESOURCE_STOCK_LOSS_RECORDED',country,canonicalLoss,'resource-economy');
     return{accepted:true,duplicate:false,eventId:eventId,shipmentId:shipmentId,batchId:batchId,
@@ -2221,7 +2221,7 @@ function captureStockFlowPeriod(stateTransaction) {
     // Mine-held cargo was debited at dispatch. Factory-bound warehouse cargo is
     // debited here from its reserved source balances in the same atomic transaction.
     if(String(shipment.shipmentType||'').toUpperCase()!=='MINE_TO_WAREHOUSE')
-      return commitFactoryBoundShipmentLoss({country:country,shipmentId:shipmentId,eventId:eventId,
+      return commitFactoryBoundShipmentLoss({ctx:ctx,country:country,shipmentId:shipmentId,eventId:eventId,
         resourceId:resourceId,quantity:quantity,unit:unit,reason:reason,eventTurn:eventTurn,
         networkBefore:networkBefore,batchesBefore:batchesBefore,lotsBefore:lotsBefore,priorLosses:priorLosses,
         shipment:shipment,rawBefore:ctx.stateTransaction.get('resource.warehouse')||null,
