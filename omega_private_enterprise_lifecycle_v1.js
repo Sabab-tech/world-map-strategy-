@@ -3442,7 +3442,11 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     }else if(category==='FACTORY_INPUT_PURCHASE'){
       if(!resource)return{schemaVersion:1,status:'UNAVAILABLE',reason:'INPUT_RESOURCE_ID_UNAVAILABLE',
         sourceTransactionId:transactionId};
-      addLine('FIRM:'+co+':INVENTORY:'+resource,'DEBIT',amountMinor,0);
+      var unit=privateFirmJournalAccountToken(entry.quantityUnit);
+      if(!unit||num(entry.quantity)===null||num(entry.quantity)<=0)
+        return{schemaVersion:1,status:'UNAVAILABLE',reason:'INPUT_RESOURCE_ID_OR_DECLARED_UNIT_UNAVAILABLE',
+          sourceTransactionId:transactionId};
+      addLine('FIRM:'+co+':INVENTORY:'+resource+':'+unit,'DEBIT',amountMinor,0);
       addLine(accountCash,'CREDIT',amountMinor,1);
       accountingBasis='PRIVATE_COMPANY_INPUT_INVENTORY_CASH_PURCHASE';
       limits=['Inventory is valued only at the recorded settlement amount; subsequent consumption and cost of goods sold are not inferred.'];
