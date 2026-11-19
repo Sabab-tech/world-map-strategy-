@@ -1965,6 +1965,9 @@
         id(row.status) === 'COUNTER' ? actionButton('bilateral-accept-counter', 'Accept counteroffer', { 'proposal-id': row.proposalId }, false) : '');
     }).join('');
     const contractRows = bilateralContracts.slice(-20).reverse().map(function (row) {
+      const consentedByPlayer = Array.isArray(row.terminationConsents) &&
+        row.terminationConsents.map(function (value) { return String(value).toUpperCase(); }).includes(String(countryId).toUpperCase());
+      const consentCount = Array.isArray(row.terminationConsents) ? row.terminationConsents.length : 0;
       return card('Agreement · ' + esc(row.agreementId || '—'), row.status || 'UNKNOWN',
         '<div class="omega-rescc-kv"><span>Partner / role</span><strong>' + esc(row.partnerCountryId || '—') + ' · ' + esc(row.role || '—') + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Commodity / delivery</span><strong>' + esc(row.resourceId || '—') + ' · ' + esc(row.quantityPerDelivery || '—') + ' / ' + esc(row.intervalDays || '—') + ' days</strong></div>' +
@@ -1972,8 +1975,10 @@
         '<div class="omega-rescc-kv"><span>Payment</span><strong>' + esc(row.paymentSchedule || 'PER_DELIVERY_ON_SETTLEMENT') + ' · ' + esc(row.paymentCurrency || 'UNKNOWN') + ' / ' + esc(row.invoiceCurrency || row.currency || 'UNKNOWN') + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Term / delivered</span><strong>' + esc(row.durationMonths || '—') + ' months · ' + esc(row.deliveredQuantity || 0) + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Next delivery / expiry</span><strong>' + esc(row.nextDeliveryTurn || '—') + ' / ' + esc(row.endTurn || '—') + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Mutual termination consent</span><strong>' + esc(consentCount) + ' / 2' + (consentedByPlayer ? ' · Your consent recorded' : '') + '</strong></div>' +
         '<div class="omega-rescc-actions">' +
         actionButton('bilateral-renew', 'Request renewal', { 'agreement-id': row.agreementId, 'duration-months': row.durationMonths || 12 }, false) +
+        actionButton('bilateral-termination-consent', consentedByPlayer ? 'Revoke consent' : 'Approve mutual termination', { 'agreement-id': row.agreementId, 'consented': consentedByPlayer ? 'true' : 'false' }, false) +
         actionButton('bilateral-terminate', 'Terminate', { 'agreement-id': row.agreementId }, false) + '</div>', '');
     }).join('');
     const syncForm = '<form class="omega-rescc-form" data-search-item data-form="bilateral-market-sync">' +
@@ -2760,12 +2765,15 @@
         // the parent Resource Command Center action dispatcher.
         if (target.closest && target.closest('.omega-rescc-market-embedded')) return;
         const action = target.getAttribute('data-action');
-        if (action === 'bilateral-accept-counter' || action === 'bilateral-renew' || action === 'bilateral-terminate') {
+        if (action === 'bilateral-accept-counter' || action === 'bilateral-renew' ||
+            action === 'bilateral-terminate' || action === 'bilateral-termination-consent') {
           event.preventDefault();
           const bilateral = g.OmegaBilateralTradeAgreementV1 || g.Omega && g.Omega.BilateralTradeAgreementV1;
           let result;
           if (action === 'bilateral-accept-counter') result = bilateral && bilateral.acceptCounteroffer ? bilateral.acceptCounteroffer(activeCountry(), target.getAttribute('data-proposal-id')) : { status: 'UNAVAILABLE' };
           else if (action === 'bilateral-renew') result = bilateral && bilateral.renewContract ? bilateral.renewContract(activeCountry(), target.getAttribute('data-agreement-id'), Number(target.getAttribute('data-duration-months') || 12)) : { status: 'UNAVAILABLE' };
+          else if (action === 'bilateral-termination-consent') result = bilateral && bilateral.recordTerminationConsent ?
+            bilateral.recordTerminationConsent(activeCountry(), target.getAttribute('data-agreement-id'), target.getAttribute('data-consented') !== 'true') : { status: 'UNAVAILABLE' };
           else result = bilateral && bilateral.terminateContract ? bilateral.terminateContract(activeCountry(), target.getAttribute('data-agreement-id'), 'PLAYER_REQUESTED_TERMINATION') : { status: 'UNAVAILABLE' };
           setOutcome('Bilateral agreement action', result);
           render(activeCountry(), 'trade');
