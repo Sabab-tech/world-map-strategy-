@@ -835,9 +835,13 @@ function captureStockFlowPeriod(stateTransaction) {
       (lossMeasurementStatus==='MEASURED_ZERO'&&submittedLossEvents.length))
       return{accepted:false,reason:'PRODUCTION_LOSS_MEASUREMENT_EVENT_COUNT_MISMATCH',
         lossMeasurementStatus:lossMeasurementStatus,lossEvents:submittedLossEvents.length};
-    if(lossMeasurementStatus!=='UNOBSERVED'&&(!lossMeasurementAuthority||!lossMeasurementBasis))
-      return{accepted:false,reason:'PRODUCTION_LOSS_MEASUREMENT_PROVENANCE_REQUIRED',
-        lossMeasurementStatus:lossMeasurementStatus};
+    if(lossMeasurementStatus!=='UNOBSERVED'&&
+      (lossMeasurementAuthority!=='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'||
+       (lossMeasurementStatus==='MEASURED_EVENTS'&&lossMeasurementBasis!=='MEASURED_PROCESS_INPUT_RESIDUE')||
+       (lossMeasurementStatus==='MEASURED_ZERO'&&lossMeasurementBasis!=='MEASURED_ZERO_PROCESS_RESIDUE')))
+      return{accepted:false,reason:'PRODUCTION_LOSS_MEASUREMENT_PROVENANCE_INVALID',
+        lossMeasurementStatus:lossMeasurementStatus,lossMeasurementAuthority:lossMeasurementAuthority,
+        lossMeasurementBasis:lossMeasurementBasis};
     if(submittedLossEvents.length&&lossMeasurementStatus!=='MEASURED_EVENTS')
       return{accepted:false,reason:'PRODUCTION_LOSS_EVENTS_REQUIRE_MEASURED_STATUS'};
     var inputQuantityByResource={};
