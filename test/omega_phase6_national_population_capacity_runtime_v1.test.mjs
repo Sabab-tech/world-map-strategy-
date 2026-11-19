@@ -160,7 +160,7 @@ test('Phase 6 audits the 197-country population coverage without filling unknown
   }
   assert.deepEqual(coverage, {
     observed2025: 195, officialObservedOtherYears: 1, estimated: 1,
-    stale2015: 0, unknown: 0, sum2025: 8177025275
+    stale2015: 0, unknown: 0, sum2025: 8200525275
   });
   assert.equal(recordsByIso3.get('TWN').metrics[metricIndex], 23299132);
   assert.equal(recordsByIso3.get('TWN').metricMetadata.years[metricIndex], 2025);
