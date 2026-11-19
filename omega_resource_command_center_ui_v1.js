@@ -1263,10 +1263,24 @@
           const outputs = recipe.outputs && typeof recipe.outputs === 'object' ? recipe.outputs : {};
           const inputUnit = recipe.inputUnit || 'SIMULATION_RESOURCE_UNIT';
           const outputUnit = recipe.outputUnit || 'SIMULATION_RESOURCE_UNIT';
-          const dailyInputs = requirements && requirements.ratedDailyInputs ? requirements.ratedDailyInputs : Object.fromEntries(
-            Object.entries(inputs).map(function (pair) { return [pair[0], Number(pair[1]) * capacity]; }));
-          const dailyOutputs = requirements && requirements.ratedDailyOutputs ? requirements.ratedDailyOutputs : Object.fromEntries(
-            Object.entries(outputs).map(function (pair) { return [pair[0], Number(pair[1]) * capacity]; }));
+          const cycleDays = Number(recipe.cycleDays);
+          const cycleTimeUnit = String(recipe.cycleTimeUnit || catalog.factoryCatalogPolicy && catalog.factoryCatalogPolicy.recipeTimeUnit || 'IN_GAME_DAYS').toUpperCase();
+          const quantityBasis = String(recipe.quantityBasis || catalog.factoryCatalogPolicy && catalog.factoryCatalogPolicy.quantityBasis || 'PER_SIMULATION_PRODUCTION_UNIT').toUpperCase();
+          const modeledDailyScale = Number.isFinite(cycleDays) && cycleDays > 0 && capacity > 0 &&
+            cycleTimeUnit === 'IN_GAME_DAYS' && quantityBasis === 'PER_SIMULATION_PRODUCTION_UNIT'
+            ? capacity / cycleDays : null;
+          const fallbackDaily = function (source) {
+            if (modeledDailyScale === null) return {};
+            return Object.fromEntries(Object.entries(source).map(function (pair) {
+              const coefficient = Number(pair[1]);
+              return [pair[0], Number.isFinite(coefficient) && coefficient > 0
+                ? Number((coefficient * modeledDailyScale).toFixed(6)) : null];
+            }));
+          };
+          const dailyInputs = requirements && requirements.status === 'READY'
+            ? (requirements.modeledAverageDailyInputs || {}) : fallbackDaily(inputs);
+          const dailyOutputs = requirements && requirements.status === 'READY'
+            ? (requirements.modeledAverageDailyOutputs || {}) : fallbackDaily(outputs);
           const inputRows = Object.entries(inputs).map(function (pair) {
             return esc(pair[0]) + ': ' + number(pair[1], ' ' + inputUnit);
           }).join(', ') || 'NOT_RECORDED';
@@ -1292,7 +1306,8 @@
           return '<li><strong>' + esc(id) + '</strong>' +
             '<div class="omega-rescc-grid2">' +
             kv('Inputs per production unit', inputRows) + kv('Outputs and by-products per production unit', outputRows) +
-            kv('Rated daily input at capacity', dailyInputRows) + kv('Rated daily output at capacity', dailyOutputRows) +
+            kv('Rated daily input at capacity · cycle-adjusted average', dailyInputRows) +
+            kv('Rated daily output at capacity · cycle-adjusted average', dailyOutputRows) +
             kv('Declared recipe cycle time', number(recipe.cycleDays, ' in-game days')) +
             kv('Power per production unit (MWh)', number(powerPerUnit)) + kv('Water per production unit (m³)', number(waterPerUnit)) +
             '</div><div class="omega-rescc-muted">' + esc(cycleMode || 'CYCLE_TIMING_MODE_NOT_RECORDED') +
