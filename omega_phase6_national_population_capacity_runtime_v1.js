@@ -15,6 +15,8 @@
 
   var preparePromise = null;
   var cataloguePromise = null;
+  var lastProvenanceSnapshot = null;
+  var restoredProvenanceSnapshot = null;
 
   function object(value) {
     return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
@@ -32,6 +34,25 @@
       if (key !== '__proto__' && key !== 'constructor' && typeof value[key] !== 'function') out[key] = clone(value[key]);
     });
     return out;
+  }
+  function stableStringify(value) {
+    if (value === null || typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return '[' + value.map(stableStringify).join(',') + ']';
+    return '{' + Object.keys(value).filter(function (key) {
+      return key !== '__proto__' && key !== 'constructor' && typeof value[key] !== 'function' &&
+        value[key] !== undefined;
+    }).sort().map(function (key) {
+      return JSON.stringify(key) + ':' + stableStringify(value[key]);
+    }).join(',') + '}';
+  }
+  function fingerprint(value) {
+    var source = stableStringify(value);
+    var hash = 2166136261;
+    for (var i = 0; i < source.length; i++) {
+      hash ^= source.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0');
   }
   function id(value) { return String(value == null ? '' : value).trim().toUpperCase(); }
   function token(value) {
@@ -599,6 +620,117 @@
       rows: rows
     };
   }
+  function createProvenanceSnapshot(summary, rates) {
+    var population = summary.population || {};
+    var demandRules = object((root.__OmegaResourceEconomyRules || {}).demand) || {};
+    var economyRules = object(root.__OmegaResourceEconomyRules) || {};
+    var rateRows = (rates || []).map(function (row) {
+      return {
+        resourceId: row.resourceId,
+        ratePer100kPerDay: row.ratePer100kPerDay,
+        unit: row.unit,
+        status: row.status
+      };
+    });
+    var priceRows = (summary.expenditure.populationConsumption.rows || []).map(function (row) {
+      return {
+        resourceId: row.resourceId,
+        price: row.price,
+        currency: row.currency,
+        priceObservation: row.priceObservation,
+        costStatus: row.costStatus
+      };
+    });
+    var inputEvidence = {
+      runtimeVersion: VERSION,
+      countryId: summary.countryId,
+      turn: summary.turn,
+      population: {
+        value: population.value,
+        status: population.status,
+        source: population.source,
+        sourceId: population.sourceId,
+        observationYear: population.observationYear,
+        sourceStatus: population.sourceStatus
+      },
+      rateVersion: demandRules.ruleVersion || economyRules.schemaVersion || 'UNVERSIONED',
+      rateRows: rateRows,
+      factoryBaseline: {
+        startingFactoryUnits: summary.factories.startingFactoryUnits,
+        startingFactoryCounts: summary.factories.startingFactoryCounts,
+        staticCapacityByType: summary.factories.staticBaselineCapacityByType
+      },
+      liveFactories: summary.factories.activePlayerCountry ? summary.factories.liveAssets : null,
+      factoryDemand: summary.factoryDemand.byResource,
+      nationalDemand: summary.nationalRequirement.byResource,
+      production: {
+        status: summary.production.status,
+        transactionIds: summary.production.transactionIds,
+        outputs: summary.production.outputByProductThisTurn
+      },
+      prices: priceRows
+    };
+    var rateFingerprint = fingerprint({
+      ruleVersion: inputEvidence.rateVersion,
+      standardBasis: 'COMMON_DAILY_RATE_PER_100K',
+      rows: rateRows
+    });
+    return {
+      schemaVersion: 1,
+      runtimeVersion: VERSION,
+      countryId: summary.countryId,
+      turn: summary.turn,
+      population: {
+        value: population.value,
+        status: population.status,
+        source: population.source || null,
+        sourceId: population.sourceId || null,
+        observationYear: population.observationYear || null,
+        sourceStatus: population.sourceStatus || null
+      },
+      rates: {
+        version: inputEvidence.rateVersion,
+        basis: 'COMMON_DAILY_RATE_PER_100K',
+        resourceProfileCount: rateRows.length,
+        calibratedCount: rateRows.filter(function (row) { return row.status === 'CALIBRATED_FROM_EXISTING_RULE'; }).length,
+        uncalibratedCount: rateRows.filter(function (row) { return row.status === 'RATE_NOT_CALIBRATED'; }).length,
+        fingerprint: rateFingerprint
+      },
+      authorities: {
+        population: 'OmegaCountryGeneralDataRuntime',
+        factoryBaseline: 'OmegaCountryFactoryStartingBaselineV1',
+        liveFactories: summary.factories.activePlayerCountry ? 'Game.state.economy[countryId].productionAssets' : 'STATIC_BASELINE_ONLY',
+        factoryDemand: summary.factories.activePlayerCountry ? 'Game.state.resource[countryId].demandRuntime' : 'NOT_ACTIVE_COUNTRY',
+        nationalDemand: 'OmegaResourceNationalDemandRuntime',
+        production: 'Game.state.resource[countryId].finishedGoodsLedger',
+        prices: 'Game.state.trade[countryId].marketPrice'
+      },
+      calculation: {
+        populationDemandFormula: '(population / 100000) * ratePer100kPerDay',
+        factoryPopulationDemandOverlap: 'EXISTING_NATIONAL_DEMAND_RUNTIME_ONLY',
+        capacityAggregation: 'BY_FACTORY_TYPE_ONLY',
+        monetaryCost: 'QUANTITY_TIMES_OBSERVED_PRICE_WITH_CURRENCY_AND_TIME'
+      },
+      inputFingerprint: fingerprint(inputEvidence)
+    };
+  }
+  function loadProvenanceSnapshot(snapshot) {
+    lastProvenanceSnapshot = null;
+    restoredProvenanceSnapshot = null;
+    if (snapshot === null || snapshot === undefined) return { status: 'NO_SNAPSHOT' };
+    var saved = object(snapshot);
+    if (!saved || saved.schemaVersion !== 1 || !/^[A-Z]{3}$/.test(id(saved.countryId)) ||
+        typeof saved.inputFingerprint !== 'string' || !/^[a-f0-9]{8}$/i.test(saved.inputFingerprint)) {
+      return { status: 'INVALID_SNAPSHOT', reason: 'PHASE6_PROVENANCE_SCHEMA_INVALID' };
+    }
+    restoredProvenanceSnapshot = clone(saved);
+    return {
+      status: 'PENDING_REVALIDATION',
+      countryId: saved.countryId,
+      turn: finite(saved.turn),
+      inputFingerprint: saved.inputFingerprint
+    };
+  }
   function getNationalSummary(countryValue) {
     var countryId = canonicalCountry(countryValue);
     if (!countryId) return Promise.resolve({ status: 'BLOCKED', reason: 'COUNTRY_ISO3_REQUIRED' });
@@ -656,7 +788,7 @@
       });
       var populationExpenditure = expenditure(expenseRows);
       var operating = object((root.__OmegaResourceEconomyRules || {}).companyOperatingCosts) || null;
-      return {
+      var summary = {
         version: VERSION,
         status: 'READY',
         countryId: countryId,
@@ -714,6 +846,30 @@
         },
         preparation: prepared
       };
+      var provenance = createProvenanceSnapshot(summary, rates);
+      summary.provenance = provenance;
+      if (restoredProvenanceSnapshot && restoredProvenanceSnapshot.countryId === countryId) {
+        if (finite(restoredProvenanceSnapshot.turn) !== finite(summary.turn)) {
+          summary.saveLoadValidation = {
+            status: 'RECOMPUTED_AFTER_TURN_CHANGE',
+            savedTurn: finite(restoredProvenanceSnapshot.turn),
+            currentTurn: summary.turn
+          };
+        } else {
+          summary.saveLoadValidation = {
+            status: restoredProvenanceSnapshot.inputFingerprint === provenance.inputFingerprint
+              ? 'REVALIDATED' : 'INVALIDATED_SOURCE_CHANGED',
+            savedTurn: finite(restoredProvenanceSnapshot.turn),
+            currentTurn: summary.turn,
+            fingerprintMatched: restoredProvenanceSnapshot.inputFingerprint === provenance.inputFingerprint
+          };
+        }
+        restoredProvenanceSnapshot = null;
+      } else {
+        summary.saveLoadValidation = { status: 'NO_RESTORED_SNAPSHOT' };
+      }
+      lastProvenanceSnapshot = clone(provenance);
+      return summary;
     });
   }
   function escapeHtml(value) {
