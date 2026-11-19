@@ -100,7 +100,7 @@ Phase 6 does not calculate `populationDemand + factoryDemand`. The current natio
 
 Physical output is read from the resource state's `finishedGoodsLedger`, filtered to the current game turn and de-duplicated by transaction ID. The economy finished-goods mirror is not counted as a second source.
 
-Inventory, confirmed imports, in-transit shipments, and demand are different facts. Completed cross-border imports are read from current-turn `resource.inventoryLedger` rows with type `INTERNATIONAL_TRADE_IMPORT`; records are de-duplicated by settlement and resource identity. Pending import requests are not treated as imports. The current trade runtime does not persist a durable in-transit import shipment ledger for this projection, so in-transit import quantity remains `UNKNOWN` rather than being inferred. Phase 6 does not debit inventory or change shipment state.
+Inventory, confirmed imports, in-transit shipments, and demand are different facts. Completed cross-border imports are read from current-turn `resource.inventoryLedger` rows with type `INTERNATIONAL_TRADE_IMPORT`; records are de-duplicated by settlement and resource identity. Pending import requests are not treated as imports. The trade runtime retains at most 2,048 inventory-ledger rows; when the ledger reaches that bound, Phase 6 marks import totals `IMPORT_LEDGER_MAY_BE_TRUNCATED` and reports them as `UNKNOWN` rather than claiming a complete zero or partial total. The current trade runtime does not persist a durable in-transit import shipment ledger for this projection, so in-transit import quantity remains `UNKNOWN` rather than being inferred. Phase 6 does not debit inventory or change shipment state.
 
 ## 6. Factory counts, capacity and ownership
 
