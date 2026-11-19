@@ -111,9 +111,10 @@ The summary reports:
 - Static starting units and counts by canonical factory type.
 - Selected-country live asset counts by operational, under-construction, maintenance, paused, offline, decommissioned and unknown status.
 - Explicit government/private ownership attribution; missing or ambiguous ownership stays unclassified.
-- Simulation-only starting rated capacity from profile defaults where all category profiles are available.
-- Live rated capacity only when all included live asset capacity values are present.
-- Effective capacity only for operational live assets with explicit capacity and utilization evidence.
+- Simulation-only starting rated capacity by factory type from the corresponding profile defaults.
+- Live rated capacity by factory type only when all included assets of that type have capacity and compatible unit evidence.
+- Effective capacity by factory type only for operational live assets with explicit capacity and utilization evidence.
+- Capacity from different factory types is never summed into one national total because their output units may differ.
 - Current-turn physical output from the resource finished-goods ledger.
 
 Factory count alone does not imply operating capacity. Under-construction, maintenance, paused, offline and decommissioned assets do not contribute to effective operating capacity. Unknown utilization does not become 100%.
@@ -164,7 +165,7 @@ The dedicated regression suite verifies:
 - Exactly 41 resource profiles, 37 calibrated per-100k rates and 4 `RATE_NOT_CALIBRATED` resources.
 - Per-100k invariance across countries and linear population scaling.
 - Live population precedence, stale observation labels and unknown-not-zero behavior.
-- Status, ownership and capacity evidence requirements for live factories.
+- Status, ownership, per-factory-type capacity units, and utilization evidence requirements for live factories; ambiguous utilization ratios above 1 remain unavailable.
 - Active-player-only detailed factory access.
 - Current-turn production transaction de-duplication using the resource finished-goods ledger.
 - Separate population and factory demand, with no naive summation.
