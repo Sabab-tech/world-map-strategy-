@@ -778,8 +778,16 @@
         ' · Observed workers ' + formatNumber(factories.currentWorkers, 0)
       : 'Non-player countries expose static factory baseline only.';
     var factoryRows = Object.keys(factories.startingFactoryCounts || {}).sort().map(function (type) {
-      return '<tr><td>' + escapeHtml(type.replace(/_/g, ' ')) + '</td><td>' +
-        formatNumber(factories.startingFactoryCounts[type], 0) + '</td></tr>';
+      var baselineCapacity = object(factories.staticBaselineCapacityByType && factories.staticBaselineCapacityByType[type]) || {};
+      var ratedCapacity = object(factories.ratedCapacityByFactoryType && factories.ratedCapacityByFactoryType[type]) || {};
+      var effectiveCapacity = object(factories.effectiveCapacityByFactoryType && factories.effectiveCapacityByFactoryType[type]) || {};
+      return '<tr><td>' + escapeHtml(type.replace(/_/g, ' ')) + '</td><td style="text-align:right">' +
+        formatNumber(factories.startingFactoryCounts[type], 0) + '</td><td style="text-align:right">' +
+        formatNumber(baselineCapacity.ratedCapacityPerDay, 2) + '</td><td>' +
+        escapeHtml(baselineCapacity.unit || '') + '</td><td style="text-align:right">' +
+        formatNumber(ratedCapacity.ratedCapacityPerDay, 2) + '</td><td style="text-align:right">' +
+        formatNumber(effectiveCapacity.effectiveCapacityPerDay, 2) + '</td><td>' +
+        escapeHtml(effectiveCapacity.unit || ratedCapacity.unit || baselineCapacity.unit || '') + '</td></tr>';
     }).join('');
     var yearText = pop.observationYear ? String(pop.observationYear) : 'YEAR UNKNOWN';
     var statusText = pop.status === 'STALE_BASELINE' ? 'STALE BASELINE' : pop.status;
@@ -796,10 +804,11 @@
       '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">LIVE FACTORY UNITS</div><strong>' +
       (factories.activePlayerCountry ? formatNumber(factories.liveFactoryUnits, 0) : 'STATIC BASELINE ONLY') +
       '</strong><div style="font-size:10px;color:#93c5fd">' + escapeHtml(factories.liveRegistrationStatus) + '</div></div>' +
-      '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">RATED CAPACITY / DAY</div><strong>' +
-      formatNumber(factories.ratedCapacityPerDay, 2) + '</strong><div style="font-size:10px;color:#93c5fd">Live asset capacity with complete evidence</div></div>' +
-      '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">EFFECTIVE CAPACITY / DAY</div><strong>' +
-      formatNumber(factories.effectiveCapacityPerDay, 2) + '</strong><div style="font-size:10px;color:#93c5fd">Operational assets with explicit utilization</div></div>' +
+      '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">BASELINE CAPACITY COVERAGE</div><strong>' +
+      escapeHtml(factories.staticBaselineCapacityTypeCoverage) + '</strong><div style="font-size:10px;color:#93c5fd">Rated capacity by factory type</div></div>' +
+      '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">LIVE CAPACITY COVERAGE</div><strong>' +
+      escapeHtml(factories.activePlayerCountry ? factories.effectiveCapacityTypeCoverage : 'STATIC ONLY') +
+      '</strong><div style="font-size:10px;color:#93c5fd">No cross-type unit aggregation</div></div>' +
       '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">MODELED POPULATION COST / DAY</div><strong>' +
       (expenditure.totalCostPerDay === null ? escapeHtml(expenditure.status) : formatNumber(expenditure.totalCostPerDay, 2) + ' ' + escapeHtml(expenditure.currency)) +
       '</strong><div style="font-size:10px;color:#93c5fd">Not a Treasury posting</div></div></div>' +
@@ -822,8 +831,8 @@
       '<details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Current-turn confirmed production</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Product/resource</th><th style="text-align:right;padding:7px">Output</th></tr></thead><tbody>' +
       productionRows + '</tbody></table><div style="padding:8px;color:#94a3b8;font-size:10px">Ledger source: ' + escapeHtml(summary.production.authority) +
       ' · Transactions: ' + formatNumber(summary.production.uniqueTransactionCount, 0) + '</div></div></details>' +
-      '<details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Starting factory allocation (21 canonical types)</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Factory type</th><th style="text-align:right;padding:7px">Units</th></tr></thead><tbody>' +
-      factoryRows + '</tbody></table></div></details><div style="font-size:10px;color:#94a3b8;margin-top:8px">Factory input demand remains separate from population demand. The existing national-demand runtime remains the only combined-demand authority; confirmed inbound shipments are not inferred from pending requests. Factory operating costs and Treasury expense remain unfinalized without evidence.</div></section>';
+      '<details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Factory allocation and type-specific capacity (21 canonical types)</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr><th style="text-align:left;padding:7px">Factory type</th><th style="text-align:right;padding:7px">Starting units</th><th style="text-align:right;padding:7px">Baseline rated/day</th><th style="text-align:left;padding:7px">Unit</th><th style="text-align:right;padding:7px">Live rated/day</th><th style="text-align:right;padding:7px">Effective/day</th><th style="text-align:left;padding:7px">Unit</th></tr></thead><tbody>' +
+      factoryRows + '</tbody></table><div style="padding:8px;color:#94a3b8;font-size:10px">Capacity is reported separately for each factory type. Different output units are not added into one misleading national total.</div></div></details><div style="font-size:10px;color:#94a3b8;margin-top:8px">Factory input demand remains separate from population demand. The existing national-demand runtime remains the only combined-demand authority; confirmed inbound shipments are not inferred from pending requests. Factory operating costs and Treasury expense remain unfinalized without evidence.</div></section>';
   }
   function refreshPanel(panel, countryId) {
     getNationalSummary(countryId).then(function (summary) {
