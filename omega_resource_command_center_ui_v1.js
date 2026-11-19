@@ -2465,17 +2465,6 @@
           return;
         }
         const action = target.getAttribute('data-action');
-        if (action === 'bilateral-accept-counter' || action === 'bilateral-renew' || action === 'bilateral-terminate') {
-          if (event.preventDefault) event.preventDefault();
-          const bilateral = g.OmegaBilateralTradeAgreementV1 || g.Omega && g.Omega.BilateralTradeAgreementV1;
-          let result;
-          if (action === 'bilateral-accept-counter') result = bilateral && bilateral.acceptCounteroffer ? bilateral.acceptCounteroffer(activeCountry(), target.getAttribute('data-proposal-id')) : { status: 'UNAVAILABLE' };
-          else if (action === 'bilateral-renew') result = bilateral && bilateral.renewContract ? bilateral.renewContract(activeCountry(), target.getAttribute('data-agreement-id'), Number(target.getAttribute('data-duration-months') || 12)) : { status: 'UNAVAILABLE' };
-          else result = bilateral && bilateral.terminateContract ? bilateral.terminateContract(activeCountry(), target.getAttribute('data-agreement-id'), 'PLAYER_REQUESTED_TERMINATION') : { status: 'UNAVAILABLE' };
-          setOutcome('Bilateral agreement action', result);
-          render(activeCountry(), 'trade');
-          return;
-        }
         if (action === 'world-activity-refresh') {
           if (event.preventDefault) event.preventDefault();
           selectedMarketView = 'transactions';
@@ -2756,6 +2745,17 @@
         // the parent Resource Command Center action dispatcher.
         if (target.closest && target.closest('.omega-rescc-market-embedded')) return;
         const action = target.getAttribute('data-action');
+        if (action === 'bilateral-accept-counter' || action === 'bilateral-renew' || action === 'bilateral-terminate') {
+          event.preventDefault();
+          const bilateral = g.OmegaBilateralTradeAgreementV1 || g.Omega && g.Omega.BilateralTradeAgreementV1;
+          let result;
+          if (action === 'bilateral-accept-counter') result = bilateral && bilateral.acceptCounteroffer ? bilateral.acceptCounteroffer(activeCountry(), target.getAttribute('data-proposal-id')) : { status: 'UNAVAILABLE' };
+          else if (action === 'bilateral-renew') result = bilateral && bilateral.renewContract ? bilateral.renewContract(activeCountry(), target.getAttribute('data-agreement-id'), Number(target.getAttribute('data-duration-months') || 12)) : { status: 'UNAVAILABLE' };
+          else result = bilateral && bilateral.terminateContract ? bilateral.terminateContract(activeCountry(), target.getAttribute('data-agreement-id'), 'PLAYER_REQUESTED_TERMINATION') : { status: 'UNAVAILABLE' };
+          setOutcome('Bilateral agreement action', result);
+          render(activeCountry(), 'trade');
+          return;
+        }
         if (!action) return;
         event.preventDefault();
         if (action === 'open-production-market') {
