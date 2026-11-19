@@ -905,20 +905,33 @@
       var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
       var type = normalizeFactoryType(rawType, catalog) || rawType;
       var profile = profiles[type] || profiles[rawType.toUpperCase()] || profiles[rawType] || {};
-      var recipeId = String(asset.recipeId || profile.defaultRecipeId || '');
+      var hasExplicitRecipeId = !!String(asset.recipeId || '').trim();
+      var recipeId = String(asset.recipeId || (!hasExplicitRecipeId ? profile.defaultRecipeId : '') || '');
       var selectedRecipe = recipeCatalog[recipeId] || null;
-      if (!selectedRecipe && Array.isArray(profile.recipeIds) && profile.recipeIds.length === 1) {
+      var recipeFactoryType = selectedRecipe ? normalizeFactoryType(selectedRecipe.factoryType, catalog) : '';
+      var recipeTypeIsKnown = !!profiles[type];
+      var recipeIdentityMismatch = !!(selectedRecipe && recipeTypeIsKnown && recipeFactoryType !== type);
+      // Do not borrow catalogue coefficients for an unrecognised legacy type.
+      // Its explicitly saved asset inputs remain visible until the type alias is registered.
+      if (recipeIdentityMismatch || (selectedRecipe && !recipeTypeIsKnown)) selectedRecipe = null;
+      if (!hasExplicitRecipeId && !selectedRecipe && Array.isArray(profile.recipeIds) && profile.recipeIds.length === 1) {
         selectedRecipe = recipeCatalog[String(profile.recipeIds[0])] || null;
-        if (selectedRecipe) recipeId = String(selectedRecipe.recipeId || profile.recipeIds[0]);
+        if (selectedRecipe && normalizeFactoryType(selectedRecipe.factoryType, catalog) === type) {
+          recipeId = String(selectedRecipe.recipeId || profile.recipeIds[0]);
+        } else {
+          selectedRecipe = null;
+        }
       }
-      var inputCoefficients = asset.inputCoefficients || asset.inputs || asset.inputProfile || {};
+      var inputCoefficients = recipeIdentityMismatch ? {} :
+        (asset.inputCoefficients || asset.inputs || asset.inputProfile || {});
       if (!Object.keys(inputCoefficients).length && selectedRecipe && selectedRecipe.inputs) inputCoefficients = selectedRecipe.inputs;
-      if (!Object.keys(inputCoefficients).length) {
+      if (!recipeIdentityMismatch && !Object.keys(inputCoefficients).length) {
         var inputResource = String(asset.resourceId || asset.inputResourceId || asset.primaryInputResourceId || '').trim();
         var processingRule = inputResource ? processingRules[inputResource] : null;
         if (processingRule && (!processingRule.factoryType || normalizeFactoryType(processingRule.factoryType, catalog) === type) && processingRule.inputs) inputCoefficients = processingRule.inputs;
       }
-      var outputProfile = asset.outputProfile || asset.outputs || asset.outputCoefficients || {};
+      var outputProfile = recipeIdentityMismatch ? {} :
+        (asset.outputProfile || asset.outputs || asset.outputCoefficients || {});
       if (!Object.keys(outputProfile).length && selectedRecipe && selectedRecipe.outputs) outputProfile = selectedRecipe.outputs;
       var capacityPerDay = num(asset.capacityPerDay !== undefined ? asset.capacityPerDay : asset.capacity !== undefined ? asset.capacity : asset.productionCapacity);
       if (capacityPerDay === null) capacityPerDay = num(profile.defaultCapacityPerDay);
@@ -927,9 +940,11 @@
       return { id:id || null, name:String(asset.name || asset.factoryName || profile.name || type || id || 'Unnamed registered factory'),
         type:type || 'Not recorded', recipeId:recipeId || 'Not recorded', status:String(asset.status || 'NOT_RECORDED'),
         capacityPerDay:capacityPerDay, inputCoefficients:inputCoefficients,
+        recipeError:recipeIdentityMismatch ? 'FACTORY_RECIPE_FACTORY_TYPE_MISMATCH' : null,
         inputUnit:String(asset.inputUnit || selectedRecipe && selectedRecipe.inputUnit || profile.inputUnit || ''),
         outputProfile:outputProfile, outputUnit:String(asset.outputUnit || selectedRecipe && selectedRecipe.outputUnit || profile.outputUnit || ''),
-        cycleDays:num(selectedRecipe && selectedRecipe.cycleDays) || num(profile.cycleDays) || 1,
+        cycleDays:selectedRecipe ? num(selectedRecipe.cycleDays) :
+          (asset.cycleDays !== undefined ? num(asset.cycleDays) : num(profile.cycleDays)),
         lastRun:run, latestOutputs:run && (run.outputQuantities || run.outputs) || null,
         healthStatus:String(health.status || 'NOT_RECORDED'), raw:asset };
     }).filter(function (factory) { return !/^(DECOMMISSIONED|DESTROYED|UNDER_CONSTRUCTION)$/.test(String(factory.status || '').trim().toUpperCase()); }) : viewAssets.map(function (asset) {      asset = asset && typeof asset === 'object' ? asset : {};
@@ -937,11 +952,22 @@
       var rawType = String(asset.factoryType || asset.type || asset.facilityType || '');
       var type = normalizeFactoryType(rawType, catalog) || rawType;
       var profile = profiles[type] || profiles[rawType.toUpperCase()] || profiles[rawType] || {};
-      var recipeId = String(asset.recipeId || profile.defaultRecipeId || '');
+      var hasExplicitRecipeId = !!String(asset.recipeId || '').trim();
+      var recipeId = String(asset.recipeId || (!hasExplicitRecipeId ? profile.defaultRecipeId : '') || '');
       var selectedRecipe = recipeCatalog[recipeId] || null;
-      if (!selectedRecipe && Array.isArray(profile.recipeIds) && profile.recipeIds.length === 1) {
+      var recipeFactoryType = selectedRecipe ? normalizeFactoryType(selectedRecipe.factoryType, catalog) : '';
+      var recipeTypeIsKnown = !!profiles[type];
+      var recipeIdentityMismatch = !!(selectedRecipe && recipeTypeIsKnown && recipeFactoryType !== type);
+      // Do not borrow catalogue coefficients for an unrecognised legacy type.
+      // Its explicitly saved asset inputs remain visible until the type alias is registered.
+      if (recipeIdentityMismatch || (selectedRecipe && !recipeTypeIsKnown)) selectedRecipe = null;
+      if (!hasExplicitRecipeId && !selectedRecipe && Array.isArray(profile.recipeIds) && profile.recipeIds.length === 1) {
         selectedRecipe = recipeCatalog[String(profile.recipeIds[0])] || null;
-        if (selectedRecipe) recipeId = String(selectedRecipe.recipeId || profile.recipeIds[0]);
+        if (selectedRecipe && normalizeFactoryType(selectedRecipe.factoryType, catalog) === type) {
+          recipeId = String(selectedRecipe.recipeId || profile.recipeIds[0]);
+        } else {
+          selectedRecipe = null;
+        }
       }
       var cycle = cycles[id] || null;
       var run = runs[id] || null;
@@ -949,16 +975,18 @@
       var input = asset.inputInventory && typeof asset.inputInventory === 'object' ? asset.inputInventory : {};
       var inputRows = Object.keys(input).map(function (key) { return { resourceId: key, quantity: num(input[key]), rawValue: input[key] }; });
       var employment = asset.employment && typeof asset.employment === 'object' ? asset.employment : {};
-      var inputCoefficients = asset.inputCoefficients || asset.inputs || asset.inputProfile || {};
+      var inputCoefficients = recipeIdentityMismatch ? {} :
+        (asset.inputCoefficients || asset.inputs || asset.inputProfile || {});
       if (!Object.keys(inputCoefficients).length && selectedRecipe && selectedRecipe.inputs) inputCoefficients = selectedRecipe.inputs;
-      if (!Object.keys(inputCoefficients).length) {
+      if (!recipeIdentityMismatch && !Object.keys(inputCoefficients).length) {
         var inputResource = String(asset.resourceId || asset.inputResourceId || asset.primaryInputResourceId || '').trim();
         var processingRule = inputResource ? processingRules[inputResource] : null;
         if (processingRule && (!processingRule.factoryType || normalizeFactoryType(processingRule.factoryType, catalog) === type) && processingRule.inputs) {
           inputCoefficients = processingRule.inputs;
         }
       }
-      var outputProfile = asset.outputProfile || asset.outputs || asset.outputCoefficients || {};
+      var outputProfile = recipeIdentityMismatch ? {} :
+        (asset.outputProfile || asset.outputs || asset.outputCoefficients || {});
       if (!Object.keys(outputProfile).length && selectedRecipe && selectedRecipe.outputs) outputProfile = selectedRecipe.outputs;
       var capacityPerDay = num(asset.capacityPerDay !== undefined ? asset.capacityPerDay : asset.capacity !== undefined ? asset.capacity : asset.productionCapacity);
       if (capacityPerDay === null) capacityPerDay = num(profile.defaultCapacityPerDay);
@@ -978,8 +1006,10 @@
         vacancies: num(employment.vacancies),
         inputRows: inputRows,
         inputCoefficients: inputCoefficients,
+        recipeError: recipeIdentityMismatch ? 'FACTORY_RECIPE_FACTORY_TYPE_MISMATCH' : null,
         inputUnit: String(asset.inputUnit || selectedRecipe && selectedRecipe.inputUnit || profile.inputUnit || ''),
-        cycleDays: num(selectedRecipe && selectedRecipe.cycleDays) || num(profile.cycleDays) || 1,
+        cycleDays: selectedRecipe ? num(selectedRecipe.cycleDays) :
+          (asset.cycleDays !== undefined ? num(asset.cycleDays) : num(profile.cycleDays)),
         inputLots: Array.isArray(asset.inputBatchLots) ? asset.inputBatchLots : [],
         inputUnits: asset.inputUnits && typeof asset.inputUnits === 'object' ? asset.inputUnits : {},
         hasInputInventory: !!(asset.inputInventory && typeof asset.inputInventory === 'object'),
@@ -2704,15 +2734,32 @@
     var catalog = safeCatalog() || {};
     var recipes = model && model.catalogRecipes || catalog.downstreamFactoryRecipes || {};
     var processingRules = model && model.processingRules || catalog.processingRules || {};
-    var recipe = recipes[String(factory && factory.recipeId || '')] || null;
-    if (!recipe) {
-      var resourceId = String(raw.resourceId || raw.inputResourceId || raw.primaryInputResourceId || '').trim();
-      recipe = resourceId ? processingRules[resourceId] || null : null;
+    var wantedType = normalizeFactoryType(factory && factory.type || '', catalog) ||
+      String(factory && factory.type || '').trim().toUpperCase();
+    var recipeId = String(factory && factory.recipeId || '').trim();
+    var recipe = recipes[recipeId] || null;
+    var recipeType = recipe ? (normalizeFactoryType(recipe.factoryType, catalog) ||
+      String(recipe.factoryType || '').trim().toUpperCase()) : '';
+    // A saved recipe ID is authoritative. If it belongs to another factory type,
+    // do not silently borrow that recipe or substitute a different input route.
+    if (recipe && wantedType && recipeType !== wantedType) {
+      cached = cached || Object.create(null);
+      cached[productKey] = null;
+      cache.dailyRequirements.set(factory, cached);
+      return null;
     }
     if (!recipe) {
-      var wantedType = normalizeFactoryType(factory && factory.type || '', catalog);
+      var resourceId = String(raw.resourceId || raw.inputResourceId || raw.primaryInputResourceId || '').trim();
+      var processingRule = resourceId ? processingRules[resourceId] || null : null;
+      var processingType = processingRule ? (normalizeFactoryType(processingRule.factoryType, catalog) ||
+        String(processingRule.factoryType || '').trim().toUpperCase()) : '';
+      if (processingRule && (!wantedType || !processingType || processingType === wantedType)) {
+        recipe = processingRule;
+      }
+    }
+    if (!recipe) {
       var candidates = factoryInputProcessingRulesByProduct(model)[productKey] || [];
-      var match = candidates.find(function (entry) { return !entry.type || entry.type === wantedType; });
+      var match = candidates.find(function (entry) { return !entry.type || !wantedType || entry.type === wantedType; });
       if (match) recipe = match.rule;
     }
     var unitMap = factory && factory.inputUnits && typeof factory.inputUnits === 'object' ? factory.inputUnits : {};
@@ -2720,9 +2767,12 @@
     var unit = unitKey ? unitMap[unitKey] : factory && factory.inputUnit || recipe && recipe.inputUnit || '';
     var cycleDays = num(recipe && recipe.cycleDays);
     if (cycleDays === null) cycleDays = num(raw.cycleDays);
+    if (cycleDays === null) cycleDays = num(factory && factory.cycleDays);
     var rate = factoryRouteRate(coefficient, {
       cycleDays:cycleDays,
-      quantityBasis:recipe && recipe.quantityBasis
+      quantityBasis:recipe && recipe.quantityBasis !== undefined ? recipe.quantityBasis : raw.quantityBasis,
+      cycleTimeUnit:recipe && recipe.cycleTimeUnit !== undefined ? recipe.cycleTimeUnit :
+        (raw.cycleTimeUnit || factory && factory.cycleTimeUnit)
     }, capacity, unit);
     var result = rate ? rate.perDay : null;
     cached = cached || Object.create(null);
@@ -3251,9 +3301,11 @@
     var unit = String(unitOverride || '').trim();
     // Legacy canonical recipes may omit quantityBasis; keep their basis visibly unrecorded while
     // still deriving a game-unit rate when capacity, cycle duration and unit are all explicit.
+    var cycleTimeUnit = String(route && route.cycleTimeUnit || '').trim().toUpperCase();
     if (coefficient === null || coefficient <= 0 || capacityValue === null || capacityValue <= 0 ||
         cycleDays === null || cycleDays <= 0 ||
-        (quantityBasis && quantityBasis !== 'PER_SIMULATION_PRODUCTION_UNIT') || !unit) return null;
+        (quantityBasis && quantityBasis !== 'PER_SIMULATION_PRODUCTION_UNIT') ||
+        (cycleTimeUnit && cycleTimeUnit !== 'IN_GAME_DAYS') || !unit) return null;
     var perCycle = capacityValue * coefficient;
     var perDay = perCycle / cycleDays;
     if (!Number.isFinite(perCycle) || !Number.isFinite(perDay)) return null;
@@ -3755,37 +3807,50 @@
   }
 
   function factoryDetailInputStatus(model, context, route, productId) {
-    var assets = context && context.asset ? [context.asset] :
+    if (context && context.asset && context.asset.recipeError) return { key:'unknown', label:'Not tracked' };
+    var catalog = safeCatalog() || {};
+    var wantedType = normalizeFactoryType(context && context.type || '', catalog) ||
+      String(context && context.type || '').trim().toUpperCase();
+    var sourceAssets = context && context.asset ? [context.asset] :
       (Array.isArray(model && model.factories) ? model.factories : []).filter(function (factory) {
-        return (normalizeFactoryType(factory && factory.type, safeCatalog()) || String(factory && factory.type || '').toUpperCase()) === String(context && context.type || '');
+        return (normalizeFactoryType(factory && factory.type, catalog) ||
+          String(factory && factory.type || '').toUpperCase()) === wantedType;
       });
+    // Only compare stock across factories whose selected recipe actually consumes
+    // this exact product; other routes in the same factory category are unrelated.
+    var assets = sourceAssets.filter(function (factory) {
+      var coefficient = factoryInputCoefficientFor(factory, productId);
+      return coefficient !== null && coefficient > 0;
+    });
     var tracked = assets.filter(function (factory) {
       return factory && (factory.hasInputInventory === true ||
         factory.raw && factory.raw.inputInventory && typeof factory.raw.inputInventory === 'object');
     });
     var completeInventory = !!assets.length && tracked.length === assets.length;
     if (completeInventory) {
-      var currentTotal = 0, requiredTotal = 0, requiredSeen = false;
+      var currentTotal = 0, requiredTotal = 0, stockComplete = true, requirementComplete = true;
       tracked.forEach(function (factory) {
         var inventory = factory.raw && factory.raw.inputInventory;
         var current = factoryFindValue(inventory, productId);
-        // An omitted key in a present, authoritative inventory map means zero stock.
-        if (current === null && inventory && typeof inventory === 'object') current = 0;
-        if (current !== null) currentTotal += Math.max(0, current);
+        // Missing product rows are unknown. Only an explicit recorded zero is zero stock.
+        if (current === null) stockComplete = false;
+        else currentTotal += Math.max(0, current);
         var requirement = factoryInputDailyRequirement(factory, productId, model);
         if (requirement === null) {
           var coefficient = factoryFindValue(route && route.inputs || {}, productId);
-          var routeRate = factoryRouteRate(coefficient, route, num(factory.capacityPerDay) || factoryDetailCapacity(model, context), route && route.inputUnit);
+          var routeRate = factoryRouteRate(coefficient, route,
+            num(factory.capacityPerDay) || factoryDetailCapacity(model, context),
+            route && route.inputUnit);
           requirement = routeRate ? routeRate.perDay : null;
         }
-        if (requirement !== null && requirement >= 0) {
-          requiredTotal += requirement;
-          requiredSeen = true;
-        }
+        if (requirement === null || requirement < 0) requirementComplete = false;
+        else requiredTotal += requirement;
       });
-      if (requiredSeen && requiredTotal > 0 && currentTotal <= 1e-9) return { key:'critical', label:'Shortage' };
-      if (requiredSeen && requiredTotal > 0 && currentTotal + 1e-9 < requiredTotal) return { key:'risk', label:'At risk' };
-      if (requiredSeen) return { key:'stable', label:'Sufficient' };
+      if (stockComplete && requirementComplete && requiredTotal > 0) {
+        if (currentTotal <= 1e-9) return { key:'critical', label:'Shortage' };
+        if (currentTotal + 1e-9 < requiredTotal) return { key:'risk', label:'At risk' };
+        return { key:'stable', label:'Sufficient' };
+      }
     }
     var coverage = factoryInputCoverageRecord(model, productId, context && context.asset ? context.asset.id : null);
     if (coverage) {

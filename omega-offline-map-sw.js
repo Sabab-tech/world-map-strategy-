@@ -2,6 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
+// The install handler refreshes cached core assets with fetch({ cache: "reload" }); keep the stable shell namespace.
 const CACHE_NAME = "omega-offline-atlas-shell-v127";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
