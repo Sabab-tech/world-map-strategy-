@@ -207,7 +207,7 @@
       'economy.industrialRuntime','economy.companyAccounts','economy.workerIncome','economy.supplierRevenue','economy.factoryOutput'
     ],
     trade:[
-      'trade.relations','trade.balance','trade.exports','trade.imports',
+      'trade.relations','trade.balance','trade.exports','trade.imports','trade.importLedger','trade.exportLedger','trade.globalTradeLedger',
       'trade.policy','trade.negotiations','trade.importRequests','trade.offerBook','trade.marketPrice','trade.marketState','trade.marketMeta','trade.routeCapacity','trade.domesticSales','trade.companyMarketResearchRequests'
     ],
     foreign:[
@@ -240,7 +240,7 @@
     resource:[
       'resourceSummary','resourceInventory','resourceDeposits','resource.inventory','resource.production','resource.consumption','resource.reserves',
       'resource.endowment','resource.mines','resource.mineStates','resource.tradeAvailability','resource.strategicReserve',
-      'resource.extractionLedger','resource.resourceDomain','resource.authority','resource.batches','resource.inventoryLedger',
+      'resource.extractionLedger','resource.resourceDomain','resource.authority','resource.batches','resource.inventoryLedger','resource.stockFlowPeriods',
       'resource.inventoryIntegrity','resource.lastExtractionTurn','resource.surveyRequests','resource.surveyResults','resource.reserveBufferRequests','resource.technologyResearchProjects','resource.technologyTransfers','resource.technologyCapabilities'
     ],
     health:[
