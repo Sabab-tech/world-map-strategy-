@@ -834,7 +834,10 @@
     return safe;
   }
   function publicEvaluateProposal(country, proposal) {
-    return publicReviewForCountry(evaluateProposal(country, proposal), country, proposal);
+    // Public callers are the proposing country; never treat the target AI's
+    // private treasury as evidence that should be returned to the proposer.
+    var requester = proposal && proposal.requestorCountryId || country;
+    return publicReviewForCountry(evaluateProposal(country, proposal), requester, proposal);
   }
 
   function upsertProposalHandler(kind) {
