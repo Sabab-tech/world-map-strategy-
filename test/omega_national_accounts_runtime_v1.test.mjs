@@ -503,7 +503,10 @@ test('sector journal reader rejects unbalanced, wrong-country and duplicate sour
   duplicateWithChangedAuthority.sourceAuthority='UNEXPECTED_SECOND_AUTHORITY';
   const result=await api.reconcileSectorJournals({countryId:'BGD',financeRows:[
     {transactionId:'BAD-1',action:'EXPENSE',sectorJournalV1:bad},
-    {transactionId:'WRONG-1',action:'BORROW',sectorJournalV1:wrong}
+    {transactionId:'WRONG-1',action:'BORROW',sectorJournalV1:wrong},
+    {transactionId:'UNOWNED-FIRM-1',type:'PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL',
+      sectorJournalV1:testJournal('BGD','firm','AURORA_INDUSTRIAL_GROUP','UNOWNED-FIRM-1',
+        'BDT','TURN-8','OMEGA_PRIVATE_ENTERPRISE_FINANCE_LEDGER')}
   ],companyAccounts:{AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',cashFlowEntries:[
     {entryId:'DUP-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',sectorJournalV1:duplicate},
     {entryId:'DUP-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',sectorJournalV1:duplicateWithChangedAuthority}
