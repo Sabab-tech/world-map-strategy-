@@ -847,8 +847,10 @@ test('storage write-off and mine-haul transport loss commit physical balances an
   const nextWriteOff=api.writeOffInventory('BGD',{eventId:'STORAGE-WRITEOFF-2',resourceId:'iron_ore',
     quantity:1,unit:'TONNES',reason:'CONTAMINATION'});
   assert.equal(nextWriteOff.status,'APPLIED');
-  assert.equal(period.lossCoverageStatus,'UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED',
+  const invalidatedPeriod=resource.stockFlowPeriods.find(row=>row.periodId==='GAME_TURN_1');
+  assert.equal(invalidatedPeriod.lossCoverageStatus,'UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED',
     'a post-attestation mutation must invalidate stale period coverage');
+  assert.equal(invalidatedPeriod.lossCoverageBySource.STORAGE.status,'INVALIDATED_BY_NEW_LOSS_EVENT');
 });
 
 test('production loss evidence is source-bound, atomic, and cannot exceed consumed input',async()=>{
