@@ -391,12 +391,105 @@
         pendingImportQuantity: finite(entry.pendingImportQuantity),
         unresolvedImportRequestCount: finite(entry.unresolvedImportRequestCount),
         inboundShipmentQuantity: null,
-        inboundShipmentEvidenceStatus: 'NOT_EXPOSED_BY_NATIONAL_DEMAND_RUNTIME',
+        inboundShipmentEvidenceStatus: 'NOT_PERSISTED_BY_TRADE_SHIPMENT_AUTHORITY',
         source: 'resource.demandRuntime.byResource',
         overlapPolicy: 'EXISTING_NATIONAL_DEMAND_RUNTIME_AUTHORITY'
       };
     });
     return rows;
+  }
+  function confirmedImportEvidence(resource, countryId, turn) {
+    var ledger = Array.isArray(resource && resource.inventoryLedger) ? resource.inventoryLedger : null;
+    if (!ledger) return {
+      status: 'IMPORT_LEDGER_UNAVAILABLE',
+      authority: 'Game.state.resource[countryId].inventoryLedger',
+      ledgerAvailable: false, byResource: {}, currentTurnRecordCount: null,
+      uniqueSettlementResourceCount: null, uniqueSettlementCount: null,
+      unclassifiedRecordCount: null, conflictingSettlementCount: null
+    };
+    var entries = Object.create(null), conflicts = Object.create(null);
+    var byResource = Object.create(null), settlementIds = Object.create(null);
+    var currentTurnRecordCount = 0, unclassifiedRecordCount = 0;
+    var ledgerMayBeTruncated = ledger.length >= 2048;
+    function bucket(resourceId) {
+      var key = token(resourceId);
+      if (!key) return null;
+      if (!byResource[key]) byResource[key] = {
+        resourceId: String(resourceId), knownQuantity: 0, settlementIds: [],
+        sourceCountryIds: [], unclassifiedRecordCount: 0,
+        conflictingSettlementCount: 0, unscopedTurnRecordCount: 0
+      };
+      return byResource[key];
+    }
+    ledger.forEach(function (row) {
+      if (!row || String(row.type || '').toUpperCase() !== 'INTERNATIONAL_TRADE_IMPORT') return;
+      var resourceId = String(row.resourceId || row.commodityId || '').trim();
+      var target = resourceId ? bucket(resourceId) : null;
+      var rowTurn = finite(row.turn);
+      if (rowTurn === null) {
+        if (target) target.unscopedTurnRecordCount += 1;
+        else unclassifiedRecordCount += 1;
+        return;
+      }
+      if (rowTurn !== turn) return;
+      currentTurnRecordCount += 1;
+      if (!target) { unclassifiedRecordCount += 1; return; }
+      var sourceCountryId = id(row.sourceCountryId || row.originCountryId || row.sellerCountryId);
+      var settlementId = String(row.settlementId || row.transactionId || '').trim();
+      var quantity = finite(row.quantity);
+      if (!settlementId || !/^[A-Z]{3}$/.test(sourceCountryId) ||
+          sourceCountryId === countryId || quantity === null || quantity <= 0) {
+        target.unclassifiedRecordCount += 1;
+        return;
+      }
+      var identity = settlementId + '|' + token(resourceId);
+      var signature = sourceCountryId + '|' + quantity + '|' +
+        String(row.unit || row.quantityUnit || '').trim().toUpperCase();
+      if (entries[identity]) {
+        if (entries[identity].signature !== signature) conflicts[identity] = true;
+        return;
+      }
+      entries[identity] = {
+        signature: signature, settlementId: settlementId,
+        resourceKey: token(resourceId), sourceCountryId: sourceCountryId, quantity: quantity
+      };
+    });
+    Object.keys(entries).forEach(function (identity) {
+      var entry = entries[identity], target = byResource[entry.resourceKey];
+      if (conflicts[identity]) { target.conflictingSettlementCount += 1; return; }
+      target.knownQuantity += entry.quantity;
+      target.settlementIds.push(entry.settlementId);
+      target.sourceCountryIds.push(entry.sourceCountryId);
+      settlementIds[entry.settlementId] = true;
+    });
+    Object.keys(byResource).forEach(function (key) {
+      var target = byResource[key];
+      target.settlementIds.sort();
+      target.sourceCountryIds = target.sourceCountryIds.filter(function (value, index, allValues) {
+        return allValues.indexOf(value) === index;
+      }).sort();
+      var complete = !ledgerMayBeTruncated && target.unclassifiedRecordCount === 0 &&
+        target.conflictingSettlementCount === 0 && target.unscopedTurnRecordCount === 0;
+      target.quantity = complete ? target.knownQuantity : null;
+      target.settlementCount = target.settlementIds.length;
+      target.status = complete
+        ? (target.settlementCount ? 'OBSERVED_SETTLED_IMPORT_LEDGER' : 'NO_SETTLED_IMPORTS_THIS_TURN')
+        : 'PARTIAL_SETTLED_IMPORT_EVIDENCE';
+    });
+    var partial = ledgerMayBeTruncated || unclassifiedRecordCount > 0 || Object.keys(byResource).some(function (key) {
+      return byResource[key].status === 'PARTIAL_SETTLED_IMPORT_EVIDENCE';
+    });
+    return {
+      status: ledgerMayBeTruncated ? 'IMPORT_LEDGER_MAY_BE_TRUNCATED' :
+        (partial ? 'PARTIAL_SETTLED_IMPORT_EVIDENCE' : 'OBSERVED_INVENTORY_IMPORT_LEDGER'),
+      authority: 'Game.state.resource[countryId].inventoryLedger[type=INTERNATIONAL_TRADE_IMPORT]',
+      ledgerAvailable: true, ledgerMayBeTruncated: ledgerMayBeTruncated,
+      byResource: byResource, currentTurnRecordCount: currentTurnRecordCount,
+      uniqueSettlementResourceCount: Object.keys(entries).filter(function (key) { return !conflicts[key]; }).length,
+      uniqueSettlementCount: Object.keys(settlementIds).length,
+      unclassifiedRecordCount: unclassifiedRecordCount,
+      conflictingSettlementCount: Object.keys(conflicts).length
+    };
   }
   function factoryCapacityProfile(type, profiles) {
     var profile = object(profiles && profiles[type]) || {};
@@ -668,6 +761,7 @@
         transactionIds: summary.production.transactionIds,
         outputs: summary.production.outputByProductThisTurn
       },
+      confirmedImports: summary.confirmedImports,
       prices: priceRows
     };
     var rateFingerprint = fingerprint({
@@ -703,6 +797,7 @@
         factoryDemand: summary.factories.activePlayerCountry ? 'Game.state.resource[countryId].demandRuntime' : 'NOT_ACTIVE_COUNTRY',
         nationalDemand: 'OmegaResourceNationalDemandRuntime',
         production: 'Game.state.resource[countryId].finishedGoodsLedger',
+        confirmedImports: 'Game.state.resource[countryId].inventoryLedger',
         prices: 'Game.state.trade[countryId].marketPrice'
       },
       calculation: {
@@ -747,11 +842,18 @@
       var s = state();
       var resource = object(s.resource && s.resource[countryId]) || {};
       var demandRows = factories.activePlayerCountry ? activeFactoryDemand(resource) : {};
+      var imports = factories.activePlayerCountry
+        ? confirmedImportEvidence(resource, countryId, currentTurn())
+        : { status: 'NOT_ACTIVE_COUNTRY', authority: 'Game.state.resource[countryId].inventoryLedger',
+          ledgerAvailable: false, byResource: null, currentTurnRecordCount: null,
+          uniqueSettlementResourceCount: null, uniqueSettlementCount: null,
+          unclassifiedRecordCount: null, conflictingSettlementCount: null, ledgerMayBeTruncated: false };
       var byResource = {};
       populationDemand.forEach(function (row) {
         var demand = demandRows[row.resourceId] || demandRows[Object.keys(demandRows).find(function (key) {
           return token(key) === token(row.resourceId);
         })] || null;
+        var importRow = imports.byResource && imports.byResource[token(row.resourceId)] || null;
         byResource[row.resourceId] = Object.assign({}, clone(row), {
           factoryInputDemandPerDay: demand ? demand.factoryInputDemandPerDay : null,
           existingNationalDemandPerDay: demand ? demand.existingNationalDemandPerDay : null,
@@ -768,8 +870,15 @@
           lowStockCoverage: demand ? demand.lowStockCoverage : null,
           pendingImportQuantity: demand ? demand.pendingImportQuantity : null,
           unresolvedImportRequestCount: demand ? demand.unresolvedImportRequestCount : null,
+          confirmedImportsThisTurn: importRow ? importRow.quantity : (imports.ledgerAvailable && !imports.ledgerMayBeTruncated ? 0 : null),
+          confirmedImportKnownQuantityThisTurn: importRow ? importRow.knownQuantity : null,
+          confirmedImportSettlementCountThisTurn: importRow ? importRow.settlementCount : 0,
+          confirmedImportSettlementIds: importRow ? clone(importRow.settlementIds) : [],
+          confirmedImportEvidenceStatus: importRow ? importRow.status :
+            (imports.ledgerMayBeTruncated ? 'IMPORT_LEDGER_MAY_BE_TRUNCATED' :
+              (imports.ledgerAvailable ? 'NO_SETTLED_IMPORTS_THIS_TURN' : imports.status)),
           inboundShipmentQuantity: null,
-          inboundShipmentEvidenceStatus: 'NOT_EXPOSED_BY_NATIONAL_DEMAND_RUNTIME',
+          inboundShipmentEvidenceStatus: 'NOT_PERSISTED_BY_TRADE_SHIPMENT_AUTHORITY',
           combinedDemandStatus: demand ? 'EXISTING_RUNTIME_VALUE' : 'NOT_AVAILABLE',
           combinedDemandAuthority: demand ? demand.source : null,
           overlapPolicy: demand ? demand.overlapPolicy : 'NOT_RECOMPUTED_TO_AVOID_DOUBLE_COUNTING'
@@ -777,8 +886,19 @@
       });
       Object.keys(demandRows).forEach(function (key) {
         if (byResource[key]) return;
+        var importRow = imports.byResource && imports.byResource[token(key)] || null;
         byResource[key] = Object.assign({ resourceId: key, ratePer100kPerDay: null,
-          quantityPerDay: null, calculationStatus: 'NO_POPULATION_RATE_PROFILE' }, clone(demandRows[key]));
+          quantityPerDay: null, calculationStatus: 'NO_POPULATION_RATE_PROFILE' }, clone(demandRows[key]), {
+          confirmedImportsThisTurn: importRow ? importRow.quantity : (imports.ledgerAvailable && !imports.ledgerMayBeTruncated ? 0 : null),
+          confirmedImportKnownQuantityThisTurn: importRow ? importRow.knownQuantity : null,
+          confirmedImportSettlementCountThisTurn: importRow ? importRow.settlementCount : 0,
+          confirmedImportSettlementIds: importRow ? clone(importRow.settlementIds) : [],
+          confirmedImportEvidenceStatus: importRow ? importRow.status :
+            (imports.ledgerMayBeTruncated ? 'IMPORT_LEDGER_MAY_BE_TRUNCATED' :
+              (imports.ledgerAvailable ? 'NO_SETTLED_IMPORTS_THIS_TURN' : imports.status)),
+          inboundShipmentQuantity: null,
+          inboundShipmentEvidenceStatus: 'NOT_PERSISTED_BY_TRADE_SHIPMENT_AUTHORITY'
+        });
       });
       var output = factories.activePlayerCountry
         ? authoritativeOutput(resource, currentTurn())
@@ -817,6 +937,7 @@
           uniqueTransactionCount: output.transactionCount,
           transactionIds: output.transactionIds
         },
+        confirmedImports: imports,
         expenditure: {
           populationConsumption: populationExpenditure,
           factoryOperatingCost: {
@@ -842,7 +963,11 @@
           factoryBaselineStatus: baseline ? 'READY' : 'UNAVAILABLE',
           startingFactoryUnits: factories.startingFactoryUnits,
           factoryTypeCount: factories.factoryTypeCount,
-          activeCountryDetailedRuntime: factories.activePlayerCountry
+          activeCountryDetailedRuntime: factories.activePlayerCountry,
+          importLedgerStatus: imports.status,
+          importLedgerMayBeTruncated: imports.ledgerMayBeTruncated === true,
+          confirmedImportSettlementResourceCount: imports.uniqueSettlementResourceCount,
+          unclassifiedImportRecordCount: imports.unclassifiedRecordCount
         },
         preparation: prepared
       };
@@ -904,12 +1029,16 @@
     var reconciliationRows = Object.keys(summary.nationalRequirement.byResource || {}).map(function (resourceId) {
       var row = summary.nationalRequirement.byResource[resourceId];
       if (row.existingNationalDemandPerDay === null && row.inventoryAfter === null &&
-          row.factoryInputDemandPerDay === null && row.unmetDemand === null) return '';
+          row.factoryInputDemandPerDay === null && row.unmetDemand === null &&
+          !(row.confirmedImportsThisTurn > 0) &&
+          row.confirmedImportEvidenceStatus !== 'PARTIAL_SETTLED_IMPORT_EVIDENCE') return '';
       return '<tr><td>' + escapeHtml(resourceId) + '</td><td style="text-align:right">' +
         formatNumber(row.quantityPerDay, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.factoryInputDemandPerDay, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.existingNationalDemandPerDay, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.inventoryAfter, 3) + '</td><td style="text-align:right">' +
+        formatNumber(row.confirmedImportsThisTurn, 3) + '</td><td style="text-align:right">' +
+        formatNumber(row.inboundShipmentQuantity, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.pendingImportQuantity, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.unmetDemand, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.stockCoverageDays, 2) + '</td></tr>';
@@ -982,8 +1111,8 @@
       calibrated.length + ' calibrated · ' + unknown.length + ' unavailable)</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Resource</th><th style="text-align:right;padding:7px">Per 100k / day</th><th style="text-align:right;padding:7px">Country / day</th><th style="text-align:left;padding:7px">Unit</th><th style="text-align:right;padding:7px">Cost / 100k / day</th><th style="text-align:right;padding:7px">Country cost / day</th><th style="text-align:left;padding:7px">Price status</th></tr></thead><tbody>' +
       resourceRows + '</tbody></table>' + (unknown.length ? '<div style="padding:8px;color:#fbbf24;font-size:10px">Uncalibrated or unavailable: ' +
         escapeHtml(unknown.map(function (row) { return row.resourceId + ' (' + row.calculationStatus + ')'; }).join(', ')) + '</div>' : '') +
-      '</div></details><details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Existing national demand and supply reconciliation</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr><th style="text-align:left;padding:6px">Resource</th><th style="text-align:right;padding:6px">Population/day</th><th style="text-align:right;padding:6px">Factory input/day</th><th style="text-align:right;padding:6px">National/day</th><th style="text-align:right;padding:6px">Stock after</th><th style="text-align:right;padding:6px">Pending import</th><th style="text-align:right;padding:6px">Shortage</th><th style="text-align:right;padding:6px">Coverage days</th></tr></thead><tbody>' +
-      reconciliationRows + '</tbody></table><div style="padding:8px;color:#94a3b8;font-size:10px">Pending import requests are not confirmed inbound shipments. Inbound shipment quantity is unavailable unless the existing runtime exposes it.</div></div></details>' +
+      '</div></details><details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Existing national demand and supply reconciliation</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr><th style="text-align:left;padding:6px">Resource</th><th style="text-align:right;padding:6px">Population/day</th><th style="text-align:right;padding:6px">Factory input/day</th><th style="text-align:right;padding:6px">National/day</th><th style="text-align:right;padding:6px">Stock after</th><th style="text-align:right;padding:6px">Settled imports this turn</th><th style="text-align:right;padding:6px">In-transit import</th><th style="text-align:right;padding:6px">Pending import request</th><th style="text-align:right;padding:6px">Shortage</th><th style="text-align:right;padding:6px">Coverage days</th></tr></thead><tbody>' +
+      reconciliationRows + '</tbody></table><div style="padding:8px;color:#94a3b8;font-size:10px">Settled imports are read from the current-turn INTERNATIONAL_TRADE_IMPORT inventory ledger and de-duplicated by settlement and resource. Pending requests are not imports. The current trade runtime does not persist a separate durable in-transit import shipment ledger, so that quantity remains UNKNOWN rather than inferred.</div></div></details>' +
       '<details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Current-turn confirmed production</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Product/resource</th><th style="text-align:right;padding:7px">Output</th></tr></thead><tbody>' +
       productionRows + '</tbody></table><div style="padding:8px;color:#94a3b8;font-size:10px">Ledger source: ' + escapeHtml(summary.production.authority) +
       ' · Transactions: ' + formatNumber(summary.production.uniqueTransactionCount, 0) + '</div></div></details>' +

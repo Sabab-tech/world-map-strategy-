@@ -1,7 +1,7 @@
 # OMEGA Phase 6 — National Population, Consumption & Industrial Capacity
 
 **Specification:** OMEGA_PHASE6_NATIONAL_POPULATION_CONSUMPTION_INDUSTRIAL_CAPACITY_V1  
-**Status:** Initial implementation integrated on a feature branch; CI verification pending  
+**Status:** Initial implementation merged to `main`; settled-import reconciliation and source-change CI coverage extended in this follow-up  
 **Scope:** 197 core countries, 21 canonical factory types, the existing 41-resource profile set
 
 ## 1. Objective and invariants
@@ -100,7 +100,7 @@ Phase 6 does not calculate `populationDemand + factoryDemand`. The current natio
 
 Physical output is read from the resource state's `finishedGoodsLedger`, filtered to the current game turn and de-duplicated by transaction ID. The economy finished-goods mirror is not counted as a second source.
 
-Inventory, confirmed inbound shipments, and demand are different facts. Phase 6's projection does not debit inventory or change shipment state.
+Inventory, confirmed imports, in-transit shipments, and demand are different facts. Completed cross-border imports are read from current-turn `resource.inventoryLedger` rows with type `INTERNATIONAL_TRADE_IMPORT`; records are de-duplicated by settlement and resource identity. Pending import requests are not treated as imports. The trade runtime retains at most 2,048 inventory-ledger rows; when the ledger reaches that bound, Phase 6 marks import totals `IMPORT_LEDGER_MAY_BE_TRUNCATED` and reports them as `UNKNOWN` rather than claiming a complete zero or partial total. The current trade runtime does not persist a durable in-transit import shipment ledger for this projection, so in-transit import quantity remains `UNKNOWN` rather than being inferred. Phase 6 does not debit inventory or change shipment state.
 
 ## 6. Factory counts, capacity and ownership
 
@@ -168,6 +168,7 @@ The dedicated regression suite verifies:
 - Status, ownership, per-factory-type capacity units, and utilization evidence requirements for live factories; ambiguous utilization ratios above 1 remain unavailable.
 - Active-player-only detailed factory access.
 - Current-turn production transaction de-duplication using the resource finished-goods ledger.
+- Current-turn settled import reconciliation from `INTERNATIONAL_TRADE_IMPORT` inventory-ledger entries, settlement/resource de-duplication, and separation from pending requests and unpersisted in-transit shipment state.
 - Separate population and factory demand, with no naive summation.
 - Price/currency evidence gates and the separation of modeled cost from Treasury postings.
 - Read-only authoritative world-state behavior and the absence of a new scheduler.
