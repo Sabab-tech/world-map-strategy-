@@ -125,6 +125,30 @@ assert.equal(duplicateShipment.status,'APPLIED',JSON.stringify(duplicateShipment
 assert.equal(duplicateShipment.result?.duplicate,true,'replaying an identical shipment ID must be idempotent');
 assert.equal(globalThis.Game.state.trade.BGD.internationalShipmentLedger.length,1);
 assert.equal(trade.diagnostics().durableInternationalShipmentLedger,true);
+const futureShipment={
+  schemaVersion:1,shipmentId:'SHIP-FUTURE-LIFECYCLE-TEST',requestId:'REQ-FUTURE-LIFECYCLE',
+  settlementId:'SET-FUTURE-LIFECYCLE',resourceId:'copper',quantity:7,unit:'METRIC_TONS',
+  originCountryId:'CHL',destinationCountryId:'BGD',dispatchTime:'2026-11-20T00:00:00.000Z',
+  dispatchTurn:1,estimatedArrivalTime:'2026-11-22T00:00:00.000Z',etaTurn:3,
+  status:'IN_TRANSIT',arrivalStatus:'PENDING',settlementStatus:'PENDING'
+};
+const createdFutureShipment=mesh.dispatchCommand('trade','OMEGA_TRADE_RECORD_INTERNATIONAL_SHIPMENT','BGD',{
+  shipment:futureShipment
+});
+assert.equal(createdFutureShipment.status,'APPLIED',JSON.stringify(createdFutureShipment));
+assert.equal(createdFutureShipment.result?.accepted,true);
+const arrivedFutureShipment=mesh.dispatchCommand('trade','OMEGA_TRADE_RECORD_INTERNATIONAL_SHIPMENT','BGD',{
+  shipment:{...futureShipment,status:'ARRIVED',arrivalStatus:'RECEIVED',settlementStatus:'SETTLED',
+    arrivalTime:'2026-11-21T14:00:00.000Z',arrivalTurn:2}
+});
+assert.equal(arrivedFutureShipment.status,'APPLIED',JSON.stringify(arrivedFutureShipment));
+assert.equal(arrivedFutureShipment.result?.updated,true,'shipment lifecycle must advance without replacing its immutable identity');
+const persistedFutureShipment=globalThis.Game.state.trade.BGD.internationalShipmentLedger.find(x=>
+  x.shipmentId==='SHIP-FUTURE-LIFECYCLE-TEST');
+assert.equal(persistedFutureShipment.status,'ARRIVED');
+assert.equal(persistedFutureShipment.arrivalStatus,'RECEIVED');
+assert.equal(persistedFutureShipment.settlementStatus,'SETTLED');
+assert.equal(persistedFutureShipment.estimatedArrivalTime,'2026-11-22T00:00:00.000Z');
 const duplicateBuyerClose=mesh.dispatchCommand('trade','OMEGA_TRADE_CLOSE_REQUEST','BGD',{
   requestId:req.requestId,status:'SETTLED',stage:'SETTLED',settlementId:req.settlementId,buyerValue:95000,sellerValue:95000
 });
