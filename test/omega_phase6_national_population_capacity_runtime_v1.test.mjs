@@ -344,7 +344,9 @@ test('the projection is read-only, does not schedule turns, and does not sum two
   const { api, context } = makeHarness({ state });
   const summary = await api.getNationalSummary('BGD');
   const row = summary.nationalRequirement.byResource.iron_ore;
-  assert.equal(row.quantityPerDay, null);
+  assert.equal(row.quantityPerDay,
+    summary.consumption.rows.find(item => item.resourceId === 'iron_ore').quantityPerDay,
+    'population demand remains a separate per-resource field');
   assert.equal(row.factoryInputDemandPerDay, 2);
   assert.equal(row.existingNationalDemandPerDay, 10);
   assert.equal(row.combinedDemandStatus, 'EXISTING_RUNTIME_VALUE');
