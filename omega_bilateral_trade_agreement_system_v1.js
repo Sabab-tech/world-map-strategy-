@@ -710,7 +710,7 @@
     var scoredSettlement = settlementValues(buyer, seller, proposedQuantity, proposedPrice);
     buyerCost = num(scoredSettlement && scoredSettlement.buyerValue);
     var liquidityScore = buyerCost === null ? 0 : clamp(funds / Math.max(buyerCost, 1e-9), 0, 1);
-    var priceScore = marketPrice === null ? 0.5 : clamp(proposal.unitPrice / Math.max(marketPrice, 1e-9), 0, 1);
+    var priceScore = marketPrice === null ? 0.5 : clamp(proposedPrice / Math.max(marketPrice, 1e-9), 0, 1);
     var relationshipScore = rel === null ? 0.5 : rel;
     var partnerContracts = contractList(target).filter(function (row) { return canonical(row.partnerCountryId) === canonical(proposal.requestorCountryId); });
     var historyCompleted = partnerContracts.reduce(function (sum, row) { return sum + (num(row.completedDeliveries) || 0); }, 0);
