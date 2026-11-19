@@ -778,14 +778,7 @@ test('storage write-off and mine-haul transport loss commit physical balances an
     'MINE-BATCH-1':{batchId:'MINE-BATCH-1',resourceId:'iron_ore',quantity:100,remainingQuantity:100,
       unit:'TONNES',status:'AVAILABLE'}
   };
-  resource.industrialNetwork={
-    shipments:[{shipmentId:'MINE-HAUL-LOSS-1',shipmentType:'MINE_TO_WAREHOUSE',countryId:'BGD',
-      siteId:'MINE_1',resourceId:'iron_ore',batchId:'MINE-BATCH-1',quantity:20,dispatchedQuantity:20,
-      unit:'TONNES',status:'IN_TRANSIT',createdTurn:1}],
-    deliveries:[],
-    siteFlowLedger:[{batchId:'MINE-BATCH-1',siteId:'MINE_1',resourceId:'iron_ore',
-      mineHeldQuantity:20,mineLogisticsStockDebited:true,mineLogisticsRouteId:'ROUTE-1'}]
-  };
+  resource.industrialNetwork={shipments:[],deliveries:[],siteFlowLedger:[]};
   const opening=api.captureStockFlowPeriod('BGD');
   assert.equal(opening.status,'APPLIED');
   assert.equal(opening.result.status,'CAPTURED');
@@ -809,7 +802,17 @@ test('storage write-off and mine-haul transport loss commit physical balances an
     warehouse:resource.warehouse,losses:resource.stockLossLedger}),afterStorage,
     'same write-off event must not debit stock or append another loss');
 
-  // Model the already-committed mine dispatch: 20 tonnes are in transit, 73 remain in the warehouse.
+  // Dispatch 20 of the remaining 93 tonnes from the 73-tonne warehouse remainder + 20 held cargo.
+  resource.industrialNetwork={
+    shipments:[{shipmentId:'MINE-HAUL-LOSS-1',shipmentType:'MINE_TO_WAREHOUSE',countryId:'BGD',
+      siteId:'MINE_1',resourceId:'iron_ore',batchId:'MINE-BATCH-1',quantity:20,dispatchedQuantity:20,
+      lostQuantity:0,lossEvents:[],unit:'TONNES',status:'IN_TRANSIT',createdTurn:1}],
+    deliveries:[],
+    siteFlowLedger:[{batchId:'MINE-BATCH-1',siteId:'MINE_1',resourceId:'iron_ore',
+      mineHeldQuantity:20,mineWarehouseReceivedQuantity:73,mineLogisticsStockDebited:true,
+      mineLogisticsRouteId:'ROUTE-1'}]
+  };
+  // The shipment source was debited from sovereign warehouse stock at dispatch.
   resource.inventory.iron_ore-=20;
   resource.warehouse.availableByResource.iron_ore-=20;
   const transportLoss=api.recordShipmentLoss('BGD',{eventId:'MINE-HAUL-LOSS-EVENT-1',
