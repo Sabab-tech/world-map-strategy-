@@ -2962,6 +2962,23 @@ function settleFactoryInputShipment(countryId,shipment){
   return{status:'DELIVERED',factory,resourceId:rid,sourceQuantity,targetQuantity,inputBatchId,unitBridge:bridge,sourceBatchIds:lineage};
 }
 
+function markShipmentTransportMeasurement(shipment){
+  if(!shipment||typeof shipment!=='object')return shipment;
+  const events=Array.isArray(shipment.lossEvents)?shipment.lossEvents:[];
+  const lost=Math.max(0,num(shipment.lostQuantity)||0);
+  shipment.dispatchedQuantity=Math.max(0,num(shipment.dispatchedQuantity)??(Math.max(0,num(shipment.quantity)||0)+lost));
+  shipment.lossMeasurementStatus=events.length?'MEASURED_EVENTS':'MEASURED_ZERO';
+  shipment.lossMeasurementAuthority=events.length
+    ?'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2':'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1';
+  shipment.lossMeasurementBasis=events.length
+    ?'CONFIRMED_CARGO_RECEIPT_WITH_LOSSES':'MEASURED_ZERO_CARGO_TRANSPORT';
+  shipment.lossMeasurementTurn=turn();
+  shipment.lossMeasurementComplete=true;
+  shipment.transportReceiptQuantity=Math.max(0,num(shipment.quantity)||0);
+  shipment.transportReceiptVerified=true;
+  return shipment;
+}
+
 function advanceShipments(c){
   const cid=canonicalCountry(c);
   if(!cid)return{status:'SKIPPED',reason:'LOGISTICS_COUNTRY_NOT_SELECTED',delivered:0,mineDelivered:0,shipments:[]};
@@ -3053,6 +3070,7 @@ function advanceShipments(c){
       }
       s.status='DELIVERED';s.deliveryStatus='DELIVERED_TO_RAW_WAREHOUSE';s.destinationStatus='RAW_WAREHOUSE_RECEIVED';
       s.deliveredTurn=turn();s.deliveredDate=factoryCurrentGameDate();s.deliveryEventId='MINE-WH-DELIVERY:'+s.shipmentId;
+      markShipmentTransportMeasurement(s);
       mineDelivered.push(clone(s));
       const haulBatch=(Array.isArray(resourceState(cid).batches)?resourceState(cid).batches:[])
         .find(row=>String(row?.batchId||'')===String(s.batchId||''))||null;
@@ -3113,6 +3131,7 @@ function advanceShipments(c){
           saveSiteFlow(cid,flow);
         }
       }
+      markShipmentTransportMeasurement(s);
       n.deliveries.push(clone(s));delivered.push(clone(s));
       if(processing?.status==='COMPLETED'){
         const consumedSourceBatches=new Set((processing.sourceBatchIds||[]).map(String));
@@ -3344,6 +3363,7 @@ function advanceShipments(c){
         saveSiteFlow(cid,flow);
       }
     }
+    markShipmentTransportMeasurement(s);
     n.deliveries.push(clone(s));delivered.push(clone(s));const res=n.reservations?.[s.reservationId];if(res)res.status='DELIVERED';
     emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,factoryId:s.factoryId,resourceId:rid,
       quantity:factoryInputQuantity,unit:factoryInputUnit,sourceQuantity:quantity,sourceUnit:s.unit,
@@ -7029,7 +7049,20 @@ function runCountryTurn(countryValue){
     const shipments=await advanceShipments(cid);
     const projects=await advanceProjects(cid);
     const factory=await processPendingFactoryInputs(cid);
-    return{status:'COMPLETED',countryId:cid,turn:turn(),shipments,projects,factory,
+    const catalog=cat()||{},resourceIds=new Set([
+      ...Object.keys(catalog.resourceRules||{}),...Object.keys(catalog.processingRules||{}),
+      ...Object.keys(catalog.productUseCatalog?.products||{}),...Object.keys(catalog.externalInputSources||{})
+    ]);
+    Object.values(catalog.downstreamFactoryRecipes||{}).forEach(recipe=>{
+      Object.keys(recipe?.inputs||{}).forEach(id=>resourceIds.add(id));
+      Object.keys(recipe?.outputs||{}).forEach(id=>resourceIds.add(id));
+    });
+    const economy=g.Omega?.ResourceEconomy||g.OmegaResourceEconomy;
+    const storageDeterioration=economy&&typeof economy.processStorageDeterioration==='function'
+      ?economy.processStorageDeterioration(cid,{policy:catalog.storageDeteriorationPolicy,
+        knownResourceIds:[...resourceIds]})
+      :{status:'UNAVAILABLE',reason:'RESOURCE_STORAGE_DETERIORATION_API_UNAVAILABLE'};
+    return{status:'COMPLETED',countryId:cid,turn:turn(),shipments,projects,factory,storageDeterioration,
       employment:factory.employmentSummary||null};
   });
   countryTurnTail=task.then(()=>undefined,()=>undefined);
