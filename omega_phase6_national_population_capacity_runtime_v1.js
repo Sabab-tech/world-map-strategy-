@@ -404,6 +404,28 @@
       }
     } catch (_) {}
     var liveTotal = Object.keys(statuses).reduce(function (sum, key) { return sum + statuses[key]; }, 0);
+    var ratedAssets = eligibleAssets.filter(function (asset) { return statusBucket(asset.status) !== 'decommissioned'; });
+    var operationalAssets = eligibleAssets.filter(function (asset) { return statusBucket(asset.status) === 'operational'; });
+    var ratedCapacityComplete = ratedAssets.length > 0;
+    var ratedCapacityObserved = 0;
+    var effectiveCapacityComplete = eligibleAssets.length > 0;
+    var effectiveCapacityObserved = 0;
+    eligibleAssets.forEach(function (asset) {
+      var bucket = statusBucket(asset.status);
+      if (bucket === 'unknown') effectiveCapacityComplete = false;
+      if (bucket !== 'operational') return;
+      var capacity = capacityOf(asset);
+      var utilization = utilizationOf(asset);
+      if (capacity === null || utilization === null) { effectiveCapacityComplete = false; return; }
+      effective += capacity * utilization;
+      effectiveCapacityObserved += 1;
+    });
+    ratedAssets.forEach(function (asset) {
+      if (capacityOf(asset) !== null) ratedCapacityObserved += 1;
+      else ratedCapacityComplete = false;
+    });
+    if (!ratedCapacityComplete || ratedCapacityObserved !== ratedAssets.length) liveRatedCount = 0;
+    if (!effectiveCapacityComplete) effectiveCapacityObserved = 0;
     return {
       status: baseline ? 'READY' : 'BASELINE_UNAVAILABLE',
       countryId: countryId,
@@ -422,9 +444,9 @@
       liveFactoryStatusCounts: isActive ? statuses : null,
       ownershipCounts: isActive ? ownership : null,
       ratedCapacityPerDay: isActive && liveRatedCount ? liveRated : null,
-      ratedCapacityCoverage: isActive ? liveRatedCount + '/' + eligibleAssets.length : 'NOT_ACTIVE_COUNTRY',
-      effectiveCapacityPerDay: isActive && effectiveCount === eligibleAssets.length && eligibleAssets.length > 0 ? effective : null,
-      effectiveCapacityCoverage: isActive ? effectiveCount + '/' + eligibleAssets.length : 'NOT_ACTIVE_COUNTRY',
+      ratedCapacityCoverage: isActive ? ratedCapacityObserved + '/' + ratedAssets.length : 'NOT_ACTIVE_COUNTRY',
+      effectiveCapacityPerDay: isActive && eligibleAssets.length > 0 && effectiveCapacityComplete ? effective : null,
+      effectiveCapacityCoverage: isActive ? effectiveCapacityObserved + '/' + operationalAssets.length : 'NOT_ACTIVE_COUNTRY',
       currentWorkers: isActive && workersCount === eligibleAssets.length && eligibleAssets.length > 0 ? workers : null,
       workforceCoverage: isActive ? workersCount + '/' + eligibleAssets.length : 'NOT_ACTIVE_COUNTRY',
       liveAssets: isActive ? eligibleAssets.map(function (asset) {
