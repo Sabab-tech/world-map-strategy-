@@ -57,6 +57,8 @@ jobs:
           node --check omega_opponent_adaptive_strategy_system.js
           node --check omega_opponent_autonomy_system.js
           node --check omega_global_trade_system.js
+          node --check omega_bilateral_trade_system_v1.js
+          node --check omega_bilateral_trade_ui_v1.js
           node --check omega_opponent_treaty_lifecycle_system.js
           node --check omega_opponent_second_order_consequence_system.js
           node --check omega_opponent_memory_trace_log_system.js
@@ -108,6 +110,13 @@ jobs:
           node --check test/omega_home_ministry_budget_integration.test.mjs
           node --check test/omega_battlefield_command_runtime_v1.test.mjs
           node --check test/omega_home_ministry_world_police_runtime_v1.test.mjs
+
+      - name: Bilateral Trade intelligence, agreement and procurement regression
+        run: |
+          set -euo pipefail
+          node --check test/omega_bilateral_trade_system_v1.test.mjs
+          node --test test/omega_bilateral_trade_system_v1.test.mjs
+          node test/omega_global_trade_system.test.mjs
 
       - name: Autonomy import policy provenance regression
         run: node --test test/omega_resource_supply_provenance.test.mjs
@@ -201,6 +210,8 @@ jobs:
             'omega_opponent_adaptive_strategy_system.js',
             'omega_opponent_autonomy_system.js',
             'omega_global_trade_system.js',
+            'omega_bilateral_trade_system_v1.js',
+            'omega_bilateral_trade_ui_v1.js',
             'omega_resource_realism_runtime_v1.js',
             'omega_resource_production_model_v2.js',
             'omega_resource_endowment_runtime.js',
