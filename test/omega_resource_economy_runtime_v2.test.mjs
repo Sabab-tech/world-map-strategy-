@@ -867,7 +867,9 @@ test('production loss evidence is source-bound, atomic, and cannot exceed consum
     inputs:[{resourceId:'iron_ore',quantity:20,unit:'TONNES'}],
     outputs:[{resourceId:'iron_intermediate',quantity:18,unit:'TONNES',stage:'INTERMEDIATE'}],
     lossEvents:[{eventId:'FACTORY-PROCESS-LOSS-1',sourceType:'PRODUCTION',lossType:'PRODUCTION',
-      resourceId:'iron_ore',quantity:2,unit:'TONNES',reason:'MEASURED_PROCESS_RESIDUE'}]};
+      resourceId:'iron_ore',quantity:2,unit:'TONNES',reason:'MEASURED_PROCESS_RESIDUE'}],
+    lossMeasurementStatus:'MEASURED_EVENTS',lossMeasurementAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',
+    lossMeasurementBasis:'MEASURED_PROCESS_INPUT_RESIDUE'};
   const result=mesh.dispatchCommand('resource','OMEGA_RESOURCE_ECON_APPLY_PRODUCTION','BGD',payload,
     {commandId:'FACTORY-LOSS-TX-1',turn:1});
   assert.equal(result.status,'APPLIED',JSON.stringify(result));
@@ -884,7 +886,9 @@ test('production loss evidence is source-bound, atomic, and cannot exceed consum
     inputs:[{resourceId:'iron_ore',quantity:1,unit:'TONNES'}],
     outputs:[{resourceId:'iron_intermediate',quantity:1,unit:'TONNES'}],
     lossEvents:[{eventId:'FACTORY-PROCESS-LOSS-INVALID',resourceId:'iron_ore',
-      quantity:2,unit:'TONNES',reason:'INVALID_EXCESS_LOSS'}]
+      quantity:2,unit:'TONNES',reason:'INVALID_EXCESS_LOSS'}],
+    lossMeasurementStatus:'MEASURED_EVENTS',lossMeasurementAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',
+    lossMeasurementBasis:'MEASURED_PROCESS_INPUT_RESIDUE'
   },{commandId:'FACTORY-LOSS-TX-INVALID',turn:1});
   assert.equal(tooLarge.status,'FAILED');
   assert.equal(tooLarge.result.reason,'PRODUCTION_LOSS_EXCEEDS_INPUT');
