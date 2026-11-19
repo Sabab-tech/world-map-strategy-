@@ -1726,8 +1726,12 @@ test('private factory utility and completed-cycle events accrue auditable operat
   assert.equal(sectorJournal.sourceWindows.privateEnterpriseFinance.journalledEntries,7);
   assert.equal(sectorJournal.sourceWindows.privateEnterpriseFinance.maximumEntries,500,
     'the Finance Ministry source ledger retains at most 500 rows');
-  assert.equal(sectorJournal.sourceWindows.companyCashFlow.legacyOrUnjournalledEntries,2,
+  const cashWindow=sectorJournal.sourceWindows.companyCashFlow;
+  assert.equal(cashWindow.legacyOrUnjournalledEntries,
+    cashWindow.retainedSourceRows-cashWindow.journalledEntries,
     'legacy cash-flow rows remain visible as unjournalled rather than silently backfilled');
+  assert.ok(cashWindow.legacyOrUnjournalledEntries>=2,
+    'new worker/transport aggregate rows remain unjournalled until counterparty identity is evidenced');
   const defensive=sectorJournal.transactions[0].journal;
   defensive.lines[0].accountId='MUTATED_BY_READER';
   assert.notEqual(api.getCompanySectorJournal('BGD',operator).transactions[0].journal.lines[0].accountId,
