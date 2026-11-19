@@ -87,6 +87,8 @@ const diagnostics = bilateral.diagnostics();
 assert.equal(diagnostics.handlerInstalled, true, JSON.stringify(diagnostics));
 assert.equal(diagnostics.registeredCommandHandlers, 2);
 assert.equal(diagnostics.automaticWorldRosterScan, false);
+assert.equal(diagnostics.usesExistingGlobalTradeScheduler, true);
+assert.equal(diagnostics.npcReviewLimitPerCountryTurn, 2);
 assert.equal(diagnostics.schedulerHandlers, 0);
 
 // Intelligence is on-demand, persisted under the requesting country's Trade state,
@@ -155,9 +157,13 @@ assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 800, 95, 
   'ACTIVE labels alone cannot replace both parties accepting the terms version');
 buyerOfferMirror.status = 'OFFERED';
 sellerOfferMirror.status = 'OFFERED';
-const accepted = bilateral.respondToOffer('SAU', agreementId, 'ACCEPT');
-assert.equal(accepted.accepted, true, JSON.stringify(accepted));
-assert.equal(accepted.agreement.status, 'ACTIVE');
+const playerTurnReview = bilateral.processCountry('BGD', { turn: 12 });
+assert.equal(playerTurnReview.reason, 'PLAYER_COUNTRY_REQUIRES_MANUAL_DECISION');
+const npcReview = bilateral.processCountry('SAU', { turn: 12 });
+assert.equal(npcReview.status, 'COMPLETED', JSON.stringify(npcReview));
+assert.equal(npcReview.accepted, 1, JSON.stringify(npcReview));
+const accepted = bilateral.getAgreements('SAU').find(row => row.agreementId === agreementId);
+assert.equal(accepted.status, 'ACTIVE');
 assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 800, 95, agreementId), true);
 assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 801, 95, agreementId), false);
 assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 800, 96, agreementId), false);
