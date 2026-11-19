@@ -312,9 +312,10 @@
       asset && asset.capacityUtilization, asset && asset.utilization];
     for (var i = 0; i < candidates.length; i++) {
       var n = finite(candidates[i]);
-      if (n !== null && n >= 0) return n > 1 && n <= 100 ? n / 100 : (n <= 1 ? n : null);
+      if (n !== null) return n >= 0 && n <= 1 ? n : null;
     }
-    var pct = finite(asset && asset.operatingUtilizationPct);
+    var pct = finite(asset && (asset.operatingUtilizationPct != null
+      ? asset.operatingUtilizationPct : asset.utilizationPct));
     return pct !== null && pct >= 0 && pct <= 100 ? pct / 100 : null;
   }
   function factoryType(asset) {
@@ -376,6 +377,29 @@
     });
     return rows;
   }
+  function factoryCapacityProfile(type, profiles) {
+    var profile = object(profiles && profiles[type]) || {};
+    var network = industrialApi();
+    var requirements = null;
+    try {
+      if (network && typeof network.factoryProductionRequirements === 'function') {
+        requirements = network.factoryProductionRequirements(type);
+      }
+    } catch (_) {}
+    var capacity = finite(profile.defaultCapacityPerDay);
+    if (capacity === null && requirements && requirements.status === 'READY') {
+      capacity = finite(requirements.ratedCapacityPerDay);
+    }
+    var unit = (requirements && requirements.status === 'READY' && requirements.outputUnit) ||
+      profile.outputUnit || profile.capacityUnit || 'SIMULATION_RESOURCE_UNIT';
+    return {
+      capacityPerFactoryPerDay: capacity,
+      unit: unit,
+      status: capacity !== null && capacity > 0 ? 'PROFILE_CAPACITY_AVAILABLE' : 'CAPACITY_PROFILE_UNAVAILABLE',
+      authority: capacity !== null && capacity > 0
+        ? (profile.authority || 'OMEGA_FACTORY_PRODUCTION_REQUIREMENTS_V1') : null
+    };
+  }
   function factorySummary(countryId, baseline) {
     var baselineCounts = object(baseline && baseline.factoryCounts) || {};
     var factoryTypeIds = Object.keys(baselineCounts).sort();
@@ -385,29 +409,96 @@
     var s = state();
     var economy = isActive ? object(s.economy && s.economy[countryId]) || {} : {};
     var assets = isActive && Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
-    var eligibleAssets = assets.filter(function (asset) { return factoryTypeIds.indexOf(factoryType(asset)) >= 0; });
+    var eligibleAssets = assets.filter(function (asset) {
+      return factoryTypeIds.indexOf(factoryType(asset)) >= 0;
+    });
     var statuses = { operational: 0, underConstruction: 0, maintenance: 0, paused: 0,
       offline: 0, decommissioned: 0, unknown: 0 };
     var ownership = { governmentOwned: 0, privateOwned: 0, ownershipUnclassified: 0 };
-    var liveRated = 0, effective = 0;
     var workers = 0, workersCount = 0;
     eligibleAssets.forEach(function (asset) {
       var status = statusBucket(asset.status);
       statuses[status] += 1;
       ownership[ownershipBucket(asset)] += 1;
-      var capacity = capacityOf(asset);
       var staff = finite(asset.currentWorkers != null ? asset.currentWorkers :
         (asset.employees != null ? asset.employees : asset.workers));
       if (staff !== null && staff >= 0) { workers += staff; workersCount += 1; }
     });
     var profiles = object(catalogue() && catalogue().factoryProfiles) || {};
-    var baselineCapacity = 0, baselineCapacityComplete = factoryTypeIds.length === 21;
+    var staticBaselineCapacityByType = {};
+    var ratedCapacityByFactoryType = {};
+    var effectiveCapacityByFactoryType = {};
+    var staticCapacityTypes = 0, liveRatedCapacityTypes = 0, effectiveCapacityTypes = 0;
     factoryTypeIds.forEach(function (type) {
-      var profile = object(profiles[type]) || {};
-      var capacity = finite(profile.defaultCapacityPerDay);
-      var count = finite(baselineCounts[type]);
-      if (capacity === null || count === null) baselineCapacityComplete = false;
-      else baselineCapacity += capacity * count;
+      var baselineCount = finite(baselineCounts[type]);
+      var profile = factoryCapacityProfile(type, profiles);
+      var staticAvailable = baselineCount !== null && profile.capacityPerFactoryPerDay !== null &&
+        baselineCount >= 0 && !!profile.unit;
+      staticBaselineCapacityByType[type] = {
+        factoryType: type,
+        startingFactoryUnits: baselineCount,
+        capacityPerFactoryPerDay: profile.capacityPerFactoryPerDay,
+        ratedCapacityPerDay: staticAvailable ? baselineCount * profile.capacityPerFactoryPerDay : null,
+        unit: staticAvailable ? profile.unit : null,
+        status: staticAvailable ? 'SIMULATED_PROFILE_CAPACITY' : 'CAPACITY_PROFILE_UNAVAILABLE',
+        authority: staticAvailable ? profile.authority : null,
+        simulationOnly: true
+      };
+      if (staticAvailable) staticCapacityTypes += 1;
+
+      if (!isActive) {
+        ratedCapacityByFactoryType[type] = null;
+        effectiveCapacityByFactoryType[type] = null;
+        return;
+      }
+      var typeAssets = eligibleAssets.filter(function (asset) { return factoryType(asset) === type; });
+      var ratedAssets = typeAssets.filter(function (asset) { return statusBucket(asset.status) !== 'decommissioned'; });
+      var operatingAssets = typeAssets.filter(function (asset) { return statusBucket(asset.status) === 'operational'; });
+      var unknownStatus = typeAssets.some(function (asset) { return statusBucket(asset.status) === 'unknown'; });
+      var unitCandidates = typeAssets.map(function (asset) {
+        return String(asset.outputUnit || asset.capacityUnit || asset.throughputUnit || '').trim();
+      }).filter(Boolean);
+      var uniqueUnits = unitCandidates.filter(function (unit, index) { return unitCandidates.indexOf(unit) === index; });
+      var resolvedUnit = uniqueUnits.length === 1 ? uniqueUnits[0] : (uniqueUnits.length === 0 ? profile.unit : null);
+      var unitConflict = uniqueUnits.length > 1 || (uniqueUnits.length === 1 && profile.unit && uniqueUnits[0] !== profile.unit);
+      var ratedTotal = 0, ratedKnown = 0, ratedComplete = ratedAssets.length > 0;
+      ratedAssets.forEach(function (asset) {
+        var capacity = capacityOf(asset);
+        if (capacity === null) ratedComplete = false;
+        else { ratedTotal += capacity; ratedKnown += 1; }
+      });
+      var effectiveTotal = 0, effectiveKnown = 0, effectiveComplete = typeAssets.length > 0 && !unknownStatus;
+      operatingAssets.forEach(function (asset) {
+        var capacity = capacityOf(asset);
+        var utilization = utilizationOf(asset);
+        if (capacity === null || utilization === null) effectiveComplete = false;
+        else { effectiveTotal += capacity * utilization; effectiveKnown += 1; }
+      });
+      if (unitConflict || !resolvedUnit) {
+        ratedComplete = false;
+        effectiveComplete = false;
+      }
+      ratedCapacityByFactoryType[type] = {
+        factoryType: type,
+        ratedCapacityPerDay: ratedComplete ? ratedTotal : null,
+        unit: ratedComplete ? resolvedUnit : null,
+        assetCount: ratedAssets.length,
+        coverage: ratedKnown + '/' + ratedAssets.length,
+        status: ratedComplete ? 'OBSERVED_LIVE_ASSET_CAPACITY' :
+          (unitConflict ? 'CAPACITY_UNIT_CONFLICT' : 'CAPACITY_EVIDENCE_INCOMPLETE')
+      };
+      effectiveCapacityByFactoryType[type] = {
+        factoryType: type,
+        effectiveCapacityPerDay: effectiveComplete ? effectiveTotal : null,
+        unit: effectiveComplete ? resolvedUnit : null,
+        operationalAssetCount: operatingAssets.length,
+        ratedCapacityCoverage: effectiveKnown + '/' + operatingAssets.length,
+        status: effectiveComplete ? 'OBSERVED_OPERATIONAL_CAPACITY' :
+          (unknownStatus ? 'FACTORY_STATUS_UNKNOWN' :
+            (unitConflict ? 'CAPACITY_UNIT_CONFLICT' : 'UTILIZATION_OR_CAPACITY_UNOBSERVED'))
+      };
+      if (ratedComplete) liveRatedCapacityTypes += 1;
+      if (effectiveComplete) effectiveCapacityTypes += 1;
     });
     var registry = null;
     var baselineApi = factoryBaselineApi();
@@ -420,28 +511,6 @@
     var liveTotal = statuses.operational + statuses.underConstruction + statuses.maintenance +
       statuses.paused + statuses.offline + statuses.unknown;
     var trackedFactoryAssets = liveTotal + statuses.decommissioned;
-    var ratedAssets = eligibleAssets.filter(function (asset) { return statusBucket(asset.status) !== 'decommissioned'; });
-    var operationalAssets = eligibleAssets.filter(function (asset) { return statusBucket(asset.status) === 'operational'; });
-    var ratedCapacityComplete = ratedAssets.length > 0;
-    var ratedCapacityObserved = 0;
-    var effectiveCapacityComplete = eligibleAssets.length > 0;
-    var effectiveCapacityObserved = 0;
-    eligibleAssets.forEach(function (asset) {
-      var bucket = statusBucket(asset.status);
-      if (bucket === 'unknown') effectiveCapacityComplete = false;
-      if (bucket !== 'operational') return;
-      var capacity = capacityOf(asset);
-      var utilization = utilizationOf(asset);
-      if (capacity === null || utilization === null) { effectiveCapacityComplete = false; return; }
-      effective += capacity * utilization;
-      effectiveCapacityObserved += 1;
-    });
-    ratedAssets.forEach(function (asset) {
-      var capacity = capacityOf(asset);
-      if (capacity !== null) { ratedCapacityObserved += 1; liveRated += capacity; }
-      else ratedCapacityComplete = false;
-    });
-    if (!effectiveCapacityComplete) effectiveCapacityObserved = 0;
     return {
       status: baseline ? 'READY' : 'BASELINE_UNAVAILABLE',
       countryId: countryId,
@@ -452,18 +521,21 @@
       startingFactoryAuthority: 'SIMULATED_COUNTRY_STARTING_INDUSTRY_PROFILE_V1',
       simulationOnly: true,
       realWorldFacilityCounts: false,
-      staticBaselineCapacityPerDay: baselineCapacityComplete ? baselineCapacity : null,
-      staticBaselineCapacityStatus: baselineCapacityComplete ? 'SIMULATED_RATED_CAPACITY' : 'CAPACITY_PROFILE_UNAVAILABLE',
+      staticBaselineCapacityByType: staticBaselineCapacityByType,
+      staticBaselineCapacityTypeCoverage: staticCapacityTypes + '/' + factoryTypeIds.length,
+      staticBaselineCapacityStatus: staticCapacityTypes === factoryTypeIds.length
+        ? 'SIMULATED_TYPE_SPECIFIC_CAPACITY_AVAILABLE' : 'SOME_FACTORY_TYPE_CAPACITY_UNAVAILABLE',
       activePlayerCountry: isActive,
       liveRegistrationStatus: registry && registry.runtimeStatus || (isActive ? 'LIVE_REGISTRY_UNAVAILABLE' : 'STATIC_BASELINE_ONLY'),
       liveFactoryUnits: isActive ? liveTotal : null,
       trackedFactoryAssetCount: isActive ? trackedFactoryAssets : null,
       liveFactoryStatusCounts: isActive ? statuses : null,
       ownershipCounts: isActive ? ownership : null,
-      ratedCapacityPerDay: isActive && ratedCapacityComplete && ratedCapacityObserved === ratedAssets.length ? liveRated : null,
-      ratedCapacityCoverage: isActive ? ratedCapacityObserved + '/' + ratedAssets.length : 'NOT_ACTIVE_COUNTRY',
-      effectiveCapacityPerDay: isActive && eligibleAssets.length > 0 && effectiveCapacityComplete ? effective : null,
-      effectiveCapacityCoverage: isActive ? effectiveCapacityObserved + '/' + operationalAssets.length : 'NOT_ACTIVE_COUNTRY',
+      ratedCapacityByFactoryType: isActive ? ratedCapacityByFactoryType : null,
+      ratedCapacityTypeCoverage: isActive ? liveRatedCapacityTypes + '/' + factoryTypeIds.length : 'NOT_ACTIVE_COUNTRY',
+      effectiveCapacityByFactoryType: isActive ? effectiveCapacityByFactoryType : null,
+      effectiveCapacityTypeCoverage: isActive ? effectiveCapacityTypes + '/' + factoryTypeIds.length : 'NOT_ACTIVE_COUNTRY',
+      capacityAggregateStatus: 'CROSS_FACTORY_TYPE_UNITS_NOT_ADDITIVE',
       currentWorkers: isActive && workersCount === eligibleAssets.length && eligibleAssets.length > 0 ? workers : null,
       workforceCoverage: isActive ? workersCount + '/' + eligibleAssets.length : 'NOT_ACTIVE_COUNTRY',
       liveAssets: isActive ? eligibleAssets.map(function (asset) {
@@ -472,6 +544,7 @@
           factoryType: factoryType(asset),
           status: id(asset.status) || 'UNKNOWN',
           ratedCapacityPerDay: capacityOf(asset),
+          capacityUnit: asset.outputUnit || asset.capacityUnit || asset.throughputUnit || null,
           utilizationRatio: utilizationOf(asset),
           ownerType: asset.ownerType || asset.ownershipType || null,
           ownerCompanyId: asset.ownerCompanyId || asset.ownerId || null,
