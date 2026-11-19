@@ -2156,6 +2156,205 @@ function captureStockFlowPeriod(stateTransaction) {
       lossCoverageStatus:'PENDING_PERIOD_SOURCE_ATTESTATION'};
   }
 
+  function processStorageDeteriorationHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},country=canonical(ctx.countryId),eventTurn=num(p.turn==null?turn():p.turn),
+      policy=p.policy||{},knownIds=new Set((Array.isArray(p.knownResourceIds)?p.knownResourceIds:[]).map(function(x){return tok(x);}).filter(Boolean));
+    if(!country||eventTurn!==turn())return{accepted:false,reason:'STORAGE_DETERIORATION_PERIOD_MISMATCH',eventTurn:eventTurn,currentTurn:turn()};
+    if(policy.policyId!=='OMEGA_STORAGE_DETERIORATION_MODEL_V1'||policy.simulationOnly!==true||
+      policy.authority!=='SIMULATED_GAMEPLAY_RULE'||!policy.defaultProfile||!policy.profiles)
+      return{accepted:false,reason:'STORAGE_DETERIORATION_POLICY_INVALID'};
+    var inventoryBefore=ctx.stateTransaction.get('resource.inventory')||{},
+      batchesBefore=ctx.stateTransaction.get('resource.batches'),
+      lotsBefore=ctx.stateTransaction.get('resource.inventoryLots')||{},
+      rawBefore=ctx.stateTransaction.get('resource.warehouse')||null,
+      processedBefore=ctx.stateTransaction.get('resource.processedWarehouse')||null,
+      network=ctx.stateTransaction.get('resource.industrialNetwork')||{},
+      lossesBefore=ctx.stateTransaction.get('resource.stockLossLedger'),
+      movementsBefore=ctx.stateTransaction.get('resource.inventoryLedger'),
+      observationsBefore=ctx.stateTransaction.get('resource.storageDeteriorationLedger');
+    if(!Array.isArray(batchesBefore)||!Array.isArray(lossesBefore)||!Array.isArray(movementsBefore))
+      return{accepted:false,reason:'STORAGE_DETERIORATION_SOURCE_LEDGER_UNAVAILABLE'};
+    var batches=batchesBefore.slice(),lots=Object.assign({},lotsBefore),inventory=Object.assign({},inventoryBefore),
+      raw=rawBefore?Object.assign({},rawBefore,{availableByResource:Object.assign({},rawBefore.availableByResource||{}),
+        reservedByResource:Object.assign({},rawBefore.reservedByResource||{}),
+        storedBatchIds:Array.isArray(rawBefore.storedBatchIds)?rawBefore.storedBatchIds.slice():[]}):null,
+      processed=processedBefore?Object.assign({},processedBefore,{availableByResource:Object.assign({},processedBefore.availableByResource||{}),
+        reservedByResource:Object.assign({},processedBefore.reservedByResource||{}),
+        storedBatchIds:Array.isArray(processedBefore.storedBatchIds)?processedBefore.storedBatchIds.slice():[]}):null,
+      lossLedger=lossesBefore.slice(),movementLedger=movementsBefore.slice(),
+      observationLedger=Array.isArray(observationsBefore)?observationsBefore.slice():[],
+      activeStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
+        'BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING']),
+      stats={measured:0,measuredZero:0,lossEvents:0,unobserved:0,idempotent:0},newLosses=[];
+    var maxEntries=Math.max(1,num(rules().runtime.maxLedgerEntries)||2048);
+    function observationId(batchId){return 'STORAGE-OBS:'+country+':'+String(batchId)+':T'+eventTurn;}
+    function observation(row,status,reason,extra){
+      var result=Object.assign({schemaVersion:1,eventId:observationId(row&&row.batchId||'MISSING'),
+        sourceEventId:String(row&&row.batchId||''),sourceType:'STORAGE',countryId:country,
+        batchId:String(row&&row.batchId||''),resourceId:String(row&&(row.resourceId||row.materialIdentity)||''),
+        turn:eventTurn,periodId:'GAME_TURN_'+eventTurn,status:status,
+        measurementAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',
+        modelId:policy.policyId,policyAuthority:policy.authority,simulationOnly:true,
+        reason:reason||null},extra||{});
+      return result;
+    }
+    function addObservation(row){observationLedger.push(row);while(observationLedger.length>maxEntries*4)observationLedger.shift();}
+    function warehouseForBatch(batch){
+      var id=String(batch&&batch.warehouseId||'').trim(),node=String(batch&&batch.locationNodeKey||'').toUpperCase();
+      if(processed&&id&&id===String(processed.warehouseId||''))return{kind:'PROCESSED',warehouse:processed};
+      if(raw&&id&&id===String(raw.warehouseId||''))return{kind:'RAW',warehouse:raw};
+      if(!id&&node.indexOf(':PROCESSED')>=0&&processed)return{kind:'PROCESSED',warehouse:processed};
+      if(!id&&node.indexOf(':RAW')>=0&&raw)return{kind:'RAW',warehouse:raw};
+      return null;
+    }
+    function profileFor(resourceId){
+      var key=Object.keys(policy.profiles||{}).find(function(x){return tok(x)===tok(resourceId);});
+      return key?policy.profiles[key]:policy.defaultProfile;
+    }
+    var currentWarehouseBatches=batches.filter(function(batch){
+      var stage=String(batch&&batch.stage||'').toUpperCase(),status=String(batch&&batch.status||'').toUpperCase(),
+        node=String(batch&&batch.locationNodeKey||'').toUpperCase(),
+        quantity=Math.max(0,num(batch&&(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity))||0);
+      return quantity>1e-9&&!!String(batch&&batch.batchId||'').trim()&&
+        !!(batch&&batch.warehouseId||node.indexOf('WAREHOUSE:')===0)&&
+        !['IN_TRANSIT','FACTORY_INPUT','TRANSFERRED_TO_FACTORY','SOLD','CONSUMED','DECOMMISSIONED',
+          'DEPLETED_BY_TRANSPORT_LOSS'].includes(stage)&&
+        !['IN_TRANSIT','RESERVED','TRANSFERRED_OUT','SOLD','CONSUMED','DECOMMISSIONED'].includes(status);
+    });
+    currentWarehouseBatches.forEach(function(batch){
+      var batchId=String(batch.batchId||''),rid=String(batch.resourceId||batch.materialIdentity||'').trim(),
+        id=observationId(batchId);
+      if(observationLedger.some(function(row){return String(row&&row.eventId||'')===id;})){stats.idempotent++;return;}
+      var lot=lots[batchId],batchQuantity=num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity),
+        lotQuantity=num(lot&&(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)),
+        createdTurn=num(batch.createdTurn??batch.timestampTurn??batch.simulationTurn??(lot&&(lot.createdTurn??lot.timestampTurn))),
+        unit=String(batch.unit||lot&&lot.unit||'').trim(),
+        profile=profileFor(rid),warehouseRef=warehouseForBatch(batch),
+        invKey=quantityObjectKey(inventory,rid),warehouse=warehouseRef&&warehouseRef.warehouse,
+        warehouseKey=warehouse?quantityObjectKey(warehouse.availableByResource||{},rid):null,
+        warehouseBalance=warehouseKey===null?null:Math.max(0,num(warehouse.availableByResource[warehouseKey])||0),
+        inventoryBalance=invKey===null?null:Math.max(0,num(inventory[invKey])||0),
+        reserved=Math.max(0,num(warehouse&&warehouse.reservedByResource&&
+          (quantityObjectKey(warehouse.reservedByResource,rid)||rid)!==null
+            ?warehouse.reservedByResource[quantityObjectKey(warehouse.reservedByResource,rid)||rid]:0)||0),
+        activeShipment=(Array.isArray(network.shipments)?network.shipments:[]).find(function(shipment){
+          return String(shipment&&shipment.batchId||'')===batchId&&activeStatuses.has(String(shipment&&shipment.status||'').toUpperCase());
+        }),
+        flow=(Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[]).find(function(row){return String(row&&row.batchId||'')===batchId;}),
+        reason=null;
+      if(!rid||!knownIds.has(tok(rid)))reason='STORAGE_RESOURCE_IDENTITY_UNREGISTERED';
+      else if(!lot)reason='STORAGE_INVENTORY_LOT_MISSING';
+      else if(!warehouseRef||!warehouseKey)reason='STORAGE_WAREHOUSE_LOCATION_UNOBSERVED';
+      else if(createdTurn===null||createdTurn<0||createdTurn>eventTurn)reason='STORAGE_BATCH_AGE_UNOBSERVED';
+      else if(!unit)reason='STORAGE_BATCH_UNIT_UNOBSERVED';
+      else if(batchQuantity===null||lotQuantity===null||Math.abs(batchQuantity-lotQuantity)>1e-6)
+        reason='STORAGE_BATCH_LOT_BALANCE_MISMATCH';
+      else if(inventoryBalance===null||inventoryBalance+1e-6<batchQuantity)reason='STORAGE_COUNTRY_INVENTORY_MISMATCH';
+      else if(warehouseBalance===null||warehouseBalance+1e-6<batchQuantity)reason='STORAGE_WAREHOUSE_BALANCE_MISMATCH';
+      else if(warehouseFreeQuantity(warehouse,rid)+1e-6<batchQuantity)reason='STORAGE_STOCK_RESERVED_OR_IN_TRANSIT';
+      else if(activeShipment)reason='STORAGE_BATCH_HAS_ACTIVE_SHIPMENT';
+      else if(Math.max(0,num(flow&&flow.mineHeldQuantity)||0)>1e-6)reason='STORAGE_BATCH_HAS_MINE_HELD_STOCK';
+      else if(!profile||num(profile.lossRatePerEligibleTurn)===null||num(profile.lossRatePerEligibleTurn)<0||
+        num(profile.lossRatePerEligibleTurn)>0.25||num(profile.graceTurns)===null||num(profile.graceTurns)<0)
+        reason='STORAGE_DETERIORATION_PROFILE_INVALID';
+      if(reason){
+        addObservation(observation(batch,'UNOBSERVED',reason,{warehouseId:warehouseRef&&warehouseRef.warehouse.warehouseId||batch.warehouseId||null,
+          unit:unit||null,createdTurn:createdTurn,quantityBefore:batchQuantity}));
+        stats.unobserved++;return;
+      }
+      var rate=num(profile.lossRatePerEligibleTurn),grace=Math.floor(num(profile.graceTurns)||0),
+        lastTurn=num(lot.lastDeteriorationTurn??batch.lastDeteriorationTurn??createdTurn),
+        firstEligibleTurn=createdTurn+grace,elapsed=Math.max(0,eventTurn-Math.max(lastTurn,firstEligibleTurn)),
+        carry=Math.max(0,num(lot.storageDeteriorationCarry??batch.storageDeteriorationCarry)||0),
+        lossRaw=batchQuantity*(1-Math.pow(1-rate,elapsed))+carry,
+        loss=Number((Math.floor((lossRaw+1e-10)*1000000)/1000000).toFixed(6)),
+        nextCarry=Math.max(0,lossRaw-loss),before=batchQuantity,after=Math.max(0,before-loss),
+        lossEventId='STORAGE-DECAY:'+country+':'+batchId+':T'+eventTurn;
+      if(loss>before+1e-9){
+        addObservation(observation(batch,'UNOBSERVED','STORAGE_CALCULATED_LOSS_EXCEEDS_BATCH_BALANCE',
+          {warehouseId:warehouse.warehouseId,unit:unit,createdTurn:createdTurn,quantityBefore:before}));
+        stats.unobserved++;return;
+      }
+      if(loss>1e-9){
+        var reservedKey=quantityObjectKey(warehouse.reservedByResource||{},rid)||rid;
+        if(inventoryBalance+1e-9<loss||warehouseBalance+1e-9<loss||
+          warehouseFreeQuantity(warehouse,rid)+1e-9<loss){
+          addObservation(observation(batch,'UNOBSERVED','STORAGE_LOSS_NOT_DISPATCHABLE_FROM_FREE_STOCK',
+            {warehouseId:warehouse.warehouseId,unit:unit,createdTurn:createdTurn,quantityBefore:before}));
+          stats.unobserved++;return;
+        }
+        inventory[invKey]=Number(Math.max(0,inventoryBalance-loss).toFixed(6));
+        warehouse.availableByResource[warehouseKey]=Number(Math.max(0,warehouseBalance-loss).toFixed(6));
+        batch.remainingQuantity=after;batch.lastMovementTurn=eventTurn;batch.lastMovementType='STORAGE_DETERIORATION';
+        batch.lastDeteriorationTurn=eventTurn;batch.storageDeteriorationCarry=nextCarry;
+        lot.remainingQuantity=after;lot.status=after>1e-9?'AVAILABLE':'DETERIORATED';
+        lot.lastMovementTurn=eventTurn;lot.lastMovementType='STORAGE_DETERIORATION';
+        lot.lastDeteriorationTurn=eventTurn;lot.storageDeteriorationCarry=nextCarry;
+        if(after<=1e-9){
+          batch.status='DETERIORATED';warehouse.storedBatchIds=warehouse.storedBatchIds.filter(function(x){return String(x)!==batchId;});
+        }
+        var movement={type:'STORAGE_LOSS_COMMITTED',eventId:lossEventId,movementId:lossEventId,
+          sourceEventId:lossEventId,sourceType:'STORAGE',lossType:'STORAGE',
+          sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',
+          evidenceAuthority:'ATOMIC_AUTOMATIC_STORAGE_DETERIORATION',
+          measurementAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',status:'COMMITTED',physicalMutationCommitted:true,
+          resourceId:rid,quantity:loss,unit:unit,reason:'SIMULATED_STORAGE_DETERIORATION',
+          batchId:batchId,warehouseId:warehouse.warehouseId,modelId:policy.policyId,
+          lossRatePerEligibleTurn:rate,graceTurns:grace,elapsedEligibleTurns:elapsed,
+          turn:eventTurn,periodId:'GAME_TURN_'+eventTurn};
+        movementLedger.push(movement);
+        lossLedger.push({schemaVersion:1,type:'STOCK_LOSS_COMMITTED',eventId:lossEventId,sourceEventId:lossEventId,
+          sourceType:'STORAGE',lossType:'STORAGE',countryId:country,resourceId:rid,quantity:loss,unit:unit,
+          sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',evidenceAuthority:'ATOMIC_AUTOMATIC_STORAGE_DETERIORATION',
+          turn:eventTurn,periodId:'GAME_TURN_'+eventTurn,status:'COMMITTED',batchId:batchId,
+          reason:'SIMULATED_STORAGE_DETERIORATION',physicalMutationCommitted:true,warehouseId:warehouse.warehouseId});
+        while(movementLedger.length>maxEntries)movementLedger.shift();
+        while(lossLedger.length>maxEntries)lossLedger.shift();
+        newLosses.push(lossEventId);stats.lossEvents++;
+      }else{
+        batch.lastDeteriorationTurn=eventTurn;batch.storageDeteriorationCarry=nextCarry;
+        lot.lastDeteriorationTurn=eventTurn;lot.storageDeteriorationCarry=nextCarry;
+        stats.measuredZero++;
+      }
+      addObservation(observation(batch,loss>1e-9?'MEASURED_EVENTS':'MEASURED_ZERO',null,{
+        warehouseId:warehouse.warehouseId,warehouseKind:warehouseRef.kind,unit:unit,createdTurn:createdTurn,
+        profileClass:profile.class||'UNCLASSIFIED',lossRatePerEligibleTurn:rate,graceTurns:grace,
+        ageTurns:Math.max(0,eventTurn-createdTurn),elapsedEligibleTurns:elapsed,
+        quantityBefore:before,measuredLossQuantity:loss,quantityAfter:after,lossEventIds:loss>1e-9?[lossEventId]:[],
+        roundingCarryAfter:nextCarry,evidenceAuthority:'ATOMIC_AUTOMATIC_STORAGE_DETERIORATION'
+      }));
+      stats.measured++;
+    });
+    ctx.stateTransaction.set('resource.inventory',inventory);
+    ctx.stateTransaction.set('resource.batches',batches);
+    ctx.stateTransaction.set('resource.inventoryLots',lots);
+    if(raw)ctx.stateTransaction.set('resource.warehouse',raw);
+    if(processed)ctx.stateTransaction.set('resource.processedWarehouse',processed);
+    ctx.stateTransaction.set('resource.storageDeteriorationLedger',observationLedger);
+    if(stats.lossEvents){
+      ctx.stateTransaction.set('resource.inventoryLedger',movementLedger);
+      ctx.stateTransaction.set('resource.stockLossLedger',lossLedger);
+      captureStockFlowPeriod(ctx.stateTransaction);
+      var periods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))
+        ?ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[],
+        period=periods.find(function(row){return String(row&&row.periodId||'')==='GAME_TURN_'+eventTurn;});
+      if(period){
+        period.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+        period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
+        if(period.lossCoverageBySource.STORAGE)
+          period.lossCoverageBySource.STORAGE=Object.assign({},period.lossCoverageBySource.STORAGE,{status:'INVALIDATED_BY_NEW_LOSS_EVENT'});
+        ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
+      }
+    }
+    if(newLosses.length)emit('OMEGA_RESOURCE_STOCK_LOSS_RECORDED',country,{sourceType:'STORAGE',
+      eventIds:newLosses,modelId:policy.policyId,turn:eventTurn},'resource-economy');
+    emit('OMEGA_RESOURCE_STORAGE_DETERIORATION_MEASURED',country,Object.assign({modelId:policy.policyId,
+      turn:eventTurn,authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'},stats),'resource-economy');
+    return{accepted:true,countryId:country,turn:eventTurn,modelId:policy.policyId,
+      measured:stats.measured,measuredZero:stats.measuredZero,lossEventsCommitted:stats.lossEvents,
+      unobserved:stats.unobserved,idempotent:stats.idempotent};
+  }
+
   function attestStockLossCoverageHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},country=canonical(ctx.countryId),sourceType=String(p.sourceType||'').trim().toUpperCase(),
       eventTurn=num(p.turn==null?turn():p.turn),periodId='GAME_TURN_'+String(eventTurn),allowed=['STORAGE','TRANSPORT','PRODUCTION'];
@@ -2338,6 +2537,7 @@ function captureStockFlowPeriod(stateTransaction) {
       ['OMEGA_RESOURCE_ECON_CONSUME_INVENTORY','resource',consumeHandler],
       ['OMEGA_RESOURCE_ECON_RECORD_STOCK_LOSS','resource',recordStockLossHandler],
       ['OMEGA_RESOURCE_ECON_COMMIT_SHIPMENT_LOSS','resource',commitShipmentLossHandler],
+      ['OMEGA_RESOURCE_ECON_PROCESS_STORAGE_DETERIORATION','resource',processStorageDeteriorationHandler],
       ['OMEGA_RESOURCE_ECON_ATTEST_STOCK_LOSS_COVERAGE','resource',attestStockLossCoverageHandler],
       ['OMEGA_RESOURCE_ECON_CAPTURE_STOCK_FLOW_PERIOD','resource',function(cmd,ctx){return captureStockFlowPeriod(ctx.stateTransaction);}],
       ['OMEGA_RESOURCE_ECON_PUBLISH_DEMAND_RUNTIME','resource',demandRuntimePublishHandler],
@@ -2897,6 +3097,12 @@ function captureStockFlowPeriod(stateTransaction) {
       data.lossType='STORAGE';
       if(eventId){data.eventId=eventId;data.idempotencyKey=eventId;data.correlationId=eventId;}
       return dispatch('resource','OMEGA_RESOURCE_ECON_CONSUME_INVENTORY',canonical(c),data);
+    },
+    processStorageDeterioration:function(c,payload){
+      installHandlers();
+      var data=Object.assign({},payload||{});
+      data.turn=turn();data.correlationId='STORAGE-DETERIORATION:'+canonical(c)+':'+turn();
+      return dispatch('resource','OMEGA_RESOURCE_ECON_PROCESS_STORAGE_DETERIORATION',canonical(c),data);
     },
     recordShipmentLoss:function(c,payload){
       installHandlers();
