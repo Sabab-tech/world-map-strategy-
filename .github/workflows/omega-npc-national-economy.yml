@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "omega_npc_national_macro_economy_runtime_v1.js"
+      - "docs/OMEGA_PHASE3C_MACRO_EVIDENCE_MATRIX_V1.md"
+      - "test/omega_npc_macro_evidence_contract_v1.test.mjs"
       - "omega_national_accounts_runtime_v1.js"
       - "national_accounts_rules_v1.json"
       - "test/omega_national_accounts_runtime_v1.test.mjs"
