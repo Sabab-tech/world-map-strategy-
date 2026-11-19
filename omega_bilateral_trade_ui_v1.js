@@ -119,7 +119,7 @@ function agreementCard(a,country){
  const controls=[];
  if(pending&&!mineAccepted)controls.push('<button type="button" data-bt-action="accept">Accept</button>');
  if(pending)controls.push('<button type="button" data-bt-action="counter">Counter</button><button type="button" data-kind="danger" data-bt-action="reject">Reject</button>');
- if(status==='ACTIVE'&&canonicalCountry(a.buyerCountryId)===country)controls.push('<button type="button" data-bt-action="procure">Place agreed import request</button>');
+ if(status==='ACTIVE')controls.push('<button type="button" data-bt-action="procure">'+(canonicalCountry(a.buyerCountryId)===country?'Place agreed import request':'Initiate agreed delivery')+'</button>');
  if(status==='ACTIVE')controls.push('<button type="button" data-bt-action="suspend">Suspend</button>');
  if(!['REJECTED','TERMINATED'].includes(status))controls.push('<button type="button" data-kind="danger" data-bt-action="terminate">Terminate</button>');
  return'<article class="bt-record" data-bt-agreement="'+esc(a.agreementId)+'">'+
