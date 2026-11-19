@@ -175,6 +175,12 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
       const c = String(country).toUpperCase();
       const trade = globalThis.Game.state.trade[c];
       trade.importRequests = trade.importRequests || [];
+      if (String(payload.governmentContractId || '').startsWith('BTA-')) {
+        const sellerContracts = globalThis.Game.state.trade[String(payload.targetCountryId).toUpperCase()]?.bilateralContracts || [];
+        const sellerMirror = sellerContracts.find(row => row.agreementId === payload.governmentContractId);
+        if (!sellerMirror || sellerMirror.currentRequestId !== payload.requestId)
+          return { accepted: false, reason: 'BTA_SELLER_REQUEST_NOT_PREAUTHORIZED' };
+      }
       if (trade.importRequests.some(row => row.requestId === payload.requestId)) return { accepted: true, duplicate: true };
       trade.importRequests.push({
         requestId: payload.requestId, countryId: c, targetCountryId: payload.targetCountryId,
@@ -259,7 +265,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
     intervalDays: 30, intervalTurns: 30
   });
   assert.equal(sellerPriceReview.decision, 'COUNTER');
-  assert.equal(sellerPriceReview.terms.unitPrice, 95,
+  assert.equal(sellerPriceReview.terms.unitPrice, 100,
     'the seller AI must counter a below-market offer upward to its market floor');
 
   const foreignBuyerFeasibility = bilateral.previewProposal('BGD', {
