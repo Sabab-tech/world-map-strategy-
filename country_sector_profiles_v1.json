@@ -3,9 +3,9 @@
     "schemaVersion": "1.1.0",
     "datasetId": "OMEGA_COUNTRY_SECTOR_PROFILES_V1",
     "title": "OMEGA Country Sector Profiles",
-    "generatedAt": "2026-11-19T15:06:43.958Z",
+    "generatedAt": "2026-11-19T18:48:54.035Z",
     "generatedFrom": "/home/runner/work/world-map-strategy-/world-map-strategy-/country_general_data_registry_v1.json",
-    "sourceRegistryGeneratedAt": "2026-11-19T15:06:39.938Z",
+    "sourceRegistryGeneratedAt": "2026-11-19T18:48:45.428Z",
     "countryAndTerritoryCount": 249,
     "uniqueIso3Count": 249,
     "duplicateIdentityCount": 0,
@@ -684,8 +684,8 @@
       "populationAndHumanDevelopment": {
         "total": 249,
         "available": 123,
-        "partial": 101,
-        "noData": 25
+        "partial": 102,
+        "noData": 24
       },
       "naturalResources": {
         "total": 249,
@@ -709,8 +709,8 @@
     "metricCoverage": {
       "populationTotal": {
         "total": 249,
-        "nonNull": 224,
-        "missing": 25
+        "nonNull": 225,
+        "missing": 24
       },
       "population2015": {
         "total": 249,
@@ -335740,7 +335740,7 @@
           "analytics": {}
         },
         "populationAndHumanDevelopment": {
-          "status": "NO_DATA",
+          "status": "PARTIAL",
           "indicators": {
             "populationTotal": {
               "refType": "METRIC",
