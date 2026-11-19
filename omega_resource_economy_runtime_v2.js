@@ -113,11 +113,13 @@
   }
 function captureStockFlowPeriod(stateTransaction) {
     const t=turn(),periodId='GAME_TURN_'+String(t);
+    const old=stateTransaction.get('resource.stockFlowPeriods');
+    if(Array.isArray(old)&&old.some(row=>String(row&&row.periodId||'')===periodId))
+      return{status:'ALREADY_CAPTURED',periodId};
     const resource={inventory:stateTransaction.get('resource.inventory'),inventoryUnits:stateTransaction.get('resource.inventoryUnits'),
       batches:stateTransaction.get('resource.batches')};
     const assets=stateTransaction.get('economy.productionAssets')||[],snapshot=stockFlowSnapshot(resource,assets);
-    const old=stateTransaction.get('resource.stockFlowPeriods'),periods=Array.isArray(old)?old.map(row=>clone(row)):[];
-    if(periods.some(row=>String(row&&row.periodId||'')===periodId))return{status:'ALREADY_CAPTURED',periodId};
+    const periods=Array.isArray(old)?old.map(row=>clone(row)):[];
     const previous=periods.length?periods[periods.length-1]:null;
     if(previous&&Number(previous.turn)<t){
       if(Number(previous.turn)===t-1){previous.closingStockByIdentity=clone(snapshot.identities);
