@@ -110,27 +110,7 @@ assert.deepEqual({
   buyerCash:globalThis.Game.state.finance.BGD.available,sellerCash:globalThis.Game.state.finance.SAU.available
 },settlementSnapshot,'duplicate settlement events must not change trade balances or treasury cash');
 
-// An active bilateral delivery reserves its promised seller stock from unrelated Open Market requests.
-globalThis.Game.state.trade.SAU.bilateralContracts=[{
-  agreementId:'BTA-RESERVE-REGRESSION',proposalId:'BTP-RESERVE-REGRESSION',
-  partnerCountryId:'BGD',buyerCountryId:'BGD',sellerCountryId:'SAU',role:'SELLER',
-  resourceId:'crude_oil',quantityPerDelivery:5000,unitPrice:100,intervalDays:30,
-  nextDeliveryTurn:globalThis.Game.state.simulation.turn,status:'ACTIVE',currentRequestId:null
-}];
-const reservedOpenMarketReview=trade.reviewRequest({
-  requestId:'REQ-OPEN-MARKET-RESERVED',countryId:'BGD',targetCountryId:'SAU',
-  resourceId:'crude_oil',quantity:100,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn
-});
-assert.equal(reservedOpenMarketReview.decision,'REJECT',JSON.stringify(reservedOpenMarketReview));
-assert.equal(reservedOpenMarketReview.reason,'BILATERAL_CONTRACT_RESERVED_SUPPLY');
-assert.equal(reservedOpenMarketReview.bilateralContractReserve.quantity,5000);
-const forgedContractRequest=trade.reviewRequest({
-  requestId:'REQ-FORGED-CONTRACT',countryId:'BGD',targetCountryId:'SAU',
-  resourceId:'crude_oil',quantity:100,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
-  governmentContractId:'BTA-RESERVE-REGRESSION'
-});
-assert.equal(forgedContractRequest.decision,'REJECT',JSON.stringify(forgedContractRequest));
-assert.equal(forgedContractRequest.reason,'BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH');
+
 const ordinaryPending=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-UI-CREATE');
 if(ordinaryPending){ordinaryPending.status='REJECTED';ordinaryPending.stage='TEST_HOLD';}
 globalThis.Game.state.trade.BGD.importRequests.push({requestId:'REQ-REJECT',countryId:'BGD',targetCountryId:'SAU',resourceId:'crude_oil',quantity:100000,status:'SENT',stage:'COUNTERPARTY_DECISION_PENDING',createdTurn:1,unitPrice:100});
@@ -605,3 +585,25 @@ assert.equal(JSON.stringify({
   seller:globalThis.Game.state.trade.SAU
 }),worldActivityBefore,'reading global activity must not mutate trade state');
 console.log('OMEGA GLOBAL WORLD TRADE ACTIVITY FEED REGRESSION PASSED');
+
+// An active bilateral delivery reserves its promised seller stock from unrelated Open Market requests.
+globalThis.Game.state.trade.SAU.bilateralContracts=[{
+  agreementId:'BTA-RESERVE-REGRESSION',proposalId:'BTP-RESERVE-REGRESSION',
+  partnerCountryId:'BGD',buyerCountryId:'BGD',sellerCountryId:'SAU',role:'SELLER',
+  resourceId:'crude_oil',quantityPerDelivery:5000,unitPrice:100,intervalDays:30,
+  nextDeliveryTurn:globalThis.Game.state.simulation.turn,status:'ACTIVE',currentRequestId:null
+}];
+const reservedOpenMarketReview=trade.reviewRequest({
+  requestId:'REQ-OPEN-MARKET-RESERVED',countryId:'BGD',targetCountryId:'SAU',
+  resourceId:'crude_oil',quantity:100,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn
+});
+assert.equal(reservedOpenMarketReview.decision,'REJECT',JSON.stringify(reservedOpenMarketReview));
+assert.equal(reservedOpenMarketReview.reason,'BILATERAL_CONTRACT_RESERVED_SUPPLY');
+assert.equal(reservedOpenMarketReview.bilateralContractReserve.quantity,5000);
+const forgedContractRequest=trade.reviewRequest({
+  requestId:'REQ-FORGED-CONTRACT',countryId:'BGD',targetCountryId:'SAU',
+  resourceId:'crude_oil',quantity:100,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
+  governmentContractId:'BTA-RESERVE-REGRESSION'
+});
+assert.equal(forgedContractRequest.decision,'REJECT',JSON.stringify(forgedContractRequest));
+assert.equal(forgedContractRequest.reason,'BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH');
