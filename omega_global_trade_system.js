@@ -456,10 +456,12 @@ function captureStockFlowPeriod(stateTransaction) {
       if(deliveryQuantity===null||deliveryQuantity<=0)continue;
       if(excludeAgreement&&agreementId===excludeAgreement){
         const tolerance=Math.max(0,Math.min(50,num(contract.quantityTolerancePct)||0))/100;
+        const allowedMin=deliveryQuantity*(1-tolerance);
         const allowedMax=deliveryQuantity*(1+tolerance);
+        const requestedQuantity=num(request.quantity);
         const dueNow=deliveryRequest===requestId || !deliveryRequest && due!==null && due<=currentTurn+1;
         if(buyerId&&canonical(contract.partnerCountryId)===buyerId&&deliveryRequest===requestId&&dueNow&&
-          num(request.quantity)!==null&&num(request.quantity)<=allowedMax+1e-8&&status==='ACTIVE'){
+          requestedQuantity!==null&&requestedQuantity+1e-8>=allowedMin&&requestedQuantity<=allowedMax+1e-8&&status==='ACTIVE'){
           authorizedAgreement=true;
         }else authorizationReason='BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH';
         continue;
