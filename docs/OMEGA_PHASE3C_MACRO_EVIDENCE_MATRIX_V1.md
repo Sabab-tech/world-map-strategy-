@@ -1,7 +1,7 @@
 # OMEGA Phase 3C — Macro-Economic Evidence Matrix v1
 
 **Status:** evidence inventory and implementation boundary recorded; Phase 3C is not closed by this document.  
-**Audited source revision:** `8b32b4c6f8df35861732367818b8bcb00968d430` (`main`, 2026-11-19).  
+**Audited source revision:** `8b32b4c6f8df35861732367818b8bcb00968d430` (`main`, 2026-11-19), with the country-scoped FX follow-up `6dd9238ad26473f5f64d923e7bd07f7c8785c524` verified after merge.  
 **Scope:** current macro, Finance, FX, trade, industrial-output, National Accounts and world-scheduler authorities.  
 **Decision:** do not activate a new Phase 5 stock-flow economy, household/firm agent layer, or GDP formula until Phase 3C evidence/calibration and Phase 4A performance exit criteria are accepted.
 
@@ -125,7 +125,7 @@ The NPC macro checkpoint uses stable input fingerprints, a one-checkpoint-per-co
 
 Global loops must be classified rather than blindly removed:
 
-- Forex's initial registry hydration, market/rate refresh and world banking summary are world-level projections; keep them distinct from country-scoped Finance update work. PR #481 addresses the country-specific Finance update path; it must pass exact-head CI before merge.
+- Forex's initial registry hydration, market/rate refresh and world banking summary remain world-level projections; keep them distinct from country-scoped Finance update work. PR #481 is merged as `6dd9238ad26473f5f64d923e7bd07f7c8785c524`; exact-head Finance, Ministry, Daily Clock, Android Build, Country Registry, Resource Certificate and Language checks all passed.
 - The world scheduler selects bounded active/macro countries; it is not intended to execute all detailed country systems every turn.
 - Resource Economy's world mine totals are a cached aggregate/diagnostic, not permission to run every country's full production engine.
 - Trade / market world summaries are aggregation or price-discovery views; a price-discovery match is not a settled transaction.
