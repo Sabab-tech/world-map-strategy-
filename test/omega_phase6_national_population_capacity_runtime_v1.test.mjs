@@ -258,7 +258,7 @@ test('active-country factory inventory is read once, capacity is evidence-gated 
     },
     trade: { BGD: {} }
   };
-  const { api } = makeHarness({ state });
+  const { api, calls } = makeHarness({ state });
   const summary = await api.getNationalSummary('BGD');
   assert.equal(summary.factories.activePlayerCountry, true);
   assert.equal(summary.factories.startingFactoryUnits, 100);
