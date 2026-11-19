@@ -122,7 +122,7 @@ Detailed live data are read only when the requested country is the selected play
 
 ## 7. Monetary cost and accounting boundaries
 
-The runtime can calculate a resource-level modeled population-consumption cost only when quantity, unit price, currency and price observation evidence are present. Missing price or currency returns `PRICE_UNAVAILABLE` or `CURRENCY_UNAVAILABLE`; the country-level total remains incomplete unless all required rows can be summed in one currency.
+The runtime can calculate both `costPer100kPerDay = ratePer100kPerDay × unitPrice` and the country's modeled daily population-consumption cost only when quantity, unit price, currency and price observation evidence are present. Missing price, currency or observation returns an explicit unavailable status; the country-level total remains incomplete unless all required rows can be summed in one currency.
 
 The existing `companyOperatingCosts` values (worker, electricity, water and maintenance defaults) are simulation defaults. They are shown as defaults, not as a posted national expense. Factory operating costs remain unfinalized until actual employment, utility usage, material-price and currency evidence is available.
 
@@ -151,9 +151,9 @@ The Country Overview receives an additive, collapsible national summary. The pan
 | 6D | Population/factory demand reconciliation | Separate streams; existing national-demand authority reused, no new sum |
 | 6E | Resource and factory cost | Resource-level modeled cost requires quote/currency/observation; factory operating and Treasury actuals remain evidence-gated |
 | 6F | National summary UI | Country Overview summary panel added |
-| 6G | Reconciliation and performance | Automated regression suite and path-filtered CI gate added; full CI result is a merge prerequisite |
+| 6G | Reconciliation and performance | Automated regression suite and path-filtered CI gate added; save/load provenance snapshot persistence remains pending; full CI result is a merge prerequisite |
 
-Phase 6 is not considered fully financially reconciled while factory operating cost and Treasury journal evidence remain incomplete. That limitation must remain visible rather than filled with fabricated amounts.
+Phase 6 is not considered fully financially reconciled while factory operating cost and Treasury journal evidence remain incomplete. Save/load persistence of a per-turn calculation-provenance snapshot is also still a 6G exit item; this read-only increment returns full provenance to the caller but does not yet write a snapshot into the saved game. These limitations must remain visible rather than filled with fabricated amounts.
 
 ## 10. Acceptance tests
 
