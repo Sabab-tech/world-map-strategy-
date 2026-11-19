@@ -1034,6 +1034,10 @@
     },
     getNationalSummary: getNationalSummary,
     renderSummary: renderSummary,
+    saveState: function () {
+      return lastProvenanceSnapshot ? clone(lastProvenanceSnapshot) : null;
+    },
+    loadState: loadProvenanceSnapshot,
     diagnostics: function () {
       return {
         version: VERSION,
@@ -1047,11 +1051,19 @@
         stateMutation: false,
         resourceProfileCount: Object.keys(resourceRules()).length,
         rateCatalogCount: getPer100kRateCatalog().length,
-        uncalibratedRateCount: getPer100kRateCatalog().filter(function (row) { return row.status === 'RATE_NOT_CALIBRATED'; }).length
+        uncalibratedRateCount: getPer100kRateCatalog().filter(function (row) { return row.status === 'RATE_NOT_CALIBRATED'; }).length,
+        savedProvenanceAvailable: !!lastProvenanceSnapshot,
+        restoredProvenancePending: !!restoredProvenanceSnapshot
       };
     }
   });
   root.Omega = root.Omega || {};
   root.Omega.Phase6NationalCapacity = API;
   root.OmegaPhase6NationalCapacity = API;
+  if (Object.prototype.hasOwnProperty.call(root, '__OMEGA_PENDING_PHASE6_NATIONAL_CAPACITY_SAVE__')) {
+    loadProvenanceSnapshot(root.__OMEGA_PENDING_PHASE6_NATIONAL_CAPACITY_SAVE__);
+    try { delete root.__OMEGA_PENDING_PHASE6_NATIONAL_CAPACITY_SAVE__; } catch (_) {
+      root.__OMEGA_PENDING_PHASE6_NATIONAL_CAPACITY_SAVE__ = null;
+    }
+  }
 })(typeof window !== 'undefined' ? window : globalThis);
