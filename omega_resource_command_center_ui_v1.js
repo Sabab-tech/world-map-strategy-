@@ -1982,7 +1982,8 @@
       '<label>Agreement term<select name="durationMonths"><option value="12">12 months</option><option value="24">2 years</option><option value="60">5 years</option><option value="84">7 years</option><option value="120">10 years</option></select></label>' +
       '<label>Delivery interval<select name="intervalDays"><option value="30">Every 30 days</option><option value="90">Every 90 days</option><option value="180">Every 180 days</option><option value="365">Every 365 days</option></select></label>' +
       '<label>Quantity tolerance (%)<input name="quantityTolerancePct" type="number" min="0" max="50" step="0.1" value="0"></label>' +
-      '<label>Early termination penalty (%)<input name="terminationPenaltyPct" type="number" min="0" max="100" step="0.1" value="0"></label></div>' +
+      '<label>Early termination penalty (%)<input name="terminationPenaltyPct" type="number" min="0" max="100" step="0.1" value="0"></label>' +
+      '<label>Relationship penalty if breached (points)<input name="relationshipPenaltyPoints" type="number" min="0" max="100" step="1" value="5"></label></div>' +
       '<p class="omega-rescc-note">The system checks your own inventory, domestic requirements, current commitments, expected supply and buyer foreign-currency capacity before sending. Unknown evidence blocks sending unless you explicitly enable conditional risk acceptance in the API.</p>' +
       '<button class="omega-rescc-button" type="submit"' + ((!bilateral || typeof bilateral.createProposal !== 'function' || !others.length || !resourceOpts) ? ' disabled' : '') + '>Analyze and send proposal</button></form>';
     const bilateralBalanceRows = others.slice(0, 8).map(function (partner) {
@@ -3206,7 +3207,7 @@
               unitPrice: Number(data.get('unitPrice')), priceModel: data.get('priceModel'),
               marketAdjustmentPct: Number(data.get('marketAdjustmentPct')), durationMonths: Number(data.get('durationMonths')),
               intervalDays: Number(data.get('intervalDays')), quantityTolerancePct: Number(data.get('quantityTolerancePct')),
-              terminationPenaltyPct: Number(data.get('terminationPenaltyPct'))
+              terminationPenaltyPct: Number(data.get('terminationPenaltyPct')), relationshipPenaltyPoints: Number(data.get('relationshipPenaltyPoints'))
             })
           : { status: 'UNAVAILABLE', reason: 'BILATERAL_AGREEMENT_RUNTIME_UNAVAILABLE' };
         setOutcome('Bilateral trade proposal', result);
