@@ -6130,5 +6130,47 @@
         ]
       }
     }
+  },
+  "storageDeteriorationPolicy": {
+    "policyId": "OMEGA_STORAGE_DETERIORATION_MODEL_V1",
+    "version": 1,
+    "simulationOnly": true,
+    "authority": "SIMULATED_GAMEPLAY_RULE",
+    "timeBasis": "ELIGIBLE_GAME_TURNS",
+    "rateMeaning": "Fraction of remaining batch quantity deteriorated per eligible game turn; parameters are gameplay calibration, not empirical storage measurements.",
+    "rounding": "SIX_DECIMAL_PLACES_WITH_PER_BATCH_FRACTIONAL_CARRY",
+    "observationContract": "Every warehouse batch with a registered resource identity, batch age, unit, matching inventory lot and reconciled stock balance is measured once per turn. Unregistered or incomplete stock is UNOBSERVED and is never silently treated as zero loss.",
+    "defaultProfile": {
+      "class": "STABLE_CATALOG_COMMODITY",
+      "graceTurns": 0,
+      "lossRatePerEligibleTurn": 0
+    },
+    "profiles": {
+      "grain": {
+        "class": "AGRICULTURAL_PERISHABLE",
+        "graceTurns": 30,
+        "lossRatePerEligibleTurn": 0.001
+      },
+      "vegetable_oil": {
+        "class": "EDIBLE_OIL",
+        "graceTurns": 45,
+        "lossRatePerEligibleTurn": 0.0005
+      },
+      "processed_food": {
+        "class": "FOOD_PERISHABLE",
+        "graceTurns": 5,
+        "lossRatePerEligibleTurn": 0.005
+      },
+      "feed_byproduct": {
+        "class": "ANIMAL_FEED_BYPRODUCT",
+        "graceTurns": 14,
+        "lossRatePerEligibleTurn": 0.002
+      },
+      "organic_processing_waste": {
+        "class": "ORGANIC_RESIDUE",
+        "graceTurns": 0,
+        "lossRatePerEligibleTurn": 0.025
+      }
+    }
   }
 }

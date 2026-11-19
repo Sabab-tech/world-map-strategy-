@@ -1659,6 +1659,7 @@ function recipeFor(resourceId,asset={}){
     cycleDays:dynamicRecipe?(num(base.cycleDays)||1):(num(asset?.cycleDays)||num(base.cycleDays)||1),
     recipeAuthority,recipeMode:asset?.recipeMode||(Object.keys(normalizedInputs).length>1?'MULTI_INPUT':'SINGLE_INPUT'),
     inputUnit:base.inputUnit||asset?.inputUnit||null,outputUnit:base.outputUnit||asset?.outputUnit||null,
+    presentation:clone(base.presentation||null),
     requiresAllInputs:base.requiresAllInputs===true,requiresTrackedInputs:asset?.requireTrackedInputs===true
   };
 }
@@ -2961,6 +2962,23 @@ function settleFactoryInputShipment(countryId,shipment){
   return{status:'DELIVERED',factory,resourceId:rid,sourceQuantity,targetQuantity,inputBatchId,unitBridge:bridge,sourceBatchIds:lineage};
 }
 
+function markShipmentTransportMeasurement(shipment){
+  if(!shipment||typeof shipment!=='object')return shipment;
+  const events=Array.isArray(shipment.lossEvents)?shipment.lossEvents:[];
+  const lost=Math.max(0,num(shipment.lostQuantity)||0);
+  shipment.dispatchedQuantity=Math.max(0,num(shipment.dispatchedQuantity)??(Math.max(0,num(shipment.quantity)||0)+lost));
+  shipment.lossMeasurementStatus=events.length?'MEASURED_EVENTS':'MEASURED_ZERO';
+  shipment.lossMeasurementAuthority=events.length
+    ?'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2':'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1';
+  shipment.lossMeasurementBasis=events.length
+    ?'CONFIRMED_CARGO_RECEIPT_WITH_LOSSES':'MEASURED_ZERO_CARGO_TRANSPORT';
+  shipment.lossMeasurementTurn=turn();
+  shipment.lossMeasurementComplete=true;
+  shipment.transportReceiptQuantity=Math.max(0,num(shipment.quantity)||0);
+  shipment.transportReceiptVerified=true;
+  return shipment;
+}
+
 function advanceShipments(c){
   const cid=canonicalCountry(c);
   if(!cid)return{status:'SKIPPED',reason:'LOGISTICS_COUNTRY_NOT_SELECTED',delivered:0,mineDelivered:0,shipments:[]};
@@ -3052,6 +3070,7 @@ function advanceShipments(c){
       }
       s.status='DELIVERED';s.deliveryStatus='DELIVERED_TO_RAW_WAREHOUSE';s.destinationStatus='RAW_WAREHOUSE_RECEIVED';
       s.deliveredTurn=turn();s.deliveredDate=factoryCurrentGameDate();s.deliveryEventId='MINE-WH-DELIVERY:'+s.shipmentId;
+      markShipmentTransportMeasurement(s);
       mineDelivered.push(clone(s));
       const haulBatch=(Array.isArray(resourceState(cid).batches)?resourceState(cid).batches:[])
         .find(row=>String(row?.batchId||'')===String(s.batchId||''))||null;
@@ -3112,6 +3131,7 @@ function advanceShipments(c){
           saveSiteFlow(cid,flow);
         }
       }
+      markShipmentTransportMeasurement(s);
       n.deliveries.push(clone(s));delivered.push(clone(s));
       if(processing?.status==='COMPLETED'){
         const consumedSourceBatches=new Set((processing.sourceBatchIds||[]).map(String));
@@ -3343,6 +3363,7 @@ function advanceShipments(c){
         saveSiteFlow(cid,flow);
       }
     }
+    markShipmentTransportMeasurement(s);
     n.deliveries.push(clone(s));delivered.push(clone(s));const res=n.reservations?.[s.reservationId];if(res)res.status='DELIVERED';
     emit('OMEGA_RESOURCE_DELIVERY_COMPLETED',cid,{shipmentId:s.shipmentId,siteId:s.siteId,factoryId:s.factoryId,resourceId:rid,
       quantity:factoryInputQuantity,unit:factoryInputUnit,sourceQuantity:quantity,sourceUnit:s.unit,
@@ -4378,6 +4399,38 @@ function writeFactoryOutputUnit(resource,warehouse,productId,unit){
     Object.keys(warehouse.availableByResource||{}).find(key=>tok(key)===tok(productId))||productId;
   if(!warehouseEntry.unit)warehouse.unitsByProduct[warehouseKey]=unit;
 }
+function factoryProductionResidueMeasurement(countryId,factoryId,recipe,outputs,outputUnits,transactionId){
+  const presentation=recipe&&recipe.presentation;
+  const authority='OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1';
+  const base={transactionId,countryId:canonicalCountry(countryId),factoryId:String(factoryId||''),
+    recipeId:recipe&&recipe.recipeId||null,turn:turn(),authority,
+    presentationAuthority:presentation&&presentation.authority||null,
+    reviewStatus:presentation&&presentation.reviewStatus||null};
+  if(!presentation||String(presentation.reviewStatus||'').toUpperCase()!=='REVIEWED_GAMEPLAY_PRESENTATION'||
+    !String(presentation.authority||'').trim()||!Array.isArray(presentation.byProducts))
+    return{status:'UNOBSERVED',authority,basis:'UNOBSERVED_RECIPE_RESIDUE_PRESENTATION',
+      measurements:[],reason:'RECIPE_BYPRODUCT_PRESENTATION_NOT_REVIEWED',...base};
+  const measurements=[];
+  for(const rawId of presentation.byProducts){
+    const outputId=String(rawId||'').trim(),key=Object.keys(outputs||{}).find(x=>tok(x)===tok(outputId)),
+      quantity=key?num(outputs[key]):null,unit=key?String(outputUnits&&outputUnits[key]||'').trim():'';
+    if(!outputId||!key||quantity===null||quantity<=1e-9||!unit)
+      return{status:'UNOBSERVED',authority,basis:'UNOBSERVED_RECIPE_RESIDUE_OUTPUT',
+        measurements:[],reason:'RECIPE_RESIDUE_OUTPUT_NOT_PHYSICALLY_COMMITTED',
+        resourceId:outputId||null,outputKey:key||null,...base};
+    const batchId='OUTPUT:'+transactionId+':'+key;
+    measurements.push({eventId:'RESIDUE:'+transactionId+':'+tok(key),sourceEventId:transactionId,
+      sourceType:'PRODUCTION_RESIDUE',productRole:'BY_PRODUCT_RESIDUE',resourceId:key,
+      quantity:Number(quantity.toFixed(6)),unit,batchId,transactionId,factoryId:String(factoryId||''),
+      recipeId:recipe&&recipe.recipeId||null,turn:turn(),periodId:'GAME_TURN_'+turn(),
+      authority,presentationAuthority:presentation.authority,
+      evidenceBasis:'REVIEWED_RECIPE_BYPRODUCT_OUTPUT',status:'MEASURED',physicalMutationCommitted:true});
+  }
+  return{status:measurements.length?'MEASURED_EVENTS':'MEASURED_ZERO',
+    authority,basis:measurements.length?'MEASURED_PROCESS_OUTPUT_RESIDUE':'MEASURED_ZERO_PROCESS_OUTPUT_RESIDUE',
+    measurements,...base};
+}
+
 function commitFactoryCycleImmediately(input={}){
   const cid=canonicalCountry(input.countryId),fid=String(input.factoryId||''),asset=(input._asset&&String(input._asset?.id||input._asset?.assetId||input._asset?.projectId)===fid)?input._asset:factoryAssets(cid).find(a=>String(a?.id||a?.assetId||a?.projectId)===fid);
   if(!asset)return{status:'BLOCKED',reason:'FACTORY_NOT_FOUND'};
@@ -4527,6 +4580,7 @@ function commitFactoryCycleImmediately(input={}){
   asset.inputInventory=factoryStock;
   const sequence=Math.max(0,Number(n.factoryRunSequence)||0)+1;n.factoryRunSequence=sequence;
   const transactionId='FACTORYRUN:'+cid+':'+fid+':T'+turn()+':'+sequence;
+  const residueMeasurement=factoryProductionResidueMeasurement(cid,fid,recipe,output,outputUnitPlan.units,transactionId);
   const ownershipParties=factoryOwnershipParties(asset,cid);
   const finishedWarehouse=r.processedWarehouse||(r.processedWarehouse={warehouseId:'WH-'+cid+'-PROCESSED',countryId:cid,type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+cid+':PROCESSED',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]});
   finishedWarehouse.availableByResource=finishedWarehouse.availableByResource||{};finishedWarehouse.storedBatchIds=Array.isArray(finishedWarehouse.storedBatchIds)?finishedWarehouse.storedBatchIds:[];
@@ -4537,7 +4591,9 @@ function commitFactoryCycleImmediately(input={}){
     const inventoryKey=outputInventoryKeys[outputId]||outputId;
     r.inventory[inventoryKey]=(num(r.inventory[inventoryKey])||0)+outQty;
     const batchId='OUTPUT:'+transactionId+':'+outputId,roots=[...new Set(sourceBatchIds.filter(Boolean))],unit=outputUnitPlan.units[outputId];
+    const residueEvent=residueMeasurement.measurements.find(event=>tok(event.resourceId)===tok(outputId));
     const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit,stage:'FINISHED',status:'AVAILABLE',countryId:cid,
+      ...(residueEvent?{productRole:'BY_PRODUCT_RESIDUE',residueMeasurementEventId:residueEvent.eventId}:{}),
       sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
       ownerCompanyId:ownershipParties.ownerCompanyId,operatorCompanyId:ownershipParties.operatorCompanyId,
       ownerAttributionStatus:ownershipParties.ownerAttributionStatus,
@@ -4551,7 +4607,8 @@ function commitFactoryCycleImmediately(input={}){
       ownerAttributionStatus:row.ownerAttributionStatus,sourceFactoryId:fid,
       sourcePrivateProposalId:row.sourcePrivateProposalId,sourcePrivateDecisionId:row.sourcePrivateDecisionId,
       sourcePrivateFundingId:row.sourcePrivateFundingId,sourcePrivatePermitId:row.sourcePrivatePermitId,sourceBatchIds:roots,status:'AVAILABLE',
-      provenance:clone(row.provenance),createdTurn:turn()};
+      provenance:clone(row.provenance),createdTurn:turn(),
+      ...(residueEvent?{productRole:'BY_PRODUCT_RESIDUE',residueMeasurementEventId:residueEvent.eventId}:{})};
     const warehouseKey=outputWarehouseKeys[outputId]||outputId;
     finishedWarehouse.availableByResource[warehouseKey]=(num(finishedWarehouse.availableByResource[warehouseKey])||0)+outQty;
     writeFactoryOutputUnit(r,finishedWarehouse,outputId,unit);
@@ -4564,7 +4621,10 @@ function commitFactoryCycleImmediately(input={}){
     ownerAttributionStatus:ownershipParties.ownerAttributionStatus,resourceId:rid,
     inputQuantity:need,inputQuantities:{[rid]:need},requestedProduction:requested,outputs:output,outputQuantities:clone(output),recipe:clone(recipe),
     productionConstraints:clone(productionConstraints),
-    cycleDays:recipe.cycleDays,turn:turn(),authority:'INDUSTRIAL_NETWORK_SIMULATION',status:'COMPLETED',inputSource:fromFactoryInput?'DELIVERED_SHIPMENT':'CENTRAL_INVENTORY',
+    cycleDays:recipe.cycleDays,turn:turn(),authority:'INDUSTRIAL_NETWORK_SIMULATION',status:'COMPLETED',
+    residueMeasurementStatus:residueMeasurement.status,residueMeasurementBasis:residueMeasurement.basis,
+    residueMeasurementAuthority:residueMeasurement.authority,residueMeasurements:clone(residueMeasurement.measurements),
+    inputSource:fromFactoryInput?'DELIVERED_SHIPMENT':'CENTRAL_INVENTORY',
     inputTrackingStatus,consumedInputs:clone(consumedInputs),sourceBatchIds:[...new Set(sourceBatchIds.filter(Boolean))],createdBatchIds:created.map(x=>x.batchId),
     factoryType:String(asset.factoryType||asset.type||asset.facilityType||'').toUpperCase(),
     privateCapitalCost:num(asset.privateCapitalCost??asset.constructionCost),
@@ -4579,8 +4639,18 @@ function commitFactoryCycleImmediately(input={}){
     sourceBatchIds:record.sourceBatchIds,outputQuantities:clone(output),
     createdBatchIds:record.createdBatchIds,turn:turn(),authority:'SIMULATED_PROCESSING_YIELD',status:'AVAILABLE_TO_ECONOMY'});
   while(r.finishedGoodsLedger.length>2048)r.finishedGoodsLedger.shift();
+  r.productionResidueLedger=Array.isArray(r.productionResidueLedger)?r.productionResidueLedger:[];
+  r.productionResidueLedger.push({schemaVersion:1,transactionId,countryId:cid,factoryId:fid,recipeId:record.recipeId||null,
+    turn:turn(),periodId:'GAME_TURN_'+turn(),status:residueMeasurement.status,basis:residueMeasurement.basis,
+    authority:residueMeasurement.authority,presentationAuthority:residueMeasurement.presentationAuthority||null,
+    measurements:clone(residueMeasurement.measurements)});
+  while(r.productionResidueLedger.length>2048)r.productionResidueLedger.shift();
   const inventoryLedger=Array.isArray(r.inventoryLedger)?r.inventoryLedger:[];
-  inventoryLedger.push({type:'FACTORY_PROCESSING_COMMITTED',transactionId,factoryId:fid,resourceId:rid,inputQuantity:need,outputs:clone(output),sourceBatchIds:record.sourceBatchIds,createdBatchIds:record.createdBatchIds,turn:turn(),periodId:'GAME_TURN_'+turn(),lossMeasurementStatus:'UNOBSERVED'});
+  inventoryLedger.push({type:'FACTORY_PROCESSING_COMMITTED',transactionId,factoryId:fid,resourceId:rid,inputQuantity:need,
+    inputQuantities:{[rid]:need},outputs:clone(output),sourceBatchIds:record.sourceBatchIds,createdBatchIds:record.createdBatchIds,
+    residueMeasurements:clone(residueMeasurement.measurements),residueMeasurementStatus:residueMeasurement.status,
+    turn:turn(),periodId:'GAME_TURN_'+turn(),lossMeasurementStatus:residueMeasurement.status,
+    lossMeasurementAuthority:residueMeasurement.authority,lossMeasurementBasis:residueMeasurement.basis});
   while(inventoryLedger.length>2048)inventoryLedger.shift();r.inventoryLedger=inventoryLedger;
   invalidateStockLossCoverage(r,'PRODUCTION','INVALIDATED_BY_NEW_PRODUCTION_EVENT');
   invalidateStockLossCoverage(r,'PRODUCTION','INVALIDATED_BY_NEW_PRODUCTION_EVENT');
@@ -4758,13 +4828,16 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   const batches=Array.isArray(r.batches)?r.batches:(r.batches=[]);
   const inventoryLots=r.inventoryLots&&typeof r.inventoryLots==='object'?r.inventoryLots:(r.inventoryLots={});
   const roots=[...new Set(sourceBatchIds.filter(Boolean))],sites=[...new Set(sourceSiteIds.filter(Boolean))],created=[];
+  const residueMeasurement=factoryProductionResidueMeasurement(cid,fid,recipe,output,outputUnitPlan.units,transactionId);
   const companyId=ownershipParties.operatorCompanyId;
   for(const [outputId,outQty] of Object.entries(output)){
     if(!(outQty>1e-9))continue;
     const inventoryKey=outputInventoryKeys[outputId]||outputId;
     r.inventory[inventoryKey]=(num(r.inventory[inventoryKey])||0)+outQty;
     const batchId='OUTPUT:'+transactionId+':'+outputId;
+    const residueEvent=residueMeasurement.measurements.find(event=>tok(event.resourceId)===tok(outputId));
     const row={batchId,resourceId:outputId,materialIdentity:outputId,quantity:outQty,remainingQuantity:outQty,unit:outputUnitPlan.units[outputId],
+      ...(residueEvent?{productRole:'BY_PRODUCT_RESIDUE',residueMeasurementEventId:residueEvent.eventId}:{}),
       stage:'FINISHED',status:'AVAILABLE',countryId:cid,sourceCountryId:cid,originCountryId:cid,ownerCountryCode:cid,destinationCountryId:cid,
       ownerCompanyId:ownershipParties.ownerCompanyId,operatorCompanyId:ownershipParties.operatorCompanyId,
       ownerAttributionStatus:ownershipParties.ownerAttributionStatus,
@@ -4781,7 +4854,8 @@ function commitMultiInputFactoryCycleImmediately(input={}){
       operatorCompanyId:row.operatorCompanyId,ownerAttributionStatus:row.ownerAttributionStatus,sourceFactoryId:fid,
       sourcePrivateProposalId:row.sourcePrivateProposalId,sourcePrivateDecisionId:row.sourcePrivateDecisionId,
       sourcePrivateFundingId:row.sourcePrivateFundingId,sourcePrivatePermitId:row.sourcePrivatePermitId,sourceBatchIds:roots,sourceSiteIds:sites,status:'AVAILABLE',
-      provenance:clone(row.provenance),createdTurn:turn()};
+      provenance:clone(row.provenance),createdTurn:turn(),
+      ...(residueEvent?{productRole:'BY_PRODUCT_RESIDUE',residueMeasurementEventId:residueEvent.eventId}:{})};
     const warehouseKey=outputWarehouseKeys[outputId]||outputId;
     finished.availableByResource[warehouseKey]=(num(finished.availableByResource[warehouseKey])||0)+outQty;
     writeFactoryOutputUnit(r,finished,outputId,outputUnitPlan.units[outputId]);
@@ -4799,6 +4873,8 @@ function commitMultiInputFactoryCycleImmediately(input={}){
     ownerAttributionStatus:ownershipParties.ownerAttributionStatus,resourceId:requestedResource,
     inputQuantity:totalInput,inputQuantities,requestedProduction:productionQuantity,outputs:clone(output),outputQuantities:clone(output),
     recipe:clone(recipe),productionConstraints:clone(productionConstraints),
+    residueMeasurementStatus:residueMeasurement.status,residueMeasurementBasis:residueMeasurement.basis,
+    residueMeasurementAuthority:residueMeasurement.authority,residueMeasurements:clone(residueMeasurement.measurements),
     cycleDays:recipe.cycleDays,turn:turn(),authority:'SIMULATED_DOWNSTREAM_PRODUCTION',status:'COMPLETED',
     inputSource:'TRACKED_FACTORY_INPUT',inputTrackingStatus:'TRACKED_FACTORY_INPUT_LOTS',
     consumedInputs:clone(consumedInputs),sourceBatchIds:roots,sourceSiteIds:sites,createdBatchIds:created.map(x=>x.batchId),
@@ -4816,9 +4892,19 @@ function commitMultiInputFactoryCycleImmediately(input={}){
     outputQuantities:clone(output),createdBatchIds:record.createdBatchIds,turn:turn(),authority:'SIMULATED_DOWNSTREAM_PRODUCTION',
     recipeId:record.recipeId,status:'AVAILABLE_TO_ECONOMY'});
   while(r.finishedGoodsLedger.length>2048)r.finishedGoodsLedger.shift();
+  r.productionResidueLedger=Array.isArray(r.productionResidueLedger)?r.productionResidueLedger:[];
+  r.productionResidueLedger.push({schemaVersion:1,transactionId,countryId:cid,factoryId:fid,recipeId:record.recipeId||null,
+    turn:turn(),periodId:'GAME_TURN_'+turn(),status:residueMeasurement.status,basis:residueMeasurement.basis,
+    authority:residueMeasurement.authority,presentationAuthority:residueMeasurement.presentationAuthority||null,
+    measurements:clone(residueMeasurement.measurements)});
+  while(r.productionResidueLedger.length>2048)r.productionResidueLedger.shift();
   r.inventoryLedger=Array.isArray(r.inventoryLedger)?r.inventoryLedger:[];
   r.inventoryLedger.push({type:'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED',transactionId,factoryId:fid,recipeId:record.recipeId,
-    inputQuantities:clone(inputQuantities),outputs:clone(output),sourceBatchIds:roots,createdBatchIds:record.createdBatchIds,turn:turn(),periodId:'GAME_TURN_'+turn(),lossMeasurementStatus:'UNOBSERVED'});
+    inputQuantities:clone(inputQuantities),inputs:clone(needs),outputs:clone(output),sourceBatchIds:roots,
+    createdBatchIds:record.createdBatchIds,residueMeasurements:clone(residueMeasurement.measurements),
+    residueMeasurementStatus:residueMeasurement.status,turn:turn(),periodId:'GAME_TURN_'+turn(),
+    lossMeasurementStatus:residueMeasurement.status,lossMeasurementAuthority:residueMeasurement.authority,
+    lossMeasurementBasis:residueMeasurement.basis});
   while(r.inventoryLedger.length>2048)r.inventoryLedger.shift();
   invalidateStockLossCoverage(r,'PRODUCTION','INVALIDATED_BY_NEW_PRODUCTION_EVENT');
   invalidateStockLossCoverage(r,'PRODUCTION','INVALIDATED_BY_NEW_PRODUCTION_EVENT');
@@ -6963,7 +7049,20 @@ function runCountryTurn(countryValue){
     const shipments=await advanceShipments(cid);
     const projects=await advanceProjects(cid);
     const factory=await processPendingFactoryInputs(cid);
-    return{status:'COMPLETED',countryId:cid,turn:turn(),shipments,projects,factory,
+    const catalog=cat()||{},resourceIds=new Set([
+      ...Object.keys(catalog.resourceRules||{}),...Object.keys(catalog.processingRules||{}),
+      ...Object.keys(catalog.productUseCatalog?.products||{}),...Object.keys(catalog.externalInputSources||{})
+    ]);
+    Object.values(catalog.downstreamFactoryRecipes||{}).forEach(recipe=>{
+      Object.keys(recipe?.inputs||{}).forEach(id=>resourceIds.add(id));
+      Object.keys(recipe?.outputs||{}).forEach(id=>resourceIds.add(id));
+    });
+    const economy=g.Omega?.ResourceEconomy||g.OmegaResourceEconomy;
+    const storageDeterioration=economy&&typeof economy.processStorageDeterioration==='function'
+      ?economy.processStorageDeterioration(cid,{policy:catalog.storageDeteriorationPolicy,
+        knownResourceIds:[...resourceIds]})
+      :{status:'UNAVAILABLE',reason:'RESOURCE_STORAGE_DETERIORATION_API_UNAVAILABLE'};
+    return{status:'COMPLETED',countryId:cid,turn:turn(),shipments,projects,factory,storageDeterioration,
       employment:factory.employmentSummary||null};
   });
   countryTurnTail=task.then(()=>undefined,()=>undefined);
