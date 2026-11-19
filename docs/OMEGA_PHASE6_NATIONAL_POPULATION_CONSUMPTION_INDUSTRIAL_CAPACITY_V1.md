@@ -1,7 +1,7 @@
 # OMEGA Phase 6 — National Population, Consumption & Industrial Capacity
 
 **Specification:** OMEGA_PHASE6_NATIONAL_POPULATION_CONSUMPTION_INDUSTRIAL_CAPACITY_V1  
-**Status:** Initial implementation integrated on a feature branch; CI verification pending  
+**Status:** Initial implementation merged to `main`; settled-import reconciliation and source-change CI coverage extended in this follow-up  
 **Scope:** 197 core countries, 21 canonical factory types, the existing 41-resource profile set
 
 ## 1. Objective and invariants
