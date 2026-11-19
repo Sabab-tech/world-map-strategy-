@@ -103,22 +103,27 @@ function assessTradePosition(a,quantity){
    buyerCash=num(value(buyer,'finance','available'))??num(value(buyer,'finance','reserves')),
    sellerStock=recordValue(seller,'resource','inventory',rid),
    sellerReserve=recordValue(seller,'resource','reserves',rid),
-   sellerFree=sellerStock===null?null:Math.max(0,sellerStock-Math.max(0,sellerReserve||0)),
+   sellerFree=sellerStock===null||sellerReserve===null?null:Math.max(0,sellerStock-Math.max(0,sellerReserve)),
+   buyerRoute=routeCapacity(buyer,rid),
    buyerImport=resourceIntelligence(seller,buyer,rid).importDemand,
    estimatedBuyerCost=q!==null&&num(a.terms.unitPrice)!==null&&fx!==null?q*num(a.terms.unitPrice)*fx:null,
    blockers=[],unknown=[];
  if(relationRow&&(relationRow.war_state===true||relationRow.sanctions===true))blockers.push('WAR_OR_SANCTIONS');
+ if(sellerStock!==null&&q!==null&&sellerStock<q)blockers.push('SELLER_TOTAL_STOCK_BELOW_REQUEST');
  if(sellerFree!==null&&q!==null&&sellerFree<q)blockers.push('SELLER_FREE_STOCK_BELOW_REQUEST');
+ if(buyerRoute.status==='KNOWN'&&num(buyerRoute.value)<=0)blockers.push('BUYER_TRADE_ROUTE_UNAVAILABLE');
  if(buyerCash!==null&&estimatedBuyerCost!==null&&buyerCash<estimatedBuyerCost)blockers.push('BUYER_LIQUIDITY_BELOW_ESTIMATED_COST');
  if(!relationRow)unknown.push('DIPLOMATIC_RELATION_NOT_OBSERVED');
  if(sellerStock===null)unknown.push('SELLER_STOCK_NOT_OBSERVED');
- if(sellerReserve===null)unknown.push('SELLER_RESERVE_NOT_OBSERVED');
+ if(sellerReserve===null)unknown.push('SELLER_RESERVED_STOCK_NOT_OBSERVED');
+ if(buyerRoute.status==='UNKNOWN')unknown.push('BUYER_ROUTE_CAPACITY_NOT_OBSERVED');
  if(buyerCash===null)unknown.push('BUYER_LIQUIDITY_NOT_OBSERVED');
  if(fx===null)unknown.push('BILATERAL_FX_NOT_OBSERVED');
  if(buyerImport.status==='UNKNOWN')unknown.push('BUYER_IMPORT_DEMAND_NOT_OBSERVED');
  return{status:blockers.length?'BLOCKED':unknown.length?'REVIEW_REQUIRED':'READY',
   buyerCountryId:buyer,sellerCountryId:seller,resourceId:rid,quantity:q,
   sellerFreeStock:field(sellerFree,'declared resource unit',sellerFree===null?'UNKNOWN':'KNOWN','resource.inventory − resource.reserves'),
+  buyerRouteCapacity:buyerRoute,
   buyerLiquidity:field(buyerCash,'buyer local currency',buyerCash===null?'UNKNOWN':'KNOWN','finance.available / finance.reserves'),
   estimatedBuyerCost:field(estimatedBuyerCost,'buyer local currency',estimatedBuyerCost===null?'UNKNOWN':'ESTIMATED','agreed unit price × quantity × recorded FX'),
   buyerImportDemand:buyerImport,fxRate:field(fx,'buyer currency per seller currency',fx===null?'UNKNOWN':'KNOWN','OmegaGlobalTrade.fxRate'),
