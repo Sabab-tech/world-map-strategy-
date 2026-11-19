@@ -129,7 +129,9 @@ The runtime can calculate both `costPer100kPerDay = ratePer100kPerDay × unitPri
 
 The existing `companyOperatingCosts` values (worker, electricity, water and maintenance defaults) remain simulation defaults. Phase 6 now reads only current-turn `PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL` rows with valid, balanced private-firm Finance journals and an explicit company and factory identity. These are displayed by currency as recorded accrual evidence. They are not converted into a daily operating rate, do not represent government-factory expenditure, and do not establish complete national factory operating costs. If no qualifying rows exist, the status remains `NOT_FINALIZED`.
 
-Actual Treasury expenditure is read from current-turn government `EXPENSE` and `EXPENSE_ROLLBACK` records only when the Finance source row has a valid, balanced, posted government journal. Gross expenses, reversals and net recorded amounts are shown separately by currency. Borrowing, debt repayment, budget transfers, tax models and unjournalled entries are not counted as operating expense. The Finance Ministry retains a bounded ledger window (up to 500 rows), so this projection is explicitly partial; it never presents a complete national Treasury total or an unverified sum. The full actual Treasury expenditure amount remains unestablished until complete period-level source coverage and reconciliation are available.
+Actual Treasury expenditure is established from the Finance Ministry's `fiscalPeriodAccount` only when the account is `COMPLETE_FROM_PERIOD_START`, has a `GAME_STATE` opening balance, is marked `GAME_STATE_RECONCILED`, and its opening balance, recorded inflows, recorded outflows and closing Treasury balance independently reconcile. Budgetary expenditure is explicitly defined as government spending plus interest paid. Principal repayments and external cash debits are reported separately and excluded from that expense figure. If the fiscal-period account is modeled, incomplete, stale in provenance, or unreconciled, the full expenditure amount stays unavailable.
+
+Current-turn government `EXPENSE` and `EXPENSE_ROLLBACK` journals are shown separately as supplemental evidence only when the source row has a valid, balanced, posted government journal. Gross expenses, reversals and net recorded amounts are shown by currency. The Finance Ministry retains a bounded transaction ledger (up to 500 rows), so current-turn detail alone never establishes a complete national total. Borrowing, budget transfers, debt principal repayments and tax receipts are not counted as budgetary expense.
 
 A modeled consumption cost is never represented as an actual Treasury expenditure.
 
@@ -176,6 +178,7 @@ The dedicated regression suite verifies:
 - Separate population and factory demand, with no naive summation.
 - Price/currency evidence gates and the separation of modeled cost from Treasury postings.
 - Current-turn government expense/reversal and private-factory operating-cost accrual projection only when every source journal is balanced, posted, correctly identified and currency-scoped; bounded source-window and non-completion statuses are preserved.
+- Actual Treasury budgetary expenditure is established only from a complete, non-modeled, reconciled Finance fiscal-period account; it is government spending plus interest paid, with principal repayment excluded.
 - In-transit international import quantities remain explicitly unknown until the trade runtime persists durable shipment identity/status evidence.
 - Read-only authoritative world-state behavior and the absence of a new scheduler.
 - Phase 6 provenance save/load checksum coverage, legacy-save compatibility, and load-time fingerprint revalidation.
