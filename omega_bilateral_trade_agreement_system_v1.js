@@ -640,9 +640,20 @@
     var liquidityScore = clamp(funds / Math.max(buyerCost, 1e-9), 0, 1);
     var priceScore = marketPrice === null ? 0.5 : clamp(proposal.unitPrice / Math.max(marketPrice, 1e-9), 0, 1);
     var relationshipScore = rel === null ? 0.5 : rel;
+    var partnerContracts = contractList(target).filter(function (row) { return canonical(row.partnerCountryId) === canonical(proposal.requestorCountryId); });
+    var historyCompleted = partnerContracts.reduce(function (sum, row) { return sum + (num(row.completedDeliveries) || 0); }, 0);
+    var historyFailed = partnerContracts.reduce(function (sum, row) { return sum + (num(row.failedDeliveries) || 0); }, 0);
+    var reliabilityScore = historyCompleted + historyFailed > 0 ? clamp(historyCompleted / (historyCompleted + historyFailed), 0, 1) : 0.5;
+    var relationshipHistoryScore = clamp(0.70 * relationshipScore + 0.30 * reliabilityScore + Math.min(partnerContracts.length, 5) * 0.02, 0, 1);
+    var bilateralBalance = tradeBalance(target, canonical(proposal.requestorCountryId));
+    var bilateralBalanceScore = 0.5;
+    if (bilateralBalance && bilateralBalance.settledTransactionCount > 0) {
+      if (target === buyer) bilateralBalanceScore = bilateralBalance.tradeBalance >= 0 ? 0.65 : 0.35;
+      else bilateralBalanceScore = bilateralBalance.tradeBalance <= 0 ? 0.70 : 0.40;
+    }
     var strategicScore = demandScore;
-    var totalScore = 0.25 * supplyScore + 0.25 * liquidityScore + 0.25 * priceScore +
-      0.15 * strategicScore + 0.10 * relationshipScore;
+    var totalScore = 0.20 * supplyScore + 0.20 * liquidityScore + 0.20 * priceScore +
+      0.15 * strategicScore + 0.10 * relationshipHistoryScore + 0.10 * bilateralBalanceScore + 0.05 * reliabilityScore;
     var alternativeEvidence = { status: 'UNKNOWN', betterSupplierCount: 0, competingBuyerCount: 0, bestAlternativePrice: null };
     if (target === buyer) {
       var supplierOptions = null;
@@ -693,8 +704,10 @@
       exportableSupply: available, buyerAvailableForeignCurrency: funds, buyerSettlementCost: buyerCost,
       observedSellerMarketPrice: marketPrice, buyerDemandPerInterval: demandNeed,
       alternativeMarketEvidence: alternativeEvidence, relationshipScore: rel,
-      weights: { supply: 0.25, liquidity: 0.25, price: 0.25, buyerDemand: 0.15, relationship: 0.10 },
-      score: Number(totalScore.toFixed(4)), scoreBasis: 'DETERMINISTIC_MULTI_FACTOR'
+      existingPartnerAgreementCount: partnerContracts.length, partnerDeliveryReliability: reliabilityScore,
+      relationshipHistoryScore: relationshipHistoryScore, bilateralTradeBalance: bilateralBalance, bilateralBalanceScore: bilateralBalanceScore,
+      weights: { supply: 0.20, liquidity: 0.20, price: 0.20, buyerDemand: 0.15, relationshipHistory: 0.10, bilateralTradeBalance: 0.10, deliveryReliability: 0.05 },
+      score: Number(totalScore.toFixed(4)), scoreBasis: 'DETERMINISTIC_MULTI_FACTOR_WITH_HISTORY_AND_BILATERAL_BALANCE'
     };
     if (adjustments.length) {
       result.decision = 'COUNTER';
