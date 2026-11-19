@@ -992,7 +992,7 @@ test('Phase 5 reversals, borrowing, repayment and World Bank debt service use co
   assert.equal(reversal.sectorJournalV1.status,'POSTED');
   assert.deepEqual(reversal.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]),[
     ['DEBIT','GOVERNMENT:TREASURY_CASH',25000],
-    ['CREDIT','GOVERNMENT:EXPENSE:interior:maintenance',25000]
+    ['CREDIT','GOVERNMENT:OPERATING_EXPENSE:interior:maintenance',25000]
   ]);
   assert.equal(reversal.sectorJournalV1.referenceTransactionId,spend.transactionId);
 
@@ -1006,7 +1006,7 @@ test('Phase 5 reversals, borrowing, repayment and World Bank debt service use co
   const defenseReversal=ledger.find(row=>row.transactionId===defenseRollback.transactionId);
   assert.deepEqual(defenseReversal.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]),[
     ['DEBIT','GOVERNMENT:TREASURY_CASH',12500],
-    ['CREDIT','GOVERNMENT:EXPENSE:defense:maintenance',12500]
+    ['CREDIT','GOVERNMENT:OPERATING_EXPENSE:defense:maintenance',12500]
   ]);
 
   const borrowing=finance.applyAction({type:'borrow',countryId:'BGD',amountUsd:100000,
