@@ -104,11 +104,21 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
       }
       const handler = handlers.get(source + ':' + type);
       if (!handler) return { status: 'UNHANDLED', result: { accepted: false, reason: 'HANDLER_NOT_FOUND' } };
-      const domain = globalThis.Game.state[source] || (globalThis.Game.state[source] = {});
-      const countryState = domain[country] || (domain[country] = {});
+      if (!globalThis.Game.state[source]) globalThis.Game.state[source] = {};
+      if (!globalThis.Game.state[source][country]) globalThis.Game.state[source][country] = {};
       const tx = {
-        get(path) { return structuredClone(readPath(countryState, path)); },
-        set(path, value) { writePath(countryState, path, value); }
+        get(path) {
+          const parts = String(path || '').split('.');
+          const domainName = parts.shift();
+          return structuredClone(readPath(globalThis.Game.state[domainName] && globalThis.Game.state[domainName][country], parts.join('.')));
+        },
+        set(path, value) {
+          const parts = String(path || '').split('.');
+          const domainName = parts.shift();
+          if (!globalThis.Game.state[domainName]) globalThis.Game.state[domainName] = {};
+          if (!globalThis.Game.state[domainName][country]) globalThis.Game.state[domainName][country] = {};
+          writePath(globalThis.Game.state[domainName][country], parts.join('.'), value);
+        }
       };
       try {
         const result = handler({ commandId: options.commandId || type + '-' + country, commandType: type, payload: structuredClone(payload) },
@@ -185,7 +195,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(report.status, 'CURRENT');
   assert.equal(report.report.products[0].stock.status, 'KNOWN');
   assert.equal(report.report.products[0].expectedPrice.status, 'KNOWN');
-  assert.equal(report.report.alternativeMarkets.competingBuyersForExports[0].status, 'UNKNOWN');
+  assert.equal(report.report.alternativeMarkets.competingBuyersForExports[0].status, 'OBSERVED');
   assert.equal(report.report.generatedTurn, 0);
 
   const feasible = bilateral.previewProposal('BGD', {
@@ -260,7 +270,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
     intervalDays: 30, intervalTurns: 30
   });
   assert.equal(competingOffer.decision, 'ACCEPT', JSON.stringify(competingOffer));
-  assert.equal(competingOffer.decisionFactors.alternativeMarketEvidence.competingBuyerCount, 0);
+  assert.equal(competingOffer.decisionFactors.alternativeMarketEvidence.competingBuyerCount, 1);
 
   const reportChangeStock = globalThis.Game.state.resource.SAU.inventory.crude_oil;
   globalThis.Game.state.resource.SAU.inventory.crude_oil = reportChangeStock - 1;
@@ -315,6 +325,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.ok(globalThis.Game.state.foreign.BGD.relationAdjustments.SAU.length > 0);
   assert.ok(globalThis.Game.state.foreign.SAU.relationAdjustments.BGD.length > 0);
 
+  assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
   const forceMajeureProposal = bilateral.createProposal('BGD', {
     proposalId: 'BTP-FORCE-MAJEURE', targetCountryId: 'SAU', direction: 'IMPORT',
     resourceId: 'crude_oil', quantityPerDelivery: 50, unitPrice: 100,
