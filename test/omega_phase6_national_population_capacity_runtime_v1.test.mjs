@@ -268,8 +268,12 @@ test('active-country factory inventory is read once, capacity is evidence-gated 
   assert.equal(summary.factories.liveFactoryStatusCounts.underConstruction, 1);
   assert.equal(summary.factories.ownershipCounts.governmentOwned, 1);
   assert.equal(summary.factories.ownershipCounts.privateOwned, 1);
-  assert.equal(summary.factories.ratedCapacityPerDay, 2000);
-  assert.equal(summary.factories.effectiveCapacityPerDay, 400);
+  assert.equal(summary.factories.ratedCapacityByFactoryType.TEXTILE_GARMENT_MILL.ratedCapacityPerDay, 1000);
+  assert.equal(summary.factories.ratedCapacityByFactoryType.STEEL_AND_ALLOY_WORKS.ratedCapacityPerDay, 1000);
+  assert.equal(summary.factories.effectiveCapacityByFactoryType.TEXTILE_GARMENT_MILL.effectiveCapacityPerDay, 400);
+  assert.equal(summary.factories.effectiveCapacityByFactoryType.STEEL_AND_ALLOY_WORKS.effectiveCapacityPerDay, 0);
+  assert.equal(summary.factories.capacityAggregateStatus, 'CROSS_FACTORY_TYPE_UNITS_NOT_ADDITIVE');
+  assert.equal(summary.factories.staticBaselineCapacityByType.TEXTILE_GARMENT_MILL.unit, 'SIMULATION_RESOURCE_UNIT');
   assert.deepEqual(calls.factoryRegistryQueries, ['BGD']);
   assert.equal(summary.production.outputByProductThisTurn.garments, 100);
   assert.equal(summary.production.outputByProductThisTurn.shoes, 20);
@@ -284,6 +288,32 @@ test('active-country factory inventory is read once, capacity is evidence-gated 
   assert.equal(reconciliation.stockCoverageDays, 2);
   assert.equal(reconciliation.inboundShipmentQuantity, null);
   assert.equal(reconciliation.inboundShipmentEvidenceStatus, 'NOT_EXPOSED_BY_NATIONAL_DEMAND_RUNTIME');
+});
+
+test('ambiguous utilization ratios and missing live capacity remain unavailable', async () => {
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {},
+    economy: {
+      BGD: { productionAssets: [
+        { id: 'AMBIGUOUS-RATIO', factoryType: 'TEXTILE_GARMENT_MILL', status: 'OPERATIONAL',
+          capacityPerDay: 500, utilizationRatio: 1.5 },
+        { id: 'UNKNOWN-CAPACITY', factoryType: 'TEXTILE_GARMENT_MILL', status: 'OPERATIONAL',
+          utilizationRatio: 0.5 }
+      ] }
+    },
+    resource: { BGD: {} },
+    trade: { BGD: {} }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const effective = summary.factories.effectiveCapacityByFactoryType.TEXTILE_GARMENT_MILL;
+  const rated = summary.factories.ratedCapacityByFactoryType.TEXTILE_GARMENT_MILL;
+  assert.equal(effective.effectiveCapacityPerDay, null);
+  assert.equal(effective.status, 'UTILIZATION_OR_CAPACITY_UNOBSERVED');
+  assert.equal(rated.ratedCapacityPerDay, null);
+  assert.equal(rated.status, 'CAPACITY_EVIDENCE_INCOMPLETE');
+  assert.equal(summary.factories.liveAssets.find(row => row.factoryId === 'AMBIGUOUS-RATIO').utilizationRatio, null);
 });
 
 test('non-player countries expose static baselines only and do not read detailed live factory assets', async () => {
