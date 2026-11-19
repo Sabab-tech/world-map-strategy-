@@ -236,12 +236,14 @@
       const debitDeclared=finite(journal.debitTotalMinor),creditDeclared=finite(journal.creditTotalMinor);
       if(!Number.isSafeInteger(debitDeclared)||!Number.isSafeInteger(creditDeclared)||
          debitDeclared<=0||debitDeclared!==creditDeclared)valid=false;
-      const lines=Array.isArray(journal.lines)?journal.lines:[];
+      const lines=Array.isArray(journal.lines)?journal.lines:[],lineIds=new Set(),lineNumbers=new Set();
       if(lines.length<2)valid=false;
       let debitTotal=0,creditTotal=0;
       for(const line of lines){
-        const amount=finite(line?.amountMinor),side=String(line?.side||'').toUpperCase();
+        const amount=finite(line?.amountMinor),side=String(line?.side||'').toUpperCase(),
+          lineId=String(line?.lineId||'').trim(),lineNumber=finite(line?.lineNumber);
         if(!isObject(line)||!Number.isSafeInteger(amount)||amount<=0||
+           !lineId||lineIds.has(lineId)||!Number.isSafeInteger(lineNumber)||lineNumber<=0||lineNumbers.has(lineNumber)||
            !String(line.accountId||'').trim()||
            String(line.currency||'').trim().toUpperCase()!==currency||
            String(line.countryId||'').trim().toUpperCase()!==countryId||
@@ -249,12 +251,13 @@
            (expectedCompany&&String(line.companyId||'')!==expectedCompany)){
           valid=false;continue;
         }
+        lineIds.add(lineId);lineNumbers.add(lineNumber);
         if(side==='DEBIT')debitTotal+=amount;
         else if(side==='CREDIT')creditTotal+=amount;
         else valid=false;
       }
       if(debitTotal!==creditTotal||debitTotal!==debitDeclared||creditTotal!==creditDeclared)valid=false;
-      const duplicateKey=[sourceLedger,sourceAuthority,countryId,expectedCompany||'',transactionId].join('|');
+      const duplicateKey=[sourceLedger,countryId,expectedCompany||'',transactionId].join('|');
       if(seen.has(duplicateKey)){duplicateTransactionCount++;valid=false;}
       else seen.add(duplicateKey);
       if(!valid){invalidTransactionCount++;return;}
@@ -275,7 +278,7 @@
     }
     let scannedCompanyRows=0,segmentStartedAt=clockNow();
     for(const company of companyRows){
-      const accountCompanyId=String(company.account?.companyId||company.companyId);
+      const accountCompanyId=company.companyId;
       for(let index=0;index<company.entries.length;index++){
         const row=company.entries[index],rowStatus=String(row?.status||'').toUpperCase();
         const required=rowStatus==='POSTED'||rowStatus==='REVERSED';
