@@ -1,0 +1,37 @@
+name: OMEGA Phase 6 Population and Industrial Capacity
+
+on:
+  pull_request:
+    paths:
+      - "omega_phase6_national_population_capacity_runtime_v1.js"
+      - "test/omega_phase6_national_population_capacity_runtime_v1.test.mjs"
+      - "docs/OMEGA_PHASE6_NATIONAL_POPULATION_CONSUMPTION_INDUSTRIAL_CAPACITY_V1.md"
+      - "index.html"
+      - ".github/workflows/omega-phase6-population-capacity.yml"
+  push:
+    branches: [main]
+    paths:
+      - "omega_phase6_national_population_capacity_runtime_v1.js"
+      - "test/omega_phase6_national_population_capacity_runtime_v1.test.mjs"
+      - "docs/OMEGA_PHASE6_NATIONAL_POPULATION_CONSUMPTION_INDUSTRIAL_CAPACITY_V1.md"
+      - "index.html"
+      - ".github/workflows/omega-phase6-population-capacity.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase6:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Syntax-check Phase 6 runtime
+        run: node --check omega_phase6_national_population_capacity_runtime_v1.js
+      - name: Verify national population, consumption and capacity contracts
+        run: node --test test/omega_phase6_national_population_capacity_runtime_v1.test.mjs
+      - name: Verify existing population-demand and factory authorities
+        run: npm run test:resource-demand && npm run test:country-factory-starting-baseline
