@@ -2383,6 +2383,40 @@ function captureStockFlowPeriod(stateTransaction) {
       });
     }
     if(sourceType==='STORAGE'){
+      var storageObservations=ctx.stateTransaction.get('resource.storageDeteriorationLedger'),
+        storageRows=Array.isArray(storageObservations)?storageObservations.filter(currentTurn):[],
+        storedBatches=Array.isArray(ctx.stateTransaction.get('resource.batches'))?ctx.stateTransaction.get('resource.batches'):[];
+      if(!Array.isArray(storageObservations))invalid.push('STORAGE_DETERIORATION_LEDGER_UNAVAILABLE');
+      observedRows=storageRows.length;
+      storageRows.forEach(function(row){
+        var status=String(row&&row.status||'').toUpperCase(),events=Array.isArray(row&&row.lossEventIds)?row.lossEventIds:[],
+          quantity=num(row&&row.measuredLossQuantity);
+        if(!row.batchId||!row.resourceId||!row.unit||!row.modelId||row.simulationOnly!==true)
+          invalid.push('STORAGE_MEASUREMENT_IDENTITY_INCOMPLETE:'+String(row&&row.eventId||'MISSING_ID'));
+        if(status==='MEASURED_EVENTS'){
+          if(quantity===null||quantity<=0||!events.length)invalid.push('STORAGE_MEASUREMENT_EVENT_COUNT_MISMATCH:'+String(row.eventId||'MISSING_ID'));
+          events.forEach(function(eventId){
+            var source=movements.find(function(item){return String(item&&item.eventId||'')===String(eventId)&&
+              String(item&&item.type||'').toUpperCase()==='STORAGE_LOSS_COMMITTED'&&
+              String(item&&item.batchId||'')===String(row.batchId);});
+            if(!source||!hasLoss({eventId:eventId,resourceId:row.resourceId,quantity:source&&source.quantity,unit:source&&source.unit},eventId))
+              invalid.push('STORAGE_MEASUREMENT_LOSS_NOT_RECONCILED:'+String(eventId));
+          });
+        }else if(status==='MEASURED_ZERO'){
+          if(quantity===null||Math.abs(quantity)>1e-9||events.length)
+            invalid.push('STORAGE_MEASURED_ZERO_STATUS_MISMATCH:'+String(row.eventId||'MISSING_ID'));
+        }else invalid.push('STORAGE_DETERIORATION_UNOBSERVED:'+String(row.batchId||row.eventId||'MISSING_ID'));
+      });
+      storedBatches.filter(function(batch){
+        var node=String(batch&&batch.locationNodeKey||'').toUpperCase(),warehouseId=String(batch&&batch.warehouseId||'').trim(),
+          quantity=Math.max(0,num(batch&&(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity))||0),
+          stage=String(batch&&batch.stage||'').toUpperCase();
+        return quantity>1e-9&&(node.indexOf('WAREHOUSE:')===0||!!warehouseId)&&
+          !['IN_TRANSIT','FACTORY_INPUT','TRANSFERRED_TO_FACTORY','SOLD','CONSUMED','DECOMMISSIONED'].includes(stage);
+      }).forEach(function(batch){
+        if(!storageRows.some(function(row){return String(row&&row.batchId||'')===String(batch.batchId||'');}))
+          invalid.push('STORAGE_BATCH_NOT_OBSERVED_THIS_TURN:'+String(batch.batchId||'MISSING_ID'));
+      });
       if(!Array.isArray(inventory))invalid.push('INVENTORY_LEDGER_UNAVAILABLE');
       else{
         if(movements.length>=ledgerLimit)invalid.push('INVENTORY_LEDGER_WINDOW_TRUNCATED');
