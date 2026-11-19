@@ -367,12 +367,12 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(balance.status, 'OBSERVED_SETTLEMENTS_ONLY');
   assert.equal(balance.totalImportValue, 9700);
   assert.equal(balance.totalExportValue, 0);
-  assert.equal(balance.tradeBalance, -10000);
+  assert.equal(balance.tradeBalance, -9700);
   assert.equal(balance.settledTransactionCount, 1);
   assert.equal(balance.outstandingContractQuantity, 2000);
   assert.equal(balance.inTransitStatus, 'NOT_INFERRED_FROM_SETTLEMENT_LEDGER');
   const globalBalance = bilateral.getGlobalTradeBalance('SAU');
-  assert.equal(globalBalance.totalExportValue, 10000);
+  assert.equal(globalBalance.totalExportValue, 9700);
   assert.equal(globalBalance.totalImportValue, 0);
 
   const beforePenalty = globalThis.Game.state.finance.BGD.available;
