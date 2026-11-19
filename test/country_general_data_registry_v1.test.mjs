@@ -9,6 +9,7 @@ const rawFinancial = readJson('economy_raw_financial_data_v2.json');
 const profilesSource = readJson('economy_global_profiles_v1.json').countries;
 const relationSource = readJson('relation_generation_engine.json').RELATION_GENERATION_ENGINE;
 const resourceSiteSource = readJson('resource_site_reserve_simulation_v1.json');
+const populationOfficialObservations = readJson('population_official_observations_v1.json');
 const rawRows = rawFinancial.countries || [];
 const schema = registry.metadata.recordSchema;
 const rawFields = registry.metadata.rawFinancialFieldNames;
@@ -29,6 +30,36 @@ try {
   // Local ad hoc test runs may not have a pre-build registry snapshot.
 }
 
+
+test('the core population register uses sourced Taiwan, Vatican and Western Sahara records with distinct evidence classes', () => {
+  const byIso3 = new Map(registry.countries.map(row => [row.identity[idIndex.iso3], row]));
+  const populationIndex = metricIndex.populationTotal;
+  const metaFor = iso3 => {
+    const row = byIso3.get(iso3);
+    return { value: row.metrics[populationIndex], year: row.metricMetadata.years[populationIndex],
+      status: provenance.statuses[row.metricMetadata.statusCodes[populationIndex]],
+      sourceUrl: row.metricMetadata.sourceUrls?.[populationIndex] };
+  };
+  assert.deepEqual(metaFor('TWN'), {
+    value: 23299132, year: 2025, status: 'OFFICIAL_POPULATION_OBSERVATION',
+    sourceUrl: 'https://www.ris.gov.tw/info-liferay/app/channel/newsEnglishDetail/26245250'
+  });
+  assert.deepEqual(metaFor('VAT'), {
+    value: 882, year: 2024, status: 'OFFICIAL_POPULATION_OBSERVATION',
+    sourceUrl: 'https://www.vaticanstate.va/en/state-and-government/general-informations/population.html'
+  });
+  assert.deepEqual(metaFor('ESH'), {
+    value: 601000, year: 2025, status: 'UN_PROJECTED_POPULATION_ESTIMATE',
+    sourceUrl: 'https://data.un.org/legacy/en/iso/eh.html'
+  });
+  assert.equal(registry.metadata.populationCoverage.observed2025, 195);
+  assert.equal(registry.metadata.populationCoverage.officialObservedOtherYears, 1);
+  assert.equal(registry.metadata.populationCoverage.estimated, 1);
+  assert.equal(registry.metadata.populationCoverage.stale2015, 0);
+  assert.equal(registry.metadata.populationCoverage.unknown, 0);
+  assert.equal(registry.metadata.populationCoverage.observed2025PopulationSubtotal, 8177025275);
+  assert.equal(populationOfficialObservations.observations.length, 3);
+});
 
 test('registry includes every canonical country/territory identity exactly once', () => {
   assert.equal(registry.metadata.countryAndTerritoryCount, roster.length);
