@@ -346,7 +346,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(balance.totalExportValue, 0);
   assert.equal(balance.tradeBalance, -10000);
   assert.equal(balance.settledTransactionCount, 1);
-  assert.equal(balance.outstandingContractQuantity, 1100);
+  assert.equal(balance.outstandingContractQuantity, 2000);
   assert.equal(balance.inTransitStatus, 'NOT_INFERRED_FROM_SETTLEMENT_LEDGER');
   const globalBalance = bilateral.getGlobalTradeBalance('SAU');
   assert.equal(globalBalance.totalExportValue, 10000);
@@ -361,6 +361,11 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.ok(globalThis.Game.state.trade.SAU.bilateralPenaltyClaims.length > 0);
   assert.ok(globalThis.Game.state.foreign.BGD.relationAdjustments.SAU.length > 0);
   assert.ok(globalThis.Game.state.foreign.SAU.relationAdjustments.BGD.length > 0);
+  const adjustedRelationship = bilateral.evaluateProposal('SAU', {
+    proposalId: 'BTP-RELATION-PENALTY', requestorCountryId: 'BGD', buyerCountryId: 'BGD',
+    sellerCountryId: 'SAU', resourceId: 'crude_oil', quantityPerDelivery: 100, unitPrice: 100, intervalDays: 30, intervalTurns: 30
+  }).decisionFactors.relationshipScore;
+  assert.equal(adjustedRelationship, 0.81, 'mutual contract breach penalties must affect subsequent AI relationship analysis');
 
   assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
   const forceMajeureProposal = bilateral.createProposal('BGD', {
