@@ -714,6 +714,9 @@ function captureStockFlowPeriod(stateTransaction) {
         grade:num(sourceBatch.grade!=null?sourceBatch.grade:sourceBatch.gradePercent),quality:num(sourceBatch.quality),
         qualityState:clone(sourceBatch.qualityState||null)});
     }
+    if(isStorageWriteOff&&rem>1e-9)
+      return{accepted:false,reason:'STORAGE_WRITE_OFF_SOURCE_BATCH_UNAVAILABLE',
+        resourceId:rid,requested:q,allocated:q-rem,unallocated:rem};
     if(rem>1e-9){
       var legacyRaw=Math.min(rawBudget,rem);rawDebit+=legacyRaw;rawBudget=Math.max(0,rawBudget-legacyRaw);rem-=legacyRaw;
       var legacyProcessed=Math.min(processedBudget,rem);processedDebit+=legacyProcessed;
