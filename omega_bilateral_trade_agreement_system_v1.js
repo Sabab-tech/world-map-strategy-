@@ -607,7 +607,8 @@
       buyerCurrency: tradeCurrency(buyer), buyerSettlementAmount: buyerAmount,
       fx: num(values && values.fx), durationMonths: durationMonths, durationTurns: monthsToTurns(durationMonths),
       intervalDays: intervalDays, intervalTurns: intervalTurns, quantityTolerancePct: clamp(p.quantityTolerancePct ?? 0, 0, 50),
-      terminationPenaltyPct: clamp(p.terminationPenaltyPct ?? 0, 0, 100), evidenceIssues: issues,
+      terminationPenaltyPct: clamp(p.terminationPenaltyPct ?? 0, 0, 100),
+      relationshipPenaltyPoints: clamp(p.relationshipPenaltyPoints ?? 5, 0, 100), evidenceIssues: issues,
       marketSnapshotId: snapshot.report.snapshotId
     };
   }
@@ -628,7 +629,7 @@
       durationMonths: preview.durationMonths, durationTurns: preview.durationTurns,
       intervalDays: preview.intervalDays, intervalTurns: preview.intervalTurns,
       quantityTolerancePct: preview.quantityTolerancePct, terminationPenaltyPct: preview.terminationPenaltyPct,
-      relationshipPenaltyPoints: clamp(p.relationshipPenaltyPoints, 0, 100),
+      relationshipPenaltyPoints: preview.relationshipPenaltyPoints,
       previousAgreementId: String(p.previousAgreementId || '') || null,
       createdTurn: turn(), status: 'SENT', stage: 'OPEN', feasibility: clone(preview),
       marketSnapshotId: preview.marketSnapshotId, decision: null, counterTerms: null
@@ -925,6 +926,25 @@
         !num(terms.unitPrice) || num(terms.unitPrice) <= 0 || intervalDays === null || intervalDays <= 0)
       return { accepted: false, reason: 'BILATERAL_CONTRACT_TERMS_INVALID' };
     var agreementId = 'BTA-' + seller + '-' + buyer + '-' + (num(proposal.createdTurn) ?? turn()) + '-' + hash([proposal.proposalId, terms.resourceId]);
+    var previousAgreementId = String(proposal.previousAgreementId || '').trim();
+    var previousBuyerContract = null, previousSellerContract = null, previousRenewalError = null;
+    if (previousAgreementId) {
+      previousBuyerContract = contractList(buyer).find(function (row) { return String(row.agreementId) === previousAgreementId; }) || null;
+      previousSellerContract = contractList(seller).find(function (row) { return String(row.agreementId) === previousAgreementId; }) || null;
+      if (!previousBuyerContract || !previousSellerContract ||
+          canonical(previousBuyerContract.partnerCountryId) !== seller || canonical(previousSellerContract.partnerCountryId) !== buyer ||
+          token(previousBuyerContract.resourceId) !== token(terms.resourceId) || token(previousSellerContract.resourceId) !== token(terms.resourceId)) {
+        return { accepted: false, reason: 'PREVIOUS_AGREEMENT_MIRROR_OR_PRODUCT_MISMATCH' };
+      }
+      [previousBuyerContract, previousSellerContract].forEach(function (row) {
+        var status = id(row.status);
+        if (row.currentRequestId) previousRenewalError = 'RENEWAL_BLOCKED_BY_PENDING_DELIVERY';
+        else if (!['ACTIVE', 'AT_RISK', 'COMPLETED', 'EXPIRED'].includes(status) &&
+            !(status === 'RENEWED' && String(row.supersededByAgreementId || '') === agreementId))
+          previousRenewalError = 'PREVIOUS_AGREEMENT_NOT_RENEWABLE';
+      });
+      if (previousRenewalError) return { accepted: false, reason: previousRenewalError };
+    }
     var durationTurns = monthsToTurns(durationMonths), intervalTurns = intervalToTurns(intervalDays);
     var deliveries = Math.max(1, Math.floor(durationTurns / intervalTurns));
     var contract = {
@@ -967,6 +987,17 @@
     if (!buyerSaved || buyerSaved.accepted !== true || !sellerSaved || sellerSaved.accepted !== true)
       return { accepted: false, status: 'CONTRACT_REPLICATION_PENDING', reason: 'BILATERAL_CONTRACT_TWO_SIDED_PERSISTENCE_INCOMPLETE',
         buyer: buyerSaved, seller: sellerSaved, agreementId: agreementId };
+    if (previousAgreementId) {
+      var renewalPatch = { status: 'RENEWED', renewalStatus: 'RENEWED', renewedTurn: turn(),
+        endTurn: turn(), nextDeliveryTurn: null, supersededByAgreementId: agreementId };
+      var priorBuyerUpdated = unwrap(dispatch('trade', 'OMEGA_BILATERAL_UPDATE_CONTRACT', buyer,
+        { agreementId: previousAgreementId, patch: renewalPatch }));
+      var priorSellerUpdated = unwrap(dispatch('trade', 'OMEGA_BILATERAL_UPDATE_CONTRACT', seller,
+        { agreementId: previousAgreementId, patch: renewalPatch }));
+      if (!priorBuyerUpdated || priorBuyerUpdated.accepted !== true || !priorSellerUpdated || priorSellerUpdated.accepted !== true)
+        return { accepted: false, status: 'RENEWAL_FINALIZATION_PENDING', reason: 'PREVIOUS_AGREEMENT_NOT_SUPERSEDED_ON_BOTH_SIDES',
+          agreementId: agreementId, previousAgreementId: previousAgreementId, buyer: priorBuyerUpdated, seller: priorSellerUpdated };
+    }
     emit('OMEGA_BILATERAL_TRADE_AGREEMENT_ACTIVATED', buyer, { agreementId: agreementId, sellerCountryId: seller, proposalId: proposal.proposalId });
     emit('OMEGA_BILATERAL_TRADE_AGREEMENT_ACTIVATED', seller, { agreementId: agreementId, buyerCountryId: buyer, proposalId: proposal.proposalId });
     return { accepted: true, status: 'ACTIVE', contract: contract };
@@ -1163,6 +1194,11 @@
     var c = canonical(country), rows = contractList(c);
     var contract = rows.find(function (row) { return String(row.agreementId) === String(agreementId); });
     if (!contract) return { accepted: false, reason: 'BILATERAL_CONTRACT_NOT_FOUND' };
+    var partner = canonical(contract.partnerCountryId);
+    if (!partner) return { accepted: false, reason: 'BILATERAL_CONTRACT_PARTNER_UNKNOWN' };
+    if (contract.currentRequestId) return { accepted: false, reason: 'RENEWAL_BLOCKED_BY_PENDING_DELIVERY' };
+    if (!['ACTIVE', 'AT_RISK', 'COMPLETED', 'EXPIRED'].includes(id(contract.status)))
+      return { accepted: false, reason: 'BILATERAL_CONTRACT_NOT_RENEWABLE' };
     var direction = id(contract.role) === 'BUYER' ? 'IMPORT' : 'EXPORT';
     var report = currentReport(c, partner, true);
     if (report.status !== 'CURRENT') {
@@ -1170,8 +1206,9 @@
       if (!synced || synced.accepted !== true) return { accepted: false, reason: 'RENEWAL_MARKET_SYNC_FAILED', detail: synced };
     }
     return createProposal(c, {
-      targetCountryId: contract.partnerCountryId, direction: direction, resourceId: contract.resourceId,
+      targetCountryId: partner, direction: direction, resourceId: contract.resourceId,
       quantityPerDelivery: contract.quantityPerDelivery, unitPrice: contract.unitPrice,
+      priceModel: contract.priceModel || 'FIXED', marketAdjustmentPct: contract.marketAdjustmentPct || 0,
       durationMonths: durationMonths, intervalDays: contract.intervalDays,
       quantityTolerancePct: contract.quantityTolerancePct, terminationPenaltyPct: contract.terminationPenaltyPct,
       relationshipPenaltyPoints: contract.relationshipPenaltyPoints, previousAgreementId: contract.agreementId
