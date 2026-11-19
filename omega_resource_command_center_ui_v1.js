@@ -1917,8 +1917,87 @@
       '<p class="omega-rescc-note">Submitting records a request as SENT/OPEN. Choose either a raw resource or a factory product. Counterparty review, sanctions, stock, logistics and settlement rules determine what happens next.</p>' +
       '<button class="omega-rescc-button" type="submit"' + ((!trade || typeof trade.createRequest !== 'function' || !others.length || !resourceOpts) ? ' disabled' : '') +
       '>Submit supply request</button></form>';
+    const bilateral = g.OmegaBilateralTradeAgreementV1 || g.Omega && g.Omega.BilateralTradeAgreementV1;
+    const bilateralState = bucket('trade', country) || {};
+    const bilateralProposals = bilateral && typeof bilateral.getProposals === 'function'
+      ? bilateral.getProposals(country) : { outbox: [], inbox: [] };
+    const bilateralContracts = bilateral && typeof bilateral.getContracts === 'function' ? bilateral.getContracts(country) : [];
+    const storedReports = bilateralState.bilateralMarketIntelligence && typeof bilateralState.bilateralMarketIntelligence === 'object'
+      ? bilateralState.bilateralMarketIntelligence : {};
+    const reportRows = Object.keys(storedReports).map(function (target) {
+      const result = bilateral && typeof bilateral.getMarketReport === 'function' ? bilateral.getMarketReport(country, target) : null;
+      const report = result && result.report;
+      if (!report) return '';
+      const needs = (report.importNeeds || []).slice(0, 3).map(function (row) {
+        return '<div class="omega-rescc-kv"><span>Import need · ' + esc(row.name || row.resourceId) + '</span><strong>' + esc(number(row.unmetDemand.value, row.unit || '')) + '</strong></div>';
+      }).join('');
+      const surpluses = (report.exportSurpluses || []).slice(0, 3).map(function (row) {
+        return '<div class="omega-rescc-kv"><span>Export surplus · ' + esc(row.name || row.resourceId) + '</span><strong>' + esc(number(row.exportableStock.value, row.unit || '')) + '</strong></div>';
+      }).join('');
+      const alternatives = report.alternativeMarkets || {};
+      const alternativeCount = (alternatives.suppliersForImports || []).reduce(function (sum, row) { return sum + (row.alternatives || []).length; }, 0) +
+        (alternatives.competingBuyersForExports || []).reduce(function (sum, row) { return sum + (row.alternatives || []).length; }, 0);
+      return card('Market report · ' + target, result.status || report.freshnessStatus || 'UNKNOWN',
+        '<div class="omega-rescc-kv"><span>Generated turn</span><strong>' + esc(report.generatedTurn) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Evidence</span><strong>' + esc(report.evidenceCounts && (report.evidenceCounts.known || 0)) + ' known · ' + esc(report.evidenceCounts && (report.evidenceCounts.estimated || 0)) + ' estimated · ' + esc(report.evidenceCounts && (report.evidenceCounts.unknown || 0)) + ' unknown</strong></div>' +
+        needs + surpluses + '<div class="omega-rescc-kv"><span>Alternative buyers / suppliers</span><strong>' + esc(alternativeCount) + '</strong></div>', '');
+    }).join('');
+    const proposalRows = (bilateralProposals.outbox || []).concat(bilateralProposals.inbox || []).slice(-20).reverse().map(function (row) {
+      const review = row.review || row.decision || {};
+      const decisionFactors = review.decisionFactors || {};
+      return card('Proposal · ' + esc(row.proposalId || '—'), row.status || row.inboxStatus || 'UNKNOWN',
+        '<div class="omega-rescc-kv"><span>Direction</span><strong>' + esc(row.direction || '—') + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Counterparty</span><strong>' + esc(row.targetCountryId || row.requestorCountryId || '—') + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Commodity / terms</span><strong>' + esc(row.resourceId || '—') + ' · ' + esc(row.quantityPerDelivery || '—') + ' @ ' + esc(row.unitPrice || '—') + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>AI decision</span><strong>' + esc(review.decision || 'PENDING') + '</strong></div>' +
+        (decisionFactors.score !== undefined ? '<div class="omega-rescc-kv"><span>Decision score</span><strong>' + esc(decisionFactors.score) + '</strong></div>' : '') +
+        (row.counterTerms ? '<div class="omega-rescc-kv"><span>Counteroffer</span><strong>' + esc(row.counterTerms.quantityPerDelivery || '—') + ' @ ' + esc(row.counterTerms.unitPrice || '—') + '</strong></div>' : ''),
+        id(row.status) === 'COUNTER' ? actionButton('bilateral-accept-counter', 'Accept counteroffer', { 'proposal-id': row.proposalId }, false) : '');
+    }).join('');
+    const contractRows = bilateralContracts.slice(-20).reverse().map(function (row) {
+      return card('Agreement · ' + esc(row.agreementId || '—'), row.status || 'UNKNOWN',
+        '<div class="omega-rescc-kv"><span>Partner / role</span><strong>' + esc(row.partnerCountryId || '—') + ' · ' + esc(row.role || '—') + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Commodity / delivery</span><strong>' + esc(row.resourceId || '—') + ' · ' + esc(row.quantityPerDelivery || '—') + ' / ' + esc(row.intervalDays || '—') + ' days</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Term / delivered</span><strong>' + esc(row.durationMonths || '—') + ' months · ' + esc(row.deliveredQuantity || 0) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Next delivery / expiry</span><strong>' + esc(row.nextDeliveryTurn || '—') + ' / ' + esc(row.endTurn || '—') + '</strong></div>' +
+        '<div class="omega-rescc-actions">' +
+        actionButton('bilateral-renew', 'Request renewal', { 'agreement-id': row.agreementId, 'duration-months': row.durationMonths || 12 }, false) +
+        actionButton('bilateral-terminate', 'Terminate', { 'agreement-id': row.agreementId }, false) + '</div>', '');
+    }).join('');
+    const syncForm = '<form class="omega-rescc-form" data-search-item data-form="bilateral-market-sync">' +
+      '<h3>Synchronize target-country market</h3><div class="omega-rescc-formgrid">' +
+      '<label>Target country<select name="targetCountryId" required>' + countries + '</select></label></div>' +
+      '<p class="omega-rescc-note">Runs an on-demand market analysis. It labels evidence as Known, Estimated or Unknown and reports demand, surplus, pricing, foreign currency, existing agreements and alternative buyers or suppliers.</p>' +
+      '<button class="omega-rescc-button" type="submit"' + ((!bilateral || typeof bilateral.syncMarket !== 'function' || !others.length) ? ' disabled' : '') + '>Synchronize market</button></form>';
+    const proposalForm = '<form class="omega-rescc-form" data-search-item data-form="bilateral-proposal">' +
+      '<h3>Negotiate bilateral agreement</h3><div class="omega-rescc-formgrid">' +
+      '<label>Target country<select name="targetCountryId" required>' + countries + '</select></label>' +
+      '<label>Trade direction<select name="direction"><option value="IMPORT">Import from target</option><option value="EXPORT">Export to target</option></select></label>' +
+      '<label>Product<select name="resourceId" required>' + resourceOpts + '</select></label>' +
+      '<label>Quantity per delivery<input name="quantityPerDelivery" type="number" min="0.000001" step="any" required></label>' +
+      '<label>Offered unit price<input name="unitPrice" type="number" min="0.000001" step="any" required></label>' +
+      '<label>Agreement term<select name="durationMonths"><option value="12">12 months</option><option value="24">2 years</option><option value="60">5 years</option><option value="84">7 years</option><option value="120">10 years</option></select></label>' +
+      '<label>Delivery interval<select name="intervalDays"><option value="30">Every 30 days</option><option value="90">Every 90 days</option><option value="180">Every 180 days</option><option value="365">Every 365 days</option></select></label>' +
+      '<label>Quantity tolerance (%)<input name="quantityTolerancePct" type="number" min="0" max="50" step="0.1" value="0"></label>' +
+      '<label>Early termination penalty (%)<input name="terminationPenaltyPct" type="number" min="0" max="100" step="0.1" value="0"></label></div>' +
+      '<p class="omega-rescc-note">The system checks your own inventory, domestic requirements, current commitments, expected supply and buyer foreign-currency capacity before sending. Unknown evidence blocks sending unless you explicitly enable conditional risk acceptance in the API.</p>' +
+      '<button class="omega-rescc-button" type="submit"' + ((!bilateral || typeof bilateral.createProposal !== 'function' || !others.length || !resourceOpts) ? ' disabled' : '') + '>Analyze and send proposal</button></form>';
+    const bilateralBalanceRows = others.slice(0, 8).map(function (partner) {
+      const balance = bilateral && typeof bilateral.getBilateralTradeBalance === 'function' ? bilateral.getBilateralTradeBalance(country, partner) : null;
+      if (!balance || balance.status !== 'OBSERVED_SETTLEMENTS_ONLY' || !balance.settledTransactionCount) return '';
+      return card('Trade with ' + partner, balance.tradePosition || 'UNKNOWN',
+        '<div class="omega-rescc-kv"><span>Exports</span><strong>' + esc(number(balance.totalExportValue, balance.currency || '')) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Imports</span><strong>' + esc(number(balance.totalImportValue, balance.currency || '')) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Balance</span><strong>' + esc(number(balance.tradeBalance, balance.currency || '')) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Settled transactions</span><strong>' + esc(balance.settledTransactionCount) + '</strong></div>', '');
+    }).join('');
     return (trade && trade.diagnostics ? diagnosticCard('Global trade diagnostics', trade.diagnostics()) : empty('Global trade engine is not available.')) +
       panelPlayerSupplyLifeline(country) + form +
+      '<h3 class="omega-rescc-section-title">Bilateral trade agreements</h3>' + syncForm + proposalForm +
+      (reportRows || empty('No market intelligence reports.')) +
+      '<h3 class="omega-rescc-section-title">Bilateral proposals</h3>' + (proposalRows || empty('No bilateral proposals recorded.')) +
+      '<h3 class="omega-rescc-section-title">Active agreements and renewals</h3>' + (contractRows || empty('No bilateral agreements recorded.')) +
+      '<h3 class="omega-rescc-section-title">Settled bilateral trade balance</h3>' + (bilateralBalanceRows || empty('No settled bilateral trade balance recorded.')) +
       '<h3 class="omega-rescc-section-title">Import requests and settlement status</h3>' + statusRows(requests) +
       '<h3 class="omega-rescc-section-title">Global trade ledger</h3>' + diagnosticCard('Ledger counters', {
         requests: Array.isArray(ledger.requests) ? ledger.requests.length : 0,
@@ -2386,6 +2465,17 @@
           return;
         }
         const action = target.getAttribute('data-action');
+        if (action === 'bilateral-accept-counter' || action === 'bilateral-renew' || action === 'bilateral-terminate') {
+          if (event.preventDefault) event.preventDefault();
+          const bilateral = g.OmegaBilateralTradeAgreementV1 || g.Omega && g.Omega.BilateralTradeAgreementV1;
+          let result;
+          if (action === 'bilateral-accept-counter') result = bilateral && bilateral.acceptCounteroffer ? bilateral.acceptCounteroffer(activeCountry(), target.getAttribute('data-proposal-id')) : { status: 'UNAVAILABLE' };
+          else if (action === 'bilateral-renew') result = bilateral && bilateral.renewContract ? bilateral.renewContract(activeCountry(), target.getAttribute('data-agreement-id'), Number(target.getAttribute('data-duration-months') || 12)) : { status: 'UNAVAILABLE' };
+          else result = bilateral && bilateral.terminateContract ? bilateral.terminateContract(activeCountry(), target.getAttribute('data-agreement-id'), 'PLAYER_REQUESTED_TERMINATION') : { status: 'UNAVAILABLE' };
+          setOutcome('Bilateral agreement action', result);
+          render(activeCountry(), 'trade');
+          return;
+        }
         if (action === 'world-activity-refresh') {
           if (event.preventDefault) event.preventDefault();
           selectedMarketView = 'transactions';
@@ -3093,6 +3183,30 @@
           transactionId: uniqueRequestId('SWF-CAPITAL', data.get('amount')), amount: Number(data.get('amount'))
         });
         setOutcome('Sovereign wealth fund capitalization', result);
+        return;
+      }
+      if (kind === 'bilateral-market-sync') {
+        const bilateral = g.OmegaBilateralTradeAgreementV1 || g.Omega && g.Omega.BilateralTradeAgreementV1;
+        result = bilateral && typeof bilateral.syncMarket === 'function'
+          ? bilateral.syncMarket(c, data.get('targetCountryId'))
+          : { status: 'UNAVAILABLE', reason: 'BILATERAL_MARKET_INTELLIGENCE_RUNTIME_UNAVAILABLE' };
+        setOutcome('Bilateral market intelligence synchronization', result);
+        render(c, 'trade');
+        return;
+      }
+      if (kind === 'bilateral-proposal') {
+        const bilateral = g.OmegaBilateralTradeAgreementV1 || g.Omega && g.Omega.BilateralTradeAgreementV1;
+        result = bilateral && typeof bilateral.createProposal === 'function'
+          ? bilateral.createProposal(c, {
+              targetCountryId: data.get('targetCountryId'), direction: data.get('direction'),
+              resourceId: data.get('resourceId'), quantityPerDelivery: Number(data.get('quantityPerDelivery')),
+              unitPrice: Number(data.get('unitPrice')), durationMonths: Number(data.get('durationMonths')),
+              intervalDays: Number(data.get('intervalDays')), quantityTolerancePct: Number(data.get('quantityTolerancePct')),
+              terminationPenaltyPct: Number(data.get('terminationPenaltyPct'))
+            })
+          : { status: 'UNAVAILABLE', reason: 'BILATERAL_AGREEMENT_RUNTIME_UNAVAILABLE' };
+        setOutcome('Bilateral trade proposal', result);
+        render(c, 'trade');
         return;
       }
       if (kind === 'trade-request') {
