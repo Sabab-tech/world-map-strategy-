@@ -2100,6 +2100,10 @@ function captureStockFlowPeriod(stateTransaction) {
     shipment.lossEvents=Array.isArray(shipment.lossEvents)?shipment.lossEvents:[];
     shipment.lossEvents.push(clone(lossEvent));
     shipment.lastLossTurn=eventTurn;shipment.lastLossEventId=eventId;
+    shipment.lossMeasurementStatus='MEASURED_EVENTS';
+    shipment.lossMeasurementAuthority='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2';
+    shipment.lossMeasurementBasis='CONFIRMED_CARGO_LOSS_EVENT';
+    shipment.lossMeasurementTurn=eventTurn;
     if(shipment.quantity<=1e-9){shipment.quantity=0;shipment.status='LOST_IN_TRANSIT';shipment.deliveryStatus='LOST_IN_TRANSIT';}
     batch.remainingQuantity=Number(Math.max(0,batchRemaining-quantity).toFixed(6));
     batch.lastMovementTurn=eventTurn;batch.lastMovementType='TRANSPORT_LOSS';
@@ -2206,12 +2210,27 @@ function captureStockFlowPeriod(stateTransaction) {
       else{
         if(network.shipments.length>=4096||network.deliveries.length>=4096)
           invalid.push('TRANSPORT_LEDGER_WINDOW_TRUNCATED');
-        var shipmentRows=network.shipments.filter(currentTurn),deliveryRows=network.deliveries.filter(currentTurn);
+        var activeShipmentStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
+          'BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING']);
+        var shipmentRows=network.shipments.filter(function(row){
+          return currentTurn(row)||activeShipmentStatuses.has(String(row&&row.status||'').toUpperCase());
+        }),deliveryRows=network.deliveries.filter(currentTurn);
         observedRows=shipmentRows.length+deliveryRows.length;
         shipmentRows.forEach(function(row){
           if(!row.shipmentId||!row.resourceId||num(row.dispatchedQuantity??row.quantity)===null||!row.unit||!row.countryId)
             invalid.push('TRANSPORT_SHIPMENT_IDENTITY_INCOMPLETE:'+String(row.shipmentId||'MISSING_ID'));
-          (Array.isArray(row.lossEvents)?row.lossEvents:[]).forEach(function(event){
+          var lossStatus=String(row.lossMeasurementStatus||'').toUpperCase(),
+            lossAuthority=String(row.lossMeasurementAuthority||''),
+            lossBasis=String(row.lossMeasurementBasis||''),
+            lossTurn=num(row.lossMeasurementTurn),
+            lossEvents=Array.isArray(row.lossEvents)?row.lossEvents:[];
+          var measuredEvents=lossStatus==='MEASURED_EVENTS'&&lossTurn===eventTurn&&
+            lossAuthority==='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'&&lossBasis==='CONFIRMED_CARGO_LOSS_EVENT'&&lossEvents.length>0,
+            measuredZero=lossStatus==='MEASURED_ZERO'&&lossTurn===eventTurn&&
+            lossAuthority==='OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'&&lossBasis==='MEASURED_ZERO_CARGO_TRANSPORT'&&lossEvents.length===0;
+          if(!measuredEvents&&!measuredZero)
+            invalid.push('TRANSPORT_LOSS_MEASUREMENT_UNOBSERVED_OR_UNTRUSTED:'+String(row.shipmentId||'MISSING_ID'));
+          lossEvents.forEach(function(event){
             if(!hasLoss(event,row.shipmentId))invalid.push('TRANSPORT_LOSS_NOT_RECONCILED:'+String(event.eventId||'MISSING_ID'));
           });
         });
