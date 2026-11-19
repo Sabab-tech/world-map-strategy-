@@ -1201,17 +1201,38 @@
         return { status: 'BLOCKED', reason: 'MARKET_LINKED_PRICE_NOT_CLEARED' };
       deliveryUnitPrice = num(linkedPrice.value) * (1 + (num(contract.marketAdjustmentPct) || 0) / 100);
     }
-    var created = trade.createRequest(c, {
-      requestId: requestId, targetCountryId: contract.sellerCountryId, resourceId: contract.resourceId,
-      quantity: contract.quantityPerDelivery, unitPrice: deliveryUnitPrice, currency: contract.currency,
-      governmentContractId: contract.agreementId, source: 'OMEGA_BILATERAL_TRADE_AGREEMENT'
-    });
+    // Global Trade may review/authorize the request synchronously inside
+    // createRequest(). Reserve the exact request ID on both contract mirrors
+    // first, so seller-side BTA authorization can verify it atomically.
+    var requestReservation = { currentRequestId: requestId, lastDeliveryStatus: 'REQUESTING',
+      lastRequestTurn: turn(), retryEligibleTurn: null, status: 'ACTIVE' };
+    var buyerReservation = updateContract(c, contract.agreementId, requestReservation);
+    if (!buyerReservation || buyerReservation.accepted !== true)
+      return { status: 'WAITING', reason: 'BUYER_CONTRACT_DELIVERY_RESERVATION_FAILED', detail: buyerReservation };
+    var sellerReservation = updateContract(partner, contract.agreementId, requestReservation);
+    if (!sellerReservation || sellerReservation.accepted !== true) {
+      updateContract(c, contract.agreementId, { currentRequestId: null, status: 'AT_RISK',
+        lastFailureReason: 'SELLER_CONTRACT_DELIVERY_RESERVATION_FAILED',
+        retryEligibleTurn: turn() + (num(contract.intervalTurns) || 1) });
+      return { status: 'WAITING', reason: 'SELLER_CONTRACT_DELIVERY_RESERVATION_FAILED', detail: sellerReservation };
+    }
+    var created;
+    try {
+      created = trade.createRequest(c, {
+        requestId: requestId, targetCountryId: contract.sellerCountryId, resourceId: contract.resourceId,
+        quantity: contract.quantityPerDelivery, unitPrice: deliveryUnitPrice, currency: contract.currency,
+        governmentContractId: contract.agreementId, source: 'OMEGA_BILATERAL_TRADE_AGREEMENT'
+      });
+    } catch (error) {
+      created = { accepted: false, reason: String(error && error.message || error) };
+    }
     if (!created || created.accepted !== true) {
-      mirrorContract(c, partner, contract.agreementId, { status: 'AT_RISK', lastFailureReason: created && created.reason || 'TRADE_REQUEST_CREATE_FAILED',
+      mirrorContract(c, partner, contract.agreementId, { currentRequestId: null, status: 'AT_RISK',
+        lastFailureReason: created && created.reason || 'TRADE_REQUEST_CREATE_FAILED',
         failedDeliveries: (num(contract.failedDeliveries) || 0) + 1, retryEligibleTurn: turn() + (num(contract.intervalTurns) || 1) });
       return { status: 'DELIVERY_REQUEST_FAILED', reason: created && created.reason || 'TRADE_REQUEST_CREATE_FAILED' };
     }
-    mirrorContract(c, partner, contract.agreementId, { currentRequestId: requestId, lastDeliveryStatus: 'REQUESTED',
+    mirrorContract(c, partner, contract.agreementId, { lastDeliveryStatus: 'REQUESTED',
       lastRequestTurn: turn(), retryEligibleTurn: null, status: 'ACTIVE' });
     return { status: 'DELIVERY_REQUESTED', agreementId: contract.agreementId, requestId: requestId };
   }
