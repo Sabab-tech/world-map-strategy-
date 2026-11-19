@@ -448,12 +448,14 @@ const apiTestCompanyIds=[
   'ATLAS_TECHNOLOGY_CORPORATION','TERRA_INFRASTRUCTURE_GROUP'
 ];
 
-function testJournal(countryId,sectorId,companyId,transactionId,currency,periodId){
+function testJournal(countryId,sectorId,companyId,transactionId,currency,periodId,sourceAuthority){
   const amount=1250,accountPrefix=sectorId==='firm'?'FIRM:'+companyId:'GOVERNMENT';
   return{
-    schemaVersion:1,status:'POSTED',sectorId,sourceAuthority:sectorId==='firm'?'OMEGA_PRIVATE_ENTERPRISE':'OMEGA_FINANCE_MINISTRY',
+    schemaVersion:1,status:'POSTED',sectorId,
+    sourceAuthority:sourceAuthority||(sectorId==='firm'?'OMEGA_PRIVATE_ENTERPRISE_CASHFLOW':'OMEGA_FINANCE_MINISTRY'),
     sourceTransactionId:transactionId,sourceTransactionType:'TEST',countryId,companyId:companyId||undefined,
-    currency,periodId,counterEntryComplete:true,debitTotalMinor:amount,creditTotalMinor:amount,
+    currency,periodId,accountingBasis:'TEST_SOURCE_POSTING',provenance:'TEST_FIXTURE',
+    counterEntryComplete:true,debitTotalMinor:amount,creditTotalMinor:amount,
     lines:[
       {lineId:transactionId+':L1',lineNumber:1,accountId:accountPrefix+':TEST_DEBIT',side:'DEBIT',
         amountMinor:amount,currency,countryId,companyId:companyId||undefined,sourceTransactionId:transactionId},
@@ -468,7 +470,7 @@ test('sector journal reader validates Finance and company-owned postings without
   const financeRows=[
     {transactionId:'GOV-J-1',action:'EXPENSE',sectorJournalV1:testJournal('BGD','government',null,'GOV-J-1','USD','FY-1')},
     {transactionId:'FIRM-FIN-1',type:'PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL',companyId:'AURORA_INDUSTRIAL_GROUP',
-      sectorJournalV1:testJournal('BGD','firm','AURORA_INDUSTRIAL_GROUP','FIRM-FIN-1','BDT','TURN-8')}
+      sectorJournalV1:testJournal('BGD','firm','AURORA_INDUSTRIAL_GROUP','FIRM-FIN-1','BDT','TURN-8','OMEGA_PRIVATE_ENTERPRISE_FINANCE_LEDGER')}
   ];
   const companyAccounts={AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',cashFlowJournalVersion:2,cashFlowEntries:[
     {entryId:'FIRM-CASH-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',
