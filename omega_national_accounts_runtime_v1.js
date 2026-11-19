@@ -604,7 +604,9 @@
     const byPeriod=new Map(),ensure=periodId=>{if(!byPeriod.has(periodId))byPeriod.set(periodId,{
       byIdentity:new Map(),unclassifiedCount:0,missingUnitCount:0,rowsObserved:0,lossEventCount:0,
       lossIntegrityErrorCount:0,lossDuplicateCount:0});return byPeriod.get(periodId);};
-    const lossTypes=new Set(['INVENTORY_LOSS','RESOURCE_LOSS','STOCK_LOSS','PHYSICAL_LOSS','STOCK_LOSS_COMMITTED']);
+    const lossTypes=new Set(['INVENTORY_LOSS','RESOURCE_LOSS','STOCK_LOSS','PHYSICAL_LOSS','STOCK_LOSS_COMMITTED',
+      'STORAGE_LOSS_COMMITTED','TRANSPORT_LOSS_COMMITTED']);
+    const lossByEventId=new Map(lossRows.map(row=>[String(row?.eventId||''),row]));
     const movementTypes=new Set(['PRODUCTION_TRANSACTION_COMMITTED','FACTORY_PROCESSING_COMMITTED',
       'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED','INVENTORY_CONSUMED','INTERNATIONAL_TRADE_IMPORT',
       'INTERNATIONAL_TRADE_EXPORT','INVENTORY_CREATED','BATCH_CREATED']);
@@ -660,7 +662,35 @@
         movementKeys.set(key,proof);
       }
       if(type==='PRODUCTION_TRANSACTION_COMMITTED'){
-        for(const input of Array.isArray(row.inputs)?row.inputs:[])add(periodId,input?.resourceId,input?.quantity,'consumption',input?.unit,input?.consumed);
+        const productionLossByResource=new Map(),transactionId=String(row.transactionId||'').trim();
+        for(const lossEvent of Array.isArray(row.lossEvents)?row.lossEvents:[]){
+          const eventId=String(lossEvent?.eventId||lossEvent?.lossEventId||'').trim(),
+            canonicalLoss=lossByEventId.get(eventId),lossResource=String(lossEvent?.resourceId||'').trim(),
+            lossQuantity=finite(lossEvent?.quantity),lossUnit=String(lossEvent?.unit||'').trim();
+          const lossEvidenceValid=!!canonicalLoss&&!!eventId&&!!transactionId&&
+            String(canonicalLoss.sourceEventId||'')===transactionId&&
+            String(canonicalLoss.sourceType||'').toUpperCase()==='PRODUCTION'&&
+            String(canonicalLoss.lossType||'').toUpperCase()==='PRODUCTION'&&
+            String(canonicalLoss.resourceId||'').toUpperCase()===lossResource.toUpperCase()&&
+            lossQuantity!==null&&lossQuantity>0&&Math.abs((finite(canonicalLoss.quantity)??-1)-lossQuantity)<=1e-9&&
+            String(canonicalLoss.unit||'').toUpperCase()===lossUnit.toUpperCase()&&
+            String(canonicalLoss.status||'').toUpperCase()==='COMMITTED'&&
+            String(lossEvent.sourceAuthority||'')===String(canonicalLoss.sourceAuthority||'');
+          if(!lossEvidenceValid){
+            group.unclassifiedCount++;group.lossIntegrityErrorCount++;lossIntegrityErrorCount++;
+            continue;
+          }
+          productionLossByResource.set(lossResource,
+            (productionLossByResource.get(lossResource)||0)+lossQuantity);
+        }
+        for(const input of Array.isArray(row.inputs)?row.inputs:[]){
+          const inputResource=String(input?.resourceId||''),inputQuantity=finite(input?.quantity),
+            provenLoss=productionLossByResource.get(inputResource)||0;
+          if(inputQuantity===null||provenLoss>inputQuantity+1e-9){
+            group.unclassifiedCount++;continue;
+          }
+          add(periodId,inputResource,Math.max(0,inputQuantity-provenLoss),'consumption',input?.unit,input?.consumed);
+        }
         if(Array.isArray(row.outputs))for(const output of row.outputs)add(periodId,output?.resourceId,output?.quantity,'production',output?.unit,output?.createdBatches);
         else addMap(periodId,row.outputs,'production');
       }else if(type==='FACTORY_PROCESSING_COMMITTED'){
