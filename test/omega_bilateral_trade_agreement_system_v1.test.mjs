@@ -62,6 +62,8 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
     }
   };
 
+  let failNextSellerRatification = false;
+
   globalThis.Omega.MinistryInteroperability = {
     registerAction() { return true; },
     registerCommandHandler(type, owner, handler) { handlers.set(owner + ':' + type, handler); },
@@ -70,6 +72,10 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
       const country = String(countryId || '').toUpperCase();
       const type = String(options.commandType || actionId || '');
       if (type === 'OMEGA_TREATY_ACTIVATE') {
+        if (country === 'SAU' && failNextSellerRatification) {
+          failNextSellerRatification = false;
+          return { status: 'FAILED', result: { accepted: false, reason: 'TEST_SELLER_RATIFICATION_TEMPORARY_FAILURE' } };
+        }
         const foreign = globalThis.Game.state.foreign[country] || (globalThis.Game.state.foreign[country] = {});
         foreign.treaties = foreign.treaties || {};
         foreign.treaties[String(payload.targetCountryId).toUpperCase()] = {
@@ -247,7 +253,26 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(globalThis.Game.state.foreign.BGD.treaties.SAU.status, 'ACTIVE');
   assert.equal(globalThis.Game.state.foreign.SAU.treaties.BGD.status, 'ACTIVE');
 
+  // A transient failure on one side of treaty ratification must recover idempotently.
+  globalThis.Game.state.simulation.turn = 2;
   assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
+  const partialProposal = bilateral.createProposal('BGD', {
+    proposalId: 'BTP-PARTIAL-RATIFICATION', targetCountryId: 'SAU', direction: 'IMPORT',
+    resourceId: 'crude_oil', quantityPerDelivery: 75, unitPrice: 100, durationMonths: 12, intervalDays: 30
+  });
+  assert.equal(partialProposal.accepted, true, JSON.stringify(partialProposal));
+  failNextSellerRatification = true;
+  globalThis.Game.state.simulation.turn = 3;
+  const partialAttempt = bilateral.processCountry('SAU');
+  assert.equal(partialAttempt.proposals[0].status, 'RATIFICATION_PENDING');
+  const pendingInbox = globalThis.Game.state.trade.SAU.bilateralProposalInbox.find(row => row.proposalId === 'BTP-PARTIAL-RATIFICATION');
+  assert.equal(pendingInbox.inboxStatus, 'ACCEPT_PENDING_RATIFICATION');
+  globalThis.Game.state.simulation.turn = 4;
+  const recovered = bilateral.processCountry('SAU');
+  assert.equal(recovered.proposals[0].status, 'ACTIVE', JSON.stringify(recovered));
+  assert.equal(globalThis.Game.state.trade.BGD.bilateralContracts.filter(row => row.proposalId === 'BTP-PARTIAL-RATIFICATION').length, 1);
+  assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts.filter(row => row.proposalId === 'BTP-PARTIAL-RATIFICATION').length, 1);
+
   assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
   const duplicateProposal = bilateral.createProposal('BGD', {
     proposalId: 'BTP-BGD-SAU-COLLISION', targetCountryId: 'SAU', direction: 'IMPORT',
