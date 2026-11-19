@@ -247,7 +247,11 @@ test('active-country factory inventory is read once, capacity is evidence-gated 
           { transactionId: 'TX-OLD', turn: 6, outputQuantities: { garments: 500 } }
         ],
         demandRuntime: { byResource: {
-          cotton_fibre: { activeFactoryInputDemandPerDay: 45, demandPerDay: 60, factoryConsumption: 40, unmetDemand: 5 }
+          cotton_fibre: { activeFactoryInputDemandPerDay: 45, demandPerDay: 60, factoryConsumption: 40,
+            fulfilledDemand: 55, unmetDemand: 5, inventoryBefore: 100, inventoryAfter: 40,
+            protectedStock: 10, spendableStockAfter: 30, stockCoverageDays: 2,
+            stockCoverageTargetDays: 5, lowStockCoverage: true, pendingImportQuantity: 15,
+            unresolvedImportRequestCount: 1 }
         } }
       }
     },
@@ -269,6 +273,14 @@ test('active-country factory inventory is read once, capacity is evidence-gated 
   assert.equal(summary.production.uniqueTransactionCount, 1);
   assert.equal(summary.production.authority, 'resource.finishedGoodsLedger');
   assert.equal(summary.factoryDemand.byResource.cotton_fibre.factoryInputDemandPerDay, 45);
+  const reconciliation = summary.nationalRequirement.byResource.cotton_fibre;
+  assert.equal(reconciliation.inventoryBefore, 100);
+  assert.equal(reconciliation.inventoryAfter, 40);
+  assert.equal(reconciliation.pendingImportQuantity, 15);
+  assert.equal(reconciliation.unmetDemand, 5);
+  assert.equal(reconciliation.stockCoverageDays, 2);
+  assert.equal(reconciliation.inboundShipmentQuantity, null);
+  assert.equal(reconciliation.inboundShipmentEvidenceStatus, 'NOT_EXPOSED_BY_NATIONAL_DEMAND_RUNTIME');
 });
 
 test('non-player countries expose static baselines only and do not read detailed live factory assets', async () => {
