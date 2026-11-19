@@ -282,6 +282,9 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(exportProposal.accepted, true, JSON.stringify(exportProposal));
   assert.equal(exportProposal.feasibility.buyerAvailableForeignCurrency, null);
   assert.equal(exportProposal.proposal.feasibility.buyerCurrencyCommitments.status, 'PRIVATE');
+  assert.equal(exportProposal.proposal.paymentSchedule, 'PER_DELIVERY_ON_SETTLEMENT');
+  assert.equal(exportProposal.proposal.paymentCurrency, exportProposal.proposal.feasibility.buyerCurrency);
+  assert.equal(exportProposal.proposal.invoiceCurrency, exportProposal.proposal.currency);
 
   globalThis.Game.state.simulation.turn = 1;
   const review = bilateral.processCountry('SAU');
