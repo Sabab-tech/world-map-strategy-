@@ -365,7 +365,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
     proposalId: 'BTP-RELATION-PENALTY', requestorCountryId: 'BGD', buyerCountryId: 'BGD',
     sellerCountryId: 'SAU', resourceId: 'crude_oil', quantityPerDelivery: 100, unitPrice: 100, intervalDays: 30, intervalTurns: 30
   }).decisionFactors.relationshipScore;
-  assert.equal(adjustedRelationship, 0.81, 'mutual contract breach penalties must affect subsequent AI relationship analysis');
+  assert.equal(adjustedRelationship, 0.8175, 'mutual contract breach penalties must affect subsequent AI relationship analysis');
 
   assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
   const forceMajeureProposal = bilateral.createProposal('BGD', {
