@@ -8,5 +8,5 @@ export function isSelfInvokingClassicScript(source) {
 
 export function scopeTranspiledAndroidAsset(originalSource, transpiledSource) {
   if (!isSelfInvokingClassicScript(originalSource)) return transpiledSource;
-  return \`(function omegaAndroidScopedClassicAsset() {\n\${transpiledSource}\n})();\n\`;
+  return '(function omegaAndroidScopedClassicAsset() {\n' + transpiledSource + '\n})();\n';
 }
