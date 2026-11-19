@@ -1979,6 +1979,221 @@ function captureStockFlowPeriod(stateTransaction) {
       resourceId:resourceId,quantity:quantity,unit:unit,lossCoverageStatus:'UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED'};
   }
 
+  function commitShipmentLossHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},country=canonical(ctx.countryId),shipmentId=String(p.shipmentId||p.sourceEventId||'').trim(),
+      eventId=String(p.eventId||p.lossEventId||'').trim(),resourceId=String(p.resourceId||'').trim(),
+      quantity=num(p.quantity),unit=String(p.unit||'').trim(),reason=String(p.reason||'').trim(),
+      eventTurn=num(p.turn==null?turn():p.turn),networkBefore=ctx.stateTransaction.get('resource.industrialNetwork')||{},
+      batchesBefore=ctx.stateTransaction.get('resource.batches'),lotsBefore=ctx.stateTransaction.get('resource.inventoryLots')||{},
+      priorLosses=Array.isArray(ctx.stateTransaction.get('resource.stockLossLedger'))?ctx.stateTransaction.get('resource.stockLossLedger'):[];
+    if(!country||!shipmentId||!eventId||!resourceId||quantity===null||quantity<=0||!unit||!reason)
+      return{accepted:false,reason:'TRANSPORT_LOSS_EVENT_FIELDS_INVALID'};
+    if(eventTurn!==turn())return{accepted:false,reason:'TRANSPORT_LOSS_PERIOD_MISMATCH',expectedTurn:turn(),eventTurn:eventTurn};
+    var existing=priorLosses.find(function(row){return String(row&&row.eventId||'')===eventId;});
+    if(existing){
+      return String(existing.sourceEventId||'')===shipmentId&&String(existing.sourceType||'')==='TRANSPORT'&&
+        String(existing.resourceId||'')===resourceId&&Math.abs((num(existing.quantity)||0)-quantity)<=1e-9&&
+        String(existing.unit||'').toUpperCase()===unit.toUpperCase()
+        ?{accepted:true,duplicate:true,eventId:eventId,shipmentId:shipmentId}
+        :{accepted:false,reason:'TRANSPORT_LOSS_EVENT_ID_COLLISION',eventId:eventId};
+    }
+    var network=clone(networkBefore),shipments=Array.isArray(network.shipments)?network.shipments:[],
+      shipment=shipments.find(function(row){return String(row&&row.shipmentId||'')===shipmentId;});
+    if(!shipment)return{accepted:false,reason:'TRANSPORT_LOSS_SHIPMENT_NOT_FOUND',shipmentId:shipmentId};
+    // This is the mine-held leg: inventory has already been reserved from the warehouse,
+    // but has not yet been received. Other legs have different stock ownership/debit rules.
+    if(String(shipment.shipmentType||'')!=='MINE_TO_WAREHOUSE')
+      return{accepted:false,reason:'TRANSPORT_LOSS_SHIPMENT_TYPE_UNSUPPORTED',shipmentId:shipmentId,
+        shipmentType:shipment.shipmentType||null};
+    if(!['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(shipment.status||'')))
+      return{accepted:false,reason:'TRANSPORT_LOSS_SHIPMENT_NOT_IN_TRANSIT',shipmentId:shipmentId,status:shipment.status};
+    if(String(shipment.resourceId||'').toUpperCase()!==resourceId.toUpperCase()||
+      String(shipment.unit||'').toUpperCase()!==unit.toUpperCase()||canonical(shipment.countryId)!==country)
+      return{accepted:false,reason:'TRANSPORT_LOSS_SHIPMENT_IDENTITY_MISMATCH',shipmentId:shipmentId};
+    var shipmentQuantity=Math.max(0,num(shipment.quantity)||0),remainingShipment=shipmentQuantity-quantity;
+    if(remainingShipment<-1e-9)return{accepted:false,reason:'TRANSPORT_LOSS_EXCEEDS_SHIPMENT',shipmentQuantity:shipmentQuantity,quantity:quantity};
+    var batchId=String(shipment.batchId||'').trim(),batches=Array.isArray(batchesBefore)?batchesBefore.slice():[],
+      batch=batches.find(function(row){return String(row&&row.batchId||'')===batchId;}),
+      lots=Object.assign({},lotsBefore),lot=lots[batchId]||null;
+    if(!batch||!lot)return{accepted:false,reason:'TRANSPORT_LOSS_SOURCE_BATCH_OR_LOT_MISSING',batchId:batchId};
+    var batchRemaining=Math.max(0,num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0),
+      lotRemaining=Math.max(0,num(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)||0);
+    if(batchRemaining+1e-9<quantity||lotRemaining+1e-9<quantity)
+      return{accepted:false,reason:'TRANSPORT_LOSS_SOURCE_BALANCE_INSUFFICIENT',batchRemaining:batchRemaining,lotRemaining:lotRemaining};
+    var flowRows=Array.isArray(network.siteFlowLedger)?network.siteFlowLedger.slice():[],
+      flow=flowRows.find(function(row){return String(row&&row.batchId||'')===batchId;}),
+      mineHeld=Math.max(0,num(flow&&flow.mineHeldQuantity)||0);
+    if(!flow||mineHeld+1e-9<quantity)
+      return{accepted:false,reason:'TRANSPORT_LOSS_MINE_HELD_BALANCE_INSUFFICIENT',mineHeldQuantity:mineHeld,batchId:batchId};
+    var lossEvent={eventId:eventId,sourceEventId:shipmentId,sourceType:'TRANSPORT',lossType:'TRANSPORT',
+      resourceId:resourceId,quantity:quantity,unit:unit,reason:reason,sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',
+      turn:eventTurn,status:'COMMITTED',physicalMutationCommitted:true,batchId:batchId,
+      shipmentId:shipmentId,countryId:country,periodId:'GAME_TURN_'+eventTurn};
+    shipment.dispatchedQuantity=Math.max(0,num(shipment.dispatchedQuantity)||shipmentQuantity);
+    shipment.lostQuantity=(num(shipment.lostQuantity)||0)+quantity;
+    shipment.quantity=Number(Math.max(0,remainingShipment).toFixed(6));
+    shipment.lossEvents=Array.isArray(shipment.lossEvents)?shipment.lossEvents:[];
+    shipment.lossEvents.push(clone(lossEvent));
+    shipment.lastLossTurn=eventTurn;shipment.lastLossEventId=eventId;
+    if(shipment.quantity<=1e-9){shipment.quantity=0;shipment.status='LOST_IN_TRANSIT';shipment.deliveryStatus='LOST_IN_TRANSIT';}
+    batch.remainingQuantity=Number(Math.max(0,batchRemaining-quantity).toFixed(6));
+    batch.lastMovementTurn=eventTurn;batch.lastMovementType='TRANSPORT_LOSS';
+    if(batch.remainingQuantity<=1e-9)batch.status='DEPLETED_BY_TRANSPORT_LOSS';
+    lot.remainingQuantity=batch.remainingQuantity;lot.status=batch.remainingQuantity>1e-9?'PARTIALLY_LOST_IN_TRANSIT':'DEPLETED_BY_TRANSPORT_LOSS';
+    lot.lastMovementTurn=eventTurn;lot.lastMovementType='TRANSPORT_LOSS';
+    flow.mineHeldQuantity=Number(Math.max(0,mineHeld-quantity).toFixed(6));
+    flow.mineLogisticsLostQuantity=(num(flow.mineLogisticsLostQuantity)||0)+quantity;
+    flow.stockLossEventIds=[...new Set([...(flow.stockLossEventIds||[]),eventId])];
+    network.shipments=shipments;network.siteFlowLedger=flowRows;
+    var canonicalLoss={schemaVersion:1,type:'STOCK_LOSS_COMMITTED',eventId:eventId,sourceEventId:shipmentId,
+      sourceType:'TRANSPORT',lossType:'TRANSPORT',countryId:country,resourceId:resourceId,quantity:quantity,unit:unit,
+      sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',turn:eventTurn,periodId:'GAME_TURN_'+eventTurn,
+      status:'COMMITTED',batchId:batchId,shipmentId:shipmentId,reason:reason,
+      evidenceAuthority:'ATOMIC_SHIPMENT_LOSS_COMMIT',physicalMutationCommitted:true};
+    var ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))
+      ?ctx.stateTransaction.get('resource.inventoryLedger').slice():[];
+    ledger.push({type:'TRANSPORT_LOSS_COMMITTED',eventId:eventId,sourceEventId:shipmentId,sourceType:'TRANSPORT',
+      lossType:'TRANSPORT',sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',status:'COMMITTED',
+      physicalMutationCommitted:true,resourceId:resourceId,quantity:quantity,unit:unit,reason:reason,
+      turn:eventTurn,periodId:'GAME_TURN_'+eventTurn,batchId:batchId,shipmentId:shipmentId,countryId:country});
+    while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
+    var lossLedger=priorLosses.slice();lossLedger.push(canonicalLoss);
+    while(lossLedger.length>(num(rules().runtime.maxLedgerEntries)||2048))lossLedger.shift();
+    captureStockFlowPeriod(ctx.stateTransaction);
+    ctx.stateTransaction.set('resource.industrialNetwork',network);
+    ctx.stateTransaction.set('resource.batches',batches);
+    ctx.stateTransaction.set('resource.inventoryLots',lots);
+    ctx.stateTransaction.set('resource.inventoryLedger',ledger);
+    ctx.stateTransaction.set('resource.stockLossLedger',lossLedger);
+    var periods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))
+      ?ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[];
+    var period=periods.find(function(row){return String(row&&row.periodId||'')===canonicalLoss.periodId;});
+    if(period){
+      period.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+      period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
+      if(period.lossCoverageBySource.TRANSPORT)
+        period.lossCoverageBySource.TRANSPORT=Object.assign({},period.lossCoverageBySource.TRANSPORT,{status:'INVALIDATED_BY_NEW_LOSS_EVENT'});
+      ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
+    }
+    emit('OMEGA_RESOURCE_STOCK_LOSS_RECORDED',country,canonicalLoss,'resource-economy');
+    return{accepted:true,duplicate:false,eventId:eventId,shipmentId:shipmentId,batchId:batchId,
+      resourceId:resourceId,quantity:quantity,remainingShipmentQuantity:shipment.quantity,
+      lossCoverageStatus:'PENDING_PERIOD_SOURCE_ATTESTATION'};
+  }
+
+  function attestStockLossCoverageHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},country=canonical(ctx.countryId),sourceType=String(p.sourceType||'').trim().toUpperCase(),
+      eventTurn=num(p.turn==null?turn():p.turn),periodId='GAME_TURN_'+String(eventTurn),allowed=['STORAGE','TRANSPORT','PRODUCTION'];
+    if(!country||!allowed.includes(sourceType)||eventTurn!==turn())
+      return{accepted:false,reason:'STOCK_LOSS_COVERAGE_REQUEST_INVALID',sourceType:sourceType,eventTurn:eventTurn};
+    var periods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))?ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[],
+      period=periods.find(function(row){return String(row&&row.periodId||'')===periodId;});
+    if(!period)return{accepted:false,reason:'STOCK_FLOW_PERIOD_NOT_CAPTURED',periodId:periodId};
+    var inventory=ctx.stateTransaction.get('resource.inventoryLedger'),lossLedger=ctx.stateTransaction.get('resource.stockLossLedger'),
+      network=ctx.stateTransaction.get('resource.industrialNetwork'),movements=Array.isArray(inventory)?inventory:[],
+      losses=Array.isArray(lossLedger)?lossLedger:[],invalid=[],observedRows=0,lossEventsObserved=0;
+    function currentTurn(row){return num(row&&(row.turn??row.simulationTurn??row.deliveredTurn??row.createdTurn))===eventTurn;}
+    function hasLoss(event,sourceEventId){
+      var id=String(event&&(event.eventId||event.lossEventId)||'').trim();
+      if(!id)return false;
+      return losses.some(function(loss){
+        return String(loss&&loss.eventId||'')===id&&String(loss.sourceEventId||'')===String(sourceEventId||'')&&
+          String(loss.sourceType||'').toUpperCase()===sourceType&&
+          String(loss.resourceId||'').toUpperCase()===String(event.resourceId||'').toUpperCase()&&
+          Math.abs((num(loss.quantity)||0)-(num(event.quantity??event.lossQuantity??event.actualLossQuantity)||0))<=1e-9&&
+          String(loss.unit||'').toUpperCase()===String(event.unit||'').toUpperCase()&&
+          String(loss.status||'').toUpperCase()==='COMMITTED';
+      });
+    }
+    if(sourceType==='STORAGE'){
+      if(!Array.isArray(inventory))invalid.push('INVENTORY_LEDGER_UNAVAILABLE');
+      else{
+        observedRows=movements.filter(currentTurn).length;
+        movements.filter(currentTurn).forEach(function(row){
+          var type=String(row&&row.type||'').toUpperCase();
+          if(type==='STORAGE_LOSS_COMMITTED'){
+            var event={eventId:row.eventId,resourceId:row.resourceId,quantity:row.quantity,unit:row.unit};
+            if(!hasLoss(event,row.sourceEventId||row.eventId))invalid.push('STORAGE_LOSS_SOURCE_NOT_RECONCILED:'+String(row.eventId||'MISSING_ID'));
+          }
+        });
+        losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()==='STORAGE';})
+          .forEach(function(row){
+            lossEventsObserved++;
+            var source=movements.find(function(item){
+              return String(item&&item.eventId||'')===String(row.sourceEventId||'')&&
+                String(item&&item.type||'').toUpperCase()==='STORAGE_LOSS_COMMITTED'&&
+                String(item&&item.resourceId||'').toUpperCase()===String(row.resourceId||'').toUpperCase()&&
+                Math.abs((num(item.quantity)||0)-(num(row.quantity)||0))<=1e-9&&
+                String(item.unit||'').toUpperCase()===String(row.unit||'').toUpperCase();
+            });
+            if(!source)invalid.push('STORAGE_LOSS_LEDGER_ORPHAN:'+row.eventId);
+          });
+      }
+    }else if(sourceType==='TRANSPORT'){
+      if(!network||!Array.isArray(network.shipments)||!Array.isArray(network.deliveries))
+        invalid.push('INDUSTRIAL_SHIPMENT_LEDGER_UNAVAILABLE');
+      else{
+        var shipmentRows=network.shipments.filter(currentTurn),deliveryRows=network.deliveries.filter(currentTurn);
+        observedRows=shipmentRows.length+deliveryRows.length;
+        shipmentRows.forEach(function(row){
+          if(!row.shipmentId||!row.resourceId||num(row.dispatchedQuantity??row.quantity)===null||!row.unit||!row.countryId)
+            invalid.push('TRANSPORT_SHIPMENT_IDENTITY_INCOMPLETE:'+String(row.shipmentId||'MISSING_ID'));
+          (Array.isArray(row.lossEvents)?row.lossEvents:[]).forEach(function(event){
+            lossEventsObserved++;
+            if(!hasLoss(event,row.shipmentId))invalid.push('TRANSPORT_LOSS_NOT_RECONCILED:'+String(event.eventId||'MISSING_ID'));
+          });
+        });
+        deliveryRows.forEach(function(row){
+          if(!row.shipmentId||!row.resourceId||num(row.quantity)===null||!row.unit)
+            invalid.push('TRANSPORT_DELIVERY_IDENTITY_INCOMPLETE:'+String(row.shipmentId||'MISSING_ID'));
+        });
+        losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()==='TRANSPORT';})
+          .forEach(function(row){
+            if(!hasLoss({eventId:row.eventId,resourceId:row.resourceId,quantity:row.quantity,unit:row.unit},row.sourceEventId))
+              invalid.push('TRANSPORT_LOSS_LEDGER_ORPHAN:'+row.eventId);
+          });
+      }
+    }else{
+      if(!Array.isArray(inventory))invalid.push('PRODUCTION_LEDGER_UNAVAILABLE');
+      else{
+        var productionRows=movements.filter(function(row){
+          return String(row&&row.type||'').toUpperCase()==='PRODUCTION_TRANSACTION_COMMITTED'&&currentTurn(row);
+        });
+        observedRows=productionRows.length;
+        productionRows.forEach(function(row){
+          if(!row.transactionId||!Array.isArray(row.inputs)||!Array.isArray(row.outputs))
+            invalid.push('PRODUCTION_TRANSACTION_IDENTITY_INCOMPLETE:'+String(row.transactionId||'MISSING_ID'));
+          (Array.isArray(row.lossEvents)?row.lossEvents:[]).forEach(function(event){
+            lossEventsObserved++;
+            if(!hasLoss(event,row.transactionId))invalid.push('PRODUCTION_LOSS_NOT_RECONCILED:'+String(event.eventId||'MISSING_ID'));
+          });
+        });
+        losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()==='PRODUCTION';})
+          .forEach(function(row){
+            var source=productionRows.find(function(item){return String(item.transactionId||'')===String(row.sourceEventId||'');});
+            if(!source||!hasLoss({eventId:row.eventId,resourceId:row.resourceId,quantity:row.quantity,unit:row.unit},row.sourceEventId))
+              invalid.push('PRODUCTION_LOSS_LEDGER_ORPHAN:'+row.eventId);
+          });
+      }
+    }
+    var coverage={status:invalid.length?'PARTIAL':'COMPLETE',sourceType:sourceType,countryId:country,turn:eventTurn,
+      periodId:periodId,rowsObserved:observedRows,lossEventsObserved:lossEventsObserved,integrityErrors:invalid,
+      authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',basis:'AUTHORITATIVE_SOURCE_LEDGER_SCAN',attestedAtTurn:turn(),
+      sourceFingerprint:fingerprint({sourceType:sourceType,turn:eventTurn,observedRows:observedRows,
+        losses:losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()===sourceType;})})};
+    period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
+    period.lossCoverageBySource[sourceType]=coverage;
+    var complete=allowed.every(function(type){return period.lossCoverageBySource[type]&&period.lossCoverageBySource[type].status==='COMPLETE';});
+    period.lossCoverageStatus=complete?'COMPLETE':allowed.some(function(type){
+      return period.lossCoverageBySource[type]&&period.lossCoverageBySource[type].status==='PARTIAL';
+    })?'PARTIAL':'UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+    period.lossCoverageAuthority='OMEGA_RESOURCE_ECONOMY_V2_SOURCE_ATTESTATION';
+    period.lossCoverageAttestedAtTurn=turn();
+    ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
+    return{accepted:true,sourceType:sourceType,periodId:periodId,coverageStatus:coverage.status,
+      lossCoverageStatus:period.lossCoverageStatus,rowsObserved:observedRows,lossEventsObserved:lossEventsObserved,integrityErrors:invalid};
+  }
+
   function demandRuntimePublishHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},current=ctx.stateTransaction.get('resource.consumption');
     var next=clone(current&&typeof current==='object'&&!Array.isArray(current)?current:{});
@@ -1997,6 +2212,9 @@ function captureStockFlowPeriod(stateTransaction) {
       ['OMEGA_RESOURCE_ECON_REGISTER_BATCH','resource',registerBatchHandler],
       ['OMEGA_RESOURCE_ECON_CONSUME_INVENTORY','resource',consumeHandler],
       ['OMEGA_RESOURCE_ECON_RECORD_STOCK_LOSS','resource',recordStockLossHandler],
+      ['OMEGA_RESOURCE_ECON_COMMIT_SHIPMENT_LOSS','resource',commitShipmentLossHandler],
+      ['OMEGA_RESOURCE_ECON_ATTEST_STOCK_LOSS_COVERAGE','resource',attestStockLossCoverageHandler],
+      ['OMEGA_RESOURCE_ECON_CAPTURE_STOCK_FLOW_PERIOD','resource',function(cmd,ctx){return captureStockFlowPeriod(ctx.stateTransaction);}],
       ['OMEGA_RESOURCE_ECON_PUBLISH_DEMAND_RUNTIME','resource',demandRuntimePublishHandler],
       ['OMEGA_RESOURCE_ECON_ADD_INVENTORY','resource',addInventoryHandler],
       ['OMEGA_RESOURCE_ECON_APPLY_PRODUCTION','resource',applyProductionHandler],
@@ -2268,6 +2486,12 @@ function captureStockFlowPeriod(stateTransaction) {
     invalidateWorldMineStats();
     return measure('load-rules',function(){return loadRules();}).then(async function(){
       measure('install-handlers-events',function(){installHandlers();installEvents();});
+      var openingCapture=dispatch('resource','OMEGA_RESOURCE_ECON_CAPTURE_STOCK_FLOW_PERIOD',cid,{
+        turn:turn(),correlationId:'STOCK-FLOW-OPEN:'+canonical(cid)+':'+turn()
+      });
+      if(!openingCapture||openingCapture.status!=='APPLIED'||
+        !['CAPTURED','ALREADY_CAPTURED'].includes(String(openingCapture.result&&openingCapture.result.status||'')))
+        throw new Error(openingCapture&&openingCapture.result&&openingCapture.result.reason||'STOCK_FLOW_OPENING_CAPTURE_FAILED');
       var publicationScope={turn:turn(),countryId:canonical(cid),finishedGoodsRows:[],
         materialOwners:{},economyPublished:false,offersPublished:false,registrationEventsPublished:false,
         economyPublication:null,offerPublication:null};
@@ -2345,6 +2569,17 @@ function captureStockFlowPeriod(stateTransaction) {
       if(g.OmegaGlobalTrade&&typeof g.OmegaGlobalTrade.processCountry==='function'){
         try{measure('global-trade-process-country',function(){return g.OmegaGlobalTrade.processCountry(cid);});}catch(_){}
       }
+      var coverageResults=['STORAGE','TRANSPORT','PRODUCTION'].map(function(sourceType){
+        return dispatch('resource','OMEGA_RESOURCE_ECON_ATTEST_STOCK_LOSS_COVERAGE',cid,{
+          sourceType:sourceType,turn:turn(),correlationId:'STOCK-LOSS-COVERAGE:'+sourceType+':'+cid+':'+turn()
+        });
+      });
+      var failedCoverage=coverageResults.filter(function(result){
+        return !result||result.status!=='APPLIED'||result.result?.accepted!==true;
+      });
+      if(failedCoverage.length)emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,{
+        status:'DEGRADED',reason:'STOCK_LOSS_COVERAGE_ATTESTATION_FAILED',details:clone(failedCoverage),turn:turn()
+      },'resource-economy');
       var dashboardRow=measure('dashboard-build',function(){return dashboard(cid);});
       emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,dashboardRow.health,'resource-economy');
       try{
@@ -2517,6 +2752,29 @@ function captureStockFlowPeriod(stateTransaction) {
   }
 
   var API={VERSION:VERSION,diagnostics:diagnostics,getCountryDashboard:dashboard,processCountry:processCountry,runTurn:runTurn,
+    captureStockFlowPeriod:function(c){
+      installHandlers();
+      return dispatch('resource','OMEGA_RESOURCE_ECON_CAPTURE_STOCK_FLOW_PERIOD',canonical(c),
+        {turn:turn(),correlationId:'MANUAL-STOCK-FLOW-OPEN:'+canonical(c)+':'+turn()});
+    },
+    attestStockLossCoverage:function(c,sourceType){
+      installHandlers();
+      return dispatch('resource','OMEGA_RESOURCE_ECON_ATTEST_STOCK_LOSS_COVERAGE',canonical(c),
+        {turn:turn(),sourceType:sourceType,correlationId:'MANUAL-STOCK-LOSS-COVERAGE:'+sourceType+':'+canonical(c)+':'+turn()});
+    },
+    writeOffInventory:function(c,payload){
+      installHandlers();
+      var data=Object.assign({},payload||{}),eventId=String(data.eventId||data.movementId||'').trim();
+      data.lossType='STORAGE';
+      if(eventId){data.eventId=eventId;data.idempotencyKey=eventId;data.correlationId=eventId;}
+      return dispatch('resource','OMEGA_RESOURCE_ECON_CONSUME_INVENTORY',canonical(c),data);
+    },
+    recordShipmentLoss:function(c,payload){
+      installHandlers();
+      var data=Object.assign({},payload||{}),eventId=String(data.eventId||data.lossEventId||'').trim();
+      if(eventId){data.idempotencyKey=eventId;data.correlationId=eventId;}
+      return dispatch('resource','OMEGA_RESOURCE_ECON_COMMIT_SHIPMENT_LOSS',canonical(c),data);
+    },
     recordStockLoss:function(c,payload){
       installHandlers();
       var data=Object.assign({},payload||{}),eventId=String(data.eventId||data.lossEventId||'').trim();
