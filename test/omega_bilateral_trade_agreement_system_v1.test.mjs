@@ -29,7 +29,7 @@ function countryResource(stock, reserve, daily, unmet) {
 test('bilateral trade market intelligence, negotiation, contract execution and balance are deterministic', async () => {
   const relation = () => ({ overall: 85, trade: 90, trust: 80, political: 85, trade_agreement: true, sanctions: false, war_state: false });
   globalThis.Game = { state: {
-    simulation: { turn: 0, stepDurationMs: 86400000 },
+    simulation: { turn: 0, date: '2015-01-01T00:00:00.000Z', stepDurationMs: 10000 },
     resource: {
       BGD: countryResource(18000, 500, 10, 500),
       SAU: countryResource(30000, 1000, 1, 1000),
@@ -204,6 +204,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   });
   assert.equal(feasible.status, 'FEASIBLE', JSON.stringify(feasible));
   assert.equal(feasible.canSend, true);
+  assert.equal(feasible.durationTurns, 365, '12 months must use the game calendar, not wall-clock stepDurationMs');
   assert.equal(feasible.buyerAvailableForeignCurrency, 500000);
   assert.equal(feasible.exportableSupply, 28970);
 
@@ -247,6 +248,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(globalThis.Game.state.foreign.SAU.treaties.BGD.status, 'ACTIVE');
 
   assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
+  assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
   const duplicateProposal = bilateral.createProposal('BGD', {
     proposalId: 'BTP-BGD-SAU-COLLISION', targetCountryId: 'SAU', direction: 'IMPORT',
     resourceId: 'crude_oil', quantityPerDelivery: 101, unitPrice: 100,
@@ -277,6 +279,13 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   globalThis.Game.state.resource.SAU.inventory.crude_oil = reportChangeStock - 1;
   assert.equal(bilateral.getMarketReport('BGD', 'SAU').status, 'STALE');
   globalThis.Game.state.resource.SAU.inventory.crude_oil = reportChangeStock;
+  const priorCompetitorDemand = globalThis.Game.state.resource.IND.demandRuntime.byResource.crude_oil.unmetDemand;
+  globalThis.Game.state.resource.IND.demandRuntime.byResource.crude_oil.unmetDemand = priorCompetitorDemand + 1;
+  const staleCompetition = bilateral.previewProposal('BGD', { targetCountryId: 'SAU', direction: 'IMPORT', resourceId: 'crude_oil', quantityPerDelivery: 100, unitPrice: 100, durationMonths: 12, intervalDays: 30 });
+  assert.equal(staleCompetition.status, 'STALE');
+  assert.equal(staleCompetition.reason, 'ALTERNATIVE_MARKET_DATA_CHANGED');
+  globalThis.Game.state.resource.IND.demandRuntime.byResource.crude_oil.unmetDemand = priorCompetitorDemand;
+  assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
 
   globalThis.Game.state.simulation.turn = buyerContract.nextDeliveryTurn;
   const due = bilateral.processCountry('BGD');
