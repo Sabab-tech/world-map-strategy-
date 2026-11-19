@@ -240,7 +240,7 @@
     resource:[
       'resourceSummary','resourceInventory','resourceDeposits','resource.inventory','resource.production','resource.consumption','resource.reserves',
       'resource.endowment','resource.mines','resource.mineStates','resource.tradeAvailability','resource.strategicReserve',
-      'resource.extractionLedger','resource.resourceDomain','resource.authority','resource.batches','resource.inventoryLedger','resource.stockFlowPeriods',
+      'resource.extractionLedger','resource.resourceDomain','resource.authority','resource.batches','resource.inventoryLedger','resource.stockLossLedger','resource.stockFlowPeriods',
       'resource.inventoryIntegrity','resource.lastExtractionTurn','resource.surveyRequests','resource.surveyResults','resource.reserveBufferRequests','resource.technologyResearchProjects','resource.technologyTransfers','resource.technologyCapabilities'
     ],
     health:[
