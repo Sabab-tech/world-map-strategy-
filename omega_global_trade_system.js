@@ -438,6 +438,30 @@ function captureStockFlowPeriod(stateTransaction) {
       result.result?.accepted!==false&&result.accepted!==false;
   }
 
+  function bilateralContractReserve(seller,resourceId,request={}){
+    const rows=countryValue(seller,'trade.bilateralContracts');
+    if(!Array.isArray(rows))return{quantity:0,agreementIds:[],status:'NO_ACTIVE_COMMITMENTS'};
+    const currentTurn=turn(),excludeAgreement=String(request.governmentContractId||'').trim(),
+      requestId=String(request.requestId||'').trim();
+    let quantity=0;const agreementIds=[];
+    for(const contract of rows){
+      if(!contract||!contract.agreementId||token(contract.resourceId)!==token(resourceId))continue;
+      const role=id(contract.role),sellerId=canonical(contract.sellerCountryId||seller),
+        status=id(contract.status),agreementId=String(contract.agreementId);
+      if(sellerId!==canonical(seller)||role&&role!=='SELLER'||!['ACTIVE','AT_RISK'].includes(status))continue;
+      if(excludeAgreement&&agreementId===excludeAgreement)continue;
+      const deliveryRequest=String(contract.currentRequestId||'').trim(),
+        due=num(contract.nextDeliveryTurn),deliveryQuantity=num(contract.quantityPerDelivery);
+      if(deliveryQuantity===null||deliveryQuantity<=0)continue;
+      if(deliveryRequest){
+        if(deliveryRequest===requestId)continue;
+        quantity+=deliveryQuantity;agreementIds.push(agreementId);continue;
+      }
+      if(due!==null&&due<=currentTurn+1){quantity+=deliveryQuantity;agreementIds.push(agreementId);}
+    }
+    return{quantity:Number(quantity.toFixed(8)),agreementIds:agreementIds,status:agreementIds.length?'RESERVED':'NO_ACTIVE_COMMITMENTS'};
+  }
+
   function sellerReviewDecision(request){
     const buyer=canonical(request.countryId),seller=canonical(request.targetCountryId),resourceId=String(request.resourceId||'').trim();
     const covertDeal=blackMarketDealFor(request);
@@ -474,7 +498,9 @@ function captureStockFlowPeriod(stateTransaction) {
     if(result.quantity===null||result.quantity<=0){result.decision='REJECT';result.reason='INVALID_QUANTITY';return result;}
     if(supply.stock===null){result.reason='SELLER_RESOURCE_STOCK_NOT_OBSERVED';return result;}
     const reserve=Math.max(0,supply.reserve||0);
-    let free=Math.max(0,supply.stock-reserve);
+    const contractReserve=bilateralContractReserve(seller,resourceId,request);
+    let free=Math.max(0,supply.stock-reserve-contractReserve.quantity);
+    result.bilateralContractReserve=clone(contractReserve);
     if(request.sellerCompanyId){
       const companySupply=privateCompanyAvailableStock(seller,resourceId,request.sellerCompanyId);
       result.privateCompanySupply=clone(companySupply);
@@ -483,7 +509,7 @@ function captureStockFlowPeriod(stateTransaction) {
       }
       free=Math.min(free,Math.max(0,num(companySupply.available)||0));
     }
-    if(free<=0){result.decision='REJECT';result.reason=request.sellerCompanyId?'PRIVATE_SELLER_COMPANY_STOCK_INSUFFICIENT':'RESOURCE_RESERVED_OR_SCARCE';return result;}
+    if(free<=0){result.decision='REJECT';result.reason=contractReserve.quantity>0?'BILATERAL_CONTRACT_RESERVED_SUPPLY':request.sellerCompanyId?'PRIVATE_SELLER_COMPANY_STOCK_INSUFFICIENT':'RESOURCE_RESERVED_OR_SCARCE';return result;}
     const approved=Math.min(result.quantity,free);
     const debtPressure=sellerFin.debtToGdp===null?0:clamp(sellerFin.debtToGdp/1.5);
     const liquidityPressure=sellerFin.liquidity===null?0:clamp(1-(sellerFin.liquidity/Math.max(sellerFin.gdp||sellerFin.liquidity||1,1)));
