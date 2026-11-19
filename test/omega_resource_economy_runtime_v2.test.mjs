@@ -1004,6 +1004,135 @@ test('factory by-product residue coverage reconciles real output batches without
     'residue already credited as product must not be booked as an additional physical loss');
 });
 
+test('automatic storage deterioration debits free physical stock once and carries fractional loss',async()=>{
+  const {context,worldState}=createContext();
+  worldState.simulation.turn=32;
+  vm.runInNewContext(readFileSync('omega_resource_economy_runtime_v2.js','utf8'),context,
+    {filename:'omega_resource_economy_runtime_v2.js'});
+  const api=context.Omega.ResourceEconomy,resource=worldState.resource.BGD;
+  resource.inventory.grain=100;
+  resource.batches=[{batchId:'GRAIN-BATCH-1',resourceId:'grain',materialIdentity:'grain',
+    quantity:100,remainingQuantity:100,unit:'TONNES',createdTurn:1,stage:'RAW',status:'AVAILABLE',
+    warehouseId:'WH-BGD-RAW',locationNodeKey:'WAREHOUSE:BGD:RAW'}];
+  resource.inventoryLots={'GRAIN-BATCH-1':{batchId:'GRAIN-BATCH-1',resourceId:'grain',
+    quantity:100,remainingQuantity:100,unit:'TONNES',createdTurn:1,status:'AVAILABLE'}};
+  resource.warehouse.availableByResource.grain=100;
+  resource.warehouse.storedBatchIds=['GRAIN-BATCH-1'];
+  api.captureStockFlowPeriod('BGD');
+  const result=api.processStorageDeterioration('BGD',{policy:STORAGE_POLICY,knownResourceIds:['grain']});
+  assert.equal(result.status,'APPLIED',JSON.stringify(result));
+  assert.equal(result.result.accepted,true);
+  assert.equal(result.result.lossEventsCommitted,1);
+  assert.equal(resource.inventory.grain,99.9);
+  assert.equal(resource.warehouse.availableByResource.grain,99.9);
+  assert.equal(resource.batches[0].remainingQuantity,99.9);
+  assert.equal(resource.inventoryLots['GRAIN-BATCH-1'].remainingQuantity,99.9);
+  assert.equal(resource.stockLossLedger.length,1);
+  assert.equal(resource.stockLossLedger[0].evidenceAuthority,'ATOMIC_AUTOMATIC_STORAGE_DETERIORATION');
+  assert.equal(resource.inventoryLedger.at(-1).type,'STORAGE_LOSS_COMMITTED');
+  const snapshot=JSON.stringify({inventory:resource.inventory,batches:resource.batches,
+    lots:resource.inventoryLots,warehouse:resource.warehouse,losses:resource.stockLossLedger});
+  api.processStorageDeterioration('BGD',{policy:STORAGE_POLICY,knownResourceIds:['grain']});
+  assert.equal(JSON.stringify({inventory:resource.inventory,batches:resource.batches,
+    lots:resource.inventoryLots,warehouse:resource.warehouse,losses:resource.stockLossLedger}),snapshot);
+});
+
+test('factory-bound transport loss is atomic for raw and processed warehouse shipments',async()=>{
+  for(const shipmentType of ['WAREHOUSE_TO_FACTORY','FACTORY_INPUT']){
+    const {context,worldState}=createContext();
+    vm.runInNewContext(readFileSync('omega_resource_economy_runtime_v2.js','utf8'),context,
+      {filename:'omega_resource_economy_runtime_v2.js'});
+    const api=context.Omega.ResourceEconomy,resource=worldState.resource.BGD,
+      processed=shipmentType==='FACTORY_INPUT',
+      warehouseId=processed?'WH-BGD-PROCESSED':'WH-BGD-RAW',
+      shipmentId='FACTORY-BOUND-LOSS-'+shipmentType;
+    resource.inventoryLots={'MINE-BATCH-1':{batchId:'MINE-BATCH-1',resourceId:'iron_ore',
+      quantity:100,remainingQuantity:100,unit:'TONNES',createdTurn:1,status:'AVAILABLE'}};
+    resource.batches[0].warehouseId=warehouseId;
+    resource.batches[0].locationNodeKey=processed?'WAREHOUSE:BGD:PROCESSED':'WAREHOUSE:BGD:RAW';
+    resource.warehouse.reservedByResource={};
+    if(processed)resource.processedWarehouse={warehouseId,countryId:'BGD',availableByResource:{iron_ore:100},
+      reservedByResource:{iron_ore:20},storedBatchIds:['MINE-BATCH-1'],receipts:[]};
+    else resource.warehouse.reservedByResource.iron_ore=20;
+    const shipment={shipmentId,shipmentType,countryId:'BGD',factoryId:'PROC_1',resourceId:'iron_ore',
+      quantity:20,dispatchedQuantity:20,lostQuantity:0,unit:'TONNES',batchId:'MINE-BATCH-1',
+      sourceWarehouseId:warehouseId,warehouseId,reservationId:shipmentId,status:'IN_TRANSIT',createdTurn:1,
+      ...(processed?{targetQuantity:40,targetUnit:'TONNES_EQUIVALENT',
+        unitBridge:{factor:2,sourceUnit:'TONNES',targetUnit:'TONNES_EQUIVALENT'}}:{})};
+    resource.industrialNetwork={shipments:[shipment],deliveries:[],siteFlowLedger:[],
+      reservations:processed?{}:{[shipmentId]:{resourceId:'iron_ore',quantity:20,status:'RESERVED',warehouseId,warehouseKind:'RAW'}}};
+    api.captureStockFlowPeriod('BGD');
+    const loss=api.recordShipmentLoss('BGD',{eventId:shipmentId+':LOSS-1',shipmentId,
+      resourceId:'iron_ore',quantity:3,unit:'TONNES',reason:'CONFIRMED_FACTORY_BOUND_CARGO_DAMAGE'});
+    assert.equal(loss.status,'APPLIED',JSON.stringify(loss));
+    assert.equal(loss.result.accepted,true);
+    assert.equal(loss.result.remainingShipmentQuantity,17);
+    assert.equal(resource.inventory.iron_ore,97);
+    const sourceWarehouse=processed?resource.processedWarehouse:resource.warehouse;
+    assert.equal(sourceWarehouse.availableByResource.iron_ore,97);
+    assert.equal(sourceWarehouse.reservedByResource.iron_ore,17);
+    assert.equal(resource.batches[0].remainingQuantity,97);
+    assert.equal(resource.inventoryLots['MINE-BATCH-1'].remainingQuantity,97);
+    assert.equal(resource.industrialNetwork.shipments[0].quantity,17);
+    if(processed)assert.equal(resource.industrialNetwork.shipments[0].targetQuantity,34);
+    else assert.equal(resource.industrialNetwork.reservations[shipmentId].quantity,17);
+    const snapshot=JSON.stringify({inventory:resource.inventory,batches:resource.batches,lots:resource.inventoryLots,
+      raw:resource.warehouse,processed:resource.processedWarehouse,network:resource.industrialNetwork,
+      losses:resource.stockLossLedger});
+    const replay=api.recordShipmentLoss('BGD',{eventId:shipmentId+':LOSS-1',shipmentId,
+      resourceId:'iron_ore',quantity:3,unit:'TONNES',reason:'CONFIRMED_FACTORY_BOUND_CARGO_DAMAGE'});
+    assert.equal(replay.status,'APPLIED');
+    assert.equal(JSON.stringify({inventory:resource.inventory,batches:resource.batches,lots:resource.inventoryLots,
+      raw:resource.warehouse,processed:resource.processedWarehouse,network:resource.industrialNetwork,
+      losses:resource.stockLossLedger}),snapshot,'loss-event replay must not consume reserved source stock again');
+    const storedShipment=resource.industrialNetwork.shipments[0];
+    storedShipment.status='DELIVERED';storedShipment.deliveryStatus='DELIVERED_TO_FACTORY';
+    storedShipment.deliveredTurn=1;storedShipment.lossMeasurementStatus='MEASURED_EVENTS';
+    storedShipment.lossMeasurementAuthority='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2';
+    storedShipment.lossMeasurementBasis='CONFIRMED_CARGO_RECEIPT_WITH_LOSSES';
+    storedShipment.lossMeasurementTurn=1;storedShipment.lossMeasurementComplete=true;
+    resource.industrialNetwork.deliveries.push({shipmentId,shipmentType,resourceId:'iron_ore',
+      quantity:17,sourceQuantity:17,unit:'TONNES',turn:1,createdTurn:1});
+    const coverage=api.attestStockLossCoverage('BGD','TRANSPORT');
+    assert.equal(coverage.status,'APPLIED');
+    assert.equal(coverage.result.coverageStatus,'COMPLETE',JSON.stringify(coverage.result));
+  }
+});
+
+test('factory by-product residue coverage reconciles real output batches without double-debiting stock',async()=>{
+  const {context,worldState}=createContext();
+  vm.runInNewContext(readFileSync('omega_resource_economy_runtime_v2.js','utf8'),context,
+    {filename:'omega_resource_economy_runtime_v2.js'});
+  const api=context.Omega.ResourceEconomy,resource=worldState.resource.BGD;
+  api.captureStockFlowPeriod('BGD');
+  const event={eventId:'RESIDUE:FACTORY-RESIDUE-TX-1:BLAST_FURNACE_SLAG',
+    sourceEventId:'FACTORY-RESIDUE-TX-1',sourceType:'PRODUCTION_RESIDUE',productRole:'BY_PRODUCT_RESIDUE',
+    resourceId:'BLAST_FURNACE_SLAG',quantity:1.5,unit:'TONNES',
+    batchId:'OUTPUT:FACTORY-RESIDUE-TX-1:BLAST_FURNACE_SLAG',transactionId:'FACTORY-RESIDUE-TX-1',
+    factoryId:'STEEL-PLANT-1',recipeId:'STEEL_PRIMARY_ROUTE_V1',turn:1,
+    authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',status:'MEASURED',physicalMutationCommitted:true};
+  const batch={batchId:event.batchId,resourceId:event.resourceId,quantity:1.5,remainingQuantity:1.5,
+    unit:'TONNES',stage:'FINISHED',status:'AVAILABLE',warehouseId:'WH-BGD-PROCESSED',
+    locationNodeKey:'WAREHOUSE:BGD:PROCESSED',createdTurn:1,productRole:'BY_PRODUCT_RESIDUE',
+    residueMeasurementEventId:event.eventId};
+  resource.batches.push(batch);
+  resource.productionResidueLedger=[{transactionId:event.transactionId,countryId:'BGD',factoryId:event.factoryId,
+    recipeId:event.recipeId,turn:1,periodId:'GAME_TURN_1',status:'MEASURED_EVENTS',
+    basis:'MEASURED_PROCESS_OUTPUT_RESIDUE',authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',
+    measurements:[event]}];
+  resource.inventoryLedger=[{type:'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED',transactionId:event.transactionId,
+    factoryId:event.factoryId,recipeId:event.recipeId,inputQuantities:{iron_concentrate:6},
+    outputs:{STEEL:6,BLAST_FURNACE_SLAG:1.5},createdBatchIds:[event.batchId],turn:1,periodId:'GAME_TURN_1',
+    lossMeasurementStatus:'MEASURED_EVENTS',lossMeasurementAuthority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1',
+    lossMeasurementBasis:'MEASURED_PROCESS_OUTPUT_RESIDUE',residueMeasurements:[event]}];
+  const coverage=api.attestStockLossCoverage('BGD','PRODUCTION');
+  assert.equal(coverage.status,'APPLIED');
+  assert.equal(coverage.result.coverageStatus,'COMPLETE',JSON.stringify(coverage.result));
+  assert.equal(coverage.result.lossEventsObserved,1);
+  assert.equal((resource.stockLossLedger||[]).length,0,
+    'residue already credited as product must not be booked as an additional physical loss');
+});
+
 test('production loss evidence is source-bound, atomic, and cannot exceed consumed input',async()=>{
   const {context,worldState}=createContext();
   vm.runInNewContext(readFileSync('omega_resource_economy_runtime_v2.js','utf8'),context,
