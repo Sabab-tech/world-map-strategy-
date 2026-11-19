@@ -907,3 +907,28 @@ test('production loss evidence is source-bound, atomic, and cannot exceed consum
   assert.equal(productionCoverage.result.coverageStatus,'PARTIAL');
   assert.ok(productionCoverage.result.integrityErrors.some(x=>x.startsWith('PRODUCTION_LOSS_MEASUREMENT_UNOBSERVED')));
 });
+
+
+test('explicit measured-zero production evidence can attest coverage without fabricating loss rows',async()=>{
+  const {context,worldState}=createContext();
+  vm.runInNewContext(readFileSync('omega_resource_economy_runtime_v2.js','utf8'),context,
+    {filename:'omega_resource_economy_runtime_v2.js'});
+  const api=context.Omega.ResourceEconomy,mesh=context.Omega.MinistryInteroperability,resource=worldState.resource.BGD;
+  api.captureStockFlowPeriod('BGD');
+  const result=mesh.dispatchCommand('resource','OMEGA_RESOURCE_ECON_APPLY_PRODUCTION','BGD',{
+    transactionId:'FACTORY-MEASURED-ZERO-1',facilityId:'PROC-UNIT-1',
+    inputs:[{resourceId:'iron_ore',quantity:1,unit:'TONNES'}],
+    outputs:[{resourceId:'iron_intermediate',quantity:1,unit:'TONNES'}],
+    lossEvents:[],lossMeasurementStatus:'MEASURED_ZERO',
+    lossMeasurementAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',
+    lossMeasurementBasis:'MEASURED_ZERO_PROCESS_RESIDUE'
+  },{commandId:'FACTORY-MEASURED-ZERO-1',turn:1});
+  assert.equal(result.status,'APPLIED',JSON.stringify(result));
+  const row=resource.inventoryLedger.find(item=>item.transactionId==='FACTORY-MEASURED-ZERO-1');
+  assert.equal(row.lossMeasurementStatus,'MEASURED_ZERO');
+  assert.equal(resource.stockLossLedger.length,0,'a measured zero must not create a synthetic loss row');
+  const coverage=api.attestStockLossCoverage('BGD','PRODUCTION');
+  assert.equal(coverage.status,'APPLIED');
+  assert.equal(coverage.result.coverageStatus,'COMPLETE');
+  assert.equal(coverage.result.lossEventsObserved,0);
+});
