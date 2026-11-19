@@ -17,7 +17,7 @@ test('transpiled helpers stay local while the runtime API remains globally publi
   const compiled = 'var M = function () { return \'object-spread-helper\'; };\n' +
     'var m = function () { return \'descriptor-helper\'; };\n' +
     '(function (global) { global.OmegaResourceResearchRuntime = { ready: true }; })(window);';
-  const scoped = scopeTranspiledAndroidAsset(original, compiled);
+  const scoped = scopeTranspiledAndroidAsset('omega_resource_research_runtime_v1.js', original, compiled);
   const context = vm.createContext({});
   context.window = context;
 
@@ -48,7 +48,7 @@ test('later classic assets cannot overwrite Resource Research transpile helpers'
 
   const scoped = vm.createContext({});
   scoped.window = scoped;
-  vm.runInContext(scopeTranspiledAndroidAsset(original, compiled), scoped);
+  vm.runInContext(scopeTranspiledAndroidAsset('omega_resource_research_runtime_v1.js', original, compiled), scoped);
   vm.runInContext(competingAsset, scoped);
   assert.deepEqual({ ...scoped.mergeResearchProject({ projectId: 'R-1' }) }, {
     projectId: 'R-1',
@@ -62,7 +62,7 @@ test('ordinary top-level scripts retain their intentional global declarations', 
   const context = vm.createContext({});
   context.window = context;
 
-  vm.runInContext(scopeTranspiledAndroidAsset(original, compiled), context);
+  vm.runInContext(scopeTranspiledAndroidAsset('omega_resource_research_runtime_v1.js', original, compiled), context);
 
   assert.equal(context.OMEGA_LEGACY_GLOBAL, 42);
   assert.equal(context.OMEGA_LEGACY_BOOT, true);
