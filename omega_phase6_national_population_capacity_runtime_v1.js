@@ -410,6 +410,7 @@
     var entries = Object.create(null), conflicts = Object.create(null);
     var byResource = Object.create(null), settlementIds = Object.create(null);
     var currentTurnRecordCount = 0, unclassifiedRecordCount = 0;
+    var ledgerMayBeTruncated = ledger.length >= 2048;
     function bucket(resourceId) {
       var key = token(resourceId);
       if (!key) return null;
@@ -467,7 +468,7 @@
       target.sourceCountryIds = target.sourceCountryIds.filter(function (value, index, allValues) {
         return allValues.indexOf(value) === index;
       }).sort();
-      var complete = target.unclassifiedRecordCount === 0 &&
+      var complete = !ledgerMayBeTruncated && target.unclassifiedRecordCount === 0 &&
         target.conflictingSettlementCount === 0 && target.unscopedTurnRecordCount === 0;
       target.quantity = complete ? target.knownQuantity : null;
       target.settlementCount = target.settlementIds.length;
@@ -475,13 +476,15 @@
         ? (target.settlementCount ? 'OBSERVED_SETTLED_IMPORT_LEDGER' : 'NO_SETTLED_IMPORTS_THIS_TURN')
         : 'PARTIAL_SETTLED_IMPORT_EVIDENCE';
     });
-    var partial = unclassifiedRecordCount > 0 || Object.keys(byResource).some(function (key) {
+    var partial = ledgerMayBeTruncated || unclassifiedRecordCount > 0 || Object.keys(byResource).some(function (key) {
       return byResource[key].status === 'PARTIAL_SETTLED_IMPORT_EVIDENCE';
     });
     return {
-      status: partial ? 'PARTIAL_SETTLED_IMPORT_EVIDENCE' : 'OBSERVED_INVENTORY_IMPORT_LEDGER',
+      status: ledgerMayBeTruncated ? 'IMPORT_LEDGER_MAY_BE_TRUNCATED' :
+        (partial ? 'PARTIAL_SETTLED_IMPORT_EVIDENCE' : 'OBSERVED_INVENTORY_IMPORT_LEDGER'),
       authority: 'Game.state.resource[countryId].inventoryLedger[type=INTERNATIONAL_TRADE_IMPORT]',
-      ledgerAvailable: true, byResource: byResource, currentTurnRecordCount: currentTurnRecordCount,
+      ledgerAvailable: true, ledgerMayBeTruncated: ledgerMayBeTruncated,
+      byResource: byResource, currentTurnRecordCount: currentTurnRecordCount,
       uniqueSettlementResourceCount: Object.keys(entries).filter(function (key) { return !conflicts[key]; }).length,
       uniqueSettlementCount: Object.keys(settlementIds).length,
       unclassifiedRecordCount: unclassifiedRecordCount,
@@ -844,7 +847,7 @@
         : { status: 'NOT_ACTIVE_COUNTRY', authority: 'Game.state.resource[countryId].inventoryLedger',
           ledgerAvailable: false, byResource: null, currentTurnRecordCount: null,
           uniqueSettlementResourceCount: null, uniqueSettlementCount: null,
-          unclassifiedRecordCount: null, conflictingSettlementCount: null };
+          unclassifiedRecordCount: null, conflictingSettlementCount: null, ledgerMayBeTruncated: false };
       var byResource = {};
       populationDemand.forEach(function (row) {
         var demand = demandRows[row.resourceId] || demandRows[Object.keys(demandRows).find(function (key) {
@@ -867,12 +870,13 @@
           lowStockCoverage: demand ? demand.lowStockCoverage : null,
           pendingImportQuantity: demand ? demand.pendingImportQuantity : null,
           unresolvedImportRequestCount: demand ? demand.unresolvedImportRequestCount : null,
-          confirmedImportsThisTurn: importRow ? importRow.quantity : (imports.ledgerAvailable ? 0 : null),
+          confirmedImportsThisTurn: importRow ? importRow.quantity : (imports.ledgerAvailable && !imports.ledgerMayBeTruncated ? 0 : null),
           confirmedImportKnownQuantityThisTurn: importRow ? importRow.knownQuantity : null,
           confirmedImportSettlementCountThisTurn: importRow ? importRow.settlementCount : 0,
           confirmedImportSettlementIds: importRow ? clone(importRow.settlementIds) : [],
           confirmedImportEvidenceStatus: importRow ? importRow.status :
-            (imports.ledgerAvailable ? 'NO_SETTLED_IMPORTS_THIS_TURN' : imports.status),
+            (imports.ledgerMayBeTruncated ? 'IMPORT_LEDGER_MAY_BE_TRUNCATED' :
+              (imports.ledgerAvailable ? 'NO_SETTLED_IMPORTS_THIS_TURN' : imports.status)),
           inboundShipmentQuantity: null,
           inboundShipmentEvidenceStatus: 'NOT_PERSISTED_BY_TRADE_SHIPMENT_AUTHORITY',
           combinedDemandStatus: demand ? 'EXISTING_RUNTIME_VALUE' : 'NOT_AVAILABLE',
@@ -885,12 +889,13 @@
         var importRow = imports.byResource && imports.byResource[token(key)] || null;
         byResource[key] = Object.assign({ resourceId: key, ratePer100kPerDay: null,
           quantityPerDay: null, calculationStatus: 'NO_POPULATION_RATE_PROFILE' }, clone(demandRows[key]), {
-          confirmedImportsThisTurn: importRow ? importRow.quantity : (imports.ledgerAvailable ? 0 : null),
+          confirmedImportsThisTurn: importRow ? importRow.quantity : (imports.ledgerAvailable && !imports.ledgerMayBeTruncated ? 0 : null),
           confirmedImportKnownQuantityThisTurn: importRow ? importRow.knownQuantity : null,
           confirmedImportSettlementCountThisTurn: importRow ? importRow.settlementCount : 0,
           confirmedImportSettlementIds: importRow ? clone(importRow.settlementIds) : [],
           confirmedImportEvidenceStatus: importRow ? importRow.status :
-            (imports.ledgerAvailable ? 'NO_SETTLED_IMPORTS_THIS_TURN' : imports.status),
+            (imports.ledgerMayBeTruncated ? 'IMPORT_LEDGER_MAY_BE_TRUNCATED' :
+              (imports.ledgerAvailable ? 'NO_SETTLED_IMPORTS_THIS_TURN' : imports.status)),
           inboundShipmentQuantity: null,
           inboundShipmentEvidenceStatus: 'NOT_PERSISTED_BY_TRADE_SHIPMENT_AUTHORITY'
         });
@@ -960,6 +965,7 @@
           factoryTypeCount: factories.factoryTypeCount,
           activeCountryDetailedRuntime: factories.activePlayerCountry,
           importLedgerStatus: imports.status,
+          importLedgerMayBeTruncated: imports.ledgerMayBeTruncated === true,
           confirmedImportSettlementResourceCount: imports.uniqueSettlementResourceCount,
           unclassifiedImportRecordCount: imports.unclassifiedRecordCount
         },
