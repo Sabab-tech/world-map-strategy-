@@ -4229,7 +4229,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
           maximumEntries:2048,droppedEntries:num(account&&account.cashFlowJournalDroppedEntries)||0,
           journalledEntries:cashJournalled,
           legacyOrUnjournalledEntries:Math.max(0,cashRows.filter(function(row){return row&&id(row.companyId)===co;}).length-cashJournalled)},
-        privateEnterpriseFinance:{retainedSourceRows:firmFinanceRows.length,maximumEntries:4096,
+        privateEnterpriseFinance:{retainedSourceRows:firmFinanceRows.length,maximumEntries:500,
           journalledEntries:financeJournalled,legacyOrUnjournalledEntries:Math.max(0,firmFinanceRows.length-financeJournalled)}
       },
       journalTransactionCount:transactions.length,postedTransactionCount:posted,
