@@ -228,6 +228,10 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(agreementReport.activeBilateralAgreementCount, 1,
     'market intelligence must account for active agreements with all partners');
   assert.equal(agreementReport.agreementsWithPlayerCount, 0);
+  globalThis.Game.state.trade.SAU.bilateralContracts[0].nextDeliveryTurn = 9998;
+  assert.equal(bilateral.getMarketReport('BGD', 'SAU').status, 'STALE',
+    'changes to other bilateral partners must invalidate this target-country market report');
+  assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
 
   const feasible = bilateral.previewProposal('BGD', {
     targetCountryId: 'SAU', direction: 'IMPORT', resourceId: 'crude_oil',
