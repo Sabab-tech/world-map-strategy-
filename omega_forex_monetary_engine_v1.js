@@ -238,7 +238,7 @@
     const id = root && root.simulation && (root.simulation.session && root.simulation.session.playerCountryId || root.simulation.playerCountryId);
     return profileByCode.get(normalizeCode(id)) || profileByCode.get('BD') || profiles[0] || null;
   }
-  function getMacro(profile) {
+  function getMacro(profile, financeState) {
     const e = getEconomyRecord(profile) || {};
     const ind = isObject(profile && profile.indicators) ? profile.indicators : {};
     const src = sourceValues(profile);
@@ -253,7 +253,9 @@
     const reserveRatio = gdp > 0 && reserves !== null ? reserves / gdp * 100 : finite(ind.reservesToGdpPct);
     let policyRate = finite(ind.policyInterestRatePct);
     try {
-      const fm = finance && typeof finance.getFinanceState === 'function' ? finance.getFinanceState(profile.countryCode || profile.iso3) : null;
+      const fm = arguments.length > 1 ? financeState
+        : finance && typeof finance.getFinanceState === 'function'
+          ? finance.getFinanceState(profile.countryCode || profile.iso3) : null;
       policyRate = finite(fm && fm.policy && fm.policy.interestRateAnnualPct) ?? policyRate;
     } catch (_) {}
     if (policyRate === null) policyRate = finite(e.policy_interest_rate_model_pct) ?? 3;
@@ -638,12 +640,12 @@
     const code = getCountryCurrency(profile);
     const source = sourceValues(profile);
     const econ = getEconomyRecord(profile) || {};
-    const macro = getMacro(profile);
+    const fm = finance && typeof finance.getFinanceState === 'function'
+      ? finance.getFinanceState(profile.countryCode || profile.iso3) : null;
+    const macro = getMacro(profile, fm);
     const simulated = code ? rateFor(code, 'SIMULATION') : null;
     const reference = code ? rateFor(code, 'REFERENCE') : null;
     const currencyName = getCountryCurrencyName(profile, code);
-    const fm = finance && typeof finance.getFinanceState === 'function'
-      ? finance.getFinanceState(profile.countryCode || profile.iso3) : null;
     const record = {
       countryCode: profile.countryCode || profile.code || profile.iso2 || null,
       iso3: profile.iso3 || null,
