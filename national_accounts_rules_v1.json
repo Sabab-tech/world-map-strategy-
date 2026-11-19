@@ -33,7 +33,8 @@
     "productionLedgerRows": 2048,
     "tradeLedgerRows": 512,
     "maxCompanyAccounts": 5,
-    "companyCashFlowRowsPerCompany": 256
+    "companyCashFlowRowsPerCompany": 256,
+    "inventoryMovementRows": 2048
   },
   "accounting": {
     "currencyPolicy": "NEVER_SUM_ACROSS_CURRENCIES",
