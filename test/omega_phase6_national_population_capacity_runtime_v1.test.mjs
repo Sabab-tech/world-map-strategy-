@@ -516,6 +516,25 @@ test('conflicting duplicate import settlements are excluded from confirmed quant
   assert.equal(summary.confirmedImports.conflictingSettlementCount, 1);
 });
 
+test('a capped inventory ledger does not claim zero current-turn imports', async () => {
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {},
+    economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: Array.from({ length: 2048 }, (_, index) => ({
+      type: 'OTHER_LEDGER_ENTRY', rowId: 'ROW-' + index, turn: 7
+    })) } },
+    trade: { BGD: {} }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const row = summary.nationalRequirement.byResource.crude_oil;
+  assert.equal(summary.confirmedImports.ledgerMayBeTruncated, true);
+  assert.equal(summary.confirmedImports.status, 'IMPORT_LEDGER_MAY_BE_TRUNCATED');
+  assert.equal(row.confirmedImportsThisTurn, null);
+  assert.equal(row.confirmedImportEvidenceStatus, 'IMPORT_LEDGER_MAY_BE_TRUNCATED');
+});
+
 test('overview HTML presents the national summary without claiming simulated factory units are real facilities', async () => {
   const { api } = makeHarness();
   const summary = await api.getNationalSummary('BGD');
