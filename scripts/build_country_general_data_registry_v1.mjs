@@ -733,6 +733,33 @@ function makeRecord(country, sources, previous, refreshData) {
     }
   }
 
+  // These country-specific sources have clearer population authority than a
+  // generic legacy baseline. Keep observation and projection status distinct.
+  const populationObservation = refreshData.populationOfficialObservationsByIso3
+    ?.get(String(country.iso3 || '').toUpperCase());
+  if (populationObservation) {
+    const currentYear = finite(metricMetadata.populationTotal?.year);
+    const currentStatus = String(metricMetadata.populationTotal?.status || '').toUpperCase();
+    const currentValue = finite(metrics.populationTotal);
+    const newer = currentYear === null || populationObservation.year > currentYear;
+    const sameYearOfficialPriority = populationObservation.status === 'OFFICIAL_POPULATION_OBSERVATION' &&
+      populationObservation.year === currentYear && currentStatus !== 'OFFICIAL_POPULATION_OBSERVATION';
+    const mayReplace = currentValue === null || newer || sameYearOfficialPriority;
+    if (mayReplace) {
+      metrics.populationTotal = finite(populationObservation.value);
+      metricMetadata.populationTotal = {
+        year: populationObservation.year,
+        sourceId: populationObservation.sourceId,
+        sourceName: populationObservation.sourceName,
+        status: populationObservation.status,
+        method: populationObservation.method || 'SOURCE_OBSERVATION',
+        indicatorCode: 'POPULATION_TOTAL',
+        sourceUrl: populationObservation.sourceUrl,
+        note: populationObservation.note || null
+      };
+    }
+  }
+
     // HDI is published by UNDP rather than the World Bank WDI API.
   if (refreshData.undpHdi) {
     const hdiObservation = refreshData.undpHdi.byIso3.get(String(country.iso3 || '').toUpperCase());
@@ -1676,6 +1703,7 @@ async function main() {
   const relationDatabase = readJson('relation_generation_engine.json');
   const resourceReserveSimulation = readJson('resource_site_reserve_simulation_v1.json');
   const indexSnapshot = readJson('country_official_index_observations_v1.json');
+  const populationOfficialObservations = readJson('population_official_observations_v1.json');
   const previousData = existsSync(OUTPUT) ? JSON.parse(readFileSync(OUTPUT, 'utf8')) : null;
 
   const profileRows = economyProfiles.countries || [];
@@ -1694,6 +1722,18 @@ async function main() {
   const relationRows = Object.values(relationDatabase?.RELATION_GENERATION_ENGINE?.srie_v2_asymmetrical_salience || {});
   const relationByIso2 = new Map(relationRows.filter((row) => row?.country_code).map((row) => [String(row.country_code).toUpperCase(), row]));
   const resourceReserveRows = Array.isArray(resourceReserveSimulation?.records) ? resourceReserveSimulation.records : [];
+  const populationOfficialObservationsByIso3 = new Map();
+  for (const observation of (populationOfficialObservations.observations || [])) {
+    const iso3 = String(observation?.iso3 || '').trim().toUpperCase();
+    const value = finite(observation?.value);
+    const year = finite(observation?.year);
+    if (!/^[A-Z]{3}$/.test(iso3) || value === null || value <= 0 || year === null ||
+        !['OFFICIAL_POPULATION_OBSERVATION','UN_PROJECTED_POPULATION_ESTIMATE'].includes(observation.status) ||
+        !observation.sourceUrl || !observation.sourceId || populationOfficialObservationsByIso3.has(iso3)) {
+      throw new Error('POPULATION_OFFICIAL_OBSERVATION_INVALID:' + iso3);
+    }
+    populationOfficialObservationsByIso3.set(iso3, observation);
+  }
   const resourceSiteSummaryByIso3 = summarizeResourceSites(resourceReserveRows);
   const economyByKey = new Map(Object.entries(economy).map(([key, row]) => [norm(key), row]));
   const populationByKey = new Map(Object.entries(population).map(([key, row]) => [norm(key), row]));
@@ -1751,6 +1791,7 @@ async function main() {
     }
   }
   const refreshData = {
+    populationOfficialObservationsByIso3,
     restCountries,
     undpHdi,
     transparencyInternationalCpi2025,
@@ -1775,6 +1816,28 @@ async function main() {
       missing: values.filter((value) => finite(value) === null).length
     }];
   }));
+  const corePopulationIds = new Set(Object.keys(resourceRows).map((iso3) => String(iso3).toUpperCase()));
+  const corePopulationRows = rows.filter((row) => corePopulationIds.has(String(row.identity.iso3 || '').toUpperCase()));
+  const populationCoverage = {
+    coreCountryCount: corePopulationIds.size,
+    observed2025: corePopulationRows.filter((row) => row.metrics.populationTotal !== null &&
+      finite(row.metrics.populationTotal) > 0 && finite(row.metricMetadata.populationTotal?.year) === 2025 &&
+      ['WORLD_BANK_API_OBSERVATION','OFFICIAL_POPULATION_OBSERVATION'].includes(row.metricMetadata.populationTotal?.status)).length,
+    officialObservedOtherYears: corePopulationRows.filter((row) => row.metrics.populationTotal !== null &&
+      row.metricMetadata.populationTotal?.status === 'OFFICIAL_POPULATION_OBSERVATION' &&
+      finite(row.metricMetadata.populationTotal?.year) !== 2025).length,
+    estimated: corePopulationRows.filter((row) => row.metrics.populationTotal !== null &&
+      row.metricMetadata.populationTotal?.status === 'UN_PROJECTED_POPULATION_ESTIMATE').length,
+    stale2015: corePopulationRows.filter((row) => finite(row.metrics.populationTotal) > 0 &&
+      finite(row.metricMetadata.populationTotal?.year) === 2015).length,
+    unknown: corePopulationRows.filter((row) => finite(row.metrics.populationTotal) === null ||
+      finite(row.metrics.populationTotal) <= 0).length,
+    observed2025PopulationSubtotal: corePopulationRows.reduce((sum, row) => {
+      const meta = row.metricMetadata.populationTotal || {};
+      return finite(meta.year) === 2025 && ['WORLD_BANK_API_OBSERVATION','OFFICIAL_POPULATION_OBSERVATION'].includes(meta.status)
+        ? sum + (finite(row.metrics.populationTotal) || 0) : sum;
+    }, 0)
+  };
   const canonicalIso3 = new Set(countries.map((country) => String(country.iso3 || '').toUpperCase()).filter(Boolean));
   const governanceRefresh = Object.fromEntries(METRIC_CATALOGUE
     .filter((field) => field.key.endsWith('WgiEstimate'))
@@ -1815,6 +1878,7 @@ async function main() {
     generatedAt: GENERATED_AT,
     countryAndTerritoryCount: rows.length,
     uniqueIso3Count: uniqueCodes.size,
+    populationCoverage,
     baselineYear: economyProfiles.metadata?.baselineYear ?? 2015,
     countryRosterSource: 'countries.json',
     rawFinancialRegistrySource: 'economy_raw_financial_data_v2.json',

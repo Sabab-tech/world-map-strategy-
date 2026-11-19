@@ -26,15 +26,34 @@ function record(population, year, status = 'WORLD_BANK_API_OBSERVATION', extra =
     },
     metricMetadata: {
       populationTotal: {
-        year, status, sourceId: 'WORLD_BANK_WDI', sourceName: 'World Bank Indicators API v2',
+        year, status, sourceId: extra.sourceId || 'WORLD_BANK_WDI',
+        sourceName: extra.sourceName || 'World Bank Indicators API v2',
         sourceUrl: extra.sourceUrl || 'https://api.worldbank.org/v2/country/bgd/indicator/SP.POP.TOTL?format=json',
-        confidence: status === 'WORLD_BANK_API_OBSERVATION' ? 0.92 : 0.4
+        confidence: status === 'WORLD_BANK_API_OBSERVATION' || status === 'OFFICIAL_POPULATION_OBSERVATION' ? 0.92 : 0.4
       },
       population2015: {
         year: 2015, status: 'LEGACY_BASELINE', sourceId: 'population.json',
         sourceName: 'OMEGA_LEGACY_POPULATION_BASELINE', confidence: 0.2
       }
     }
+  };
+}
+
+function testJournal(countryId, sectorId, companyId, transactionId, currency, amountMinor, authority) {
+  const company = companyId || null;
+  const sourceAuthority = authority || (sectorId === 'government'
+    ? 'OMEGA_FINANCE_MINISTRY' : 'OMEGA_PRIVATE_ENTERPRISE_FINANCE_LEDGER');
+  const line = (lineNumber, side, accountId) => ({
+    lineId: transactionId + ':L' + lineNumber, lineNumber, accountId, side, amountMinor,
+    currency, countryId, companyId: company || undefined, sourceTransactionId: transactionId
+  });
+  return {
+    schemaVersion: 1, status: 'POSTED', sectorId, sourceAuthority,
+    sourceTransactionId: transactionId, countryId, companyId: company || undefined,
+    currency, turn: 7, periodId: 'GAME_TURN_7', accountingBasis: 'RECORDED_GAME_RUNTIME',
+    provenance: 'RECORDED_GAME_RUNTIME', counterEntryComplete: true,
+    debitTotalMinor: amountMinor, creditTotalMinor: amountMinor,
+    lines: [line(1, 'DEBIT', 'EXPENSE_ACCOUNT'), line(2, 'CREDIT', 'CASH_OR_PAYABLE')]
   };
 }
 
@@ -50,10 +69,12 @@ function makeHarness(options = {}) {
   const records = {
     BGD: record(175686899, 2025, 'WORLD_BANK_API_OBSERVATION', { iso3: 'BGD', name: 'Bangladesh' }),
     USA: record(341784857, 2025, 'WORLD_BANK_API_OBSERVATION', { iso3: 'USA', name: 'United States' }),
-    TWN: record(23500000, 2015, 'STALE_BASELINE', { iso3: 'TWN', name: 'Taiwan' }),
-    VAT: record(800, 2015, 'STALE_BASELINE', { iso3: 'VAT', name: 'Vatican City' }),
-    ESH: record(null, null, 'NOT_RECORDED', { iso3: 'ESH', name: 'Western Sahara' })
+    TWN: record(23299132, 2025, 'OFFICIAL_POPULATION_OBSERVATION', { iso3: 'TWN', name: 'Taiwan', sourceUrl: 'https://www.ris.gov.tw/info-liferay/app/channel/newsEnglishDetail/26245250', sourceName: 'Taiwan Ministry of the Interior' }),
+    VAT: record(882, 2024, 'OFFICIAL_POPULATION_OBSERVATION', { iso3: 'VAT', name: 'Vatican City', sourceUrl: 'https://www.vaticanstate.va/en/state-and-government/general-informations/population.html', sourceName: 'Governorate of Vatican City State' }),
+    ESH: record(601000, 2025, 'UN_PROJECTED_POPULATION_ESTIMATE', { iso3: 'ESH', name: 'Western Sahara', sourceUrl: 'https://data.un.org/legacy/en/iso/eh.html', sourceName: 'United Nations Statistics Division, UNData' }),
+    VUT: record(276244, 2015, 'STALE_BASELINE', { iso3: 'VUT', name: 'Vanuatu' })
   };
+  Object.assign(records, options.records || {});
   const calls = { generalInit: [], baselineInit: 0, catalogLoad: 0, factoryRegistryQueries: [] };
   const baselineApi = {
     async init() { calls.baselineInit += 1; return { status: 'READY', countryCount: 197, factoryTypeCount: 21 }; },
@@ -116,28 +137,57 @@ test('Phase 6 audits the 197-country population coverage without filling unknown
   const metricIndex = registry.fieldCatalogue.findIndex(field => field.key === 'populationTotal');
   assert.equal(metricIndex, 0);
   const recordsByIso3 = new Map(Object.values(registry.countries).map(row => [row.identity[2], row]));
-  const coverage = { observed2025: 0, stale2015: 0, unknown: 0, sum2025: 0 };
+  const coverage = { observed2025: 0, officialObservedOtherYears: 0, estimated: 0, stale2015: 0, unknown: 0, sum2025: 0 };
+  const statuses = registry.metadata.provenanceEncoding.statuses;
   for (const iso3 of coreCountryIds) {
     const row = recordsByIso3.get(iso3);
     assert.ok(row, 'core country has a population status row: ' + iso3);
     const value = row.metrics[metricIndex];
     const year = row.metricMetadata.years[metricIndex];
-    if (Number.isFinite(value) && value > 0 && year === 2025) {
+    const status = statuses[row.metricMetadata.statusCodes[metricIndex]];
+    if (Number.isFinite(value) && value > 0 && year === 2025 &&
+        ['WORLD_BANK_API_OBSERVATION', 'OFFICIAL_POPULATION_OBSERVATION'].includes(status)) {
       coverage.observed2025 += 1;
       coverage.sum2025 += value;
+    } else if (Number.isFinite(value) && value > 0 && status === 'OFFICIAL_POPULATION_OBSERVATION') {
+      coverage.officialObservedOtherYears += 1;
+    } else if (Number.isFinite(value) && value > 0 && status === 'UN_PROJECTED_POPULATION_ESTIMATE') {
+      coverage.estimated += 1;
     } else if (Number.isFinite(value) && value > 0 && year === 2015) {
       coverage.stale2015 += 1;
-    } else {
+    } else if (!Number.isFinite(value)) {
       coverage.unknown += 1;
     }
   }
   assert.deepEqual(coverage, {
-    observed2025: 194, stale2015: 2, unknown: 1, sum2025: 8177226143
+    observed2025: 195, officialObservedOtherYears: 1, estimated: 1,
+    stale2015: 0, unknown: 0, sum2025: 8200525275
   });
-  assert.equal(recordsByIso3.get('TWN').metrics[metricIndex], 23500000);
-  assert.equal(recordsByIso3.get('TWN').metricMetadata.years[metricIndex], 2015);
-  assert.equal(recordsByIso3.get('VAT').metricMetadata.years[metricIndex], 2015);
-  assert.equal(recordsByIso3.get('ESH').metrics[metricIndex], null);
+  assert.equal(recordsByIso3.get('TWN').metrics[metricIndex], 23299132);
+  assert.equal(recordsByIso3.get('TWN').metricMetadata.years[metricIndex], 2025);
+  assert.equal(recordsByIso3.get('VAT').metrics[metricIndex], 882);
+  assert.equal(recordsByIso3.get('VAT').metricMetadata.years[metricIndex], 2024);
+  assert.equal(recordsByIso3.get('ESH').metrics[metricIndex], 601000);
+  assert.equal(recordsByIso3.get('ESH').metricMetadata.years[metricIndex], 2025);
+  assert.equal(registry.metadata.populationCoverage.observed2025, 195);
+});
+
+test('official and projected population sources keep distinct runtime statuses', async () => {
+  const { api } = makeHarness();
+  const taiwan = await api.getNationalSummary('TWN');
+  const vatican = await api.getNationalSummary('VAT');
+  const westernSahara = await api.getNationalSummary('ESH');
+  assert.equal(taiwan.population.value, 23299132);
+  assert.equal(taiwan.population.status, 'OBSERVED');
+  assert.equal(taiwan.population.observationYear, 2025);
+  assert.equal(taiwan.population.sourceUrl, 'https://www.ris.gov.tw/info-liferay/app/channel/newsEnglishDetail/26245250');
+  assert.equal(vatican.population.value, 882);
+  assert.equal(vatican.population.status, 'OBSERVED');
+  assert.equal(vatican.population.observationYear, 2024);
+  assert.equal(westernSahara.population.value, 601000);
+  assert.equal(westernSahara.population.status, 'ESTIMATED');
+  assert.equal(westernSahara.population.sourceStatus, 'UN_PROJECTED_POPULATION_ESTIMATE');
+  assert.equal(westernSahara.population.observationYear, 2025);
 });
 
 test('every core country retains the same canonical 21 factory-type keys and simulation-only counts', () => {
@@ -222,10 +272,14 @@ test('Phase 6 provenance is saved and revalidated after game load; changed input
   assert.equal(changed.population.status, 'LIVE_RUNTIME');
 });
 
-test('live population outranks the static observation; old observations remain explicitly stale', async () => {
+test('live population outranks official observations; stale fallback remains explicitly stale', async () => {
   const { api, worldState } = makeHarness();
-  const old = await api.getNationalSummary('TWN');
-  assert.equal(old.population.value, 23500000);
+  const current = await api.getNationalSummary('TWN');
+  assert.equal(current.population.value, 23299132);
+  assert.equal(current.population.status, 'OBSERVED');
+  assert.equal(current.population.observationYear, 2025);
+  const old = await api.getNationalSummary('VUT');
+  assert.equal(old.population.value, 276244);
   assert.equal(old.population.status, 'STALE_BASELINE');
   assert.equal(old.population.observationYear, 2015);
 
@@ -241,7 +295,9 @@ test('live population outranks the static observation; old observations remain e
 });
 
 test('unknown population is not zero and yields unavailable population-demand calculations', async () => {
-  const { api } = makeHarness();
+  const { api } = makeHarness({ records: {
+    ESH: record(null, null, 'NOT_RECORDED', { iso3: 'ESH', name: 'Western Sahara' })
+  } });
   const summary = await api.getNationalSummary('ESH');
   assert.equal(summary.population.value, null);
   assert.equal(summary.population.status, 'UNKNOWN');
@@ -465,6 +521,138 @@ test('the projection is read-only, does not schedule turns, and does not sum two
   assert.equal(context.OmegaPhase6NationalCapacity, api);
 });
 
+test('Phase 6 reads only balanced current-turn Treasury expenses and private factory accruals without mutation', async () => {
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {}, economy: { BGD: { productionAssets: [] } }, resource: { BGD: {} }, trade: { BGD: {} },
+    finance: { BGD: { omegaFinance: { ledger: [
+      { transactionId: 'GOV-EXP-1', action: 'EXPENSE', amountUsd: 125, turn: 7,
+        sectorJournalV1: testJournal('BGD', 'government', null, 'GOV-EXP-1', 'USD', 12500) },
+      { transactionId: 'GOV-REV-1', action: 'EXPENSE_ROLLBACK', amountUsd: 25, turn: 7,
+        sectorJournalV1: testJournal('BGD', 'government', null, 'GOV-REV-1', 'USD', 2500) },
+      { transactionId: 'GOV-BAD-1', action: 'EXPENSE', amountUsd: 400, turn: 7,
+        sectorJournalV1: Object.assign(testJournal('BGD', 'government', null, 'GOV-BAD-1', 'USD', 40000), { creditTotalMinor: 39900 }) },
+      { transactionId: 'FIRM-OPEX-1', type: 'PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL',
+        companyId: 'AURORA_INDUSTRIAL_GROUP', factoryId: 'PRIVATE-STEEL-01', amount: 15,
+        currency: 'GAME_CURRENCY_UNITS', turn: 7,
+        sectorJournalV1: testJournal('BGD', 'firm', 'AURORA_INDUSTRIAL_GROUP', 'FIRM-OPEX-1', 'GAME_CURRENCY_UNITS', 1500) },
+      { transactionId: 'FIRM-OPEX-OLD', type: 'PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL',
+        companyId: 'AURORA_INDUSTRIAL_GROUP', factoryId: 'PRIVATE-STEEL-01', amount: 80,
+        currency: 'GAME_CURRENCY_UNITS', turn: 6,
+        sectorJournalV1: testJournal('BGD', 'firm', 'AURORA_INDUSTRIAL_GROUP', 'FIRM-OPEX-OLD', 'GAME_CURRENCY_UNITS', 8000) }
+    ] } } }
+  };
+  const before = JSON.stringify(state);
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const treasury = summary.expenditure.treasuryActualExpense;
+  assert.equal(treasury.status, 'PARTIAL_CURRENT_TURN_POSTED_EXPENSE_EVIDENCE');
+  assert.equal(treasury.amount, null);
+  assert.equal(treasury.postedExpenseTransactionCount, 2);
+  assert.equal(treasury.invalidExpenseJournalCount, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(treasury.knownPostedExpenseByCurrency.map(row => ({
+    currency: row.currency, grossAmount: row.grossAmount, reversalAmount: row.reversalAmount, netAmount: row.netAmount
+  })))), [{ currency: 'USD', grossAmount: 125, reversalAmount: 25, netAmount: 100 }]);
+  const operating = summary.expenditure.factoryOperatingCost;
+  assert.equal(operating.status, 'PARTIAL_RECORDED_PRIVATE_FACTORY_ACCRUALS');
+  assert.equal(operating.totalCostPerDay, null);
+  assert.equal(operating.recordedAccrualTransactionCount, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(operating.recordedAccrualByCurrency.map(row => ({
+    currency: row.currency, netAmount: row.netAmount, transactionCount: row.transactionCount
+  })))), [{ currency: 'GAME_CURRENCY_UNITS', netAmount: 15, transactionCount: 1 }]);
+  assert.equal(summary.expenditure.financialEvidence.amountsAggregatedAcrossCurrencies, false);
+  assert.equal(summary.expenditure.financialEvidence.sourceLedgerWindow.complete, false);
+  assert.equal(JSON.stringify(state), before, 'Phase 6 must not mutate Finance journal sources');
+});
+
+test('a complete game-state Finance fiscal period establishes budgetary Treasury expenditure without counting debt principal', async () => {
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {}, economy: { BGD: { productionAssets: [] } }, resource: { BGD: {} }, trade: { BGD: {} },
+    finance: { BGD: { omegaFinance: {
+      treasuryBalanceUsd: 130,
+      fiscalPeriodAccount: {
+        schemaVersion: 1, sourceAuthority: 'OMEGA_FINANCE_MINISTRY_RUNTIME',
+        periodIndex: 0, periodLabel: '2026', currency: 'USD',
+        openingBalanceUsd: 100, closingBalanceUsd: 130,
+        openingBalanceQuality: 'GAME_STATE', openingBalanceSource: 'NEW_GAME_FINANCE_OPENING',
+        flowCoverage: 'COMPLETE_FROM_PERIOD_START',
+        flowComponents: {
+          taxRevenueUsd: 20, borrowingProceedsUsd: 10, externalCreditsUsd: 20,
+          governmentSpendingUsd: 5, interestPaidUsd: 5,
+          principalRepaymentUsd: 5, externalDebitsUsd: 5
+        },
+        totalInflowsUsd: 50, totalOutflowsUsd: 20,
+        expectedClosingBalanceUsd: 130, varianceUsd: 0,
+        reconciliationStatus: 'GAME_STATE_RECONCILED', status: 'GAME_STATE_RECONCILED',
+        updatedTurn: 7
+      },
+      ledger: []
+    } } }
+  };
+  const before = JSON.stringify(state);
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const treasury = summary.expenditure.treasuryActualExpense;
+  assert.equal(treasury.status, 'PERIOD_RECONCILED_GAME_STATE');
+  assert.equal(treasury.amount, 10);
+  assert.equal(treasury.currency, 'USD');
+  assert.equal(treasury.period, '2026');
+  assert.equal(treasury.periodEvidence.governmentSpending, 5);
+  assert.equal(treasury.periodEvidence.interestPaid, 5);
+  assert.equal(treasury.periodEvidence.budgetaryExpense, 10);
+  assert.equal(treasury.periodEvidence.principalRepaymentExcludedFromExpense, 5);
+  assert.equal(treasury.periodEvidence.externalDebitsExcludedFromExpense, 5);
+  assert.equal(treasury.periodEvidence.totalCashOutflows, 20);
+  assert.equal(JSON.stringify(state), before, 'Phase 6 must only read the Finance fiscal account');
+});
+
+test('a modeled or incomplete Finance fiscal period never establishes actual Treasury expenditure', async () => {
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {}, economy: { BGD: { productionAssets: [] } }, resource: { BGD: {} }, trade: { BGD: {} },
+    finance: { BGD: { omegaFinance: {
+      treasuryBalanceUsd: 130,
+      fiscalPeriodAccount: {
+        schemaVersion: 1, sourceAuthority: 'OMEGA_FINANCE_MINISTRY_RUNTIME',
+        periodIndex: 0, periodLabel: '2026', currency: 'USD',
+        openingBalanceUsd: 100, closingBalanceUsd: 130,
+        openingBalanceQuality: 'MODELLED', flowCoverage: 'COMPLETE_FROM_PERIOD_START',
+        flowComponents: {
+          taxRevenueUsd: 20, borrowingProceedsUsd: 10, externalCreditsUsd: 20,
+          governmentSpendingUsd: 5, interestPaidUsd: 5, principalRepaymentUsd: 5, externalDebitsUsd: 5
+        },
+        totalInflowsUsd: 50, totalOutflowsUsd: 20, expectedClosingBalanceUsd: 130, varianceUsd: 0,
+        reconciliationStatus: 'MODELLED_RECONCILED', status: 'MODELLED_RECONCILED'
+      },
+      ledger: []
+    } } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  assert.equal(summary.expenditure.treasuryActualExpense.status, 'NOT_ESTABLISHED');
+  assert.equal(summary.expenditure.treasuryActualExpense.amount, null);
+});
+
+test('in-transit international imports remain UNKNOWN when only pending or domestic shipment evidence exists', async () => {
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {}, economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: [], demandRuntime: { byResource: {
+      crude_oil: { pendingImportQuantity: 30, inboundShipmentQuantity: 99, demandPerDay: 40 }
+    } } } },
+    trade: { BGD: { pendingImportRequests: [{ quantity: 30 }], shipments: [{ quantity: 99, domestic: true }] } },
+    finance: { BGD: { omegaFinance: { ledger: [] } } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  assert.equal(summary.inTransitInternationalImports.status, 'UNKNOWN');
+  assert.equal(summary.inTransitInternationalImports.quantity, null);
+  assert.equal(summary.nationalRequirement.byResource.crude_oil.inTransitInternationalImportQuantity, null);
+  assert.equal(summary.nationalRequirement.byResource.crude_oil.inTransitInternationalImportStatus, 'UNKNOWN');
+  assert.equal(summary.nationalRequirement.byResource.crude_oil.pendingImportQuantity, 30);
+});
+
 test('missing import ledger remains unavailable instead of becoming a zero import', async () => {
   const { api } = makeHarness();
   const summary = await api.getNationalSummary('BGD');
@@ -544,5 +732,7 @@ test('overview HTML presents the national summary without claiming simulated fac
   assert.match(html, /Common daily coefficients are simulation rules/);
   assert.match(html, /Settled imports this turn/);
   assert.match(html, /does not persist a separate durable in-transit import shipment ledger/);
+  assert.match(html, /Current-turn financial journal evidence/);
+  assert.match(html, /In-transit international import/);
   assert.doesNotMatch(html, /real-world facility count: 100/i);
 });
