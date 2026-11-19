@@ -147,7 +147,7 @@ test('Checkpoint reads existing authority and writes only Economy-owned national
   const h=harness();await h.window.Omega.NationalAccounts.init();
   const before={finance:structuredClone(h.state.finance),trade:structuredClone(h.state.trade),resource:structuredClone(h.state.resource)};
   const result=await h.window.Omega.NationalAccounts.processCountry('BGD',{turn:8,state:h.state});
-  assert.equal(result.status,'CHECKPOINTED',JSON.stringify(result));
+  assert.equal(result.status,'CHECKPOINTED');
   const statement=h.state.economy.BGD.nationalAccounts;
   assert.equal(statement.gdp.status,'UNOBSERVED');
   assert.equal(statement.gdp.modelledReference.value,500000);
@@ -687,4 +687,54 @@ test('Physical stock-flow stays partial when loss coverage is unobserved or move
   assert.equal(iron.movementWindowComplete,false,'a movement without a stable event ID is not trusted');
   assert.equal(iron.losses,null,'unobserved loss coverage must not be treated as zero');
   assert.equal(h.window.Omega.NationalAccounts.reconcileGoodsFlow([iron]).status,'PARTIAL');
+});
+
+
+test('Physical stock-flow separates committed production loss from ordinary input consumption',async()=>{
+  const h=harness(),bucket=h.state.resource.BGD;
+  const lossEvent={
+    schemaVersion:1,eventId:'NA-PRODUCTION-LOSS-1',sourceEventId:'NA-PRODUCTION-TX-1',
+    sourceType:'PRODUCTION',lossType:'PRODUCTION',resourceId:'IRON_ORE',quantity:2,unit:'TONNE',
+    sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',turn:7,periodId:'GAME_TURN_7',
+    status:'COMMITTED',physicalMutationCommitted:true
+  };
+  bucket.inventory={IRON_ORE:80,STEEL:18};
+  bucket.inventoryUnits={IRON_ORE:'TONNE',STEEL:'TONNE'};
+  bucket.batches=[
+    {batchId:'IRON-CLOSE-7',resourceId:'IRON_ORE',unit:'TONNE',quantity:80,remainingQuantity:80,status:'AVAILABLE'},
+    {batchId:'STEEL-CLOSE-7',resourceId:'STEEL',unit:'TONNE',quantity:18,remainingQuantity:18,status:'AVAILABLE'}
+  ];
+  bucket.inventoryLedger=[{
+    type:'PRODUCTION_TRANSACTION_COMMITTED',transactionId:'NA-PRODUCTION-TX-1',turn:7,periodId:'GAME_TURN_7',
+    inputs:[{resourceId:'IRON_ORE',quantity:20,unit:'TONNE',consumed:[]}],
+    outputs:[{resourceId:'STEEL',quantity:18,unit:'TONNE'}],
+    lossEvents:[lossEvent]
+  }];
+  bucket.stockLossLedger=[Object.assign({type:'STOCK_LOSS_COMMITTED',countryId:'BGD',
+    evidenceAuthority:'ATOMIC_PRODUCTION_COMMIT'},lossEvent)];
+  bucket.stockFlowPeriods=[{
+    schemaVersion:1,periodId:'GAME_TURN_7',turn:7,periodType:'GAME_TURN',
+    openingStockByIdentity:[{resourceId:'IRON_ORE',unit:'TONNE',quantity:100}],
+    openingCoverageComplete:true,openingCaptured:true,openingCaptureSource:'TEST_SOURCE',
+    closingStockByIdentity:[
+      {resourceId:'IRON_ORE',unit:'TONNE',quantity:80},
+      {resourceId:'STEEL',unit:'TONNE',quantity:18}
+    ],
+    closingCoverageComplete:true,closingCaptured:true,closingCaptureSource:'TEST_SOURCE',
+    stockLossLedgerRowsAtOpening:0,stockLossLedgerRowsAtClosing:1,lossLedgerClosingCaptured:true,
+    lossCoverageStatus:'COMPLETE'
+  }];
+  await h.window.Omega.NationalAccounts.init();
+  const result=await h.window.Omega.NationalAccounts.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(result.status,'CHECKPOINTED',JSON.stringify(result));
+  const inventory=h.state.economy.BGD.nationalAccounts.goods.inventory;
+  const iron=inventory.periodStockFlowRows.find(row=>row.periodId==='GAME_TURN_7'&&row.resourceId==='IRON_ORE');
+  const steel=inventory.periodStockFlowRows.find(row=>row.periodId==='GAME_TURN_7'&&row.resourceId==='STEEL');
+  assert.ok(iron&&steel);
+  assert.equal(iron.consumption,18,'measured production residue is not counted as ordinary factory input consumption');
+  assert.equal(iron.losses,2,'committed production loss appears in the loss flow');
+  assert.equal(iron.closingQuantity,80);
+  assert.equal(steel.production,18);
+  assert.equal(steel.closingQuantity,18);
+  assert.equal(h.window.Omega.NationalAccounts.reconcileGoodsFlow([iron,steel]).status,'RECONCILED');
 });
