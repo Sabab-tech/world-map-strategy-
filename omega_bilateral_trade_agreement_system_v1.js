@@ -314,8 +314,9 @@
     var requests = requestIdList(country).slice(-MAX_PROPOSALS).map(function (row) {
       return [row.requestId, row.resourceId, row.quantity, row.status, row.stage, row.targetCountryId];
     });
-    var contracts = contractList(country).filter(function (row) { return canonical(row.partnerCountryId) === canonical(partner); })
-      .map(function (row) { return [row.agreementId, row.status, row.nextDeliveryTurn, row.deliveredQuantity]; });
+    var contracts = contractList(country)
+      .map(function (row) { return [row.agreementId, canonical(row.partnerCountryId), row.status,
+        row.quantityPerDelivery, row.nextDeliveryTurn, row.deliveredQuantity, row.currentRequestId]; });
     return hash({ products: products, relations: relations, treaties: treaties, relationAdjustments: relationAdjustments, finance: finance,
       requests: requests, contracts: contracts, tradePolicy: tradeBucket.policy || tradeBucket.tradePolicy || null });
   }
