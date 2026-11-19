@@ -4,7 +4,7 @@ const handlers = new Map();
 const actionMetadata = new Map();
 globalThis.Game = { state: {
   simulation: { turn: 12, session: { playerCountryId: 'BGD' } },
-  trade: { BGD: { routeCapacity: { crude_oil: 5000 } }, SAU: { internationalShipmentLedger: [] } },
+  trade: { BGD: { routeCapacity: { crude_oil: 5000, steel: 5000 } }, SAU: { internationalShipmentLedger: [] } },
   resource: {
     BGD: {
       inventory: { crude_oil: 120 },
@@ -12,8 +12,8 @@ globalThis.Game = { state: {
       consumption: { crude_oil: 12 }
     },
     SAU: {
-      inventory: { crude_oil: 2500 },
-      reserves: { crude_oil: 200 },
+      inventory: { crude_oil: 2500, steel: 100 },
+      reserves: { crude_oil: 200, steel: 10 },
       production: { crude_oil: 120 },
       consumption: { crude_oil: 75 },
       demandRuntime: { byResource: { crude_oil: { demandPerDay: 75 } } },
@@ -191,18 +191,20 @@ assert.equal(sellerInitiated.request.countryId, 'BGD',
 
 // A counteroffer increments the terms version and requires acceptance of that
 // version by the original offerer before either mirror becomes active.
+globalThis.Game.state.simulation.turn = 13;
 const counterOffer = bilateral.createAgreementOffer('BGD', 'SAU', 'IMPORT', {
-  resourceId: 'steel', quantityPerShipment: 30, unitPrice: 200, currency: 'SAR', durationTurns: 12
+  resourceId: 'steel', quantityPerShipment: 30, unitPrice: 250, currency: 'SAR', durationTurns: 12
 });
 assert.equal(counterOffer.accepted, true, JSON.stringify(counterOffer));
 const counterId = counterOffer.agreement.agreementId;
-const counter = bilateral.respondToOffer('SAU', counterId, 'COUNTER', {
-  resourceId: 'steel', quantityPerShipment: 25, unitPrice: 190, currency: 'SAR', durationTurns: 12
-});
-assert.equal(counter.accepted, true, JSON.stringify(counter));
-assert.equal(counter.agreement.termVersion, 2);
-assert.equal(counter.agreement.status, 'COUNTER_OFFERED');
-assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'steel', 25, 190, counterId), false);
+const npcCounter = bilateral.processCountry('SAU', { turn: 13 });
+assert.equal(npcCounter.status, 'COMPLETED', JSON.stringify(npcCounter));
+assert.equal(npcCounter.countered, 1, JSON.stringify(npcCounter));
+const counter = bilateral.getAgreements('BGD').find(row => row.agreementId === counterId);
+assert.equal(counter.termVersion, 2);
+assert.equal(counter.status, 'COUNTER_OFFERED');
+assert.equal(counter.terms.unitPrice, 190);
+assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'steel', 30, 190, counterId), false);
 const counterAccepted = bilateral.respondToOffer('BGD', counterId, 'ACCEPT');
 assert.equal(counterAccepted.accepted, true, JSON.stringify(counterAccepted));
 assert.equal(counterAccepted.agreement.status, 'ACTIVE');
