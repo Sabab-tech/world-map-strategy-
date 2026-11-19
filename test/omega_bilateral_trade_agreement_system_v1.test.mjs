@@ -258,6 +258,13 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   });
   assert.ok(!buyerPriceReview.terms || buyerPriceReview.terms.unitPrice <= 80,
     'the buyer AI must not counter a lower seller price upward');
+  const privateSupplierEvidence = buyerPriceReview.decisionFactors.alternativeMarketEvidence;
+  assert.deepEqual(privateSupplierEvidence.suppliers, [],
+    'a seller must not receive the buyer country AI private competing supplier quotes');
+  assert.equal(privateSupplierEvidence.bestAlternativePrice, null);
+  assert.equal(privateSupplierEvidence.bestAlternativeBuyerCost, null);
+  assert.equal(privateSupplierEvidence.competingSupplierQuoteDisclosure, 'PRIVATE');
+  assert.equal(buyerPriceReview.decisionFactors.buyerDemandPerInterval, null);
   const sellerPriceReview = bilateral.evaluateProposal('BGD', {
     proposalId: 'BTP-SELLER-PRICE', requestorCountryId: 'SAU', targetCountryId: 'BGD',
     buyerCountryId: 'SAU', sellerCountryId: 'BGD', resourceId: 'crude_oil',
