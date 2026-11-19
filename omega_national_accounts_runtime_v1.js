@@ -196,17 +196,19 @@
       if(entries.length>observed.length||dropped>0)companyCashFlowWindowTruncated=true;
       companyRows.push({companyId,account,entries:observed,retainedRows:entries.length,droppedRows:dropped});
     }
-    const expectedFinanceSector=row=>{
+    const expectedFinanceJournal=row=>{
       const type=String(row?.type||'').trim().toUpperCase(),action=String(row?.action||'').trim().toUpperCase();
-      if(type.startsWith('PRIVATE_ENTERPRISE_'))return'firm';
-      if(['EXPENSE','EXPENSE_ROLLBACK','BORROW','DEBT_REPAYMENT','WORLD_BANK_DEBT_SERVICE'].includes(action))return'government';
+      if(type.startsWith('PRIVATE_ENTERPRISE_'))
+        return{sector:'firm',sourceAuthority:'OMEGA_PRIVATE_ENTERPRISE_FINANCE_LEDGER'};
+      if(['EXPENSE','EXPENSE_ROLLBACK','BORROW','DEBT_REPAYMENT','WORLD_BANK_DEBT_SERVICE'].includes(action))
+        return{sector:'government',sourceAuthority:'OMEGA_FINANCE_MINISTRY'};
       return null;
     };
     const seen=new Set(),groups=new Map();
     let journalTransactionCount=0,postedTransactionCount=0,unavailableTransactionCount=0,
       unaccountedSourceRowCount=0,invalidTransactionCount=0,duplicateTransactionCount=0;
     const accountTotals={government:{posted:0,unavailable:0},firm:{posted:0,unavailable:0}};
-    function processJournalRow(row,sourceLedger,expectedSector,expectedCompany,sourceTransactionId,required){
+    function processJournalRow(row,sourceLedger,expectedSector,expectedCompany,sourceTransactionId,required,expectedAuthority){
       const journal=row?.sectorJournalV1;
       if(!isObject(journal)){
         if(required)unaccountedSourceRowCount++;
@@ -230,9 +232,12 @@
         String(journal.sourceTransactionId||'').trim()===transactionId&&
         journalCountry===countryId&&
         (!expectedSector||sector===expectedSector)&&
+        (!expectedAuthority||sourceAuthority===expectedAuthority)&&
+        (!expectedCompany||registeredCompanyIds.includes(expectedCompany))&&
         (!expectedCompany||String(journal.companyId||'')===expectedCompany)&&
         (!expectedCompany||!row?.companyId||String(row.companyId)===expectedCompany)&&
-        journal.counterEntryComplete===true;
+        journal.schemaVersion===1&&String(journal.accountingBasis||'').trim()!==''&&
+        String(journal.provenance||'').trim()!==''&&journal.counterEntryComplete===true;
       const debitDeclared=finite(journal.debitTotalMinor),creditDeclared=finite(journal.creditTotalMinor);
       if(!Number.isSafeInteger(debitDeclared)||!Number.isSafeInteger(creditDeclared)||
          debitDeclared<=0||debitDeclared!==creditDeclared)valid=false;
@@ -271,10 +276,10 @@
       groups.set(groupKey,group);
     }
     for(let index=0;index<financeRows.length;index++){
-      const row=financeRows[index],sector=expectedFinanceSector(row),
+      const row=financeRows[index],expected=expectedFinanceJournal(row),
         tx=String(row?.transactionId||'').trim();
-      processJournalRow(row,'FINANCE_LEDGER',sector||String(row?.sectorJournalV1?.sectorId||'').toLowerCase(),
-        String(row?.companyId||'')||null,tx,!!sector);
+      processJournalRow(row,'FINANCE_LEDGER',expected?.sector||String(row?.sectorJournalV1?.sectorId||'').toLowerCase(),
+        String(row?.companyId||'')||null,tx,!!expected,expected?.sourceAuthority||null);
     }
     let scannedCompanyRows=0,segmentStartedAt=clockNow();
     for(const company of companyRows){
@@ -283,7 +288,7 @@
         const row=company.entries[index],rowStatus=String(row?.status||'').toUpperCase();
         const required=rowStatus==='POSTED'||rowStatus==='REVERSED';
         const tx=String(row?.entryId||row?.transactionId||'').trim();
-        processJournalRow(row,'COMPANY_CASH_FLOW','firm',accountCompanyId,tx,required);
+        processJournalRow(row,'COMPANY_CASH_FLOW','firm',accountCompanyId,tx,required,'OMEGA_PRIVATE_ENTERPRISE_CASHFLOW');
         scannedCompanyRows++;
         if(scannedCompanyRows%MAX_ROWS_PER_SYNC_SLICE===0&&scannedCompanyRows<companyCashFlowRowsObserved){
           recordSyncSegment(segmentStartedAt);await yieldToBrowser();segmentStartedAt=clockNow();
