@@ -168,6 +168,7 @@ The dedicated regression suite verifies:
 - Status, ownership, per-factory-type capacity units, and utilization evidence requirements for live factories; ambiguous utilization ratios above 1 remain unavailable.
 - Active-player-only detailed factory access.
 - Current-turn production transaction de-duplication using the resource finished-goods ledger.
+- Current-turn settled import reconciliation from `INTERNATIONAL_TRADE_IMPORT` inventory-ledger entries, settlement/resource de-duplication, and separation from pending requests and unpersisted in-transit shipment state.
 - Separate population and factory demand, with no naive summation.
 - Price/currency evidence gates and the separation of modeled cost from Treasury postings.
 - Read-only authoritative world-state behavior and the absence of a new scheduler.
