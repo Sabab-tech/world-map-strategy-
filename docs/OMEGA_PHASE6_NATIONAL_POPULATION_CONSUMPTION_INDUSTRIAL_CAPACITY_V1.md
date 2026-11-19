@@ -8,7 +8,7 @@
 
 Phase 6 provides a country-level view of population, common population-based resource requirements, the industrial starting baseline, selected-country live factory capacity, existing factory input demand, physical production evidence, and evidence-backed modeled costs.
 
-The implementation is an additive read-only projection over OMEGA's existing authorities. It is not a second economy engine.
+The implementation is an additive read-only projection over OMEGA's existing authorities. It is not a second economy engine. Its compact calculation-provenance record is written only into the optional simulation save snapshot, outside the authoritative world-state tree; it never mutates country/economy state.
 
 The following invariants are mandatory:
 
@@ -138,7 +138,7 @@ New additive runtime:
 - Main read API: `getNationalSummary(countryId)`
 - Supporting APIs: `getPer100kRateCatalog()`, `calculatePopulationDemand(countryId)`, `renderSummary(summary)`, `diagnostics()`
 
-It calls the existing general-data and factory-baseline interfaces. It does not copy the large registry into a second data file or load the entire registry into a new in-memory world-wide map.
+It calls the existing general-data and factory-baseline interfaces. It does not copy the large registry into a second data file or load the entire registry into a new in-memory world-wide map. The calculation provenance includes the population source/status/year, demand-rule version, universal rate fingerprint, factory baseline and live asset evidence, current-turn factory/national demand, production ledger transactions and observed price records.
 
 The Country Overview receives an additive, collapsible national summary. The panel labels the factory allocation as a simulation baseline and leaves uncalibrated data visible as unavailable.
 
@@ -152,9 +152,9 @@ The Country Overview receives an additive, collapsible national summary. The pan
 | 6D | Population/factory demand reconciliation | Separate streams; existing national-demand authority reused, no new sum |
 | 6E | Resource and factory cost | Resource-level modeled cost requires quote/currency/observation; factory operating and Treasury actuals remain evidence-gated |
 | 6F | National summary UI | Country Overview summary panel added |
-| 6G | Reconciliation and performance | Automated regression suite and path-filtered CI gate added; save/load provenance snapshot persistence remains pending; full CI result is a merge prerequisite |
+| 6G | Reconciliation and performance | Optional save snapshot extension and load-time provenance revalidation added; full CI result and device-performance validation remain separate gates |
 
-Phase 6 is not considered fully financially reconciled while factory operating cost and Treasury journal evidence remain incomplete. Save/load persistence of a per-turn calculation-provenance snapshot is also still a 6G exit item; this read-only increment returns full provenance to the caller but does not yet write a snapshot into the saved game. These limitations must remain visible rather than filled with fabricated amounts.
+Phase 6 is not considered fully financially reconciled while factory operating cost and Treasury journal evidence remain incomplete. The simulation save runtime now includes the optional `phase6NationalCapacity` provenance block in the checksum-covered save snapshot. On load, Phase 6 holds it only as a reference, recalculates from the restored authorities, and returns `REVALIDATED`, `INVALIDATED_SOURCE_CHANGED` or `RECOMPUTED_AFTER_TURN_CHANGE`. Legacy saves without the extension remain supported and reset any previous Phase 6 reference. This persists calculation provenance, not a cached calculation that bypasses current source data.
 
 ## 10. Acceptance tests
 
@@ -170,6 +170,7 @@ The dedicated regression suite verifies:
 - Current-turn production transaction de-duplication using the resource finished-goods ledger.
 - Separate population and factory demand, with no naive summation.
 - Price/currency evidence gates and the separation of modeled cost from Treasury postings.
-- Read-only behavior and the absence of a new scheduler.
+- Read-only authoritative world-state behavior and the absence of a new scheduler.
+- Phase 6 provenance save/load checksum coverage, legacy-save compatibility, and load-time fingerprint revalidation.
 
 The existing resource-demand, factory baseline, industrial network, country general-data and selected-country-scope tests remain compatibility checks for the Phase 6 branch.
