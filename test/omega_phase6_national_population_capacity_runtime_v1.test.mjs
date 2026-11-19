@@ -678,6 +678,10 @@ test('unit-backed Black Market transit is exposed separately while legal bilater
   assert.equal(row.blackMarketInboundShipmentEvidenceStatus, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
   assert.equal(summary.dataCoverage.blackMarketTransitStatus, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
   assert.equal(summary.dataCoverage.blackMarketTransitLedgerAvailable, true);
+  const html = api.renderSummary(summary);
+  assert.match(html, /Legal in-transit import/);
+  assert.match(html, /Black Market transit subset/);
+  assert.match(html, /UNKNOWN because its durable shipment ledger is not persisted/);
 });
 
 test('legacy Black Market transit without a saved unit remains partial rather than guessing a quantity unit', async () => {
