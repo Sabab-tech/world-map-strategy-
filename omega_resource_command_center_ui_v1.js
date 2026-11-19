@@ -1929,10 +1929,14 @@
       const report = result && result.report;
       if (!report) return '';
       const needs = (report.importNeeds || []).slice(0, 3).map(function (row) {
-        return '<div class="omega-rescc-kv"><span>Import need · ' + esc(row.name || row.resourceId) + '</span><strong>' + esc(number(row.unmetDemand.value, row.unit || '')) + '</strong></div>';
+        const price = row.expectedPrice && row.expectedPrice.status !== 'UNKNOWN'
+          ? row.expectedPrice.status + ' · ' + number(row.expectedPrice.value, report.currency && report.currency.value || '') : 'Price unknown';
+        return '<div class="omega-rescc-kv"><span>Import need · ' + esc(row.name || row.resourceId) + '</span><strong>' + esc(number(row.unmetDemand.value, row.unit || '')) + ' · ' + esc(price) + '</strong></div>';
       }).join('');
       const surpluses = (report.exportSurpluses || []).slice(0, 3).map(function (row) {
-        return '<div class="omega-rescc-kv"><span>Export surplus · ' + esc(row.name || row.resourceId) + '</span><strong>' + esc(number(row.exportableStock.value, row.unit || '')) + '</strong></div>';
+        const price = row.expectedPrice && row.expectedPrice.status !== 'UNKNOWN'
+          ? row.expectedPrice.status + ' · ' + number(row.expectedPrice.value, report.currency && report.currency.value || '') : 'Price unknown';
+        return '<div class="omega-rescc-kv"><span>Export surplus · ' + esc(row.name || row.resourceId) + '</span><strong>' + esc(number(row.exportableStock.value, row.unit || '')) + ' · ' + esc(price) + '</strong></div>';
       }).join('');
       const alternatives = report.alternativeMarkets || {};
       const alternativeCount = (alternatives.suppliersForImports || []).reduce(function (sum, row) { return sum + (row.alternatives || []).length; }, 0) +
@@ -1940,14 +1944,18 @@
       return card('Market report · ' + target, result.status || report.freshnessStatus || 'UNKNOWN',
         '<div class="omega-rescc-kv"><span>Generated turn</span><strong>' + esc(report.generatedTurn) + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Evidence</span><strong>' + esc(report.evidenceCounts && (report.evidenceCounts.known || 0)) + ' known · ' + esc(report.evidenceCounts && (report.evidenceCounts.estimated || 0)) + ' estimated · ' + esc(report.evidenceCounts && (report.evidenceCounts.unknown || 0)) + ' unknown</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Counterparty currency capacity</span><strong>' + esc(report.availableForeignCurrency && report.availableForeignCurrency.status === 'KNOWN' ? number(report.availableForeignCurrency.value, report.currency && report.currency.value || '') : report.availableForeignCurrency && report.availableForeignCurrency.status || 'UNKNOWN') + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Existing bilateral agreements</span><strong>' + esc(report.activeBilateralAgreementCount || 0) + '</strong></div>' +
         needs + surpluses + '<div class="omega-rescc-kv"><span>Alternative buyers / suppliers</span><strong>' + esc(alternativeCount) + '</strong></div>', '');
     }).join('');
     const proposalRows = (bilateralProposals.outbox || []).concat(bilateralProposals.inbox || []).slice(-20).reverse().map(function (row) {
       const review = row.review || row.decision || {};
+      const displayStatus = row.inboxStatus || row.status || 'UNKNOWN';
+      const counterparty = row.inboxStatus ? row.requestorCountryId : row.targetCountryId;
       const decisionFactors = review.decisionFactors || {};
-      return card('Proposal · ' + esc(row.proposalId || '—'), row.status || row.inboxStatus || 'UNKNOWN',
+      return card('Proposal · ' + esc(row.proposalId || '—'), displayStatus,
         '<div class="omega-rescc-kv"><span>Direction</span><strong>' + esc(row.direction || '—') + '</strong></div>' +
-        '<div class="omega-rescc-kv"><span>Counterparty</span><strong>' + esc(row.targetCountryId || row.requestorCountryId || '—') + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Counterparty</span><strong>' + esc(counterparty || '—') + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Commodity / terms</span><strong>' + esc(row.resourceId || '—') + ' · ' + esc(row.quantityPerDelivery || '—') + ' @ ' + esc(row.unitPrice || '—') + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>AI decision</span><strong>' + esc(review.decision || 'PENDING') + '</strong></div>' +
         (decisionFactors.score !== undefined ? '<div class="omega-rescc-kv"><span>Decision score</span><strong>' + esc(decisionFactors.score) + '</strong></div>' : '') +
