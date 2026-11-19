@@ -663,7 +663,7 @@
     const accountId=(template)=>{
       const value=String(template||'').trim();
       if(!value)return '';
-      return value.replace(/\\{([^}]+)\\}/g,(match,key)=>{
+      return value.replace(/\{([^}]+)\}/g,(match,key)=>{
         const token=String(row?.[key]??'unclassified').trim().toLowerCase()
           .replace(/[^a-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'');
         return token||'unclassified';
@@ -679,13 +679,11 @@
         sourceTransactionId:transactionId});
       return true;
     };
-    let creditMinor=null;
     if(String(rule.type||'').toUpperCase()==='PAIR'){
       const minor=amountMinor(row[rule.amountField||'amountUsd'],rule.absoluteValue===true);
       if(minor===null||minor<=0)return null;
       if(!addLine(accountId(rule.debitAccount),'DEBIT',minor)||
          !addLine(accountId(rule.creditAccount),'CREDIT',minor))return null;
-      creditMinor=minor;
     }else if(String(rule.type||'').toUpperCase()==='SPLIT_DEBIT'){
       const total=amountMinor(row[rule.totalAmountField||'amountUsd'],false);
       if(total===null||total<=0||!Array.isArray(rule.debitComponents))return null;
@@ -702,7 +700,6 @@
         reason:'SOURCE_SPLIT_DOES_NOT_BALANCE_TO_CASH_MOVEMENT',sourceTransactionId:transactionId,
         debitTotalMinor:debitTotal,creditTotalMinor:total};
       if(!addLine(accountId(rule.creditAccount),'CREDIT',total))return null;
-      creditMinor=total;
     }else return null;
     const debitTotalMinor=lines.filter(line=>line.side==='DEBIT').reduce((sum,line)=>sum+line.amountMinor,0);
     const creditTotalMinor=lines.filter(line=>line.side==='CREDIT').reduce((sum,line)=>sum+line.amountMinor,0);
