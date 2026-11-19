@@ -565,6 +565,75 @@ test('Phase 6 reads only balanced current-turn Treasury expenses and private fac
   assert.equal(JSON.stringify(state), before, 'Phase 6 must not mutate Finance journal sources');
 });
 
+test('a complete game-state Finance fiscal period establishes budgetary Treasury expenditure without counting debt principal', async () => {
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {}, economy: { BGD: { productionAssets: [] } }, resource: { BGD: {} }, trade: { BGD: {} },
+    finance: { BGD: { omegaFinance: {
+      treasuryBalanceUsd: 130,
+      fiscalPeriodAccount: {
+        schemaVersion: 1, sourceAuthority: 'OMEGA_FINANCE_MINISTRY_RUNTIME',
+        periodIndex: 0, periodLabel: '2026', currency: 'USD',
+        openingBalanceUsd: 100, closingBalanceUsd: 130,
+        openingBalanceQuality: 'GAME_STATE', openingBalanceSource: 'NEW_GAME_FINANCE_OPENING',
+        flowCoverage: 'COMPLETE_FROM_PERIOD_START',
+        flowComponents: {
+          taxRevenueUsd: 20, borrowingProceedsUsd: 10, externalCreditsUsd: 20,
+          governmentSpendingUsd: 5, interestPaidUsd: 5,
+          principalRepaymentUsd: 5, externalDebitsUsd: 5
+        },
+        totalInflowsUsd: 50, totalOutflowsUsd: 20,
+        expectedClosingBalanceUsd: 130, varianceUsd: 0,
+        reconciliationStatus: 'GAME_STATE_RECONCILED', status: 'GAME_STATE_RECONCILED',
+        updatedTurn: 7
+      },
+      ledger: []
+    } } }
+  };
+  const before = JSON.stringify(state);
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const treasury = summary.expenditure.treasuryActualExpense;
+  assert.equal(treasury.status, 'PERIOD_RECONCILED_GAME_STATE');
+  assert.equal(treasury.amount, 10);
+  assert.equal(treasury.currency, 'USD');
+  assert.equal(treasury.period, '2026');
+  assert.equal(treasury.periodEvidence.governmentSpending, 5);
+  assert.equal(treasury.periodEvidence.interestPaid, 5);
+  assert.equal(treasury.periodEvidence.budgetaryExpense, 10);
+  assert.equal(treasury.periodEvidence.principalRepaymentExcludedFromExpense, 5);
+  assert.equal(treasury.periodEvidence.externalDebitsExcludedFromExpense, 5);
+  assert.equal(treasury.periodEvidence.totalCashOutflows, 20);
+  assert.equal(JSON.stringify(state), before, 'Phase 6 must only read the Finance fiscal account');
+});
+
+test('a modeled or incomplete Finance fiscal period never establishes actual Treasury expenditure', async () => {
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {}, economy: { BGD: { productionAssets: [] } }, resource: { BGD: {} }, trade: { BGD: {} },
+    finance: { BGD: { omegaFinance: {
+      treasuryBalanceUsd: 130,
+      fiscalPeriodAccount: {
+        schemaVersion: 1, sourceAuthority: 'OMEGA_FINANCE_MINISTRY_RUNTIME',
+        periodIndex: 0, periodLabel: '2026', currency: 'USD',
+        openingBalanceUsd: 100, closingBalanceUsd: 130,
+        openingBalanceQuality: 'MODELLED', flowCoverage: 'COMPLETE_FROM_PERIOD_START',
+        flowComponents: {
+          taxRevenueUsd: 20, borrowingProceedsUsd: 10, externalCreditsUsd: 20,
+          governmentSpendingUsd: 5, interestPaidUsd: 5, principalRepaymentUsd: 5, externalDebitsUsd: 5
+        },
+        totalInflowsUsd: 50, totalOutflowsUsd: 20, expectedClosingBalanceUsd: 130, varianceUsd: 0,
+        reconciliationStatus: 'MODELLED_RECONCILED', status: 'MODELLED_RECONCILED'
+      },
+      ledger: []
+    } } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  assert.equal(summary.expenditure.treasuryActualExpense.status, 'NOT_ESTABLISHED');
+  assert.equal(summary.expenditure.treasuryActualExpense.amount, null);
+});
+
 test('in-transit international imports remain UNKNOWN when only pending or domestic shipment evidence exists', async () => {
   const state = {
     simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
