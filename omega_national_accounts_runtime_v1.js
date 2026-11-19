@@ -152,16 +152,16 @@
       return{name,value,currency:currency||null,period:period||null,
         complete:raw.complete===true&&value!==null&&!!currency&&!!period};});
     const complete=rows.filter(row=>row.complete);
-    if(!complete.length)return{status:'UNOBSERVED',value:null,currency:null,period:null,approaches:rows,reason:'NO_COMPLETE_GDP_APPROACH'};
-    if(complete.length!==3)return{status:'PARTIAL',value:null,currency:null,period:null,approaches:rows,reason:'ALL_THREE_APPROACHES_REQUIRED'};
+    if(!complete.length)return{status:'UNOBSERVED',value:null,currency:null,period:null,approaches:rows,reason:'NO_COMPLETE_GDP_APPROACH',reconciliationAllowed:false};
+    if(complete.length!==3)return{status:'PARTIAL',value:null,currency:null,period:null,approaches:rows,reason:'ALL_THREE_APPROACHES_REQUIRED',reconciliationAllowed:false};
     const first=complete[0];
     if(complete.some(row=>row.currency!==first.currency||row.period!==first.period))
-      return{status:'UNRECONCILED',value:null,currency:null,period:null,approaches:rows,reason:'GDP_APPROACH_BASIS_MISMATCH'};
+      return{status:'UNRECONCILED',value:null,currency:null,period:null,approaches:rows,reason:'GDP_APPROACH_BASIS_MISMATCH',reconciliationAllowed:false};
     const min=Math.min(...complete.map(row=>row.value)),max=Math.max(...complete.map(row=>row.value));
     const ok=near(min,max,finite(options.absoluteTolerance)??1,finite(options.relativeTolerance)??0.005);
     return{status:ok?'RECONCILED':'UNRECONCILED',
       value:ok?complete.reduce((sum,row)=>sum+row.value,0)/3:null,currency:first.currency,period:first.period,
-      approaches:rows,difference:max-min,reason:ok?null:'GDP_APPROACH_VARIANCE'};
+      approaches:rows,difference:max-min,reason:ok?null:'GDP_APPROACH_VARIANCE',reconciliationAllowed:ok};
   }
 
   async function reconcileSectorJournals(input={}) {
@@ -427,11 +427,15 @@
         const peerSettlements=Array.isArray(peerBucket?.globalTradeLedger?.settlements)?peerBucket.globalTradeLedger.settlements:[];
         const peerSettlementRows=peerSettlements.filter(row=>String(row?.settlementId||'').trim()===settlementId&&
           String(row?.status||'').toUpperCase()==='SETTLED');
+        const localMatches=localRows.filter(row=>String(row?.settlementId||'').trim()===settlementId);
+        const localSettlementRows=Array.isArray(root?.trade?.[country]?.globalTradeLedger?.settlements)?
+          root.trade[country].globalTradeLedger.settlements.filter(row=>String(row?.settlementId||'').trim()===settlementId&&String(row?.status||'').toUpperCase()==='SETTLED'):[];
         let status='PARTIAL',reason='COUNTERPARTY_MIRROR_NOT_OBSERVED',
           buyerValue=null,sellerValue=null,fx=null,buyerCurrency=null,sellerCurrency=null,variance=null;
-        if(matches.length>1){status='UNRECONCILED';reason='DUPLICATE_COUNTERPARTY_SETTLEMENT_MIRROR';}
+        if(localMatches.length>1||localSettlementRows.length>1){status='UNRECONCILED';reason='DUPLICATE_LOCAL_SETTLEMENT_COUNTER_ENTRY';}
+        else if(matches.length>1){status='UNRECONCILED';reason='DUPLICATE_COUNTERPARTY_SETTLEMENT_MIRROR';}
         else if(matches.length===1&&peerSettlementRows.length>1){status='UNRECONCILED';reason='DUPLICATE_COUNTERPARTY_SETTLEMENT_HEADER';}
-        else if(matches.length===1&&peerSettlementRows.length===1){
+        else if(localSettlementRows.length===1&&matches.length===1&&peerSettlementRows.length===1){
           const peer=matches[0],buyerRow=direction==='IMPORT'?local:peer,sellerRow=direction==='EXPORT'?local:peer;
           buyerValue=finite(buyerRow?.buyerValue??buyerRow?.totalValue);
           sellerValue=finite(sellerRow?.sellerValue??sellerRow?.totalValue);
@@ -498,15 +502,19 @@
   }
   function nationalStockSnapshot(resource,productionAssets){
     const inventory=isObject(resource?.inventory)?resource.inventory:null,units=isObject(resource?.inventoryUnits)?resource.inventoryUnits:{},
-      batches=Array.isArray(resource?.batches)?resource.batches:[],byIdentity=new Map();
+      batches=Array.isArray(resource?.batches)?resource.batches:[],byIdentity=new Map(),batchTotals=new Map();
     let complete=!!inventory;
     const resolveUnit=rid=>{
       const keys=Object.keys(units).filter(key=>key.trim().toLowerCase()===String(rid).trim().toLowerCase());
       const observed=keys.map(key=>String(units[key]||'').trim()).filter(Boolean);
       if(new Set(observed).size===1)return observed[0];
-      const batchUnits=[...new Set(batches.filter(row=>String(row?.resourceId||row?.materialIdentity||'').trim().toLowerCase()===String(rid).trim().toLowerCase())
+      const candidates=[...new Set(batches.filter(row=>String(row?.resourceId||row?.materialIdentity||'').trim().toLowerCase()===String(rid).trim().toLowerCase())
         .map(row=>String(row?.unit||'').trim()).filter(Boolean))];
-      return batchUnits.length===1?batchUnits[0]:null;
+      if(candidates.length===1)return candidates[0];
+      const factoryUnits=[...new Set((Array.isArray(productionAssets)?productionAssets:[]).flatMap(asset=>(Array.isArray(asset?.inputBatchLots)?asset.inputBatchLots:[])
+        .filter(lot=>String(lot?.resourceId||lot?.materialIdentity||'').trim().toLowerCase()===String(rid).trim().toLowerCase())
+        .map(lot=>String(lot?.unit||'').trim()).filter(Boolean)))];
+      return factoryUnits.length===1?factoryUnits[0]:null;
     };
     const add=(rid,unit,q)=>{
       const amount=finite(q),name=String(rid||'').trim(),u=String(unit||'').trim();
@@ -515,15 +523,25 @@
       const key=name+'\\u0000'+u,row=byIdentity.get(key)||{resourceId:name,unit:u,quantity:0};
       row.quantity+=amount;byIdentity.set(key,row);
     };
+    const inactive=new Set(['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','DECOMMISSIONED']);
+    for(const batch of batches){
+      if(inactive.has(String(batch?.status||'').toUpperCase()))continue;
+      const rid=String(batch?.resourceId||batch?.materialIdentity||'').trim(),q=finite(batch?.remainingQuantity??batch?.quantity);
+      if(!rid||q===null||q<0){complete=false;continue;}if(q<=1e-9)continue;
+      const normalized=rid.toLowerCase();batchTotals.set(normalized,(batchTotals.get(normalized)||0)+q);add(rid,batch?.unit,q);
+    }
     if(inventory)for(const key of Object.keys(inventory)){
-      const q=finite(inventory[key]);if(q===null||q<0){complete=false;continue;}add(key,resolveUnit(key),q);
+      const q=finite(inventory[key]);if(q===null||q<0){complete=false;continue;}
+      const tracked=batchTotals.get(key.toLowerCase())||0;
+      if(tracked>1e-9){if(q>tracked+1e-6)complete=false;continue;}
+      add(key,resolveUnit(key),q);
     }
     for(const asset of Array.isArray(productionAssets)?productionAssets:[]){
       const stock=isObject(asset?.inputInventory)?asset.inputInventory:{},lots=Array.isArray(asset?.inputBatchLots)?asset.inputBatchLots:[];
       for(const rid of Object.keys(stock)){
         const total=finite(stock[rid]);if(total===null||total<0){complete=false;continue;}
         const active=lots.filter(lot=>String(lot?.resourceId||lot?.materialIdentity||'').trim().toLowerCase()===rid.trim().toLowerCase()&&
-          !['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED'].includes(String(lot?.status||'').toUpperCase()));
+          !inactive.has(String(lot?.status||'').toUpperCase())&&!['IN_TRANSIT','RESERVED'].includes(String(lot?.status||'').toUpperCase()));
         const grouped=new Map();let lotTotal=0,bad=false;
         for(const lot of active){const q=finite(lot?.remainingQuantity??lot?.quantity),unit=String(lot?.unit||'').trim();
           if(q===null||q<0||!unit){bad=true;continue;}lotTotal+=q;grouped.set(unit,(grouped.get(unit)||0)+q);}
@@ -561,7 +579,12 @@
       const keys=Object.keys(unitMap).filter(key=>key.trim().toLowerCase()===String(rid).trim().toLowerCase());
       const mapped=[...new Set(keys.map(key=>String(unitMap[key]||'').trim()).filter(Boolean))];if(mapped.length===1)return mapped[0];
       const observed=[...new Set(batches.filter(row=>String(row?.resourceId||row?.materialIdentity||'').trim().toLowerCase()===String(rid).trim().toLowerCase())
-        .map(row=>String(row?.unit||'').trim()).filter(Boolean))];return observed.length===1?observed[0]:null;
+        .map(row=>String(row?.unit||'').trim()).filter(Boolean))];
+      if(observed.length===1)return observed[0];
+      const factoryUnits=[...new Set((Array.isArray(productionAssets)?productionAssets:[]).flatMap(asset=>(Array.isArray(asset?.inputBatchLots)?asset.inputBatchLots:[])
+        .filter(lot=>String(lot?.resourceId||lot?.materialIdentity||'').trim().toLowerCase()===String(rid).trim().toLowerCase())
+        .map(lot=>String(lot?.unit||'').trim()).filter(Boolean)))];
+      return factoryUnits.length===1?factoryUnits[0]:null;
     };
     const add=(periodId,rid,q,field,unit,transfers)=>{
       const group=ensure(periodId),quantity=finite(q),resolved=resolveUnit(rid,unit,transfers);

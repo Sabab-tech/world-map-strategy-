@@ -705,12 +705,13 @@ function normalizeFactoryType(value){
 }
 
 
-  function stockFlowSnapshot(resource, factoryAssets) {
+    function stockFlowSnapshot(resource, factoryAssets) {
     resource = resource && typeof resource === 'object' ? resource : {};
     const inventory = resource.inventory && typeof resource.inventory === 'object' && !Array.isArray(resource.inventory) ? resource.inventory : null;
     const units = resource.inventoryUnits && typeof resource.inventoryUnits === 'object' ? resource.inventoryUnits : {};
     const batches = Array.isArray(resource.batches) ? resource.batches : [];
-    const byIdentity = new Map(); let complete = !!inventory;
+    const byIdentity = new Map(), batchTotals = new Map();
+    let complete = !!inventory;
     const normalizeKey = value => tok(value);
     const unitFor = rid => {
       const keys=Object.keys(units).filter(key=>normalizeKey(key)===normalizeKey(rid));
@@ -727,12 +728,25 @@ function normalizeFactoryType(value){
       const key=name+'\\u0000'+u,row=byIdentity.get(key)||{resourceId:name,unit:u,quantity:0};
       row.quantity+=q;byIdentity.set(key,row);
     };
+    const inactive=new Set(['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','DECOMMISSIONED']);
+    for(const batch of batches){
+      if(inactive.has(String(batch&&batch.status||'').toUpperCase()))continue;
+      const rid=String(batch&&(batch.resourceId||batch.materialIdentity)||'').trim();
+      const q=num(batch&&(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity));
+      if(!rid||q===null||q<0){complete=false;continue;}
+      if(q<=1e-9)continue;
+      const key=normalizeKey(rid);batchTotals.set(key,(batchTotals.get(key)||0)+q);
+      add(rid,batch.unit,q);
+    }
     if(inventory){
       const seen=new Set();
       for(const key of Object.keys(inventory)){
         const q=num(inventory[key]),normalized=normalizeKey(key);
         if(!normalized||q===null||q<0){complete=false;continue;}
-        if(seen.has(normalized))complete=false;seen.add(normalized);add(key,unitFor(key),q);
+        if(seen.has(normalized))complete=false;seen.add(normalized);
+        const tracked=batchTotals.get(normalized)||0;
+        if(tracked>1e-9){if(q>tracked+1e-6)complete=false;continue;}
+        add(key,unitFor(key),q);
       }
     }
     for(const asset of Array.isArray(factoryAssets)?factoryAssets:[]){
@@ -740,10 +754,11 @@ function normalizeFactoryType(value){
       const lots=Array.isArray(asset&&asset.inputBatchLots)?asset.inputBatchLots:[];
       for(const rid of Object.keys(stock)){
         const total=num(stock[rid]);if(total===null||total<0){complete=false;continue;}
-        const active=lots.filter(lot=>normalizeKey(lot&&(lot.resourceId||lot.materialIdentity))===normalizeKey(rid)&&
-          !['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED'].includes(String(lot&&lot.status||'').toUpperCase()));
+        const activeLots=lots.filter(lot=>normalizeKey(lot&&(lot.resourceId||lot.materialIdentity))===normalizeKey(rid)&&
+          !inactive.has(String(lot&&lot.status||'').toUpperCase())&&
+          !['IN_TRANSIT','RESERVED'].includes(String(lot&&lot.status||'').toUpperCase()));
         const grouped=new Map();let lotTotal=0,bad=false;
-        for(const lot of active){const q=num(lot&&(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)),unit=String(lot&&lot.unit||'').trim();
+        for(const lot of activeLots){const q=num(lot&&(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)),unit=String(lot&&lot.unit||'').trim();
           if(q===null||q<0||!unit){bad=true;continue;}lotTotal+=q;grouped.set(unit,(grouped.get(unit)||0)+q);}
         if(!bad&&Math.abs(lotTotal-total)<=1e-6){for(const [unit,q] of grouped)add(rid,unit,q);}
         else if(total>1e-9){complete=false;add(rid,null,total);}
@@ -751,7 +766,7 @@ function normalizeFactoryType(value){
     }
     return{complete,identities:[...byIdentity.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit))};
   }
-  function captureStockFlowPeriod(stateTransaction) {
+function captureStockFlowPeriod(stateTransaction) {
     const t=turn(),periodId='GAME_TURN_'+String(t);
     const resource={inventory:stateTransaction.get('resource.inventory'),inventoryUnits:stateTransaction.get('resource.inventoryUnits'),
       batches:stateTransaction.get('resource.batches')};

@@ -207,7 +207,7 @@
       'economy.industrialRuntime','economy.companyAccounts','economy.workerIncome','economy.supplierRevenue','economy.factoryOutput'
     ],
     trade:[
-      'trade.relations','trade.balance','trade.exports','trade.imports',
+      'trade.relations','trade.balance','trade.exports','trade.imports','trade.importLedger','trade.exportLedger','trade.globalTradeLedger',
       'trade.policy','trade.negotiations','trade.importRequests','trade.offerBook','trade.marketPrice','trade.marketState','trade.marketMeta','trade.routeCapacity','trade.domesticSales','trade.companyMarketResearchRequests'
     ],
     foreign:[
