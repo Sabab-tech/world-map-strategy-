@@ -206,10 +206,12 @@
     if (currentValue !== null && currentValue > 0) {
       var year = finite(currentMeta.year);
       var sourceStatus = String(currentMeta.status || '').toUpperCase();
-      var isFreshObservation = sourceStatus === 'WORLD_BANK_API_OBSERVATION' && year !== null && year >= 2025;
+      var isFreshObservation = (sourceStatus === 'WORLD_BANK_API_OBSERVATION' && year !== null && year >= 2025) ||
+        (sourceStatus === 'OFFICIAL_POPULATION_OBSERVATION' && year !== null && year >= 2024);
+      var isProjectedEstimate = sourceStatus === 'UN_PROJECTED_POPULATION_ESTIMATE';
       return {
         value: currentValue,
-        status: isFreshObservation ? 'OBSERVED' : 'STALE_BASELINE',
+        status: isFreshObservation ? 'OBSERVED' : (isProjectedEstimate ? 'ESTIMATED' : 'STALE_BASELINE'),
         source: currentMeta.sourceName || currentMeta.sourceId || 'COUNTRY_GENERAL_DATA_REGISTRY',
         sourceId: currentMeta.sourceId || null,
         sourceUrl: currentMeta.sourceUrl || null,
@@ -668,6 +670,117 @@
       }) : null
     };
   }
+  function financialJournalEvidence(countryId, turn) {
+    var s = state(), record = countryGeneralRecord(countryId);
+    var iso2 = id(record && record.identity && record.identity.iso2);
+    var financeRoot = object(s.finance) || {}, candidateKeys = [countryId, iso2].filter(Boolean);
+    var bucket = null;
+    for (var i = 0; i < candidateKeys.length && !bucket; i++) bucket = object(financeRoot[candidateKeys[i]]) || null;
+    if (!bucket) Object.keys(financeRoot).some(function (key) {
+      if (candidateKeys.indexOf(id(key)) < 0) return false;
+      bucket = object(financeRoot[key]) || null; return !!bucket;
+    });
+    var finance = object(bucket && bucket.omegaFinance) || {};
+    var ledger = Array.isArray(finance.ledger) ? finance.ledger : null;
+    var maximumRows = 500, retainedRows = ledger ? ledger.length : 0;
+    var windowTruncated = !!ledger && retainedRows >= maximumRows;
+    var seen = Object.create(null), treasury = Object.create(null), privateCosts = Object.create(null);
+    var invalidTreasuryRows = 0, invalidPrivateRows = 0, duplicateRows = 0;
+    var treasuryCandidateCount = 0, privateCandidateCount = 0;
+    function validate(row, sector, authority, companyId) {
+      var j = object(row && row.sectorJournalV1), tx = String(row && row.transactionId || '').trim();
+      if (!j || !tx || j.status !== 'POSTED' || j.schemaVersion !== 1 || j.sectorId !== sector ||
+          j.sourceAuthority !== authority || j.sourceTransactionId !== tx || id(j.countryId) !== countryId ||
+          !j.currency || j.counterEntryComplete !== true ||
+          (companyId && id(j.companyId) !== id(companyId))) return null;
+      var currency = id(j.currency), debitDeclared = finite(j.debitTotalMinor), creditDeclared = finite(j.creditTotalMinor);
+      if (!currency || !Number.isSafeInteger(debitDeclared) || !Number.isSafeInteger(creditDeclared) ||
+          debitDeclared <= 0 || debitDeclared !== creditDeclared) return null;
+      var lines = Array.isArray(j.lines) ? j.lines : [], debit = 0, credit = 0, lineIds = Object.create(null);
+      if (lines.length < 2) return null;
+      for (var x = 0; x < lines.length; x++) {
+        var line = lines[x] || {}, amount = finite(line.amountMinor), side = String(line.side || '').toUpperCase();
+        var lineId = String(line.lineId || '').trim();
+        if (!Number.isSafeInteger(amount) || amount <= 0 || !lineId || lineIds[lineId] ||
+            !String(line.accountId || '').trim() || id(line.currency) !== currency ||
+            id(line.countryId) !== countryId || String(line.sourceTransactionId || '').trim() !== tx ||
+            (companyId && id(line.companyId) !== id(companyId))) return null;
+        lineIds[lineId] = true;
+        if (side === 'DEBIT') debit += amount; else if (side === 'CREDIT') credit += amount; else return null;
+      }
+      if (debit !== debitDeclared || credit !== creditDeclared || debit !== credit) return null;
+      return { transactionId: tx, currency: currency, amountMinor: debit };
+    }
+    function group(map, currency) {
+      if (!map[currency]) map[currency] = { currency: currency, grossAmount: 0, reversalAmount: 0,
+        netAmount: 0, transactionCount: 0, transactionIds: [] };
+      return map[currency];
+    }
+    if (ledger) for (var k = 0; k < ledger.length; k++) {
+      var row = ledger[k] || {};
+      if (finite(row.turn) !== turn) continue;
+      var action = String(row.action || '').toUpperCase();
+      if (action === 'EXPENSE' || action === 'EXPENSE_ROLLBACK') {
+        treasuryCandidateCount++;
+        var gov = validate(row, 'government', 'OMEGA_FINANCE_MINISTRY', null);
+        if (!gov) { invalidTreasuryRows++; continue; }
+        var govKey = 'GOV|' + gov.transactionId;
+        if (seen[govKey]) { duplicateRows++; continue; } seen[govKey] = true;
+        var govGroup = group(treasury, gov.currency);
+        if (action === 'EXPENSE') govGroup.grossAmount += gov.amountMinor / 100;
+        else govGroup.reversalAmount += gov.amountMinor / 100;
+        govGroup.transactionCount++; govGroup.transactionIds.push(gov.transactionId);
+      }
+      if (String(row.type || '').toUpperCase() === 'PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL') {
+        privateCandidateCount++;
+        var companyId = String(row.companyId || '').trim(), factoryId = String(row.factoryId || '').trim();
+        var firm = companyId && factoryId
+          ? validate(row, 'firm', 'OMEGA_PRIVATE_ENTERPRISE_FINANCE_LEDGER', companyId) : null;
+        if (!firm) { invalidPrivateRows++; continue; }
+        var firmKey = 'FIRM|' + firm.transactionId;
+        if (seen[firmKey]) { duplicateRows++; continue; } seen[firmKey] = true;
+        var firmGroup = group(privateCosts, firm.currency);
+        firmGroup.grossAmount += firm.amountMinor / 100;
+        firmGroup.netAmount += firm.amountMinor / 100;
+        firmGroup.transactionCount++; firmGroup.transactionIds.push(firm.transactionId);
+      }
+    }
+    var treasuryRows = Object.keys(treasury).sort().map(function (currency) {
+      var row = treasury[currency];
+      row.netAmount = Number((row.grossAmount - row.reversalAmount).toFixed(2));
+      row.grossAmount = Number(row.grossAmount.toFixed(2));
+      row.reversalAmount = Number(row.reversalAmount.toFixed(2));
+      row.transactionIds.sort(); return row;
+    });
+    var privateRows = Object.keys(privateCosts).sort().map(function (currency) {
+      var row = privateCosts[currency];
+      row.grossAmount = Number(row.grossAmount.toFixed(2));
+      row.netAmount = Number(row.netAmount.toFixed(2));
+      row.transactionIds.sort(); return row;
+    });
+    var treasuryCount = treasuryRows.reduce(function (sum, row) { return sum + row.transactionCount; }, 0);
+    var privateCount = privateRows.reduce(function (sum, row) { return sum + row.transactionCount; }, 0);
+    return {
+      status: ledger ? 'PARTIAL_SOURCE_WINDOW' : 'UNOBSERVED', turn: turn,
+      treasuryActualExpense: {
+        status: treasuryCount ? 'PARTIAL_CURRENT_TURN_POSTED_EXPENSE_EVIDENCE' : 'NOT_ESTABLISHED',
+        amount: null, knownPostedExpenseByCurrency: treasuryRows, postedExpenseTransactionCount: treasuryCount,
+        candidateExpenseTransactionCount: treasuryCandidateCount, invalidExpenseJournalCount: invalidTreasuryRows,
+        note: 'Only balanced, posted EXPENSE and EXPENSE_ROLLBACK journals in the retained current-turn Finance window are shown. This is not a complete national Treasury expenditure total.'
+      },
+      factoryOperatingCost: {
+        status: privateCount ? 'PARTIAL_RECORDED_PRIVATE_FACTORY_ACCRUALS' : 'NOT_FINALIZED',
+        totalCostPerDay: null, currency: null, recordedAccrualByCurrency: privateRows,
+        recordedAccrualTransactionCount: privateCount, candidateAccrualTransactionCount: privateCandidateCount,
+        invalidAccrualJournalCount: invalidPrivateRows, coverageScope: 'PRIVATE_FACTORY_OPERATING_COST_ACCRUALS_ONLY',
+        note: 'These are recorded private-company operating-cost accruals for the current turn, not a daily rate or complete government-plus-private factory operating expenditure.'
+      },
+      sourceLedgerWindow: { authority: 'Game.state.finance[countryId].omegaFinance.ledger',
+        ledgerAvailable: !!ledger, retainedRows: retainedRows, maximumRows: maximumRows,
+        windowTruncated: windowTruncated, complete: false },
+      duplicateTransactionCount: duplicateRows, amountsAggregatedAcrossCurrencies: false
+    };
+  }
   function marketQuote(countryId, resourceId) {
     var s = state();
     var trade = object(s.trade && s.trade[countryId]) || {};
@@ -762,7 +875,9 @@
         outputs: summary.production.outputByProductThisTurn
       },
       confirmedImports: summary.confirmedImports,
-      prices: priceRows
+      prices: priceRows,
+      financialEvidence: summary.expenditure.financialEvidence,
+      inTransitInternationalImports: summary.inTransitInternationalImports
     };
     var rateFingerprint = fingerprint({
       ruleVersion: inputEvidence.rateVersion,
@@ -798,6 +913,9 @@
         nationalDemand: 'OmegaResourceNationalDemandRuntime',
         production: 'Game.state.resource[countryId].finishedGoodsLedger',
         confirmedImports: 'Game.state.resource[countryId].inventoryLedger',
+        inTransitInternationalImports: 'NOT_PERSISTED_BY_TRADE_SHIPMENT_AUTHORITY',
+        treasuryExpenses: 'Game.state.finance[countryId].omegaFinance.ledger[action=EXPENSE|EXPENSE_ROLLBACK]',
+        factoryOperatingAccruals: 'Game.state.finance[countryId].omegaFinance.ledger[type=PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL]',
         prices: 'Game.state.trade[countryId].marketPrice'
       },
       calculation: {
@@ -848,6 +966,18 @@
           ledgerAvailable: false, byResource: null, currentTurnRecordCount: null,
           uniqueSettlementResourceCount: null, uniqueSettlementCount: null,
           unclassifiedRecordCount: null, conflictingSettlementCount: null, ledgerMayBeTruncated: false };
+      var inTransitInternationalImports = {
+        status: factories.activePlayerCountry ? 'UNKNOWN' : 'NOT_ACTIVE_COUNTRY',
+        quantity: null, shipmentCount: null,
+        sourceAuthority: 'NO_DURABLE_INTERNATIONAL_IMPORT_SHIPMENT_LEDGER',
+        note: 'Pending requests, domestic shipments and settled imports are not evidence of in-transit international imports.'
+      };
+      var financeEvidence = factories.activePlayerCountry
+        ? financialJournalEvidence(countryId, currentTurn())
+        : { status: 'NOT_ACTIVE_COUNTRY', turn: currentTurn(),
+            treasuryActualExpense: { status: 'NOT_ESTABLISHED', amount: null, knownPostedExpenseByCurrency: [] },
+            factoryOperatingCost: { status: 'NOT_FINALIZED', totalCostPerDay: null, currency: null, recordedAccrualByCurrency: [] },
+            sourceLedgerWindow: { ledgerAvailable: false, complete: false } };
       var byResource = {};
       populationDemand.forEach(function (row) {
         var demand = demandRows[row.resourceId] || demandRows[Object.keys(demandRows).find(function (key) {
@@ -900,6 +1030,12 @@
           inboundShipmentEvidenceStatus: 'NOT_PERSISTED_BY_TRADE_SHIPMENT_AUTHORITY'
         });
       });
+      Object.keys(byResource).forEach(function (resourceId) {
+        byResource[resourceId].inTransitInternationalImportQuantity = null;
+        byResource[resourceId].inTransitInternationalImportStatus = 'UNKNOWN';
+        byResource[resourceId].inboundShipmentQuantity = null;
+        byResource[resourceId].inboundShipmentEvidenceStatus = 'NOT_PERSISTED_BY_TRADE_SHIPMENT_AUTHORITY';
+      });
       var output = factories.activePlayerCountry
         ? authoritativeOutput(resource, currentTurn())
         : { status: 'NOT_ACTIVE_COUNTRY', authority: 'resource.finishedGoodsLedger', byProduct: null, transactionCount: null, transactionIds: [] };
@@ -938,20 +1074,14 @@
           transactionIds: output.transactionIds
         },
         confirmedImports: imports,
+        inTransitInternationalImports: inTransitInternationalImports,
         expenditure: {
           populationConsumption: populationExpenditure,
-          factoryOperatingCost: {
-            status: 'NOT_FINALIZED',
-            totalCostPerDay: null,
-            currency: null,
-            costDefaults: operating ? clone(operating) : null,
-            note: 'Simulation defaults are not a posted country expense. Actual employment, utility use, material prices and currency evidence are required.'
-          },
-          treasuryActualExpense: {
-            status: 'NOT_ESTABLISHED',
-            amount: null,
-            note: 'Modeled consumption cost is not a Treasury journal posting.'
-          }
+          factoryOperatingCost: Object.assign({}, clone(financeEvidence.factoryOperatingCost), {
+            costDefaults: operating ? clone(operating) : null
+          }),
+          treasuryActualExpense: clone(financeEvidence.treasuryActualExpense),
+          financialEvidence: financeEvidence
         },
         dataCoverage: {
           populationStatus: population.status,
@@ -964,6 +1094,10 @@
           startingFactoryUnits: factories.startingFactoryUnits,
           factoryTypeCount: factories.factoryTypeCount,
           activeCountryDetailedRuntime: factories.activePlayerCountry,
+          inTransitInternationalImportStatus: inTransitInternationalImports.status,
+          factoryOperatingCostStatus: financeEvidence.factoryOperatingCost.status,
+          treasuryActualExpenseStatus: financeEvidence.treasuryActualExpense.status,
+          financeEvidenceWindowTruncated: financeEvidence.sourceLedgerWindow && financeEvidence.sourceLedgerWindow.windowTruncated === true,
           importLedgerStatus: imports.status,
           importLedgerMayBeTruncated: imports.ledgerMayBeTruncated === true,
           confirmedImportSettlementResourceCount: imports.uniqueSettlementResourceCount,
@@ -1038,7 +1172,7 @@
         formatNumber(row.existingNationalDemandPerDay, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.inventoryAfter, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.confirmedImportsThisTurn, 3) + '</td><td style="text-align:right">' +
-        formatNumber(row.inboundShipmentQuantity, 3) + '</td><td style="text-align:right">' +
+        formatNumber(row.inTransitInternationalImportQuantity, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.pendingImportQuantity, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.unmetDemand, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.stockCoverageDays, 2) + '</td></tr>';
@@ -1111,13 +1245,13 @@
       calibrated.length + ' calibrated · ' + unknown.length + ' unavailable)</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Resource</th><th style="text-align:right;padding:7px">Per 100k / day</th><th style="text-align:right;padding:7px">Country / day</th><th style="text-align:left;padding:7px">Unit</th><th style="text-align:right;padding:7px">Cost / 100k / day</th><th style="text-align:right;padding:7px">Country cost / day</th><th style="text-align:left;padding:7px">Price status</th></tr></thead><tbody>' +
       resourceRows + '</tbody></table>' + (unknown.length ? '<div style="padding:8px;color:#fbbf24;font-size:10px">Uncalibrated or unavailable: ' +
         escapeHtml(unknown.map(function (row) { return row.resourceId + ' (' + row.calculationStatus + ')'; }).join(', ')) + '</div>' : '') +
-      '</div></details><details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Existing national demand and supply reconciliation</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr><th style="text-align:left;padding:6px">Resource</th><th style="text-align:right;padding:6px">Population/day</th><th style="text-align:right;padding:6px">Factory input/day</th><th style="text-align:right;padding:6px">National/day</th><th style="text-align:right;padding:6px">Stock after</th><th style="text-align:right;padding:6px">Settled imports this turn</th><th style="text-align:right;padding:6px">In-transit import</th><th style="text-align:right;padding:6px">Pending import request</th><th style="text-align:right;padding:6px">Shortage</th><th style="text-align:right;padding:6px">Coverage days</th></tr></thead><tbody>' +
+      '</div></details><details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Existing national demand and supply reconciliation</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr><th style="text-align:left;padding:6px">Resource</th><th style="text-align:right;padding:6px">Population/day</th><th style="text-align:right;padding:6px">Factory input/day</th><th style="text-align:right;padding:6px">National/day</th><th style="text-align:right;padding:6px">Stock after</th><th style="text-align:right;padding:6px">Settled imports this turn</th><th style="text-align:right;padding:6px">In-transit international import</th><th style="text-align:right;padding:6px">Pending import request</th><th style="text-align:right;padding:6px">Shortage</th><th style="text-align:right;padding:6px">Coverage days</th></tr></thead><tbody>' +
       reconciliationRows + '</tbody></table><div style="padding:8px;color:#94a3b8;font-size:10px">Settled imports are read from the current-turn INTERNATIONAL_TRADE_IMPORT inventory ledger and de-duplicated by settlement and resource. Pending requests are not imports. The current trade runtime does not persist a separate durable in-transit import shipment ledger, so that quantity remains UNKNOWN rather than inferred.</div></div></details>' +
       '<details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Current-turn confirmed production</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Product/resource</th><th style="text-align:right;padding:7px">Output</th></tr></thead><tbody>' +
       productionRows + '</tbody></table><div style="padding:8px;color:#94a3b8;font-size:10px">Ledger source: ' + escapeHtml(summary.production.authority) +
       ' · Transactions: ' + formatNumber(summary.production.uniqueTransactionCount, 0) + '</div></div></details>' +
       '<details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Factory allocation and type-specific capacity (21 canonical types)</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr><th style="text-align:left;padding:7px">Factory type</th><th style="text-align:right;padding:7px">Starting units</th><th style="text-align:right;padding:7px">Baseline rated/day</th><th style="text-align:left;padding:7px">Unit</th><th style="text-align:right;padding:7px">Live rated/day</th><th style="text-align:right;padding:7px">Effective/day</th><th style="text-align:left;padding:7px">Unit</th></tr></thead><tbody>' +
-      factoryRows + '</tbody></table><div style="padding:8px;color:#94a3b8;font-size:10px">Capacity is reported separately for each factory type. Different output units are not added into one misleading national total.</div></div></details><div style="font-size:10px;color:#94a3b8;margin-top:8px">Factory input demand remains separate from population demand. The existing national-demand runtime remains the only combined-demand authority; confirmed inbound shipments are not inferred from pending requests. Factory operating costs and Treasury expense remain unfinalized without evidence.</div></section>';
+      factoryRows + '</tbody></table><div style="padding:8px;color:#94a3b8;font-size:10px">Capacity is reported separately for each factory type. Different output units are not added into one misleading national total.</div></div></details><div style="font-size:10px;color:#94a3b8;margin-top:8px">Current-turn financial journal evidence</summary><div style="padding:8px;overflow-x:auto;font-size:10px;color:#cbd5e1"><strong>Private factory operating-cost accruals:</strong> ' + escapeHtml(summary.expenditure.factoryOperatingCost.status) + ' · ' + formatNumber(summary.expenditure.factoryOperatingCost.recordedAccrualTransactionCount, 0) + ' recorded entries' + (summary.expenditure.factoryOperatingCost.recordedAccrualByCurrency || []).map(function (row) { return '<div>' + escapeHtml(row.currency) + ': ' + formatNumber(row.netAmount, 2) + ' (' + formatNumber(row.transactionCount, 0) + ' entries)</div>'; }).join('') + '<div style="margin-top:6px"><strong>Government Treasury expenses:</strong> ' + escapeHtml(summary.expenditure.treasuryActualExpense.status) + ' · ' + formatNumber(summary.expenditure.treasuryActualExpense.postedExpenseTransactionCount, 0) + ' posted expense/reversal entries</div>' + (summary.expenditure.treasuryActualExpense.knownPostedExpenseByCurrency || []).map(function (row) { return '<div>' + escapeHtml(row.currency) + ': gross ' + formatNumber(row.grossAmount, 2) + ' · reversals ' + formatNumber(row.reversalAmount, 2) + ' · net ' + formatNumber(row.netAmount, 2) + '</div>'; }).join('') + '<div style="margin-top:6px;color:#fbbf24">Source ledger window is bounded; these entries do not establish complete national expenditure or all-factory daily operating cost.</div></div></details><div style="font-size:10px;color:#94a3b8;margin-top:8px">Factory input demand remains separate from population demand. The existing national-demand runtime remains the only combined-demand authority. International in-transit quantity remains UNKNOWN because no durable international shipment ledger is persisted. Only current-turn posted Finance journal evidence is displayed; national totals are not inferred.</div></section>';
   }
   function refreshPanel(panel, countryId) {
     getNationalSummary(countryId).then(function (summary) {
