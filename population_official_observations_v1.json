@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "sourceAuthority": "OFFICIAL_AND_UN_PROJECTED_POPULATION_SOURCES",
+  "observations": [
+    {
+      "iso3": "TWN",
+      "value": 23299132,
+      "year": 2025,
+      "status": "OFFICIAL_POPULATION_OBSERVATION",
+      "sourceId": "TAIWAN_RIS_HOUSEHOLD_REGISTRATION_DEC_2025",
+      "sourceName": "Taiwan Ministry of the Interior, Department of Household Registration",
+      "sourceUrl": "https://www.ris.gov.tw/info-liferay/app/channel/newsEnglishDetail/26245250",
+      "method": "YEAR_END_HOUSEHOLD_REGISTRATION_COUNT",
+      "note": "Population at the end of December 2025; official household-registration count."
+    },
+    {
+      "iso3": "VAT",
+      "value": 882,
+      "year": 2024,
+      "status": "OFFICIAL_POPULATION_OBSERVATION",
+      "sourceId": "VATICAN_GOVERNORATE_POPULATION_2024",
+      "sourceName": "Governorate of Vatican City State",
+      "sourceUrl": "https://www.vaticanstate.va/en/state-and-government/general-informations/population.html",
+      "method": "OFFICIAL_RESIDENT_POPULATION_COUNT",
+      "note": "State residents as of 31 December 2024; this is an official 2024 resident count, not a 2025 observation."
+    },
+    {
+      "iso3": "ESH",
+      "value": 601000,
+      "year": 2025,
+      "status": "UN_PROJECTED_POPULATION_ESTIMATE",
+      "sourceId": "UNDESA_UNDATA_WESTERN_SAHARA_2025",
+      "sourceName": "United Nations Statistics Division, UNData",
+      "sourceUrl": "https://data.un.org/legacy/en/iso/eh.html",
+      "method": "MEDIUM_FERTILITY_VARIANT_PROJECTION",
+      "note": "UNData 2025 population estimate reported in thousands (601); projected estimate, not an observed census count."
+    }
+  ]
+}
