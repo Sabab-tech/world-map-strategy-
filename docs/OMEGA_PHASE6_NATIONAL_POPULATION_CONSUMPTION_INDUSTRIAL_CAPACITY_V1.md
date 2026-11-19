@@ -1,7 +1,7 @@
 # OMEGA Phase 6 — National Population, Consumption & Industrial Capacity
 
 **Specification:** OMEGA_PHASE6_NATIONAL_POPULATION_CONSUMPTION_INDUSTRIAL_CAPACITY_V1  
-**Status:** Initial implementation merged to `main`; settled-import reconciliation and source-change CI coverage extended in this follow-up  
+**Status:** Source-aware population refresh and bounded current-turn financial journal projections implemented on the Phase 6 follow-up branch; complete financial totals and durable international in-transit tracking remain evidence-gated  
 **Scope:** 197 core countries, 21 canonical factory types, the existing 41-resource profile set
 
 ## 1. Objective and invariants
@@ -42,15 +42,17 @@ Audit results at the current main baseline:
 | Core countries | 197 |
 | Canonical factory types | 21 |
 | Starting factory units | 15,920 |
-| Core-country population observations dated 2025 | 194 |
-| Core-country population observations dated 2015 | 2 |
-| Core-country population unknown | 1 |
-| Population represented by the 194 observations | 8,177,226,143 |
+| Core-country population observations dated 2025 | 195 |
+| Additional official population observation dated 2024 | 1 |
+| UN projected population estimate dated 2025 | 1 |
+| Core-country population observations dated 2015 | 0 |
+| Core-country population unknown | 0 |
+| Population represented by the 195 observations | 8,177,025,275 |
 | Existing resource profiles | 41 |
 | Profiles with `basePerMillionPopulation` | 37 |
 | Profiles without a calibrated coefficient | 4 |
 
-The 8,177,226,143 subtotal is explicitly **not** the population of all 197 countries. Taiwan and Vatican City have 2015 observations; Western Sahara has no numeric population observation. The unknown population is not zero.
+The 8,177,025,275 subtotal is the sum of the 195 core-country records with 2025 population observations; it is not the population total for all 197 countries. Taiwan now uses the official December 2025 household-registration count (23,299,132). Vatican City uses the Governorate's official resident count at 31 December 2024 (882), and is not mislabeled as a 2025 observation. Western Sahara uses the UNData 2025 medium-fertility projected estimate (601,000), explicitly classified as an estimate rather than an observation. The estimate is excluded from the 2025 observed subtotal. The three records retain their publisher/source URL and source method in the registry metadata.
 
 The starting factory units are abstract OMEGA game units. They are not actual facilities counted in the real world. The Bangladesh baseline has 100 units, including 40 Textile and Garment Mill units. A zero category stays zero; Phase 6 does not force all 21 categories into every country.
 
@@ -65,7 +67,7 @@ Population resolution order:
 
 The runtime keeps the selected value's source and observation year in the result. Historical source records are not overwritten. Working-age population is derived only when the corresponding percentage observation is available. Urban share and age-dependency ratio remain separate observed fields.
 
-A live value is marked `LIVE_RUNTIME`; a 2025 World Bank population observation is marked `OBSERVED`; an older observation is `STALE_BASELINE`; an unavailable value is `UNKNOWN`.
+A live value is marked `LIVE_RUNTIME`; a 2025 World Bank or official population observation is marked `OBSERVED` with its actual observation year; a UN projected value is marked `ESTIMATED`; an older record is `STALE_BASELINE`; an unavailable value is `UNKNOWN`. The registry does not promote an estimate to an observation.
 
 ## 4. Universal per-100k consumption standard
 
@@ -125,9 +127,11 @@ Detailed live data are read only when the requested country is the selected play
 
 The runtime can calculate both `costPer100kPerDay = ratePer100kPerDay × unitPrice` and the country's modeled daily population-consumption cost only when quantity, unit price, currency and price observation evidence are present. Missing price, currency or observation returns an explicit unavailable status; the country-level total remains incomplete unless all required rows can be summed in one currency.
 
-The existing `companyOperatingCosts` values (worker, electricity, water and maintenance defaults) are simulation defaults. They are shown as defaults, not as a posted national expense. Factory operating costs remain unfinalized until actual employment, utility usage, material-price and currency evidence is available.
+The existing `companyOperatingCosts` values (worker, electricity, water and maintenance defaults) remain simulation defaults. Phase 6 now reads only current-turn `PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL` rows with valid, balanced private-firm Finance journals and an explicit company and factory identity. These are displayed by currency as recorded accrual evidence. They are not converted into a daily operating rate, do not represent government-factory expenditure, and do not establish complete national factory operating costs. If no qualifying rows exist, the status remains `NOT_FINALIZED`.
 
-A modeled consumption cost is never represented as an actual Treasury expenditure. National Accounts journal coverage must independently establish posted expenditure.
+Actual Treasury expenditure is read from current-turn government `EXPENSE` and `EXPENSE_ROLLBACK` records only when the Finance source row has a valid, balanced, posted government journal. Gross expenses, reversals and net recorded amounts are shown separately by currency. Borrowing, debt repayment, budget transfers, tax models and unjournalled entries are not counted as operating expense. The Finance Ministry retains a bounded ledger window (up to 500 rows), so this projection is explicitly partial; it never presents a complete national Treasury total or an unverified sum. The full actual Treasury expenditure amount remains unestablished until complete period-level source coverage and reconciliation are available.
+
+A modeled consumption cost is never represented as an actual Treasury expenditure.
 
 ## 8. Runtime contract
 
@@ -154,13 +158,13 @@ The Country Overview receives an additive, collapsible national summary. The pan
 | 6F | National summary UI | Country Overview summary panel added |
 | 6G | Reconciliation and performance | Optional save snapshot extension and load-time provenance revalidation added; full CI result and device-performance validation remain separate gates |
 
-Phase 6 is not considered fully financially reconciled while factory operating cost and Treasury journal evidence remain incomplete. The simulation save runtime now includes the optional `phase6NationalCapacity` provenance block in the checksum-covered save snapshot. On load, Phase 6 holds it only as a reference, recalculates from the restored authorities, and returns `REVALIDATED`, `INVALIDATED_SOURCE_CHANGED` or `RECOMPUTED_AFTER_TURN_CHANGE`. Legacy saves without the extension remain supported and reset any previous Phase 6 reference. This persists calculation provenance, not a cached calculation that bypasses current source data.
+Phase 6 now exposes the qualifying current-turn journal evidence while keeping full financial reconciliation open: private-factory operating accruals remain a partial subset, and the government Treasury expense ledger remains a bounded window rather than a complete fiscal-period record. The simulation save runtime now includes the optional `phase6NationalCapacity` provenance block in the checksum-covered save snapshot. On load, Phase 6 holds it only as a reference, recalculates from the restored authorities, and returns `REVALIDATED`, `INVALIDATED_SOURCE_CHANGED` or `RECOMPUTED_AFTER_TURN_CHANGE`. Legacy saves without the extension remain supported and reset any previous Phase 6 reference. This persists calculation provenance, not a cached calculation that bypasses current source data.
 
 ## 10. Acceptance tests
 
 The dedicated regression suite verifies:
 
-- Exactly 197 core population records, with 194 year-2025 observations, 2 stale 2015 observations and 1 unknown; the 194-record subtotal is 8,177,226,143.
+- Exactly 197 core population records: 195 year-2025 observations, 1 official 2024 observation, 1 UN projected 2025 estimate, no 2015 population baseline and no unknown population; the 2025 observed subtotal is 8,177,025,275.
 - Exactly 197 factory baseline countries × 21 canonical type keys, with 15,920 total simulation-only starting units.
 - Exactly 41 resource profiles, 37 calibrated per-100k rates and 4 `RATE_NOT_CALIBRATED` resources.
 - Per-100k invariance across countries and linear population scaling.
@@ -171,6 +175,8 @@ The dedicated regression suite verifies:
 - Current-turn settled import reconciliation from `INTERNATIONAL_TRADE_IMPORT` inventory-ledger entries, settlement/resource de-duplication, and separation from pending requests and unpersisted in-transit shipment state.
 - Separate population and factory demand, with no naive summation.
 - Price/currency evidence gates and the separation of modeled cost from Treasury postings.
+- Current-turn government expense/reversal and private-factory operating-cost accrual projection only when every source journal is balanced, posted, correctly identified and currency-scoped; bounded source-window and non-completion statuses are preserved.
+- In-transit international import quantities remain explicitly unknown until the trade runtime persists durable shipment identity/status evidence.
 - Read-only authoritative world-state behavior and the absence of a new scheduler.
 - Phase 6 provenance save/load checksum coverage, legacy-save compatibility, and load-time fingerprint revalidation.
 
