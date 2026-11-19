@@ -2261,7 +2261,7 @@ function captureStockFlowPeriod(stateTransaction) {
     shipment.lossMeasurementAuthority='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2';
     shipment.lossMeasurementBasis='CONFIRMED_CARGO_LOSS_EVENT';
     shipment.lossMeasurementTurn=eventTurn;
-    shipment.lossMeasurementComplete=true;
+    shipment.lossMeasurementComplete=shipment.quantity<=1e-9;
     if(shipment.quantity<=1e-9){shipment.quantity=0;shipment.status='LOST_IN_TRANSIT';shipment.deliveryStatus='LOST_IN_TRANSIT';}
     batch.remainingQuantity=Number(Math.max(0,batchRemaining-quantity).toFixed(6));
     batch.lastMovementTurn=eventTurn;batch.lastMovementType='TRANSPORT_LOSS';
