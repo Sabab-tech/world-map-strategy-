@@ -768,10 +768,13 @@ function normalizeFactoryType(value){
   }
 function captureStockFlowPeriod(resource,countryId) {
   if(!resource||typeof resource!=='object')return{status:'UNOBSERVED'};
-  const t=turn(),periodId='GAME_TURN_'+String(t),assets=factoryAssets(countryId)||[];
+  const t=turn(),periodId='GAME_TURN_'+String(t);
+  const existingPeriods=Array.isArray(resource.stockFlowPeriods)?resource.stockFlowPeriods:[];
+  if(existingPeriods.some(row=>String(row&&row.periodId||'')===periodId))
+    return{status:'ALREADY_CAPTURED',periodId};
+  const assets=factoryAssets(countryId)||[];
   const snapshot=stockFlowSnapshot(resource,assets);
-  const periods=Array.isArray(resource.stockFlowPeriods)?resource.stockFlowPeriods.map(row=>clone(row)):[];
-  if(periods.some(row=>String(row&&row.periodId||'')===periodId))return{status:'ALREADY_CAPTURED',periodId};
+  const periods=existingPeriods.map(row=>clone(row));
   const previous=periods.length?periods[periods.length-1]:null;
   if(previous&&Number(previous.turn)<t){
     if(Number(previous.turn)===t-1){
