@@ -246,6 +246,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(globalThis.Game.state.foreign.BGD.treaties.SAU.status, 'ACTIVE');
   assert.equal(globalThis.Game.state.foreign.SAU.treaties.BGD.status, 'ACTIVE');
 
+  assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
   const duplicateProposal = bilateral.createProposal('BGD', {
     proposalId: 'BTP-BGD-SAU-COLLISION', targetCountryId: 'SAU', direction: 'IMPORT',
     resourceId: 'crude_oil', quantityPerDelivery: 101, unitPrice: 100,
