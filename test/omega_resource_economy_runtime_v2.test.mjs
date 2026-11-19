@@ -13,6 +13,13 @@ class CustomEventMock {
   constructor(type,opts={}){ this.type=type; this.detail=opts.detail; }
 }
 
+const STORAGE_POLICY = {
+  policyId:'OMEGA_STORAGE_DETERIORATION_MODEL_V1',version:1,simulationOnly:true,
+  authority:'SIMULATED_GAMEPLAY_RULE',timeBasis:'ELIGIBLE_GAME_TURNS',
+  defaultProfile:{class:'STABLE_CATALOG_COMMODITY',graceTurns:0,lossRatePerEligibleTurn:0},
+  profiles:{grain:{class:'AGRICULTURAL_PERISHABLE',graceTurns:30,lossRatePerEligibleTurn:0.001}}
+};
+
 function deepGet(root,path){
   let cur=root;
   for(const p of path.split('.')){ if(cur==null)return undefined; cur=cur[p]; }
@@ -42,7 +49,7 @@ function createContext(){
         inventory:{iron_ore:100},
         batches:[{
           batchId:'MINE-BATCH-1',resourceId:'iron_ore',materialIdentity:'iron_ore',
-          quantity:100,remainingQuantity:100,stage:'RAW',ownerCountryCode:'BGD',
+          quantity:100,remainingQuantity:100,unit:'TONNES',createdTurn:1,stage:'RAW',ownerCountryCode:'BGD',
           ownerCompanyId:'MINER_CO',sourceBatchIds:[],purity:0.62,grade:62,
           quality:0.62,qualityState:{purity:0.62,purityStatus:'OBSERVED',gradePercent:62},
           warehouseId:'WH-BGD-RAW',locationNodeKey:'WAREHOUSE:BGD:RAW'
@@ -776,7 +783,7 @@ test('storage write-off and mine-haul transport loss commit physical balances an
   const api=context.Omega.ResourceEconomy,resource=worldState.resource.BGD;
   resource.inventoryLots={
     'MINE-BATCH-1':{batchId:'MINE-BATCH-1',resourceId:'iron_ore',quantity:100,remainingQuantity:100,
-      unit:'TONNES',status:'AVAILABLE'}
+      unit:'TONNES',createdTurn:1,status:'AVAILABLE'}
   };
   resource.industrialNetwork={shipments:[],deliveries:[],siteFlowLedger:[]};
   const opening=api.captureStockFlowPeriod('BGD');
@@ -793,6 +800,19 @@ test('storage write-off and mine-haul transport loss commit physical balances an
   assert.equal(resource.batches[0].remainingQuantity,93);
   assert.equal(resource.inventoryLedger.at(-1).type,'STORAGE_LOSS_COMMITTED');
   assert.equal(resource.stockLossLedger.length,1);
+  const measuredStorage=api.processStorageDeterioration('BGD',{policy:STORAGE_POLICY,knownResourceIds:['iron_ore']});
+  assert.equal(measuredStorage.status,'APPLIED',JSON.stringify(measuredStorage));
+  assert.equal(measuredStorage.result.accepted,true);
+  assert.equal(measuredStorage.result.measured,1);
+  assert.equal(measuredStorage.result.measuredZero,1);
+  assert.equal(resource.storageDeteriorationLedger.length,1);
+  const afterMeasurement=JSON.stringify({inventory:resource.inventory,batches:resource.batches,
+    warehouse:resource.warehouse,lots:resource.inventoryLots,observations:resource.storageDeteriorationLedger});
+  const replayMeasurement=api.processStorageDeterioration('BGD',{policy:STORAGE_POLICY,knownResourceIds:['iron_ore']});
+  assert.equal(replayMeasurement.status,'APPLIED');
+  assert.equal(JSON.stringify({inventory:resource.inventory,batches:resource.batches,
+    warehouse:resource.warehouse,lots:resource.inventoryLots,observations:resource.storageDeteriorationLedger}),afterMeasurement,
+    'storage deterioration must be idempotent within a game turn');
   const afterStorage=JSON.stringify({inventory:resource.inventory,batches:resource.batches,
     warehouse:resource.warehouse,losses:resource.stockLossLedger});
   const replayWriteOff=api.writeOffInventory('BGD',{eventId:'STORAGE-WRITEOFF-1',resourceId:'iron_ore',
