@@ -637,3 +637,14 @@ const withinToleranceRequest=trade.reviewRequest({
 });
 assert.equal(withinToleranceRequest.bilateralContractReserve.authorizedAgreement,true,
   'a delivery inside both agreed tolerance bounds must be recognized as an authorized BTA delivery');
+
+toleranceContract.currentRequestId='REQ-BTA-TOLERANCE-PRICE';
+const belowMarketBtaRequest=trade.reviewRequest({
+  requestId:'REQ-BTA-TOLERANCE-PRICE',countryId:'BGD',targetCountryId:'SAU',
+  resourceId:'crude_oil',quantity:4800,unitPrice:80,createdTurn:globalThis.Game.state.simulation.turn,
+  governmentContractId:'BTA-RESERVE-REGRESSION'
+});
+assert.equal(belowMarketBtaRequest.decision,'ACCEPT',JSON.stringify(belowMarketBtaRequest));
+assert.equal(belowMarketBtaRequest.reason,'BILATERAL_AGREEMENT_FULFILLMENT');
+assert.equal(belowMarketBtaRequest.unitPrice,80,
+  'Global Trade must preserve the ratified fixed contract price even below the Open Market price floor');
