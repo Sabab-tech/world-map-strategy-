@@ -132,12 +132,25 @@ assert.equal(offer.accepted, true, JSON.stringify(offer));
 const agreementId = offer.agreement.agreementId;
 assert.equal(bilateral.getAgreements('BGD').length, 1);
 assert.equal(bilateral.getAgreements('SAU').length, 1);
+const buyerOfferMirror = globalThis.Game.state.trade.BGD.bilateralAgreementLedger[0];
+const sellerOfferMirror = globalThis.Game.state.trade.SAU.bilateralAgreementLedger[0];
+buyerOfferMirror.status = 'ACTIVE';
+sellerOfferMirror.status = 'ACTIVE';
+assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 800, 95, agreementId), false,
+  'ACTIVE labels alone cannot replace both parties accepting the terms version');
+buyerOfferMirror.status = 'OFFERED';
+sellerOfferMirror.status = 'OFFERED';
 const accepted = bilateral.respondToOffer('SAU', agreementId, 'ACCEPT');
 assert.equal(accepted.accepted, true, JSON.stringify(accepted));
 assert.equal(accepted.agreement.status, 'ACTIVE');
 assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 800, 95, agreementId), true);
 assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 801, 95, agreementId), false);
 assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 800, 96, agreementId), false);
+const sellerActiveMirror = globalThis.Game.state.trade.SAU.bilateralAgreementLedger[0];
+sellerActiveMirror.terms.unitPrice = 96;
+assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 800, 95, agreementId), false,
+  'both party mirrors must retain exactly the same contract terms');
+sellerActiveMirror.terms.unitPrice = 95;
 assert.equal(bilateral.getActiveAgreement('BGD', 'SAU', 'crude_oil', agreementId).status, 'ACTIVE');
 
 // Agreed procurement is routed into the existing Global Trade API with the
