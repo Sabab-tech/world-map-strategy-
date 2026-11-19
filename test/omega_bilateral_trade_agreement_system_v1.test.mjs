@@ -293,6 +293,9 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   globalThis.Game.state.simulation.turn = 4;
   const recovered = bilateral.processCountry('SAU');
   assert.equal(recovered.proposals[0].status, 'ACTIVE', JSON.stringify(recovered));
+  assert.equal(globalThis.Game.state.trade.SAU.bilateralProposalInbox.find(row => row.proposalId === 'BTP-PARTIAL-RATIFICATION').inboxStatus, 'ACTIVE');
+  globalThis.Game.state.simulation.turn = 5;
+  assert.equal(bilateral.processCountry('SAU').proposals.length, 0, 'successfully ratified proposals must not be re-evaluated every turn');
   assert.equal(globalThis.Game.state.trade.BGD.bilateralContracts.filter(row => row.proposalId === 'BTP-PARTIAL-RATIFICATION').length, 1);
   assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts.filter(row => row.proposalId === 'BTP-PARTIAL-RATIFICATION').length, 1);
 
