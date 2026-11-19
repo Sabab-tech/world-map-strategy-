@@ -866,7 +866,7 @@ function startTransit(request={}){
  const reserved=dispatch('trade','OMEGA_BLACK_MARKET_RESERVE_TRANSIT_STOCK',deal.sellerCountryId,{reservation:{reservationId,dealId:deal.dealId,requestId:deal.requestId,sellerCountryId:deal.sellerCountryId,buyerCountryId:deal.buyerCountryId,resourceId:deal.resourceId,quantity:deal.quantity}});
  if(reserved?.accepted!==true)return{accepted:false,reason:reserved?.reason||'BLACK_MARKET_TRANSIT_STOCK_RESERVATION_FAILED'};
  const transit={transitId:'BM-TRANSIT-'+deal.dealId,dealId:deal.dealId,requestId:deal.requestId,buyerCountryId:deal.buyerCountryId,sellerCountryId:deal.sellerCountryId,
-  resourceId:deal.resourceId,quantity:deal.quantity,permitId:deal.permitId,route,reservationId,brokerId:deal.brokerId||null,createdTurn:turn(),nextTurn:turn()+1,
+  resourceId:deal.resourceId,quantity:deal.quantity,unit:product(deal.resourceId)?.unit||null,permitId:deal.permitId,route,reservationId,brokerId:deal.brokerId||null,createdTurn:turn(),nextTurn:turn()+1,
   currentIndex:-1,status:'IN_TRANSIT',timeline:[],authority:'OMEGA_BLACK_MARKET_ROUTE_RUNTIME'};
  const saved=dispatch('trade','OMEGA_BLACK_MARKET_RECORD_TRANSIT',buyer,{transit});
  if(saved?.accepted!==true){dispatch('trade','OMEGA_BLACK_MARKET_RESERVE_TRANSIT_STOCK',deal.sellerCountryId,{release:true,reservation:{reservationId}});return{accepted:false,reason:saved?.reason||'BLACK_MARKET_TRANSIT_RECORD_FAILED'};}
