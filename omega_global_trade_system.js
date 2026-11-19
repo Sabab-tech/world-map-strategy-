@@ -511,7 +511,8 @@ function captureStockFlowPeriod(stateTransaction) {
     if(supply.stock===null){result.reason='SELLER_RESOURCE_STOCK_NOT_OBSERVED';return result;}
     const reserve=Math.max(0,supply.reserve||0);
     const contractReserve=bilateralContractReserve(seller,resourceId,request);
-    if(request.governmentContractId&&!contractReserve.authorizedAgreement){
+    const bilateralContractRequest=String(request.governmentContractId||'').startsWith('BTA-');
+    if(bilateralContractRequest&&!contractReserve.authorizedAgreement){
       result.decision='REJECT';result.reason=contractReserve.authorizationReason||'BILATERAL_GOVERNMENT_CONTRACT_NOT_ACTIVE_OR_DUE';
       result.bilateralContractReserve=clone(contractReserve);return result;
     }
