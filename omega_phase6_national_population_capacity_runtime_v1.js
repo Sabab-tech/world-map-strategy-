@@ -1363,7 +1363,7 @@
         formatNumber(row.confirmedImportsThisTurn, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.inTransitInternationalImportQuantity, 3) + '</td><td style="text-align:right">' +
         formatNumber(row.blackMarketInboundShipmentQuantity, 3) + ' ' +
-        escapeHtml(row.blackMarketInboundShipmentUnit || (row.blackMarketInboundShipmentQuantity !== null ? 'UNIT UNKNOWN' : '')) +
+        escapeHtml(row.blackMarketInboundShipmentUnit || (row.blackMarketInboundShipmentQuantity > 0 ? 'UNIT UNKNOWN' : '')) +
         '<div style="font-size:9px;color:#94a3b8">' + escapeHtml(row.blackMarketInboundShipmentEvidenceStatus || 'UNKNOWN') +
         '</div></td><td style="text-align:right">' +
         formatNumber(row.pendingImportQuantity, 3) + '</td><td style="text-align:right">' +
