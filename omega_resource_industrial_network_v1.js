@@ -767,6 +767,19 @@ function normalizeFactoryType(value){
     }
     return{complete,identities:[...byIdentity.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit))};
   }
+function invalidateStockLossCoverage(resource,sourceType,status){
+  if(!resource||typeof resource!=='object')return false;
+  const periods=Array.isArray(resource.stockFlowPeriods)?resource.stockFlowPeriods.slice():[],
+    period=periods.find(row=>String(row?.periodId||'')==='GAME_TURN_'+turn());
+  if(!period)return false;
+  period.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+  period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
+  if(period.lossCoverageBySource[sourceType])
+    period.lossCoverageBySource[sourceType]=Object.assign({},period.lossCoverageBySource[sourceType],
+      {status:status||'INVALIDATED_BY_NEW_SOURCE_EVENT'});
+  resource.stockFlowPeriods=periods;
+  return true;
+}
 function captureStockFlowPeriod(resource,countryId) {
   if(!resource||typeof resource!=='object')return{status:'UNOBSERVED'};
   const t=turn(),periodId='GAME_TURN_'+String(t);
@@ -4197,6 +4210,7 @@ function commitTransportCapacity(countryId,route,quantity,shipmentId,quantityToC
     useByMode:Object.fromEntries(Object.entries(counts).map(([mode,count])=>[mode,Number((capacityQuantity*count).toFixed(6))])),
     authority:'SIMULATED_SHARED_TRANSPORT_CAPACITY_LEDGER'};
   bucket.shipments.push(row);while(bucket.shipments.length>1024)bucket.shipments.shift();
+  invalidateStockLossCoverage(resourceState(cid),'TRANSPORT','INVALIDATED_BY_NEW_TRANSPORT_MOVEMENT');
   return clone(row);
 }
 function factoryUtilityDiagnostics(countryId){
@@ -4568,6 +4582,7 @@ function commitFactoryCycleImmediately(input={}){
   const inventoryLedger=Array.isArray(r.inventoryLedger)?r.inventoryLedger:[];
   inventoryLedger.push({type:'FACTORY_PROCESSING_COMMITTED',transactionId,factoryId:fid,resourceId:rid,inputQuantity:need,outputs:clone(output),sourceBatchIds:record.sourceBatchIds,createdBatchIds:record.createdBatchIds,turn:turn(),periodId:'GAME_TURN_'+turn()});
   while(inventoryLedger.length>2048)inventoryLedger.shift();r.inventoryLedger=inventoryLedger;
+  invalidateStockLossCoverage(r,'PRODUCTION','INVALIDATED_BY_NEW_PRODUCTION_EVENT');
   n.factoryRuntime[fid]=record;n.events.push(record);n.events=n.events.slice(-MAX_EVENTS);
   factorySetProductionHealth(asset,requested+1e-6<ratedCapacity?'REDUCED':'RUNNING',requested,ratedCapacity,
     {transactionId,constraints:clone(productionConstraints)});
@@ -4804,6 +4819,7 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   r.inventoryLedger.push({type:'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED',transactionId,factoryId:fid,recipeId:record.recipeId,
     inputQuantities:clone(inputQuantities),outputs:clone(output),sourceBatchIds:roots,createdBatchIds:record.createdBatchIds,turn:turn(),periodId:'GAME_TURN_'+turn()});
   while(r.inventoryLedger.length>2048)r.inventoryLedger.shift();
+  invalidateStockLossCoverage(r,'PRODUCTION','INVALIDATED_BY_NEW_PRODUCTION_EVENT');
   n.factoryRuntime=n.factoryRuntime||{};n.factoryRuntime[fid]=record;
   n.events=Array.isArray(n.events)?n.events:[];n.events.push(record);n.events=n.events.slice(-MAX_EVENTS);
   factorySetProductionHealth(asset,productionQuantity+1e-6<capacity?'REDUCED':'RUNNING',productionQuantity,capacity,
