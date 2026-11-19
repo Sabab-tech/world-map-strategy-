@@ -105,7 +105,7 @@ test('cached shell scripts do not trigger another background network request on 
 test('boot-critical world and country economy JSON remain available from the shell cache offline',async()=>{
   const h=createCacheHarness();await h.install();
   h.setOffline(true);
-  for(const file of ['world.json','economy_global_profiles_v1.json','omega_global_market_system.js']){
+  for(const file of ['world.json','economy_global_profiles_v1.json','finance_runtime_rules_v1.json','omega_global_market_system.js']){
     const response=await h.request('https://omega.test/game/'+file);
     assert.equal(response.status,200,file+' must be served from the app shell cache');
   }

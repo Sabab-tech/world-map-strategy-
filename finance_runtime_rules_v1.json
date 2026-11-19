@@ -41,5 +41,82 @@
     "estimates": "Country-sector output and projected tax contributions use finance_sector_registry_v1.json default shares and are game estimates, not observed statistics."
   },
   "maximumFiscalPeriodHistory": 12,
-  "maximumFiscalTransactionIds": 2048
+  "maximumFiscalTransactionIds": 2048,
+  "sectorJournalV1": {
+    "schemaVersion": 1,
+    "currency": "USD",
+    "sourceAuthority": "OMEGA_FINANCE_MINISTRY",
+    "postingScope": "GOVERNMENT_SECTOR_FINANCE_CASH_TRANSACTIONS_ONLY",
+    "transactionRules": {
+      "EXPENSE": {
+        "type": "PAIR",
+        "sectorId": "government",
+        "amountField": "amountUsd",
+        "debitAccount": "GOVERNMENT:OPERATING_EXPENSE:{department}:{category}",
+        "creditAccount": "GOVERNMENT:TREASURY_CASH",
+        "accountingBasis": "RECORDED_GAME_CASH_EXPENSE",
+        "provenance": "RECORDED_GAME_RUNTIME",
+        "debitAccountByCategory": {
+          "purchase": "GOVERNMENT:CAPITAL_ASSETS:{department}",
+          "investment": "GOVERNMENT:CAPITAL_ASSETS:{department}"
+        }
+      },
+      "EXPENSE_ROLLBACK": {
+        "type": "PAIR",
+        "sectorId": "government",
+        "amountField": "amountUsd",
+        "absoluteValue": true,
+        "debitAccount": "GOVERNMENT:TREASURY_CASH",
+        "creditAccount": "GOVERNMENT:OPERATING_EXPENSE:{department}:{category}",
+        "accountingBasis": "RECORDED_GAME_CASH_EXPENSE_REVERSAL",
+        "provenance": "RECORDED_GAME_RUNTIME_REVERSAL",
+        "creditAccountByCategory": {
+          "purchase": "GOVERNMENT:CAPITAL_ASSETS:{department}",
+          "investment": "GOVERNMENT:CAPITAL_ASSETS:{department}"
+        }
+      },
+      "BORROW": {
+        "type": "PAIR",
+        "sectorId": "government",
+        "amountField": "amountUsd",
+        "debitAccount": "GOVERNMENT:TREASURY_CASH",
+        "creditAccount": "GOVERNMENT:PUBLIC_DEBT",
+        "accountingBasis": "RECORDED_SOVEREIGN_BORROWING",
+        "provenance": "RECORDED_GAME_RUNTIME"
+      },
+      "DEBT_REPAYMENT": {
+        "type": "PAIR",
+        "sectorId": "government",
+        "amountField": "amountUsd",
+        "debitAccount": "GOVERNMENT:PUBLIC_DEBT",
+        "creditAccount": "GOVERNMENT:TREASURY_CASH",
+        "accountingBasis": "RECORDED_SOVEREIGN_PRINCIPAL_REPAYMENT",
+        "provenance": "RECORDED_GAME_RUNTIME"
+      },
+      "WORLD_BANK_DEBT_SERVICE": {
+        "type": "SPLIT_DEBIT",
+        "sectorId": "government",
+        "totalAmountField": "amountUsd",
+        "debitComponents": [
+          {
+            "accountId": "GOVERNMENT:PUBLIC_DEBT",
+            "amountField": "principalPaidUsd"
+          },
+          {
+            "accountId": "GOVERNMENT:INTEREST_EXPENSE",
+            "amountField": "interestPaidUsd"
+          }
+        ],
+        "creditAccount": "GOVERNMENT:TREASURY_CASH",
+        "accountingBasis": "RECORDED_WORLD_BANK_DEBT_SERVICE",
+        "provenance": "RECORDED_GAME_RUNTIME"
+      }
+    },
+    "excludedFlowClasses": [
+      "MODELED_TAX_REVENUE_WITHOUT_TRANSACTION_LEVEL_TAXPAYER_COUNTERPARTY",
+      "EXTERNAL_TREASURY_RECONCILIATION_WITH_UNRESOLVED_SOURCE_ACCOUNT",
+      "BUDGET_ALLOCATION_TRANSFERS_ARE_NON_CASH",
+      "HOUSEHOLD_AND_FIRM_SECTOR_SOURCES_ARE_NOT_COMPLETE_IN_THIS_SLICE"
+    ]
+  }
 }

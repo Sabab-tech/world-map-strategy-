@@ -70,3 +70,5 @@ jobs:
         run: node --test test/omega_finance_analytics_runtime_v1.test.mjs
       - name: Offline Finance and Macro cache regression
         run: node --check test/offline_hybrid_map.test.mjs && node --test test/offline_hybrid_map.test.mjs
+      - name: Offline shell update and cache lifecycle tests
+        run: node --check test/omega_offline_data_cache.test.mjs && node --test test/omega_offline_data_cache.test.mjs

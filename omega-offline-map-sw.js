@@ -2,7 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
-const CACHE_NAME = "omega-offline-atlas-shell-v126";
+const CACHE_NAME = "omega-offline-atlas-shell-v127";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
@@ -155,7 +155,7 @@ function isShellAsset(value) {
     const url = new URL(value, INDEX_URL);
     if (url.origin !== self.location.origin || !url.pathname.startsWith(APP_BASE.pathname)) return false;
     if (/\.(?:m?js|css|woff2?)$/i.test(url.pathname)) return true;
-    return /\/(?:index\.html?|world\.json|economy_global_profiles_v1\.json|resource_economy_rules\.json|country_primary_resource_opening_baseline_v1\.json|resource_industrial_catalog_v1\.json|resource_country_resource_context_index\.json|country_factory_starting_baseline_v1\.json|country_private_factory_starting_baseline_v1\.json)$/i.test(url.pathname);
+    return /\/(?:index\.html?|world\.json|economy_global_profiles_v1\.json|resource_economy_rules\.json|country_primary_resource_opening_baseline_v1\.json|finance_runtime_rules_v1\.json|resource_industrial_catalog_v1\.json|resource_country_resource_context_index\.json|country_factory_starting_baseline_v1\.json|country_private_factory_starting_baseline_v1\.json)$/i.test(url.pathname);
   } catch (_) {
     return false;
   }
@@ -169,7 +169,7 @@ function isCoreOfflineData(url) {
   // These immutable bootstrap datasets are required before the player can open
   // the factory workspace. Install them with the versioned shell so first launch
   // and relaunch work without a network connection.
-  return /\/(?:world\.json|economy_global_profiles_v1\.json|resource_economy_rules\.json|country_primary_resource_opening_baseline_v1\.json|resource_industrial_catalog_v1\.json|resource_country_resource_context_index\.json|country_factory_starting_baseline_v1\.json|country_private_factory_starting_baseline_v1\.json)$/i.test(url.pathname);
+  return /\/(?:world\.json|economy_global_profiles_v1\.json|resource_economy_rules\.json|country_primary_resource_opening_baseline_v1\.json|finance_runtime_rules_v1\.json|resource_industrial_catalog_v1\.json|resource_country_resource_context_index\.json|country_factory_starting_baseline_v1\.json|country_private_factory_starting_baseline_v1\.json)$/i.test(url.pathname);
 }
 function isDataRequest(url) {
   // Core bootstrap JSON is served from the versioned shell cache. Mutable country

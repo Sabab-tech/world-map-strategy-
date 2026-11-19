@@ -646,11 +646,94 @@
     for(const p of profiles)syncEconomyRecord(p,ensureFinanceState(p,root),root);
   }
   function getPlayerCode(){return playerCountryProfile()?.countryCode||null;}
+  function buildSectorJournalV1(profile,row){
+    const contract=rules.sectorJournalV1,action=String(row?.action||'').trim().toUpperCase();
+    const rule=contract?.transactionRules?.[action],transactionId=String(row?.transactionId||'').trim();
+    if(!isObject(rule)||!transactionId)return null;
+    const countryCode=String(profile?.countryCode||row?.countryCode||'').trim().toUpperCase();
+    const countryId=String(profile?.iso3||row?.countryId||countryCode).trim().toUpperCase();
+    const currency=String(rule.currency||contract.currency||rules.currency||'USD').trim().toUpperCase();
+    if(!countryCode||currency!=='USD')return null;
+    const amountMinor=(value,absolute)=>{
+      const raw=finite(value);if(raw===null)return null;
+      const amount=absolute?Math.abs(raw):raw;
+      if(amount<0)return null;
+      const minor=Math.round(amount*100);
+      if(!Number.isSafeInteger(minor)||Math.abs(amount-minor/100)>1e-7)return null;
+      return minor;
+    };
+    const accountId=(template)=>{
+      const value=String(template||'').trim();
+      if(!value)return '';
+      return value.replace(/\{([^}]+)\}/g,(match,key)=>{
+        const token=String(row?.[key]??'unclassified').trim().toLowerCase()
+          .replace(/[^a-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'');
+        return token||'unclassified';
+      });
+    };
+    const lines=[];
+    const addLine=(account,side,minor)=>{
+      if(!account||!Number.isSafeInteger(minor)||minor<=0)return false;
+      lines.push({lineId:transactionId+':L'+(lines.length+1),lineNumber:lines.length+1,
+        accountId:account,side,amountMinor:minor,amountUsd:Number((minor/100).toFixed(2)),
+        currency,countryId,countryCode,turn:finite(row.turn)??currentTurn(),
+        fiscalYearIndex:Math.max(0,Math.floor(finite(row.fiscalYearIndex)||0)),
+        sourceTransactionId:transactionId});
+      return true;
+    };
+    if(String(rule.type||'').toUpperCase()==='PAIR'){
+      const minor=amountMinor(row[rule.amountField||'amountUsd'],rule.absoluteValue===true);
+      if(minor===null||minor<=0)return {schemaVersion:contract.schemaVersion||1,status:'UNAVAILABLE',
+        reason:'SOURCE_AMOUNT_MISSING_OR_NOT_CENT_EXACT',sourceTransactionId:transactionId};
+      const category=String(row?.[rule.categoryField||'category']||'').trim().toLowerCase();
+      const debitTemplate=rule.debitAccountByCategory?.[category]||rule.debitAccount;
+      const creditTemplate=rule.creditAccountByCategory?.[category]||rule.creditAccount;
+      if(!addLine(accountId(debitTemplate),'DEBIT',minor)||
+         !addLine(accountId(creditTemplate),'CREDIT',minor))return null;
+    }else if(String(rule.type||'').toUpperCase()==='SPLIT_DEBIT'){
+      const total=amountMinor(row[rule.totalAmountField||'amountUsd'],false);
+      if(total===null||total<=0)return {schemaVersion:contract.schemaVersion||1,status:'UNAVAILABLE',
+        reason:'SOURCE_TOTAL_MISSING_OR_NOT_CENT_EXACT',sourceTransactionId:transactionId};
+      if(!Array.isArray(rule.debitComponents))return null;
+      let debitTotal=0;
+      for(const component of rule.debitComponents){
+        const minor=amountMinor(row[component.amountField],false);
+        if(minor===null)return {schemaVersion:contract.schemaVersion||1,status:'UNAVAILABLE',
+          reason:'SOURCE_SPLIT_AMOUNT_MISSING_OR_NOT_CENT_EXACT',sourceTransactionId:transactionId};
+        if(minor===0)continue;
+        if(!addLine(accountId(component.accountId),'DEBIT',minor))return null;
+        debitTotal+=minor;
+      }
+      if(debitTotal!==total)return {schemaVersion:contract.schemaVersion||1,status:'UNAVAILABLE',
+        reason:'SOURCE_SPLIT_DOES_NOT_BALANCE_TO_CASH_MOVEMENT',sourceTransactionId:transactionId,
+        debitTotalMinor:debitTotal,creditTotalMinor:total};
+      if(!addLine(accountId(rule.creditAccount),'CREDIT',total))return null;
+    }else return null;
+    const debitTotalMinor=lines.filter(line=>line.side==='DEBIT').reduce((sum,line)=>sum+line.amountMinor,0);
+    const creditTotalMinor=lines.filter(line=>line.side==='CREDIT').reduce((sum,line)=>sum+line.amountMinor,0);
+    if(debitTotalMinor<=0||debitTotalMinor!==creditTotalMinor)return {
+      schemaVersion:contract.schemaVersion||1,status:'UNAVAILABLE',
+      reason:'DOUBLE_ENTRY_TOTALS_DO_NOT_BALANCE',sourceTransactionId:transactionId,
+      debitTotalMinor,creditTotalMinor
+    };
+    return {schemaVersion:contract.schemaVersion||1,status:'POSTED',sectorId:rule.sectorId||'government',
+      sourceAuthority:'OMEGA_FINANCE_MINISTRY',sourceTransactionId:transactionId,
+      sourceTransactionType:action,correlationId:String(row.transferId||row.settlementId||transactionId),
+      referenceTransactionId:row.referenceTransactionId||null,
+      countryId,countryCode,currency,turn:finite(row.turn)??currentTurn(),
+      fiscalYearIndex:Math.max(0,Math.floor(finite(row.fiscalYearIndex)||0)),
+      periodId:'GAME_FISCAL_YEAR_'+String(Math.max(0,Math.floor(finite(row.fiscalYearIndex)||0))),
+      accountingBasis:rule.accountingBasis||'RECORDED_GAME_TRANSACTION',
+      provenance:rule.provenance||'RECORDED_GAME_RUNTIME',
+      counterEntryComplete:true,debitTotalMinor,creditTotalMinor,lines};
+  }
   function postLedger(model,profile,entry){
     model.ledger=Array.isArray(model.ledger)?model.ledger:[];
     const row=Object.assign({turn:currentTurn(),countryCode:profile.countryCode,
       balanceAfterUsd:finite(model.treasuryBalanceUsd)||0,fiscalYearIndex:Math.max(0,Math.floor(finite(model.fiscalYearIndex)||0))},entry);
     if(!row.transactionId)row.transactionId='FIN-'+profile.countryCode+'-'+currentTurn()+'-'+String((finite(model.revision)||0)+1)+'-'+String(model.ledger.length+1);
+    const sectorJournal=buildSectorJournalV1(profile,row);
+    if(sectorJournal)row.sectorJournalV1=sectorJournal;
     model.ledger.push(row);
     model.ledger=model.ledger.slice(-Number(rules.maximumLedgerEntries||500));
     return clone(row);
@@ -913,7 +996,7 @@
       fb.spending=Math.max(0,(finite(fb.spending)||0)-refund);
       if(['purchase','investment'].includes(String(original.category||'')))fb.capitalExpenditure=Math.max(0,(finite(fb.capitalExpenditure)||0)-refund);
       else fb.operatingExpenditure=Math.max(0,(finite(fb.operatingExpenditure)||0)-refund);
-      const reversal=postLedger(fm,p,{department:'interior',action:'EXPENSE_ROLLBACK',category:original.category,
+      const reversal=postLedger(fm,p,{department:originalDepartment,action:'EXPENSE_ROLLBACK',category:original.category,
         amountUsd:-refund,description:'OMEGA_HOME_BUDGET_ROLLBACK:'+transactionId,referenceTransactionId:transactionId});
       fm.revision+=1;
       result={ok:true,code:'HOME_EXPENSE_ROLLED_BACK',transactionId:reversal.transactionId,reversedTransactionId:transactionId,
@@ -1426,10 +1509,31 @@
     if(!homeExpense&&!militaryExpense)return{ok:false,code:'SIMULATION_EXPENSE_AUTHORITY_NOT_ALLOWED'};
     return applyAction(Object.assign({},action,{__omegaSimulationPipelineAuthority:true}));
   }
+  function getSectorJournal(countryValue){
+    const profile=resolveProfile(countryValue)||playerCountryProfile();
+    if(!profile)return null;
+    const root=rootState(),bucket=financeBucketFor(root,profile,false);
+    const model=bucket&&isObject(bucket.omegaFinance)?bucket.omegaFinance:null;
+    const ledger=Array.isArray(model?.ledger)?model.ledger:[];
+    const transactions=[];
+    for(const row of ledger){
+      if(!isObject(row?.sectorJournalV1))continue;
+      transactions.push({sourceTransactionId:row.transactionId||null,sourceTransactionType:row.action||row.type||null,
+        journal:clone(row.sectorJournalV1)});
+    }
+    const contract=rules.sectorJournalV1||{};
+    return {schemaVersion:contract.schemaVersion||1,countryId:profile.iso3||profile.countryCode,countryCode:profile.countryCode,sectorId:'government',
+      sourceAuthority:'OMEGA_FINANCE_MINISTRY',currency:contract.currency||'USD',
+      status:'PARTIAL',complete:false,coverage:'BOUNDED_FINANCE_LEDGER_WINDOW',
+      sourceLedgerWindow:{retainedEntries:ledger.length,maximumEntries:Number(rules.maximumLedgerEntries||500),complete:false},
+      journalTransactionCount:transactions.filter(row=>row.journal.status==='POSTED').length,
+      transactions,excludedFlowClasses:clone(contract.excludedFlowClasses||[])};
+  }
   const api={VERSION,init,diagnostics,resolveCountry:resolveProfile,getProfiles:()=>profiles.slice(),getProfileMetadata:()=>clone(profileDatasetMetadata),getPlayerCountry:playerCountryProfile,
      applySimulationAction,
     getIndicators:function(v){const p=resolveProfile(v)||playerCountryProfile();return p?worldSnapshot().byCode.get(p.countryCode)||null:null;},
     getFinanceState:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const root=rootState(),fm=ensureFinanceState(p,root);if(reconcileExternalTreasury(p,fm,root))syncEconomyRecord(p,fm,root);return clone(fm);},
+    getSectorJournal,
     selectCountry:function(v){
       const p=resolveProfile(v);if(!p)return {ok:false,code:'COUNTRY_NOT_FOUND'};
       selectedCountryCode=p.countryCode;global.OmegaMinistryViewCountry=p.countryCode;

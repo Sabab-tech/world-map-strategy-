@@ -931,3 +931,150 @@ test('Fiscal period history remains capped at twelve periods',async()=>{
   assert.equal(fm.fiscalPeriodHistory.length,12);
   assert.equal(fm.fiscalPeriodHistory[0].periodIndex,2);
 });
+
+test('Phase 5 records balanced Government cash postings inside the existing Finance source ledger',async()=>{
+  const {context}=createRuntime();await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const request={type:'spend-budget',countryId:'BGD',department:'interior',amountUsd:1234.56,
+    spendType:'purchase',description:'Phase 5 government journal fixture',idempotencyKey:'phase5-government-expense-001'};
+  const posted=finance.applyAction(request);
+  assert.equal(posted.ok,true);
+  const state=finance.getFinanceState('BGD');
+  const source=state.ledger.find(row=>row.transactionId===posted.transactionId);
+  assert.ok(source,'the existing Finance transaction remains the source record');
+  const journal=source.sectorJournalV1;
+  assert.equal(journal.status,'POSTED');
+  assert.equal(journal.sectorId,'government');
+  assert.equal(journal.sourceAuthority,'OMEGA_FINANCE_MINISTRY');
+  assert.equal(journal.currency,'USD');
+  assert.equal(journal.countryId,'BGD');
+  assert.equal(journal.countryCode,'BD');
+  assert.equal(journal.sourceTransactionId,source.transactionId);
+  assert.equal(journal.counterEntryComplete,true);
+  assert.equal(journal.debitTotalMinor,123456);
+  assert.equal(journal.creditTotalMinor,123456);
+  assert.deepEqual(journal.lines.map(line=>[line.side,line.accountId,line.amountMinor]),[
+    ['DEBIT','GOVERNMENT:CAPITAL_ASSETS:interior',123456],
+    ['CREDIT','GOVERNMENT:TREASURY_CASH',123456]
+  ]);
+
+  const duplicate=finance.applyAction(request);
+  assert.equal(duplicate.ok,true);
+  assert.equal(duplicate.duplicate,true);
+  const afterDuplicate=finance.getFinanceState('BGD');
+  assert.equal(afterDuplicate.ledger.filter(row=>row.transactionId===posted.transactionId).length,1,
+    'Finance idempotency must prevent a second source transaction and journal');
+
+  const sourceAllocation=afterDuplicate.allocations.defense;
+  const targetAllocation=afterDuplicate.allocations.interior;
+  assert.ok(sourceAllocation&&targetAllocation);
+  const transfer=finance.applyAction({type:'transfer-budget',countryId:'BGD',sourceDepartment:'defense',
+    targetDepartment:'interior',amountUsd:10,description:'Non-cash budget reallocation',
+    idempotencyKey:'phase5-government-budget-transfer-001'});
+  assert.equal(transfer.ok,true);
+  const transferRows=finance.getFinanceState('BGD').ledger.filter(row=>row.transferId===transfer.transferId);
+  assert.equal(transferRows.length,2);
+  assert.ok(transferRows.every(row=>!row.sectorJournalV1),
+    'budget authority transfers do not move Treasury cash and must not enter the cash journal');
+});
+
+test('Phase 5 reversals, borrowing, repayment and World Bank debt service use correct counter-entries',async()=>{
+  const {context}=createRuntime();await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const spend=finance.applyAction({type:'spend-budget',countryId:'BGD',department:'interior',amountUsd:250,
+    spendType:'maintenance',description:'OMEGA_HOME_BUDGET:PHASE5_REVERSAL_FIXTURE'});
+  assert.equal(spend.ok,true);
+  const rollback=finance.applyAction({type:'rollback-home-ministry-expense',countryId:'BGD',
+    transactionId:spend.transactionId});
+  assert.equal(rollback.ok,true);
+  let ledger=finance.getFinanceState('BGD').ledger;
+  const reversal=ledger.find(row=>row.transactionId===rollback.transactionId);
+  assert.equal(reversal.sectorJournalV1.status,'POSTED');
+  assert.deepEqual(reversal.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]),[
+    ['DEBIT','GOVERNMENT:TREASURY_CASH',25000],
+    ['CREDIT','GOVERNMENT:OPERATING_EXPENSE:interior:maintenance',25000]
+  ]);
+  assert.equal(reversal.sectorJournalV1.referenceTransactionId,spend.transactionId);
+
+  const defenseSpend=finance.applyAction({type:'spend-budget',countryId:'BGD',department:'defense',amountUsd:125,
+    spendType:'maintenance',description:'OMEGA_MILITARY_BUDGET:PHASE5_DEFENSE_REVERSAL_FIXTURE'});
+  assert.equal(defenseSpend.ok,true);
+  const defenseRollback=finance.applyAction({type:'rollback-home-ministry-expense',countryId:'BGD',
+    transactionId:defenseSpend.transactionId});
+  assert.equal(defenseRollback.ok,true);
+  ledger=finance.getFinanceState('BGD').ledger;
+  const defenseReversal=ledger.find(row=>row.transactionId===defenseRollback.transactionId);
+  assert.deepEqual(defenseReversal.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]),[
+    ['DEBIT','GOVERNMENT:TREASURY_CASH',12500],
+    ['CREDIT','GOVERNMENT:OPERATING_EXPENSE:defense:maintenance',12500]
+  ]);
+
+  const borrowing=finance.applyAction({type:'borrow',countryId:'BGD',amountUsd:100000,
+    description:'Phase 5 sovereign borrowing fixture'});
+  assert.equal(borrowing.ok,true);
+  ledger=finance.getFinanceState('BGD').ledger;
+  const borrowRow=ledger.find(row=>row.action==='BORROW'&&row.description==='Phase 5 sovereign borrowing fixture');
+  assert.equal(borrowRow.sectorJournalV1.status,'POSTED');
+  assert.deepEqual(borrowRow.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]),[
+    ['DEBIT','GOVERNMENT:TREASURY_CASH',10000000],
+    ['CREDIT','GOVERNMENT:PUBLIC_DEBT',10000000]
+  ]);
+
+  const repayment=finance.applyAction({type:'repay-debt',countryId:'BGD',amountUsd:1000,
+    description:'Phase 5 principal repayment fixture'});
+  assert.equal(repayment.ok,true);
+  ledger=finance.getFinanceState('BGD').ledger;
+  const repaymentRow=ledger.find(row=>row.action==='DEBT_REPAYMENT'&&row.description==='Phase 5 principal repayment fixture');
+  assert.equal(repaymentRow.sectorJournalV1.status,'POSTED');
+  assert.deepEqual(repaymentRow.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]),[
+    ['DEBIT','GOVERNMENT:PUBLIC_DEBT',100000],
+    ['CREDIT','GOVERNMENT:TREASURY_CASH',100000]
+  ]);
+
+  const service=finance.applyAction({type:'world-bank-debt-service',countryId:'BGD',amountUsd:30,
+    principalPaidUsd:20,interestPaidUsd:10,authorization:'OMEGA_WORLD_BANK_LENDING'});
+  assert.equal(service.ok,true);
+  ledger=finance.getFinanceState('BGD').ledger;
+  const serviceRow=ledger.find(row=>row.action==='WORLD_BANK_DEBT_SERVICE');
+  assert.equal(serviceRow.sectorJournalV1.status,'POSTED');
+  assert.equal(serviceRow.sectorJournalV1.debitTotalMinor,3000);
+  assert.equal(serviceRow.sectorJournalV1.creditTotalMinor,3000);
+  assert.deepEqual(serviceRow.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]),[
+    ['DEBIT','GOVERNMENT:PUBLIC_DEBT',2000],
+    ['DEBIT','GOVERNMENT:INTEREST_EXPENSE',1000],
+    ['CREDIT','GOVERNMENT:TREASURY_CASH',3000]
+  ]);
+});
+
+test('Phase 5 Government journal API is read-only, bounded and explicitly partial',async()=>{
+  const {context}=createRuntime();await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  finance.applyAction({type:'spend-budget',countryId:'BGD',department:'interior',amountUsd:75,
+    spendType:'general',description:'Phase 5 journal read-only fixture'});
+  const before=finance.getFinanceState('BGD').ledger.length;
+  const journal=finance.getSectorJournal('BGD');
+  assert.equal(journal.status,'PARTIAL');
+  assert.equal(journal.complete,false);
+  assert.equal(journal.coverage,'BOUNDED_FINANCE_LEDGER_WINDOW');
+  assert.ok(journal.sourceLedgerWindow.maximumEntries>0);
+  assert.ok(journal.journalTransactionCount>=1);
+  assert.ok(journal.excludedFlowClasses.includes('MODELED_TAX_REVENUE_WITHOUT_TRANSACTION_LEVEL_TAXPAYER_COUNTERPARTY'));
+  assert.ok(journal.excludedFlowClasses.includes('HOUSEHOLD_AND_FIRM_SECTOR_SOURCES_ARE_NOT_COMPLETE_IN_THIS_SLICE'));
+  assert.equal(Object.prototype.hasOwnProperty.call(journal,'totalRevenueUsd'),false,
+    'a partial journal must not publish synthetic sector totals');
+  const row=journal.transactions.find(item=>item.sourceTransactionType==='EXPENSE');
+  assert.ok(row);
+  row.journal.lines[0].amountMinor=-1;
+  assert.equal(finance.getFinanceState('BGD').ledger.length,before);
+  const fresh=finance.getSectorJournal('BGD').transactions.find(item=>item.sourceTransactionType==='EXPENSE');
+  assert.ok(fresh.journal.lines[0].amountMinor>0,'the accessor returns defensive copies');
+
+  const imprecise=finance.applyAction({type:'spend-budget',countryId:'BGD',department:'interior',
+    amountUsd:1.005,spendType:'general',description:'Phase 5 non-cent amount fixture'});
+  assert.equal(imprecise.ok,true);
+  const impreciseSource=finance.getFinanceState('BGD').ledger.find(item=>item.transactionId===imprecise.transactionId);
+  assert.equal(impreciseSource.sectorJournalV1.status,'UNAVAILABLE',
+    'a source amount that cannot be represented in exact integer cents is not rounded into the journal');
+  assert.equal(impreciseSource.sectorJournalV1.reason,'SOURCE_AMOUNT_MISSING_OR_NOT_CENT_EXACT');
+});
+
