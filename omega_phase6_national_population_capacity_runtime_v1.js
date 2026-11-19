@@ -506,8 +506,11 @@
       });
       var quote = marketQuote(row.countryId || '', row.resourceId);
       var cost = quote.status === 'AVAILABLE' ? row.quantityPerDay * quote.price : null;
+      var costPer100k = quote.status === 'AVAILABLE' && finite(row.ratePer100kPerDay) !== null
+        ? row.ratePer100kPerDay * quote.price : null;
       return Object.assign({}, clone(row), {
         price: quote.price, currency: quote.currency, priceObservation: quote.observation,
+        costPer100kPerDay: costPer100k,
         costPerDay: cost, costStatus: quote.status
       });
     });
@@ -658,9 +661,16 @@
     var rows = summary.consumption.rows;
     var calibrated = rows.filter(function (row) { return row.calculationStatus === 'CALCULATED'; });
     var unknown = rows.filter(function (row) { return row.calculationStatus !== 'CALCULATED'; });
+    var expenditure = summary.expenditure.populationConsumption;
+    var expenseByResource = {};
+    (expenditure.rows || []).forEach(function (row) { expenseByResource[row.resourceId] = row; });
     var resourceRows = calibrated.map(function (row) {
+      var cost = expenseByResource[row.resourceId] || {};
       return '<tr><td>' + escapeHtml(row.resourceId) + '</td><td>' + formatNumber(row.ratePer100kPerDay, 5) + '</td><td>' +
-        formatNumber(row.quantityPerDay, 3) + '</td><td>' + escapeHtml(row.unit || 'UNIT_UNSPECIFIED') + '</td></tr>';
+        formatNumber(row.quantityPerDay, 3) + '</td><td>' + escapeHtml(row.unit || 'UNIT_UNSPECIFIED') + '</td><td>' +
+        formatNumber(cost.costPer100kPerDay, 3) + ' ' + escapeHtml(cost.currency || '') + '</td><td>' +
+        formatNumber(cost.costPerDay, 2) + ' ' + escapeHtml(cost.currency || '') + '</td><td>' +
+        escapeHtml(cost.costStatus || 'PRICE_UNAVAILABLE') + '</td></tr>';
     }).join('');
     var reconciliationRows = Object.keys(summary.nationalRequirement.byResource || {}).map(function (resourceId) {
       var row = summary.nationalRequirement.byResource[resourceId];
@@ -680,7 +690,6 @@
         return '<tr><td>' + escapeHtml(resourceId) + '</td><td style="text-align:right">' +
           formatNumber(summary.production.outputByProductThisTurn[resourceId], 3) + '</td></tr>';
       }).join('') : '';
-    var expenditure = summary.expenditure.populationConsumption;
     var factoryStatus = factories.liveFactoryStatusCounts || {};
     var ownership = factories.ownershipCounts || {};
     var factoryStatusText = factories.activePlayerCountry
@@ -732,7 +741,7 @@
       formatNumber(summary.dataCoverage.resourceProfileCount, 0) + ' calibrated; ' +
       formatNumber(summary.dataCoverage.uncalibratedRateCount, 0) + ' explicitly uncalibrated.</div>' +
       '<details style="margin-top:10px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Population consumption standard (' +
-      calibrated.length + ' calibrated · ' + unknown.length + ' unavailable)</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Resource</th><th style="text-align:right;padding:7px">Per 100k / day</th><th style="text-align:right;padding:7px">Country / day</th><th style="text-align:left;padding:7px">Unit</th></tr></thead><tbody>' +
+      calibrated.length + ' calibrated · ' + unknown.length + ' unavailable)</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Resource</th><th style="text-align:right;padding:7px">Per 100k / day</th><th style="text-align:right;padding:7px">Country / day</th><th style="text-align:left;padding:7px">Unit</th><th style="text-align:right;padding:7px">Cost / 100k / day</th><th style="text-align:right;padding:7px">Country cost / day</th><th style="text-align:left;padding:7px">Price status</th></tr></thead><tbody>' +
       resourceRows + '</tbody></table>' + (unknown.length ? '<div style="padding:8px;color:#fbbf24;font-size:10px">Uncalibrated or unavailable: ' +
         escapeHtml(unknown.map(function (row) { return row.resourceId + ' (' + row.calculationStatus + ')'; }).join(', ')) + '</div>' : '') +
       '</div></details><details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Existing national demand and supply reconciliation</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr><th style="text-align:left;padding:6px">Resource</th><th style="text-align:right;padding:6px">Population/day</th><th style="text-align:right;padding:6px">Factory input/day</th><th style="text-align:right;padding:6px">National/day</th><th style="text-align:right;padding:6px">Stock after</th><th style="text-align:right;padding:6px">Pending import</th><th style="text-align:right;padding:6px">Shortage</th><th style="text-align:right;padding:6px">Coverage days</th></tr></thead><tbody>' +
