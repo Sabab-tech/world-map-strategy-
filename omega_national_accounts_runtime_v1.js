@@ -551,6 +551,7 @@
     }
     return{complete,identities:[...byIdentity.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit))};
   }
+  // Movement totals are keyed by game-turn period, resource identity and physical unit.
   async function summarizeInventory(bucket,maxBatches,maxItems,maxMovementRows,reportTurn,productionAssets){
     const batches=Array.isArray(bucket?.batches)?bucket.batches.slice(-maxBatches):[];
     const groups=new Map(),seen=new Set();let missingIdentityCount=0,duplicateBatchCount=0,segmentStartedAt=clockNow();
