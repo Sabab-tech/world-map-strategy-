@@ -781,7 +781,15 @@
   }
   function processContract(country, contract) {
     var c = canonical(country), partner = canonical(contract.partnerCountryId), role = id(contract.role);
-    if (id(contract.status) !== 'ACTIVE' || !partner) return { status: 'SKIPPED' };
+    if (!partner) return { status: 'SKIPPED' };
+    if (id(contract.status) === 'AT_RISK') {
+      var retryTurn = num(contract.retryEligibleTurn);
+      if (retryTurn === null || turn() < retryTurn) return { status: 'AT_RISK', retryEligibleTurn: retryTurn };
+      var resumedPatch = { status: 'ACTIVE', nextDeliveryTurn: Math.min(num(contract.nextDeliveryTurn) || retryTurn, retryTurn), retryEligibleTurn: null };
+      mirrorContract(c, partner, contract.agreementId, resumedPatch);
+      contract = Object.assign({}, contract, resumedPatch);
+    }
+    if (id(contract.status) !== 'ACTIVE') return { status: 'SKIPPED' };
     if (role === 'BUYER' && contract.currentRequestId) {
       var request = findImportRequest(c, contract.currentRequestId);
       if (!request) return { status: 'WAITING', reason: 'CONTRACT_DELIVERY_REQUEST_NOT_FOUND' };
@@ -888,9 +896,9 @@
     if (!preview.canSend) return { accepted: false, reason: preview.reason, feasibility: preview };
     var activated = activateContract(updated, terms);
     if (activated.accepted) {
-      dispatch('trade', 'OMEGA_BILATERAL_APPLY_RESPONSE', c, {
-        proposalId: proposalIdValue, review: { decision: 'ACCEPTED_COUNTER', terms: terms, acceptedTurn: turn() }
-      });
+      var acceptedReview = { decision: 'ACCEPTED_COUNTER', terms: terms, acceptedTurn: turn() };
+      dispatch('trade', 'OMEGA_BILATERAL_APPLY_RESPONSE', c, { proposalId: proposalIdValue, review: acceptedReview });
+      dispatch('trade', 'OMEGA_BILATERAL_RECORD_REVIEW', proposal.targetCountryId, { proposalId: proposalIdValue, review: acceptedReview });
     }
     return activated;
   }
@@ -954,6 +962,10 @@
     if (!forceMajeure && !mutual && relationPenalty !== null && relationPenalty > 0) {
       dispatch('foreign', 'OMEGA_BILATERAL_RELATION_ADJUSTMENT', c, {
         targetCountryId: partner, adjustmentId: 'BILAT-BREACH-' + contract.agreementId,
+        delta: -relationPenalty, reason: 'BILATERAL_TRADE_AGREEMENT_BREACH'
+      });
+      dispatch('foreign', 'OMEGA_BILATERAL_RELATION_ADJUSTMENT', partner, {
+        targetCountryId: c, adjustmentId: 'BILAT-BREACH-' + contract.agreementId,
         delta: -relationPenalty, reason: 'BILATERAL_TRADE_AGREEMENT_BREACH'
       });
     }
