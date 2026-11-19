@@ -78,7 +78,7 @@ function harness(){
   const window={
     Omega:{FinanceMinistry:finance,MinistryInteroperability:interop,WorldSimulationScheduler:scheduler,
       PrivateEnterpriseLifecycleV1:{companyIds:[
-        'AURORA_INDUSTRIAL_GROUP_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP','NOVA_CONSUMER_INDUSTRIES',
+        'AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP','NOVA_CONSUMER_INDUSTRIES',
         'ATLAS_TECHNOLOGY_CORPORATION','TERRA_INFRASTRUCTURE_GROUP'
       ]},
       Simulation:{world:{state},clock:{turn:8}}},
