@@ -79,9 +79,55 @@ function respondToOffer(countryValue,agreementId,decisionValue,counterTerms){ins
 function changeStatus(country,idValue,status){const a=localAgreement(country,idValue);if(!a)return{accepted:false,reason:'BILATERAL_AGREEMENT_NOT_FOUND'};const s=id(status);if(s==='SUSPENDED'&&a.status!=='ACTIVE')return{accepted:false,reason:'ONLY_ACTIVE_AGREEMENTS_CAN_BE_SUSPENDED'};if(s==='TERMINATED'&&['REJECTED','TERMINATED'].includes(a.status))return{accepted:false,reason:'AGREEMENT_ALREADY_CLOSED'};if(!['SUSPENDED','TERMINATED'].includes(s))return{accepted:false,reason:'UNSUPPORTED_AGREEMENT_STATUS'};const next=Object.assign({},a,{status:s,stage:s,updatedAt:new Date().toISOString(),lastDecisionTurn:turn()}),saved=mirrorAgreement(next);return{accepted:saved.accepted,agreement:next,results:saved.results,reason:saved.accepted?null:'BILATERAL_STATUS_MIRROR_INCOMPLETE'};}
 function isAgreementActiveFor(buyerValue,sellerValue,resourceValue,quantityValue,priceValue,agreementId){const buyer=canonical(buyerValue),seller=canonical(sellerValue),rid=token(resourceValue);if(!buyer||!seller||buyer===seller)return false;const a=agreementRows(buyer).find(x=>x&&(!agreementId||String(x.agreementId)===String(agreementId))&&canonical(x.buyerCountryId)===buyer&&canonical(x.sellerCountryId)===seller&&x.status==='ACTIVE'&&(!rid||token(x.resourceId)===rid));if(!a)return false;const mirror=agreementRows(seller).find(x=>x&&String(x.agreementId)===String(a.agreementId)&&x.status==='ACTIVE'&&num(x.termVersion)===num(a.termVersion)&&token(x.resourceId)===token(a.resourceId));if(!mirror||turn()<num(a.startTurn)||turn()>num(a.endTurn))return false;const q=num(quantityValue),p=num(priceValue);if(q!==null&&q>num(a.terms.quantityPerShipment))return false;if(p!==null&&Math.abs(p-num(a.terms.unitPrice))>Math.max(1e-7,Math.abs(num(a.terms.unitPrice))*1e-6))return false;return true;}
 function getActiveAgreement(buyer,seller,rid,agreementId){const row=agreementRows(buyer).find(x=>x&&(!agreementId||String(x.agreementId)===String(agreementId))&&canonical(x.buyerCountryId)===canonical(buyer)&&canonical(x.sellerCountryId)===canonical(seller)&&(!rid||token(x.resourceId)===token(rid))&&x.status==='ACTIVE');return row&&isAgreementActiveFor(buyer,seller,rid,null,null,row.agreementId)?clone(row):null;}
-function procureAgreement(buyerValue,agreementId,quantityValue){const buyer=canonical(buyerValue),a=localAgreement(buyer,agreementId);if(!a||a.status!=='ACTIVE'||canonical(a.buyerCountryId)!==buyer)return{accepted:false,reason:'ACTIVE_BUYER_SIDE_AGREEMENT_REQUIRED'};const q=num(quantityValue)??num(a.terms.quantityPerShipment);if(q===null||q<=0||q>num(a.terms.quantityPerShipment))return{accepted:false,reason:'QUANTITY_EXCEEDS_AGREEMENT_PER_SHIPMENT_LIMIT'};if(!isAgreementActiveFor(buyer,a.sellerCountryId,a.resourceId,q,a.terms.unitPrice,agreementId))return{accepted:false,reason:'BILATERAL_AGREEMENT_NOT_ACTIVE_ON_BOTH_PARTIES'};const t=trade();if(!t?.createRequest)return{accepted:false,reason:'GLOBAL_TRADE_SETTLEMENT_RUNTIME_UNAVAILABLE'};const r=t.createRequest(buyer,{targetCountryId:a.sellerCountryId,resourceId:a.resourceId,quantity:q,unitPrice:a.terms.unitPrice,currency:a.terms.currency,bilateralAgreementId:a.agreementId,transportMode:a.terms.deliveryMode,routeId:a.terms.routeId,source:'OMEGA_BILATERAL_TRADE_AGREEMENT'});return r?.accepted===true?{accepted:true,agreementId:a.agreementId,request:clone(r.request||r)}:{accepted:false,reason:r?.reason||'BILATERAL_PROCUREMENT_REQUEST_REJECTED',detail:r};}
+function assessTradePosition(a,quantity){
+ const buyer=canonical(a.buyerCountryId),seller=canonical(a.sellerCountryId),rid=token(a.resourceId),q=num(quantity),
+   relationRow=relation(buyer,seller),fx=num(trade()?.fxRate?.(buyer,seller)),
+   buyerCash=num(value(buyer,'finance','available'))??num(value(buyer,'finance','reserves')),
+   sellerStock=recordValue(seller,'resource','inventory',rid),
+   sellerReserve=recordValue(seller,'resource','reserves',rid),
+   sellerFree=sellerStock===null?null:Math.max(0,sellerStock-Math.max(0,sellerReserve||0)),
+   buyerImport=resourceIntelligence(seller,buyer,rid).importDemand,
+   estimatedBuyerCost=q!==null&&num(a.terms.unitPrice)!==null&&fx!==null?q*num(a.terms.unitPrice)*fx:null,
+   blockers=[],unknown=[];
+ if(relationRow&&(relationRow.war_state===true||relationRow.sanctions===true))blockers.push('WAR_OR_SANCTIONS');
+ if(sellerFree!==null&&q!==null&&sellerFree<q)blockers.push('SELLER_FREE_STOCK_BELOW_REQUEST');
+ if(buyerCash!==null&&estimatedBuyerCost!==null&&buyerCash<estimatedBuyerCost)blockers.push('BUYER_LIQUIDITY_BELOW_ESTIMATED_COST');
+ if(!relationRow)unknown.push('DIPLOMATIC_RELATION_NOT_OBSERVED');
+ if(sellerStock===null)unknown.push('SELLER_STOCK_NOT_OBSERVED');
+ if(sellerReserve===null)unknown.push('SELLER_RESERVE_NOT_OBSERVED');
+ if(buyerCash===null)unknown.push('BUYER_LIQUIDITY_NOT_OBSERVED');
+ if(fx===null)unknown.push('BILATERAL_FX_NOT_OBSERVED');
+ if(buyerImport.status==='UNKNOWN')unknown.push('BUYER_IMPORT_DEMAND_NOT_OBSERVED');
+ return{status:blockers.length?'BLOCKED':unknown.length?'REVIEW_REQUIRED':'READY',
+  buyerCountryId:buyer,sellerCountryId:seller,resourceId:rid,quantity:q,
+  sellerFreeStock:field(sellerFree,'declared resource unit',sellerFree===null?'UNKNOWN':'KNOWN','resource.inventory − resource.reserves'),
+  buyerLiquidity:field(buyerCash,'buyer local currency',buyerCash===null?'UNKNOWN':'KNOWN','finance.available / finance.reserves'),
+  estimatedBuyerCost:field(estimatedBuyerCost,'buyer local currency',estimatedBuyerCost===null?'UNKNOWN':'ESTIMATED','agreed unit price × quantity × recorded FX'),
+  buyerImportDemand:buyerImport,fxRate:field(fx,'buyer currency per seller currency',fx===null?'UNKNOWN':'KNOWN','OmegaGlobalTrade.fxRate'),
+  diplomaticRisk:field(relationRow?(relationRow.war_state===true||relationRow.sanctions===true?'PROHIBITIVE':'NO_RECORDED_WAR_OR_SANCTIONS'):null,'risk status',relationRow?'KNOWN':'UNKNOWN','foreign.relations'),
+  blockers,unknown,settlementAuthority:'OMEGA_GLOBAL_TRADE_REMAINS_FINAL_AUTHORITY'};
+}
+function procureAgreement(partyValue,agreementId,quantityValue){
+ const party=canonical(partyValue),a=localAgreement(party,agreementId);
+ if(!a||a.status!=='ACTIVE'||![canonical(a.buyerCountryId),canonical(a.sellerCountryId)].includes(party))
+  return{accepted:false,reason:'ACTIVE_AGREEMENT_PARTY_RECORD_REQUIRED'};
+ const buyer=canonical(a.buyerCountryId),seller=canonical(a.sellerCountryId),
+   q=num(quantityValue)??num(a.terms.quantityPerShipment);
+ if(q===null||q<=0||q>num(a.terms.quantityPerShipment))
+  return{accepted:false,reason:'QUANTITY_EXCEEDS_AGREEMENT_PER_SHIPMENT_LIMIT'};
+ if(!isAgreementActiveFor(buyer,seller,a.resourceId,q,a.terms.unitPrice,agreementId))
+  return{accepted:false,reason:'BILATERAL_AGREEMENT_NOT_ACTIVE_ON_BOTH_PARTIES'};
+ const assessment=assessTradePosition(a,q);
+ if(assessment.status==='BLOCKED')return{accepted:false,reason:'BILATERAL_TRADE_READINESS_BLOCKED',assessment};
+ const t=trade();if(!t?.createRequest)return{accepted:false,reason:'GLOBAL_TRADE_SETTLEMENT_RUNTIME_UNAVAILABLE'};
+ const r=t.createRequest(buyer,{targetCountryId:seller,resourceId:a.resourceId,quantity:q,
+  unitPrice:a.terms.unitPrice,currency:a.terms.currency,bilateralAgreementId:a.agreementId,
+  transportMode:a.terms.deliveryMode,routeId:a.terms.routeId,source:'OMEGA_BILATERAL_TRADE_AGREEMENT'});
+ return r?.accepted===true?{accepted:true,agreementId:a.agreementId,assessment,request:clone(r.request||r)}:
+  {accepted:false,reason:r?.reason||'BILATERAL_PROCUREMENT_REQUEST_REJECTED',assessment,detail:r};
+}
 function diagnostics(){return{version:VERSION,handlerInstalled:!!installReport.ready,registeredCommandHandlers:installReport.registered,commandHandlerCount:installReport.total,registrationErrors:clone(installReport.errors),actionRegistrationWarnings:clone(installReport.actionWarnings),automaticWorldRosterScan:false,schedulerHandlers:0,usesGlobalTradeSettlement:true,usesDurableInternationalShipmentLedger:true,provenanceStates:['KNOWN','ESTIMATED','UNKNOWN']};}
 function init(){installHandlers();if(!g.__omegaBilateralTradeInitHook){g.__omegaBilateralTradeInitHook=true;g.addEventListener?.('OMEGA_READY',installHandlers);g.addEventListener?.('OMEGA_GAME_SESSION_STARTED',installHandlers);}return diagnostics();}
-const API=Object.freeze({VERSION,COMMANDS,init,diagnostics,buildMarketIntelligence,requestMarketIntelligence,getReport,createAgreementOffer,respondToOffer,suspendAgreement:(c,a)=>changeStatus(c,a,'SUSPENDED'),terminateAgreement:(c,a)=>changeStatus(c,a,'TERMINATED'),getAgreements:c=>agreementRows(c).map(row=>clone(row)),getActiveAgreement,isAgreementActiveFor,procureAgreement});
+const API=Object.freeze({VERSION,COMMANDS,init,diagnostics,buildMarketIntelligence,requestMarketIntelligence,getReport,createAgreementOffer,respondToOffer,suspendAgreement:(c,a)=>changeStatus(c,a,'SUSPENDED'),terminateAgreement:(c,a)=>changeStatus(c,a,'TERMINATED'),getAgreements:c=>agreementRows(c).map(row=>clone(row)),getActiveAgreement,isAgreementActiveFor,assessTradePosition,procureAgreement});
 g.Omega=g.Omega||{};g.Omega.BilateralTrade=API;g.OmegaBilateralTrade=API;try{init();}catch(e){g.OmegaBilateralTradeError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);
