@@ -4,8 +4,13 @@ const handlers = new Map();
 const actionMetadata = new Map();
 globalThis.Game = { state: {
   simulation: { turn: 12, session: { playerCountryId: 'BGD' } },
-  trade: { BGD: {}, SAU: {} },
+  trade: { BGD: {}, SAU: { internationalShipmentLedger: [] } },
   resource: {
+    BGD: {
+      inventory: { crude_oil: 120 },
+      production: { crude_oil: 8 },
+      consumption: { crude_oil: 12 }
+    },
     SAU: {
       inventory: { crude_oil: 2500 },
       production: { crude_oil: 120 },
@@ -100,6 +105,10 @@ assert.equal(oil.supplierReliability.status, 'UNKNOWN');
 assert.equal(oil.expectedLocalPrice.value, 95);
 const noLedger = bilateral.buildMarketIntelligence('BGD', 'BGD', { resourceId: 'crude_oil' });
 assert.equal(noLedger.ok, false, 'self-country intelligence requests must be rejected');
+const legacyReport = bilateral.buildMarketIntelligence('SAU', 'BGD', { resourceId: 'crude_oil' });
+assert.equal(legacyReport.ok, true);
+assert.equal(legacyReport.report.resources[0].inboundInTransit.status, 'UNKNOWN',
+  'a missing shipment ledger is not treated as zero');
 const saved = bilateral.requestMarketIntelligence('BGD', 'SAU', { resourceId: 'crude_oil' });
 assert.equal(saved.ok, true, JSON.stringify(saved));
 assert.equal(saved.persisted, true);
