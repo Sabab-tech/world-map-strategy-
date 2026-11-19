@@ -503,6 +503,8 @@
       return { status: 'INVALID', canSend: false, reason: 'UNSUPPORTED_AGREEMENT_DURATION' };
     if (intervalDays === null || intervalDays < 1 || intervalDays > 365)
       return { status: 'INVALID', canSend: false, reason: 'DELIVERY_INTERVAL_OUT_OF_RANGE' };
+    if (!['FIXED', 'MARKET_LINKED'].includes(id(p.priceModel || 'FIXED')))
+      return { status: 'INVALID', canSend: false, reason: 'UNSUPPORTED_AGREEMENT_PRICE_MODEL' };
     var snapshot = currentReport(player, target, true);
     if (snapshot.status !== 'CURRENT') return { status: snapshot.status, canSend: false, reason: snapshot.reason };
     var seller = direction === 'EXPORT' ? player : target;
@@ -518,7 +520,11 @@
     var exportable = stock === null || reserve === null || domesticBuffer === null
       ? null : Math.max(0, stock - reserve - commitments - accepted.quantity - domesticBuffer);
     var quotePrice = marketPriceFor(seller, resourceId);
-    var priceForAgreement = unitPrice;
+    var priceModel = id(p.priceModel || 'FIXED');
+    var marketAdjustmentPct = clamp(p.marketAdjustmentPct ?? 0, -50, 100);
+    var clearedPrice = supply.expectedPrice.status === 'KNOWN' ? supply.expectedPrice.value : null;
+    var priceForAgreement = priceModel === 'MARKET_LINKED' && clearedPrice !== null
+      ? clearedPrice * (1 + (marketAdjustmentPct || 0) / 100) : unitPrice;
     var values = settlementValues(buyer, seller, quantity, priceForAgreement);
     var buyerAmount = num(values && values.buyerValue);
     var availableMoney = finance.available.value;
@@ -529,17 +535,20 @@
     if (finance.available.status !== 'KNOWN') issues.push('BUYER_AVAILABLE_FOREIGN_CURRENCY_UNKNOWN');
     if (buyerAmount === null) issues.push('FX_SETTLEMENT_VALUE_UNKNOWN');
     if (quotePrice === null) issues.push('MARKET_PRICE_UNKNOWN');
+    if (priceModel === 'MARKET_LINKED' && clearedPrice === null) issues.push('MARKET_LINKED_PRICE_NOT_CLEARED');
     var supplyOK = exportable !== null && exportable + 1e-8 >= quantity;
     var fundsOK = buyerAmount !== null && availableMoney !== null && availableMoney + 1e-8 >= buyerAmount;
-    var hardUnknown = stock === null || reserve === null || finance.available.status !== 'KNOWN' || buyerAmount === null;
+    var hardUnknown = stock === null || reserve === null || finance.available.status !== 'KNOWN' || buyerAmount === null ||
+      priceModel === 'MARKET_LINKED' && clearedPrice === null;
     var status = hardUnknown || domesticBuffer === null ? 'CONDITIONAL' : supplyOK && fundsOK ? 'FEASIBLE' : 'INFEASIBLE';
     var canSend = status === 'FEASIBLE' || status === 'CONDITIONAL' && p.acceptUnknownRisk === true && supplyOK && fundsOK;
     return {
       status: status, canSend: canSend, reason: status === 'FEASIBLE' ? 'CURRENT_STOCK_AND_PAYMENT_CAPACITY_OBSERVED' :
         status === 'INFEASIBLE' ? (!supplyOK ? 'EXPORTABLE_SUPPLY_INSUFFICIENT' : 'BUYER_FOREIGN_CURRENCY_INSUFFICIENT') : 'SOME_REQUIRED_EVIDENCE_UNKNOWN',
       direction: direction, buyerCountryId: buyer, sellerCountryId: seller, targetCountryId: target,
-      resourceId: resourceId, quantityPerDelivery: quantity, unitPrice: unitPrice,
-      priceCurrency: tradeCurrency(seller), expectedMarketPrice: quotePrice,
+      resourceId: resourceId, quantityPerDelivery: quantity, unitPrice: priceForAgreement,
+      priceModel: priceModel, marketAdjustmentPct: marketAdjustmentPct,
+      indicativeUnitPrice: unitPrice, priceCurrency: tradeCurrency(seller), expectedMarketPrice: quotePrice,
       sellerStock: stock, sellerReserve: reserve, commitments: commitments, acceptedPendingRequests: accepted.quantity,
       domesticRequirementPerInterval: domesticBuffer, exportableSupply: exportable,
       buyerAvailableForeignCurrency: availableMoney, buyerCurrency: tradeCurrency(buyer), buyerSettlementAmount: buyerAmount,
@@ -562,7 +571,7 @@
       schemaVersion: VERSION, proposalId: pid, requestorCountryId: player, targetCountryId: target,
       direction: preview.direction, buyerCountryId: preview.buyerCountryId, sellerCountryId: preview.sellerCountryId,
       resourceId: preview.resourceId, quantityPerDelivery: preview.quantityPerDelivery, unitPrice: preview.unitPrice,
-      currency: preview.priceCurrency, priceModel: id(p.priceModel || 'FIXED'),
+      currency: preview.priceCurrency, priceModel: preview.priceModel, marketAdjustmentPct: preview.marketAdjustmentPct,
       durationMonths: preview.durationMonths, durationTurns: preview.durationTurns,
       intervalDays: preview.intervalDays, intervalTurns: preview.intervalTurns,
       quantityTolerancePct: preview.quantityTolerancePct, terminationPenaltyPct: preview.terminationPenaltyPct,
@@ -614,6 +623,12 @@
     }
     if (quantity <= 0 || price <= 0) { result.decision = 'REJECT'; result.reason = 'NON_POSITIVE_TRADE_TERMS'; return result; }
     var proposedQuantity = quantity, proposedPrice = price, adjustments = [];
+    if (id(proposal.priceModel || 'FIXED') === 'MARKET_LINKED') {
+      var linkedPriceEvidence = supplier.expectedPrice;
+      if (!linkedPriceEvidence || linkedPriceEvidence.status !== 'KNOWN' || num(linkedPriceEvidence.value) === null)
+        return Object.assign(result, { reason: 'MARKET_LINKED_PRICE_NOT_CLEARED' });
+      proposedPrice = num(linkedPriceEvidence.value) * (1 + (num(proposal.marketAdjustmentPct) || 0) / 100);
+    }
     if (available + 1e-8 < proposedQuantity) {
       if (available <= 0) { result.decision = 'REJECT'; result.reason = 'NO_EXPORTABLE_STOCK_AFTER_DOMESTIC_AND_CONTRACT_COMMITMENTS'; return result; }
       proposedQuantity = Math.min(proposedQuantity, available);
@@ -861,7 +876,8 @@
       resourceId: String(terms.resourceId), quantityPerDelivery: num(terms.quantityPerDelivery),
       quantityTolerancePct: clamp(terms.quantityTolerancePct ?? 0, 0, 50),
       unitPrice: num(terms.unitPrice), currency: tradeCurrency(seller),
-      priceModel: id(terms.priceModel || 'FIXED'),
+      priceModel: id(terms.priceModel || 'FIXED'), marketAdjustmentPct: clamp(terms.marketAdjustmentPct ?? 0, -50, 100),
+      priceHistory: [{ turn: turn(), unitPrice: num(terms.unitPrice), model: id(terms.priceModel || 'FIXED') }]
       durationMonths: durationMonths, durationTurns: durationTurns,
       intervalDays: intervalDays, intervalTurns: intervalTurns,
       terminationPenaltyPct: clamp(terms.terminationPenaltyPct ?? 0, 0, 100),
@@ -928,16 +944,28 @@
       var request = findImportRequest(c, contract.currentRequestId);
       if (!request) return { status: 'WAITING', reason: 'CONTRACT_DELIVERY_REQUEST_NOT_FOUND' };
       if (id(request.status) === 'SETTLED' && !contract.deliveries.some(function (row) { return row.requestId === request.requestId; })) {
+        var actualQuantity = num(request.quantity) || 0;
+        var tolerancePct = clamp(contract.quantityTolerancePct ?? 0, 0, 50) || 0;
+        var minimumQuantity = (num(contract.quantityPerDelivery) || 0) * (1 - tolerancePct / 100);
+        var maximumQuantity = (num(contract.quantityPerDelivery) || 0) * (1 + tolerancePct / 100);
+        var withinTolerance = actualQuantity + 1e-8 >= minimumQuantity && actualQuantity <= maximumQuantity + 1e-8;
         var delivery = { requestId: request.requestId, settlementId: request.settlementId || null,
-          quantity: num(request.quantity) || 0, settledTurn: num(request.settledTurn ?? request.turn) ?? turn(),
-          resourceId: contract.resourceId, status: 'SETTLED' };
+          quantity: actualQuantity, minAllowedQuantity: minimumQuantity, maxAllowedQuantity: maximumQuantity,
+          withinTolerance: withinTolerance, unitPrice: num(request.unitPrice),
+          settledTurn: num(request.settledTurn ?? request.turn) ?? turn(),
+          resourceId: contract.resourceId, status: withinTolerance ? 'SETTLED' : 'SETTLED_OUTSIDE_TOLERANCE' };
         var nextDue = (num(contract.nextDeliveryTurn) || turn()) + (num(contract.intervalTurns) || 1);
         var completed = (num(contract.completedDeliveries) || 0) + 1;
+        var priceHistory = (contract.priceHistory || []).concat([{ turn: delivery.settledTurn, unitPrice: delivery.unitPrice, requestId: delivery.requestId }]).slice(-128);
         var patch = { deliveries: (contract.deliveries || []).concat([delivery]).slice(-128),
           deliveredQuantity: (num(contract.deliveredQuantity) || 0) + delivery.quantity,
-          completedDeliveries: completed, currentRequestId: null, nextDeliveryTurn: nextDue,
-          lastDeliveryTurn: delivery.settledTurn, lastDeliveryStatus: 'SETTLED' };
-        if (completed >= num(contract.plannedDeliveryCount)) patch.status = 'COMPLETED';
+          completedDeliveries: completed, currentRequestId: null, nextDeliveryTurn: nextDue, priceHistory: priceHistory,
+          lastDeliveryTurn: delivery.settledTurn, lastDeliveryStatus: delivery.status,
+          lastToleranceResult: { withinTolerance: withinTolerance, minimumQuantity: minimumQuantity, maximumQuantity: maximumQuantity, actualQuantity: actualQuantity } };
+        if (!withinTolerance) {
+          patch.status = 'AT_RISK'; patch.retryEligibleTurn = nextDue;
+          patch.lastFailureReason = 'DELIVERY_OUTSIDE_AGREED_QUANTITY_TOLERANCE';
+        } else if (completed >= num(contract.plannedDeliveryCount)) patch.status = 'COMPLETED';
         mirrorContract(c, partner, contract.agreementId, patch);
         return { status: 'DELIVERY_SETTLED', requestId: request.requestId, agreementId: contract.agreementId };
       }
@@ -964,9 +992,16 @@
     if (!trade || typeof trade.createRequest !== 'function') return { status: 'BLOCKED', reason: 'GLOBAL_TRADE_SETTLEMENT_AUTHORITY_UNAVAILABLE' };
     var sequence = (num(contract.completedDeliveries) || 0) + (num(contract.failedDeliveries) || 0) + 1;
     var requestId = String(contract.agreementId) + '-DELIVERY-' + String(sequence).padStart(4, '0');
+    var deliveryUnitPrice = num(contract.unitPrice);
+    if (id(contract.priceModel || 'FIXED') === 'MARKET_LINKED') {
+      var linkedPrice = readProduct(contract.sellerCountryId, { id: contract.resourceId }).expectedPrice;
+      if (!linkedPrice || linkedPrice.status !== 'KNOWN' || num(linkedPrice.value) === null)
+        return { status: 'BLOCKED', reason: 'MARKET_LINKED_PRICE_NOT_CLEARED' };
+      deliveryUnitPrice = num(linkedPrice.value) * (1 + (num(contract.marketAdjustmentPct) || 0) / 100);
+    }
     var created = trade.createRequest(c, {
       requestId: requestId, targetCountryId: contract.sellerCountryId, resourceId: contract.resourceId,
-      quantity: contract.quantityPerDelivery, unitPrice: contract.unitPrice, currency: contract.currency,
+      quantity: contract.quantityPerDelivery, unitPrice: deliveryUnitPrice, currency: contract.currency,
       governmentContractId: contract.agreementId, source: 'OMEGA_BILATERAL_TRADE_AGREEMENT'
     });
     if (!created || created.accepted !== true) {
