@@ -35,6 +35,7 @@ The new runtime registers two Trade-owned State Transaction commands. It adds no
 ## Current limits
 
 - Reports use evidence already available in the selected game state; this version does not fetch external official statistics or claim real-time real-world market quotations.
+- Requester and counterparty Treasury liquidity are shown in their own national currencies. FX reserve balances are read separately from the existing Finance/FX economy reserve field and are not added to Treasury cash. Reserve baselines can be modeled or legacy-source records; the report does not silently relabel them as current official observations.
 - Reliability is a historical game-ledger ratio, not a prediction.
 - Exportable surplus does not yet reserve cumulative contract quantities across multiple agreements. The per-shipment quantity and price are checked at procurement; seller inventory, existing reservations and Treasury remain enforced at settlement.
 - Multi-turn travel ETA is not estimated unless a separate authoritative route travel-time model exists. Shipment state remains owned by the durable shipment ledger.
