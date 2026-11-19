@@ -557,6 +557,27 @@ test('country checkpoint reads existing private-firm journals without mutating c
     'the read model must not mutate private-company wallet or cash-flow source rows');
 });
 
+test('private-enterprise lifecycle mutations invalidate the country journal checkpoint',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  await api.init();
+  assert.equal((await api.processCountry('BGD',{turn:8,state:h.state})).status,'CHECKPOINTED');
+  h.state.economy.BGD.companyAccounts={
+    AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',cashFlowEntries:[
+      {entryId:'PRIVATE-SETTLEMENT-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',
+        sectorJournalV1:testJournal('BGD','firm','AURORA_INDUSTRIAL_GROUP',
+          'PRIVATE-SETTLEMENT-1','BDT','TURN-9')}
+    ]}
+  };
+  h.dispatch('OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_CHANGED',{
+    countryId:'BGD',eventType:'PRIVATE_COMPANY_PROCUREMENT_SETTLED'
+  });
+  assert.equal(api.diagnostics().dirtyCountryCount,1);
+  const refreshed=await api.processCountry('BGD',{turn:9,state:h.state});
+  assert.equal(refreshed.status,'CHECKPOINTED');
+  assert.equal(h.state.economy.BGD.nationalAccounts.sectorJournals.postedTransactionCount,1);
+  assert.equal(api.diagnostics().dirtyCountryCount,0);
+});
+
 test('country checkpoint caps private-firm journal work to configured canonical company and row windows',async()=>{
   const h=harness(),api=h.window.Omega.NationalAccounts,companyAccounts={},companyIds=apiTestCompanyIds;
   for(const companyId of companyIds){
