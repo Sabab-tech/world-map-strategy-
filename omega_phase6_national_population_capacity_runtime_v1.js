@@ -412,12 +412,14 @@
     var registry = null;
     var baselineApi = factoryBaselineApi();
     try {
-      if (baselineApi && typeof baselineApi.getCountryFactoryRegistry === 'function') {
+      if (isActive && baselineApi && typeof baselineApi.getCountryFactoryRegistry === 'function') {
         var row = baselineApi.getCountryFactoryRegistry(countryId);
         if (row && row.status === 'READY') registry = row;
       }
     } catch (_) {}
-    var liveTotal = Object.keys(statuses).reduce(function (sum, key) { return sum + statuses[key]; }, 0);
+    var liveTotal = statuses.operational + statuses.underConstruction + statuses.maintenance +
+      statuses.paused + statuses.offline + statuses.unknown;
+    var trackedFactoryAssets = liveTotal + statuses.decommissioned;
     var ratedAssets = eligibleAssets.filter(function (asset) { return statusBucket(asset.status) !== 'decommissioned'; });
     var operationalAssets = eligibleAssets.filter(function (asset) { return statusBucket(asset.status) === 'operational'; });
     var ratedCapacityComplete = ratedAssets.length > 0;
@@ -455,6 +457,7 @@
       activePlayerCountry: isActive,
       liveRegistrationStatus: registry && registry.runtimeStatus || (isActive ? 'LIVE_REGISTRY_UNAVAILABLE' : 'STATIC_BASELINE_ONLY'),
       liveFactoryUnits: isActive ? liveTotal : null,
+      trackedFactoryAssetCount: isActive ? trackedFactoryAssets : null,
       liveFactoryStatusCounts: isActive ? statuses : null,
       ownershipCounts: isActive ? ownership : null,
       ratedCapacityPerDay: isActive && ratedCapacityComplete && ratedCapacityObserved === ratedAssets.length ? liveRated : null,
