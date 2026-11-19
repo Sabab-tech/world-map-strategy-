@@ -659,7 +659,8 @@
       const amount=absolute?Math.abs(raw):raw;
       if(amount<0)return null;
       const minor=Math.round(amount*100);
-      return Number.isSafeInteger(minor)?minor:null;
+      if(!Number.isSafeInteger(minor)||Math.abs(amount-minor/100)>1e-7)return null;
+      return minor;
     };
     const accountId=(template)=>{
       const value=String(template||'').trim();
@@ -682,17 +683,23 @@
     };
     if(String(rule.type||'').toUpperCase()==='PAIR'){
       const minor=amountMinor(row[rule.amountField||'amountUsd'],rule.absoluteValue===true);
-      if(minor===null||minor<=0)return null;
-      if(!addLine(accountId(rule.debitAccount),'DEBIT',minor)||
-         !addLine(accountId(rule.creditAccount),'CREDIT',minor))return null;
+      if(minor===null||minor<=0)return {schemaVersion:contract.schemaVersion||1,status:'UNAVAILABLE',
+        reason:'SOURCE_AMOUNT_MISSING_OR_NOT_CENT_EXACT',sourceTransactionId:transactionId};
+      const category=String(row?.[rule.categoryField||'category']||'').trim().toLowerCase();
+      const debitTemplate=rule.debitAccountByCategory?.[category]||rule.debitAccount;
+      const creditTemplate=rule.creditAccountByCategory?.[category]||rule.creditAccount;
+      if(!addLine(accountId(debitTemplate),'DEBIT',minor)||
+         !addLine(accountId(creditTemplate),'CREDIT',minor))return null;
     }else if(String(rule.type||'').toUpperCase()==='SPLIT_DEBIT'){
       const total=amountMinor(row[rule.totalAmountField||'amountUsd'],false);
-      if(total===null||total<=0||!Array.isArray(rule.debitComponents))return null;
+      if(total===null||total<=0)return {schemaVersion:contract.schemaVersion||1,status:'UNAVAILABLE',
+        reason:'SOURCE_TOTAL_MISSING_OR_NOT_CENT_EXACT',sourceTransactionId:transactionId};
+      if(!Array.isArray(rule.debitComponents))return null;
       let debitTotal=0;
       for(const component of rule.debitComponents){
         const minor=amountMinor(row[component.amountField],false);
         if(minor===null)return {schemaVersion:contract.schemaVersion||1,status:'UNAVAILABLE',
-          reason:'SOURCE_SPLIT_AMOUNT_UNAVAILABLE',sourceTransactionId:transactionId};
+          reason:'SOURCE_SPLIT_AMOUNT_MISSING_OR_NOT_CENT_EXACT',sourceTransactionId:transactionId};
         if(minor===0)continue;
         if(!addLine(accountId(component.accountId),'DEBIT',minor))return null;
         debitTotal+=minor;
