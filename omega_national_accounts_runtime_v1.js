@@ -610,7 +610,7 @@
     const movementTypes=new Set(['PRODUCTION_TRANSACTION_COMMITTED','FACTORY_PROCESSING_COMMITTED',
       'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED','INVENTORY_CONSUMED','INTERNATIONAL_TRADE_IMPORT',
       'INTERNATIONAL_TRADE_EXPORT','INVENTORY_CREATED','BATCH_CREATED']);
-    const movementKeys=new Map();
+    const movementKeys=new Map(),batchTransferKeys=new Map();
     let duplicateMovementCount=0,conflictingMovementCount=0,missingMovementIdentityCount=0,
       unscopedMovementCount=0,lossIntegrityErrorCount=0,lossDuplicateCount=0,conflictingLossCount=0;
     const resolveUnit=(rid,explicit,transfers)=>{
@@ -702,19 +702,19 @@
       }else if(type==='INTERNATIONAL_TRADE_IMPORT'||type==='INTERNATIONAL_TRADE_EXPORT'){
         const field=type==='INTERNATIONAL_TRADE_IMPORT'?'imports':'exports';
         if(Array.isArray(row.batchTransfers)&&row.batchTransfers.length){
-          const seenTransfers=new Map();
           for(const transfer of row.batchTransfers){
             const transferId=String(transfer?.transferId||transfer?.batchTransferId||transfer?.sourceBatchId||transfer?.batchId||'').trim();
             if(!transferId){group.unclassifiedCount++;missingMovementIdentityCount++;continue;}
+            const transferKey=periodId+':'+field+':'+transferId;
             const transferProof=fingerprint({resourceId:transfer?.resourceId||row.resourceId,
               quantity:transfer?.quantity,unit:transfer?.unit});
-            const priorTransfer=seenTransfers.get(transferId);
+            const priorTransfer=batchTransferKeys.get(transferKey);
             if(priorTransfer!==undefined){
               if(priorTransfer!==transferProof){group.unclassifiedCount++;conflictingMovementCount++;}
               else duplicateMovementCount++;
               continue;
             }
-            seenTransfers.set(transferId,transferProof);
+            batchTransferKeys.set(transferKey,transferProof);
             add(periodId,transfer?.resourceId||row.resourceId,transfer?.quantity,field,transfer?.unit,null);
           }
         }else add(periodId,row.resourceId,row.quantity,field,row.unit,null);
