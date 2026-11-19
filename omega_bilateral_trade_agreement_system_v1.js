@@ -952,6 +952,26 @@
     if (role === 'BUYER' && contract.currentRequestId) {
       var request = findImportRequest(c, contract.currentRequestId);
       if (!request) return { status: 'WAITING', reason: 'CONTRACT_DELIVERY_REQUEST_NOT_FOUND' };
+      var sellerMirror = contractList(partner).find(function (row) { return String(row.agreementId) === String(contract.agreementId); });
+      if (!sellerMirror) {
+        var partnerTreaty = mapEntry((bucket(partner, 'foreign') || {}).treaties || {}, c).value;
+        if (!partnerTreaty || !['ACTIVE', 'IMPLEMENTED'].includes(id(partnerTreaty.status || partnerTreaty.stage)))
+          return { status: 'BLOCKED', reason: 'SELLER_AGREEMENT_OR_TREATY_MIRROR_MISSING' };
+        var sellerCopy = Object.assign({}, clone(contract), { partnerCountryId: c, role: 'SELLER' });
+        var restored = unwrap(dispatch('trade', 'OMEGA_BILATERAL_PUT_CONTRACT', partner, { contract: sellerCopy }));
+        if (!restored || restored.accepted !== true) return { status: 'WAITING', reason: 'SELLER_CONTRACT_MIRROR_RECOVERY_FAILED', detail: restored };
+        sellerMirror = sellerCopy;
+      }
+      if (id(sellerMirror.status) !== 'ACTIVE' ||
+          sellerMirror.currentRequestId && String(sellerMirror.currentRequestId) !== String(request.requestId))
+        return { status: 'BLOCKED', reason: 'BUYER_SELLER_CONTRACT_STATE_MISMATCH' };
+      if (!sellerMirror.currentRequestId) {
+        var sellerRequestMirror = unwrap(dispatch('trade', 'OMEGA_BILATERAL_UPDATE_CONTRACT', partner, {
+          agreementId: contract.agreementId, patch: { currentRequestId: request.requestId, lastRequestTurn: contract.lastRequestTurn || turn() }
+        }));
+        if (!sellerRequestMirror || sellerRequestMirror.accepted !== true)
+          return { status: 'WAITING', reason: 'SELLER_DELIVERY_REQUEST_MIRROR_RECOVERY_FAILED' };
+      }
       if (id(request.status) === 'SETTLED' && !contract.deliveries.some(function (row) { return row.requestId === request.requestId; })) {
         var actualQuantity = num(request.quantity) || 0;
         var tolerancePct = clamp(contract.quantityTolerancePct ?? 0, 0, 50) || 0;
