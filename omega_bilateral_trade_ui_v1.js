@@ -8,6 +8,7 @@ const runtime=()=>g.OmegaBilateralTrade||g.Omega&&g.Omega.BilateralTrade||null;
 function canonicalCountry(v){const raw=String(v||'').trim();if(!raw)return'';try{const r=g.OmegaCountryRuntimeData?.resolveCountry?.(raw);if(r?.iso3)return String(r.iso3).toUpperCase();if(r?.id)return String(r.id).toUpperCase();}catch(_){}try{const r=(g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge)?.resolveCountry?.(raw);if(r?.id)return String(r.id).toUpperCase();}catch(_){}return raw.toUpperCase();}
 function field(f){if(!f)return'Not recorded';const v=f.value;if(v===null||v===undefined)return'Unknown';return typeof v==='object'?(Array.isArray(v)?String(v.length)+' records':JSON.stringify(v)):String(v);}
 function badge(f){const status=String(f&&f.status||'UNKNOWN').toUpperCase();return '<span class="bt-status bt-'+esc(status.toLowerCase())+'">'+esc(status)+'</span>';}
+function evidenceMeta(f){if(!f)return '<small class="bt-evidence">Source not recorded</small>';const source=String(f.source||'Source not recorded'),note=String(f.note||'');return '<small class="bt-evidence">'+esc(source)+(note?' · '+esc(note):'')+'</small>';}
 function render(root,countryValue){
  if(!root)return{ok:false,reason:'BILATERAL_TRADE_ROOT_REQUIRED'};
  const country=canonicalCountry(countryValue||g.OmegaMinistryViewCountry||g.OmegaCabinetUI?.activeCountry||'');
@@ -39,6 +40,7 @@ function render(root,countryValue){
  '.bt-report-metrics>div{border-radius:7px;background:rgba(255,255,255,.035);padding:7px;min-width:0}'+
  '.bt-report-metrics small{display:block;color:#96aec3;font-size:9px;margin-bottom:4px}'+
  '.bt-report-metrics strong{display:block;overflow-wrap:anywhere;font-size:11px;color:#e5f2fc}'+
+ '.bt-evidence{display:block;margin-top:4px;color:#819bb2;font-size:9px;line-height:1.35;overflow-wrap:anywhere}'+
  '.bt-status-line{min-height:18px;font-size:11px;color:#a8d8f4}'+
  '@media(max-width:480px){.bt-panel{padding:10px}.bt-actions button{flex:1}}'+
  '</style><div class="bt-wrap">'+
@@ -99,7 +101,18 @@ function render(root,countryValue){
     if(action==='procure')result=api.procureAgreement(currentCountry,agreementId,num(get('quantity')));
     if(action==='suspend')result=api.suspendAgreement(currentCountry,agreementId);
     if(action==='terminate')result=api.terminateAgreement(currentCountry,agreementId);
-    say(result&&result.accepted?'Agreement action completed · '+agreementId:'Agreement action failed · '+(result&&result.reason||'Unknown reason'));
+    if(action==='procure'&&result&&result.accepted){
+      const readiness=result.assessment&&result.assessment.status||'UNKNOWN';
+      const requestStatus=result.request&&result.request.status||'PENDING_REVIEW';
+      const gaps=result.assessment&&Array.isArray(result.assessment.unknown)&&result.assessment.unknown.length
+        ?' · evidence gaps: '+result.assessment.unknown.join(', '):'';
+      say('Trade request recorded · '+requestStatus+' · readiness '+readiness+gaps+'. Settlement is not yet confirmed; Global Trade remains the final authority.');
+    }else if(result&&result.accepted){
+      const state=result.agreement&&result.agreement.status;
+      say((action==='accept'||action==='counter'||action==='reject'?'Agreement response recorded':'Agreement action recorded')+' · '+(state||agreementId));
+    }else{
+      say('Agreement action failed · '+(result&&result.reason||'Unknown reason'));
+    }
    }
    render(root,currentCountry);
    const newStatus=root.querySelector('[data-bt-status]');
@@ -134,9 +147,9 @@ function reportMarkup(report){
  const o=report.countryOverview||{},resources=report.resources||[];
  const overview=[['Counterparty currency',o.currency],['Requester Treasury',o.requesterTreasuryLiquidity],['Counterparty Treasury',o.targetTreasuryLiquidity],['Requester FX reserves',o.requesterForeignExchangeReservesUsd],['Counterparty FX reserves',o.targetForeignExchangeReservesUsd],['Bilateral FX',o.bilateralFxRate],['Diplomatic score',o.diplomaticRelationScore],['War/sanctions risk',o.warOrSanctionsRisk],['Active agreements',o.agreementCount]];
  return'<div class="bt-record"><h3>'+esc(report.targetCountryId)+' · Market Intelligence</h3><p class="bt-note">'+esc(report.generatedAt)+' · turn '+esc(report.generatedTurn)+' · version '+esc(report.dataVersion)+'</p>'+
- '<div class="bt-report-metrics">'+overview.map(([label,f])=>'<div><small>'+esc(label)+' '+badge(f)+'</small><strong>'+esc(field(f))+'</strong></div>').join('')+'</div>'+
+ '<div class="bt-report-metrics">'+overview.map(([label,f])=>'<div><small>'+esc(label)+' '+badge(f)+'</small><strong>'+esc(field(f))+'</strong>'+evidenceMeta(f)+'</div>').join('')+'</div>'+
  resources.map(r=>'<div class="bt-report-row"><h4>'+esc(r.resourceId)+'</h4><div class="bt-report-metrics">'+
- [['Domestic production',r.domesticProduction],['Domestic consumption',r.domesticConsumption],['Inventory',r.currentInventory],['Import demand',r.importDemand],['Potential export surplus',r.potentialExportableSurplus],['In transit',r.inboundInTransit],['Expected local price',r.expectedLocalPrice],['Route capacity',r.routeCapacity],['Supplier reliability',r.supplierReliability],['Strategic importance',r.strategicImportance],['Strategic risk',r.strategicRisk]].map(([label,f])=>'<div><small>'+esc(label)+' '+badge(f)+'</small><strong>'+esc(field(f))+'</strong></div>').join('')+
+ [['Domestic production',r.domesticProduction],['Domestic consumption',r.domesticConsumption],['Inventory',r.currentInventory],['Import demand',r.importDemand],['Potential export surplus',r.potentialExportableSurplus],['In transit',r.inboundInTransit],['Expected local price',r.expectedLocalPrice],['Route capacity',r.routeCapacity],['Supplier reliability',r.supplierReliability],['Strategic importance',r.strategicImportance],['Strategic risk',r.strategicRisk]].map(([label,f])=>'<div><small>'+esc(label)+' '+badge(f)+'</small><strong>'+esc(field(f))+'</strong>'+evidenceMeta(f)+'</div>').join('')+
  '</div><p class="bt-note">Alternatives: '+(r.alternativeSuppliers&&r.alternativeSuppliers.length?r.alternativeSuppliers.map(x=>esc(x.countryId)+' ('+esc(x.evidenceStatus)+')').join(', '):'Not recorded')+'</p></div>').join('')+'</div>';
 }
 g.OmegaBilateralTradeUI=Object.freeze({version:'1.0.0',render:render});
