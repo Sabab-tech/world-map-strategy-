@@ -20,7 +20,7 @@ World Bank debt service is represented as one Treasury credit against two debit 
 
 ## Journal contract
 
-Each posting records the canonical country, USD currency, simulation turn, fiscal-year period, source Finance transaction ID, source action, correlation/reference ID, accounting basis and provenance. Each line has a stable source-derived line ID, account, debit/credit side, integer minor-unit amount and source transaction reference.
+Each posting records the canonical ISO3 country identity plus the Finance country code, USD currency, simulation turn, fiscal-year period, source Finance transaction ID, source action, correlation/reference ID, accounting basis and provenance. Source amounts must be exactly representable in cents; non-cent amounts are marked `UNAVAILABLE` instead of being rounded into the journal. Each line has a stable source-derived line ID, account, debit/credit side, integer minor-unit amount and source transaction reference.
 
 A posting is exposed as \`sectorJournalV1\` on its existing source Finance ledger row. The Finance API method \`getSectorJournal(country)\` provides a defensive copy of the retained journal evidence. It explicitly reports \`PARTIAL\` / \`complete: false\` because Finance retains a bounded 500-row source ledger and other economic sectors are not yet represented.
 
@@ -47,7 +47,7 @@ Missing inputs and split amounts remain unavailable; the implementation does not
 The Finance runtime test suite adds checks for:
 1. Expense posting, balanced debit/credit lines, same-request idempotency and exclusion of non-cash budget transfers.
 2. Expense reversal, sovereign borrowing, principal repayment and split World Bank debt service.
-3. Partial/bounded journal API behavior and defensive-copy semantics.
+3. Partial/bounded journal API behavior, defensive-copy semantics and non-cent amount rejection.
 
 The offline data-cache test now verifies that \`finance_runtime_rules_v1.json\` is available from the installed shell while offline. Browser E2E and Browser tests are intentionally not part of this slice.
 
