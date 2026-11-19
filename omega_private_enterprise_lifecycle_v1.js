@@ -3404,6 +3404,63 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     return String(value==null?'':value).trim().toLowerCase()
       .replace(/[^a-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'');
   }
+  function buildPrivateFirmFinanceLedgerJournalV1(country,company,entry){
+    entry=entry||{};
+    var cid=canonicalCountry(country),co=id(company),type=String(entry.type||'').toUpperCase(),
+      supported={
+        PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL:'PRIVATE_COMPANY_RECORDED_OPERATING_COST_ACCRUAL',
+        PRIVATE_ENTERPRISE_OPERATING_COST_SETTLEMENT:'PRIVATE_COMPANY_RECORDED_OPERATING_COST_SETTLEMENT',
+        PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX:'PRIVATE_COMPANY_RECORDED_CORPORATE_TAX_PAYMENT'
+      };
+    if(!supported[type])return null;
+    var transactionId=String(entry.transactionId||'').trim(),currency=id(entry.currency),
+      amount=num(entry.amount),debitAccount=String(entry.debitAccount||'').trim(),
+      creditAccount=String(entry.creditAccount||'').trim(),
+      base={schemaVersion:1,status:'UNAVAILABLE',sectorId:'firm',
+        sourceAuthority:'OMEGA_PRIVATE_ENTERPRISE_FINANCE_LEDGER',
+        sourceTransactionId:transactionId||null,sourceTransactionType:type||null,
+        countryId:cid||null,companyId:co||null,currency:currency||null,
+        turn:num(entry.turn)??turn(),provenance:'RECORDED_GAME_RUNTIME'};
+    if(!cid||!co||!transactionId||!currency||amount===null||amount<=0||
+       !debitAccount||!creditAccount||debitAccount===creditAccount){
+      base.reason='FIRM_FINANCE_LEDGER_SOURCE_FIELDS_UNAVAILABLE';
+      return base;
+    }
+    var amountMinor=Math.round(amount*100);
+    if(!Number.isSafeInteger(amountMinor)||amountMinor<=0||Math.abs(amount-amountMinor/100)>1e-7){
+      base.reason='FIRM_FINANCE_LEDGER_AMOUNT_NOT_CENT_EXACT';
+      return base;
+    }
+    var turnValue=num(entry.turn)??turn(),periodTurn=Math.max(0,Math.floor(turnValue)),
+      lines=[
+        {lineId:transactionId+':L1',lineNumber:1,accountId:debitAccount,side:'DEBIT',
+          amountMinor:amountMinor,amount:Number((amountMinor/100).toFixed(2)),currency:currency,
+          countryId:cid,companyId:co,turn:turnValue,sourceTransactionId:transactionId},
+        {lineId:transactionId+':L2',lineNumber:2,accountId:creditAccount,side:'CREDIT',
+          amountMinor:amountMinor,amount:Number((amountMinor/100).toFixed(2)),currency:currency,
+          countryId:cid,companyId:co,turn:turnValue,sourceTransactionId:transactionId}
+      ];
+    var accountingBasis=supported[type],limits=[];
+    if(type==='PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL')
+      limits.push('Accrual recognizes the recorded company cost and payable only; it does not identify a household, employee or supplier payee.');
+    else if(type==='PRIVATE_ENTERPRISE_OPERATING_COST_SETTLEMENT')
+      limits.push('Settlement clears the recorded company payable; no employee, household or external supplier counterparty is inferred.');
+    else
+      limits.push('Company tax payment is linked to the sovereign Treasury account in the source record; this journal does not create a second Treasury receipt.');
+    return Object.assign(base,{
+      status:'POSTED',accountingBasis:accountingBasis,
+      correlationId:String(entry.sourceEventId||entry.sourceEntryId||entry.periodId||transactionId),
+      referenceTransactionId:String(entry.sourceEntryId||'')||null,
+      periodId:'GAME_TURN_'+String(periodTurn),timeBasis:'COMMITTED_GAME_TURN',
+      counterEntryComplete:true,debitTotalMinor:amountMinor,creditTotalMinor:amountMinor,
+      lines:lines,limits:limits
+    });
+  }
+  function postPrivateFirmFinanceLedgerJournalV1(country,company,entry){
+    var journal=buildPrivateFirmFinanceLedgerJournalV1(country,company,entry);
+    if(journal)entry.sectorJournalV1=journal;
+    return journal;
+  }
   function buildPrivateFirmSectorJournalV1(country,company,entry,reversalOf){
     entry=entry||{};
     var cid=canonicalCountry(country),co=id(company),currency=id(entry.currency),
@@ -3796,11 +3853,15 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
       authority:'OMEGA_PRIVATE_ENTERPRISE_OPERATING_COST_V1'};
     r.operatingCostEntries.push(row);if(r.operatingCostEntries.length>4096)r.operatingCostEntries.splice(0,r.operatingCostEntries.length-4096);
     var ledger=financeLedger(cid,true),existing=ledger.find(function(x){return x&&x.transactionId===entryId;});
-    if(!existing)ledger.push({transactionId:entryId,type:'PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL',
-      companyId:company,factoryId:factoryId,sourceEventId:source,category:category,amount:row.amount,currency:row.currency,
-      direction:'EXPENSE_ACCRUAL',debitAccount:'COMPANY_OPERATING_EXPENSE:'+category,
-      creditAccount:'COMPANY_ACCRUED_EXPENSES_PAYABLE:'+company,status:'POSTED',turn:row.turn,
-      authority:'OMEGA_PRIVATE_ENTERPRISE_OPERATING_COST_V1'});
+    if(!existing){
+      var financeRow={transactionId:entryId,type:'PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL',
+        companyId:company,factoryId:factoryId,sourceEventId:source,category:category,amount:row.amount,currency:row.currency,
+        direction:'EXPENSE_ACCRUAL',debitAccount:'COMPANY_OPERATING_EXPENSE:'+category,
+        creditAccount:'COMPANY_ACCRUED_EXPENSES_PAYABLE:'+company,status:'POSTED',turn:row.turn,
+        authority:'OMEGA_PRIVATE_ENTERPRISE_OPERATING_COST_V1'};
+      postPrivateFirmFinanceLedgerJournalV1(cid,company,financeRow);
+      ledger.push(financeRow);
+    }
     if(ledger.length>4096)ledger.splice(0,ledger.length-4096);
     return{status:'POSTED',entry:clone(row)};
   }
@@ -3917,11 +3978,13 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
         return !financePayments.some(function(financeEntry){return financeEntry.transactionId===payment.entryId;});
       });
       missingFinance.forEach(function(payment){
-        ledger.push({transactionId:payment.entryId,type:'PRIVATE_ENTERPRISE_OPERATING_COST_SETTLEMENT',
+        var financeRow={transactionId:payment.entryId,type:'PRIVATE_ENTERPRISE_OPERATING_COST_SETTLEMENT',
           sourceEntryId:sourceId,companyId:co,factoryId:row.factoryId,category:row.category,
           amount:payment.amount,currency:payment.currency||row.currency,direction:'TRANSFER',
           debitAccount:'COMPANY_ACCRUED_EXPENSES_PAYABLE:'+co,creditAccount:'COMPANY_OPERATING_CASH:'+co,
-          status:'POSTED',turn:payment.turn,authority:'OMEGA_PRIVATE_ENTERPRISE_CASH_SETTLEMENT_V1'});
+          status:'POSTED',turn:payment.turn,authority:'OMEGA_PRIVATE_ENTERPRISE_CASH_SETTLEMENT_V1'};
+        postPrivateFirmFinanceLedgerJournalV1(cid,co,financeRow);
+        ledger.push(financeRow);
       });
       var outstanding=Math.max(0,amount-settled);
       if(outstanding<=1e-8){row.settlementStatus='PAID';return;}
@@ -3948,11 +4011,13 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
       account.cashFlowEntries.push(payment);
       account.runtimeNetCashFlow=(num(account.runtimeNetCashFlow)||0)-paymentAmount;
       account.paymentsMade=(num(account.paymentsMade)||0)+paymentAmount;
-      ledger.push({transactionId:settlementId,type:'PRIVATE_ENTERPRISE_OPERATING_COST_SETTLEMENT',
+      var financeRow={transactionId:settlementId,type:'PRIVATE_ENTERPRISE_OPERATING_COST_SETTLEMENT',
         sourceEntryId:sourceId,companyId:co,factoryId:row.factoryId,category:row.category,
         amount:paymentAmount,currency:payment.currency,direction:'TRANSFER',
         debitAccount:'COMPANY_ACCRUED_EXPENSES_PAYABLE:'+co,creditAccount:'COMPANY_OPERATING_CASH:'+co,
-        status:'POSTED',turn:payment.turn,authority:'OMEGA_PRIVATE_ENTERPRISE_CASH_SETTLEMENT_V1'});
+        status:'POSTED',turn:payment.turn,authority:'OMEGA_PRIVATE_ENTERPRISE_CASH_SETTLEMENT_V1'};
+      postPrivateFirmFinanceLedgerJournalV1(cid,co,financeRow);
+      ledger.push(financeRow);
       row.settledAmount=Number((settled+paymentAmount).toFixed(2));
       row.outstandingAmount=Number(Math.max(0,amount-row.settledAmount).toFixed(2));
       row.settlementStatus=row.outstandingAmount<=1e-8?'PAID':'PARTIALLY_PAID';
@@ -4119,6 +4184,65 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
       note:'Only posted company cash-flow events are counted. Construction CAPEX is reported separately. Unsold inventory, depreciation and unrecorded input cost are not invented.'
     };
   }
+  function getCompanySectorJournal(country,company){
+    var cid=canonicalCountry(country||playerCountry()),co=id(company);
+    if(cid!==playerCountry()||COMPANY_IDS.indexOf(co)<0)
+      return{status:'BLOCKED',reason:'PLAYER_COUNTRY_OR_COMPANY_SCOPE_INVALID'};
+    var account=companyFlowAccount(cid,co),cashRows=account&&Array.isArray(account.cashFlowEntries)?account.cashFlowEntries:[],
+      financeRows=financeLedger(cid,false)||[],supportedTypes={
+        PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL:true,
+        PRIVATE_ENTERPRISE_OPERATING_COST_SETTLEMENT:true,
+        PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX:true
+      },firmFinanceRows=financeRows.filter(function(row){
+        return row&&id(row.companyId)===co&&supportedTypes[String(row.type||'').toUpperCase()];
+      }),transactions=[],cashJournalled=0,financeJournalled=0,posted=0,unavailable=0;
+    cashRows.forEach(function(row){
+      if(!row||id(row.companyId)!==co)return;
+      if(obj(row.sectorJournalV1)){
+        cashJournalled++;
+        transactions.push({sourceLedger:'COMPANY_CASH_FLOW',sourceTransactionId:row.entryId||null,
+          journal:clone(row.sectorJournalV1)});
+      }
+    });
+    firmFinanceRows.forEach(function(row){
+      if(obj(row.sectorJournalV1)){
+        financeJournalled++;
+        transactions.push({sourceLedger:'PRIVATE_ENTERPRISE_FINANCE_LEDGER',sourceTransactionId:row.transactionId||null,
+          journal:clone(row.sectorJournalV1)});
+      }
+    });
+    transactions.sort(function(a,b){
+      var at=num(a.journal&&a.journal.turn)||0,bt=num(b.journal&&b.journal.turn)||0;
+      return at-bt||String(a.sourceTransactionId||'').localeCompare(String(b.sourceTransactionId||''));
+    });
+    transactions.forEach(function(item){
+      var status=String(item.journal&&item.journal.status||'').toUpperCase();
+      if(status==='POSTED')posted++;
+      else if(status==='UNAVAILABLE')unavailable++;
+    });
+    return{
+      schemaVersion:1,status:'PARTIAL',complete:false,sectorId:'firm',
+      countryId:cid,companyId:co,sourceAuthority:'MULTI_SOURCE_PRIVATE_ENTERPRISE_JOURNAL',
+      coverage:'RETAINED_COMPANY_CASH_FLOW_AND_PRIVATE_ENTERPRISE_FINANCE_LEDGER_WINDOWS',
+      sourceWindows:{
+        companyCashFlow:{retainedSourceRows:cashRows.filter(function(row){return row&&id(row.companyId)===co;}).length,
+          maximumEntries:2048,droppedEntries:num(account&&account.cashFlowJournalDroppedEntries)||0,
+          journalledEntries:cashJournalled,
+          legacyOrUnjournalledEntries:Math.max(0,cashRows.filter(function(row){return row&&id(row.companyId)===co;}).length-cashJournalled)},
+        privateEnterpriseFinance:{retainedSourceRows:firmFinanceRows.length,maximumEntries:4096,
+          journalledEntries:financeJournalled,legacyOrUnjournalledEntries:Math.max(0,firmFinanceRows.length-financeJournalled)}
+      },
+      journalTransactionCount:transactions.length,postedTransactionCount:posted,
+      unavailableTransactionCount:unavailable,
+      transactions:transactions,
+      limitations:[
+        'The result is partial and limited to retained source-ledger rows; older unjournalled rows are not backfilled.',
+        'Company cash-flow and Finance-ledger entries retain their original currencies and must not be summed across currencies.',
+        'Household wages, transport counterparties, supplier identities, inventory valuation, COGS, profit and value-added are not inferred from aggregate allocations.',
+        'A missing journal or source counterparty remains unavailable; no balancing account is fabricated.'
+      ]
+    };
+  }
   function companyTaxRate(country){
     var econ=countryBucket('economy',country,false)||{},finance=financeBucket(country,false)||{},
       omega=finance.omegaFinance||{},policy=econ.privateEnterpriseFiscalPolicy||econ.fiscalPolicy||omega.privateEnterpriseFiscalPolicy||{};
@@ -4198,11 +4322,13 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     }
     var taxTransactionId='PE-CORPORATE-TAX:'+cid+':'+co+':T'+endTurn;
     if(taxDue>0){
-      financeRows.push({transactionId:taxTransactionId,type:'PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX',
+      var taxLedgerRow={transactionId:taxTransactionId,type:'PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX',
         companyId:co,amount:taxDue,currency:capital.currency||'GAME_CURRENCY_UNITS',
         direction:'TRANSFER',debitAccount:'COMPANY_OPERATING_CASH:'+co,creditAccount:'SOVEREIGN_TREASURY',
         status:'POSTED',turn:endTurn,taxRate:rate,taxableProfit:taxableProfit,
-        authority:'OMEGA_PRIVATE_ENTERPRISE_CASH_BASIS_TAX_V1'});
+        authority:'OMEGA_PRIVATE_ENTERPRISE_CASH_BASIS_TAX_V1'};
+      postPrivateFirmFinanceLedgerJournalV1(cid,co,taxLedgerRow);
+      financeRows.push(taxLedgerRow);
       company.runtimeNetCashFlow=(num(company.runtimeNetCashFlow)||0)-taxDue;
       company.paymentsMade=(num(company.paymentsMade)||0)+taxDue;
       company.taxPaid=(num(company.taxPaid)||0)+taxDue;
@@ -5703,7 +5829,8 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     getCompanyMarketResearchRequests:function(country,companyId){var r=runtime(country||playerCountry(),false),rows=r&&Array.isArray(r.marketResearchRequests)?r.marketResearchRequests:[],target=id(companyId);return clone(rows.filter(function(row){return !target||id(row.companyId)===target;}));},
     createGovernmentInvitation:createGovernmentInvitation,closeGovernmentInvitation:closeGovernmentInvitation,
     previewCompanyExpansion:previewCompanyExpansion,respondToGovernmentCounterOffer:respondToGovernmentCounterOffer,
-    getCompanyFinanceSummary:getCompanyFinanceSummary,closeCompanyFinancialPeriod:closeCompanyFinancialPeriod,
+    getCompanyFinanceSummary:getCompanyFinanceSummary,getCompanySectorJournal:getCompanySectorJournal,
+    closeCompanyFinancialPeriod:closeCompanyFinancialPeriod,
     setCompanyOperatingCostPolicy:setCompanyOperatingCostPolicy,getCompanyOperatingCostPolicy:companyOperatingCostPolicy,
     createJointVenture:createJointVenture,decideJointVenture:decideJointVenture,
     reservePrivateCompanyImport:reservePrivateCompanyImport,cancelPrivateCompanyImport:cancelPrivateCompanyImport,
