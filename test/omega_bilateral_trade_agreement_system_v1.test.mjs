@@ -429,4 +429,35 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   const forceEnded = bilateral.terminateContract('BGD', forceAgreement.agreementId, 'FORCE_MAJEURE', { forceMajeure: true });
   assert.equal(forceEnded.penalty.status, 'WAIVED');
   assert.equal(globalThis.Game.state.finance.BGD.available, beforeForcePenalty);
+
+  const pendingRenewal = globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.proposalId === 'BTP-PARTIAL-RATIFICATION');
+  assert.equal(bilateral.renewContract('BGD', pendingRenewal.agreementId, 24).reason, 'RENEWAL_BLOCKED_BY_PENDING_DELIVERY');
+
+  // A clean mutual renewal supersedes the previous agreement on both country ledgers.
+  const priorAgreementId = 'BTA-RENEWAL-REGRESSION';
+  const previousContract = {
+    agreementId: priorAgreementId, proposalId: 'BTP-RENEWAL-REGRESSION', buyerCountryId: 'BGD', sellerCountryId: 'SAU',
+    partnerCountryId: 'SAU', role: 'BUYER', resourceId: 'crude_oil', quantityPerDelivery: 100,
+    unitPrice: 110, priceModel: 'MARKET_LINKED', marketAdjustmentPct: 10, quantityTolerancePct: 7,
+    currency: 'USD', durationMonths: 12, durationTurns: 365, intervalDays: 30, intervalTurns: 30,
+    terminationPenaltyPct: 4, relationshipPenaltyPoints: 3, startTurn: globalThis.Game.state.simulation.turn - 100,
+    endTurn: globalThis.Game.state.simulation.turn + 265, nextDeliveryTurn: globalThis.Game.state.simulation.turn + 100,
+    plannedDeliveryCount: 12, deliveredQuantity: 100, completedDeliveries: 1, currentRequestId: null,
+    failedDeliveries: 0, deliveries: [], status: 'ACTIVE', renewalStatus: 'DUE'
+  };
+  globalThis.Game.state.trade.BGD.bilateralContracts.push(structuredClone(previousContract));
+  globalThis.Game.state.trade.SAU.bilateralContracts.push({ ...structuredClone(previousContract), partnerCountryId: 'BGD', role: 'SELLER' });
+  const renewalProposal = bilateral.renewContract('BGD', priorAgreementId, 24);
+  assert.equal(renewalProposal.accepted, true, JSON.stringify(renewalProposal));
+  assert.equal(renewalProposal.proposal.previousAgreementId, priorAgreementId);
+  assert.equal(renewalProposal.proposal.priceModel, 'MARKET_LINKED');
+  globalThis.Game.state.simulation.turn += 1;
+  const renewalReview = bilateral.processCountry('SAU');
+  const newRenewedContract = globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.proposalId === renewalProposal.proposal.proposalId);
+  assert.ok(newRenewedContract, JSON.stringify(renewalReview));
+  assert.equal(newRenewedContract.durationMonths, 24);
+  assert.equal(newRenewedContract.priceModel, 'MARKET_LINKED');
+  assert.equal(globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.agreementId === priorAgreementId).status, 'RENEWED');
+  assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === priorAgreementId).status, 'RENEWED');
+  assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === newRenewedContract.agreementId).role, 'SELLER');
 });
