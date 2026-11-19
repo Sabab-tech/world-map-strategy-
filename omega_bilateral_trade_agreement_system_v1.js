@@ -718,9 +718,12 @@
       proposedQuantity = Math.min(proposedQuantity, affordable);
       adjustments.push('QUANTITY_REDUCED_TO_AVAILABLE_FOREIGN_CURRENCY');
     }
-    if (marketPrice !== null && proposedPrice < marketPrice * 0.95) {
+    if (marketPrice !== null && target === seller && proposedPrice < marketPrice * 0.95) {
       proposedPrice = marketPrice;
-      adjustments.push('PRICE_COUNTERED_TO_OBSERVED_SELLER_MARKET_LEVEL');
+      adjustments.push('SELLER_COUNTERED_TO_OBSERVED_MARKET_FLOOR');
+    } else if (marketPrice !== null && target === buyer && proposedPrice > marketPrice * 1.05) {
+      proposedPrice = marketPrice;
+      adjustments.push('BUYER_COUNTERED_TO_OBSERVED_SELLER_MARKET_LEVEL');
     }
     var buyerDemand = getProductDemand(buyer, resourceId);
     var unmet = num(buyerDemand && buyerDemand.unmetDemand);
@@ -731,7 +734,9 @@
     var scoredSettlement = settlementValues(buyer, seller, proposedQuantity, proposedPrice);
     buyerCost = num(scoredSettlement && scoredSettlement.buyerValue);
     var liquidityScore = buyerCost === null ? 0 : clamp(funds / Math.max(buyerCost, 1e-9), 0, 1);
-    var priceScore = marketPrice === null ? 0.5 : clamp(proposedPrice / Math.max(marketPrice, 1e-9), 0, 1);
+    var priceScore = marketPrice === null ? 0.5 : target === buyer
+      ? clamp(marketPrice / Math.max(proposedPrice, 1e-9), 0, 1)
+      : clamp(proposedPrice / Math.max(marketPrice, 1e-9), 0, 1);
     var relationshipScore = rel === null ? 0.5 : rel;
     var partnerContracts = contractList(target).filter(function (row) { return canonical(row.partnerCountryId) === canonical(proposal.requestorCountryId); });
     var historyCompleted = partnerContracts.reduce(function (sum, row) { return sum + (num(row.completedDeliveries) || 0); }, 0);
@@ -754,13 +759,23 @@
       if (Array.isArray(supplierOptions)) {
         var priceOptions = supplierOptions.filter(function (row) { return row && canonical(row.countryId) !== canonical(seller); })
           .map(function (row) {
-            var value = null;
+            var value = null, buyerCost = null;
             try { value = num(globalMarket()?.localPrice?.(row.countryId, resourceId)); } catch (_) {}
-            return { countryId: canonical(row.countryId), available: num(row.available), price: value };
-          }).filter(function (row) { return row.price !== null && row.available !== null && row.available >= proposedQuantity; })
-          .sort(function (a, b) { return a.price - b.price; });
-        alternativeEvidence = { status: 'OBSERVED', betterSupplierCount: priceOptions.filter(function (row) { return row.price < proposedPrice; }).length,
-          competingBuyerCount: 0, bestAlternativePrice: priceOptions.length ? priceOptions[0].price : null, suppliers: priceOptions.slice(0, 5) };
+            if (value !== null) {
+              var converted = settlementValues(buyer, row.countryId, 1, value);
+              buyerCost = num(converted && converted.buyerValue);
+            }
+            return { countryId: canonical(row.countryId), available: num(row.available), price: value,
+              currency: tradeCurrency(row.countryId), buyerCost: buyerCost, buyerCurrency: tradeCurrency(buyer) };
+          }).filter(function (row) { return row.price !== null && row.buyerCost !== null &&
+            row.available !== null && row.available >= proposedQuantity; })
+          .sort(function (a, b) { return a.buyerCost - b.buyerCost; });
+        var proposalBuyerUnitCost = num(settlementValues(buyer, seller, 1, proposedPrice).buyerValue);
+        alternativeEvidence = { status: priceOptions.length ? 'OBSERVED' : 'UNKNOWN',
+          betterSupplierCount: proposalBuyerUnitCost === null ? 0 : priceOptions.filter(function (row) { return row.buyerCost < proposalBuyerUnitCost; }).length,
+          competingBuyerCount: 0, bestAlternativePrice: priceOptions.length ? priceOptions[0].price : null,
+          bestAlternativeBuyerCost: priceOptions.length ? priceOptions[0].buyerCost : null,
+          buyerCostCurrency: tradeCurrency(buyer), suppliers: priceOptions.slice(0, 5) };
       }
     } else {
       var competing = [];
@@ -780,11 +795,16 @@
       alternativeEvidence = { status: competing.length ? 'OBSERVED' : 'UNKNOWN', betterSupplierCount: 0, competingBuyerCount: competing.length,
         bestAlternativePrice: null, bestAlternativeBuyerPrice: alternativeBuyerPrices.length ? Math.max.apply(null, alternativeBuyerPrices) : null, buyers: competing.slice(0, 8) };
     }
-    if (target === buyer && alternativeEvidence.bestAlternativePrice !== null && alternativeEvidence.bestAlternativePrice < proposedPrice * 0.95) {
-      proposedPrice = alternativeEvidence.bestAlternativePrice;
-      adjustments.push('COUNTERED_TO_BETTER_OBSERVED_ALTERNATIVE_SUPPLIER_PRICE');
-      settlement = settlementValues(buyer, seller, proposedQuantity, proposedPrice);
-      buyerCost = num(settlement && settlement.buyerValue);
+    if (target === buyer && alternativeEvidence.bestAlternativeBuyerCost !== null) {
+      var currentBuyerUnitCost = num(settlementValues(buyer, seller, 1, proposedPrice).buyerValue);
+      var sellerUnitFx = num(settlementValues(buyer, seller, 1, 1).buyerValue);
+      if (currentBuyerUnitCost !== null && sellerUnitFx !== null && sellerUnitFx > 0 &&
+          alternativeEvidence.bestAlternativeBuyerCost < currentBuyerUnitCost * 0.95) {
+        proposedPrice = alternativeEvidence.bestAlternativeBuyerCost / sellerUnitFx;
+        adjustments.push('COUNTERED_TO_BETTER_OBSERVED_ALTERNATIVE_SUPPLIER_PRICE');
+        settlement = settlementValues(buyer, seller, proposedQuantity, proposedPrice);
+        buyerCost = num(settlement && settlement.buyerValue);
+      }
     }
     if (target === seller && alternativeEvidence.bestAlternativeBuyerPrice !== null && alternativeEvidence.bestAlternativeBuyerPrice > proposedPrice * 1.15) {
       result.decisionFactors = { exportableSupply: available, buyerAvailableForeignCurrency: funds, buyerSettlementCost: buyerCost,
