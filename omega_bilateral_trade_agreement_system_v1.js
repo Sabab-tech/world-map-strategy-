@@ -301,6 +301,49 @@
     return hash({ products: products, relations: relations, treaties: treaties, finance: finance,
       requests: requests, contracts: contracts, tradePolicy: tradeBucket.policy || tradeBucket.tradePolicy || null });
   }
+  function alternativeMarketReport(player, target, products, importNeeds, exportSurpluses) {
+    var market = globalMarket(), output = { suppliersForImports: [], competingBuyersForExports: [] };
+    if (!market) return { status: 'UNKNOWN', reason: 'GLOBAL_MARKET_RUNTIME_UNAVAILABLE', suppliersForImports: [], competingBuyersForExports: [] };
+    importNeeds.slice(0, 8).forEach(function (need) {
+      var rid = need.resourceId, quantity = num(need.unmetDemand.value) || num(need.demandPerDay.value) || 0, suppliers = [];
+      try { suppliers = typeof market.suppliers === 'function' ? market.suppliers(rid, quantity, target) : []; } catch (_) {}
+      var rows = (Array.isArray(suppliers) ? suppliers : []).filter(function (row) {
+        return row && canonical(row.countryId) !== canonical(player) && canonical(row.countryId) !== canonical(target);
+      }).map(function (row) {
+        var price = null;
+        try { price = typeof market.localPrice === 'function' ? num(market.localPrice(row.countryId, rid)) : null; } catch (_) {}
+        return { countryId: canonical(row.countryId), availableQuantity: num(row.available),
+          expectedUnitPrice: price, currency: tradeCurrency(row.countryId),
+          priceStatus: price === null ? 'UNKNOWN' : row.marketQuote && row.marketQuote.status === 'CLEARED' ? 'KNOWN' : 'ESTIMATED',
+          relationshipObserved: row.relationObserved === true };
+      }).sort(function (a, b) {
+        if (a.expectedUnitPrice === null) return 1;
+        if (b.expectedUnitPrice === null) return -1;
+        return a.expectedUnitPrice - b.expectedUnitPrice;
+      }).slice(0, 5);
+      output.suppliersForImports.push({ resourceId: rid, requestedQuantity: quantity, status: rows.length ? 'OBSERVED' : 'UNKNOWN', alternatives: rows });
+    });
+    var ids = countryIds();
+    exportSurpluses.slice(0, 8).forEach(function (surplus) {
+      var rid = surplus.resourceId, candidates = [];
+      ids.forEach(function (countryId) {
+        if (countryId === canonical(player) || countryId === canonical(target)) return;
+        var demand = getProductDemand(countryId, rid), unmet = num(demand && demand.unmetDemand),
+          daily = num(demand && (demand.consumerDemandPerDay ?? demand.demandPerDay ?? demand.demand));
+        if (unmet !== null && unmet <= 0 && (daily === null || daily <= 0)) return;
+        var pending = requestIdList(countryId).filter(function (row) {
+          return canonical(row.targetCountryId || row.sellerCountryId) === canonical(target) &&
+            token(row.resourceId) === token(rid) && ['SENT','COUNTER_OFFERED','ACCEPTED','SETTLEMENT_PREPARING','PENDING_SETTLEMENT'].indexOf(id(row.status)) >= 0;
+        });
+        candidates.push({ countryId: countryId, observedUnmetDemand: evidence(unmet, unmet === null ? 'UNKNOWN' : 'KNOWN', demand ? 'resource.demandRuntime' : null),
+          demandPerDay: evidence(daily, daily === null ? 'UNKNOWN' : 'KNOWN', demand ? 'resource.demandRuntime' : null),
+          existingRequests: pending.map(function (row) { return { requestId: row.requestId, quantity: num(row.quantity), unitPrice: num(row.unitPrice), status: row.status }; }).slice(0, 4) });
+      });
+      output.competingBuyersForExports.push({ resourceId: rid, status: candidates.length ? 'OBSERVED' : 'UNKNOWN', alternatives: candidates.slice(0, 8) });
+    });
+    return output;
+  }
+
   function buildReport(playerCountry, targetCountry) {
     var player = canonical(playerCountry), target = canonical(targetCountry), catalog = productCatalog();
     if (!player || !target || player === target) return { accepted: false, reason: 'BILATERAL_MARKET_SCOPE_INVALID' };
@@ -317,6 +360,7 @@
       .sort(function (a, b) { return b.unmetDemand.value - a.unmetDemand.value; }).slice(0, 12);
     var surpluses = rows.filter(function (row) { return row.exportableStock.status === 'KNOWN' && row.exportableStock.value > 0; })
       .sort(function (a, b) { return b.exportableStock.value - a.exportableStock.value; }).slice(0, 12);
+    var alternatives = alternativeMarketReport(player, target, rows, needs, surpluses);
     var counts = { known: 0, estimated: 0, unknown: 0 };
     rows.forEach(function (row) {
       [row.stock, row.reserve, row.production, row.demandPerDay, row.unmetDemand, row.expectedPrice].forEach(function (item) {
@@ -346,6 +390,7 @@
       importNeeds: needs,
       exportSurpluses: surpluses,
       products: rows,
+      alternativeMarkets: alternatives,
       productIds: rows.map(function (row) { return row.resourceId; }),
       sourceFingerprint: sourceFingerprint(target, player, rows.map(function (row) { return row.resourceId; }))
     };
@@ -568,10 +613,44 @@
     var strategicScore = demandScore;
     var totalScore = 0.25 * supplyScore + 0.25 * liquidityScore + 0.25 * priceScore +
       0.15 * strategicScore + 0.10 * relationshipScore;
+    var alternativeEvidence = { status: 'UNKNOWN', betterSupplierCount: 0, competingBuyerCount: 0, bestAlternativePrice: null };
+    if (target === buyer) {
+      var supplierOptions = null;
+      try { supplierOptions = globalMarket()?.suppliers?.(resourceId, proposedQuantity, buyer) || null; } catch (_) {}
+      if (Array.isArray(supplierOptions)) {
+        var priceOptions = supplierOptions.filter(function (row) { return row && canonical(row.countryId) !== canonical(seller); })
+          .map(function (row) {
+            var value = null;
+            try { value = num(globalMarket()?.localPrice?.(row.countryId, resourceId)); } catch (_) {}
+            return { countryId: canonical(row.countryId), available: num(row.available), price: value };
+          }).filter(function (row) { return row.price !== null && row.available !== null && row.available >= proposedQuantity; })
+          .sort(function (a, b) { return a.price - b.price; });
+        alternativeEvidence = { status: 'OBSERVED', betterSupplierCount: priceOptions.filter(function (row) { return row.price < proposedPrice; }).length,
+          competingBuyerCount: 0, bestAlternativePrice: priceOptions.length ? priceOptions[0].price : null, suppliers: priceOptions.slice(0, 5) };
+      }
+    } else {
+      var competing = [];
+      countryIds().forEach(function (candidate) {
+        if (candidate === canonical(target) || candidate === canonical(buyer)) return;
+        var demand = getProductDemand(candidate, resourceId), pending = requestIdList(candidate).filter(function (row) {
+          return canonical(row.targetCountryId || row.sellerCountryId) === canonical(seller) && token(row.resourceId) === token(resourceId) &&
+            ['SENT','COUNTER_OFFERED','ACCEPTED','SETTLEMENT_PREPARING','PENDING_SETTLEMENT'].indexOf(id(row.status)) >= 0;
+        });
+        var unmetCandidate = num(demand && demand.unmetDemand);
+        if (pending.length || unmetCandidate !== null && unmetCandidate > 0)
+          competing.push({ countryId: candidate, unmetDemand: unmetCandidate, requests: pending.map(function (row) { return { quantity: num(row.quantity), unitPrice: num(row.unitPrice) }; }) });
+      });
+      alternativeEvidence = { status: competing.length ? 'OBSERVED' : 'UNKNOWN', betterSupplierCount: 0, competingBuyerCount: competing.length,
+        bestAlternativePrice: null, buyers: competing.slice(0, 8) };
+    }
+    if (target === buyer && alternativeEvidence.bestAlternativePrice !== null && alternativeEvidence.bestAlternativePrice < proposedPrice * 0.95) {
+      proposedPrice = alternativeEvidence.bestAlternativePrice;
+      adjustments.push('COUNTERED_TO_BETTER_OBSERVED_ALTERNATIVE_SUPPLIER_PRICE');
+    }
     result.decisionFactors = {
       exportableSupply: available, buyerAvailableForeignCurrency: funds, buyerSettlementCost: buyerCost,
       observedSellerMarketPrice: marketPrice, buyerDemandPerInterval: demandNeed,
-      alternativeMarketEvidence: 'NOT_REQUIRED_FOR_COUNTERPARTY_APPROVAL', relationshipScore: rel,
+      alternativeMarketEvidence: alternativeEvidence, relationshipScore: rel,
       weights: { supply: 0.25, liquidity: 0.25, price: 0.25, buyerDemand: 0.15, relationship: 0.10 },
       score: Number(totalScore.toFixed(4)), scoreBasis: 'DETERMINISTIC_MULTI_FACTOR'
     };
