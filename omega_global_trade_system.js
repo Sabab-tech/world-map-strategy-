@@ -333,6 +333,10 @@
     try{return mesh.dispatchCommand(owner,type,canonical(c),payload,{turn:turn(),commandType:type,correlationId:payload?.requestId||payload?.settlementId||payload?.decisionId||null});}
     catch(e){return{status:'FAILED',reason:String(e?.message||e)};}
   }
+  function commandApplied(result){
+    return !!result&&(result.status==='APPLIED'||result.result?.duplicate===true||result.duplicate===true)&&
+      result.result?.accepted!==false&&result.accepted!==false;
+  }
 
   function sellerReviewDecision(request){
     const buyer=canonical(request.countryId),seller=canonical(request.targetCountryId),resourceId=String(request.resourceId||'').trim();
@@ -1254,10 +1258,58 @@
       emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,reason:'PRIVATE_IMPORT_COMPANY_PAIR_INCOMPLETE'});return;
     }
     const useBank=!privateCompanyPurchase&&!!(bank&&typeof bank.prepareTradeSettlement==='function'&&typeof bank.commitTradeSettlement==='function');
-    const sid=privateCompanyPurchase
+    let sid=privateCompanyPurchase
       ?('SET-PRIVATE-'+c+'-'+s+'-'+String(req.requestId||'').replace(/[^A-Za-z0-9_.:-]/g,'_').slice(0,150))
       :useBank?('SET-'+c+'-'+s+'-'+String(req.requestId||'').replace(/[^A-Za-z0-9_.:-]/g,'_').slice(0,180))
       :'SET-'+turn()+'-'+c+'-'+s+'-'+String(req.requestId);
+
+    // Recover a committed physical transfer even when the previous attempt failed before
+    // request closure. The seller ledger is written only after the buyer stock credit succeeds.
+    const priorSellerRows=countryValue(s,'trade.globalTradeLedger.settlements');
+    const priorSellerSettlement=Array.isArray(priorSellerRows)?priorSellerRows.find(row=>
+      String(row?.requestId||'')===String(req.requestId||'')&&
+      String(row?.status||'').toUpperCase()==='SETTLED'&&
+      canonical(row?.buyerCountryId)===c&&String(row?.resourceId||'')===String(req.resourceId||'')):null;
+    if(priorSellerSettlement){
+      sid=String(priorSellerSettlement.settlementId||sid);
+      const buyerInventoryRows=countryValue(c,'resource.inventoryLedger');
+      const priorBuyerImport=Array.isArray(buyerInventoryRows)?buyerInventoryRows.find(row=>
+        String(row?.settlementId||'')===sid&&String(row?.type||'').toUpperCase()==='INTERNATIONAL_TRADE_IMPORT'):null;
+      const importedQuantity=num(priorBuyerImport?.quantity);
+      if(!priorBuyerImport||importedQuantity===null||Math.abs(importedQuantity-(num(req.quantity)||0))>1e-6){
+        emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,
+          reason:'TRADE_SETTLEMENT_RECOVERY_IMPORT_LEDGER_MISSING',recoverable:true});
+        return;
+      }
+      const buyerValue=num(priorSellerSettlement.buyerValue)??num(priorBuyerImport.totalValue)??0;
+      const sellerValue=num(priorSellerSettlement.totalValue)??((num(req.quantity)||0)*(num(req.unitPrice)||0));
+      const batchTransfers=clone(priorBuyerImport.batchTransfers||[]);
+      const createdBatchIds=clone(priorBuyerImport.createdBatchIds||[]);
+      const closeResult=command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.SETTLED,
+        stage:'SETTLED',settlementId:sid,buyerValue,sellerValue,sellerCountryId:s,
+        buyerCurrency:priorSellerSettlement.buyerCurrency||currencyOf(c),
+        sellerCurrency:priorSellerSettlement.sellerCurrency||currencyOf(s),
+        fx:priorSellerSettlement.fx,recovered:true});
+      g.__OMEGA_SETTLEMENT_TRACE={requestId:req.requestId,settlementId:sid,recoveredFromSellerLedger:true,
+        close:clone(closeResult),sellerSettlement:clone(priorSellerSettlement)};
+      if(!commandApplied(closeResult)){
+        emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,
+          reason:'TRADE_REQUEST_CLOSE_RECOVERY_FAILED',recoverable:true,detail:clone(closeResult)});
+        return;
+      }
+      const sourceBatchIds=[...new Set(batchTransfers.flatMap(x=>[...(x.sourceBatchIds||[]),x.sourceBatchId].filter(Boolean).map(String)))];
+      emit('OMEGA_TRADE_SHIPMENT_CREATED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,
+        resourceId:req.resourceId,quantity:req.quantity,sourceCountryId:s,destinationCountryId:c,
+        transferType:'TRADE',batchTransfers,sourceBatchIds,createdBatchIds,recovered:true});
+      emit('OMEGA_TRADE_SETTLEMENT_COMPLETED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,
+        resourceId:req.resourceId,quantity:req.quantity,totalValue:sellerValue,buyerValue,
+        fx:priorSellerSettlement.fx||null,buyerCurrency:priorSellerSettlement.buyerCurrency||currencyOf(c),
+        sellerCurrency:priorSellerSettlement.sellerCurrency||currencyOf(s),sourceCountryId:s,destinationCountryId:c,
+        transferType:'TRADE',buyerCompanyId:req.buyerCompanyId||null,sellerCompanyId:req.sellerCompanyId||null,
+        privateCompanyPurchase:!!(req.buyerCompanyId&&req.sellerCompanyId),
+        batchTransfers,sourceBatchIds,createdBatchIds,recovered:true});
+      return;
+    }
 
     // Recovery after a prior attempt committed the banking journal but the request-closing
     // event did not finish. Never debit money or inventory a second time.
@@ -1268,9 +1320,28 @@
       const sellerValue=num(priorRow.sellerTotalLocal)??0;
       const batchTransfers=clone(priorRow.batchTransfers||[]);
       const createdBatchIds=clone(priorRow.createdBatchIds||[]);
-      command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.SETTLED,stage:'SETTLED',
-        settlementId:sid,buyerValue,sellerValue,buyerCurrency:priorRow.buyerCurrencyCode||currencyOf(c),
+      const sellerLedgerRecovery=command('trade','OMEGA_TRADE_RECORD_SELLER_SETTLEMENT',s,{
+        settlementId:sid,requestId:req.requestId,buyerCountryId:c,resourceId:req.resourceId,
+        quantity:req.quantity,unitPrice:req.unitPrice,totalValue:sellerValue,buyerValue,
+        fx:priorRow.fx||null,buyerCurrency:priorRow.buyerCurrencyCode||currencyOf(c),
+        sellerCurrency:priorRow.sellerCurrencyCode||currencyOf(s),status:'SETTLED',turn:turn()
+      });
+      g.__OMEGA_SETTLEMENT_TRACE.sellerLedgerRecovery=clone(sellerLedgerRecovery);
+      if(!commandApplied(sellerLedgerRecovery)){
+        emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,
+          reason:'SELLER_SETTLEMENT_LEDGER_RECOVERY_FAILED',recoverable:true,detail:clone(sellerLedgerRecovery)});
+        return;
+      }
+      const closeRecovery=command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.SETTLED,
+        stage:'SETTLED',settlementId:sid,buyerValue,sellerValue,sellerCountryId:s,
+        buyerCurrency:priorRow.buyerCurrencyCode||currencyOf(c),
         sellerCurrency:priorRow.sellerCurrencyCode||currencyOf(s),recovered:true});
+      g.__OMEGA_SETTLEMENT_TRACE.closeRecovery=clone(closeRecovery);
+      if(!commandApplied(closeRecovery)){
+        emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,
+          reason:'TRADE_REQUEST_CLOSE_RECOVERY_FAILED',recoverable:true,detail:clone(closeRecovery)});
+        return;
+      }
       const sourceBatchIds=[...new Set(batchTransfers.flatMap(x=>[...(x.sourceBatchIds||[]),x.sourceBatchId].filter(Boolean).map(String)))];
       emit('OMEGA_TRADE_SHIPMENT_CREATED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,blackMarketDealId:req.blackMarketDealId||null,
         resourceId:req.resourceId,quantity:req.quantity,sourceCountryId:s,destinationCountryId:c,transferType:'TRADE',
@@ -1556,17 +1627,28 @@
       }
     }
 
-    const closeResult=command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{
-      requestId:req.requestId,status:TYPES.SETTLED,stage:'SETTLED',settlementId:sid,
-      buyerValue:check.buyerTotal,sellerValue:check.sellerTotal,
-      buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,fx:check.fx
-    });
-    g.__OMEGA_SETTLEMENT_TRACE.close=clone(closeResult);
-    command('trade','OMEGA_TRADE_RECORD_SELLER_SETTLEMENT',s,{
+    const sellerLedgerResult=command('trade','OMEGA_TRADE_RECORD_SELLER_SETTLEMENT',s,{
       settlementId:sid,requestId:req.requestId,buyerCountryId:c,resourceId:req.resourceId,
       quantity:req.quantity,unitPrice:req.unitPrice,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,
       fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,status:'SETTLED',turn:turn()
     });
+    g.__OMEGA_SETTLEMENT_TRACE.sellerLedger=clone(sellerLedgerResult);
+    if(!commandApplied(sellerLedgerResult)){
+      emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,
+        reason:'SELLER_SETTLEMENT_LEDGER_POST_FAILED',recoverable:true,detail:clone(sellerLedgerResult)});
+      return;
+    }
+    const closeResult=command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{
+      requestId:req.requestId,status:TYPES.SETTLED,stage:'SETTLED',settlementId:sid,
+      buyerValue:check.buyerTotal,sellerValue:check.sellerTotal,sellerCountryId:s,
+      buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,fx:check.fx
+    });
+    g.__OMEGA_SETTLEMENT_TRACE.close=clone(closeResult);
+    if(!commandApplied(closeResult)){
+      emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,
+        reason:'TRADE_REQUEST_CLOSE_FAILED',recoverable:true,detail:clone(closeResult)});
+      return;
+    }
     const reservationId=req.reservationId;
     if(reservationId)command('cabinet','OMEGA_AUTO_RELEASE_RESERVATION',c,{reservationId,correlationId:req.requestId});
     const sourceBatchIds=[...new Set(batchTransfers.flatMap(x=>[...(x.sourceBatchIds||[]),x.sourceBatchId].filter(Boolean).map(String)))];
