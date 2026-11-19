@@ -1364,6 +1364,154 @@ test('factory production scheduler waits for cycle time and posts output only on
   assert.equal(asset.productionHealth.productivityPct, 50);
 });
 
+test('factory input reservations survive save/load and commit inputs and finished goods exactly once', async () => {
+  const { context, api } = makeRuntime();
+  const requiredInputs = {
+    iron_concentrate: 30,
+    coal_concentrate: 10,
+    cement_feed: 5,
+    copper_concentrate: 5
+  };
+  const inputBatchLots = Object.entries(requiredInputs).map(([resourceId, quantity], index) => ({
+    batchId: 'SAVE-LOAD-FACTORY-INPUT-' + (index + 1),
+    resourceId,
+    quantity,
+    remainingQuantity: quantity,
+    unit: 'SIMULATION_TONNE_EQUIVALENT',
+    sourceBatchIds: ['MINE-SOURCE-' + resourceId.toUpperCase()],
+    status: 'AVAILABLE',
+    createdTurn: 1
+  }));
+  const asset = makeSteelAsset({
+    inputInventory: { ...requiredInputs },
+    inputBatchLots
+  });
+  context.Game.state.economy.BGD = {
+    unemploymentCount: 600000, laborForce: 6000000, unemployment_rate: 10,
+    productionAssets: [asset]
+  };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  context.Game.state.resource.BGD = {
+    inventory: {}, batches: [], inventoryLots: {},
+    warehouse: {
+      warehouseId: 'WH-BGD-RAW', countryId: 'BGD',
+      availableByResource: {}, reservedByResource: {}, storedBatchIds: []
+    }
+  };
+
+  const started = api.startFactoryProductionCycle({
+    countryId: 'BGD', factoryId: asset.id, resourceId: 'iron_concentrate', quantity: 50
+  });
+  assert.equal(started.status, 'IN_PROGRESS', JSON.stringify(started));
+  assert.deepEqual(JSON.parse(JSON.stringify(started.inputQuantities)), requiredInputs);
+  assert.equal(started.inputBatchReservations.length, Object.keys(requiredInputs).length);
+  assert.deepEqual(JSON.parse(JSON.stringify(asset.inputInventory)), requiredInputs,
+    'starting production reserves inputs but does not debit stock before the cycle finishes');
+  for (const reservation of started.inputBatchReservations) {
+    const lot = asset.inputBatchLots.find(row => row.batchId === reservation.batchId);
+    assert.ok(lot, 'every persisted reservation must resolve to one input lot');
+    assert.equal(lot.cycleReservationId, started.cycleId);
+    assert.equal(Number(lot.cycleReservedQuantity), Number(reservation.quantity));
+    assert.equal(Number(lot.remainingQuantity), Number(requiredInputs[reservation.resourceId]),
+      'the reservation must not reduce the physical remaining quantity');
+  }
+
+  // Match the game Save/Load boundary: only serializable game state survives a reload.
+  context.Game.state = JSON.parse(JSON.stringify(context.Game.state));
+  const restoredAsset = context.Game.state.economy.BGD.productionAssets[0];
+  const restoredResource = context.Game.state.resource.BGD;
+  const restoredCycle = restoredResource.industrialNetwork.factoryProductionCycles[asset.id];
+  assert.equal(restoredCycle.status, 'IN_PROGRESS');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredCycle.inputQuantities)), requiredInputs);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(restoredCycle.inputBatchReservations.map(row => ({
+      batchId: row.batchId, resourceId: row.resourceId, quantity: row.quantity
+    })))).sort((a, b) => a.resourceId.localeCompare(b.resourceId)),
+    JSON.parse(JSON.stringify(started.inputBatchReservations.map(row => ({
+      batchId: row.batchId, resourceId: row.resourceId, quantity: row.quantity
+    })))).sort((a, b) => a.resourceId.localeCompare(b.resourceId)),
+    'recipe-specific reservations and lot identity must survive serialization'
+  );
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredAsset.inputInventory)), requiredInputs);
+  for (const lot of restoredAsset.inputBatchLots) {
+    assert.equal(lot.cycleReservationId, restoredCycle.cycleId);
+    assert.equal(Number(lot.remainingQuantity), Number(requiredInputs[lot.resourceId]));
+  }
+
+  const repeatedStart = api.startFactoryProductionCycle({
+    countryId: 'BGD', factoryId: restoredAsset.id, resourceId: 'iron_concentrate', quantity: 50
+  });
+  assert.equal(repeatedStart.status, 'IN_PROGRESS');
+  assert.equal(repeatedStart.idempotent, true,
+    're-entering the same active factory after reload must not create a second cycle');
+  assert.equal(repeatedStart.cycleId, restoredCycle.cycleId);
+
+  moveSimulationClock(context, restoredCycle.finishTurn);
+  const completed = await api.processPendingFactoryInputs('BGD');
+  assert.equal(completed.completedCount, 1, JSON.stringify(completed));
+  assert.equal(completed.completed[0].status, 'COMPLETED');
+  const completedCycle = restoredResource.industrialNetwork.factoryProductionCycles[restoredAsset.id];
+  assert.equal(completedCycle.status, 'COMPLETED');
+  assert.ok(completedCycle.transactionId);
+  assert.deepEqual(JSON.parse(JSON.stringify(completedCycle.inputQuantities)), requiredInputs);
+  for (const [resourceId, quantity] of Object.entries(requiredInputs)) {
+    assert.equal(Number(restoredAsset.inputInventory[resourceId]) || 0, 0,
+      resourceId + ': factory aggregate stock must be debited by the recipe quantity exactly once');
+    const lot = restoredAsset.inputBatchLots.find(row => row.resourceId === resourceId);
+    assert.ok(lot, resourceId + ': consumed input lot must remain auditable');
+    assert.equal(Number(lot.remainingQuantity) || 0, 0);
+    assert.equal(lot.status, 'CONSUMED');
+    assert.equal(lot.cycleReservationId, undefined,
+      'successful completion must release the saved cycle reservation');
+  }
+
+  const outputIds = Object.keys(completedCycle.expectedOutputs);
+  assert.ok(outputIds.length > 0);
+  for (const outputId of outputIds) {
+    const expected = Number(completedCycle.expectedOutputs[outputId]);
+    assert.equal(Number(completedCycle.outputQuantities[outputId]), expected,
+      outputId + ': actual finished quantity must equal the saved recipe output');
+    assert.equal(Number(restoredResource.inventory[outputId]), expected,
+      outputId + ': national finished-goods inventory must be credited once');
+    assert.equal(Number(restoredResource.processedWarehouse.availableByResource[outputId]), expected,
+      outputId + ': processed warehouse must receive the exact finished quantity');
+    const outputBatches = restoredResource.batches.filter(row =>
+      row.processId === completedCycle.transactionId && row.resourceId === outputId && row.stage === 'FINISHED');
+    assert.equal(outputBatches.length, 1, outputId + ': exactly one traceable finished batch must be created');
+    assert.equal(Number(restoredResource.inventoryLots[outputBatches[0].batchId].remainingQuantity), expected);
+    const receipts = restoredResource.processedWarehouse.receipts.filter(row =>
+      row.batchId === outputBatches[0].batchId && row.status === 'RECEIVED');
+    assert.equal(receipts.length, 1, outputId + ': each finished batch must have exactly one warehouse receipt');
+  }
+
+  const transactionId = completedCycle.transactionId;
+  assert.equal(restoredResource.inventoryLedger.filter(row =>
+    row.transactionId === transactionId && row.type === 'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED').length, 1);
+  assert.equal(restoredResource.finishedGoodsLedger.filter(row => row.transactionId === transactionId).length, 1);
+  const outputSnapshot = JSON.stringify({
+    inventory: Object.fromEntries(outputIds.map(id => [id, restoredResource.inventory[id]])),
+    warehouse: Object.fromEntries(outputIds.map(id => [id, restoredResource.processedWarehouse.availableByResource[id]])),
+    batches: restoredResource.batches.filter(row => row.processId === transactionId),
+    receipts: restoredResource.processedWarehouse.receipts.filter(row => String(row.batchId || '').startsWith('OUTPUT:' + transactionId))
+  });
+
+  const replay = await api.processPendingFactoryInputs('BGD');
+  assert.equal(replay.completedCount, 0,
+    'replaying the scheduler after reload and completion must not settle the same cycle again');
+  assert.equal(JSON.stringify({
+    inventory: Object.fromEntries(outputIds.map(id => [id, restoredResource.inventory[id]])),
+    warehouse: Object.fromEntries(outputIds.map(id => [id, restoredResource.processedWarehouse.availableByResource[id]])),
+    batches: restoredResource.batches.filter(row => row.processId === transactionId),
+    receipts: restoredResource.processedWarehouse.receipts.filter(row => String(row.batchId || '').startsWith('OUTPUT:' + transactionId))
+  }), outputSnapshot, 'cycle replay must not duplicate input deductions, finished goods or warehouse receipts');
+  assert.equal(restoredResource.inventoryLedger.filter(row =>
+    row.transactionId === transactionId && row.type === 'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED').length, 1);
+  assert.equal(restoredResource.finishedGoodsLedger.filter(row => row.transactionId === transactionId).length, 1);
+});
+
 test('warehouse feeder transfers real tracked stock and schedules proportional partial factory production', async () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset({ inputInventory: {}, inputBatchLots: [] });
