@@ -675,7 +675,7 @@
       if(!account||!Number.isSafeInteger(minor)||minor<=0)return false;
       lines.push({lineId:transactionId+':L'+(lines.length+1),lineNumber:lines.length+1,
         accountId:account,side,amountMinor:minor,amountUsd:Number((minor/100).toFixed(2)),
-        currency,countryCode,turn:finite(row.turn)??currentTurn(),
+        currency,countryId,countryCode,turn:finite(row.turn)??currentTurn(),
         fiscalYearIndex:Math.max(0,Math.floor(finite(row.fiscalYearIndex)||0)),
         sourceTransactionId:transactionId});
       return true;
@@ -1515,7 +1515,7 @@
         journal:clone(row.sectorJournalV1)});
     }
     const contract=rules.sectorJournalV1||{};
-    return {schemaVersion:contract.schemaVersion||1,countryCode:profile.countryCode,sectorId:'government',
+    return {schemaVersion:contract.schemaVersion||1,countryId:profile.iso3||profile.countryCode,countryCode:profile.countryCode,sectorId:'government',
       sourceAuthority:'OMEGA_FINANCE_MINISTRY',currency:contract.currency||'USD',
       status:'PARTIAL',complete:false,coverage:'BOUNDED_FINANCE_LEDGER_WINDOW',
       sourceLedgerWindow:{retainedEntries:ledger.length,maximumEntries:Number(rules.maximumLedgerEntries||500),complete:false},
