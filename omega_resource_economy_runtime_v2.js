@@ -2237,9 +2237,13 @@ function captureStockFlowPeriod(stateTransaction) {
             invalid.push('PRODUCTION_TRANSACTION_IDENTITY_INCOMPLETE:'+String(row.transactionId||'MISSING_ID'));
           var measurementStatus=String(row.lossMeasurementStatus||'').toUpperCase(),
             measuredEvents=Array.isArray(row.lossEvents)?row.lossEvents:[];
-          if(!['MEASURED_EVENTS','MEASURED_ZERO'].includes(measurementStatus)||
-            !row.lossMeasurementAuthority||!row.lossMeasurementBasis)
-            invalid.push('PRODUCTION_LOSS_MEASUREMENT_UNOBSERVED:'+String(row.transactionId||'MISSING_ID'));
+          const measurementAuthority=String(row.lossMeasurementAuthority||''),
+            measurementBasis=String(row.lossMeasurementBasis||''),
+            validMeasurementProvenance=measurementAuthority==='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'&&
+              ((measurementStatus==='MEASURED_EVENTS'&&measurementBasis==='MEASURED_PROCESS_INPUT_RESIDUE')||
+               (measurementStatus==='MEASURED_ZERO'&&measurementBasis==='MEASURED_ZERO_PROCESS_RESIDUE'));
+          if(!validMeasurementProvenance)
+            invalid.push('PRODUCTION_LOSS_MEASUREMENT_UNOBSERVED_OR_UNTRUSTED:'+String(row.transactionId||'MISSING_ID'));
           if((measurementStatus==='MEASURED_EVENTS'&&!measuredEvents.length)||
             (measurementStatus==='MEASURED_ZERO'&&measuredEvents.length))
             invalid.push('PRODUCTION_LOSS_MEASUREMENT_STATUS_MISMATCH:'+String(row.transactionId||'MISSING_ID'));
