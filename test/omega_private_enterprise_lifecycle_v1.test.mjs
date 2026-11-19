@@ -1724,6 +1724,8 @@ test('private factory utility and completed-cycle events accrue auditable operat
     'six accrued costs and the corporate tax source row must each be journalled once');
   assert.equal(sectorJournal.unavailableTransactionCount,0);
   assert.equal(sectorJournal.sourceWindows.privateEnterpriseFinance.journalledEntries,7);
+  assert.equal(sectorJournal.sourceWindows.privateEnterpriseFinance.maximumEntries,500,
+    'the Finance Ministry source ledger retains at most 500 rows');
   assert.equal(sectorJournal.sourceWindows.companyCashFlow.legacyOrUnjournalledEntries,2,
     'legacy cash-flow rows remain visible as unjournalled rather than silently backfilled');
   const defensive=sectorJournal.transactions[0].journal;
