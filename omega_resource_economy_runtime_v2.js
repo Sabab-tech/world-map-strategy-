@@ -49,6 +49,78 @@
     x=num(s&&s.simulationTurn);if(x!==null)return x;
     return 0;
   }
+
+  function stockFlowSnapshot(resource, factoryAssets) {
+    resource = resource && typeof resource === 'object' ? resource : {};
+    const inventory = resource.inventory && typeof resource.inventory === 'object' && !Array.isArray(resource.inventory) ? resource.inventory : null;
+    const units = resource.inventoryUnits && typeof resource.inventoryUnits === 'object' ? resource.inventoryUnits : {};
+    const batches = Array.isArray(resource.batches) ? resource.batches : [];
+    const byIdentity = new Map(); let complete = !!inventory;
+    const normalizeKey = value => tok(value);
+    const unitFor = rid => {
+      const keys=Object.keys(units).filter(key=>normalizeKey(key)===normalizeKey(rid));
+      const observed=keys.map(key=>String(units[key]||'').trim()).filter(Boolean);
+      if(new Set(observed).size===1)return observed[0];
+      const candidates=[...new Set(batches.filter(row=>normalizeKey(row&&(row.resourceId||row.materialIdentity))===normalizeKey(rid))
+        .map(row=>String(row&&row.unit||'').trim()).filter(Boolean))];
+      return candidates.length===1?candidates[0]:null;
+    };
+    const add=(rid,unit,quantity)=>{
+      const name=String(rid||'').trim(),q=num(quantity),u=String(unit||'').trim();
+      if(!name||q===null||q<0){complete=false;return;}
+      if(!u){if(q>1e-9)complete=false;return;}
+      const key=name+'\\u0000'+u,row=byIdentity.get(key)||{resourceId:name,unit:u,quantity:0};
+      row.quantity+=q;byIdentity.set(key,row);
+    };
+    if(inventory){
+      const seen=new Set();
+      for(const key of Object.keys(inventory)){
+        const q=num(inventory[key]),normalized=normalizeKey(key);
+        if(!normalized||q===null||q<0){complete=false;continue;}
+        if(seen.has(normalized))complete=false;seen.add(normalized);add(key,unitFor(key),q);
+      }
+    }
+    for(const asset of Array.isArray(factoryAssets)?factoryAssets:[]){
+      const stock=asset&&asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:{};
+      const lots=Array.isArray(asset&&asset.inputBatchLots)?asset.inputBatchLots:[];
+      for(const rid of Object.keys(stock)){
+        const total=num(stock[rid]);if(total===null||total<0){complete=false;continue;}
+        const active=lots.filter(lot=>normalizeKey(lot&&(lot.resourceId||lot.materialIdentity))===normalizeKey(rid)&&
+          !['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED'].includes(String(lot&&lot.status||'').toUpperCase()));
+        const grouped=new Map();let lotTotal=0,bad=false;
+        for(const lot of active){const q=num(lot&&(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)),unit=String(lot&&lot.unit||'').trim();
+          if(q===null||q<0||!unit){bad=true;continue;}lotTotal+=q;grouped.set(unit,(grouped.get(unit)||0)+q);}
+        if(!bad&&Math.abs(lotTotal-total)<=1e-6){for(const [unit,q] of grouped)add(rid,unit,q);}
+        else if(total>1e-9){complete=false;add(rid,null,total);}
+      }
+    }
+    return{complete,identities:[...byIdentity.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit))};
+  }
+  function captureStockFlowPeriod(stateTransaction) {
+    const t=turn(),periodId='GAME_TURN_'+String(t);
+    const resource={inventory:stateTransaction.get('resource.inventory'),inventoryUnits:stateTransaction.get('resource.inventoryUnits'),
+      batches:stateTransaction.get('resource.batches')};
+    const assets=stateTransaction.get('economy.productionAssets')||[],snapshot=stockFlowSnapshot(resource,assets);
+    const old=stateTransaction.get('resource.stockFlowPeriods'),periods=Array.isArray(old)?old.map(row=>clone(row)):[];
+    if(periods.some(row=>String(row&&row.periodId||'')===periodId))return{status:'ALREADY_CAPTURED',periodId};
+    const previous=periods.length?periods[periods.length-1]:null;
+    if(previous&&Number(previous.turn)<t){
+      if(Number(previous.turn)===t-1){previous.closingStockByIdentity=clone(snapshot.identities);
+        previous.closingCoverageComplete=snapshot.complete;previous.closingCaptured=true;
+        previous.closingCaptureSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';}
+      else{previous.closingCaptured=false;previous.closingCaptureStatus='TURN_GAP_UNOBSERVED';}
+    }
+    const ledger=stateTransaction.get('resource.inventoryLedger');
+    periods.push({schemaVersion:1,periodId,turn:t,periodType:'GAME_TURN',
+      openingStockByIdentity:clone(snapshot.identities),openingCoverageComplete:snapshot.complete,
+      openingCaptured:true,openingCaptureSource:'BEFORE_FIRST_PHYSICAL_STOCK_MUTATION',
+      inventoryLedgerRowsAtOpening:Array.isArray(ledger)?ledger.length:0,
+      lossCoverageStatus:'UNOBSERVED_NO_AUTHORITATIVE_LOSS_LEDGER'});
+    while(periods.length>32)periods.shift();
+    stateTransaction.set('resource.stockFlowPeriods',periods);
+    return{status:'CAPTURED',periodId,openingCoverageComplete:snapshot.complete};
+  }
+
   function registry(){return g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||(g.Omega&&g.Omega.CanonicalIdentity)||null;}
   function canonical(v){
     var raw=v&&typeof v==='object'
@@ -518,6 +590,7 @@
     if(boundaryCheck&&!boundaryCheck.ok)return{accepted:false,reason:boundaryCheck.reason||'CROSS_COUNTRY_RESOURCE_BREACH',countryId:c,detail:clone(boundaryCheck)};
     var bs=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[];
     if(bs.some(function(x){return String(x&&x.batchId)===b.batchId;}))return{accepted:true,duplicate:true,batchId:b.batchId};
+    captureStockFlowPeriod(ctx.stateTransaction);
     bs.push(b);while(bs.length>(num(rules().runtime.maxBatches)||8192))bs.shift();
     var ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
     ledger.push({type:'BATCH_CREATED',batchId:b.batchId,resourceId:rid,quantity:q,stage:stage,turn:turn(),source:b.extractionReference?'EXTRACTION':'RUNTIME'});
@@ -623,6 +696,7 @@
       processedWarehouseNext=Object.assign({},pwhBefore,{availableByResource:processedBook,lastMovementTurn:turn(),lastMovementType:'CONSUME'});
     }
     var networkNext=applyMineWarehouseConsumption(networkBefore,maps,consumedBySiteBatch);
+    captureStockFlowPeriod(ctx.stateTransaction);
     ctx.stateTransaction.set('resource.inventory',inv);
     if(batchesNext)ctx.stateTransaction.set('resource.batches',batchesNext);
     if(lotsNext)ctx.stateTransaction.set('resource.inventoryLots',lotsNext);
@@ -790,6 +864,7 @@
       inputs:clone(consumed),outputs:clone(created),turn:turn()});
     while(working.length>(num(rules().runtime.maxBatches)||8192))working.shift();
     while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
+    captureStockFlowPeriod(ctx.stateTransaction);
     if(warehouse)ctx.stateTransaction.set('resource.warehouse',warehouse);
     if(processedWarehouse)ctx.stateTransaction.set('resource.processedWarehouse',processedWarehouse);
     ctx.stateTransaction.set('resource.inventory',inv);
@@ -813,6 +888,7 @@
       countryId:c,sourceCountryId:c,originCountryId:c,destinationCountryId:c,warehouseId,locationNodeKey,provenance:clone(p.provenance||{source:'OMEGA_RESOURCE_ECONOMY_RUNTIME',simulationTurn:turn()})};
     var boundaryCheck=boundary()?.validateLocalBatch?.(b,c);
     if(boundaryCheck&&!boundaryCheck.ok)return{accepted:false,reason:boundaryCheck.reason||'CROSS_COUNTRY_RESOURCE_BREACH',countryId:c,detail:clone(boundaryCheck)};
+    captureStockFlowPeriod(ctx.stateTransaction);
     bs.push(b);while(bs.length>(num(rules().runtime.maxBatches)||8192))bs.shift();
     var ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))?clone(ctx.stateTransaction.get('resource.inventoryLedger')):[];
     ledger.push({type:'INVENTORY_CREATED',resourceId:rid,quantity:q,stage:stage,turn:turn(),batchId:b.batchId,sourceBatchIds:b.sourceBatchIds});

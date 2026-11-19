@@ -303,8 +303,82 @@
   function ensureTradeBucket(root,c){
     if(!root[c]||typeof root[c]!=='object')root[c]={};
     if(!Array.isArray(root[c].importRequests))root[c].importRequests=[];
+    if(!Array.isArray(root[c].importLedger))root[c].importLedger=[];
+    if(!Array.isArray(root[c].exportLedger))root[c].exportLedger=[];
     if(!root[c].globalTradeLedger||typeof root[c].globalTradeLedger!=='object')root[c].globalTradeLedger={requests:[],decisions:[],settlements:[]};
     return root[c];
+  }
+
+
+  function stockFlowSnapshot(resource, factoryAssets) {
+    resource = resource && typeof resource === 'object' ? resource : {};
+    const inventory = resource.inventory && typeof resource.inventory === 'object' && !Array.isArray(resource.inventory) ? resource.inventory : null;
+    const units = resource.inventoryUnits && typeof resource.inventoryUnits === 'object' ? resource.inventoryUnits : {};
+    const batches = Array.isArray(resource.batches) ? resource.batches : [];
+    const byIdentity = new Map(); let complete = !!inventory;
+    const normalizeKey = value => token(value);
+    const unitFor = rid => {
+      const keys=Object.keys(units).filter(key=>normalizeKey(key)===normalizeKey(rid));
+      const observed=keys.map(key=>String(units[key]||'').trim()).filter(Boolean);
+      if(new Set(observed).size===1)return observed[0];
+      const candidates=[...new Set(batches.filter(row=>normalizeKey(row&&(row.resourceId||row.materialIdentity))===normalizeKey(rid))
+        .map(row=>String(row&&row.unit||'').trim()).filter(Boolean))];
+      return candidates.length===1?candidates[0]:null;
+    };
+    const add=(rid,unit,quantity)=>{
+      const name=String(rid||'').trim(),q=num(quantity),u=String(unit||'').trim();
+      if(!name||q===null||q<0){complete=false;return;}
+      if(!u){if(q>1e-9)complete=false;return;}
+      const key=name+'\\u0000'+u,row=byIdentity.get(key)||{resourceId:name,unit:u,quantity:0};
+      row.quantity+=q;byIdentity.set(key,row);
+    };
+    if(inventory){
+      const seen=new Set();
+      for(const key of Object.keys(inventory)){
+        const q=num(inventory[key]),normalized=normalizeKey(key);
+        if(!normalized||q===null||q<0){complete=false;continue;}
+        if(seen.has(normalized))complete=false;seen.add(normalized);add(key,unitFor(key),q);
+      }
+    }
+    for(const asset of Array.isArray(factoryAssets)?factoryAssets:[]){
+      const stock=asset&&asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:{};
+      const lots=Array.isArray(asset&&asset.inputBatchLots)?asset.inputBatchLots:[];
+      for(const rid of Object.keys(stock)){
+        const total=num(stock[rid]);if(total===null||total<0){complete=false;continue;}
+        const active=lots.filter(lot=>normalizeKey(lot&&(lot.resourceId||lot.materialIdentity))===normalizeKey(rid)&&
+          !['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','IN_TRANSIT','RESERVED','DECOMMISSIONED'].includes(String(lot&&lot.status||'').toUpperCase()));
+        const grouped=new Map();let lotTotal=0,bad=false;
+        for(const lot of active){const q=num(lot&&(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)),unit=String(lot&&lot.unit||'').trim();
+          if(q===null||q<0||!unit){bad=true;continue;}lotTotal+=q;grouped.set(unit,(grouped.get(unit)||0)+q);}
+        if(!bad&&Math.abs(lotTotal-total)<=1e-6){for(const [unit,q] of grouped)add(rid,unit,q);}
+        else if(total>1e-9){complete=false;add(rid,null,total);}
+      }
+    }
+    return{complete,identities:[...byIdentity.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit))};
+  }
+  function captureStockFlowPeriod(stateTransaction) {
+    const t=turn(),periodId='GAME_TURN_'+String(t);
+    const resource={inventory:stateTransaction.get('resource.inventory'),inventoryUnits:stateTransaction.get('resource.inventoryUnits'),
+      batches:stateTransaction.get('resource.batches')};
+    const assets=stateTransaction.get('economy.productionAssets')||[],snapshot=stockFlowSnapshot(resource,assets);
+    const old=stateTransaction.get('resource.stockFlowPeriods'),periods=Array.isArray(old)?old.map(row=>clone(row)):[];
+    if(periods.some(row=>String(row&&row.periodId||'')===periodId))return{status:'ALREADY_CAPTURED',periodId};
+    const previous=periods.length?periods[periods.length-1]:null;
+    if(previous&&Number(previous.turn)<t){
+      if(Number(previous.turn)===t-1){previous.closingStockByIdentity=clone(snapshot.identities);
+        previous.closingCoverageComplete=snapshot.complete;previous.closingCaptured=true;
+        previous.closingCaptureSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';}
+      else{previous.closingCaptured=false;previous.closingCaptureStatus='TURN_GAP_UNOBSERVED';}
+    }
+    const ledger=stateTransaction.get('resource.inventoryLedger');
+    periods.push({schemaVersion:1,periodId,turn:t,periodType:'GAME_TURN',
+      openingStockByIdentity:clone(snapshot.identities),openingCoverageComplete:snapshot.complete,
+      openingCaptured:true,openingCaptureSource:'BEFORE_FIRST_PHYSICAL_STOCK_MUTATION',
+      inventoryLedgerRowsAtOpening:Array.isArray(ledger)?ledger.length:0,
+      lossCoverageStatus:'UNOBSERVED_NO_AUTHORITATIVE_LOSS_LEDGER'});
+    while(periods.length>32)periods.shift();
+    stateTransaction.set('resource.stockFlowPeriods',periods);
+    return{status:'CAPTURED',periodId,openingCoverageComplete:snapshot.complete};
   }
 
   function persistTradeBucket(ctx,bucket){
@@ -313,6 +387,8 @@
       ?bucket.globalTradeLedger:{requests:[],decisions:[],settlements:[]};
     ctx.stateTransaction.set('trade.importRequests',requests);
     ctx.stateTransaction.set('trade.globalTradeLedger',ledger);
+    ctx.stateTransaction.set('trade.importLedger',Array.isArray(bucket?.importLedger)?bucket.importLedger:[]);
+    ctx.stateTransaction.set('trade.exportLedger',Array.isArray(bucket?.exportLedger)?bucket.exportLedger:[]);
     for(const key of ['balance','importValue','exportValue','tradeValue','lastSettlementTurn']){
       if(Object.prototype.hasOwnProperty.call(bucket,key))ctx.stateTransaction.set('trade.'+key,bucket[key]);
     }
@@ -942,6 +1018,7 @@
     const directiveCommit=strategicPolicy?.commitExportDirectiveTx?.(ctx,{settlementId:settlementId,resourceId:rid,
       quantity:q,destinationCountryId:buyer,governmentContractId:auth.governmentContractId,batchTransfers});
     if(directiveCommit&&directiveCommit.accepted===false)return{accepted:false,reason:directiveCommit.reason||'STATE_SUPPLY_DIRECTIVE_COMMIT_FAILED',stateSupplyDirective:directiveCommit};
+    captureStockFlowPeriod(ctx.stateTransaction);
     const next=clone(inv);
     const inventoryMirrorAdjustment=Math.max(0,stock-inventoryStock);
     next[k]=Math.max(0,(num(next[k])||0)+inventoryMirrorAdjustment-q);
@@ -989,6 +1066,7 @@
       batchTransfers:clone(priorImport.batchTransfers||[]),createdBatchIds:clone(priorImport.createdBatchIds||[])};
     if(!inv||typeof inv!=='object')return{accepted:false,reason:'RESOURCE_INVENTORY_NOT_OBSERVED'};
     const k=Object.prototype.hasOwnProperty.call(inv,rid)?rid:(Object.keys(inv).find(x=>token(x)===token(rid))||rid);
+    captureStockFlowPeriod(ctx.stateTransaction);
     const next=clone(inv),current=num(next[k])??0,transfers=Array.isArray(auth.batchTransfers)?clone(auth.batchTransfers):[];
     const transferTotal=transfers.reduce((sum,x)=>sum+Math.max(0,num(x?.quantity)||0),0);
     if(transfers.length&&Math.abs(transferTotal-q)>1e-6)return{accepted:false,reason:'TRADE_BATCH_TRANSFER_QUANTITY_MISMATCH',requested:q,transferred:transferTotal};
@@ -1044,7 +1122,8 @@
       credited+=quantity;
       acceptedTransfers.push({sourceBatchId:transfer.sourceBatchId||null,sourceBatchIds:roots,creditedBatchId:batchId,quantity,resourceId:rid,
         sourceCountryId:seller,destinationCountryId:buyer,ownerCompanyId:privateCompanyTrade?buyerCompanyId:null,
-        sellerCompanyId:sellerCompanyId||transfer.ownerCompanyId||null,sourceFactoryId:transfer.sourceFactoryId||null,status:'CREDITED'});
+        sellerCompanyId:sellerCompanyId||transfer.ownerCompanyId||null,sourceFactoryId:transfer.sourceFactoryId||null,
+        unit:transfer.unit||null,status:'CREDITED'});
     }
     if(Math.abs(credited-q)>1e-6)return{accepted:false,reason:'TRADE_IMPORT_CREDIT_QUANTITY_MISMATCH',requested:q,credited};
     next[k]=current+credited;
@@ -1075,7 +1154,10 @@
     }
     req.status=nextStatus;req.stage=p.stage||'SETTLED';req.settlementId=settlementId||null;req.settledTurn=nextStatus===TYPES.SETTLED?turn():null;
     bucket.importRequests[idx]=req;
-    bucket.globalTradeLedger.settlements=[...(bucket.globalTradeLedger.settlements||[]),{settlementId,requestId:p.requestId,status:req.status,turn:turn(),quantity:req.quantity,unitPrice:req.unitPrice,supplier:req.targetCountryId}].slice(-MAX_HISTORY);
+    bucket.globalTradeLedger.settlements=[...(bucket.globalTradeLedger.settlements||[]),{settlementId,requestId:p.requestId,status:req.status,turn:turn(),periodId:'GAME_TURN_'+turn(),
+      quantity:req.quantity,resourceId:req.resourceId,buyerCountryId:c,sellerCountryId:req.targetCountryId,supplier:req.targetCountryId,
+      buyerValue:num(p.buyerValue)??num(req.totalValue)??((num(req.quantity)||0)*(num(req.unitPrice)||0)),
+      sellerValue:num(p.sellerValue),buyerCurrency:p.buyerCurrency||null,sellerCurrency:p.sellerCurrency||null,fx:num(p.fx)}].slice(-MAX_HISTORY);
     if(nextStatus===TYPES.SETTLED&&!wasSettled){
       const buyerValue=num(p.buyerValue)??num(req.totalValue)??((num(req.quantity)||0)*(num(req.unitPrice)||0));
       if(buyerValue===null||buyerValue<0)return{accepted:false,reason:'BUYER_TRADE_VALUE_INVALID'};
@@ -1084,7 +1166,10 @@
       bucket.lastSettlementTurn=turn();
       const imports=Array.isArray(bucket.importLedger)?bucket.importLedger:[];
       bucket.importLedger=imports.concat([{settlementId,requestId:req.requestId,resourceId:req.resourceId,
-        quantity:num(req.quantity)||0,totalValue:buyerValue,currency:p.buyerCurrency||null,sourceCountryId:req.targetCountryId,turn:turn()}]).slice(-MAX_HISTORY);
+        quantity:num(req.quantity)||0,totalValue:buyerValue,buyerValue,sellerValue:num(p.sellerValue),
+        currency:p.buyerCurrency||null,buyerCurrency:p.buyerCurrency||null,sellerCurrency:p.sellerCurrency||null,fx:num(p.fx),
+        sourceCountryId:req.targetCountryId,sellerCountryId:req.targetCountryId,buyerCountryId:c,counterpartyCountryId:req.targetCountryId,
+        status:'SETTLED',turn:turn(),periodId:'GAME_TURN_'+turn()}]).slice(-MAX_HISTORY);
     }
     persistTradeBucket(ctx,bucket);
     return{accepted:true,request:req,balance:bucket.balance,importValue:bucket.importValue};
@@ -1106,9 +1191,13 @@
       bucket.lastSettlementTurn=turn();
       const exports=Array.isArray(bucket.exportLedger)?bucket.exportLedger:[];
       bucket.exportLedger=exports.concat([{settlementId:sid,requestId:p.requestId,resourceId:p.resourceId,
-        quantity:num(p.quantity)||0,totalValue:gross,currency:p.sellerCurrency||null,buyerCountryId:p.buyerCountryId||null,turn:turn()}]).slice(-MAX_HISTORY);
+        quantity:num(p.quantity)||0,totalValue:gross,sellerValue:gross,buyerValue:num(p.buyerValue),
+        currency:p.sellerCurrency||null,sellerCurrency:p.sellerCurrency||null,buyerCurrency:p.buyerCurrency||null,fx:num(p.fx),
+        sellerCountryId:canonical(ctx.countryId),buyerCountryId:p.buyerCountryId||null,counterpartyCountryId:p.buyerCountryId||null,
+        status:'SETTLED',turn:turn(),periodId:'GAME_TURN_'+turn()}]).slice(-MAX_HISTORY);
     }
-    bucket.globalTradeLedger.settlements=[...(bucket.globalTradeLedger.settlements||[]),{...clone(p),ledgerType:'SELLER_SETTLEMENT'}].slice(-MAX_HISTORY);
+    bucket.globalTradeLedger.settlements=[...(bucket.globalTradeLedger.settlements||[]),{...clone(p),sellerCountryId:canonical(ctx.countryId),
+      periodId:'GAME_TURN_'+turn(),ledgerType:'SELLER_SETTLEMENT'}].slice(-MAX_HISTORY);
     persistTradeBucket(ctx,bucket);
     return{accepted:true,settlementId:sid,balance:bucket.balance,exportValue:bucket.exportValue};
   }
