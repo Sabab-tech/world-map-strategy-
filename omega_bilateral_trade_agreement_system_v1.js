@@ -1041,6 +1041,11 @@
     var contract = rows.find(function (row) { return String(row.agreementId) === String(agreementId); });
     if (!contract) return { accepted: false, reason: 'BILATERAL_CONTRACT_NOT_FOUND' };
     var direction = id(contract.role) === 'BUYER' ? 'IMPORT' : 'EXPORT';
+    var report = currentReport(c, partner, true);
+    if (report.status !== 'CURRENT') {
+      var synced = syncMarket(c, partner);
+      if (!synced || synced.accepted !== true) return { accepted: false, reason: 'RENEWAL_MARKET_SYNC_FAILED', detail: synced };
+    }
     return createProposal(c, {
       targetCountryId: contract.partnerCountryId, direction: direction, resourceId: contract.resourceId,
       quantityPerDelivery: contract.quantityPerDelivery, unitPrice: contract.unitPrice,
@@ -1130,8 +1135,11 @@
       if (value === null) return;
       if (canonical(row.sellerCountryId) === c) exports += value;
       else if (canonical(row.buyerCountryId) === c) imports += value;
-      var year = Math.floor((num(row.turn) || 0) * turnDays() / 365) + 1;
-      if (!years[year]) years[year] = { year: year, exports: 0, imports: 0, currency: tradeCurrency(c) };
+      var settledTurn = num(row.turn) === null ? turn() : num(row.turn);
+      var currentDate = simulationDate();
+      var settlementDate = currentDate ? new Date(currentDate.getTime() - Math.max(0, turn() - settledTurn) * 86400000) : null;
+      var year = settlementDate && Number.isFinite(settlementDate.getTime()) ? settlementDate.getUTCFullYear() : Math.floor(settledTurn / 365) + 1;
+      if (!years[year]) years[year] = { year: year, exports: 0, imports: 0, balance: 0, currency: tradeCurrency(c), yearBasis: settlementDate ? 'SIMULATION_CALENDAR_YEAR' : '365_DAY_SIMULATION_YEAR_FALLBACK' };
       if (canonical(row.sellerCountryId) === c) years[year].exports += value;
       else years[year].imports += value;
       rows.push({ settlementId: row.settlementId, requestId: row.requestId || null, resourceId: row.resourceId,
