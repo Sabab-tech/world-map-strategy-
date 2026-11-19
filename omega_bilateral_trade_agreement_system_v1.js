@@ -472,9 +472,8 @@
     }).reduce(function (sum, row) { return sum + Math.max(0, num(row.quantityPerDelivery) || 0); }, 0);
   }
   function marketPriceFor(sellerCountry, resourceId) {
-    var market = globalMarket();
-    try { return market && typeof market.localPrice === 'function' ? num(market.localPrice(sellerCountry, resourceId)) : null; }
-    catch (_) { return null; }
+    var product = readProduct(sellerCountry, { id: resourceId });
+    return product.expectedPrice && product.expectedPrice.status === 'KNOWN' ? num(product.expectedPrice.value) : null;
   }
   function settlementValues(buyer, seller, quantity, unitPrice) {
     var trade = globalTrade();
@@ -652,7 +651,9 @@
     var demandNeed = unmet !== null && unmet > 0 ? unmet : daily !== null ? daily * (num(proposal.intervalDays) || 30) : null;
     var demandScore = demandNeed === null ? 0.5 : clamp(demandNeed / Math.max(quantity, 1e-9), 0, 1);
     var supplyScore = clamp(available / Math.max(quantity, 1e-9), 0, 1);
-    var liquidityScore = clamp(funds / Math.max(buyerCost, 1e-9), 0, 1);
+    var scoredSettlement = settlementValues(buyer, seller, proposedQuantity, proposedPrice);
+    buyerCost = num(scoredSettlement && scoredSettlement.buyerValue);
+    var liquidityScore = buyerCost === null ? 0 : clamp(funds / Math.max(buyerCost, 1e-9), 0, 1);
     var priceScore = marketPrice === null ? 0.5 : clamp(proposal.unitPrice / Math.max(marketPrice, 1e-9), 0, 1);
     var relationshipScore = rel === null ? 0.5 : rel;
     var partnerContracts = contractList(target).filter(function (row) { return canonical(row.partnerCountryId) === canonical(proposal.requestorCountryId); });
@@ -1175,8 +1176,8 @@
     });
     var exports = 0, imports = 0, rows = [], years = {};
     unique.forEach(function (row) {
-      var value = canonical(row.sellerCountryId) === c ? num(row.sellerValue ?? row.totalValue) :
-        canonical(row.buyerCountryId) === c ? num(row.buyerValue ?? row.totalValue) : null;
+      var value = canonical(row.sellerCountryId) === c ? num(row.sellerValue) :
+        canonical(row.buyerCountryId) === c ? num(row.buyerValue) : null;
       if (value === null) return;
       if (canonical(row.sellerCountryId) === c) exports += value;
       else if (canonical(row.buyerCountryId) === c) imports += value;
