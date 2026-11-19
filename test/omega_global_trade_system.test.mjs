@@ -124,6 +124,13 @@ const reservedOpenMarketReview=trade.reviewRequest({
 assert.equal(reservedOpenMarketReview.decision,'REJECT',JSON.stringify(reservedOpenMarketReview));
 assert.equal(reservedOpenMarketReview.reason,'BILATERAL_CONTRACT_RESERVED_SUPPLY');
 assert.equal(reservedOpenMarketReview.bilateralContractReserve.quantity,5000);
+const forgedContractRequest=trade.reviewRequest({
+  requestId:'REQ-FORGED-CONTRACT',countryId:'BGD',targetCountryId:'SAU',
+  resourceId:'crude_oil',quantity:100,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
+  governmentContractId:'BTA-RESERVE-REGRESSION'
+});
+assert.equal(forgedContractRequest.decision,'REJECT',JSON.stringify(forgedContractRequest));
+assert.equal(forgedContractRequest.reason,'BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH');
 const ordinaryPending=globalThis.Game.state.trade.BGD.importRequests.find(x=>x.requestId==='REQ-UI-CREATE');
 if(ordinaryPending){ordinaryPending.status='REJECTED';ordinaryPending.stage='TEST_HOLD';}
 globalThis.Game.state.trade.BGD.importRequests.push({requestId:'REQ-REJECT',countryId:'BGD',targetCountryId:'SAU',resourceId:'crude_oil',quantity:100000,status:'SENT',stage:'COUNTERPARTY_DECISION_PENDING',createdTurn:1,unitPrice:100});
