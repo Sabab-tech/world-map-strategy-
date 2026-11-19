@@ -988,7 +988,7 @@
       fb.spending=Math.max(0,(finite(fb.spending)||0)-refund);
       if(['purchase','investment'].includes(String(original.category||'')))fb.capitalExpenditure=Math.max(0,(finite(fb.capitalExpenditure)||0)-refund);
       else fb.operatingExpenditure=Math.max(0,(finite(fb.operatingExpenditure)||0)-refund);
-      const reversal=postLedger(fm,p,{department:'interior',action:'EXPENSE_ROLLBACK',category:original.category,
+      const reversal=postLedger(fm,p,{department:originalDepartment,action:'EXPENSE_ROLLBACK',category:original.category,
         amountUsd:-refund,description:'OMEGA_HOME_BUDGET_ROLLBACK:'+transactionId,referenceTransactionId:transactionId});
       fm.revision+=1;
       result={ok:true,code:'HOME_EXPENSE_ROLLED_BACK',transactionId:reversal.transactionId,reversedTransactionId:transactionId,
