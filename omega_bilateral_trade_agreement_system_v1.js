@@ -773,7 +773,7 @@
     var index = rows.findIndex(function (row) { return String(row.proposalId) === String(p.proposalId); });
     if (index < 0) return { accepted: false, reason: 'BILATERAL_INBOX_PROPOSAL_NOT_FOUND' };
     rows[index].review = clone(p.review || {});
-    rows[index].inboxStatus = String(p.review && p.review.decision || 'WAITING_DATA');
+    rows[index].inboxStatus = String(p.inboxStatus || (p.review && p.review.decision === 'WAITING_DATA' ? 'PENDING' : p.review && p.review.decision) || 'PENDING');
     rows[index].lastReviewedTurn = turn();
     ctx.stateTransaction.set('trade.bilateralProposalInbox', rows);
     return { accepted: true, proposalId: p.proposalId };
@@ -851,7 +851,7 @@
         !num(terms.quantityPerDelivery) || num(terms.quantityPerDelivery) <= 0 ||
         !num(terms.unitPrice) || num(terms.unitPrice) <= 0 || intervalDays === null || intervalDays <= 0)
       return { accepted: false, reason: 'BILATERAL_CONTRACT_TERMS_INVALID' };
-    var agreementId = 'BTA-' + seller + '-' + buyer + '-' + turn() + '-' + hash([proposal.proposalId, terms.resourceId]);
+    var agreementId = 'BTA-' + seller + '-' + buyer + '-' + (num(proposal.createdTurn) ?? turn()) + '-' + hash([proposal.proposalId, terms.resourceId]);
     var durationTurns = monthsToTurns(durationMonths), intervalTurns = intervalToTurns(intervalDays);
     var deliveries = Math.max(1, Math.floor(durationTurns / intervalTurns));
     var contract = {
@@ -980,12 +980,16 @@
   }
   function processInbox(country) {
     var c = canonical(country), rows = recordArray(bucket(c, 'trade'), 'bilateralProposalInbox');
-    var pending = rows.filter(function (row) { return id(row.inboxStatus) === 'PENDING' && num(row.createdTurn) !== null && num(row.createdTurn) < turn(); })
+    var pending = rows.filter(function (row) { return ['PENDING', 'WAITING_DATA', 'ACCEPT_PENDING_RATIFICATION'].includes(id(row.inboxStatus)) && num(row.createdTurn) !== null && num(row.createdTurn) < turn(); })
       .slice(0, MAX_REVIEWS_PER_COUNTRY_TURN);
     var results = [];
     pending.forEach(function (proposal) {
-      var review = evaluateProposal(c, proposal);
-      var recorded = unwrap(dispatch('trade', 'OMEGA_BILATERAL_RECORD_REVIEW', c, { proposalId: proposal.proposalId, review: review }));
+      var recovering = id(proposal.inboxStatus) === 'ACCEPT_PENDING_RATIFICATION' && proposal.review && proposal.review.decision === 'ACCEPT';
+      var review = recovering ? clone(proposal.review) : evaluateProposal(c, proposal);
+      var inboxStatus = review.decision === 'WAITING_DATA' ? 'PENDING' : recovering ? 'ACCEPT_PENDING_RATIFICATION' : review.decision;
+      var recorded = unwrap(dispatch('trade', 'OMEGA_BILATERAL_RECORD_REVIEW', c, {
+        proposalId: proposal.proposalId, review: review, inboxStatus: inboxStatus
+      }));
       if (!recorded || recorded.accepted !== true) {
         results.push({ proposalId: proposal.proposalId, status: 'FAILED', reason: recorded && recorded.reason || 'COUNTERPARTY_REVIEW_WRITE_FAILED' });
         return;
@@ -994,11 +998,17 @@
         proposalId: proposal.proposalId, review: review
       }));
       if (!applied || applied.accepted !== true) {
+        if (review.decision === 'ACCEPT') dispatch('trade', 'OMEGA_BILATERAL_RECORD_REVIEW', c, {
+          proposalId: proposal.proposalId, review: review, inboxStatus: 'ACCEPT_PENDING_RATIFICATION'
+        });
         results.push({ proposalId: proposal.proposalId, status: 'FAILED', reason: applied && applied.reason || 'PROPOSER_RESPONSE_WRITE_FAILED' });
         return;
       }
       if (review.decision === 'ACCEPT') {
         var activated = activateContract(proposal, review.terms);
+        if (!activated.accepted) dispatch('trade', 'OMEGA_BILATERAL_RECORD_REVIEW', c, {
+          proposalId: proposal.proposalId, review: review, inboxStatus: 'ACCEPT_PENDING_RATIFICATION'
+        });
         results.push({ proposalId: proposal.proposalId, status: activated.status || 'ACCEPTED', activation: activated });
       } else results.push({ proposalId: proposal.proposalId, status: review.decision, reason: review.reason, terms: review.terms || null });
     });
