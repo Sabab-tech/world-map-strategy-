@@ -19,6 +19,7 @@
   function obj(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
   function clone(v){if(v===null||typeof v!=='object')return v;if(Array.isArray(v))return v.map(clone);var o={};Object.keys(v).forEach(function(k){if(k!=='__proto__'&&k!=='constructor')o[k]=clone(v[k]);});return o;}
   function num(v){if(v===null||v===undefined||v==='')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
+  function isCentExactAmount(value){var amount=num(value);if(amount===null)return false;var minor=Math.round(amount*100);return Number.isSafeInteger(minor)&&minor>=0&&Math.abs(amount-minor/100)<=1e-7;}
   function id(v){return String(v==null?'':v).trim().toUpperCase();}
   function token(v){return String(v==null?'':v).trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
   function state(){
