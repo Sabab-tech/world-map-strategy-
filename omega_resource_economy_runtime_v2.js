@@ -844,10 +844,15 @@ function captureStockFlowPeriod(stateTransaction) {
         lossMeasurementBasis:lossMeasurementBasis};
     if(submittedLossEvents.length&&lossMeasurementStatus!=='MEASURED_EVENTS')
       return{accepted:false,reason:'PRODUCTION_LOSS_EVENTS_REQUIRE_MEASURED_STATUS'};
-    var inputQuantityByResource={};
+    var inputQuantityByResource={},inputUnitsByResource={};
     inputs.forEach(function(input){
       var inputId=String(input&&input.resourceId||'').trim(),inputQuantity=num(input&&input.quantity);
-      if(inputId&&inputQuantity!==null&&inputQuantity>0)inputQuantityByResource[tok(inputId)]=(inputQuantityByResource[tok(inputId)]||0)+inputQuantity;
+      if(inputId&&inputQuantity!==null&&inputQuantity>0){
+        var resourceToken=tok(inputId);
+        inputQuantityByResource[resourceToken]=(inputQuantityByResource[resourceToken]||0)+inputQuantity;
+        if(!inputUnitsByResource[resourceToken])inputUnitsByResource[resourceToken]=new Set();
+        inputUnitsByResource[resourceToken].add(String(input&&input.unit||'').trim().toUpperCase());
+      }
     });
     var normalizedProductionLosses=[],productionLossTotals={},productionLossIds=new Set(),
       priorProductionLosses=Array.isArray(ctx.stateTransaction.get('resource.stockLossLedger'))?ctx.stateTransaction.get('resource.stockLossLedger'):[];
@@ -860,6 +865,10 @@ function captureStockFlowPeriod(stateTransaction) {
         (submittedLoss.lossType&&String(submittedLoss.lossType).toUpperCase()!=='PRODUCTION')||productionLossIds.has(lossEventId))
         return{accepted:false,reason:'PRODUCTION_LOSS_EVENT_FIELDS_INVALID',index:lossIndex};
       if(!inputQuantityByResource[tok(lossResource)])return{accepted:false,reason:'PRODUCTION_LOSS_RESOURCE_NOT_IN_INPUTS',eventId:lossEventId,resourceId:lossResource};
+      var sourceUnits=inputUnitsByResource[tok(lossResource)];
+      if(!sourceUnits||sourceUnits.size!==1||sourceUnits.has('')||!sourceUnits.has(lossUnit.toUpperCase()))
+        return{accepted:false,reason:'PRODUCTION_LOSS_UNIT_MISMATCH',eventId:lossEventId,resourceId:lossResource,
+          lossUnit:lossUnit,inputUnits:sourceUnits?Array.from(sourceUnits):[]};
       if(priorProductionLosses.some(function(row){return String(row&&row.eventId||'')===lossEventId;}))
         return{accepted:false,reason:'PRODUCTION_LOSS_EVENT_ID_ALREADY_COMMITTED',eventId:lossEventId};
       productionLossIds.add(lossEventId);
@@ -1033,14 +1042,19 @@ function captureStockFlowPeriod(stateTransaction) {
       });
       while(lossRows.length>(num(rules().runtime.maxLedgerEntries)||2048))lossRows.shift();
       ctx.stateTransaction.set('resource.stockLossLedger',lossRows);
-      var periods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))?ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[],
-        period=periods.find(function(row){return String(row&&row.periodId||'')==='GAME_TURN_'+turn();});
-      if(period){
-        period.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
-        period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
-        if(period.lossCoverageBySource.PRODUCTION)period.lossCoverageBySource.PRODUCTION=Object.assign({},period.lossCoverageBySource.PRODUCTION,{status:'INVALIDATED_BY_NEW_LOSS_EVENT'});
-        ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
-      }
+    }
+    // Every committed production transaction changes the evidence population. A prior
+    // attestation cannot remain COMPLETE after a later measured or unmeasured run.
+    var productionPeriods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))
+        ?ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[],
+      productionPeriod=productionPeriods.find(function(row){return String(row&&row.periodId||'')==='GAME_TURN_'+turn();});
+    if(productionPeriod){
+      productionPeriod.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+      productionPeriod.lossCoverageBySource=Object.assign({},productionPeriod.lossCoverageBySource||{});
+      if(productionPeriod.lossCoverageBySource.PRODUCTION)
+        productionPeriod.lossCoverageBySource.PRODUCTION=Object.assign({},productionPeriod.lossCoverageBySource.PRODUCTION,
+          {status:'INVALIDATED_BY_NEW_PRODUCTION_EVENT'});
+      ctx.stateTransaction.set('resource.stockFlowPeriods',productionPeriods);
     }
     if(siteFlowChanged)ctx.stateTransaction.set('resource.industrialNetwork',network);
     emit('OMEGA_RESOURCE_INVENTORY_CHANGED',ctx.countryId,{transactionId:tx,type:'PRODUCTION_TRANSACTION_COMMITTED'},'resource');
@@ -2228,8 +2242,10 @@ function captureStockFlowPeriod(stateTransaction) {
       if(!Array.isArray(inventory))invalid.push('PRODUCTION_LEDGER_UNAVAILABLE');
       else{
         if(movements.length>=ledgerLimit)invalid.push('INVENTORY_LEDGER_WINDOW_TRUNCATED');
+        var productionTypes=new Set(['PRODUCTION_TRANSACTION_COMMITTED','FACTORY_PROCESSING_COMMITTED',
+          'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED']);
         var productionRows=movements.filter(function(row){
-          return String(row&&row.type||'').toUpperCase()==='PRODUCTION_TRANSACTION_COMMITTED'&&currentTurn(row);
+          return productionTypes.has(String(row&&row.type||'').toUpperCase())&&currentTurn(row);
         });
         observedRows=productionRows.length;
         productionRows.forEach(function(row){
