@@ -8,8 +8,8 @@
 
 The National Accounts country checkpoint now reads:
 - the same bounded Finance source window already used for Finance evidence (maximum 500 rows);
-- at most five existing company accounts from the selected country's `economy.companyAccounts`;
-- the latest 256 retained company cash-flow rows per account.
+- at most five company IDs from the existing `Omega.PrivateEnterpriseLifecycleV1.companyIds` canonical registry, resolved directly against the selected country's `economy.companyAccounts` (unknown company keys are ignored; missing canonical accounts remain visible as partial coverage);
+- the latest 256 retained company cash-flow rows per resolved account.
 
 For journalled source rows it checks transaction identity, country/company scope, source authority, currency identity, balanced integer-minor-unit debit/credit totals, line identity and line currency. It reports posted, explicitly unavailable, unjournalled, duplicate and invalid entries separately.
 
