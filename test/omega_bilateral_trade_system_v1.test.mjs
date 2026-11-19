@@ -21,7 +21,7 @@ globalThis.Game = { state: {
     }
   },
   finance: { BGD: { available: 100000, currencyCode: 'BDT' }, SAU: { available: 80000, currencyCode: 'SAR' } },
-  economy: { BGD: { currencyCode: 'BDT' }, SAU: { currencyCode: 'SAR' } },
+  economy: { BGD: { currencyCode: 'BDT', reserves: 750000 }, SAU: { currencyCode: 'SAR', reserves: 1200000 } },
   foreign: {
     BGD: { relations: { SAU: { overall: 82, trade: 88, trust: 80, political: 78, sanctions: false, war_state: false } } },
     SAU: { relations: { BGD: { overall: 82, trade: 88, trust: 80, political: 78, sanctions: false, war_state: false } } }
@@ -106,6 +106,10 @@ assert.equal(oil.supplierReliability.status, 'UNKNOWN');
 assert.equal(oil.strategicImportance.status, 'UNKNOWN',
   'no national strategic priority is fabricated when no source record exists');
 assert.equal(oil.expectedLocalPrice.value, 95);
+assert.equal(built.report.countryOverview.requesterTreasuryLiquidity.value, 100000);
+assert.equal(built.report.countryOverview.targetTreasuryLiquidity.value, 80000);
+assert.equal(built.report.countryOverview.requesterForeignExchangeReservesUsd.value, 750000);
+assert.equal(built.report.countryOverview.targetForeignExchangeReservesUsd.value, 1200000);
 const noLedger = bilateral.buildMarketIntelligence('BGD', 'BGD', { resourceId: 'crude_oil' });
 assert.equal(noLedger.ok, false, 'self-country intelligence requests must be rejected');
 const legacyReport = bilateral.buildMarketIntelligence('SAU', 'BGD', { resourceId: 'crude_oil' });
