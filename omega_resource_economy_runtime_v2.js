@@ -2056,9 +2056,15 @@ function captureStockFlowPeriod(stateTransaction) {
     if(eventTurn!==turn())return{accepted:false,reason:'TRANSPORT_LOSS_PERIOD_MISMATCH',expectedTurn:turn(),eventTurn:eventTurn};
     var existing=priorLosses.find(function(row){return String(row&&row.eventId||'')===eventId;});
     if(existing){
-      return String(existing.sourceEventId||'')===shipmentId&&String(existing.sourceType||'')==='TRANSPORT'&&
-        String(existing.resourceId||'')===resourceId&&Math.abs((num(existing.quantity)||0)-quantity)<=1e-9&&
-        String(existing.unit||'').toUpperCase()===unit.toUpperCase()
+      var sameShipmentLoss=String(existing.sourceEventId||'')===shipmentId&&
+        String(existing.sourceType||'')==='TRANSPORT'&&String(existing.lossType||'')==='TRANSPORT'&&
+        String(existing.countryId||'')===country&&String(existing.resourceId||'')===resourceId&&
+        Math.abs((num(existing.quantity)||0)-quantity)<=1e-9&&
+        String(existing.unit||'').toUpperCase()===unit.toUpperCase()&&
+        String(existing.reason||'')===reason&&num(existing.turn)===eventTurn&&
+        String(existing.periodId||'')==='GAME_TURN_'+eventTurn&&String(existing.status||'')==='COMMITTED'&&
+        String(existing.sourceAuthority||'')==='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2';
+      return sameShipmentLoss
         ?{accepted:true,duplicate:true,eventId:eventId,shipmentId:shipmentId}
         :{accepted:false,reason:'TRANSPORT_LOSS_EVENT_ID_COLLISION',eventId:eventId};
     }
