@@ -596,13 +596,13 @@ async function handleClickAction(event, actionProgress){
  const siteId=String(button.getAttribute('data-site-id')||''),rid=String(button.getAttribute('data-resource-id')||'').toLowerCase();
  if(action==='run-factory'){
   if(country!==playerCountry()){lastOutcome='Rejected: processing is restricted to the active player country.';render();return;}
-  if(!api?.executeFactoryCycle){lastOutcome='Factory processing runtime unavailable.';render();return;}
+  if(!api?.startFactoryProductionCycle){lastOutcome='Factory production scheduler unavailable.';render();return;}
   const factoryId=String(button.getAttribute('data-factory-id')||'').trim();
   const qtyInput=Array.from(g.document.querySelectorAll('[data-omm-factory-quantity]')).find(el=>el.getAttribute('data-omm-factory-quantity')===factoryId);
   const quantity=num(qtyInput?.value);
   if(!factoryId||quantity===null||quantity<=0){lastOutcome='Factory and positive input quantity are required.';render();return;}
   button.disabled=true;
-  try{const result=api.executeFactoryCycle({countryId:country,factoryId,resourceId:rid,quantity});lastOutcome=message('Factory processing cycle',result);}
+  try{const result=api.startFactoryProductionCycle({countryId:country,factoryId,resourceId:rid,quantity});lastOutcome=message('Factory production cycle',result);}
   catch(error){lastOutcome='Factory processing failed: '+String(error?.message||error);}
   render();return;
  }
