@@ -586,15 +586,17 @@
       row.sourceCountryIds = row.sourceCountryIds.filter(function (value, index, rows) {
         return rows.indexOf(value) === index;
       }).sort();
-      var complete = row.conflictingTransitCount === 0 && row.unitConflict !== true;
-      row.quantity = complete ? row.knownQuantity : null;
+      var noQuantityConflict = row.conflictingTransitCount === 0 && row.unitConflict !== true;
+      var complete = noQuantityConflict && row.unitEvidenceIncomplete !== true;
+      row.quantity = noQuantityConflict ? row.knownQuantity : null;
       row.status = complete ? (row.shipmentCount ? 'OBSERVED_BLACK_MARKET_IN_TRANSIT' : 'NO_BLACK_MARKET_IN_TRANSIT')
         : 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE';
       if (row.unitEvidenceIncomplete) row.unit = null;
     });
     var complete = invalidRecordCount === 0 && Object.keys(conflicts).length === 0 &&
       Object.keys(byResource).every(function (key) {
-        return byResource[key].conflictingTransitCount === 0 && byResource[key].unitConflict !== true;
+        return byResource[key].conflictingTransitCount === 0 && byResource[key].unitConflict !== true &&
+          byResource[key].unitEvidenceIncomplete !== true;
       });
     return {
       status: !complete ? 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE' :
@@ -613,7 +615,8 @@
       ? tradeBucket.internationalShipmentLedger : null;
     var blackMarket = blackMarketTransitEvidence(tradeBucket, countryId, ledger);
     if (!ledger) return {
-      status: blackMarket.ledgerAvailable && blackMarket.shipmentCount > 0
+      status: blackMarket.ledgerAvailable &&
+        (blackMarket.shipmentCount > 0 || blackMarket.status === 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE')
         ? 'PARTIAL_BLACK_MARKET_TRANSIT_ONLY' : 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE',
       authority: 'Game.state.trade[countryId].internationalShipmentLedger',
       ledgerAvailable: false, ledgerRecordCount: null, uniqueShipmentCount: null,
