@@ -71,8 +71,10 @@ function makeHarness(options = {}) {
     USA: record(341784857, 2025, 'WORLD_BANK_API_OBSERVATION', { iso3: 'USA', name: 'United States' }),
     TWN: record(23299132, 2025, 'OFFICIAL_POPULATION_OBSERVATION', { iso3: 'TWN', name: 'Taiwan', sourceUrl: 'https://www.ris.gov.tw/info-liferay/app/channel/newsEnglishDetail/26245250', sourceName: 'Taiwan Ministry of the Interior' }),
     VAT: record(882, 2024, 'OFFICIAL_POPULATION_OBSERVATION', { iso3: 'VAT', name: 'Vatican City', sourceUrl: 'https://www.vaticanstate.va/en/state-and-government/general-informations/population.html', sourceName: 'Governorate of Vatican City State' }),
-    ESH: record(601000, 2025, 'UN_PROJECTED_POPULATION_ESTIMATE', { iso3: 'ESH', name: 'Western Sahara', sourceUrl: 'https://data.un.org/legacy/en/iso/eh.html', sourceName: 'United Nations Statistics Division, UNData' })
+    ESH: record(601000, 2025, 'UN_PROJECTED_POPULATION_ESTIMATE', { iso3: 'ESH', name: 'Western Sahara', sourceUrl: 'https://data.un.org/legacy/en/iso/eh.html', sourceName: 'United Nations Statistics Division, UNData' }),
+    VUT: record(276244, 2015, 'STALE_BASELINE', { iso3: 'VUT', name: 'Vanuatu' })
   };
+  Object.assign(records, options.records || {});
   const calls = { generalInit: [], baselineInit: 0, catalogLoad: 0, factoryRegistryQueries: [] };
   const baselineApi = {
     async init() { calls.baselineInit += 1; return { status: 'READY', countryCount: 197, factoryTypeCount: 21 }; },
@@ -270,10 +272,14 @@ test('Phase 6 provenance is saved and revalidated after game load; changed input
   assert.equal(changed.population.status, 'LIVE_RUNTIME');
 });
 
-test('live population outranks the static observation; old observations remain explicitly stale', async () => {
+test('live population outranks official observations; stale fallback remains explicitly stale', async () => {
   const { api, worldState } = makeHarness();
-  const old = await api.getNationalSummary('TWN');
-  assert.equal(old.population.value, 23500000);
+  const current = await api.getNationalSummary('TWN');
+  assert.equal(current.population.value, 23299132);
+  assert.equal(current.population.status, 'OBSERVED');
+  assert.equal(current.population.observationYear, 2025);
+  const old = await api.getNationalSummary('VUT');
+  assert.equal(old.population.value, 276244);
   assert.equal(old.population.status, 'STALE_BASELINE');
   assert.equal(old.population.observationYear, 2015);
 
@@ -289,7 +295,9 @@ test('live population outranks the static observation; old observations remain e
 });
 
 test('unknown population is not zero and yields unavailable population-demand calculations', async () => {
-  const { api } = makeHarness();
+  const { api } = makeHarness({ records: {
+    ESH: record(null, null, 'NOT_RECORDED', { iso3: 'ESH', name: 'Western Sahara' })
+  } });
   const summary = await api.getNationalSummary('ESH');
   assert.equal(summary.population.value, null);
   assert.equal(summary.population.status, 'UNKNOWN');
@@ -542,16 +550,16 @@ test('Phase 6 reads only balanced current-turn Treasury expenses and private fac
   assert.equal(treasury.amount, null);
   assert.equal(treasury.postedExpenseTransactionCount, 2);
   assert.equal(treasury.invalidExpenseJournalCount, 1);
-  assert.deepEqual(treasury.knownPostedExpenseByCurrency.map(row => ({
+  assert.deepEqual(JSON.parse(JSON.stringify(treasury.knownPostedExpenseByCurrency.map(row => ({
     currency: row.currency, grossAmount: row.grossAmount, reversalAmount: row.reversalAmount, netAmount: row.netAmount
-  })), [{ currency: 'USD', grossAmount: 125, reversalAmount: 25, netAmount: 100 }]);
+  })))), [{ currency: 'USD', grossAmount: 125, reversalAmount: 25, netAmount: 100 }]);
   const operating = summary.expenditure.factoryOperatingCost;
   assert.equal(operating.status, 'PARTIAL_RECORDED_PRIVATE_FACTORY_ACCRUALS');
   assert.equal(operating.totalCostPerDay, null);
   assert.equal(operating.recordedAccrualTransactionCount, 1);
-  assert.deepEqual(operating.recordedAccrualByCurrency.map(row => ({
+  assert.deepEqual(JSON.parse(JSON.stringify(operating.recordedAccrualByCurrency.map(row => ({
     currency: row.currency, netAmount: row.netAmount, transactionCount: row.transactionCount
-  })), [{ currency: 'GAME_CURRENCY_UNITS', netAmount: 15, transactionCount: 1 }]);
+  })))), [{ currency: 'GAME_CURRENCY_UNITS', netAmount: 15, transactionCount: 1 }]);
   assert.equal(summary.expenditure.financialEvidence.amountsAggregatedAcrossCurrencies, false);
   assert.equal(summary.expenditure.financialEvidence.sourceLedgerWindow.complete, false);
   assert.equal(JSON.stringify(state), before, 'Phase 6 must not mutate Finance journal sources');
