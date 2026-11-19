@@ -93,6 +93,38 @@ const settlementSnapshot={
 };
 const mesh=globalThis.Omega?.MinistryInteroperability||globalThis.OmegaMinistryInteroperability;
 assert.ok(mesh?.dispatchCommand,'ministry command mesh is required for duplicate settlement verification');
+const buyerShipmentLedger=globalThis.Game.state.trade.BGD.internationalShipmentLedger;
+const sellerShipmentLedger=globalThis.Game.state.trade.SAU.internationalShipmentLedger;
+assert.equal(buyerShipmentLedger.length,1,'buyer durable shipment ledger must contain the settled import');
+assert.equal(sellerShipmentLedger.length,1,'seller durable shipment ledger must contain the settled export');
+const buyerShipment=buyerShipmentLedger[0],sellerShipment=sellerShipmentLedger[0];
+assert.equal(buyerShipment.shipmentId,'SHIP-'+req.settlementId);
+assert.equal(buyerShipment.participantRole,'IMPORTER');
+assert.equal(sellerShipment.participantRole,'EXPORTER');
+for(const row of [buyerShipment,sellerShipment]){
+  assert.equal(row.requestId,req.requestId);
+  assert.equal(row.settlementId,req.settlementId);
+  assert.equal(row.resourceId,'crude_oil');
+  assert.equal(row.quantity,1000);
+  assert.equal(row.originCountryId,'SAU');
+  assert.equal(row.destinationCountryId,'BGD');
+  assert.ok(row.dispatchTime,'new shipments retain observed dispatch timestamp');
+  assert.ok(row.arrivalTime,'new shipments retain observed buyer receipt timestamp');
+  assert.equal(row.status,'ARRIVED');
+  assert.equal(row.arrivalStatus,'RECEIVED');
+  assert.equal(row.settlementStatus,'SETTLED');
+  assert.equal(row.estimatedArrivalTime,null,'route ETA must stay unknown until travel-time evidence exists');
+  assert.equal(row.etaStatus,'NOT_ESTIMATED_ROUTE_TRAVEL_TIME_NOT_MODELED');
+}
+assert.equal(buyerShipment.dispatchTurn,1);
+assert.equal(buyerShipment.arrivalTurn,1);
+const duplicateShipment=mesh.dispatchCommand('trade','OMEGA_TRADE_RECORD_INTERNATIONAL_SHIPMENT','BGD',{
+  shipment:buyerShipment
+});
+assert.equal(duplicateShipment.status,'APPLIED',JSON.stringify(duplicateShipment));
+assert.equal(duplicateShipment.result?.duplicate,true,'replaying an identical shipment ID must be idempotent');
+assert.equal(globalThis.Game.state.trade.BGD.internationalShipmentLedger.length,1);
+assert.equal(trade.diagnostics().durableInternationalShipmentLedger,true);
 const duplicateBuyerClose=mesh.dispatchCommand('trade','OMEGA_TRADE_CLOSE_REQUEST','BGD',{
   requestId:req.requestId,status:'SETTLED',stage:'SETTLED',settlementId:req.settlementId,buyerValue:95000,sellerValue:95000
 });
