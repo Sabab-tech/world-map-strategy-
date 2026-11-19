@@ -1138,6 +1138,128 @@
     };
   }
 
+  function finalProfiles() {
+    var all = g.__OmegaResourceEconomyRules || {};
+    var cfg = object(all.finalProductProfiles) || object(rules().finalProductProfiles);
+    if (cfg && Object.keys(cfg).length) return cfg;
+    return {};
+  }
+
+  function evaluateFinalProductDemand(countryId, options) {
+    var cid = canonical(countryId), opts = options || {};
+    var resource = bucket(cid, 'resource') || {};
+    var trade = bucket(cid, 'trade') || {};
+    var finance = bucket(cid, 'finance') || {};
+    var profileMap = Object.assign({}, finalProfiles(), object(opts.profiles) || {});
+    var productIds = Object.keys(profileMap);
+    if (!productIds.length) {
+      return { countryId: cid, turn: currentTurn(), status: 'NO_FINAL_PRODUCT_PROFILES', items: [] };
+    }
+    var runtime = object(resource.demandRuntime) || {};
+    var metrics = referenceContext(resource, cid, runtime);
+    var pop = metrics.current && metrics.current.population ? finite(metrics.current.population.value) : null;
+    if (pop === null || pop <= 0) {
+      return { countryId: cid, turn: currentTurn(), status: 'POPULATION_UNOBSERVED', items: [] };
+    }
+    var turnDays = simulationTurnDays();
+    var inventory = object(resource.inventory) || {};
+    var govTreasury = finite(finance.available) !== null ? finite(finance.available) : finite(finance.reserves);
+    var transmission = g.OmegaEconomicTransmissionRuntime || (g.Omega && g.Omega.EconomicTransmission);
+    var ppMult = 1;
+    try {
+      if (transmission && typeof transmission.getHouseholdPurchasingPowerMultiplier === 'function') {
+        var pp = finite(transmission.getHouseholdPurchasingPowerMultiplier(cid));
+        if (pp !== null && pp > 0) ppMult = clamp(pp, 0.2, 1.5);
+      }
+    } catch (_) {}
+    var items = [];
+    productIds.forEach(function (rid) {
+      var prof = object(profileMap[rid]) || {};
+      var coeff = finite(prof.basePerMillionPopulation);
+      if (coeff === null || coeff <= 0) return;
+      var baselineRate = coeff * pop / 1000000;
+      var factors = calculateDemand({
+        config: rules(),
+        profile: prof,
+        baselineRate: baselineRate,
+        reference: metrics.reference,
+        current: {
+          population: pop,
+          gdpPerCapita: metrics.current.gdpPerCapita.value,
+          industry: metrics.current.industry.value,
+          militaryPersonnel: metrics.current.militaryPersonnel.value
+        },
+        currentPrice: null,
+        referencePrice: null,
+        priceSource: null,
+        policyMultiplier: policyMultiplier(resource, rid),
+        warActive: warActive(cid)
+      });
+      var buyerType = String(prof.buyerType || 'HOUSEHOLD_RETAIL').toUpperCase();
+      var demandPerDay = Math.max(0, finite(factors.demand) || 0) * (buyerType === 'HOUSEHOLD_RETAIL' ? ppMult : 1);
+      var demandThisTurn = demandPerDay * turnDays;
+      var stock = resourceValue(inventory, rid);
+      if (stock === null) stock = 0;
+      var budgetCap = buyerType === 'GOVERNMENT_PROCUREMENT' && prof.debitGovernmentTreasury === true
+        ? (govTreasury !== null ? Math.max(0, govTreasury) : null)
+        : (opts.householdBudget != null ? finite(opts.householdBudget) : null);
+      items.push({
+        resourceId: rid,
+        buyerType: buyerType,
+        unit: prof.unit || null,
+        demandPerDay: demandPerDay,
+        demandThisTurn: demandThisTurn,
+        availableStock: stock,
+        satisfiableByDomesticStock: Math.min(demandThisTurn, stock),
+        unmetImportCandidate: Math.max(0, demandThisTurn - stock),
+        debitGovernmentTreasury: prof.debitGovernmentTreasury === true,
+        budgetAvailable: budgetCap,
+        priority: finite(prof.priority) || 5
+      });
+    });
+    return { countryId: cid, turn: currentTurn(), status: 'ACTIVE', items: items };
+  }
+
+  function submitConsumerBuyerOrders(countryId, options) {
+    var cid = canonical(countryId), opts = options || {};
+    var econApi = g.OmegaResourceEconomy || (g.Omega && g.Omega.ResourceEconomy);
+    if (!econApi || typeof econApi.submitBuyerOrder !== 'function') {
+      return { countryId: cid, turn: currentTurn(), status: 'RESOURCE_ECONOMY_UNAVAILABLE', submitted: [], settled: null };
+    }
+    var evalResult = evaluateFinalProductDemand(cid, opts);
+    if (evalResult.status !== 'ACTIVE') {
+      return { countryId: cid, turn: currentTurn(), status: evalResult.status, submitted: [], settled: null };
+    }
+    var submitted = [];
+    evalResult.items.forEach(function (item) {
+      if (!(item.demandThisTurn > 1e-9)) return;
+      if (opts.onlyWhenDomesticStockAvailable === true && !(item.availableStock > 1e-9)) return;
+      if (item.budgetAvailable !== null && item.budgetAvailable <= 0) return;
+      var qty = opts.capToDomesticStock !== false && item.availableStock > 0
+        ? Math.min(item.demandThisTurn, item.availableStock)
+        : item.demandThisTurn;
+      if (!(qty > 1e-9)) return;
+      var res = econApi.submitBuyerOrder(cid, {
+        orderId: 'FINAL-' + currentTurn() + '-' + cid + '-' + token(item.resourceId) + '-' + item.buyerType,
+        buyerType: item.buyerType,
+        buyerId: item.buyerType + '_' + cid,
+        resourceId: item.resourceId,
+        quantity: qty,
+        budgetAvailable: item.budgetAvailable,
+        debitGovernmentTreasury: item.debitGovernmentTreasury,
+        source: 'OMEGA_RESOURCE_NATIONAL_DEMAND_FINAL_GOODS'
+      });
+      if (res && res.status === 'APPLIED' && res.result && res.result.accepted) {
+        submitted.push(res.result.order);
+      }
+    });
+    var settlement = null;
+    if (opts.autoSettle !== false && typeof econApi.settleBuyerOrders === 'function' && submitted.length) {
+      settlement = econApi.settleBuyerOrders(cid, opts);
+    }
+    return { countryId: cid, turn: currentTurn(), status: 'ACTIVE', evaluated: evalResult.items.length, submitted: submitted, settlement: settlement };
+  }
+
   function diagnostics() {
     var cfg = rules();
     return {
@@ -1145,6 +1267,7 @@
       populationDatasetLoaded: !!populationData, economyDatasetLoaded: !!economyData,
       prepareErrors: clone(prepareErrors), rulesEnabled: cfg.enabled === true,
       configuredResourceProfiles: Object.keys(profiles()).length,
+      configuredFinalProductProfiles: Object.keys(finalProfiles()).length,
       lastTurn: currentTurn()
     };
   }
@@ -1154,6 +1277,8 @@
     prepare: prepare,
     processCountry: processCountry,
     calculateDemand: calculateDemand,
+    evaluateFinalProductDemand: evaluateFinalProductDemand,
+    submitConsumerBuyerOrders: submitConsumerBuyerOrders,
     authorizePlayerSupplyLifeline: authorizePlayerSupplyLifeline,
     getPlayerSupplyLifeline: getPlayerSupplyLifeline,
     diagnostics: diagnostics

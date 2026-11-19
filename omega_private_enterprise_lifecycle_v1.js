@@ -3278,8 +3278,58 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     var project=projects.find(function(p){return p.projectId===projectId&&p.projectType==='FACTORY_CONSTRUCTION'&&p.sourcePrivateProposalId;});
     if(project)applyCommissionedAsset(cid,project);
   }
+  function syncMarketResearchResolutions(country,incomingRows){
+    var cid=canonicalCountry(country||playerCountry()),r=runtime(cid,false);
+    if(!cid||!r||!Array.isArray(r.marketResearchRequests)||!r.marketResearchRequests.length)return 0;
+    var trade=countryBucket('trade',cid,false)||{},
+      source=Array.isArray(incomingRows)&&incomingRows.length?incomingRows:
+        (Array.isArray(trade.companyMarketResearchRequests)?trade.companyMarketResearchRequests:[]);
+    if(!source.length)return 0;
+    var byId=new Map();
+    source.forEach(function(item){
+      if(item&&item.requestId&&id(item.status)==='RESOLVED')byId.set(String(item.requestId),item);
+    });
+    if(!byId.size)return 0;
+    var synced=0;
+    r.marketResearchRequests.forEach(function(row){
+      if(!row||!row.requestId)return;
+      var resolved=byId.get(String(row.requestId));
+      if(!resolved)return;
+      if(id(row.status)==='RESOLVED'&&id(row.responseStatus)===id(resolved.responseStatus))return;
+      row.status='RESOLVED';
+      row.responseStatus=resolved.responseStatus||'MARKET_EVIDENCE_OBSERVED';
+      row.resolvedTurn=num(resolved.resolvedTurn)!==null?num(resolved.resolvedTurn):turn();
+      row.resolutionAuthority=resolved.resolutionAuthority||'OMEGA_GLOBAL_MARKET_RESEARCH_RESOLVER_V1';
+      row.marketEvidence=clone(resolved.evidence||null);
+      if(Array.isArray(resolved.inputRequirements))row.inputRequirements=clone(resolved.inputRequirements);
+      if(Array.isArray(resolved.outputRequirements))row.outputRequirements=clone(resolved.outputRequirements);
+      synced++;
+      recordEvent(cid,'COMPANY_MARKET_RESEARCH_RESOLVED',{
+        proposalId:row.proposalId||null,requestId:row.requestId,companyId:row.companyId,
+        responseStatus:row.responseStatus,resolvedTurn:row.resolvedTurn
+      });
+    });
+    if(synced>0&&Array.isArray(r.proposals)){
+      r.proposals.forEach(function(prop){
+        if(!prop||!prop.marketResearchRequestId)return;
+        var updated=r.marketResearchRequests.find(function(item){return item&&item.requestId===prop.marketResearchRequestId;});
+        if(!updated)return;
+        prop.marketResearchRequest=clone(updated);
+        if(prop.companyCase&&prop.companyCase.marketAnalysis)prop.companyCase.marketAnalysis.researchRequest=clone(updated);
+      });
+    }
+    return synced;
+  }
+  function onMarketResearchResolved(event){
+    var detail=event&&event.detail||{};
+    var cid=canonicalCountry(detail.countryId||playerCountry());
+    if(!cid)return;
+    syncMarketResearchResolutions(cid,Array.isArray(detail.requests)?detail.requests:null);
+  }
   function getCountryDashboard(country){
-    var cid=canonicalCountry(country||playerCountry()),r=runtime(cid,false),f=financeBucket(cid,false),omega=f&&f.omegaFinance||{},accounts=omega.companyCapitalAccounts||{};
+    var cid=canonicalCountry(country||playerCountry());
+    syncMarketResearchResolutions(cid);
+    var r=runtime(cid,false),f=financeBucket(cid,false),omega=f&&f.omegaFinance||{},accounts=omega.companyCapitalAccounts||{};
     return{version:VERSION,countryId:cid,playerCountryId:playerCountry(),activeCountry:cid===playerCountry(),
       proposals:r?clone(r.proposals):[],governmentInvitations:r?clone(r.governmentInvitations||[]):[],
       marketResearchRequests:r?clone(r.marketResearchRequests||[]):[],
@@ -5815,6 +5865,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     g.addEventListener('OMEGA_FACTORY_UTILITY_CONSUMED',onPrivateFactoryUtilityConsumed);
     g.addEventListener('OMEGA_RESOURCE_DELIVERY_COMPLETED',onPrivateFactoryFreightDelivered);
     g.addEventListener('OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',onPrivateFactoryCycleCompleted);
+    g.addEventListener('OMEGA_MARKET_RESEARCH_RESOLVED',onMarketResearchResolved);
     // UI refresh is event/navigation-driven. Proposal submissions are bounded to one active-country review per 30 committed game turns.
     g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED',onCommittedSimulationTurn);
   }
@@ -5826,7 +5877,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     recordCompanyCapitalReceipt:recordCompanyCapitalReceipt,initializeOpeningCompanyCapital:initializeOpeningCompanyCapital,refreshCommissionedProductionGate:refreshCommissionedProductionGate,
     getProposal:getProposal,getCountryDashboard:getCountryDashboard,getCompanyCapitalSummary:getCompanyCapitalSummary,
     getCompanyBusinessCase:function(country,proposalId){var p=getProposal(country,proposalId);return p?clone(p.companyCase||companyBusinessCase(p)):null;},
-    getCompanyMarketResearchRequests:function(country,companyId){var r=runtime(country||playerCountry(),false),rows=r&&Array.isArray(r.marketResearchRequests)?r.marketResearchRequests:[],target=id(companyId);return clone(rows.filter(function(row){return !target||id(row.companyId)===target;}));},
+    getCompanyMarketResearchRequests:function(country,companyId){var cid=country||playerCountry();syncMarketResearchResolutions(cid);var r=runtime(cid,false),rows=r&&Array.isArray(r.marketResearchRequests)?r.marketResearchRequests:[],target=id(companyId);return clone(rows.filter(function(row){return !target||id(row.companyId)===target;}));},
     createGovernmentInvitation:createGovernmentInvitation,closeGovernmentInvitation:closeGovernmentInvitation,
     previewCompanyExpansion:previewCompanyExpansion,respondToGovernmentCounterOffer:respondToGovernmentCounterOffer,
     getCompanyFinanceSummary:getCompanyFinanceSummary,getCompanySectorJournal:getCompanySectorJournal,

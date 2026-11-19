@@ -309,7 +309,12 @@
       for(const q of rows){
         if(token(q?.resourceId||q?.resource)!==token(rid))continue;
         const usd=toUsd(c,q.unitPrice??q.price);if(usd===null)continue;
-        pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:n(q.quantity)||n(q.available)||0,price:n(q.unitPrice??q.price),priceUsd:usd,currency:currency(c),source:'TRADE_OFFER_BOOK',referenceOnly:false,offerId:q.offerId||q.id||null,productType:product.productType,productRole:product.productRole,unit:q.unit||product.unit||null,priceAuthority:q.priceAuthority||null});
+        const rawAuthority=String(q.priceAuthority||q.priceAuthorityStatus||'').toUpperCase();
+        const rawProvenance=String(q.priceProvenance||'').toUpperCase();
+        const isIndicative=q.referenceOnly===true||q.indicativeOnly===true||q.executableOffer===false||
+          rawProvenance==='REFERENCE'||rawProvenance==='SIMULATED'||
+          (q.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER'&&['RESOURCE_REFERENCE_PRICE','SIMULATED_FROM_SOURCE_COMMODITY','SIMULATED_FALLBACK'].includes(rawAuthority));
+        pushOrder({[rid]:book},{resourceId:rid,side:'asks',countryId:canonical(c),quantity:n(q.quantity)||n(q.available)||0,price:n(q.unitPrice??q.price),priceUsd:usd,currency:currency(c),source:q.source||'TRADE_OFFER_BOOK',referenceOnly:isIndicative,indicativeOnly:isIndicative,priceProvenance:rawProvenance||(isIndicative?'REFERENCE':'OBSERVED'),offerId:q.offerId||q.id||null,productType:product.productType,productRole:product.productRole,unit:q.unit||product.unit||null,priceAuthority:q.priceAuthority||null});
       }
       const inv=countryValue(c,'resource.inventory'),prod=countryValue(c,'resource.production'),tradeable=countryValue(c,'resource.tradeAvailability');
       const spr=countryValue(c,'resource.strategicReserve'),protectedStock=n(spr?.availableByResource?.[rid])||0;
@@ -412,6 +417,13 @@
     const q=quote(rid),c=canonical(countryId);
     const usd=q.clearingPriceUsd??q.referencePrice;
     if(usd===null||usd===undefined)return null;
+    const rate=usdRate(c);if(rate===null)return null;
+    return currency(c)==='USD'?usd:usd*rate;
+  }
+  function executableLocalPrice(countryId,rid){
+    const q=quote(rid),c=canonical(countryId);
+    const usd=q.status==='CLEARED'?n(q.clearingPriceUsd):null;
+    if(usd===null||usd<=0)return null;
     const rate=usdRate(c);if(rate===null)return null;
     return currency(c)==='USD'?usd:usd*rate;
   }
@@ -665,6 +677,152 @@
     const target=id(companyId);
     return clone((Array.isArray(rows)?rows:[]).filter(row=>!target||id(row.companyId)===target));
   }
+  function inspectCommodityEvidence(cid,rid){
+    const books=g.__OmegaMarketBooks&&Object.keys(g.__OmegaMarketBooks).length?g.__OmegaMarketBooks:rebuild();
+    const bookKey=Object.keys(books||{}).find(k=>token(k)===token(rid));
+    const book=bookKey?books[bookKey]:null;
+    const clearing=book?.clearing||quote(rid);
+    const orders=book?.orders||{bids:[],asks:[]};
+    const executableAsks=(orders.asks||[]).filter(x=>x.referenceOnly!==true);
+    const referenceAsks=(orders.asks||[]).filter(x=>x.referenceOnly===true);
+    const rs=countryValue(cid,'resource')||{};
+    const inv=rs.inventory&&typeof rs.inventory==='object'?rs.inventory:{};
+    const invKey=Object.keys(inv).find(k=>token(k)===token(rid));
+    const rawWh=rs.warehouse?.availableByResource||{},procWh=rs.processedWarehouse?.availableByResource||{};
+    const rawRes=rs.warehouse?.reservedByResource||{},procRes=rs.processedWarehouse?.reservedByResource||{};
+    const freeOf=(avail,res)=>{
+      const k=Object.keys(avail||{}).find(x=>token(x)===token(rid));
+      return k?Math.max(0,(n(avail[k])||0)-(n(res?.[k])||n(res?.[rid])||0)):0;
+    };
+    const protectedStock=Math.max(0,n(rs.strategicReserve?.availableByResource?.[rid]??rs.strategicReserve?.availableByResource?.[token(rid)])||0);
+    const warehouseFree=freeOf(rawWh,rawRes)+freeOf(procWh,procRes);
+    const domesticUncommittedAvailable=(invKey!==undefined||rs.warehouse?.warehouseId||rs.processedWarehouse?.warehouseId)
+      ?Math.max(0,warehouseFree>0?warehouseFree-protectedStock:(invKey!==undefined?Math.max(0,(n(inv[invKey])||0)-protectedStock):0)):null;
+    const demandByRes=rs.demandRuntime?.byResource||{};
+    const demandKey=Object.keys(demandByRes).find(k=>token(k)===token(rid));
+    const demandRow=demandKey?demandByRes[demandKey]:null;
+    const horizon=30;
+    const unmetDaily=n(demandRow?.unmetDemand);
+    const demandPerDay=n(demandRow?.demandPerDay);
+    const unmetDomesticDemand30Day=unmetDaily!==null?Number((unmetDaily*horizon).toFixed(4))
+      :(demandPerDay!==null?Number(Math.max(0,demandPerDay*horizon-(domesticUncommittedAvailable||0)).toFixed(4)):null);
+    const domesticOrders=(Array.isArray(countryValue(cid,'trade.buyerOrders'))?countryValue(cid,'trade.buyerOrders'):[])
+      .filter(o=>o&&token(o.resourceId)===token(rid)&&['OPEN','PARTIAL'].includes(id(o.status)));
+    const domesticBuyerOrderDepth=domesticOrders.reduce((s,o)=>s+Math.max(0,(n(o.quantity)||0)-(n(o.fulfilledQuantity)||0)),0);
+    const supplierList=suppliers(rid,1,cid);
+    const privateSuppliers=privateCompanySuppliers(rid,1,cid);
+    const catalog=g.OmegaResourceIndustrialCatalogData||g.Omega?.ResourceIndustrialCatalogData||{};
+    const terminalRoute=catalog.terminalBuyerCatalog?.products?.[token(rid)]||null;
+    const executableClearingUsd=clearing?.status==='CLEARED'?n(clearing.clearingPriceUsd):null;
+    const referencePriceUsd=n(clearing?.referencePrice);
+    const internationalEvidenceObserved=Boolean(clearing&&(clearing.status==='CLEARED'||(orders.bids||[]).length>0||executableAsks.length>0||supplierList.length>0||privateSuppliers.length>0));
+    return{
+      resourceId:token(rid),
+      product:describeProduct(rid),
+      domesticUncommittedAvailable,
+      unmetDomesticDemand30Day,
+      domesticDemandPerDay:demandPerDay,
+      domesticBuyerOrderDepth:domesticOrders.length?Number(domesticBuyerOrderDepth.toFixed(4)):0,
+      globalUnmatchedBuyOrderDepth:(orders.bids||[]).reduce((s,x)=>s+(n(x.remaining??x.quantity)||0),0),
+      globalUnmatchedSellOfferDepth:executableAsks.reduce((s,x)=>s+(n(x.quantity)||0),0),
+      indicativeSellOfferDepth:referenceAsks.reduce((s,x)=>s+(n(x.quantity)||0),0),
+      executableClearingPriceUsd:executableClearingUsd,
+      priceDiscovery:clearing?.priceDiscovery||'UNAVAILABLE',
+      referencePriceUsd,
+      referencePriceNotice:referencePriceUsd!==null?'REFERENCE_ONLY_NOT_EXECUTABLE_CLEARING':null,
+      crossBorderSupplierCount:supplierList.length,
+      crossBorderSuppliers:supplierList.slice(0,10).map(s=>({countryId:s.countryId,available:s.available,tradeAgreementObserved:s.tradeAgreementObserved})),
+      privateCompanySupplierCount:privateSuppliers.length,
+      privateSuppliers:privateSuppliers.slice(0,10).map(s=>({countryId:s.countryId,companyId:s.companyId,available:s.available})),
+      buyerChannels:terminalRoute?.buyerChannels||[],
+      compatibleFactoryTypes:terminalRoute?.compatibleFactoryTypes||[],
+      domesticDemandEvidenceStatus:demandRow?'OBSERVED':(domesticOrders.length?'BUYER_ORDERS_OBSERVED':'UNOBSERVED'),
+      domesticSupplyEvidenceStatus:domesticUncommittedAvailable!==null?'OBSERVED':'UNOBSERVED',
+      internationalMarketEvidenceStatus:internationalEvidenceObserved?'OBSERVED_ORDER_BOOK_OR_SUPPLIERS':(referencePriceUsd!==null?'REFERENCE_PRICE_ONLY':'UNOBSERVED')
+    };
+  }
+  function resolveCompanyResearchHandler(cmd,ctx){
+    const p=cmd?.payload||{},cid=canonical(ctx.countryId),targetCompany=id(p.companyId),onlyRequestId=String(p.requestId||'').trim();
+    const force=p.force===true;
+    const previous=ctx.stateTransaction.get('trade.companyMarketResearchRequests');
+    const queue=Array.isArray(previous)?clone(previous):[];
+    if(!queue.length)return{accepted:true,resolvedCount:0,remainingQueued:0,requests:[]};
+    if(!g.__OmegaMarketBooks||!Object.keys(g.__OmegaMarketBooks).length)rebuild();
+    let resolvedCount=0;
+    const resolvedRows=[];
+    const updated=queue.map(req=>{
+      if(!req)return req;
+      if(onlyRequestId&&String(req.requestId)!==onlyRequestId)return req;
+      if(targetCompany&&id(req.companyId)!==targetCompany)return req;
+      if(!force&&!['QUEUED','PENDING'].includes(id(req.status)))return req;
+      const inputEvidence=(Array.isArray(req.inputResources)?req.inputResources:[]).map(rid=>inspectCommodityEvidence(cid,rid));
+      const outputEvidence=(Array.isArray(req.outputResources)?req.outputResources:[]).map(rid=>inspectCommodityEvidence(cid,rid));
+      const allEvidence=inputEvidence.concat(outputEvidence);
+      const anyObserved=allEvidence.some(e=>e.executableClearingPriceUsd!==null||e.globalUnmatchedBuyOrderDepth>0||e.globalUnmatchedSellOfferDepth>0||e.crossBorderSupplierCount>0||e.domesticDemandEvidenceStatus!=='UNOBSERVED'||e.domesticBuyerOrderDepth>0);
+      const anyPartial=allEvidence.some(e=>e.domesticSupplyEvidenceStatus==='OBSERVED'||e.referencePriceUsd!==null||e.buyerChannels.length>0);
+      const responseStatus=anyObserved?'MARKET_EVIDENCE_OBSERVED':(anyPartial?'PARTIAL_MARKET_EVIDENCE':'NO_ACTIVE_BUYER_OR_SUPPLIER_OBSERVED');
+      const enrichedInputReqs=(Array.isArray(req.inputRequirements)?req.inputRequirements:[]).map(item=>{
+        const ev=inputEvidence.find(e=>e.resourceId===token(item.resourceId));
+        if(!ev)return item;
+        return Object.assign({},item,{
+          domesticUncommittedAvailable:ev.domesticUncommittedAvailable!==null?ev.domesticUncommittedAvailable:item.domesticUncommittedAvailable,
+          demandEvidenceStatus:ev.domesticDemandEvidenceStatus,
+          internationalMarketEvidenceStatus:ev.internationalMarketEvidenceStatus,
+          observedSuppliers:ev.crossBorderSuppliers,
+          observedPrivateSuppliers:ev.privateSuppliers,
+          executableClearingPriceUsd:ev.executableClearingPriceUsd,
+          referencePriceUsd:ev.referencePriceUsd
+        });
+      });
+      const enrichedOutputReqs=(Array.isArray(req.outputRequirements)?req.outputRequirements:[]).map(item=>{
+        const ev=outputEvidence.find(e=>e.resourceId===token(item.resourceId));
+        if(!ev)return item;
+        return Object.assign({},item,{
+          unmetDomesticDemand30Day:ev.unmetDomesticDemand30Day!==null?ev.unmetDomesticDemand30Day:item.unmetDomesticDemand30Day,
+          domesticBuyerOrderDepth:ev.domesticBuyerOrderDepth,
+          globalUnmatchedBuyOrderDepth:ev.globalUnmatchedBuyOrderDepth,
+          globalUnmatchedSellOfferDepth:ev.globalUnmatchedSellOfferDepth,
+          indicativeSellOfferDepth:ev.indicativeSellOfferDepth,
+          domesticDemandEvidenceStatus:ev.domesticDemandEvidenceStatus,
+          domesticOutputEvidenceStatus:ev.domesticSupplyEvidenceStatus,
+          internationalMarketEvidenceStatus:ev.internationalMarketEvidenceStatus,
+          buyerChannels:ev.buyerChannels,
+          compatibleFactoryTypes:ev.compatibleFactoryTypes,
+          executableClearingPriceUsd:ev.executableClearingPriceUsd,
+          referencePriceUsd:ev.referencePriceUsd,
+          marketTurn:turn()
+        });
+      });
+      const row=Object.assign({},req,{
+        status:'RESOLVED',
+        responseStatus,
+        resolvedTurn:turn(),
+        resolutionAuthority:'OMEGA_GLOBAL_MARKET_RESEARCH_RESOLVER_V1',
+        inputRequirements:enrichedInputReqs,
+        outputRequirements:enrichedOutputReqs,
+        evidence:{inputs:inputEvidence,outputs:outputEvidence}
+      });
+      resolvedCount++;
+      resolvedRows.push(clone(row));
+      return row;
+    });
+    if(resolvedCount>0){
+      ctx.stateTransaction.set('trade.companyMarketResearchRequests',updated);
+      try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')
+        g.dispatchEvent(new g.CustomEvent('OMEGA_MARKET_RESEARCH_RESOLVED',{detail:{countryId:cid,turn:turn(),resolvedCount,requests:clone(resolvedRows)}}));}catch(_){}
+    }
+    const remainingQueued=updated.filter(r=>r&&['QUEUED','PENDING'].includes(id(r.status))).length;
+    return{accepted:true,countryId:cid,resolvedCount,remainingQueued,requests:resolvedRows};
+  }
+  function resolveCompanyResearch(countryId,options={}){
+    const mesh=interop(),cid=canonical(countryId||playerSimulationCountryId());
+    if(!cid)return{accepted:false,reason:'COUNTRY_NOT_RESOLVED'};
+    if(!mesh?.dispatchCommand)return{accepted:false,reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
+    install();
+    const result=mesh.dispatchCommand('trade','OMEGA_MARKET_RESOLVE_COMPANY_RESEARCH',cid,clone(options||{}),
+      {turn:turn(),commandType:'OMEGA_MARKET_RESOLVE_COMPANY_RESEARCH',correlationId:'MARKET-RESEARCH-RESOLVE-'+cid+'-'+turn()});
+    return result&&result.status==='APPLIED'&&result.result?result.result:result;
+  }
 
   function install(){
     const m=interop();if(!m?.registerCommandHandler)return false;
@@ -673,6 +831,8 @@
       m.registerCommandHandler('OMEGA_MARKET_PUBLISH_PROJECTION','trade',projectionHandler);
       m.registerAction?.('OMEGA_MARKET_QUEUE_COMPANY_RESEARCH',{actionId:'OMEGA_MARKET_QUEUE_COMPANY_RESEARCH',stateOwnerMinistry:'trade',authority:'OMEGA_GLOBAL_MARKET'});
       m.registerCommandHandler('OMEGA_MARKET_QUEUE_COMPANY_RESEARCH','trade',companyResearchRequestHandler);
+      m.registerAction?.('OMEGA_MARKET_RESOLVE_COMPANY_RESEARCH',{actionId:'OMEGA_MARKET_RESOLVE_COMPANY_RESEARCH',stateOwnerMinistry:'trade',authority:'OMEGA_GLOBAL_MARKET'});
+      m.registerCommandHandler('OMEGA_MARKET_RESOLVE_COMPANY_RESEARCH','trade',resolveCompanyResearchHandler);
       return true;
     }catch(_){return false;}
   }
@@ -699,9 +859,10 @@
     install();
     const markets=rebuild();
     const result=writeProjection(selected,markets);
+    const researchResolution=resolveCompanyResearch(selected);
     try{interop()?.emitEvent?.('OMEGA_MARKET_PRICE_UPDATED',selected,'trade',{turn:turn(),resources:Object.keys(markets).length},{turn:turn(),correlationId:'MARKET-'+turn()+'-'+selected});}catch(_){}
     g.__omegaGlobalMarketProjectedToken=token;
-    return{status:'COMPLETED',countryId:selected,turn:turn(),resourceCount:Object.keys(markets).length,projection:result};
+    return{status:'COMPLETED',countryId:selected,turn:turn(),resourceCount:Object.keys(markets).length,projection:result,researchResolution};
   }
   function onTurn(){
     const selected=playerSimulationCountryId();
@@ -723,8 +884,8 @@
     if(state()?.simulation?.turn!==undefined)rebuild();
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,diagnostics,rebuild,rebuildCountry,quote,localPrice,suppliers,privateCompanySuppliers,
-    describeProduct,productCatalog,marketLanes,requestCompanyResearch,getCompanyResearchRequests});
+  const API=Object.freeze({VERSION,diagnostics,rebuild,rebuildCountry,quote,localPrice,executableLocalPrice,suppliers,privateCompanySuppliers,
+    describeProduct,productCatalog,marketLanes,requestCompanyResearch,getCompanyResearchRequests,resolveCompanyResearch,inspectCommodityEvidence});
   g.Omega=g.Omega||{};g.Omega.GlobalMarket=API;g.OmegaGlobalMarket=API;
   try{init();}catch(e){g.OmegaGlobalMarketError=String(e?.message||e);}
 })(typeof window!=='undefined'?window:globalThis);

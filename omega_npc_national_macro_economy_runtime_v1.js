@@ -699,6 +699,148 @@
     };
   }
 
+  function deriveAutonomousEconomicDecisions(root, profile, countryId, baseline, liveActivity, progression, turn) {
+    const resource = countryRecord(root, 'resource', profile, countryId) || {};
+    const finance = countryRecord(root, 'finance', profile, countryId) || {};
+    const economy = countryRecord(root, 'economy', profile, countryId) || {};
+    const diplomacy = liveActivity?.diplomaticPolicyContext?.availability === 'AVAILABLE' ? liveActivity.diplomaticPolicyContext.value : null;
+    const outputRows = liveActivity?.industrialOutputByResourceUnit?.availability === 'AVAILABLE'
+      ? (liveActivity.industrialOutputByResourceUnit.value?.rows || {}) : {};
+    const infl = finite(progression?.inflationProjectionPct ?? progression?.inflationBaselinePct);
+    const growth = finite(progression?.gdpGrowthProjectionPct ?? progression?.gdpGrowthBaselinePct);
+    const unemp = finite(progression?.unemploymentProjectionPct ?? progression?.unemploymentBaselinePct);
+    const netTrade = finite(liveActivity?.settledTradeActivity?.value?.netTradeValueUsd);
+    const treasuryAvail = finite(finance?.available ?? finance?.omegaFinance?.treasuryBalanceUsd);
+
+    let fiscalStance = 'UNOBSERVED';
+    if (infl !== null || growth !== null || unemp !== null) {
+      if (infl !== null && infl > 8) fiscalStance = 'INFLATION_CONTAINMENT_TIGHTENING';
+      else if ((growth !== null && growth < 1.5) || (unemp !== null && unemp > 8)) fiscalStance = 'COUNTER_CYCLICAL_INVESTMENT_STIMULUS';
+      else fiscalStance = 'BALANCED_EXPANSION';
+    }
+
+    const tariffCurrent = finite(diplomacy?.importTariffPct);
+    let recommendedTariffPct = null;
+    if (tariffCurrent !== null) {
+      const delta = fiscalStance === 'INFLATION_CONTAINMENT_TIGHTENING' ? -2 :
+        (netTrade !== null && netTrade < 0 ? 1.5 : 0);
+      recommendedTariffPct = Number(Math.max(0, Math.min(35, tariffCurrent + delta)).toFixed(2));
+    }
+
+    const productionDirectives = [];
+    const tradeDirectives = [];
+    const demandApi = g.OmegaResourceNationalDemandRuntime || g.Omega?.ResourceNationalDemandRuntime;
+    let demandEval = null;
+    try {
+      if (demandApi && typeof demandApi.evaluateDemand === 'function') {
+        demandEval = demandApi.evaluateDemand(countryId);
+      }
+    } catch (_) {}
+
+    const demandRows = Array.isArray(demandEval?.profiles) ? demandEval.profiles : [];
+    for (const row of demandRows) {
+      if (!row?.resourceId) continue;
+      const deficit = finite(row.deficit ?? row.unmetDemand);
+      const surplus = finite(row.surplus);
+      if (deficit !== null && deficit > 1e-6 && tradeDirectives.length < 5) {
+        tradeDirectives.push({
+          action: 'IMPORT_DEFICIT_COVERAGE',
+          resourceId: row.resourceId,
+          targetQuantity: Number(deficit.toFixed(4)),
+          reason: 'DOMESTIC_DEMAND_DEFICIT_OBSERVED'
+        });
+        if (productionDirectives.length < 5) {
+          productionDirectives.push({
+            action: 'EXPAND_DOMESTIC_CAPACITY',
+            resourceId: row.resourceId,
+            targetAnnualGap: Number(deficit.toFixed(4)),
+            reason: 'REDUCE_STRUCTURAL_IMPORT_DEPENDENCY'
+          });
+        }
+      } else if (surplus !== null && surplus > 1e-6 && tradeDirectives.length < 5) {
+        tradeDirectives.push({
+          action: 'EXPORT_VERIFIED_SURPLUS',
+          resourceId: row.resourceId,
+          targetQuantity: Number((surplus * 0.25).toFixed(4)),
+          reason: 'VERIFIED_SURPLUS_WITH_FOREIGN_MARKET_ELIGIBILITY'
+        });
+      }
+    }
+
+    const activeOutputKeys = Object.keys(outputRows);
+    if (!productionDirectives.length && activeOutputKeys.length && treasuryAvail !== null && treasuryAvail > 0) {
+      const topOut = outputRows[activeOutputKeys[0]];
+      productionDirectives.push({
+        action: 'MAINTAIN_OR_SCALE_FACTORY_UTILIZATION',
+        resourceId: topOut.resourceId,
+        observedOutput: topOut.quantity,
+        unit: topOut.unit,
+        reason: 'ACTIVE_INDUSTRIAL_OUTPUT_OBSERVED'
+      });
+    }
+
+    const cap = finite(economy?.productionCapacity);
+    const completedProjects = finite(liveActivity?.autonomousProjectStatusCounts?.value?.completed) ?? 0;
+    const investmentBudgetRatio = fiscalStance === 'COUNTER_CYCLICAL_INVESTMENT_STIMULUS' ? 0.14 :
+      (fiscalStance === 'INFLATION_CONTAINMENT_TIGHTENING' ? 0.06 : 0.10);
+
+    return {
+      status: (fiscalStance !== 'UNOBSERVED' || productionDirectives.length || tradeDirectives.length) ? 'PLANNED' : 'UNOBSERVED',
+      turn,
+      countryId,
+      fiscalStance,
+      targetPublicInvestmentShare: treasuryAvail !== null ? investmentBudgetRatio : null,
+      observedProductionCapacity: cap,
+      completedProjectsCount: completedProjects,
+      recommendedTariffPct,
+      productionDirectives: productionDirectives.slice(0, 5),
+      tradeDirectives: tradeDirectives.slice(0, 5),
+      autonomousExecutionMode: 'NON_MUTATING_CHECKPOINT_RECOMMENDATION_UNLESS_EXPLICITLY_DISPATCHED',
+      authority: 'EVIDENCE_BACKED_NPC_AUTONOMOUS_POLICY_PLAN'
+    };
+  }
+
+  function evaluateAutonomousActions(countryValue, context = {}) {
+    const countryId = canonicalIso3(countryValue);
+    if (!countryId) return { status: 'SKIPPED', reason: 'COUNTRY_ID_INVALID' };
+    const root = rootState(context);
+    if (!isObject(root)) return { status: 'DEFERRED', reason: 'AUTHORITATIVE_WORLD_STATE_UNAVAILABLE', countryId };
+    if (isPlayerCountry(countryId, root)) return { status: 'SKIPPED', reason: 'PLAYER_COUNTRY_REMAINS_PLAYER_CONTROLLED', countryId };
+    const profile = findProfile(countryId);
+    if (!profile) return { status: 'DEFERRED', reason: 'COUNTRY_FINANCE_PROFILE_UNAVAILABLE', countryId };
+    if (!runtime.ready) return { status: 'DEFERRED', reason: 'NPC_MACRO_RUNTIME_NOT_READY', countryId };
+    const turn = currentTurn(context);
+    const previous = readPath(root, profile, countryId, runtime.rules.persistence.statePath);
+    const baseline = buildBaseline(countryId, profile);
+    const previousTurn = finite(previous?.lastProcessedTurn) ?? Math.max(0, turn - 1);
+    const liveActivity = buildLiveActivity(root, profile, countryId, baseline, previousTurn, turn);
+    const progression = deriveProgression(baseline, liveActivity, previous, turn, context.stepDurationMs);
+    return deriveAutonomousEconomicDecisions(root, profile, countryId, baseline, liveActivity, progression, turn);
+  }
+
+  function applyAutonomousEconomicDecisions(countryValue, options = {}) {
+    const plan = evaluateAutonomousActions(countryValue, options);
+    if (!plan || plan.status !== 'PLANNED') return plan;
+    if (options.execute !== true) return Object.assign({}, plan, { executed: false, dispatchedActions: [] });
+    const tradeApi = g.OmegaGlobalTrade || g.Omega?.GlobalTrade;
+    const dispatchedActions = [];
+    if (tradeApi && typeof tradeApi.createRequest === 'function') {
+      for (const dir of plan.tradeDirectives || []) {
+        if (dir.action !== 'IMPORT_DEFICIT_COVERAGE' || !dir.targetQuantity || !dir.targetCountryId) continue;
+        try {
+          const res = tradeApi.createRequest(plan.countryId, {
+            resourceId: dir.resourceId,
+            quantity: dir.targetQuantity,
+            targetCountryId: dir.targetCountryId,
+            source: 'NPC_AUTONOMOUS_MACRO_DECISION'
+          });
+          dispatchedActions.push({ action: dir.action, resourceId: dir.resourceId, result: res });
+        } catch (_) {}
+      }
+    }
+    return Object.assign({}, plan, { executed: true, dispatchedActions });
+  }
+
   function checkpointHandler(command, context) {
     const payload = command?.payload || {};
     const countryId = canonicalIso3(context?.countryId || payload.countryId);
@@ -767,8 +909,9 @@
     const previousTurn = finite(previous?.lastProcessedTurn) ?? Math.max(0, turn - 1);
     const liveActivity = buildLiveActivity(root, profile, countryId, baseline, previousTurn, turn);
     const progression = deriveProgression(baseline, liveActivity, previous, turn, context.stepDurationMs);
+    const autonomousPolicyPlan = deriveAutonomousEconomicDecisions(root, profile, countryId, baseline, liveActivity, progression, turn);
     const baselineFingerprint = fingerprint(baseline);
-    const sourceFingerprint = fingerprint({ baseline, liveActivity, progression, modelVersion: runtime.rules.modelVersion });
+    const sourceFingerprint = fingerprint({ baseline, liveActivity, progression, autonomousPolicyPlan, modelVersion: runtime.rules.modelVersion });
     const history = Array.isArray(previous?.snapshots) ? previous.snapshots.slice() : [];
     const previousSnapshot = history.length ? history[history.length - 1] : null;
     const snapshot = {
@@ -776,6 +919,7 @@
       sourceFingerprint,
       liveActivity: clone(liveActivity),
       progression: clone(progression),
+      autonomousPolicyPlan: clone(autonomousPolicyPlan),
       deltasFromPrevious: buildDeltas(previousSnapshot?.liveActivity, liveActivity)
     };
     const historyLimit = Math.max(1, Math.floor(finite(runtime.rules.persistence.historyLimit) ?? 24));
@@ -790,6 +934,7 @@
       baseline,
       liveActivity,
       progression,
+      autonomousPolicyPlan,
       snapshots: history.slice(-historyLimit),
       provenance: {
         rosterManifest: runtime.rules.roster.manifestPath,
@@ -886,7 +1031,8 @@
   }
 
   const API = Object.freeze({ VERSION, init, processCountry, getSnapshot,
-    getProgression: countryValue => getSnapshot(countryValue)?.progression || null, diagnostics });
+    getProgression: countryValue => getSnapshot(countryValue)?.progression || null,
+    evaluateAutonomousActions, applyAutonomousEconomicDecisions, diagnostics });
   g.Omega = g.Omega || {};
   g.Omega.NpcNationalMacroEconomy = API;
   g.OmegaNpcNationalMacroEconomy = API;

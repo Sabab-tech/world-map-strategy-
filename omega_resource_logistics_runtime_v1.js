@@ -90,7 +90,19 @@ function installEventListener(){return false;}
 function advanceCountry(countryId){
  return advanceHandler({payload:{countryId}}, {countryId});
 }
-const API=Object.freeze({VERSION,install,plan,planFromFactoryInput,advanceCountry,routeMode});
+function routeModesForResource(resourceId){
+ const r=String(resourceId||'').toLowerCase();
+ if(/crude_oil|natural_gas|naphtha|lng|lpg/.test(r))return['pipeline','ship','rail','truck'];
+ if(/coal|iron|bauxite|copper|nickel|cobalt|uranium|phosphate|potash|steel|slag|cement|limestone|aggregate/.test(r))return['rail','barge','ship','truck'];
+ if(/processed_food|pharmaceutical|medical|garment|battery|semiconductor|vehicle|defense|solar/.test(r))return['truck','rail','ship'];
+ return['truck','rail','barge','ship'];
+}
+function evaluateRouteCoverage(countryId){
+ const c=canonical(countryId),net=g.Omega?.ResourceIndustrialNetwork||g.OmegaResourceIndustrialNetwork;
+ if(net&&typeof net.evaluateTransportCoverage==='function')return net.evaluateTransportCoverage(c);
+ return{status:'UNAVAILABLE',countryId:c,supportedModes:['truck','rail','barge','ship','pipeline']};
+}
+const API=Object.freeze({VERSION,install,plan,planFromFactoryInput,advanceCountry,routeMode,routeModesForResource,evaluateRouteCoverage});
 g.Omega=g.Omega||{};g.Omega.ResourceLogisticsRuntime=API;g.OmegaResourceLogisticsRuntime=API;
 install();installEventListener();
 })(typeof window!=='undefined'?window:globalThis);

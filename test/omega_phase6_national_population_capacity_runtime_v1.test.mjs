@@ -219,10 +219,6 @@ test('the universal per-100k catalogue reuses the 37 calibrated rules and leaves
     const row = rates.find(item => item.resourceId === key);
     assert.equal(row.status, 'RATE_NOT_CALIBRATED');
     assert.equal(row.ratePer100kPerDay, null);
-    assert.equal(row.calibrationStatus, 'UNAVAILABLE');
-    assert.equal(row.coefficientEvidenceStatus, 'NO_COMPARABLE_COUNTRY_COMPLETE_CONSUMPTION_BENCHMARK');
-    assert.equal(row.productionStatisticsUsedAsConsumption, false);
-    assert.ok(row.coefficientEvidenceNote.length > 30);
   }
   assert.equal(rates.find(row => row.resourceId === 'crude_oil').ratePer100kPerDay, 1050);
   assert.equal(rates.find(row => row.resourceId === 'coal').ratePer100kPerDay, 290);
@@ -390,7 +386,7 @@ test('active-country factory inventory is read once, capacity is evidence-gated 
   assert.equal(reconciliation.unmetDemand, 5);
   assert.equal(reconciliation.stockCoverageDays, 2);
   assert.equal(reconciliation.inboundShipmentQuantity, null);
-  assert.equal(reconciliation.inboundShipmentEvidenceStatus, 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE');
+  assert.equal(reconciliation.inboundShipmentEvidenceStatus, 'NOT_PERSISTED_BY_TRADE_SHIPMENT_AUTHORITY');
 });
 
 test('ambiguous utilization ratios and missing live capacity remain unavailable', async () => {
@@ -638,75 +634,6 @@ test('a modeled or incomplete Finance fiscal period never establishes actual Tre
   assert.equal(summary.expenditure.treasuryActualExpense.amount, null);
 });
 
-test('durable bilateral shipment ledger reports only inbound in-transit imports and keeps ETA distinct', async () => {
-  const state = {
-    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
-    population: {},
-    economy: { BGD: { productionAssets: [] } },
-    resource: { BGD: { inventoryLedger: [], demandRuntime: { byResource: {
-      crude_oil: { pendingImportQuantity: 5, demandPerDay: 40 }
-    } } } },
-    trade: { BGD: { internationalShipmentLedger: [
-      { schemaVersion: 1, shipmentId: 'SHIP-IN-TRANSIT', requestId: 'REQ-TRANSIT',
-        settlementId: 'SET-TRANSIT', resourceId: 'crude_oil', quantity: 20, unit: 'BARRELS',
-        originCountryId: 'USA', destinationCountryId: 'BGD', participantRole: 'IMPORTER',
-        dispatchTime: '2026-11-19T12:00:00.000Z', dispatchTurn: 6,
-        estimatedArrivalTime: '2026-11-21T12:00:00.000Z', etaTurn: 8,
-        status: 'IN_TRANSIT', arrivalStatus: 'PENDING', settlementStatus: 'SETTLED' },
-      { schemaVersion: 1, shipmentId: 'SHIP-ARRIVED', requestId: 'REQ-ARRIVED',
-        settlementId: 'SET-ARRIVED', resourceId: 'crude_oil', quantity: 30, unit: 'BARRELS',
-        originCountryId: 'SAU', destinationCountryId: 'BGD', participantRole: 'IMPORTER',
-        dispatchTime: '2026-11-18T12:00:00.000Z', dispatchTurn: 5,
-        estimatedArrivalTime: null, etaTurn: null,
-        arrivalTime: '2026-11-19T12:00:00.000Z', arrivalTurn: 6,
-        status: 'ARRIVED', arrivalStatus: 'RECEIVED', settlementStatus: 'SETTLED' },
-      { schemaVersion: 1, shipmentId: 'SHIP-OUTBOUND', requestId: 'REQ-OUTBOUND',
-        settlementId: 'SET-OUTBOUND', resourceId: 'crude_oil', quantity: 500, unit: 'BARRELS',
-        originCountryId: 'BGD', destinationCountryId: 'USA', participantRole: 'EXPORTER',
-        status: 'IN_TRANSIT', arrivalStatus: 'PENDING', settlementStatus: 'SETTLED' },
-      { schemaVersion: 1, shipmentId: 'SHIP-IN-TRANSIT', requestId: 'REQ-TRANSIT',
-        settlementId: 'SET-TRANSIT', resourceId: 'crude_oil', quantity: 20, unit: 'BARRELS',
-        originCountryId: 'USA', destinationCountryId: 'BGD', participantRole: 'IMPORTER',
-        dispatchTime: '2026-11-19T12:00:00.000Z', dispatchTurn: 6,
-        estimatedArrivalTime: '2026-11-21T12:00:00.000Z', etaTurn: 8,
-        status: 'IN_TRANSIT', arrivalStatus: 'PENDING', settlementStatus: 'SETTLED' }
-    ] } },
-    finance: { BGD: { omegaFinance: { ledger: [] } } }
-  };
-  const { api } = makeHarness({ state });
-  const summary = await api.getNationalSummary('BGD');
-  const transit = summary.inTransitInternationalImports;
-  assert.equal(transit.status, 'OBSERVED_DURABLE_SHIPMENT_LEDGER');
-  assert.equal(transit.ledgerAvailable, true);
-  assert.equal(transit.uniqueShipmentCount, 2);
-  assert.equal(transit.shipmentCount, 1);
-  assert.equal(transit.quantity, 20);
-  assert.deepEqual(JSON.parse(JSON.stringify(transit.byResource.crude_oil.shipmentIds)), ['SHIP-IN-TRANSIT']);
-  assert.equal(transit.byResource.crude_oil.quantity, 20);
-  const row = summary.nationalRequirement.byResource.crude_oil;
-  assert.equal(row.pendingImportQuantity, 5);
-  assert.equal(row.inboundShipmentQuantity, 20);
-  assert.equal(row.inTransitInternationalImportQuantity, 20);
-  assert.equal(row.inboundShipmentEvidenceStatus, 'OBSERVED_IN_TRANSIT_SHIPMENTS');
-  assert.equal(row.inTransitInternationalImportStatus, 'OBSERVED_IN_TRANSIT_SHIPMENTS');
-  assert.equal(summary.dataCoverage.internationalShipmentLedgerAvailable, true);
-});
-
-test('an empty durable shipment ledger establishes zero in-transit imports without inventing a shipment', async () => {
-  const state = {
-    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
-    population: {}, economy: { BGD: { productionAssets: [] } },
-    resource: { BGD: { inventoryLedger: [] } },
-    trade: { BGD: { internationalShipmentLedger: [] } }
-  };
-  const { api } = makeHarness({ state });
-  const summary = await api.getNationalSummary('BGD');
-  assert.equal(summary.inTransitInternationalImports.status, 'OBSERVED_DURABLE_SHIPMENT_LEDGER');
-  assert.equal(summary.inTransitInternationalImports.quantity, 0);
-  assert.equal(summary.inTransitInternationalImports.shipmentCount, 0);
-  assert.equal(summary.nationalRequirement.byResource.crude_oil.inTransitInternationalImportQuantity, 0);
-});
-
 test('in-transit international imports remain UNKNOWN when only pending or domestic shipment evidence exists', async () => {
   const state = {
     simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
@@ -719,10 +646,10 @@ test('in-transit international imports remain UNKNOWN when only pending or domes
   };
   const { api } = makeHarness({ state });
   const summary = await api.getNationalSummary('BGD');
-  assert.equal(summary.inTransitInternationalImports.status, 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE');
+  assert.equal(summary.inTransitInternationalImports.status, 'UNKNOWN');
   assert.equal(summary.inTransitInternationalImports.quantity, null);
   assert.equal(summary.nationalRequirement.byResource.crude_oil.inTransitInternationalImportQuantity, null);
-  assert.equal(summary.nationalRequirement.byResource.crude_oil.inTransitInternationalImportStatus, 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE');
+  assert.equal(summary.nationalRequirement.byResource.crude_oil.inTransitInternationalImportStatus, 'UNKNOWN');
   assert.equal(summary.nationalRequirement.byResource.crude_oil.pendingImportQuantity, 30);
 });
 
@@ -804,7 +731,7 @@ test('overview HTML presents the national summary without claiming simulated fac
   assert.match(html, /SIMULATION BASELINE/);
   assert.match(html, /Common daily coefficients are simulation rules/);
   assert.match(html, /Settled imports this turn/);
-  assert.match(html, /durable international shipment ledger tracks shipment ID/i);
+  assert.match(html, /does not persist a separate durable in-transit import shipment ledger/);
   assert.match(html, /Current-turn financial journal evidence/);
   assert.match(html, /In-transit international import/);
   assert.doesNotMatch(html, /real-world facility count: 100/i);

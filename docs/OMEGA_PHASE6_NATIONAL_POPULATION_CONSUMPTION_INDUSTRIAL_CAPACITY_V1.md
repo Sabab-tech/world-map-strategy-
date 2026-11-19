@@ -1,7 +1,7 @@
 # OMEGA Phase 6 — National Population, Consumption & Industrial Capacity
 
 **Specification:** OMEGA_PHASE6_NATIONAL_POPULATION_CONSUMPTION_INDUSTRIAL_CAPACITY_V1  
-**Status:** Durable bilateral international shipment evidence and Phase 6 import projections implemented; four universal mineral coefficients remain unavailable pending comparable consumption benchmarks; complete financial totals remain evidence-gated  
+**Status:** Source-aware population refresh and bounded current-turn financial journal projections implemented on the Phase 6 follow-up branch; complete financial totals and durable international in-transit tracking remain evidence-gated  
 **Scope:** 197 core countries, 21 canonical factory types, the existing 41-resource profile set
 
 ## 1. Objective and invariants
@@ -88,7 +88,7 @@ The four existing profiles with no population coefficient remain:
 - Ruby
 - Limestone
 
-These rows return `RATE_NOT_CALIBRATED`; they are not assigned estimated coefficients. Their rule records now explicitly carry `coefficientStatus: UNAVAILABLE`, `NO_COMPARABLE_COUNTRY_COMPLETE_CONSUMPTION_BENCHMARK`, an evidence-gap note, and `productionStatisticsUsedAsConsumption: false`. Factory recipe demand for such a material can still be surfaced independently when existing runtime evidence exists.
+These rows return `RATE_NOT_CALIBRATED`; they are not assigned estimated coefficients. Factory recipe demand for such a material can still be surfaced independently when existing runtime evidence exists.
 
 ## 5. Population demand, factory demand and national demand
 
@@ -98,13 +98,13 @@ Three records remain distinct:
 - **Factory input demand:** read from the active-country factory assets and the existing `resource.demandRuntime.byResource` evidence.
 - **National demand:** read from the existing national-demand runtime's `demandPerDay` result.
 
-The universal per-100k rate catalogue remains at 37 calibrated rules and 4 explicitly uncalibrated rates: `gypsum`, `niobium`, `ruby`, and `limestone`. Their `ratePer100kPerDay` stays `null`; they are not converted to zero demand. No defensible common per-capita apparent-consumption series for these four is present in the current source set. Global mine-production figures are not interchangeable with consumption because imports, exports, recycled/synthetic supply, stock changes and industrial use must be reconciled. The [USGS 2026 data release](https://www.usgs.gov/data/mineral-commodity-summaries-2026-data-release) includes world production statistics but its salient apparent-consumption series are United States statistics; it does not provide population-linked apparent consumption for all 197 OMEGA countries. [World Mining Data 2026](https://www.world-mining-data.info/wmd/downloads/PDF/WMD%202026.pdf) is a country-level production dataset, not a consumption dataset. [UN Comtrade](https://comtrade.un.org/en/trade-statistics) supplies reported imports and exports but explicitly does not fill country reporting gaps; it also does not establish stock changes or cover all domestic non-traded use. These sources therefore cannot justify a synthetic world per-capita rate without a disclosed estimation model. Factory input requirements remain a separate demand source and must not be double-counted as direct population demand. Calibrating these four rates remains an open data task until a comparable consumption benchmark and method are available.
+The universal per-100k rate catalogue remains at 37 calibrated rules and 4 explicitly uncalibrated rates: `gypsum`, `niobium`, `ruby`, and `limestone`. Their `ratePer100kPerDay` stays `null`; they are not converted to zero demand. No defensible common per-capita apparent-consumption series for these four is present in the current source set. Global mine-production figures are not interchangeable with consumption because imports, exports, synthetic supply, stock changes and industrial use must be reconciled. For example, the [USGS Mineral Commodity Summaries 2026](https://pubs.usgs.gov/publication/mcs2026) reports global mineral production and reserves, not a complete 197-country population-linked consumption measure. Factory input requirements remain a separate demand source and must not be double-counted as direct population demand. Calibrating these four rates remains an open data task until a comparable consumption benchmark and method are available.
 
 Phase 6 does not calculate `populationDemand + factoryDemand`. The current national-demand runtime has explicit overlap handling and currently uses a maximum-based comparison in relevant active-factory cases. Only its published result is used as the combined national-demand authority. If the existing runtime has not published a row, national demand is `NOT_AVAILABLE`, not an invented sum.
 
 Physical output is read from the resource state's `finishedGoodsLedger`, filtered to the current game turn and de-duplicated by transaction ID. The economy finished-goods mirror is not counted as a second source.
 
-Inventory, confirmed imports, in-transit shipments, and demand are different facts. Completed cross-border imports are read from current-turn `resource.inventoryLedger` rows with type `INTERNATIONAL_TRADE_IMPORT`; records are de-duplicated by settlement and resource identity. Pending import requests are not treated as imports. The trade runtime retains at most 2,048 inventory-ledger rows; when the ledger reaches that bound, Phase 6 marks settled-import totals `IMPORT_LEDGER_MAY_BE_TRUNCATED` and reports them as `UNKNOWN`. Separately, Global Trade now writes a durable `trade.internationalShipmentLedger` entry for both exporter and importer using the same `shipmentId`. Each record carries request/settlement IDs, resource and quantity, origin/destination, dispatch time/turn, estimated-arrival fields, arrival status/time, settlement status, transport/route identifiers when supplied, and batch references. Writes are idempotent by shipment ID and conflicting replays are rejected. Phase 6 reads only the selected player's importer-side ledger and counts only records explicitly marked `DISPATCHED`, `IN_TRANSIT`, `CUSTOMS_CLEARANCE` or `PENDING_ARRIVAL`; arrived shipments are not counted as inbound transit. The current standard bilateral trade path dispatches and credits the buyer within the same settlement flow, so its status is `ARRIVED` and both observed timestamps are recorded within the current turn. The ETA field remains `null` with `NOT_ESTIMATED_ROUTE_TRAVEL_TIME_NOT_MODELED` until a route travel-time authority exists. An old save with no ledger remains `UNKNOWN`; a present empty ledger establishes zero. Phase 6 reads this evidence only and does not debit inventory or change shipment state.
+Inventory, confirmed imports, in-transit shipments, and demand are different facts. Completed cross-border imports are read from current-turn `resource.inventoryLedger` rows with type `INTERNATIONAL_TRADE_IMPORT`; records are de-duplicated by settlement and resource identity. Pending import requests are not treated as imports. The trade runtime retains at most 2,048 inventory-ledger rows; when the ledger reaches that bound, Phase 6 marks import totals `IMPORT_LEDGER_MAY_BE_TRUNCATED` and reports them as `UNKNOWN` rather than claiming a complete zero or partial total. The current trade runtime does not persist a durable in-transit import shipment ledger for this projection, so in-transit import quantity remains `UNKNOWN` rather than being inferred. Phase 6 does not debit inventory or change shipment state.
 
 ## 6. Factory counts, capacity and ownership
 
@@ -158,7 +158,6 @@ The Country Overview receives an additive, collapsible national summary. The pan
 | 6B | Universal per-100k coefficient catalog | Existing 41 profiles normalized; 37 calculated, 4 uncalibrated |
 | 6C | National factory census and capacity | 197 × 21 static matrix surfaced; selected-country live status/capacity read from existing registry |
 | 6D | Population/factory demand reconciliation | Separate streams; existing national-demand authority reused, no new sum |
-| 6D+ | International shipment evidence | Bilateral durable shipment ID ledger, idempotent exporter/importer records, explicit dispatch/arrival/settlement status; ETA remains unavailable until route-time evidence exists |
 | 6E | Resource and factory cost | Resource-level modeled cost requires quote/currency/observation; factory operating and Treasury actuals remain evidence-gated |
 | 6F | National summary UI | Country Overview summary panel added |
 | 6G | Reconciliation and performance | Optional save snapshot extension and load-time provenance revalidation added; full CI result and device-performance validation remain separate gates |
@@ -177,14 +176,12 @@ The dedicated regression suite verifies:
 - Status, ownership, per-factory-type capacity units, and utilization evidence requirements for live factories; ambiguous utilization ratios above 1 remain unavailable.
 - Active-player-only detailed factory access.
 - Current-turn production transaction de-duplication using the resource finished-goods ledger.
-- Current-turn settled import reconciliation from `INTERNATIONAL_TRADE_IMPORT` inventory-ledger entries, settlement/resource de-duplication, and separation from pending requests.
-- Durable bilateral shipment ledger creation, exporter/importer ownership, shipment ID idempotency, conflict rejection, observed dispatch/arrival timestamps, explicit ETA-unavailable status, and active-country-only in-transit import aggregation.
-- Gypsum, niobium, ruby and limestone remain explicitly uncalibrated with source-gap metadata; production statistics are never substituted for consumption.
+- Current-turn settled import reconciliation from `INTERNATIONAL_TRADE_IMPORT` inventory-ledger entries, settlement/resource de-duplication, and separation from pending requests and unpersisted in-transit shipment state.
 - Separate population and factory demand, with no naive summation.
 - Price/currency evidence gates and the separation of modeled cost from Treasury postings.
 - Current-turn government expense/reversal and private-factory operating-cost accrual projection only when every source journal is balanced, posted, correctly identified and currency-scoped; bounded source-window and non-completion statuses are preserved.
 - Actual Treasury budgetary expenditure is established only from a complete, non-modeled, reconciled Finance fiscal-period account; it is government spending plus interest paid, with principal repayment excluded.
-- In-transit international import quantities come only from durable importer-side shipment records; old saves without the ledger remain unknown, an empty ledger means zero, and incomplete/duplicate-conflicting shipment records do not produce a complete quantity.
+- In-transit international import quantities remain explicitly unknown until the trade runtime persists durable shipment identity/status evidence.
 - Read-only authoritative world-state behavior and the absence of a new scheduler.
 - Phase 6 provenance save/load checksum coverage, legacy-save compatibility, and load-time fingerprint revalidation.
 

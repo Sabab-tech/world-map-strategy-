@@ -672,5 +672,165 @@
       "TROY_OUNCES_PER_DAY": "TROY_OUNCES",
       "CARATS_PER_DAY": "CARATS"
     }
+  },
+  "finalProductProfiles": {
+    "processed_food": {
+      "buyerType": "HOUSEHOLD_RETAIL",
+      "unit": "METRIC_TONS_PER_DAY",
+      "basePerMillionPopulation": 180,
+      "priority": 10,
+      "gdpPerCapitaElasticity": 0.15,
+      "populationElasticity": 0.95,
+      "wartimeMultiplier": 1.05
+    },
+    "readymade_garments": {
+      "buyerType": "HOUSEHOLD_RETAIL",
+      "unit": "UNITS_PER_DAY",
+      "basePerMillionPopulation": 120,
+      "priority": 8.5,
+      "gdpPerCapitaElasticity": 0.35,
+      "populationElasticity": 0.9,
+      "wartimeMultiplier": 0.95
+    },
+    "pharmaceutical_goods": {
+      "buyerType": "GOVERNMENT_PROCUREMENT",
+      "unit": "METRIC_TONS_PER_DAY",
+      "basePerMillionPopulation": 4.5,
+      "priority": 9.8,
+      "gdpPerCapitaElasticity": 0.4,
+      "populationElasticity": 0.9,
+      "wartimeMultiplier": 1.35,
+      "debitGovernmentTreasury": true
+    },
+    "medical_supplies": {
+      "buyerType": "GOVERNMENT_PROCUREMENT",
+      "unit": "UNITS_PER_DAY",
+      "basePerMillionPopulation": 18,
+      "priority": 9.6,
+      "gdpPerCapitaElasticity": 0.3,
+      "populationElasticity": 0.9,
+      "wartimeMultiplier": 1.5,
+      "debitGovernmentTreasury": true
+    },
+    "diesel": {
+      "buyerType": "COMMERCIAL_FLEET",
+      "unit": "BARRELS_PER_DAY",
+      "basePerMillionPopulation": 2400,
+      "priority": 9.4,
+      "gdpPerCapitaElasticity": 0.25,
+      "populationElasticity": 0.65,
+      "wartimeMultiplier": 1.35
+    },
+    "gasoline": {
+      "buyerType": "HOUSEHOLD_RETAIL",
+      "unit": "BARRELS_PER_DAY",
+      "basePerMillionPopulation": 2100,
+      "priority": 9.1,
+      "gdpPerCapitaElasticity": 0.35,
+      "populationElasticity": 0.7,
+      "wartimeMultiplier": 1.15
+    },
+    "kerosene_jet_fuel": {
+      "buyerType": "COMMERCIAL_FLEET",
+      "unit": "BARRELS_PER_DAY",
+      "basePerMillionPopulation": 650,
+      "priority": 8.7,
+      "gdpPerCapitaElasticity": 0.45,
+      "populationElasticity": 0.55,
+      "wartimeMultiplier": 1.4
+    },
+    "npk_fertilizer": {
+      "buyerType": "AGRICULTURAL_BUYER",
+      "unit": "METRIC_TONS_PER_DAY",
+      "basePerMillionPopulation": 65,
+      "priority": 9.3,
+      "gdpPerCapitaElasticity": 0.12,
+      "populationElasticity": 0.8,
+      "wartimeMultiplier": 1.1
+    },
+    "urea": {
+      "buyerType": "AGRICULTURAL_BUYER",
+      "unit": "METRIC_TONS_PER_DAY",
+      "basePerMillionPopulation": 55,
+      "priority": 9.0,
+      "gdpPerCapitaElasticity": 0.12,
+      "populationElasticity": 0.8,
+      "wartimeMultiplier": 1.05
+    },
+    "cement": {
+      "buyerType": "GOVERNMENT_PROCUREMENT",
+      "unit": "METRIC_TONS_PER_DAY",
+      "basePerMillionPopulation": 420,
+      "priority": 8.2,
+      "gdpPerCapitaElasticity": 0.35,
+      "populationElasticity": 0.6,
+      "wartimeMultiplier": 1.1
+    },
+    "steel_rebar": {
+      "buyerType": "GOVERNMENT_PROCUREMENT",
+      "unit": "METRIC_TONS_PER_DAY",
+      "basePerMillionPopulation": 160,
+      "priority": 8.3,
+      "gdpPerCapitaElasticity": 0.35,
+      "populationElasticity": 0.55,
+      "wartimeMultiplier": 1.2
+    },
+    "vehicles": {
+      "buyerType": "COMMERCIAL_FLEET",
+      "unit": "UNITS_PER_DAY",
+      "basePerMillionPopulation": 6,
+      "priority": 7.8,
+      "gdpPerCapitaElasticity": 0.5,
+      "populationElasticity": 0.5,
+      "wartimeMultiplier": 1.25
+    },
+    "battery_packs": {
+      "buyerType": "COMMERCIAL_FLEET",
+      "unit": "UNITS_PER_DAY",
+      "basePerMillionPopulation": 12,
+      "priority": 8.0,
+      "gdpPerCapitaElasticity": 0.45,
+      "populationElasticity": 0.5,
+      "wartimeMultiplier": 1.15
+    },
+    "defense_equipment": {
+      "buyerType": "GOVERNMENT_PROCUREMENT",
+      "unit": "UNITS_PER_DAY",
+      "basePerMillionPopulation": 1.5,
+      "priority": 9.0,
+      "gdpPerCapitaElasticity": 0.3,
+      "populationElasticity": 0.35,
+      "militaryElasticity": 0.6,
+      "wartimeMultiplier": 2.0,
+      "debitGovernmentTreasury": true
+    },
+    "communication_hardware": {
+      "buyerType": "HOUSEHOLD_RETAIL",
+      "unit": "UNITS_PER_DAY",
+      "basePerMillionPopulation": 8,
+      "priority": 7.5,
+      "gdpPerCapitaElasticity": 0.55,
+      "populationElasticity": 0.6,
+      "wartimeMultiplier": 1.2
+    },
+    "semiconductor_wafers": {
+      "buyerType": "DOMESTIC_FACTORY",
+      "unit": "UNITS_PER_DAY",
+      "basePerMillionPopulation": 3,
+      "priority": 8.8,
+      "gdpPerCapitaElasticity": 0.5,
+      "populationElasticity": 0.35,
+      "wartimeMultiplier": 1.2
+    },
+    "solar_panels": {
+      "buyerType": "COMMERCIAL_FLEET",
+      "unit": "UNITS_PER_DAY",
+      "basePerMillionPopulation": 10,
+      "priority": 7.7,
+      "gdpPerCapitaElasticity": 0.4,
+      "populationElasticity": 0.45,
+      "wartimeMultiplier": 1.0
+    }
   }
 }
+
