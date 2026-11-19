@@ -172,7 +172,7 @@ function assessTradePosition(a,quantity){
  if(buyerRoute.status==='UNKNOWN')unknown.push('BUYER_ROUTE_CAPACITY_NOT_OBSERVED');
  if(buyerCash===null)unknown.push('BUYER_LIQUIDITY_NOT_OBSERVED');
  if(fx===null)unknown.push('BILATERAL_FX_NOT_OBSERVED');
- if(buyerImport.status==='UNKNOWN')unknown.push('BUYER_IMPORT_DEMAND_NOT_OBSERVED');
+
  return{status:blockers.length?'BLOCKED':unknown.length?'REVIEW_REQUIRED':'READY',
   buyerCountryId:buyer,sellerCountryId:seller,resourceId:rid,quantity:q,
   sellerFreeStock:field(sellerFree,'declared resource unit',sellerFree===null?'UNKNOWN':'KNOWN','resource.inventory − resource.reserves'),
