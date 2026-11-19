@@ -1070,7 +1070,25 @@
     const req=clone(bucket.importRequests[idx]),wasSettled=String(req.status||'').toUpperCase()===TYPES.SETTLED;
     const nextStatus=p.status||TYPES.SETTLED,settlementId=String(p.settlementId||req.settlementId||'');
     if(wasSettled){
-      if(settlementId&&settlementId===String(req.settlementId||''))return{accepted:true,duplicate:true,request:req,settlementId,balance:bucket.balance,importValue:bucket.importValue};
+      if(settlementId&&settlementId===String(req.settlementId||'')){
+        const priorImport=(bucket.importLedger||[]).find(x=>String(x?.settlementId||'')===settlementId);
+        const requestedBuyerValue=num(p.buyerValue);
+        const priorBuyerValue=num(priorImport?.totalValue);
+        const expectedSellerValue=(num(req.quantity)||0)*(num(req.unitPrice)||0);
+        const requestedSellerValue=num(p.sellerValue);
+        const sameBuyerValue=requestedBuyerValue===null||priorBuyerValue===null||
+          Math.abs(requestedBuyerValue-priorBuyerValue)<=1e-7;
+        const sameSellerValue=requestedSellerValue===null||
+          Math.abs(requestedSellerValue-expectedSellerValue)<=1e-7;
+        const sameBuyerCurrency=!p.buyerCurrency||!priorImport?.currency||
+          String(p.buyerCurrency).toUpperCase()===String(priorImport.currency).toUpperCase();
+        const sameCounterparty=!p.sellerCountryId||canonical(p.sellerCountryId)===canonical(req.targetCountryId);
+        if(!sameBuyerValue||!sameSellerValue||!sameBuyerCurrency||!sameCounterparty)
+          return{accepted:false,reason:'TRADE_SETTLEMENT_IDEMPOTENCY_COLLISION',settlementId,
+            requestId:req.requestId,expectedBuyerValue:priorBuyerValue,receivedBuyerValue:requestedBuyerValue,
+            expectedSellerValue,receivedSellerValue:requestedSellerValue};
+        return{accepted:true,duplicate:true,request:req,settlementId,balance:bucket.balance,importValue:bucket.importValue};
+      }
       return{accepted:false,reason:'TRADE_REQUEST_ALREADY_SETTLED',requestId:req.requestId,settlementId:req.settlementId||null};
     }
     req.status=nextStatus;req.stage=p.stage||'SETTLED';req.settlementId=settlementId||null;req.settledTurn=nextStatus===TYPES.SETTLED?turn():null;
@@ -1096,8 +1114,20 @@
     if(!bucket.globalTradeLedger||typeof bucket.globalTradeLedger!=='object')bucket.globalTradeLedger={requests:[],decisions:[],settlements:[]};
     const sid=String(p.settlementId||'').trim();
     if(String(p.status||'').toUpperCase()==='SETTLED'&&!sid)return{accepted:false,reason:'SELLER_SETTLEMENT_ID_REQUIRED'};
-    const existed=(bucket.globalTradeLedger.settlements||[]).some(x=>String(x?.settlementId||'')===sid&&String(x?.status||'').toUpperCase()==='SETTLED');
-    if(existed)return{accepted:true,duplicate:true,settlementId:sid,balance:bucket.balance,exportValue:bucket.exportValue};
+    const priorSettlement=(bucket.globalTradeLedger.settlements||[]).find(x=>
+      String(x?.settlementId||'')===sid&&String(x?.status||'').toUpperCase()==='SETTLED');
+    if(priorSettlement){
+      const fields=['requestId','resourceId','buyerCountryId','buyerCurrency','sellerCurrency'];
+      const sameFields=fields.every(key=>!priorSettlement[key]||!p[key]||
+        String(priorSettlement[key]).toUpperCase()===String(p[key]).toUpperCase());
+      const numericFields=['quantity','unitPrice','totalValue','buyerValue','fx'];
+      const sameNumbers=numericFields.every(key=>num(priorSettlement[key])===null||num(p[key])===null||
+        Math.abs(num(priorSettlement[key])-num(p[key]))<=1e-7);
+      if(!sameFields||!sameNumbers)
+        return{accepted:false,reason:'SELLER_SETTLEMENT_IDEMPOTENCY_COLLISION',settlementId:sid,
+          requestId:p.requestId||null};
+      return{accepted:true,duplicate:true,settlementId:sid,balance:bucket.balance,exportValue:bucket.exportValue};
+    }
     if(String(p.status||'').toUpperCase()==='SETTLED'){
       const gross=num(p.totalValue);
       if(gross===null||gross<0)return{accepted:false,reason:'SELLER_TRADE_VALUE_INVALID'};
