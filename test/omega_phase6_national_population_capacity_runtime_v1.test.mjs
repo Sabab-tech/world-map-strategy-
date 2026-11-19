@@ -54,11 +54,12 @@ function makeHarness(options = {}) {
     VAT: record(800, 2015, 'STALE_BASELINE', { iso3: 'VAT', name: 'Vatican City' }),
     ESH: record(null, null, 'NOT_RECORDED', { iso3: 'ESH', name: 'Western Sahara' })
   };
-  const calls = { generalInit: [], baselineInit: 0, catalogLoad: 0 };
+  const calls = { generalInit: [], baselineInit: 0, catalogLoad: 0, factoryRegistryQueries: [] };
   const baselineApi = {
     async init() { calls.baselineInit += 1; return { status: 'READY', countryCount: 197, factoryTypeCount: 21 }; },
     getCountryBaseline(id) { return baseline.countries[id] || null; },
     getCountryFactoryRegistry(id) {
+      calls.factoryRegistryQueries.push(id);
       const row = baseline.countries[id];
       if (!row) return null;
       return {
@@ -267,7 +268,9 @@ test('active-country factory inventory is read once, capacity is evidence-gated 
   assert.equal(summary.factories.liveFactoryStatusCounts.underConstruction, 1);
   assert.equal(summary.factories.ownershipCounts.governmentOwned, 1);
   assert.equal(summary.factories.ownershipCounts.privateOwned, 1);
+  assert.equal(summary.factories.ratedCapacityPerDay, 2000);
   assert.equal(summary.factories.effectiveCapacityPerDay, 400);
+  assert.deepEqual(calls.factoryRegistryQueries, ['BGD']);
   assert.equal(summary.production.outputByProductThisTurn.garments, 100);
   assert.equal(summary.production.outputByProductThisTurn.shoes, 20);
   assert.equal(summary.production.uniqueTransactionCount, 1);
@@ -294,7 +297,7 @@ test('non-player countries expose static baselines only and do not read detailed
     resource: { BGD: { finishedGoodsLedger: [{ transactionId: 'NPC-TX', turn: 3, outputQuantities: { garments: 10 } }] } },
     trade: {}
   };
-  const { api } = makeHarness({ state, countryId: 'BGD', playerCountryId: 'USA' });
+  const { api, calls } = makeHarness({ state, countryId: 'BGD', playerCountryId: 'USA' });
   const summary = await api.getNationalSummary('BGD');
   assert.equal(summary.factories.activePlayerCountry, false);
   assert.equal(summary.factories.startingFactoryUnits, 100);
@@ -303,6 +306,8 @@ test('non-player countries expose static baselines only and do not read detailed
   assert.equal(summary.production.status, 'NOT_ACTIVE_COUNTRY');
   assert.equal(summary.production.outputByProductThisTurn, null);
   assert.equal(summary.factoryDemand.byResource, null);
+  assert.deepEqual(calls.factoryRegistryQueries, [],
+    'the static NPC summary must not query a detailed live factory registry');
 });
 
 test('population expenditure stays unavailable without explicit price currency and Treasury proof', async () => {
