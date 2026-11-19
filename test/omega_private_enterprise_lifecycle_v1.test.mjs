@@ -2000,7 +2000,7 @@ test('private-company import debits the verified buyer wallet, credits the selli
   const transfer=[{
     sourceBatchId:'SAU-PRIVATE-ORE-BATCH-1',sourceBatchIds:['SAU-PRIVATE-ORE-BATCH-1'],
     ownerCompanyId:seller,operatorCompanyId:operator,ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
-    sourceFactoryId:'SAU-PRIVATE-ORE-FAC-1',quantity:10,resourceId:'iron_ore',
+    sourceFactoryId:'SAU-PRIVATE-ORE-FAC-1',quantity:10,resourceId:'iron_ore',unit:'tonne',
     stage:'RAW_EXTRACTED',provenance:{sourceAuthority:'RECORDED_PRIVATE_FACTORY_OUTPUT'}
   }];
   const completed=api.completePrivateCompanyImport({
@@ -2035,7 +2035,7 @@ test('private-company import debits the verified buyer wallet, credits the selli
   assert.equal(purchaseEntry.sectorJournalV1.debitTotalMinor,10000);
   assert.equal(purchaseEntry.sectorJournalV1.creditTotalMinor,10000);
   assert.deepEqual(JSON.parse(JSON.stringify(purchaseEntry.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]))),[
-    ['DEBIT','FIRM:'+buyer+':INVENTORY:iron_ore',10000],
+    ['DEBIT','FIRM:'+buyer+':INVENTORY:iron_ore:tonne',10000],
     ['CREDIT','FIRM:'+buyer+':CASH',10000]
   ]);
   assert.equal(tariffEntry.sectorJournalV1.status,'POSTED');
@@ -2104,7 +2104,7 @@ test('failed private-company receipt collision reverses buyer cash and makes the
   const transfer=[{sourceBatchId:'SAU-PRIVATE-FAIL-BATCH',sourceBatchIds:['SAU-PRIVATE-FAIL-BATCH'],
     ownerCompanyId:seller,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
     ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'SAU-PRIVATE-FAIL-FAC',
-    quantity:10,resourceId:'iron_ore',stage:'RAW_EXTRACTED'}];
+    quantity:10,resourceId:'iron_ore',unit:'tonne',stage:'RAW_EXTRACTED'}];
   const first=api.completePrivateCompanyImport({
     settlementId:settlementId,buyerCountryId:'BGD',sellerCountryId:'SAU',
     buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
@@ -2128,7 +2128,7 @@ test('failed private-company receipt collision reverses buyer cash and makes the
   assert.equal(purchaseReversal.sectorJournalV1.referenceTransactionId,purchase.entryId);
   assert.deepEqual(JSON.parse(JSON.stringify(purchaseReversal.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]))),[
     ['DEBIT','FIRM:'+buyer+':CASH',10000],
-    ['CREDIT','FIRM:'+buyer+':INVENTORY:iron_ore',10000]
+    ['CREDIT','FIRM:'+buyer+':INVENTORY:iron_ore:tonne',10000]
   ]);
   assert.equal(tariffReversal.sectorJournalV1.status,'POSTED');
   assert.deepEqual(JSON.parse(JSON.stringify(tariffReversal.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]))),[
@@ -2313,4 +2313,38 @@ test('private-company import rejects sub-cent cash amounts before reservation or
   assert.equal(h.state.finance.BGD.available,treasuryBefore);
   assert.equal(h.state.finance.BGD.omegaFinance.companyTradeReservations,undefined);
   assert.equal(h.state.economy.BGD.companyAccounts,undefined);
+});
+
+
+test('firm input inventory journal stays unavailable when the declared quantity unit is missing',()=>{
+  const h=makeHarness(),api=h.api,buyer=COMPANY,seller='AURORA_INDUSTRIAL_GROUP';
+  h.state.finance.BGD.currencyCode='USD';
+  h.state.finance.SAU={currencyCode:'USD',omegaFinance:{ledger:[],companyCapitalAccounts:{}}};
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [buyer]:{companyId:buyer,currency:'USD',availableBalance:500,reservedBalance:0,
+      capitalRaised:500,capitalSpent:0,revision:0}
+  };
+  const reservation=api.reservePrivateCompanyImport({
+    settlementId:'PRIVATE-IMPORT-UNIT-UNKNOWN-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:100,buyerPurchaseAmount:100,
+    buyerTariffAmount:0,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    resourceId:'iron_ore',quantity:10,unitPrice:10
+  });
+  assert.equal(reservation.status,'RESERVED');
+  const transfer=[{
+    sourceBatchId:'SAU-PRIVATE-UNKNOWN-UNIT-BATCH',sourceBatchIds:['SAU-PRIVATE-UNKNOWN-UNIT-BATCH'],
+    ownerCompanyId:seller,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+    sourceFactoryId:'SAU-PRIVATE-UNKNOWN-UNIT-FAC',quantity:10,resourceId:'iron_ore',
+    stage:'RAW_EXTRACTED'
+  }];
+  const result=api.completePrivateCompanyImport({
+    settlementId:'PRIVATE-IMPORT-UNIT-UNKNOWN-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:100,buyerPurchaseAmount:100,
+    buyerTariffAmount:0,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    resourceId:'iron_ore',quantity:10,batchTransfers:transfer
+  });
+  assert.equal(result.status,'SETTLED',JSON.stringify(result));
+  const entry=h.state.economy.BGD.companyAccounts[buyer].cashFlowEntries.find(row=>row.category==='FACTORY_INPUT_PURCHASE');
+  assert.equal(entry.sectorJournalV1.status,'UNAVAILABLE');
+  assert.equal(entry.sectorJournalV1.reason,'INPUT_RESOURCE_ID_OR_DECLARED_UNIT_UNAVAILABLE');
 });
