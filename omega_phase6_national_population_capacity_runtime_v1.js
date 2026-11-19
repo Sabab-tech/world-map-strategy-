@@ -221,12 +221,19 @@
     var workingPct = finite(metrics.populationAge15To64Pct);
     var urbanPct = finite(metrics.urbanizationPct);
     var dependency = finite(metrics.ageDependencyRatioPct);
+    var growth = finite(metrics.populationGrowthPct);
+    var metricMetadata = object(record && record.metricMetadata) || {};
     return {
+      annualPopulationGrowthPct: growth,
+      annualGrowthObservation: clone(metricMetadata.populationGrowthPct || null),
       urbanPopulationPct: urbanPct,
+      urbanPopulationObservation: clone(metricMetadata.urbanizationPct || null),
       workingAgePopulationPct: workingPct,
       workingAgePopulation: population.value !== null && workingPct !== null
         ? population.value * workingPct / 100 : null,
-      dependencyRatioPct: dependency
+      workingAgePopulationObservation: clone(metricMetadata.populationAge15To64Pct || null),
+      dependencyRatioPct: dependency,
+      dependencyRatioObservation: clone(metricMetadata.ageDependencyRatioPct || null)
     };
   }
   function getPer100kRateCatalog() {
@@ -350,7 +357,19 @@
         existingNationalDemandPerDay: finite(entry.demandPerDay != null ? entry.demandPerDay : entry.demand),
         factoryConsumption: finite(entry.factoryConsumption),
         nationalConsumption: finite(entry.nationalConsumption),
+        fulfilledDemand: finite(entry.fulfilledDemand),
         unmetDemand: finite(entry.unmetDemand),
+        inventoryBefore: finite(entry.inventoryBefore),
+        inventoryAfter: finite(entry.inventoryAfter),
+        protectedStock: finite(entry.protectedStock),
+        spendableStockAfter: finite(entry.spendableStockAfter),
+        stockCoverageDays: finite(entry.stockCoverageDays),
+        stockCoverageTargetDays: finite(entry.stockCoverageTargetDays),
+        lowStockCoverage: typeof entry.lowStockCoverage === 'boolean' ? entry.lowStockCoverage : null,
+        pendingImportQuantity: finite(entry.pendingImportQuantity),
+        unresolvedImportRequestCount: finite(entry.unresolvedImportRequestCount),
+        inboundShipmentQuantity: null,
+        inboundShipmentEvidenceStatus: 'NOT_EXPOSED_BY_NATIONAL_DEMAND_RUNTIME',
         source: 'resource.demandRuntime.byResource',
         overlapPolicy: 'EXISTING_NATIONAL_DEMAND_RUNTIME_AUTHORITY'
       };
@@ -528,6 +547,18 @@
           factoryConsumption: demand ? demand.factoryConsumption : null,
           nationalConsumption: demand ? demand.nationalConsumption : null,
           unmetDemand: demand ? demand.unmetDemand : null,
+          fulfilledDemand: demand ? demand.fulfilledDemand : null,
+          inventoryBefore: demand ? demand.inventoryBefore : null,
+          inventoryAfter: demand ? demand.inventoryAfter : null,
+          protectedStock: demand ? demand.protectedStock : null,
+          spendableStockAfter: demand ? demand.spendableStockAfter : null,
+          stockCoverageDays: demand ? demand.stockCoverageDays : null,
+          stockCoverageTargetDays: demand ? demand.stockCoverageTargetDays : null,
+          lowStockCoverage: demand ? demand.lowStockCoverage : null,
+          pendingImportQuantity: demand ? demand.pendingImportQuantity : null,
+          unresolvedImportRequestCount: demand ? demand.unresolvedImportRequestCount : null,
+          inboundShipmentQuantity: null,
+          inboundShipmentEvidenceStatus: 'NOT_EXPOSED_BY_NATIONAL_DEMAND_RUNTIME',
           combinedDemandStatus: demand ? 'EXISTING_RUNTIME_VALUE' : 'NOT_AVAILABLE',
           combinedDemandAuthority: demand ? demand.source : null,
           overlapPolicy: demand ? demand.overlapPolicy : 'NOT_RECOMPUTED_TO_AVOID_DOUBLE_COUNTING'
@@ -628,6 +659,25 @@
       return '<tr><td>' + escapeHtml(row.resourceId) + '</td><td>' + formatNumber(row.ratePer100kPerDay, 5) + '</td><td>' +
         formatNumber(row.quantityPerDay, 3) + '</td><td>' + escapeHtml(row.unit || 'UNIT_UNSPECIFIED') + '</td></tr>';
     }).join('');
+    var reconciliationRows = Object.keys(summary.nationalRequirement.byResource || {}).map(function (resourceId) {
+      var row = summary.nationalRequirement.byResource[resourceId];
+      if (row.existingNationalDemandPerDay === null && row.inventoryAfter === null &&
+          row.factoryInputDemandPerDay === null && row.unmetDemand === null) return '';
+      return '<tr><td>' + escapeHtml(resourceId) + '</td><td style="text-align:right">' +
+        formatNumber(row.quantityPerDay, 3) + '</td><td style="text-align:right">' +
+        formatNumber(row.factoryInputDemandPerDay, 3) + '</td><td style="text-align:right">' +
+        formatNumber(row.existingNationalDemandPerDay, 3) + '</td><td style="text-align:right">' +
+        formatNumber(row.inventoryAfter, 3) + '</td><td style="text-align:right">' +
+        formatNumber(row.pendingImportQuantity, 3) + '</td><td style="text-align:right">' +
+        formatNumber(row.unmetDemand, 3) + '</td><td style="text-align:right">' +
+        formatNumber(row.stockCoverageDays, 2) + '</td></tr>';
+    }).filter(Boolean).join('');
+    var productionRows = summary.production.outputByProductThisTurn
+      ? Object.keys(summary.production.outputByProductThisTurn).sort().map(function (resourceId) {
+        return '<tr><td>' + escapeHtml(resourceId) + '</td><td style="text-align:right">' +
+          formatNumber(summary.production.outputByProductThisTurn[resourceId], 3) + '</td></tr>';
+      }).join('') : '';
+    var expenditure = summary.expenditure.populationConsumption;
     var factoryRows = Object.keys(factories.startingFactoryCounts || {}).sort().map(function (type) {
       return '<tr><td>' + escapeHtml(type.replace(/_/g, ' ')) + '</td><td>' +
         formatNumber(factories.startingFactoryCounts[type], 0) + '</td></tr>';
@@ -647,15 +697,27 @@
       '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">LIVE FACTORY UNITS</div><strong>' +
       (factories.activePlayerCountry ? formatNumber(factories.liveFactoryUnits, 0) : 'STATIC BASELINE ONLY') +
       '</strong><div style="font-size:10px;color:#93c5fd">' + escapeHtml(factories.liveRegistrationStatus) + '</div></div>' +
-      '</div><div style="font-size:10px;color:#94a3b8;margin-top:8px">Population source: ' + escapeHtml(pop.source || 'NOT RECORDED') +
+      '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">EFFECTIVE CAPACITY / DAY</div><strong>' +
+      formatNumber(factories.effectiveCapacityPerDay, 2) + '</strong><div style="font-size:10px;color:#93c5fd">Operational assets with explicit utilization</div></div>' +
+      '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">MODELED POPULATION COST / DAY</div><strong>' +
+      (expenditure.totalCostPerDay === null ? escapeHtml(expenditure.status) : formatNumber(expenditure.totalCostPerDay, 2) + ' ' + escapeHtml(expenditure.currency)) +
+      '</strong><div style="font-size:10px;color:#93c5fd">Not a Treasury posting</div></div></div>' +
+      '<div style="font-size:10px;color:#94a3b8;margin-top:8px">Population source: ' + escapeHtml(pop.source || 'NOT RECORDED') +
       ' · 100k multiplier: ' + formatNumber(pop.value === null ? null : pop.value / 100000, 5) +
+      ' · Growth: ' + formatNumber(pop.annualPopulationGrowthPct, 3) + '% · Urban: ' + formatNumber(pop.urbanPopulationPct, 2) +
+      '% · Working age: ' + formatNumber(pop.workingAgePopulation, 0) +
       ' · Common daily coefficients are simulation rules, not measured real-world household use.</div>' +
       '<details style="margin-top:10px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Population consumption standard (' +
       calibrated.length + ' calibrated · ' + unknown.length + ' unavailable)</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Resource</th><th style="text-align:right;padding:7px">Per 100k / day</th><th style="text-align:right;padding:7px">Country / day</th><th style="text-align:left;padding:7px">Unit</th></tr></thead><tbody>' +
       resourceRows + '</tbody></table>' + (unknown.length ? '<div style="padding:8px;color:#fbbf24;font-size:10px">Uncalibrated or unavailable: ' +
         escapeHtml(unknown.map(function (row) { return row.resourceId + ' (' + row.calculationStatus + ')'; }).join(', ')) + '</div>' : '') +
-      '</div></details><details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Starting factory allocation (21 canonical types)</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Factory type</th><th style="text-align:right;padding:7px">Units</th></tr></thead><tbody>' +
-      factoryRows + '</tbody></table></div></details><div style="font-size:10px;color:#94a3b8;margin-top:8px">Factory input demand remains separate from population demand. The existing national-demand runtime remains the only combined-demand authority; unknown prices and unposted expenses are not shown as zero.</div></section>';
+      '</div></details><details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Existing national demand and supply reconciliation</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10px"><thead><tr><th style="text-align:left;padding:6px">Resource</th><th style="text-align:right;padding:6px">Population/day</th><th style="text-align:right;padding:6px">Factory input/day</th><th style="text-align:right;padding:6px">National/day</th><th style="text-align:right;padding:6px">Stock after</th><th style="text-align:right;padding:6px">Pending import</th><th style="text-align:right;padding:6px">Shortage</th><th style="text-align:right;padding:6px">Coverage days</th></tr></thead><tbody>' +
+      reconciliationRows + '</tbody></table><div style="padding:8px;color:#94a3b8;font-size:10px">Pending import requests are not confirmed inbound shipments. Inbound shipment quantity is unavailable unless the existing runtime exposes it.</div></div></details>' +
+      '<details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Current-turn confirmed production</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Product/resource</th><th style="text-align:right;padding:7px">Output</th></tr></thead><tbody>' +
+      productionRows + '</tbody></table><div style="padding:8px;color:#94a3b8;font-size:10px">Ledger source: ' + escapeHtml(summary.production.authority) +
+      ' · Transactions: ' + formatNumber(summary.production.uniqueTransactionCount, 0) + '</div></div></details>' +
+      '<details style="margin-top:8px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Starting factory allocation (21 canonical types)</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Factory type</th><th style="text-align:right;padding:7px">Units</th></tr></thead><tbody>' +
+      factoryRows + '</tbody></table></div></details><div style="font-size:10px;color:#94a3b8;margin-top:8px">Factory input demand remains separate from population demand. The existing national-demand runtime remains the only combined-demand authority; confirmed inbound shipments are not inferred from pending requests. Factory operating costs and Treasury expense remain unfinalized without evidence.</div></section>';
   }
   function refreshPanel(panel, countryId) {
     getNationalSummary(countryId).then(function (summary) {
