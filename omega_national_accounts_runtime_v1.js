@@ -551,24 +551,31 @@
     }
     return{complete,identities:[...byIdentity.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit))};
   }
-  function summarizeInternalDeliveries(network){
-    const rows=Array.isArray(network?.deliveries)?network.deliveries:[],seen=new Map();
-    let duplicateCount=0,conflictCount=0,missingIdentityCount=0,unscopedDeliveryCount=0;
+  function summarizeInternalDeliveries(network,resource,countryId){
+    const rows=Array.isArray(network?.deliveries)?network.deliveries:[],seen=new Map(),
+      batches=Array.isArray(resource?.batches)?resource.batches:[],batchById=new Map();
+    batches.forEach(batch=>{const id=String(batch?.batchId||'').trim();if(id&&!batchById.has(id))batchById.set(id,batch);});
+    let duplicateCount=0,conflictCount=0,missingIdentityCount=0,unscopedDeliveryCount=0,sourceMismatchCount=0;
     for(const row of rows){
-      const shipmentId=String(row?.shipmentId||'').trim(),batchId=String(row?.batchId||'').trim(),
+      const shipmentId=String(row?.shipmentId||'').trim(),batchId=String(row?.batchId||row?.sourceBatchId||'').trim(),
         resourceId=String(row?.resourceId||'').trim(),quantity=finite(row?.quantity),unit=String(row?.unit||'').trim();
       if(!shipmentId||!batchId||!resourceId||quantity===null||quantity<=0||!unit){missingIdentityCount++;continue;}
       const proof=fingerprint({shipmentId,batchId,resourceId,quantity,unit,
         factoryId:row?.factoryId||null,shipmentType:row?.shipmentType||null});
       if(seen.has(shipmentId)){if(seen.get(shipmentId)===proof)duplicateCount++;else conflictCount++;}
       else seen.set(shipmentId,proof);
+      const sourceBatch=batchById.get(batchId);
+      if(!sourceBatch||String(sourceBatch?.resourceId||sourceBatch?.materialIdentity||'').trim().toUpperCase()!==resourceId.toUpperCase()||
+        (sourceBatch?.countryId&&String(sourceBatch.countryId).trim().toUpperCase()!==String(countryId||'').trim().toUpperCase()))
+        sourceMismatchCount++;
       if(finite(row?.deliveredTurn??row?.deliveryTurn??row?.completedTurn??row?.turn??row?.simulationTurn)===null)
         unscopedDeliveryCount++;
     }
     return{status:!rows.length?'UNOBSERVED':
-        missingIdentityCount||conflictCount||unscopedDeliveryCount?'PARTIAL':'COMPLETE',
+        missingIdentityCount||conflictCount||sourceMismatchCount||unscopedDeliveryCount?'PARTIAL':'COMPLETE',
       rowsObserved:rows.length,uniqueDeliveryCount:seen.size,duplicateCount,conflictCount,missingIdentityCount,
-      unscopedDeliveryCount,stockFlowTreatment:'INTRA_COUNTRY_TRANSFER_NOT_ADDED_TO_PRODUCTION_OR_EXTERNAL_TRADE'};
+      sourceMismatchCount,unscopedDeliveryCount,
+      stockFlowTreatment:'INTRA_COUNTRY_TRANSFER_NOT_ADDED_TO_PRODUCTION_OR_EXTERNAL_TRADE'};
   }
 
   // Movement totals are keyed by game-turn period, resource identity and physical unit.
@@ -738,11 +745,13 @@
         lossEventCount:0,lossIntegrityErrorCount:0,lossDuplicateCount:0};
       const flowComplete=!movementWindowTruncated&&unscopedMovementCount===0&&movement.unclassifiedCount===0&&
         movement.missingUnitCount===0;
-      const lossLedgerBoundaryComplete=Number.isFinite(Number(period.stockLossLedgerRowsAtOpening))&&
-        (useLive||(period.lossLedgerClosingCaptured===true&&Number.isFinite(Number(period.stockLossLedgerRowsAtClosing))));
+      const lossLedgerBoundaryComplete=period.stockLossLedgerRowsAtOpening!==null&&period.stockLossLedgerRowsAtOpening!==undefined&&
+        Number.isFinite(Number(period.stockLossLedgerRowsAtOpening))&&
+        (useLive||(period.lossLedgerClosingCaptured===true&&period.stockLossLedgerRowsAtClosing!==null&&
+          period.stockLossLedgerRowsAtClosing!==undefined&&Number.isFinite(Number(period.stockLossLedgerRowsAtClosing))));
       const lossesComplete=String(period.lossCoverageStatus||'').toUpperCase()==='COMPLETE'&&
         lossLedgerBoundaryComplete&&!stockLossLedgerWindowTruncated&&
-        movement.lossIntegrityErrorCount===0&&lossIntegrityErrorCount===0;
+        movement.lossIntegrityErrorCount===0;
       const identities=new Map();
       for(const row of openingRows)if(row?.resourceId&&row?.unit)identities.set(row.resourceId+'\\u0000'+row.unit,{resourceId:row.resourceId,unit:row.unit});
       for(const row of closingRows)if(row?.resourceId&&row?.unit)identities.set(row.resourceId+'\\u0000'+row.unit,{resourceId:row.resourceId,unit:row.unit});
@@ -779,7 +788,7 @@
       movementIdentityErrorCount:missingMovementIdentityCount,unscopedMovementCount,
       stockLossLedgerRowsObserved:lossRows.length,stockLossLedgerWindowTruncated,
       lossIntegrityErrorCount,lossDuplicateCount,conflictingLossCount,
-      deliveryAudit:summarizeInternalDeliveries(bucket?.industrialNetwork),
+      deliveryAudit:summarizeInternalDeliveries(bucket?.industrialNetwork,bucket,countryId),
       stockSnapshotCoverage:liveClosing.complete?'COMPLETE':'PARTIAL'};
   }
 
