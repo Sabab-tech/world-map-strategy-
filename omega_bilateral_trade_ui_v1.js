@@ -57,7 +57,7 @@ function render(root,countryValue){
  '<label class="bt-field">Commodity ID<input data-bt-field="offerResource" placeholder="e.g. crude_oil"></label>'+
  '<label class="bt-field">Quantity per shipment<input data-bt-field="quantity" type="number" min="0.000001" step="any" placeholder="Quantity"></label>'+
  '<label class="bt-field">Agreed unit price<input data-bt-field="price" type="number" min="0" step="any" placeholder="Unit price"></label>'+
- '<label class="bt-field">Settlement currency<input data-bt-field="currency" maxlength="3" placeholder="e.g. USD"></label>'+
+ '<label class="bt-field">Seller settlement currency<input data-bt-field="currency" maxlength="3" placeholder="e.g. USD"></label>'+
  '<label class="bt-field">Duration (game turns)<input data-bt-field="duration" type="number" min="1" max="10000" value="100"></label>'+
  '<label class="bt-field">Delivery mode (optional)<input data-bt-field="mode" placeholder="SHIP / RAIL / PIPELINE"></label>'+
  '</div><div class="bt-actions"><button type="button" data-bt-action="offer">Send bilateral offer</button></div></div>'+
