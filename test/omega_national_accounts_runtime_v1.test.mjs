@@ -519,3 +519,50 @@ test('sector journal reader exposes legacy, unavailable and truncated source cov
   assert.equal(result.integrityStatus,'UNOBSERVED');
 });
 
+
+
+test('country checkpoint reads existing private-firm journals without mutating company cash or Finance sources',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts;
+  const journal=testJournal('BGD','firm','AURORA','COMPANY-FLOW-1','BDT','TURN-8');
+  h.state.economy.BGD.companyAccounts={
+    AURORA:{companyId:'AURORA',cashFlowJournalVersion:2,cashFlowEntries:[
+      {entryId:'COMPANY-FLOW-1',companyId:'AURORA',status:'POSTED',sectorJournalV1:journal}
+    ]}
+  };
+  const financeBefore=structuredClone(h.state.finance);
+  const companyBefore=structuredClone(h.state.economy.BGD.companyAccounts);
+  await api.init();
+  const result=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(result.status,'CHECKPOINTED');
+  const statement=h.state.economy.BGD.nationalAccounts;
+  assert.equal(statement.sectorJournals.postedTransactionCount,1);
+  assert.equal(statement.sectorJournals.integrityStatus,'RECONCILED');
+  assert.equal(statement.completeness.sectorJournalDoubleEntryIntegrity,'RECONCILED');
+  assert.deepEqual(h.state.finance,financeBefore,'the read model must not mutate Finance cash or source rows');
+  assert.deepEqual(h.state.economy.BGD.companyAccounts,companyBefore,
+    'the read model must not mutate private-company wallet or cash-flow source rows');
+});
+
+test('country checkpoint caps private-firm journal work to five accounts and 256 rows per account',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts,companyAccounts={};
+  for(let company=0;company<7;company++){
+    const companyId='COMPANY-'+company;
+    companyAccounts[companyId]={companyId,cashFlowJournalDroppedEntries:0,cashFlowEntries:
+      Array.from({length:300},(_,index)=>({entryId:companyId+'-'+index,companyId,status:'POSTED'}))};
+  }
+  h.state.economy.BGD.companyAccounts=companyAccounts;
+  await api.init();
+  const result=await api.processCountry('BGD',{turn:8,state:h.state});
+  assert.equal(result.status,'CHECKPOINTED');
+  const journal=h.state.economy.BGD.nationalAccounts.sectorJournals;
+  assert.equal(journal.sourceWindows.companyCashFlow.companyAccountsAvailable,7);
+  assert.equal(journal.sourceWindows.companyCashFlow.companyAccountsObserved,5);
+  assert.equal(journal.sourceWindows.companyCashFlow.companyAccountsTruncated,true);
+  assert.equal(journal.sourceWindows.companyCashFlow.observedRows,5*256);
+  assert.equal(journal.sourceWindows.companyCashFlow.windowTruncated,true);
+  assert.equal(journal.sourceRowsScanned,5*256);
+  assert.equal(result.sourceRowsScanned,8692+5*256);
+  assert.equal(journal.sourceCoverageStatus,'PARTIAL');
+  assert.equal(api.diagnostics().yieldCount>=2,true,
+    'the bounded company window must yield cooperatively at 512-row intervals');
+});
