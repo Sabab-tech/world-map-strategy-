@@ -322,7 +322,7 @@ test('active-country factory inventory is read once, capacity is evidence-gated 
   assert.equal(reconciliation.confirmedImportsThisTurn, 12);
   assert.equal(reconciliation.confirmedImportKnownQuantityThisTurn, 12);
   assert.equal(reconciliation.confirmedImportSettlementCountThisTurn, 1);
-  assert.deepEqual(reconciliation.confirmedImportSettlementIds, ['IMPORT-COTTON-7']);
+  assert.equal(Array.from(reconciliation.confirmedImportSettlementIds).join(','), 'IMPORT-COTTON-7');
   assert.equal(reconciliation.confirmedImportEvidenceStatus, 'OBSERVED_SETTLED_IMPORT_LEDGER');
   assert.equal(summary.confirmedImports.authority,
     'Game.state.resource[countryId].inventoryLedger[type=INTERNATIONAL_TRADE_IMPORT]');
