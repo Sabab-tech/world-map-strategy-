@@ -214,6 +214,22 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(feasible.buyerAvailableForeignCurrency, 500000);
   assert.equal(feasible.exportableSupply, 28970);
 
+  // Existing pending import orders consume foreign-currency capacity before a new treaty is offered.
+  globalThis.Game.state.trade.BGD.importRequests.push({
+    requestId: 'PENDING-FX-RESERVE', targetCountryId: 'IND', resourceId: 'crude_oil',
+    quantity: 1000, unitPrice: 100, status: 'ACCEPTED'
+  });
+  assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
+  const pendingFx = bilateral.previewProposal('BGD', {
+    targetCountryId: 'SAU', direction: 'IMPORT', resourceId: 'crude_oil',
+    quantityPerDelivery: 100, unitPrice: 100, durationMonths: 12, intervalDays: 30
+  });
+  assert.equal(pendingFx.status, 'FEASIBLE', JSON.stringify(pendingFx));
+  assert.equal(pendingFx.buyerReservedForeignCurrency, 100000);
+  assert.equal(pendingFx.buyerAvailableForeignCurrency, 400000);
+  globalThis.Game.state.trade.BGD.importRequests = globalThis.Game.state.trade.BGD.importRequests.filter(row => row.requestId !== 'PENDING-FX-RESERVE');
+  assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
+
   const noFundsBefore = globalThis.Game.state.finance.BGD.available;
   globalThis.Game.state.finance.BGD.available = 1;
   const unaffordable = bilateral.previewProposal('BGD', {
@@ -252,6 +268,11 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(buyerContract.status, 'ACTIVE');
   assert.equal(globalThis.Game.state.foreign.BGD.treaties.SAU.status, 'ACTIVE');
   assert.equal(globalThis.Game.state.foreign.SAU.treaties.BGD.status, 'ACTIVE');
+  assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
+  const contractFx = bilateral.previewProposal('BGD', { targetCountryId: 'SAU', direction: 'IMPORT',
+    resourceId: 'crude_oil', quantityPerDelivery: 50, unitPrice: 100, durationMonths: 12, intervalDays: 30 });
+  assert.equal(contractFx.buyerReservedForeignCurrency, 10000);
+  assert.equal(contractFx.buyerAvailableForeignCurrency, 490000);
 
   // A transient failure on one side of treaty ratification must recover idempotently.
   globalThis.Game.state.simulation.turn = 2;
