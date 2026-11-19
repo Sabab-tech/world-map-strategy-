@@ -925,7 +925,7 @@
       var inputCoefficients = recipeIdentityMismatch ? {} :
         (asset.inputCoefficients || asset.inputs || asset.inputProfile || {});
       if (!Object.keys(inputCoefficients).length && selectedRecipe && selectedRecipe.inputs) inputCoefficients = selectedRecipe.inputs;
-      if (!Object.keys(inputCoefficients).length) {
+      if (!recipeIdentityMismatch && !Object.keys(inputCoefficients).length) {
         var inputResource = String(asset.resourceId || asset.inputResourceId || asset.primaryInputResourceId || '').trim();
         var processingRule = inputResource ? processingRules[inputResource] : null;
         if (processingRule && (!processingRule.factoryType || normalizeFactoryType(processingRule.factoryType, catalog) === type) && processingRule.inputs) inputCoefficients = processingRule.inputs;
@@ -978,7 +978,7 @@
       var inputCoefficients = recipeIdentityMismatch ? {} :
         (asset.inputCoefficients || asset.inputs || asset.inputProfile || {});
       if (!Object.keys(inputCoefficients).length && selectedRecipe && selectedRecipe.inputs) inputCoefficients = selectedRecipe.inputs;
-      if (!Object.keys(inputCoefficients).length) {
+      if (!recipeIdentityMismatch && !Object.keys(inputCoefficients).length) {
         var inputResource = String(asset.resourceId || asset.inputResourceId || asset.primaryInputResourceId || '').trim();
         var processingRule = inputResource ? processingRules[inputResource] : null;
         if (processingRule && (!processingRule.factoryType || normalizeFactoryType(processingRule.factoryType, catalog) === type) && processingRule.inputs) {
