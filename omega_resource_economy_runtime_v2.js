@@ -2505,7 +2505,11 @@ function captureStockFlowPeriod(stateTransaction) {
       });
       if(!openingCapture||openingCapture.status!=='APPLIED'||
         !['CAPTURED','ALREADY_CAPTURED'].includes(String(openingCapture.result&&openingCapture.result.status||'')))
-        throw new Error(openingCapture&&openingCapture.result&&openingCapture.result.reason||'STOCK_FLOW_OPENING_CAPTURE_FAILED');
+        emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,{
+          status:'DEGRADED',reason:'STOCK_FLOW_OPENING_CAPTURE_FAILED',
+          detail:openingCapture&& (openingCapture.reason||openingCapture.result&&openingCapture.result.reason||openingCapture.status)||'UNKNOWN',
+          turn:turn()
+        },'resource-economy');
       var publicationScope={turn:turn(),countryId:canonical(cid),finishedGoodsRows:[],
         materialOwners:{},economyPublished:false,offersPublished:false,registrationEventsPublished:false,
         economyPublication:null,offerPublication:null};
