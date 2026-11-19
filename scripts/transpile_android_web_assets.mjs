@@ -49,7 +49,7 @@ try {
       // Keep esbuild's per-file compatibility helpers private for self-invoking
       // classic scripts. Minified helper names can otherwise leak onto window and
       // be overwritten by another independently transpiled classic asset.
-      const scoped = scopeTranspiledAndroidAsset(originalSource, instrumented);
+      const scoped = scopeTranspiledAndroidAsset(label, originalSource, instrumented);
       await fs.writeFile(file, scoped, 'utf8');
     }
   }
