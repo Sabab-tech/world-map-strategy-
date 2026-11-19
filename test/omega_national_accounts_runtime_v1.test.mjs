@@ -623,7 +623,10 @@ test('Physical stock-flow uses stable movement IDs and canonical loss evidence e
     importRow,structuredClone(importRow),
     {type:'PRODUCTION_TRANSACTION_COMMITTED',transactionId:'FACTORY-PRODUCTION-7',turn:7,
       inputs:[{resourceId:'IRON_ORE',quantity:2,unit:'TONNE'}],
-      outputs:[{resourceId:'STEEL',quantity:2,unit:'TONNE'}]},
+      outputs:[{resourceId:'STEEL',quantity:2,unit:'TONNE'}],
+      lossMeasurementStatus:'MEASURED_ZERO',
+      lossMeasurementAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',
+      lossMeasurementBasis:'MEASURED_ZERO_PROCESS_RESIDUE'},
     consumeRow,structuredClone(consumeRow),
     {type:'INTERNATIONAL_TRADE_EXPORT',settlementId:'EXP-STOCK-7',resourceId:'IRON_ORE',
       quantity:1,unit:'TONNE',turn:7,batchTransfers:[
@@ -708,7 +711,9 @@ test('Physical stock-flow separates committed production loss from ordinary inpu
     type:'PRODUCTION_TRANSACTION_COMMITTED',transactionId:'NA-PRODUCTION-TX-1',turn:7,periodId:'GAME_TURN_7',
     inputs:[{resourceId:'IRON_ORE',quantity:20,unit:'TONNE',consumed:[]}],
     outputs:[{resourceId:'STEEL',quantity:18,unit:'TONNE'}],
-    lossEvents:[lossEvent]
+    lossEvents:[lossEvent],lossMeasurementStatus:'MEASURED_EVENTS',
+    lossMeasurementAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',
+    lossMeasurementBasis:'MEASURED_PROCESS_INPUT_RESIDUE'
   }];
   bucket.stockLossLedger=[Object.assign({type:'STOCK_LOSS_COMMITTED',countryId:'BGD',
     evidenceAuthority:'ATOMIC_PRODUCTION_COMMIT'},lossEvent)];
