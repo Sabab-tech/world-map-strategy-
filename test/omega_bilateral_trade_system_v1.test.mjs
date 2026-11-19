@@ -122,6 +122,19 @@ assert.equal(saved.persisted, true);
 assert.equal(bilateral.getReport('BGD', saved.report.reportId).dataVersion, saved.report.dataVersion);
 assert.equal(globalThis.Game.state.trade.BGD.marketIntelligenceReports.length, 1);
 
+// Contracts use the seller's local price currency and only the settlement
+// mode supported by the existing Global Trade authority.
+const wrongCurrency = bilateral.createAgreementOffer('BGD', 'SAU', 'IMPORT', {
+  resourceId: 'crude_oil', quantityPerShipment: 100, unitPrice: 95, currency: 'USD'
+});
+assert.equal(wrongCurrency.accepted, false);
+assert.equal(wrongCurrency.reason, 'AGREEMENT_CURRENCY_MUST_MATCH_SELLER_LOCAL_CURRENCY');
+const unsupportedPayment = bilateral.createAgreementOffer('BGD', 'SAU', 'IMPORT', {
+  resourceId: 'crude_oil', quantityPerShipment: 100, unitPrice: 95, paymentTerms: 'NET_30'
+});
+assert.equal(unsupportedPayment.accepted, false);
+assert.equal(unsupportedPayment.reason, 'PAYMENT_TERMS_NOT_SUPPORTED_BY_CURRENT_SETTLEMENT_AUTHORITY');
+
 // The first offer is stored in both country-owned ledgers. The counterparty's
 // acceptance activates the same terms version on both sides.
 const offer = bilateral.createAgreementOffer('BGD', 'SAU', 'IMPORT', {
