@@ -838,6 +838,18 @@
       safe.privateEvidence = safe.privateEvidence || {};
       safe.privateEvidence.buyerTreasury = 'NOT_DISCLOSED_TO_COUNTERPARTY';
     }
+    // The evaluated country's competing buyer bids are private commercial
+    // intelligence. Keep the aggregate count for negotiation context, but do
+    // not disclose competitor identities, individual quantities or bid prices.
+    var evaluator = canonical(proposal && proposal.targetCountryId);
+    if (evaluator && viewer && evaluator !== viewer && safe.decisionFactors &&
+        safe.decisionFactors.alternativeMarketEvidence) {
+      var alternatives = safe.decisionFactors.alternativeMarketEvidence;
+      if (Array.isArray(alternatives.buyers)) alternatives.buyers = [];
+      if (Object.prototype.hasOwnProperty.call(alternatives, 'bestAlternativeBuyerPrice'))
+        alternatives.bestAlternativeBuyerPrice = null;
+      alternatives.competingBuyerBidDisclosure = 'PRIVATE';
+    }
     return safe;
   }
   function publicEvaluateProposal(country, proposal) {
