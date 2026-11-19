@@ -13,6 +13,7 @@ globalThis.Game = { state: {
     },
     SAU: {
       inventory: { crude_oil: 2500 },
+      reserves: { crude_oil: 200 },
       production: { crude_oil: 120 },
       consumption: { crude_oil: 75 },
       demandRuntime: { byResource: { crude_oil: { demandPerDay: 75 } } },
@@ -102,6 +103,8 @@ assert.equal(oil.potentialExportableSurplus.value, 45);
 assert.equal(oil.inboundInTransit.status, 'KNOWN');
 assert.equal(oil.inboundInTransit.value, 0);
 assert.equal(oil.supplierReliability.status, 'UNKNOWN');
+assert.equal(oil.strategicImportance.status, 'UNKNOWN',
+  'no national strategic priority is fabricated when no source record exists');
 assert.equal(oil.expectedLocalPrice.value, 95);
 const noLedger = bilateral.buildMarketIntelligence('BGD', 'BGD', { resourceId: 'crude_oil' });
 assert.equal(noLedger.ok, false, 'self-country intelligence requests must be rejected');
