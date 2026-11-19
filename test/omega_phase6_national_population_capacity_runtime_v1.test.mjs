@@ -26,8 +26,7 @@ function record(population, year, status = 'WORLD_BANK_API_OBSERVATION', extra =
     },
     metricMetadata: {
       populationTotal: {
-        year, status, sourceId: 'WORLD_BANK_WDI', sourceName: 'World Bank Indicators API v2',
-        sourceId: extra.sourceId || 'WORLD_BANK_WDI',
+        year, status, sourceId: extra.sourceId || 'WORLD_BANK_WDI',
         sourceName: extra.sourceName || 'World Bank Indicators API v2',
         sourceUrl: extra.sourceUrl || 'https://api.worldbank.org/v2/country/bgd/indicator/SP.POP.TOTL?format=json',
         confidence: status === 'WORLD_BANK_API_OBSERVATION' || status === 'OFFICIAL_POPULATION_OBSERVATION' ? 0.92 : 0.4
