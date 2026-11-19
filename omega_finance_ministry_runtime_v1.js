@@ -651,6 +651,7 @@
     const rule=contract?.transactionRules?.[action],transactionId=String(row?.transactionId||'').trim();
     if(!isObject(rule)||!transactionId)return null;
     const countryCode=String(profile?.countryCode||row?.countryCode||'').trim().toUpperCase();
+    const countryId=String(profile?.iso3||row?.countryId||countryCode).trim().toUpperCase();
     const currency=String(rule.currency||contract.currency||rules.currency||'USD').trim().toUpperCase();
     if(!countryCode||currency!=='USD')return null;
     const amountMinor=(value,absolute)=>{
@@ -712,7 +713,7 @@
       sourceAuthority:'OMEGA_FINANCE_MINISTRY',sourceTransactionId:transactionId,
       sourceTransactionType:action,correlationId:String(row.transferId||row.settlementId||transactionId),
       referenceTransactionId:row.referenceTransactionId||null,
-      countryCode,currency,turn:finite(row.turn)??currentTurn(),
+      countryId,countryCode,currency,turn:finite(row.turn)??currentTurn(),
       fiscalYearIndex:Math.max(0,Math.floor(finite(row.fiscalYearIndex)||0)),
       periodId:'GAME_FISCAL_YEAR_'+String(Math.max(0,Math.floor(finite(row.fiscalYearIndex)||0))),
       accountingBasis:rule.accountingBasis||'RECORDED_GAME_TRANSACTION',
