@@ -64,6 +64,8 @@ jobs:
         run: npm run test:private-enterprise-lifecycle
 
   chromium-browser-e2e:
+    # Explicit owner opt-out marker: preserve lifecycle unit coverage while omitting browser/E2E jobs.
+    if: ${{ !contains(github.event.pull_request.title || '', '[skip-e2e]') && !contains(github.event.head_commit.message || '', '[skip-e2e]') }}
     name: chromium-${{ matrix.scenario }}
     runs-on: ubuntu-24.04
     timeout-minutes: 18

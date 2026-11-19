@@ -35,6 +35,7 @@ permissions:
 
 jobs:
   android-nine-webview-performance:
+    if: ${{ !contains(github.event.pull_request.title || '', '[skip-e2e]') && !contains(github.event.head_commit.message || '', '[skip-e2e]') }}
     runs-on: macos-15-intel
     timeout-minutes: 40
     steps:

@@ -1977,36 +1977,36 @@ test('insolvency opens only on recorded cash shortfall; restructuring, suspensio
 
 test('private-company import debits the verified buyer wallet, credits the selling company, and preserves receipt lineage exactly once',()=>{
   const h=makeHarness(),api=h.api,buyer=COMPANY,seller='AURORA_INDUSTRIAL_GROUP',operator='MERIDIAN_ENGINEERING_GROUP';
-  h.state.finance.BGD.currencyCode='USD';
-  h.state.finance.SAU={currencyCode:'USD',omegaFinance:{ledger:[],companyCapitalAccounts:{}}};
+  h.state.finance.BGD.currencyCode='BDT';
+  h.state.finance.SAU={currencyCode:'SAR',omegaFinance:{ledger:[],companyCapitalAccounts:{}}};
   h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
-    [buyer]:{companyId:buyer,currency:'USD',availableBalance:500,reservedBalance:400,
+    [buyer]:{companyId:buyer,currency:'BDT',availableBalance:500,reservedBalance:400,
       capitalRaised:1000,capitalSpent:100,revision:1}
   };
   const beforeTreasury=h.state.finance.BGD.available;
   const reservation=api.reservePrivateCompanyImport({
     settlementId:'PRIVATE-IMPORT-E2E-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
     buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
-    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'BDT',sellerCurrency:'SAR',
     resourceId:'iron_ore',quantity:10,unitPrice:10
   });
   assert.equal(reservation.status,'RESERVED',JSON.stringify(reservation));
   assert.equal(api.reservePrivateCompanyImport({
     settlementId:'PRIVATE-IMPORT-E2E-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
     buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
-    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'BDT',sellerCurrency:'SAR',
     resourceId:'iron_ore',quantity:10,unitPrice:10
   }).status,'DUPLICATE');
   const transfer=[{
     sourceBatchId:'SAU-PRIVATE-ORE-BATCH-1',sourceBatchIds:['SAU-PRIVATE-ORE-BATCH-1'],
     ownerCompanyId:seller,operatorCompanyId:operator,ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
-    sourceFactoryId:'SAU-PRIVATE-ORE-FAC-1',quantity:10,resourceId:'iron_ore',
+    sourceFactoryId:'SAU-PRIVATE-ORE-FAC-1',quantity:10,resourceId:'iron_ore',unit:'tonne',
     stage:'RAW_EXTRACTED',provenance:{sourceAuthority:'RECORDED_PRIVATE_FACTORY_OUTPUT'}
   }];
   const completed=api.completePrivateCompanyImport({
     settlementId:'PRIVATE-IMPORT-E2E-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
     buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
-    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'BDT',sellerCurrency:'SAR',
     resourceId:'iron_ore',quantity:10,unitPrice:10,batchTransfers:transfer,
     createdBatchIds:['TRADE-PRIVATE-IMPORT-BATCH-1'],deliveryReceiptIds:['WH-REC-TRADE-PRIVATE-IMPORT-BATCH-1']
   });
@@ -2022,6 +2022,37 @@ test('private-company import debits the verified buyer wallet, credits the selli
   const buyerJournal=h.state.economy.BGD.companyAccounts[buyer].cashFlowEntries;
   const sellerJournal=h.state.economy.SAU.companyAccounts[seller].cashFlowEntries;
   assert.equal(buyerJournal.some(row=>row.category==='FACTORY_INPUT_PURCHASE'&&row.amount===100&&row.status==='POSTED'),true);
+  const purchaseEntry=buyerJournal.find(row=>row.category==='FACTORY_INPUT_PURCHASE');
+  const tariffEntry=buyerJournal.find(row=>row.category==='IMPORT_TARIFF');
+  const saleEntry=sellerJournal.find(row=>row.category==='PRIVATE_COMPANY_EXPORT_SALE');
+  assert.equal(purchaseEntry.sectorJournalV1.status,'POSTED');
+  assert.equal(purchaseEntry.sectorJournalV1.sectorId,'firm');
+  assert.equal(purchaseEntry.sectorJournalV1.currency,'BDT');
+  assert.equal(purchaseEntry.sectorJournalV1.countryId,'BGD');
+  assert.equal(purchaseEntry.sectorJournalV1.sourceTransactionId,purchaseEntry.entryId);
+  assert.equal(purchaseEntry.sectorJournalV1.correlationId,'PRIVATE-IMPORT-E2E-1');
+  assert.equal(purchaseEntry.sectorJournalV1.counterEntryComplete,true);
+  assert.equal(purchaseEntry.sectorJournalV1.debitTotalMinor,10000);
+  assert.equal(purchaseEntry.sectorJournalV1.creditTotalMinor,10000);
+  assert.deepEqual(JSON.parse(JSON.stringify(purchaseEntry.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]))),[
+    ['DEBIT','FIRM:'+buyer+':INVENTORY:iron_ore:tonne',10000],
+    ['CREDIT','FIRM:'+buyer+':CASH',10000]
+  ]);
+  assert.equal(tariffEntry.sectorJournalV1.status,'POSTED');
+  assert.equal(tariffEntry.sectorJournalV1.currency,'BDT');
+  assert.deepEqual(JSON.parse(JSON.stringify(tariffEntry.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]))),[
+    ['DEBIT','FIRM:'+buyer+':CUSTOMS_TAX_EXPENSE',500],
+    ['CREDIT','FIRM:'+buyer+':CASH',500]
+  ]);
+  assert.equal(saleEntry.sectorJournalV1.status,'POSTED');
+  assert.equal(saleEntry.sectorJournalV1.currency,'SAR');
+  assert.equal(saleEntry.sectorJournalV1.countryId,'SAU');
+  assert.deepEqual(JSON.parse(JSON.stringify(saleEntry.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]))),[
+    ['DEBIT','FIRM:'+seller+':CASH',10000],
+    ['CREDIT','FIRM:'+seller+':TRADE_REVENUE',10000]
+  ]);
+  assert.ok(saleEntry.sectorJournalV1.limits.some(value=>value.includes('cost of goods sold')),
+    'gross sales must not be promoted into profit or value-added without a cost basis');
   assert.equal(buyerJournal.some(row=>row.category==='IMPORT_TARIFF'&&row.amount===5&&row.status==='POSTED'),true);
   assert.equal(sellerJournal.some(row=>row.category==='PRIVATE_COMPANY_EXPORT_SALE'&&row.amount===100&&row.status==='POSTED'),true);
   assert.equal(completed.record.sourceBatchIds.includes('SAU-PRIVATE-ORE-BATCH-1'),true);
@@ -2029,11 +2060,17 @@ test('private-company import debits the verified buyer wallet, credits the selli
   const consumed=api.completePrivateCompanyImport({
     settlementId:'PRIVATE-IMPORT-E2E-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
     buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
-    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'BDT',sellerCurrency:'SAR',
     resourceId:'iron_ore',quantity:10,batchTransfers:transfer,
     createdBatchIds:['TRADE-PRIVATE-IMPORT-BATCH-1']
   });
   assert.equal(consumed.status,'DUPLICATE');
+  assert.equal(buyerJournal.filter(row=>row.category==='FACTORY_INPUT_PURCHASE').length,1,
+    'same settlement replay must not create a second buyer firm-journal posting');
+  assert.equal(buyerJournal.filter(row=>row.category==='IMPORT_TARIFF').length,1,
+    'same settlement replay must not create a second tariff firm-journal posting');
+  assert.equal(sellerJournal.filter(row=>row.category==='PRIVATE_COMPANY_EXPORT_SALE').length,1,
+    'same settlement replay must not create a second seller firm-journal posting');
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer].availableBalance,395,
     'duplicate completion must not refund or re-debit the buyer wallet');
   assert.equal(h.state.finance.SAU.omegaFinance.companyCapitalAccounts[seller].availableBalance,100);
@@ -2073,7 +2110,7 @@ test('failed private-company receipt collision reverses buyer cash and makes the
   const transfer=[{sourceBatchId:'SAU-PRIVATE-FAIL-BATCH',sourceBatchIds:['SAU-PRIVATE-FAIL-BATCH'],
     ownerCompanyId:seller,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
     ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',sourceFactoryId:'SAU-PRIVATE-FAIL-FAC',
-    quantity:10,resourceId:'iron_ore',stage:'RAW_EXTRACTED'}];
+    quantity:10,resourceId:'iron_ore',unit:'tonne',stage:'RAW_EXTRACTED'}];
   const first=api.completePrivateCompanyImport({
     settlementId:settlementId,buyerCountryId:'BGD',sellerCountryId:'SAU',
     buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105,buyerPurchaseAmount:100,
@@ -2089,8 +2126,34 @@ test('failed private-company receipt collision reverses buyer cash and makes the
   const tariff=buyerAccount.cashFlowEntries.find(x=>x.entryId==='PE-PRIVATE-IMPORT-TARIFF:'+settlementId);
   assert.equal(purchase.status,'REVERSED');
   assert.equal(tariff.status,'REVERSED');
+  const reversalRows=buyerAccount.cashFlowEntries.filter(row=>row.isReversal===true);
+  assert.equal(reversalRows.length,2,'both posted firm cash-flow events need append-only reversal postings');
+  const purchaseReversal=reversalRows.find(row=>row.referenceEntryId===purchase.entryId);
+  const tariffReversal=reversalRows.find(row=>row.referenceEntryId===tariff.entryId);
+  assert.equal(purchaseReversal.sectorJournalV1.status,'POSTED');
+  assert.equal(purchaseReversal.sectorJournalV1.referenceTransactionId,purchase.entryId);
+  assert.deepEqual(JSON.parse(JSON.stringify(purchaseReversal.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]))),[
+    ['CREDIT','FIRM:'+buyer+':INVENTORY:iron_ore:tonne',10000],
+    ['DEBIT','FIRM:'+buyer+':CASH',10000]
+  ]);
+  assert.equal(tariffReversal.sectorJournalV1.status,'POSTED');
+  assert.deepEqual(JSON.parse(JSON.stringify(tariffReversal.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]))),[
+    ['CREDIT','FIRM:'+buyer+':CUSTOMS_TAX_EXPENSE',500],
+    ['DEBIT','FIRM:'+buyer+':CASH',500]
+  ]);
   assert.equal(buyerAccount.runtimeNetCashFlow,0);
   assert.equal(buyerAccount.paymentsMade,0);
+  const companySummary=api.getCompanyFinanceSummary('BGD',buyer);
+  assert.equal(companySummary.journal.status,'VERIFIED_RUNTIME_JOURNAL',
+    'version 2 journal remains compatible with existing company finance summaries');
+  assert.equal(companySummary.journal.version,2);
+  assert.equal(companySummary.journal.recordedRevenue,0,
+    'append-only reversal rows must not be counted as new sales revenue');
+  assert.equal(companySummary.journal.recordedOperatingCosts,0,
+    'append-only reversal rows must not be counted as new operating costs');
+  const periodClose=api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:buyer});
+  assert.equal(periodClose.status,'WAITING',
+    'a reversed settlement with no other source-backed activity must not become a false financial period');
   const failedReservation=h.state.finance.BGD.omegaFinance.companyTradeReservations[settlementId];
   assert.equal(failedReservation.status,'FAILED');
   const second=api.completePrivateCompanyImport({
@@ -2241,4 +2304,64 @@ test('company scenario matrix keeps shared production capacity single-counted ac
     assert.equal(scenario.finalLandedCostObserved,false);
   }
   assert.equal(proposal.marketResearchRequest.status,'QUEUED_LOCAL_MARKET_HANDOFF');
+});
+
+
+test('private-company import rejects sub-cent cash amounts before reservation or wallet mutation',()=>{
+  const h=makeHarness(),api=h.api,buyer=COMPANY,seller='AURORA_INDUSTRIAL_GROUP';
+  h.state.finance.BGD.currencyCode='BDT';
+  h.state.finance.SAU={currencyCode:'SAR',omegaFinance:{ledger:[],companyCapitalAccounts:{}}};
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [buyer]:{companyId:buyer,currency:'BDT',availableBalance:1000,reservedBalance:0,
+      capitalRaised:1000,capitalSpent:0,revision:0}
+  };
+  const treasuryBefore=h.state.finance.BGD.available;
+  const walletBefore=JSON.stringify(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer]);
+  const result=api.reservePrivateCompanyImport({
+    settlementId:'PRIVATE-IMPORT-SUBCENT-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:105.005,buyerPurchaseAmount:100.005,
+    buyerTariffAmount:5,sellerAmount:100,buyerCurrency:'BDT',sellerCurrency:'SAR',
+    resourceId:'iron_ore',quantity:10,unitPrice:10
+  });
+  assert.equal(result.status,'BLOCKED');
+  assert.equal(result.reason,'PRIVATE_IMPORT_PAYMENT_AMOUNT_NOT_CENT_EXACT');
+  assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer].availableBalance,1000);
+  assert.equal(JSON.stringify(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer]),walletBefore);
+  assert.equal(h.state.finance.BGD.available,treasuryBefore);
+  assert.equal(h.state.finance.BGD.omegaFinance.companyTradeReservations,undefined);
+  assert.equal(h.state.economy.BGD.companyAccounts,undefined);
+});
+
+
+test('firm input inventory journal stays unavailable when the declared quantity unit is missing',()=>{
+  const h=makeHarness(),api=h.api,buyer=COMPANY,seller='AURORA_INDUSTRIAL_GROUP';
+  h.state.finance.BGD.currencyCode='USD';
+  h.state.finance.SAU={currencyCode:'USD',omegaFinance:{ledger:[],companyCapitalAccounts:{}}};
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={
+    [buyer]:{companyId:buyer,currency:'USD',availableBalance:500,reservedBalance:0,
+      capitalRaised:500,capitalSpent:0,revision:0}
+  };
+  const reservation=api.reservePrivateCompanyImport({
+    settlementId:'PRIVATE-IMPORT-UNIT-UNKNOWN-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:100,buyerPurchaseAmount:100,
+    buyerTariffAmount:0,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    resourceId:'iron_ore',quantity:10,unitPrice:10
+  });
+  assert.equal(reservation.status,'RESERVED');
+  const transfer=[{
+    sourceBatchId:'SAU-PRIVATE-UNKNOWN-UNIT-BATCH',sourceBatchIds:['SAU-PRIVATE-UNKNOWN-UNIT-BATCH'],
+    ownerCompanyId:seller,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',ownerAttributionStatus:'EXPLICIT_ASSET_OWNER',
+    sourceFactoryId:'SAU-PRIVATE-UNKNOWN-UNIT-FAC',quantity:10,resourceId:'iron_ore',
+    stage:'RAW_EXTRACTED'
+  }];
+  const result=api.completePrivateCompanyImport({
+    settlementId:'PRIVATE-IMPORT-UNIT-UNKNOWN-1',buyerCountryId:'BGD',sellerCountryId:'SAU',
+    buyerCompanyId:buyer,sellerCompanyId:seller,buyerAmount:100,buyerPurchaseAmount:100,
+    buyerTariffAmount:0,sellerAmount:100,buyerCurrency:'USD',sellerCurrency:'USD',
+    resourceId:'iron_ore',quantity:10,batchTransfers:transfer
+  });
+  assert.equal(result.status,'SETTLED',JSON.stringify(result));
+  const entry=h.state.economy.BGD.companyAccounts[buyer].cashFlowEntries.find(row=>row.category==='FACTORY_INPUT_PURCHASE');
+  assert.equal(entry.sectorJournalV1.status,'UNAVAILABLE');
+  assert.equal(entry.sectorJournalV1.reason,'INPUT_RESOURCE_ID_OR_DECLARED_UNIT_UNAVAILABLE');
 });

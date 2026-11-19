@@ -19,6 +19,7 @@
   function obj(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
   function clone(v){if(v===null||typeof v!=='object')return v;if(Array.isArray(v))return v.map(clone);var o={};Object.keys(v).forEach(function(k){if(k!=='__proto__'&&k!=='constructor')o[k]=clone(v[k]);});return o;}
   function num(v){if(v===null||v===undefined||v==='')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
+  function isCentExactAmount(value){var amount=num(value);if(amount===null)return false;var minor=Math.round(amount*100);return Number.isSafeInteger(minor)&&minor>=0&&Math.abs(amount-minor/100)<=1e-7;}
   function id(v){return String(v==null?'':v).trim().toUpperCase();}
   function token(v){return String(v==null?'':v).trim().toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
   function state(){
@@ -3345,6 +3346,9 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
        buyerPurchaseAmount===null||buyerPurchaseAmount<=0||buyerTariffAmount===null||buyerTariffAmount<0||
        Math.abs(buyerPurchaseAmount+buyerTariffAmount-buyerAmount)>1e-6||quantity===null||quantity<=0||!buyerCurrency||!sellerCurrency)
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_PAYMENT_FIELDS_INVALID'};
+    if(!isCentExactAmount(buyerAmount)||!isCentExactAmount(sellerAmount)||
+       !isCentExactAmount(buyerPurchaseAmount)||!isCentExactAmount(buyerTariffAmount))
+      return{status:'BLOCKED',reason:'PRIVATE_IMPORT_PAYMENT_AMOUNT_NOT_CENT_EXACT'};
     if(buyerCurrency!==observedCompanyCurrency(buyerCountry)||sellerCurrency!==observedCompanyCurrency(sellerCountry))
       return{status:'BLOCKED',reason:'PRIVATE_IMPORT_COUNTRY_CURRENCY_NOT_RECONCILED',
         observedBuyerCurrency:observedCompanyCurrency(buyerCountry),observedSellerCurrency:observedCompanyCurrency(sellerCountry)};
@@ -3396,7 +3400,122 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     recordEvent(cid,'PRIVATE_COMPANY_IMPORT_CASH_RELEASED',{settlementId:settlementId,buyerCompanyId:row.buyerCompanyId,reason:row.cancellationReason});
     return{status:'CANCELLED',reservation:clone(row)};
   }
+  function privateFirmJournalAccountToken(value){
+    return String(value==null?'':value).trim().toLowerCase()
+      .replace(/[^a-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'');
+  }
+  function buildPrivateFirmSectorJournalV1(country,company,entry,reversalOf){
+    entry=entry||{};
+    var cid=canonicalCountry(country),co=id(company),currency=id(entry.currency),
+      transactionId=String(entry.entryId||'').trim(),amount=num(entry.amount);
+    if(!cid||!co||!currency||!transactionId||amount===null||amount<=0)
+      return{schemaVersion:1,status:'UNAVAILABLE',reason:'FIRM_JOURNAL_SOURCE_IDENTITY_OR_AMOUNT_UNAVAILABLE',
+        sourceTransactionId:transactionId||null};
+    var amountMinor=Math.round(amount*100);
+    if(!Number.isSafeInteger(amountMinor)||amountMinor<=0||Math.abs(amount-amountMinor/100)>1e-7)
+      return{schemaVersion:1,status:'UNAVAILABLE',reason:'SOURCE_AMOUNT_MISSING_OR_NOT_CENT_EXACT',
+        sourceTransactionId:transactionId};
+    var turnValue=num(entry.turn)??turn(),lines=[],accountCash='FIRM:'+co+':CASH',
+      category=String(entry.category||'').toUpperCase(),resource=privateFirmJournalAccountToken(entry.resourceId),
+      accountingBasis='PRIVATE_COMPANY_RECORDED_CASH_FLOW',limits=[];
+    function addLine(accountId,side,minor,index){
+      if(!accountId||!Number.isSafeInteger(minor)||minor<=0)return false;
+      lines.push({lineId:transactionId+':L'+(index+1),lineNumber:index+1,accountId:accountId,side:side,
+        amountMinor:minor,amount:Number((minor/100).toFixed(2)),currency:currency,
+        countryId:cid,companyId:co,turn:turnValue,sourceTransactionId:transactionId});
+      return true;
+    }
+    if(reversalOf){
+      var original=reversalOf.sectorJournalV1;
+      if(!original||original.status!=='POSTED'||!Array.isArray(original.lines)||!original.lines.length)
+        return{schemaVersion:1,status:'UNAVAILABLE',reason:'ORIGINAL_FIRM_SECTOR_JOURNAL_UNAVAILABLE',
+          sourceTransactionId:transactionId,referenceTransactionId:String(reversalOf.entryId||'')||null};
+      for(var r=0;r<original.lines.length;r++){
+        var oldLine=original.lines[r]||{},oldMinor=num(oldLine.amountMinor);
+        if(!Number.isSafeInteger(oldMinor)||oldMinor<=0||
+           !addLine(String(oldLine.accountId||''),String(oldLine.side||'').toUpperCase()==='DEBIT'?'CREDIT':'DEBIT',
+             oldMinor,r))return{schemaVersion:1,status:'UNAVAILABLE',reason:'ORIGINAL_FIRM_JOURNAL_LINE_INVALID',
+               sourceTransactionId:transactionId,referenceTransactionId:String(reversalOf.entryId||'')||null};
+      }
+      accountingBasis='REVERSAL_OF_'+String(original.accountingBasis||'PRIVATE_COMPANY_RECORDED_CASH_FLOW');
+      limits=Array.isArray(original.limits)?original.limits.slice():[];
+    }else if(category==='FACTORY_INPUT_PURCHASE'){
+      if(!resource)return{schemaVersion:1,status:'UNAVAILABLE',reason:'INPUT_RESOURCE_ID_UNAVAILABLE',
+        sourceTransactionId:transactionId};
+      var unit=privateFirmJournalAccountToken(entry.quantityUnit);
+      if(!unit||num(entry.quantity)===null||num(entry.quantity)<=0)
+        return{schemaVersion:1,status:'UNAVAILABLE',reason:'INPUT_RESOURCE_ID_OR_DECLARED_UNIT_UNAVAILABLE',
+          sourceTransactionId:transactionId};
+      addLine('FIRM:'+co+':INVENTORY:'+resource+':'+unit,'DEBIT',amountMinor,0);
+      addLine(accountCash,'CREDIT',amountMinor,1);
+      accountingBasis='PRIVATE_COMPANY_INPUT_INVENTORY_CASH_PURCHASE';
+      limits=['Inventory is valued only at the recorded settlement amount; subsequent consumption and cost of goods sold are not inferred.'];
+    }else if(category==='IMPORT_TARIFF'){
+      addLine('FIRM:'+co+':CUSTOMS_TAX_EXPENSE','DEBIT',amountMinor,0);
+      addLine(accountCash,'CREDIT',amountMinor,1);
+      accountingBasis='PRIVATE_COMPANY_RECORDED_IMPORT_TARIFF_CASH_PAYMENT';
+      limits=['This firm-side tax expense is not a claim that a matching government customs receipt was posted.'];
+    }else if(category==='PRIVATE_COMPANY_EXPORT_SALE'){
+      addLine(accountCash,'DEBIT',amountMinor,0);
+      addLine('FIRM:'+co+':TRADE_REVENUE','CREDIT',amountMinor,1);
+      accountingBasis='PRIVATE_COMPANY_SETTLED_TRADE_CASH_RECEIPT';
+      limits=['Gross sales revenue only; cost of goods sold, profit and value-added are not inferred without a source-backed cost basis.'];
+    }else return{schemaVersion:1,status:'UNAVAILABLE',reason:'FIRM_SECTOR_JOURNAL_CATEGORY_NOT_MAPPED',
+      sourceTransactionId:transactionId,sourceTransactionType:category||null};
+    var debitTotal=lines.filter(function(line){return line.side==='DEBIT';})
+      .reduce(function(sum,line){return sum+line.amountMinor;},0);
+    var creditTotal=lines.filter(function(line){return line.side==='CREDIT';})
+      .reduce(function(sum,line){return sum+line.amountMinor;},0);
+    if(debitTotal<=0||debitTotal!==creditTotal)
+      return{schemaVersion:1,status:'UNAVAILABLE',reason:'FIRM_SECTOR_JOURNAL_NOT_BALANCED',
+        sourceTransactionId:transactionId,debitTotalMinor:debitTotal,creditTotalMinor:creditTotal};
+    return{schemaVersion:1,status:'POSTED',sectorId:'firm',
+      sourceAuthority:'OMEGA_PRIVATE_ENTERPRISE_CASHFLOW',sourceTransactionId:transactionId,
+      sourceTransactionType:category||'CASH_FLOW_REVERSAL',
+      correlationId:String(entry.sourceId||transactionId),referenceTransactionId:reversalOf?String(reversalOf.entryId||''):null,
+      countryId:cid,companyId:co,currency:currency,turn:turnValue,
+      periodId:'GAME_TURN_'+String(Math.max(0,Math.floor(turnValue))),
+      timeBasis:'COMMITTED_GAME_TURN',accountingBasis:accountingBasis,provenance:'RECORDED_GAME_RUNTIME',
+      counterEntryComplete:true,debitTotalMinor:debitTotal,creditTotalMinor:creditTotal,
+      counterpartyCountryId:entry.counterpartyCountryId||null,
+      counterpartyCompanyId:entry.counterpartyCompanyId||null,
+      counterpartyCurrency:id(entry.counterpartyCurrency)||null,
+      resourceId:entry.resourceId||null,quantity:num(entry.quantity),quantityUnit:entry.quantityUnit||null,
+      limits:limits,lines:lines};
+  }
+  function appendPrivateTradeCashFlowReversal(country,company,original,reason){
+    if(!original||!original.entryId)return{status:'BLOCKED',reason:'FIRM_CASHFLOW_REVERSAL_SOURCE_UNAVAILABLE'};
+    var account=companyFlowAccount(country,id(company)),entries=account&&Array.isArray(account.cashFlowEntries)?account.cashFlowEntries:null;
+    if(!entries)return{status:'BLOCKED',reason:'FIRM_CASHFLOW_REVERSAL_LEDGER_UNAVAILABLE'};
+    var reversalId='PE-CASHFLOW-REVERSAL:'+String(original.entryId);
+    var prior=entries.find(function(row){return row&&row.entryId===reversalId;});
+    if(prior)return{status:'DUPLICATE',entry:clone(prior)};
+    var reversal={entryId:reversalId,companyId:id(company),amount:num(original.amount),
+      direction:String(original.direction||'').toUpperCase()==='CREDIT'?'DEBIT':'CREDIT',
+      category:'CASH_FLOW_REVERSAL',originalCategory:original.category||null,
+      currency:id(original.currency),sourceId:String(original.sourceId||original.entryId),
+      resourceId:original.resourceId||null,quantity:num(original.quantity),quantityUnit:original.quantityUnit||null,
+      counterpartyCountryId:original.counterpartyCountryId||null,
+      counterpartyCompanyId:original.counterpartyCompanyId||null,
+      counterpartyCurrency:id(original.counterpartyCurrency)||null,
+      turn:turn(),status:'POSTED',isReversal:true,referenceEntryId:String(original.entryId),
+      reversalReason:String(reason||'SOURCE_TRANSACTION_REVERSED'),
+      authority:'OMEGA_PRIVATE_COMPANY_TRADE_CASH_V1'};
+    reversal.sectorJournalV1=buildPrivateFirmSectorJournalV1(country,company,reversal,original);
+    entries.push(reversal);
+    while(entries.length>2048){
+      var dropped=entries.shift(),droppedTurn=num(dropped&&dropped.turn);
+      account.cashFlowJournalDroppedEntries=(num(account.cashFlowJournalDroppedEntries)||0)+1;
+      if(droppedTurn!==null){
+        var earliest=num(account.cashFlowJournalEarliestDroppedTurn);
+        account.cashFlowJournalEarliestDroppedTurn=earliest===null?droppedTurn:Math.min(earliest,droppedTurn);
+      }
+    }
+    account.cashFlowEntries=entries;
+    return{status:'POSTED',entry:clone(reversal)};
+  }
   function postPrivateTradeCashFlow(country,company,input){
+    input=input||{};
     var econ=countryBucket('economy',country,true),accounts=obj(econ.companyAccounts)?econ.companyAccounts:{};
     var co=id(company),account=obj(accounts[co])?accounts[co]:null;
     if(!account)account={companyId:co,openingCashStatus:'UNKNOWN',runtimeNetCashFlow:0,grossRevenue:0,
@@ -3406,6 +3525,9 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
       category=String(input.category||'').toUpperCase(),currency=id(input.currency),sourceId=String(input.sourceId||'');
     if(!entryId||amount===null||amount<=0||!['CREDIT','DEBIT'].includes(direction)||!category||!currency||!sourceId)
       return{status:'BLOCKED',reason:'PRIVATE_TRADE_CASHFLOW_FIELDS_INVALID'};
+    var amountMinor=Math.round(amount*100);
+    if(!Number.isSafeInteger(amountMinor)||amountMinor<=0||Math.abs(amount-amountMinor/100)>1e-7)
+      return{status:'BLOCKED',reason:'PRIVATE_TRADE_CASHFLOW_AMOUNT_NOT_CENT_EXACT'};
     var prior=entries.find(function(row){return row&&row.entryId===entryId;});
     if(prior){
       if(String(prior.status||'').toUpperCase()==='REVERSED')
@@ -3422,10 +3544,16 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     }else account.paymentsMade=(num(account.paymentsMade)||0)+amount;
     if(account.cashFlowJournalStartedAtTurn===undefined||account.cashFlowJournalStartedAtTurn===null)
       account.cashFlowJournalStartedAtTurn=turn();
-    account.cashFlowJournalVersion=1;
-    var row={entryId:entryId,companyId:co,amount:Number(amount.toFixed(2)),direction:direction,
+    account.cashFlowJournalVersion=2;
+    var row={entryId:entryId,companyId:co,amount:Number((amountMinor/100).toFixed(2)),direction:direction,
       category:category,currency:currency,sourceId:sourceId,turn:turn(),status:'POSTED',
+      resourceId:input.resourceId?String(input.resourceId):null,quantity:num(input.quantity),
+      quantityUnit:input.quantityUnit?String(input.quantityUnit):null,
+      counterpartyCountryId:input.counterpartyCountryId?canonicalCountry(input.counterpartyCountryId):null,
+      counterpartyCompanyId:input.counterpartyCompanyId?id(input.counterpartyCompanyId):null,
+      counterpartyCurrency:id(input.counterpartyCurrency)||null,
       authority:'OMEGA_PRIVATE_COMPANY_TRADE_CASH_V1'};
+    row.sectorJournalV1=buildPrivateFirmSectorJournalV1(country,co,row,null);
     entries.push(row);
     while(entries.length>2048){
       var dropped=entries.shift(),droppedTurn=num(dropped&&dropped.turn);
@@ -3498,12 +3626,16 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
         required:num(reservation.buyerAmount)||0});
     var debit=postPrivateTradeCashFlow(buyerCountry,buyerCompany,{
       entryId:'PE-PRIVATE-IMPORT-PAYMENT:'+settlementId,sourceId:settlementId,
-      amount:buyerPurchaseAmount,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',currency:buyerCurrency
+      amount:buyerPurchaseAmount,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',currency:buyerCurrency,
+      resourceId:input.resourceId,quantity:quantity,quantityUnit:transfers[0]&&(transfers[0].unit||transfers[0].quantityUnit)||null,
+      counterpartyCountryId:sellerCountry,counterpartyCompanyId:sellerCompany,counterpartyCurrency:sellerCurrency
     });
     if(!['POSTED','DUPLICATE'].includes(debit.status))return failImport('PRIVATE_IMPORT_BUYER_CASHFLOW_POST_FAILED',debit);
     var tariffDebit=buyerTariffAmount>1e-9?postPrivateTradeCashFlow(buyerCountry,buyerCompany,{
       entryId:'PE-PRIVATE-IMPORT-TARIFF:'+settlementId,sourceId:settlementId,
-      amount:buyerTariffAmount,direction:'DEBIT',category:'IMPORT_TARIFF',currency:buyerCurrency
+      amount:buyerTariffAmount,direction:'DEBIT',category:'IMPORT_TARIFF',currency:buyerCurrency,
+      resourceId:input.resourceId,quantity:quantity,quantityUnit:transfers[0]&&(transfers[0].unit||transfers[0].quantityUnit)||null,
+      counterpartyCountryId:buyerCountry,counterpartyCurrency:buyerCurrency
     }):{status:'DUPLICATE'};
     if(!['POSTED','DUPLICATE'].includes(tariffDebit.status)){
       if(['POSTED','DUPLICATE'].indexOf(debit.status)>=0){
@@ -3511,6 +3643,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
         var rollbackEntry=rollbackRows.find(function(row){return row&&row.entryId==='PE-PRIVATE-IMPORT-PAYMENT:'+settlementId;});
         if(rollbackEntry&&rollbackEntry.status==='POSTED'){
           rollbackEntry.status='REVERSED';rollbackEntry.reversedTurn=turn();rollbackEntry.reversalReason='PRIVATE_IMPORT_TARIFF_CASHFLOW_POST_FAILED';
+          appendPrivateTradeCashFlowReversal(buyerCountry,buyerCompany,rollbackEntry,rollbackEntry.reversalReason);
           rollbackAccount.runtimeNetCashFlow=(num(rollbackAccount.runtimeNetCashFlow)||0)+buyerPurchaseAmount;
           rollbackAccount.paymentsMade=Math.max(0,(num(rollbackAccount.paymentsMade)||0)-buyerPurchaseAmount);}
       }
@@ -3518,7 +3651,9 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     }
     var credit=postPrivateTradeCashFlow(sellerCountry,sellerCompany,{
       entryId:'PE-PRIVATE-IMPORT-RECEIPT:'+settlementId,sourceId:settlementId,
-      amount:sellerAmount,direction:'CREDIT',category:'PRIVATE_COMPANY_EXPORT_SALE',currency:sellerCurrency
+      amount:sellerAmount,direction:'CREDIT',category:'PRIVATE_COMPANY_EXPORT_SALE',currency:sellerCurrency,
+      resourceId:input.resourceId,quantity:quantity,quantityUnit:transfers[0]&&(transfers[0].unit||transfers[0].quantityUnit)||null,
+      counterpartyCountryId:buyerCountry,counterpartyCompanyId:buyerCompany,counterpartyCurrency:buyerCurrency
     });
     if(!['POSTED','DUPLICATE'].includes(credit.status)){
       if(['POSTED','DUPLICATE'].indexOf(debit.status)>=0){
@@ -3526,12 +3661,15 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
         var posted=entries.find(function(row){return row&&row.entryId==='PE-PRIVATE-IMPORT-PAYMENT:'+settlementId;});
         if(posted&&posted.status==='POSTED'){
           posted.status='REVERSED';posted.reversedTurn=turn();posted.reversalReason='SELLER_COMPANY_CASHFLOW_POST_FAILED';
+          appendPrivateTradeCashFlowReversal(buyerCountry,buyerCompany,posted,posted.reversalReason);
           buyerAccount.runtimeNetCashFlow=(num(buyerAccount.runtimeNetCashFlow)||0)+buyerPurchaseAmount;
           buyerAccount.paymentsMade=Math.max(0,(num(buyerAccount.paymentsMade)||0)-buyerPurchaseAmount);
         }
         if(['POSTED','DUPLICATE'].indexOf(tariffDebit.status)>=0){
           var postedTariff=entries.find(function(row){return row&&row.entryId==='PE-PRIVATE-IMPORT-TARIFF:'+settlementId;});
           if(postedTariff&&postedTariff.status==='POSTED'){postedTariff.status='REVERSED';postedTariff.reversedTurn=turn();
+            postedTariff.reversalReason='SELLER_COMPANY_CASHFLOW_POST_FAILED';
+            appendPrivateTradeCashFlowReversal(buyerCountry,buyerCompany,postedTariff,postedTariff.reversalReason);
             buyerAccount.runtimeNetCashFlow=(num(buyerAccount.runtimeNetCashFlow)||0)+buyerTariffAmount;
             buyerAccount.paymentsMade=Math.max(0,(num(buyerAccount.paymentsMade)||0)-buyerTariffAmount);}
         }
@@ -3920,7 +4058,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     var accruedOperatingCosts=costEntries.reduce(function(sum,row){return sum+(num(row.amount)||0);},0);
     var revenue=0,cost=0,tax=0,worker=0,transport=0,inputMaterials=0,other=0,operatingCostSettlementPayments=0;
     runtimeRows.forEach(function(row){
-      if(!row||String(row.status||'').toUpperCase()!=='POSTED')return;
+      if(!row||String(row.status||'').toUpperCase()!=='POSTED'||row.isReversal===true)return;
       var amount=num(row.amount);if(amount===null||amount<0)return;
       var direction=String(row.direction||'').toUpperCase(),category=String(row.category||'OTHER').toUpperCase();
       if(direction==='CREDIT')revenue+=amount;
@@ -3940,7 +4078,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     if(r)for(var i=r.financialPeriods.length-1;i>=0;i--){
       if(r.financialPeriods[i]&&r.financialPeriods[i].companyId===co){lastPeriod=clone(r.financialPeriods[i]);break;}
     }
-    var cashFlowKnown=!!(account&&account.cashFlowJournalVersion===1&&Array.isArray(account.cashFlowEntries)),
+    var cashFlowKnown=!!(account&&(num(account.cashFlowJournalVersion)||0)>=1&&Array.isArray(account.cashFlowEntries)),
       droppedTotal=account?(num(account.cashFlowJournalDroppedEntries)||0):0,
       droppedAtLastClose=capital?(num(capital.cashFlowJournalDroppedEntriesAtClose)||0):0,
       openPeriodDroppedEntries=Math.max(0,droppedTotal-droppedAtLastClose);
@@ -3954,7 +4092,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
       runtimeNetCashFlow:account&&num(account.runtimeNetCashFlow)!==null?num(account.runtimeNetCashFlow):null,
       journal:{status:!cashFlowKnown?'LEGACY_OR_NOT_RECORDED':
           openPeriodDroppedEntries>0?'JOURNAL_TRUNCATED':'VERIFIED_RUNTIME_JOURNAL',
-        version:cashFlowKnown?1:null,startedAtTurn:account&&num(account.cashFlowJournalStartedAtTurn),
+        version:cashFlowKnown?Math.floor(num(account.cashFlowJournalVersion)||1):null,startedAtTurn:account&&num(account.cashFlowJournalStartedAtTurn),
         entryCount:runtimeRows.length,droppedEntryCount:droppedTotal,
         droppedEntriesSinceLastClose:openPeriodDroppedEntries,
         earliestDroppedTurn:account?num(account.cashFlowJournalEarliestDroppedTurn):null,
@@ -4000,7 +4138,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     if(!cid||cid!==playerCountry()||COMPANY_IDS.indexOf(co)<0)
       return{status:'BLOCKED',reason:'PLAYER_COUNTRY_OR_COMPANY_SCOPE_INVALID'};
     var company=companyFlowAccount(cid,co);
-    if(!company||company.cashFlowJournalVersion!==1||!Array.isArray(company.cashFlowEntries))
+    if(!company||(num(company.cashFlowJournalVersion)||0)<1||!Array.isArray(company.cashFlowEntries))
       return{status:'BLOCKED',reason:'COMPANY_CASH_FLOW_JOURNAL_NOT_READY'};
     var capital=capitalAccount(cid,co,true),endTurn=turn(),previousClose=num(capital.lastFinancialCloseTurn),
       startTurn=previousClose===null?num(company.cashFlowJournalStartedAtTurn):previousClose+1;
@@ -4019,7 +4157,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     if(previousClose!==null&&endTurn<=previousClose)
       return{status:'DUPLICATE',reason:'FINANCIAL_PERIOD_ALREADY_CLOSED',periodEndTurn:previousClose};
     var allEntries=company.cashFlowEntries.filter(function(row){
-      var t=num(row&&row.turn);return row&&String(row.status||'').toUpperCase()==='POSTED'&&t!==null&&t>=startTurn&&t<=endTurn;
+      var t=num(row&&row.turn);return row&&String(row.status||'').toUpperCase()==='POSTED'&&row.isReversal!==true&&t!==null&&t>=startTurn&&t<=endTurn;
     });
     var lifecycleRuntime=runtime(cid,true),periodCosts=lifecycleRuntime.operatingCostEntries.filter(function(row){var t=num(row&&row.turn);return row&&row.companyId===co&&row.status==='POSTED'&&t!==null&&t>=startTurn&&t<=endTurn;}),
       periodUnpriced=lifecycleRuntime.unpricedOperatingCostEvents.filter(function(row){var t=num(row&&row.turn);return row&&row.companyId===co&&row.status==='UNPRICED'&&t!==null&&t>=startTurn&&t<=endTurn;});
