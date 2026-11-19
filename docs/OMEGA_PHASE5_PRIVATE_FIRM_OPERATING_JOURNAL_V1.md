@@ -34,7 +34,7 @@ No employee, household, supplier, freight carrier, or other counterparty is inve
 `OmegaPrivateEnterpriseLifecycle.getCompanySectorJournal(countryId, companyId)` returns a defensive copy of retained firm-journal evidence from both existing source windows:
 
 - company cash-flow rows (maximum retained window: 2,048 entries);
-- the private-enterprise Finance ledger source rows (maximum retained window: 4,096 entries).
+- the private-enterprise Finance ledger source rows (maximum retained window: 500 entries).
 
 The response reports `PARTIAL` and `complete: false` by design. It includes posted/unavailable counts and legacy/un-journalled source counts. It does not backfill historical rows, claim complete period coverage, or sum values across currencies. Readers must use each transaction's own recorded currency.
 
