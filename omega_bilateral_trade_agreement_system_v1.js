@@ -1269,6 +1269,9 @@
     if (!contract) return { accepted: false, reason: 'BILATERAL_CONTRACT_NOT_FOUND' };
     if (id(contract.status) === 'TERMINATED' || id(contract.status) === 'EXPIRED')
       return { accepted: true, duplicate: true, status: contract.status };
+    if (contract.currentRequestId)
+      return { accepted: false, reason: 'TERMINATION_BLOCKED_BY_PENDING_DELIVERY',
+        agreementId: contract.agreementId, requestId: contract.currentRequestId };
     var partner = canonical(contract.partnerCountryId), buyer = canonical(contract.buyerCountryId), seller = canonical(contract.sellerCountryId);
     var remainingDeliveries = Math.max(0, (num(contract.plannedDeliveryCount) || 0) - (num(contract.completedDeliveries) || 0));
     var pct = num(contract.terminationPenaltyPct) || 0;
