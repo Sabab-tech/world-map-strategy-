@@ -609,19 +609,35 @@
       },
       "gypsum": {
         "unit": "METRIC_TONS_PER_DAY",
-        "stockCoverageDays": 3
+        "stockCoverageDays": 3,
+        "coefficientStatus": "UNAVAILABLE",
+        "coefficientEvidenceStatus": "NO_COMPARABLE_COUNTRY_COMPLETE_CONSUMPTION_BENCHMARK",
+        "coefficientEvidenceNote": "No country-complete apparent-consumption benchmark is available. USGS production figures are supply evidence, not population consumption; the U.S. apparent-consumption series cannot be generalized to all 197 countries.",
+        "productionStatisticsUsedAsConsumption": false
       },
       "niobium": {
         "unit": "METRIC_TONS_PER_DAY",
-        "stockCoverageDays": 3
+        "stockCoverageDays": 3,
+        "coefficientStatus": "UNAVAILABLE",
+        "coefficientEvidenceStatus": "NO_COMPARABLE_COUNTRY_COMPLETE_CONSUMPTION_BENCHMARK",
+        "coefficientEvidenceNote": "No country-complete apparent-consumption benchmark is available. Mine output and U.S.-only apparent consumption do not establish a universal population-linked rate.",
+        "productionStatisticsUsedAsConsumption": false
       },
       "ruby": {
         "unit": "CARATS_PER_DAY",
-        "stockCoverageDays": 2
+        "stockCoverageDays": 2,
+        "coefficientStatus": "UNAVAILABLE",
+        "coefficientEvidenceStatus": "NO_COMPARABLE_COUNTRY_COMPLETE_CONSUMPTION_BENCHMARK",
+        "coefficientEvidenceNote": "No comparable country-complete ruby-consumption series is available. Aggregate gemstone production/trade cannot be treated as ruby consumption.",
+        "productionStatisticsUsedAsConsumption": false
       },
       "limestone": {
         "unit": "METRIC_TONS_PER_DAY",
-        "stockCoverageDays": 3
+        "stockCoverageDays": 3,
+        "coefficientStatus": "UNAVAILABLE",
+        "coefficientEvidenceStatus": "NO_COMPARABLE_COUNTRY_COMPLETE_CONSUMPTION_BENCHMARK",
+        "coefficientEvidenceNote": "No country-complete apparent-consumption benchmark is available. Production is supply evidence and does not reconcile imports, exports, inventory changes, or industrial use.",
+        "productionStatisticsUsedAsConsumption": false
       }
     },
     "maxHistoryTurns": 128,
