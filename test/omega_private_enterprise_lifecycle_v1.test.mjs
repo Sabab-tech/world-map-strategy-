@@ -2133,13 +2133,13 @@ test('failed private-company receipt collision reverses buyer cash and makes the
   assert.equal(purchaseReversal.sectorJournalV1.status,'POSTED');
   assert.equal(purchaseReversal.sectorJournalV1.referenceTransactionId,purchase.entryId);
   assert.deepEqual(JSON.parse(JSON.stringify(purchaseReversal.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]))),[
-    ['DEBIT','FIRM:'+buyer+':CASH',10000],
-    ['CREDIT','FIRM:'+buyer+':INVENTORY:iron_ore:tonne',10000]
+    ['CREDIT','FIRM:'+buyer+':INVENTORY:iron_ore:tonne',10000],
+    ['DEBIT','FIRM:'+buyer+':CASH',10000]
   ]);
   assert.equal(tariffReversal.sectorJournalV1.status,'POSTED');
   assert.deepEqual(JSON.parse(JSON.stringify(tariffReversal.sectorJournalV1.lines.map(line=>[line.side,line.accountId,line.amountMinor]))),[
-    ['DEBIT','FIRM:'+buyer+':CASH',500],
-    ['CREDIT','FIRM:'+buyer+':CUSTOMS_TAX_EXPENSE',500]
+    ['CREDIT','FIRM:'+buyer+':CUSTOMS_TAX_EXPENSE',500],
+    ['DEBIT','FIRM:'+buyer+':CASH',500]
   ]);
   assert.equal(buyerAccount.runtimeNetCashFlow,0);
   assert.equal(buyerAccount.paymentsMade,0);
