@@ -681,6 +681,20 @@
           formatNumber(summary.production.outputByProductThisTurn[resourceId], 3) + '</td></tr>';
       }).join('') : '';
     var expenditure = summary.expenditure.populationConsumption;
+    var factoryStatus = factories.liveFactoryStatusCounts || {};
+    var ownership = factories.ownershipCounts || {};
+    var factoryStatusText = factories.activePlayerCountry
+      ? 'Operational ' + formatNumber(factoryStatus.operational, 0) +
+        ' · Under construction ' + formatNumber(factoryStatus.underConstruction, 0) +
+        ' · Maintenance ' + formatNumber(factoryStatus.maintenance, 0) +
+        ' · Paused ' + formatNumber(factoryStatus.paused, 0) +
+        ' · Offline ' + formatNumber(factoryStatus.offline, 0) +
+        ' · Decommissioned ' + formatNumber(factoryStatus.decommissioned, 0) +
+        ' · Ownership: Government ' + formatNumber(ownership.governmentOwned, 0) +
+        ', Private ' + formatNumber(ownership.privateOwned, 0) +
+        ', Unclassified ' + formatNumber(ownership.ownershipUnclassified, 0) +
+        ' · Observed workers ' + formatNumber(factories.currentWorkers, 0)
+      : 'Non-player countries expose static factory baseline only.';
     var factoryRows = Object.keys(factories.startingFactoryCounts || {}).sort().map(function (type) {
       return '<tr><td>' + escapeHtml(type.replace(/_/g, ' ')) + '</td><td>' +
         formatNumber(factories.startingFactoryCounts[type], 0) + '</td></tr>';
@@ -700,6 +714,8 @@
       '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">LIVE FACTORY UNITS</div><strong>' +
       (factories.activePlayerCountry ? formatNumber(factories.liveFactoryUnits, 0) : 'STATIC BASELINE ONLY') +
       '</strong><div style="font-size:10px;color:#93c5fd">' + escapeHtml(factories.liveRegistrationStatus) + '</div></div>' +
+      '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">RATED CAPACITY / DAY</div><strong>' +
+      formatNumber(factories.ratedCapacityPerDay, 2) + '</strong><div style="font-size:10px;color:#93c5fd">Live asset capacity with complete evidence</div></div>' +
       '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">EFFECTIVE CAPACITY / DAY</div><strong>' +
       formatNumber(factories.effectiveCapacityPerDay, 2) + '</strong><div style="font-size:10px;color:#93c5fd">Operational assets with explicit utilization</div></div>' +
       '<div style="padding:9px;border:1px solid #334155;border-radius:9px"><div style="font-size:10px;color:#94a3b8">MODELED POPULATION COST / DAY</div><strong>' +
@@ -710,6 +726,11 @@
       ' · Growth: ' + formatNumber(pop.annualPopulationGrowthPct, 3) + '% · Urban: ' + formatNumber(pop.urbanPopulationPct, 2) +
       '% · Working age: ' + formatNumber(pop.workingAgePopulation, 0) +
       ' · Common daily coefficients are simulation rules, not measured real-world household use.</div>' +
+      '<div style="font-size:10px;color:#cbd5e1;margin-top:7px">' + escapeHtml(factoryStatusText) + '</div>' +
+      '<div style="font-size:10px;color:#94a3b8;margin-top:5px">Rate coverage: ' +
+      formatNumber(summary.dataCoverage.calibratedRateCount, 0) + '/' +
+      formatNumber(summary.dataCoverage.resourceProfileCount, 0) + ' calibrated; ' +
+      formatNumber(summary.dataCoverage.uncalibratedRateCount, 0) + ' explicitly uncalibrated.</div>' +
       '<details style="margin-top:10px;border:1px solid #334155;border-radius:9px"><summary style="padding:9px;cursor:pointer;color:#bfdbfe;font-size:12px;font-weight:700">Population consumption standard (' +
       calibrated.length + ' calibrated · ' + unknown.length + ' unavailable)</summary><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:7px">Resource</th><th style="text-align:right;padding:7px">Per 100k / day</th><th style="text-align:right;padding:7px">Country / day</th><th style="text-align:left;padding:7px">Unit</th></tr></thead><tbody>' +
       resourceRows + '</tbody></table>' + (unknown.length ? '<div style="padding:8px;color:#fbbf24;font-size:10px">Uncalibrated or unavailable: ' +
