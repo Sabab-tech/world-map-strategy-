@@ -12,9 +12,11 @@ function capability(profile,operation='EXECUTION'){
  return Number((total/Math.max(weight,.0001)).toFixed(2));
 }
 function evaluate(profile,operation='EXECUTION',context={}){
- const base=capability(profile,operation),taskFit=clamp(context.taskFit??1,.5,1.25),experienceFactor=1+clamp(context.experience??0,0,100)/400,informationQuality=clamp(context.informationQuality??1,.5,1),workloadFactor=1-(clamp(context.workload??0,0,100)/100)*clamp(context.workloadPenalty??.35,0,.7),stressFactor=1-(clamp(context.stress??0,0,100)/100)*clamp(context.stressPenalty??.30,0,.7),timePressureFactor=clamp(context.timePressureFactor??1,.6,1.05);
+ const ctx=typeof context==='number'?{scale:context}:(context||{});
+ const base=capability(profile,operation),taskFit=clamp(ctx.taskFit??1,.5,1.25),experienceFactor=1+clamp(ctx.experience??0,0,100)/400,informationQuality=clamp(ctx.informationQuality??1,.5,1),workloadFactor=1-(clamp(ctx.workload??0,0,100)/100)*clamp(ctx.workloadPenalty??.35,0,.7),stressFactor=1-(clamp(ctx.stress??0,0,100)/100)*clamp(ctx.stressPenalty??.30,0,.7),timePressureFactor=clamp(ctx.timePressureFactor??1,.6,1.05);
  const value=clamp(base*taskFit*experienceFactor*informationQuality*workloadFactor*stressFactor*timePressureFactor,0,100);
- return Object.freeze({operation,baseCapability:base,taskFit:Number(taskFit.toFixed(3)),experienceFactor:Number(experienceFactor.toFixed(3)),informationQuality:Number(informationQuality.toFixed(3)),workloadFactor:Number(workloadFactor.toFixed(3)),stressFactor:Number(stressFactor.toFixed(3)),timePressureFactor:Number(timePressureFactor.toFixed(3)),effectiveCapability:Number(value.toFixed(2)),profileId:profile?.id||profile?.ministerId||null});
+ const multiplier=Number(Math.max(0.1, 0.5 + value / 100).toFixed(3));
+ return Object.freeze({operation,score:Number(value.toFixed(2)),multiplier,baseCapability:base,taskFit:Number(taskFit.toFixed(3)),experienceFactor:Number(experienceFactor.toFixed(3)),informationQuality:Number(informationQuality.toFixed(3)),workloadFactor:Number(workloadFactor.toFixed(3)),stressFactor:Number(stressFactor.toFixed(3)),timePressureFactor:Number(timePressureFactor.toFixed(3)),effectiveCapability:Number(value.toFixed(2)),profileId:profile?.id||profile?.ministerId||null});
 }
 function register(profile){const id=profile?.id||profile?.ministerId;if(id)state.profiles.set(id,Object.freeze({...profile}));return id||null;}
 function get(profileId,operation,context={}){return evaluate(state.profiles.get(profileId),operation,context)}

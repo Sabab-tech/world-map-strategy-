@@ -798,7 +798,7 @@
 
         // Global Touch Scroll Lockup Prevention for Mobile WebViews & Touch Devices
         document.addEventListener('touchstart', (e) => {
-            const scrollEl = e.target.closest('#ministry-dashboard-content, .ministry-content-area, .cabinet-body, #cabinet-body, .ios-content-viewport, #ios-chapter-stage');
+            const scrollEl = e.target.closest('#ministry-dashboard-view, #ministry-dashboard-content, .ministry-content-area, .cabinet-body, #cabinet-body, .ios-content-viewport, #ios-chapter-stage');
             if (scrollEl && scrollEl.scrollHeight > scrollEl.clientHeight) {
                 if (scrollEl.scrollTop <= 0) {
                     scrollEl.scrollTop = 1;
