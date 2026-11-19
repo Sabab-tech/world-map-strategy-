@@ -313,6 +313,22 @@ test('population expenditure stays unavailable without explicit price currency a
   assert.equal(summary.expenditure.treasuryActualExpense.status, 'NOT_ESTABLISHED');
 });
 
+test('price currency without an observation does not produce a modeled expense', async () => {
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {},
+    economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: {} },
+    trade: { BGD: { marketPrice: { crude_oil: { price: 80, currency: 'USD' } } } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const oil = summary.expenditure.populationConsumption.rows.find(row => row.resourceId === 'crude_oil');
+  assert.equal(oil.costStatus, 'PRICE_OBSERVATION_UNAVAILABLE');
+  assert.equal(oil.costPerDay, null);
+  assert.equal(summary.expenditure.populationConsumption.totalCostPerDay, null);
+});
+
 test('explicit price, currency and observation allow a resource-level modeled cost only', async () => {
   const state = {
     simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
