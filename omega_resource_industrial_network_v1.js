@@ -769,10 +769,13 @@ function normalizeFactoryType(value){
   }
 function captureStockFlowPeriod(resource,countryId) {
   if(!resource||typeof resource!=='object')return{status:'UNOBSERVED'};
-  const t=turn(),periodId='GAME_TURN_'+String(t),assets=factoryAssets(countryId)||[];
+  const t=turn(),periodId='GAME_TURN_'+String(t);
+  const existingPeriods=Array.isArray(resource.stockFlowPeriods)?resource.stockFlowPeriods:[];
+  if(existingPeriods.some(row=>String(row&&row.periodId||'')===periodId))
+    return{status:'ALREADY_CAPTURED',periodId};
+  const assets=factoryAssets(countryId)||[];
   const snapshot=stockFlowSnapshot(resource,assets);
-  const periods=Array.isArray(resource.stockFlowPeriods)?resource.stockFlowPeriods.map(row=>clone(row)):[];
-  if(periods.some(row=>String(row&&row.periodId||'')===periodId))return{status:'ALREADY_CAPTURED',periodId};
+  const periods=existingPeriods.map(row=>clone(row));
   const previous=periods.length?periods[periods.length-1]:null;
   if(previous&&Number(previous.turn)<t){
     if(Number(previous.turn)===t-1){
@@ -1597,18 +1600,32 @@ function factoryAssets(c){
   return economy.productionAssets;
 }
 function recipeFor(resourceId,asset={}){
-  const rid=tok(resourceId),type=String(asset?.factoryType||asset?.type||'').trim().toUpperCase();
+  const rid=tok(resourceId),rawType=String(asset?.factoryType||asset?.type||'').trim();
+  const type=normalizeFactoryType(rawType)||rawType.toUpperCase();
   const downstream=cat()?.downstreamFactoryRecipes||{};
   const recipeMode=String(asset?.recipeMode||'').trim().toUpperCase();
   const dynamicProcessing=recipeMode==='DYNAMIC_PROCESSING';
   const dynamicRecipeSet=recipeMode==='DYNAMIC_RECIPE_SET';
   const dynamicRecipe=dynamicProcessing||dynamicRecipeSet;
-  let downstreamRule=(!dynamicProcessing&&asset?.recipeId)?downstream[String(asset.recipeId)]||null:null;
+  const explicitRecipeId=String(asset?.recipeId||'').trim();
+  let downstreamRule=(!dynamicProcessing&&explicitRecipeId)?downstream[explicitRecipeId]||null:null;
+  if(downstreamRule&&type){
+    const recipeType=normalizeFactoryType(downstreamRule.factoryType)||String(downstreamRule.factoryType||'').trim().toUpperCase();
+    if(recipeType!==type){
+      return{recipeId:explicitRecipeId,recipeError:'FACTORY_RECIPE_FACTORY_TYPE_MISMATCH',
+        factoryType:type,recipeFactoryType:recipeType,inputs:{},outputs:{},cycleDays:null,
+        recipeAuthority:'INVALID_RECIPE_IDENTITY',recipeMode:recipeMode||'SINGLE_INPUT'};
+    }
+  }
   if(!downstreamRule&&type){
-    downstreamRule=Object.values(downstream).find(row=>String(row?.factoryType||'').toUpperCase()===type&&
+    downstreamRule=Object.values(downstream).find(row=>(normalizeFactoryType(row?.factoryType)||String(row?.factoryType||'').toUpperCase())===type&&
       Object.keys(row?.inputs||{}).some(key=>tok(key)===rid))||null;
   }
-  const r=processRules()[rid]||null;
+  let r=processRules()[rid]||null;
+  if(r&&type){
+    const ruleType=normalizeFactoryType(r.factoryType)||String(r.factoryType||'').trim().toUpperCase();
+    if(ruleType&&ruleType!==type)r=null;
+  }
   const genericProduct=String(resourceId||'RESOURCE').trim().replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').toUpperCase()+'_PROCESSED';
   const genericRule={factoryType:'UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT',inputs:{[rid||'unknown_resource']:1},
     outputs:{[genericProduct]:0.85,PROCESSING_RESIDUE:0.15},cycleDays:2,authority:'SIMULATED_GENERIC_FALLBACK'};
@@ -4354,11 +4371,16 @@ function commitFactoryCycleImmediately(input={}){
   if(gate.status!=='READY')return gate;
   const recipeAsset=input.recipeId?{...asset,recipeId:String(input.recipeId)}:asset;
   const requestedRecipe=recipeFor(input.resourceId||Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId,recipeAsset);
+  if(requestedRecipe.recipeError)return{status:'BLOCKED',reason:requestedRecipe.recipeError,factoryId:fid,
+    recipeId:requestedRecipe.recipeId,recipeFactoryType:requestedRecipe.recipeFactoryType};
   if(asset.recipeMode==='MULTI_INPUT'||requestedRecipe.recipeMode==='MULTI_INPUT'||Object.keys(requestedRecipe.inputs||{}).length>1)
     return commitMultiInputFactoryCycleImmediately({...input,_asset:asset,recipeId:input.recipeId||requestedRecipe.recipeId||null});
   const n=netState(cid),processedTurns=n.factoryProcessingTurns&&typeof n.factoryProcessingTurns==='object'?n.factoryProcessingTurns:(n.factoryProcessingTurns={});
   if(Number(processedTurns[fid])===turn())return{status:'BLOCKED',reason:'FACTORY_TURN_CAPACITY_ALREADY_USED',factoryId:fid,turn:turn()};
-  const rid=tok(input.resourceId),recipe=recipeFor(rid,recipeAsset),r=resourceState(cid);
+  const rid=tok(input.resourceId),recipe=recipeFor(rid,recipeAsset);
+  if(recipe.recipeError)return{status:'BLOCKED',reason:recipe.recipeError,factoryId:fid,
+    recipeId:recipe.recipeId,recipeFactoryType:recipe.recipeFactoryType};
+  const r=resourceState(cid);
   r.inventory=r.inventory&&typeof r.inventory==='object'&&!Array.isArray(r.inventory)?r.inventory:{};
   const inputInventoryKeys=Object.keys(r.inventory).filter(key=>tok(key)===rid);
   if(inputInventoryKeys.length>1)return{status:'BLOCKED',reason:'DUPLICATE_NORMALIZED_INPUT_INVENTORY_KEYS',
@@ -4565,7 +4587,10 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   const fallbackResource=Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId||'';
   const requestedResource=tok(input.resourceId||fallbackResource);
   const recipeAsset=input.recipeId?{...asset,recipeId:String(input.recipeId)}:asset;
-  const recipe=recipeFor(requestedResource,recipeAsset),entries=Object.entries(recipe.inputs||{}).map(([id,coefficient])=>[tok(id),num(coefficient)]);
+  const recipe=recipeFor(requestedResource,recipeAsset);
+  if(recipe.recipeError)return{status:'BLOCKED',reason:recipe.recipeError,factoryId:fid,
+    recipeId:recipe.recipeId,recipeFactoryType:recipe.recipeFactoryType};
+  const entries=Object.entries(recipe.inputs||{}).map(([id,coefficient])=>[tok(id),num(coefficient)]);
   if(entries.length<2)return{status:'BLOCKED',reason:'MULTI_INPUT_RECIPE_REQUIRED',factoryId:fid,recipeId:recipe.recipeId||null};
   if(!entries.some(([id])=>id===requestedResource))return{status:'BLOCKED',reason:'FACTORY_INPUT_NOT_IN_RECIPE',resourceId:requestedResource,recipeId:recipe.recipeId||null};
   if(entries.some(([id,coefficient])=>!id||coefficient===null||coefficient<=0))
@@ -5302,7 +5327,10 @@ function startFactoryProductionCycle(input={}){
   }
   const first=tok(input.resourceId||Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId||'');
   const recipeAsset=input.recipeId?{...asset,recipeId:String(input.recipeId)}:asset;
-  const recipe=recipeFor(first,recipeAsset),metrics=factoryProductionMetrics(asset,recipe);
+  const recipe=recipeFor(first,recipeAsset);
+  if(recipe.recipeError)return{status:'BLOCKED',reason:recipe.recipeError,factoryId:fid,
+    recipeId:recipe.recipeId,recipeFactoryType:recipe.recipeFactoryType};
+  const metrics=factoryProductionMetrics(asset,recipe);
   const requested=Math.max(0,num(input.quantity)||metrics.capacity);
   let quantity=Math.min(metrics.capacity,requested,metrics.possibleProduction,
     metrics.capacity*Math.min(1,Math.max(0,num(gate.workforceRatio)??1)));
@@ -5601,6 +5629,11 @@ async function processPendingFactoryInputs(countryId){
       Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId||'');
     if(!first)continue;
     const recipe=dynamicSelection?.recipe||recipeFor(first,prior?.recipeId?{...asset,recipeId:prior.recipeId}:asset);
+    if(recipe.recipeError){
+      factorySetProductionHealth(asset,'STOPPED',0,num(asset.capacityPerDay??asset.capacity),{reason:recipe.recipeError});
+      blocked.push({factoryId:fid,reason:recipe.recipeError,recipeId:recipe.recipeId,recipeFactoryType:recipe.recipeFactoryType});
+      continue;
+    }
     if(!Object.keys(recipe.inputs||{}).length)continue;
     const plan={asset,factoryId:fid,first,recipe,gate,allocations:{},requestIds:[]};
     pendingPlans.push(plan);planByFactory.set(fid,plan);
@@ -5657,6 +5690,11 @@ async function processPendingFactoryInputs(countryId){
     }
     first=first||tok(Object.keys(asset.inputCoefficients||asset.inputs||{})[0]||asset.resourceId||'');
     recipe=recipe||recipeFor(first,asset);
+    if(recipe.recipeError){
+      factorySetProductionHealth(asset,'STOPPED',0,num(asset.capacityPerDay??asset.capacity),{reason:recipe.recipeError});
+      blocked.push({factoryId:fid,reason:recipe.recipeError,recipeId:recipe.recipeId,recipeFactoryType:recipe.recipeFactoryType});
+      continue;
+    }
     if(!feeder){
       const result=transferFactoryInputsFromWarehouse(cid,asset,recipe,plan?.allocations||null);
       feeder=result;transfers.push(...(result.transfers||[]));
@@ -6207,7 +6245,12 @@ function factoryProductionRequirements(factoryType, recipeId){
       if(found){key=found[0];recipe=found[1];kind='DOWNSTREAM';}
     }
   }
-  const resolvedType=String(recipe?.factoryType||requestedType).trim().toUpperCase();
+  const resolvedType=normalizeFactoryType(recipe?.factoryType||requestedType)||
+    String(recipe?.factoryType||requestedType||'').trim().toUpperCase();
+  if(recipe&&requestedType&&resolvedType!==requestedType){
+    return{status:'NOT_FOUND',reason:'FACTORY_RECIPE_FACTORY_TYPE_MISMATCH',
+      factoryType:requestedType,recipeFactoryType:resolvedType,recipeId:key||null};
+  }
   const profile=profiles[resolvedType];
   if(!recipe||!profile)return{status:'NOT_FOUND',reason:!recipe?'FACTORY_RECIPE_NOT_FOUND':'FACTORY_PROFILE_NOT_FOUND',
     factoryType:resolvedType,recipeId:key||null};
@@ -6220,10 +6263,15 @@ function factoryProductionRequirements(factoryType, recipeId){
     const result={};
     for(const [id,value] of Object.entries(source)){
       const quantity=num(value);
-      result[id]=quantity===null?null:Number((quantity*scale).toFixed(6));
+      result[id]=quantity===null||scale===null?null:Number((quantity*scale).toFixed(6));
     }
     return result;
   };
+  const cycleDays=num(recipe.cycleDays);
+  const cycleTimeUnit=String(recipe.cycleTimeUnit||catalog.factoryCatalogPolicy?.recipeTimeUnit||'IN_GAME_DAYS').toUpperCase();
+  const quantityBasis=String(recipe.quantityBasis||catalog.factoryCatalogPolicy?.quantityBasis||'PER_SIMULATION_PRODUCTION_UNIT').toUpperCase();
+  const modeledDailyScale=cycleDays!==null&&cycleDays>0&&cycleTimeUnit==='IN_GAME_DAYS'&&
+    quantityBasis==='PER_SIMULATION_PRODUCTION_UNIT'?capacity/cycleDays:null;
   const utilities=profile.utilities&&typeof profile.utilities==='object'?profile.utilities:{};
   const power=num(utilities.electricityMWhPerDay),water=num(utilities.waterM3PerDay);
   const employment=profile.employment&&typeof profile.employment==='object'?profile.employment:{};
@@ -6244,7 +6292,9 @@ function factoryProductionRequirements(factoryType, recipeId){
     ratedCapacityPerDay:capacity,
     ratedDailyInputs:scaleRows(inputs,capacity),
     ratedDailyOutputs:scaleRows(outputs,capacity),
-    processing:{cycleDays:num(recipe.cycleDays),cycleTimeUnit:recipe.cycleTimeUnit||catalog.factoryCatalogPolicy?.recipeTimeUnit||'IN_GAME_DAYS',
+    modeledAverageDailyInputs:modeledDailyScale===null?null:scaleRows(inputs,modeledDailyScale),
+    modeledAverageDailyOutputs:modeledDailyScale===null?null:scaleRows(outputs,modeledDailyScale),
+    processing:{cycleDays:cycleDays,cycleTimeUnit:cycleTimeUnit,
       runtimeTimingMode:catalog.factoryCatalogPolicy?.recipeTimingRuntimeBehavior||'GAME_CALENDAR_DELAYED_COMPLETION',
       durationEnforced:true},
     workforce:{
@@ -6729,6 +6779,23 @@ function factoryCatalogDiagnostics(){
       Math.abs((num(employment?.coreOperatingCrew)||0)+(num(employment?.additionalDirectStaffSlots)||0)-(num(employment?.jobsPerFactory)||0))>1e-6)
       issues.push({code:'FACTORY_EMPLOYMENT_ROLE_BREAKDOWN_MISMATCH',factoryType:type,jobMixTotal,jobsPerFactory:employment?.jobsPerFactory});
     for(const tech of profile?.requiredTechnologyIds||[])if(!techRules()[String(tech).toUpperCase()])issues.push({code:'FACTORY_TECHNOLOGY_UNDEFINED',factoryType:type,technologyId:tech});
+  }
+  for(const [type,profile] of Object.entries(profiles)){
+    const declared=Array.isArray(profile?.recipeIds)?profile.recipeIds:[];
+    if(profile?.defaultRecipeId){
+      const preferred=downstream[String(profile.defaultRecipeId)];
+      const preferredType=normalizeFactoryType(preferred?.factoryType)||String(preferred?.factoryType||'').toUpperCase();
+      if(!preferred||preferredType!==normalizeFactoryType(type))
+        issues.push({code:'FACTORY_DEFAULT_RECIPE_TYPE_MISMATCH',factoryType:type,recipeId:profile.defaultRecipeId,recipeFactoryType:preferred?.factoryType||null});
+    }
+    const seenRecipeIds=new Set();
+    for(const recipeId of declared){
+      const recipe=downstream[String(recipeId)];
+      const recipeType=normalizeFactoryType(recipe?.factoryType)||String(recipe?.factoryType||'').toUpperCase();
+      if(seenRecipeIds.has(String(recipeId))||!recipe||recipeType!==normalizeFactoryType(type))
+        issues.push({code:'FACTORY_PROFILE_RECIPE_TYPE_MISMATCH',factoryType:type,recipeId:String(recipeId),recipeFactoryType:recipe?.factoryType||null});
+      seenRecipeIds.add(String(recipeId));
+    }
   }
   for(const [resourceId,rule] of Object.entries(processing)){
     if(!(num(rule?.cycleDays)>0))issues.push({code:'PROCESSING_CYCLE_TIME_INVALID',resourceId,cycleDays:rule?.cycleDays});
