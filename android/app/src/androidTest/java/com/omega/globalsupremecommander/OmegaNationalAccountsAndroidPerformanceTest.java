@@ -343,19 +343,39 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                     }
                     if (typeof originalDispatch === 'function') {
                       instance.dispatchCommand = function() {
+                        const args = Array.prototype.slice.call(arguments);
+                        const options = args[4] && typeof args[4] === 'object' ? args[4] : {};
+                        const commandType = String(options.commandType || args[1] || '');
+                        const registered = instance.commandHandlers &&
+                          typeof instance.commandHandlers.get === 'function'
+                            ? instance.commandHandlers.get(commandType) : null;
+                        const commandDetail = {
+                          api:entry.name,sourceMinistry:args[0] || null,actionId:args[1] || null,
+                          countryId:args[2] || null,commandType,
+                          registeredOwner:registered && registered.ownerMinistry || null,
+                          handlerName:registered && registered.handler && registered.handler.name || null,
+                          handlerSource:registered && registered.handler
+                            ? String(registered.handler).slice(0,800) : null,
+                          transactionFactoryType:typeof instance.stateTransaction,
+                          transactionCreateType:typeof (instance.stateTransaction && instance.stateTransaction.create)
+                        };
+                        if (commandType === 'OMEGA_NATIONAL_ACCOUNTS_CHECKPOINT' ||
+                            commandType === 'OMEGA_RESOURCE_RESEARCH_TICK') {
+                          recordPerfFailure('interop.dispatchCommand.invoke',null,commandDetail);
+                        }
                         try {
-                          const result = originalDispatch.apply(this,arguments);
+                          const result = originalDispatch.apply(this,args);
                           if (result && result.status === 'FAILED') {
                             recordPerfFailure('interop.dispatchCommand.failed',
                               new Error(result.reason || result.result && result.result.reason || 'COMMAND_FAILED'),{
-                                api:entry.name,commandId:result.commandId,commandType:result.commandType,
-                                countryId:result.countryId,status:result.status,reason:result.reason||null,
-                                result:result.result||null
+                                ...commandDetail,commandId:result.commandId,
+                                resultCommandType:result.commandType,countryId:result.countryId,
+                                status:result.status,reason:result.reason||null,result:result.result||null
                               });
                           }
                           return result;
                         } catch (error) {
-                          recordPerfFailure('interop.dispatchCommand.throw',error,{api:entry.name});
+                          recordPerfFailure('interop.dispatchCommand.throw',error,commandDetail);
                           throw error;
                         }
                       };
@@ -461,7 +481,16 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                   }));
                 }
               })().catch(error => {
-                window.__OMEGA_ANDROID_PERF_RESULT = {status:'ERROR',error:String(error && error.stack || error)};
+                window.__OMEGA_ANDROID_PERF_RESULT = {
+                  status:'ERROR',error:String(error && error.stack || error),
+                  diagnostics:(window.__OMEGA_ANDROID_PERF_DIAGNOSTICS || []).slice(),
+                  commandTypes:window.OmegaMinistryInteroperability &&
+                    window.OmegaMinistryInteroperability.instance &&
+                    window.OmegaMinistryInteroperability.instance.commandHandlers &&
+                    typeof window.OmegaMinistryInteroperability.instance.commandHandlers.keys === 'function'
+                      ?Array.from(window.OmegaMinistryInteroperability.instance.commandHandlers.keys())
+                      :[]
+                };
               });
               return 'STARTED';
             })()
