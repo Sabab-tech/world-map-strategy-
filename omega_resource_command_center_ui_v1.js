@@ -1958,6 +1958,7 @@
       return card('Agreement · ' + esc(row.agreementId || '—'), row.status || 'UNKNOWN',
         '<div class="omega-rescc-kv"><span>Partner / role</span><strong>' + esc(row.partnerCountryId || '—') + ' · ' + esc(row.role || '—') + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Commodity / delivery</span><strong>' + esc(row.resourceId || '—') + ' · ' + esc(row.quantityPerDelivery || '—') + ' / ' + esc(row.intervalDays || '—') + ' days</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Pricing / tolerance</span><strong>' + esc(row.priceModel || 'FIXED') + ' · ±' + esc(row.quantityTolerancePct || 0) + '%</strong></div>' +
         '<div class="omega-rescc-kv"><span>Term / delivered</span><strong>' + esc(row.durationMonths || '—') + ' months · ' + esc(row.deliveredQuantity || 0) + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Next delivery / expiry</span><strong>' + esc(row.nextDeliveryTurn || '—') + ' / ' + esc(row.endTurn || '—') + '</strong></div>' +
         '<div class="omega-rescc-actions">' +
@@ -1975,7 +1976,9 @@
       '<label>Trade direction<select name="direction"><option value="IMPORT">Import from target</option><option value="EXPORT">Export to target</option></select></label>' +
       '<label>Product<select name="resourceId" required>' + resourceOpts + '</select></label>' +
       '<label>Quantity per delivery<input name="quantityPerDelivery" type="number" min="0.000001" step="any" required></label>' +
-      '<label>Offered unit price<input name="unitPrice" type="number" min="0.000001" step="any" required></label>' +
+      '<label>Initial / offered unit price<input name="unitPrice" type="number" min="0.000001" step="any" required></label>' +
+      '<label>Pricing model<select name="priceModel"><option value="FIXED">Fixed price</option><option value="MARKET_LINKED">Market-linked price</option></select></label>' +
+      '<label>Market price adjustment (%)<input name="marketAdjustmentPct" type="number" min="-50" max="100" step="0.1" value="0"></label>' +
       '<label>Agreement term<select name="durationMonths"><option value="12">12 months</option><option value="24">2 years</option><option value="60">5 years</option><option value="84">7 years</option><option value="120">10 years</option></select></label>' +
       '<label>Delivery interval<select name="intervalDays"><option value="30">Every 30 days</option><option value="90">Every 90 days</option><option value="180">Every 180 days</option><option value="365">Every 365 days</option></select></label>' +
       '<label>Quantity tolerance (%)<input name="quantityTolerancePct" type="number" min="0" max="50" step="0.1" value="0"></label>' +
@@ -3200,7 +3203,8 @@
           ? bilateral.createProposal(c, {
               targetCountryId: data.get('targetCountryId'), direction: data.get('direction'),
               resourceId: data.get('resourceId'), quantityPerDelivery: Number(data.get('quantityPerDelivery')),
-              unitPrice: Number(data.get('unitPrice')), durationMonths: Number(data.get('durationMonths')),
+              unitPrice: Number(data.get('unitPrice')), priceModel: data.get('priceModel'),
+              marketAdjustmentPct: Number(data.get('marketAdjustmentPct')), durationMonths: Number(data.get('durationMonths')),
               intervalDays: Number(data.get('intervalDays')), quantityTolerancePct: Number(data.get('quantityTolerancePct')),
               terminationPenaltyPct: Number(data.get('terminationPenaltyPct'))
             })
