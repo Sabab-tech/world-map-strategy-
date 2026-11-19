@@ -408,7 +408,11 @@
       maxAgeTurns: MAX_REPORT_AGE_TURNS,
       freshnessStatus: 'CURRENT',
       currency: readFinance(target).currency,
-      availableForeignCurrency: readFinance(target).available,
+      // Treasury balances are private. The counterpart receives an explicit
+      // disclosure state; the negotiating AI still evaluates the exact value
+      // internally through readFinance()/reservedBuyerCurrency().
+      availableForeignCurrency: evidence(null, 'UNKNOWN', null, 'COUNTERPARTY_TREASURY_NOT_PUBLIC'),
+      paymentCapacity: evidence('NOT_DISCLOSED', 'UNKNOWN', null, 'Counterparty Treasury balances are not public intelligence'),
       relationship: evidence(relation ? relationScore(relation) : null, relation ? 'KNOWN' : 'UNKNOWN', relation ? 'foreign.relations' : null),
       diplomaticStatus: evidence(relation ? { war: relation.war_state === true, sanctions: relation.sanctions === true,
         tradeAgreement: relation.trade_agreement === true } : null, relation ? 'KNOWN' : 'UNKNOWN', relation ? 'foreign.relations' : null),
@@ -602,8 +606,14 @@
       indicativeUnitPrice: unitPrice, priceCurrency: tradeCurrency(seller), expectedMarketPrice: quotePrice,
       sellerStock: stock, sellerReserve: reserve, commitments: commitments, acceptedPendingRequests: accepted.quantity,
       domesticRequirementPerInterval: domesticBuffer, exportableSupply: exportable,
-      buyerAvailableForeignCurrency: availableMoney, buyerGrossAvailableForeignCurrency: grossAvailableMoney,
-      buyerReservedForeignCurrency: currencyCommitments.amount, buyerCurrencyCommitments: currencyCommitments,
+      // Exact buyer liquidity is shown only to the buyer country itself. A
+      // seller receives feasibility and an outcome, never the buyer Treasury.
+      buyerAvailableForeignCurrency: buyer === player ? availableMoney : null,
+      buyerGrossAvailableForeignCurrency: buyer === player ? grossAvailableMoney : null,
+      buyerReservedForeignCurrency: buyer === player ? currencyCommitments.amount : null,
+      buyerCurrencyCommitments: buyer === player ? currencyCommitments : {
+        status: 'PRIVATE', amount: null, requestCount: null, agreementCount: null, reasons: []
+      },
       buyerCurrency: tradeCurrency(buyer), buyerSettlementAmount: buyerAmount,
       fx: num(values && values.fx), durationMonths: durationMonths, durationTurns: monthsToTurns(durationMonths),
       intervalDays: intervalDays, intervalTurns: intervalTurns, quantityTolerancePct: clamp(p.quantityTolerancePct ?? 0, 0, 50),
@@ -806,6 +816,27 @@
     }
     return result;
   }
+  function publicReviewForCountry(review, viewerCountry, proposal) {
+    var safe = clone(review || {});
+    var viewer = canonical(viewerCountry), buyer = canonical(proposal && proposal.buyerCountryId);
+    if (buyer && viewer && buyer !== viewer) {
+      var factors = safe.decisionFactors && typeof safe.decisionFactors === 'object' ? safe.decisionFactors : {};
+      ['buyerAvailableForeignCurrency', 'buyerGrossAvailableForeignCurrency',
+        'buyerReservedForeignCurrency'].forEach(function (key) {
+        if (Object.prototype.hasOwnProperty.call(factors, key)) factors[key] = null;
+      });
+      if (Object.prototype.hasOwnProperty.call(factors, 'buyerCurrencyCommitments'))
+        factors.buyerCurrencyCommitments = { status: 'PRIVATE', amount: null };
+      safe.decisionFactors = factors;
+      safe.privateEvidence = safe.privateEvidence || {};
+      safe.privateEvidence.buyerTreasury = 'NOT_DISCLOSED_TO_COUNTERPARTY';
+    }
+    return safe;
+  }
+  function publicEvaluateProposal(country, proposal) {
+    return publicReviewForCountry(evaluateProposal(country, proposal), country, proposal);
+  }
+
   function upsertProposalHandler(kind) {
     return function (cmd, ctx) {
       var p = cmd && cmd.payload || {}, proposal = clone(p.proposal || {});
@@ -1138,8 +1169,9 @@
         results.push({ proposalId: proposal.proposalId, status: 'FAILED', reason: recorded && recorded.reason || 'COUNTERPARTY_REVIEW_WRITE_FAILED' });
         return;
       }
+      var proposerReview = publicReviewForCountry(review, proposal.requestorCountryId, proposal);
       var applied = unwrap(dispatch('trade', 'OMEGA_BILATERAL_APPLY_RESPONSE', proposal.requestorCountryId, {
-        proposalId: proposal.proposalId, review: review
+        proposalId: proposal.proposalId, review: proposerReview
       }));
       if (!applied || applied.accepted !== true) {
         if (review.decision === 'ACCEPT') dispatch('trade', 'OMEGA_BILATERAL_RECORD_REVIEW', c, {
@@ -1411,7 +1443,7 @@
     renewContract: renewContract,
     terminateContract: terminateContract,
     processCountry: processCountry,
-    evaluateProposal: evaluateProposal,
+    evaluateProposal: publicEvaluateProposal,
     getProposals: function (country) {
       var trade = bucket(country, 'trade') || {};
       return { outbox: recordArray(trade, 'bilateralProposalOutbox'), inbox: recordArray(trade, 'bilateralProposalInbox') };
