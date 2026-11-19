@@ -614,7 +614,7 @@ toleranceContract.quantityTolerancePct=5;
 toleranceContract.currentRequestId='REQ-BTA-TOLERANCE-LOW';
 const belowToleranceRequest=trade.reviewRequest({
   requestId:'REQ-BTA-TOLERANCE-LOW',countryId:'BGD',targetCountryId:'SAU',
-  resourceId:'crude_oil',quantity:94,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
+  resourceId:'crude_oil',quantity:4700,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
   governmentContractId:'BTA-RESERVE-REGRESSION'
 });
 assert.equal(belowToleranceRequest.reason,'BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH',
@@ -623,7 +623,7 @@ assert.equal(belowToleranceRequest.reason,'BILATERAL_GOVERNMENT_CONTRACT_AUTHORI
 toleranceContract.currentRequestId='REQ-BTA-TOLERANCE-HIGH';
 const aboveToleranceRequest=trade.reviewRequest({
   requestId:'REQ-BTA-TOLERANCE-HIGH',countryId:'BGD',targetCountryId:'SAU',
-  resourceId:'crude_oil',quantity:106,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
+  resourceId:'crude_oil',quantity:5300,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
   governmentContractId:'BTA-RESERVE-REGRESSION'
 });
 assert.equal(aboveToleranceRequest.reason,'BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH',
@@ -632,7 +632,7 @@ assert.equal(aboveToleranceRequest.reason,'BILATERAL_GOVERNMENT_CONTRACT_AUTHORI
 toleranceContract.currentRequestId='REQ-BTA-TOLERANCE-WITHIN';
 const withinToleranceRequest=trade.reviewRequest({
   requestId:'REQ-BTA-TOLERANCE-WITHIN',countryId:'BGD',targetCountryId:'SAU',
-  resourceId:'crude_oil',quantity:97,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
+  resourceId:'crude_oil',quantity:4800,unitPrice:100,createdTurn:globalThis.Game.state.simulation.turn,
   governmentContractId:'BTA-RESERVE-REGRESSION'
 });
 assert.equal(withinToleranceRequest.bilateralContractReserve.authorizedAgreement,true,
