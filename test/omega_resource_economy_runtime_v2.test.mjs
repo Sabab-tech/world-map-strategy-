@@ -263,11 +263,10 @@ test('private-company settlement fiscalization does not credit seller revenue or
     companyId:sellerCompany,openingCashStatus:'UNKNOWN',runtimeNetCashFlow:200,
     grossRevenue:200,paymentsReceived:200,paymentsMade:0,taxPaid:0,
     workerIncomePaid:0,transportPaid:0,supplierRevenue:200,lastTurn:1,
-    cashFlowJournalVersion:2,cashFlowJournalStartedAtTurn:1,cashFlowEntries:[{
+    cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,cashFlowEntries:[{
       entryId:'PE-PRIVATE-IMPORT-RECEIPT:'+settlementId,companyId:sellerCompany,
       amount:200,direction:'CREDIT',category:'PRIVATE_COMPANY_EXPORT_SALE',
-      currency:'USD',sourceId:settlementId,turn:1,status:'POSTED',
-      sectorJournalV1:{schemaVersion:1,status:'POSTED',sectorId:'firm',sourceTransactionId:'PE-PRIVATE-IMPORT-RECEIPT:'+settlementId}
+      currency:'USD',sourceId:settlementId,turn:1,status:'POSTED'
     }]
   };
   worldState.economy.BGD.companyAccounts={[sellerCompany]:account};
@@ -726,4 +725,47 @@ test('resource economy resolves Bangladesh ISO2 aliases into the ISO3 BGD state 
   assert.equal(worldState.resource.BD,undefined,
     'an ISO2 display alias must not create a duplicate resource state bucket');
   assert.equal(context.OmegaResourceEconomy.diagnostics().countryCount,1);
+});
+
+
+test('resource company-flow writer preserves firm journal v2 and leaves unmapped rows unavailable',async()=>{
+  const {context,worldState}=createContext();
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+  const companyId='PHASE5_RESOURCE_FLOW_COMPANY';
+  worldState.economy.BGD.companyAccounts={
+    [companyId]:{
+      companyId,openingCashStatus:'UNKNOWN',runtimeNetCashFlow:0,grossRevenue:0,paymentsReceived:0,
+      paymentsMade:0,taxPaid:0,workerIncomePaid:0,transportPaid:0,supplierRevenue:0,lastTurn:1,
+      cashFlowJournalVersion:2,cashFlowJournalStartedAtTurn:1,cashFlowEntries:[{
+        entryId:'FIRM-JOURNAL-V2-EXISTING',companyId,amount:20,direction:'CREDIT',
+        category:'PRIVATE_COMPANY_EXPORT_SALE',currency:'USD',sourceId:'FIRM-TRADE-SETTLEMENT',
+        turn:1,status:'POSTED',
+        sectorJournalV1:{schemaVersion:1,status:'POSTED',sectorId:'firm',
+          sourceTransactionId:'FIRM-JOURNAL-V2-EXISTING',debitTotalMinor:2000,creditTotalMinor:2000}
+      }]
+    }
+  };
+  const result=context.Omega.MinistryInteroperability.dispatchCommand(
+    'economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW','BGD',{
+      companyId,amount:7.25,direction:'DEBIT',category:'WORKER_INCOME',
+      settlementId:'PHASE5-UNMAPPED-RESOURCE-COMPANY-FLOW',
+      idempotencyKey:'PHASE5-RESOURCE-COMPANY-FLOW-V2-1',currency:'USD'
+    }
+  );
+  assert.equal(result.status,'APPLIED',JSON.stringify(result));
+  const account=worldState.economy.BGD.companyAccounts[companyId];
+  assert.equal(account.cashFlowJournalVersion,2,'resource flow must never downgrade the newer firm journal version');
+  assert.equal(account.cashFlowEntries[0].sectorJournalV1.status,'POSTED',
+    'the prior source-backed firm journal is not overwritten');
+  const added=account.cashFlowEntries.find(row=>row.entryId==='PHASE5-RESOURCE-COMPANY-FLOW-V2-1');
+  assert.ok(added);
+  assert.equal(added.sectorJournalV1.status,'UNAVAILABLE');
+  assert.equal(added.sectorJournalV1.reason,'RESOURCE_ECONOMY_COMPANY_FLOW_CATEGORY_NOT_MAPPED');
+  assert.equal(added.sectorJournalV1.sourceAuthority,'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2');
+  assert.equal(added.sectorJournalV1.countryId,'BGD');
+  assert.equal(added.sectorJournalV1.companyId,companyId);
+  assert.equal(added.sectorJournalV1.currency,'USD');
+  assert.equal(account.runtimeNetCashFlow,-7.25);
+  assert.equal(account.paymentsMade,7.25);
 });
