@@ -44,7 +44,7 @@ test('later classic assets cannot overwrite Resource Research transpile helpers'
   unscoped.window = unscoped;
   vm.runInContext(compiled, unscoped);
   vm.runInContext(competingAsset, unscoped);
-  assert.throws(() => unscoped.mergeResearchProject({ projectId: 'R-1' }), TypeError);
+  assert.throws(() => unscoped.mergeResearchProject({ projectId: 'R-1' }), error => error?.name === 'TypeError');
 
   const scoped = vm.createContext({});
   scoped.window = scoped;
