@@ -70,7 +70,7 @@
     "test:resource-strategic-policy": "node --test test/omega_resource_strategic_policy_runtime.test.mjs && npm run test:simulation && npm run test:resource-research",
     "test:resource-multicentury-depletion": "node --test test/omega_resource_multicentury_depletion.test.mjs",
     "test:geographic-regions": "node test/geographic_region_data.test.mjs",
-    "test:phase6-population-capacity": "node --check omega_phase6_national_population_capacity_runtime_v1.js && node --test test/omega_phase6_national_population_capacity_runtime_v1.test.mjs",
+    "test:phase6-population-capacity": "node --check omega_phase6_national_population_capacity_runtime_v1.js && node --test test/omega_phase6_national_population_capacity_runtime_v1.test.mjs test/omega_simulation_phase6_save_provenance.test.mjs",
     "test:resource-demand": "node --test test/omega_resource_national_demand_runtime_v1.test.mjs",
     "test:home-ministry": "node --test test/omega_home_ministry_engine_v1.test.mjs test/omega_home_ministry_budget_integration.test.mjs test/omega_home_ministry_vehicle_ui.test.mjs test/omega_home_ministry_world_police_runtime_v1.test.mjs",
     "test:finance": "node --test test/omega_finance_ministry_runtime_v1.test.mjs",
