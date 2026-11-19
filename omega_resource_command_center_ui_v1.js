@@ -1967,6 +1967,7 @@
         '<div class="omega-rescc-kv"><span>Partner / role</span><strong>' + esc(row.partnerCountryId || '—') + ' · ' + esc(row.role || '—') + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Commodity / delivery</span><strong>' + esc(row.resourceId || '—') + ' · ' + esc(row.quantityPerDelivery || '—') + ' / ' + esc(row.intervalDays || '—') + ' days</strong></div>' +
         '<div class="omega-rescc-kv"><span>Pricing / tolerance</span><strong>' + esc(row.priceModel || 'FIXED') + ' · ±' + esc(row.quantityTolerancePct || 0) + '%</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Payment</span><strong>' + esc(row.paymentSchedule || 'PER_DELIVERY_ON_SETTLEMENT') + ' · ' + esc(row.paymentCurrency || 'UNKNOWN') + ' / ' + esc(row.invoiceCurrency || row.currency || 'UNKNOWN') + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Term / delivered</span><strong>' + esc(row.durationMonths || '—') + ' months · ' + esc(row.deliveredQuantity || 0) + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Next delivery / expiry</span><strong>' + esc(row.nextDeliveryTurn || '—') + ' / ' + esc(row.endTurn || '—') + '</strong></div>' +
         '<div class="omega-rescc-actions">' +
@@ -1992,7 +1993,7 @@
       '<label>Quantity tolerance (%)<input name="quantityTolerancePct" type="number" min="0" max="50" step="0.1" value="0"></label>' +
       '<label>Early termination penalty (%)<input name="terminationPenaltyPct" type="number" min="0" max="100" step="0.1" value="0"></label>' +
       '<label>Relationship penalty if breached (points)<input name="relationshipPenaltyPoints" type="number" min="0" max="100" step="1" value="5"></label></div>' +
-      '<p class="omega-rescc-note">The system checks your own inventory, domestic requirements, current commitments, expected supply and buyer foreign-currency capacity before sending. Unknown evidence blocks sending unless you explicitly enable conditional risk acceptance in the API.</p>' +
+      '<p class="omega-rescc-note">The system checks your own inventory, domestic requirements, current commitments, expected supply and buyer foreign-currency capacity before sending. Each delivery is paid through the existing Global Trade FX/Treasury settlement in the buyer settlement currency against the seller invoice currency. Deferred or advance-payment schedules are not supported in this version.</p>' +
       '<button class="omega-rescc-button" type="submit"' + ((!bilateral || typeof bilateral.createProposal !== 'function' || !others.length || !resourceOpts) ? ' disabled' : '') + '>Analyze and send proposal</button></form>';
     const bilateralBalanceRows = others.slice(0, 8).map(function (partner) {
       const balance = bilateral && typeof bilateral.getBilateralTradeBalance === 'function' ? bilateral.getBilateralTradeBalance(country, partner) : null;
