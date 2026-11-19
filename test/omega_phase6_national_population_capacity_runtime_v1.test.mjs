@@ -359,6 +359,7 @@ test('explicit price, currency and observation allow a resource-level modeled co
   const oil = summary.expenditure.populationConsumption.rows.find(row => row.resourceId === 'crude_oil');
   assert.equal(oil.costStatus, 'AVAILABLE');
   assert.equal(oil.currency, 'USD');
+  assert.ok(Math.abs(oil.costPer100kPerDay - oil.ratePer100kPerDay * 80) < 1e-9);
   assert.ok(Math.abs(oil.costPerDay - oil.quantityPerDay * 80) < 1e-6);
   assert.equal(summary.expenditure.treasuryActualExpense.amount, null);
 });
