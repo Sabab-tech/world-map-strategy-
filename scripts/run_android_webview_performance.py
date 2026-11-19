@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import time
+import shutil
 from pathlib import Path
 from threading import Thread
 
@@ -122,6 +123,14 @@ def instrumentation_report_summary(report_dir: Path) -> dict[str, int]:
 
 def capture_emulator_diagnostics() -> None:
     capture(["adb", "devices", "-l"], ARTIFACT_DIR / "adb-devices.txt", 15)
+    generated_resource_runtime = Path(
+        "android/app/build/generated/omegaWebAssets/omega_resource_research_runtime_v1.js"
+    )
+    if generated_resource_runtime.is_file():
+        shutil.copy2(
+            generated_resource_runtime,
+            ARTIFACT_DIR / "omega_resource_research_runtime_v1.android.min.js",
+        )
     raw_logcat = ARTIFACT_DIR / "android9-logcat-raw.log"
     capture(["adb", "logcat", "-d", "-t", "10000"], raw_logcat, 30)
 
