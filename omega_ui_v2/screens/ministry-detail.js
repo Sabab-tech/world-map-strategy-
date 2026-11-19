@@ -126,7 +126,7 @@
     var domain = domainRecord(country, id);
     var section = SECTIONS.indexOf(options.section) >= 0 &&
       (options.section !== 'market' || id === 'trade') ? options.section : 'dashboard';
-    var marketTab = options.marketTab === 'black-market' ? 'black-market' : 'commodities';
+    var marketTab = ['black-market','bilateral'].indexOf(options.marketTab) >= 0 ? options.marketTab : 'commodities';
     var rawRows = scalarRows(domain && domain.record);
     var categories = options.sectionData && Array.isArray(options.sectionData[section]) ? options.sectionData[section] : null;
     var content;
@@ -163,13 +163,16 @@
         '.omega-v2-trade-market-tabs button:disabled{opacity:.52;cursor:not-allowed;border-style:dashed}' +
         '@media(max-width:560px){.omega-v2-trade-market-tabs button{flex:1;min-width:0}}</style>' +
         '<section class="omega-v2-shell omega-v2-ministry-detail omega-v2-trade-market-page">' +
-        '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">TRADE & COMMERCE</div><h1 class="omega-v2-title">' + (marketTab === 'black-market' ? 'Black Market' : 'Market Commodities') + '</h1>' +
-        '<p class="omega-v2-subtitle">' + (marketTab === 'black-market' ? 'Shadow commerce, restricted supply, tariff arbitrage and evidence-based exposure.' : 'Raw resources, factory products, food products, international offers and recorded prices.') + '</p></div>' +
+        '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">TRADE & COMMERCE</div><h1 class="omega-v2-title">' + (marketTab === 'black-market' ? 'Black Market' : marketTab === 'bilateral' ? 'Bilateral Trade' : 'Market Commodities') + '</h1>' +
+        '<p class="omega-v2-subtitle">' + (marketTab === 'black-market' ? 'Shadow commerce, restricted supply, tariff arbitrage and evidence-based exposure.' : marketTab === 'bilateral' ? 'Country market intelligence, negotiated contracts and authorized cross-border procurement.' : 'Raw resources, factory products, food products, international offers and recorded prices.') + '</p></div>' +
         '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-ministry-section="dashboard">Back to Trade & Commerce</button></header>' +
         '<nav class="omega-v2-trade-market-tabs" aria-label="Trade market sections">' +
         '<button type="button" aria-current="' + (marketTab === 'commodities' ? 'page' : 'false') + '" data-omega-v2-trade-market-tab="commodities">Market Commodities</button>' +
+        '<button type="button" aria-current="' + (marketTab === 'bilateral' ? 'page' : 'false') + '" data-omega-v2-trade-market-tab="bilateral">Bilateral Trade</button>' +
         '<button type="button" aria-current="' + (marketTab === 'black-market' ? 'page' : 'false') + '" data-omega-v2-trade-market-tab="black-market">Black Market</button></nav>' +
-        (marketTab === 'black-market' ? '<div class="omega-v2-trade-market-host" data-omega-v2-black-market-host aria-label="Black Market"></div>' : '<div class="omega-v2-trade-market-host" data-omega-v2-trade-market-host aria-label="Market Commodities"></div>') + '</section>';
+        (marketTab === 'black-market' ? '<div class="omega-v2-trade-market-host" data-omega-v2-black-market-host aria-label="Black Market"></div>' :
+         marketTab === 'bilateral' ? '<div class="omega-v2-trade-market-host" data-omega-v2-bilateral-trade-host aria-label="Bilateral Trade"></div>' :
+         '<div class="omega-v2-trade-market-host" data-omega-v2-trade-market-host aria-label="Market Commodities"></div>') + '</section>';
     } else {
       root.innerHTML = '<section class="omega-v2-shell omega-v2-ministry-detail">' +
         '<header class="omega-v2-heading"><div class="omega-v2-ministry-detail-mark">' + emblem + '<div><div class="omega-v2-eyebrow">ALL MINISTRIES · ' + esc(id.replace(/[_-]+/g,' ').toUpperCase()) + '</div><h1 class="omega-v2-title">' + esc(row ? row.title : id || 'Ministry') + '</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · registered ministry profile and source-backed domain record</p></div></div><span class="omega-v2-status" data-state="' + (domain && domain.record ? 'operational' : 'unknown') + '">' + (domain && domain.record ? 'DOMAIN RECORD AVAILABLE' : esc(domain.reason || 'DOMAIN RECORD NOT RECORDED')) + '</span></header>' +
@@ -193,7 +196,9 @@
         var marketTabButton = target.closest('[data-omega-v2-trade-market-tab]');
         if (marketTabButton && root.contains(marketTabButton)) {
           var marketOptions = root.__omegaV2MinistryDetailOptions || {};
-          scheduleRender(root, Object.assign({}, marketOptions, { section:'market', marketTab:marketTabButton.getAttribute('data-omega-v2-trade-market-tab') }), 'Opening ' + (marketTabButton.getAttribute('data-omega-v2-trade-market-tab') === 'black-market' ? 'Black Market' : 'Market Commodities'));
+          var nextMarketTab = marketTabButton.getAttribute('data-omega-v2-trade-market-tab');
+          scheduleRender(root, Object.assign({}, marketOptions, { section:'market', marketTab:nextMarketTab }),
+            'Opening ' + (nextMarketTab === 'black-market' ? 'Black Market' : nextMarketTab === 'bilateral' ? 'Bilateral Trade' : 'Market Commodities'));
           return;
         }
         var route = target.closest('[data-omega-v2-detail-navigate]');
@@ -207,7 +212,15 @@
     root.__omegaV2MinistryDetailOptions = options;
     var marketMounted = false;
     if (id === 'trade' && section === 'market') {
-      if (marketTab === 'black-market') {
+      if (marketTab === 'bilateral') {
+        var bilateralHost = typeof root.querySelector === 'function' ? root.querySelector('[data-omega-v2-bilateral-trade-host]') : null;
+        var bilateralUI = g.OmegaBilateralTradeUI || (g.Omega && g.Omega.BilateralTradeUI);
+        if (bilateralHost && bilateralUI && typeof bilateralUI.render === 'function') {
+          var bilateralResult = bilateralUI.render(bilateralHost, country);
+          marketMounted = !!(bilateralResult && bilateralResult.ok !== false);
+          if (!marketMounted) bilateralHost.textContent = 'Bilateral Trade could not be mounted. Existing market and trade ledgers remain unchanged.';
+        } else if (bilateralHost) bilateralHost.textContent = 'Bilateral Trade runtime or UI is unavailable in this session.';
+      } else if (marketTab === 'black-market') {
         var blackHost = typeof root.querySelector === 'function' ? root.querySelector('[data-omega-v2-black-market-host]') : null;
         var blackUI = g.OmegaBlackMarketUI || (g.Omega && g.Omega.BlackMarketUI);
         if (blackHost && blackUI && typeof blackUI.render === 'function') {
