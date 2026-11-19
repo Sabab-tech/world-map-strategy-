@@ -369,19 +369,13 @@
     var statuses = { operational: 0, underConstruction: 0, maintenance: 0, paused: 0,
       offline: 0, decommissioned: 0, unknown: 0 };
     var ownership = { governmentOwned: 0, privateOwned: 0, ownershipUnclassified: 0 };
-    var liveRated = 0, liveRatedCount = 0, effective = 0, effectiveCount = 0;
+    var liveRated = 0, effective = 0;
     var workers = 0, workersCount = 0;
     eligibleAssets.forEach(function (asset) {
       var status = statusBucket(asset.status);
       statuses[status] += 1;
       ownership[ownershipBucket(asset)] += 1;
       var capacity = capacityOf(asset);
-      if (capacity !== null) { liveRated += capacity; liveRatedCount += 1; }
-      var utilization = utilizationOf(asset);
-      if (capacity !== null && utilization !== null) {
-        effective += capacity * utilization;
-        effectiveCount += 1;
-      }
       var staff = finite(asset.currentWorkers != null ? asset.currentWorkers :
         (asset.employees != null ? asset.employees : asset.workers));
       if (staff !== null && staff >= 0) { workers += staff; workersCount += 1; }
@@ -421,10 +415,10 @@
       effectiveCapacityObserved += 1;
     });
     ratedAssets.forEach(function (asset) {
-      if (capacityOf(asset) !== null) ratedCapacityObserved += 1;
+      var capacity = capacityOf(asset);
+      if (capacity !== null) { ratedCapacityObserved += 1; liveRated += capacity; }
       else ratedCapacityComplete = false;
     });
-    if (!ratedCapacityComplete || ratedCapacityObserved !== ratedAssets.length) liveRatedCount = 0;
     if (!effectiveCapacityComplete) effectiveCapacityObserved = 0;
     return {
       status: baseline ? 'READY' : 'BASELINE_UNAVAILABLE',
@@ -443,7 +437,7 @@
       liveFactoryUnits: isActive ? liveTotal : null,
       liveFactoryStatusCounts: isActive ? statuses : null,
       ownershipCounts: isActive ? ownership : null,
-      ratedCapacityPerDay: isActive && liveRatedCount ? liveRated : null,
+      ratedCapacityPerDay: isActive && ratedCapacityComplete && ratedCapacityObserved === ratedAssets.length ? liveRated : null,
       ratedCapacityCoverage: isActive ? ratedCapacityObserved + '/' + ratedAssets.length : 'NOT_ACTIVE_COUNTRY',
       effectiveCapacityPerDay: isActive && eligibleAssets.length > 0 && effectiveCapacityComplete ? effective : null,
       effectiveCapacityCoverage: isActive ? effectiveCapacityObserved + '/' + operationalAssets.length : 'NOT_ACTIVE_COUNTRY',
