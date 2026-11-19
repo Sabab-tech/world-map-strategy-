@@ -2507,24 +2507,68 @@ function captureStockFlowPeriod(stateTransaction) {
         });
         observedRows=productionRows.length;
         productionRows.forEach(function(row){
-          if(!row.transactionId||!Array.isArray(row.inputs)||!Array.isArray(row.outputs))
+          var hasInputs=Array.isArray(row.inputs)||!!(row.inputQuantities&&typeof row.inputQuantities==='object'),
+            hasOutputs=Array.isArray(row.outputs)||!!(row.outputs&&typeof row.outputs==='object');
+          if(!row.transactionId||!hasInputs||!hasOutputs)
             invalid.push('PRODUCTION_TRANSACTION_IDENTITY_INCOMPLETE:'+String(row.transactionId||'MISSING_ID'));
           var measurementStatus=String(row.lossMeasurementStatus||'').toUpperCase(),
-            measuredEvents=Array.isArray(row.lossEvents)?row.lossEvents:[];
-          const measurementAuthority=String(row.lossMeasurementAuthority||''),
+            measuredEvents=Array.isArray(row.lossEvents)?row.lossEvents:[],
+            residueMeasurements=Array.isArray(row.residueMeasurements)?row.residueMeasurements:[],
+            measurementAuthority=String(row.lossMeasurementAuthority||''),
             measurementBasis=String(row.lossMeasurementBasis||''),
-            validMeasurementProvenance=measurementAuthority==='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'&&
+            residueBasis=measurementAuthority==='OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'&&
+              ((measurementStatus==='MEASURED_EVENTS'&&measurementBasis==='MEASURED_PROCESS_OUTPUT_RESIDUE')||
+               (measurementStatus==='MEASURED_ZERO'&&measurementBasis==='MEASURED_ZERO_PROCESS_OUTPUT_RESIDUE')),
+            physicalLossBasis=measurementAuthority==='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'&&
               ((measurementStatus==='MEASURED_EVENTS'&&measurementBasis==='MEASURED_PROCESS_INPUT_RESIDUE')||
                (measurementStatus==='MEASURED_ZERO'&&measurementBasis==='MEASURED_ZERO_PROCESS_RESIDUE'));
-          if(!validMeasurementProvenance)
+          if(!residueBasis&&!physicalLossBasis)
             invalid.push('PRODUCTION_LOSS_MEASUREMENT_UNOBSERVED_OR_UNTRUSTED:'+String(row.transactionId||'MISSING_ID'));
-          if((measurementStatus==='MEASURED_EVENTS'&&!measuredEvents.length)||
-            (measurementStatus==='MEASURED_ZERO'&&measuredEvents.length))
-            invalid.push('PRODUCTION_LOSS_MEASUREMENT_STATUS_MISMATCH:'+String(row.transactionId||'MISSING_ID'));
-          measuredEvents.forEach(function(event){
-            lossEventsObserved++;
-            if(!hasLoss(event,row.transactionId))invalid.push('PRODUCTION_LOSS_NOT_RECONCILED:'+String(event.eventId||'MISSING_ID'));
-          });
+          if(residueBasis){
+            var residueLedger=ctx.stateTransaction.get('resource.productionResidueLedger'),
+              residueRows=Array.isArray(residueLedger)?residueLedger:[],
+              envelope=residueRows.find(function(item){return String(item&&item.transactionId||'')===String(row.transactionId);}),
+              envelopeMeasurements=Array.isArray(envelope&&envelope.measurements)?envelope.measurements:[],
+              batchesNow=Array.isArray(ctx.stateTransaction.get('resource.batches'))?ctx.stateTransaction.get('resource.batches'):[];
+            if(!envelope||String(envelope.status||'').toUpperCase()!==measurementStatus||
+              String(envelope.basis||'')!==measurementBasis||
+              String(envelope.authority||'')!==measurementAuthority)
+              invalid.push('PRODUCTION_RESIDUE_ENVELOPE_MISSING_OR_MISMATCH:'+String(row.transactionId));
+            if((measurementStatus==='MEASURED_EVENTS'&&!residueMeasurements.length)||
+              (measurementStatus==='MEASURED_ZERO'&&residueMeasurements.length))
+              invalid.push('PRODUCTION_RESIDUE_MEASUREMENT_STATUS_MISMATCH:'+String(row.transactionId));
+            residueMeasurements.forEach(function(event){
+              var authoritative=envelopeMeasurements.find(function(item){return String(item&&item.eventId||'')===String(event&&event.eventId||'');}),
+                batch=batchesNow.find(function(item){return String(item&&item.batchId||'')===String(event&&event.batchId||'');}),
+                output= row.outputs && !Array.isArray(row.outputs)
+                  ? Object.keys(row.outputs).find(function(key){return String(key).toUpperCase()===String(event.resourceId||'').toUpperCase();})
+                  : null,
+                outputQuantity=output?num(row.outputs[output]):null;
+              if(!authoritative||String(authoritative.resourceId||'').toUpperCase()!==String(event.resourceId||'').toUpperCase()||
+                Math.abs((num(authoritative.quantity)||0)-(num(event.quantity)||0))>1e-9||
+                String(authoritative.unit||'').toUpperCase()!==String(event.unit||'').toUpperCase()||
+                String(authoritative.batchId||'')!==String(event.batchId||''))
+                invalid.push('PRODUCTION_RESIDUE_LEDGER_EVENT_MISMATCH:'+String(event&&event.eventId||'MISSING_ID'));
+              if(!batch||String(batch.productRole||'').toUpperCase()!=='BY_PRODUCT_RESIDUE'||
+                String(batch.residueMeasurementEventId||'')!==String(event.eventId||'')||
+                String(batch.resourceId||'').toUpperCase()!==String(event.resourceId||'').toUpperCase()||
+                Math.abs((num(batch.quantity)||0)-(num(event.quantity)||0))>1e-9||
+                String(batch.unit||'').toUpperCase()!==String(event.unit||'').toUpperCase())
+                invalid.push('PRODUCTION_RESIDUE_OUTPUT_BATCH_NOT_RECONCILED:'+String(event&&event.eventId||'MISSING_ID'));
+              if(row.outputs&&!Array.isArray(row.outputs)&&
+                (outputQuantity===null||Math.abs(outputQuantity-(num(event.quantity)||0))>1e-9))
+                invalid.push('PRODUCTION_RESIDUE_OUTPUT_QUANTITY_MISMATCH:'+String(event&&event.eventId||'MISSING_ID'));
+              lossEventsObserved++;
+            });
+          }else{
+            if((measurementStatus==='MEASURED_EVENTS'&&!measuredEvents.length)||
+              (measurementStatus==='MEASURED_ZERO'&&measuredEvents.length))
+              invalid.push('PRODUCTION_LOSS_MEASUREMENT_STATUS_MISMATCH:'+String(row.transactionId||'MISSING_ID'));
+            measuredEvents.forEach(function(event){
+              lossEventsObserved++;
+              if(!hasLoss(event,row.transactionId))invalid.push('PRODUCTION_LOSS_NOT_RECONCILED:'+String(event.eventId||'MISSING_ID'));
+            });
+          }
         });
         losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()==='PRODUCTION';})
           .forEach(function(row){
