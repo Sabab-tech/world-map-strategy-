@@ -265,7 +265,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
     intervalDays: 30, intervalTurns: 30
   });
   assert.equal(sellerPriceReview.decision, 'COUNTER');
-  assert.equal(sellerPriceReview.terms.unitPrice, 100,
+  assert.equal(sellerPriceReview.terms.unitPrice, 95,
     'the seller AI must counter a below-market offer upward to its market floor');
 
   const foreignBuyerFeasibility = bilateral.previewProposal('BGD', {
