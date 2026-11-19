@@ -14,7 +14,7 @@ function render(root,countryValue){
  const country=canonicalCountry(countryValue||g.OmegaMinistryViewCountry||g.OmegaCabinetUI?.activeCountry||'');
  const api=runtime();
  if(!api){root.textContent='Bilateral Trade runtime is not available in this session.';return{ok:false,reason:'RUNTIME_UNAVAILABLE'};}
- const agreements=api.getAgreements(country);
+ const agreements=api.getAgreements(country),canAct=api.canActFor?.(country)===true;
  root.innerHTML='<style>'+
  '.bt-wrap{display:grid;gap:12px;min-width:0;color:#dceaf6;font-size:13px}'+
  '.bt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}'+
@@ -45,10 +45,11 @@ function render(root,countryValue){
  '@media(max-width:480px){.bt-panel{padding:10px}.bt-actions button{flex:1}}'+
  '</style><div class="bt-wrap">'+
  '<div class="bt-panel"><h3>Bilateral Market Intelligence</h3><p>Generate a timestamped report for one counterparty. Each metric is marked Known, Estimated or Unknown; unavailable evidence is not filled with zero.</p>'+
+ (!canAct?'<p class="bt-note">Read-only country view. Bilateral actions require the selected player country.</p>':'')+
  '<div class="bt-form-grid">'+
  '<label class="bt-field">Counterparty ISO3 or name<input data-bt-field="target" placeholder="e.g. SAU" autocomplete="off"></label>'+
  '<label class="bt-field">Commodity ID (optional)<input data-bt-field="resource" placeholder="e.g. crude_oil"></label>'+
- '</div><div class="bt-actions"><button type="button" data-bt-action="intelligence">Generate intelligence report</button></div>'+
+ '</div><div class="bt-actions"><button type="button" data-bt-action="intelligence"'+(!canAct?' disabled':'')+'>Generate intelligence report</button></div>'+
  '<div data-bt-report aria-live="polite"></div></div>'+
  '<div class="bt-panel"><h3>Negotiate a Bilateral Trade Agreement</h3><p>The offer is recorded for both countries. Procurement is enabled only after both party records show the same active terms version.</p>'+
  '<div class="bt-form-grid">'+
@@ -60,9 +61,9 @@ function render(root,countryValue){
  '<label class="bt-field">Seller settlement currency<input data-bt-field="currency" maxlength="3" placeholder="e.g. USD"></label>'+
  '<label class="bt-field">Duration (game turns)<input data-bt-field="duration" type="number" min="1" max="10000" value="100"></label>'+
  '<label class="bt-field">Delivery mode (optional)<input data-bt-field="mode" placeholder="SHIP / RAIL / PIPELINE"></label>'+
- '</div><div class="bt-actions"><button type="button" data-bt-action="offer">Send bilateral offer</button></div></div>'+
+ '</div><div class="bt-actions"><button type="button" data-bt-action="offer"'+(!canAct?' disabled':'')+'>Send bilateral offer</button></div></div>'+
  '<div class="bt-panel"><h3>Current Country Agreements</h3><div data-bt-agreements>'+
- (agreements.length?agreements.slice().reverse().map(a=>agreementCard(a,country)).join(''):'<p class="bt-note">No bilateral agreement is recorded for this country yet.</p>')+
+ (agreements.length?agreements.slice().reverse().map(a=>agreementCard(a,country,canAct)).join(''):'<p class="bt-note">No bilateral agreement is recorded for this country yet.</p>')+
  '</div></div><p class="bt-status-line" data-bt-status role="status"></p>'+
  '<p class="bt-note">Open Market price discovery remains separate. An agreement does not create stock, money or route capacity; procurement still passes through the existing Global Trade review, inventory, FX, Treasury and settlement checks.</p>'+
  '</div>';
@@ -70,6 +71,7 @@ function render(root,countryValue){
   root.addEventListener('click',function(event){
    const button=event.target&&event.target.closest&&event.target.closest('[data-bt-action]');
    if(!button||!root.contains(button))return;
+   if(!api.canActFor?.(country)){const readOnlyStatus=root.querySelector('[data-bt-status]');if(readOnlyStatus)readOnlyStatus.textContent='Read-only country view · player-country authority required.';return;}
    const action=button.getAttribute('data-bt-action'),reportHost=root.querySelector('[data-bt-report]'),status=root.querySelector('[data-bt-status]');
    const get=name=>{const el=root.querySelector('[data-bt-field="'+name+'"]');return el?el.value:'';};
    const say=message=>{if(status)status.textContent=message;};
@@ -125,11 +127,17 @@ function render(root,countryValue){
  }
  return{ok:true,countryId:country,agreementCount:agreements.length};
 }
-function agreementCard(a,country){
+function agreementCard(a,country,canAct){
  const parties=[String(a.buyerCountryId||''),String(a.sellerCountryId||'')],other=parties.find(x=>x!==country)||a.counterpartyCountryId||'Unknown';
  const mine=a.responses&&a.responses[country],version=num(a.termVersion),mineAccepted=mine&&num(mine.acceptedVersion)===version;
  const status=String(a.status||'UNKNOWN'),pending=['OFFERED','COUNTER_OFFERED','ACCEPTED_AWAITING_COUNTERPARTY'].includes(status);
  const controls=[];
+ if(!canAct)return '<article class="bt-record" data-bt-agreement="'+esc(a.agreementId)+'">'+
+ '<div class="bt-meta"><span>Agreement</span><strong>'+esc(a.agreementId)+'</strong></div>'+
+ '<div class="bt-meta"><span>Counterparty</span><strong>'+esc(other)+' · '+esc(a.buyerCountryId)+' → '+esc(a.sellerCountryId)+'</strong></div>'+
+ '<div class="bt-meta"><span>Commodity</span><strong>'+esc(a.resourceId)+'</strong></div>'+
+ '<div class="bt-meta"><span>Terms</span><strong>'+fmt(a.terms&&a.terms.quantityPerShipment)+' / shipment · '+fmt(a.terms&&a.terms.unitPrice)+' '+esc(a.terms&&a.terms.currency||'currency not recorded')+'</strong></div>'+
+ '<div class="bt-meta"><span>Status</span><strong>'+esc(status)+' · terms v'+esc(version)+'</strong></div></article>';
  if(pending&&!mineAccepted)controls.push('<button type="button" data-bt-action="accept">Accept</button>');
  if(pending)controls.push('<button type="button" data-bt-action="counter">Counter</button><button type="button" data-kind="danger" data-bt-action="reject">Reject</button>');
  if(status==='ACTIVE')controls.push('<button type="button" data-bt-action="procure">'+(canonicalCountry(a.buyerCountryId)===country?'Place agreed import request':'Initiate agreed delivery')+'</button>');

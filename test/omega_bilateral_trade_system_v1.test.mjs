@@ -87,7 +87,14 @@ await import('../omega_bilateral_trade_system_v1.js');
 const bilateral = globalThis.OmegaBilateralTrade;
 assert.ok(bilateral, 'Bilateral Trade API must be registered');
 const diagnostics = bilateral.diagnostics();
+assert.equal(bilateral.canActFor('BGD'), true);
+assert.equal(bilateral.canActFor('SAU'), false);
 assert.equal(diagnostics.handlerInstalled, true, JSON.stringify(diagnostics));
+const outOfScopeOffer = bilateral.createAgreementOffer('SAU', 'BGD', 'EXPORT', {
+  resourceId: 'crude_oil', quantityPerShipment: 10, unitPrice: 95, currency: 'SAR'
+});
+assert.equal(outOfScopeOffer.accepted, false);
+assert.equal(outOfScopeOffer.reason, 'PLAYER_COUNTRY_SCOPE_ONLY');
 assert.equal(diagnostics.registeredCommandHandlers, 2);
 assert.equal(diagnostics.automaticWorldRosterScan, false);
 assert.equal(diagnostics.usesExistingGlobalTradeScheduler, true);
@@ -128,6 +135,7 @@ const legacyReport = bilateral.buildMarketIntelligence('SAU', 'BGD', { resourceI
 assert.equal(legacyReport.ok, true);
 assert.equal(legacyReport.report.resources[0].inboundInTransit.status, 'UNKNOWN',
   'a missing shipment ledger is not treated as zero');
+assert.equal(bilateral.requestMarketIntelligence('SAU', 'BGD', { resourceId: 'crude_oil' }).reason,'PLAYER_COUNTRY_SCOPE_ONLY');
 const saved = bilateral.requestMarketIntelligence('BGD', 'SAU', { resourceId: 'crude_oil' });
 assert.equal(saved.ok, true, JSON.stringify(saved));
 assert.equal(saved.persisted, true);
@@ -193,11 +201,14 @@ assert.equal(procurement.request.quantity, 600);
 assert.equal(procurement.request.targetCountryId, 'SAU');
 assert.equal(procurement.request.currency, 'SAR');
 assert.equal(procurement.assessment.status, 'READY');
+globalThis.Game.state.simulation.session.playerCountryId = 'SAU';
+assert.equal(bilateral.canActFor('SAU'), true);
 const sellerInitiated = bilateral.procureAgreement('SAU', agreementId, 500);
 assert.equal(sellerInitiated.accepted, true, JSON.stringify(sellerInitiated));
 assert.equal(sellerInitiated.request.currency, 'SAR');
 assert.equal(sellerInitiated.request.countryId, 'BGD',
   'seller-side initiation must create the agreed buyer-side request in the buyer country state');
+globalThis.Game.state.simulation.session.playerCountryId = 'BGD';
 
 // A counteroffer increments the terms version and requires acceptance of that
 // version by the original offerer before either mirror becomes active.
