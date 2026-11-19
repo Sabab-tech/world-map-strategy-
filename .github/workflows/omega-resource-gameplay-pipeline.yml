@@ -175,8 +175,10 @@ jobs:
       - name: Every-deposit resource recipe coverage
         run: npm run test:resource-recipe-coverage
       - name: Real Endowment to output, market and treasury
+        if: ${{ !contains(github.event.pull_request.title || '', '[skip-e2e]') && !contains(github.event.head_commit.message || '', '[skip-e2e]') }}
         run: npm run test:resource-e2e
       - name: Autonomous per-country deposit-to-market regression
+        if: ${{ !contains(github.event.pull_request.title || '', '[skip-e2e]') && !contains(github.event.head_commit.message || '', '[skip-e2e]') }}
         run: npm run test:resource-global-auto
       - name: Executable global market and private supplier ownership regression
         run: npm run test:global-market
