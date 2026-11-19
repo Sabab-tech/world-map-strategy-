@@ -731,10 +731,12 @@ test('Black Market inbound transit is exposed separately and reconciles against 
   assert.equal(transit.status, 'OBSERVED_DURABLE_SHIPMENT_LEDGER');
   assert.equal(transit.shipmentCount, 0, 'the arrived generic shipment is not counted as in transit');
   assert.equal(transit.quantity, 0);
-  assert.equal(transit.blackMarketTransit.status, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
+  assert.equal(transit.blackMarketTransit.status, 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE',
+    'the existing Black Market route record does not preserve its quantity unit');
   assert.equal(transit.blackMarketTransit.ledgerAvailable, true);
   assert.equal(transit.blackMarketTransit.shipmentCount, 2);
   assert.equal(transit.blackMarketTransit.byResource.crude_oil.quantity, 25);
+  assert.equal(transit.blackMarketTransit.byResource.crude_oil.unit, null);
   assert.deepEqual(JSON.parse(JSON.stringify(transit.blackMarketTransit.byResource.crude_oil.transitIds)),
     ['BM-TRANSIT-ARRIVAL', 'BM-TRANSIT-OPEN']);
   assert.equal(transit.blackMarketTransit.reconciledCompletedTransitCount, 1,
@@ -766,7 +768,9 @@ test('Black Market transit can provide a known subset without claiming complete 
   assert.equal(summary.inTransitInternationalImports.status, 'PARTIAL_BLACK_MARKET_TRANSIT_ONLY');
   assert.equal(summary.inTransitInternationalImports.quantity, null,
     'the complete bilateral import total remains unknown without its durable shipment ledger');
+  assert.equal(summary.inTransitInternationalImports.blackMarketTransit.status, 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE');
   assert.equal(summary.inTransitInternationalImports.blackMarketTransit.byResource.crude_oil.quantity, 9);
+  assert.equal(summary.inTransitInternationalImports.blackMarketTransit.byResource.crude_oil.unit, null);
   assert.equal(summary.nationalRequirement.byResource.crude_oil.blackMarketInboundShipmentQuantity, 9);
   assert.equal(summary.dataCoverage.inTransitInternationalImportStatus, 'PARTIAL_BLACK_MARKET_TRANSIT_ONLY');
 });
