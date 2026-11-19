@@ -2065,6 +2065,12 @@ test('private-company import debits the verified buyer wallet, credits the selli
     createdBatchIds:['TRADE-PRIVATE-IMPORT-BATCH-1']
   });
   assert.equal(consumed.status,'DUPLICATE');
+  assert.equal(buyerJournal.filter(row=>row.category==='FACTORY_INPUT_PURCHASE').length,1,
+    'same settlement replay must not create a second buyer firm-journal posting');
+  assert.equal(buyerJournal.filter(row=>row.category==='IMPORT_TARIFF').length,1,
+    'same settlement replay must not create a second tariff firm-journal posting');
+  assert.equal(sellerJournal.filter(row=>row.category==='PRIVATE_COMPANY_EXPORT_SALE').length,1,
+    'same settlement replay must not create a second seller firm-journal posting');
   assert.equal(h.state.finance.BGD.omegaFinance.companyCapitalAccounts[buyer].availableBalance,395,
     'duplicate completion must not refund or re-debit the buyer wallet');
   assert.equal(h.state.finance.SAU.omegaFinance.companyCapitalAccounts[seller].availableBalance,100);
