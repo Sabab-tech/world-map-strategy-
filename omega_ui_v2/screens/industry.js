@@ -908,9 +908,12 @@
       var hasExplicitRecipeId = !!String(asset.recipeId || '').trim();
       var recipeId = String(asset.recipeId || (!hasExplicitRecipeId ? profile.defaultRecipeId : '') || '');
       var selectedRecipe = recipeCatalog[recipeId] || null;
-      var recipeIdentityMismatch = !!(selectedRecipe &&
-        normalizeFactoryType(selectedRecipe.factoryType, catalog) !== type);
-      if (recipeIdentityMismatch) selectedRecipe = null;
+      var recipeFactoryType = selectedRecipe ? normalizeFactoryType(selectedRecipe.factoryType, catalog) : '';
+      var recipeTypeIsKnown = !!profiles[type];
+      var recipeIdentityMismatch = !!(selectedRecipe && recipeTypeIsKnown && recipeFactoryType !== type);
+      // Do not borrow catalogue coefficients for an unrecognised legacy type.
+      // Its explicitly saved asset inputs remain visible until the type alias is registered.
+      if (recipeIdentityMismatch || (selectedRecipe && !recipeTypeIsKnown)) selectedRecipe = null;
       if (!hasExplicitRecipeId && !selectedRecipe && Array.isArray(profile.recipeIds) && profile.recipeIds.length === 1) {
         selectedRecipe = recipeCatalog[String(profile.recipeIds[0])] || null;
         if (selectedRecipe && normalizeFactoryType(selectedRecipe.factoryType, catalog) === type) {
@@ -952,9 +955,12 @@
       var hasExplicitRecipeId = !!String(asset.recipeId || '').trim();
       var recipeId = String(asset.recipeId || (!hasExplicitRecipeId ? profile.defaultRecipeId : '') || '');
       var selectedRecipe = recipeCatalog[recipeId] || null;
-      var recipeIdentityMismatch = !!(selectedRecipe &&
-        normalizeFactoryType(selectedRecipe.factoryType, catalog) !== type);
-      if (recipeIdentityMismatch) selectedRecipe = null;
+      var recipeFactoryType = selectedRecipe ? normalizeFactoryType(selectedRecipe.factoryType, catalog) : '';
+      var recipeTypeIsKnown = !!profiles[type];
+      var recipeIdentityMismatch = !!(selectedRecipe && recipeTypeIsKnown && recipeFactoryType !== type);
+      // Do not borrow catalogue coefficients for an unrecognised legacy type.
+      // Its explicitly saved asset inputs remain visible until the type alias is registered.
+      if (recipeIdentityMismatch || (selectedRecipe && !recipeTypeIsKnown)) selectedRecipe = null;
       if (!hasExplicitRecipeId && !selectedRecipe && Array.isArray(profile.recipeIds) && profile.recipeIds.length === 1) {
         selectedRecipe = recipeCatalog[String(profile.recipeIds[0])] || null;
         if (selectedRecipe && normalizeFactoryType(selectedRecipe.factoryType, catalog) === type) {
