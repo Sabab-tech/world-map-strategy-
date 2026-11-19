@@ -9,7 +9,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
   if (root.OmegaPhase6NationalCapacity &&
       root.OmegaPhase6NationalCapacity.VERSION === VERSION) return;
 
@@ -498,15 +498,127 @@
       conflictingSettlementCount: Object.keys(conflicts).length
     };
   }
+  function blackMarketTransitEvidence(tradeBucket, countryId, shipmentLedger) {
+    var ledger = Array.isArray(tradeBucket && tradeBucket.blackMarketTransits)
+      ? tradeBucket.blackMarketTransits : null;
+    if (!ledger) return {
+      status: 'UNKNOWN_BLACK_MARKET_TRANSIT_LEDGER_NOT_AVAILABLE',
+      authority: 'Game.state.trade[countryId].blackMarketTransits',
+      ledgerAvailable: false, ledgerRecordCount: null, shipmentCount: null,
+      quantity: null, byResource: {}, invalidRecordCount: null,
+      conflictingTransitCount: null, reconciledCompletedTransitCount: 0
+    };
+    var completedRequests = Object.create(null);
+    (Array.isArray(shipmentLedger) ? shipmentLedger : []).forEach(function (row) {
+      if (!object(row) || canonicalCountry(row.destinationCountryId) !== countryId) return;
+      var requestId = String(row.requestId || '').trim();
+      if (!requestId) return;
+      var status = id(row.status || row.arrivalStatus || 'UNKNOWN');
+      var arrivalStatus = id(row.arrivalStatus || '');
+      var completed = ['ARRIVED', 'RECEIVED', 'DELIVERED', 'SETTLED', 'COMPLETE'].indexOf(status) >= 0 ||
+        ['ARRIVED', 'RECEIVED', 'DELIVERED', 'SETTLED', 'COMPLETE'].indexOf(arrivalStatus) >= 0;
+      if (completed) completedRequests[requestId] = true;
+    });
+    var entries = Object.create(null), conflicts = Object.create(null), byResource = Object.create(null);
+    var invalidRecordCount = 0, reconciledCompletedTransitCount = 0, shipmentCount = 0;
+    function resourceBucket(resourceId) {
+      var key = token(resourceId);
+      if (!key) return null;
+      if (!byResource[key]) byResource[key] = {
+        resourceId: String(resourceId), knownQuantity: 0, quantity: 0,
+        shipmentCount: 0, transitIds: [], requestIds: [], sourceCountryIds: [],
+        unit: null, unitKnown: false, conflictingTransitCount: 0
+      };
+      return byResource[key];
+    }
+    ledger.forEach(function (row) {
+      if (!object(row)) { invalidRecordCount++; return; }
+      var status = id(row.status || 'UNKNOWN');
+      if (status !== 'IN_TRANSIT' && status !== 'ARRIVAL_PENDING') return;
+      var buyer = canonicalCountry(row.buyerCountryId);
+      var seller = canonicalCountry(row.sellerCountryId);
+      var transitId = String(row.transitId || '').trim();
+      var dealId = String(row.dealId || '').trim();
+      var requestId = String(row.requestId || '').trim();
+      var resourceId = String(row.resourceId || '').trim();
+      var quantity = finite(row.quantity);
+      var route = Array.isArray(row.route) ? row.route : [];
+      if (buyer !== countryId || !seller || seller === buyer || !transitId || !dealId ||
+          !requestId || !resourceId || quantity === null || quantity <= 0 || route.length < 2) {
+        invalidRecordCount++; return;
+      }
+      if (completedRequests[requestId]) {
+        reconciledCompletedTransitCount++;
+        return;
+      }
+      var resourceKey = token(resourceId);
+      var signature = [buyer, seller, dealId, requestId, resourceKey, quantity, status].join('|');
+      if (entries[transitId]) {
+        if (entries[transitId].signature !== signature) conflicts[transitId] = true;
+        return;
+      }
+      entries[transitId] = {
+        transitId: transitId, signature: signature, resourceKey: resourceKey,
+        sellerCountryId: seller, requestId: requestId, quantity: quantity,
+        unit: String(row.unit || '').trim() || null
+      };
+    });
+    Object.keys(entries).forEach(function (transitId) {
+      var entry = entries[transitId], target = byResource[entry.resourceKey];
+      if (conflicts[transitId]) {
+        target.conflictingTransitCount++;
+        return;
+      }
+      target.knownQuantity += entry.quantity;
+      target.shipmentCount++;
+      target.transitIds.push(transitId);
+      target.requestIds.push(entry.requestId);
+      target.sourceCountryIds.push(entry.sellerCountryId);
+      if (entry.unit) {
+        if (!target.unitKnown) { target.unit = entry.unit; target.unitKnown = true; }
+        else if (target.unit !== entry.unit) target.unitConflict = true;
+      } else target.unitEvidenceIncomplete = true;
+      shipmentCount++;
+    });
+    Object.keys(byResource).forEach(function (key) {
+      var row = byResource[key];
+      row.transitIds.sort(); row.requestIds.sort();
+      row.sourceCountryIds = row.sourceCountryIds.filter(function (value, index, rows) {
+        return rows.indexOf(value) === index;
+      }).sort();
+      var complete = row.conflictingTransitCount === 0 && row.unitConflict !== true;
+      row.quantity = complete ? row.knownQuantity : null;
+      row.status = complete ? (row.shipmentCount ? 'OBSERVED_BLACK_MARKET_IN_TRANSIT' : 'NO_BLACK_MARKET_IN_TRANSIT')
+        : 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE';
+      if (row.unitEvidenceIncomplete) row.unit = null;
+    });
+    var complete = invalidRecordCount === 0 && Object.keys(conflicts).length === 0 &&
+      Object.keys(byResource).every(function (key) {
+        return byResource[key].conflictingTransitCount === 0 && byResource[key].unitConflict !== true;
+      });
+    return {
+      status: !complete ? 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE' :
+        (shipmentCount ? 'OBSERVED_BLACK_MARKET_IN_TRANSIT' : 'NO_BLACK_MARKET_IN_TRANSIT'),
+      authority: 'Game.state.trade[countryId].blackMarketTransits',
+      ledgerAvailable: true, ledgerRecordCount: ledger.length,
+      uniqueTransitCount: Object.keys(entries).length, shipmentCount: shipmentCount,
+      quantity: null, byResource: byResource, invalidRecordCount: invalidRecordCount,
+      conflictingTransitCount: Object.keys(conflicts).length,
+      reconciledCompletedTransitCount: reconciledCompletedTransitCount,
+      quantityAggregation: 'BY_RESOURCE_ONLY_NO_CROSS_RESOURCE_UNIT_SUM'
+    };
+  }
   function internationalShipmentEvidence(tradeBucket, countryId) {
     var ledger = Array.isArray(tradeBucket && tradeBucket.internationalShipmentLedger)
       ? tradeBucket.internationalShipmentLedger : null;
+    var blackMarket = blackMarketTransitEvidence(tradeBucket, countryId, ledger);
     if (!ledger) return {
-      status: 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE',
+      status: blackMarket.ledgerAvailable && blackMarket.shipmentCount > 0
+        ? 'PARTIAL_BLACK_MARKET_TRANSIT_ONLY' : 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE',
       authority: 'Game.state.trade[countryId].internationalShipmentLedger',
       ledgerAvailable: false, ledgerRecordCount: null, uniqueShipmentCount: null,
       shipmentCount: null, quantity: null, byResource: {}, invalidRecordCount: null,
-      conflictingShipmentCount: null
+      conflictingShipmentCount: null, blackMarketTransit: blackMarket
     };
     var entries = Object.create(null), conflicts = Object.create(null), byResource = Object.create(null);
     var invalidRecordCount = 0, uniqueShipmentCount = 0, inTransitShipmentCount = 0;
@@ -590,7 +702,8 @@
       uniqueShipmentCount: uniqueShipmentCount, shipmentCount: inTransitShipmentCount,
       quantity: complete ? totalQuantity : null, byResource: byResource,
       invalidRecordCount: invalidRecordCount,
-      conflictingShipmentCount: Object.keys(conflicts).length
+      conflictingShipmentCount: Object.keys(conflicts).length,
+      blackMarketTransit: blackMarket
     };
   }
   function factoryCapacityProfile(type, profiles) {
@@ -1077,7 +1190,7 @@
         nationalDemand: 'OmegaResourceNationalDemandRuntime',
         production: 'Game.state.resource[countryId].finishedGoodsLedger',
         confirmedImports: 'Game.state.resource[countryId].inventoryLedger',
-        inTransitInternationalImports: 'Game.state.trade[countryId].internationalShipmentLedger',
+        inTransitInternationalImports: 'Game.state.trade[countryId].internationalShipmentLedger + blackMarketTransits (separate evidence)',
         treasuryExpenses: 'Game.state.finance[countryId].omegaFinance.ledger[action=EXPENSE|EXPENSE_ROLLBACK]',
         factoryOperatingAccruals: 'Game.state.finance[countryId].omegaFinance.ledger[type=PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL]',
         prices: 'Game.state.trade[countryId].marketPrice'
@@ -1139,12 +1252,20 @@
       Object.keys(demandRows).forEach(function (key) {
         var shipment = inTransitInternationalImports.byResource &&
           inTransitInternationalImports.byResource[token(key)] || null;
+        var blackMarketShipment = inTransitInternationalImports.blackMarketTransit &&
+          inTransitInternationalImports.blackMarketTransit.byResource &&
+          inTransitInternationalImports.blackMarketTransit.byResource[token(key)] || null;
         demandRows[key].inboundShipmentQuantity = shipment ? shipment.quantity :
           (inTransitInternationalImports.ledgerAvailable ? 0 : null);
         demandRows[key].inboundShipmentEvidenceStatus = shipment ? shipment.status :
           (inTransitInternationalImports.ledgerAvailable ? 'NO_IN_TRANSIT_SHIPMENTS' : inTransitInternationalImports.status);
         demandRows[key].inTransitInternationalImportQuantity = demandRows[key].inboundShipmentQuantity;
         demandRows[key].inTransitInternationalImportStatus = demandRows[key].inboundShipmentEvidenceStatus;
+        demandRows[key].blackMarketInboundShipmentQuantity = blackMarketShipment ? blackMarketShipment.quantity :
+          (inTransitInternationalImports.blackMarketTransit && inTransitInternationalImports.blackMarketTransit.ledgerAvailable ? 0 : null);
+        demandRows[key].blackMarketInboundShipmentEvidenceStatus = blackMarketShipment ? blackMarketShipment.status :
+          (inTransitInternationalImports.blackMarketTransit && inTransitInternationalImports.blackMarketTransit.ledgerAvailable
+            ? 'NO_BLACK_MARKET_IN_TRANSIT' : 'UNKNOWN_BLACK_MARKET_TRANSIT_LEDGER_NOT_AVAILABLE');
       });
       var financeEvidence = factories.activePlayerCountry
         ? financialJournalEvidence(countryId, currentTurn())
@@ -1197,6 +1318,9 @@
             inTransitInternationalImports.byResource[token(row.resourceId)])
             ? inTransitInternationalImports.byResource[token(row.resourceId)].status
             : (inTransitInternationalImports.ledgerAvailable ? 'NO_IN_TRANSIT_SHIPMENTS' : inTransitInternationalImports.status),
+          blackMarketInboundShipmentQuantity: demand ? demand.blackMarketInboundShipmentQuantity : null,
+          blackMarketInboundShipmentEvidenceStatus: demand
+            ? demand.blackMarketInboundShipmentEvidenceStatus : 'NOT_ACTIVE_COUNTRY',
           combinedDemandStatus: demand ? 'EXISTING_RUNTIME_VALUE' : 'NOT_AVAILABLE',
           combinedDemandAuthority: demand ? demand.source : null,
           overlapPolicy: demand ? demand.overlapPolicy : 'NOT_RECOMPUTED_TO_AVOID_DOUBLE_COUNTING'
@@ -1293,6 +1417,12 @@
           inTransitInternationalImportStatus: inTransitInternationalImports.status,
           internationalShipmentLedgerAvailable: inTransitInternationalImports.ledgerAvailable === true,
           internationalShipmentLedgerRecordCount: inTransitInternationalImports.ledgerRecordCount,
+          blackMarketTransitStatus: inTransitInternationalImports.blackMarketTransit
+            ? inTransitInternationalImports.blackMarketTransit.status : 'NOT_ACTIVE_COUNTRY',
+          blackMarketTransitLedgerAvailable: !!(inTransitInternationalImports.blackMarketTransit &&
+            inTransitInternationalImports.blackMarketTransit.ledgerAvailable),
+          blackMarketTransitShipmentCount: inTransitInternationalImports.blackMarketTransit
+            ? inTransitInternationalImports.blackMarketTransit.shipmentCount : null,
           factoryOperatingCostStatus: financeEvidence.factoryOperatingCost.status,
           treasuryActualExpenseStatus: financeEvidence.treasuryActualExpense.status,
           financeEvidenceWindowTruncated: financeEvidence.sourceLedgerWindow && financeEvidence.sourceLedgerWindow.windowTruncated === true,
