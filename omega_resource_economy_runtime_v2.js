@@ -892,11 +892,21 @@
     if(x.cashFlowJournalStartedAtTurn===undefined||x.cashFlowJournalStartedAtTurn===null)
       x.cashFlowJournalStartedAtTurn=turn();
     x.cashFlowJournalVersion=Math.max(1,num(x.cashFlowJournalVersion)||1);
-    entries.push({
+    var flowRow={
       entryId:key,companyId:cid,amount:a,direction:direction,category:category,
       grossRevenue:grossRevenue,currency:currency,sourceId:sourceId,
       turn:turn(),status:'POSTED',authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'
-    });
+    };
+    if((num(x.cashFlowJournalVersion)||0)>=2){
+      flowRow.sectorJournalV1={
+        schemaVersion:1,status:'UNAVAILABLE',
+        reason:'RESOURCE_ECONOMY_COMPANY_FLOW_CATEGORY_NOT_MAPPED',
+        sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',
+        sourceTransactionId:key,countryId:ctx.countryId,companyId:cid,currency:currency,
+        turn:flowRow.turn,provenance:'RECORDED_GAME_RUNTIME'
+      };
+    }
+    entries.push(flowRow);
     while(entries.length>(num(rules().runtime.maxLedgerEntries)||2048)){
       var dropped=entries.shift(),droppedTurn=num(dropped&&dropped.turn);
       x.cashFlowJournalDroppedEntries=(num(x.cashFlowJournalDroppedEntries)||0)+1;
