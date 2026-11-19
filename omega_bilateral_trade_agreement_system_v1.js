@@ -464,7 +464,7 @@
       requestIdList(buyer).forEach(function (row) {
         if (canonical(row && (row.targetCountryId || row.sellerCountryId)) !== canonical(sellerCountry) ||
             token(row && row.resourceId) !== token(resourceId) ||
-            !['ACCEPTED', 'SETTLEMENT_PREPARING', 'PENDING_SETTLEMENT', 'IN_TRANSIT'].includes(id(row && row.status))) return;
+            !['SENT', 'COUNTER_OFFERED', 'ACCEPTED', 'SETTLEMENT_PREPARING', 'PENDING_SETTLEMENT', 'IN_TRANSIT'].includes(id(row && row.status))) return;
         total += Math.max(0, num(row.quantity) || 0);
         count++;
       });
