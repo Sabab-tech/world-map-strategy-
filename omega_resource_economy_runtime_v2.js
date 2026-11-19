@@ -2080,13 +2080,13 @@ function captureStockFlowPeriod(stateTransaction) {
       return{accepted:false,reason:'TRANSPORT_LOSS_SOURCE_BATCH_RESOURCE_MISMATCH',batchId:batchId};
     var batchRemaining=Math.max(0,num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0),
       lotRemaining=Math.max(0,num(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)||0),
-      invBefore=args.inventoryBefore||{},inventoryKey=quantityObjectKey(invBefore,resourceId),
+      invBefore=args.inventoryBefore||{},inventoryKey=matchingStockKey(invBefore,resourceId),
       countryStock=inventoryKey===null?0:Math.max(0,num(invBefore[inventoryKey])||0),
       warehouse=Object.assign({},warehouseBefore,{availableByResource:Object.assign({},warehouseBefore.availableByResource||{}),
         reservedByResource:Object.assign({},warehouseBefore.reservedByResource||{}),
         storedBatchIds:Array.isArray(warehouseBefore.storedBatchIds)?warehouseBefore.storedBatchIds.slice():[]}),
-      availableKey=quantityObjectKey(warehouse.availableByResource,resourceId),
-      reservedKey=quantityObjectKey(warehouse.reservedByResource,resourceId),
+      availableKey=matchingStockKey(warehouse.availableByResource,resourceId),
+      reservedKey=matchingStockKey(warehouse.reservedByResource,resourceId),
       available=availableKey===null?0:Math.max(0,num(warehouse.availableByResource[availableKey])||0),
       reserved=reservedKey===null?0:Math.max(0,num(warehouse.reservedByResource[reservedKey])||0);
     if(batchRemaining+1e-9<quantity||lotRemaining+1e-9<quantity||countryStock+1e-9<quantity||
@@ -2384,13 +2384,13 @@ function captureStockFlowPeriod(stateTransaction) {
         createdTurn=num(batch.createdTurn??batch.timestampTurn??batch.simulationTurn??(lot&&(lot.createdTurn??lot.timestampTurn))),
         unit=String(batch.unit||lot&&lot.unit||'').trim(),
         profile=profileFor(rid),warehouseRef=warehouseForBatch(batch),
-        invKey=quantityObjectKey(inventory,rid),warehouse=warehouseRef&&warehouseRef.warehouse,
-        warehouseKey=warehouse?quantityObjectKey(warehouse.availableByResource||{},rid):null,
+        invKey=matchingStockKey(inventory,rid),warehouse=warehouseRef&&warehouseRef.warehouse,
+        warehouseKey=warehouse?matchingStockKey(warehouse.availableByResource||{},rid):null,
         warehouseBalance=warehouseKey===null?null:Math.max(0,num(warehouse.availableByResource[warehouseKey])||0),
         inventoryBalance=invKey===null?null:Math.max(0,num(inventory[invKey])||0),
         reserved=Math.max(0,num(warehouse&&warehouse.reservedByResource&&
-          (quantityObjectKey(warehouse.reservedByResource,rid)||rid)!==null
-            ?warehouse.reservedByResource[quantityObjectKey(warehouse.reservedByResource,rid)||rid]:0)||0),
+          (matchingStockKey(warehouse.reservedByResource,rid)||rid)!==null
+            ?warehouse.reservedByResource[matchingStockKey(warehouse.reservedByResource,rid)||rid]:0)||0),
         activeShipment=(Array.isArray(network.shipments)?network.shipments:[]).find(function(shipment){
           return String(shipment&&shipment.batchId||'')===batchId&&activeStatuses.has(String(shipment&&shipment.status||'').toUpperCase());
         }),
@@ -2430,7 +2430,7 @@ function captureStockFlowPeriod(stateTransaction) {
         stats.unobserved++;return;
       }
       if(loss>1e-9){
-        var reservedKey=quantityObjectKey(warehouse.reservedByResource||{},rid)||rid;
+        var reservedKey=matchingStockKey(warehouse.reservedByResource||{},rid)||rid;
         if(inventoryBalance+1e-9<loss||warehouseBalance+1e-9<loss||
           warehouseFreeQuantity(warehouse,rid)+1e-9<loss){
           addObservation(observation(batch,'UNOBSERVED','STORAGE_LOSS_NOT_DISPATCHABLE_FROM_FREE_STOCK',
