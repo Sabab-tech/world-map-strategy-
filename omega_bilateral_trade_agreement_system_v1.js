@@ -1126,6 +1126,8 @@
       return String(row.agreementId) === String(agreementId);
     });
     if (!contract) return { accepted: false, reason: 'BILATERAL_CONTRACT_NOT_FOUND' };
+    if (!['ACTIVE', 'AT_RISK', 'RATIFICATION_PENDING'].includes(id(contract.status)))
+      return { accepted: false, reason: 'BILATERAL_CONTRACT_NOT_ACTIVE' };
     if (contract.currentRequestId)
       return { accepted: false, reason: 'TERMINATION_BLOCKED_BY_PENDING_DELIVERY',
         agreementId: contract.agreementId, requestId: contract.currentRequestId };
@@ -1371,8 +1373,10 @@
     var c = canonical(country), opts = options || {};
     var rows = contractList(c), contract = rows.find(function (row) { return String(row.agreementId) === String(agreementId); });
     if (!contract) return { accepted: false, reason: 'BILATERAL_CONTRACT_NOT_FOUND' };
-    if (id(contract.status) === 'TERMINATED' || id(contract.status) === 'EXPIRED')
+    if (['TERMINATED', 'EXPIRED', 'RENEWED'].includes(id(contract.status)))
       return { accepted: true, duplicate: true, status: contract.status };
+    if (!['ACTIVE', 'AT_RISK', 'RATIFICATION_PENDING'].includes(id(contract.status)))
+      return { accepted: false, reason: 'BILATERAL_CONTRACT_NOT_ACTIVE' };
     if (contract.currentRequestId)
       return { accepted: false, reason: 'TERMINATION_BLOCKED_BY_PENDING_DELIVERY',
         agreementId: contract.agreementId, requestId: contract.currentRequestId };
