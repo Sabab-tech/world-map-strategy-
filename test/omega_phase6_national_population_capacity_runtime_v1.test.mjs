@@ -709,17 +709,17 @@ test('Black Market inbound transit is exposed separately and reconciles against 
       }],
       blackMarketTransits: [
         { transitId: 'BM-TRANSIT-OPEN', dealId: 'BM-DEAL-OPEN', requestId: 'REQ-BM-OPEN',
-          buyerCountryId: 'BGD', sellerCountryId: 'USA', resourceId: 'crude_oil', quantity: 20,
+          buyerCountryId: 'BGD', sellerCountryId: 'USA', resourceId: 'crude_oil', quantity: 20, unit: 'tonne',
           route: [{ countryId: 'USA' }, { countryId: 'BGD' }], status: 'IN_TRANSIT', nextTurn: 10 },
         { transitId: 'BM-TRANSIT-ARRIVAL', dealId: 'BM-DEAL-ARRIVAL', requestId: 'REQ-BM-ARRIVAL',
-          buyerCountryId: 'BGD', sellerCountryId: 'CAN', resourceId: 'crude_oil', quantity: 5,
+          buyerCountryId: 'BGD', sellerCountryId: 'CAN', resourceId: 'crude_oil', quantity: 5, unit: 'tonne',
           route: [{ countryId: 'CAN' }, { countryId: 'BGD' }], status: 'ARRIVAL_PENDING', nextTurn: 9 },
         { transitId: 'BM-TRANSIT-SETTLED', dealId: 'BM-DEAL-SETTLED', requestId: 'REQ-BM-SETTLED',
           buyerCountryId: 'BGD', sellerCountryId: 'AUS', resourceId: 'crude_oil', quantity: 100,
           route: [{ countryId: 'AUS' }, { countryId: 'BGD' }], status: 'SETTLED' },
         { transitId: 'BM-TRANSIT-ALREADY-ARRIVED', dealId: 'BM-DEAL-ARRIVED',
           requestId: 'REQ-BM-ARRIVED', buyerCountryId: 'BGD', sellerCountryId: 'USA',
-          resourceId: 'crude_oil', quantity: 90, route: [{ countryId: 'USA' }, { countryId: 'BGD' }],
+          resourceId: 'crude_oil', quantity: 90, unit: 'tonne', route: [{ countryId: 'USA' }, { countryId: 'BGD' }],
           status: 'IN_TRANSIT', nextTurn: 8 }
       ]
     } },
@@ -731,12 +731,11 @@ test('Black Market inbound transit is exposed separately and reconciles against 
   assert.equal(transit.status, 'OBSERVED_DURABLE_SHIPMENT_LEDGER');
   assert.equal(transit.shipmentCount, 0, 'the arrived generic shipment is not counted as in transit');
   assert.equal(transit.quantity, 0);
-  assert.equal(transit.blackMarketTransit.status, 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE',
-    'the existing Black Market route record does not preserve its quantity unit');
+  assert.equal(transit.blackMarketTransit.status, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
   assert.equal(transit.blackMarketTransit.ledgerAvailable, true);
   assert.equal(transit.blackMarketTransit.shipmentCount, 2);
   assert.equal(transit.blackMarketTransit.byResource.crude_oil.quantity, 25);
-  assert.equal(transit.blackMarketTransit.byResource.crude_oil.unit, null);
+  assert.equal(transit.blackMarketTransit.byResource.crude_oil.unit, 'tonne');
   assert.deepEqual(JSON.parse(JSON.stringify(transit.blackMarketTransit.byResource.crude_oil.transitIds)),
     ['BM-TRANSIT-ARRIVAL', 'BM-TRANSIT-OPEN']);
   assert.equal(transit.blackMarketTransit.reconciledCompletedTransitCount, 1,
