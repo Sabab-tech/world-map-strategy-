@@ -579,7 +579,7 @@
   }
 
   // Movement totals are keyed by game-turn period, resource identity and physical unit.
-  async function summarizeInventory(bucket,maxBatches,maxItems,maxMovementRows,reportTurn,productionAssets){
+  async function summarizeInventory(bucket,maxBatches,maxItems,maxMovementRows,reportTurn,productionAssets,countryId){
     const batches=Array.isArray(bucket?.batches)?bucket.batches.slice(-maxBatches):[];
     const groups=new Map(),seen=new Set();let missingIdentityCount=0,duplicateBatchCount=0,segmentStartedAt=clockNow();
     for(let index=0;index<batches.length;index++){
@@ -809,7 +809,7 @@
       bounded(limits.pendingImportRequestRows,512,512),root,countryId);
     recordSyncSegment(sourceLookupStartedAt);
     const inventory=await summarizeInventory(resource,bounded(limits.inventoryBatchRows,4096,4096),
-      bounded(limits.maxStockIdentityRows,96,256),bounded(limits.inventoryMovementRows,2048,2048),turn,economy.productionAssets);
+      bounded(limits.maxStockIdentityRows,96,256),bounded(limits.inventoryMovementRows,2048,2048),turn,economy.productionAssets,countryId);
     const industry=isObject(economy.industrialRuntime)?economy.industrialRuntime:{};
     const productionRows=Array.isArray(industry.productionLedger)?
       industry.productionLedger.slice(-bounded(limits.productionLedgerRows,2048,2048)):[];
