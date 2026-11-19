@@ -52,10 +52,14 @@
         "type": "PAIR",
         "sectorId": "government",
         "amountField": "amountUsd",
-        "debitAccount": "GOVERNMENT:EXPENSE:{department}:{category}",
+        "debitAccount": "GOVERNMENT:OPERATING_EXPENSE:{department}:{category}",
         "creditAccount": "GOVERNMENT:TREASURY_CASH",
         "accountingBasis": "RECORDED_GAME_CASH_EXPENSE",
-        "provenance": "RECORDED_GAME_RUNTIME"
+        "provenance": "RECORDED_GAME_RUNTIME",
+        "debitAccountByCategory": {
+          "purchase": "GOVERNMENT:CAPITAL_ASSETS:{department}",
+          "investment": "GOVERNMENT:CAPITAL_ASSETS:{department}"
+        }
       },
       "EXPENSE_ROLLBACK": {
         "type": "PAIR",
@@ -63,9 +67,13 @@
         "amountField": "amountUsd",
         "absoluteValue": true,
         "debitAccount": "GOVERNMENT:TREASURY_CASH",
-        "creditAccount": "GOVERNMENT:EXPENSE:{department}:{category}",
+        "creditAccount": "GOVERNMENT:OPERATING_EXPENSE:{department}:{category}",
         "accountingBasis": "RECORDED_GAME_CASH_EXPENSE_REVERSAL",
-        "provenance": "RECORDED_GAME_RUNTIME_REVERSAL"
+        "provenance": "RECORDED_GAME_RUNTIME_REVERSAL",
+        "creditAccountByCategory": {
+          "purchase": "GOVERNMENT:CAPITAL_ASSETS:{department}",
+          "investment": "GOVERNMENT:CAPITAL_ASSETS:{department}"
+        }
       },
       "BORROW": {
         "type": "PAIR",
