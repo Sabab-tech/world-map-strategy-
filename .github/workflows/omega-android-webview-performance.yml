@@ -57,6 +57,9 @@ jobs:
         with:
           gradle-version: '9.6.1'
 
+      - name: Test Android 9 WebView instrumentation gate
+        run: python3 scripts/test_android_webview_performance.py
+
       - name: Run packaged APK in Android 9 WebView emulator
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
