@@ -4,7 +4,7 @@ const handlers = new Map();
 const actionMetadata = new Map();
 globalThis.Game = { state: {
   simulation: { turn: 12, session: { playerCountryId: 'BGD' } },
-  trade: { BGD: {}, SAU: { internationalShipmentLedger: [] } },
+  trade: { BGD: { routeCapacity: { crude_oil: 5000 } }, SAU: { internationalShipmentLedger: [] } },
   resource: {
     BGD: {
       inventory: { crude_oil: 120 },
