@@ -455,9 +455,9 @@ function testJournal(countryId,sectorId,companyId,transactionId,currency,periodI
     sourceTransactionId:transactionId,sourceTransactionType:'TEST',countryId,companyId:companyId||undefined,
     currency,periodId,counterEntryComplete:true,debitTotalMinor:amount,creditTotalMinor:amount,
     lines:[
-      {lineId:transactionId+':L1',accountId:accountPrefix+':TEST_DEBIT',side:'DEBIT',
+      {lineId:transactionId+':L1',lineNumber:1,accountId:accountPrefix+':TEST_DEBIT',side:'DEBIT',
         amountMinor:amount,currency,countryId,companyId:companyId||undefined,sourceTransactionId:transactionId},
-      {lineId:transactionId+':L2',accountId:accountPrefix+':TEST_CREDIT',side:'CREDIT',
+      {lineId:transactionId+':L2',lineNumber:2,accountId:accountPrefix+':TEST_CREDIT',side:'CREDIT',
         amountMinor:amount,currency,countryId,companyId:companyId||undefined,sourceTransactionId:transactionId}
     ]
   };
@@ -496,13 +496,15 @@ test('sector journal reader rejects unbalanced, wrong-country and duplicate sour
   bad.creditTotalMinor=1249;
   bad.lines[1].amountMinor=1249;
   const wrong=testJournal('USA','government',null,'WRONG-1','USD','FY-1');
-  const duplicate=testJournal('BGD','firm','AURORA_INDUSTRIAL_GROUP','DUP-1','BDT','TURN-8');
+  const duplicate=testJournal('BGD','firm','AURORA_INDUSTRIAL_GROUP','DUP-1','BDT','TURN-8'),
+    duplicateWithChangedAuthority=structuredClone(duplicate);
+  duplicateWithChangedAuthority.sourceAuthority='UNEXPECTED_SECOND_AUTHORITY';
   const result=await api.reconcileSectorJournals({countryId:'BGD',financeRows:[
     {transactionId:'BAD-1',action:'EXPENSE',sectorJournalV1:bad},
     {transactionId:'WRONG-1',action:'BORROW',sectorJournalV1:wrong}
   ],companyAccounts:{AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',cashFlowEntries:[
     {entryId:'DUP-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',sectorJournalV1:duplicate},
-    {entryId:'DUP-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',sectorJournalV1:duplicate}
+    {entryId:'DUP-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',sectorJournalV1:duplicateWithChangedAuthority}
   ]}}});
   assert.equal(result.integrityStatus,'UNRECONCILED');
   assert.ok(result.invalidTransactionCount>=2);
