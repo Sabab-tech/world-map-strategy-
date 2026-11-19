@@ -2,6 +2,7 @@
  * Same-origin app files are cached for offline relaunch; remote map tiles are never cached here.
  */
 "use strict";
+// Retires the previous shell cache (omega-offline-atlas-shell-v127) after this release activates.
 const CACHE_NAME = "omega-offline-atlas-shell-v128";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
