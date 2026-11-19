@@ -456,11 +456,11 @@
       var operatingAssets = typeAssets.filter(function (asset) { return statusBucket(asset.status) === 'operational'; });
       var unknownStatus = typeAssets.some(function (asset) { return statusBucket(asset.status) === 'unknown'; });
       var unitCandidates = typeAssets.map(function (asset) {
-        return String(asset.outputUnit || asset.capacityUnit || asset.throughputUnit || '').trim();
+        return String(asset.outputUnit || asset.capacityUnit || asset.throughputUnit || profile.unit || '').trim();
       }).filter(Boolean);
       var uniqueUnits = unitCandidates.filter(function (unit, index) { return unitCandidates.indexOf(unit) === index; });
-      var resolvedUnit = uniqueUnits.length === 1 ? uniqueUnits[0] : (uniqueUnits.length === 0 ? profile.unit : null);
-      var unitConflict = uniqueUnits.length > 1 || (uniqueUnits.length === 1 && profile.unit && uniqueUnits[0] !== profile.unit);
+      var resolvedUnit = uniqueUnits.length === 1 ? uniqueUnits[0] : null;
+      var unitConflict = uniqueUnits.length > 1;
       var ratedTotal = 0, ratedKnown = 0, ratedComplete = ratedAssets.length > 0;
       ratedAssets.forEach(function (asset) {
         var capacity = capacityOf(asset);
