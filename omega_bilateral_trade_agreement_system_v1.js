@@ -78,15 +78,25 @@
     if (value === null) value = num(g.Omega && g.Omega.Simulation && g.Omega.Simulation.clock && g.Omega.Simulation.clock.turn);
     return value === null ? 0 : value;
   }
-  function turnDays() {
+  function simulationDate() {
     var s = state(), clock = g.Omega && g.Omega.Simulation && g.Omega.Simulation.clock;
-    var ms = num(clock && clock.stepDurationMs);
-    if (ms === null) ms = num(s.simulation && s.simulation.stepDurationMs);
-    if (ms === null || ms <= 0) ms = 86400000;
-    return Math.max(1 / 86400000, ms / 86400000);
+    var raw = clock && (clock.simulationDate || clock.date) || s.simulation && (s.simulation.date || s.simulation.simulationDate);
+    if (!raw) return null;
+    var date = raw instanceof Date ? new Date(raw.getTime()) : new Date(String(raw));
+    return Number.isFinite(date.getTime()) ? date : null;
   }
-  function monthsToTurns(months) { return Math.max(1, Math.ceil((months * 30) / turnDays())); }
-  function intervalToTurns(days) { return Math.max(1, Math.ceil(days / turnDays())); }
+  // OMEGA advances one calendar day per committed turn. stepDurationMs is wall-clock pacing, not game-time length.
+  function turnDays() { return 1; }
+  function monthsToTurns(months) {
+    var start = simulationDate();
+    if (!start) return Math.max(1, Math.ceil(months * 30));
+    var startDay = start.getUTCDate();
+    var targetMonth = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + months, 1));
+    var lastDay = new Date(Date.UTC(targetMonth.getUTCFullYear(), targetMonth.getUTCMonth() + 1, 0)).getUTCDate();
+    targetMonth.setUTCDate(Math.min(startDay, lastDay));
+    return Math.max(1, Math.ceil((targetMonth.getTime() - start.getTime()) / 86400000));
+  }
+  function intervalToTurns(days) { return Math.max(1, Math.ceil(days)); }
   function bucket(country, domain) {
     var root = state()[domain], cid = canonical(country);
     if (!root || typeof root !== 'object' || Array.isArray(root)) return null;
@@ -348,7 +358,20 @@
     var player = canonical(playerCountry), target = canonical(targetCountry), catalog = productCatalog();
     if (!player || !target || player === target) return { accepted: false, reason: 'BILATERAL_MARKET_SCOPE_INVALID' };
     if (!catalog.length) return { accepted: false, reason: 'CANONICAL_MARKET_PRODUCT_CATALOG_UNAVAILABLE' };
-    var rows = catalog.map(function (product) { return readProduct(target, product); });
+    var rows = catalog.map(function (product) {
+      var row = readProduct(target, product);
+      var commitments = activeContractCommitment(target, row.resourceId, intervalToTurns(30));
+      var accepted = totalAcceptedTradeRequests(target, row.resourceId);
+      var demandPerDay = row.demandPerDay.status === 'KNOWN' ? row.demandPerDay.value : null;
+      var stock = row.stock.value, reserve = row.reserve.value;
+      var exportable = stock === null || reserve === null || demandPerDay === null ? null :
+        Math.max(0, stock - reserve - commitments - accepted.quantity - demandPerDay * 30);
+      row.contractCommitment = evidence(commitments, 'KNOWN', 'trade.bilateralContracts');
+      row.acceptedPendingRequests = evidence(accepted.quantity, 'KNOWN', 'trade.importRequests');
+      row.exportableStock = evidence(exportable, exportable === null ? 'UNKNOWN' : 'KNOWN',
+        exportable === null ? null : 'inventory minus reserve, domestic 30-day demand, accepted requests and due agreements');
+      return row;
+    });
     var foreign = bucket(target, 'foreign') || {};
     var relation = mapEntry(foreign.relations, player).value || mapEntry((bucket(player, 'foreign') || {}).relations, target).value || null;
     var treaty = mapEntry(foreign.treaties, player).value || null;
@@ -392,21 +415,28 @@
       products: rows,
       alternativeMarkets: alternatives,
       productIds: rows.map(function (row) { return row.resourceId; }),
-      sourceFingerprint: sourceFingerprint(target, player, rows.map(function (row) { return row.resourceId; }))
+      sourceFingerprint: sourceFingerprint(target, player, rows.map(function (row) { return row.resourceId; })),
+      alternativeMarketFingerprint: hash(alternatives)
     };
     return { accepted: true, report: report };
   }
-  function currentReport(playerCountry, targetCountry) {
+  function currentReport(playerCountry, targetCountry, verifyAlternatives) {
     var player = canonical(playerCountry), target = canonical(targetCountry);
     var stored = mapEntry((bucket(player, 'trade') || {}).bilateralMarketIntelligence || {}, target);
     if (!stored.found || !stored.value) return { status: 'NOT_SYNCED', report: null, reason: 'MARKET_INTELLIGENCE_SYNC_REQUIRED' };
     var report = clone(stored.value);
     var age = turn() - num(report.generatedTurn);
     var fingerprint = sourceFingerprint(target, player, Array.isArray(report.productIds) ? report.productIds : []);
-    var stale = age > (num(report.maxAgeTurns) || MAX_REPORT_AGE_TURNS) || fingerprint !== report.sourceFingerprint;
+    var alternativeFingerprint = null;
+    if (verifyAlternatives === true) {
+      var alternatives = alternativeMarketReport(player, target, report.products || [], report.importNeeds || [], report.exportSurpluses || []);
+      alternativeFingerprint = hash(alternatives);
+    }
+    var stale = age > (num(report.maxAgeTurns) || MAX_REPORT_AGE_TURNS) || fingerprint !== report.sourceFingerprint ||
+      verifyAlternatives === true && alternativeFingerprint !== report.alternativeMarketFingerprint;
     report.ageTurns = age;
     report.freshnessStatus = stale ? 'STALE' : 'CURRENT';
-    report.staleReason = stale ? (age > (num(report.maxAgeTurns) || MAX_REPORT_AGE_TURNS) ? 'MAX_REPORT_AGE_EXCEEDED' : 'SOURCE_DATA_CHANGED') : null;
+    report.staleReason = stale ? (age > (num(report.maxAgeTurns) || MAX_REPORT_AGE_TURNS) ? 'MAX_REPORT_AGE_EXCEEDED' : fingerprint !== report.sourceFingerprint ? 'SOURCE_DATA_CHANGED' : 'ALTERNATIVE_MARKET_DATA_CHANGED') : null;
     return { status: report.freshnessStatus, report: report, reason: report.staleReason };
   }
   function syncMarket(playerCountry, targetCountry) {
@@ -473,7 +503,7 @@
       return { status: 'INVALID', canSend: false, reason: 'UNSUPPORTED_AGREEMENT_DURATION' };
     if (intervalDays === null || intervalDays < 1 || intervalDays > 365)
       return { status: 'INVALID', canSend: false, reason: 'DELIVERY_INTERVAL_OUT_OF_RANGE' };
-    var snapshot = currentReport(player, target);
+    var snapshot = currentReport(player, target, true);
     if (snapshot.status !== 'CURRENT') return { status: snapshot.status, canSend: false, reason: snapshot.reason };
     var seller = direction === 'EXPORT' ? player : target;
     var buyer = direction === 'IMPORT' ? player : target;
