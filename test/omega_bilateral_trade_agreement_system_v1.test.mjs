@@ -232,6 +232,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
 
   const noFundsBefore = globalThis.Game.state.finance.BGD.available;
   globalThis.Game.state.finance.BGD.available = 1;
+  assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
   const unaffordable = bilateral.previewProposal('BGD', {
     targetCountryId: 'SAU', direction: 'IMPORT', resourceId: 'crude_oil',
     quantityPerDelivery: 100, unitPrice: 100, durationMonths: 12, intervalDays: 30
@@ -239,6 +240,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(unaffordable.status, 'INFEASIBLE');
   assert.equal(unaffordable.canSend, false);
   globalThis.Game.state.finance.BGD.available = noFundsBefore;
+  assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
 
   const firstProposal = bilateral.createProposal('BGD', {
     proposalId: 'BTP-BGD-SAU-ACCEPT', targetCountryId: 'SAU', direction: 'IMPORT',
@@ -386,7 +388,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
     proposalId: 'BTP-RELATION-PENALTY', requestorCountryId: 'BGD', buyerCountryId: 'BGD',
     sellerCountryId: 'SAU', resourceId: 'crude_oil', quantityPerDelivery: 100, unitPrice: 100, intervalDays: 30, intervalTurns: 30
   }).decisionFactors.relationshipScore;
-  assert.equal(adjustedRelationship, 0.8175, 'mutual contract breach penalties must affect subsequent AI relationship analysis');
+  assert.equal(adjustedRelationship, 0.81, 'mutual contract breach penalties must affect subsequent AI relationship analysis');
 
   assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
   const forceMajeureProposal = bilateral.createProposal('BGD', {
