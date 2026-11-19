@@ -203,6 +203,10 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(report.report.products[0].expectedPrice.status, 'KNOWN');
   assert.equal(report.report.alternativeMarkets.competingBuyersForExports[0].status, 'OBSERVED');
   assert.equal(report.report.generatedTurn, 0);
+  assert.equal(report.report.availableForeignCurrency.value, null,
+    'market intelligence must not disclose the counterparty Treasury balance');
+  assert.equal(report.report.availableForeignCurrency.status, 'UNKNOWN');
+  assert.equal(report.report.paymentCapacity.value, 'NOT_DISCLOSED');
 
   const feasible = bilateral.previewProposal('BGD', {
     targetCountryId: 'SAU', direction: 'IMPORT', resourceId: 'crude_oil',
@@ -211,8 +215,20 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(feasible.status, 'FEASIBLE', JSON.stringify(feasible));
   assert.equal(feasible.canSend, true);
   assert.equal(feasible.durationTurns, 365, '12 months must use the game calendar, not wall-clock stepDurationMs');
-  assert.equal(feasible.buyerAvailableForeignCurrency, 500000);
+  assert.equal(feasible.buyerAvailableForeignCurrency, 500000,
+    'the player may see their own available foreign currency');
   assert.equal(feasible.exportableSupply, 28970);
+
+  const foreignBuyerFeasibility = bilateral.previewProposal('BGD', {
+    targetCountryId: 'SAU', direction: 'EXPORT', resourceId: 'crude_oil',
+    quantityPerDelivery: 100, unitPrice: 95, durationMonths: 12, intervalDays: 30
+  });
+  assert.equal(foreignBuyerFeasibility.status, 'FEASIBLE', JSON.stringify(foreignBuyerFeasibility));
+  assert.equal(foreignBuyerFeasibility.buyerAvailableForeignCurrency, null,
+    'the seller must not see another country exact treasury balance');
+  assert.equal(foreignBuyerFeasibility.buyerGrossAvailableForeignCurrency, null);
+  assert.equal(foreignBuyerFeasibility.buyerReservedForeignCurrency, null);
+  assert.equal(foreignBuyerFeasibility.buyerCurrencyCommitments.status, 'PRIVATE');
 
   // Existing pending import orders consume foreign-currency capacity before a new treaty is offered.
   globalThis.Game.state.trade.BGD.importRequests.push({
@@ -258,10 +274,25 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
     relationshipPenaltyPoints: 4
   }).accepted, true, 'an exact retry must be idempotent');
 
+  const exportProposal = bilateral.createProposal('BGD', {
+    proposalId: 'BTP-BGD-SAU-EXPORT-PRIVACY', targetCountryId: 'SAU', direction: 'EXPORT',
+    resourceId: 'crude_oil', quantityPerDelivery: 100, unitPrice: 95,
+    durationMonths: 12, intervalDays: 30
+  });
+  assert.equal(exportProposal.accepted, true, JSON.stringify(exportProposal));
+  assert.equal(exportProposal.feasibility.buyerAvailableForeignCurrency, null);
+  assert.equal(exportProposal.proposal.feasibility.buyerCurrencyCommitments.status, 'PRIVATE');
+
   globalThis.Game.state.simulation.turn = 1;
   const review = bilateral.processCountry('SAU');
   assert.equal(review.status, 'COMPLETED', JSON.stringify(review));
   assert.equal(review.proposals[0].status, 'ACTIVE', JSON.stringify(review));
+  const exportOutbox = globalThis.Game.state.trade.BGD.bilateralProposalOutbox.find(row => row.proposalId === 'BTP-BGD-SAU-EXPORT-PRIVACY');
+  assert.ok(exportOutbox && exportOutbox.decision);
+  assert.equal(exportOutbox.decision.decisionFactors.buyerAvailableForeignCurrency, null,
+    'the counterparty response must not disclose its exact Treasury balance');
+  assert.equal(exportOutbox.decision.decisionFactors.buyerGrossAvailableForeignCurrency, null);
+  assert.equal(exportOutbox.decision.privateEvidence.buyerTreasury, 'NOT_DISCLOSED_TO_COUNTERPARTY');
   const agreementId = globalThis.Game.state.trade.BGD.bilateralContracts[0].agreementId;
   const buyerContract = globalThis.Game.state.trade.BGD.bilateralContracts[0];
   const sellerContract = globalThis.Game.state.trade.SAU.bilateralContracts[0];
