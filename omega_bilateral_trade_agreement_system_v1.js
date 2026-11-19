@@ -962,10 +962,13 @@
     var terms = Object.assign({}, clone(proposal), clone(acceptedTerms || {}));
     var seller = canonical(proposal.sellerCountryId), buyer = canonical(proposal.buyerCountryId);
     var durationMonths = num(terms.durationMonths), intervalDays = num(terms.intervalDays);
+    var paymentSchedule = id(terms.paymentSchedule || 'PER_DELIVERY_ON_SETTLEMENT');
     if (!seller || !buyer || seller === buyer || DURATION_MONTHS.indexOf(durationMonths) < 0 ||
         !num(terms.quantityPerDelivery) || num(terms.quantityPerDelivery) <= 0 ||
         !num(terms.unitPrice) || num(terms.unitPrice) <= 0 || intervalDays === null || intervalDays <= 0)
       return { accepted: false, reason: 'BILATERAL_CONTRACT_TERMS_INVALID' };
+    if (paymentSchedule !== 'PER_DELIVERY_ON_SETTLEMENT')
+      return { accepted: false, reason: 'UNSUPPORTED_PAYMENT_SCHEDULE' };
     var agreementId = 'BTA-' + seller + '-' + buyer + '-' + (num(proposal.createdTurn) ?? turn()) + '-' + hash([proposal.proposalId, terms.resourceId]);
     var previousAgreementId = String(proposal.previousAgreementId || '').trim();
     var previousBuyerContract = null, previousSellerContract = null, previousRenewalError = null;
@@ -996,7 +999,7 @@
       quantityTolerancePct: clamp(terms.quantityTolerancePct ?? 0, 0, 50),
       unitPrice: num(terms.unitPrice), currency: tradeCurrency(seller),
       invoiceCurrency: tradeCurrency(seller), paymentCurrency: tradeCurrency(buyer),
-      paymentSchedule: id(terms.paymentSchedule || 'PER_DELIVERY_ON_SETTLEMENT'),
+      paymentSchedule: paymentSchedule,
       paymentTiming: 'AT_EACH_DELIVERY_SETTLEMENT',
       priceModel: id(terms.priceModel || 'FIXED'), marketAdjustmentPct: clamp(terms.marketAdjustmentPct ?? 0, -50, 100),
       priceHistory: [{ turn: turn(), unitPrice: num(terms.unitPrice), model: id(terms.priceModel || 'FIXED') }],
