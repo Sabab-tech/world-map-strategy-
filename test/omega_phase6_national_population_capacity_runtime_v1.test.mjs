@@ -681,7 +681,7 @@ test('unit-backed Black Market transit is exposed separately while legal bilater
   const html = api.renderSummary(summary);
   assert.match(html, /Legal in-transit import/);
   assert.match(html, /Black Market transit subset/);
-  assert.match(html, /UNKNOWN because its durable shipment ledger is not persisted/);
+  assert.match(html, /complete legal bilateral in-transit total remains UNKNOWN/);
 });
 
 test('legacy Black Market transit without a saved unit remains partial rather than guessing a quantity unit', async () => {
