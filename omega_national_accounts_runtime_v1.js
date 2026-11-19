@@ -233,7 +233,7 @@
         journalCountry===countryId&&
         (!expectedSector||sector===expectedSector)&&
         (!expectedAuthority||sourceAuthority===expectedAuthority)&&
-        (!expectedCompany||registeredCompanyIds.includes(expectedCompany))&&
+        (expectedSector!=='firm'||!!expectedCompany&&registeredCompanyIds.includes(expectedCompany))&&
         (!expectedCompany||String(journal.companyId||'')===expectedCompany)&&
         (!expectedCompany||!row?.companyId||String(row.companyId)===expectedCompany)&&
         journal.schemaVersion===1&&String(journal.accountingBasis||'').trim()!==''&&
