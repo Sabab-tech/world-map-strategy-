@@ -165,11 +165,11 @@ test('Phase 3C function-level ownership map pins the live ledgers and scheduled 
   assert.match(npc, /context\.stateTransaction\.set\(runtime\.rules\.persistence\.statePath, checkpoint\)/);
   assert.equal(npcRules.persistence.ownerMinistry, 'economy');
   assert.equal(npcRules.persistence.statePath, 'economy.npcMacroEconomy');
-  assert.equal(npcRules.scheduler.priority, 30);
+  assert.match(npc, /priority:\s*finite\(runtime\.rules\.scheduler\?\.priority\)\s*\?\?\s*30/);
 
   // National Accounts reads the source domains but writes only its own country checkpoint.
   assert.match(accounts, /function buildStatement\(countryId,profile,root,turn\)/);
-  assert.match(accounts, /const gdp=reconcileGDP\(\),goods=reconcileGoodsFlow\(\[\]\)/);
+  assert.match(accounts, /const gdp=reconcileGDP\(\{\}\),goods=reconcileGoodsFlow\(\[\]\)/);
   assert.match(accounts, /context\.stateTransaction\.set\(path,saved\)/);
   assert.equal(accountRules.persistence.ownerMinistry, 'economy');
   assert.equal(accountRules.persistence.statePath, 'economy.nationalAccounts');
