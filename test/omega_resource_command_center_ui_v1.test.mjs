@@ -178,7 +178,7 @@ test('Trade & Commerce hosts the full commodity market dashboard with separate l
 
 test('global commodity market uses the user artwork in the offline shell cache', () => {
   const serviceWorker = fs.readFileSync('omega-offline-map-sw.js', 'utf8');
-  assert.match(serviceWorker, /omega-offline-atlas-shell-v127/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v128/);
   for (const asset of [
     'assets/omega-global-market/market-header.svg',
     'assets/omega-global-market/raw-mining.svg',
