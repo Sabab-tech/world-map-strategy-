@@ -296,13 +296,14 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(buyerRequest.quantity, 100);
   assert.equal(buyerRequest.governmentContractId, agreementId);
 
+  buyerRequest.quantity = 97;
   buyerRequest.status = 'SETTLED';
   buyerRequest.settlementId = 'SETTLEMENT-' + agreementId + '-0001';
   buyerRequest.settledTurn = globalThis.Game.state.simulation.turn + 1;
   const settlement = {
     settlementId: buyerRequest.settlementId, requestId: buyerRequest.requestId, status: 'SETTLED',
     buyerCountryId: 'BGD', sellerCountryId: 'SAU', resourceId: 'crude_oil',
-    quantity: 100, buyerValue: 10000, sellerValue: 10000, buyerCurrency: 'USD', sellerCurrency: 'USD',
+    quantity: 97, buyerValue: 9700, sellerValue: 9700, buyerCurrency: 'USD', sellerCurrency: 'USD',
     turn: globalThis.Game.state.simulation.turn + 1
   };
   globalThis.Game.state.trade.BGD.globalTradeLedger.settlements.push(structuredClone(settlement));
@@ -311,11 +312,12 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   const deliveryClosed = bilateral.processCountry('BGD');
   assert.equal(deliveryClosed.contracts[0].status, 'DELIVERY_SETTLED', JSON.stringify(deliveryClosed));
   assert.equal(globalThis.Game.state.trade.BGD.bilateralContracts[0].completedDeliveries, 1);
-  assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts[0].deliveredQuantity, 100);
+  assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts[0].deliveredQuantity, 97);
+  assert.equal(globalThis.Game.state.trade.BGD.bilateralContracts[0].deliveries[0].withinTolerance, true);
 
   const balance = bilateral.getBilateralTradeBalance('BGD', 'SAU');
   assert.equal(balance.status, 'OBSERVED_SETTLEMENTS_ONLY');
-  assert.equal(balance.totalImportValue, 10000);
+  assert.equal(balance.totalImportValue, 9700);
   assert.equal(balance.totalExportValue, 0);
   assert.equal(balance.tradeBalance, -10000);
   assert.equal(balance.settledTransactionCount, 1);
@@ -338,14 +340,38 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(bilateral.syncMarket('BGD', 'SAU').accepted, true);
   const forceMajeureProposal = bilateral.createProposal('BGD', {
     proposalId: 'BTP-FORCE-MAJEURE', targetCountryId: 'SAU', direction: 'IMPORT',
-    resourceId: 'crude_oil', quantityPerDelivery: 50, unitPrice: 100,
+    resourceId: 'crude_oil', quantityPerDelivery: 50, unitPrice: 100, priceModel: 'MARKET_LINKED',
+    marketAdjustmentPct: 10, quantityTolerancePct: 5,
     durationMonths: 24, intervalDays: 30
   });
-  assert.equal(forceMajeureProposal.accepted, true);
+  assert.equal(forceMajeureProposal.accepted, true, JSON.stringify(forceMajeureProposal));
   globalThis.Game.state.simulation.turn += 1;
   const forceReview = bilateral.processCountry('SAU');
   assert.equal(forceReview.proposals[0].status, 'ACTIVE');
   const forceAgreement = globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.proposalId === 'BTP-FORCE-MAJEURE');
+  assert.equal(forceAgreement.priceModel, 'MARKET_LINKED');
+  assert.equal(forceAgreement.unitPrice, 110);
+  globalThis.Game.state.simulation.turn = forceAgreement.nextDeliveryTurn;
+  const linkedDelivery = bilateral.processCountry('BGD');
+  assert.equal(linkedDelivery.contracts.find(row => row.agreementId === forceAgreement.agreementId).status, 'DELIVERY_REQUESTED');
+  const forceRequest = globalThis.Game.state.trade.BGD.importRequests.find(row => row.governmentContractId === forceAgreement.agreementId);
+  assert.equal(forceRequest.unitPrice, 110);
+  forceRequest.quantity = 45;
+  forceRequest.status = 'SETTLED';
+  forceRequest.settlementId = 'SETTLEMENT-' + forceAgreement.agreementId + '-0001';
+  forceRequest.settledTurn = globalThis.Game.state.simulation.turn + 1;
+  const forceSettlement = { settlementId: forceRequest.settlementId, requestId: forceRequest.requestId, status: 'SETTLED',
+    buyerCountryId: 'BGD', sellerCountryId: 'SAU', resourceId: 'crude_oil', quantity: 45,
+    buyerValue: 4950, sellerValue: 4950, buyerCurrency: 'USD', sellerCurrency: 'USD', turn: forceRequest.settledTurn };
+  globalThis.Game.state.trade.BGD.globalTradeLedger.settlements.push(structuredClone(forceSettlement));
+  globalThis.Game.state.trade.SAU.globalTradeLedger.settlements.push({ ...structuredClone(forceSettlement), ledgerType: 'SELLER_SETTLEMENT' });
+  globalThis.Game.state.simulation.turn += 1;
+  const outOfTolerance = bilateral.processCountry('BGD');
+  assert.equal(outOfTolerance.contracts.find(row => row.agreementId === forceAgreement.agreementId).status, 'DELIVERY_SETTLED');
+  const forceContractAfterSettlement = globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.agreementId === forceAgreement.agreementId);
+  assert.equal(forceContractAfterSettlement.status, 'AT_RISK');
+  assert.equal(forceContractAfterSettlement.deliveries[0].withinTolerance, false);
+  assert.equal(forceContractAfterSettlement.lastDeliveryStatus, 'SETTLED_OUTSIDE_TOLERANCE');
   const beforeForcePenalty = globalThis.Game.state.finance.BGD.available;
   const forceEnded = bilateral.terminateContract('BGD', forceAgreement.agreementId, 'FORCE_MAJEURE', { forceMajeure: true });
   assert.equal(forceEnded.penalty.status, 'WAIVED');
