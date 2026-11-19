@@ -1429,7 +1429,17 @@ test('company cash-flow period close posts net-profit tax once and carries post-
   assert.equal(duplicate.status,'DUPLICATE');
   assert.equal(h.state.finance.BGD.available,1012);
   assert.equal(h.api.getCompanyFinanceSummary('BGD',COMPANY).capital.retainedEarningsBalance,48);
-  assert.equal(h.state.finance.BGD.omegaFinance.ledger.filter(row=>row.type==='PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX').length,1);
+  const taxLedger=h.state.finance.BGD.omegaFinance.ledger.find(row=>row.type==='PRIVATE_ENTERPRISE_CORPORATE_PROFIT_TAX');
+  assert.equal(taxLedger.sectorJournalV1.status,'POSTED');
+  assert.equal(taxLedger.sectorJournalV1.accountingBasis,'PRIVATE_COMPANY_RECORDED_CORPORATE_TAX_PAYMENT');
+  assert.equal(taxLedger.sectorJournalV1.debitTotalMinor,1200);
+  assert.equal(taxLedger.sectorJournalV1.creditTotalMinor,1200);
+  assert.deepEqual(JSON.parse(JSON.stringify(taxLedger.sectorJournalV1.lines.map(line=>[
+    line.side,line.accountId,line.amountMinor,line.currency
+  ]))),[
+    ['DEBIT','COMPANY_OPERATING_CASH:'+COMPANY,1200,'GAME_CURRENCY_UNITS'],
+    ['CREDIT','SOVEREIGN_TREASURY',1200,'GAME_CURRENCY_UNITS']
+  ]);
 });
 
 test('company tax close blocks when current-period cash-flow entries were pruned',()=>{
@@ -1673,7 +1683,20 @@ test('private factory utility and completed-cycle events accrue auditable operat
   });
   assert.ok(runtime.operatingCostEntries.every(row=>row.companyId===operator));
   assert.ok(runtime.operatingCostEntries.every(row=>row.factoryId==='PRIVATE-STEEL-01'));
-  assert.equal(h.state.finance.BGD.omegaFinance.ledger.filter(row=>row.type==='PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL').length,6);
+  const accruedFinanceRows=h.state.finance.BGD.omegaFinance.ledger.filter(
+    row=>row.type==='PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL');
+  assert.equal(accruedFinanceRows.length,6);
+  assert.ok(accruedFinanceRows.every(row=>row.sectorJournalV1&&row.sectorJournalV1.status==='POSTED'),
+    'each recorded private-factory accrual must carry its own balanced firm-sector journal');
+  const electricityAccrual=accruedFinanceRows.find(row=>row.category==='ELECTRICITY');
+  assert.equal(electricityAccrual.sectorJournalV1.debitTotalMinor,1500);
+  assert.equal(electricityAccrual.sectorJournalV1.creditTotalMinor,1500);
+  assert.deepEqual(JSON.parse(JSON.stringify(electricityAccrual.sectorJournalV1.lines.map(line=>[
+    line.side,line.accountId,line.amountMinor,line.currency
+  ]))),[
+    ['DEBIT','COMPANY_OPERATING_EXPENSE:ELECTRICITY',1500,'GAME_CURRENCY_UNITS'],
+    ['CREDIT','COMPANY_ACCRUED_EXPENSES_PAYABLE:'+operator,1500,'GAME_CURRENCY_UNITS']
+  ]);
 
   const statement=api.getCompanyFinanceSummary('BGD',operator);
   assert.equal(statement.accountingProfit,383);
@@ -1692,6 +1715,27 @@ test('private factory utility and completed-cycle events accrue auditable operat
   assert.equal(h.state.finance.BGD.available,1076.6);
   assert.equal(api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:operator}).status,'DUPLICATE');
   assert.equal(h.state.finance.BGD.available,1076.6);
+
+  const sectorJournal=api.getCompanySectorJournal('BGD',operator);
+  assert.equal(sectorJournal.status,'PARTIAL');
+  assert.equal(sectorJournal.complete,false);
+  assert.equal(sectorJournal.sectorId,'firm');
+  assert.equal(sectorJournal.postedTransactionCount,7,
+    'six accrued costs and the corporate tax source row must each be journalled once');
+  assert.equal(sectorJournal.unavailableTransactionCount,0);
+  assert.equal(sectorJournal.sourceWindows.privateEnterpriseFinance.journalledEntries,7);
+  assert.equal(sectorJournal.sourceWindows.privateEnterpriseFinance.maximumEntries,500,
+    'the Finance Ministry source ledger retains at most 500 rows');
+  const cashWindow=sectorJournal.sourceWindows.companyCashFlow;
+  assert.equal(cashWindow.legacyOrUnjournalledEntries,
+    cashWindow.retainedSourceRows-cashWindow.journalledEntries,
+    'legacy cash-flow rows remain visible as unjournalled rather than silently backfilled');
+  assert.ok(cashWindow.legacyOrUnjournalledEntries>=2,
+    'new worker/transport aggregate rows remain unjournalled until counterparty identity is evidenced');
+  const defensive=sectorJournal.transactions[0].journal;
+  defensive.lines[0].accountId='MUTATED_BY_READER';
+  assert.notEqual(api.getCompanySectorJournal('BGD',operator).transactions[0].journal.lines[0].accountId,
+    'MUTATED_BY_READER','the accessor must return a defensive copy of all journal lines');
 });
 
 test('private factory financial close fails closed when a required operating cost rate is unpriced',()=>{
