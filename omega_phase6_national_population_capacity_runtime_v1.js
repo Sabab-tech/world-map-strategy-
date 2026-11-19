@@ -230,7 +230,8 @@
     };
   }
   function getPer100kRateCatalog() {
-    var profiles = resourceRules();
+    var demandRules = object((root.__OmegaResourceEconomyRules || {}).demand) || {};
+    var profiles = object(demandRules.resourceProfiles) || {};
     return Object.keys(profiles).sort().map(function (resourceId) {
       var profile = object(profiles[resourceId]) || {};
       var rate = finite(profile.basePerMillionPopulation);
@@ -245,7 +246,7 @@
         sourceUnitBasis: calibrated ? 'PER_MILLION_POPULATION_PER_DAY' : null,
         standardPopulation: 100000,
         simulationOnly: true,
-        ruleVersion: (root.__OmegaResourceEconomyRules || {}).schemaVersion || null
+        ruleVersion: demandRules.ruleVersion || null
       };
     });
   }
@@ -470,8 +471,7 @@
     var currency = quote.currency || quote.currencyCode || trade.marketPriceCurrency ||
       trade.priceCurrency || trade.currencyCode || null;
     var observation = quote.observation || quote.observedAt || quote.observationDate ||
-      quote.turn || trade.marketPriceObservation || trade.marketPriceUpdatedAt ||
-      (price !== null ? { turn: currentTurn(), source: 'CURRENT_GAME_TURN_MARKET_PRICE' } : null);
+      quote.turn || trade.marketPriceObservation || trade.marketPriceUpdatedAt || null;
     if (price === null || price < 0) return { status: 'PRICE_UNAVAILABLE', price: null, currency: currency, observation: observation };
     if (!currency) return { status: 'CURRENCY_UNAVAILABLE', price: price, currency: null, observation: observation };
     if (!observation) return { status: 'PRICE_OBSERVATION_UNAVAILABLE', price: price, currency: currency, observation: null };
