@@ -534,7 +534,9 @@ test('mine project rejects cross-country identity and player-only actions requir
   assert.match(uiSource, /setAttribute\('data-omega-mine-entry','mines'\)/);
   assert.match(uiSource, /function stationDirectory/);
   assert.match(uiSource, /action==='run-factory'/);
-  assert.match(uiSource, /executeFactoryCycle/);
+  assert.match(uiSource, /startFactoryProductionCycle/);
+  assert.doesNotMatch(uiSource, /api\.executeFactoryCycle/,
+    'Mine Management must schedule a dated cycle instead of directly committing finished goods');
   assert.match(uiSource, /<svg/);
   assert.match(uiSource, /omm-mine-flip/);
   assert.ok(uiSource.includes('.omm-mine-flip.is-flipped .omm-flip-inner{transform:rotateY(180deg)}'), 'flipped card must rotate the 3D card stack');

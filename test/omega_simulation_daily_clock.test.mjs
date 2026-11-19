@@ -170,19 +170,41 @@ test('save slot preserves an unfinished factory project, reserved input batches 
     id: 'FAC-BGD-STEEL-01',
     countryId: 'BGD',
     factoryType: 'STEEL_AND_ALLOY_WORKS',
+    recipeId: 'STEEL_PRIMARY_ROUTE_V1',
+    recipeMode: 'MULTI_INPUT',
+    inputCoefficients: {
+      iron_concentrate: 0.60, coal_concentrate: 0.20,
+      cement_feed: 0.10, copper_concentrate: 0.10
+    },
+    outputProfile: { STEEL: 0.72, ALLOY_STEEL: 0.08, BLAST_FURNACE_SLAG: 0.15, PROCESSING_DUST: 0.05 },
     status: 'OPERATIONAL',
-    inputInventory: { iron_concentrate: 60, coal_concentrate: 20 },
-    inputBatchLots: [{
-      batchId: 'INPUT-IRON-01',
-      resourceId: 'iron_concentrate',
-      quantity: 60,
-      remainingQuantity: 60,
-      cycleReservationId: 'CYCLE-STEEL-01',
-      cycleReservedQuantity: 50,
-      sourceBatchIds: ['MINE-BGD-IRON-01'],
-      unit: 'SIMULATION_TONNE_EQUIVALENT'
-    }]
+    inputInventory: {
+      iron_concentrate: 30, coal_concentrate: 10, cement_feed: 5, copper_concentrate: 5
+    },
+    inputBatchLots: [
+      {
+        batchId: 'INPUT-IRON-01', resourceId: 'iron_concentrate', quantity: 30, remainingQuantity: 30,
+        cycleReservationId: 'CYCLE-STEEL-01', cycleReservedQuantity: 30,
+        sourceBatchIds: ['MINE-BGD-IRON-01'], unit: 'SIMULATION_TONNE_EQUIVALENT'
+      },
+      {
+        batchId: 'INPUT-COAL-01', resourceId: 'coal_concentrate', quantity: 10, remainingQuantity: 10,
+        cycleReservationId: 'CYCLE-STEEL-01', cycleReservedQuantity: 10,
+        sourceBatchIds: ['MINE-BGD-COAL-01'], unit: 'SIMULATION_TONNE_EQUIVALENT'
+      },
+      {
+        batchId: 'INPUT-CEMENT-01', resourceId: 'cement_feed', quantity: 5, remainingQuantity: 5,
+        cycleReservationId: 'CYCLE-STEEL-01', cycleReservedQuantity: 5,
+        sourceBatchIds: ['MINE-BGD-CEMENT-01'], unit: 'SIMULATION_TONNE_EQUIVALENT'
+      },
+      {
+        batchId: 'INPUT-COPPER-01', resourceId: 'copper_concentrate', quantity: 5, remainingQuantity: 5,
+        cycleReservationId: 'CYCLE-STEEL-01', cycleReservedQuantity: 5,
+        sourceBatchIds: ['MINE-BGD-COPPER-01'], unit: 'SIMULATION_TONNE_EQUIVALENT'
+      }
+    ]
   }];
+
   gameState.resource.BGD.industrialNetwork = {
     schemaVersion: '1.0.0',
     projects: [{
@@ -203,17 +225,36 @@ test('save slot preserves an unfinished factory project, reserved input batches 
         factoryId: 'FAC-BGD-STEEL-01',
         countryId: 'BGD',
         status: 'IN_PROGRESS',
+        recipeId: 'STEEL_PRIMARY_ROUTE_V1',
+        recipeMode: 'MULTI_INPUT',
+        recipe: {
+          recipeId: 'STEEL_PRIMARY_ROUTE_V1',
+          factoryType: 'STEEL_AND_ALLOY_WORKS',
+          inputs: {
+            iron_concentrate: 0.60, coal_concentrate: 0.20,
+            cement_feed: 0.10, copper_concentrate: 0.10
+          },
+          outputs: { STEEL: 0.72, ALLOY_STEEL: 0.08, BLAST_FURNACE_SLAG: 0.15, PROCESSING_DUST: 0.05 },
+          cycleDays: 2
+        },
+        primaryInputResourceId: 'iron_concentrate',
+        inputQuantities: {
+          iron_concentrate: 30, coal_concentrate: 10, cement_feed: 5, copper_concentrate: 5
+        },
+        expectedOutputs: { STEEL: 36, ALLOY_STEEL: 4, BLAST_FURNACE_SLAG: 7.5, PROCESSING_DUST: 2.5 },
         startDate: '2015-01-03',
         finishDate: '2015-01-06',
         productionQuantity: 50,
-        sourceBatchIds: ['MINE-BGD-IRON-01'],
-        inputBatchReservations: [{
-          batchId: 'INPUT-IRON-01',
-          resourceId: 'iron_concentrate',
-          quantity: 50,
-          unit: 'SIMULATION_TONNE_EQUIVALENT'
-        }],
-        outputQuantities: { STEEL: 36 }
+        sourceBatchIds: [
+          'MINE-BGD-IRON-01', 'MINE-BGD-COAL-01', 'MINE-BGD-CEMENT-01', 'MINE-BGD-COPPER-01'
+        ],
+        inputBatchReservations: [
+          { batchId: 'INPUT-IRON-01', resourceId: 'iron_concentrate', quantity: 30, unit: 'SIMULATION_TONNE_EQUIVALENT' },
+          { batchId: 'INPUT-COAL-01', resourceId: 'coal_concentrate', quantity: 10, unit: 'SIMULATION_TONNE_EQUIVALENT' },
+          { batchId: 'INPUT-CEMENT-01', resourceId: 'cement_feed', quantity: 5, unit: 'SIMULATION_TONNE_EQUIVALENT' },
+          { batchId: 'INPUT-COPPER-01', resourceId: 'copper_concentrate', quantity: 5, unit: 'SIMULATION_TONNE_EQUIVALENT' }
+        ],
+        outputQuantities: { STEEL: 36, ALLOY_STEEL: 4, BLAST_FURNACE_SLAG: 7.5, PROCESSING_DUST: 2.5 }
       }
     },
     factoryProductionCycleHistory: []
@@ -221,7 +262,14 @@ test('save slot preserves an unfinished factory project, reserved input batches 
 
   const expectedProject = JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.projects[0]));
   const expectedCycle = JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.factoryProductionCycles['FAC-BGD-STEEL-01']));
-  const expectedLot = JSON.parse(JSON.stringify(gameState.economy.BGD.productionAssets[0].inputBatchLots[0]));
+  const expectedFactoryRecipe = JSON.parse(JSON.stringify({
+    recipeId: gameState.economy.BGD.productionAssets[0].recipeId,
+    recipeMode: gameState.economy.BGD.productionAssets[0].recipeMode,
+    inputCoefficients: gameState.economy.BGD.productionAssets[0].inputCoefficients,
+    outputProfile: gameState.economy.BGD.productionAssets[0].outputProfile
+  }));
+  const expectedInputInventory = JSON.parse(JSON.stringify(gameState.economy.BGD.productionAssets[0].inputInventory));
+  const expectedInputLots = JSON.parse(JSON.stringify(gameState.economy.BGD.productionAssets[0].inputBatchLots));
   const saved = await sim.saveSlot('factory-acceptance');
   assert.equal(saved.ok, true);
   assert.equal(storage.has('omega.game.save.factory-acceptance'), true);
@@ -236,10 +284,26 @@ test('save slot preserves an unfinished factory project, reserved input batches 
     'construction dates, consumed BOM allocations and request identity must survive reload');
   assert.deepEqual(JSON.parse(JSON.stringify(gameState.resource.BGD.industrialNetwork.factoryProductionCycles['FAC-BGD-STEEL-01'])), expectedCycle,
     'cycle status, finish date, exact batch reservations and expected outputs must survive reload');
-  assert.deepEqual(JSON.parse(JSON.stringify(gameState.economy.BGD.productionAssets[0].inputBatchLots[0])), expectedLot,
-    'remaining quantity, reservation lock and source-mine lineage must survive reload');
-  assert.equal(gameState.economy.BGD.productionAssets[0].inputBatchLots[0].cycleReservedQuantity, 50);
-  assert.equal(gameState.resource.BGD.industrialNetwork.factoryProductionCycles['FAC-BGD-STEEL-01'].status, 'IN_PROGRESS');
+  const restoredFactory = gameState.economy.BGD.productionAssets[0];
+  assert.deepEqual(JSON.parse(JSON.stringify({
+    recipeId: restoredFactory.recipeId, recipeMode: restoredFactory.recipeMode,
+    inputCoefficients: restoredFactory.inputCoefficients, outputProfile: restoredFactory.outputProfile
+  })), expectedFactoryRecipe,
+    'the canonical factory recipe identity and coefficients must survive the real save-slot reload');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredFactory.inputInventory)), expectedInputInventory,
+    'all aggregate factory input balances must survive the real save-slot reload');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredFactory.inputBatchLots)), expectedInputLots,
+    'all reserved input lots, remaining quantities and mine lineage must survive the real save-slot reload');
+  assert.equal(restoredFactory.inputBatchLots.length, 4);
+  assert.equal(restoredFactory.inputBatchLots.reduce((sum, lot) => sum + Number(lot.cycleReservedQuantity || 0), 0), 50);
+  const restoredCycle = gameState.resource.BGD.industrialNetwork.factoryProductionCycles['FAC-BGD-STEEL-01'];
+  assert.equal(restoredCycle.status, 'IN_PROGRESS');
+  assert.equal(restoredCycle.recipeId, 'STEEL_PRIMARY_ROUTE_V1');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredCycle.inputQuantities)), expectedInputInventory,
+    'cycle input demand must survive unchanged and remain aligned with the recipe');
+  assert.deepEqual(JSON.parse(JSON.stringify(restoredCycle.expectedOutputs)), {
+    STEEL: 36, ALLOY_STEEL: 4, BLAST_FURNACE_SLAG: 7.5, PROCESSING_DUST: 2.5
+  });
 });
 
 test('legacy hourly save is migrated to one calendar day per turn', () => {
