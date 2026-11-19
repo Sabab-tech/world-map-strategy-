@@ -31,7 +31,9 @@
     "maxStockIdentityRows": 96,
     "pendingImportRequestRows": 512,
     "productionLedgerRows": 2048,
-    "tradeLedgerRows": 512
+    "tradeLedgerRows": 512,
+    "maxCompanyAccounts": 5,
+    "companyCashFlowRowsPerCompany": 256
   },
   "accounting": {
     "currencyPolicy": "NEVER_SUM_ACROSS_CURRENCIES",
