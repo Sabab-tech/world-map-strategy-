@@ -2194,7 +2194,6 @@ function captureStockFlowPeriod(stateTransaction) {
           if(!row.shipmentId||!row.resourceId||num(row.dispatchedQuantity??row.quantity)===null||!row.unit||!row.countryId)
             invalid.push('TRANSPORT_SHIPMENT_IDENTITY_INCOMPLETE:'+String(row.shipmentId||'MISSING_ID'));
           (Array.isArray(row.lossEvents)?row.lossEvents:[]).forEach(function(event){
-            lossEventsObserved++;
             if(!hasLoss(event,row.shipmentId))invalid.push('TRANSPORT_LOSS_NOT_RECONCILED:'+String(event.eventId||'MISSING_ID'));
           });
         });
@@ -2204,6 +2203,7 @@ function captureStockFlowPeriod(stateTransaction) {
         });
         losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()==='TRANSPORT';})
           .forEach(function(row){
+            lossEventsObserved++;
             var sourceShipment=network.shipments.find(function(item){
               return String(item&&item.shipmentId||'')===String(row.sourceEventId||'');
             });
