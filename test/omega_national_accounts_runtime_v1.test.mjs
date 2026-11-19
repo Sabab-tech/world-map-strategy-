@@ -436,3 +436,85 @@ test('large ledger inputs remain hard-bounded to the configured accounting workl
   assert.ok(api.diagnostics().yieldCount>=10,
     'large inventory and production ledger reads must yield between bounded 512-row synchronous slices');
 });
+
+
+function testJournal(countryId,sectorId,companyId,transactionId,currency,periodId){
+  const amount=1250,accountPrefix=sectorId==='firm'?'FIRM:'+companyId:'GOVERNMENT';
+  return{
+    schemaVersion:1,status:'POSTED',sectorId,sourceAuthority:sectorId==='firm'?'OMEGA_PRIVATE_ENTERPRISE':'OMEGA_FINANCE_MINISTRY',
+    sourceTransactionId:transactionId,sourceTransactionType:'TEST',countryId,companyId:companyId||undefined,
+    currency,periodId,counterEntryComplete:true,debitTotalMinor:amount,creditTotalMinor:amount,
+    lines:[
+      {lineId:transactionId+':L1',accountId:accountPrefix+':TEST_DEBIT',side:'DEBIT',
+        amountMinor:amount,currency,countryId,companyId:companyId||undefined,sourceTransactionId:transactionId},
+      {lineId:transactionId+':L2',accountId:accountPrefix+':TEST_CREDIT',side:'CREDIT',
+        amountMinor:amount,currency,countryId,companyId:companyId||undefined,sourceTransactionId:transactionId}
+    ]
+  };
+}
+
+test('sector journal reader validates Finance and company-owned postings without cross-currency aggregation',async()=>{
+  const api=harness().window.Omega.NationalAccounts;
+  const financeRows=[
+    {transactionId:'GOV-J-1',action:'EXPENSE',sectorJournalV1:testJournal('BGD','government',null,'GOV-J-1','USD','FY-1')},
+    {transactionId:'FIRM-FIN-1',type:'PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL',companyId:'AURORA',
+      sectorJournalV1:testJournal('BGD','firm','AURORA','FIRM-FIN-1','BDT','TURN-8')}
+  ];
+  const companyAccounts={AURORA:{companyId:'AURORA',cashFlowJournalVersion:2,cashFlowEntries:[
+    {entryId:'FIRM-CASH-1',companyId:'AURORA',status:'POSTED',
+      sectorJournalV1:testJournal('BGD','firm','AURORA','FIRM-CASH-1','BDT','TURN-8')}
+  ]}};
+  const result=await api.reconcileSectorJournals({countryId:'BGD',financeRows,financeSourceRowsTotal:2,
+    companyAccounts,maxCompanyAccounts:5,companyCashFlowRowsPerCompany:256,financeLedgerRows:500});
+  assert.equal(result.status,'PARTIAL','this read model never claims whole-economy completeness');
+  assert.equal(result.integrityStatus,'RECONCILED');
+  assert.equal(result.sourceCoverageStatus,'RETAINED_SOURCE_WINDOWS_ACCOUNTED');
+  assert.equal(result.postedTransactionCount,3);
+  assert.equal(result.invalidTransactionCount,0);
+  assert.equal(result.duplicateTransactionCount,0);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.currencyPeriodCoverage)),[
+    {sectorId:'firm',currency:'BDT',periodId:'TURN-8',postedTransactionCount:2,unavailableTransactionCount:0},
+    {sectorId:'government',currency:'USD',periodId:'FY-1',postedTransactionCount:1,unavailableTransactionCount:0}
+  ]);
+  assert.equal(result.amountsAggregated,false);
+});
+
+test('sector journal reader rejects unbalanced, wrong-country and duplicate source postings',async()=>{
+  const api=harness().window.Omega.NationalAccounts;
+  const bad=testJournal('BGD','government',null,'BAD-1','USD','FY-1');
+  bad.creditTotalMinor=1249;
+  bad.lines[1].amountMinor=1249;
+  const wrong=testJournal('USA','government',null,'WRONG-1','USD','FY-1');
+  const duplicate=testJournal('BGD','firm','AURORA','DUP-1','BDT','TURN-8');
+  const result=await api.reconcileSectorJournals({countryId:'BGD',financeRows:[
+    {transactionId:'BAD-1',action:'EXPENSE',sectorJournalV1:bad},
+    {transactionId:'WRONG-1',action:'BORROW',sectorJournalV1:wrong}
+  ],companyAccounts:{AURORA:{companyId:'AURORA',cashFlowEntries:[
+    {entryId:'DUP-1',companyId:'AURORA',status:'POSTED',sectorJournalV1:duplicate},
+    {entryId:'DUP-1',companyId:'AURORA',status:'POSTED',sectorJournalV1:duplicate}
+  ]}}});
+  assert.equal(result.integrityStatus,'UNRECONCILED');
+  assert.ok(result.invalidTransactionCount>=2);
+  assert.equal(result.duplicateTransactionCount,1);
+});
+
+test('sector journal reader exposes legacy, unavailable and truncated source coverage instead of zero-filling it',async()=>{
+  const api=harness().window.Omega.NationalAccounts;
+  const entries=Array.from({length:300},(_,index)=>({entryId:'LEGACY-'+index,companyId:'AURORA',status:'POSTED'}));
+  entries.push({entryId:'UNAVAILABLE-1',companyId:'AURORA',status:'POSTED',
+    sectorJournalV1:{schemaVersion:1,status:'UNAVAILABLE',sourceTransactionId:'UNAVAILABLE-1',
+      sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',countryId:'BGD',companyId:'AURORA'}});
+  const result=await api.reconcileSectorJournals({countryId:'BGD',
+    financeRows:[{transactionId:'LEGACY-FIN-1',action:'BORROW'}],financeSourceRowsTotal:600,
+    companyAccounts:{AURORA:{companyId:'AURORA',cashFlowJournalDroppedEntries:2,cashFlowEntries:entries}},
+    maxCompanyAccounts:5,companyCashFlowRowsPerCompany:256,financeLedgerRows:500});
+  assert.equal(result.status,'PARTIAL');
+  assert.equal(result.sourceCoverageStatus,'PARTIAL');
+  assert.equal(result.sourceWindows.financeLedger.windowTruncated,true);
+  assert.equal(result.sourceWindows.companyCashFlow.windowTruncated,true);
+  assert.equal(result.sourceWindows.companyCashFlow.droppedSourceRows,2);
+  assert.ok(result.unaccountedSourceRowCount>0);
+  assert.equal(result.unavailableTransactionCount,1);
+  assert.equal(result.integrityStatus,'UNOBSERVED');
+});
+
