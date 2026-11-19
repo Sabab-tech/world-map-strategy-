@@ -47,12 +47,12 @@ Audit results at the current main baseline:
 | UN projected population estimate dated 2025 | 1 |
 | Core-country population observations dated 2015 | 0 |
 | Core-country population unknown | 0 |
-| Population represented by the 195 observations | 8,177,025,275 |
+| Population represented by the 195 observations | 8,200,525,275 |
 | Existing resource profiles | 41 |
 | Profiles with `basePerMillionPopulation` | 37 |
 | Profiles without a calibrated coefficient | 4 |
 
-The 8,177,025,275 subtotal is the sum of the 195 core-country records with 2025 population observations; it is not the population total for all 197 countries. Taiwan now uses the official December 2025 household-registration count (23,299,132). Vatican City uses the Governorate's official resident count at 31 December 2024 (882), and is not mislabeled as a 2025 observation. Western Sahara uses the UNData 2025 medium-fertility projected estimate (601,000), explicitly classified as an estimate rather than an observation. The estimate is excluded from the 2025 observed subtotal. The three records retain their publisher/source URL and source method in the registry metadata.
+The 8,200,525,275 subtotal is the sum of the 195 core-country records with 2025 population observations; it is not the population total for all 197 countries. Taiwan now uses the official December 2025 household-registration count (23,299,132). Vatican City uses the Governorate's official resident count at 31 December 2024 (882), and is not mislabeled as a 2025 observation. Western Sahara uses the UNData 2025 medium-fertility projected estimate (601,000), explicitly classified as an estimate rather than an observation. The estimate is excluded from the 2025 observed subtotal. The three records retain their publisher/source URL and source method in the registry metadata.
 
 The starting factory units are abstract OMEGA game units. They are not actual facilities counted in the real world. The Bangladesh baseline has 100 units, including 40 Textile and Garment Mill units. A zero category stays zero; Phase 6 does not force all 21 categories into every country.
 
@@ -164,7 +164,7 @@ Phase 6 now exposes the qualifying current-turn journal evidence while keeping f
 
 The dedicated regression suite verifies:
 
-- Exactly 197 core population records: 195 year-2025 observations, 1 official 2024 observation, 1 UN projected 2025 estimate, no 2015 population baseline and no unknown population; the 2025 observed subtotal is 8,177,025,275.
+- Exactly 197 core population records: 195 year-2025 observations, 1 official 2024 observation, 1 UN projected 2025 estimate, no 2015 population baseline and no unknown population; the 2025 observed subtotal is 8,200,525,275.
 - Exactly 197 factory baseline countries × 21 canonical type keys, with 15,920 total simulation-only starting units.
 - Exactly 41 resource profiles, 37 calibrated per-100k rates and 4 `RATE_NOT_CALIBRATED` resources.
 - Per-100k invariance across countries and linear population scaling.
