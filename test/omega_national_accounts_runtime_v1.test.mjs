@@ -561,7 +561,9 @@ test('country checkpoint caps private-firm journal work to five accounts and 256
   assert.equal(journal.sourceWindows.companyCashFlow.observedRows,5*256);
   assert.equal(journal.sourceWindows.companyCashFlow.windowTruncated,true);
   assert.equal(journal.sourceRowsScanned,5*256);
-  assert.equal(result.sourceRowsScanned,8692+5*256);
+  const workload=h.state.economy.BGD.nationalAccounts.workload;
+  assert.equal(result.sourceRowsScanned,workload.financeLedgerRowsObserved+workload.tradeRowsObserved+
+    workload.inventoryBatchRowsObserved+workload.productionLedgerRowsObserved+5*256);
   assert.equal(journal.sourceCoverageStatus,'PARTIAL');
   assert.equal(api.diagnostics().yieldCount>=2,true,
     'the bounded company window must yield cooperatively at 512-row intervals');
