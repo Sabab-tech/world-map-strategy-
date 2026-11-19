@@ -554,6 +554,9 @@
       return { status: 'INVALID', canSend: false, reason: 'UNSUPPORTED_AGREEMENT_DURATION' };
     if (intervalDays === null || intervalDays < 1 || intervalDays > 365)
       return { status: 'INVALID', canSend: false, reason: 'DELIVERY_INTERVAL_OUT_OF_RANGE' };
+    var paymentSchedule = id(p.paymentSchedule || 'PER_DELIVERY_ON_SETTLEMENT');
+    if (paymentSchedule !== 'PER_DELIVERY_ON_SETTLEMENT')
+      return { status: 'INVALID', canSend: false, reason: 'UNSUPPORTED_PAYMENT_SCHEDULE' };
     if (!['FIXED', 'MARKET_LINKED'].includes(id(p.priceModel || 'FIXED')))
       return { status: 'INVALID', canSend: false, reason: 'UNSUPPORTED_AGREEMENT_PRICE_MODEL' };
     var snapshot = currentReport(player, target, true);
@@ -615,6 +618,8 @@
         status: 'PRIVATE', amount: null, requestCount: null, agreementCount: null, reasons: []
       },
       buyerCurrency: tradeCurrency(buyer), buyerSettlementAmount: buyerAmount,
+      invoiceCurrency: tradeCurrency(seller), paymentCurrency: tradeCurrency(buyer),
+      paymentSchedule: paymentSchedule,
       fx: num(values && values.fx), durationMonths: durationMonths, durationTurns: monthsToTurns(durationMonths),
       intervalDays: intervalDays, intervalTurns: intervalTurns, quantityTolerancePct: clamp(p.quantityTolerancePct ?? 0, 0, 50),
       terminationPenaltyPct: clamp(p.terminationPenaltyPct ?? 0, 0, 100),
@@ -988,6 +993,9 @@
       resourceId: String(terms.resourceId), quantityPerDelivery: num(terms.quantityPerDelivery),
       quantityTolerancePct: clamp(terms.quantityTolerancePct ?? 0, 0, 50),
       unitPrice: num(terms.unitPrice), currency: tradeCurrency(seller),
+      invoiceCurrency: tradeCurrency(seller), paymentCurrency: tradeCurrency(buyer),
+      paymentSchedule: id(terms.paymentSchedule || 'PER_DELIVERY_ON_SETTLEMENT'),
+      paymentTiming: 'AT_EACH_DELIVERY_SETTLEMENT',
       priceModel: id(terms.priceModel || 'FIXED'), marketAdjustmentPct: clamp(terms.marketAdjustmentPct ?? 0, -50, 100),
       priceHistory: [{ turn: turn(), unitPrice: num(terms.unitPrice), model: id(terms.priceModel || 'FIXED') }],
       durationMonths: durationMonths, durationTurns: durationTurns,
