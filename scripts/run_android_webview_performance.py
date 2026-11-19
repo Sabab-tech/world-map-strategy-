@@ -89,7 +89,7 @@ def instrumentation_report_summary(report_dir: Path) -> dict[str, int]:
             raise RuntimeError("ANDROID_INSTRUMENTATION_REPORT_SUMMARY_INVALID:" + section_id)
         value_start = report_html.find(">", counter_start) + 1
         value_end = report_html.find("</div>", value_start)
-        match = re.search(r"\\d+", report_html[value_start:value_end])
+        match = re.search(r"\d+", report_html[value_start:value_end])
         if not match:
             raise RuntimeError("ANDROID_INSTRUMENTATION_REPORT_SUMMARY_INVALID:" + section_id)
         return int(match.group(0))
@@ -148,7 +148,7 @@ def capture_emulator_diagnostics() -> None:
                         target.write(line)
     except OSError as error:
         filtered_log.write_text(
-            "FILTERED_LOG_CAPTURE_FAILED: " + repr(error) + "\\n",
+            "FILTERED_LOG_CAPTURE_FAILED: " + repr(error) + "\n",
             encoding="utf-8",
         )
 
@@ -230,6 +230,7 @@ def main() -> int:
         print("OMEGA_ANDROID_INSTRUMENTATION_GATE_FAILED=" + str(error), flush=True)
         return 1
     print("OMEGA_ANDROID_INSTRUMENTATION_SUMMARY=" + repr(summary), flush=True)
+    return exit_code
 
 
 
