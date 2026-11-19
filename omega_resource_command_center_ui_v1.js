@@ -1942,7 +1942,9 @@
       const alternativeCount = (alternatives.suppliersForImports || []).reduce(function (sum, row) { return sum + (row.alternatives || []).length; }, 0) +
         (alternatives.competingBuyersForExports || []).reduce(function (sum, row) { return sum + (row.alternatives || []).length; }, 0);
       return card('Market report · ' + target, result.status || report.freshnessStatus || 'UNKNOWN',
-        '<div class="omega-rescc-kv"><span>Generated turn</span><strong>' + esc(report.generatedTurn) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Synced at (UTC)</span><strong>' + esc(report.generatedAt || 'UNKNOWN') + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Simulation date / turn</span><strong>' + esc(report.simulationDate || 'UNKNOWN') + ' · ' + esc(report.generatedTurn) + '</strong></div>' +
+        '<div class="omega-rescc-kv"><span>Data version / snapshot</span><strong>' + esc(report.dataVersion || 'UNKNOWN') + ' · ' + esc(report.snapshotId || '—') + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Evidence</span><strong>' + esc(report.evidenceCounts && (report.evidenceCounts.known || 0)) + ' known · ' + esc(report.evidenceCounts && (report.evidenceCounts.estimated || 0)) + ' estimated · ' + esc(report.evidenceCounts && (report.evidenceCounts.unknown || 0)) + ' unknown</strong></div>' +
         '<div class="omega-rescc-kv"><span>Counterparty payment capacity</span><strong>' + esc(report.paymentCapacity && report.paymentCapacity.value === 'NOT_DISCLOSED' ? 'Not publicly disclosed' : report.paymentCapacity && report.paymentCapacity.status || 'UNKNOWN') + '</strong></div>' +
         '<div class="omega-rescc-kv"><span>Existing bilateral agreements</span><strong>' + esc(report.activeBilateralAgreementCount || 0) + '</strong></div>' +
