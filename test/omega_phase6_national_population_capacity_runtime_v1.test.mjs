@@ -277,6 +277,11 @@ test('active-country factory inventory is read once, capacity is evidence-gated 
           { transactionId: 'TX-1', turn: 7, outputQuantities: { garments: 100, shoes: 20 } },
           { transactionId: 'TX-OLD', turn: 6, outputQuantities: { garments: 500 } }
         ],
+        inventoryLedger: [
+          { type: 'INTERNATIONAL_TRADE_IMPORT', settlementId: 'IMPORT-COTTON-7', resourceId: 'cotton_fibre', quantity: 12, sourceCountryId: 'USA', turn: 7 },
+          { type: 'INTERNATIONAL_TRADE_IMPORT', settlementId: 'IMPORT-COTTON-7', resourceId: 'cotton_fibre', quantity: 12, sourceCountryId: 'USA', turn: 7 },
+          { type: 'INTERNATIONAL_TRADE_IMPORT', settlementId: 'IMPORT-COTTON-6', resourceId: 'cotton_fibre', quantity: 90, sourceCountryId: 'USA', turn: 6 }
+        ],
         demandRuntime: { byResource: {
           cotton_fibre: { activeFactoryInputDemandPerDay: 45, demandPerDay: 60, factoryConsumption: 40,
             fulfilledDemand: 55, unmetDemand: 5, inventoryBefore: 100, inventoryAfter: 40,
@@ -314,10 +319,18 @@ test('active-country factory inventory is read once, capacity is evidence-gated 
   assert.equal(reconciliation.inventoryBefore, 100);
   assert.equal(reconciliation.inventoryAfter, 40);
   assert.equal(reconciliation.pendingImportQuantity, 15);
+  assert.equal(reconciliation.confirmedImportsThisTurn, 12);
+  assert.equal(reconciliation.confirmedImportKnownQuantityThisTurn, 12);
+  assert.equal(reconciliation.confirmedImportSettlementCountThisTurn, 1);
+  assert.deepEqual(reconciliation.confirmedImportSettlementIds, ['IMPORT-COTTON-7']);
+  assert.equal(reconciliation.confirmedImportEvidenceStatus, 'OBSERVED_SETTLED_IMPORT_LEDGER');
+  assert.equal(summary.confirmedImports.authority,
+    'Game.state.resource[countryId].inventoryLedger[type=INTERNATIONAL_TRADE_IMPORT]');
+  assert.equal(summary.confirmedImports.uniqueSettlementCount, 1);
   assert.equal(reconciliation.unmetDemand, 5);
   assert.equal(reconciliation.stockCoverageDays, 2);
   assert.equal(reconciliation.inboundShipmentQuantity, null);
-  assert.equal(reconciliation.inboundShipmentEvidenceStatus, 'NOT_EXPOSED_BY_NATIONAL_DEMAND_RUNTIME');
+  assert.equal(reconciliation.inboundShipmentEvidenceStatus, 'NOT_PERSISTED_BY_TRADE_SHIPMENT_AUTHORITY');
 });
 
 test('ambiguous utilization ratios and missing live capacity remain unavailable', async () => {
@@ -452,6 +465,57 @@ test('the projection is read-only, does not schedule turns, and does not sum two
   assert.equal(context.OmegaPhase6NationalCapacity, api);
 });
 
+test('missing import ledger remains unavailable instead of becoming a zero import', async () => {
+  const { api } = makeHarness();
+  const summary = await api.getNationalSummary('BGD');
+  const row = summary.nationalRequirement.byResource.crude_oil;
+  assert.equal(row.confirmedImportsThisTurn, null);
+  assert.equal(row.confirmedImportEvidenceStatus, 'IMPORT_LEDGER_UNAVAILABLE');
+  assert.equal(summary.confirmedImports.status, 'IMPORT_LEDGER_UNAVAILABLE');
+});
+
+test('an empty import ledger gives zero for the active country; NPCs remain static-only', async () => {
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'USA' } },
+    population: {},
+    economy: { BGD: { productionAssets: [] }, USA: { productionAssets: [] } },
+    resource: {
+      BGD: { inventoryLedger: [] },
+      USA: { inventoryLedger: [{ type: 'INTERNATIONAL_TRADE_IMPORT', settlementId: 'USA-IMPORT', resourceId: 'crude_oil', quantity: 50, sourceCountryId: 'SAU', turn: 7 }] }
+    },
+    trade: { BGD: {}, USA: {} }
+  };
+  const { api } = makeHarness({ state, playerCountryId: 'USA' });
+  const npc = await api.getNationalSummary('BGD');
+  assert.equal(npc.confirmedImports.status, 'NOT_ACTIVE_COUNTRY');
+  assert.equal(npc.confirmedImports.byResource, null);
+  assert.equal(npc.nationalRequirement.byResource.crude_oil.confirmedImportsThisTurn, null);
+  const active = await api.getNationalSummary('USA');
+  assert.equal(active.nationalRequirement.byResource.crude_oil.confirmedImportsThisTurn, 50);
+  assert.equal(active.nationalRequirement.byResource.crude_oil.confirmedImportSettlementCountThisTurn, 1);
+});
+
+test('conflicting duplicate import settlements are excluded from confirmed quantities', async () => {
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {},
+    economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: [
+      { type: 'INTERNATIONAL_TRADE_IMPORT', settlementId: 'CONFLICT-1', resourceId: 'copper', quantity: 10, sourceCountryId: 'CHL', turn: 7 },
+      { type: 'INTERNATIONAL_TRADE_IMPORT', settlementId: 'CONFLICT-1', resourceId: 'copper', quantity: 11, sourceCountryId: 'CHL', turn: 7 }
+    ] } },
+    trade: { BGD: {} }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const row = summary.nationalRequirement.byResource.copper;
+  assert.equal(row.confirmedImportsThisTurn, null);
+  assert.equal(row.confirmedImportKnownQuantityThisTurn, 0);
+  assert.equal(row.confirmedImportEvidenceStatus, 'PARTIAL_SETTLED_IMPORT_EVIDENCE');
+  assert.equal(summary.confirmedImports.status, 'PARTIAL_SETTLED_IMPORT_EVIDENCE');
+  assert.equal(summary.confirmedImports.conflictingSettlementCount, 1);
+});
+
 test('overview HTML presents the national summary without claiming simulated factory units are real facilities', async () => {
   const { api } = makeHarness();
   const summary = await api.getNationalSummary('BGD');
@@ -459,5 +523,7 @@ test('overview HTML presents the national summary without claiming simulated fac
   assert.match(html, /National Population & Industrial Capacity/);
   assert.match(html, /SIMULATION BASELINE/);
   assert.match(html, /Common daily coefficients are simulation rules/);
+  assert.match(html, /Settled imports this turn/);
+  assert.match(html, /does not persist a separate durable in-transit import shipment ledger/);
   assert.doesNotMatch(html, /real-world facility count: 100/i);
 });
