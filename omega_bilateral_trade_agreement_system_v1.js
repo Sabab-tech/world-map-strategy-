@@ -502,7 +502,7 @@
       var requestId = String(request.requestId || '');
       if (requestId) requestIds.add(requestId);
       var seller = canonical(request.targetCountryId || request.sellerCountryId), quantity = num(request.quantityApproved ?? request.quantity),
-        price = num(request.unitPrice ?? request.lastCounterpartyDecision && request.lastCounterpartyDecision.unitPrice);
+        price = num(request.unitPrice ?? (request.lastCounterpartyDecision && request.lastCounterpartyDecision.unitPrice));
       if (!seller || quantity === null || price === null) { unknownReasons.push('PENDING_IMPORT_REQUEST_TERMS_UNKNOWN'); return; }
       var values = settlementValues(buyer, seller, quantity, price), amount = num(values && values.buyerValue);
       if (amount === null) unknownReasons.push('PENDING_IMPORT_REQUEST_FX_UNKNOWN');
