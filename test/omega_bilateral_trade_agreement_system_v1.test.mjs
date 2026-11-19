@@ -442,7 +442,8 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(forceAgreement.priceModel, 'MARKET_LINKED');
   assert.equal(forceAgreement.unitPrice, 110);
   assert.equal(forceAgreement.paymentSchedule, 'PER_DELIVERY_ON_SETTLEMENT');
-  assert.equal(forceAgreement.paymentCurrency, forceAgreement.buyerCurrency);
+  assert.equal(forceAgreement.paymentCurrency, forceMajeureProposal.proposal.paymentCurrency,
+    'contract payment currency must retain the mutually accepted buyer settlement currency');
   assert.equal(forceAgreement.invoiceCurrency, forceAgreement.currency);
   assert.equal(forceAgreement.paymentTiming, 'AT_EACH_DELIVERY_SETTLEMENT');
 
