@@ -135,6 +135,8 @@ Actual Treasury expenditure is established from the Finance Ministry's `fiscalPe
 
 Current-turn government `EXPENSE` and `EXPENSE_ROLLBACK` journals are shown separately as supplemental evidence only when the source row has a valid, balanced, posted government journal. Gross expenses, reversals and net recorded amounts are shown by currency. The Finance Ministry retains a bounded transaction ledger (up to 500 rows), so current-turn detail alone never establishes a complete national total. Borrowing, budget transfers, debt principal repayments and tax receipts are not counted as budgetary expense.
 
+Black Market transit is reported as a separate subset from `Game.state.trade[countryId].blackMarketTransits`. Only `IN_TRANSIT` and `ARRIVAL_PENDING` records for the selected buyer country are counted. A stale transit row is excluded when the same request is already represented by a completed importer-side bilateral shipment. Black Market quantities remain separate from the standard bilateral shipment total, and this checkpoint route does not establish a travel-time ETA.
+
 A modeled consumption cost is never represented as an actual Treasury expenditure.
 
 ## 8. Runtime contract
@@ -154,11 +156,11 @@ The Country Overview receives an additive, collapsible national summary. The pan
 
 | Milestone | Scope | Initial implementation status |
 | --- | --- | --- |
-| 6A | 197-country population source/year/status audit | Audit and regression contract added; 194/2/1 coverage remains explicit |
+| 6A | 197-country population source/year/status audit | Complete: 195 observed 2025 populations, 1 official 2024 population (Vatican), and 1 UN projected 2025 estimate (Western Sahara); no 2015 fallback |
 | 6B | Universal per-100k coefficient catalog | Existing 41 profiles normalized; 37 calculated, 4 uncalibrated |
 | 6C | National factory census and capacity | 197 × 21 static matrix surfaced; selected-country live status/capacity read from existing registry |
 | 6D | Population/factory demand reconciliation | Separate streams; existing national-demand authority reused, no new sum |
-| 6D+ | International shipment evidence | Bilateral durable shipment ID ledger, idempotent exporter/importer records, explicit dispatch/arrival/settlement status; ETA remains unavailable until route-time evidence exists |
+| 6D+ | International shipment evidence | Bilateral durable shipment ID ledger, idempotent exporter/importer records and dispatch/arrival/settlement status; separate Black Market transit evidence is also exposed without merging its quantities into bilateral settlement totals; ETA remains unavailable until route-time evidence exists |
 | 6E | Resource and factory cost | Resource-level modeled cost requires quote/currency/observation; factory operating and Treasury actuals remain evidence-gated |
 | 6F | National summary UI | Country Overview summary panel added |
 | 6G | Reconciliation and performance | Optional save snapshot extension and load-time provenance revalidation added; full CI result and device-performance validation remain separate gates |
@@ -178,13 +180,13 @@ The dedicated regression suite verifies:
 - Active-player-only detailed factory access.
 - Current-turn production transaction de-duplication using the resource finished-goods ledger.
 - Current-turn settled import reconciliation from `INTERNATIONAL_TRADE_IMPORT` inventory-ledger entries, settlement/resource de-duplication, and separation from pending requests.
-- Durable bilateral shipment ledger creation, exporter/importer ownership, shipment ID idempotency, conflict rejection, observed dispatch/arrival timestamps, explicit ETA-unavailable status, and active-country-only in-transit import aggregation.
+- Durable bilateral shipment ledger creation, exporter/importer ownership, shipment ID idempotency, conflict rejection, observed dispatch/arrival timestamps, explicit ETA-unavailable status, active-country-only in-transit import aggregation, plus separate Black Market `IN_TRANSIT`/`ARRIVAL_PENDING` evidence and arrived-shipment de-duplication.
 - Gypsum, niobium, ruby and limestone remain explicitly uncalibrated with source-gap metadata; production statistics are never substituted for consumption.
 - Separate population and factory demand, with no naive summation.
 - Price/currency evidence gates and the separation of modeled cost from Treasury postings.
 - Current-turn government expense/reversal and private-factory operating-cost accrual projection only when every source journal is balanced, posted, correctly identified and currency-scoped; bounded source-window and non-completion statuses are preserved.
 - Actual Treasury budgetary expenditure is established only from a complete, non-modeled, reconciled Finance fiscal-period account; it is government spending plus interest paid, with principal repayment excluded.
-- In-transit international import quantities come only from durable importer-side shipment records; old saves without the ledger remain unknown, an empty ledger means zero, and incomplete/duplicate-conflicting shipment records do not produce a complete quantity.
+- Standard in-transit international import quantities come only from durable importer-side bilateral shipment records; old saves without the ledger remain unknown, an empty ledger means zero, and incomplete/duplicate-conflicting records do not produce a complete bilateral quantity. Black Market in-transit quantities are separately derived from its durable route ledger, exclude transit rows already reconciled to an arrived bilateral shipment, and never get merged into the bilateral subtotal.
 - Read-only authoritative world-state behavior and the absence of a new scheduler.
 - Phase 6 provenance save/load checksum coverage, legacy-save compatibility, and load-time fingerprint revalidation.
 
