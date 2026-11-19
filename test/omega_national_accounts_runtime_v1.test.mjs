@@ -429,6 +429,7 @@ test('large ledger inputs remain hard-bounded to the configured accounting workl
     tradeRowsObserved:2048,
     inventoryBatchRowsObserved:4096,
     productionLedgerRowsObserved:2048,
+    companyCashFlowRowsObserved:0,
     sourceRowsScanned:8692
   });
   assert.equal(api.diagnostics().lastSourceRowsScanned,8692);
