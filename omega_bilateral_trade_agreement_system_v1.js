@@ -184,9 +184,16 @@
   function relationFor(a, b) {
     var aa = bucket(a, 'foreign') || {}, bb = bucket(b, 'foreign') || {};
     var first = mapEntry(aa.relations, canonical(b));
-    if (first.found) return clone(first.value);
-    var second = mapEntry(bb.relations, canonical(a));
-    return second.found ? clone(second.value) : null;
+    var relation = first.found ? clone(first.value) : clone(mapEntry(bb.relations, canonical(a)).value);
+    if (!relation || typeof relation !== 'object') return null;
+    var adjustment = mapEntry(aa.relationAdjustments, canonical(b));
+    var adjustments = adjustment.found && Array.isArray(adjustment.value) ? adjustment.value : [];
+    var delta = adjustments.reduce(function (sum, row) { return sum + (num(row && row.delta) || 0); }, 0);
+    if (delta) ['overall', 'trade', 'trust', 'political'].forEach(function (key) {
+      var value = num(relation[key]);
+      if (value !== null) relation[key] = clamp(value + delta, 0, 100);
+    });
+    return relation;
   }
   function relationScore(relation) {
     var trade = globalTrade();
@@ -301,6 +308,7 @@
     var foreign = bucket(country, 'foreign') || {};
     var relations = mapEntry(foreign.relations, partner).value || null;
     var treaties = mapEntry(foreign.treaties, partner).value || null;
+    var relationAdjustments = mapEntry(foreign.relationAdjustments, partner).value || null;
     var finance = readFinance(country);
     var tradeBucket = bucket(country, 'trade') || {};
     var requests = requestIdList(country).slice(-MAX_PROPOSALS).map(function (row) {
@@ -308,7 +316,7 @@
     });
     var contracts = contractList(country).filter(function (row) { return canonical(row.partnerCountryId) === canonical(partner); })
       .map(function (row) { return [row.agreementId, row.status, row.nextDeliveryTurn, row.deliveredQuantity]; });
-    return hash({ products: products, relations: relations, treaties: treaties, finance: finance,
+    return hash({ products: products, relations: relations, treaties: treaties, relationAdjustments: relationAdjustments, finance: finance,
       requests: requests, contracts: contracts, tradePolicy: tradeBucket.policy || tradeBucket.tradePolicy || null });
   }
   function alternativeMarketReport(player, target, products, importNeeds, exportSurpluses) {
