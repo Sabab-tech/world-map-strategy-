@@ -103,7 +103,33 @@ function createAgreementOffer(offererValue,counterpartyValue,direction,termsInpu
 function localAgreement(c,idValue){const row=agreementRows(c).find(x=>x&&String(x.agreementId)===String(idValue));return row?clone(row):null;}
 function respondToOffer(countryValue,agreementId,decisionValue,counterTerms){installHandlers();const c=canonical(countryValue),a=localAgreement(c,agreementId);if(!a)return{accepted:false,reason:'BILATERAL_AGREEMENT_NOT_FOUND_FOR_COUNTRY'};if(['ACTIVE','REJECTED','TERMINATED'].includes(a.status))return{accepted:false,reason:'BILATERAL_AGREEMENT_IS_NOT_PENDING'};const parties=[canonical(a.buyerCountryId),canonical(a.sellerCountryId)],d=id(decisionValue),next=clone(a),now=new Date().toISOString();if(!parties.includes(c))return{accepted:false,reason:'BILATERAL_AGREEMENT_PARTY_SCOPE_INVALID'};next.responses=clone(next.responses||{});if(d==='REJECT'){next.responses[c]={decision:'REJECT',acceptedVersion:null,turn:turn(),at:now};next.status='REJECTED';next.stage='COUNTERPARTY_REJECTED';}else if(d==='COUNTER'){const n=normalizeTerms(counterTerms,next.terms);if(!n.ok)return{accepted:false,reason:n.reason};next.termVersion=Math.max(1,Math.floor(num(next.termVersion)||1))+1;next.terms=n.terms;next.resourceId=n.terms.resourceId;next.responses={[parties[0]]:{decision:'PENDING_COUNTER_REVIEW',acceptedVersion:null,turn:null,at:null},[parties[1]]:{decision:'PENDING_COUNTER_REVIEW',acceptedVersion:null,turn:null,at:null}};next.responses[c]={decision:'COUNTER',acceptedVersion:next.termVersion,turn:turn(),at:now};next.status='COUNTER_OFFERED';next.stage='AWAITING_ORIGINAL_OFFERER';}else if(d==='ACCEPT'){next.responses[c]={decision:'ACCEPT',acceptedVersion:next.termVersion,turn:turn(),at:now};const all=parties.every(p=>next.responses[p]&&num(next.responses[p].acceptedVersion)===num(next.termVersion));next.status=all?'ACTIVE':'ACCEPTED_AWAITING_COUNTERPARTY';next.stage=all?'IMPLEMENTED':'AWAITING_SECOND_PARTY_ACCEPTANCE';}else return{accepted:false,reason:'DECISION_MUST_BE_ACCEPT_COUNTER_OR_REJECT'};next.updatedAt=now;next.lastDecisionTurn=turn();const saved=mirrorAgreement(next);return saved.accepted?{accepted:true,agreement:next,results:saved.results}:{accepted:false,reason:'BILATERAL_DECISION_MIRROR_INCOMPLETE',agreement:next,results:saved.results};}
 function changeStatus(country,idValue,status){const a=localAgreement(country,idValue);if(!a)return{accepted:false,reason:'BILATERAL_AGREEMENT_NOT_FOUND'};const s=id(status);if(s==='SUSPENDED'&&a.status!=='ACTIVE')return{accepted:false,reason:'ONLY_ACTIVE_AGREEMENTS_CAN_BE_SUSPENDED'};if(s==='TERMINATED'&&['REJECTED','TERMINATED'].includes(a.status))return{accepted:false,reason:'AGREEMENT_ALREADY_CLOSED'};if(!['SUSPENDED','TERMINATED'].includes(s))return{accepted:false,reason:'UNSUPPORTED_AGREEMENT_STATUS'};const next=Object.assign({},a,{status:s,stage:s,updatedAt:new Date().toISOString(),lastDecisionTurn:turn()}),saved=mirrorAgreement(next);return{accepted:saved.accepted,agreement:next,results:saved.results,reason:saved.accepted?null:'BILATERAL_STATUS_MIRROR_INCOMPLETE'};}
-function isAgreementActiveFor(buyerValue,sellerValue,resourceValue,quantityValue,priceValue,agreementId){const buyer=canonical(buyerValue),seller=canonical(sellerValue),rid=token(resourceValue);if(!buyer||!seller||buyer===seller)return false;const a=agreementRows(buyer).find(x=>x&&(!agreementId||String(x.agreementId)===String(agreementId))&&canonical(x.buyerCountryId)===buyer&&canonical(x.sellerCountryId)===seller&&x.status==='ACTIVE'&&(!rid||token(x.resourceId)===rid));if(!a)return false;const mirror=agreementRows(seller).find(x=>x&&String(x.agreementId)===String(a.agreementId)&&x.status==='ACTIVE'&&num(x.termVersion)===num(a.termVersion)&&token(x.resourceId)===token(a.resourceId));if(!mirror||turn()<num(a.startTurn)||turn()>num(a.endTurn))return false;const q=num(quantityValue),p=num(priceValue);if(q!==null&&q>num(a.terms.quantityPerShipment))return false;if(p!==null&&Math.abs(p-num(a.terms.unitPrice))>Math.max(1e-7,Math.abs(num(a.terms.unitPrice))*1e-6))return false;return true;}
+function acceptedTermsVersion(row){
+ const version=num(row&&row.termVersion),responses=row&&row.responses||{};
+ if(version===null||!Number.isInteger(version)||version<1)return false;
+ return [canonical(row.buyerCountryId),canonical(row.sellerCountryId)].every(party=>{
+  const response=responses[party],decision=id(response&&response.decision);
+  return !!response&&num(response.acceptedVersion)===version&&['OFFER','ACCEPT','COUNTER'].includes(decision);
+ });
+}
+function sameContractTerms(a,b){
+ if(!a||!b||token(a.resourceId)!==token(b.resourceId))return false;
+ const numeric=['quantityPerShipment','unitPrice','durationTurns'];
+ const keys=['currency','unit','paymentTerms','deliveryMode','routeId','conditions'];
+ return numeric.every(key=>num(a.terms&&a.terms[key])===num(b.terms&&b.terms[key]))&&
+  keys.every(key=>String(a.terms&&a.terms[key]||'')===String(b.terms&&b.terms[key]||''));
+}
+function isAgreementActiveFor(buyerValue,sellerValue,resourceValue,quantityValue,priceValue,agreementId){
+ const buyer=canonical(buyerValue),seller=canonical(sellerValue),rid=token(resourceValue);
+ if(!buyer||!seller||buyer===seller)return false;
+ const a=agreementRows(buyer).find(x=>x&&(!agreementId||String(x.agreementId)===String(agreementId))&&canonical(x.buyerCountryId)===buyer&&canonical(x.sellerCountryId)===seller&&x.status==='ACTIVE'&&(!rid||token(x.resourceId)===rid));
+ if(!a||!acceptedTermsVersion(a))return false;
+ const mirror=agreementRows(seller).find(x=>x&&String(x.agreementId)===String(a.agreementId)&&x.status==='ACTIVE'&&num(x.termVersion)===num(a.termVersion)&&token(x.resourceId)===token(a.resourceId));
+ if(!mirror||!acceptedTermsVersion(mirror)||!sameContractTerms(a,mirror)||turn()<num(a.startTurn)||turn()>num(a.endTurn))return false;
+ const q=num(quantityValue),p=num(priceValue);
+ if(q!==null&&q>num(a.terms.quantityPerShipment))return false;
+ if(p!==null&&Math.abs(p-num(a.terms.unitPrice))>Math.max(1e-7,Math.abs(num(a.terms.unitPrice))*1e-6))return false;
+ return true;
+}
 function getActiveAgreement(buyer,seller,rid,agreementId){const row=agreementRows(buyer).find(x=>x&&(!agreementId||String(x.agreementId)===String(agreementId))&&canonical(x.buyerCountryId)===canonical(buyer)&&canonical(x.sellerCountryId)===canonical(seller)&&(!rid||token(x.resourceId)===token(rid))&&x.status==='ACTIVE');return row&&isAgreementActiveFor(buyer,seller,rid,null,null,row.agreementId)?clone(row):null;}
 function assessTradePosition(a,quantity){
  const buyer=canonical(a.buyerCountryId),seller=canonical(a.sellerCountryId),rid=token(a.resourceId),q=num(quantity),
