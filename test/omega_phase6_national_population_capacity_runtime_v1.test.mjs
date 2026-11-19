@@ -192,6 +192,36 @@ test('population scaling preserves one common per-100k rate across countries', a
   assert.equal(bangladesh.consumption.populationDemandOnly, true);
 });
 
+test('Phase 6 provenance is saved and revalidated after game load; changed inputs invalidate the saved fingerprint', async () => {
+  const { api, worldState } = makeHarness();
+  const original = await api.getNationalSummary('BGD');
+  const saved = api.saveState();
+  assert.equal(saved.schemaVersion, 1);
+  assert.equal(saved.countryId, 'BGD');
+  assert.equal(saved.population.sourceId, 'WORLD_BANK_WDI');
+  assert.equal(saved.population.observationYear, 2025);
+  assert.equal(saved.rates.version, '1.0.0');
+  assert.equal(saved.rates.resourceProfileCount, 41);
+  assert.equal(saved.rates.calibratedCount, 37);
+  assert.equal(saved.rates.uncalibratedCount, 4);
+  assert.match(saved.inputFingerprint, /^[a-f0-9]{8}$/);
+
+  assert.equal(api.loadState(saved).status, 'PENDING_REVALIDATION');
+  const restored = await api.getNationalSummary('BGD');
+  assert.equal(restored.saveLoadValidation.status, 'REVALIDATED');
+  assert.equal(restored.provenance.inputFingerprint, original.provenance.inputFingerprint);
+
+  api.loadState(saved);
+  worldState.population.BGD = {
+    totalPopulation: 176000000,
+    observationYear: 2026,
+    sourceId: 'ACTIVE_SESSION_POPULATION'
+  };
+  const changed = await api.getNationalSummary('BGD');
+  assert.equal(changed.saveLoadValidation.status, 'INVALIDATED_SOURCE_CHANGED');
+  assert.equal(changed.population.status, 'LIVE_RUNTIME');
+});
+
 test('live population outranks the static observation; old observations remain explicitly stale', async () => {
   const { api, worldState } = makeHarness();
   const old = await api.getNationalSummary('TWN');
