@@ -209,6 +209,10 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(Object.hasOwn(potentialBuyer, 'demandPerDay'), false);
   assert.equal(Object.hasOwn(potentialBuyer, 'existingRequests'), false);
   assert.equal(report.report.generatedTurn, 0);
+  assert.ok(Number.isFinite(Date.parse(report.report.generatedAt)), 'market report must carry an ISO sync timestamp');
+  assert.equal(report.report.simulationDate, '2015-01-01T00:00:00.000Z');
+  assert.ok(typeof report.report.dataVersion === 'string' && report.report.dataVersion.length > 0);
+  assert.equal(report.report.sourceFingerprint.length > 0, true);
   assert.equal(report.report.availableForeignCurrency.value, null,
     'market intelligence must not disclose the counterparty Treasury balance');
   assert.equal(report.report.availableForeignCurrency.status, 'UNKNOWN');
