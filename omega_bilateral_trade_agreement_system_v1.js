@@ -1150,8 +1150,9 @@
       }
       if (review.decision === 'ACCEPT') {
         var activated = activateContract(proposal, review.terms);
-        if (!activated.accepted) dispatch('trade', 'OMEGA_BILATERAL_RECORD_REVIEW', c, {
-          proposalId: proposal.proposalId, review: review, inboxStatus: 'ACCEPT_PENDING_RATIFICATION'
+        dispatch('trade', 'OMEGA_BILATERAL_RECORD_REVIEW', c, {
+          proposalId: proposal.proposalId, review: review,
+          inboxStatus: activated.accepted ? 'ACTIVE' : 'ACCEPT_PENDING_RATIFICATION'
         });
         results.push({ proposalId: proposal.proposalId, status: activated.status || 'ACCEPTED', activation: activated });
       } else results.push({ proposalId: proposal.proposalId, status: review.decision, reason: review.reason, terms: review.terms || null });
