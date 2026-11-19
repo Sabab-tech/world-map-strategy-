@@ -2340,7 +2340,20 @@ function captureStockFlowPeriod(stateTransaction) {
       activeStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
         'BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING']),
       stats={measured:0,measuredZero:0,lossEvents:0,unobserved:0,idempotent:0},newLosses=[];
-    var maxEntries=Math.max(1,num(rules().runtime.maxLedgerEntries)||2048);
+    var maxEntries=Math.max(1,num(rules().runtime.maxLedgerEntries)||2048),
+      observedEventIds=new Set(observationLedger.map(function(row){return String(row&&row.eventId||'');})),
+      shipmentRows=Array.isArray(network.shipments)?network.shipments:[],
+      siteFlowRows=Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[],
+      activeShipmentBatchIds=new Set(),
+      siteFlowByBatch=new Map();
+    shipmentRows.forEach(function(shipment){
+      if(activeStatuses.has(String(shipment&&shipment.status||'').toUpperCase())&&shipment&&shipment.batchId)
+        activeShipmentBatchIds.add(String(shipment.batchId));
+    });
+    siteFlowRows.forEach(function(row){
+      var id=String(row&&row.batchId||'');
+      if(id&&!siteFlowByBatch.has(id))siteFlowByBatch.set(id,row);
+    });
     function observationId(batchId){return 'STORAGE-OBS:'+country+':'+String(batchId)+':T'+eventTurn;}
     function observation(row,status,reason,extra){
       var result=Object.assign({schemaVersion:1,eventId:observationId(row&&row.batchId||'MISSING'),
@@ -2352,7 +2365,7 @@ function captureStockFlowPeriod(stateTransaction) {
         reason:reason||null},extra||{});
       return result;
     }
-    function addObservation(row){observationLedger.push(row);while(observationLedger.length>maxEntries*4)observationLedger.shift();}
+    function addObservation(row){observationLedger.push(row);observedEventIds.add(String(row&&row.eventId||''));while(observationLedger.length>maxEntries*4)observationLedger.shift();}
     function warehouseForBatch(batch){
       var id=String(batch&&batch.warehouseId||'').trim(),node=String(batch&&batch.locationNodeKey||'').toUpperCase();
       if(processed&&id&&id===String(processed.warehouseId||''))return{kind:'PROCESSED',warehouse:processed};
@@ -2378,7 +2391,7 @@ function captureStockFlowPeriod(stateTransaction) {
     currentWarehouseBatches.forEach(function(batch){
       var batchId=String(batch.batchId||''),rid=String(batch.resourceId||batch.materialIdentity||'').trim(),
         id=observationId(batchId);
-      if(observationLedger.some(function(row){return String(row&&row.eventId||'')===id;})){stats.idempotent++;return;}
+      if(observedEventIds.has(id)){stats.idempotent++;return;}
       var lot=lots[batchId],batchQuantity=num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity),
         lotQuantity=num(lot&&(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)),
         createdTurn=num(batch.createdTurn??batch.timestampTurn??batch.simulationTurn??(lot&&(lot.createdTurn??lot.timestampTurn))),
@@ -2391,10 +2404,8 @@ function captureStockFlowPeriod(stateTransaction) {
         reserved=Math.max(0,num(warehouse&&warehouse.reservedByResource&&
           (matchingStockKey(warehouse.reservedByResource,rid)||rid)!==null
             ?warehouse.reservedByResource[matchingStockKey(warehouse.reservedByResource,rid)||rid]:0)||0),
-        activeShipment=(Array.isArray(network.shipments)?network.shipments:[]).find(function(shipment){
-          return String(shipment&&shipment.batchId||'')===batchId&&activeStatuses.has(String(shipment&&shipment.status||'').toUpperCase());
-        }),
-        flow=(Array.isArray(network.siteFlowLedger)?network.siteFlowLedger:[]).find(function(row){return String(row&&row.batchId||'')===batchId;}),
+        activeShipment=activeShipmentBatchIds.has(batchId),
+        flow=siteFlowByBatch.get(batchId)||null,
         reason=null;
       if(!rid||!knownIds.has(tok(rid)))reason='STORAGE_RESOURCE_IDENTITY_UNREGISTERED';
       else if(!lot)reason='STORAGE_INVENTORY_LOT_MISSING';
