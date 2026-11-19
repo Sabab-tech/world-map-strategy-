@@ -2324,8 +2324,10 @@ function captureStockFlowPeriod(stateTransaction) {
       lossesBefore=ctx.stateTransaction.get('resource.stockLossLedger'),
       movementsBefore=ctx.stateTransaction.get('resource.inventoryLedger'),
       observationsBefore=ctx.stateTransaction.get('resource.storageDeteriorationLedger');
-    if(!Array.isArray(batchesBefore)||!Array.isArray(lossesBefore)||!Array.isArray(movementsBefore))
-      return{accepted:false,reason:'STORAGE_DETERIORATION_SOURCE_LEDGER_UNAVAILABLE'};
+    if(!Array.isArray(batchesBefore))
+      return{accepted:false,reason:'STORAGE_DETERIORATION_BATCH_LEDGER_UNAVAILABLE'};
+    lossesBefore=Array.isArray(lossesBefore)?lossesBefore:[];
+    movementsBefore=Array.isArray(movementsBefore)?movementsBefore:[];
     var batches=batchesBefore.slice(),lots=Object.assign({},lotsBefore),inventory=Object.assign({},inventoryBefore),
       raw=rawBefore?Object.assign({},rawBefore,{availableByResource:Object.assign({},rawBefore.availableByResource||{}),
         reservedByResource:Object.assign({},rawBefore.reservedByResource||{}),
