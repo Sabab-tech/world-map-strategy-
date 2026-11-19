@@ -893,4 +893,17 @@ test('production loss evidence is source-bound, atomic, and cannot exceed consum
   assert.equal(tooLarge.status,'FAILED');
   assert.equal(tooLarge.result.reason,'PRODUCTION_LOSS_EXCEEDS_INPUT');
   assert.equal(resource.stockLossLedger.length,1,'rejected loss must not enter the authoritative loss ledger');
+
+  const unmeasured=mesh.dispatchCommand('resource','OMEGA_RESOURCE_ECON_APPLY_PRODUCTION','BGD',{
+    transactionId:'FACTORY-LOSS-TX-UNMEASURED',facilityId:'PROC_1',
+    inputs:[{resourceId:'iron_ore',quantity:1,unit:'TONNES'}],
+    outputs:[{resourceId:'iron_intermediate',quantity:1,unit:'TONNES'}]
+  },{commandId:'FACTORY-LOSS-TX-UNMEASURED',turn:1});
+  assert.equal(unmeasured.status,'APPLIED',JSON.stringify(unmeasured));
+  const unmeasuredRow=resource.inventoryLedger.find(row=>row.transactionId==='FACTORY-LOSS-TX-UNMEASURED');
+  assert.equal(unmeasuredRow.lossMeasurementStatus,'UNOBSERVED');
+  const productionCoverage=api.attestStockLossCoverage('BGD','PRODUCTION');
+  assert.equal(productionCoverage.status,'APPLIED');
+  assert.equal(productionCoverage.result.coverageStatus,'PARTIAL');
+  assert.ok(productionCoverage.result.integrityErrors.some(x=>x.startsWith('PRODUCTION_LOSS_MEASUREMENT_UNOBSERVED')));
 });
