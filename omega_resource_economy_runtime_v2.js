@@ -41,6 +41,23 @@
   function num(v){var n=Number(v);return Number.isFinite(n)?n:null;}
   function id(v){return String(v==null?'':v).trim().toUpperCase();}
   function tok(v){return String(v==null?'':v).normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
+  function stableLossEvidenceValue(value,seen){
+    if(value===null||typeof value!=='object')return JSON.stringify(value);
+    seen=seen||new Set();
+    if(seen.has(value))return '"[CIRCULAR]"';
+    seen.add(value);
+    var result=Array.isArray(value)
+      ?'['+value.map(function(item){return stableLossEvidenceValue(item,seen);}).join(',')+']'
+      :'{'+Object.keys(value).filter(function(key){return key!=='__proto__'&&key!=='constructor'&&typeof value[key]!=='function'&&value[key]!==undefined;})
+        .sort().map(function(key){return JSON.stringify(key)+':'+stableLossEvidenceValue(value[key],seen);}).join(',')+'}';
+    seen.delete(value);
+    return result;
+  }
+  function lossEvidenceFingerprint(value){
+    var input=stableLossEvidenceValue(value),hash=2166136261;
+    for(var index=0;index<input.length;index++){hash^=input.charCodeAt(index);hash=Math.imul(hash,16777619);}
+    return('00000000'+(hash>>>0).toString(16)).slice(-8);
+  }
   function state(){return g.Game&&g.Game.state?g.Game.state:(g.gameState||{});}
   function turn(){
     var s=state(),x=s&&s.simulation?num(s.simulation.turn):null;
@@ -124,14 +141,23 @@ function captureStockFlowPeriod(stateTransaction) {
     if(previous&&Number(previous.turn)<t){
       if(Number(previous.turn)===t-1){previous.closingStockByIdentity=clone(snapshot.identities);
         previous.closingCoverageComplete=snapshot.complete;previous.closingCaptured=true;
-        previous.closingCaptureSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';}
-      else{previous.closingCaptured=false;previous.closingCaptureStatus='TURN_GAP_UNOBSERVED';}
+        previous.closingCaptureSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';
+        previous.stockLossLedgerRowsAtClosing=Array.isArray(stateTransaction.get('resource.stockLossLedger'))
+          ?stateTransaction.get('resource.stockLossLedger').length:0;
+        previous.lossLedgerClosingCaptured=true;
+        previous.lossLedgerClosingSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';}
+      else{previous.closingCaptured=false;previous.closingCaptureStatus='TURN_GAP_UNOBSERVED';
+        previous.lossLedgerClosingCaptured=false;previous.lossLedgerClosingStatus='TURN_GAP_UNOBSERVED';}
     }
-    const ledger=stateTransaction.get('resource.inventoryLedger');
+    const ledger=stateTransaction.get('resource.inventoryLedger'),
+      existingLossLedger=stateTransaction.get('resource.stockLossLedger'),
+      lossLedger=Array.isArray(existingLossLedger)?existingLossLedger:[];
+    if(!Array.isArray(existingLossLedger))stateTransaction.set('resource.stockLossLedger',lossLedger);
     periods.push({schemaVersion:1,periodId,turn:t,periodType:'GAME_TURN',
       openingStockByIdentity:clone(snapshot.identities),openingCoverageComplete:snapshot.complete,
       openingCaptured:true,openingCaptureSource:'BEFORE_FIRST_PHYSICAL_STOCK_MUTATION',
       inventoryLedgerRowsAtOpening:Array.isArray(ledger)?ledger.length:0,
+      stockLossLedgerRowsAtOpening:Array.isArray(lossLedger)?lossLedger.length:0,
       lossCoverageStatus:'UNOBSERVED_NO_AUTHORITATIVE_LOSS_LEDGER'});
     while(periods.length>32)periods.shift();
     stateTransaction.set('resource.stockFlowPeriods',periods);
@@ -629,6 +655,27 @@ function captureStockFlowPeriod(stateTransaction) {
   function consumeHandler(cmd,ctx){
     var c=canonical(ctx.countryId),p=cmd&&cmd.payload||{},rid=String(p.resourceId||'').trim(),q=num(p.quantity);
     if(!rid||q===null||q<=0)return{accepted:false,reason:'CONSUME_INPUT_INVALID'};
+    var movementId=String(p.eventId||p.movementId||p.transactionId||p.decisionId||cmd?.commandId||'').trim(),
+      lossType=String(p.lossType||'').trim().toUpperCase(),isStorageWriteOff=lossType==='STORAGE',
+      writeOffReason=String(p.reason||'').trim(),writeOffUnit=String(p.unit||'').trim();
+    if(!movementId)return{accepted:false,reason:'CONSUMPTION_MOVEMENT_ID_REQUIRED'};
+    if(lossType&&lossType!=='STORAGE')return{accepted:false,reason:'INVENTORY_WRITE_OFF_LOSS_TYPE_UNSUPPORTED',lossType:lossType};
+    if(isStorageWriteOff&&(!writeOffReason||!writeOffUnit))return{accepted:false,reason:'STORAGE_WRITE_OFF_EVIDENCE_REQUIRED'};
+    var ledgerAtStart=ctx.stateTransaction.get('resource.inventoryLedger'),
+      lossLedgerAtStart=ctx.stateTransaction.get('resource.stockLossLedger'),
+      existingConsumption=(Array.isArray(ledgerAtStart)?ledgerAtStart:[]).find(function(row){
+        return String(row&&row.eventId||'')===movementId&&
+          ['INVENTORY_CONSUMED','STORAGE_LOSS_COMMITTED'].includes(String(row&&row.type||'').toUpperCase());
+      }),
+      existingLoss=(Array.isArray(lossLedgerAtStart)?lossLedgerAtStart:[]).find(function(row){return String(row&&row.eventId||'')===movementId;});
+    if(existingConsumption||existingLoss){
+      var existing=existingConsumption||existingLoss,expectedType=isStorageWriteOff?'STORAGE_LOSS_COMMITTED':'INVENTORY_CONSUMED';
+      if(String(existing.type||'').toUpperCase()===expectedType&&String(existing.resourceId||'')===rid&&
+        Math.abs((num(existing.quantity)||0)-q)<=1e-9&&
+        (!isStorageWriteOff||(String(existing.unit||'').toUpperCase()===writeOffUnit.toUpperCase()&&String(existing.reason||'')===writeOffReason)))
+        return{accepted:true,duplicate:true,eventId:movementId,resourceId:rid,quantity:q};
+      return{accepted:false,reason:'CONSUMPTION_MOVEMENT_ID_COLLISION',eventId:movementId};
+    }
     // Read large ledgers by reference and copy only the containers/rows that this
     // transaction actually changes. The previous deep clones copied every site-flow
     // record, route, shipment and lot for every individual resource debit.
@@ -686,6 +733,9 @@ function captureStockFlowPeriod(stateTransaction) {
         grade:num(sourceBatch.grade!=null?sourceBatch.grade:sourceBatch.gradePercent),quality:num(sourceBatch.quality),
         qualityState:clone(sourceBatch.qualityState||null)});
     }
+    if(isStorageWriteOff&&rem>1e-9)
+      return{accepted:false,reason:'STORAGE_WRITE_OFF_SOURCE_BATCH_UNAVAILABLE',
+        resourceId:rid,requested:q,allocated:q-rem,unallocated:rem};
     if(rem>1e-9){
       var legacyRaw=Math.min(rawBudget,rem);rawDebit+=legacyRaw;rawBudget=Math.max(0,rawBudget-legacyRaw);rem-=legacyRaw;
       var legacyProcessed=Math.min(processedBudget,rem);processedDebit+=legacyProcessed;
@@ -696,10 +746,30 @@ function captureStockFlowPeriod(stateTransaction) {
     if(rem>1e-9)return{accepted:false,reason:'RESOURCE_INVENTORY_NOT_WAREHOUSE_AVAILABLE',
       resourceId:rid,requested:q,available:q-rem,unavailableOrReserved:rem};
     var inv=Object.assign({},invBefore);inv[key]=cur-q;
-    var ledgerBefore=ctx.stateTransaction.get('resource.inventoryLedger'),
+    var ledgerBefore=ledgerAtStart,
       ledger=Array.isArray(ledgerBefore)?ledgerBefore.slice():[];
-    ledger.push({type:'INVENTORY_CONSUMED',resourceId:rid,quantity:q,reason:p.reason||'PROCESSING_OR_FACTORY_INPUT',turn:turn(),consumed:used});
+    var movementRow=isStorageWriteOff
+      ?{type:'STORAGE_LOSS_COMMITTED',eventId:movementId,movementId:movementId,sourceEventId:movementId,
+        sourceType:'STORAGE',lossType:'STORAGE',sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',
+        status:'COMMITTED',physicalMutationCommitted:true,resourceId:rid,quantity:q,unit:writeOffUnit,
+        reason:writeOffReason,turn:turn(),periodId:'GAME_TURN_'+turn(),
+        batchId:used.length===1?used[0].batchId||null:null,consumed:used}
+      :{type:'INVENTORY_CONSUMED',eventId:movementId,movementId:movementId,
+        transactionId:p.transactionId||null,decisionId:p.decisionId||null,resourceId:rid,quantity:q,unit:p.unit||null,
+        reason:p.reason||'PROCESSING_OR_FACTORY_INPUT',turn:turn(),periodId:'GAME_TURN_'+turn(),consumed:used};
+    ledger.push(movementRow);
     while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
+    var stockLossLedgerNext=null;
+    if(isStorageWriteOff){
+      var lossRows=Array.isArray(lossLedgerAtStart)?lossLedgerAtStart.slice():[];
+      lossRows.push({schemaVersion:1,type:'STOCK_LOSS_COMMITTED',eventId:movementId,sourceEventId:movementId,
+        sourceType:'STORAGE',lossType:'STORAGE',countryId:c,resourceId:rid,quantity:q,unit:writeOffUnit,
+        sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',turn:turn(),periodId:'GAME_TURN_'+turn(),
+        status:'COMMITTED',batchId:movementRow.batchId,reason:writeOffReason,
+        evidenceAuthority:'ATOMIC_STORAGE_WRITE_OFF',physicalMutationCommitted:true});
+      while(lossRows.length>(num(rules().runtime.maxLedgerEntries)||2048))lossRows.shift();
+      stockLossLedgerNext=lossRows;
+    }
     if(whBefore&&whBefore.availableByResource&&rawDebit>1e-9){
       var rawKey=Object.keys(whBefore.availableByResource).find(function(k){return tok(k)===tok(rid);})||rid;
       var rawBook=Object.assign({},whBefore.availableByResource);
@@ -718,16 +788,37 @@ function captureStockFlowPeriod(stateTransaction) {
     if(batchesNext)ctx.stateTransaction.set('resource.batches',batchesNext);
     if(lotsNext)ctx.stateTransaction.set('resource.inventoryLots',lotsNext);
     ctx.stateTransaction.set('resource.inventoryLedger',ledger);
+    if(stockLossLedgerNext){
+      ctx.stateTransaction.set('resource.stockLossLedger',stockLossLedgerNext);
+      var periods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))?ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[],
+        period=periods.find(function(row){return String(row&&row.periodId||'')==='GAME_TURN_'+turn();});
+      if(period){
+        period.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+        period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
+        if(period.lossCoverageBySource.STORAGE)period.lossCoverageBySource.STORAGE=Object.assign({},period.lossCoverageBySource.STORAGE,{status:'INVALIDATED_BY_NEW_LOSS_EVENT'});
+        ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
+      }
+    }
     if(warehouseNext)ctx.stateTransaction.set('resource.warehouse',warehouseNext);
     if(processedWarehouseNext)ctx.stateTransaction.set('resource.processedWarehouse',processedWarehouseNext);
     if(networkNext)ctx.stateTransaction.set('resource.industrialNetwork',networkNext);
     emit('OMEGA_RESOURCE_INVENTORY_CHANGED',c,{resourceId:rid,delta:-q,newQuantity:inv[key],
       rawWarehouseQuantity:warehouseNext?.availableByResource?.[rid]??whBefore?.availableByResource?.[rid]??null,
-      processedWarehouseQuantity:processedWarehouseNext?.availableByResource?.[rid]??pwhBefore?.availableByResource?.[rid]??null},'resource');
-    return{accepted:true,resourceId:rid,quantity:q,consumed:used};
+      processedWarehouseQuantity:processedWarehouseNext?.availableByResource?.[rid]??pwhBefore?.availableByResource?.[rid]??null,
+      eventId:movementId,type:isStorageWriteOff?'STORAGE_LOSS_COMMITTED':'INVENTORY_CONSUMED'},'resource');
+    if(isStorageWriteOff)emit('OMEGA_RESOURCE_STOCK_LOSS_RECORDED',c,stockLossLedgerNext[stockLossLedgerNext.length-1],'resource-economy');
+    return{accepted:true,resourceId:rid,quantity:q,consumed:used,eventId:movementId,
+      movementType:isStorageWriteOff?'STORAGE_LOSS_COMMITTED':'INVENTORY_CONSUMED',
+      lossCoverageStatus:isStorageWriteOff?'PENDING_PERIOD_SOURCE_ATTESTATION':undefined};
   }
   function applyProductionHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},inputs=Array.isArray(p.inputs)?p.inputs:[],outputs=Array.isArray(p.outputs)?p.outputs:[],
+        tx=String(p.transactionId||('PROD-'+turn()+'-'+canonical(ctx.countryId))),
+        submittedLossEvents=Array.isArray(p.lossEvents)?p.lossEvents:[],
+        lossMeasurementStatus=String(p.lossMeasurementStatus||
+          (Array.isArray(p.lossEvents)&&p.lossEvents.length?'MEASURED_EVENTS':'UNOBSERVED')).trim().toUpperCase(),
+        lossMeasurementAuthority=String(p.lossMeasurementAuthority||'').trim(),
+        lossMeasurementBasis=String(p.lossMeasurementBasis||'').trim(),
         inv=clone(ctx.stateTransaction.get('resource.inventory')||{}),
         working=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],
         inventoryLots=clone(ctx.stateTransaction.get('resource.inventoryLots')||{}),
@@ -738,6 +829,60 @@ function captureStockFlowPeriod(stateTransaction) {
         maps=consumptionLedgerMaps(network),flowByBatch=maps.flowByBatch,reservedByBatch=maps.reservedByBatch,
         consumed=[],sourceBatchIds=[],inputQuality={},c=canonical(ctx.countryId),siteFlowChanged=false;
     if(!inputs.length||!outputs.length)return{accepted:false,reason:'PRODUCTION_TRANSACTION_SHAPE_INVALID'};
+    if(!['MEASURED_EVENTS','MEASURED_ZERO','UNOBSERVED'].includes(lossMeasurementStatus))
+      return{accepted:false,reason:'PRODUCTION_LOSS_MEASUREMENT_STATUS_INVALID',lossMeasurementStatus:lossMeasurementStatus};
+    if((lossMeasurementStatus==='MEASURED_EVENTS'&&!submittedLossEvents.length)||
+      (lossMeasurementStatus==='MEASURED_ZERO'&&submittedLossEvents.length))
+      return{accepted:false,reason:'PRODUCTION_LOSS_MEASUREMENT_EVENT_COUNT_MISMATCH',
+        lossMeasurementStatus:lossMeasurementStatus,lossEvents:submittedLossEvents.length};
+    if(lossMeasurementStatus!=='UNOBSERVED'&&
+      (lossMeasurementAuthority!=='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'||
+       (lossMeasurementStatus==='MEASURED_EVENTS'&&lossMeasurementBasis!=='MEASURED_PROCESS_INPUT_RESIDUE')||
+       (lossMeasurementStatus==='MEASURED_ZERO'&&lossMeasurementBasis!=='MEASURED_ZERO_PROCESS_RESIDUE')))
+      return{accepted:false,reason:'PRODUCTION_LOSS_MEASUREMENT_PROVENANCE_INVALID',
+        lossMeasurementStatus:lossMeasurementStatus,lossMeasurementAuthority:lossMeasurementAuthority,
+        lossMeasurementBasis:lossMeasurementBasis};
+    if(submittedLossEvents.length&&lossMeasurementStatus!=='MEASURED_EVENTS')
+      return{accepted:false,reason:'PRODUCTION_LOSS_EVENTS_REQUIRE_MEASURED_STATUS'};
+    var inputQuantityByResource={},inputUnitsByResource={};
+    inputs.forEach(function(input){
+      var inputId=String(input&&input.resourceId||'').trim(),inputQuantity=num(input&&input.quantity);
+      if(inputId&&inputQuantity!==null&&inputQuantity>0){
+        var resourceToken=tok(inputId);
+        inputQuantityByResource[resourceToken]=(inputQuantityByResource[resourceToken]||0)+inputQuantity;
+        if(!inputUnitsByResource[resourceToken])inputUnitsByResource[resourceToken]=new Set();
+        inputUnitsByResource[resourceToken].add(String(input&&input.unit||'').trim().toUpperCase());
+      }
+    });
+    var normalizedProductionLosses=[],productionLossTotals={},productionLossIds=new Set(),
+      priorProductionLosses=Array.isArray(ctx.stateTransaction.get('resource.stockLossLedger'))?ctx.stateTransaction.get('resource.stockLossLedger'):[];
+    for(var lossIndex=0;lossIndex<submittedLossEvents.length;lossIndex++){
+      var submittedLoss=submittedLossEvents[lossIndex]||{},lossEventId=String(submittedLoss.eventId||submittedLoss.lossEventId||'').trim(),
+        lossResource=String(submittedLoss.resourceId||'').trim(),lossQuantity=num(submittedLoss.quantity),
+        lossUnit=String(submittedLoss.unit||'').trim(),lossReason=String(submittedLoss.reason||'').trim();
+      if(!lossEventId||!lossResource||lossQuantity===null||lossQuantity<=0||!lossUnit||!lossReason||
+        (submittedLoss.sourceType&&String(submittedLoss.sourceType).toUpperCase()!=='PRODUCTION')||
+        (submittedLoss.lossType&&String(submittedLoss.lossType).toUpperCase()!=='PRODUCTION')||productionLossIds.has(lossEventId))
+        return{accepted:false,reason:'PRODUCTION_LOSS_EVENT_FIELDS_INVALID',index:lossIndex};
+      if(!inputQuantityByResource[tok(lossResource)])return{accepted:false,reason:'PRODUCTION_LOSS_RESOURCE_NOT_IN_INPUTS',eventId:lossEventId,resourceId:lossResource};
+      var sourceUnits=inputUnitsByResource[tok(lossResource)];
+      if(!sourceUnits||sourceUnits.size!==1||sourceUnits.has('')||!sourceUnits.has(lossUnit.toUpperCase()))
+        return{accepted:false,reason:'PRODUCTION_LOSS_UNIT_MISMATCH',eventId:lossEventId,resourceId:lossResource,
+          lossUnit:lossUnit,inputUnits:sourceUnits?Array.from(sourceUnits):[]};
+      if(priorProductionLosses.some(function(row){return String(row&&row.eventId||'')===lossEventId;}))
+        return{accepted:false,reason:'PRODUCTION_LOSS_EVENT_ID_ALREADY_COMMITTED',eventId:lossEventId};
+      productionLossIds.add(lossEventId);
+      productionLossTotals[tok(lossResource)]=(productionLossTotals[tok(lossResource)]||0)+lossQuantity;
+      normalizedProductionLosses.push({schemaVersion:1,eventId:lossEventId,sourceEventId:tx,sourceType:'PRODUCTION',
+        lossType:'PRODUCTION',resourceId:lossResource,quantity:lossQuantity,unit:lossUnit,reason:lossReason,
+        sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',turn:turn(),periodId:'GAME_TURN_'+turn(),
+        status:'COMMITTED',physicalMutationCommitted:true});
+    }
+    for(var lossResourceKey in productionLossTotals){
+      if(productionLossTotals[lossResourceKey]>inputQuantityByResource[lossResourceKey]+1e-9)
+        return{accepted:false,reason:'PRODUCTION_LOSS_EXCEEDS_INPUT',resourceId:lossResourceKey,
+          inputQuantity:inputQuantityByResource[lossResourceKey],lossQuantity:productionLossTotals[lossResourceKey]};
+    }
     var productionBoundary=boundary()?.validateResourceCollection?.(working,c);
     if(productionBoundary&&!productionBoundary.ok)return{accepted:false,reason:'CROSS_COUNTRY_RESOURCE_BREACH',countryId:c,violations:clone(productionBoundary.violations||[])};
     var productionWarehouseBoundary=boundary()?.validateWarehouse?.(warehouse,c);
@@ -873,12 +1018,13 @@ function captureStockFlowPeriod(stateTransaction) {
       }
     }
 
-    var tx=String(p.transactionId||('PROD-'+turn()+'-'+canonical(ctx.countryId)+'-'+working.length));
     ledger.push({type:'PRODUCTION_TRANSACTION_COMMITTED',transactionId:tx,facilityId:p.facilityId||null,
       companyId:p.companyId||null,ownerCompanyId:p.ownerCompanyId||'UNKNOWN_SOURCE',
-      operatorCompanyId:p.operatorCompanyId||p.companyId||null,
-      ownerAttributionStatus:p.ownerAttributionStatus||'UNASSIGNED',
-      inputs:clone(consumed),outputs:clone(created),turn:turn()});
+      operatorCompanyId:p.operatorCompanyId||p.companyId||null,ownerAttributionStatus:p.ownerAttributionStatus||'UNASSIGNED',
+      inputs:clone(consumed),outputs:clone(created),lossEvents:clone(normalizedProductionLosses),
+      lossMeasurementStatus:lossMeasurementStatus,lossMeasurementAuthority:lossMeasurementAuthority||null,
+      lossMeasurementBasis:lossMeasurementBasis||null,
+      countryId:c,sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',turn:turn(),periodId:'GAME_TURN_'+turn()});
     while(working.length>(num(rules().runtime.maxBatches)||8192))working.shift();
     while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
     captureStockFlowPeriod(ctx.stateTransaction);
@@ -888,9 +1034,31 @@ function captureStockFlowPeriod(stateTransaction) {
     ctx.stateTransaction.set('resource.batches',working);
     ctx.stateTransaction.set('resource.inventoryLots',inventoryLots);
     ctx.stateTransaction.set('resource.inventoryLedger',ledger);
+    if(normalizedProductionLosses.length){
+      var lossRows=Array.isArray(ctx.stateTransaction.get('resource.stockLossLedger'))?ctx.stateTransaction.get('resource.stockLossLedger').slice():[];
+      normalizedProductionLosses.forEach(function(loss){
+        lossRows.push(Object.assign({type:'STOCK_LOSS_COMMITTED',countryId:c,transactionId:tx,
+          evidenceAuthority:'ATOMIC_PRODUCTION_COMMIT'},clone(loss)));
+      });
+      while(lossRows.length>(num(rules().runtime.maxLedgerEntries)||2048))lossRows.shift();
+      ctx.stateTransaction.set('resource.stockLossLedger',lossRows);
+    }
+    // Every committed production transaction changes the evidence population. A prior
+    // attestation cannot remain COMPLETE after a later measured or unmeasured run.
+    var productionPeriods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))
+        ?ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[],
+      productionPeriod=productionPeriods.find(function(row){return String(row&&row.periodId||'')==='GAME_TURN_'+turn();});
+    if(productionPeriod){
+      productionPeriod.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+      productionPeriod.lossCoverageBySource=Object.assign({},productionPeriod.lossCoverageBySource||{});
+      if(productionPeriod.lossCoverageBySource.PRODUCTION)
+        productionPeriod.lossCoverageBySource.PRODUCTION=Object.assign({},productionPeriod.lossCoverageBySource.PRODUCTION,
+          {status:'INVALIDATED_BY_NEW_PRODUCTION_EVENT'});
+      ctx.stateTransaction.set('resource.stockFlowPeriods',productionPeriods);
+    }
     if(siteFlowChanged)ctx.stateTransaction.set('resource.industrialNetwork',network);
     emit('OMEGA_RESOURCE_INVENTORY_CHANGED',ctx.countryId,{transactionId:tx,type:'PRODUCTION_TRANSACTION_COMMITTED'},'resource');
-    return{accepted:true,transactionId:tx,consumed:consumed,created:created};
+    return{accepted:true,transactionId:tx,consumed:consumed,created:created,lossEventsCommitted:normalizedProductionLosses.length};
   }
   function addInventoryHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},rid=String(p.resourceId||'').trim(),q=num(p.quantity);
@@ -1266,6 +1434,10 @@ function captureStockFlowPeriod(stateTransaction) {
       var outputs=Object.keys(row.computedOutputs).map(function(rid){return{resourceId:rid,quantity:row.computedOutputs[rid],stage:row.stage==='PROCESSING'?'INTERMEDIATE':'FINISHED',unit:null};});
       var result=dispatch('resource','OMEGA_RESOURCE_ECON_APPLY_PRODUCTION',c,{
         transactionId:tx,facilityId:row.facilityId,companyId:row.companyId,
+        lossEvents:Array.isArray(row.lossEvents)?clone(row.lossEvents):[],
+        lossMeasurementStatus:row.lossMeasurementStatus||'UNOBSERVED',
+        lossMeasurementAuthority:row.lossMeasurementAuthority||null,
+        lossMeasurementBasis:row.lossMeasurementBasis||null,
         ownerCompanyId:row.ownerCompanyId,operatorCompanyId:row.operatorCompanyId,
         ownerAttributionStatus:row.ownerAttributionStatus,
         inputs:inputs,outputs:outputs,
@@ -1770,6 +1942,383 @@ function captureStockFlowPeriod(stateTransaction) {
     var p=cmd&&cmd.payload||{};ctx.stateTransaction.set('economy.industrialRuntime',clone(p.industrialRuntime||{}));ctx.stateTransaction.set('economy.companyAccounts',clone(p.companyAccounts||{}));ctx.stateTransaction.set('economy.workerIncome',clone(p.workerIncome||{}));ctx.stateTransaction.set('economy.supplierRevenue',clone(p.supplierRevenue||{}));ctx.stateTransaction.set('economy.factoryOutput',clone(p.factoryOutput||{}));emit('OMEGA_INDUSTRIAL_RUNTIME_PUBLISHED',ctx.countryId,{turn:turn()},'economy');return{accepted:true};
   }
 
+  function recordStockLossHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},country=canonical(ctx.countryId),eventId=String(p.eventId||p.lossEventId||'').trim(),
+      sourceEventId=String(p.sourceEventId||'').trim(),sourceType=String(p.sourceType||'').toUpperCase(),
+      resourceId=String(p.resourceId||'').trim(),quantity=num(p.quantity),unit=String(p.unit||'').trim(),
+      lossType=String(p.lossType||sourceType).toUpperCase(),sourceAuthority=String(p.sourceAuthority||'').trim(),
+      eventTurn=num(p.turn==null?turn():p.turn);
+    if(!country||!eventId||!sourceEventId||!resourceId||quantity===null||quantity<=0||!unit||
+      !['STORAGE','TRANSPORT','PRODUCTION'].includes(sourceType)||lossType!==sourceType||!sourceAuthority)
+      return{accepted:false,reason:'STOCK_LOSS_EVENT_FIELDS_INVALID'};
+    if(eventTurn===null||eventTurn!==turn())
+      return{accepted:false,reason:'STOCK_LOSS_EVENT_PERIOD_MISMATCH',expectedTurn:turn(),eventTurn:eventTurn};
+    var inventoryLedger=ctx.stateTransaction.get('resource.inventoryLedger'),
+      network=ctx.stateTransaction.get('resource.industrialNetwork')||{},
+      economy=ctx.stateTransaction.get('economy.industrialRuntime')||{},
+      parent=null,evidence=null,sourceRecordId='';
+    function eventKey(row){return String(row&&(row.eventId||row.lossEventId||row.movementId||row.shipmentId||row.transactionId||row.flowId)||'');}
+    function matchingLoss(row){
+      var events=Array.isArray(row&&row.lossEvents)?row.lossEvents:[];
+      return events.find(function(item){return String(item&&(item.eventId||item.lossEventId)||'')===eventId;})||null;
+    }
+    if(sourceType==='STORAGE'){
+      parent=(Array.isArray(inventoryLedger)?inventoryLedger:[]).find(function(row){
+        var type=String(row&&row.type||'').toUpperCase();
+        return eventKey(row)===sourceEventId&&
+          ['STORAGE_LOSS_COMMITTED','INVENTORY_LOSS','RESOURCE_LOSS','STOCK_LOSS','PHYSICAL_LOSS'].includes(type);
+      })||null;
+      evidence=parent;sourceRecordId=String(parent&&(parent.eventId||parent.movementId)||'');
+    }else if(sourceType==='TRANSPORT'){
+      parent=(Array.isArray(network.shipments)?network.shipments:[]).find(function(row){
+        return String(row&&row.shipmentId||'')===sourceEventId;
+      })||null;
+      evidence=matchingLoss(parent);sourceRecordId=String(parent&&parent.shipmentId||'');
+    }else if(sourceType==='PRODUCTION'){
+      var productionRows=Array.isArray(economy.productionLedger)?economy.productionLedger:[];
+      parent=(Array.isArray(inventoryLedger)?inventoryLedger:[]).find(function(row){
+        return String(row&&row.type||'').toUpperCase()==='PRODUCTION_TRANSACTION_COMMITTED'&&String(row&&row.transactionId||'')===sourceEventId;
+      })||null;
+      evidence=matchingLoss(parent);sourceRecordId=String(parent&&parent.transactionId||'');
+    }
+    if(!parent||!evidence)return{accepted:false,reason:'STOCK_LOSS_SOURCE_EVIDENCE_NOT_FOUND',
+      sourceType:sourceType,sourceEventId:sourceEventId};
+    var evidenceId=String(evidence.eventId||evidence.lossEventId||'').trim(),
+      evidenceResource=String(evidence.resourceId||evidence.materialIdentity||'').trim(),
+      evidenceQuantity=num(evidence.quantity??evidence.lossQuantity??evidence.actualLossQuantity),
+      evidenceUnit=String(evidence.unit||'').trim(),
+      evidenceLossType=String(evidence.lossType||sourceType).toUpperCase(),
+      evidenceAuthority=String(evidence.sourceAuthority||parent.sourceAuthority||parent.authority||'').trim(),
+      evidenceTurn=num(evidence.turn??evidence.simulationTurn??parent.turn??parent.simulationTurn),
+      committed=['COMMITTED','POSTED'].includes(String(evidence.status||'').toUpperCase());
+    if(evidenceId!==eventId||evidenceResource.toUpperCase()!==resourceId.toUpperCase()||
+      evidenceQuantity===null||Math.abs(evidenceQuantity-quantity)>1e-9||
+      evidenceUnit.toUpperCase()!==unit.toUpperCase()||evidenceLossType!==lossType||
+      evidenceAuthority!==sourceAuthority||!committed||evidence.physicalMutationCommitted!==true||
+      evidenceTurn===null||evidenceTurn!==eventTurn)
+      return{accepted:false,reason:'STOCK_LOSS_SOURCE_EVIDENCE_MISMATCH',eventId:eventId,sourceEventId:sourceEventId};
+    var allowedAuthorities={
+      STORAGE:['OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'],
+      TRANSPORT:['OMEGA_RESOURCE_ECONOMY_RUNTIME_V2','OMEGA_RESOURCE_INDUSTRIAL_NETWORK','OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'],
+      PRODUCTION:['OMEGA_RESOURCE_ECONOMY_RUNTIME_V2','OMEGA_RESOURCE_INDUSTRIAL_NETWORK','OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1']
+    };
+    if(!allowedAuthorities[sourceType].includes(sourceAuthority))
+      return{accepted:false,reason:'STOCK_LOSS_SOURCE_AUTHORITY_INVALID',sourceAuthority:sourceAuthority};
+    if(evidence.countryId&&canonical(evidence.countryId)!==country)
+      return{accepted:false,reason:'STOCK_LOSS_COUNTRY_MISMATCH'};
+    var prior=Array.isArray(ctx.stateTransaction.get('resource.stockLossLedger'))
+      ?ctx.stateTransaction.get('resource.stockLossLedger'):[];
+    var normalized={schemaVersion:1,type:'STOCK_LOSS_COMMITTED',eventId:eventId,sourceEventId:sourceEventId,
+      sourceType:sourceType,lossType:lossType,countryId:country,resourceId:resourceId,quantity:quantity,unit:unit,
+      sourceAuthority:sourceAuthority,turn:eventTurn,periodId:'GAME_TURN_'+eventTurn,status:'COMMITTED',
+      batchId:evidence.batchId||parent.batchId||p.batchId||null,
+      shipmentId:evidence.shipmentId||parent.shipmentId||p.shipmentId||null,
+      transactionId:evidence.transactionId||parent.transactionId||p.transactionId||null,
+      warehouseId:evidence.warehouseId||parent.warehouseId||p.warehouseId||null,
+      factoryId:evidence.factoryId||parent.factoryId||p.factoryId||null,
+      reason:String(evidence.reason||p.reason||'PHYSICAL_STOCK_LOSS').trim(),
+      evidenceAuthority:'SOURCE_EVENT_VERIFIED',sourceRecordId:sourceRecordId};
+    var existing=prior.find(function(row){return String(row&&row.eventId||'')===eventId;});
+    if(existing){
+      var same=['sourceEventId','sourceType','lossType','countryId','resourceId','quantity','unit','sourceAuthority','turn','periodId','status']
+        .every(function(key){return String(existing[key]??'')===String(normalized[key]??'');});
+      return same?{accepted:true,duplicate:true,eventId:eventId,periodId:normalized.periodId}:
+        {accepted:false,reason:'STOCK_LOSS_EVENT_ID_COLLISION',eventId:eventId};
+    }
+    var rows=prior.slice();rows.push(normalized);
+    while(rows.length>(num(rules().runtime.maxLedgerEntries)||2048))rows.shift();
+    ctx.stateTransaction.set('resource.stockLossLedger',rows);
+    var periods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))
+      ?ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[];
+    var period=periods.find(function(row){return String(row&&row.periodId||'')===normalized.periodId;});
+    if(period){
+      period.stockLossLedgerRowsObserved=(num(period.stockLossLedgerRowsObserved)||0)+1;
+      period.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+      period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
+      period.lossCoverageBySource[sourceType]=Object.assign({},period.lossCoverageBySource[sourceType]||{},
+        {status:'INVALIDATED_BY_NEW_LOSS_EVENT'});
+      ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
+    }
+    emit('OMEGA_RESOURCE_STOCK_LOSS_RECORDED',country,normalized,'resource-economy');
+    return{accepted:true,duplicate:false,eventId:eventId,periodId:normalized.periodId,sourceType:sourceType,
+      resourceId:resourceId,quantity:quantity,unit:unit,lossCoverageStatus:'UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED'};
+  }
+
+  function commitShipmentLossHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},country=canonical(ctx.countryId),shipmentId=String(p.shipmentId||p.sourceEventId||'').trim(),
+      eventId=String(p.eventId||p.lossEventId||'').trim(),resourceId=String(p.resourceId||'').trim(),
+      quantity=num(p.quantity),unit=String(p.unit||'').trim(),reason=String(p.reason||'').trim(),
+      eventTurn=num(p.turn==null?turn():p.turn),networkBefore=ctx.stateTransaction.get('resource.industrialNetwork')||{},
+      batchesBefore=ctx.stateTransaction.get('resource.batches'),lotsBefore=ctx.stateTransaction.get('resource.inventoryLots')||{},
+      priorLosses=Array.isArray(ctx.stateTransaction.get('resource.stockLossLedger'))?ctx.stateTransaction.get('resource.stockLossLedger'):[];
+    if(!country||!shipmentId||!eventId||!resourceId||quantity===null||quantity<=0||!unit||!reason)
+      return{accepted:false,reason:'TRANSPORT_LOSS_EVENT_FIELDS_INVALID'};
+    if(eventTurn!==turn())return{accepted:false,reason:'TRANSPORT_LOSS_PERIOD_MISMATCH',expectedTurn:turn(),eventTurn:eventTurn};
+    var existing=priorLosses.find(function(row){return String(row&&row.eventId||'')===eventId;});
+    if(existing){
+      var sameShipmentLoss=String(existing.sourceEventId||'')===shipmentId&&
+        String(existing.sourceType||'')==='TRANSPORT'&&String(existing.lossType||'')==='TRANSPORT'&&
+        String(existing.countryId||'')===country&&String(existing.resourceId||'')===resourceId&&
+        Math.abs((num(existing.quantity)||0)-quantity)<=1e-9&&
+        String(existing.unit||'').toUpperCase()===unit.toUpperCase()&&
+        String(existing.reason||'')===reason&&num(existing.turn)===eventTurn&&
+        String(existing.periodId||'')==='GAME_TURN_'+eventTurn&&String(existing.status||'')==='COMMITTED'&&
+        String(existing.sourceAuthority||'')==='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2';
+      return sameShipmentLoss
+        ?{accepted:true,duplicate:true,eventId:eventId,shipmentId:shipmentId}
+        :{accepted:false,reason:'TRANSPORT_LOSS_EVENT_ID_COLLISION',eventId:eventId};
+    }
+    var network=clone(networkBefore),shipments=Array.isArray(network.shipments)?network.shipments:[],
+      shipment=shipments.find(function(row){return String(row&&row.shipmentId||'')===shipmentId;});
+    if(!shipment)return{accepted:false,reason:'TRANSPORT_LOSS_SHIPMENT_NOT_FOUND',shipmentId:shipmentId};
+    // This is the mine-held leg: inventory has already been reserved from the warehouse,
+    // but has not yet been received. Other legs have different stock ownership/debit rules.
+    if(String(shipment.shipmentType||'')!=='MINE_TO_WAREHOUSE')
+      return{accepted:false,reason:'TRANSPORT_LOSS_SHIPMENT_TYPE_UNSUPPORTED',shipmentId:shipmentId,
+        shipmentType:shipment.shipmentType||null};
+    if(!['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE'].includes(String(shipment.status||'')))
+      return{accepted:false,reason:'TRANSPORT_LOSS_SHIPMENT_NOT_IN_TRANSIT',shipmentId:shipmentId,status:shipment.status};
+    if(String(shipment.resourceId||'').toUpperCase()!==resourceId.toUpperCase()||
+      String(shipment.unit||'').toUpperCase()!==unit.toUpperCase()||canonical(shipment.countryId)!==country)
+      return{accepted:false,reason:'TRANSPORT_LOSS_SHIPMENT_IDENTITY_MISMATCH',shipmentId:shipmentId};
+    var shipmentQuantity=Math.max(0,num(shipment.quantity)||0),remainingShipment=shipmentQuantity-quantity;
+    if(remainingShipment<-1e-9)return{accepted:false,reason:'TRANSPORT_LOSS_EXCEEDS_SHIPMENT',shipmentQuantity:shipmentQuantity,quantity:quantity};
+    var batchId=String(shipment.batchId||'').trim(),batches=Array.isArray(batchesBefore)?batchesBefore.slice():[],
+      batch=batches.find(function(row){return String(row&&row.batchId||'')===batchId;}),
+      lots=Object.assign({},lotsBefore),lot=lots[batchId]||null;
+    if(!batch||!lot)return{accepted:false,reason:'TRANSPORT_LOSS_SOURCE_BATCH_OR_LOT_MISSING',batchId:batchId};
+    var batchRemaining=Math.max(0,num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity)||0),
+      lotRemaining=Math.max(0,num(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)||0);
+    if(batchRemaining+1e-9<quantity||lotRemaining+1e-9<quantity)
+      return{accepted:false,reason:'TRANSPORT_LOSS_SOURCE_BALANCE_INSUFFICIENT',batchRemaining:batchRemaining,lotRemaining:lotRemaining};
+    var flowRows=Array.isArray(network.siteFlowLedger)?network.siteFlowLedger.slice():[],
+      flow=flowRows.find(function(row){return String(row&&row.batchId||'')===batchId;}),
+      mineHeld=Math.max(0,num(flow&&flow.mineHeldQuantity)||0);
+    if(!flow||mineHeld+1e-9<quantity)
+      return{accepted:false,reason:'TRANSPORT_LOSS_MINE_HELD_BALANCE_INSUFFICIENT',mineHeldQuantity:mineHeld,batchId:batchId};
+    var lossEvent={eventId:eventId,sourceEventId:shipmentId,sourceType:'TRANSPORT',lossType:'TRANSPORT',
+      resourceId:resourceId,quantity:quantity,unit:unit,reason:reason,sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',
+      turn:eventTurn,status:'COMMITTED',physicalMutationCommitted:true,batchId:batchId,
+      shipmentId:shipmentId,countryId:country,periodId:'GAME_TURN_'+eventTurn};
+    shipment.dispatchedQuantity=Math.max(0,num(shipment.dispatchedQuantity)||shipmentQuantity);
+    shipment.lostQuantity=(num(shipment.lostQuantity)||0)+quantity;
+    shipment.quantity=Number(Math.max(0,remainingShipment).toFixed(6));
+    shipment.lossEvents=Array.isArray(shipment.lossEvents)?shipment.lossEvents:[];
+    shipment.lossEvents.push(clone(lossEvent));
+    shipment.lastLossTurn=eventTurn;shipment.lastLossEventId=eventId;
+    shipment.lossMeasurementStatus='MEASURED_EVENTS';
+    shipment.lossMeasurementAuthority='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2';
+    shipment.lossMeasurementBasis='CONFIRMED_CARGO_LOSS_EVENT';
+    shipment.lossMeasurementTurn=eventTurn;
+    if(shipment.quantity<=1e-9){shipment.quantity=0;shipment.status='LOST_IN_TRANSIT';shipment.deliveryStatus='LOST_IN_TRANSIT';}
+    batch.remainingQuantity=Number(Math.max(0,batchRemaining-quantity).toFixed(6));
+    batch.lastMovementTurn=eventTurn;batch.lastMovementType='TRANSPORT_LOSS';
+    if(batch.remainingQuantity<=1e-9)batch.status='DEPLETED_BY_TRANSPORT_LOSS';
+    lot.remainingQuantity=batch.remainingQuantity;lot.status=batch.remainingQuantity>1e-9?'PARTIALLY_LOST_IN_TRANSIT':'DEPLETED_BY_TRANSPORT_LOSS';
+    lot.lastMovementTurn=eventTurn;lot.lastMovementType='TRANSPORT_LOSS';
+    flow.mineHeldQuantity=Number(Math.max(0,mineHeld-quantity).toFixed(6));
+    flow.mineLogisticsLostQuantity=(num(flow.mineLogisticsLostQuantity)||0)+quantity;
+    flow.stockLossEventIds=[...new Set([...(flow.stockLossEventIds||[]),eventId])];
+    network.shipments=shipments;network.siteFlowLedger=flowRows;
+    var canonicalLoss={schemaVersion:1,type:'STOCK_LOSS_COMMITTED',eventId:eventId,sourceEventId:shipmentId,
+      sourceType:'TRANSPORT',lossType:'TRANSPORT',countryId:country,resourceId:resourceId,quantity:quantity,unit:unit,
+      sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',turn:eventTurn,periodId:'GAME_TURN_'+eventTurn,
+      status:'COMMITTED',batchId:batchId,shipmentId:shipmentId,reason:reason,
+      evidenceAuthority:'ATOMIC_SHIPMENT_LOSS_COMMIT',physicalMutationCommitted:true};
+    var ledger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))
+      ?ctx.stateTransaction.get('resource.inventoryLedger').slice():[];
+    ledger.push({type:'TRANSPORT_LOSS_COMMITTED',eventId:eventId,sourceEventId:shipmentId,sourceType:'TRANSPORT',
+      lossType:'TRANSPORT',sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',status:'COMMITTED',
+      physicalMutationCommitted:true,resourceId:resourceId,quantity:quantity,unit:unit,reason:reason,
+      turn:eventTurn,periodId:'GAME_TURN_'+eventTurn,batchId:batchId,shipmentId:shipmentId,countryId:country});
+    while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
+    var lossLedger=priorLosses.slice();lossLedger.push(canonicalLoss);
+    while(lossLedger.length>(num(rules().runtime.maxLedgerEntries)||2048))lossLedger.shift();
+    captureStockFlowPeriod(ctx.stateTransaction);
+    ctx.stateTransaction.set('resource.industrialNetwork',network);
+    ctx.stateTransaction.set('resource.batches',batches);
+    ctx.stateTransaction.set('resource.inventoryLots',lots);
+    ctx.stateTransaction.set('resource.inventoryLedger',ledger);
+    ctx.stateTransaction.set('resource.stockLossLedger',lossLedger);
+    var periods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))
+      ?ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[];
+    var period=periods.find(function(row){return String(row&&row.periodId||'')===canonicalLoss.periodId;});
+    if(period){
+      period.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+      period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
+      if(period.lossCoverageBySource.TRANSPORT)
+        period.lossCoverageBySource.TRANSPORT=Object.assign({},period.lossCoverageBySource.TRANSPORT,{status:'INVALIDATED_BY_NEW_LOSS_EVENT'});
+      ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
+    }
+    emit('OMEGA_RESOURCE_STOCK_LOSS_RECORDED',country,canonicalLoss,'resource-economy');
+    return{accepted:true,duplicate:false,eventId:eventId,shipmentId:shipmentId,batchId:batchId,
+      resourceId:resourceId,quantity:quantity,remainingShipmentQuantity:shipment.quantity,
+      lossCoverageStatus:'PENDING_PERIOD_SOURCE_ATTESTATION'};
+  }
+
+  function attestStockLossCoverageHandler(cmd,ctx){
+    var p=cmd&&cmd.payload||{},country=canonical(ctx.countryId),sourceType=String(p.sourceType||'').trim().toUpperCase(),
+      eventTurn=num(p.turn==null?turn():p.turn),periodId='GAME_TURN_'+String(eventTurn),allowed=['STORAGE','TRANSPORT','PRODUCTION'];
+    if(!country||!allowed.includes(sourceType)||eventTurn!==turn())
+      return{accepted:false,reason:'STOCK_LOSS_COVERAGE_REQUEST_INVALID',sourceType:sourceType,eventTurn:eventTurn};
+    var periods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))?ctx.stateTransaction.get('resource.stockFlowPeriods').slice():[],
+      period=periods.find(function(row){return String(row&&row.periodId||'')===periodId;});
+    if(!period)return{accepted:false,reason:'STOCK_FLOW_PERIOD_NOT_CAPTURED',periodId:periodId};
+    var inventory=ctx.stateTransaction.get('resource.inventoryLedger'),lossLedger=ctx.stateTransaction.get('resource.stockLossLedger'),
+      network=ctx.stateTransaction.get('resource.industrialNetwork'),movements=Array.isArray(inventory)?inventory:[],
+      losses=Array.isArray(lossLedger)?lossLedger:[],invalid=[],observedRows=0,lossEventsObserved=0,
+      ledgerLimit=Math.max(1,num(rules().runtime.maxLedgerEntries)||2048);
+    if(!Array.isArray(lossLedger))invalid.push('STOCK_LOSS_LEDGER_NOT_INITIALIZED');
+    if(losses.length>=ledgerLimit)invalid.push('STOCK_LOSS_LEDGER_WINDOW_TRUNCATED');
+    function currentTurn(row){return num(row&&(row.turn??row.simulationTurn??row.deliveredTurn??row.createdTurn))===eventTurn;}
+    function hasLoss(event,sourceEventId){
+      var id=String(event&&(event.eventId||event.lossEventId)||'').trim();
+      if(!id)return false;
+      return losses.some(function(loss){
+        return String(loss&&loss.eventId||'')===id&&String(loss.sourceEventId||'')===String(sourceEventId||'')&&
+          String(loss.sourceType||'').toUpperCase()===sourceType&&
+          String(loss.resourceId||'').toUpperCase()===String(event.resourceId||'').toUpperCase()&&
+          Math.abs((num(loss.quantity)||0)-(num(event.quantity??event.lossQuantity??event.actualLossQuantity)||0))<=1e-9&&
+          String(loss.unit||'').toUpperCase()===String(event.unit||'').toUpperCase()&&
+          String(loss.status||'').toUpperCase()==='COMMITTED';
+      });
+    }
+    if(sourceType==='STORAGE'){
+      if(!Array.isArray(inventory))invalid.push('INVENTORY_LEDGER_UNAVAILABLE');
+      else{
+        if(movements.length>=ledgerLimit)invalid.push('INVENTORY_LEDGER_WINDOW_TRUNCATED');
+        observedRows=movements.filter(currentTurn).length;
+        movements.filter(currentTurn).forEach(function(row){
+          var type=String(row&&row.type||'').toUpperCase();
+          if(type==='STORAGE_LOSS_COMMITTED'){
+            var event={eventId:row.eventId,resourceId:row.resourceId,quantity:row.quantity,unit:row.unit};
+            if(!hasLoss(event,row.sourceEventId||row.eventId))invalid.push('STORAGE_LOSS_SOURCE_NOT_RECONCILED:'+String(row.eventId||'MISSING_ID'));
+          }else if(type.includes('LOSS')&&!['TRANSPORT_LOSS_COMMITTED','PRODUCTION_LOSS_COMMITTED'].includes(type)){
+            invalid.push('UNCLASSIFIED_STORAGE_LOSS_EVENT:'+String(row.eventId||'MISSING_ID'));
+          }
+        });
+        losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()==='STORAGE';})
+          .forEach(function(row){
+            lossEventsObserved++;
+            var source=movements.find(function(item){
+              return String(item&&item.eventId||'')===String(row.sourceEventId||'')&&
+                String(item&&item.type||'').toUpperCase()==='STORAGE_LOSS_COMMITTED'&&
+                String(item&&item.resourceId||'').toUpperCase()===String(row.resourceId||'').toUpperCase()&&
+                Math.abs((num(item.quantity)||0)-(num(row.quantity)||0))<=1e-9&&
+                String(item.unit||'').toUpperCase()===String(row.unit||'').toUpperCase();
+            });
+            if(!source)invalid.push('STORAGE_LOSS_LEDGER_ORPHAN:'+row.eventId);
+          });
+      }
+    }else if(sourceType==='TRANSPORT'){
+      if(!network||!Array.isArray(network.shipments)||!Array.isArray(network.deliveries))
+        invalid.push('INDUSTRIAL_SHIPMENT_LEDGER_UNAVAILABLE');
+      else{
+        if(network.shipments.length>=4096||network.deliveries.length>=4096)
+          invalid.push('TRANSPORT_LEDGER_WINDOW_TRUNCATED');
+        var activeShipmentStatuses=new Set(['IN_TRANSIT','BLOCKED_ROUTE_BLOCKADE','BLOCKED_LEDGER_MISMATCH',
+          'BLOCKED_BATCH_LEDGER_MISMATCH','BLOCKED_FACTORY_MISSING']);
+        var shipmentRows=network.shipments.filter(function(row){
+          return currentTurn(row)||activeShipmentStatuses.has(String(row&&row.status||'').toUpperCase());
+        }),deliveryRows=network.deliveries.filter(currentTurn);
+        observedRows=shipmentRows.length+deliveryRows.length;
+        shipmentRows.forEach(function(row){
+          if(!row.shipmentId||!row.resourceId||num(row.dispatchedQuantity??row.quantity)===null||!row.unit||!row.countryId)
+            invalid.push('TRANSPORT_SHIPMENT_IDENTITY_INCOMPLETE:'+String(row.shipmentId||'MISSING_ID'));
+          var lossStatus=String(row.lossMeasurementStatus||'').toUpperCase(),
+            lossAuthority=String(row.lossMeasurementAuthority||''),
+            lossBasis=String(row.lossMeasurementBasis||''),
+            lossTurn=num(row.lossMeasurementTurn),
+            lossEvents=Array.isArray(row.lossEvents)?row.lossEvents:[];
+          var measuredEvents=lossStatus==='MEASURED_EVENTS'&&lossTurn===eventTurn&&
+            lossAuthority==='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'&&lossBasis==='CONFIRMED_CARGO_LOSS_EVENT'&&lossEvents.length>0,
+            measuredZero=lossStatus==='MEASURED_ZERO'&&lossTurn===eventTurn&&
+            lossAuthority==='OMEGA_RESOURCE_INDUSTRIAL_NETWORK_V1'&&lossBasis==='MEASURED_ZERO_CARGO_TRANSPORT'&&lossEvents.length===0;
+          if(!measuredEvents&&!measuredZero)
+            invalid.push('TRANSPORT_LOSS_MEASUREMENT_UNOBSERVED_OR_UNTRUSTED:'+String(row.shipmentId||'MISSING_ID'));
+          lossEvents.forEach(function(event){
+            if(!hasLoss(event,row.shipmentId))invalid.push('TRANSPORT_LOSS_NOT_RECONCILED:'+String(event.eventId||'MISSING_ID'));
+          });
+        });
+        deliveryRows.forEach(function(row){
+          if(!row.shipmentId||!row.resourceId||num(row.quantity)===null||!row.unit)
+            invalid.push('TRANSPORT_DELIVERY_IDENTITY_INCOMPLETE:'+String(row.shipmentId||'MISSING_ID'));
+        });
+        losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()==='TRANSPORT';})
+          .forEach(function(row){
+            lossEventsObserved++;
+            var sourceShipment=network.shipments.find(function(item){
+              return String(item&&item.shipmentId||'')===String(row.sourceEventId||'');
+            });
+            var sourceEvent=Array.isArray(sourceShipment&&sourceShipment.lossEvents)
+              ?sourceShipment.lossEvents.find(function(event){return String(event&&event.eventId||'')===String(row.eventId||'');}):null;
+            if(!hasLoss({eventId:row.eventId,resourceId:row.resourceId,quantity:row.quantity,unit:row.unit},row.sourceEventId))
+              invalid.push('TRANSPORT_LOSS_LEDGER_ORPHAN:'+row.eventId);
+            if(!sourceShipment||!sourceEvent||
+              String(sourceShipment.resourceId||'').toUpperCase()!==String(row.resourceId||'').toUpperCase()||
+              String(sourceShipment.unit||'').toUpperCase()!==String(row.unit||'').toUpperCase()||
+              String(sourceShipment.countryId||'').toUpperCase()!==country||
+              Math.abs((num(sourceEvent.quantity)||0)-(num(row.quantity)||0))>1e-9)
+              invalid.push('TRANSPORT_LOSS_SOURCE_EVENT_MISSING_OR_MISMATCH:'+row.eventId);
+            else observedRows++;
+          });
+      }
+    }else{
+      if(!Array.isArray(inventory))invalid.push('PRODUCTION_LEDGER_UNAVAILABLE');
+      else{
+        if(movements.length>=ledgerLimit)invalid.push('INVENTORY_LEDGER_WINDOW_TRUNCATED');
+        var productionTypes=new Set(['PRODUCTION_TRANSACTION_COMMITTED','FACTORY_PROCESSING_COMMITTED',
+          'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED']);
+        var productionRows=movements.filter(function(row){
+          return productionTypes.has(String(row&&row.type||'').toUpperCase())&&currentTurn(row);
+        });
+        observedRows=productionRows.length;
+        productionRows.forEach(function(row){
+          if(!row.transactionId||!Array.isArray(row.inputs)||!Array.isArray(row.outputs))
+            invalid.push('PRODUCTION_TRANSACTION_IDENTITY_INCOMPLETE:'+String(row.transactionId||'MISSING_ID'));
+          var measurementStatus=String(row.lossMeasurementStatus||'').toUpperCase(),
+            measuredEvents=Array.isArray(row.lossEvents)?row.lossEvents:[];
+          const measurementAuthority=String(row.lossMeasurementAuthority||''),
+            measurementBasis=String(row.lossMeasurementBasis||''),
+            validMeasurementProvenance=measurementAuthority==='OMEGA_RESOURCE_ECONOMY_RUNTIME_V2'&&
+              ((measurementStatus==='MEASURED_EVENTS'&&measurementBasis==='MEASURED_PROCESS_INPUT_RESIDUE')||
+               (measurementStatus==='MEASURED_ZERO'&&measurementBasis==='MEASURED_ZERO_PROCESS_RESIDUE'));
+          if(!validMeasurementProvenance)
+            invalid.push('PRODUCTION_LOSS_MEASUREMENT_UNOBSERVED_OR_UNTRUSTED:'+String(row.transactionId||'MISSING_ID'));
+          if((measurementStatus==='MEASURED_EVENTS'&&!measuredEvents.length)||
+            (measurementStatus==='MEASURED_ZERO'&&measuredEvents.length))
+            invalid.push('PRODUCTION_LOSS_MEASUREMENT_STATUS_MISMATCH:'+String(row.transactionId||'MISSING_ID'));
+          measuredEvents.forEach(function(event){
+            lossEventsObserved++;
+            if(!hasLoss(event,row.transactionId))invalid.push('PRODUCTION_LOSS_NOT_RECONCILED:'+String(event.eventId||'MISSING_ID'));
+          });
+        });
+        losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()==='PRODUCTION';})
+          .forEach(function(row){
+            var source=productionRows.find(function(item){return String(item.transactionId||'')===String(row.sourceEventId||'');});
+            if(!source||!hasLoss({eventId:row.eventId,resourceId:row.resourceId,quantity:row.quantity,unit:row.unit},row.sourceEventId))
+              invalid.push('PRODUCTION_LOSS_LEDGER_ORPHAN:'+row.eventId);
+          });
+      }
+    }
+    var coverage={status:invalid.length?'PARTIAL':'COMPLETE',sourceType:sourceType,countryId:country,turn:eventTurn,
+      periodId:periodId,rowsObserved:observedRows,lossEventsObserved:lossEventsObserved,integrityErrors:invalid,
+      authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',basis:'AUTHORITATIVE_SOURCE_LEDGER_SCAN',attestedAtTurn:turn(),
+      sourceFingerprint:lossEvidenceFingerprint({sourceType:sourceType,turn:eventTurn,observedRows:observedRows,
+        losses:losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()===sourceType;})})};
+    period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
+    period.lossCoverageBySource[sourceType]=coverage;
+    var complete=allowed.every(function(type){return period.lossCoverageBySource[type]&&period.lossCoverageBySource[type].status==='COMPLETE';});
+    period.lossCoverageStatus=complete?'COMPLETE':allowed.some(function(type){
+      return period.lossCoverageBySource[type]&&period.lossCoverageBySource[type].status==='PARTIAL';
+    })?'PARTIAL':'UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+    period.lossCoverageAuthority='OMEGA_RESOURCE_ECONOMY_V2_SOURCE_ATTESTATION';
+    period.lossCoverageAttestedAtTurn=turn();
+    ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
+    return{accepted:true,sourceType:sourceType,periodId:periodId,coverageStatus:coverage.status,
+      lossCoverageStatus:period.lossCoverageStatus,rowsObserved:observedRows,lossEventsObserved:lossEventsObserved,integrityErrors:invalid};
+  }
+
   function demandRuntimePublishHandler(cmd,ctx){
     var p=cmd&&cmd.payload||{},current=ctx.stateTransaction.get('resource.consumption');
     var next=clone(current&&typeof current==='object'&&!Array.isArray(current)?current:{});
@@ -1787,6 +2336,10 @@ function captureStockFlowPeriod(stateTransaction) {
       ['OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY','resource',reconcileHandler],
       ['OMEGA_RESOURCE_ECON_REGISTER_BATCH','resource',registerBatchHandler],
       ['OMEGA_RESOURCE_ECON_CONSUME_INVENTORY','resource',consumeHandler],
+      ['OMEGA_RESOURCE_ECON_RECORD_STOCK_LOSS','resource',recordStockLossHandler],
+      ['OMEGA_RESOURCE_ECON_COMMIT_SHIPMENT_LOSS','resource',commitShipmentLossHandler],
+      ['OMEGA_RESOURCE_ECON_ATTEST_STOCK_LOSS_COVERAGE','resource',attestStockLossCoverageHandler],
+      ['OMEGA_RESOURCE_ECON_CAPTURE_STOCK_FLOW_PERIOD','resource',function(cmd,ctx){return captureStockFlowPeriod(ctx.stateTransaction);}],
       ['OMEGA_RESOURCE_ECON_PUBLISH_DEMAND_RUNTIME','resource',demandRuntimePublishHandler],
       ['OMEGA_RESOURCE_ECON_ADD_INVENTORY','resource',addInventoryHandler],
       ['OMEGA_RESOURCE_ECON_APPLY_PRODUCTION','resource',applyProductionHandler],
@@ -2058,6 +2611,16 @@ function captureStockFlowPeriod(stateTransaction) {
     invalidateWorldMineStats();
     return measure('load-rules',function(){return loadRules();}).then(async function(){
       measure('install-handlers-events',function(){installHandlers();installEvents();});
+      var openingCapture=dispatch('resource','OMEGA_RESOURCE_ECON_CAPTURE_STOCK_FLOW_PERIOD',cid,{
+        turn:turn(),correlationId:'STOCK-FLOW-OPEN:'+canonical(cid)+':'+turn()
+      });
+      if(!openingCapture||openingCapture.status!=='APPLIED'||
+        !['CAPTURED','ALREADY_CAPTURED'].includes(String(openingCapture.result&&openingCapture.result.status||'')))
+        emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,{
+          status:'DEGRADED',reason:'STOCK_FLOW_OPENING_CAPTURE_FAILED',
+          detail:openingCapture&& (openingCapture.reason||openingCapture.result&&openingCapture.result.reason||openingCapture.status)||'UNKNOWN',
+          turn:turn()
+        },'resource-economy');
       var publicationScope={turn:turn(),countryId:canonical(cid),finishedGoodsRows:[],
         materialOwners:{},economyPublished:false,offersPublished:false,registrationEventsPublished:false,
         economyPublication:null,offerPublication:null};
@@ -2135,6 +2698,17 @@ function captureStockFlowPeriod(stateTransaction) {
       if(g.OmegaGlobalTrade&&typeof g.OmegaGlobalTrade.processCountry==='function'){
         try{measure('global-trade-process-country',function(){return g.OmegaGlobalTrade.processCountry(cid);});}catch(_){}
       }
+      var coverageResults=['STORAGE','TRANSPORT','PRODUCTION'].map(function(sourceType){
+        return dispatch('resource','OMEGA_RESOURCE_ECON_ATTEST_STOCK_LOSS_COVERAGE',cid,{
+          sourceType:sourceType,turn:turn(),correlationId:'STOCK-LOSS-COVERAGE:'+sourceType+':'+cid+':'+turn()
+        });
+      });
+      var failedCoverage=coverageResults.filter(function(result){
+        return !result||result.status!=='APPLIED'||result.result?.accepted!==true;
+      });
+      if(failedCoverage.length)emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,{
+        status:'DEGRADED',reason:'STOCK_LOSS_COVERAGE_ATTESTATION_FAILED',details:clone(failedCoverage),turn:turn()
+      },'resource-economy');
       var dashboardRow=measure('dashboard-build',function(){return dashboard(cid);});
       emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',cid,dashboardRow.health,'resource-economy');
       try{
@@ -2306,7 +2880,38 @@ function captureStockFlowPeriod(stateTransaction) {
     fetch('./resource_ontology.json',{cache:'no-store'}).then(function(r){return r&&r.ok?r.json():null;}).then(function(d){if(d)g.__OmegaResourceEconomyOntology=d.COMMODITY_ONTOLOGIES||d.commodity_ontologies||{};}).catch(function(e){g.__OmegaResourceEconomyOntologyError=String(e&&e.message||e);});
   }
 
-  var API={VERSION:VERSION,diagnostics:diagnostics,getCountryDashboard:dashboard,processCountry:processCountry,runTurn:runTurn,reconcileCountry:function(c){installHandlers();return dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',canonical(c),{correlationId:'MANUAL-RECON-'+turn()+'-'+canonical(c)});},executeCountryFactories:executeFactories};
+  var API={VERSION:VERSION,diagnostics:diagnostics,getCountryDashboard:dashboard,processCountry:processCountry,runTurn:runTurn,
+    captureStockFlowPeriod:function(c){
+      installHandlers();
+      return dispatch('resource','OMEGA_RESOURCE_ECON_CAPTURE_STOCK_FLOW_PERIOD',canonical(c),
+        {turn:turn(),correlationId:'MANUAL-STOCK-FLOW-OPEN:'+canonical(c)+':'+turn()});
+    },
+    attestStockLossCoverage:function(c,sourceType){
+      installHandlers();
+      return dispatch('resource','OMEGA_RESOURCE_ECON_ATTEST_STOCK_LOSS_COVERAGE',canonical(c),
+        {turn:turn(),sourceType:sourceType,correlationId:'MANUAL-STOCK-LOSS-COVERAGE:'+sourceType+':'+canonical(c)+':'+turn()});
+    },
+    writeOffInventory:function(c,payload){
+      installHandlers();
+      var data=Object.assign({},payload||{}),eventId=String(data.eventId||data.movementId||'').trim();
+      data.lossType='STORAGE';
+      if(eventId){data.eventId=eventId;data.idempotencyKey=eventId;data.correlationId=eventId;}
+      return dispatch('resource','OMEGA_RESOURCE_ECON_CONSUME_INVENTORY',canonical(c),data);
+    },
+    recordShipmentLoss:function(c,payload){
+      installHandlers();
+      var data=Object.assign({},payload||{}),eventId=String(data.eventId||data.lossEventId||'').trim();
+      if(eventId){data.idempotencyKey=eventId;data.correlationId=eventId;}
+      return dispatch('resource','OMEGA_RESOURCE_ECON_COMMIT_SHIPMENT_LOSS',canonical(c),data);
+    },
+    recordStockLoss:function(c,payload){
+      installHandlers();
+      var data=Object.assign({},payload||{}),eventId=String(data.eventId||data.lossEventId||'').trim();
+      if(eventId){data.idempotencyKey=eventId;data.correlationId=eventId;}
+      return dispatch('resource','OMEGA_RESOURCE_ECON_RECORD_STOCK_LOSS',canonical(c),data);
+    },
+    reconcileCountry:function(c){installHandlers();return dispatch('resource','OMEGA_RESOURCE_ECON_RECONCILE_INVENTORY',canonical(c),{correlationId:'MANUAL-RECON-'+turn()+'-'+canonical(c)});},
+    executeCountryFactories:executeFactories};
   g.Omega=g.Omega||{};g.Omega.ResourceEconomy=API;g.OmegaResourceEconomy=API;boot();
 
 })(typeof window!=='undefined'?window:globalThis);

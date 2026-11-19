@@ -551,8 +551,35 @@
     }
     return{complete,identities:[...byIdentity.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit))};
   }
+  function summarizeInternalDeliveries(network,resource,countryId){
+    const rows=Array.isArray(network?.deliveries)?network.deliveries:[],seen=new Map(),
+      batches=Array.isArray(resource?.batches)?resource.batches:[],batchById=new Map();
+    batches.forEach(batch=>{const id=String(batch?.batchId||'').trim();if(id&&!batchById.has(id))batchById.set(id,batch);});
+    let duplicateCount=0,conflictCount=0,missingIdentityCount=0,unscopedDeliveryCount=0,sourceMismatchCount=0;
+    for(const row of rows){
+      const shipmentId=String(row?.shipmentId||'').trim(),batchId=String(row?.batchId||row?.sourceBatchId||'').trim(),
+        resourceId=String(row?.resourceId||'').trim(),quantity=finite(row?.quantity),unit=String(row?.unit||'').trim();
+      if(!shipmentId||!batchId||!resourceId||quantity===null||quantity<=0||!unit){missingIdentityCount++;continue;}
+      const proof=fingerprint({shipmentId,batchId,resourceId,quantity,unit,
+        factoryId:row?.factoryId||null,shipmentType:row?.shipmentType||null});
+      if(seen.has(shipmentId)){if(seen.get(shipmentId)===proof)duplicateCount++;else conflictCount++;}
+      else seen.set(shipmentId,proof);
+      const sourceBatch=batchById.get(batchId);
+      if(!sourceBatch||String(sourceBatch?.resourceId||sourceBatch?.materialIdentity||'').trim().toUpperCase()!==resourceId.toUpperCase()||
+        (sourceBatch?.countryId&&String(sourceBatch.countryId).trim().toUpperCase()!==String(countryId||'').trim().toUpperCase()))
+        sourceMismatchCount++;
+      if(finite(row?.deliveredTurn??row?.deliveryTurn??row?.completedTurn??row?.turn??row?.simulationTurn)===null)
+        unscopedDeliveryCount++;
+    }
+    return{status:!rows.length?'UNOBSERVED':
+        missingIdentityCount||conflictCount||sourceMismatchCount||unscopedDeliveryCount?'PARTIAL':'COMPLETE',
+      rowsObserved:rows.length,uniqueDeliveryCount:seen.size,duplicateCount,conflictCount,missingIdentityCount,
+      sourceMismatchCount,unscopedDeliveryCount,
+      stockFlowTreatment:'INTRA_COUNTRY_TRANSFER_NOT_ADDED_TO_PRODUCTION_OR_EXTERNAL_TRADE'};
+  }
+
   // Movement totals are keyed by game-turn period, resource identity and physical unit.
-  async function summarizeInventory(bucket,maxBatches,maxItems,maxMovementRows,reportTurn,productionAssets){
+  async function summarizeInventory(bucket,maxBatches,maxItems,maxMovementRows,reportTurn,productionAssets,countryId){
     const batches=Array.isArray(bucket?.batches)?bucket.batches.slice(-maxBatches):[];
     const groups=new Map(),seen=new Set();let missingIdentityCount=0,duplicateBatchCount=0,segmentStartedAt=clockNow();
     for(let index=0;index<batches.length;index++){
@@ -571,8 +598,21 @@
     const all=[...groups.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit));
     const ledger=Array.isArray(bucket?.inventoryLedger)?bucket.inventoryLedger:[],movementLimit=Math.max(1,Math.min(4096,Math.floor(finite(maxMovementRows)??2048)));
     const movementRows=ledger.slice(-movementLimit),movementWindowTruncated=ledger.length>=2048||ledger.length>movementLimit;
+    const lossLedger=Array.isArray(bucket?.stockLossLedger)?bucket.stockLossLedger:[];
+    const lossRows=lossLedger.slice(-movementLimit),stockLossLedgerWindowTruncated=lossLedger.length>=2048||lossLedger.length>movementLimit;
     const unitMap=isObject(bucket?.inventoryUnits)?bucket.inventoryUnits:{},periods=Array.isArray(bucket?.stockFlowPeriods)?bucket.stockFlowPeriods.slice(-32):[];
-    const byPeriod=new Map(),ensure=periodId=>{if(!byPeriod.has(periodId))byPeriod.set(periodId,{byIdentity:new Map(),unclassifiedCount:0,missingUnitCount:0,rowsObserved:0});return byPeriod.get(periodId);};
+    const byPeriod=new Map(),ensure=periodId=>{if(!byPeriod.has(periodId))byPeriod.set(periodId,{
+      byIdentity:new Map(),unclassifiedCount:0,missingUnitCount:0,rowsObserved:0,lossEventCount:0,
+      lossIntegrityErrorCount:0,lossDuplicateCount:0});return byPeriod.get(periodId);};
+    const lossTypes=new Set(['INVENTORY_LOSS','RESOURCE_LOSS','STOCK_LOSS','PHYSICAL_LOSS','STOCK_LOSS_COMMITTED',
+      'STORAGE_LOSS_COMMITTED','TRANSPORT_LOSS_COMMITTED']);
+    const lossByEventId=new Map(lossRows.map(row=>[String(row?.eventId||''),row]));
+    const movementTypes=new Set(['PRODUCTION_TRANSACTION_COMMITTED','FACTORY_PROCESSING_COMMITTED',
+      'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED','INVENTORY_CONSUMED','INTERNATIONAL_TRADE_IMPORT',
+      'INTERNATIONAL_TRADE_EXPORT','INVENTORY_CREATED','BATCH_CREATED']);
+    const movementKeys=new Map(),batchTransferKeys=new Map();
+    let duplicateMovementCount=0,conflictingMovementCount=0,missingMovementIdentityCount=0,
+      unscopedMovementCount=0,lossIntegrityErrorCount=0,lossDuplicateCount=0,conflictingLossCount=0;
     const resolveUnit=(rid,explicit,transfers)=>{
       if(explicit)return String(explicit).trim();
       const transferUnits=[...new Set((Array.isArray(transfers)?transfers:[]).map(row=>String(row?.unit||'').trim()).filter(Boolean))];
@@ -600,10 +640,57 @@
       for(const [rid,raw] of Object.entries(values))add(periodId,rid,isObject(raw)?raw.quantity??raw.amount:raw,field,isObject(raw)?raw.unit:null,null);
     };
     for(let index=0;index<movementRows.length;index++){
-      const row=movementRows[index],type=String(row?.type||'').toUpperCase(),t=finite(row?.turn);if(!type||t===null)continue;
+      const row=movementRows[index],type=String(row?.type||'').toUpperCase(),t=finite(row?.turn??row?.simulationTurn);
+      if(!type||t===null){
+        if(row?.resourceId||row?.quantity!==undefined)unscopedMovementCount++;
+        continue;
+      }
       const periodId=String(row?.periodId||'GAME_TURN_'+t),group=ensure(periodId);group.rowsObserved++;
+      if(lossTypes.has(type)){continue;}
+      if(movementTypes.has(type)){
+        const rawId=type==='INVENTORY_CONSUMED'
+          ?(row.eventId||row.movementId||row.transactionId)
+          :(row.eventId||row.movementId||row.transactionId||row.productionTransactionId||row.settlementId||row.batchId);
+        const movementId=String(rawId||'').trim();
+        if(!movementId){group.unclassifiedCount++;missingMovementIdentityCount++;continue;}
+        const key=type+':'+movementId,proof=fingerprint(row),prior=movementKeys.get(key);
+        if(prior!==undefined){
+          if(prior===proof)duplicateMovementCount++;
+          else{group.unclassifiedCount++;conflictingMovementCount++;}
+          continue;
+        }
+        movementKeys.set(key,proof);
+      }
       if(type==='PRODUCTION_TRANSACTION_COMMITTED'){
-        for(const input of Array.isArray(row.inputs)?row.inputs:[])add(periodId,input?.resourceId,input?.quantity,'consumption',input?.unit,input?.consumed);
+        const productionLossByResource=new Map(),transactionId=String(row.transactionId||'').trim();
+        for(const lossEvent of Array.isArray(row.lossEvents)?row.lossEvents:[]){
+          const eventId=String(lossEvent?.eventId||lossEvent?.lossEventId||'').trim(),
+            canonicalLoss=lossByEventId.get(eventId),lossResource=String(lossEvent?.resourceId||'').trim(),
+            lossQuantity=finite(lossEvent?.quantity),lossUnit=String(lossEvent?.unit||'').trim();
+          const lossEvidenceValid=!!canonicalLoss&&!!eventId&&!!transactionId&&
+            String(canonicalLoss.sourceEventId||'')===transactionId&&
+            String(canonicalLoss.sourceType||'').toUpperCase()==='PRODUCTION'&&
+            String(canonicalLoss.lossType||'').toUpperCase()==='PRODUCTION'&&
+            String(canonicalLoss.resourceId||'').toUpperCase()===lossResource.toUpperCase()&&
+            lossQuantity!==null&&lossQuantity>0&&Math.abs((finite(canonicalLoss.quantity)??-1)-lossQuantity)<=1e-9&&
+            String(canonicalLoss.unit||'').toUpperCase()===lossUnit.toUpperCase()&&
+            String(canonicalLoss.status||'').toUpperCase()==='COMMITTED'&&
+            String(lossEvent.sourceAuthority||'')===String(canonicalLoss.sourceAuthority||'');
+          if(!lossEvidenceValid){
+            group.unclassifiedCount++;group.lossIntegrityErrorCount++;lossIntegrityErrorCount++;
+            continue;
+          }
+          productionLossByResource.set(lossResource,
+            (productionLossByResource.get(lossResource)||0)+lossQuantity);
+        }
+        for(const input of Array.isArray(row.inputs)?row.inputs:[]){
+          const inputResource=String(input?.resourceId||''),inputQuantity=finite(input?.quantity),
+            provenLoss=productionLossByResource.get(inputResource)||0;
+          if(inputQuantity===null||provenLoss>inputQuantity+1e-9){
+            group.unclassifiedCount++;continue;
+          }
+          add(periodId,inputResource,Math.max(0,inputQuantity-provenLoss),'consumption',input?.unit,input?.consumed);
+        }
         if(Array.isArray(row.outputs))for(const output of row.outputs)add(periodId,output?.resourceId,output?.quantity,'production',output?.unit,output?.createdBatches);
         else addMap(periodId,row.outputs,'production');
       }else if(type==='FACTORY_PROCESSING_COMMITTED'){
@@ -614,20 +701,68 @@
         add(periodId,row.resourceId,row.quantity,'consumption',row.unit,row.consumed);
       }else if(type==='INTERNATIONAL_TRADE_IMPORT'||type==='INTERNATIONAL_TRADE_EXPORT'){
         const field=type==='INTERNATIONAL_TRADE_IMPORT'?'imports':'exports';
-        if(Array.isArray(row.batchTransfers)&&row.batchTransfers.length)
-          for(const transfer of row.batchTransfers)add(periodId,transfer?.resourceId||row.resourceId,transfer?.quantity,field,transfer?.unit,null);
-        else add(periodId,row.resourceId,row.quantity,field,row.unit,null);
+        if(Array.isArray(row.batchTransfers)&&row.batchTransfers.length){
+          for(const transfer of row.batchTransfers){
+            const transferId=String(transfer?.transferId||transfer?.batchTransferId||transfer?.sourceBatchId||transfer?.batchId||'').trim();
+            if(!transferId){group.unclassifiedCount++;missingMovementIdentityCount++;continue;}
+            const transferKey=periodId+':'+field+':'+transferId;
+            const transferProof=fingerprint({resourceId:transfer?.resourceId||row.resourceId,
+              quantity:transfer?.quantity,unit:transfer?.unit});
+            const priorTransfer=batchTransferKeys.get(transferKey);
+            if(priorTransfer!==undefined){
+              if(priorTransfer!==transferProof){group.unclassifiedCount++;conflictingMovementCount++;}
+              else duplicateMovementCount++;
+              continue;
+            }
+            batchTransferKeys.set(transferKey,transferProof);
+            add(periodId,transfer?.resourceId||row.resourceId,transfer?.quantity,field,transfer?.unit,null);
+          }
+        }else add(periodId,row.resourceId,row.quantity,field,row.unit,null);
       }else if(type==='INVENTORY_CREATED'){
         add(periodId,row.resourceId,row.quantity,'production',row.unit,null);
       }else if(type==='BATCH_CREATED'&&String(row.source||'').toUpperCase()==='EXTRACTION'){
         add(periodId,row.resourceId,row.quantity,'production',row.unit,null);
-      }else if(['INVENTORY_LOSS','RESOURCE_LOSS','STOCK_LOSS','PHYSICAL_LOSS'].includes(type)){
-        add(periodId,row.resourceId,row.quantity,'losses',row.unit,null);
+      }else if(type==='STRATEGIC_RESERVE_TRANSFER'&&row.aggregateInventoryUnchanged===true){
+        // This is an internal warehouse/reserve movement, not a change to national stock.
       }else if(!['INVENTORY_RECONCILIATION','INVENTORY_LOT_RECONCILIATION','INVENTORY_AUDIT'].includes(type)&&
         (row.resourceId||row.quantity!==undefined)){group.unclassifiedCount++;}
       if((index+1)%MAX_ROWS_PER_SYNC_SLICE===0&&index+1<movementRows.length){recordSyncSegment(segmentStartedAt);await yieldToBrowser();segmentStartedAt=clockNow();}
     }
     recordSyncSegment(segmentStartedAt);
+    const seenLosses=new Map();
+    const lossCandidates=[
+      ...lossRows.map(row=>({row,source:'STOCK_LOSS_LEDGER'})),
+      ...movementRows.filter(row=>lossTypes.has(String(row?.type||'').toUpperCase()))
+        .map(row=>({row,source:'INVENTORY_LEDGER'}))
+    ];
+    for(const candidate of lossCandidates){
+      const row=candidate.row||{},eventId=String(row.eventId||row.lossEventId||row.movementId||'').trim(),
+        t=finite(row.turn??row.simulationTurn),periodId=String(row.periodId||(t===null?'':'GAME_TURN_'+t)),
+        group=periodId?ensure(periodId):null,quantity=finite(row.quantity??row.lossQuantity??row.actualLossQuantity),
+        resourceId=String(row.resourceId||row.materialIdentity||'').trim(),unit=String(row.unit||'').trim(),
+        lossType=String(row.lossType||row.sourceType||'').toUpperCase(),
+        sourceEventId=String(row.sourceEventId||row.sourceReference||'').trim(),
+        sourceAuthority=String(row.sourceAuthority||row.authority||'').trim(),
+        status=String(row.status||'').toUpperCase();
+      const proof=fingerprint({eventId,sourceEventId,sourceType:row.sourceType||null,lossType,resourceId,quantity,unit,
+        sourceAuthority,turn:t,periodId,status});
+      if(eventId&&seenLosses.has(eventId)){
+        if(seenLosses.get(eventId)===proof){lossDuplicateCount++;if(group)group.lossDuplicateCount++;}
+        else{conflictingLossCount++;lossIntegrityErrorCount++;if(group){group.lossIntegrityErrorCount++;group.unclassifiedCount++;}}
+        continue;
+      }
+      if(eventId)seenLosses.set(eventId,proof);
+      const valid=!!eventId&&!!sourceEventId&&!!sourceAuthority&&!!resourceId&&!!unit&&quantity!==null&&quantity>0&&
+        t!==null&&periodId==='GAME_TURN_'+t&&['STORAGE','TRANSPORT','PRODUCTION'].includes(lossType)&&
+        ['COMMITTED','POSTED'].includes(status);
+      if(!valid){
+        lossIntegrityErrorCount++;
+        if(group){group.lossIntegrityErrorCount++;group.unclassifiedCount++;}
+        continue;
+      }
+      add(periodId,resourceId,quantity,'losses',unit,null);
+      if(group)group.lossEventCount++;
+    }
     const liveClosing=nationalStockSnapshot(bucket,productionAssets),periodStockFlowRows=[];
     for(const period of periods){
       if(!isObject(period))continue;
@@ -636,9 +771,17 @@
       const useLive=periodTurn===finite(reportTurn),closingRows=useLive?liveClosing.identities:(Array.isArray(period.closingStockByIdentity)?period.closingStockByIdentity:[]);
       const openingComplete=period.openingCaptured===true&&period.openingCoverageComplete===true;
       const closingComplete=useLive?liveClosing.complete:(period.closingCaptured===true&&period.closingCoverageComplete===true);
-      const movement=byPeriod.get(periodId)||{byIdentity:new Map(),unclassifiedCount:0,missingUnitCount:0,rowsObserved:0};
-      const flowComplete=!movementWindowTruncated&&movement.unclassifiedCount===0&&movement.missingUnitCount===0;
-      const lossesComplete=String(period.lossCoverageStatus||'').toUpperCase()==='COMPLETE';
+      const movement=byPeriod.get(periodId)||{byIdentity:new Map(),unclassifiedCount:0,missingUnitCount:0,rowsObserved:0,
+        lossEventCount:0,lossIntegrityErrorCount:0,lossDuplicateCount:0};
+      const flowComplete=!movementWindowTruncated&&unscopedMovementCount===0&&movement.unclassifiedCount===0&&
+        movement.missingUnitCount===0;
+      const lossLedgerBoundaryComplete=period.stockLossLedgerRowsAtOpening!==null&&period.stockLossLedgerRowsAtOpening!==undefined&&
+        Number.isFinite(Number(period.stockLossLedgerRowsAtOpening))&&
+        (useLive||(period.lossLedgerClosingCaptured===true&&period.stockLossLedgerRowsAtClosing!==null&&
+          period.stockLossLedgerRowsAtClosing!==undefined&&Number.isFinite(Number(period.stockLossLedgerRowsAtClosing))));
+      const lossesComplete=String(period.lossCoverageStatus||'').toUpperCase()==='COMPLETE'&&
+        lossLedgerBoundaryComplete&&!stockLossLedgerWindowTruncated&&
+        movement.lossIntegrityErrorCount===0;
       const identities=new Map();
       for(const row of openingRows)if(row?.resourceId&&row?.unit)identities.set(row.resourceId+'\\u0000'+row.unit,{resourceId:row.resourceId,unit:row.unit});
       for(const row of closingRows)if(row?.resourceId&&row?.unit)identities.set(row.resourceId+'\\u0000'+row.unit,{resourceId:row.resourceId,unit:row.unit});
@@ -653,18 +796,30 @@
           production:flowComplete?flow.production:null,imports:flowComplete?flow.imports:null,
           consumption:flowComplete?flow.consumption:null,exports:flowComplete?flow.exports:null,
           losses:lossesComplete&&flowComplete?flow.losses:null,
+          observedLosses:movement.lossEventCount>0&&movement.lossIntegrityErrorCount===0?flow.losses:null,
+          lossEventsObserved:movement.lossEventCount,
           closingQuantity:closed?finite(closed.quantity):(closingComplete?0:null),
           openingSource:period.openingCaptureSource||'UNOBSERVED',
           closingSource:useLive?'LIVE_READ_ONLY_CHECKPOINT':period.closingCaptureSource||'UNOBSERVED',
           movementRowsObserved:movement.rowsObserved,movementWindowComplete:flowComplete,
-          lossCoverageStatus:period.lossCoverageStatus||'UNOBSERVED_NO_AUTHORITATIVE_LOSS_LEDGER'});
+          movementDuplicateCount:duplicateMovementCount,movementConflictCount:conflictingMovementCount,
+          movementIdentityErrorCount:missingMovementIdentityCount,
+          lossCoverageStatus:period.lossCoverageStatus||'UNOBSERVED_NO_AUTHORITATIVE_LOSS_LEDGER',
+          lossLedgerBoundaryComplete:lossLedgerBoundaryComplete,lossLedgerWindowComplete:!stockLossLedgerWindowTruncated,
+          lossIntegrityErrorCount:movement.lossIntegrityErrorCount,lossDuplicateCount:movement.lossDuplicateCount});
       }
     }
     return{sourceBatchCount:batches.length,identifiedBatchCount:all.reduce((n,row)=>n+row.batchCount,0),
       missingIdentityCount,duplicateBatchCount,closingStockByIdentity:all.slice(0,maxItems).map(row=>Object.assign({},row,{status:'CLOSING_STOCK_ONLY'})),
       truncatedIdentityCount:Math.max(0,all.length-maxItems),periodStockFlowRows:periodStockFlowRows.slice(-Math.max(maxItems,MAX_ROWS_PER_SYNC_SLICE)),
       stockFlowPeriodCount:periods.length,stockFlowStatus:periodStockFlowRows.length?'PERIOD_MOVEMENT_EVIDENCE_OBSERVED':all.length?'CLOSING_STOCK_ONLY':'UNOBSERVED',
-      movementLedgerRowsObserved:movementRows.length,movementWindowTruncated,stockSnapshotCoverage:liveClosing.complete?'COMPLETE':'PARTIAL'};
+      movementLedgerRowsObserved:movementRows.length,movementWindowTruncated,
+      movementDuplicateCount:duplicateMovementCount,movementConflictCount:conflictingMovementCount,
+      movementIdentityErrorCount:missingMovementIdentityCount,unscopedMovementCount,
+      stockLossLedgerRowsObserved:lossRows.length,stockLossLedgerWindowTruncated,
+      lossIntegrityErrorCount,lossDuplicateCount,conflictingLossCount,
+      deliveryAudit:summarizeInternalDeliveries(bucket?.industrialNetwork,bucket,countryId),
+      stockSnapshotCoverage:liveClosing.complete?'COMPLETE':'PARTIAL'};
   }
 
   async function buildStatement(countryId,profile,root,turn){
@@ -684,7 +839,7 @@
       bounded(limits.pendingImportRequestRows,512,512),root,countryId);
     recordSyncSegment(sourceLookupStartedAt);
     const inventory=await summarizeInventory(resource,bounded(limits.inventoryBatchRows,4096,4096),
-      bounded(limits.maxStockIdentityRows,96,256),bounded(limits.inventoryMovementRows,2048,2048),turn,economy.productionAssets);
+      bounded(limits.maxStockIdentityRows,96,256),bounded(limits.inventoryMovementRows,2048,2048),turn,economy.productionAssets,countryId);
     const industry=isObject(economy.industrialRuntime)?economy.industrialRuntime:{};
     const productionRows=Array.isArray(industry.productionLedger)?
       industry.productionLedger.slice(-bounded(limits.productionLedgerRows,2048,2048)):[];

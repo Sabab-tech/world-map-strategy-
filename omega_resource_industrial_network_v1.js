@@ -491,7 +491,8 @@ function dispatchMineToWarehouse(countryId,site,flow,sourceBatch,routeProfile){
   appendSiteLogisticsStage(siteRuntime,'MINE_TO_WAREHOUSE','IN_TRANSIT_TO_WAREHOUSE',{shipmentId,batchId,quantity,unit:route.unit,
     etaTurn,etaDate,plannedTransitDays:days,quantityUnitBridge:bridge,transportAssetBindingStatus:'UNBOUND_SIMULATED_CAPACITY'});
   const shipment={shipmentId,shipmentType:'MINE_TO_WAREHOUSE',countryId:cid,siteId,resourceId:rid,batchId,
-    quantity:Number(quantity.toFixed(6)),unit:route.unit,warehouseId,sourceWarehouseId:null,
+    quantity:Number(quantity.toFixed(6)),dispatchedQuantity:Number(quantity.toFixed(6)),lostQuantity:0,lossEvents:[],
+    unit:route.unit,warehouseId,sourceWarehouseId:null,
     status:'IN_TRANSIT',deliveryStatus:'IN_TRANSIT_TO_RAW_WAREHOUSE',createdTurn:turn(),createdDate:factoryCurrentGameDate(),
     etaTurn,etaDate,route,transportCapacityReservation:capacityUse,
     provenance:{source:'OMEGA_RESOURCE_SITE_LOGISTICS_RUNTIME',authority:routeProfile.provenance?.authority||'SCENARIO_LOGISTICS_DESIGN_ONLY',
@@ -766,6 +767,19 @@ function normalizeFactoryType(value){
     }
     return{complete,identities:[...byIdentity.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit))};
   }
+function invalidateStockLossCoverage(resource,sourceType,status){
+  if(!resource||typeof resource!=='object')return false;
+  const periods=Array.isArray(resource.stockFlowPeriods)?resource.stockFlowPeriods.slice():[],
+    period=periods.find(row=>String(row?.periodId||'')==='GAME_TURN_'+turn());
+  if(!period)return false;
+  period.lossCoverageStatus='UNOBSERVED_SOURCE_COVERAGE_NOT_ATTESTED';
+  period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
+  if(period.lossCoverageBySource[sourceType])
+    period.lossCoverageBySource[sourceType]=Object.assign({},period.lossCoverageBySource[sourceType],
+      {status:status||'INVALIDATED_BY_NEW_SOURCE_EVENT'});
+  resource.stockFlowPeriods=periods;
+  return true;
+}
 function captureStockFlowPeriod(resource,countryId) {
   if(!resource||typeof resource!=='object')return{status:'UNOBSERVED'};
   const t=turn(),periodId='GAME_TURN_'+String(t);
@@ -780,12 +794,16 @@ function captureStockFlowPeriod(resource,countryId) {
     if(Number(previous.turn)===t-1){
       previous.closingStockByIdentity=clone(snapshot.identities);previous.closingCoverageComplete=snapshot.complete;
       previous.closingCaptured=true;previous.closingCaptureSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';
-    }else{previous.closingCaptured=false;previous.closingCaptureStatus='TURN_GAP_UNOBSERVED';}
+      previous.stockLossLedgerRowsAtClosing=Array.isArray(resource.stockLossLedger)?resource.stockLossLedger.length:0;
+      previous.lossLedgerClosingCaptured=true;previous.lossLedgerClosingSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';
+    }else{previous.closingCaptured=false;previous.closingCaptureStatus='TURN_GAP_UNOBSERVED';
+      previous.lossLedgerClosingCaptured=false;previous.lossLedgerClosingStatus='TURN_GAP_UNOBSERVED';}
   }
   periods.push({schemaVersion:1,periodId,turn:t,periodType:'GAME_TURN',
     openingStockByIdentity:clone(snapshot.identities),openingCoverageComplete:snapshot.complete,
     openingCaptured:true,openingCaptureSource:'BEFORE_FIRST_PHYSICAL_STOCK_MUTATION',
     inventoryLedgerRowsAtOpening:Array.isArray(resource.inventoryLedger)?resource.inventoryLedger.length:0,
+    stockLossLedgerRowsAtOpening:Array.isArray(resource.stockLossLedger)?resource.stockLossLedger.length:0,
     lossCoverageStatus:'UNOBSERVED_NO_AUTHORITATIVE_LOSS_LEDGER'});
   while(periods.length>32)periods.shift();
   resource.stockFlowPeriods=periods;
@@ -4192,6 +4210,7 @@ function commitTransportCapacity(countryId,route,quantity,shipmentId,quantityToC
     useByMode:Object.fromEntries(Object.entries(counts).map(([mode,count])=>[mode,Number((capacityQuantity*count).toFixed(6))])),
     authority:'SIMULATED_SHARED_TRANSPORT_CAPACITY_LEDGER'};
   bucket.shipments.push(row);while(bucket.shipments.length>1024)bucket.shipments.shift();
+  invalidateStockLossCoverage(resourceState(cid),'TRANSPORT','INVALIDATED_BY_NEW_TRANSPORT_MOVEMENT');
   return clone(row);
 }
 function factoryUtilityDiagnostics(countryId){
@@ -4561,8 +4580,10 @@ function commitFactoryCycleImmediately(input={}){
     createdBatchIds:record.createdBatchIds,turn:turn(),authority:'SIMULATED_PROCESSING_YIELD',status:'AVAILABLE_TO_ECONOMY'});
   while(r.finishedGoodsLedger.length>2048)r.finishedGoodsLedger.shift();
   const inventoryLedger=Array.isArray(r.inventoryLedger)?r.inventoryLedger:[];
-  inventoryLedger.push({type:'FACTORY_PROCESSING_COMMITTED',transactionId,factoryId:fid,resourceId:rid,inputQuantity:need,outputs:clone(output),sourceBatchIds:record.sourceBatchIds,createdBatchIds:record.createdBatchIds,turn:turn(),periodId:'GAME_TURN_'+turn()});
+  inventoryLedger.push({type:'FACTORY_PROCESSING_COMMITTED',transactionId,factoryId:fid,resourceId:rid,inputQuantity:need,outputs:clone(output),sourceBatchIds:record.sourceBatchIds,createdBatchIds:record.createdBatchIds,turn:turn(),periodId:'GAME_TURN_'+turn(),lossMeasurementStatus:'UNOBSERVED'});
   while(inventoryLedger.length>2048)inventoryLedger.shift();r.inventoryLedger=inventoryLedger;
+  invalidateStockLossCoverage(r,'PRODUCTION','INVALIDATED_BY_NEW_PRODUCTION_EVENT');
+  invalidateStockLossCoverage(r,'PRODUCTION','INVALIDATED_BY_NEW_PRODUCTION_EVENT');
   n.factoryRuntime[fid]=record;n.events.push(record);n.events=n.events.slice(-MAX_EVENTS);
   factorySetProductionHealth(asset,requested+1e-6<ratedCapacity?'REDUCED':'RUNNING',requested,ratedCapacity,
     {transactionId,constraints:clone(productionConstraints)});
@@ -4797,8 +4818,10 @@ function commitMultiInputFactoryCycleImmediately(input={}){
   while(r.finishedGoodsLedger.length>2048)r.finishedGoodsLedger.shift();
   r.inventoryLedger=Array.isArray(r.inventoryLedger)?r.inventoryLedger:[];
   r.inventoryLedger.push({type:'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED',transactionId,factoryId:fid,recipeId:record.recipeId,
-    inputQuantities:clone(inputQuantities),outputs:clone(output),sourceBatchIds:roots,createdBatchIds:record.createdBatchIds,turn:turn(),periodId:'GAME_TURN_'+turn()});
+    inputQuantities:clone(inputQuantities),outputs:clone(output),sourceBatchIds:roots,createdBatchIds:record.createdBatchIds,turn:turn(),periodId:'GAME_TURN_'+turn(),lossMeasurementStatus:'UNOBSERVED'});
   while(r.inventoryLedger.length>2048)r.inventoryLedger.shift();
+  invalidateStockLossCoverage(r,'PRODUCTION','INVALIDATED_BY_NEW_PRODUCTION_EVENT');
+  invalidateStockLossCoverage(r,'PRODUCTION','INVALIDATED_BY_NEW_PRODUCTION_EVENT');
   n.factoryRuntime=n.factoryRuntime||{};n.factoryRuntime[fid]=record;
   n.events=Array.isArray(n.events)?n.events:[];n.events.push(record);n.events=n.events.slice(-MAX_EVENTS);
   factorySetProductionHealth(asset,productionQuantity+1e-6<capacity?'REDUCED':'RUNNING',productionQuantity,capacity,
@@ -6949,7 +6972,13 @@ function runCountryTurn(countryValue){
   return task;
 }
 function api(){
-  return Object.freeze({VERSION,loadCatalog,runCountryTurn,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,registerStartingFactoryAssets,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,allocateFactoryInputProportionally,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,resourceMethod,buildRoute});
+  function recordShipmentLoss(countryValue,payload){
+    const economy=g.Omega?.ResourceEconomy||g.OmegaResourceEconomy;
+    if(!economy||typeof economy.recordShipmentLoss!=='function')
+      return{status:'UNAVAILABLE',reason:'RESOURCE_ECONOMY_LOSS_COMMIT_UNAVAILABLE'};
+    return economy.recordShipmentLoss(countryValue,payload);
+  }
+  return Object.freeze({VERSION,loadCatalog,runCountryTurn,loadSiteLogisticsRoutes,getTransportFleet,setTransportFleet,previewSiteTransport,planExtraction,planShipment,dispatchShipment,dispatchFactoryInputShipment,advanceShipments,recordShipmentLoss,quoteMineProject,startMineProject,startFactoryProject,startInfrastructureProject,startPadmaCorridorProject,advanceProjects,startTechnologyProject,executeFactoryCycle,executeSitePipeline,diagnostics,gameplayPipelineDiagnostics,factoryCatalogDiagnostics,factoryProductionRequirements,registerStartingFactoryAssets,factoryProductionStatus,decommissionFactory,decommissionMine,setMineOperatingStatus,quoteMineDemolition,destroyMineAssets,startFactoryProductionCycle,transferFactoryInputsFromWarehouse,processPendingFactoryInputs,allocateFactoryInputProportionally,factoryUtilityDiagnostics,factoryConstructionMaterialQuote,reconcileFactoryEmployment,normalizeInfrastructure,candidateFactories,recipeFor,resourceMethod,buildRoute});
 }
 g.Omega=g.Omega||{};g.Omega.ResourceIndustrialNetwork=api();g.OmegaResourceIndustrialNetwork=g.Omega.ResourceIndustrialNetwork;
 

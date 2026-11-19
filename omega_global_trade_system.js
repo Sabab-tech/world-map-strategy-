@@ -384,14 +384,21 @@ function captureStockFlowPeriod(stateTransaction) {
     if(previous&&Number(previous.turn)<t){
       if(Number(previous.turn)===t-1){previous.closingStockByIdentity=clone(snapshot.identities);
         previous.closingCoverageComplete=snapshot.complete;previous.closingCaptured=true;
-        previous.closingCaptureSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';}
-      else{previous.closingCaptured=false;previous.closingCaptureStatus='TURN_GAP_UNOBSERVED';}
+        previous.closingCaptureSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';
+        previous.stockLossLedgerRowsAtClosing=Array.isArray(stateTransaction.get('resource.stockLossLedger'))
+          ?stateTransaction.get('resource.stockLossLedger').length:0;
+        previous.lossLedgerClosingCaptured=true;
+        previous.lossLedgerClosingSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';}
+      else{previous.closingCaptured=false;previous.closingCaptureStatus='TURN_GAP_UNOBSERVED';
+        previous.lossLedgerClosingCaptured=false;previous.lossLedgerClosingStatus='TURN_GAP_UNOBSERVED';}
     }
-    const ledger=stateTransaction.get('resource.inventoryLedger');
+    const ledger=stateTransaction.get('resource.inventoryLedger'),
+      lossLedger=stateTransaction.get('resource.stockLossLedger');
     periods.push({schemaVersion:1,periodId,turn:t,periodType:'GAME_TURN',
       openingStockByIdentity:clone(snapshot.identities),openingCoverageComplete:snapshot.complete,
       openingCaptured:true,openingCaptureSource:'BEFORE_FIRST_PHYSICAL_STOCK_MUTATION',
       inventoryLedgerRowsAtOpening:Array.isArray(ledger)?ledger.length:0,
+      stockLossLedgerRowsAtOpening:Array.isArray(lossLedger)?lossLedger.length:0,
       lossCoverageStatus:'UNOBSERVED_NO_AUTHORITATIVE_LOSS_LEDGER'});
     while(periods.length>32)periods.shift();
     stateTransaction.set('resource.stockFlowPeriods',periods);
