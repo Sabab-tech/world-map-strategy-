@@ -41,6 +41,23 @@
   function num(v){var n=Number(v);return Number.isFinite(n)?n:null;}
   function id(v){return String(v==null?'':v).trim().toUpperCase();}
   function tok(v){return String(v==null?'':v).normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
+  function stableLossEvidenceValue(value,seen){
+    if(value===null||typeof value!=='object')return JSON.stringify(value);
+    seen=seen||new Set();
+    if(seen.has(value))return '"[CIRCULAR]"';
+    seen.add(value);
+    var result=Array.isArray(value)
+      ?'['+value.map(function(item){return stableLossEvidenceValue(item,seen);}).join(',')+']'
+      :'{'+Object.keys(value).filter(function(key){return key!=='__proto__'&&key!=='constructor'&&typeof value[key]!=='function'&&value[key]!==undefined;})
+        .sort().map(function(key){return JSON.stringify(key)+':'+stableLossEvidenceValue(value[key],seen);}).join(',')+'}';
+    seen.delete(value);
+    return result;
+  }
+  function lossEvidenceFingerprint(value){
+    var input=stableLossEvidenceValue(value),hash=2166136261;
+    for(var index=0;index<input.length;index++){hash^=input.charCodeAt(index);hash=Math.imul(hash,16777619);}
+    return('00000000'+(hash>>>0).toString(16)).slice(-8);
+  }
   function state(){return g.Game&&g.Game.state?g.Game.state:(g.gameState||{});}
   function turn(){
     var s=state(),x=s&&s.simulation?num(s.simulation.turn):null;
@@ -2196,7 +2213,7 @@ function captureStockFlowPeriod(stateTransaction) {
     var coverage={status:invalid.length?'PARTIAL':'COMPLETE',sourceType:sourceType,countryId:country,turn:eventTurn,
       periodId:periodId,rowsObserved:observedRows,lossEventsObserved:lossEventsObserved,integrityErrors:invalid,
       authority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',basis:'AUTHORITATIVE_SOURCE_LEDGER_SCAN',attestedAtTurn:turn(),
-      sourceFingerprint:fingerprint({sourceType:sourceType,turn:eventTurn,observedRows:observedRows,
+      sourceFingerprint:lossEvidenceFingerprint({sourceType:sourceType,turn:eventTurn,observedRows:observedRows,
         losses:losses.filter(function(row){return currentTurn(row)&&String(row.sourceType||'').toUpperCase()===sourceType;})})};
     period.lossCoverageBySource=Object.assign({},period.lossCoverageBySource||{});
     period.lossCoverageBySource[sourceType]=coverage;
