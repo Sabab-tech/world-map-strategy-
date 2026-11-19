@@ -28,6 +28,34 @@ test('transpiled helpers stay local while the runtime API remains globally publi
   assert.deepEqual({ ...context.OmegaResourceResearchRuntime }, { ready: true });
 });
 
+test('later classic assets cannot overwrite Resource Research transpile helpers', () => {
+  const original = '/* runtime banner */\\n(function (global) { global.mergeResearchProject = project => m(M({}, project), { progress: 100 }); })(window);';
+  const compiled = [
+    'var M = (target, source) => Object.assign(target, source);',
+    'var m = (target, descriptors) => Object.defineProperties(target, Object.getOwnPropertyDescriptors(descriptors));',
+    '(function (global) { global.mergeResearchProject = project => m(M({}, project), { progress: 100 }); })(window);'
+  ].join('\\n');
+  const competingAsset = [
+    'var M = (target, source) => undefined;',
+    'var m = (target, descriptors) => Object.defineProperties(target, Object.getOwnPropertyDescriptors(descriptors));'
+  ].join('\\n');
+
+  const unscoped = vm.createContext({});
+  unscoped.window = unscoped;
+  vm.runInContext(compiled, unscoped);
+  vm.runInContext(competingAsset, unscoped);
+  assert.throws(() => unscoped.mergeResearchProject({ projectId: 'R-1' }), TypeError);
+
+  const scoped = vm.createContext({});
+  scoped.window = scoped;
+  vm.runInContext(scopeTranspiledAndroidAsset(original, compiled), scoped);
+  vm.runInContext(competingAsset, scoped);
+  assert.deepEqual({ ...scoped.mergeResearchProject({ projectId: 'R-1' }) }, {
+    projectId: 'R-1',
+    progress: 100
+  });
+});
+
 test('ordinary top-level scripts retain their intentional global declarations', () => {
   const original = 'window.OMEGA_LEGACY_BOOT = true;\nvar OMEGA_LEGACY_GLOBAL = 42;';
   const compiled = 'var OMEGA_LEGACY_GLOBAL = 42; window.OMEGA_LEGACY_BOOT = true;';
