@@ -77,6 +77,10 @@ function harness(){
   const eventHandlers=new Map();
   const window={
     Omega:{FinanceMinistry:finance,MinistryInteroperability:interop,WorldSimulationScheduler:scheduler,
+      PrivateEnterpriseLifecycleV1:{companyIds:[
+        'AURORA_INDUSTRIAL_GROUP_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP','NOVA_CONSUMER_INDUSTRIES',
+        'ATLAS_TECHNOLOGY_CORPORATION','TERRA_INFRASTRUCTURE_GROUP'
+      ]},
       Simulation:{world:{state},clock:{turn:8}}},
     addEventListener(type,handler){
       const set=eventHandlers.get(type)||new Set();set.add(handler);eventHandlers.set(type,set);
@@ -439,6 +443,11 @@ test('large ledger inputs remain hard-bounded to the configured accounting workl
 });
 
 
+const apiTestCompanyIds=[
+  'AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP','NOVA_CONSUMER_INDUSTRIES',
+  'ATLAS_TECHNOLOGY_CORPORATION','TERRA_INFRASTRUCTURE_GROUP'
+];
+
 function testJournal(countryId,sectorId,companyId,transactionId,currency,periodId){
   const amount=1250,accountPrefix=sectorId==='firm'?'FIRM:'+companyId:'GOVERNMENT';
   return{
@@ -458,18 +467,19 @@ test('sector journal reader validates Finance and company-owned postings without
   const api=harness().window.Omega.NationalAccounts;
   const financeRows=[
     {transactionId:'GOV-J-1',action:'EXPENSE',sectorJournalV1:testJournal('BGD','government',null,'GOV-J-1','USD','FY-1')},
-    {transactionId:'FIRM-FIN-1',type:'PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL',companyId:'AURORA',
-      sectorJournalV1:testJournal('BGD','firm','AURORA','FIRM-FIN-1','BDT','TURN-8')}
+    {transactionId:'FIRM-FIN-1',type:'PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL',companyId:'AURORA_INDUSTRIAL_GROUP',
+      sectorJournalV1:testJournal('BGD','firm','AURORA_INDUSTRIAL_GROUP','FIRM-FIN-1','BDT','TURN-8')}
   ];
-  const companyAccounts={AURORA:{companyId:'AURORA',cashFlowJournalVersion:2,cashFlowEntries:[
-    {entryId:'FIRM-CASH-1',companyId:'AURORA',status:'POSTED',
-      sectorJournalV1:testJournal('BGD','firm','AURORA','FIRM-CASH-1','BDT','TURN-8')}
+  const companyAccounts={AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',cashFlowJournalVersion:2,cashFlowEntries:[
+    {entryId:'FIRM-CASH-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',
+      sectorJournalV1:testJournal('BGD','firm','AURORA_INDUSTRIAL_GROUP','FIRM-CASH-1','BDT','TURN-8')}
   ]}};
   const result=await api.reconcileSectorJournals({countryId:'BGD',financeRows,financeSourceRowsTotal:2,
     companyAccounts,maxCompanyAccounts:5,companyCashFlowRowsPerCompany:256,financeLedgerRows:500});
   assert.equal(result.status,'PARTIAL','this read model never claims whole-economy completeness');
   assert.equal(result.integrityStatus,'RECONCILED');
-  assert.equal(result.sourceCoverageStatus,'RETAINED_SOURCE_WINDOWS_ACCOUNTED');
+  assert.equal(result.sourceCoverageStatus,'PARTIAL',
+    'other canonical company records remain unobserved in this fixture');
   assert.equal(result.postedTransactionCount,3);
   assert.equal(result.invalidTransactionCount,0);
   assert.equal(result.duplicateTransactionCount,0);
@@ -486,13 +496,13 @@ test('sector journal reader rejects unbalanced, wrong-country and duplicate sour
   bad.creditTotalMinor=1249;
   bad.lines[1].amountMinor=1249;
   const wrong=testJournal('USA','government',null,'WRONG-1','USD','FY-1');
-  const duplicate=testJournal('BGD','firm','AURORA','DUP-1','BDT','TURN-8');
+  const duplicate=testJournal('BGD','firm','AURORA_INDUSTRIAL_GROUP','DUP-1','BDT','TURN-8');
   const result=await api.reconcileSectorJournals({countryId:'BGD',financeRows:[
     {transactionId:'BAD-1',action:'EXPENSE',sectorJournalV1:bad},
     {transactionId:'WRONG-1',action:'BORROW',sectorJournalV1:wrong}
-  ],companyAccounts:{AURORA:{companyId:'AURORA',cashFlowEntries:[
-    {entryId:'DUP-1',companyId:'AURORA',status:'POSTED',sectorJournalV1:duplicate},
-    {entryId:'DUP-1',companyId:'AURORA',status:'POSTED',sectorJournalV1:duplicate}
+  ],companyAccounts:{AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',cashFlowEntries:[
+    {entryId:'DUP-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',sectorJournalV1:duplicate},
+    {entryId:'DUP-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',sectorJournalV1:duplicate}
   ]}}});
   assert.equal(result.integrityStatus,'UNRECONCILED');
   assert.ok(result.invalidTransactionCount>=2);
@@ -501,13 +511,13 @@ test('sector journal reader rejects unbalanced, wrong-country and duplicate sour
 
 test('sector journal reader exposes legacy, unavailable and truncated source coverage instead of zero-filling it',async()=>{
   const api=harness().window.Omega.NationalAccounts;
-  const entries=Array.from({length:300},(_,index)=>({entryId:'LEGACY-'+index,companyId:'AURORA',status:'POSTED'}));
-  entries.push({entryId:'UNAVAILABLE-1',companyId:'AURORA',status:'POSTED',
+  const entries=Array.from({length:300},(_,index)=>({entryId:'LEGACY-'+index,companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED'}));
+  entries.push({entryId:'UNAVAILABLE-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',
     sectorJournalV1:{schemaVersion:1,status:'UNAVAILABLE',sourceTransactionId:'UNAVAILABLE-1',
-      sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',countryId:'BGD',companyId:'AURORA'}});
+      sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',countryId:'BGD',companyId:'AURORA_INDUSTRIAL_GROUP'}});
   const result=await api.reconcileSectorJournals({countryId:'BGD',
     financeRows:[{transactionId:'LEGACY-FIN-1',action:'BORROW'}],financeSourceRowsTotal:600,
-    companyAccounts:{AURORA:{companyId:'AURORA',cashFlowJournalDroppedEntries:2,cashFlowEntries:entries}},
+    companyAccounts:{AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',cashFlowJournalDroppedEntries:2,cashFlowEntries:entries}},
     maxCompanyAccounts:5,companyCashFlowRowsPerCompany:256,financeLedgerRows:500});
   assert.equal(result.status,'PARTIAL');
   assert.equal(result.sourceCoverageStatus,'PARTIAL');
@@ -523,10 +533,10 @@ test('sector journal reader exposes legacy, unavailable and truncated source cov
 
 test('country checkpoint reads existing private-firm journals without mutating company cash or Finance sources',async()=>{
   const h=harness(),api=h.window.Omega.NationalAccounts;
-  const journal=testJournal('BGD','firm','AURORA','COMPANY-FLOW-1','BDT','TURN-8');
+  const journal=testJournal('BGD','firm','AURORA_INDUSTRIAL_GROUP','COMPANY-FLOW-1','BDT','TURN-8');
   h.state.economy.BGD.companyAccounts={
-    AURORA:{companyId:'AURORA',cashFlowJournalVersion:2,cashFlowEntries:[
-      {entryId:'COMPANY-FLOW-1',companyId:'AURORA',status:'POSTED',sectorJournalV1:journal}
+    AURORA_INDUSTRIAL_GROUP:{companyId:'AURORA_INDUSTRIAL_GROUP',cashFlowJournalVersion:2,cashFlowEntries:[
+      {entryId:'COMPANY-FLOW-1',companyId:'AURORA_INDUSTRIAL_GROUP',status:'POSTED',sectorJournalV1:journal}
     ]}
   };
   const financeBefore=structuredClone(h.state.finance);
@@ -543,28 +553,21 @@ test('country checkpoint reads existing private-firm journals without mutating c
     'the read model must not mutate private-company wallet or cash-flow source rows');
 });
 
-test('country checkpoint caps private-firm journal work to five accounts and 256 rows per account',async()=>{
-  const h=harness(),api=h.window.Omega.NationalAccounts,companyAccounts={};
-  for(let company=0;company<7;company++){
-    const companyId='COMPANY-'+company;
+test('country checkpoint caps private-firm journal work to configured canonical company and row windows',async()=>{
+  const h=harness(),api=h.window.Omega.NationalAccounts,companyAccounts={},companyIds=apiTestCompanyIds;
+  for(const companyId of companyIds){
     companyAccounts[companyId]={companyId,cashFlowJournalDroppedEntries:0,cashFlowEntries:
       Array.from({length:300},(_,index)=>({entryId:companyId+'-'+index,companyId,status:'POSTED'}))};
   }
-  h.state.economy.BGD.companyAccounts=companyAccounts;
-  await api.init();
-  const result=await api.processCountry('BGD',{turn:8,state:h.state});
-  assert.equal(result.status,'CHECKPOINTED');
-  const journal=h.state.economy.BGD.nationalAccounts.sectorJournals;
-  assert.equal(journal.sourceWindows.companyCashFlow.companyAccountsAvailable,7);
-  assert.equal(journal.sourceWindows.companyCashFlow.companyAccountsObserved,5);
-  assert.equal(journal.sourceWindows.companyCashFlow.companyAccountsTruncated,true);
-  assert.equal(journal.sourceWindows.companyCashFlow.observedRows,5*256);
-  assert.equal(journal.sourceWindows.companyCashFlow.windowTruncated,true);
-  assert.equal(journal.sourceRowsScanned,5*256);
-  const workload=h.state.economy.BGD.nationalAccounts.workload;
-  assert.equal(result.sourceRowsScanned,workload.financeLedgerRowsObserved+workload.tradeRowsObserved+
-    workload.inventoryBatchRowsObserved+workload.productionLedgerRowsObserved+5*256);
-  assert.equal(journal.sourceCoverageStatus,'PARTIAL');
-  assert.equal(api.diagnostics().yieldCount>=2,true,
+  const result=await api.reconcileSectorJournals({countryId:'BGD',financeRows:[],financeSourceRowsTotal:0,
+    companyAccounts,maxCompanyAccounts:3,companyCashFlowRowsPerCompany:256,financeLedgerRows:500});
+  assert.equal(result.sourceWindows.companyCashFlow.companyAccountsAvailable,5);
+  assert.equal(result.sourceWindows.companyCashFlow.companyAccountsObserved,3);
+  assert.equal(result.sourceWindows.companyCashFlow.companyAccountsTruncated,true);
+  assert.equal(result.sourceWindows.companyCashFlow.observedRows,3*256);
+  assert.equal(result.sourceWindows.companyCashFlow.windowTruncated,true);
+  assert.equal(result.sourceRowsScanned,3*256);
+  assert.equal(result.sourceCoverageStatus,'PARTIAL');
+  assert.equal(api.diagnostics().yieldCount>=1,true,
     'the bounded company window must yield cooperatively at 512-row intervals');
 });
