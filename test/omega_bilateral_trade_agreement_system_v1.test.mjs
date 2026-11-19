@@ -202,6 +202,12 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(report.report.products[0].stock.status, 'KNOWN');
   assert.equal(report.report.products[0].expectedPrice.status, 'KNOWN');
   assert.equal(report.report.alternativeMarkets.competingBuyersForExports[0].status, 'OBSERVED');
+  const potentialBuyer = report.report.alternativeMarkets.competingBuyersForExports[0].alternatives[0];
+  assert.equal(potentialBuyer.status, 'POTENTIAL_BUYER');
+  assert.equal(potentialBuyer.competingBidDisclosure, 'PRIVATE');
+  assert.equal(Object.hasOwn(potentialBuyer, 'observedUnmetDemand'), false);
+  assert.equal(Object.hasOwn(potentialBuyer, 'demandPerDay'), false);
+  assert.equal(Object.hasOwn(potentialBuyer, 'existingRequests'), false);
   assert.equal(report.report.generatedTurn, 0);
   assert.equal(report.report.availableForeignCurrency.value, null,
     'market intelligence must not disclose the counterparty Treasury balance');
