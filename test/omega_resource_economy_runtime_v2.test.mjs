@@ -806,7 +806,7 @@ test('storage write-off and mine-haul transport loss commit physical balances an
   resource.industrialNetwork={
     shipments:[{shipmentId:'MINE-HAUL-LOSS-1',shipmentType:'MINE_TO_WAREHOUSE',countryId:'BGD',
       siteId:'MINE_1',resourceId:'iron_ore',batchId:'MINE-BATCH-1',quantity:20,dispatchedQuantity:20,
-      lostQuantity:0,lossEvents:[],unit:'TONNES',status:'IN_TRANSIT',createdTurn:1}],
+      lostQuantity:0,lossEvents:[],unit:'TONNES',status:'IN_TRANSIT',createdTurn:0}],
     deliveries:[],
     siteFlowLedger:[{batchId:'MINE-BATCH-1',siteId:'MINE_1',resourceId:'iron_ore',
       mineHeldQuantity:20,mineWarehouseReceivedQuantity:73,mineLogisticsStockDebited:true,
