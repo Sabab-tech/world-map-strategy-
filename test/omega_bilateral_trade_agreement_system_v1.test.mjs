@@ -459,6 +459,10 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(linkedDelivery.contracts.find(row => row.agreementId === forceAgreement.agreementId).status, 'DELIVERY_REQUESTED');
   const forceRequest = globalThis.Game.state.trade.BGD.importRequests.find(row => row.governmentContractId === forceAgreement.agreementId);
   assert.equal(forceRequest.unitPrice, 110);
+  const blockedTermination = bilateral.terminateContract('BGD', forceAgreement.agreementId, 'PLAYER_REQUESTED_TERMINATION');
+  assert.equal(blockedTermination.accepted, false);
+  assert.equal(blockedTermination.reason, 'TERMINATION_BLOCKED_BY_PENDING_DELIVERY',
+    'a pending shipment must be settled or explicitly cancelled before a treaty can terminate');
   forceRequest.quantity = 45;
   forceRequest.status = 'SETTLED';
   forceRequest.settlementId = 'SETTLEMENT-' + forceAgreement.agreementId + '-0001';
