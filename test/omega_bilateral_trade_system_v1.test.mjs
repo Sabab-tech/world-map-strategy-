@@ -1,0 +1,230 @@
+import assert from 'node:assert/strict';
+
+const handlers = new Map();
+const actionMetadata = new Map();
+globalThis.Game = { state: {
+  simulation: { turn: 12, session: { playerCountryId: 'BGD' } },
+  trade: { BGD: { routeCapacity: { crude_oil: 5000, steel: 5000 } }, SAU: { internationalShipmentLedger: [] } },
+  resource: {
+    BGD: {
+      inventory: { crude_oil: 120 },
+      production: { crude_oil: 8 },
+      consumption: { crude_oil: 12 }
+    },
+    SAU: {
+      inventory: { crude_oil: 2500, steel: 100 },
+      reserves: { crude_oil: 200, steel: 10 },
+      production: { crude_oil: 120 },
+      consumption: { crude_oil: 75 },
+      demandRuntime: { byResource: { crude_oil: { demandPerDay: 75 } } },
+      industrialNetwork: {}
+    }
+  },
+  finance: { BGD: { available: 100000, currencyCode: 'BDT' }, SAU: { available: 80000, currencyCode: 'SAR' } },
+  economy: { BGD: { currencyCode: 'BDT', reserves: 750000 }, SAU: { currencyCode: 'SAR', reserves: 1200000 } },
+  foreign: {
+    BGD: { relations: { SAU: { overall: 82, trade: 88, trust: 80, political: 78, sanctions: false, war_state: false } } },
+    SAU: { relations: { BGD: { overall: 82, trade: 88, trust: 80, political: 78, sanctions: false, war_state: false } } }
+  }
+} };
+globalThis.Omega = {
+  MinistryInteroperability: {
+    configure() {},
+    registerAction(type, metadata) { actionMetadata.set(type, metadata); },
+    registerCommandHandler(type, owner, handler) { handlers.set(type, { owner, handler }); },
+    dispatchCommand(owner, type, countryId, payload) {
+      const registered = handlers.get(type);
+      if (!registered || registered.owner !== owner) return { status: 'UNHANDLED', reason: type };
+      const cid = String(countryId).toUpperCase();
+      const domains = globalThis.Game.state;
+      domains[owner] = domains[owner] || {};
+      domains[owner][cid] = domains[owner][cid] || {};
+      const record = domains[owner][cid];
+      const transaction = {
+        get(key) {
+          const parts = String(key).split('.');
+          if (parts.shift() !== owner) return undefined;
+          let current = record;
+          for (const part of parts) current = current == null ? undefined : current[part];
+          return current;
+        },
+        set(key, value) {
+          const parts = String(key).split('.');
+          if (parts.shift() !== owner) throw new Error('STATE_OWNER_MISMATCH');
+          let current = record;
+          while (parts.length > 1) {
+            const part = parts.shift();
+            current[part] = current[part] && typeof current[part] === 'object' ? current[part] : {};
+            current = current[part];
+          }
+          current[parts[0]] = value;
+        }
+      };
+      const result = registered.handler({ payload }, { countryId: cid, stateTransaction: transaction });
+      return result && result.accepted
+        ? { status: 'APPLIED', result }
+        : { status: 'REJECTED', result, reason: result && result.reason };
+    }
+  }
+};
+globalThis.OmegaGlobalTrade = {
+  currencyOf(countryId) { return countryId === 'SAU' ? 'SAR' : 'BDT'; },
+  fxRate() { return 0.012; },
+  createRequest(countryId, payload) { return { accepted: true, request: { countryId, ...payload, requestId: 'TEST-IMPORT-1' } }; }
+};
+let marketQuoteStatus='CLEARED';
+globalThis.OmegaGlobalMarket = {
+  describeProduct(resourceId) { return { id: resourceId, available: true }; },
+  quote(resourceId) { return { resourceId, status: marketQuoteStatus, clearingPriceUsd: marketQuoteStatus==='CLEARED' ? 95 : null, referencePrice: 88 }; },
+  executableLocalPrice(countryId, resourceId) { return marketQuoteStatus==='CLEARED' ? (resourceId === 'crude_oil' ? 95 : 190) : null; },
+  localPrice(countryId, resourceId) { return resourceId === 'crude_oil' ? 88 : 175; },
+  suppliers(resourceId, limit, buyerCountryId) {
+    return [{ countryId: 'SAU', available: 2500, evidenceStatus: 'VERIFIED_MARKET_STOCK' }];
+  }
+};
+
+await import('../omega_bilateral_trade_system_v1.js');
+const bilateral = globalThis.OmegaBilateralTrade;
+assert.ok(bilateral, 'Bilateral Trade API must be registered');
+const diagnostics = bilateral.diagnostics();
+assert.equal(diagnostics.handlerInstalled, true, JSON.stringify(diagnostics));
+assert.equal(diagnostics.registeredCommandHandlers, 2);
+assert.equal(diagnostics.automaticWorldRosterScan, false);
+assert.equal(diagnostics.usesExistingGlobalTradeScheduler, true);
+assert.equal(diagnostics.npcReviewLimitPerCountryTurn, 2);
+assert.equal(diagnostics.schedulerHandlers, 0);
+
+// Intelligence is on-demand, persisted under the requesting country's Trade state,
+// and keeps source evidence distinct from derived estimates and missing data.
+const built = bilateral.buildMarketIntelligence('BGD', 'SAU', { resourceId: 'crude_oil' });
+assert.equal(built.ok, true, JSON.stringify(built));
+assert.equal(built.report.resources.length, 1);
+const oil = built.report.resources[0];
+assert.equal(oil.domesticProduction.status, 'KNOWN');
+assert.equal(oil.domesticProduction.value, 120);
+assert.equal(oil.domesticConsumption.value, 75);
+assert.equal(oil.potentialExportableSurplus.status, 'ESTIMATED');
+assert.equal(oil.potentialExportableSurplus.value, 45);
+assert.equal(oil.inboundInTransit.status, 'KNOWN');
+assert.equal(oil.inboundInTransit.value, 0);
+assert.equal(oil.supplierReliability.status, 'UNKNOWN');
+assert.equal(oil.strategicImportance.status, 'UNKNOWN',
+  'no national strategic priority is fabricated when no source record exists');
+assert.equal(oil.expectedLocalPrice.value, 95);
+assert.equal(oil.expectedLocalPrice.status, 'KNOWN');
+marketQuoteStatus='REFERENCE_ONLY';
+const indicativeOnlyReport=bilateral.buildMarketIntelligence('BGD','SAU',{resourceId:'crude_oil'});
+assert.equal(indicativeOnlyReport.report.resources[0].expectedLocalPrice.status,'UNKNOWN',
+  'reference-only prices must not become executable contract prices');
+assert.equal(indicativeOnlyReport.report.resources[0].indicativeReferencePrice.status,'ESTIMATED');
+marketQuoteStatus='CLEARED';
+assert.equal(built.report.countryOverview.requesterTreasuryLiquidity.value, 100000);
+assert.equal(built.report.countryOverview.targetTreasuryLiquidity.value, 80000);
+assert.equal(built.report.countryOverview.requesterForeignExchangeReservesUsd.value, 750000);
+assert.equal(built.report.countryOverview.targetForeignExchangeReservesUsd.value, 1200000);
+const noLedger = bilateral.buildMarketIntelligence('BGD', 'BGD', { resourceId: 'crude_oil' });
+assert.equal(noLedger.ok, false, 'self-country intelligence requests must be rejected');
+const legacyReport = bilateral.buildMarketIntelligence('SAU', 'BGD', { resourceId: 'crude_oil' });
+assert.equal(legacyReport.ok, true);
+assert.equal(legacyReport.report.resources[0].inboundInTransit.status, 'UNKNOWN',
+  'a missing shipment ledger is not treated as zero');
+const saved = bilateral.requestMarketIntelligence('BGD', 'SAU', { resourceId: 'crude_oil' });
+assert.equal(saved.ok, true, JSON.stringify(saved));
+assert.equal(saved.persisted, true);
+assert.equal(bilateral.getReport('BGD', saved.report.reportId).dataVersion, saved.report.dataVersion);
+assert.equal(globalThis.Game.state.trade.BGD.marketIntelligenceReports.length, 1);
+
+// Contracts use the seller's local price currency and only the settlement
+// mode supported by the existing Global Trade authority.
+const wrongCurrency = bilateral.createAgreementOffer('BGD', 'SAU', 'IMPORT', {
+  resourceId: 'crude_oil', quantityPerShipment: 100, unitPrice: 95, currency: 'USD'
+});
+assert.equal(wrongCurrency.accepted, false);
+assert.equal(wrongCurrency.reason, 'AGREEMENT_CURRENCY_MUST_MATCH_SELLER_LOCAL_CURRENCY');
+const unsupportedPayment = bilateral.createAgreementOffer('BGD', 'SAU', 'IMPORT', {
+  resourceId: 'crude_oil', quantityPerShipment: 100, unitPrice: 95, paymentTerms: 'NET_30'
+});
+assert.equal(unsupportedPayment.accepted, false);
+assert.equal(unsupportedPayment.reason, 'PAYMENT_TERMS_NOT_SUPPORTED_BY_CURRENT_SETTLEMENT_AUTHORITY');
+
+// The first offer is stored in both country-owned ledgers. The counterparty's
+// acceptance activates the same terms version on both sides.
+const offer = bilateral.createAgreementOffer('BGD', 'SAU', 'IMPORT', {
+  resourceId: 'crude_oil', quantityPerShipment: 800, unitPrice: 95,
+  durationTurns: 30, deliveryMode: 'SHIP'
+});
+assert.equal(offer.accepted, true, JSON.stringify(offer));
+const agreementId = offer.agreement.agreementId;
+assert.equal(offer.agreement.terms.currency, 'SAR',
+  'omitted settlement currency defaults to the seller local currency');
+assert.equal(bilateral.getAgreements('BGD').length, 1);
+assert.equal(bilateral.getAgreements('SAU').length, 1);
+const buyerOfferMirror = globalThis.Game.state.trade.BGD.bilateralAgreementLedger[0];
+const sellerOfferMirror = globalThis.Game.state.trade.SAU.bilateralAgreementLedger[0];
+buyerOfferMirror.status = 'ACTIVE';
+sellerOfferMirror.status = 'ACTIVE';
+assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 800, 95, agreementId), false,
+  'ACTIVE labels alone cannot replace both parties accepting the terms version');
+buyerOfferMirror.status = 'OFFERED';
+sellerOfferMirror.status = 'OFFERED';
+const playerTurnReview = bilateral.processCountry('BGD', { turn: 12 });
+assert.equal(playerTurnReview.reason, 'PLAYER_COUNTRY_REQUIRES_MANUAL_DECISION');
+const npcReview = bilateral.processCountry('SAU', { turn: 12 });
+assert.equal(npcReview.status, 'COMPLETED', JSON.stringify(npcReview));
+assert.equal(npcReview.accepted, 1, JSON.stringify(npcReview));
+const accepted = bilateral.getAgreements('SAU').find(row => row.agreementId === agreementId);
+assert.equal(accepted.status, 'ACTIVE');
+assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 800, 95, agreementId), true);
+assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 801, 95, agreementId), false);
+assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 800, 96, agreementId), false);
+const sellerActiveMirror = globalThis.Game.state.trade.SAU.bilateralAgreementLedger[0];
+sellerActiveMirror.terms.unitPrice = 96;
+assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'crude_oil', 800, 95, agreementId), false,
+  'both party mirrors must retain exactly the same contract terms');
+sellerActiveMirror.terms.unitPrice = 95;
+assert.equal(bilateral.getActiveAgreement('BGD', 'SAU', 'crude_oil', agreementId).status, 'ACTIVE');
+
+// Agreed procurement is routed into the existing Global Trade API with the
+// durable agreement identity; it does not debit stock or Treasury itself.
+const procurement = bilateral.procureAgreement('BGD', agreementId, 600);
+assert.equal(procurement.accepted, true, JSON.stringify(procurement));
+assert.equal(procurement.request.bilateralAgreementId, agreementId);
+assert.equal(procurement.request.quantity, 600);
+assert.equal(procurement.request.targetCountryId, 'SAU');
+assert.equal(procurement.request.currency, 'SAR');
+assert.equal(procurement.assessment.status, 'READY');
+const sellerInitiated = bilateral.procureAgreement('SAU', agreementId, 500);
+assert.equal(sellerInitiated.accepted, true, JSON.stringify(sellerInitiated));
+assert.equal(sellerInitiated.request.currency, 'SAR');
+assert.equal(sellerInitiated.request.countryId, 'BGD',
+  'seller-side initiation must create the agreed buyer-side request in the buyer country state');
+
+// A counteroffer increments the terms version and requires acceptance of that
+// version by the original offerer before either mirror becomes active.
+globalThis.Game.state.simulation.turn = 13;
+const counterOffer = bilateral.createAgreementOffer('BGD', 'SAU', 'IMPORT', {
+  resourceId: 'steel', quantityPerShipment: 30, unitPrice: 250, currency: 'SAR', durationTurns: 12
+});
+assert.equal(counterOffer.accepted, true, JSON.stringify(counterOffer));
+const counterId = counterOffer.agreement.agreementId;
+const npcCounter = bilateral.processCountry('SAU', { turn: 13 });
+assert.equal(npcCounter.status, 'COMPLETED', JSON.stringify(npcCounter));
+assert.equal(npcCounter.countered, 1, JSON.stringify(npcCounter));
+const counter = bilateral.getAgreements('BGD').find(row => row.agreementId === counterId);
+assert.equal(counter.termVersion, 2);
+assert.equal(counter.status, 'COUNTER_OFFERED');
+assert.equal(counter.terms.unitPrice, 190);
+assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'steel', 30, 190, counterId), false);
+const counterAccepted = bilateral.respondToOffer('BGD', counterId, 'ACCEPT');
+assert.equal(counterAccepted.accepted, true, JSON.stringify(counterAccepted));
+assert.equal(counterAccepted.agreement.status, 'ACTIVE');
+assert.equal(bilateral.isAgreementActiveFor('BGD', 'SAU', 'steel', 25, 190, counterId), true);
+
+// Agreement IDs cannot be reused for a different contract or country pair.
+const conflict = bilateral.createAgreementOffer('BGD', 'SAU', 'IMPORT', {
+  resourceId: 'crude_oil', quantityPerShipment: 5, unitPrice: 1
+});
+assert.equal(conflict.accepted, true);
+const original = bilateral.getAgreements('BGD').find(x => x.agreementId === agreementId);
+assert.equal(original.terms.quantityPerShipment, 800);
+console.log('OMEGA BILATERAL TRADE TEST PASSED');
