@@ -171,17 +171,25 @@
     const financeRows=Array.isArray(input.financeRows)?input.financeRows:[];
     const financeSourceRowsTotal=Math.max(financeRows.length,Math.floor(finite(input.financeSourceRowsTotal)??financeRows.length));
     const companyAccounts=isObject(input.companyAccounts)?input.companyAccounts:{};
+    const enterpriseRegistry=g.Omega?.PrivateEnterpriseLifecycleV1||g.OmegaPrivateEnterpriseLifecycleV1;
+    const registeredCompanyIds=Array.isArray(enterpriseRegistry?.companyIds)?
+      [...new Set(enterpriseRegistry.companyIds.map(value=>String(value||'').trim()).filter(Boolean))]:[];
+    const companyRegistryAvailable=registeredCompanyIds.length>0;
     const maxCompanies=bounded(input.maxCompanyAccounts,5,5);
     const maxRowsPerCompany=bounded(input.companyCashFlowRowsPerCompany,256,512);
-    const companyIds=Object.keys(companyAccounts).sort();
+    const hasOwn=(value,key)=>Object.prototype.hasOwnProperty.call(value,key);
+    const companyIds=companyRegistryAvailable?registeredCompanyIds.filter(companyId=>
+      hasOwn(companyAccounts,companyId)&&isObject(companyAccounts[companyId])):[];
+    const missingCompanyIds=companyRegistryAvailable?registeredCompanyIds.filter(companyId=>
+      !hasOwn(companyAccounts,companyId)||!isObject(companyAccounts[companyId])):[];
     const selectedCompanyIds=companyIds.slice(0,maxCompanies);
     const companyRows=[];
     let companyCashFlowRowsObserved=0,companyCashFlowRowsRetained=0,droppedCompanyRows=0;
     let companyCashFlowWindowTruncated=companyIds.length>selectedCompanyIds.length;
     for(const companyId of selectedCompanyIds){
-      const account=companyAccounts[companyId],entries=Array.isArray(account?.cashFlowEntries)?account.cashFlowEntries:[];
+      const account=companyAccounts[companyId],entries=Array.isArray(account.cashFlowEntries)?account.cashFlowEntries:[];
       const observed=entries.slice(-maxRowsPerCompany);
-      const dropped=Math.max(0,Math.floor(finite(account?.cashFlowJournalDroppedEntries)||0));
+      const dropped=Math.max(0,Math.floor(finite(account.cashFlowJournalDroppedEntries)||0));
       companyCashFlowRowsObserved+=observed.length;
       companyCashFlowRowsRetained+=entries.length;
       droppedCompanyRows+=dropped;
@@ -223,6 +231,7 @@
         journalCountry===countryId&&
         (!expectedSector||sector===expectedSector)&&
         (!expectedCompany||String(journal.companyId||'')===expectedCompany)&&
+        (!expectedCompany||!row?.companyId||String(row.companyId)===expectedCompany)&&
         journal.counterEntryComplete===true;
       const debitDeclared=finite(journal.debitTotalMinor),creditDeclared=finite(journal.creditTotalMinor);
       if(!Number.isSafeInteger(debitDeclared)||!Number.isSafeInteger(creditDeclared)||
@@ -284,7 +293,8 @@
     const integrityStatus=invalidTransactionCount||duplicateTransactionCount?'UNRECONCILED':
       postedTransactionCount?'RECONCILED':'UNOBSERVED';
     const sourceCoverageStatus=!anySourceRows?'UNOBSERVED':
-      (windowTruncated||unaccountedSourceRowCount||unavailableTransactionCount)?
+      (!companyRegistryAvailable||missingCompanyIds.length||windowTruncated||
+       unaccountedSourceRowCount||unavailableTransactionCount)?
         'PARTIAL':'RETAINED_SOURCE_WINDOWS_ACCOUNTED';
     const currencyPeriodCoverage=[...groups.values()].sort((a,b)=>
       a.sectorId.localeCompare(b.sectorId)||a.currency.localeCompare(b.currency)||a.periodId.localeCompare(b.periodId));
@@ -297,8 +307,9 @@
       sourceWindows:{
         financeLedger:{retainedSourceRows:financeSourceRowsTotal,observedRows:financeRows.length,
           maximumRows:bounded(input.financeLedgerRows,500,500),windowTruncated:financeSourceRowsTotal>financeRows.length},
-        companyCashFlow:{companyAccountsAvailable:companyIds.length,companyAccountsObserved:selectedCompanyIds.length,
-          companyAccountsTruncated:companyIds.length>selectedCompanyIds.length,
+        companyCashFlow:{companyRegistryAvailable,companyAccountsAvailable:companyRegistryAvailable?companyIds.length:null,
+          companyAccountsMissing:companyRegistryAvailable?missingCompanyIds.length:null,
+          companyAccountsObserved:selectedCompanyIds.length,companyAccountsTruncated:companyIds.length>selectedCompanyIds.length,
           retainedSourceRows:companyCashFlowRowsRetained,observedRows:companyCashFlowRowsObserved,
           maximumRowsPerCompany:maxRowsPerCompany,windowTruncated:companyCashFlowWindowTruncated,
           droppedSourceRows:droppedCompanyRows,
