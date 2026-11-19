@@ -891,7 +891,7 @@
     }
     if(x.cashFlowJournalStartedAtTurn===undefined||x.cashFlowJournalStartedAtTurn===null)
       x.cashFlowJournalStartedAtTurn=turn();
-    x.cashFlowJournalVersion=1;
+    x.cashFlowJournalVersion=Math.max(1,num(x.cashFlowJournalVersion)||1);
     entries.push({
       entryId:key,companyId:cid,amount:a,direction:direction,category:category,
       grossRevenue:grossRevenue,currency:currency,sourceId:sourceId,
