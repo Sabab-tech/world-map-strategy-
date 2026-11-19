@@ -50,7 +50,7 @@ test('trade evidence is based on settled country ledgers, not pending orders', a
   assert.match(runtime, /countryRecord\(root, 'trade', profile, countryId\)/);
   assert.match(runtime, /trade\?\.importLedger/);
   assert.match(runtime, /trade\?\.exportLedger/);
-  assert.match(runtime, /row\.turn\s*>\s*previousTurn/);
+  assert.match(runtime, /rowTurn\\s*>\\s*previousTurn/);
   assert.match(trade, /status:'SETTLED'/);
   assert.match(trade, /buyerCurrency/);
   assert.match(trade, /sellerCurrency/);
