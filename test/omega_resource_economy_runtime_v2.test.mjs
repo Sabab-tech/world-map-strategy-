@@ -263,10 +263,11 @@ test('private-company settlement fiscalization does not credit seller revenue or
     companyId:sellerCompany,openingCashStatus:'UNKNOWN',runtimeNetCashFlow:200,
     grossRevenue:200,paymentsReceived:200,paymentsMade:0,taxPaid:0,
     workerIncomePaid:0,transportPaid:0,supplierRevenue:200,lastTurn:1,
-    cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,cashFlowEntries:[{
+    cashFlowJournalVersion:2,cashFlowJournalStartedAtTurn:1,cashFlowEntries:[{
       entryId:'PE-PRIVATE-IMPORT-RECEIPT:'+settlementId,companyId:sellerCompany,
       amount:200,direction:'CREDIT',category:'PRIVATE_COMPANY_EXPORT_SALE',
-      currency:'USD',sourceId:settlementId,turn:1,status:'POSTED'
+      currency:'USD',sourceId:settlementId,turn:1,status:'POSTED',
+      sectorJournalV1:{schemaVersion:1,status:'POSTED',sectorId:'firm',sourceTransactionId:'PE-PRIVATE-IMPORT-RECEIPT:'+settlementId}
     }]
   };
   worldState.economy.BGD.companyAccounts={[sellerCompany]:account};
@@ -285,6 +286,8 @@ test('private-company settlement fiscalization does not credit seller revenue or
   }));
   send();
   const afterFirst=worldState.economy.BGD.companyAccounts[sellerCompany];
+  assert.equal(afterFirst.cashFlowJournalVersion,2,'resource fiscalization must not downgrade the shared firm journal version');
+  assert.equal(afterFirst.cashFlowEntries[0].sectorJournalV1.status,'POSTED','existing firm-sector journal source rows remain intact');
   assert.equal(afterFirst.grossRevenue,revenueBefore,'private import completion already credited seller revenue');
   assert.equal(afterFirst.paymentsReceived,receivedBefore,'fiscalization must not post a second seller receipt');
   const fiscalReceipts=Number(worldState.finance.BGD.resourceFiscal?.cumulative?.total)||0;
