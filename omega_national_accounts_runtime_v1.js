@@ -839,7 +839,11 @@
       const elapsed=Math.max(0,clockNow()-startedAt);
       runtime.lastCountryElapsedMs=elapsed;runtime.maxCountryElapsedMs=Math.max(runtime.maxCountryElapsedMs,elapsed);
       runtime.totalCountryElapsedMs+=elapsed;
-      runtime.failedCountries++;return{status:'FAILED',reason:String(error?.message||error),
+      runtime.failedCountries++;
+      runtime.lastCountryError={countryId,turn,message:String(error?.message||error),stack:String(error?.stack||'').slice(0,5000)};
+      if(typeof console!=='undefined'&&typeof console.error==='function')
+        console.error('[OMEGA NATIONAL ACCOUNTS] country checkpoint build failed',runtime.lastCountryError);
+      return{status:'FAILED',reason:String(error?.message||error),
         errorStack:String(error?.stack||'').slice(0,5000),countryId,turn};}
     const interop=g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability;
     const commandId='NATIONAL-ACCOUNTS-'+countryId+'-T'+turn,owner=runtime.rules.persistence.ownerMinistry||'economy';

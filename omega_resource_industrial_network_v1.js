@@ -766,30 +766,28 @@ function normalizeFactoryType(value){
     }
     return{complete,identities:[...byIdentity.values()].sort((a,b)=>a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit))};
   }
-function captureStockFlowPeriod(stateTransaction) {
-    const t=turn(),periodId='GAME_TURN_'+String(t);
-    const resource={inventory:stateTransaction.get('resource.inventory'),inventoryUnits:stateTransaction.get('resource.inventoryUnits'),
-      batches:stateTransaction.get('resource.batches')};
-    const assets=stateTransaction.get('economy.productionAssets')||[],snapshot=stockFlowSnapshot(resource,assets);
-    const old=stateTransaction.get('resource.stockFlowPeriods'),periods=Array.isArray(old)?old.map(row=>clone(row)):[];
-    if(periods.some(row=>String(row&&row.periodId||'')===periodId))return{status:'ALREADY_CAPTURED',periodId};
-    const previous=periods.length?periods[periods.length-1]:null;
-    if(previous&&Number(previous.turn)<t){
-      if(Number(previous.turn)===t-1){previous.closingStockByIdentity=clone(snapshot.identities);
-        previous.closingCoverageComplete=snapshot.complete;previous.closingCaptured=true;
-        previous.closingCaptureSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';}
-      else{previous.closingCaptured=false;previous.closingCaptureStatus='TURN_GAP_UNOBSERVED';}
-    }
-    const ledger=stateTransaction.get('resource.inventoryLedger');
-    periods.push({schemaVersion:1,periodId,turn:t,periodType:'GAME_TURN',
-      openingStockByIdentity:clone(snapshot.identities),openingCoverageComplete:snapshot.complete,
-      openingCaptured:true,openingCaptureSource:'BEFORE_FIRST_PHYSICAL_STOCK_MUTATION',
-      inventoryLedgerRowsAtOpening:Array.isArray(ledger)?ledger.length:0,
-      lossCoverageStatus:'UNOBSERVED_NO_AUTHORITATIVE_LOSS_LEDGER'});
-    while(periods.length>32)periods.shift();
-    stateTransaction.set('resource.stockFlowPeriods',periods);
-    return{status:'CAPTURED',periodId,openingCoverageComplete:snapshot.complete};
+function captureStockFlowPeriod(resource,countryId) {
+  if(!resource||typeof resource!=='object')return{status:'UNOBSERVED'};
+  const t=turn(),periodId='GAME_TURN_'+String(t),assets=factoryAssets(countryId)||[];
+  const snapshot=stockFlowSnapshot(resource,assets);
+  const periods=Array.isArray(resource.stockFlowPeriods)?resource.stockFlowPeriods.map(row=>clone(row)):[];
+  if(periods.some(row=>String(row&&row.periodId||'')===periodId))return{status:'ALREADY_CAPTURED',periodId};
+  const previous=periods.length?periods[periods.length-1]:null;
+  if(previous&&Number(previous.turn)<t){
+    if(Number(previous.turn)===t-1){
+      previous.closingStockByIdentity=clone(snapshot.identities);previous.closingCoverageComplete=snapshot.complete;
+      previous.closingCaptured=true;previous.closingCaptureSource='NEXT_TURN_PRE_MOVEMENT_SNAPSHOT';
+    }else{previous.closingCaptured=false;previous.closingCaptureStatus='TURN_GAP_UNOBSERVED';}
   }
+  periods.push({schemaVersion:1,periodId,turn:t,periodType:'GAME_TURN',
+    openingStockByIdentity:clone(snapshot.identities),openingCoverageComplete:snapshot.complete,
+    openingCaptured:true,openingCaptureSource:'BEFORE_FIRST_PHYSICAL_STOCK_MUTATION',
+    inventoryLedgerRowsAtOpening:Array.isArray(resource.inventoryLedger)?resource.inventoryLedger.length:0,
+    lossCoverageStatus:'UNOBSERVED_NO_AUTHORITATIVE_LOSS_LEDGER'});
+  while(periods.length>32)periods.shift();
+  resource.stockFlowPeriods=periods;
+  return{status:'CAPTURED',periodId,openingCoverageComplete:snapshot.complete};
+}
 
 function resourceState(c){
   const s=state(),cid=canonicalCountry(c);s.resource=s.resource||{};s.resource[cid]=s.resource[cid]||{};return s.resource[cid];
