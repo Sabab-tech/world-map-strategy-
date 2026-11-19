@@ -663,7 +663,7 @@
       missingIdentityCount,duplicateBatchCount,closingStockByIdentity:all.slice(0,maxItems).map(row=>Object.assign({},row,{status:'CLOSING_STOCK_ONLY'})),
       truncatedIdentityCount:Math.max(0,all.length-maxItems),periodStockFlowRows:periodStockFlowRows.slice(-Math.max(maxItems,MAX_ROWS_PER_SYNC_SLICE)),
       stockFlowPeriodCount:periods.length,stockFlowStatus:periodStockFlowRows.length?'PERIOD_MOVEMENT_EVIDENCE_OBSERVED':all.length?'CLOSING_STOCK_ONLY':'UNOBSERVED',
-      movementLedgerRowsObserved:movementRows.length,movementLedgerWindowTruncated,stockSnapshotCoverage:liveClosing.complete?'COMPLETE':'PARTIAL'};
+      movementLedgerRowsObserved:movementRows.length,movementWindowTruncated,stockSnapshotCoverage:liveClosing.complete?'COMPLETE':'PARTIAL'};
   }
 
   async function buildStatement(countryId,profile,root,turn){
@@ -839,11 +839,7 @@
       const elapsed=Math.max(0,clockNow()-startedAt);
       runtime.lastCountryElapsedMs=elapsed;runtime.maxCountryElapsedMs=Math.max(runtime.maxCountryElapsedMs,elapsed);
       runtime.totalCountryElapsedMs+=elapsed;
-      runtime.failedCountries++;
-      runtime.lastCountryError={countryId,turn,message:String(error?.message||error),stack:String(error?.stack||'').slice(0,5000)};
-      if(typeof console!=='undefined'&&typeof console.error==='function')
-        console.error('[OMEGA NATIONAL ACCOUNTS] country checkpoint build failed',runtime.lastCountryError);
-      return{status:'FAILED',reason:String(error?.message||error),
+      runtime.failedCountries++;return{status:'FAILED',reason:String(error?.message||error),
         errorStack:String(error?.stack||'').slice(0,5000),countryId,turn};}
     const interop=g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability;
     const commandId='NATIONAL-ACCOUNTS-'+countryId+'-T'+turn,owner=runtime.rules.persistence.ownerMinistry||'economy';
