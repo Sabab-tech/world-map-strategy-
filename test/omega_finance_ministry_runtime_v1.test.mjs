@@ -947,7 +947,8 @@ test('Phase 5 records balanced Government cash postings inside the existing Fina
   assert.equal(journal.sectorId,'government');
   assert.equal(journal.sourceAuthority,'OMEGA_FINANCE_MINISTRY');
   assert.equal(journal.currency,'USD');
-  assert.equal(journal.countryCode,'BGD');
+  assert.equal(journal.countryId,'BGD');
+  assert.equal(journal.countryCode,'BD');
   assert.equal(journal.sourceTransactionId,source.transactionId);
   assert.equal(journal.counterEntryComplete,true);
   assert.equal(journal.debitTotalMinor,123456);
