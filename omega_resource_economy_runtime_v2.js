@@ -815,6 +815,10 @@ function captureStockFlowPeriod(stateTransaction) {
     var p=cmd&&cmd.payload||{},inputs=Array.isArray(p.inputs)?p.inputs:[],outputs=Array.isArray(p.outputs)?p.outputs:[],
         tx=String(p.transactionId||('PROD-'+turn()+'-'+canonical(ctx.countryId))),
         submittedLossEvents=Array.isArray(p.lossEvents)?p.lossEvents:[],
+        lossMeasurementStatus=String(p.lossMeasurementStatus||
+          (Array.isArray(p.lossEvents)&&p.lossEvents.length?'MEASURED_EVENTS':'UNOBSERVED')).trim().toUpperCase(),
+        lossMeasurementAuthority=String(p.lossMeasurementAuthority||'').trim(),
+        lossMeasurementBasis=String(p.lossMeasurementBasis||'').trim(),
         inv=clone(ctx.stateTransaction.get('resource.inventory')||{}),
         working=Array.isArray(ctx.stateTransaction.get('resource.batches'))?clone(ctx.stateTransaction.get('resource.batches')):[],
         inventoryLots=clone(ctx.stateTransaction.get('resource.inventoryLots')||{}),
@@ -825,6 +829,17 @@ function captureStockFlowPeriod(stateTransaction) {
         maps=consumptionLedgerMaps(network),flowByBatch=maps.flowByBatch,reservedByBatch=maps.reservedByBatch,
         consumed=[],sourceBatchIds=[],inputQuality={},c=canonical(ctx.countryId),siteFlowChanged=false;
     if(!inputs.length||!outputs.length)return{accepted:false,reason:'PRODUCTION_TRANSACTION_SHAPE_INVALID'};
+    if(!['MEASURED_EVENTS','MEASURED_ZERO','UNOBSERVED'].includes(lossMeasurementStatus))
+      return{accepted:false,reason:'PRODUCTION_LOSS_MEASUREMENT_STATUS_INVALID',lossMeasurementStatus:lossMeasurementStatus};
+    if((lossMeasurementStatus==='MEASURED_EVENTS'&&!submittedLossEvents.length)||
+      (lossMeasurementStatus==='MEASURED_ZERO'&&submittedLossEvents.length))
+      return{accepted:false,reason:'PRODUCTION_LOSS_MEASUREMENT_EVENT_COUNT_MISMATCH',
+        lossMeasurementStatus:lossMeasurementStatus,lossEvents:submittedLossEvents.length};
+    if(lossMeasurementStatus!=='UNOBSERVED'&&(!lossMeasurementAuthority||!lossMeasurementBasis))
+      return{accepted:false,reason:'PRODUCTION_LOSS_MEASUREMENT_PROVENANCE_REQUIRED',
+        lossMeasurementStatus:lossMeasurementStatus};
+    if(submittedLossEvents.length&&lossMeasurementStatus!=='MEASURED_EVENTS')
+      return{accepted:false,reason:'PRODUCTION_LOSS_EVENTS_REQUIRE_MEASURED_STATUS'};
     var inputQuantityByResource={};
     inputs.forEach(function(input){
       var inputId=String(input&&input.resourceId||'').trim(),inputQuantity=num(input&&input.quantity);
@@ -994,6 +1009,8 @@ function captureStockFlowPeriod(stateTransaction) {
       companyId:p.companyId||null,ownerCompanyId:p.ownerCompanyId||'UNKNOWN_SOURCE',
       operatorCompanyId:p.operatorCompanyId||p.companyId||null,ownerAttributionStatus:p.ownerAttributionStatus||'UNASSIGNED',
       inputs:clone(consumed),outputs:clone(created),lossEvents:clone(normalizedProductionLosses),
+      lossMeasurementStatus:lossMeasurementStatus,lossMeasurementAuthority:lossMeasurementAuthority||null,
+      lossMeasurementBasis:lossMeasurementBasis||null,
       countryId:c,sourceAuthority:'OMEGA_RESOURCE_ECONOMY_RUNTIME_V2',turn:turn(),periodId:'GAME_TURN_'+turn()});
     while(working.length>(num(rules().runtime.maxBatches)||8192))working.shift();
     while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
@@ -1400,6 +1417,9 @@ function captureStockFlowPeriod(stateTransaction) {
       var result=dispatch('resource','OMEGA_RESOURCE_ECON_APPLY_PRODUCTION',c,{
         transactionId:tx,facilityId:row.facilityId,companyId:row.companyId,
         lossEvents:Array.isArray(row.lossEvents)?clone(row.lossEvents):[],
+        lossMeasurementStatus:row.lossMeasurementStatus||'UNOBSERVED',
+        lossMeasurementAuthority:row.lossMeasurementAuthority||null,
+        lossMeasurementBasis:row.lossMeasurementBasis||null,
         ownerCompanyId:row.ownerCompanyId,operatorCompanyId:row.operatorCompanyId,
         ownerAttributionStatus:row.ownerAttributionStatus,
         inputs:inputs,outputs:outputs,
@@ -2199,7 +2219,15 @@ function captureStockFlowPeriod(stateTransaction) {
         productionRows.forEach(function(row){
           if(!row.transactionId||!Array.isArray(row.inputs)||!Array.isArray(row.outputs))
             invalid.push('PRODUCTION_TRANSACTION_IDENTITY_INCOMPLETE:'+String(row.transactionId||'MISSING_ID'));
-          (Array.isArray(row.lossEvents)?row.lossEvents:[]).forEach(function(event){
+          var measurementStatus=String(row.lossMeasurementStatus||'').toUpperCase(),
+            measuredEvents=Array.isArray(row.lossEvents)?row.lossEvents:[];
+          if(!['MEASURED_EVENTS','MEASURED_ZERO'].includes(measurementStatus)||
+            !row.lossMeasurementAuthority||!row.lossMeasurementBasis)
+            invalid.push('PRODUCTION_LOSS_MEASUREMENT_UNOBSERVED:'+String(row.transactionId||'MISSING_ID'));
+          if((measurementStatus==='MEASURED_EVENTS'&&!measuredEvents.length)||
+            (measurementStatus==='MEASURED_ZERO'&&measuredEvents.length))
+            invalid.push('PRODUCTION_LOSS_MEASUREMENT_STATUS_MISMATCH:'+String(row.transactionId||'MISSING_ID'));
+          measuredEvents.forEach(function(event){
             lossEventsObserved++;
             if(!hasLoss(event,row.transactionId))invalid.push('PRODUCTION_LOSS_NOT_RECONCILED:'+String(event.eventId||'MISSING_ID'));
           });
