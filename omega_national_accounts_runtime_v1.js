@@ -443,6 +443,11 @@
     function validate(row,sourceKind,sourceCompanyId){
       const journal=isObject(row?.sectorJournalV1)?row.sectorJournalV1:null;
       const transactionId=String(row?.transactionId||row?.entryId||'').trim();
+      if(journal&&transactionId&&seen.has(transactionId)){
+        duplicateTransactionCount++;
+        if(seen.get(transactionId)!==stable(journal))invalidTransactionCount++;
+        return{status:'DUPLICATE',transactionId};
+      }
       if(!journal){legacyTransactionCount++;return{status:'LEGACY',transactionId};}
       if(String(journal.status||'').toUpperCase()==='UNAVAILABLE'){
         unavailableTransactionCount++;
@@ -492,13 +497,7 @@
       if(debit!==debitDeclared||credit!==creditDeclared||debit!==credit){
         invalidTransactionCount++;return{status:'INVALID',transactionId:tx};
       }
-      const signature=JSON.stringify({sector,companyId,currency,periodId:journal.periodId,authority,debit,credit});
-      if(seen.has(tx)){
-        duplicateTransactionCount++;
-        if(seen.get(tx)!==signature)invalidTransactionCount++;
-        return{status:'DUPLICATE',transactionId:tx};
-      }
-      seen.set(tx,signature);postedTransactionCount++;recordCoverage(journal);
+      seen.set(tx,stable(journal));postedTransactionCount++;recordCoverage(journal);
       return{status:'POSTED',transactionId:tx};
     }
     for(const row of financeRows)validate(row,'FINANCE',row?.companyId);
@@ -676,17 +675,19 @@
           const split=key.split('\u0000'),resourceId=split[0],unit=split.slice(1).join('\u0000');
           if(!resourceId||!unit)continue;
           const flow=flows.get(key)||{};
-          const lossQuantity=[...lossSeen.values()].reduce((sum,item)=>{
-            if(String(item.row.resourceId||'').trim()===resourceId&&String(item.row.unit||'').trim()===unit)
-              return sum+(finite(item.row.quantity)||0);
-            return sum;
-          },0);
+          const lossItems=[...lossSeen.values()].filter(item=>
+            String(item.row.resourceId||'').trim()===resourceId&&String(item.row.unit||'').trim()===unit);
+          const lossQuantity=lossItems.reduce((sum,item)=>sum+(finite(item.row.quantity)||0),0);
+          const productionLossQuantity=lossItems.filter(item=>
+            String(item.row.sourceType||'').toUpperCase()==='PRODUCTION'||String(item.row.lossType||'').toUpperCase()==='PRODUCTION')
+            .reduce((sum,item)=>sum+(finite(item.row.quantity)||0),0);
+          const consumptionQuantity=Math.max(0,(finite(flow.consumption)||0)-productionLossQuantity);
           const row={
             periodId,turn,resourceId,unit,
             openingQuantity:opening.has(key)?opening.get(key):(period.openingCoverageComplete===true?0:null),
             production:movementWindowComplete?(finite(flow.production)||0):null,
             imports:movementWindowComplete?(finite(flow.imports)||0):null,
-            consumption:movementWindowComplete?(finite(flow.consumption)||0):null,
+            consumption:movementWindowComplete?consumptionQuantity:null,
             exports:movementWindowComplete?(finite(flow.exports)||0):null,
             losses:lossLedgerBoundaryComplete?lossQuantity:null,
             closingQuantity:closing.has(key)?closing.get(key):(period.closingCoverageComplete===true?0:null),
