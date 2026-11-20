@@ -532,6 +532,19 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
         inventory:rs&&rs.inventory||{},
         rawWarehouse:rs&&rs.warehouse&&rs.warehouse.availableByResource||{},
         processedWarehouse:rs&&rs.processedWarehouse&&rs.processedWarehouse.availableByResource||{},
+        factories:(state.economy[cid]&&state.economy[cid].productionAssets||[]).map(factory=>({
+          id:factory.id,capacity:factory.capacity,capacityPerDay:factory.capacityPerDay,
+          productionCapacity:factory.productionCapacity,throughput:factory.throughput,
+          employment:factory.employment,productionHealth:factory.productionHealth,
+          inputInventory:factory.inputInventory,inputBatchLots:factory.inputBatchLots
+        })),
+        cycles:rs&&rs.industrialNetwork&&rs.industrialNetwork.factoryProductionCycles||{},
+        cycleHistory:(rs&&rs.industrialNetwork&&rs.industrialNetwork.factoryProductionCycleHistory||[]).map(cycle=>({
+          factoryId:cycle.factoryId,productionQuantity:cycle.productionQuantity,
+          capacityPerDay:cycle.capacityPerDay,productivityPct:cycle.productivityPct,
+          productionConstraints:cycle.productionConstraints,inputQuantities:cycle.inputQuantities,
+          expectedOutputs:cycle.expectedOutputs,status:cycle.status
+        })),
         batches:(rs&&rs.batches||[]).filter(row=>String(row.stage||'').toUpperCase()==='FINISHED'||
           (row.sourceBatchIds||[]).some(id=>expectedRawBatchIds.has(String(id))))
           .slice(-24).map(row=>({batchId:row.batchId,resourceId:row.resourceId,quantity:row.quantity,
