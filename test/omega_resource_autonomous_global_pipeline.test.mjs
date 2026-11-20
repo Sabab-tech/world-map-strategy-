@@ -469,7 +469,11 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
   assert.equal(allInitialShipments.length,activeSites.length,
     'every active deposit must have exactly one source-batch shipment before delivery');
   const lastEta=Math.max(1,...allInitialShipments.map(shipment=>Number(shipment.etaTurn)||1));
-  const processingTurnLimit=lastEta+maxActivePerCountry+5;
+  // Factory inputs are requisitioned and shipped in bounded scheduled batches.
+  // Keep enough game-calendar time for multiple low-yield cycles (for example,
+  // diamond -> sorted diamonds) to cross the existing minimum market-offer floor.
+  // This advances the real scheduler; it does not bypass shipment or cycle timing.
+  const processingTurnLimit=lastEta+maxActivePerCountry+20;
   for(let simulationTurn=1;simulationTurn<=processingTurnLimit;simulationTurn++){
     state.simulation.turn=simulationTurn;
     const daysPerTurn=Math.max(1,Math.round(Number(state.simulation.daysPerTurn)||1));
