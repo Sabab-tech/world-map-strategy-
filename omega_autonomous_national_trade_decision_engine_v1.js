@@ -119,7 +119,12 @@
     if (activeRules) return Promise.resolve({ status: 'READY' });
     if (rulesPromise) return rulesPromise;
     var supplied = g.__OmegaAutonomousNationalTradeDecisionRules;
-    if (supplied && rulesValid(supplied)) {
+    if (supplied) {
+      if (!rulesValid(supplied)) {
+        rulesStatus = 'UNAVAILABLE';
+        runtimeStats.errors++;
+        return Promise.resolve({ status: rulesStatus, reason: 'AUTONOMOUS_TRADE_RULES_INVALID' });
+      }
       activeRules = clone(supplied);
       rulesStatus = 'READY';
       return Promise.resolve({ status: 'READY', source: 'INJECTED_RULES' });
