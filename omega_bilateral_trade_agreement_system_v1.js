@@ -365,6 +365,44 @@
     });
     return output;
   }
+  function alternativeMarketSourceFingerprint(player, target, importNeeds, exportSurpluses) {
+    var market = globalMarket(), suppliers = [], competingBuyerSources = [];
+    importNeeds.slice(0, 8).forEach(function (need) {
+      var rid = need.resourceId, quantity = num(need.unmetDemand.value) || num(need.demandPerDay.value) || 0, rows = [];
+      try { rows = market && typeof market.suppliers === 'function' ? market.suppliers(rid, quantity, target) : []; } catch (_) {}
+      var observed = (Array.isArray(rows) ? rows : []).filter(function (row) {
+        return row && canonical(row.countryId) !== canonical(player) && canonical(row.countryId) !== canonical(target);
+      }).map(function (row) {
+        var price = null;
+        try { price = market && typeof market.localPrice === 'function' ? num(market.localPrice(row.countryId, rid)) : null; } catch (_) {}
+        return [canonical(row.countryId), num(row.available), price, row.marketQuote && row.marketQuote.status || null,
+          row.relationObserved === true];
+      }).sort(function (a, b) { return String(a[0]).localeCompare(String(b[0])); });
+      suppliers.push([rid, quantity, observed]);
+    });
+    var ids = countryIds();
+    exportSurpluses.slice(0, 8).forEach(function (surplus) {
+      var rid = surplus.resourceId;
+      ids.forEach(function (countryId) {
+        if (countryId === canonical(player) || countryId === canonical(target)) return;
+        var demand = getProductDemand(countryId, rid);
+        var unmet = num(demand && demand.unmetDemand);
+        var daily = num(demand && (demand.consumerDemandPerDay ?? demand.demandPerDay ?? demand.demand));
+        var requests = requestIdList(countryId).filter(function (row) {
+          return canonical(row.targetCountryId || row.sellerCountryId) === canonical(target) &&
+            token(row.resourceId) === token(rid) &&
+            ['SENT','COUNTER_OFFERED','ACCEPTED','SETTLEMENT_PREPARING','PENDING_SETTLEMENT'].indexOf(id(row.status)) >= 0;
+        }).map(function (row) {
+          return [row.requestId || null, num(row.quantity), num(row.unitPrice), id(row.status), num(row.createdTurn)];
+        }).sort(function (a, b) { return String(a[0]).localeCompare(String(b[0])); });
+        if (unmet !== null && unmet <= 0 && (daily === null || daily <= 0) && !requests.length) return;
+        // This digest captures private demand and offer changes without
+        // returning those values or individual bids in the player-facing report.
+        competingBuyerSources.push([rid, countryId, unmet, daily, requests]);
+      });
+    });
+    return hash({ suppliers: suppliers, competingBuyerSources: competingBuyerSources });
+  }
 
   function buildReport(playerCountry, targetCountry) {
     var player = canonical(playerCountry), target = canonical(targetCountry), catalog = productCatalog();
@@ -397,6 +435,7 @@
     var surpluses = rows.filter(function (row) { return row.exportableStock.status === 'KNOWN' && row.exportableStock.value > 0; })
       .sort(function (a, b) { return b.exportableStock.value - a.exportableStock.value; }).slice(0, 12);
     var alternatives = alternativeMarketReport(player, target, rows, needs, surpluses);
+    var alternativesVersion = alternativeMarketSourceFingerprint(player, target, needs, surpluses);
     var counts = { known: 0, estimated: 0, unknown: 0 };
     rows.forEach(function (row) {
       [row.stock, row.reserve, row.production, row.demandPerDay, row.unmetDemand, row.expectedPrice].forEach(function (item) {
@@ -407,7 +446,6 @@
     var syncedAt = new Date();
     var simulatedAt = simulationDate();
     var sourceVersion = sourceFingerprint(target, player, rows.map(function (r) { return r.resourceId; }));
-    var alternativesVersion = hash(alternatives);
     var dataVersion = hash([VERSION, sourceVersion, alternativesVersion]);
     var report = {
       schemaVersion: VERSION,
@@ -442,7 +480,7 @@
       alternativeMarkets: alternatives,
       productIds: rows.map(function (row) { return row.resourceId; }),
       sourceFingerprint: sourceFingerprint(target, player, rows.map(function (row) { return row.resourceId; })),
-      alternativeMarketFingerprint: hash(alternatives)
+      alternativeMarketFingerprint: alternativesVersion
     };
     return { accepted: true, report: report };
   }
@@ -455,8 +493,8 @@
     var fingerprint = sourceFingerprint(target, player, Array.isArray(report.productIds) ? report.productIds : []);
     var alternativeFingerprint = null;
     if (verifyAlternatives === true) {
-      var alternatives = alternativeMarketReport(player, target, report.products || [], report.importNeeds || [], report.exportSurpluses || []);
-      alternativeFingerprint = hash(alternatives);
+      alternativeFingerprint = alternativeMarketSourceFingerprint(player, target,
+        report.importNeeds || [], report.exportSurpluses || []);
     }
     var stale = age > (num(report.maxAgeTurns) || MAX_REPORT_AGE_TURNS) || fingerprint !== report.sourceFingerprint ||
       verifyAlternatives === true && alternativeFingerprint !== report.alternativeMarketFingerprint;
