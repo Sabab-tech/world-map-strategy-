@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "app": "OMEGA",
   "namespace": "omega_ui_v2",
-  "rolloutStatus": "AUTONOMOUS_DEVELOPMENT_COMMAND_CENTER_INTEGRATED; LIVE_RUNTIME_AND_DEVICE_ACCEPTANCE_REQUIRED",
+  "rolloutStatus": "AUTONOMOUS_TRADE_COMMAND_CENTER_INTEGRATED; LIVE_RUNTIME_AND_DEVICE_ACCEPTANCE_REQUIRED",
   "preservationPolicy": "ADDITIVE_ONLY",
   "designDocument": "docs/OMEGA_UI_V2_DESIGN_SPEC_V1.md",
   "globalNavigation": [
@@ -58,7 +58,7 @@
     "countryIsolation": true,
     "preserveLegacyFiles": true
   },
-  "screenCoverageStatus": "ATLAS_COMMAND_AND_AUTONOMOUS_DEVELOPMENT_SCREEN_INTEGRATED; DEVICE_ACCEPTANCE_REQUIRED",
+  "screenCoverageStatus": "ATLAS_COMMAND_AND_AUTONOMOUS_TRADE_COMMAND_SCREEN_INTEGRATED; DEVICE_ACCEPTANCE_REQUIRED",
   "integrationPolicy": {
     "entry": "omega_ministry_entry_v3.js",
     "trigger": "Single global Atlas Command dock; legacy government entry retained hidden for compatibility",
