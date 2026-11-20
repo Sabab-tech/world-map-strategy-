@@ -166,6 +166,41 @@ function createSandbox(options={}){
   return {sandbox,rows,countryA,countryB,state,ids,runtime,mesh,kernel,store,blackboard,tick,tickAll,registerTradeAction};
 }
 
+test('ISO3 country keys bypass semantic resolution in interop and state transactions',()=>{
+  const s=createSandbox();
+  const registry=s.sandbox.OmegaCanonicalIdentityRegistry;
+  const originalResolve=registry.resolveCountry.bind(registry);
+  const resolverCalls=[];
+  registry.resolveCountry=function(value){
+    resolverCalls.push(String(value));
+    if(/^[A-Z]{3}$/.test(String(value).trim().toUpperCase()))
+      throw new Error('CANONICAL_ISO3_MUST_NOT_REQUIRE_SEMANTIC_LOOKUP');
+    return originalResolve(value);
+  };
+
+  const tx=s.sandbox.OmegaMinistryStateTransaction.create(
+    'economy','USA',3,'ISO3-DIRECT-TX',s.state,{});
+  assert.equal(tx.countryId,'USA');
+  tx.rollback();
+  assert.deepEqual(resolverCalls,[],
+    'the state transaction must retain an already-canonical ISO3 key without invoking the bridge');
+
+  const unhandled=s.mesh.dispatchCommand('trade','ISO3_UNHANDLED_COUNTRY_TEST','USA',{},{
+    turn:3,commandType:'ISO3_UNHANDLED_COUNTRY_TEST',commandId:'ISO3-COUNTRY-CODE-DISPATCH'
+  });
+  assert.equal(unhandled.status,'UNHANDLED');
+  assert.equal(unhandled.countryId,'USA');
+  assert.deepEqual(resolverCalls,[],
+    'ministry dispatch must not call the semantic bridge for an already-canonical ISO3 key');
+
+  const named=s.mesh.dispatchCommand('trade','NAMED_UNHANDLED_COUNTRY_TEST','United States',{},{
+    turn:3,commandType:'NAMED_UNHANDLED_COUNTRY_TEST',commandId:'NAMED-COUNTRY-DISPATCH'
+  });
+  assert.equal(named.countryId,'USA');
+  assert.ok(resolverCalls.includes('United States'),
+    'country names must continue through canonical semantic resolution');
+});
+
 test('A+B: registry and 17 independent engines are authoritative',()=>{
   const s=createSandbox();
   assert.equal(s.ids.length,MINISTRY_COUNT);
