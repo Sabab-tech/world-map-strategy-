@@ -1853,7 +1853,7 @@ function captureStockFlowPeriod(stateTransaction) {
     }
     const batchTransfers=clone(sellerResource?.result?.batchTransfers||[]);
     const createdBatchIds=clone(buyerResource?.result?.createdBatchIds||[]);
-    const sourceBatchIds=[...new Set(batchTransfers.flatMap(x=>[...(x.sourceBatchIds||[]),x.sourceBatchId].filter(Boolean).map(String)))];
+    const shipmentSourceBatchIds=[...new Set(batchTransfers.flatMap(x=>[...(x.sourceBatchIds||[]),x.sourceBatchId].filter(Boolean).map(String)))];
     const shipment={
       schemaVersion:1,shipmentId:'SHIP-'+sid,requestId:String(req.requestId),settlementId:sid,
       resourceId:String(req.resourceId),quantity:num(req.quantity),
@@ -1863,7 +1863,7 @@ function captureStockFlowPeriod(stateTransaction) {
       dispatchTime:settlementDispatchTime,dispatchTurn:settlementDispatchTurn,
       estimatedArrivalTime:null,etaTurn:null,etaStatus:'NOT_ESTIMATED_ROUTE_TRAVEL_TIME_NOT_MODELED',
       arrivalTime:new Date().toISOString(),arrivalTurn:turn(),status:'ARRIVED',arrivalStatus:'RECEIVED',settlementStatus:'SETTLED',
-      sourceBatchIds:sourceBatchIds,createdBatchIds:createdBatchIds,batchTransfers:batchTransfers,
+      sourceBatchIds:shipmentSourceBatchIds,createdBatchIds:createdBatchIds,batchTransfers:batchTransfers,
       tradeMode:req.source||'GENERAL_TRADE',transportMode:null,routeId:null,routeEvidenceStatus:'UNKNOWN'
     };
     if(useBank){
