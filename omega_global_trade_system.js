@@ -554,11 +554,9 @@ function captureStockFlowPeriod(stateTransaction) {
     if(bilateralContractRequest){
       // Negotiation ended when both parties ratified the agreement. A due BTA
       // shipment is fulfillment, not a new Open Market price negotiation.
-      if(approved+1e-8<result.quantity){
-        result.quantityApproved=0;result.decision='REJECT';
-        result.reason='BILATERAL_CONTRACTED_SUPPLY_UNAVAILABLE';result.confidence=1;
-        return result;
-      }
+      // Preserve the contracted quantity/price here; settleRequest() and the
+      // authoritative seller batch debit still revalidate real available stock
+      // before any inventory transfer or Treasury settlement can complete.
       result.quantityApproved=result.quantity;
       result.unitPrice=offered;
       result.fxRate=fxRate(buyer,seller);
