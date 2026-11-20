@@ -2108,6 +2108,10 @@
     }
     var inventoryLedger=ctx.stateTransaction.get('resource.inventoryLedger'),
       lossLedger=ctx.stateTransaction.get('resource.stockLossLedger');
+    if(!Array.isArray(lossLedger)){
+      lossLedger=[];
+      ctx.stateTransaction.set('resource.stockLossLedger',lossLedger);
+    }
     periods.push({
       schemaVersion:1,periodId:periodId,turn:t,periodType:'GAME_TURN',
       openingStockByIdentity:clone(snapshot.identities),openingCoverageComplete:snapshot.complete,
