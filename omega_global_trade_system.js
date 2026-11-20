@@ -425,6 +425,8 @@ function captureStockFlowPeriod(stateTransaction) {
     ctx.stateTransaction.set('trade.globalTradeLedger',ledger);
     ctx.stateTransaction.set('trade.importLedger',Array.isArray(bucket?.importLedger)?bucket.importLedger:[]);
     ctx.stateTransaction.set('trade.exportLedger',Array.isArray(bucket?.exportLedger)?bucket.exportLedger:[]);
+    ctx.stateTransaction.set('trade.internationalShipmentLedger',
+      Array.isArray(bucket?.internationalShipmentLedger)?bucket.internationalShipmentLedger:[]);
     for(const key of ['balance','importValue','exportValue','tradeValue','lastSettlementTurn']){
       if(Object.prototype.hasOwnProperty.call(bucket,key))ctx.stateTransaction.set('trade.'+key,bucket[key]);
     }
@@ -448,6 +450,59 @@ function captureStockFlowPeriod(stateTransaction) {
   function commandApplied(result){
     return !!result&&(result.status==='APPLIED'||result.result?.duplicate===true||result.duplicate===true)&&
       result.result?.accepted!==false&&result.accepted!==false;
+  }
+
+  function bilateralContractReserve(seller,resourceId,request={}){
+    const rows=countryValue(seller,'trade.bilateralContracts');
+    if(!Array.isArray(rows))return{quantity:0,agreementIds:[],status:'NO_ACTIVE_COMMITMENTS',authorizedAgreement:false};
+    const currentTurn=turn(),excludeAgreement=String(request.governmentContractId||'').trim(),
+      requestId=String(request.requestId||'').trim(),buyerId=canonical(request.countryId);
+    const ledger=countryValue(seller,'trade.globalTradeLedger.settlements');
+    const settledIds=new Set((Array.isArray(ledger)?ledger:[]).filter(row=>String(row.status||'').toUpperCase()==='SETTLED').map(row=>String(row.requestId||'')));
+    let quantity=0,authorizedAgreement=false,authorizedUnitPrice=null,authorizationReason=null;const agreementIds=[];
+    for(const contract of rows){
+      if(!contract||!contract.agreementId||token(contract.resourceId)!==token(resourceId))continue;
+      const role=id(contract.role),sellerId=canonical(contract.sellerCountryId||seller),
+        status=id(contract.status),agreementId=String(contract.agreementId);
+      if(sellerId!==canonical(seller)||role&&role!=='SELLER'||!['ACTIVE','AT_RISK'].includes(status))continue;
+      const deliveryRequest=String(contract.currentRequestId||'').trim(),
+        due=num(contract.nextDeliveryTurn),deliveryQuantity=num(contract.quantityPerDelivery);
+      if(deliveryQuantity===null||deliveryQuantity<=0)continue;
+      if(excludeAgreement&&agreementId===excludeAgreement){
+        const tolerance=Math.max(0,Math.min(50,num(contract.quantityTolerancePct)||0))/100;
+        const allowedMin=deliveryQuantity*(1-tolerance);
+        const allowedMax=deliveryQuantity*(1+tolerance);
+        const requestedQuantity=num(request.quantity),requestedPrice=num(request.unitPrice);
+        const dueNow=deliveryRequest===requestId || !deliveryRequest && due!==null && due<=currentTurn+1;
+        const identityAndQuantityMatch=!!buyerId&&canonical(contract.partnerCountryId)===buyerId&&
+          deliveryRequest===requestId&&dueNow&&requestedQuantity!==null&&
+          requestedQuantity+1e-8>=allowedMin&&requestedQuantity<=allowedMax+1e-8&&status==='ACTIVE';
+        // Fixed-price contracts can fall back to their ratified price for old
+        // saves. Market-linked deliveries require the price snapshot reserved
+        // for this exact request; the live market may have changed since then.
+        const expectedPrice=num(contract.currentRequestUnitPrice) ??
+          (id(contract.priceModel||'FIXED')==='FIXED'?num(contract.unitPrice):null);
+        const priceMatches=expectedPrice!==null&&requestedPrice!==null&&
+          Math.abs(requestedPrice-expectedPrice)<=Math.max(1e-8,Math.abs(expectedPrice)*1e-8);
+        if(identityAndQuantityMatch&&priceMatches){
+          authorizedAgreement=true;
+          authorizedUnitPrice=expectedPrice;
+        }else if(identityAndQuantityMatch&&!priceMatches){
+          authorizationReason=expectedPrice===null
+            ?'BILATERAL_CONTRACT_PRICE_AUTHORIZATION_UNKNOWN'
+            :'BILATERAL_CONTRACT_PRICE_AUTHORIZATION_MISMATCH';
+        }else authorizationReason='BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH';
+        continue;
+      }
+      if(deliveryRequest){
+        if(deliveryRequest===requestId||settledIds.has(deliveryRequest))continue;
+        quantity+=deliveryQuantity;agreementIds.push(agreementId);continue;
+      }
+      if(due!==null&&due<=currentTurn+1){quantity+=deliveryQuantity;agreementIds.push(agreementId);}
+    }
+    return{quantity:Number(quantity.toFixed(8)),agreementIds:agreementIds,
+      status:agreementIds.length?'RESERVED':'NO_ACTIVE_COMMITMENTS',authorizedAgreement:authorizedAgreement,
+      authorizedUnitPrice:authorizedUnitPrice,authorizationReason:authorizationReason};
   }
 
   function sellerReviewDecision(request){
@@ -486,7 +541,14 @@ function captureStockFlowPeriod(stateTransaction) {
     if(result.quantity===null||result.quantity<=0){result.decision='REJECT';result.reason='INVALID_QUANTITY';return result;}
     if(supply.stock===null){result.reason='SELLER_RESOURCE_STOCK_NOT_OBSERVED';return result;}
     const reserve=Math.max(0,supply.reserve||0);
-    let free=Math.max(0,supply.stock-reserve);
+    const contractReserve=bilateralContractReserve(seller,resourceId,request);
+    const bilateralContractRequest=String(request.governmentContractId||'').startsWith('BTA-');
+    if(bilateralContractRequest&&!contractReserve.authorizedAgreement){
+      result.decision='REJECT';result.reason=contractReserve.authorizationReason||'BILATERAL_GOVERNMENT_CONTRACT_NOT_ACTIVE_OR_DUE';
+      result.bilateralContractReserve=clone(contractReserve);return result;
+    }
+    let free=Math.max(0,supply.stock-reserve-contractReserve.quantity);
+    result.bilateralContractReserve=clone(contractReserve);
     if(request.sellerCompanyId){
       const companySupply=privateCompanyAvailableStock(seller,resourceId,request.sellerCompanyId);
       result.privateCompanySupply=clone(companySupply);
@@ -495,7 +557,7 @@ function captureStockFlowPeriod(stateTransaction) {
       }
       free=Math.min(free,Math.max(0,num(companySupply.available)||0));
     }
-    if(free<=0){result.decision='REJECT';result.reason=request.sellerCompanyId?'PRIVATE_SELLER_COMPANY_STOCK_INSUFFICIENT':'RESOURCE_RESERVED_OR_SCARCE';return result;}
+    if(free<=0){result.decision='REJECT';result.reason=contractReserve.quantity>0?'BILATERAL_CONTRACT_RESERVED_SUPPLY':request.sellerCompanyId?'PRIVATE_SELLER_COMPANY_STOCK_INSUFFICIENT':'RESOURCE_RESERVED_OR_SCARCE';return result;}
     const approved=Math.min(result.quantity,free);
     const debtPressure=sellerFin.debtToGdp===null?0:clamp(sellerFin.debtToGdp/1.5);
     const liquidityPressure=sellerFin.liquidity===null?0:clamp(1-(sellerFin.liquidity/Math.max(sellerFin.gdp||sellerFin.liquidity||1,1)));
@@ -516,6 +578,21 @@ function captureStockFlowPeriod(stateTransaction) {
       debtPressure,liquidityPressure,productionBuffer,diplomaticBenefit,willingness};
     const offered=result.offeredUnitPrice;
     if(offered===null){result.reason='REQUESTED_PRICE_NOT_OBSERVED';return result;}
+    if(bilateralContractRequest){
+      // Negotiation ended when both parties ratified the agreement. A due BTA
+      // shipment is fulfillment, not a new Open Market price negotiation.
+      // Preserve the contracted quantity/price here; settleRequest() and the
+      // authoritative seller batch debit still revalidate real available stock
+      // before any inventory transfer or Treasury settlement can complete.
+      result.quantityApproved=result.quantity;
+      result.unitPrice=contractReserve.authorizedUnitPrice;
+      result.fxRate=fxRate(buyer,seller);
+      if(result.fxRate===null){result.decision='WAITING_DATA';result.reason='SETTLEMENT_FX_NOT_OBSERVED';return result;}
+      result.decision='ACCEPT';
+      result.reason='BILATERAL_AGREEMENT_FULFILLMENT';
+      result.confidence=1;
+      return result;
+    }
     if(approved<result.quantity){
       result.quantityApproved=approved;
       if(approved<=0){result.decision='REJECT';result.reason='INSUFFICIENT_FREE_SUPPLY';return result;}
@@ -1202,6 +1279,65 @@ function captureStockFlowPeriod(stateTransaction) {
     return{accepted:true,resourceId:rid,quantity:credited,sourceCountryId:seller,destinationCountryId:buyer,transferType:'TRADE',
       sourceBatchTransfers:transfers,createdBatchIds,batchTransfers:acceptedTransfers};
   }
+  function storeInternationalShipment(bucket,countryId,shipmentInput){
+    const shipment=clone(shipmentInput||{}),owner=canonical(countryId);
+    const shipmentId=String(shipment.shipmentId||'').trim(),requestId=String(shipment.requestId||'').trim(),
+      settlementId=String(shipment.settlementId||'').trim(),origin=canonical(shipment.originCountryId),
+      destination=canonical(shipment.destinationCountryId),quantity=num(shipment.quantity);
+    if(!owner||!shipmentId||!requestId||!settlementId||!origin||!destination||origin===destination||
+      quantity===null||quantity<=0||!shipment.resourceId||!shipment.dispatchTime)
+      return{accepted:false,reason:'INTERNATIONAL_SHIPMENT_FIELDS_INVALID'};
+    if(owner!==origin&&owner!==destination)
+      return{accepted:false,reason:'INTERNATIONAL_SHIPMENT_PARTICIPANT_COUNTRY_MISMATCH',countryId:owner};
+    const role=owner===destination?'IMPORTER':'EXPORTER';
+    const incoming=Object.assign({},shipment,{schemaVersion:1,shipmentId:shipmentId,requestId:requestId,
+      settlementId:settlementId,originCountryId:origin,destinationCountryId:destination,
+      participantRole:role,quantity:quantity});
+    if(!['SCHEDULED','DISPATCHED','IN_TRANSIT','ARRIVED','BLOCKED','FAILED','CANCELLED'].includes(String(incoming.status||'').toUpperCase()))
+      return{accepted:false,reason:'INTERNATIONAL_SHIPMENT_STATUS_INVALID'};
+    const ledger=Array.isArray(bucket.internationalShipmentLedger)?bucket.internationalShipmentLedger.slice():[];
+    const index=ledger.findIndex(row=>String(row&&row.shipmentId||'')===shipmentId&&
+      String(row&&row.participantRole||'').toUpperCase()===role);
+    if(index>=0){
+      const prior=ledger[index];
+      const immutable=['requestId','settlementId','resourceId','quantity','originCountryId','destinationCountryId',
+        'dispatchTime','dispatchTurn','participantRole'];
+      const collision=immutable.some(key=>{
+        const a=prior[key],b=incoming[key];
+        return a!==undefined&&a!==null&&b!==undefined&&b!==null&&
+          (typeof a==='number'||typeof b==='number'?Math.abs(Number(a)-Number(b))>1e-7:String(a)!==String(b));
+      });
+      if(collision)return{accepted:false,reason:'INTERNATIONAL_SHIPMENT_IDENTITY_COLLISION',shipmentId,participantRole:role};
+      const statusRank={SCHEDULED:0,DISPATCHED:1,IN_TRANSIT:2,ARRIVED:3,BLOCKED:3,FAILED:3,CANCELLED:3};
+      const before=String(prior.status||'SCHEDULED').toUpperCase(),after=String(incoming.status||before).toUpperCase();
+      if(statusRank[after]<statusRank[before])return{accepted:false,reason:'INTERNATIONAL_SHIPMENT_LIFECYCLE_REGRESSION',
+        shipmentId,currentStatus:before,requestedStatus:after};
+      const mutable=['estimatedArrivalTime','etaTurn','etaStatus','arrivalTime','arrivalTurn','status',
+        'arrivalStatus','settlementStatus','routeId','transportMode','transportAssetIds','lastUpdatedTurn'];
+      const changed=mutable.some(key=>incoming[key]!==undefined&&
+        JSON.stringify(prior[key]===undefined?null:prior[key])!==JSON.stringify(incoming[key]));
+      if(!changed)return{accepted:true,duplicate:true,shipment:clone(prior)};
+      const next=Object.assign({},prior);
+      mutable.forEach(key=>{if(incoming[key]!==undefined)next[key]=clone(incoming[key]);});
+      next.lastUpdatedTurn=turn();
+      ledger[index]=next;
+      bucket.internationalShipmentLedger=ledger.slice(-MAX_HISTORY);
+      return{accepted:true,updated:true,shipment:clone(next)};
+    }
+    incoming.lastUpdatedTurn=turn();
+    ledger.push(incoming);
+    bucket.internationalShipmentLedger=ledger.slice(-MAX_HISTORY);
+    return{accepted:true,created:true,shipment:clone(incoming)};
+  }
+  function shipmentLedgerHandler(cmd,ctx){
+    const shipment=cmd&&cmd.payload&&cmd.payload.shipment||{};
+    const prior=ctx.stateTransaction.get('trade');
+    const bucket=prior&&typeof prior==='object'?clone(prior):{};
+    const result=storeInternationalShipment(bucket,ctx.countryId,shipment);
+    if(!result.accepted)return result;
+    persistTradeBucket(ctx,bucket);
+    return result;
+  }
   function closeRequestHandler(cmd,ctx){
     const p=cmd?.payload||{},c=canonical(ctx.countryId);
     const rawBucket=ctx.stateTransaction.get('trade');
@@ -1230,6 +1366,11 @@ function captureStockFlowPeriod(stateTransaction) {
           return{accepted:false,reason:'TRADE_SETTLEMENT_IDEMPOTENCY_COLLISION',settlementId,
             requestId:req.requestId,expectedBuyerValue:priorBuyerValue,receivedBuyerValue:requestedBuyerValue,
             expectedSellerValue,receivedSellerValue:requestedSellerValue};
+        if(p.shipment){
+          const shipmentResult=storeInternationalShipment(bucket,c,p.shipment);
+          if(!shipmentResult.accepted)return shipmentResult;
+          persistTradeBucket(ctx,bucket);
+        }
         return{accepted:true,duplicate:true,request:req,settlementId,balance:bucket.balance,importValue:bucket.importValue};
       }
       return{accepted:false,reason:'TRADE_REQUEST_ALREADY_SETTLED',requestId:req.requestId,settlementId:req.settlementId||null};
@@ -1253,6 +1394,10 @@ function captureStockFlowPeriod(stateTransaction) {
         sourceCountryId:req.targetCountryId,sellerCountryId:req.targetCountryId,buyerCountryId:c,counterpartyCountryId:req.targetCountryId,
         status:'SETTLED',turn:turn(),periodId:'GAME_TURN_'+turn()}]).slice(-MAX_HISTORY);
     }
+    if(nextStatus===TYPES.SETTLED&&p.shipment){
+      const shipmentResult=storeInternationalShipment(bucket,c,p.shipment);
+      if(!shipmentResult.accepted)return shipmentResult;
+    }
     persistTradeBucket(ctx,bucket);
     return{accepted:true,request:req,balance:bucket.balance,importValue:bucket.importValue};
   }
@@ -1275,6 +1420,11 @@ function captureStockFlowPeriod(stateTransaction) {
       if(!sameFields||!sameNumbers)
         return{accepted:false,reason:'SELLER_SETTLEMENT_IDEMPOTENCY_COLLISION',settlementId:sid,
           requestId:p.requestId||null};
+      if(p.shipment){
+        const shipmentResult=storeInternationalShipment(bucket,ctx.countryId,p.shipment);
+        if(!shipmentResult.accepted)return shipmentResult;
+        if(!shipmentResult.duplicate)persistTradeBucket(ctx,bucket);
+      }
       return{accepted:true,duplicate:true,settlementId:sid,balance:bucket.balance,exportValue:bucket.exportValue};
     }
     if(String(p.status||'').toUpperCase()==='SETTLED'){
@@ -1292,6 +1442,10 @@ function captureStockFlowPeriod(stateTransaction) {
     }
     bucket.globalTradeLedger.settlements=[...(bucket.globalTradeLedger.settlements||[]),{...clone(p),sellerCountryId:canonical(ctx.countryId),
       periodId:'GAME_TURN_'+turn(),ledgerType:'SELLER_SETTLEMENT'}].slice(-MAX_HISTORY);
+    if(p.shipment){
+      const shipmentResult=storeInternationalShipment(bucket,ctx.countryId,p.shipment);
+      if(!shipmentResult.accepted)return shipmentResult;
+    }
     persistTradeBucket(ctx,bucket);
     return{accepted:true,settlementId:sid,balance:bucket.balance,exportValue:bucket.exportValue};
   }
@@ -1342,6 +1496,7 @@ function captureStockFlowPeriod(stateTransaction) {
       ['OMEGA_TRADE_RESOURCE_CREDIT','resource',resourceCreditHandler],
       ['OMEGA_TRADE_CLOSE_REQUEST','trade',closeRequestHandler],
       ['OMEGA_TRADE_RECORD_SELLER_SETTLEMENT','trade',sellerLedgerHandler],
+      ['OMEGA_TRADE_RECORD_INTERNATIONAL_SHIPMENT','trade',shipmentLedgerHandler],
       ['OMEGA_TRADE_APPLY_POLITICAL_PRESSURE','foreign',relationPressureHandler],
       ['OMEGA_TRADE_APPLY_MILITARY_PRESSURE','military',militaryPressureHandler]
     ];
@@ -1419,6 +1574,7 @@ function captureStockFlowPeriod(stateTransaction) {
       String(row?.requestId||'')===String(req.requestId||'')&&
       String(row?.status||'').toUpperCase()==='SETTLED'&&
       canonical(row?.buyerCountryId)===c&&String(row?.resourceId||'')===String(req.resourceId||'')):null;
+    const settlementDispatchTime=new Date().toISOString(),settlementDispatchTurn=turn();
     if(priorSellerSettlement){
       sid=String(priorSellerSettlement.settlementId||sid);
       const buyerInventoryRows=countryValue(c,'resource.inventoryLedger');
@@ -1438,7 +1594,7 @@ function captureStockFlowPeriod(stateTransaction) {
         stage:'SETTLED',settlementId:sid,buyerValue,sellerValue,sellerCountryId:s,
         buyerCurrency:priorSellerSettlement.buyerCurrency||currencyOf(c),
         sellerCurrency:priorSellerSettlement.sellerCurrency||currencyOf(s),
-        fx:priorSellerSettlement.fx,recovered:true});
+        fx:priorSellerSettlement.fx,recovered:true,shipment:priorSellerSettlement.shipment||null});
       g.__OMEGA_SETTLEMENT_TRACE={requestId:req.requestId,settlementId:sid,recoveredFromSellerLedger:true,
         close:clone(closeResult),sellerSettlement:clone(priorSellerSettlement)};
       if(!commandApplied(closeResult)){
@@ -1469,11 +1625,12 @@ function captureStockFlowPeriod(stateTransaction) {
       const sellerValue=num(priorRow.sellerTotalLocal)??0;
       const batchTransfers=clone(priorRow.batchTransfers||[]);
       const createdBatchIds=clone(priorRow.createdBatchIds||[]);
+      const recoveredShipment=priorRow.shipment||priorTxn.shipment||null;
       const sellerLedgerRecovery=command('trade','OMEGA_TRADE_RECORD_SELLER_SETTLEMENT',s,{
         settlementId:sid,requestId:req.requestId,buyerCountryId:c,resourceId:req.resourceId,
         quantity:req.quantity,unitPrice:req.unitPrice,totalValue:sellerValue,buyerValue,
         fx:priorRow.fx||null,buyerCurrency:priorRow.buyerCurrencyCode||currencyOf(c),
-        sellerCurrency:priorRow.sellerCurrencyCode||currencyOf(s),status:'SETTLED',turn:turn()
+        sellerCurrency:priorRow.sellerCurrencyCode||currencyOf(s),status:'SETTLED',turn:turn(),shipment:recoveredShipment
       });
       g.__OMEGA_SETTLEMENT_TRACE.sellerLedgerRecovery=clone(sellerLedgerRecovery);
       if(!commandApplied(sellerLedgerRecovery)){
@@ -1484,7 +1641,7 @@ function captureStockFlowPeriod(stateTransaction) {
       const closeRecovery=command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.SETTLED,
         stage:'SETTLED',settlementId:sid,buyerValue,sellerValue,sellerCountryId:s,
         buyerCurrency:priorRow.buyerCurrencyCode||currencyOf(c),
-        sellerCurrency:priorRow.sellerCurrencyCode||currencyOf(s),recovered:true});
+        sellerCurrency:priorRow.sellerCurrencyCode||currencyOf(s),recovered:true,shipment:recoveredShipment});
       g.__OMEGA_SETTLEMENT_TRACE.closeRecovery=clone(closeRecovery);
       if(!commandApplied(closeRecovery)){
         emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,
@@ -1747,9 +1904,22 @@ function captureStockFlowPeriod(stateTransaction) {
     }
     const batchTransfers=clone(sellerResource?.result?.batchTransfers||[]);
     const createdBatchIds=clone(buyerResource?.result?.createdBatchIds||[]);
+    const shipmentSourceBatchIds=[...new Set(batchTransfers.flatMap(x=>[...(x.sourceBatchIds||[]),x.sourceBatchId].filter(Boolean).map(String)))];
+    const shipment={
+      schemaVersion:1,shipmentId:'SHIP-'+sid,requestId:String(req.requestId),settlementId:sid,
+      resourceId:String(req.resourceId),quantity:num(req.quantity),
+      unit:batchTransfers.length&&[...new Set(batchTransfers.map(x=>String(x.unit||'').trim()).filter(Boolean))].length===1?
+        batchTransfers.find(x=>x.unit)?.unit:null,
+      originCountryId:s,destinationCountryId:c,
+      dispatchTime:settlementDispatchTime,dispatchTurn:settlementDispatchTurn,
+      estimatedArrivalTime:null,etaTurn:null,etaStatus:'NOT_ESTIMATED_ROUTE_TRAVEL_TIME_NOT_MODELED',
+      arrivalTime:new Date().toISOString(),arrivalTurn:turn(),status:'ARRIVED',arrivalStatus:'RECEIVED',settlementStatus:'SETTLED',
+      sourceBatchIds:shipmentSourceBatchIds,createdBatchIds:createdBatchIds,batchTransfers:batchTransfers,
+      tradeMode:req.source||'GENERAL_TRADE',transportMode:null,routeId:null,routeEvidenceStatus:'UNKNOWN'
+    };
     if(useBank){
       const bankCommit=bank.commitTradeSettlement({
-        settlementId:sid,batchTransfers,createdBatchIds,requestId:req.requestId
+        settlementId:sid,batchTransfers,createdBatchIds,requestId:req.requestId,shipment:shipment
       });
       g.__OMEGA_SETTLEMENT_TRACE.bankCommit=clone(bankCommit);
       if(!bankCommit||bankCommit.ok!==true){
@@ -1779,7 +1949,8 @@ function captureStockFlowPeriod(stateTransaction) {
     const sellerLedgerResult=command('trade','OMEGA_TRADE_RECORD_SELLER_SETTLEMENT',s,{
       settlementId:sid,requestId:req.requestId,buyerCountryId:c,resourceId:req.resourceId,
       quantity:req.quantity,unitPrice:req.unitPrice,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,
-      fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,status:'SETTLED',turn:turn()
+      fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,status:'SETTLED',turn:turn(),
+      shipment:shipment
     });
     g.__OMEGA_SETTLEMENT_TRACE.sellerLedger=clone(sellerLedgerResult);
     if(!commandApplied(sellerLedgerResult)){
@@ -1790,7 +1961,7 @@ function captureStockFlowPeriod(stateTransaction) {
     const closeResult=command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{
       requestId:req.requestId,status:TYPES.SETTLED,stage:'SETTLED',settlementId:sid,
       buyerValue:check.buyerTotal,sellerValue:check.sellerTotal,sellerCountryId:s,
-      buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,fx:check.fx
+      buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,fx:check.fx,shipment:shipment
     });
     g.__OMEGA_SETTLEMENT_TRACE.close=clone(closeResult);
     if(!commandApplied(closeResult)){
@@ -1807,13 +1978,13 @@ function captureStockFlowPeriod(stateTransaction) {
     const sourceBatchIds=[...new Set(batchTransfers.flatMap(x=>[...(x.sourceBatchIds||[]),x.sourceBatchId].filter(Boolean).map(String)))];
     emit('OMEGA_TRADE_SHIPMENT_CREATED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,blackMarketDealId:req.blackMarketDealId||null,
       resourceId:req.resourceId,quantity:req.quantity,sourceCountryId:s,destinationCountryId:c,
-      transferType:'TRADE',batchTransfers,sourceBatchIds,createdBatchIds});
+      transferType:'TRADE',shipmentId:shipment.shipmentId,batchTransfers,sourceBatchIds,createdBatchIds});
     emit('OMEGA_TRADE_SETTLEMENT_COMPLETED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,blackMarketDealId:req.blackMarketDealId||null,
       resourceId:req.resourceId,quantity:req.quantity,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,
       fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,
       sourceCountryId:s,destinationCountryId:c,transferType:'TRADE',
       buyerCompanyId:req.buyerCompanyId||null,sellerCompanyId:req.sellerCompanyId||null,
-      privateCompanyPurchase:privateCompanyPurchase,
+      privateCompanyPurchase:privateCompanyPurchase,shipmentId:shipment.shipmentId,
       batchTransfers,sourceBatchIds,createdBatchIds});
     try{memory()?.record?.(c,{type:'RELATIONAL',sourceEvent:'OMEGA_TRADE_SETTLEMENT_COMPLETED',
       targetCountryId:s,action:'IMPORT',outcome:{status:'SETTLED'},importance:.9,confidence:.9,
@@ -2136,6 +2307,7 @@ function captureStockFlowPeriod(stateTransaction) {
       worldCountryCount:ids().length,requests,pending,settled,settlementModel:'CROSS_MINISTRY_TWO_PHASE_COMPENSATING_LEDGER',
       schedulerHandlerRegistered:typeof unregisterSchedulerHandler==='function',
       autonomousCountryRequestCap:MAX_AUTONOMOUS_REQUESTS_PER_COUNTRY_PER_TURN,
+      durableInternationalShipmentLedger:true,
       autonomousCountryTiers:['ACTIVE','MACRO']};
   }
   function init(){

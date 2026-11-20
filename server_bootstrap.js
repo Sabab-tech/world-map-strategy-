@@ -162,6 +162,7 @@ const CANONICAL_AI_SCRIPTS = Object.freeze([
   'omega_black_market_network_v1.js',
   'omega_black_market_ui_v1.js',
   'omega_opponent_treaty_lifecycle_system.js',
+  'omega_bilateral_trade_agreement_system_v1.js',
   'omega_opponent_second_order_consequence_system.js',
 ]);
 
