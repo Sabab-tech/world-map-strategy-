@@ -372,3 +372,18 @@ test('static shell, server bootstrap and offline cache load the same runtime/con
   assert.doesNotMatch(runtimeSource,/setInterval|requestAnimationFrame|new Worker\s*\(/);
 });
 function staticRuntimeAfterTrade(runtimeIndex,tradeIndex){return runtimeIndex>tradeIndex&&runtimeIndex>=0&&tradeIndex>=0;}
+
+
+test('NPC macro trade planning has a read-only per-country resource-demand source', () => {
+  const macro = read('omega_npc_national_macro_economy_runtime_v1.js');
+  const demand = read('omega_resource_national_demand_runtime_v1.js');
+  assert.match(macro, /demandApi\.evaluateDemand\(countryId\)/);
+  assert.match(demand, /evaluateDemand:\s*evaluateDemand/);
+  const start = demand.indexOf('function evaluateDemand(countryId)');
+  const end = demand.indexOf('function diagnostics()', start);
+  assert.ok(start >= 0 && end > start);
+  const readOnly = demand.slice(start, end);
+  assert.doesNotMatch(readOnly, /dispatch\(|dispatchCommand\(|stateTransaction\.set|\.inventory\s*=/);
+  assert.match(readOnly, /mode:\s*'READ_ONLY'/);
+  assert.match(readOnly, /stateMutation:\s*false/);
+});

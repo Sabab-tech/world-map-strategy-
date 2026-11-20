@@ -186,7 +186,15 @@ function createRuntime(options = {}) {
       WorldSimulationScheduler: scheduler,
       BilateralTradeAgreementV1: bilateral,
       GlobalMarket: market,
-      GlobalTrade: trade
+      GlobalTrade: trade,
+      ResourceNationalDemandRuntime: {
+        evaluateDemand(countryId) {
+          const rows = state.resource[countryId]?.demandRuntime?.byResource || {};
+          return { countryId, turn: state.simulation.turn, status: 'ACTIVE',
+            profiles: Object.keys(rows).map(key => structuredClone(rows[key])),
+            mode: 'READ_ONLY', stateMutation: false };
+        }
+      }
     },
     __OmegaAutonomousNationalTradeDecisionRules: options.pendingRules ? undefined : (() => {
       const configured = structuredClone(rules);

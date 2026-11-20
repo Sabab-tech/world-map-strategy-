@@ -6,6 +6,12 @@ This module is a bounded decision orchestrator, not another economy, market, sch
 
 The player-selected country is always excluded. The handler runs only on the existing World Simulation Scheduler's ACTIVE and MACRO tiers. It creates no timer, worker, animation loop, world-roster scan, or network-backed AI request.
 
+## Country-scoped demand evidence
+
+The engine does not read the player's cached `resource.demandRuntime` as an NPC snapshot. It calls the additive `Omega.ResourceNationalDemandRuntime.evaluateDemand(countryId)` API. This API reuses the canonical demand formula, resource catalogue, country population/economy/military observations, active factory recipe capacity, inventory book, protected stock, and confirmed inbound import requests. It returns a bounded read-only `profiles` array with demand, available/spendable stock, inbound quantity, unresolved requests, deficit, surplus, provenance and UNKNOWN markers. It never debits inventory, publishes a demand cache, changes the country state, or sends a Ministry command.
+
+The detailed Resource Economy turn participant remains player-country-only. NPC countries receive only this read-only demand calculation; their mine/factory production is not simulated in parallel or on every world turn. Resource identities remain sourced from the existing resource profiles and observed country state.
+
 ## Per-country state machine
 
 Each NPC country has a checkpoint at `trade.autonomousNationalTradeDecision`, owned by the Trade Ministry and written through Ministry Interoperability:

@@ -236,15 +236,19 @@
     return finite(row[key]);
   }
   function demandRows(countryId) {
-    var resource = bucket(countryId, 'resource') || {};
-    var runtime = resource.demandRuntime || {};
-    var byResource = runtime.byResource;
-    if (!byResource || typeof byResource !== 'object' || Array.isArray(byResource)) return [];
-    return Object.keys(byResource).map(function (key) {
-      var row = byResource[key];
-      if (!row || typeof row !== 'object') return null;
-      return Object.assign({ resourceId: row.resourceId || key }, clone(row));
-    }).filter(Boolean).sort(function (a, b) {
+    var api = g.Omega && g.Omega.ResourceNationalDemandRuntime || g.OmegaResourceNationalDemandRuntime;
+    if (!api || typeof api.evaluateDemand !== 'function') return [];
+    var snapshot = null;
+    try { snapshot = api.evaluateDemand(countryId); } catch (_) { return []; }
+    if (!snapshot || !Array.isArray(snapshot.profiles) ||
+        !['ACTIVE', 'PARTIAL'].includes(String(snapshot.status || '').toUpperCase())) return [];
+    return snapshot.profiles.filter(function (row) {
+      return row && typeof row === 'object' &&
+        finite(row.demandPerDay) !== null && finite(row.demandPerDay) > 0 &&
+        finite(row.spendableStockAfter) !== null &&
+        finite(row.pendingImportQuantity) !== null &&
+        finite(row.unresolvedImportRequestCount) !== null;
+    }).sort(function (a, b) {
       return (finite(b.procurementScore) || 0) - (finite(a.procurementScore) || 0) ||
         (finite(b.priority) || 0) - (finite(a.priority) || 0) ||
         token(a.resourceId).localeCompare(token(b.resourceId));
@@ -399,8 +403,7 @@
       var unresolved = nonNegative(row.unresolvedImportRequestCount);
       if (!rid || daily === null || daily <= 0 || spendable === null || inbound === null || unresolved === null) return;
       if (unresolved > 0) return;
-      var targetDays = finite(row.stockCoverageTargetDays);
-      if (targetDays === null || targetDays <= 0) targetDays = policy.targetCoverageDays;
+      var targetDays = policy.targetCoverageDays;
       var importGap = Math.max(0, daily * targetDays - spendable - inbound);
       if (importGap <= 1e-8 || importSupplierScanUsed) return;
 
@@ -462,8 +465,7 @@
         var partnerUnresolved = nonNegative(need.unresolvedImportRequestCount);
         if (partnerDaily === null || partnerDaily <= 0 || partnerStock === null ||
             partnerInbound === null || partnerUnresolved === null || partnerUnresolved > 0) return;
-        var targetDays = finite(need.stockCoverageTargetDays);
-        if (targetDays === null || targetDays <= 0) targetDays = policy.targetCoverageDays;
+        var targetDays = policy.targetCoverageDays;
         var importNeed = Math.max(0, partnerDaily * targetDays - partnerStock - partnerInbound);
         if (importNeed <= 1e-8) return;
         var price = finite(marketApi.executableLocalPrice(countryId, rid));
