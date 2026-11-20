@@ -6,6 +6,10 @@ on:
     paths:
       - 'android/**'
       - 'omega_national_accounts_runtime_v1.js'
+      - 'omega_resource_research_runtime_v1.js'
+      - 'scripts/transpile_android_web_assets.mjs'
+      - 'scripts/android_web_asset_scope.mjs'
+      - 'test/omega_android_web_asset_scope.test.mjs'
       - 'national_accounts_rules_v1.json'
       - 'omega_finance_ministry_runtime_v1.js'
       - 'omega_world_simulation_scheduler_v1.js'
@@ -20,6 +24,10 @@ on:
     paths:
       - 'android/**'
       - 'omega_national_accounts_runtime_v1.js'
+      - 'omega_resource_research_runtime_v1.js'
+      - 'scripts/transpile_android_web_assets.mjs'
+      - 'scripts/android_web_asset_scope.mjs'
+      - 'test/omega_android_web_asset_scope.test.mjs'
       - 'national_accounts_rules_v1.json'
       - 'omega_finance_ministry_runtime_v1.js'
       - 'omega_world_simulation_scheduler_v1.js'
@@ -57,6 +65,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.6.1'
+
+      - name: Verify Android asset helper scoping
+        run: node --test test/omega_android_web_asset_scope.test.mjs
 
       - name: Test Android 9 WebView instrumentation gate
         run: python3 scripts/test_android_webview_performance.py

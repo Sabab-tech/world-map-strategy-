@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { scopeTranspiledAndroidAsset } from './android_web_asset_scope.mjs';
 
 const root = path.resolve(process.argv[2] || '');
 if (!process.argv[2]) throw new Error('ANDROID_WEB_ASSET_DIRECTORY_REQUIRED');
@@ -37,6 +38,7 @@ try {
     for (const file of jsFiles) {
       const output = path.join(outDir, path.relative(root, file));
       const transpiled = await fs.readFile(output, 'utf8');
+      const originalSource = await fs.readFile(file, 'utf8');
       const label = path.relative(root, file).split(path.sep).join('/').replace(/'/g, "\\'");
       const traceStart = `;if(window.OMEGA_ANDROID_DIAGNOSTICS===true)console.info('[OMEGA_BOOT_START] ${label}');\n`;
       const traceEnd = `\n;if(window.OMEGA_ANDROID_DIAGNOSTICS===true)console.info('[OMEGA_BOOT_END] ${label}');\n`;
@@ -44,7 +46,11 @@ try {
       const instrumented = strictDirective
         ? strictDirective[1] + traceStart + transpiled.slice(strictDirective[1].length) + traceEnd
         : traceStart + transpiled + traceEnd;
-      await fs.writeFile(file, instrumented, 'utf8');
+      // Keep esbuild's per-file compatibility helpers private for self-invoking
+      // classic scripts. Minified helper names can otherwise leak onto window and
+      // be overwritten by another independently transpiled classic asset.
+      const scoped = scopeTranspiledAndroidAsset(label, originalSource, instrumented);
+      await fs.writeFile(file, scoped, 'utf8');
     }
   }
 
