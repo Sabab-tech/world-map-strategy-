@@ -99,7 +99,8 @@
   }
   function historySnapshot(state) {
     return { route:state.route, ministryId:state.ministryId, section:state.section,
-      resourceSiteId:state.resourceSiteId, governmentView:state.governmentView };
+      marketTab:state.marketTab || 'commodities', resourceSiteId:state.resourceSiteId,
+      governmentView:state.governmentView };
   }
   function routeName(id) {
     var value = String(id || '');
@@ -131,6 +132,7 @@
     state.history.push(historySnapshot(state));
     state.ministryId = id;
     state.section = 'dashboard';
+    state.marketTab = 'commodities';
     state.resourceSiteId = null;
     state.route = next;
     if (next === 'government') state.governmentView = 'executive-ministry';
@@ -212,6 +214,7 @@
     state.route = previous.route || 'map';
     state.ministryId = previous.ministryId || null;
     state.section = previous.section || 'dashboard';
+    state.marketTab = previous.marketTab === 'black-market' || previous.marketTab === 'transactions' ? previous.marketTab : 'commodities';
     state.resourceSiteId = previous.resourceSiteId || null;
     state.governmentView = previous.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry';
     refreshAfterStateChange(root, deferRender);
@@ -322,7 +325,21 @@
       }
     } else if (state.route === 'economy') {
       if (g.OmegaUIV2Economy && typeof g.OmegaUIV2Economy.render === 'function') {
-        return g.OmegaUIV2Economy.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId, onOpenMinistry:function (id) { return openMinistry(root, id, true); } })));
+        return g.OmegaUIV2Economy.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, {
+          countryId:state.countryId,
+          onOpenMinistry:function (id) { return openMinistry(root, id, true); },
+          onOpenTradeSection:function (section, marketTab) {
+            var current = stateFor(root);
+            if (!current) return false;
+            current.history.push(historySnapshot(current));
+            current.route = 'ministry-detail';
+            current.ministryId = 'trade';
+            current.section = section === 'settlement' ? 'settlement' : 'market';
+            current.marketTab = marketTab === 'black-market' || marketTab === 'transactions' ? marketTab : 'commodities';
+            current.resourceSiteId = null;
+            return refreshAfterStateChange(root, true);
+          }
+        })));
       }
     } else if (state.route === 'industry' || (state.route === 'ministry-detail' && state.ministryId === 'production')) {
       if (g.OmegaUIV2Industry && typeof g.OmegaUIV2Industry.render === 'function') return g.OmegaUIV2Industry.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId, onOpenFactory:options.onOpenFactory })));
@@ -342,7 +359,8 @@
     } else if (state.route === 'ministry-detail') {
       if (g.OmegaUIV2MinistryDetail && typeof g.OmegaUIV2MinistryDetail.render === 'function') {
         return g.OmegaUIV2MinistryDetail.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId, ministryId:state.ministryId,
-          onNavigate:function (destination) { return navigate(root, destination, true); }, section:state.section })));
+          onNavigate:function (destination) { return navigate(root, destination, true); },
+          section:state.section, marketTab:state.marketTab })));
       }
     }
     if (state.route === 'map') {
@@ -761,6 +779,7 @@
         route:item.route || 'map',
         ministryId:item.ministryId || null,
         section:item.section || 'dashboard',
+        marketTab:item.marketTab === 'black-market' || item.marketTab === 'transactions' ? item.marketTab : 'commodities',
         resourceSiteId:item.resourceSiteId || null,
         governmentView:item.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry'
       };
@@ -777,6 +796,7 @@
       route:initialRoute,
       ministryId:options.initialMinistryId ? String(options.initialMinistryId) : null,
       section:options.initialSection || 'dashboard',
+      marketTab:options.initialMarketTab === 'black-market' || options.initialMarketTab === 'transactions' ? options.initialMarketTab : 'commodities',
       resourceSiteId:options.initialResourceSiteId || null,
       governmentView:options.initialGovernmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry',
       countryId:canonicalCountry(options.countryId || currentCountry() || ''),
