@@ -12,11 +12,25 @@ The engine does not read the player's cached `resource.demandRuntime` as an NPC 
 
 The detailed Resource Economy turn participant remains player-country-only. NPC countries receive only this read-only demand calculation; their mine/factory production is not simulated in parallel or on every world turn. Resource identities remain sourced from the existing resource profiles and observed country state.
 
+## Physical stock-flow and loss evidence
+
+The Resource Economy runtime now exposes an additive physical-evidence API, with all mutations routed through the existing Resource Ministry command handlers:
+
+- `captureStockFlowPeriod(countryId)` records the opening inventory/batch position for `GAME_TURN_n` before player-country extraction, transport, production and settlement work. The following turn captures the prior period's closing position where turns are contiguous.
+- `writeOffInventory(countryId, {eventId, resourceId, quantity, unit, reason})` debits only free, warehouse-backed physical stock. It updates aggregate inventory, the appropriate raw/processed warehouse, batch remainder, inventory lot, inventory ledger and canonical stock-loss ledger atomically. Event IDs are idempotent; a conflicting replay is rejected.
+- `processStorageDeterioration(countryId, {policy, knownResourceIds})` accepts only explicitly simulation-only policy. It uses per-commodity grace turns and per-eligible-turn rates, persists fractional carry by batch, and creates measured-zero observations without synthetic loss rows.
+- `recordShipmentLoss(countryId, {eventId, shipmentId, resourceId, quantity, reason})` binds the loss to the real shipment and source batch. Mine-held cargo loss changes the shipment, held-flow and batch balances without debiting already-dispatched warehouse stock a second time. Factory-bound loss adjusts the actual source inventory, warehouse availability, reservation, batch, lot and unit-bridged target quantity.
+- `attestStockLossCoverage(countryId, source)` records source-scoped STORAGE, TRANSPORT and PRODUCTION coverage. Production measurements distinguish MEASURED_EVENTS, MEASURED_ZERO and UNOBSERVED; a reported loss cannot exceed its consumed input. A later physical loss invalidates prior period attestation.
+
+These are simulation-game physical ledgers, not claims about measured real-world commodity deterioration or losses. Unknown measurement remains UNOBSERVED. The Resource Economy regression suite exercises stock write-off, fractional deterioration, mine-haul and factory-bound cargo losses, output-residue coverage, production-loss bounds, measured-zero evidence, replay idempotency and post-attestation invalidation.
+
+The active-country Resource Economy turn participant captures the opening stock-flow period before its first physical mutations. Other countries are not started in parallel detailed factory/mine simulations.
+
 ## Per-country state machine
 
 Each NPC country has a checkpoint at `trade.autonomousNationalTradeDecision`, owned by the Trade Ministry and written through Ministry Interoperability:
 
-1. **PLAN** reads the existing `resource.demandRuntime.byResource` summaries and a bounded list of known diplomatic partners. It ranks at most three import/export opportunities.
+1. **PLAN** calls `Omega.ResourceNationalDemandRuntime.evaluateDemand(countryId)` for a fresh country-scoped read-only snapshot and combines it with a bounded list of known diplomatic partners. It ranks at most three import/export opportunities.
 2. **MARKET_INTELLIGENCE** checks the existing bilateral market snapshot. It performs at most one on-demand sync per country visit when the snapshot is stale or missing.
 3. **VALIDATE** delegates final stock, reserve, contract commitments, domestic requirement, FX, Treasury and market-evidence checks to `BilateralTradeAgreementV1.previewProposal()`. Only FEASIBLE evidence may authorize a proposal.
 4. **COUNTEROFFER** evaluates at most one own-outbox counteroffer per visit. It checks cleared seller price, the configured premium/discount boundary and bilateral feasibility; accepted terms use `acceptCounteroffer()`. A rejected counteroffer is recorded through the existing `OMEGA_BILATERAL_APPLY_RESPONSE` handler.
@@ -44,7 +58,7 @@ The checked-in rules file starts in **read-only planner mode**:
 - `autonomousCounteroffers: false`
 - `marketIntelligenceSyncEnabled: false`
 
-This mode reads current evidence, ranks opportunities, and persists only its own Trade-Ministry-owned decision checkpoint. It does not synchronize bilateral market snapshots, send proposals, accept/reject counteroffers, reserve stock, or move money. This is intentional while Phase 0 subsystem regressions are stabilized and the planner is validated.
+This mode reads current evidence, ranks opportunities, and persists only its own Trade-Ministry-owned decision checkpoint. It does not synchronize bilateral market snapshots, send proposals, accept/reject counteroffers, reserve stock, or move money. This is intentional while Phase 0 subsystem regressions and end-to-end shipment/settlement checks are validated.
 
 Phase 2 may be enabled only after the existing bilateral, resource, finance/FX, scheduler, offline and end-to-end regression suites pass. It requires all three flags to be enabled together. The staged state machine then refreshes at most one stale bilateral market snapshot per country visit, creates at most one proposal after a FEASIBLE existing bilateral preview, and evaluates at most one counteroffer per visit.
 
