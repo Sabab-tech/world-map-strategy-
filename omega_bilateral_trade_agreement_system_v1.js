@@ -881,18 +881,14 @@
         safe.decisionFactors.alternativeMarketEvidence) {
       var alternatives = safe.decisionFactors.alternativeMarketEvidence;
       if (evaluator === seller) {
-        if (Array.isArray(alternatives.buyers)) alternatives.buyers = [];
-        if (Object.prototype.hasOwnProperty.call(alternatives, 'bestAlternativeBuyerPrice'))
-          alternatives.bestAlternativeBuyerPrice = null;
+        alternatives.buyers = [];
+        alternatives.bestAlternativeBuyerPrice = null;
         alternatives.competingBuyerBidDisclosure = 'PRIVATE';
       } else if (evaluator === buyer) {
-        if (Array.isArray(alternatives.suppliers)) alternatives.suppliers = [];
-        if (Object.prototype.hasOwnProperty.call(alternatives, 'bestAlternativePrice'))
-          alternatives.bestAlternativePrice = null;
-        if (Object.prototype.hasOwnProperty.call(alternatives, 'bestAlternativeBuyerCost'))
-          alternatives.bestAlternativeBuyerCost = null;
-        if (Object.prototype.hasOwnProperty.call(alternatives, 'buyerCostCurrency'))
-          alternatives.buyerCostCurrency = null;
+        alternatives.suppliers = [];
+        alternatives.bestAlternativePrice = null;
+        alternatives.bestAlternativeBuyerCost = null;
+        alternatives.buyerCostCurrency = null;
         alternatives.competingSupplierQuoteDisclosure = 'PRIVATE';
         safe.decisionFactors.buyerDemandPerInterval = null;
       }
