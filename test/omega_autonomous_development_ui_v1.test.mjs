@@ -43,6 +43,7 @@ test('dashboard reads existing runtimes and does not mutate canonical state',()=
   const rendered=API.render(root,{countryId:'BGD'});
   assert.equal(rendered.ok,true);assert.equal(rendered.pipelineLayers,28);
   assert.match(root.innerHTML,/Autonomous Trade Command/);
+  assert.match(root.innerHTML,/<svg[^>]+width="24"[^>]+height="24"[^>]+viewBox="0 0 24 24"/);
   assert.match(root.innerHTML,/Candidate only · not a confirmed contract/);
   assert.match(root.innerHTML,/Authority boundaries/);
   assert.match(root.innerHTML,/omega-v2-autonomy-status--healthy/);
@@ -83,6 +84,5 @@ test('autonomous screen is wired to the shared route and offline shell',()=>{
  assert.match(css,/\.omega-v2-autonomy-status--pending/);
  assert.match(css,/\.omega-v2-autonomy-status--blocked/);
  assert.equal(manifest.screens.autonomousDevelopment,'omega_ui_v2/screens/autonomous-development.js');
- assert.match(root.innerHTML,/<svg[^>]+width="24"[^>]+height="24"[^>]+viewBox="0 0 24 24"/);
  assert.equal(API.VERSION,'1.1.0');
 });
