@@ -616,7 +616,7 @@ function captureStockFlowPeriod(stateTransaction) {
       blackMarketDealId:blackMarketDeal?.dealId||null,blackMarketPermitId:blackMarketDeal?.permitId||null,
       ...(blackMarketDeal?{importTariffPct:0}:(p.importTariffPct===undefined?{}:{importTariffPct:p.importTariffPct})),
       governmentContractId:String(p.governmentContractId||p.contractId||'').trim()||null,
-      transportMode:String(p.transportMode||p.shippingMode||'').trim()||null,
+      transportMode:String(p.transportMode||p.shippingMode||p.routeMode||'').trim()||null,
       routeId:String(p.routeId||'').trim()||null,
       buyerCompanyId:buyerCompanyId||null,sellerCompanyId:sellerCompanyId||null,
       marketPriceEvidence:privateCompanyPurchase?clone(marketPriceEvidence):null,
