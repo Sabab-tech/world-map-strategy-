@@ -238,5 +238,48 @@ test('Trade Settlement renders without a domain data record and does not merge s
   assert.match(dashboard.innerHTML,/data-omega-v2-ministry-section="market"/);
   assert.match(dashboard.innerHTML,/data-omega-v2-trade-market-tab="black-market"/);
   assert.match(dashboard.innerHTML,/data-omega-v2-ministry-section="settlement"/);
-  assert.match(dashboard.innerHTML,/data-omega-v2-detail-navigate="treasury_finance"/);
+  assert.match(dashboard.innerHTML,/data-omega-v2-ministry-section="market" data-omega-v2-trade-market-tab="transactions"/);
 });
+
+test('Transactions shortcut mounts the existing Market Transactions tab without cloning its ledger', () => {
+  cleanGlobals();
+  installCountryRuntime();
+  globalThis.Game = { state:{ simulation:{turn:12}, trade:{ BGD:{} } } };
+  let existingTransactionsTabActivated = 0;
+  const transactionButton = { click(){ existingTransactionsTabActivated += 1; } };
+  const marketHost = {
+    querySelector(selector) {
+      return selector === '[data-market-view="transactions"]' ? transactionButton : null;
+    },
+    textContent:''
+  };
+  globalThis.OmegaUIV2Government = {
+    getMinistryRows() { return [{ id:'trade', title:'Trade & Commerce', ministerName:'Not recorded' }]; }
+  };
+  globalThis.OmegaResourceCommandCenterUI = {
+    renderMarketDashboard(host, country) {
+      assert.equal(country,'BGD');
+      assert.equal(host,marketHost);
+      return { ok:true };
+    }
+  };
+  const root = {
+    classList:{ add(){} },
+    addEventListener(){},
+    contains(){ return true; },
+    querySelector(selector) {
+      return selector === '[data-omega-v2-trade-market-host]' ? marketHost : null;
+    },
+    innerHTML:''
+  };
+  const result = globalThis.OmegaUIV2MinistryDetail.render(root,{
+    ministryId:'trade', countryId:'BGD', section:'market', marketTab:'transactions'
+  });
+  assert.equal(result.ok,true);
+  assert.equal(result.marketMounted,true);
+  assert.equal(existingTransactionsTabActivated,1,
+    'the current Resource Command Center transaction view is activated through its existing tab');
+  assert.match(root.innerHTML,/Market Transactions/);
+  assert.match(root.innerHTML,/data-omega-v2-trade-market-tab="transactions"/);
+});
+
