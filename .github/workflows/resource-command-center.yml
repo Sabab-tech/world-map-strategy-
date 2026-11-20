@@ -1,7 +1,10 @@
 name: Resource Command Center
 concurrency:
-  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # Keep explicit reruns of the same PR head alive. The PR CI coalescer
+  # cancels obsolete head SHAs; a branch-wide cancel group also cancelled
+  # manual reruns of the current head before its feature-specific tests ran.
+  group: omega-pr-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 on:
   pull_request:
