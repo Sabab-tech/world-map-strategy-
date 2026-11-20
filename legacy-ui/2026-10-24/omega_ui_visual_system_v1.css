@@ -1,0 +1,700 @@
+/* OMEGA UI Visual System v1.0
+   Consistent command-center palette, predictable layering, and low-end Android paint budget.
+   Loaded after legacy styles so this is the single visual authority. */
+:root{
+  --ui-bg:#0b1220;
+  --ui-surface:#111b2b;
+  --ui-surface-raised:#172437;
+  --ui-surface-soft:#1c2b40;
+  --ui-border:#34465c;
+  --ui-border-strong:#52677f;
+  --ui-text:#e6edf5;
+  --ui-muted:#9aabbe;
+  --ui-accent:#76b7d8;
+  --ui-accent-soft:rgba(118,183,216,.14);
+  --ui-gold:#c9a96e;
+  --ui-success:#75b798;
+  --ui-warning:#d8b36a;
+  --ui-danger:#d77c7c;
+  --ui-radius:8px;
+  --ui-font:Inter,"Segoe UI",Roboto,Arial,sans-serif;
+}
+html,body,#app{font-family:var(--ui-font)!important;color:var(--ui-text);}
+#render-engine-root,#map,.leaflet-container{filter:none!important;-webkit-filter:none!important;}
+.leaflet-container{background:#14263a!important;}
+#ui-engine-root{font-family:var(--ui-font)!important;}
+.ui-top-hud,.ui-right-controls,.map-metric-dropdown,#map-metric-dropdown,
+#resource-filter-box,.omega-drawer,.country-info-card,.city-detail-bar,
+#command-hub-modal,#cabinet-full-window,.omega-modal,.country-selection-bar,
+#notification-stack,.leaflet-popup-content-wrapper{
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  background:rgba(11,18,32,.98)!important;
+  color:var(--ui-text)!important;
+  border-color:var(--ui-border)!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.42)!important;
+}
+.ui-top-hud,.ui-right-controls,.country-selection-bar{border-radius:var(--ui-radius)!important;}
+.ui-top-hud{gap:12px!important;padding:7px 12px!important;max-width:calc(100vw - 20px)!important;}
+.status-resources{background:var(--ui-surface)!important;border-color:var(--ui-border)!important;gap:10px!important;}
+.status-resources .res-val,.res-val{color:var(--ui-text)!important;}
+.res-node span:first-child{color:var(--ui-accent)!important;}
+.res-trend.positive{color:var(--ui-success)!important;}
+.metric-pill-btn,#top-bar-dropdown-trigger{background:var(--ui-surface-raised)!important;border:1px solid var(--ui-border-strong)!important;box-shadow:none!important;color:var(--ui-text)!important;}
+#active-metric-label{color:var(--ui-accent)!important;}
+.ui-right-controls{padding:8px!important;gap:7px!important;border:1px solid var(--ui-border)!important;}
+.icon-btn{
+  width:42px!important;height:42px!important;border-radius:8px!important;
+  background:var(--ui-surface-raised)!important;border:1px solid var(--ui-border)!important;
+  color:var(--ui-text)!important;font-family:var(--ui-font)!important;font-size:17px!important;
+  box-shadow:none!important;transition:background-color .12s ease,border-color .12s ease!important;
+}
+.icon-btn.active,.icon-btn[aria-pressed="true"]{background:var(--ui-accent-soft)!important;border-color:var(--ui-accent)!important;color:#c4e7f7!important;}
+button,.nav-btn,.layer-opt-btn,.metric-opt-btn,select,input,textarea{
+  font-family:var(--ui-font)!important;
+}
+button{ -webkit-tap-highlight-color:transparent; }
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--ui-accent)!important;outline-offset:2px!important;
+}
+/* Normalize legacy inline button styling across every major application surface. */
+#ui-engine-root button,.omega-modal button,#command-hub-modal button,
+#cabinet-full-window button,.country-info-card button,.city-detail-bar button,
+#resource-filter-box button,.dark-theme-popup button{
+  background:var(--ui-surface)!important;color:var(--ui-text)!important;
+  border-color:var(--ui-border)!important;border-radius:7px!important;
+  box-shadow:none!important;text-shadow:none!important;
+  font-family:var(--ui-font)!important;transition:background-color .12s ease,border-color .12s ease!important;
+}
+#ui-engine-root button:hover,.omega-modal button:hover,#command-hub-modal button:hover,
+#cabinet-full-window button:hover,.country-info-card button:hover,.city-detail-bar button:hover,
+#resource-filter-box button:hover,.dark-theme-popup button:hover{
+  background:var(--ui-surface-soft)!important;border-color:var(--ui-border-strong)!important;
+  color:#fff!important;box-shadow:none!important;transform:none!important;
+}
+#ui-engine-root button:disabled,.omega-modal button:disabled,#command-hub-modal button:disabled,
+#cabinet-full-window button:disabled{opacity:.5!important;cursor:not-allowed!important;}
+
+.metric-opt-btn,.layer-opt-btn,.drawer-close,.nav-btn,
+#btn-ministry-dock,#btn-view-map,#btn-card-cabinet,.ui-bottom-navigation .nav-btn{
+  background:var(--ui-surface)!important;color:var(--ui-text)!important;
+  border:1px solid var(--ui-border)!important;border-radius:7px!important;
+  box-shadow:none!important;backdrop-filter:none!important;
+}
+.metric-opt-btn:hover,.layer-opt-btn:hover,.nav-btn:hover,
+#btn-ministry-dock:hover,#btn-view-map:hover,#btn-card-cabinet:hover{
+  background:var(--ui-surface-soft)!important;border-color:var(--ui-border-strong)!important;
+  color:#fff!important;transform:none!important;box-shadow:none!important;
+}
+.nav-btn.active{color:var(--ui-accent)!important;border-color:var(--ui-accent)!important;}
+.ui-bottom-navigation{gap:8px!important;}
+.ui-bottom-navigation .nav-btn{padding:9px 14px!important;font-size:12px!important;}
+#resource-filter-box{
+  box-sizing:border-box!important;pointer-events:auto!important;
+  z-index:100002!important;position:fixed!important;
+  top:50%!important;right:68px!important;left:auto!important;
+  transform:translateY(-50%)!important;
+  width:340px!important;max-width:calc(100vw - 92px)!important;
+  max-height:calc(100vh - 32px)!important;overflow-x:hidden!important;overflow-y:auto!important;
+  padding:14px!important;border:1px solid var(--ui-border-strong)!important;
+  border-radius:10px!important;gap:10px!important;
+}
+#resource-filter-box.hidden{display:none!important;}
+#resource-filter-box:not(.hidden){display:flex!important;}
+#resource-filter-box>div:first-child{
+  background:var(--ui-bg)!important;border-bottom:1px solid var(--ui-border)!important;
+  color:var(--ui-text)!important;
+}
+#resource-filter-box>div:first-child span{color:var(--ui-text)!important;}
+#resource-filter-box button{
+  box-shadow:none!important;text-shadow:none!important;transition:background-color .12s ease,border-color .12s ease!important;
+}
+#btn-scope-nation,#btn-scope-world{
+  background:var(--ui-surface)!important;border:1px solid var(--ui-border)!important;
+  color:var(--ui-muted)!important;border-radius:7px!important;
+}
+#btn-scope-nation[aria-pressed="true"],#btn-scope-world[aria-pressed="true"],
+#btn-scope-nation.active,#btn-scope-world.active{
+  background:var(--ui-accent-soft)!important;border-color:var(--ui-accent)!important;color:#d9f1fc!important;
+}
+#res-scope-indicator{background:var(--ui-surface)!important;border-color:var(--ui-border)!important;color:var(--ui-muted)!important;}
+#res-scope-target{color:var(--ui-accent)!important;}
+#resource-chip-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;
+  max-height:min(34vh,280px)!important;background:var(--ui-bg)!important;
+  border:1px solid var(--ui-border)!important;border-radius:8px!important;padding:8px!important;
+  overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;
+}
+.res-chip-item{
+  box-sizing:border-box!important;min-width:0!important;min-height:38px!important;
+  padding:6px 7px!important;gap:7px!important;border-radius:7px!important;
+  background:var(--ui-surface)!important;border:1px solid var(--ui-border)!important;
+  color:var(--ui-muted)!important;font-size:11px!important;line-height:1.25!important;
+  transition:none!important;
+}
+ .res-chip-item.selected{
+  background:var(--ui-accent-soft)!important;border-color:var(--ui-accent)!important;color:var(--ui-text)!important;
+}
+.res-chip-item input[type="checkbox"]{
+  flex:0 0 auto!important;width:14px!important;height:14px!important;margin:0!important;
+  accent-color:var(--ui-accent)!important;
+}
+.omega-resource-glyph{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  flex:0 0 auto!important;box-sizing:border-box!important;
+  width:27px;height:27px;border:1px solid var(--ui-resource-color,var(--ui-border-strong));
+  border-radius:6px;background:rgba(255,255,255,.035);color:var(--ui-resource-color,var(--ui-accent));
+  font:700 9px/1 var(--ui-font)!important;letter-spacing:-.25px;white-space:nowrap;
+}
+.omega-resource-glyph--map{width:28px;height:28px;border-radius:7px;background:#101b2a;font-size:9px!important;}
+.omega-resource-glyph--popup{width:24px;height:24px;font-size:8px!important;}
+#resource-summary-count{
+  color:var(--ui-text)!important;background:var(--ui-surface)!important;
+  border:1px solid var(--ui-border)!important;border-radius:7px!important;
+}
+#resource-summary-count strong{color:var(--ui-accent)!important;}
+#resource-filter-box>div:last-child{
+  position:sticky!important;bottom:0!important;background:var(--ui-bg)!important;
+  border-top:1px solid var(--ui-border)!important;padding-top:9px!important;
+}
+#btn-exit-res-filter,#btn-clear-res-filter,#btn-apply-res-filter{
+  background:var(--ui-surface-raised)!important;border:1px solid var(--ui-border-strong)!important;
+  color:var(--ui-text)!important;border-radius:7px!important;font-size:11px!important;
+}
+#btn-apply-res-filter{background:var(--ui-accent-soft)!important;border-color:var(--ui-accent)!important;color:#d9f1fc!important;}
+#btn-clear-res-filter{color:var(--ui-warning)!important;}
+#btn-exit-res-filter{color:var(--ui-danger)!important;}
+.resource-deposit-compact-icon{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;max-width:30px!important;max-height:30px!important;overflow:visible!important;}
+.resource-deposit-compact-icon>div{box-shadow:none!important;transition:none!important;}
+.resource-deposit-compact-icon *{box-shadow:none!important;animation:none!important;transition:none!important;}
+.resource-deposit-compact-icon [style*="animation"]{display:none!important;}
+.city-btn-marker{background:#101b2a!important;border:1px solid var(--ui-accent)!important;box-shadow:none!important;border-radius:5px!important;padding:2px 5px!important;}
+.city-btn-dot{box-shadow:none!important;}
+.city-btn-label{font:600 10px/1.2 var(--ui-font)!important;color:var(--ui-text)!important;text-shadow:0 1px 2px #000!important;}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--ui-surface)!important;color:var(--ui-text)!important;border:1px solid var(--ui-border)!important;}
+.leaflet-popup-content{margin:10px!important;}
+.dark-theme-popup button{box-shadow:none!important;backdrop-filter:none!important;border-radius:6px!important;}
+.country-selection-bar{bottom:78px!important;background:var(--ui-surface)!important;border-color:var(--ui-border)!important;box-shadow:0 8px 24px rgba(0,0,0,.4)!important;}
+.sel-country-name{font-family:var(--ui-font)!important;text-shadow:none!important;}
+.sel-country-eye-btn{background:var(--ui-accent-soft)!important;color:#d9f1fc!important;border:1px solid var(--ui-accent)!important;border-radius:7px!important;box-shadow:none!important;}
+.sel-country-eye-btn:hover{transform:none!important;box-shadow:none!important;}
+#map-metric-dropdown,.map-metric-dropdown{background:var(--ui-bg)!important;border-color:var(--ui-border)!important;}
+#map-metric-dropdown button{box-shadow:none!important;}
+@media(max-width:700px){
+  #resource-filter-box{
+    top:58px!important;right:10px!important;left:10px!important;transform:none!important;
+    width:auto!important;max-width:none!important;max-height:calc(100dvh - 72px)!important;
+  }
+  #resource-chip-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-height:30dvh!important;}
+  .ui-right-controls{right:8px!important;gap:6px!important;padding:6px!important;}
+  .icon-btn{width:38px!important;height:38px!important;border-radius:7px!important;}
+  .ui-bottom-navigation{gap:5px!important;max-width:calc(100vw - 16px)!important;flex-wrap:wrap!important;}
+  .ui-bottom-navigation .nav-btn{padding:8px 10px!important;font-size:11px!important;}
+}
+@media(prefers-reduced-motion:reduce),(pointer:coarse){
+  *,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important;}
+}
+
+/* Reapply state and primary-action treatments after the legacy-button reset. */
+#ui-engine-root .speed-btn.active,#ui-engine-root .nav-btn.active,
+#ui-engine-root .icon-btn.active{
+  background:var(--ui-accent-soft)!important;border-color:var(--ui-accent)!important;color:#d9f1fc!important;
+}
+#resource-filter-box #btn-scope-nation.active,
+#resource-filter-box #btn-scope-world.active{
+  background:var(--ui-accent-soft)!important;border-color:var(--ui-accent)!important;color:#d9f1fc!important;
+}
+#resource-filter-box #btn-apply-res-filter{
+  background:var(--ui-accent-soft)!important;border-color:var(--ui-accent)!important;color:#d9f1fc!important;
+}
+#resource-filter-box #btn-clear-res-filter{color:var(--ui-warning)!important;}
+#resource-filter-box #btn-exit-res-filter{color:var(--ui-danger)!important;}
+
+
+/* Individual canonical mine/field sites: resource-specific compact glyphs, not identical brown dots. */
+.omega-individual-site-marker{background:transparent!important;border:0!important;}
+.omega-individual-site-marker span{
+ display:flex;align-items:center;justify-content:center;box-sizing:border-box;
+ width:26px;height:26px;border-radius:7px;
+ background:#101b2a;border:2px solid var(--site-color,#76b7d8);
+ color:var(--site-color,#76b7d8);font:800 10px/1 Arial,sans-serif;
+ box-shadow:0 1px 4px #000b;text-shadow:none;
+}
+.omega-individual-site-marker:focus-visible{outline:2px solid #fff;outline-offset:2px;}
+.omega-individual-site-marker span{position:relative;}
+
+
+/* Resource deposit details: compact hierarchy, human-readable data, no raw engine dumps. */
+#omega-individual-resource-panel.omega-resource-site-panel{
+ box-sizing:border-box;display:none;position:fixed;left:12px;bottom:64px;z-index:1000002;
+ width:min(430px,calc(100vw - 24px));max-height:78vh;overflow:auto;overscroll-behavior:contain;
+ padding:16px;background:var(--ui-surface,#101923);color:var(--ui-text,#e8edf2);
+ border:1px solid var(--ui-border,#34465c);border-radius:15px;
+ box-shadow:0 14px 42px rgba(0,0,0,.44);
+ font:13px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:0;
+ scrollbar-width:thin;scrollbar-color:var(--ui-border,#526272) transparent
+}
+.omega-site-panel-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--ui-border,#34465c)}
+.omega-site-panel-header h2{margin:0;font:700 19px/1.2 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.25px}
+.omega-site-eyebrow{margin:0 0 4px;color:var(--ui-muted,#9db0c1);font-size:10px;font-weight:750;letter-spacing:1.15px}
+#omega-individual-resource-panel .omega-site-close{flex:none;padding:7px 10px;background:transparent;color:var(--ui-text,#e8edf2);border:1px solid var(--ui-border,#526272);border-radius:8px;font:600 12px/1.1 system-ui,sans-serif;cursor:pointer}
+#omega-individual-status.omega-site-status{margin:10px 0 12px;color:var(--ui-muted,#a7b6c5);font-size:11px;line-height:1.4}
+.omega-site-select-label{display:block;margin:0 0 5px;color:var(--ui-muted,#a7b6c5);font-size:11px;font-weight:650}
+#omega-individual-select.omega-site-select{box-sizing:border-box;display:block;width:100%;min-width:0;padding:10px 11px;margin:0 0 13px;
+ background:var(--ui-bg,#162332);color:var(--ui-text,#edf3f8);border:1px solid var(--ui-border,#43566a);
+ border-radius:9px;font:12px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;outline-offset:2px}
+.omega-site-hero{padding:2px 0 12px}
+.omega-site-hero h3{margin:0 0 9px;font:750 18px/1.25 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:-.2px;overflow-wrap:anywhere}
+.omega-site-badges{display:flex;flex-wrap:wrap;gap:6px}
+.omega-site-badge{display:inline-flex;align-items:center;max-width:100%;padding:4px 8px;border-radius:999px;
+ background:var(--ui-bg,#172637);border:1px solid var(--ui-border,#43566a);color:var(--ui-text,#e8edf2);
+ font-size:10px;font-weight:650;line-height:1.25;overflow-wrap:anywhere}
+.omega-site-badge--resource{background:var(--ui-accent-soft,rgba(79,166,204,.12));border-color:var(--ui-accent,#528baa);color:var(--ui-text,#e8edf2)}
+.omega-site-badge--status{border-color:var(--ui-success,#558d75)}
+.omega-site-location{margin:9px 0 0;color:var(--ui-muted,#aab9c8);font-size:12px}
+.omega-site-section{margin:12px 0 0}
+.omega-site-section h4{margin:0 0 8px;color:var(--ui-muted,#b8c8d7);font-size:10px;font-weight:800;letter-spacing:.85px;text-transform:uppercase}
+.omega-site-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.omega-site-metric{min-width:0;padding:10px 11px;background:var(--ui-bg,#162332);border:1px solid var(--ui-border,#34465c);border-radius:10px}
+.omega-site-metric>span{display:block;margin-bottom:5px;color:var(--ui-muted,#a7b6c5);font-size:10px;font-weight:650;line-height:1.35}
+.omega-site-metric>strong{display:block;color:var(--ui-text,#f0f5fa);font-size:14px;font-weight:750;line-height:1.3;overflow-wrap:anywhere}
+.omega-site-metric>small{display:block;margin-top:5px;color:var(--ui-muted,#a4b6c7);font-size:9px;line-height:1.25}
+.omega-site-data-note{margin:12px 0 0;padding:10px 12px;background:var(--ui-bg,#162332);border-left:3px solid var(--ui-border,#526272);border-radius:5px;color:var(--ui-muted,#b5c2cf);font-size:12px;line-height:1.45}
+.omega-site-rows{display:grid;gap:0}
+.omega-site-row{display:grid;grid-template-columns:minmax(105px,.85fr) minmax(0,1.15fr);gap:10px;align-items:start;padding:7px 0;border-bottom:1px solid var(--ui-border,#26394b)}
+.omega-site-row:last-child{border-bottom:0}
+.omega-site-row-label{color:var(--ui-muted,#a7b6c5);font-size:11px}
+.omega-site-row-value{min-width:0;color:var(--ui-text,#e8edf2);font-size:12px;font-weight:550;overflow-wrap:anywhere}
+.omega-site-authority{display:block;margin-top:3px;color:var(--ui-muted,#9eb0c1);font-size:9px;font-weight:500}
+.omega-site-detail-sections{margin-top:10px;border-top:1px solid var(--ui-border,#34465c)}
+.omega-site-details{border-bottom:1px solid var(--ui-border,#34465c)}
+.omega-site-details>summary{position:relative;list-style:none;padding:11px 20px 11px 0;cursor:pointer;color:var(--ui-text,#e8edf2);font-size:12px;font-weight:650}
+.omega-site-details>summary::-webkit-details-marker{display:none}
+.omega-site-details>summary:after{content:"+";position:absolute;right:2px;top:9px;color:var(--ui-muted,#9fb0c0);font-size:16px;font-weight:400}
+.omega-site-details[open]>summary:after{content:"−"}
+.omega-site-details[open]>summary{margin-bottom:2px}
+.omega-site-details .omega-site-section{margin:0 0 10px}
+.omega-site-route-list{display:grid;gap:8px}
+.omega-site-route{padding:10px;background:var(--ui-bg,#162332);border:1px solid var(--ui-border,#34465c);border-radius:9px}
+.omega-site-route h5{margin:0 0 4px;font-size:12px;font-weight:700}
+.omega-site-route .omega-site-row{grid-template-columns:minmax(80px,.7fr) minmax(0,1.3fr);padding:5px 0}
+.omega-site-muted{margin:7px 0 10px;color:var(--ui-muted,#9eafbf);font-size:10px}
+.omega-site-output{padding-top:7px}
+.omega-site-output>.omega-site-row-label{display:block;margin-bottom:6px}
+.omega-site-chip-list{display:flex;flex-wrap:wrap;gap:5px}
+.omega-site-chip{padding:4px 7px;background:var(--ui-bg,#162332);border:1px solid var(--ui-border,#43566a);border-radius:6px;color:var(--ui-text,#dce6ef);font-size:10px;line-height:1.35}
+.omega-site-empty{margin:0;padding:12px 0;color:var(--ui-muted,#a7b6c5)}
+.omega-site-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid var(--ui-border,#34465c)}
+#omega-individual-resource-panel .omega-site-action{min-width:0;padding:10px 9px;border:1px solid var(--ui-border,#43566a);border-radius:9px;
+ font:650 12px/1.25 system-ui,-apple-system,"Segoe UI",sans-serif;cursor:pointer}
+#omega-individual-resource-panel .omega-site-action--plan{background:var(--ui-accent-soft,rgba(79,166,204,.13));color:var(--ui-text,#e8edf2);border-color:var(--ui-accent,#528baa)}
+#omega-individual-resource-panel .omega-site-action--execute{background:var(--ui-bg,#162332);color:var(--ui-text,#e8edf2)}
+#omega-individual-resource-panel button:focus-visible,#omega-individual-resource-panel select:focus-visible{outline:2px solid var(--ui-accent,#6ba8c7);outline-offset:2px}
+@media(max-width:480px){
+ #omega-individual-resource-panel.omega-resource-site-panel{left:8px;bottom:58px;width:calc(100vw - 16px);max-height:78vh;padding:13px}
+ .omega-site-metric{padding:9px}
+ .omega-site-metric>strong{font-size:13px}
+ .omega-site-row{grid-template-columns:minmax(84px,.8fr) minmax(0,1.2fr);gap:7px}
+}
+
+
+/* MAP-FIRST NAVIGATION: keep only a compact Ministries action on a map corner. */
+.ui-bottom-navigation {
+    position: fixed !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    left: 12px !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+#btn-ministry-dock {
+    box-sizing: border-box !important;
+    position: relative !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    flex: 0 0 42px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    border: 1px solid rgba(0, 229, 255, 0.72) !important;
+    border-radius: 50% !important;
+    background: rgba(5, 16, 29, 0.94) !important;
+    color: #c8f5ff !important;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.36) !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    transform: none !important;
+    backdrop-filter: none !important;
+}
+#btn-ministry-dock .nav-icon {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-family: Arial, sans-serif !important;
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+}
+#btn-ministry-dock .nav-text {
+    display: none !important;
+}
+#btn-ministry-dock:hover,
+#btn-ministry-dock:active {
+    transform: scale(1.04) !important;
+    border-color: #8ceeff !important;
+    background: rgba(8, 34, 53, 0.98) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.42) !important;
+}
+@media (max-width: 480px) {
+    .ui-bottom-navigation {
+        left: 8px !important;
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+    #btn-ministry-dock {
+        width: 40px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
+        flex-basis: 40px !important;
+    }
+}
+
+
+/* ==========================================================================
+   OMEGA BUTTON FINISH v1.1
+   Shared tactile surface, deliberate action hierarchy, consistent touch targets.
+   Keep this additive: legacy IDs, click handlers, and layout contracts stay intact.
+   ========================================================================== */
+:root{
+  --ui-btn-bg:#17263a;
+  --ui-btn-bg-top:#1b2d43;
+  --ui-btn-bg-hover:#203750;
+  --ui-btn-border:#3c526a;
+  --ui-btn-border-hover:#648ba8;
+  --ui-btn-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 2px 5px rgba(0,0,0,.22);
+  --ui-btn-radius:9px;
+  --ui-btn-height:38px;
+  --ui-btn-primary:#1d4058;
+  --ui-btn-primary-border:#579abd;
+}
+
+/* Common text-action controls. Icon-only buttons and tiny close controls are
+   intentionally excluded so this never stretches their hitboxes unexpectedly. */
+#ui-engine-root .speed-controls .speed-btn,
+.special-btn,
+.metric-opt-btn,
+.layer-opt-btn,
+.tab-btn,
+.cabinet-btn,
+.res-quick-btn,
+.city-bar-btn,
+.drawer-close,
+#btn-view-map,
+#btn-card-cabinet,
+#resource-filter-box #btn-exit-res-filter,
+#resource-filter-box #btn-clear-res-filter,
+#resource-filter-box #btn-apply-res-filter,
+#resource-filter-box #btn-scope-nation,
+#resource-filter-box #btn-scope-world,
+#omega-individual-resource-panel .omega-site-close,
+#omega-individual-resource-panel .omega-site-action,
+.sel-country-eye-btn{
+  box-sizing:border-box!important;
+  min-width:0;
+  min-height:36px!important;
+  padding:8px 11px!important;
+  border:1px solid var(--ui-btn-border)!important;
+  border-radius:var(--ui-btn-radius)!important;
+  background:linear-gradient(180deg,var(--ui-btn-bg-top),var(--ui-btn-bg))!important;
+  color:var(--ui-text)!important;
+  font-family:var(--ui-font)!important;
+  font-size:12px!important;
+  font-weight:650!important;
+  line-height:1.25!important;
+  letter-spacing:.01em!important;
+  text-shadow:none!important;
+  box-shadow:var(--ui-btn-shadow)!important;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  transition:background-color .14s ease,border-color .14s ease,box-shadow .14s ease,transform .14s ease!important;
+}
+
+/* Four-state speed selector: compact, even and easy to read at a glance. */
+#ui-engine-root .speed-controls .speed-btn{
+  min-width:36px!important;
+  min-height:36px!important;
+  padding:0 9px!important;
+  border-radius:8px!important;
+  color:var(--ui-muted)!important;
+  font-size:11px!important;
+  font-weight:750!important;
+  font-variant-numeric:tabular-nums;
+}
+#ui-engine-root .speed-controls .speed-btn.active{
+  background:linear-gradient(180deg,#244960,#1b374d)!important;
+  border-color:var(--ui-accent)!important;
+  color:#e5f6ff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(118,183,216,.10)!important;
+}
+
+/* Floating map controls have one consistent shape, with the ministry dock
+   retaining its deliberate circular silhouette and original 40–42px geometry. */
+#ui-engine-root .icon-btn{
+  box-sizing:border-box!important;
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  min-height:42px!important;
+  padding:0!important;
+  border:1px solid var(--ui-btn-border)!important;
+  border-radius:10px!important;
+  background:linear-gradient(180deg,#1b2c41,#111e2f)!important;
+  color:var(--ui-text)!important;
+  box-shadow:var(--ui-btn-shadow)!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  line-height:1!important;
+  transition:background-color .14s ease,border-color .14s ease,box-shadow .14s ease,transform .14s ease!important;
+}
+#ui-engine-root .icon-btn > .omega-ui-icon{
+  border-color:transparent!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+#ui-engine-root .icon-btn.active,
+#ui-engine-root .icon-btn[aria-pressed="true"]{
+  background:linear-gradient(180deg,#23445c,#19364b)!important;
+  border-color:var(--ui-accent)!important;
+  color:#dff5ff!important;
+}
+
+/* Clickable metric and dropdown pills read like controls, not loose labels. */
+.metric-pill-btn,#top-bar-dropdown-trigger{
+  box-sizing:border-box!important;
+  min-height:34px!important;
+  padding:5px 10px!important;
+  border:1px solid var(--ui-btn-border)!important;
+  border-radius:9px!important;
+  background:linear-gradient(180deg,var(--ui-btn-bg-top),var(--ui-btn-bg))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04)!important;
+  color:var(--ui-text)!important;
+}
+
+/* Selected states stay visible without turning every button into a neon sign. */
+.tab-btn.active,
+.special-btn.active,
+.metric-opt-btn[aria-pressed="true"],
+.layer-opt-btn[aria-pressed="true"],
+.res-quick-btn.active,
+.city-bar-btn.active{
+  background:linear-gradient(180deg,#24465d,#19374c)!important;
+  border-color:var(--ui-accent)!important;
+  color:#e5f6ff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px rgba(118,183,216,.08)!important;
+}
+#resource-filter-box #btn-apply-res-filter,
+#omega-individual-resource-panel .omega-site-action--plan{
+  background:linear-gradient(180deg,#28526b,#1c4057)!important;
+  border-color:var(--ui-primary-border)!important;
+  color:#f0f9ff!important;
+}
+#resource-filter-box #btn-clear-res-filter{
+  color:#e8cb8d!important;
+  border-color:rgba(216,179,106,.48)!important;
+}
+#resource-filter-box #btn-exit-res-filter{
+  color:#f0aaaa!important;
+  border-color:rgba(215,124,124,.52)!important;
+}
+
+/* Main back/action controls keep their existing placement and handlers. */
+#global-back-btn.global-back-btn{
+  box-sizing:border-box!important;
+  min-height:40px!important;
+  padding:8px 12px!important;
+  border:1px solid var(--ui-btn-border)!important;
+  border-radius:10px!important;
+  background:linear-gradient(180deg,#1b2d43,#101d2d)!important;
+  color:var(--ui-text)!important;
+  box-shadow:var(--ui-btn-shadow)!important;
+  font-family:var(--ui-font)!important;
+  font-size:12px!important;
+  font-weight:750!important;
+  letter-spacing:.04em!important;
+}
+#btn-ministry-dock:focus-visible,
+#global-back-btn:focus-visible,
+#ui-engine-root .icon-btn:focus-visible,
+#ui-engine-root .speed-controls .speed-btn:focus-visible,
+.special-btn:focus-visible,
+.metric-opt-btn:focus-visible,
+.layer-opt-btn:focus-visible,
+.tab-btn:focus-visible,
+.cabinet-btn:focus-visible,
+.res-quick-btn:focus-visible,
+.city-bar-btn:focus-visible,
+.drawer-close:focus-visible,
+#resource-filter-box button:focus-visible,
+#omega-individual-resource-panel button:focus-visible,
+.sel-country-eye-btn:focus-visible,
+.c-ministry-btn:focus-visible,
+.access-card:focus-visible,
+.om-royal-card:focus-visible{
+  outline:2px solid #9bd9f2!important;
+  outline-offset:2px!important;
+}
+
+/* Smooth tactile feedback on pointer devices only; no hover-lift on touch screens. */
+@media(hover:hover) and (pointer:fine){
+  #ui-engine-root .speed-controls .speed-btn:hover:not(:disabled),
+  #ui-engine-root .icon-btn:hover:not(:disabled),
+  .special-btn:hover:not(:disabled),
+  .metric-opt-btn:hover:not(:disabled),
+  .layer-opt-btn:hover:not(:disabled),
+  .tab-btn:hover:not(:disabled),
+  .cabinet-btn:hover:not(:disabled),
+  .res-quick-btn:hover:not(:disabled),
+  .city-bar-btn:hover:not(:disabled),
+  .drawer-close:hover:not(:disabled),
+  #btn-view-map:hover:not(:disabled),
+  #btn-card-cabinet:hover:not(:disabled),
+  #resource-filter-box button:hover:not(:disabled),
+  #omega-individual-resource-panel button:hover:not(:disabled),
+  .sel-country-eye-btn:hover:not(:disabled){
+    background:linear-gradient(180deg,#203650,#17283b)!important;
+    border-color:var(--ui-btn-border-hover)!important;
+    color:#f4f8fc!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.055),0 3px 8px rgba(0,0,0,.26)!important;
+  }
+  #ui-engine-root .speed-controls .speed-btn:hover:not(:disabled),
+  #ui-engine-root .icon-btn:hover:not(:disabled),
+  .special-btn:hover:not(:disabled),
+  .metric-opt-btn:hover:not(:disabled),
+  .layer-opt-btn:hover:not(:disabled),
+  .tab-btn:hover:not(:disabled),
+  .cabinet-btn:hover:not(:disabled),
+  .res-quick-btn:hover:not(:disabled),
+  .city-bar-btn:hover:not(:disabled),
+  #btn-view-map:hover:not(:disabled),
+  #btn-card-cabinet:hover:not(:disabled){
+    transform:translateY(-1px)!important;
+  }
+}
+#ui-engine-root .speed-controls .speed-btn:active:not(:disabled),
+#ui-engine-root .icon-btn:active:not(:disabled),
+.special-btn:active:not(:disabled),
+.metric-opt-btn:active:not(:disabled),
+.layer-opt-btn:active:not(:disabled),
+.tab-btn:active:not(:disabled),
+.cabinet-btn:active:not(:disabled),
+.res-quick-btn:active:not(:disabled),
+.city-bar-btn:active:not(:disabled),
+.drawer-close:active:not(:disabled),
+#btn-view-map:active:not(:disabled),
+#btn-card-cabinet:active:not(:disabled),
+#resource-filter-box button:active:not(:disabled),
+#omega-individual-resource-panel button:active:not(:disabled),
+.sel-country-eye-btn:active:not(:disabled){
+  transform:translateY(1px)!important;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.28)!important;
+}
+#btn-ministry-dock:active:not(:disabled){
+  transform:scale(.97)!important;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.3)!important;
+}
+
+/* Rounded, calmer ministry action tiles; locked/alert states remain semantic. */
+.c-ministry-btn{
+  border-radius:10px!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 3px 8px rgba(0,0,0,.22)!important;
+}
+.c-ministry-btn:hover:not(:disabled):not([data-om-state="locked"]){
+  border-color:var(--ui-btn-border-hover)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 5px 12px rgba(0,0,0,.28)!important;
+}
+.c-ministry-btn[data-om-state="locked"],.c-ministry-btn:disabled{
+  opacity:.48!important;
+  cursor:not-allowed!important;
+  transform:none!important;
+}
+.access-card:focus-visible{
+  outline:2px solid #9bd9f2!important;
+  outline-offset:3px!important;
+}
+.access-card:active{
+  transform:translateY(1px) scale(.995)!important;
+  box-shadow:inset 0 1px 4px rgba(0,0,0,.3)!important;
+}
+button:disabled,.c-ministry-btn[data-om-state="locked"]{
+  cursor:not-allowed!important;
+}
+@media(max-width:700px){
+  #ui-engine-root .icon-btn{
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    min-height:40px!important;
+    border-radius:9px!important;
+  }
+  #ui-engine-root .speed-controls .speed-btn{
+    min-width:36px!important;
+    min-height:36px!important;
+  }
+  .tab-btn{padding:8px 5px!important;font-size:11px!important;}
+  .cabinet-btn{min-height:68px!important;padding:9px 6px!important;}
+}
+@media(prefers-reduced-motion:reduce){
+  #ui-engine-root .speed-controls .speed-btn,
+  #ui-engine-root .icon-btn,
+  .special-btn,.metric-opt-btn,.layer-opt-btn,.tab-btn,.cabinet-btn,
+  .res-quick-btn,.city-bar-btn,.drawer-close,#btn-view-map,#btn-card-cabinet,
+  #resource-filter-box button,#omega-individual-resource-panel button,
+  .sel-country-eye-btn,.access-card,.c-ministry-btn{
+    transition:none!important;
+    animation:none!important;
+  }
+}
+
+
+/* Preserve the existing low-end Android policy: visual feedback is immediate
+   on coarse pointers and never starts a costly transition/animation storm. */
+@media(pointer:coarse){
+  #ui-engine-root .speed-controls .speed-btn,
+  #ui-engine-root .icon-btn,
+  .special-btn,.metric-opt-btn,.layer-opt-btn,.tab-btn,.cabinet-btn,
+  .res-quick-btn,.city-bar-btn,.drawer-close,#btn-view-map,#btn-card-cabinet,
+  #resource-filter-box button,#omega-individual-resource-panel button,
+  .sel-country-eye-btn,.access-card,.c-ministry-btn{
+    transition:none!important;
+    animation:none!important;
+  }
+}

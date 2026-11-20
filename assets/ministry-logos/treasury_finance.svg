@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Treasury and Finance emblem</title>
+  <desc id="desc">Original OMEGA ministry emblem in navy, steel silver and signal blue.</desc>
+  <rect x="4" y="4" width="120" height="120" rx="25" fill="#edf3f8" stroke="#68849d" stroke-width="3"/>
+  <circle cx="64" cy="64" r="47" fill="#0b2238" stroke="#77c8f2" stroke-width="2.5"/>
+  <circle cx="64" cy="64" r="39" fill="none" stroke="#9fb4c8" stroke-width="1.2" opacity=".6"/>
+  <g fill="none" stroke="#e3edf6" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"><rect x="29" y="37" width="70" height="58" rx="7"/><circle cx="64" cy="66" r="18"/><circle cx="64" cy="66" r="6"/><path d="M64 48v6m0 24v6M46 66h6m24 0h6M39 30h50"/></g>
+  <g fill="none" stroke="#77c8f2" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M64 59v14m-5-10h10m-10 6h10"/></g>
+</svg>

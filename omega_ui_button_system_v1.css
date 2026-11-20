@@ -1,0 +1,155 @@
+/* OMEGA UI Button System v1
+ * One visual contract for static and runtime-generated buttons.
+ * Deliberate layout owners stay in their existing CSS; this layer normalizes the
+ * button surface, semantic action hierarchy, touch target and feedback states.
+ */
+:root {
+  --omega-button-bg: #17263a;
+  --omega-button-bg-hover: #203750;
+  --omega-button-border: #3c526a;
+  --omega-button-border-hover: #648ba8;
+  --omega-button-text: #e6edf5;
+  --omega-button-muted: #a3b3c4;
+  --omega-button-accent: #7fc5e2;
+  --omega-button-accent-bg: rgba(127, 197, 226, .14);
+  --omega-button-primary-bg: #1d4058;
+  --omega-button-primary-border: #579abd;
+  --omega-button-danger-bg: #3a252d;
+  --omega-button-danger-border: #925466;
+  --omega-button-danger-text: #ffdce2;
+  --omega-button-radius: 9px;
+  --omega-button-height: 40px;
+}
+
+/* Keep the circular ministry dock's deliberate geometry; normalize every
+   other real button, including controls rendered later by ministry runtimes. */
+button[data-omega-button-managed="v1"]:not(#btn-ministry-dock) {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  min-height: var(--omega-button-height) !important;
+  max-width: 100%;
+  padding: 8px 12px !important;
+  border: 1px solid var(--omega-button-border) !important;
+  border-radius: var(--omega-button-radius) !important;
+  background: linear-gradient(180deg, #1b2d43, var(--omega-button-bg)) !important;
+  color: var(--omega-button-text) !important;
+  font-family: var(--ui-font, Inter, "Segoe UI", Roboto, Arial, sans-serif) !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  line-height: 1.25 !important;
+  letter-spacing: .01em;
+  text-shadow: none !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 2px 5px rgba(0,0,0,.22) !important;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  transition: background-color .14s ease, border-color .14s ease, box-shadow .14s ease, transform .14s ease !important;
+}
+
+button[data-omega-button-managed="v1"][data-omega-button-kind="primary"]:not(#btn-ministry-dock),
+button[data-omega-button-managed="v1"][data-omega-button-kind="submit"]:not(#btn-ministry-dock) {
+  background: linear-gradient(180deg, #28526b, var(--omega-button-primary-bg)) !important;
+  border-color: var(--omega-button-primary-border) !important;
+  color: #f0f9ff !important;
+}
+
+button[data-omega-button-managed="v1"][data-omega-button-kind="danger"]:not(#btn-ministry-dock) {
+  background: linear-gradient(180deg, #442a34, var(--omega-button-danger-bg)) !important;
+  border-color: var(--omega-button-danger-border) !important;
+  color: var(--omega-button-danger-text) !important;
+}
+
+button[data-omega-button-managed="v1"][data-omega-button-kind="navigation"]:not(#btn-ministry-dock),
+button[data-omega-button-managed="v1"][data-omega-button-kind="toggle"]:not(#btn-ministry-dock) {
+  min-height: 40px !important;
+  padding: 8px 11px !important;
+  background: var(--omega-button-bg) !important;
+  color: var(--omega-button-muted) !important;
+  box-shadow: none !important;
+}
+
+button[data-omega-button-managed="v1"][data-omega-button-kind="icon"]:not(#btn-ministry-dock) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto;
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  padding: 0 !important;
+  border-radius: 9px !important;
+  line-height: 1 !important;
+  text-align: center;
+}
+
+button[data-omega-button-managed="v1"][data-omega-button-kind="utility"]:not(#btn-ministry-dock) {
+  min-height: 40px !important;
+  padding: 7px 10px !important;
+}
+
+button[data-omega-button-managed="v1"]:not(#btn-ministry-dock).active,
+button[data-omega-button-managed="v1"]:not(#btn-ministry-dock)[aria-pressed="true"],
+button[data-omega-button-managed="v1"]:not(#btn-ministry-dock)[aria-selected="true"],
+button[data-omega-button-managed="v1"]:not(#btn-ministry-dock)[aria-current="page"] {
+  border-color: var(--omega-button-accent) !important;
+  background: var(--omega-button-accent-bg) !important;
+  color: #e5f6ff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 0 0 1px rgba(127,197,226,.08) !important;
+}
+
+button[data-omega-button-managed="v1"]:not(#btn-ministry-dock):hover:not(:disabled):not([aria-disabled="true"]),
+button[data-omega-button-managed="v1"]:not(#btn-ministry-dock):focus-visible {
+  border-color: var(--omega-button-border-hover) !important;
+}
+
+button[data-omega-button-managed="v1"]:not(#btn-ministry-dock):focus-visible {
+  outline: 2px solid var(--omega-button-accent) !important;
+  outline-offset: 2px !important;
+}
+
+button[data-omega-button-managed="v1"]:disabled,
+button[data-omega-button-managed="v1"][aria-disabled="true"],
+button[data-omega-button-managed="v1"][data-omega-button-test-result="BLOCKED"] {
+  opacity: .5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+button[data-omega-button-managed="v1"]:not(#btn-ministry-dock):active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(1px) !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.28) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button[data-omega-button-managed="v1"]:not(#btn-ministry-dock):hover:not(:disabled):not([aria-disabled="true"]) {
+    background-color: var(--omega-button-bg-hover) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  button[data-omega-button-managed="v1"]:not(#btn-ministry-dock) {
+    min-height: 40px !important;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  button[data-omega-button-managed="v1"][data-omega-button-kind="icon"]:not(#btn-ministry-dock) {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (pointer: coarse) {
+  button[data-omega-button-managed="v1"] {
+    transition: none !important;
+    animation: none !important;
+  }
+}

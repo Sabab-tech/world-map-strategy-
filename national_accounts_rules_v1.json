@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "modelVersion": "1.0.0",
+  "title": "OMEGA Phase 4A National Accounts Foundation",
+  "purpose": "Read-only per-country national-account evidence checkpoint. Defines coverage and bounded execution; never synthesizes GDP, cash, transactions or goods.",
+  "roster": {
+    "manifestPath": "minister_country_roster_manifest_v1.json",
+    "identityField": "ISO3",
+    "expectedCoreCountryCount": 197,
+    "scope": "OMEGA_CORE_GAME_COUNTRIES"
+  },
+  "scheduler": {
+    "tiers": [
+      "PLAYER",
+      "ACTIVE",
+      "MACRO"
+    ],
+    "priority": 40,
+    "execution": "ONE_SELECTED_COUNTRY_HANDLER_PER_SCHEDULER_SELECTION",
+    "gameTimeOnly": true
+  },
+  "persistence": {
+    "ownerMinistry": "economy",
+    "statePath": "economy.nationalAccounts",
+    "commandType": "OMEGA_NATIONAL_ACCOUNTS_CHECKPOINT",
+    "historyLimit": 12
+  },
+  "limits": {
+    "financeLedgerRows": 500,
+    "inventoryBatchRows": 4096,
+    "maxStockIdentityRows": 96,
+    "pendingImportRequestRows": 512,
+    "productionLedgerRows": 2048,
+    "tradeLedgerRows": 512,
+    "maxCompanyAccounts": 5,
+    "companyCashFlowRowsPerCompany": 256,
+    "inventoryMovementRows": 2048
+  },
+  "accounting": {
+    "currencyPolicy": "NEVER_SUM_ACROSS_CURRENCIES",
+    "goodsIdentityFields": [
+      "resourceId",
+      "unit"
+    ],
+    "gdpApproaches": [
+      "production",
+      "expenditure",
+      "income"
+    ],
+    "gdpRequiresAllThreeApproaches": true,
+    "missingValuePolicy": "UNOBSERVED_NOT_ZERO",
+    "pendingTradePolicy": "EXCLUDE_UNSETTLED",
+    "ledgerPolicy": "READ_ONLY_NO_REPOST"
+  },
+  "tolerances": {
+    "moneyAbsolute": 0.01,
+    "moneyRelative": 1e-8,
+    "quantityAbsolute": 0.000001,
+    "quantityRelative": 1e-8,
+    "gdpRelative": 0.005
+  },
+  "nonGoals": [
+    "No GDP projection or growth mutation",
+    "No Treasury or Finance ledger mutation",
+    "No inventory, production, trade or market mutation",
+    "No world-wide per-turn scan",
+    "No UI polling, timers, workers or background browser tasks"
+  ]
+}

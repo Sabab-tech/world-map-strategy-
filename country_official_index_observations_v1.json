@@ -1,0 +1,1475 @@
+{
+  "metadata": {
+    "schemaVersion": "1.0.0",
+    "datasetId": "OMEGA_TI_CPI_2025_SNAPSHOT_V1",
+    "publisher": "Transparency International",
+    "publisherUrl": "https://www.transparency.org/en/cpi/2025",
+    "sourceUrl": "https://raw.githubusercontent.com/loupeat/ti-cpi/main/docs/ti/CPI2025_GlobalResultsTrends.csv",
+    "sourceRepositoryUrl": "https://github.com/loupeat/ti-cpi/blob/main/docs/ti/CPI2025_GlobalResultsTrends.csv",
+    "sourceType": "MIRRORED_PUBLISHER_RESULTS",
+    "observationYear": 2025,
+    "importedAt": "2026-10-20",
+    "countryCount": 182,
+    "scoreScale": "0–100; higher score means lower perceived public-sector corruption",
+    "rankSemantics": "Ordinal rank in the publisher's 2025 CPI result table; lower numeric rank means higher position",
+    "usePolicy": "Offline fallback when source refresh was not requested or the live mirror is unavailable. The source is a GitHub mirror of the publisher's full results, not a first-party Transparency International API. Every record retains publisher and mirror URLs."
+  },
+  "countries": [
+    {
+      "iso3": "AFG",
+      "countryName": "Afghanistan",
+      "region": "AP",
+      "score": 16,
+      "rank": 169,
+      "year": 2025
+    },
+    {
+      "iso3": "ALB",
+      "countryName": "Albania",
+      "region": "ECA",
+      "score": 39,
+      "rank": 91,
+      "year": 2025
+    },
+    {
+      "iso3": "DZA",
+      "countryName": "Algeria",
+      "region": "MENA",
+      "score": 34,
+      "rank": 109,
+      "year": 2025
+    },
+    {
+      "iso3": "AGO",
+      "countryName": "Angola",
+      "region": "SSA",
+      "score": 32,
+      "rank": 120,
+      "year": 2025
+    },
+    {
+      "iso3": "ARG",
+      "countryName": "Argentina",
+      "region": "AME",
+      "score": 36,
+      "rank": 104,
+      "year": 2025
+    },
+    {
+      "iso3": "ARM",
+      "countryName": "Armenia",
+      "region": "ECA",
+      "score": 46,
+      "rank": 65,
+      "year": 2025
+    },
+    {
+      "iso3": "AUS",
+      "countryName": "Australia",
+      "region": "AP",
+      "score": 76,
+      "rank": 12,
+      "year": 2025
+    },
+    {
+      "iso3": "DNK",
+      "countryName": "Denmark",
+      "region": "WE/EU",
+      "score": 89,
+      "rank": 1,
+      "year": 2025
+    },
+    {
+      "iso3": "AZE",
+      "countryName": "Azerbaijan",
+      "region": "ECA",
+      "score": 30,
+      "rank": 130,
+      "year": 2025
+    },
+    {
+      "iso3": "BHS",
+      "countryName": "Bahamas",
+      "region": "AME",
+      "score": 64,
+      "rank": 29,
+      "year": 2025
+    },
+    {
+      "iso3": "BHR",
+      "countryName": "Bahrain",
+      "region": "MENA",
+      "score": 50,
+      "rank": 56,
+      "year": 2025
+    },
+    {
+      "iso3": "BGD",
+      "countryName": "Bangladesh",
+      "region": "AP",
+      "score": 24,
+      "rank": 150,
+      "year": 2025
+    },
+    {
+      "iso3": "BRB",
+      "countryName": "Barbados",
+      "region": "AME",
+      "score": 68,
+      "rank": 24,
+      "year": 2025
+    },
+    {
+      "iso3": "BLR",
+      "countryName": "Belarus",
+      "region": "ECA",
+      "score": 31,
+      "rank": 124,
+      "year": 2025
+    },
+    {
+      "iso3": "FIN",
+      "countryName": "Finland",
+      "region": "WE/EU",
+      "score": 88,
+      "rank": 2,
+      "year": 2025
+    },
+    {
+      "iso3": "BEN",
+      "countryName": "Benin",
+      "region": "SSA",
+      "score": 45,
+      "rank": 70,
+      "year": 2025
+    },
+    {
+      "iso3": "BLZ",
+      "countryName": "Belize",
+      "region": "AME",
+      "score": 36,
+      "rank": 104,
+      "year": 2025
+    },
+    {
+      "iso3": "BTN",
+      "countryName": "Bhutan",
+      "region": "AP",
+      "score": 71,
+      "rank": 18,
+      "year": 2025
+    },
+    {
+      "iso3": "BOL",
+      "countryName": "Bolivia",
+      "region": "AME",
+      "score": 28,
+      "rank": 136,
+      "year": 2025
+    },
+    {
+      "iso3": "BIH",
+      "countryName": "Bosnia and Herzegovina",
+      "region": "ECA",
+      "score": 34,
+      "rank": 109,
+      "year": 2025
+    },
+    {
+      "iso3": "BWA",
+      "countryName": "Botswana",
+      "region": "SSA",
+      "score": 58,
+      "rank": 41,
+      "year": 2025
+    },
+    {
+      "iso3": "BRA",
+      "countryName": "Brazil",
+      "region": "AME",
+      "score": 35,
+      "rank": 107,
+      "year": 2025
+    },
+    {
+      "iso3": "BRN",
+      "countryName": "Brunei Darussalam",
+      "region": "AP",
+      "score": 63,
+      "rank": 31,
+      "year": 2025
+    },
+    {
+      "iso3": "LUX",
+      "countryName": "Luxembourg",
+      "region": "WE/EU",
+      "score": 78,
+      "rank": 8,
+      "year": 2025
+    },
+    {
+      "iso3": "BFA",
+      "countryName": "Burkina Faso",
+      "region": "SSA",
+      "score": 40,
+      "rank": 84,
+      "year": 2025
+    },
+    {
+      "iso3": "BDI",
+      "countryName": "Burundi",
+      "region": "SSA",
+      "score": 17,
+      "rank": 167,
+      "year": 2025
+    },
+    {
+      "iso3": "CPV",
+      "countryName": "Cabo Verde",
+      "region": "SSA",
+      "score": 62,
+      "rank": 35,
+      "year": 2025
+    },
+    {
+      "iso3": "KHM",
+      "countryName": "Cambodia",
+      "region": "AP",
+      "score": 20,
+      "rank": 163,
+      "year": 2025
+    },
+    {
+      "iso3": "CMR",
+      "countryName": "Cameroon",
+      "region": "SSA",
+      "score": 26,
+      "rank": 142,
+      "year": 2025
+    },
+    {
+      "iso3": "CAN",
+      "countryName": "Canada",
+      "region": "AME",
+      "score": 75,
+      "rank": 16,
+      "year": 2025
+    },
+    {
+      "iso3": "CAF",
+      "countryName": "Central African Republic",
+      "region": "SSA",
+      "score": 24,
+      "rank": 150,
+      "year": 2025
+    },
+    {
+      "iso3": "TCD",
+      "countryName": "Chad",
+      "region": "SSA",
+      "score": 22,
+      "rank": 157,
+      "year": 2025
+    },
+    {
+      "iso3": "CHL",
+      "countryName": "Chile",
+      "region": "AME",
+      "score": 63,
+      "rank": 31,
+      "year": 2025
+    },
+    {
+      "iso3": "CHN",
+      "countryName": "China",
+      "region": "AP",
+      "score": 43,
+      "rank": 76,
+      "year": 2025
+    },
+    {
+      "iso3": "COL",
+      "countryName": "Colombia",
+      "region": "AME",
+      "score": 37,
+      "rank": 99,
+      "year": 2025
+    },
+    {
+      "iso3": "COM",
+      "countryName": "Comoros",
+      "region": "SSA",
+      "score": 20,
+      "rank": 163,
+      "year": 2025
+    },
+    {
+      "iso3": "COG",
+      "countryName": "Congo",
+      "region": "SSA",
+      "score": 23,
+      "rank": 153,
+      "year": 2025
+    },
+    {
+      "iso3": "CRI",
+      "countryName": "Costa Rica",
+      "region": "AME",
+      "score": 56,
+      "rank": 46,
+      "year": 2025
+    },
+    {
+      "iso3": "CIV",
+      "countryName": "Cote d'Ivoire",
+      "region": "SSA",
+      "score": 43,
+      "rank": 76,
+      "year": 2025
+    },
+    {
+      "iso3": "NOR",
+      "countryName": "Norway",
+      "region": "WE/EU",
+      "score": 81,
+      "rank": 4,
+      "year": 2025
+    },
+    {
+      "iso3": "CUB",
+      "countryName": "Cuba",
+      "region": "AME",
+      "score": 40,
+      "rank": 84,
+      "year": 2025
+    },
+    {
+      "iso3": "CHE",
+      "countryName": "Switzerland",
+      "region": "WE/EU",
+      "score": 80,
+      "rank": 6,
+      "year": 2025
+    },
+    {
+      "iso3": "SWE",
+      "countryName": "Sweden",
+      "region": "WE/EU",
+      "score": 80,
+      "rank": 6,
+      "year": 2025
+    },
+    {
+      "iso3": "COD",
+      "countryName": "Democratic Republic of the Congo",
+      "region": "SSA",
+      "score": 20,
+      "rank": 163,
+      "year": 2025
+    },
+    {
+      "iso3": "NLD",
+      "countryName": "Netherlands",
+      "region": "WE/EU",
+      "score": 78,
+      "rank": 8,
+      "year": 2025
+    },
+    {
+      "iso3": "DJI",
+      "countryName": "Djibouti",
+      "region": "SSA",
+      "score": 31,
+      "rank": 124,
+      "year": 2025
+    },
+    {
+      "iso3": "DMA",
+      "countryName": "Dominica",
+      "region": "AME",
+      "score": 60,
+      "rank": 37,
+      "year": 2025
+    },
+    {
+      "iso3": "DOM",
+      "countryName": "Dominican Republic",
+      "region": "AME",
+      "score": 37,
+      "rank": 99,
+      "year": 2025
+    },
+    {
+      "iso3": "ECU",
+      "countryName": "Ecuador",
+      "region": "AME",
+      "score": 33,
+      "rank": 116,
+      "year": 2025
+    },
+    {
+      "iso3": "EGY",
+      "countryName": "Egypt",
+      "region": "MENA",
+      "score": 30,
+      "rank": 130,
+      "year": 2025
+    },
+    {
+      "iso3": "SLV",
+      "countryName": "El Salvador",
+      "region": "AME",
+      "score": 32,
+      "rank": 120,
+      "year": 2025
+    },
+    {
+      "iso3": "GNQ",
+      "countryName": "Equatorial Guinea",
+      "region": "SSA",
+      "score": 15,
+      "rank": 172,
+      "year": 2025
+    },
+    {
+      "iso3": "ERI",
+      "countryName": "Eritrea",
+      "region": "SSA",
+      "score": 13,
+      "rank": 177,
+      "year": 2025
+    },
+    {
+      "iso3": "ISL",
+      "countryName": "Iceland",
+      "region": "WE/EU",
+      "score": 77,
+      "rank": 10,
+      "year": 2025
+    },
+    {
+      "iso3": "SWZ",
+      "countryName": "Eswatini",
+      "region": "SSA",
+      "score": 23,
+      "rank": 153,
+      "year": 2025
+    },
+    {
+      "iso3": "ETH",
+      "countryName": "Ethiopia",
+      "region": "SSA",
+      "score": 38,
+      "rank": 96,
+      "year": 2025
+    },
+    {
+      "iso3": "FJI",
+      "countryName": "Fiji",
+      "region": "AP",
+      "score": 55,
+      "rank": 49,
+      "year": 2025
+    },
+    {
+      "iso3": "IRL",
+      "countryName": "Ireland",
+      "region": "WE/EU",
+      "score": 76,
+      "rank": 12,
+      "year": 2025
+    },
+    {
+      "iso3": "EST",
+      "countryName": "Estonia",
+      "region": "WE/EU",
+      "score": 76,
+      "rank": 12,
+      "year": 2025
+    },
+    {
+      "iso3": "GAB",
+      "countryName": "Gabon",
+      "region": "SSA",
+      "score": 29,
+      "rank": 135,
+      "year": 2025
+    },
+    {
+      "iso3": "GMB",
+      "countryName": "Gambia",
+      "region": "SSA",
+      "score": 37,
+      "rank": 99,
+      "year": 2025
+    },
+    {
+      "iso3": "GEO",
+      "countryName": "Georgia",
+      "region": "ECA",
+      "score": 50,
+      "rank": 56,
+      "year": 2025
+    },
+    {
+      "iso3": "DEU",
+      "countryName": "Germany",
+      "region": "WE/EU",
+      "score": 77,
+      "rank": 10,
+      "year": 2025
+    },
+    {
+      "iso3": "GHA",
+      "countryName": "Ghana",
+      "region": "SSA",
+      "score": 43,
+      "rank": 76,
+      "year": 2025
+    },
+    {
+      "iso3": "GBR",
+      "countryName": "United Kingdom",
+      "region": "WE/EU",
+      "score": 70,
+      "rank": 20,
+      "year": 2025
+    },
+    {
+      "iso3": "GRD",
+      "countryName": "Grenada",
+      "region": "AME",
+      "score": 56,
+      "rank": 46,
+      "year": 2025
+    },
+    {
+      "iso3": "GTM",
+      "countryName": "Guatemala",
+      "region": "AME",
+      "score": 26,
+      "rank": 142,
+      "year": 2025
+    },
+    {
+      "iso3": "GIN",
+      "countryName": "Guinea",
+      "region": "SSA",
+      "score": 26,
+      "rank": 142,
+      "year": 2025
+    },
+    {
+      "iso3": "GNB",
+      "countryName": "Guinea Bissau",
+      "region": "SSA",
+      "score": 21,
+      "rank": 161,
+      "year": 2025
+    },
+    {
+      "iso3": "GUY",
+      "countryName": "Guyana",
+      "region": "AME",
+      "score": 40,
+      "rank": 84,
+      "year": 2025
+    },
+    {
+      "iso3": "HTI",
+      "countryName": "Haiti",
+      "region": "AME",
+      "score": 16,
+      "rank": 169,
+      "year": 2025
+    },
+    {
+      "iso3": "HND",
+      "countryName": "Honduras",
+      "region": "AME",
+      "score": 22,
+      "rank": 157,
+      "year": 2025
+    },
+    {
+      "iso3": "HKG",
+      "countryName": "Hong Kong",
+      "region": "AP",
+      "score": 76,
+      "rank": 12,
+      "year": 2025
+    },
+    {
+      "iso3": "BEL",
+      "countryName": "Belgium",
+      "region": "WE/EU",
+      "score": 69,
+      "rank": 21,
+      "year": 2025
+    },
+    {
+      "iso3": "AUT",
+      "countryName": "Austria",
+      "region": "WE/EU",
+      "score": 69,
+      "rank": 21,
+      "year": 2025
+    },
+    {
+      "iso3": "IND",
+      "countryName": "India",
+      "region": "AP",
+      "score": 39,
+      "rank": 91,
+      "year": 2025
+    },
+    {
+      "iso3": "IDN",
+      "countryName": "Indonesia",
+      "region": "AP",
+      "score": 34,
+      "rank": 109,
+      "year": 2025
+    },
+    {
+      "iso3": "IRN",
+      "countryName": "Iran",
+      "region": "MENA",
+      "score": 23,
+      "rank": 153,
+      "year": 2025
+    },
+    {
+      "iso3": "IRQ",
+      "countryName": "Iraq",
+      "region": "MENA",
+      "score": 28,
+      "rank": 136,
+      "year": 2025
+    },
+    {
+      "iso3": "FRA",
+      "countryName": "France",
+      "region": "WE/EU",
+      "score": 66,
+      "rank": 27,
+      "year": 2025
+    },
+    {
+      "iso3": "ISR",
+      "countryName": "Israel",
+      "region": "MENA",
+      "score": 62,
+      "rank": 35,
+      "year": 2025
+    },
+    {
+      "iso3": "LTU",
+      "countryName": "Lithuania",
+      "region": "WE/EU",
+      "score": 65,
+      "rank": 28,
+      "year": 2025
+    },
+    {
+      "iso3": "JAM",
+      "countryName": "Jamaica",
+      "region": "AME",
+      "score": 44,
+      "rank": 73,
+      "year": 2025
+    },
+    {
+      "iso3": "JPN",
+      "countryName": "Japan",
+      "region": "AP",
+      "score": 71,
+      "rank": 18,
+      "year": 2025
+    },
+    {
+      "iso3": "JOR",
+      "countryName": "Jordan",
+      "region": "MENA",
+      "score": 50,
+      "rank": 56,
+      "year": 2025
+    },
+    {
+      "iso3": "KAZ",
+      "countryName": "Kazakhstan",
+      "region": "ECA",
+      "score": 38,
+      "rank": 96,
+      "year": 2025
+    },
+    {
+      "iso3": "KEN",
+      "countryName": "Kenya",
+      "region": "SSA",
+      "score": 30,
+      "rank": 130,
+      "year": 2025
+    },
+    {
+      "iso3": "PRK",
+      "countryName": "Korea; North",
+      "region": "AP",
+      "score": 15,
+      "rank": 172,
+      "year": 2025
+    },
+    {
+      "iso3": "KOR",
+      "countryName": "Korea; South",
+      "region": "AP",
+      "score": 63,
+      "rank": 31,
+      "year": 2025
+    },
+    {
+      "iso3": "KSV",
+      "countryName": "Kosovo",
+      "region": "ECA",
+      "score": 43,
+      "rank": 76,
+      "year": 2025
+    },
+    {
+      "iso3": "KWT",
+      "countryName": "Kuwait",
+      "region": "MENA",
+      "score": 46,
+      "rank": 65,
+      "year": 2025
+    },
+    {
+      "iso3": "KGZ",
+      "countryName": "Kyrgyzstan",
+      "region": "ECA",
+      "score": 26,
+      "rank": 142,
+      "year": 2025
+    },
+    {
+      "iso3": "LAO",
+      "countryName": "Laos",
+      "region": "AP",
+      "score": 34,
+      "rank": 109,
+      "year": 2025
+    },
+    {
+      "iso3": "SVN",
+      "countryName": "Slovenia",
+      "region": "WE/EU",
+      "score": 58,
+      "rank": 41,
+      "year": 2025
+    },
+    {
+      "iso3": "LBN",
+      "countryName": "Lebanon",
+      "region": "MENA",
+      "score": 23,
+      "rank": 153,
+      "year": 2025
+    },
+    {
+      "iso3": "LSO",
+      "countryName": "Lesotho",
+      "region": "SSA",
+      "score": 37,
+      "rank": 99,
+      "year": 2025
+    },
+    {
+      "iso3": "LBR",
+      "countryName": "Liberia",
+      "region": "SSA",
+      "score": 28,
+      "rank": 136,
+      "year": 2025
+    },
+    {
+      "iso3": "LBY",
+      "countryName": "Libya",
+      "region": "MENA",
+      "score": 13,
+      "rank": 177,
+      "year": 2025
+    },
+    {
+      "iso3": "LVA",
+      "countryName": "Latvia",
+      "region": "WE/EU",
+      "score": 60,
+      "rank": 37,
+      "year": 2025
+    },
+    {
+      "iso3": "PRT",
+      "countryName": "Portugal",
+      "region": "WE/EU",
+      "score": 56,
+      "rank": 46,
+      "year": 2025
+    },
+    {
+      "iso3": "MDG",
+      "countryName": "Madagascar",
+      "region": "SSA",
+      "score": 25,
+      "rank": 148,
+      "year": 2025
+    },
+    {
+      "iso3": "MWI",
+      "countryName": "Malawi",
+      "region": "SSA",
+      "score": 34,
+      "rank": 109,
+      "year": 2025
+    },
+    {
+      "iso3": "MYS",
+      "countryName": "Malaysia",
+      "region": "AP",
+      "score": 52,
+      "rank": 54,
+      "year": 2025
+    },
+    {
+      "iso3": "MDV",
+      "countryName": "Maldives",
+      "region": "AP",
+      "score": 39,
+      "rank": 91,
+      "year": 2025
+    },
+    {
+      "iso3": "MLI",
+      "countryName": "Mali",
+      "region": "SSA",
+      "score": 28,
+      "rank": 136,
+      "year": 2025
+    },
+    {
+      "iso3": "CYP",
+      "countryName": "Cyprus",
+      "region": "WE/EU",
+      "score": 55,
+      "rank": 49,
+      "year": 2025
+    },
+    {
+      "iso3": "MRT",
+      "countryName": "Mauritania",
+      "region": "SSA",
+      "score": 30,
+      "rank": 130,
+      "year": 2025
+    },
+    {
+      "iso3": "MUS",
+      "countryName": "Mauritius",
+      "region": "SSA",
+      "score": 48,
+      "rank": 61,
+      "year": 2025
+    },
+    {
+      "iso3": "MEX",
+      "countryName": "Mexico",
+      "region": "AME",
+      "score": 27,
+      "rank": 141,
+      "year": 2025
+    },
+    {
+      "iso3": "MDA",
+      "countryName": "Moldova",
+      "region": "ECA",
+      "score": 42,
+      "rank": 80,
+      "year": 2025
+    },
+    {
+      "iso3": "MNG",
+      "countryName": "Mongolia",
+      "region": "AP",
+      "score": 31,
+      "rank": 124,
+      "year": 2025
+    },
+    {
+      "iso3": "MNE",
+      "countryName": "Montenegro",
+      "region": "ECA",
+      "score": 46,
+      "rank": 65,
+      "year": 2025
+    },
+    {
+      "iso3": "MAR",
+      "countryName": "Morocco",
+      "region": "MENA",
+      "score": 39,
+      "rank": 91,
+      "year": 2025
+    },
+    {
+      "iso3": "MOZ",
+      "countryName": "Mozambique",
+      "region": "SSA",
+      "score": 21,
+      "rank": 161,
+      "year": 2025
+    },
+    {
+      "iso3": "MMR",
+      "countryName": "Myanmar",
+      "region": "AP",
+      "score": 16,
+      "rank": 169,
+      "year": 2025
+    },
+    {
+      "iso3": "NAM",
+      "countryName": "Namibia",
+      "region": "SSA",
+      "score": 46,
+      "rank": 65,
+      "year": 2025
+    },
+    {
+      "iso3": "NPL",
+      "countryName": "Nepal",
+      "region": "AP",
+      "score": 34,
+      "rank": 109,
+      "year": 2025
+    },
+    {
+      "iso3": "CZE",
+      "countryName": "Czechia",
+      "region": "WE/EU",
+      "score": 59,
+      "rank": 39,
+      "year": 2025
+    },
+    {
+      "iso3": "NZL",
+      "countryName": "New Zealand",
+      "region": "AP",
+      "score": 81,
+      "rank": 4,
+      "year": 2025
+    },
+    {
+      "iso3": "NIC",
+      "countryName": "Nicaragua",
+      "region": "AME",
+      "score": 14,
+      "rank": 175,
+      "year": 2025
+    },
+    {
+      "iso3": "NER",
+      "countryName": "Niger",
+      "region": "SSA",
+      "score": 31,
+      "rank": 124,
+      "year": 2025
+    },
+    {
+      "iso3": "NGA",
+      "countryName": "Nigeria",
+      "region": "SSA",
+      "score": 26,
+      "rank": 142,
+      "year": 2025
+    },
+    {
+      "iso3": "MKD",
+      "countryName": "North Macedonia",
+      "region": "ECA",
+      "score": 40,
+      "rank": 84,
+      "year": 2025
+    },
+    {
+      "iso3": "ESP",
+      "countryName": "Spain",
+      "region": "WE/EU",
+      "score": 55,
+      "rank": 49,
+      "year": 2025
+    },
+    {
+      "iso3": "OMN",
+      "countryName": "Oman",
+      "region": "MENA",
+      "score": 52,
+      "rank": 54,
+      "year": 2025
+    },
+    {
+      "iso3": "PAK",
+      "countryName": "Pakistan",
+      "region": "AP",
+      "score": 28,
+      "rank": 136,
+      "year": 2025
+    },
+    {
+      "iso3": "PAN",
+      "countryName": "Panama",
+      "region": "AME",
+      "score": 33,
+      "rank": 116,
+      "year": 2025
+    },
+    {
+      "iso3": "PNG",
+      "countryName": "Papua New Guinea",
+      "region": "AP",
+      "score": 26,
+      "rank": 142,
+      "year": 2025
+    },
+    {
+      "iso3": "PRY",
+      "countryName": "Paraguay",
+      "region": "AME",
+      "score": 24,
+      "rank": 150,
+      "year": 2025
+    },
+    {
+      "iso3": "PER",
+      "countryName": "Peru",
+      "region": "AME",
+      "score": 30,
+      "rank": 130,
+      "year": 2025
+    },
+    {
+      "iso3": "PHL",
+      "countryName": "Philippines",
+      "region": "AP",
+      "score": 32,
+      "rank": 120,
+      "year": 2025
+    },
+    {
+      "iso3": "ITA",
+      "countryName": "Italy",
+      "region": "WE/EU",
+      "score": 53,
+      "rank": 52,
+      "year": 2025
+    },
+    {
+      "iso3": "POL",
+      "countryName": "Poland",
+      "region": "WE/EU",
+      "score": 53,
+      "rank": 52,
+      "year": 2025
+    },
+    {
+      "iso3": "QAT",
+      "countryName": "Qatar",
+      "region": "MENA",
+      "score": 58,
+      "rank": 41,
+      "year": 2025
+    },
+    {
+      "iso3": "GRC",
+      "countryName": "Greece",
+      "region": "WE/EU",
+      "score": 50,
+      "rank": 56,
+      "year": 2025
+    },
+    {
+      "iso3": "RUS",
+      "countryName": "Russia",
+      "region": "ECA",
+      "score": 22,
+      "rank": 157,
+      "year": 2025
+    },
+    {
+      "iso3": "RWA",
+      "countryName": "Rwanda",
+      "region": "SSA",
+      "score": 58,
+      "rank": 41,
+      "year": 2025
+    },
+    {
+      "iso3": "LCA",
+      "countryName": "Saint Lucia",
+      "region": "AME",
+      "score": 59,
+      "rank": 39,
+      "year": 2025
+    },
+    {
+      "iso3": "VCT",
+      "countryName": "Saint Vincent and the Grenadines",
+      "region": "AME",
+      "score": 63,
+      "rank": 31,
+      "year": 2025
+    },
+    {
+      "iso3": "STP",
+      "countryName": "Sao Tome and Principe",
+      "region": "SSA",
+      "score": 45,
+      "rank": 70,
+      "year": 2025
+    },
+    {
+      "iso3": "SAU",
+      "countryName": "Saudi Arabia",
+      "region": "MENA",
+      "score": 57,
+      "rank": 45,
+      "year": 2025
+    },
+    {
+      "iso3": "SEN",
+      "countryName": "Senegal",
+      "region": "SSA",
+      "score": 46,
+      "rank": 65,
+      "year": 2025
+    },
+    {
+      "iso3": "SRB",
+      "countryName": "Serbia",
+      "region": "ECA",
+      "score": 33,
+      "rank": 116,
+      "year": 2025
+    },
+    {
+      "iso3": "SYC",
+      "countryName": "Seychelles",
+      "region": "SSA",
+      "score": 68,
+      "rank": 24,
+      "year": 2025
+    },
+    {
+      "iso3": "SLE",
+      "countryName": "Sierra Leone",
+      "region": "SSA",
+      "score": 34,
+      "rank": 109,
+      "year": 2025
+    },
+    {
+      "iso3": "SGP",
+      "countryName": "Singapore",
+      "region": "AP",
+      "score": 84,
+      "rank": 3,
+      "year": 2025
+    },
+    {
+      "iso3": "SVK",
+      "countryName": "Slovakia",
+      "region": "WE/EU",
+      "score": 48,
+      "rank": 61,
+      "year": 2025
+    },
+    {
+      "iso3": "HRV",
+      "countryName": "Croatia",
+      "region": "WE/EU",
+      "score": 47,
+      "rank": 63,
+      "year": 2025
+    },
+    {
+      "iso3": "SLB",
+      "countryName": "Solomon Islands",
+      "region": "AP",
+      "score": 44,
+      "rank": 73,
+      "year": 2025
+    },
+    {
+      "iso3": "SOM",
+      "countryName": "Somalia",
+      "region": "SSA",
+      "score": 9,
+      "rank": 181,
+      "year": 2025
+    },
+    {
+      "iso3": "ZAF",
+      "countryName": "South Africa",
+      "region": "SSA",
+      "score": 41,
+      "rank": 81,
+      "year": 2025
+    },
+    {
+      "iso3": "SSD",
+      "countryName": "South Sudan",
+      "region": "SSA",
+      "score": 9,
+      "rank": 181,
+      "year": 2025
+    },
+    {
+      "iso3": "MLT",
+      "countryName": "Malta",
+      "region": "WE/EU",
+      "score": 49,
+      "rank": 60,
+      "year": 2025
+    },
+    {
+      "iso3": "LKA",
+      "countryName": "Sri Lanka",
+      "region": "AP",
+      "score": 35,
+      "rank": 107,
+      "year": 2025
+    },
+    {
+      "iso3": "SDN",
+      "countryName": "Sudan",
+      "region": "SSA",
+      "score": 14,
+      "rank": 175,
+      "year": 2025
+    },
+    {
+      "iso3": "SUR",
+      "countryName": "Suriname",
+      "region": "AME",
+      "score": 38,
+      "rank": 96,
+      "year": 2025
+    },
+    {
+      "iso3": "ROU",
+      "countryName": "Romania",
+      "region": "WE/EU",
+      "score": 45,
+      "rank": 70,
+      "year": 2025
+    },
+    {
+      "iso3": "BGR",
+      "countryName": "Bulgaria",
+      "region": "WE/EU",
+      "score": 40,
+      "rank": 84,
+      "year": 2025
+    },
+    {
+      "iso3": "SYR",
+      "countryName": "Syria",
+      "region": "MENA",
+      "score": 15,
+      "rank": 172,
+      "year": 2025
+    },
+    {
+      "iso3": "TWN",
+      "countryName": "Taiwan",
+      "region": "AP",
+      "score": 68,
+      "rank": 24,
+      "year": 2025
+    },
+    {
+      "iso3": "TJK",
+      "countryName": "Tajikistan",
+      "region": "ECA",
+      "score": 19,
+      "rank": 166,
+      "year": 2025
+    },
+    {
+      "iso3": "TZA",
+      "countryName": "Tanzania",
+      "region": "SSA",
+      "score": 40,
+      "rank": 84,
+      "year": 2025
+    },
+    {
+      "iso3": "THA",
+      "countryName": "Thailand",
+      "region": "AP",
+      "score": 33,
+      "rank": 116,
+      "year": 2025
+    },
+    {
+      "iso3": "TLS",
+      "countryName": "Timor-Leste",
+      "region": "AP",
+      "score": 44,
+      "rank": 73,
+      "year": 2025
+    },
+    {
+      "iso3": "TGO",
+      "countryName": "Togo",
+      "region": "SSA",
+      "score": 32,
+      "rank": 120,
+      "year": 2025
+    },
+    {
+      "iso3": "TTO",
+      "countryName": "Trinidad and Tobago",
+      "region": "AME",
+      "score": 41,
+      "rank": 81,
+      "year": 2025
+    },
+    {
+      "iso3": "TUN",
+      "countryName": "Tunisia",
+      "region": "MENA",
+      "score": 39,
+      "rank": 91,
+      "year": 2025
+    },
+    {
+      "iso3": "TUR",
+      "countryName": "Turkey",
+      "region": "ECA",
+      "score": 31,
+      "rank": 124,
+      "year": 2025
+    },
+    {
+      "iso3": "TKM",
+      "countryName": "Turkmenistan",
+      "region": "ECA",
+      "score": 17,
+      "rank": 167,
+      "year": 2025
+    },
+    {
+      "iso3": "UGA",
+      "countryName": "Uganda",
+      "region": "SSA",
+      "score": 25,
+      "rank": 148,
+      "year": 2025
+    },
+    {
+      "iso3": "UKR",
+      "countryName": "Ukraine",
+      "region": "ECA",
+      "score": 36,
+      "rank": 104,
+      "year": 2025
+    },
+    {
+      "iso3": "ARE",
+      "countryName": "United Arab Emirates",
+      "region": "MENA",
+      "score": 69,
+      "rank": 21,
+      "year": 2025
+    },
+    {
+      "iso3": "HUN",
+      "countryName": "Hungary",
+      "region": "WE/EU",
+      "score": 40,
+      "rank": 84,
+      "year": 2025
+    },
+    {
+      "iso3": "USA",
+      "countryName": "United States of America",
+      "region": "AME",
+      "score": 64,
+      "rank": 29,
+      "year": 2025
+    },
+    {
+      "iso3": "URY",
+      "countryName": "Uruguay",
+      "region": "AME",
+      "score": 73,
+      "rank": 17,
+      "year": 2025
+    },
+    {
+      "iso3": "UZB",
+      "countryName": "Uzbekistan",
+      "region": "ECA",
+      "score": 31,
+      "rank": 124,
+      "year": 2025
+    },
+    {
+      "iso3": "VUT",
+      "countryName": "Vanuatu",
+      "region": "AP",
+      "score": 47,
+      "rank": 63,
+      "year": 2025
+    },
+    {
+      "iso3": "VEN",
+      "countryName": "Venezuela",
+      "region": "AME",
+      "score": 10,
+      "rank": 180,
+      "year": 2025
+    },
+    {
+      "iso3": "VNM",
+      "countryName": "Vietnam",
+      "region": "AP",
+      "score": 41,
+      "rank": 81,
+      "year": 2025
+    },
+    {
+      "iso3": "YEM",
+      "countryName": "Yemen",
+      "region": "MENA",
+      "score": 13,
+      "rank": 177,
+      "year": 2025
+    },
+    {
+      "iso3": "ZMB",
+      "countryName": "Zambia",
+      "region": "SSA",
+      "score": 37,
+      "rank": 99,
+      "year": 2025
+    },
+    {
+      "iso3": "ZWE",
+      "countryName": "Zimbabwe",
+      "region": "SSA",
+      "score": 22,
+      "rank": 157,
+      "year": 2025
+    }
+  ]
+}

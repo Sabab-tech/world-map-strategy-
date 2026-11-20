@@ -1,0 +1,26 @@
+name: OMEGA Current Resource Snapshot
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    if: contains(github.event.head_commit.message, '[resource-snapshot]') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Upload current resource datasets
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-current-resource-snapshot
+          path: |
+            resources.json
+            resources_2.json
+          retention-days: 1

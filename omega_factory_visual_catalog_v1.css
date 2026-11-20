@@ -1,0 +1,31 @@
+.omega-factory-visual {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 64px;
+  height: 40px;
+  max-width: 28vw;
+  box-sizing: border-box;
+  vertical-align: middle;
+  border: 1px solid rgba(177, 201, 221, 0.35);
+  border-radius: 6px;
+  background-color: #122131;
+  background-repeat: no-repeat;
+  background-size: 500% 200%;
+  background-position: 0 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+}
+.omega-rescc-factory-head .omega-factory-visual {
+  margin-right: 8px;
+}
+.omega-rescc-factory-catalog-row .omega-rescc-factory-head {
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 560px) {
+  .omega-factory-visual {
+    width: 56px;
+    height: 35px;
+    max-width: 24vw;
+  }
+}

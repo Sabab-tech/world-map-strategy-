@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="hero-pipe-title hero-pipe-desc" data-omega-icon-kind="transport" data-omega-icon-id="mode-hero-pipeline">
+<title id="hero-pipe-title">Dimensional industrial pipeline</title>
+<desc id="hero-pipe-desc">Three-dimensional steel pipeline infrastructure with reinforced flanges, a high-pressure valve assembly, supports and directional flow.</desc>
+<defs>
+ <linearGradient id="pipe-steel" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f4fbfd"/><stop offset=".2" stop-color="#a6beca"/><stop offset=".47" stop-color="#526e82"/><stop offset=".73" stop-color="#c0d1d8"/><stop offset="1" stop-color="#253f54"/></linearGradient>
+ <linearGradient id="pipe-blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8ee8f5"/><stop offset=".45" stop-color="#237fa5"/><stop offset="1" stop-color="#0b3852"/></linearGradient>
+ <linearGradient id="pipe-brass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff0b4"/><stop offset=".42" stop-color="#d0a04c"/><stop offset="1" stop-color="#684a25"/></linearGradient>
+ <filter id="pipe-depth" x="-25%" y="-25%" width="160%" height="180%"><feDropShadow dx="0" dy="4" stdDeviation="2.4" flood-color="#020b14" flood-opacity=".58"/></filter>
+</defs>
+<ellipse cx="66" cy="111" rx="45" ry="6" fill="#020a12" opacity=".44"/>
+<g filter="url(#pipe-depth)">
+ <path d="M17 80 17 96 25 101 25 85M100 58 100 79 108 83 108 62" fill="#28485e" stroke="#0e2a40" stroke-width="1.3"/>
+ <path d="M18 88 99 59" fill="none" stroke="#122b40" stroke-width="22" stroke-linecap="round"/>
+ <path d="M18 84 99 55" fill="none" stroke="url(#pipe-steel)" stroke-width="16" stroke-linecap="round"/>
+ <path d="M22 79 96 53" fill="none" stroke="#f2fbff" stroke-width="2.3" stroke-linecap="round" opacity=".75"/>
+ <path d="M18 76 18 93M26 74 26 90" stroke="#233d52" stroke-width="5"/>
+ <path d="M15 76 28 72M15 94 28 90" stroke="#c4d4dc" stroke-width="2"/>
+ <path d="M46 69 51 84M41 70 56 65M41 84 56 79" stroke="#29465b" stroke-width="3"/>
+ <path d="M68 61 73 76M63 62 78 57M63 76 78 71" stroke="#29465b" stroke-width="3"/>
+ <path d="M61 64 61 42 73 38 73 60Z" fill="url(#pipe-blue)" stroke="#193c55" stroke-width="1.3"/>
+ <path d="M60 42 73 38 84 43 71 48Z" fill="#a7c3ce" stroke="#35566b" stroke-width="1"/>
+ <path d="M65 38 65 29 71 27 71 37" fill="url(#pipe-brass)" stroke="#5d4526" stroke-width="1"/>
+ <path d="M54 28 82 18M68 15 68 38" stroke="#d8e8ee" stroke-width="4" stroke-linecap="round"/>
+ <circle cx="68" cy="27" r="6.5" fill="url(#pipe-brass)" stroke="#674a26" stroke-width="1.3"/>
+ <circle cx="68" cy="27" r="2" fill="#fff0ba"/>
+ <path d="M59 100 59 88 66 85 66 98M92 87 92 76 98 73 98 85" fill="#526f82" stroke="#182f44" stroke-width="1.3"/>
+ <path d="m92 47 9 3-7 7" fill="none" stroke="#f6d47f" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+ <path d="M29 101 59 90 88 100" fill="none" stroke="#8fa9b7" stroke-width="1.6" opacity=".65"/>
+ <path d="M20 83 25 81M95 56 101 54" stroke="#fff" stroke-width="1.4" opacity=".85"/>
+</g></svg>

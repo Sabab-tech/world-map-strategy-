@@ -1,0 +1,26 @@
+name: OMEGA 199 Resource Site Data Certificate
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  data-certificate:
+    if: contains(github.event.head_commit.message, '[resource-data-certificate]') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Syntax gate
+        run: node --check test/omega_resource_199_site_data_certificate.test.mjs
+      - name: 199-site data certificate
+        run: node test/omega_resource_199_site_data_certificate.test.mjs

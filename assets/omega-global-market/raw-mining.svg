@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 347 156" role="img" aria-label="Three dimensional open-pit mine illustration">
+<defs>
+ <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#174b6a"/><stop offset="1" stop-color="#071d36"/></linearGradient>
+ <linearGradient id="rock" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d3a46a"/><stop offset=".55" stop-color="#91623d"/><stop offset="1" stop-color="#4d382c"/></linearGradient>
+ <linearGradient id="ore" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e6c18b"/><stop offset=".48" stop-color="#9f754b"/><stop offset="1" stop-color="#4d4236"/></linearGradient>
+ <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a9f0ff"/><stop offset=".5" stop-color="#2ca7d2"/><stop offset="1" stop-color="#105276"/></linearGradient>
+</defs>
+<path d="M0 0h347v156H0Z" fill="url(#sky)"/>
+<path d="M0 112 47 69l38 12 33-42 42 25 43-33 37 26 35-16 72 47v68H0Z" fill="#143d50" stroke="#4b8ca4" stroke-opacity=".5"/>
+<path d="m0 102 57-19 47 15 43-21 40 20 47-16 42 16 71-18v77H0Z" fill="#1c4b5b"/>
+<path d="m18 92 42 0 18 18-18 13H24Z" fill="#7b6046" stroke="#d5aa73" stroke-width="1.2"/>
+<path d="m37 84 43 6 19 16-20 11-37-8Z" fill="url(#rock)"/>
+<path d="m81 107 23-5 18 11-8 13-30-2Z" fill="#493b32"/>
+<path d="m0 120 81-10 40 8 44-12 45 12 53-5 84 8v35H0Z" fill="#0a263e"/>
+<path d="M0 132 70 126 117 137 181 121 241 133 307 119 347 127" fill="none" stroke="#3e8ca5" stroke-width="2"/>
+<g stroke="#20384a" stroke-width="1.3" stroke-linejoin="round">
+ <path d="m170 100 24-22 22 7-6 23-26 10Z" fill="url(#ore)"/>
+ <path d="m194 78 22 7-6 23-16-10Z" fill="#5f4a3a"/>
+ <path d="m170 100 24-22 5 20-9 20Z" fill="#d4aa70"/>
+ <path d="m214 85 20-8 12 9-4 22-28 0Z" fill="#76543d"/>
+ <path d="m234 77 22 6 10 15-24 10Z" fill="#c2925a"/>
+ <path d="m266 98 14-18 23 4 12 18-33 10Z" fill="#4b3e35"/>
+ <path d="m280 80 23 4-8 15-15-5Z" fill="#a1784e"/>
+</g>
+<g transform="translate(36 28)">
+ <path d="M5 68h86" stroke="#7de3fa" stroke-opacity=".8" stroke-width="2"/>
+ <path d="M19 65 38 18h7L29 65Z" fill="url(#metal)" stroke="#c4f2ff" stroke-width="1.2"/>
+ <path d="M26 19h75l-8 6H32Z" fill="#71cbe7" stroke="#c4f2ff" stroke-width="1"/>
+ <path d="m91 25 17 30-6 3-19-31Z" fill="#247da2" stroke="#9fe7f7"/>
+ <path d="M101 56h16l-10 9H87Z" fill="#d39b55" stroke="#ffe0a4"/>
+ <path d="M17 65h16v10H17Zm-4 11a6 6 0 1 0 12 0 6 6 0 0 0-12 0Zm60 0a6 6 0 1 0 12 0 6 6 0 0 0-12 0Z" fill="#0b1929" stroke="#7db8ca" stroke-width="2"/>
+ <path d="M39 18 43 3h10l-5 15" fill="none" stroke="#d2e9ef" stroke-width="2"/>
+</g>
+<g fill="#ffd995" opacity=".94"><path d="m118 129 6-4 6 4-6 4Z"/><path d="m136 120 5-3 6 3-6 4Z"/><path d="m149 133 5-3 6 3-6 4Z"/></g>
+<path d="M12 17h50M12 22h31" stroke="#65cfe9" stroke-width="2" opacity=".75"/>
+</svg>

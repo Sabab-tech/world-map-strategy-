@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-10-08",
+  "totalSites": 199,
+  "partSize": 50,
+  "partCount": 4,
+  "parts": [
+    {
+      "file": "resource_site_reference_expanded_part_01.json",
+      "siteRange": [
+        1,
+        50
+      ],
+      "siteCount": 50
+    },
+    {
+      "file": "resource_site_reference_expanded_part_02.json",
+      "siteRange": [
+        51,
+        100
+      ],
+      "siteCount": 50
+    },
+    {
+      "file": "resource_site_reference_expanded_part_03.json",
+      "siteRange": [
+        101,
+        150
+      ],
+      "siteCount": 50
+    },
+    {
+      "file": "resource_site_reference_expanded_part_04.json",
+      "siteRange": [
+        151,
+        199
+      ],
+      "siteCount": 49
+    }
+  ],
+  "countryContextFile": "resource_country_resource_context_index.json",
+  "authoritativeSources": [
+    "resources.json",
+    "resources_2.json"
+  ],
+  "invariant": "Each site reference preserves the complete source site record and siteDataPackage. Country-level aggregates remain in a separate country context index."
+}
