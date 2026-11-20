@@ -3909,10 +3909,11 @@ test('market presentation keeps raw, factory-role and food lanes separate and us
       'index.html must load ' + script + ' in dependency order for static/offline sessions');
     previousBlackMarketScriptPosition = position;
   }
-  assert.equal(offlineShellCacheVersion(sw),128,
-    'Bilateral Trade and Finance runtime changes must invalidate the previously cached v127 shell');
+  assert.equal(offlineShellCacheVersion(sw),129,
+    'Phase 6 runtime precache must invalidate the previously cached v128 shell');
   for (const asset of [
     './omega_global_trade_system.js',
+    './omega_phase6_national_population_capacity_runtime_v1.js',
     './omega_black_market_system_v1.js',
     './omega_sanction_response_runtime_v1.js',
     './omega_black_market_network_v1.js',

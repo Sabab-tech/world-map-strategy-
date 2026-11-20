@@ -1,14 +1,14 @@
 # OMEGA Phase 6 — National Population, Consumption & Industrial Capacity
 
 **Specification:** OMEGA_PHASE6_NATIONAL_POPULATION_CONSUMPTION_INDUSTRIAL_CAPACITY_V1  
-**Status:** Source-aware population refresh and bounded current-turn financial journal projections implemented on the Phase 6 follow-up branch; complete financial totals and durable international in-transit tracking remain evidence-gated  
+**Status:** 195 core-country 2025 population observations plus separately sourced Vatican 2024 and Western Sahara 2025 projected values; durable bilateral shipment identity/status is persisted and read by Phase 6; four mineral coefficients and full factory/Treasury expenditure totals remain evidence-gated  
 **Scope:** 197 core countries, 21 canonical factory types, the existing 41-resource profile set
 
 ## 1. Objective and invariants
 
 Phase 6 provides a country-level view of population, common population-based resource requirements, the industrial starting baseline, selected-country live factory capacity, existing factory input demand, physical production evidence, and evidence-backed modeled costs.
 
-The implementation is an additive read-only projection over OMEGA's existing authorities. It is not a second economy engine. Its compact calculation-provenance record is written only into the optional simulation save snapshot, outside the authoritative world-state tree; it never mutates country/economy state.
+The implementation is an additive read-only projection over OMEGA's existing authorities. It is not a second economy engine. Its compact calculation-provenance record is written only into the optional simulation save snapshot, outside the authoritative world-state tree; it never mutates country/economy state. Global Trade remains the sole writer for bilateral shipment lifecycle records.
 
 The following invariants are mandatory:
 
@@ -88,7 +88,7 @@ The four existing profiles with no population coefficient remain:
 - Ruby
 - Limestone
 
-These rows return `RATE_NOT_CALIBRATED`; they are not assigned estimated coefficients. Factory recipe demand for such a material can still be surfaced independently when existing runtime evidence exists.
+These rows return `RATE_NOT_CALIBRATED`; each profile records `coefficientStatus: UNAVAILABLE`, `NO_COMPARABLE_COUNTRY_COMPLETE_CONSUMPTION_BENCHMARK`, a resource-specific evidence note and `productionStatisticsUsedAsConsumption: false`. They are not assigned estimates or zero demand. Factory recipe demand for such a material can still be surfaced independently when existing runtime evidence exists.
 
 ## 5. Population demand, factory demand and national demand
 
@@ -104,7 +104,7 @@ Phase 6 does not calculate `populationDemand + factoryDemand`. The current natio
 
 Physical output is read from the resource state's `finishedGoodsLedger`, filtered to the current game turn and de-duplicated by transaction ID. The economy finished-goods mirror is not counted as a second source.
 
-Inventory, confirmed imports, in-transit shipments, and demand are different facts. Completed cross-border imports are read from current-turn `resource.inventoryLedger` rows with type `INTERNATIONAL_TRADE_IMPORT`; records are de-duplicated by settlement and resource identity. Pending import requests are not treated as imports. The trade runtime retains at most 2,048 inventory-ledger rows; when the ledger reaches that bound, Phase 6 marks import totals `IMPORT_LEDGER_MAY_BE_TRUNCATED` and reports them as `UNKNOWN` rather than claiming a complete zero or partial total. The current trade runtime does not persist a durable in-transit import shipment ledger for this projection, so in-transit import quantity remains `UNKNOWN` rather than being inferred. Phase 6 does not debit inventory or change shipment state.
+Inventory, confirmed imports, in-transit shipments, and demand are different facts. Completed cross-border imports are read from current-turn `resource.inventoryLedger` rows with type `INTERNATIONAL_TRADE_IMPORT`; records are de-duplicated by settlement and resource identity. Pending import requests are not treated as imports. The trade runtime retains at most 2,048 inventory-ledger rows; when the ledger reaches that bound, Phase 6 marks import totals `IMPORT_LEDGER_MAY_BE_TRUNCATED` and reports them as `UNKNOWN` rather than claiming a complete zero or partial total. Separately, Global Trade persists an `internationalShipmentLedger` mirror for both exporter and importer under the same `shipmentId`, with request/settlement identity, origin/destination, resource/quantity/unit, status, dispatch/arrival evidence, transport/route identifiers when supplied, and batch references. Writes are idempotent; immutable shipment facts cannot be rewritten and lifecycle states can only advance. Phase 6 reads only the selected player country's importer-side ledger, deduplicates shipment IDs, and counts only `DISPATCHED`, `IN_TRANSIT`, `CUSTOMS_CLEARANCE` and `PENDING_ARRIVAL`; outbound and `ARRIVED` records are excluded. An absent ledger is `UNKNOWN`; an observed empty ledger means zero. The normal bilateral settlement path currently debits and credits inventory in the same settlement flow, so it records observed dispatch/arrival in the same turn and does not model a travel delay. ETA remains null with `NOT_ESTIMATED_ROUTE_TRAVEL_TIME_NOT_MODELED` until a route travel-time authority exists. Phase 6 reads this evidence only and does not debit inventory or change shipment state.
 
 ## 6. Factory counts, capacity and ownership
 
@@ -154,10 +154,11 @@ The Country Overview receives an additive, collapsible national summary. The pan
 
 | Milestone | Scope | Initial implementation status |
 | --- | --- | --- |
-| 6A | 197-country population source/year/status audit | Audit and regression contract added; 194/2/1 coverage remains explicit |
+| 6A | 197-country population source/year/status audit | 195 observed in 2025, 1 official resident count in 2024, 1 UN projected estimate in 2025; provenance and year remain distinct |
 | 6B | Universal per-100k coefficient catalog | Existing 41 profiles normalized; 37 calculated, 4 uncalibrated |
 | 6C | National factory census and capacity | 197 × 21 static matrix surfaced; selected-country live status/capacity read from existing registry |
 | 6D | Population/factory demand reconciliation | Separate streams; existing national-demand authority reused, no new sum |
+| 6D+ | International shipment evidence | Durable bilateral shipment ID ledger, exporter/importer ownership mirrors, idempotency and monotonic status updates; Phase 6 counts only inbound in-transit records; ETA remains unavailable pending route-time evidence |
 | 6E | Resource and factory cost | Resource-level modeled cost requires quote/currency/observation; factory operating and Treasury actuals remain evidence-gated |
 | 6F | National summary UI | Country Overview summary panel added |
 | 6G | Reconciliation and performance | Optional save snapshot extension and load-time provenance revalidation added; full CI result and device-performance validation remain separate gates |
@@ -168,7 +169,7 @@ Phase 6 now exposes the qualifying current-turn journal evidence while keeping f
 
 The dedicated regression suite verifies:
 
-- Exactly 197 core population records: 195 year-2025 observations, 1 official 2024 observation, 1 UN projected 2025 estimate, no 2015 population baseline and no unknown population; the 2025 observed subtotal is 8,200,525,275.
+- Exactly 197 core population records: 195 year-2025 observations, 1 official 2024 resident count (Vatican), 1 UN-projected 2025 estimate (Western Sahara), no stale 2015 population baseline and no unknown population; the observed-2025 subtotal excludes the projection and is 8,200,525,275.
 - Exactly 197 factory baseline countries × 21 canonical type keys, with 15,920 total simulation-only starting units.
 - Exactly 41 resource profiles, 37 calibrated per-100k rates and 4 `RATE_NOT_CALIBRATED` resources.
 - Per-100k invariance across countries and linear population scaling.
@@ -176,12 +177,13 @@ The dedicated regression suite verifies:
 - Status, ownership, per-factory-type capacity units, and utilization evidence requirements for live factories; ambiguous utilization ratios above 1 remain unavailable.
 - Active-player-only detailed factory access.
 - Current-turn production transaction de-duplication using the resource finished-goods ledger.
-- Current-turn settled import reconciliation from `INTERNATIONAL_TRADE_IMPORT` inventory-ledger entries, settlement/resource de-duplication, and separation from pending requests and unpersisted in-transit shipment state.
+- Current-turn settled import reconciliation from `INTERNATIONAL_TRADE_IMPORT` inventory-ledger entries, settlement/resource de-duplication, and separation from pending requests.
+- Durable importer-side shipment-ledger reconciliation: only unique inbound `DISPATCHED`/`IN_TRANSIT`/`CUSTOMS_CLEARANCE`/`PENDING_ARRIVAL` shipments count; `ARRIVED` and outbound shipments do not count, missing ledger remains unknown, an empty ledger means zero, and ETA is never inferred without route-time evidence.
 - Separate population and factory demand, with no naive summation.
 - Price/currency evidence gates and the separation of modeled cost from Treasury postings.
 - Current-turn government expense/reversal and private-factory operating-cost accrual projection only when every source journal is balanced, posted, correctly identified and currency-scoped; bounded source-window and non-completion statuses are preserved.
 - Actual Treasury budgetary expenditure is established only from a complete, non-modeled, reconciled Finance fiscal-period account; it is government spending plus interest paid, with principal repayment excluded.
-- In-transit international import quantities remain explicitly unknown until the trade runtime persists durable shipment identity/status evidence.
+- In-transit international import quantities are read only from durable importer-side shipment identity/status evidence; old saves without that ledger remain unknown.
 - Read-only authoritative world-state behavior and the absence of a new scheduler.
 - Phase 6 provenance save/load checksum coverage, legacy-save compatibility, and load-time fingerprint revalidation.
 

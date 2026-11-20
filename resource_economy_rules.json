@@ -752,7 +752,7 @@
       "buyerType": "AGRICULTURAL_BUYER",
       "unit": "METRIC_TONS_PER_DAY",
       "basePerMillionPopulation": 55,
-      "priority": 9.0,
+      "priority": 9,
       "gdpPerCapitaElasticity": 0.12,
       "populationElasticity": 0.8,
       "wartimeMultiplier": 1.05
@@ -788,7 +788,7 @@
       "buyerType": "COMMERCIAL_FLEET",
       "unit": "UNITS_PER_DAY",
       "basePerMillionPopulation": 12,
-      "priority": 8.0,
+      "priority": 8,
       "gdpPerCapitaElasticity": 0.45,
       "populationElasticity": 0.5,
       "wartimeMultiplier": 1.15
@@ -797,11 +797,11 @@
       "buyerType": "GOVERNMENT_PROCUREMENT",
       "unit": "UNITS_PER_DAY",
       "basePerMillionPopulation": 1.5,
-      "priority": 9.0,
+      "priority": 9,
       "gdpPerCapitaElasticity": 0.3,
       "populationElasticity": 0.35,
       "militaryElasticity": 0.6,
-      "wartimeMultiplier": 2.0,
+      "wartimeMultiplier": 2,
       "debitGovernmentTreasury": true
     },
     "communication_hardware": {
@@ -829,8 +829,7 @@
       "priority": 7.7,
       "gdpPerCapitaElasticity": 0.4,
       "populationElasticity": 0.45,
-      "wartimeMultiplier": 1.0
+      "wartimeMultiplier": 1
     }
   }
 }
-

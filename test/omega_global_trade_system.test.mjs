@@ -20,7 +20,7 @@ globalThis.Game={state:{
   },
   foreign:{BGD:{relations:{SAU:{overall:80,trade:90,political:75,trust:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{}},SAU:{relations:{BGD:{overall:80,trade:90,political:75,trust:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{}}},
   trade:{
-    BGD:{marketPrice:{crude_oil:100},routeCapacity:{crude_oil:5000},importRequests:[{requestId:'REQ-1',countryId:'BGD',targetCountryId:'SAU',resourceId:'crude_oil',quantity:1000,unitPrice:95,totalValue:95000,status:'SENT',stage:'COUNTERPARTY_DECISION_PENDING',createdTurn:1}]},
+    BGD:{marketPrice:{crude_oil:100},routeCapacity:{crude_oil:5000},importRequests:[{requestId:'REQ-1',countryId:'BGD',targetCountryId:'SAU',resourceId:'crude_oil',quantity:1000,unitPrice:95,totalValue:95000,transportMode:'ship',routeId:'SAU-BGD-SEA',status:'SENT',stage:'COUNTERPARTY_DECISION_PENDING',createdTurn:1}]},
     SAU:{marketPrice:{crude_oil:100},routeCapacity:{crude_oil:5000}}
   }
 }};
@@ -108,6 +108,8 @@ for(const row of [buyerShipment,sellerShipment]){
   assert.equal(row.quantity,1000);
   assert.equal(row.originCountryId,'SAU');
   assert.equal(row.destinationCountryId,'BGD');
+  assert.equal(row.transportMode,'ship');
+  assert.equal(row.routeId,'SAU-BGD-SEA');
   assert.ok(row.dispatchTime,'new shipments retain observed dispatch timestamp');
   assert.ok(row.arrivalTime,'new shipments retain observed buyer receipt timestamp');
   assert.equal(row.status,'ARRIVED');
