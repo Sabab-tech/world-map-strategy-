@@ -16,6 +16,10 @@
   function canonicalCountryId(value){
     const raw=String(value??'').trim();
     if(!raw)return '';
+    // An ISO 3166-1 alpha-3 key is already the canonical country identity.
+    // Keep it out of the semantic resolver hot path used for every state transaction.
+    const direct=raw.toUpperCase();
+    if(/^[A-Z]{3}$/.test(direct))return direct;
     const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||global.Omega?.CanonicalIdentity;
     if(registry&&typeof registry.resolveCountry==='function'){
       for(const candidate of [raw,raw.replace(/[_-]+/g,' ')]){
