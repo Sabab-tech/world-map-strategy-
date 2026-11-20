@@ -78,6 +78,7 @@ test('autonomous screen is wired to the shared route and offline shell',()=>{
  const tradeCss=readFileSync(new URL('../omega_ui_v2/autonomous-trade-command.css',import.meta.url),'utf8');
  const manifest=JSON.parse(readFileSync(new URL('../omega_ui_v2/manifest.json',import.meta.url),'utf8'));
  assert.match(app,/autonomous-development/);
+ assert.match(app,/Autonomous Trade Command/);
  assert.match(index,/<script src="omega_ui_v2\/screens\/autonomous-development\.js" defer><\/script>/);
  assert.match(sw,/omega-offline-atlas-shell-v133/);
  assert.match(sw,/"\.\/omega_ui_v2\/screens\/autonomous-development\.js"/);
