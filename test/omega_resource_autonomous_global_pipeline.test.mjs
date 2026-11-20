@@ -526,7 +526,17 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
       offerSourceRootsByCountry.set(cid,new Set());
       continue;
     }
-    assert.ok(offers.length>0,cid+': active producing country must publish at least one positive finished/raw market offer');
+    assert.ok(offers.length>0,cid+': active producing country must publish at least one positive finished/raw market offer; diagnostics='+
+      JSON.stringify({
+        inventory:rs&&rs.inventory||{},
+        rawWarehouse:rs&&rs.warehouse&&rs.warehouse.availableByResource||{},
+        processedWarehouse:rs&&rs.processedWarehouse&&rs.processedWarehouse.availableByResource||{},
+        batches:(rs&&rs.batches||[]).filter(row=>String(row.stage||'').toUpperCase()==='FINISHED'||
+          (row.sourceBatchIds||[]).some(id=>expectedRawBatchIds.has(String(id))))
+          .slice(-24).map(row=>({batchId:row.batchId,resourceId:row.resourceId,quantity:row.quantity,
+            remainingQuantity:row.remainingQuantity,stage:row.stage,status:row.status,sourceBatchIds:row.sourceBatchIds})),
+        offers:(state.trade[cid]&&state.trade[cid].offerBook)||[]
+      }));
     const roots=new Set();
     for(const offer of offers){
       assert.ok(Array.isArray(offer.batchAllocations)&&offer.batchAllocations.length>0,
