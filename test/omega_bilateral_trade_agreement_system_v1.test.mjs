@@ -444,6 +444,11 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.ok(buyerRequest, 'agreement delivery must use the existing Global Trade request path');
   assert.equal(buyerRequest.quantity, 100);
   assert.equal(buyerRequest.governmentContractId, agreementId);
+  const reservedBuyerMirror = globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.agreementId === agreementId);
+  const reservedSellerMirror = globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === agreementId);
+  assert.equal(reservedBuyerMirror.currentRequestUnitPrice, buyerRequest.unitPrice);
+  assert.equal(reservedSellerMirror.currentRequestUnitPrice, buyerRequest.unitPrice,
+    'the same exact price snapshot must be reserved on both country contract mirrors before Global Trade review');
 
   buyerRequest.quantity = 97;
   buyerRequest.status = 'SETTLED';
@@ -463,6 +468,9 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(globalThis.Game.state.trade.BGD.bilateralContracts[0].completedDeliveries, 1);
   assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === agreementId).deliveredQuantity, 97);
   assert.equal(globalThis.Game.state.trade.BGD.bilateralContracts[0].deliveries[0].withinTolerance, true);
+  assert.equal(globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.agreementId === agreementId).currentRequestUnitPrice, null);
+  assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === agreementId).currentRequestUnitPrice, null,
+    'the reserved price snapshot must be cleared from both mirrors after settlement');
 
   const balance = bilateral.getBilateralTradeBalance('BGD', 'SAU');
   assert.equal(balance.status, 'OBSERVED_SETTLEMENTS_ONLY');
@@ -523,6 +531,9 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(linkedDelivery.contracts.find(row => row.agreementId === forceAgreement.agreementId).status, 'DELIVERY_REQUESTED');
   const forceRequest = globalThis.Game.state.trade.BGD.importRequests.find(row => row.governmentContractId === forceAgreement.agreementId);
   assert.equal(forceRequest.unitPrice, 110);
+  assert.equal(globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.agreementId === forceAgreement.agreementId).currentRequestUnitPrice, 110);
+  assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === forceAgreement.agreementId).currentRequestUnitPrice, 110,
+    'market-linked price snapshot must be identical on buyer and seller mirrors');
   const blockedTermination = bilateral.terminateContract('BGD', forceAgreement.agreementId, 'PLAYER_REQUESTED_TERMINATION');
   assert.equal(blockedTermination.accepted, false);
   assert.equal(blockedTermination.reason, 'TERMINATION_BLOCKED_BY_PENDING_DELIVERY',
@@ -543,6 +554,8 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(forceContractAfterSettlement.status, 'AT_RISK');
   assert.equal(forceContractAfterSettlement.deliveries[0].withinTolerance, false);
   assert.equal(forceContractAfterSettlement.lastDeliveryStatus, 'SETTLED_OUTSIDE_TOLERANCE');
+  assert.equal(forceContractAfterSettlement.currentRequestUnitPrice, null);
+  assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === forceAgreement.agreementId).currentRequestUnitPrice, null);
   const beforeForcePenalty = globalThis.Game.state.finance.BGD.available;
   const forceWithoutEvidence = bilateral.terminateContract('BGD', forceAgreement.agreementId,
     'FORCE_MAJEURE', { forceMajeure: true });
