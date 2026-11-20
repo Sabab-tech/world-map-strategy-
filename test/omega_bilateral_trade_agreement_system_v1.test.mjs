@@ -201,6 +201,11 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(bilateral.diagnostics().worldRosterScansOnTurn, false);
   assert.ok(schedulerHandlers.has('omega.bilateral-trade-agreement.country-runtime'));
 
+  // Unknown demand with no pending order is not evidence of a potential buyer.
+  globalThis.Game.state.resource.NPL = {};
+  globalThis.Game.state.trade.NPL = { importRequests: [] };
+  globalThis.Game.state.finance.NPL = { currencyCode: 'NPR' };
+
   const synced = bilateral.syncMarket('BGD', 'SAU');
   assert.equal(synced.accepted, true, JSON.stringify(synced));
   const report = bilateral.getMarketReport('BGD', 'SAU');
@@ -208,6 +213,8 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(report.report.products[0].stock.status, 'KNOWN');
   assert.equal(report.report.products[0].expectedPrice.status, 'KNOWN');
   assert.equal(report.report.alternativeMarkets.competingBuyersForExports[0].status, 'OBSERVED');
+  assert.equal(report.report.alternativeMarkets.competingBuyersForExports[0].alternatives.some(row => row.countryId === 'NPL'), false,
+    'missing demand with no pending order must not be presented as an observed potential buyer');
   const potentialBuyer = report.report.alternativeMarkets.competingBuyersForExports[0].alternatives[0];
   assert.equal(potentialBuyer.status, 'POTENTIAL_BUYER');
   assert.equal(potentialBuyer.competingBidDisclosure, 'PRIVATE');
