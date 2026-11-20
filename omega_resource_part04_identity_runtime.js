@@ -198,12 +198,15 @@
         destinationCountryId:countryId,
         warehouseId
       },
-      provenance:{
-        ...(raw.provenance&&typeof raw.provenance==='object'?clone(raw.provenance):{}),
-        sourceAuthority:raw.sourceAuthority||raw.provenance?.sourceAuthority||ref.sourceAuthority||'UNOBSERVED',
-        sourceDatasetId:raw.sourceDatasetId||raw.provenance?.sourceDatasetId||ref.sourceDatasetId||null,
-        sourcePath:raw.sourcePath||raw.provenance?.sourcePath||ref.sourcePath||null
-      },
+      provenance:Object.assign(
+        {},
+        raw.provenance&&typeof raw.provenance==='object'?clone(raw.provenance):{},
+        {
+          sourceAuthority:raw.sourceAuthority||raw.provenance?.sourceAuthority||ref.sourceAuthority||'UNOBSERVED',
+          sourceDatasetId:raw.sourceDatasetId||raw.provenance?.sourceDatasetId||ref.sourceDatasetId||null,
+          sourcePath:raw.sourcePath||raw.provenance?.sourcePath||ref.sourcePath||null
+        }
+      ),
       dataAuthority:{
         overall:overallAuthority(authorities),
         reserve:reserveAuthority,
@@ -257,14 +260,13 @@
           if(seen.has(dedupeKey))return;seen.add(dedupeKey);
           const sourcePath='GSRSK_Master_CountryProfiles_v14.countryProfiles.'+String(profileKey)+'.resource_infrastructure_context.mineSites['+index+']';
           const rawSiteObject=rawSite&&typeof rawSite==='object'?clone(rawSite):{name:siteName};
-          const resourceAsset=normalizeUnifiedAsset({
-            ...rawSiteObject,
+          const resourceAsset=normalizeUnifiedAsset(Object.assign({},rawSiteObject,{
             assetType:'MINE_SITE',
             assetId:siteReferenceKey,siteReferenceKey,
             siteName,countryId,countryCode:countryId,
             sourceAuthority:'RESOURCE_JSON',sourceDatasetId,sourcePath,
             extractionExecutable:false
-          });
+          }));
           rows.push({
             siteReferenceKey,countryId,countryCode:countryId,profileKey:String(profileKey),siteName,
             status:'ACTIVE_SITE_REFERENCE',activationState:'ACTIVE_REFERENCE',
@@ -309,8 +311,7 @@
         status:String(raw?.status||'UNKNOWN').trim().toUpperCase(),
         sourceDatasetId:raw?.sourceDatasetId||raw?.provenance?.sourceDatasetId||'resources.json',
         rawDeposit:clone(raw),
-        resourceAsset:normalizeUnifiedAsset({
-          ...clone(raw),
+        resourceAsset:normalizeUnifiedAsset(Object.assign({},clone(raw),{
           assetType:'RESOURCE_MINE',
           assetId:occurrenceKey,
           occurrenceKey,siteName:String(raw?.name||depositKey),
@@ -319,7 +320,7 @@
           sourceDatasetId:raw?.sourceDatasetId||raw?.provenance?.sourceDatasetId||'resources.json',
           extractionExecutable:true,
           quantitativeExtractionDataAvailable:true
-        })
+        }))
       };
       rows.push(occurrence);
       byDeposit.set(depositKey,occurrence);

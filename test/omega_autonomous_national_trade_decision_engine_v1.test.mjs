@@ -198,7 +198,11 @@ function createRuntime(options = {}) {
     },
     __OmegaAutonomousNationalTradeDecisionRules: options.pendingRules ? undefined : (() => {
       const configured = structuredClone(rules);
-      if (options.enablePhase2 === true) {
+      if (options.readOnly === true) {
+        configured.autonomousProposals = false;
+        configured.autonomousCounteroffers = false;
+        configured.marketIntelligenceSyncEnabled = false;
+      } else if (options.enablePhase2 === true) {
         configured.autonomousProposals = true;
         configured.autonomousCounteroffers = true;
         configured.marketIntelligenceSyncEnabled = true;
@@ -242,8 +246,16 @@ test('registers only on the existing ACTIVE/MACRO scheduler and never schedules 
   assert.equal(diag.playerCountryAutomation, false);
 });
 
-test('runs PLAN, one market-intelligence sync, then one feasible bilateral proposal across separate visits', async () => {
-  const runtime = createRuntime({ enablePhase2: true });
+test('production rules enable all Phase 2 flags together and run PLAN, sync and proposal across separate visits', async () => {
+  assert.equal(rules.autonomousProposals, true);
+  assert.equal(rules.autonomousCounteroffers, true);
+  assert.equal(rules.marketIntelligenceSyncEnabled, true);
+  const runtime = createRuntime();
+  const productionDiag = runtime.context.Omega.AutonomousNationalTradeDecisionV1.diagnostics();
+  assert.equal(productionDiag.rolloutMode, 'AUTONOMOUS');
+  assert.equal(productionDiag.autonomousProposals, true);
+  assert.equal(productionDiag.autonomousCounteroffers, true);
+  assert.equal(productionDiag.marketIntelligenceSyncEnabled, true);
   runtime.state.resource.AUS.demandRuntime.byResource.copper_ore = {
     resourceId: 'copper_ore', status: 'SHORTAGE', demandPerDay: 1,
     spendableStockAfter: 29, pendingImportQuantity: 0,
@@ -289,8 +301,8 @@ test('runs PLAN, one market-intelligence sync, then one feasible bilateral propo
   assert.equal(runtime.metrics.proposalCalls, 1);
 });
 
-test('default rollout is read-only: it saves a ranked plan without syncing market data or sending proposals', async () => {
-  const runtime = createRuntime();
+test('explicit read-only mode saves a ranked plan without syncing market data or sending proposals', async () => {
+  const runtime = createRuntime({ readOnly: true });
   const result = await runtime.process('AUS', 1);
   assert.equal(result.status, 'PLANNED_READ_ONLY');
   assert.equal(result.phase, 'PLAN');
@@ -410,8 +422,8 @@ test('refuses imports when the required FX settlement value is unknown', async (
   assert.equal(runtime.metrics.syncCalls, 0);
 });
 
-test('plans an export only against a known partner shortage and preserves the seller-side reserve', async () => {
-  const runtime = createRuntime();
+test('read-only export planner requires a known partner shortage and preserves the seller-side reserve', async () => {
+  const runtime = createRuntime({ readOnly: true });
   const own = runtime.state.resource.AUS.demandRuntime.byResource.iron_ore;
   own.spendableStockAfter = 1000;
   runtime.state.resource.CAN.demandRuntime.byResource.iron_ore = {

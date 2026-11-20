@@ -12,6 +12,12 @@ on:
       - 'omega_resource_economy_runtime_v2.js'
       - 'omega_resource_research_runtime_v1.js'
       - 'test/omega_resource_research_runtime.test.mjs'
+      - 'omega_resource_part04_identity_runtime.js'
+      - 'test/omega_resource_legacy_gameplay_expansion.test.mjs'
+      - 'test/omega_resource_android_es2017_compat.test.mjs'
+      - 'omega_autonomous_national_trade_decision_engine_v1.js'
+      - 'omega_autonomous_national_trade_decision_rules_v1.json'
+      - 'test/omega_autonomous_national_trade_decision_engine_v1.test.mjs'
       - 'omega_resource_industrial_network_v1.js'
       - 'omega_global_trade_system.js'
       - 'index.html'
@@ -28,6 +34,12 @@ on:
       - 'omega_resource_economy_runtime_v2.js'
       - 'omega_resource_research_runtime_v1.js'
       - 'test/omega_resource_research_runtime.test.mjs'
+      - 'omega_resource_part04_identity_runtime.js'
+      - 'test/omega_resource_legacy_gameplay_expansion.test.mjs'
+      - 'test/omega_resource_android_es2017_compat.test.mjs'
+      - 'omega_autonomous_national_trade_decision_engine_v1.js'
+      - 'omega_autonomous_national_trade_decision_rules_v1.json'
+      - 'test/omega_autonomous_national_trade_decision_engine_v1.test.mjs'
       - 'omega_resource_industrial_network_v1.js'
       - 'omega_global_trade_system.js'
       - 'index.html'
@@ -64,6 +76,15 @@ jobs:
 
       - name: Resource Research runtime regression
         run: npm run test:resource-research
+
+      - name: Resource identity and country expansion regression
+        run: npm run test:resource-country-expansion
+
+      - name: Android 9 identity asset compatibility regression
+        run: node --test test/omega_resource_android_es2017_compat.test.mjs
+
+      - name: Autonomous national trade tests with production rollout rules
+        run: npm run test:autonomous-national-trade
 
       - name: Test Android 9 WebView instrumentation gate
         run: python3 scripts/test_android_webview_performance.py

@@ -53,14 +53,14 @@ The rules file caps work at four demand rows, eight known relationship candidate
 
 ## Rollout and diagnostics
 
-The checked-in rules file starts in **read-only planner mode**:
-- `autonomousProposals: false`
-- `autonomousCounteroffers: false`
-- `marketIntelligenceSyncEnabled: false`
+The checked-in production rules enable Phase 2 as one atomic configuration:
+- `autonomousProposals: true`
+- `autonomousCounteroffers: true`
+- `marketIntelligenceSyncEnabled: true`
 
-This mode reads current evidence, ranks opportunities, and persists only its own Trade-Ministry-owned decision checkpoint. It does not synchronize bilateral market snapshots, send proposals, accept/reject counteroffers, reserve stock, or move money. This is intentional while Phase 0 subsystem regressions and end-to-end shipment/settlement checks are validated.
+The runtime rejects partial configurations. All three flags must be enabled together or disabled together. Explicit read-only mode remains available for controlled tests and staged diagnosis, but it is not the production default.
 
-Phase 2 may be enabled only after the existing bilateral, resource, finance/FX, scheduler, offline and end-to-end regression suites pass. It requires all three flags to be enabled together. The staged state machine then refreshes at most one stale bilateral market snapshot per country visit, creates at most one proposal after a FEASIBLE existing bilateral preview, and evaluates at most one counteroffer per visit.
+The production rollout is constrained by the existing scheduler and bilateral authority: one supplier scan, one market-intelligence sync, one new proposal and one counteroffer evaluation per country visit. A ranked candidate is not itself a trade; the existing `previewProposal()` must return FEASIBLE before a proposal is sent. Counteroffers require a current market snapshot, cleared seller price, the configured price boundary and a FEASIBLE bilateral preview. No direct inventory reservation, FX movement, Treasury debit, shipment or settlement is performed by the decision engine.
 
 The scheduler handler never awaits the rules-file network fetch. Rules are preloaded during initialization; until ready, a scheduler visit returns immediately with `DEFERRED`. If rules cannot be loaded offline, the engine remains disabled instead of blocking the turn.
 
