@@ -109,7 +109,11 @@
       [12, 24, 60, 84, 120].indexOf(finite(policy.proposalDurationMonths)) >= 0 &&
       typeof input.autonomousProposals === 'boolean' &&
       typeof input.autonomousCounteroffers === 'boolean' &&
-      typeof input.marketIntelligenceSyncEnabled === 'boolean';
+      typeof input.marketIntelligenceSyncEnabled === 'boolean' &&
+      ((input.autonomousProposals === false && input.autonomousCounteroffers === false &&
+        input.marketIntelligenceSyncEnabled === false) ||
+       (input.autonomousProposals === true && input.autonomousCounteroffers === true &&
+        input.marketIntelligenceSyncEnabled === true));
   }
   function prepare() {
     if (activeRules) return Promise.resolve({ status: 'READY' });

@@ -202,6 +202,10 @@ function createRuntime(options = {}) {
         configured.autonomousProposals = true;
         configured.autonomousCounteroffers = true;
         configured.marketIntelligenceSyncEnabled = true;
+      } else if (options.partialPhase2 === true) {
+        configured.autonomousProposals = true;
+        configured.autonomousCounteroffers = false;
+        configured.marketIntelligenceSyncEnabled = false;
       }
       return configured;
     })(),
@@ -303,6 +307,17 @@ test('default rollout is read-only: it saves a ranked plan without syncing marke
   assert.equal(diag.autonomousProposals, false);
   assert.equal(diag.autonomousCounteroffers, false);
   assert.equal(diag.marketIntelligenceSyncEnabled, false);
+});
+
+test('rejects a partially enabled Phase 2 rules configuration', async () => {
+  const runtime = createRuntime({ partialPhase2: true });
+  const result = await runtime.context.Omega.AutonomousNationalTradeDecisionV1.prepare();
+  assert.equal(result.status, 'UNAVAILABLE');
+  assert.match(result.reason, /RULES_INVALID/);
+  const visit = await runtime.process('AUS', 1);
+  assert.equal(visit.status, 'DEFERRED');
+  assert.equal(runtime.metrics.proposalCalls, 0);
+  assert.equal(runtime.metrics.syncCalls, 0);
 });
 
 test('does not block the world-turn scheduler while offline rules are still loading', async () => {
