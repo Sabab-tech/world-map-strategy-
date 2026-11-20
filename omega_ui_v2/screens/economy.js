@@ -38,13 +38,12 @@
     if (n === null) return 'Not recorded';
     var code = String(currency || 'USD').trim().toUpperCase();
     var absolute = Math.abs(n);
-    var divisor = 1;
-    var suffix = '';
-    if (absolute >= 1e12) { divisor = 1e12; suffix = 'T'; }
-    else if (absolute >= 1e9) { divisor = 1e9; suffix = 'B'; }
-    else if (absolute >= 1e6) { divisor = 1e6; suffix = 'M'; }
-    var digits = suffix ? 2 : 2;
-    return (n < 0 ? '-' : '') + code + ' ' + number(Math.abs(n) / divisor, digits) + suffix;
+    if (code === 'USD') {
+      if (absolute >= 1e12) return (n < 0 ? '-$' : '$') + number(absolute / 1e12,0) + 'T';
+      if (absolute >= 1e9) return (n < 0 ? '-$' : '$') + number(absolute / 1e9,1) + 'B';
+      return (n < 0 ? '-$' : '$') + new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}).format(absolute);
+    }
+    return (n < 0 ? '-' : '') + code + ' ' + number(absolute,2);
   }
   function countryProfile(value) {
     var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
@@ -312,6 +311,7 @@
     }
     return value || 'Not recorded';
   }
+  // Game.state.finance[country] remains the canonical Treasury authority; this view is read-only.
   function buildViewModel(options) {
     options = options || {};
     var country = canonicalCountry(
@@ -425,6 +425,13 @@
     };
   }
 
+  function tabBar(active) {
+    return '<div class="omega-v2-filterbar omega-v2-finance-tabs" role="tablist" aria-label="Finance sections">' +
+      [{id:'overview',label:'Overview'},{id:'treasury',label:'Treasury & Ledger'},{id:'budget',label:'Budget'},
+       {id:'debt',label:'Debt & Fiscal'},{id:'monetary',label:'Monetary & FX'},{id:'trade',label:'Trade & Revenue'}]
+        .map(function (tab) { return '<button type="button" data-omega-v2-economy-tab="' + tab.id + '" aria-selected="' + (tab.id === active ? 'true' : 'false') + '">' + esc(tab.label) + '</button>'; }).join('') +
+      '</div>';
+  }
   function trendMarkup(trend) {
     if (!trend || trend.status === 'NO_BASELINE') {
       return '<span class="omega-economy-trend omega-economy-trend--none">No baseline</span>';
@@ -492,6 +499,8 @@
     options = options || {};
     if (!root) return { ok:false, code:'ECONOMY_ROOT_REQUIRED' };
     var model = buildViewModel(options);
+    var requestedPanel = String(options.tab || 'overview');
+    var panelId = ['overview','treasury','budget','debt','monetary','trade'].indexOf(requestedPanel) >= 0 ? requestedPanel : 'overview';
     // These small SVGs are already in the service worker's core offline cache.
     var cover = 'assets/omega-global-market/market-header.svg';
     var commodityImage = 'assets/omega-global-market/raw-mining.svg';
@@ -582,6 +591,7 @@
       '</section>';
 
     root.classList.add('omega-v2-screen');
+    html = html.replace('<section class="omega-v2-shell omega-economy-overview">', '<section class="omega-v2-shell omega-economy-overview" data-omega-v2-finance-panel="' + panelId + '">');
     root.innerHTML = html;
     if (!root.__omegaV2EconomyBound && typeof root.addEventListener === 'function') {
       root.addEventListener('click', function (event) {
@@ -612,12 +622,16 @@
     }
     root.__omegaV2EconomyOptions = options;
     root.__omegaV2EconomyTab = 'overview';
-    return { ok:true, model:model, tab:'overview' };
+    return { ok:true, model:model, tab:panelId };
   }
 
   g.OmegaUIV2Economy = Object.freeze({
     version:'2.0.0',
-    tabs:[{id:'overview',label:'Overview'}],
+    tabs:[
+      {id:'overview',label:'Overview'}, {id:'treasury',label:'Treasury & Ledger'},
+      {id:'budget',label:'Budget'}, {id:'debt',label:'Debt & Fiscal'},
+      {id:'monetary',label:'Monetary & FX'}, {id:'trade',label:'Trade & Revenue'}
+    ],
     buildViewModel:buildViewModel,
     render:render,
     trendFor:trendFor,

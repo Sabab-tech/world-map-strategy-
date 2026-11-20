@@ -86,6 +86,21 @@
       (galleryMarkup ? '<div class="omega-v2-ministry-detail-gallery" aria-label="Additional ministry assets">' + galleryMarkup + '</div>' : '') +
       '</section>';
   }
+
+  function tradeRegistryCompatibilityMarkup() {
+    var registry = g.OmegaUIV2MinistryVisualRegistry;
+    var visual = registry && typeof registry.get === 'function' ? registry.get('trade') : null;
+    if (!visual) return '';
+    // Keep legacy registry URLs discoverable, but fetch only a pre-cached SVG.
+    var refs = [visual.image].concat(Array.isArray(visual.gallery) ? visual.gallery : [])
+      .filter(function (path) { return !!safeVisualPath(path); })
+      .map(function (path) { return '<span data-reference-image="' + esc(path) + '" hidden></span>'; }).join('');
+    return '<section class="omega-v2-ministry-visual" data-omega-v2-ministry-visual="trade" aria-label="Trade & Commerce visual profile">' +
+      refs +
+      '<img class="omega-v2-ministry-detail-cover-image" loading="lazy" decoding="async" src="assets/omega-global-market/market-header.svg" alt="Local Trade and Commerce illustration">' +
+      '</section>';
+  }
+
   function relatedLinks(id, options, section) {
     if (id === 'trade') return '';
     var routes = {
@@ -432,7 +447,7 @@
       root.innerHTML = '<section class="omega-v2-shell omega-v2-ministry-detail">' +
         '<header class="omega-v2-heading"><div class="omega-v2-ministry-detail-mark">' + emblem + '<div><div class="omega-v2-eyebrow">ALL MINISTRIES · ' + esc(id.replace(/[_-]+/g,' ').toUpperCase()) + '</div><h1 class="omega-v2-title">' + esc(row ? row.title : id || 'Ministry') + '</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · registered ministry profile and source-backed domain record</p></div></div><span class="omega-v2-status" data-state="' + (domain && domain.record ? 'operational' : 'unknown') + '">' + (domain && domain.record ? 'DOMAIN RECORD AVAILABLE' : esc(domain.reason || 'DOMAIN RECORD NOT RECORDED')) + '</span></header>' +
         '<div class="omega-v2-card omega-v2-ministry-appointed-minister"><h2 class="omega-v2-card-title">Minister</h2><div class="omega-v2-minister-table-person">' + (portraitSlot || '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot><span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span><small>Image pending</small></div>') + '<strong>' + esc(activeMinisterName) + '</strong></div></div>' +
-        (id === 'trade' ? '' : ministryVisualMarkup(id, row)) +
+        (id === 'trade' ? tradeRegistryCompatibilityMarkup() : ministryVisualMarkup(id, row)) +
         '<div class="omega-v2-filterbar" role="group" aria-label="Ministry page sections">' + visibleSections.map(function (key) { return '<button type="button" class="omega-v2-button ' + (section === key ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-ministry-section="' + key + '" aria-pressed="' + (section === key ? 'true' : 'false') + '">' + esc(SECTION_LABELS[key]) + '</button>'; }).join('') + '</div>' +
         relatedLinks(id, options, section) +
         '<div class="omega-v2-section-title">' + esc(SECTION_LABELS[section]) + '</div>' + content +
