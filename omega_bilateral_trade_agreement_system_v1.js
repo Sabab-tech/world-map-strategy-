@@ -752,7 +752,7 @@
       var linkedPriceEvidence = supplier.expectedPrice;
       if (!linkedPriceEvidence || linkedPriceEvidence.status !== 'KNOWN' || num(linkedPriceEvidence.value) === null)
         return Object.assign(result, { reason: 'MARKET_LINKED_PRICE_NOT_CLEARED' });
-      proposedPrice = num(linkedPriceEvidence.value) * (1 + (num(proposal.marketAdjustmentPct) || 0) / 100);
+      proposedPrice = Number((num(linkedPriceEvidence.value) * (1 + (num(proposal.marketAdjustmentPct) || 0) / 100)).toFixed(8));
     }
     if (available + 1e-8 < proposedQuantity) {
       if (available <= 0) { result.decision = 'REJECT'; result.reason = 'NO_EXPORTABLE_STOCK_AFTER_DOMESTIC_AND_CONTRACT_COMMITMENTS'; return result; }
@@ -1291,7 +1291,7 @@
       var linkedPrice = readProduct(contract.sellerCountryId, { id: contract.resourceId }).expectedPrice;
       if (!linkedPrice || linkedPrice.status !== 'KNOWN' || num(linkedPrice.value) === null)
         return { status: 'BLOCKED', reason: 'MARKET_LINKED_PRICE_NOT_CLEARED' };
-      deliveryUnitPrice = num(linkedPrice.value) * (1 + (num(contract.marketAdjustmentPct) || 0) / 100);
+      deliveryUnitPrice = Number((num(linkedPrice.value) * (1 + (num(contract.marketAdjustmentPct) || 0) / 100)).toFixed(8));
     }
     // Global Trade may review/authorize the request synchronously inside
     // createRequest(). Reserve the exact request ID on both contract mirrors
