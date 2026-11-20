@@ -157,7 +157,7 @@
   }
   function buildTradeSettlementModel(countryValue) {
     var country = canonicalTradeCountry(countryValue);
-    if (!country) return { ok:false, countryId:null, turn:0, imports:[], exports:[], importTotalByCurrency:[], exportTotalByCurrency:[] };
+    if (!country) return { ok:false, countryId:null, turn:0, imports:[], exports:[], importTotalByCurrency:[], exportTotalByCurrency:[], openCount:0 };
     var root = tradeStateRoot();
     var simulation = root.simulation || {};
     var turn = Math.max(0, Math.floor(finiteTradeNumber(simulation.turn !== undefined ? simulation.turn : root.turn) || 0));
@@ -262,6 +262,7 @@
       importTotalByCurrency:importTotals, exportTotalByCurrency:exportTotals,
       importCount:imports.length, exportCount:exports.length,
       activeCount:imports.length + exports.length,
+      openCount:imports.length + exports.length,
       source:'Current country trade.bilateralContracts via OMEGA_BILATERAL_TRADE_AGREEMENT_V1'
     };
   }
@@ -320,7 +321,7 @@
     return '<div class="omega-trade-settlement">' +
       '<div class="omega-trade-settlement-intro"><div><span>TRADE AGREEMENTS · TURN ' + esc(model.turn) + '</span>' +
         '<h2>Trade Settlement</h2><p>Country ' + esc(country) + ' · only the selected country’s agreement records are shown</p></div>' +
-        '<span class="omega-trade-settlement-count">' + esc(model.activeCount) + ' active agreement(s)</span></div>' +
+        '<span class="omega-trade-settlement-count">' + esc(model.openCount) + ' open agreement(s)</span></div>' +
       '<div class="omega-trade-settlement-kpis"><div><small>Import agreements</small><strong>' + esc(model.importCount) + '</strong></div>' +
         '<div><small>Export agreements</small><strong>' + esc(model.exportCount) + '</strong></div>' +
         '<div><small>Current game turn</small><strong>' + esc(model.turn) + '</strong></div></div>' +
