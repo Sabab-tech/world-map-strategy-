@@ -11,7 +11,7 @@
     health_welfare:'health', treasury_finance:'finance', mega_projects:'projects'
   };
   var SECTIONS = ['dashboard','operations','assets','budget','reports','market','settlement'];
-  var SECTION_LABELS = { dashboard:'Dashboard', operations:'Operations / Programmes', assets:'People & Assets', budget:'Budget', reports:'Reports', market:'Markets', settlement:'Trade Settlement' };
+  var SECTION_LABELS = { dashboard:'Dashboard', operations:'Operations / Programmes', assets:'People & Assets', budget:'Budget', reports:'Reports', market:'Global Commodity Market', settlement:'Trade Settlement' };
   var PHOTO_BY_MINISTRY = {
     interior_security:'bangladesh-police-headquarters', health_welfare:'chittagong-hospital',
     energy_mining:'open-pit-mine', production:'industrial-production-line',
