@@ -403,7 +403,10 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
           operationalStatus:site.operation.status,sourceStatus:site.sourceSiteRecord.status,sourceAuthority:'EXPANDED_SITE_REGISTRY',simulationTurn:1}}}));
       continue;
     }
-    const batchId='BATCH-ALL-SITE:'+site.siteId,quantity=100+(index%17);
+    // The smallest tradable recipe yield in the current catalog is 0.1%.
+    // 5,000 fixture units remain marketable after the 25% offer fraction and
+    // the existing minimum one-unit offer threshold.
+    const batchId='BATCH-ALL-SITE:'+site.siteId,quantity=5000+(index%17);
     state.simulation.playerCountryId=cid;
     state.simulation.session=state.simulation.session||{};
     state.simulation.session.playerCountryId=cid;
