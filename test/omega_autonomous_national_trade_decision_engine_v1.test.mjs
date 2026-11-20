@@ -173,6 +173,7 @@ function createRuntime(options = {}) {
       return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
     },
     settlementValues(buyerId, sellerId, quantity, unitPrice) {
+      if (options.fxUnavailable) return { buyerValue: null, sellerValue: null, fx: null };
       return { buyerValue: quantity * unitPrice, sellerValue: quantity * unitPrice, fx: 1 };
     }
   };
@@ -265,6 +266,9 @@ test('runs PLAN, one market-intelligence sync, then one feasible bilateral propo
   const duplicate = await runtime.process('AUS', 3);
   assert.equal(duplicate.status, 'ALREADY_PROCESSED');
   assert.equal(runtime.metrics.proposalCalls, 1);
+  const afterCooldown = await runtime.process('AUS', 28);
+  assert.equal(afterCooldown.status, 'HOLD');
+  assert.equal(runtime.metrics.proposalCalls, 1, 'the existing pending proposal must not be duplicated');
 });
 
 test('default rollout is read-only: it saves a ranked plan without syncing market data or sending proposals', async () => {
@@ -339,6 +343,44 @@ test('requires observed diplomacy and respects existing embargo/war/sanctions ev
   delete runtime.state.foreign.MEX.relations.AUS;
   const result = await runtime.process('AUS', 1);
   assert.equal(result.status, 'HOLD');
+  assert.equal(runtime.metrics.proposalCalls, 0);
+});
+
+test('refuses to trade when the observed diplomatic relationship is at war or sanctioned', async () => {
+  const runtime = createRuntime();
+  runtime.state.foreign.AUS.relations.CAN.war_state = true;
+  runtime.state.foreign.AUS.relations.MEX.sanctions = true;
+  const result = await runtime.process('AUS', 1);
+  assert.equal(result.status, 'HOLD');
+  assert.equal(result.reason, 'NO_KNOWN_FEASIBLE_TRADE_NEED_OR_SURPLUS');
+  assert.equal(runtime.metrics.proposalCalls, 0);
+});
+
+test('refuses imports when the required FX settlement value is unknown', async () => {
+  const runtime = createRuntime({ fxUnavailable: true });
+  const result = await runtime.process('AUS', 1);
+  assert.equal(result.status, 'HOLD');
+  assert.equal(runtime.metrics.proposalCalls, 0);
+  assert.equal(runtime.metrics.syncCalls, 0);
+});
+
+test('plans an export only against a known partner shortage and preserves the seller-side reserve', async () => {
+  const runtime = createRuntime();
+  const own = runtime.state.resource.AUS.demandRuntime.byResource.iron_ore;
+  own.spendableStockAfter = 1000;
+  runtime.state.resource.CAN.demandRuntime.byResource.iron_ore = {
+    resourceId: 'iron_ore', status: 'SHORTAGE', demandPerDay: 2,
+    spendableStockAfter: 0, pendingImportQuantity: 0,
+    unresolvedImportRequestCount: 0, stockCoverageTargetDays: 30,
+    procurementScore: 0.8, priority: 4
+  };
+  const result = await runtime.process('AUS', 1);
+  assert.equal(result.status, 'PLANNED_READ_ONLY');
+  const candidate = runtime.context.Omega.AutonomousNationalTradeDecisionV1
+    .getDecisionPlan('AUS').candidates.find(row => row.direction === 'EXPORT');
+  assert.ok(candidate);
+  assert.equal(candidate.targetCountryId, 'CAN');
+  assert.equal(candidate.quantityPerDelivery, 60);
   assert.equal(runtime.metrics.proposalCalls, 0);
 });
 
