@@ -410,14 +410,44 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                   });
                   if (identityRegistry && typeof identityRegistry.resolveCountry === 'function') {
                     const originalIdentityResolver = identityRegistry.resolveCountry;
+                    let identityResolverCallCount = 0;
                     try {
                       identityRegistry.resolveCountry = function() {
+                        const callIndex = identityResolverCallCount++;
+                        const firstArgument = arguments.length ? arguments[0] : null;
+                        const argumentText = firstArgument == null ? null : String(firstArgument);
+                        if (callIndex < 80) {
+                          try {
+                            console.info('[OMEGA_ANDROID_IDENTITY_CALL]' + JSON.stringify({
+                              index:callIndex,argument:argumentText,
+                              argumentType:typeof firstArgument,
+                              stack:String(new Error().stack || '').split('\\n').slice(0,5).join('|')
+                            }));
+                          } catch (_) {}
+                        }
                         try {
-                          return originalIdentityResolver.apply(this,arguments);
+                          const resolved = originalIdentityResolver.apply(this,arguments);
+                          if (callIndex < 80) {
+                            try {
+                              console.info('[OMEGA_ANDROID_IDENTITY_RESULT]' + JSON.stringify({
+                                index:callIndex,argument:argumentText,
+                                id:resolved && resolved.id || null,
+                                status:resolved && resolved.status || null
+                              }));
+                            } catch (_) {}
+                          }
+                          return resolved;
                         } catch (error) {
+                          try {
+                            console.error('[OMEGA_ANDROID_IDENTITY_THROW]' + JSON.stringify({
+                              index:callIndex,argument:argumentText,
+                              error:String(error && error.message || error),
+                              stack:String(error && error.stack || '').split('\\n').slice(0,7).join('|')
+                            }));
+                          } catch (_) {}
                           recordPerfFailure('identityResolver.resolveCountry.throw',error,{
                             argumentCount:arguments.length,
-                            firstArgument:arguments.length ? String(arguments[0]) : null,
+                            firstArgument:argumentText,
                             resolverSource:String(originalIdentityResolver).slice(0,1800)
                           });
                           throw error;
