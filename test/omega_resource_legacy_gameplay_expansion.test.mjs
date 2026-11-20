@@ -21,8 +21,11 @@ assert.equal(canonical.sites.length, 315);
 assert.equal(canonicalIds.size, 315);
 assert.equal(sites.filter(s => canonicalIds.has(s.siteId)).length, 65, 'the original 65 records remain in canonical source data');
 assert.equal(sites.filter(s => !canonicalIds.has(s.siteId)).length, 50, 'the next 50 are additive runtime records, not source-file overwrites');
-const canonicalLegacyRows = canonical.sites.filter(s => s.runtime?.identityAuthority === 'LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
-assert.equal(canonicalLegacyRows.length, 65, 'the original 65 gameplay records remain in the canonical file');
+// Some canonical legacy sites were later reconciled under a newer identity-authority label.
+// Their source identity must remain present; the legacy expansion IDs are the preservation contract.
+const canonicalLegacyRows = canonical.sites.filter(s => ids.has(s.siteId));
+assert.equal(canonicalLegacyRows.length, 65, 'the original 65 gameplay site identities remain in the canonical file');
+assert.equal(new Set(canonicalLegacyRows.map(s => s.siteId)).size, 65, 'all 65 canonical legacy identities remain unique');
 assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === true && !s.runtime?.aliasOfSiteId).length, 55, '55 original physical map sites are independently eligible');
 assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === false || s.runtime?.aliasOfSiteId).length, 10, '10 aliases are retained but not independently executable');
 const master = read('resource_site_master_registry_v1.json');
