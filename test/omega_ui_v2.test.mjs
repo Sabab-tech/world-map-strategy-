@@ -1447,7 +1447,7 @@ test('application shell exports explicit mount and contains only five intended g
   const app = globalThis.OmegaUIV2App;
   assert.ok(app);
   assert.equal(typeof app.mount,'function');
-  assert.deepEqual(app.destinations,['map','overview','government','economy','more','industry','reports','religion']);
+  assert.deepEqual(app.destinations,['map','overview','government','economy','more','industry','reports','religion','autonomous-development']);
   assert.equal(globalThis.OmegaUIV2Navigation.governmentDestinations.length,2);
 });
 
@@ -3909,7 +3909,7 @@ test('market presentation keeps raw, factory-role and food lanes separate and us
       'index.html must load ' + script + ' in dependency order for static/offline sessions');
     previousBlackMarketScriptPosition = position;
   }
-  assert.equal(offlineShellCacheVersion(sw),130,
+  assert.equal(offlineShellCacheVersion(sw),131,
     'Autonomous trade, Resource Research and identity runtime changes must invalidate the previously cached v129 shell');
   for (const asset of [
     './omega_global_trade_system.js',
