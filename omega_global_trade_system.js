@@ -447,7 +447,7 @@ function captureStockFlowPeriod(stateTransaction) {
       requestId=String(request.requestId||'').trim(),buyerId=canonical(request.countryId);
     const ledger=countryValue(seller,'trade.globalTradeLedger.settlements');
     const settledIds=new Set((Array.isArray(ledger)?ledger:[]).filter(row=>String(row.status||'').toUpperCase()==='SETTLED').map(row=>String(row.requestId||'')));
-    let quantity=0,authorizedAgreement=false,authorizationReason=null;const agreementIds=[];
+    let quantity=0,authorizedAgreement=false,authorizedUnitPrice=null,authorizationReason=null;const agreementIds=[];
     for(const contract of rows){
       if(!contract||!contract.agreementId||token(contract.resourceId)!==token(resourceId))continue;
       const role=id(contract.role),sellerId=canonical(contract.sellerCountryId||seller),
@@ -460,11 +460,25 @@ function captureStockFlowPeriod(stateTransaction) {
         const tolerance=Math.max(0,Math.min(50,num(contract.quantityTolerancePct)||0))/100;
         const allowedMin=deliveryQuantity*(1-tolerance);
         const allowedMax=deliveryQuantity*(1+tolerance);
-        const requestedQuantity=num(request.quantity);
+        const requestedQuantity=num(request.quantity),requestedPrice=num(request.unitPrice);
         const dueNow=deliveryRequest===requestId || !deliveryRequest && due!==null && due<=currentTurn+1;
-        if(buyerId&&canonical(contract.partnerCountryId)===buyerId&&deliveryRequest===requestId&&dueNow&&
-          requestedQuantity!==null&&requestedQuantity+1e-8>=allowedMin&&requestedQuantity<=allowedMax+1e-8&&status==='ACTIVE'){
+        const identityAndQuantityMatch=!!buyerId&&canonical(contract.partnerCountryId)===buyerId&&
+          deliveryRequest===requestId&&dueNow&&requestedQuantity!==null&&
+          requestedQuantity+1e-8>=allowedMin&&requestedQuantity<=allowedMax+1e-8&&status==='ACTIVE';
+        // Fixed-price contracts can fall back to their ratified price for old
+        // saves. Market-linked deliveries require the price snapshot reserved
+        // for this exact request; the live market may have changed since then.
+        const expectedPrice=num(contract.currentRequestUnitPrice) ??
+          (id(contract.priceModel||'FIXED')==='FIXED'?num(contract.unitPrice):null);
+        const priceMatches=expectedPrice!==null&&requestedPrice!==null&&
+          Math.abs(requestedPrice-expectedPrice)<=Math.max(1e-8,Math.abs(expectedPrice)*1e-8);
+        if(identityAndQuantityMatch&&priceMatches){
           authorizedAgreement=true;
+          authorizedUnitPrice=expectedPrice;
+        }else if(identityAndQuantityMatch&&!priceMatches){
+          authorizationReason=expectedPrice===null
+            ?'BILATERAL_CONTRACT_PRICE_AUTHORIZATION_UNKNOWN'
+            :'BILATERAL_CONTRACT_PRICE_AUTHORIZATION_MISMATCH';
         }else authorizationReason='BILATERAL_GOVERNMENT_CONTRACT_AUTHORIZATION_MISMATCH';
         continue;
       }
@@ -475,7 +489,8 @@ function captureStockFlowPeriod(stateTransaction) {
       if(due!==null&&due<=currentTurn+1){quantity+=deliveryQuantity;agreementIds.push(agreementId);}
     }
     return{quantity:Number(quantity.toFixed(8)),agreementIds:agreementIds,
-      status:agreementIds.length?'RESERVED':'NO_ACTIVE_COMMITMENTS',authorizedAgreement:authorizedAgreement,authorizationReason:authorizationReason};
+      status:agreementIds.length?'RESERVED':'NO_ACTIVE_COMMITMENTS',authorizedAgreement:authorizedAgreement,
+      authorizedUnitPrice:authorizedUnitPrice,authorizationReason:authorizationReason};
   }
 
   function sellerReviewDecision(request){
@@ -558,7 +573,7 @@ function captureStockFlowPeriod(stateTransaction) {
       // authoritative seller batch debit still revalidate real available stock
       // before any inventory transfer or Treasury settlement can complete.
       result.quantityApproved=result.quantity;
-      result.unitPrice=offered;
+      result.unitPrice=contractReserve.authorizedUnitPrice;
       result.fxRate=fxRate(buyer,seller);
       if(result.fxRate===null){result.decision='WAITING_DATA';result.reason='SETTLEMENT_FX_NOT_OBSERVED';return result;}
       result.decision='ACCEPT';
