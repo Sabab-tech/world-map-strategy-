@@ -22,6 +22,8 @@ on:
       - "omega_resource_industrial_network_v1.js"
       - "omega_global_trade_system.js"
       - "test/omega_global_trade_system.test.mjs"
+      - "omega-offline-map-sw.js"
+      - "test/omega_ui_v2.test.mjs"
       - "package.json"
       - ".github/workflows/omega-phase6-population-capacity.yml"
   push:
@@ -46,6 +48,8 @@ on:
       - "omega_resource_industrial_network_v1.js"
       - "omega_global_trade_system.js"
       - "test/omega_global_trade_system.test.mjs"
+      - "omega-offline-map-sw.js"
+      - "test/omega_ui_v2.test.mjs"
       - "package.json"
       - ".github/workflows/omega-phase6-population-capacity.yml"
   workflow_dispatch:
@@ -69,5 +73,7 @@ jobs:
         run: node --test test/omega_phase6_national_population_capacity_runtime_v1.test.mjs test/omega_simulation_phase6_save_provenance.test.mjs
       - name: Verify durable bilateral shipment lifecycle
         run: node --check omega_global_trade_system.js && node test/omega_global_trade_system.test.mjs
+      - name: Verify offline Phase 6 runtime and cache invalidation
+        run: node --check omega-offline-map-sw.js && node --test --test-name-pattern="market presentation keeps raw, factory-role and food lanes separate and uses offline vector art" test/omega_ui_v2.test.mjs
       - name: Verify existing population-demand and factory authorities
         run: npm run test:resource-demand && npm run test:country-factory-starting-baseline
