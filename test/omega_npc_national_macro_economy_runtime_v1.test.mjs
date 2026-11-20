@@ -375,8 +375,8 @@ function staticRuntimeAfterTrade(runtimeIndex,tradeIndex){return runtimeIndex>tr
 
 
 test('NPC macro trade planning has a read-only per-country resource-demand source', () => {
-  const macro = read('omega_npc_national_macro_economy_runtime_v1.js');
-  const demand = read('omega_resource_national_demand_runtime_v1.js');
+  const macro = readFileSync('omega_npc_national_macro_economy_runtime_v1.js', 'utf8');
+  const demand = readFileSync('omega_resource_national_demand_runtime_v1.js', 'utf8');
   assert.match(macro, /demandApi\.evaluateDemand\(countryId\)/);
   assert.match(demand, /evaluateDemand:\s*evaluateDemand/);
   const start = demand.indexOf('function evaluateDemand(countryId)');
