@@ -1106,7 +1106,7 @@
       startTurn: turn(), endTurn: turn() + durationTurns,
       nextDeliveryTurn: turn() + intervalTurns,
       plannedDeliveryCount: deliveries, deliveredQuantity: 0, completedDeliveries: 0,
-      currentRequestId: null, failedDeliveries: 0, deliveries: [],
+      currentRequestId: null, currentRequestUnitPrice: null, failedDeliveries: 0, deliveries: [],
       status: 'ACTIVE', renewalStatus: 'NOT_DUE', createdTurn: turn(), updatedTurn: turn(),
       termsProvenance: { source: 'BILATERAL_MUTUAL_ACCEPTANCE', proposalId: proposal.proposalId }
     };
@@ -1214,10 +1214,23 @@
       if (id(sellerMirror.status) !== 'ACTIVE' ||
           sellerMirror.currentRequestId && String(sellerMirror.currentRequestId) !== String(request.requestId))
         return { status: 'BLOCKED', reason: 'BUYER_SELLER_CONTRACT_STATE_MISMATCH' };
-      if (!sellerMirror.currentRequestId) {
+      var reservedRequestPrice = num(contract.currentRequestUnitPrice);
+      if (reservedRequestPrice === null) {
+        reservedRequestPrice = id(contract.priceModel || 'FIXED') === 'FIXED'
+          ? num(contract.unitPrice) : num(request.unitPrice);
+        if (reservedRequestPrice === null || reservedRequestPrice <= 0)
+          return { status: 'BLOCKED', reason: 'CONTRACT_DELIVERY_PRICE_UNKNOWN' };
+        var buyerPriceMirror = unwrap(dispatch('trade', 'OMEGA_BILATERAL_UPDATE_CONTRACT', c, {
+          agreementId: contract.agreementId, patch: { currentRequestUnitPrice: reservedRequestPrice }
+        }));
+        if (!buyerPriceMirror || buyerPriceMirror.accepted !== true)
+          return { status: 'WAITING', reason: 'BUYER_DELIVERY_PRICE_MIRROR_RECOVERY_FAILED' };
+        contract = Object.assign({}, contract, { currentRequestUnitPrice: reservedRequestPrice });
+      }
+      if (!sellerMirror.currentRequestId || num(sellerMirror.currentRequestUnitPrice) === null) {
         var sellerRequestMirror = unwrap(dispatch('trade', 'OMEGA_BILATERAL_UPDATE_CONTRACT', partner, {
           agreementId: contract.agreementId, patch: { currentRequestId: request.requestId,
-            currentRequestUnitPrice: num(contract.currentRequestUnitPrice) ?? num(request.unitPrice),
+            currentRequestUnitPrice: reservedRequestPrice,
             lastRequestTurn: contract.lastRequestTurn || turn() }
         }));
         if (!sellerRequestMirror || sellerRequestMirror.accepted !== true)
@@ -1306,7 +1319,7 @@
       created = { accepted: false, reason: String(error && error.message || error) };
     }
     if (!created || created.accepted !== true) {
-      mirrorContract(c, partner, contract.agreementId, { currentRequestId: null, status: 'AT_RISK',
+      mirrorContract(c, partner, contract.agreementId, { currentRequestId: null, currentRequestUnitPrice: null, status: 'AT_RISK',
         lastFailureReason: created && created.reason || 'TRADE_REQUEST_CREATE_FAILED',
         failedDeliveries: (num(contract.failedDeliveries) || 0) + 1, retryEligibleTurn: turn() + (num(contract.intervalTurns) || 1) });
       return { status: 'DELIVERY_REQUEST_FAILED', reason: created && created.reason || 'TRADE_REQUEST_CREATE_FAILED' };
