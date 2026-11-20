@@ -242,7 +242,7 @@ test('runs PLAN, one market-intelligence sync, then one feasible bilateral propo
   const runtime = createRuntime({ enablePhase2: true });
   runtime.state.resource.AUS.demandRuntime.byResource.copper_ore = {
     resourceId: 'copper_ore', status: 'SHORTAGE', demandPerDay: 1,
-    spendableStockAfter: 2, pendingImportQuantity: 0,
+    spendableStockAfter: 29, pendingImportQuantity: 0,
     unresolvedImportRequestCount: 0, stockCoverageTargetDays: 30,
     procurementScore: 0.5, priority: 3, unmetDemand: 1
   };
