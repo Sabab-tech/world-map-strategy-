@@ -3,7 +3,7 @@
  */
 "use strict";
 // The install handler refreshes cached core assets with fetch({ cache: "reload" }); keep the stable shell namespace.
-const CACHE_NAME = "omega-offline-atlas-shell-v130";
+const CACHE_NAME = "omega-offline-atlas-shell-v131";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
@@ -125,6 +125,7 @@ const CORE_ASSETS = [
   "./omega_ui_v2/screens/home-affairs.js",
   "./omega_ui_v2/screens/police-fleet.js",
   "./omega_ui_v2/screens/reports.js",
+  "./omega_ui_v2/screens/autonomous-development.js",
   "./omega_ui_v2/app.js",
   "./omega_ui_v2/integration.js",
   "./omega_ui_v2/world-command-dock.js",

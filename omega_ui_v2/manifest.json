@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "app": "OMEGA",
   "namespace": "omega_ui_v2",
-  "rolloutStatus": "GLOBAL_ATLAS_COMMAND_DOCK_AND_OVERVIEW_MORE_INTEGRATED; FULL_ANDROID_AND_VISUAL_ACCEPTANCE_PENDING",
+  "rolloutStatus": "AUTONOMOUS_DEVELOPMENT_COMMAND_CENTER_INTEGRATED; LIVE_RUNTIME_AND_DEVICE_ACCEPTANCE_REQUIRED",
   "preservationPolicy": "ADDITIVE_ONLY",
   "designDocument": "docs/OMEGA_UI_V2_DESIGN_SPEC_V1.md",
   "globalNavigation": [
@@ -29,7 +29,8 @@
     "policeFleet": "omega_ui_v2/screens/police-fleet.js",
     "integration": "omega_ui_v2/integration.js",
     "worldCommandDock": "world-command-dock.js",
-    "religion": "app.js#religion (existing canonical Religion & Ideology handoff)"
+    "religion": "app.js#religion (existing canonical Religion & Ideology handoff)",
+    "autonomousDevelopment": "omega_ui_v2/screens/autonomous-development.js"
   },
   "sharedStyles": "omega_ui_v2/omega-ui-v2.css",
   "additionalStyles": [
@@ -56,7 +57,7 @@
     "countryIsolation": true,
     "preserveLegacyFiles": true
   },
-  "screenCoverageStatus": "ATLAS_VISUAL_SYSTEM_AND_GLOBAL_ROUTES_INTEGRATED; DEVICE_ACCEPTANCE_REQUIRED",
+  "screenCoverageStatus": "ATLAS_COMMAND_AND_AUTONOMOUS_DEVELOPMENT_SCREEN_INTEGRATED; DEVICE_ACCEPTANCE_REQUIRED",
   "integrationPolicy": {
     "entry": "omega_ministry_entry_v3.js",
     "trigger": "Single global Atlas Command dock; legacy government entry retained hidden for compatibility",
