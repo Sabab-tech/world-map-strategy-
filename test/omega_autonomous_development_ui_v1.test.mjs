@@ -64,7 +64,7 @@ test('missing runtime evidence remains UNKNOWN, not a fabricated healthy zero',(
   assert.equal(model.scheduler.state,'unknown');assert.equal(model.autonomy.state,'unknown');
   assert.equal(model.projects.available,false);
   const root={innerHTML:''};API.render(root,{countryId:'BGD'});
-  assert.match(root.innerHTML,/PARTIAL TELEMETRY/);
+  assert.match(root.innerHTML,/Partial telemetry/);
   assert.match(root.innerHTML,/Project data not exposed/);
   assert.match(root.innerHTML,/Not reported/);
  }finally{if(previous===undefined)delete globalThis.Omega;else globalThis.Omega=previous;}
