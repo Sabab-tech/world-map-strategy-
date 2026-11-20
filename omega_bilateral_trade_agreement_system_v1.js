@@ -349,11 +349,11 @@
         if (countryId === canonical(player) || countryId === canonical(target)) return;
         var demand = getProductDemand(countryId, rid), unmet = num(demand && demand.unmetDemand),
           daily = num(demand && (demand.consumerDemandPerDay ?? demand.demandPerDay ?? demand.demand));
-        if (unmet !== null && unmet <= 0 && (daily === null || daily <= 0)) return;
         var pending = requestIdList(countryId).filter(function (row) {
           return canonical(row.targetCountryId || row.sellerCountryId) === canonical(target) &&
             token(row.resourceId) === token(rid) && ['SENT','COUNTER_OFFERED','ACCEPTED','SETTLEMENT_PREPARING','PENDING_SETTLEMENT'].indexOf(id(row.status)) >= 0;
         });
+        if ((unmet === null || unmet <= 0) && (daily === null || daily <= 0) && !pending.length) return;
         // Expose only a potential buyer country. Exact national demand and
         // pending bid terms are private commercial intelligence and stay inside
         // the country AI rather than its player-facing market report.
@@ -395,7 +395,7 @@
         }).map(function (row) {
           return [row.requestId || null, num(row.quantity), num(row.unitPrice), id(row.status), num(row.createdTurn)];
         }).sort(function (a, b) { return String(a[0]).localeCompare(String(b[0])); });
-        if (unmet !== null && unmet <= 0 && (daily === null || daily <= 0) && !requests.length) return;
+        if ((unmet === null || unmet <= 0) && (daily === null || daily <= 0) && !requests.length) return;
         // This digest captures private demand and offer changes without
         // returning those values or individual bids in the player-facing report.
         competingBuyerSources.push([rid, countryId, unmet, daily, requests]);
