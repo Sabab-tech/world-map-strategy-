@@ -638,19 +638,6 @@
             card('Budget balance',model.budgetBalance === null ? 'Not recorded' : money(model.budgetBalance,'USD'),'Existing Finance budget balance field',null) +
           '</div>' +
         '</section>' +
-        '<section class="omega-economy-section omega-economy-actions-section">' +
-          '<div class="omega-economy-section-heading"><div><span>04 / ECONOMIC CONTROL</span><h2>Markets, contracts & transactions</h2></div></div>' +
-          '<div class="omega-economy-action-grid">' +
-            actionCard('Commodity Market','Buy, sell and monitor recorded commodity offers','market',
-              'data-omega-v2-open-trade-section="market" data-omega-v2-market-tab="commodities"',commodityImage,'Open market') +
-            actionCard('Black Market','Restricted and shadow-market operations','black',
-              'data-omega-v2-open-trade-section="market" data-omega-v2-market-tab="black-market"','','Open black market') +
-            actionCard('Transactions','Open the existing read-only trade transaction ledger','transaction',
-              'data-omega-v2-open-trade-section="market" data-omega-v2-market-tab="transactions"','','Open transactions') +
-            actionCard('Trade Settlement','Review bilateral import and export agreements','settlement',
-              'data-omega-v2-open-trade-section="settlement"',settlementImage,'View agreements') +
-          '</div>' +
-        '</section>' +
         '<footer class="omega-economy-footer">Read-only overview · no new ledger, no online data refresh, and no world-wide country scan is performed while this page opens.</footer>' +
       '</section>';
 

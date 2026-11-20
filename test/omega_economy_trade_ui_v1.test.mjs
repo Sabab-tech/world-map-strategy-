@@ -117,11 +117,10 @@ test('Economy Overview keeps Treasury cash, domestic currency and FX reserves se
   assert.equal(rendered.ok,true);
   assert.match(root.innerHTML,/Economy Overview/);
   assert.match(root.innerHTML,/Foreign-exchange reserves/);
-  assert.match(root.innerHTML,/Trade Settlement/);
   assert.match(root.innerHTML,/Trade dependency profile/);
   assert.match(root.innerHTML,/Largest overall trade partner/);
-  assert.match(root.innerHTML,/Black Market/);
-  assert.match(root.innerHTML,/Transactions/);
+  assert.doesNotMatch(root.innerHTML,/Commodity Market|Black Market|Transactions|Trade Settlement/,
+    'market, transaction and settlement actions are owned by the Trade & Commerce ministry');
   assert.doesNotMatch(root.innerHTML,/<canvas|recharts|data-omega-v2-economy-tab/i);
   assert.match(root.innerHTML,/No baseline/, 'no historical percent change is invented');
 });
@@ -245,6 +244,10 @@ test('Trade Settlement renders without a domain data record and does not merge s
     classList:{ add(){} }, addEventListener(){}, contains(){ return true; }, innerHTML:''
   };
   globalThis.OmegaUIV2MinistryDetail.render(dashboard,{ ministryId:'trade', countryId:'BGD', section:'dashboard' });
+  assert.match(dashboard.innerHTML,/Commodity Market/);
+  assert.match(dashboard.innerHTML,/Black Market/);
+  assert.match(dashboard.innerHTML,/Transactions/);
+  assert.match(dashboard.innerHTML,/Trade Settlement/);
   assert.match(dashboard.innerHTML,/data-omega-v2-ministry-section="market"/);
   assert.match(dashboard.innerHTML,/data-omega-v2-trade-market-tab="black-market"/);
   assert.match(dashboard.innerHTML,/data-omega-v2-ministry-section="settlement"/);
