@@ -21,6 +21,7 @@ on:
       - "omega_resource_national_demand_runtime_v1.js"
       - "omega_resource_industrial_network_v1.js"
       - "omega_global_trade_system.js"
+      - "test/omega_global_trade_system.test.mjs"
       - "package.json"
       - ".github/workflows/omega-phase6-population-capacity.yml"
   push:
@@ -44,6 +45,7 @@ on:
       - "omega_resource_national_demand_runtime_v1.js"
       - "omega_resource_industrial_network_v1.js"
       - "omega_global_trade_system.js"
+      - "test/omega_global_trade_system.test.mjs"
       - "package.json"
       - ".github/workflows/omega-phase6-population-capacity.yml"
   workflow_dispatch:
@@ -65,5 +67,7 @@ jobs:
         run: node --check omega_phase6_national_population_capacity_runtime_v1.js
       - name: Verify national population, consumption and capacity contracts
         run: node --test test/omega_phase6_national_population_capacity_runtime_v1.test.mjs test/omega_simulation_phase6_save_provenance.test.mjs
+      - name: Verify durable bilateral shipment lifecycle
+        run: node --check omega_global_trade_system.js && node test/omega_global_trade_system.test.mjs
       - name: Verify existing population-demand and factory authorities
         run: npm run test:resource-demand && npm run test:country-factory-starting-baseline
