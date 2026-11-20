@@ -353,10 +353,11 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(exportOutbox.decision.decisionFactors.buyerGrossAvailableForeignCurrency, null);
   assert.equal(exportOutbox.decision.privateEvidence.buyerTreasury, 'NOT_DISCLOSED_TO_COUNTERPARTY');
   const alternativeEvidence = exportOutbox.decision.decisionFactors.alternativeMarketEvidence;
-  assert.deepEqual(alternativeEvidence.buyers, [],
-    'competitor identities and their private buyer bids must not be disclosed');
-  assert.equal(alternativeEvidence.bestAlternativeBuyerPrice, null);
-  assert.equal(alternativeEvidence.competingBuyerBidDisclosure, 'PRIVATE');
+  assert.deepEqual(alternativeEvidence.suppliers, [],
+    'the target buyer must not disclose its competing supplier identities or private quotations to the seller');
+  assert.equal(alternativeEvidence.bestAlternativePrice, null);
+  assert.equal(alternativeEvidence.bestAlternativeBuyerCost, null);
+  assert.equal(alternativeEvidence.competingSupplierQuoteDisclosure, 'PRIVATE');
   const agreementId = globalThis.Game.state.trade.BGD.bilateralContracts[0].agreementId;
   const buyerContract = globalThis.Game.state.trade.BGD.bilateralContracts[0];
   const sellerContract = globalThis.Game.state.trade.SAU.bilateralContracts[0];
