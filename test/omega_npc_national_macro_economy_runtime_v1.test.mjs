@@ -350,7 +350,7 @@ test('static shell, server bootstrap and offline cache load the same runtime/con
   const serverTrade=serverBootstrap.indexOf("'omega_global_trade_system.js'");
   assert.ok(staticRuntimeAfterTrade(staticIndex,staticTrade));
   assert.ok(serverRuntime>serverTrade);
-  assert.match(offlineShell,/omega-offline-atlas-shell-v127/);
+  assert.match(offlineShell,/omega-offline-atlas-shell-v128/);
   assert.match(indexHtml,/omega_national_accounts_runtime_v1\.js/);
   assert.match(serverBootstrap,/omega_national_accounts_runtime_v1\.js/);
   assert.match(offlineShell,/\.\/national_accounts_rules_v1\.json/);
