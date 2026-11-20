@@ -346,11 +346,16 @@ test('checkpoint deltas never aggregate different resource or physical units', a
 test('static shell, server bootstrap and offline cache load the same runtime/config',()=>{
   const staticIndex=indexHtml.indexOf('omega_npc_national_macro_economy_runtime_v1.js');
   const staticTrade=indexHtml.indexOf('omega_global_trade_system.js');
+  const staticBilateral=indexHtml.indexOf('omega_bilateral_trade_agreement_system_v1.js');
   const serverRuntime=serverBootstrap.indexOf("'omega_npc_national_macro_economy_runtime_v1.js'");
   const serverTrade=serverBootstrap.indexOf("'omega_global_trade_system.js'");
+  const serverBilateral=serverBootstrap.indexOf("'omega_bilateral_trade_agreement_system_v1.js'");
   assert.ok(staticRuntimeAfterTrade(staticIndex,staticTrade));
+  assert.ok(staticBilateral>staticTrade,'browser boot must load Bilateral Trade after its Global Trade dependency');
   assert.ok(serverRuntime>serverTrade);
-  assert.match(offlineShell,/omega-offline-atlas-shell-v128/);
+  assert.ok(serverBilateral>serverTrade,'server boot must load the same Bilateral Trade runtime');
+  assert.match(offlineShell,/omega-offline-atlas-shell-v129/);
+  assert.match(offlineShell,/omega_bilateral_trade_agreement_system_v1\.js/);
   assert.match(indexHtml,/omega_national_accounts_runtime_v1\.js/);
   assert.match(serverBootstrap,/omega_national_accounts_runtime_v1\.js/);
   assert.match(offlineShell,/\.\/national_accounts_rules_v1\.json/);

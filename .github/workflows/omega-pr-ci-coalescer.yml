@@ -7,7 +7,8 @@ permissions:
   contents: read
 concurrency:
   group: omega-pr-ci-coalescer-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  # Serialize cleanup runs; delayed synchronize events must not cancel the latest-head cleanup.
+  cancel-in-progress: false
 jobs:
   cancel-superseded-runs:
     if: github.event.pull_request.head.repo.full_name == github.repository
@@ -17,11 +18,20 @@ jobs:
       - name: Cancel obsolete runs for this PR branch
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
         shell: bash
         run: |
           set -euo pipefail
+          # Pull request synchronize events can arrive out of order. Resolve the
+          # branch's current head at execution time instead of trusting the
+          # possibly stale SHA carried by this event.
+          HEAD_REF_ENCODED="${HEAD_REF//\//%2F}"
+          HEAD_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/branches/${HEAD_REF_ENCODED}" --jq '.commit.sha')"
+          if [[ -z "${HEAD_SHA}" ]]; then
+            echo "::error::Unable to resolve the current PR branch head"
+            exit 1
+          fi
+          echo "Cleaning obsolete PR runs; current branch head is ${HEAD_SHA}"
           mapfile -t stale_run_ids < <(
             gh run list --repo "$GITHUB_REPOSITORY" --branch "$HEAD_REF" --limit 1000 --json databaseId,status,headSha,workflowName |
               jq -r --arg current "$HEAD_SHA" '.[] | select(.headSha != $current and .status != "completed" and (.workflowName != "OMEGA Private Enterprise Real Browser E2E" or .status == "queued" or .status == "pending")) | .databaseId'

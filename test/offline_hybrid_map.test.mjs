@@ -180,6 +180,7 @@ test("browser shell resources are cached locally for offline relaunch", () => {
   assert.match(serviceWorker, /\.\/omega_ui_v2\/omega-ui-v2\.css/);
   assert.match(serviceWorker, /\.\/omega_ui_v2\/ministry-visual-registry\.js/);
   assert.match(serviceWorker, /omega_finance_ministry_runtime_v1\.js/);
+  assert.match(serviceWorker, /omega_bilateral_trade_agreement_system_v1\.js/);
   assert.doesNotMatch(serviceWorker, /"\.\/omega_finance_ministry_v1\.css"/, 'legacy finance CSS is not eagerly cached');
   assert.match(serviceWorker, /economy_global_profiles_v1\.json/);
   assert.match(serviceWorker, /finance_runtime_rules_v1\.json/);
