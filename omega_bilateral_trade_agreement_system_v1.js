@@ -875,22 +875,25 @@
     // Keep the evaluated country's competing offers and demand private.
     // A seller must not learn a buyer's alternative supplier quotations, while
     // a buyer must not learn a seller's competing buyer identities or bids.
+    // Redact by the viewer's contractual role, rather than relying on which
+    // side happened to be the evaluator. This also creates explicit empty
+    // arrays when the private market source has no observations.
     var evaluator = canonical(proposal && proposal.targetCountryId);
     var seller = canonical(proposal && proposal.sellerCountryId);
     if (evaluator && viewer && evaluator !== viewer && safe.decisionFactors &&
         safe.decisionFactors.alternativeMarketEvidence) {
       var alternatives = safe.decisionFactors.alternativeMarketEvidence;
-      if (evaluator === seller) {
-        alternatives.buyers = [];
-        alternatives.bestAlternativeBuyerPrice = null;
-        alternatives.competingBuyerBidDisclosure = 'PRIVATE';
-      } else if (evaluator === buyer) {
+      if (viewer === seller) {
         alternatives.suppliers = [];
         alternatives.bestAlternativePrice = null;
         alternatives.bestAlternativeBuyerCost = null;
         alternatives.buyerCostCurrency = null;
         alternatives.competingSupplierQuoteDisclosure = 'PRIVATE';
         safe.decisionFactors.buyerDemandPerInterval = null;
+      } else if (viewer === buyer) {
+        alternatives.buyers = [];
+        alternatives.bestAlternativeBuyerPrice = null;
+        alternatives.competingBuyerBidDisclosure = 'PRIVATE';
       }
     }
     return safe;
