@@ -403,7 +403,11 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
           operationalStatus:site.operation.status,sourceStatus:site.sourceSiteRecord.status,sourceAuthority:'EXPANDED_SITE_REGISTRY',simulationTurn:1}}}));
       continue;
     }
-    const batchId='BATCH-ALL-SITE:'+site.siteId,quantity=100+(index%17);
+    // The smallest tradable recipe yield in the current catalog is 0.1%.
+    // Scheduled multi-turn processing can realize less than the headline recipe
+    // coefficient in this fixture; 20,000 source units leave margin above the
+    // existing 25% offer fraction and minimum one-unit offer threshold.
+    const batchId='BATCH-ALL-SITE:'+site.siteId,quantity=20000+(index%17);
     state.simulation.playerCountryId=cid;
     state.simulation.session=state.simulation.session||{};
     state.simulation.session.playerCountryId=cid;
@@ -465,7 +469,11 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
   assert.equal(allInitialShipments.length,activeSites.length,
     'every active deposit must have exactly one source-batch shipment before delivery');
   const lastEta=Math.max(1,...allInitialShipments.map(shipment=>Number(shipment.etaTurn)||1));
-  const processingTurnLimit=lastEta+maxActivePerCountry+5;
+  // Factory inputs are requisitioned and shipped in bounded scheduled batches.
+  // Keep enough game-calendar time for multiple low-yield cycles (for example,
+  // diamond -> sorted diamonds) to cross the existing minimum market-offer floor.
+  // This advances the real scheduler; it does not bypass shipment or cycle timing.
+  const processingTurnLimit=lastEta+maxActivePerCountry+20;
   for(let simulationTurn=1;simulationTurn<=processingTurnLimit;simulationTurn++){
     state.simulation.turn=simulationTurn;
     const daysPerTurn=Math.max(1,Math.round(Number(state.simulation.daysPerTurn)||1));
@@ -523,7 +531,30 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
       offerSourceRootsByCountry.set(cid,new Set());
       continue;
     }
-    assert.ok(offers.length>0,cid+': active producing country must publish at least one positive finished/raw market offer');
+    assert.ok(offers.length>0,cid+': active producing country must publish at least one positive finished/raw market offer; diagnostics='+
+      JSON.stringify({
+        inventory:rs&&rs.inventory||{},
+        rawWarehouse:rs&&rs.warehouse&&rs.warehouse.availableByResource||{},
+        processedWarehouse:rs&&rs.processedWarehouse&&rs.processedWarehouse.availableByResource||{},
+        factories:(state.economy[cid]&&state.economy[cid].productionAssets||[]).map(factory=>({
+          id:factory.id,capacity:factory.capacity,capacityPerDay:factory.capacityPerDay,
+          productionCapacity:factory.productionCapacity,throughput:factory.throughput,
+          employment:factory.employment,productionHealth:factory.productionHealth,
+          inputInventory:factory.inputInventory,inputBatchLots:factory.inputBatchLots
+        })),
+        cycles:rs&&rs.industrialNetwork&&rs.industrialNetwork.factoryProductionCycles||{},
+        cycleHistory:(rs&&rs.industrialNetwork&&rs.industrialNetwork.factoryProductionCycleHistory||[]).map(cycle=>({
+          factoryId:cycle.factoryId,productionQuantity:cycle.productionQuantity,
+          capacityPerDay:cycle.capacityPerDay,productivityPct:cycle.productivityPct,
+          productionConstraints:cycle.productionConstraints,inputQuantities:cycle.inputQuantities,
+          expectedOutputs:cycle.expectedOutputs,status:cycle.status
+        })),
+        batches:(rs&&rs.batches||[]).filter(row=>String(row.stage||'').toUpperCase()==='FINISHED'||
+          (row.sourceBatchIds||[]).some(id=>expectedRawBatchIds.has(String(id))))
+          .slice(-24).map(row=>({batchId:row.batchId,resourceId:row.resourceId,quantity:row.quantity,
+            remainingQuantity:row.remainingQuantity,stage:row.stage,status:row.status,sourceBatchIds:row.sourceBatchIds})),
+        offers:(state.trade[cid]&&state.trade[cid].offerBook)||[]
+      }));
     const roots=new Set();
     for(const offer of offers){
       assert.ok(Array.isArray(offer.batchAllocations)&&offer.batchAllocations.length>0,

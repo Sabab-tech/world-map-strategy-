@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0.0",
+  "enabled": true,
+  "autonomousProposals": false,
+  "autonomousCounteroffers": false,
+  "marketIntelligenceSyncEnabled": false,
+  "scheduler": {
+    "existingSchedulerOnly": true,
+    "tiers": [
+      "ACTIVE",
+      "MACRO"
+    ],
+    "priority": 75,
+    "playerCountryAutomation": false,
+    "perTurnNetworkIo": false
+  },
+  "limits": {
+    "maxResourceRows": 4,
+    "maxRelationshipCandidates": 8,
+    "maxSupplierRows": 3,
+    "maxCandidates": 3,
+    "maxMarketIntelligenceSyncsPerCountryTurn": 1,
+    "maxProposalsPerCountryTurn": 1,
+    "maxCounterofferEvaluationsPerCountryTurn": 1,
+    "maxExperienceAgreements": 24,
+    "maxExperiencePartners": 32,
+    "maxHistory": 32,
+    "maxMarketSupplierScansPerCountryVisit": 1
+  },
+  "policy": {
+    "targetCoverageDays": 30,
+    "exportReserveDays": 30,
+    "proposalDurationMonths": 12,
+    "deliveryIntervalDays": 30,
+    "maxPurchaseDays": 60,
+    "maxExportDeliveryDays": 30,
+    "marketAdjustmentPct": 0,
+    "quantityTolerancePct": 5,
+    "terminationPenaltyPct": 0,
+    "minimumRelationshipScore": 0.2,
+    "maxCounterPremiumPct": 5,
+    "minExportCounterPricePct": 95,
+    "proposalCooldownTurns": 25,
+    "decisionCooldownTurns": 25,
+    "emptyPlanCooldownTurns": 25,
+    "counterofferValidationDelayTurns": 1,
+    "counterofferRetryTurns": 5
+  }
+}
