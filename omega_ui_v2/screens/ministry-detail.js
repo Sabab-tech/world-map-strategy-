@@ -360,7 +360,7 @@
       '<div class="omega-trade-dashboard-grid">' +
         action('Commodity Market','Browse offers, buy or sell existing commodities',commodityIcon,'market','commodities',marketImage,'Open market') +
         action('Black Market','Restricted and shadow-market operations',blackIcon,'market','black-market','','Open black market') +
-        action('Transactions','Review existing financial transaction records',transactionIcon,'','','','Open transactions','treasury_finance') +
+        action('Transactions','Review the existing read-only world trade ledger',transactionIcon,'market','transactions','','Open transactions') +
         action('Trade Settlement','Review bilateral import and export agreements',settlementIcon,'settlement','','','Open agreements') +
       '</div>' +
       '<div class="omega-trade-dashboard-gallery">' +
@@ -395,7 +395,7 @@
     var domain = domainRecord(country, id);
     var allowedSections = id === 'trade' ? ['dashboard','settlement','market'] : SECTIONS.filter(function (key) { return key !== 'market' && key !== 'settlement'; });
     var section = allowedSections.indexOf(options.section) >= 0 ? options.section : 'dashboard';
-    var marketTab = options.marketTab === 'black-market' ? 'black-market' : 'commodities';
+    var marketTab = options.marketTab === 'black-market' ? 'black-market' : options.marketTab === 'transactions' ? 'transactions' : 'commodities';
     var rawRows = scalarRows(domain && domain.record);
     var categories = options.sectionData && Array.isArray(options.sectionData[section]) ? options.sectionData[section] : null;
     var content;
@@ -436,13 +436,14 @@
         '.omega-v2-trade-market-tabs button:disabled{opacity:.52;cursor:not-allowed;border-style:dashed}' +
         '@media(max-width:560px){.omega-v2-trade-market-tabs button{flex:1;min-width:0}}</style>' +
         '<section class="omega-v2-shell omega-v2-ministry-detail omega-v2-trade-market-page">' +
-        '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">TRADE & COMMERCE</div><h1 class="omega-v2-title">' + (marketTab === 'black-market' ? 'Black Market' : 'Market Commodities') + '</h1>' +
-        '<p class="omega-v2-subtitle">' + (marketTab === 'black-market' ? 'Shadow commerce, restricted supply, tariff arbitrage and evidence-based exposure.' : 'Raw resources, factory products, food products, international offers and recorded prices.') + '</p></div>' +
+        '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">TRADE & COMMERCE</div><h1 class="omega-v2-title">' + (marketTab === 'black-market' ? 'Black Market' : marketTab === 'transactions' ? 'Market Transactions' : 'Market Commodities') + '</h1>' +
+        '<p class="omega-v2-subtitle">' + (marketTab === 'black-market' ? 'Shadow commerce, restricted supply, tariff arbitrage and evidence-based exposure.' : marketTab === 'transactions' ? 'Read-only country requests, counterparty decisions and completed settlements.' : 'Raw resources, factory products, food products, international offers and recorded prices.') + '</p></div>' +
         '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-ministry-section="dashboard">Back to Trade & Commerce</button></header>' +
         '<nav class="omega-v2-trade-market-tabs" aria-label="Trade market sections">' +
         '<button type="button" aria-current="' + (marketTab === 'commodities' ? 'page' : 'false') + '" data-omega-v2-trade-market-tab="commodities">Market Commodities</button>' +
+        '<button type="button" aria-current="' + (marketTab === 'transactions' ? 'page' : 'false') + '" data-omega-v2-trade-market-tab="transactions">Transactions</button>' +
         '<button type="button" aria-current="' + (marketTab === 'black-market' ? 'page' : 'false') + '" data-omega-v2-trade-market-tab="black-market">Black Market</button></nav>' +
-        (marketTab === 'black-market' ? '<div class="omega-v2-trade-market-host" data-omega-v2-black-market-host aria-label="Black Market"></div>' : '<div class="omega-v2-trade-market-host" data-omega-v2-trade-market-host aria-label="Market Commodities"></div>') + '</section>';
+        (marketTab === 'black-market' ? '<div class="omega-v2-trade-market-host" data-omega-v2-black-market-host aria-label="Black Market"></div>' : '<div class="omega-v2-trade-market-host" data-omega-v2-trade-market-host aria-label="Market Commodities and Transactions"></div>') + '</section>';
     } else {
       root.innerHTML = '<section class="omega-v2-shell omega-v2-ministry-detail">' +
         '<header class="omega-v2-heading"><div class="omega-v2-ministry-detail-mark">' + emblem + '<div><div class="omega-v2-eyebrow">ALL MINISTRIES · ' + esc(id.replace(/[_-]+/g,' ').toUpperCase()) + '</div><h1 class="omega-v2-title">' + esc(row ? row.title : id || 'Ministry') + '</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · registered ministry profile and source-backed domain record</p></div></div><span class="omega-v2-status" data-state="' + (domain && domain.record ? 'operational' : 'unknown') + '">' + (domain && domain.record ? 'DOMAIN RECORD AVAILABLE' : esc(domain.reason || 'DOMAIN RECORD NOT RECORDED')) + '</span></header>' +
@@ -464,7 +465,7 @@
           var nextMarketTab = tab.getAttribute('data-omega-v2-trade-market-tab');
           scheduleRender(root, Object.assign({}, current, {
             section:nextSection,
-            marketTab:nextMarketTab === 'black-market' ? 'black-market' : (nextSection === 'market' ? 'commodities' : current.marketTab)
+            marketTab:nextMarketTab === 'black-market' || nextMarketTab === 'transactions' ? nextMarketTab : (nextSection === 'market' ? 'commodities' : current.marketTab)
           }));
           return;
         }
@@ -477,7 +478,7 @@
         var marketTabButton = target.closest('[data-omega-v2-trade-market-tab]');
         if (marketTabButton && root.contains(marketTabButton)) {
           var marketOptions = root.__omegaV2MinistryDetailOptions || {};
-          scheduleRender(root, Object.assign({}, marketOptions, { section:'market', marketTab:marketTabButton.getAttribute('data-omega-v2-trade-market-tab') }), 'Opening ' + (marketTabButton.getAttribute('data-omega-v2-trade-market-tab') === 'black-market' ? 'Black Market' : 'Market Commodities'));
+          scheduleRender(root, Object.assign({}, marketOptions, { section:'market', marketTab:marketTabButton.getAttribute('data-omega-v2-trade-market-tab') }), 'Opening ' + (marketTabButton.getAttribute('data-omega-v2-trade-market-tab') === 'black-market' ? 'Black Market' : marketTabButton.getAttribute('data-omega-v2-trade-market-tab') === 'transactions' ? 'Market Transactions' : 'Market Commodities'));
           return;
         }
         var route = target.closest('[data-omega-v2-detail-navigate]');
@@ -505,6 +506,10 @@
           var mountResult = marketUI.renderMarketDashboard(marketHost, country, { onClose:function () { var current = root.__omegaV2MinistryDetailOptions || options; scheduleRender(root, Object.assign({}, current, { section:'dashboard' }), 'Returning to Trade & Commerce'); } });
           marketMounted = !!(mountResult && mountResult.ok !== false);
           if (!marketMounted) marketHost.textContent = 'The Global Commodity Market could not be mounted. The market runtime and settlement records remain unchanged.';
+          else if (marketTab === 'transactions' && typeof marketHost.querySelector === 'function') {
+            var transactionViewButton = marketHost.querySelector('[data-market-view="transactions"]');
+            if (transactionViewButton && typeof transactionViewButton.click === 'function') transactionViewButton.click();
+          }
         } else if (marketHost) marketHost.textContent = 'The Global Commodity Market UI is unavailable in this session.';
       }
     }

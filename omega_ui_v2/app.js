@@ -214,7 +214,7 @@
     state.route = previous.route || 'map';
     state.ministryId = previous.ministryId || null;
     state.section = previous.section || 'dashboard';
-    state.marketTab = previous.marketTab === 'black-market' ? 'black-market' : 'commodities';
+    state.marketTab = previous.marketTab === 'black-market' || previous.marketTab === 'transactions' ? previous.marketTab : 'commodities';
     state.resourceSiteId = previous.resourceSiteId || null;
     state.governmentView = previous.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry';
     refreshAfterStateChange(root, deferRender);
@@ -335,7 +335,7 @@
             current.route = 'ministry-detail';
             current.ministryId = 'trade';
             current.section = section === 'settlement' ? 'settlement' : 'market';
-            current.marketTab = marketTab === 'black-market' ? 'black-market' : 'commodities';
+            current.marketTab = marketTab === 'black-market' || marketTab === 'transactions' ? marketTab : 'commodities';
             current.resourceSiteId = null;
             return refreshAfterStateChange(root, true);
           }
@@ -779,7 +779,7 @@
         route:item.route || 'map',
         ministryId:item.ministryId || null,
         section:item.section || 'dashboard',
-        marketTab:item.marketTab === 'black-market' ? 'black-market' : 'commodities',
+        marketTab:item.marketTab === 'black-market' || item.marketTab === 'transactions' ? item.marketTab : 'commodities',
         resourceSiteId:item.resourceSiteId || null,
         governmentView:item.governmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry'
       };
@@ -796,7 +796,7 @@
       route:initialRoute,
       ministryId:options.initialMinistryId ? String(options.initialMinistryId) : null,
       section:options.initialSection || 'dashboard',
-      marketTab:options.initialMarketTab === 'black-market' ? 'black-market' : 'commodities',
+      marketTab:options.initialMarketTab === 'black-market' || options.initialMarketTab === 'transactions' ? options.initialMarketTab : 'commodities',
       resourceSiteId:options.initialResourceSiteId || null,
       governmentView:options.initialGovernmentView === 'all-ministries' ? 'all-ministries' : 'executive-ministry',
       countryId:canonicalCountry(options.countryId || currentCountry() || ''),

@@ -584,8 +584,8 @@
               'data-omega-v2-open-trade-section="market" data-omega-v2-market-tab="commodities"',commodityImage,'Open market') +
             actionCard('Black Market','Restricted and shadow-market operations','black',
               'data-omega-v2-open-trade-section="market" data-omega-v2-market-tab="black-market"','','Open black market') +
-            actionCard('Transactions','Open the existing financial transaction ledger','transaction',
-              'data-omega-v2-open-economic-ministry="treasury_finance"','','Open transactions') +
+            actionCard('Transactions','Open the existing read-only trade transaction ledger','transaction',
+              'data-omega-v2-open-trade-section="market" data-omega-v2-market-tab="transactions"','','Open transactions') +
             actionCard('Trade Settlement','Review bilateral import and export agreements','settlement',
               'data-omega-v2-open-trade-section="settlement"',settlementImage,'View agreements') +
           '</div>' +
