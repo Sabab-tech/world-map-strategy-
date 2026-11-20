@@ -49,7 +49,7 @@ The PLAN, market-sync and validation phases are deliberately split across visits
 
 ## Bounds
 
-The rules file caps work at four demand rows, eight known relationship candidates, one full Global Market supplier-roster scan, three retained supplier rows, three ranked trade candidates, one market-intelligence sync, one new proposal and one counteroffer evaluation per NPC country visit. Import supplier candidates are ranked by cleared buyer-currency cost before relationship and reliability tie-breakers. The engine persists its phase and resumes on the next scheduler selection. It does not create a second scheduler or alter the scheduler's own 8/4 macro and 4/2 active country caps or time budgets.
+The rules file caps work at four source-country demand rows and eight known relationship candidates. For export screening, each known partner receives at most one fresh read-only demand evaluation, capped at four rows and cached only within that country visit; this avoids stale shared demand caches without starting NPC production simulation. The visit also permits one full Global Market supplier-roster scan, three retained supplier rows, three ranked trade candidates, one market-intelligence sync, one new proposal and one counteroffer evaluation. Import supplier candidates are ranked by cleared buyer-currency cost before relationship and reliability tie-breakers. The engine persists its phase and resumes on the next scheduler selection. It does not create a second scheduler or alter the scheduler's own 8/4 macro and 4/2 active country caps or time budgets.
 
 ## Rollout and diagnostics
 
