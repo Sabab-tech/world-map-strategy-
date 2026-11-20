@@ -404,9 +404,10 @@ test('all expanded deposits receive explicit flow status; active sites dispatch 
       continue;
     }
     // The smallest tradable recipe yield in the current catalog is 0.1%.
-    // 5,000 fixture units remain marketable after the 25% offer fraction and
-    // the existing minimum one-unit offer threshold.
-    const batchId='BATCH-ALL-SITE:'+site.siteId,quantity=5000+(index%17);
+    // Scheduled multi-turn processing can realize less than the headline recipe
+    // coefficient in this fixture; 20,000 source units leave margin above the
+    // existing 25% offer fraction and minimum one-unit offer threshold.
+    const batchId='BATCH-ALL-SITE:'+site.siteId,quantity=20000+(index%17);
     state.simulation.playerCountryId=cid;
     state.simulation.session=state.simulation.session||{};
     state.simulation.session.playerCountryId=cid;
