@@ -336,6 +336,7 @@ test('evaluates and accepts at most one counteroffer when price, stock and Treas
 
 test('rejects a counteroffer outside the cleared-market premium policy through the existing bilateral response handler', async () => {
   const runtime = createRuntime({
+    enablePhase2: true,
     outbox: [{
       proposalId: 'BTP-COUNTER-2', requestorCountryId: 'AUS', targetCountryId: 'CAN',
       direction: 'IMPORT', resourceId: 'iron_ore', quantityPerDelivery: 5, unitPrice: 9,
