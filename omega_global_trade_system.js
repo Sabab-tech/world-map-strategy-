@@ -1445,6 +1445,7 @@ function captureStockFlowPeriod(stateTransaction) {
       ['OMEGA_TRADE_RESOURCE_CREDIT','resource',resourceCreditHandler],
       ['OMEGA_TRADE_CLOSE_REQUEST','trade',closeRequestHandler],
       ['OMEGA_TRADE_RECORD_SELLER_SETTLEMENT','trade',sellerLedgerHandler],
+      ['OMEGA_TRADE_RECORD_INTERNATIONAL_SHIPMENT','trade',shipmentLedgerHandler],
       ['OMEGA_TRADE_APPLY_POLITICAL_PRESSURE','foreign',relationPressureHandler],
       ['OMEGA_TRADE_APPLY_MILITARY_PRESSURE','military',militaryPressureHandler]
     ];
@@ -1522,6 +1523,7 @@ function captureStockFlowPeriod(stateTransaction) {
       String(row?.requestId||'')===String(req.requestId||'')&&
       String(row?.status||'').toUpperCase()==='SETTLED'&&
       canonical(row?.buyerCountryId)===c&&String(row?.resourceId||'')===String(req.resourceId||'')):null;
+    const settlementDispatchTime=new Date().toISOString(),settlementDispatchTurn=turn();
     if(priorSellerSettlement){
       sid=String(priorSellerSettlement.settlementId||sid);
       const buyerInventoryRows=countryValue(c,'resource.inventoryLedger');
@@ -1541,7 +1543,7 @@ function captureStockFlowPeriod(stateTransaction) {
         stage:'SETTLED',settlementId:sid,buyerValue,sellerValue,sellerCountryId:s,
         buyerCurrency:priorSellerSettlement.buyerCurrency||currencyOf(c),
         sellerCurrency:priorSellerSettlement.sellerCurrency||currencyOf(s),
-        fx:priorSellerSettlement.fx,recovered:true});
+        fx:priorSellerSettlement.fx,recovered:true,shipment:priorSellerSettlement.shipment||null});
       g.__OMEGA_SETTLEMENT_TRACE={requestId:req.requestId,settlementId:sid,recoveredFromSellerLedger:true,
         close:clone(closeResult),sellerSettlement:clone(priorSellerSettlement)};
       if(!commandApplied(closeResult)){
@@ -1572,11 +1574,12 @@ function captureStockFlowPeriod(stateTransaction) {
       const sellerValue=num(priorRow.sellerTotalLocal)??0;
       const batchTransfers=clone(priorRow.batchTransfers||[]);
       const createdBatchIds=clone(priorRow.createdBatchIds||[]);
+      const recoveredShipment=priorRow.shipment||priorTxn.shipment||null;
       const sellerLedgerRecovery=command('trade','OMEGA_TRADE_RECORD_SELLER_SETTLEMENT',s,{
         settlementId:sid,requestId:req.requestId,buyerCountryId:c,resourceId:req.resourceId,
         quantity:req.quantity,unitPrice:req.unitPrice,totalValue:sellerValue,buyerValue,
         fx:priorRow.fx||null,buyerCurrency:priorRow.buyerCurrencyCode||currencyOf(c),
-        sellerCurrency:priorRow.sellerCurrencyCode||currencyOf(s),status:'SETTLED',turn:turn()
+        sellerCurrency:priorRow.sellerCurrencyCode||currencyOf(s),status:'SETTLED',turn:turn(),shipment:recoveredShipment
       });
       g.__OMEGA_SETTLEMENT_TRACE.sellerLedgerRecovery=clone(sellerLedgerRecovery);
       if(!commandApplied(sellerLedgerRecovery)){
@@ -1587,7 +1590,7 @@ function captureStockFlowPeriod(stateTransaction) {
       const closeRecovery=command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{requestId:req.requestId,status:TYPES.SETTLED,
         stage:'SETTLED',settlementId:sid,buyerValue,sellerValue,sellerCountryId:s,
         buyerCurrency:priorRow.buyerCurrencyCode||currencyOf(c),
-        sellerCurrency:priorRow.sellerCurrencyCode||currencyOf(s),recovered:true});
+        sellerCurrency:priorRow.sellerCurrencyCode||currencyOf(s),recovered:true,shipment:recoveredShipment});
       g.__OMEGA_SETTLEMENT_TRACE.closeRecovery=clone(closeRecovery);
       if(!commandApplied(closeRecovery)){
         emit('OMEGA_TRADE_SETTLEMENT_FAILED',c,{requestId:req.requestId,settlementId:sid,
@@ -1850,9 +1853,22 @@ function captureStockFlowPeriod(stateTransaction) {
     }
     const batchTransfers=clone(sellerResource?.result?.batchTransfers||[]);
     const createdBatchIds=clone(buyerResource?.result?.createdBatchIds||[]);
+    const sourceBatchIds=[...new Set(batchTransfers.flatMap(x=>[...(x.sourceBatchIds||[]),x.sourceBatchId].filter(Boolean).map(String)))];
+    const shipment={
+      schemaVersion:1,shipmentId:'SHIP-'+sid,requestId:String(req.requestId),settlementId:sid,
+      resourceId:String(req.resourceId),quantity:num(req.quantity),
+      unit:batchTransfers.length&&[...new Set(batchTransfers.map(x=>String(x.unit||'').trim()).filter(Boolean))].length===1?
+        batchTransfers.find(x=>x.unit)?.unit:null,
+      originCountryId:s,destinationCountryId:c,
+      dispatchTime:settlementDispatchTime,dispatchTurn:settlementDispatchTurn,
+      estimatedArrivalTime:null,etaTurn:null,etaStatus:'NOT_ESTIMATED_ROUTE_TRAVEL_TIME_NOT_MODELED',
+      arrivalTime:new Date().toISOString(),arrivalTurn:turn(),status:'ARRIVED',arrivalStatus:'RECEIVED',settlementStatus:'SETTLED',
+      sourceBatchIds:sourceBatchIds,createdBatchIds:createdBatchIds,batchTransfers:batchTransfers,
+      tradeMode:req.source||'GENERAL_TRADE',transportMode:null,routeId:null,routeEvidenceStatus:'UNKNOWN'
+    };
     if(useBank){
       const bankCommit=bank.commitTradeSettlement({
-        settlementId:sid,batchTransfers,createdBatchIds,requestId:req.requestId
+        settlementId:sid,batchTransfers,createdBatchIds,requestId:req.requestId,shipment:shipment
       });
       g.__OMEGA_SETTLEMENT_TRACE.bankCommit=clone(bankCommit);
       if(!bankCommit||bankCommit.ok!==true){
@@ -1882,7 +1898,8 @@ function captureStockFlowPeriod(stateTransaction) {
     const sellerLedgerResult=command('trade','OMEGA_TRADE_RECORD_SELLER_SETTLEMENT',s,{
       settlementId:sid,requestId:req.requestId,buyerCountryId:c,resourceId:req.resourceId,
       quantity:req.quantity,unitPrice:req.unitPrice,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,
-      fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,status:'SETTLED',turn:turn()
+      fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,status:'SETTLED',turn:turn(),
+      shipment:shipment
     });
     g.__OMEGA_SETTLEMENT_TRACE.sellerLedger=clone(sellerLedgerResult);
     if(!commandApplied(sellerLedgerResult)){
@@ -1893,7 +1910,7 @@ function captureStockFlowPeriod(stateTransaction) {
     const closeResult=command('trade','OMEGA_TRADE_CLOSE_REQUEST',c,{
       requestId:req.requestId,status:TYPES.SETTLED,stage:'SETTLED',settlementId:sid,
       buyerValue:check.buyerTotal,sellerValue:check.sellerTotal,sellerCountryId:s,
-      buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,fx:check.fx
+      buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,fx:check.fx,shipment:shipment
     });
     g.__OMEGA_SETTLEMENT_TRACE.close=clone(closeResult);
     if(!commandApplied(closeResult)){
@@ -1906,13 +1923,13 @@ function captureStockFlowPeriod(stateTransaction) {
     const sourceBatchIds=[...new Set(batchTransfers.flatMap(x=>[...(x.sourceBatchIds||[]),x.sourceBatchId].filter(Boolean).map(String)))];
     emit('OMEGA_TRADE_SHIPMENT_CREATED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,blackMarketDealId:req.blackMarketDealId||null,
       resourceId:req.resourceId,quantity:req.quantity,sourceCountryId:s,destinationCountryId:c,
-      transferType:'TRADE',batchTransfers,sourceBatchIds,createdBatchIds});
+      transferType:'TRADE',shipmentId:shipment.shipmentId,batchTransfers,sourceBatchIds,createdBatchIds});
     emit('OMEGA_TRADE_SETTLEMENT_COMPLETED',c,{settlementId:sid,requestId:req.requestId,targetCountryId:s,blackMarketDealId:req.blackMarketDealId||null,
       resourceId:req.resourceId,quantity:req.quantity,totalValue:check.sellerTotal,buyerValue:check.buyerTotal,
       fx:check.fx,buyerCurrency:check.buyerCurrency,sellerCurrency:check.sellerCurrency,
       sourceCountryId:s,destinationCountryId:c,transferType:'TRADE',
       buyerCompanyId:req.buyerCompanyId||null,sellerCompanyId:req.sellerCompanyId||null,
-      privateCompanyPurchase:privateCompanyPurchase,
+      privateCompanyPurchase:privateCompanyPurchase,shipmentId:shipment.shipmentId,
       batchTransfers,sourceBatchIds,createdBatchIds});
     try{memory()?.record?.(c,{type:'RELATIONAL',sourceEvent:'OMEGA_TRADE_SETTLEMENT_COMPLETED',
       targetCountryId:s,action:'IMPORT',outcome:{status:'SETTLED'},importance:.9,confidence:.9,
