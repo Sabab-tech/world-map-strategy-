@@ -178,9 +178,12 @@ test('ISO3 country keys bypass semantic resolution in interop and state transact
     return originalResolve(value);
   };
 
+  s.state.economy={CAN:{gdp:100}};
   const tx=s.sandbox.OmegaMinistryStateTransaction.create(
     'economy','USA',3,'ISO3-DIRECT-TX',s.state,{});
   assert.equal(tx.countryId,'USA');
+  assert.equal(tx.get('economy.gdp'),undefined,
+    'missing ISO3 bucket lookup must not re-enter semantic identity resolution');
   tx.rollback();
   assert.deepEqual(resolverCalls,[],
     'the state transaction must retain an already-canonical ISO3 key without invoking the bridge');
