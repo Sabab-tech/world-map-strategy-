@@ -42,12 +42,13 @@ test('dashboard reads existing runtimes and does not mutate canonical state',()=
   const root={innerHTML:'',handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
   const rendered=API.render(root,{countryId:'BGD'});
   assert.equal(rendered.ok,true);assert.equal(rendered.pipelineLayers,28);
-  assert.match(root.innerHTML,/Autonomous Development/);
-  assert.match(root.innerHTML,/Candidate only; not a confirmed contract/);
-  assert.match(root.innerHTML,/Safety and authority boundaries/);
+  assert.match(root.innerHTML,/Autonomous Trade Command/);
+  assert.match(root.innerHTML,/<svg[^>]+width="24"[^>]+height="24"[^>]+viewBox="0 0 24 24"/);
+  assert.match(root.innerHTML,/Candidate only · not a confirmed contract/);
+  assert.match(root.innerHTML,/Authority boundaries/);
   assert.match(root.innerHTML,/omega-v2-autonomy-status--healthy/);
   assert.match(root.innerHTML,/omega-v2-autonomy-status--pending/);
-  assert.match(root.innerHTML,/28-stage autonomous architecture/);
+  assert.match(root.innerHTML,/How a national trade decision moves/);
   assert.equal(calls.trade,2);assert.equal(calls.macro,2);assert.equal(calls.scheduler,2);assert.equal(calls.autonomy,2);
  }finally{
   if(previous.Omega===undefined)delete globalThis.Omega;else globalThis.Omega=previous.Omega;
@@ -63,8 +64,8 @@ test('missing runtime evidence remains UNKNOWN, not a fabricated healthy zero',(
   assert.equal(model.scheduler.state,'unknown');assert.equal(model.autonomy.state,'unknown');
   assert.equal(model.projects.available,false);
   const root={innerHTML:''};API.render(root,{countryId:'BGD'});
-  assert.match(root.innerHTML,/PARTIAL TELEMETRY/);
-  assert.match(root.innerHTML,/Project records are not exposed/);
+  assert.match(root.innerHTML,/Partial telemetry/);
+  assert.match(root.innerHTML,/Project data not exposed/);
   assert.match(root.innerHTML,/Not reported/);
  }finally{if(previous===undefined)delete globalThis.Omega;else globalThis.Omega=previous;}
 });
@@ -74,14 +75,21 @@ test('autonomous screen is wired to the shared route and offline shell',()=>{
  const index=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const sw=readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),'utf8');
  const css=readFileSync(new URL('../omega_ui_v2/omega-ui-v2.css',import.meta.url),'utf8');
+ const tradeCss=readFileSync(new URL('../omega_ui_v2/autonomous-trade-command.css',import.meta.url),'utf8');
  const manifest=JSON.parse(readFileSync(new URL('../omega_ui_v2/manifest.json',import.meta.url),'utf8'));
  assert.match(app,/autonomous-development/);
+ assert.match(app,/Autonomous Trade Command/);
  assert.match(index,/<script src="omega_ui_v2\/screens\/autonomous-development\.js" defer><\/script>/);
- assert.match(sw,/omega-offline-atlas-shell-v131/);
+ assert.match(sw,/omega-offline-atlas-shell-v133/);
  assert.match(sw,/"\.\/omega_ui_v2\/screens\/autonomous-development\.js"/);
  assert.match(css,/\.omega-v2-autonomy-status--healthy/);
  assert.match(css,/\.omega-v2-autonomy-status--pending/);
  assert.match(css,/\.omega-v2-autonomy-status--blocked/);
+ assert.ok(index.indexOf('omega_ui_v2/autonomous-trade-command.css')>index.indexOf('omega_ui_unified_visual_system_v1.css'),'trade command overrides must load after the global visual system');
+ assert.match(sw,/\.\/omega_ui_v2\/autonomous-trade-command\.css/);
+ assert.match(tradeCss,/\.omega-v2-autonomy-page \.oa-hero h1/);
+ assert.match(tradeCss,/svg\.omega-v2-autonomy-icon/);
+ assert.ok(manifest.additionalStyles.includes('omega_ui_v2/autonomous-trade-command.css'));
  assert.equal(manifest.screens.autonomousDevelopment,'omega_ui_v2/screens/autonomous-development.js');
- assert.equal(API.VERSION,'1.0.0');
+ assert.equal(API.VERSION,'1.1.0');
 });

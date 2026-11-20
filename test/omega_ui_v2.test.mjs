@@ -3909,7 +3909,7 @@ test('market presentation keeps raw, factory-role and food lanes separate and us
       'index.html must load ' + script + ' in dependency order for static/offline sessions');
     previousBlackMarketScriptPosition = position;
   }
-  assert.equal(offlineShellCacheVersion(sw),131,
+  assert.equal(offlineShellCacheVersion(sw),133,
     'Autonomous trade, Resource Research and identity runtime changes must invalidate the previously cached v129 shell');
   for (const asset of [
     './omega_global_trade_system.js',

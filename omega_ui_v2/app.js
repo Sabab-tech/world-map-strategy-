@@ -65,7 +65,7 @@
     var globalRoutes = [
       ['map','World map'],['overview','Country overview'],['government','Government'],
       ['economy','Economy & finance'],['industry','Factories & industry'],['reports','Reports'],
-      ['more','More modules'],['religion','Religion & ideology'],['autonomous-development','Autonomous development']
+      ['more','More modules'],['religion','Religion & ideology'],['autonomous-development','Autonomous Trade Command']
     ];
     return '<details class="omega-v2-route-switcher"><summary aria-label="Jump to any screen or ministry">Jump anywhere ▾</summary>' +
       '<div class="omega-v2-route-menu"><section><h2>MAIN SCREENS</h2><div class="omega-v2-route-menu-grid">' +
@@ -390,7 +390,7 @@
       more:'Command Center', industry:'Factories & industry', resources:'Resources & Mining',
       'home-affairs':'Public Safety', 'ministry-detail':'Ministry details',
       'mine-detail':'Mine details', reports:'Reports', religion:'Religion & ideology',
-      'autonomous-development':'Autonomous development'
+      'autonomous-development':'Autonomous Trade Command'
     };
     return labels[state.route] || 'the selected section';
   }

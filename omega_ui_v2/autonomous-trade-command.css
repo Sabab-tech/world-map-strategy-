@@ -1,0 +1,301 @@
+/* OMEGA Autonomous Trade Command — final screen-level visual authority.
+ * Loaded after omega_ui_unified_visual_system_v1.css on purpose.
+ * Scope is limited to the autonomous trade screen; no other ministry is affected.
+ */
+.omega-v2-app-root .omega-v2-autonomy-page {
+  color:#f2f6fb !important;
+  font-family:Inter,"Segoe UI",Roboto,system-ui,-apple-system,sans-serif !important;
+  font-size:14px !important;
+  line-height:1.58 !important;
+  letter-spacing:normal !important;
+  width:100% !important;
+  max-width:none !important;
+  min-width:0 !important;
+  overflow-wrap:anywhere;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-hero h1 {
+  color:#f7fbff !important;
+  font-size:clamp(30px,3.2vw,44px) !important;
+  font-weight:790 !important;
+  letter-spacing:-.04em !important;
+  line-height:1.12 !important;
+  margin:0 !important;
+  max-width:900px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-section-heading h2 {
+  color:#f1f6fb !important;
+  font-size:clamp(21px,2vw,26px) !important;
+  font-weight:770 !important;
+  letter-spacing:-.028em !important;
+  line-height:1.24 !important;
+  margin:0 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-system-title h3,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-panel-heading h3 {
+  color:#eef5fb !important;
+  font-size:16px !important;
+  font-weight:760 !important;
+  letter-spacing:-.012em !important;
+  line-height:1.32 !important;
+  margin:0 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-stage h3,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-candidate h4 {
+  color:#f0f6fb !important;
+  font-size:17px !important;
+  font-weight:770 !important;
+  letter-spacing:-.015em !important;
+  line-height:1.3 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page p {
+  font-size:13px !important;
+  line-height:1.58 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-eyebrow,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-kicker {
+  color:#8ac9e9 !important;
+  font-size:11px !important;
+  font-weight:820 !important;
+  letter-spacing:.13em !important;
+  line-height:1.4 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-system-title p,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-panel-heading p,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-section-heading p {
+  color:#a3b8c9 !important;
+  font-size:13px !important;
+  line-height:1.55 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-stat-label {
+  color:#b0c2d1 !important;
+  font-size:13px !important;
+  font-weight:720 !important;
+  line-height:1.42 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-stat>strong {
+  font-size:clamp(28px,3vw,38px) !important;
+  font-weight:790 !important;
+  line-height:1.12 !important;
+  font-variant-numeric:tabular-nums !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-stat>small,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-footnote {
+  color:#91a9bd !important;
+  font-size:12px !important;
+  line-height:1.55 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .omega-v2-autonomy-status {
+  font-size:11px !important;
+  font-weight:760 !important;
+  letter-spacing:.015em !important;
+  line-height:1.4 !important;
+  padding:6px 10px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page button.omega-v2-button,
+.omega-v2-app-root .omega-v2-autonomy-page button.oa-refresh {
+  align-items:center !important;
+  box-sizing:border-box !important;
+  display:inline-flex !important;
+  font-family:inherit !important;
+  font-size:13px !important;
+  font-weight:720 !important;
+  letter-spacing:0 !important;
+  line-height:1.3 !important;
+  min-height:44px !important;
+  max-width:100% !important;
+  padding:10px 15px !important;
+  text-align:center !important;
+  text-transform:none !important;
+  white-space:normal !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-shortcuts button.omega-v2-button {
+  min-height:46px !important;
+  padding:11px 16px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page svg.omega-v2-autonomy-icon {
+  aspect-ratio:1 / 1 !important;
+  display:block !important;
+  flex:0 0 26px !important;
+  height:26px !important;
+  max-height:26px !important;
+  max-width:26px !important;
+  min-height:26px !important;
+  min-width:26px !important;
+  overflow:visible !important;
+  shape-rendering:geometricPrecision !important;
+  stroke:currentColor !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  vertical-align:middle !important;
+  width:26px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-icon-tile {
+  flex:0 0 46px !important;
+  height:46px !important;
+  width:46px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-icon-tile svg.omega-v2-autonomy-icon {
+  flex-basis:25px !important;
+  height:25px !important;
+  max-height:25px !important;
+  max-width:25px !important;
+  min-height:25px !important;
+  min-width:25px !important;
+  width:25px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-stat-label svg.omega-v2-autonomy-icon {
+  flex-basis:22px !important;
+  height:22px !important;
+  max-height:22px !important;
+  max-width:22px !important;
+  min-height:22px !important;
+  min-width:22px !important;
+  width:22px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-system-grid {
+  gap:15px !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-system-card,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-panel {
+  border-radius:17px !important;
+  padding:19px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-system-metrics span,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-decision-details span,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-market-stats span {
+  color:#9db3c5 !important;
+  font-size:12px !important;
+  line-height:1.4 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-system-metrics strong,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-decision-details strong {
+  color:#edf5fb !important;
+  font-size:14px !important;
+  font-weight:740 !important;
+  line-height:1.38 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-candidate {
+  border-radius:14px !important;
+  gap:18px !important;
+  padding:17px 18px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-candidate-quantity>strong {
+  font-size:19px !important;
+  font-weight:780 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-candidate-main>p,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-candidate-quantity>small,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-project-copy span,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-project-progress small {
+  font-size:12px !important;
+  line-height:1.5 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-stage {
+  border-radius:16px !important;
+  padding:17px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-stage>p,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-stage li,
+.omega-v2-app-root .omega-v2-autonomy-page .oa-guard>div>p {
+  font-size:12px !important;
+  line-height:1.52 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-stage li {
+  overflow-wrap:anywhere !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-stage>small {
+  font-size:11px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-guard>div>strong {
+  font-size:13px !important;
+  line-height:1.45 !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-empty>strong {
+  font-size:14px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-empty>p {
+  font-size:13px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-market-stats strong {
+  font-size:22px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-shortcuts {
+  gap:11px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-section {
+  margin-top:34px !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-hero {
+  border-radius:22px !important;
+  gap:28px !important;
+  padding:clamp(23px,3vw,38px) !important;
+}
+.omega-v2-app-root .omega-v2-autonomy-page .oa-workspace-grid {
+  gap:17px !important;
+  grid-template-columns:minmax(0,1.32fr) minmax(300px,.68fr) !important;
+}
+@media (max-width:1100px) {
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-system-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-pipeline {
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  }
+}
+@media (max-width:760px) {
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-hero {
+    gap:17px !important;
+    padding:19px !important;
+  }
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-hero h1 {
+    font-size:clamp(28px,7vw,36px) !important;
+  }
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-workspace-grid {
+    grid-template-columns:minmax(0,1fr) !important;
+  }
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-system-card,
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-panel {
+    padding:16px !important;
+  }
+}
+@media (max-width:560px) {
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-system-grid,
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-pipeline {
+    grid-template-columns:minmax(0,1fr) !important;
+  }
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-candidate {
+    gap:11px !important;
+    padding:14px !important;
+  }
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-stage {
+    padding:16px !important;
+  }
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-shortcuts button.omega-v2-button {
+    justify-content:center !important;
+    width:100% !important;
+  }
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-context {
+    gap:7px !important;
+  }
+}
+@media (orientation:landscape) and (max-width:900px) and (min-height:320px) {
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-stats {
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  }
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-system-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  .omega-v2-app-root .omega-v2-autonomy-page .oa-pipeline {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  .omega-v2-app-root .omega-v2-autonomy-page *,
+  .omega-v2-app-root .omega-v2-autonomy-page *:before,
+  .omega-v2-app-root .omega-v2-autonomy-page *:after {
+    animation:none !important;
+    scroll-behavior:auto !important;
+    transition:none !important;
+  }
+}
