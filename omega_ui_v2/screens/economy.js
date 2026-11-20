@@ -572,6 +572,9 @@
             card('GDP growth',value(model.gdpGrowth),sourceLine(model.gdpGrowth),trend.gdpGrowth) +
             card('Inflation',value(model.inflation),sourceLine(model.inflation),trend.inflation) +
             card('Public debt / GDP',value(model.debtToGdp),sourceLine(model.debtToGdp),trend.debtToGdp) +
+            card('Recorded government revenue',model.revenue === null ? 'Not recorded' : money(model.revenue,'USD'),'Existing Finance revenue field',null) +
+            card('Recorded government expenditure',model.expenditure === null ? 'Not recorded' : money(model.expenditure,'USD'),'Existing Finance expenditure field',null) +
+            card('Budget balance',model.budgetBalance === null ? 'Not recorded' : money(model.budgetBalance,'USD'),'Existing Finance budget balance field',null) +
           '</div>' +
         '</section>' +
         '<section class="omega-economy-section omega-economy-actions-section">' +
