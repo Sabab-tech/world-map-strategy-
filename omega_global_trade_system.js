@@ -413,6 +413,8 @@ function captureStockFlowPeriod(stateTransaction) {
     ctx.stateTransaction.set('trade.globalTradeLedger',ledger);
     ctx.stateTransaction.set('trade.importLedger',Array.isArray(bucket?.importLedger)?bucket.importLedger:[]);
     ctx.stateTransaction.set('trade.exportLedger',Array.isArray(bucket?.exportLedger)?bucket.exportLedger:[]);
+    ctx.stateTransaction.set('trade.internationalShipmentLedger',
+      Array.isArray(bucket?.internationalShipmentLedger)?bucket.internationalShipmentLedger:[]);
     for(const key of ['balance','importValue','exportValue','tradeValue','lastSettlementTurn']){
       if(Object.prototype.hasOwnProperty.call(bucket,key))ctx.stateTransaction.set('trade.'+key,bucket[key]);
     }
