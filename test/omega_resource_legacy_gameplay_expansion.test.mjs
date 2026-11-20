@@ -31,9 +31,9 @@ assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === false || 
 const master = read('resource_site_master_registry_v1.json');
 assert.equal(master.sites.length, 250, 'baseline master research registry is preserved');
 assert(master.sites.every(s => canonical.sites.slice(0, 250).some(c => c.siteId === s.siteId)), 'all original master IDs remain in the original 250 rows');
-assert.equal(aliases.length, 10, 'six canonical aliases and four duplicate legacy aliases');
-assert.equal(sites.filter(s => s.map?.markerEligible === true).length, 105, 'only distinct physical assets receive independent markers');
-assert.equal(sites.filter(s => s.map?.markerEligible === false).length, 10, 'aliases must not create duplicate markers');
+assert.equal(aliases.length, 13, 'the 10 preserved legacy aliases plus three additional Part 6 canonical aliases remain represented');
+assert.equal(sites.filter(s => s.map?.markerEligible === true).length, 102, 'only distinct physical assets receive independent markers after all 13 aliases are excluded');
+assert.equal(sites.filter(s => s.map?.markerEligible === false).length, 13, 'all 13 aliases must remain excluded from duplicate map markers');
 for (const target of aliases) {
   assert(target.runtime.aliasOfSiteId, target.siteId + ': alias target missing');
   if (target.runtime.aliasOfSiteId.startsWith('SITE_') &&
