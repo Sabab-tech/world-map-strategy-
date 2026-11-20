@@ -2520,7 +2520,8 @@
       var inventoryLedger=Array.isArray(ctx.stateTransaction.get('resource.inventoryLedger'))
         ?ctx.stateTransaction.get('resource.inventoryLedger'):[];
       var productionRows=inventoryLedger.filter(function(row){
-        return String(row.type||'')==='PRODUCTION_TRANSACTION_COMMITTED'&&num(row.turn)===t;
+        return ['PRODUCTION_TRANSACTION_COMMITTED','FACTORY_MULTI_INPUT_PROCESSING_COMMITTED']
+          .includes(String(row.type||''))&&num(row.turn)===t;
       });
       productionRows.forEach(function(row){
         if(!['MEASURED_EVENTS','MEASURED_ZERO'].includes(String(row.lossMeasurementStatus||'')))
