@@ -1,8 +1,9 @@
 {
   "schemaVersion": "1.0.0",
   "enabled": true,
-  "autonomousProposals": true,
-  "autonomousCounteroffers": true,
+  "autonomousProposals": false,
+  "autonomousCounteroffers": false,
+  "marketIntelligenceSyncEnabled": false,
   "scheduler": {
     "existingSchedulerOnly": true,
     "tiers": [

@@ -185,7 +185,16 @@ function createRuntime(options = {}) {
       GlobalMarket: market,
       GlobalTrade: trade
     },
-    __OmegaAutonomousNationalTradeDecisionRules: structuredClone(rules),
+    __OmegaAutonomousNationalTradeDecisionRules: options.pendingRules ? undefined : (() => {
+      const configured = structuredClone(rules);
+      if (options.enablePhase2 === true) {
+        configured.autonomousProposals = true;
+        configured.autonomousCounteroffers = true;
+        configured.marketIntelligenceSyncEnabled = true;
+      }
+      return configured;
+    })(),
+    fetch: options.pendingRules ? (() => new Promise(() => {})) : undefined,
     addEventListener() {}
   };
   context.window = context;
@@ -219,7 +228,7 @@ test('registers only on the existing ACTIVE/MACRO scheduler and never schedules 
 });
 
 test('runs PLAN, one market-intelligence sync, then one feasible bilateral proposal across separate visits', async () => {
-  const runtime = createRuntime();
+  const runtime = createRuntime({ enablePhase2: true });
 
   const plan = await runtime.process('AUS', 1);
   assert.equal(plan.status, 'PLANNED');
@@ -247,6 +256,35 @@ test('runs PLAN, one market-intelligence sync, then one feasible bilateral propo
   const duplicate = await runtime.process('AUS', 3);
   assert.equal(duplicate.status, 'ALREADY_PROCESSED');
   assert.equal(runtime.metrics.proposalCalls, 1);
+});
+
+test('default rollout is read-only: it saves a ranked plan without syncing market data or sending proposals', async () => {
+  const runtime = createRuntime();
+  const result = await runtime.process('AUS', 1);
+  assert.equal(result.status, 'PLANNED_READ_ONLY');
+  assert.equal(result.phase, 'PLAN');
+  assert.ok(result.candidateCount > 0);
+  assert.equal(runtime.metrics.syncCalls, 0);
+  assert.equal(runtime.metrics.proposalCalls, 0);
+  assert.equal(runtime.metrics.previewCalls, 0);
+  const plan = runtime.context.Omega.AutonomousNationalTradeDecisionV1.getDecisionPlan('AUS');
+  assert.equal(plan.phase, 'PLAN');
+  assert.ok(plan.candidates.length > 0);
+  const diag = runtime.context.Omega.AutonomousNationalTradeDecisionV1.diagnostics();
+  assert.equal(diag.rolloutMode, 'READ_ONLY_PLANNER');
+  assert.equal(diag.autonomousProposals, false);
+  assert.equal(diag.autonomousCounteroffers, false);
+  assert.equal(diag.marketIntelligenceSyncEnabled, false);
+});
+
+test('does not block the world-turn scheduler while offline rules are still loading', async () => {
+  const runtime = createRuntime({ pendingRules: true });
+  const result = await runtime.process('AUS', 1);
+  assert.equal(result.status, 'DEFERRED');
+  assert.equal(result.reason, 'AUTONOMOUS_TRADE_RULES_LOADING');
+  assert.equal(runtime.metrics.supplierCalls, 0);
+  assert.equal(runtime.metrics.syncCalls, 0);
+  assert.equal(runtime.metrics.proposalCalls, 0);
 });
 
 test('does not treat missing demand or inventory evidence as zero and does not create a proposal', async () => {
@@ -279,6 +317,7 @@ test('requires observed diplomacy and respects existing embargo/war/sanctions ev
 
 test('evaluates and accepts at most one counteroffer when price, stock and Treasury preview are feasible', async () => {
   const runtime = createRuntime({
+    enablePhase2: true,
     outbox: [{
       proposalId: 'BTP-COUNTER-1', requestorCountryId: 'AUS', targetCountryId: 'CAN',
       direction: 'IMPORT', resourceId: 'iron_ore', quantityPerDelivery: 5, unitPrice: 9,

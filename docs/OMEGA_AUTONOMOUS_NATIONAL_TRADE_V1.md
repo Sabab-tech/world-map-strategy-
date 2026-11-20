@@ -33,6 +33,17 @@ The rules file caps work at four demand rows, eight known relationship candidate
 
 ## Rollout and diagnostics
 
-Autonomous proposals and counteroffer decisions are enabled by the checked-in rules file after the read-only ranking, evidence checks, and bounded state machine have been implemented. The public diagnostics API is `Omega.AutonomousNationalTradeDecisionV1.diagnostics()`; `getDecisionPlan(countryId)` exposes the current ranked candidate list and current phase for tests/debugging.
+The checked-in rules file starts in **read-only planner mode**:
+- `autonomousProposals: false`
+- `autonomousCounteroffers: false`
+- `marketIntelligenceSyncEnabled: false`
+
+This mode reads current evidence, ranks opportunities, and persists only its own Trade-Ministry-owned decision checkpoint. It does not synchronize bilateral market snapshots, send proposals, accept/reject counteroffers, reserve stock, or move money. This is intentional while Phase 0 subsystem regressions are stabilized and the planner is validated.
+
+Phase 2 may be enabled only after the existing bilateral, resource, finance/FX, scheduler, offline and end-to-end regression suites pass. It requires all three flags to be enabled together. The staged state machine then refreshes at most one stale bilateral market snapshot per country visit, creates at most one proposal after a FEASIBLE existing bilateral preview, and evaluates at most one counteroffer per visit.
+
+The scheduler handler never awaits the rules-file network fetch. Rules are preloaded during initialization; until ready, a scheduler visit returns immediately with `DEFERRED`. If rules cannot be loaded offline, the engine remains disabled instead of blocking the turn.
+
+The public diagnostics API is `Omega.AutonomousNationalTradeDecisionV1.diagnostics()`; `getDecisionPlan(countryId)` exposes the current ranked candidate list and current phase for tests/debugging.
 
 The engine does not create import requests or settle payments directly. A proposal is not a contract; the existing bilateral recipient review, two-sided contract replication, Global Trade request processing, stock reservation, FX, Treasury and settlement pipeline remain authoritative.

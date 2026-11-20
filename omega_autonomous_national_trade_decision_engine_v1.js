@@ -105,7 +105,10 @@
       finite(limits.maxCounterofferEvaluationsPerCountryTurn) === 1 &&
       finite(policy.targetCoverageDays) > 0 && finite(policy.exportReserveDays) > 0 &&
       finite(policy.deliveryIntervalDays) > 0 && finite(policy.maxPurchaseDays) >= policy.deliveryIntervalDays &&
-      [12, 24, 60, 84, 120].indexOf(finite(policy.proposalDurationMonths)) >= 0;
+      [12, 24, 60, 84, 120].indexOf(finite(policy.proposalDurationMonths)) >= 0 &&
+      typeof input.autonomousProposals === 'boolean' &&
+      typeof input.autonomousCounteroffers === 'boolean' &&
+      typeof input.marketIntelligenceSyncEnabled === 'boolean';
   }
   function prepare() {
     if (activeRules) return Promise.resolve({ status: 'READY' });
@@ -551,6 +554,13 @@
     if (!target || target === countryId) return { handled: false };
     var report = api.getMarketReport(countryId, target);
     if (!report || report.status !== 'CURRENT') {
+      if (activeRules.marketIntelligenceSyncEnabled !== true) {
+        checkpoint.counterofferRetryById[counter.proposalId] = turnNumber + activeRules.policy.counterofferRetryTurns;
+        note(checkpoint, turnNumber, 'WAITING', 'COUNTEROFFER_MARKET_INTELLIGENCE_SYNC_DISABLED', null, {
+          proposalId: counter.proposalId
+        });
+        return { handled: true, status: 'WAITING_FOR_MARKET_INTELLIGENCE' };
+      }
       var synced = syncMarket(countryId, target);
       if (synced && synced.accepted === true) {
         runtimeStats.marketSyncs++;
@@ -626,12 +636,16 @@
     return { handled: true, status: 'WAITING_FOR_EVIDENCE', preview: preview };
   }
   function processCountry(countryValue, context) {
+    // Never make the authoritative turn scheduler wait for a network fetch.
+    // Rules are preloaded at init; an unready engine yields immediately and tries next visit.
+    if (!activeRules) {
+      if (rulesStatus === 'NOT_LOADED') prepare();
+      runtimeStats.deferred++;
+      return Promise.resolve({ status: 'DEFERRED',
+        reason: rulesStatus === 'LOADING' ? 'AUTONOMOUS_TRADE_RULES_LOADING' : 'AUTONOMOUS_TRADE_RULES_UNAVAILABLE',
+        rulesStatus: rulesStatus });
+    }
     return (async function () {
-      var prepared = await prepare();
-      if (prepared.status !== 'READY') {
-        runtimeStats.deferred++;
-        return { status: 'DEFERRED', reason: 'AUTONOMOUS_TRADE_RULES_UNAVAILABLE', detail: prepared };
-      }
       var countryId = canonical(countryValue), turnNumber = turn(context);
       if (!/^[A-Z]{3}$/.test(countryId)) {
         runtimeStats.skipped++;
@@ -673,14 +687,25 @@
           var candidates = buildCandidates(countryId, checkpoint);
           checkpoint.plan = { createdTurn: turnNumber, candidates: candidates };
           checkpoint.candidateIndex = 0;
-          checkpoint.phase = candidates.length ? 'MARKET_INTELLIGENCE' : 'PLAN';
+          checkpoint.phase = candidates.length && activeRules.autonomousProposals === true
+            ? 'MARKET_INTELLIGENCE' : 'PLAN';
           if (candidates.length) {
             runtimeStats.planned++;
-            note(checkpoint, turnNumber, 'PLANNED', 'RANKED_EVIDENCE_BACKED_TRADE_CANDIDATES', candidates[0], {
-              candidateCount: candidates.length, maximumCandidates: activeRules.limits.maxCandidates
-            });
-            phaseResult = { status: 'PLANNED', phase: checkpoint.phase,
-              candidateCount: candidates.length, topCandidate: clone(candidates[0]) };
+            if (activeRules.autonomousProposals === true) {
+              note(checkpoint, turnNumber, 'PLANNED', 'RANKED_EVIDENCE_BACKED_TRADE_CANDIDATES', candidates[0], {
+                candidateCount: candidates.length, maximumCandidates: activeRules.limits.maxCandidates
+              });
+              phaseResult = { status: 'PLANNED', phase: checkpoint.phase,
+                candidateCount: candidates.length, topCandidate: clone(candidates[0]) };
+            } else {
+              checkpoint.nextDecisionTurn = turnNumber + activeRules.policy.decisionCooldownTurns;
+              note(checkpoint, turnNumber, 'PLANNED_READ_ONLY', 'READ_ONLY_ROLLOUT_AUTONOMOUS_PROPOSALS_DISABLED', candidates[0], {
+                candidateCount: candidates.length, maximumCandidates: activeRules.limits.maxCandidates,
+                marketSyncEnabled: false, proposalsEnabled: false, counteroffersEnabled: false
+              });
+              phaseResult = { status: 'PLANNED_READ_ONLY', phase: 'PLAN',
+                candidateCount: candidates.length, candidates: clone(candidates) };
+            }
           } else {
             checkpoint.nextDecisionTurn = turnNumber + activeRules.policy.emptyPlanCooldownTurns;
             note(checkpoint, turnNumber, 'HOLD', 'NO_KNOWN_FEASIBLE_TRADE_NEED_OR_SURPLUS', null, {
@@ -697,6 +722,11 @@
         } else {
           var report = bilateral().getMarketReport(countryId, candidate.targetCountryId);
           if (!report || report.status !== 'CURRENT') {
+            if (activeRules.marketIntelligenceSyncEnabled !== true) {
+              note(checkpoint, turnNumber, 'WAITING', 'MARKET_INTELLIGENCE_SYNC_DISABLED', candidate, null);
+              phaseResult = { status: 'WAITING_FOR_MARKET_INTELLIGENCE', phase: 'MARKET_INTELLIGENCE',
+                reason: 'MARKET_INTELLIGENCE_SYNC_DISABLED', targetCountryId: candidate.targetCountryId };
+            } else {
             var synced = syncMarket(countryId, candidate.targetCountryId);
             if (synced && synced.accepted === true) {
               runtimeStats.marketSyncs++;
@@ -710,6 +740,7 @@
               advanceCandidate(checkpoint, turnNumber, 'MARKET_INTELLIGENCE_SYNC_FAILED', synced);
               phaseResult = { status: 'CANDIDATE_SKIPPED', phase: checkpoint.phase,
                 reason: 'MARKET_INTELLIGENCE_SYNC_FAILED', detail: synced };
+            }
             }
           } else {
             checkpoint.phase = 'VALIDATE';
@@ -780,8 +811,10 @@
     var scheduler = g.Omega && g.Omega.WorldSimulationScheduler || g.OmegaWorldSimulationScheduler;
     return {
       version: VERSION, rulesStatus: rulesStatus, rulesEnabled: !!activeRules,
+      rolloutMode: activeRules ? (activeRules.autonomousProposals === true ? 'AUTONOMOUS' : 'READ_ONLY_PLANNER') : 'DISABLED',
       autonomousProposals: activeRules ? activeRules.autonomousProposals === true : false,
       autonomousCounteroffers: activeRules ? activeRules.autonomousCounteroffers === true : false,
+      marketIntelligenceSyncEnabled: activeRules ? activeRules.marketIntelligenceSyncEnabled === true : false,
       schedulerHandlerRegistered: typeof unregisterScheduler === 'function',
       commandHandlerRegistered: commandRegistered,
       schedulerTiers: activeRules && activeRules.scheduler ? clone(activeRules.scheduler.tiers) : ['ACTIVE', 'MACRO'],
