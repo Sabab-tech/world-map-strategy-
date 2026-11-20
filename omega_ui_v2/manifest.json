@@ -35,7 +35,8 @@
   "sharedStyles": "omega_ui_v2/omega-ui-v2.css",
   "additionalStyles": [
     "omega_ui_v2/ministry-visual-refresh.css",
-    "omega_ui_v2/resource-ministry-premium.css"
+    "omega_ui_v2/resource-ministry-premium.css",
+    "omega_ui_v2/autonomous-trade-command.css"
   ],
   "canonicalAdapters": {
     "policeEngine": "OmegaHomeMinistryEngine",
