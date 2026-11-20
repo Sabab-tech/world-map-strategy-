@@ -1,0 +1,38 @@
+# OMEGA Autonomous National Trade Decision Engine v1
+
+## Purpose and ownership
+
+This module is a bounded decision orchestrator, not another economy, market, scheduler, inventory, FX, transport, or settlement engine. It consumes existing country resource-demand snapshots, Global Market quotes and supplier availability, bilateral diplomacy, Global Trade FX values, and the Bilateral Trade Agreement API. Trade state is changed only through the existing Ministry Interoperability transaction and bilateral API.
+
+The player-selected country is always excluded. The handler runs only on the existing World Simulation Scheduler's ACTIVE and MACRO tiers. It creates no timer, worker, animation loop, world-roster scan, or network-backed AI request.
+
+## Per-country state machine
+
+Each NPC country has a checkpoint at `trade.autonomousNationalTradeDecision`, owned by the Trade Ministry and written through Ministry Interoperability:
+
+1. **PLAN** reads the existing `resource.demandRuntime.byResource` summaries and a bounded list of known diplomatic partners. It ranks at most three import/export opportunities.
+2. **MARKET_INTELLIGENCE** checks the existing bilateral market snapshot. It performs at most one on-demand sync per country visit when the snapshot is stale or missing.
+3. **VALIDATE** delegates final stock, reserve, contract commitments, domestic requirement, FX, Treasury and market-evidence checks to `BilateralTradeAgreementV1.previewProposal()`. Only FEASIBLE evidence may authorize a proposal.
+4. **COUNTEROFFER** evaluates at most one own-outbox counteroffer per visit. It checks cleared seller price, the configured premium/discount boundary and bilateral feasibility; accepted terms use `acceptCounteroffer()`. A rejected counteroffer is recorded through the existing `OMEGA_BILATERAL_APPLY_RESPONSE` handler.
+5. **EXPERIENCE** updates partner observations only from existing completed/failed delivery counters and SETTLED-only bilateral trade balance evidence. Missing evidence remains UNKNOWN.
+
+The PLAN, market-sync and validation phases are deliberately split across visits. This keeps synchronous work bounded because the scheduler can yield between country handlers but cannot interrupt a long handler midway.
+
+## Decision rules
+
+- Import need = max(0, target coverage × known daily demand − spendable stock − confirmed inbound).
+- Export surplus = max(0, spendable stock after domestic consumption − domestic reserve coverage).
+- Existing unresolved import requests, pending proposals, active bilateral contracts, blocked routes/embargo supplier lists, war/sanctions, unknown diplomacy, unknown demand, unknown stock, missing cleared price, and unknown FX are not converted to zero or used to authorize a contract.
+- Partner discovery uses the supplier list returned by the existing Global Market for imports and only the country's bounded, already-known diplomatic relation keys for exports. It does not enumerate the 197-country roster.
+- Candidate ranking is deterministic. It considers need/surplus urgency, observed relation score, known delivery reliability and buyer-currency cost where available.
+- Contracts use the existing bilateral channel, market-linked pricing, 12-month duration and 30-day delivery intervals by default. Existing preview/activation rules remain authoritative.
+
+## Bounds
+
+The rules file caps work at four demand rows, eight known relationship candidates, three supplier rows, three ranked trade candidates, one market-intelligence sync, one new proposal and one counteroffer evaluation per NPC country visit. The engine persists its phase and resumes on the next scheduler selection. It does not create a second scheduler or alter the scheduler's own 8/4 macro and 4/2 active country caps or time budgets.
+
+## Rollout and diagnostics
+
+Autonomous proposals and counteroffer decisions are enabled by the checked-in rules file after the read-only ranking, evidence checks, and bounded state machine have been implemented. The public diagnostics API is `Omega.AutonomousNationalTradeDecisionV1.diagnostics()`; `getDecisionPlan(countryId)` exposes the current ranked candidate list and current phase for tests/debugging.
+
+The engine does not create import requests or settle payments directly. A proposal is not a contract; the existing bilateral recipient review, two-sided contract replication, Global Trade request processing, stock reservation, FX, Treasury and settlement pipeline remain authoritative.

@@ -1,0 +1,71 @@
+name: OMEGA Autonomous National Trade
+
+on:
+  pull_request:
+    paths:
+      - "omega_autonomous_national_trade_decision_engine_v1.js"
+      - "omega_autonomous_national_trade_decision_rules_v1.json"
+      - "omega_bilateral_trade_agreement_system_v1.js"
+      - "omega_global_market_system.js"
+      - "omega_global_trade_system.js"
+      - "omega_world_simulation_scheduler_v1.js"
+      - "omega_resource_national_demand_runtime_v1.js"
+      - "omega_ministry_interoperability_system.js"
+      - "index.html"
+      - "server_bootstrap.js"
+      - "omega-offline-map-sw.js"
+      - "package.json"
+      - "test/omega_autonomous_national_trade_decision_engine_v1.test.mjs"
+      - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
+      - "test/omega_bilateral_trade_agreement_system_v1.test.mjs"
+      - ".github/workflows/omega-autonomous-national-trade.yml"
+  push:
+    branches: [main]
+    paths:
+      - "omega_autonomous_national_trade_decision_engine_v1.js"
+      - "omega_autonomous_national_trade_decision_rules_v1.json"
+      - "omega_bilateral_trade_agreement_system_v1.js"
+      - "omega_global_market_system.js"
+      - "omega_global_trade_system.js"
+      - "omega_world_simulation_scheduler_v1.js"
+      - "omega_resource_national_demand_runtime_v1.js"
+      - "omega_ministry_interoperability_system.js"
+      - "index.html"
+      - "server_bootstrap.js"
+      - "omega-offline-map-sw.js"
+      - "package.json"
+      - "test/omega_autonomous_national_trade_decision_engine_v1.test.mjs"
+      - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
+      - "test/omega_bilateral_trade_agreement_system_v1.test.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-national-trade:
+    name: Planner, bilateral integration and offline boot
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax checks
+        run: |
+          node --check omega_autonomous_national_trade_decision_engine_v1.js
+          node --check test/omega_autonomous_national_trade_decision_engine_v1.test.mjs
+          node --check server_bootstrap.js
+          node --check test/omega_npc_national_macro_economy_runtime_v1.test.mjs
+          node --check test/omega_resource_command_center_ui_v1.test.mjs
+      - name: Autonomous national trade tests
+        run: npm run test:autonomous-national-trade
+      - name: Bilateral trade regression tests
+        run: npm run test:bilateral-trade
+      - name: Scheduler, ministry boot and offline asset-order regression
+        run: node --test test/omega_npc_national_macro_economy_runtime_v1.test.mjs
+      - name: Offline asset cache regression
+        run: node --test test/omega_resource_command_center_ui_v1.test.mjs
