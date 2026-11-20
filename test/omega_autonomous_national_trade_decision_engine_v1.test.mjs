@@ -45,7 +45,7 @@ function createRuntime(options = {}) {
   const schedulerRegistrations = [];
   const dispatchLog = [];
   const reports = new Map();
-  const metrics = { supplierCalls: 0, marketPriceCalls: 0, previewCalls: 0, proposalCalls: 0, syncCalls: 0, acceptCalls: 0 };
+  const metrics = { supplierCalls: 0, marketPriceCalls: 0, previewCalls: 0, proposalCalls: 0, syncCalls: 0, acceptCalls: 0, demandCalls: {} };
   const key = (a, b) => a + '|' + b;
 
   const interop = {
@@ -189,6 +189,7 @@ function createRuntime(options = {}) {
       GlobalTrade: trade,
       ResourceNationalDemandRuntime: {
         evaluateDemand(countryId) {
+          metrics.demandCalls[countryId] = (metrics.demandCalls[countryId] || 0) + 1;
           const rows = state.resource[countryId]?.demandRuntime?.byResource || {};
           return { countryId, turn: state.simulation.turn, status: 'ACTIVE',
             profiles: Object.keys(rows).map(key => structuredClone(rows[key])),
@@ -439,6 +440,8 @@ test('read-only export planner requires a known partner shortage and preserves t
   assert.ok(candidate);
   assert.equal(candidate.targetCountryId, 'CAN');
   assert.equal(candidate.quantityPerDelivery, 60);
+  assert.equal(runtime.metrics.demandCalls.CAN, 1,
+    'partner demand must come from one fresh, read-only national-demand evaluation, not a cached demandRuntime');
   assert.equal(runtime.metrics.proposalCalls, 0);
 });
 
