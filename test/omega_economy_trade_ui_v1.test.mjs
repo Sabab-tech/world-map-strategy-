@@ -34,6 +34,8 @@ function installEconomyFixture() {
       { settlementId:'SET-IMPORT-1', status:'SETTLED', buyerCountryId:'BGD', sellerCountryId:'IND', buyerValue:10000, buyerCurrency:'BDT', resourceId:'coal', turn:40 },
       { settlementId:'SET-IMPORT-1', status:'SETTLED', buyerCountryId:'BGD', sellerCountryId:'IND', buyerValue:10000, buyerCurrency:'BDT', resourceId:'coal', turn:40 },
       { settlementId:'SET-EXPORT-1', status:'SETTLED', buyerCountryId:'CHN', sellerCountryId:'BGD', sellerValue:5000, sellerCurrency:'BDT', resourceId:'steel', turn:41 },
+      { settlementId:'SET-IMPORT-KOR', status:'SETTLED', buyerCountryId:'BGD', sellerCountryId:'KOR', buyerValue:8000, buyerCurrency:'BDT', resourceId:'machinery', turn:41 },
+      { settlementId:'SET-EXPORT-KOR', status:'SETTLED', buyerCountryId:'KOR', sellerCountryId:'BGD', sellerValue:4500, sellerCurrency:'BDT', resourceId:'textiles', turn:42 },
       { settlementId:'SET-PENDING', status:'ACCEPTED', buyerCountryId:'BGD', sellerCountryId:'USA', buyerValue:90000, buyerCurrency:'BDT', resourceId:'oil' }
     ] } } }
   } };
@@ -100,12 +102,15 @@ test('Economy Overview keeps Treasury cash, domestic currency and FX reserves se
   assert.equal(model.foreignDirectInvestment.value,1200000000);
   assert.equal(model.importDependency.value,28);
   assert.equal(model.exportDependency.value,21);
-  assert.equal(model.imports.value,10000, 'duplicate settlement IDs are counted once');
-  assert.equal(model.exports.value,5000);
-  assert.equal(model.tradeBalance.value,-5000, 'live settled trade is calculated from local-currency ledger rows');
+  assert.equal(model.imports.value,18000, 'duplicate settlement IDs are counted once');
+  assert.equal(model.exports.value,9500);
+  assert.equal(model.tradeBalance.value,-8500, 'live settled trade is calculated from local-currency ledger rows');
   assert.equal(model.tradePosition,'Trade deficit');
   assert.equal(model.importPartner.countryId,'IND');
   assert.equal(model.exportPartner.countryId,'CHN');
+  assert.equal(model.tradePartner.countryId,'KOR', 'largest overall partner combines settled import and export value');
+  assert.equal(model.tradePartner.value,12500);
+  assert.equal(model.tradeDependencyProfile.label,'Import-dependent');
 
   const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
   const rendered = globalThis.OmegaUIV2Economy.render(root,{ countryId:'BGD' });
@@ -113,6 +118,8 @@ test('Economy Overview keeps Treasury cash, domestic currency and FX reserves se
   assert.match(root.innerHTML,/Economy Overview/);
   assert.match(root.innerHTML,/Foreign-exchange reserves/);
   assert.match(root.innerHTML,/Trade Settlement/);
+  assert.match(root.innerHTML,/Trade dependency profile/);
+  assert.match(root.innerHTML,/Largest overall trade partner/);
   assert.match(root.innerHTML,/Black Market/);
   assert.match(root.innerHTML,/Transactions/);
   assert.doesNotMatch(root.innerHTML,/<canvas|recharts|data-omega-v2-economy-tab/i);
@@ -179,7 +186,8 @@ test('Trade Settlement reads only selected-country bilateral commitments and kee
   assert.equal(model.turn,42);
   assert.equal(model.importCount,1);
   assert.equal(model.exportCount,1);
-  assert.equal(model.activeCount,2);
+  assert.equal(model.activeCount,2, 'legacy count remains available for compatibility');
+  assert.equal(model.openCount,2, 'settlement view exposes the number of open commitments');
   assert.equal(model.imports[0].partnerCountryId,'IND');
   assert.equal(model.imports[0].totalValue,60000);
   assert.equal(model.imports[0].remainingValue,40000);
@@ -224,6 +232,8 @@ test('Trade Settlement renders without a domain data record and does not merge s
   assert.equal(result.section,'settlement');
   assert.equal(result.domainRecordAvailable,false);
   assert.match(root.innerHTML,/Trade Settlement/);
+  assert.match(root.innerHTML,/open agreement\(s\)/);
+  assert.doesNotMatch(root.innerHTML,/active agreement\(s\)/);
   assert.match(root.innerHTML,/BGD-IND-FIXED/);
   assert.match(root.innerHTML,/Total agreement cost/);
   assert.match(root.innerHTML,/future commitments/);

@@ -301,6 +301,44 @@
       settlementCount:imports.length + exports.length
     };
   }
+  function summarizeTopTradePartner(importRows, exportRows) {
+    var byCountry = Object.create(null);
+    function include(rows, direction) {
+      (Array.isArray(rows) ? rows : []).forEach(function (row) {
+        if (!row || !row.partnerCountryId) return;
+        var countryId = String(row.partnerCountryId).trim().toUpperCase();
+        if (!countryId) return;
+        var entry = byCountry[countryId];
+        if (!entry) {
+          entry = byCountry[countryId] = {
+            countryId:countryId, value:0, currency:null, count:0,
+            importCount:0, exportCount:0, complete:true
+          };
+        }
+        entry.count += 1;
+        if (direction === 'IMPORT') entry.importCount += 1;
+        else entry.exportCount += 1;
+        var amount = num(row.value);
+        var currency = String(row.currency || '').trim().toUpperCase();
+        if (amount === null || !currency) {
+          entry.complete = false;
+          return;
+        }
+        if (entry.currency && entry.currency !== currency) {
+          entry.complete = false;
+          return;
+        }
+        entry.currency = currency;
+        entry.value += amount;
+      });
+    }
+    include(importRows, 'IMPORT');
+    include(exportRows, 'EXPORT');
+    var ranked = Object.keys(byCountry).map(function (key) { return byCountry[key]; })
+      .filter(function (row) { return row.complete && row.currency && row.count > 0; })
+      .sort(function (a, b) { return b.value - a.value || a.countryId.localeCompare(b.countryId); });
+    return ranked[0] || null;
+  }
   function countryName(value) {
     var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
     if (runtime && typeof runtime.resolveCountry === 'function') {
@@ -337,6 +375,7 @@
     var foreignAccountsUsd = foreignAccounts.length && foreignAccounts.every(function (row) { return row.usdValue !== null; })
       ? foreignAccounts.reduce(function (sum, row) { return sum + row.usdValue; }, 0) : null;
     var settled = localSettlements(root, country, homeCurrency);
+    var topTradePartner = summarizeTopTradePartner(settled.imports.rows, settled.exports.rows);
     var gdp = fieldRecord(snapshot, 'gdp');
     var gdpGrowth = fieldRecord(snapshot, 'gdpGrowth');
     var inflation = fieldRecord(snapshot, 'inflation');
@@ -363,6 +402,18 @@
       : tradeBalanceField;
     var topImport = settled.imports.topPartner;
     var topExport = settled.exports.topPartner;
+    var importDependencyValue = num(importDependency.value);
+    var exportDependencyValue = num(exportDependency.value);
+    var tradeDependencyProfile = {
+      label:importDependencyValue === null || exportDependencyValue === null ? 'Not recorded'
+        : importDependencyValue > exportDependencyValue ? 'Import-dependent'
+        : exportDependencyValue > importDependencyValue ? 'Export-oriented'
+        : 'Balanced dependency',
+      status:importDependencyValue === null || exportDependencyValue === null ? 'UNAVAILABLE' : 'AVAILABLE',
+      detail:importDependencyValue === null || exportDependencyValue === null
+        ? 'Both import and export dependency indicators are required'
+        : number(importDependencyValue,1) + '% import dependency · ' + number(exportDependencyValue,1) + '% export dependency'
+    };
     var importPosition = tradeBalance.value === null ? 'Not recorded'
       : tradeBalance.value > 0 ? 'Trade surplus'
       : tradeBalance.value < 0 ? 'Trade deficit' : 'Balanced trade';
@@ -414,6 +465,8 @@
       exportDependency:exportDependency,
       importPartner:topImport ? Object.assign({},topImport,{name:countryName(topImport.countryId)}) : null,
       exportPartner:topExport ? Object.assign({},topExport,{name:countryName(topExport.countryId)}) : null,
+      tradePartner:topTradePartner ? Object.assign({},topTradePartner,{name:countryName(topTradePartner.countryId)}) : null,
+      tradeDependencyProfile:tradeDependencyProfile,
       foreignDirectInvestment:fdiRecord,
       fxReserves:fxReserves,
       settledTradeCount:settled.settlementCount,
@@ -520,6 +573,12 @@
     var exportPartner = model.exportPartner
       ? model.exportPartner.name + ' · ' + money(model.exportPartner.value,model.exportPartner.currency)
       : 'Not recorded';
+    var tradePartner = model.tradePartner
+      ? model.tradePartner.name + ' · ' + money(model.tradePartner.value,model.tradePartner.currency)
+      : 'Not recorded';
+    var tradePartnerNote = model.tradePartner
+      ? number(model.tradePartner.importCount,0) + ' import · ' + number(model.tradePartner.exportCount,0) + ' export settlement(s)'
+      : 'No complete, currency-comparable settled partner evidence';
     var currencyTitle = model.currencyCode || 'Home currency';
     var html =
       '<section class="omega-v2-shell omega-economy-overview">' +
@@ -557,11 +616,13 @@
             card('Trade balance',value(model.tradeBalance,'money'),sourceLine(model.tradeBalance),trend.tradeBalance,model.tradeBalance.value === null ? '' : model.tradeBalance.value >= 0 ? 'is-positive' : 'is-negative') +
             card('Total imports',value(model.imports,'money'),importNote,trend.imports) +
             card('Total exports',value(model.exports,'money'),exportNote,trend.exports) +
+            card('Trade dependency profile',model.tradeDependencyProfile.label,model.tradeDependencyProfile.detail,null) +
             card('Import dependency',value(model.importDependency),sourceLine(model.importDependency),trend.importDependency) +
             card('Export dependency',value(model.exportDependency),sourceLine(model.exportDependency),trend.exportDependency) +
             card('Foreign direct investment',value(model.foreignDirectInvestment,'money'),sourceLine(model.foreignDirectInvestment),trend.fdi) +
             card('Largest import partner',importPartner,model.importPartner ? number(model.importPartner.count,0) + ' settled deal(s)' : 'No settled partner evidence',null) +
             card('Largest export partner',exportPartner,model.exportPartner ? number(model.exportPartner.count,0) + ' settled deal(s)' : 'No settled partner evidence',null) +
+            card('Largest overall trade partner',tradePartner,tradePartnerNote,null) +
           '</div>' +
           '<p class="omega-economy-data-note">Trade totals use this country’s deduplicated SETTLED ledger rows. Baseline values are labelled by source and year; pending offers and agreements are not counted as completed trade.</p>' +
         '</section>' +
