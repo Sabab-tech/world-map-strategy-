@@ -249,7 +249,16 @@
         finite(row.pendingImportQuantity) !== null &&
         finite(row.unresolvedImportRequestCount) !== null;
     }).sort(function (a, b) {
-      return (finite(b.procurementScore) || 0) - (finite(a.procurementScore) || 0) ||
+      function nationalNeedScore(row) {
+        var daily = nonNegative(row.demandPerDay);
+        var stock = nonNegative(row.spendableStockAfter);
+        var inbound = nonNegative(row.pendingImportQuantity);
+        if (daily === null || daily <= 0 || stock === null || inbound === null) return 0;
+        var importGap = Math.max(0, daily * activeRules.policy.targetCoverageDays - stock - inbound);
+        var exportable = Math.max(0, stock - daily * activeRules.policy.exportReserveDays);
+        return Math.max(importGap, exportable) / Math.max(1, daily * activeRules.policy.targetCoverageDays);
+      }
+      return nationalNeedScore(b) - nationalNeedScore(a) ||
         (finite(b.priority) || 0) - (finite(a.priority) || 0) ||
         token(a.resourceId).localeCompare(token(b.resourceId));
     }).slice(0, activeRules.limits.maxResourceRows);

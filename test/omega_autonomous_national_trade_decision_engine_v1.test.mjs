@@ -315,6 +315,23 @@ test('does not block the world-turn scheduler while offline rules are still load
   assert.equal(runtime.metrics.proposalCalls, 0);
 });
 
+test('ranks national import gaps against the engine 30-day coverage policy, not the player cache score', async () => {
+  const runtime = createRuntime({ enablePhase2: true });
+  runtime.state.resource.AUS.demandRuntime.byResource.copper_ore = {
+    resourceId: 'copper_ore', status: 'BALANCED', demandPerDay: 1,
+    spendableStockAfter: 28, pendingImportQuantity: 0,
+    unresolvedImportRequestCount: 0, stockCoverageTargetDays: 3,
+    procurementScore: 0, priority: 5
+  };
+  runtime.state.resource.AUS.demandRuntime.byResource.iron_ore.procurementScore = 0;
+  const result = await runtime.process('AUS', 1);
+  assert.equal(result.status, 'PLANNED');
+  assert.equal(result.topCandidate.resourceId, 'iron_ore',
+    'the larger 30-day import gap must outrank a zero-score player 3-day coverage cache');
+  assert.equal(result.topCandidate.quantityPerDelivery, 55);
+  assert.equal(runtime.metrics.supplierCalls, 1);
+});
+
 test('ranks import suppliers by cleared buyer-currency cost rather than ISO ordering', async () => {
   const runtime = createRuntime({
     enablePhase2: true,
