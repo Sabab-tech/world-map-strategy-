@@ -556,6 +556,158 @@
   }
 
   function buildObservedGoodsFlowRows(resource,tradeCountry,economy,inventory){
+    const periods=Array.isArray(resource?.stockFlowPeriods)?resource.stockFlowPeriods:[];
+    if(periods.length){
+      const inventoryMovements=Array.isArray(resource?.inventoryLedger)?resource.inventoryLedger:[];
+      const stockLossLedger=Array.isArray(resource?.stockLossLedger)?resource.stockLossLedger:[];
+      const rows=[],allMovementKeys=new Set(),allLossKeys=new Set();
+      let movementDuplicateCount=0,lossDuplicateCount=0;
+      const number=(v)=>{const n=finite(v);return n===null?null:n;};
+      const add=(map,resourceId,unit,field,quantity)=>{
+        const id=String(resourceId||'').trim(),u=String(unit||'').trim(),q=number(quantity);
+        if(!id||!u||q===null||q<0)return;
+        const key=id+'\u0000'+u,row=map.get(key)||{resourceId:id,unit:u};
+        row[field]=(finite(row[field])||0)+q;map.set(key,row);
+      };
+      for(const period of periods){
+        if(!isObject(period))continue;
+        const periodId=String(period.periodId||('GAME_TURN_'+String(period.turn??''))).trim();
+        const turn=finite(period.turn);
+        const openingRows=Array.isArray(period.openingStockByIdentity)?period.openingStockByIdentity:[];
+        const closingRows=Array.isArray(period.closingStockByIdentity)?period.closingStockByIdentity:[];
+        const opening=new Map(),closing=new Map(),flows=new Map(),movementSeen=new Map(),lossSeen=new Map();
+        for(const row of openingRows){
+          if(!isObject(row))continue;
+          const quantity=finite(row.quantity);
+          if(quantity===null||quantity<0)continue;
+          opening.set(String(row.resourceId||'').trim()+'\u0000'+String(row.unit||'').trim(),quantity);
+        }
+        for(const row of closingRows){
+          if(!isObject(row))continue;
+          const quantity=finite(row.quantity);
+          if(quantity===null||quantity<0)continue;
+          closing.set(String(row.resourceId||'').trim()+'\u0000'+String(row.unit||'').trim(),quantity);
+        }
+        const periodMovements=inventoryMovements.filter(row=>
+          isObject(row)&&(String(row.periodId||'')===periodId||
+            (turn!==null&&finite(row.turn)===turn)||
+            (row.type==='BATCH_CREATED'&&turn!==null&&finite(row.createdTurn)===turn)));
+        let movementWindowComplete=true,movementConflictCount=0;
+        const lossCandidates=[];
+        function addLoss(row){
+          if(!isObject(row))return;
+          const eventId=String(row.eventId||row.lossEventId||'').trim();
+          const sourceId=String(row.sourceEventId||row.sourceTransactionId||'').trim();
+          const key=eventId||sourceId;
+          if(!key)return;
+          const signature=JSON.stringify({resourceId:row.resourceId,unit:row.unit,quantity:row.quantity,
+            sourceType:row.sourceType,lossType:row.lossType,turn:row.turn});
+          if(lossSeen.has(key)){
+            lossDuplicateCount++;
+            if(lossSeen.get(key).signature!==signature)movementConflictCount++;
+            return;
+          }
+          lossSeen.set(key,{signature,row});
+        }
+        for(const row of periodMovements){
+          const type=String(row.type||'').toUpperCase();
+          const movementId=String(row.eventId||row.movementId||row.transactionId||
+            row.settlementId||row.batchId||'').trim();
+          if(!movementId){movementWindowComplete=false;continue;}
+          const key=type+'\u0000'+movementId;
+          const signature=JSON.stringify(row);
+          if(movementSeen.has(key)){
+            movementDuplicateCount++;
+            if(movementSeen.get(key)!==signature)movementConflictCount++;
+            continue;
+          }
+          movementSeen.set(key,signature);
+          if(type==='BATCH_CREATED'){
+            const source=String(row.source||row.sourceType||'').toUpperCase();
+            if(source==='EXTRACTION'||source==='MINE_EXTRACTION'||source==='MINE'){
+              add(flows,row.resourceId,row.unit,'production',row.quantity);
+            }
+          }else if(type==='INTERNATIONAL_TRADE_IMPORT'){
+            add(flows,row.resourceId,row.unit,'imports',row.quantity);
+          }else if(type==='INTERNATIONAL_TRADE_EXPORT'){
+            add(flows,row.resourceId,row.unit,'exports',row.quantity);
+          }else if(type==='INVENTORY_CONSUMED'){
+            add(flows,row.resourceId,row.unit,'consumption',row.quantity);
+          }else if(type==='INVENTORY_LOSS'||type==='STOCK_LOSS_COMMITTED'){
+            addLoss(row);
+          }else if(type==='PRODUCTION_TRANSACTION_COMMITTED'){
+            const inputs=Array.isArray(row.inputs)?row.inputs:[];
+            const outputs=Array.isArray(row.outputs)?row.outputs:[];
+            for(const input of inputs)add(flows,input.resourceId,input.unit,'consumption',input.quantity);
+            for(const output of outputs)add(flows,output.resourceId,output.unit,'production',output.quantity);
+            for(const [resourceId,quantity] of Object.entries(row.inputQuantities||{})){
+              const unit=row.inputUnits?.[resourceId]||row.unit||null;
+              add(flows,resourceId,unit,'consumption',quantity);
+            }
+            for(const [resourceId,quantity] of Object.entries(row.outputQuantities||{})){
+              const unit=row.outputUnits?.[resourceId]||row.unit||null;
+              add(flows,resourceId,unit,'production',quantity);
+            }
+            for(const loss of Array.isArray(row.lossEvents)?row.lossEvents:[])addLoss(loss);
+          }
+        }
+        for(const loss of stockLossLedger){
+          if(!isObject(loss))continue;
+          const lossTurn=finite(loss.turn);
+          if(String(loss.periodId||'')!==periodId&&!(turn!==null&&lossTurn===turn))continue;
+          addLoss(loss);
+        }
+        const lossRowsObserved=stockLossLedger.filter(row=>isObject(row)&&
+          (String(row.periodId||'')===periodId||(turn!==null&&finite(row.turn)===turn))).length;
+        const declaredLossRows=finite(period.stockLossLedgerRowsAtClosing);
+        const lossLedgerBoundaryComplete=period.openingCaptured===true&&period.closingCaptured===true&&
+          period.lossLedgerClosingCaptured===true&&String(period.lossCoverageStatus||'').toUpperCase()==='COMPLETE'&&
+          finite(period.stockLossLedgerRowsAtOpening)!==null&&declaredLossRows!==null&&declaredLossRows===lossRowsObserved;
+        const movementDeclared=finite(period.movementLedgerRowsAtClosing);
+        if(movementDeclared!==null&&movementDeclared!==periodMovements.length)movementWindowComplete=false;
+        const movementDropped=finite(period.movementLedgerDroppedEntries);
+        if(movementDropped!==null&&movementDropped>0)movementWindowComplete=false;
+        if(movementConflictCount>0)movementWindowComplete=false;
+        allMovementKeys.add(periodId);
+        const ids=new Set([...opening.keys(),...closing.keys(),...flows.keys(),...[...lossSeen.values()].map(x=>{
+          return String(x.row.resourceId||'').trim()+'\u0000'+String(x.row.unit||'').trim();
+        })]);
+        for(const key of ids){
+          const split=key.split('\u0000'),resourceId=split[0],unit=split.slice(1).join('\u0000');
+          if(!resourceId||!unit)continue;
+          const flow=flows.get(key)||{};
+          const lossQuantity=[...lossSeen.values()].reduce((sum,item)=>{
+            if(String(item.row.resourceId||'').trim()===resourceId&&String(item.row.unit||'').trim()===unit)
+              return sum+(finite(item.row.quantity)||0);
+            return sum;
+          },0);
+          const row={
+            periodId,turn,resourceId,unit,
+            openingQuantity:opening.has(key)?opening.get(key):(period.openingCoverageComplete===true?0:null),
+            production:movementWindowComplete?(finite(flow.production)||0):null,
+            imports:movementWindowComplete?(finite(flow.imports)||0):null,
+            consumption:movementWindowComplete?(finite(flow.consumption)||0):null,
+            exports:movementWindowComplete?(finite(flow.exports)||0):null,
+            losses:lossLedgerBoundaryComplete?lossQuantity:null,
+            closingQuantity:closing.has(key)?closing.get(key):(period.closingCoverageComplete===true?0:null),
+            movementWindowComplete:movementWindowComplete,
+            lossLedgerBoundaryComplete:lossLedgerBoundaryComplete,
+            movementRowsObserved:periodMovements.length,
+            lossRowsObserved:lossRowsObserved,
+            sourceAuthority:'RESOURCE_STOCK_FLOW_PERIOD_AND_EVENT_LEDGER'
+          };
+          rows.push(row);
+        }
+      }
+      rows.sort((a,b)=>String(a.periodId).localeCompare(String(b.periodId))||
+        a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit));
+      inventory.periodStockFlowRows=rows.map(row=>clone(row));
+      inventory.movementDuplicateCount=movementDuplicateCount;
+      inventory.lossDuplicateCount=lossDuplicateCount;
+      inventory.movementWindowComplete=rows.every(row=>row.movementWindowComplete);
+      inventory.lossCoverageStatus=rows.every(row=>row.lossLedgerBoundaryComplete)?'COMPLETE':'PARTIAL_OR_UNOBSERVED';
+      return rows;
+    }
     if(Array.isArray(resource?.goodsFlowRows)&&resource.goodsFlowRows.length)return resource.goodsFlowRows;
     const openingBook=isObject(resource?.openingInventoryByResource)?resource.openingInventoryByResource:null;
     if(!openingBook||!Object.keys(openingBook).length)return[];
