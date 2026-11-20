@@ -3,7 +3,7 @@
  */
 "use strict";
 // The install handler refreshes cached core assets with fetch({ cache: "reload" }); keep the stable shell namespace.
-const CACHE_NAME = "omega-offline-atlas-shell-v131";
+const CACHE_NAME = "omega-offline-atlas-shell-v132";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
