@@ -77,6 +77,8 @@ const expected = [
   'omega_black_market_network_v1.js',
   'omega_black_market_ui_v1.js',
   'omega_opponent_treaty_lifecycle_system.js',
+  'omega_bilateral_trade_agreement_system_v1.js',
+  'omega_autonomous_national_trade_decision_engine_v1.js',
   'omega_opponent_second_order_consequence_system.js',
 ];
 assert.deepEqual(staticSources, expected, 'GitHub Pages runtime assets must be loaded exactly once in canonical order');
