@@ -73,7 +73,12 @@ for (const s of sites) {
   assert(s.quantitative.capacity.minimum > 0 &&
     s.quantitative.capacity.minimum <= s.quantitative.capacity.nominal &&
     s.quantitative.capacity.nominal <= s.quantitative.capacity.maximum, s.siteId + ': capacity ordering invalid');
-  assert.equal(s.quantitative.quantitativeProvenance.authority, 'SCENARIO_SIMULATION_DATA');
+  const quantitativeAuthority = s.quantitative.quantitativeProvenance.authority;
+  assert(
+    quantitativeAuthority === 'SCENARIO_SIMULATION_DATA' ||
+      (Boolean(s.runtime?.aliasOfSiteId) && quantitativeAuthority === 'SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET'),
+    s.siteId + ': quantitative provenance must identify scenario data or a non-independent simulation alias'
+  );
   assert.equal(s.quantitative.quantitativeProvenance.externalMeasuredValuePromotion, false);
   const horizon = Number(s.simulation.reserveHorizonYears);
   const horizonOk = s.sourceReference?.sourcePath?.includes('_part_6_') ? horizon >= 350 && horizon <= 450 : horizon >= 400 && horizon <= 440;
