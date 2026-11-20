@@ -392,6 +392,64 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                     interopApiCount:interopCandidates.length,
                     patchedInstanceCount:patchedInteropInstances.length
                   });
+                  const identityRegistry = window.OmegaCanonicalIdentityRegistry ||
+                    window.OmegaCountrySemanticBridge || (window.Omega && window.Omega.CanonicalIdentity) || null;
+                  const identityBridge = window.OmegaCountrySemanticBridge || null;
+                  recordPerfFailure('probe.identityResolver.source',null,{
+                    registryType:typeof identityRegistry,
+                    registryResolverType:typeof (identityRegistry && identityRegistry.resolveCountry),
+                    registryResolverSource:identityRegistry && typeof identityRegistry.resolveCountry === 'function'
+                      ?String(identityRegistry.resolveCountry).slice(0,1800):null,
+                    registryExportDataType:typeof (identityRegistry && identityRegistry.exportData),
+                    bridgeResolverType:typeof (identityBridge && identityBridge.resolveCountry),
+                    bridgeResolverSource:identityBridge && typeof identityBridge.resolveCountry === 'function'
+                      ?String(identityBridge.resolveCountry).slice(0,1800):null,
+                    universalResolveType:typeof (window.OmegaUniversalEntityIdentityEngine &&
+                      window.OmegaUniversalEntityIdentityEngine.resolve),
+                    blackMarketType:typeof (window.OmegaBlackMarket && window.OmegaBlackMarket.diagnostics)
+                  });
+                  if (identityRegistry && typeof identityRegistry.resolveCountry === 'function') {
+                    const originalIdentityResolver = identityRegistry.resolveCountry;
+                    try {
+                      identityRegistry.resolveCountry = function() {
+                        try {
+                          return originalIdentityResolver.apply(this,arguments);
+                        } catch (error) {
+                          recordPerfFailure('identityResolver.resolveCountry.throw',error,{
+                            argumentCount:arguments.length,
+                            firstArgument:arguments.length ? String(arguments[0]) : null,
+                            resolverSource:String(originalIdentityResolver).slice(0,1800)
+                          });
+                          throw error;
+                        }
+                      };
+                    } catch (error) {
+                      recordPerfFailure('identityResolver.instrumentation.wrapFailed',error);
+                    }
+                    try {
+                      const resolved = identityRegistry.resolveCountry('USA');
+                      recordPerfFailure('identityResolver.directLookup.USA',null,{
+                        status:resolved && resolved.status || null,
+                        id:resolved && resolved.id || null,
+                        source:resolved && resolved.source || null
+                      });
+                    } catch (error) {
+                      recordPerfFailure('identityResolver.directLookup.USA.throw',error);
+                    }
+                  }
+                  const universalIdentity = window.OmegaUniversalEntityIdentityEngine;
+                  if (universalIdentity && typeof universalIdentity.resolve === 'function') {
+                    try {
+                      const resolved = universalIdentity.resolve('USA','COUNTRY');
+                      recordPerfFailure('identityResolver.universalLookup.USA',null,{
+                        status:resolved && resolved.status || null,
+                        id:resolved && resolved.id || null,
+                        source:resolved && resolved.source || null
+                      });
+                    } catch (error) {
+                      recordPerfFailure('identityResolver.universalLookup.USA.throw',error);
+                    }
+                  }
                   function restorePerfDiagnostics() {
                     patchedInteropInstances.forEach(function(entry) {
                       try { entry.instance.stateTransaction = entry.originalInstanceFactory; } catch (_) {}
