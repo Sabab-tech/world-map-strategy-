@@ -558,6 +558,45 @@ test('player lifeline approval is scoped to the active player country and schedu
   assert.equal(runtime.getPlayerSupplyLifeline('BGD').status, 'ACTIVE');
 });
 
+test('evaluateDemand provides a read-only resource/stock snapshot for NPC trade planning', async () => {
+  const { context, worldState, calls } = createRuntimeContext();
+  const runtime = context.OmegaResourceNationalDemandRuntime;
+  await runtime.prepare();
+  const before = structuredClone(worldState.resource.BGD);
+  const result = runtime.evaluateDemand('BGD');
+  assert.equal(result.status, 'ACTIVE');
+  assert.equal(result.mode, 'READ_ONLY');
+  assert.equal(result.stateMutation, false);
+  assert.ok(result.profiles.length > 0);
+  const iron = result.profiles.find(row => row.resourceId === 'iron_ore');
+  assert.ok(iron);
+  assert.ok(iron.demandPerDay > 0);
+  assert.equal(iron.availableStock, 100);
+  assert.equal(iron.spendableStockAfter, 80);
+  assert.equal(iron.pendingImportQuantity, 0);
+  assert.equal(iron.unresolvedImportRequestCount, 0);
+  assert.ok(iron.deficit >= 0);
+  assert.ok(iron.surplus >= 0);
+  assert.deepEqual(worldState.resource.BGD, before,
+    'read-only demand evaluation must not alter inventory, consumption, demand cache or history');
+  assert.equal(calls.length, 0, 'read-only evaluation must not dispatch any Ministry command');
+});
+
+test('evaluateDemand preserves UNKNOWN inventory rather than interpreting it as an empty stock book', async () => {
+  const { context, worldState, calls } = createRuntimeContext({ inventory: null });
+  await context.OmegaResourceNationalDemandRuntime.prepare();
+  const result = context.OmegaResourceNationalDemandRuntime.evaluateDemand('BGD');
+  const iron = result.profiles.find(row => row.resourceId === 'iron_ore');
+  assert.equal(result.status, 'PARTIAL');
+  assert.equal(iron.availableStock, null);
+  assert.equal(iron.spendableStockAfter, null);
+  assert.equal(iron.deficit, null);
+  assert.equal(iron.surplus, null);
+  assert.equal(iron.status, 'WAITING_FOR_INVENTORY');
+  assert.equal(calls.length, 0);
+  assert.equal(worldState.resource.BGD.demandRuntime, undefined);
+});
+
 test('economic transmission reduces resource demand when household purchasing power falls', async () => {
   const { context, worldState } = createRuntimeContext({
     financialTransmission: { household: 0.5, importCost: 1.8, producerCost: 1.4 }

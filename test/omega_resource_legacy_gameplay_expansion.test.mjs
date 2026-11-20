@@ -21,16 +21,19 @@ assert.equal(canonical.sites.length, 315);
 assert.equal(canonicalIds.size, 315);
 assert.equal(sites.filter(s => canonicalIds.has(s.siteId)).length, 65, 'the original 65 records remain in canonical source data');
 assert.equal(sites.filter(s => !canonicalIds.has(s.siteId)).length, 50, 'the next 50 are additive runtime records, not source-file overwrites');
-const canonicalLegacyRows = canonical.sites.filter(s => s.runtime?.identityAuthority === 'LEGACY_SITE_GAMEPLAY_EXPANSION_WITH_SOURCE_LINEAGE');
-assert.equal(canonicalLegacyRows.length, 65, 'the original 65 gameplay records remain in the canonical file');
+// Some canonical legacy sites were later reconciled under a newer identity-authority label.
+// Their source identity must remain present; the legacy expansion IDs are the preservation contract.
+const canonicalLegacyRows = canonical.sites.filter(s => ids.has(s.siteId));
+assert.equal(canonicalLegacyRows.length, 65, 'the original 65 gameplay site identities remain in the canonical file');
+assert.equal(new Set(canonicalLegacyRows.map(s => s.siteId)).size, 65, 'all 65 canonical legacy identities remain unique');
 assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === true && !s.runtime?.aliasOfSiteId).length, 55, '55 original physical map sites are independently eligible');
 assert.equal(canonicalLegacyRows.filter(s => s.map?.markerEligible === false || s.runtime?.aliasOfSiteId).length, 10, '10 aliases are retained but not independently executable');
 const master = read('resource_site_master_registry_v1.json');
 assert.equal(master.sites.length, 250, 'baseline master research registry is preserved');
 assert(master.sites.every(s => canonical.sites.slice(0, 250).some(c => c.siteId === s.siteId)), 'all original master IDs remain in the original 250 rows');
-assert.equal(aliases.length, 10, 'six canonical aliases and four duplicate legacy aliases');
-assert.equal(sites.filter(s => s.map?.markerEligible === true).length, 105, 'only distinct physical assets receive independent markers');
-assert.equal(sites.filter(s => s.map?.markerEligible === false).length, 10, 'aliases must not create duplicate markers');
+assert.equal(aliases.length, 13, 'the 10 preserved legacy aliases plus three additional Part 6 canonical aliases remain represented');
+assert.equal(sites.filter(s => s.map?.markerEligible === true).length, 102, 'only distinct physical assets receive independent markers after all 13 aliases are excluded');
+assert.equal(sites.filter(s => s.map?.markerEligible === false).length, 13, 'all 13 aliases must remain excluded from duplicate map markers');
 for (const target of aliases) {
   assert(target.runtime.aliasOfSiteId, target.siteId + ': alias target missing');
   if (target.runtime.aliasOfSiteId.startsWith('SITE_') &&
@@ -70,9 +73,16 @@ for (const s of sites) {
   assert(s.quantitative.capacity.minimum > 0 &&
     s.quantitative.capacity.minimum <= s.quantitative.capacity.nominal &&
     s.quantitative.capacity.nominal <= s.quantitative.capacity.maximum, s.siteId + ': capacity ordering invalid');
-  assert.equal(s.quantitative.quantitativeProvenance.authority, 'SCENARIO_SIMULATION_DATA');
+  const quantitativeAuthority = s.quantitative.quantitativeProvenance.authority;
+  assert(
+    quantitativeAuthority === 'SCENARIO_SIMULATION_DATA' ||
+      (Boolean(s.runtime?.aliasOfSiteId) && quantitativeAuthority === 'SIMULATION_ALIAS_REFERENCE_NOT_INDEPENDENT_ASSET'),
+    s.siteId + ': quantitative provenance must identify scenario data or a non-independent simulation alias'
+  );
   assert.equal(s.quantitative.quantitativeProvenance.externalMeasuredValuePromotion, false);
-  const horizon = Number(s.simulation.reserveHorizonYears);\n  const horizonOk = s.sourceReference?.sourcePath?.includes('_part_6_') ? horizon >= 350 && horizon <= 450 : horizon >= 400 && horizon <= 440;\n  assert(horizonOk, s.siteId + ': gameplay reserve horizon out of range');
+  const horizon = Number(s.simulation.reserveHorizonYears);
+  const horizonOk = s.sourceReference?.sourcePath?.includes('_part_6_') ? horizon >= 350 && horizon <= 450 : horizon >= 400 && horizon <= 440;
+  assert(horizonOk, s.siteId + ': gameplay reserve horizon out of range');
   assert(s.simulation.transportRoute.length > 0, s.siteId + ': per-site route missing');
   assert(s.processing.midstreamProcess, s.siteId + ': processing step missing');
   assert(s.processing.refinedOutputs.length > 0, s.siteId + ': product output missing');

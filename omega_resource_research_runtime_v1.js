@@ -200,15 +200,15 @@ function tickTx(ctx){
     const p=projects[i];if(id(p?.countryId)!==id(c)||!['REQUESTED','IN_PROGRESS'].includes(String(p?.status||'').toUpperCase()))continue;
     const rate=Math.max(.1,num(p.researchRate)||1);
     const units=Math.min(1000,(num(p.progressUnits)||0)+rate),required=Math.max(1,num(p.requiredUnits)||1);
-    const next={...p,progressUnits:units,progress:Math.min(100,Math.floor(units/required*100)),lastProgressTurn:turn()};
+    const next=Object.assign({},p,{progressUnits:units,progress:Math.min(100,Math.floor(units/required*100)),lastProgressTurn:turn()});
     if(units+1e-9>=required){next.progress=100;next.status='COMPLETED';next.completedTurn=turn();const cap=completeCapability(ctx.stateTransaction,c,next,'RESEARCH');next.capabilityId=cap?.capabilityId||null;researchCompleted++;emit('OMEGA_RESOURCE_TECHNOLOGY_RESEARCH_COMPLETED',c,{project:next,capability:cap});}
     projects[i]=next;changed++;
   }
   for(let i=0;i<transfers.length;i++){
     const p=transfers[i];if(id(p?.countryId)!==id(c)||!['REQUESTED','IN_PROGRESS'].includes(String(p?.status||'').toUpperCase()))continue;
-    if(!hasCapabilityInState(p.donorCountryId,p.technologyId,{siteId:p.targetSiteId,resourceId:p.targetResourceId,siteType:p.targetSiteType})){transfers[i]={...p,status:'BLOCKED',blockedTurn:turn(),reason:'DONOR_TECHNOLOGY_NO_LONGER_AVAILABLE'};blocked++;changed++;continue;}
+    if(!hasCapabilityInState(p.donorCountryId,p.technologyId,{siteId:p.targetSiteId,resourceId:p.targetResourceId,siteType:p.targetSiteType})){transfers[i]=Object.assign({},p,{status:'BLOCKED',blockedTurn:turn(),reason:'DONOR_TECHNOLOGY_NO_LONGER_AVAILABLE'});blocked++;changed++;continue;}
     const rate=Math.max(.1,num(p.transferRate)||1),units=Math.min(1000,(num(p.progressUnits)||0)+rate),required=Math.max(1,num(p.requiredUnits)||1);
-    const next={...p,progressUnits:units,progress:Math.min(100,Math.floor(units/required*100)),lastProgressTurn:turn()};
+    const next=Object.assign({},p,{progressUnits:units,progress:Math.min(100,Math.floor(units/required*100)),lastProgressTurn:turn()});
     if(units+1e-9>=required){next.progress=100;next.status='COMPLETED';next.completedTurn=turn();const cap=completeCapability(ctx.stateTransaction,c,next,'IMPORTED');next.capabilityId=cap?.capabilityId||null;transferCompleted++;emit('OMEGA_RESOURCE_TECHNOLOGY_TRANSFER_COMPLETED',c,{project:next,capability:cap});}
     transfers[i]=next;changed++;
   }
@@ -268,8 +268,8 @@ function register(){
     ['OMEGA_RESOURCE_RESEARCH_TICK',{actionId:'OMEGA_RESOURCE_RESEARCH_TICK',stateOwnerMinistry:'resource',authority:'OMEGA_RESOURCE_RESEARCH_RUNTIME'}]
   ]){try{m.registerAction?.(type,meta);}catch(e){g.__omegaResourceResearchActionErrors=g.__omegaResourceResearchActionErrors||{};g.__omegaResourceResearchActionErrors[type]=String(e?.message||e);}}
   const handlers=[
-    ['OMEGA_RESOURCE_RESEARCH_START',(cmd,ctx)=>startResearchTx({...ctx,payload:cmd?.payload||cmd?.data||{}})],
-    ['OMEGA_RESOURCE_TECHNOLOGY_IMPORT',(cmd,ctx)=>importTechnologyTx({...ctx,payload:cmd?.payload||cmd?.data||{}})],
+    ['OMEGA_RESOURCE_RESEARCH_START',(cmd,ctx)=>startResearchTx(Object.assign({},ctx||{},{payload:cmd?.payload||cmd?.data||{}}))],
+    ['OMEGA_RESOURCE_TECHNOLOGY_IMPORT',(cmd,ctx)=>importTechnologyTx(Object.assign({},ctx||{},{payload:cmd?.payload||cmd?.data||{}}))],
     ['OMEGA_RESOURCE_RESEARCH_TICK',(cmd,ctx)=>tickTx(ctx)]
   ];
   for(const [type,handler] of handlers){try{m.registerCommandHandler(type,'resource',handler);ok=true;}catch(e){g.__omegaResourceResearchHandlerErrors=g.__omegaResourceResearchHandlerErrors||{};g.__omegaResourceResearchHandlerErrors[type]=String(e?.message||e);}}

@@ -131,6 +131,14 @@ def capture_emulator_diagnostics() -> None:
             generated_resource_runtime,
             ARTIFACT_DIR / "omega_resource_research_runtime_v1.android.min.js",
         )
+    generated_identity_runtime = Path(
+        "android/app/build/generated/omegaWebAssets/omega_resource_part04_identity_runtime.js"
+    )
+    if generated_identity_runtime.is_file():
+        shutil.copy2(
+            generated_identity_runtime,
+            ARTIFACT_DIR / "omega_resource_part04_identity_runtime.android.min.js",
+        )
     raw_logcat = ARTIFACT_DIR / "android9-logcat-raw.log"
     capture(["adb", "logcat", "-d", "-t", "10000"], raw_logcat, 30)
 

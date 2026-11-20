@@ -1260,6 +1260,158 @@
     return { countryId: cid, turn: currentTurn(), status: 'ACTIVE', evaluated: evalResult.items.length, submitted: submitted, settlement: settlement };
   }
 
+  // Read-only per-country demand snapshot for bounded NPC planning.
+  // Unlike processCountry(), this path never consumes inventory or publishes state.
+  function evaluateDemand(countryId) {
+    var cid = canonical(countryId), cfg = rules();
+    if (!cid || !/^[A-Z]{3}$/.test(cid)) return {
+      countryId: cid || null, turn: currentTurn(), status: 'SKIPPED',
+      profiles: [], reason: 'COUNTRY_ID_INVALID', mode: 'READ_ONLY', stateMutation: false
+    };
+    if (cfg.enabled !== true) return {
+      countryId: cid, turn: currentTurn(), status: 'DISABLED',
+      profiles: [], reason: 'DEMAND_RULES_DISABLED', mode: 'READ_ONLY', stateMutation: false
+    };
+    var resource = bucket(cid, 'resource');
+    if (!resource || typeof resource !== 'object') return {
+      countryId: cid, turn: currentTurn(), status: 'WAITING_FOR_EVIDENCE',
+      profiles: [], reason: 'RESOURCE_STATE_NOT_OBSERVED', mode: 'READ_ONLY', stateMutation: false
+    };
+    var priorRuntime = object(resource.demandRuntime) || {};
+    var localRuntime = clone(priorRuntime);
+    var metrics = referenceContext(resource, cid, localRuntime);
+    var inventory = object(resource.inventory);
+    var inventoryObserved = !!inventory;
+    var trade = bucket(cid, 'trade') || {};
+    var importRows = Array.isArray(trade.importRequests) ? trade.importRequests : [];
+    var inboundByResource = {}, unresolvedByResource = {};
+    importRows.forEach(function (row) {
+      if (!row || !row.resourceId || isTerminalImportRequest(row)) return;
+      var quantity = finite(row.remainingQuantity != null ? row.remainingQuantity : row.quantity);
+      if (quantity === null || quantity <= 0) return;
+      var key = token(row.resourceId);
+      if (isConfirmedInboundImport(row)) inboundByResource[key] = (inboundByResource[key] || 0) + quantity;
+      else unresolvedByResource[key] = (unresolvedByResource[key] || 0) + 1;
+    });
+    var economy = bucket(cid, 'economy') || {};
+    var activeFactoryDemand = activeFactoryInputDailyRates(economy.productionAssets, resource);
+    var activeRates = activeFactoryDemand.rates || {};
+    var activeSources = activeFactoryDemand.sources || {};
+    var resourceIds = Object.keys(profiles());
+    var consumption = object(resource.consumption) || {};
+    var production = object(resource.production) || {};
+    [consumption, production, activeRates].forEach(function (map) {
+      Object.keys(map).forEach(function (resourceId) {
+        if (!resourceIds.some(function (existing) { return token(existing) === token(resourceId); })) resourceIds.push(resourceId);
+      });
+    });
+    resourceIds = resourceIds.slice(0, 64);
+    var turnDays = simulationTurnDays();
+    if (turnDays === null || turnDays <= 0) turnDays = 1;
+    var transmission = g.OmegaEconomicTransmissionRuntime || (g.Omega && g.Omega.EconomicTransmission);
+    var purchasingPowerMultiplier = 1, importCostMultiplier = 1;
+    try {
+      if (transmission && typeof transmission.getHouseholdPurchasingPowerMultiplier === 'function') {
+        var pp = finite(transmission.getHouseholdPurchasingPowerMultiplier(cid));
+        if (pp !== null && pp > 0) purchasingPowerMultiplier = clamp(pp, 0.2, 1.5);
+      }
+      if (transmission && typeof transmission.getImportCostMultiplier === 'function') {
+        var ic = finite(transmission.getImportCostMultiplier(cid));
+        if (ic !== null && ic > 0) importCostMultiplier = clamp(ic, 0.4, 5);
+      }
+    } catch (_) {}
+    var coverageDays = Math.max(1, finite(cfg.autonomousTradeCoverageDays) ||
+      finite(cfg.stockCoverageDays) || finite(cfg.stockCoverageTurns) || 30);
+    var rows = [];
+    resourceIds.forEach(function (resourceId) {
+      var profile = profileFor(resourceId) || {};
+      var activeRate = resourceValue(activeRates, resourceId);
+      if (activeRate === null || activeRate < 0) activeRate = 0;
+      var baseline = baselineFor(resourceId, resource, profile, localRuntime, metrics, activeRate, activeRate);
+      var rawStockValue = inventoryObserved ? resourceValue(inventory, resourceId) : null;
+      var stockValue = !inventoryObserved ? null : (rawStockValue === null ? 0 : Math.max(0, rawStockValue));
+      var protectedValue = stockValue === null ? null : Math.min(stockValue, protectedStock(resource, resourceId));
+      var spendable = stockValue === null ? null : Math.max(0, stockValue - protectedValue);
+      var inbound = inboundByResource[token(resourceId)] || 0;
+      var unresolved = unresolvedByResource[token(resourceId)] || 0;
+      var priority = finite(profile.priority);
+      if (priority === null) priority = 1;
+      if (!baseline || finite(baseline.rate) === null || finite(baseline.rate) < 0) {
+        rows.push({
+          resourceId: resourceId, unit: profile.unit || null, status: stockValue === null ? 'WAITING_FOR_INVENTORY' : 'UNKNOWN',
+          demandPerDay: null, demandThisTurn: null, availableStock: stockValue, spendableStockAfter: spendable,
+          pendingImportQuantity: inbound, unresolvedImportRequestCount: unresolved,
+          stockCoverageTargetDays: coverageDays, procurementScore: null, priority: priority,
+          unmetDemand: null, deficit: null, surplus: null,
+          demandSource: 'NO_BASELINE_OR_REQUIRED_METRICS', demandProvenance: 'UNKNOWN',
+          demandEvidenceStatus: 'UNKNOWN', inventoryObserved: stockValue !== null,
+          unknownFactors: ['DEMAND_BASELINE']
+        });
+        return;
+      }
+      var currentPriceRaw = marketPrice(cid, resourceId, trade);
+      var currentPrice = currentPriceRaw.value === null ? null : currentPriceRaw.value * importCostMultiplier;
+      var referencePrices = object(localRuntime.referencePriceByResource) || {};
+      var referencePrice = finite(referencePrices[resourceId]);
+      if (referencePrice === null && currentPrice !== null) referencePrice = currentPrice;
+      var factors = calculateDemand({
+        config: cfg, profile: profile, baselineRate: baseline.rate, reference: metrics.reference,
+        current: {
+          population: metrics.current.population.value,
+          gdpPerCapita: metrics.current.gdpPerCapita.value,
+          industry: metrics.current.industry.value,
+          militaryPersonnel: metrics.current.militaryPersonnel.value
+        },
+        currentPrice: currentPrice, referencePrice: referencePrice, priceSource: currentPriceRaw.source,
+        policyMultiplier: policyMultiplier(resource, resourceId), warActive: warActive(cid)
+      });
+      var factoryOnlyBaseline = baseline.source === 'ACTIVE_FACTORY_INPUT_REQUIREMENT_PROXY';
+      var consumerDemanded = factoryOnlyBaseline ? 0 : Math.max(0, factors.demand) * purchasingPowerMultiplier;
+      var dailyDemand = activeRate > 0 ? Math.max(consumerDemanded, activeRate) :
+        Math.max(0, factors.demand) * purchasingPowerMultiplier;
+      if (!Number.isFinite(dailyDemand) || dailyDemand < 0) dailyDemand = null;
+      var demandThisTurn = dailyDemand === null ? null : dailyDemand * turnDays;
+      var targetDays = Math.max(1, finite(profile.stockCoverageDays) || finite(profile.stockCoverageTurns) || coverageDays);
+      var deficit = spendable === null || dailyDemand === null ? null :
+        Math.max(0, dailyDemand * targetDays - spendable - inbound);
+      var unmet = spendable === null || demandThisTurn === null ? null : Math.max(0, demandThisTurn - spendable);
+      var surplus = spendable === null || dailyDemand === null ? null : Math.max(0, spendable - dailyDemand * coverageDays);
+      var coverage = spendable === null || dailyDemand === null || dailyDemand <= 0 ? null : spendable / dailyDemand;
+      var score = deficit === null ? null : clamp(deficit / Math.max(1, dailyDemand * targetDays), 0, 1) * priority;
+      var status = stockValue === null ? 'WAITING_FOR_INVENTORY' :
+        deficit !== null && deficit > 1e-8 ? 'SHORTAGE' :
+        coverage !== null && coverage < targetDays ? 'LOW_COVERAGE' : 'BALANCED';
+      var evidenceStatus = baseline.provenance === 'OBSERVED' || baseline.provenance === 'OBSERVED_FACTORY_INPUT_PROXY'
+        ? 'OBSERVED' : (baseline.provenance ? 'MODELED' : 'UNKNOWN');
+      rows.push({
+        resourceId: resourceId, unit: profile.unit || null, status: status,
+        demandPerDay: dailyDemand, demandThisTurn: demandThisTurn, availableStock: stockValue,
+        spendableStockAfter: spendable, protectedStock: protectedValue,
+        pendingImportQuantity: inbound, unresolvedImportRequestCount: unresolved,
+        stockCoverageDays: coverage, stockCoverageTargetDays: targetDays,
+        procurementScore: score, priority: priority, unmetDemand: unmet,
+        deficit: deficit, surplus: surplus, demandSource: baseline.source || null,
+        demandProvenance: baseline.provenance || 'UNKNOWN', demandEvidenceStatus: evidenceStatus,
+        baselineRate: baseline.rate, currentPrice: currentPrice, inventoryObserved: stockValue !== null,
+        activeFactoryInputDemandPerDay: activeRate,
+        activeFactoryInputDemandSources: clone(activeSources[token(resourceId)] || activeSources[resourceId] || []),
+        unknownFactors: clone(factors.unknownFactors || [])
+      });
+    });
+    rows.sort(function (a, b) {
+      return (finite(b.procurementScore) || 0) - (finite(a.procurementScore) || 0) ||
+        (finite(b.priority) || 0) - (finite(a.priority) || 0) ||
+        token(a.resourceId).localeCompare(token(b.resourceId));
+    });
+    return {
+      countryId: cid, turn: currentTurn(), status: inventoryObserved ? 'ACTIVE' : 'PARTIAL',
+      profiles: rows, resourceCount: rows.length,
+      evidenceAuthority: 'RESOURCE_MINISTRY_READ_ONLY_NATIONAL_DEMAND_SNAPSHOT',
+      mode: 'READ_ONLY', stateMutation: false, targetStockCoverageDays: coverageDays,
+      inventoryObserved: inventoryObserved
+    };
+  }
+
   function diagnostics() {
     var cfg = rules();
     return {
@@ -1277,6 +1429,7 @@
     prepare: prepare,
     processCountry: processCountry,
     calculateDemand: calculateDemand,
+    evaluateDemand: evaluateDemand,
     evaluateFinalProductDemand: evaluateFinalProductDemand,
     submitConsumerBuyerOrders: submitConsumerBuyerOrders,
     authorizePlayerSupplyLifeline: authorizePlayerSupplyLifeline,

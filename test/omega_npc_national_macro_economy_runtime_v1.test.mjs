@@ -347,15 +347,21 @@ test('static shell, server bootstrap and offline cache load the same runtime/con
   const staticIndex=indexHtml.indexOf('omega_npc_national_macro_economy_runtime_v1.js');
   const staticTrade=indexHtml.indexOf('omega_global_trade_system.js');
   const staticBilateral=indexHtml.indexOf('omega_bilateral_trade_agreement_system_v1.js');
+  const staticAutonomousTrade=indexHtml.indexOf('omega_autonomous_national_trade_decision_engine_v1.js');
   const serverRuntime=serverBootstrap.indexOf("'omega_npc_national_macro_economy_runtime_v1.js'");
   const serverTrade=serverBootstrap.indexOf("'omega_global_trade_system.js'");
   const serverBilateral=serverBootstrap.indexOf("'omega_bilateral_trade_agreement_system_v1.js'");
+  const serverAutonomousTrade=serverBootstrap.indexOf("'omega_autonomous_national_trade_decision_engine_v1.js'");
   assert.ok(staticRuntimeAfterTrade(staticIndex,staticTrade));
   assert.ok(staticBilateral>staticTrade,'browser boot must load Bilateral Trade after its Global Trade dependency');
+  assert.ok(staticAutonomousTrade>staticBilateral,'browser boot must load the decision orchestrator after Bilateral Trade');
   assert.ok(serverRuntime>serverTrade);
   assert.ok(serverBilateral>serverTrade,'server boot must load the same Bilateral Trade runtime');
-  assert.match(offlineShell,/omega-offline-atlas-shell-v128/);
+  assert.ok(serverAutonomousTrade>serverBilateral,'server boot must load the decision orchestrator after Bilateral Trade');
+  assert.match(offlineShell,/omega-offline-atlas-shell-v130/);
   assert.match(offlineShell,/omega_bilateral_trade_agreement_system_v1\.js/);
+  assert.match(offlineShell,/omega_autonomous_national_trade_decision_engine_v1\.js/);
+  assert.match(offlineShell,/omega_autonomous_national_trade_decision_rules_v1\.json/);
   assert.match(indexHtml,/omega_national_accounts_runtime_v1\.js/);
   assert.match(serverBootstrap,/omega_national_accounts_runtime_v1\.js/);
   assert.match(offlineShell,/\.\/national_accounts_rules_v1\.json/);
@@ -366,3 +372,18 @@ test('static shell, server bootstrap and offline cache load the same runtime/con
   assert.doesNotMatch(runtimeSource,/setInterval|requestAnimationFrame|new Worker\s*\(/);
 });
 function staticRuntimeAfterTrade(runtimeIndex,tradeIndex){return runtimeIndex>tradeIndex&&runtimeIndex>=0&&tradeIndex>=0;}
+
+
+test('NPC macro trade planning has a read-only per-country resource-demand source', () => {
+  const macro = readFileSync('omega_npc_national_macro_economy_runtime_v1.js', 'utf8');
+  const demand = readFileSync('omega_resource_national_demand_runtime_v1.js', 'utf8');
+  assert.match(macro, /demandApi\.evaluateDemand\(countryId\)/);
+  assert.match(demand, /evaluateDemand:\s*evaluateDemand/);
+  const start = demand.indexOf('function evaluateDemand(countryId)');
+  const end = demand.indexOf('function diagnostics()', start);
+  assert.ok(start >= 0 && end > start);
+  const readOnly = demand.slice(start, end);
+  assert.doesNotMatch(readOnly, /dispatch\(|dispatchCommand\(|stateTransaction\.set|\.inventory\s*=/);
+  assert.match(readOnly, /mode:\s*'READ_ONLY'/);
+  assert.match(readOnly, /stateMutation:\s*false/);
+});

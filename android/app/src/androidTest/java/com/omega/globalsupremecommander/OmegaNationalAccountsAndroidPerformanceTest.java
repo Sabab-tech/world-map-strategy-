@@ -392,6 +392,94 @@ public final class OmegaNationalAccountsAndroidPerformanceTest {
                     interopApiCount:interopCandidates.length,
                     patchedInstanceCount:patchedInteropInstances.length
                   });
+                  const identityRegistry = window.OmegaCanonicalIdentityRegistry ||
+                    window.OmegaCountrySemanticBridge || (window.Omega && window.Omega.CanonicalIdentity) || null;
+                  const identityBridge = window.OmegaCountrySemanticBridge || null;
+                  recordPerfFailure('probe.identityResolver.source',null,{
+                    registryType:typeof identityRegistry,
+                    registryResolverType:typeof (identityRegistry && identityRegistry.resolveCountry),
+                    registryResolverSource:identityRegistry && typeof identityRegistry.resolveCountry === 'function'
+                      ?String(identityRegistry.resolveCountry).slice(0,1800):null,
+                    registryExportDataType:typeof (identityRegistry && identityRegistry.exportData),
+                    bridgeResolverType:typeof (identityBridge && identityBridge.resolveCountry),
+                    bridgeResolverSource:identityBridge && typeof identityBridge.resolveCountry === 'function'
+                      ?String(identityBridge.resolveCountry).slice(0,1800):null,
+                    universalResolveType:typeof (window.OmegaUniversalEntityIdentityEngine &&
+                      window.OmegaUniversalEntityIdentityEngine.resolve),
+                    blackMarketType:typeof (window.OmegaBlackMarket && window.OmegaBlackMarket.diagnostics)
+                  });
+                  if (identityRegistry && typeof identityRegistry.resolveCountry === 'function') {
+                    const originalIdentityResolver = identityRegistry.resolveCountry;
+                    let identityResolverCallCount = 0;
+                    try {
+                      identityRegistry.resolveCountry = function() {
+                        const callIndex = identityResolverCallCount++;
+                        const firstArgument = arguments.length ? arguments[0] : null;
+                        const argumentText = firstArgument == null ? null : String(firstArgument);
+                        if (callIndex < 80) {
+                          try {
+                            console.info('[OMEGA_ANDROID_IDENTITY_CALL]' + JSON.stringify({
+                              index:callIndex,argument:argumentText,
+                              argumentType:typeof firstArgument,
+                              stack:String(new Error().stack || '').split('\\n').slice(0,5).join('|')
+                            }));
+                          } catch (_) {}
+                        }
+                        try {
+                          const resolved = originalIdentityResolver.apply(this,arguments);
+                          if (callIndex < 80) {
+                            try {
+                              console.info('[OMEGA_ANDROID_IDENTITY_RESULT]' + JSON.stringify({
+                                index:callIndex,argument:argumentText,
+                                id:resolved && resolved.id || null,
+                                status:resolved && resolved.status || null
+                              }));
+                            } catch (_) {}
+                          }
+                          return resolved;
+                        } catch (error) {
+                          try {
+                            console.error('[OMEGA_ANDROID_IDENTITY_THROW]' + JSON.stringify({
+                              index:callIndex,argument:argumentText,
+                              error:String(error && error.message || error),
+                              stack:String(error && error.stack || '').split('\\n').slice(0,7).join('|')
+                            }));
+                          } catch (_) {}
+                          recordPerfFailure('identityResolver.resolveCountry.throw',error,{
+                            argumentCount:arguments.length,
+                            firstArgument:argumentText,
+                            resolverSource:String(originalIdentityResolver).slice(0,1800)
+                          });
+                          throw error;
+                        }
+                      };
+                    } catch (error) {
+                      recordPerfFailure('identityResolver.instrumentation.wrapFailed',error);
+                    }
+                    try {
+                      const resolved = identityRegistry.resolveCountry('USA');
+                      recordPerfFailure('identityResolver.directLookup.USA',null,{
+                        status:resolved && resolved.status || null,
+                        id:resolved && resolved.id || null,
+                        source:resolved && resolved.source || null
+                      });
+                    } catch (error) {
+                      recordPerfFailure('identityResolver.directLookup.USA.throw',error);
+                    }
+                  }
+                  const universalIdentity = window.OmegaUniversalEntityIdentityEngine;
+                  if (universalIdentity && typeof universalIdentity.resolve === 'function') {
+                    try {
+                      const resolved = universalIdentity.resolve('USA','COUNTRY');
+                      recordPerfFailure('identityResolver.universalLookup.USA',null,{
+                        status:resolved && resolved.status || null,
+                        id:resolved && resolved.id || null,
+                        source:resolved && resolved.source || null
+                      });
+                    } catch (error) {
+                      recordPerfFailure('identityResolver.universalLookup.USA.throw',error);
+                    }
+                  }
                   function restorePerfDiagnostics() {
                     patchedInteropInstances.forEach(function(entry) {
                       try { entry.instance.stateTransaction = entry.originalInstanceFactory; } catch (_) {}

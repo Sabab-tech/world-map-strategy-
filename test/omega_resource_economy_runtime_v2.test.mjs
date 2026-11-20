@@ -1052,10 +1052,17 @@ test('production loss evidence is source-bound, atomic, and cannot exceed consum
   assert.equal(unmeasured.status,'APPLIED',JSON.stringify(unmeasured));
   const unmeasuredRow=resource.inventoryLedger.find(row=>row.transactionId==='FACTORY-LOSS-TX-UNMEASURED');
   assert.equal(unmeasuredRow.lossMeasurementStatus,'UNOBSERVED');
+  resource.inventoryLedger.push({
+    type:'FACTORY_MULTI_INPUT_PROCESSING_COMMITTED',
+    transactionId:'FACTORY-MULTI-INPUT-UNOBSERVED',turn:1,
+    inputQuantities:{iron_ore:5},outputs:{iron_intermediate:4}
+  });
   const productionCoverage=api.attestStockLossCoverage('BGD','PRODUCTION');
   assert.equal(productionCoverage.status,'APPLIED');
   assert.equal(productionCoverage.result.coverageStatus,'PARTIAL');
   assert.ok(productionCoverage.result.integrityErrors.some(x=>x.startsWith('PRODUCTION_LOSS_MEASUREMENT_UNOBSERVED')));
+  assert.ok(productionCoverage.result.integrityErrors.some(x=>x==='PRODUCTION_LOSS_MEASUREMENT_UNOBSERVED:FACTORY-MULTI-INPUT-UNOBSERVED'),
+    'multi-input industrial-network production must not be counted as measured zero when no loss evidence exists');
 });
 
 

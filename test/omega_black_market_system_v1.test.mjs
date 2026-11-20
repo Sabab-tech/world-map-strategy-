@@ -12,9 +12,10 @@ function makeHarness(){
  foreign:{BGD:{relations:{SAU:{overall:30,trade:20,trust:25,political:35,trade_agreement:false,sanctions:true,war_state:false}}},
   SAU:{relations:{BGD:{overall:35,trade:20,trust:25,political:40,trade_agreement:false,sanctions:true,war_state:false}}},XYZ:{}},
  finance:{BGD:{available:1000000}},governmentBanking:{tradePolicies:{BGD:{importTariffPct:30}}},intelligence:{}};
- const handlers=new Map(),listeners=new Map();
- const ctx={Game:{state},Omega:{CanonicalIdentity:{resolveCountry(v){const x=String(v||'').toUpperCase();return{id:x,iso3:x};}}},
- OmegaCanonicalIdentityRegistry:{resolveCountry(v){const x=String(v||'').toUpperCase();return{id:x,iso3:x};}},
+ const handlers=new Map(),listeners=new Map(),identityResolutionCalls=[];
+  function resolveCountry(v){identityResolutionCalls.push(v);const x=String(v||'').toUpperCase(),id=x==='BANGLADESH'?'BGD':(x==='SAUDI ARABIA'?'SAU':x);return{id,iso3:id};}
+ const ctx={Game:{state},Omega:{CanonicalIdentity:{resolveCountry}},
+ OmegaCanonicalIdentityRegistry:{resolveCountry},
  CustomEvent:class{constructor(type,init){this.type=type;this.detail=init?.detail;}},
  addEventListener(type,fn){const a=listeners.get(type)||[];a.push(fn);listeners.set(type,a);},
  dispatchEvent(e){for(const fn of listeners.get(e.type)||[])fn(e);return true;},
@@ -36,8 +37,16 @@ function makeHarness(){
  const result=r.handler({payload:p},{countryId:c,stateTransaction:tx});return{status:result?.accepted===false?'REJECTED':'APPLIED',result};},
  emitEvent(t,c,o,p){for(const fn of listeners.get(t)||[])fn({detail:{eventType:t,countryId:c,payload:p}});}}
  };
- vm.createContext(ctx);vm.runInContext(source,ctx,{filename:'omega_black_market_system_v1.js'});return{ctx,state,handlers};
+ vm.createContext(ctx);vm.runInContext(source,ctx,{filename:'omega_black_market_system_v1.js'});return{ctx,state,handlers,identityResolutionCalls};
 }
+test('canonical ISO country codes bypass semantic identity lookup while country names still resolve',()=>{
+ const h=makeHarness(),api=h.ctx.OmegaBlackMarket;
+ assert.equal(api.getOffers('BGD','coal',10).status,'READY');
+ assert.equal(h.identityResolutionCalls.length,0,'canonical country codes must not repeatedly invoke the semantic identity bridge');
+ assert.equal(api.getOffers('Bangladesh','coal',10).status,'READY');
+ assert.ok(h.identityResolutionCalls.includes('Bangladesh'),'non-canonical country names must continue through semantic identity resolution');
+});
+
 test('offers use canonical products and observed stock, warehouse and protected reserve',()=>{
  const h=makeHarness(),r=h.ctx.OmegaBlackMarket.getOffers('BGD','coal',10);
  assert.equal(r.status,'READY');assert.equal(r.offers.length,1);assert.equal(r.offers[0].availableQuantity,90);
