@@ -4,7 +4,7 @@
 (function (g) {
   'use strict';
 
-  var ROUTES = ['map', 'overview', 'government', 'economy', 'more', 'industry', 'reports', 'religion'];
+  var ROUTES = ['map', 'overview', 'government', 'economy', 'more', 'industry', 'reports', 'religion', 'autonomous-development'];
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]; }); }
   function canonicalCountry(value) {
     var raw = String(value == null ? '' : value).trim();
@@ -53,7 +53,7 @@
     try { return lib && typeof lib.list === 'function' ? lib.list().length : null; } catch (_) { return null; }
   }
   function navButton(id, label, active) {
-    var selected = active === id || (id === 'more' && ['industry','reports','religion','home-affairs','resources','ministry-detail','mine-detail'].indexOf(active) >= 0);
+    var selected = active === id || (id === 'more' && ['industry','reports','religion','autonomous-development','home-affairs','resources','ministry-detail','mine-detail'].indexOf(active) >= 0);
     return '<button type="button" class="omega-v2-nav-button' + (selected ? ' is-active' : '') + '" data-omega-v2-global-nav="' + esc(id) + '" aria-current="' + (selected ? 'page' : 'false') + '">' + esc(label) + '</button>';
   }
   function jumpMenuMarkup(activeRoute) {
@@ -65,7 +65,7 @@
     var globalRoutes = [
       ['map','World map'],['overview','Country overview'],['government','Government'],
       ['economy','Economy & finance'],['industry','Factories & industry'],['reports','Reports'],
-      ['more','More modules'],['religion','Religion & ideology']
+      ['more','More modules'],['religion','Religion & ideology'],['autonomous-development','Autonomous development']
     ];
     return '<details class="omega-v2-route-switcher"><summary aria-label="Jump to any screen or ministry">Jump anywhere ▾</summary>' +
       '<div class="omega-v2-route-menu"><section><h2>MAIN SCREENS</h2><div class="omega-v2-route-menu-grid">' +
@@ -278,6 +278,7 @@
       {title:'Resources & Mining',desc:'Registered sites, extraction, reserves, stock and material flow.',photo:'open-pit-mine',ministry:'energy_mining'},
       {title:'Public Safety',desc:'Police staffing, fleet, operations and incidents.',photo:'bangladesh-police-headquarters',ministry:'interior_security'},
       {title:'Trade & Commerce',desc:'Global commodity market, international orders, shipping and trade contracts.',photo:'container-ship',ministry:'trade'},
+      {title:'Autonomous Development',desc:'NPC economic progression, national projects, scheduler health and autonomous trade decisions.',photo:'hydroelectric-plant',route:'autonomous-development'},
       {title:'Foreign Affairs',desc:'Diplomacy, treaties and international commitments.',photo:'un-assembly-building',ministry:'foreign_affairs'},
       {title:'Defense',desc:'Readiness, assets, procurement and defense logistics.',asset:'assets/images (15).jpeg',ministry:'defense'},
       {title:'Intelligence & Cyber',desc:'Satellite imagery, threat research and strategic reports.',asset:'assets/China_Military_Facilities_What_Satellites_Reveal_f6efe2c1b2.jpg',ministry:'intelligence_cyber'},
@@ -311,6 +312,10 @@
       return renderMore(root, content);
     } else if (state.route === 'religion') {
       return renderReligion(root, content);
+    } else if (state.route === 'autonomous-development') {
+      if (g.OmegaUIV2AutonomousDevelopment && typeof g.OmegaUIV2AutonomousDevelopment.render === 'function') {
+        return g.OmegaUIV2AutonomousDevelopment.render(content, withScheduledScreenRefresh(root, Object.assign({}, options, { countryId:state.countryId })));
+      }
     } else if (state.route === 'government') {
       if (g.OmegaUIV2Government && typeof g.OmegaUIV2Government.render === 'function') {
         return g.OmegaUIV2Government.render(content, ministryOptions(root));
@@ -384,7 +389,8 @@
       map:'World map', overview:'Country overview', economy:'Economy & finance',
       more:'Command Center', industry:'Factories & industry', resources:'Resources & Mining',
       'home-affairs':'Public Safety', 'ministry-detail':'Ministry details',
-      'mine-detail':'Mine details', reports:'Reports', religion:'Religion & ideology'
+      'mine-detail':'Mine details', reports:'Reports', religion:'Religion & ideology',
+      'autonomous-development':'Autonomous development'
     };
     return labels[state.route] || 'the selected section';
   }
@@ -445,7 +451,7 @@
       Array.prototype.forEach.call(navButtons, function (button) {
         var id = button.getAttribute('data-omega-v2-global-nav');
         var active = id === state.route || (id === 'more' &&
-          ['industry','reports','religion','home-affairs','resources','ministry-detail','mine-detail'].indexOf(state.route) >= 0);
+          ['industry','reports','religion','autonomous-development','home-affairs','resources','ministry-detail','mine-detail'].indexOf(state.route) >= 0);
         if (button.classList) {
           if (active && button.classList.add) button.classList.add('is-active');
           else if (!active && button.classList.remove) button.classList.remove('is-active');
