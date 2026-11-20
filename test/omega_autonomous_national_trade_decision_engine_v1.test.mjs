@@ -267,8 +267,14 @@ test('runs PLAN, one market-intelligence sync, then one feasible bilateral propo
   assert.equal(duplicate.status, 'ALREADY_PROCESSED');
   assert.equal(runtime.metrics.proposalCalls, 1);
   const afterCooldown = await runtime.process('AUS', 28);
-  assert.equal(afterCooldown.status, 'HOLD');
-  assert.equal(runtime.metrics.proposalCalls, 1, 'the existing pending proposal must not be duplicated');
+  assert.equal(afterCooldown.status, 'PLANNED');
+  const nextCandidates = runtime.context.Omega.AutonomousNationalTradeDecisionV1.getDecisionPlan('AUS').candidates;
+  assert.ok(nextCandidates.length > 0);
+  assert.ok(nextCandidates.every(row => row.targetCountryId !== 'CAN'),
+    'the existing pending CAN proposal must not be duplicated');
+  assert.ok(nextCandidates.some(row => row.targetCountryId === 'MEX'),
+    'a different feasible supplier remains available as an alternative');
+  assert.equal(runtime.metrics.proposalCalls, 1);
 });
 
 test('default rollout is read-only: it saves a ranked plan without syncing market data or sending proposals', async () => {
