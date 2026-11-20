@@ -1176,11 +1176,22 @@
     consents = consents.filter(function (countryId) { return countryId !== c; });
     if (agreed === true) consents.push(c);
     consents = Array.from(new Set(consents)).sort();
-    var saved = updateContract(c, contract.agreementId, {
-      terminationConsents: consents, terminationConsentTurn: turn()
-    });
-    if (!saved || saved.accepted !== true)
-      return { accepted: false, reason: 'TERMINATION_CONSENT_PERSISTENCE_FAILED', detail: saved };
+    var patch = { terminationConsents: consents, terminationConsentTurn: turn() };
+    // Consent is bilateral state: persist the same consent set to both country
+    // mirrors so the second party can observe the first party's approval.
+    var ownSaved = updateContract(c, contract.agreementId, patch);
+    if (!ownSaved || ownSaved.accepted !== true)
+      return { accepted: false, reason: 'TERMINATION_CONSENT_PERSISTENCE_FAILED', detail: ownSaved };
+    var partnerSaved = updateContract(partner, contract.agreementId, patch);
+    if (!partnerSaved || partnerSaved.accepted !== true) {
+      var previousConsents = Array.isArray(contract.terminationConsents) ?
+        contract.terminationConsents.map(canonical).filter(Boolean) : [];
+      updateContract(c, contract.agreementId, {
+        terminationConsents: previousConsents,
+        terminationConsentTurn: num(contract.terminationConsentTurn)
+      });
+      return { accepted: false, reason: 'PARTNER_TERMINATION_CONSENT_PERSISTENCE_FAILED', detail: partnerSaved };
+    }
     return { accepted: true, status: consents.indexOf(partner) >= 0 ? 'MUTUALLY_APPROVED' : agreed ? 'WAITING_FOR_PARTNER_CONSENT' : 'CONSENT_REVOKED',
       agreementId: contract.agreementId, consentedBy: consents };
   }
