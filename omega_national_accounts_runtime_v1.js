@@ -415,6 +415,144 @@
       authority:'PHASE5_INSTITUTIONAL_SECTOR_ACCOUNTS_EVIDENCE_LEDGER'
     };
   }
+
+  async function reconcileSectorJournals(input={}){
+    const countryId=canonicalIso3(input.countryId),financeRows=Array.isArray(input.financeRows)?input.financeRows:[];
+    const financeSourceRowsTotal=Math.max(financeRows.length,Math.floor(finite(input.financeSourceRowsTotal)??financeRows.length));
+    const financeLimit=bounded(input.financeLedgerRows,500,500);
+    const companyAccounts=isObject(input.companyAccounts)?input.companyAccounts:{};
+    const companyLimit=bounded(input.maxCompanyAccounts,5,64);
+    const rowsPerCompany=bounded(input.companyCashFlowRowsPerCompany,256,1024);
+    const availableCompanyIds=[...new Set([
+      ...(Array.isArray(g.Omega?.PrivateEnterpriseLifecycleV1?.companyIds)?g.Omega.PrivateEnterpriseLifecycleV1.companyIds:[]),
+      ...Object.keys(companyAccounts)
+    ].map(v=>String(v||'').trim()).filter(Boolean))].sort();
+    const observedCompanyIds=availableCompanyIds.slice(0,companyLimit);
+    const seen=new Map(),coverage=new Map();
+    let postedTransactionCount=0,invalidTransactionCount=0,duplicateTransactionCount=0;
+    let legacyTransactionCount=0,unavailableTransactionCount=0,companyCashFlowRowsObserved=0;
+    let sourceRowsScanned=financeRows.length,companyDroppedRows=0,companyRowsTruncated=false;
+    function recordCoverage(journal){
+      const sectorId=String(journal.sectorId||'').toLowerCase(),currency=String(journal.currency||'').toUpperCase(),
+        periodId=String(journal.periodId||'').trim();
+      const key=sectorId+'\u0000'+currency+'\u0000'+periodId;
+      const row=coverage.get(key)||{sectorId,currency,periodId,postedTransactionCount:0,unavailableTransactionCount:0};
+      row.postedTransactionCount++;coverage.set(key,row);
+    }
+    function validate(row,sourceKind,sourceCompanyId){
+      const journal=isObject(row?.sectorJournalV1)?row.sectorJournalV1:null;
+      const transactionId=String(row?.transactionId||row?.entryId||'').trim();
+      if(!journal){legacyTransactionCount++;return{status:'LEGACY',transactionId};}
+      if(String(journal.status||'').toUpperCase()==='UNAVAILABLE'){
+        unavailableTransactionCount++;
+        const key=String(journal.sectorId||'').toLowerCase()+'\u0000'+String(journal.currency||'').toUpperCase()+'\u0000'+String(journal.periodId||'');
+        const current=coverage.get(key)||{sectorId:String(journal.sectorId||'').toLowerCase(),currency:String(journal.currency||'').toUpperCase(),
+          periodId:String(journal.periodId||''),postedTransactionCount:0,unavailableTransactionCount:0};
+        current.unavailableTransactionCount++;coverage.set(key,current);
+        return{status:'UNAVAILABLE',transactionId};
+      }
+      const tx=String(row?.transactionId||row?.entryId||'').trim();
+      const sector=String(journal.sectorId||'').toLowerCase();
+      const companyId=String(journal.companyId||row?.companyId||'').trim();
+      const authority=String(journal.sourceAuthority||'').trim();
+      const expectedAuthority=sourceKind==='FINANCE'
+        ?(sector==='government'?'OMEGA_FINANCE_MINISTRY':'OMEGA_PRIVATE_ENTERPRISE_FINANCE_LEDGER')
+        :'OMEGA_PRIVATE_ENTERPRISE_CASHFLOW';
+      if(!countryId||!tx||journal.status!=='POSTED'||journal.schemaVersion!==1||
+         !['government','firm'].includes(sector)||journal.sourceTransactionId!==tx||
+         canonicalIso3(journal.countryId)!==countryId||!String(journal.currency||'').trim()||
+         !String(journal.periodId||'').trim()||journal.counterEntryComplete!==true||
+         authority!==expectedAuthority||
+         (sector==='government'&&companyId)||
+         (sector==='firm'&&(!companyId||companyId!==String(sourceCompanyId||row?.companyId||'')))||
+         (sourceKind==='FINANCE'&&sector==='government'&&!['EXPENSE','EXPENSE_ROLLBACK'].includes(String(row?.action||'').toUpperCase()))||
+         (sourceKind==='FINANCE'&&sector==='firm'&&String(row?.type||'').toUpperCase()!=='PRIVATE_ENTERPRISE_OPERATING_COST_ACCRUAL')){
+        invalidTransactionCount++;return{status:'INVALID',transactionId:tx};
+      }
+      const currency=String(journal.currency).trim().toUpperCase();
+      const debitDeclared=finite(journal.debitTotalMinor),creditDeclared=finite(journal.creditTotalMinor);
+      if(!currency||!Number.isSafeInteger(debitDeclared)||!Number.isSafeInteger(creditDeclared)||
+         debitDeclared<=0||debitDeclared!==creditDeclared){invalidTransactionCount++;return{status:'INVALID',transactionId:tx};}
+      const lines=Array.isArray(journal.lines)?journal.lines:[],lineIds=new Set();let debit=0,credit=0;
+      if(lines.length<2){invalidTransactionCount++;return{status:'INVALID',transactionId:tx};}
+      for(const line of lines){
+        const amount=finite(line?.amountMinor),side=String(line?.side||'').toUpperCase(),lineId=String(line?.lineId||'').trim();
+        if(!Number.isSafeInteger(amount)||amount<=0||!lineId||lineIds.has(lineId)||
+           !String(line?.accountId||'').trim()||String(line.currency||'').toUpperCase()!==currency||
+           canonicalIso3(line.countryId)!==countryId||String(line.sourceTransactionId||'')!==tx||
+           (sector==='firm'&&String(line.companyId||'')!==companyId)){
+          invalidTransactionCount++;return{status:'INVALID',transactionId:tx};
+        }
+        lineIds.add(lineId);
+        if(side==='DEBIT')debit+=amount;else if(side==='CREDIT')credit+=amount;else{
+          invalidTransactionCount++;return{status:'INVALID',transactionId:tx};
+        }
+      }
+      if(debit!==debitDeclared||credit!==creditDeclared||debit!==credit){
+        invalidTransactionCount++;return{status:'INVALID',transactionId:tx};
+      }
+      const signature=JSON.stringify({sector,companyId,currency,periodId:journal.periodId,authority,debit,credit});
+      if(seen.has(tx)){
+        duplicateTransactionCount++;
+        if(seen.get(tx)!==signature)invalidTransactionCount++;
+        return{status:'DUPLICATE',transactionId:tx};
+      }
+      seen.set(tx,signature);postedTransactionCount++;recordCoverage(journal);
+      return{status:'POSTED',transactionId:tx};
+    }
+    for(const row of financeRows)validate(row,'FINANCE',row?.companyId);
+    const maxEntries=companyLimit*rowsPerCompany;
+    let scannedCompanyAccounts=0,scannedCompanyRows=0,segmentStartedAt=clockNow();
+    for(const companyId of observedCompanyIds){
+      const account=companyAccounts[companyId];
+      if(!isObject(account))continue;
+      scannedCompanyAccounts++;
+      const entries=Array.isArray(account.cashFlowEntries)?account.cashFlowEntries:[];
+      const selected=entries.slice(-rowsPerCompany);
+      const dropped=Math.max(0,finite(account.cashFlowJournalDroppedEntries)||0);
+      companyDroppedRows+=dropped;
+      if(entries.length>selected.length||dropped>0)companyRowsTruncated=true;
+      for(const row of selected){
+        companyCashFlowRowsObserved++;scannedCompanyRows++;
+        validate(row,'COMPANY_CASHFLOW',companyId);
+        if((scannedCompanyRows%MAX_ROWS_PER_SYNC_SLICE)===0){
+          recordSyncSegment(segmentStartedAt);await yieldToBrowser();segmentStartedAt=clockNow();
+        }
+      }
+    }
+    recordSyncSegment(segmentStartedAt);
+    sourceRowsScanned+=companyCashFlowRowsObserved;
+    const financeTruncated=financeRows.length>=financeLimit||financeSourceRowsTotal>financeRows.length;
+    const companyAccountsTruncated=availableCompanyIds.length>scannedCompanyAccounts;
+    const sourceCoverageStatus=financeTruncated||companyRowsTruncated||companyAccountsTruncated||
+      observedCompanyIds.length<availableCompanyIds.length||availableCompanyIds.length<(Array.isArray(g.Omega?.PrivateEnterpriseLifecycleV1?.companyIds)?g.Omega.PrivateEnterpriseLifecycleV1.companyIds.length:0)
+      ?'PARTIAL':(legacyTransactionCount||unavailableTransactionCount?'PARTIAL':'PARTIAL');
+    const integrityStatus=invalidTransactionCount>0?'UNRECONCILED':
+      (postedTransactionCount>0&&duplicateTransactionCount===0?'RECONCILED':
+        (postedTransactionCount>0&&invalidTransactionCount===0?'RECONCILED':'UNOBSERVED'));
+    const financeWindow={observedRows:financeRows.length,sourceRows:financeSourceRowsTotal,
+      rowLimit:financeLimit,windowTruncated:financeTruncated,
+      droppedSourceRows:Math.max(0,financeSourceRowsTotal-financeRows.length)};
+    const companyWindow={companyAccountsAvailable:availableCompanyIds.length,
+      companyAccountsObserved:scannedCompanyAccounts,companyAccountsLimit:companyLimit,
+      companyAccountsTruncated,observedRows:companyCashFlowRowsObserved,rowLimitPerCompany:rowsPerCompany,
+      windowTruncated:companyRowsTruncated||companyAccountsTruncated,droppedSourceRows:companyDroppedRows};
+    const unaccountedSourceRowCount=Math.max(0,financeWindow.droppedSourceRows)+companyDroppedRows+
+      Math.max(0,availableCompanyIds.length-scannedCompanyAccounts)+legacyTransactionCount+unavailableTransactionCount;
+    return{
+      status:'PARTIAL',integrityStatus,sourceCoverageStatus,countryId,
+      postedTransactionCount,invalidTransactionCount,duplicateTransactionCount,
+      legacyTransactionCount,unavailableTransactionCount,
+      currencyPeriodCoverage:[...coverage.values()].sort((a,b)=>
+        a.sectorId.localeCompare(b.sectorId)||a.currency.localeCompare(b.currency)||a.periodId.localeCompare(b.periodId)),
+      amountsAggregated:false,currencyAmountAggregation:'DISABLED',
+      sourceWindows:{financeLedger:financeWindow,companyCashFlow:companyWindow},
+      sourceRowsScanned,unaccountedSourceRowCount,
+      companyCashFlowRowsObserved,
+      note:'Read-only double-entry evidence validation. Partial source coverage remains PARTIAL; amounts are not summed across currencies and missing postings are never inferred.'
+    };
+  }
+
   function buildObservedGoodsFlowRows(resource,tradeCountry,economy,inventory){
     if(Array.isArray(resource?.goodsFlowRows)&&resource.goodsFlowRows.length)return resource.goodsFlowRows;
     const openingBook=isObject(resource?.openingInventoryByResource)?resource.openingInventoryByResource:null;
@@ -717,7 +855,7 @@
     totalCountryElapsedMs:Number(runtime.totalCountryElapsedMs.toFixed(3)),
     lastSourceRowsScanned:runtime.lastSourceRowsScanned,maxSourceRowsScanned:runtime.maxSourceRowsScanned,
     executionMode:'CHANGE_DRIVEN_BOUNDED_PER_COUNTRY_READ_ONLY_ACCOUNTING_CHECKPOINT'};}
-  const API=Object.freeze({VERSION,init,processCountry,getSnapshot,diagnostics,reconcileTreasury,reconcileGoodsFlow,reconcileGDP,buildPhase5SectorAccounts});
+  const API=Object.freeze({VERSION,init,processCountry,getSnapshot,diagnostics,reconcileTreasury,reconcileGoodsFlow,reconcileGDP,reconcileSectorJournals,buildPhase5SectorAccounts});
   g.Omega=g.Omega||{};g.Omega.NationalAccounts=API;g.OmegaNationalAccounts=API;
   if(typeof g.addEventListener==='function'){
     g.addEventListener('OMEGA_READY',()=>{init().catch(error=>{runtime.error=String(error?.message||error);});});
