@@ -2032,15 +2032,86 @@
 
 
   function stockFlowSnapshot(ctx,c){
-    var inventory=ctx.stateTransaction.get('resource.inventory')||{},
-      units=ctx.stateTransaction.get('resource.inventoryUnits')||{},
-      rows=[],complete=true;
-    Object.keys(inventory).sort().forEach(function(resourceId){
-      var quantity=num(inventory[resourceId]),unit=units[resourceId]||null;
-      if(quantity===null||quantity<0)complete=false;
-      rows.push({resourceId:resourceId,quantity:quantity,unit:unit,quantityStatus:quantity===null?'UNKNOWN':'OBSERVED'});
+    var resource={
+      inventory:ctx.stateTransaction.get('resource.inventory'),
+      inventoryUnits:ctx.stateTransaction.get('resource.inventoryUnits'),
+      batches:ctx.stateTransaction.get('resource.batches')
+    };
+    var inventory=resource.inventory&&typeof resource.inventory==='object'&&!Array.isArray(resource.inventory)
+      ?resource.inventory:null;
+    var units=resource.inventoryUnits&&typeof resource.inventoryUnits==='object'?resource.inventoryUnits:{};
+    var batches=Array.isArray(resource.batches)?resource.batches:[];
+    var assets=ctx.stateTransaction.get('economy.productionAssets')||[];
+    var byIdentity=new Map(),batchTotals=new Map(),complete=!!inventory;
+    function unitFor(resourceId){
+      var keys=Object.keys(units).filter(function(key){return tok(key)===tok(resourceId);});
+      var observed=keys.map(function(key){return String(units[key]||'').trim();}).filter(Boolean);
+      if(new Set(observed).size===1)return observed[0];
+      var candidates=[];
+      batches.forEach(function(batch){
+        if(tok(batch&&(batch.resourceId||batch.materialIdentity))!==tok(resourceId))return;
+        var unit=String(batch&&batch.unit||'').trim();
+        if(unit&&candidates.indexOf(unit)<0)candidates.push(unit);
+      });
+      return candidates.length===1?candidates[0]:null;
+    }
+    function add(resourceId,unit,quantity){
+      var name=String(resourceId||'').trim(),q=num(quantity),u=String(unit||'').trim();
+      if(!name||q===null||q<0){complete=false;return;}
+      if(!u){if(q>1e-9)complete=false;return;}
+      var key=name+'\u0000'+u,row=byIdentity.get(key)||{resourceId:name,unit:u,quantity:0};
+      row.quantity+=q;byIdentity.set(key,row);
+    }
+    var inactive=new Set(['CONSUMED','SOLD','TRANSFERRED_OUT','EXHAUSTED','DECOMMISSIONED']);
+    batches.forEach(function(batch){
+      if(inactive.has(String(batch&&batch.status||'').toUpperCase()))return;
+      var rid=String(batch&&(batch.resourceId||batch.materialIdentity)||'').trim(),
+        quantity=num(batch&&(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity));
+      if(!rid||quantity===null||quantity<0){complete=false;return;}
+      if(quantity<=1e-9)return;
+      var key=tok(rid);batchTotals.set(key,(batchTotals.get(key)||0)+quantity);
+      add(rid,batch.unit,quantity);
     });
-    return {identities:rows,complete:complete,countryId:c,turn:turn()};
+    if(inventory){
+      var seen=new Set();
+      Object.keys(inventory).forEach(function(key){
+        var quantity=num(inventory[key]),normalized=tok(key);
+        if(!normalized||quantity===null||quantity<0){complete=false;return;}
+        if(seen.has(normalized))complete=false;
+        seen.add(normalized);
+        var tracked=batchTotals.get(normalized)||0;
+        if(tracked>1e-9){if(quantity>tracked+1e-6)complete=false;return;}
+        add(key,unitFor(key),quantity);
+      });
+    }
+    (Array.isArray(assets)?assets:[]).forEach(function(asset){
+      var stock=asset&&asset.inputInventory&&typeof asset.inputInventory==='object'?asset.inputInventory:{},
+        lots=Array.isArray(asset&&asset.inputBatchLots)?asset.inputBatchLots:[];
+      Object.keys(stock).forEach(function(resourceId){
+        var total=num(stock[resourceId]);
+        if(total===null||total<0){complete=false;return;}
+        var activeLots=lots.filter(function(lot){
+          var status=String(lot&&lot.status||'').toUpperCase();
+          return tok(lot&&(lot.resourceId||lot.materialIdentity))===tok(resourceId)&&
+            !inactive.has(status)&&!['IN_TRANSIT','RESERVED'].includes(status);
+        });
+        var grouped=new Map(),lotTotal=0,bad=false;
+        activeLots.forEach(function(lot){
+          var quantity=num(lot&&(lot.remainingQuantity!=null?lot.remainingQuantity:lot.quantity)),
+            unit=String(lot&&lot.unit||'').trim();
+          if(quantity===null||quantity<0||!unit){bad=true;return;}
+          lotTotal+=quantity;grouped.set(unit,(grouped.get(unit)||0)+quantity);
+        });
+        if(!bad&&Math.abs(lotTotal-total)<=1e-6){
+          grouped.forEach(function(quantity,unit){add(resourceId,unit,quantity);});
+        }else if(total>1e-9){
+          complete=false;add(resourceId,null,total);
+        }
+      });
+    });
+    return{complete:complete,identities:Array.from(byIdentity.values()).sort(function(a,b){
+      return a.resourceId.localeCompare(b.resourceId)||a.unit.localeCompare(b.unit);
+    }),countryId:c,turn:turn()};
   }
   function invalidateStockLossCoverage(ctx,source,turnNumber){
     var periods=Array.isArray(ctx.stateTransaction.get('resource.stockFlowPeriods'))
@@ -2088,8 +2159,18 @@
       existing=ctx.stateTransaction.get('resource.stockFlowPeriods'),
       periods=Array.isArray(existing)?clone(existing):[];
     if(!c)return{accepted:false,reason:'STOCK_FLOW_COUNTRY_REQUIRED'};
-    if(periods.some(function(row){return String(row&&row.periodId||'')===periodId;}))
+    var alreadyCaptured=periods.find(function(row){return String(row&&row.periodId||'')===periodId;});
+    if(alreadyCaptured){
+      var existingLossLedger=ctx.stateTransaction.get('resource.stockLossLedger');
+      if(!Array.isArray(existingLossLedger))ctx.stateTransaction.set('resource.stockLossLedger',[]);
+      alreadyCaptured.lossCoverageBySource=alreadyCaptured.lossCoverageBySource||{
+        STORAGE:{status:'UNOBSERVED',lossEventsObserved:0,attestedTurn:null},
+        TRANSPORT:{status:'UNOBSERVED',lossEventsObserved:0,attestedTurn:null},
+        PRODUCTION:{status:'UNOBSERVED',lossEventsObserved:0,attestedTurn:null}
+      };
+      ctx.stateTransaction.set('resource.stockFlowPeriods',periods);
       return{accepted:true,duplicate:true,status:'ALREADY_CAPTURED',periodId:periodId};
+    }
     var snapshot=stockFlowSnapshot(ctx,c),previous=periods.length?periods[periods.length-1]:null;
     if(previous&&num(previous.turn)!==null&&num(previous.turn)<t){
       if(num(previous.turn)===t-1){
@@ -2147,7 +2228,11 @@
     if(available===null||available+1e-9<q)return{accepted:false,reason:'STOCK_WRITE_OFF_INVENTORY_INSUFFICIENT',resourceId:rid,requested:q,available:available===null?0:available};
     var rawBefore=ctx.stateTransaction.get('resource.warehouse')||null,
       processedBefore=ctx.stateTransaction.get('resource.processedWarehouse')||null,
-      raw=rawBefore?clone(rawBefore):null,processed=processedBefore?clone(processedBefore):null,
+      rawBoundary=boundary()?.validateWarehouse?.(rawBefore,c),
+      processedBoundary=boundary()?.validateWarehouse?.(processedBefore,c);
+    if(rawBoundary&&!rawBoundary.ok)return{accepted:false,reason:'CROSS_COUNTRY_WAREHOUSE_BREACH',detail:clone(rawBoundary)};
+    if(processedBoundary&&!processedBoundary.ok)return{accepted:false,reason:'CROSS_COUNTRY_PROCESSED_WAREHOUSE_BREACH',detail:clone(processedBoundary)};
+    var raw=rawBefore?clone(rawBefore):null,processed=processedBefore?clone(processedBefore):null,
       network=ctx.stateTransaction.get('resource.industrialNetwork')||{},
       maps=consumptionLedgerMaps(network),batchesBefore=ctx.stateTransaction.get('resource.batches'),
       batches=Array.isArray(batchesBefore)?batchesBefore.slice():[],lotsBefore=ctx.stateTransaction.get('resource.inventoryLots')||{},
@@ -2315,6 +2400,10 @@
       inventoryKey=Object.prototype.hasOwnProperty.call(inv,rid)?rid:Object.keys(inv).find(function(key){return tok(key)===tok(rid);}),
       batchesBefore=ctx.stateTransaction.get('resource.batches'),batches=Array.isArray(batchesBefore)?batchesBefore.slice():[],
       lotsBefore=ctx.stateTransaction.get('resource.inventoryLots')||{},lots=Object.assign({},lotsBefore);
+    var resourceBoundary=boundary()?.validateResourceCollection?.(batches,c);
+    if(resourceBoundary&&!resourceBoundary.ok)return{accepted:false,reason:'CROSS_COUNTRY_RESOURCE_BREACH',detail:clone(resourceBoundary)};
+    var sourceWarehouseBoundary=boundary()?.validateWarehouse?.(warehouse,c);
+    if(sourceWarehouseBoundary&&!sourceWarehouseBoundary.ok)return{accepted:false,reason:'CROSS_COUNTRY_WAREHOUSE_BREACH',detail:clone(sourceWarehouseBoundary)};
     var batchIndex=batchId?batches.findIndex(function(row){return String(row&&row.batchId||'')===batchId;}):-1;
     if(batchIndex<0)return{accepted:false,reason:'SHIPMENT_LOSS_SOURCE_BATCH_NOT_FOUND',batchId:batchId};
     var batch=batches[batchIndex],batchRemaining=num(batch.remainingQuantity!=null?batch.remainingQuantity:batch.quantity);
