@@ -413,6 +413,18 @@
     // GlobalMarket.suppliers() scans the country roster internally. Run it at most once
     // per planner visit, then retain only already-observed, trusted diplomatic partners.
     var importSupplierScanUsed = false;
+    var partnerDemandRowsByCountry = Object.create(null);
+    function partnerDemandRow(partnerCountryId, resourceId) {
+      var partnerId = canonical(partnerCountryId);
+      if (!Object.prototype.hasOwnProperty.call(partnerDemandRowsByCountry, partnerId)) {
+        partnerDemandRowsByCountry[partnerId] = demandRows(partnerId);
+      }
+      var rows = partnerDemandRowsByCountry[partnerId];
+      for (var index = 0; index < rows.length; index++) {
+        if (token(rows[index].resourceId) === token(resourceId)) return rows[index];
+      }
+      return null;
+    }
     demand.forEach(function (row) {
       var rid = String(row.resourceId || '').trim();
       var daily = nonNegative(row.demandPerDay);
@@ -474,8 +486,9 @@
       partnerIds.forEach(function (partnerRow) {
         var partner = partnerRow.countryId;
         if (hasOpenProposalOrContract(countryId, partner, rid) || hasPendingImport(partner, countryId, rid)) return;
-        var remoteDemand = mapEntry(((bucket(partner, 'resource') || {}).demandRuntime || {}).byResource, rid);
-        var need = remoteDemand.value;
+        // Do not trust a stale or player-owned demandRuntime cache for another NPC.
+        // Evaluate one current, read-only snapshot per known partner during this bounded visit.
+        var need = partnerDemandRow(partner, rid);
         if (!need || typeof need !== 'object') return;
         var partnerDaily = nonNegative(need.demandPerDay);
         var partnerStock = nonNegative(need.spendableStockAfter);
