@@ -1217,7 +1217,7 @@
       var reservedRequestPrice = num(contract.currentRequestUnitPrice);
       if (reservedRequestPrice === null) {
         reservedRequestPrice = id(contract.priceModel || 'FIXED') === 'FIXED'
-          ? num(contract.unitPrice) : num(request.unitPrice);
+          ? num(contract.unitPrice) : null;
         if (reservedRequestPrice === null || reservedRequestPrice <= 0)
           return { status: 'BLOCKED', reason: 'CONTRACT_DELIVERY_PRICE_UNKNOWN' };
         var buyerPriceMirror = unwrap(dispatch('trade', 'OMEGA_BILATERAL_UPDATE_CONTRACT', c, {
