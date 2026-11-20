@@ -359,8 +359,10 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(alternativeEvidence.bestAlternativeBuyerCost, null);
   assert.equal(alternativeEvidence.competingSupplierQuoteDisclosure, 'PRIVATE');
   const agreementId = globalThis.Game.state.trade.BGD.bilateralContracts[0].agreementId;
-  const buyerContract = globalThis.Game.state.trade.BGD.bilateralContracts[0];
-  const sellerContract = globalThis.Game.state.trade.SAU.bilateralContracts[0];
+  const buyerContract = globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.agreementId === agreementId);
+  const sellerContract = globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === agreementId);
+  assert.ok(buyerContract, 'buyer contract mirror must exist by agreement ID');
+  assert.ok(sellerContract, 'seller contract mirror must exist by agreement ID');
   assert.equal(buyerContract.role, 'BUYER');
   assert.equal(sellerContract.role, 'SELLER');
   assert.equal(buyerContract.status, 'ACTIVE');
@@ -459,7 +461,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   const deliveryClosed = bilateral.processCountry('BGD');
   assert.equal(deliveryClosed.contracts[0].status, 'DELIVERY_SETTLED', JSON.stringify(deliveryClosed));
   assert.equal(globalThis.Game.state.trade.BGD.bilateralContracts[0].completedDeliveries, 1);
-  assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts[0].deliveredQuantity, 97);
+  assert.equal(globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === agreementId).deliveredQuantity, 97);
   assert.equal(globalThis.Game.state.trade.BGD.bilateralContracts[0].deliveries[0].withinTolerance, true);
 
   const balance = bilateral.getBilateralTradeBalance('BGD', 'SAU');
