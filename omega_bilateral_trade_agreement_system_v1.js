@@ -1216,7 +1216,9 @@
         return { status: 'BLOCKED', reason: 'BUYER_SELLER_CONTRACT_STATE_MISMATCH' };
       if (!sellerMirror.currentRequestId) {
         var sellerRequestMirror = unwrap(dispatch('trade', 'OMEGA_BILATERAL_UPDATE_CONTRACT', partner, {
-          agreementId: contract.agreementId, patch: { currentRequestId: request.requestId, lastRequestTurn: contract.lastRequestTurn || turn() }
+          agreementId: contract.agreementId, patch: { currentRequestId: request.requestId,
+            currentRequestUnitPrice: num(contract.currentRequestUnitPrice) ?? num(request.unitPrice),
+            lastRequestTurn: contract.lastRequestTurn || turn() }
         }));
         if (!sellerRequestMirror || sellerRequestMirror.accepted !== true)
           return { status: 'WAITING', reason: 'SELLER_DELIVERY_REQUEST_MIRROR_RECOVERY_FAILED' };
@@ -1237,7 +1239,8 @@
         var priceHistory = (contract.priceHistory || []).concat([{ turn: delivery.settledTurn, unitPrice: delivery.unitPrice, requestId: delivery.requestId }]).slice(-128);
         var patch = { deliveries: (contract.deliveries || []).concat([delivery]).slice(-128),
           deliveredQuantity: (num(contract.deliveredQuantity) || 0) + delivery.quantity,
-          completedDeliveries: completed, currentRequestId: null, nextDeliveryTurn: nextDue, priceHistory: priceHistory,
+          completedDeliveries: completed, currentRequestId: null, currentRequestUnitPrice: null,
+          nextDeliveryTurn: nextDue, priceHistory: priceHistory,
           lastDeliveryTurn: delivery.settledTurn, lastDeliveryStatus: delivery.status,
           lastToleranceResult: { withinTolerance: withinTolerance, minimumQuantity: minimumQuantity, maximumQuantity: maximumQuantity, actualQuantity: actualQuantity } };
         if (!withinTolerance) {
@@ -1248,7 +1251,7 @@
         return { status: 'DELIVERY_SETTLED', requestId: request.requestId, agreementId: contract.agreementId };
       }
       if (['REJECTED', 'FAILED', 'CANCELLED', 'EXPIRED'].includes(id(request.status))) {
-        mirrorContract(c, partner, contract.agreementId, { currentRequestId: null, status: 'AT_RISK',
+        mirrorContract(c, partner, contract.agreementId, { currentRequestId: null, currentRequestUnitPrice: null, status: 'AT_RISK',
           failedDeliveries: (num(contract.failedDeliveries) || 0) + 1,
           lastDeliveryStatus: id(request.status), lastFailureReason: request.reason || request.stage || request.status,
           retryEligibleTurn: turn() + (num(contract.intervalTurns) || 1) });
@@ -1280,14 +1283,14 @@
     // Global Trade may review/authorize the request synchronously inside
     // createRequest(). Reserve the exact request ID on both contract mirrors
     // first, so seller-side BTA authorization can verify it atomically.
-    var requestReservation = { currentRequestId: requestId, lastDeliveryStatus: 'REQUESTING',
+    var requestReservation = { currentRequestId: requestId, currentRequestUnitPrice: deliveryUnitPrice, lastDeliveryStatus: 'REQUESTING',
       lastRequestTurn: turn(), retryEligibleTurn: null, status: 'ACTIVE' };
     var buyerReservation = updateContract(c, contract.agreementId, requestReservation);
     if (!buyerReservation || buyerReservation.accepted !== true)
       return { status: 'WAITING', reason: 'BUYER_CONTRACT_DELIVERY_RESERVATION_FAILED', detail: buyerReservation };
     var sellerReservation = updateContract(partner, contract.agreementId, requestReservation);
     if (!sellerReservation || sellerReservation.accepted !== true) {
-      updateContract(c, contract.agreementId, { currentRequestId: null, status: 'AT_RISK',
+      updateContract(c, contract.agreementId, { currentRequestId: null, currentRequestUnitPrice: null, status: 'AT_RISK',
         lastFailureReason: 'SELLER_CONTRACT_DELIVERY_RESERVATION_FAILED',
         retryEligibleTurn: turn() + (num(contract.intervalTurns) || 1) });
       return { status: 'WAITING', reason: 'SELLER_CONTRACT_DELIVERY_RESERVATION_FAILED', detail: sellerReservation };
