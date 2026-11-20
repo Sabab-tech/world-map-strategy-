@@ -68,6 +68,10 @@
   }
 
   function countryAliasKeys(countryId){
+    // Preserve the canonical ISO3 key without invoking the semantic resolver
+    // during every country-scoped state read on older WebView runtimes.
+    const direct=String(countryId??'').trim().toUpperCase();
+    if(/^[A-Z]{3}$/.test(direct))return [direct];
     const registry=global.OmegaCanonicalIdentityRegistry||global.OmegaCountrySemanticBridge||global.Omega?.CanonicalIdentity;
     if(!registry||typeof registry.resolveCountry!=='function')return [];
     for(const candidate of [countryId,String(countryId??'').replace(/[_-]+/g,' ')]){
