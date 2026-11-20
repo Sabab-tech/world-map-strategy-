@@ -16,7 +16,7 @@
   var commandRegistered = false;
   var runtimeStats = { visits: 0, skipped: 0, deferred: 0, planned: 0, marketSyncs: 0,
     proposals: 0, counteroffersEvaluated: 0, counteroffersAccepted: 0, counteroffersRejected: 0,
-    checkpointFailures: 0, errors: 0, lastCountryId: null, lastTurn: null, lastResult: null };
+    checkpointFailures: 0, supplierScans: 0, errors: 0, lastCountryId: null, lastTurn: null, lastResult: null };
 
   function finite(value) {
     if (typeof value === 'number') return Number.isFinite(value) ? value : null;
@@ -101,6 +101,7 @@
       finite(limits.maxRelationshipCandidates) >= 1 && finite(limits.maxRelationshipCandidates) <= 16 &&
       finite(limits.maxCandidates) >= 1 && finite(limits.maxCandidates) <= 3 &&
       finite(limits.maxMarketIntelligenceSyncsPerCountryTurn) === 1 &&
+      finite(limits.maxMarketSupplierScansPerCountryVisit) === 1 &&
       finite(limits.maxProposalsPerCountryTurn) === 1 &&
       finite(limits.maxCounterofferEvaluationsPerCountryTurn) === 1 &&
       finite(policy.targetCoverageDays) > 0 && finite(policy.exportReserveDays) > 0 &&
@@ -371,11 +372,25 @@
     } catch (_) { return null; }
   }
   function buildCandidates(countryId, checkpoint) {
-    var resource = bucket(countryId, 'resource') || {};
     var demand = demandRows(countryId), marketApi = market(), tradeApi = globalTrade();
     if (!marketApi || typeof marketApi.executableLocalPrice !== 'function' ||
         typeof marketApi.suppliers !== 'function' || !tradeApi || typeof tradeApi.settlementValues !== 'function') return [];
     var candidates = [], policy = activeRules.policy;
+    var foreign = bucket(countryId, 'foreign') || {};
+    var relationMap = foreign.relations && typeof foreign.relations === 'object' ? foreign.relations : {};
+    var partnerIds = Object.keys(relationMap).map(canonical).filter(function (partner) {
+      return /^[A-Z]{3}$/.test(partner) && partner !== countryId;
+    }).map(function (partner) {
+      return { countryId: partner, relation: relationEvidence(countryId, partner) };
+    }).filter(function (item) { return item.relation.status === 'KNOWN'; })
+      .sort(function (a, b) { return b.relation.score - a.relation.score || a.countryId.localeCompare(b.countryId); })
+      .slice(0, activeRules.limits.maxRelationshipCandidates);
+    var knownPartners = {};
+    partnerIds.forEach(function (item) { knownPartners[item.countryId] = item; });
+
+    // GlobalMarket.suppliers() scans the country roster internally. Run it at most once
+    // per planner visit, then retain only already-observed, trusted diplomatic partners.
+    var importSupplierScanUsed = false;
     demand.forEach(function (row) {
       var rid = String(row.resourceId || '').trim();
       var daily = nonNegative(row.demandPerDay);
@@ -387,47 +402,47 @@
       var targetDays = finite(row.stockCoverageTargetDays);
       if (targetDays === null || targetDays <= 0) targetDays = policy.targetCoverageDays;
       var importGap = Math.max(0, daily * targetDays - spendable - inbound);
-      if (importGap > 1e-8) {
-        var purchaseQty = Math.min(importGap, daily * policy.maxPurchaseDays);
-        var suppliers = [];
-        try { suppliers = marketApi.suppliers(rid, 0, countryId) || []; } catch (_) {}
-        suppliers.slice(0, activeRules.limits.maxSupplierRows).forEach(function (supplier) {
-          var partner = candidateId(supplier), available = nonNegative(supplier && supplier.available);
-          if (!partner || partner === countryId || available === null || available <= 0 ||
-              hasOpenProposalOrContract(countryId, partner, rid) || hasPendingImport(countryId, partner, rid)) return;
-          var relation = relationEvidence(countryId, partner);
-          if (relation.status !== 'KNOWN') return;
-          var price = finite(marketApi.executableLocalPrice(partner, rid));
-          if (price === null || price <= 0) return;
-          var qty = Math.min(purchaseQty, available, daily * policy.maxPurchaseDays);
-          if (qty <= 0) return;
-          var buyerCost = settlementUnitValue(countryId, partner, price);
-          if (buyerCost === null || buyerCost <= 0) return;
-          var reliability = partnerScore(checkpoint, partner);
-          var urgency = clamp(finite(row.procurementScore) || 0, 0, 1);
-          candidates.push({
-            direction: 'IMPORT', targetCountryId: partner, resourceId: rid, quantityPerDelivery: qty,
-            unitPrice: price, expectedBuyerUnitCost: buyerCost, priceModel: 'MARKET_LINKED',
-            relationshipScore: relation.score, reliability: reliability, source: 'NATIONAL_DEMAND_RUNTIME',
-            priorityScore: urgency * 100 + relation.score * 10 +
-              (reliability === null ? 0 : reliability * 5),
-            evidence: { demand: 'KNOWN', spendableStock: 'KNOWN', pendingInbound: 'KNOWN',
-              sellerSupply: 'GLOBAL_MARKET_SUPPLIERS', relationship: 'KNOWN',
-              price: 'CLEARED_MARKET_PRICE', fx: 'KNOWN' }
-          });
+      if (importGap <= 1e-8 || importSupplierScanUsed) return;
+
+      importSupplierScanUsed = true;
+      runtimeStats.supplierScans++;
+      var purchaseQty = Math.min(importGap, daily * policy.maxPurchaseDays);
+      var suppliers = [];
+      try { suppliers = marketApi.suppliers(rid, 0, countryId) || []; } catch (_) {}
+      var rankedSuppliers = [];
+      suppliers.forEach(function (supplier) {
+        var partner = candidateId(supplier), available = nonNegative(supplier && supplier.available);
+        var observedPartner = knownPartners[partner];
+        if (!partner || partner === countryId || !observedPartner || available === null || available <= 0 ||
+            hasOpenProposalOrContract(countryId, partner, rid) || hasPendingImport(countryId, partner, rid)) return;
+        var price = finite(marketApi.executableLocalPrice(partner, rid));
+        if (price === null || price <= 0) return;
+        var qty = Math.min(purchaseQty, available, daily * policy.maxPurchaseDays);
+        if (qty <= 0) return;
+        var buyerCost = settlementUnitValue(countryId, partner, price);
+        if (buyerCost === null || buyerCost <= 0) return;
+        var reliability = partnerScore(checkpoint, partner);
+        var urgency = clamp(finite(row.procurementScore) || 0, 0, 1);
+        rankedSuppliers.push({
+          direction: 'IMPORT', targetCountryId: partner, resourceId: rid, quantityPerDelivery: qty,
+          unitPrice: price, expectedBuyerUnitCost: buyerCost, priceModel: 'MARKET_LINKED',
+          relationshipScore: observedPartner.relation.score, reliability: reliability, source: 'NATIONAL_DEMAND_RUNTIME',
+          priorityScore: urgency * 100 + observedPartner.relation.score * 10 +
+            (reliability === null ? 0 : reliability * 5),
+          evidence: { demand: 'KNOWN', spendableStock: 'KNOWN', pendingInbound: 'KNOWN',
+            sellerSupply: 'GLOBAL_MARKET_SUPPLIERS', relationship: 'KNOWN',
+            price: 'CLEARED_MARKET_PRICE', fx: 'KNOWN' }
         });
-      }
+      });
+      rankedSuppliers.sort(function (a, b) {
+        return a.expectedBuyerUnitCost - b.expectedBuyerUnitCost ||
+          b.priorityScore - a.priorityScore || a.targetCountryId.localeCompare(b.targetCountryId);
+      });
+      rankedSuppliers.slice(0, activeRules.limits.maxSupplierRows).forEach(function (candidate) {
+        candidates.push(candidate);
+      });
     });
 
-    var foreign = bucket(countryId, 'foreign') || {};
-    var relationMap = foreign.relations && typeof foreign.relations === 'object' ? foreign.relations : {};
-    var partnerIds = Object.keys(relationMap).map(canonical).filter(function (partner) {
-      return /^[A-Z]{3}$/.test(partner) && partner !== countryId;
-    }).map(function (partner) {
-      return { countryId: partner, relation: relationEvidence(countryId, partner) };
-    }).filter(function (item) { return item.relation.status === 'KNOWN'; })
-      .sort(function (a, b) { return b.relation.score - a.relation.score || a.countryId.localeCompare(b.countryId); })
-      .slice(0, activeRules.limits.maxRelationshipCandidates).map(function (item) { return item.countryId; });
     demand.forEach(function (row) {
       var rid = String(row.resourceId || '').trim();
       var daily = nonNegative(row.demandPerDay), spendable = nonNegative(row.spendableStockAfter);
@@ -435,10 +450,9 @@
       if (!rid || daily === null || daily <= 0 || spendable === null || unresolved === null || unresolved > 0) return;
       var exportable = Math.max(0, spendable - daily * policy.exportReserveDays);
       if (exportable <= 1e-8) return;
-      partnerIds.forEach(function (partner) {
+      partnerIds.forEach(function (partnerRow) {
+        var partner = partnerRow.countryId;
         if (hasOpenProposalOrContract(countryId, partner, rid) || hasPendingImport(partner, countryId, rid)) return;
-        var relation = relationEvidence(countryId, partner);
-        if (relation.status !== 'KNOWN') return;
         var remoteDemand = mapEntry(((bucket(partner, 'resource') || {}).demandRuntime || {}).byResource, rid);
         var need = remoteDemand.value;
         if (!need || typeof need !== 'object') return;
@@ -467,20 +481,27 @@
         candidates.push({
           direction: 'EXPORT', targetCountryId: partner, resourceId: rid, quantityPerDelivery: qty,
           unitPrice: price, expectedSellerValue: sellerValue, priceModel: 'MARKET_LINKED',
-          relationshipScore: relation.score, reliability: reliability, source: 'PARTNER_DEMAND_RUNTIME',
-          priorityScore: urgency * 100 + relation.score * 10 + (reliability === null ? 0 : reliability * 5),
+          relationshipScore: partnerRow.relation.score, reliability: reliability, source: 'PARTNER_DEMAND_RUNTIME',
+          priorityScore: urgency * 100 + partnerRow.relation.score * 10 + (reliability === null ? 0 : reliability * 5),
           evidence: { exportableSurplus: 'KNOWN', partnerDemand: 'KNOWN', partnerInbound: 'KNOWN',
             relationship: 'KNOWN', price: 'CLEARED_MARKET_PRICE', fx: 'KNOWN' }
         });
       });
     });
     candidates.sort(function (a, b) {
+      if (a.direction === b.direction && token(a.resourceId) === token(b.resourceId)) {
+        if (a.direction === 'IMPORT') {
+          return a.expectedBuyerUnitCost - b.expectedBuyerUnitCost ||
+            b.priorityScore - a.priorityScore || a.targetCountryId.localeCompare(b.targetCountryId);
+        }
+        if (a.direction === 'EXPORT') {
+          return b.expectedSellerValue - a.expectedSellerValue ||
+            b.priorityScore - a.priorityScore || a.targetCountryId.localeCompare(b.targetCountryId);
+        }
+      }
       return b.priorityScore - a.priorityScore ||
-        (a.direction === 'IMPORT' && b.direction === 'IMPORT'
-          ? a.expectedBuyerUnitCost - b.expectedBuyerUnitCost
-          : a.direction === 'EXPORT' && b.direction === 'EXPORT'
-            ? b.unitPrice - a.unitPrice : a.direction.localeCompare(b.direction)) ||
-        a.targetCountryId.localeCompare(b.targetCountryId) || token(a.resourceId).localeCompare(token(b.resourceId));
+        a.direction.localeCompare(b.direction) || a.targetCountryId.localeCompare(b.targetCountryId) ||
+        token(a.resourceId).localeCompare(token(b.resourceId));
     });
     var unique = [], seen = {};
     candidates.forEach(function (candidate) {
@@ -819,7 +840,7 @@
       commandHandlerRegistered: commandRegistered,
       schedulerTiers: activeRules && activeRules.scheduler ? clone(activeRules.scheduler.tiers) : ['ACTIVE', 'MACRO'],
       schedulerPriority: activeRules && activeRules.scheduler ? activeRules.scheduler.priority : 75,
-      maximumMarketSyncsPerCountryTurn: 1, maximumProposalsPerCountryTurn: 1,
+      maximumMarketSyncsPerCountryTurn: 1, maximumMarketSupplierScansPerCountryVisit: 1, maximumProposalsPerCountryTurn: 1,
       maximumCounterofferEvaluationsPerCountryTurn: 1,
       playerCountryAutomation: false, usesExistingGlobalMarket: true, usesExistingGlobalTrade: true,
       usesExistingBilateralTrade: true, usesExistingMinistryStateTransaction: true,

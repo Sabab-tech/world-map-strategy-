@@ -160,6 +160,8 @@ function createRuntime(options = {}) {
     },
     executableLocalPrice(countryId, resourceId) {
       metrics.marketPriceCalls++;
+      if (options.priceMap && Object.prototype.hasOwnProperty.call(options.priceMap, countryId))
+        return options.priceMap[countryId];
       return countryId === 'CAN' ? 10 : 12;
     }
   };
@@ -229,10 +231,17 @@ test('registers only on the existing ACTIVE/MACRO scheduler and never schedules 
 
 test('runs PLAN, one market-intelligence sync, then one feasible bilateral proposal across separate visits', async () => {
   const runtime = createRuntime({ enablePhase2: true });
+  runtime.state.resource.AUS.demandRuntime.byResource.copper_ore = {
+    resourceId: 'copper_ore', status: 'SHORTAGE', demandPerDay: 1,
+    spendableStockAfter: 2, pendingImportQuantity: 0,
+    unresolvedImportRequestCount: 0, stockCoverageTargetDays: 30,
+    procurementScore: 0.5, priority: 3, unmetDemand: 1
+  };
 
   const plan = await runtime.process('AUS', 1);
   assert.equal(plan.status, 'PLANNED');
   assert.equal(plan.candidateCount, 2);
+  assert.equal(runtime.metrics.supplierCalls, 1, 'global market roster scan is capped to one resource per visit');
   assert.equal(runtime.metrics.syncCalls, 0);
   assert.equal(runtime.metrics.proposalCalls, 0);
   assert.equal(runtime.state.trade.AUS.autonomousNationalTradeDecision.phase, 'MARKET_INTELLIGENCE');
@@ -264,6 +273,7 @@ test('default rollout is read-only: it saves a ranked plan without syncing marke
   assert.equal(result.status, 'PLANNED_READ_ONLY');
   assert.equal(result.phase, 'PLAN');
   assert.ok(result.candidateCount > 0);
+  assert.equal(runtime.metrics.supplierCalls, 1);
   assert.equal(runtime.metrics.syncCalls, 0);
   assert.equal(runtime.metrics.proposalCalls, 0);
   assert.equal(runtime.metrics.previewCalls, 0);
@@ -285,6 +295,23 @@ test('does not block the world-turn scheduler while offline rules are still load
   assert.equal(runtime.metrics.supplierCalls, 0);
   assert.equal(runtime.metrics.syncCalls, 0);
   assert.equal(runtime.metrics.proposalCalls, 0);
+});
+
+test('ranks import suppliers by cleared buyer-currency cost rather than ISO ordering', async () => {
+  const runtime = createRuntime({
+    enablePhase2: true,
+    suppliers: [
+      { countryId: 'MEX', available: 80 },
+      { countryId: 'CAN', available: 100 }
+    ],
+    priceMap: { MEX: 8, CAN: 10 }
+  });
+  const result = await runtime.process('AUS', 1);
+  assert.equal(result.status, 'PLANNED');
+  assert.equal(result.topCandidate.targetCountryId, 'MEX');
+  assert.equal(result.topCandidate.expectedBuyerUnitCost, 8);
+  assert.equal(runtime.metrics.supplierCalls, 1);
+  assert.equal(runtime.context.Omega.AutonomousNationalTradeDecisionV1.diagnostics().maximumMarketSupplierScansPerCountryVisit, 1);
 });
 
 test('does not treat missing demand or inventory evidence as zero and does not create a proposal', async () => {

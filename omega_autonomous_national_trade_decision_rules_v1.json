@@ -24,7 +24,8 @@
     "maxCounterofferEvaluationsPerCountryTurn": 1,
     "maxExperienceAgreements": 24,
     "maxExperiencePartners": 32,
-    "maxHistory": 32
+    "maxHistory": 32,
+    "maxMarketSupplierScansPerCountryVisit": 1
   },
   "policy": {
     "targetCoverageDays": 30,
