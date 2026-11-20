@@ -638,6 +638,21 @@ const withinToleranceRequest=trade.reviewRequest({
 assert.equal(withinToleranceRequest.bilateralContractReserve.authorizedAgreement,true,
   'a delivery inside both agreed tolerance bounds must be recognized as an authorized BTA delivery');
 
+toleranceContract.currentRequestUnitPrice=100;
+toleranceContract.currentRequestId='REQ-BTA-TOLERANCE-PRICE-MISMATCH';
+const alteredPriceBtaRequest=trade.reviewRequest({
+  requestId:'REQ-BTA-TOLERANCE-PRICE-MISMATCH',countryId:'BGD',targetCountryId:'SAU',
+  resourceId:'crude_oil',quantity:4800,unitPrice:80,createdTurn:globalThis.Game.state.simulation.turn,
+  governmentContractId:'BTA-RESERVE-REGRESSION'
+});
+assert.equal(alteredPriceBtaRequest.decision,'REJECT',JSON.stringify(alteredPriceBtaRequest));
+assert.equal(alteredPriceBtaRequest.reason,'BILATERAL_CONTRACT_PRICE_AUTHORIZATION_MISMATCH',
+  'a valid shipment ID and quantity must not authorize a changed contract price');
+
+// A lower-than-market price is valid when it is the actual ratified price,
+// rather than a price substituted on an individual delivery request.
+toleranceContract.unitPrice=80;
+toleranceContract.currentRequestUnitPrice=80;
 toleranceContract.currentRequestId='REQ-BTA-TOLERANCE-PRICE';
 const belowMarketBtaRequest=trade.reviewRequest({
   requestId:'REQ-BTA-TOLERANCE-PRICE',countryId:'BGD',targetCountryId:'SAU',
