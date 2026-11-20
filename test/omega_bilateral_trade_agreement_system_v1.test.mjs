@@ -614,6 +614,9 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   const oneSidedConsent = bilateral.recordTerminationConsent('BGD', newRenewedContract.agreementId, true);
   assert.equal(oneSidedConsent.accepted, true);
   assert.equal(oneSidedConsent.status, 'WAITING_FOR_PARTNER_CONSENT');
+  assert.deepEqual(globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.agreementId === newRenewedContract.agreementId).terminationConsents, ['BGD']);
+  assert.deepEqual(globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === newRenewedContract.agreementId).terminationConsents, ['BGD'],
+    'both country-owned contract mirrors must persist the first party approval');
   const unilateralMutual = bilateral.terminateContract('BGD', newRenewedContract.agreementId,
     'MUTUAL_AGREEMENT', { mutualAgreement: true });
   assert.equal(unilateralMutual.accepted, false);
@@ -621,6 +624,8 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   const partnerConsent = bilateral.recordTerminationConsent('SAU', newRenewedContract.agreementId, true);
   assert.equal(partnerConsent.accepted, true);
   assert.equal(partnerConsent.status, 'MUTUALLY_APPROVED');
+  assert.deepEqual(globalThis.Game.state.trade.BGD.bilateralContracts.find(row => row.agreementId === newRenewedContract.agreementId).terminationConsents, ['BGD', 'SAU']);
+  assert.deepEqual(globalThis.Game.state.trade.SAU.bilateralContracts.find(row => row.agreementId === newRenewedContract.agreementId).terminationConsents, ['BGD', 'SAU']);
   const mutualEnd = bilateral.terminateContract('BGD', newRenewedContract.agreementId,
     'MUTUAL_AGREEMENT', { mutualAgreement: true });
   assert.equal(mutualEnd.accepted, true, JSON.stringify(mutualEnd));
