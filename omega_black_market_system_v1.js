@@ -22,8 +22,12 @@ const OFFER_SCAN_SECRET={};
 function country(v){
  const raw=v&&typeof v==='object'?(v.iso3||v.iso3Code||v.countryCode||v.countryId||v.code||v.id||v.name):v;
  if(raw==null)return'';
+ // Canonical ISO2/ISO3 keys are already unambiguous; avoid semantic bridge work
+ // for every country-bucket lookup in older Android WebView builds.
+ const direct=id(raw);
+ if(/^[A-Z0-9]{2,3}$/.test(direct))return direct;
  try{const b=g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity,h=b?.resolveCountry?.(raw),x=h?.iso3||h?.iso3Code||h?.raw?.iso3||h?.id;if(x&&/^[A-Z0-9]{2,3}$/i.test(String(x)))return id(x);}catch(_){}
- const s=id(raw);return /^[A-Z0-9]{2,3}$/.test(s)?s:'';
+ return'';
 }
 function player(){
  const s=state(),sim=g.Omega?.Simulation;let direct=null;try{direct=sim?.getPlayerCountryId?.()||null;}catch(_){}
