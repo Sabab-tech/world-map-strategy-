@@ -63,6 +63,7 @@
     'OMEGA_RESOURCE_MINE_WAREHOUSE_RECEIPT_POSTED','OMEGA_RESOURCE_DELIVERY_COMPLETED',
     'OMEGA_FACTORY_INPUT_SHIPMENT_DELIVERED','OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',
     'OMEGA_FACTORY_UTILITY_CONSUMED','OMEGA_FACTORY_CAPACITY_CHANGED','OMEGA_RESOURCE_MINE_CAPACITY_CHANGED',
+    'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_CHANGED',
     'OMEGA_RESOURCE_BUYER_ORDER_SETTLED'
   ]);
   function syncRootState(root){
@@ -525,8 +526,9 @@
     const financeTruncated=financeRows.length>=financeLimit||financeSourceRowsTotal>financeRows.length;
     const companyAccountsTruncated=availableCompanyIds.length>scannedCompanyAccounts;
     const sourceCoverageStatus=financeTruncated||companyRowsTruncated||companyAccountsTruncated||
-      observedCompanyIds.length<availableCompanyIds.length||availableCompanyIds.length<(Array.isArray(g.Omega?.PrivateEnterpriseLifecycleV1?.companyIds)?g.Omega.PrivateEnterpriseLifecycleV1.companyIds.length:0)
-      ?'PARTIAL':(legacyTransactionCount||unavailableTransactionCount?'PARTIAL':'PARTIAL');
+      scannedCompanyAccounts<availableCompanyIds.length||observedCompanyIds.length<availableCompanyIds.length||
+      availableCompanyIds.length<(Array.isArray(g.Omega?.PrivateEnterpriseLifecycleV1?.companyIds)?g.Omega.PrivateEnterpriseLifecycleV1.companyIds.length:0)||
+      legacyTransactionCount||unavailableTransactionCount?'PARTIAL':'PARTIAL';
     const integrityStatus=invalidTransactionCount>0?'UNRECONCILED':
       (postedTransactionCount>0&&duplicateTransactionCount===0?'RECONCILED':
         (postedTransactionCount>0&&invalidTransactionCount===0?'RECONCILED':'UNOBSERVED'));
@@ -682,6 +684,13 @@
     const gdpSource=finite(economy.gdp)!==null?'FINANCE_OWNED_GAMEPLAY_ECONOMY_STATE':
       currentGdp!==null?'COUNTRY_ECONOMIC_BASELINE_PROFILE':'UNOBSERVED';
     const sectorAccounts=buildPhase5SectorAccounts(countryId,profile,finance,tradeCountry,resource,economy,trade,fiscalPeriodAccount,turn);
+    const sectorJournals=await reconcileSectorJournals({
+      countryId,financeRows,financeSourceRowsTotal:Array.isArray(financeState.ledger)?financeState.ledger.length:0,
+      financeLedgerRows:bounded(limits.financeLedgerRows,500,500),
+      companyAccounts:isObject(economy.companyAccounts)?economy.companyAccounts:{},
+      maxCompanyAccounts:bounded(limits.maxCompanyAccounts,5,64),
+      companyCashFlowRowsPerCompany:bounded(limits.companyCashFlowRowsPerCompany,256,1024)
+    });
     const goodsFlowRows=buildObservedGoodsFlowRows(resource,tradeCountry,economy,inventory);
     const goods=reconcileGoodsFlow(goodsFlowRows);
     const gdp=buildObservedGdpApproaches(economy,sectorAccounts,turn);
@@ -697,6 +706,7 @@
         modelledReference:{value:currentGdp,currency:currentGdp===null?null:'USD',source:gdpSource,
           status:currentGdp===null?'UNOBSERVED':'MODELLED_REFERENCE_NOT_RECONCILED_NATIONAL_ACCOUNTS'}},
       sectorAccounts,
+      sectorJournals,
       treasury:{status:treasuryStatus,closingBalance:balance,source:cashSource,currency:balance===null?null:'USD',
         availableLiquidity:available,availableLiquidityCurrency:profile?.currencyCode||profile?.currency||null,
         openingBalance:fiscalPeriodComplete?finite(fiscalPeriodAccount.openingBalanceUsd):null,
@@ -719,6 +729,7 @@
       goods:{status:goods.status==='UNOBSERVED'?inventory.stockFlowStatus:goods.status,stockFlowReconciliation:goods,inventory},
       completeness:{treasuryOpeningAndFlows:fiscalPeriodAccount?treasuryReconciliation.status:'UNOBSERVED',physicalGoodsOpeningProductionConsumptionExportLoss:goods.status,
         institutionalSectorAccounts:sectorAccounts.status,
+        sectorJournalDoubleEntryIntegrity:sectorJournals.integrityStatus,
         gdpProductionApproach:approachMap.production?.complete?'AVAILABLE':'UNOBSERVED',
         gdpExpenditureApproach:approachMap.expenditure?.complete?'AVAILABLE':'UNOBSERVED',
         gdpIncomeApproach:approachMap.income?.complete?'AVAILABLE':'UNOBSERVED',
@@ -737,10 +748,12 @@
     statement.workload={
       financeLedgerRowsObserved:financeRows.length,tradeRowsObserved:trade.rowsScanned,
       inventoryBatchRowsObserved:inventory.sourceBatchCount,productionLedgerRowsObserved:productionRows.length,
-      sourceRowsScanned:financeRows.length+trade.rowsScanned+inventory.sourceBatchCount+productionRows.length
+      companyCashFlowRowsObserved:sectorJournals.companyCashFlowRowsObserved,
+      sourceRowsScanned:financeRows.length+trade.rowsScanned+inventory.sourceBatchCount+productionRows.length+sectorJournals.companyCashFlowRowsObserved
     };
     statement.sourceFingerprint=fingerprint({countryId,turn,treasury:statement.treasury,trade:statement.trade,
-      industry:statement.industry,goods:statement.goods,gdp:statement.gdp,sectorAccounts:statement.sectorAccounts,workload:statement.workload});
+      industry:statement.industry,goods:statement.goods,gdp:statement.gdp,sectorAccounts:statement.sectorAccounts,
+      sectorJournals:statement.sectorJournals,workload:statement.workload});
     recordSyncSegment(statementAssemblyStartedAt);
     return statement;
   }
