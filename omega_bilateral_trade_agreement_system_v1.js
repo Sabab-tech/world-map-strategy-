@@ -578,7 +578,7 @@
       if (id(contract.priceModel || 'FIXED') === 'MARKET_LINKED') {
         var marketPrice = readProduct(seller, { id: contract.resourceId }).expectedPrice;
         price = marketPrice && marketPrice.status === 'KNOWN' && num(marketPrice.value) !== null
-          ? num(marketPrice.value) * (1 + (num(contract.marketAdjustmentPct) || 0) / 100) : null;
+          ? Number((num(marketPrice.value) * (1 + (num(contract.marketAdjustmentPct) || 0) / 100)).toFixed(8)) : null;
       }
       var quantity = num(contract.quantityPerDelivery);
       if (quantity === null || price === null) { unknownReasons.push('BILATERAL_BUYER_CONTRACT_FX_UNKNOWN'); return; }
@@ -630,7 +630,7 @@
     var marketAdjustmentPct = clamp(p.marketAdjustmentPct ?? 0, -50, 100);
     var clearedPrice = supply.expectedPrice.status === 'KNOWN' ? supply.expectedPrice.value : null;
     var priceForAgreement = priceModel === 'MARKET_LINKED' && clearedPrice !== null
-      ? clearedPrice * (1 + (marketAdjustmentPct || 0) / 100) : unitPrice;
+      ? Number((clearedPrice * (1 + (marketAdjustmentPct || 0) / 100)).toFixed(8)) : unitPrice;
     var values = settlementValues(buyer, seller, quantity, priceForAgreement);
     var buyerAmount = num(values && values.buyerValue);
     var currencyCommitments = reservedBuyerCurrency(buyer, intervalTurns);
