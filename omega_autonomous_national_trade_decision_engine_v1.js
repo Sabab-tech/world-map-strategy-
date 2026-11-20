@@ -434,7 +434,7 @@
         var buyerCost = settlementUnitValue(countryId, partner, price);
         if (buyerCost === null || buyerCost <= 0) return;
         var reliability = partnerScore(checkpoint, partner);
-        var urgency = clamp(finite(row.procurementScore) || 0, 0, 1);
+        var urgency = clamp(importGap / Math.max(1, daily * targetDays), 0, 1);
         rankedSuppliers.push({
           direction: 'IMPORT', targetCountryId: partner, resourceId: rid, quantityPerDelivery: qty,
           unitPrice: price, expectedBuyerUnitCost: buyerCost, priceModel: 'MARKET_LINKED',
