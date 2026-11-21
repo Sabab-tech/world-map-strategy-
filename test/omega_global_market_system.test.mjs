@@ -86,6 +86,10 @@ assert.equal(market.suppliers('crude_oil',1,'BDG').some(x=>x.countryId==='SAU'),
 assert.equal(policy.liftSupplyDirective('SAU',{policyId:'MARKET-DOMESTIC-ONLY-TEST'}).accepted,true);
 const books=market.rebuild();
 assert(books.crude_oil);
+const crossBorderSteelBid=market.bestCrossBorderBid('SAU','steel');
+assert.equal(crossBorderSteelBid.countryId,'BDG');
+assert.equal(crossBorderSteelBid.priceUsd,120);
+assert.equal(market.localPriceFromUsd('SAU',120),120);
 const q=market.quote('crude_oil');
 assert.equal(q.status,'CLEARED');
 assert.equal(q.matchedQuantity,100);
