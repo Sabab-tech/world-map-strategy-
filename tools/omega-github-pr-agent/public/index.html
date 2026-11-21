@@ -170,7 +170,21 @@
         dismiss.remove();
       });
       row.append(approve, dismiss);
-      card.append(title, summary, row);
+      card.append(title, summary);
+      if (action.preview) {
+        const details = document.createElement("details");
+        details.open = true;
+        details.style.cssText = "border:1px solid #46566a;border-radius:8px;padding:10px;max-height:420px;overflow:auto;background:#091522";
+        const previewTitle = document.createElement("summary");
+        previewTitle.textContent = "Complete proposed file contents";
+        previewTitle.style.cssText = "cursor:pointer;color:#9bd2ff;font-size:12px;margin-bottom:9px";
+        const preview = document.createElement("pre");
+        preview.textContent = action.preview;
+        preview.style.cssText = "white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:#d7e5f5;margin:0";
+        details.append(previewTitle, preview);
+        card.append(details);
+      }
+      card.append(row);
       actionsNode.appendChild(card);
     }
 
