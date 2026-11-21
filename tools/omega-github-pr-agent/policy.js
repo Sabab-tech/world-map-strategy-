@@ -1,5 +1,5 @@
 const MAX_FILES = 20;
-const MAX_TOTAL_BYTES = 750 * 1024;
+const MAX_TOTAL_BYTES = 250 * 1024;
 const BLOCKED_PATH = /(^|\/)(\.env(?:\..*)?|secrets?|credentials?)(\/|$)|(^|\/)(id_rsa|id_ed25519|.*\.(?:pem|key|p12|pfx|jks))$/i;
 
 export function assertSafeRepoPath(input) {
