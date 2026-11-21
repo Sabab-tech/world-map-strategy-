@@ -644,7 +644,7 @@
     const priceMeta=oldMeta&&typeof oldMeta==='object'&&!Array.isArray(oldMeta)?clone(oldMeta):{};
     const metaKey=Object.keys(priceMeta).find(key=>token(key)===token(resourceId))||priceKey;
     prices[priceKey]=unitPrice;
-    priceMeta[metaKey]={authority:'PLAYER_AUTHORIZED_SELLER_ASK',priceProvenance:'OBSERVED',
+    priceMeta[metaKey]={authority:'PLAYER_AUTHORIZED_SELLER_ASK',priceProvenance:'PLAYER_AUTHORIZED',
       executablePrice:true,source:'PLAYER_MARKET_ASK',resourceId,unitPrice,currencyCode:currency(cid),
       requestId,turn:turn(),countryId:cid};
     ledger.push({requestId,countryId:cid,resourceId,unitPrice,currencyCode:currency(cid),
