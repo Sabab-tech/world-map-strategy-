@@ -99,7 +99,8 @@ assert.equal(eventRoute.owner,'trade');
 const importRoute=autonomy.routeSubject('import','BGD','SAU');
 assert.equal(importRoute.primary,'trade');
 assert.deepEqual(importRoute.targetCountryId,'SAU');
-assert(importRoute.files.includes('relations.json'));
+assert(importRoute.checks.some(row=>row.path==='foreign.relations'),
+  'import routing must consume the selected country’s observed bilateral relation state');
 
 const evidence=autonomy.collectEvidence('BGD',['treasury','labor','materials','debt','housing','military','relations'],'SAU');
 for(const key of ['treasury','labor','materials','debt','housing','military','relations'])assert(evidence.subjects[key],key+' route missing');
