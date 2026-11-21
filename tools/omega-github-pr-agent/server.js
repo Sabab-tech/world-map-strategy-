@@ -200,7 +200,7 @@ app.post("/api/actions/execute", async (req, res, next) => {
         case "post_pr_comment": {
           const args = action.args;
           const posted = await github.postPullRequestComment(args.prNumber, args.comment, action.nonce);
-          result = { commentId: posted?.id || null, url: posted?.html_url || null };
+          result = { commentId: posted?.id || null, url: posted?.html_url || null, alreadyApplied: posted?.alreadyApplied === true };
           break;
         }
         case "submit_pr_review": {
