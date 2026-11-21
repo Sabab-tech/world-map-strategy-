@@ -897,3 +897,139 @@
   .omega-economy-action-button,
   .omega-trade-settlement-tabs button { transition:none !important; }
 }
+
+
+
+/* Trade & Commerce: phone-first national overview. Static, selected-country only, and chart-free. */
+.omega-trade-overview { display:grid; gap:13px; min-width:0; }
+.omega-trade-overview-hero {
+  background:linear-gradient(115deg,#07182d 0%,#0c2d4e 58%,#081b32 100%);
+  border:1px solid rgba(61,174,226,.56); border-radius:16px;
+  box-shadow:inset 0 1px rgba(255,255,255,.08),0 8px 20px rgba(0,0,0,.22);
+  display:grid; gap:10px; grid-template-columns:minmax(0,1fr); min-width:0;
+  overflow:hidden; padding:16px; position:relative;
+}
+.omega-trade-overview-hero-image {
+  height:100%; inset:0 0 0 auto; object-fit:cover; opacity:.19; pointer-events:none;
+  position:absolute; width:56%;
+}
+.omega-trade-overview-hero:after {
+  background:linear-gradient(90deg,#07182d 0%,rgba(7,24,45,.96) 45%,rgba(7,24,45,.36) 100%);
+  content:""; inset:0; pointer-events:none; position:absolute;
+}
+.omega-trade-overview-hero-copy,.omega-trade-overview-hero-balance {
+  min-width:0; position:relative; z-index:1;
+}
+.omega-trade-overview-eyebrow {
+  color:#63d5ff; display:block; font-size:9px; font-weight:900; letter-spacing:.13em; line-height:1.4;
+}
+.omega-trade-overview-hero-copy h2 {
+  color:#f4faff; font-size:clamp(20px,4.6vw,28px); font-weight:900;
+  letter-spacing:-.035em; line-height:1.12; margin:6px 0 5px;
+}
+.omega-trade-overview-hero-copy p { color:#a9c8df; font-size:11px; line-height:1.45; margin:0; }
+.omega-trade-overview-turn,.omega-trade-overview-section-tag {
+  background:rgba(13,67,101,.56); border:1px solid rgba(66,177,222,.34);
+  border-radius:999px; color:#c0eaff; display:inline-flex; font-size:8px; font-weight:850;
+  letter-spacing:.08em; margin-top:9px; padding:6px 9px; width:max-content; max-width:100%;
+}
+.omega-trade-overview-hero-balance {
+  align-content:start; background:rgba(3,17,33,.62); border:1px solid rgba(109,184,219,.22);
+  border-radius:12px; display:grid; gap:5px; max-width:360px; padding:10px 12px;
+}
+.omega-trade-overview-hero-balance small { color:#86b4d1; font-size:8px; font-weight:900; letter-spacing:.1em; }
+.omega-trade-overview-hero-balance strong {
+  color:#fff; font-size:clamp(19px,4.2vw,27px); font-weight:900; letter-spacing:-.025em;
+  line-height:1.12; overflow-wrap:anywhere;
+}
+.omega-trade-overview-hero-balance > span:not(.omega-economy-trend) { font-size:9px; font-weight:850; }
+.omega-trade-overview-hero-balance .is-positive { color:#55e2a3; }
+.omega-trade-overview-hero-balance .is-negative { color:#ff8588; }
+.omega-trade-overview-hero-balance .is-neutral { color:#b4c8d8; }
+.omega-trade-overview-section {
+  background:linear-gradient(150deg,rgba(10,30,53,.96),rgba(5,19,37,.98));
+  border:1px solid rgba(64,126,170,.36); border-radius:14px; min-width:0; padding:12px;
+}
+.omega-trade-overview-section-heading {
+  align-items:center; display:flex; gap:8px; justify-content:space-between;
+  margin:0 0 10px; min-width:0;
+}
+.omega-trade-overview-section-heading > div { min-width:0; }
+.omega-trade-overview-section-heading > div > span {
+  color:#55cfff; font-size:8px; font-weight:900; letter-spacing:.12em;
+}
+.omega-trade-overview-section-heading h3 {
+  color:#eff8ff; font-size:14px; font-weight:850; letter-spacing:-.02em; line-height:1.2; margin:3px 0 0;
+}
+.omega-trade-overview-section-heading .omega-trade-overview-section-tag { flex:0 0 auto; margin:0; }
+.omega-trade-overview-grid {
+  display:grid; gap:8px; grid-template-columns:repeat(2,minmax(0,1fr)); min-width:0;
+}
+.omega-trade-overview-grid--four { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.omega-trade-overview-metric {
+  background:linear-gradient(145deg,rgba(17,48,79,.95),rgba(8,25,47,.98));
+  border:1px solid rgba(62,128,177,.33); border-radius:11px;
+  display:flex; flex-direction:column; gap:6px; min-width:0; padding:10px;
+}
+.omega-trade-overview-metric.is-positive { border-color:rgba(36,198,128,.53); }
+.omega-trade-overview-metric.is-negative { border-color:rgba(248,94,100,.56); }
+.omega-trade-overview-metric-label {
+  color:#9fbcd4; font-size:9px; font-weight:750; line-height:1.35; overflow-wrap:anywhere;
+}
+.omega-trade-overview-metric-value {
+  color:#f4f9ff; font-size:clamp(13px,3.4vw,18px); font-variant-numeric:tabular-nums;
+  font-weight:900; line-height:1.2; overflow-wrap:anywhere;
+}
+.omega-trade-overview-metric-note { color:#7795af; font-size:8px; line-height:1.4; overflow-wrap:anywhere; }
+.omega-trade-overview-data-note { color:#829db5; font-size:8px; line-height:1.5; margin:10px 2px 0; }
+.omega-trade-overview-currency-list {
+  border-top:1px solid rgba(84,133,173,.22); display:grid; gap:0; margin-top:10px; padding-top:8px;
+}
+.omega-trade-overview-currency-list > span {
+  color:#8eacc5; font-size:8px; font-weight:850; letter-spacing:.08em; margin-bottom:5px;
+}
+.omega-trade-overview-currency-list > div {
+  align-items:center; border-bottom:1px solid rgba(84,133,173,.15); display:grid;
+  gap:7px; grid-template-columns:minmax(0,1fr) auto; padding:7px 2px;
+}
+.omega-trade-overview-currency-list > div > span { display:grid; gap:2px; }
+.omega-trade-overview-currency-list strong,.omega-trade-overview-currency-list b { color:#e8f5ff; font-size:9px; }
+.omega-trade-overview-currency-list small { color:#809db8; font-size:8px; }
+.omega-trade-overview-currency-list > div > small { grid-column:2; text-align:right; }
+.omega-trade-overview-gallery {
+  display:grid; gap:8px; grid-template-columns:repeat(3,minmax(0,1fr)); min-width:0;
+}
+.omega-trade-overview-gallery-item {
+  background:#081b30; border:1px solid rgba(70,143,190,.36); border-radius:10px;
+  margin:0; min-width:0; overflow:hidden;
+}
+.omega-trade-overview-gallery-item img { aspect-ratio:16/9; display:block; object-fit:cover; width:100%; }
+.omega-trade-overview-gallery-item figcaption {
+  color:#9db9cf; font-size:7px; font-weight:850; letter-spacing:.05em;
+  line-height:1.25; padding:6px 5px; text-align:center;
+}
+.omega-trade-overview-operations .omega-trade-dashboard-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.omega-trade-overview .omega-trade-action-card { min-width:0; }
+.omega-trade-overview .omega-trade-action-card > .omega-v2-button { min-height:38px; touch-action:manipulation; }
+.omega-trade-overview .omega-trade-dashboard-note { margin-top:9px; }
+@media (min-width:760px) {
+  .omega-trade-overview-hero { align-items:end; grid-template-columns:minmax(0,1fr) minmax(240px,.55fr); padding:20px; }
+  .omega-trade-overview-hero-balance { justify-self:end; width:100%; }
+  .omega-trade-overview-grid--four { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .omega-trade-overview-grid:not(.omega-trade-overview-grid--four) { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .omega-trade-overview-operations .omega-trade-dashboard-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .omega-trade-overview-gallery-item figcaption { font-size:8px; }
+}
+@media (max-width:360px) {
+  .omega-trade-overview-section { padding:9px; }
+  .omega-trade-overview-grid,.omega-trade-overview-grid--four { gap:6px; }
+  .omega-trade-overview-metric { padding:8px; }
+  .omega-trade-overview-metric-value { font-size:12px; }
+  .omega-trade-overview-hero { padding:12px; }
+  .omega-trade-overview-gallery { gap:5px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .omega-trade-overview *, .omega-trade-overview *:before, .omega-trade-overview *:after {
+    scroll-behavior:auto; transition:none!important; animation:none!important;
+  }
+}

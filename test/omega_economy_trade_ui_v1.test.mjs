@@ -244,10 +244,21 @@ test('Trade Settlement renders without a domain data record and does not merge s
     classList:{ add(){} }, addEventListener(){}, contains(){ return true; }, innerHTML:''
   };
   globalThis.OmegaUIV2MinistryDetail.render(dashboard,{ ministryId:'trade', countryId:'BGD', section:'dashboard' });
+  assert.match(dashboard.innerHTML,/National trade overview/);
+  assert.match(dashboard.innerHTML,/National liquidity/);
+  assert.match(dashboard.innerHTML,/International trade position/);
+  assert.match(dashboard.innerHTML,/Foreign-exchange reserves/);
+  assert.match(dashboard.innerHTML,/Domestic currency balance/);
+  assert.match(dashboard.innerHTML,/Largest import partner/);
+  assert.match(dashboard.innerHTML,/Largest export partner/);
+  assert.match(dashboard.innerHTML,/Foreign direct investment/);
   assert.match(dashboard.innerHTML,/Commodity Market/);
   assert.match(dashboard.innerHTML,/Black Market/);
   assert.match(dashboard.innerHTML,/Transactions/);
   assert.match(dashboard.innerHTML,/Trade Settlement/);
+  assert.doesNotMatch(dashboard.innerHTML,/<canvas|recharts|sparkline|Economy &amp; finance|Resources &amp; Mining/i,
+    'the trade ministry overview remains chart-free and does not add the unused left navigation');
+  assert.match(dashboard.innerHTML,/data-omega-trade-overview="true"/);
   assert.match(dashboard.innerHTML,/data-omega-v2-ministry-section="market"/);
   assert.match(dashboard.innerHTML,/data-omega-v2-trade-market-tab="black-market"/);
   assert.match(dashboard.innerHTML,/data-omega-v2-ministry-section="settlement"/);
@@ -296,3 +307,44 @@ test('Transactions shortcut mounts the existing Market Transactions tab without 
   assert.match(root.innerHTML,/data-omega-v2-trade-market-tab="transactions"/);
 });
 
+test('Trade & Commerce opens directly on a selected-country financial and trade overview', () => {
+  cleanGlobals();
+  installEconomyFixture();
+  globalThis.OmegaUIV2Government = {
+    getMinistryRows() {
+      return [{ id:'trade', title:'Trade & Commerce', ministerName:'Not recorded' }];
+    }
+  };
+  const root = {
+    classList:{ add(){} },
+    addEventListener(){},
+    contains(){ return true; },
+    innerHTML:''
+  };
+  const result = globalThis.OmegaUIV2MinistryDetail.render(root,{
+    ministryId:'trade', countryId:'BGD'
+  });
+  assert.equal(result.ok,true);
+  assert.equal(result.section,'dashboard', 'the ministry opens on Overview by default');
+  assert.match(root.innerHTML,/National trade overview/);
+  assert.match(root.innerHTML,/Bangladesh/);
+  assert.match(root.innerHTML,/Domestic currency balance/);
+  assert.match(root.innerHTML,/Foreign currency accounts/);
+  assert.match(root.innerHTML,/Foreign-exchange reserves/);
+  assert.match(root.innerHTML,/Government Treasury cash/);
+  assert.match(root.innerHTML,/Total imports/);
+  assert.match(root.innerHTML,/Total exports/);
+  assert.match(root.innerHTML,/Trade balance/);
+  assert.match(root.innerHTML,/Foreign direct investment/);
+  assert.match(root.innerHTML,/Import-dependent/);
+  assert.match(root.innerHTML,/Largest import partner/);
+  assert.match(root.innerHTML,/Largest export partner/);
+  assert.match(root.innerHTML,/Commodity Market/);
+  assert.match(root.innerHTML,/Black Market/);
+  assert.match(root.innerHTML,/Transactions/);
+  assert.match(root.innerHTML,/Trade Settlement/);
+  assert.doesNotMatch(root.innerHTML,/<canvas|recharts|sparkline/i,
+    'no charts or graph runtime are mounted in the ministry overview');
+  assert.doesNotMatch(root.innerHTML,/Economy &amp; finance|Factories &amp; industry|Resources &amp; Mining/i,
+    'the ministry overview does not add the unwanted left-side category navigation');
+});

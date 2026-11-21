@@ -335,6 +335,174 @@
       '<p class="omega-trade-settlement-ownership">Agreements are future commitments. Actual cargo movement, payment and completed transactions remain in the existing Global Trade, Treasury and Transactions ledgers. This screen is read-only and does not repeat or alter settled transaction history.</p>' +
     '</div>';
   }
+  function tradeDashboardOverviewMarkup(country) {
+    // Read the selected country's existing Finance / Banking / settled-Trade model.
+    // No world scan, polling, new ledger, or network dependency is introduced.
+    var model = null;
+    try {
+      var financeApi = g.OmegaUIV2Economy;
+      if (financeApi && typeof financeApi.buildViewModel === 'function') {
+        model = financeApi.buildViewModel({ countryId:country });
+      }
+    } catch (_) { model = null; }
+    model = model || {};
+    var trends = model.trends || {};
+    var homeCurrency = model.currencyCode || 'Home currency';
+    var cover = 'assets/omega-global-market/market-header.svg';
+    var marketImage = 'assets/omega-global-market/raw-mining.svg';
+    var factoryImage = 'assets/omega-global-market/factory-refinery.svg';
+    var shipImage = 'assets/omega-industrial-icons-v1/transport/cargo/general-cargo/ship.svg';
+
+    function moneyTrade(value, currency) {
+      var amount = finiteTradeNumber(value);
+      if (amount === null) return 'Not recorded';
+      var code = String(currency || 'USD').trim().toUpperCase() || 'USD';
+      try {
+        return new Intl.NumberFormat('en-US',{style:'currency',currency:code,maximumFractionDigits:2}).format(amount);
+      } catch (_) { return numberTrade(amount) + ' ' + code; }
+    }
+    function recordText(record, kind) {
+      if (!record || finiteTradeNumber(record.value) === null) return 'Not recorded';
+      if (kind === 'money') return moneyTrade(record.value,record.unit || 'USD');
+      if (kind === 'percent' || record.unit === '%') return numberTrade(record.value) + '%';
+      return numberTrade(record.value) + (record.unit ? ' ' + String(record.unit) : '');
+    }
+    function recordNote(record, fallback) {
+      var source = record && (record.source || record.sourceName);
+      if (!source) source = record && record.status === 'AVAILABLE' ? 'Recorded game value' : (fallback || 'Source not recorded');
+      return String(source) + (record && record.year ? ' · ' + record.year : '');
+    }
+    function trendMarkup(trend) {
+      if (!trend || trend.status === 'NO_BASELINE') return '<span class="omega-economy-trend omega-economy-trend--none">No baseline</span>';
+      if (trend.status === 'NEW') return '<span class="omega-economy-trend omega-economy-trend--none">New record</span>';
+      if (trend.status === 'FLAT') return '<span class="omega-economy-trend omega-economy-trend--none">0.0% · unchanged</span>';
+      var change = finiteTradeNumber(trend.changePct);
+      if (change === null) return '<span class="omega-economy-trend omega-economy-trend--none">No baseline</span>';
+      var up = trend.status === 'UP';
+      return '<span class="omega-economy-trend ' + (up ? 'omega-economy-trend--up' : 'omega-economy-trend--down') + '">' +
+        (up ? '▲ +' : '▼ ') + numberTrade(Math.abs(change)) + '%</span>';
+    }
+    function metric(label, value, note, trend, modifier) {
+      return '<article class="omega-trade-overview-metric ' + esc(modifier || '') + '">' +
+        '<span class="omega-trade-overview-metric-label">' + esc(label) + '</span>' +
+        '<strong class="omega-trade-overview-metric-value">' + esc(value) + '</strong>' +
+        (trend ? trendMarkup(trend) : '') +
+        (note ? '<small class="omega-trade-overview-metric-note">' + esc(note) + '</small>' : '') +
+      '</article>';
+    }
+    function partnerValue(partner) {
+      if (!partner || finiteTradeNumber(partner.value) === null) return 'Not recorded';
+      return String(partner.name || partner.countryId || 'Partner') + ' · ' + moneyTrade(partner.value,partner.currency || homeCurrency);
+    }
+    function action(title, description, icon, section, marketTab, image, label) {
+      var safe = safeVisualPath(image);
+      return '<article class="omega-trade-action-card">' +
+        (safe ? '<div class="omega-trade-action-media"><img loading="lazy" decoding="async" src="' + esc(safe) + '" alt="' + esc(title) + ' reference"></div>' : '') +
+        '<div class="omega-trade-action-copy"><span class="omega-trade-action-icon">' + icon + '</span><div><h3>' + esc(title) +
+        '</h3><p>' + esc(description) + '</p></div></div>' +
+        '<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-ministry-section="' +
+        esc(section) + '" data-omega-v2-trade-market-tab="' + esc(marketTab || 'commodities') + '">' +
+        esc(label) + ' <span aria-hidden="true">›</span></button></article>';
+    }
+    function galleryImage(src, alt, caption) {
+      var safe = safeVisualPath(src);
+      if (!safe) return '';
+      return '<figure class="omega-trade-overview-gallery-item"><img loading="lazy" decoding="async" src="' +
+        esc(safe) + '" alt="' + esc(alt) + '"><figcaption>' + esc(caption) + '</figcaption></figure>';
+    }
+
+    var balanceValue = model.tradeBalance ? finiteTradeNumber(model.tradeBalance.value) : null;
+    var balanceModifier = balanceValue === null ? '' : balanceValue > 0 ? 'is-positive' : balanceValue < 0 ? 'is-negative' : '';
+    var position = String(model.tradePosition || 'Not recorded');
+    var foreignAccounts = Array.isArray(model.foreignAccounts) ? model.foreignAccounts : [];
+    var foreignAccountValue = model.foreignAccountsUsd !== null && model.foreignAccountsUsd !== undefined
+      ? moneyTrade(model.foreignAccountsUsd,'USD')
+      : foreignAccounts.length ? foreignAccounts.length + ' account(s)' : 'Not recorded';
+    var foreignAccountNote = foreignAccounts.length
+      ? foreignAccounts.length + ' foreign currency account(s) · USD equivalent only when FX quote exists'
+      : 'No foreign currency account balance recorded';
+    var dependency = model.tradeDependencyProfile || { label:'Not recorded', detail:'Import/export dependency evidence is unavailable' };
+    var countryName = model.countryName || model.countryId || country || 'Selected country';
+    var turn = Math.max(0,Math.floor(finiteTradeNumber(model.currentTurn) || 0));
+
+    var commodityIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2-5H5L3 9Zm2 0v11h14V9M9 20v-6h6v6"/></svg>';
+    var blackIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M6 7l1 13h10l1-13M9 7V4h6v3M9 11v5M15 11v5"/></svg>';
+    var transactionIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15l-3-3M20 17H5l3 3M4 7v4M20 13v4"/></svg>';
+    var settlementIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h18M5 8l1 11h12l1-11M8 8V5h8v3M8 13h8M12 11v4"/></svg>';
+
+    return '<div class="omega-trade-dashboard omega-trade-overview" data-omega-trade-overview="true">' +
+      '<header class="omega-trade-overview-hero">' +
+        '<img class="omega-trade-overview-hero-image" loading="lazy" decoding="async" src="' + esc(cover) + '" alt="International container port">' +
+        '<div class="omega-trade-overview-hero-copy">' +
+          '<span class="omega-trade-overview-eyebrow">TRADE & COMMERCE · NATIONAL OVERVIEW</span>' +
+          '<h2>National trade overview</h2>' +
+          '<p>' + esc(countryName) + ' · current recorded commercial position</p>' +
+          '<span class="omega-trade-overview-turn">GAME TURN ' + esc(turn) + '</span>' +
+        '</div>' +
+        '<div class="omega-trade-overview-hero-balance">' +
+          '<small>NET TRADE POSITION</small><strong>' + esc(recordText(model.tradeBalance,'money')) + '</strong>' +
+          '<span class="' + (balanceModifier === 'is-positive' ? 'is-positive' : balanceModifier === 'is-negative' ? 'is-negative' : 'is-neutral') + '">' + esc(position) + '</span>' +
+          trendMarkup(trends.tradeBalance) +
+        '</div>' +
+      '</header>' +
+      '<section class="omega-trade-overview-section" aria-label="International trade results">' +
+        '<div class="omega-trade-overview-section-heading"><div><span>01 / TRADE RESULTS</span><h3>International trade position</h3></div>' +
+          '<span class="omega-trade-overview-section-tag">' + esc(position) + '</span></div>' +
+        '<div class="omega-trade-overview-grid omega-trade-overview-grid--four">' +
+          metric('Total imports',recordText(model.imports,'money'),recordNote(model.imports,'Settled import ledger or country baseline'),trends.imports) +
+          metric('Total exports',recordText(model.exports,'money'),recordNote(model.exports,'Settled export ledger or country baseline'),trends.exports) +
+          metric('Trade balance',recordText(model.tradeBalance,'money'),recordNote(model.tradeBalance,'Currency-comparable settled trade or baseline'),trends.tradeBalance,balanceModifier) +
+          metric('Foreign direct investment',recordText(model.foreignDirectInvestment,'money'),recordNote(model.foreignDirectInvestment,'FDI source not recorded'),trends.fdi) +
+        '</div>' +
+      '</section>' +
+      '<section class="omega-trade-overview-section" aria-label="National liquidity and reserves">' +
+        '<div class="omega-trade-overview-section-heading"><div><span>02 / CURRENCY & RESERVES</span><h3>National liquidity</h3></div>' +
+          '<span class="omega-trade-overview-section-tag">' + esc(homeCurrency) + '</span></div>' +
+        '<div class="omega-trade-overview-grid">' +
+          metric('Domestic currency balance',moneyTrade(model.domesticCurrencyBalance,homeCurrency),'Home-currency account · ' + homeCurrency,trends.localCurrency) +
+          metric('Foreign currency accounts',foreignAccountValue,foreignAccountNote,trends.foreignAccounts) +
+          metric('Foreign-exchange reserves',recordText(model.foreignExchangeReserves,'money'),recordNote(model.foreignExchangeReserves,'Official FX reserve source not recorded'),trends.fxReserves) +
+          metric('Government Treasury cash',moneyTrade(model.treasuryCash,'USD'),'Available Treasury cash · USD, separate from FX reserves',trends.treasury) +
+          metric('Treasury reserves',moneyTrade(model.treasuryReserves,'USD'),'Finance reserve field · separate from official FX reserves',trends.treasuryReserves) +
+        '</div>' +
+        (foreignAccounts.length ? '<div class="omega-trade-overview-currency-list"><span>RECORDED FOREIGN ACCOUNTS</span>' +
+          foreignAccounts.map(function (row) {
+            return '<div><span><strong>' + esc(row.currencyCode) + '</strong><small>' + esc(row.currencyName || row.currencyCode) + '</small></span>' +
+              '<b>' + esc(finiteTradeNumber(row.balance) === null ? 'Not recorded' : numberTrade(row.balance) + ' ' + row.currencyCode) + '</b>' +
+              '<small>' + esc(row.usdValue === null ? 'USD quote unavailable' : moneyTrade(row.usdValue,'USD')) + '</small></div>';
+          }).join('') + '</div>' : '') +
+      '</section>' +
+      '<section class="omega-trade-overview-section" aria-label="Trade dependency and international partners">' +
+        '<div class="omega-trade-overview-section-heading"><div><span>03 / PARTNERS & DEPENDENCY</span><h3>Trade relationships</h3></div></div>' +
+        '<div class="omega-trade-overview-grid">' +
+          metric('Trade orientation',dependency.label,dependency.detail,null) +
+          metric('Import dependency',recordText(model.importDependency,'percent'),recordNote(model.importDependency,'Import dependency source not recorded'),trends.importDependency) +
+          metric('Export dependency',recordText(model.exportDependency,'percent'),recordNote(model.exportDependency,'Export dependency source not recorded'),trends.exportDependency) +
+          metric('Largest import partner',partnerValue(model.importPartner),model.importPartner ? numberTrade(model.importPartner.count || 0) + ' settled import(s)' : 'No comparable settled import evidence',null) +
+          metric('Largest export partner',partnerValue(model.exportPartner),model.exportPartner ? numberTrade(model.exportPartner.count || 0) + ' settled export(s)' : 'No comparable settled export evidence',null) +
+          metric('Largest overall trade partner',partnerValue(model.tradePartner),model.tradePartner ? numberTrade(model.tradePartner.importCount || 0) + ' import · ' + numberTrade(model.tradePartner.exportCount || 0) + ' export settlement(s)' : 'No comparable settled partner evidence',null) +
+        '</div>' +
+        '<p class="omega-trade-overview-data-note">Trade totals use deduplicated SETTLED ledger rows. Pending offers and bilateral commitments are not counted as completed trade. Missing values remain unavailable rather than being replaced with zero.</p>' +
+      '</section>' +
+      '<section class="omega-trade-overview-gallery" aria-label="Trade and industry visual references">' +
+        galleryImage(marketImage,'Raw commodities at a mining and trade origin','COMMODITY SUPPLY') +
+        galleryImage(factoryImage,'Industrial processing and production','INDUSTRIAL OUTPUT') +
+        galleryImage(shipImage,'Cargo ship and international freight','CROSS-BORDER LOGISTICS') +
+      '</section>' +
+      '<section class="omega-trade-overview-section omega-trade-overview-operations" aria-label="Trade operations">' +
+        '<div class="omega-trade-overview-section-heading"><div><span>04 / TRADE OPERATIONS</span><h3>Markets, transactions & agreements</h3></div>' +
+          '<span class="omega-trade-overview-section-tag">4 SERVICES</span></div>' +
+        '<div class="omega-trade-dashboard-grid">' +
+          action('Commodity Market','Browse and trade existing commodity offers',commodityIcon,'market','commodities',marketImage,'Open market') +
+          action('Black Market','Restricted and shadow-market operations',blackIcon,'market','black-market','','Open black market') +
+          action('Transactions','Review completed trade and payment records',transactionIcon,'market','transactions','','Open transactions') +
+          action('Trade Settlement','Review bilateral import and export agreements',settlementIcon,'settlement','',shipImage,'Open agreements') +
+        '</div>' +
+        '<p class="omega-trade-dashboard-note">Agreements are future commitments. Completed deliveries, payments and settlements remain in the existing Global Trade and Finance ledgers.</p>' +
+      '</section>' +
+    '</div>';
+  }
+
   function tradeDashboardMarkup(country) {
     // Reuse tiny SVG artwork that is already precached for offline sessions.
     var cover = 'assets/omega-global-market/market-header.svg';
@@ -403,7 +571,7 @@
     if (!row) {
       content = '<div class="omega-v2-empty">The selected ID is not present in the current ministry directory. No substitute ministry was created.</div>';
     } else if (id === 'trade' && section === 'dashboard') {
-      content = tradeDashboardMarkup(country);
+      content = tradeDashboardOverviewMarkup(country);
     } else if (id === 'trade' && section === 'settlement') {
       content = renderTradeSettlement(country, options.settlementTab);
     } else if (id === 'trade' && section === 'market') {

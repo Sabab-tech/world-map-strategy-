@@ -80,7 +80,7 @@ test('autonomous screen is wired to the shared route and offline shell',()=>{
  assert.match(app,/autonomous-development/);
  assert.match(app,/Autonomous Trade Command/);
  assert.match(index,/<script src="omega_ui_v2\/screens\/autonomous-development\.js" defer><\/script>/);
- assert.match(sw,/omega-offline-atlas-shell-v133/);
+ assert.match(sw,/omega-offline-atlas-shell-v134/);
  assert.match(sw,/"\.\/omega_ui_v2\/screens\/autonomous-development\.js"/);
  assert.match(css,/\.omega-v2-autonomy-status--healthy/);
  assert.match(css,/\.omega-v2-autonomy-status--pending/);
