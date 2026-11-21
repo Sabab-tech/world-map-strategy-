@@ -46,4 +46,4 @@ jobs:
           node --check omega_ui_v2/app.js
           node --check test/omega_economy_trade_ui_v1.test.mjs
       - name: Economy, Trade & Commerce, and navigation regression
-        run: npm run test:omega-ui-v2
+        run: npm run test:omega-economy-trade-ui
