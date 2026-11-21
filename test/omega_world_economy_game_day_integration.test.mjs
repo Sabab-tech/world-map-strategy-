@@ -170,7 +170,7 @@ test('100 fresh game days process all 196 NPCs on the real 197-country roster an
         ...events[6], simulationTurn: turn
       }).status, 'DUPLICATE', 'replayed relationship events must be idempotently ignored');
 
-      const queuedTypes = h.state.simulation.worldSimulationScheduler.pendingEvents.map(row => row.eventType);
+      const queuedTypes = Array.from(h.state.simulation.worldSimulationScheduler.pendingEvents, row => row.eventType);
       assert.deepEqual(queuedTypes, [
         'OMEGA_WAR_DECLARED',
         'OMEGA_BORDER_CONFLICT_ESCALATED',
