@@ -174,6 +174,11 @@ app.post("/api/actions/execute", async (req, res, next) => {
     if (!replayGuard.reserve(action.nonce, action.exp)) {
       return res.status(409).json({ ok: false, error: "ACTION_ALREADY_USED_OR_RUNNING" });
     }
+    // Consume the approval before the external write. A network failure can have an
+    // ambiguous outcome, so the same token must never be retried as a second write.
+    if (!replayGuard.commit(action.nonce)) {
+      return res.status(409).json({ ok: false, error: "ACTION_APPROVAL_COMMIT_FAILED" });
+    }
 
     try {
       let result;
@@ -209,16 +214,11 @@ app.post("/api/actions/execute", async (req, res, next) => {
           break;
         }
         default:
-          replayGuard.release(action.nonce);
           return res.status(400).json({ ok: false, error: "ACTION_NOT_SUPPORTED" });
       }
 
-      if (!replayGuard.commit(action.nonce)) {
-        throw new Error("ACTION_REPLAY_GUARD_COMMIT_FAILED");
-      }
       return res.json({ ok: true, action: action.action, result });
     } catch (error) {
-      replayGuard.release(action.nonce);
       throw error;
     }
   } catch (error) {
