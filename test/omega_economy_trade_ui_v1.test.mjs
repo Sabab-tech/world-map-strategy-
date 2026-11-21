@@ -119,10 +119,48 @@ test('Economy Overview keeps Treasury cash, domestic currency and FX reserves se
   assert.match(root.innerHTML,/Foreign-exchange reserves/);
   assert.match(root.innerHTML,/Trade dependency profile/);
   assert.match(root.innerHTML,/Largest overall trade partner/);
+  assert.match(root.innerHTML,/Trade &amp; Commerce/);
+  assert.match(root.innerHTML,/data-omega-v2-open-economic-ministry="trade"/,
+    'Economy must expose a single gateway to the ministry that owns trade operations');
+  assert.match(root.innerHTML,/omega-economy-action-grid--single/);
   assert.doesNotMatch(root.innerHTML,/Commodity Market|Black Market|Transactions|Trade Settlement/,
     'market, transaction and settlement actions are owned by the Trade & Commerce ministry');
   assert.doesNotMatch(root.innerHTML,/<canvas|recharts|data-omega-v2-economy-tab/i);
   assert.match(root.innerHTML,/No baseline/, 'no historical percent change is invented');
+});
+
+
+test('Economy ministry gateway opens the existing Trade & Commerce ministry', () => {
+  cleanGlobals();
+  installEconomyFixture();
+  let clickHandler = null;
+  let openedMinistry = null;
+  const root = {
+    classList:{ add(){} },
+    addEventListener(type, handler) { if (type === 'click') clickHandler = handler; },
+    contains() { return true; },
+    innerHTML:''
+  };
+  const result = globalThis.OmegaUIV2Economy.render(root,{
+    countryId:'BGD',
+    onOpenMinistry(id) { openedMinistry = id; }
+  });
+  assert.equal(result.ok,true);
+  assert.equal(typeof clickHandler,'function');
+  const ministryButton = {
+    disabled:false,
+    getAttribute(name) {
+      return name === 'data-omega-v2-open-economic-ministry' ? 'trade' : null;
+    }
+  };
+  clickHandler({ target:{
+    closest(selector) {
+      if (selector === '[data-omega-v2-open-economic-ministry]') return ministryButton;
+      return null;
+    }
+  } });
+  assert.equal(openedMinistry,'trade',
+    'the gateway must use the app’s canonical ministry navigation callback');
 });
 
 test('trend display reports a percentage only when two actual historical points exist', () => {

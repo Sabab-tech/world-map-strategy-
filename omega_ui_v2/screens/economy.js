@@ -595,6 +595,12 @@
             '<small>Available government Treasury · USD. This is not the national GDP or the FX reserve.</small></div>' +
           '<div class="omega-economy-hero-image"><img loading="lazy" decoding="async" src="' + esc(cover) + '" alt="Container ship at a trade port"></div>' +
         '</div>' +
+        '<section class="omega-economy-section omega-economy-ministry-entry" aria-label="Trade ministry access">' +
+          '<div class="omega-economy-section-heading"><div><span>MINISTRY ACCESS</span><h2>Trade & Commerce</h2></div><span class="omega-economy-section-mark">CONTROL ROOM</span></div>' +
+          '<div class="omega-economy-action-grid omega-economy-action-grid--single">' +
+            actionCard('Trade & Commerce','Open the dedicated national trade control room and its market and agreement systems.','market','data-omega-v2-open-economic-ministry="trade"',cover,'OPEN MINISTRY') +
+          '</div>' +
+        '</section>' +
         '<section class="omega-economy-section">' +
           '<div class="omega-economy-section-heading"><div><span>01 / CURRENCY & RESERVES</span><h2>National liquidity</h2></div><span class="omega-economy-section-mark">FINANCE</span></div>' +
           '<div class="omega-economy-metric-grid">' +

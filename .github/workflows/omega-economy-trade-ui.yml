@@ -1,0 +1,61 @@
+name: OMEGA Economy and Trade UI
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'omega_ui_v2/screens/economy.js'
+      - 'omega_ui_v2/screens/ministry-detail.js'
+      - 'omega_ui_v2/ministry-visual-refresh.css'
+      - 'omega_ui_v2/omega-ui-v2.css'
+      - 'test/omega_economy_trade_ui_v1.test.mjs'
+      - 'test/omega_ui_v2.test.mjs'
+      - 'test/omega_autonomous_development_ui_v1.test.mjs'
+      - 'test/omega_minister_mobile_ui_v2_regression.test.cjs'
+      - 'test/omega_ui_text_presentation.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_npc_national_macro_economy_runtime_v1.test.mjs'
+      - 'omega-offline-map-sw.js'
+      - 'package.json'
+      - '.github/workflows/omega-economy-trade-ui.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'omega_ui_v2/screens/economy.js'
+      - 'omega_ui_v2/screens/ministry-detail.js'
+      - 'omega_ui_v2/ministry-visual-refresh.css'
+      - 'omega_ui_v2/omega-ui-v2.css'
+      - 'test/omega_economy_trade_ui_v1.test.mjs'
+      - 'test/omega_ui_v2.test.mjs'
+      - 'test/omega_autonomous_development_ui_v1.test.mjs'
+      - 'test/omega_minister_mobile_ui_v2_regression.test.cjs'
+      - 'test/omega_ui_text_presentation.test.mjs'
+      - 'test/omega_resource_command_center_ui_v1.test.mjs'
+      - 'test/omega_npc_national_macro_economy_runtime_v1.test.mjs'
+      - 'omega-offline-map-sw.js'
+      - 'package.json'
+      - '.github/workflows/omega-economy-trade-ui.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  economy-trade-ui:
+    name: Economy navigation and Trade & Commerce regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax checks
+        run: |
+          node --check omega_ui_v2/screens/economy.js
+          node --check omega_ui_v2/screens/ministry-detail.js
+          node --check omega_ui_v2/app.js
+          node --check test/omega_economy_trade_ui_v1.test.mjs
+      - name: Economy, Trade & Commerce, and navigation regression
+        run: npm run test:omega-ui-v2 && node --test test/omega_resource_command_center_ui_v1.test.mjs test/omega_npc_national_macro_economy_runtime_v1.test.mjs
