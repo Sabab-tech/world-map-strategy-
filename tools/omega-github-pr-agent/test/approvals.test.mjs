@@ -27,11 +27,21 @@ test("tampered and expired approval tokens are rejected", () => {
   assert.throws(() => verifyActionToken(token, secret, { now: 1_800_000_120_000 }));
 });
 
-test("replay guard allows one use and rejects a second use", () => {
+test("replay guard reserves an approval, commits it once, and rejects replays", () => {
   const guard = createReplayGuard();
-  assert.equal(guard.consume("nonce-a", 1_900_000_000), true);
-  assert.equal(guard.consume("nonce-a", 1_900_000_000), false);
+  assert.equal(guard.reserve("nonce-a", 1_900_000_000), true);
+  assert.equal(guard.reserve("nonce-a", 1_900_000_000), false);
+  assert.equal(guard.commit("nonce-a"), true);
+  assert.equal(guard.commit("nonce-a"), false);
+  assert.equal(guard.reserve("nonce-a", 1_900_000_000), false);
   assert.equal(guard.size(), 1);
+});
+
+test("failed actions can release a reservation for a safe retry", () => {
+  const guard = createReplayGuard();
+  assert.equal(guard.reserve("nonce-retry", 1_900_000_000), true);
+  assert.equal(guard.release("nonce-retry"), true);
+  assert.equal(guard.reserve("nonce-retry", 1_900_000_000), true);
 });
 
 test("short action secrets are rejected", () => {
