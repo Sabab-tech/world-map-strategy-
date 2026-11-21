@@ -32,15 +32,13 @@ on:
       - "omega_black_market_system_v1.js"
       - "omega_black_market_network_v1.js"
       - "test/omega_opponent_autonomy_system.test.mjs"
+      - "test/opponent_country_rules_runtime.test.js"
       - "test/omega_opponent_multi_country_integration.test.mjs"
       - "test/omega_opponent_treaty_lifecycle_system.test.mjs"
       - "test/omega_opponent_e2e_runtime.test.mjs"
       - "test/omega_sanction_response_runtime_v1.test.mjs"
       - "test/omega_black_market_system_v1.test.mjs"
       - "test/omega_black_market_network_v1.test.mjs"
-      - "test/omega_opponent_treaty_lifecycle_system.test.mjs"
-      - "test/omega_opponent_e2e_runtime.test.mjs"
-      - "test/omega_opponent_autonomy_system.test.mjs"
       - "minister_country_roster_manifest_v1.json"
       - "test/omega_bilateral_trade_agreement_system_v1.test.mjs"
       - ".github/workflows/omega-autonomous-national-trade.yml"
@@ -76,15 +74,13 @@ on:
       - "omega_black_market_system_v1.js"
       - "omega_black_market_network_v1.js"
       - "test/omega_opponent_autonomy_system.test.mjs"
+      - "test/opponent_country_rules_runtime.test.js"
       - "test/omega_opponent_multi_country_integration.test.mjs"
       - "test/omega_opponent_treaty_lifecycle_system.test.mjs"
       - "test/omega_opponent_e2e_runtime.test.mjs"
       - "test/omega_sanction_response_runtime_v1.test.mjs"
       - "test/omega_black_market_system_v1.test.mjs"
       - "test/omega_black_market_network_v1.test.mjs"
-      - "test/omega_opponent_treaty_lifecycle_system.test.mjs"
-      - "test/omega_opponent_e2e_runtime.test.mjs"
-      - "test/omega_opponent_autonomy_system.test.mjs"
       - "minister_country_roster_manifest_v1.json"
   workflow_dispatch:
 
@@ -141,6 +137,7 @@ jobs:
       - name: War, conflict, sanctions, crisis and relationship decision regressions
         run: |
           npm run test:opponent-autonomy
+          npm run test:opponent-rules
           npm run test:opponent-multi-country
           npm run test:treaty-lifecycle
           npm run test:country-behavior
