@@ -1175,7 +1175,7 @@ test('a buyer bid arriving after factory output upgrades the player seller offer
   assert.equal(offers[0].unitPrice,281.93);
   assert.equal(offers[0].quantity,1.875);
   assert.ok(offers[0].sourceBatchIds.includes(sourceBatchId));
-  assert.ok(offers[0].sourceBatchIds.includes(outputBatchId));
+  assert.equal(offers[0].batchAllocations[0].batchId,outputBatchId);
 
   const rebuildsBeforeOffScopeRequest=rebuildCount;
   context.dispatchEvent(new CustomEventMock('OMEGA_TRADE_REQUEST_CREATED',{
