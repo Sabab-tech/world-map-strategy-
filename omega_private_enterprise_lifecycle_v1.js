@@ -3082,7 +3082,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
   }
   function sab34LiveBrowserProofAccepted(){
     var proof=g.OmegaSAB34LiveBrowserProofV1||(g.Omega&&g.Omega.SAB34LiveBrowserProofV1);
-    if(!proof||proof.schemaVersion!==1||proof.status!=='VERIFIED'||
+    if(!proof||proof.schemaVersion!==1||!['VERIFIED','FACTORY_INPUT_READY'].includes(proof.status)||
        proof.authority!=='SAB34_LIVE_BROWSER_ACCEPTANCE_CERTIFICATE_V1'||
        proof.workflow!=='OMEGA Private Enterprise Real Browser E2E'||proof.browser!=='Chromium'||
        !/^[a-f0-9]{40}$/i.test(String(proof.proofCommitSha||'')))return false;
@@ -3091,10 +3091,16 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
        String(proof.workflowRunUrl||'')!=='https://github.com/Sabab-tech/world-map-strategy-/actions/runs/'+runId||
        !proof.verifiedAt||!Number.isFinite(Date.parse(String(proof.verifiedAt))))return false;
     var stages=proof.stages||{};
-    var requiredStages=[
+    // Factory authorization needs real-browser proof of the complete upstream hand-off,
+    // not downstream finished-goods/market stages that cannot occur until this gate is open.
+    // Continue accepting the original full certificate for already verified runs.
+    var inputReadyStages=[
       'realAppBoot','siteMarkerSelection','siteExtractionAndMineDispatch','mineReceiptAndFactoryDispatch',
-      'factoryReceiptAndInputLot','finishedGoodsAndMarketLineage','selectedCountryIsolation','indexedDbSaveLoadReplay'
+      'factoryReceiptAndInputLot','selectedCountryIsolation','indexedDbSaveLoadReplay'
     ];
+    if(proof.status==='FACTORY_INPUT_READY')
+      return inputReadyStages.every(function(stage){return stages[stage]===true;})&&stages.finishedGoodsAndMarketLineage!==true;
+    var requiredStages=inputReadyStages.concat(['finishedGoodsAndMarketLineage']);
     return requiredStages.every(function(stage){return stages[stage]===true;});
   }
   function productionGateReason(){
