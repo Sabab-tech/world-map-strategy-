@@ -1781,7 +1781,38 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const buyerNetTreasuryDebitUsd = buyerDebitUsd - buyerTariffRevenueUsd;
       close(buyerNetTreasuryDebitUsd, sellerCreditUsd, 'BUYER_NET_PAYMENT_AFTER_IMPORT_TARIFF');
       close(buyerAfterUsd, buyerBeforeUsd - buyerNetTreasuryDebitUsd, 'BUYER_TREASURY_NET_DEBIT');
-      close(sellerAfterUsd, sellerBeforeUsd + sellerCreditUsd, 'SELLER_TREASURY_CREDIT');
+
+      // The seller's gross bank credit is subsequently cleared from sovereign Treasury
+      // into the owning company wallet. Royalty/resource-tax receipts are credited back
+      // to Treasury separately, so reconciling Treasury to gross seller credit alone is wrong.
+      const fiscalRows = g.Game.state.finance?.[seller]?.resourceFiscalLedger || [];
+      const fiscalReceipt = fiscalRows.find(row =>
+        String(row.settlementId || '') === settlementId &&
+        String(row.companyId || '') === String(production.factoryOwnerCompanyId || '') &&
+        String(row.direction || '').toUpperCase() === 'EXPORT');
+      if (!fiscalReceipt || !Number.isFinite(Number(fiscalReceipt.total)) || Number(fiscalReceipt.total) < 0)
+        throw new Error('SELLER_EXPORT_FISCAL_RECEIPT_NOT_RECONCILED:' + JSON.stringify({
+          settlementId, expectedCompany: production.factoryOwnerCompanyId, fiscalRows: fiscalRows.slice(-8)
+        }).slice(0, 4000));
+
+      const companyAccounts = g.Game.state.economy?.[seller]?.companyAccounts || {};
+      const sellerCompany = companyAccounts[String(companyClearing.companyId)] || null;
+      const companyCashFlowRows = Array.isArray(sellerCompany?.cashFlowEntries) ? sellerCompany.cashFlowEntries : [];
+      const companySaleReceipt = companyCashFlowRows.find(row =>
+        String(row.sourceId || '') === settlementId &&
+        String(row.direction || '').toUpperCase() === 'CREDIT' &&
+        String(row.category || '').toUpperCase() === 'SUPPLIER_SALE');
+      if (!companySaleReceipt)
+        throw new Error('SELLER_COMPANY_CASH_RECEIPT_MISSING:' + JSON.stringify({
+          settlementId, companyId: companyClearing.companyId, companyCashFlowRows: companyCashFlowRows.slice(-8)
+        }).slice(0, 4000));
+      close(Number(companySaleReceipt.amount), Number(companyClearing.amount),
+        'SELLER_COMPANY_CASH_RECEIPT_MATCHES_TREASURY_CLEARING');
+
+      const sellerTreasuryExpectedUsd = sellerBeforeUsd + sellerCreditUsd -
+        Number(companyClearing.amount) + Number(fiscalReceipt.total);
+      close(sellerAfterUsd, sellerTreasuryExpectedUsd,
+        'SELLER_TREASURY_AFTER_COMPANY_CLEARING_AND_EXPORT_FISCAL_RECEIPT');
       close(buyerAfterStock - buyerOpeningStock, quantity, 'BUYER_FINISHED_GOODS_RECEIPT', 1e-5);
       close(sellerBeforeStock - sellerAfterStock, quantity, 'SELLER_FINISHED_GOODS_DEBIT', 1e-5);
 
