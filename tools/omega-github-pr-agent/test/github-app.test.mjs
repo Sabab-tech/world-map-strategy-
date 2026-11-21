@@ -95,10 +95,18 @@ test("commits only to the exact open same-repository PR head without force", asy
     if (route.endsWith("/git/commits/" + head)) {
       return jsonResponse(200, { tree: { sha: "base-tree" } });
     }
+    if (route.endsWith("/git/trees/base-tree") && method === "GET") {
+      return jsonResponse(200, {
+        truncated: false,
+        tree: [{ path: "src/fix.js", type: "blob", mode: "100755" }]
+      });
+    }
     if (route.endsWith("/git/blobs") && method === "POST") {
       return jsonResponse(201, { sha: "new-blob" });
     }
     if (route.endsWith("/git/trees") && method === "POST") {
+      const body = JSON.parse(options.body);
+      assert.equal(body.tree[0].mode, "100755");
       return jsonResponse(201, { sha: "new-tree" });
     }
     if (route.endsWith("/git/commits") && method === "POST") {
