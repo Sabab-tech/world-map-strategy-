@@ -1089,3 +1089,102 @@ test('explicit measured-zero production evidence can attest coverage without fab
   assert.equal(coverage.result.coverageStatus,'COMPLETE');
   assert.equal(coverage.result.lossEventsObserved,0);
 });
+
+test('a buyer bid arriving after factory output upgrades the player seller offer to executable market liquidity',async()=>{
+  const {context,worldState}=createContext();
+  const resource=worldState.resource.BGD;
+  const outputBatchId='OUTPUT:FACTORYRUN:BGD:DORE:T4:1';
+  const sourceBatchId='MINE-GOLD-BATCH-1';
+  resource.inventory['DORÉ']=7.5;
+  resource.batches.push({
+    batchId:sourceBatchId,resourceId:'gold',materialIdentity:'gold',
+    quantity:100,remainingQuantity:100,unit:'TONNES',createdTurn:1,
+    stage:'RAW_EXTRACTED',status:'AVAILABLE',countryId:'BGD',ownerCountryCode:'BGD',
+    sourceBatchIds:[],siteReferenceKey:'SITE-BGD-GOLD-1'
+  },{
+    batchId:outputBatchId,resourceId:'DORÉ',materialIdentity:'DORÉ',
+    quantity:7.5,remainingQuantity:7.5,unit:'TONNES',createdTurn:4,
+    stage:'FINISHED',status:'AVAILABLE',countryId:'BGD',ownerCountryCode:'BGD',
+    sourceBatchIds:[sourceBatchId],processId:'FACTORYRUN:BGD:DORE:T4:1'
+  });
+  resource.inventoryLots={
+    [outputBatchId]:{
+      batchId:outputBatchId,resourceId:'DORÉ',quantity:7.5,remainingQuantity:7.5,
+      unit:'TONNES',stage:'FINISHED',countryId:'BGD',status:'AVAILABLE'
+    }
+  };
+  resource.processedWarehouse={
+    warehouseId:'WH-BGD-PROCESSED',countryId:'BGD',type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',
+    locationNodeKey:'WAREHOUSE:BGD:PROCESSED',status:'OPERATIONAL',
+    availableByResource:{'DORÉ':7.5},reservedByResource:{},storedBatchIds:[outputBatchId],receipts:[]
+  };
+  resource.industrialNetwork={shipments:[],siteFlowLedger:[],events:[]};
+  worldState.trade.BGD.marketPrice.gold=50;
+  worldState.trade.KIR={importRequests:[]};
+  let rebuildCount=0;
+  context.OmegaGlobalMarket={
+    localPrice(_country,resourceId){
+      return worldState.trade.BGD.marketPrice[resourceId]??null;
+    },
+    executableLocalPrice(){return null;},
+    bestCrossBorderBid(seller,resourceId){
+      const bids=Object.entries(worldState.trade).flatMap(([buyer,bucket])=>
+        (bucket?.importRequests||[]).filter(row=>
+          String(row.targetCountryId||'').toUpperCase()===String(seller).toUpperCase()&&
+          String(row.resourceId||'').normalize('NFKC').toLowerCase()===String(resourceId).normalize('NFKC').toLowerCase()&&
+          ['SENT','COUNTER_OFFERED','ACCEPTED'].includes(String(row.status||'').toUpperCase())
+        ).map(row=>({countryId:buyer,requestId:row.requestId,priceUsd:Number(row.unitPrice)}))
+      ).filter(row=>Number.isFinite(row.priceUsd)&&row.priceUsd>0);
+      bids.sort((a,b)=>b.priceUsd-a.priceUsd);
+      return bids[0]||null;
+    },
+    localPriceFromUsd(_country,priceUsd){return priceUsd;},
+    rebuild(){rebuildCount++;return{};}
+  };
+  const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
+  vm.runInNewContext(code,context,{filename:'omega_resource_economy_runtime_v2.js'});
+
+  const initial=context.OmegaResourceEconomy.publishMarketOffers('BGD');
+  assert.equal(initial.status,'APPLIED',JSON.stringify(initial));
+  const initialOffer=worldState.trade.BGD.offerBook.find(row=>
+    row.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER'&&row.resourceId==='DORÉ');
+  assert.ok(initialOffer,'factory finished goods must first publish from the processed warehouse');
+  assert.equal(initialOffer.executableOffer,false,
+    'a source-input-derived or reference price must remain indicative before an observed buyer bid exists');
+
+  const buyerRequest={
+    requestId:'KIR-BID-DORE-1',countryId:'KIR',targetCountryId:'BGD',
+    resourceId:'DORÉ',quantity:1,unitPrice:281.93,status:'SENT',
+    source:'OMEGA_RESOURCE_COMMAND_CENTER_UI'
+  };
+  worldState.trade.KIR.importRequests.push(buyerRequest);
+  context.dispatchEvent(new CustomEventMock('OMEGA_TRADE_REQUEST_CREATED',{
+    detail:{eventType:'OMEGA_TRADE_REQUEST_CREATED',countryId:'KIR',payload:buyerRequest,source:'trade'}
+  }));
+  await Promise.resolve();
+
+  assert.equal(rebuildCount,2,
+    'market must discover the new buyer bid before repricing, then rebuild against the published executable ask');
+  const offers=worldState.trade.BGD.offerBook.filter(row=>
+    row.source==='OMEGA_RESOURCE_ECON_AUTO_OFFER'&&row.resourceId==='DORÉ');
+  assert.equal(offers.length,1,'refresh must replace, not duplicate, the seller auto-offer');
+  assert.equal(offers[0].executableOffer,true);
+  assert.equal(offers[0].indicativeOnly,false);
+  assert.equal(offers[0].priceProvenance,'OBSERVED');
+  assert.equal(offers[0].priceAuthority,'OBSERVED_CROSS_BORDER_BUYER_BID');
+  assert.equal(offers[0].unitPrice,281.93);
+  assert.equal(offers[0].quantity,1.875);
+  assert.ok(offers[0].sourceBatchIds.includes(sourceBatchId));
+  assert.ok(offers[0].sourceBatchIds.includes(outputBatchId));
+
+  const rebuildsBeforeOffScopeRequest=rebuildCount;
+  context.dispatchEvent(new CustomEventMock('OMEGA_TRADE_REQUEST_CREATED',{
+    detail:{eventType:'OMEGA_TRADE_REQUEST_CREATED',countryId:'AUS',payload:{
+      requestId:'AUS-BID-DORE-1',countryId:'AUS',targetCountryId:'KIR',
+      resourceId:'DORÉ',quantity:1,unitPrice:300,status:'SENT'
+    },source:'trade'}
+  }));
+  await Promise.resolve();
+  assert.equal(rebuildCount,rebuildsBeforeOffScopeRequest,
+    'an inactive non-player seller must not trigger another country offer refresh');
+});
