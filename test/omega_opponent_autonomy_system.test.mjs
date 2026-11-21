@@ -184,11 +184,15 @@ const training=autonomy.dispatch('OMEGA_AUTO_MILITARY_TRAIN','BGD',{
 });
 assert.equal(training.status,'APPLIED');
 assert.equal(globalThis.Game.state.military.BGD.trainingQueue.length,1);
+assert.equal(globalThis.Game.state.military.BGD.trainingQueue[0].status,'IN_TRAINING');
+assert.equal(globalThis.Game.state.military.BGD.trainingQueue[0].completionTurn,3);
 
-globalThis.Game.state.simulation.turn=2;
+globalThis.Game.state.simulation.turn=3;
 const tick=autonomy.dispatch('OMEGA_AUTO_MILITARY_TICK','BGD',{});
 assert.equal(tick.status,'APPLIED');
-assert.equal(globalThis.Game.state.military.BGD.trainingQueue[0].status,'COMPLETED');
+assert.equal(globalThis.Game.state.military.BGD.trainingQueue[0].status,'COMPLETED',
+  'a one-day training order must complete on the following game day');
+assert.equal(globalThis.Game.state.military.BGD.trainingQueue[0].completedTurn,3);
 const organize=autonomy.dispatch('OMEGA_AUTO_MILITARY_ORGANIZE','BGD',{
   quantity:200,personnelPerUnit:100,decisionId:'TEST-ORG'
 });
@@ -196,11 +200,14 @@ assert.equal(organize.status,'APPLIED');
 assert.equal(globalThis.Game.state.military.BGD.forceStructure.units,12);
 assert.equal(globalThis.Game.state.military.BGD.forceStructure.organizedPersonnel,1200);
 
-globalThis.Game.state.simulation.turn=3;
+globalThis.Game.state.simulation.turn=4;
 const training2=autonomy.dispatch('OMEGA_AUTO_MILITARY_TRAIN','BGD',{
   quantity:200,durationTurns:1,readinessDelta:5,decisionId:'TEST-TRAIN-2'
 });
 assert.equal(training2.status,'APPLIED');
+assert.equal(globalThis.Game.state.military.BGD.trainingQueue.at(-1).status,'IN_TRAINING');
+assert.equal(globalThis.Game.state.military.BGD.trainingQueue.at(-1).completionTurn,5);
+globalThis.Game.state.simulation.turn=5;
 const tick2=autonomy.dispatch('OMEGA_AUTO_MILITARY_TICK','BGD',{});
 assert.equal(tick2.status,'APPLIED');
 assert.equal(globalThis.Game.state.military.BGD.readiness,65);
