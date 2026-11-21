@@ -771,7 +771,8 @@
           var nextMarketTab = tab.getAttribute('data-omega-v2-trade-market-tab');
           scheduleRender(root, Object.assign({}, current, {
             section:nextSection,
-            marketTab:nextMarketTab === 'black-market' || nextMarketTab === 'transactions' ? nextMarketTab : (nextSection === 'market' ? 'commodities' : current.marketTab)
+            marketTab:nextMarketTab === 'black-market' || nextMarketTab === 'transactions' ? nextMarketTab : (nextSection === 'market' ? 'commodities' : current.marketTab),
+            settlementTab:nextSection === 'settlement' ? 'imports' : current.settlementTab
           }));
           return;
         }
