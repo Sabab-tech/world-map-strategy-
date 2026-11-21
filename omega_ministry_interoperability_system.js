@@ -212,7 +212,7 @@
     ],
     trade:[
       'trade.relations','trade.balance','trade.exports','trade.imports','trade.importLedger','trade.exportLedger','trade.globalTradeLedger',
-      'trade.policy','trade.negotiations','trade.importRequests','trade.offerBook','trade.marketPrice','trade.marketState','trade.marketMeta','trade.routeCapacity','trade.domesticSales','trade.companyMarketResearchRequests'
+      'trade.policy','trade.negotiations','trade.importRequests','trade.offerBook','trade.marketPrice','trade.marketPriceMeta','trade.marketPriceLedger','trade.marketState','trade.marketMeta','trade.routeCapacity','trade.domesticSales','trade.companyMarketResearchRequests'
     ],
     foreign:[
       'foreign.relations','foreign.treaties','foreign.negotiations',
