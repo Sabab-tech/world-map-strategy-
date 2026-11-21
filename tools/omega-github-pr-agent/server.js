@@ -157,10 +157,14 @@ app.get("/api/status", (_req, res) => {
 app.post("/api/chat", async (req, res, next) => {
   try {
     const prompt = String(req.body?.prompt || "").trim();
+    const history = req.body?.history === undefined ? [] : req.body.history;
     if (!prompt || prompt.length > 10000) {
       return res.status(400).json({ ok: false, error: "PROMPT_INVALID" });
     }
-    const result = await agent.chat(prompt);
+    if (!Array.isArray(history) || history.length > 16) {
+      return res.status(400).json({ ok: false, error: "CONVERSATION_HISTORY_INVALID" });
+    }
+    const result = await agent.chat(prompt, history);
     return res.json({ ok: true, ...result });
   } catch (error) {
     return next(error);
