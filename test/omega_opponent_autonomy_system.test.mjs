@@ -114,7 +114,12 @@ const oversubscribe=autonomy.dispatch('OMEGA_AUTO_RESERVE','BGD',{
   reservationId:'TEST-RES-OVER',decisionId:'TEST-DEC-OVER',money:95000,labor:0,materials:{steel:1}
 });
 assert.equal(oversubscribe.status,'FAILED');
-assert.equal(oversubscribe.reason,'INSUFFICIENT_UNRESERVED_TREASURY');
+assert.equal(oversubscribe.result?.accepted,false);
+assert.equal(oversubscribe.result?.reason,'INSUFFICIENT_UNRESERVED_TREASURY');
+assert.equal(globalThis.Game.state.cabinet.BGD.autonomyReservations.length,1,
+  'a rejected reservation must not be committed to the national ledger');
+assert.equal(globalThis.Game.state.cabinet.BGD.autonomyReservations[0].money,10000,
+  'the rejected command must preserve the already committed reservation only');
 
 
 const importRequest=autonomy.dispatch('OMEGA_AUTO_RESOURCE_IMPORT_REQUEST','BGD',{
