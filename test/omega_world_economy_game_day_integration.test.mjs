@@ -157,7 +157,7 @@ test('100 fresh game days process all 196 NPCs on the real 197-country roster an
         { eventId: 'WORLD-CRISIS-001', eventType: 'OMEGA_ECONOMIC_CRISIS_ESCALATED', payload: { sourceCountryId: 'PAK', targetCountryId: 'BGD' } },
         { eventId: 'WORLD-TREATY-001', eventType: 'OMEGA_TREATY_ACTIVATED', payload: { sourceCountryId: 'IND', targetCountryId: 'BGD' } },
         { eventId: 'WORLD-TRADE-001', eventType: 'OMEGA_TRADE_SETTLEMENT_COMPLETED', payload: { sourceCountryId: 'CHN', targetCountryId: 'BGD' } },
-        { eventId: 'WORLD-RELATION-001', eventType: 'OMEGA_DIPLOMATIC_RELATIONSHIP_CHANGED', payload: { sourceCountryId: 'AFG', targetCountryId: 'BGD' } }
+        { eventId: 'WORLD-RELATION-001', eventType: 'OMEGA_RELATIONSHIP_DETERIORATED', payload: { sourceCountryId: 'AFG', targetCountryId: 'BGD' } }
       ];
       const priorities = [100, 95, 90, 85, 75, 75, 70];
       const accepted = events.map(event => h.scheduler.enqueueEvent({
@@ -178,7 +178,7 @@ test('100 fresh game days process all 196 NPCs on the real 197-country roster an
         'OMEGA_ECONOMIC_CRISIS_ESCALATED',
         'OMEGA_TREATY_ACTIVATED',
         'OMEGA_TRADE_SETTLEMENT_COMPLETED',
-        'OMEGA_DIPLOMATIC_RELATIONSHIP_CHANGED'
+        'OMEGA_RELATIONSHIP_DETERIORATED'
       ]);
     }
 
