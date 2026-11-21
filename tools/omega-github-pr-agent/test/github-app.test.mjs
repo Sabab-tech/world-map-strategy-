@@ -283,4 +283,79 @@ test("refuses to replace symlink and submodule entries with regular files", asyn
   );
   assert.equal(blobWrites, 0);
 });
+test("PR comment action markers prevent duplicate posts after process restarts", async () => {
+  const nonce = "01234567-89ab-4cde-8fab-0123456789ab";
+  let stored = null;
+  let writes = 0;
+  const { client } = makeClient(async (url, options = {}) => {
+    const parsed = new URL(String(url));
+    const route = parsed.pathname;
+    const method = options.method || "GET";
+    if (route.endsWith("/access_tokens")) {
+      return jsonResponse(201, {
+        token: "installation-token",
+        expires_at: new Date(1_800_000_000_000 + 3600_000).toISOString()
+      });
+    }
+    if (route.endsWith("/issues/23/comments") && method === "GET") {
+      return jsonResponse(200, stored ? [stored] : []);
+    }
+    if (route.endsWith("/issues/23/comments") && method === "POST") {
+      writes += 1;
+      const body = JSON.parse(options.body).body;
+      stored = { id: 77, body, html_url: "https://github.com/example/repo/pull/23#issuecomment-77" };
+      return jsonResponse(201, stored);
+    }
+    throw new Error("Unexpected comment route " + method + " " + route);
+  });
+
+  const first = await client.postPullRequestComment(23, "Reviewed the fix", nonce);
+  const second = await client.postPullRequestComment(23, "Reviewed the fix", nonce);
+  assert.equal(first.alreadyApplied, false);
+  assert.equal(second.alreadyApplied, true);
+  assert.equal(writes, 1);
+  assert.match(stored.body, new RegExp(nonce));
+});
+
+test("PR review action markers prevent duplicate review submissions", async () => {
+  const nonce = "11234567-89ab-4cde-8fab-0123456789ab";
+  let stored = null;
+  let writes = 0;
+  const { client } = makeClient(async (url, options = {}) => {
+    const parsed = new URL(String(url));
+    const route = parsed.pathname;
+    const method = options.method || "GET";
+    if (route.endsWith("/access_tokens")) {
+      return jsonResponse(201, {
+        token: "installation-token",
+        expires_at: new Date(1_800_000_000_000 + 3600_000).toISOString()
+      });
+    }
+    if (route.endsWith("/pulls/24/reviews") && method === "GET") {
+      return jsonResponse(200, stored ? [stored] : []);
+    }
+    if (route.endsWith("/pulls/24/reviews") && method === "POST") {
+      writes += 1;
+      const body = JSON.parse(options.body).body;
+      stored = { id: 88, state: "COMMENTED", body };
+      return jsonResponse(200, stored);
+    }
+    throw new Error("Unexpected review route " + method + " " + route);
+  });
+
+  const first = await client.submitPullRequestReview(24, "COMMENT", "Please keep this guard", nonce);
+  const second = await client.submitPullRequestReview(24, "COMMENT", "Please keep this guard", nonce);
+  assert.equal(first.alreadyApplied, false);
+  assert.equal(second.alreadyApplied, true);
+  assert.equal(writes, 1);
+  assert.match(stored.body, new RegExp(nonce));
+});
+
+test("PR comment and review writes require a UUID action identifier", async () => {
+  const { client } = makeClient(async () => {
+    throw new Error("No GitHub request should be made");
+  });
+  await assert.rejects(client.postPullRequestComment(25, "A note", "not-a-uuid"), /ACTION_ID_INVALID/);
+  await assert.rejects(client.submitPullRequestReview(25, "COMMENT", "A review", "not-a-uuid"), /ACTION_ID_INVALID/);
+});
 
