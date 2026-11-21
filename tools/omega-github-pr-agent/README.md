@@ -66,7 +66,7 @@ Copy .env.example into your deployment environment. Required variables:
 | Variable | Value |
 | --- | --- |
 | GEMINI_API_KEY | Server-side API key from Google AI Studio |
-| GEMINI_MODEL | Optional; defaults to gemini-2.5-flash |
+| GEMINI_MODEL | Optional; defaults to gemini-3.8-flash |
 | GITHUB_APP_ID | GitHub App ID |
 | GITHUB_APP_PRIVATE_KEY | Full PEM private key; multiline is supported |
 | GITHUB_INSTALLATION_ID | Installation ID |
