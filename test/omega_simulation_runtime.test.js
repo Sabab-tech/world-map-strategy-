@@ -312,6 +312,8 @@ test('large canonical save slots use gzip storage and restore the original world
   Object.assign(sandbox,{
     Blob:globalThis.Blob,
     Response:globalThis.Response,
+    ReadableStream:globalThis.ReadableStream,
+    TextEncoder:globalThis.TextEncoder,
     CompressionStream:globalThis.CompressionStream,
     DecompressionStream:globalThis.DecompressionStream,
     btoa:globalThis.btoa,
@@ -382,6 +384,8 @@ test('large IndexedDB save slots retain gzip as Blob without base64 expansion',a
   Object.assign(sandbox,{
     Blob:globalThis.Blob,
     Response:globalThis.Response,
+    ReadableStream:globalThis.ReadableStream,
+    TextEncoder:globalThis.TextEncoder,
     CompressionStream:globalThis.CompressionStream,
     DecompressionStream:globalThis.DecompressionStream,
     btoa:globalThis.btoa,
@@ -389,7 +393,7 @@ test('large IndexedDB save slots retain gzip as Blob without base64 expansion',a
   });
   loadScript('omega_simulation_runtime.js',sandbox);
   const runtime=sandbox.Omega.Simulation;
-  const audit='OMEGA-IDB-BLOB-SAVE-'.repeat(12000);
+  const audit=('OMEGA-IDB-BLOB-SAVE-বাংলা-😀-').repeat(12000);
   state.resource={BGD:{inventory:{coal:50},batches:[],auditLog:audit}};
 
   const result=await runtime.saveSlot('indexeddb-blob-save');
@@ -423,8 +427,14 @@ test('turn autosave uses the canonical IndexedDB slot and retains legacy recover
   assert.match(lifecycle,/await sim\.loadSlot\(SLOT\)/,
     'the lifecycle must restore through the same canonical slot');
   assert.match(runtime,/async saveSlot\(slot='default'\)/);
-  assert.match(runtime,/const stored=encodeStoredSave\(serialized\)/,
-    'the canonical save API must prepare a compressed-or-plain storage envelope');
+  assert.match(runtime,/const stored=encodeStoredSnapshot\(snapshot\)/,
+    'the canonical save API must stream the authoritative snapshot into a compressed-or-plain storage envelope');
+  assert.match(runtime,/function\* saveSnapshotJsonChunks\(snapshot\)/,
+    'the streaming serializer must emit canonical JSON in bounded chunks');
+  assert.match(runtime,/hash=updateChecksumHash\(hash,chunk\)/,
+    'the persisted checksum must be calculated from the exact chunks written');
+  assert.match(runtime,/if\(this\.saveBarrier\)await this\.saveBarrier/,
+    'the next game turn must wait while the authoritative save stream is being written');
   assert.match(runtime,/indexedDbSaveRequest\(global\.indexedDB,'put',key,stored\.value\)/,
     'the canonical save API must write its storage envelope to IndexedDB first');
   assert.match(runtime,/const decoded=await decodeStoredSave\(raw\)/,
