@@ -29,7 +29,10 @@ export function validateFileEdits(files) {
   const seen = new Set();
   let totalBytes = 0;
   const normalized = files.map((entry) => {
-    if (!entry || typeof entry !== "object") throw new Error("FILE_EDIT_INVALID");
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) throw new Error("FILE_EDIT_INVALID");
+    if (entry.delete === true || entry.operation === "delete" || entry.content === null) {
+      throw new Error("FILE_DELETION_NOT_ALLOWED");
+    }
     const path = assertSafeRepoPath(entry.path);
     if (seen.has(path)) throw new Error("DUPLICATE_FILE_PATH");
     seen.add(path);
