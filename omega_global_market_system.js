@@ -574,15 +574,38 @@
   function projectionHandler(cmd,ctx){
     const p=cmd?.payload||{},snap=clone(p.snapshot||{});
     ctx.stateTransaction.set('trade.marketState',snap);
-    const prices={};
+    const currentPrices=ctx.stateTransaction.get('trade.marketPrice');
+    const prices=currentPrices&&typeof currentPrices==='object'?clone(currentPrices):{};
+    const currentPriceMeta=ctx.stateTransaction.get('trade.marketPriceMeta');
+    const priceMeta=currentPriceMeta&&typeof currentPriceMeta==='object'?clone(currentPriceMeta):{};
     for(const [rid,q] of Object.entries(snap.resources||{})){
-      const px=q.clearingPriceUsd??q.referencePrice??null;
-      if(px!==null){
+      const clearing=n(q?.clearingPriceUsd),reference=n(q?.referencePrice);
+      const key=Object.keys(prices).find(value=>token(value)===token(rid))||rid;
+      const metaKey=Object.keys(priceMeta).find(value=>token(value)===token(rid))||key;
+      if(clearing!==null&&clearing>0){
         const rate=usdRate(ctx.countryId);
-        if(rate!==null)prices[rid]=currency(ctx.countryId)==='USD'?px:px*rate;
+        if(rate!==null){
+          prices[key]=currency(ctx.countryId)==='USD'?clearing:clearing*rate;
+          priceMeta[metaKey]={authority:'GLOBAL_MARKET_CLEARED_PRICE',priceProvenance:'OBSERVED',
+            executablePrice:true,turn:turn(),numeraire:'USD'};
+        }
+      }else if(reference!==null&&reference>0){
+        const prior=priceMeta[metaKey];
+        // A player's explicit seller ask remains the executable quote until the seller
+        // changes it or an actual market clearing replaces it. Reference liquidity must
+        // not silently overwrite that asking price.
+        if(String(prior?.authority||'')!=='PLAYER_AUTHORIZED_SELLER_ASK'){
+          const rate=usdRate(ctx.countryId);
+          if(rate!==null){
+            prices[key]=currency(ctx.countryId)==='USD'?reference:reference*rate;
+            priceMeta[metaKey]={authority:'GLOBAL_MARKET_REFERENCE_PRICE',priceProvenance:'REFERENCE',
+              executablePrice:false,turn:turn(),numeraire:'USD'};
+          }
+        }
       }
     }
-    if(Object.keys(prices).length)ctx.stateTransaction.set('trade.marketPrice',prices);
+    ctx.stateTransaction.set('trade.marketPrice',prices);
+    ctx.stateTransaction.set('trade.marketPriceMeta',priceMeta);
     const meta=ctx.stateTransaction.get('trade.marketMeta');
     const next=meta&&typeof meta==='object'?clone(meta):{};
     const history=ctx.stateTransaction.get('trade.marketHistory');
@@ -596,6 +619,43 @@
     return{accepted:true,resourceCount:Object.keys(snap.resources||{}).length,turn:snap.turn};
   }
 
+  function sellerAskingPriceHandler(cmd,ctx){
+    const p=cmd?.payload||{},cid=canonical(ctx.countryId),resourceId=String(p.resourceId||'').trim(),
+      unitPrice=n(p.unitPrice),requestId=String(p.requestId||'').trim();
+    if(!cid||!resourceId||unitPrice===null||unitPrice<=0||!requestId)
+      return{accepted:false,reason:'SELLER_ASK_IDENTITY_PRICE_AND_REQUEST_REQUIRED'};
+    if(playerSimulationCountryId()!==cid)
+      return{accepted:false,reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:playerSimulationCountryId()};
+    const product=describeProduct(resourceId);
+    if(!product||product.productType==='UNCLASSIFIED')
+      return{accepted:false,reason:'SELLER_ASK_PRODUCT_NOT_IN_CANONICAL_CATALOG',resourceId};
+    const oldLedger=ctx.stateTransaction.get('trade.marketPriceLedger');
+    const ledger=Array.isArray(oldLedger)?clone(oldLedger):[];
+    const prior=ledger.find(row=>String(row?.requestId||'')===requestId);
+    if(prior){
+      if(String(prior.resourceId||'')!==resourceId||Math.abs((n(prior.unitPrice)||0)-unitPrice)>1e-9)
+        return{accepted:false,reason:'SELLER_ASK_IDEMPOTENCY_COLLISION',requestId};
+      return{accepted:true,duplicate:true,requestId,resourceId,unitPrice,currencyCode:prior.currencyCode||currency(cid)};
+    }
+    const oldPrices=ctx.stateTransaction.get('trade.marketPrice');
+    const prices=oldPrices&&typeof oldPrices==='object'&&!Array.isArray(oldPrices)?clone(oldPrices):{};
+    const priceKey=Object.keys(prices).find(key=>token(key)===token(resourceId))||resourceId;
+    const oldMeta=ctx.stateTransaction.get('trade.marketPriceMeta');
+    const priceMeta=oldMeta&&typeof oldMeta==='object'&&!Array.isArray(oldMeta)?clone(oldMeta):{};
+    const metaKey=Object.keys(priceMeta).find(key=>token(key)===token(resourceId))||priceKey;
+    prices[priceKey]=unitPrice;
+    priceMeta[metaKey]={authority:'PLAYER_AUTHORIZED_SELLER_ASK',priceProvenance:'OBSERVED',
+      executablePrice:true,source:'PLAYER_MARKET_ASK',resourceId,unitPrice,currencyCode:currency(cid),
+      requestId,turn:turn(),countryId:cid};
+    ledger.push({requestId,countryId:cid,resourceId,unitPrice,currencyCode:currency(cid),
+      authority:'PLAYER_AUTHORIZED_SELLER_ASK',turn:turn(),status:'ACTIVE'});
+    while(ledger.length>1024)ledger.shift();
+    ctx.stateTransaction.set('trade.marketPrice',prices);
+    ctx.stateTransaction.set('trade.marketPriceMeta',priceMeta);
+    ctx.stateTransaction.set('trade.marketPriceLedger',ledger);
+    return{accepted:true,requestId,countryId:cid,resourceId,unitPrice,currencyCode:currency(cid),
+      authority:'PLAYER_AUTHORIZED_SELLER_ASK',executable:true,turn:turn()};
+  }
   function companyResearchRequestHandler(cmd,ctx){
     const p=cmd?.payload||{},cid=canonical(ctx.countryId),requestId=String(p.requestId||'').trim(),
       companyId=id(p.companyId),outputs=Array.isArray(p.outputResources)?p.outputResources.map(x=>token(x)).filter(Boolean):[],
@@ -677,6 +737,20 @@
     try{if(typeof g.dispatchEvent==='function'&&typeof g.CustomEvent==='function')
       g.dispatchEvent(new g.CustomEvent('OMEGA_MARKET_RESEARCH_REQUEST_QUEUED',{detail:clone(request)}));}catch(_){}
     return{accepted:true,request:clone(request),queueSize:Math.min(512,queue.length)};
+  }
+  function setSellerAskingPrice(countryId,resourceId,unitPrice,options={}){
+    const mesh=interop(),selected=playerSimulationCountryId(),cid=canonical(countryId||selected),
+      rid=String(resourceId||'').trim(),price=n(unitPrice);
+    if(!selected)return{accepted:false,reason:'PLAYER_COUNTRY_NOT_SELECTED'};
+    if(!cid||cid!==selected)return{accepted:false,reason:'PLAYER_COUNTRY_SCOPE_VIOLATION',countryId:cid,playerCountryId:selected};
+    if(!rid||price===null||price<=0)return{accepted:false,reason:'SELLER_ASK_PRODUCT_AND_POSITIVE_PRICE_REQUIRED'};
+    if(!mesh?.dispatchCommand)return{accepted:false,reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
+    install();
+    const requestId=String(options.requestId||('SELLER-ASK-'+cid+'-'+token(rid)+'-'+turn()+'-'+String(price)));
+    const result=mesh.dispatchCommand('trade','OMEGA_MARKET_SET_SELLER_ASK',cid,
+      {resourceId:rid,unitPrice:price,requestId},
+      {turn:turn(),commandType:'OMEGA_MARKET_SET_SELLER_ASK',correlationId:requestId});
+    return result&&result.status==='APPLIED'&&result.result?result.result:result;
   }
   function requestCompanyResearch(countryId,payload={}){
     const mesh=interop(),cid=canonical(countryId||playerSimulationCountryId());
@@ -845,6 +919,8 @@
     try{
       m.registerAction?.('OMEGA_MARKET_PUBLISH_PROJECTION',{actionId:'OMEGA_MARKET_PUBLISH_PROJECTION',stateOwnerMinistry:'trade',authority:'OMEGA_GLOBAL_MARKET'});
       m.registerCommandHandler('OMEGA_MARKET_PUBLISH_PROJECTION','trade',projectionHandler);
+      m.registerAction?.('OMEGA_MARKET_SET_SELLER_ASK',{actionId:'OMEGA_MARKET_SET_SELLER_ASK',stateOwnerMinistry:'trade',authority:'PLAYER_AUTHORIZED_SELLER_ASK'});
+      m.registerCommandHandler('OMEGA_MARKET_SET_SELLER_ASK','trade',sellerAskingPriceHandler);
       m.registerAction?.('OMEGA_MARKET_QUEUE_COMPANY_RESEARCH',{actionId:'OMEGA_MARKET_QUEUE_COMPANY_RESEARCH',stateOwnerMinistry:'trade',authority:'OMEGA_GLOBAL_MARKET'});
       m.registerCommandHandler('OMEGA_MARKET_QUEUE_COMPANY_RESEARCH','trade',companyResearchRequestHandler);
       m.registerAction?.('OMEGA_MARKET_RESOLVE_COMPANY_RESEARCH',{actionId:'OMEGA_MARKET_RESOLVE_COMPANY_RESEARCH',stateOwnerMinistry:'trade',authority:'OMEGA_GLOBAL_MARKET'});
@@ -900,7 +976,7 @@
     if(state()?.simulation?.turn!==undefined)rebuild();
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,diagnostics,rebuild,rebuildCountry,quote,localPrice,localPriceFromUsd,bestCrossBorderBid,executableLocalPrice,suppliers,privateCompanySuppliers,
+  const API=Object.freeze({VERSION,diagnostics,rebuild,rebuildCountry,quote,localPrice,localPriceFromUsd,bestCrossBorderBid,executableLocalPrice,suppliers,privateCompanySuppliers,setSellerAskingPrice,
     describeProduct,productCatalog,marketLanes,requestCompanyResearch,getCompanyResearchRequests,resolveCompanyResearch,inspectCommodityEvidence});
   g.Omega=g.Omega||{};g.Omega.GlobalMarket=API;g.OmegaGlobalMarket=API;
   try{init();}catch(e){g.OmegaGlobalMarketError=String(e?.message||e);}
