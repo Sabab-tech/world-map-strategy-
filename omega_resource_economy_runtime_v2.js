@@ -1341,6 +1341,19 @@
           }
         }catch(_){}
       }
+      if(typeof g.OmegaGlobalMarket.bestCrossBorderBid==='function'&&
+         typeof g.OmegaGlobalMarket.localPriceFromUsd==='function'){
+        try{
+          var crossBorderBid=g.OmegaGlobalMarket.bestCrossBorderBid(c,rid);
+          var bidLocalPrice=crossBorderBid?num(g.OmegaGlobalMarket.localPriceFromUsd(c,crossBorderBid.priceUsd)):null;
+          if(crossBorderBid&&bidLocalPrice!==null&&bidLocalPrice>0){
+            return{price:bidLocalPrice,authority:'OBSERVED_CROSS_BORDER_BUYER_BID',
+              priceProvenance:'OBSERVED',isSimulatedPrice:false,isReferencePrice:false,executablePrice:true,
+              basisResourceId:rid,buyerCountryId:crossBorderBid.countryId,buyerRequestId:crossBorderBid.requestId,
+              priceSource:'CROSS_BORDER_BUYER_BID'};
+          }
+        }catch(_){}
+      }
       if(typeof g.OmegaGlobalMarket.localPrice==='function'){
         try{
           var quote=typeof g.OmegaGlobalMarket.quote==='function'?g.OmegaGlobalMarket.quote(rid):null;
@@ -1537,7 +1550,12 @@
   function publishOffers(c){
     var inv=invObj(c),prices=read(c,'trade.marketPrice')||{},offers=[],f=num(rules().market.offerFractionOfObservedInventory);if(f===null)f=0.25;f=Math.max(0,Math.min(1,f));
     var min=num(rules().market.minOfferQuantity);if(min===null)min=1;
-    Object.keys(inv).forEach(function(rid){
+    var resourceState=bucket(c,'resource')||{},offerResourceIds=new Set(Object.keys(inv));
+    [resourceState.warehouse?.availableByResource,resourceState.processedWarehouse?.availableByResource,
+      resourceState.production].forEach(function(source){
+      if(source&&typeof source==='object')Object.keys(source).forEach(function(id){offerResourceIds.add(id);});
+    });
+    Array.from(offerResourceIds).forEach(function(rid){
       if(isNonTradableWasteOrLoss(rid))return;
       var aggregate=Math.max(0,num(inv[rid])||0),q=marketFreeQuantity(c,rid,aggregate);if(q<min)return;
       var pricing=resolvePriceWithProvenance(c,rid,prices),p=num(pricing?.price);if(p===null||p<=0)return;
