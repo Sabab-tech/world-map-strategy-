@@ -77,6 +77,7 @@
     const repositoryNode = document.getElementById("repositoryLabel");
     const messagesNode = document.getElementById("messages");
     const actionsNode = document.getElementById("pendingActions");
+    const conversationHistory = [];
     const form = document.getElementById("chatForm");
     const sendButton = document.getElementById("sendButton");
 
@@ -194,11 +195,14 @@
       if (!prompt) return;
       document.getElementById("prompt").value = "";
       addMessage("You", prompt, "user");
+      const history = conversationHistory.slice(-16);
+      conversationHistory.push({ role: "user", text: prompt });
       sendButton.disabled = true;
       sendButton.textContent = "Gemini is working…";
       try {
-        const result = await api("/api/chat", { prompt });
+        const result = await api("/api/chat", { prompt, history });
         addMessage("Gemini", result.text, "agent");
+        conversationHistory.push({ role: "model", text: result.text || "" });
         for (const action of result.pendingActions || []) showPendingAction(action);
       } catch (error) {
         addMessage("System", error.message, "agent");
