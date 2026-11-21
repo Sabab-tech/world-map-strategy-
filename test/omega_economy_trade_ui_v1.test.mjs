@@ -267,6 +267,11 @@ test('Trade Settlement renders without a domain data record and does not merge s
       agreementId:'BGD-IND-FIXED', partnerCountryId:'IND', role:'BUYER', buyerCountryId:'BGD', sellerCountryId:'IND',
       resourceId:'coal', status:'ACTIVE', quantityPerDelivery:10, unitPrice:20, currency:'BDT',
       plannedDeliveryCount:5, completedDeliveries:1, nextDeliveryTurn:12, startTurn:1, durationTurns:30, intervalDays:5
+    },
+    {
+      agreementId:'BGD-CHN-EXPORT', partnerCountryId:'CHN', role:'SELLER', buyerCountryId:'CHN', sellerCountryId:'BGD',
+      resourceId:'textiles', status:'ACTIVE', quantityPerDelivery:3, unitPrice:10, currency:'BDT',
+      plannedDeliveryCount:2, completedDeliveries:0, nextDeliveryTurn:15, startTurn:2, durationTurns:40
     }
   ], globalTradeLedger:{ settlements:[
     { settlementId:'SETTLED-HISTORY-1', status:'SETTLED', buyerCountryId:'BGD', sellerCountryId:'IND', buyerValue:20, buyerCurrency:'BDT' }
@@ -307,6 +312,15 @@ test('Trade Settlement renders without a domain data record and does not merge s
   assert.match(root.innerHTML,/does not repeat or alter settled transaction history/);
   assert.match(root.innerHTML,/data-partner-country="IND"/);
   assert.match(root.innerHTML,/India/);
+  assert.match(root.innerHTML,/🇨🇳/);
+  assert.match(root.innerHTML,/data-partner-country="CHN"/);
+  assert.match(root.innerHTML,/BGD-CHN-EXPORT/,
+    'the country-specific China portfolio includes its export agreement even while Imports is selected');
+  const primaryImportList = root.innerHTML.match(/<section class="omega-trade-agreement-ledger"[^]*?<\/section>/);
+  assert.ok(primaryImportList);
+  assert.match(primaryImportList[0],/BGD-IND-FIXED/);
+  assert.doesNotMatch(primaryImportList[0],/BGD-CHN-EXPORT/,
+    'the primary agreement list shows only the selected Import direction');
   assert.match(root.innerHTML,/VALIDITY/);
   assert.doesNotMatch(root.innerHTML,/SETTLED-HISTORY-1/,
     'agreement page must not reproduce the completed transaction ledger');
