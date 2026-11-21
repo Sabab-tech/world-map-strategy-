@@ -315,8 +315,17 @@
   }
 
   function encodeStoredSnapshot(snapshot){
-    const canStream=global.indexedDB&&typeof global.indexedDB.open==='function'&&
-      typeof global.CompressionStream==='function'&&
+    // Without IndexedDB, preserve the lifecycle's synchronous localStorage
+    // checkpoint path. pagehide/visibilitychange cannot wait for compression
+    // promises; streaming compression is reserved for IndexedDB-backed saves.
+    if(!global.indexedDB||typeof global.indexedDB.open!=='function')
+      return {
+        value:serializeSaveSnapshot(snapshot),
+        compression:'NONE',
+        originalBytes:0,
+        storedBytes:0
+      };
+    const canStream=typeof global.CompressionStream==='function'&&
       typeof global.DecompressionStream==='function'&&
       typeof global.Blob==='function'&&
       typeof global.Response==='function'&&
@@ -1169,6 +1178,7 @@
         let completedSteps=0,last=null;
         for(let i=0;i<scheduledSteps&&this.status==='RUNNING';i++){
           last=await this.step();
+          if(last&&last.skipped)break;
           completedSteps+=1;
         }
         return {steps:completedSteps,scheduledSteps,turn:this.clock.turn,last,status:this.status};
@@ -1185,9 +1195,10 @@
       let last=null,completed=0;
       for(let i=0;i<count&&this.status!=='ERROR';i++){
         last=await this.step();
+        if(last&&last.skipped)break;
         completed+=1;
       }
-      if(!wasRunning&&this.status!=='ERROR')this.status='READY';
+      if(!wasRunning&&this.status==='RUNNING')this.status='READY';
       return {turn:this.clock.turn,steps:completed,last,status:this.status};
     }
 
