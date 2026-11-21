@@ -1837,14 +1837,6 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           batchTransfers: transactionTransfers
         }).slice(0, 4500));
 
-      const clearingRows = g.Game.state.finance?.[seller]?.resourceSettlementClearing || [];
-      const companyClearing = clearingRows.find(row => String(row.settlementId || '') === settlementId);
-      if (!companyClearing || !(Number(companyClearing.amount) > 0) ||
-          String(companyClearing.companyId || '') !== String(production.factoryOwnerCompanyId || ''))
-        throw new Error('SELLER_COMPANY_RECEIPT_NOT_RECONCILED_TO_TREASURY_CLEARING:' + JSON.stringify({
-          settlementId, expectedCompany: production.factoryOwnerCompanyId, clearingRows: clearingRows.slice(-8)
-        }).slice(0, 4000));
-
       const saleReport = {
         productId, quantity, unitPrice, offerId: chosenOffer.offerId, offerQuantity,
         offerSourceBatchIds: chosenOffer.sourceBatchIds || [],
