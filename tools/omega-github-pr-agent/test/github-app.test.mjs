@@ -191,3 +191,49 @@ test("refuses to write directly to the main branch even through a PR head", asyn
     /MAIN_BRANCH_WRITE_NOT_ALLOWED/
   );
 });
+test("PR check reader uses only granted Checks and Actions read endpoints", async () => {
+  const head = "e".repeat(40);
+  const { client } = makeClient(async (url, options = {}) => {
+    const parsed = new URL(String(url));
+    const route = parsed.pathname;
+    if (route.endsWith("/access_tokens")) {
+      return jsonResponse(201, {
+        token: "installation-token",
+        expires_at: new Date(1_800_000_000_000 + 3600_000).toISOString()
+      });
+    }
+    if (route.endsWith("/pulls/21")) {
+      return jsonResponse(200, { number: 21, head: { sha: head } });
+    }
+    if (route.endsWith("/commits/" + head + "/check-runs")) {
+      return jsonResponse(200, {
+        check_runs: [{
+          name: "OMEGA PR Agent",
+          status: "completed",
+          conclusion: "success",
+          html_url: "https://github.com/example/repo/actions/runs/1"
+        }]
+      });
+    }
+    if (route.endsWith("/actions/runs")) {
+      return jsonResponse(200, {
+        workflow_runs: [{
+          name: "Node tests",
+          status: "completed",
+          conclusion: "success"
+        }]
+      });
+    }
+    if (route.endsWith("/status")) {
+      throw new Error("Commit statuses permission is intentionally not granted");
+    }
+    throw new Error("Unexpected checks endpoint: " + route);
+  });
+
+  const result = await client.getPullRequestChecks(21);
+  assert.equal(result.headSha, head);
+  assert.equal(result.checkRuns[0].conclusion, "success");
+  assert.equal(result.workflowRuns[0].conclusion, "success");
+});
+
+
