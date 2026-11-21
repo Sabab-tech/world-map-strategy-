@@ -1384,6 +1384,13 @@
       let releaseSave;
       const currentSave=new Promise(resolve=>{releaseSave=resolve;});
       this.saveBarrier=currentSave;
+      let released=false;
+      const releaseCurrentSave=()=>{
+        if(released)return;
+        released=true;
+        releaseSave();
+        if(this.saveBarrier===currentSave)this.saveBarrier=null;
+      };
       try{
         if(previousSave)await previousSave;
         // Volatile diagnostics are omitted. Canonical JSON and its checksum
@@ -1433,14 +1440,9 @@
         global.localStorage.setItem(key,stored.value);
         return {...result,storage:'LOCAL_STORAGE_FALLBACK'};
       };
-      const releaseCurrentSave=()=>{
-        releaseSave();
-        if(this.saveBarrier===currentSave)this.saveBarrier=null;
-      };
       const stored=encodeStoredSnapshot(snapshot);
-      if(stored&&typeof stored.then==='function'){
+      if(stored&&typeof stored.then==='function')
         return Promise.resolve(stored).then(persistStoredSave).finally(releaseCurrentSave);
-      }
       // Keep a plain-JSON/no-IndexedDB fallback synchronous. pagehide and
       // beforeunload cannot rely on another promise microtask before teardown.
       const persisted=persistStoredSave(stored);
@@ -1448,8 +1450,9 @@
         return persisted.finally(releaseCurrentSave);
       releaseCurrentSave();
       return persisted;
-      }finally{
-        if(this.saveBarrier===currentSave)releaseSave();
+      }catch(error){
+        releaseCurrentSave();
+        throw error;
       }
     }
 
