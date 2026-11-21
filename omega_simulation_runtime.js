@@ -138,9 +138,7 @@
     if(typeof global.CompressionStream!=='function'||
        typeof global.DecompressionStream!=='function'||
        typeof global.Blob!=='function'||
-       typeof global.Response!=='function'||
-       typeof global.btoa!=='function'||
-       typeof global.atob!=='function'){
+       typeof global.Response!=='function'){
       return {
         value:serialized,
         compression:'NONE',
@@ -152,7 +150,45 @@
       try{
         const source=new global.Blob([serialized]);
         const compressedStream=source.stream().pipeThrough(new global.CompressionStream('gzip'));
-        const compressedBytes=new Uint8Array(await new global.Response(compressedStream).arrayBuffer());
+        const response=new global.Response(compressedStream);
+
+        // IndexedDB supports structured-clone Blob values. Store the gzip stream
+        // as a Blob rather than expanding it into a base64 string: large 197-country
+        // snapshots otherwise need simultaneous plain JSON, compressed bytes,
+        // binary-string and base64-string copies in the renderer process.
+        if(global.indexedDB&&typeof global.indexedDB.open==='function'&&
+           typeof response.blob==='function'){
+          const compressedBlob=await response.blob();
+          const encodedBlob=new global.Blob([SAVE_COMPRESSION_PREFIX,compressedBlob],
+            {type:'application/x-omega-simulation-save'});
+          if(encodedBlob.size<source.size){
+            return {
+              value:encodedBlob,
+              compression:'GZIP_BLOB',
+              originalBytes:source.size,
+              storedBytes:encodedBlob.size
+            };
+          }
+          return {
+            value:serialized,
+            compression:'NONE',
+            originalBytes:source.size,
+            storedBytes:String(serialized).length
+          };
+        }
+
+        // Browsers without IndexedDB retain the compatible string envelope for
+        // localStorage. This branch is intentionally not used for normal modern
+        // IndexedDB saves because base64 increases renderer memory and stored size.
+        if(typeof global.btoa!=='function'||typeof global.atob!=='function'){
+          return {
+            value:serialized,
+            compression:'NONE',
+            originalBytes:source.size,
+            storedBytes:String(serialized).length
+          };
+        }
+        const compressedBytes=new Uint8Array(await response.arrayBuffer());
         const encoded=SAVE_COMPRESSION_PREFIX+bytesToBase64(compressedBytes);
         if(encoded.length>=String(serialized).length){
           return {
@@ -183,6 +219,16 @@
   }
 
   async function decodeStoredSave(stored){
+    if(typeof global.Blob==='function'&&stored instanceof global.Blob){
+      if(typeof global.Response!=='function')throw new Error('SIMULATION_SAVE_BLOB_READER_UNAVAILABLE');
+      const header=await new global.Response(stored.slice(0,SAVE_COMPRESSION_PREFIX.length)).text();
+      if(header!==SAVE_COMPRESSION_PREFIX)return new global.Response(stored).text();
+      if(typeof global.DecompressionStream!=='function')
+        throw new Error('SIMULATION_SAVE_GZIP_DECOMPRESSION_UNAVAILABLE');
+      const compressed=stored.slice(SAVE_COMPRESSION_PREFIX.length);
+      const stream=compressed.stream().pipeThrough(new global.DecompressionStream('gzip'));
+      return new global.Response(stream).text();
+    }
     const value=String(stored==null?'':stored);
     if(!value.startsWith(SAVE_COMPRESSION_PREFIX))return value;
     if(typeof global.DecompressionStream!=='function'||
@@ -225,7 +271,8 @@
         transaction.onabort=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_ABORTED'));
         try{
           const store=transaction.objectStore('slots');
-          request=operation==='put'?store.put(String(value),String(key)):store.get(String(key));
+          const storedValue=typeof global.Blob==='function'&&value instanceof global.Blob?value:String(value);
+          request=operation==='put'?store.put(storedValue,String(key)):store.get(String(key));
           request.onsuccess=()=>{result=request.result===undefined?null:request.result;};
           request.onerror=()=>finish(request.error||new Error('SAVE_DATABASE_REQUEST_FAILED'));
         }catch(error){try{transaction.abort();}catch(_){}finish(error);}
@@ -1214,11 +1261,26 @@
         if(global.indexedDB&&typeof global.indexedDB.open==='function'){
           return indexedDbSaveRequest(global.indexedDB,'put',key,stored.value).then(() => ({
             ...result,storage:'INDEXEDDB'
-          })).catch(indexedDbError => {
+          })).catch(async indexedDbError => {
             try{
               if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
-              global.localStorage.setItem(key,stored.value);
-              return {...result,storage:'LOCAL_STORAGE_FALLBACK'};
+              let fallbackValue=stored.value,fallbackCompression=stored.compression,fallbackBytes=stored.storedBytes;
+              if(typeof global.Blob==='function'&&fallbackValue instanceof global.Blob){
+                const header=await new global.Response(fallbackValue.slice(0,SAVE_COMPRESSION_PREFIX.length)).text();
+                if(header===SAVE_COMPRESSION_PREFIX&&typeof global.btoa==='function'){
+                  const compressed=fallbackValue.slice(SAVE_COMPRESSION_PREFIX.length);
+                  const bytes=new Uint8Array(await new global.Response(compressed).arrayBuffer());
+                  fallbackValue=SAVE_COMPRESSION_PREFIX+bytesToBase64(bytes);
+                  fallbackCompression='GZIP_BASE64';
+                  fallbackBytes=fallbackValue.length;
+                }else{
+                  fallbackValue=serialized;
+                  fallbackCompression='NONE';
+                  fallbackBytes=String(serialized).length;
+                }
+              }
+              global.localStorage.setItem(key,fallbackValue);
+              return {...result,compression:fallbackCompression,storedBytes:fallbackBytes,storage:'LOCAL_STORAGE_FALLBACK'};
             }catch(localStorageError){
               throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; INDEXEDDB:'+String(indexedDbError&&indexedDbError.message||indexedDbError)+'; COMPRESSION:'+stored.compression+'; STORED_BYTES:'+stored.storedBytes);
             }
