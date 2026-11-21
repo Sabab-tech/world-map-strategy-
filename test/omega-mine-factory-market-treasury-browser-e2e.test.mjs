@@ -1802,6 +1802,16 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         throw new Error('SELLER_EXPORT_FISCAL_RECEIPT_NOT_RECONCILED:' + JSON.stringify({
           settlementId, expectedCompany: production.factoryOwnerCompanyId, fiscalRows: fiscalRows.slice(-8)
         }).slice(0, 4000));
+      if (String(fiscalReceipt.currency || '') !== 'USD' ||
+          String(fiscalReceipt.sellerCurrency || '') !== String(transaction.sellerCurrencyCode || '') ||
+          Math.abs(Number(fiscalReceipt.sellerTotalUsd) - sellerCreditUsd) > 0.05)
+        throw new Error('SELLER_EXPORT_FISCAL_CURRENCY_NOT_RECONCILED:' + JSON.stringify({
+          settlementId, sellerCurrency: transaction.sellerCurrencyCode,
+          sellerCreditUsd, fiscalReceipt
+        }).slice(0, 4000));
+      close(Number(companyClearing.amount), sellerCreditUsd,
+        'SELLER_COMPANY_CLEARING_USES_BANK_SETTLED_USD');
+
 
       const companyAccounts = g.Game.state.economy?.[seller]?.companyAccounts || {};
       const sellerCompany = companyAccounts[String(companyClearing.companyId)] || null;
@@ -1816,6 +1826,28 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         }).slice(0, 4000));
       close(Number(companySaleReceipt.amount), Number(companyClearing.amount),
         'SELLER_COMPANY_CASH_RECEIPT_MATCHES_TREASURY_CLEARING');
+      if (String(companySaleReceipt.currency || '') !== 'USD')
+        throw new Error('SELLER_COMPANY_RECEIPT_CURRENCY_NOT_USD:' + JSON.stringify(companySaleReceipt));
+      const companyWorkerCost = companyCashFlowRows.find(row =>
+        String(row.sourceId || '') === settlementId &&
+        String(row.direction || '').toUpperCase() === 'DEBIT' &&
+        String(row.category || '').toUpperCase() === 'WORKER_INCOME');
+      const companyTransportCost = companyCashFlowRows.find(row =>
+        String(row.sourceId || '') === settlementId &&
+        String(row.direction || '').toUpperCase() === 'DEBIT' &&
+        String(row.category || '').toUpperCase() === 'TRANSPORT');
+      if (!companyWorkerCost || !companyTransportCost ||
+          String(companyWorkerCost.currency || '') !== 'USD' ||
+          String(companyTransportCost.currency || '') !== 'USD')
+        throw new Error('SELLER_COMPANY_OPERATING_ALLOCATIONS_NOT_USD:' + JSON.stringify({
+          companyWorkerCost, companyTransportCost
+        }).slice(0, 4000));
+      close(Number(companySaleReceipt.amount), sellerCreditUsd,
+        'SELLER_COMPANY_RECEIPT_MATCHES_BANK_USD_CREDIT');
+      close(Number(companyWorkerCost.amount), sellerCreditUsd * 0.12,
+        'SELLER_COMPANY_WORKER_ALLOCATION_USD');
+      close(Number(companyTransportCost.amount), sellerCreditUsd * 0.05,
+        'SELLER_COMPANY_TRANSPORT_ALLOCATION_USD');
 
       const sellerTreasuryExpectedUsd = sellerBeforeUsd + sellerCreditUsd -
         Number(companyClearing.amount) + Number(fiscalReceipt.total);
