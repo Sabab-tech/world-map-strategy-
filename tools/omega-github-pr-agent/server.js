@@ -155,47 +155,55 @@ app.post("/api/actions/execute", async (req, res, next) => {
   try {
     const token = String(req.body?.actionToken || "");
     const action = verifyActionToken(token, actionSecret);
-    if (!replayGuard.consume(action.nonce, action.exp)) {
-      return res.status(409).json({ ok: false, error: "ACTION_ALREADY_USED" });
+    if (!replayGuard.reserve(action.nonce, action.exp)) {
+      return res.status(409).json({ ok: false, error: "ACTION_ALREADY_USED_OR_RUNNING" });
     }
 
-    let result;
-    switch (action.action) {
-      case "commit_pr_files": {
-        const args = action.args;
-        result = await github.commitPullRequestFiles(
-          args.prNumber,
-          args.expectedHeadSha,
-          args.files,
-          args.commitMessage
-        );
-        break;
+    try {
+      let result;
+      switch (action.action) {
+        case "commit_pr_files": {
+          const args = action.args;
+          result = await github.commitPullRequestFiles(
+            args.prNumber,
+            args.expectedHeadSha,
+            args.files,
+            args.commitMessage
+          );
+          break;
+        }
+        case "post_pr_comment": {
+          const args = action.args;
+          const posted = await github.postPullRequestComment(args.prNumber, args.comment);
+          result = { commentId: posted?.id || null, url: posted?.html_url || null };
+          break;
+        }
+        case "submit_pr_review": {
+          const args = action.args;
+          const submitted = await github.submitPullRequestReview(
+            args.prNumber,
+            args.event,
+            args.body
+          );
+          result = {
+            reviewId: submitted?.id || null,
+            state: submitted?.state || args.event,
+            url: submitted?.html_url || null
+          };
+          break;
+        }
+        default:
+          return res.status(400).json({ ok: false, error: "ACTION_NOT_SUPPORTED" });
       }
-      case "post_pr_comment": {
-        const args = action.args;
-        const posted = await github.postPullRequestComment(args.prNumber, args.comment);
-        result = { commentId: posted?.id || null, url: posted?.html_url || null };
-        break;
-      }
-      case "submit_pr_review": {
-        const args = action.args;
-        const submitted = await github.submitPullRequestReview(
-          args.prNumber,
-          args.event,
-          args.body
-        );
-        result = {
-          reviewId: submitted?.id || null,
-          state: submitted?.state || args.event,
-          url: submitted?.html_url || null
-        };
-        break;
-      }
-      default:
-        return res.status(400).json({ ok: false, error: "ACTION_NOT_SUPPORTED" });
-    }
 
-    return res.json({ ok: true, action: action.action, result });
+      if (!replayGuard.commit(action.nonce)) {
+        throw new Error("ACTION_REPLAY_GUARD_COMMIT_FAILED");
+      }
+      return res.json({ ok: true, action: action.action, result });
+    } catch (error) {
+      replayGuard.release(action.nonce);
+      throw error;
+    }
   } catch (error) {
     if (error?.message === "ACTION_TOKEN_INVALID" ||
         error?.message === "ACTION_TOKEN_EXPIRED_OR_INVALID") {
