@@ -1818,3 +1818,420 @@
 /* Keep the embossed SVG medallions legible inside their compact Economy controls. */
 .omega-economy-v3-icon .omega-economy-v3-icon-svg--3d { height:26px; width:26px; }
 .omega-economy-v3-section-icon .omega-economy-v3-icon-svg--3d { height:27px; width:27px; }
+
+
+/* Premium Trade & Commerce command deck and dimensional agreement cards. */
+.omega-trade-command-nav {
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(73,183,231,.18),transparent 44%),
+    linear-gradient(155deg,rgba(15,42,70,.98),rgba(3,14,29,.985));
+  border:1px solid rgba(95,197,235,.58);
+  border-radius:14px;
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.17),
+    inset 0 -3px 7px rgba(0,0,0,.48),
+    0 8px 20px rgba(0,0,0,.34),
+    0 0 20px rgba(39,172,224,.12);
+  gap:5px;
+  padding:6px;
+}
+.omega-trade-command-button {
+  --trade-accent:#65ddff;
+  --trade-top:rgba(32,111,151,.8);
+  --trade-bottom:#071b31;
+  --trade-border:rgba(97,207,244,.68);
+  --trade-glow:rgba(39,183,231,.26);
+  background:linear-gradient(155deg,var(--trade-top),#12314e 48%,var(--trade-bottom));
+  border:1px solid var(--trade-border);
+  border-radius:10px;
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.25),
+    inset 0 -3px 0 rgba(0,0,0,.42),
+    0 4px 8px rgba(0,0,0,.3);
+  height:60px;
+  min-height:56px;
+  padding:2px 2px 1px;
+}
+.omega-trade-command-button[data-omega-trade-route="overview"] {
+  --trade-accent:#65e4ff; --trade-top:rgba(30,119,159,.84);
+  --trade-bottom:#081e35; --trade-border:rgba(91,221,255,.7); --trade-glow:rgba(42,191,236,.28);
+}
+.omega-trade-command-button[data-omega-trade-route="commodities"] {
+  --trade-accent:#ffd27a; --trade-top:rgba(131,93,34,.82);
+  --trade-bottom:#251c17; --trade-border:rgba(255,199,99,.68); --trade-glow:rgba(241,173,58,.25);
+}
+.omega-trade-command-button[data-omega-trade-route="settlement"] {
+  --trade-accent:#76f0c2; --trade-top:rgba(28,117,91,.84);
+  --trade-bottom:#071f25; --trade-border:rgba(91,235,183,.7); --trade-glow:rgba(42,220,159,.24);
+}
+.omega-trade-command-button[data-omega-trade-route="transactions"] {
+  --trade-accent:#a8c8ff; --trade-top:rgba(67,92,151,.84);
+  --trade-bottom:#101b36; --trade-border:rgba(139,179,255,.72); --trade-glow:rgba(102,149,255,.25);
+}
+.omega-trade-command-button[data-omega-trade-route="black-market"] {
+  --trade-accent:#e3a3ff; --trade-top:rgba(112,62,140,.84);
+  --trade-bottom:#20122c; --trade-border:rgba(209,142,245,.72); --trade-glow:rgba(190,91,239,.27);
+}
+.omega-trade-command-button:before {
+  background:
+    radial-gradient(ellipse at 28% 0%,rgba(255,255,255,.32),transparent 49%),
+    linear-gradient(115deg,rgba(255,255,255,.1),transparent 55%,var(--trade-glow));
+}
+.omega-trade-command-button:after {
+  background:linear-gradient(90deg,transparent,var(--trade-accent),transparent);
+  box-shadow:0 0 8px var(--trade-glow);
+  height:2px;
+  width:78%;
+}
+.omega-trade-command-button:hover {
+  border-color:var(--trade-accent);
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.3),
+    inset 0 -3px 0 rgba(0,0,0,.38),
+    0 5px 12px rgba(0,0,0,.35),
+    0 0 13px var(--trade-glow);
+  filter:brightness(1.13);
+}
+.omega-trade-command-button.is-active,
+.omega-trade-command-button[aria-current="page"] {
+  background:
+    radial-gradient(ellipse at 50% 0%,var(--trade-glow),transparent 65%),
+    linear-gradient(155deg,var(--trade-top),#102b44 53%,var(--trade-bottom));
+  border-color:var(--trade-accent);
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.34),
+    inset 0 -3px 0 rgba(0,0,0,.3),
+    0 4px 13px rgba(0,0,0,.34),
+    0 0 0 1px var(--trade-glow),
+    0 0 16px var(--trade-glow);
+  color:#fff;
+}
+.omega-trade-command-button.is-active:after,
+.omega-trade-command-button[aria-current="page"]:after { opacity:1; }
+.omega-trade-command-icon { filter:drop-shadow(0 2px 2px rgba(0,0,0,.7)) drop-shadow(0 0 5px var(--trade-glow)); }
+.omega-trade-command-svg { height:29px; width:34px; }
+.omega-trade-command-label {
+  color:#f0f7ff;
+  font-size:clamp(7.3px,1.6vw,9px);
+  letter-spacing:.005em;
+  line-height:1.08;
+}
+.omega-trade-command-index { color:var(--trade-accent); opacity:.88; }
+.omega-trade-command-button:focus-visible {
+  outline:2px solid var(--trade-accent);
+  outline-offset:2px;
+}
+
+/* Agreement cards use one clear product/partner row followed by three aligned data columns. */
+.omega-trade-agreement-ledger,
+.omega-trade-country-agreements { display:grid; gap:9px; min-width:0; }
+.omega-trade-agreement-ledger-heading,
+.omega-trade-country-heading {
+  align-items:center;
+  display:flex;
+  gap:10px;
+  justify-content:space-between;
+  min-width:0;
+}
+.omega-trade-agreement-ledger-heading > div,
+.omega-trade-country-heading > div { min-width:0; }
+.omega-trade-agreement-ledger-heading > div > span,
+.omega-trade-country-heading > div > span {
+  color:#6bdfff;
+  display:block;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.14em;
+}
+.omega-trade-agreement-ledger-heading h3,
+.omega-trade-country-heading h3 {
+  color:#f2f8ff;
+  font-size:15px;
+  font-weight:900;
+  letter-spacing:-.02em;
+  line-height:1.2;
+  margin:3px 0 0;
+}
+.omega-trade-agreement-ledger-heading > small,
+.omega-trade-country-total {
+  background:rgba(14,52,77,.78);
+  border:1px solid rgba(94,185,225,.34);
+  border-radius:999px;
+  color:#bcecff;
+  flex:0 0 auto;
+  font-size:8px;
+  font-weight:900;
+  padding:6px 8px;
+}
+.omega-trade-country-heading p {
+  color:#8eaac1;
+  font-size:9px;
+  line-height:1.45;
+  margin:4px 0 0;
+}
+.omega-trade-contract-grid { display:grid; gap:10px; min-width:0; }
+.omega-trade-contract-card.omega-trade-agreement-card {
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.075),transparent 32%),
+    linear-gradient(153deg,#163b5c 0%,#0b263f 48%,#06182b 100%);
+  border:1px solid rgba(85,167,207,.52);
+  border-radius:14px;
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.16),
+    inset 0 -3px 7px rgba(0,0,0,.34),
+    0 7px 17px rgba(0,0,0,.27),
+    0 0 12px rgba(42,156,206,.08);
+  overflow:hidden;
+  padding:11px;
+  position:relative;
+}
+.omega-trade-contract-card.omega-trade-agreement-card:before {
+  background:linear-gradient(115deg,rgba(174,235,255,.17),transparent 37%,transparent 74%,rgba(79,202,242,.07));
+  content:"";
+  inset:0;
+  pointer-events:none;
+  position:absolute;
+}
+.omega-trade-agreement-head {
+  align-items:center;
+  display:grid;
+  gap:10px;
+  grid-template-columns:minmax(0,1fr) minmax(105px,.62fr);
+  position:relative;
+  z-index:1;
+}
+.omega-trade-agreement-product { min-width:0; }
+.omega-trade-agreement-kicker {
+  color:#69d9ff;
+  display:block;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.16em;
+}
+.omega-trade-agreement-product h3 {
+  color:#f6fbff;
+  font-size:14px;
+  font-weight:950;
+  letter-spacing:-.015em;
+  line-height:1.2;
+  margin:4px 0 5px;
+  overflow-wrap:anywhere;
+}
+.omega-trade-agreement-product .omega-trade-contract-id {
+  display:block;
+  font-size:7px;
+  letter-spacing:.07em;
+  overflow-wrap:anywhere;
+}
+.omega-trade-agreement-partner {
+  background:linear-gradient(145deg,rgba(9,25,43,.88),rgba(7,19,34,.95));
+  border:1px solid rgba(107,175,209,.3);
+  border-radius:10px;
+  box-shadow:inset 0 1px rgba(255,255,255,.08),0 3px 8px rgba(0,0,0,.16);
+  display:grid;
+  gap:3px;
+  min-width:0;
+  padding:7px 8px;
+}
+.omega-trade-agreement-partner > small:first-child {
+  color:#82b4d1;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.12em;
+}
+.omega-trade-agreement-partner > strong {
+  align-items:center;
+  color:#f1f8ff;
+  display:flex;
+  font-size:10px;
+  font-weight:900;
+  gap:6px;
+  line-height:1.2;
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+.omega-trade-country-flag {
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.65));
+  flex:0 0 auto;
+  font-size:17px;
+  line-height:1;
+}
+.omega-trade-agreement-partner > small:last-child {
+  color:#82a4bc;
+  font-size:7px;
+  font-weight:800;
+  letter-spacing:.06em;
+}
+.omega-trade-contract-values.omega-trade-agreement-values {
+  background:linear-gradient(180deg,rgba(3,17,31,.5),rgba(4,18,32,.16));
+  border:1px solid rgba(91,154,190,.2);
+  border-radius:10px;
+  display:grid;
+  gap:0;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  margin:10px 0 8px;
+  overflow:hidden;
+  padding:0;
+  position:relative;
+  z-index:1;
+}
+.omega-trade-agreement-metric {
+  display:grid;
+  gap:4px;
+  min-width:0;
+  padding:8px 7px;
+}
+.omega-trade-agreement-metric + .omega-trade-agreement-metric {
+  border-left:1px solid rgba(104,164,197,.22);
+}
+.omega-trade-agreement-metric > small {
+  color:#83a9c2;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.1em;
+}
+.omega-trade-agreement-metric > strong {
+  color:#f4f9ff;
+  font-size:clamp(10px,2.4vw,13px);
+  font-weight:950;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+  font-variant-numeric:tabular-nums;
+}
+.omega-trade-agreement-metric > span {
+  color:#8daac0;
+  font-size:7px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.omega-trade-agreement-amount > strong { color:#94dcff; }
+.omega-trade-agreement-value > strong { color:#9aebc6; }
+.omega-trade-agreement-validity > strong { color:#f6d18c; }
+.omega-trade-agreement-foot {
+  align-items:center;
+  display:flex;
+  gap:8px;
+  justify-content:space-between;
+  position:relative;
+  z-index:1;
+}
+.omega-trade-agreement-direction {
+  color:#7799b4;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.1em;
+}
+.omega-trade-country-groups { display:grid; gap:7px; }
+.omega-trade-country-group {
+  background:linear-gradient(145deg,rgba(16,44,70,.92),rgba(5,20,36,.98));
+  border:1px solid rgba(84,155,193,.38);
+  border-radius:12px;
+  box-shadow:inset 0 1px rgba(255,255,255,.09),0 4px 11px rgba(0,0,0,.17);
+  min-width:0;
+  overflow:hidden;
+}
+.omega-trade-country-group > summary {
+  align-items:center;
+  cursor:pointer;
+  display:flex;
+  gap:9px;
+  list-style:none;
+  min-height:55px;
+  padding:8px 10px;
+  touch-action:manipulation;
+}
+.omega-trade-country-group > summary::-webkit-details-marker { display:none; }
+.omega-trade-country-group > summary:focus-visible {
+  outline:2px solid #7ee4ff;
+  outline-offset:-3px;
+}
+.omega-trade-country-group-flag {
+  align-items:center;
+  background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.2),rgba(7,23,41,.95) 72%);
+  border:1px solid rgba(113,194,228,.35);
+  border-radius:9px;
+  box-shadow:inset 0 1px rgba(255,255,255,.12),0 3px 7px rgba(0,0,0,.2);
+  display:flex;
+  flex:0 0 37px;
+  font-size:21px;
+  height:37px;
+  justify-content:center;
+}
+.omega-trade-country-group-copy { display:grid; flex:1 1 auto; gap:3px; min-width:0; }
+.omega-trade-country-group-copy strong { color:#eff8ff; font-size:11px; font-weight:900; overflow-wrap:anywhere; }
+.omega-trade-country-group-copy small { color:#88a8c0; font-size:8px; line-height:1.3; }
+.omega-trade-country-group-count {
+  background:rgba(48,148,191,.18);
+  border:1px solid rgba(91,193,232,.34);
+  border-radius:999px;
+  color:#a9e9ff;
+  flex:0 0 auto;
+  font-size:9px;
+  font-weight:950;
+  min-width:25px;
+  padding:5px 7px;
+  text-align:center;
+}
+.omega-trade-country-chevron {
+  color:#78cfea;
+  font-size:17px;
+  line-height:1;
+  transition:transform .18s ease;
+}
+.omega-trade-country-group[open] > summary {
+  background:linear-gradient(90deg,rgba(34,117,151,.2),transparent);
+  border-bottom:1px solid rgba(89,160,195,.23);
+}
+.omega-trade-country-group[open] .omega-trade-country-chevron { transform:rotate(180deg); }
+.omega-trade-country-group-body { display:grid; gap:8px; padding:9px; }
+.omega-trade-country-group-body .omega-trade-contract-card { margin:0; }
+@media (max-width:560px) {
+  .omega-trade-command-nav { gap:4px; padding:4px; }
+  .omega-trade-command-button { height:55px; min-height:53px; grid-template-rows:24px 1fr 2px; }
+  .omega-trade-command-icon { height:25px; width:29px; }
+  .omega-trade-command-svg { height:25px; width:29px; }
+  .omega-trade-command-label { font-size:7.1px; }
+  .omega-trade-agreement-head { grid-template-columns:minmax(0,1fr) minmax(96px,.62fr); gap:7px; }
+  .omega-trade-contract-card.omega-trade-agreement-card { padding:9px; }
+  .omega-trade-agreement-metric { padding:7px 5px; }
+}
+@media (max-width:360px) {
+  .omega-trade-command-nav { gap:3px; padding:3px; }
+  .omega-trade-command-button { border-radius:8px; height:52px; min-height:50px; }
+  .omega-trade-command-label { font-size:6.8px; }
+  .omega-trade-agreement-partner { padding:6px; }
+  .omega-trade-agreement-partner > strong { font-size:9px; }
+  .omega-trade-agreement-metric > strong { font-size:10px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .omega-trade-country-chevron { transition:none!important; }
+}
+
+
+/* Distinct import/export selector with a restrained neon active state. */
+.omega-trade-settlement-tabs {
+  background:linear-gradient(145deg,rgba(4,17,32,.96),rgba(7,28,45,.96));
+  border:1px solid rgba(90,169,207,.43);
+  box-shadow:inset 0 1px rgba(255,255,255,.1),0 5px 12px rgba(0,0,0,.2);
+  gap:6px;
+  padding:5px;
+}
+.omega-trade-settlement-tabs button {
+  background:linear-gradient(145deg,rgba(28,57,82,.36),rgba(8,23,40,.75));
+  border:1px solid rgba(98,151,181,.2);
+  color:#99b6ca;
+  letter-spacing:.08em;
+  min-height:39px;
+}
+.omega-trade-settlement-tabs button[data-omega-v2-trade-settlement-tab="imports"][aria-selected="true"] {
+  background:linear-gradient(145deg,#1a678c,#0b324f);
+  border-color:rgba(93,222,255,.8);
+  box-shadow:inset 0 1px rgba(255,255,255,.25),0 0 0 1px rgba(69,190,231,.15),0 0 14px rgba(49,185,230,.22);
+  color:#effbff;
+}
+.omega-trade-settlement-tabs button[data-omega-v2-trade-settlement-tab="exports"][aria-selected="true"] {
+  background:linear-gradient(145deg,#176b56,#0b322c);
+  border-color:rgba(96,235,185,.78);
+  box-shadow:inset 0 1px rgba(255,255,255,.24),0 0 0 1px rgba(63,210,158,.14),0 0 14px rgba(49,205,147,.2);
+  color:#edfff7;
+}

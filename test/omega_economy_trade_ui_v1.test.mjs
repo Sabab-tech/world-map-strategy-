@@ -16,6 +16,10 @@ function installCountryRuntime() {
         USA:{ iso3:'USA', countryCode:'US', name:'United States' }
       };
       return profiles[code] || (code === 'BANGLADESH' || code === 'BD' ? profiles.BGD : null);
+    },
+    flagFor(value) {
+      const profile = this.resolveCountry(value);
+      return profile ? ({ BD:'🇧🇩', IN:'🇮🇳', CN:'🇨🇳', US:'🇺🇸' })[profile.countryCode] || null : null;
     }
   };
 }
@@ -140,8 +144,8 @@ test('Economy Overview keeps Treasury cash, domestic currency and FX reserves se
 
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),'utf8');
   const visualCss = readFileSync(new URL('../omega_ui_v2/ministry-visual-refresh.css',import.meta.url),'utf8');
-  assert.match(serviceWorker,/CACHE_NAME = "omega-offline-atlas-shell-v137"/,
-    'the offline shell version must advance beyond the currently installed v135 shell');
+  assert.match(serviceWorker,/CACHE_NAME = "omega-offline-atlas-shell-v138"/,
+    'the offline shell version must advance beyond the currently installed v137 shell');
   assert.match(serviceWorker,/\.\/omega_ui_v2\/screens\/economy\.js/);
   assert.match(serviceWorker,/\.\/omega_ui_v2\/ministry-visual-refresh\.css/);
   assert.match(visualCss,/\.omega-economy-v3-metric-label\s*\{[^}]*font-size:\s*10px/s,
@@ -263,6 +267,11 @@ test('Trade Settlement renders without a domain data record and does not merge s
       agreementId:'BGD-IND-FIXED', partnerCountryId:'IND', role:'BUYER', buyerCountryId:'BGD', sellerCountryId:'IND',
       resourceId:'coal', status:'ACTIVE', quantityPerDelivery:10, unitPrice:20, currency:'BDT',
       plannedDeliveryCount:5, completedDeliveries:1, nextDeliveryTurn:12, startTurn:1, durationTurns:30, intervalDays:5
+    },
+    {
+      agreementId:'BGD-CHN-EXPORT', partnerCountryId:'CHN', role:'SELLER', buyerCountryId:'CHN', sellerCountryId:'BGD',
+      resourceId:'textiles', status:'ACTIVE', quantityPerDelivery:3, unitPrice:10, currency:'BDT',
+      plannedDeliveryCount:2, completedDeliveries:0, nextDeliveryTurn:15, startTurn:2, durationTurns:40
     }
   ], globalTradeLedger:{ settlements:[
     { settlementId:'SETTLED-HISTORY-1', status:'SETTLED', buyerCountryId:'BGD', sellerCountryId:'IND', buyerValue:20, buyerCurrency:'BDT' }
@@ -291,9 +300,28 @@ test('Trade Settlement renders without a domain data record and does not merge s
   assert.match(root.innerHTML,/open agreement\(s\)/);
   assert.doesNotMatch(root.innerHTML,/active agreement\(s\)/);
   assert.match(root.innerHTML,/BGD-IND-FIXED/);
-  assert.match(root.innerHTML,/Total agreement cost/);
+  assert.match(root.innerHTML,/AMOUNT/);
+  assert.match(root.innerHTML,/COST/);
+  assert.match(root.innerHTML,/VALIDITY/);
+  assert.match(root.innerHTML,/🇮🇳/);
+  assert.match(root.innerHTML,/SELLER/);
+  assert.match(root.innerHTML,/data-omega-trade-primary-list="imports"/);
+  assert.match(root.innerHTML,/data-omega-trade-country-agreements/);
+  assert.match(root.innerHTML,/Bilateral agreements/);
   assert.match(root.innerHTML,/future commitments/);
   assert.match(root.innerHTML,/does not repeat or alter settled transaction history/);
+  assert.match(root.innerHTML,/data-partner-country="IND"/);
+  assert.match(root.innerHTML,/India/);
+  assert.match(root.innerHTML,/🇨🇳/);
+  assert.match(root.innerHTML,/data-partner-country="CHN"/);
+  assert.match(root.innerHTML,/BGD-CHN-EXPORT/,
+    'the country-specific China portfolio includes its export agreement even while Imports is selected');
+  const primaryImportList = root.innerHTML.match(/<section class="omega-trade-agreement-ledger"[^]*?<\/section>/);
+  assert.ok(primaryImportList);
+  assert.match(primaryImportList[0],/BGD-IND-FIXED/);
+  assert.doesNotMatch(primaryImportList[0],/BGD-CHN-EXPORT/,
+    'the primary agreement list shows only the selected Import direction');
+  assert.match(root.innerHTML,/VALIDITY/);
   assert.doesNotMatch(root.innerHTML,/SETTLED-HISTORY-1/,
     'agreement page must not reproduce the completed transaction ledger');
 
@@ -423,11 +451,11 @@ test('Trade & Commerce keeps the five premium navigation destinations fixed acro
   const routes = [
     { section:'dashboard', label:'Overview' },
     { section:'market', marketTab:'commodities', label:'Commodity<br>Market' },
-    { section:'market', marketTab:'black-market', label:'Black<br>Market' },
+    { section:'settlement', label:'Trade<br>Settlement' },
     { section:'market', marketTab:'transactions', label:'Transactions' },
-    { section:'settlement', label:'Trade<br>Settlement' }
+    { section:'market', marketTab:'black-market', label:'Black<br>Market' }
   ];
-  const ordered = ['Overview','Commodity<br>Market','Black<br>Market','Transactions','Trade<br>Settlement'];
+  const ordered = ['Overview','Commodity<br>Market','Trade<br>Settlement','Transactions','Black<br>Market'];
   routes.forEach(route => {
     const result = globalThis.OmegaUIV2MinistryDetail.render(root,{
       ministryId:'trade', countryId:'BGD', section:route.section, marketTab:route.marketTab
