@@ -19,7 +19,6 @@
   font-family: Inter, Arial, sans-serif;
   line-height: 1.2;
   contain: layout paint;
-  pointer-events: auto;
 }
 /* The ministry layer is a separate high-z stacking surface; leave room so its title row stays usable. */
 #map-metric-dropdown { z-index: 1000002 !important; }
