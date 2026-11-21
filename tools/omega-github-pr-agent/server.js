@@ -208,12 +208,14 @@ app.post("/api/actions/execute", async (req, res, next) => {
           const submitted = await github.submitPullRequestReview(
             args.prNumber,
             args.event,
-            args.body
+            args.body,
+            action.nonce
           );
           result = {
             reviewId: submitted?.id || null,
             state: submitted?.state || args.event,
-            url: submitted?.html_url || null
+            url: submitted?.html_url || null,
+            alreadyApplied: submitted?.alreadyApplied === true
           };
           break;
         }
