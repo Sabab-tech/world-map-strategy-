@@ -173,16 +173,16 @@ test('real Chromium keeps the five premium Trade & Commerce destinations availab
     const tradeText = await main.innerText();
     check('Trade & Commerce overview is visible', /TRADE & COMMERCE/i.test(tradeText) && /National trade overview/i.test(tradeText));
 
-    const nav = main.locator('[data-omega-trade-command-nav]');
+    const nav = page.locator('#cabinet-full-window [data-omega-v2-main] [data-omega-trade-command-nav]');
     const expectedRouteOrder = ['overview','commodities','black-market','transactions','settlement'];
     const navRouteOrder = () => nav.locator('.omega-trade-command-button').evaluateAll(buttons =>
       buttons.map(button => button.getAttribute('data-omega-trade-route')));
     const actionSelectors = [
-      { name:'Overview', route:'overview', selector:'[data-omega-trade-route="overview"]', section:'dashboard', tab:null, host:'[data-omega-trade-overview="true"]', heading:'National trade overview' },
       { name:'Commodity Market', route:'commodities', selector:'[data-omega-trade-route="commodities"]', section:'market', tab:'commodities', host:'[data-omega-v2-trade-market-host]', heading:'Market Commodities' },
       { name:'Black Market', route:'black-market', selector:'[data-omega-trade-route="black-market"]', section:'market', tab:'black-market', host:'[data-omega-v2-black-market-host]', heading:'Black Market' },
       { name:'Transactions', route:'transactions', selector:'[data-omega-trade-route="transactions"]', section:'market', tab:'transactions', host:'[data-omega-v2-trade-market-host]', heading:'Market Transactions' },
-      { name:'Trade Settlement', route:'settlement', selector:'[data-omega-trade-route="settlement"]', section:'settlement', tab:null, host:'.omega-trade-settlement', heading:'Trade Settlement' }
+      { name:'Trade Settlement', route:'settlement', selector:'[data-omega-trade-route="settlement"]', section:'settlement', tab:null, host:'.omega-trade-settlement', heading:'Trade Settlement' },
+      { name:'Overview', route:'overview', selector:'[data-omega-trade-route="overview"]', section:'dashboard', tab:null, host:'[data-omega-trade-overview="true"]', heading:'National trade overview' }
     ];
 
     check('the five upper navigation destinations appear in the requested fixed order',
@@ -202,9 +202,12 @@ test('real Chromium keeps the five premium Trade & Commerce destinations availab
           options?.section === section &&
           (tab === null || options?.marketTab === tab);
       }, { section:action.section, tab:action.tab }, { timeout:25000 });
+      await nav.waitFor({ state:'visible', timeout:15000 });
+      const actualRouteOrder = await navRouteOrder();
       check(action.name + ' keeps the same navigation and order',
         await nav.locator('.omega-trade-command-button').count() === 5 &&
-        JSON.stringify(await navRouteOrder()) === JSON.stringify(expectedRouteOrder));
+        JSON.stringify(actualRouteOrder) === JSON.stringify(expectedRouteOrder),
+        JSON.stringify(actualRouteOrder));
       check(action.name + ' is marked active', await nav.locator(action.selector).getAttribute('aria-current') === 'page');
       if (action.name === 'Overview') {
         check('Overview screen returns to the selected-country trade dashboard', (await main.innerText()).includes(action.heading));
