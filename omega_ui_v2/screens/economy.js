@@ -569,13 +569,36 @@
       budget:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h4m4 0h2"/>'
     };
     var glyph = icons[name] || icons.bank;
+    var palette = {
+      bank:'#f0c36e', domestic:'#69dfb4', foreign:'#69d6ff', reserve:'#c5a3ff',
+      imports:'#73caff', exports:'#70e0ae', balance:'#ffd17a', dependency:'#d6b17c',
+      partner:'#8fc1ff', investment:'#edbd75', gdp:'#79d9dc', growth:'#7be1a7',
+      inflation:'#f2aa78', debt:'#f29ba5', revenue:'#73dfae', spending:'#c8a3ff', budget:'#76c9ec'
+    };
+    var accent = palette[name] || '#78d9f6';
+    var prefix = 'omega-economy-' + String(name || 'bank').replace(/[^a-z0-9-]/gi,'') + '-' +
+      (economySvgIcon.__sequence = (economySvgIcon.__sequence || 0) + 1);
     return '<svg class="omega-economy-v3-icon-svg omega-economy-v3-icon-svg--3d" viewBox="0 0 40 40" aria-hidden="true" focusable="false">' +
-      '<defs><linearGradient id="omega-economy-medallion" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e0faff"/><stop offset=".28" stop-color="#55c6ec"/><stop offset=".7" stop-color="#14537d"/><stop offset="1" stop-color="#061d37"/></linearGradient><linearGradient id="omega-economy-glyph" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset=".55" stop-color="#b5edff"/><stop offset="1" stop-color="#5bb9e3"/></linearGradient><radialGradient id="omega-economy-gloss" cx=".3" cy=".14" r=".9"><stop stop-color="#fff" stop-opacity=".58"/><stop offset=".35" stop-color="#a4efff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>' +
-      '<circle cx="20" cy="20" r="17.5" fill="url(#omega-economy-medallion)" stroke="#c6f4ff" stroke-opacity=".8" stroke-width="1.1"/>' +
-      '<circle cx="20" cy="20" r="14.5" fill="none" stroke="#75d9fa" stroke-opacity=".48" stroke-width=".8"/>' +
-      '<ellipse cx="15" cy="10.2" rx="10" ry="4.8" fill="url(#omega-economy-gloss)"/>' +
-      '<g transform="translate(9 9)" fill="none" stroke="#04182c" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round" opacity=".88">' + glyph + '</g>' +
-      '<g transform="translate(8 8)" fill="none" stroke="url(#omega-economy-glyph)" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">' + glyph + '</g></svg>';
+      '<defs>' +
+        '<linearGradient id="' + prefix + '-rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f3fdff"/><stop offset=".24" stop-color="' + accent + '"/><stop offset=".67" stop-color="#286b91"/><stop offset="1" stop-color="#041426"/></linearGradient>' +
+        '<linearGradient id="' + prefix + '-face" x1=".1" y1="0" x2=".9" y2="1"><stop stop-color="#d7f7ff"/><stop offset=".16" stop-color="#397da3"/><stop offset=".53" stop-color="#123b60"/><stop offset="1" stop-color="#06172b"/></linearGradient>' +
+        '<linearGradient id="' + prefix + '-glyph" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset=".42" stop-color="' + accent + '"/><stop offset="1" stop-color="#8cb9d4"/></linearGradient>' +
+        '<radialGradient id="' + prefix + '-gloss" cx=".27" cy=".12" r=".92"><stop stop-color="#ffffff" stop-opacity=".76"/><stop offset=".32" stop-color="#c8f5ff" stop-opacity=".2"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>' +
+        '<filter id="' + prefix + '-shadow" x="-35%" y="-35%" width="180%" height="190%"><feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/><feOffset dy="2.1"/><feComponentTransfer><feFuncA type="linear" slope=".58"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+      '</defs>' +
+      '<ellipse cx="20" cy="37.1" rx="13.8" ry="1.7" fill="#010916" opacity=".62"/>' +
+      '<g filter="url(#' + prefix + '-shadow)">' +
+        '<circle cx="20" cy="19.2" r="17.4" fill="url(#' + prefix + '-rim)" stroke="#e5faff" stroke-opacity=".9" stroke-width=".9"/>' +
+        '<circle cx="20" cy="19.2" r="15.1" fill="url(#' + prefix + '-face)" stroke="' + accent + '" stroke-opacity=".8" stroke-width=".8"/>' +
+        '<circle cx="20" cy="19.2" r="12.7" fill="none" stroke="#d6f8ff" stroke-opacity=".2" stroke-width=".8"/>' +
+        '<path d="M5 18Q6 4 20 2Q34 4 35 18" fill="none" stroke="#ffffff" stroke-opacity=".5" stroke-width="1.1"/>' +
+        '<path d="M7 26Q20 34 33 26" fill="none" stroke="#020e1d" stroke-opacity=".75" stroke-width="1.4"/>' +
+        '<ellipse cx="14.2" cy="9.4" rx="10.5" ry="5.3" fill="url(#' + prefix + '-gloss)"/>' +
+        '<g transform="translate(9 9.2)" fill="none" stroke="#020d1c" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" opacity=".96">' + glyph + '</g>' +
+        '<g transform="translate(8.55 8.75)" fill="none" stroke="#327da3" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" opacity=".94">' + glyph + '</g>' +
+        '<g transform="translate(8 8.2)" fill="none" stroke="url(#' + prefix + '-glyph)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + glyph + '</g>' +
+        '<path d="M9 29Q20 34 31 29" fill="none" stroke="' + accent + '" stroke-opacity=".65" stroke-width=".9"/>' +
+      '</g></svg>';
   }
   function economySourceText(record) {
     if (!record) return 'Source not recorded';
