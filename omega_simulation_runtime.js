@@ -314,17 +314,16 @@
     })();
   }
 
-  function encodeStoredSnapshot(snapshot){
-    // Without IndexedDB, preserve the lifecycle's synchronous localStorage
-    // checkpoint path. pagehide/visibilitychange cannot wait for compression
-    // promises; streaming compression is reserved for IndexedDB-backed saves.
+  function encodeStoredSnapshot(snapshot,options={}){
+    // A page-exit emergency checkpoint is synchronous. Normal no-IndexedDB
+    // saves still use the established gzip/base64 storage optimization.
+    if((!global.indexedDB||typeof global.indexedDB.open!=='function')&&
+       options.synchronousLocalStorage===true){
+      const value=serializeSaveSnapshot(snapshot);
+      return{value,compression:'NONE',originalBytes:value.length,storedBytes:value.length};
+    }
     if(!global.indexedDB||typeof global.indexedDB.open!=='function')
-      return {
-        value:serializeSaveSnapshot(snapshot),
-        compression:'NONE',
-        originalBytes:0,
-        storedBytes:0
-      };
+      return encodeStoredSave(serializeSaveSnapshot(snapshot));
     const canStream=typeof global.CompressionStream==='function'&&
       typeof global.DecompressionStream==='function'&&
       typeof global.Blob==='function'&&
@@ -770,6 +769,7 @@
       this.status='READY';
       this.stepInProgress=false;
       this.saveBarrier=null;
+      this.saveSequence=0;
       this.lastError=null;
       this.lastLoadIntegrity='NOT_LOADED';
       this.lastStepSummary=null;
@@ -1389,9 +1389,10 @@
       return this.diagnostics();
     }
 
-    async saveSlot(slot='default'){
+    async saveSlot(slot='default',options={}){
       const key='omega.game.save.'+String(slot||'default');
       const previousSave=this.saveBarrier;
+      const sequence=this.saveSequence=(this.saveSequence||0)+1;
       let releaseSave;
       const currentSave=new Promise(resolve=>{releaseSave=resolve;});
       this.saveBarrier=currentSave;
@@ -1403,7 +1404,8 @@
         if(this.saveBarrier===currentSave)this.saveBarrier=null;
       };
       try{
-        if(previousSave)await previousSave;
+        // Exit flushes must not be queued behind an earlier compression promise.
+        if(previousSave&&options.synchronousLocalStorage!==true)await previousSave;
         // Volatile diagnostics are omitted. Canonical JSON and its checksum
         // are emitted together as a stream, avoiding a full-size JSON duplicate.
         const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},true);
@@ -1411,6 +1413,11 @@
       // gzip envelope when the browser supports both compression directions.
       // Large 197-country saves can exceed localStorage/IndexedDB quotas.
       const persistStoredSave = stored => {
+        // Prevent an older asynchronous save from overwriting a newer
+        // page-exit checkpoint when it resolves later.
+        if(sequence!==this.saveSequence)
+          return {ok:true,skipped:true,storage:'SUPERSEDED',turn:this.clock.turn,
+            compression:stored.compression,storedBytes:stored.storedBytes};
         const result = {
           ok:true,key,turn:this.clock.turn,
           compression:stored.compression,
@@ -1451,7 +1458,7 @@
         global.localStorage.setItem(key,stored.value);
         return {...result,storage:'LOCAL_STORAGE_FALLBACK'};
       };
-      const stored=encodeStoredSnapshot(snapshot);
+      const stored=encodeStoredSnapshot(snapshot,options);
       if(stored&&typeof stored.then==='function')
         return Promise.resolve(stored).then(persistStoredSave).finally(releaseCurrentSave);
       // Keep a plain-JSON/no-IndexedDB fallback synchronous. pagehide and
