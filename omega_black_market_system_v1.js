@@ -5,7 +5,7 @@
  */
 (function(g){
 'use strict';
-const VERSION='1.4.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12,MAX_TURN_MAINTENANCE=12;
+const VERSION='1.5.0',MAX_DEALS=256,MAX_CASES=256,MAX_RESPONSES=128,PERMIT_TTL=12,MAX_TURN_MAINTENANCE=12;
 const clone=(v,seen=new WeakMap())=>{if(v===null||typeof v!=='object')return v;if(seen.has(v))return seen.get(v);if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}const o={};seen.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function'&&v[k]!==undefined)o[k]=clone(v[k]);return o;};
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;},id=v=>String(v??'').trim().toUpperCase();
 const tok=v=>String(v??'').normalize('NFKC').trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
@@ -870,7 +870,7 @@ function startTransit(request={}){
  const reserved=dispatch('trade','OMEGA_BLACK_MARKET_RESERVE_TRANSIT_STOCK',deal.sellerCountryId,{reservation:{reservationId,dealId:deal.dealId,requestId:deal.requestId,sellerCountryId:deal.sellerCountryId,buyerCountryId:deal.buyerCountryId,resourceId:deal.resourceId,quantity:deal.quantity}});
  if(reserved?.accepted!==true)return{accepted:false,reason:reserved?.reason||'BLACK_MARKET_TRANSIT_STOCK_RESERVATION_FAILED'};
  const transit={transitId:'BM-TRANSIT-'+deal.dealId,dealId:deal.dealId,requestId:deal.requestId,buyerCountryId:deal.buyerCountryId,sellerCountryId:deal.sellerCountryId,
-  resourceId:deal.resourceId,quantity:deal.quantity,permitId:deal.permitId,route,reservationId,brokerId:deal.brokerId||null,createdTurn:turn(),nextTurn:turn()+1,
+  resourceId:deal.resourceId,quantity:deal.quantity,unit:product(deal.resourceId)?.unit||null,permitId:deal.permitId,route,reservationId,brokerId:deal.brokerId||null,createdTurn:turn(),nextTurn:turn()+1,
   currentIndex:-1,status:'IN_TRANSIT',timeline:[],authority:'OMEGA_BLACK_MARKET_ROUTE_RUNTIME'};
  const saved=dispatch('trade','OMEGA_BLACK_MARKET_RECORD_TRANSIT',buyer,{transit});
  if(saved?.accepted!==true){dispatch('trade','OMEGA_BLACK_MARKET_RESERVE_TRANSIT_STOCK',deal.sellerCountryId,{release:true,reservation:{reservationId}});return{accepted:false,reason:saved?.reason||'BLACK_MARKET_TRANSIT_RECORD_FAILED'};}

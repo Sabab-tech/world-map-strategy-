@@ -634,6 +634,83 @@ test('a modeled or incomplete Finance fiscal period never establishes actual Tre
   assert.equal(summary.expenditure.treasuryActualExpense.amount, null);
 });
 
+test('unit-backed Black Market transit is exposed separately while legal bilateral in-transit imports remain UNKNOWN', async () => {
+  const state = {
+    simulation: { turn: 9, session: { playerCountryId: 'BGD' } },
+    population: {},
+    economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: [], demandRuntime: { byResource: {
+      crude_oil: { pendingImportQuantity: 0, demandPerDay: 40 }
+    } } } },
+    trade: { BGD: { blackMarketTransits: [
+      { transitId: 'BM-TRANSIT-OPEN', dealId: 'BM-DEAL-OPEN', requestId: 'REQ-BM-OPEN',
+        buyerCountryId: 'BGD', sellerCountryId: 'USA', resourceId: 'crude_oil',
+        quantity: 20, unit: 'tonne', route: [{ countryId: 'USA' }, { countryId: 'BGD' }],
+        status: 'IN_TRANSIT', nextTurn: 10 },
+      { transitId: 'BM-TRANSIT-ARRIVAL', dealId: 'BM-DEAL-ARRIVAL', requestId: 'REQ-BM-ARRIVAL',
+        buyerCountryId: 'BGD', sellerCountryId: 'CAN', resourceId: 'crude_oil',
+        quantity: 5, unit: 'tonne', route: [{ countryId: 'CAN' }, { countryId: 'BGD' }],
+        status: 'ARRIVAL_PENDING', nextTurn: 9 },
+      { transitId: 'BM-TRANSIT-SETTLED', dealId: 'BM-DEAL-SETTLED', requestId: 'REQ-BM-SETTLED',
+        buyerCountryId: 'BGD', sellerCountryId: 'AUS', resourceId: 'crude_oil',
+        quantity: 100, unit: 'tonne', route: [{ countryId: 'AUS' }, { countryId: 'BGD' }],
+        status: 'SETTLED' }
+    ] } },
+    finance: { BGD: { omegaFinance: { ledger: [] } } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const standard = summary.inTransitInternationalImports;
+  assert.equal(standard.status, 'UNKNOWN');
+  assert.equal(standard.quantity, null);
+  assert.equal(standard.blackMarketTransit.status, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
+  assert.equal(standard.blackMarketTransit.ledgerAvailable, true);
+  assert.equal(standard.blackMarketTransit.shipmentCount, 2);
+  assert.equal(standard.blackMarketTransit.byResource.crude_oil.quantity, 25);
+  assert.equal(standard.blackMarketTransit.byResource.crude_oil.unit, 'tonne');
+  assert.deepEqual(JSON.parse(JSON.stringify(standard.blackMarketTransit.byResource.crude_oil.transitIds)),
+    ['BM-TRANSIT-ARRIVAL', 'BM-TRANSIT-OPEN']);
+  const row = summary.nationalRequirement.byResource.crude_oil;
+  assert.equal(row.inTransitInternationalImportQuantity, null,
+    'Black Market subset must not be promoted to the complete legal bilateral total');
+  assert.equal(row.inTransitInternationalImportStatus, 'UNKNOWN');
+  assert.equal(row.blackMarketInboundShipmentQuantity, 25);
+  assert.equal(row.blackMarketInboundShipmentEvidenceStatus, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
+  assert.equal(summary.dataCoverage.blackMarketTransitStatus, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
+  assert.equal(summary.dataCoverage.blackMarketTransitLedgerAvailable, true);
+  const html = api.renderSummary(summary);
+  assert.match(html, /Legal in-transit import/);
+  assert.match(html, /Black Market transit subset/);
+  assert.match(html, /complete legal bilateral in-transit total remains UNKNOWN/);
+});
+
+test('legacy Black Market transit without a saved unit remains partial rather than guessing a quantity unit', async () => {
+  const state = {
+    simulation: { turn: 9, session: { playerCountryId: 'BGD' } },
+    population: {},
+    economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: [], demandRuntime: { byResource: {
+      crude_oil: { pendingImportQuantity: 0, demandPerDay: 40 }
+    } } } },
+    trade: { BGD: { blackMarketTransits: [{
+      transitId: 'BM-TRANSIT-LEGACY', dealId: 'BM-DEAL-LEGACY', requestId: 'REQ-BM-LEGACY',
+      buyerCountryId: 'BGD', sellerCountryId: 'USA', resourceId: 'crude_oil',
+      quantity: 9, route: [{ countryId: 'USA' }, { countryId: 'BGD' }],
+      status: 'IN_TRANSIT', nextTurn: 10
+    }] } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const subset = summary.inTransitInternationalImports.blackMarketTransit;
+  assert.equal(summary.inTransitInternationalImports.status, 'UNKNOWN');
+  assert.equal(subset.status, 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE');
+  assert.equal(subset.byResource.crude_oil.quantity, 9);
+  assert.equal(subset.byResource.crude_oil.unit, null);
+  assert.equal(summary.nationalRequirement.byResource.crude_oil.blackMarketInboundShipmentQuantity, 9);
+  assert.equal(summary.nationalRequirement.byResource.crude_oil.blackMarketInboundShipmentEvidenceStatus,
+    'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE');
+});
+
 test('in-transit international imports remain UNKNOWN when only pending or domestic shipment evidence exists', async () => {
   const state = {
     simulation: { turn: 7, session: { playerCountryId: 'BGD' } },

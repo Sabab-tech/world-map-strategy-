@@ -104,7 +104,7 @@ Phase 6 does not calculate `populationDemand + factoryDemand`. The current natio
 
 Physical output is read from the resource state's `finishedGoodsLedger`, filtered to the current game turn and de-duplicated by transaction ID. The economy finished-goods mirror is not counted as a second source.
 
-Inventory, confirmed imports, in-transit shipments, and demand are different facts. Completed cross-border imports are read from current-turn `resource.inventoryLedger` rows with type `INTERNATIONAL_TRADE_IMPORT`; records are de-duplicated by settlement and resource identity. Pending import requests are not treated as imports. The trade runtime retains at most 2,048 inventory-ledger rows; when the ledger reaches that bound, Phase 6 marks import totals `IMPORT_LEDGER_MAY_BE_TRUNCATED` and reports them as `UNKNOWN` rather than claiming a complete zero or partial total. The current trade runtime does not persist a durable in-transit import shipment ledger for this projection, so in-transit import quantity remains `UNKNOWN` rather than being inferred. Phase 6 does not debit inventory or change shipment state.
+Inventory, confirmed imports, in-transit shipments, and demand are different facts. Completed cross-border imports are read from current-turn `resource.inventoryLedger` rows with type `INTERNATIONAL_TRADE_IMPORT`; records are de-duplicated by settlement and resource identity. Pending import requests are not treated as imports. The trade runtime retains at most 2,048 inventory-ledger rows; when the ledger reaches that bound, Phase 6 marks import totals `IMPORT_LEDGER_MAY_BE_TRUNCATED` and reports them as `UNKNOWN` rather than claiming a complete zero or partial total. The current standard legal trade runtime does not persist a durable in-transit import shipment ledger for this projection, so the complete legal in-transit import quantity remains `UNKNOWN` rather than being inferred. Phase 6 separately reports Black Market `IN_TRANSIT` and `ARRIVAL_PENDING` route records as a limited subset; new records persist the canonical product unit, while legacy rows without unit provenance remain `PARTIAL`. This covert subset is never promoted to the complete legal import total. Phase 6 does not debit inventory or change shipment state.
 
 ## 6. Factory counts, capacity and ownership
 
@@ -154,7 +154,7 @@ The Country Overview receives an additive, collapsible national summary. The pan
 
 | Milestone | Scope | Initial implementation status |
 | --- | --- | --- |
-| 6A | 197-country population source/year/status audit | Audit and regression contract added; 194/2/1 coverage remains explicit |
+| 6A | 197-country population source/year/status audit | Complete: 195 observed 2025 populations, 1 official 2024 population (Vatican), and 1 UN projected 2025 estimate (Western Sahara); no 2015 fallback |
 | 6B | Universal per-100k coefficient catalog | Existing 41 profiles normalized; 37 calculated, 4 uncalibrated |
 | 6C | National factory census and capacity | 197 × 21 static matrix surfaced; selected-country live status/capacity read from existing registry |
 | 6D | Population/factory demand reconciliation | Separate streams; existing national-demand authority reused, no new sum |
@@ -181,7 +181,7 @@ The dedicated regression suite verifies:
 - Price/currency evidence gates and the separation of modeled cost from Treasury postings.
 - Current-turn government expense/reversal and private-factory operating-cost accrual projection only when every source journal is balanced, posted, correctly identified and currency-scoped; bounded source-window and non-completion statuses are preserved.
 - Actual Treasury budgetary expenditure is established only from a complete, non-modeled, reconciled Finance fiscal-period account; it is government spending plus interest paid, with principal repayment excluded.
-- In-transit international import quantities remain explicitly unknown until the trade runtime persists durable shipment identity/status evidence.
+- Complete legal in-transit international import quantities remain explicitly unknown until the legal trade runtime persists durable shipment identity/status evidence. Black Market route cargo is exposed as a separate subset; its new rows include canonical product units and legacy unitless rows remain partial.
 - Read-only authoritative world-state behavior and the absence of a new scheduler.
 - Phase 6 provenance save/load checksum coverage, legacy-save compatibility, and load-time fingerprint revalidation.
 
