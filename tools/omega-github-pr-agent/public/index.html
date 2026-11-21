@@ -196,6 +196,7 @@
       document.getElementById("prompt").value = "";
       addMessage("You", prompt, "user");
       const history = conversationHistory.slice(-16);
+      while (history.length && history[0].role !== "user") history.shift();
       conversationHistory.push({ role: "user", text: prompt });
       sendButton.disabled = true;
       sendButton.textContent = "Gemini is working…";
@@ -206,6 +207,7 @@
         for (const action of result.pendingActions || []) showPendingAction(action);
       } catch (error) {
         addMessage("System", error.message, "agent");
+        conversationHistory.push({ role: "model", text: "The previous agent request failed: " + error.message });
       } finally {
         sendButton.disabled = false;
         sendButton.textContent = "Send to Gemini";
