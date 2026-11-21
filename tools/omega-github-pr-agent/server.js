@@ -55,6 +55,7 @@ const allowedOrigins = new Set(
 
 app.disable("x-powered-by");
 app.use(express.json({ limit: "1200kb", strict: true }));
+app.use(corsPolicy);
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "no-referrer");
@@ -77,6 +78,21 @@ function originAllowed(req) {
     .split(",")[0].trim();
   const host = String(req.get("host") || "");
   return origin === protocol + "://" + host;
+}
+
+function corsPolicy(req, res, next) {
+  const origin = req.get("origin");
+  if (origin && !originAllowed(req)) {
+    return res.status(403).json({ ok: false, error: "ORIGIN_NOT_ALLOWED" });
+  }
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+  }
+  if (req.method === "OPTIONS") return res.status(204).end();
+  return next();
 }
 
 function requireOrigin(req, res, next) {
@@ -193,6 +209,7 @@ app.post("/api/actions/execute", async (req, res, next) => {
           break;
         }
         default:
+          replayGuard.release(action.nonce);
           return res.status(400).json({ ok: false, error: "ACTION_NOT_SUPPORTED" });
       }
 
