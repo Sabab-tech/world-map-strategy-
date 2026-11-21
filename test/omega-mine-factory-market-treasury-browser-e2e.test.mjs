@@ -1261,6 +1261,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           inputCoefficients: selectedFactory.inputCoefficients || selectedFactory.inputs || null,
           productionHealth: selectedFactory.productionHealth || null,
           employment: factoryEmployment,
+          employmentModel: g.Game.state.economy?.[seller]?.factoryEmployment || null,
           cycle: factoryCycle,
           inputInventory: selectedFactory.inputInventory || null,
           inputBatchLots: (selectedFactory.inputBatchLots || []).slice(-12).map(lot => ({
