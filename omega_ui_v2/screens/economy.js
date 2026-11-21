@@ -568,8 +568,14 @@
       spending:'<path d="M12 3v13m-5-5 5 5 5-5M4 20h16"/>',
       budget:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h4m4 0h2"/>'
     };
-    return '<svg class="omega-economy-v3-icon-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-      (icons[name] || icons.bank) + '</svg>';
+    var glyph = icons[name] || icons.bank;
+    return '<svg class="omega-economy-v3-icon-svg omega-economy-v3-icon-svg--3d" viewBox="0 0 40 40" aria-hidden="true" focusable="false">' +
+      '<defs><linearGradient id="omega-economy-medallion" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e0faff"/><stop offset=".28" stop-color="#55c6ec"/><stop offset=".7" stop-color="#14537d"/><stop offset="1" stop-color="#061d37"/></linearGradient><linearGradient id="omega-economy-glyph" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset=".55" stop-color="#b5edff"/><stop offset="1" stop-color="#5bb9e3"/></linearGradient><radialGradient id="omega-economy-gloss" cx=".3" cy=".14" r=".9"><stop stop-color="#fff" stop-opacity=".58"/><stop offset=".35" stop-color="#a4efff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>' +
+      '<circle cx="20" cy="20" r="17.5" fill="url(#omega-economy-medallion)" stroke="#c6f4ff" stroke-opacity=".8" stroke-width="1.1"/>' +
+      '<circle cx="20" cy="20" r="14.5" fill="none" stroke="#75d9fa" stroke-opacity=".48" stroke-width=".8"/>' +
+      '<ellipse cx="15" cy="10.2" rx="10" ry="4.8" fill="url(#omega-economy-gloss)"/>' +
+      '<g transform="translate(9 9)" fill="none" stroke="#04182c" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round" opacity=".88">' + glyph + '</g>' +
+      '<g transform="translate(8 8)" fill="none" stroke="url(#omega-economy-glyph)" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">' + glyph + '</g></svg>';
   }
   function economySourceText(record) {
     if (!record) return 'Source not recorded';

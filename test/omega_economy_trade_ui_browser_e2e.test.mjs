@@ -73,7 +73,7 @@ function startStaticServer() {
   });
 }
 
-test('real Chromium opens all four Trade & Commerce services from the Economy ministry', {
+test('real Chromium keeps the five premium Trade & Commerce destinations available on every section', {
   timeout: 240000
 }, async () => {
   const artifactDir = process.env.OMEGA_TRADE_UI_ARTIFACT_DIR || path.join(ROOT, 'test-results', 'omega-economy-trade-browser');
@@ -150,6 +150,8 @@ test('real Chromium opens all four Trade & Commerce services from the Economy mi
       /FOREIGN DIRECT INVESTMENT/i.test(overviewText));
     check('Economy overview has no chart or duplicate left-side section navigation',
       await dashboard.locator('canvas, svg.recharts-surface, [data-omega-v2-economy-tab], .omega-economy-v3-sidebar').count() === 0);
+    check('Economy metric icons use the new dimensional SVG medallions',
+      await dashboard.locator('.omega-economy-v3-icon-svg--3d').count() > 0);
     const labelFontSize = await dashboard.locator('.omega-economy-v3-metric-label').first().evaluate(el => getComputedStyle(el).fontSize);
     check('Economy metric labels meet the mobile readability floor',
       Number.parseFloat(labelFontSize) >= 9, labelFontSize);
@@ -171,17 +173,27 @@ test('real Chromium opens all four Trade & Commerce services from the Economy mi
     const tradeText = await main.innerText();
     check('Trade & Commerce overview is visible', /TRADE & COMMERCE/i.test(tradeText) && /National trade overview/i.test(tradeText));
 
+    const nav = page.locator('#cabinet-full-window [data-omega-v2-main] [data-omega-trade-command-nav]');
+    const expectedRouteOrder = ['overview','commodities','black-market','transactions','settlement'];
+    const navRouteOrder = () => nav.locator('.omega-trade-command-button').evaluateAll(buttons =>
+      buttons.map(button => button.getAttribute('data-omega-trade-route')));
     const actionSelectors = [
-      { name:'Commodity Market', selector:'[data-omega-v2-ministry-section="market"][data-omega-v2-trade-market-tab="commodities"]', section:'market', tab:'commodities', host:'[data-omega-v2-trade-market-host]', heading:'Market Commodities' },
-      { name:'Black Market', selector:'[data-omega-v2-ministry-section="market"][data-omega-v2-trade-market-tab="black-market"]', section:'market', tab:'black-market', host:'[data-omega-v2-black-market-host]', heading:'Black Market' },
-      { name:'Transactions', selector:'[data-omega-v2-ministry-section="market"][data-omega-v2-trade-market-tab="transactions"]', section:'market', tab:'transactions', host:'[data-omega-v2-trade-market-host]', heading:'Market Transactions' },
-      { name:'Trade Settlement', selector:'[data-omega-v2-ministry-section="settlement"]', section:'settlement', tab:null, host:'.omega-trade-settlement', heading:'Trade Settlement' }
+      { name:'Commodity Market', route:'commodities', selector:'[data-omega-trade-route="commodities"]', section:'market', tab:'commodities', host:'[data-omega-v2-trade-market-host]', heading:'Market Commodities' },
+      { name:'Black Market', route:'black-market', selector:'[data-omega-trade-route="black-market"]', section:'market', tab:'black-market', host:'[data-omega-v2-black-market-host]', heading:'Black Market' },
+      { name:'Transactions', route:'transactions', selector:'[data-omega-trade-route="transactions"]', section:'market', tab:'transactions', host:'[data-omega-v2-trade-market-host]', heading:'Market Transactions' },
+      { name:'Trade Settlement', route:'settlement', selector:'[data-omega-trade-route="settlement"]', section:'settlement', tab:null, host:'.omega-trade-settlement', heading:'Trade Settlement' },
+      { name:'Overview', route:'overview', selector:'[data-omega-trade-route="overview"]', section:'dashboard', tab:null, host:'[data-omega-trade-overview="true"]', heading:'National trade overview' }
     ];
 
+    check('the five upper navigation destinations appear in the requested fixed order',
+      JSON.stringify(await navRouteOrder()) === JSON.stringify(expectedRouteOrder));
+    check('the bottom TRADE OPERATIONS action block is removed',
+      !/04 \/ TRADE OPERATIONS/.test(await main.innerText()));
+
     for (const action of actionSelectors) {
-      const button = main.locator(action.selector).first();
+      const button = nav.locator(action.selector);
       await button.waitFor({ state:'visible', timeout:15000 });
-      check(action.name + ' action is visible in Trade & Commerce', await button.count() >= 1);
+      check(action.name + ' remains available in the persistent navigation', await button.count() === 1);
       await button.click();
       await page.waitForFunction(({ section, tab }) => {
         const currentMain = document.querySelector('#cabinet-full-window [data-omega-v2-main]');
@@ -190,17 +202,29 @@ test('real Chromium opens all four Trade & Commerce services from the Economy mi
           options?.section === section &&
           (tab === null || options?.marketTab === tab);
       }, { section:action.section, tab:action.tab }, { timeout:25000 });
-      await main.locator(action.host).waitFor({ state:'attached', timeout:15000 });
-      check(action.name + ' opens its intended screen', await main.locator(action.host).count() > 0);
-      check(action.name + ' shows its screen heading', (await main.innerText()).includes(action.heading));
-
-      const back = main.locator('[data-omega-v2-ministry-section="dashboard"]').first();
-      await back.waitFor({ state:'visible', timeout:15000 });
-      await back.click();
-      await page.waitForFunction(() =>
-        document.querySelector('#cabinet-full-window [data-omega-v2-main]')?.__omegaV2MinistryDetailOptions?.section === 'dashboard'
-      , null, { timeout:25000 });
+      await nav.waitFor({ state:'visible', timeout:15000 });
+      const actualRouteOrder = await navRouteOrder();
+      check(action.name + ' keeps the same navigation and order',
+        await nav.locator('.omega-trade-command-button').count() === 5 &&
+        JSON.stringify(actualRouteOrder) === JSON.stringify(expectedRouteOrder),
+        JSON.stringify(actualRouteOrder));
+      check(action.name + ' is marked active', await nav.locator(action.selector).getAttribute('aria-current') === 'page');
+      if (action.name === 'Overview') {
+        check('Overview screen returns to the selected-country trade dashboard', (await main.innerText()).includes(action.heading));
+      } else {
+        await main.locator(action.host).waitFor({ state:'attached', timeout:15000 });
+        check(action.name + ' opens its existing screen', await main.locator(action.host).count() > 0);
+        check(action.name + ' shows its existing screen heading', (await main.innerText()).includes(action.heading));
+      }
     }
+
+    await page.setViewportSize({ width:360, height:800 });
+    const navWidth = await nav.evaluate(el => ({ client:el.clientWidth, scroll:el.scrollWidth }));
+    check('the five-button command deck fits a 360px mobile screen without horizontal overflow',
+      navWidth.scroll <= navWidth.client + 1, JSON.stringify(navWidth));
+    check('the command deck remains compact on mobile',
+      Number.parseFloat(await nav.locator('.omega-trade-command-button').first().evaluate(el => getComputedStyle(el).minHeight)) <= 60);
+    await page.setViewportSize({ width:1280, height:850 });
 
     result.ok = true;
     fs.writeFileSync(path.join(artifactDir, 'trade-navigation-result.json'), JSON.stringify(result, null, 2));
