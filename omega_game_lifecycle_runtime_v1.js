@@ -362,7 +362,11 @@
           if (forceLatest) pendingExitFlush = true;
           return true;
         }
-        return writeSnapshotNow({ force: forceLatest, committedTurn: committedLatest });
+        return writeSnapshotNow({
+          force: forceLatest,
+          committedTurn: committedLatest,
+          synchronousLocalStorage: options.synchronousLocalStorage === true
+        });
       }
       return true;
     });
@@ -704,7 +708,7 @@
       syncSelectedCountry(selectedCountry);
       setSaveStatus('PLAYER COUNTRY SELECTED · PRESS PLAY');
       updateHud();
-      saveNow({ force: true });
+      saveNow({ force: true, synchronousLocalStorage: true });
     } catch (error) {
       setSaveStatus('COUNTRY SELECTION FAILED · ' + String(error && error.message || error).slice(0, 40));
       updateHud();
