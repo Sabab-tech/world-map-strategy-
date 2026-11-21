@@ -85,7 +85,7 @@ assert.equal(canonical.authority,'OMEGA_CANONICAL_COUNTRY_IDENTITY');
 const namedRoute=autonomy.routeSubject('import','Bangladesh','Saudi Arabia');
 assert.equal(namedRoute.countryId,'BGD');
 assert.equal(namedRoute.targetCountryId,'SAU');
-const kernelEvaluation=await globalThis.Omega.OpponentCountryRules.evaluateCountry('Bangladesh',1);
+const kernelEvaluation=await globalThis.Omega.OpponentCountryRules.evaluateCountry('BGD',1);
 assert.equal(kernelEvaluation.countryId,'BGD');
 
 const sourceRoute=autonomy.findDataSources('treasury','Bangladesh');
