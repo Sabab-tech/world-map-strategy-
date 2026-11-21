@@ -367,7 +367,8 @@
     }
     const ref=referencePrice(rid);
     const clearing=matched>0?Number(((lastBid.priceUsd+lastAsk.priceUsd)/2).toFixed(8)):null;
-    const bestBid=bids[0]?.priceUsd??null,bestAsk=asks.find(x=>x.referenceOnly!==true)?.priceUsd??null;
+    const bestBid=bids[0]?.priceUsd??null,bestAsk=asks.find(x=>x.referenceOnly!==true)?.priceUsd??null,
+      bestBidCountryId=bids[0]?.countryId??null;
     const status=clearing!==null?'CLEARED':(bestBid!==null||bestAsk!==null?'NO_CROSS':'NO_ORDERS');
     const matchedNotional=matches.reduce((s,x)=>s+(x.quantity||0)*((x.bidPriceUsd+x.askPriceUsd)/2),0);
     const vwap=matched>0?Number((matchedNotional/matched).toFixed(8)):null;
@@ -378,7 +379,7 @@
     const variance=priceSamples.length>1?priceSamples.reduce((s,x)=>s+Math.pow(x-mean,2),0)/priceSamples.length:null;
     const volatilityUsd=variance!==null?Number(Math.sqrt(variance).toFixed(8)):null;
     const product=describeProduct(rid);
-    return{resourceId:rid,productType:product.productType,productRole:product.productRole||null,status,numeraire:'USD',settlementAuthority:'PRICE_DISCOVERY_ONLY',clearingPriceUsd:clearing,bestBidUsd:bestBid,bestAskUsd:bestAsk,matchedQuantity:matched,blockedTradePairs:blockedPairs,
+    return{resourceId:rid,productType:product.productType,productRole:product.productRole||null,status,numeraire:'USD',settlementAuthority:'PRICE_DISCOVERY_ONLY',clearingPriceUsd:clearing,bestBidUsd:bestBid,bestBidCountryId,bestAskUsd:bestAsk,matchedQuantity:matched,blockedTradePairs:blockedPairs,
       bidDepth:bids.reduce((s,x)=>s+(n(x.quantity)||0),0),askDepth:asks.filter(x=>x.referenceOnly!==true).reduce((s,x)=>s+(n(x.quantity)||0),0),referenceAskDepth:asks.filter(x=>x.referenceOnly===true).reduce((s,x)=>s+(n(x.quantity)||0),0),
       priceDiscovery:clearing!==null?'ORDER_BOOK_CROSSING':(bestBid!==null&&bestAsk!==null?'NEGOTIATION_RANGE':ref?'REFERENCE_ONLY':'UNAVAILABLE'),
       referencePrice:ref?.price??null,referenceUnit:ref?.unit??null,referenceSource:ref?.source??null,matches,vwapUsd:vwap,spreadUsd:spread,volatilityUsd,
@@ -412,6 +413,21 @@
     const product=describeProduct(key);
     const q=row?.clearing||{resourceId:key,productType:product.productType,productRole:product.productRole||null,status:'UNAVAILABLE',priceDiscovery:'UNAVAILABLE',clearingPriceUsd:null,bestBidUsd:null,bestAskUsd:null,referencePrice:null,settlementAuthority:'PRICE_DISCOVERY_ONLY'};
     return clone(q);
+  }
+  function bestCrossBorderBid(countryId,rid){
+    const seller=canonical(countryId),key=String(rid||'').trim(),
+      book=g.__OmegaMarketBooks?.[key]||g.__OmegaMarketBooks?.[Object.keys(g.__OmegaMarketBooks||{}).find(x=>token(x)===token(key))],
+      rows=Array.isArray(book?.orders?.bids)?book.orders.bids:[];
+    const best=rows.filter(row=>canonical(row.countryId)!==seller&&(n(row.priceUsd)||0)>0&&(n(row.quantity)||0)>0)
+      .sort((a,b)=>(n(b.priceUsd)||0)-(n(a.priceUsd)||0)||String(a.countryId||'').localeCompare(String(b.countryId||'')))[0];
+    return best?clone({countryId:canonical(best.countryId),resourceId:key,requestId:best.requestId||null,
+      priceUsd:n(best.priceUsd),quantity:n(best.quantity),source:best.source||'OBSERVED_BUYER_ORDER'}):null;
+  }
+  function localPriceFromUsd(countryId,usdPrice){
+    const usd=n(usdPrice),c=canonical(countryId);
+    if(usd===null||usd<=0)return null;
+    const rate=usdRate(c);if(rate===null)return null;
+    return Number((currency(c)==='USD'?usd:usd*rate).toFixed(8));
   }
   function localPrice(countryId,rid){
     const q=quote(rid),c=canonical(countryId);
@@ -884,7 +900,7 @@
     if(state()?.simulation?.turn!==undefined)rebuild();
     return diagnostics();
   }
-  const API=Object.freeze({VERSION,diagnostics,rebuild,rebuildCountry,quote,localPrice,executableLocalPrice,suppliers,privateCompanySuppliers,
+  const API=Object.freeze({VERSION,diagnostics,rebuild,rebuildCountry,quote,localPrice,localPriceFromUsd,bestCrossBorderBid,executableLocalPrice,suppliers,privateCompanySuppliers,
     describeProduct,productCatalog,marketLanes,requestCompanyResearch,getCompanyResearchRequests,resolveCompanyResearch,inspectCommodityEvidence});
   g.Omega=g.Omega||{};g.Omega.GlobalMarket=API;g.OmegaGlobalMarket=API;
   try{init();}catch(e){g.OmegaGlobalMarketError=String(e?.message||e);}
