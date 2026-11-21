@@ -1682,6 +1682,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const seller = saleContext.seller, buyer = saleContext.buyer;
       const productId = saleContext.productId, quantity = saleContext.quantity, unitPrice = saleContext.unitPrice;
       const chosenOffer = saleContext.chosenOffer;
+      const offerQuantity = Number(chosenOffer?.quantity ?? chosenOffer?.available);
       const buyerOpeningStock = saleContext.buyerOpeningStock, sellerBeforeStock = saleContext.sellerBeforeStock;
       const buyerBeforeUsd = saleContext.buyerBeforeUsd, sellerBeforeUsd = saleContext.sellerBeforeUsd;
       const normalize = value => String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
