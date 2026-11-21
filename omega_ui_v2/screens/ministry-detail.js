@@ -598,7 +598,9 @@
     } else if (id === 'trade' && section === 'settlement') {
       content = renderTradeSettlement(country, options.settlementTab);
     } else if (id === 'trade' && section === 'market') {
-      content = '<div class="omega-v2-trade-market-host" data-omega-v2-trade-market-host aria-label="Global Commodity Market"></div>';
+      content = marketTab === 'black-market'
+        ? '<div class="omega-v2-trade-market-host" data-omega-v2-black-market-host aria-label="Black Market"></div>'
+        : '<div class="omega-v2-trade-market-host" data-omega-v2-trade-market-host aria-label="Global Commodity Market"></div>';
     } else if (!domain || !domain.record) {
       content = '<div class="omega-v2-empty">No usable country-domain record is registered for this section yet. Use the owning runtime or source coverage report to see which data is missing.</div>';
     } else if (categories) {
