@@ -218,7 +218,6 @@
     <link rel="stylesheet" href="omega_ui_v2/resource-ministry-premium.css">
     <link rel="stylesheet" href="omega_icon_system_v1.css">
     <link rel="stylesheet" href="omega_ui_unified_visual_system_v1.css">
-    <link rel="stylesheet" href="omega_game_lifecycle_runtime_v1.css">
     <link rel="stylesheet" href="omega_ui_v2/autonomous-trade-command.css">
     <!-- OMEGA UI v2 owns the active application-shell styling; legacy CSS files remain on disk but are intentionally not loaded. -->
 </head>
@@ -312,7 +311,7 @@
                 </div>
 
             <!-- OMEGA persistent game-time and national-finance controls -->
-            <section id="omega-global-time-hud" aria-label="Global game clock and national status">
+            <section id="omega-global-time-hud" aria-label="Global game clock and national status" style="pointer-events:auto; z-index:1000001;">
                 <div class="ogth-topline">
                     <div class="ogth-time">
                         <span data-omega-game-status>READY</span>
