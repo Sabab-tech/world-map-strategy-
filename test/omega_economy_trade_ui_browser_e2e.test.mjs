@@ -174,7 +174,7 @@ test('real Chromium keeps the five premium Trade & Commerce destinations availab
     check('Trade & Commerce overview is visible', /TRADE & COMMERCE/i.test(tradeText) && /National trade overview/i.test(tradeText));
 
     const nav = page.locator('#cabinet-full-window [data-omega-v2-main] [data-omega-trade-command-nav]');
-    const expectedRouteOrder = ['overview','commodities','black-market','transactions','settlement'];
+    const expectedRouteOrder = ['overview','commodities','settlement','transactions','black-market'];
     const navRouteOrder = () => nav.locator('.omega-trade-command-button').evaluateAll(buttons =>
       buttons.map(button => button.getAttribute('data-omega-trade-route')));
     const actionSelectors = [
