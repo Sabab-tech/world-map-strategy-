@@ -307,6 +307,36 @@ test('durable save slots checksum the canonical serialized world without a secon
     'single-pass serialized saves must restore the authoritative world state');
 });
 
+test('large canonical save slots use gzip storage and restore the original world',async()=>{
+  const {sandbox,state}=makeSandbox();
+  Object.assign(sandbox,{
+    Blob:globalThis.Blob,
+    Response:globalThis.Response,
+    CompressionStream:globalThis.CompressionStream,
+    DecompressionStream:globalThis.DecompressionStream,
+    btoa:globalThis.btoa,
+    atob:globalThis.atob
+  });
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  state.resource={BGD:{inventory:{coal:50},batches:[],auditLog:'OMEGA-CANONICAL-SAVE-'.repeat(12000)}};
+
+  const result=await runtime.saveSlot('compressed-save');
+  assert.equal(result.ok,true);
+  assert.equal(result.compression,'GZIP_BASE64');
+  assert.ok(result.storedBytes<result.originalBytes,
+    'gzip envelope must be smaller than the canonical plain JSON');
+  const stored=sandbox.localStorage.getItem(result.key);
+  assert.ok(stored.startsWith('OMEGA_SIM_SAVE_GZIP_V1:'));
+
+  state.resource.BGD.inventory.coal=999;
+  const restored=await runtime.loadSlot('compressed-save');
+  assert.equal(restored.lastLoadIntegrity,'VERIFIED');
+  assert.equal(state.resource.BGD.inventory.coal,50,
+    'compressed saves must restore the same authoritative world state');
+  assert.equal(state.resource.BGD.auditLog,'OMEGA-CANONICAL-SAVE-'.repeat(12000));
+});
+
 test('turn autosave uses the canonical IndexedDB slot and retains legacy recovery',()=>{
   const lifecycle=fs.readFileSync(new URL('../omega_game_lifecycle_runtime_v1.js',import.meta.url),'utf8');
   const runtime=fs.readFileSync(new URL('../omega_simulation_runtime.js',import.meta.url),'utf8');
@@ -316,8 +346,12 @@ test('turn autosave uses the canonical IndexedDB slot and retains legacy recover
   assert.match(lifecycle,/await sim\.loadSlot\(SLOT\)/,
     'the lifecycle must restore through the same canonical slot');
   assert.match(runtime,/async saveSlot\(slot='default'\)/);
-  assert.match(runtime,/indexedDbSaveRequest\(global\.indexedDB,'put',key,serialized\)/,
-    'the canonical save API must write its checksummed snapshot to IndexedDB first');
+  assert.match(runtime,/const stored=encodeStoredSave\(serialized\)/,
+    'the canonical save API must prepare a compressed-or-plain storage envelope');
+  assert.match(runtime,/indexedDbSaveRequest\(global\.indexedDB,'put',key,stored\.value\)/,
+    'the canonical save API must write its storage envelope to IndexedDB first');
+  assert.match(runtime,/const decoded=await decodeStoredSave\(raw\)/,
+    'the canonical save API must decode compressed slots while retaining plain JSON compatibility');
   assert.match(runtime,/LOCAL_STORAGE_FALLBACK/,
     'the canonical slot must retain a localStorage fallback when IndexedDB is unavailable');
   assert.match(lifecycle,/function readIndexedSave\(/,
