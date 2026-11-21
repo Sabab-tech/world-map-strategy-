@@ -3,14 +3,27 @@
  */
 (function(g){
   'use strict';
-  const VERSION='1.1.0',MAX=256,MAX_PENDING_REVIEWS_PER_COUNTRY=2;
+  const VERSION='1.2.0',MAX=256,MAX_PENDING_REVIEWS_PER_COUNTRY=2;
   const clone=(v,seen=new WeakMap())=>{if(v===null||typeof v!=='object')return v;if(seen.has(v))return seen.get(v);if(Array.isArray(v)){const a=[];seen.set(v,a);for(const x of v)a.push(clone(x,seen));return a;}const o={};seen.set(v,o);for(const k of Object.keys(v))if(k!=='__proto__'&&k!=='constructor'&&typeof v[k]!=='function'&&v[k]!==undefined)o[k]=clone(v[k]);return o;};
   const id=v=>String(v??'').trim().toUpperCase();
   const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
   const clamp=(v,a=0,b=1)=>{const n=num(v);return n===null?null:Math.max(a,Math.min(b,n));};
   const state=()=>g.Game?.state||g.gameState||{};
   const registry=()=>g.OmegaCanonicalIdentityRegistry||g.OmegaCountrySemanticBridge||g.Omega?.CanonicalIdentity||null;
-  const canonical=v=>{try{const r=registry()?.resolveCountry?.(v);if(r?.id)return id(r.id);}catch(_){}return id(v);};
+  const canonical=v=>{
+    try{
+      const hit=registry()?.resolveCountry?.(v);
+      if(hit?.id){
+        const raw=hit.raw||null;
+        const record=raw?.raw||raw?.datasets?.['countries.json']||raw?.['countries.json']||raw||{};
+        const iso3=record?.iso3||record?.iso3Code||record?.iso3_code||
+          hit?.iso3||hit?.iso3Code||hit?.iso3_code;
+        if(iso3&&/^[A-Z]{3}$/i.test(String(iso3).trim()))return id(iso3);
+        return id(hit.id);
+      }
+    }catch(_){}
+    return id(v);
+  };
   const interop=()=>g.Omega?.MinistryInteroperability||g.OmegaMinistryInteroperability||null;
   let unregisterSchedulerHandler=null;
   const processedCountryTurns=new Set();
