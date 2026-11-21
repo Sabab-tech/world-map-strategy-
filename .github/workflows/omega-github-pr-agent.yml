@@ -1,0 +1,36 @@
+name: OMEGA GitHub PR Agent
+
+on:
+  pull_request:
+    paths:
+      - "tools/omega-github-pr-agent/**"
+      - ".github/workflows/omega-github-pr-agent.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  agent-tests:
+    name: PR Agent unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/omega-github-pr-agent
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Run isolated PR agent tests
+        run: npm test
+      - name: Check source syntax
+        run: |
+          node --check server.js
+          node --check agent.js
+          node --check github-app.js
+          node --check approvals.js
+          node --check policy.js

@@ -1,0 +1,16 @@
+{
+  "name": "omega-github-pr-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20.18.0" },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@google/genai": "^2.21.0",
+    "express": "^5.1.0"
+  }
+}
