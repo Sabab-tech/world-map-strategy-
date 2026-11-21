@@ -404,7 +404,7 @@
     return '<div class="omega-trade-settlement" data-omega-trade-settlement-view="true">' +
       '<div class="omega-trade-settlement-intro"><div><span>TRADE AGREEMENTS · TURN ' + esc(model.turn) + '</span>' +
         '<h2>Trade Settlement</h2><p>' + esc(country) + ' · current bilateral commitments</p></div>' +
-        '<span class="omega-trade-settlement-count">' + esc(model.openCount) + ' active agreement(s)</span></div>' +
+        '<span class="omega-trade-settlement-count">' + esc(model.openCount) + ' open agreement(s)</span></div>' +
       '<div class="omega-trade-settlement-kpis">' +
         '<div><small>Import agreements</small><strong>' + esc(model.importCount) + '</strong></div>' +
         '<div><small>Export agreements</small><strong>' + esc(model.exportCount) + '</strong></div>' +
