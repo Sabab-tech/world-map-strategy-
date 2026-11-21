@@ -216,6 +216,28 @@ test('real Chromium keeps the five premium Trade & Commerce destinations availab
         check(action.name + ' opens its existing screen', await main.locator(action.host).count() > 0);
         check(action.name + ' shows its existing screen heading', (await main.innerText()).includes(action.heading));
       }
+      if (action.name === 'Trade Settlement') {
+        const importsTab = main.locator('[data-omega-v2-trade-settlement-tab="imports"]');
+        const exportsTab = main.locator('[data-omega-v2-trade-settlement-tab="exports"]');
+        check('Trade Settlement opens with Imports selected by default',
+          await importsTab.getAttribute('aria-selected') === 'true' &&
+          await exportsTab.getAttribute('aria-selected') === 'false');
+        await exportsTab.click();
+        await page.waitForFunction(() =>
+          document.querySelector('#cabinet-full-window [data-omega-v2-main]')?.__omegaV2MinistryDetailOptions?.settlementTab === 'exports',
+          null, { timeout:15000 });
+        check('Export tab replaces the primary Import list instead of showing both at once',
+          await exportsTab.getAttribute('aria-selected') === 'true' &&
+          await main.locator('[data-omega-trade-primary-list="exports"]').count() === 1 &&
+          await main.locator('[data-omega-trade-primary-list="imports"]').count() === 0);
+        await importsTab.click();
+        await page.waitForFunction(() =>
+          document.querySelector('#cabinet-full-window [data-omega-v2-main]')?.__omegaV2MinistryDetailOptions?.settlementTab === 'imports',
+          null, { timeout:15000 });
+        check('player can return to Imports without leaving Trade Settlement',
+          await importsTab.getAttribute('aria-selected') === 'true' &&
+          await main.locator('[data-omega-trade-primary-list="imports"]').count() === 1);
+      }
     }
 
     await page.setViewportSize({ width:360, height:800 });
