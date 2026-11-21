@@ -1797,7 +1797,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const fiscalReceipt = fiscalRows.find(row =>
         String(row.settlementId || '') === settlementId &&
         String(row.companyId || '') === String(production.factoryOwnerCompanyId || '') &&
-        String(row.direction || '').toUpperCase() === 'EXPORT');
+        String(row.resourceId || '') === String(productId));
       if (!fiscalReceipt || !Number.isFinite(Number(fiscalReceipt.total)) || Number(fiscalReceipt.total) < 0)
         throw new Error('SELLER_EXPORT_FISCAL_RECEIPT_NOT_RECONCILED:' + JSON.stringify({
           settlementId, expectedCompany: production.factoryOwnerCompanyId, fiscalRows: fiscalRows.slice(-8)
