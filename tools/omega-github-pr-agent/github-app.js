@@ -271,27 +271,52 @@ export class GitHubAppClient {
     };
   }
 
-  async postPullRequestComment(number, comment) {
+  async findExistingActionMarker(endpoint, marker) {
+    for (let page = 1; page <= 10; page += 1) {
+      const rows = await this.repoRequest(endpoint + "?per_page=100&page=" + page);
+      if (!Array.isArray(rows)) throw new Error("IDEMPOTENCY_LOOKUP_INVALID");
+      const found = rows.find(row => String(row.body || "").includes(marker));
+      if (found) return found;
+      if (rows.length < 100) return null;
+    }
+    throw new Error("IDEMPOTENCY_LOOKUP_INCOMPLETE");
+  }
+
+  async postPullRequestComment(number, comment, nonce) {
     const prNumber = validatePullNumber(number);
     const body = String(comment || "").trim();
     if (!body || body.length > 12000) throw new Error("COMMENT_INVALID");
-    return this.repoRequest("/issues/" + prNumber + "/comments", {
+    const actionId = String(nonce || "");
+    if (!/^[0-9a-f-]{36}$/i.test(actionId)) throw new Error("ACTION_ID_INVALID");
+    const marker = "<!-- omega-pr-agent-action:" + actionId + " -->";
+    const endpoint = "/issues/" + prNumber + "/comments";
+    const existing = await this.findExistingActionMarker(endpoint, marker);
+    if (existing) return { ...existing, alreadyApplied: true };
+    const posted = await this.repoRequest(endpoint, {
       method: "POST",
-      body: { body }
+      body: { body: body + "\n\n" + marker }
     });
+    return { ...posted, alreadyApplied: false };
   }
 
-  async submitPullRequestReview(number, event, body) {
+  async submitPullRequestReview(number, event, body, nonce) {
     const prNumber = validatePullNumber(number);
     if (!["COMMENT", "REQUEST_CHANGES"].includes(event)) {
       throw new Error("REVIEW_EVENT_NOT_ALLOWED");
     }
     const reviewBody = String(body || "").trim();
     if (!reviewBody || reviewBody.length > 12000) throw new Error("REVIEW_BODY_INVALID");
-    return this.repoRequest("/pulls/" + prNumber + "/reviews", {
+    const actionId = String(nonce || "");
+    if (!/^[0-9a-f-]{36}$/i.test(actionId)) throw new Error("ACTION_ID_INVALID");
+    const marker = "<!-- omega-pr-agent-action:" + actionId + " -->";
+    const endpoint = "/pulls/" + prNumber + "/reviews";
+    const existing = await this.findExistingActionMarker(endpoint, marker);
+    if (existing) return { ...existing, alreadyApplied: true };
+    const submitted = await this.repoRequest(endpoint, {
       method: "POST",
-      body: { event, body: reviewBody }
+      body: { event, body: reviewBody + "\n\n" + marker }
     });
+    return { ...submitted, alreadyApplied: false };
   }
 
   async commitPullRequestFiles(number, expectedHeadSha, files, commitMessage) {
