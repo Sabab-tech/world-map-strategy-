@@ -5,15 +5,15 @@ import { fileURLToPath } from 'node:url';
 
 globalThis.Game={state:{
   simulation:{turn:1,simulationTurn:1},
-  finance:{BD:{available:100000,reserves:120000,committed:0}},
-  economy:{BD:{gdp:1000000,debt:100000,productionCapacity:500}},
-  population:{BD:{labor:{available:10000}}},
-  resource:{BD:{inventory:{steel:10000},production:{steel:100},consumption:{steel:50},reserves:{steel:20000}}},
-  cities:{BD:{housing:{available:1000,required:1200}}},
-  projects:{BD:{registry:[]}},
-  military:{BD:{forceStructure:{personnel:1000,units:10,organizedPersonnel:1000},readiness:60,trainingQueue:[],equipmentInventory:{}}},
-  foreign:{BD:{relations:{SA:{overall:75,trade:80,trust:70,political:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{}}},
-  trade:{BD:{relations:{SA:{overall:75,trade:80,trust:70}},marketPrice:{crude_oil:80},routeCapacity:{crude_oil:2000000}}}
+  finance:{BGD:{available:100000,reserves:120000,committed:0}},
+  economy:{BGD:{gdp:1000000,debt:100000,productionCapacity:500}},
+  population:{BGD:{labor:{available:10000}}},
+  resource:{BGD:{inventory:{steel:10000},production:{steel:100},consumption:{steel:50},reserves:{steel:20000}}},
+  cities:{BGD:{housing:{available:1000,required:1200}}},
+  projects:{BGD:{registry:[]}},
+  military:{BGD:{forceStructure:{personnel:1000,units:10,organizedPersonnel:1000},readiness:60,trainingQueue:[],equipmentInventory:{}}},
+  foreign:{BGD:{relations:{SAU:{overall:75,trade:80,trust:70,political:70,trade_agreement:true,sanctions:false,war_state:false}},treaties:{}}},
+  trade:{BGD:{relations:{SAU:{overall:75,trade:80,trust:70}},marketPrice:{crude_oil:80},routeCapacity:{crude_oil:2000000}}}
 }};
 globalThis.window=globalThis;
 const projectRoot=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
@@ -69,22 +69,22 @@ await import('../omega_opponent_treaty_lifecycle_system.js');
 await import('../omega_opponent_second_order_consequence_system.js');
 
 const rules=globalThis.Omega.OpponentCountryRules;
-const evalResult=await rules.evaluateCountry('BD',1);
-assert.equal(evalResult.countryId,'BD');
+const evalResult=await rules.evaluateCountry('BGD',1);
+assert.equal(evalResult.countryId,'BGD');
 assert.equal(evalResult.status,'COMPLETE');
 
 const identity=globalThis.OmegaCountryRuntimeData.resolveCountry('Bangladesh');
-assert.equal(identity.countryCode,'BD','canonical identity must resolve before behaviour is scored');
+assert.equal(identity.countryCode,'BGD','canonical identity must resolve before behaviour is scored');
 const behavior=globalThis.OmegaCountryBehaviorEngine.getBehaviorProfile(identity.iso3);
 assert.notEqual(behavior.status,'ENGINE_ERROR','resolved country must produce a behaviour profile');
 const adaptive=globalThis.OmegaOpponentAdaptiveStrategy;
-const strategyScore=adaptive.scoreAction('BD','HOUSING_BUILD');
+const strategyScore=adaptive.scoreAction('BGD','HOUSING_BUILD');
 assert.equal(strategyScore.known,true,'country profile must inform the candidate action score');
 
 const autonomy=globalThis.OmegaOpponentAutonomy;
 const route=autonomy.routeDecision({
   decisionId:'E2E-HOUSING-1',
-  countryId:'BD',
+  countryId:'BGD',
   scenarioId:'HOUSING_SHORTAGE',
   candidateActions:['HOUSING_BUILD'],
   runtimeMeasurement:{
@@ -105,7 +105,7 @@ assert.equal(candidate.factors.strategy,strategyScore.score,
   'country strategy score must reach the autonomy factor model before queueing');
 const sim=globalThis.Omega.Simulation;
 const firstAdvance=await sim.advance(1);
-const projectsAfterFirstAdvance=globalThis.Game.state.projects?.BD?.registry||[];
+const projectsAfterFirstAdvance=globalThis.Game.state.projects?.BGD?.registry||[];
 assert.equal(projectsAfterFirstAdvance[0]?.status,'UNDER_CONSTRUCTION',
   'queued country action must mutate authoritative project state; '+JSON.stringify({
     advance:{turn:firstAdvance.turn,status:firstAdvance.status,last:firstAdvance.last?{
@@ -114,21 +114,21 @@ assert.equal(projectsAfterFirstAdvance[0]?.status,'UNDER_CONSTRUCTION',
       commandResults:firstAdvance.last.commandResults
     }:null},
     queuedCommands:sim.commandQueue?.snapshot?.(),
-    projects:globalThis.Game.state.projects?.BD?.registry,
+    projects:globalThis.Game.state.projects?.BGD?.registry,
     autonomy:globalThis.OmegaOpponentAutonomy?.diagnostics?.(),
     interoperability:globalThis.OmegaMinistryInteroperability?.diagnostics?.()
   }));
 await sim.advance(1);
 await sim.advance(1);
-assert.equal(globalThis.Game.state.cities.BD.housing.available,1200,
+assert.equal(globalThis.Game.state.cities.BGD.housing.available,1200,
   'housing commissioning must update authoritative live state');
-assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'COMMISSIONING',
+assert.equal(globalThis.Game.state.projects.BGD.registry[0].status,'COMMISSIONING',
   'construction and asset commissioning occur before the queued finalization turn');
 await sim.advance(1);
-assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'COMPLETED',
+assert.equal(globalThis.Game.state.projects.BGD.registry[0].status,'COMPLETED',
   'queued project finalization must commit the completed status on the following simulation turn');
-assert.equal(globalThis.Game.state.resource.BD.inventory.steel,9950);
-const reservationLedger=globalThis.Game.state.cabinet?.BD?.autonomyReservations
+assert.equal(globalThis.Game.state.resource.BGD.inventory.steel,9950);
+const reservationLedger=globalThis.Game.state.cabinet?.BGD?.autonomyReservations
   ||globalThis.Game.state.cabinet?.BGD?.autonomyReservations||[];
 assert(reservationLedger.some(x=>x.status==='RELEASED'),
   'completed autonomy project must release its reservation; '+JSON.stringify({
