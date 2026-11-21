@@ -137,10 +137,13 @@
         card.querySelector("p").className = "success";
         button.remove();
       } catch (error) {
-        card.querySelector("p").textContent = "Not applied: " + error.message;
+        card.querySelector("p").textContent =
+          "Result not confirmed: " + error.message +
+          ". This approval is single-use. Refresh the PR state before preparing another action.";
         card.querySelector("p").className = "error";
-        button.disabled = false;
-        button.textContent = "Retry approval";
+        button.remove();
+        const dismiss = card.querySelector(".secondary");
+        if (dismiss) dismiss.remove();
       }
     }
 
