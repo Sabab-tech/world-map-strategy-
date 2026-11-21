@@ -126,7 +126,7 @@ function rateLimit(req, res, next) {
 }
 
 app.get("/health", (_req, res) => res.json({ ok: true, service: "omega-github-pr-agent" }));
-app.use("/api", requireOrigin, requireAgentToken, rateLimit);
+app.use("/api", rateLimit, requireOrigin, requireAgentToken);
 
 app.get("/api/status", (_req, res) => {
   res.json({
