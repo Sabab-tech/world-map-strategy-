@@ -6054,7 +6054,8 @@ function readUnemploymentRate(econ){
   }
   return{value:null,key:null};
 }
-function reconcileFactoryEmployment(countryId){
+function reconcileFactoryEmployment(countryId,options){
+  options=options&&typeof options==='object'?options:{};
   const cid=canonicalCountry(countryId);
   if(!cid)return{status:'BLOCKED',reason:'FACTORY_EMPLOYMENT_COUNTRY_INVALID'};
   const econ=econState(cid),profiles=cat()?.factoryProfiles||{},assets=factoryAssets(cid);
@@ -6063,6 +6064,8 @@ function reconcileFactoryEmployment(countryId){
     model={schemaVersion:'1.0.0',model:'SIMULATED_FACTORY_EMPLOYMENT_V1',baselineUnemployedCount:null,
       labourForce:null,labourForceAuthority:'NOT_RECORDED',unemploymentSource:'NOT_RECORDED',factories:{},jobsSupported:0,jobsFilled:0,
       vacancies:0,unemployedCount:null,unemploymentRatePct:null,lastAppliedUnemployedCount:null,lastAppliedUnemploymentRatePct:null,
+      unemploymentRateAuthority:'NOT_RECORDED',unemploymentRateSimulationOnly:false,simulatedUnemploymentRatePct:null,
+      availableUnassignedLabourCount:null,availableUnassignedLabourAuthority:'NOT_RECORDED',
       lastUpdatedTurn:null,simulationOnly:true};
     econ.factoryEmployment=model;
   }
@@ -6074,15 +6077,30 @@ function reconcileFactoryEmployment(countryId){
   const directChanged=direct.value!==null&&lastCount!==null&&Math.abs(direct.value-lastCount)>1e-6;
   const rateChanged=rate.value!==null&&lastRate!==null&&Math.abs(rate.value-lastRate)>1e-7;
   if(baseline===null){
-    if(direct.value!==null){baseline=direct.value;model.unemploymentSource='RECORDED_UNEMPLOYED_HEADCOUNT';}
-    else if(rate.value!==null&&labour.value!==null){
-      baseline=Math.max(0,Math.round(labour.value*rate.value/100));model.unemploymentSource='RECORDED_UNEMPLOYMENT_RATE_X_LABOUR_FORCE';
+    if(direct.value!==null){
+      baseline=direct.value;model.unemploymentSource='RECORDED_UNEMPLOYED_HEADCOUNT';
+      model.unemploymentRateAuthority='RECORDED_UNEMPLOYED_HEADCOUNT';model.unemploymentRateSimulationOnly=false;
+    }else if(rate.value!==null&&labour.value!==null){
+      baseline=Math.max(0,Math.round(labour.value*rate.value/100));
+      model.unemploymentSource='RECORDED_UNEMPLOYMENT_RATE_X_LABOUR_FORCE';
+      model.unemploymentRateAuthority='RECORDED_UNEMPLOYMENT_RATE';model.unemploymentRateSimulationOnly=false;
     }
+  }else if(model.unemploymentRateSimulationOnly===true&&direct.value!==null){
+    baseline=direct.value+priorFilled;model.unemploymentSource='RECORDED_UNEMPLOYED_HEADCOUNT';
+    model.unemploymentRateAuthority='RECORDED_UNEMPLOYED_HEADCOUNT';model.unemploymentRateSimulationOnly=false;
+    model.simulatedUnemploymentRatePct=null;
+  }else if(model.unemploymentRateSimulationOnly===true&&rate.value!==null&&labour.value!==null){
+    baseline=Math.max(0,Math.round(labour.value*rate.value/100))+priorFilled;
+    model.unemploymentSource='RECORDED_UNEMPLOYMENT_RATE_X_LABOUR_FORCE';
+    model.unemploymentRateAuthority='RECORDED_UNEMPLOYMENT_RATE';model.unemploymentRateSimulationOnly=false;
+    model.simulatedUnemploymentRatePct=null;
   }else if(directChanged){
     baseline=direct.value+priorFilled;model.unemploymentSource='UPDATED_LIVE_UNEMPLOYED_HEADCOUNT_PLUS_EXISTING_FACTORY_HIRES';
+    model.unemploymentRateAuthority='RECORDED_UNEMPLOYED_HEADCOUNT';model.unemploymentRateSimulationOnly=false;
   }else if(rateChanged&&labour.value!==null){
     baseline=Math.max(0,Math.round(labour.value*rate.value/100))+priorFilled;
     model.unemploymentSource='UPDATED_LIVE_UNEMPLOYMENT_RATE_PLUS_EXISTING_FACTORY_HIRES';
+    model.unemploymentRateAuthority='RECORDED_UNEMPLOYMENT_RATE';model.unemploymentRateSimulationOnly=false;
   }
   if(baseline!==null)model.baselineUnemployedCount=baseline;
   model.labourForce=labour.value;model.labourForceAuthority=labour.authority;model.labourForceSimulationOnly=labour.simulationOnly;
@@ -6095,9 +6113,25 @@ function reconcileFactoryEmployment(countryId){
     const id=String(asset.id||asset.assetId||asset.factoryId||asset.projectId||'').trim();
     const type=String(asset.factoryType||asset.type||asset.facilityType||'').toUpperCase(),profile=profiles[type]||{};
     const jobsRaw=num(profile.employment?.jobsPerFactory??asset.employmentProfile?.jobsPerFactory??asset.employment?.jobsSupported);
-    return{id,supported:jobsRaw!==null&&jobsRaw>0?Math.floor(jobsRaw):0};
+    const coreRaw=num(profile.employment?.coreOperatingCrew??asset.employmentProfile?.coreOperatingCrew??asset.employment?.coreOperatingCrew);
+    const supported=jobsRaw!==null&&jobsRaw>0?Math.floor(jobsRaw):0;
+    return{id,supported,coreOperatingCrew:coreRaw!==null&&coreRaw>0?Math.min(supported,Math.floor(coreRaw)):0};
   }).filter(row=>row.id);
   const totalStaffingDemand=staffingRows.reduce((sum,row)=>sum+row.supported,0);
+  if(baseline===null&&options.allowSimulationUnemploymentFallback===true&&labour.value!==null&&labour.value>0){
+    const defaultRate=num(options.simulatedUnemploymentRatePct);
+    const ratePct=defaultRate===null?5:Math.max(0,Math.min(100,defaultRate));
+    const minimumCoreCrewPool=totalStaffingDemand>0?Math.ceil(staffingRows.reduce((max,row)=>{
+      const needed=row.supported>0?row.coreOperatingCrew*totalStaffingDemand/row.supported:0;
+      return Math.max(max,needed);
+    },0)):0;
+    const rateBasedPool=Math.round(labour.value*ratePct/100);
+    baseline=Math.min(labour.value,Math.max(rateBasedPool,minimumCoreCrewPool));
+    model.unemploymentSource='SIMULATED_CORE_CREW_LABOUR_RESERVE';
+    model.unemploymentRateAuthority='SIMULATED_FACTORY_CORE_CREW_RESERVE';
+    model.unemploymentRateSimulationOnly=true;
+    model.simulatedUnemploymentRatePct=Number((baseline/labour.value*100).toFixed(4));
+  }
   const staffingBudget=baseline===null?0:Math.min(Math.max(0,baseline),totalStaffingDemand);
   const filledByFactory=new Map();let allocatedWorkers=0;
   for(const row of staffingRows){
@@ -6139,24 +6173,42 @@ function reconcileFactoryEmployment(countryId){
     Number((model.unemployedCount/labour.value*100).toFixed(4)):null;
   model.status=model.unemployedCount===null?'UNEMPLOYMENT_HEADCOUNT_UNAVAILABLE':'ACTIVE';
   model.authority='SIMULATED_FACTORY_EMPLOYMENT_RECONCILIATION';model.simulationOnly=true;model.lastUpdatedTurn=turn();
+  model.availableUnassignedLabourCount=model.unemployedCount;
+  model.availableUnassignedLabourAuthority=model.unemploymentRateAuthority||model.unemploymentSource||'NOT_RECORDED';
   if(model.unemployedCount!==null){
-    econ.unemploymentCount=model.unemployedCount;
-    for(const key of ['unemployedCount','unemployedPeople','unemployed_people','unemployment_count','joblessCount'])
-      if(Object.prototype.hasOwnProperty.call(econ,key))econ[key]=model.unemployedCount;
-    if(model.unemploymentRatePct!==null){
-      econ.unemployment_rate=model.unemploymentRatePct;
-      for(const key of ['unemploymentRatePct','unemploymentRate','unemployment_rate_pct'])
-        if(Object.prototype.hasOwnProperty.call(econ,key))econ[key]=model.unemploymentRatePct;
-      model.lastAppliedUnemploymentRatePct=model.unemploymentRatePct;
+    if(model.unemploymentRateSimulationOnly===true){
+      econ.simulatedUnemploymentCount=model.unemployedCount;
+      econ.simulatedUnemploymentRatePct=model.unemploymentRatePct;
+      econ.unemploymentEstimateAuthority=model.availableUnassignedLabourAuthority;
+      econ.unemploymentEstimateSimulationOnly=true;
+      model.lastAppliedUnemployedCount=null;
+      model.lastAppliedUnemploymentRatePct=null;
+    }else{
+      econ.unemploymentCount=model.unemployedCount;
+      delete econ.simulatedUnemploymentCount;
+      delete econ.simulatedUnemploymentRatePct;
+      delete econ.unemploymentEstimateAuthority;
+      delete econ.unemploymentEstimateSimulationOnly;
+      for(const key of ['unemployedCount','unemployedPeople','unemployed_people','unemployment_count','joblessCount'])
+        if(Object.prototype.hasOwnProperty.call(econ,key))econ[key]=model.unemployedCount;
+      if(model.unemploymentRatePct!==null){
+        econ.unemployment_rate=model.unemploymentRatePct;
+        for(const key of ['unemploymentRatePct','unemploymentRate','unemployment_rate_pct'])
+          if(Object.prototype.hasOwnProperty.call(econ,key))econ[key]=model.unemploymentRatePct;
+        model.lastAppliedUnemploymentRatePct=model.unemploymentRatePct;
+      }
+      model.lastAppliedUnemployedCount=model.unemployedCount;
     }
-    model.lastAppliedUnemployedCount=model.unemployedCount;
   }
   model.baselineUnemployedCount=baseline;
   model.lastUpdateSourceFields={unemployedCountKey:direct.key,unemploymentRateKey:rate.key};
   return{status:model.status,countryId:cid,turn:turn(),baselineUnemployedCount:baseline,labourForce:model.labourForce,
     labourForceAuthority:model.labourForceAuthority,unemployedCount:model.unemployedCount,unemploymentRatePct:model.unemploymentRatePct,
     jobsSupported:model.jobsSupported,jobsFilled:model.jobsFilled,vacancies:model.vacancies,operationalFactoryCount:operational.length,
-    source:model.unemploymentSource,simulationOnly:true};
+    source:model.unemploymentSource,unemploymentRateAuthority:model.unemploymentRateAuthority||'NOT_RECORDED',
+    unemploymentRateSimulationOnly:model.unemploymentRateSimulationOnly===true,
+    availableUnassignedLabourCount:model.availableUnassignedLabourCount,
+    availableUnassignedLabourAuthority:model.availableUnassignedLabourAuthority,simulationOnly:true};
 }
 
 function factoryProductionRequirements(factoryType, recipeId){
