@@ -8,6 +8,7 @@ on:
       - 'omega_ui_v2/ministry-visual-refresh.css'
       - 'omega_ui_v2/omega-ui-v2.css'
       - 'test/omega_economy_trade_ui_v1.test.mjs'
+      - 'test/omega_economy_trade_ui_browser_e2e.test.mjs'
       - 'test/omega_ui_v2.test.mjs'
       - 'test/omega_autonomous_development_ui_v1.test.mjs'
       - 'test/omega_minister_mobile_ui_v2_regression.test.cjs'
@@ -25,6 +26,7 @@ on:
       - 'omega_ui_v2/ministry-visual-refresh.css'
       - 'omega_ui_v2/omega-ui-v2.css'
       - 'test/omega_economy_trade_ui_v1.test.mjs'
+      - 'test/omega_economy_trade_ui_browser_e2e.test.mjs'
       - 'test/omega_ui_v2.test.mjs'
       - 'test/omega_autonomous_development_ui_v1.test.mjs'
       - 'test/omega_minister_mobile_ui_v2_regression.test.cjs'
@@ -43,7 +45,7 @@ jobs:
   economy-trade-ui:
     name: Economy navigation and Trade & Commerce regression
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,5 +59,25 @@ jobs:
           node --check omega_ui_v2/screens/ministry-detail.js
           node --check omega_ui_v2/app.js
           node --check test/omega_economy_trade_ui_v1.test.mjs
+          node --check test/omega_economy_trade_ui_browser_e2e.test.mjs
       - name: Economy, Trade & Commerce, and navigation regression
         run: npm run test:omega-ui-v2 && node --test test/omega_resource_command_center_ui_v1.test.mjs test/omega_npc_national_macro_economy_runtime_v1.test.mjs
+      - name: Install pinned real-browser runner
+        run: |
+          npm install --prefix "$RUNNER_TEMP/omega-trade-browser-deps" --no-save --package-lock=false --ignore-scripts playwright@1.65.0
+          "$RUNNER_TEMP/omega-trade-browser-deps/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Verify production Economy to Trade & Commerce navigation in Chromium
+        env:
+          NODE_PATH: ${{ runner.temp }}/omega-trade-browser-deps/node_modules
+          OMEGA_TRADE_UI_ARTIFACT_DIR: ${{ runner.temp }}/omega-trade-ui
+        run: |
+          mkdir -p "$OMEGA_TRADE_UI_ARTIFACT_DIR"
+          timeout --signal=TERM --kill-after=15s 5m node --test test/omega_economy_trade_ui_browser_e2e.test.mjs
+      - name: Upload Trade UI browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-economy-trade-browser-e2e
+          path: ${{ runner.temp }}/omega-trade-ui/**
+          if-no-files-found: warn
+          retention-days: 7
