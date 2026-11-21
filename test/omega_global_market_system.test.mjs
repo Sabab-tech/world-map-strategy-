@@ -200,6 +200,23 @@ assert.equal(referenceOnly.bestAskUsd,null,'reference ask must not be presented 
 assert.equal(referenceOnly.askDepth,0);
 assert.equal(referenceOnly.referenceAskDepth>0,true);
 assert.equal(referenceOnly.matches.some(x=>x.referenceLiquidity),false);
+// A player may publish an explicit seller ask for a canonical factory product.
+ // The quote is executable game-market intent, not a claim about an observed real-world price.
+ globalThis.Game.state.simulation.session={playerCountryId:'BDG'};
+ const sellerAsk=market.setSellerAskingPrice('BDG','steel',111.5,{requestId:'PLAYER-ASK-STEEL-001'});
+ assert.equal(sellerAsk.accepted,true,JSON.stringify(sellerAsk));
+ assert.equal(sellerAsk.authority,'PLAYER_AUTHORIZED_SELLER_ASK');
+ assert.equal(sellerAsk.executable,true);
+ assert.equal(globalThis.Game.state.trade.BDG.marketPrice.steel,111.5);
+ assert.equal(globalThis.Game.state.trade.BDG.marketPriceMeta.steel.authority,'PLAYER_AUTHORIZED_SELLER_ASK');
+ const repeatedSellerAsk=market.setSellerAskingPrice('BDG','steel',111.5,{requestId:'PLAYER-ASK-STEEL-001'});
+ assert.equal(repeatedSellerAsk.accepted,true,JSON.stringify(repeatedSellerAsk));
+ assert.equal(repeatedSellerAsk.duplicate,true,'identical seller ask retries must be idempotent');
+ const wrongCountryAsk=market.setSellerAskingPrice('SAU','steel',110,{requestId:'PLAYER-ASK-STEEL-FOREIGN'});
+ assert.equal(wrongCountryAsk.accepted,false);
+ assert.equal(wrongCountryAsk.reason,'PLAYER_COUNTRY_SCOPE_VIOLATION',
+   'a player cannot publish a seller ask into another country state');
+
 // Canonical Forex simulation rates are the authoritative fallback when legacy
 // Finance exchange_rate_usd fields are absent. Both sides must remain executable.
 // Deliberately omit per-country Finance currency snapshots. The canonical
