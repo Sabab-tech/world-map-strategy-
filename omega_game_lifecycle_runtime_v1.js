@@ -307,7 +307,9 @@
       // It avoids the previous deep-clone + JSON.stringify + synchronous localStorage
       // sequence on every small domain event.
       saveInProgress = true;
-      operation = sim.saveSlot(SLOT);
+      operation = sim.saveSlot(SLOT, {
+        synchronousLocalStorage: options.synchronousLocalStorage === true
+      });
     } catch (error) {
       lastSaveError = String(error && error.message || error);
       setSaveStatus('SAVE FAILED · LAST COMPLETE SAVE PRESERVED');
@@ -378,7 +380,7 @@
       return Promise.resolve(false);
     }
     if (!options.force && mutationRevision <= persistedRevision) return Promise.resolve(true);
-    if (saveInFlightPromise) {
+    if (saveInFlightPromise && options.synchronousLocalStorage !== true) {
       saveQueued = true;
       if (options.force) saveQueuedForce = true;
       if (options.committedTurn) saveQueuedCommittedTurn = true;
@@ -557,7 +559,7 @@
       backgroundRunsEnabled = false;
       try { sim.clock.setSpeed(0); } catch (_) {}
       try { if (typeof sim.pauseSession === 'function') sim.pauseSession(); } catch (_) {}
-      saveNow({ force: true });
+      saveNow({ force: true, synchronousLocalStorage: true });
       updateHud();
       setSaveStatus('BACKGROUND SYSTEMS PAUSED · PRESS PLAY TO RESUME');
       return true;
@@ -779,7 +781,7 @@
         try { g.clearTimeout(stateSaveTimer); } catch (_) {}
         stateSaveTimer = null;
       }
-      var flush = saveNow({ force: true });
+      var flush = saveNow({ force: true, synchronousLocalStorage: true });
       Promise.resolve(flush).then(function (saved) {
         hiddenSnapshotSaved = !!saved;
         if (hiddenWasRunning && sim && String(sim.status || '').toUpperCase() !== 'ERROR' && saved) {
