@@ -144,7 +144,8 @@ test('Economy Overview keeps Treasury cash, domestic currency and FX reserves se
 
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),'utf8');
   const visualCss = readFileSync(new URL('../omega_ui_v2/ministry-visual-refresh.css',import.meta.url),'utf8');
-  assert.match(serviceWorker,/CACHE_NAME = "omega-offline-atlas-shell-v138"/,
+  const shellVersion = Number(serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v([0-9]+)"/)?.[1] || 0);
+  assert.ok(shellVersion > 137,
     'the offline shell version must advance beyond the currently installed v137 shell');
   assert.match(serviceWorker,/\.\/omega_ui_v2\/screens\/economy\.js/);
   assert.match(serviceWorker,/\.\/omega_ui_v2\/ministry-visual-refresh\.css/);
