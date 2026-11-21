@@ -1541,7 +1541,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         normalize(row.resourceId) === normalize(productId) &&
         row.source === 'OMEGA_RESOURCE_ECON_AUTO_OFFER' &&
         row.executableOffer === true && row.referenceOnly !== true &&
-        row.priceProvenance === 'OBSERVED' &&
+        row.priceProvenance === 'PLAYER_AUTHORIZED' &&
         row.priceAuthority === 'PLAYER_AUTHORIZED_SELLER_ASK' &&
         Number(row.unitPrice ?? row.price) > 0 &&
         Number(row.quantity ?? row.available) >= 1 &&
