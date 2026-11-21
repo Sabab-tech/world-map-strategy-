@@ -206,6 +206,7 @@ assert.equal(referenceOnly.matches.some(x=>x.referenceLiquidity),false);
  const sellerAsk=market.setSellerAskingPrice('BDG','steel',111.5,{requestId:'PLAYER-ASK-STEEL-001'});
  assert.equal(sellerAsk.accepted,true,JSON.stringify(sellerAsk));
  assert.equal(sellerAsk.authority,'PLAYER_AUTHORIZED_SELLER_ASK');
+ assert.equal(globalThis.Game.state.trade.BDG.marketPriceMeta.steel.priceProvenance,'PLAYER_AUTHORIZED');
  assert.equal(sellerAsk.executable,true);
  assert.equal(globalThis.Game.state.trade.BDG.marketPrice.steel,111.5);
  assert.equal(globalThis.Game.state.trade.BDG.marketPriceMeta.steel.authority,'PLAYER_AUTHORIZED_SELLER_ASK');
