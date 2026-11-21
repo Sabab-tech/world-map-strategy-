@@ -107,7 +107,8 @@ Create Secret Manager secrets for each credential, then deploy the subdirectory 
       --source tools/omega-github-pr-agent \
       --region asia-south1 \
       --allow-unauthenticated \
-      --set-env-vars GITHUB_OWNER=Sabab-tech,GITHUB_REPO=world-map-strategy-,GEMINI_MODEL=gemini-2.5-flash \
+      --max 1 \
+      --set-env-vars GITHUB_OWNER=Sabab-tech,GITHUB_REPO=world-map-strategy-,GEMINI_MODEL=gemini-3.8-flash \
       --set-secrets GITHUB_APP_ID=omega-github-app-id:latest,GITHUB_APP_PRIVATE_KEY=omega-github-app-private-key:latest,GITHUB_INSTALLATION_ID=omega-github-installation-id:latest,GEMINI_API_KEY=omega-gemini-api-key:latest,OMEGA_AGENT_ACCESS_TOKEN=omega-agent-access-token:latest,OMEGA_ACTION_SIGNING_SECRET=omega-action-signing-secret:latest
 
 The service URL is the PR agent UI. The UI is publicly reachable only so the browser can load; every /api/** route requires the independent bearer token. Keep that token private and rotate it if exposed. For stronger perimeter control, use Cloud Run authentication or an identity-aware proxy in front of the service.
