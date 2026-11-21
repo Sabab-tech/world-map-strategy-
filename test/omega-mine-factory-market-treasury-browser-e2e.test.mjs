@@ -1782,6 +1782,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       close(buyerNetTreasuryDebitUsd, sellerCreditUsd, 'BUYER_NET_PAYMENT_AFTER_IMPORT_TARIFF');
       close(buyerAfterUsd, buyerBeforeUsd - buyerNetTreasuryDebitUsd, 'BUYER_TREASURY_NET_DEBIT');
 
+      const clearingRows = g.Game.state.finance?.[seller]?.resourceSettlementClearing || [];
+      const companyClearing = clearingRows.find(row => String(row.settlementId || '') === settlementId);
+      if (!companyClearing || !(Number(companyClearing.amount) > 0) ||
+          String(companyClearing.companyId || '') !== String(production.factoryOwnerCompanyId || ''))
+        throw new Error('SELLER_COMPANY_RECEIPT_NOT_RECONCILED_TO_TREASURY_CLEARING:' + JSON.stringify({
+          settlementId, expectedCompany: production.factoryOwnerCompanyId, clearingRows: clearingRows.slice(-8)
+        }).slice(0, 4000));
+
       // The seller's gross bank credit is subsequently cleared from sovereign Treasury
       // into the owning company wallet. Royalty/resource-tax receipts are credited back
       // to Treasury separately, so reconciling Treasury to gross seller credit alone is wrong.
