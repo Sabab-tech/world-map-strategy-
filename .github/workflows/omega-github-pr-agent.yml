@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - main
+      - feat/omega-gemini-github-pr-agent-20261122
     paths:
       - "tools/omega-github-pr-agent/**"
       - ".github/workflows/omega-github-pr-agent.yml"
