@@ -86,3 +86,106 @@ test('the Phase 3C matrix calls out modeled-versus-observed boundaries and open 
   assert.match(matrix, /zero skipped tests/i);
   assert.match(matrix, /Physical-device QA/i);
 });
+
+
+test('Phase 3C function-level ownership map pins the live ledgers and scheduled handlers', async () => {
+  const [
+    finance,
+    macro,
+    transmission,
+    fx,
+    trade,
+    industrial,
+    resourceEconomy,
+    npc,
+    accounts,
+    transaction,
+    scheduler,
+    npcRules,
+    accountRules
+  ] = await Promise.all([
+    readText('omega_finance_ministry_runtime_v1.js'),
+    readText('omega_macro_stability_runtime_v1.js'),
+    readText('omega_economic_transmission_runtime_v1.js'),
+    readText('omega_forex_monetary_engine_v1.js'),
+    readText('omega_global_trade_system.js'),
+    readText('omega_resource_industrial_network_v1.js'),
+    readText('omega_resource_economy_runtime_v2.js'),
+    readText('omega_npc_national_macro_economy_runtime_v1.js'),
+    readText('omega_national_accounts_runtime_v1.js'),
+    readText('omega_ministry_state_transaction.js'),
+    readText('omega_world_simulation_scheduler_v1.js'),
+    readJson('npc_national_macro_economy_rules_v1.json'),
+    readJson('national_accounts_rules_v1.json')
+  ]);
+
+  // Finance remains the sole fiscal-period and Treasury cash authority.
+  assert.match(finance, /function ensureFinanceState\(/);
+  assert.match(finance, /function fiscalFlowComponents\(model\)/);
+  assert.match(finance, /currentYearTaxRevenueUsd/);
+  assert.match(finance, /function advanceFinanceProfile\(/);
+  assert.match(finance, /registerCountryHandler\('omega-finance-ministry',[\s\S]*?priority:15/);
+
+  // Country macro and transmission remain model projections on the same scheduler.
+  assert.match(macro, /function advanceProfile\(p,t,dt,years,root\)/);
+  assert.match(macro, /financeBucket\(root,p,true\)/);
+  assert.match(macro, /registerCountryHandler\('omega-macro-stability',[\s\S]*?priority:10/);
+  assert.match(transmission, /function updateOne\(profile, turnNumber, dt, globalInflationPct, simDay\)/);
+  assert.match(transmission, /economicTransmissionByCountry/);
+  assert.match(transmission, /registerCountryHandler\('omega-economic-transmission',[\s\S]*?priority: 20/);
+
+  // FX retains a central currency tick and separate targeted / full country projections.
+  assert.match(fx, /function simulationTick\(turn, durationMs\)/);
+  assert.match(fx, /function syncCountry\(countryValue\)/);
+  assert.match(fx, /function syncAllCountries\(\)/);
+  assert.match(fx, /OMEGA_FINANCE_STATE_UPDATED/);
+
+  // Trade only posts settled seller records and preserves settlement identity and currency.
+  assert.match(trade, /function settleRequest\(req\)/);
+  assert.match(trade, /function sellerLedgerHandler\(cmd,ctx\)/);
+  assert.match(trade, /SELLER_SETTLEMENT_ID_REQUIRED/);
+  assert.match(trade, /ledgerType:'SELLER_SETTLEMENT'/);
+  assert.match(trade, /buyerCurrency/);
+  assert.match(trade, /sellerCurrency/);
+  assert.match(trade, /function processScheduledCountry\(countryId,context=\{\}\)/);
+
+  // Physical output is committed once in Resource; Economy holds an event-driven mirror.
+  assert.match(industrial, /function commitFactoryCycleImmediately\(/);
+  assert.match(industrial, /r\.finishedGoodsLedger\.push\(\{transactionId,countryId:cid/);
+  assert.match(industrial, /authority:'SIMULATED_PROCESSING_YIELD',status:'AVAILABLE_TO_ECONOMY'/);
+  assert.match(resourceEconomy, /function finishedGoodsEventHandler\(e\)/);
+  assert.match(resourceEconomy, /scope\.finishedGoodsRows\.push\(row\)/);
+  assert.match(resourceEconomy, /function publishTurnPublication\(scope,publication\)/);
+  assert.match(resourceEconomy, /function economyPublishHandler\(cmd,ctx\)/);
+
+  // NPC macro reads source evidence and checkpoints through the Economy-owned transaction.
+  assert.match(npc, /function buildIndustrialOutputEvidence\(/);
+  assert.match(npc, /function buildSettledTradeEvidence\(/);
+  assert.match(npc, /function deriveProgression\(/);
+  assert.match(npc, /context\.stateTransaction\.set\(runtime\.rules\.persistence\.statePath, checkpoint\)/);
+  assert.equal(npcRules.persistence.ownerMinistry, 'economy');
+  assert.equal(npcRules.persistence.statePath, 'economy.npcMacroEconomy');
+  assert.match(npc, /priority:\s*finite\(runtime\.rules\.scheduler\?\.priority\)\s*\?\?\s*30/);
+
+  // National Accounts reads the source domains but writes only its own country checkpoint.
+  assert.match(accounts, /function buildStatement\(countryId,profile,root,turn\)/);
+  assert.match(accounts, /const gdp=reconcileGDP\(\{\}\),goods=reconcileGoodsFlow\(\[\]\)/);
+  assert.match(accounts, /context\.stateTransaction\.set\(path,saved\)/);
+  assert.equal(accountRules.persistence.ownerMinistry, 'economy');
+  assert.equal(accountRules.persistence.statePath, 'economy.nationalAccounts');
+  assert.equal(accountRules.scheduler.priority, 40);
+  assert.equal(accountRules.accounting.ledgerPolicy, 'READ_ONLY_NO_REPOST');
+
+  // State transactions scope a domain path to the handler's canonical country.
+  assert.match(transaction, /_countryContainer\(path,create\)/);
+  assert.match(transaction, /countryBucketKey\(this\.state\[domain\],this\.countryId\)/);
+  assert.match(transaction, /STATE_PATH_NOT_OWNED_BY_MINISTRY/);
+
+  // One scheduler orders country handlers and bounds active/macro work.
+  assert.match(scheduler, /function registerCountryHandler\(id,handler,options=\{\}\)/);
+  assert.match(scheduler, /function runHandlers\(cid,tier,ctx\)/);
+  assert.match(scheduler, /function selectMacro\(ids,meta,turn,player/);
+  assert.match(scheduler, /MACRO_COUNTRIES_PER_TURN:8/);
+  assert.match(scheduler, /MOBILE_TURN_BUDGET_MS:28/);
+  assert.match(scheduler, /DESKTOP_TURN_BUDGET_MS:52/);
+});
