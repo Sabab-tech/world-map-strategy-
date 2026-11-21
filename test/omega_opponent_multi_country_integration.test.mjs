@@ -27,9 +27,18 @@ await import('../omega_opponent_treaty_lifecycle_system.js');
 await import('../omega_opponent_second_order_consequence_system.js');
 
 const rules=globalThis.Omega.OpponentCountryRules;
+const roster=await rules.listCountryIds();
 const batch=await rules.evaluateAllCountries(1,{excludePlayer:false,queue:true,concurrency:8});
 assert.equal(batch.selectedCountries,batch.totalCountries);
-assert.equal(typeof batch.failed,'number');
+assert.equal(batch.totalCountries,roster.length,'the real engine must use its complete canonical country roster');
+assert.equal(batch.status,'COMPLETE',JSON.stringify(batch.failedCountryIds));
+assert.equal(batch.failed,0,'no country evaluation may fail silently');
+assert.equal(batch.skipped,0,'every country in a fresh full-world tick must receive an evaluation');
+assert.equal(batch.evaluated,batch.totalCountries,'every country must complete an AI/economy evaluation');
+assert.equal(new Set(batch.evaluatedCountryIds).size,batch.totalCountries,
+  'the full-world batch must evaluate each country exactly once');
+assert.deepEqual([...batch.evaluatedCountryIds].sort(),[...roster].sort(),
+  'evaluated country IDs must match the complete engine roster');
 assert.equal(batch.dispatchMode,'SAME_TICK_COOPERATIVE_CONCURRENT');
 const sim=globalThis.Omega.Simulation;
 const step=await sim.advance(1);
