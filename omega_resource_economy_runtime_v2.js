@@ -1334,7 +1334,7 @@
         referenceOnly=metaAuthority==='GLOBAL_MARKET_REFERENCE_PRICE'||
           String(metaRow&&metaRow.priceProvenance||'').toUpperCase()==='REFERENCE'||
           metaRow&&metaRow.executablePrice===false;
-      return{price:direct,authority:metaAuthority,priceProvenance:referenceOnly?'REFERENCE':'OBSERVED',
+      return{price:direct,authority:metaAuthority,priceProvenance:referenceOnly?'REFERENCE':(metaAuthority==='PLAYER_AUTHORIZED_SELLER_ASK'?'PLAYER_AUTHORIZED':'OBSERVED'),
         isSimulatedPrice:false,isReferencePrice:referenceOnly,executablePrice:!referenceOnly,basisResourceId:rid};
     }
     if(g.OmegaGlobalMarket){
