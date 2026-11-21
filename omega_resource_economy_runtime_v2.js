@@ -1557,7 +1557,12 @@
     });
     Array.from(offerResourceIds).forEach(function(rid){
       if(isNonTradableWasteOrLoss(rid))return;
-      var aggregate=Math.max(0,num(inv[rid])||0),q=marketFreeQuantity(c,rid,aggregate);if(q<min)return;
+      var rawBook=resourceState.warehouse?.availableByResource||{},processedBook=resourceState.processedWarehouse?.availableByResource||{},
+        rawKey=matchingStockKey(rawBook,rid),processedKey=matchingStockKey(processedBook,rid),
+        warehouseAggregate=(rawKey===null?0:Math.max(0,num(rawBook[rawKey])||0))+
+          (processedKey===null?0:Math.max(0,num(processedBook[processedKey])||0)),
+        aggregate=Math.max(0,num(inv[rid])||0,warehouseAggregate),
+        q=marketFreeQuantity(c,rid,aggregate);if(q<min)return;
       var pricing=resolvePriceWithProvenance(c,rid,prices),p=num(pricing?.price);if(p===null||p<=0)return;
       var oq=q*f;if(oq<min)return;
       var batchAllocations=marketBatchAllocations(c,rid,oq),allocationTotal=batchAllocations.reduce(function(sum,row){return sum+(num(row.quantity)||0);},0);
