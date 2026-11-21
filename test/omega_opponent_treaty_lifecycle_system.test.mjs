@@ -49,8 +49,27 @@ assert.equal(scheduledResult.scanned,1,JSON.stringify(scheduledResult));
 assert.equal(scheduledResult.accepted,1,JSON.stringify(scheduledResult));
 assert.equal(treaty.processCountry('BGD').status,'ALREADY_PROCESSED',
   'repeated scheduler callbacks for one country/turn must not process a treaty twice');
-assert.equal(globalThis.Game.state.foreign.BGD.treaties.SA.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.SAU.treaties.BD.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.BGD.negotiations.SA.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.SAU.negotiations.BD.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.BGD.treaties.SAU.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.SAU.treaties.BGD.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.BGD.negotiations.SAU.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.SAU.negotiations.BGD.status,'ACTIVE');
+
+// A state already at war or under sanctions cannot accept a new bilateral treaty.
+const bilateralRelation=globalThis.Game.state.foreign.BGD.relations.SAU;
+bilateralRelation.war_state=true;
+const warReview=treaty.review({countryId:'BGD',targetCountryId:'SAU',terms:{}},'SAU');
+assert.equal(warReview.decision,'REJECT');
+assert.equal(warReview.reason,'WAR_OR_SANCTIONS');
+bilateralRelation.war_state=false;
+bilateralRelation.sanctions=true;
+const sanctionReview=treaty.review({countryId:'BGD',targetCountryId:'SAU',terms:{}},'SAU');
+assert.equal(sanctionReview.decision,'REJECT');
+assert.equal(sanctionReview.reason,'WAR_OR_SANCTIONS');
+bilateralRelation.sanctions=false;
+bilateralRelation.overall=8;
+bilateralRelation.trust=7;
+bilateralRelation.political=9;
+const hostileReview=treaty.review({countryId:'BGD',targetCountryId:'SAU',terms:{}},'SAU');
+assert.equal(hostileReview.decision,'REJECT');
+assert.equal(hostileReview.reason,'BILATERAL_RELATION_BELOW_ACCEPTANCE_THRESHOLD');
 console.log('OMEGA TREATY LIFECYCLE TEST PASSED');

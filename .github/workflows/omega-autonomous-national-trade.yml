@@ -23,6 +23,23 @@ on:
       - "package.json"
       - "test/omega_autonomous_national_trade_decision_engine_v1.test.mjs"
       - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
+      - "test/omega_world_economy_game_day_integration.test.mjs"
+      - "test/omega_economy_trade_ui_v1.test.mjs"
+      - "opponent_country_rules.js"
+      - "omega_opponent_autonomy_system.js"
+      - "omega_opponent_treaty_lifecycle_system.js"
+      - "omega_sanction_response_runtime_v1.js"
+      - "omega_black_market_system_v1.js"
+      - "omega_black_market_network_v1.js"
+      - "test/omega_opponent_autonomy_system.test.mjs"
+      - "test/opponent_country_rules_runtime.test.js"
+      - "test/omega_opponent_multi_country_integration.test.mjs"
+      - "test/omega_opponent_treaty_lifecycle_system.test.mjs"
+      - "test/omega_opponent_e2e_runtime.test.mjs"
+      - "test/omega_sanction_response_runtime_v1.test.mjs"
+      - "test/omega_black_market_system_v1.test.mjs"
+      - "test/omega_black_market_network_v1.test.mjs"
+      - "minister_country_roster_manifest_v1.json"
       - "test/omega_bilateral_trade_agreement_system_v1.test.mjs"
       - ".github/workflows/omega-autonomous-national-trade.yml"
   push:
@@ -48,6 +65,23 @@ on:
       - "test/omega_autonomous_national_trade_decision_engine_v1.test.mjs"
       - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
       - "test/omega_bilateral_trade_agreement_system_v1.test.mjs"
+      - "test/omega_world_economy_game_day_integration.test.mjs"
+      - "test/omega_economy_trade_ui_v1.test.mjs"
+      - "opponent_country_rules.js"
+      - "omega_opponent_autonomy_system.js"
+      - "omega_opponent_treaty_lifecycle_system.js"
+      - "omega_sanction_response_runtime_v1.js"
+      - "omega_black_market_system_v1.js"
+      - "omega_black_market_network_v1.js"
+      - "test/omega_opponent_autonomy_system.test.mjs"
+      - "test/opponent_country_rules_runtime.test.js"
+      - "test/omega_opponent_multi_country_integration.test.mjs"
+      - "test/omega_opponent_treaty_lifecycle_system.test.mjs"
+      - "test/omega_opponent_e2e_runtime.test.mjs"
+      - "test/omega_sanction_response_runtime_v1.test.mjs"
+      - "test/omega_black_market_system_v1.test.mjs"
+      - "test/omega_black_market_network_v1.test.mjs"
+      - "minister_country_roster_manifest_v1.json"
   workflow_dispatch:
 
 permissions:
@@ -57,7 +91,7 @@ jobs:
   bounded-national-trade:
     name: Planner, bilateral integration and offline boot
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -95,3 +129,24 @@ jobs:
         run: node --test test/omega_npc_national_macro_economy_runtime_v1.test.mjs
       - name: Offline asset cache regression
         run: node --test test/omega_resource_command_center_ui_v1.test.mjs
+      - name: Full 100-day game run on the canonical 197-country roster
+        run: |
+          node --check omega_world_simulation_scheduler_v1.js
+          node --check test/omega_world_economy_game_day_integration.test.mjs
+          node --test test/omega_world_economy_game_day_integration.test.mjs
+      - name: War, conflict, sanctions, crisis and relationship decision regressions
+        run: |
+          npm run test:opponent-autonomy
+          npm run test:opponent-rules
+          npm run test:opponent-multi-country
+          npm run test:treaty-lifecycle
+          npm run test:country-behavior
+          npm run test:black-market
+      - name: Global market, bilateral business and NPC macro economy
+        run: |
+          npm run test:global-trade
+          npm run test:global-market
+          npm run test:npc-macro-economy
+          npm run test:finance-transmission
+      - name: Full economy audit and national accounts reconciliation
+        run: node --test test/omega_economy_audit_e2e_v1.test.mjs
