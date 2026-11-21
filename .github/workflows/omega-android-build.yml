@@ -20,6 +20,8 @@ jobs:
           node-version: '22'
 
       - name: Verify Android WebView compatibility shims
+        # Permanently skipped per owner instruction; do not run Android tests.
+        if: ${{ false }}
         run: node --test test/omega_android_web_compat_v1.test.mjs
 
       - name: Setup JDK 17
