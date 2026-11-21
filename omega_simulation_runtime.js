@@ -116,27 +116,35 @@
     return (hash>>>0).toString(16).padStart(8,'0');
   }
 
-  function* saveSnapshotJsonChunks(snapshot,checksum){
-    // Preserve the durable format: a root checksum first, then the sorted
-    // canonical snapshot fields (excluding any prior checksum property).
-    yield '{';
-    yield '"checksum":'+JSON.stringify(checksum);
+  function* saveSnapshotJsonChunks(snapshot){
+    // Hash exactly the canonical JSON chunks as they are emitted. Appending
+    // the checksum after the canonical closing brace preserves the same
+    // checksum contract while avoiding a second traversal of a mutable root.
+    let hash=2166136261;
+    const emit=function*(chunk){
+      hash=updateChecksumHash(hash,chunk);
+      yield chunk;
+    };
+    yield* emit('{');
     const keys=Object.keys(snapshot||{}).filter(key=>key!=='__proto__'&&key!=='constructor'&&
       key!=='checksum'&&typeof snapshot[key]!=='function'&&snapshot[key]!==undefined).sort();
-    if(keys.length)yield ',';
     for(let index=0;index<keys.length;index++){
-      if(index)yield ',';
+      if(index)yield* emit(',');
       const key=keys[index];
-      yield JSON.stringify(key);
-      yield ':';
-      yield* stableJsonChunks(snapshot[key],false,false);
+      yield* emit(JSON.stringify(key));
+      yield* emit(':');
+      for(const chunk of stableJsonChunks(snapshot[key],false,false))yield* emit(chunk);
     }
+    hash=updateChecksumHash(hash,'}');
+    const checksum=(hash>>>0).toString(16).padStart(8,'0');
+    if(keys.length)yield ',';
+    yield '"checksum":'+JSON.stringify(checksum);
     yield '}';
   }
 
-  function createSaveJsonStream(snapshot,checksum){
+  function createSaveJsonStream(snapshot){
     if(typeof global.ReadableStream!=='function'||typeof global.TextEncoder!=='function')return null;
-    const iterator=saveSnapshotJsonChunks(snapshot,checksum);
+    const iterator=saveSnapshotJsonChunks(snapshot);
     const encoder=new global.TextEncoder();
     let originalBytes=0;
     const stream=new global.ReadableStream({
@@ -161,8 +169,9 @@
     return{stream,get originalBytes(){return originalBytes;}};
   }
 
-  function serializeSaveSnapshot(snapshot,checksum){
+  function serializeSaveSnapshot(snapshot){
     const canonical=stableStringify(snapshot,true);
+    const checksum=checksumSnapshot(snapshot);
     return canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
       (canonical.length>2?',':'')+canonical.slice(1);
   }
@@ -306,7 +315,7 @@
     })();
   }
 
-  function encodeStoredSnapshot(snapshot,checksum){
+  function encodeStoredSnapshot(snapshot){
     const canStream=global.indexedDB&&typeof global.indexedDB.open==='function'&&
       typeof global.CompressionStream==='function'&&
       typeof global.DecompressionStream==='function'&&
@@ -314,11 +323,11 @@
       typeof global.Response==='function'&&
       typeof global.ReadableStream==='function'&&
       typeof global.TextEncoder==='function';
-    if(!canStream)return encodeStoredSave(serializeSaveSnapshot(snapshot,checksum));
+    if(!canStream)return encodeStoredSave(serializeSaveSnapshot(snapshot));
 
     return (async function(){
-      const source=createSaveJsonStream(snapshot,checksum);
-      if(!source)return encodeStoredSave(serializeSaveSnapshot(snapshot,checksum));
+      const source=createSaveJsonStream(snapshot);
+      if(!source)return encodeStoredSave(serializeSaveSnapshot(snapshot));
       try{
         // Serialize and gzip incrementally. The previous implementation first
         // materialized the complete canonical JSON string, then copied it into
@@ -336,7 +345,7 @@
       }catch(error){
         // Preserve compatibility if a browser exposes stream APIs but cannot
         // complete gzip. The legacy serializer is used only on this fallback.
-        const legacy=encodeStoredSave(serializeSaveSnapshot(snapshot,checksum));
+        const legacy=encodeStoredSave(serializeSaveSnapshot(snapshot));
         const stored=legacy&&typeof legacy.then==='function'?await legacy:legacy;
         return{...stored,compressionError:String(error&&error.message||error)};
       }
@@ -752,6 +761,7 @@
       this.ministryRuntime=null;
       this.status='READY';
       this.stepInProgress=false;
+      this.saveBarrier=null;
       this.lastError=null;
       this.lastLoadIntegrity='NOT_LOADED';
       this.lastStepSummary=null;
@@ -1183,6 +1193,9 @@
     }
 
     async step(){
+      // A durable streaming save reads the authoritative root over multiple
+      // chunks. Hold the next turn until the save has reached IndexedDB.
+      if(this.saveBarrier)await this.saveBarrier;
       if(this.stepInProgress)throw new Error('SIMULATION_STEP_REENTRANT');
       if(this.status==='ERROR')throw new Error('SIMULATION_IN_ERROR:'+String(this.lastError||'UNKNOWN'));
       this.stepInProgress=true;
@@ -1362,14 +1375,15 @@
 
     async saveSlot(slot='default'){
       const key='omega.game.save.'+String(slot||'default');
-      // Volatile diagnostics are not part of the durable game state. Serialize
-      // the canonical snapshot once, then hash and inject its root checksum into
-      // that same JSON string. The previous path walked the entire world twice
-      // (stable checksum serialization + JSON.stringify), blocking the browser
-      // main thread on large country/economy saves.
-      const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},true);
-      const checksum=checksumSnapshot(snapshot);
-      snapshot.checksum=checksum;
+      const previousSave=this.saveBarrier;
+      let releaseSave;
+      const currentSave=new Promise(resolve=>{releaseSave=resolve;});
+      this.saveBarrier=currentSave;
+      try{
+        if(previousSave)await previousSave;
+        // Volatile diagnostics are omitted. Canonical JSON and its checksum
+        // are emitted together as a stream, avoiding a full-size JSON duplicate.
+        const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},true);
       // Keep the checksum over the canonical plain JSON snapshot, but store a
       // gzip envelope when the browser supports both compression directions.
       // Large 197-country saves can exceed localStorage/IndexedDB quotas.
@@ -1396,7 +1410,7 @@
                   fallbackCompression='GZIP_BASE64';
                   fallbackBytes=fallbackValue.length;
                 }else{
-                  fallbackValue=serializeSaveSnapshot(snapshot,checksum);
+                  fallbackValue=serializeSaveSnapshot(snapshot);
                   fallbackCompression='NONE';
                   fallbackBytes=String(fallbackValue).length;
                 }
@@ -1414,10 +1428,12 @@
         global.localStorage.setItem(key,stored.value);
         return {...result,storage:'LOCAL_STORAGE_FALLBACK'};
       };
-      const stored=encodeStoredSnapshot(snapshot,checksum);
-      return stored && typeof stored.then==='function'
-        ? stored.then(persistStoredSave)
-        : persistStoredSave(stored);
+      const stored=encodeStoredSnapshot(snapshot);
+      return await Promise.resolve(stored).then(persistStoredSave);
+      }finally{
+        releaseSave();
+        if(this.saveBarrier===currentSave)this.saveBarrier=null;
+      }
     }
 
     async loadSlot(slot='default'){
