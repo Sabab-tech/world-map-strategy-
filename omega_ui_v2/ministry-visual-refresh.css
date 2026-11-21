@@ -1033,3 +1033,53 @@
     scroll-behavior:auto; transition:none!important; animation:none!important;
   }
 }
+
+/* Single ministry gateway: visible in Economy without duplicating ministry-owned actions. */
+.omega-economy-action-grid--single {
+  grid-template-columns:minmax(0,1fr);
+}
+.omega-economy-action-grid--single .omega-economy-action-card {
+  align-items:stretch;
+  display:grid;
+  grid-template-columns:minmax(104px,24%) minmax(0,1fr) auto;
+}
+.omega-economy-action-grid--single .omega-economy-action-media {
+  height:100%;
+  min-height:104px;
+}
+.omega-economy-action-grid--single .omega-economy-action-copy {
+  align-items:center;
+  padding:12px;
+}
+.omega-economy-action-grid--single .omega-economy-action-button {
+  align-self:center;
+  border-left:1px solid rgba(74,143,187,.24);
+  border-top:0;
+  justify-content:center;
+  gap:9px;
+  margin:0 12px 0 0;
+  min-height:44px;
+  min-width:112px;
+}
+@media(max-width:560px) {
+  .omega-economy-action-grid--single .omega-economy-action-card {
+    grid-template-columns:82px minmax(0,1fr);
+  }
+  .omega-economy-action-grid--single .omega-economy-action-media {
+    grid-row:1 / span 2;
+    min-height:100%;
+  }
+  .omega-economy-action-grid--single .omega-economy-action-copy {
+    padding:10px 10px 6px;
+  }
+  .omega-economy-action-grid--single .omega-economy-action-button {
+    border-left:0;
+    border-top:1px solid rgba(74,143,187,.24);
+    grid-column:2;
+    justify-self:start;
+    margin:0 10px 10px;
+    min-width:0;
+    min-height:34px;
+    padding:6px 0;
+  }
+}
