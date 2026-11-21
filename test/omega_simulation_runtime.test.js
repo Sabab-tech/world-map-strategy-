@@ -337,6 +337,83 @@ test('large canonical save slots use gzip storage and restore the original world
   assert.equal(state.resource.BGD.auditLog,'OMEGA-CANONICAL-SAVE-'.repeat(12000));
 });
 
+test('large IndexedDB save slots retain gzip as Blob without base64 expansion',async()=>{
+  const {sandbox,state}=makeSandbox();
+  const records=new Map();
+  const database={
+    objectStoreNames:{contains(){return true;}},
+    close(){},
+    transaction(){
+      const transaction={};
+      transaction.objectStore=()=>({
+        put(value,key){
+          const request={};
+          queueMicrotask(()=>{
+            records.set(String(key),value);
+            request.result=String(key);
+            request.onsuccess?.();
+            transaction.oncomplete?.();
+          });
+          return request;
+        },
+        get(key){
+          const request={};
+          queueMicrotask(()=>{
+            request.result=records.get(String(key))??null;
+            request.onsuccess?.();
+            transaction.oncomplete?.();
+          });
+          return request;
+        }
+      });
+      return transaction;
+    }
+  };
+  sandbox.indexedDB={
+    open(){
+      const request={};
+      queueMicrotask(()=>{
+        request.result=database;
+        request.onsuccess?.();
+      });
+      return request;
+    }
+  };
+  Object.assign(sandbox,{
+    Blob:globalThis.Blob,
+    Response:globalThis.Response,
+    CompressionStream:globalThis.CompressionStream,
+    DecompressionStream:globalThis.DecompressionStream,
+    btoa:globalThis.btoa,
+    atob:globalThis.atob
+  });
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  const audit='OMEGA-IDB-BLOB-SAVE-'.repeat(12000);
+  state.resource={BGD:{inventory:{coal:50},batches:[],auditLog:audit}};
+
+  const result=await runtime.saveSlot('indexeddb-blob-save');
+  assert.equal(result.ok,true);
+  assert.equal(result.storage,'INDEXEDDB');
+  assert.equal(result.compression,'GZIP_BLOB');
+  assert.ok(result.storedBytes<result.originalBytes,
+    'the IndexedDB gzip Blob must remain smaller than the canonical snapshot');
+
+  const stored=records.get(result.key);
+  assert.ok(stored instanceof globalThis.Blob,
+    'IndexedDB must retain a structured-clone Blob, not a base64-expanded string');
+  const prefix=await new globalThis.Response(stored.slice(0,'OMEGA_SIM_SAVE_GZIP_V1:'.length)).text();
+  assert.equal(prefix,'OMEGA_SIM_SAVE_GZIP_V1:');
+
+  state.resource.BGD.inventory.coal=999;
+  const restored=await runtime.loadSlot('indexeddb-blob-save');
+  assert.equal(restored.lastLoadIntegrity,'VERIFIED');
+  assert.equal(state.resource.BGD.inventory.coal,50);
+  assert.equal(state.resource.BGD.auditLog,audit);
+  assert.equal(runtime.world.state,state,
+    'Blob-backed IndexedDB restore must preserve the authoritative Game.state root');
+});
+
 test('turn autosave uses the canonical IndexedDB slot and retains legacy recovery',()=>{
   const lifecycle=fs.readFileSync(new URL('../omega_game_lifecycle_runtime_v1.js',import.meta.url),'utf8');
   const runtime=fs.readFileSync(new URL('../omega_simulation_runtime.js',import.meta.url),'utf8');
