@@ -3030,12 +3030,12 @@ function advanceShipments(c){
         ?arrivalBelongsToCurrentCycle
           ?{status:currentCycle.status==='PAUSED'?'PAUSED':'IN_PROGRESS',cycleId:currentCycle.cycleId,
             factoryId:String(s.factoryId),finishDate:currentCycle.finishDate,productionQuantity:currentCycle.productionQuantity,idempotent:true}
-          :{status:'BLOCKED',reason:'FACTORY_CYCLE_ALREADY_RUNNING',activeCycleId:currentCycle.cycleId,
+          :{status:'QUEUED',reason:'FACTORY_CYCLE_ALREADY_RUNNING',activeCycleId:currentCycle.cycleId,
             factoryId:String(s.factoryId),finishDate:currentCycle.finishDate}
         :maxProduction>1e-9
           ?startFactoryProductionCycle({countryId:cid,factoryId:s.factoryId,resourceId:received.resourceId,quantity:maxProduction,unit:received.unitBridge.targetUnit})
           :{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:s.factoryId};
-      s.processingStatus=processing?.status==='IN_PROGRESS'?'IN_PROGRESS':
+      s.processingStatus=processing?.status==='QUEUED'?'QUEUED':processing?.status==='IN_PROGRESS'?'IN_PROGRESS':
         processing?.status==='COMPLETED'?'PROCESSED':
         ['FACTORY_INPUT_SHORTAGE','FACTORY_INPUT_NOT_IN_RECIPE','FACTORY_INPUT_BATCH_LEDGER_MISMATCH'].includes(processing?.reason)?'AWAITING_INPUTS':'AWAITING_PROCESSING';
       s.processingTransactionId=processing?.transactionId||processing?.cycleId||null;s.processing=clone(processing);
@@ -3253,14 +3253,14 @@ function advanceShipments(c){
       ?arrivalBelongsToCurrentCycle
         ?{status:existingCycle.status==='PAUSED'?'PAUSED':'IN_PROGRESS',cycleId:existingCycle.cycleId,
           factoryId:String(s.factoryId),finishDate:existingCycle.finishDate,productionQuantity:existingCycle.productionQuantity,idempotent:true}
-        :{status:'BLOCKED',reason:'FACTORY_CYCLE_ALREADY_RUNNING',activeCycleId:existingCycle.cycleId,
+        :{status:'QUEUED',reason:'FACTORY_CYCLE_ALREADY_RUNNING',activeCycleId:existingCycle.cycleId,
           factoryId:String(s.factoryId),finishDate:existingCycle.finishDate}
       :productionMetrics.missingInputs.length
         ?{status:'BLOCKED',reason:'FACTORY_INPUT_SHORTAGE',factoryId:String(s.factoryId),
           missingInputs:clone(productionMetrics.missingInputs),capacity:productionMetrics.capacity}
         :startFactoryProductionCycle({countryId:cid,factoryId:s.factoryId,resourceId:rid,
           quantity:productionMetrics.possibleProduction,unit:s.targetUnit||s.unit||sourceBatch?.unit||factory.inputUnit||null});
-    s.processingStatus=processing?.status==='COMPLETED'?'PROCESSED':
+    s.processingStatus=processing?.status==='QUEUED'?'QUEUED':processing?.status==='COMPLETED'?'PROCESSED':
       processing?.status==='IN_PROGRESS'?'IN_PROGRESS':
       processing?.status==='PAUSED'?'PAUSED':
       ['FACTORY_INPUT_SHORTAGE','FACTORY_INPUT_OR_BATCH_SHORTAGE','FACTORY_INPUT_BATCH_LEDGER_MISMATCH'].includes(processing?.reason)
