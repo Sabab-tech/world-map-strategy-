@@ -358,7 +358,7 @@ test('static shell, server bootstrap and offline cache load the same runtime/con
   assert.ok(serverRuntime>serverTrade);
   assert.ok(serverBilateral>serverTrade,'server boot must load the same Bilateral Trade runtime');
   assert.ok(serverAutonomousTrade>serverBilateral,'server boot must load the decision orchestrator after Bilateral Trade');
-  const shellCacheMatch = offlineShell.match(/CACHE_NAME = "omega-offline-atlas-shell-v(\\d+)"/);
+  const shellCacheMatch = offlineShell.match(/CACHE_NAME = "omega-offline-atlas-shell-v([0-9]+)"/);
   assert.ok(shellCacheMatch && Number(shellCacheMatch[1]) > 129,
     'the offline shell must include the current runtime generation');
   assert.match(offlineShell,/omega_bilateral_trade_agreement_system_v1\.js/);
