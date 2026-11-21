@@ -38,7 +38,7 @@ const github = new GitHubAppClient({
 
 const agent = new GeminiGitHubAgent({
   apiKey: process.env.GEMINI_API_KEY,
-  model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+  model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
   github,
   actionSecret: process.env.OMEGA_ACTION_SIGNING_SECRET
 });
