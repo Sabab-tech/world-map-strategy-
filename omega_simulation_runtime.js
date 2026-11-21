@@ -198,6 +198,31 @@
     return target;
   }
 
+  function persistedTurnParticipantResults(rows) {
+    return (Array.isArray(rows) ? rows : []).slice(-256).map(function (row) {
+      var compact = {
+        id: String(row && row.id || ''),
+        turn: finite(row && row.turn, 0),
+        status: String(row && row.status || 'UNKNOWN')
+      };
+      if (row && row.error) compact.error = String(row.error).slice(0, 500);
+      var result = row && row.result;
+      if (result && typeof result === 'object') {
+        var summary = {};
+        ['status', 'reason', 'countryId', 'factoryId', 'cycleId', 'turn',
+          'startedCount', 'completedCount', 'processedCount', 'blockedCount',
+          'awaitingCount', 'warehouseTransferCount'].forEach(function (key) {
+          var value = result[key];
+          if (value === null || ['string', 'number', 'boolean'].indexOf(typeof value) >= 0) {
+            if (value !== undefined) summary[key] = typeof value === 'string' ? value.slice(0, 160) : value;
+          }
+        });
+        if (Object.keys(summary).length) compact.result = summary;
+      }
+      return compact;
+    });
+  }
+
   function finite(value,fallback){
     const n=Number(value);
     return Number.isFinite(n)?n:fallback;
@@ -534,12 +559,12 @@
           this.world.state.simulation.subsystemTurns[entry.id]=turn;
           results.push({id:entry.id,turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
           this.lastTurnParticipantResults=results.slice(-256);
-          this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
+          this.world.state.simulation.lastTurnParticipantResults=persistedTurnParticipantResults(this.lastTurnParticipantResults);
         }catch(error){
           const failure={id:entry.id,turn,status:'FAILED',error:String(error?.message||error)};
           results.push(failure);
           this.lastTurnParticipantResults=results.slice(-256);
-          this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
+          this.world.state.simulation.lastTurnParticipantResults=persistedTurnParticipantResults(this.lastTurnParticipantResults);
           // Stop the world immediately rather than silently let one sector miss a day.
           this.status='ERROR';
           this.clock.pause();
@@ -556,7 +581,7 @@
         global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=false;
       }
       this.lastTurnParticipantResults=results.slice(-256);
-      this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
+      this.world.state.simulation.lastTurnParticipantResults=persistedTurnParticipantResults(this.lastTurnParticipantResults);
       return results;
     }
 
