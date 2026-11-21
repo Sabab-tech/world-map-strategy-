@@ -329,13 +329,32 @@ export class GitHubAppClient {
     const parent = await this.repoRequest("/git/commits/" + expectedSha);
     if (!parent?.tree?.sha) throw new Error("PR_PARENT_TREE_UNAVAILABLE");
 
+    const parentTree = await this.repoRequest(
+      "/git/trees/" + encodeURIComponent(parent.tree.sha) + "?recursive=1"
+    );
+    if (!Array.isArray(parentTree?.tree) || parentTree.truncated) {
+      throw new Error("PR_PARENT_TREE_INCOMPLETE_CANNOT_PRESERVE_FILE_MODES");
+    }
+    const existingModes = new Map(parentTree.tree
+      .filter(entry => entry.type === "blob")
+      .map(entry => [entry.path, entry.mode]));
+
     const blobs = await Promise.all(edits.map(async edit => {
+      const previousMode = existingModes.get(edit.path);
+      if (previousMode && !["100644", "100755"].includes(previousMode)) {
+        throw new Error("UNSUPPORTED_EXISTING_FILE_MODE");
+      }
       const blob = await this.repoRequest("/git/blobs", {
         method: "POST",
         body: { content: edit.content, encoding: "utf-8" }
       });
       if (!blob?.sha) throw new Error("GIT_BLOB_CREATION_FAILED");
-      return { path: edit.path, mode: "100644", type: "blob", sha: blob.sha };
+      return {
+        path: edit.path,
+        mode: previousMode || "100644",
+        type: "blob",
+        sha: blob.sha
+      };
     }));
 
     const tree = await this.repoRequest("/git/trees", {
