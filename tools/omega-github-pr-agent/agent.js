@@ -170,7 +170,7 @@ export class GeminiGitHubAgent {
   constructor(options = {}) {
     this.github = options.github;
     this.actionSecret = String(options.actionSecret || "");
-    this.model = String(options.model || "gemini-2.5-flash");
+    this.model = String(options.model || "gemini-3.8-flash");
     this.ai = options.ai || new GoogleGenAI({ apiKey: options.apiKey });
     if (!this.github) throw new Error("GITHUB_CLIENT_REQUIRED");
     if (Buffer.byteLength(this.actionSecret) < 32) throw new Error("ACTION_SIGNING_SECRET_TOO_SHORT");
