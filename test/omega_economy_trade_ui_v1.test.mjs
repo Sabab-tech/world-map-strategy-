@@ -439,6 +439,11 @@ test('Trade & Commerce keeps the five premium navigation destinations fixed acro
     assert.ok(offsets.every((offset,index) => offset >= 0 && (index === 0 || offset > offsets[index-1])),
       'the same five destinations remain in the same order');
     assert.match(root.innerHTML,/aria-current="page"/);
+    if (route.marketTab === 'black-market') {
+      assert.match(root.innerHTML,/data-omega-v2-black-market-host/);
+      assert.doesNotMatch(root.innerHTML,/data-omega-v2-trade-market-host/,
+        'Black Market keeps its dedicated runtime mount instead of the commodity-market host');
+    }
     assert.doesNotMatch(root.innerHTML,/04 \/ TRADE OPERATIONS|omega-trade-action-card/);
   });
 });
