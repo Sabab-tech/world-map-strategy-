@@ -33,6 +33,7 @@ globalThis.Game={
     projects:{
       BGD:{registry:[]}
     },
+    defense:{BGD:{threatLevel:15}},
     military:{
       BGD:{forceStructure:{personnel:1000,units:10,organizedPersonnel:1000,personnelPerUnit:100},readiness:60,trainingQueue:[],equipmentQueue:[],equipmentInventory:{}},
       SAU:{forceStructure:{personnel:50000,units:500},readiness:80}
