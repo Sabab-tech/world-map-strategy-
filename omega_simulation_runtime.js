@@ -74,9 +74,97 @@
     return (hash>>>0).toString(16).padStart(8,'0');
   }
 
+  function* stableJsonChunks(value,omitRootChecksum=false,isRoot=true){
+    if(value===null||value===undefined){yield 'null';return;}
+    if(value instanceof Date){yield JSON.stringify(value.toISOString());return;}
+    if(typeof value!=='object'){
+      const encoded=JSON.stringify(value);
+      yield encoded===undefined?'null':encoded;
+      return;
+    }
+    if(Array.isArray(value)){
+      yield '[';
+      for(let index=0;index<value.length;index++){
+        if(index)yield ',';
+        yield* stableJsonChunks(value[index],false,false);
+      }
+      yield ']';
+      return;
+    }
+    const keys=Object.keys(value).filter(key=>key!=='__proto__'&&key!=='constructor'&&
+      !(isRoot&&omitRootChecksum&&key==='checksum')&&typeof value[key]!=='function'&&value[key]!==undefined).sort();
+    yield '{';
+    for(let index=0;index<keys.length;index++){
+      if(index)yield ',';
+      const key=keys[index];
+      yield JSON.stringify(key);
+      yield ':';
+      yield* stableJsonChunks(value[key],false,false);
+    }
+    yield '}';
+  }
+
+  function updateChecksumHash(hash,text){
+    for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
+    return hash>>>0;
+  }
+
   function checksumSnapshot(value){
-    // Exclude only the top-level checksum without cloning the full snapshot.
-    return checksumText(stableStringify(value||{},true));
+    // Hash canonical chunks in-place. Do not materialize a second full-world JSON string.
+    let hash=2166136261;
+    for(const chunk of stableJsonChunks(value||{},true,true))hash=updateChecksumHash(hash,chunk);
+    return (hash>>>0).toString(16).padStart(8,'0');
+  }
+
+  function* saveSnapshotJsonChunks(snapshot,checksum){
+    // Preserve the durable format: a root checksum first, then the sorted
+    // canonical snapshot fields (excluding any prior checksum property).
+    yield '{';
+    yield '"checksum":'+JSON.stringify(checksum);
+    const keys=Object.keys(snapshot||{}).filter(key=>key!=='__proto__'&&key!=='constructor'&&
+      key!=='checksum'&&typeof snapshot[key]!=='function'&&snapshot[key]!==undefined).sort();
+    if(keys.length)yield ',';
+    for(let index=0;index<keys.length;index++){
+      if(index)yield ',';
+      const key=keys[index];
+      yield JSON.stringify(key);
+      yield ':';
+      yield* stableJsonChunks(snapshot[key],false,false);
+    }
+    yield '}';
+  }
+
+  function createSaveJsonStream(snapshot,checksum){
+    if(typeof global.ReadableStream!=='function'||typeof global.TextEncoder!=='function')return null;
+    const iterator=saveSnapshotJsonChunks(snapshot,checksum);
+    const encoder=new global.TextEncoder();
+    let originalBytes=0;
+    const stream=new global.ReadableStream({
+      pull(controller){
+        try{
+          let text='';
+          while(text.length<65536){
+            const next=iterator.next();
+            if(next.done){
+              if(text){
+                const bytes=encoder.encode(text);originalBytes+=bytes.byteLength;controller.enqueue(bytes);
+              }
+              controller.close();return;
+            }
+            text+=next.value;
+          }
+          const bytes=encoder.encode(text);originalBytes+=bytes.byteLength;controller.enqueue(bytes);
+        }catch(error){controller.error(error);}
+      },
+      cancel(){try{iterator.return?.();}catch(_){}}
+    });
+    return{stream,get originalBytes(){return originalBytes;}};
+  }
+
+  function serializeSaveSnapshot(snapshot,checksum){
+    const canonical=stableStringify(snapshot,true);
+    return canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
+      (canonical.length>2?',':'')+canonical.slice(1);
   }
 
   function createSaveSnapshot(runtime,options={},referenceWorldState=false){
@@ -214,6 +302,43 @@
           storedBytes:String(serialized).length,
           compressionError:String(error&&error.message||error)
         };
+      }
+    })();
+  }
+
+  function encodeStoredSnapshot(snapshot,checksum){
+    const canStream=global.indexedDB&&typeof global.indexedDB.open==='function'&&
+      typeof global.CompressionStream==='function'&&
+      typeof global.DecompressionStream==='function'&&
+      typeof global.Blob==='function'&&
+      typeof global.Response==='function'&&
+      typeof global.ReadableStream==='function'&&
+      typeof global.TextEncoder==='function';
+    if(!canStream)return encodeStoredSave(serializeSaveSnapshot(snapshot,checksum));
+
+    return (async function(){
+      const source=createSaveJsonStream(snapshot,checksum);
+      if(!source)return encodeStoredSave(serializeSaveSnapshot(snapshot,checksum));
+      try{
+        // Serialize and gzip incrementally. The previous implementation first
+        // materialized the complete canonical JSON string, then copied it into
+        // a Blob before compression; a 197-country world could exhaust the
+        // Chromium renderer before IndexedDB was even reached.
+        const compressedStream=source.stream.pipeThrough(new global.CompressionStream('gzip'));
+        const compressedBlob=await new global.Response(compressedStream).blob();
+        const value=new global.Blob([SAVE_COMPRESSION_PREFIX,compressedBlob],{
+          type:'application/x-omega-simulation-save'
+        });
+        return{
+          value,compression:'GZIP_BLOB',
+          originalBytes:source.originalBytes,storedBytes:value.size
+        };
+      }catch(error){
+        // Preserve compatibility if a browser exposes stream APIs but cannot
+        // complete gzip. The legacy serializer is used only on this fallback.
+        const legacy=encodeStoredSave(serializeSaveSnapshot(snapshot,checksum));
+        const stored=legacy&&typeof legacy.then==='function'?await legacy:legacy;
+        return{...stored,compressionError:String(error&&error.message||error)};
       }
     })();
   }
@@ -1243,11 +1368,8 @@
       // (stable checksum serialization + JSON.stringify), blocking the browser
       // main thread on large country/economy saves.
       const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},true);
-      const canonical=stableStringify(snapshot,true);
-      const checksum=checksumText(canonical);
+      const checksum=checksumSnapshot(snapshot);
       snapshot.checksum=checksum;
-      const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
-        (canonical.length>2?',':'')+canonical.slice(1);
       // Keep the checksum over the canonical plain JSON snapshot, but store a
       // gzip envelope when the browser supports both compression directions.
       // Large 197-country saves can exceed localStorage/IndexedDB quotas.
@@ -1274,9 +1396,9 @@
                   fallbackCompression='GZIP_BASE64';
                   fallbackBytes=fallbackValue.length;
                 }else{
-                  fallbackValue=serialized;
+                  fallbackValue=serializeSaveSnapshot(snapshot,checksum);
                   fallbackCompression='NONE';
-                  fallbackBytes=String(serialized).length;
+                  fallbackBytes=String(fallbackValue).length;
                 }
               }
               global.localStorage.setItem(key,fallbackValue);
@@ -1292,7 +1414,7 @@
         global.localStorage.setItem(key,stored.value);
         return {...result,storage:'LOCAL_STORAGE_FALLBACK'};
       };
-      const stored=encodeStoredSave(serialized);
+      const stored=encodeStoredSnapshot(snapshot,checksum);
       return stored && typeof stored.then==='function'
         ? stored.then(persistStoredSave)
         : persistStoredSave(stored);
