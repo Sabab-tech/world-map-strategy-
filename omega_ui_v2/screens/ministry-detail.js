@@ -231,6 +231,7 @@
         plannedDeliveryCount:planned, completedDeliveries:completed,
         remainingDeliveries:remainingDeliveries,
         nextDeliveryTurn:finiteTradeNumber(raw.nextDeliveryTurn),
+        startTurn:startTurn,
         endTurn:endTurn, remainingTurns:remainingTurns,
         durationMonths:finiteTradeNumber(raw.durationMonths),
         intervalDays:finiteTradeNumber(raw.intervalDays),
@@ -277,35 +278,116 @@
         esc(contractMoney(row.value,row.currency)) + '</strong></span>';
     }).join('') + '</div>';
   }
+  function tradeCountryFlag(value) {
+    var runtime = g.OmegaCountryRuntimeData || (g.Omega && g.Omega.CountryRuntimeData);
+    var flag = null;
+    try {
+      if (runtime && typeof runtime.flagFor === 'function') flag = runtime.flagFor(value);
+    } catch (_) {}
+    if (flag) return String(flag);
+    var profile = null;
+    try {
+      if (runtime && typeof runtime.resolveCountry === 'function') profile = runtime.resolveCountry(value);
+    } catch (_) {}
+    var code = String(profile && (profile.countryCode || profile.iso2 || profile.cca2 || profile.alpha2) || '').trim().toUpperCase();
+    return /^[A-Z]{2}$/.test(code)
+      ? Array.from(code,function (letter) { return String.fromCodePoint(0x1F1E6 + letter.charCodeAt(0) - 65); }).join('')
+      : '🏳️';
+  }
   function contractCard(row) {
-    var product = row.productId.replace(/[_-]+/g,' ').replace(/\b\w/g,function (ch) { return ch.toUpperCase(); });
-    var pricing = row.totalValue === null
-      ? (row.priceModel === 'MARKET_LINKED' || row.priceModel === 'INDEX_LINKED'
-        ? 'Variable price · final value not fixed' : 'Total value not fully recorded')
-      : contractMoney(row.totalValue,row.currency);
-    var remaining = row.remainingValue === null ? 'Not recorded' : contractMoney(row.remainingValue,row.currency);
-    var qty = row.quantityPerDelivery === null ? 'Not recorded' : numberTrade(row.quantityPerDelivery) + ' per delivery';
-    var price = row.unitPrice === null ? 'Not recorded' : contractMoney(row.unitPrice,row.currency) + ' / unit';
-    var delivery = row.completedDeliveries === null || row.plannedDeliveryCount === null
-      ? 'Not recorded' : numberTrade(row.completedDeliveries) + ' / ' + numberTrade(row.plannedDeliveryCount);
-    var next = row.nextDeliveryTurn === null ? 'Not recorded' : 'Turn ' + row.nextDeliveryTurn;
-    var time = row.remainingTurns === null ? 'Not recorded' : row.remainingTurns + ' turn(s)';
-    var statusLabel = row.status.replace(/[_-]+/g,' ');
-    return '<article class="omega-trade-contract-card">' +
-      '<div class="omega-trade-contract-head"><div><span class="omega-trade-contract-id">AGREEMENT · ' + esc(row.agreementId) + '</span>' +
-        '<h3>' + esc(product) + '</h3><p>' + esc(row.direction === 'IMPORT' ? 'Import from ' : 'Export to ') +
-        esc(row.partnerName) + (row.partnerCountryId ? ' · ' + esc(row.partnerCountryId) : '') + '</p></div>' +
-        '<span class="omega-trade-contract-status" data-status="' + esc(row.status) + '">' + esc(statusLabel) + '</span></div>' +
-      '<div class="omega-trade-contract-values"><div><small>' + esc(row.direction === 'IMPORT' ? 'Total agreement cost' : 'Total agreement income') + '</small><strong>' + esc(pricing) + '</strong></div>' +
-        '<div><small>Remaining commitment</small><strong>' + esc(remaining) + '</strong></div></div>' +
-      '<div class="omega-trade-contract-details">' +
-        '<div><small>Quantity / delivery</small><strong>' + esc(qty) + '</strong></div>' +
-        '<div><small>Agreed unit price</small><strong>' + esc(price) + '</strong></div>' +
-        '<div><small>Deliveries complete</small><strong>' + esc(delivery) + '</strong></div>' +
-        '<div><small>Next delivery</small><strong>' + esc(next) + '</strong></div>' +
-        '<div><small>Time remaining</small><strong>' + esc(time) + '</strong></div>' +
-        '<div><small>Delivery interval</small><strong>' + esc(row.intervalDays === null ? 'Not recorded' : row.intervalDays + ' days') + '</strong></div>' +
-      '</div></article>';
+    var raw = row.raw && typeof row.raw === 'object' ? row.raw : {};
+    var product = String(row.productId || 'Product not recorded')
+      .replace(/[_-]+/g,' ')
+      .replace(/\b\w/g,function (ch) { return ch.toUpperCase(); });
+    var partnerRole = row.direction === 'IMPORT' ? 'SELLER' : 'BUYER';
+    var flag = tradeCountryFlag(row.partnerCountryId);
+    var quantity = finiteTradeNumber(row.quantityPerDelivery);
+    var deliveries = finiteTradeNumber(row.plannedDeliveryCount);
+    var amount = quantity !== null && deliveries !== null
+      ? quantity * deliveries
+      : finiteTradeNumber(raw.totalQuantity !== undefined ? raw.totalQuantity
+        : raw.totalAmount !== undefined ? raw.totalAmount
+        : raw.amount !== undefined ? raw.amount : raw.quantity);
+    var unit = String(raw.quantityUnit || raw.unitOfMeasure || raw.unit || '').trim();
+    var amountText = amount === null ? 'Not recorded' : numberTrade(amount) + (unit ? ' ' + unit : '');
+    var amountDetails = [];
+    if (quantity !== null) amountDetails.push(numberTrade(quantity) + ' per delivery');
+    if (deliveries !== null) amountDetails.push(numberTrade(deliveries) + ' planned');
+    if (row.completedDeliveries !== null) amountDetails.push(numberTrade(row.completedDeliveries) + ' completed');
+    var value = row.remainingValue !== null ? row.remainingValue : row.totalValue;
+    var valueText = value !== null
+      ? contractMoney(value,row.currency)
+      : (row.priceModel === 'MARKET_LINKED' || row.priceModel === 'INDEX_LINKED'
+        ? 'Market-linked' : 'Not recorded');
+    var valueNote = row.remainingValue !== null ? 'Remaining commitment'
+      : row.totalValue !== null ? 'Full agreement value'
+      : (row.priceModel === 'MARKET_LINKED' || row.priceModel === 'INDEX_LINKED'
+        ? 'Final value follows market terms' : 'Price not recorded');
+    var validityText = row.remainingTurns !== null ? numberTrade(row.remainingTurns) + ' turns left'
+      : row.endTurn !== null ? 'Until Turn ' + numberTrade(row.endTurn)
+      : row.durationMonths !== null ? numberTrade(row.durationMonths) + ' months'
+      : 'Not recorded';
+    var validityNote = row.startTurn !== null && row.endTurn !== null
+      ? 'Turn ' + numberTrade(row.startTurn) + ' → ' + numberTrade(row.endTurn)
+      : row.endTurn !== null ? 'Expires at Turn ' + numberTrade(row.endTurn)
+      : 'Validity period not recorded';
+    var statusLabel = String(row.status || 'UNKNOWN').replace(/[_-]+/g,' ');
+    return '<article class="omega-trade-contract-card omega-trade-agreement-card" data-direction="' + esc(row.direction) +
+      '" data-partner-country="' + esc(row.partnerCountryId || 'UNKNOWN') + '">' +
+      '<div class="omega-trade-contract-head omega-trade-agreement-head">' +
+        '<div class="omega-trade-agreement-product"><span class="omega-trade-agreement-kicker">PRODUCT</span>' +
+          '<h3>' + esc(product) + '</h3><small class="omega-trade-contract-id">AGREEMENT · ' + esc(row.agreementId) + '</small></div>' +
+        '<div class="omega-trade-agreement-partner"><small>' + partnerRole + '</small><strong><span class="omega-trade-country-flag" aria-label="' +
+          esc(row.partnerName || 'Partner country') + ' flag">' + esc(flag) + '</span><span>' +
+          esc(row.partnerName || 'Partner not recorded') + '</span></strong><small>' + esc(row.partnerCountryId || 'Country not recorded') + '</small></div>' +
+      '</div>' +
+      '<div class="omega-trade-contract-values omega-trade-agreement-values">' +
+        '<div class="omega-trade-agreement-metric omega-trade-agreement-amount"><small>AMOUNT</small><strong>' + esc(amountText) +
+          '</strong><span>' + esc(amountDetails.join(' · ') || 'Quantity not fully recorded') + '</span></div>' +
+        '<div class="omega-trade-agreement-metric omega-trade-agreement-value"><small>' +
+          (row.direction === 'IMPORT' ? 'COST' : 'INCOME') + '</small><strong>' + esc(valueText) +
+          '</strong><span>' + esc(valueNote) + '</span></div>' +
+        '<div class="omega-trade-agreement-metric omega-trade-agreement-validity"><small>VALIDITY</small><strong>' +
+          esc(validityText) + '</strong><span>' + esc(validityNote) + '</span></div>' +
+      '</div>' +
+      '<div class="omega-trade-agreement-foot"><span class="omega-trade-contract-status" data-status="' + esc(row.status) + '">' +
+        esc(statusLabel) + '</span><span class="omega-trade-agreement-direction">' +
+        (row.direction === 'IMPORT' ? 'IMPORT AGREEMENT' : 'EXPORT AGREEMENT') + '</span></div>' +
+    '</article>';
+  }
+  function tradePartnerGroupsMarkup(rows) {
+    if (!rows.length) return '<div class="omega-v2-empty">No active bilateral agreement is recorded by partner country.</div>';
+    var groups = Object.create(null);
+    rows.forEach(function (row) {
+      var key = String(row.partnerCountryId || 'UNKNOWN').trim().toUpperCase() || 'UNKNOWN';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(row);
+    });
+    var entries = Object.keys(groups).map(function (key) {
+      var items = groups[key];
+      var first = items[0] || {};
+      var imports = items.filter(function (row) { return row.direction === 'IMPORT'; }).length;
+      var exports = items.length - imports;
+      return {
+        key:key, rows:items, name:String(first.partnerName || 'Partner not recorded'),
+        flag:tradeCountryFlag(key), imports:imports, exports:exports
+      };
+    }).sort(function (a,b) { return a.name.localeCompare(b.name); });
+    return '<section class="omega-trade-country-agreements" data-omega-trade-country-agreements>' +
+      '<div class="omega-trade-country-heading"><div><span>COUNTRY-BY-COUNTRY PORTFOLIO</span>' +
+        '<h3>Bilateral agreements</h3><p>Expand a country to review every active import and export agreement with that partner.</p></div>' +
+        '<span class="omega-trade-country-total">' + numberTrade(rows.length) + ' TOTAL</span></div>' +
+      '<div class="omega-trade-country-groups">' + entries.map(function (entry) {
+        return '<details class="omega-trade-country-group" data-partner-country="' + esc(entry.key) + '">' +
+          '<summary><span class="omega-trade-country-group-flag">' + esc(entry.flag) + '</span>' +
+            '<span class="omega-trade-country-group-copy"><strong>' + esc(entry.name) + '</strong>' +
+              '<small>' + esc(entry.key) + ' · ' + numberTrade(entry.imports) + ' import · ' +
+                numberTrade(entry.exports) + ' export</small></span>' +
+            '<span class="omega-trade-country-group-count">' + numberTrade(entry.rows.length) + '</span>' +
+            '<span class="omega-trade-country-chevron" aria-hidden="true">⌄</span></summary>' +
+          '<div class="omega-trade-country-group-body">' + entry.rows.map(contractCard).join('') + '</div>' +
+        '</details>';
+      }).join('') + '</div></section>';
   }
   function numberTrade(value) {
     try { return new Intl.NumberFormat('en-US',{maximumFractionDigits:3}).format(value); }
@@ -318,31 +400,45 @@
     var totals = tab === 'imports' ? model.importTotalByCurrency : model.exportTotalByCurrency;
     var direction = tab === 'imports' ? 'Import' : 'Export';
     var totalLabel = tab === 'imports' ? 'Total contracted import cost' : 'Total contracted export income';
-    return '<div class="omega-trade-settlement">' +
+    var allAgreements = model.imports.concat(model.exports);
+    return '<div class="omega-trade-settlement" data-omega-trade-settlement-view="true">' +
       '<div class="omega-trade-settlement-intro"><div><span>TRADE AGREEMENTS · TURN ' + esc(model.turn) + '</span>' +
-        '<h2>Trade Settlement</h2><p>Country ' + esc(country) + ' · only the selected country’s agreement records are shown</p></div>' +
-        '<span class="omega-trade-settlement-count">' + esc(model.openCount) + ' open agreement(s)</span></div>' +
-      '<div class="omega-trade-settlement-kpis"><div><small>Import agreements</small><strong>' + esc(model.importCount) + '</strong></div>' +
+        '<h2>Trade Settlement</h2><p>' + esc(country) + ' · current bilateral commitments</p></div>' +
+        '<span class="omega-trade-settlement-count">' + esc(model.openCount) + ' active agreement(s)</span></div>' +
+      '<div class="omega-trade-settlement-kpis">' +
+        '<div><small>Import agreements</small><strong>' + esc(model.importCount) + '</strong></div>' +
         '<div><small>Export agreements</small><strong>' + esc(model.exportCount) + '</strong></div>' +
         '<div><small>Current game turn</small><strong>' + esc(model.turn) + '</strong></div></div>' +
       '<div class="omega-trade-settlement-tabs" role="tablist" aria-label="Import and export agreements">' +
-        '<button type="button" data-omega-v2-trade-settlement-tab="imports" aria-selected="' + (tab === 'imports' ? 'true' : 'false') + '">Imports · ' + esc(model.importCount) + '</button>' +
-        '<button type="button" data-omega-v2-trade-settlement-tab="exports" aria-selected="' + (tab === 'exports' ? 'true' : 'false') + '">Exports · ' + esc(model.exportCount) + '</button></div>' +
+        '<button type="button" data-omega-v2-trade-settlement-tab="imports" aria-selected="' +
+          (tab === 'imports' ? 'true' : 'false') + '">IMPORT · ' + esc(model.importCount) + '</button>' +
+        '<button type="button" data-omega-v2-trade-settlement-tab="exports" aria-selected="' +
+          (tab === 'exports' ? 'true' : 'false') + '">EXPORT · ' + esc(model.exportCount) + '</button></div>' +
       '<div class="omega-trade-settlement-summary"><span>' + esc(totalLabel) + '</span>' +
         settlementTotalMarkup(totals,direction) + '</div>' +
-      (rows.length ? '<div class="omega-trade-contract-grid">' + rows.map(contractCard).join('') + '</div>' :
-        '<div class="omega-v2-empty">No active ' + direction.toLowerCase() + ' agreement is recorded for this country.</div>') +
+      '<section class="omega-trade-agreement-ledger" data-omega-trade-primary-list="' + tab + '">' +
+        '<div class="omega-trade-agreement-ledger-heading"><div><span>ACTIVE COMMITMENTS</span>' +
+          '<h3>' + direction + ' agreements</h3></div><small>' + numberTrade(rows.length) + ' RECORD(S)</small></div>' +
+        (rows.length ? '<div class="omega-trade-contract-grid">' + rows.map(contractCard).join('') + '</div>' :
+          '<div class="omega-v2-empty">No active ' + direction.toLowerCase() + ' agreement is recorded for this country.</div>') +
+      '</section>' +
+      tradePartnerGroupsMarkup(allAgreements) +
       '<p class="omega-trade-settlement-ownership">Agreements are future commitments. Actual cargo movement, payment and completed transactions remain in the existing Global Trade, Treasury and Transactions ledgers. This screen is read-only and does not repeat or alter settled transaction history.</p>' +
     '</div>';
   }
 
   function tradeCommandIconMarkup(kind) {
     var prefix = 'omega-trade-' + String(kind || 'overview').replace(/[^a-z0-9-]/gi,'');
+    var accent = {
+      overview:'#62dfff', commodities:'#ffc979', settlement:'#63e4bb',
+      transactions:'#8bbaff', 'black-market':'#d49aff'
+    }[kind] || '#62dfff';
     var defs = '<defs>' +
       '<linearGradient id="' + prefix + '-steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f0fbff"/><stop offset=".32" stop-color="#78badc"/><stop offset=".68" stop-color="#28658f"/><stop offset="1" stop-color="#102e50"/></linearGradient>' +
       '<linearGradient id="' + prefix + '-cyan" x1="0" y1="0" x2=".2" y2="1"><stop stop-color="#dbfbff"/><stop offset=".35" stop-color="#55d8f4"/><stop offset=".72" stop-color="#1689bf"/><stop offset="1" stop-color="#075078"/></linearGradient>' +
       '<linearGradient id="' + prefix + '-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff1bb"/><stop offset=".42" stop-color="#f4bf66"/><stop offset="1" stop-color="#99551f"/></linearGradient>' +
       '<linearGradient id="' + prefix + '-dark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#354b70"/><stop offset=".45" stop-color="#172d4c"/><stop offset="1" stop-color="#07182d"/></linearGradient>' +
+      '<linearGradient id="' + prefix + '-rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f1fbff"/><stop offset=".2" stop-color="' + accent + '"/><stop offset=".58" stop-color="#286b91"/><stop offset="1" stop-color="#061527"/></linearGradient>' +
       '<radialGradient id="' + prefix + '-glow" cx=".34" cy=".2" r=".8"><stop stop-color="#ffffff" stop-opacity=".72"/><stop offset=".25" stop-color="#8ceaff" stop-opacity=".18"/><stop offset="1" stop-color="#0a2845" stop-opacity="0"/></radialGradient>' +
       '<filter id="' + prefix + '-shadow" x="-35%" y="-35%" width="180%" height="180%"><feGaussianBlur in="SourceAlpha" stdDeviation="1.8"/><feOffset dy="2"/><feComponentTransfer><feFuncA type="linear" slope=".55"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
       '</defs>';
@@ -359,16 +455,23 @@
         '<g filter="url(#' + prefix + '-shadow)" stroke-linejoin="round"><path d="M7 36h49l-7 12-29 3-13-8Z" fill="url(#' + prefix + '-dark)" stroke="#a2d5eb" stroke-width="1.2"/><path d="m13 35 5-10h11v10Zm14 0 5-13h12v13Z" fill="url(#' + prefix + '-cyan)" stroke="#b4efff"/><path d="m18 25 5-5h11l-5 5Zm14-3 5-5h12l-5 5Z" fill="url(#' + prefix + '-steel)" stroke="#e1f8ff"/><path d="M19 27v8m6-8v8m13-11v11m6-11v11" stroke="#e6f8ff" stroke-width="1.15" opacity=".7"/><path d="M7 43q22 7 49-2" fill="none" stroke="#4bd5f4" stroke-width="2"/><path d="M11 53q9-3 18 0t18 0" fill="none" stroke="#63cde8" stroke-width="1.4"/><circle cx="49" cy="12" r="8.5" fill="url(#' + prefix + '-gold)" stroke="#fff2c8"/><path d="m45 12 3 3 5-6" fill="none" stroke="#315b70" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g><path d="M15 34h34" stroke="#fff" stroke-opacity=".45" stroke-width="1.3"/>'
     };
     return '<svg class="omega-trade-command-svg" viewBox="0 0 64 56" aria-hidden="true" focusable="false">' +
-      defs + (art[kind] || art.overview) + '</svg>';
+      defs +
+      '<ellipse cx="32" cy="51" rx="17" ry="3" fill="#020914" opacity=".72"/>' +
+      '<circle cx="32" cy="28" r="25.2" fill="url(#' + prefix + '-dark)" stroke="url(#' + prefix + '-rim)" stroke-width="1.8"/>' +
+      '<circle cx="32" cy="28" r="22.4" fill="#0b2139" stroke="' + accent + '" stroke-opacity=".68" stroke-width=".9"/>' +
+      '<circle cx="32" cy="28" r="20.3" fill="none" stroke="#dff8ff" stroke-opacity=".16" stroke-width=".8"/>' +
+      '<path d="M12 25Q18 6 32 5Q47 6 52 25" fill="none" stroke="#ffffff" stroke-opacity=".28" stroke-width="1.4" stroke-linecap="round"/>' +
+      '<ellipse cx="23" cy="12" rx="13" ry="5" fill="url(#' + prefix + '-glow)"/>' +
+      (art[kind] || art.overview) + '</svg>';
   }
 
   function tradeCommandNavigationMarkup(section, marketTab) {
     var routes = [
       { id:'overview', label:'Overview', section:'dashboard', attributes:'data-omega-v2-ministry-section="dashboard"', icon:'overview' },
       { id:'commodities', label:'Commodity<br>Market', section:'market', tab:'commodities', attributes:'data-omega-v2-ministry-section="market" data-omega-v2-trade-market-tab="commodities"', icon:'commodities' },
-      { id:'black-market', label:'Black<br>Market', section:'market', tab:'black-market', attributes:'data-omega-v2-ministry-section="market" data-omega-v2-trade-market-tab="black-market"', icon:'black-market' },
+      { id:'settlement', label:'Trade<br>Settlement', section:'settlement', attributes:'data-omega-v2-ministry-section="settlement"', icon:'settlement' },
       { id:'transactions', label:'Transactions', section:'market', tab:'transactions', attributes:'data-omega-v2-ministry-section="market" data-omega-v2-trade-market-tab="transactions"', icon:'transactions' },
-      { id:'settlement', label:'Trade<br>Settlement', section:'settlement', attributes:'data-omega-v2-ministry-section="settlement"', icon:'settlement' }
+      { id:'black-market', label:'Black<br>Market', section:'market', tab:'black-market', attributes:'data-omega-v2-ministry-section="market" data-omega-v2-trade-market-tab="black-market"', icon:'black-market' }
     ];
     return '<nav class="omega-trade-command-nav" data-omega-trade-command-nav role="navigation" aria-label="Trade & Commerce navigation">' +
       routes.map(function (route, index) {
