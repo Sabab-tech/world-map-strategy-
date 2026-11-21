@@ -219,7 +219,7 @@ export class GitHubAppClient {
     ]);
     const actions = await this.repoRequest(
       "/actions/runs?head_sha=" + encodeURIComponent(sha) + "&per_page=50"
-    ).catch(() => ({ workflow_runs: [] }));
+    ).catch(error => ({ workflow_runs: [], error }));
 
     return {
       headSha: sha,
@@ -241,6 +241,7 @@ export class GitHubAppClient {
           target_url: item.target_url
         }))
       },
+      workflowRunsError: actions?.error ? String(actions.error.message || actions.error).slice(0, 300) : null,
       workflowRuns: (actions?.workflow_runs || []).map(run => ({
         name: run.name,
         status: run.status,
@@ -261,7 +262,7 @@ export class GitHubAppClient {
     const data = await this.repoRequest(
       "/contents/" + encodePath(safePath) + "?ref=" + encodeURIComponent(safeRef)
     );
-    if (!data || data.type !== "file" || data.encoding !== "base64" || !data.content) {
+    if (!data || data.type !== "file" || data.encoding !== "base64" || typeof data.content !== "string") {
       throw new Error("FILE_CONTENT_UNAVAILABLE_OR_NOT_TEXT");
     }
     const content = Buffer.from(data.content.replace(/\s/g, ""), "base64").toString("utf8");
