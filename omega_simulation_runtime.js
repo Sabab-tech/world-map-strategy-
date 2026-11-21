@@ -1194,7 +1194,13 @@
     async step(){
       // A durable streaming save reads the authoritative root over multiple
       // chunks. Hold the next turn until the save has reached IndexedDB.
-      if(this.saveBarrier)await this.saveBarrier;
+      if(this.saveBarrier){
+        await this.saveBarrier;
+        // A frame may have queued this step before the app was backgrounded.
+        // Recheck after the wait so a visibility/pagehide pause cannot be
+        // undone by a step that resumes after its save barrier releases.
+        if(this.status!=='RUNNING')return {turn:this.clock.turn,steps:0,status:this.status,skipped:true};
+      }
       if(this.stepInProgress)throw new Error('SIMULATION_STEP_REENTRANT');
       if(this.status==='ERROR')throw new Error('SIMULATION_IN_ERROR:'+String(this.lastError||'UNKNOWN'));
       this.stepInProgress=true;
@@ -1427,11 +1433,23 @@
         global.localStorage.setItem(key,stored.value);
         return {...result,storage:'LOCAL_STORAGE_FALLBACK'};
       };
-      const stored=encodeStoredSnapshot(snapshot);
-      return await Promise.resolve(stored).then(persistStoredSave);
-      }finally{
+      const releaseCurrentSave=()=>{
         releaseSave();
         if(this.saveBarrier===currentSave)this.saveBarrier=null;
+      };
+      const stored=encodeStoredSnapshot(snapshot);
+      if(stored&&typeof stored.then==='function'){
+        return Promise.resolve(stored).then(persistStoredSave).finally(releaseCurrentSave);
+      }
+      // Keep a plain-JSON/no-IndexedDB fallback synchronous. pagehide and
+      // beforeunload cannot rely on another promise microtask before teardown.
+      const persisted=persistStoredSave(stored);
+      if(persisted&&typeof persisted.then==='function')
+        return persisted.finally(releaseCurrentSave);
+      releaseCurrentSave();
+      return persisted;
+      }finally{
+        if(this.saveBarrier===currentSave)releaseSave();
       }
     }
 
