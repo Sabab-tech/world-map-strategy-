@@ -97,7 +97,7 @@ function createWorldHarness() {
 
   const sandbox = {
     console, Promise, Map, Set, WeakMap, Object, Array, Number, String, Math, Date, JSON,
-    performance: { now() { monotonicClock += 1; return monotonicClock; } },
+    performance: { now() { monotonicClock += 0.25; return monotonicClock; } },
     setTimeout(callback) { schedulerYields += 1; queueMicrotask(callback); return 0; },
     Omega: { Simulation: simulation, OpponentCountryRules: rules },
     OmegaCountryRuntimeData: {
