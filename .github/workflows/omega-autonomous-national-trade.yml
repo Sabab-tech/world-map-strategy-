@@ -24,6 +24,7 @@ on:
       - "test/omega_autonomous_national_trade_decision_engine_v1.test.mjs"
       - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
       - "test/omega_world_economy_game_day_integration.test.mjs"
+      - "test/omega_economy_trade_ui_v1.test.mjs"
       - "minister_country_roster_manifest_v1.json"
       - "test/omega_bilateral_trade_agreement_system_v1.test.mjs"
       - ".github/workflows/omega-autonomous-national-trade.yml"
@@ -51,6 +52,7 @@ on:
       - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
       - "test/omega_bilateral_trade_agreement_system_v1.test.mjs"
       - "test/omega_world_economy_game_day_integration.test.mjs"
+      - "test/omega_economy_trade_ui_v1.test.mjs"
       - "minister_country_roster_manifest_v1.json"
   workflow_dispatch:
 
