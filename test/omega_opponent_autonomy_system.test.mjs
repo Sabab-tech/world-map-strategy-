@@ -14,41 +14,41 @@ globalThis.Game={
   state:{
     simulation:{turn:1,simulationTurn:1},
     finance:{
-      BD:{available:100000,reserves:120000,committed:1000},
-      SA:{available:200000,reserves:300000}
+      BGD:{available:100000,reserves:120000,committed:1000},
+      SAU:{available:200000,reserves:300000}
     },
     economy:{
-      BD:{gdp:460000,debt:210000,production:500,productionCapacity:600},
-      SA:{gdp:650000,debt:120000}
+      BGD:{gdp:460000,debt:210000,production:500,productionCapacity:600},
+      SAU:{gdp:650000,debt:120000}
     },
     population:{
-      BD:{labor:{available:5000,skilled:1200}}
+      BGD:{labor:{available:5000,skilled:1200}}
     },
     resource:{
-      BD:{inventory:{steel:10000},production:{steel:500},consumption:{steel:400},reserves:{steel:20000}}
+      BGD:{inventory:{steel:10000},production:{steel:500},consumption:{steel:400},reserves:{steel:20000}}
     },
     cities:{
-      BD:{housing:{available:1000,required:1200}}
+      BGD:{housing:{available:1000,required:1200}}
     },
     projects:{
-      BD:{registry:[]}
+      BGD:{registry:[]}
     },
     military:{
-      BD:{forceStructure:{personnel:1000,units:10,organizedPersonnel:1000,personnelPerUnit:100},readiness:60,trainingQueue:[],equipmentQueue:[],equipmentInventory:{}},
-      SA:{forceStructure:{personnel:50000,units:500},readiness:80}
+      BGD:{forceStructure:{personnel:1000,units:10,organizedPersonnel:1000,personnelPerUnit:100},readiness:60,trainingQueue:[],equipmentQueue:[],equipmentInventory:{}},
+      SAU:{forceStructure:{personnel:50000,units:500},readiness:80}
     },
     relations:{
-      BD:{
-        SA:{overall:75,trade:80,trust:70,trade_agreement:true,sanctions:false,war_state:false}
+      BGD:{
+        SAU:{overall:75,trade:80,trust:70,trade_agreement:true,sanctions:false,war_state:false}
       }
     },
     foreign:{
-      BD:{
-        relations:{SA:{overall:75,trade:80,trust:70,trade_agreement:true,sanctions:false,war_state:false}},
+      BGD:{
+        relations:{SAU:{overall:75,trade:80,trust:70,trade_agreement:true,sanctions:false,war_state:false}},
         treaties:{}
       }
     },
-    trade:{BD:{relations:{SA:{overall:75,trade:80,trust:70}},marketPrice:{crude_oil:80},offerBook:{crude_oil:{unitPrice:80}},routeCapacity:{crude_oil:2000000}},SA:{offerBook:{crude_oil:{unitPrice:78}}}}
+    trade:{BGD:{relations:{SAU:{overall:75,trade:80,trust:70}},marketPrice:{crude_oil:80},offerBook:{crude_oil:{unitPrice:80}},routeCapacity:{crude_oil:2000000}},SAU:{offerBook:{crude_oil:{unitPrice:78}}}}
   }
 };
 
@@ -60,9 +60,9 @@ globalThis.ResourceMinistryEngine={
     return {countryId,inventory:{crude_oil:1000000},production:{crude_oil:500000},reserves:{crude_oil:5000000}};
   },
   getCountryResourceProfile(countryId){
-    return {countryId,market:{prices:{crude_oil:countryId==='SA'?78:120}}};
+    return {countryId,market:{prices:{crude_oil:countryId==='SAU'?78:120}}};
   },
-  deposits:[{countryCode:'SA',resourceId:'crude_oil'}]
+  deposits:[{countryCode:'SAU',resourceId:'crude_oil'}]
 };
 
 await import('../omega_ministry_registry.js');
@@ -80,148 +80,148 @@ assert(autonomy,'autonomy API missing');
 assert(autonomy.diagnostics().queueBridgeInstalled===true,'opponent queue bridge not installed');
 
 const canonical=autonomy.canonicalCountry('Bangladesh');
-assert.equal(canonical.id,'BD');
+assert.equal(canonical.id,'BGD');
 assert.equal(canonical.authority,'OMEGA_CANONICAL_COUNTRY_IDENTITY');
 const namedRoute=autonomy.routeSubject('import','Bangladesh','Saudi Arabia');
-assert.equal(namedRoute.countryId,'BD');
-assert.equal(namedRoute.targetCountryId,'SA');
+assert.equal(namedRoute.countryId,'BGD');
+assert.equal(namedRoute.targetCountryId,'SAU');
 const kernelEvaluation=await globalThis.Omega.OpponentCountryRules.evaluateCountry('Bangladesh',1);
-assert.equal(kernelEvaluation.countryId,'BD');
+assert.equal(kernelEvaluation.countryId,'BGD');
 
 const sourceRoute=autonomy.findDataSources('treasury','Bangladesh');
-assert.equal(sourceRoute.countryId,'BD');
+assert.equal(sourceRoute.countryId,'BGD');
 assert.equal(sourceRoute.primaryMinistry,'finance');
 const eventRoute=autonomy.resolveEventRoute('OMEGA_RESOURCE_IMPORT_REQUEST_SENT','Bangladesh');
-assert.equal(eventRoute.countryId,'BD');
+assert.equal(eventRoute.countryId,'BGD');
 assert.equal(eventRoute.owner,'trade');
 
 
-const importRoute=autonomy.routeSubject('import','BD','SA');
+const importRoute=autonomy.routeSubject('import','BGD','SAU');
 assert.equal(importRoute.primary,'trade');
-assert.deepEqual(importRoute.targetCountryId,'SA');
+assert.deepEqual(importRoute.targetCountryId,'SAU');
 assert(importRoute.files.includes('relations.json'));
 
-const evidence=autonomy.collectEvidence('BD',['treasury','labor','materials','debt','housing','military','relations'],'SA');
+const evidence=autonomy.collectEvidence('BGD',['treasury','labor','materials','debt','housing','military','relations'],'SAU');
 for(const key of ['treasury','labor','materials','debt','housing','military','relations'])assert(evidence.subjects[key],key+' route missing');
 
-const reserved=autonomy.dispatch('OMEGA_AUTO_RESERVE','BD',{
+const reserved=autonomy.dispatch('OMEGA_AUTO_RESERVE','BGD',{
   reservationId:'TEST-RES-1',decisionId:'TEST-DEC-1',money:10000,labor:100,materials:{steel:500}
 });
 assert.equal(reserved.status,'APPLIED');
-assert.equal(globalThis.Game.state.cabinet.BD.autonomyReservations.length,1);
-const oversubscribe=autonomy.dispatch('OMEGA_AUTO_RESERVE','BD',{
+assert.equal(globalThis.Game.state.cabinet.BGD.autonomyReservations.length,1);
+const oversubscribe=autonomy.dispatch('OMEGA_AUTO_RESERVE','BGD',{
   reservationId:'TEST-RES-OVER',decisionId:'TEST-DEC-OVER',money:95000,labor:0,materials:{steel:1}
 });
 assert.equal(oversubscribe.status,'FAILED');
 assert.equal(oversubscribe.reason,'INSUFFICIENT_UNRESERVED_TREASURY');
 
 
-const importRequest=autonomy.dispatch('OMEGA_AUTO_RESOURCE_IMPORT_REQUEST','BD',{
+const importRequest=autonomy.dispatch('OMEGA_AUTO_RESOURCE_IMPORT_REQUEST','BGD',{
   requestId:'TEST-IMP-1',decisionId:'TEST-DEC-2',resourceId:'crude_oil',
-  targetCountryId:'SA',quantity:1000000,unitPrice:80,reservationId:'TEST-RES-1'
+  targetCountryId:'SAU',quantity:1000000,unitPrice:80,reservationId:'TEST-RES-1'
 });
 assert.equal(importRequest.status,'APPLIED');
-assert.equal(globalThis.Game.state.trade.BD.importRequests[0].targetCountryId,'SA');
-assert.equal(globalThis.Game.state.trade.BD.importRequests[0].status,'SENT');
-assert.equal(globalThis.Game.state.trade.BD.importRequests[0].stage,'COUNTERPARTY_DECISION_PENDING');
+assert.equal(globalThis.Game.state.trade.BGD.importRequests[0].targetCountryId,'SAU');
+assert.equal(globalThis.Game.state.trade.BGD.importRequests[0].status,'SENT');
+assert.equal(globalThis.Game.state.trade.BGD.importRequests[0].stage,'COUNTERPARTY_DECISION_PENDING');
 const supplier=autonomy.chooseImportSupplier('Bangladesh',{
   countryId:'Bangladesh',
   scenarioId:'RESOURCE_DEFICIT',
   runtimeMeasurement:{resourceId:'crude_oil',required:1000000}
 });
-assert.equal(supplier.countryId,'SA');
+assert.equal(supplier.countryId,'SAU');
 assert.equal(supplier.unitPrice,78);
 
 
-const housing=autonomy.dispatch('OMEGA_AUTO_HOUSING_COMMISSION','BD',{
+const housing=autonomy.dispatch('OMEGA_AUTO_HOUSING_COMMISSION','BGD',{
   project:{projectId:'HOUSE-1',quantity:200,decisionId:'TEST-HOUSING'}
 });
 assert.equal(housing.status,'APPLIED');
-assert.equal(globalThis.Game.state.cities.BD.housing.available,1200);
-const projectReservation=autonomy.dispatch('OMEGA_AUTO_RESERVE','BD',{
+assert.equal(globalThis.Game.state.cities.BGD.housing.available,1200);
+const projectReservation=autonomy.dispatch('OMEGA_AUTO_RESERVE','BGD',{
   reservationId:'TEST-RES-PROJECT',decisionId:'TEST-PROJECT',money:1000,labor:50,materials:{steel:50}
 });
 assert.equal(projectReservation.status,'APPLIED');
-const project=autonomy.dispatch('OMEGA_AUTO_PROJECT_CREATE','BD',{
+const project=autonomy.dispatch('OMEGA_AUTO_PROJECT_CREATE','BGD',{
   projectId:'HOUSE-PROJECT-1',action:'HOUSING_BUILD',kind:'HOUSING',
   scenarioId:'HOUSING_SHORTAGE',decisionId:'TEST-PROJECT',reservationId:'TEST-RES-PROJECT',
   quantity:50,cost:1000,labor:50,materials:{steel:50},durationTurns:1
 });
 assert.equal(project.status,'APPLIED');
 globalThis.Game.state.simulation.turn=2;
-const projectTick=autonomy.dispatch('OMEGA_AUTO_PROJECT_TICK','BD',{});
+const projectTick=autonomy.dispatch('OMEGA_AUTO_PROJECT_TICK','BGD',{});
 assert.equal(projectTick.status,'APPLIED');
-assert(globalThis.Game.state.projects.BD.registry.some(x=>x.projectId==='HOUSE-PROJECT-1'&&x.status==='COMMISSIONING'&&x.settlementReady===true));
-const projectFinalize=autonomy.dispatch('OMEGA_AUTO_PROJECT_FINALIZE','BD',{
+assert(globalThis.Game.state.projects.BGD.registry.some(x=>x.projectId==='HOUSE-PROJECT-1'&&x.status==='COMMISSIONING'&&x.settlementReady===true));
+const projectFinalize=autonomy.dispatch('OMEGA_AUTO_PROJECT_FINALIZE','BGD',{
   projectId:'HOUSE-PROJECT-1',decisionId:'TEST-PROJECT',reservationId:'TEST-RES-PROJECT',correlationId:'TEST-PROJECT'
 });
 assert.equal(projectFinalize.status,'APPLIED');
-assert(globalThis.Game.state.projects.BD.registry.some(x=>x.projectId==='HOUSE-PROJECT-1'&&x.status==='COMPLETED'&&x.phase==='OPERATIONAL'));
-assert.equal(globalThis.Game.state.cities.BD.housing.available,1250);
-assert.equal(globalThis.Game.state.resource.BD.inventory.steel,9950);
+assert(globalThis.Game.state.projects.BGD.registry.some(x=>x.projectId==='HOUSE-PROJECT-1'&&x.status==='COMPLETED'&&x.phase==='OPERATIONAL'));
+assert.equal(globalThis.Game.state.cities.BGD.housing.available,1250);
+assert.equal(globalThis.Game.state.resource.BGD.inventory.steel,9950);
 
 
-const factory=autonomy.dispatch('OMEGA_AUTO_FACTORY_COMMISSION','BD',{
+const factory=autonomy.dispatch('OMEGA_AUTO_FACTORY_COMMISSION','BGD',{
   project:{projectId:'FACTORY-1',quantity:50,decisionId:'TEST-FACTORY'}
 });
 assert.equal(factory.status,'APPLIED');
-assert.equal(globalThis.Game.state.economy.BD.productionCapacity,650);
+assert.equal(globalThis.Game.state.economy.BGD.productionCapacity,650);
 
-const recruit=autonomy.dispatch('OMEGA_AUTO_MILITARY_RECRUIT','BD',{
+const recruit=autonomy.dispatch('OMEGA_AUTO_MILITARY_RECRUIT','BGD',{
   quantity:250,decisionId:'TEST-RECRUIT'
 });
 assert.equal(recruit.status,'APPLIED');
-assert.equal(globalThis.Game.state.military.BD.forceStructure.personnel,1250);
+assert.equal(globalThis.Game.state.military.BGD.forceStructure.personnel,1250);
 
-const training=autonomy.dispatch('OMEGA_AUTO_MILITARY_TRAIN','BD',{
+const training=autonomy.dispatch('OMEGA_AUTO_MILITARY_TRAIN','BGD',{
   quantity:250,durationTurns:1,decisionId:'TEST-TRAIN'
 });
 assert.equal(training.status,'APPLIED');
-assert.equal(globalThis.Game.state.military.BD.trainingQueue.length,1);
+assert.equal(globalThis.Game.state.military.BGD.trainingQueue.length,1);
 
 globalThis.Game.state.simulation.turn=2;
-const tick=autonomy.dispatch('OMEGA_AUTO_MILITARY_TICK','BD',{});
+const tick=autonomy.dispatch('OMEGA_AUTO_MILITARY_TICK','BGD',{});
 assert.equal(tick.status,'APPLIED');
-assert.equal(globalThis.Game.state.military.BD.trainingQueue[0].status,'COMPLETED');
-const organize=autonomy.dispatch('OMEGA_AUTO_MILITARY_ORGANIZE','BD',{
+assert.equal(globalThis.Game.state.military.BGD.trainingQueue[0].status,'COMPLETED');
+const organize=autonomy.dispatch('OMEGA_AUTO_MILITARY_ORGANIZE','BGD',{
   quantity:200,personnelPerUnit:100,decisionId:'TEST-ORG'
 });
 assert.equal(organize.status,'APPLIED');
-assert.equal(globalThis.Game.state.military.BD.forceStructure.units,12);
-assert.equal(globalThis.Game.state.military.BD.forceStructure.organizedPersonnel,1200);
+assert.equal(globalThis.Game.state.military.BGD.forceStructure.units,12);
+assert.equal(globalThis.Game.state.military.BGD.forceStructure.organizedPersonnel,1200);
 
 globalThis.Game.state.simulation.turn=3;
-const training2=autonomy.dispatch('OMEGA_AUTO_MILITARY_TRAIN','BD',{
+const training2=autonomy.dispatch('OMEGA_AUTO_MILITARY_TRAIN','BGD',{
   quantity:200,durationTurns:1,readinessDelta:5,decisionId:'TEST-TRAIN-2'
 });
 assert.equal(training2.status,'APPLIED');
-const tick2=autonomy.dispatch('OMEGA_AUTO_MILITARY_TICK','BD',{});
+const tick2=autonomy.dispatch('OMEGA_AUTO_MILITARY_TICK','BGD',{});
 assert.equal(tick2.status,'APPLIED');
-assert.equal(globalThis.Game.state.military.BD.readiness,65);
+assert.equal(globalThis.Game.state.military.BGD.readiness,65);
 
-const equipment=autonomy.dispatch('OMEGA_AUTO_MILITARY_EQUIP','BD',{
+const equipment=autonomy.dispatch('OMEGA_AUTO_MILITARY_EQUIP','BGD',{
   quantity:20,item:'APC',cost:1000,materials:{steel:100},decisionId:'TEST-EQUIP'
 });
 assert.equal(equipment.status,'APPLIED');
-assert.equal(globalThis.Game.state.military.BD.equipmentInventory.APC,20);
+assert.equal(globalThis.Game.state.military.BGD.equipmentInventory.APC,20);
 
 
-const treaty=autonomy.startTreatyNegotiation('BD','SA',{
+const treaty=autonomy.startTreatyNegotiation('BGD','SAU',{
   treatyType:'ENERGY_SUPPLY',
   terms:{resourceId:'crude_oil',quantity:1000000},
   decisionId:'TEST-TREATY'
 });
 assert.equal(treaty.status,'APPLIED');
-assert.equal(globalThis.Game.state.foreign.BD.negotiations.SA.counterpartyDecision,'PENDING');
+assert.equal(globalThis.Game.state.foreign.BGD.negotiations.SAU.counterpartyDecision,'PENDING');
 
-const threat=autonomy.assessThreat('BD','SA');
-assert.equal(threat.targetCountryId,'SA');
+const threat=autonomy.assessThreat('BGD','SAU');
+assert.equal(threat.targetCountryId,'SAU');
 assert('confidence' in threat);
 assert('uncertainty' in threat);
 
 const decision=autonomy.planDecision({
   decisionId:'TEST-DECISION',
-  countryId:'BD',
+  countryId:'BGD',
   scenarioId:'HOUSING_SHORTAGE',
   runtimeMeasurement:{
     required:1200,available:1000,gap:200,
@@ -256,9 +256,9 @@ console.log(JSON.stringify({
   queueBridgeInstalled:autonomy.diagnostics().queueBridgeInstalled,
   routeCount:autonomy.diagnostics().routeCount,
   eventRouteCount:autonomy.diagnostics().eventRouteCount,
-  reservationCount:globalThis.Game.state.cabinet.BD.autonomyReservations.length,
-  importRequests:globalThis.Game.state.trade.BD.importRequests.length,
-  housingAvailable:globalThis.Game.state.cities.BD.housing.available,
-  productionCapacity:globalThis.Game.state.economy.BD.productionCapacity,
-  militaryPersonnel:globalThis.Game.state.military.BD.forceStructure.personnel
+  reservationCount:globalThis.Game.state.cabinet.BGD.autonomyReservations.length,
+  importRequests:globalThis.Game.state.trade.BGD.importRequests.length,
+  housingAvailable:globalThis.Game.state.cities.BGD.housing.available,
+  productionCapacity:globalThis.Game.state.economy.BGD.productionCapacity,
+  militaryPersonnel:globalThis.Game.state.military.BGD.forceStructure.personnel
 },null,2));
