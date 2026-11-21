@@ -335,6 +335,56 @@
       '<p class="omega-trade-settlement-ownership">Agreements are future commitments. Actual cargo movement, payment and completed transactions remain in the existing Global Trade, Treasury and Transactions ledgers. This screen is read-only and does not repeat or alter settled transaction history.</p>' +
     '</div>';
   }
+
+  function tradeCommandIconMarkup(kind) {
+    var prefix = 'omega-trade-' + String(kind || 'overview').replace(/[^a-z0-9-]/gi,'');
+    var defs = '<defs>' +
+      '<linearGradient id="' + prefix + '-steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f0fbff"/><stop offset=".32" stop-color="#78badc"/><stop offset=".68" stop-color="#28658f"/><stop offset="1" stop-color="#102e50"/></linearGradient>' +
+      '<linearGradient id="' + prefix + '-cyan" x1="0" y1="0" x2=".2" y2="1"><stop stop-color="#dbfbff"/><stop offset=".35" stop-color="#55d8f4"/><stop offset=".72" stop-color="#1689bf"/><stop offset="1" stop-color="#075078"/></linearGradient>' +
+      '<linearGradient id="' + prefix + '-gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff1bb"/><stop offset=".42" stop-color="#f4bf66"/><stop offset="1" stop-color="#99551f"/></linearGradient>' +
+      '<linearGradient id="' + prefix + '-dark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#354b70"/><stop offset=".45" stop-color="#172d4c"/><stop offset="1" stop-color="#07182d"/></linearGradient>' +
+      '<radialGradient id="' + prefix + '-glow" cx=".34" cy=".2" r=".8"><stop stop-color="#ffffff" stop-opacity=".72"/><stop offset=".25" stop-color="#8ceaff" stop-opacity=".18"/><stop offset="1" stop-color="#0a2845" stop-opacity="0"/></radialGradient>' +
+      '<filter id="' + prefix + '-shadow" x="-35%" y="-35%" width="180%" height="180%"><feGaussianBlur in="SourceAlpha" stdDeviation="1.8"/><feOffset dy="2"/><feComponentTransfer><feFuncA type="linear" slope=".55"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+      '</defs>';
+    var art = {
+      overview:
+        '<g filter="url(#' + prefix + '-shadow)"><circle cx="31" cy="27" r="18.5" fill="url(#' + prefix + '-steel)" stroke="#d3f4ff" stroke-width="1.3"/><path d="M16 22Q31 9 46 22L47 32Q31 44 15 32Z" fill="url(#' + prefix + '-cyan)" opacity=".92"/><path d="M31 9C23 17 22 35 31 45M31 9C39 17 40 35 31 45M13 27h36M17 18q14 8 28 0M17 36q14-8 28 0" fill="none" stroke="#e0faff" stroke-width="1.25" opacity=".88"/><ellipse cx="31" cy="27" rx="24" ry="10" transform="rotate(-27 31 27)" fill="none" stroke="url(#' + prefix + '-gold)" stroke-width="2.2"/><path d="m48 11 4 1-2 4" fill="none" stroke="#fff0b5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="17" cy="17" r="2.8" fill="url(#' + prefix + '-gold)" stroke="#fff0c5"/></g><ellipse cx="21" cy="14" rx="10" ry="4" fill="url(#' + prefix + '-glow)"/>',
+      commodities:
+        '<g filter="url(#' + prefix + '-shadow)" stroke-linejoin="round"><path d="m9 25 15-9 15 7-15 9Z" fill="url(#' + prefix + '-steel)" stroke="#d4f3ff" stroke-width="1"/><path d="m9 25 15 7v18L9 42Z" fill="url(#' + prefix + '-dark)" stroke="#6ea8ca"/><path d="m24 32 15-9v19l-15 8Z" fill="url(#' + prefix + '-cyan)" stroke="#9ceaff"/><path d="m28 16 13-8 14 7-14 8Z" fill="url(#' + prefix + '-gold)" stroke="#fff0c3"/><path d="m28 16 13 7v17l-13-7Z" fill="#98612f" stroke="#f7d49b"/><path d="m41 23 14-8v18l-14 7Z" fill="#c78a43" stroke="#ffe2ad"/><path d="M13 27v13m4-11v14m11-8v12m4-13v11m12-16v12m4-15v12" stroke="#e8f9ff" stroke-width="1" opacity=".72"/><path d="M9 42 24 50l15-8 16-10" fill="none" stroke="#66def6" stroke-width="1.4"/></g><path d="m13 25 11-7 11 6" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.4"/>',
+      "black-market":
+        '<g filter="url(#' + prefix + '-shadow)" stroke-linejoin="round"><path d="m11 17 24-9 20 8-24 10Z" fill="url(#' + prefix + '-steel)" stroke="#b6d8ee"/><path d="m11 17 20 9v26L11 42Z" fill="url(#' + prefix + '-dark)" stroke="#4a779b"/><path d="m31 26 24-10v26L31 52Z" fill="#102642" stroke="#5a8db5"/><path d="m17 22 14-6 15 6-15 6Z" fill="url(#' + prefix + '-gold)" stroke="#ffebba"/><path d="m17 22 14 6v17l-14-7Z" fill="#a66e37" stroke="#ffdc9e"/><path d="m31 28 15-6v17l-15 6Z" fill="#7b4f2c" stroke="#d9a96b"/><circle cx="31" cy="35" r="10" fill="url(#' + prefix + '-steel)" stroke="#d8f5ff" stroke-width="1.8"/><circle cx="31" cy="35" r="6.6" fill="url(#' + prefix + '-dark)" stroke="#61c8eb" stroke-width="1.5"/><path d="M31 31v8m-3-4h6" stroke="#f7d995" stroke-width="2.2" stroke-linecap="round"/><path d="m46 18 5 2v7l-5-2Z" fill="#d94d55" stroke="#ffb0a4"/></g>',
+      transactions:
+        '<g filter="url(#' + prefix + '-shadow)" stroke-linejoin="round"><path d="m11 15 25-7 17 8-25 8Z" fill="url(#' + prefix + '-steel)" stroke="#d7f2ff"/><path d="m11 15 17 9v27l-17-10Z" fill="#173b60" stroke="#85b5d3"/><path d="m28 24 25-8v27l-25 8Z" fill="url(#' + prefix + '-dark)" stroke="#7ebce0"/><path d="m18 19 8-2m-8 7 7-2m-7 7 7-2m4 0 15-5m-15 11 13-4m-13 10 11-3" stroke="#d2f0ff" stroke-width="1.6" stroke-linecap="round"/><circle cx="45" cy="39" r="9.5" fill="url(#' + prefix + '-gold)" stroke="#fff0bf" stroke-width="1.2"/><circle cx="45" cy="39" r="6.2" fill="none" stroke="#9b5c26" stroke-width="1.1"/><path d="M45 34v10m-3-7h5m-5 5h5" stroke="#75451f" stroke-width="1.35" stroke-linecap="round"/><path d="m17 12 18-5 13 6" fill="none" stroke="#fff" stroke-opacity=".65" stroke-width="1.3"/></g>',
+      settlement:
+        '<g filter="url(#' + prefix + '-shadow)" stroke-linejoin="round"><path d="M7 36h49l-7 12-29 3-13-8Z" fill="url(#' + prefix + '-dark)" stroke="#a2d5eb" stroke-width="1.2"/><path d="m13 35 5-10h11v10Zm14 0 5-13h12v13Z" fill="url(#' + prefix + '-cyan)" stroke="#b4efff"/><path d="m18 25 5-5h11l-5 5Zm14-3 5-5h12l-5 5Z" fill="url(#' + prefix + '-steel)" stroke="#e1f8ff"/><path d="M19 27v8m6-8v8m13-11v11m6-11v11" stroke="#e6f8ff" stroke-width="1.15" opacity=".7"/><path d="M7 43q22 7 49-2" fill="none" stroke="#4bd5f4" stroke-width="2"/><path d="M11 53q9-3 18 0t18 0" fill="none" stroke="#63cde8" stroke-width="1.4"/><circle cx="49" cy="12" r="8.5" fill="url(#' + prefix + '-gold)" stroke="#fff2c8"/><path d="m45 12 3 3 5-6" fill="none" stroke="#315b70" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g><path d="M15 34h34" stroke="#fff" stroke-opacity=".45" stroke-width="1.3"/>'
+    };
+    return '<svg class="omega-trade-command-svg" viewBox="0 0 64 56" aria-hidden="true" focusable="false">' +
+      defs + (art[kind] || art.overview) + '</svg>';
+  }
+
+  function tradeCommandNavigationMarkup(section, marketTab) {
+    var routes = [
+      { id:'overview', label:'Overview', section:'dashboard', icon:'overview' },
+      { id:'commodities', label:'Commodity<br>Market', section:'market', tab:'commodities', icon:'commodities' },
+      { id:'black-market', label:'Black<br>Market', section:'market', tab:'black-market', icon:'black-market' },
+      { id:'transactions', label:'Transactions', section:'market', tab:'transactions', icon:'transactions' },
+      { id:'settlement', label:'Trade<br>Settlement', section:'settlement', icon:'settlement' }
+    ];
+    return '<nav class="omega-trade-command-nav" data-omega-trade-command-nav role="navigation" aria-label="Trade & Commerce navigation">' +
+      routes.map(function (route, index) {
+        var active = route.section === section && (!route.tab || route.tab === marketTab);
+        return '<button type="button" class="omega-trade-command-button' + (active ? ' is-active' : '') + '"' +
+          ' data-omega-v2-ministry-section="' + route.section + '"' +
+          (route.tab ? ' data-omega-v2-trade-market-tab="' + route.tab + '"' : '') +
+          ' data-omega-trade-route="' + route.id + '" aria-current="' + (active ? 'page' : 'false') + '"' +
+          ' aria-label="' + esc(route.label.replace(/<br>/g,' ')) + '">' +
+          '<span class="omega-trade-command-icon">' + tradeCommandIconMarkup(route.icon) + '</span>' +
+          '<span class="omega-trade-command-label">' + route.label + '</span>' +
+          '<span class="omega-trade-command-index">' + String(index + 1).padStart(2,'0') + '</span>' +
+        '</button>';
+      }).join('') + '</nav>';
+  }
+
   function tradeDashboardOverviewMarkup(country) {
     // Read the selected country's existing Finance / Banking / settled-Trade model.
     // No world scan, polling, new ledger, or network dependency is introduced.
@@ -394,16 +444,6 @@
       if (!partner || finiteTradeNumber(partner.value) === null) return 'Not recorded';
       return String(partner.name || partner.countryId || 'Partner') + ' · ' + moneyTrade(partner.value,partner.currency || homeCurrency);
     }
-    function action(title, description, icon, section, marketTab, image, label) {
-      var safe = safeVisualPath(image);
-      return '<article class="omega-trade-action-card">' +
-        (safe ? '<div class="omega-trade-action-media"><img loading="lazy" decoding="async" src="' + esc(safe) + '" alt="' + esc(title) + ' reference"></div>' : '') +
-        '<div class="omega-trade-action-copy"><span class="omega-trade-action-icon">' + icon + '</span><div><h3>' + esc(title) +
-        '</h3><p>' + esc(description) + '</p></div></div>' +
-        '<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-ministry-section="' +
-        esc(section) + '" data-omega-v2-trade-market-tab="' + esc(marketTab || 'commodities') + '">' +
-        esc(label) + ' <span aria-hidden="true">›</span></button></article>';
-    }
     function galleryImage(src, alt, caption) {
       var safe = safeVisualPath(src);
       if (!safe) return '';
@@ -424,11 +464,6 @@
     var dependency = model.tradeDependencyProfile || { label:'Not recorded', detail:'Import/export dependency evidence is unavailable' };
     var countryName = model.countryName || model.countryId || country || 'Selected country';
     var turn = Math.max(0,Math.floor(finiteTradeNumber(model.currentTurn) || 0));
-
-    var commodityIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2-5H5L3 9Zm2 0v11h14V9M9 20v-6h6v6"/></svg>';
-    var blackIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M6 7l1 13h10l1-13M9 7V4h6v3M9 11v5M15 11v5"/></svg>';
-    var transactionIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h15l-3-3M20 17H5l3 3M4 7v4M20 13v4"/></svg>';
-    var settlementIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h18M5 8l1 11h12l1-11M8 8V5h8v3M8 13h8M12 11v4"/></svg>';
 
     return '<div class="omega-trade-dashboard omega-trade-overview" data-omega-trade-overview="true">' +
       '<header class="omega-trade-overview-hero">' +
@@ -488,17 +523,6 @@
         galleryImage(marketImage,'Raw commodities at a mining and trade origin','COMMODITY SUPPLY') +
         galleryImage(factoryImage,'Industrial processing and production','INDUSTRIAL OUTPUT') +
         galleryImage(shipImage,'Cargo ship and international freight','CROSS-BORDER LOGISTICS') +
-      '</section>' +
-      '<section class="omega-trade-overview-section omega-trade-overview-operations" aria-label="Trade operations">' +
-        '<div class="omega-trade-overview-section-heading"><div><span>04 / TRADE OPERATIONS</span><h3>Markets, transactions & agreements</h3></div>' +
-          '<span class="omega-trade-overview-section-tag">4 SERVICES</span></div>' +
-        '<div class="omega-trade-dashboard-grid">' +
-          action('Commodity Market','Browse and trade existing commodity offers',commodityIcon,'market','commodities',marketImage,'Open market') +
-          action('Black Market','Restricted and shadow-market operations',blackIcon,'market','black-market','','Open black market') +
-          action('Transactions','Review completed trade and payment records',transactionIcon,'market','transactions','','Open transactions') +
-          action('Trade Settlement','Review bilateral import and export agreements',settlementIcon,'settlement','',shipImage,'Open agreements') +
-        '</div>' +
-        '<p class="omega-trade-dashboard-note">Agreements are future commitments. Completed deliveries, payments and settlements remain in the existing Global Trade and Finance ledgers.</p>' +
       '</section>' +
     '</div>';
   }
@@ -597,27 +621,36 @@
     var activeMinisterName = row && row.ministerName || 'Minister not recorded';
     var portraitSlot = row && g.OmegaUIV2Government && typeof g.OmegaUIV2Government.renderMinisterPortrait === 'function' ? g.OmegaUIV2Government.renderMinisterPortrait(row) : '';
     var visibleSections = allowedSections;
-    if (id === 'trade' && section === 'market') {
-      root.innerHTML = '<style>.omega-v2-trade-market-page{width:100%;max-width:none!important;min-width:0;box-sizing:border-box}' +
-        '.omega-v2-trade-market-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}' +
-        '.omega-v2-trade-market-tabs button{min-height:36px;padding:7px 13px;border:1px solid rgba(92,164,207,.45);border-radius:8px;background:linear-gradient(145deg,#102c47,#081a30);color:#cfe8f8;font:inherit;font-size:11px;font-weight:800}' +
-        '.omega-v2-trade-market-tabs button[aria-current="page"]{border-color:#29c9ff;background:linear-gradient(145deg,#0c5274,#0a2947);color:#effaff;box-shadow:inset 0 1px rgba(255,255,255,.12),0 0 12px rgba(32,180,240,.16)}' +
-        '.omega-v2-trade-market-tabs button:disabled{opacity:.52;cursor:not-allowed;border-style:dashed}' +
-        '@media(max-width:560px){.omega-v2-trade-market-tabs button{flex:1;min-width:0}}</style>' +
-        '<section class="omega-v2-shell omega-v2-ministry-detail omega-v2-trade-market-page">' +
-        '<header class="omega-v2-heading"><div><div class="omega-v2-eyebrow">TRADE & COMMERCE</div><h1 class="omega-v2-title">' + (marketTab === 'black-market' ? 'Black Market' : marketTab === 'transactions' ? 'Market Transactions' : 'Market Commodities') + '</h1>' +
-        '<p class="omega-v2-subtitle">' + (marketTab === 'black-market' ? 'Shadow commerce, restricted supply, tariff arbitrage and evidence-based exposure.' : marketTab === 'transactions' ? 'Read-only country requests, counterparty decisions and completed settlements.' : 'Raw resources, factory products, food products, international offers and recorded prices.') + '</p></div>' +
-        '<button type="button" class="omega-v2-button omega-v2-button--quiet" data-omega-v2-ministry-section="dashboard">Back to Trade & Commerce</button></header>' +
-        '<nav class="omega-v2-trade-market-tabs" aria-label="Trade market sections">' +
-        '<button type="button" aria-current="' + (marketTab === 'commodities' ? 'page' : 'false') + '" data-omega-v2-trade-market-tab="commodities">Market Commodities</button>' +
-        '<button type="button" aria-current="' + (marketTab === 'transactions' ? 'page' : 'false') + '" data-omega-v2-trade-market-tab="transactions">Transactions</button>' +
-        '<button type="button" aria-current="' + (marketTab === 'black-market' ? 'page' : 'false') + '" data-omega-v2-trade-market-tab="black-market">Black Market</button></nav>' +
-        (marketTab === 'black-market' ? '<div class="omega-v2-trade-market-host" data-omega-v2-black-market-host aria-label="Black Market"></div>' : '<div class="omega-v2-trade-market-host" data-omega-v2-trade-market-host aria-label="Market Commodities and Transactions"></div>') + '</section>';
+    if (id === 'trade') {
+      var tradePageTitle = section === 'dashboard' ? 'Overview'
+        : section === 'settlement' ? 'Trade Settlement'
+        : marketTab === 'black-market' ? 'Black Market'
+        : marketTab === 'transactions' ? 'Market Transactions' : 'Market Commodities';
+      var tradeSubtitle = 'Country ' + esc(country || 'Not recorded') + ' · international markets, completed transactions and bilateral commitments';
+      var tradeHeader = '<header class="omega-v2-heading omega-trade-command-heading">' +
+        '<div class="omega-v2-ministry-detail-mark">' + emblem +
+          '<div><div class="omega-v2-eyebrow">ALL MINISTRIES · TRADE & COMMERCE</div>' +
+          '<h1 class="omega-v2-title">Trade & Commerce</h1>' +
+          '<p class="omega-v2-subtitle">' + tradeSubtitle + '</p></div></div>' +
+        '<span class="omega-v2-status" data-state="' + (domain && domain.record ? 'operational' : 'unknown') + '">' +
+          (domain && domain.record ? 'DOMAIN RECORD AVAILABLE' : esc(domain.reason || 'COUNTRY VIEW')) + '</span></header>';
+      var ministerCard = '<div class="omega-v2-card omega-v2-ministry-appointed-minister omega-trade-command-minister">' +
+        '<h2 class="omega-v2-card-title">Minister</h2><div class="omega-v2-minister-table-person">' +
+        (portraitSlot || '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot><span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span><small>Image pending</small></div>') +
+        '<strong>' + esc(activeMinisterName) + '</strong></div></div>';
+      root.innerHTML = '<section class="omega-v2-shell omega-v2-ministry-detail omega-v2-trade-command-page" data-omega-v2-trade-ministry-page="true">' +
+        tradeHeader +
+        tradeCommandNavigationMarkup(section,marketTab) +
+        ministerCard +
+        (section === 'dashboard' ? tradeRegistryCompatibilityMarkup() : '') +
+        '<div class="omega-v2-section-title omega-trade-command-section-title">' + esc(tradePageTitle) + '</div>' +
+        content +
+        '<p class="omega-v2-source">Existing Global Trade, Treasury, Transactions and bilateral-agreement records remain authoritative. This navigation changes the view only; it does not duplicate or alter any market, payment or settlement ledger.</p></section>';
     } else {
       root.innerHTML = '<section class="omega-v2-shell omega-v2-ministry-detail">' +
         '<header class="omega-v2-heading"><div class="omega-v2-ministry-detail-mark">' + emblem + '<div><div class="omega-v2-eyebrow">ALL MINISTRIES · ' + esc(id.replace(/[_-]+/g,' ').toUpperCase()) + '</div><h1 class="omega-v2-title">' + esc(row ? row.title : id || 'Ministry') + '</h1><p class="omega-v2-subtitle">Country ' + esc(country || 'Not recorded') + ' · registered ministry profile and source-backed domain record</p></div></div><span class="omega-v2-status" data-state="' + (domain && domain.record ? 'operational' : 'unknown') + '">' + (domain && domain.record ? 'DOMAIN RECORD AVAILABLE' : esc(domain.reason || 'DOMAIN RECORD NOT RECORDED')) + '</span></header>' +
         '<div class="omega-v2-card omega-v2-ministry-appointed-minister"><h2 class="omega-v2-card-title">Minister</h2><div class="omega-v2-minister-table-person">' + (portraitSlot || '<div class="omega-v2-minister-portrait" data-omega-v2-minister-portrait-slot><span class="omega-v2-minister-portrait-placeholder">MINISTER PORTRAIT</span><small>Image pending</small></div>') + '<strong>' + esc(activeMinisterName) + '</strong></div></div>' +
-        (id === 'trade' ? tradeRegistryCompatibilityMarkup() : ministryVisualMarkup(id, row)) +
+        ministryVisualMarkup(id, row) +
         '<div class="omega-v2-filterbar" role="group" aria-label="Ministry page sections">' + visibleSections.map(function (key) { return '<button type="button" class="omega-v2-button ' + (section === key ? 'omega-v2-button--accent' : 'omega-v2-button--quiet') + '" data-omega-v2-ministry-section="' + key + '" aria-pressed="' + (section === key ? 'true' : 'false') + '">' + esc(SECTION_LABELS[key]) + '</button>'; }).join('') + '</div>' +
         relatedLinks(id, options, section) +
         '<div class="omega-v2-section-title">' + esc(SECTION_LABELS[section]) + '</div>' + content +
