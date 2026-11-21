@@ -130,7 +130,7 @@ test('Economy Overview keeps Treasury cash, domestic currency and FX reserves se
   assert.match(root.innerHTML,/TRADE & COMMERCE MINISTRY/);
   assert.match(root.innerHTML,/data-omega-v2-open-economic-ministry="trade"/,
     'Economy keeps one visible route to the existing Trade & Commerce ministry');
-  assert.match(root.innerHTML,/<svg class="omega-economy-v3-icon-svg"/,
+  assert.match(root.innerHTML,/omega-economy-v3-icon-svg--3d/,
     'the redesigned overview uses inline SVG icons');
   assert.doesNotMatch(root.innerHTML,/data-omega-v2-open-trade-section|data-omega-v2-market-tab|omega-economy-action-card/,
     'market, black-market, transaction and settlement action controls are not duplicated in Economy');
@@ -140,7 +140,7 @@ test('Economy Overview keeps Treasury cash, domestic currency and FX reserves se
 
   const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),'utf8');
   const visualCss = readFileSync(new URL('../omega_ui_v2/ministry-visual-refresh.css',import.meta.url),'utf8');
-  assert.match(serviceWorker,/CACHE_NAME = "omega-offline-atlas-shell-v136"/,
+  assert.match(serviceWorker,/CACHE_NAME = "omega-offline-atlas-shell-v137"/,
     'the offline shell version must advance beyond the currently installed v135 shell');
   assert.match(serviceWorker,/\.\/omega_ui_v2\/screens\/economy\.js/);
   assert.match(serviceWorker,/\.\/omega_ui_v2\/ministry-visual-refresh\.css/);
