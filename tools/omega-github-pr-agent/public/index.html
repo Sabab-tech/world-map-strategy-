@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>OMEGA GitHub PR Agent</title>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#e6edf6;background:#07111f;font-synthesis:none}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 12% 0%,#17345a 0,transparent 38%),#07111f}
+    main{max-width:980px;margin:0 auto;padding:28px 18px 48px}
+    header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px}
+    h1{font-size:clamp(23px,4vw,34px);letter-spacing:-.04em;margin:0 0 7px}
+    .sub{color:#91a4bd;font-size:14px;line-height:1.5}
+    .status{border:1px solid #29425e;border-radius:999px;padding:7px 11px;color:#9bd2ff;font-size:12px;white-space:nowrap}
+    .panel{background:#0b1b2d;border:1px solid #203750;border-radius:16px;padding:16px;box-shadow:0 18px 50px #0005}
+    .auth{display:grid;grid-template-columns:1fr auto;gap:9px;margin-bottom:14px}
+    input,textarea{width:100%;background:#081524;color:#e6edf6;border:1px solid #2a4561;border-radius:10px;padding:12px;font:inherit;outline:none}
+    input:focus,textarea:focus{border-color:#4aabf5;box-shadow:0 0 0 3px #258bd322}
+    button{border:0;border-radius:10px;padding:11px 15px;font:600 13px inherit;cursor:pointer;color:#041322;background:#65bdff}
+    button:disabled{opacity:.5;cursor:wait}
+    .secondary{background:#193550;color:#d5e9ff;border:1px solid #315575}
+    .danger{background:#442b25;color:#ffd6c8;border:1px solid #87503c}
+    .messages{display:flex;flex-direction:column;gap:12px;margin:16px 0;min-height:120px}
+    .message{padding:13px 14px;border:1px solid #203750;border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55;font-size:14px}
+    .message.user{align-self:flex-end;background:#122c46;max-width:88%}
+    .message.agent{background:#0a1727;max-width:100%}
+    .message .role{font-size:11px;color:#83bce8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+    textarea{min-height:105px;resize:vertical}
+    .composer{display:grid;gap:10px}
+    .actions{display:grid;gap:10px;margin-top:12px}
+    .action{border:1px solid #765b38;background:#211d16;border-radius:12px;padding:13px;display:grid;gap:9px}
+    .action h3{margin:0;font-size:14px;color:#ffe0a8}
+    .action p{margin:0;color:#c8bda8;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.45}
+    .action .row{display:flex;flex-wrap:wrap;gap:8px}
+    .hint{font-size:12px;color:#8298b2;line-height:1.5;margin-top:12px}
+    .error{color:#ffb7a7}
+    .success{color:#91e3bd}
+    @media(max-width:580px){main{padding:20px 12px 36px}header{display:block}.status{display:inline-block;margin-top:10px}.auth{grid-template-columns:1fr}.message.user{max-width:100%}}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>OMEGA GitHub PR Agent</h1>
+        <div class="sub">Gemini-assisted repository review, code analysis and controlled PR updates</div>
+      </div>
+      <div class="status" id="serviceStatus">Checking service…</div>
+    </header>
+
+    <section class="panel">
+      <div class="auth">
+        <input id="accessToken" type="password" autocomplete="off" placeholder="OMEGA agent access token" aria-label="OMEGA agent access token">
+        <button class="secondary" id="checkButton" type="button">Connect</button>
+      </div>
+      <div class="sub" id="repositoryLabel">Repository details appear after authentication.</div>
+    </section>
+
+    <section class="panel" style="margin-top:14px">
+      <div class="messages" id="messages" aria-live="polite">
+        <div class="message agent"><div class="role">Agent</div>Ask me to inspect open PRs, read changed files, investigate CI failures, review implementation or prepare a code fix. GitHub writes always require a separate approval.</div>
+      </div>
+      <form class="composer" id="chatForm">
+        <textarea id="prompt" maxlength="10000" placeholder="Example: Inspect the latest Mine → Warehouse → Factory → Market → Treasury PR. Read its code and checks, identify the first real failure, and prepare a minimal fix." required></textarea>
+        <div><button id="sendButton" type="submit">Send to Gemini</button></div>
+      </form>
+      <div class="actions" id="pendingActions"></div>
+      <div class="hint">Read-only inspection runs automatically. A commit, comment or review is only applied after you select its approval button. The agent cannot merge, force-push, delete files or write to main.</div>
+    </section>
+  </main>
+
+  <script>
+    const tokenInput = document.getElementById("accessToken");
+    const statusNode = document.getElementById("serviceStatus");
+    const repositoryNode = document.getElementById("repositoryLabel");
+    const messagesNode = document.getElementById("messages");
+    const actionsNode = document.getElementById("pendingActions");
+    const form = document.getElementById("chatForm");
+    const sendButton = document.getElementById("sendButton");
+
+    function addMessage(role, text, extraClass) {
+      const box = document.createElement("div");
+      box.className = "message " + (extraClass || role);
+      const label = document.createElement("div");
+      label.className = "role";
+      label.textContent = role;
+      const body = document.createElement("div");
+      body.textContent = String(text || "");
+      box.append(label, body);
+      messagesNode.appendChild(box);
+      box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+
+    async function api(path, body) {
+      const token = tokenInput.value.trim();
+      if (!token) throw new Error("Enter the OMEGA agent access token first.");
+      const response = await fetch(path, {
+        method: body === undefined ? "GET" : "POST",
+        headers: {
+          Authorization: "Bearer " + token,
+          ...(body === undefined ? {} : { "Content-Type": "application/json" })
+        },
+        body: body === undefined ? undefined : JSON.stringify(body)
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Request failed (" + response.status + ")");
+      return result;
+    }
+
+    document.getElementById("checkButton").addEventListener("click", async () => {
+      try {
+        const result = await api("/api/status");
+        repositoryNode.textContent = "Connected repository: " + result.repository + " · Model: " + result.model;
+        statusNode.textContent = "Connected";
+        statusNode.style.color = "#91e3bd";
+      } catch (error) {
+        statusNode.textContent = "Not connected";
+        statusNode.style.color = "#ffb7a7";
+        addMessage("System", error.message, "agent");
+      }
+    });
+
+    async function executeApprovedAction(action, button, card) {
+      const accepted = window.confirm(
+        "Apply this GitHub action?\n\n" + action.title + "\n\n" + action.summary +
+        "\n\nThis will change the selected pull request."
+      );
+      if (!accepted) return;
+      button.disabled = true;
+      button.textContent = "Applying…";
+      try {
+        const result = await api("/api/actions/execute", { actionToken: action.token });
+        card.querySelector("p").textContent =
+          "Completed. GitHub response: " + JSON.stringify(result.result);
+        card.querySelector("p").className = "success";
+        button.remove();
+      } catch (error) {
+        card.querySelector("p").textContent = "Not applied: " + error.message;
+        card.querySelector("p").className = "error";
+        button.disabled = false;
+        button.textContent = "Retry approval";
+      }
+    }
+
+    function showPendingAction(action) {
+      const card = document.createElement("div");
+      card.className = "action";
+      const title = document.createElement("h3");
+      title.textContent = action.title;
+      const summary = document.createElement("p");
+      summary.textContent = action.summary;
+      const row = document.createElement("div");
+      row.className = "row";
+      const approve = document.createElement("button");
+      approve.type = "button";
+      approve.textContent = "Review & apply";
+      approve.addEventListener("click", () => executeApprovedAction(action, approve, card));
+      const dismiss = document.createElement("button");
+      dismiss.type = "button";
+      dismiss.className = "secondary";
+      dismiss.textContent = "Dismiss";
+      dismiss.addEventListener("click", () => {
+        card.querySelector("p").textContent = "Dismissed. No GitHub write was made.";
+        approve.remove();
+        dismiss.remove();
+      });
+      row.append(approve, dismiss);
+      card.append(title, summary, row);
+      actionsNode.appendChild(card);
+    }
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const prompt = document.getElementById("prompt").value.trim();
+      if (!prompt) return;
+      document.getElementById("prompt").value = "";
+      addMessage("You", prompt, "user");
+      sendButton.disabled = true;
+      sendButton.textContent = "Gemini is working…";
+      try {
+        const result = await api("/api/chat", { prompt });
+        addMessage("Gemini", result.text, "agent");
+        for (const action of result.pendingActions || []) showPendingAction(action);
+      } catch (error) {
+        addMessage("System", error.message, "agent");
+      } finally {
+        sendButton.disabled = false;
+        sendButton.textContent = "Send to Gemini";
+      }
+    });
+
+    fetch("/health").then(response => response.json()).then(result => {
+      if (result.ok) statusNode.textContent = "Service online · authentication required";
+    }).catch(() => {
+      statusNode.textContent = "Service unavailable";
+    });
+  </script>
+</body>
+</html>
