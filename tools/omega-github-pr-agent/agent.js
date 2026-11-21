@@ -242,9 +242,9 @@ export class GeminiGitHubAgent {
         "commit_pr_files",
         argsForApproval,
         "Commit code to PR #" + prNumber,
-        commitMessage + " — " + files.length + " file(s):\\n" +
-          files.map(file => "--- " + file.path + "\\n" + file.content.slice(0, 1200) +
-            (file.content.length > 1200 ? "\\n[FILE PREVIEW TRUNCATED]" : "")).join("\\n\\n").slice(0, 10000)
+        commitMessage + " — " + files.length + " file(s):\n" +
+          files.map(file => "--- " + file.path + "\n" + file.content.slice(0, 1200) +
+            (file.content.length > 1200 ? "\n[FILE PREVIEW TRUNCATED]" : "")).join("\n\n").slice(0, 10000)
       );
       pendingActions.push(action);
       return { status: "awaiting_user_approval", files: files.map(file => file.path), note: "No GitHub write has happened yet." };
