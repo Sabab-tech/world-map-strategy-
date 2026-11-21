@@ -218,13 +218,12 @@ export class GitHubAppClient {
   async getPullRequestChecks(number) {
     const pr = await this.getPullRequest(number);
     const sha = validateHeadSha(pr.head?.sha);
-    const [runs, status] = await Promise.all([
+    const [runs, actions] = await Promise.all([
       this.repoRequest("/commits/" + sha + "/check-runs?per_page=100"),
-      this.repoRequest("/commits/" + sha + "/status")
+      this.repoRequest(
+        "/actions/runs?head_sha=" + encodeURIComponent(sha) + "&per_page=50"
+      ).catch(error => ({ workflow_runs: [], error }))
     ]);
-    const actions = await this.repoRequest(
-      "/actions/runs?head_sha=" + encodeURIComponent(sha) + "&per_page=50"
-    ).catch(error => ({ workflow_runs: [], error }));
 
     return {
       headSha: sha,
@@ -236,17 +235,9 @@ export class GitHubAppClient {
         started_at: run.started_at,
         completed_at: run.completed_at
       })),
-      commitStatus: {
-        state: status?.state || "unknown",
-        total_count: status?.total_count || 0,
-        statuses: (status?.statuses || []).slice(0, 50).map(item => ({
-          context: item.context,
-          state: item.state,
-          description: boundedText(item.description, 500),
-          target_url: item.target_url
-        }))
-      },
-      workflowRunsError: actions?.error ? String(actions.error.message || actions.error).slice(0, 300) : null,
+      workflowRunsError: actions?.error
+        ? String(actions.error.message || actions.error).slice(0, 300)
+        : null,
       workflowRuns: (actions?.workflow_runs || []).map(run => ({
         name: run.name,
         status: run.status,
