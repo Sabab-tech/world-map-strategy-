@@ -80,6 +80,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
   const milestoneTrace = [];
   let setupSummaryForFailure = null;
   page.on('pageerror', error => pageErrors.push(String(error?.stack || error)));
+  page.on('crash', () => pageErrors.push('CHROMIUM_PAGE_CRASHED'));
   page.on('console', message => {
     const text = message.text();
     if (message.type() === 'error') consoleErrors.push(text);
@@ -1903,10 +1904,24 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     const persistence = await page.evaluate(async ({ setup, production, sale }) => {
       const simulation = window.Omega.Simulation;
       const slot = 'OMEGA-MINE-MARKET-TREASURY-' + setup.seller + '-' + Date.now();
+      console.log('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({
+        stage:'SAVE_SLOT_BEGIN',slot,turn:simulation.clock?.turn??null,
+        seller:setup.seller,buyer:setup.buyer,settlementId:sale.settlementId
+      }));
       const save = await simulation.saveSlot(slot);
+      console.log('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({
+        stage:'SAVE_SLOT_COMPLETE',slot,saveStatus:save?.status||null,
+        storage:save?.storage||null,compression:save?.compression||null,
+        originalBytes:save?.originalBytes??null,storedBytes:save?.storedBytes??null
+      }));
       if (!save || save.ok === false || String(save.status || '').toUpperCase() === 'FAILED')
         throw new Error('FULL_PIPELINE_SAVE_FAILED:' + JSON.stringify(save).slice(0, 1500));
+      console.log('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({stage:'LOAD_SLOT_BEGIN',slot}));
       const load = await simulation.loadSlot(slot);
+      console.log('[OMEGA_MMT_E2E_STAGE]' + JSON.stringify({
+        stage:'LOAD_SLOT_COMPLETE',slot,loadStatus:load?.status||null,
+        loadIntegrity:simulation.lastLoadIntegrity||null
+      }));
       if (!load || load.ok === false || String(load.status || '').toUpperCase() === 'FAILED')
         throw new Error('FULL_PIPELINE_LOAD_FAILED:' + JSON.stringify(load).slice(0, 1500));
 
