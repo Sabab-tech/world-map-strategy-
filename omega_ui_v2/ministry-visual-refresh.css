@@ -1677,6 +1677,9 @@
 .omega-trade-command-button {
   align-items:center;
   appearance:none;
+  box-sizing:border-box;
+  height:65px;
+  line-height:1;
   background:linear-gradient(155deg,#244766 0%,#122f4e 42%,#081c33 100%);
   border:1px solid rgba(103,167,202,.42);
   border-radius:11px;
@@ -1685,12 +1688,12 @@
   cursor:pointer;
   display:grid;
   gap:1px;
-  grid-template-rows:30px auto 3px;
+  grid-template-rows:26px 1fr 2px;
   justify-items:center;
   min-height:60px;
   min-width:0;
   overflow:hidden;
-  padding:4px 2px 3px;
+  padding:2px 2px 1px;
   position:relative;
   touch-action:manipulation;
   transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,filter .16s ease;
@@ -1779,7 +1782,7 @@
 .omega-v2-trade-market-page { min-width:0; }
 @media (max-width:560px) {
   .omega-trade-command-nav { gap:4px; margin:9px 0 12px; padding:5px; border-radius:12px; }
-  .omega-trade-command-button { border-radius:9px; grid-template-rows:27px auto 2px; min-height:54px; padding:3px 1px 2px; }
+  .omega-trade-command-button { border-radius:9px; height:56px; grid-template-rows:25px 1fr 2px; min-height:54px; padding:2px 1px 1px; }
   .omega-trade-command-icon { height:27px; width:31px; }
   .omega-trade-command-svg { height:27px; width:32px; }
   .omega-trade-command-label { font-size:7.5px; letter-spacing:0; }
