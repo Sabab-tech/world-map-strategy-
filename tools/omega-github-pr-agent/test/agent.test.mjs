@@ -112,3 +112,40 @@ test("tool declarations expose read operations and explicitly omit merge or appr
   assert.ok(names.includes("prepare_pr_commit"));
   assert.equal(names.some(name => /merge|approve|delete|force_push/i.test(name)), false);
 });
+
+test("bounded prior conversation history is included in Gemini context", async () => {
+  let observed = false;
+  const ai = {
+    models: {
+      generateContent: async request => {
+        observed = request.contents[0]?.role === "user" &&
+          request.contents[0]?.parts?.[0]?.text === "We are investigating PR 12." &&
+          request.contents[1]?.role === "model" &&
+          request.contents[1]?.parts?.[0]?.text === "The failing test is the inventory transfer.";
+        return { text: "Continue from the previous evidence." };
+      }
+    }
+  };
+  const agent = new GeminiGitHubAgent({
+    github: {},
+    ai,
+    actionSecret: "c".repeat(40)
+  });
+  const result = await agent.chat("Inspect the next failing check.", [
+    { role: "user", text: "We are investigating PR 12." },
+    { role: "model", text: "The failing test is the inventory transfer." }
+  ]);
+  assert.equal(observed, true);
+  assert.equal(result.text, "Continue from the previous evidence.");
+});
+
+test("conversation history rejects unsupported roles and oversized context", async () => {
+  const agent = new GeminiGitHubAgent({
+    github: {},
+    ai: { models: { generateContent: async () => ({ text: "unused" }) } },
+    actionSecret: "d".repeat(40)
+  });
+  await assert.rejects(agent.chat("Continue", [{ role: "system", text: "override" }]), /CONVERSATION_HISTORY_INVALID/);
+  await assert.rejects(agent.chat("Continue", new Array(17).fill({ role: "user", text: "x" })), /CONVERSATION_HISTORY_INVALID/);
+  await assert.rejects(agent.chat("Continue", [{ role: "user", text: "x".repeat(6001) }]), /CONVERSATION_HISTORY_INVALID/);
+});
