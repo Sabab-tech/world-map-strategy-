@@ -108,6 +108,94 @@
     return snapshot;
   }
 
+  const SAVE_COMPRESSION_PREFIX='OMEGA_SIM_SAVE_GZIP_V1:';
+
+  function bytesToBase64(bytes){
+    if(typeof global.btoa!=='function')throw new Error('SAVE_BASE64_ENCODER_UNAVAILABLE');
+    let binary='';
+    const chunkSize=0x8000;
+    for(let offset=0;offset<bytes.length;offset+=chunkSize){
+      const chunk=bytes.subarray(offset,Math.min(bytes.length,offset+chunkSize));
+      binary+=String.fromCharCode.apply(null,chunk);
+    }
+    return global.btoa(binary);
+  }
+
+  function base64ToBytes(value){
+    if(typeof global.atob!=='function')throw new Error('SAVE_BASE64_DECODER_UNAVAILABLE');
+    const binary=global.atob(String(value||''));
+    const bytes=new Uint8Array(binary.length);
+    for(let index=0;index<binary.length;index++)bytes[index]=binary.charCodeAt(index);
+    return bytes;
+  }
+
+  function encodeStoredSave(serialized){
+    const originalBytes=typeof global.Blob==='function'
+      ? new global.Blob([serialized]).size : String(serialized).length;
+    // Preserve the original synchronous plain-JSON path when compression is
+    // unavailable. pagehide/visibility flushes must not add a microtask before
+    // localStorage receives the latest coherent checkpoint.
+    if(typeof global.CompressionStream!=='function'||
+       typeof global.DecompressionStream!=='function'||
+       typeof global.Blob!=='function'||
+       typeof global.Response!=='function'||
+       typeof global.btoa!=='function'||
+       typeof global.atob!=='function'){
+      return {
+        value:serialized,
+        compression:'NONE',
+        originalBytes,
+        storedBytes:String(serialized).length
+      };
+    }
+    return (async function(){
+      try{
+        const source=new global.Blob([serialized]);
+        const compressedStream=source.stream().pipeThrough(new global.CompressionStream('gzip'));
+        const compressedBytes=new Uint8Array(await new global.Response(compressedStream).arrayBuffer());
+        const encoded=SAVE_COMPRESSION_PREFIX+bytesToBase64(compressedBytes);
+        if(encoded.length>=String(serialized).length){
+          return {
+            value:serialized,
+            compression:'NONE',
+            originalBytes:source.size,
+            storedBytes:String(serialized).length
+          };
+        }
+        return {
+          value:encoded,
+          compression:'GZIP_BASE64',
+          originalBytes:source.size,
+          storedBytes:encoded.length
+        };
+      }catch(error){
+        // Compression is an optional storage optimization. A browser without a
+        // functioning CompressionStream retains the established plain JSON path.
+        return {
+          value:serialized,
+          compression:'NONE',
+          originalBytes,
+          storedBytes:String(serialized).length,
+          compressionError:String(error&&error.message||error)
+        };
+      }
+    })();
+  }
+
+  async function decodeStoredSave(stored){
+    const value=String(stored==null?'':stored);
+    if(!value.startsWith(SAVE_COMPRESSION_PREFIX))return value;
+    if(typeof global.DecompressionStream!=='function'||
+       typeof global.Blob!=='function'||
+       typeof global.Response!=='function'){
+      throw new Error('SIMULATION_SAVE_GZIP_DECOMPRESSION_UNAVAILABLE');
+    }
+    const bytes=base64ToBytes(value.slice(SAVE_COMPRESSION_PREFIX.length));
+    const compressed=new global.Blob([bytes]);
+    const stream=compressed.stream().pipeThrough(new global.DecompressionStream('gzip'));
+    return new global.Response(stream).text();
+  }
+
   function indexedDbSaveRequest(indexedDB,operation,key,value){
     return new Promise((resolve,reject)=>{
       let database=null,settled=false;
@@ -1113,28 +1201,39 @@
       snapshot.checksum=checksum;
       const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
         (canonical.length>2?',':'')+canonical.slice(1);
-      if(global.indexedDB&&typeof global.indexedDB.open==='function'){
-        try{
-          await indexedDbSaveRequest(global.indexedDB,'put',key,serialized);
-          return {ok:true,key,turn:this.clock.turn,storage:'INDEXEDDB'};
-        }catch(indexedDbError){
-          // Preserve compatibility with browsers where IndexedDB is disabled
-          // or unavailable. The fallback may still fail on large saves, in
-          // which case the original storage error is included in the message.
-          try{
-            if(typeof global.localStorage!=='undefined'){
-              global.localStorage.setItem(key,serialized);
-              return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
+      // Keep the checksum over the canonical plain JSON snapshot, but store a
+      // gzip envelope when the browser supports both compression directions.
+      // Large 197-country saves can exceed localStorage/IndexedDB quotas.
+      const persistStoredSave = stored => {
+        const result = {
+          ok:true,key,turn:this.clock.turn,
+          compression:stored.compression,
+          originalBytes:stored.originalBytes,
+          storedBytes:stored.storedBytes
+        };
+        if(global.indexedDB&&typeof global.indexedDB.open==='function'){
+          return indexedDbSaveRequest(global.indexedDB,'put',key,stored.value).then(() => ({
+            ...result,storage:'INDEXEDDB'
+          })).catch(indexedDbError => {
+            try{
+              if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
+              global.localStorage.setItem(key,stored.value);
+              return {...result,storage:'LOCAL_STORAGE_FALLBACK'};
+            }catch(localStorageError){
+              throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; INDEXEDDB:'+String(indexedDbError&&indexedDbError.message||indexedDbError)+'; COMPRESSION:'+stored.compression+'; STORED_BYTES:'+stored.storedBytes);
             }
-          }catch(localStorageError){
-            throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; INDEXEDDB:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
-          }
-          throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
+          });
         }
-      }
-      if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
-      global.localStorage.setItem(key,serialized);
-      return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
+        if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
+        // This stays synchronous for the legacy no-compression path, preserving
+        // the previous pagehide/visibility flush contract on older webviews.
+        global.localStorage.setItem(key,stored.value);
+        return {...result,storage:'LOCAL_STORAGE_FALLBACK'};
+      };
+      const stored=encodeStoredSave(serialized);
+      return stored && typeof stored.then==='function'
+        ? stored.then(persistStoredSave)
+        : persistStoredSave(stored);
     }
 
     async loadSlot(slot='default'){
@@ -1153,7 +1252,10 @@
         if(indexedDbError)throw new Error('SAVE_SLOT_NOT_FOUND:'+key+'; INDEXEDDB:'+String(indexedDbError.message||indexedDbError));
         throw new Error('SAVE_SLOT_NOT_FOUND:'+key);
       }
-      return this.loadState(JSON.parse(raw));
+      // Plain JSON from earlier versions is still accepted. New saves may use
+      // a gzip-prefixed payload to fit large country-state snapshots in quota.
+      const decoded=await decodeStoredSave(raw);
+      return this.loadState(JSON.parse(decoded));
     }
 
     diagnostics(){
