@@ -59,23 +59,39 @@ export function verifyActionToken(token, secret, options = {}) {
 
 export function createReplayGuard(options = {}) {
   const used = new Map();
+  const reserved = new Map();
   const maxEntries = Number(options.maxEntries || 5000);
 
+  function cleanup(now) {
+    const seconds = Math.floor(now / 1000);
+    for (const [key, expiry] of used) {
+      if (expiry <= seconds) used.delete(key);
+    }
+    for (const [key, expiry] of reserved) {
+      if (expiry <= seconds) reserved.delete(key);
+    }
+  }
+
   return {
-    consume(nonce, expiresAtSeconds, now = Date.now()) {
-      for (const [key, expiry] of used) {
-        if (expiry <= Math.floor(now / 1000)) used.delete(key);
-      }
-      if (used.has(nonce)) return false;
-      if (used.size >= maxEntries) {
-        const first = used.keys().next().value;
-        if (first) used.delete(first);
-      }
-      used.set(nonce, expiresAtSeconds);
+    reserve(nonce, expiresAtSeconds, now = Date.now()) {
+      cleanup(now);
+      if (!nonce || used.has(nonce) || reserved.has(nonce)) return false;
+      if (used.size + reserved.size >= maxEntries) return false;
+      reserved.set(nonce, expiresAtSeconds);
       return true;
     },
+    commit(nonce) {
+      const expiry = reserved.get(nonce);
+      if (!expiry) return false;
+      reserved.delete(nonce);
+      used.set(nonce, expiry);
+      return true;
+    },
+    release(nonce) {
+      return reserved.delete(nonce);
+    },
     size() {
-      return used.size;
+      return used.size + reserved.size;
     }
   };
 }
