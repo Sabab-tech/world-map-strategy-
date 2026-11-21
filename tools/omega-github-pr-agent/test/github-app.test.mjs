@@ -153,3 +153,33 @@ test("refuses stale-head and fork PR writes before creating Git objects", async 
   );
   assert.equal(blobWrites, 0);
 });
+
+test("refuses to write directly to the main branch even through a PR head", async () => {
+  const head = "d".repeat(40);
+  const { client } = makeClient(async (url, options = {}) => {
+    const parsed = new URL(String(url));
+    if (parsed.pathname.endsWith("/access_tokens")) {
+      return jsonResponse(201, {
+        token: "installation-token",
+        expires_at: new Date(1_800_000_000_000 + 3600_000).toISOString()
+      });
+    }
+    if (parsed.pathname.endsWith("/pulls/19")) {
+      return jsonResponse(200, {
+        number: 19,
+        state: "open",
+        head: {
+          ref: "main",
+          sha: head,
+          repo: { full_name: "Sabab-tech/world-map-strategy-" }
+        }
+      });
+    }
+    throw new Error("No write should be attempted for main");
+  });
+
+  await assert.rejects(
+    client.commitPullRequestFiles(19, head, [{ path: "fix.js", content: "x" }], "fix"),
+    /MAIN_BRANCH_WRITE_NOT_ALLOWED/
+  );
+});
