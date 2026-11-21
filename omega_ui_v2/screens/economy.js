@@ -602,7 +602,7 @@
           '</div>' +
         '</section>' +
         '<section class="omega-economy-section">' +
-          '<div class="omega-economy-section-heading"><div><span>01 / CURRENCY & RESERVES</span><h2>National liquidity</h2></div><span class="omega-economy-section-mark">FINANCE</span></div>'
+          '<div class="omega-economy-section-heading"><div><span>01 / CURRENCY & RESERVES</span><h2>National liquidity</h2></div><span class="omega-economy-section-mark">FINANCE</span></div>' +
           '<div class="omega-economy-metric-grid">' +
             card('Domestic currency · ' + currencyTitle,model.domesticCurrencyBalance === null ? 'Not recorded' : money(model.domesticCurrencyBalance,model.currencyCode),accountNote,trend.localCurrency) +
             card('Foreign currency accounts',model.foreignAccountsUsd === null ? number(model.foreignAccounts.length,0) + (model.foreignAccounts.length ? ' account(s)' : '') : money(model.foreignAccountsUsd,'USD'),foreignNote,trend.foreignAccounts) +
