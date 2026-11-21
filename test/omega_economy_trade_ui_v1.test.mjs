@@ -309,10 +309,13 @@ test('Trade Settlement renders without a domain data record and does not merge s
   assert.match(dashboard.innerHTML,/Largest import partner/);
   assert.match(dashboard.innerHTML,/Largest export partner/);
   assert.match(dashboard.innerHTML,/Foreign direct investment/);
-  assert.match(dashboard.innerHTML,/Commodity Market/);
-  assert.match(dashboard.innerHTML,/Black Market/);
+  assert.match(dashboard.innerHTML,/data-omega-trade-command-nav/);
+  assert.match(dashboard.innerHTML,/Commodity<br>Market/);
+  assert.match(dashboard.innerHTML,/Black<br>Market/);
   assert.match(dashboard.innerHTML,/Transactions/);
-  assert.match(dashboard.innerHTML,/Trade Settlement/);
+  assert.match(dashboard.innerHTML,/Trade<br>Settlement/);
+  assert.doesNotMatch(dashboard.innerHTML,/04 \/ TRADE OPERATIONS|omega-trade-action-card/,
+    'all trade destinations are in the permanent upper navigation, not a duplicate bottom panel');
   assert.doesNotMatch(dashboard.innerHTML,/<canvas|recharts|sparkline|Economy &amp; finance|Resources &amp; Mining/i,
     'the trade ministry overview remains chart-free and does not add the unused left navigation');
   assert.match(dashboard.innerHTML,/data-omega-trade-overview="true"/);
@@ -404,4 +407,38 @@ test('Trade & Commerce opens directly on a selected-country financial and trade 
     'no charts or graph runtime are mounted in the ministry overview');
   assert.doesNotMatch(root.innerHTML,/Economy &amp; finance|Factories &amp; industry|Resources &amp; Mining/i,
     'the ministry overview does not add the unwanted left-side category navigation');
+});
+
+
+test('Trade & Commerce keeps the five premium navigation destinations fixed across every section', () => {
+  cleanGlobals();
+  installEconomyFixture();
+  globalThis.OmegaUIV2Government = {
+    getMinistryRows() { return [{ id:'trade', title:'Trade & Commerce', ministerName:'Not recorded' }]; }
+  };
+  const root = {
+    classList:{ add(){} }, addEventListener(){}, contains(){ return true; },
+    querySelector(){ return null; }, innerHTML:''
+  };
+  const routes = [
+    { section:'dashboard', label:'Overview' },
+    { section:'market', marketTab:'commodities', label:'Commodity<br>Market' },
+    { section:'market', marketTab:'black-market', label:'Black<br>Market' },
+    { section:'market', marketTab:'transactions', label:'Transactions' },
+    { section:'settlement', label:'Trade<br>Settlement' }
+  ];
+  const ordered = ['Overview','Commodity<br>Market','Black<br>Market','Transactions','Trade<br>Settlement'];
+  routes.forEach(route => {
+    const result = globalThis.OmegaUIV2MinistryDetail.render(root,{
+      ministryId:'trade', countryId:'BGD', section:route.section, marketTab:route.marketTab
+    });
+    assert.equal(result.ok,true);
+    assert.match(root.innerHTML,/data-omega-trade-command-nav/);
+    assert.equal((root.innerHTML.match(/class="omega-trade-command-button/g) || []).length,5);
+    const offsets = ordered.map(label => root.innerHTML.indexOf(label));
+    assert.ok(offsets.every((offset,index) => offset >= 0 && (index === 0 || offset > offsets[index-1])),
+      'the same five destinations remain in the same order');
+    assert.match(root.innerHTML,/aria-current="page"/);
+    assert.doesNotMatch(root.innerHTML,/04 \/ TRADE OPERATIONS|omega-trade-action-card/);
+  });
 });
