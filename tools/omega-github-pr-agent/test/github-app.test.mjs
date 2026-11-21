@@ -235,5 +235,52 @@ test("PR check reader uses only granted Checks and Actions read endpoints", asyn
   assert.equal(result.checkRuns[0].conclusion, "success");
   assert.equal(result.workflowRuns[0].conclusion, "success");
 });
+test("refuses to replace symlink and submodule entries with regular files", async () => {
+  const head = "f".repeat(40);
+  let blobWrites = 0;
+  const { client } = makeClient(async (url, options = {}) => {
+    const parsed = new URL(String(url));
+    const route = parsed.pathname;
+    const method = options.method || "GET";
+    if (route.endsWith("/access_tokens")) {
+      return jsonResponse(201, {
+        token: "installation-token",
+        expires_at: new Date(1_800_000_000_000 + 3600_000).toISOString()
+      });
+    }
+    if (route.endsWith("/pulls/22")) {
+      return jsonResponse(200, {
+        number: 22,
+        state: "open",
+        head: {
+          ref: "feature/special-file",
+          sha: head,
+          repo: { full_name: "Sabab-tech/world-map-strategy-" }
+        }
+      });
+    }
+    if (route.endsWith("/git/commits/" + head)) {
+      return jsonResponse(200, { tree: { sha: "special-tree" } });
+    }
+    if (route.endsWith("/git/trees/special-tree")) {
+      return jsonResponse(200, {
+        truncated: false,
+        tree: [{ path: "assets/current-link", type: "blob", mode: "120000" }]
+      });
+    }
+    if (route.endsWith("/git/blobs") && method === "POST") blobWrites += 1;
+    throw new Error("Unexpected route; special entries must be blocked: " + route);
+  });
 
+  await assert.rejects(
+    client.commitPullRequestFiles(
+      22,
+      head,
+      [{ path: "assets/current-link", content: "ordinary file content" }],
+      "fix: update asset"
+    ),
+    /UNSUPPORTED_EXISTING_FILE_MODE/
+  );
+  assert.equal(blobWrites, 0);
+});
 
