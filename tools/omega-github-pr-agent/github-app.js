@@ -176,11 +176,17 @@ export class GitHubAppClient {
       );
       if (!Array.isArray(rows)) throw new Error("PR_FILE_LIST_INVALID");
       for (const row of rows) {
+        if (output.length >= 40) return output;
         const filePath = String(row.filename || "");
         let patch = null;
         try {
           assertSafeRepoPath(filePath);
-          patch = boundedText(row.patch || "", 12000);
+          const remainingBudget = Math.max(0, 80_000 - output.reduce(
+            (sum, item) => sum + (typeof item.patch === "string" ? item.patch.length : 0), 0
+          ));
+          patch = remainingBudget
+            ? boundedText(row.patch || "", Math.min(4000, remainingBudget))
+            : "[PATCH OMITTED: PR DIFF CONTEXT BUDGET REACHED]";
         } catch {
           patch = "[PATCH WITHHELD: SENSITIVE OR RESTRICTED PATH]";
         }
@@ -192,7 +198,6 @@ export class GitHubAppClient {
           changes: row.changes,
           patch
         });
-        if (output.length >= 250) return output;
       }
       if (rows.length < 100) break;
     }
@@ -318,6 +323,8 @@ export class GitHubAppClient {
         branch.split("/").some(part => !part || part === "." || part === "..")) {
       throw new Error("PR_HEAD_BRANCH_INVALID");
     }
+
+    if (branch.toLowerCase() === "main") throw new Error("MAIN_BRANCH_WRITE_NOT_ALLOWED");
 
     const parent = await this.repoRequest("/git/commits/" + expectedSha);
     if (!parent?.tree?.sha) throw new Error("PR_PARENT_TREE_UNAVAILABLE");
