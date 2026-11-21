@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import '../omega_ui_v2/screens/economy.js';
 import '../omega_ui_v2/screens/ministry-detail.js';
@@ -115,18 +116,36 @@ test('Economy Overview keeps Treasury cash, domestic currency and FX reserves se
   const root = { classList:{ add(){} }, addEventListener(){}, contains(){ return true; } };
   const rendered = globalThis.OmegaUIV2Economy.render(root,{ countryId:'BGD' });
   assert.equal(rendered.ok,true);
-  assert.match(root.innerHTML,/Economy Overview/);
+  assert.match(root.innerHTML,/data-omega-economy-v3="true"/);
+  assert.match(root.innerHTML,/NATIONAL ECONOMY/);
+  assert.match(root.innerHTML,/AVAILABLE GOVERNMENT TREASURY/);
+  assert.match(root.innerHTML,/Domestic currency · BDT/);
+  assert.match(root.innerHTML,/Foreign currency accounts/);
   assert.match(root.innerHTML,/Foreign-exchange reserves/);
   assert.match(root.innerHTML,/Trade dependency profile/);
+  assert.match(root.innerHTML,/Largest import partner/);
+  assert.match(root.innerHTML,/Largest export partner/);
   assert.match(root.innerHTML,/Largest overall trade partner/);
-  assert.match(root.innerHTML,/Trade &amp; Commerce/);
+  assert.match(root.innerHTML,/FOREIGN DIRECT INVESTMENT/);
+  assert.match(root.innerHTML,/TRADE & COMMERCE MINISTRY/);
   assert.match(root.innerHTML,/data-omega-v2-open-economic-ministry="trade"/,
-    'Economy must expose a single gateway to the ministry that owns trade operations');
-  assert.match(root.innerHTML,/omega-economy-action-grid--single/);
-  assert.doesNotMatch(root.innerHTML,/Commodity Market|Black Market|Transactions|Trade Settlement/,
-    'market, transaction and settlement actions are owned by the Trade & Commerce ministry');
-  assert.doesNotMatch(root.innerHTML,/<canvas|recharts|data-omega-v2-economy-tab/i);
+    'Economy keeps one visible route to the existing Trade & Commerce ministry');
+  assert.match(root.innerHTML,/<svg class="omega-economy-v3-icon-svg"/,
+    'the redesigned overview uses inline SVG icons');
+  assert.doesNotMatch(root.innerHTML,/data-omega-v2-open-trade-section|data-omega-v2-market-tab|omega-economy-action-card/,
+    'market, black-market, transaction and settlement action controls are not duplicated in Economy');
+  assert.doesNotMatch(root.innerHTML,/<canvas|recharts|sparkline|data-omega-v2-economy-tab/i,
+    'the overview does not mount graph/chart UI or legacy Economy tabs');
   assert.match(root.innerHTML,/No baseline/, 'no historical percent change is invented');
+
+  const serviceWorker = readFileSync(new URL('../omega-offline-map-sw.js',import.meta.url),'utf8');
+  const visualCss = readFileSync(new URL('../omega_ui_v2/ministry-visual-refresh.css',import.meta.url),'utf8');
+  assert.match(serviceWorker,/CACHE_NAME = "omega-offline-atlas-shell-v136"/,
+    'the offline shell version must advance beyond the currently installed v135 shell');
+  assert.match(serviceWorker,/\.\/omega_ui_v2\/screens\/economy\.js/);
+  assert.match(serviceWorker,/\.\/omega_ui_v2\/ministry-visual-refresh\.css/);
+  assert.match(visualCss,/\.omega-economy-v3-metric-label\s*\{[^}]*font-size:\s*10px/s,
+    'Economy metric labels must remain readable on mobile');
 });
 
 

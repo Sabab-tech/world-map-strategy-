@@ -136,6 +136,29 @@ test('real Chromium opens all four Trade & Commerce services from the Economy mi
     await cabinet.locator('[data-omega-v2-open-economic-ministry="trade"]').waitFor({ state:'visible', timeout:30000 });
     check('Economy renders the Trade & Commerce ministry gateway', await cabinet.locator('[data-omega-v2-open-economic-ministry="trade"]').count() === 1);
 
+    const dashboard = cabinet.locator('[data-omega-economy-v3="true"]');
+    await dashboard.waitFor({ state:'visible', timeout:30000 });
+    check('Economy opens directly on the redesigned overview', await dashboard.count() === 1);
+    const overviewText = await dashboard.innerText();
+    check('Economy overview exposes national liquidity, trade, partners and investment',
+      /Domestic currency/i.test(overviewText) &&
+      /Foreign-exchange reserves/i.test(overviewText) &&
+      /Total imports/i.test(overviewText) &&
+      /Total exports/i.test(overviewText) &&
+      /Largest import partner/i.test(overviewText) &&
+      /Largest export partner/i.test(overviewText) &&
+      /FOREIGN DIRECT INVESTMENT/i.test(overviewText));
+    check('Economy overview has no chart or duplicate left-side section navigation',
+      await dashboard.locator('canvas, svg.recharts-surface, [data-omega-v2-economy-tab], .omega-economy-v3-sidebar').count() === 0);
+    const labelFontSize = await dashboard.locator('.omega-economy-v3-metric-label').first().evaluate(el => getComputedStyle(el).fontSize);
+    check('Economy metric labels meet the mobile readability floor',
+      Number.parseFloat(labelFontSize) >= 9, labelFontSize);
+    await page.setViewportSize({ width:360, height:800 });
+    const mobileWidth = await dashboard.evaluate(el => ({ client:el.clientWidth, scroll:el.scrollWidth }));
+    check('Economy overview has no horizontal overflow at 360px',
+      mobileWidth.scroll <= mobileWidth.client + 1, JSON.stringify(mobileWidth));
+    await page.setViewportSize({ width:1280, height:850 });
+
     await cabinet.locator('[data-omega-v2-open-economic-ministry="trade"]').click();
     await page.waitForFunction(() => {
       const root = document.getElementById('cabinet-full-window');

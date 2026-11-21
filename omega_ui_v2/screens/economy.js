@@ -548,107 +548,158 @@
     }
     return render(root,options);
   }
-  function render(root, options) {
-    options = options || {};
-    if (!root) return { ok:false, code:'ECONOMY_ROOT_REQUIRED' };
-    var model = buildViewModel(options);
-    var requestedPanel = String(options.tab || 'overview');
-    var panelId = ['overview','treasury','budget','debt','monetary','trade'].indexOf(requestedPanel) >= 0 ? requestedPanel : 'overview';
-    // These small SVGs are already in the service worker's core offline cache.
-    var cover = 'assets/omega-global-market/market-header.svg';
-    var commodityImage = 'assets/omega-global-market/raw-mining.svg';
-    var settlementImage = 'assets/omega-industrial-icons-v1/transport/cargo/general-cargo/ship.svg';
+  function economySvgIcon(name) {
+    var icons = {
+      bank:'<path d="M3 9h18L12 3 3 9Zm2 2v7m4-7v7m6-7v7m4-7v7M3 21h18M2 18h20"/>',
+      domestic:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5c-.6-.8-1.6-1.2-3-1.2-1.8 0-3 .9-3 2.2 0 3 6.5 1.2 6.5 4.5 0 1.4-1.3 2.5-3.4 2.5-1.5 0-2.7-.5-3.5-1.5M12 5v14"/>',
+      foreign:'<circle cx="12" cy="12" r="9"/><path d="M3.5 12h17M12 3c2.2 2.4 3.3 5.4 3.3 9S14.2 18.6 12 21c-2.2-2.4-3.3-5.4-3.3-9S9.8 5.4 12 3Z"/>',
+      reserve:'<path d="M4 7h16v13H4zM7 4h10M8 11h8m-8 3h5"/><circle cx="16.5" cy="16.5" r="2.5"/>',
+      imports:'<path d="M12 3v12m-5-5 5 5 5-5M4 19h16"/>',
+      exports:'<path d="M12 21V9m-5 5 5-5 5 5M4 5h16"/>',
+      balance:'<path d="M12 3v18M5 7h14M4 7l-3 7h6L4 7Zm16 0-3 7h6l-3-7ZM8 21h8"/>',
+      dependency:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M3 12h3m12 0h3"/>',
+      partner:'<circle cx="12" cy="12" r="3"/><circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="18" r="2"/><path d="m7 7.5 3 2.5m7-2.5-3 2.5M7 16.5l3-2.5m7 2.5-3-2.5"/>',
+      investment:'<path d="M4 21V8l8-5 8 5v13M8 21v-7h8v7M8 9h.01M12 9h.01M16 9h.01"/>',
+      gdp:'<path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-6"/><path d="M15 7h4v4"/>',
+      growth:'<path d="m4 17 6-6 4 3 6-8M14 6h6v6"/>',
+      inflation:'<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2M7 4 5 2m12 2 2-2"/>',
+      debt:'<path d="M12 3 20 6v6c0 4.5-3.2 7.5-8 9-4.8-1.5-8-4.5-8-9V6l8-3Z"/><path d="M8 12h8m-4-4v8"/>',
+      revenue:'<path d="M4 18V6m0 12h16M7 14l3-3 3 2 5-6"/><path d="M14 7h4v4"/>',
+      spending:'<path d="M12 3v13m-5-5 5 5 5-5M4 20h16"/>',
+      budget:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10M7 13h4m4 0h2"/>'
+    };
+    return '<svg class="omega-economy-v3-icon-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+      (icons[name] || icons.bank) + '</svg>';
+  }
+  function economySourceText(record) {
+    if (!record) return 'Source not recorded';
+    var source = record.source || (record.status === 'AVAILABLE' ? 'Recorded game value' : 'Source not recorded');
+    return source + (record.year ? ' · ' + record.year : '');
+  }
+  function economyMetricCard(label, valueText, note, trend, iconName, tone) {
+    var toneClass = tone === 'positive' ? ' is-positive' : tone === 'negative' ? ' is-negative' : '';
+    return '<article class="omega-economy-v3-metric' + toneClass + '">' +
+      '<div class="omega-economy-v3-metric-head"><span class="omega-economy-v3-icon">' + economySvgIcon(iconName) + '</span>' +
+        '<span class="omega-economy-v3-metric-label">' + esc(label) + '</span></div>' +
+      '<strong class="omega-economy-v3-metric-value">' + esc(valueText) + '</strong>' +
+      (trend ? trendMarkup(trend) : '') +
+      (note ? '<small class="omega-economy-v3-metric-note">' + esc(note) + '</small>' : '') +
+      '</article>';
+  }
+  function economySectionHeading(numberLabel, eyebrow, title, description, iconName, tag) {
+    return '<div class="omega-economy-v3-section-heading"><span class="omega-economy-v3-section-icon">' +
+      economySvgIcon(iconName) + '</span><div><span class="omega-economy-v3-section-eyebrow">' + esc(numberLabel + ' / ' + eyebrow) +
+      '</span><h2>' + esc(title) + '</h2><p>' + esc(description) + '</p></div>' +
+      (tag ? '<span class="omega-economy-v3-section-tag">' + esc(tag) + '</span>' : '') + '</div>';
+  }
+  function renderEconomyDashboard(model, cover) {
     var trend = model.trends || {};
-    var accountNote = model.domesticCurrencyAccount
-      ? 'Account · ' + model.domesticCurrencyAccount.currencyCode
-      : 'Domestic currency account not recorded';
-    var foreignNote = model.foreignAccounts.length
-      ? model.foreignAccounts.length + ' currency account(s) · USD equivalent only when FX quote exists'
-      : 'No foreign-currency account balance recorded';
-    var importNote = model.imports.source || (model.imports.status === 'PARTIAL' ? 'Some settled values are unavailable' : 'No settled import ledger value');
-    var exportNote = model.exports.source || (model.exports.status === 'PARTIAL' ? 'Some settled values are unavailable' : 'No settled export ledger value');
+    var currencyTitle = model.currencyCode || 'Home currency';
+    var domesticValue = model.domesticCurrencyBalance === null
+      ? 'Not recorded' : money(model.domesticCurrencyBalance,model.currencyCode);
+    var foreignValue = model.foreignAccountsUsd === null
+      ? number(model.foreignAccounts.length,0) + (model.foreignAccounts.length ? ' account(s)' : ' accounts')
+      : money(model.foreignAccountsUsd,'USD');
+    var tradeTone = model.tradePosition === 'Trade surplus' ? 'positive'
+      : model.tradePosition === 'Trade deficit' ? 'negative' : '';
+    var tradeValue = value(model.tradeBalance,'money');
     var importPartner = model.importPartner
       ? model.importPartner.name + ' · ' + money(model.importPartner.value,model.importPartner.currency)
       : 'Not recorded';
     var exportPartner = model.exportPartner
       ? model.exportPartner.name + ' · ' + money(model.exportPartner.value,model.exportPartner.currency)
       : 'Not recorded';
-    var tradePartner = model.tradePartner
+    var overallPartner = model.tradePartner
       ? model.tradePartner.name + ' · ' + money(model.tradePartner.value,model.tradePartner.currency)
       : 'Not recorded';
     var tradePartnerNote = model.tradePartner
       ? number(model.tradePartner.importCount,0) + ' import · ' + number(model.tradePartner.exportCount,0) + ' export settlement(s)'
       : 'No complete, currency-comparable settled partner evidence';
-    var currencyTitle = model.currencyCode || 'Home currency';
-    var html =
-      '<section class="omega-v2-shell omega-economy-overview">' +
-        '<header class="omega-economy-heading">' +
-          '<div class="omega-economy-heading-mark">' + inlineIcon('overview') + '</div>' +
-          '<div class="omega-economy-heading-copy"><div class="omega-v2-eyebrow">NATIONAL ECONOMY</div><h1>Economy Overview</h1>' +
-            '<p>' + esc(model.countryName || model.countryId || 'Selected country') + ' · current recorded position</p></div>' +
-          '<span class="omega-economy-turn">TURN ' + esc(model.currentTurn) + '</span>' +
-        '</header>' +
-        '<div class="omega-economy-hero">' +
-          '<div class="omega-economy-hero-copy"><span class="omega-economy-kicker">SOVEREIGN FINANCIAL POSITION</span>' +
-            '<h2>Treasury cash</h2><strong>' + esc(money(model.treasuryCash,'USD')) + '</strong>' +
-            trendMarkup(trend.treasury) +
-            '<small>Available government Treasury · USD. This is not the national GDP or the FX reserve.</small></div>' +
-          '<div class="omega-economy-hero-image"><img loading="lazy" decoding="async" src="' + esc(cover) + '" alt="Container ship at a trade port"></div>' +
+    var foreignRows = model.foreignAccounts.length
+      ? '<div class="omega-economy-v3-account-list"><div class="omega-economy-v3-account-heading"><span>FOREIGN CURRENCY ACCOUNTS</span><span>RECORDED BALANCE</span><span>USD EQUIVALENT</span></div>' +
+        model.foreignAccounts.map(function (row) {
+          return '<div class="omega-economy-v3-account-row"><div><strong>' + esc(row.currencyCode) + '</strong><small>' + esc(row.currencyName) +
+            '</small></div><b>' + esc(row.balance === null ? 'Not recorded' : number(row.balance,2) + ' ' + row.currencyCode) +
+            '</b><small>' + esc(row.usdValue === null ? 'FX quote unavailable' : money(row.usdValue,'USD')) + '</small></div>';
+        }).join('') + '</div>'
+      : '<div class="omega-economy-v3-empty">No foreign-currency account balance is recorded for this country.</div>';
+    var tradeToneClass = tradeTone ? ' is-' + tradeTone : '';
+    return '<section class="omega-v2-shell omega-economy-overview omega-economy-v3" data-omega-economy-v3="true">' +
+      '<header class="omega-economy-v3-heading"><span class="omega-economy-v3-brand-mark">' + economySvgIcon('bank') + '</span>' +
+        '<div class="omega-economy-v3-heading-copy"><span>OMEGA · NATIONAL ECONOMY</span><h1>Economy Overview</h1>' +
+          '<p>' + esc(model.countryName || model.countryId || 'Selected country') + ' · sovereign financial position</p></div>' +
+        '<div class="omega-economy-v3-turn"><small>GAME TURN</small><strong>' + esc(model.currentTurn) + '</strong></div></header>' +
+      '<section class="omega-economy-v3-hero" aria-label="Government Treasury overview">' +
+        '<img class="omega-economy-v3-hero-image" loading="lazy" decoding="async" src="' + esc(cover) + '" alt="International trade port">' +
+        '<div class="omega-economy-v3-hero-shade"></div><div class="omega-economy-v3-hero-content">' +
+          '<div class="omega-economy-v3-hero-top"><span>SOVEREIGN FINANCIAL POSITION</span><span class="omega-economy-v3-record"><i></i> GAME RECORD</span></div>' +
+          '<div class="omega-economy-v3-hero-main"><div class="omega-economy-v3-hero-primary"><small>AVAILABLE GOVERNMENT TREASURY</small>' +
+            '<strong>' + esc(money(model.treasuryCash,'USD')) + '</strong>' + trendMarkup(trend.treasury) +
+            '<p>Treasury cash is separate from domestic currency supply and official foreign-exchange reserves.</p></div>' +
+            '<div class="omega-economy-v3-hero-side"><div><span>TRADE POSITION</span><strong class="' + tradeToneClass + '">' + esc(model.tradePosition) +
+              '</strong></div><div><span>SETTLED TRADE RECORDS</span><strong>' + esc(number(model.settledTradeCount,0)) + '</strong></div></div></div></div></section>' +
+      '<section class="omega-economy-v3-section">' +
+        economySectionHeading('01','CURRENCY & RESERVES','National liquidity','Domestic money, foreign currency accounts and sovereign reserves.','reserve','4 INDICATORS') +
+        '<div class="omega-economy-v3-grid omega-economy-v3-grid--four">' +
+          economyMetricCard('Domestic currency · ' + currencyTitle,domesticValue,model.domesticCurrencyAccount ? 'Account · ' + model.domesticCurrencyAccount.currencyCode : 'Domestic currency account not recorded',trend.localCurrency,'domestic') +
+          economyMetricCard('Foreign currency accounts',foreignValue,model.foreignAccounts.length + ' recorded foreign account(s) · USD conversion only when an FX quote exists',trend.foreignAccounts,'foreign') +
+          economyMetricCard('Foreign-exchange reserves',value(model.foreignExchangeReserves,'money'),economySourceText(model.foreignExchangeReserves),trend.fxReserves,'reserve') +
+          economyMetricCard('Treasury reserves',model.treasuryReserves === null ? 'Not recorded' : money(model.treasuryReserves,'USD'),'Finance reserve field · separate from available Treasury cash',trend.treasuryReserves,'bank') +
+        '</div>' + foreignRows + '</section>' +
+      '<section class="omega-economy-v3-section">' +
+        economySectionHeading('02','INTERNATIONAL COMMERCE','Trade position','Settled imports and exports, trade dependency and the country’s leading partners.','balance',model.tradePosition.toUpperCase()) +
+        '<div class="omega-economy-v3-trade-banner' + tradeToneClass + '"><div><small>NET TRADE BALANCE</small><strong>' + esc(tradeValue) +
+          '</strong><span>' + esc(economySourceText(model.tradeBalance)) + '</span></div><span class="omega-economy-v3-trade-status">' + esc(model.tradePosition) + '</span></div>' +
+        '<div class="omega-economy-v3-grid omega-economy-v3-grid--three">' +
+          economyMetricCard('Total imports',value(model.imports,'money'),economySourceText(model.imports),trend.imports,'imports') +
+          economyMetricCard('Total exports',value(model.exports,'money'),economySourceText(model.exports),trend.exports,'exports') +
+          economyMetricCard('Import dependency',value(model.importDependency),economySourceText(model.importDependency),trend.importDependency,'dependency') +
+          economyMetricCard('Export dependency',value(model.exportDependency),economySourceText(model.exportDependency),trend.exportDependency,'growth') +
+          economyMetricCard('Trade dependency profile',model.tradeDependencyProfile.label,model.tradeDependencyProfile.detail,null,'balance') +
+          economyMetricCard('Settled trade records',number(model.settledTradeCount,0),'Deduplicated completed settlements only',null,'partner') +
         '</div>' +
-        '<section class="omega-economy-section omega-economy-ministry-entry" aria-label="Trade ministry access">' +
-          '<div class="omega-economy-section-heading"><div><span>MINISTRY ACCESS</span><h2>Trade & Commerce</h2></div><span class="omega-economy-section-mark">CONTROL ROOM</span></div>' +
-          '<div class="omega-economy-action-grid omega-economy-action-grid--single">' +
-            actionCard('Trade & Commerce','Open the dedicated national trade control room and its market and agreement systems.','market','data-omega-v2-open-economic-ministry="trade"',cover,'OPEN MINISTRY') +
-          '</div>' +
-        '</section>' +
-        '<section class="omega-economy-section">' +
-          '<div class="omega-economy-section-heading"><div><span>01 / CURRENCY & RESERVES</span><h2>National liquidity</h2></div><span class="omega-economy-section-mark">FINANCE</span></div>' +
-          '<div class="omega-economy-metric-grid">' +
-            card('Domestic currency · ' + currencyTitle,model.domesticCurrencyBalance === null ? 'Not recorded' : money(model.domesticCurrencyBalance,model.currencyCode),accountNote,trend.localCurrency) +
-            card('Foreign currency accounts',model.foreignAccountsUsd === null ? number(model.foreignAccounts.length,0) + (model.foreignAccounts.length ? ' account(s)' : '') : money(model.foreignAccountsUsd,'USD'),foreignNote,trend.foreignAccounts) +
-            card('Foreign-exchange reserves',value(model.foreignExchangeReserves,'money'),sourceLine(model.foreignExchangeReserves),trend.fxReserves) +
-            card('Treasury reserves',model.treasuryReserves === null ? 'Not recorded' : money(model.treasuryReserves,'USD'),'Finance reserve field · separate from official FX reserves',trend.treasuryReserves) +
-          '</div>' +
-          (model.foreignAccounts.length ? '<div class="omega-economy-currency-list"><div class="omega-economy-currency-list-title">Recorded currency accounts</div>' +
-            model.foreignAccounts.map(function (row) {
-              return '<div class="omega-economy-currency-row"><span><strong>' + esc(row.currencyCode) + '</strong><small>' + esc(row.currencyName) + '</small></span><b>' +
-                esc(row.balance === null ? 'Not recorded' : number(row.balance,2) + ' ' + row.currencyCode) + '</b><small>' +
-                esc(row.usdValue === null ? 'USD quote unavailable' : money(row.usdValue,'USD')) + '</small></div>';
-            }).join('') + '</div>' : '') +
-        '</section>' +
-        '<section class="omega-economy-section">' +
-          '<div class="omega-economy-section-heading"><div><span>02 / INTERNATIONAL COMMERCE</span><h2>Trade position</h2></div><span class="omega-economy-position">' + esc(model.tradePosition) + '</span></div>' +
-          '<div class="omega-economy-metric-grid">' +
-            card('Trade balance',value(model.tradeBalance,'money'),sourceLine(model.tradeBalance),trend.tradeBalance,model.tradeBalance.value === null ? '' : model.tradeBalance.value >= 0 ? 'is-positive' : 'is-negative') +
-            card('Total imports',value(model.imports,'money'),importNote,trend.imports) +
-            card('Total exports',value(model.exports,'money'),exportNote,trend.exports) +
-            card('Trade dependency profile',model.tradeDependencyProfile.label,model.tradeDependencyProfile.detail,null) +
-            card('Import dependency',value(model.importDependency),sourceLine(model.importDependency),trend.importDependency) +
-            card('Export dependency',value(model.exportDependency),sourceLine(model.exportDependency),trend.exportDependency) +
-            card('Foreign direct investment',value(model.foreignDirectInvestment,'money'),sourceLine(model.foreignDirectInvestment),trend.fdi) +
-            card('Largest import partner',importPartner,model.importPartner ? number(model.importPartner.count,0) + ' settled deal(s)' : 'No settled partner evidence',null) +
-            card('Largest export partner',exportPartner,model.exportPartner ? number(model.exportPartner.count,0) + ' settled deal(s)' : 'No settled partner evidence',null) +
-            card('Largest overall trade partner',tradePartner,tradePartnerNote,null) +
-          '</div>' +
-          '<p class="omega-economy-data-note">Trade totals use this country’s deduplicated SETTLED ledger rows. Baseline values are labelled by source and year; pending offers and agreements are not counted as completed trade.</p>' +
-        '</section>' +
-        '<section class="omega-economy-section">' +
-          '<div class="omega-economy-section-heading"><div><span>03 / MACRO INDICATORS</span><h2>Economic fundamentals</h2></div></div>' +
-          '<div class="omega-economy-metric-grid">' +
-            card('GDP',value(model.gdp,'money'),sourceLine(model.gdp),trend.gdp) +
-            card('GDP growth',value(model.gdpGrowth),sourceLine(model.gdpGrowth),trend.gdpGrowth) +
-            card('Inflation',value(model.inflation),sourceLine(model.inflation),trend.inflation) +
-            card('Public debt / GDP',value(model.debtToGdp),sourceLine(model.debtToGdp),trend.debtToGdp) +
-            card('Recorded government revenue',model.revenue === null ? 'Not recorded' : money(model.revenue,'USD'),'Existing Finance revenue field',null) +
-            card('Recorded government expenditure',model.expenditure === null ? 'Not recorded' : money(model.expenditure,'USD'),'Existing Finance expenditure field',null) +
-            card('Budget balance',model.budgetBalance === null ? 'Not recorded' : money(model.budgetBalance,'USD'),'Existing Finance budget balance field',null) +
-          '</div>' +
-        '</section>' +
-        '<footer class="omega-economy-footer">Read-only overview · no new ledger, no online data refresh, and no world-wide country scan is performed while this page opens.</footer>' +
-      '</section>';
+        '<div class="omega-economy-v3-partners"><div class="omega-economy-v3-partners-title"><span>TRADE NETWORK</span><strong>Leading commercial partners</strong></div>' +
+          '<div class="omega-economy-v3-grid omega-economy-v3-grid--three">' +
+            economyMetricCard('Largest import partner',importPartner,model.importPartner ? number(model.importPartner.count,0) + ' settled deal(s)' : 'No settled partner evidence',null,'partner') +
+            economyMetricCard('Largest export partner',exportPartner,model.exportPartner ? number(model.exportPartner.count,0) + ' settled deal(s)' : 'No settled partner evidence',null,'partner') +
+            economyMetricCard('Largest overall trade partner',overallPartner,tradePartnerNote,null,'foreign') +
+          '</div></div>' +
+        '<p class="omega-economy-v3-data-note">Trade totals use this country’s deduplicated SETTLED ledger rows. Baseline values retain their source and year; pending agreements are not counted as completed trade.</p>' +
+      '</section>' +
+      '<section class="omega-economy-v3-section">' +
+        economySectionHeading('03','INVESTMENT & MACROECONOMY','Economic fundamentals','Capital inflows and national indicators from the existing country data registry.','investment','SOURCE-AWARE') +
+        '<div class="omega-economy-v3-investment"><img loading="lazy" decoding="async" src="assets/omega-global-market/factory-refinery.svg" alt="Industrial refinery illustration">' +
+          '<div><span>FOREIGN DIRECT INVESTMENT</span><strong>' + esc(value(model.foreignDirectInvestment,'money')) + '</strong>' +
+            trendMarkup(trend.fdi) + '<small>' + esc(economySourceText(model.foreignDirectInvestment)) + '</small></div></div>' +
+        '<div class="omega-economy-v3-grid omega-economy-v3-grid--four">' +
+          economyMetricCard('GDP',value(model.gdp,'money'),economySourceText(model.gdp),trend.gdp,'gdp') +
+          economyMetricCard('GDP growth',value(model.gdpGrowth),economySourceText(model.gdpGrowth),trend.gdpGrowth,'growth') +
+          economyMetricCard('Inflation',value(model.inflation),economySourceText(model.inflation),trend.inflation,'inflation') +
+          economyMetricCard('Public debt / GDP',value(model.debtToGdp),economySourceText(model.debtToGdp),trend.debtToGdp,'debt') +
+          economyMetricCard('Recorded government revenue',model.revenue === null ? 'Not recorded' : money(model.revenue,'USD'),'Existing Finance revenue field',null,'revenue') +
+          economyMetricCard('Recorded government expenditure',model.expenditure === null ? 'Not recorded' : money(model.expenditure,'USD'),'Existing Finance expenditure field',null,'spending') +
+          economyMetricCard('Budget balance',model.budgetBalance === null ? 'Not recorded' : money(model.budgetBalance,'USD'),'Existing Finance budget balance field',null,'budget') +
+        '</div>' +
+        '<div class="omega-economy-v3-image-row"><figure><img loading="lazy" decoding="async" src="assets/omega-global-market/raw-mining.svg" alt="Raw commodity handling"><figcaption>GLOBAL COMMODITY FLOWS</figcaption></figure>' +
+          '<figure><img loading="lazy" decoding="async" src="assets/omega-global-market/factory-refinery.svg" alt="Industrial refining"><figcaption>INDUSTRIAL VALUE CHAIN</figcaption></figure></div>' +
+      '</section>' +
+      '<div class="omega-economy-v3-ministry-link"><div><span>TRADE & COMMERCE MINISTRY</span><strong>Markets, transactions and agreements</strong><small>Open the existing ministry to manage Commodity Market, Black Market, Transactions and Trade Settlement.</small></div>' +
+        '<button type="button" class="omega-v2-button omega-v2-button--primary" data-omega-v2-open-economic-ministry="trade">OPEN MINISTRY <span aria-hidden="true">›</span></button></div>' +
+      '<footer class="omega-economy-v3-footer">Read-only economic overview · selected-country data only · no chart engine, online refresh, world scan or new ledger is started when this screen opens.</footer>' +
+    '</section>';
+  }
+  function render(root, options) {
+    options = options || {};
+    if (!root) return { ok:false, code:'ECONOMY_ROOT_REQUIRED' };
+    var model = buildViewModel(options);
+    var requestedPanel = String(options.tab || 'overview');
+    var panelId = ['overview','treasury','budget','debt','monetary','trade'].indexOf(requestedPanel) >= 0 ? requestedPanel : 'overview';
+    // The dashboard uses only SVG artwork already precached by the offline shell.
+    var cover = 'assets/omega-global-market/market-header.svg';
+    var html = renderEconomyDashboard(model, cover);
 
     root.classList.add('omega-v2-screen');
-    html = html.replace('<section class="omega-v2-shell omega-economy-overview">', '<section class="omega-v2-shell omega-economy-overview" data-omega-v2-finance-panel="' + panelId + '">');
+    html = html.replace('<section class="omega-v2-shell omega-economy-overview omega-economy-v3" data-omega-economy-v3="true">', '<section class="omega-v2-shell omega-economy-overview omega-economy-v3" data-omega-economy-v3="true" data-omega-v2-finance-panel="' + panelId + '">');
     root.innerHTML = html;
     if (!root.__omegaV2EconomyBound && typeof root.addEventListener === 'function') {
       root.addEventListener('click', function (event) {
