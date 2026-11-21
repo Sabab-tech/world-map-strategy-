@@ -317,7 +317,7 @@ test('non-USD export fiscalization clears the bank-settled USD amount and keeps 
   assert.equal(worker.currency,'USD');
   assert.equal(transport.currency,'USD');
 
-  const reconciled=worldState.economy.BGD.tradeSettlementFiscalizationFailures||[];
+  const reconciled=worldState.economy.BGD.industrialRuntime?.tradeSettlementFiscalizationFailures||[];
   assert.equal(reconciled.length,0,'a valid settled bank transaction must not create an FX/fiscalization failure');
   const treasuryAfter=worldState.finance.BGD.available;
   const companyAfter=JSON.stringify(company);
