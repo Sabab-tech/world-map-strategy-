@@ -49,8 +49,8 @@ assert.equal(scheduledResult.scanned,1,JSON.stringify(scheduledResult));
 assert.equal(scheduledResult.accepted,1,JSON.stringify(scheduledResult));
 assert.equal(treaty.processCountry('BGD').status,'ALREADY_PROCESSED',
   'repeated scheduler callbacks for one country/turn must not process a treaty twice');
-assert.equal(globalThis.Game.state.foreign.BGD.treaties.SAU.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.SAU.treaties.BGD.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.BGD.negotiations.SAU.status,'ACTIVE');
-assert.equal(globalThis.Game.state.foreign.SAU.negotiations.BGD.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.BGD.treaties.SA.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.SAU.treaties.BD.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.BGD.negotiations.SA.status,'ACTIVE');
+assert.equal(globalThis.Game.state.foreign.SAU.negotiations.BD.status,'ACTIVE');
 console.log('OMEGA TREATY LIFECYCLE TEST PASSED');
