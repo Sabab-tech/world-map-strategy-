@@ -1,9 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
-  <title id="title">Trade and Commerce emblem</title>
-  <desc id="desc">Original OMEGA ministry emblem in navy, steel silver and signal blue.</desc>
-  <rect x="4" y="4" width="120" height="120" rx="25" fill="#edf3f8" stroke="#68849d" stroke-width="3"/>
-  <circle cx="64" cy="64" r="47" fill="#0b2238" stroke="#77c8f2" stroke-width="2.5"/>
-  <circle cx="64" cy="64" r="39" fill="none" stroke="#9fb4c8" stroke-width="1.2" opacity=".6"/>
-  <g fill="none" stroke="#e3edf6" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"><path d="M25 75h78l-12 17H41zM39 62h50M47 62V47h34v15"/><path d="M28 37h20m-7-7 7 7-7 7M100 47H80m7-7-7 7 7 7"/></g>
-  <g fill="none" stroke="#77c8f2" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M49 84h29"/></g>
+<title id="title">Trade and Commerce ministry seal</title>
+<desc id="desc">An embossed metallic globe, cargo ship and stacked freight containers in OMEGA navy, steel and signal blue.</desc>
+<defs>
+ <linearGradient id="frame" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#effaff"/><stop offset=".34" stop-color="#7dacc4"/><stop offset=".72" stop-color="#315978"/><stop offset="1" stop-color="#102b45"/></linearGradient>
+ <linearGradient id="navy" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#183d5d"/><stop offset=".5" stop-color="#071f39"/><stop offset="1" stop-color="#030f23"/></linearGradient>
+ <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d6fbff"/><stop offset=".42" stop-color="#51c5e9"/><stop offset="1" stop-color="#0b5a8a"/></linearGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0c6"/><stop offset=".5" stop-color="#e0ae61"/><stop offset="1" stop-color="#81512b"/></linearGradient>
+ <radialGradient id="shine" cx=".28" cy=".14" r=".9"><stop stop-color="#fff" stop-opacity=".55"/><stop offset=".32" stop-color="#d3f7ff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+ <filter id="shadow" x="-25%" y="-25%" width="150%" height="160%"><feGaussianBlur in="SourceAlpha" stdDeviation="2.2"/><feOffset dy="3"/><feComponentTransfer><feFuncA type="linear" slope=".5"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect x="3" y="3" width="122" height="122" rx="27" fill="url(#frame)" stroke="#e5f8ff" stroke-width="1.4"/>
+<rect x="8" y="8" width="112" height="112" rx="23" fill="url(#navy)" stroke="#3d94c0" stroke-width="1.2"/>
+<circle cx="64" cy="53" r="35" fill="url(#cyan)" stroke="#d7f8ff" stroke-width="1.6" filter="url(#shadow)"/>
+<path d="M32 52h64M64 18c-16 12-17 58 0 70M64 18c16 12 17 58 0 70M37 35q27 14 54 0M37 71q27-14 54 0" fill="none" stroke="#e7fbff" stroke-width="1.6" opacity=".78"/>
+<ellipse cx="64" cy="53" rx="42" ry="17" transform="rotate(-28 64 53)" fill="none" stroke="url(#gold)" stroke-width="2.8"/>
+<circle cx="34" cy="39" r="4" fill="url(#gold)" stroke="#fff2c8"/>
+<g filter="url(#shadow)" stroke="#061b31" stroke-width="1.6" stroke-linejoin="round">
+ <path d="M22 86h84l-10 18H36Z" fill="url(#frame)"/>
+ <path d="m27 85 17-10 19 10-17 8Z" fill="url(#gold)"/>
+ <path d="m46 85 17-10 19 10-17 8Z" fill="url(#cyan)"/>
+ <path d="m65 85 17-10 19 10-17 8Z" fill="url(#gold)"/>
+ <path d="M36 91h60l-6 11H42Z" fill="url(#navy)"/>
+ <path d="M47 92v8m18-8v8m17-8v8" stroke="#d8f7ff" stroke-width="1.2"/>
+</g>
+<path d="M15 16h64" stroke="#fff" stroke-opacity=".5" stroke-width="1.3" stroke-linecap="round"/>
+<path d="M15 112h98" stroke="#53cdf1" stroke-opacity=".65" stroke-width="1.4"/>
+<rect x="8" y="8" width="112" height="112" rx="23" fill="url(#shine)" pointer-events="none"/>
 </svg>
