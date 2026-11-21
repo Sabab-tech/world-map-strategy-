@@ -128,7 +128,7 @@ await sim.advance(1);
 assert.equal(globalThis.Game.state.projects.BD.registry[0].status,'COMPLETED',
   'queued project finalization must commit the completed status on the following simulation turn');
 assert.equal(globalThis.Game.state.resource.BD.inventory.steel,9950);
-const reservationLedger=globalThis.Game.state.cabinet?.BD?.autonomyReservations
+const reservationLedger=globalThis.Game.state.cabinet?.BGD?.autonomyReservations
   ||globalThis.Game.state.cabinet?.BD?.autonomyReservations||[];
 assert(reservationLedger.some(x=>x.status==='RELEASED'),
   'completed autonomy project must release its reservation; '+JSON.stringify({
