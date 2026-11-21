@@ -35,6 +35,7 @@
   var hiddenSnapshotSaved = false;
   var restoreFailed = false;
   var restoreFinished = false;
+  var restoredFromSave = false;
   var saveStatus = 'AUTOSAVE READY';
   // Gameplay automation is opt-in after every boot and remains paused in the background.
   var backgroundRunsEnabled = false;
@@ -488,6 +489,7 @@
     }
 
     if (restored) {
+      restoredFromSave = true;
       var savedStatus = String(sim.status || '').toUpperCase();
       var savedSpeed = number(sim.clock.speed);
       if (savedStatus === 'ERROR') {
