@@ -127,7 +127,7 @@ test('Economy Overview keeps Treasury cash, domestic currency and FX reserves se
   assert.match(root.innerHTML,/Largest export partner/);
   assert.match(root.innerHTML,/Largest overall trade partner/);
   assert.match(root.innerHTML,/FOREIGN DIRECT INVESTMENT/);
-  assert.match(root.innerHTML,/Trade &amp; Commerce/);
+  assert.match(root.innerHTML,/TRADE & COMMERCE MINISTRY/);
   assert.match(root.innerHTML,/data-omega-v2-open-economic-ministry="trade"/,
     'Economy keeps one visible route to the existing Trade & Commerce ministry');
   assert.match(root.innerHTML,/<svg class="omega-economy-v3-icon-svg"/,
