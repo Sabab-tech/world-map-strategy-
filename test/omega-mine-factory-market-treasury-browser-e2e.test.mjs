@@ -1523,6 +1523,36 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           market: market.diagnostics()
         }).slice(0, 9000));
 
+      const suggestedAsk = Number(chosenOffer.unitPrice ?? chosenOffer.price);
+      if (!(suggestedAsk > 0)) throw new Error('MARKET_ORDER_PRICE_INVALID');
+      const askResult = market.setSellerAskingPrice(seller, productId, suggestedAsk, {
+        requestId: 'MMT-SELLER-ASK-' + seller + '-' + production.outputBatchId
+      });
+      if (!askResult?.accepted || askResult.authority !== 'PLAYER_AUTHORIZED_SELLER_ASK')
+        throw new Error('PLAYER_SELLER_ASK_NOT_ACCEPTED:' + JSON.stringify(askResult));
+      const economy = g.Omega?.ResourceEconomy || g.OmegaResourceEconomy;
+      if (typeof economy?.publishMarketOffers !== 'function')
+        throw new Error('ECONOMY_MARKET_OFFER_REPUBLISH_API_UNAVAILABLE');
+      const offerPublication = economy.publishMarketOffers(seller);
+      if (offerPublication?.status !== 'APPLIED' || offerPublication?.result?.accepted !== true)
+        throw new Error('FACTORY_OUTPUT_OFFER_REPUBLICATION_FAILED:' + JSON.stringify(offerPublication));
+      market.rebuild();
+      const executableOffers = rawOffers().filter(row =>
+        normalize(row.resourceId) === normalize(productId) &&
+        row.source === 'OMEGA_RESOURCE_ECON_AUTO_OFFER' &&
+        row.executableOffer === true && row.referenceOnly !== true &&
+        row.priceProvenance === 'OBSERVED' &&
+        row.priceAuthority === 'PLAYER_AUTHORIZED_SELLER_ASK' &&
+        Number(row.unitPrice ?? row.price) > 0 &&
+        Number(row.quantity ?? row.available) >= 1 &&
+        includesOrigin(row));
+      executableOffers.sort((a, b) => Number(b.quantity ?? b.available) - Number(a.quantity ?? a.available));
+      if (!executableOffers.length)
+        throw new Error('PLAYER_ASK_DID_NOT_CREATE_EXECUTABLE_FACTORY_OFFER:' + JSON.stringify({
+          productId, seller, askResult, offerPublication,
+          offers: rawOffers().filter(row => normalize(row.resourceId) === normalize(productId))
+        }).slice(0, 7000));
+      chosenOffer = executableOffers[0];
       const offerQuantity = Number(chosenOffer.quantity ?? chosenOffer.available);
       const quantity = Math.min(1, offerQuantity, production.outputQuantity);
       const unitPrice = Number(chosenOffer.unitPrice ?? chosenOffer.price);
