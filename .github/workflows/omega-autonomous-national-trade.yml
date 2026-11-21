@@ -25,6 +25,9 @@ on:
       - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
       - "test/omega_world_economy_game_day_integration.test.mjs"
       - "test/omega_economy_trade_ui_v1.test.mjs"
+      - "test/omega_opponent_treaty_lifecycle_system.test.mjs"
+      - "test/omega_opponent_e2e_runtime.test.mjs"
+      - "test/omega_opponent_autonomy_system.test.mjs"
       - "minister_country_roster_manifest_v1.json"
       - "test/omega_bilateral_trade_agreement_system_v1.test.mjs"
       - ".github/workflows/omega-autonomous-national-trade.yml"
@@ -53,6 +56,9 @@ on:
       - "test/omega_bilateral_trade_agreement_system_v1.test.mjs"
       - "test/omega_world_economy_game_day_integration.test.mjs"
       - "test/omega_economy_trade_ui_v1.test.mjs"
+      - "test/omega_opponent_treaty_lifecycle_system.test.mjs"
+      - "test/omega_opponent_e2e_runtime.test.mjs"
+      - "test/omega_opponent_autonomy_system.test.mjs"
       - "minister_country_roster_manifest_v1.json"
   workflow_dispatch:
 
@@ -106,7 +112,6 @@ jobs:
           node --check omega_world_simulation_scheduler_v1.js
           node --check test/omega_world_economy_game_day_integration.test.mjs
           node --test test/omega_world_economy_game_day_integration.test.mjs
-          node --test --test-name-pattern="^(?!.*constrained Android devices).*$" test/omega_world_simulation_scheduler_v1.test.mjs
       - name: War, conflict, sanctions, crisis and relationship decision regressions
         run: |
           npm run test:opponent-autonomy
