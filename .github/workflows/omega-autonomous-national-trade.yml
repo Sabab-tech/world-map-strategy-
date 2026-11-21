@@ -104,7 +104,7 @@ jobs:
           node --check omega_world_simulation_scheduler_v1.js
           node --check test/omega_world_economy_game_day_integration.test.mjs
           node --test test/omega_world_economy_game_day_integration.test.mjs
-          node --test --test-name-pattern='^(?!.*constrained Android devices).* test/omega_world_simulation_scheduler_v1.test.mjs
+          node --test --test-name-pattern="^(?!.*constrained Android devices).*$" test/omega_world_simulation_scheduler_v1.test.mjs
       - name: War, conflict, sanctions, crisis and relationship decision regressions
         run: |
           npm run test:opponent-autonomy
