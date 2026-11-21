@@ -182,9 +182,8 @@
       runtimeVersion:VERSION,
       status:runtime.status,
       clock:runtime.clock.snapshot(),
-      // saveSlot serializes synchronously before its first await, so it may
-      // safely capture the authoritative root by reference and avoid allocating
-      // a second full copy of a very large world. Public saveState() keeps the
+      // saveSlot holds the simulation save barrier while a bounded JSON
+      // stream reads the authoritative root. Public saveState() keeps the
       // detached deep-clone contract by default.
       worldState:referenceWorldState?runtime.world.state:runtime.world.snapshot(),
       commands:runtime.commandQueue.snapshot(),
