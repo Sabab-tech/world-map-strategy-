@@ -166,6 +166,23 @@ function compactPullRequest(pr) {
   };
 }
 
+function normalizeConversationHistory(history) {
+  if (history === undefined || history === null) return [];
+  if (!Array.isArray(history) || history.length > 16) {
+    throw new Error("CONVERSATION_HISTORY_INVALID");
+  }
+  let totalCharacters = 0;
+  return history.map(turn => {
+    if (!turn || !["user", "model"].includes(turn.role) ||
+        typeof turn.text !== "string" || turn.text.length > 6000) {
+      throw new Error("CONVERSATION_HISTORY_INVALID");
+    }
+    totalCharacters += turn.text.length;
+    if (totalCharacters > 40000) throw new Error("CONVERSATION_HISTORY_TOO_LARGE");
+    return { role: turn.role, parts: [{ text: turn.text }] };
+  });
+}
+
 export class GeminiGitHubAgent {
   constructor(options = {}) {
     this.github = options.github;
@@ -285,12 +302,15 @@ export class GeminiGitHubAgent {
     throw new Error("UNKNOWN_WRITE_TOOL");
   }
 
-  async chat(prompt) {
+  async chat(prompt, history = []) {
     const question = String(prompt || "").trim();
     if (!question || question.length > 10000) throw new Error("PROMPT_INVALID");
 
     const pendingActions = [];
-    const contents = [{ role: "user", parts: [{ text: question }] }];
+    const contents = [
+      ...normalizeConversationHistory(history),
+      { role: "user", parts: [{ text: question }] }
+    ];
     const toolConfig = {
       systemInstruction: SYSTEM_INSTRUCTION,
       temperature: 0.1,
