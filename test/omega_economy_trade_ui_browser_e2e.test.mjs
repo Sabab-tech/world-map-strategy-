@@ -174,7 +174,9 @@ test('real Chromium keeps the five premium Trade & Commerce destinations availab
     check('Trade & Commerce overview is visible', /TRADE & COMMERCE/i.test(tradeText) && /National trade overview/i.test(tradeText));
 
     const nav = main.locator('[data-omega-trade-command-nav]');
-    const expectedNav = ['Overview','Commodity Market','Black Market','Transactions','Trade Settlement'];
+    const expectedRouteOrder = ['overview','commodities','black-market','transactions','settlement'];
+    const navRouteOrder = () => nav.locator('.omega-trade-command-button').evaluateAll(buttons =>
+      buttons.map(button => button.getAttribute('data-omega-trade-route')));
     const actionSelectors = [
       { name:'Overview', route:'overview', selector:'[data-omega-trade-route="overview"]', section:'dashboard', tab:null, host:'[data-omega-trade-overview="true"]', heading:'National trade overview' },
       { name:'Commodity Market', route:'commodities', selector:'[data-omega-trade-route="commodities"]', section:'market', tab:'commodities', host:'[data-omega-v2-trade-market-host]', heading:'Market Commodities' },
@@ -184,7 +186,7 @@ test('real Chromium keeps the five premium Trade & Commerce destinations availab
     ];
 
     check('the five upper navigation destinations appear in the requested fixed order',
-      JSON.stringify(await nav.locator('.omega-trade-command-button').allInnerTexts()) === JSON.stringify(expectedNav));
+      JSON.stringify(await navRouteOrder()) === JSON.stringify(expectedRouteOrder));
     check('the bottom TRADE OPERATIONS action block is removed',
       !/04 \/ TRADE OPERATIONS/.test(await main.innerText()));
 
@@ -202,7 +204,7 @@ test('real Chromium keeps the five premium Trade & Commerce destinations availab
       }, { section:action.section, tab:action.tab }, { timeout:25000 });
       check(action.name + ' keeps the same navigation and order',
         await nav.locator('.omega-trade-command-button').count() === 5 &&
-        JSON.stringify(await nav.locator('.omega-trade-command-button').allInnerTexts()) === JSON.stringify(expectedNav));
+        JSON.stringify(await navRouteOrder()) === JSON.stringify(expectedRouteOrder));
       check(action.name + ' is marked active', await nav.locator(action.selector).getAttribute('aria-current') === 'page');
       if (action.name === 'Overview') {
         check('Overview screen returns to the selected-country trade dashboard', (await main.innerText()).includes(action.heading));
