@@ -259,6 +259,74 @@ test('export settlement replay is idempotent across company flows, Treasury clea
   assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,clearingAfterFirst);
   assert.ok(commandCollisions.some(x=>x.reason==='COMMAND_ID_COLLISION'),'same stable command ID with a changed payload must raise a persisted-command integrity collision');
 });
+test('non-USD export fiscalization clears the bank-settled USD amount and keeps company/tax ledgers in USD',async()=>{
+  const {context,worldState}=createContext();
+  const settlementId='AUD-EXPORT-USD-SETTLEMENT-1';
+  const sellerLocal=375;
+  const sellerCreditUsd=363.75;
+  const bankTransaction={status:'SETTLED',result:{
+    status:'SETTLED',type:'TRADE_SETTLEMENT',settlementId,
+    sellerCountryCode:'BGD',sellerCurrencyCode:'AUD',
+    sellerTotalLocal:sellerLocal,sellerCreditUsd
+  }};
+  context.OmegaGovernmentBanking={
+    getTransaction(id){return String(id)===settlementId?bankTransaction:null;}
+  };
+  // The bank has already credited this USD amount before the settlement event is emitted.
+  worldState.finance.BGD.available+=sellerCreditUsd;
+  vm.runInNewContext(readFileSync('omega_resource_economy_runtime_v2.js','utf8'),context,
+    {filename:'omega_resource_economy_runtime_v2.js'});
+
+  const send=()=>context.dispatchEvent(new CustomEventMock('OMEGA_TRADE_SETTLEMENT_COMPLETED',{
+    detail:{payload:{
+      settlementId,sellerCountryId:'BGD',resourceId:'iron_ore',
+      totalValue:sellerLocal,sellerCurrency:'AUD',quantity:20,
+      sourceBatchIds:['EXPORT-BATCH-AUD-1'],
+      batchTransfers:[{sourceBatchId:'EXPORT-BATCH-AUD-1',sourceBatchIds:['EXPORT-BATCH-AUD-1'],
+        ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',resourceId:'iron_ore',quantity:20}]
+    }}
+  }));
+  send();
+
+  const expectedFiscalUsd=sellerCreditUsd*0.03;
+  assert.ok(Math.abs(worldState.finance.BGD.available-(1000+expectedFiscalUsd))<1e-9,
+    'Treasury must receive only the USD royalty/resource-tax receipt after the full USD seller receipt is cleared to its company');
+  const clearing=worldState.finance.BGD.resourceSettlementClearing.find(row=>row.settlementId===settlementId);
+  assert.ok(clearing,'the settled seller receipt must be cleared to the owning company');
+  assert.equal(clearing.amount,sellerCreditUsd,
+    'company clearing must use the bank-confirmed USD credit, not the seller-local AUD amount');
+
+  const fiscal=worldState.finance.BGD.resourceFiscalLedger.find(row=>row.settlementId===settlementId);
+  assert.ok(fiscal,'the export fiscal receipt must be recorded against this settlement');
+  assert.equal(fiscal.currency,'USD');
+  assert.equal(fiscal.sellerCurrency,'AUD');
+  assert.equal(fiscal.sellerTotalLocal,sellerLocal);
+  assert.equal(fiscal.sellerTotalUsd,sellerCreditUsd);
+  assert.ok(Math.abs(fiscal.total-expectedFiscalUsd)<1e-9);
+
+  const company=worldState.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES;
+  const receipt=company.cashFlowEntries.find(row=>row.sourceId===settlementId&&row.direction==='CREDIT'&&row.category==='SUPPLIER_SALE');
+  assert.ok(receipt,'owning company must receive the export proceeds');
+  assert.equal(receipt.amount,sellerCreditUsd);
+  assert.equal(receipt.currency,'USD');
+  const worker=company.cashFlowEntries.find(row=>row.sourceId===settlementId&&row.direction==='DEBIT'&&row.category==='WORKER_INCOME');
+  const transport=company.cashFlowEntries.find(row=>row.sourceId===settlementId&&row.direction==='DEBIT'&&row.category==='TRANSPORT');
+  assert.ok(worker&&transport,'worker and transport allocations must be posted to the company cash journal');
+  assert.equal(worker.amount,sellerCreditUsd*0.12);
+  assert.equal(transport.amount,sellerCreditUsd*0.05);
+  assert.equal(worker.currency,'USD');
+  assert.equal(transport.currency,'USD');
+
+  const reconciled=worldState.economy.BGD.tradeSettlementFiscalizationFailures||[];
+  assert.equal(reconciled.length,0,'a valid settled bank transaction must not create an FX/fiscalization failure');
+  const treasuryAfter=worldState.finance.BGD.available;
+  const companyAfter=JSON.stringify(company);
+  send();
+  assert.equal(worldState.finance.BGD.available,treasuryAfter,'replayed non-USD settlement must not duplicate Treasury tax');
+  assert.equal(JSON.stringify(worldState.economy.BGD.companyAccounts.NOVA_CONSUMER_INDUSTRIES),companyAfter,
+    'replayed non-USD settlement must not duplicate company receipt, payroll or transport allocations');
+});
+
 test('private-company settlement fiscalization does not credit seller revenue or Treasury twice',async()=>{
   const {context,worldState,commands}=createContext();
   const code=readFileSync('omega_resource_economy_runtime_v2.js','utf8');
