@@ -12,6 +12,7 @@ This service does not modify or replace the OMEGA game runtime. It does not conn
 - Prepare a code commit on an existing PR branch using GitHub's Git database API (blob, tree, commit and branch reference).
 - Prepare PR comments and review submissions.
 - Require a signed, short-lived action token and a separate user confirmation before every write.
+- Add a hidden GitHub-side action marker to PR comments and reviews, so retrying the same signed action after a service restart does not post a duplicate; lookup fails closed if the history exceeds the bounded scan.
 
 ## Hard boundaries
 
