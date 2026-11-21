@@ -2660,6 +2660,45 @@
     emitFinishedGoodsEconomyRegistered(c,row,offerPublication,finishedGoodsOfferList(c));
   }
 
+  function tradeRequestCreatedEventHandler(e){
+    var d=e&&e.detail?e.detail:{},
+      raw=d.payload||(d.data&&d.data.payload)||d,
+      p=raw&&raw.request&&typeof raw.request==='object'?raw.request:raw,
+      seller=canonical(p.targetCountryId||p.sellerCountryId||p.sellerCountryCode),
+      buyer=canonical(p.countryId||p.buyerCountryId||d.countryId),
+      resourceId=String(p.resourceId||'').trim(),
+      quantity=num(p.quantity),unitPrice=num(p.unitPrice),
+      status=id(p.status||'SENT');
+    if(!seller||seller!==playerSimulationCountryId()||!buyer||buyer===seller||
+       !resourceId||quantity===null||quantity<=0||unitPrice===null||unitPrice<=0||
+       !['SENT','COUNTER_OFFERED','ACCEPTED'].includes(status))return;
+    // The trade request event is emitted inside the buyer command handler. Defer this
+    // refresh one microtask so the buyer's import-request transaction is committed
+    // before the market discovers its bid and the seller republishes finished goods.
+    Promise.resolve().then(function(){
+      if(playerSimulationCountryId()!==seller)return;
+      var market=g.OmegaGlobalMarket||(g.Omega&&g.Omega.GlobalMarket);
+      if(!market||typeof market.rebuild!=='function')return;
+      market.rebuild();
+      var publication=publishMarketOffers(seller);
+      if(!publication||publication.status==='FAILED'||publication.status==='UNAVAILABLE'||
+         publication.result&&publication.result.accepted===false){
+        emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',seller,{
+          status:'DEGRADED',reason:'MARKET_OFFER_REFRESH_AFTER_BUYER_BID_FAILED',
+          buyerCountryId:buyer,resourceId:resourceId,requestId:p.requestId||null,turn:turn()
+        },'resource-economy');
+        return;
+      }
+      market.rebuild();
+    }).catch(function(error){
+      emit('OMEGA_RESOURCE_ECONOMY_RUNTIME_HEALTH',seller,{
+        status:'DEGRADED',reason:'MARKET_OFFER_REFRESH_AFTER_BUYER_BID_FAILED',
+        buyerCountryId:buyer,resourceId:resourceId,requestId:p.requestId||null,
+        error:String(error&&error.message||error),turn:turn()
+      },'resource-economy');
+    });
+  }
+
   function installEvents(){
     if(g.__OmegaResourceEconomyV2Events||typeof g.addEventListener!=='function')return;
     g.__OmegaResourceEconomyV2Events=true;
@@ -2670,6 +2709,7 @@
     g.addEventListener('OMEGA_RESOURCE_PROCESSING_COMPLETED',function(e){var p=e&&e.detail?e.detail.payload||e.detail:{};recordOwner(p.countryId||e.detail&&e.detail.countryId,p);});
     g.addEventListener('OMEGA_INDUSTRIAL_PRODUCTION_COMPLETED',function(e){var d=e&&e.detail?e.detail:{},raw=d.payload||d,p=raw&&raw.payload&&raw.source?raw.payload:raw;recordOwner(p.countryId||raw.countryId||d.countryId,p);});
     g.addEventListener('OMEGA_RESOURCE_FINISHED_GOODS_AVAILABLE',finishedGoodsEventHandler);
+    g.addEventListener('OMEGA_TRADE_REQUEST_CREATED',tradeRequestCreatedEventHandler);
     g.addEventListener('OMEGA_TRADE_SETTLEMENT_COMPLETED',fiscalizeTrade);
   }
 
