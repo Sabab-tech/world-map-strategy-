@@ -326,13 +326,14 @@ export class GitHubAppClient {
     if (!Array.isArray(parentTree?.tree) || parentTree.truncated) {
       throw new Error("PR_PARENT_TREE_INCOMPLETE_CANNOT_PRESERVE_FILE_MODES");
     }
-    const existingModes = new Map(parentTree.tree
-      .filter(entry => entry.type === "blob")
-      .map(entry => [entry.path, entry.mode]));
+    const existingEntries = new Map(parentTree.tree
+      .map(entry => [entry.path, entry]));
 
     const blobs = await Promise.all(edits.map(async edit => {
-      const previousMode = existingModes.get(edit.path);
-      if (previousMode && !["100644", "100755"].includes(previousMode)) {
+      const previousEntry = existingEntries.get(edit.path);
+      const previousMode = previousEntry?.mode;
+      if (previousEntry &&
+          (previousEntry.type !== "blob" || !["100644", "100755"].includes(previousMode))) {
         throw new Error("UNSUPPORTED_EXISTING_FILE_MODE");
       }
       const blob = await this.repoRequest("/git/blobs", {
