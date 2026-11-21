@@ -364,18 +364,17 @@
 
   function tradeCommandNavigationMarkup(section, marketTab) {
     var routes = [
-      { id:'overview', label:'Overview', section:'dashboard', icon:'overview' },
-      { id:'commodities', label:'Commodity<br>Market', section:'market', tab:'commodities', icon:'commodities' },
-      { id:'black-market', label:'Black<br>Market', section:'market', tab:'black-market', icon:'black-market' },
-      { id:'transactions', label:'Transactions', section:'market', tab:'transactions', icon:'transactions' },
-      { id:'settlement', label:'Trade<br>Settlement', section:'settlement', icon:'settlement' }
+      { id:'overview', label:'Overview', section:'dashboard', attributes:'data-omega-v2-ministry-section="dashboard"', icon:'overview' },
+      { id:'commodities', label:'Commodity<br>Market', section:'market', tab:'commodities', attributes:'data-omega-v2-ministry-section="market" data-omega-v2-trade-market-tab="commodities"', icon:'commodities' },
+      { id:'black-market', label:'Black<br>Market', section:'market', tab:'black-market', attributes:'data-omega-v2-ministry-section="market" data-omega-v2-trade-market-tab="black-market"', icon:'black-market' },
+      { id:'transactions', label:'Transactions', section:'market', tab:'transactions', attributes:'data-omega-v2-ministry-section="market" data-omega-v2-trade-market-tab="transactions"', icon:'transactions' },
+      { id:'settlement', label:'Trade<br>Settlement', section:'settlement', attributes:'data-omega-v2-ministry-section="settlement"', icon:'settlement' }
     ];
     return '<nav class="omega-trade-command-nav" data-omega-trade-command-nav role="navigation" aria-label="Trade & Commerce navigation">' +
       routes.map(function (route, index) {
         var active = route.section === section && (!route.tab || route.tab === marketTab);
         return '<button type="button" class="omega-trade-command-button' + (active ? ' is-active' : '') + '"' +
-          ' data-omega-v2-ministry-section="' + route.section + '"' +
-          (route.tab ? ' data-omega-v2-trade-market-tab="' + route.tab + '"' : '') +
+          ' ' + route.attributes +
           ' data-omega-trade-route="' + route.id + '" aria-current="' + (active ? 'page' : 'false') + '"' +
           ' aria-label="' + esc(route.label.replace(/<br>/g,' ')) + '">' +
           '<span class="omega-trade-command-icon">' + tradeCommandIconMarkup(route.icon) + '</span>' +
