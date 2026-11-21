@@ -176,13 +176,14 @@ export class GeminiGitHubAgent {
     if (Buffer.byteLength(this.actionSecret) < 32) throw new Error("ACTION_SIGNING_SECRET_TOO_SHORT");
   }
 
-  async prepareAction(kind, args, title, summary) {
+  async prepareAction(kind, args, title, summary, preview = null) {
     const token = signActionToken(kind, args, this.actionSecret);
     return {
       id: token.split(".")[0].slice(0, 12),
       kind,
       title,
       summary,
+      preview,
       token,
       approvalRequired: true
     };
@@ -242,9 +243,8 @@ export class GeminiGitHubAgent {
         "commit_pr_files",
         argsForApproval,
         "Commit code to PR #" + prNumber,
-        commitMessage + " — " + files.length + " file(s):\n" +
-          files.map(file => "--- " + file.path + "\n" + file.content.slice(0, 1200) +
-            (file.content.length > 1200 ? "\n[FILE PREVIEW TRUNCATED]" : "")).join("\n\n").slice(0, 10000)
+        commitMessage + " — " + files.length + " file(s): " + files.map(file => file.path).join(", "),
+        files.map(file => "--- " + file.path + "\n" + file.content).join("\n\n")
       );
       pendingActions.push(action);
       return { status: "awaiting_user_approval", files: files.map(file => file.path), note: "No GitHub write has happened yet." };
