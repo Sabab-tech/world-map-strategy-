@@ -1261,7 +1261,26 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           inputCoefficients: selectedFactory.inputCoefficients || selectedFactory.inputs || null,
           productionHealth: selectedFactory.productionHealth || null,
           employment: factoryEmployment,
-          employmentModel: g.Game.state.economy?.[seller]?.factoryEmployment || null,
+          employmentModel: (() => {
+            const model = g.Game.state.economy?.[seller]?.factoryEmployment;
+            return model ? {
+              status: model.status || null,
+              baselineUnemployedCount: model.baselineUnemployedCount ?? null,
+              labourForce: model.labourForce ?? null,
+              labourForceAuthority: model.labourForceAuthority || null,
+              unemploymentSource: model.unemploymentSource || null,
+              unemploymentRateAuthority: model.unemploymentRateAuthority || null,
+              unemploymentRateSimulationOnly: model.unemploymentRateSimulationOnly === true,
+              simulatedUnemploymentRatePct: model.simulatedUnemploymentRatePct ?? null,
+              availableUnassignedLabourCount: model.availableUnassignedLabourCount ?? null,
+              availableUnassignedLabourAuthority: model.availableUnassignedLabourAuthority || null,
+              jobsSupported: model.jobsSupported ?? null,
+              jobsFilled: model.jobsFilled ?? null,
+              vacancies: model.vacancies ?? null,
+              operationalFactoryCount: Object.keys(model.factories || {}).length,
+              selectedFactory: model.factories?.[setup.selected.factoryId] || null
+            } : null;
+          })(),
           cycle: factoryCycle,
           inputInventory: selectedFactory.inputInventory || null,
           inputBatchLots: (selectedFactory.inputBatchLots || []).slice(-12).map(lot => ({
