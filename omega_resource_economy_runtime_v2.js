@@ -1603,11 +1603,32 @@
       idempotencyKey:financialIdempotencyKey('TRADE_OWNER_BLOCK',settlementId)
     });
   }
+  function recordTradeFiscalizationFailure(countryId,settlementId,resourceId,reason,details){
+    var econ=bucket(countryId,'economy')||{},runtime=clone(econ.industrialRuntime||{}),
+      rows=Array.isArray(runtime.tradeSettlementFiscalizationFailures)?runtime.tradeSettlementFiscalizationFailures:[];
+    if(!rows.some(function(row){return String(row&&row.settlementId||'')===String(settlementId);}))
+      rows.push({settlementId:String(settlementId),resourceId:String(resourceId||''),reason:String(reason),
+        details:clone(details||{}),turn:turn(),authority:'OMEGA_RESOURCE_ECONOMY_V2',status:'BLOCKED'});
+    while(rows.length>(num(rules().runtime.maxLedgerEntries)||2048))rows.shift();
+    runtime.tradeSettlementFiscalizationFailures=rows;runtime.lastTradeFiscalizationFailureTurn=turn();
+    dispatch('economy','OMEGA_RESOURCE_ECON_PUBLISH_ECONOMY',countryId,{
+      industrialRuntime:runtime,companyAccounts:clone(econ.companyAccounts||{}),
+      workerIncome:clone(econ.workerIncome||{}),supplierRevenue:clone(econ.supplierRevenue||{}),
+      factoryOutput:clone(econ.factoryOutput||{}),correlationId:'TRADE-FISCAL-BLOCK-'+settlementId,
+      idempotencyKey:financialIdempotencyKey('TRADE_FISCAL_BLOCK',settlementId)
+    });
+    emit('OMEGA_RESOURCE_TRADE_FISCALIZATION_BLOCKED',countryId,{
+      settlementId,resourceId,reason,details:clone(details||{}),status:'BLOCKED'
+    },'finance');
+  }
+
   function fiscalizeTrade(evt){
     var d=evt&&evt.detail?evt.detail:{},p=d.payload||(d.data&&d.data.payload)||d,sid=String(p.settlementId||'').trim();if(!sid)return;
     if(!g.__OmegaResourceFiscalizedSettlements)g.__OmegaResourceFiscalizedSettlements={};
     if(g.__OmegaResourceFiscalizedSettlements[sid])return;
-    var seller=canonical(p.sellerCountryId||p.targetCountryId||p.countryId),rid=String(p.resourceId||'').trim(),gross=num(p.totalValue!=null?p.totalValue:p.sellerTotal);if(!seller||!rid||gross===null||gross<0)return;
+    var seller=canonical(p.sellerCountryId||p.targetCountryId||p.countryId),
+      rid=String(p.resourceId||'').trim(),grossLocal=num(p.totalValue!=null?p.totalValue:p.sellerTotal);
+    if(!seller||!rid||grossLocal===null||grossLocal<0)return;
     var econ=bucket(seller,'economy')||{},owners=econ.industrialRuntime&&econ.industrialRuntime.materialOwners||{};
     var batchRows=read(seller,'resource.batches');batchRows=Array.isArray(batchRows)?batchRows:[];
     var batchById=new Map(batchRows.map(function(row){return[String(row&&row.batchId||''),row];}));
@@ -1652,34 +1673,77 @@
     if(privateCompanyTrade){
       g.__OmegaResourceFiscalizedSettlements[sid]=true;
       emit('OMEGA_RESOURCE_TRADE_RECONCILED',seller,{settlementId:sid,resourceId:rid,
-        companyId:company,gross:gross,status:'PRIVATE_COMPANY_CASH_ALREADY_RECONCILED',
+        companyId:company,gross:grossLocal,grossLocal:grossLocal,
+        status:'PRIVATE_COMPANY_CASH_ALREADY_RECONCILED',
         buyerCompanyId:p.buyerCompanyId,sellerCompanyId:p.sellerCompanyId,
         quantity:num(p.quantity)||null,batchTransfers:Array.isArray(p.batchTransfers)?clone(p.batchTransfers):[],
         sourceBatchIds:Array.isArray(p.sourceBatchIds)?p.sourceBatchIds.slice():[],
         publicTreasuryClearing:false,authority:'OMEGA_PRIVATE_COMPANY_PROCUREMENT_V1'},'finance');
       return;
     }
+
+    // Global Trade posts government Treasury credit in USD. Its settlement event carries
+    // sellerTotalLocal in the seller's currency, so never clear that local amount directly
+    // from the USD Treasury. Prefer the committed bank transaction; use the canonical FX
+    // rate only for a non-bank settlement with explicit currency evidence.
+    var bank=g.OmegaGovernmentBanking||g.Omega&&g.Omega.GovernmentBanking,
+      storedTxn=bank&&typeof bank.getTransaction==='function'?bank.getTransaction(sid):null,
+      bankTxn=storedTxn&&(storedTxn.result||storedTxn),
+      bankStatus=String(storedTxn&&storedTxn.status||bankTxn&&bankTxn.status||'').toUpperCase(),
+      sellerCurrency=String(p.sellerCurrency||bankTxn&&bankTxn.sellerCurrencyCode||'USD').trim().toUpperCase(),
+      grossUsd=null;
+    if(bank&&typeof bank.getTransaction==='function'){
+      if(!bankTxn||bankStatus!=='SETTLED'){
+        recordTradeFiscalizationFailure(seller,sid,rid,'SETTLED_BANK_TRANSACTION_NOT_AVAILABLE',{
+          bankStatus,bankTransactionPresent:!!bankTxn,sellerCurrency,grossLocal
+        });
+        return;
+      }
+      if(canonical(bankTxn.sellerCountryCode)!==seller||
+         String(bankTxn.sellerCurrencyCode||'').trim().toUpperCase()!==sellerCurrency){
+        recordTradeFiscalizationFailure(seller,sid,rid,'BANK_SELLER_IDENTITY_OR_CURRENCY_MISMATCH',{
+          expectedSeller:seller,bankSeller:bankTxn.sellerCountryCode||null,
+          expectedCurrency:sellerCurrency,bankCurrency:bankTxn.sellerCurrencyCode||null
+        });
+        return;
+      }
+      grossUsd=num(bankTxn.sellerCreditUsd);
+    }else if(sellerCurrency==='USD'){
+      grossUsd=grossLocal;
+    }else{
+      var forex=g.OmegaForexMonetaryEngine||g.Omega&&g.Omega.ForexMonetaryEngine,
+        localPerUsd=num(forex&&typeof forex.getRate==='function'?forex.getRate(sellerCurrency,'SIMULATION'):null);
+      if(localPerUsd!==null&&localPerUsd>0)grossUsd=grossLocal/localPerUsd;
+    }
+    if(grossUsd===null||grossUsd<0){
+      recordTradeFiscalizationFailure(seller,sid,rid,'SELLER_SETTLEMENT_USD_VALUE_UNAVAILABLE',{
+        sellerCurrency,grossLocal,grossUsd
+      });
+      return;
+    }
+
     var clear=dispatch('finance','OMEGA_RESOURCE_ECON_TRADE_CLEAR_TO_COMPANY',seller,{
-      amount:gross,settlementId:sid,companyId:company,correlationId:sid,
+      amount:grossUsd,settlementId:sid,companyId:company,correlationId:sid,
       idempotencyKey:financialIdempotencyKey('EXPORT_CLEAR',sid,company)
     });
     if(!clear||clear.status!=='APPLIED')return;
     var companyCredit=dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{
-      companyId:company,amount:gross,direction:'CREDIT',grossRevenue:gross,supplierRevenue:gross,
-      category:'SUPPLIER_SALE',settlementId:sid,
+      companyId:company,amount:grossUsd,direction:'CREDIT',grossRevenue:grossUsd,supplierRevenue:grossUsd,
+      category:'SUPPLIER_SALE',settlementId:sid,currency:'USD',
       idempotencyKey:financialIdempotencyKey('COMPANY_FLOW','EXPORT',sid,company,'CREDIT','SUPPLIER_SALE')
     });
     if(!companyCredit||companyCredit.status!=='APPLIED')return;
-    var f=fiscalFor(gross,'EXPORT',company);
+    var f=fiscalFor(grossUsd,'EXPORT',company);
     if(f.total>0){
       var fiscal=dispatch('finance','OMEGA_RESOURCE_ECON_FISCAL_RECEIPT',seller,{
-        receipt:Object.assign({},f,{settlementId:sid,sellerCountryId:seller,resourceId:rid,companyId:company}),
+        receipt:Object.assign({},f,{settlementId:sid,sellerCountryId:seller,resourceId:rid,companyId:company,
+          currency:'USD',amountCurrency:'USD',sellerCurrency:sellerCurrency,sellerTotalLocal:grossLocal,sellerTotalUsd:grossUsd}),
         correlationId:sid,idempotencyKey:financialIdempotencyKey('FISCAL_RECEIPT','EXPORT',sid,company)
       });
       if(!fiscal||fiscal.status!=='APPLIED')return;
     }
-    var w=gross*(num(rules().operatingAllocation.workerIncomeRate)||0),
-      t=gross*(num(rules().operatingAllocation.transportRevenueRate)||0);
+    var w=grossUsd*(num(rules().operatingAllocation.workerIncomeRate)||0),
+      t=grossUsd*(num(rules().operatingAllocation.transportRevenueRate)||0);
     if(w>0){
       var worker=dispatch('economy','OMEGA_RESOURCE_ECON_WORKER_FLOW',seller,{
         amount:w,settlementId:sid,companyId:company,
@@ -1687,7 +1751,7 @@
       });
       if(!worker||worker.status!=='APPLIED')return;
       var workerExpense=dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{
-        companyId:company,amount:w,direction:'DEBIT',category:'WORKER_INCOME',settlementId:sid,
+        companyId:company,amount:w,direction:'DEBIT',category:'WORKER_INCOME',settlementId:sid,currency:'USD',
         idempotencyKey:financialIdempotencyKey('COMPANY_FLOW','EXPORT',sid,company,'DEBIT','WORKER_INCOME')
       });
       if(!workerExpense||workerExpense.status!=='APPLIED')return;
@@ -1699,7 +1763,7 @@
       });
       if(!transport||transport.status!=='APPLIED')return;
       var transportExpense=dispatch('economy','OMEGA_RESOURCE_ECON_COMPANY_FLOW',seller,{
-        companyId:company,amount:t,direction:'DEBIT',category:'TRANSPORT',settlementId:sid,
+        companyId:company,amount:t,direction:'DEBIT',category:'TRANSPORT',settlementId:sid,currency:'USD',
         idempotencyKey:financialIdempotencyKey('COMPANY_FLOW','EXPORT',sid,company,'DEBIT','TRANSPORT')
       });
       if(!transportExpense||transportExpense.status!=='APPLIED')return;
@@ -1707,8 +1771,11 @@
     // Commit the volatile fast-path guard only after every durable ledger accepted.
     // A partial failure remains retryable; persisted idempotency journals prevent replayed legs.
     g.__OmegaResourceFiscalizedSettlements[sid]=true;
-    emit('OMEGA_RESOURCE_TRADE_RECONCILED',seller,{settlementId:sid,resourceId:rid,companyId:company,gross:gross,fiscal:f,status:'FISCALIZED',
-      quantity:num(p.quantity)||null,batchTransfers:Array.isArray(p.batchTransfers)?clone(p.batchTransfers):[],sourceBatchIds:Array.isArray(p.sourceBatchIds)?p.sourceBatchIds.slice():[]},'finance');
+    emit('OMEGA_RESOURCE_TRADE_RECONCILED',seller,{settlementId:sid,resourceId:rid,companyId:company,
+      gross:grossUsd,grossUsd:grossUsd,grossLocal:grossLocal,sellerCurrency:sellerCurrency,currency:'USD',
+      companyClearingUsd:grossUsd,fiscal:f,status:'FISCALIZED',
+      quantity:num(p.quantity)||null,batchTransfers:Array.isArray(p.batchTransfers)?clone(p.batchTransfers):[],
+      sourceBatchIds:Array.isArray(p.sourceBatchIds)?p.sourceBatchIds.slice():[]},'finance');
   }
 
   function activeTurnPublicationFor(countryValue){
