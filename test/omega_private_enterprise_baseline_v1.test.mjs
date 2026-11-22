@@ -158,3 +158,30 @@ test('exact country data key takes precedence over a conflicting ISO2 alias from
  assert.equal(usa.companies.length,5);
  assert.deepEqual({...usa.governmentFactoryCounts},government.countries.USA.factoryCounts);
 });
+
+
+test('validated private enterprise registry exposes its canonical country roster without re-fetching the baseline',async()=>{
+ const registry=fs.readFileSync(new URL('../omega_private_enterprise_registry_v1.js',import.meta.url),'utf8');
+ let fetchCount=0;
+ const sandbox={
+  AbortController,
+  OmegaCountryFactoryStartingBaselineV1:{
+   ready:Promise.resolve({status:'READY'}),
+   getCountryBaseline(countryId){
+    const row=government.countries[String(countryId).trim().toUpperCase()];
+    return row?{factoryCounts:row.factoryCounts}:null;
+   }
+  },
+  fetch:async()=>{fetchCount++;return{ok:true,json:async()=>generated};},
+  dispatchEvent(){},
+  CustomEvent:function CustomEvent(type,options){this.type=type;this.detail=options&&options.detail;},
+  setTimeout,clearTimeout
+ };
+ runInNewContext(registry,sandbox);
+ const ready=await sandbox.OmegaPrivateEnterpriseRegistryV1.ready;
+ assert.equal(ready.status,'READY');
+ const countryIds=sandbox.OmegaPrivateEnterpriseRegistryV1.listCountryIds();
+ assert.equal(countryIds.length,197);
+ assert.deepEqual([...countryIds],Object.keys(generated.countries).sort());
+ assert.equal(fetchCount,1,'the decision engine reuses the already loaded validated registry instead of downloading a second country dataset');
+});
