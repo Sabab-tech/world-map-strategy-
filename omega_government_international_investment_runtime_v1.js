@@ -1334,86 +1334,145 @@
     var host = canonicalCountry(countryValue || playerCountry());
     if (!host) return result('BLOCKED', { reason: 'LOAN_SERVICING_COUNTRY_INVALID' });
     var root = countryFinanceRoot(host), inv = root && investmentRoot(root, false);
-    var loans = inv && Array.isArray(inv.loans) ? inv.loans : [];
-    var d = dependencies(), paid = [], arrears = [];
-    var due = loans.filter(function (loan) { return loan && loan.status === 'ACTIVE' && num(loan.nextDueTurn) !== null && loan.nextDueTurn <= turn(); }).slice(0, 40);
+    var loans = inv && Array.isArray(inv.loans) ? clone(inv.loans) : [];
+    var d = dependencies(), paid = [], arrears = [], evaluated = 0;
+    var due = loans.filter(function (loan) {
+      return loan && loan.ownerRole !== 'LENDER' &&
+        ['ACTIVE', 'IN_ARREARS', 'RECONCILIATION_REQUIRED'].includes(String(loan.status || '')) &&
+        num(loan.nextDueTurn) !== null && loan.nextDueTurn <= turn();
+    }).slice(0, 40);
+    function persistLoan(loan, patch) {
+      return dispatch(d, HANDLERS.updateLoan, host, { hostCountryId: host,
+        investorCountryId: loan.investorCountryId, ownerRole: 'BORROWER', loanId: loan.loanId, patch: patch }, loan.loanId);
+    }
+    function persistLender(loan, patch) {
+      return dispatch(d, HANDLERS.updateLoan, loan.investorCountryId, { hostCountryId: host,
+        investorCountryId: loan.investorCountryId, ownerRole: 'LENDER', loanId: loan.loanId, patch: patch }, loan.loanId);
+    }
     for (var i = 0; i < due.length; i++) {
       var loan = due[i], principal = Math.max(0, num(loan.principalOutstandingUsd) || 0);
-      if (principal <= 0.005) { loan.status = 'REPAID'; continue; }
+      evaluated++;
+      if (loan.pendingPayment) {
+        var pending = loan.pendingPayment;
+        var retryCredit = dispatch(d, HANDLERS.loanCredit, loan.investorCountryId, {
+          investorCountryId: loan.investorCountryId, hostCountryId: host,
+          paymentId: pending.paymentId, amountUsd: pending.amountUsd, projectId: loan.projectId,
+          proposalId: loan.proposalId }, pending.paymentId);
+        if (!retryCredit.ok) {
+          arrears.push({ loanId: loan.loanId, paymentId: pending.paymentId, reason: retryCredit.reason, reconciliationRequired: true });
+          continue;
+        }
+        var pendingPatch = clone(pending.loanPatch || {});
+        pendingPatch.pendingPayment = null;
+        pendingPatch.status = pendingPatch.principalOutstandingUsd <= 0.01 ? 'REPAID' : 'ACTIVE';
+        var updatePending = persistLoan(loan, pendingPatch);
+        if (!updatePending.ok) {
+          arrears.push({ loanId: loan.loanId, paymentId: pending.paymentId, reason: updatePending.reason, reconciliationRequired: true });
+          continue;
+        }
+        persistLender(loan, pendingPatch);
+        paid.push({ loanId: loan.loanId, paymentId: pending.paymentId, amountUsd: pending.amountUsd,
+          reconciled: true, remainingPrincipalUsd: pendingPatch.principalOutstandingUsd });
+        continue;
+      }
+      if (principal <= 0.005) {
+        persistLoan(loan, { status: 'REPAID', nextDueTurn: null });
+        continue;
+      }
       var rate = Math.max(0, num(loan.annualInterestRateBps) || 0) / 10000 / 4;
       var interest = round(principal * rate, 2), principalPayment = 0, payment = interest;
-      if ((num(loan.graceInstallmentsRemaining) || 0) > 0) {
-        loan.graceInstallmentsRemaining -= 1;
+      var graceLeft = Math.max(0, num(loan.graceInstallmentsRemaining) || 0);
+      var remaining = Math.max(1, num(loan.remainingInstallments) || 1);
+      if (graceLeft > 0) {
+        graceLeft -= 1;
       } else {
-        var remaining = Math.max(1, num(loan.remainingInstallments) || 1);
         var periodic = rate > 0 ? principal * rate / (1 - Math.pow(1 + rate, -remaining)) : principal / remaining;
         payment = round(periodic, 2);
         principalPayment = Math.min(principal, Math.max(0, round(payment - interest, 2)));
         payment = round(interest + principalPayment, 2);
-        loan.remainingInstallments = Math.max(0, remaining - 1);
+        remaining = Math.max(0, remaining - 1);
       }
-      var paymentId = loan.loanId + ':PAYMENT:' + String(loan.installmentNumber = (num(loan.installmentNumber) || 0) + 1);
+      var installmentNumber = (num(loan.installmentNumber) || 0) + 1;
+      var paymentId = loan.loanId + ':PAYMENT:' + String(installmentNumber);
+      var nextPrincipal = round(Math.max(0, principal - principalPayment), 2);
+      var loanPatch = {
+        principalOutstandingUsd: nextPrincipal, graceInstallmentsRemaining: graceLeft,
+        remainingInstallments: remaining, installmentNumber: installmentNumber,
+        totalInterestPaidUsd: round((num(loan.totalInterestPaidUsd) || 0) + interest, 2),
+        totalPrincipalPaidUsd: round((num(loan.totalPrincipalPaidUsd) || 0) + principalPayment, 2),
+        lastPaymentTurn: turn(), nextDueTurn: turn() + 90,
+        status: nextPrincipal <= 0.01 ? 'REPAID' : 'ACTIVE',
+        missedPayments: 0, pendingPayment: null
+      };
       var debit = dispatch(d, HANDLERS.loanDebit, host, { hostCountryId: host, investorCountryId: loan.investorCountryId,
         paymentId: paymentId, amountUsd: payment, projectId: loan.projectId, proposalId: loan.proposalId }, paymentId);
       if (!debit.ok) {
-        loan.status = 'IN_ARREARS';
-        loan.missedPayments = (num(loan.missedPayments) || 0) + 1;
-        loan.lastFailedPaymentTurn = turn();
-        loan.nextDueTurn = turn() + 90;
-        arrears.push({ loanId: loan.loanId, amountDueUsd: payment, reason: debit.reason, missedPayments: loan.missedPayments });
+        var arrearsPatch = { installmentNumber: installmentNumber, status: 'IN_ARREARS',
+          missedPayments: (num(loan.missedPayments) || 0) + 1, lastFailedPaymentTurn: turn(), nextDueTurn: turn() + 90 };
+        persistLoan(loan, arrearsPatch);
+        arrears.push({ loanId: loan.loanId, amountDueUsd: payment, reason: debit.reason, missedPayments: arrearsPatch.missedPayments });
         continue;
       }
       var credit = dispatch(d, HANDLERS.loanCredit, loan.investorCountryId, { investorCountryId: loan.investorCountryId,
         hostCountryId: host, paymentId: paymentId, amountUsd: payment, projectId: loan.projectId, proposalId: loan.proposalId }, paymentId);
       if (!credit.ok) {
-        loan.status = 'RECONCILIATION_REQUIRED';
-        arrears.push({ loanId: loan.loanId, amountDueUsd: payment, reason: credit.reason, paymentId: paymentId });
+        var pendingPatch = { installmentNumber: installmentNumber, status: 'RECONCILIATION_REQUIRED',
+          nextDueTurn: turn() + 30,
+          pendingPayment: { paymentId: paymentId, amountUsd: payment, loanPatch: loanPatch } };
+        persistLoan(loan, pendingPatch);
+        arrears.push({ loanId: loan.loanId, amountDueUsd: payment, reason: credit.reason,
+          paymentId: paymentId, reconciliationRequired: true });
         continue;
       }
-      loan.principalOutstandingUsd = round(Math.max(0, principal - principalPayment), 2);
-      loan.totalInterestPaidUsd = round((num(loan.totalInterestPaidUsd) || 0) + interest, 2);
-      loan.totalPrincipalPaidUsd = round((num(loan.totalPrincipalPaidUsd) || 0) + principalPayment, 2);
-      loan.lastPaymentTurn = turn();
-      loan.nextDueTurn = turn() + 90;
-      if (loan.principalOutstandingUsd <= 0.01) loan.status = 'REPAID';
-      else if (loan.status === 'IN_ARREARS') loan.status = 'ACTIVE';
-      paid.push({ loanId: loan.loanId, paymentId: paymentId, amountUsd: payment, interestUsd: interest,
-        principalUsd: principalPayment, remainingPrincipalUsd: loan.principalOutstandingUsd });
+      var updated = persistLoan(loan, loanPatch);
+      if (!updated.ok) {
+        arrears.push({ loanId: loan.loanId, amountDueUsd: payment, reason: updated.reason, paymentId: paymentId,
+          reconciliationRequired: true });
+        continue;
+      }
+      persistLender(loan, loanPatch);
+      paid.push({ loanId: loan.loanId, paymentId: paymentId, amountUsd: payment,
+        interestUsd: interest, principalUsd: principalPayment, remainingPrincipalUsd: nextPrincipal });
     }
-    return result(arrears.length ? 'PARTIAL' : 'PROCESSED', { countryId: host, paid: paid, arrears: arrears, evaluated: due.length });
+    return result(arrears.length ? 'PARTIAL' : 'PROCESSED',
+      { countryId: host, paid: paid, arrears: arrears, evaluated: evaluated });
   }
 
   function distributeProjectProfit(input) {
     input = input || {};
-    var host = canonicalCountry(input.hostCountryId), investor = canonicalCountry(input.investorCountryId), projectId = String(input.projectId || '');
-    var sourceId = String(input.sourceTransactionId || '');
-    if (!host || !investor || !projectId || !sourceId) return result('BLOCKED', { reason: 'PROJECT_PROFIT_FIELDS_REQUIRED' });
-    var project = projectInCountry(host, projectId);
-    if (!project || !isObject(project.governmentInvestmentV1)) return result('BLOCKED', { reason: 'GOVERNMENT_EQUITY_POSITION_NOT_FOUND' });
-    var position = (project.governmentInvestmentV1.investors || []).find(function (x) { return x && x.investorCountryId === investor; });
-    if (!position || !position.equityShareBps) return result('BLOCKED', { reason: 'INVESTOR_HAS_NO_EQUITY_SHARE' });
-    var root = countryFinanceRoot(host), rows = root && Array.isArray(root.ledger) ? root.ledger : [];
+    var host = canonicalCountry(input.hostCountryId), investor = canonicalCountry(input.investorCountryId);
+    var projectId = String(input.projectId || ''), sourceId = String(input.sourceTransactionId || '');
+    if (!host || !investor || !projectId || !sourceId)
+      return result('BLOCKED', { reason: 'PROJECT_PROFIT_FIELDS_REQUIRED' });
+    var root = countryFinanceRoot(host), inv = root && investmentRoot(root, false);
+    var positions = inv && Array.isArray(inv.investments) ? inv.investments : [];
+    var position = positions.find(function (x) {
+      return x && x.projectId === projectId && x.investorCountryId === investor && x.equityShareBps > 0;
+    });
+    if (!position) return result('BLOCKED', { reason: 'GOVERNMENT_EQUITY_POSITION_NOT_FOUND' });
+    var rows = root && Array.isArray(root.ledger) ? root.ledger : [];
     var source = rows.find(function (x) { return x && x.transactionId === sourceId; });
     if (!source || String(source.status || '').toUpperCase() !== 'POSTED' ||
         String(source.projectId || '') !== projectId || num(source.distributableNetProfitUsd) === null ||
         num(source.distributableNetProfitUsd) <= 0)
       return result('BLOCKED', { reason: 'VERIFIED_PROJECT_DISTRIBUTABLE_NET_PROFIT_NOT_FOUND',
-        evidencePolicy: 'Requires a posted Finance receipt tied to this exact projectId and an explicit distributableNetProfitUsd field. Gross sales are not profit.' });
+        evidencePolicy: 'Requires a posted Finance entry for this exact projectId with explicit distributableNetProfitUsd. Gross sales, gross margin and unverified estimates are not distributable profit.' });
     var share = position.equityShareBps / 10000;
     var amount = round(num(source.distributableNetProfitUsd) * share, 2);
     if (amount <= 0) return result('BLOCKED', { reason: 'DISTRIBUTABLE_RETURN_ROUNDED_TO_ZERO' });
     var distributionId = 'GOVINV:DISTRIBUTION:' + sourceId + ':' + investor;
     var d = dependencies();
     var debit = dispatch(d, HANDLERS.profitDebit, host, { hostCountryId: host, investorCountryId: investor,
-      distributionId: distributionId, amountUsd: amount, projectId: projectId, proposalId: position.proposalIds && position.proposalIds[0],
+      distributionId: distributionId, amountUsd: amount, projectId: projectId, proposalId: position.proposalId,
       sourceTransactionId: sourceId }, distributionId);
     if (!debit.ok) return result('BLOCKED', { reason: debit.reason });
     var credit = dispatch(d, HANDLERS.profitCredit, investor, { investorCountryId: investor, hostCountryId: host,
-      distributionId: distributionId, amountUsd: amount, projectId: projectId, proposalId: position.proposalIds && position.proposalIds[0],
+      distributionId: distributionId, amountUsd: amount, projectId: projectId, proposalId: position.proposalId,
       sourceTransactionId: sourceId }, distributionId);
     if (!credit.ok) return result('RECONCILIATION_REQUIRED', { reason: credit.reason, distributionId: distributionId });
     return result('DISTRIBUTED', { distributionId: distributionId, projectId: projectId, amountUsd: amount,
-      equitySharePct: round(position.equityShareBps / 100, 2), sourceTransactionId: sourceId });
+      equitySharePct: round(position.equityShareBps / 100, 2), sourceTransactionId: sourceId,
+      realizedNetProfitEvidenceUsd: source.distributableNetProfitUsd });
   }
 
   function runNpcDecisionCycle(input) {
