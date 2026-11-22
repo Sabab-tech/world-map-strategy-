@@ -224,5 +224,5 @@ test('foreign investment only reports production and employment after an existin
  assert.equal(record.productionStatus,'OPERATIONAL');
  assert.equal(record.employmentStatus,'RECORDED_IN_EXISTING_FACTORY_RUNTIME');
  assert.equal(record.observedEmployment,320);
- assert.deepEqual(record.factoryIds,['BGD-TEXTILE-FACTORY-01']);
+ assert.deepEqual(Array.from(record.factoryIds),['BGD-TEXTILE-FACTORY-01']);
 });
