@@ -404,7 +404,7 @@ test('unknown host macro evidence leaves an NPC proposal for review rather than 
   const result = await h.api.submitProposal(mineInput({
     investorCountryId: 'DEU', hostCountryId: 'USA',
     actorType: 'NPC', __omegaNpcDecisionAuthority: 'OMEGA_GOVERNMENT_SOVEREIGN_INVESTMENT_V1',
-    requestId: 'GOV-NPC-REVIEW-001', amount: 1000000, amountUsd: 1000000
+    requestId: 'GOV-NPC-REVIEW-001', amount: 920000, amountUsd: 1000000
   }));
   assert.equal(result.status, 'PENDING_HOST_REVIEW');
   assert.equal(result.hostDecision.decision, 'REVIEW');
