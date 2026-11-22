@@ -2443,3 +2443,75 @@ test('firm input inventory journal stays unavailable when the declared quantity 
   assert.equal(entry.sectorJournalV1.status,'UNAVAILABLE');
   assert.equal(entry.sectorJournalV1.reason,'INPUT_RESOURCE_ID_OR_DECLARED_UNIT_UNAVAILABLE');
 });
+
+test('international-investment authority can seed all five country-local wallets without changing the selected player or Treasury',()=>{
+  const h=makeHarness(),treasuryBefore=h.state.finance.BGD.available,treasuryUsdBefore=h.state.finance.BGD.omegaFinance.treasuryBalanceUsd;
+  h.state.finance.USA={available:2000,omegaFinance:{treasuryBalanceUsd:5000,ledger:[]}};
+  const companyAllocations=COMPANY_IDS.map(companyId=>({companyId,amount:300,sharePct:20,privateFactoryUnits:0,capitalWeightedFactoryUnits:0}));
+  const input={countryId:'USA',currencyCode:'USD',totalCapital:1500,baselineId:'TEST_FDI_OPENING_CAPITAL',
+    privateSectorContributionPct:60,companyAllocations,authority:'OMEGA_PRIVATE_CROSS_BORDER_INVESTMENT_RUNTIME_V1'};
+  const result=h.api.initializeOpeningCompanyCapital(input);
+  assert.equal(result.status,'INITIALIZED',JSON.stringify(result));
+  assert.deepEqual(JSON.parse(JSON.stringify(result.seededCompanies)),COMPANY_IDS);
+  assert.equal(Object.keys(h.state.finance.USA.omegaFinance.companyCapitalAccounts).length,5);
+  for(const companyId of COMPANY_IDS){
+    const account=h.state.finance.USA.omegaFinance.companyCapitalAccounts[companyId];
+    assert.equal(account.currency,'USD');
+    assert.equal(account.availableBalance,300);
+  }
+  assert.equal(h.state.simulation.session.playerCountryId,'BGD');
+  assert.equal(h.state.finance.BGD.available,treasuryBefore);
+  assert.equal(h.state.finance.BGD.omegaFinance.treasuryBalanceUsd,treasuryUsdBefore);
+  assert.equal(h.state.finance.USA.available,2000);
+  assert.equal(h.state.finance.USA.omegaFinance.treasuryBalanceUsd,5000);
+  const unauthorized=h.api.initializeOpeningCompanyCapital({...input,authority:null,baselineId:'UNAUTHORIZED'});
+  assert.equal(unauthorized.status,'BLOCKED');
+  assert.equal(unauthorized.reason,'PLAYER_COUNTRY_SCOPE_ONLY');
+});
+
+test('foreign investment capital is traced from the host company wallet through CAPEX into its commissioned shared factory asset',()=>{
+  const h=makeHarness(),api=h.api,account={
+    companyId:COMPANY,currency:'GAME_CURRENCY_UNITS',availableBalance:100,reservedBalance:0,
+    capitalRaised:100,capitalSpent:0,revision:1,
+    foreignInvestmentReceivedLocal:100,
+    foreignCapitalLots:[{transferId:'FDI:USA:BGD:'+COMPANY+':TRACE-001',investorCountryId:'USA',
+      investorCompanyId:COMPANY,hostCountryId:'BGD',currencyCode:'GAME_CURRENCY_UNITS',
+      amount:100,availableBalance:100,reservedBalance:0,spentBalance:0,createdTurn:4}]
+  };
+  h.state.finance.BGD.omegaFinance.companyCapitalAccounts={[COMPANY]:account};
+  const treasuryBefore=h.state.finance.BGD.available;
+  const proposal=submitProposal(api,{countryId:'BGD',companyId:COMPANY,operatorCompanyId:'MERIDIAN_ENGINEERING_GROUP',
+    factoryType:'STEEL_WORKS',quantity:1,sourcingPolicy:'COMPANY_FUNDED_IMPORTS'});
+  assert.equal(api.decideProposal({countryId:'BGD',proposalId:proposal.proposalId,decision:'APPROVE'}).status,'APPROVED_AWAITING_FUNDING');
+  const funding=api.fundProposal({countryId:'BGD',proposalId:proposal.proposalId,sourceType:'COMPANY_CAPITAL',amount:100});
+  assert.equal(funding.status,'FUNDED',JSON.stringify(funding));
+  assert.deepEqual(JSON.parse(JSON.stringify(funding.proposal.funding.investmentSources)),[{
+    transferId:'FDI:USA:BGD:'+COMPANY+':TRACE-001',investorCountryId:'USA',investorCompanyId:COMPANY,
+    companyId:COMPANY,amount:100,remainingReservedAmount:100,currencyCode:'GAME_CURRENCY_UNITS'
+  }]);
+  assert.equal(account.foreignCapitalLots[0].availableBalance,0);
+  assert.equal(account.foreignCapitalLots[0].reservedBalance,100);
+  setReadyIronSupply(h,600);
+  const build=api.startConstruction({countryId:'BGD',proposalId:proposal.proposalId});
+  assert.equal(build.status,'UNDER_CONSTRUCTION',JSON.stringify(build));
+  assert.equal(build.started.length,1);
+  const project=h.projects[0];
+  assert.equal(project.foreignInvestmentCapexAmount,100);
+  assert.equal(project.foreignInvestmentSources[0].investorCountryId,'USA');
+  assert.equal(account.foreignCapitalLots[0].reservedBalance,0);
+  assert.equal(account.foreignCapitalLots[0].spentBalance,100);
+  assert.equal(account.capitalSpent,100);
+  project.status='COMPLETED';
+  h.state.economy.BGD.productionAssets.push({id:project.factoryId,countryId:'BGD',factoryType:'STEEL_WORKS',status:'OPERATIONAL'});
+  emit(h,'OMEGA_FACTORY_CAPACITY_CHANGED',{countryId:'BGD',payload:{projectId:project.projectId}});
+  const asset=h.state.economy.BGD.productionAssets[0];
+  assert.equal(asset.ownerCompanyId,COMPANY);
+  assert.equal(asset.foreignOwnershipStatus,'CROSS_BORDER_PRIVATE_CAPITAL_PARTICIPATION');
+  assert.equal(asset.foreignInvestmentCapexAmount,100);
+  assert.equal(asset.foreignInvestorCountryIds[0],'USA');
+  assert.equal(asset.foreignCapitalParticipationPct,100);
+  assert.equal(asset.foreignInvestmentCommissionedTurn,h.state.simulation.turn);
+  assert.equal(h.state.finance.BGD.available,treasuryBefore);
+  assert.equal(h.state.economy.BGD.productionAssets.length,1,
+    'the foreign-funded private factory joins the existing shared government/private production asset pool');
+});

@@ -25,6 +25,12 @@ on:
       - "omega_simulation_runtime.js"
       - "test/omega_private_enterprise_browser_e2e.test.mjs"
       - "test/omega_private_enterprise_lifecycle_v1.test.mjs"
+      - "omega_private_international_investment_runtime_v1.js"
+      - "test/omega_private_international_investment_runtime_v1.test.mjs"
+      - "omega_npc_national_macro_economy_runtime_v1.js"
+      - "npc_national_macro_economy_rules_v1.json"
+      - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
+      - "server_bootstrap.js"
       - "package.json"
   push:
     branches: [ main ]
@@ -41,6 +47,15 @@ on:
       - "omega_simulation_runtime.js"
       - "test/omega_private_enterprise_browser_e2e.test.mjs"
       - "test/omega_private_enterprise_lifecycle_v1.test.mjs"
+      - "omega_private_international_investment_runtime_v1.js"
+      - "test/omega_private_international_investment_runtime_v1.test.mjs"
+      - "omega_npc_national_macro_economy_runtime_v1.js"
+      - "npc_national_macro_economy_rules_v1.json"
+      - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
+      - "server_bootstrap.js"
+      - "omega-offline-map-sw.js"
+      - "test/omega_private_enterprise_baseline_v1.test.mjs"
+      - "scripts/build_country_private_factory_starting_baseline_v1.mjs"
       - "package.json"
 
 permissions:

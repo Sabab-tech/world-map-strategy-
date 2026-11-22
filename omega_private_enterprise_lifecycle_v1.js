@@ -2721,8 +2721,9 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     var cid=canonicalCountry(input.countryId||playerCountry()),player=playerCountry(),currency=id(input.currencyCode),
       total=num(input.totalCapital),allocations=Array.isArray(input.companyAllocations)?input.companyAllocations:[],
       baselineId=String(input.baselineId||'OMEGA_PRIVATE_COMPANY_OPENING_CAPITAL_V1');
-    if(cid!==player||!player)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
-    if(!currency||!Number.isFinite(total)||total<=0||allocations.length!==COMPANY_IDS.length)
+    var crossBorderAuthority=input.authority==='OMEGA_PRIVATE_CROSS_BORDER_INVESTMENT_RUNTIME_V1';
+    if(!cid||(!crossBorderAuthority&&(!player||cid!==player)))return{status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY'};
+    if(!/^[A-Z]{3}$/.test(cid)||!currency||!Number.isFinite(total)||total<=0||allocations.length!==COMPANY_IDS.length)
       return{status:'BLOCKED',reason:'OPENING_COMPANY_CAPITAL_FIELDS_INVALID'};
     var byCompany=new Map(),sum=0;
     for(var i=0;i<allocations.length;i++){
@@ -2836,12 +2837,28 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     }else return{status:'BLOCKED',reason:'UNSUPPORTED_FUNDING_SOURCE'};
     if(account.availableBalance+1e-9<amount)
       return{status:'BLOCKED',reason:'INSUFFICIENT_UNRESERVED_COMPANY_CAPITAL',available:account.availableBalance,required:amount};
+    var foreignInvestmentSources=[];
+    if(sourceType==='COMPANY_CAPITAL'&&Array.isArray(account.foreignCapitalLots)){
+      var foreignRemaining=amount;
+      account.foreignCapitalLots.forEach(function(lot){
+        if(foreignRemaining<=1e-9||!lot)return;
+        var lotAvailable=Math.max(0,num(lot.availableBalance)||0),allocated=Math.min(lotAvailable,foreignRemaining);
+        if(allocated<=1e-9)return;
+        lot.availableBalance=Math.max(0,Number((lotAvailable-allocated).toFixed(2)));
+        lot.reservedBalance=Number(((num(lot.reservedBalance)||0)+allocated).toFixed(2));
+        foreignInvestmentSources.push({transferId:String(lot.transferId||''),investorCountryId:canonicalCountry(lot.investorCountryId),
+          investorCompanyId:id(lot.investorCompanyId||proposal.companyId),companyId:proposal.companyId,
+          amount:Number(allocated.toFixed(2)),remainingReservedAmount:Number(allocated.toFixed(2)),currencyCode:id(lot.currencyCode||account.currency)});
+        foreignRemaining=Math.max(0,Number((foreignRemaining-allocated).toFixed(2)));
+      });
+    }
     account.availableBalance=Math.max(0,account.availableBalance-amount);
     account.reservedBalance=normalizeCapitalReservation(cid,proposal.companyId,account)+amount;
     account.revision=(num(account.revision)||0)+1;
     var fundingEntry=ledger.find(function(row){return row.transactionId===transactionId;});
     if(fundingEntry){fundingEntry.companyBalanceAfter=account.availableBalance;fundingEntry.companyReservedAfter=account.reservedBalance;}
     proposal.funding={transactionId:transactionId,sourceType:sourceType,amount:amount,currency:proposal.capitalUnit,companyId:proposal.companyId,
+      investmentSources:foreignInvestmentSources,
       fundedTurn:turn(),status:'FUNDED',companyCapitalBalance:account.availableBalance};
     proposal.status='FUNDED';proposal.updatedTurn=turn();
     recordEvent(cid,'COMPANY_PROPOSAL_FUNDED',{proposalId:proposalId,companyId:proposal.companyId,amount:amount,sourceType:sourceType,transactionId:transactionId});
@@ -2955,6 +2972,25 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
       var reserveNow=normalizeCapitalReservation(cid,proposal.companyId,account);
       if(reserveNow+1e-9<unitCost)return{accepted:false,reason:'PRIVATE_CONSTRUCTION_UNIT_CAPITAL_NOT_RESERVED',reserved:reserveNow,required:unitCost};
       account.reservedBalance=Math.max(0,reserveNow-unitCost);account.capitalSpent+=unitCost;account.revision++;
+      var capexForeignSources=[],capexForeignRemaining=unitCost;
+      (proposal.funding&&Array.isArray(proposal.funding.investmentSources)?proposal.funding.investmentSources:[]).forEach(function(source){
+        if(capexForeignRemaining<=1e-9||!source)return;
+        var sourceRemaining=Math.max(0,num(source.remainingReservedAmount)||0),applied=Math.min(sourceRemaining,capexForeignRemaining);
+        if(applied<=1e-9)return;
+        var lots=Array.isArray(account.foreignCapitalLots)?account.foreignCapitalLots:[],lot=lots.find(function(row){return row&&row.transferId===source.transferId;});
+        if(!lot||Math.max(0,num(lot.reservedBalance)||0)+1e-9<applied)
+          return;
+        source.remainingReservedAmount=Number((sourceRemaining-applied).toFixed(2));
+        lot.reservedBalance=Math.max(0,Number((num(lot.reservedBalance)-applied).toFixed(2)));
+        lot.spentBalance=Number(((num(lot.spentBalance)||0)+applied).toFixed(2));
+        capexForeignSources.push({transferId:source.transferId,investorCountryId:source.investorCountryId,
+          investorCompanyId:source.investorCompanyId,companyId:source.companyId,amount:Number(applied.toFixed(2)),
+          currencyCode:source.currencyCode});
+        capexForeignRemaining=Math.max(0,Number((capexForeignRemaining-applied).toFixed(2)));
+      });
+      if(capexForeignSources.length){project.foreignInvestmentSources=capexForeignSources;
+        project.foreignInvestmentCapexAmount=Number(capexForeignSources.reduce(function(sum,row){return sum+row.amount;},0).toFixed(2));
+        project.foreignInvestmentCurrency=proposal.capitalUnit;project.foreignInvestmentAttributionTurn=turn();}
       ledger.push({transactionId:transactionId,type:'PRIVATE_ENTERPRISE_FACTORY_CAPEX',proposalId:proposal.proposalId,
         projectId:project.projectId,companyId:proposal.companyId,amount:unitCost,currency:proposal.capitalUnit,direction:'TRANSFER',
         debitAccount:'COMPANY_CAPITAL_RESERVED:'+proposal.companyId,creditAccount:'FACTORY_CONSTRUCTION:'+project.projectId,
@@ -3191,6 +3227,16 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     asset.ownershipStatus='PRIVATE_COMPANY_OWNED';asset.operatorStatus='PRIVATE_COMPANY_OPERATED';
     asset.sourcePrivateProposalId=project.sourcePrivateProposalId;asset.sourcePrivateDecisionId=project.sourcePrivateDecisionId||null;
     asset.sourcePrivateFundingId=project.sourcePrivateFundingId||null;asset.constructionProjectId=project.projectId;
+    if(Array.isArray(project.foreignInvestmentSources)&&project.foreignInvestmentSources.length){
+      asset.foreignInvestmentSources=clone(project.foreignInvestmentSources);
+      asset.foreignInvestmentCapexAmount=Math.max(0,num(project.foreignInvestmentCapexAmount)||0);
+      asset.foreignInvestmentCurrency=id(project.foreignInvestmentCurrency||proposal.capitalUnit)||null;
+      asset.foreignInvestorCountryIds=Array.from(new Set(project.foreignInvestmentSources.map(function(row){return canonicalCountry(row.investorCountryId);}).filter(Boolean)));
+      asset.foreignInvestmentAttributionTurn=num(project.foreignInvestmentAttributionTurn)||turn();
+      asset.foreignInvestmentCommissionedTurn=turn();
+      asset.foreignOwnershipStatus='CROSS_BORDER_PRIVATE_CAPITAL_PARTICIPATION';
+      asset.foreignCapitalParticipationPct=num(project.cost)>0?Number((asset.foreignInvestmentCapexAmount/num(project.cost)*100).toFixed(2)):0;
+    }
     var resource=countryBucket('resource',cid,false)||{},projects=resource.industrialNetwork&&resource.industrialNetwork.projects||[];
     var canonicalProject=projects.find(function(row){return row&&row.projectId===project.projectId;});
     if(!privateCommissioningRecordVerified(cid,proposal,canonicalProject,asset)){
