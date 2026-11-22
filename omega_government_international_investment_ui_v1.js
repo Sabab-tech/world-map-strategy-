@@ -99,10 +99,13 @@
     var row = a || b || null;
     if (!row) return { score: null, status: 'RELATIONSHIP_DATA_UNAVAILABLE' };
     if (row.war_state === true || row.sanctions === true) return { score: 0, status: row.war_state ? 'WAR' : 'SANCTIONS' };
+    var adjustments = foreign[host] && foreign[host].relationAdjustments && foreign[host].relationAdjustments[investor];
+    if (!Array.isArray(adjustments)) adjustments = foreign[investor] && foreign[investor].relationAdjustments && foreign[investor].relationAdjustments[host];
+    var delta = (Array.isArray(adjustments) ? adjustments : []).reduce(function (sum, item) { return sum + (number(item && item.delta) || 0); }, 0);
     var fields = [['overall', .35], ['trade', .35], ['trust', .20], ['political', .10]];
     var total = 0, weight = 0;
-    fields.forEach(function (item) { var value = number(row[item[0]]); if (value !== null) { total += (value > 1 ? value / 100 : value) * item[1]; weight += item[1]; } });
-    return { score: weight ? Math.round(total / weight * 100) : null, status: weight ? 'OBSERVED' : 'RELATIONSHIP_SCORE_UNAVAILABLE' };
+    fields.forEach(function (item) { var value = number(row[item[0]]); if (value !== null) { value = value > 1 ? value : value * 100; value = Math.max(0, Math.min(100, value + delta)); total += value * item[1]; weight += item[1]; } });
+    return { score: weight ? Math.round(total / weight * 100) / 100 : null, delta: delta, status: weight ? 'OBSERVED' : 'RELATIONSHIP_SCORE_UNAVAILABLE' };
   }
   function proposalCard(proposal, incoming, editable) {
     var investor = proposal.investorCountryId, host = proposal.hostCountryId;
