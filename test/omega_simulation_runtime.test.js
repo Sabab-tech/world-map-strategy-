@@ -418,11 +418,116 @@ test('large IndexedDB save slots retain gzip as Blob without base64 expansion',a
     'Blob-backed IndexedDB restore must preserve the authoritative Game.state root');
 });
 
+test('concurrent IndexedDB saves to different slots do not supersede each other',async()=>{
+  const {sandbox,state}=makeSandbox();
+  const records=new Map();
+  const database={
+    objectStoreNames:{contains(){return true;}},
+    close(){},
+    transaction(){
+      const transaction={};
+      transaction.objectStore=()=>({
+        put(value,key){
+          const request={};
+          queueMicrotask(()=>{
+            records.set(String(key),value);
+            request.result=String(key);
+            request.onsuccess?.();
+            transaction.oncomplete?.();
+          });
+          return request;
+        },
+        get(key){
+          const request={};
+          queueMicrotask(()=>{
+            request.result=records.get(String(key))??null;
+            request.onsuccess?.();
+            transaction.oncomplete?.();
+          });
+          return request;
+        }
+      });
+      return transaction;
+    }
+  };
+  sandbox.indexedDB={
+    open(){
+      const request={};
+      queueMicrotask(()=>{
+        request.result=database;
+        request.onsuccess?.();
+      });
+      return request;
+    }
+  };
+
+  let signalCompressionStarted;
+  const compressionStarted=new Promise(resolve=>{signalCompressionStarted=resolve;});
+  let releaseCompression;
+  const compressionGate=new Promise(resolve=>{releaseCompression=resolve;});
+  let heldFirstChunk=false;
+  class ControlledCompressionStream{
+    constructor(){
+      return new globalThis.TransformStream({
+        async transform(chunk,controller){
+          if(!heldFirstChunk){
+            heldFirstChunk=true;
+            signalCompressionStarted();
+            await compressionGate;
+          }
+          controller.enqueue(chunk);
+        }
+      });
+    }
+  }
+  class PassThroughDecompressionStream{
+    constructor(){return new globalThis.TransformStream();}
+  }
+  Object.assign(sandbox,{
+    Blob:globalThis.Blob,
+    Response:globalThis.Response,
+    ReadableStream:globalThis.ReadableStream,
+    TextEncoder:globalThis.TextEncoder,
+    TransformStream:globalThis.TransformStream,
+    CompressionStream:ControlledCompressionStream,
+    DecompressionStream:PassThroughDecompressionStream
+  });
+
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  state.resource={BGD:{inventory:{coal:50},batches:[],saveMarker:'SHARED_WORLD_STATE'}};
+
+  // Hold the first slot inside stream compression, then start another slot.
+  // A process-wide sequence counter incorrectly superseded the first checkpoint.
+  const mineSavePromise=runtime.saveSlot('mine-e2e-checkpoint');
+  await compressionStarted;
+  const defaultSavePromise=runtime.saveSlot('default');
+  releaseCompression();
+
+  const [mineSave,defaultSave]=await Promise.all([mineSavePromise,defaultSavePromise]);
+  assert.equal(mineSave.ok,true);
+  assert.equal(defaultSave.ok,true);
+  assert.equal(mineSave.storage,'INDEXEDDB');
+  assert.equal(defaultSave.storage,'INDEXEDDB');
+  assert.equal(records.has(mineSave.key),true,
+    'an unrelated default-slot write must not cancel the mine E2E checkpoint');
+  assert.equal(records.has(defaultSave.key),true,
+    'the default lifecycle save must also remain durable');
+
+  state.resource.BGD.inventory.coal=999;
+  await runtime.loadSlot('mine-e2e-checkpoint');
+  assert.equal(state.resource.BGD.inventory.coal,50,
+    'the named checkpoint must survive a later write to the default slot');
+  await runtime.loadSlot('default');
+  assert.equal(state.resource.BGD.inventory.coal,50,
+    'the default checkpoint must remain independently loadable');
+});
+
 test('turn autosave uses the canonical IndexedDB slot and retains legacy recovery',()=>{
   const lifecycle=fs.readFileSync(new URL('../omega_game_lifecycle_runtime_v1.js',import.meta.url),'utf8');
   const runtime=fs.readFileSync(new URL('../omega_simulation_runtime.js',import.meta.url),'utf8');
 
-  assert.match(lifecycle,/operation = sim\.saveSlot\(SLOT\)/,
+  assert.match(lifecycle,/operation = sim\.saveSlot\(SLOT,\s*\{/,
     'the lifecycle must persist through the canonical Simulation save API');
   assert.match(lifecycle,/await sim\.loadSlot\(SLOT\)/,
     'the lifecycle must restore through the same canonical slot');
