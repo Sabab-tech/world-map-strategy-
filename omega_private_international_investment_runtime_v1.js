@@ -18,7 +18,7 @@
     refund:'OMEGA_PRIVATE_FDI_REFUND_CAPITAL',
     confirm:'OMEGA_PRIVATE_FDI_CONFIRM_RECEIPT'
   };
-  var ready=false,initPromise=null,lastError=null,registered=false,settledCount=0,pendingCount=0;
+  var ready=false,initPromise=null,lastError=null,registered=false,settledTransfers=new Set(),pendingTransfers=new Set();
   function obj(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
   function num(v){if(v===null||v===undefined||v===''||typeof v==='boolean')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
   function id(v){return String(v==null?'':v).trim().toUpperCase();}
@@ -256,6 +256,7 @@
     if(!validCompany(company))return{status:'BLOCKED',reason:'UNIVERSAL_PRIVATE_COMPANY_REQUIRED',companyIds:COMPANY_IDS.slice()};
     if(!/^[A-Z0-9:_-]{6,100}$/i.test(requestId))return{status:'BLOCKED',reason:'FDI_REQUEST_ID_INVALID'};
     if(amount===null||amount<=0||amount>9e15)return{status:'BLOCKED',reason:'FDI_AMOUNT_OUT_OF_RANGE'};
+    if(Math.abs(amount-round(amount,2))>1e-9)return{status:'BLOCKED',reason:'FDI_INVESTMENT_AMOUNT_NOT_CENT_EXACT'};
     var investorBase=d.privateRegistry.getCountryBaseline(investor),hostBase=d.privateRegistry.getCountryBaseline(host);
     if(!investorBase||investorBase.status!=='READY'||!hostBase||hostBase.status!=='READY')
       return{status:'WAITING',reason:'PRIVATE_COMPANY_COUNTRY_BASELINE_NOT_READY',investorCountryId:investor,hostCountryId:host};
@@ -283,21 +284,23 @@
       investorCurrencyCode:investorCurrency,investorLocalPerUsd:investorFx.localPerUsd,hostLocalPerUsd:hostFx.localPerUsd},transferId);
     if(!received.ok){
       var refund=dispatch(d,HANDLERS.refund,investor,{transferId:transferId,companyId:company},transferId);
+      if(!refund.ok)pendingTransfers.add(transferId);
+      else pendingTransfers.delete(transferId);
       return{status:refund.ok?'REFUNDED':'RECONCILIATION_REQUIRED',reason:received.reason,stage:'HOST_RECEIPT',
         refundStatus:refund.status,refundReason:refund.reason||null,transferId:transferId};
     }
     var settled=dispatch(d,HANDLERS.settle,investor,{transferId:transferId,companyId:company,hostCountryId:host},transferId);
     if(!settled.ok){
-      pendingCount++;return{status:'SETTLEMENT_PENDING',reason:settled.reason,transferId:transferId,
+      pendingTransfers.add(transferId);return{status:'SETTLEMENT_PENDING',reason:settled.reason,transferId:transferId,
         investorCountryId:investor,hostCountryId:host,investorAmount:amount,investorCurrencyCode:investorCurrency,
         hostAmount:hostAmount,hostCurrencyCode:hostFx.currencyCode,amountUsd:amountUsd,
         hostReceiptStatus:received.status,retryable:true};
     }
     var confirmed=dispatch(d,HANDLERS.confirm,host,{transferId:transferId,companyId:company,investorCountryId:investor},transferId);
-    if(!confirmed.ok){pendingCount++;return{status:'SETTLEMENT_PENDING',reason:confirmed.reason,transferId:transferId,
+    if(!confirmed.ok){pendingTransfers.add(transferId);return{status:'SETTLEMENT_PENDING',reason:confirmed.reason,transferId:transferId,
       investorCountryId:investor,hostCountryId:host,investorAmount:amount,investorCurrencyCode:investorCurrency,
       hostAmount:hostAmount,hostCurrencyCode:hostFx.currencyCode,amountUsd:amountUsd,retryable:true};}
-    settledCount++;return{status:'SETTLED',transferId:transferId,investorCountryId:investor,hostCountryId:host,
+    settledTransfers.add(transferId);pendingTransfers.delete(transferId);return{status:'SETTLED',transferId:transferId,investorCountryId:investor,hostCountryId:host,
       companyId:company,investorAmount:amount,investorCurrencyCode:investorCurrency,
       hostAmount:hostAmount,hostCurrencyCode:hostFx.currencyCode,amountUsd:amountUsd,
       investorDebitStatus:settled.status,hostReceiptStatus:confirmed.status,governmentTreasuryChanged:false,
@@ -308,13 +311,22 @@
     var d=dependencies(),investor=canonicalCountry(input.investorCountryId),host=canonicalCountry(input.hostCountryId),
       company=id(input.companyId),requestId=String(input.requestId||'').trim(),transferId='FDI:'+investor+':'+host+':'+company+':'+requestId;
     if(!investor||!host||!validCompany(company)||!requestId)return{status:'BLOCKED',reason:'FDI_RECONCILIATION_FIELDS_INVALID'};
+    var investorRoot=financeRoot(d.state,investor),investorRecord=findRecord(investorRoot||{},transferId);
     var hostRoot=financeRoot(d.state,host),receipt=findRecord(hostRoot||{},transferId);
-    if(!receipt||!['RECEIVED','SETTLED'].includes(receipt.status))return{status:'WAITING',reason:'HOST_FDI_RECEIPT_NOT_FOUND',transferId:transferId};
+    if(!receipt||!['RECEIVED','SETTLED'].includes(receipt.status)){
+      if(investorRecord&&investorRecord.status==='RESERVED'){
+        var refunded=dispatch(d,HANDLERS.refund,investor,{transferId:transferId,companyId:company},transferId);
+        if(refunded.ok){pendingTransfers.delete(transferId);return{status:'REFUNDED',transferId:transferId,reason:'HOST_FDI_RECEIPT_NOT_FOUND'};}
+        pendingTransfers.add(transferId);return{status:'RECONCILIATION_REQUIRED',reason:refunded.reason,transferId:transferId};
+      }
+      return{status:'WAITING',reason:'HOST_FDI_RECEIPT_NOT_FOUND',transferId:transferId};
+    }
     var result=dispatch(d,HANDLERS.settle,investor,{transferId:transferId,companyId:company,hostCountryId:host},transferId);
-    if(!result.ok)return{status:'SETTLEMENT_PENDING',reason:result.reason,transferId:transferId};
+    if(!result.ok){pendingTransfers.add(transferId);return{status:'SETTLEMENT_PENDING',reason:result.reason,transferId:transferId};}
     var confirmed=dispatch(d,HANDLERS.confirm,host,{transferId:transferId,companyId:company,investorCountryId:investor},transferId);
-    if(!confirmed.ok)return{status:'SETTLEMENT_PENDING',reason:confirmed.reason,transferId:transferId};
-    settledCount++;return{status:'SETTLED',transferId:transferId,investorCountryId:investor,hostCountryId:host,authority:AUTHORITY};
+    if(!confirmed.ok){pendingTransfers.add(transferId);return{status:'SETTLEMENT_PENDING',reason:confirmed.reason,transferId:transferId};}
+    settledTransfers.add(transferId);pendingTransfers.delete(transferId);
+    return{status:'SETTLED',transferId:transferId,investorCountryId:investor,hostCountryId:host,authority:AUTHORITY};
   }
   function getCountryLedger(countryValue){
     var cid=canonicalCountry(countryValue),d=dependencies(),root=cid&&financeRoot(d.state,cid);
@@ -331,8 +343,8 @@
   }
   function diagnostics(){
     return{version:VERSION,ready:ready,error:lastError,registered,handlerCount:registered?5:0,
-      companyCount:COMPANY_IDS.length,canonicalCompanyIds:COMPANY_IDS.slice(),settledCount:settledCount,
-      pendingReconciliationCount:pendingCount,capitalAuthority:'EXISTING_PRIVATE_COMPANY_CAPITAL_ACCOUNTS',
+      companyCount:COMPANY_IDS.length,canonicalCompanyIds:COMPANY_IDS.slice(),settledCount:settledTransfers.size,
+      pendingReconciliationCount:pendingTransfers.size,capitalAuthority:'EXISTING_PRIVATE_COMPANY_CAPITAL_ACCOUNTS',
       financeAuthority:'OMEGA_MINISTRY_STATE_TRANSACTION',treasuryDebit:false,
       productionAuthority:'EXISTING_SHARED_ECONOMY_PRODUCTION_ASSETS_POOL',
       countryScope:'CANONICAL_197_COUNTRY_ROSTER'};
