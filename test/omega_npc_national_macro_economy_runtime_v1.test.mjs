@@ -363,16 +363,20 @@ test('save/load round-trip retains checkpoint and prevents replaying a committed
   assert.equal(restored.state.economy.BBB.npcMacroEconomy.snapshots.length, 1);
 });
 
-test('general-data observations override local baseline only with metric-level provenance', async () => {
-  const generalDataApi = {
-    getCountryRecord: id => id === 'BBB' ? {
-      datasetId: 'COUNTRY_GENERAL_DATA',
-      metrics: { gdpCurrentUsd: 2800000 },
-      metricMetadata: { gdpCurrentUsd: { year: 2024, status: 'WORLD_BANK_API_OBSERVATION',
-        sourceName: 'World Bank API', sourceUrl: 'https://example.invalid/source', confidence: 0.9 } }
-    } : null
-  };
-  const h = createHarness({ generalDataApi });
+test('preloaded country observations override local baseline only with metric-level provenance', async () => {
+  const h = createHarness();
+  Object.assign(h.context.__OMEGA_NPC_MACRO_FIXTURES__.inputs.countries.BBB.metrics.gdpCurrentUsd, {
+    value: 2800000,
+    year: 2024,
+    sourceStatus: 'WORLD_BANK_API_OBSERVATION',
+    sourceId: 'WORLD_BANK_WDI',
+    sourceName: 'World Bank API',
+    method: null,
+    sourceUrl: 'https://example.invalid/source',
+    confidence: 0.9,
+    dataGap: null,
+    note: null
+  });
   await h.context.Omega.NpcNationalMacroEconomy.init();
   await h.context.Omega.NpcNationalMacroEconomy.processCountry('BBB', { turn: 3, state: h.state });
   const metric = h.state.economy.BBB.npcMacroEconomy.baseline.metrics.gdpCurrentUsd;
