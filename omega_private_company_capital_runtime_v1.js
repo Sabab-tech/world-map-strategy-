@@ -1,6 +1,6 @@
 /* OMEGA PRIVATE COMPANY OPENING CAPITAL RUNTIME v1.0.0
- * Selected-country, local-currency opening capital allocation for the five canonical companies.
- * Uses the existing country economy, private factory allocation and Finance-owned capital accounts.
+ * Lazy country-local opening capital for the five canonical companies.
+ * Foreign investment may initialize an investor-country wallet without changing the active player.
  */
 (function(g){
 'use strict';
@@ -256,9 +256,9 @@ function getActiveDependencies(){
   forex:g.OmegaForexMonetaryEngine||(g.Omega&&g.Omega.ForexMonetaryEngine)
  };
 }
-function ensureCountryInitialized(country){
- var cid=id(country||playerCountry()),active=playerCountry();
- if(!cid||cid!==active)return Promise.resolve({status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY',countryId:cid||null});
+function ensureCountryInitialized(country,options){
+ var cid=id(country||playerCountry()),active=playerCountry(),allowNonPlayer=!!options&&options.authority==='OMEGA_PRIVATE_CROSS_BORDER_INVESTMENT_RUNTIME_V1';
+ if(!cid||(!allowNonPlayer&&cid!==active))return Promise.resolve({status:'BLOCKED',reason:'PLAYER_COUNTRY_SCOPE_ONLY',countryId:cid||null});
  activationRequested=true;
  if(completed.has(cid))return Promise.resolve(clone(completed.get(cid)));
  if(inflight.has(cid))return inflight.get(cid);
@@ -275,7 +275,7 @@ function ensureCountryInitialized(country){
     Promise.resolve(deps.finance.init&&deps.finance.init()).catch(function(){return null;}),
     Promise.resolve(true)
    ]);
-   if(token!==sequence||playerCountry()!==cid)return{status:'STALE_COUNTRY_RESULT',countryId:cid};
+   if(token!==sequence||(!allowNonPlayer&&playerCountry()!==cid))return{status:'STALE_COUNTRY_RESULT',countryId:cid};
    var privateRow=deps.privateRegistry.getCountryBaseline(cid);
    var governmentRow=deps.governmentRegistry.getCountryBaseline(cid);
    if(!privateRow||privateRow.status!=='READY'||!governmentRow)
@@ -291,7 +291,7 @@ function ensureCountryInitialized(country){
     countryId:cid,currencyCode:plan.currencyCode,totalCapital:plan.totalOpeningCapital,
     baselineId:plan.baselineId,privateSectorContributionPct:plan.privateSectorContributionPct,
     gdpUsd:plan.gdpUsd,gdpLocal:plan.gdpLocal,fxLocalPerUsd:plan.fxLocalPerUsd,
-    companyAllocations:plan.companyAllocations,model:clone(plan)
+    companyAllocations:plan.companyAllocations,model:clone(plan),authority:allowNonPlayer?'OMEGA_PRIVATE_CROSS_BORDER_INVESTMENT_RUNTIME_V1':null
    });
    if(result&&['INITIALIZED','ALREADY_INITIALIZED','PARTIALLY_INITIALIZED'].indexOf(result.status)>=0){
     completed.set(cid,clone(result));return result;
@@ -321,6 +321,7 @@ function diagnostics(){
   lastPlan:clone(lastPlan),currencyPolicy:'COUNTRY_LOCAL_CURRENCY',financeAuthority:'OMEGA_PRIVATE_ENTERPRISE_LIFECYCLE_FINANCE_CAPITAL_ACCOUNTS'};
 }
 var API=Object.freeze({VERSION:VERSION,ensureCountryInitialized:ensureCountryInitialized,
+ ensureCountryInitializedForInvestment:function(country){return ensureCountryInitialized(country,{authority:'OMEGA_PRIVATE_CROSS_BORDER_INVESTMENT_RUNTIME_V1'});},
  requestActiveCountry:requestActiveCountry,diagnostics:diagnostics,buildPlan:buildPlan});
 g.OmegaPrivateCompanyCapitalRuntimeV1=API;g.Omega=g.Omega||{};g.Omega.PrivateCompanyCapitalRuntimeV1=API;
 function scheduleAfterBootIdle(){
