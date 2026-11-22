@@ -954,10 +954,24 @@
     var projectQuote = null;
     if (input.projectType !== 'EXISTING_PROJECT') {
       projectQuote = quoteProject(Object.assign({}, input, { hostCountryId: host,
-        costUsd: input.projectType === 'FACTORY' ? amountUsd : (input.costUsd || input.projectFundingUsd || input.costUsd) }));
+        costUsd: ['FACTORY', 'INFRASTRUCTURE'].includes(input.projectType) ? amountUsd : (input.costUsd || input.projectFundingUsd || input.costUsd) }));
       if (projectQuote.status !== 'QUOTED') return result('BLOCKED', { reason: projectQuote.reason, projectQuote: projectQuote });
-      if (amountUsd + 1e-7 < projectQuote.projectCostUsd)
-        return result('BLOCKED', { reason: 'INVESTMENT_BELOW_PROJECT_CAPEX', amountUsd: amountUsd, requiredProjectCapexUsd: projectQuote.projectCostUsd, projectQuote: projectQuote });
+      if (input.projectType === 'MINE') {
+        if (amountUsd > projectQuote.projectCostUsd + 1e-7)
+          return result('BLOCKED', { reason: 'MINE_CONTRIBUTION_EXCEEDS_PROJECT_CAPEX',
+            maximumContributionUsd: projectQuote.projectCostUsd, projectQuote: projectQuote });
+        var hostCashSnapshot = num(financeBucket(d.state, host) && financeBucket(d.state, host).available);
+        var cashAfterReserveAndRelease = hostCashSnapshot === null ? null
+          : hostCashSnapshot - (investor === host ? amountUsd : 0) + amountUsd;
+        if (cashAfterReserveAndRelease === null || cashAfterReserveAndRelease + 1e-7 < projectQuote.projectCostUsd)
+          return result('BLOCKED', { reason: 'HOST_TREASURY_AND_INVESTMENT_CANNOT_COVER_MINE_CAPEX',
+            hostTreasuryUsd: hostCashSnapshot, investorContributionUsd: amountUsd,
+            requiredMineCapexUsd: projectQuote.projectCostUsd, projectQuote: projectQuote });
+        projectQuote.hostTreasuryCoFundingUsd = round(projectQuote.projectCostUsd - amountUsd, 2);
+      } else if (amountUsd + 1e-7 < projectQuote.projectCostUsd || Math.abs(amountUsd - projectQuote.projectCostUsd) > 0.01) {
+        return result('BLOCKED', { reason: 'INVESTMENT_MUST_MATCH_APPROVED_PROJECT_FUNDING',
+          requestedUsd: amountUsd, requiredProjectFundingUsd: projectQuote.projectCostUsd, projectQuote: projectQuote });
+      }
     } else {
       projectQuote = quoteProject({ hostCountryId: host, projectType: 'EXISTING_PROJECT', existingProjectId: input.existingProjectId, costUsd: amountUsd });
       if (projectQuote.status !== 'QUOTED') return result('BLOCKED', { reason: projectQuote.reason, projectQuote: projectQuote });
@@ -1086,13 +1100,17 @@
         quantity: proposal.quantity, assignedWorkers: proposal.assignedWorkers });
       if (!quote || quote.status !== 'QUOTED' || !quote.materialsReady || !quote.staffingReady || !quote.commissioningReady)
         return result('BLOCKED', { reason: 'MINE_PROJECT_NOT_READY_AT_FUNDING', quote: quote || null });
-      var mineCost = num(quote.costUsd);
-      if (mineCost === null || mineCost <= 0 || (num(receipt.remainingUsd) || 0) + 1e-7 < mineCost)
-        return result('BLOCKED', { reason: 'MINE_PROJECT_ESCROW_BELOW_CAPEX', requiredUsd: mineCost, escrowUsd: receipt.remainingUsd });
+      var mineCost = num(quote.costUsd), investorContribution = Math.min(num(proposal.amountUsd) || 0, num(receipt.remainingUsd) || 0);
+      var hostCashBeforeMine = num(financeBucket(state(), host) && financeBucket(state(), host).available);
+      if (mineCost === null || mineCost <= 0 || investorContribution <= 0 ||
+          hostCashBeforeMine === null || hostCashBeforeMine + investorContribution + 1e-7 < mineCost)
+        return result('BLOCKED', { reason: 'MINE_PROJECT_HOST_AND_INVESTOR_CAPITAL_INSUFFICIENT',
+          requiredMineCapexUsd: mineCost, investorContributionUsd: investorContribution,
+          hostTreasuryAvailableUsd: hostCashBeforeMine, restrictedEscrowUsd: receipt.remainingUsd });
       var releaseId = proposal.transferId + ':MINE:' + proposal.siteId;
       var release = dispatch(d, HANDLERS.releaseMine, host, { hostCountryId: host, proposalId: proposal.proposalId,
         transferId: proposal.transferId, releaseId: releaseId, projectId: 'MINE:' + host + ':' + proposal.siteId,
-        amountUsd: mineCost }, proposal.transferId);
+        amountUsd: investorContribution }, proposal.transferId);
       if (!release.ok) return result('BLOCKED', { reason: release.reason, stage: 'MINE_FUND_RELEASE' });
       var mine;
       try {
@@ -1108,16 +1126,20 @@
           cashReversal: rollbackRelease.status, requiredManualReconciliation: !rollbackRelease.ok });
       }
       var capex = dispatch(d, HANDLERS.commitCapex, host, { hostCountryId: host, proposalId: proposal.proposalId,
-        transferId: proposal.transferId, projectId: mine.projectId, amountUsd: mineCost,
+        transferId: proposal.transferId, projectId: mine.projectId, amountUsd: investorContribution,
         equityShareBps: proposal.equityShareBps, durationYears: proposal.durationYears }, proposal.transferId);
       if (!capex.ok) return result('RECONCILIATION_REQUIRED', { reason: capex.reason, project: mine, stage: 'MINE_CAPEX_COMMIT' });
-      proposal.projectId = mine.projectId; proposal.projectCostUsd = mineCost;
-      proposal.capitalAppliedUsd = mineCost; proposal.constructionDays = quote.durationDays;
+      proposal.projectId = mine.projectId; proposal.totalProjectCapexUsd = mineCost;
+      proposal.projectCostUsd = mineCost; proposal.capitalAppliedUsd = investorContribution;
+      proposal.hostTreasuryCoFundingUsd = round(mineCost - investorContribution, 2);
+      proposal.constructionDays = quote.durationDays;
       proposal.status = 'PROJECT_STARTED'; proposal.updatedTurn = turn();
-      var loanResult = registerLoanPositions(proposal, mine.projectId, mineCost);
+      var loanResult = registerLoanPositions(proposal, mine.projectId, investorContribution);
       if (!loanResult.ok) return result('RECONCILIATION_REQUIRED', { reason: loanResult.reason, stage: loanResult.stage, project: mine });
       return result('PROJECT_STARTED', { project: clone(mine), constructionDays: quote.durationDays,
-        projectCostUsd: mineCost, remainingEscrowUsd: capex.result.remainingUsd, loanId: loanResult.loanId || null });
+        totalProjectCapexUsd: mineCost, investorContributionUsd: investorContribution,
+        hostTreasuryCoFundingUsd: round(mineCost - investorContribution, 2),
+        remainingEscrowUsd: capex.result.remainingUsd, loanId: loanResult.loanId || null });
     }
     if (proposal.projectType === 'FACTORY') {
       var catalog = currentCatalog(), profile = catalog.factoryProfiles && catalog.factoryProfiles[proposal.factoryType];
