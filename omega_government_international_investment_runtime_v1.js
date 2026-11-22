@@ -974,8 +974,8 @@
     if (investorFx.status !== 'READY' || hostFx.status !== 'READY')
       return result('BLOCKED', { reason: 'CROSS_BORDER_FX_RATE_UNAVAILABLE', investorFx: investorFx, hostFx: hostFx });
     var amountLocal = num(input.amount), amountUsd = num(input.amountUsd);
-    if (amountUsd === null && amountLocal !== null) amountUsd = amountLocal / investorFx.localPerUsd;
-    if (amountLocal === null && amountUsd !== null) amountLocal = amountUsd * investorFx.localPerUsd;
+    if (amountUsd === null && amountLocal !== null) amountUsd = round(amountLocal / investorFx.localPerUsd, 2);
+    if (amountLocal === null && amountUsd !== null) amountLocal = round(amountUsd * investorFx.localPerUsd, 2);
     if (amountUsd === null || amountUsd <= 0 || amountUsd > 9e15 || Math.abs(amountUsd - round(amountUsd, 2)) > 1e-7)
       return result('BLOCKED', { reason: 'GOVERNMENT_INVESTMENT_AMOUNT_INVALID' });
     amountUsd = round(amountUsd, 2);
@@ -1066,7 +1066,8 @@
         var resolved = await respondProposal({ hostCountryId: host, proposalId: proposalId,
           decision: decision.decision, actorType: 'NPC', __omegaNpcDecisionAuthority: AUTHORITY, reason: decision.reason });
         if (decision.decision === 'ACCEPT' && resolved.status === 'PROJECT_STARTED')
-          return result('PROJECT_STARTED', { proposal: resolved.proposal, project: resolved.project, hostDecision: decision, budget: budget });
+          return result('PROJECT_STARTED', { proposal: resolved.proposal, project: resolved.project,
+            investment: resolved.investment || null, hostDecision: decision, budget: budget });
         if (decision.decision === 'DECLINE') return result('DECLINED', { proposal: getProposal(host, proposalId), hostDecision: decision });
         return resolved;
       }
