@@ -769,7 +769,9 @@
       this.status='READY';
       this.stepInProgress=false;
       this.saveBarrier=null;
-      this.saveSequence=0;
+      // Save supersession is slot-scoped: a write to `default` must never
+      // invalidate an independent named-slot checkpoint (or vice versa).
+      this.saveSlotSequences=new Map();
       this.lastError=null;
       this.lastLoadIntegrity='NOT_LOADED';
       this.lastStepSummary=null;
@@ -1392,7 +1394,9 @@
     async saveSlot(slot='default',options={}){
       const key='omega.game.save.'+String(slot||'default');
       const previousSave=this.saveBarrier;
-      const sequence=this.saveSequence=(this.saveSequence||0)+1;
+      const sequences=this.saveSlotSequences || (this.saveSlotSequences=new Map());
+      const sequence=(sequences.get(key)||0)+1;
+      sequences.set(key,sequence);
       let releaseSave;
       const currentSave=new Promise(resolve=>{releaseSave=resolve;});
       this.saveBarrier=currentSave;
@@ -1415,7 +1419,7 @@
       const persistStoredSave = stored => {
         // Prevent an older asynchronous save from overwriting a newer
         // page-exit checkpoint when it resolves later.
-        if(sequence!==this.saveSequence)
+        if(sequence!==this.saveSlotSequences.get(key))
           return {ok:true,skipped:true,storage:'SUPERSEDED',turn:this.clock.turn,
             compression:stored.compression,storedBytes:stored.storedBytes};
         const result = {
