@@ -367,11 +367,11 @@
         return handlerResult(false, { reason: 'HOST_RECEIPT_IDEMPOTENCY_COLLISION' });
       return handlerResult(true, { status: 'DUPLICATE', duplicate: true, transferId: p.transferId });
     }
-    var account = String(p.instrument || 'EQUITY').toUpperCase() === 'LOAN'
-      ? 'GOVERNMENT:FOREIGN_SOVEREIGN_DEBT'
-      : String(p.instrument || '').toUpperCase() === 'GRANT'
-        ? 'GOVERNMENT:FOREIGN_DEVELOPMENT_GRANT'
-        : 'GOVERNMENT:FOREIGN_EQUITY_CAPITAL';
+    var instrument = String(p.instrument || 'EQUITY').toUpperCase();
+    var account = instrument === 'LOAN' ? 'GOVERNMENT:FOREIGN_SOVEREIGN_DEBT'
+      : instrument === 'GRANT' ? 'GOVERNMENT:FOREIGN_DEVELOPMENT_GRANT'
+      : instrument === 'DOMESTIC_PUBLIC_CAPEX' ? 'GOVERNMENT:DOMESTIC_PUBLIC_CAPITAL'
+      : 'GOVERNMENT:FOREIGN_EQUITY_CAPITAL';
     var receiptId = p.transferId + ':RECEIPT';
     appendLedger(root, { transactionId: receiptId, type: 'GOVERNMENT_FOREIGN_INVESTMENT_RECEIPT',
       action: 'GOVERNMENT_INVESTMENT_RECEIPT', countryId: cid, countryCode: cid, amountUsd: amount,
@@ -816,8 +816,7 @@
       if (!Number.isInteger(share) || share < 100 || share > 7500)
         return { ok: false, reason: 'EQUITY_SHARE_OUT_OF_RANGE', minimumBps: 100, maximumBps: 7500 };
     } else share = 0;
-    var rate = num(input.annualInterestRateBps);
-    var grace = num(input.gracePeriodYears);
+    var rate = num(input.annualInterestRateBps), grace = num(input.gracePeriodYears);
     if (instrument === 'LOAN') {
       if (rate === null) rate = 500;
       if (!Number.isInteger(rate) || rate < 0 || rate > 2000)
@@ -900,7 +899,8 @@
     if (!['PLAYER', 'NPC'].includes(actorType)) return result('BLOCKED', { reason: 'PROPOSAL_ACTOR_INVALID' });
     var requestId = String(input.requestId || '').trim();
     if (!/^[A-Z0-9:_-]{6,140}$/i.test(requestId)) return result('BLOCKED', { reason: 'GOVERNMENT_INVESTMENT_REQUEST_ID_INVALID' });
-    var instrument = validateInstrument(input);
+    var domestic = investor === host;
+    var instrument = validateInstrument(input, domestic);
     if (!instrument.ok) return result('BLOCKED', { reason: instrument.reason, detail: instrument });
     var investorFx = currencyFor(investor, d), hostFx = currencyFor(host, d);
     if (investorFx.status !== 'READY' || hostFx.status !== 'READY')
@@ -919,12 +919,13 @@
         requestedUsd: amountUsd, maximumPerProjectUsd: budget.maximumPerProjectUsd, budget: budget });
     var projectQuote = null;
     if (input.projectType !== 'EXISTING_PROJECT') {
-      projectQuote = quoteProject(Object.assign({}, input, { hostCountryId: host }));
+      projectQuote = quoteProject(Object.assign({}, input, { hostCountryId: host,
+        costUsd: input.projectType === 'FACTORY' ? amountUsd : (input.costUsd || input.projectFundingUsd || input.costUsd) }));
       if (projectQuote.status !== 'QUOTED') return result('BLOCKED', { reason: projectQuote.reason, projectQuote: projectQuote });
       if (amountUsd + 1e-7 < projectQuote.projectCostUsd)
         return result('BLOCKED', { reason: 'INVESTMENT_BELOW_PROJECT_CAPEX', amountUsd: amountUsd, requiredProjectCapexUsd: projectQuote.projectCostUsd, projectQuote: projectQuote });
     } else {
-      projectQuote = quoteProject({ hostCountryId: host, projectType: 'EXISTING_PROJECT', existingProjectId: input.existingProjectId });
+      projectQuote = quoteProject({ hostCountryId: host, projectType: 'EXISTING_PROJECT', existingProjectId: input.existingProjectId, costUsd: amountUsd });
       if (projectQuote.status !== 'QUOTED') return result('BLOCKED', { reason: projectQuote.reason, projectQuote: projectQuote });
       if (amountUsd > projectQuote.projectCostUsd * 0.25 + 1e-7)
         return result('BLOCKED', { reason: 'EXISTING_PROJECT_RECAPITALIZATION_LIMIT', maximumUsd: projectQuote.projectCostUsd * 0.25 });
@@ -945,6 +946,7 @@
       fxSnapshot: { investorLocalPerUsd: investorFx.localPerUsd, hostLocalPerUsd: hostFx.localPerUsd,
         investorCurrencyCode: investorFx.currencyCode, hostCurrencyCode: hostFx.currencyCode, turn: turn(), authority: 'OMEGA_FOREX_MONETARY_ENGINE' },
       instrument: instrument.instrument, durationYears: instrument.durationYears,
+      domesticPublicCapex: instrument.instrument === 'DOMESTIC_PUBLIC_CAPEX',
       equityShareBps: instrument.equityShareBps, annualInterestRateBps: instrument.annualInterestRateBps,
       gracePeriodYears: instrument.gracePeriodYears, projectType: input.projectType,
       existingProjectId: input.existingProjectId || null, factoryType: input.factoryType || null,
@@ -953,6 +955,8 @@
       assignedWorkers: num(input.assignedWorkers), infrastructureType: input.infrastructureType || null,
       distanceKm: num(input.distanceKm), capacityPerDay: num(input.capacityPerDay),
       projectCostUsd: projectQuote.projectCostUsd, constructionDays: projectQuote.constructionDays,
+      factoryCatalogConstructionCost: projectQuote.factoryCatalogConstructionCost || null,
+      factoryCatalogCostUnit: projectQuote.factoryCatalogCostUnit || null,
       projectQuote: clone(projectQuote), projectDescription: String(input.projectDescription || ''),
       submittedTurn: turn(), updatedTurn: turn(), status: 'PENDING_HOST_APPROVAL',
       returnPolicy: 'NO_GUARANTEED_RETURN; EQUITY_DISTRIBUTIONS_REQUIRE_PROJECT_LINKED_REALIZED_NET_PROFIT',
@@ -970,7 +974,7 @@
       var decision = npcHostDecision(proposal);
       if (decision.decision === 'ACCEPT' || decision.decision === 'DECLINE') {
         var resolved = await respondProposal({ hostCountryId: host, proposalId: proposalId,
-          decision: decision.decision, actorType: 'NPC', reason: decision.reason });
+          decision: decision.decision, actorType: 'NPC', __omegaNpcDecisionAuthority: AUTHORITY, reason: decision.reason });
         if (decision.decision === 'ACCEPT' && resolved.status === 'PROJECT_STARTED')
           return result('PROJECT_STARTED', { proposal: resolved.proposal, project: resolved.project, hostDecision: decision, budget: budget });
         if (decision.decision === 'DECLINE') return result('DECLINED', { proposal: getProposal(host, proposalId), hostDecision: decision });
@@ -980,7 +984,8 @@
     }
     if (host === investor) {
       var domestic = await respondProposal({ hostCountryId: host, proposalId: proposalId,
-        decision: 'ACCEPT', actorType: actorType === 'NPC' ? 'NPC' : 'PLAYER', reason: 'DOMESTIC_PUBLIC_INVESTMENT' });
+        decision: 'ACCEPT', actorType: actorType === 'NPC' ? 'NPC' : 'PLAYER',
+        __omegaNpcDecisionAuthority: input.__omegaNpcDecisionAuthority, reason: 'DOMESTIC_PUBLIC_INVESTMENT' });
       return domestic;
     }
     return result('PENDING_HOST_APPROVAL', { proposal: getProposal(host, proposalId), budget: budget });
