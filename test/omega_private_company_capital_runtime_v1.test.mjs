@@ -349,5 +349,5 @@ test('parallel opening-capital initialization for two foreign investors is isola
  ]);
  assert.deepEqual(results.map(row=>row.status),['INITIALIZED','INITIALIZED']);
  assert.deepEqual(calls.sort(),['DEU','USA']);
- assert.deepEqual(api.diagnostics().initializedCountries.sort(),['DEU','USA']);
+ assert.deepEqual(JSON.parse(JSON.stringify(api.diagnostics().initializedCountries)).sort(),['DEU','USA']);
 });
