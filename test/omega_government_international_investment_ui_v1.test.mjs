@@ -99,9 +99,10 @@ test('investment explorer requires the player to select destination and opportun
   const { ui } = harness();
   const html = ui.render('BGD', true, null);
   assert.match(html, /Select destination country/);
-  assert.match(html, /Select a destination first/);
+  assert.match(html, /Select destination first/);
+  assert.match(html, /Select a sector first/);
   assert.match(html, /data-gov-opportunity-summary/);
-  assert.match(html, /Choose a destination first/);
+  assert.match(html, /Select a destination country/);
   assert.doesNotMatch(html, /<option value="BGD" selected>/);
   assert.doesNotMatch(html, /<option value="FACTORY" selected>/);
 });
