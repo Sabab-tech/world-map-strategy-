@@ -123,6 +123,8 @@
         restrictedFundsUsd: 0,
         outboundEscrowUsd: 0,
         investedCapitalUsd: 0,
+        outboundInvestedCapitalUsd: 0,
+        capitalizedProjectCapitalUsd: 0,
         receivedCapitalUsd: 0,
         proposals: [],
         transfers: {},
@@ -412,6 +414,7 @@
     transfer.status = 'SETTLED'; transfer.settledTurn = turn();
     inv.outboundEscrowUsd = Math.max(0, round((num(inv.outboundEscrowUsd) || 0) - transfer.amountUsd, 2));
     inv.investedCapitalUsd = round((num(inv.investedCapitalUsd) || 0) + transfer.amountUsd, 2);
+    inv.outboundInvestedCapitalUsd = round((num(inv.outboundInvestedCapitalUsd) || 0) + transfer.amountUsd, 2);
     appendLedger(root, { transactionId: p.transferId + ':SETTLE', type: 'GOVERNMENT_INTERNATIONAL_INVESTMENT_SETTLEMENT',
       action: 'GOVERNMENT_INVESTMENT_SETTLEMENT', countryId: cid, countryCode: cid, amountUsd: transfer.amountUsd,
       direction: 'MEMO', debitAccount: 'GOVERNMENT:FOREIGN_EQUITY_INVESTMENT',
@@ -467,7 +470,10 @@
     var wasReserved = transfer.status === 'RESERVED';
     transfer.status = 'REFUNDED'; transfer.refundedTurn = turn();
     if (wasReserved) inv.outboundEscrowUsd = Math.max(0, round((num(inv.outboundEscrowUsd) || 0) - amount, 2));
-    else inv.investedCapitalUsd = Math.max(0, round((num(inv.investedCapitalUsd) || 0) - amount, 2));
+    else {
+      inv.investedCapitalUsd = Math.max(0, round((num(inv.investedCapitalUsd) || 0) - amount, 2));
+      inv.outboundInvestedCapitalUsd = Math.max(0, round((num(inv.outboundInvestedCapitalUsd) || 0) - amount, 2));
+    }
     var after = round(cash + amount, 2);
     appendLedger(root, { transactionId: p.transferId + ':INVESTOR-REFUND', type: 'GOVERNMENT_INVESTMENT_REFUND_IN',
       action: 'GOVERNMENT_INVESTMENT_REFUND', countryId: cid, countryCode: cid, amountUsd: amount,
@@ -525,6 +531,7 @@
     receipt.remainingUsd = round(receipt.remainingUsd - amount, 2);
     inv.restrictedFundsUsd = Math.max(0, round((num(inv.restrictedFundsUsd) || 0) - amount, 2));
     inv.investedCapitalUsd = round((num(inv.investedCapitalUsd) || 0) + amount, 2);
+    inv.capitalizedProjectCapitalUsd = round((num(inv.capitalizedProjectCapitalUsd) || 0) + amount, 2);
     appendLedger(root, { transactionId: capexId, type: 'GOVERNMENT_INVESTMENT_PROJECT_CAPEX',
       action: 'GOVERNMENT_INVESTMENT_CAPEX', countryId: cid, countryCode: cid, amountUsd: amount,
       direction: 'CAPITALIZATION', debitAccount: 'GOVERNMENT:PUBLIC_PROJECT_CAPITAL_ASSET',
@@ -584,6 +591,7 @@
     receipt.remainingUsd = round(receipt.remainingUsd - amount, 2);
     inv.restrictedFundsUsd = Math.max(0, round((num(inv.restrictedFundsUsd) || 0) - amount, 2));
     inv.investedCapitalUsd = round((num(inv.investedCapitalUsd) || 0) + amount, 2);
+    inv.capitalizedProjectCapitalUsd = round((num(inv.capitalizedProjectCapitalUsd) || 0) + amount, 2);
     inv.projectWorkingCapitalUsd = isObject(inv.projectWorkingCapitalUsd) ? inv.projectWorkingCapitalUsd : {};
     inv.projectWorkingCapitalUsd[p.projectId] = round((num(inv.projectWorkingCapitalUsd[p.projectId]) || 0) + amount, 2);
     appendLedger(root, { transactionId: txId, type: 'GOVERNMENT_PROJECT_RECAPITALIZATION',
@@ -1505,6 +1513,9 @@
       outboundProposals: outbound, investments: projectRows, loans: loans,
       restrictedFundsUsd: num(inv && inv.restrictedFundsUsd) || 0,
       investedCapitalUsd: num(inv && inv.investedCapitalUsd) || 0,
+      outboundInvestedCapitalUsd: num(inv && inv.outboundInvestedCapitalUsd) || 0,
+      capitalizedProjectCapitalUsd: num(inv && inv.capitalizedProjectCapitalUsd) || 0,
+      projectWorkingCapitalUsd: clone(inv && inv.projectWorkingCapitalUsd || {}),
       receivedCapitalUsd: num(inv && inv.receivedCapitalUsd) || 0,
       ledger: clone((root && root.ledger || []).filter(function (x) { return String(x && x.type || '').indexOf('GOVERNMENT_') === 0; }).slice(-100)) };
   }
