@@ -381,7 +381,10 @@
     ['overall', 'trust', 'trade', 'political'].forEach(function (key) {
       relation.rows.forEach(function (row) {
         var value = finite(row[key]);
-        if (value !== null && value >= 0 && value <= 100) relationshipValues.push(value);
+        if (value !== null && value >= 0 && value <= 100) {
+          // Other OMEGA diplomacy runtimes accept both 0..1 and 0..100 inputs.
+          relationshipValues.push(value <= 1 ? value * 100 : value);
+        }
       });
     });
     if (!relationshipValues.length) {
