@@ -50,7 +50,7 @@
     var data = g.OmegaResourceSiteCanonicalCatalogData || g.Omega && g.Omega.ResourceSiteCanonicalCatalogData;
     var rows = Array.isArray(data && data.sites) ? data.sites : [];
     return rows.filter(function (row) {
-      var country = String(row.countryId || row.countryCode || row.identity && row.identity.countryIso3 || '').toUpperCase();
+      var country = String(row.countryId || row.countryCode || row.identity && row.identity.countryIso3 || row.sourceSiteRecord && row.sourceSiteRecord.countryCode || '').toUpperCase();
       var siteId = String(row.siteId || row.id || '');
       var resource = row.resourceId || row.real && row.real.resourceId || row.identity && row.identity.resourceTypeId;
       return country === host && siteId && resource &&
