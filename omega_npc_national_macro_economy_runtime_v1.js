@@ -711,19 +711,25 @@
     const investmentIndexPrior = finite(priorProgression?.investmentActivityIndex);
     const projectIndexStep = finite(rules.investmentIndexPointsPerCompletedProject) ?? 0.8;
     const maxInvestmentIndex = finite(rules.maximumInvestmentActivityIndex) ?? 250;
+    const foreignInvestmentIndexStep = finite(rules.foreignInvestmentIndexPointsPerCommissionedFactory) ?? projectIndexStep;
     const allInvestmentSteps = projectDelta + foreignFactoryDelta;
+    const investmentIndexChange = projectDelta * projectIndexStep + foreignFactoryDelta * foreignInvestmentIndexStep;
     const investmentActivityIndex = grossCapitalFormationPctGdp !== null
-      ? Math.min(maxInvestmentIndex, (investmentIndexPrior ?? 100) + allInvestmentSteps * projectIndexStep)
-      : (projects || foreignInvestment ? Math.min(maxInvestmentIndex, (investmentIndexPrior ?? 100) + allInvestmentSteps * projectIndexStep) : null);
+      ? Math.min(maxInvestmentIndex, (investmentIndexPrior ?? 100) + investmentIndexChange)
+      : (projects || foreignInvestment ? Math.min(maxInvestmentIndex, (investmentIndexPrior ?? 100) + investmentIndexChange) : null);
     const investmentStatus = grossCapitalFormationPctGdp !== null
       ? (allInvestmentSteps ? 'SOURCE_BASELINE_PLUS_RECORDED_PROJECT_AND_FOREIGN_INVESTMENT_ACTIVITY' : 'SOURCE_BASELINE_ONLY')
       : (allInvestmentSteps ? 'PROJECT_AND_FDI_FACTORY_COUNT_PROXY_ONLY_NO_MONETARY_CAPEX' : 'UNOBSERVED');
     const domesticInvestmentContributionPp = grossCapitalFormationPctGdp !== null && projectDelta > 0 && years > 0
       ? Math.min(maxGrowthPp, projectDelta * (finite(rules.investmentGrowthPpPerCompletedProject) ?? 0.04) / years)
       : null;
-    const foreignInvestmentContributionPp = foreignFactoryDelta > 0 && years > 0
-      ? Math.min(maxGrowthPp, foreignFactoryDelta * (finite(rules.foreignInvestmentGrowthPpPerCommissionedFactory) ?? 0.04) / years)
-      : null;
+    const foreignInvestmentCapexUsd = finite(foreignInvestment?.newlyCommissionedForeignInvestmentCapexUsd);
+    const foreignInvestmentContributionPp = foreignInvestmentCapexUsd !== null && baseGdp !== null && baseGdp > 0
+      ? Math.min(maxGrowthPp, Math.max(0, foreignInvestmentCapexUsd / baseGdp *
+        (finite(rules.foreignInvestmentGrowthSensitivity) ?? 0.12)))
+      : (foreignFactoryDelta > 0 && years > 0
+        ? Math.min(maxGrowthPp, foreignFactoryDelta * (finite(rules.foreignInvestmentGrowthPpPerCommissionedFactory) ?? 0.04) / years)
+        : null);
     const investmentParts = [domesticInvestmentContributionPp, foreignInvestmentContributionPp].filter(value => value !== null);
     const investmentContributionPp = investmentParts.length
       ? Math.max(0, Math.min(maxGrowthPp, investmentParts.reduce((sum, value) => sum + value, 0))) : null;
