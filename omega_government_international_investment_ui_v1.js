@@ -10,6 +10,7 @@
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
   function number(value) {
+    if (value === null || value === undefined || value === '') return null;
     var n = Number(value);
     return Number.isFinite(n) ? n : null;
   }
@@ -119,6 +120,8 @@
       '<div class="ogiv-facts"><div><small>Total project investment cost</small><strong>' + money(projectCost === null ? investorContribution : projectCost, 'USD') +
       '</strong></div><div><small>Investor contribution</small><strong>' + money(investorContribution, 'USD') +
       '</strong></div><div><small>Host contribution</small><strong>' + money(hostContribution, 'USD') +
+      '</strong></div><div><small>Expected annual revenue</small><strong>' + (number(proposal.forecast && proposal.forecast.expectedAnnualRevenueUsd) === null ? 'Not yet evidenced' : money(proposal.forecast.expectedAnnualRevenueUsd, 'USD')) +
+      '</strong></div><div><small>Expected annual operating cost</small><strong>' + (number(proposal.forecast && proposal.forecast.expectedAnnualOperatingCostUsd) === null ? 'Not yet evidenced' : money(proposal.forecast.expectedAnnualOperatingCostUsd, 'USD')) +
       '</strong></div><div><small>Expected annual net profit</small><strong>' + (number(proposal.forecast && proposal.forecast.expectedAnnualReturnUsd) === null ? 'Not yet evidenced' : money(proposal.forecast.expectedAnnualReturnUsd, 'USD')) +
       '</strong></div><div><small>ROI / payback</small><strong>' + (number(proposal.forecast && proposal.forecast.expectedReturnPct) === null ? 'Unavailable' : number(proposal.forecast.expectedReturnPct).toFixed(2) + '%') +
       ' · ' + (number(proposal.forecast && proposal.forecast.paybackYears) === null ? 'N/A' : proposal.forecast.paybackYears + ' years') +
@@ -126,7 +129,7 @@
       (number(proposal.equityShareBps) ? esc((proposal.equityShareBps / 100).toFixed(2) + '%') : 'No equity') + ' · ' +
       (number(proposal.durationYears) === 0 ? 'No fixed term' : (number(proposal.durationYears) === null ? 'N/A' : esc(proposal.durationYears + ' years'))) +
       '</strong></div><div><small>Current bilateral relationship</small><strong>' +
-      (relation.score === null ? 'Unavailable' : relation.score + ' / 100') + '</strong></div><div><small>Relationship impact</small><strong>Awaiting diplomatic decision</strong></div></div>';
+      (relation.score === null ? 'Unavailable' : relation.score + ' / 100') + ' · ' + esc(statusLabel(relation.status)) + '</strong></div><div><small>Relationship impact</small><strong>Awaiting diplomatic decision</strong></div></div>';
     html += '<p class="ogiv-note">Profit status: ' + esc(statusLabel(profitStatus)) +
       '. Profit, ROI and payback are not fabricated; they require verified project sales revenue and operating-cost evidence.</p>';
     if (proposal.hostAmountLocal !== null && proposal.hostCurrencyCode)
