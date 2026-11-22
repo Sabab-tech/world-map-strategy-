@@ -1613,7 +1613,9 @@
         return p && p.hostCountryId === host && p.investorCountryId !== host &&
           ['PENDING_HOST_APPROVAL', 'PENDING_HOST_REVIEW'].includes(p.status);
       }).slice(0, 2) : [];
-      pending.forEach(function (p) { pendingDecisions.push({ hostCountryId: host, proposalId: p.proposalId, proposal: clone(p) }); });
+      if (host !== playerCountry()) {
+        pending.forEach(function (p) { pendingDecisions.push({ hostCountryId: host, proposalId: p.proposalId, proposal: clone(p) }); });
+      }
       var bucket = resources[host] || {}, projects = bucket.industrialNetwork && bucket.industrialNetwork.projects || [];
       var eligible = projects.filter(function (p) {
         return p && p.projectId && ['UNDER_CONSTRUCTION', 'COMPLETED'].includes(String(p.status || '').toUpperCase()) &&
