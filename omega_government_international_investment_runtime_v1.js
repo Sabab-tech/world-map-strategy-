@@ -1142,7 +1142,10 @@
       proposal.capitalAppliedUsd = contribution;
       proposal.status = 'PROJECT_STARTED';
       proposal.updatedTurn = turn();
+      var existingLoan = registerLoanPositions(proposal, existing.projectId, contribution);
+      if (!existingLoan.ok) return result('RECONCILIATION_REQUIRED', { reason: existingLoan.reason, stage: existingLoan.stage });
       return result('PROJECT_STARTED', { project: clone(existing), recapitalized: true,
+        loanId: existingLoan.loanId || null,
         projectEffect: 'PROJECT_LINKED_WORKING_CAPITAL_EARMARKED; EXISTING OUTPUT_NOT_ASSUMED_TO_INCREASE' });
     }
     if (proposal.projectType === 'MINE') {
