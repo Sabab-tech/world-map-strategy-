@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0.0",
+  "enabled": true,
+  "scheduler": {
+    "existingSchedulerOnly": true,
+    "tiers": [
+      "ACTIVE",
+      "MACRO"
+    ],
+    "priority": 76,
+    "playerCountryAutomation": false,
+    "perTurnNetworkIo": false
+  },
+  "limits": {
+    "maxHostCandidatesPerVisit": 12,
+    "maxHistory": 24,
+    "maxInboundInvestmentsPerHostWindow": 6
+  },
+  "policy": {
+    "scanIntervalTurns": 30,
+    "investmentCooldownTurns": 120,
+    "sameHostCompanyCooldownTurns": 360,
+    "inboundWindowTurns": 120,
+    "investmentPercentOfAvailableCapital": 3,
+    "minimumInvestmentLocal": 1,
+    "minimumInvestmentScore": 62,
+    "minimumRelationshipScore": 45,
+    "maximumInflationPct": 25,
+    "minimumGdpGrowthPct": -4,
+    "maximumDebtToGdpPct": 180,
+    "partialRiskEvidencePenalty": 8
+  },
+  "scoring": {
+    "relationshipWeight": 35,
+    "growthWeight": 25,
+    "inflationWeight": 20,
+    "debtWeight": 10,
+    "marketSizeWeight": 10
+  },
+  "notes": [
+    "The country and company wallet roster comes from the existing validated 197-country Private Enterprise registry.",
+    "A country is eligible only with recorded GDP, GDP growth, inflation and bilateral relationship evidence.",
+    "A known war, sanction, active conflict, active economic crisis, severe recession, high inflation or excessive debt blocks investment.",
+    "The score is a game decision heuristic, not a real-world country credit rating or forecast.",
+    "Debt-to-GDP and complete reciprocal risk flags are optional evidence; missing data reduces confidence and is never filled with a guessed value.",
+    "Each transfer deploys at most 3 percent of one company's currently available cash and uses the existing cent-exact, currency-aware FDI settlement.",
+    "Capital is transferred only into the host company's wallet. It does not authorize permits, factories, CAPEX, production or sovereign spending."
+  ]
+}
