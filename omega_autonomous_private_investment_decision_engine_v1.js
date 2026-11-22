@@ -144,7 +144,6 @@
         g.Omega && g.Omega.PrivateCompanyCapitalRuntimeV1,
       registry: g.OmegaPrivateEnterpriseRegistryV1 ||
         g.Omega && g.Omega.PrivateEnterpriseRegistryV1,
-      finance: g.OmegaFinanceMinistry || g.Omega && g.Omega.FinanceMinistry,
       interop: g.OmegaMinistryInteroperability || g.Omega && g.Omega.MinistryInteroperability,
       scheduler: g.OmegaWorldSimulationScheduler || g.Omega && g.Omega.WorldSimulationScheduler
     };
@@ -337,7 +336,6 @@
     if (hostEconomy.activeCrisis === true || investorEconomy.activeCrisis === true) {
       return { eligible: false, reason: 'ACTIVE_ECONOMIC_CRISIS' };
     }
-    var military = root && root.military;
     var hostMilitary = bucket(root, 'military', hostId);
     var investorMilitary = bucket(root, 'military', investorId);
     if (hostMilitary && hostMilitary.activeConflict === true ||
@@ -609,8 +607,7 @@
           typeof deps.investment.getCompanyCapital !== 'function' ||
           !deps.capital || typeof deps.capital.ensureCountryInitializedForInvestment !== 'function' ||
           !deps.registry || typeof deps.registry.getCountryBaseline !== 'function' ||
-          typeof deps.registry.listCountryIds !== 'function' ||
-          !deps.finance || typeof deps.finance.getProfiles !== 'function') {
+          typeof deps.registry.listCountryIds !== 'function') {
         stats.deferred++;
         return { status: 'DEFERRED', reason: 'PRIVATE_INVESTMENT_DEPENDENCIES_NOT_READY' };
       }
