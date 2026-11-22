@@ -757,6 +757,9 @@
       registerHandlers(d);
       ready = true;
       lastError = null;
+      if (typeof g.dispatchEvent === 'function' && typeof g.Event === 'function') {
+        try { g.dispatchEvent(new g.Event('OMEGA_GOVERNMENT_INVESTMENT_RUNTIME_READY')); } catch (_) {}
+      }
       return diagnostics();
     })();
     try { return await initPromise; }
