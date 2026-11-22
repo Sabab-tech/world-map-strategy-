@@ -444,3 +444,43 @@ test('NPC macro trade planning has a read-only per-country resource-demand sourc
   assert.match(readOnly, /mode:\s*'READ_ONLY'/);
   assert.match(readOnly, /stateMutation:\s*false/);
 });
+
+test('settled foreign investment contributes host-country investment, GDP progression and real shared-pool employment evidence',async()=>{
+  const h=createHarness();
+  await h.context.Omega.NpcNationalMacroEconomy.init();
+  const firstResult=await h.context.Omega.NpcNationalMacroEconomy.processCountry('BBB',{turn:3,state:h.state,stepDurationMs:86400000});
+  assert.equal(firstResult.status,'CHECKPOINTED',JSON.stringify(firstResult));
+  h.state.simulation.turn=4;
+  h.state.finance.BBB.omegaFinance.foreignInvestmentLedger=[{
+    transferId:'FDI:AAA:BBB:AURORA_INDUSTRIAL_GROUP:MACRO-001',
+    investorCountryId:'AAA',hostCountryId:'BBB',companyId:'AURORA_INDUSTRIAL_GROUP',
+    amountUsd:250000,status:'SETTLED',turn:4,authority:'OMEGA_PRIVATE_CROSS_BORDER_INVESTMENT_RUNTIME_V1'
+  }];
+  h.state.economy.BBB.productionAssets.push({
+    id:'FDI-FACTORY-BBB-001',factoryType:'STEEL_WORKS',status:'OPERATIONAL',productionEnabled:true,
+    foreignInvestmentSources:[{transferId:'FDI:AAA:BBB:AURORA_INDUSTRIAL_GROUP:MACRO-001',
+      investorCountryId:'AAA',investorCompanyId:'AURORA_INDUSTRIAL_GROUP',amount:50000}],
+    foreignInvestmentCapexAmount:50000,foreignInvestmentCommissionedTurn:4,
+    employment:{jobsSupported:120,jobsFilled:105}
+  });
+  const nextResult=await h.context.Omega.NpcNationalMacroEconomy.processCountry('BBB',{
+    turn:4,state:h.state,stepDurationMs:86400000
+  });
+  assert.equal(nextResult.status,'CHECKPOINTED',JSON.stringify(nextResult));
+  const checkpoint=h.state.economy.BBB.npcMacroEconomy;
+  const evidence=checkpoint.liveActivity.foreignInvestmentEvidence;
+  assert.equal(evidence.availability,'AVAILABLE');
+  assert.equal(evidence.value.settledForeignInvestmentReceiptUsd,250000);
+  assert.equal(evidence.value.settledForeignInvestmentCount,1);
+  assert.equal(evidence.value.foreignFundedFactoryCount,1);
+  assert.equal(evidence.value.activeForeignFundedFactoryCount,1);
+  assert.equal(evidence.value.newlyCommissionedForeignFundedFactoryCount,1);
+  assert.equal(evidence.value.foreignFundedJobsSupported,120);
+  assert.equal(evidence.value.foreignFundedJobsFilled,105);
+  assert.equal(evidence.value.newlyCommissionedForeignInvestmentCapexUsd,500);
+  assert.equal(checkpoint.progression.evidenceAvailability.foreignInvestment,'AVAILABLE');
+  assert.ok(checkpoint.progression.foreignInvestmentGrowthContributionPp>0);
+  assert.ok(checkpoint.progression.investmentActivityIndex>100);
+  assert.equal(h.state.economy.BBB.productionAssets.length,3,
+    'FDI evidence reads the same country productionAssets pool used by government and domestic private factories');
+});
