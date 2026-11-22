@@ -94,7 +94,9 @@ function readyDependencies(){
 function financeRoot(country,create){
  var bucket=countryBucket('finance',country,create);if(!bucket)return null;
  if(!obj(bucket.omegaFinance)&&create)bucket.omegaFinance={};
- return obj(bucket.omegaFinance)?bucket.omegaFinance:null;
+ var root=obj(bucket.omegaFinance)?bucket.omegaFinance:null;
+ if(root&&create&&!Array.isArray(root.ledger))root.ledger=[];
+ return root;
 }
 function capitalAccounts(country,create){
  var root=financeRoot(country,create);if(!root)return null;
@@ -367,6 +369,9 @@ function settleApprovedProposal(host,proposal){
  if(already+proposal.equityBps>10000)
   return{status:'BLOCKED',reason:'HOST_COMPANY_FOREIGN_EQUITY_LIMIT_EXCEEDED',
    existingForeignShareBps:already,requestedEquityBps:proposal.equityBps};
+ if(!Array.isArray(target.foreignCapitalLots))target.foreignCapitalLots=[];
+ if(target.foreignCapitalLots.some(function(row){return row&&String(row.transferId||'')==='PE-FDI-SETTLEMENT:'+proposal.proposalId;}))
+  return{status:'BLOCKED',reason:'FOREIGN_CAPITAL_LOT_IDEMPOTENCY_COLLISION'};
  var sourceBalance=roundMoney((num(source.availableBalance)||0)-amount),
   targetBalance=roundMoney((num(target.availableBalance)||0)+hostAmount);
  // Both countries' account balances and paired finance ledger entries are committed synchronously
@@ -377,7 +382,14 @@ function settleApprovedProposal(host,proposal){
  target.currency=id(fxHost.currencyCode);target.availableBalance=targetBalance;
  target.capitalRaised=roundMoney((num(target.capitalRaised)||0)+hostAmount);
  target.foreignEquityReceived=roundMoney((num(target.foreignEquityReceived)||0)+hostAmount);
+ target.foreignInvestmentReceivedLocal=roundMoney((num(target.foreignInvestmentReceivedLocal)||0)+hostAmount);
  target.revision=(num(target.revision)||0)+1;
+ // The established Private Enterprise funding lifecycle consumes this canonical lot:
+ // fundProposal -> investmentSources -> construction CAPEX -> commissioned productionAssets.
+ target.foreignCapitalLots.push({transferId:transactionId,investorCountryId:investor,
+  investorCompanyId:investorCompany,hostCountryId:host,currencyCode:fxHost.currencyCode,
+  amount:hostAmount,availableBalance:hostAmount,reservedBalance:0,spentBalance:0,
+  createdTurn:currentTurn(),investmentId:'PE-FDI-PROJECT:'+proposal.proposalId});
  if(!Array.isArray(target.foreignShareholders))target.foreignShareholders=[];
  var shareRow=target.foreignShareholders.find(function(row){
   return row&&row.investorCountryId===investor&&row.investorCompanyId===investorCompany;
@@ -463,13 +475,23 @@ function reconcileCountry(country){
   linked=0,rows=[];
  bucket.inboundInvestments.forEach(function(investment){
   if(!investment||!investment.factoryProposalId)return;
-  var asset=assets.find(function(row){return row&&row.sourcePrivateProposalId===investment.factoryProposalId&&
-    id(row.ownerCompanyId||row.ownerId)===investment.hostCompanyId&&
-    id(row.factoryType||row.type)===investment.factoryType;});
+  var asset=assets.find(function(row){
+   if(!row||id(row.ownerCompanyId||row.ownerId)!==investment.hostCompanyId||
+      id(row.factoryType||row.type)!==investment.factoryType)return false;
+   var sources=Array.isArray(row.foreignInvestmentSources)?row.foreignInvestmentSources:[];
+   return sources.some(function(source){return source&&String(source.transferId||'')===String(investment.transactionId)&&
+    canonicalCountry(source.investorCountryId)===investment.investorCountryId&&
+    id(source.investorCompanyId)===investment.investorCompanyId;});
+  });
   if(!asset)return;
+  investment.factoryProposalId=investment.factoryProposalId||asset.sourcePrivateProposalId||null;
   investment.factoryIds=Array.isArray(investment.factoryIds)?investment.factoryIds:[];
   var factoryId=String(asset.id||asset.factoryId||'');
   if(factoryId&&investment.factoryIds.indexOf(factoryId)<0)investment.factoryIds.push(factoryId);
+  investment.foreignCapitalUsedLocal=roundMoney((Array.isArray(asset.foreignInvestmentSources)?asset.foreignInvestmentSources:[])
+   .filter(function(source){return source&&String(source.transferId||'')===String(investment.transactionId);})
+   .reduce(function(total,source){return total+(num(source.amount)||0);},0));
+  investment.foreignCapitalParticipationPct=num(asset.foreignCapitalParticipationPct);
   investment.productionStatus=asset.productionEnabled===true?'OPERATIONAL':
    String(asset.status||'').toUpperCase()==='BLOCKED'?'BLOCKED':'COMMISSIONED_PRODUCTION_GATED';
   investment.employmentStatus=obj(asset.employment)?'RECORDED_IN_EXISTING_FACTORY_RUNTIME':
