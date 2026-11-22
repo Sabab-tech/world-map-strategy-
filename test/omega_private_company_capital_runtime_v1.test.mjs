@@ -287,3 +287,63 @@ test('opening capital runtime refuses a non-player country without loading any c
  assert.equal(result.reason,'PLAYER_COUNTRY_SCOPE_ONLY');
  assert.equal(fetchCount,0,'a non-player country request must not fetch or initialize another country');
 });
+
+test('foreign investment may lazily initialize a non-player investor wallet without switching the player country',async()=>{
+ const rows=baselineFixtures(),calls=[];
+ const sandbox={
+  Game:{state:{simulation:{session:{playerCountryId:'BGD'}}}},
+  Omega:{Simulation:{world:{state:{simulation:{session:{playerCountryId:'BGD'}}}},getPlayerCountryId:()=> 'BGD'}},
+  OmegaPrivateEnterpriseLifecycleV1:{initializeOpeningCompanyCapital(input){
+   calls.push(input);return{status:'INITIALIZED',countryId:input.countryId,currency:input.currencyCode,totalCapital:input.totalCapital};
+  }},
+  OmegaPrivateEnterpriseRegistryV1:{ready:Promise.resolve({status:'READY'}),
+   getCountryBaseline:country=>Object.assign({},rows.private,{countryId:country})},
+  OmegaCountryFactoryStartingBaselineV1:{ready:Promise.resolve({status:'READY'}),
+   getCountryBaseline:country=>Object.assign({},rows.government,{countryId:country})},
+  OmegaCountryRuntimeData:{ready:Promise.resolve(true),getProfile:country=>Object.assign({},profile,{iso3:country,
+   countryCode:country==='USA'?'US':'DE',currencyCode:country==='USA'?'USD':'EUR'})},
+  OmegaCountryGeneralDataRuntime:{getCountryRecord:()=>general},
+  OmegaFinanceMinistry:{init:async()=>({ok:true}),getIndicators:()=>({gdpCurrentUsd:450000000000})},
+  OmegaForexMonetaryEngine:{getCurrencyCode:p=>p.currencyCode,getRate:currency=>currency==='EUR'?.9:1},
+  addEventListener(){},dispatchEvent(){},CustomEvent:function(){}
+ };
+ const api=runtimeApi(sandbox);
+ const result=await api.ensureCountryInitializedForInvestment('USA');
+ assert.equal(result.status,'INITIALIZED',JSON.stringify(result));
+ assert.equal(calls.length,1);
+ assert.equal(calls[0].countryId,'USA');
+ assert.equal(calls[0].currencyCode,'USD');
+ assert.equal(calls[0].authority,'OMEGA_PRIVATE_CROSS_BORDER_INVESTMENT_RUNTIME_V1');
+ assert.equal(calls[0].model.countryId,'USA');
+ assert.equal((await api.ensureCountryInitialized('USA')).reason,'PLAYER_COUNTRY_SCOPE_ONLY',
+  'ordinary company panel operations remain limited to the selected player country');
+});
+
+test('parallel opening-capital initialization for two foreign investors is isolated by country',async()=>{
+ const rows=baselineFixtures(),calls=[];
+ const sandbox={
+  Game:{state:{simulation:{session:{playerCountryId:'BGD'}}}},
+  Omega:{Simulation:{world:{state:{simulation:{session:{playerCountryId:'BGD'}}}},getPlayerCountryId:()=> 'BGD'}},
+  OmegaPrivateEnterpriseLifecycleV1:{initializeOpeningCompanyCapital(input){
+   calls.push(input.countryId);return{status:'INITIALIZED',countryId:input.countryId,currency:input.currencyCode,totalCapital:input.totalCapital};
+  }},
+  OmegaPrivateEnterpriseRegistryV1:{ready:Promise.resolve({status:'READY'}),
+   getCountryBaseline:country=>Object.assign({},rows.private,{countryId:country})},
+  OmegaCountryFactoryStartingBaselineV1:{ready:Promise.resolve({status:'READY'}),
+   getCountryBaseline:country=>Object.assign({},rows.government,{countryId:country})},
+  OmegaCountryRuntimeData:{ready:Promise.resolve(true),getProfile:country=>Object.assign({},profile,{iso3:country,
+   countryCode:country==='USA'?'US':'DE',currencyCode:country==='USA'?'USD':'EUR'})},
+  OmegaCountryGeneralDataRuntime:{getCountryRecord:()=>general},
+  OmegaFinanceMinistry:{init:async()=>({ok:true}),getIndicators:()=>({gdpCurrentUsd:450000000000})},
+  OmegaForexMonetaryEngine:{getCurrencyCode:p=>p.currencyCode,getRate:currency=>currency==='EUR'?.9:1},
+  addEventListener(){},dispatchEvent(){},CustomEvent:function(){}
+ };
+ const api=runtimeApi(sandbox);
+ const results=await Promise.all([
+  api.ensureCountryInitializedForInvestment('USA'),
+  api.ensureCountryInitializedForInvestment('DEU')
+ ]);
+ assert.deepEqual(results.map(row=>row.status),['INITIALIZED','INITIALIZED']);
+ assert.deepEqual(calls.sort(),['DEU','USA']);
+ assert.deepEqual(api.diagnostics().initializedCountries.sort(),['DEU','USA']);
+});
