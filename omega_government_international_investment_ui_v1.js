@@ -254,7 +254,7 @@
     return ({ FACTORY: 'Factory construction', MINE: 'Mine construction', INFRASTRUCTURE: 'Infrastructure', EXISTING_PROJECT: 'Existing project capital' })[value] || value;
   }
   function instrumentLabel(value) {
-    return ({ EQUITY: 'Equity investment', JOINT_VENTURE: 'Government joint venture', LOAN: 'Sovereign project loan', GRANT: 'Development grant', DOMESTIC_PUBLIC_CAPEX: 'Domestic public capital expenditure' })[value] || value;
+    return ({ EQUITY: 'Equity investment', JOINT_VENTURE: 'Joint venture / profit-sharing', LOAN: 'Sovereign project loan', GRANT: 'Development grant', DOMESTIC_PUBLIC_CAPEX: 'Domestic public capital expenditure' })[value] || value;
   }
   function statusLabel(value) { return String(value || 'UNKNOWN').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, function (x) { return x.toUpperCase(); }); }
   function sectorLabel(proposal) {
@@ -398,10 +398,10 @@
         '<select name="projectType" data-gov-project-type hidden><option value="">Select a sector first</option></select>' +
         '<div class="ogiv-opportunity-summary" data-gov-opportunity-summary aria-live="polite">Select a destination country to browse available investment sectors.</div>' +
         '<div class="ogiv-grid-2"><label>Investment amount (' + esc(fx.currency) + ')<div class="ogiv-range-pair"><input type="range" data-gov-amount-slider min="0" max="1000" step="1" value="' + amountSliderDefault + '"' + (budget && budget.status === 'READY' && fx.rate !== null ? '' : ' disabled') + '><input type="number" name="amount" min="1" max="' + amountSliderMax + '" step="0.01" value="' + amountDefault + '" required placeholder="Amount"></div></label>' +
-        '<label>Deal structure<select name="instrument" data-gov-instrument><option value="LOAN" selected>Sovereign project loan</option><option value="EQUITY">Equity investment</option><option value="JOINT_VENTURE">Government joint venture</option><option value="GRANT">Development grant</option></select></label></div>' +
+        '<label>Deal structure<select name="instrument" data-gov-instrument><option value="LOAN" selected>Sovereign project loan</option><option value="EQUITY">Equity investment</option><option value="JOINT_VENTURE">Joint venture / profit-sharing</option><option value="GRANT">Development grant</option></select></label></div>' +
         '<div class="ogiv-grid-2" data-gov-field="equity"><label>Ownership share (%)<div class="ogiv-range-pair"><input type="range" data-gov-share-slider min="1" max="75" step="1" value="20"><input name="equitySharePct" type="number" min="1" max="75" step="1" value="20"></div></label></div>' +
         '<div data-gov-field="loan"><div class="ogiv-grid-2"><label>Annual loan interest (%)<div class="ogiv-range-pair"><input type="range" data-gov-interest-slider min="0" max="20" step="0.1" value="10"><input name="interestPct" type="number" min="0" max="20" step="0.1" value="10"></div></label>' +
-        '<label>Grace period (years)<input name="gracePeriodYears" type="number" min="0" max="5" step="1" value="1"></label></div></div>' +
+        '<label>Grace period (years)<input name="gracePeriodYears" type="number" min="0" max="0" step="1" value="0"></label></div></div>' +
         '<div class="ogiv-grid-2" data-gov-field="duration"><label>Investment duration<select name="durationYears"><option value="1" selected>1 year</option><option value="2">2 years</option><option value="3">3 years</option><option value="5">5 years</option><option value="10">10 years</option><option value="15">15 years</option><option value="20">20 years</option><option value="30">30 years</option></select></label></div>' +
         '<div data-gov-field="factory"><label>Factory category<select name="factoryType" data-gov-factory-type>' + factoryOptions + '</select></label><p class="ogiv-note">Factory construction remains country-level because the current Factory runtime does not accept a district, region or coordinate. Catalog construction cost keeps its declared unit; it is not converted to USD.</p></div>' +
         '<div data-gov-field="mine"><div class="ogiv-grid-2"><label>Canonical mine site<select name="siteId" data-gov-site><option value="">Select a mine site in the host country</option></select></label>' +
@@ -437,7 +437,7 @@
         '<label>Target government<select name="targetInvestorCountryId" required>' + foreignInvestorOptions + '</select></label>' +
         '<label>Project type<select name="projectType" data-gov-request-project-type required><option value="FACTORY">Factory</option><option value="MINE">Mine</option><option value="INFRASTRUCTURE">Infrastructure</option></select></label></div>' +
         '<div class="ogiv-grid-2"><label>Funding requested (USD)<input name="amountUsd" type="number" min="0.01" step="0.01" required></label>' +
-        '<label>Proposed instrument<select name="instrument"><option value="JOINT_VENTURE">Government joint venture</option><option value="EQUITY">Equity investment</option><option value="LOAN">Sovereign project loan</option><option value="GRANT">Development grant</option></select></label></div>' +
+        '<label>Proposed instrument<select name="instrument"><option value="JOINT_VENTURE">Joint venture / profit-sharing</option><option value="EQUITY">Equity investment</option><option value="LOAN">Sovereign project loan</option><option value="GRANT">Development grant</option></select></label></div>' +
         '<div class="ogiv-grid-2" data-gov-request-field="equity"><label>Proposed equity share (%)<input name="equitySharePct" type="number" min="1" max="75" step="0.1" value="25"></label>' +
         '<label>Duration (years)<input name="durationYears" type="number" min="1" max="30" value="5"></label></div>' +
         '<div class="ogiv-grid-2" data-gov-request-field="loan"><label>Annual interest (%)<input name="interestPct" type="number" min="0" max="20" step="0.1" value="5"></label>' +
@@ -615,6 +615,16 @@
     }
     syncRange('[data-gov-share-slider]', '[name="equitySharePct"]');
     syncRange('[data-gov-interest-slider]', '[name="interestPct"]');
+    var durationNode = form.querySelector('[name="durationYears"]');
+    var graceNode = form.querySelector('[name="gracePeriodYears"]');
+    if (durationNode && graceNode) {
+      var selectedDuration = number(durationNode.value);
+      if (selectedDuration !== null && selectedDuration > 0) {
+        var graceMax = Math.max(0, Math.min(5, selectedDuration - 1));
+        graceNode.max = String(graceMax);
+        if ((number(graceNode.value) || 0) > graceMax) graceNode.value = String(graceMax);
+      }
+    }
     Array.prototype.forEach.call(form.querySelectorAll('[data-gov-field]'), function (node) {
       var field = node.getAttribute('data-gov-field');
       var visible = !!host && !!type && (field === 'equity' ? ['EQUITY','JOINT_VENTURE'].includes(instrument && instrument.value) :
