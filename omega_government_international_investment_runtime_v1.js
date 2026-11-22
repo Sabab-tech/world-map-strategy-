@@ -1701,7 +1701,7 @@
     var loans = inv && Array.isArray(inv.loans) ? clone(inv.loans) : [];
     return {
       countryId: country,
-      inboundProposals: inbound.filter(function (p) { return ['PENDING_HOST_APPROVAL', 'PENDING_HOST_REVIEW'].includes(p.status); }),
+      inboundProposals: inbound,
       outboundProposals: outbound,
       investments: projectRows,
       loans: loans,
