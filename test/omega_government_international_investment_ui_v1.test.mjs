@@ -83,7 +83,7 @@ test('investment destinations and target opportunities are sourced from current 
   const bangladesh = ui.listOpportunities('BGD');
   assert.deepEqual(plain(bangladesh.projectTypes.map(row => row.value)), ['FACTORY', 'MINE', 'INFRASTRUCTURE', 'EXISTING_PROJECT']);
   assert.deepEqual(plain(bangladesh.factories.map(row => row.value)), ['STEEL', 'TEXTILE']);
-  assert.deepEqual(plain(bangladesh.mines.map(row => row.value)), ['BGD-IRON-01', 'BGD-GAS-01']);
+  assert.deepEqual(plain(bangladesh.mines.map(row => row.value)), ['BGD-IRON-01', 'BGD-GAS-01', 'BGD-NOMAP-01']);
   assert.deepEqual(plain(bangladesh.projects.map(row => row.value)), ['BGD-FACTORY-01']);
   const unitedStates = ui.listOpportunities('USA');
   assert.deepEqual(plain(unitedStates.mines.map(row => row.value)), ['USA-IRON-01']);
