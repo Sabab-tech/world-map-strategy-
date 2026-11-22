@@ -82,6 +82,43 @@ function createHarness(options = {}) {
   const manifest = { schemaVersion: '1.0.0', scope: 'fixture roster resolved through canonical country identities',
     counts: { countryEntities: profiles.length }, countries: { AAA: {}, BBB: {}, CCC: {} } };
   const fixtureRules = structuredClone(rules);
+  const fixtureInputs = {
+    metadata: {
+      datasetId: 'OMEGA_NPC_NATIONAL_MACRO_ECONOMY_INPUTS_V1',
+      schemaVersion: '1.0.0',
+      sourceMode: 'TEST_FIXTURE',
+      sourceRegistry: 'country_general_data_registry_v1.json',
+      countryCount: profiles.length,
+      metricIds: fixtureRules.baseline.metrics.map(rule => rule.id)
+    },
+    countries: Object.fromEntries(profiles.map(profile => [profile.iso3, {
+      metrics: Object.fromEntries(fixtureRules.baseline.metrics.map(rule => {
+        const raw = profile.indicators?.[rule.profileMetric];
+        const value = typeof raw === 'number' && Number.isFinite(raw) &&
+          profile.metricAvailability?.[rule.profileMetric] !== false ? raw : null;
+        const isCurrentGdp = profile.iso3 === 'BBB' && rule.id === 'gdpCurrentUsd' && value !== null;
+        const available = value !== null;
+        return [rule.id, {
+          value,
+          year: available ? (isCurrentGdp ? 2024 : 2015) : null,
+          sourceStatus: isCurrentGdp ? 'WORLD_BANK_API_OBSERVATION' :
+            (available ? 'LEGACY_2015_BASELINE_NOT_EXTERNALLY_REVALIDATED' : 'NO_SOURCE_OBSERVATION'),
+          sourceId: available ? (isCurrentGdp ? 'WORLD_BANK_WDI' : 'economy.json') : null,
+          sourceName: available ? (isCurrentGdp ? 'World Bank Indicators API v2' : 'Legacy country economy profile') : null,
+          method: available ? (isCurrentGdp ? 'SOURCE_OBSERVATION' : 'LEGACY_PROFILE_VALUE') : null,
+          indicatorCode: null,
+          sourceUrl: null,
+          confidence: available ? (isCurrentGdp ? 0.92 : 0.46) : null,
+          dataGap: available ? (isCurrentGdp ? null : 'LEGACY_SOURCE_NOT_REVALIDATED') : 'MISSING_OBSERVATION',
+          note: available ? null : 'No source observation in the fixture.'
+        }];
+      }))
+    }]))
+  };
+  let generalDataCalls = 0;
+  const countryGeneralDataApi = {
+    getCountryRecord() { generalDataCalls += 1; return null; }
+  };
   const countryHandlers = new Map();
   const commandHandlers = new Map();
   const commands = new Map();
@@ -129,7 +166,7 @@ function createHarness(options = {}) {
           }
         }
       },
-      CountryGeneralData: options.generalDataApi || { getCountryRecord: () => null }
+      CountryGeneralData: countryGeneralDataApi
     },
     OmegaFinanceMinistry: {
       init: async () => ({ initialized: true }),
@@ -145,14 +182,15 @@ function createHarness(options = {}) {
         return profile ? { id: profile.iso3, raw: { raw: profile } } : null;
       }
     },
-    __OMEGA_NPC_MACRO_FIXTURES__: { manifest, rules: fixtureRules },
+    __OMEGA_NPC_MACRO_FIXTURES__: { manifest, rules: fixtureRules, inputs: fixtureInputs },
     addEventListener() {}
   };
   context.window = context;
   context.globalThis = context;
   vm.runInNewContext(transactionSource, context, { filename: 'omega_ministry_state_transaction.js' });
   vm.runInNewContext(runtimeSource, context, { filename: 'omega_npc_national_macro_economy_runtime_v1.js' });
-  return { context, state, profiles, countryHandlers, commandHandlers, commands, events };
+  return { context, state, profiles, countryHandlers, commandHandlers, commands, events,
+    get generalDataCalls() { return generalDataCalls; } };
 }
 
 test('NPC macro runtime resolves the manifest dynamically and registers only ACTIVE/MACRO tiers', async () => {
@@ -160,11 +198,24 @@ test('NPC macro runtime resolves the manifest dynamically and registers only ACT
   const result = await h.context.Omega.NpcNationalMacroEconomy.init();
   assert.equal(result.ready, true);
   assert.equal(result.coreCountryCount, 3);
+  assert.equal(result.baselineInputCountryCount, 3);
+  assert.equal(result.baselineInputMetricIds.length, 10);
+  assert.equal(result.baselineInputSourceRegistry, 'country_general_data_registry_v1.json');
   assert.equal(h.countryHandlers.size, 1);
   const registration = [...h.countryHandlers.values()][0];
   assert.deepEqual(Array.from(registration.opts.tiers), ['ACTIVE', 'MACRO']);
   assert.equal(h.commandHandlers.size, 1);
   assert.equal([...h.commandHandlers.values()][0].owner, 'economy');
+});
+
+test('197-country input bundle replaces the bounded lazy cache for all macro baseline metrics', async () => {
+  const h = createHarness();
+  const diagnostics = await h.context.Omega.NpcNationalMacroEconomy.init();
+  assert.equal(diagnostics.baselineInputCountryCount, 3);
+  assert.equal(diagnostics.baselineInputMetricIds.length, 10);
+  await h.context.Omega.NpcNationalMacroEconomy.processCountry('BBB', { turn: 3, state: h.state });
+  assert.equal(h.state.economy.BBB.npcMacroEconomy.baseline.metrics.gdpCurrentUsd.year, 2024);
+  assert.equal(h.generalDataCalls, 0, 'the six-entry general-data cache must not be consulted for NPC macro baselines');
 });
 
 test('NPC macro checkpoint uses live country state and records only SETTLED trade ledger rows', async () => {
@@ -175,8 +226,8 @@ test('NPC macro checkpoint uses live country state and records only SETTLED trad
   const checkpoint = h.state.economy.BBB.npcMacroEconomy;
   assert.equal(checkpoint.countryId, 'BBB');
   assert.equal(checkpoint.baseline.metrics.gdpCurrentUsd.value, 2500000);
-  assert.equal(checkpoint.baseline.metrics.gdpCurrentUsd.year, 2015);
-  assert.equal(checkpoint.baseline.metrics.gdpCurrentUsd.authority, 'LOCAL_BASELINE_NOT_EXTERNALLY_REVALIDATED');
+  assert.equal(checkpoint.baseline.metrics.gdpCurrentUsd.year, 2024);
+  assert.equal(checkpoint.baseline.metrics.gdpCurrentUsd.authority, 'COUNTRY_GENERAL_DATA_WORLD_BANK_API_OBSERVATION');
   assert.equal(checkpoint.baseline.metrics.gdpGrowthPct.value, null);
   assert.equal(checkpoint.baseline.metrics.gdpGrowthPct.availability, 'UNAVAILABLE');
   assert.equal(checkpoint.liveActivity.recordedProductionCapacity.value, 275);
