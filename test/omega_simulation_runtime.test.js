@@ -538,7 +538,7 @@ test('turn autosave uses the canonical IndexedDB slot and retains legacy recover
     'the streaming serializer must emit canonical JSON in bounded chunks');
   assert.match(runtime,/hash=updateChecksumHash\(hash,chunk\)/,
     'the persisted checksum must be calculated from the exact chunks written');
-  assert.match(runtime,/if\(this\.saveBarrier\)await this\.saveBarrier/,
+  assert.match(runtime,/if\(this\.saveBarrier\)\{\s*await this\.saveBarrier;/,
     'the next game turn must wait while the authoritative save stream is being written');
   assert.match(runtime,/indexedDbSaveRequest\(global\.indexedDB,'put',key,stored\.value\)/,
     'the canonical save API must write its storage envelope to IndexedDB first');
