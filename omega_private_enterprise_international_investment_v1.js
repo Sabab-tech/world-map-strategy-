@@ -13,7 +13,7 @@ var COMPANY_IDS=[
  'AURORA_INDUSTRIAL_GROUP','MERIDIAN_ENGINEERING_GROUP','NOVA_CONSUMER_INDUSTRIES',
  'ATLAS_TECHNOLOGY_CORPORATION','TERRA_INFRASTRUCTURE_GROUP'
 ];
-var inflight=new Map(),initialized=new Map(),lastError=null,unregister=null,registered=false;
+var inflight=new Map(),initialized=new Map(),lastError=null,unregister=null,registered=false,initScheduled=false,listenersBound=false;
 var MAX_INVESTMENT_PROPOSALS=500,MAX_INVESTMENT_HISTORY=1000;
 function obj(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
 function num(v){if(v===null||v===undefined||v==='')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
@@ -524,17 +524,29 @@ function registerScheduler(){
  unregister=scheduler.registerCountryHandler(HANDLER_ID,processCountry,{tiers:['MACRO'],priority:42});
  registered=true;return true;
 }
+function bindRuntimeEvents(){
+ if(listenersBound||typeof g.addEventListener!=='function')return;
+ listenersBound=true;
+ ['OMEGA_PRIVATE_FACTORY_COMMISSIONED','OMEGA_FACTORY_CAPACITY_CHANGED','OMEGA_PRIVATE_ENTERPRISE_FOREIGN_INVESTMENT_SETTLED']
+  .forEach(function(type){g.addEventListener(type,function(event){
+   var cid=canonicalCountry(event&&event.detail&&(event.detail.countryId||event.detail.hostCountryId||event.detail.country));
+   if(cid)reconcileCountry(cid);
+  });});
+}
 async function init(){
  var ready=await readyDependencies();if(ready.status!=='READY')return ready;
- registerScheduler();
- if(typeof g.addEventListener==='function'){
-  ['OMEGA_PRIVATE_FACTORY_COMMISSIONED','OMEGA_FACTORY_CAPACITY_CHANGED','OMEGA_PRIVATE_ENTERPRISE_FOREIGN_INVESTMENT_SETTLED']
-   .forEach(function(type){g.addEventListener(type,function(event){
-    var cid=canonicalCountry(event&&event.detail&&(event.detail.countryId||event.detail.hostCountryId||event.detail.country));
-    if(cid)reconcileCountry(cid);
-   });});
- }
+ registerScheduler();bindRuntimeEvents();
  return diagnostics();
+}
+function scheduleInit(){
+ if(initScheduled)return;
+ initScheduled=true;
+ var run=function(){initScheduled=false;init().catch(function(error){lastError=String(error&&error.message||error);});};
+ if(typeof g.requestIdleCallback==='function'){
+  try{g.requestIdleCallback(run,{timeout:1800});return;}catch(_){}
+ }
+ if(typeof g.setTimeout==='function'){g.setTimeout(run,900);return;}
+ Promise.resolve().then(run);
 }
 function diagnostics(){
  return{version:VERSION,status:lastError?'DEGRADED':registered?'READY':'DEPENDENCIES_READY',
@@ -553,8 +565,10 @@ var API=Object.freeze({VERSION,init,ensureCountryCapital,processCountry,
  getCountryInvestments:function(country){var bucket=investmentBucket(canonicalCountry(country),false);return bucket?clone(bucket):null;}});
 g.OmegaPrivateEnterpriseInternationalInvestmentV1=API;
 g.Omega=g.Omega||{};g.Omega.PrivateEnterpriseInternationalInvestmentV1=API;
-if(typeof g.addEventListener==='function')g.addEventListener('OMEGA_READY',function(){init().catch(function(error){lastError=String(error&&error.message||error);});});
-if(g.document&&(g.document.readyState==='complete'||g.document.readyState==='interactive'))
- Promise.resolve().then(function(){init().catch(function(error){lastError=String(error&&error.message||error);});});
+if(typeof g.addEventListener==='function'){
+ ['OMEGA_READY','OMEGA_GAME_SESSION_STARTED'].forEach(function(type){
+  g.addEventListener(type,scheduleInit);
+ });
+}
 if(typeof module!=='undefined'&&module.exports)module.exports=API;
 })(typeof globalThis!=='undefined'?globalThis:window);
