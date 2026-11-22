@@ -88,6 +88,8 @@ test('investment destinations and target opportunities are sourced from current 
   const unitedStates = ui.listOpportunities('USA');
   assert.deepEqual(plain(unitedStates.mines.map(row => row.value)), ['USA-IRON-01']);
   assert.deepEqual(plain(unitedStates.projects.map(row => row.value)), ['USA-PORT-01']);
+  assert.deepEqual(plain(ui.listOpportunities('').projectTypes), []);
+  assert.deepEqual(plain(ui.listOpportunities('').factories), []);
   assert.deepEqual(plain(ui.listOpportunities('').mines), []);
 });
 
