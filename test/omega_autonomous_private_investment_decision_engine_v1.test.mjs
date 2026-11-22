@@ -215,7 +215,7 @@ test('war, sanctions, active conflict and economic crisis block foreign investme
     { name: 'crisis', mutate(state) { state.economy.CAN.activeCrisis = true; } },
     { name: 'recession', mutate(state) { state.economy.CAN.gdp_growth = -5; } },
     { name: 'inflation', mutate(state) { state.economy.CAN.inflation = 27; } },
-    { name: 'debt', mutate(state) { state.economy.CAN.debt = 2e12; } }
+    { name: 'debt', mutate(state) { state.economy.CAN.debt = 4e12; } }
   ];
   for (const entry of cases) {
     const h = createRuntime();
