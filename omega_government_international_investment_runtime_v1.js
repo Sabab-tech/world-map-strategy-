@@ -574,30 +574,34 @@
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
     if (!cid || canonicalCountry(p.hostCountryId) !== cid || !p.transferId || !p.projectId)
       return handlerResult(false, { reason: 'PROJECT_RECAPITALIZATION_SCOPE_INVALID' });
-    var amount = num(p.amountUsd), cash = num(getPath(ctx, 'finance.available'));
-    if (amount === null || amount <= 0 || cash === null) return handlerResult(false, { reason: 'PROJECT_RECAPITALIZATION_AMOUNT_INVALID' });
-    var root = rootForContext(ctx), inv = investmentRoot(root, true), receipt = inv.receipts && inv.receipts[p.transferId];
-    if (!receipt || receipt.status !== 'SETTLED' || amount > (num(receipt.remainingUsd) || 0) + 1e-7)
+    var amount = num(p.amountUsd), root = rootForContext(ctx), inv = investmentRoot(root, true), receipt = inv.receipts && inv.receipts[p.transferId];
+    if (amount === null || amount <= 0 || !receipt || receipt.status !== 'SETTLED' ||
+        amount > (num(receipt.remainingUsd) || 0) + 1e-7)
       return handlerResult(false, { reason: 'PROJECT_RECAPITALIZATION_ESCROW_INSUFFICIENT' });
     var txId = p.transferId + ':RECAPITALIZE:' + p.projectId;
     if ((root.ledger || []).some(function (x) { return x && x.transactionId === txId; }))
       return handlerResult(true, { status: 'DUPLICATE', duplicate: true });
     receipt.remainingUsd = round(receipt.remainingUsd - amount, 2);
     inv.restrictedFundsUsd = Math.max(0, round((num(inv.restrictedFundsUsd) || 0) - amount, 2));
-    var after = round(cash + amount, 2);
-    appendLedger(root, { transactionId: txId, type: 'GOVERNMENT_PROJECT_RECAPITALIZATION_RECEIPT',
-      action: 'GOVERNMENT_INVESTMENT_RECAPITALIZATION', countryId: cid, countryCode: cid, amountUsd: amount,
-      direction: 'TRANSFER', debitAccount: 'GOVERNMENT:SOVEREIGN_TREASURY_CASH',
-      creditAccount: 'GOVERNMENT:FOREIGN_PROJECT_EQUITY_OR_LOAN', projectId: p.projectId,
-      investorCountryId: receipt.investorCountryId, proposalId: p.proposalId, correlationId: p.transferId, balanceAfterUsd: after });
     inv.investedCapitalUsd = round((num(inv.investedCapitalUsd) || 0) + amount, 2);
+    inv.projectWorkingCapitalUsd = isObject(inv.projectWorkingCapitalUsd) ? inv.projectWorkingCapitalUsd : {};
+    inv.projectWorkingCapitalUsd[p.projectId] = round((num(inv.projectWorkingCapitalUsd[p.projectId]) || 0) + amount, 2);
+    appendLedger(root, { transactionId: txId, type: 'GOVERNMENT_PROJECT_RECAPITALIZATION',
+      action: 'GOVERNMENT_INVESTMENT_RECAPITALIZATION', countryId: cid, countryCode: cid, amountUsd: amount,
+      direction: 'CAPITALIZATION', debitAccount: 'GOVERNMENT:PROJECT_WORKING_CAPITAL_ASSET',
+      creditAccount: 'GOVERNMENT:RESTRICTED_INVESTMENT_CASH', projectId: p.projectId,
+      investorCountryId: receipt.investorCountryId, proposalId: p.proposalId, correlationId: p.transferId });
     inv.investments = Array.isArray(inv.investments) ? inv.investments : [];
     inv.investments.push({ proposalId: p.proposalId, transferId: p.transferId, projectId: p.projectId,
       investorCountryId: receipt.investorCountryId, hostCountryId: cid, instrument: receipt.instrument,
       equityShareBps: Math.max(0, Math.floor(num(p.equityShareBps) || 0)), durationYears: num(p.durationYears),
-      investedCapitalUsd: amount, remainingEscrowUsd: receipt.remainingUsd, turn: turn(), status: 'PROJECT_RECAPITALIZED' });
-    saveContext(ctx, root, after);
-    return handlerResult(true, { status: 'RECAPITALIZED', amountUsd: amount, balanceAfterUsd: after });
+      investedCapitalUsd: amount, remainingEscrowUsd: receipt.remainingUsd, turn: turn(),
+      status: 'PROJECT_WORKING_CAPITAL_RESERVED', deploymentStatus: 'EARMARKED_NOT_YET_SPENT_BY_PROJECT_RUNTIME' });
+    recordEvent(inv, 'GOVERNMENT_PROJECT_WORKING_CAPITAL_RESERVED', { proposalId: p.proposalId, projectId: p.projectId, amountUsd: amount });
+    saveContext(ctx, root);
+    return handlerResult(true, { status: 'RECAPITALIZED', amountUsd: amount,
+      projectWorkingCapitalUsd: inv.projectWorkingCapitalUsd[p.projectId],
+      deploymentStatus: 'EARMARKED_NOT_YET_SPENT_BY_PROJECT_RUNTIME' });
   }
   function loanDebitHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
@@ -1011,82 +1015,60 @@
     return result('PENDING_HOST_APPROVAL', { proposal: getProposal(host, proposalId), budget: budget });
   }
 
-  function applyProjectOwnership(project, proposal) {
-    if (!project || !proposal) return false;
-    project.governmentInvestmentV1 = isObject(project.governmentInvestmentV1) ? project.governmentInvestmentV1 : {
-      schemaVersion: 1, hostCountryId: proposal.hostCountryId, investors: [], authority: AUTHORITY
-    };
-    var rows = project.governmentInvestmentV1.investors;
-    var investor = rows.find(function (x) { return x && x.investorCountryId === proposal.investorCountryId; });
-    if (!investor) {
-      investor = { investorCountryId: proposal.investorCountryId, instrument: proposal.instrument,
-        investedCapitalUsd: 0, equityShareBps: proposal.equityShareBps, proposalIds: [] };
-      rows.push(investor);
-    }
-    investor.investedCapitalUsd = round((num(investor.investedCapitalUsd) || 0) + proposal.amountUsd, 2);
-    investor.equityShareBps = Math.max(num(investor.equityShareBps) || 0, proposal.equityShareBps || 0);
-    if (investor.proposalIds.indexOf(proposal.proposalId) < 0) investor.proposalIds.push(proposal.proposalId);
-    project.governmentInvestmentV1.totalForeignGovernmentCapitalUsd =
-      round((num(project.governmentInvestmentV1.totalForeignGovernmentCapitalUsd) || 0) + proposal.amountUsd, 2);
-    project.governmentInvestmentV1.updatedTurn = turn();
-    return true;
-  }
-  function createLoanRecord(proposal, projectId) {
+  function createLoanRecord(proposal, projectId, principalUsd) {
     if (proposal.instrument !== 'LOAN') return null;
+    var principal = num(principalUsd) || num(proposal.amountUsd);
     var quarters = Math.max(1, Math.round(proposal.durationYears * 4));
     var graceQuarters = Math.max(0, Math.round(proposal.gracePeriodYears * 4));
     return {
       loanId: proposal.proposalId + ':LOAN',
       proposalId: proposal.proposalId, transferId: proposal.transferId,
       projectId: projectId, investorCountryId: proposal.investorCountryId,
-      hostCountryId: proposal.hostCountryId, originalPrincipalUsd: proposal.amountUsd,
-      principalOutstandingUsd: proposal.amountUsd, annualInterestRateBps: proposal.annualInterestRateBps,
+      hostCountryId: proposal.hostCountryId, originalPrincipalUsd: principal,
+      principalOutstandingUsd: principal, annualInterestRateBps: proposal.annualInterestRateBps,
       durationYears: proposal.durationYears, gracePeriodYears: proposal.gracePeriodYears,
       paymentFrequencyDays: 90, totalInstallments: quarters,
       graceInstallmentsRemaining: graceQuarters, remainingInstallments: Math.max(1, quarters - graceQuarters),
-      nextDueTurn: turn() + 90, status: 'ACTIVE', missedPayments: 0,
+      nextDueTurn: turn() + 90, status: 'ACTIVE', missedPayments: 0, installmentNumber: 0,
       currency: 'USD', createdTurn: turn(), authority: AUTHORITY
     };
   }
-  function attachProject(proposal, project, projectCost) {
-    var d = dependencies(), countryRoot = d.state.resource || {}, bucket = countryRoot[proposal.hostCountryId] || {};
-    var networkState = bucket.industrialNetwork || {}, projects = Array.isArray(networkState.projects) ? networkState.projects : [];
-    var live = projects.find(function (x) { return x && x.projectId === project.projectId; });
-    if (live) {
-      live.investmentFundingId = proposal.transferId;
-      live.governmentInvestmentV1 = {
-        schemaVersion: 1, proposalId: proposal.proposalId, transferId: proposal.transferId,
-        investorCountryId: proposal.investorCountryId, hostCountryId: proposal.hostCountryId,
-        instrument: proposal.instrument, equityShareBps: proposal.equityShareBps,
-        investedCapitalUsd: projectCost, remainingInvestmentEscrowUsd: round(proposal.amountUsd - projectCost, 2),
-        constructionCostUsd: projectCost, estimatedPaybackYears: null,
-        returnEvidenceStatus: 'UNAVAILABLE_UNTIL_PROJECT_LEVEL_NET_PROFIT_IS_RECORDED',
-        authority: AUTHORITY
-      };
+  function registerLoanPositions(proposal, projectId, principalUsd) {
+    var loan = createLoanRecord(proposal, projectId, principalUsd);
+    if (!loan) return { ok: true, status: 'NOT_APPLICABLE' };
+    var d = dependencies();
+    var borrower = dispatch(d, HANDLERS.registerLoan, proposal.hostCountryId,
+      { hostCountryId: proposal.hostCountryId, investorCountryId: proposal.investorCountryId, ownerRole: 'BORROWER', loan: loan }, loan.loanId);
+    if (!borrower.ok) return { ok: false, reason: borrower.reason, stage: 'BORROWER_LOAN_REGISTER' };
+    if (proposal.investorCountryId !== proposal.hostCountryId) {
+      var lender = dispatch(d, HANDLERS.registerLoan, proposal.investorCountryId,
+        { hostCountryId: proposal.hostCountryId, investorCountryId: proposal.investorCountryId,
+          ownerRole: 'LENDER', loan: loan }, loan.loanId);
+      if (!lender.ok) return { ok: false, reason: lender.reason, stage: 'LENDER_LOAN_REGISTER' };
     }
-    applyProjectOwnership(live || project, proposal);
-    return live || project;
+    return { ok: true, loanId: loan.loanId };
   }
   async function startFundedProject(proposal) {
     var d = dependencies(), net = d.network, host = proposal.hostCountryId;
-    var receiptRoot = countryFinanceRoot(host), hostInvestment = receiptRoot && investmentRoot(receiptRoot, false);
+    var hostRoot = countryFinanceRoot(host), hostInvestment = hostRoot && investmentRoot(hostRoot, false);
     var receipt = hostInvestment && hostInvestment.receipts && hostInvestment.receipts[proposal.transferId];
     if (!receipt || receipt.status !== 'SETTLED') return result('BLOCKED', { reason: 'SETTLED_HOST_INVESTMENT_RECEIPT_REQUIRED' });
     if (proposal.projectType === 'EXISTING_PROJECT') {
       var existing = projectInCountry(host, proposal.existingProjectId);
       if (!existing) return result('BLOCKED', { reason: 'EXISTING_PROJECT_DISAPPEARED' });
-      var amount = Math.min(proposal.amountUsd, num(receipt.remainingUsd) || 0);
-      var recap = dispatch(d, HANDLERS.recapitalize, host, { hostCountryId: host, transferId: proposal.transferId,
-        projectId: existing.projectId, proposalId: proposal.proposalId, amountUsd: amount }, proposal.transferId);
+      var contribution = Math.min(proposal.amountUsd, num(receipt.remainingUsd) || 0);
+      var recap = dispatch(d, HANDLERS.recapitalize, host, { hostCountryId: host,
+        investorCountryId: proposal.investorCountryId, transferId: proposal.transferId,
+        projectId: existing.projectId, proposalId: proposal.proposalId, amountUsd: contribution,
+        equityShareBps: proposal.equityShareBps, durationYears: proposal.durationYears }, proposal.transferId);
       if (!recap.ok) return result('RECONCILIATION_REQUIRED', { reason: recap.reason, projectId: existing.projectId });
-      var updatedExisting = attachProject(proposal, existing, amount);
       proposal.projectId = existing.projectId;
-      proposal.projectCostUsd = num(existing.costUsd || existing.cost) || proposal.projectCostUsd;
-      proposal.capitalAppliedUsd = amount;
+      proposal.projectCostUsd = contribution;
+      proposal.capitalAppliedUsd = contribution;
       proposal.status = 'PROJECT_STARTED';
       proposal.updatedTurn = turn();
-      return result('PROJECT_STARTED', { project: clone(updatedExisting), recapitalized: true,
-        projectEffect: 'EXISTING_PROJECT_RECAPITALIZED_NO_DUPLICATE_ASSET_CREATED' });
+      return result('PROJECT_STARTED', { project: clone(existing), recapitalized: true,
+        projectEffect: 'PROJECT_LINKED_WORKING_CAPITAL_EARMARKED; EXISTING OUTPUT_NOT_ASSUMED_TO_INCREASE' });
     }
     if (proposal.projectType === 'MINE') {
       if (typeof net.startMineProject !== 'function') return result('BLOCKED', { reason: 'MINE_CONSTRUCTION_API_UNAVAILABLE' });
@@ -1109,106 +1091,100 @@
           requestId: 'GOVINV_BUILD:' + proposal.proposalId });
       } catch (e) { mine = { status: 'FAILED', reason: String(e && e.message || e) }; }
       if (!mine || mine.status !== 'UNDER_CONSTRUCTION') {
-        var releasedCash = dispatch(d, HANDLERS.refundCash, host, { investorCountryId: host,
-          transferId: 'UNUSED_MINE_RELEASE:' + releaseId, amountUsd: mineCost }, releaseId);
-        return result('RECONCILIATION_REQUIRED', { reason: mine && mine.reason || 'MINE_PROJECT_START_FAILED',
-          stage: 'MINE_PROJECT_START', releaseId: releaseId, project: mine || null,
-          cashReversal: releasedCash.status, requiredManualReconciliation: true });
+        var rollbackRelease = dispatch(d, HANDLERS.rollbackMine, host, { hostCountryId: host, releaseId: releaseId,
+          projectId: 'MINE:' + host + ':' + proposal.siteId, proposalId: proposal.proposalId, amountUsd: mineCost }, releaseId);
+        return result(rollbackRelease.ok ? 'BLOCKED' : 'RECONCILIATION_REQUIRED', {
+          reason: mine && mine.reason || 'MINE_PROJECT_START_FAILED', stage: 'MINE_PROJECT_START',
+          cashReversal: rollbackRelease.status, requiredManualReconciliation: !rollbackRelease.ok });
       }
       var capex = dispatch(d, HANDLERS.commitCapex, host, { hostCountryId: host, proposalId: proposal.proposalId,
-        transferId: proposal.transferId, projectId: mine.projectId, amountUsd: mineCost }, proposal.transferId);
+        transferId: proposal.transferId, projectId: mine.projectId, amountUsd: mineCost,
+        equityShareBps: proposal.equityShareBps, durationYears: proposal.durationYears }, proposal.transferId);
       if (!capex.ok) return result('RECONCILIATION_REQUIRED', { reason: capex.reason, project: mine, stage: 'MINE_CAPEX_COMMIT' });
-      var mineLive = attachProject(proposal, mine, mineCost);
-      proposal.projectId = mine.projectId;
-      proposal.projectCostUsd = mineCost;
-      proposal.capitalAppliedUsd = mineCost;
-      proposal.constructionDays = quote.durationDays;
-      proposal.status = 'PROJECT_STARTED';
-      proposal.updatedTurn = turn();
-      var loan = createLoanRecord(proposal, mine.projectId);
-      if (loan) {
-        var fresh = countryFinanceRoot(host), rootInv = investmentRoot(fresh, true);
-        rootInv.loans = Array.isArray(rootInv.loans) ? rootInv.loans : [];
-        rootInv.loans.push(loan);
-        var saved = dispatch(d, HANDLERS.create, host, { countryId: host, proposal: proposal, direction: 'INBOUND' }, proposal.proposalId);
-        if (!saved.ok) return result('RECONCILIATION_REQUIRED', { reason: 'LOAN_RECORD_CREATE_FAILED', project: mine });
-      }
-      return result('PROJECT_STARTED', { project: clone(mineLive), constructionDays: quote.durationDays,
-        projectCostUsd: mineCost, remainingEscrowUsd: capex.result.remainingUsd });
+      proposal.projectId = mine.projectId; proposal.projectCostUsd = mineCost;
+      proposal.capitalAppliedUsd = mineCost; proposal.constructionDays = quote.durationDays;
+      proposal.status = 'PROJECT_STARTED'; proposal.updatedTurn = turn();
+      var loanResult = registerLoanPositions(proposal, mine.projectId, mineCost);
+      if (!loanResult.ok) return result('RECONCILIATION_REQUIRED', { reason: loanResult.reason, stage: loanResult.stage, project: mine });
+      return result('PROJECT_STARTED', { project: clone(mine), constructionDays: quote.durationDays,
+        projectCostUsd: mineCost, remainingEscrowUsd: capex.result.remainingUsd, loanId: loanResult.loanId || null });
     }
     if (proposal.projectType === 'FACTORY') {
       var catalog = currentCatalog(), profile = catalog.factoryProfiles && catalog.factoryProfiles[proposal.factoryType];
       if (!profile || typeof net.startFactoryProject !== 'function') return result('BLOCKED', { reason: 'CANONICAL_FACTORY_PROJECT_API_UNAVAILABLE' });
-      var constructionCost = num(proposal.projectCostUsd);
-      if (constructionCost === null || constructionCost <= 0 || (num(receipt.remainingUsd) || 0) + 1e-7 < constructionCost)
-        return result('BLOCKED', { reason: 'FACTORY_PROJECT_ESCROW_BELOW_CAPEX', requiredUsd: constructionCost, escrowUsd: receipt.remainingUsd });
+      var contribution = num(proposal.projectCostUsd);
+      var constructionUnits = num(proposal.factoryCatalogConstructionCost);
+      if (contribution === null || contribution <= 0 || constructionUnits === null || constructionUnits <= 0 ||
+          (num(receipt.remainingUsd) || 0) + 1e-7 < contribution)
+        return result('BLOCKED', { reason: 'FACTORY_PROJECT_FUNDING_OR_CATALOG_COST_UNAVAILABLE' });
       var bom = net.factoryConstructionMaterialQuote(host, profile);
       if (!bom || bom.status !== 'QUOTED' || !Array.isArray(bom.materials) || bom.materials.some(function (x) { return x.sufficient !== true; }))
         return result('BLOCKED', { reason: 'FACTORY_CONSTRUCTION_MATERIALS_CHANGED_BEFORE_FUNDING', quote: bom || null });
-      var factoryInput = { countryId: host, factoryType: proposal.factoryType, recipeId: proposal.recipeId,
-        resourceId: proposal.resourceId, cost: constructionCost, buildDays: proposal.buildDays,
-        requestId: 'GOVINV_BUILD:' + proposal.proposalId, ownerType: 'STATE_OWNED_ENTERPRISE',
-        operatorType: 'STATE_ENTERPRISE_OPERATOR' };
+      var pendingId = 'PENDING_FACTORY:' + proposal.proposalId;
       var capexFactory = dispatch(d, HANDLERS.commitCapex, host, { hostCountryId: host,
-        proposalId: proposal.proposalId, transferId: proposal.transferId,
-        projectId: 'PENDING_FACTORY:' + proposal.proposalId, amountUsd: constructionCost }, proposal.transferId);
+        proposalId: proposal.proposalId, transferId: proposal.transferId, projectId: pendingId,
+        amountUsd: contribution, equityShareBps: proposal.equityShareBps, durationYears: proposal.durationYears }, proposal.transferId);
       if (!capexFactory.ok) return result('BLOCKED', { reason: capexFactory.reason, stage: 'FACTORY_CAPEX_RESERVATION' });
       var factory;
-      try { factory = net.startFactoryProject(factoryInput); }
-      catch (e2) { factory = { status: 'FAILED', reason: String(e2 && e2.message || e2) }; }
+      try {
+        factory = net.startFactoryProject({ countryId: host, factoryType: proposal.factoryType,
+          recipeId: proposal.recipeId, cost: constructionUnits, costUnit: proposal.factoryCatalogCostUnit || profile.unit,
+          buildDays: proposal.constructionDays, requestId: 'GOVINV_BUILD:' + proposal.proposalId,
+          ownerType: 'STATE_OWNED_ENTERPRISE', operatorType: 'STATE_ENTERPRISE_OPERATOR' });
+      } catch (e2) { factory = { status: 'FAILED', reason: String(e2 && e2.message || e2) }; }
       if (!factory || factory.status !== 'UNDER_CONSTRUCTION') {
         var rollback = dispatch(d, HANDLERS.rollbackCapex, host, { hostCountryId: host,
-          transferId: proposal.transferId, proposalId: proposal.proposalId, projectId: 'PENDING_FACTORY:' + proposal.proposalId,
-          capexTransactionId: proposal.transferId + ':CAPEX:PENDING_FACTORY:' + proposal.proposalId,
-          amountUsd: constructionCost }, proposal.transferId);
-        return result(rollback.ok ? 'BLOCKED' : 'RECONCILIATION_REQUIRED', { reason: factory && factory.reason || 'FACTORY_PROJECT_START_FAILED', rollback: rollback.status });
+          transferId: proposal.transferId, proposalId: proposal.proposalId, projectId: pendingId,
+          capexTransactionId: proposal.transferId + ':CAPEX:' + pendingId, amountUsd: contribution }, proposal.transferId);
+        return result(rollback.ok ? 'BLOCKED' : 'RECONCILIATION_REQUIRED', {
+          reason: factory && factory.reason || 'FACTORY_PROJECT_START_FAILED', rollback: rollback.status });
       }
-      var factoryLive = attachProject(proposal, factory, constructionCost);
-      proposal.projectId = factory.projectId;
-      proposal.projectCostUsd = constructionCost;
-      proposal.capitalAppliedUsd = constructionCost;
-      proposal.constructionDays = num(factory.durationDays);
-      proposal.status = 'PROJECT_STARTED';
-      proposal.updatedTurn = turn();
-      var factoryLoan = createLoanRecord(proposal, factory.projectId);
-      if (factoryLoan) {
-        var froot = countryFinanceRoot(host), finv = investmentRoot(froot, true);
-        finv.loans = Array.isArray(finv.loans) ? finv.loans : [];
-        finv.loans.push(factoryLoan);
-        // The contract is already in the inbound proposal record; the loan schedule is saved by the finance command.
-        dispatch(d, HANDLERS.decide, host, { hostCountryId: host, proposalId: proposal.proposalId, decision: 'ACCEPT', actorType: 'NPC' }, proposal.proposalId);
-      }
-      return result('PROJECT_STARTED', { project: clone(factoryLive), constructionDays: factory.durationDays,
-        projectCostUsd: constructionCost, remainingEscrowUsd: capexFactory.result.remainingUsd });
+      var link = dispatch(d, HANDLERS.linkProject, host, { hostCountryId: host, transferId: proposal.transferId,
+        pendingProjectId: pendingId, projectId: factory.projectId }, proposal.transferId);
+      if (!link.ok) return result('RECONCILIATION_REQUIRED', { reason: link.reason, stage: 'FACTORY_PROJECT_LINK', project: factory });
+      proposal.projectId = factory.projectId; proposal.projectCostUsd = contribution;
+      proposal.capitalAppliedUsd = contribution; proposal.constructionDays = num(factory.durationDays);
+      proposal.status = 'PROJECT_STARTED'; proposal.updatedTurn = turn();
+      var factoryLoan = registerLoanPositions(proposal, factory.projectId, contribution);
+      if (!factoryLoan.ok) return result('RECONCILIATION_REQUIRED', { reason: factoryLoan.reason, stage: factoryLoan.stage, project: factory });
+      return result('PROJECT_STARTED', { project: clone(factory), constructionDays: factory.durationDays,
+        governmentContributionUsd: contribution, factoryCatalogConstructionCost: constructionUnits,
+        factoryCatalogCostUnit: proposal.factoryCatalogCostUnit, remainingEscrowUsd: capexFactory.result.remainingUsd,
+        loanId: factoryLoan.loanId || null });
     }
     if (proposal.projectType === 'INFRASTRUCTURE') {
       if (typeof net.startInfrastructureProject !== 'function') return result('BLOCKED', { reason: 'INFRASTRUCTURE_PROJECT_API_UNAVAILABLE' });
       var infraCost = num(proposal.projectCostUsd);
       if (infraCost === null || infraCost <= 0 || (num(receipt.remainingUsd) || 0) + 1e-7 < infraCost)
         return result('BLOCKED', { reason: 'INFRASTRUCTURE_PROJECT_ESCROW_BELOW_CAPEX' });
-      var infraRequest = { countryId: host, infrastructureType: proposal.infrastructureType,
-        distanceKm: proposal.distanceKm, capacityPerDay: proposal.capacityPerDay,
-        cost: infraCost, buildDays: proposal.buildDays, requestId: 'GOVINV_BUILD:' + proposal.proposalId };
+      var pendingInfraId = 'PENDING_INFRA:' + proposal.proposalId;
       var infraCapex = dispatch(d, HANDLERS.commitCapex, host, { hostCountryId: host,
-        proposalId: proposal.proposalId, transferId: proposal.transferId,
-        projectId: 'PENDING_INFRA:' + proposal.proposalId, amountUsd: infraCost }, proposal.transferId);
+        proposalId: proposal.proposalId, transferId: proposal.transferId, projectId: pendingInfraId,
+        amountUsd: infraCost, equityShareBps: proposal.equityShareBps, durationYears: proposal.durationYears }, proposal.transferId);
       if (!infraCapex.ok) return result('BLOCKED', { reason: infraCapex.reason });
       var infra;
-      try { infra = net.startInfrastructureProject(infraRequest); }
-      catch (e3) { infra = { status: 'FAILED', reason: String(e3 && e3.message || e3) }; }
+      try {
+        infra = net.startInfrastructureProject({ countryId: host, infrastructureType: proposal.infrastructureType,
+          distanceKm: proposal.distanceKm, capacityPerDay: proposal.capacityPerDay,
+          cost: infraCost, buildDays: proposal.constructionDays, requestId: 'GOVINV_BUILD:' + proposal.proposalId });
+      } catch (e3) { infra = { status: 'FAILED', reason: String(e3 && e3.message || e3) }; }
       if (!infra || infra.status !== 'UNDER_CONSTRUCTION') {
         var rollbackInfra = dispatch(d, HANDLERS.rollbackCapex, host, { hostCountryId: host,
-          transferId: proposal.transferId, proposalId: proposal.proposalId, projectId: 'PENDING_INFRA:' + proposal.proposalId,
-          capexTransactionId: proposal.transferId + ':CAPEX:PENDING_INFRA:' + proposal.proposalId,
-          amountUsd: infraCost }, proposal.transferId);
-        return result(rollbackInfra.ok ? 'BLOCKED' : 'RECONCILIATION_REQUIRED', { reason: infra && infra.reason || 'INFRASTRUCTURE_PROJECT_START_FAILED' });
+          transferId: proposal.transferId, proposalId: proposal.proposalId, projectId: pendingInfraId,
+          capexTransactionId: proposal.transferId + ':CAPEX:' + pendingInfraId, amountUsd: infraCost }, proposal.transferId);
+        return result(rollbackInfra.ok ? 'BLOCKED' : 'RECONCILIATION_REQUIRED', {
+          reason: infra && infra.reason || 'INFRASTRUCTURE_PROJECT_START_FAILED', rollback: rollbackInfra.status });
       }
-      var infraLive = attachProject(proposal, infra, infraCost);
+      var infraLink = dispatch(d, HANDLERS.linkProject, host, { hostCountryId: host, transferId: proposal.transferId,
+        pendingProjectId: pendingInfraId, projectId: infra.projectId }, proposal.transferId);
+      if (!infraLink.ok) return result('RECONCILIATION_REQUIRED', { reason: infraLink.reason, stage: 'INFRASTRUCTURE_PROJECT_LINK', project: infra });
       proposal.projectId = infra.projectId; proposal.projectCostUsd = infraCost;
-      proposal.capitalAppliedUsd = infraCost; proposal.constructionDays = infra.durationDays;
+      proposal.capitalAppliedUsd = infraCost; proposal.constructionDays = num(infra.durationDays);
       proposal.status = 'PROJECT_STARTED'; proposal.updatedTurn = turn();
-      return result('PROJECT_STARTED', { project: clone(infraLive), constructionDays: infra.durationDays,
-        projectCostUsd: infraCost, remainingEscrowUsd: infraCapex.result.remainingUsd });
+      var infraLoan = registerLoanPositions(proposal, infra.projectId, infraCost);
+      if (!infraLoan.ok) return result('RECONCILIATION_REQUIRED', { reason: infraLoan.reason, stage: infraLoan.stage, project: infra });
+      return result('PROJECT_STARTED', { project: clone(infra), constructionDays: infra.durationDays,
+        projectCostUsd: infraCost, remainingEscrowUsd: infraCapex.result.remainingUsd, loanId: infraLoan.loanId || null });
     }
     return result('BLOCKED', { reason: 'GOVERNMENT_PROJECT_TYPE_NOT_SUPPORTED' });
   }
