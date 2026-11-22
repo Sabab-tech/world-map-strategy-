@@ -32,7 +32,9 @@
     loanDebit: 'OMEGA_GOV_INVEST_LOAN_REPAYMENT_DEBIT_V1',
     loanCredit: 'OMEGA_GOV_INVEST_LOAN_REPAYMENT_CREDIT_V1',
     profitDebit: 'OMEGA_GOV_INVEST_PROFIT_DISTRIBUTION_DEBIT_V1',
-    profitCredit: 'OMEGA_GOV_INVEST_PROFIT_DISTRIBUTION_CREDIT_V1'
+    profitCredit: 'OMEGA_GOV_INVEST_PROFIT_DISTRIBUTION_CREDIT_V1',
+    updateProposal: 'OMEGA_GOV_INVEST_UPDATE_PROPOSAL_V1', rollbackMine: 'OMEGA_GOV_INVEST_MINE_RELEASE_ROLLBACK_V1',
+    linkProject: 'OMEGA_GOV_INVEST_LINK_PROJECT_V1', registerLoan: 'OMEGA_GOV_INVEST_REGISTER_LOAN_V1', updateLoan: 'OMEGA_GOV_INVEST_UPDATE_LOAN_V1'
   };
 
   var ready = false;
@@ -294,6 +296,33 @@
     saveContext(ctx, root);
     return handlerResult(true, { status: proposal.status, proposalId: proposal.proposalId });
   }
+  function updateProposalHandler(command, ctx) {
+    var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
+    if (!cid || canonicalCountry(p.countryId) !== cid || !p.proposalId || !isObject(p.patch)) return handlerResult(false, { reason: 'PROPOSAL_UPDATE_SCOPE_INVALID' });
+    var root = rootForContext(ctx), inv = investmentRoot(root, true);
+    var proposal = inv.proposals.find(function (x) { return x && x.proposalId === p.proposalId; });
+    if (!proposal) return handlerResult(false, { reason: 'PROPOSAL_NOT_FOUND' });
+    Object.keys(p.patch).forEach(function (key) { if (['status','projectId','projectCostUsd','capitalAppliedUsd','constructionDays','project','projectFailure','updatedTurn','remainingRefundedUsd','hostDecision','funding','settledTurn'].includes(key)) proposal[key] = clone(p.patch[key]); });
+    recordEvent(inv, 'GOVERNMENT_INVESTMENT_PROPOSAL_UPDATED', { proposalId: p.proposalId, status: proposal.status });
+    saveContext(ctx, root); return handlerResult(true, { status: 'UPDATED', proposalId: p.proposalId });
+  }
+  function registerLoanHandler(command, ctx) {
+    var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
+    if (!cid || canonicalCountry(p.hostCountryId) !== cid || !p.loan || !p.loan.loanId) return handlerResult(false, { reason: 'LOAN_REGISTER_SCOPE_INVALID' });
+    var root = rootForContext(ctx), inv = investmentRoot(root, true); inv.loans = Array.isArray(inv.loans) ? inv.loans : [];
+    var prior = inv.loans.find(function (x) { return x && x.loanId === p.loan.loanId; });
+    if (prior) return sameFingerprint(prior, p.loan) ? handlerResult(true, { status: 'DUPLICATE', duplicate: true }) : handlerResult(false, { reason: 'LOAN_IDEMPOTENCY_COLLISION' });
+    inv.loans.push(clone(p.loan)); recordEvent(inv, 'GOVERNMENT_FOREIGN_LOAN_REGISTERED', { loanId: p.loan.loanId, proposalId: p.loan.proposalId });
+    saveContext(ctx, root); return handlerResult(true, { status: 'REGISTERED', loanId: p.loan.loanId });
+  }
+  function updateLoanHandler(command, ctx) {
+    var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
+    if (!cid || canonicalCountry(p.hostCountryId) !== cid || !p.loanId || !isObject(p.patch)) return handlerResult(false, { reason: 'LOAN_UPDATE_SCOPE_INVALID' });
+    var root = rootForContext(ctx), inv = investmentRoot(root, true), loans = Array.isArray(inv.loans) ? inv.loans : [];
+    var loan = loans.find(function (x) { return x && x.loanId === p.loanId; }); if (!loan) return handlerResult(false, { reason: 'LOAN_NOT_FOUND' });
+    Object.keys(p.patch).forEach(function (key) { if (['principalOutstandingUsd','graceInstallmentsRemaining','remainingInstallments','nextDueTurn','status','missedPayments','lastFailedPaymentTurn','installmentNumber','lastPaymentTurn','totalInterestPaidUsd','totalPrincipalPaidUsd'].includes(key)) loan[key] = clone(p.patch[key]); });
+    saveContext(ctx, root); return handlerResult(true, { status: 'UPDATED', loanId: p.loanId });
+  }
   function reserveHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
     if (!cid || canonicalCountry(p.investorCountryId) !== cid || !p.transferId) return handlerResult(false, { reason: 'INVESTOR_RESERVATION_SCOPE_INVALID' });
@@ -421,8 +450,10 @@
     if (!transfer || transfer.status === 'REFUNDED') return handlerResult(false, { reason: 'INVESTOR_TRANSFER_NOT_REFUNDABLE' });
     if (transfer.status !== 'SETTLED' && transfer.status !== 'RESERVED') return handlerResult(false, { reason: 'INVESTOR_TRANSFER_STATUS_INVALID' });
     if (Math.abs((num(transfer.amountUsd) || 0) - amount) > 0.01) return handlerResult(false, { reason: 'INVESTOR_REFUND_AMOUNT_MISMATCH' });
+    var wasReserved = transfer.status === 'RESERVED';
     transfer.status = 'REFUNDED'; transfer.refundedTurn = turn();
-    inv.investedCapitalUsd = Math.max(0, round((num(inv.investedCapitalUsd) || 0) - amount, 2));
+    if (wasReserved) inv.outboundEscrowUsd = Math.max(0, round((num(inv.outboundEscrowUsd) || 0) - amount, 2));
+    else inv.investedCapitalUsd = Math.max(0, round((num(inv.investedCapitalUsd) || 0) - amount, 2));
     var after = round(cash + amount, 2);
     appendLedger(root, { transactionId: p.transferId + ':INVESTOR-REFUND', type: 'GOVERNMENT_INVESTMENT_REFUND_IN',
       action: 'GOVERNMENT_INVESTMENT_REFUND', countryId: cid, countryCode: cid, amountUsd: amount,
@@ -453,6 +484,18 @@
       projectId: p.projectId, proposalId: p.proposalId, correlationId: p.transferId, balanceAfterUsd: after });
     saveContext(ctx, root, after);
     return handlerResult(true, { status: 'RELEASED', amountUsd: amount, balanceAfterUsd: after });
+  }
+  function rollbackMineReleaseHandler(command, ctx) {
+    var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
+    if (!cid || canonicalCountry(p.hostCountryId) !== cid || !p.releaseId) return handlerResult(false, { reason: 'MINE_RELEASE_ROLLBACK_SCOPE_INVALID' });
+    var amount = num(p.amountUsd), cash = num(getPath(ctx, 'finance.available'));
+    if (amount === null || amount <= 0 || cash === null || cash + 1e-7 < amount) return handlerResult(false, { reason: 'MINE_RELEASE_ROLLBACK_CASH_INVALID' });
+    var root = rootForContext(ctx), inv = investmentRoot(root, true), release = inv.mineReleases && inv.mineReleases[p.releaseId];
+    if (!release) return handlerResult(false, { reason: 'MINE_RELEASE_NOT_FOUND' });
+    if (release.status === 'REVERSED') return handlerResult(true, { status: 'DUPLICATE', duplicate: true });
+    var after = round(cash - amount, 2); release.status = 'REVERSED'; release.reversedTurn = turn();
+    appendLedger(root, { transactionId: p.releaseId + ':ROLLBACK', type: 'GOVERNMENT_INVESTMENT_PROJECT_FUND_RELEASE_REVERSAL', action: 'GOVERNMENT_INVESTMENT_RELEASE_REVERSAL', countryId: cid, countryCode: cid, amountUsd: amount, direction: 'REVERSAL', debitAccount: 'GOVERNMENT:RESTRICTED_INVESTMENT_CASH', creditAccount: 'GOVERNMENT:PROJECT_TREASURY_CASH', projectId: p.projectId || null, proposalId: p.proposalId || null, correlationId: p.releaseId, balanceAfterUsd: after });
+    saveContext(ctx, root, after); return handlerResult(true, { status: 'REVERSED', balanceAfterUsd: after });
   }
   function commitCapexHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
@@ -501,6 +544,16 @@
       proposalId: p.proposalId, correlationId: p.transferId });
     saveContext(ctx, root);
     return handlerResult(true, { status: 'REVERSED', amountUsd: amount });
+  }
+  function linkProjectHandler(command, ctx) {
+    var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
+    if (!cid || canonicalCountry(p.hostCountryId) !== cid || !p.transferId || !p.pendingProjectId || !p.projectId) return handlerResult(false, { reason: 'PROJECT_LINK_SCOPE_INVALID' });
+    var root = rootForContext(ctx), inv = investmentRoot(root, true), investments = Array.isArray(inv.investments) ? inv.investments : [];
+    var row = investments.find(function (x) { return x && x.transferId === p.transferId && x.projectId === p.pendingProjectId; });
+    if (!row) return handlerResult(false, { reason: 'PENDING_PROJECT_CAPITAL_RECORD_NOT_FOUND' });
+    row.projectId = p.projectId; row.linkedTurn = turn();
+    (root.ledger || []).forEach(function (entry) { if (entry && entry.transactionId === p.transferId + ':CAPEX:' + p.pendingProjectId) entry.projectId = p.projectId; });
+    saveContext(ctx, root); return handlerResult(true, { status: 'LINKED', projectId: p.projectId });
   }
   function recapitalizeHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
@@ -602,12 +655,13 @@
         typeof deps.interop.dispatchCommand !== 'function' || !g.OmegaMinistryStateTransaction && !(g.Omega && g.Omega.MinistryStateTransaction))
       throw new Error('GOVERNMENT_INVESTMENT_FINANCE_TRANSACTION_BOUNDARY_UNAVAILABLE');
     var handlers = [
-      [HANDLERS.create, createHandler], [HANDLERS.decide, decideHandler],
+      [HANDLERS.create, createHandler], [HANDLERS.decide, decideHandler], [HANDLERS.updateProposal, updateProposalHandler],
+      [HANDLERS.registerLoan, registerLoanHandler], [HANDLERS.updateLoan, updateLoanHandler],
       [HANDLERS.reserve, reserveHandler], [HANDLERS.receive, receiveHandler],
       [HANDLERS.settle, settleHandler], [HANDLERS.confirm, confirmHandler],
       [HANDLERS.refundReceipt, refundReceiptHandler], [HANDLERS.refundCash, refundCashHandler],
-      [HANDLERS.releaseMine, releaseMineHandler], [HANDLERS.commitCapex, commitCapexHandler],
-      [HANDLERS.rollbackCapex, rollbackCapexHandler], [HANDLERS.recapitalize, recapitalizeHandler],
+      [HANDLERS.releaseMine, releaseMineHandler], [HANDLERS.rollbackMine, rollbackMineReleaseHandler], [HANDLERS.commitCapex, commitCapexHandler],
+      [HANDLERS.rollbackCapex, rollbackCapexHandler], [HANDLERS.linkProject, linkProjectHandler], [HANDLERS.recapitalize, recapitalizeHandler],
       [HANDLERS.loanDebit, loanDebitHandler], [HANDLERS.loanCredit, loanCreditHandler],
       [HANDLERS.profitDebit, profitDebitHandler], [HANDLERS.profitCredit, profitCreditHandler]
     ];
