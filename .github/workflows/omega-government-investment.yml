@@ -1,0 +1,61 @@
+name: OMEGA Sovereign Investment
+concurrency:
+  group: omega-sovereign-investment-\${{ github.event.pull_request.head.ref || github.ref_name || github.ref }}
+  cancel-in-progress: \${{ github.event_name == 'pull_request' }}
+
+on:
+  push:
+    branches: [main, feat/omega-sovereign-investment-runtime-20261122]
+    paths:
+      - 'omega_government_international_investment_runtime_v1.js'
+      - 'omega_government_international_investment_ui_v1.js'
+      - 'test/omega_government_international_investment_runtime_v1.test.mjs'
+      - 'omega_finance_ministry_runtime_v1.js'
+      - 'omega_resource_industrial_network_v1.js'
+      - 'omega_ministry_interoperability_system.js'
+      - 'omega_ministry_state_transaction.js'
+      - 'package.json'
+      - 'index.html'
+      - 'server_bootstrap.js'
+      - 'omega-offline-map-sw.js'
+      - '.github/workflows/omega-government-investment.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'omega_government_international_investment_runtime_v1.js'
+      - 'omega_government_international_investment_ui_v1.js'
+      - 'test/omega_government_international_investment_runtime_v1.test.mjs'
+      - 'omega_finance_ministry_runtime_v1.js'
+      - 'omega_resource_industrial_network_v1.js'
+      - 'omega_ministry_interoperability_system.js'
+      - 'omega_ministry_state_transaction.js'
+      - 'package.json'
+      - 'index.html'
+      - 'server_bootstrap.js'
+      - 'omega-offline-map-sw.js'
+      - '.github/workflows/omega-government-investment.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  sovereign-investment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Validate sovereign runtime and focused lifecycle tests
+        run: npm run test:government-investment
+      - name: Preserve Finance Ministry ledger and Treasury behavior
+        run: npm run test:finance
+      - name: Preserve currency conversion and monetary policy behavior
+        run: npm run test:finance-fx
+      - name: Preserve existing Mine construction and inventory lifecycle
+        run: npm run test:resource-mine-management
+      - name: Preserve existing Private Enterprise and cross-border FDI behavior
+        run: npm run test:private-enterprise-lifecycle
