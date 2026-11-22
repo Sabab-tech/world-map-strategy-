@@ -250,6 +250,10 @@ test('foreign government equity funds a canonical Mine, co-funds the balance fro
   assert.equal(hostInvestment.receipts[result.proposal.transferId].status, 'SETTLED');
   assert.equal(hostInvestment.investments[0].projectId, 'MINE:USA:USA-IRON-01');
   assert.equal(hostInvestment.investments[0].equityShareBps, 2500);
+  assert.equal(hostInvestment.investedCapitalUsd || 0, 0);
+  assert.equal(hostInvestment.receivedCapitalUsd, 1500000);
+  assert.equal(hostInvestment.capitalizedProjectCapitalUsd, 1500000);
+  assert.equal(investorInvestment.investedCapitalUsd, 1500000);
   assert.equal(investorInvestment.transfers[result.proposal.transferId].status, 'SETTLED');
   assert.equal(h.state.finance.USA.omegaFinance.ledger.filter(row => row.type === 'GOVERNMENT_INVESTMENT_PROJECT_CAPEX').length, 1);
   const replay = await h.api.submitProposal(mineInput());
