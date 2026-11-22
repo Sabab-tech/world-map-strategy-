@@ -1580,7 +1580,7 @@
     var investors = [];
     for (var i = 0; i < Math.min(investorLimit, roster.length); i++) {
       var candidate = roster[(start + i) % roster.length];
-      if (candidate && candidate.countryId && !hosts.includes(candidate.countryId)) investors.push(candidate);
+      if (candidate && candidate.countryId && candidate.countryId !== playerCountry() && !hosts.includes(candidate.countryId)) investors.push(candidate);
     }
     var pendingDecisions = [], candidates = [], rejected = [], accepted = [];
     var evaluated = 0, proposalLimit = 12;
