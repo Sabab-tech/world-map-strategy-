@@ -523,6 +523,20 @@ test('a selected foreign government declines a funding request when its sovereig
   assert.equal(h.state.finance.BGD.available, hostBefore);
 });
 
+test('strict investment identity validation is limited to factory assets and preserves Mine project lifecycle', async () => {
+  const h = makeHarness();
+  await ready(h);
+  const mine = await h.api.submitProposal(mineInput({ requestId: 'GOV-MINE-LIFECYCLE-IDENTITY-001' }));
+  assert.equal(mine.status, 'PROJECT_STARTED', JSON.stringify(mine));
+  const minePosition = h.api.getPortfolio('USA').investments.find(row => row.projectId === mine.proposal.projectId);
+  assert.ok(minePosition);
+  assert.equal(minePosition.lifecycle.stage, 'CONSTRUCTION');
+  const project = h.state.resource.USA.industrialNetwork.projects.find(row => row.projectId === mine.proposal.projectId);
+  assert.ok(project);
+  assert.equal(project.investmentId, undefined,
+    'Mine runtime does not currently persist Factory-specific investment provenance');
+});
+
 test('investment duration and return projections stay explicit and do not fabricate ROI or jobs', async () => {
   const h = makeHarness();
   await ready(h);
