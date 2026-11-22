@@ -187,6 +187,8 @@ test('unsupported identities, same-country transfers, insufficient capital, and 
     companyId: 'LOCAL_NON_UNIVERSAL_GROUP', requestId: 'FDI-BAD-001', amount: 100 })).reason, 'UNIVERSAL_PRIVATE_COMPANY_REQUIRED');
   assert.equal((await h.api.invest({ investorCountryId: 'BGD', hostCountryId: 'USA',
     companyId: COMPANY, requestId: 'FDI-OVER-001', amount: 999999999 })).reason, 'INSUFFICIENT_INVESTOR_COMPANY_CAPITAL');
+  assert.equal((await h.api.invest({ investorCountryId: 'BGD', hostCountryId: 'USA',
+    companyId: COMPANY, requestId: 'FDI-CENT-001', amount: 1.001 })).reason, 'FDI_INVESTMENT_AMOUNT_NOT_CENT_EXACT');
   const missingFx = makeHarness();
   missingFx.state.finance.BGD.omegaFinance.companyCapitalAccounts[COMPANY].currency = 'ZZZ';
   assert.equal((await missingFx.api.invest({ investorCountryId: 'BGD', hostCountryId: 'USA',
