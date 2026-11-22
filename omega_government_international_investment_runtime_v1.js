@@ -613,13 +613,15 @@
   }
   function loanDebitHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
-    if (!cid || canonicalCountry(p.hostCountryId) !== cid || !p.paymentId) return handlerResult(false, { reason: 'LOAN_DEBIT_SCOPE_INVALID' });
-    var amount = num(p.amountUsd), cash = num(getPath(ctx, 'finance.available'));
-    if (amount === null || amount <= 0 || cash === null || cash + 1e-7 < amount)
-      return handlerResult(false, { reason: 'LOAN_REPAYMENT_TREASURY_SHORTFALL', available: cash, required: amount });
-    var root = rootForContext(ctx), inv = investmentRoot(root, true), after = round(cash - amount, 2);
+    if (!cid || canonicalCountry(p.hostCountryId) !== cid || !p.paymentId)
+      return handlerResult(false, { reason: 'LOAN_DEBIT_SCOPE_INVALID' });
+    var amount = num(p.amountUsd), root = rootForContext(ctx);
     if ((root.ledger || []).some(function (x) { return x && x.transactionId === p.paymentId + ':DEBIT'; }))
       return handlerResult(true, { status: 'DUPLICATE', duplicate: true });
+    var cash = num(getPath(ctx, 'finance.available'));
+    if (amount === null || amount <= 0 || cash === null || cash + 1e-7 < amount)
+      return handlerResult(false, { reason: 'LOAN_REPAYMENT_TREASURY_SHORTFALL', available: cash, required: amount });
+    var after = round(cash - amount, 2);
     appendLedger(root, { transactionId: p.paymentId + ':DEBIT', type: 'GOVERNMENT_FOREIGN_LOAN_REPAYMENT',
       action: 'GOVERNMENT_LOAN_REPAYMENT', countryId: cid, countryCode: cid, amountUsd: amount,
       direction: 'OUTFLOW', debitAccount: 'GOVERNMENT:FOREIGN_SOVEREIGN_DEBT',
@@ -630,12 +632,15 @@
   }
   function loanCreditHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
-    if (!cid || canonicalCountry(p.investorCountryId) !== cid || !p.paymentId) return handlerResult(false, { reason: 'LOAN_CREDIT_SCOPE_INVALID' });
-    var amount = num(p.amountUsd), cash = num(getPath(ctx, 'finance.available'));
-    if (amount === null || amount <= 0 || cash === null) return handlerResult(false, { reason: 'LOAN_CREDIT_AMOUNT_INVALID' });
-    var root = rootForContext(ctx), inv = investmentRoot(root, true), after = round(cash + amount, 2);
+    if (!cid || canonicalCountry(p.investorCountryId) !== cid || !p.paymentId)
+      return handlerResult(false, { reason: 'LOAN_CREDIT_SCOPE_INVALID' });
+    var amount = num(p.amountUsd), root = rootForContext(ctx);
     if ((root.ledger || []).some(function (x) { return x && x.transactionId === p.paymentId + ':CREDIT'; }))
       return handlerResult(true, { status: 'DUPLICATE', duplicate: true });
+    var cash = num(getPath(ctx, 'finance.available'));
+    if (amount === null || amount <= 0 || cash === null)
+      return handlerResult(false, { reason: 'LOAN_CREDIT_AMOUNT_INVALID' });
+    var inv = investmentRoot(root, true), after = round(cash + amount, 2);
     appendLedger(root, { transactionId: p.paymentId + ':CREDIT', type: 'GOVERNMENT_FOREIGN_LOAN_REPAYMENT_RECEIPT',
       action: 'GOVERNMENT_LOAN_REPAYMENT_RECEIPT', countryId: cid, countryCode: cid, amountUsd: amount,
       direction: 'INFLOW', debitAccount: 'GOVERNMENT:SOVEREIGN_TREASURY_CASH',
@@ -647,12 +652,15 @@
   }
   function profitDebitHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
-    if (!cid || canonicalCountry(p.hostCountryId) !== cid || !p.distributionId) return handlerResult(false, { reason: 'PROFIT_DISTRIBUTION_DEBIT_SCOPE_INVALID' });
-    var amount = num(p.amountUsd), cash = num(getPath(ctx, 'finance.available'));
-    if (amount === null || amount <= 0 || cash === null || cash + 1e-7 < amount) return handlerResult(false, { reason: 'PROJECT_PROFIT_CASH_SHORTFALL', available: cash, required: amount });
-    var root = rootForContext(ctx), after = round(cash - amount, 2);
+    if (!cid || canonicalCountry(p.hostCountryId) !== cid || !p.distributionId)
+      return handlerResult(false, { reason: 'PROFIT_DISTRIBUTION_DEBIT_SCOPE_INVALID' });
+    var amount = num(p.amountUsd), root = rootForContext(ctx);
     if ((root.ledger || []).some(function (x) { return x && x.transactionId === p.distributionId + ':DEBIT'; }))
       return handlerResult(true, { status: 'DUPLICATE', duplicate: true });
+    var cash = num(getPath(ctx, 'finance.available'));
+    if (amount === null || amount <= 0 || cash === null || cash + 1e-7 < amount)
+      return handlerResult(false, { reason: 'PROJECT_PROFIT_CASH_SHORTFALL', available: cash, required: amount });
+    var after = round(cash - amount, 2);
     appendLedger(root, { transactionId: p.distributionId + ':DEBIT', type: 'GOVERNMENT_PROJECT_PROFIT_DISTRIBUTION',
       action: 'GOVERNMENT_PROJECT_PROFIT_DISTRIBUTION', countryId: cid, countryCode: cid, amountUsd: amount,
       direction: 'OUTFLOW', debitAccount: 'GOVERNMENT:PROJECT_DISTRIBUTION_PAYABLE',
@@ -664,12 +672,15 @@
   }
   function profitCreditHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
-    if (!cid || canonicalCountry(p.investorCountryId) !== cid || !p.distributionId) return handlerResult(false, { reason: 'PROFIT_DISTRIBUTION_CREDIT_SCOPE_INVALID' });
-    var amount = num(p.amountUsd), cash = num(getPath(ctx, 'finance.available'));
-    if (amount === null || amount <= 0 || cash === null) return handlerResult(false, { reason: 'PROFIT_DISTRIBUTION_CREDIT_INVALID' });
-    var root = rootForContext(ctx), inv = investmentRoot(root, true), after = round(cash + amount, 2);
+    if (!cid || canonicalCountry(p.investorCountryId) !== cid || !p.distributionId)
+      return handlerResult(false, { reason: 'PROFIT_DISTRIBUTION_CREDIT_SCOPE_INVALID' });
+    var amount = num(p.amountUsd), root = rootForContext(ctx);
     if ((root.ledger || []).some(function (x) { return x && x.transactionId === p.distributionId + ':CREDIT'; }))
       return handlerResult(true, { status: 'DUPLICATE', duplicate: true });
+    var cash = num(getPath(ctx, 'finance.available'));
+    if (amount === null || amount <= 0 || cash === null)
+      return handlerResult(false, { reason: 'PROFIT_DISTRIBUTION_CREDIT_INVALID' });
+    var inv = investmentRoot(root, true), after = round(cash + amount, 2);
     appendLedger(root, { transactionId: p.distributionId + ':CREDIT', type: 'GOVERNMENT_PROJECT_INVESTMENT_RETURN',
       action: 'GOVERNMENT_PROJECT_INVESTMENT_RETURN', countryId: cid, countryCode: cid, amountUsd: amount,
       direction: 'INFLOW', debitAccount: 'GOVERNMENT:SOVEREIGN_TREASURY_CASH',
@@ -680,7 +691,6 @@
     saveContext(ctx, root, after);
     return handlerResult(true, { status: 'RECEIVED', balanceAfterUsd: after });
   }
-
   function registerHandlers(deps) {
     if (registered) return true;
     if (!deps.interop || typeof deps.interop.registerCommandHandler !== 'function' ||
