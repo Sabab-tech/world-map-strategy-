@@ -76,13 +76,30 @@
       ? (value.iso3 || value.iso3Code || value.countryCode || value.countryId || value.code || value.id)
       : value);
     if (/^[A-Z]{3}$/.test(raw)) return raw;
+    // The world scheduler's canonical countryId is often ISO2. Resolve it
+    // through the existing country-profile runtime before reading ISO3 ledgers.
+    try {
+      var countryRuntime = g.OmegaCountryRuntimeData || g.Omega && g.Omega.CountryRuntimeData;
+      var profile = countryRuntime && typeof countryRuntime.getProfile === 'function'
+        ? countryRuntime.getProfile(value)
+        : countryRuntime && typeof countryRuntime.resolveCountry === 'function'
+          ? countryRuntime.resolveCountry(value) : null;
+      var profileIso3 = id(profile && (profile.iso3 || profile.iso3Code));
+      if (/^[A-Z]{3}$/.test(profileIso3)) return profileIso3;
+    } catch (_) {}
     var registry = g.OmegaCanonicalIdentityRegistry || g.OmegaCountrySemanticBridge ||
       g.Omega && g.Omega.CanonicalIdentity;
     try {
       var resolved = registry && typeof registry.resolveCountry === 'function' ? registry.resolveCountry(value) : null;
       var row = resolved && resolved.raw && (resolved.raw.raw || resolved.raw);
-      var iso3 = id(row && (row.iso3 || row.iso3Code) || resolved && (resolved.iso3 || resolved.iso3Code || resolved.id));
+      var iso3 = id(row && (row.iso3 || row.iso3Code) || resolved && (resolved.iso3 || resolved.iso3Code));
       if (/^[A-Z]{3}$/.test(iso3)) return iso3;
+      // Some canonical bridges expose the ISO2 id first; ask the country
+      // runtime once more with that resolved identity rather than persisting it.
+      var bridgeProfile = countryRuntime && typeof countryRuntime.getProfile === 'function'
+        ? countryRuntime.getProfile(resolved && (resolved.countryCode || resolved.id) || value) : null;
+      var bridgeIso3 = id(bridgeProfile && (bridgeProfile.iso3 || bridgeProfile.iso3Code));
+      if (/^[A-Z]{3}$/.test(bridgeIso3)) return bridgeIso3;
     } catch (_) {}
     return '';
   }
