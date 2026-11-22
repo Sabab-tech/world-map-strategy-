@@ -1930,7 +1930,7 @@
       productionTransactionId: null, actualProductionQuantity: null, outputQuantities: null };
     if (!project) return lifecycle;
     var projectInvestmentId = String(project.investmentId || project.sourceInvestmentId || '');
-    if (projectInvestmentId && investmentId && projectInvestmentId !== investmentId) {
+    if (!investmentId || projectInvestmentId !== investmentId) {
       lifecycle.stage = 'INVESTMENT_IDENTITY_MISMATCH'; return lifecycle;
     }
     lifecycle.projectStatus = String(project.status || 'UNKNOWN').toUpperCase();
@@ -1940,10 +1940,15 @@
     if (String(project.projectType || '').toUpperCase() === 'FACTORY_CONSTRUCTION') {
       var economy = (state().economy || {})[host] || {};
       var assets = Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
-      var asset = assets.find(function (row) {
-        return row && String(row.constructionProjectId || '') === String(project.projectId || '') &&
-          (!investmentId || !row.investmentId || String(row.investmentId) === investmentId);
+      var projectAssets = assets.filter(function (row) {
+        return row && String(row.constructionProjectId || '') === String(project.projectId || '');
+      });
+      var asset = projectAssets.find(function (row) {
+        return String(row.investmentId || row.sourceInvestmentId || '') === investmentId;
       }) || null;
+      if (projectAssets.length && !asset) {
+        lifecycle.stage = 'INVESTMENT_IDENTITY_MISMATCH'; return lifecycle;
+      }
       if (!asset) { lifecycle.stage = lifecycle.projectStatus === 'COMPLETED' ? 'COMMISSIONING' : lifecycle.projectStatus; return lifecycle; }
       lifecycle.factoryId = asset.id || asset.assetId || null;
       lifecycle.assetStatus = String(asset.status || 'UNKNOWN').toUpperCase();
@@ -1957,10 +1962,11 @@
       var history = Array.isArray(network.factoryProductionCycleHistory) ? network.factoryProductionCycleHistory : [];
       var cycle = history.find(function (row) {
         return row && String(row.factoryId || '') === String(lifecycle.factoryId || '') &&
-          (!investmentId || !row.investmentId || String(row.investmentId) === investmentId) &&
+          String(row.investmentId || row.sourceInvestmentId || '') === investmentId &&
+          String(row.constructionProjectId || '') === String(project.projectId || '') &&
           String(row.status || '').toUpperCase() === 'COMPLETED' && !!row.transactionId &&
           (num(row.actualProductionQuantity) || 0) > 0;
-      });
+      }) || null;
       if (cycle) {
         lifecycle.stage = 'PRODUCTION'; lifecycle.firstProductionTurn = num(cycle.completedTurn ?? cycle.turn);
         lifecycle.firstProductionCycleId = cycle.cycleId || null; lifecycle.productionTransactionId = cycle.transactionId;
