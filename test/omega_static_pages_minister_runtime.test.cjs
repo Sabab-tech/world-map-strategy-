@@ -72,6 +72,7 @@ const expected = [
   'omega_global_trade_system.js',
   'omega_npc_national_macro_economy_runtime_v1.js',
   'omega_private_international_investment_runtime_v1.js',
+  'omega_autonomous_private_investment_decision_engine_v1.js',
   'omega_national_accounts_runtime_v1.js',
   'omega_black_market_system_v1.js',
   'omega_sanction_response_runtime_v1.js',
