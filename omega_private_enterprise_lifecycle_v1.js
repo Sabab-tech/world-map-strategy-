@@ -4317,11 +4317,26 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
     var cid=canonicalCountry(input.countryId||playerCountry()),co=id(input.companyId);
     if(!cid||cid!==playerCountry()||COMPANY_IDS.indexOf(co)<0)
       return{status:'BLOCKED',reason:'PLAYER_COUNTRY_OR_COMPANY_SCOPE_INVALID'};
-    var company=companyFlowAccount(cid,co);
+    // Resolve idempotency before requiring the live cash-flow journal. A save/load
+    // restore may retain the already-posted period close and capital checkpoint even
+    // when the source journal is unavailable or migrated; replay must not turn a
+    // completed close into COMPANY_CASH_FLOW_JOURNAL_NOT_READY.
+    var endTurn=turn(),capital=capitalAccount(cid,co,false),company=companyFlowAccount(cid,co),
+      previousClose=num(capital&&capital.lastFinancialCloseTurn);
+    if(previousClose===null)previousClose=num(company&&company.lastFinancialCloseTurn);
+    var periodId='PE-FINANCIAL-PERIOD:'+cid+':'+co+':T'+endTurn;
+    var existingFinanceRows=financeLedger(cid,false)||[];
+    var prior=existingFinanceRows.find(function(row){return row&&row.transactionId===periodId;});
+    if(prior)return{status:'DUPLICATE',reason:'FINANCIAL_PERIOD_ALREADY_CLOSED',transactionId:periodId,period:prior.period||null};
+    if(previousClose!==null&&endTurn<=previousClose)
+      return{status:'DUPLICATE',reason:'FINANCIAL_PERIOD_ALREADY_CLOSED',periodEndTurn:previousClose};
+    // A new close still requires its complete retained source journal. Never
+    // fabricate or silently reconstruct missing cash-flow rows.
     if(!company||(num(company.cashFlowJournalVersion)||0)<1||!Array.isArray(company.cashFlowEntries))
       return{status:'BLOCKED',reason:'COMPANY_CASH_FLOW_JOURNAL_NOT_READY'};
-    var capital=capitalAccount(cid,co,true),endTurn=turn(),previousClose=num(capital.lastFinancialCloseTurn),
-      startTurn=previousClose===null?num(company.cashFlowJournalStartedAtTurn):previousClose+1;
+    capital=capitalAccount(cid,co,true);
+    previousClose=num(capital.lastFinancialCloseTurn);
+    var startTurn=previousClose===null?num(company.cashFlowJournalStartedAtTurn):previousClose+1;
     if(startTurn===null)return{status:'BLOCKED',reason:'COMPANY_JOURNAL_START_TURN_UNKNOWN'};
     var droppedEntries=num(company.cashFlowJournalDroppedEntries)||0,
       droppedAtLastClose=num(capital.cashFlowJournalDroppedEntriesAtClose)||0,
@@ -4330,12 +4345,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
       return{status:'BLOCKED',reason:'COMPANY_FINANCIAL_PERIOD_JOURNAL_TRUNCATED',
         periodStartTurn:startTurn,periodEndTurn:endTurn,droppedEntriesSinceLastClose:droppedEntries-droppedAtLastClose,
         earliestDroppedTurn:earliestDroppedTurn};
-    var periodId='PE-FINANCIAL-PERIOD:'+cid+':'+co+':T'+endTurn;
     var financeRows=financeLedger(cid,true);
-    var prior=financeRows.find(function(row){return row&&row.transactionId===periodId;});
-    if(prior)return{status:'DUPLICATE',reason:'FINANCIAL_PERIOD_ALREADY_CLOSED',transactionId:periodId,period:prior.period||null};
-    if(previousClose!==null&&endTurn<=previousClose)
-      return{status:'DUPLICATE',reason:'FINANCIAL_PERIOD_ALREADY_CLOSED',periodEndTurn:previousClose};
     var allEntries=company.cashFlowEntries.filter(function(row){
       var t=num(row&&row.turn);return row&&String(row.status||'').toUpperCase()==='POSTED'&&row.isReversal!==true&&t!==null&&t>=startTurn&&t<=endTurn;
     });

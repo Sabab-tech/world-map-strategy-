@@ -304,8 +304,23 @@
             currentGlobalMarker.sessionId !== sessionId &&
             isObject(currentGlobalMarker.countries) &&
             Object.keys(currentGlobalMarker.countries).length >= loaded.countryIds.length) {
-          lastReport = clone(currentGlobalMarker);
-          return { version: VERSION, status: 'EXISTING_BASELINE_PRESERVED', reason: 'PRIOR_SESSION_BASELINE_NOT_OVERWRITTEN' };
+          var sessionStatus = id(effectiveSession.status);
+          var lastCommittedTurn = finite(effectiveSession.lastCommittedTurn);
+          var createdTurn = finite(effectiveSession.createdTurn);
+          var startedTurn = finite(effectiveSession.startedTurn);
+          var pausedTurn = finite(effectiveSession.pausedTurn);
+          var priorBaselineTurn = finite(currentGlobalMarker.initializedAtTurn);
+          var unplayedSessionHandoff = priorBaselineTurn === 0 &&
+            currentTurn(state) === 0 &&
+            ['READY', 'PAUSED'].indexOf(sessionStatus) >= 0 &&
+            (lastCommittedTurn === null || lastCommittedTurn === 0) &&
+            (createdTurn === null || createdTurn === 0) &&
+            (startedTurn === null || startedTurn === 0) &&
+            (pausedTurn === null || pausedTurn === 0);
+          if (!unplayedSessionHandoff) {
+            lastReport = clone(currentGlobalMarker);
+            return { version: VERSION, status: 'EXISTING_BASELINE_PRESERVED', reason: 'PRIOR_SESSION_BASELINE_NOT_OVERWRITTEN' };
+          }
         }
         var playerCountryId = id(effectiveSession.playerCountryId);
         var playerBaseline = loaded.baseline.countries[playerCountryId];
@@ -336,6 +351,12 @@
         }
         var playerAssetsRegistered = factoryRegistrationStatus === 'COMPLETED' ||
           factoryRegistrationStatus === 'ALREADY_REGISTERED';
+        var playerCountryEmploymentBaseline = typeof industrialNetwork.reconcileFactoryEmployment === 'function'
+          ? industrialNetwork.reconcileFactoryEmployment(playerCountryId, {
+              allowSimulationUnemploymentFallback: true,
+              simulatedUnemploymentRatePct: 5
+            })
+          : { status: 'BLOCKED', reason: 'FACTORY_EMPLOYMENT_RECONCILIATION_UNAVAILABLE' };
         var countryAllocations = Object.create(null);
         loaded.countryIds.forEach(function (countryId) {
           var row = loaded.baseline.countries[countryId];
@@ -382,6 +403,7 @@
           playerCountryAssetRegistryStatus: playerAssetsRegistered ? 'REGISTERED' : 'COMPLETED_WITH_GAPS',
           playerCountryLiveAssetCount: Number(factoryAssetRegistration.activeAssetCount) || 0,
           playerCountryFactoryRegistration: clone(factoryAssetRegistration),
+          playerCountryEmploymentBaseline: clone(playerCountryEmploymentBaseline),
           factoryRegistrationScope: 'ACTIVE_PLAYER_COUNTRY_ONLY',
           countriesCreated: loaded.countryIds.length,
           countriesPreserved: 0,

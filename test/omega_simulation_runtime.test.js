@@ -307,17 +307,243 @@ test('durable save slots checksum the canonical serialized world without a secon
     'single-pass serialized saves must restore the authoritative world state');
 });
 
+test('large canonical save slots use gzip storage and restore the original world',async()=>{
+  const {sandbox,state}=makeSandbox();
+  Object.assign(sandbox,{
+    Blob:globalThis.Blob,
+    Response:globalThis.Response,
+    ReadableStream:globalThis.ReadableStream,
+    TextEncoder:globalThis.TextEncoder,
+    CompressionStream:globalThis.CompressionStream,
+    DecompressionStream:globalThis.DecompressionStream,
+    btoa:globalThis.btoa,
+    atob:globalThis.atob
+  });
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  state.resource={BGD:{inventory:{coal:50},batches:[],auditLog:'OMEGA-CANONICAL-SAVE-'.repeat(12000)}};
+
+  const result=await runtime.saveSlot('compressed-save');
+  assert.equal(result.ok,true);
+  assert.equal(result.compression,'GZIP_BASE64');
+  assert.ok(result.storedBytes<result.originalBytes,
+    'gzip envelope must be smaller than the canonical plain JSON');
+  const stored=sandbox.localStorage.getItem(result.key);
+  assert.ok(stored.startsWith('OMEGA_SIM_SAVE_GZIP_V1:'));
+
+  state.resource.BGD.inventory.coal=999;
+  const restored=await runtime.loadSlot('compressed-save');
+  assert.equal(restored.lastLoadIntegrity,'VERIFIED');
+  assert.equal(state.resource.BGD.inventory.coal,50,
+    'compressed saves must restore the same authoritative world state');
+  assert.equal(state.resource.BGD.auditLog,'OMEGA-CANONICAL-SAVE-'.repeat(12000));
+});
+
+test('large IndexedDB save slots retain gzip as Blob without base64 expansion',async()=>{
+  const {sandbox,state}=makeSandbox();
+  const records=new Map();
+  const database={
+    objectStoreNames:{contains(){return true;}},
+    close(){},
+    transaction(){
+      const transaction={};
+      transaction.objectStore=()=>({
+        put(value,key){
+          const request={};
+          queueMicrotask(()=>{
+            records.set(String(key),value);
+            request.result=String(key);
+            request.onsuccess?.();
+            transaction.oncomplete?.();
+          });
+          return request;
+        },
+        get(key){
+          const request={};
+          queueMicrotask(()=>{
+            request.result=records.get(String(key))??null;
+            request.onsuccess?.();
+            transaction.oncomplete?.();
+          });
+          return request;
+        }
+      });
+      return transaction;
+    }
+  };
+  sandbox.indexedDB={
+    open(){
+      const request={};
+      queueMicrotask(()=>{
+        request.result=database;
+        request.onsuccess?.();
+      });
+      return request;
+    }
+  };
+  Object.assign(sandbox,{
+    Blob:globalThis.Blob,
+    Response:globalThis.Response,
+    ReadableStream:globalThis.ReadableStream,
+    TextEncoder:globalThis.TextEncoder,
+    CompressionStream:globalThis.CompressionStream,
+    DecompressionStream:globalThis.DecompressionStream,
+    btoa:globalThis.btoa,
+    atob:globalThis.atob
+  });
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  const audit=('OMEGA-IDB-BLOB-SAVE-বাংলা-😀-').repeat(12000);
+  state.resource={BGD:{inventory:{coal:50},batches:[],auditLog:audit}};
+
+  const result=await runtime.saveSlot('indexeddb-blob-save');
+  assert.equal(result.ok,true);
+  assert.equal(result.storage,'INDEXEDDB');
+  assert.equal(result.compression,'GZIP_BLOB');
+  assert.ok(result.storedBytes<result.originalBytes,
+    'the IndexedDB gzip Blob must remain smaller than the canonical snapshot');
+
+  const stored=records.get(result.key);
+  assert.ok(stored instanceof globalThis.Blob,
+    'IndexedDB must retain a structured-clone Blob, not a base64-expanded string');
+  const prefix=await new globalThis.Response(stored.slice(0,'OMEGA_SIM_SAVE_GZIP_V1:'.length)).text();
+  assert.equal(prefix,'OMEGA_SIM_SAVE_GZIP_V1:');
+
+  state.resource.BGD.inventory.coal=999;
+  const restored=await runtime.loadSlot('indexeddb-blob-save');
+  assert.equal(restored.lastLoadIntegrity,'VERIFIED');
+  assert.equal(state.resource.BGD.inventory.coal,50);
+  assert.equal(state.resource.BGD.auditLog,audit);
+  assert.equal(runtime.world.state,state,
+    'Blob-backed IndexedDB restore must preserve the authoritative Game.state root');
+});
+
+test('concurrent IndexedDB saves to different slots do not supersede each other',async()=>{
+  const {sandbox,state}=makeSandbox();
+  const records=new Map();
+  const database={
+    objectStoreNames:{contains(){return true;}},
+    close(){},
+    transaction(){
+      const transaction={};
+      transaction.objectStore=()=>({
+        put(value,key){
+          const request={};
+          queueMicrotask(()=>{
+            records.set(String(key),value);
+            request.result=String(key);
+            request.onsuccess?.();
+            transaction.oncomplete?.();
+          });
+          return request;
+        },
+        get(key){
+          const request={};
+          queueMicrotask(()=>{
+            request.result=records.get(String(key))??null;
+            request.onsuccess?.();
+            transaction.oncomplete?.();
+          });
+          return request;
+        }
+      });
+      return transaction;
+    }
+  };
+  sandbox.indexedDB={
+    open(){
+      const request={};
+      queueMicrotask(()=>{
+        request.result=database;
+        request.onsuccess?.();
+      });
+      return request;
+    }
+  };
+
+  let signalCompressionStarted;
+  const compressionStarted=new Promise(resolve=>{signalCompressionStarted=resolve;});
+  let releaseCompression;
+  const compressionGate=new Promise(resolve=>{releaseCompression=resolve;});
+  let heldFirstChunk=false;
+  class ControlledCompressionStream{
+    constructor(){
+      return new globalThis.TransformStream({
+        async transform(chunk,controller){
+          if(!heldFirstChunk){
+            heldFirstChunk=true;
+            signalCompressionStarted();
+            await compressionGate;
+          }
+          controller.enqueue(chunk);
+        }
+      });
+    }
+  }
+  class PassThroughDecompressionStream{
+    constructor(){return new globalThis.TransformStream();}
+  }
+  Object.assign(sandbox,{
+    Blob:globalThis.Blob,
+    Response:globalThis.Response,
+    ReadableStream:globalThis.ReadableStream,
+    TextEncoder:globalThis.TextEncoder,
+    TransformStream:globalThis.TransformStream,
+    CompressionStream:ControlledCompressionStream,
+    DecompressionStream:PassThroughDecompressionStream
+  });
+
+  loadScript('omega_simulation_runtime.js',sandbox);
+  const runtime=sandbox.Omega.Simulation;
+  state.resource={BGD:{inventory:{coal:50},batches:[],saveMarker:'SHARED_WORLD_STATE'}};
+
+  // Hold the first slot inside stream compression, then start another slot.
+  // A process-wide sequence counter incorrectly superseded the first checkpoint.
+  const mineSavePromise=runtime.saveSlot('mine-e2e-checkpoint');
+  await compressionStarted;
+  const defaultSavePromise=runtime.saveSlot('default');
+  releaseCompression();
+
+  const [mineSave,defaultSave]=await Promise.all([mineSavePromise,defaultSavePromise]);
+  assert.equal(mineSave.ok,true);
+  assert.equal(defaultSave.ok,true);
+  assert.equal(mineSave.storage,'INDEXEDDB');
+  assert.equal(defaultSave.storage,'INDEXEDDB');
+  assert.equal(records.has(mineSave.key),true,
+    'an unrelated default-slot write must not cancel the mine E2E checkpoint');
+  assert.equal(records.has(defaultSave.key),true,
+    'the default lifecycle save must also remain durable');
+
+  state.resource.BGD.inventory.coal=999;
+  await runtime.loadSlot('mine-e2e-checkpoint');
+  assert.equal(state.resource.BGD.inventory.coal,50,
+    'the named checkpoint must survive a later write to the default slot');
+  await runtime.loadSlot('default');
+  assert.equal(state.resource.BGD.inventory.coal,50,
+    'the default checkpoint must remain independently loadable');
+});
+
 test('turn autosave uses the canonical IndexedDB slot and retains legacy recovery',()=>{
   const lifecycle=fs.readFileSync(new URL('../omega_game_lifecycle_runtime_v1.js',import.meta.url),'utf8');
   const runtime=fs.readFileSync(new URL('../omega_simulation_runtime.js',import.meta.url),'utf8');
 
-  assert.match(lifecycle,/operation = sim\.saveSlot\(SLOT\)/,
+  assert.match(lifecycle,/operation = sim\.saveSlot\(SLOT,\s*\{/,
     'the lifecycle must persist through the canonical Simulation save API');
   assert.match(lifecycle,/await sim\.loadSlot\(SLOT\)/,
     'the lifecycle must restore through the same canonical slot');
-  assert.match(runtime,/async saveSlot\(slot='default'\)/);
-  assert.match(runtime,/indexedDbSaveRequest\(global\.indexedDB,'put',key,serialized\)/,
-    'the canonical save API must write its checksummed snapshot to IndexedDB first');
+  assert.match(runtime,/async saveSlot\(slot='default',\s*options=/);
+  assert.match(runtime,/const stored=encodeStoredSnapshot\(snapshot,\s*options\)/,
+    'the canonical save API must stream the authoritative snapshot into a compressed-or-plain storage envelope');
+  assert.match(runtime,/function\* saveSnapshotJsonChunks\(snapshot\)/,
+    'the streaming serializer must emit canonical JSON in bounded chunks');
+  assert.match(runtime,/hash=updateChecksumHash\(hash,chunk\)/,
+    'the persisted checksum must be calculated from the exact chunks written');
+  assert.match(runtime,/if\(this\.saveBarrier\)\{\s*await this\.saveBarrier;/,
+    'the next game turn must wait while the authoritative save stream is being written');
+  assert.match(runtime,/indexedDbSaveRequest\(global\.indexedDB,'put',key,stored\.value\)/,
+    'the canonical save API must write its storage envelope to IndexedDB first');
+  assert.match(runtime,/const decoded=await decodeStoredSave\(raw\)/,
+    'the canonical save API must decode compressed slots while retaining plain JSON compatibility');
   assert.match(runtime,/LOCAL_STORAGE_FALLBACK/,
     'the canonical slot must retain a localStorage fallback when IndexedDB is unavailable');
   assert.match(lifecycle,/function readIndexedSave\(/,

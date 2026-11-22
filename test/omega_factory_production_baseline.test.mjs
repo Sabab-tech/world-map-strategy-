@@ -803,6 +803,29 @@ test('factory production consumes proportional electricity and water only after 
   assert.equal(balance.water.availableThisTurn, 1000000 - result.utilityConsumption.waterM3);
 });
 
+test('explicit simulation-only core-crew labour reserve staffs starting factories without inventing national unemployment statistics', () => {
+  const { context, api } = makeRuntime();
+  const asset = makeSteelAsset();
+  context.Game.state.economy.BGD = { laborForce: 6000000, productionAssets: [asset] };
+  context.Game.state.transport.BGD = { infrastructure: { utilitySupply: {
+    electricityMWhPerDay: 1000000, waterM3PerDay: 1000000,
+    authority: 'TEST_FIXTURE', status: 'AVAILABLE', simulationOnly: true, assets: []
+  } } };
+  const result = api.reconcileFactoryEmployment('BGD', {
+    allowSimulationUnemploymentFallback: true,
+    simulatedUnemploymentRatePct: 5
+  });
+  assert.equal(result.status, 'ACTIVE', JSON.stringify(result));
+  assert.equal(result.unemploymentRateSimulationOnly, true);
+  assert.equal(result.source, 'SIMULATED_CORE_CREW_LABOUR_RESERVE');
+  assert.ok(result.baselineUnemployedCount >= 500);
+  assert.ok(result.jobsFilled >= 500);
+  assert.equal(context.Game.state.economy.BGD.unemploymentCount, undefined,
+    'simulated labour availability must not be written as measured national unemployment');
+  assert.equal(context.Game.state.economy.BGD.unemployment_rate, undefined);
+  assert.equal(context.Game.state.economy.BGD.unemploymentEstimateSimulationOnly, true);
+});
+
 test('factory production refuses an unrecorded workforce pool', () => {
   const { context, api } = makeRuntime();
   const asset = makeSteelAsset();

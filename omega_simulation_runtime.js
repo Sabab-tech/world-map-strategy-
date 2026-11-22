@@ -74,9 +74,106 @@
     return (hash>>>0).toString(16).padStart(8,'0');
   }
 
+  function* stableJsonChunks(value,omitRootChecksum=false,isRoot=true){
+    if(value===null||value===undefined){yield 'null';return;}
+    if(value instanceof Date){yield JSON.stringify(value.toISOString());return;}
+    if(typeof value!=='object'){
+      const encoded=JSON.stringify(value);
+      yield encoded===undefined?'null':encoded;
+      return;
+    }
+    if(Array.isArray(value)){
+      yield '[';
+      for(let index=0;index<value.length;index++){
+        if(index)yield ',';
+        yield* stableJsonChunks(value[index],false,false);
+      }
+      yield ']';
+      return;
+    }
+    const keys=Object.keys(value).filter(key=>key!=='__proto__'&&key!=='constructor'&&
+      !(isRoot&&omitRootChecksum&&key==='checksum')&&typeof value[key]!=='function'&&value[key]!==undefined).sort();
+    yield '{';
+    for(let index=0;index<keys.length;index++){
+      if(index)yield ',';
+      const key=keys[index];
+      yield JSON.stringify(key);
+      yield ':';
+      yield* stableJsonChunks(value[key],false,false);
+    }
+    yield '}';
+  }
+
+  function updateChecksumHash(hash,text){
+    for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
+    return hash>>>0;
+  }
+
   function checksumSnapshot(value){
-    // Exclude only the top-level checksum without cloning the full snapshot.
-    return checksumText(stableStringify(value||{},true));
+    // Hash canonical chunks in-place. Do not materialize a second full-world JSON string.
+    let hash=2166136261;
+    for(const chunk of stableJsonChunks(value||{},true,true))hash=updateChecksumHash(hash,chunk);
+    return (hash>>>0).toString(16).padStart(8,'0');
+  }
+
+  function* saveSnapshotJsonChunks(snapshot){
+    // Hash exactly the canonical JSON chunks as they are emitted. Appending
+    // the checksum after the canonical closing brace preserves the same
+    // checksum contract while avoiding a second traversal of a mutable root.
+    let hash=2166136261;
+    const emit=function*(chunk){
+      hash=updateChecksumHash(hash,chunk);
+      yield chunk;
+    };
+    yield* emit('{');
+    const keys=Object.keys(snapshot||{}).filter(key=>key!=='__proto__'&&key!=='constructor'&&
+      key!=='checksum'&&typeof snapshot[key]!=='function'&&snapshot[key]!==undefined).sort();
+    for(let index=0;index<keys.length;index++){
+      if(index)yield* emit(',');
+      const key=keys[index];
+      yield* emit(JSON.stringify(key));
+      yield* emit(':');
+      for(const chunk of stableJsonChunks(snapshot[key],false,false))yield* emit(chunk);
+    }
+    hash=updateChecksumHash(hash,'}');
+    const checksum=(hash>>>0).toString(16).padStart(8,'0');
+    if(keys.length)yield ',';
+    yield '"checksum":'+JSON.stringify(checksum);
+    yield '}';
+  }
+
+  function createSaveJsonStream(snapshot){
+    if(typeof global.ReadableStream!=='function'||typeof global.TextEncoder!=='function')return null;
+    const iterator=saveSnapshotJsonChunks(snapshot);
+    const encoder=new global.TextEncoder();
+    let originalBytes=0;
+    const stream=new global.ReadableStream({
+      pull(controller){
+        try{
+          let text='';
+          while(text.length<65536){
+            const next=iterator.next();
+            if(next.done){
+              if(text){
+                const bytes=encoder.encode(text);originalBytes+=bytes.byteLength;controller.enqueue(bytes);
+              }
+              controller.close();return;
+            }
+            text+=next.value;
+          }
+          const bytes=encoder.encode(text);originalBytes+=bytes.byteLength;controller.enqueue(bytes);
+        }catch(error){controller.error(error);}
+      },
+      cancel(){try{iterator.return?.();}catch(_){}}
+    });
+    return{stream,get originalBytes(){return originalBytes;}};
+  }
+
+  function serializeSaveSnapshot(snapshot){
+    const canonical=stableStringify(snapshot,true);
+    const checksum=checksumSnapshot(snapshot);
+    return canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
+      (canonical.length>2?',':'')+canonical.slice(1);
   }
 
   function createSaveSnapshot(runtime,options={},referenceWorldState=false){
@@ -85,9 +182,8 @@
       runtimeVersion:VERSION,
       status:runtime.status,
       clock:runtime.clock.snapshot(),
-      // saveSlot serializes synchronously before its first await, so it may
-      // safely capture the authoritative root by reference and avoid allocating
-      // a second full copy of a very large world. Public saveState() keeps the
+      // saveSlot holds the simulation save barrier while a bounded JSON
+      // stream reads the authoritative root. Public saveState() keeps the
       // detached deep-clone contract by default.
       worldState:referenceWorldState?runtime.world.state:runtime.world.snapshot(),
       commands:runtime.commandQueue.snapshot(),
@@ -106,6 +202,185 @@
     // runtime memory. Callers can omit them from routine durable autosaves.
     if(options.includeDiagnostics!==false)snapshot.diagnostics=runtime.diagnostics();
     return snapshot;
+  }
+
+  const SAVE_COMPRESSION_PREFIX='OMEGA_SIM_SAVE_GZIP_V1:';
+
+  function bytesToBase64(bytes){
+    if(typeof global.btoa!=='function')throw new Error('SAVE_BASE64_ENCODER_UNAVAILABLE');
+    let binary='';
+    const chunkSize=0x8000;
+    for(let offset=0;offset<bytes.length;offset+=chunkSize){
+      const chunk=bytes.subarray(offset,Math.min(bytes.length,offset+chunkSize));
+      binary+=String.fromCharCode.apply(null,chunk);
+    }
+    return global.btoa(binary);
+  }
+
+  function base64ToBytes(value){
+    if(typeof global.atob!=='function')throw new Error('SAVE_BASE64_DECODER_UNAVAILABLE');
+    const binary=global.atob(String(value||''));
+    const bytes=new Uint8Array(binary.length);
+    for(let index=0;index<binary.length;index++)bytes[index]=binary.charCodeAt(index);
+    return bytes;
+  }
+
+  function encodeStoredSave(serialized){
+    const originalBytes=typeof global.Blob==='function'
+      ? new global.Blob([serialized]).size : String(serialized).length;
+    // Preserve the original synchronous plain-JSON path when compression is
+    // unavailable. pagehide/visibility flushes must not add a microtask before
+    // localStorage receives the latest coherent checkpoint.
+    if(typeof global.CompressionStream!=='function'||
+       typeof global.DecompressionStream!=='function'||
+       typeof global.Blob!=='function'||
+       typeof global.Response!=='function'){
+      return {
+        value:serialized,
+        compression:'NONE',
+        originalBytes,
+        storedBytes:String(serialized).length
+      };
+    }
+    return (async function(){
+      try{
+        const source=new global.Blob([serialized]);
+        const compressedStream=source.stream().pipeThrough(new global.CompressionStream('gzip'));
+        const response=new global.Response(compressedStream);
+
+        // IndexedDB supports structured-clone Blob values. Store the gzip stream
+        // as a Blob rather than expanding it into a base64 string: large 197-country
+        // snapshots otherwise need simultaneous plain JSON, compressed bytes,
+        // binary-string and base64-string copies in the renderer process.
+        if(global.indexedDB&&typeof global.indexedDB.open==='function'&&
+           typeof response.blob==='function'){
+          const compressedBlob=await response.blob();
+          const encodedBlob=new global.Blob([SAVE_COMPRESSION_PREFIX,compressedBlob],
+            {type:'application/x-omega-simulation-save'});
+          if(encodedBlob.size<source.size){
+            return {
+              value:encodedBlob,
+              compression:'GZIP_BLOB',
+              originalBytes:source.size,
+              storedBytes:encodedBlob.size
+            };
+          }
+          return {
+            value:serialized,
+            compression:'NONE',
+            originalBytes:source.size,
+            storedBytes:String(serialized).length
+          };
+        }
+
+        // Browsers without IndexedDB retain the compatible string envelope for
+        // localStorage. This branch is intentionally not used for normal modern
+        // IndexedDB saves because base64 increases renderer memory and stored size.
+        if(typeof global.btoa!=='function'||typeof global.atob!=='function'){
+          return {
+            value:serialized,
+            compression:'NONE',
+            originalBytes:source.size,
+            storedBytes:String(serialized).length
+          };
+        }
+        const compressedBytes=new Uint8Array(await response.arrayBuffer());
+        const encoded=SAVE_COMPRESSION_PREFIX+bytesToBase64(compressedBytes);
+        if(encoded.length>=String(serialized).length){
+          return {
+            value:serialized,
+            compression:'NONE',
+            originalBytes:source.size,
+            storedBytes:String(serialized).length
+          };
+        }
+        return {
+          value:encoded,
+          compression:'GZIP_BASE64',
+          originalBytes:source.size,
+          storedBytes:encoded.length
+        };
+      }catch(error){
+        // Compression is an optional storage optimization. A browser without a
+        // functioning CompressionStream retains the established plain JSON path.
+        return {
+          value:serialized,
+          compression:'NONE',
+          originalBytes,
+          storedBytes:String(serialized).length,
+          compressionError:String(error&&error.message||error)
+        };
+      }
+    })();
+  }
+
+  function encodeStoredSnapshot(snapshot,options={}){
+    // A page-exit emergency checkpoint is synchronous. Normal no-IndexedDB
+    // saves still use the established gzip/base64 storage optimization.
+    if((!global.indexedDB||typeof global.indexedDB.open!=='function')&&
+       options.synchronousLocalStorage===true){
+      const value=serializeSaveSnapshot(snapshot);
+      return{value,compression:'NONE',originalBytes:value.length,storedBytes:value.length};
+    }
+    if(!global.indexedDB||typeof global.indexedDB.open!=='function')
+      return encodeStoredSave(serializeSaveSnapshot(snapshot));
+    const canStream=typeof global.CompressionStream==='function'&&
+      typeof global.DecompressionStream==='function'&&
+      typeof global.Blob==='function'&&
+      typeof global.Response==='function'&&
+      typeof global.ReadableStream==='function'&&
+      typeof global.TextEncoder==='function';
+    if(!canStream)return encodeStoredSave(serializeSaveSnapshot(snapshot));
+
+    return (async function(){
+      const source=createSaveJsonStream(snapshot);
+      if(!source)return encodeStoredSave(serializeSaveSnapshot(snapshot));
+      try{
+        // Serialize and gzip incrementally. The previous implementation first
+        // materialized the complete canonical JSON string, then copied it into
+        // a Blob before compression; a 197-country world could exhaust the
+        // Chromium renderer before IndexedDB was even reached.
+        const compressedStream=source.stream.pipeThrough(new global.CompressionStream('gzip'));
+        const compressedBlob=await new global.Response(compressedStream).blob();
+        const value=new global.Blob([SAVE_COMPRESSION_PREFIX,compressedBlob],{
+          type:'application/x-omega-simulation-save'
+        });
+        return{
+          value,compression:'GZIP_BLOB',
+          originalBytes:source.originalBytes,storedBytes:value.size
+        };
+      }catch(error){
+        // Preserve compatibility if a browser exposes stream APIs but cannot
+        // complete gzip. The legacy serializer is used only on this fallback.
+        const legacy=encodeStoredSave(serializeSaveSnapshot(snapshot));
+        const stored=legacy&&typeof legacy.then==='function'?await legacy:legacy;
+        return{...stored,compressionError:String(error&&error.message||error)};
+      }
+    })();
+  }
+
+  async function decodeStoredSave(stored){
+    if(typeof global.Blob==='function'&&stored instanceof global.Blob){
+      if(typeof global.Response!=='function')throw new Error('SIMULATION_SAVE_BLOB_READER_UNAVAILABLE');
+      const header=await new global.Response(stored.slice(0,SAVE_COMPRESSION_PREFIX.length)).text();
+      if(header!==SAVE_COMPRESSION_PREFIX)return new global.Response(stored).text();
+      if(typeof global.DecompressionStream!=='function')
+        throw new Error('SIMULATION_SAVE_GZIP_DECOMPRESSION_UNAVAILABLE');
+      const compressed=stored.slice(SAVE_COMPRESSION_PREFIX.length);
+      const stream=compressed.stream().pipeThrough(new global.DecompressionStream('gzip'));
+      return new global.Response(stream).text();
+    }
+    const value=String(stored==null?'':stored);
+    if(!value.startsWith(SAVE_COMPRESSION_PREFIX))return value;
+    if(typeof global.DecompressionStream!=='function'||
+       typeof global.Blob!=='function'||
+       typeof global.Response!=='function'){
+      throw new Error('SIMULATION_SAVE_GZIP_DECOMPRESSION_UNAVAILABLE');
+    }
+    const bytes=base64ToBytes(value.slice(SAVE_COMPRESSION_PREFIX.length));
+    const compressed=new global.Blob([bytes]);
+    const stream=compressed.stream().pipeThrough(new global.DecompressionStream('gzip'));
+    return new global.Response(stream).text();
   }
 
   function indexedDbSaveRequest(indexedDB,operation,key,value){
@@ -137,7 +412,8 @@
         transaction.onabort=()=>finish(transaction.error||new Error('SAVE_DATABASE_TRANSACTION_ABORTED'));
         try{
           const store=transaction.objectStore('slots');
-          request=operation==='put'?store.put(String(value),String(key)):store.get(String(key));
+          const storedValue=typeof global.Blob==='function'&&value instanceof global.Blob?value:String(value);
+          request=operation==='put'?store.put(storedValue,String(key)):store.get(String(key));
           request.onsuccess=()=>{result=request.result===undefined?null:request.result;};
           request.onerror=()=>finish(request.error||new Error('SAVE_DATABASE_REQUEST_FAILED'));
         }catch(error){try{transaction.abort();}catch(_){}finish(error);}
@@ -196,6 +472,31 @@
       }
     }
     return target;
+  }
+
+  function persistedTurnParticipantResults(rows) {
+    return (Array.isArray(rows) ? rows : []).slice(-256).map(function (row) {
+      var compact = {
+        id: String(row && row.id || ''),
+        turn: finite(row && row.turn, 0),
+        status: String(row && row.status || 'UNKNOWN')
+      };
+      if (row && row.error) compact.error = String(row.error).slice(0, 500);
+      var result = row && row.result;
+      if (result && typeof result === 'object') {
+        var summary = {};
+        ['status', 'reason', 'countryId', 'factoryId', 'cycleId', 'turn',
+          'startedCount', 'completedCount', 'processedCount', 'blockedCount',
+          'awaitingCount', 'warehouseTransferCount'].forEach(function (key) {
+          var value = result[key];
+          if (value === null || ['string', 'number', 'boolean'].indexOf(typeof value) >= 0) {
+            if (value !== undefined) summary[key] = typeof value === 'string' ? value.slice(0, 160) : value;
+          }
+        });
+        if (Object.keys(summary).length) compact.result = summary;
+      }
+      return compact;
+    });
   }
 
   function finite(value,fallback){
@@ -467,6 +768,10 @@
       this.ministryRuntime=null;
       this.status='READY';
       this.stepInProgress=false;
+      this.saveBarrier=null;
+      // Save supersession is slot-scoped: a write to `default` must never
+      // invalidate an independent named-slot checkpoint (or vice versa).
+      this.saveSlotSequences=new Map();
       this.lastError=null;
       this.lastLoadIntegrity='NOT_LOADED';
       this.lastStepSummary=null;
@@ -534,12 +839,12 @@
           this.world.state.simulation.subsystemTurns[entry.id]=turn;
           results.push({id:entry.id,turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
           this.lastTurnParticipantResults=results.slice(-256);
-          this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
+          this.world.state.simulation.lastTurnParticipantResults=persistedTurnParticipantResults(this.lastTurnParticipantResults);
         }catch(error){
           const failure={id:entry.id,turn,status:'FAILED',error:String(error?.message||error)};
           results.push(failure);
           this.lastTurnParticipantResults=results.slice(-256);
-          this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
+          this.world.state.simulation.lastTurnParticipantResults=persistedTurnParticipantResults(this.lastTurnParticipantResults);
           // Stop the world immediately rather than silently let one sector miss a day.
           this.status='ERROR';
           this.clock.pause();
@@ -556,7 +861,7 @@
         global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=false;
       }
       this.lastTurnParticipantResults=results.slice(-256);
-      this.world.state.simulation.lastTurnParticipantResults=clone(this.lastTurnParticipantResults);
+      this.world.state.simulation.lastTurnParticipantResults=persistedTurnParticipantResults(this.lastTurnParticipantResults);
       return results;
     }
 
@@ -875,6 +1180,7 @@
         let completedSteps=0,last=null;
         for(let i=0;i<scheduledSteps&&this.status==='RUNNING';i++){
           last=await this.step();
+          if(last&&last.skipped)break;
           completedSteps+=1;
         }
         return {steps:completedSteps,scheduledSteps,turn:this.clock.turn,last,status:this.status};
@@ -891,13 +1197,23 @@
       let last=null,completed=0;
       for(let i=0;i<count&&this.status!=='ERROR';i++){
         last=await this.step();
+        if(last&&last.skipped)break;
         completed+=1;
       }
-      if(!wasRunning&&this.status!=='ERROR')this.status='READY';
+      if(!wasRunning&&this.status==='RUNNING')this.status='READY';
       return {turn:this.clock.turn,steps:completed,last,status:this.status};
     }
 
     async step(){
+      // A durable streaming save reads the authoritative root over multiple
+      // chunks. Hold the next turn until the save has reached IndexedDB.
+      if(this.saveBarrier){
+        await this.saveBarrier;
+        // A frame may have queued this step before the app was backgrounded.
+        // Recheck after the wait so a visibility/pagehide pause cannot be
+        // undone by a step that resumes after its save barrier releases.
+        if(this.status!=='RUNNING')return {turn:this.clock.turn,steps:0,status:this.status,skipped:true};
+      }
       if(this.stepInProgress)throw new Error('SIMULATION_STEP_REENTRANT');
       if(this.status==='ERROR')throw new Error('SIMULATION_IN_ERROR:'+String(this.lastError||'UNKNOWN'));
       this.stepInProgress=true;
@@ -1075,41 +1391,91 @@
       return this.diagnostics();
     }
 
-    async saveSlot(slot='default'){
+    async saveSlot(slot='default',options={}){
       const key='omega.game.save.'+String(slot||'default');
-      // Volatile diagnostics are not part of the durable game state. Serialize
-      // the canonical snapshot once, then hash and inject its root checksum into
-      // that same JSON string. The previous path walked the entire world twice
-      // (stable checksum serialization + JSON.stringify), blocking the browser
-      // main thread on large country/economy saves.
-      const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},true);
-      const canonical=stableStringify(snapshot,true);
-      const checksum=checksumText(canonical);
-      snapshot.checksum=checksum;
-      const serialized=canonical.slice(0,1)+'"checksum":'+JSON.stringify(checksum)+
-        (canonical.length>2?',':'')+canonical.slice(1);
-      if(global.indexedDB&&typeof global.indexedDB.open==='function'){
-        try{
-          await indexedDbSaveRequest(global.indexedDB,'put',key,serialized);
-          return {ok:true,key,turn:this.clock.turn,storage:'INDEXEDDB'};
-        }catch(indexedDbError){
-          // Preserve compatibility with browsers where IndexedDB is disabled
-          // or unavailable. The fallback may still fail on large saves, in
-          // which case the original storage error is included in the message.
-          try{
-            if(typeof global.localStorage!=='undefined'){
-              global.localStorage.setItem(key,serialized);
-              return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
+      const previousSave=this.saveBarrier;
+      const sequences=this.saveSlotSequences || (this.saveSlotSequences=new Map());
+      const sequence=(sequences.get(key)||0)+1;
+      sequences.set(key,sequence);
+      let releaseSave;
+      const currentSave=new Promise(resolve=>{releaseSave=resolve;});
+      this.saveBarrier=currentSave;
+      let released=false;
+      const releaseCurrentSave=()=>{
+        if(released)return;
+        released=true;
+        releaseSave();
+        if(this.saveBarrier===currentSave)this.saveBarrier=null;
+      };
+      try{
+        // Exit flushes must not be queued behind an earlier compression promise.
+        if(previousSave&&options.synchronousLocalStorage!==true)await previousSave;
+        // Volatile diagnostics are omitted. Canonical JSON and its checksum
+        // are emitted together as a stream, avoiding a full-size JSON duplicate.
+        const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},true);
+      // Keep the checksum over the canonical plain JSON snapshot, but store a
+      // gzip envelope when the browser supports both compression directions.
+      // Large 197-country saves can exceed localStorage/IndexedDB quotas.
+      const persistStoredSave = stored => {
+        // Prevent an older asynchronous save from overwriting a newer
+        // page-exit checkpoint when it resolves later.
+        if(sequence!==this.saveSlotSequences.get(key))
+          return {ok:true,skipped:true,storage:'SUPERSEDED',turn:this.clock.turn,
+            compression:stored.compression,storedBytes:stored.storedBytes};
+        const result = {
+          ok:true,key,turn:this.clock.turn,
+          compression:stored.compression,
+          originalBytes:stored.originalBytes,
+          storedBytes:stored.storedBytes
+        };
+        if(global.indexedDB&&typeof global.indexedDB.open==='function'){
+          return indexedDbSaveRequest(global.indexedDB,'put',key,stored.value).then(() => ({
+            ...result,storage:'INDEXEDDB'
+          })).catch(async indexedDbError => {
+            try{
+              if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
+              let fallbackValue=stored.value,fallbackCompression=stored.compression,fallbackBytes=stored.storedBytes;
+              if(typeof global.Blob==='function'&&fallbackValue instanceof global.Blob){
+                const header=await new global.Response(fallbackValue.slice(0,SAVE_COMPRESSION_PREFIX.length)).text();
+                if(header===SAVE_COMPRESSION_PREFIX&&typeof global.btoa==='function'){
+                  const compressed=fallbackValue.slice(SAVE_COMPRESSION_PREFIX.length);
+                  const bytes=new Uint8Array(await new global.Response(compressed).arrayBuffer());
+                  fallbackValue=SAVE_COMPRESSION_PREFIX+bytesToBase64(bytes);
+                  fallbackCompression='GZIP_BASE64';
+                  fallbackBytes=fallbackValue.length;
+                }else{
+                  fallbackValue=serializeSaveSnapshot(snapshot);
+                  fallbackCompression='NONE';
+                  fallbackBytes=String(fallbackValue).length;
+                }
+              }
+              global.localStorage.setItem(key,fallbackValue);
+              return {...result,compression:fallbackCompression,storedBytes:fallbackBytes,storage:'LOCAL_STORAGE_FALLBACK'};
+            }catch(localStorageError){
+              throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; INDEXEDDB:'+String(indexedDbError&&indexedDbError.message||indexedDbError)+'; COMPRESSION:'+stored.compression+'; STORED_BYTES:'+stored.storedBytes);
             }
-          }catch(localStorageError){
-            throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(localStorageError&&localStorageError.message||localStorageError)+'; INDEXEDDB:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
-          }
-          throw new Error('LOCAL_STORAGE_AND_INDEXEDDB_SAVE_FAILED:'+String(indexedDbError&&indexedDbError.message||indexedDbError));
+          });
         }
+        if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
+        // This stays synchronous for the legacy no-compression path, preserving
+        // the previous pagehide/visibility flush contract on older webviews.
+        global.localStorage.setItem(key,stored.value);
+        return {...result,storage:'LOCAL_STORAGE_FALLBACK'};
+      };
+      const stored=encodeStoredSnapshot(snapshot,options);
+      if(stored&&typeof stored.then==='function')
+        return Promise.resolve(stored).then(persistStoredSave).finally(releaseCurrentSave);
+      // Keep a plain-JSON/no-IndexedDB fallback synchronous. pagehide and
+      // beforeunload cannot rely on another promise microtask before teardown.
+      const persisted=persistStoredSave(stored);
+      if(persisted&&typeof persisted.then==='function')
+        return persisted.finally(releaseCurrentSave);
+      releaseCurrentSave();
+      return persisted;
+      }catch(error){
+        releaseCurrentSave();
+        throw error;
       }
-      if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
-      global.localStorage.setItem(key,serialized);
-      return {ok:true,key,turn:this.clock.turn,storage:'LOCAL_STORAGE_FALLBACK'};
     }
 
     async loadSlot(slot='default'){
@@ -1128,7 +1494,10 @@
         if(indexedDbError)throw new Error('SAVE_SLOT_NOT_FOUND:'+key+'; INDEXEDDB:'+String(indexedDbError.message||indexedDbError));
         throw new Error('SAVE_SLOT_NOT_FOUND:'+key);
       }
-      return this.loadState(JSON.parse(raw));
+      // Plain JSON from earlier versions is still accepted. New saves may use
+      // a gzip-prefixed payload to fit large country-state snapshots in quota.
+      const decoded=await decodeStoredSave(raw);
+      return this.loadState(JSON.parse(decoded));
     }
 
     diagnostics(){

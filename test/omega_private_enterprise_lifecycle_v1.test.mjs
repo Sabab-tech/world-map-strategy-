@@ -1442,6 +1442,40 @@ test('company cash-flow period close posts net-profit tax once and carries post-
   ]);
 });
 
+test('financial period replay stays duplicate after the retained cash-flow journal is unavailable',()=>{
+  const h=makeHarness();
+  h.state.economy.BGD.companyAccounts={
+    [COMPANY]:{
+      companyId:COMPANY,openingCashStatus:'UNKNOWN',
+      runtimeNetCashFlow:60,grossRevenue:100,paymentsReceived:100,paymentsMade:40,
+      taxPaid:0,workerIncomePaid:40,transportPaid:0,
+      cashFlowJournalVersion:1,cashFlowJournalStartedAtTurn:1,lastTurn:4,
+      cashFlowEntries:[
+        {entryId:'REPLAY-SALE-1',companyId:COMPANY,amount:100,direction:'CREDIT',category:'DOMESTIC_SUPPLY',turn:1,status:'POSTED'},
+        {entryId:'REPLAY-WAGES-1',companyId:COMPANY,amount:20,direction:'DEBIT',category:'WORKER_INCOME',turn:2,status:'POSTED'},
+        {entryId:'REPLAY-INPUT-1',companyId:COMPANY,amount:20,direction:'DEBIT',category:'FACTORY_INPUT_PURCHASE',turn:3,status:'POSTED'}
+      ]
+    }
+  };
+  const first=h.api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:COMPANY});
+  assert.equal(first.status,'CLOSED');
+  const treasuryAfterClose=h.state.finance.BGD.available;
+  const retainedAfterClose=h.api.getCompanyFinanceSummary('BGD',COMPANY).capital.retainedEarningsBalance;
+
+  // Simulate a restored/migrated save whose durable close checkpoint remains,
+  // but whose original cash-flow journal is no longer present.
+  delete h.state.economy.BGD.companyAccounts[COMPANY].cashFlowJournalVersion;
+  delete h.state.economy.BGD.companyAccounts[COMPANY].cashFlowEntries;
+  const replay=h.api.closeCompanyFinancialPeriod({countryId:'BGD',companyId:COMPANY});
+
+  assert.equal(replay.status,'DUPLICATE',JSON.stringify(replay));
+  assert.equal(replay.reason,'FINANCIAL_PERIOD_ALREADY_CLOSED');
+  assert.equal(h.state.finance.BGD.available,treasuryAfterClose,
+    'a duplicate close must never credit the Treasury a second time');
+  assert.equal(h.api.getCompanyFinanceSummary('BGD',COMPANY).capital.retainedEarningsBalance,retainedAfterClose,
+    'a duplicate close must not change retained earnings');
+});
+
 test('company tax close blocks when current-period cash-flow entries were pruned',()=>{
   const h=makeHarness();
   h.state.economy.BGD.companyAccounts={
