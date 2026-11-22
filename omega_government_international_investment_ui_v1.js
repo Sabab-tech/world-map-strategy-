@@ -176,6 +176,8 @@
         if (Math.abs(priorShare - currentShare) > 750) return;
         var priorRate = number(proposal.annualInterestRateBps) || 0, currentRate = number(terms.annualInterestRateBps) || 0;
         if (Math.abs(priorRate - currentRate) > 200) return;
+        var priorGrace = number(proposal.gracePeriodYears), currentGrace = number(terms.gracePeriodYears);
+        if ((priorGrace === null ? 0 : priorGrace) !== (currentGrace === null ? 0 : currentGrace)) return;
         decisions.push(accepted ? 1 : 0);
       });
     });
@@ -197,18 +199,68 @@
     });
     return values;
   }
+  function loanRepaymentPreview(amountUsd, annualInterestRateBps, durationYears, gracePeriodYears) {
+    var principal = number(amountUsd), annualRateBps = number(annualInterestRateBps);
+    var duration = number(durationYears), graceYears = number(gracePeriodYears);
+    if (principal === null || principal <= 0 || annualRateBps === null || annualRateBps < 0 || annualRateBps > 2000 ||
+        duration === null || !Number.isInteger(duration) || duration < 1 || duration > 30 ||
+        graceYears === null || !Number.isInteger(graceYears) || graceYears < 0 || graceYears > 5 || graceYears >= duration)
+      return { available: false, reason: 'LOAN_PREVIEW_TERMS_INVALID' };
+    function roundMoney(value) { return Math.round((Number(value) + Number.EPSILON) * 100) / 100; }
+    var quarterlyRate = annualRateBps / 10000 / 4;
+    var totalInstallments = duration * 4, graceInstallments = graceYears * 4;
+    var remainingInstallments = Math.max(1, totalInstallments - graceInstallments);
+    var graceLeft = graceInstallments, balance = roundMoney(principal);
+    var totalInterestUsd = 0, totalRepaymentUsd = 0;
+    var firstGracePaymentUsd = null, firstAmortizingPaymentUsd = null, finalPaymentUsd = null;
+    for (var quarter = 1; quarter <= totalInstallments; quarter++) {
+      var interest = roundMoney(balance * quarterlyRate), principalPayment = 0, payment = interest;
+      if (graceLeft > 0) {
+        if (firstGracePaymentUsd === null) firstGracePaymentUsd = payment;
+        graceLeft -= 1;
+      } else {
+        var periodic = quarterlyRate > 0
+          ? balance * quarterlyRate / (1 - Math.pow(1 + quarterlyRate, -remainingInstallments))
+          : balance / remainingInstallments;
+        payment = roundMoney(periodic);
+        principalPayment = Math.min(balance, Math.max(0, roundMoney(payment - interest)));
+        payment = roundMoney(interest + principalPayment);
+        remainingInstallments = Math.max(0, remainingInstallments - 1);
+        if (firstAmortizingPaymentUsd === null) firstAmortizingPaymentUsd = payment;
+      }
+      balance = roundMoney(Math.max(0, balance - principalPayment));
+      totalInterestUsd = roundMoney(totalInterestUsd + interest);
+      totalRepaymentUsd = roundMoney(totalRepaymentUsd + payment);
+      finalPaymentUsd = payment;
+    }
+    return {
+      available: true, currency: 'USD', paymentFrequencyDays: 90,
+      totalInstallments: totalInstallments, graceInstallments: graceInstallments,
+      amortizingInstallments: totalInstallments - graceInstallments,
+      gracePeriodYears: graceYears, amortizationYears: duration - graceYears,
+      firstGracePaymentUsd: firstGracePaymentUsd,
+      firstAmortizingPaymentUsd: firstAmortizingPaymentUsd,
+      finalPaymentUsd: finalPaymentUsd, totalInterestUsd: totalInterestUsd,
+      totalRepaymentUsd: totalRepaymentUsd, remainingPrincipalUsd: balance,
+      basis: 'FINANCE_RUNTIME_QUARTERLY_AMORTIZATION'
+    };
+  }
   function dealPreview(form, investorCountry, host, sector, type) {
     if (!host || !sector) return '<p class="ogiv-note">Choose a destination country and investment sector to calculate the deal preview.</p>';
     var values = formValues(form), instrument = String(values.instrument || 'LOAN').toUpperCase();
     var amountLocal = number(values.amount), fx = fxFor(investorCountry);
     var amountUsd = amountLocal !== null && amountLocal > 0 && fx.rate !== null ? amountLocal / fx.rate : null;
     var duration = instrument === 'GRANT' || instrument === 'DOMESTIC_PUBLIC_CAPEX' ? 0 : number(values.durationYears);
+    var gracePeriodYears = instrument === 'LOAN' ? (number(values.gracePeriodYears) || 0) : 0;
     var sharePct = number(values.equitySharePct), interestPct = number(values.interestPct);
     var shareBps = ['EQUITY', 'JOINT_VENTURE'].includes(instrument) ? Math.round((sharePct || 0) * 100) : 0;
     var interestBps = instrument === 'LOAN' ? Math.round((interestPct || 0) * 100) : 0;
+    var repaymentPreview = instrument === 'LOAN' && amountUsd !== null && duration !== null
+      ? loanRepaymentPreview(amountUsd, interestBps, duration, gracePeriodYears) : null;
     var history = estimateAcceptanceRate(investorCountry, host, {
       projectType: type, sector: sector, instrument: instrument, amountUsd: amountUsd,
-      durationYears: duration, equityShareBps: shareBps, annualInterestRateBps: interestBps
+      durationYears: duration, equityShareBps: shareBps, annualInterestRateBps: interestBps,
+      gracePeriodYears: gracePeriodYears
     });
     var api = runtime(), risk = null;
     try { risk = api && typeof api.getRiskSnapshot === 'function' ? api.getRiskSnapshot(host) : null; } catch (_) {}
@@ -216,13 +268,18 @@
     var destination = profiles().find(function (row) { return row.code === host; });
     var amountText = amountUsd === null ? 'Enter an amount and confirm current FX' : money(amountUsd, 'USD');
     var profitHtml = '';
-    if (instrument === 'LOAN' && amountUsd !== null && duration !== null && interestPct !== null) {
-      var annualInterest = amountUsd * interestPct / 100;
-      var totalInterest = annualInterest * duration;
-      profitHtml = '<div><small>Estimated annual interest (' + interestPct + '%)</small><strong>' + money(annualInterest, 'USD') +
-        '</strong></div><div><small>Total simple interest over term</small><strong>' + money(totalInterest, 'USD') +
-        '</strong></div><div><small>Total principal + interest</small><strong>' + money(amountUsd + totalInterest, 'USD') +
-        '</strong></div>';
+    if (instrument === 'LOAN') {
+      if (repaymentPreview && repaymentPreview.available) {
+        profitHtml = '<div><small>Annual loan interest rate</small><strong>' + interestBps / 100 + '%</strong></div>' +
+          (repaymentPreview.graceInstallments
+            ? '<div><small>Grace-period payment · quarterly</small><strong>' + money(repaymentPreview.firstGracePaymentUsd, 'USD') + ' · interest only</strong></div>'
+            : '') +
+          '<div><small>First amortizing payment · quarterly</small><strong>' + money(repaymentPreview.firstAmortizingPaymentUsd, 'USD') + '</strong></div>' +
+          '<div><small>Estimated total interest income</small><strong>' + money(repaymentPreview.totalInterestUsd, 'USD') + '</strong></div>' +
+          '<div><small>Estimated total repayment</small><strong>' + money(repaymentPreview.totalRepaymentUsd, 'USD') + '</strong></div>';
+      } else {
+        profitHtml = '<div><small>Loan repayment estimate</small><strong>Complete valid amount, rate and duration to calculate</strong></div>';
+      }
     } else if (['EQUITY', 'JOINT_VENTURE'].includes(instrument)) {
       profitHtml = '<div><small>Ownership share</small><strong>' + (sharePct === null ? 'Select a share' : sharePct + '%') +
         '</strong></div><div><small>Profit entitlement</small><strong>Share of verified distributable profit</strong></div>';
@@ -230,6 +287,15 @@
       profitHtml = '<div><small>Financial return</small><strong>Grant / public CAPEX — no repayment return</strong></div>';
     }
     var termHtml = '';
+    if (instrument === 'LOAN') {
+      termHtml = repaymentPreview && repaymentPreview.available
+        ? '<div><small>Grace period</small><strong>' + (gracePeriodYears
+          ? gracePeriodYears + ' years · ' + repaymentPreview.graceInstallments + ' interest-only quarterly payments'
+          : 'No grace period') + '</strong></div>' +
+          '<div><small>Repayment schedule</small><strong>' + repaymentPreview.amortizingInstallments +
+          ' quarterly amortizing payments over ' + repaymentPreview.amortizationYears + ' years</strong></div>'
+        : '<div><small>Grace period</small><strong>Awaiting valid loan terms</strong></div>';
+    }
     var durationText = duration === null ? 'Select duration' : duration === 0 ? 'No fixed repayment term' : duration + ' years';
     var acceptanceHtml = history.available
       ? '<strong>' + history.ratePct + '%</strong><span>Observed acceptance: ' + history.accepted + ' accepted / ' +
@@ -240,15 +306,19 @@
       ? statusLabel(risk.riskStatus) + (number(risk.publicDebtToGdpPct) === null ? '' : ' · Public debt/GDP ' + number(risk.publicDebtToGdpPct).toFixed(1) + '%')
       : 'Country risk evidence unavailable';
     var relationText = relation.score === null ? statusLabel(relation.status) : relation.score.toFixed(1) + ' / 100';
-    return '<div class="ogiv-preview-title"><strong>' + esc((destination && destination.flag ? destination.flag + ' ' : '') +
-      (destination && destination.name || host)) + '</strong><span>' + esc(sectorDisplayName(sector)) + '</span></div>' +
+    var investorProfile = profiles().find(function (row) { return row.code === investorCountry; });
+    var investorLabel = (investorProfile && investorProfile.flag ? investorProfile.flag + ' ' : '') +
+      (investorProfile && investorProfile.name || investorCountry);
+    var hostLabel = (destination && destination.flag ? destination.flag + ' ' : '') + (destination && destination.name || host);
+    var corridorLabel = host === investorCountry ? investorLabel + ' · Domestic investment' : investorLabel + ' → ' + hostLabel;
+    return '<div class="ogiv-preview-title"><strong>' + esc(corridorLabel) + '</strong><span>' + esc(sectorDisplayName(sector)) + '</span></div>' +
       '<div class="ogiv-preview-grid"><div><small>Investment amount</small><strong>' + money(amountLocal, fx.currency) +
       ' · ' + amountText + '</strong></div><div><small>Deal structure</small><strong>' + esc(instrumentLabel(instrument)) +
       '</strong></div>' + termHtml + '<div><small>Duration</small><strong>' + esc(durationText) + '</strong></div>' +
       profitHtml + '<div><small>Host country risk</small><strong>' + esc(riskText) + '</strong></div>' +
       '<div><small>Bilateral relationship</small><strong>' + esc(relationText) + '</strong></div>' +
       '<div class="ogiv-acceptance"><small>Historical acceptance rate</small>' + acceptanceHtml + '</div></div>' +
-      '<p class="ogiv-note">Financial figures are projections from the selected contract terms. Loan interest uses simple interest for this preview; actual loan servicing follows the signed schedule. Equity returns are not guaranteed and require recorded project profit. Historical acceptance uses only comparable, completed decisions for this exact country pair and similar terms.</p>';
+      '<p class="ogiv-note">Loan estimates mirror the Finance runtime: 90-day quarterly periods, interest-only payments during the grace period, then quarterly amortization. Actual signed contracts, payment execution, arrears and Treasury settlement remain authoritative. Equity returns are not guaranteed and require recorded project profit. Historical acceptance uses only comparable completed decisions, including the grace-period term.</p>';
   }
   function projectTypeLabel(value) {
     return ({ FACTORY: 'Factory construction', MINE: 'Mine construction', INFRASTRUCTURE: 'Infrastructure', EXISTING_PROJECT: 'Existing project capital' })[value] || value;
@@ -595,21 +665,44 @@
     function syncRange(rangeSelector, inputSelector) {
       var range = form.querySelector(rangeSelector), input = form.querySelector(inputSelector);
       if (!range || !input) return;
-      if (changedNode === range) input.value = range.value;
-      else if (changedNode === input) range.value = input.value;
-      else if (input.value !== '') range.value = input.value;
-      else input.value = range.value;
+      var min = number(input.min);
+      if (min === null) min = number(range.min);
+      if (min === null) min = 0;
+      var max = number(input.max);
+      if (max === null) max = number(range.max);
+      var stepValue = String(input.step || range.step || '1');
+      var step = stepValue === 'any' ? 0 : number(stepValue);
+      if (step === null || step < 0) step = 0;
+      function normalized(value) {
+        var n = number(value);
+        if (n === null) return null;
+        if (max !== null) n = Math.min(max, n);
+        n = Math.max(min, n);
+        if (step > 0) n = min + Math.round((n - min) / step) * step;
+        if (max !== null) n = Math.min(max, n);
+        var precision = step > 0 && stepValue.indexOf('.') >= 0 ? stepValue.split('.')[1].length : 0;
+        return Number(n.toFixed(Math.min(8, precision)));
+      }
+      if (changedNode === input && input.value === '') return;
+      var value = normalized(changedNode === range ? range.value :
+        (input.value !== '' ? input.value : range.value));
+      if (value === null) return;
+      input.value = String(value);
+      range.value = String(value);
     }
     var amountRange = form.querySelector('[data-gov-amount-slider]'), amountInput = form.querySelector('[name="amount"]');
     if (amountRange && amountInput) {
       var amountMin = number(amountInput.min) || 1, amountMax = number(amountInput.max) || amountMin;
-      if (changedNode === amountRange) {
+      if (changedNode === amountInput && amountInput.value === '') {
+        amountRange.value = '0';
+      } else if (changedNode === amountRange) {
         var position = Math.max(0, Math.min(1000, number(amountRange.value) || 0));
         amountInput.value = String(Math.round(amountMin * Math.pow(amountMax / amountMin, position / 1000) * 100) / 100);
       } else {
         var amountValue = number(amountInput.value);
         if (amountValue === null) amountValue = amountMin;
         amountValue = Math.max(amountMin, Math.min(amountMax, amountValue));
+        amountInput.value = String(amountValue);
         amountRange.value = String(amountMax > amountMin ? Math.round(Math.log(amountValue / amountMin) / Math.log(amountMax / amountMin) * 1000) : 0);
       }
     }
@@ -717,6 +810,7 @@
   var API = Object.freeze({
     VERSION: VERSION, render: render, refreshForm: refreshForm, refreshFundingRequestForm: refreshFundingRequestForm,
     listOpportunities: opportunitiesFor, estimateAcceptanceRate: estimateAcceptanceRate,
+    previewLoanRepayment: loanRepaymentPreview,
     submit: submit, requestInvestment: requestInvestment, decide: decide
   });
   g.OmegaGovernmentInvestmentUIV1 = API;
