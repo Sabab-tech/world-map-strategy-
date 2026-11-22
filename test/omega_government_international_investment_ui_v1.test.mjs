@@ -183,7 +183,8 @@ test('investment explorer renders country flags, amount/share/interest sliders a
   assert.match(html, /data-gov-interest-slider/);
   assert.match(html, /name="durationYears"/);
   assert.match(html, /data-gov-live-preview/);
-  assert.match(html, /Historical acceptance rate/);
+  assert.match(html, /Select a destination and sector to preview the deal/);
+  assert.doesNotMatch(html, /Historical acceptance rate/);
   assert.match(html, /value="10"/);
   assert.match(html, /value="1" selected>1 year/);
 });
