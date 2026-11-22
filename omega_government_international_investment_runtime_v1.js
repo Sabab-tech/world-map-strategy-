@@ -1533,9 +1533,19 @@
     activeHosts.sort();
     var hostLimit = Math.max(1, Math.min(NPC_HOSTS_PER_CYCLE,
       num(input.maxHostCountries) || NPC_HOSTS_PER_CYCLE));
-    var hosts = Array.isArray(input.hostCountryIds)
-      ? input.hostCountryIds.map(canonicalCountry).filter(Boolean).slice(0, hostLimit)
-      : activeHosts.slice(0, hostLimit);
+    var hosts;
+    if (Array.isArray(input.hostCountryIds)) {
+      hosts = input.hostCountryIds.map(canonicalCountry).filter(Boolean).slice(0, hostLimit);
+    } else {
+      hosts = [];
+      var playerHost = playerCountry();
+      if (playerHost && activeHosts.includes(playerHost)) hosts.push(playerHost);
+      var rotatingHosts = activeHosts.filter(function (x) { return x !== playerHost; });
+      var hostStart = Math.floor(turn() / INTERVAL_TURNS) * Math.max(1, hostLimit - hosts.length) %
+        Math.max(1, rotatingHosts.length);
+      for (var h = 0; h < rotatingHosts.length && hosts.length < hostLimit; h++)
+        hosts.push(rotatingHosts[(hostStart + h) % rotatingHosts.length]);
+    }
     var investorLimit = Math.max(1, Math.min(NPC_INVESTORS_PER_CYCLE,
       num(input.maxInvestorCountries) || NPC_INVESTORS_PER_CYCLE));
     var start = Math.floor(turn() / INTERVAL_TURNS) * investorLimit % Math.max(1, roster.length);
