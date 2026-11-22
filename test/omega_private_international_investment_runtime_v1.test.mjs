@@ -217,3 +217,14 @@ test('runtime exposes host receipts and foreign-funded capital lots for the shar
   assert.equal(capital.foreignCapitalLots[0].investorCountryId, 'BGD');
   assert.equal(h.api.diagnostics().treasuryDebit, false);
 });
+
+test('browser, server-generated and offline boots all include the same international investment runtime',()=>{
+  const index=readFileSync('index.html','utf8');
+  const server=readFileSync('server_bootstrap.js','utf8');
+  const offline=readFileSync('omega-offline-map-sw.js','utf8');
+  assert.match(index,/omega_private_international_investment_runtime_v1\.js/);
+  assert.match(server,/omega_private_international_investment_runtime_v1\.js/);
+  assert.match(offline,/\.\/omega_private_international_investment_runtime_v1\.js/);
+  const cache=offline.match(/CACHE_NAME\s*=\s*"omega-offline-atlas-shell-v([0-9]+)"/);
+  assert.ok(cache&&Number(cache[1])>=141,'offline cache generation must be incremented when a new runtime asset is added');
+});
