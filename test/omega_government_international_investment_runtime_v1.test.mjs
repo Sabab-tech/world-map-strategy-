@@ -396,6 +396,11 @@ test('bounded NPC cycle never uses the active player as an NPC investor and can 
   assert.ok(incoming.length > 0, JSON.stringify({ cycle, incoming }));
   assert.ok(incoming.every(row => row.investorCountryId !== 'BGD'));
   assert.ok(incoming.every(row => row.status === 'PENDING_HOST_APPROVAL'));
+  const nextCycle = await h.api.runNpcDecisionCycle({ hostCountryIds: ['BGD'] });
+  assert.equal(nextCycle.status, 'COMPLETED');
+  const afterNpcReview = h.api.getPortfolio('BGD').inboundProposals;
+  assert.ok(afterNpcReview.every(row => row.status === 'PENDING_HOST_APPROVAL'),
+    'NPC cycles must never approve or decline a proposal addressed to the active player country');
 });
 
 test('unknown host macro evidence leaves an NPC proposal for review rather than auto-approving it', async () => {
