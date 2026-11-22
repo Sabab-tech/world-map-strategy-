@@ -138,12 +138,23 @@ function createRuntime(options = {}) {
       return { status: 'SETTLED', transferId: request.requestId };
     }
   };
+  const countryRuntime = {
+    getProfile(value) {
+      const raw = String(value && typeof value === 'object'
+        ? (value.countryCode || value.iso2 || value.iso3 || value.countryId || value.code || value.name)
+        : value || '').trim().toUpperCase();
+      const iso3ByIso2 = { AU: 'AUS', CA: 'CAN', DE: 'DEU', MX: 'MEX', US: 'USA' };
+      const iso3 = iso3ByIso2[raw] || (/^[A-Z]{3}$/.test(raw) ? raw : null);
+      return iso3 ? { countryCode: raw, iso3 } : null;
+    }
+  };
   const sandbox = {
     Game: { state },
     Omega: {
       Simulation: { world: { state }, getPlayerCountryId: () => state.simulation.session.playerCountryId },
       MinistryInteroperability: interop,
-      WorldSimulationScheduler: scheduler
+      WorldSimulationScheduler: scheduler,
+      CountryRuntimeData: countryRuntime
     },
     OmegaPrivateInternationalInvestmentRuntimeV1: investment,
     OmegaPrivateCompanyCapitalRuntimeV1: capital,
@@ -179,6 +190,16 @@ test('player country is never autonomously used as an investor', async () => {
   assert.equal(result.reason, 'PLAYER_COUNTRY_AUTOMATION_DISABLED');
   assert.equal(h.investments.length, 0);
   assert.equal(h.capitalInitializationCalls.length, 0);
+});
+
+test('scheduler ISO2 country IDs are resolved to the canonical ISO3 investor before reading finance ledgers', async () => {
+  const h = createRuntime();
+  const result = await h.api.processCountry('AU', { turn: 130, tier: 'MACRO' });
+  assert.equal(result.status, 'SETTLED', JSON.stringify(result));
+  assert.equal(result.decision.investorCountryId, 'AUS');
+  assert.equal(result.decision.hostCountryId, 'CAN');
+  assert.equal(h.investments[0].investorCountryId, 'AUS');
+  assert.equal(h.capitalInitializationCalls[0], 'AUS');
 });
 
 test('selects a safe foreign host and transfers only a small share of private company cash', async () => {
