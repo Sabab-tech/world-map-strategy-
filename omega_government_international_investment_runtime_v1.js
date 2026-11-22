@@ -459,29 +459,47 @@
   }
   function refundCashHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
-    if (!cid || canonicalCountry(p.investorCountryId) !== cid || !p.transferId) return handlerResult(false, { reason: 'INVESTOR_REFUND_SCOPE_INVALID' });
+    if (!cid || canonicalCountry(p.investorCountryId) !== cid || !p.transferId)
+      return handlerResult(false, { reason: 'INVESTOR_REFUND_SCOPE_INVALID' });
     var amount = num(p.amountUsd), cash = num(getPath(ctx, 'finance.available'));
-    if (amount === null || amount <= 0 || cash === null) return handlerResult(false, { reason: 'INVESTOR_REFUND_AMOUNT_INVALID' });
+    if (amount === null || amount <= 0 || cash === null)
+      return handlerResult(false, { reason: 'INVESTOR_REFUND_AMOUNT_INVALID' });
     var root = rootForContext(ctx), inv = investmentRoot(root, true);
     var transfer = inv.transfers && inv.transfers[p.transferId];
-    if (!transfer || transfer.status === 'REFUNDED') return handlerResult(false, { reason: 'INVESTOR_TRANSFER_NOT_REFUNDABLE' });
-    if (transfer.status !== 'SETTLED' && transfer.status !== 'RESERVED') return handlerResult(false, { reason: 'INVESTOR_TRANSFER_STATUS_INVALID' });
-    if (Math.abs((num(transfer.amountUsd) || 0) - amount) > 0.01) return handlerResult(false, { reason: 'INVESTOR_REFUND_AMOUNT_MISMATCH' });
+    if (!transfer || !['SETTLED', 'RESERVED'].includes(transfer.status))
+      return handlerResult(false, { reason: 'INVESTOR_TRANSFER_NOT_REFUNDABLE' });
     var wasReserved = transfer.status === 'RESERVED';
-    transfer.status = 'REFUNDED'; transfer.refundedTurn = turn();
-    if (wasReserved) inv.outboundEscrowUsd = Math.max(0, round((num(inv.outboundEscrowUsd) || 0) - amount, 2));
-    else {
+    var alreadyRefunded = num(transfer.refundedUsd) || 0;
+    var refundable = wasReserved ? (num(transfer.amountUsd) || 0) : Math.max(0, (num(transfer.amountUsd) || 0) - alreadyRefunded);
+    if (amount > refundable + 1e-7)
+      return handlerResult(false, { reason: 'INVESTOR_REFUND_AMOUNT_EXCEEDS_UNREFUNDED_CAPITAL',
+        refundableUsd: refundable, requestedUsd: amount });
+    var requestId = String(p.refundRequestId || 'FULL');
+    var refundTxId = p.transferId + ':INVESTOR-REFUND:' + requestId;
+    if ((root.ledger || []).some(function (x) { return x && x.transactionId === refundTxId; }))
+      return handlerResult(true, { status: 'DUPLICATE', duplicate: true });
+    transfer.refundedUsd = round(alreadyRefunded + amount, 2);
+    transfer.refundedTurn = turn();
+    if (wasReserved) {
+      inv.outboundEscrowUsd = Math.max(0, round((num(inv.outboundEscrowUsd) || 0) - amount, 2));
+    } else {
       inv.investedCapitalUsd = Math.max(0, round((num(inv.investedCapitalUsd) || 0) - amount, 2));
       inv.outboundInvestedCapitalUsd = Math.max(0, round((num(inv.outboundInvestedCapitalUsd) || 0) - amount, 2));
     }
+    if (transfer.refundedUsd + 1e-7 >= (num(transfer.amountUsd) || 0)) transfer.status = 'REFUNDED';
+    else if (wasReserved) transfer.status = 'RESERVED';
+    else transfer.status = 'SETTLED';
     var after = round(cash + amount, 2);
-    appendLedger(root, { transactionId: p.transferId + ':INVESTOR-REFUND', type: 'GOVERNMENT_INVESTMENT_REFUND_IN',
+    appendLedger(root, { transactionId: refundTxId, type: 'GOVERNMENT_INVESTMENT_REFUND_IN',
       action: 'GOVERNMENT_INVESTMENT_REFUND', countryId: cid, countryCode: cid, amountUsd: amount,
-      direction: 'TRANSFER', debitAccount: 'GOVERNMENT:SOVEREIGN_TREASURY_CASH', creditAccount: 'GOVERNMENT:FOREIGN_INVESTMENT_ASSET',
-      hostCountryId: transfer.hostCountryId, proposalId: transfer.proposalId, correlationId: p.transferId, balanceAfterUsd: after });
+      direction: 'TRANSFER', debitAccount: 'GOVERNMENT:SOVEREIGN_TREASURY_CASH',
+      creditAccount: 'GOVERNMENT:FOREIGN_INVESTMENT_ASSET',
+      hostCountryId: transfer.hostCountryId, proposalId: transfer.proposalId,
+      correlationId: p.transferId, balanceAfterUsd: after });
     recordEvent(inv, 'GOVERNMENT_INVESTMENT_REFUNDED', { transferId: p.transferId, amountUsd: amount });
     saveContext(ctx, root, after);
-    return handlerResult(true, { status: 'REFUNDED', balanceAfterUsd: after });
+    return handlerResult(true, { status: 'REFUNDED', balanceAfterUsd: after,
+      refundedUsd: transfer.refundedUsd, remainingRefundableUsd: Math.max(0, refundable - amount) });
   }
   function releaseMineHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
