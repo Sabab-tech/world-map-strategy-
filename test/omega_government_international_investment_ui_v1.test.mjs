@@ -62,6 +62,7 @@ function harness() {
       { siteId: 'BGD-GAS-01', countryId: 'BGD', siteName: 'Sylhet gas field', resourceId: 'NATURAL_GAS', map: { markerEligible: true } },
       { siteId: 'BGD-HIDDEN-01', countryId: 'BGD', siteName: 'Hidden alias', resourceId: 'IRON', runtime: { aliasOfSiteId: 'BGD-IRON-01' }, map: { markerEligible: true } },
       { siteId: 'BGD-NOMAP-01', countryId: 'BGD', siteName: 'Not map eligible', resourceId: 'IRON', map: { markerEligible: false } },
+      { siteId: 'BGD-SOURCE-01', sourceSiteRecord: { countryCode: 'BGD' }, siteName: 'Source-linked copper site', resourceId: 'COPPER', map: { markerEligible: true } },
       { siteId: 'USA-IRON-01', countryId: 'USA', siteName: 'Great Lakes iron site', resourceId: 'IRON', map: { markerEligible: true } }
     ] }
   };
@@ -83,7 +84,7 @@ test('investment destinations and target opportunities are sourced from current 
   const bangladesh = ui.listOpportunities('BGD');
   assert.deepEqual(plain(bangladesh.projectTypes.map(row => row.value)), ['FACTORY', 'MINE', 'INFRASTRUCTURE', 'EXISTING_PROJECT']);
   assert.deepEqual(plain(bangladesh.factories.map(row => row.value)), ['STEEL', 'TEXTILE']);
-  assert.deepEqual(plain(bangladesh.mines.map(row => row.value)), ['BGD-IRON-01', 'BGD-GAS-01', 'BGD-NOMAP-01']);
+  assert.deepEqual(plain(bangladesh.mines.map(row => row.value)), ['BGD-IRON-01', 'BGD-GAS-01', 'BGD-NOMAP-01', 'BGD-SOURCE-01']);
   assert.deepEqual(plain(bangladesh.projects.map(row => row.value)), ['BGD-FACTORY-01']);
   const unitedStates = ui.listOpportunities('USA');
   assert.deepEqual(plain(unitedStates.mines.map(row => row.value)), ['USA-IRON-01']);
