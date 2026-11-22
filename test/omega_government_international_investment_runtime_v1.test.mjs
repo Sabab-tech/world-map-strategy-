@@ -468,18 +468,34 @@ test('government funding request routes to its selected investor, then one inves
   assert.equal(portfolioRow.lifecycle.stage, 'CONSTRUCTION');
   assert.equal(portfolioRow.lifecycle.investmentId, requestRecord.investmentId);
   project.status = 'COMPLETED';
-  h.state.economy.BGD.productionAssets.push({
+  const commissionedAsset = {
     id: project.factoryId, countryId: 'BGD', constructionProjectId: project.projectId,
-    investmentId: requestRecord.investmentId, status: 'OPERATIONAL', commissionedTurn: 20,
+    investmentId: 'GOVINV:OTHER:BGD:UNRELATED', status: 'OPERATIONAL', commissionedTurn: 20,
     companyId: 'STATE_INDUSTRY_BGD'
-  });
+  };
+  h.state.economy.BGD.productionAssets.push(commissionedAsset);
+  portfolioRow = h.api.getPortfolio('BGD').investments.find(row => row.projectId === project.projectId);
+  assert.equal(portfolioRow.lifecycle.stage, 'INVESTMENT_IDENTITY_MISMATCH',
+    'a commissioned asset from a different investment must not be linked');
+  commissionedAsset.investmentId = requestRecord.investmentId;
+  commissionedAsset.sourceInvestmentId = requestRecord.investmentId;
   portfolioRow = h.api.getPortfolio('BGD').investments.find(row => row.projectId === project.projectId);
   assert.equal(portfolioRow.lifecycle.stage, 'COMMISSIONED');
   assert.equal(portfolioRow.lifecycle.commissionedTurn, 20);
   h.state.resource.BGD.industrialNetwork.factoryProductionCycleHistory.push({
-    cycleId: 'FACTORYCYCLE:BGD:FAC:STEEL:001:T21:1', factoryId: project.factoryId,
-    investmentId: requestRecord.investmentId, status: 'COMPLETED', transactionId: 'PRODUCTION-TX-001',
-    actualProductionQuantity: 125, outputQuantities: { STEEL: 125 }, turn: 21
+    cycleId: 'FACTORYCYCLE:BGD:FAC:STEEL:OTHER:T21:1', factoryId: project.factoryId,
+    constructionProjectId: project.projectId, investmentId: 'GOVINV:OTHER:BGD:UNRELATED',
+    status: 'COMPLETED', transactionId: 'UNRELATED-PRODUCTION-TX',
+    actualProductionQuantity: 999, outputQuantities: { STEEL: 999 }, turn: 21
+  });
+  portfolioRow = h.api.getPortfolio('BGD').investments.find(row => row.projectId === project.projectId);
+  assert.equal(portfolioRow.lifecycle.stage, 'COMMISSIONED',
+    'an unrelated investment cycle must not advance this project to production');
+  h.state.resource.BGD.industrialNetwork.factoryProductionCycleHistory.push({
+    cycleId: 'FACTORYCYCLE:BGD:FAC:STEEL:001:T22:1', factoryId: project.factoryId,
+    constructionProjectId: project.projectId, investmentId: requestRecord.investmentId,
+    sourceProposalId: incoming.proposalId, status: 'COMPLETED', transactionId: 'PRODUCTION-TX-001',
+    actualProductionQuantity: 125, outputQuantities: { STEEL: 125 }, turn: 22
   });
   portfolioRow = h.api.getPortfolio('BGD').investments.find(row => row.projectId === project.projectId);
   assert.equal(portfolioRow.lifecycle.stage, 'PRODUCTION');
