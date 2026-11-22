@@ -393,7 +393,7 @@
       action: 'GOVERNMENT_INVESTMENT_RECEIPT', countryId: cid, countryCode: cid, amountUsd: amount,
       direction: 'TRANSFER', debitAccount: 'GOVERNMENT:RESTRICTED_INVESTMENT_CASH', creditAccount: account,
       investorCountryId: canonicalCountry(p.investorCountryId), proposalId: p.proposalId,
-      instrument: p.instrument, correlationId: p.transferId, balanceAfterUsd: num(getPath(ctx, 'finance.available')) }));
+      instrument: p.instrument, correlationId: p.transferId, balanceAfterUsd: num(getPath(ctx, 'finance.available')) });
     inv.restrictedFundsUsd = round((num(inv.restrictedFundsUsd) || 0) + amount, 2);
     inv.receivedCapitalUsd = round((num(inv.receivedCapitalUsd) || 0) + amount, 2);
     inv.receipts[p.transferId] = { transferId: p.transferId, proposalId: p.proposalId,
