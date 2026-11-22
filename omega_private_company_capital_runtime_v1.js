@@ -285,7 +285,7 @@ function ensureCountryInitialized(country,options){
    var general=deps.generalRuntime&&typeof deps.generalRuntime.getCountryRecord==='function'
     ?deps.generalRuntime.getCountryRecord(cid):null;
    var plan=buildPlan(cid,privateRow,governmentRow,profile,indicators,general,deps.forex);
-   if(token!==sequence||playerCountry()!==cid)return{status:'STALE_COUNTRY_RESULT',countryId:cid};
+   if(token!==sequence||(!allowNonPlayer&&playerCountry()!==cid))return{status:'STALE_COUNTRY_RESULT',countryId:cid};
    lastPlan=plan;lastError=null;
    var result=deps.lifecycle.initializeOpeningCompanyCapital({
     countryId:cid,currencyCode:plan.currencyCode,totalCapital:plan.totalOpeningCapital,
