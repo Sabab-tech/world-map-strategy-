@@ -62,8 +62,36 @@
       state.resource[host].industrialNetwork && state.resource[host].industrialNetwork.projects;
     return (Array.isArray(rows) ? rows : []).filter(function (row) {
       return row && row.projectId && number(row.costUsd) > 0 &&
-        !['CANCELLED', 'FAILED'].includes(String(row.status || '').toUpperCase());
+        ['UNDER_CONSTRUCTION', 'COMPLETED'].includes(String(row.status || '').toUpperCase());
     });
+  }
+  function opportunitiesFor(host) {
+    host = String(host || '').trim().toUpperCase();
+    var factoryProfiles = catalog().factoryProfiles || {};
+    var factories = Object.keys(factoryProfiles).sort().map(function (key) {
+      var profile = factoryProfiles[key] || {};
+      return { value: key, label: String(profile.displayName || profile.name || key).replace(/_/g, ' '),
+        constructionCost: number(profile.constructionCost), costUnit: String(profile.unit || 'UNKNOWN'),
+        recipeId: profile.defaultRecipeId || null };
+    });
+    var mines = sitesFor(host).map(function (site) {
+      var siteId = site.siteId || site.id;
+      return { value: siteId, label: site.siteName || site.name || siteId,
+        resourceId: site.resourceId || site.real && site.real.resourceId ||
+          site.identity && site.identity.resourceTypeId || null,
+        region: site.location && (site.location.region || site.location.name) ||
+          site.regionName || site.region || null };
+    });
+    var projects = projectsFor(host).map(function (project) {
+      return { value: project.projectId, label: project.projectName || project.projectId,
+        status: String(project.status || '').toUpperCase(), costUsd: number(project.costUsd) };
+    });
+    var types = [];
+    if (factories.length) types.push({ value: 'FACTORY', label: 'Factory construction' });
+    if (mines.length) types.push({ value: 'MINE', label: 'Mine construction · canonical sites' });
+    types.push({ value: 'INFRASTRUCTURE', label: 'New infrastructure project' });
+    if (projects.length) types.push({ value: 'EXISTING_PROJECT', label: 'Existing project capital' });
+    return { hostCountryId: host, projectTypes: types, factories: factories, mines: mines, projects: projects };
   }
   function selectedOption(value, current) { return String(value) === String(current) ? ' selected' : ''; }
   function options(rows, current, placeholder) {
@@ -184,7 +212,7 @@
     var risk = api.getRiskSnapshot(country) || {};
     var fx = fxFor(country);
     var countryRows = profiles();
-    var countryOptions = options(countryRows.map(function (p) { return { value: p.code, label: p.name + ' (' + p.code + ')' }; }), country, null);
+    var countryOptions = options(countryRows.map(function (p) { return { value: p.code, label: p.name + ' (' + p.code + ')' }; }), '', 'Select destination country');
     var foreignInvestorOptions = options(countryRows.filter(function (p) { return p.code !== country; }).map(function (p) {
       return { value: p.code, label: p.name + ' (' + p.code + ')' };
     }), '', 'Select a foreign government');
@@ -192,7 +220,7 @@
     var factoryOptions = options(Object.keys(factoryProfiles).sort().map(function (key) {
       return { value: key, label: String(factoryProfiles[key].displayName || factoryProfiles[key].name || key).replace(/_/g, ' ') };
     }), '', 'Select an existing factory type');
-    var html = '<style data-ogiv-style>.ogiv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.ogiv-stat,.ogiv-card,.ogiv-form{border:1px solid var(--border-color,rgba(128,128,128,.25));border-radius:12px;padding:12px;min-width:0}.ogiv-stat small,.ogiv-card small,.ogiv-mini-card small{display:block;color:var(--text-secondary,#8b929c);font-size:12px}.ogiv-stat strong{display:block;font-size:19px;margin-top:5px;overflow-wrap:anywhere}.ogiv-grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.ogiv-form{display:grid;gap:12px}.ogiv-form label{display:grid;gap:5px;font-size:13px}.ogiv-form input,.ogiv-form select{width:100%;min-width:0;padding:10px;border:1px solid var(--border-color,rgba(128,128,128,.3));border-radius:8px;background:var(--surface-primary,transparent);color:inherit}.ogiv-form .ogiv-actions,.ogiv-actions{display:flex;gap:8px;flex-wrap:wrap}.ogiv-actions button{padding:9px 13px;border:0;border-radius:8px;background:var(--accent,#2674df);color:white}.ogiv-actions button.is-secondary{background:var(--surface-tertiary,#555);color:inherit}.ogiv-card{margin:9px 0}.ogiv-card-head{display:flex;justify-content:space-between;gap:12px;align-items:start}.ogiv-card-head strong,.ogiv-card-head span{display:block}.ogiv-card-head span,.ogiv-note{font-size:12px;color:var(--text-secondary,#8b929c);margin-top:4px}.ogiv-status{font-size:11px;padding:5px 7px;border-radius:6px;background:var(--surface-tertiary,rgba(128,128,128,.15));white-space:nowrap}.ogiv-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.ogiv-facts strong{display:block;font-size:13px;overflow-wrap:anywhere}.ogiv-actions{margin-top:10px}.ogiv-warning{color:#d18b29;font-size:13px}.ogiv-mini-card{padding:9px 0;border-bottom:1px solid var(--border-color,rgba(128,128,128,.2))}.ogiv-mini-card strong,.ogiv-mini-card span{display:block}.ogiv-form[aria-busy=true]{opacity:.65;pointer-events:none}@media(max-width:540px){.ogiv-grid-2{grid-template-columns:1fr}.ogiv-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}.ogiv-grid{align-items:stretch;margin:14px 0}.ogiv-stat{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(18,36,61,.96),rgba(10,20,36,.94));border-color:rgba(77,153,235,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 8px 22px rgba(0,0,0,.16)}.ogiv-stat:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(180deg,#55b7ff,#2874d8)}.ogiv-stat small{letter-spacing:.045em;text-transform:uppercase;font-size:10px}.ogiv-stat strong{color:#edf6ff;font-size:clamp(17px,2vw,23px);font-variant-numeric:tabular-nums}.ogiv-form{background:linear-gradient(150deg,rgba(18,31,51,.94),rgba(11,20,34,.96));border-color:rgba(100,155,213,.25);box-shadow:0 12px 28px rgba(0,0,0,.15);padding:clamp(13px,2vw,20px)}.ogiv-form h4{margin:0;color:#e8f3ff;font-size:16px;letter-spacing:.01em}.ogiv-form label{color:#c5d4e6;font-weight:600}.ogiv-form input,.ogiv-form select{background:rgba(5,13,25,.72);border-color:rgba(130,166,205,.3);min-height:42px;transition:border-color .16s ease,box-shadow .16s ease}.ogiv-form input:focus,.ogiv-form select:focus{outline:none;border-color:#55aaff;box-shadow:0 0 0 3px rgba(55,145,235,.16)}.ogiv-card{position:relative;background:linear-gradient(145deg,rgba(19,34,55,.96),rgba(11,21,36,.97));border-color:rgba(93,150,211,.25);box-shadow:0 8px 20px rgba(0,0,0,.14);padding:15px;transition:border-color .16s ease,transform .16s ease}.ogiv-card:hover{border-color:rgba(85,170,255,.48);transform:translateY(-1px)}.ogiv-card-head{align-items:center;padding-bottom:10px;border-bottom:1px solid rgba(125,160,197,.14)}.ogiv-card-head strong{color:#edf6ff;font-size:14px;letter-spacing:.01em}.ogiv-card-head span{color:#91a8c2;font-size:11px;line-height:1.45}.ogiv-status{background:rgba(52,125,198,.15);border:1px solid rgba(91,165,235,.24);color:#a9d6ff;font-weight:700;letter-spacing:.035em;text-transform:uppercase}.ogiv-facts{gap:8px;margin-top:12px}.ogiv-facts>div{min-width:0;padding:9px 10px;border:1px solid rgba(117,153,190,.13);border-radius:9px;background:rgba(5,14,27,.42)}.ogiv-facts small{font-size:9px;letter-spacing:.045em;text-transform:uppercase;color:#8ea6c1;line-height:1.35}.ogiv-facts strong{margin-top:4px;color:#e5f1ff;font-size:13px;line-height:1.4;font-variant-numeric:tabular-nums}.ogiv-note{color:#91a5bd;line-height:1.55}.ogiv-warning{padding:9px 11px;border:1px solid rgba(220,160,70,.28);border-radius:8px;background:rgba(150,94,24,.12);line-height:1.5}.ogiv-actions{gap:9px}.ogiv-actions button{min-height:40px;padding:10px 15px;border:1px solid rgba(112,181,255,.28);background:linear-gradient(135deg,#287bd0,#1856a0);font-weight:700;letter-spacing:.01em;box-shadow:0 4px 12px rgba(15,75,145,.2)}.ogiv-actions button:hover{filter:brightness(1.12)}.ogiv-actions button.is-secondary{border-color:rgba(151,170,194,.2);background:rgba(87,105,128,.2);color:#d2deeb;box-shadow:none}.ogiv-mini-card{padding:12px 2px;border-bottom-color:rgba(125,160,197,.16)}.ogiv-mini-card strong{color:#e6f2ff;font-size:13px}.ogiv-mini-card span{color:#a4b8cf;font-size:12px;margin-top:3px}.ogiv-form[hidden],.ogiv-form [hidden]{display:none!important}.ogiv-form[aria-busy=true]{filter:saturate(.65)}@media(min-width:900px){.ogiv-facts{grid-template-columns:repeat(3,minmax(0,1fr))}.ogiv-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:540px){.ogiv-grid-2{grid-template-columns:1fr}.ogiv-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.ogiv-card{padding:12px}.ogiv-card-head{align-items:flex-start}.ogiv-actions button{flex:1 1 130px}}@media(prefers-reduced-motion:reduce){.ogiv-card,.ogiv-form input,.ogiv-form select{transition:none}}</style>';
+    var html = '<style data-ogiv-style>.ogiv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}.ogiv-stat,.ogiv-card,.ogiv-form{border:1px solid var(--border-color,rgba(128,128,128,.25));border-radius:12px;padding:12px;min-width:0}.ogiv-stat small,.ogiv-card small,.ogiv-mini-card small{display:block;color:var(--text-secondary,#8b929c);font-size:12px}.ogiv-stat strong{display:block;font-size:19px;margin-top:5px;overflow-wrap:anywhere}.ogiv-grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.ogiv-form{display:grid;gap:12px}.ogiv-form label{display:grid;gap:5px;font-size:13px}.ogiv-form input,.ogiv-form select{width:100%;min-width:0;padding:10px;border:1px solid var(--border-color,rgba(128,128,128,.3));border-radius:8px;background:var(--surface-primary,transparent);color:inherit}.ogiv-form .ogiv-actions,.ogiv-actions{display:flex;gap:8px;flex-wrap:wrap}.ogiv-actions button{padding:9px 13px;border:0;border-radius:8px;background:var(--accent,#2674df);color:white}.ogiv-actions button.is-secondary{background:var(--surface-tertiary,#555);color:inherit}.ogiv-card{margin:9px 0}.ogiv-card-head{display:flex;justify-content:space-between;gap:12px;align-items:start}.ogiv-card-head strong,.ogiv-card-head span{display:block}.ogiv-card-head span,.ogiv-note{font-size:12px;color:var(--text-secondary,#8b929c);margin-top:4px}.ogiv-status{font-size:11px;padding:5px 7px;border-radius:6px;background:var(--surface-tertiary,rgba(128,128,128,.15));white-space:nowrap}.ogiv-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.ogiv-facts strong{display:block;font-size:13px;overflow-wrap:anywhere}.ogiv-actions{margin-top:10px}.ogiv-warning{color:#d18b29;font-size:13px}.ogiv-mini-card{padding:9px 0;border-bottom:1px solid var(--border-color,rgba(128,128,128,.2))}.ogiv-mini-card strong,.ogiv-mini-card span{display:block}.ogiv-form[aria-busy=true]{opacity:.65;pointer-events:none}@media(max-width:540px){.ogiv-grid-2{grid-template-columns:1fr}.ogiv-facts{grid-template-columns:repeat(2,minmax(0,1fr))}}.ogiv-grid{align-items:stretch;margin:14px 0}.ogiv-stat{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(18,36,61,.96),rgba(10,20,36,.94));border-color:rgba(77,153,235,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 8px 22px rgba(0,0,0,.16)}.ogiv-stat:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(180deg,#55b7ff,#2874d8)}.ogiv-stat small{letter-spacing:.045em;text-transform:uppercase;font-size:10px}.ogiv-stat strong{color:#edf6ff;font-size:clamp(17px,2vw,23px);font-variant-numeric:tabular-nums}.ogiv-form{background:linear-gradient(150deg,rgba(18,31,51,.94),rgba(11,20,34,.96));border-color:rgba(100,155,213,.25);box-shadow:0 12px 28px rgba(0,0,0,.15);padding:clamp(13px,2vw,20px)}.ogiv-form h4{margin:0;color:#e8f3ff;font-size:16px;letter-spacing:.01em}.ogiv-form label{color:#c5d4e6;font-weight:600}.ogiv-form input,.ogiv-form select{background:rgba(5,13,25,.72);border-color:rgba(130,166,205,.3);min-height:42px;transition:border-color .16s ease,box-shadow .16s ease}.ogiv-form input:focus,.ogiv-form select:focus{outline:none;border-color:#55aaff;box-shadow:0 0 0 3px rgba(55,145,235,.16)}.ogiv-card{position:relative;background:linear-gradient(145deg,rgba(19,34,55,.96),rgba(11,21,36,.97));border-color:rgba(93,150,211,.25);box-shadow:0 8px 20px rgba(0,0,0,.14);padding:15px;transition:border-color .16s ease,transform .16s ease}.ogiv-card:hover{border-color:rgba(85,170,255,.48);transform:translateY(-1px)}.ogiv-card-head{align-items:center;padding-bottom:10px;border-bottom:1px solid rgba(125,160,197,.14)}.ogiv-card-head strong{color:#edf6ff;font-size:14px;letter-spacing:.01em}.ogiv-card-head span{color:#91a8c2;font-size:11px;line-height:1.45}.ogiv-status{background:rgba(52,125,198,.15);border:1px solid rgba(91,165,235,.24);color:#a9d6ff;font-weight:700;letter-spacing:.035em;text-transform:uppercase}.ogiv-facts{gap:8px;margin-top:12px}.ogiv-facts>div{min-width:0;padding:9px 10px;border:1px solid rgba(117,153,190,.13);border-radius:9px;background:rgba(5,14,27,.42)}.ogiv-facts small{font-size:9px;letter-spacing:.045em;text-transform:uppercase;color:#8ea6c1;line-height:1.35}.ogiv-facts strong{margin-top:4px;color:#e5f1ff;font-size:13px;line-height:1.4;font-variant-numeric:tabular-nums}.ogiv-note{color:#91a5bd;line-height:1.55}.ogiv-warning{padding:9px 11px;border:1px solid rgba(220,160,70,.28);border-radius:8px;background:rgba(150,94,24,.12);line-height:1.5}.ogiv-actions{gap:9px}.ogiv-actions button{min-height:40px;padding:10px 15px;border:1px solid rgba(112,181,255,.28);background:linear-gradient(135deg,#287bd0,#1856a0);font-weight:700;letter-spacing:.01em;box-shadow:0 4px 12px rgba(15,75,145,.2)}.ogiv-actions button:hover{filter:brightness(1.12)}.ogiv-actions button.is-secondary{border-color:rgba(151,170,194,.2);background:rgba(87,105,128,.2);color:#d2deeb;box-shadow:none}.ogiv-mini-card{padding:12px 2px;border-bottom-color:rgba(125,160,197,.16)}.ogiv-mini-card strong{color:#e6f2ff;font-size:13px}.ogiv-mini-card span{color:#a4b8cf;font-size:12px;margin-top:3px}.ogiv-form[hidden],.ogiv-form [hidden]{display:none!important}.ogiv-form[aria-busy=true]{filter:saturate(.65)}@media(min-width:900px){.ogiv-facts{grid-template-columns:repeat(3,minmax(0,1fr))}.ogiv-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:540px){.ogiv-grid-2{grid-template-columns:1fr}.ogiv-facts{grid-template-columns:repeat(2,minmax(0,1fr))}.ogiv-card{padding:12px}.ogiv-card-head{align-items:flex-start}.ogiv-actions button{flex:1 1 130px}}@media(prefers-reduced-motion:reduce){.ogiv-card,.ogiv-form input,.ogiv-form select{transition:none}}.ogiv-opportunity-summary{display:grid;gap:5px;margin:11px 0;padding:12px;border:1px solid rgba(85,170,255,.24);border-radius:10px;background:rgba(7,19,34,.65);color:#b8cce2;font-size:12px;line-height:1.5}.ogiv-opportunity-summary strong{color:#edf6ff;font-size:14px}.ogiv-quote-ready{color:#8fd7b2;font-weight:700}.ogiv-opportunity-summary .ogiv-warning{margin-top:4px}</style>';
     html += '<section class="ofm-section"><div class="ofm-section-heading"><h3>Government Investment & International Development</h3><span>Domestic public capital · sovereign FDI · joint ventures · loans · grants</span></div>';
     if (notice) html += '<div class="ofm-notice ' + (notice.ok ? 'is-ok' : 'is-error') + '" role="status">' + esc(notice.message) + '</div>';
     html += '<p class="ofm-data-note">Governments invest from their own Treasury. The host must approve foreign proposals. Each project uses its existing construction and production lifecycle; no automatic jobs, output or profit are created.</p>';
@@ -206,18 +234,19 @@
     } else if (editable) html += '<p class="ogiv-warning">Treasury budget or reserve evidence is unavailable. New proposals are disabled until Finance data is ready.</p>';
     if (!editable) html += '<p class="ogiv-note">Read-only country portfolio. Investment actions are available only for the active player country.</p>';
     if (editable) {
-      html += '<form class="ogiv-form" data-gov-invest-form><h4>Create a government investment proposal</h4>' +
-        '<div class="ogiv-grid-2"><label>Host country<select name="hostCountryId" data-gov-host-country>' + countryOptions + '</select></label>' +
-        '<label>Investment sector<select name="projectType" data-gov-project-type required>' +
-        '<option value="FACTORY">Factory construction</option><option value="MINE">Mine construction</option>' +
-        '<option value="INFRASTRUCTURE">Infrastructure</option><option value="EXISTING_PROJECT">Existing project capital</option></select></label></div>' +
+      html += '<form class="ogiv-form" data-gov-invest-form><h4>Explore and configure a government investment</h4>' +
+        '<p class="ogiv-note">Choose a destination first. Opportunity categories and targets are loaded from that country’s current game records and the existing industrial catalogue.</p>' +
+        '<div class="ogiv-grid-2"><label>Destination country<select name="hostCountryId" data-gov-host-country required>' + countryOptions + '</select></label>' +
+        '<label>Investment opportunity<select name="projectType" data-gov-project-type required>' +
+        options([], '', 'Select a destination first') + '</select></label></div>' +
+        '<div class="ogiv-opportunity-summary" data-gov-opportunity-summary aria-live="polite">Select a destination country to browse available investment opportunities.</div>' +
         '<div class="ogiv-grid-2"><label>Investment amount (' + esc(fx.currency) + ')<input type="number" name="amount" min="0.01" step="0.01" required placeholder="Amount in investor currency"></label>' +
         '<label>Financial instrument<select name="instrument" data-gov-instrument><option value="EQUITY">Equity investment</option><option value="JOINT_VENTURE">Government joint venture</option><option value="LOAN">Sovereign project loan</option><option value="GRANT">Development grant</option></select></label></div>' +
         '<div class="ogiv-grid-2" data-gov-field="equity"><label>Ownership share (%)<input name="equitySharePct" type="number" min="1" max="75" step="0.1" value="20"></label>' +
         '<label>Investment duration (years)<input name="durationYears" type="number" min="1" max="30" step="1" value="5"></label></div>' +
         '<div class="ogiv-grid-2" data-gov-field="loan"><label>Annual loan interest (%)<input name="interestPct" type="number" min="0" max="20" step="0.1" value="5"></label>' +
         '<label>Grace period (years)<input name="gracePeriodYears" type="number" min="0" max="5" step="1" value="1"></label></div>' +
-        '<div data-gov-field="factory"><label>Factory category<select name="factoryType">' + factoryOptions + '</select></label><p class="ogiv-note">The factory catalog construction cost remains in its canonical game unit; no USD conversion is assumed. This contribution is recorded separately.</p></div>' +
+        '<div data-gov-field="factory"><label>Factory category<select name="factoryType" data-gov-factory-type>' + factoryOptions + '</select></label><p class="ogiv-note">Factory construction is currently placed at country level. The existing Factory runtime does not accept a district, region or coordinate, so no regional placement selector is shown. Catalog construction cost keeps its declared unit; it is not converted to USD.</p></div>' +
         '<div data-gov-field="mine"><div class="ogiv-grid-2"><label>Canonical mine site<select name="siteId" data-gov-site><option value="">Select a mine site in the host country</option></select></label>' +
         '<label>Mine quantity<input name="quantity" type="number" min="1" max="100" step="1" value="1"></label></div>' +
         '<label>Assigned workers<input name="assignedWorkers" type="number" min="1" step="1" value="50"></label></div>' +
@@ -295,52 +324,119 @@
       node.hidden = !visible;
     });
   }
+  function opportunitySummary(form, investorCountry, host, type, data) {
+    if (!host) return 'Select a destination country to browse its current opportunities.';
+    if (!type) return data.projectTypes.length + ' supported project categories are available for this destination. Select one to inspect its targets.';
+    var api = runtime(), values = {};
+    Array.prototype.forEach.call(form.elements || [], function (el) { if (el.name) values[el.name] = el.value; });
+    var selected = null, details = '';
+    if (type === 'FACTORY') {
+      selected = data.factories.find(function (x) { return x.value === values.factoryType; }) || null;
+      if (!selected) return data.factories.length + ' factory categories are available from the canonical industrial catalogue. Select a category to continue. Regional placement is not supported by the current Factory runtime.';
+      details = '<strong>' + esc(selected.label) + '</strong><span>Catalog construction cost: ' +
+        (selected.constructionCost === null ? 'Not specified' : esc(selected.constructionCost.toLocaleString('en-US'))) +
+        ' ' + esc(selected.costUnit) + '</span><span>Placement: ' + esc(host) + ' · country-level</span>';
+    } else if (type === 'MINE') {
+      selected = data.mines.find(function (x) { return x.value === values.siteId; }) || null;
+      if (!selected) return data.mines.length + ' canonical mine sites are recorded for ' + esc(host) + '. Select a site to request its current construction quote.';
+      details = '<strong>' + esc(selected.label) + '</strong><span>Resource: ' + esc(selected.resourceId || 'Not classified') +
+        ' · Site ID: ' + esc(selected.value) + '</span><span>Location: ' + esc(selected.region || 'Canonical site; no finer region label recorded') + '</span>';
+    } else if (type === 'EXISTING_PROJECT') {
+      selected = data.projects.find(function (x) { return x.value === values.existingProjectId; }) || null;
+      if (!selected) return data.projects.length + ' eligible project records have positive USD CAPEX evidence and an active supported status. Select a project to review its funding limit.';
+      details = '<strong>' + esc(selected.label) + '</strong><span>' + esc(statusLabel(selected.status)) +
+        ' · Recorded CAPEX: ' + money(selected.costUsd, 'USD') + '</span><span>Target: ' + esc(host) + ' · Project ID: ' + esc(selected.value) + '</span>';
+    } else if (type === 'INFRASTRUCTURE') {
+      details = '<strong>Player-defined infrastructure scope</strong><span>Enter the infrastructure type, distance, daily capacity and construction duration. The current infrastructure investment API records the host country and project specifications, but no district or coordinate.</span>';
+    }
+    var amountLocal = number(values.amount), fx = fxFor(investorCountry);
+    var amountUsd = amountLocal !== null && amountLocal > 0 && fx.rate !== null ? amountLocal / fx.rate : null;
+    var quoteInput = { hostCountryId: host, projectType: type, amountUsd: amountUsd, costUsd: amountUsd,
+      factoryType: values.factoryType, siteId: values.siteId, assignedWorkers: number(values.assignedWorkers),
+      quantity: number(values.quantity) || 1, resourceId: selected && selected.resourceId,
+      existingProjectId: values.existingProjectId, infrastructureType: values.infrastructureType,
+      distanceKm: number(values.distanceKm), capacityPerDay: number(values.capacityPerDay),
+      buildDays: number(values.buildDays) };
+    var canQuote = type === 'MINE' ? !!(selected && api && typeof api.quoteProject === 'function') :
+      type === 'FACTORY' || type === 'EXISTING_PROJECT' ? !!(selected && amountUsd > 0 && api && typeof api.quoteProject === 'function') :
+      type === 'INFRASTRUCTURE' ? !!(values.infrastructureType && number(values.distanceKm) !== null &&
+        number(values.capacityPerDay) > 0 && number(values.buildDays) > 0 && amountUsd > 0 &&
+        api && typeof api.quoteProject === 'function') : false;
+    if (!canQuote) {
+      if (type === 'FACTORY' || type === 'EXISTING_PROJECT') details += '<span>Enter an investment amount to request a live Finance project quote.</span>';
+      return details;
+    }
+    var quote;
+    try { quote = api.quoteProject(quoteInput); } catch (_) { quote = { status: 'BLOCKED', reason: 'PROJECT_QUOTE_FAILED' }; }
+    if (!quote || quote.status !== 'QUOTED') {
+      details += '<span class="ogiv-warning">Current project quote: ' + esc(statusLabel(quote && quote.reason || 'QUOTE_UNAVAILABLE')) + '</span>';
+    } else {
+      details += '<span class="ogiv-quote-ready">Finance project quote: ' + money(quote.projectCostUsd, 'USD') +
+        (quote.constructionDays ? ' · ' + esc(quote.constructionDays) + ' days' : '') + '</span>';
+      var materials = quote.materials || quote.quote && quote.quote.materials;
+      if (Array.isArray(materials) && materials.length) {
+        var ready = materials.filter(function (x) { return x && x.sufficient === true; }).length;
+        details += '<span>Construction materials: ' + ready + ' / ' + materials.length + ' verified sufficient</span>';
+      }
+    }
+    return details + '<span class="ogiv-note">This is a project-readiness quote only. Final Treasury, FX, risk and host-approval checks run when the proposal is submitted.</span>';
+  }
   function refreshForm(form, investorCountry) {
     if (!form || !form.querySelector) return;
     var hostNode = form.querySelector('[data-gov-host-country]');
-    var host = String(hostNode && hostNode.value || investorCountry).toUpperCase();
+    var host = String(hostNode && hostNode.value || '').toUpperCase();
+    var data = opportunitiesFor(host);
     var typeNode = form.querySelector('[data-gov-project-type]');
-    var type = String(typeNode && typeNode.value || 'FACTORY').toUpperCase();
+    var type = String(typeNode && typeNode.value || '').toUpperCase();
+    if (typeNode) {
+      var typeChoices = data.projectTypes;
+      if (!typeChoices.some(function (x) { return x.value === type; })) type = '';
+      typeNode.innerHTML = options(typeChoices, type, host ? 'Select an investment opportunity' : 'Select a destination first');
+      typeNode.disabled = !host || !typeChoices.length;
+    }
     var instrument = form.querySelector('[data-gov-instrument]');
     if (instrument) {
-      var isDomestic = host === String(investorCountry).toUpperCase();
-      var choices = isDomestic ? [['DOMESTIC_PUBLIC_CAPEX', 'Domestic public capital expenditure']] :
+      var isDomestic = !!host && host === String(investorCountry).toUpperCase();
+      var choices = !host ? [] : isDomestic ? [['DOMESTIC_PUBLIC_CAPEX', 'Domestic public capital expenditure']] :
         [['EQUITY', 'Equity investment'], ['JOINT_VENTURE', 'Government joint venture'],
           ['LOAN', 'Sovereign project loan'], ['GRANT', 'Development grant']];
       var prior = instrument.value;
       instrument.innerHTML = choices.map(function (x) { return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('');
-      instrument.value = choices.some(function (x) { return x[0] === prior; }) ? prior : choices[0][0];
+      instrument.value = choices.some(function (x) { return x[0] === prior; }) ? prior : (choices[0] && choices[0][0] || '');
+      instrument.disabled = !host;
     }
-    Array.prototype.forEach.call(form.querySelectorAll('[data-gov-field]'), function (node) {
-      var field = node.getAttribute('data-gov-field');
-      var show = field === 'equity' ? ['EQUITY', 'JOINT_VENTURE'].includes(instrument && instrument.value) :
-        field === 'loan' ? instrument && instrument.value === 'LOAN' :
-        field === 'factory' ? type === 'FACTORY' :
-        field === 'mine' ? type === 'MINE' :
-        field === 'infrastructure' ? type === 'INFRASTRUCTURE' :
-        field === 'existing' ? type === 'EXISTING_PROJECT' : true;
-      node.hidden = !show;
-    });
+    var factoryNode = form.querySelector('[data-gov-factory-type]');
+    if (factoryNode) {
+      var currentFactory = factoryNode.value;
+      factoryNode.innerHTML = options(data.factories, currentFactory, 'Select a canonical factory category');
+      factoryNode.disabled = !host || !data.factories.length;
+    }
     var siteNode = form.querySelector('[data-gov-site]');
     if (siteNode) {
       var currentSite = siteNode.value;
-      var sites = sitesFor(host).map(function (site) {
-        var siteId = site.siteId || site.id;
-        var resource = site.resourceId || site.real && site.real.resourceId ||
-          site.identity && site.identity.resourceTypeId || 'Resource';
-        var label = site.siteName || site.name || siteId;
-        return { value: siteId, label: label + ' · ' + resource };
-      });
-      siteNode.innerHTML = options(sites, currentSite, 'Select a mine site in the host country');
+      siteNode.innerHTML = options(data.mines, currentSite, 'Select a canonical mine site in this country');
+      siteNode.disabled = !host || !data.mines.length;
     }
     var projectNode = form.querySelector('[data-gov-existing-project]');
     if (projectNode) {
       var currentProject = projectNode.value;
-      projectNode.innerHTML = options(projectsFor(host).map(function (project) {
-        return { value: project.projectId, label: (project.projectName || project.projectId) + ' · ' +
-          statusLabel(project.status) + ' · ' + money(project.costUsd, 'USD') };
-      }), currentProject, 'Select a project with USD CAPEX evidence');
+      projectNode.innerHTML = options(data.projects.map(function (project) {
+        return { value: project.value, label: project.label + ' · ' + statusLabel(project.status) + ' · ' + money(project.costUsd, 'USD') };
+      }), currentProject, 'Select an eligible existing project');
+      projectNode.disabled = !host || !data.projects.length;
     }
+    Array.prototype.forEach.call(form.querySelectorAll('[data-gov-field]'), function (node) {
+      var field = node.getAttribute('data-gov-field');
+      var visible = !!host && !!type && (field === 'equity' ? ['EQUITY','JOINT_VENTURE'].includes(instrument && instrument.value) :
+        field === 'loan' ? instrument && instrument.value === 'LOAN' :
+        field === 'factory' ? type === 'FACTORY' :
+        field === 'mine' ? type === 'MINE' :
+        field === 'infrastructure' ? type === 'INFRASTRUCTURE' :
+        field === 'existing' ? type === 'EXISTING_PROJECT' : true);
+      node.hidden = !visible;
+    });
+    var summaryNode = form.querySelector('[data-gov-opportunity-summary]');
+    if (summaryNode) summaryNode.innerHTML = opportunitySummary(form, investorCountry, host, type, data);
   }
   async function submit(form, investorCountry) {
     var api = runtime();
@@ -417,6 +513,7 @@
   }
   var API = Object.freeze({
     VERSION: VERSION, render: render, refreshForm: refreshForm, refreshFundingRequestForm: refreshFundingRequestForm,
+    listOpportunities: opportunitiesFor,
     submit: submit, requestInvestment: requestInvestment, decide: decide
   });
   g.OmegaGovernmentInvestmentUIV1 = API;
