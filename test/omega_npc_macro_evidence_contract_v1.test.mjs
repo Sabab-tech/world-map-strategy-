@@ -16,6 +16,19 @@ test('economic baseline coverage is explicitly historical and incomplete', async
   assert.equal(registry.metadata.dataPolicy.includes('no missing national statistics are invented'), true);
 });
 
+test('NPC macro uses one source-aware 197-country input bundle, not the six-record lazy country cache', async () => {
+  const rules = await readJson('npc_national_macro_economy_rules_v1.json');
+  const runtime = await readText('omega_npc_national_macro_economy_runtime_v1.js');
+  const builder = await readText('scripts/build_npc_national_macro_economy_inputs_v1.mjs');
+  assert.equal(rules.baseline.inputsPath, 'npc_national_macro_economy_inputs_v1.json');
+  assert.equal(rules.baseline.source, 'country_general_data_registry_v1.json');
+  assert.match(runtime, /baselineInputsByIso3/);
+  assert.match(runtime, /NPC_MACRO_INPUT_BUNDLE_ROSTER_OR_SCHEMA_MISMATCH/);
+  assert.doesNotMatch(runtime, /g\.Omega\?\.CountryGeneralData/);
+  assert.match(builder, /country_general_data_registry_v1\.json/);
+  assert.match(builder, /Object\.keys\(outputCountries\)\.length !== 197/);
+});
+
 test('NPC macro remains an evidence projection on the existing bounded scheduler', async () => {
   const rules = await readJson('npc_national_macro_economy_rules_v1.json');
   const runtime = await readText('omega_npc_national_macro_economy_runtime_v1.js');
