@@ -1191,6 +1191,10 @@
 
   async function fundAndExecute(proposal) {
     var d = dependencies(), investor = proposal.investorCountryId, host = proposal.hostCountryId, transferId = proposal.transferId;
+    var budget = budgetFor(investor, d);
+    if (budget.status !== 'READY' || proposal.amountUsd > budget.maximumPerProjectUsd + 1e-7)
+      return result('BLOCKED', { reason: 'SOVEREIGN_BUDGET_CHANGED_SINCE_PROPOSAL',
+        currentBudget: budget, requestedUsd: proposal.amountUsd });
     var reserve = dispatch(d, HANDLERS.reserve, investor, { investorCountryId: investor, hostCountryId: host,
       proposalId: proposal.proposalId, transferId: transferId, amountUsd: proposal.amountUsd,
       investorCurrencyCode: proposal.investorCurrencyCode }, transferId);
@@ -1199,69 +1203,70 @@
       proposalId: proposal.proposalId, transferId: transferId, amountUsd: proposal.amountUsd,
       instrument: proposal.instrument, hostCurrencyCode: proposal.hostCurrencyCode, fxSnapshot: proposal.fxSnapshot }, transferId);
     if (!received.ok) {
-      if (!reserve.duplicate) dispatch(d, HANDLERS.refundCash, investor, { investorCountryId: investor,
+      var refund = dispatch(d, HANDLERS.refundCash, investor, { investorCountryId: investor,
         transferId: transferId, amountUsd: proposal.amountUsd }, transferId);
-      return result('REFUNDED', { reason: received.reason, stage: 'HOST_RECEIPT', transferId: transferId });
+      return result(refund.ok ? 'REFUNDED' : 'RECONCILIATION_REQUIRED', {
+        reason: received.reason, stage: 'HOST_RECEIPT', refundStatus: refund.status, transferId: transferId });
     }
     var settled = dispatch(d, HANDLERS.settle, investor, { investorCountryId: investor,
       hostCountryId: host, proposalId: proposal.proposalId, transferId: transferId }, transferId);
     if (!settled.ok) { pendingTransfers.add(transferId); return result('SETTLEMENT_PENDING', { reason: settled.reason, transferId: transferId, retryable: true }); }
-    var confirmed = dispatch(d, HANDLERS.confirm, host, { hostCountryId: host, proposalId: proposal.proposalId, transferId: transferId }, transferId);
+    var confirmed = dispatch(d, HANDLERS.confirm, host, { hostCountryId: host,
+      proposalId: proposal.proposalId, transferId: transferId }, transferId);
     if (!confirmed.ok) { pendingTransfers.add(transferId); return result('SETTLEMENT_PENDING', { reason: confirmed.reason, transferId: transferId, retryable: true }); }
     pendingTransfers.delete(transferId);
     var executed = await startFundedProject(proposal);
     if (executed.status !== 'PROJECT_STARTED') {
-      proposal.status = 'FUNDED_AWAITING_PROJECT_RESOLUTION';
-      proposal.projectFailure = { reason: executed.reason, status: executed.status, turn: turn() };
-      proposal.updatedTurn = turn();
-      var hostRoot = countryFinanceRoot(host), hostInv = hostRoot && investmentRoot(hostRoot, false);
-      if (hostInv && Array.isArray(hostInv.proposals)) {
-        var hostProposal = hostInv.proposals.find(function (x) { return x && x.proposalId === proposal.proposalId; });
-        if (hostProposal) Object.assign(hostProposal, clone(proposal));
-      }
-      return result(executed.status, { reason: executed.reason, stage: 'PROJECT_CREATION',
-        project: executed.project || null, proposal: clone(proposal), transferId: transferId });
+      var failurePatch = { status: 'FUNDED_AWAITING_PROJECT_RESOLUTION',
+        projectFailure: { reason: executed.reason, status: executed.status, turn: turn(), stage: executed.stage || null },
+        updatedTurn: turn() };
+      var failedSave = persistProposalEverywhere(proposal, failurePatch);
+      return result(failedSave.ok ? executed.status : 'RECONCILIATION_REQUIRED', {
+        reason: executed.reason, stage: executed.stage || 'PROJECT_CREATION', proposal: clone(proposal),
+        project: executed.project || null, transferId: transferId, proposalPersistence: failedSave });
     }
-    proposal.status = 'PROJECT_STARTED';
-    proposal.updatedTurn = turn();
-    proposal.project = { projectId: proposal.projectId, projectType: proposal.projectType,
-      constructionDays: proposal.constructionDays, costUsd: proposal.projectCostUsd };
-    var updatedHost = countryFinanceRoot(host), updatedInv = updatedHost && investmentRoot(updatedHost, false);
-    if (updatedInv && Array.isArray(updatedInv.proposals)) {
-      var storedHost = updatedInv.proposals.find(function (x) { return x && x.proposalId === proposal.proposalId; });
-      if (storedHost) Object.assign(storedHost, clone(proposal));
-      if (proposal.instrument === 'LOAN') {
-        var loan = createLoanRecord(proposal, proposal.projectId);
-        updatedInv.loans = Array.isArray(updatedInv.loans) ? updatedInv.loans : [];
-        if (!updatedInv.loans.some(function (x) { return x && x.loanId === loan.loanId; })) updatedInv.loans.push(loan);
-      }
-    }
-    var investorRoot = countryFinanceRoot(investor), investorInv = investorRoot && investmentRoot(investorRoot, false);
-    if (investorInv && Array.isArray(investorInv.proposals)) {
-      var storedOut = investorInv.proposals.find(function (x) { return x && x.proposalId === proposal.proposalId; });
-      if (storedOut) Object.assign(storedOut, clone(proposal));
-    }
+    var successPatch = { status: 'PROJECT_STARTED', projectId: proposal.projectId,
+      projectCostUsd: proposal.projectCostUsd, capitalAppliedUsd: proposal.capitalAppliedUsd,
+      constructionDays: proposal.constructionDays,
+      project: { projectId: proposal.projectId, projectType: proposal.projectType,
+        constructionDays: proposal.constructionDays, contributionUsd: proposal.capitalAppliedUsd },
+      projectFailure: null, updatedTurn: turn() };
+    var saved = persistProposalEverywhere(proposal, successPatch);
+    if (!saved.ok) return result('RECONCILIATION_REQUIRED', { reason: saved.reason, stage: saved.stage,
+      proposal: clone(proposal), project: executed.project, transferId: transferId });
     return result('PROJECT_STARTED', { proposal: clone(proposal), project: clone(executed.project),
-      investment: { amountUsd: proposal.amountUsd, projectCostUsd: proposal.projectCostUsd,
-        remainingEscrowUsd: round(proposal.amountUsd - proposal.capitalAppliedUsd, 2),
+      investment: { amountUsd: proposal.amountUsd, projectContributionUsd: proposal.capitalAppliedUsd,
+        remainingEscrowUsd: round(proposal.amountUsd - (num(proposal.capitalAppliedUsd) || 0), 2),
         instrument: proposal.instrument, equityShareBps: proposal.equityShareBps,
         estimatedAnnualReturnUsd: null, estimatedPaybackYears: null,
-        returnStatus: 'NO_GUARANTEED_RETURN; PROJECT_LEVEL_NET_PROFIT_EVIDENCE_REQUIRED' } });
+        returnStatus: 'NO_GUARANTEED_RETURN; PROJECT_LEVEL_NET_PROFIT_EVIDENCE_REQUIRED',
+        factoryCatalogConstructionCost: proposal.factoryCatalogConstructionCost || null,
+        factoryCatalogCostUnit: proposal.factoryCatalogCostUnit || null } });
   }
   async function respondProposal(input) {
     input = input || {};
     try { if (!ready) await init(); } catch (e) { return result('WAITING', { reason: String(e && e.message || e) }); }
     var host = canonicalCountry(input.hostCountryId || playerCountry()), proposalId = String(input.proposalId || '');
     var actorType = String(input.actorType || 'PLAYER').toUpperCase(), decision = String(input.decision || '').toUpperCase();
-    if (!host || !proposalId || !['ACCEPT', 'DECLINE'].includes(decision)) return result('BLOCKED', { reason: 'HOST_DECISION_FIELDS_INVALID' });
+    if (!host || !proposalId || !['ACCEPT', 'DECLINE'].includes(decision))
+      return result('BLOCKED', { reason: 'HOST_DECISION_FIELDS_INVALID' });
     if (actorType === 'PLAYER' && host !== playerCountry()) return result('BLOCKED', { reason: 'PLAYER_HOST_COUNTRY_SCOPE_VIOLATION' });
+    if (actorType === 'NPC' && input.__omegaNpcDecisionAuthority !== AUTHORITY)
+      return result('BLOCKED', { reason: 'NPC_DECISION_ENGINE_AUTHORITY_REQUIRED' });
+    if (!['PLAYER', 'NPC'].includes(actorType)) return result('BLOCKED', { reason: 'HOST_DECISION_ACTOR_INVALID' });
     var proposal = getProposal(host, proposalId);
     if (!proposal) return result('BLOCKED', { reason: 'INCOMING_GOVERNMENT_PROPOSAL_NOT_FOUND' });
+    if (proposal.status === 'PROJECT_STARTED') return result('PROJECT_STARTED', { proposal: proposal, duplicate: true });
+    if (proposal.status === 'DECLINED') return result('DECLINED', { proposal: proposal, duplicate: true });
     var d = dependencies();
     var recorded = dispatch(d, HANDLERS.decide, host, { hostCountryId: host, proposalId: proposalId,
       decision: decision, actorType: actorType, reason: input.reason || null }, proposalId);
     if (!recorded.ok) return result('BLOCKED', { reason: recorded.reason });
-    if (decision === 'DECLINE') return result('DECLINED', { proposal: getProposal(host, proposalId) });
+    if (decision === 'DECLINE') {
+      var declined = persistProposalEverywhere(proposal, { status: 'DECLINED', updatedTurn: turn() });
+      return result(declined.ok ? 'DECLINED' : 'RECONCILIATION_REQUIRED', {
+        proposal: clone(proposal), persistence: declined });
+    }
     proposal = getProposal(host, proposalId) || proposal;
     return fundAndExecute(proposal);
   }
