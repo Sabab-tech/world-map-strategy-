@@ -77,7 +77,7 @@
   function instrumentLabel(value) {
     return ({ EQUITY: 'Equity investment', JOINT_VENTURE: 'Government joint venture', LOAN: 'Sovereign project loan', GRANT: 'Development grant', DOMESTIC_PUBLIC_CAPEX: 'Domestic public capital expenditure' })[value] || value;
   }
-  function statusLabel(value) { return String(value || 'UNKNOWN').replace(/_/g, ' ').toLowerCase().replace(/\\b\\w/g, function (x) { return x.toUpperCase(); }); }
+  function statusLabel(value) { return String(value || 'UNKNOWN').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, function (x) { return x.toUpperCase(); }); }
   function sectorLabel(proposal) {
     var type = String(proposal && proposal.projectType || '').toUpperCase();
     if (type === 'FACTORY') {
