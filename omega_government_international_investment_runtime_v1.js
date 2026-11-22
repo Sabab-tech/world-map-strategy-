@@ -721,16 +721,25 @@
     }) || null;
   }
   function quoteProject(input) {
+    input = input || {};
     var d = dependencies(), country = canonicalCountry(input.hostCountryId), type = String(input.projectType || '').toUpperCase();
     if (!country || !d.network) return result('BLOCKED', { reason: 'PROJECT_COUNTRY_OR_NETWORK_UNAVAILABLE' });
     if (type === 'EXISTING_PROJECT') {
       var existing = projectInCountry(country, input.existingProjectId);
       if (!existing || !['UNDER_CONSTRUCTION', 'COMPLETED'].includes(String(existing.status || '').toUpperCase()))
         return result('BLOCKED', { reason: 'EXISTING_PROJECT_NOT_ELIGIBLE' });
-      var existingCost = num(existing.costUsd || existing.cost);
-      if (existingCost === null || existingCost <= 0) return result('BLOCKED', { reason: 'EXISTING_PROJECT_CAPEX_UNOBSERVED' });
+      var existingCost = num(existing.costUsd);
+      if (existingCost === null || existingCost <= 0)
+        return result('BLOCKED', { reason: 'EXISTING_PROJECT_USD_CAPEX_EVIDENCE_UNAVAILABLE',
+          note: 'GAME_CURRENCY_UNITS are not converted or relabelled as USD.' });
+      var contribution = num(input.costUsd || input.amountUsd);
+      if (contribution === null || contribution <= 0 || contribution > existingCost * 0.25 + 1e-7)
+        return result('BLOCKED', { reason: 'EXISTING_PROJECT_RECAPITALIZATION_LIMIT',
+          maximumUsd: round(existingCost * 0.25, 2), referenceProjectCapexUsd: existingCost });
       return result('QUOTED', { countryId: country, projectType: type, projectId: existing.projectId,
-        projectCostUsd: existingCost, constructionDays: num(existing.durationDays), existingProject: true,
+        projectCostUsd: contribution, referenceProjectCapexUsd: existingCost,
+        constructionDays: num(existing.durationDays), existingProject: true,
+        effect: 'RESTRICTED_CAPITAL_RELEASED_TO_HOST_TREASURY_AS_PROJECT_WORKING_CAPITAL; NO_NEW_ASSET_OR_CAPACITY_CREATED',
         authority: 'EXISTING_RESOURCE_INDUSTRIAL_NETWORK_PROJECT_RECORD' });
     }
     if (type === 'MINE') {
@@ -751,14 +760,17 @@
       return result('QUOTED', { countryId: country, projectType: type, projectCostUsd: mineCost,
         constructionDays: mineQuote.durationDays, workersRequired: mineQuote.workersRequired,
         materials: clone(mineQuote.materials || []), quote: clone(mineQuote),
+        costAuthority: 'EXISTING_MINE_CONSTRUCTION_QUOTE_GAMEPLAY_ESTIMATE_NOT_REAL_VENDOR_PRICE',
         authority: 'CANONICAL_MINE_CONSTRUCTION_QUOTE' });
     }
     if (type === 'FACTORY') {
       var catalog = currentCatalog(), profiles = catalog.factoryProfiles || {};
       var factoryType = String(input.factoryType || '').trim().toUpperCase(), profile = profiles[factoryType];
       if (!profile) return result('BLOCKED', { reason: 'CANONICAL_FACTORY_TYPE_NOT_FOUND', factoryType: factoryType || null });
-      var cost = num(input.costUsd || profile.constructionCost);
-      if (cost === null || cost <= 0) return result('BLOCKED', { reason: 'FACTORY_CONSTRUCTION_CAPEX_UNAVAILABLE' });
+      var contributionUsd = num(input.costUsd || input.projectFundingUsd || input.amountUsd);
+      if (contributionUsd === null || contributionUsd <= 0)
+        return result('BLOCKED', { reason: 'EXPLICIT_GOVERNMENT_FACTORY_CONTRIBUTION_USD_REQUIRED',
+          catalogConstructionCost: num(profile.constructionCost), catalogCostUnit: profile.unit || 'UNKNOWN' });
       if (typeof d.network.factoryConstructionMaterialQuote !== 'function') return result('BLOCKED', { reason: 'FACTORY_CONSTRUCTION_BOM_API_UNAVAILABLE' });
       var bom;
       try { bom = d.network.factoryConstructionMaterialQuote(country, profile); }
@@ -766,15 +778,17 @@
       if (!bom || bom.status !== 'QUOTED' || !Array.isArray(bom.materials) || bom.materials.some(function (x) { return x.sufficient !== true; }))
         return result('BLOCKED', { reason: 'FACTORY_CONSTRUCTION_MATERIALS_NOT_READY', quote: bom || null });
       return result('QUOTED', { countryId: country, projectType: type, factoryType: factoryType,
-        recipeId: input.recipeId || profile.defaultRecipeId || null, projectCostUsd: cost,
+        recipeId: input.recipeId || profile.defaultRecipeId || null, projectCostUsd: round(contributionUsd, 2),
+        factoryCatalogConstructionCost: num(profile.constructionCost),
+        factoryCatalogCostUnit: String(profile.unit || 'UNKNOWN'),
         constructionDays: num(input.buildDays) || num(profile.constructionDays), materials: clone(bom.materials),
+        fundingBasis: 'GOVERNMENT_CONTRIBUTION_USD; CATALOG_CONSTRUCTION_COST_REMAINS_IN_ITS_DECLARED_GAME_UNIT; NO_FX_EQUIVALENCE_ASSUMED',
         quote: clone(bom), authority: 'CANONICAL_FACTORY_PROFILE_AND_CONSTRUCTION_BOM' });
     }
     if (type === 'INFRASTRUCTURE') {
       var infrastructureType = String(input.infrastructureType || '').trim().toLowerCase();
-      var distanceKm = num(input.distanceKm);
-      var capacity = num(input.capacityPerDay);
-      var infrastructureCost = num(input.costUsd);
+      var distanceKm = num(input.distanceKm), capacity = num(input.capacityPerDay);
+      var infrastructureCost = num(input.costUsd || input.projectFundingUsd || input.amountUsd);
       if (!infrastructureType || distanceKm === null || distanceKm < 0 || capacity === null || capacity <= 0 ||
           infrastructureCost === null || infrastructureCost <= 0)
         return result('BLOCKED', { reason: 'INFRASTRUCTURE_PROJECT_SCOPE_OR_COST_INVALID' });
@@ -783,14 +797,17 @@
         capacityPerDay: capacity, distanceKm: distanceKm, costAuthority: 'PLAYER_CONFIGURED_SIMULATION_PROJECT_BUDGET',
         authority: 'EXISTING_INFRASTRUCTURE_PROJECT_API_WITH_EXPLICIT_BUDGET' });
     }
-    return result('BLOCKED', { reason: 'GOVERNMENT_INVESTMENT_SECTOR_NOT_SUPPORTED', supportedProjectTypes: ['FACTORY', 'MINE', 'INFRASTRUCTURE', 'EXISTING_PROJECT'] });
+    return result('BLOCKED', { reason: 'GOVERNMENT_INVESTMENT_SECTOR_NOT_SUPPORTED',
+      supportedProjectTypes: ['FACTORY', 'MINE', 'INFRASTRUCTURE', 'EXISTING_PROJECT'] });
   }
-  function validateInstrument(input) {
-    var instrument = String(input.instrument || 'EQUITY').toUpperCase();
-    if (!['EQUITY', 'JOINT_VENTURE', 'LOAN', 'GRANT'].includes(instrument))
+  function validateInstrument(input, domestic) {
+    var instrument = String(input.instrument || (domestic ? 'DOMESTIC_PUBLIC_CAPEX' : 'EQUITY')).toUpperCase();
+    if (domestic && instrument !== 'DOMESTIC_PUBLIC_CAPEX') return { ok: false, reason: 'DOMESTIC_INVESTMENT_MUST_USE_PUBLIC_CAPEX_INSTRUMENT' };
+    if (!domestic && instrument === 'DOMESTIC_PUBLIC_CAPEX') return { ok: false, reason: 'DOMESTIC_PUBLIC_CAPEX_CANNOT_CROSS_BORDERS' };
+    if (!['EQUITY', 'JOINT_VENTURE', 'LOAN', 'GRANT', 'DOMESTIC_PUBLIC_CAPEX'].includes(instrument))
       return { ok: false, reason: 'INVESTMENT_INSTRUMENT_INVALID' };
     var duration = num(input.durationYears);
-    if (instrument === 'GRANT') duration = 0;
+    if (instrument === 'GRANT' || instrument === 'DOMESTIC_PUBLIC_CAPEX') duration = 0;
     else if (duration === null || !Number.isInteger(duration) || duration < 1 || duration > 30)
       return { ok: false, reason: 'INVESTMENT_DURATION_OUT_OF_RANGE', minimumYears: 1, maximumYears: 30 };
     var share = num(input.equityShareBps);
@@ -822,7 +839,8 @@
   }
   function getProposal(country, proposalId) {
     var root = countryFinanceRoot(country), inv = root && investmentRoot(root, false);
-    return inv && Array.isArray(inv.proposals) ? inv.proposals.find(function (x) { return x && x.proposalId === proposalId; }) || null : null;
+    var proposal = inv && Array.isArray(inv.proposals) ? inv.proposals.find(function (x) { return x && x.proposalId === proposalId; }) || null : null;
+    return proposal ? clone(proposal) : null;
   }
   function storeProposal(country, proposal, direction) {
     var d = dependencies();
@@ -830,6 +848,20 @@
       { countryId: country, proposal: clone(proposal), direction: direction }, proposal.proposalId);
     return response.ok ? result(response.result.status || 'CREATED', { proposalId: proposal.proposalId, duplicate: response.duplicate }) :
       result('BLOCKED', { reason: response.reason, detail: response.result });
+  }
+  function updateProposalRecord(country, proposalId, patch) {
+    var d = dependencies();
+    return dispatch(d, HANDLERS.updateProposal, country, { countryId: country, proposalId: proposalId, patch: clone(patch || {}) }, proposalId);
+  }
+  function persistProposalEverywhere(proposal, patch) {
+    Object.assign(proposal, clone(patch || {}));
+    var host = updateProposalRecord(proposal.hostCountryId, proposal.proposalId, patch);
+    if (!host.ok) return { ok: false, reason: host.reason, stage: 'HOST_PROPOSAL_UPDATE' };
+    if (proposal.investorCountryId !== proposal.hostCountryId) {
+      var investor = updateProposalRecord(proposal.investorCountryId, proposal.proposalId, patch);
+      if (!investor.ok) return { ok: false, reason: investor.reason, stage: 'INVESTOR_PROPOSAL_UPDATE' };
+    }
+    return { ok: true };
   }
   function debtRatioFor(country, deps) {
     try {
