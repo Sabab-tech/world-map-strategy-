@@ -532,7 +532,7 @@ test('turn autosave uses the canonical IndexedDB slot and retains legacy recover
   assert.match(lifecycle,/await sim\.loadSlot\(SLOT\)/,
     'the lifecycle must restore through the same canonical slot');
   assert.match(runtime,/async saveSlot\(slot='default',\s*options=/);
-  assert.match(runtime,/const stored=encodeStoredSnapshot\(snapshot\)/,
+  assert.match(runtime,/const stored=encodeStoredSnapshot\(snapshot,\s*options\)/,
     'the canonical save API must stream the authoritative snapshot into a compressed-or-plain storage envelope');
   assert.match(runtime,/function\* saveSnapshotJsonChunks\(snapshot\)/,
     'the streaming serializer must emit canonical JSON in bounded chunks');
