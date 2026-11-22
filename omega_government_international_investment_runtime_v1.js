@@ -1497,76 +1497,129 @@
       realizedNetProfitEvidenceUsd: source.distributableNetProfitUsd });
   }
 
-  function runNpcDecisionCycle(input) {
+  async function runNpcDecisionCycle(input) {
     input = input || {};
     if (!ready) return result('WAITING', { reason: 'RUNTIME_NOT_READY' });
     var d = dependencies(), roster = [];
     try { roster = d.countries && typeof d.countries.listProfiles === 'function' ? d.countries.listProfiles() : []; } catch (_) {}
-    roster = roster.map(function (p) { return { countryId: canonicalCountry(p.iso3 || p.countryCode), name: p.name }; })
-      .filter(function (p) { return p.countryId; });
-    var resources = d.state.resource || {}, hostEntries = Object.keys(resources).filter(function (key) {
-      var host = canonicalCountry(key), n = resources[key] && resources[key].industrialNetwork;
-      return host && n && Array.isArray(n.projects) && n.projects.some(function (p) {
-        return p && ['UNDER_CONSTRUCTION', 'COMPLETED'].includes(String(p.status || '').toUpperCase());
+    roster = roster.map(function (p) {
+      return { countryId: canonicalCountry(p.iso3 || p.countryCode), name: p.name };
+    }).filter(function (p) { return p.countryId; });
+    var resources = d.state.resource || {}, financeState = d.state.finance || {};
+    var activeHosts = Object.keys(resources).filter(function (key) {
+      var n = resources[key] && resources[key].industrialNetwork;
+      return canonicalCountry(key) && n && Array.isArray(n.projects) && n.projects.some(function (p) {
+        return p && String(p.status || '').toUpperCase() !== 'CANCELLED';
       });
     });
-    var hosts = Array.isArray(input.hostCountryIds) ? input.hostCountryIds.map(canonicalCountry).filter(Boolean) :
-      hostEntries.sort().slice(0, NPC_HOSTS_PER_CYCLE);
-    hosts = hosts.slice(0, Math.max(1, Math.min(NPC_HOSTS_PER_CYCLE, num(input.maxHostCountries) || NPC_HOSTS_PER_CYCLE)));
-    var limit = Math.max(1, Math.min(NPC_INVESTORS_PER_CYCLE, num(input.maxInvestorCountries) || NPC_INVESTORS_PER_CYCLE));
-    var start = Math.floor(turn() / INTERVAL_TURNS) * limit % Math.max(1, roster.length);
+    Object.keys(financeState).forEach(function (key) {
+      var country = canonicalCountry(key), root = financeBucket(d.state, country);
+      var inv = root && root.omegaFinance && investmentRoot(root.omegaFinance, false);
+      if (country && inv && Array.isArray(inv.proposals) &&
+          inv.proposals.some(function (p) { return p && p.hostCountryId === country &&
+            ['PENDING_HOST_APPROVAL', 'PENDING_HOST_REVIEW'].includes(p.status); }) &&
+          activeHosts.indexOf(country) < 0) activeHosts.push(country);
+    });
+    activeHosts.sort();
+    var hostLimit = Math.max(1, Math.min(NPC_HOSTS_PER_CYCLE,
+      num(input.maxHostCountries) || NPC_HOSTS_PER_CYCLE));
+    var hosts = Array.isArray(input.hostCountryIds)
+      ? input.hostCountryIds.map(canonicalCountry).filter(Boolean).slice(0, hostLimit)
+      : activeHosts.slice(0, hostLimit);
+    var investorLimit = Math.max(1, Math.min(NPC_INVESTORS_PER_CYCLE,
+      num(input.maxInvestorCountries) || NPC_INVESTORS_PER_CYCLE));
+    var start = Math.floor(turn() / INTERVAL_TURNS) * investorLimit % Math.max(1, roster.length);
     var investors = [];
-    for (var i = 0; i < Math.min(limit, roster.length); i++) {
+    for (var i = 0; i < Math.min(investorLimit, roster.length); i++) {
       var candidate = roster[(start + i) % roster.length];
       if (candidate && candidate.countryId && !hosts.includes(candidate.countryId)) investors.push(candidate);
     }
-    var made = [], rejected = [], evaluated = 0;
+    var pendingDecisions = [], candidates = [], rejected = [], accepted = [];
+    var evaluated = 0, proposalLimit = 12;
     hosts.forEach(function (host) {
+      serviceLoans(host);
+      var hostRoot = countryFinanceRoot(host), hostInv = hostRoot && investmentRoot(hostRoot, false);
+      var pending = hostInv && Array.isArray(hostInv.proposals) ? hostInv.proposals.filter(function (p) {
+        return p && p.hostCountryId === host && p.investorCountryId !== host &&
+          ['PENDING_HOST_APPROVAL', 'PENDING_HOST_REVIEW'].includes(p.status);
+      }).slice(0, 2) : [];
+      pending.forEach(function (p) { pendingDecisions.push({ hostCountryId: host, proposalId: p.proposalId, proposal: clone(p) }); });
       var bucket = resources[host] || {}, projects = bucket.industrialNetwork && bucket.industrialNetwork.projects || [];
-      var candidates = projects.filter(function (p) { return p && ['UNDER_CONSTRUCTION', 'COMPLETED'].includes(String(p.status || '').toUpperCase()); })
-        .sort(function (a, b) { return (num(b.costUsd || b.cost) || 0) - (num(a.costUsd || a.cost) || 0); }).slice(0, 2);
-      candidates.forEach(function (project) {
+      var eligible = projects.filter(function (p) {
+        return p && p.projectId && ['UNDER_CONSTRUCTION', 'COMPLETED'].includes(String(p.status || '').toUpperCase()) &&
+          num(p.costUsd) !== null && num(p.costUsd) > 0;
+      }).sort(function (a, b) { return (num(b.costUsd) || 0) - (num(a.costUsd) || 0); }).slice(0, 2);
+      var investments = hostInv && Array.isArray(hostInv.investments) ? hostInv.investments : [];
+      var hostProposals = hostInv && Array.isArray(hostInv.proposals) ? hostInv.proposals : [];
+      eligible.forEach(function (project) {
+        var attached = investments.filter(function (x) { return x && x.projectId === project.projectId; });
+        var totalEquity = attached.reduce(function (sum, x) { return sum + (num(x.equityShareBps) || 0); }, 0);
+        if (totalEquity >= 7000) return;
         investors.forEach(function (investor) {
-          if (investor.countryId === host || !project.projectId || made.length >= 12) return;
-          var attached = project.governmentInvestmentV1 && project.governmentInvestmentV1.investors || [];
-          if (attached.some(function (x) { return x && x.investorCountryId === investor.countryId; })) return;
-          var totalEquity = attached.reduce(function (sum, x) { return sum + (num(x.equityShareBps) || 0); }, 0);
-          if (totalEquity >= 7000) return;
+          if (investor.countryId === host || candidates.length >= proposalLimit) return;
+          if (attached.some(function (x) { return x.investorCountryId === investor.countryId; })) return;
+          if (hostProposals.some(function (p) {
+            return p && p.investorCountryId === investor.countryId && p.projectId === project.projectId &&
+              ['PENDING_HOST_APPROVAL', 'PENDING_HOST_REVIEW', 'APPROVED', 'PROJECT_STARTED', 'FUNDED_AWAITING_PROJECT_RESOLUTION'].includes(p.status);
+          })) return;
           evaluated++;
-          var budget = budgetFor(investor.countryId, d);
-          var projectCost = num(project.costUsd || project.cost);
+          var budget = budgetFor(investor.countryId, d), projectCost = num(project.costUsd);
           if (budget.status !== 'READY' || projectCost === null || projectCost <= 0) return;
           var amountUsd = round(Math.min(budget.maximumPerProjectUsd, projectCost * 0.15), 2);
           if (amountUsd < 1000) return;
           var fx = currencyFor(investor.countryId, d);
           if (fx.status !== 'READY') return;
-          var req = 'NPC' + turn() + ':' + investor.countryId + ':' + host + ':' + String(project.projectId).replace(/[^A-Z0-9:_-]/gi, '').slice(-45);
-          var proposalPromise = submitProposal({
-            investorCountryId: investor.countryId, hostCountryId: host, actorType: 'NPC',
+          var req = 'NPC' + turn() + ':' + investor.countryId + ':' + host + ':' +
+            String(project.projectId).replace(/[^A-Z0-9:_-]/gi, '').slice(-45);
+          candidates.push({
+            investorCountryId: investor.countryId, hostCountryId: host, projectId: project.projectId,
             requestId: req, amountUsd: amountUsd, amount: round(amountUsd * fx.localPerUsd, 2),
-            projectType: 'EXISTING_PROJECT', existingProjectId: project.projectId,
-            instrument: 'EQUITY', durationYears: 5,
-            equityShareBps: Math.min(1500, Math.max(100, Math.round(amountUsd / projectCost * 10000))),
-            projectDescription: 'Bounded sovereign co-investment screening of an existing public project'
+            equityShareBps: Math.min(1500, Math.max(100, Math.round(amountUsd / projectCost * 10000)))
           });
-          // No asynchronous work is spawned here. The public API returns promises; this cycle
-          // runs from an async wrapper below and awaits each candidate in deterministic order.
-          made.push({ pending: proposalPromise, investorCountryId: investor.countryId, hostCountryId: host, projectId: project.projectId });
         });
       });
     });
-    return Promise.all(made.map(function (row) { return row.pending.then(function (r) {
-      if (r.status === 'PENDING_HOST_APPROVAL' || r.status === 'PROJECT_STARTED') return r;
-      rejected.push({ investorCountryId: row.investorCountryId, hostCountryId: row.hostCountryId,
-        projectId: row.projectId, status: r.status, reason: r.reason || null });
-      return r;
-    }); })).then(function (results) {
-      npcCycleCount += 1;
-      npcProposalCount += results.filter(function (r) { return r && ['PENDING_HOST_APPROVAL', 'PROJECT_STARTED'].includes(r.status); }).length;
-      lastNpcCycleTurn = turn();
-      return result('COMPLETED', { turn: turn(), investorsConsidered: investors.length, projectsConsidered: evaluated,
-        proposalsCreated: results.filter(function (r) { return r && ['PENDING_HOST_APPROVAL', 'PROJECT_STARTED'].includes(r.status); }).length,
-        results: results, rejected: rejected });
+    var pendingResults = [];
+    for (var pIndex = 0; pIndex < pendingDecisions.length; pIndex++) {
+      var item = pendingDecisions[pIndex], decision = npcHostDecision(item.proposal);
+      if (decision.decision === 'REVIEW') continue;
+      var decisionResult = await respondProposal({
+        hostCountryId: item.hostCountryId, proposalId: item.proposalId,
+        decision: decision.decision, actorType: 'NPC',
+        __omegaNpcDecisionAuthority: AUTHORITY, reason: decision.reason
+      });
+      pendingResults.push({ hostCountryId: item.hostCountryId, proposalId: item.proposalId,
+        decision: decision.decision, status: decisionResult.status, reason: decision.reason });
+    }
+    var proposalResults = [];
+    for (var j = 0; j < candidates.length; j++) {
+      var c = candidates[j];
+      var submitted = await submitProposal({
+        investorCountryId: c.investorCountryId, hostCountryId: c.hostCountryId,
+        actorType: 'NPC', __omegaNpcDecisionAuthority: AUTHORITY,
+        requestId: c.requestId, amountUsd: c.amountUsd, amount: c.amount,
+        projectType: 'EXISTING_PROJECT', existingProjectId: c.projectId,
+        instrument: 'EQUITY', durationYears: 5, equityShareBps: c.equityShareBps,
+        projectDescription: 'Bounded sovereign co-investment screening of an existing public project'
+      });
+      if (['PENDING_HOST_APPROVAL', 'PENDING_HOST_REVIEW', 'PROJECT_STARTED'].includes(submitted.status))
+        accepted.push({ investorCountryId: c.investorCountryId, hostCountryId: c.hostCountryId,
+          projectId: c.projectId, status: submitted.status });
+      else rejected.push({ investorCountryId: c.investorCountryId, hostCountryId: c.hostCountryId,
+        projectId: c.projectId, status: submitted.status, reason: submitted.reason || null });
+      proposalResults.push({ investorCountryId: c.investorCountryId, hostCountryId: c.hostCountryId,
+        projectId: c.projectId, result: submitted.status });
+    }
+    npcCycleCount += 1;
+    npcProposalCount += accepted.length;
+    lastNpcCycleTurn = turn();
+    return result('COMPLETED', {
+      turn: turn(), investorsConsidered: investors.length, hostsConsidered: hosts.length,
+      projectsAndProposalsEvaluated: evaluated, pendingHostDecisions: pendingResults,
+      proposalsCreated: proposalResults.length, proposals: proposalResults, accepted: accepted, rejected: rejected,
+      bounds: { intervalTurns: INTERVAL_TURNS, maxInvestorCountries: investorLimit,
+        maxHostCountries: hostLimit, maxNewProposalsPerCycle: proposalLimit,
+        maximumPendingHostReviewsPerHost: 2 }
     });
   }
 
@@ -1577,28 +1630,39 @@
     var proposals = inv && Array.isArray(inv.proposals) ? clone(inv.proposals) : [];
     var outbound = proposals.filter(function (p) { return p && p.investorCountryId === country; });
     var inbound = proposals.filter(function (p) { return p && p.hostCountryId === country; });
-    var projectRows = [];
-    var resources = state().resource || {};
-    Object.keys(resources).forEach(function (hostKey) {
-      var host = canonicalCountry(hostKey), rows = resources[hostKey] && resources[hostKey].industrialNetwork && resources[hostKey].industrialNetwork.projects || [];
-      rows.forEach(function (project) {
-        var records = project && project.governmentInvestmentV1 && project.governmentInvestmentV1.investors || [];
-        records.forEach(function (position) {
-          if (position && (position.investorCountryId === country || host === country))
-            projectRows.push({ hostCountryId: host, project: clone(project), position: clone(position) });
-        });
+    var projectRows = [], financeState = state().finance || {};
+    Object.keys(financeState).forEach(function (hostKey) {
+      var host = canonicalCountry(hostKey);
+      if (!host) return;
+      var hostBucket = financeBucket(state(), host);
+      var hostRoot = hostBucket && hostBucket.omegaFinance;
+      var hostInv = hostRoot && investmentRoot(hostRoot, false);
+      var records = hostInv && Array.isArray(hostInv.investments) ? hostInv.investments : [];
+      records.forEach(function (position) {
+        if (!position || (position.investorCountryId !== country && host !== country)) return;
+        var project = projectInCountry(host, position.projectId);
+        projectRows.push({ hostCountryId: host, projectId: position.projectId,
+          project: project ? clone(project) : null, position: clone(position),
+          projectStatus: project && project.status || 'PROJECT_RECORD_NOT_LOADED' });
       });
     });
     var loans = inv && Array.isArray(inv.loans) ? clone(inv.loans) : [];
-    return { countryId: country, inboundProposals: inbound.filter(function (p) { return p.status === 'PENDING_HOST_APPROVAL'; }),
-      outboundProposals: outbound, investments: projectRows, loans: loans,
+    return {
+      countryId: country,
+      inboundProposals: inbound.filter(function (p) { return ['PENDING_HOST_APPROVAL', 'PENDING_HOST_REVIEW'].includes(p.status); }),
+      outboundProposals: outbound,
+      investments: projectRows,
+      loans: loans,
       restrictedFundsUsd: num(inv && inv.restrictedFundsUsd) || 0,
       investedCapitalUsd: num(inv && inv.investedCapitalUsd) || 0,
       outboundInvestedCapitalUsd: num(inv && inv.outboundInvestedCapitalUsd) || 0,
       capitalizedProjectCapitalUsd: num(inv && inv.capitalizedProjectCapitalUsd) || 0,
       projectWorkingCapitalUsd: clone(inv && inv.projectWorkingCapitalUsd || {}),
       receivedCapitalUsd: num(inv && inv.receivedCapitalUsd) || 0,
-      ledger: clone((root && root.ledger || []).filter(function (x) { return String(x && x.type || '').indexOf('GOVERNMENT_') === 0; }).slice(-100)) };
+      ledger: clone((root && root.ledger || []).filter(function (x) {
+        return String(x && x.type || '').indexOf('GOVERNMENT_') === 0;
+      }).slice(-100))
+    };
   }
   function getRiskSnapshot(countryValue) {
     var country = canonicalCountry(countryValue), d = dependencies();
