@@ -3927,6 +3927,7 @@ function refreshTechnologyGatedFactories(c){
     const req=Array.isArray(asset.requiredTechnologyIds)?asset.requiredTechnologyIds.map(x=>tok(x).toUpperCase()).filter(Boolean):[];
     if(req.length&&req.every(t=>caps.some(row=>tok(row?.technologyId).toUpperCase()===t&&technologyCapabilityAvailable(row)))){
       asset.status='OPERATIONAL';asset.technologyUnlockedTurn=turn();
+      asset.commissionedTurn=asset.commissionedTurn??turn();asset.commissioningStatus='COMMISSIONED';
       emit('OMEGA_FACTORY_TECHNOLOGY_UNLOCKED',cid,{factoryId:asset.id,requiredTechnologyIds:clone(req)});
     }
   }
