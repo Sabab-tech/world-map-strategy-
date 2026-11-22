@@ -67,6 +67,7 @@
   }
   function opportunitiesFor(host) {
     host = String(host || '').trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(host)) return { hostCountryId: '', projectTypes: [], factories: [], mines: [], projects: [] };
     var factoryProfiles = catalog().factoryProfiles || {};
     var factories = Object.keys(factoryProfiles).sort().map(function (key) {
       var profile = factoryProfiles[key] || {};
