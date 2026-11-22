@@ -349,11 +349,68 @@
     };
   }
 
+  function buildForeignInvestmentEvidence(root, profile, countryId, baseline, previousTurn, currentTurnValue) {
+    const finance = countryRecord(root, 'finance', profile, countryId);
+    const economy = countryRecord(root, 'economy', profile, countryId);
+    const ledger = Array.isArray(finance?.omegaFinance?.foreignInvestmentLedger) ? finance.omegaFinance.foreignInvestmentLedger : null;
+    const assets = Array.isArray(economy?.productionAssets) ? economy.productionAssets : null;
+    if (!ledger || !assets) return {
+      value: null, availability: 'UNOBSERVED', unit: 'USD_AND_FACTORY_EMPLOYMENT_COUNTS',
+      authority: 'COUNTRY_FINANCE_FDI_LEDGER_AND_SHARED_PRODUCTION_ASSET_POOL',
+      source: 'finance.omegaFinance.foreignInvestmentLedger+economy.productionAssets',
+      note: 'Both the settled host-country FDI ledger and shared production asset pool are required.'
+    };
+    const fx = currencyAndFx(profile, baseline);
+    const settled = ledger.filter(row => String(row?.status || '').toUpperCase() === 'SETTLED' &&
+      finite(row?.turn) !== null && finite(row.turn) > previousTurn && finite(row.turn) <= currentTurnValue);
+    const receiptsUsd = settled.reduce((sum, row) => sum + Math.max(0, finite(row?.amountUsd) ?? 0), 0);
+    const catalog = g.OmegaResourceIndustrialCatalogData || g.Omega?.ResourceIndustrialCatalogData || {};
+    const profiles = catalog.factoryProfiles || {};
+    const foreignFunded = assets.filter(asset => Array.isArray(asset?.foreignInvestmentSources) &&
+      asset.foreignInvestmentSources.some(source => finite(source?.amount) > 0));
+    const active = foreignFunded.filter(asset => String(asset?.status || '').toUpperCase() === 'OPERATIONAL' && asset?.productionEnabled !== false);
+    const jobs = asset => {
+      const factoryProfile = profiles[String(asset?.factoryType || asset?.type || '').toUpperCase()] || {};
+      return {
+        supported: Math.max(0, Math.floor(finite(asset?.employment?.jobsSupported) ?? finite(factoryProfile.employment?.jobsPerFactory) ?? 0)),
+        filled: Math.max(0, Math.floor(finite(asset?.employment?.jobsFilled) ?? 0))
+      };
+    };
+    const jobTotals = active.reduce((sum, asset) => { const value = jobs(asset); sum.supported += value.supported; sum.filled += value.filled; return sum; }, { supported: 0, filled: 0 });
+    const newlyCommissioned = foreignFunded.filter(asset => {
+      const at = finite(asset?.foreignInvestmentCommissionedTurn);
+      return at !== null && at > previousTurn && at <= currentTurnValue;
+    });
+    const capexLocal = newlyCommissioned.reduce((sum, asset) => sum + Math.max(0, finite(asset?.foreignInvestmentCapexAmount) ?? 0), 0);
+    const capexCurrency = newlyCommissioned.map(asset => String(asset?.foreignInvestmentCurrency || '').trim().toUpperCase()).filter(Boolean);
+    const capexCompatible = !capexCurrency.length || capexCurrency.every(code => code === fx.currencyCode);
+    const capexUsd = fx.localPerUsd !== null && capexCompatible ? capexLocal / fx.localPerUsd : null;
+    return {
+      value: {
+        settledForeignInvestmentReceiptUsd: Number(receiptsUsd.toFixed(4)),
+        settledForeignInvestmentCount: settled.length,
+        foreignFundedFactoryCount: foreignFunded.length,
+        activeForeignFundedFactoryCount: active.length,
+        newlyCommissionedForeignFundedFactoryCount: newlyCommissioned.length,
+        newlyCommissionedForeignInvestmentCapexUsd: capexUsd === null ? null : Number(capexUsd.toFixed(4)),
+        foreignFundedJobsSupported: jobTotals.supported,
+        foreignFundedJobsFilled: jobTotals.filled,
+        currencyCode: fx.currencyCode,
+        fxLocalPerUsd: fx.localPerUsd
+      },
+      availability: 'AVAILABLE', unit: 'USD_AND_FACTORY_EMPLOYMENT_COUNTS',
+      authority: 'SETTLED_CROSS_BORDER_FINANCE_LEDGER_AND_PRIVATE_FACTORIES_IN_SHARED_PRODUCTION_POOL',
+      source: 'finance.omegaFinance.foreignInvestmentLedger+economy.productionAssets',
+      note: 'Only settled FDI receipts and operational FDI-funded assets in the canonical country factory pool are counted; job counts use the existing simulated factory-employment reconciliation.'
+    };
+  }
+
   function buildLiveActivity(root, profile, countryId, baseline, previousTurn, currentTurnValue) {
     const live = {};
     for (const rule of runtime.rules.liveSignals) live[rule.id] = readLiveSignal(root, profile, countryId, rule);
     live.industrialOutputByResourceUnit = buildIndustrialOutputEvidence(root, profile, countryId);
     live.settledTradeActivity = buildSettledTradeEvidence(root, profile, countryId, baseline, previousTurn, currentTurnValue);
+    live.foreignInvestmentEvidence = buildForeignInvestmentEvidence(root, profile, countryId, baseline, previousTurn, currentTurnValue);
     live.diplomaticPolicyContext = buildDiplomacyEvidence(root, profile, countryId);
     return live;
   }
@@ -649,18 +706,27 @@
         tradeBalanceToGdpPct * tradeSensitivity * treatyBoost * disruption * policyAccessMultiplier));
     }
     const grossCapitalFormationPctGdp = metric('grossCapitalFormationPctGdp');
+    const foreignInvestment = live?.foreignInvestmentEvidence?.availability === 'AVAILABLE' ? live.foreignInvestmentEvidence.value : null;
+    const foreignFactoryDelta = Math.max(0, finite(foreignInvestment?.newlyCommissionedForeignFundedFactoryCount) ?? 0);
     const investmentIndexPrior = finite(priorProgression?.investmentActivityIndex);
     const projectIndexStep = finite(rules.investmentIndexPointsPerCompletedProject) ?? 0.8;
     const maxInvestmentIndex = finite(rules.maximumInvestmentActivityIndex) ?? 250;
+    const allInvestmentSteps = projectDelta + foreignFactoryDelta;
     const investmentActivityIndex = grossCapitalFormationPctGdp !== null
-      ? Math.min(maxInvestmentIndex, (investmentIndexPrior ?? 100) + projectDelta * projectIndexStep)
-      : (projects ? Math.min(maxInvestmentIndex, (investmentIndexPrior ?? 100) + projectDelta * projectIndexStep) : null);
+      ? Math.min(maxInvestmentIndex, (investmentIndexPrior ?? 100) + allInvestmentSteps * projectIndexStep)
+      : (projects || foreignInvestment ? Math.min(maxInvestmentIndex, (investmentIndexPrior ?? 100) + allInvestmentSteps * projectIndexStep) : null);
     const investmentStatus = grossCapitalFormationPctGdp !== null
-      ? (projects ? 'SOURCE_BASELINE_PLUS_RECORDED_PROJECT_ACTIVITY' : 'SOURCE_BASELINE_ONLY')
-      : (projects ? 'PROJECT_COUNT_PROXY_ONLY_NO_MONETARY_CAPEX' : 'UNOBSERVED');
-    const investmentContributionPp = grossCapitalFormationPctGdp !== null && projectDelta > 0 && years > 0
+      ? (allInvestmentSteps ? 'SOURCE_BASELINE_PLUS_RECORDED_PROJECT_AND_FOREIGN_INVESTMENT_ACTIVITY' : 'SOURCE_BASELINE_ONLY')
+      : (allInvestmentSteps ? 'PROJECT_AND_FDI_FACTORY_COUNT_PROXY_ONLY_NO_MONETARY_CAPEX' : 'UNOBSERVED');
+    const domesticInvestmentContributionPp = grossCapitalFormationPctGdp !== null && projectDelta > 0 && years > 0
       ? Math.min(maxGrowthPp, projectDelta * (finite(rules.investmentGrowthPpPerCompletedProject) ?? 0.04) / years)
       : null;
+    const foreignInvestmentContributionPp = foreignFactoryDelta > 0 && years > 0
+      ? Math.min(maxGrowthPp, foreignFactoryDelta * (finite(rules.foreignInvestmentGrowthPpPerCommissionedFactory) ?? 0.04) / years)
+      : null;
+    const investmentParts = [domesticInvestmentContributionPp, foreignInvestmentContributionPp].filter(value => value !== null);
+    const investmentContributionPp = investmentParts.length
+      ? Math.max(0, Math.min(maxGrowthPp, investmentParts.reduce((sum, value) => sum + value, 0))) : null;
     const tariffPct = finite(diplomacy?.importTariffPct);
     const tariffInflationPp = tariffPct === null ? null :
       Math.max(0, Math.min(finite(rules.maximumTariffInflationPp) ?? 2, tariffPct * (finite(rules.tariffInflationSensitivity) ?? 0.025)));
@@ -702,7 +768,7 @@
     const unemploymentProjectionPct = baseUnemployment === null ? null :
       Math.max(0, Math.min(100, baseUnemployment + (unemploymentChangePp || 0)));
     const status = baseGdp !== null && baseGrowth !== null ? 'PROGRESSION_CALIBRATED' :
-      (industrialOutputGrowthPct !== null || tradeContributionPp !== null ? 'PARTIAL_EVIDENCE_MODEL' : 'BASELINE_ONLY_OR_UNOBSERVED');
+      (industrialOutputGrowthPct !== null || tradeContributionPp !== null || foreignInvestmentContributionPp !== null ? 'PARTIAL_EVIDENCE_MODEL' : 'BASELINE_ONLY_OR_UNOBSERVED');
     return {
       status, modelVersion: String(runtime.rules.modelVersion || VERSION),
       interval: { fromTurn: finite(previous?.lastProcessedTurn) ?? Math.max(0, turn - 1), toTurn: turn, elapsedTurns, elapsedYears: years },
@@ -711,6 +777,8 @@
       tradeBalanceToGdpAnnualizedPct: tradeBalanceToGdpPct, tradeGrowthContributionPp: tradeContributionPp,
       investmentBaselineGrossCapitalFormationPctGdp: grossCapitalFormationPctGdp,
       investmentActivityIndex, investmentProgressionStatus: investmentStatus,
+      foreignInvestmentGrowthContributionPp: foreignInvestmentContributionPp,
+      foreignInvestmentEvidence: foreignInvestment ? clone(foreignInvestment) : null,
       inflationBaselinePct: baseInflation, inflationProjectionPct, inflationContributionPp,
       unemploymentBaselinePct: baseUnemployment, unemploymentProjectionPct, unemploymentChangePp,
       observedPolicy: diplomacy ? clone(diplomacy) : null,
@@ -724,6 +792,7 @@
         industrialOutput: outputNow === null ? 'UNOBSERVED' : 'AVAILABLE',
         settledTrade: tradeEvidence ? 'AVAILABLE' : 'UNOBSERVED',
         grossCapitalFormation: grossCapitalFormationPctGdp === null ? 'UNOBSERVED' : 'AVAILABLE',
+        foreignInvestment: foreignInvestment ? 'AVAILABLE' : 'UNOBSERVED',
         inflation: baseInflation === null ? 'UNOBSERVED' : 'AVAILABLE',
         unemployment: baseUnemployment === null ? 'UNOBSERVED' : 'AVAILABLE'
       },
