@@ -266,6 +266,22 @@ test('missing macro or bilateral evidence stays unknown and is not filled with a
   assert.equal(h.investments.length, 0);
 });
 
+test('fractional 0..1 diplomatic scores normalize to the same 0..100 relationship scale', () => {
+  const h = createRuntime();
+  h.state.foreign.AUS.relations.CAN = {
+    overall: 0.80, trade: 0.82, trust: 0.79, political: 0.81,
+    sanctions: false, war_state: false
+  };
+  h.state.foreign.CAN.relations.AUS = {
+    overall: 0.81, trade: 0.80, trust: 0.82, political: 0.79,
+    sanctions: false, war_state: false
+  };
+  const result = h.api.scoreHost('AUS', 'CAN', h.state);
+  assert.equal(result.eligible, true);
+  assert.equal(result.relationshipScore, 80.5);
+  assert.equal(result.riskEvidenceStatus, 'COMPLETE');
+});
+
 test('a host with too many recent settled inbound investments is skipped', async () => {
   const h = createRuntime();
   h.inboundLedgers.CAN = Array.from({ length: 6 }, (_, index) => ({
