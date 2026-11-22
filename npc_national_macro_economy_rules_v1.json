@@ -43,7 +43,7 @@
       {
         "id": "governmentBudgetBalanceUsd",
         "profileMetric": "governmentBudgetBalanceUsd",
-        "generalDataMetric": "budgetBalanceUsd",
+        "generalDataMetric": "governmentBudgetBalanceUsd",
         "unit": "USD_CURRENT",
         "currency": "USD"
       },
