@@ -183,6 +183,8 @@ test('investment explorer renders country flags, amount/share/interest sliders a
   assert.match(html, /data-gov-share-slider/);
   assert.match(html, /data-gov-interest-slider/);
   assert.match(html, /name="durationYears"/);
+  assert.match(html, /name="gracePeriodYears"[^>]*value="0"/);
+  assert.match(html, /Joint venture \/ profit-sharing/);
   assert.match(html, /data-gov-live-preview/);
   assert.match(html, /Select a destination and sector to preview the deal/);
   assert.doesNotMatch(html, /Historical acceptance rate/);
