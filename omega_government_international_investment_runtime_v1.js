@@ -413,11 +413,12 @@
     if (transfer.status !== 'RESERVED') return handlerResult(false, { reason: 'INVESTOR_TRANSFER_NOT_RESERVED' });
     transfer.status = 'SETTLED'; transfer.settledTurn = turn();
     inv.outboundEscrowUsd = Math.max(0, round((num(inv.outboundEscrowUsd) || 0) - transfer.amountUsd, 2));
+    var domestic = canonicalCountry(transfer.hostCountryId) === cid;
     inv.investedCapitalUsd = round((num(inv.investedCapitalUsd) || 0) + transfer.amountUsd, 2);
-    inv.outboundInvestedCapitalUsd = round((num(inv.outboundInvestedCapitalUsd) || 0) + transfer.amountUsd, 2);
+    if (!domestic) inv.outboundInvestedCapitalUsd = round((num(inv.outboundInvestedCapitalUsd) || 0) + transfer.amountUsd, 2);
     appendLedger(root, { transactionId: p.transferId + ':SETTLE', type: 'GOVERNMENT_INTERNATIONAL_INVESTMENT_SETTLEMENT',
       action: 'GOVERNMENT_INVESTMENT_SETTLEMENT', countryId: cid, countryCode: cid, amountUsd: transfer.amountUsd,
-      direction: 'MEMO', debitAccount: 'GOVERNMENT:FOREIGN_EQUITY_INVESTMENT',
+      direction: 'MEMO', debitAccount: domestic ? 'GOVERNMENT:DOMESTIC_PUBLIC_CAPITAL' : 'GOVERNMENT:FOREIGN_EQUITY_INVESTMENT',
       creditAccount: 'GOVERNMENT:INVESTMENT_ESCROW', hostCountryId: transfer.hostCountryId,
       proposalId: transfer.proposalId, correlationId: p.transferId, balanceAfterUsd: num(getPath(ctx, 'finance.available')) });
     recordEvent(inv, 'GOVERNMENT_INVESTMENT_SETTLED', { transferId: p.transferId, proposalId: p.proposalId });
