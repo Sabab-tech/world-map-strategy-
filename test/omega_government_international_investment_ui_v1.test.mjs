@@ -46,7 +46,8 @@ function harness() {
     Game: { state },
     OmegaCountryRuntimeData: {
       listProfiles: () => profiles,
-      getProfile: code => profiles.find(row => row.iso3 === code) || null
+      getProfile: code => profiles.find(row => row.iso3 === code) || null,
+      flagFor: code => ({ BGD: '🇧🇩', USA: '🇺🇸', DEU: '🇩🇪' }[code] || null)
     },
     OmegaForexMonetaryEngine: {
       getCurrencyCode: profile => profile.currencyCode,
@@ -169,4 +170,53 @@ test('factory opportunities disclose country-level placement and do not invent r
   assert.equal(quotes.length, 1);
   assert.equal(quotes[0].hostCountryId, 'DEU');
   assert.equal(quotes[0].factoryType, 'STEEL');
+});
+
+test('investment explorer renders country flags, amount/share/interest sliders and live deal controls', () => {
+  const { ui } = harness();
+  const html = ui.render('BGD', true, null);
+  assert.match(html, /🇧🇩 Bangladesh/);
+  assert.match(html, /🇺🇸 United States/);
+  assert.match(html, /data-gov-sector/);
+  assert.match(html, /data-gov-amount-slider/);
+  assert.match(html, /data-gov-share-slider/);
+  assert.match(html, /data-gov-interest-slider/);
+  assert.match(html, /name="durationYears"/);
+  assert.match(html, /data-gov-live-preview/);
+  assert.match(html, /Historical acceptance rate/);
+  assert.match(html, /value="10"/);
+  assert.match(html, /value="1" selected>1 year/);
+});
+
+test('historical acceptance estimate uses only comparable, completed bilateral decisions', () => {
+  const { ui, state } = harness();
+  const proposal = (proposalId, decision) => ({
+    proposalId, investorCountryId: 'BGD', hostCountryId: 'USA',
+    projectType: 'FACTORY', sector: 'METALS_AND_ALLOYS', factoryType: 'STEEL',
+    instrument: 'LOAN', amountUsd: 10000, durationYears: 2,
+    equityShareBps: 0, annualInterestRateBps: 1000,
+    status: decision === 'ACCEPT' ? 'APPROVED' : 'DECLINED',
+    hostDecision: { decision }
+  });
+  state.finance = {
+    BGD: { omegaFinance: { governmentInvestmentV1: { proposals: [
+      proposal('DEAL-1', 'ACCEPT'), proposal('DEAL-2', 'ACCEPT')
+    ] } } },
+    USA: { omegaFinance: { governmentInvestmentV1: { proposals: [
+      proposal('DEAL-1', 'ACCEPT'), proposal('DEAL-3', 'DECLINE')
+    ] } } }
+  };
+  const terms = {
+    projectType: 'FACTORY', sector: 'METALS_AND_ALLOYS', instrument: 'LOAN',
+    amountUsd: 10000, durationYears: 2, equityShareBps: 0, annualInterestRateBps: 1000
+  };
+  const estimate = ui.estimateAcceptanceRate('BGD', 'USA', terms);
+  assert.equal(estimate.available, true);
+  assert.equal(estimate.sampleSize, 3);
+  assert.equal(estimate.accepted, 2);
+  assert.equal(estimate.rejected, 1);
+  assert.equal(estimate.ratePct, 66.7);
+  const changedTerms = ui.estimateAcceptanceRate('BGD', 'USA', { ...terms, durationYears: 10, amountUsd: 50000 });
+  assert.equal(changedTerms.available, false);
+  assert.equal(changedTerms.sampleSize, 0);
 });
