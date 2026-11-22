@@ -251,7 +251,7 @@ test('foreign government equity funds a canonical Mine, co-funds the balance fro
   assert.equal(hostInvestment.investments[0].projectId, 'MINE:USA:USA-IRON-01');
   assert.equal(hostInvestment.investments[0].equityShareBps, 2500);
   assert.equal(investorInvestment.transfers[result.proposal.transferId].status, 'SETTLED');
-  assert.equal(hostInvestment.ledger.filter(row => row.type === 'GOVERNMENT_INVESTMENT_PROJECT_CAPEX').length, 1);
+  assert.equal(h.state.finance.USA.omegaFinance.ledger.filter(row => row.type === 'GOVERNMENT_INVESTMENT_PROJECT_CAPEX').length, 1);
   const replay = await h.api.submitProposal(mineInput());
   assert.equal(replay.duplicate, true);
   assert.equal(h.state.finance.BGD.available, investorBefore - 1500000);
@@ -296,7 +296,7 @@ test('factory investment preserves catalog cost units and links Finance CAPEX to
   assert.equal(result.proposal.projectId, 'FACTORY:USA:STEEL:001');
   const hostInv = h.state.finance.USA.omegaFinance.governmentInvestmentV1;
   assert.ok(hostInv.investments.some(row => row.projectId === 'FACTORY:USA:STEEL:001'));
-  assert.ok(hostInv.ledger.some(row => row.transactionId.includes('FACTORY:USA:STEEL:001')));
+  assert.ok(h.state.finance.USA.omegaFinance.ledger.some(row => row.transactionId.includes('FACTORY:USA:STEEL:001')));
   const project = h.state.resource.USA.industrialNetwork.projects[0];
   assert.equal(project.costUnit, 'GAME_CURRENCY_UNITS');
   assert.equal(project.ownerType, 'STATE_OWNED_ENTERPRISE');
@@ -325,7 +325,8 @@ test('loan investment creates borrower and lender schedules and services an evid
   assert.equal(serviced.paid.length, 1);
   assert.ok(h.state.finance.USA.available < hostBefore);
   assert.ok(h.state.finance.BGD.available > investorBefore);
-  assert.ok(hostInv.loans[0].totalInterestPaidUsd > 0);
+  const hostInvAfter = h.state.finance.USA.omegaFinance.governmentInvestmentV1;
+  assert.ok(hostInvAfter.loans[0].totalInterestPaidUsd > 0);
 });
 
 test('equity return is blocked without realized project net-profit evidence, then paid once against exact project evidence', async () => {
@@ -384,7 +385,7 @@ test('bounded NPC cycle never uses the active player as an NPC investor and can 
   const cycle = await h.api.runNpcDecisionCycle({ hostCountryIds: ['BGD'] });
   assert.equal(cycle.status, 'COMPLETED');
   assert.ok(cycle.proposalsCreated <= 12);
-  assert.ok(cycle.proposals.length > 0);
+  assert.ok(cycle.proposals.length > 0, JSON.stringify(cycle));
   assert.ok(cycle.proposals.every(row => row.investorCountryId !== 'BGD'));
   assert.ok(cycle.proposals.every(row => row.hostCountryId === 'BGD'));
   const incoming = h.api.getPortfolio('BGD').inboundProposals;
