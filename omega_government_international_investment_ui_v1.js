@@ -52,7 +52,7 @@
       var country = String(row.countryId || row.countryCode || row.identity && row.identity.countryIso3 || '').toUpperCase();
       var siteId = String(row.siteId || row.id || '');
       var resource = row.resourceId || row.real && row.real.resourceId || row.identity && row.identity.resourceTypeId;
-      return country === host && siteId && resource && row.map && row.map.markerEligible !== false &&
+      return country === host && siteId && resource && !(row.map && row.map.markerEligible === false) &&
         !(row.runtime && row.runtime.aliasOfSiteId);
     });
   }
