@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "modelVersion": "1.2.0",
   "title": "OMEGA NPC National Macro-Economy Evidence-Backed Progression Rules",
-  "purpose": "Advance NPC macro indicators from country-specific source baselines, same-country industrial output batches, settled trade ledgers, project lifecycle evidence, Finance progress and observed foreign-policy conditions. Projections remain explicitly modelled and never create cash, stock, production, settlements or official national-account observations.",
+  "purpose": "Advance NPC macro indicators from country-specific source baselines, same-country industrial output batches, settled trade ledgers, project lifecycle evidence, Finance progress and observed foreign-policy conditions. Projections remain explicitly modelled and never create cash, stock, production, settlements or official national-account observations. Settled foreign direct investment receipts and newly commissioned FDI-funded factories add evidence-backed host-country investment, employment and GDP-growth effects.",
   "roster": {
     "manifestPath": "minister_country_roster_manifest_v1.json",
     "identityField": "ISO3",
@@ -257,7 +257,10 @@
     "warInflationPpPerCountry": 0.08,
     "maximumWarInflationPp": 1.5,
     "producerCostInflationSensitivity": 0.25,
-    "unemploymentGrowthSensitivity": 0.12
+    "unemploymentGrowthSensitivity": 0.12,
+    "foreignInvestmentIndexPointsPerCommissionedFactory": 0.8,
+    "foreignInvestmentGrowthSensitivity": 0.12,
+    "foreignInvestmentGrowthPpPerCommissionedFactory": 0.04
   },
   "policyEffects": {
     "tradePolicyFactors": {
