@@ -296,7 +296,7 @@ test('factory investment preserves catalog cost units and links Finance CAPEX to
   assert.equal(result.proposal.projectId, 'FACTORY:USA:STEEL:001');
   const hostInv = h.state.finance.USA.omegaFinance.governmentInvestmentV1;
   assert.ok(hostInv.investments.some(row => row.projectId === 'FACTORY:USA:STEEL:001'));
-  assert.ok(h.state.finance.USA.omegaFinance.ledger.some(row => row.transactionId.includes('FACTORY:USA:STEEL:001')));
+  assert.ok(h.state.finance.USA.omegaFinance.ledger.some(row => row.projectId === 'FACTORY:USA:STEEL:001' && row.type === 'GOVERNMENT_INVESTMENT_PROJECT_CAPEX'));
   const project = h.state.resource.USA.industrialNetwork.projects[0];
   assert.equal(project.costUnit, 'GAME_CURRENCY_UNITS');
   assert.equal(project.ownerType, 'STATE_OWNED_ENTERPRISE');
@@ -389,7 +389,7 @@ test('bounded NPC cycle never uses the active player as an NPC investor and can 
   assert.ok(cycle.proposals.every(row => row.investorCountryId !== 'BGD'));
   assert.ok(cycle.proposals.every(row => row.hostCountryId === 'BGD'));
   const incoming = h.api.getPortfolio('BGD').inboundProposals;
-  assert.ok(incoming.length > 0);
+  assert.ok(incoming.length > 0, JSON.stringify({ cycle, incoming }));
   assert.ok(incoming.every(row => row.investorCountryId !== 'BGD'));
   assert.ok(incoming.every(row => row.status === 'PENDING_HOST_APPROVAL'));
 });
