@@ -224,3 +224,126 @@ test('historical acceptance estimate uses only comparable, completed bilateral d
   assert.equal(changedTerms.available, false);
   assert.equal(changedTerms.sampleSize, 0);
 });
+
+
+test('loan repayment preview mirrors quarterly amortization and interest-only grace periods', () => {
+  const { ui } = harness();
+  const standard = plain(ui.previewLoanRepayment(10000, 1000, 1, 0));
+  assert.equal(standard.available, true);
+  assert.equal(standard.paymentFrequencyDays, 90);
+  assert.equal(standard.totalInstallments, 4);
+  assert.equal(standard.graceInstallments, 0);
+  assert.equal(standard.amortizingInstallments, 4);
+  assert.equal(standard.firstGracePaymentUsd, null);
+  assert.equal(standard.firstAmortizingPaymentUsd, 2658.18);
+  assert.equal(standard.totalInterestUsd, 632.72);
+  assert.equal(standard.totalRepaymentUsd, 10632.72);
+  assert.equal(standard.remainingPrincipalUsd, 0);
+
+  const withGrace = plain(ui.previewLoanRepayment(10000, 1000, 2, 1));
+  assert.equal(withGrace.graceInstallments, 4);
+  assert.equal(withGrace.amortizingInstallments, 4);
+  assert.equal(withGrace.firstGracePaymentUsd, 250);
+  assert.equal(withGrace.firstAmortizingPaymentUsd, 2658.18);
+  assert.ok(withGrace.totalInterestUsd > standard.totalInterestUsd);
+  assert.equal(withGrace.remainingPrincipalUsd, 0);
+  assert.equal(ui.previewLoanRepayment(10000, 1000, 1, 1).available, false);
+});
+
+test('grace-period terms are included in historical acceptance comparisons', () => {
+  const { ui, state } = harness();
+  const proposal = (proposalId, decision) => ({
+    proposalId, investorCountryId: 'BGD', hostCountryId: 'USA',
+    projectType: 'FACTORY', sector: 'METALS_AND_ALLOYS', factoryType: 'STEEL',
+    instrument: 'LOAN', amountUsd: 10000, durationYears: 2,
+    equityShareBps: 0, annualInterestRateBps: 1000, gracePeriodYears: 0,
+    status: decision === 'ACCEPT' ? 'APPROVED' : 'DECLINED',
+    hostDecision: { decision }
+  });
+  state.finance = {
+    BGD: { omegaFinance: { governmentInvestmentV1: { proposals: [
+      proposal('GRACE-1', 'ACCEPT'), proposal('GRACE-2', 'ACCEPT')
+    ] } } },
+    USA: { omegaFinance: { governmentInvestmentV1: { proposals: [
+      proposal('GRACE-1', 'ACCEPT'), proposal('GRACE-3', 'DECLINE')
+    ] } } }
+  };
+  const terms = {
+    projectType: 'FACTORY', sector: 'METALS_AND_ALLOYS', instrument: 'LOAN',
+    amountUsd: 10000, durationYears: 2, equityShareBps: 0,
+    annualInterestRateBps: 1000, gracePeriodYears: 0
+  };
+  assert.equal(ui.estimateAcceptanceRate('BGD', 'USA', terms).sampleSize, 3);
+  assert.equal(ui.estimateAcceptanceRate('BGD', 'USA', { ...terms, gracePeriodYears: 1 }).sampleSize, 0);
+});
+
+test('live loan preview shows bilateral country flags and the selected grace-period repayment terms', () => {
+  const { ui } = harness();
+  const nodes = {
+    '[data-gov-host-country]': fakeNode('USA'),
+    '[data-gov-sector]': fakeNode('MINING'),
+    '[data-gov-project-type]': fakeNode('MINE'),
+    '[data-gov-instrument]': fakeNode('LOAN'),
+    '[data-gov-factory-type]': fakeNode(''),
+    '[data-gov-site]': fakeNode('USA-IRON-01'),
+    '[data-gov-existing-project]': fakeNode(''),
+    '[data-gov-amount-slider]': fakeNode('0'),
+    '[name="amount"]': fakeNode('110000'),
+    '[data-gov-share-slider]': fakeNode('20'),
+    '[name="equitySharePct"]': fakeNode('20'),
+    '[data-gov-interest-slider]': fakeNode('10'),
+    '[name="interestPct"]': fakeNode('10'),
+    '[name="durationYears"]': fakeNode('2'),
+    '[name="gracePeriodYears"]': fakeNode('1'),
+    '[data-gov-opportunity-summary]': fakeNode(),
+    '[data-gov-live-preview]': fakeNode()
+  };
+  const values = [
+    { name: 'hostCountryId', value: 'USA' }, { name: 'sector', value: 'MINING' },
+    { name: 'projectType', value: 'MINE' }, { name: 'instrument', value: 'LOAN' },
+    { name: 'amount', value: '110000' }, { name: 'interestPct', value: '10' },
+    { name: 'durationYears', value: '2' }, { name: 'gracePeriodYears', value: '1' },
+    { name: 'siteId', value: 'USA-IRON-01' }, { name: 'quantity', value: '1' },
+    { name: 'assignedWorkers', value: '50' }, { name: 'equitySharePct', value: '20' }
+  ];
+  const form = {
+    elements: values,
+    querySelector(selector) { return nodes[selector] || null; },
+    querySelectorAll() { return []; }
+  };
+  ui.refreshForm(form, 'BGD');
+  const preview = nodes['[data-gov-live-preview]'].innerHTML;
+  assert.match(preview, /🇧🇩 Bangladesh → 🇺🇸 United States/);
+  assert.match(preview, /Grace period/);
+  assert.match(preview, /4 interest-only quarterly payments/);
+  assert.match(preview, /First amortizing payment · quarterly/);
+  assert.match(preview, /Estimated total interest income/);
+  assert.match(preview, /Estimated total repayment/);
+  assert.doesNotMatch(preview, /simple interest/i);
+});
+
+test('share and interest number inputs clamp to their slider bounds and preserve blank edits', () => {
+  const { ui } = harness();
+  const shareRange = fakeNode('20'); shareRange.min = '1'; shareRange.max = '75'; shareRange.step = '1';
+  const shareInput = fakeNode('90'); shareInput.min = '1'; shareInput.max = '75'; shareInput.step = '1';
+  const interestRange = fakeNode('10'); interestRange.min = '0'; interestRange.max = '20'; interestRange.step = '0.1';
+  const interestInput = fakeNode('25'); interestInput.min = '0'; interestInput.max = '20'; interestInput.step = '0.1';
+  const nodes = {
+    '[data-gov-share-slider]': shareRange,
+    '[name="equitySharePct"]': shareInput,
+    '[data-gov-interest-slider]': interestRange,
+    '[name="interestPct"]': interestInput
+  };
+  const form = { querySelector(selector) { return nodes[selector] || null; }, querySelectorAll() { return []; } };
+  ui.refreshForm(form, 'BGD', shareInput);
+  assert.equal(shareInput.value, '75');
+  assert.equal(shareRange.value, '75');
+  ui.refreshForm(form, 'BGD', interestInput);
+  assert.equal(interestInput.value, '20');
+  assert.equal(interestRange.value, '20');
+  interestInput.value = '';
+  interestRange.value = '5';
+  ui.refreshForm(form, 'BGD', interestInput);
+  assert.equal(interestInput.value, '');
+  assert.equal(interestRange.value, '5');
+});
