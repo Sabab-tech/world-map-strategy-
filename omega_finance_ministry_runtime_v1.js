@@ -1377,7 +1377,8 @@
       {id:'fx',glyph:'FX',label:'FX & Banking',sub:'Currency & central bank'},
       {id:'macro',glyph:'MS',label:'Macro Stability',sub:'Growth, inflation & jobs'},
       {id:'analytics',glyph:'∿',label:'Analytics & graphs',sub:'30-day model & raw data'},
-      {id:'worldbank',glyph:'WB',label:'World Bank',sub:'Loans & reference data'}
+      {id:'worldbank',glyph:'WB',label:'World Bank',sub:'Loans & reference data'},
+      {id:'investment',glyph:'↔',label:'Government investment',sub:'Domestic & international capital'}
     ];
     let out='<div class="ofm-dashboard" data-ofm-root><div class="ofm-hero"><div><div class="ofm-eyebrow">OMEGA / SOVEREIGN FISCAL CONTROL</div><h2>Finance Ministry</h2><p>Budget distribution, state income, recorded Treasury flows and controlled public spending.</p></div><div class="ofm-status">'+escapeHTML(isPlayable(p)?'RUNTIME MODEL ACTIVE':'BASELINE UNAVAILABLE')+'</div></div>';
     out+='<div class="ofm-toolbar"><label for="ofm-country-select">Country profile</label><select id="ofm-country-select">'+renderCountryOptions()+'</select><span class="ofm-baseline">Game baseline '+Number(rules.baselineYear||2015)+' · USD reference</span></div>';
@@ -1394,6 +1395,7 @@
     else if(activeTab==='macro')out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>Macroeconomic Stability</h3><span>Policy stance, stability indicators and automatic stabilizers</span></div><p class="ofm-data-note">This panel combines the available baseline with modeled policies for growth, spending, inflation, debt and employment. It is a game model, not a credit rating or a real-world forecast. Missing baseline observations remain unavailable.</p><div data-omss-container></div></section>';
     else if(activeTab==='analytics')out+='<section class="ofm-section"><div data-ofa-container></div></section>';
     else if(activeTab==='worldbank')out+='<section class="ofm-section"><div class="ofm-section-heading"><h3>International Lending Institution</h3><span>World Bank public indicators are references only; game loan contracts remain simulated.</span></div><div data-owb-container></div></section>';
+    else if(activeTab==='investment')out+=global.OmegaGovernmentInvestmentUIV1&&typeof global.OmegaGovernmentInvestmentUIV1.render==='function'?global.OmegaGovernmentInvestmentUIV1.render(p.iso3||p.countryCode,editable,notice):'<section class="ofm-section"><p class="ofm-warning">Government Investment interface is unavailable.</p></section>';
     else out+=renderOverviewTab(p,m,fm,rows,editable,root);
     out+='</div><footer class="ofm-footer"><span>Country state: '+escapeHTML(p.countryCode)+' / '+escapeHTML(p.iso3)+'</span><span>Turn '+escapeHTML(String(currentTurn()))+'</span><span>Budget plan is not cash already spent.</span></footer></div>';
     return out;
@@ -1408,13 +1410,45 @@
     if(crumb)crumb.textContent='WORLD / '+p.name+' / FINANCE MINISTRY';
     if(status)status.textContent='FINANCE & TREASURY CONTROL ROOM';
     if(global.OmegaCabinetUI)global.OmegaCabinetUI.currentDashboardMinistryId='treasury_finance';
-    content.innerHTML=dashboardHTML(p,m,fm,snap.rows,notice,root);uiContainer=content;bindDashboardEvents(content);return true;
+    content.innerHTML=dashboardHTML(p,m,fm,snap.rows,notice,root);uiContainer=content;
+    const investmentForm=content.querySelector?.('[data-gov-invest-form]');
+    if(investmentForm&&global.OmegaGovernmentInvestmentUIV1&&typeof global.OmegaGovernmentInvestmentUIV1.refreshForm==='function')
+      global.OmegaGovernmentInvestmentUIV1.refreshForm(investmentForm,getPlayerCode());
+    bindDashboardEvents(content);return true;
   }
   function bindDashboardEvents(content){
     if(!content||content.__omegaFinanceBound)return;content.__omegaFinanceBound=true;
-    content.addEventListener('click',function(event){
+    content.addEventListener('click',async function(event){
       const tab=event.target?.closest?.('[data-ofm-tab]');
-      if(tab){const id=String(tab.getAttribute('data-ofm-tab')||'overview');if(['overview','budget','income','treasury','reports','fx','macro','analytics','worldbank'].includes(id)){activeTab=id;renderDashboard('finance');return;}}
+      if(tab){
+        const id=String(tab.getAttribute('data-ofm-tab')||'overview');
+        if(['overview','budget','income','treasury','reports','fx','macro','analytics','worldbank','investment'].includes(id)){
+          activeTab=id;renderDashboard('finance');return;
+        }
+      }
+      const investmentAction=event.target?.closest?.('[data-gov-invest-action]');
+      if(investmentAction){
+        event.preventDefault();
+        if(selectedCountryCode!==getPlayerCode()){
+          renderDashboard('finance',{ok:false,message:'Government investment actions are restricted to the active player country.'});
+          return;
+        }
+        const ui=global.OmegaGovernmentInvestmentUIV1;
+        if(!ui||typeof ui.decide!=='function'){
+          renderDashboard('finance',{ok:false,message:'Government Investment interface is unavailable.'});return;
+        }
+        investmentAction.disabled=true;
+        const action=String(investmentAction.getAttribute('data-gov-invest-action')||'');
+        const proposalId=String(investmentAction.getAttribute('data-proposal-id')||'');
+        try{
+          const result=await ui.decide(action,proposalId,selectedCountryCode);
+          const ok=['PROJECT_STARTED','DECLINED','REFUNDED','DISTRIBUTED'].includes(result?.status);
+          const message=ok?(action==='accept'?'Foreign government proposal approved and funded.':action==='decline'?'Foreign government proposal declined.':'Unused investment funds returned.') :
+            'Government investment action: '+String(result?.status||'FAILED')+' — '+String(result?.reason||result?.stage||'review the proposal and Treasury status');
+          renderDashboard('finance',{ok,message});
+        }catch(error){renderDashboard('finance',{ok:false,message:'Government investment action failed: '+String(error?.message||error)});}
+        return;
+      }
       const summary=event.target?.closest?.('#ofm-world-register > summary');
       if(summary){setTimeout(function(){const details=content.querySelector?.('#ofm-world-register');const holder=content.querySelector?.('#ofm-world-register-content');if(details&&details.open&&holder&&holder.dataset.loaded!=='true'){holder.innerHTML=renderFullWorldTable(worldSnapshot().rows);holder.dataset.loaded='true';}},0);}
     });
@@ -1424,10 +1458,39 @@
         global.OmegaMinistryViewCountry=selectedCountryCode;
         if(global.OmegaCabinetUI)global.OmegaCabinetUI.activeCountry=selectedCountryCode;
         renderDashboard('finance');
+        return;
       }
+      const investmentForm=event.target?.closest?.('[data-gov-invest-form]');
+      if(investmentForm&&global.OmegaGovernmentInvestmentUIV1&&typeof global.OmegaGovernmentInvestmentUIV1.refreshForm==='function')
+        global.OmegaGovernmentInvestmentUIV1.refreshForm(investmentForm,getPlayerCode());
     });
-    content.addEventListener('submit',function(event){
-      const form=event.target,action=form?.getAttribute?.('data-ofm-action');if(!action)return;
+    content.addEventListener('submit',async function(event){
+      const form=event.target;
+      const governmentForm=form?.closest?.('[data-gov-invest-form]');
+      if(governmentForm){
+        event.preventDefault();
+        if(selectedCountryCode!==getPlayerCode()){
+          renderDashboard('finance',{ok:false,message:'Government investment actions are restricted to the active player country.'});return;
+        }
+        const ui=global.OmegaGovernmentInvestmentUIV1;
+        if(!ui||typeof ui.submit!=='function'){
+          renderDashboard('finance',{ok:false,message:'Government Investment interface is unavailable.'});return;
+        }
+        const button=governmentForm.querySelector('[data-gov-submit]');
+        if(button)button.disabled=true;
+        governmentForm.setAttribute('aria-busy','true');
+        try{
+          const response=await ui.submit(governmentForm,getPlayerCode());
+          const status=String(response?.status||'FAILED');
+          const ok=['PROJECT_STARTED','PENDING_HOST_APPROVAL','PENDING_HOST_REVIEW'].includes(status);
+          const detail=response?.reason||response?.stage||response?.hostDecision?.reason||'';
+          const message=ok?'Government investment proposal: '+status.replace(/_/g,' ').toLowerCase()+'.'+(detail?' '+detail:'') :
+            'Government investment blocked: '+status.replace(/_/g,' ').toLowerCase()+'. '+detail;
+          renderDashboard('finance',{ok,message});
+        }catch(error){renderDashboard('finance',{ok:false,message:'Government investment proposal failed: '+String(error?.message||error)});}
+        return;
+      }
+      const action=form?.getAttribute?.('data-ofm-action');if(!action)return;
       event.preventDefault();const payload={type:action,countryId:selectedCountryCode||getPlayerCode()};
       for(const el of Array.from(form.elements||[]))if(el.name)payload[el.name]=el.value;
       if(payload.amountUsd!==undefined)payload.amountUsd=finite(payload.amountUsd);
@@ -1449,6 +1512,7 @@
   function attachUiBridge(){
     if(uiHooksAttached)return;uiHooksAttached=true;
     global.addEventListener?.('OMEGA_READY',function(){if(!initialized)init().catch(error=>console.error('[OMEGA FINANCE INIT]',error));});
+    global.addEventListener?.('OMEGA_GOVERNMENT_INVESTMENT_RUNTIME_READY',function(){if(activeTab==='investment')renderDashboard('finance');});
     global.addEventListener?.('MINISTRY_SELECTED',function(event){const d=event?.detail||{};const id=d.ministryId||d.id||d.ministry;if(isFinanceMinistryId(id))renderDashboard(id);});
     global.document?.addEventListener?.('click',function(event){
       const target=event.target?.closest?.('[data-ministry-id],[data-ministry]');if(!target)return;
@@ -1540,7 +1604,7 @@
       if(global.OmegaCabinetUI)global.OmegaCabinetUI.activeCountry=p.countryCode;
       renderDashboard('finance');return {ok:true,countryCode:p.countryCode};
     },
-    selectTab:function(v){const tab=String(v||'overview');if(!['overview','budget','income','treasury','reports','fx','macro','analytics','worldbank'].includes(tab))return {ok:false,code:'FINANCE_TAB_INVALID'};activeTab=tab;renderDashboard('finance');return {ok:true,tab};},
+    selectTab:function(v){const tab=String(v||'overview');if(!['overview','budget','income','treasury','reports','fx','macro','analytics','worldbank','investment'].includes(tab))return {ok:false,code:'FINANCE_TAB_INVALID'};activeTab=tab;renderDashboard('finance');return {ok:true,tab};},
     getBudgetSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState());return {countryCode:p.countryCode,...budgetTotals(fm)};},
     getRevenueSnapshot:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const fm=ensureFinanceState(p,rootState()),m=worldSnapshot().byCode.get(p.countryCode)||currentMetrics(p);return revenueState(p,fm,m,rootState());},
     applyAction,advanceCountry,advanceTurn,renderDashboard,isFinanceMinistryId};
