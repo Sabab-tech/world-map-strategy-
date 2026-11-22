@@ -391,7 +391,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(core, /TURN_PARTICIPANT_FAILED/);
   assert.match(lifecycle, /priority: Number\.MAX_SAFE_INTEGER/);
   assert.match(lifecycle, /registerTurnFinalizer\('omega\.game-lifecycle\.autosave'/);
-  assert.match(lifecycle, /sim\.saveSlot\(SLOT\)/,
+  assert.match(lifecycle, /sim\.saveSlot\(SLOT,\s*\{/,
     'routine lifecycle persistence must use the canonical Simulation.saveSlot API');
   assert.match(lifecycle, /await sim\.loadSlot\(SLOT\)/,
     'startup must restore from the same canonical save slot');
