@@ -342,8 +342,6 @@
     if (!cid || canonicalCountry(p.investorCountryId) !== cid || !p.transferId) return handlerResult(false, { reason: 'INVESTOR_RESERVATION_SCOPE_INVALID' });
     var amount = num(p.amountUsd);
     if (amount === null || amount <= 0 || Math.abs(amount - round(amount, 2)) > 1e-7) return handlerResult(false, { reason: 'INVESTMENT_AMOUNT_INVALID' });
-    var cash = num(getPath(ctx, 'finance.available'));
-    if (cash === null || cash < amount) return handlerResult(false, { reason: 'INSUFFICIENT_SOVEREIGN_TREASURY', available: cash, required: amount });
     var root = rootForContext(ctx), inv = investmentRoot(root, true);
     inv.transfers = isObject(inv.transfers) ? inv.transfers : {};
     var prior = inv.transfers[p.transferId];
@@ -352,6 +350,8 @@
         return handlerResult(false, { reason: 'GOVERNMENT_TRANSFER_IDEMPOTENCY_COLLISION' });
       return handlerResult(true, { status: 'DUPLICATE', duplicate: true, transferId: p.transferId });
     }
+    var cash = num(getPath(ctx, 'finance.available'));
+    if (cash === null || cash < amount) return handlerResult(false, { reason: 'INSUFFICIENT_SOVEREIGN_TREASURY', available: cash, required: amount });
     var after = round(cash - amount, 2);
     var entryId = p.transferId + ':RESERVE';
     if (!appendLedger(root, { transactionId: entryId, type: 'GOVERNMENT_INTERNATIONAL_INVESTMENT_RESERVE',
@@ -921,6 +921,8 @@
     if (!investor || !host) return result('BLOCKED', { reason: 'VALID_ISO3_INVESTOR_AND_HOST_COUNTRIES_REQUIRED' });
     if (actorType === 'PLAYER' && investor !== playerCountry()) return result('BLOCKED', { reason: 'PLAYER_INVESTOR_COUNTRY_SCOPE_VIOLATION' });
     if (!['PLAYER', 'NPC'].includes(actorType)) return result('BLOCKED', { reason: 'PROPOSAL_ACTOR_INVALID' });
+    if (actorType === 'NPC' && input.__omegaNpcDecisionAuthority !== AUTHORITY)
+      return result('BLOCKED', { reason: 'NPC_INVESTMENT_ENGINE_AUTHORITY_REQUIRED' });
     var requestId = String(input.requestId || '').trim();
     if (!/^[A-Z0-9:_-]{6,140}$/i.test(requestId)) return result('BLOCKED', { reason: 'GOVERNMENT_INVESTMENT_REQUEST_ID_INVALID' });
     var domestic = investor === host;
@@ -1287,10 +1289,9 @@
     var investorRefund = dispatch(d, HANDLERS.refundCash, investor, { investorCountryId: investor,
       transferId: proposal.transferId, amountUsd: amount }, proposal.transferId);
     if (!investorRefund.ok) return result('RECONCILIATION_REQUIRED', { reason: investorRefund.reason, stage: 'INVESTOR_REFUND' });
-    proposal.remainingRefundedUsd = amount;
-    proposal.status = 'PARTIALLY_REFUNDED';
-    proposal.updatedTurn = turn();
-    return result('REFUNDED', { amountUsd: amount, proposal: proposal });
+    var saved = persistProposalEverywhere(proposal, { remainingRefundedUsd: round((num(proposal.remainingRefundedUsd) || 0) + amount, 2),
+      status: amount + 1e-7 >= (num(receipt.amountUsd) || 0) ? 'REFUNDED' : 'PARTIALLY_REFUNDED', updatedTurn: turn() });
+    return result(saved.ok ? 'REFUNDED' : 'RECONCILIATION_REQUIRED', { amountUsd: amount, proposal: clone(proposal), persistence: saved });
   }
   function reconcileTransfer(input) {
     input = input || {};
