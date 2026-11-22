@@ -56,7 +56,7 @@ var TYPE_OWNER={
  RECYCLING_WASTE_PROCESSING_PLANT:'TERRA_INFRASTRUCTURE_GROUP'
 };
 var CAP_PER_GDP=.0000025,REFERENCE_FACTORY_COST=15500;
-var inflight=new Map(),completed=new Map(),lastError=null,lastPlan=null,sequence=0,activationRequested=false,activationScheduled=false;
+var inflight=new Map(),completed=new Map(),requestTokens=new Map(),lastError=null,lastPlan=null,sequence=0,activationRequested=false,activationScheduled=false;
 function obj(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
 function num(v){if(v===null||v===undefined||v==='')return null;var n=Number(v);return Number.isFinite(n)?n:null;}
 function id(v){return String(v==null?'':v).trim().toUpperCase();}
@@ -262,7 +262,7 @@ function ensureCountryInitialized(country,options){
  activationRequested=true;
  if(completed.has(cid))return Promise.resolve(clone(completed.get(cid)));
  if(inflight.has(cid))return inflight.get(cid);
- var token=++sequence,deps=getActiveDependencies();
+ var token=++sequence,deps=getActiveDependencies();requestTokens.set(cid,token);
  if(!deps.lifecycle||typeof deps.lifecycle.initializeOpeningCompanyCapital!=='function'||
     !deps.privateRegistry||!deps.governmentRegistry||!deps.countryRuntime||!deps.finance)
   return Promise.resolve({status:'WAITING',reason:'PRIVATE_COMPANY_CAPITAL_DEPENDENCIES_NOT_READY',countryId:cid});
@@ -275,7 +275,7 @@ function ensureCountryInitialized(country,options){
     Promise.resolve(deps.finance.init&&deps.finance.init()).catch(function(){return null;}),
     Promise.resolve(true)
    ]);
-   if(token!==sequence||(!allowNonPlayer&&playerCountry()!==cid))return{status:'STALE_COUNTRY_RESULT',countryId:cid};
+   if(requestTokens.get(cid)!==token||(!allowNonPlayer&&playerCountry()!==cid))return{status:'STALE_COUNTRY_RESULT',countryId:cid};
    var privateRow=deps.privateRegistry.getCountryBaseline(cid);
    var governmentRow=deps.governmentRegistry.getCountryBaseline(cid);
    if(!privateRow||privateRow.status!=='READY'||!governmentRow)
