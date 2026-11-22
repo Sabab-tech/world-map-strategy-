@@ -304,3 +304,16 @@ test('same-turn replay does not initiate another foreign capital transfer', asyn
   assert.equal(replay.status, 'DUPLICATE');
   assert.equal(h.investments.length, 1);
 });
+
+
+test('GitHub Pages, Node server and offline shell all ship the same new runtime and rules',()=>{
+  const index=readFileSync('index.html','utf8');
+  const server=readFileSync('server_bootstrap.js','utf8');
+  const offline=readFileSync('omega-offline-map-sw.js','utf8');
+  assert.match(index,/omega_autonomous_private_investment_decision_engine_v1\.js/);
+  assert.match(server,/omega_autonomous_private_investment_decision_engine_v1\.js/);
+  assert.match(offline,/\.\/omega_autonomous_private_investment_decision_engine_v1\.js/);
+  assert.match(offline,/\.\/omega_autonomous_private_investment_rules_v1\.json/);
+  const cache=offline.match(/CACHE_NAME\s*=\s*"omega-offline-atlas-shell-v([0-9]+)"/);
+  assert.ok(cache&&Number(cache[1])>=142,'offline shell must refresh after adding the engine and its rules');
+});
