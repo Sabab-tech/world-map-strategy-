@@ -1410,7 +1410,11 @@
     if(crumb)crumb.textContent='WORLD / '+p.name+' / FINANCE MINISTRY';
     if(status)status.textContent='FINANCE & TREASURY CONTROL ROOM';
     if(global.OmegaCabinetUI)global.OmegaCabinetUI.currentDashboardMinistryId='treasury_finance';
-    content.innerHTML=dashboardHTML(p,m,fm,snap.rows,notice,root);uiContainer=content;bindDashboardEvents(content);return true;
+    content.innerHTML=dashboardHTML(p,m,fm,snap.rows,notice,root);uiContainer=content;
+    const investmentForm=content.querySelector?.('[data-gov-invest-form]');
+    if(investmentForm&&global.OmegaGovernmentInvestmentUIV1&&typeof global.OmegaGovernmentInvestmentUIV1.refreshForm==='function')
+      global.OmegaGovernmentInvestmentUIV1.refreshForm(investmentForm,getPlayerCode());
+    bindDashboardEvents(content);return true;
   }
   function bindDashboardEvents(content){
     if(!content||content.__omegaFinanceBound)return;content.__omegaFinanceBound=true;
@@ -1508,6 +1512,7 @@
   function attachUiBridge(){
     if(uiHooksAttached)return;uiHooksAttached=true;
     global.addEventListener?.('OMEGA_READY',function(){if(!initialized)init().catch(error=>console.error('[OMEGA FINANCE INIT]',error));});
+    global.addEventListener?.('OMEGA_GOVERNMENT_INVESTMENT_RUNTIME_READY',function(){if(activeTab==='investment')renderDashboard('finance');});
     global.addEventListener?.('MINISTRY_SELECTED',function(event){const d=event?.detail||{};const id=d.ministryId||d.id||d.ministry;if(isFinanceMinistryId(id))renderDashboard(id);});
     global.document?.addEventListener?.('click',function(event){
       const target=event.target?.closest?.('[data-ministry-id],[data-ministry]');if(!target)return;
