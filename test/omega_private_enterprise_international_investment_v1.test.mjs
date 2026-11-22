@@ -144,6 +144,23 @@ test('foreign investment is reviewed by the host government and settles with rec
  assert.equal(investor.availableBalance,investorBefore-1000);
  assert.equal(host.availableBalance,hostBefore+110000);
  assert.equal(host.foreignEquityReceived,110000);
+ assert.equal(host.foreignInvestmentReceivedLocal,110000);
+ assert.equal(host.foreignCapitalLots.length,1);
+ assert.deepEqual({
+  transferId:host.foreignCapitalLots[0].transferId,
+  investorCountryId:host.foreignCapitalLots[0].investorCountryId,
+  investorCompanyId:host.foreignCapitalLots[0].investorCompanyId,
+  hostCountryId:host.foreignCapitalLots[0].hostCountryId,
+  currencyCode:host.foreignCapitalLots[0].currencyCode,
+  amount:host.foreignCapitalLots[0].amount,
+  availableBalance:host.foreignCapitalLots[0].availableBalance,
+  reservedBalance:host.foreignCapitalLots[0].reservedBalance,
+  spentBalance:host.foreignCapitalLots[0].spentBalance
+ },{
+  transferId:settled.investment.transactionId,investorCountryId:'USA',
+  investorCompanyId:'AURORA_INDUSTRIAL_GROUP',hostCountryId:'BGD',
+  currencyCode:'BDT',amount:110000,availableBalance:110000,reservedBalance:0,spentBalance:0
+ });
  assert.equal(host.foreignShareholders[0].investorCountryId,'USA');
  assert.equal(host.foreignShareholders[0].investorCompanyId,'AURORA_INDUSTRIAL_GROUP');
  assert.equal(host.foreignShareholders[0].shareBps,3000);
@@ -200,29 +217,34 @@ test('foreign ownership cannot exceed 100 percent of the host private company',a
  assert.equal(source.availableBalance,before);
 });
 
-test('foreign investment only reports production and employment after an existing lifecycle asset is commissioned',async()=>{
+test('foreign investment is attributed automatically when the existing private lifecycle commissions a funded factory',async()=>{
  const h=fixture();await h.api.ensureCountryCapital('USA');
- const p=await h.api.submitInvestmentProposal(request({requestId:'LINK-1'}));
+ const p=await h.api.submitInvestmentProposal(request({requestId:'LIFECYCLE-TRACE-1'}));
  h.api.reviewInvestmentProposal({hostCountryId:'BGD',proposalId:p.proposalId,decision:'APPROVE'});
  const settled=h.api.settleInvestmentProposal({hostCountryId:'BGD',proposalId:p.proposalId});
- const investmentId=settled.investment.investmentId;
  h.state.economy.BGD.privateEnterpriseLifecycle={proposals:[{
   proposalId:'HOST-FACTORY-PROPOSAL',companyId:'NOVA_CONSUMER_INDUSTRIES',
   factoryType:'TEXTILE_GARMENT_MILL',quantity:2,status:'COMMISSIONED_PRODUCTION_GATED'
  }]};
- assert.equal(h.api.linkInvestmentToFactoryProposal({hostCountryId:'BGD',investmentId,factoryProposalId:'HOST-FACTORY-PROPOSAL'}).status,'LINKED');
- assert.equal(h.api.getCountryInvestments('BGD').inboundInvestments[0].productionStatus,'FACTORY_PROPOSAL_LINKED');
  assert.equal(h.api.reconcileCountry('BGD').linked,0);
+ // This is the same provenance emitted by lifecycle fundProposal -> construction CAPEX -> applyCommissionedAsset.
  h.state.economy.BGD.productionAssets=[{
   id:'BGD-TEXTILE-FACTORY-01',ownerCompanyId:'NOVA_CONSUMER_INDUSTRIES',
   factoryType:'TEXTILE_GARMENT_MILL',sourcePrivateProposalId:'HOST-FACTORY-PROPOSAL',
+  foreignInvestmentSources:[{transferId:settled.investment.transactionId,
+   investorCountryId:'USA',investorCompanyId:'AURORA_INDUSTRIAL_GROUP',
+   companyId:'NOVA_CONSUMER_INDUSTRIES',amount:55000,currencyCode:'BDT'}],
+  foreignInvestmentCapexAmount:55000,foreignCapitalParticipationPct:50,
   productionEnabled:true,status:'OPERATIONAL',workforce:{total:320}
  }];
  const reconciliation=h.api.reconcileCountry('BGD');
  assert.equal(reconciliation.linked,1);
  const record=h.api.getCountryInvestments('BGD').inboundInvestments[0];
+ assert.equal(record.factoryProposalId,'HOST-FACTORY-PROPOSAL');
  assert.equal(record.productionStatus,'OPERATIONAL');
  assert.equal(record.employmentStatus,'RECORDED_IN_EXISTING_FACTORY_RUNTIME');
  assert.equal(record.observedEmployment,320);
+ assert.equal(record.foreignCapitalUsedLocal,55000);
+ assert.equal(record.foreignCapitalParticipationPct,50);
  assert.deepEqual(Array.from(record.factoryIds),['BGD-TEXTILE-FACTORY-01']);
 });
