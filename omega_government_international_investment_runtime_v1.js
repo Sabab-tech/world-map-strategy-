@@ -1929,15 +1929,16 @@
       commissionedTurn: null, firstProductionTurn: null, firstProductionCycleId: null,
       productionTransactionId: null, actualProductionQuantity: null, outputQuantities: null };
     if (!project) return lifecycle;
+    var projectType = String(project.projectType || '').toUpperCase();
     var projectInvestmentId = String(project.investmentId || project.sourceInvestmentId || '');
-    if (!investmentId || projectInvestmentId !== investmentId) {
+    if (projectType === 'FACTORY_CONSTRUCTION' && (!investmentId || projectInvestmentId !== investmentId)) {
       lifecycle.stage = 'INVESTMENT_IDENTITY_MISMATCH'; return lifecycle;
     }
     lifecycle.projectStatus = String(project.status || 'UNKNOWN').toUpperCase();
     lifecycle.progressPct = num(project.progressPct);
     lifecycle.constructionDaysRemaining = num(project.remainingDays);
     if (lifecycle.projectStatus === 'UNDER_CONSTRUCTION') { lifecycle.stage = 'CONSTRUCTION'; return lifecycle; }
-    if (String(project.projectType || '').toUpperCase() === 'FACTORY_CONSTRUCTION') {
+    if (projectType === 'FACTORY_CONSTRUCTION') {
       var economy = (state().economy || {})[host] || {};
       var assets = Array.isArray(economy.productionAssets) ? economy.productionAssets : [];
       var projectAssets = assets.filter(function (row) {
