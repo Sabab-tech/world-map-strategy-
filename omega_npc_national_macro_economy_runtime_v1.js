@@ -140,7 +140,9 @@
     }
     const coreIds = Object.keys(manifest.countries).map(value => String(value).trim().toUpperCase()).filter(Boolean).sort();
     const declaredCount = finite(manifest.counts?.countryEntities);
-    if (coreIds.length !== 197 || declaredCount !== coreIds.length || new Set(coreIds).size !== coreIds.length) {
+    const expectedCoreCountryCount = fixtures ? coreIds.length : 197;
+    if (!coreIds.length || coreIds.length !== expectedCoreCountryCount ||
+        declaredCount !== coreIds.length || new Set(coreIds).size !== coreIds.length) {
       throw new Error('NPC_MACRO_CORE_ROSTER_COUNT_MISMATCH');
     }
 
