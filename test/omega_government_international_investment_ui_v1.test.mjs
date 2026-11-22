@@ -298,6 +298,9 @@ test('live loan preview shows bilateral country flags and the selected grace-per
     '[data-gov-opportunity-summary]': fakeNode(),
     '[data-gov-live-preview]': fakeNode()
   };
+  nodes['[name="amount"]'].min = '1';
+  nodes['[name="amount"]'].max = '2000000000';
+  nodes['[name="amount"]'].step = '0.01';
   const values = [
     { name: 'hostCountryId', value: 'USA' }, { name: 'sector', value: 'MINING' },
     { name: 'projectType', value: 'MINE' }, { name: 'instrument', value: 'LOAN' },
