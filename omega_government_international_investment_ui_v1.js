@@ -76,22 +76,62 @@
   function instrumentLabel(value) {
     return ({ EQUITY: 'Equity investment', JOINT_VENTURE: 'Government joint venture', LOAN: 'Sovereign project loan', GRANT: 'Development grant', DOMESTIC_PUBLIC_CAPEX: 'Domestic public capital expenditure' })[value] || value;
   }
-  function statusLabel(value) { return String(value || 'UNKNOWN').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, function (x) { return x.toUpperCase(); }); }
+  function statusLabel(value) { return String(value || 'UNKNOWN').replace(/_/g, ' ').toLowerCase().replace(/\\b\\w/g, function (x) { return x.toUpperCase(); }); }
+  function sectorLabel(proposal) {
+    var type = String(proposal && proposal.projectType || '').toUpperCase();
+    if (type === 'FACTORY') {
+      var profile = catalog().factoryProfiles && catalog().factoryProfiles[proposal.factoryType];
+      return 'Factory · ' + String(profile && (profile.displayName || profile.name) || proposal.factoryType || 'Unspecified').replace(/_/g, ' ');
+    }
+    if (type === 'MINE') {
+      var site = sitesFor(proposal.hostCountryId).find(function (x) { return String(x.siteId || x.id) === String(proposal.siteId); });
+      return 'Mining · ' + String(site && (site.siteName || site.name) || proposal.siteId || 'Unspecified');
+    }
+    if (type === 'INFRASTRUCTURE') return 'Infrastructure · ' + String(proposal.infrastructureType || 'Unspecified').replace(/_/g, ' ');
+    if (type === 'EXISTING_PROJECT') return 'Existing project · ' + String(proposal.existingProjectId || proposal.projectId || 'Unspecified');
+    return projectTypeLabel(type);
+  }
+  function relationshipSnapshot(investor, host) {
+    var state = gameState(), foreign = state.foreign || {};
+    var a = foreign[host] && foreign[host].relations && foreign[host].relations[investor];
+    var b = foreign[investor] && foreign[investor].relations && foreign[investor].relations[host];
+    var row = a || b || null;
+    if (!row) return { score: null, status: 'RELATIONSHIP_DATA_UNAVAILABLE' };
+    if (row.war_state === true || row.sanctions === true) return { score: 0, status: row.war_state ? 'WAR' : 'SANCTIONS' };
+    var fields = [['overall', .35], ['trade', .35], ['trust', .20], ['political', .10]];
+    var total = 0, weight = 0;
+    fields.forEach(function (item) { var value = number(row[item[0]]); if (value !== null) { total += (value > 1 ? value / 100 : value) * item[1]; weight += item[1]; } });
+    return { score: weight ? Math.round(total / weight * 100) : null, status: weight ? 'OBSERVED' : 'RELATIONSHIP_SCORE_UNAVAILABLE' };
+  }
   function proposalCard(proposal, incoming, editable) {
     var investor = proposal.investorCountryId, host = proposal.hostCountryId;
     var remaining = Math.max(0, (number(proposal.amountUsd) || 0) - (number(proposal.capitalAppliedUsd) || 0));
+    var projectCost = number(proposal.projectCostUsd), investorContribution = number(proposal.amountUsd);
+    var hostContribution = number(proposal.hostTreasuryCoFundingUsd);
+    if (hostContribution === null && projectCost !== null && investorContribution !== null)
+      hostContribution = Math.max(0, projectCost - investorContribution);
+    var relation = relationshipSnapshot(investor, host);
+    var profitStatus = proposal.forecast && proposal.forecast.status || 'PROJECT_LEVEL_REVENUE_AND_OPERATING_COST_EVIDENCE_REQUIRED';
     var html = '<article class="ogiv-card"><div class="ogiv-card-head"><div><strong>' +
-      esc(incoming ? investor + ' → ' + host : projectTypeLabel(proposal.projectType)) +
-      '</strong><span>' + esc(projectTypeLabel(proposal.projectType)) + ' · ' + esc(instrumentLabel(proposal.instrument)) +
+      esc(investor + ' → ' + host) +
+      '</strong><span>' + esc(sectorLabel(proposal)) + ' · ' + esc(instrumentLabel(proposal.instrument)) +
       '</span></div><b class="ogiv-status">' + esc(statusLabel(proposal.status)) + '</b></div>' +
-      '<div class="ogiv-facts"><div><small>Investment</small><strong>' + money(proposal.amountUsd, 'USD') +
-      '</strong></div><div><small>Host project</small><strong>' + esc(proposal.projectId || proposal.siteId || proposal.factoryType || proposal.infrastructureType || 'Pending') +
-      '</strong></div><div><small>Duration</small><strong>' + (number(proposal.durationYears) === 0 ? 'Public CAPEX' : (number(proposal.durationYears) === null ? 'N/A' : esc(proposal.durationYears + ' years'))) +
-      '</strong></div><div><small>Equity share</small><strong>' + (number(proposal.equityShareBps) ? esc((proposal.equityShareBps / 100).toFixed(2) + '%') : 'Not applicable') +
-      '</strong></div></div>';
+      '<div class="ogiv-facts"><div><small>Total project investment cost</small><strong>' + money(projectCost === null ? investorContribution : projectCost, 'USD') +
+      '</strong></div><div><small>Investor contribution</small><strong>' + money(investorContribution, 'USD') +
+      '</strong></div><div><small>Host contribution</small><strong>' + money(hostContribution, 'USD') +
+      '</strong></div><div><small>Expected annual net profit</small><strong>' + (number(proposal.forecast && proposal.forecast.expectedAnnualReturnUsd) === null ? 'Not yet evidenced' : money(proposal.forecast.expectedAnnualReturnUsd, 'USD')) +
+      '</strong></div><div><small>ROI / payback</small><strong>' + (number(proposal.forecast && proposal.forecast.expectedReturnPct) === null ? 'Unavailable' : number(proposal.forecast.expectedReturnPct).toFixed(2) + '%') +
+      ' · ' + (number(proposal.forecast && proposal.forecast.paybackYears) === null ? 'N/A' : proposal.forecast.paybackYears + ' years') +
+      '</strong></div><div><small>Ownership / duration</small><strong>' +
+      (number(proposal.equityShareBps) ? esc((proposal.equityShareBps / 100).toFixed(2) + '%') : 'No equity') + ' · ' +
+      (number(proposal.durationYears) === 0 ? 'No fixed term' : (number(proposal.durationYears) === null ? 'N/A' : esc(proposal.durationYears + ' years'))) +
+      '</strong></div><div><small>Current bilateral relationship</small><strong>' +
+      (relation.score === null ? 'Unavailable' : relation.score + ' / 100') + '</strong></div><div><small>Relationship impact</small><strong>Awaiting diplomatic decision</strong></div></div>';
+    html += '<p class="ogiv-note">Profit status: ' + esc(statusLabel(profitStatus)) +
+      '. Profit, ROI and payback are not fabricated; they require verified project sales revenue and operating-cost evidence.</p>';
     if (proposal.hostAmountLocal !== null && proposal.hostCurrencyCode)
-      html += '<p class="ogiv-note">Host-side settlement snapshot: ' + money(proposal.hostAmountLocal, proposal.hostCurrencyCode) +
-        ' at proposal-time FX. No later exchange-rate change is silently applied.</p>';
+      html += '<p class="ogiv-note">Host settlement: ' + money(proposal.hostAmountLocal, proposal.hostCurrencyCode) +
+        ' at proposal-time FX. The exchange-rate snapshot is preserved.</p>';
     if (proposal.projectFailure) html += '<p class="ogiv-warning">Project resolution: ' + esc(proposal.projectFailure.reason || proposal.projectFailure.status) + '</p>';
     if (remaining > 0.01) html += '<p class="ogiv-note">Unspent restricted amount: ' + money(remaining, 'USD') + '. It is not project expenditure until an approved CAPEX release is recorded.</p>';
     if (incoming && editable && ['PENDING_HOST_APPROVAL', 'PENDING_HOST_REVIEW'].includes(proposal.status)) {
@@ -105,18 +145,22 @@
   }
   function investmentCard(row) {
     var position = row.position || {}, project = row.project || {}, lifecycle = row.lifecycle || {};
+    var projectType = String(project.projectType || position.projectType || 'Project').replace(/_/g, ' ');
+    var deployed = number(position.investedCapitalUsd), hostContribution = number(position.hostContributionUsd);
+    var profit = number(position.realizedNetProfitUsd);
     return '<article class="ogiv-card"><div class="ogiv-card-head"><div><strong>' +
-      esc(row.hostCountryId + ' · ' + (project.projectId || row.projectId)) + '</strong><span>' +
-      esc(project.projectType || 'Project') + ' · ' + esc(project.factoryType || project.infrastructureType || project.siteId || '') +
+      esc((position.investorCountryId || 'N/A') + ' → ' + row.hostCountryId) + '</strong><span>' +
+      esc(projectType + ' · ' + (project.factoryType || project.infrastructureType || project.siteId || project.projectId || row.projectId || '')) +
       '</span></div><b class="ogiv-status">' + esc(statusLabel(row.projectStatus)) + '</b></div>' +
-      '<div class="ogiv-facts"><div><small>Investor</small><strong>' + esc(position.investorCountryId || 'N/A') +
-      '</strong></div><div><small>Capital deployed</small><strong>' + money(position.investedCapitalUsd, 'USD') +
-      '</strong></div><div><small>Equity</small><strong>' + (number(position.equityShareBps) ? esc((position.equityShareBps / 100).toFixed(2) + '%') : 'Not applicable') +
-      '</strong></div><div><small>Returns</small><strong>Not yet evidenced</strong></div></div>' +
+      '<div class="ogiv-facts"><div><small>Investor capital deployed</small><strong>' + money(deployed, 'USD') +
+      '</strong></div><div><small>Host co-investment</small><strong>' + money(hostContribution, 'USD') +
+      '</strong></div><div><small>Verified realized net profit</small><strong>' + (profit === null ? 'Not yet recorded' : money(profit, 'USD')) +
+      '</strong></div><div><small>Ownership</small><strong>' + (number(position.equityShareBps) ? esc((position.equityShareBps / 100).toFixed(2) + '%') : 'No equity') +
+      '</strong></div></div>' +
       '<p class="ogiv-note">Investment ID: ' + esc(row.investmentId || position.investmentId || 'Legacy record') +
       ' · Lifecycle: ' + esc(statusLabel(lifecycle.stage || row.projectStatus)) +
       (number(lifecycle.progressPct) === null ? '' : ' · Construction progress: ' + esc((lifecycle.progressPct * 100).toFixed(1)) + '%') +
-      '</p><p class="ogiv-note">First production is recorded only after a completed production transaction with positive actual output. Investment performance and payback require realized project results.</p></article>';
+      '</p><p class="ogiv-note">Profit distributions and ROI require posted project-linked financial evidence. Missing operating costs or sales data remain unavailable, not zero.</p></article>';
   }
   function loanCard(loan) {
     return '<article class="ogiv-mini-card"><strong>' + esc(loan.loanId) + '</strong><span>' +
