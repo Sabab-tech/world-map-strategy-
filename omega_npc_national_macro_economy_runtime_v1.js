@@ -1,13 +1,14 @@
-/* OMEGA NPC NATIONAL MACRO-ECONOMY RUNTIME v1.1.0
+/* OMEGA NPC NATIONAL MACRO-ECONOMY RUNTIME v1.2.0
  * Evidence-calibrated NPC progression. All country writes remain inside the existing
  * Finance-owned country checkpoint; no parallel national accounts or per-frame work.
  */
 (function (g) {
   'use strict';
 
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
   const HANDLER_ID = 'omega.npc-national-macro-economy.v1';
   const RULES_URL = 'npc_national_macro_economy_rules_v1.json';
+  const INPUTS_URL = 'npc_national_macro_economy_inputs_v1.json';
   const runtime = {
     initialized: false,
     initPromise: null,
@@ -16,6 +17,8 @@
     rules: null,
     manifest: null,
     profileMetadata: null,
+    baselineInputsByIso3: new Map(),
+    baselineInputMetadata: null,
     profilesByIso3: new Map(),
     coreCountryIds: new Set(),
     unregisterCountryHandler: null,
@@ -137,8 +140,39 @@
     }
     const coreIds = Object.keys(manifest.countries).map(value => String(value).trim().toUpperCase()).filter(Boolean).sort();
     const declaredCount = finite(manifest.counts?.countryEntities);
-    if (!coreIds.length || (declaredCount !== null && declaredCount !== coreIds.length) || new Set(coreIds).size !== coreIds.length) {
+    const expectedCoreCountryCount = fixtures ? coreIds.length : 197;
+    if (!coreIds.length || coreIds.length !== expectedCoreCountryCount ||
+        declaredCount !== coreIds.length || new Set(coreIds).size !== coreIds.length) {
       throw new Error('NPC_MACRO_CORE_ROSTER_COUNT_MISMATCH');
+    }
+
+    const inputsPath = String(rules.baseline.inputsPath || INPUTS_URL);
+    const inputs = fixtures?.inputs || await fetchJson(inputsPath);
+    const requiredMetricIds = rules.baseline.metrics.map(row => String(row?.id || '').trim());
+    const inputMetricIds = Array.isArray(inputs?.metadata?.metricIds) ? inputs.metadata.metricIds.map(String) : [];
+    const inputCountryIds = isObject(inputs?.countries)
+      ? Object.keys(inputs.countries).map(value => String(value).trim().toUpperCase()).sort()
+      : [];
+    if (!isObject(inputs?.metadata) || inputs.metadata.datasetId !== 'OMEGA_NPC_NATIONAL_MACRO_ECONOMY_INPUTS_V1' ||
+        Number(inputs.metadata.countryCount) !== coreIds.length ||
+        stable(inputMetricIds) !== stable(requiredMetricIds) ||
+        stable(inputCountryIds) !== stable(coreIds)) {
+      throw new Error('NPC_MACRO_INPUT_BUNDLE_ROSTER_OR_SCHEMA_MISMATCH');
+    }
+    const baselineInputsByIso3 = new Map();
+    for (const iso3 of coreIds) {
+      const country = inputs.countries[iso3];
+      if (!isObject(country?.metrics) || stable(Object.keys(country.metrics).sort()) !== stable(requiredMetricIds.slice().sort())) {
+        throw new Error('NPC_MACRO_INPUT_COUNTRY_METRICS_INVALID:' + iso3);
+      }
+      for (const metricId of requiredMetricIds) {
+        const metric = country.metrics[metricId];
+        if (!isObject(metric) || (metric.value !== null && finite(metric.value) === null) ||
+            (metric.year !== null && finite(metric.year) === null)) {
+          throw new Error('NPC_MACRO_INPUT_METRIC_RECORD_INVALID:' + iso3 + ':' + metricId);
+        }
+      }
+      baselineInputsByIso3.set(iso3, country);
     }
 
     const finance = g.OmegaFinanceMinistry || g.Omega?.FinanceMinistry;
@@ -159,6 +193,18 @@
     if (unresolved.length) throw new Error('NPC_MACRO_CORE_ROSTER_PROFILE_JOIN_FAILED:' + unresolved.length);
     runtime.profileMetadata = finance.getProfileMetadata();
     if (!isObject(runtime.profileMetadata)) throw new Error('NPC_MACRO_PROFILE_METADATA_UNAVAILABLE');
+    runtime.baselineInputsByIso3 = baselineInputsByIso3;
+    runtime.baselineInputMetadata = {
+      datasetId: inputs.metadata.datasetId,
+      schemaVersion: inputs.metadata.schemaVersion || null,
+      sourceMode: inputs.metadata.sourceMode || null,
+      sourceRegistry: inputs.metadata.sourceRegistry || null,
+      sourceRegistryGeneratedAt: inputs.metadata.sourceRegistryGeneratedAt || null,
+      generatedAt: inputs.metadata.generatedAt || null,
+      countryCount: inputs.metadata.countryCount,
+      metricIds: clone(inputMetricIds),
+      coverage: clone(inputs.coverage || {})
+    };
     runtime.coreCountryIds = new Set(coreIds);
     runtime.manifest = manifest;
     runtime.rules = rules;
@@ -236,49 +282,35 @@
 
   function buildBaseline(countryId, profile) {
     const rules = runtime.rules.baseline;
-    const generalApi = g.Omega?.CountryGeneralData || g.OmegaCountryGeneralDataRuntime || null;
-    let general = null;
-    try {
-      if (typeof generalApi?.getCountryRecord === 'function') general = generalApi.getCountryRecord(countryId);
-    } catch (_) {}
+    const countryInputs = runtime.baselineInputsByIso3.get(countryId);
+    if (!countryInputs || !isObject(countryInputs.metrics)) throw new Error('NPC_MACRO_COUNTRY_INPUTS_NOT_LOADED:' + countryId);
     const metrics = {};
     for (const rule of rules.metrics) {
-      const generalKey = rule.generalDataMetric;
-      const generalValue = generalKey ? general?.metrics?.[generalKey] : null;
-      const generalMeta = generalKey ? general?.metricMetadata?.[generalKey] : null;
-      const profileValue = profile?.indicators?.[rule.profileMetric];
-      const useGeneral = finite(generalValue) !== null;
-      const value = useGeneral ? generalValue : profileValue;
-      const meta = useGeneral
-        ? {
-            unit: rule.unit,
-            currency: rule.currency || null,
-            authority: generalMeta?.status ? 'COUNTRY_GENERAL_DATA_' + String(generalMeta.status).toUpperCase() : 'COUNTRY_GENERAL_DATA_OBSERVATION',
-            source: generalMeta?.sourceName || generalMeta?.sourceId || general?.datasetId || null,
-            sourceUrl: generalMeta?.sourceUrl || null,
-            method: generalMeta?.method || null,
-            sourceStatus: generalMeta?.status || null,
-            freshness: generalMeta?.freshness ?? null,
-            year: generalMeta?.year ?? null,
-            confidence: generalMeta?.confidence ?? generalMeta?.sourceConfidence ?? null,
-            note: generalMeta?.dataGap || generalMeta?.note || null
-          }
-        : {
-            unit: rule.unit,
-            currency: rule.currency || null,
-            authority: profile?.profileStatus === 'UNAVAILABLE' ? 'UNAVAILABLE' : 'LOCAL_BASELINE_NOT_EXTERNALLY_REVALIDATED',
-            source: profile?.provenance?.economicSource || runtime.profileMetadata?.economicBaselineSource || rules.source || null,
-            year: runtime.profileMetadata?.baselineYear ?? null,
-            confidence: null,
-            note: profile?.profileStatus === 'UNAVAILABLE' ? 'Country economic baseline unavailable in the current local profile registry.' : 'Repository-local baseline; not independently revalidated against current official statistical series.'
-          };
+      const input = countryInputs.metrics[rule.id];
+      const value = finite(input?.value);
+      const sourceStatus = input?.sourceStatus || (value === null ? 'MISSING' : 'SOURCE_STATUS_UNKNOWN');
+      const meta = {
+        unit: rule.unit,
+        currency: rule.currency || null,
+        authority: 'COUNTRY_GENERAL_DATA_' + String(sourceStatus).toUpperCase(),
+        source: input?.sourceName || input?.sourceId || runtime.baselineInputMetadata?.sourceRegistry || null,
+        sourceUrl: input?.sourceUrl || null,
+        method: input?.method || null,
+        sourceStatus,
+        freshness: finite(input?.freshness),
+        year: input?.year ?? null,
+        confidence: finite(input?.confidence),
+        note: input?.dataGap || input?.note || null
+      };
       let fallback = 'UNOBSERVED';
-      if (profile?.metricAvailability?.[rule.profileMetric] === false || profile?.profileStatus === 'UNAVAILABLE') fallback = 'UNAVAILABLE';
+      if (profile?.metricAvailability?.[rule.profileMetric] === false || profile?.profileStatus === 'UNAVAILABLE') {
+        fallback = 'UNAVAILABLE';
+      }
       metrics[rule.id] = metricRecord(value, meta, fallback);
     }
     return {
       baselineYear: runtime.profileMetadata?.baselineYear ?? null,
-      registry: rules.source || null,
+      registry: runtime.baselineInputMetadata?.sourceRegistry || rules.source || null,
       profileStatus: profile?.profileStatus || 'UNOBSERVED',
       provenance: clone(profile?.provenance || {}),
       metrics
@@ -1014,6 +1046,12 @@
       manifestSchemaVersion: runtime.manifest?.schemaVersion || null,
       modelVersion: runtime.rules?.modelVersion || null,
       profileBaselineYear: runtime.profileMetadata?.baselineYear ?? null,
+      baselineInputCountryCount: runtime.baselineInputsByIso3.size,
+      baselineInputMetricIds: clone(runtime.baselineInputMetadata?.metricIds || []),
+      baselineInputSourceRegistry: runtime.baselineInputMetadata?.sourceRegistry || null,
+      baselineInputSourceMode: runtime.baselineInputMetadata?.sourceMode || null,
+      baselineInputGeneratedAt: runtime.baselineInputMetadata?.generatedAt || null,
+      baselineInputCoverage: clone(runtime.baselineInputMetadata?.coverage || {}),
       commandHandlerRegistered: runtime.commandHandlerRegistered,
       schedulerHandlerRegistered: typeof runtime.unregisterCountryHandler === 'function',
       schedulerTiers: clone(runtime.rules?.scheduler?.tiers || []),

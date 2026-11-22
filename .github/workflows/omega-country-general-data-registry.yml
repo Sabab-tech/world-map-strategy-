@@ -59,6 +59,13 @@ on:
       - "economy_raw_financial_data_v2.json"
       - "resource_country_resource_context_index.json"
       - "omega_home_ministry_country_police_baseline_v1.json"
+      - "scripts/build_npc_national_macro_economy_inputs_v1.mjs"
+      - "omega_npc_national_macro_economy_runtime_v1.js"
+      - "npc_national_macro_economy_rules_v1.json"
+      - "minister_country_roster_manifest_v1.json"
+      - "test/npc_national_macro_economy_inputs_v1.test.mjs"
+      - "test/omega_npc_national_macro_economy_runtime_v1.test.mjs"
+      - "test/omega_npc_macro_evidence_contract_v1.test.mjs"
 
 permissions:
   contents: write
@@ -92,6 +99,9 @@ jobs:
             node scripts/build_country_general_data_registry_v1.mjs --refresh-sources
           fi
 
+      - name: Build compact 197-country NPC macro economy input bundle
+        run: node scripts/build_npc_national_macro_economy_inputs_v1.mjs
+
       - name: Build canonical country sector profiles
         run: node scripts/build_country_sector_profiles_v1.mjs
 
@@ -112,7 +122,9 @@ jobs:
           node --check omega_ministry_entry_v3.js
           node --check omega_ui_system_redesign_v1.js
           node --test test/country_general_data_registry_v1.test.mjs test/omega_country_runtime_data_v1.test.mjs test/omega_country_behavior_engine_v1.test.mjs test/omega_ministry_country_details_runtime.test.mjs test/omega_country_data_gateway_v1.test.mjs
+          node --test test/npc_national_macro_economy_inputs_v1.test.mjs test/omega_npc_national_macro_economy_runtime_v1.test.mjs test/omega_npc_macro_evidence_contract_v1.test.mjs
           node test/omega_opponent_e2e_runtime.test.mjs
+          node --check scripts/build_npc_national_macro_economy_inputs_v1.mjs
           node --check scripts/build_country_sector_profiles_v1.mjs
           node --test test/country_sector_profiles_v1.test.mjs test/omega_country_sector_profile_ui_v1.test.mjs
           node --check scripts/enrich_country_factory_starting_baseline_v1.mjs
@@ -124,7 +136,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git add -f country_general_data_registry_v1.json country_sector_profiles_v1.json country_factory_starting_baseline_v1.json
+          git add -f country_general_data_registry_v1.json country_sector_profiles_v1.json country_factory_starting_baseline_v1.json npc_national_macro_economy_inputs_v1.json
           if git diff --cached --quiet; then
             echo "Country data artifacts unchanged; no generated data commit required."
             exit 0

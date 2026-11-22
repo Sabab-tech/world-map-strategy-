@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "modelVersion": "1.1.0",
+  "modelVersion": "1.2.0",
   "title": "OMEGA NPC National Macro-Economy Evidence-Backed Progression Rules",
   "purpose": "Advance NPC macro indicators from country-specific source baselines, same-country industrial output batches, settled trade ledgers, project lifecycle evidence, Finance progress and observed foreign-policy conditions. Projections remain explicitly modelled and never create cash, stock, production, settlements or official national-account observations.",
   "roster": {
@@ -9,9 +9,10 @@
     "manifestCountryMap": "countries"
   },
   "baseline": {
-    "source": "economy_global_profiles_v1.json",
+    "source": "country_general_data_registry_v1.json",
+    "inputsPath": "npc_national_macro_economy_inputs_v1.json",
     "metadataSource": "FinanceMinistry.getProfileMetadata",
-    "generalDataCacheApi": "Omega.CountryGeneralData.getCountryRecord",
+    "generalDataCacheApi": "LEGACY_ONLY_NOT_USED_BY_NPC_MACRO_BASELINE",
     "missingValuePolicy": "NULL_REMAINS_UNOBSERVED",
     "metrics": [
       {
@@ -42,7 +43,7 @@
       {
         "id": "governmentBudgetBalanceUsd",
         "profileMetric": "governmentBudgetBalanceUsd",
-        "generalDataMetric": "budgetBalanceUsd",
+        "generalDataMetric": "governmentBudgetBalanceUsd",
         "unit": "USD_CURRENT",
         "currency": "USD"
       },

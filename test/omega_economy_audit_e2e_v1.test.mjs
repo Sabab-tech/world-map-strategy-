@@ -58,6 +58,37 @@ function makeHarness(initialState = {}) {
     }
   };
 
+  const npcMacroMetricIds = npcRules.baseline.metrics.map(rule => rule.id);
+  const npcMacroInputs = {
+    metadata: {
+      datasetId: 'OMEGA_NPC_NATIONAL_MACRO_ECONOMY_INPUTS_V1',
+      schemaVersion: '1.0.0',
+      sourceMode: 'TEST_FIXTURE',
+      sourceRegistry: 'test-fixture',
+      countryCount: identityRows.length,
+      metricIds: npcMacroMetricIds
+    },
+    countries: Object.fromEntries(identityRows.map(profile => [profile.iso3, {
+      metrics: Object.fromEntries(npcRules.baseline.metrics.map(rule => {
+        const raw = profile.indicators?.[rule.profileMetric];
+        const value = typeof raw === 'number' && Number.isFinite(raw) ? raw : null;
+        return [rule.id, {
+          value,
+          year: value === null ? null : 2024,
+          sourceStatus: value === null ? 'MISSING_TEST_FIXTURE' : 'TEST_FIXTURE_OBSERVATION',
+          sourceId: value === null ? null : 'test-economy-fixture',
+          sourceName: value === null ? null : 'Economy audit test fixture',
+          method: value === null ? null : 'TEST_FIXTURE',
+          indicatorCode: null,
+          sourceUrl: null,
+          confidence: value === null ? null : 1,
+          dataGap: value === null ? 'MISSING_TEST_FIXTURE' : null,
+          note: null
+        }];
+      }))
+    }]))
+  };
+
   const events = [];
   const handlers = new Map();
   const schedulerHandlers = new Map();
@@ -176,7 +207,8 @@ function makeHarness(initialState = {}) {
     OmegaCountryProfilesData: countryProfiles,
     __OMEGA_NPC_MACRO_FIXTURES__: {
       manifest: { schemaVersion: '1.0.0', scope: 'TEST_NPC_ROSTER', counts: { countryEntities: 3 }, countries: { BGD: {}, SAU: {}, AAA: {} } },
-      rules: structuredClone(npcRules)
+      rules: structuredClone(npcRules),
+      inputs: npcMacroInputs
     },
     // Test-scoped SAB34 certificate (production omega_sab34_live_browser_proof_v1.js remains untouched)
     OmegaSab34LiveBrowserProofV1: {
