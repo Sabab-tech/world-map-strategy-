@@ -4,6 +4,7 @@ import { runInNewContext } from 'node:vm';
 import { test } from 'node:test';
 
 const source = readFileSync(new URL('../omega_government_international_investment_ui_v1.js', import.meta.url), 'utf8');
+const plain = value => JSON.parse(JSON.stringify(value));
 
 function harness() {
   const profiles = [
@@ -80,14 +81,14 @@ function fakeNode(value = '', attrs = {}) {
 test('investment destinations and target opportunities are sourced from current country records', () => {
   const { ui } = harness();
   const bangladesh = ui.listOpportunities('BGD');
-  assert.deepEqual(bangladesh.projectTypes.map(row => row.value), ['FACTORY', 'MINE', 'INFRASTRUCTURE', 'EXISTING_PROJECT']);
-  assert.deepEqual(bangladesh.factories.map(row => row.value), ['STEEL', 'TEXTILE']);
-  assert.deepEqual(bangladesh.mines.map(row => row.value), ['BGD-IRON-01', 'BGD-GAS-01']);
-  assert.deepEqual(bangladesh.projects.map(row => row.value), ['BGD-FACTORY-01']);
+  assert.deepEqual(plain(bangladesh.projectTypes.map(row => row.value)), ['FACTORY', 'MINE', 'INFRASTRUCTURE', 'EXISTING_PROJECT']);
+  assert.deepEqual(plain(bangladesh.factories.map(row => row.value)), ['STEEL', 'TEXTILE']);
+  assert.deepEqual(plain(bangladesh.mines.map(row => row.value)), ['BGD-IRON-01', 'BGD-GAS-01']);
+  assert.deepEqual(plain(bangladesh.projects.map(row => row.value)), ['BGD-FACTORY-01']);
   const unitedStates = ui.listOpportunities('USA');
-  assert.deepEqual(unitedStates.mines.map(row => row.value), ['USA-IRON-01']);
-  assert.deepEqual(unitedStates.projects.map(row => row.value), ['USA-PORT-01']);
-  assert.deepEqual(ui.listOpportunities('').mines, []);
+  assert.deepEqual(plain(unitedStates.mines.map(row => row.value)), ['USA-IRON-01']);
+  assert.deepEqual(plain(unitedStates.projects.map(row => row.value)), ['USA-PORT-01']);
+  assert.deepEqual(plain(ui.listOpportunities('').mines), []);
 });
 
 test('investment explorer requires the player to select destination and opportunity', () => {
