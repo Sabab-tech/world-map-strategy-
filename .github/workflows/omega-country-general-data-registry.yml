@@ -59,7 +59,6 @@ on:
       - "economy_raw_financial_data_v2.json"
       - "resource_country_resource_context_index.json"
       - "omega_home_ministry_country_police_baseline_v1.json"
-      - "npc_national_macro_economy_inputs_v1.json"
       - "scripts/build_npc_national_macro_economy_inputs_v1.mjs"
       - "omega_npc_national_macro_economy_runtime_v1.js"
       - "npc_national_macro_economy_rules_v1.json"
