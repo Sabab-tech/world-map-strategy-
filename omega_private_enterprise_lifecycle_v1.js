@@ -2977,10 +2977,10 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
         if(capexForeignRemaining<=1e-9||!source)return;
         var sourceRemaining=Math.max(0,num(source.remainingReservedAmount)||0),applied=Math.min(sourceRemaining,capexForeignRemaining);
         if(applied<=1e-9)return;
-        source.remainingReservedAmount=Number((sourceRemaining-applied).toFixed(2));
         var lots=Array.isArray(account.foreignCapitalLots)?account.foreignCapitalLots:[],lot=lots.find(function(row){return row&&row.transferId===source.transferId;});
         if(!lot||Math.max(0,num(lot.reservedBalance)||0)+1e-9<applied)
           return;
+        source.remainingReservedAmount=Number((sourceRemaining-applied).toFixed(2));
         lot.reservedBalance=Math.max(0,Number((num(lot.reservedBalance)-applied).toFixed(2)));
         lot.spentBalance=Number(((num(lot.spentBalance)||0)+applied).toFixed(2));
         capexForeignSources.push({transferId:source.transferId,investorCountryId:source.investorCountryId,
@@ -3233,6 +3233,7 @@ function buildCompanyFinancingAlternatives(preference,privateShareRequested,shar
       asset.foreignInvestmentCurrency=id(project.foreignInvestmentCurrency||proposal.capitalUnit)||null;
       asset.foreignInvestorCountryIds=Array.from(new Set(project.foreignInvestmentSources.map(function(row){return canonicalCountry(row.investorCountryId);}).filter(Boolean)));
       asset.foreignInvestmentAttributionTurn=num(project.foreignInvestmentAttributionTurn)||turn();
+      asset.foreignInvestmentCommissionedTurn=turn();
       asset.foreignOwnershipStatus='CROSS_BORDER_PRIVATE_CAPITAL_PARTICIPATION';
       asset.foreignCapitalParticipationPct=num(project.cost)>0?Number((asset.foreignInvestmentCapexAmount/num(project.cost)*100).toFixed(2)):0;
     }
