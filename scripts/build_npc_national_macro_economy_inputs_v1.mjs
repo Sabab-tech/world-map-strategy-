@@ -112,7 +112,8 @@ function build() {
   };
 }
 
-const expected = JSON.stringify(build(), null, 2) + '\n';
+const generated = build();
+const expected = JSON.stringify(generated, null, 2) + '\n';
 if (process.argv.includes('--check')) {
   if (!existsSync(OUTPUT_PATH) || readFileSync(OUTPUT_PATH, 'utf8') !== expected) {
     throw new Error('NPC_MACRO_ECONOMY_INPUTS_STALE: regenerate with scripts/build_npc_national_macro_economy_inputs_v1.mjs');
@@ -120,5 +121,5 @@ if (process.argv.includes('--check')) {
   console.log('NPC MACRO ECONOMY INPUTS CHECK PASSED');
 } else {
   writeFileSync(OUTPUT_PATH, expected, 'utf8');
-  console.log('Generated npc_national_macro_economy_inputs_v1.json; countries=197; metrics=' + build().metadata.metricIds.length);
+  console.log('Generated npc_national_macro_economy_inputs_v1.json; countries=' + generated.metadata.countryCount + '; metrics=' + generated.metadata.metricIds.length);
 }
