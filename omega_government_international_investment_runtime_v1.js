@@ -308,20 +308,34 @@
   }
   function registerLoanHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
-    if (!cid || canonicalCountry(p.hostCountryId) !== cid || !p.loan || !p.loan.loanId) return handlerResult(false, { reason: 'LOAN_REGISTER_SCOPE_INVALID' });
+    var role = String(p.ownerRole || 'BORROWER').toUpperCase();
+    if (!cid || !['BORROWER', 'LENDER'].includes(role) ||
+        (role === 'BORROWER' ? canonicalCountry(p.hostCountryId) !== cid : canonicalCountry(p.investorCountryId) !== cid) ||
+        !p.loan || !p.loan.loanId) return handlerResult(false, { reason: 'LOAN_REGISTER_SCOPE_INVALID' });
     var root = rootForContext(ctx), inv = investmentRoot(root, true); inv.loans = Array.isArray(inv.loans) ? inv.loans : [];
-    var prior = inv.loans.find(function (x) { return x && x.loanId === p.loan.loanId; });
-    if (prior) return sameFingerprint(prior, p.loan) ? handlerResult(true, { status: 'DUPLICATE', duplicate: true }) : handlerResult(false, { reason: 'LOAN_IDEMPOTENCY_COLLISION' });
-    inv.loans.push(clone(p.loan)); recordEvent(inv, 'GOVERNMENT_FOREIGN_LOAN_REGISTERED', { loanId: p.loan.loanId, proposalId: p.loan.proposalId });
-    saveContext(ctx, root); return handlerResult(true, { status: 'REGISTERED', loanId: p.loan.loanId });
+    var prior = inv.loans.find(function (x) { return x && x.loanId === p.loan.loanId && x.ownerRole === role; });
+    if (prior) return sameFingerprint(prior, Object.assign({}, p.loan, { ownerRole: role }))
+      ? handlerResult(true, { status: 'DUPLICATE', duplicate: true })
+      : handlerResult(false, { reason: 'LOAN_IDEMPOTENCY_COLLISION' });
+    inv.loans.push(Object.assign(clone(p.loan), { ownerRole: role }));
+    recordEvent(inv, 'GOVERNMENT_FOREIGN_LOAN_REGISTERED', { loanId: p.loan.loanId, proposalId: p.loan.proposalId, ownerRole: role });
+    saveContext(ctx, root); return handlerResult(true, { status: 'REGISTERED', loanId: p.loan.loanId, ownerRole: role });
   }
   function updateLoanHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
-    if (!cid || canonicalCountry(p.hostCountryId) !== cid || !p.loanId || !isObject(p.patch)) return handlerResult(false, { reason: 'LOAN_UPDATE_SCOPE_INVALID' });
+    var role = String(p.ownerRole || 'BORROWER').toUpperCase();
+    if (!cid || !['BORROWER', 'LENDER'].includes(role) ||
+        (role === 'BORROWER' ? canonicalCountry(p.hostCountryId) !== cid : canonicalCountry(p.investorCountryId) !== cid) ||
+        !p.loanId || !isObject(p.patch)) return handlerResult(false, { reason: 'LOAN_UPDATE_SCOPE_INVALID' });
     var root = rootForContext(ctx), inv = investmentRoot(root, true), loans = Array.isArray(inv.loans) ? inv.loans : [];
-    var loan = loans.find(function (x) { return x && x.loanId === p.loanId; }); if (!loan) return handlerResult(false, { reason: 'LOAN_NOT_FOUND' });
-    Object.keys(p.patch).forEach(function (key) { if (['principalOutstandingUsd','graceInstallmentsRemaining','remainingInstallments','nextDueTurn','status','missedPayments','lastFailedPaymentTurn','installmentNumber','lastPaymentTurn','totalInterestPaidUsd','totalPrincipalPaidUsd'].includes(key)) loan[key] = clone(p.patch[key]); });
-    saveContext(ctx, root); return handlerResult(true, { status: 'UPDATED', loanId: p.loanId });
+    var loan = loans.find(function (x) { return x && x.loanId === p.loanId && x.ownerRole === role; });
+    if (!loan) return handlerResult(false, { reason: 'LOAN_NOT_FOUND' });
+    Object.keys(p.patch).forEach(function (key) {
+      if (['principalOutstandingUsd','graceInstallmentsRemaining','remainingInstallments','nextDueTurn','status','missedPayments',
+        'lastFailedPaymentTurn','installmentNumber','lastPaymentTurn','totalInterestPaidUsd','totalPrincipalPaidUsd',
+        'pendingPayment','lastPaymentAmountUsd'].includes(key)) loan[key] = clone(p.patch[key]);
+    });
+    saveContext(ctx, root); return handlerResult(true, { status: 'UPDATED', loanId: p.loanId, ownerRole: role });
   }
   function reserveHandler(command, ctx) {
     var p = command && command.payload || {}, cid = canonicalCountry(ctx && ctx.countryId);
@@ -520,6 +534,7 @@
     inv.investments = Array.isArray(inv.investments) ? inv.investments : [];
     inv.investments.push({ proposalId: p.proposalId, transferId: p.transferId, projectId: p.projectId,
       investorCountryId: receipt.investorCountryId, hostCountryId: cid, instrument: receipt.instrument,
+      equityShareBps: Math.max(0, Math.floor(num(p.equityShareBps) || 0)), durationYears: num(p.durationYears),
       investedCapitalUsd: amount, remainingEscrowUsd: receipt.remainingUsd, turn: turn(), status: 'PROJECT_CAPITALIZED' });
     recordEvent(inv, 'GOVERNMENT_INVESTMENT_PROJECT_CAPITALIZED', { proposalId: p.proposalId, projectId: p.projectId, amountUsd: amount });
     saveContext(ctx, root);
@@ -576,6 +591,11 @@
       creditAccount: 'GOVERNMENT:FOREIGN_PROJECT_EQUITY_OR_LOAN', projectId: p.projectId,
       investorCountryId: receipt.investorCountryId, proposalId: p.proposalId, correlationId: p.transferId, balanceAfterUsd: after });
     inv.investedCapitalUsd = round((num(inv.investedCapitalUsd) || 0) + amount, 2);
+    inv.investments = Array.isArray(inv.investments) ? inv.investments : [];
+    inv.investments.push({ proposalId: p.proposalId, transferId: p.transferId, projectId: p.projectId,
+      investorCountryId: receipt.investorCountryId, hostCountryId: cid, instrument: receipt.instrument,
+      equityShareBps: Math.max(0, Math.floor(num(p.equityShareBps) || 0)), durationYears: num(p.durationYears),
+      investedCapitalUsd: amount, remainingEscrowUsd: receipt.remainingUsd, turn: turn(), status: 'PROJECT_RECAPITALIZED' });
     saveContext(ctx, root, after);
     return handlerResult(true, { status: 'RECAPITALIZED', amountUsd: amount, balanceAfterUsd: after });
   }
