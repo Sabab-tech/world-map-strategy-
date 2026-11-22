@@ -549,7 +549,6 @@
       return handlerResult(true, { status: 'DUPLICATE', duplicate: true });
     receipt.remainingUsd = round(receipt.remainingUsd - amount, 2);
     inv.restrictedFundsUsd = Math.max(0, round((num(inv.restrictedFundsUsd) || 0) - amount, 2));
-    inv.investedCapitalUsd = round((num(inv.investedCapitalUsd) || 0) + amount, 2);
     inv.capitalizedProjectCapitalUsd = round((num(inv.capitalizedProjectCapitalUsd) || 0) + amount, 2);
     appendLedger(root, { transactionId: capexId, type: 'GOVERNMENT_INVESTMENT_PROJECT_CAPEX',
       action: 'GOVERNMENT_INVESTMENT_CAPEX', countryId: cid, countryCode: cid, amountUsd: amount,
@@ -609,7 +608,6 @@
       return handlerResult(true, { status: 'DUPLICATE', duplicate: true });
     receipt.remainingUsd = round(receipt.remainingUsd - amount, 2);
     inv.restrictedFundsUsd = Math.max(0, round((num(inv.restrictedFundsUsd) || 0) - amount, 2));
-    inv.investedCapitalUsd = round((num(inv.investedCapitalUsd) || 0) + amount, 2);
     inv.capitalizedProjectCapitalUsd = round((num(inv.capitalizedProjectCapitalUsd) || 0) + amount, 2);
     inv.projectWorkingCapitalUsd = isObject(inv.projectWorkingCapitalUsd) ? inv.projectWorkingCapitalUsd : {};
     inv.projectWorkingCapitalUsd[p.projectId] = round((num(inv.projectWorkingCapitalUsd[p.projectId]) || 0) + amount, 2);
@@ -1010,8 +1008,8 @@
     } else {
       projectQuote = quoteProject({ hostCountryId: host, projectType: projectType, existingProjectId: input.existingProjectId, costUsd: amountUsd });
       if (projectQuote.status !== 'QUOTED') return result('BLOCKED', { reason: projectQuote.reason, projectQuote: projectQuote });
-      if (amountUsd > projectQuote.projectCostUsd * 0.25 + 1e-7)
-        return result('BLOCKED', { reason: 'EXISTING_PROJECT_RECAPITALIZATION_LIMIT', maximumUsd: projectQuote.projectCostUsd * 0.25 });
+      if (amountUsd > projectQuote.referenceProjectCapexUsd * 0.25 + 1e-7)
+        return result('BLOCKED', { reason: 'EXISTING_PROJECT_RECAPITALIZATION_LIMIT', maximumUsd: round(projectQuote.referenceProjectCapexUsd * 0.25, 2), referenceProjectCapexUsd: projectQuote.referenceProjectCapexUsd });
     }
     var transferId = 'GOVINV:' + investor + ':' + host + ':' + requestId;
     var proposalId = transferId + ':PROPOSAL';
