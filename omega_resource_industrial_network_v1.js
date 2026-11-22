@@ -3698,6 +3698,9 @@ function startFactoryProject(input={}){
     (Array.isArray(typeProfile.requiredTechnologyIds)?typeProfile.requiredTechnologyIds.map(x=>String(x).toUpperCase()):[]);
   const project={projectId:'FACTORY:'+cid+':'+factoryType+':'+(rule.recipeId||rid)+':T'+turn()+':'+h32(JSON.stringify(input)),
     projectType:'FACTORY_CONSTRUCTION',countryId:cid,resourceId:rid,factoryType,
+    investmentId:String(input.investmentId||input.sourceInvestmentId||'').trim()||null,
+    sourceInvestmentId:String(input.sourceInvestmentId||input.investmentId||'').trim()||null,
+    sourceProposalId:input.sourceProposalId||null,investorCountryId:input.investorCountryId||null,
     recipeId:rule.recipeId||requestedRecipeId||null,recipeMode:rule.recipeMode|| (Object.keys(rule.inputs||{}).length>1?'MULTI_INPUT':'SINGLE_INPUT'),
     recipeAuthority:rule.recipeAuthority||'INDUSTRIAL_CATALOG_RULE',factoryProfile:clone(typeProfile),
     contractorType:contractor,contractorCountryId:canonicalCountry(input.contractorCountryId||cid),
@@ -3825,9 +3828,12 @@ function advanceProjects(c,options={}){
       const commissionedStatus=techReady?'OPERATIONAL':'TECHNOLOGY_LOCKED';
       const assetStatus=isPrivateFactory?'BLOCKED':commissionedStatus;
       econ.productionAssets.push({id:p.factoryId,countryId:cid,stage:'PROCESSING',factoryType:p.factoryType,
+        investmentId:p.investmentId||p.sourceInvestmentId||null,sourceInvestmentId:p.sourceInvestmentId||p.investmentId||null,
+        sourceProposalId:p.sourceProposalId||null,investorCountryId:p.investorCountryId||null,
         recipeId:p.recipeId||p.recipe?.recipeId||null,recipeMode:p.recipeMode||p.recipe?.recipeMode||'SINGLE_INPUT',
         recipeAuthority:p.recipeAuthority||p.recipe?.recipeAuthority||'INDUSTRIAL_CATALOG_RULE',
         capacity:inputCapacityFromFactory(p),capacityPerDay:inputCapacityFromFactory(p),locationNodeKey:p.targetLocationNodeKey,status:assetStatus,
+        commissionedTurn:techReady?turn():null,commissioningStatus:techReady?'COMMISSIONED':'AWAITING_TECHNOLOGY',
         privateCommissionedStatus:isPrivateFactory?commissionedStatus:null,
         productionEnabled:isPrivateFactory?false:undefined,
         productionStatus:isPrivateFactory?'STRATEGIC_SUPPLY_PIPELINE_PROOF_REQUIRED':undefined,
@@ -5316,6 +5322,9 @@ function startFactoryProductionCycle(input={}){
   const finishTurn=turn()+Math.max(1,Math.ceil(durationDays/Math.max(daysPerTurn(),1/86400000)));
   const cycleSequence=(Number(n.factoryProductionCycleSequence)||0)+1;n.factoryProductionCycleSequence=cycleSequence;
   const cycle={cycleId:'FACTORYCYCLE:'+cid+':'+fid+':T'+turn()+':'+cycleSequence,countryId:cid,factoryId:fid,
+    investmentId:asset.investmentId||asset.sourceInvestmentId||null,
+    constructionProjectId:asset.constructionProjectId||null,
+    sourceProposalId:asset.sourceProposalId||null,
     factoryType:String(asset.factoryType||asset.type||'').toUpperCase(),recipeId:recipe.recipeId||(recipe.recipeMode==='DYNAMIC_PROCESSING'?null:input.recipeId||asset.recipeId||null),
     recipeMode:recipe.recipeMode||'SINGLE_INPUT',primaryInputResourceId:first,productionQuantity:Number(quantity.toFixed(6)),
     capacityPerDay:metrics.capacity,productivityPct:Number((quantity/metrics.capacity*100).toFixed(2)),
@@ -5419,7 +5428,9 @@ function completeFactoryProductionCycle(countryId,asset,cycle,result){
   const completionOwnership=factoryOwnershipParties(asset,cid);
   emit('OMEGA_FACTORY_PRODUCTION_CYCLE_COMPLETED',cid,{cycleId:cycle.cycleId,transactionId:result.transactionId,
     countryId:cid,factoryId:cycle.factoryId,ownerCompanyId:completionOwnership.ownerCompanyId,
-    operatorCompanyId:completionOwnership.operatorCompanyId,cycleDays:cycle.cycleDays,
+    operatorCompanyId:completionOwnership.operatorCompanyId,investmentId:cycle.investmentId||asset?.investmentId||null,
+    constructionProjectId:cycle.constructionProjectId||asset?.constructionProjectId||null,
+    sourceProposalId:cycle.sourceProposalId||asset?.sourceProposalId||null,cycleDays:cycle.cycleDays,
     actualProductionQuantity:cycle.actualProductionQuantity,outputQuantities:cycle.outputQuantities,
     finishDate:cycle.finishDate,actualCompletionDate:cycle.actualCompletionDate,turn:turn(),
     authority:'OMEGA_RESOURCE_INDUSTRIAL_NETWORK'});
