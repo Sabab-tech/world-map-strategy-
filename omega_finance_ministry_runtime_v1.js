@@ -1452,6 +1452,13 @@
       const summary=event.target?.closest?.('#ofm-world-register > summary');
       if(summary){setTimeout(function(){const details=content.querySelector?.('#ofm-world-register');const holder=content.querySelector?.('#ofm-world-register-content');if(details&&details.open&&holder&&holder.dataset.loaded!=='true'){holder.innerHTML=renderFullWorldTable(worldSnapshot().rows);holder.dataset.loaded='true';}},0);}
     });
+    content.addEventListener('input',function(event){
+      const investmentForm=event.target?.closest?.('[data-gov-invest-form]');
+      const ui=global.OmegaGovernmentInvestmentUIV1;
+      const liveControls='[data-gov-amount-slider],[name="amount"],[data-gov-share-slider],[name="equitySharePct"],[data-gov-interest-slider],[name="interestPct"],[name="durationYears"]';
+      if(investmentForm&&event.target?.matches?.(liveControls)&&ui&&typeof ui.refreshForm==='function')
+        ui.refreshForm(investmentForm,getPlayerCode(),event.target);
+    });
     content.addEventListener('change',function(event){
       if(event.target&&event.target.id==='ofm-country-select'){
         selectedCountryCode=event.target.value;
