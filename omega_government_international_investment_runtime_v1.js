@@ -984,6 +984,9 @@
     var amountLocal = num(input.amount), amountUsd = num(input.amountUsd);
     if (amountUsd === null && amountLocal !== null) amountUsd = round(amountLocal / investorFx.localPerUsd, 2);
     if (amountLocal === null && amountUsd !== null) amountLocal = round(amountUsd * investorFx.localPerUsd, 2);
+    if (amountLocal === null || amountLocal <= 0) return result('BLOCKED', { reason: 'INVESTMENT_LOCAL_AMOUNT_INVALID' });
+    if (amountUsd !== null && Math.abs(round(amountLocal / investorFx.localPerUsd, 2) - amountUsd) > 0.01)
+      return result('BLOCKED', { reason: 'INVESTMENT_FX_AMOUNT_MISMATCH', expectedUsd: round(amountLocal / investorFx.localPerUsd, 2), suppliedUsd: amountUsd, investorCurrencyCode: investorFx.currencyCode });
     if (amountUsd === null || amountUsd <= 0 || amountUsd > 9e15 || Math.abs(amountUsd - round(amountUsd, 2)) > 1e-7)
       return result('BLOCKED', { reason: 'GOVERNMENT_INVESTMENT_AMOUNT_INVALID' });
     amountUsd = round(amountUsd, 2);
