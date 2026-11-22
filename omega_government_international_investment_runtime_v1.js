@@ -288,7 +288,7 @@
     var proposal = inv.proposals.find(function (x) { return x && x.proposalId === p.proposalId; });
     if (!proposal) return handlerResult(false, { reason: 'PROPOSAL_NOT_FOUND' });
     if (proposal.status === 'APPROVED' || proposal.status === 'PROJECT_STARTED' || proposal.status === 'SETTLED') return handlerResult(true, { status: 'DUPLICATE', duplicate: true });
-    if (proposal.status !== 'PENDING_HOST_APPROVAL') return handlerResult(false, { reason: 'PROPOSAL_NOT_PENDING' });
+    if (!['PENDING_HOST_APPROVAL', 'PENDING_HOST_REVIEW'].includes(proposal.status)) return handlerResult(false, { reason: 'PROPOSAL_NOT_PENDING' });
     var decision = String(p.decision || '').toUpperCase();
     if (decision !== 'ACCEPT' && decision !== 'DECLINE') return handlerResult(false, { reason: 'PROPOSAL_DECISION_INVALID' });
     proposal.status = decision === 'ACCEPT' ? 'APPROVED' : 'DECLINED';
@@ -345,6 +345,11 @@
     var amount = num(p.amountUsd);
     if (amount === null || amount <= 0 || Math.abs(amount - round(amount, 2)) > 1e-7) return handlerResult(false, { reason: 'INVESTMENT_AMOUNT_INVALID' });
     var root = rootForContext(ctx), inv = investmentRoot(root, true);
+    var approvedProposal = (inv.proposals || []).find(function (x) { return x && x.proposalId === p.proposalId; });
+    if (!approvedProposal || approvedProposal.status !== 'APPROVED' ||
+        approvedProposal.investorCountryId !== cid || approvedProposal.hostCountryId !== canonicalCountry(p.hostCountryId) ||
+        Math.abs((num(approvedProposal.amountUsd) || 0) - amount) > 0.01)
+      return handlerResult(false, { reason: 'HOST_APPROVED_PROPOSAL_REQUIRED_FOR_TREASURY_RESERVATION' });
     inv.transfers = isObject(inv.transfers) ? inv.transfers : {};
     var prior = inv.transfers[p.transferId];
     if (prior) {
@@ -376,6 +381,11 @@
     var amount = num(p.amountUsd);
     if (amount === null || amount <= 0) return handlerResult(false, { reason: 'HOST_RECEIPT_AMOUNT_INVALID' });
     var root = rootForContext(ctx), inv = investmentRoot(root, true);
+    var approvedProposal = (inv.proposals || []).find(function (x) { return x && x.proposalId === p.proposalId; });
+    if (!approvedProposal || approvedProposal.status !== 'APPROVED' ||
+        approvedProposal.hostCountryId !== cid || approvedProposal.investorCountryId !== canonicalCountry(p.investorCountryId) ||
+        approvedProposal.transferId !== p.transferId || Math.abs((num(approvedProposal.amountUsd) || 0) - amount) > 0.01)
+      return handlerResult(false, { reason: 'HOST_APPROVED_PROPOSAL_REQUIRED_FOR_INVESTMENT_RECEIPT' });
     inv.receipts = isObject(inv.receipts) ? inv.receipts : {};
     var prior = inv.receipts[p.transferId];
     if (prior) {
@@ -1335,11 +1345,14 @@
     var recorded = dispatch(d, HANDLERS.decide, host, { hostCountryId: host, proposalId: proposalId,
       decision: decision, actorType: actorType, reason: input.reason || null }, proposalId);
     if (!recorded.ok) return result('BLOCKED', { reason: recorded.reason });
-    if (decision === 'DECLINE') {
-      var declined = persistProposalEverywhere(proposal, { status: 'DECLINED', updatedTurn: turn() });
-      return result(declined.ok ? 'DECLINED' : 'RECONCILIATION_REQUIRED', {
-        proposal: clone(proposal), persistence: declined });
-    }
+    proposal = getProposal(host, proposalId) || proposal;
+    var synchronized = persistProposalEverywhere(proposal, {
+      status: decision === 'ACCEPT' ? 'APPROVED' : 'DECLINED',
+      hostDecision: clone(proposal.hostDecision), updatedTurn: turn()
+    });
+    if (!synchronized.ok) return result('RECONCILIATION_REQUIRED', {
+      reason: synchronized.reason, stage: synchronized.stage, proposal: clone(proposal) });
+    if (decision === 'DECLINE') return result('DECLINED', { proposal: clone(proposal) });
     proposal = getProposal(host, proposalId) || proposal;
     return fundAndExecute(proposal);
   }
