@@ -1455,7 +1455,7 @@
     content.addEventListener('input',function(event){
       const investmentForm=event.target?.closest?.('[data-gov-invest-form]');
       const ui=global.OmegaGovernmentInvestmentUIV1;
-      const liveControls='[data-gov-amount-slider],[name="amount"],[data-gov-share-slider],[name="equitySharePct"],[data-gov-interest-slider],[name="interestPct"],[name="durationYears"]';
+      const liveControls='[data-gov-amount-slider],[name="amount"],[data-gov-share-slider],[name="equitySharePct"],[data-gov-interest-slider],[name="interestPct"],[name="durationYears"],[name="gracePeriodYears"]';
       if(investmentForm&&event.target?.matches?.(liveControls)&&ui&&typeof ui.refreshForm==='function')
         ui.refreshForm(investmentForm,getPlayerCode(),event.target);
     });
