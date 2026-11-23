@@ -705,10 +705,13 @@
     }
     function inTransit(row) {
       var status = id(row && row.status);
+      var arrival = id(row && row.arrivalStatus);
+      // A terminal arrival observation must win over a stale in-transit status.
+      // This prevents legacy or partially updated snapshots from re-counting
+      // cargo that the importer already received, failed, blocked or cancelled.
+      if (['ARRIVED', 'RECEIVED', 'DELIVERED', 'BLOCKED', 'FAILED', 'CANCELLED'].indexOf(arrival) >= 0) return false;
       if (['ARRIVED', 'BLOCKED', 'FAILED', 'CANCELLED', 'SCHEDULED'].indexOf(status) >= 0) return false;
       if (['DISPATCHED', 'IN_TRANSIT'].indexOf(status) >= 0) return true;
-      var arrival = id(row && row.arrivalStatus);
-      if (['ARRIVED', 'RECEIVED', 'DELIVERED', 'PENDING'].indexOf(arrival) >= 0) return false;
       return ['IN_TRANSIT', 'CUSTOMS_CLEARANCE', 'PENDING_ARRIVAL'].indexOf(arrival) >= 0;
     }
     ledger.forEach(function (row) {
