@@ -879,5 +879,5 @@ test('global time controls are moved outside the clipped header and expose an ex
   assert.match(lifecycle, /ensureTimeHudPlacement\(\);/);
   assert.match(lifecycle, /toggleLabel = running \? 'PAUSE TIME' : status === 'PAUSED' \? 'RESUME TIME'.*'START TIME'/);
   assert.match(hudCss, /#omega-global-time-hud \.ogth-controls button/);
-  assert.match(hudCss, /data-omega-action=\\"toggle\\"/);
+  assert.match(hudCss, /data-omega-action="toggle"/);
 });
