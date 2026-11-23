@@ -870,3 +870,14 @@ test('backgrounding during a manual day batch cancels after the in-flight day an
   assert.equal(sim.manualAdvanceInProgress, false);
   assert.equal(lifecycle.getDiagnostics().backgroundRunsEnabled, false);
 });
+
+
+test('global time controls are moved outside the clipped header and expose an explicit start action', () => {
+  const lifecycle = fs.readFileSync(path.join(root, 'omega_game_lifecycle_runtime_v1.js'), 'utf8');
+  const hudCss = fs.readFileSync(path.join(root, 'omega_manual_time_controls_v1.css'), 'utf8');
+  assert.match(lifecycle, /function ensureTimeHudPlacement\(\)/);
+  assert.match(lifecycle, /ensureTimeHudPlacement\(\);/);
+  assert.match(lifecycle, /toggleLabel = running \? 'PAUSE TIME' : status === 'PAUSED' \? 'RESUME TIME'.*'START TIME'/);
+  assert.match(hudCss, /#omega-global-time-hud \.ogth-controls button/);
+  assert.match(hudCss, /data-omega-action=\\"toggle\\"/);
+});
