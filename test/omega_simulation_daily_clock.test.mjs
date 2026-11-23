@@ -782,3 +782,59 @@ test('Resource Economy registers as one ordered simulation subsystem instead of 
   assert.equal(resourceParticipants.length, 1);
   assert.equal(resourceParticipants[0].status, 'COMPLETED');
 });
+
+
+test('manual time HUD buttons step days, run selected days, pause/resume and expose diagnostics', async () => {
+  const { win, sim, gameState } = createRuntime();
+  const { documentListeners, lifecycle } = attachLifecycle(win, sim);
+  await lifecycle.restore();
+
+  const diagnosticsPanel = { hidden: true, textContent: '' };
+  win.document.querySelector = (selector) => {
+    if (selector === '[data-omega-days]') return { value: '2' };
+    if (selector === '[data-omega-diagnostics]') return diagnosticsPanel;
+    return null;
+  };
+  const dispatchAction = (action) => {
+    const target = {
+      closest(selector) {
+        return selector.includes('[data-omega-action="' + action + '"]') ? this : null;
+      },
+      hasAttribute(name) { return name === 'data-omega-action'; },
+      getAttribute(name) { return name === 'data-omega-action' ? action : null; }
+    };
+    const event = {
+      target, cancelable: true,
+      preventDefault() {}, stopImmediatePropagation() {}, stopPropagation() {}
+    };
+    for (const listener of documentListeners.get('click') || []) listener(event);
+  };
+  const waitForManualFinish = async () => {
+    for (let attempt = 0; attempt < 200 && lifecycle.getDiagnostics().manualCommandInFlight; attempt += 1) {
+      await new Promise(resolve => setTimeout(resolve, 1));
+    }
+    assert.equal(lifecycle.getDiagnostics().manualCommandInFlight, false, 'the manual HUD action should settle');
+  };
+
+  dispatchAction('advance-days');
+  await waitForManualFinish();
+  assert.equal(sim.clock.turn, 2, 'RUN DAYS must use the numeric days input');
+  assert.equal(sim.status, 'PAUSED', 'manual time testing must leave automatic time paused');
+  assert.equal(gameState.simulation.date, '2015-01-03T00:00:00.000Z');
+
+  dispatchAction('step-day');
+  await waitForManualFinish();
+  assert.equal(sim.clock.turn, 3, '+1 DAY must commit exactly one authoritative day');
+  assert.equal(gameState.simulation.date, '2015-01-04T00:00:00.000Z');
+
+  dispatchAction('diagnostics');
+  assert.equal(diagnosticsPanel.hidden, false);
+  const report = JSON.parse(diagnosticsPanel.textContent);
+  assert.equal(report.simulation.clock.turn, 3);
+  assert.equal(report.lifecycle.restoreFinished, true);
+
+  dispatchAction('toggle');
+  assert.equal(sim.status, 'RUNNING', 'Play must resume the canonical clock');
+  dispatchAction('toggle');
+  assert.equal(sim.status, 'PAUSED', 'Pause must stop further automatic turns');
+});
