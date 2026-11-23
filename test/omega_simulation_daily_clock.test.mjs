@@ -344,7 +344,18 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.ok(topHeaderStart >= 0 && unifiedHudStart > topHeaderStart && unifiedHudStart < metricDropdownStart,
     'the lifecycle HUD must be embedded in the existing top status bar');
   assert.match(index, /data-speed="3" title="Very Fast Speed">3x/);
-  assert.match(index, /data-omega-speed="3" aria-label="Very fast game speed" title="Very fast speed">3x/);
+  assert.match(index, /data-omega-speed="3" aria-label="Three times game speed" title="Three times speed">3x/);
+  assert.match(index, /data-omega-action="step-day"/);
+  assert.match(index, /data-omega-action="advance-days"/);
+  assert.match(index, /data-omega-action="cancel-advance"/);
+  assert.match(index, /data-omega-action="diagnostics"/);
+  assert.match(index, /data-omega-days[^>]*max="365"/);
+  assert.match(index, /omega_manual_time_controls_v1\.css/);
+  assert.match(lifecycle, /function beginManualAdvance\(turns\)/);
+  assert.match(lifecycle, /sim\.advance\(count, \{ yieldEvery: 1 \}\)/);
+  assert.match(core, /MAX_STEPS_PER_FRAME=1/);
+  assert.match(core, /droppedScaledTimeMs/);
+  assert.match(core, /cancelAdvance\(\)/);
   assert.match(css, /#top-status-bar \.status-right \{[\s\S]{0,40}display: none !important;/);
   assert.match(css, /max-height: 104px !important;\n  flex-wrap: wrap !important;/,
     'the compact header must wrap the metrics onto a second row instead of squeezing them off-screen');
@@ -721,7 +732,7 @@ test('daily tick supplies the same turn, duration and date to every subsystem', 
     seen.push({ subsystem: 'b', turn: context.turn, duration: context.stepDurationMs, date: context.simulationDate });
   });
   sim.startSession({ playerCountryId: 'BGD' });
-  await sim.frame(STEP_MS * 5);
+  await sim.advance(5);
 
   assert.equal(seen.length, 10);
   for (let turn = 1; turn <= 5; turn++) {
