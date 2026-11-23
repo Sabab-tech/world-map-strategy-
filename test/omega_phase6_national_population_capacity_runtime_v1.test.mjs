@@ -706,6 +706,43 @@ test('durable importer-side evidence counts unique inbound shipments and exclude
   assert.equal(row.inTransitInternationalImportStatus, 'OBSERVED_IN_TRANSIT_SHIPMENTS');
 });
 
+test('terminal arrival evidence overrides a stale IN_TRANSIT status', async () => {
+  const active = {
+    shipmentId: 'SHIP-ACTIVE-COPPER', requestId: 'REQ-ACTIVE-COPPER',
+    settlementId: 'SET-ACTIVE-COPPER', resourceId: 'copper', quantity: 7,
+    unit: 'METRIC_TONS', originCountryId: 'CHL', destinationCountryId: 'BGD',
+    participantRole: 'IMPORTER', status: 'IN_TRANSIT', arrivalStatus: 'PENDING',
+    dispatchTime: 'TURN_7', dispatchTurn: 7
+  };
+  const receivedButStale = {
+    ...active, shipmentId: 'SHIP-ALREADY-RECEIVED', requestId: 'REQ-RECEIVED',
+    settlementId: 'SET-RECEIVED', quantity: 30,
+    status: 'IN_TRANSIT', arrivalStatus: 'RECEIVED'
+  };
+  const failedButStale = {
+    ...active, shipmentId: 'SHIP-FAILED', requestId: 'REQ-FAILED',
+    settlementId: 'SET-FAILED', quantity: 100,
+    status: 'IN_TRANSIT', arrivalStatus: 'FAILED'
+  };
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {}, economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: [], demandRuntime: { byResource: {
+      copper: { demandPerDay: 10 }
+    } } } },
+    trade: { BGD: { internationalShipmentLedger: [active, receivedButStale, failedButStale] } },
+    finance: { BGD: { omegaFinance: { ledger: [] } } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const transit = summary.inTransitInternationalImports;
+  assert.equal(transit.uniqueShipmentCount, 3, 'all three valid importer records remain available as history');
+  assert.equal(transit.shipmentCount, 1, 'terminal arrival evidence excludes stale IN_TRANSIT statuses');
+  assert.equal(transit.byResource.copper.shipmentCount, 1);
+  assert.equal(transit.byResource.copper.quantity, 7);
+  assert.equal(summary.nationalRequirement.byResource.copper.inTransitInternationalImportQuantity, 7);
+});
+
 test('an observed empty importer shipment ledger means zero; an absent ledger remains unknown', async () => {
   const state = {
     simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
