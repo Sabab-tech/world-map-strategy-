@@ -161,15 +161,27 @@
     setText('#status-autosave', saveStatus);
   }
 
+  function ensureTimeHudPlacement() {
+    var doc = g.document;
+    if (!doc || !doc.body || typeof doc.body.appendChild !== 'function') return false;
+    var hud = typeof doc.getElementById === 'function'
+      ? doc.getElementById('omega-global-time-hud') : null;
+    if (!hud && typeof doc.querySelector === 'function') hud = doc.querySelector('#omega-global-time-hud');
+    if (!hud) return false;
+    if (hud.parentNode !== doc.body) doc.body.appendChild(hud);
+    return hud.parentNode === doc.body;
+  }
+
   function updateControls(sim) {
     if (!g.document) return;
     var status = String(sim && sim.status || 'READY').toUpperCase();
     var running = status === 'RUNNING' && !(sim.clock && sim.clock.paused);
     var toggle = g.document.querySelector('[data-omega-action="toggle"]');
     if (toggle) {
-      toggle.textContent = running ? 'Ⅱ' : '▶';
-      toggle.setAttribute('aria-label', running ? 'Pause game' : 'Resume game');
-      toggle.title = running ? 'Pause game' : 'Resume game';
+      var toggleLabel = running ? 'PAUSE TIME' : status === 'PAUSED' ? 'RESUME TIME' : status === 'ERROR' ? 'TIME ERROR' : 'START TIME';
+      toggle.textContent = toggleLabel;
+      toggle.setAttribute('aria-label', running ? 'Pause simulation time' : status === 'PAUSED' ? 'Resume simulation time' : 'Start simulation time');
+      toggle.title = toggleLabel;
     }
     var effectiveSpeed = number(sim && sim.clock && sim.clock.speed);
     if (effectiveSpeed !== null && effectiveSpeed > 0) lastKnownSpeed = effectiveSpeed;
@@ -186,7 +198,7 @@
     setText('[data-omega-game-status]', status);
     var manualBusy = manualCommandInFlight || !!(sim && sim.manualAdvanceInProgress);
     var clockButtons = g.document.querySelectorAll('[data-omega-action="toggle"], [data-omega-speed], .speed-btn');
-    for (var c = 0; c < clockButtons.length; c++) clockButtons[c].disabled = manualBusy;
+    for (var c = 0; c < clockButtons.length; c++) clockButtons[c].disabled = manualBusy || status === 'ERROR';
     var turnBusy = !!(sim && (sim.stepInProgress || sim.frameInProgress));
     var countryReady = !!(sim && playerCountry(sim));
     var manualButtons = g.document.querySelectorAll('[data-omega-action="step-day"], [data-omega-action="advance-days"]');
@@ -946,6 +958,7 @@
 
   function init() {
     if (!g.document) return;
+    ensureTimeHudPlacement();
     registerLifecycleFinalizer();
     requestPersistentStorage();
     installMutationEventSaveBridge();

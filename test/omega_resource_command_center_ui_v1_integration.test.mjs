@@ -333,3 +333,11 @@ test('integrated Production Line panel unifies existing resource, factory, priva
   assert.match(ui, /renderMarketDashboard\(host, countryId/);
   assert.match(ui, /line advances on committed simulation turns for the selected player country/);
 });
+
+
+test('Commodity Market and Transactions always open their own requested view', () => {
+  assert.match(ui, /selectedMarketView = options\.initialView === 'transactions' \? 'transactions' : 'commodities';/);
+  assert.match(tradeMinistryUi, /initialView:marketTab === 'transactions' \? 'transactions' : 'commodities'/);
+  assert.equal(tradeMinistryUi.includes('transactionViewButton.click()'), false,
+    'the requested initial market view must be selected before the first render, not by a synthetic click');
+});
