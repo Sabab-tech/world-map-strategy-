@@ -1166,6 +1166,8 @@
 
     pauseSession(){
       this.clock.pause();
+      // Time collected while a slow turn was active must not replay after resume.
+      this.pendingRealDeltaMs=0;
       this.status='PAUSED';
       const session=this.world.state.simulation?.session||{};
       session.status='PAUSED';
@@ -1200,7 +1202,15 @@
       const delta=Math.max(0,finite(realDeltaMs,0));
       if(this.manualAdvanceInProgress)return {steps:0,turn:this.clock.turn,status:this.status,busy:true,reason:'MANUAL_ADVANCE_IN_PROGRESS'};
       if(this.frameInProgress){
-        this.pendingRealDeltaMs=Math.min(MAX_PENDING_REAL_DELTA_MS,this.pendingRealDeltaMs+delta);
+        if(this.status!=='RUNNING'||this.clock.paused){
+          this.pendingRealDeltaMs=0;
+        }else{
+          const accumulated=this.pendingRealDeltaMs+delta;
+          const retained=Math.min(MAX_PENDING_REAL_DELTA_MS,accumulated);
+          this.pendingRealDeltaMs=retained;
+          const dropped=accumulated-retained;
+          if(dropped>0)this.clock.droppedScaledTimeMs+=dropped*Math.max(0,finite(this.clock.speed,0));
+        }
         return {steps:0,turn:this.clock.turn,status:this.status,busy:true};
       }
       if(this.status!=='RUNNING')return {steps:0,turn:this.clock.turn,status:this.status};
