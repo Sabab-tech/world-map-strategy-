@@ -219,6 +219,7 @@
     <link rel="stylesheet" href="omega_icon_system_v1.css">
     <link rel="stylesheet" href="omega_ui_unified_visual_system_v1.css">
     <link rel="stylesheet" href="omega_ui_v2/autonomous-trade-command.css">
+    <link rel="stylesheet" href="omega_manual_time_controls_v1.css">
     <!-- OMEGA UI v2 owns the active application-shell styling; legacy CSS files remain on disk but are intentionally not loaded. -->
 </head>
 <body>
@@ -263,9 +264,12 @@
                     <span class="status-item"><span class="icon">⏰</span> <span id="status-clock">SIMULATION TIME: NOT RECORDED</span></span>
                     <div class="speed-controls" role="group" aria-label="Game Speed">
                         <button class="speed-btn" data-speed="0" title="Pause Game">⏸</button>
+                        <button class="speed-btn" data-speed="0.5" title="Half Speed">0.5x</button>
                         <button class="speed-btn active" data-speed="1" title="Normal Speed">1x</button>
                         <button class="speed-btn" data-speed="2" title="Fast Speed">2x</button>
                         <button class="speed-btn" data-speed="3" title="Very Fast Speed">3x</button>
+                        <button class="speed-btn" data-speed="4" title="Four Times Speed">4x</button>
+                        <button class="speed-btn" data-speed="8" title="Eight Times Speed">8x</button>
                     </div>
                 </div>
 
@@ -320,12 +324,26 @@
                     </div>
                     <span class="ogth-save" data-omega-save>Autosave ready</span>
                     <div class="ogth-controls" role="group" aria-label="Global simulation controls">
-                        <button type="button" data-omega-action="toggle" aria-label="Resume game" title="Resume game">▶</button>
+                        <button type="button" data-omega-action="toggle" aria-label="Resume game" title="Start, pause or resume game">▶</button>
+                        <button type="button" data-omega-speed="0.5" aria-label="Half speed" title="Half speed">0.5x</button>
                         <button type="button" data-omega-speed="1" class="active" aria-label="Normal game speed" title="Normal speed">1x</button>
                         <button type="button" data-omega-speed="2" aria-label="Fast game speed" title="Fast speed">2x</button>
-                        <button type="button" data-omega-speed="3" aria-label="Very fast game speed" title="Very fast speed">3x</button>
+                        <button type="button" data-omega-speed="3" aria-label="Three times game speed" title="Three times speed">3x</button>
+                        <button type="button" data-omega-speed="4" aria-label="Four times game speed" title="Four times speed">4x</button>
+                        <button type="button" data-omega-speed="8" aria-label="Eight times game speed" title="Eight times speed">8x</button>
                     </div>
                 </div>
+                <div class="ogth-manual-controls" role="group" aria-label="Manual simulation testing controls">
+                    <button type="button" class="ogth-manual-primary" data-omega-action="step-day">+1 DAY</button>
+                    <label class="ogth-days-label" for="omega-manual-days">DAYS
+                        <input id="omega-manual-days" type="number" inputmode="numeric" min="1" max="365" step="1" value="7" data-omega-days aria-label="Number of days to advance">
+                    </label>
+                    <button type="button" data-omega-action="advance-days">RUN DAYS</button>
+                    <button type="button" data-omega-action="cancel-advance" disabled>CANCEL</button>
+                    <button type="button" data-omega-action="diagnostics">DIAGNOSTICS</button>
+                    <span class="ogth-manual-progress" data-omega-manual-progress>MANUAL TEST READY</span>
+                </div>
+                <pre class="ogth-diagnostics" data-omega-diagnostics hidden></pre>
                 <div class="ogth-economy" data-omega-economy title="Daily revenue, spending and net are modeled annual Finance figures divided by 365, not observed daily cash receipts.">Treasury and daily fiscal flow: Not recorded</div>
                 <div class="ogth-assets" data-omega-assets>Assets/resources not recorded</div>
             </section>

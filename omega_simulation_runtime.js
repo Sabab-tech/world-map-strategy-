@@ -22,10 +22,12 @@
   const SESSION_VERSION=1;
   const DAY_MS=86400000;
   const STEP_MS=15000;
-  const MAX_STEPS_PER_FRAME=8;
-  // Bound frame deltas arriving while an asynchronous turn is still running.
-  // Otherwise slow turns accumulate an unbounded catch-up burst on low-end devices.
+  // A rendered frame may commit at most one day. Excess elapsed time is discarded
+  // and measured instead of creating a burst of synchronous catch-up turns.
+  const MAX_STEPS_PER_FRAME=1;
   const MAX_PENDING_REAL_DELTA_MS=STEP_MS;
+  const MAX_MANUAL_ADVANCE_TURNS=365;
+  const MAX_PARTICIPANTS_PER_SLICE=4;
   const MAX_EVENT_HISTORY=2000;
   const MAX_COMMAND_HISTORY=2000;
 
@@ -504,6 +506,25 @@
     return Number.isFinite(n)?n:fallback;
   }
 
+  function yieldToBrowser(){
+    return new Promise(resolve=>{
+      if(typeof global.setTimeout==='function'){
+        global.setTimeout(resolve,0);
+        return;
+      }
+      Promise.resolve().then(resolve);
+    });
+  }
+
+  function dispatchRuntimeEvent(type,detail){
+    try{
+      const event=typeof global.CustomEvent==='function'
+        ?new global.CustomEvent(type,{detail:clone(detail)})
+        :{type,detail:clone(detail)};
+      global.dispatchEvent?.(event);
+    }catch(_){}
+  }
+
   class SimulationClock{
     constructor(options={}){
       this.version=VERSION;
@@ -511,7 +532,8 @@
       this.simulationTimeMs=finite(options.simulationTimeMs,0);
       this.stepDurationMs=Math.max(1,finite(options.stepDurationMs,DAY_MS));
       this.accumulatorMs=Math.max(0,finite(options.accumulatorMs,0));
-      this.speed=Math.max(0,finite(options.speed,1));
+      this.speed=Math.min(8,Math.max(0,finite(options.speed,1)));
+      this.droppedScaledTimeMs=Math.max(0,finite(options.droppedScaledTimeMs,0));
       this.running=false;
       this.paused=false;
       this.startEpochMs=finite(options.startEpochMs,Date.UTC(2015,0,1));
@@ -519,7 +541,7 @@
 
     setSpeed(value){
       const speed=finite(value,1);
-      if(speed<0)throw new Error('SIMULATION_SPEED_INVALID');
+      if(speed<0||speed>8)throw new Error('SIMULATION_SPEED_INVALID');
       this.speed=speed;
       return this.speed;
     }
@@ -554,13 +576,17 @@
     consumeRealDelta(realDeltaMs){
       if(!this.running||this.paused||this.speed===0)return 0;
       const delta=Math.max(0,finite(realDeltaMs,0));
-      this.accumulatorMs+=delta*this.speed;
-      let steps=0;
-      while(this.accumulatorMs>=STEP_MS&&steps<MAX_STEPS_PER_FRAME){
-        this.accumulatorMs-=STEP_MS;
-        steps+=1;
+      const projected=this.accumulatorMs+delta*this.speed;
+      const dueDays=Math.floor(projected/STEP_MS);
+      if(dueDays<1){
+        this.accumulatorMs=projected;
+        return 0;
       }
-      return steps;
+      // Commit one day per frame; discard only additional complete due days.
+      // Preserve the partial-day remainder so higher speeds stay accurate over time.
+      if(dueDays>1)this.droppedScaledTimeMs+=(dueDays-1)*STEP_MS;
+      this.accumulatorMs=projected-(dueDays*STEP_MS);
+      return MAX_STEPS_PER_FRAME;
     }
 
     simulationDate(){
@@ -575,6 +601,7 @@
         stepDurationMs:this.stepDurationMs,
         accumulatorMs:this.accumulatorMs,
         speed:this.speed,
+        droppedScaledTimeMs:this.droppedScaledTimeMs,
         running:this.running,
         paused:this.paused,
         startEpochMs:this.startEpochMs,
@@ -588,7 +615,8 @@
       this.simulationTimeMs=finite(snapshot.simulationTimeMs,0);
       this.stepDurationMs=Math.max(1,finite(snapshot.stepDurationMs,this.stepDurationMs));
       this.accumulatorMs=Math.max(0,finite(snapshot.accumulatorMs,0));
-      this.speed=Math.max(0,finite(snapshot.speed,1));
+      this.speed=Math.min(8,Math.max(0,finite(snapshot.speed,1)));
+      this.droppedScaledTimeMs=Math.max(0,finite(snapshot.droppedScaledTimeMs,0));
       this.running=Boolean(snapshot.running);
       this.paused=Boolean(snapshot.paused);
       this.startEpochMs=finite(snapshot.startEpochMs,this.startEpochMs);
@@ -781,6 +809,9 @@
       this.hooks={};
       this.frameInProgress=false;
       this.pendingRealDeltaMs=0;
+      this.manualAdvanceInProgress=false;
+      this.manualAdvanceCancelled=false;
+      this.manualAdvanceProgress=null;
       this.turnParticipants=new Map();
       this.turnParticipantSequence=0;
       this.lastTurnParticipantResults=[];
@@ -821,6 +852,7 @@
       const turn=Math.max(0,finite(event?.simulationTurn,0));
       const results=[];
       global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=true;
+      let participantSliceCount=0;
       try{
       for(const entry of rows){
         if(this.turnParticipants.get(entry.id)!==entry)continue;
@@ -838,13 +870,9 @@
           this.world.state.simulation.subsystemTurns=this.world.state.simulation.subsystemTurns||{};
           this.world.state.simulation.subsystemTurns[entry.id]=turn;
           results.push({id:entry.id,turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
-          this.lastTurnParticipantResults=results.slice(-256);
-          this.world.state.simulation.lastTurnParticipantResults=persistedTurnParticipantResults(this.lastTurnParticipantResults);
         }catch(error){
           const failure={id:entry.id,turn,status:'FAILED',error:String(error?.message||error)};
           results.push(failure);
-          this.lastTurnParticipantResults=results.slice(-256);
-          this.world.state.simulation.lastTurnParticipantResults=persistedTurnParticipantResults(this.lastTurnParticipantResults);
           // Stop the world immediately rather than silently let one sector miss a day.
           this.status='ERROR';
           this.clock.pause();
@@ -856,10 +884,17 @@
           this.world.setSession(session);
           try{console.error('[OMEGA TURN PARTICIPANT]',failure);}catch(_){}
         }
+        participantSliceCount+=1;
+        if(participantSliceCount>=MAX_PARTICIPANTS_PER_SLICE){
+          participantSliceCount=0;
+          await yieldToBrowser();
+        }
       }
       }finally{
         global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=false;
       }
+      // Persist the compact participant trace once per turn, not once per handler.
+      // The previous per-handler rewrite repeatedly cloned the growing result list.
       this.lastTurnParticipantResults=results.slice(-256);
       this.world.state.simulation.lastTurnParticipantResults=persistedTurnParticipantResults(this.lastTurnParticipantResults);
       return results;
@@ -1134,6 +1169,8 @@
 
     pauseSession(){
       this.clock.pause();
+      // Time collected while a slow turn was active must not replay after resume.
+      this.pendingRealDeltaMs=0;
       this.status='PAUSED';
       const session=this.world.state.simulation?.session||{};
       session.status='PAUSED';
@@ -1166,8 +1203,17 @@
 
     async frame(realDeltaMs){
       const delta=Math.max(0,finite(realDeltaMs,0));
+      if(this.manualAdvanceInProgress)return {steps:0,turn:this.clock.turn,status:this.status,busy:true,reason:'MANUAL_ADVANCE_IN_PROGRESS'};
       if(this.frameInProgress){
-        this.pendingRealDeltaMs=Math.min(MAX_PENDING_REAL_DELTA_MS,this.pendingRealDeltaMs+delta);
+        if(this.status!=='RUNNING'||this.clock.paused){
+          this.pendingRealDeltaMs=0;
+        }else{
+          const accumulated=this.pendingRealDeltaMs+delta;
+          const retained=Math.min(MAX_PENDING_REAL_DELTA_MS,accumulated);
+          this.pendingRealDeltaMs=retained;
+          const dropped=accumulated-retained;
+          if(dropped>0)this.clock.droppedScaledTimeMs+=dropped*Math.max(0,finite(this.clock.speed,0));
+        }
         return {steps:0,turn:this.clock.turn,status:this.status,busy:true};
       }
       if(this.status!=='RUNNING')return {steps:0,turn:this.clock.turn,status:this.status};
@@ -1189,19 +1235,79 @@
       }
     }
 
-    async advance(turns=1){
-      const count=Math.max(0,Math.floor(finite(turns,0)));
+    async advance(turns=1,options={}){
+      const requestedTurns=Math.max(0,Math.floor(finite(turns,0)));
+      const count=Math.min(MAX_MANUAL_ADVANCE_TURNS,requestedTurns);
       if(this.status==='ERROR')return {turn:this.clock.turn,steps:0,last:null,status:'ERROR',reason:'SIMULATION_IN_ERROR'};
-      const wasRunning=this.status==='RUNNING';
-      if(!wasRunning)this.status='RUNNING';
-      let last=null,completed=0;
-      for(let i=0;i<count&&this.status!=='ERROR';i++){
-        last=await this.step();
-        if(last&&last.skipped)break;
-        completed+=1;
+      if(this.frameInProgress||this.stepInProgress||this.manualAdvanceInProgress)
+        return {turn:this.clock.turn,steps:0,last:null,status:this.status,busy:true,reason:'SIMULATION_TURN_BUSY'};
+      if(count===0)return {turn:this.clock.turn,steps:0,last:null,status:this.status,empty:true};
+
+      const previousStatus=this.status;
+      const yieldEvery=Math.max(1,Math.min(4,Math.floor(finite(options.yieldEvery,1))));
+      let last=null,completed=0,cancelled=false;
+      this.manualAdvanceInProgress=true;
+      this.manualAdvanceCancelled=false;
+      this.manualAdvanceProgress={status:'RUNNING',requestedTurns,plannedTurns:count,completedTurns:0,turn:this.clock.turn,percent:0};
+      this.status='RUNNING';
+      const started={requestedTurns,plannedTurns:count,turn:this.clock.turn,countryId:this.getPlayerCountryId()};
+      this.events.emit('OMEGA_SIMULATION_BATCH_STARTED',started,this.clock.turn);
+      dispatchRuntimeEvent('OMEGA_SIMULATION_BATCH_STARTED',started);
+      try{
+        for(let index=0;index<count;index++){
+          if(this.manualAdvanceCancelled){cancelled=true;break;}
+          if(this.status==='ERROR')break;
+          if(this.status!=='RUNNING'){cancelled=true;break;}
+          last=await this.step();
+          if(last&&last.skipped)break;
+          completed+=1;
+          const progress={requestedTurns,plannedTurns:count,completedTurns:completed,turn:this.clock.turn,
+            percent:Math.round(completed/count*100),lastTurnStatus:this.status};
+          this.manualAdvanceProgress={...progress,status:'RUNNING'};
+          this.events.emit('OMEGA_SIMULATION_BATCH_PROGRESS',progress,this.clock.turn);
+          dispatchRuntimeEvent('OMEGA_SIMULATION_BATCH_PROGRESS',progress);
+          if(index+1<count&&completed%yieldEvery===0)await yieldToBrowser();
+        }
+        cancelled=cancelled||this.manualAdvanceCancelled;
+        // An external Pause/Stop during a running-origin batch is authoritative:
+        // never restore the pre-batch RUNNING status after the caller interrupted it.
+        const restoreStatus=cancelled&&this.status!=='RUNNING'?this.status:previousStatus;
+        if(this.status!=='ERROR'){
+          this.status=restoreStatus;
+          const session=this.world.state.simulation?.session||{};
+          if(restoreStatus==='RUNNING'){
+            this.clock.resume();
+            session.status='RUNNING';
+          }else if(restoreStatus==='PAUSED'){
+            this.clock.pause();
+            session.status='PAUSED';
+          }else if(restoreStatus==='STOPPED'){
+            this.clock.stop();
+            session.status='STOPPED';
+          }else{
+            this.clock.running=false;
+            this.clock.paused=false;
+            session.status=restoreStatus||'READY';
+          }
+          this.world.setSession(session);
+        }
+        const result={turn:this.clock.turn,steps:completed,last,status:this.status,cancelled,
+          requestedTurns,plannedTurns:count,limited:requestedTurns>count};
+        this.manualAdvanceProgress={...result,status:this.status==='ERROR'?'ERROR':cancelled?'CANCELLED':'COMPLETED',
+          completedTurns:completed,percent:Math.round(completed/count*100)};
+        this.events.emit('OMEGA_SIMULATION_BATCH_COMPLETED',result,this.clock.turn);
+        dispatchRuntimeEvent('OMEGA_SIMULATION_BATCH_COMPLETED',result);
+        return result;
+      }finally{
+        this.manualAdvanceInProgress=false;
+        this.manualAdvanceCancelled=false;
       }
-      if(!wasRunning&&this.status==='RUNNING')this.status='READY';
-      return {turn:this.clock.turn,steps:completed,last,status:this.status};
+    }
+
+    cancelAdvance(){
+      if(!this.manualAdvanceInProgress)return false;
+      this.manualAdvanceCancelled=true;
+      return true;
     }
 
     async step(){
@@ -1519,6 +1625,10 @@
           events:this.events.events.length
         },
         stepCount:this.stepCount,
+        frameInProgress:this.frameInProgress,
+        pendingRealDeltaMs:this.pendingRealDeltaMs,
+        manualAdvanceInProgress:this.manualAdvanceInProgress,
+        manualAdvanceProgress:clone(this.manualAdvanceProgress),
         lastStep:clone(this.lastStepSummary),
         lastError:this.lastError,
         lastLoadIntegrity:this.lastLoadIntegrity,

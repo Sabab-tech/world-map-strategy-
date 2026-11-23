@@ -1,0 +1,152 @@
+/* OMEGA manual simulation controls: fixed outside the horizontally scrolling legacy header. */
+#omega-global-time-hud {
+  position: fixed !important;
+  top: 52px !important;
+  right: 6px !important;
+  bottom: auto !important;
+  left: 6px !important;
+  z-index: 1000004 !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 3px !important;
+  width: auto !important;
+  max-width: none !important;
+  max-height: 148px !important;
+  margin: 0 !important;
+  padding: 5px 7px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  border: 1px solid rgba(91, 157, 190, .48) !important;
+  border-radius: 7px !important;
+  background: rgba(4, 12, 23, .97) !important;
+  color: #dce9f7 !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .38) !important;
+  font-family: Inter, Arial, sans-serif !important;
+  line-height: 1.2 !important;
+  contain: layout paint !important;
+}
+#omega-global-time-hud .ogth-topline {
+  display: flex !important;
+  min-width: 0 !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+}
+#omega-global-time-hud .ogth-controls {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+#omega-global-time-hud .ogth-save { display: block !important; }
+#top-status-bar.top-status-bar {
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+@media (max-height: 480px) {
+  #omega-global-time-hud { max-height: 30vh !important; }
+}
+#omega-global-time-hud .ogth-manual-controls {
+  display: flex;
+  flex: 1 1 100%;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  padding: 2px 0;
+  color: #d7e6f5;
+  font-family: Inter, Arial, sans-serif;
+}
+#omega-global-time-hud .ogth-manual-controls button {
+  min-width: 0;
+  min-height: 27px;
+  height: 27px;
+  padding: 3px 7px;
+  border: 1px solid rgba(105, 164, 202, .42);
+  border-radius: 4px;
+  background: #102137;
+  color: #dcecff;
+  font: 800 9px/1 Inter, Arial, sans-serif;
+  letter-spacing: .02em;
+  touch-action: manipulation;
+}
+#omega-global-time-hud .ogth-manual-controls button.ogth-manual-primary {
+  border-color: #2b9fbd;
+  background: #123d54;
+  color: #e0fbff;
+}
+#omega-global-time-hud .ogth-manual-controls button:disabled {
+  opacity: .38;
+  cursor: not-allowed;
+}
+#omega-global-time-hud .ogth-days-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #90abc5;
+  font: 800 8px/1 Inter, Arial, sans-serif;
+}
+#omega-global-time-hud .ogth-days-label input {
+  box-sizing: border-box;
+  width: 50px;
+  min-width: 50px;
+  height: 27px;
+  padding: 2px 4px;
+  border: 1px solid rgba(105, 164, 202, .42);
+  border-radius: 4px;
+  outline: none;
+  background: #081626;
+  color: #fff;
+  font: 800 10px/1 Inter, Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+#omega-global-time-hud .ogth-manual-progress {
+  flex: 1 1 110px;
+  min-width: 70px;
+  overflow: hidden;
+  color: #9fc4d9;
+  font: 700 8px/1.3 Inter, Arial, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#omega-global-time-hud .ogth-diagnostics {
+  box-sizing: border-box;
+  flex: 1 1 100%;
+  width: 100%;
+  max-height: 180px;
+  margin: 2px 0;
+  padding: 7px;
+  overflow: auto;
+  border: 1px solid rgba(105, 164, 202, .28);
+  border-radius: 4px;
+  background: #06111f;
+  color: #b9d8ee;
+  font: 8px/1.35 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+#omega-global-time-hud .ogth-diagnostics[hidden] { display: none !important; }
+@media (max-width: 420px) {
+  #top-status-bar { max-height: 148px !important; }
+  #omega-global-time-hud .ogth-manual-controls { gap: 3px; }
+  #omega-global-time-hud .ogth-manual-controls button {
+    min-height: 26px;
+    height: 26px;
+    padding: 3px 5px;
+    font-size: 8px;
+  }
+  #omega-global-time-hud .ogth-days-label input {
+    width: 43px;
+    min-width: 43px;
+  }
+}
+@media (min-width: 760px) {
+  #top-status-bar { max-height: 148px !important; }
+}

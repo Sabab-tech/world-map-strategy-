@@ -106,6 +106,39 @@ test('canonical simulation authority owns the clock and ordered turn pipeline',a
   assert.equal(sandbox.Omega.Simulation.diagnostics().authoritativeState.worldStateLinked,true);
 });
 
+test('real-time frame drops excess elapsed time instead of running a multi-turn catch-up burst',async()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  sandbox.Omega.Simulation.configure({state,worldEngine:{setAuthoritativeState(){},processSimulationTick(){return {advanced:true};}}});
+  const sim=sandbox.Omega.Simulation;
+  sim.createSession({playerCountryId:'BANGLADESH'});
+  sim.startSession({playerCountryId:'BANGLADESH'});
+  const frame=await sim.frame(15000*5);
+  assert.equal(frame.steps,1,'a single coordinator frame must commit at most one in-game day');
+  assert.equal(sim.clock.turn,1);
+  assert.equal(sim.clock.accumulatorMs,0,'overdue days must not remain queued for a later burst');
+  assert.equal(sim.clock.droppedScaledTimeMs,15000*4,'discarded scaled time must be visible in diagnostics');
+  assert.equal(sim.diagnostics().clock.droppedScaledTimeMs,60000);
+});
+
+test('faster game speed preserves fractional calendar-day progress after a capped frame', async () => {
+  const { sandbox, state } = makeSandbox();
+  loadScript('omega_simulation_runtime.js', sandbox);
+  sandbox.Omega.Simulation.configure({
+    state,
+    worldEngine: { setAuthoritativeState() {}, processSimulationTick() { return { advanced:true }; } }
+  });
+  const sim = sandbox.Omega.Simulation;
+  sim.createSession({ playerCountryId:'BANGLADESH' });
+  sim.startSession({ playerCountryId:'BANGLADESH' });
+  sim.clock.setSpeed(2);
+
+  const frame = await sim.frame(8000);
+  assert.equal(frame.steps, 1, 'a 2x frame with 16 seconds of scaled time commits one day only');
+  assert.equal(sim.clock.turn, 1);
+  assert.equal(sim.clock.accumulatorMs, 1000, 'the unconsumed partial day must be retained');
+  assert.equal(sim.clock.droppedScaledTimeMs, 0, 'no complete extra day was skipped');
+});
 test('frame scheduler advances one calendar day per fifteen-second driver interval',async()=>{
   const {sandbox,state}=makeSandbox();
   loadScript('omega_simulation_runtime.js',sandbox);
@@ -191,6 +224,8 @@ test('slow in-flight frame caps accumulated catch-up work instead of freezing th
   }
   releaseFirstTurn();
   await activeFrame;
+  assert.equal(sandbox.Omega.Simulation.clock.droppedScaledTimeMs, 49 * 15000,
+    'overlapping frame time beyond the one-day pending cap must be visible in diagnostics');
   const resumed=await sandbox.Omega.Simulation.frame(0);
   assert.equal(resumed.steps,1,'bounded pending time should allow at most one catch-up day at normal speed');
   assert.equal(sandbox.Omega.Simulation.clock.turn,2);
@@ -552,4 +587,105 @@ test('turn autosave uses the canonical IndexedDB slot and retains legacy recover
     'legacy localStorage saves remain available when the canonical slot cannot be restored');
   assert.doesNotMatch(lifecycle,/function writeIndexedSave\(/,
     'the retired lifecycle database must not receive a duplicate write for each canonical save');
+});
+
+test('manual day batches use the full pipeline and restore the paused session state',async()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  let participantTurns=0;
+  sandbox.Omega.Simulation.configure({state,worldEngine:{setAuthoritativeState(){},processSimulationTick(){return {advanced:true};}}});
+  const sim=sandbox.Omega.Simulation;
+  sim.createSession({playerCountryId:'BANGLADESH'});
+  sim.registerTurnParticipant('test.manual-day-observer',async(_event,context)=>{participantTurns+=1;return {turn:context.turn};});
+  sim.pauseSession();
+  const result=await sim.advance(4,{yieldEvery:1});
+  assert.equal(result.steps,4);
+  assert.equal(result.turn,4);
+  assert.equal(participantTurns,4,'manual advance must run every authoritative participant once per day');
+  assert.equal(state.simulation.date,'2015-01-05T00:00:00.000Z');
+  assert.equal(sim.status,'PAUSED','manual testing must not silently resume automatic time');
+  assert.equal(sim.clock.paused,true);
+  assert.equal(sim.clock.running,false);
+  assert.equal(sim.manualAdvanceInProgress,false);
+});
+
+test('manual day batches can be cancelled after the current authoritative day commits',async()=>{
+  const {sandbox,state}=makeSandbox();
+  loadScript('omega_simulation_runtime.js',sandbox);
+  let release,notifyStarted;
+  const gate=new Promise(resolve=>{release=resolve;});
+  const started=new Promise(resolve=>{notifyStarted=resolve;});
+  sandbox.Omega.Simulation.configure({state,worldEngine:{setAuthoritativeState(){},processSimulationTick(){return {advanced:true};}}});
+  const sim=sandbox.Omega.Simulation;
+  sim.createSession({playerCountryId:'BANGLADESH'});
+  sim.pauseSession();
+  sim.registerTurnParticipant('test.manual-cancellable',async()=>{notifyStarted();await gate;});
+  const running=sim.advance(5);
+  await started;
+  assert.equal(sim.cancelAdvance(),true);
+  release();
+  const result=await running;
+  assert.equal(result.steps,1,'cancellation must finish the in-flight day but not start another');
+  assert.equal(result.cancelled,true);
+  assert.equal(sim.clock.turn,1);
+  assert.equal(sim.status,'PAUSED');
+});
+
+test('pausing during a slow turn discards pending real-time frames before resume', async () => {
+  const { sandbox, state } = makeSandbox();
+  loadScript('omega_simulation_runtime.js', sandbox);
+  let release, notifyStarted;
+  const gate = new Promise(resolve => { release = resolve; });
+  const started = new Promise(resolve => { notifyStarted = resolve; });
+  sandbox.Omega.Simulation.configure({
+    state,
+    worldEngine: { setAuthoritativeState() {}, processSimulationTick() { return { advanced:true }; } },
+    ministryPump: async () => { notifyStarted(); await gate; }
+  });
+  const sim = sandbox.Omega.Simulation;
+  sim.createSession({ playerCountryId:'BANGLADESH' });
+  sim.startSession({ playerCountryId:'BANGLADESH' });
+  const inFlight = sim.frame(15000);
+  await started;
+  await sim.frame(15000);
+  assert.equal(sim.pendingRealDeltaMs, 15000);
+  sim.pauseSession();
+  assert.equal(sim.pendingRealDeltaMs, 0, 'pause must clear elapsed time queued behind an active turn');
+  release();
+  await inFlight;
+  assert.equal(sim.status, 'PAUSED');
+  assert.equal(sim.clock.paused, true);
+  sim.resumeSession();
+  const resumed = await sim.frame(0);
+  assert.equal(resumed.steps, 0, 'resume must not replay elapsed time collected before the pause');
+  assert.equal(sim.clock.turn, 1);
+});
+
+
+test('manual batch respects an external pause when the prior session was running', async () => {
+  const { sandbox, state } = makeSandbox();
+  loadScript('omega_simulation_runtime.js', sandbox);
+  let release, notifyStarted;
+  const gate = new Promise(resolve => { release = resolve; });
+  const started = new Promise(resolve => { notifyStarted = resolve; });
+  sandbox.Omega.Simulation.configure({
+    state,
+    worldEngine: { setAuthoritativeState() {}, processSimulationTick() { return { advanced:true }; } }
+  });
+  const sim = sandbox.Omega.Simulation;
+  sim.createSession({ playerCountryId:'BANGLADESH' });
+  sim.startSession({ playerCountryId:'BANGLADESH' });
+  sim.registerTurnParticipant('test.running-manual-pause', async () => {
+    notifyStarted();
+    await gate;
+  });
+  const batch = sim.advance(3);
+  await started;
+  sim.pauseSession();
+  release();
+  const result = await batch;
+  assert.equal(result.steps, 1);
+  assert.equal(result.cancelled, true);
+  assert.equal(sim.status, 'PAUSED', 'an external pause must not be overwritten by the pre-batch RUNNING state');
+  assert.equal(sim.clock.paused, true);
 });

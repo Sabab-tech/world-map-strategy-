@@ -296,7 +296,11 @@ test('production shell fully disconnects legacy UI scripts and caches the isolat
 test('slow simulation frames and data-heavy ministry panels bound repeated UI work', () => {
   const simulation = read('omega_simulation_runtime.js');
   assert.match(simulation, /MAX_PENDING_REAL_DELTA_MS\s*=\s*STEP_MS/);
-  assert.match(simulation, /this\.pendingRealDeltaMs\s*=\s*Math\.min\(MAX_PENDING_REAL_DELTA_MS,\s*this\.pendingRealDeltaMs\s*\+\s*delta\)/);
+  assert.match(simulation, /const accumulated=this\.pendingRealDeltaMs\+delta/);
+  assert.match(simulation, /const retained=Math\.min\(MAX_PENDING_REAL_DELTA_MS,accumulated\)/);
+  assert.match(simulation, /this\.clock\.droppedScaledTimeMs\+=dropped\*Math\.max/);
+  assert.match(simulation, /this\.pendingRealDeltaMs=0;/,
+    'pausing during an in-flight frame must discard its queued wall-clock time');
 
   const overview = read('omega_country_overview_ministry_ui_v1.js');
   assert.match(overview, /function scheduleOverviewRender\(\)/);
@@ -334,7 +338,7 @@ test('UI v2 screen transitions schedule heavy rendering after paint and cancel s
 
 test('simulation coordinator throttles asynchronous work and pauses cleanly in the background', () => {
   const root = read('omega_enterprise_composition_root_v10.js');
-  assert.match(root, /SIMULATION_FRAME_INTERVAL_MS\s*=\s*250/);
+  assert.match(root, /SIMULATION_FRAME_INTERVAL_MS\s*=\s*500/);
   assert.match(root, /MAX_FRAME_DELTA_MS\s*=\s*15000/);
   assert.match(root, /async function engineLoop\(\)/);
   assert.match(root, /await simulation\.frame\(dt\)/);
@@ -348,7 +352,14 @@ test('simulation coordinator throttles asynchronous work and pauses cleanly in t
   assert.match(root, /simulationRuntime\.events\.subscribe\("OMEGA_GAME_SESSION_RESUMED"/);
   assert.match(root, /simulationRuntime\.events\.subscribe\("OMEGA_GAME_SESSION_PAUSED"/);
   assert.match(root, /if \(simulationIsRunning\(\)\) scheduleEngineLoop\(SIMULATION_FRAME_INTERVAL_MS\)/,
-    'paused sessions must not reschedule the 250 ms coordinator timer');
+    'paused sessions must not reschedule the paced coordinator timer');
+  const simulation = read('omega_simulation_runtime.js');
+  assert.match(simulation, /MAX_STEPS_PER_FRAME=1/,
+    'one coordinator frame must never enqueue a multi-day catch-up burst');
+  assert.match(simulation, /manualAdvanceInProgress/,
+    'automatic frames must stay out of a manually controlled day batch');
+  assert.match(simulation, /await yieldToBrowser\(\)/,
+    'long manual batches must yield to the browser between days');
   assert.match(root, /window\.clearTimeout\(loopTimerId\)/);
   assert.doesNotMatch(root, /requestAnimationFrame\(engineLoop\)/);
 });
@@ -644,7 +655,7 @@ test('world geometry becomes usable before supporting datasets and resumes witho
   const simulation = read('omega_simulation_runtime.js');
   const driver = read('omega_enterprise_composition_root_v10.js');
   const resourceEconomy = read('omega_resource_economy_runtime_v2.js');
-  assert.ok(simulation.includes('const STEP_MS=15000;') && driver.includes('SIMULATION_FRAME_INTERVAL_MS = 250'),
+  assert.ok(simulation.includes('const STEP_MS=15000;') && driver.includes('SIMULATION_FRAME_INTERVAL_MS = 500'),
     'authoritative turns must advance every fifteen real seconds without polling every second');
   assert.ok(resourceEconomy.includes('function runResourceEconomyTurnParticipant()') &&
     resourceEconomy.includes('g.Game&&g.Game.Map&&g.Game.Map.__omegaMapUiActive===true)return;'),

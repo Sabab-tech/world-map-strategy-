@@ -344,7 +344,22 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.ok(topHeaderStart >= 0 && unifiedHudStart > topHeaderStart && unifiedHudStart < metricDropdownStart,
     'the lifecycle HUD must be embedded in the existing top status bar');
   assert.match(index, /data-speed="3" title="Very Fast Speed">3x/);
-  assert.match(index, /data-omega-speed="3" aria-label="Very fast game speed" title="Very fast speed">3x/);
+  assert.match(index, /data-omega-speed="3" aria-label="Three times game speed" title="Three times speed">3x/);
+  assert.match(index, /data-omega-action="step-day"/);
+  assert.match(index, /data-omega-action="advance-days"/);
+  assert.match(index, /data-omega-action="cancel-advance"/);
+  assert.match(index, /data-omega-action="diagnostics"/);
+  assert.match(index, /max="365"[^>]*data-omega-days/);
+  assert.match(index, /omega_manual_time_controls_v1\.css/);
+  const manualTimeCss = fs.readFileSync(path.join(root, 'omega_manual_time_controls_v1.css'), 'utf8');
+  assert.match(manualTimeCss, /#omega-global-time-hud \{[\s\S]{0,80}position: fixed !important;/);
+  assert.match(manualTimeCss, /z-index: 1000004 !important;/);
+  assert.match(manualTimeCss, /#top-status-bar\.top-status-bar/);
+  assert.match(lifecycle, /function beginManualAdvance\(turns\)/);
+  assert.match(lifecycle, /sim\.advance\(count, \{ yieldEvery: 1 \}\)/);
+  assert.match(core, /MAX_STEPS_PER_FRAME=1/);
+  assert.match(core, /droppedScaledTimeMs/);
+  assert.match(core, /cancelAdvance\(\)/);
   assert.match(css, /#top-status-bar \.status-right \{[\s\S]{0,40}display: none !important;/);
   assert.match(css, /max-height: 104px !important;\n  flex-wrap: wrap !important;/,
     'the compact header must wrap the metrics onto a second row instead of squeezing them off-screen');
@@ -721,7 +736,7 @@ test('daily tick supplies the same turn, duration and date to every subsystem', 
     seen.push({ subsystem: 'b', turn: context.turn, duration: context.stepDurationMs, date: context.simulationDate });
   });
   sim.startSession({ playerCountryId: 'BGD' });
-  await sim.frame(STEP_MS * 5);
+  await sim.advance(5);
 
   assert.equal(seen.length, 10);
   for (let turn = 1; turn <= 5; turn++) {
@@ -770,4 +785,88 @@ test('Resource Economy registers as one ordered simulation subsystem instead of 
     .filter(row => row.id === 'omega.resource-economy.player-country');
   assert.equal(resourceParticipants.length, 1);
   assert.equal(resourceParticipants[0].status, 'COMPLETED');
+});
+
+
+test('manual time HUD buttons step days, run selected days, pause/resume and expose diagnostics', async () => {
+  const { win, sim, gameState } = createRuntime();
+  const { documentListeners, lifecycle } = attachLifecycle(win, sim);
+  await lifecycle.restore();
+
+  const diagnosticsPanel = { hidden: true, textContent: '' };
+  win.document.querySelector = (selector) => {
+    if (selector === '[data-omega-days]') return { value: '2' };
+    if (selector === '[data-omega-diagnostics]') return diagnosticsPanel;
+    return null;
+  };
+  const dispatchAction = (action) => {
+    const target = {
+      closest(selector) {
+        return selector.includes('[data-omega-action="' + action + '"]') ? this : null;
+      },
+      hasAttribute(name) { return name === 'data-omega-action'; },
+      getAttribute(name) { return name === 'data-omega-action' ? action : null; }
+    };
+    const event = {
+      target, cancelable: true,
+      preventDefault() {}, stopImmediatePropagation() {}, stopPropagation() {}
+    };
+    for (const listener of documentListeners.get('click') || []) listener(event);
+  };
+  const waitForManualFinish = async () => {
+    for (let attempt = 0; attempt < 200 && lifecycle.getDiagnostics().manualCommandInFlight; attempt += 1) {
+      await new Promise(resolve => setTimeout(resolve, 1));
+    }
+    assert.equal(lifecycle.getDiagnostics().manualCommandInFlight, false, 'the manual HUD action should settle');
+  };
+
+  dispatchAction('advance-days');
+  await waitForManualFinish();
+  assert.equal(sim.clock.turn, 2, 'RUN DAYS must use the numeric days input');
+  assert.equal(sim.status, 'PAUSED', 'manual time testing must leave automatic time paused');
+  assert.equal(gameState.simulation.date, '2015-01-03T00:00:00.000Z');
+
+  dispatchAction('step-day');
+  await waitForManualFinish();
+  assert.equal(sim.clock.turn, 3, '+1 DAY must commit exactly one authoritative day');
+  assert.equal(gameState.simulation.date, '2015-01-04T00:00:00.000Z');
+
+  dispatchAction('diagnostics');
+  assert.equal(diagnosticsPanel.hidden, false);
+  const report = JSON.parse(diagnosticsPanel.textContent);
+  assert.equal(report.simulation.clock.turn, 3);
+  assert.equal(report.lifecycle.restoreFinished, true);
+
+  dispatchAction('toggle');
+  assert.equal(sim.status, 'RUNNING', 'Play must resume the canonical clock');
+  dispatchAction('toggle');
+  assert.equal(sim.status, 'PAUSED', 'Pause must stop further automatic turns');
+});
+
+test('backgrounding during a manual day batch cancels after the in-flight day and keeps time paused', async () => {
+  const { win, sim } = createRuntime();
+  const { documentListeners, lifecycle } = attachLifecycle(win, sim);
+  await lifecycle.restore();
+  let release, notifyStarted;
+  const gate = new Promise(resolve => { release = resolve; });
+  const started = new Promise(resolve => { notifyStarted = resolve; });
+  sim.registerTurnParticipant('test.background-manual-batch', async () => {
+    notifyStarted();
+    await gate;
+  });
+  assert.equal(lifecycle.advanceDays(4), true);
+  await started;
+
+  win.document.visibilityState = 'hidden';
+  for (const listener of documentListeners.get('visibilitychange') || []) listener();
+  release();
+  for (let attempt = 0; attempt < 200 && lifecycle.getDiagnostics().manualCommandInFlight; attempt += 1) {
+    await new Promise(resolve => setTimeout(resolve, 1));
+  }
+
+  assert.equal(sim.clock.turn, 1, 'only the current authoritative day may commit after backgrounding');
+  assert.equal(sim.status, 'PAUSED');
+  assert.equal(sim.clock.paused, true);
+  assert.equal(sim.manualAdvanceInProgress, false);
+  assert.equal(lifecycle.getDiagnostics().backgroundRunsEnabled, false);
 });

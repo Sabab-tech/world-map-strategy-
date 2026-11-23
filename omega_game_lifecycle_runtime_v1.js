@@ -36,6 +36,7 @@
   var restoreFailed = false;
   var restoreFinished = false;
   var restoredFromSave = false;
+  var manualCommandInFlight = false;
   var saveStatus = 'AUTOSAVE READY';
   // Gameplay automation is opt-in after every boot and remains paused in the background.
   var backgroundRunsEnabled = false;
@@ -183,6 +184,17 @@
       legacyButtons[j].classList.toggle('active', running ? legacySpeed === effectiveSpeed : legacySpeed === 0);
     }
     setText('[data-omega-game-status]', status);
+    var manualBusy = manualCommandInFlight || !!(sim && sim.manualAdvanceInProgress);
+    var clockButtons = g.document.querySelectorAll('[data-omega-action="toggle"], [data-omega-speed], .speed-btn');
+    for (var c = 0; c < clockButtons.length; c++) clockButtons[c].disabled = manualBusy;
+    var turnBusy = !!(sim && (sim.stepInProgress || sim.frameInProgress));
+    var countryReady = !!(sim && playerCountry(sim));
+    var manualButtons = g.document.querySelectorAll('[data-omega-action="step-day"], [data-omega-action="advance-days"]');
+    for (var m = 0; m < manualButtons.length; m++) {
+      manualButtons[m].disabled = !countryReady || manualBusy || turnBusy || status === 'ERROR';
+    }
+    var cancelButton = g.document.querySelector('[data-omega-action="cancel-advance"]');
+    if (cancelButton) cancelButton.disabled = !manualBusy;
   }
 
   function updateHud() {
@@ -551,7 +563,7 @@
   function setSpeed(value, explicitStart) {
     var sim = runtime();
     var speed = number(value);
-    if (!sim || !sim.clock || speed === null || speed < 0) return false;
+    if (!sim || !sim.clock || speed === null || speed < 0 || speed > 8) return false;
     // Never turn an error checkpoint into an apparently healthy paused session.
     if (String(sim.status || '').toUpperCase() === 'ERROR') {
       setSaveStatus('GAME ERROR · LAST COMPLETE SAVE PRESERVED');
@@ -595,6 +607,78 @@
       updateHud();
       return false;
     }
+  }
+
+  function beginManualAdvance(turns) {
+    var sim = runtime();
+    var count = Math.max(1, Math.min(365, Math.floor(number(turns) || 1)));
+    if (!sim || typeof sim.advance !== 'function' || manualCommandInFlight) return false;
+    if (String(sim.status || '').toUpperCase() === 'ERROR') {
+      setSaveStatus('GAME ERROR · FIX FAILED SYSTEM BEFORE TESTING');
+      updateHud();
+      return false;
+    }
+    if (!playerCountry(sim)) {
+      setSaveStatus('SELECT COUNTRY TO TEST TIME');
+      updateHud();
+      return false;
+    }
+    if (sim.frameInProgress || sim.stepInProgress || sim.manualAdvanceInProgress) {
+      setSaveStatus('CURRENT DAY IS STILL COMMITTING · TRY AGAIN');
+      updateHud();
+      return false;
+    }
+    // Manual runs begin from a paused clock and always use the canonical day pipeline.
+    if (String(sim.status || '').toUpperCase() !== 'PAUSED' || !(sim.clock && sim.clock.paused)) setSpeed(0);
+    manualCommandInFlight = true;
+    setText('[data-omega-manual-progress]', 'RUNNING · 0/' + count + ' DAYS');
+    updateHud();
+    Promise.resolve(sim.advance(count, { yieldEvery: 1 })).then(function (result) {
+      if (result && result.status === 'ERROR') setSaveStatus('TIME TEST FAILED · INSPECT DIAGNOSTICS');
+      else if (result && result.cancelled) setSaveStatus('MANUAL ADVANCE CANCELLED · ' + result.steps + ' DAYS COMMITTED');
+      else setSaveStatus('MANUAL ADVANCE COMPLETE · ' + (result && result.steps || 0) + ' DAYS');
+      var progress = result && result.cancelled ? 'CANCELLED' : (result && result.status === 'ERROR' ? 'ERROR' : 'COMPLETE');
+      setText('[data-omega-manual-progress]', progress + ' · ' + (result && result.steps || 0) + '/' + count + ' DAYS');
+      updateHud();
+      return saveNow({ force: true });
+    }).catch(function (error) {
+      setSaveStatus('MANUAL ADVANCE FAILED · ' + String(error && error.message || error).slice(0, 42));
+      setText('[data-omega-manual-progress]', 'FAILED · INSPECT DIAGNOSTICS');
+      updateHud();
+    }).finally(function () {
+      manualCommandInFlight = false;
+      updateHud();
+    });
+    return true;
+  }
+
+  function cancelManualAdvance() {
+    var sim = runtime();
+    if (!sim || typeof sim.cancelAdvance !== 'function' || !sim.cancelAdvance()) return false;
+    setText('[data-omega-manual-progress]', 'CANCELLING AFTER CURRENT DAY…');
+    updateHud();
+    return true;
+  }
+
+  function toggleTimeDiagnostics() {
+    var panel = g.document && g.document.querySelector('[data-omega-diagnostics]');
+    var sim = runtime();
+    if (!panel || !sim) return false;
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) {
+      var report = {
+        simulation: typeof sim.diagnostics === 'function' ? sim.diagnostics() : null,
+        scheduler: g.Omega && g.Omega.WorldSimulationScheduler && typeof g.Omega.WorldSimulationScheduler.diagnostics === 'function'
+          ? g.Omega.WorldSimulationScheduler.diagnostics() : null,
+        lifecycle: {
+          saveStatus: saveStatus, savePending: !!saveInFlightPromise || !!saveQueued,
+          savedTurn: lastSavedTurn, savedStorage: lastSavedStorage, restoreFinished: restoreFinished,
+          restoreFailed: restoreFailed, manualCommandInFlight: manualCommandInFlight
+        }
+      };
+      panel.textContent = JSON.stringify(report, null, 2);
+    }
+    return true;
   }
 
   function queueTurnSave() {
@@ -746,7 +830,7 @@
   }
 
   function clickHandler(event) {
-    var target = event.target && event.target.closest ? event.target.closest('[data-omega-action="toggle"], [data-omega-speed], .speed-btn') : null;
+    var target = event.target && event.target.closest ? event.target.closest('[data-omega-action="toggle"], [data-omega-action="step-day"], [data-omega-action="advance-days"], [data-omega-action="cancel-advance"], [data-omega-action="diagnostics"], [data-omega-speed], .speed-btn') : null;
     if (!target) return;
     // This is the authoritative game-clock route. Legacy listeners must not
     // overwrite a speed selection after this handler updates the simulation.
@@ -755,11 +839,23 @@
     if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
     var speed;
     if (target.hasAttribute('data-omega-action')) {
-      var sim = runtime();
-      var running = sim && String(sim.status || '').toUpperCase() === 'RUNNING' &&
-        !(sim.clock && sim.clock.paused);
-      if (running) setSpeed(0);
-      else setSpeed(lastKnownSpeed || 1);
+      var action = target.getAttribute('data-omega-action');
+      if (action === 'toggle') {
+        var sim = runtime();
+        var running = sim && String(sim.status || '').toUpperCase() === 'RUNNING' &&
+          !(sim.clock && sim.clock.paused);
+        if (running) setSpeed(0);
+        else setSpeed(lastKnownSpeed || 1);
+      } else if (action === 'step-day') {
+        beginManualAdvance(1);
+      } else if (action === 'advance-days') {
+        var daysInput = g.document && g.document.querySelector('[data-omega-days]');
+        beginManualAdvance(daysInput && daysInput.value);
+      } else if (action === 'cancel-advance') {
+        cancelManualAdvance();
+      } else if (action === 'diagnostics') {
+        toggleTimeDiagnostics();
+      }
       return;
     }
     if (target.hasAttribute('data-omega-speed')) speed = number(target.getAttribute('data-omega-speed'));
@@ -771,7 +867,7 @@
     if (!g.document) return;
     if (g.document.visibilityState === 'hidden') {
       var sim = runtime();
-      hiddenWasRunning = isSimulationRunning(sim);
+      hiddenWasRunning = isSimulationRunning(sim) || !!(sim && sim.manualAdvanceInProgress);
       if (hiddenWasRunning && sim && String(sim.status || '').toUpperCase() !== 'ERROR') {
         var speed = number(sim.clock && sim.clock.speed);
         if (speed !== null && speed > 0) lastKnownSpeed = speed;
@@ -808,6 +904,10 @@
   }
 
   function onPageExit() {
+    var exitingSimulation = runtime();
+    if (exitingSimulation && exitingSimulation.manualAdvanceInProgress && typeof exitingSimulation.cancelAdvance === 'function') {
+      exitingSimulation.cancelAdvance();
+    }
     if (exitSaveStarted) return;
     // visibilitychange normally starts this flush first. Its promise is already
     // writing the same canonical slot, so do not start a duplicate exit write.
@@ -861,6 +961,13 @@
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', queueTurnSave);
     g.addEventListener && g.addEventListener('OMEGA_COUNTRY_CONTEXT_CHANGED', onCountryContextChanged);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_STEP_COMPLETED', updateHud);
+    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_STARTED', updateHud);
+    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_PROGRESS', function (event) {
+      var detail = event && event.detail || {};
+      setText('[data-omega-manual-progress]', 'RUNNING · ' + number(detail.completedTurns || 0) + '/' + number(detail.plannedTurns || 0) + ' DAYS');
+      updateHud();
+    });
+    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_COMPLETED', updateHud);
     g.addEventListener && g.addEventListener('OMEGA_FINANCE_STATE_UPDATED', updateHud);
     [
       'MINISTRY_STATE_CHANGED', 'RESOURCE_STATE_UPDATED', 'OMEGA_FINANCE_STATE_UPDATED',
@@ -895,6 +1002,9 @@
     saveNow: saveNow,
     updateHud: updateHud,
     setSpeed: setSpeed,
+    advanceDays: beginManualAdvance,
+    cancelAdvance: cancelManualAdvance,
+    toggleTimeDiagnostics: toggleTimeDiagnostics,
     stopAllBackgroundRuns: function () { return setSpeed(0); },
     startAllBackgroundRuns: function () { return setSpeed(lastKnownSpeed || 1, true); },
     restore: restoreOnReady,
@@ -920,6 +1030,8 @@
         restoreFailed: restoreFailed,
         running: !!(sim && sim.status === 'RUNNING'),
         backgroundRunsEnabled: backgroundRunsEnabled,
+        manualCommandInFlight: manualCommandInFlight,
+        manualAdvanceInProgress: !!(sim && sim.manualAdvanceInProgress),
         clock: sim && sim.clock && sim.clock.snapshot ? sim.clock.snapshot() : null
       };
     }

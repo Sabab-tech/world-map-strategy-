@@ -130,11 +130,10 @@
                     console.warn("[OMEGA] OmegaMinistry.createRuntime not found.");
                 }
 
-                // The simulation clock advances in 15-second steps. Polling it at display
-                // refresh rate repeatedly hydrated world state while no game turn was due.
-                // A 250 ms scheduler checks the day clock with lower battery/CPU overhead
-                // without tying simulation work to the screen's 60 Hz paint loop.
-                const SIMULATION_FRAME_INTERVAL_MS = 250;
+                // The simulation clock advances in 15-second steps. One 500 ms paced
+                // coordinator check is sufficient for the supported 0.5x–8x speeds.
+                // The awaited loop never overlaps turns and the runtime caps catch-up at one day.
+                const SIMULATION_FRAME_INTERVAL_MS = 500;
                 // The authoritative simulation commits one in-game day every 15 seconds.
                 // A modest frame cadence keeps UI/battery overhead low without polling each second.
                 const MAX_FRAME_DELTA_MS = 15000;
