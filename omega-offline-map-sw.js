@@ -3,7 +3,7 @@
  */
 "use strict";
 // The install handler refreshes cached core assets with fetch({ cache: "reload" }); keep the stable shell namespace.
-const CACHE_NAME = "omega-offline-atlas-shell-v143";
+const CACHE_NAME = "omega-offline-atlas-shell-v144";
 const DATA_CACHE_NAME = "omega-country-data-v1";
 const DATA_CACHE_MAX_ENTRIES = 48;
 const DATA_CACHE_MAX_BYTES = 48 * 1024 * 1024;
@@ -36,7 +36,7 @@ const REQUIRED_FACTORY_INPUT_ASSETS = [
 const CORE_ASSETS = [
   "./", "./index.html", "./omega_android_compat_v1.js", "./world.json", "./leaflet.js", "./leaflet.css",
   "./style.css", "./design-tokens.js", "./omega_action_progress_v1.js", "./map-engine-1.js", "./map-engine-2.js",
-  "./omega_game_lifecycle_runtime_v1.js", 
+  "./omega_game_lifecycle_runtime_v1.js", "./omega_simulation_runtime.js", "./omega_manual_time_controls_v1.css",
   "./omega_shared_number_format_v1.js",
   "./omega_boot_performance_monitor_v1.js", "./omega_enterprise_composition_root_v10.js",
   "./omega_ui_photo_asset_system_v1.js",  "./omega_ui_photo_asset_catalog_v1.json",
