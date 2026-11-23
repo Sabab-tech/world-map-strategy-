@@ -4,7 +4,7 @@
     "datasetId": "OMEGA_COUNTRY_GENERAL_DATA_REGISTRY_V1",
     "title": "OMEGA Unified Country General Data Registry",
     "description": "Canonical common-schema registry aggregating identity, basic facts, economy, demographics, general indexes, resource context, public-safety summary and a source-aware strategic country profile for every identity in countries.json.",
-    "generatedAt": "2026-11-23T08:08:47.177Z",
+    "generatedAt": "2026-11-23T15:02:27.600Z",
     "countryAndTerritoryCount": 249,
     "uniqueIso3Count": 249,
     "populationCoverage": {
@@ -157,7 +157,12 @@
       "requested": true,
       "worldBankIndicatorsLoaded": true,
       "worldBankMetadataLoaded": true,
-      "worldBankIndicatorErrors": [],
+      "worldBankIndicatorErrors": [
+        {
+          "indicator": "GC.XPN.TOTL.GD.ZS",
+          "error": "Error: HTTP_400 from https://api.worldbank.org/v2/country/all/indicator/GC.XPN.TOTL.GD.ZS?format=json&mrnev=1&per_page=20000"
+        }
+      ],
       "worldBankMetadataError": null,
       "undpHdi": {
         "loaded": true,
@@ -1435,6 +1440,7 @@
         "UNDP_HDR_OBSERVATION",
         "TRANSPARENCY_INTERNATIONAL_CPI_2025",
         "NOT_DEFINED_OR_SOURCED",
+        "SOURCE_REFRESH_FAILED",
         "LOCAL_POPULATION_BASELINE",
         "OFFICIAL_POPULATION_OBSERVATION",
         "UN_PROJECTED_POPULATION_ESTIMATE"
@@ -4599,7 +4605,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -4896,7 +4902,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -4995,7 +5001,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -5094,7 +5100,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -5490,7 +5496,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -5688,7 +5694,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -6550,7 +6556,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -8753,7 +8759,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -9058,7 +9064,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -9157,7 +9163,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -9256,7 +9262,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -9652,7 +9658,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -9850,7 +9856,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -11046,7 +11052,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -11344,7 +11350,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -11443,7 +11449,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -11542,7 +11548,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -11938,7 +11944,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -12136,7 +12142,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -13063,7 +13069,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -13361,7 +13367,7 @@
           4,
           0,
           4,
-          5,
+          11,
           4,
           0,
           0,
@@ -13460,7 +13466,7 @@
           -1,
           0,
           -1,
-          -1,
+          0,
           -1,
           0,
           0,
@@ -13559,7 +13565,7 @@
           -1,
           0,
           -1,
-          -1,
+          0,
           -1,
           0,
           0,
@@ -13955,7 +13961,7 @@
           null,
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -14153,7 +14159,7 @@
           "MISSING_OBSERVATION",
           null,
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           null,
           null,
@@ -15279,7 +15285,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -17546,7 +17552,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -17843,7 +17849,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -17942,7 +17948,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -18041,7 +18047,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -18437,7 +18443,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -18635,7 +18641,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -19548,7 +19554,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -19837,7 +19843,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -19936,7 +19942,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -20035,7 +20041,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -20431,7 +20437,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -20629,7 +20635,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -21491,7 +21497,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -21788,7 +21794,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -21887,7 +21893,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -21986,7 +21992,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -22382,7 +22388,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -22580,7 +22586,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -23751,7 +23757,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -25940,7 +25946,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -28208,7 +28214,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -28506,7 +28512,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -28605,7 +28611,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -28704,7 +28710,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -29100,7 +29106,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -29298,7 +29304,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -30193,7 +30199,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -32381,7 +32387,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -34559,7 +34565,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -36710,7 +36716,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -38888,7 +38894,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -41078,7 +41084,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -43350,7 +43356,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -45554,7 +45560,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -47778,7 +47784,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -49967,7 +49973,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -52178,7 +52184,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -52480,7 +52486,7 @@
           4,
           0,
           4,
-          5,
+          11,
           4,
           0,
           0,
@@ -52579,7 +52585,7 @@
           -1,
           0,
           -1,
-          -1,
+          0,
           -1,
           0,
           0,
@@ -52678,7 +52684,7 @@
           -1,
           0,
           -1,
-          -1,
+          0,
           -1,
           0,
           0,
@@ -53074,7 +53080,7 @@
           null,
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -53272,7 +53278,7 @@
           "MISSING_OBSERVATION",
           null,
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           null,
           null,
@@ -54339,7 +54345,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -54636,7 +54642,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -54735,7 +54741,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -54834,7 +54840,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -55230,7 +55236,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -55428,7 +55434,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -56321,7 +56327,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -58512,7 +58518,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -60675,7 +60681,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -60974,7 +60980,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -61073,7 +61079,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -61172,7 +61178,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -61568,7 +61574,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -61766,7 +61772,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -62628,7 +62634,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -64855,7 +64861,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -67072,7 +67078,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -67365,7 +67371,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -67464,7 +67470,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -67563,7 +67569,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -67959,7 +67965,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -68157,7 +68163,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -69019,7 +69025,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -71218,7 +71224,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -71515,7 +71521,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -71614,7 +71620,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -71713,7 +71719,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -72109,7 +72115,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -72307,7 +72313,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -73169,7 +73175,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -73470,7 +73476,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -73569,7 +73575,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -73668,7 +73674,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -74064,7 +74070,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -74262,7 +74268,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -75322,7 +75328,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -77463,7 +77469,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -79654,7 +79660,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -81921,7 +81927,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -84043,7 +84049,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -86145,7 +86151,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -88303,7 +88309,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -90399,7 +90405,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -90696,7 +90702,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -90795,7 +90801,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -90894,7 +90900,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -91290,7 +91296,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -91488,7 +91494,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -92383,7 +92389,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -94536,7 +94542,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -94839,7 +94845,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -94938,7 +94944,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -95037,7 +95043,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -95433,7 +95439,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -95631,7 +95637,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -96657,7 +96663,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -98740,7 +98746,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -99054,7 +99060,7 @@
           4,
           0,
           4,
-          5,
+          11,
           4,
           0,
           0,
@@ -99153,7 +99159,7 @@
           -1,
           0,
           -1,
-          -1,
+          0,
           -1,
           0,
           0,
@@ -99252,7 +99258,7 @@
           -1,
           0,
           -1,
-          -1,
+          0,
           -1,
           0,
           0,
@@ -99648,7 +99654,7 @@
           null,
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -99846,7 +99852,7 @@
           "MISSING_OBSERVATION",
           null,
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           null,
           null,
@@ -100848,7 +100854,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -101111,41 +101117,41 @@
           null
         ],
         "statusCodes": [
+          12,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
+          5,
+          5,
+          1,
+          3,
+          1,
+          4,
+          5,
+          4,
           11,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
-          5,
-          5,
-          5,
-          1,
-          3,
-          1,
-          4,
-          5,
-          4,
-          5,
           4,
           5,
           5,
@@ -101244,7 +101250,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -101343,7 +101349,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -101739,7 +101745,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -101937,7 +101943,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -102812,7 +102818,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -103075,41 +103081,41 @@
           null
         ],
         "statusCodes": [
+          12,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
+          5,
+          5,
+          1,
+          3,
+          1,
+          4,
+          5,
+          4,
           11,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
-          5,
-          5,
-          5,
-          1,
-          3,
-          1,
-          4,
-          5,
-          4,
-          5,
           4,
           5,
           5,
@@ -103208,7 +103214,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -103307,7 +103313,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -103703,7 +103709,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -103901,7 +103907,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -104776,7 +104782,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -106917,7 +106923,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -107216,7 +107222,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -107315,7 +107321,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -107414,7 +107420,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -107810,7 +107816,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -108008,7 +108014,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -109061,7 +109067,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -111184,7 +111190,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -113310,7 +113316,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -113576,41 +113582,41 @@
           null
         ],
         "statusCodes": [
+          12,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
+          5,
+          5,
+          1,
+          3,
+          1,
+          4,
+          5,
+          4,
           11,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
-          5,
-          5,
-          5,
-          1,
-          3,
-          1,
-          4,
-          5,
-          4,
-          5,
           4,
           5,
           5,
@@ -113709,7 +113715,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -113808,7 +113814,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -114204,7 +114210,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -114402,7 +114408,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -115318,7 +115324,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -117389,7 +117395,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -119500,7 +119506,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -121615,7 +121621,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -121912,7 +121918,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -122011,7 +122017,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -122110,7 +122116,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -122506,7 +122512,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -122704,7 +122710,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -123737,7 +123743,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -124036,7 +124042,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -124135,7 +124141,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -124234,7 +124240,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -124630,7 +124636,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -124828,7 +124834,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -125768,7 +125774,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -127838,7 +127844,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -129922,7 +129928,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -132005,7 +132011,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -132307,7 +132313,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -132406,7 +132412,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -132505,7 +132511,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -132901,7 +132907,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -133099,7 +133105,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -134141,7 +134147,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -134438,7 +134444,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -134537,7 +134543,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -134636,7 +134642,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -135032,7 +135038,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -135230,7 +135236,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -136247,7 +136253,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -138297,7 +138303,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -140390,7 +140396,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -142579,7 +142585,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -144713,7 +144719,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -146814,7 +146820,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -147117,7 +147123,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -147216,7 +147222,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -147315,7 +147321,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -147711,7 +147717,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -147909,7 +147915,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -148974,7 +148980,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -151046,7 +151052,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -153205,7 +153211,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -155364,7 +155370,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -155661,7 +155667,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -155760,7 +155766,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -155859,7 +155865,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -156255,7 +156261,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -156453,7 +156459,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -157328,7 +157334,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -157628,7 +157634,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -157727,7 +157733,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -157826,7 +157832,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -158222,7 +158228,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -158420,7 +158426,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -159307,7 +159313,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -161414,7 +161420,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -163497,7 +163503,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -165606,7 +165612,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -165906,7 +165912,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -166005,7 +166011,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -166104,7 +166110,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -166500,7 +166506,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -166698,7 +166704,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -167636,7 +167642,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -167933,7 +167939,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -168032,7 +168038,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -168131,7 +168137,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -168527,7 +168533,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -168725,7 +168731,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -169660,7 +169666,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -169958,7 +169964,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -170057,7 +170063,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -170156,7 +170162,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -170552,7 +170558,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -170750,7 +170756,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -171612,7 +171618,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -173736,7 +173742,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -175869,7 +175875,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -177982,7 +177988,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -180080,7 +180086,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -182202,7 +182208,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -182501,7 +182507,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -182600,7 +182606,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -182699,7 +182705,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -183095,7 +183101,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -183293,7 +183299,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -184209,7 +184215,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -186288,7 +186294,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -186586,7 +186592,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -186685,7 +186691,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -186784,7 +186790,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -187180,7 +187186,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -187378,7 +187384,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -188309,7 +188315,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -188606,7 +188612,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -188705,7 +188711,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -188804,7 +188810,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -189200,7 +189206,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -189398,7 +189404,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -190430,7 +190436,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -190727,7 +190733,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -190826,7 +190832,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -190925,7 +190931,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -191321,7 +191327,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -191519,7 +191525,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -192457,7 +192463,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -192756,7 +192762,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -192855,7 +192861,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -192954,7 +192960,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -193350,7 +193356,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -193548,7 +193554,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -194480,7 +194486,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -196604,7 +196610,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -196905,7 +196911,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -197004,7 +197010,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -197103,7 +197109,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -197499,7 +197505,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -197697,7 +197703,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -198559,7 +198565,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -200715,7 +200721,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -202876,7 +202882,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -203177,7 +203183,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -203276,7 +203282,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -203375,7 +203381,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -203771,7 +203777,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -203969,7 +203975,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -204993,7 +204999,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -205293,7 +205299,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -205392,7 +205398,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -205491,7 +205497,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -205887,7 +205893,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -206085,7 +206091,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -207149,7 +207155,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -207440,7 +207446,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -207539,7 +207545,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -207638,7 +207644,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -208034,7 +208040,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -208232,7 +208238,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -209094,7 +209100,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -209358,7 +209364,7 @@
           null
         ],
         "statusCodes": [
-          12,
+          13,
           1,
           1,
           1,
@@ -209392,7 +209398,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -209491,7 +209497,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -209590,7 +209596,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -209986,7 +209992,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -210184,7 +210190,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -211124,7 +211130,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -213270,7 +213276,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -213570,7 +213576,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -213669,7 +213675,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -213768,7 +213774,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -214164,7 +214170,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -214362,7 +214368,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -215275,7 +215281,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -217358,7 +217364,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -219441,7 +219447,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -221550,7 +221556,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -223653,7 +223659,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -225839,7 +225845,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -227985,7 +227991,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -230067,7 +230073,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -230367,7 +230373,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -230466,7 +230472,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -230565,7 +230571,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -230961,7 +230967,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -231159,7 +231165,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -232042,7 +232048,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -234164,7 +234170,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -236255,7 +236261,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -238354,7 +238360,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -240452,7 +240458,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -240753,7 +240759,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -240852,7 +240858,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -240951,7 +240957,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -241347,7 +241353,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -241545,7 +241551,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -242407,7 +242413,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -244546,7 +244552,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -246641,7 +246647,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -248761,7 +248767,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -250873,7 +250879,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -251174,7 +251180,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -251273,7 +251279,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -251372,7 +251378,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -251768,7 +251774,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -251966,7 +251972,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -253015,7 +253021,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -255101,7 +255107,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -257175,7 +257181,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -259316,7 +259322,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -261459,7 +261465,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -263531,7 +263537,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -265728,7 +265734,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -267842,7 +267848,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -269980,7 +269986,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -270284,7 +270290,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -270383,7 +270389,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -270482,7 +270488,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -270878,7 +270884,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -271076,7 +271082,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -272124,7 +272130,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -272422,7 +272428,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -272521,7 +272527,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -272620,7 +272626,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -273016,7 +273022,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -273214,7 +273220,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -274178,7 +274184,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -276252,7 +276258,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -278323,7 +278329,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -280309,7 +280315,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -282457,7 +282463,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -284584,7 +284590,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -286670,7 +286676,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -288774,7 +288780,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -290896,7 +290902,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -292964,7 +292970,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -295081,7 +295087,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -295378,7 +295384,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -295477,7 +295483,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -295576,7 +295582,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -295972,7 +295978,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -296170,7 +296176,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -297108,7 +297114,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -297410,7 +297416,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -297509,7 +297515,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -297608,7 +297614,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -298004,7 +298010,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -298202,7 +298208,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -299280,7 +299286,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -301384,7 +301390,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -301681,7 +301687,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -301780,7 +301786,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -301879,7 +301885,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -302275,7 +302281,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -302473,7 +302479,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -303335,7 +303341,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -305442,7 +305448,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -307551,7 +307557,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -309646,7 +309652,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -309945,7 +309951,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -310044,7 +310050,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -310143,7 +310149,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -310539,7 +310545,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -310737,7 +310743,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -311702,7 +311708,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -313760,7 +313766,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -314063,7 +314069,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -314162,7 +314168,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -314261,7 +314267,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -314657,7 +314663,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -314855,7 +314861,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -315877,7 +315883,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -316174,7 +316180,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -316273,7 +316279,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -316372,7 +316378,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -316768,7 +316774,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -316966,7 +316972,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -317879,7 +317885,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -320021,7 +320027,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -322168,7 +322174,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -324319,7 +324325,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -326444,7 +326450,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -328547,7 +328553,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -330685,7 +330691,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -332767,7 +332773,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -333064,7 +333070,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -333163,7 +333169,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -333262,7 +333268,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -333658,7 +333664,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -333856,7 +333862,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -334792,7 +334798,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -336853,7 +336859,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -338998,7 +339004,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -341119,7 +341125,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -341421,7 +341427,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -341520,7 +341526,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -341619,7 +341625,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -342015,7 +342021,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -342213,7 +342219,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -343263,7 +343269,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -343527,41 +343533,41 @@
           null
         ],
         "statusCodes": [
+          12,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
+          5,
+          5,
+          1,
+          3,
+          1,
+          4,
+          5,
+          4,
           11,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
-          5,
-          5,
-          5,
-          1,
-          3,
-          1,
-          4,
-          5,
-          4,
-          5,
           4,
           5,
           5,
@@ -343660,7 +343666,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -343759,7 +343765,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -344155,7 +344161,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -344353,7 +344359,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -345266,7 +345272,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -345530,41 +345536,41 @@
           null
         ],
         "statusCodes": [
+          12,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
+          5,
+          5,
+          1,
+          3,
+          1,
+          4,
+          5,
+          4,
           11,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
-          5,
-          5,
-          5,
-          1,
-          3,
-          1,
-          4,
-          5,
-          4,
-          5,
           4,
           5,
           5,
@@ -345663,7 +345669,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -345762,7 +345768,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -346158,7 +346164,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -346356,7 +346362,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -347269,7 +347275,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -349384,7 +349390,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -349683,7 +349689,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -349782,7 +349788,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -349881,7 +349887,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -350277,7 +350283,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -350475,7 +350481,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -351403,7 +351409,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -353490,7 +353496,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -353791,7 +353797,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -353890,7 +353896,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -353989,7 +353995,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -354385,7 +354391,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -354583,7 +354589,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -355575,7 +355581,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -357755,7 +357761,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -359835,7 +359841,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -362003,7 +362009,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -364114,7 +364120,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -366231,7 +366237,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -368306,7 +368312,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -370406,7 +370412,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -372540,7 +372546,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -372837,7 +372843,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -372936,7 +372942,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -373035,7 +373041,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -373431,7 +373437,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -373629,7 +373635,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -374501,7 +374507,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -376594,7 +376600,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -378674,7 +378680,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -378972,7 +378978,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -379071,7 +379077,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -379170,7 +379176,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -379566,7 +379572,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -379764,7 +379770,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -380654,7 +380660,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -380953,7 +380959,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -381052,7 +381058,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -381151,7 +381157,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -381547,7 +381553,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -381745,7 +381751,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -382734,7 +382740,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -383031,7 +383037,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -383130,7 +383136,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -383229,7 +383235,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -383625,7 +383631,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -383823,7 +383829,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -384685,7 +384691,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -386809,7 +386815,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -388961,7 +388967,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -391083,7 +391089,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -391380,7 +391386,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -391479,7 +391485,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -391578,7 +391584,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -391974,7 +391980,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -392172,7 +392178,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -393034,7 +393040,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -393333,7 +393339,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -393432,7 +393438,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -393531,7 +393537,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -393927,7 +393933,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -394125,7 +394131,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -394987,7 +394993,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -397049,7 +397055,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -399139,7 +399145,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -399438,7 +399444,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -399537,7 +399543,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -399636,7 +399642,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -400032,7 +400038,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -400230,7 +400236,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -401102,7 +401108,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -401399,7 +401405,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -401498,7 +401504,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -401597,7 +401603,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -401993,7 +401999,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -402191,7 +402197,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -403053,7 +403059,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -405164,7 +405170,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -407266,7 +407272,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -409334,7 +409340,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -409631,7 +409637,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -409730,7 +409736,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -409829,7 +409835,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -410225,7 +410231,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -410423,7 +410429,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -411467,7 +411473,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -413568,7 +413574,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -415678,7 +415684,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -417747,7 +417753,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -419865,7 +419871,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -420165,7 +420171,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -420264,7 +420270,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -420363,7 +420369,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -420759,7 +420765,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -420957,7 +420963,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -421999,7 +422005,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -424099,7 +424105,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -424400,7 +424406,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -424499,7 +424505,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -424598,7 +424604,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -424994,7 +425000,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -425192,7 +425198,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -426114,7 +426120,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -428176,7 +428182,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -430248,7 +430254,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -432375,7 +432381,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -434532,7 +434538,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -436660,7 +436666,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -436957,7 +436963,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -437056,7 +437062,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -437155,7 +437161,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -437551,7 +437557,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -437749,7 +437755,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -438611,7 +438617,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -438913,7 +438919,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -439012,7 +439018,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -439111,7 +439117,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -439507,7 +439513,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -439705,7 +439711,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -440760,7 +440766,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -442874,7 +442880,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -444945,7 +444951,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -447095,7 +447101,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -447396,7 +447402,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -447495,7 +447501,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -447594,7 +447600,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -447990,7 +447996,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -448188,7 +448194,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -449204,7 +449210,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -449502,7 +449508,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -449601,7 +449607,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -449700,7 +449706,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -450096,7 +450102,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -450294,7 +450300,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -451156,7 +451162,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -453240,7 +453246,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -455331,7 +455337,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -455634,7 +455640,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -455733,7 +455739,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -455832,7 +455838,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -456228,7 +456234,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -456426,7 +456432,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -457548,7 +457554,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -457811,7 +457817,7 @@
           null
         ],
         "statusCodes": [
-          12,
+          13,
           1,
           1,
           1,
@@ -457845,7 +457851,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -457944,7 +457950,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -458043,7 +458049,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -458439,7 +458445,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -458637,7 +458643,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -459612,7 +459618,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -461757,7 +461763,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -463840,7 +463846,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -465938,7 +465944,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -468063,7 +468069,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -470208,7 +470214,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -470473,41 +470479,41 @@
           null
         ],
         "statusCodes": [
+          12,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
+          5,
+          5,
+          1,
+          3,
+          1,
+          4,
+          5,
+          4,
           11,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
-          5,
-          5,
-          5,
-          1,
-          3,
-          1,
-          4,
-          5,
-          4,
-          5,
           4,
           5,
           5,
@@ -470606,7 +470612,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -470705,7 +470711,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -471101,7 +471107,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -471299,7 +471305,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -472212,7 +472218,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -474307,7 +474313,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -476351,7 +476357,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -478494,7 +478500,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -480640,7 +480646,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -480941,7 +480947,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -481040,7 +481046,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -481139,7 +481145,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -481535,7 +481541,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -481733,7 +481739,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -482748,7 +482754,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -483045,7 +483051,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -483144,7 +483150,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -483243,7 +483249,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -483639,7 +483645,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -483837,7 +483843,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -484727,7 +484733,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -485027,7 +485033,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -485126,7 +485132,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -485225,7 +485231,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -485621,7 +485627,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -485819,7 +485825,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -486814,7 +486820,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -488963,7 +488969,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -491104,7 +491110,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -493204,7 +493210,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -495305,7 +495311,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -497404,7 +497410,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -497701,7 +497707,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -497800,7 +497806,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -497899,7 +497905,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -498295,7 +498301,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -498493,7 +498499,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -499355,7 +499361,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -501424,7 +501430,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -503561,7 +503567,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -505667,7 +505673,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -505968,7 +505974,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -506067,7 +506073,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -506166,7 +506172,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -506562,7 +506568,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -506760,7 +506766,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -507801,7 +507807,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -508102,7 +508108,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -508201,7 +508207,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -508300,7 +508306,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -508696,7 +508702,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -508894,7 +508900,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -509889,7 +509895,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -510186,7 +510192,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -510285,7 +510291,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -510384,7 +510390,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -510780,7 +510786,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -510978,7 +510984,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -511853,7 +511859,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -512150,7 +512156,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -512249,7 +512255,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -512348,7 +512354,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -512744,7 +512750,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -512942,7 +512948,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -513863,7 +513869,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -514126,41 +514132,41 @@
           null
         ],
         "statusCodes": [
+          12,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          5,
+          5,
+          1,
+          2,
+          1,
+          1,
+          1,
+          3,
+          2,
+          5,
+          5,
+          3,
+          2,
+          1,
+          3,
+          5,
+          5,
+          5,
+          1,
+          3,
+          1,
+          4,
+          5,
+          4,
           11,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          5,
-          5,
-          5,
-          1,
-          2,
-          1,
-          1,
-          1,
-          3,
-          2,
-          5,
-          5,
-          3,
-          2,
-          1,
-          3,
-          5,
-          5,
-          5,
-          1,
-          3,
-          1,
-          4,
-          5,
-          4,
-          5,
           4,
           5,
           5,
@@ -514259,7 +514265,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -514358,7 +514364,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -514754,7 +514760,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -514952,7 +514958,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -515868,7 +515874,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -516141,7 +516147,7 @@
           null
         ],
         "statusCodes": [
-          13,
+          14,
           4,
           5,
           5,
@@ -516175,7 +516181,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           5,
@@ -516274,7 +516280,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -516373,7 +516379,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           -1,
@@ -516769,7 +516775,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
@@ -516967,7 +516973,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
@@ -517986,7 +517992,7 @@
         "MOST_GLOBAL_INDEXES_NOT_IMPORTED",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -518286,7 +518292,7 @@
           4,
           5,
           4,
-          5,
+          11,
           4,
           5,
           0,
@@ -518385,7 +518391,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -518484,7 +518490,7 @@
           -1,
           -1,
           -1,
-          -1,
+          0,
           -1,
           -1,
           0,
@@ -518880,7 +518886,7 @@
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           null,
-          "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
+          "No source value was stored because the indicator request failed: GC.XPN.TOTL.GD.ZS. Inspect metadata.externalRefresh.worldBankIndicatorErrors.",
           null,
           "The indicator requests completed but no numeric observation was returned for this country. Missing does not mean zero.",
           "Most recent non-empty observation returned by the preferred indicator series; observation year and series ID are preserved.",
@@ -519078,7 +519084,7 @@
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           "MISSING_OBSERVATION",
-          "NO_SOURCE_OBSERVATION",
+          "SOURCE_REFRESH_FAILED",
           "MISSING_OBSERVATION",
           "NO_SOURCE_OBSERVATION",
           null,
@@ -520181,7 +520187,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -522271,7 +522277,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
@@ -524461,7 +524467,7 @@
         "PARTIAL_SOURCE_VALUES",
         [
           true,
-          "LOADED",
+          "PARTIAL_OR_FAILED",
           "LOADED",
           "LOADED"
         ]
