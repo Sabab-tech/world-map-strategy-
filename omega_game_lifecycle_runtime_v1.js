@@ -185,6 +185,8 @@
     }
     setText('[data-omega-game-status]', status);
     var manualBusy = manualCommandInFlight || !!(sim && sim.manualAdvanceInProgress);
+    var clockButtons = g.document.querySelectorAll('[data-omega-action="toggle"], [data-omega-speed], .speed-btn');
+    for (var c = 0; c < clockButtons.length; c++) clockButtons[c].disabled = manualBusy;
     var turnBusy = !!(sim && (sim.stepInProgress || sim.frameInProgress));
     var countryReady = !!(sim && playerCountry(sim));
     var manualButtons = g.document.querySelectorAll('[data-omega-action="step-day"], [data-omega-action="advance-days"]');
@@ -865,7 +867,7 @@
     if (!g.document) return;
     if (g.document.visibilityState === 'hidden') {
       var sim = runtime();
-      hiddenWasRunning = isSimulationRunning(sim);
+      hiddenWasRunning = isSimulationRunning(sim) || !!(sim && sim.manualAdvanceInProgress);
       if (hiddenWasRunning && sim && String(sim.status || '').toUpperCase() !== 'ERROR') {
         var speed = number(sim.clock && sim.clock.speed);
         if (speed !== null && speed > 0) lastKnownSpeed = speed;
@@ -902,6 +904,10 @@
   }
 
   function onPageExit() {
+    var exitingSimulation = runtime();
+    if (exitingSimulation && exitingSimulation.manualAdvanceInProgress && typeof exitingSimulation.cancelAdvance === 'function') {
+      exitingSimulation.cancelAdvance();
+    }
     if (exitSaveStarted) return;
     // visibilitychange normally starts this flush first. Its promise is already
     // writing the same canonical slot, so do not start a duplicate exit write.
