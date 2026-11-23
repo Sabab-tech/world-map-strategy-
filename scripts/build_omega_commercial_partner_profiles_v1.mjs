@@ -206,6 +206,7 @@ function addFlow(aggregates, countryId, resourceId, year, partnerIso3, partnerKi
     aggregates[countryId][resourceId][year] = {
       partners: Object.create(null),
       unresolvedValue: 0,
+      unresolvedPartnerFlowCount: 0,
       rowCount: 0
     };
   }
@@ -213,6 +214,7 @@ function addFlow(aggregates, countryId, resourceId, year, partnerIso3, partnerKi
   bucket.rowCount++;
   if (!partnerIso3) {
     bucket.unresolvedValue += value;
+    bucket.unresolvedPartnerFlowCount++;
     return;
   }
   if (!bucket.partners[partnerIso3]) {
@@ -224,6 +226,7 @@ function addFlow(aggregates, countryId, resourceId, year, partnerIso3, partnerKi
 function summarizeShares(buckets, years, coreCountryIds) {
   let totalValue = 0;
   let unresolvedValue = 0;
+  let unresolvedPartnerFlowCount = 0;
   const partnerValues = Object.create(null);
   const observedYears = [];
   for (const year of years) {
@@ -231,6 +234,7 @@ function summarizeShares(buckets, years, coreCountryIds) {
     if (!bucket || (!bucket.rowCount && !bucket.unresolvedValue)) continue;
     observedYears.push(year);
     unresolvedValue += bucket.unresolvedValue;
+    unresolvedPartnerFlowCount += bucket.unresolvedPartnerFlowCount || 0;
     for (const [iso3, row] of Object.entries(bucket.partners)) {
       if (!partnerValues[iso3]) partnerValues[iso3] = { value: 0 };
       partnerValues[iso3].value += row.value;
@@ -260,7 +264,7 @@ function summarizeShares(buckets, years, coreCountryIds) {
     unresolvedPartnerShare: unresolvedPartnerShare,
     coverage: {
       partnerCount: partnerShares.length,
-      unresolvedPartnerFlowCount: unresolvedValue > 0 ? 1 : 0
+      unresolvedPartnerFlowCount: unresolvedPartnerFlowCount
     }
   };
 }
@@ -370,12 +374,14 @@ export async function buildCommercialPartnerProfiles({ dataDir }) {
       const buckets = aggregates[countryId]?.[resourceId] || Object.create(null);
       const baseline = summarizeShares(buckets, BASELINE_YEARS, coreCountryIds);
       const provisional = summarizeShares(buckets, [PROVISIONAL_YEAR], coreCountryIds);
-      const profileStatus = baseline.status === 'OBSERVED_POSITIVE_FLOWS'
-        || baseline.status === 'OBSERVED_PARTIAL_YEAR_COVERAGE'
-        ? 'OBSERVED_2022_2023_BASELINE'
-        : provisional.status === 'OBSERVED_POSITIVE_FLOWS'
-          ? 'PROVISIONAL_2024_ONLY'
-          : 'NO_POSITIVE_FLOW_RECORDED_REPORTING_COVERAGE_UNKNOWN';
+      const profileStatus = !mappedCoreCountryIds.has(countryId)
+        ? 'COUNTRY_NOT_IN_BACI_CROSSWALK'
+        : baseline.status === 'OBSERVED_POSITIVE_FLOWS'
+          || baseline.status === 'OBSERVED_PARTIAL_YEAR_COVERAGE'
+          ? 'OBSERVED_2022_2023_BASELINE'
+          : provisional.status === 'OBSERVED_POSITIVE_FLOWS'
+            ? 'PROVISIONAL_2024_ONLY'
+            : 'NO_POSITIVE_FLOW_RECORDED_REPORTING_COVERAGE_UNKNOWN';
       resourceProfilesByCountry[resourceId] = {
         mappingStatus: 'MAPPED_EXACT',
         partnerProfileEligibility: 'EXACT_HS22_CODE_BILATERAL_SOURCE_REQUIRED',
@@ -385,7 +391,11 @@ export async function buildCommercialPartnerProfiles({ dataDir }) {
         provisional2024: provisional
       };
     }
-    countries[countryId] = { resourceProfiles: resourceProfilesByCountry };
+    countries[countryId] = {
+      countryCrosswalkStatus: mappedCoreCountryIds.has(countryId)
+        ? 'MAPPED_TO_BACI_COUNTRY_CODE' : 'NOT_IN_BACI_COUNTRY_CROSSWALK',
+      resourceProfiles: resourceProfilesByCountry
+    };
   }
 
   return {
@@ -440,7 +450,10 @@ export async function buildCommercialPartnerProfiles({ dataDir }) {
       unresolvedImporterFlowRowCount: unresolvedImporterFlowRows,
       nonCoreImporterFlowRowCount: nonCoreImporterFlowRows,
       selfFlowRowCount: selfFlowRows,
-      partnerProfileReady: selectedFlowRows > 0
+      partnerProfileReady: selectedFlowRows > 0 && unmappedCoreCountryIds.length === 0,
+      partnerProfileReadinessStatus: unmappedCoreCountryIds.length > 0
+        ? 'INCOMPLETE_CORE_COUNTRY_CROSSWALK'
+        : selectedFlowRows > 0 ? 'READY' : 'NO_EXACT_PARTNER_FLOW_ROWS'
     },
     countries: countries
   };
