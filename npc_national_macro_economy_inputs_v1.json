@@ -4,8 +4,8 @@
     "schemaVersion": "1.0.0",
     "sourceMode": "COUNTRY_GENERAL_DATA_REGISTRY_SNAPSHOT",
     "sourceRegistry": "country_general_data_registry_v1.json",
-    "sourceRegistryGeneratedAt": "2026-11-23T06:00:03.298Z",
-    "generatedAt": "2026-11-23T06:00:03.298Z",
+    "sourceRegistryGeneratedAt": "2026-11-23T08:08:47.177Z",
+    "generatedAt": "2026-11-23T08:08:47.177Z",
     "sourceRegistrySchemaVersion": "1.3.0",
     "countryCount": 197,
     "metricIds": [
