@@ -296,7 +296,11 @@ test('production shell fully disconnects legacy UI scripts and caches the isolat
 test('slow simulation frames and data-heavy ministry panels bound repeated UI work', () => {
   const simulation = read('omega_simulation_runtime.js');
   assert.match(simulation, /MAX_PENDING_REAL_DELTA_MS\s*=\s*STEP_MS/);
-  assert.match(simulation, /this\.pendingRealDeltaMs\s*=\s*Math\.min\(MAX_PENDING_REAL_DELTA_MS,\s*this\.pendingRealDeltaMs\s*\+\s*delta\)/);
+  assert.match(simulation, /const accumulated=this\.pendingRealDeltaMs\+delta/);
+  assert.match(simulation, /const retained=Math\.min\(MAX_PENDING_REAL_DELTA_MS,accumulated\)/);
+  assert.match(simulation, /this\.clock\.droppedScaledTimeMs\+=dropped\*Math\.max/);
+  assert.match(simulation, /this\.pendingRealDeltaMs=0;/,
+    'pausing during an in-flight frame must discard its queued wall-clock time');
 
   const overview = read('omega_country_overview_ministry_ui_v1.js');
   assert.match(overview, /function scheduleOverviewRender\(\)/);
