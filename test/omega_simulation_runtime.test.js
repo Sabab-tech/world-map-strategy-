@@ -206,6 +206,8 @@ test('slow in-flight frame caps accumulated catch-up work instead of freezing th
   }
   releaseFirstTurn();
   await activeFrame;
+  assert.equal(sandbox.Omega.Simulation.clock.droppedScaledTimeMs, 49 * 15000,
+    'overlapping frame time beyond the one-day pending cap must be visible in diagnostics');
   const resumed=await sandbox.Omega.Simulation.frame(0);
   assert.equal(resumed.steps,1,'bounded pending time should allow at most one catch-up day at normal speed');
   assert.equal(sandbox.Omega.Simulation.clock.turn,2);
@@ -609,4 +611,34 @@ test('manual day batches can be cancelled after the current authoritative day co
   assert.equal(result.cancelled,true);
   assert.equal(sim.clock.turn,1);
   assert.equal(sim.status,'PAUSED');
+});
+
+test('pausing during a slow turn discards pending real-time frames before resume', async () => {
+  const { sandbox, state } = makeSandbox();
+  loadScript('omega_simulation_runtime.js', sandbox);
+  let release, notifyStarted;
+  const gate = new Promise(resolve => { release = resolve; });
+  const started = new Promise(resolve => { notifyStarted = resolve; });
+  sandbox.Omega.Simulation.configure({
+    state,
+    worldEngine: { setAuthoritativeState() {}, processSimulationTick() { return { advanced:true }; } },
+    ministryPump: async () => { notifyStarted(); await gate; }
+  });
+  const sim = sandbox.Omega.Simulation;
+  sim.createSession({ playerCountryId:'BANGLADESH' });
+  sim.startSession({ playerCountryId:'BANGLADESH' });
+  const inFlight = sim.frame(15000);
+  await started;
+  await sim.frame(15000);
+  assert.equal(sim.pendingRealDeltaMs, 15000);
+  sim.pauseSession();
+  assert.equal(sim.pendingRealDeltaMs, 0, 'pause must clear elapsed time queued behind an active turn');
+  release();
+  await inFlight;
+  assert.equal(sim.status, 'PAUSED');
+  assert.equal(sim.clock.paused, true);
+  sim.resumeSession();
+  const resumed = await sim.frame(0);
+  assert.equal(resumed.steps, 0, 'resume must not replay elapsed time collected before the pause');
+  assert.equal(sim.clock.turn, 1);
 });
