@@ -1,4 +1,58 @@
-/* OMEGA manual simulation controls: compact, touch-safe and low-compositing. */
+/* OMEGA manual simulation controls: fixed outside the horizontally scrolling legacy header. */
+#omega-global-time-hud {
+  position: fixed !important;
+  top: 52px !important;
+  right: 6px !important;
+  bottom: auto !important;
+  left: 6px !important;
+  z-index: 1000004 !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 3px !important;
+  width: auto !important;
+  max-width: none !important;
+  max-height: min(148px, 32dvh) !important;
+  margin: 0 !important;
+  padding: 5px 7px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  border: 1px solid rgba(91, 157, 190, .48) !important;
+  border-radius: 7px !important;
+  background: rgba(4, 12, 23, .97) !important;
+  color: #dce9f7 !important;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, .38) !important;
+  font-family: Inter, Arial, sans-serif !important;
+  line-height: 1.2 !important;
+  contain: layout paint !important;
+}
+#omega-global-time-hud .ogth-topline {
+  display: flex !important;
+  min-width: 0 !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+}
+#omega-global-time-hud .ogth-controls {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 2px !important;
+}
+#omega-global-time-hud .ogth-save { display: block !important; }
+#top-status-bar.top-status-bar {
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+@media (max-height: 480px) {
+  #omega-global-time-hud { max-height: 30dvh !important; }
+}
 #omega-global-time-hud .ogth-manual-controls {
   display: flex;
   flex: 1 1 100%;
