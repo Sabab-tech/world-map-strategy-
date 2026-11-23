@@ -677,6 +677,9 @@ test('durable importer-side evidence counts unique inbound shipments and exclude
       { ...inbound, shipmentId: 'SHIP-ARRIVED', requestId: 'REQ-ARRIVED',
         settlementId: 'SET-ARRIVED', quantity: 30, originCountryId: 'SAU',
         status: 'ARRIVED', arrivalStatus: 'RECEIVED' },
+      { ...inbound, shipmentId: 'SHIP-SCHEDULED', requestId: 'REQ-SCHEDULED',
+        settlementId: 'SET-SCHEDULED', quantity: 80,
+        status: 'SCHEDULED', arrivalStatus: 'PENDING' },
       { ...inbound, shipmentId: 'SHIP-OUTBOUND', requestId: 'REQ-OUTBOUND',
         settlementId: 'SET-OUTBOUND', quantity: 500, originCountryId: 'BGD',
         destinationCountryId: 'USA', participantRole: 'EXPORTER' }
@@ -688,8 +691,8 @@ test('durable importer-side evidence counts unique inbound shipments and exclude
   const transit = summary.inTransitInternationalImports;
   assert.equal(transit.status, 'OBSERVED_DURABLE_SHIPMENT_LEDGER');
   assert.equal(transit.ledgerAvailable, true);
-  assert.equal(transit.uniqueShipmentCount, 2);
-  assert.equal(transit.shipmentCount, 1);
+  assert.equal(transit.uniqueShipmentCount, 3, 'arrived and scheduled importer records remain visible as history');
+  assert.equal(transit.shipmentCount, 1, 'only dispatched or in-transit records count as in transit');
   assert.equal(transit.quantity, null, 'different resource quantities must not be collapsed into one misleading total');
   assert.equal(transit.quantityAggregationStatus, 'NOT_AGGREGATED_ACROSS_RESOURCE_IDENTITIES');
   assert.equal(transit.byResource.crude_oil.quantity, 20);
@@ -749,6 +752,35 @@ test('conflicting duplicate shipment IDs and incompatible units remain partial i
   const row = summary.nationalRequirement.byResource.crude_oil;
   assert.equal(row.inTransitInternationalImportQuantity, null);
   assert.equal(row.inTransitInternationalImportStatus, 'PARTIAL_DURABLE_SHIPMENT_EVIDENCE');
+});
+
+test('a conflicting shipment ID reused for another resource marks both resource identities partial', async () => {
+  const first = {
+    shipmentId: 'SHIP-CROSS-RESOURCE', requestId: 'REQ-CROSS',
+    settlementId: 'SET-CROSS', resourceId: 'crude_oil', quantity: 20,
+    unit: 'BARRELS', originCountryId: 'USA', destinationCountryId: 'BGD',
+    participantRole: 'IMPORTER', status: 'IN_TRANSIT',
+    arrivalStatus: 'PENDING', dispatchTime: 'TURN_7', dispatchTurn: 7
+  };
+  const conflicting = { ...first, resourceId: 'iron_ore', unit: 'METRIC_TONNES', quantity: 20 };
+  const state = {
+    simulation: { turn: 7, session: { playerCountryId: 'BGD' } },
+    population: {}, economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: [], demandRuntime: { byResource: {
+      crude_oil: { demandPerDay: 40 }, iron_ore: { demandPerDay: 10 }
+    } } } },
+    trade: { BGD: { internationalShipmentLedger: [first, conflicting] } },
+    finance: { BGD: { omegaFinance: { ledger: [] } } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  assert.equal(summary.inTransitInternationalImports.status, 'PARTIAL_DURABLE_SHIPMENT_EVIDENCE');
+  assert.equal(summary.inTransitInternationalImports.conflictingShipmentCount, 1);
+  for (const resourceId of ['crude_oil', 'iron_ore']) {
+    const row = summary.nationalRequirement.byResource[resourceId];
+    assert.equal(row.inTransitInternationalImportQuantity, null, resourceId + ' cannot inherit a conflicting shipment');
+    assert.equal(row.inTransitInternationalImportStatus, 'PARTIAL_DURABLE_SHIPMENT_EVIDENCE');
+  }
 });
 
 test('missing import ledger remains unavailable instead of becoming a zero import', async () => {
