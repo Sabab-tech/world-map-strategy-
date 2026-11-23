@@ -1,0 +1,379 @@
+{
+  "schemaVersion": 1,
+  "datasetId": "OMEGA_COMMERCIAL_HS22_RESOURCE_MAPPING_V1",
+  "status": "STRUCTURAL_CODE_MAPPING_ONLY",
+  "source": {
+    "name": "CEPII BACI",
+    "release": "202601",
+    "hsRevision": "HS22",
+    "nativeTradeYears": [
+      2022,
+      2023,
+      2024
+    ],
+    "officialDatasetPage": "https://www.cepii.fr/DATA_DOWNLOAD/baci/doc/baci_webpage.html",
+    "archiveUrl": "https://www.cepii.fr/DATA_DOWNLOAD/baci/data/BACI_HS22_V202601.zip",
+    "licence": "Etalab Open Licence 2.0",
+    "productCodeMetadata": "Product-code metadata is shipped within the official HS22 archive.",
+    "labelCrossCheck": "TradeWeave public HS22 product endpoint was used only to verify selected product labels: https://tradeweave.org/api/v1/product/{hs6}/trade?revision=HS22&year=2023&limit=1",
+    "limitations": "The raw bilateral archive and its country-code crosswalk were not materialized in this execution. Product label checks are not bilateral partner evidence.",
+    "rawBilateralFlowFilesMaterialized": false,
+    "countryCodeCrosswalkMaterialized": false,
+    "rawBilateralFlowStatus": "NOT_ACQUIRED"
+  },
+  "policies": {
+    "onlyHsRevision": "HS22",
+    "compareOnlyNativeYears": [
+      2022,
+      2023,
+      2024
+    ],
+    "noRevisionStringMatchingAcrossHsEditions": true,
+    "hsCodeFormat": "six-character string; preserve leading zeros",
+    "rawResourceIdentityOnly": true,
+    "processedOutputsAreNotRawResourceMappings": true,
+    "onlyExactMappingsEligibleForFuturePartnerSharePreparation": true,
+    "noPartnerProfilesCreated": true,
+    "partnerProfileReady": false,
+    "allMappingsRequireOfficialCountryCodeCrosswalk": true,
+    "externalPartnersRemainExternal": true,
+    "unknownOrUnmappedMustNotBecomeZero": true,
+    "noGameQuantitiesOrPrices": true
+  },
+  "mappingStatusValues": [
+    "MAPPED_EXACT",
+    "MAPPED_PARTIAL",
+    "SHARED_AMBIGUOUS",
+    "NOT_MAPPED"
+  ],
+  "resources": {
+    "aragonite": {
+      "status": "NOT_MAPPED",
+      "codes": [],
+      "note": "No distinct HS22 six-digit identity was verified; generic sand/stone codes would mix unrelated minerals.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "basalt": {
+      "status": "NOT_MAPPED",
+      "codes": [],
+      "note": "Building-stone and aggregate codes are broader than basalt and cannot isolate this raw resource.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "bauxite": {
+      "status": "MAPPED_PARTIAL",
+      "codes": [
+        "260600"
+      ],
+      "note": "HS22 code covers aluminium ores and concentrates, not bauxite alone.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "boron": {
+      "status": "MAPPED_PARTIAL",
+      "codes": [
+        "252800"
+      ],
+      "note": "Natural borates are covered, but the code also includes related borates and boric acid.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "chromite": {
+      "status": "MAPPED_PARTIAL",
+      "codes": [
+        "261000"
+      ],
+      "note": "The product label is chromium ores and concentrates; it does not identify chromite alone.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "coal": {
+      "status": "MAPPED_PARTIAL",
+      "codes": [
+        "270111",
+        "270112",
+        "270119",
+        "270210",
+        "270220"
+      ],
+      "note": "The selected codes cover anthracite, bituminous coal, other coal and lignite; mapping is not a one-code identity.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "cobalt": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "260500"
+      ],
+      "note": "HS22 product is cobalt ores and concentrates.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "construction_aggregate": {
+      "status": "MAPPED_PARTIAL",
+      "codes": [
+        "251710"
+      ],
+      "note": "The product is pebbles, gravel and broken/crushed stone commonly used as concrete aggregate or road/rail ballast; other aggregate forms are not identified.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "copper": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "260300"
+      ],
+      "note": "HS22 product is copper ores and concentrates.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "coral_aggregate": {
+      "status": "NOT_MAPPED",
+      "codes": [],
+      "note": "Generic aggregate classifications do not isolate coral-derived aggregate.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "crude_oil": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "270900"
+      ],
+      "note": "HS22 product is crude petroleum oils and oils obtained from bituminous minerals.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "diamond": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "710210",
+        "710221",
+        "710231"
+      ],
+      "note": "The three HS22 codes cover unsorted, industrial unworked and non-industrial unworked diamonds; worked or mounted diamonds are excluded.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "diatomite": {
+      "status": "MAPPED_PARTIAL",
+      "codes": [
+        "251200"
+      ],
+      "note": "HS22 product includes diatomite but also other siliceous fossil meals and similar siliceous earths.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "dolomite": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "251810"
+      ],
+      "note": "HS22 product is natural dolomite not calcined or sintered.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "gold": {
+      "status": "SHARED_AMBIGUOUS",
+      "codes": [
+        "261690"
+      ],
+      "note": "The HS22 code aggregates precious-metal ores other than silver and cannot isolate gold from other precious metals.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "granite": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "251611",
+        "251612"
+      ],
+      "note": "HS22 products identify granite, crude/roughly trimmed and cut into blocks/slabs.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "graphite": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "250410",
+        "250490"
+      ],
+      "note": "HS22 products identify natural graphite in powder/flakes and other natural forms.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "gypsum": {
+      "status": "MAPPED_PARTIAL",
+      "codes": [
+        "252010"
+      ],
+      "note": "HS22 code 252010 covers gypsum and anhydrite; it cannot isolate gypsum-only bilateral flows.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "ilmenite": {
+      "status": "SHARED_AMBIGUOUS",
+      "codes": [
+        "261400"
+      ],
+      "note": "HS22 titanium ores and concentrates do not distinguish ilmenite from rutile.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "iron_ore": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "260111",
+        "260112"
+      ],
+      "note": "HS22 products identify non-agglomerated and agglomerated iron ores and concentrates.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "limestone": {
+      "status": "MAPPED_PARTIAL",
+      "codes": [
+        "252100"
+      ],
+      "note": "HS22 product covers limestone flux and other calcareous stone of a kind used for lime or cement, not every limestone use.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "lithium": {
+      "status": "NOT_MAPPED",
+      "codes": [],
+      "note": "Lithium carbonate (283691) is a processed compound, not the raw lithium resource identity; no verified distinct raw-ore HS22 code is used.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "magnesite": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "251910"
+      ],
+      "note": "HS22 product is natural magnesium carbonate (magnesite).",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "manganese": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "260200"
+      ],
+      "note": "HS22 product is manganese ores and concentrates.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "marble": {
+      "status": "MAPPED_PARTIAL",
+      "codes": [
+        "251511",
+        "251512"
+      ],
+      "note": "The HS22 products include marble and travertine in rough or cut block form; the code does not isolate marble from travertine.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "natural_gas": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "271111",
+        "271121"
+      ],
+      "note": "HS22 products identify liquefied natural gas and natural gas in gaseous state.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "nickel": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "260400"
+      ],
+      "note": "HS22 product is nickel ores and concentrates.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "niobium": {
+      "status": "SHARED_AMBIGUOUS",
+      "codes": [
+        "261590"
+      ],
+      "note": "HS22 product combines niobium, tantalum and vanadium ores and concentrates.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "oil_shale": {
+      "status": "SHARED_AMBIGUOUS",
+      "codes": [
+        "271410"
+      ],
+      "note": "HS22 product combines bituminous shale, oil shale and tar sands; it cannot isolate oil shale.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "phosphate": {
+      "status": "MAPPED_PARTIAL",
+      "codes": [
+        "251010",
+        "251020"
+      ],
+      "note": "HS22 products cover unground and ground natural calcium/aluminium phosphates and phosphatic chalk.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "platinum": {
+      "status": "SHARED_AMBIGUOUS",
+      "codes": [
+        "261690"
+      ],
+      "note": "The HS22 code aggregates precious-metal ores other than silver and cannot isolate platinum-group ore.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "potash": {
+      "status": "NOT_MAPPED",
+      "codes": [],
+      "note": "Potassium chloride fertilizer (310420) is a processed product and is not substituted for raw potash.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "rare_earth": {
+      "status": "NOT_MAPPED",
+      "codes": [],
+      "note": "Rare-earth metals and compounds (for example 280530 or 284690) are not raw rare-earth ore; no distinct raw identity is accepted.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "ruby": {
+      "status": "SHARED_AMBIGUOUS",
+      "codes": [
+        "710310"
+      ],
+      "note": "HS22 product combines many precious and semi-precious stones and does not isolate ruby.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "rutile": {
+      "status": "SHARED_AMBIGUOUS",
+      "codes": [
+        "261400"
+      ],
+      "note": "HS22 titanium ores and concentrates do not distinguish rutile from ilmenite.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "salt": {
+      "status": "MAPPED_PARTIAL",
+      "codes": [
+        "250100"
+      ],
+      "note": "HS22 product aggregates salt, table salt, denatured salt, sodium chloride and sea water.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
+    },
+    "silver": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "261610"
+      ],
+      "note": "HS22 product is silver ores and concentrates.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "tin": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "260900"
+      ],
+      "note": "HS22 product is tin ores and concentrates.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "tungsten": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "261100"
+      ],
+      "note": "HS22 product is tungsten ores and concentrates.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "uranium": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "261210"
+      ],
+      "note": "HS22 product is uranium ores and concentrates.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    },
+    "zinc": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "260800"
+      ],
+      "note": "HS22 product is zinc ores and concentrates.",
+      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+    }
+  }
+}

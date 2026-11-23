@@ -9,6 +9,14 @@
   var HANDLER_ID = 'omega.autonomous-national-trade-decision.country-runtime';
   var COMMAND_TYPE = 'OMEGA_AUTONOMOUS_NATIONAL_TRADE_CHECKPOINT';
   var RULES_URL = './omega_autonomous_national_trade_decision_rules_v1.json';
+  var COMMERCIAL_BASELINE_INDEX_URL = './omega_global_commercial_baseline_v1.json';
+  var commercialBaselineIndex = null;
+  var commercialBaselineIndexPromise = null;
+  var commercialBaselineStatus = 'NOT_LOADED';
+  var commercialBaselineError = null;
+  var commercialBaselineShards = Object.create(null);
+  var commercialBaselineShardPromises = Object.create(null);
+  var commercialBaselineShardErrors = 0;
   var unregisterScheduler = null;
   var rulesPromise = null;
   var activeRules = null;
@@ -90,6 +98,121 @@
     var wanted = token(key), keys = Object.keys(map);
     for (var i = 0; i < keys.length; i++) if (token(keys[i]) === wanted) return { found: true, value: map[keys[i]] };
     return { found: false, value: null };
+  }
+
+  function getCommercialBaselineIndex() {
+    if (!commercialBaselineIndex && g.__OmegaGlobalCommercialBaselineIndex &&
+        g.__OmegaGlobalCommercialBaselineIndex.datasetId === 'OMEGA_GLOBAL_COMMERCIAL_BASELINE_V1') {
+      commercialBaselineIndex = g.__OmegaGlobalCommercialBaselineIndex;
+      commercialBaselineStatus = 'READY';
+    }
+    return commercialBaselineIndex;
+  }
+  function loadCommercialBaselineIndex() {
+    if (getCommercialBaselineIndex()) return Promise.resolve(commercialBaselineIndex);
+    if (commercialBaselineIndexPromise) return commercialBaselineIndexPromise;
+    if (typeof g.fetch !== 'function') {
+      commercialBaselineStatus = 'UNAVAILABLE';
+      return Promise.resolve(null);
+    }
+    commercialBaselineStatus = 'LOADING';
+    commercialBaselineIndexPromise = g.fetch(COMMERCIAL_BASELINE_INDEX_URL, { cache: 'force-cache' })
+      .then(function (response) {
+        if (!response || !response.ok) throw new Error('GLOBAL_COMMERCIAL_BASELINE_INDEX_NOT_AVAILABLE');
+        return response.json();
+      }).then(function (data) {
+        if (!data || data.datasetId !== 'OMEGA_GLOBAL_COMMERCIAL_BASELINE_V1' ||
+            data.countryCount !== 197 || data.commodityCount !== 185 ||
+            !data.countries || !data.commodityToShard) {
+          throw new Error('GLOBAL_COMMERCIAL_BASELINE_INDEX_INVALID');
+        }
+        commercialBaselineIndex = data;
+        commercialBaselineStatus = 'READY';
+        commercialBaselineError = null;
+        return data;
+      }).catch(function (error) {
+        commercialBaselineStatus = 'UNAVAILABLE';
+        commercialBaselineError = String(error && error.message || error);
+        commercialBaselineIndexPromise = null;
+        return null;
+      });
+    return commercialBaselineIndexPromise;
+  }
+  function commercialPartnerRows(countryId) {
+    var index = getCommercialBaselineIndex();
+    var row = index && mapEntry(index.countries, canonical(countryId));
+    var value = row && row.found ? row.value : null;
+    return value && Array.isArray(value.majorPartners) ? value.majorPartners : [];
+  }
+  function commercialPartnerScore(countryId, partnerId) {
+    var rows = commercialPartnerRows(countryId), partner = canonical(partnerId);
+    for (var i = 0; i < rows.length; i++) {
+      if (canonical(rows[i] && rows[i][0]) !== partner) continue;
+      var share = finite(rows[i][1]);
+      if (share === null || share <= 0) return null;
+      return clamp(0.52 + clamp(share / 100, 0, 1) * 0.4, 0, 0.92);
+    }
+    return null;
+  }
+  function requestCommercialBaselineShard(resourceId) {
+    var index = getCommercialBaselineIndex();
+    if (!index) {
+      loadCommercialBaselineIndex();
+      return null;
+    }
+    var resourceKey = token(resourceId);
+    var shardEntry = mapEntry(index.commodityToShard, resourceKey);
+    var shardId = shardEntry.found ? String(shardEntry.value) : '';
+    if (!shardId) return null;
+    if (commercialBaselineShards[shardId]) return commercialBaselineShards[shardId];
+    var injected = g.__OmegaGlobalCommercialBaselineShards;
+    if (injected && injected[shardId] &&
+        injected[shardId].datasetId === 'OMEGA_GLOBAL_COMMERCIAL_BASELINE_V1') {
+      commercialBaselineShards[shardId] = injected[shardId];
+      return commercialBaselineShards[shardId];
+    }
+    if (!commercialBaselineShardPromises[shardId] && typeof g.fetch === 'function') {
+      var descriptor = (index.shards || []).find(function (row) { return String(row.id) === shardId; });
+      if (descriptor && descriptor.file) {
+        commercialBaselineShardPromises[shardId] = g.fetch('./' + descriptor.file, { cache: 'force-cache' })
+          .then(function (response) {
+            if (!response || !response.ok) throw new Error('GLOBAL_COMMERCIAL_BASELINE_SHARD_NOT_AVAILABLE:' + shardId);
+            return response.json();
+          }).then(function (data) {
+            if (!data || data.datasetId !== 'OMEGA_GLOBAL_COMMERCIAL_BASELINE_V1' ||
+                String(data.shardId) !== shardId || !data.commodities) {
+              throw new Error('GLOBAL_COMMERCIAL_BASELINE_SHARD_INVALID:' + shardId);
+            }
+            commercialBaselineShards[shardId] = data;
+            delete commercialBaselineShardPromises[shardId];
+            return data;
+          }).catch(function (error) {
+            commercialBaselineShardErrors++;
+            commercialBaselineError = String(error && error.message || error);
+            delete commercialBaselineShardPromises[shardId];
+            return null;
+          });
+      }
+    }
+    return null;
+  }
+  function commercialProductProfile(countryId, resourceId) {
+    var shard = requestCommercialBaselineShard(resourceId);
+    if (!shard) return null;
+    var product = mapEntry(shard.commodities, token(resourceId));
+    var country = product.found && product.value && mapEntry(product.value.countries, canonical(countryId));
+    return country && country.found ? country.value : null;
+  }
+  function commercialShare(rows, partnerId) {
+    var partner = canonical(partnerId);
+    if (!Array.isArray(rows)) return 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (canonical(rows[i] && rows[i][0]) === partner) {
+        var share = finite(rows[i][1]);
+        return share === null ? 0 : clamp(share, 0, 100);
+      }
+    }
+    return 0;
   }
   function rulesValid(input) {
     if (!input || input.schemaVersion !== VERSION || input.enabled !== true) return false;
@@ -278,7 +401,12 @@
     var own = mapEntry(ownForeign.relations, partnerId);
     var remote = mapEntry(partnerForeign.relations, countryId);
     var row = own.found ? own.value : remote.value;
-    if (!row || typeof row !== 'object') return { status: 'UNKNOWN', relation: null, score: null };
+    var baselineScore = commercialPartnerScore(countryId, partnerId);
+    if (!row || typeof row !== 'object') {
+      return baselineScore === null
+        ? { status: 'UNKNOWN', relation: null, score: null }
+        : { status: 'KNOWN', relation: null, score: baselineScore, source: 'GLOBAL_COMMERCIAL_BASELINE' };
+    }
     if (row.war_state === true || row.sanctions === true || row.tradeEmbargo === true)
       return { status: 'BLOCKED', relation: row, score: 0 };
     var trade = globalTrade(), score = null;
@@ -290,11 +418,12 @@
       }).filter(function (n) { return n !== null; });
       if (values.length) score = values.reduce(function (sum, n) { return sum + n; }, 0) / values.length;
     }
+    if (score === null && baselineScore !== null) score = baselineScore;
     if (score === null) return { status: 'UNKNOWN', relation: row, score: null };
     score = clamp(score > 1 ? score / 100 : score, 0, 1);
     if (score < activeRules.policy.minimumRelationshipScore)
       return { status: 'BLOCKED', relation: row, score: score };
-    return { status: 'KNOWN', relation: row, score: score };
+    return { status: 'KNOWN', relation: row, score: score, source: baselineScore !== null ? 'DIPLOMACY_AND_COMMERCIAL_BASELINE' : 'DIPLOMACY' };
   }
   function hasOpenProposalOrContract(countryId, partnerId, resourceId) {
     var api = bilateral();
@@ -400,9 +529,12 @@
     var candidates = [], policy = activeRules.policy;
     var foreign = bucket(countryId, 'foreign') || {};
     var relationMap = foreign.relations && typeof foreign.relations === 'object' ? foreign.relations : {};
-    var partnerIds = Object.keys(relationMap).map(canonical).filter(function (partner) {
-      return /^[A-Z]{3}$/.test(partner) && partner !== countryId;
-    }).map(function (partner) {
+    var commercialCandidates = commercialPartnerRows(countryId).map(function (row) { return canonical(row && row[0]); });
+    var candidateMap = Object.create(null);
+    Object.keys(relationMap).map(canonical).concat(commercialCandidates).forEach(function (partner) {
+      if (/^[A-Z]{3}$/.test(partner) && partner !== countryId) candidateMap[partner] = true;
+    });
+    var partnerIds = Object.keys(candidateMap).map(function (partner) {
       return { countryId: partner, relation: relationEvidence(countryId, partner) };
     }).filter(function (item) { return item.relation.status === 'KNOWN'; })
       .sort(function (a, b) { return b.relation.score - a.relation.score || a.countryId.localeCompare(b.countryId); })
@@ -440,6 +572,7 @@
       importSupplierScanUsed = true;
       runtimeStats.supplierScans++;
       var purchaseQty = Math.min(importGap, daily * policy.maxPurchaseDays);
+      var productProfile = commercialProductProfile(countryId, rid);
       var suppliers = [];
       try { suppliers = marketApi.suppliers(rid, 0, countryId) || []; } catch (_) {}
       var rankedSuppliers = [];
@@ -461,7 +594,7 @@
           unitPrice: price, expectedBuyerUnitCost: buyerCost, priceModel: 'MARKET_LINKED',
           relationshipScore: observedPartner.relation.score, reliability: reliability, source: 'NATIONAL_DEMAND_RUNTIME',
           priorityScore: urgency * 100 + observedPartner.relation.score * 10 +
-            (reliability === null ? 0 : reliability * 5),
+            (reliability === null ? 0 : reliability * 5) + commercialShare(productProfile && productProfile.supplierPartners, partner) * 0.12,
           evidence: { demand: 'KNOWN', spendableStock: 'KNOWN', pendingInbound: 'KNOWN',
             sellerSupply: 'GLOBAL_MARKET_SUPPLIERS', relationship: 'KNOWN',
             price: 'CLEARED_MARKET_PRICE', fx: 'KNOWN' }
@@ -483,6 +616,7 @@
       if (!rid || daily === null || daily <= 0 || spendable === null || unresolved === null || unresolved > 0) return;
       var exportable = Math.max(0, spendable - daily * policy.exportReserveDays);
       if (exportable <= 1e-8) return;
+      var productProfile = commercialProductProfile(countryId, rid);
       partnerIds.forEach(function (partnerRow) {
         var partner = partnerRow.countryId;
         if (hasOpenProposalOrContract(countryId, partner, rid) || hasPendingImport(partner, countryId, rid)) return;
@@ -515,7 +649,8 @@
           direction: 'EXPORT', targetCountryId: partner, resourceId: rid, quantityPerDelivery: qty,
           unitPrice: price, expectedSellerValue: sellerValue, priceModel: 'MARKET_LINKED',
           relationshipScore: partnerRow.relation.score, reliability: reliability, source: 'PARTNER_DEMAND_RUNTIME',
-          priorityScore: urgency * 100 + partnerRow.relation.score * 10 + (reliability === null ? 0 : reliability * 5),
+          priorityScore: urgency * 100 + partnerRow.relation.score * 10 + (reliability === null ? 0 : reliability * 5) +
+            commercialShare(productProfile && productProfile.buyerMarkets, partner) * 0.12,
           evidence: { exportableSurplus: 'KNOWN', partnerDemand: 'KNOWN', partnerInbound: 'KNOWN',
             relationship: 'KNOWN', price: 'CLEARED_MARKET_PRICE', fx: 'KNOWN' }
         });
@@ -865,6 +1000,9 @@
     var scheduler = g.Omega && g.Omega.WorldSimulationScheduler || g.OmegaWorldSimulationScheduler;
     return {
       version: VERSION, rulesStatus: rulesStatus, rulesEnabled: !!activeRules,
+      commercialBaselineStatus: getCommercialBaselineIndex() ? 'READY' : commercialBaselineStatus,
+      commercialBaselineLoadedShardCount: Object.keys(commercialBaselineShards).length,
+      commercialBaselineShardLoadErrors: commercialBaselineShardErrors,
       rolloutMode: activeRules ? (activeRules.autonomousProposals === true ? 'AUTONOMOUS' : 'READ_ONLY_PLANNER') : 'DISABLED',
       autonomousProposals: activeRules ? activeRules.autonomousProposals === true : false,
       autonomousCounteroffers: activeRules ? activeRules.autonomousCounteroffers === true : false,
@@ -909,6 +1047,7 @@
     return diagnostics();
   }
   function init() {
+    loadCommercialBaselineIndex();
     prepare();
     install();
     if (!g.__omegaAutonomousNationalTradeDecisionHook) {
@@ -924,6 +1063,13 @@
     VERSION: VERSION, HANDLER_ID: HANDLER_ID,
     prepare: prepare, processCountry: processCountry, diagnostics: diagnostics,
     getDecisionState: function (countryId) { return currentCheckpoint(canonical(countryId)); },
+    getCommercialBaselineIndex: getCommercialBaselineIndex,
+    getCommercialBaselineProfile: commercialProductProfile,
+    getCommercialBaselineDiagnostics: function () {
+      return { status: getCommercialBaselineIndex() ? 'READY' : commercialBaselineStatus,
+        loadedShardCount: Object.keys(commercialBaselineShards).length,
+        shardLoadErrors: commercialBaselineShardErrors, lastError: commercialBaselineError };
+    },
     getDecisionPlan: function (countryId) {
       var checkpoint = currentCheckpoint(canonical(countryId));
       return { countryId: checkpoint.countryId, phase: checkpoint.phase,
