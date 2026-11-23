@@ -3,9 +3,9 @@
     "schemaVersion": "1.1.0",
     "datasetId": "OMEGA_COUNTRY_SECTOR_PROFILES_V1",
     "title": "OMEGA Country Sector Profiles",
-    "generatedAt": "2026-11-23T15:02:38.258Z",
+    "generatedAt": "2026-11-23T18:43:48.421Z",
     "generatedFrom": "/home/runner/work/world-map-strategy-/world-map-strategy-/country_general_data_registry_v1.json",
-    "sourceRegistryGeneratedAt": "2026-11-23T15:02:27.600Z",
+    "sourceRegistryGeneratedAt": "2026-11-23T18:41:30.462Z",
     "countryAndTerritoryCount": 249,
     "uniqueIso3Count": 249,
     "duplicateIdentityCount": 0,
@@ -14,12 +14,7 @@
       "requested": true,
       "worldBankIndicatorsLoaded": true,
       "worldBankMetadataLoaded": true,
-      "worldBankIndicatorErrors": [
-        {
-          "indicator": "GC.XPN.TOTL.GD.ZS",
-          "error": "Error: HTTP_400 from https://api.worldbank.org/v2/country/all/indicator/GC.XPN.TOTL.GD.ZS?format=json&mrnev=1&per_page=20000"
-        }
-      ],
+      "worldBankIndicatorErrors": [],
       "worldBankMetadataError": null,
       "undpHdi": {
         "loaded": true,
