@@ -48,55 +48,50 @@ All 77 current usage classes have an explicit mapping. The fallback remains mand
 
 All 41 existing raw-resource IDs receive a descriptive role using the default industrial-intermediate role plus explicit energy, construction and precious/luxury overrides. This does **not** mean every resource is consumed by households.
 
-The registry marks population-demand eligibility as `NOT_ESTABLISHED_BY_ROLE_METADATA` for every raw resource. The presence of a calibrated per-population simulation coefficient is not itself evidence that a commodity is directly consumed by households. Existing coefficients, demand ledgers, and the current National Demand overlap authority are untouched.
+The registry marks population-demand eligibility as `NOT_ESTABLISHED_BY_ROLE_METADATA` for every raw resource. The presence of a calibrated per-population coefficient is not itself evidence that a commodity is directly consumed by households. Existing coefficients, demand ledgers, and the current National Demand overlap authority are untouched.
 
 ## Factory outputs
 
 All 75 current downstream recipe output identifiers resolve to one of the 185 existing product-use catalog identities after case normalization. No alias, new product ID, recipe, factory category or quantity is introduced.
 
-## Historical trade-data boundary
+## Generated global commercial baseline
 
-A separate `omega_commercial_hs22_resource_mapping_v1.json` now records a conservative HS22 code audit for all 41 existing raw-resource identities:
+The game-wide commercial dataset is built from existing OMEGA country, factory, resource and site records. It does not require an external trade archive.
 
-| HS22 mapping status | Resource identities |
-|---|---:|
-| MAPPED_EXACT | 17 |
-| MAPPED_PARTIAL | 11 |
-| SHARED_AMBIGUOUS | 7 |
-| NOT_MAPPED | 6 |
+| Existing source | Used for |
+|---|---|
+| `country_factory_starting_baseline_v1.json` | 197 country profiles, starting factory allocations, economic sectors and industrial specializations |
+| `resource_site_logistics_routes_v1.json` and its six route shards | 561 existing site/route records across 193 countries and 41 raw-resource identities |
+| `resource_industrial_catalog_v1.json` | 185 existing product IDs, 21 factory categories, 42 processing rules and 22 recipes |
+| `resource_economy_rules.json` | 41 raw-resource profiles and their existing units/demand inputs |
 
-Only exact code identities are candidates for later product-specific partner analysis. Partial, shared and unmapped resources remain ineligible. Even an exact HS22 code is **not** a supplier relationship: the registry deliberately marks every partner profile as not ready until bilateral product flows and the official numeric-country-to-ISO3 crosswalk are available.
+The generated dataset contains **36,445 country-product profiles** (197 countries × 185 products): 41 raw resources and 144 existing factory/processed products. No product ID, resource ID or factory category is added.
 
-The official source is the [CEPII BACI dataset](https://www.cepii.fr/DATA_DOWNLOAD/baci/doc/baci_webpage.html), release 202601, HS22. It covers native HS22 trade years 2022–2024 and is distributed under the Etalab Open Licence 2.0. Selected product labels were cross-checked against the [HS22 product metadata endpoint](https://tradeweave.org/api/v1/product/260300/trade?revision=HS22&year=2023&limit=1); that endpoint's global exporter rows were **not** used as bilateral supplier evidence.
+Files:
 
-The raw BACI bilateral archive and its country-code crosswalk were not materialized in this execution. A product's global exporter ranking and a country's aggregate trade-partner ranking are not a bilateral product flow. They must not be joined to manufacture a supplier relationship. Therefore product-specific partner shares remain `NOT_MAPPED`; no partner shares, trade quantities, values, opening contracts, inventory or shipments are generated in this phase.
+- `omega_global_commercial_baseline_v1.json` — country partner index, commodity-to-shard map and overall country partner rankings
+- `omega_global_commercial_baseline_v1_part_01.json` through `part_09.json` — all 185 product profiles, split into nine loadable shards
 
-## Guarded historical partner-profile importer
+Each country-product profile contains:
+- commercial position: `IMPORTER`, `EXPORTER` or `BALANCED`
+- import dependency and export potential percentages
+- domestic supply and domestic demand indices
+- up to three supplier countries and three buyer markets, each with relative shares
 
-The additive importer `scripts/build_omega_commercial_partner_profiles_v1.mjs` is a manual, read-only ETL tool. It requires an externally downloaded and extracted CEPII BACI `HS22 V202601` folder containing:
+Supplier candidates need commodity supply and exportable surplus. Buyer candidates need a current demand gap. Country-wide major partners are weighted from the product-level partner network. The same country can be an exporter of one product and an importer of another.
 
-- `BACI_HS22_Y2022_V202601.csv`
-- `BACI_HS22_Y2023_V202601.csv`
-- `BACI_HS22_Y2024_V202601.csv`
-- `country_codes_V202601.csv`
-- `product_codes_HS22_V202601.csv`
+## NPC trade integration
 
-Example invocation (the output path must not already exist):
+The existing Autonomous National Trade planner now reads the country partner network and loads commodity shards on demand. Commercial partners expand the NPC candidate pool when no explicit diplomacy row exists; product-level supplier/buyer shares influence candidate ranking.
 
-```bash
-node scripts/build_omega_commercial_partner_profiles_v1.mjs \
-  --data-dir /path/to/extracted/BACI_HS22_V202601 \
-  --output /path/to/new/omega_commercial_partner_profiles_v1.json
-```
+The commercial baseline does **not** create stock, inventory, prices, demand, import orders, contracts, shipments, cash or completed transactions. Every actual trade still requires the existing Global Market supplier/stock record, National Demand evidence, executable market price, settlement/FX validation, diplomacy and sanctions checks, and bilateral proposal/settlement authorities. Existing ledgers and save formats remain unchanged.
 
-The importer validates the release, HS revision, year and product dictionary; preserves unknown partner-code share; treats non-core countries as external partners; aggregates 2022–2023 value weights into normalized relative shares; keeps 2024 separate and provisional; and emits every 197-country × 41-resource profile slot. Partial, shared, ambiguous and unmapped resource IDs are explicitly `NOT_ELIGIBLE_MAPPING_STATUS`; no-positive-flow records remain unknown rather than zero.
-
-BACI's `v` field is used only as an internal share weight. Absolute values, `q` quantities and prices are not serialized. The importer does not create a runtime agreement, import order, shipment, inventory, cash movement or NPC action. It writes only to the new file specified on the command line and refuses to overwrite an existing output file.
-
-The official archive could not be materialized in this execution environment (DNS/network access to the CEPII host was unavailable). Therefore **no real historical partner-profile JSON has been generated or committed**. Synthetic fixture tests validate the ETL contract only; they are not a substitute for the real archive.
+The offline shell cache includes the index and all nine shards. The core cache namespace was advanced to `v147` so existing installations refresh these assets on update.
 
 ## Validation
 
-Run `npm run test:commercial-baseline`. The test asserts the 197/41/21/22/185/75 roster invariants, explicit usage-class coverage, fail-closed fallback, and case-only joins from existing recipe outputs to existing product-use identities.
+- `npm run test:commercial-baseline` validates the 197/41/21/22/185/75 source identities, all 36,445 country-product profiles, partner-share totals, no self-partners, supply/demand evidence thresholds and offline asset coverage.
+- `npm run test:autonomous-national-trade` verifies NPC candidate ranking with baseline partners while preserving live market and settlement gates.
+- Existing Phase 6 shipment-evidence and save-provenance tests remain in the commercial-baseline workflow.
 
-**Gameplay effect:** none. **Save effect:** none. **Trade/finance effect:** none.
+**Gameplay:** adds country/product partner preferences to NPC trade planning. **Inventory/finance/save effect:** none until existing trade authorities complete a real in-game transaction.
