@@ -12,7 +12,7 @@
   gap: 3px !important;
   width: auto !important;
   max-width: none !important;
-  max-height: min(148px, 32dvh) !important;
+  max-height: 148px !important;
   margin: 0 !important;
   padding: 5px 7px !important;
   overflow-x: hidden !important;
@@ -51,7 +51,7 @@
   overflow-y: hidden !important;
 }
 @media (max-height: 480px) {
-  #omega-global-time-hud { max-height: 30dvh !important; }
+  #omega-global-time-hud { max-height: 30vh !important; }
 }
 #omega-global-time-hud .ogth-manual-controls {
   display: flex;
