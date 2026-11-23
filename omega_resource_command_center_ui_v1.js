@@ -2401,6 +2401,7 @@
       return { ok:false, code:'MARKET_DASHBOARD_ROOT_REQUIRED' };
     }
     const selectedCountry = activeCountry(country || options.countryId || countryId);
+    selectedMarketView = options.initialView === 'transactions' ? 'transactions' : 'commodities';
     root.__omegaMarketDashboardOptions = {
       countryId: selectedCountry,
       onClose: typeof options.onClose === 'function' ? options.onClose : null
