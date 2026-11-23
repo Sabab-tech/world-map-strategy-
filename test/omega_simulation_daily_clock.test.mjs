@@ -349,7 +349,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(index, /data-omega-action="advance-days"/);
   assert.match(index, /data-omega-action="cancel-advance"/);
   assert.match(index, /data-omega-action="diagnostics"/);
-  assert.match(index, /data-omega-days[^>]*max="365"/);
+  assert.match(index, /max="365"[^>]*data-omega-days/);
   assert.match(index, /omega_manual_time_controls_v1\.css/);
   assert.match(lifecycle, /function beginManualAdvance\(turns\)/);
   assert.match(lifecycle, /sim\.advance\(count, \{ yieldEvery: 1 \}\)/);
