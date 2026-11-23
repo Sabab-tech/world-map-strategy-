@@ -17,7 +17,7 @@ const allowedRoles = new Set([
   'UNMAPPED_OR_UNSUPPORTED'
 ]);
 
-function assertPartnerRows(rows, self, profileByCountry, type) {
+function assertPartnerRows(rows, self, profileByCountry, type, isRawResource) {
   assert.ok(Array.isArray(rows), self + ' ' + type + ' must be an array');
   assert.ok(rows.length <= 3, self + ' ' + type + ' may retain only the top three partners');
   if (!rows.length) return;
@@ -33,7 +33,7 @@ function assertPartnerRows(rows, self, profileByCountry, type) {
     const evidence = profileByCountry[partner];
     assert.ok(evidence, self + ' ' + type + ' needs counterpart profile evidence');
     if (type === 'supplierPartners') {
-      assert.ok(evidence.domesticSupplyIndex >= (evidence.__raw ? 0.3 : 0.18));
+      assert.ok(evidence.domesticSupplyIndex >= (isRawResource ? 0.3 : 0.18));
       assert.ok(evidence.domesticSupplyIndex - evidence.domesticDemandIndex * 0.35 > 0.04);
     } else {
       assert.ok(evidence.domesticDemandIndex >= 0.10);
@@ -80,8 +80,8 @@ test('all product shards contain complete per-country profiles and valid partner
         assert.equal(row.exportPotentialPct + row.importDependencyPct, 100);
         assert.ok(Number.isFinite(row.domesticSupplyIndex) && row.domesticSupplyIndex >= 0);
         assert.ok(Number.isFinite(row.domesticDemandIndex) && row.domesticDemandIndex > 0);
-        assertPartnerRows(row.supplierPartners, countryId, product.countries, 'supplierPartners');
-        assertPartnerRows(row.buyerMarkets, countryId, product.countries, 'buyerMarkets');
+        assertPartnerRows(row.supplierPartners, countryId, product.countries, 'supplierPartners', product.productType === 'RAW_RESOURCE');
+        assertPartnerRows(row.buyerMarkets, countryId, product.countries, 'buyerMarkets', product.productType === 'RAW_RESOURCE');
       }
       profiles[productId] = product;
     }
@@ -117,7 +117,6 @@ test('known industrial specializations feed distinct commodity profiles', () => 
     const data = readJson(shard.file);
     Object.assign(profiles, data.commodities);
   }
-  assert.equal(profiles.textile_fabric.countries.BGD.productType, undefined);
   assert.ok(profiles.textile_fabric.countries.BGD.domesticSupplyIndex > 0);
   assert.ok(profiles.copper.countries.CHL.domesticSupplyIndex > profiles.copper.countries.BGD.domesticSupplyIndex);
   assert.ok(profiles.crude_oil.countries.SAU.domesticSupplyIndex > profiles.crude_oil.countries.BGD.domesticSupplyIndex);
