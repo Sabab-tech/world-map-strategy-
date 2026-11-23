@@ -185,10 +185,11 @@
     }
     setText('[data-omega-game-status]', status);
     var manualBusy = manualCommandInFlight || !!(sim && sim.manualAdvanceInProgress);
+    var turnBusy = !!(sim && (sim.stepInProgress || sim.frameInProgress));
     var countryReady = !!(sim && playerCountry(sim));
     var manualButtons = g.document.querySelectorAll('[data-omega-action="step-day"], [data-omega-action="advance-days"]');
     for (var m = 0; m < manualButtons.length; m++) {
-      manualButtons[m].disabled = !countryReady || manualBusy || status === 'ERROR';
+      manualButtons[m].disabled = !countryReady || manualBusy || turnBusy || status === 'ERROR';
     }
     var cancelButton = g.document.querySelector('[data-omega-action="cancel-advance"]');
     if (cancelButton) cancelButton.disabled = !manualBusy;
