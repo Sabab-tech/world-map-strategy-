@@ -184,7 +184,7 @@
       legacyButtons[j].classList.toggle('active', running ? legacySpeed === effectiveSpeed : legacySpeed === 0);
     }
     setText('[data-omega-game-status]', status);
-    var manualBusy = manualCommandInFlight || !!(sim && (sim.manualAdvanceInProgress || sim.stepInProgress || sim.frameInProgress));
+    var manualBusy = manualCommandInFlight || !!(sim && sim.manualAdvanceInProgress);
     var countryReady = !!(sim && playerCountry(sim));
     var manualButtons = g.document.querySelectorAll('[data-omega-action="step-day"], [data-omega-action="advance-days"]');
     for (var m = 0; m < manualButtons.length; m++) {
