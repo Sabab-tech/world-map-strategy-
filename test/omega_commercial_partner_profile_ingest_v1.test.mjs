@@ -119,7 +119,7 @@ test('BACI 2022-2023 shares aggregate value weights without retaining absolute t
     'profile output must not retain absolute trade values, quantities, prices or amounts');
   assert.equal(output.policies.noPartnerValueOrQuantityRetained, true);
   assert.equal(output.policies.noGameStateMutation, true);
-  assert.equal(output.policies.2024IsProvisionalOnly, true);
+  assert.equal(output.policies['2024IsProvisionalOnly'], true);
 });
 
 test('a missing positive flow is unknown rather than a zero partner share', async t => {
