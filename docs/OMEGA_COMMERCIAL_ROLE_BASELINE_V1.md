@@ -71,6 +71,30 @@ The official source is the [CEPII BACI dataset](https://www.cepii.fr/DATA_DOWNLO
 
 The raw BACI bilateral archive and its country-code crosswalk were not materialized in this execution. A product's global exporter ranking and a country's aggregate trade-partner ranking are not a bilateral product flow. They must not be joined to manufacture a supplier relationship. Therefore product-specific partner shares remain `NOT_MAPPED`; no partner shares, trade quantities, values, opening contracts, inventory or shipments are generated in this phase.
 
+## Guarded historical partner-profile importer
+
+The additive importer `scripts/build_omega_commercial_partner_profiles_v1.mjs` is a manual, read-only ETL tool. It requires an externally downloaded and extracted CEPII BACI `HS22 V202601` folder containing:
+
+- `BACI_HS22_Y2022_V202601.csv`
+- `BACI_HS22_Y2023_V202601.csv`
+- `BACI_HS22_Y2024_V202601.csv`
+- `country_codes_V202601.csv`
+- `product_codes_HS22_V202601.csv`
+
+Example invocation (the output path must not already exist):
+
+```bash
+node scripts/build_omega_commercial_partner_profiles_v1.mjs \
+  --data-dir /path/to/extracted/BACI_HS22_V202601 \
+  --output /path/to/new/omega_commercial_partner_profiles_v1.json
+```
+
+The importer validates the release, HS revision, year and product dictionary; preserves unknown partner-code share; treats non-core countries as external partners; aggregates 2022–2023 value weights into normalized relative shares; keeps 2024 separate and provisional; and emits every 197-country × 41-resource profile slot. Partial, shared, ambiguous and unmapped resource IDs are explicitly `NOT_ELIGIBLE_MAPPING_STATUS`; no-positive-flow records remain unknown rather than zero.
+
+BACI's `v` field is used only as an internal share weight. Absolute values, `q` quantities and prices are not serialized. The importer does not create a runtime agreement, import order, shipment, inventory, cash movement or NPC action. It writes only to the new file specified on the command line and refuses to overwrite an existing output file.
+
+The official archive could not be materialized in this execution environment (DNS/network access to the CEPII host was unavailable). Therefore **no real historical partner-profile JSON has been generated or committed**. Synthetic fixture tests validate the ETL contract only; they are not a substitute for the real archive.
+
 ## Validation
 
 Run `npm run test:commercial-baseline`. The test asserts the 197/41/21/22/185/75 roster invariants, explicit usage-class coverage, fail-closed fallback, and case-only joins from existing recipe outputs to existing product-use identities.
