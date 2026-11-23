@@ -705,11 +705,11 @@
     }
     function inTransit(row) {
       var status = id(row && row.status);
-      if (['ARRIVED', 'BLOCKED', 'FAILED', 'CANCELLED'].indexOf(status) >= 0) return false;
-      if (['SCHEDULED', 'DISPATCHED', 'IN_TRANSIT'].indexOf(status) >= 0) return true;
+      if (['ARRIVED', 'BLOCKED', 'FAILED', 'CANCELLED', 'SCHEDULED'].indexOf(status) >= 0) return false;
+      if (['DISPATCHED', 'IN_TRANSIT'].indexOf(status) >= 0) return true;
       var arrival = id(row && row.arrivalStatus);
-      if (['ARRIVED', 'RECEIVED', 'DELIVERED'].indexOf(arrival) >= 0) return false;
-      return ['PENDING', 'IN_TRANSIT', 'CUSTOMS_CLEARANCE', 'PENDING_ARRIVAL'].indexOf(arrival) >= 0;
+      if (['ARRIVED', 'RECEIVED', 'DELIVERED', 'PENDING'].indexOf(arrival) >= 0) return false;
+      return ['IN_TRANSIT', 'CUSTOMS_CLEARANCE', 'PENDING_ARRIVAL'].indexOf(arrival) >= 0;
     }
     ledger.forEach(function (row) {
       if (!object(row)) { invalidRecordCount++; return; }
@@ -743,16 +743,14 @@
       var transit = inTransit(row);
       if (entries[shipmentId]) {
         if (entries[shipmentId].signature !== signature) {
-          conflicts[shipmentId] = resourceKey;
+          if (!conflicts[shipmentId]) conflicts[shipmentId] = Object.create(null);
+          conflicts[shipmentId][entries[shipmentId].resourceKey] = true;
+          conflicts[shipmentId][resourceKey] = true;
           return;
         }
         // Duplicate snapshots of one shipment are counted once. A terminal
         // lifecycle state wins over an older in-transit duplicate.
         entries[shipmentId].inTransit = entries[shipmentId].inTransit && transit;
-        if (!entries[shipmentId].unit && unit) entries[shipmentId].unit = unit;
-        else if (unit && entries[shipmentId].unit && entries[shipmentId].unit !== unit) {
-          entries[shipmentId].unitConflict = true;
-        }
         return;
       }
       entries[shipmentId] = {
@@ -763,18 +761,19 @@
     });
 
     Object.keys(conflicts).forEach(function (shipmentId) {
-      var key = conflicts[shipmentId], row = byResource[key];
-      if (row) row.conflictingShipmentCount++;
+      Object.keys(conflicts[shipmentId]).forEach(function (key) {
+        var row = byResource[key];
+        if (row) row.conflictingShipmentCount++;
+      });
     });
     Object.keys(entries).forEach(function (shipmentId) {
       var entry = entries[shipmentId], target = byResource[entry.resourceKey];
-      if (!target) return;
-      if (entry.unitConflict) target.unitConflict = true;
+      if (!target || !entry.inTransit) return;
       if (entry.unit) {
         if (target.unit === null) target.unit = entry.unit;
         else if (target.unit !== entry.unit) target.unitConflict = true;
       }
-      if (!entry.inTransit || conflicts[shipmentId]) return;
+      if (conflicts[shipmentId]) return;
       target.knownQuantity += entry.quantity;
       target.shipmentCount++;
       target.shipmentIds.push(entry.shipmentId);
