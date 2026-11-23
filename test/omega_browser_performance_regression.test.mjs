@@ -651,7 +651,7 @@ test('world geometry becomes usable before supporting datasets and resumes witho
   const simulation = read('omega_simulation_runtime.js');
   const driver = read('omega_enterprise_composition_root_v10.js');
   const resourceEconomy = read('omega_resource_economy_runtime_v2.js');
-  assert.ok(simulation.includes('const STEP_MS=15000;') && driver.includes('SIMULATION_FRAME_INTERVAL_MS = 250'),
+  assert.ok(simulation.includes('const STEP_MS=15000;') && driver.includes('SIMULATION_FRAME_INTERVAL_MS = 500'),
     'authoritative turns must advance every fifteen real seconds without polling every second');
   assert.ok(resourceEconomy.includes('function runResourceEconomyTurnParticipant()') &&
     resourceEconomy.includes('g.Game&&g.Game.Map&&g.Game.Map.__omegaMapUiActive===true)return;'),
