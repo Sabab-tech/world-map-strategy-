@@ -353,7 +353,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(index, /omega_manual_time_controls_v1\.css/);
   const manualTimeCss = fs.readFileSync(path.join(root, 'omega_manual_time_controls_v1.css'), 'utf8');
   assert.match(manualTimeCss, /#omega-global-time-hud \{[\s\S]{0,80}position: fixed !important;/);
-  assert.match(manualTimeCss, /z-index: 1000004 !important;/);
+  assert.match(manualTimeCss, /z-index: 2147483646 !important;/);
   assert.match(manualTimeCss, /#top-status-bar\.top-status-bar/);
   assert.match(lifecycle, /function beginManualAdvance\(turns\)/);
   assert.match(lifecycle, /sim\.advance\(count, \{ yieldEvery: 1 \}\)/);
@@ -880,4 +880,10 @@ test('global time controls are moved outside the clipped header and expose an ex
   assert.match(lifecycle, /toggleLabel = running \? 'PAUSE TIME' : status === 'PAUSED' \? 'RESUME TIME'.*'START TIME'/);
   assert.match(hudCss, /#omega-global-time-hud \.ogth-controls button/);
   assert.match(hudCss, /data-omega-action="toggle"/);
+  assert.match(hudCss, /z-index: 2147483646 !important;/,
+    'the body-level time dock must stay above the UI v2 cabinet stacking layer (2147483000)');
+  assert.match(hudCss, /pointer-events: auto !important;/,
+    'the persistent time dock must accept pointer and touch input');
+  assert.match(hudCss, /min-height: 44px !important;/,
+    'the primary time controls must have touch-friendly targets');
 });

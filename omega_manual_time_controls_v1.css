@@ -5,7 +5,9 @@
   right: 6px !important;
   bottom: auto !important;
   left: 6px !important;
-  z-index: 1000004 !important;
+  z-index: 2147483646 !important;
+  pointer-events: auto !important;
+  isolation: isolate !important;
   box-sizing: border-box !important;
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) !important;
@@ -44,7 +46,11 @@
 #omega-global-time-hud .ogth-controls button {
   box-sizing: border-box !important;
   min-width: 34px;
-  min-height: 30px;
+  min-height: 44px !important;
+  min-width: 38px !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 1 !important;
   padding: 6px 8px;
   border: 1px solid rgba(105, 164, 202, .55);
   border-radius: 5px;
@@ -52,7 +58,8 @@
   color: #e5f5ff;
   font: 800 10px/1 Inter, Arial, sans-serif;
   cursor: pointer;
-  touch-action: manipulation;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: rgba(117, 228, 255, .25);
 }
 #omega-global-time-hud .ogth-controls button[data-omega-action="toggle"] {
   min-width: 88px;
@@ -102,16 +109,20 @@
 }
 #omega-global-time-hud .ogth-manual-controls button {
   min-width: 0;
-  min-height: 27px;
-  height: 27px;
-  padding: 3px 7px;
+  min-height: 44px !important;
+  height: 44px !important;
+  padding: 8px 10px !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 1 !important;
   border: 1px solid rgba(105, 164, 202, .42);
   border-radius: 4px;
   background: #102137;
   color: #dcecff;
   font: 800 9px/1 Inter, Arial, sans-serif;
   letter-spacing: .02em;
-  touch-action: manipulation;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: rgba(117, 228, 255, .25);
 }
 #omega-global-time-hud .ogth-manual-controls button.ogth-manual-primary {
   border-color: #2b9fbd;
@@ -133,8 +144,8 @@
   box-sizing: border-box;
   width: 50px;
   min-width: 50px;
-  height: 27px;
-  padding: 2px 4px;
+  height: 44px;
+  padding: 2px 6px;
   border: 1px solid rgba(105, 164, 202, .42);
   border-radius: 4px;
   outline: none;
@@ -173,9 +184,9 @@
   #top-status-bar { max-height: 148px !important; }
   #omega-global-time-hud .ogth-manual-controls { gap: 3px; }
   #omega-global-time-hud .ogth-manual-controls button {
-    min-height: 26px;
-    height: 26px;
-    padding: 3px 5px;
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 8px 8px !important;
     font-size: 8px;
   }
   #omega-global-time-hud .ogth-days-label input {
