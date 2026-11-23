@@ -660,3 +660,32 @@ test('pausing during a slow turn discards pending real-time frames before resume
   assert.equal(resumed.steps, 0, 'resume must not replay elapsed time collected before the pause');
   assert.equal(sim.clock.turn, 1);
 });
+
+
+test('manual batch respects an external pause when the prior session was running', async () => {
+  const { sandbox, state } = makeSandbox();
+  loadScript('omega_simulation_runtime.js', sandbox);
+  let release, notifyStarted;
+  const gate = new Promise(resolve => { release = resolve; });
+  const started = new Promise(resolve => { notifyStarted = resolve; });
+  sandbox.Omega.Simulation.configure({
+    state,
+    worldEngine: { setAuthoritativeState() {}, processSimulationTick() { return { advanced:true }; } }
+  });
+  const sim = sandbox.Omega.Simulation;
+  sim.createSession({ playerCountryId:'BANGLADESH' });
+  sim.startSession({ playerCountryId:'BANGLADESH' });
+  sim.registerTurnParticipant('test.running-manual-pause', async () => {
+    notifyStarted();
+    await gate;
+  });
+  const batch = sim.advance(3);
+  await started;
+  sim.pauseSession();
+  release();
+  const result = await batch;
+  assert.equal(result.steps, 1);
+  assert.equal(result.cancelled, true);
+  assert.equal(sim.status, 'PAUSED', 'an external pause must not be overwritten by the pre-batch RUNNING state');
+  assert.equal(sim.clock.paused, true);
+});
