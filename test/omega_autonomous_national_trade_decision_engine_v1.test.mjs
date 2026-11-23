@@ -38,6 +38,11 @@ function createRuntime(options = {}) {
       MEX: { relations: { AUS: { overall: 70, trade: 70, trust: 70, political: 70 } } }
     }
   };
+  if (options.noRelations) {
+    state.foreign.AUS.relations = {};
+    state.foreign.CAN.relations = {};
+    state.foreign.MEX.relations = {};
+  }
   if (options.contracts) state.trade.AUS.bilateralContracts = structuredClone(options.contracts);
   if (options.outbox) state.trade.AUS.bilateralProposalOutbox = structuredClone(options.outbox);
 
@@ -197,6 +202,8 @@ function createRuntime(options = {}) {
         }
       }
     },
+    __OmegaGlobalCommercialBaselineIndex: options.commercialBaselineIndex,
+    __OmegaGlobalCommercialBaselineShards: options.commercialBaselineShards,
     __OmegaAutonomousNationalTradeDecisionRules: options.pendingRules ? undefined : (() => {
       const configured = structuredClone(rules);
       if (options.readOnly === true) {
@@ -229,6 +236,62 @@ function createRuntime(options = {}) {
     }
   };
 }
+
+
+test('global commercial baseline expands NPC trade partners and only ranks live market evidence', async () => {
+  const baselineIndex = {
+    schemaVersion: 1,
+    datasetId: 'OMEGA_GLOBAL_COMMERCIAL_BASELINE_V1',
+    countryCount: 197,
+    commodityCount: 185,
+    countries: {
+      AUS: { majorPartners: [['CAN', 50], ['MEX', 50]] },
+      CAN: { majorPartners: [['AUS', 70]] },
+      MEX: { majorPartners: [['AUS', 70]] }
+    },
+    commodityToShard: { iron_ore: '01' },
+    shards: [{ id: '01', file: 'omega_global_commercial_baseline_v1_part_01.json' }]
+  };
+  const shard = {
+    schemaVersion: 1,
+    datasetId: 'OMEGA_GLOBAL_COMMERCIAL_BASELINE_V1',
+    shardId: '01',
+    commodityCount: 1,
+    commodities: {
+      iron_ore: {
+        productType: 'RAW_RESOURCE',
+        productRole: 'INDUSTRIAL_INTERMEDIATE',
+        countries: {
+          AUS: {
+            supplierPartners: [['MEX', 90], ['CAN', 10]],
+            buyerMarkets: []
+          }
+        }
+      }
+    }
+  };
+  const runtime = createRuntime({
+    noRelations: true,
+    priceMap: { CAN: 10, MEX: 10 },
+    commercialBaselineIndex: baselineIndex,
+    commercialBaselineShards: { '01': shard }
+  });
+
+  const result = await runtime.process('AUS', 1);
+  assert.equal(result.status, 'PLANNED');
+  assert.equal(result.topCandidate.direction, 'IMPORT');
+  assert.equal(result.topCandidate.targetCountryId, 'MEX',
+    'commodity-specific supplier share breaks equal-price ties');
+  assert.equal(runtime.metrics.supplierCalls, 1, 'the existing live supplier authority is still queried');
+  assert.equal(runtime.metrics.marketPriceCalls > 0, true, 'a cleared live market price is still required');
+  assert.equal(runtime.metrics.proposalCalls, 0, 'baseline preferences never create a proposal by themselves');
+  assert.deepEqual(runtime.state.resource.AUS.inventory, { iron_ore: 5 },
+    'baseline profiles do not create or credit inventory');
+  assert.equal(runtime.state.trade.AUS.importRequests.length, 0);
+  const diagnostics = runtime.context.Omega.AutonomousNationalTradeDecisionV1.diagnostics();
+  assert.equal(diagnostics.commercialBaselineStatus, 'READY');
+  assert.equal(diagnostics.commercialBaselineLoadedShardCount, 1);
+});
 
 test('registers only on the existing ACTIVE/MACRO scheduler and never schedules the player country', async () => {
   const runtime = createRuntime();
