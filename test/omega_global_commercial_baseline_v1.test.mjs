@@ -90,6 +90,13 @@ test('all product shards contain complete per-country profiles and valid partner
   assert.equal(Object.keys(profiles).length * countries.length, 197 * 185);
 });
 
+test('global commercial index and every data shard are available in the offline core cache', () => {
+  const worker = fs.readFileSync(new URL('../omega-offline-map-sw.js', import.meta.url), 'utf8');
+  const required = ['omega_global_commercial_baseline_v1.json', ...index.shards.map(row => row.file)];
+  for (const file of required) assert.ok(worker.includes('"./' + file + '"'), file + ' must be cached for offline use');
+  assert.match(worker, /omega-offline-atlas-shell-v147/);
+});
+
 test('country-wide commercial partner lists are country-specific and never self-referential', () => {
   for (const [countryId, row] of Object.entries(index.countries)) {
     assert.ok(row.countryName);
