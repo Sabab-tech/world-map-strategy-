@@ -78,7 +78,8 @@ test('BACI 2022-2023 shares aggregate value weights without retaining absolute t
   assert.equal(output.coverage.resourceProfileSlotCount, 197 * 41);
   assert.equal(Object.keys(output.countries.BGD.resourceProfiles).length, 41);
   assert.equal(profileFor(output, 'BGD', 'gypsum').mappingStatus, 'MAPPED_PARTIAL');
-  assert.equal(profileFor(output, 'BGD', 'gypsum').profileStatus, 'NOT_ELIGIBLE_MAPPING_STATUS');
+  assert.equal(profileFor(output, 'BGD', 'gypsum').partnerProfileEligibility, 'NOT_ELIGIBLE_MAPPING_STATUS');
+  assert.equal(profileFor(output, 'BGD', 'gypsum').baseline.status, 'NOT_CALCULATED_MAPPING_NOT_EXACT');
   assert.equal(profileFor(output, 'BGD', 'gypsum').baseline.unresolvedPartnerShare, null);
   assert.equal(output.coverage.validBaciFlowRowCount, 6);
   assert.equal(output.coverage.selectedExactResourceFlowRowCount, 6);
