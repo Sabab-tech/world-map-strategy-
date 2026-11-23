@@ -880,4 +880,10 @@ test('global time controls are moved outside the clipped header and expose an ex
   assert.match(lifecycle, /toggleLabel = running \? 'PAUSE TIME' : status === 'PAUSED' \? 'RESUME TIME'.*'START TIME'/);
   assert.match(hudCss, /#omega-global-time-hud \.ogth-controls button/);
   assert.match(hudCss, /data-omega-action="toggle"/);
+  assert.match(hudCss, /z-index: 2147483646 !important;/,
+    'the body-level time dock must stay above the UI v2 cabinet stacking layer (2147483000)');
+  assert.match(hudCss, /pointer-events: auto !important;/,
+    'the persistent time dock must accept pointer and touch input');
+  assert.match(hudCss, /min-height: 44px !important;/,
+    'the primary time controls must have touch-friendly targets');
 });
