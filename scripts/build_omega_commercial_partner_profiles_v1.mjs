@@ -431,7 +431,7 @@ export async function buildCommercialPartnerProfiles({ dataDir }) {
       noInventoryContractShipmentOrFinanceMutation: true,
       noNpcSimulationMutation: true,
       baselineSharesUseAggregated2022And2023TradeValue: true,
-      2024IsProvisionalOnly: true,
+      '2024IsProvisionalOnly': true,
       noPositiveFlowMustNotBeTreatedAsZero: true
     },
     coverage: {
