@@ -86,9 +86,14 @@ test('BACI 2022-2023 shares aggregate value weights without retaining absolute t
   assert.equal(output.coverage.unresolvedImporterFlowRowCount, 0);
   assert.equal(output.coverage.nonCoreImporterFlowRowCount, 0);
   assert.equal(output.coverage.selfFlowRowCount, 0);
+  assert.equal(output.coverage.partnerProfileDatasetGenerated, true);
+  assert.equal(output.coverage.partnerProfileReadyForGameplay, false);
+  assert.equal(output.coverage.partnerProfileReadinessStatus,
+    'HISTORICAL_PROFILE_ONLY_REQUIRES_COVERAGE_REVIEW_AND_SEPARATE_GAMEPLAY_ACTIVATION');
 
   assert.equal(copper.mappingStatus, 'MAPPED_EXACT');
-  assert.equal(copper.profileStatus, 'OBSERVED_2022_2023_BASELINE');
+  assert.equal(copper.profileStatus, 'OBSERVED_2022_2023_BASELINE_WITH_UNRESOLVED_PARTNER_CODES');
+  assert.equal(copper.baseline.status, 'OBSERVED_POSITIVE_FLOWS_WITH_UNRESOLVED_PARTNER_CODES');
   assert.deepEqual(copper.baseline.observedYears, [2022, 2023]);
   assert.equal(copper.baseline.partnerShares.length, 2);
   assert.equal(copper.baseline.partnerShares[0].partnerIso3, 'DEU');
