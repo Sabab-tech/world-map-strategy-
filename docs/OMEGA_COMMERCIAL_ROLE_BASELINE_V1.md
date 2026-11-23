@@ -89,7 +89,7 @@ node scripts/build_omega_commercial_partner_profiles_v1.mjs \
   --output /path/to/new/omega_commercial_partner_profiles_v1.json
 ```
 
-The importer validates the release, HS revision, year and product dictionary; preserves unknown partner-code share; treats non-core countries as external partners; aggregates 2022–2023 value weights into normalized relative shares; keeps 2024 separate and provisional; and emits every 197-country × 41-resource profile slot. Partial, shared, ambiguous and unmapped resource IDs are explicitly `NOT_ELIGIBLE_MAPPING_STATUS`; no-positive-flow records remain unknown rather than zero.
+The importer validates the release, HS revision, year and product dictionary; preserves unknown partner-code share and its row count; treats non-core countries as external partners; gates global readiness on a complete 197-country numeric-code crosswalk; aggregates 2022–2023 value weights into normalized relative shares; keeps 2024 separate and provisional; and emits every 197-country × 41-resource profile slot. Partial, shared, ambiguous and unmapped resource IDs are explicitly `NOT_ELIGIBLE_MAPPING_STATUS`; no-positive-flow records remain unknown rather than zero.
 
 BACI's `v` field is used only as an internal share weight. Absolute values, `q` quantities and prices are not serialized. The importer does not create a runtime agreement, import order, shipment, inventory, cash movement or NPC action. It writes only to the new file specified on the command line and refuses to overwrite an existing output file.
 
