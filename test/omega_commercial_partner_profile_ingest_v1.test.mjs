@@ -75,9 +75,15 @@ test('BACI 2022-2023 shares aggregate value weights without retaining absolute t
   assert.equal(output.coverage.coreCountryCount, 197);
   assert.equal(output.coverage.rawResourceCount, 41);
   assert.equal(output.coverage.exactHsMappedResourceCount, 17);
+  assert.equal(output.coverage.resourceProfileSlotCount, 197 * 41);
+  assert.equal(Object.keys(output.countries.BGD.resourceProfiles).length, 41);
+  assert.equal(profileFor(output, 'BGD', 'gypsum').mappingStatus, 'MAPPED_PARTIAL');
+  assert.equal(profileFor(output, 'BGD', 'gypsum').profileStatus, 'NOT_ELIGIBLE_MAPPING_STATUS');
+  assert.equal(profileFor(output, 'BGD', 'gypsum').baseline.unresolvedPartnerShare, null);
   assert.equal(output.coverage.validBaciFlowRowCount, 6);
   assert.equal(output.coverage.selectedExactResourceFlowRowCount, 6);
   assert.equal(output.coverage.unresolvedPartnerFlowRowCount, 1);
+  assert.equal(output.coverage.unresolvedImporterFlowRowCount, 0);
   assert.equal(output.coverage.nonCoreImporterFlowRowCount, 0);
   assert.equal(output.coverage.selfFlowRowCount, 0);
 
@@ -126,12 +132,16 @@ test('a missing positive flow is unknown rather than a zero partner share', asyn
 
 test('non-core importers are not assigned to a core country, and a self-flow is rejected', async t => {
   const root = await fixtureDirectory(t, {
-    2022: ['2022,276,999,260300,10,'],
+    2022: [
+      '2022,276,999,260300,10,',
+      '2022,276,888,260300,5,'
+    ],
     2023: [],
     2024: []
   });
   const output = await buildCommercialPartnerProfiles({ dataDir: root });
-  assert.equal(output.coverage.nonCoreImporterFlowRows, 1);
+  assert.equal(output.coverage.nonCoreImporterFlowRowCount, 1);
+  assert.equal(output.coverage.unresolvedImporterFlowRowCount, 1);
   assert.equal(profileFor(output, 'BGD', 'copper').profileStatus,
     'NO_POSITIVE_FLOW_RECORDED_REPORTING_COVERAGE_UNKNOWN');
 
