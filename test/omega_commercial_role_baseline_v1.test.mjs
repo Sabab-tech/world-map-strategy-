@@ -100,6 +100,62 @@ test('every downstream recipe output resolves to an existing product identity wi
   assert.equal(roleRules.recipeOutputIdentityPolicy.createProductIds, false);
 });
 
+test('HS22 resource mappings cover the existing 41 raw resources and keep incomplete mappings non-executable', () => {
+  const mapping = readJson('omega_commercial_hs22_resource_mapping_v1.json');
+  const resourceIds = Object.keys(economyRules.demand.resourceProfiles || {}).sort();
+  const mappedIds = Object.keys(mapping.resources || {}).sort();
+  const statusCounts = Object.values(mapping.resources || {}).reduce((counts, row) => {
+    counts[row.status] = (counts[row.status] || 0) + 1;
+    return counts;
+  }, {});
+  const codeOwners = new Map();
+
+  assert.deepEqual(mappedIds, resourceIds);
+  assert.equal(mapping.source.hsRevision, 'HS22');
+  assert.equal(mapping.source.release, '202601');
+  assert.equal(mapping.source.rawBilateralFlowStatus, 'NOT_ACQUIRED');
+  assert.equal(mapping.source.rawBilateralFlowFilesMaterialized, false);
+  assert.equal(mapping.source.countryCodeCrosswalkMaterialized, false);
+  assert.equal(mapping.policies.partnerProfileReady, false);
+  assert.equal(mapping.policies.noPartnerProfilesCreated, true);
+  assert.deepEqual(statusCounts, {
+    MAPPED_EXACT: 18,
+    MAPPED_PARTIAL: 10,
+    SHARED_AMBIGUOUS: 7,
+    NOT_MAPPED: 6
+  });
+
+  for (const [resourceId, row] of Object.entries(mapping.resources)) {
+    assert.ok(mapping.mappingStatusValues.includes(row.status), resourceId + ' has an unknown mapping status');
+    assert.ok(row.partnerProfileEligibility, resourceId + ' must declare partner-profile eligibility');
+    if (row.status === 'NOT_MAPPED') {
+      assert.deepEqual(row.codes, []);
+      assert.equal(row.partnerProfileEligibility, 'NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT');
+    } else {
+      assert.ok(row.codes.length > 0, resourceId + ' mapping status requires at least one HS6 code');
+    }
+    if (row.status === 'MAPPED_EXACT') {
+      assert.equal(row.partnerProfileEligibility, 'CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED');
+    } else if (row.status !== 'NOT_MAPPED') {
+      assert.equal(row.partnerProfileEligibility, 'NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT');
+    }
+    for (const code of row.codes) {
+      assert.match(code, /^\\d{6}$/, resourceId + ' HS22 code must remain a six-character string');
+      if (!codeOwners.has(code)) codeOwners.set(code, []);
+      codeOwners.get(code).push({ resourceId, status: row.status });
+    }
+  }
+
+  for (const [code, owners] of codeOwners) {
+    if (owners.length > 1) {
+      assert.ok(owners.every(owner => owner.status === 'SHARED_AMBIGUOUS'),
+        'shared HS6 ' + code + ' must never be accepted as a unique resource identity');
+    }
+  }
+  assert.ok(!Object.hasOwn(mapping, 'partnerProfiles'), 'a code map must not fabricate partner profiles');
+  assert.equal(mapping.policies.noGameQuantitiesOrPrices, true);
+});
+
 test('role metadata has no gameplay, trade, save, or real-world quantity authority', () => {
   assert.equal(roleRules.runtimeEffect, 'NONE');
   assert.equal(roleRules.tradeEffect, 'NONE');
