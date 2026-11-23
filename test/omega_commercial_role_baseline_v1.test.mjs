@@ -140,7 +140,7 @@ test('HS22 resource mappings cover the existing 41 raw resources and keep incomp
       assert.equal(row.partnerProfileEligibility, 'NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT');
     }
     for (const code of row.codes) {
-      assert.match(code, /^\\d{6}$/, resourceId + ' HS22 code must remain a six-character string');
+      assert.match(code, /^\d{6}$/, resourceId + ' HS22 code must remain a six-character string');
       if (!codeOwners.has(code)) codeOwners.set(code, []);
       codeOwners.get(code).push({ resourceId, status: row.status });
     }
