@@ -186,12 +186,12 @@
       "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
     },
     "gypsum": {
-      "status": "MAPPED_EXACT",
+      "status": "MAPPED_PARTIAL",
       "codes": [
         "252010"
       ],
-      "note": "HS22 product identifies gypsum and anhydrite.",
-      "partnerProfileEligibility": "CODE_IDENTITY_ONLY_BILATERAL_FLOWS_AND_COUNTRY_CROSSWALK_REQUIRED"
+      "note": "HS22 code 252010 covers gypsum and anhydrite; it cannot isolate gypsum-only bilateral flows.",
+      "partnerProfileEligibility": "NOT_ELIGIBLE_MAPPING_PARTIAL_AMBIGUOUS_OR_ABSENT"
     },
     "ilmenite": {
       "status": "SHARED_AMBIGUOUS",
