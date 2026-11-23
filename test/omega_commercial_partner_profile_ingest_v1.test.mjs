@@ -17,8 +17,15 @@ async function fixtureDirectory(t, rowsByYear) {
     '999,External Market,XX,XYZ\n',
     'utf8');
 
+  const mapping = JSON.parse(await fs.readFile(
+    new URL('../omega_commercial_hs22_resource_mapping_v1.json', import.meta.url), 'utf8'
+  ));
+  const exactCodes = [...new Set(Object.values(mapping.resources)
+    .filter(row => row.status === 'MAPPED_EXACT')
+    .flatMap(row => row.codes))].sort();
   await fs.writeFile(path.join(root, 'product_codes_HS22_V202601.csv'),
-    'productCode,productName\n260300,Copper ores and concentrates\n',
+    'productCode,productName\n' +
+    exactCodes.map(code => code + ',Verified HS22 fixture').join('\n') + '\n',
     'utf8');
 
   for (const year of [2022, 2023, 2024]) {
@@ -139,19 +146,13 @@ test('non-core importers are not assigned to a core country, and a self-flow is 
   );
 });
 
-test('the importer refuses a mismatched HS revision/release or missing official product metadata', async t => {
+test('the importer refuses to build when official HS22 product metadata omits an exact-mapped code', async t => {
   const root = await fixtureDirectory(t, { 2022: [], 2023: [], 2024: [] });
-  const mappingPath = path.resolve('omega_commercial_hs22_resource_mapping_v1.json');
-  const mapping = JSON.parse(await fs.readFile(mappingPath, 'utf8'));
-  mapping.source.release = '202501';
-  const badMappingPath = path.join(root, 'bad-mapping.json');
-  await fs.writeFile(badMappingPath, JSON.stringify(mapping), 'utf8');
-
   const productPath = path.join(root, 'product_codes_HS22_V202601.csv');
   await fs.writeFile(productPath, 'productCode,productName\n999999,Unknown\n', 'utf8');
 
-  // The production builder reads the canonical mapping file adjacent to the
-  // repository script, so a missing HS6 code must fail against that authority.
+  // A complete exact-code mapping must be reconciled against the matching
+  // official HS22 product dictionary before any partner profiles are built.
   await assert.rejects(
     () => buildCommercialPartnerProfiles({ dataDir: root }),
     /EXACT_HS22_CODES_MISSING_FROM_OFFICIAL_PRODUCT_METADATA/
