@@ -56,9 +56,20 @@ All 75 current downstream recipe output identifiers resolve to one of the 185 ex
 
 ## Historical trade-data boundary
 
-This role audit is not a historical trade-partner baseline. A product's global exporter ranking and a country's aggregate trade-partner ranking are not a bilateral product flow. They must not be joined to manufacture a supplier relationship. No partner shares, trade quantities, values, opening contracts or shipments are generated in this phase.
+A separate `omega_commercial_hs22_resource_mapping_v1.json` now records a conservative HS22 code audit for all 41 existing raw-resource identities:
 
-The full CEPII BACI 202601 HS22 bilateral source and its country/product crosswalk are still required to derive product-specific partner shares. Until that source is available, the Phase 2 partner mapping remains `NOT_MAPPED`; this audit does not replace that missing evidence.
+| HS22 mapping status | Resource identities |
+|---|---:|
+| MAPPED_EXACT | 18 |
+| MAPPED_PARTIAL | 10 |
+| SHARED_AMBIGUOUS | 7 |
+| NOT_MAPPED | 6 |
+
+Only exact code identities are candidates for later product-specific partner analysis. Partial, shared and unmapped resources remain ineligible. Even an exact HS22 code is **not** a supplier relationship: the registry deliberately marks every partner profile as not ready until bilateral product flows and the official numeric-country-to-ISO3 crosswalk are available.
+
+The official source is the [CEPII BACI dataset](https://www.cepii.fr/DATA_DOWNLOAD/baci/doc/baci_webpage.html), release 202601, HS22. It covers native HS22 trade years 2022–2024 and is distributed under the Etalab Open Licence 2.0. Selected product labels were cross-checked against the [HS22 product metadata endpoint](https://tradeweave.org/api/v1/product/260300/trade?revision=HS22&year=2023&limit=1); that endpoint's global exporter rows were **not** used as bilateral supplier evidence.
+
+The raw BACI bilateral archive and its country-code crosswalk were not materialized in this execution. A product's global exporter ranking and a country's aggregate trade-partner ranking are not a bilateral product flow. They must not be joined to manufacture a supplier relationship. Therefore product-specific partner shares remain `NOT_MAPPED`; no partner shares, trade quantities, values, opening contracts, inventory or shipments are generated in this phase.
 
 ## Validation
 
