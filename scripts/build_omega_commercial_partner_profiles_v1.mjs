@@ -253,8 +253,12 @@ function summarizeShares(buckets, years, coreCountryIds) {
     share: Number((partnerValues[iso3].value / totalValue).toFixed(12))
   })).sort((a, b) => b.share - a.share || a.partnerIso3.localeCompare(b.partnerIso3));
   const unresolvedPartnerShare = Number((unresolvedValue / totalValue).toFixed(12));
+  const yearCoverageStatus = observedYears.length === years.length
+    ? 'OBSERVED_POSITIVE_FLOWS' : 'OBSERVED_PARTIAL_YEAR_COVERAGE';
+  const profileEvidenceStatus = unresolvedValue > 0
+    ? yearCoverageStatus + '_WITH_UNRESOLVED_PARTNER_CODES' : yearCoverageStatus;
   return {
-    status: observedYears.length === years.length ? 'OBSERVED_POSITIVE_FLOWS' : 'OBSERVED_PARTIAL_YEAR_COVERAGE',
+    status: profileEvidenceStatus,
     observedYears: observedYears,
     partnerShares: partnerShares,
     unresolvedPartnerShare: unresolvedPartnerShare,
@@ -370,10 +374,14 @@ export async function buildCommercialPartnerProfiles({ dataDir }) {
       const buckets = aggregates[countryId]?.[resourceId] || Object.create(null);
       const baseline = summarizeShares(buckets, BASELINE_YEARS, coreCountryIds);
       const provisional = summarizeShares(buckets, [PROVISIONAL_YEAR], coreCountryIds);
-      const profileStatus = baseline.status === 'OBSERVED_POSITIVE_FLOWS'
-        || baseline.status === 'OBSERVED_PARTIAL_YEAR_COVERAGE'
-        ? 'OBSERVED_2022_2023_BASELINE'
-        : provisional.status === 'OBSERVED_POSITIVE_FLOWS'
+      const baselineHasFlow = baseline.status.indexOf('OBSERVED_POSITIVE_FLOWS') === 0 ||
+        baseline.status.indexOf('OBSERVED_PARTIAL_YEAR_COVERAGE') === 0;
+      const profileStatus = baselineHasFlow
+        ? (baseline.status.indexOf('OBSERVED_PARTIAL_YEAR_COVERAGE') === 0
+          ? 'OBSERVED_PARTIAL_2022_2023_BASELINE'
+          : 'OBSERVED_2022_2023_BASELINE') +
+            (baseline.unresolvedPartnerShare > 0 ? '_WITH_UNRESOLVED_PARTNER_CODES' : '')
+        : provisional.status.indexOf('OBSERVED_POSITIVE_FLOWS') === 0
           ? 'PROVISIONAL_2024_ONLY'
           : 'NO_POSITIVE_FLOW_RECORDED_REPORTING_COVERAGE_UNKNOWN';
       resourceProfilesByCountry[resourceId] = {
@@ -440,7 +448,9 @@ export async function buildCommercialPartnerProfiles({ dataDir }) {
       unresolvedImporterFlowRowCount: unresolvedImporterFlowRows,
       nonCoreImporterFlowRowCount: nonCoreImporterFlowRows,
       selfFlowRowCount: selfFlowRows,
-      partnerProfileReady: selectedFlowRows > 0
+      partnerProfileDatasetGenerated: true,
+      partnerProfileReadyForGameplay: false,
+      partnerProfileReadinessStatus: 'HISTORICAL_PROFILE_ONLY_REQUIRES_COVERAGE_REVIEW_AND_SEPARATE_GAMEPLAY_ACTIVATION'
     },
     countries: countries
   };
