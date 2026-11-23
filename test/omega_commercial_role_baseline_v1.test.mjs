@@ -118,6 +118,8 @@ test('HS22 resource mappings cover the existing 41 raw resources and keep incomp
   assert.equal(mapping.source.countryCodeCrosswalkMaterialized, false);
   assert.equal(mapping.policies.partnerProfileReady, false);
   assert.equal(mapping.policies.noPartnerProfilesCreated, true);
+  assert.equal(mapping.resources.gypsum.status, 'MAPPED_PARTIAL',
+    'HS22 252010 includes anhydrite and cannot isolate gypsum-only flows');
   assert.equal(mapping.resources.gypsum.status, 'MAPPED_PARTIAL', 'HS22 252010 includes anhydrite as well as gypsum');
   assert.deepEqual(statusCounts, {
     MAPPED_EXACT: 17,
