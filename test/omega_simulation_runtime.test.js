@@ -121,6 +121,24 @@ test('real-time frame drops excess elapsed time instead of running a multi-turn 
   assert.equal(sim.diagnostics().clock.droppedScaledTimeMs,60000);
 });
 
+test('faster game speed preserves fractional calendar-day progress after a capped frame', async () => {
+  const { sandbox, state } = makeSandbox();
+  loadScript('omega_simulation_runtime.js', sandbox);
+  sandbox.Omega.Simulation.configure({
+    state,
+    worldEngine: { setAuthoritativeState() {}, processSimulationTick() { return { advanced:true }; } }
+  });
+  const sim = sandbox.Omega.Simulation;
+  sim.createSession({ playerCountryId:'BANGLADESH' });
+  sim.startSession({ playerCountryId:'BANGLADESH' });
+  sim.clock.setSpeed(2);
+
+  const frame = await sim.frame(8000);
+  assert.equal(frame.steps, 1, 'a 2x frame with 16 seconds of scaled time commits one day only');
+  assert.equal(sim.clock.turn, 1);
+  assert.equal(sim.clock.accumulatorMs, 1000, 'the unconsumed partial day must be retained');
+  assert.equal(sim.clock.droppedScaledTimeMs, 0, 'no complete extra day was skipped');
+});
 test('frame scheduler advances one calendar day per fifteen-second driver interval',async()=>{
   const {sandbox,state}=makeSandbox();
   loadScript('omega_simulation_runtime.js',sandbox);
