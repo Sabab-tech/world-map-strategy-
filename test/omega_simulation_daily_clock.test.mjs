@@ -353,7 +353,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   assert.match(index, /omega_manual_time_controls_v1\.css/);
   const manualTimeCss = fs.readFileSync(path.join(root, 'omega_manual_time_controls_v1.css'), 'utf8');
   assert.match(manualTimeCss, /#omega-global-time-hud \{[\s\S]{0,80}position: fixed !important;/);
-  assert.match(manualTimeCss, /z-index: 1000004 !important;/);
+  assert.match(manualTimeCss, /z-index: 2147483646 !important;/);
   assert.match(manualTimeCss, /#top-status-bar\.top-status-bar/);
   assert.match(lifecycle, /function beginManualAdvance\(turns\)/);
   assert.match(lifecycle, /sim\.advance\(count, \{ yieldEvery: 1 \}\)/);
