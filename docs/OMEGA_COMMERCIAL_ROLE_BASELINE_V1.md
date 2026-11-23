@@ -60,8 +60,8 @@ A separate `omega_commercial_hs22_resource_mapping_v1.json` now records a conser
 
 | HS22 mapping status | Resource identities |
 |---|---:|
-| MAPPED_EXACT | 18 |
-| MAPPED_PARTIAL | 10 |
+| MAPPED_EXACT | 17 |
+| MAPPED_PARTIAL | 11 |
 | SHARED_AMBIGUOUS | 7 |
 | NOT_MAPPED | 6 |
 
