@@ -842,3 +842,31 @@ test('manual time HUD buttons step days, run selected days, pause/resume and exp
   dispatchAction('toggle');
   assert.equal(sim.status, 'PAUSED', 'Pause must stop further automatic turns');
 });
+
+test('backgrounding during a manual day batch cancels after the in-flight day and keeps time paused', async () => {
+  const { win, sim } = createRuntime();
+  const { documentListeners, lifecycle } = attachLifecycle(win, sim);
+  await lifecycle.restore();
+  let release, notifyStarted;
+  const gate = new Promise(resolve => { release = resolve; });
+  const started = new Promise(resolve => { notifyStarted = resolve; });
+  sim.registerTurnParticipant('test.background-manual-batch', async () => {
+    notifyStarted();
+    await gate;
+  });
+  assert.equal(lifecycle.advanceDays(4), true);
+  await started;
+
+  win.document.visibilityState = 'hidden';
+  for (const listener of documentListeners.get('visibilitychange') || []) listener();
+  release();
+  for (let attempt = 0; attempt < 200 && lifecycle.getDiagnostics().manualCommandInFlight; attempt += 1) {
+    await new Promise(resolve => setTimeout(resolve, 1));
+  }
+
+  assert.equal(sim.clock.turn, 1, 'only the current authoritative day may commit after backgrounding');
+  assert.equal(sim.status, 'PAUSED');
+  assert.equal(sim.clock.paused, true);
+  assert.equal(sim.manualAdvanceInProgress, false);
+  assert.equal(lifecycle.getDiagnostics().backgroundRunsEnabled, false);
+});
