@@ -119,8 +119,10 @@ async function readCountryCrosswalk(dataDir, coreCountryIds) {
   for await (const row of iterator) add(row.fields);
   if (!crosswalk.size) throw new Error('COUNTRY_CROSSWALK_HAS_NO_CODES');
 
+  const mappedCoreCountryIds = new Set([...crosswalk.values()].filter(iso3 => iso3 && coreCountryIds.has(iso3)));
+  const unmappedCoreCountryIds = [...coreCountryIds].filter(iso3 => !mappedCoreCountryIds.has(iso3)).sort();
   const coreCodeCount = [...crosswalk.values()].filter(iso3 => iso3 && coreCountryIds.has(iso3)).length;
-  return { crosswalk, coreCodeCount, file: filePath };
+  return { crosswalk, coreCodeCount, mappedCoreCountryIds, unmappedCoreCountryIds, file: filePath };
 }
 
 async function readProductCodeSet(dataDir, hsMapping) {
@@ -279,13 +281,15 @@ export async function buildCommercialPartnerProfiles({ dataDir }) {
   const resourceProfiles = economyRules.demand?.resourceProfiles || {};
   if (Object.keys(resourceProfiles).length !== 41) throw new Error('RAW_RESOURCE_ROSTER_COUNT_MISMATCH');
 
-  const { crosswalk, coreCodeCount } = await readCountryCrosswalk(root, coreCountryIds);
+  const { crosswalk, coreCodeCount, mappedCoreCountryIds, unmappedCoreCountryIds } =
+    await readCountryCrosswalk(root, coreCountryIds);
   const { productCodes } = await readProductCodeSet(root, hsMapping);
   const codeToResource = exactResourceCodeIndex(hsMapping);
   const aggregates = Object.create(null);
   let validFlowRows = 0;
   let selectedFlowRows = 0;
   let unresolvedPartnerFlowRows = 0;
+  let unresolvedImporterFlowRows = 0;
   let nonCoreImporterFlowRows = 0;
   let selfFlowRows = 0;
 
@@ -319,7 +323,11 @@ export async function buildCommercialPartnerProfiles({ dataDir }) {
         throw new Error('BACI_202601_CONTAINS_SELF_FLOW_AT_' + fileName + '_LINE_' + lineNumber);
       }
       const importerIso3 = crosswalk.get(importerCode);
-      if (!importerIso3 || !coreCountryIds.has(importerIso3)) {
+      if (!importerIso3) {
+        unresolvedImporterFlowRows++;
+        return;
+      }
+      if (!coreCountryIds.has(importerIso3)) {
         nonCoreImporterFlowRows++;
         return;
       }
@@ -334,12 +342,31 @@ export async function buildCommercialPartnerProfiles({ dataDir }) {
     for await (const row of iterator) processRow(row);
   }
 
-  const exactResourceIds = Object.keys(hsMapping.resources)
-    .filter(resourceId => hsMapping.resources[resourceId].status === 'MAPPED_EXACT').sort();
+  const resourceIds = Object.keys(hsMapping.resources).sort();
+  const exactResourceIds = resourceIds
+    .filter(resourceId => hsMapping.resources[resourceId].status === 'MAPPED_EXACT');
+  const notEligibleProfile = {
+    profileStatus: 'NOT_ELIGIBLE_MAPPING_STATUS',
+    observedYears: [],
+    partnerShares: [],
+    unresolvedPartnerShare: null,
+    coverage: { partnerCount: 0, unresolvedPartnerFlowCount: null }
+  };
   const countries = {};
   for (const countryId of [...coreCountryIds].sort()) {
     const resourceProfilesByCountry = {};
-    for (const resourceId of exactResourceIds) {
+    for (const resourceId of resourceIds) {
+      const mapping = hsMapping.resources[resourceId];
+      if (mapping.status !== 'MAPPED_EXACT') {
+        resourceProfilesByCountry[resourceId] = {
+          mappingStatus: mapping.status,
+          partnerProfileEligibility: 'NOT_ELIGIBLE_MAPPING_STATUS',
+          baselineYears: BASELINE_YEARS,
+          baseline: { status: 'NOT_CALCULATED_MAPPING_NOT_EXACT', ...notEligibleProfile },
+          provisional2024: { status: 'NOT_CALCULATED_MAPPING_NOT_EXACT', ...notEligibleProfile }
+        };
+        continue;
+      }
       const buckets = aggregates[countryId]?.[resourceId] || Object.create(null);
       const baseline = summarizeShares(buckets, BASELINE_YEARS, coreCountryIds);
       const provisional = summarizeShares(buckets, [PROVISIONAL_YEAR], coreCountryIds);
@@ -351,6 +378,7 @@ export async function buildCommercialPartnerProfiles({ dataDir }) {
           : 'NO_POSITIVE_FLOW_RECORDED_REPORTING_COVERAGE_UNKNOWN';
       resourceProfilesByCountry[resourceId] = {
         mappingStatus: 'MAPPED_EXACT',
+        partnerProfileEligibility: 'EXACT_HS22_CODE_BILATERAL_SOURCE_REQUIRED',
         profileStatus: profileStatus,
         baselineYears: BASELINE_YEARS,
         baseline: baseline,
@@ -403,12 +431,16 @@ export async function buildCommercialPartnerProfiles({ dataDir }) {
       rawResourceCount: Object.keys(resourceProfiles).length,
       exactHsMappedResourceCount: exactResourceIds.length,
       mappedBaciCountryCodeCount: coreCodeCount,
+      mappedCoreCountryCount: mappedCoreCountryIds.size,
+      unmappedCoreCountryIds: unmappedCoreCountryIds,
+      resourceProfileSlotCount: coreCountryIds.size * resourceIds.length,
       validBaciFlowRowCount: validFlowRows,
       selectedExactResourceFlowRowCount: selectedFlowRows,
       unresolvedPartnerFlowRowCount: unresolvedPartnerFlowRows,
+      unresolvedImporterFlowRowCount: unresolvedImporterFlowRows,
       nonCoreImporterFlowRowCount: nonCoreImporterFlowRows,
       selfFlowRowCount: selfFlowRows,
-      partnerProfileReady: true
+      partnerProfileReady: selectedFlowRows > 0
     },
     countries: countries
   };
