@@ -392,6 +392,9 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   const cacheVersionMatch = serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v([0-9]+)"/);
   const offlineShellVersion = Number(cacheVersionMatch?.[1] || 0);
   assert.ok(offlineShellVersion >= 23, 'the offline shell cache must invalidate stale UI assets after the country overview changes');
+  assert.ok(offlineShellVersion >= 145, 'the offline shell must refresh the latest global time-control touch styles');
+  assert.match(serviceWorker, /\.\/omega_manual_time_controls_v1\\.css/,
+    'the fixed global time-control stylesheet must remain in the offline core asset cache');
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.js/);
   assert.doesNotMatch(serviceWorker, /"\.\/omega_game_lifecycle_runtime_v1\.css"/, 'legacy lifecycle CSS is not preloaded');
   assert.match(serviceWorker, /"\.\/omega_ui_v2\/omega-ui-v2\.css"/);
