@@ -390,7 +390,7 @@ test('active-country factory inventory is read once, capacity is evidence-gated 
   assert.equal(reconciliation.unmetDemand, 5);
   assert.equal(reconciliation.stockCoverageDays, 2);
   assert.equal(reconciliation.inboundShipmentQuantity, null);
-  assert.equal(reconciliation.inboundShipmentEvidenceStatus, 'NOT_PERSISTED_BY_TRADE_SHIPMENT_AUTHORITY');
+  assert.equal(reconciliation.inboundShipmentEvidenceStatus, 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE');
 });
 
 test('ambiguous utilization ratios and missing live capacity remain unavailable', async () => {
