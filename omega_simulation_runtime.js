@@ -1269,22 +1269,25 @@
           if(index+1<count&&completed%yieldEvery===0)await yieldToBrowser();
         }
         cancelled=cancelled||this.manualAdvanceCancelled;
+        // An external Pause/Stop during a running-origin batch is authoritative:
+        // never restore the pre-batch RUNNING status after the caller interrupted it.
+        const restoreStatus=cancelled&&this.status!=='RUNNING'?this.status:previousStatus;
         if(this.status!=='ERROR'){
-          this.status=previousStatus;
+          this.status=restoreStatus;
           const session=this.world.state.simulation?.session||{};
-          if(previousStatus==='RUNNING'){
+          if(restoreStatus==='RUNNING'){
             this.clock.resume();
             session.status='RUNNING';
-          }else if(previousStatus==='PAUSED'){
+          }else if(restoreStatus==='PAUSED'){
             this.clock.pause();
             session.status='PAUSED';
-          }else if(previousStatus==='STOPPED'){
+          }else if(restoreStatus==='STOPPED'){
             this.clock.stop();
             session.status='STOPPED';
           }else{
             this.clock.running=false;
             this.clock.paused=false;
-            session.status=previousStatus||'READY';
+            session.status=restoreStatus||'READY';
           }
           this.world.setSession(session);
         }
