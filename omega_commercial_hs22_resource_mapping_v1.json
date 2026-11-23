@@ -323,6 +323,13 @@
         "261210"
       ],
       "note": "HS22 product is uranium ores and concentrates."
+    },
+    "zinc": {
+      "status": "MAPPED_EXACT",
+      "codes": [
+        "260800"
+      ],
+      "note": "HS22 product is zinc ores and concentrates."
     }
   }
 }
