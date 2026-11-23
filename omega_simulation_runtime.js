@@ -577,12 +577,15 @@
       if(!this.running||this.paused||this.speed===0)return 0;
       const delta=Math.max(0,finite(realDeltaMs,0));
       const projected=this.accumulatorMs+delta*this.speed;
-      if(projected>STEP_MS)this.droppedScaledTimeMs+=projected-STEP_MS;
-      // Keep no more than one due day in the accumulator. A slow turn therefore
-      // cannot cause eight or more expensive turns to execute back-to-back.
-      this.accumulatorMs=Math.min(STEP_MS,projected);
-      if(this.accumulatorMs<STEP_MS)return 0;
-      this.accumulatorMs=0;
+      const dueDays=Math.floor(projected/STEP_MS);
+      if(dueDays<1){
+        this.accumulatorMs=projected;
+        return 0;
+      }
+      // Commit one day per frame; discard only additional complete due days.
+      // Preserve the partial-day remainder so higher speeds stay accurate over time.
+      if(dueDays>1)this.droppedScaledTimeMs+=(dueDays-1)*STEP_MS;
+      this.accumulatorMs=projected-(dueDays*STEP_MS);
       return MAX_STEPS_PER_FRAME;
     }
 
