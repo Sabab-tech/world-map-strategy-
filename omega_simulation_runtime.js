@@ -1244,6 +1244,7 @@
         for(let index=0;index<count;index++){
           if(this.manualAdvanceCancelled){cancelled=true;break;}
           if(this.status==='ERROR')break;
+          if(this.status!=='RUNNING'){cancelled=true;break;}
           last=await this.step();
           if(last&&last.skipped)break;
           completed+=1;
