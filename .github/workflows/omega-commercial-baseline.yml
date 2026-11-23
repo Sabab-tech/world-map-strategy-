@@ -1,0 +1,55 @@
+name: OMEGA Commercial Baseline
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "omega_phase6_national_population_capacity_runtime_v1.js"
+      - "test/omega_phase6_national_population_capacity_runtime_v1.test.mjs"
+      - "omega_commercial_product_role_rules_v1.json"
+      - "omega_commercial_hs22_resource_mapping_v1.json"
+      - "scripts/build_omega_commercial_partner_profiles_v1.mjs"
+      - "test/omega_commercial_partner_profile_ingest_v1.test.mjs"
+      - "test/omega_commercial_role_baseline_v1.test.mjs"
+      - "resource_industrial_catalog_v1.json"
+      - "resource_economy_rules.json"
+      - "resource_country_resource_context_index.json"
+      - "package.json"
+      - ".github/workflows/omega-commercial-baseline.yml"
+  push:
+    branches: [main]
+    paths:
+      - "omega_phase6_national_population_capacity_runtime_v1.js"
+      - "test/omega_phase6_national_population_capacity_runtime_v1.test.mjs"
+      - "omega_commercial_product_role_rules_v1.json"
+      - "omega_commercial_hs22_resource_mapping_v1.json"
+      - "scripts/build_omega_commercial_partner_profiles_v1.mjs"
+      - "test/omega_commercial_partner_profile_ingest_v1.test.mjs"
+      - "test/omega_commercial_role_baseline_v1.test.mjs"
+      - "resource_industrial_catalog_v1.json"
+      - "resource_economy_rules.json"
+      - "resource_country_resource_context_index.json"
+      - "package.json"
+      - ".github/workflows/omega-commercial-baseline.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  commercial-baseline:
+    name: Phase 6 shipment evidence and commercial role contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate commercial baseline invariants
+        run: npm run test:commercial-baseline
+      - name: Verify Global Trade shipment writer compatibility
+        run: npm run test:global-trade
+      - name: Verify bilateral trade request and agreement compatibility
+        run: npm run test:bilateral-trade
