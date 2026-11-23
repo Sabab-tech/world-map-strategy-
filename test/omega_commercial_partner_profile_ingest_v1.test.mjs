@@ -4,16 +4,29 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
+const countryContext = JSON.parse(await fs.readFile(
+  new URL('../resource_country_resource_context_index.json', import.meta.url), 'utf8'
+));
+const coreCountryIds = Object.keys(countryContext.countries || {});
+
 import { buildCommercialPartnerProfiles } from '../scripts/build_omega_commercial_partner_profiles_v1.mjs';
 
-async function fixtureDirectory(t, rowsByYear) {
+async function fixtureDirectory(t, rowsByYear, { omittedCountryId = null } = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'omega-baci-fixture-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
 
+  let nextCode = 1000;
+  const codeByCountry = new Map(coreCountryIds.map(countryId => {
+    if (countryId === 'BGD') return [countryId, '50'];
+    if (countryId === 'DEU') return [countryId, '276'];
+    return [countryId, String(nextCode++)];
+  }));
+  const crosswalkRows = coreCountryIds
+    .filter(countryId => countryId !== omittedCountryId)
+    .map(countryId => codeByCountry.get(countryId) + ',' + countryId + ',,' + countryId);
   await fs.writeFile(path.join(root, 'country_codes_V202601.csv'),
     'Country Code,Country Name,ISO2-digit Alpha,ISO3-digit Alpha\n' +
-    '50,Bangladesh,BD,BGD\n' +
-    '276,Germany,DE,DEU\n' +
+    crosswalkRows.join('\n') + '\n' +
     '999,External Market,XX,XYZ\n',
     'utf8');
 
@@ -62,7 +75,8 @@ test('BACI 2022-2023 shares aggregate value weights without retaining absolute t
     ],
     2023: [
       '2023,276,50,260300,300,',
-      '2023,999,50,260300,100,'
+      '2023,999,50,260300,100,',
+      '2023,888,50,260300,50,'
     ],
     2024: [
       '2024,276,50,260300,50,'
@@ -73,6 +87,10 @@ test('BACI 2022-2023 shares aggregate value weights without retaining absolute t
   const copper = profileFor(output, 'BGD', 'copper');
 
   assert.equal(output.coverage.coreCountryCount, 197);
+  assert.equal(output.coverage.mappedCoreCountryCount, 197);
+  assert.deepEqual(output.coverage.unmappedCoreCountryIds, []);
+  assert.equal(output.coverage.partnerProfileReady, true);
+  assert.equal(output.coverage.partnerProfileReadinessStatus, 'READY');
   assert.equal(output.coverage.rawResourceCount, 41);
   assert.equal(output.coverage.exactHsMappedResourceCount, 17);
   assert.equal(output.coverage.resourceProfileSlotCount, 197 * 41);
@@ -80,24 +98,26 @@ test('BACI 2022-2023 shares aggregate value weights without retaining absolute t
   assert.equal(profileFor(output, 'BGD', 'gypsum').mappingStatus, 'MAPPED_PARTIAL');
   assert.equal(profileFor(output, 'BGD', 'gypsum').profileStatus, 'NOT_ELIGIBLE_MAPPING_STATUS');
   assert.equal(profileFor(output, 'BGD', 'gypsum').baseline.unresolvedPartnerShare, null);
-  assert.equal(output.coverage.validBaciFlowRowCount, 6);
-  assert.equal(output.coverage.selectedExactResourceFlowRowCount, 6);
-  assert.equal(output.coverage.unresolvedPartnerFlowRowCount, 1);
+  assert.equal(output.coverage.validBaciFlowRowCount, 7);
+  assert.equal(output.coverage.selectedExactResourceFlowRowCount, 7);
+  assert.equal(output.coverage.unresolvedPartnerFlowRowCount, 2);
+  assert.equal(copper.baseline.coverage.unresolvedPartnerFlowCount, 2);
   assert.equal(output.coverage.unresolvedImporterFlowRowCount, 0);
   assert.equal(output.coverage.nonCoreImporterFlowRowCount, 0);
   assert.equal(output.coverage.selfFlowRowCount, 0);
 
+  assert.equal(output.countries.BGD.countryCrosswalkStatus, 'MAPPED_TO_BACI_COUNTRY_CODE');
   assert.equal(copper.mappingStatus, 'MAPPED_EXACT');
   assert.equal(copper.profileStatus, 'OBSERVED_2022_2023_BASELINE');
   assert.deepEqual(copper.baseline.observedYears, [2022, 2023]);
   assert.equal(copper.baseline.partnerShares.length, 2);
   assert.equal(copper.baseline.partnerShares[0].partnerIso3, 'DEU');
-  assert.ok(Math.abs(copper.baseline.partnerShares[0].share - (400 / 575)) < 1e-10);
+  assert.ok(Math.abs(copper.baseline.partnerShares[0].share - (400 / 625)) < 1e-10);
   assert.equal(copper.baseline.partnerShares[0].partnerKind, 'CORE_COUNTRY');
   assert.equal(copper.baseline.partnerShares[1].partnerIso3, 'XYZ');
-  assert.ok(Math.abs(copper.baseline.partnerShares[1].share - (150 / 575)) < 1e-10);
+  assert.ok(Math.abs(copper.baseline.partnerShares[1].share - (150 / 625)) < 1e-10);
   assert.equal(copper.baseline.partnerShares[1].partnerKind, 'EXTERNAL_MARKET');
-  assert.ok(Math.abs(copper.baseline.unresolvedPartnerShare - (25 / 575)) < 1e-10);
+  assert.ok(Math.abs(copper.baseline.unresolvedPartnerShare - (75 / 625)) < 1e-10);
   assert.ok(Math.abs(
     copper.baseline.partnerShares.reduce((sum, row) => sum + row.share, 0) +
     copper.baseline.unresolvedPartnerShare - 1
@@ -122,6 +142,8 @@ test('a missing positive flow is unknown rather than a zero partner share', asyn
   const output = await buildCommercialPartnerProfiles({ dataDir: root });
   const profile = profileFor(output, 'BGD', 'crude_oil');
 
+  assert.equal(output.coverage.partnerProfileReady, false);
+  assert.equal(output.coverage.partnerProfileReadinessStatus, 'NO_EXACT_PARTNER_FLOW_ROWS');
   assert.equal(profile.mappingStatus, 'MAPPED_EXACT');
   assert.equal(profile.profileStatus, 'NO_POSITIVE_FLOW_RECORDED_REPORTING_COVERAGE_UNKNOWN');
   assert.deepEqual(profile.baseline.partnerShares, []);
@@ -154,6 +176,28 @@ test('non-core importers are not assigned to a core country, and a self-flow is 
     () => buildCommercialPartnerProfiles({ dataDir: selfRoot }),
     /BACI_202601_CONTAINS_SELF_FLOW/
   );
+});
+
+
+test('an incomplete core-country crosswalk keeps the partner baseline not ready', async t => {
+  const omittedCountryId = coreCountryIds.find(countryId => countryId !== 'BGD' && countryId !== 'DEU');
+  const root = await fixtureDirectory(t, {
+    2022: ['2022,276,50,260300,100,'],
+    2023: [],
+    2024: []
+  }, { omittedCountryId });
+  const output = await buildCommercialPartnerProfiles({ dataDir: root });
+  const country = output.countries[omittedCountryId];
+
+  assert.equal(output.coverage.mappedCoreCountryCount, 196);
+  assert.deepEqual(output.coverage.unmappedCoreCountryIds, [omittedCountryId]);
+  assert.equal(output.coverage.partnerProfileReady, false);
+  assert.equal(output.coverage.partnerProfileReadinessStatus, 'INCOMPLETE_CORE_COUNTRY_CROSSWALK');
+  assert.equal(country.countryCrosswalkStatus, 'NOT_IN_BACI_COUNTRY_CROSSWALK');
+  assert.equal(profileFor(output, omittedCountryId, 'copper').profileStatus,
+    'COUNTRY_NOT_IN_BACI_CROSSWALK');
+  assert.equal(profileFor(output, omittedCountryId, 'copper').baseline.status,
+    'NO_POSITIVE_FLOW_RECORDED_REPORTING_COVERAGE_UNKNOWN');
 });
 
 test('the importer refuses to build when official HS22 product metadata omits an exact-mapped code', async t => {
