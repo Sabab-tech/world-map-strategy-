@@ -810,13 +810,15 @@
         var marketHost = typeof root.querySelector === 'function' ? root.querySelector('[data-omega-v2-trade-market-host]') : null;
         var marketUI = g.OmegaResourceCommandCenterUI || (g.Omega && g.Omega.ResourceCommandCenterUI);
         if (marketHost && marketUI && typeof marketUI.renderMarketDashboard === 'function') {
-          var mountResult = marketUI.renderMarketDashboard(marketHost, country, { onClose:function () { var current = root.__omegaV2MinistryDetailOptions || options; scheduleRender(root, Object.assign({}, current, { section:'dashboard' }), 'Returning to Trade & Commerce'); } });
+          var mountResult = marketUI.renderMarketDashboard(marketHost, country, {
+            initialView:marketTab === 'transactions' ? 'transactions' : 'commodities',
+            onClose:function () {
+              var current = root.__omegaV2MinistryDetailOptions || options;
+              scheduleRender(root, Object.assign({}, current, { section:'dashboard' }), 'Returning to Trade & Commerce');
+            }
+          });
           marketMounted = !!(mountResult && mountResult.ok !== false);
           if (!marketMounted) marketHost.textContent = 'The Global Commodity Market could not be mounted. The market runtime and settlement records remain unchanged.';
-          else if (marketTab === 'transactions' && typeof marketHost.querySelector === 'function') {
-            var transactionViewButton = marketHost.querySelector('[data-market-view="transactions"]');
-            if (transactionViewButton && typeof transactionViewButton.click === 'function') transactionViewButton.click();
-          }
         } else if (marketHost) marketHost.textContent = 'The Global Commodity Market UI is unavailable in this session.';
       }
     }
