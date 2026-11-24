@@ -485,6 +485,9 @@ test('committed command audit records write paths and revisions without copying 
 
   s.mesh.registerCommandHandler('TEST_COMPACT_TRANSACTION_AUDIT','economy',(command,{stateTransaction})=>{
     stateTransaction.set('economy.largeAuditDomain',after);
+    // Compact commit may transfer the transaction-owned clone directly into
+    // authoritative state, but the caller must not retain a mutable alias.
+    after.rows[0].payload='MUTATED_AFTER_STAGE';
     return{accepted:true};
   });
 
