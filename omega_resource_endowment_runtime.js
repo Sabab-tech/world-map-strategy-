@@ -8,6 +8,7 @@
 (function(g){
   'use strict';
   const VERSION='2.0.0',DAY_HOURS=24,MAX_LEDGER=2048,MAX_MINE_HISTORY=4096;
+  const perfNow=()=>typeof g.performance?.now==='function'?g.performance.now():Date.now();
   const clone=(v,seen=new WeakMap())=>{
     if(v===null||typeof v!=='object')return v;
     if(seen.has(v))return seen.get(v);
