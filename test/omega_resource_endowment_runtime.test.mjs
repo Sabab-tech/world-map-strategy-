@@ -264,7 +264,14 @@ for(const site of unifiedProfileRows){
   unifiedProfileCount++;
 }
 assert.ok(unifiedProfileCount>=400,'the normalized authority audit must cover the canonical and supplemental physical-site population; count='+unifiedProfileCount);
-const hydrated=runtime.hydrateCountry('BGD');
+const previousResourcePerfFlag=globalThis.__OMEGA_RESOURCE_ECONOMY_PERF__;
+let hydrated;
+globalThis.__OMEGA_RESOURCE_ECONOMY_PERF__=true;
+try{
+  hydrated=runtime.hydrateCountry('BGD');
+}finally{
+  globalThis.__OMEGA_RESOURCE_ECONOMY_PERF__=previousResourcePerfFlag;
+}
 const indDiag=runtime.hydrateCountry('IND');
 const indState=runtime.countryResourceState('IND')||{};
 
