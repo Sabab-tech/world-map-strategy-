@@ -851,11 +851,16 @@
         :{type:'OMEGA_SIMULATION_TURN_COMMITTED',detail:clone(event)};
       const turn=Math.max(0,finite(event?.simulationTurn,0));
       const results=[];
+      const profile=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true?global.__OMEGA_SIMULATION_STEP_PROFILE__:null;
+      const now=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
       global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=true;
       let participantSliceCount=0;
       try{
       for(const entry of rows){
         if(this.turnParticipants.get(entry.id)!==entry)continue;
+        const startedAt=profile?now():0;
+        const timing=profile?{id:entry.id,priority:entry.priority,sequence:entry.sequence,status:'RUNNING'}:null;
+        if(timing){profile.participants.push(timing);profile.activeParticipant=entry.id;}
         try{
           const value=await entry.handler.call(global,browserEvent,{
             turn,
@@ -869,8 +874,10 @@
           });
           this.world.state.simulation.subsystemTurns=this.world.state.simulation.subsystemTurns||{};
           this.world.state.simulation.subsystemTurns[entry.id]=turn;
+          if(timing){timing.status='COMPLETED';timing.durationMs=Number((now()-startedAt).toFixed(2));profile.activeParticipant=null;}
           results.push({id:entry.id,turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
         }catch(error){
+          if(timing){timing.status='FAILED';timing.durationMs=Number((now()-startedAt).toFixed(2));timing.error=String(error?.message||error);profile.activeParticipant=null;}
           const failure={id:entry.id,turn,status:'FAILED',error:String(error?.message||error)};
           results.push(failure);
           // Stop the world immediately rather than silently let one sector miss a day.
@@ -929,12 +936,19 @@
           return a.priority-b.priority||a.sequence-b.sequence;
         });
       const results=[];
+      const profile=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true?global.__OMEGA_SIMULATION_STEP_PROFILE__:null;
+      const now=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
       for(const entry of rows){
         if(this.turnFinalizers.get(entry.id)!==entry)continue;
+        const startedAt=profile?now():0;
+        const timing=profile?{id:entry.id,priority:entry.priority,sequence:entry.sequence,status:'RUNNING'}:null;
+        if(timing){profile.finalizers.push(timing);profile.activeFinalizer=entry.id;}
         try{
           const value=await entry.handler.call(global,context);
+          if(timing){timing.status='COMPLETED';timing.durationMs=Number((now()-startedAt).toFixed(2));profile.activeFinalizer=null;}
           results.push({id:entry.id,turn:context.turn,status:'COMPLETED',result:value===undefined?null:clone(value)});
         }catch(error){
+          if(timing){timing.status='FAILED';timing.durationMs=Number((now()-startedAt).toFixed(2));timing.error=String(error?.message||error);profile.activeFinalizer=null;}
           const failure={id:entry.id,turn:context.turn,status:'FAILED',error:String(error?.message||error)};
           results.push(failure);
           this.status='ERROR';
@@ -1012,13 +1026,25 @@
         if(worldEngine?.setAuthoritativeState){
           worldEngine.setAuthoritativeState(this.world.state);
         }
+        const profile=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true?global.__OMEGA_SIMULATION_STEP_PROFILE__:null;
+        const profileNow=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
         if(worldEngine?.processSimulationTick){
+          const startedAt=profile?profileNow():0;
           worldResult=worldEngine.processSimulationTick(stepDurationMs,turn);
+          if(profile)profile.simulateComponents.push({name:'worldEngine.processSimulationTick',status:'COMPLETED',durationMs:Number((profileNow()-startedAt).toFixed(2))});
         }
 
         let ministryResult=null;
         if(typeof this.ministryPump==='function'){
-          ministryResult=await this.ministryPump({turn,stepDurationMs,countryId:this.getPlayerCountryId(),state:this.world.state});
+          const startedAt=profile?profileNow():0;
+          if(profile)profile.activeSimulateComponent='ministryPump';
+          try{
+            ministryResult=await this.ministryPump({turn,stepDurationMs,countryId:this.getPlayerCountryId(),state:this.world.state});
+            if(profile)profile.simulateComponents.push({name:'ministryPump',status:'COMPLETED',durationMs:Number((profileNow()-startedAt).toFixed(2))});
+          }catch(error){
+            if(profile)profile.simulateComponents.push({name:'ministryPump',status:'FAILED',durationMs:Number((profileNow()-startedAt).toFixed(2)),error:String(error?.message||error)});
+            throw error;
+          }finally{if(profile)profile.activeSimulateComponent=null;}
         }
 
         return {worldResult,ministryResult};
@@ -1331,6 +1357,26 @@
         const time=this.clock.advanceTurn();
         const turn=time.turn;
         this.status='RUNNING';
+        const profiling=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
+        const profileNow=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
+        const turnProfile=profiling?{
+          turn,status:'RUNNING',startedAt:profileNow(),phases:[],participants:[],finalizers:[],
+          simulateComponents:[],activePhase:null,activeParticipant:null,activeFinalizer:null,activeSimulateComponent:null
+        }:null;
+        if(turnProfile)global.__OMEGA_SIMULATION_STEP_PROFILE__=turnProfile;
+        const runProfiledPhase=async(name,task)=>{
+          if(!turnProfile)return task();
+          const startedAt=profileNow(),row={name,status:'RUNNING'};
+          turnProfile.phases.push(row);turnProfile.activePhase=name;
+          try{
+            const result=await task();
+            row.status='COMPLETED';row.durationMs=Number((profileNow()-startedAt).toFixed(2));
+            turnProfile.activePhase=null;return result;
+          }catch(error){
+            row.status='FAILED';row.durationMs=Number((profileNow()-startedAt).toFixed(2));row.error=String(error?.message||error);
+            turnProfile.activePhase=null;throw error;
+          }
+        };
 
         const commands=this.commandQueue.drain();
         for(const command of commands)this.commandQueue.record({...command,status:'PROCESSING',simulationTurn:turn});
@@ -1344,15 +1390,15 @@
         };
 
         const phaseResults={};
-        const inputResult=await this.phaseHandlers.get('INPUT')(context);
+        const inputResult=await runProfiledPhase('INPUT',()=>this.phaseHandlers.get('INPUT')(context));
         commandResults.push(...(Array.isArray(inputResult)?inputResult:[]));
         phaseResults.INPUT=clone(inputResult);
 
-        phaseResults.VALIDATE=clone(await this.phaseHandlers.get('VALIDATE')({...context,commandResults}));
-        phaseResults.SIMULATE=clone(await this.phaseHandlers.get('SIMULATE')({...context,commandResults}));
-        phaseResults.COMMIT=clone(await this.phaseHandlers.get('COMMIT')({...context,commandResults,simulationResult:phaseResults.SIMULATE}));
-        phaseResults.PUBLISH=clone(await this.phaseHandlers.get('PUBLISH')({...context,commandResults,phaseResults}));
-        phaseResults.CHECKPOINT=clone(await this.phaseHandlers.get('CHECKPOINT')({...context,commandResults,phaseResults}));
+        phaseResults.VALIDATE=clone(await runProfiledPhase('VALIDATE',()=>this.phaseHandlers.get('VALIDATE')({...context,commandResults})));
+        phaseResults.SIMULATE=clone(await runProfiledPhase('SIMULATE',()=>this.phaseHandlers.get('SIMULATE')({...context,commandResults})));
+        phaseResults.COMMIT=clone(await runProfiledPhase('COMMIT',()=>this.phaseHandlers.get('COMMIT')({...context,commandResults,simulationResult:phaseResults.SIMULATE})));
+        phaseResults.PUBLISH=clone(await runProfiledPhase('PUBLISH',()=>this.phaseHandlers.get('PUBLISH')({...context,commandResults,phaseResults})));
+        phaseResults.CHECKPOINT=clone(await runProfiledPhase('CHECKPOINT',()=>this.phaseHandlers.get('CHECKPOINT')({...context,commandResults,phaseResults})));
 
         // Mark the world/session as committed before the finalizer phase so its
         // durable snapshot contains the exact date, turn, and completion metadata.
@@ -1376,7 +1422,7 @@
 
         // The save finalizer executes after all state mutations and the completion
         // event, so the durable snapshot represents the completed turn, not a preview.
-        phaseResults.FINALIZE=clone(await this.runTurnFinalizers({
+        phaseResults.FINALIZE=clone(await runProfiledPhase('FINALIZE',()=>this.runTurnFinalizers({
           turn,
           day:turn+1,
           stepDurationMs:this.clock.stepDurationMs,
@@ -1385,10 +1431,12 @@
           state:this.world.state,
           clock:this.clock,
           simulation:this
-        },finalizersAtTurnStart));
+        },finalizersAtTurnStart)));
         this.lastStepSummary.phases=clone(phaseResults);
+        if(turnProfile){turnProfile.status='COMPLETED';turnProfile.totalMs=Number((profileNow()-turnProfile.startedAt).toFixed(2));turnProfile.activePhase=null;turnProfile.completedAt=profileNow();}
         return clone(this.lastStepSummary);
       }catch(error){
+        if(turnProfile){turnProfile.status='FAILED';turnProfile.error=String(error?.message||error);turnProfile.totalMs=Number((profileNow()-turnProfile.startedAt).toFixed(2));turnProfile.activePhase=turnProfile.activePhase||'STEP_ERROR';}
         this.lastError=String(error?.message||error);
         this.status='ERROR';
         this.clock.pause();
