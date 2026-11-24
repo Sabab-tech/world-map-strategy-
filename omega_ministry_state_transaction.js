@@ -102,6 +102,9 @@
       this.turn=Number.isFinite(Number(turn))?Number(turn):0;
       this.commandId=String(commandId||'');
       this.commandType=String(transactionOptions.commandType||'');
+      // Standalone transaction callers retain full before/after evidence. The
+      // Interoperability command ledger opts out to avoid retaining large copies.
+      this.includeOperationValues=transactionOptions.includeOperationValues!==false;
       const commandPaths=Object.prototype.hasOwnProperty.call(COMMAND_CROSS_DOMAIN_WRITE_PATHS,this.commandType)
         ?COMMAND_CROSS_DOMAIN_WRITE_PATHS[this.commandType]:[];
       this.authorizedCrossDomainWritePaths=new Set(commandPaths);
@@ -255,16 +258,22 @@
         const leaf=ref.parts[ref.parts.length-1];
         if(operation.op==='SET')cur[leaf]=clone(operation.after);
         else if(operation.op==='DELETE')delete cur[leaf];
-        // The authoritative before/after values already live in Game.state and
-        // the transaction-wide content revisions below. Persisting a second full
-        // copy of each written domain in every Interoperability command row caused
-        // multi-megabyte ledger entries for large resource-domain writes.
-        // Keep the operation identity and the transaction digests as the durable
-        // audit record; callers still receive one operation row per committed path.
-        applied.push({
-          op:operation.op,
-          path:operation.path
-        });
+        if(this.includeOperationValues){
+          applied.push({
+            op:operation.op,
+            path:operation.path,
+            before:clone(operation.before),
+            after:clone(operation.after)
+          });
+        }else{
+          // The authoritative before/after values already live in Game.state.
+          // The transaction-wide content revisions retain integrity evidence without
+          // duplicating multi-megabyte domain snapshots in each command row.
+          applied.push({
+            op:operation.op,
+            path:operation.path
+          });
+        }
       }
       const afterDigest=this._writeSetFingerprint(true);
       this.closed=true;
