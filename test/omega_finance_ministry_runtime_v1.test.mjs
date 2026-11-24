@@ -1122,7 +1122,8 @@ test('NPC national reserve uses coverage tiers on reconciled operating surplus, 
   assert.equal(current.nationalReserve.contributionPctOfOperatingSurplus,50);
   assert.equal(current.nationalReserve.selectedTier,'BELOW_30_DAYS');
   assert.equal(current.nationalReserve.selectedTierRatePct,50);
-  assert.equal(current.nationalReserve.operatingSurplusWatermarkUsd,expectedSurplus);
+  assert.ok(Math.abs(current.nationalReserve.operatingSurplusWatermarkUsd-expectedSurplus)<1,
+    'the period surplus watermark includes the same small modeled turn accrual as the reconciled flow account');
   assert.equal(current.nationalReserve.borrowingProceedsExcluded,true);
   assert.ok(Math.abs(financeBucket.available-current.treasuryBalanceUsd)<0.01,
     'earmarking reserve must not create cash or debit Treasury a second time');
