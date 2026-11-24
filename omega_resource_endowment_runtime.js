@@ -1493,9 +1493,9 @@ function batchFromExtraction(x,record){
     }
     const cached=siteExecutionRowsCache.get(cid);
     const requestedOccurrenceKeys=new Set(Array.isArray(existing?.requestedOccurrenceKeys)?existing.requestedOccurrenceKeys.map(String):[]);
-    if(cached){
+    const selectRowsForRequestedSites=sourceRows=>{
       const saved=existing?.mineStates&&typeof existing.mineStates==='object'?existing.mineStates:{};
-      let reusableRows=cached;
+      let reusableRows=sourceRows;
       if(requestedOccurrenceKeys.size){
         // Selected extraction slices reuse the already-built country site models.
         // Reconstructing the whole profile for every small transaction multiplied
@@ -1514,7 +1514,7 @@ function batchFromExtraction(x,record){
             if(siteId)requestedSiteReferenceKeys.add(siteId);
           }
         }
-        reusableRows=cached.filter(row=>
+        reusableRows=sourceRows.filter(row=>
           row?.assetType!=='MINE_SITE'||
           requestedSiteReferenceKeys.has(String(row?.siteReferenceKey||'').trim())
         );
@@ -1525,6 +1525,14 @@ function batchFromExtraction(x,record){
         if(persisted&&ReserveState)row.reserveState=new ReserveState(clone(persisted));
       }
       return reusableRows;
+    };
+    if(cached)return selectRowsForRequestedSites(cached);
+    if(requestedOccurrenceKeys.size){
+      // A loaded save can have authoritative site state but no in-memory catalog
+      // cache yet. Build the full country cache once, then apply the same slice
+      // filter used by warm-cache transactions.
+      const fullRows=siteExecutionRows(c,{...existing,requestedOccurrenceKeys:[]},authoritativeOccurrences);
+      return selectRowsForRequestedSites(fullRows);
     }
     const p=profile(cid)||{},rows=[],seen=new Set(),realism=g.Omega?.ResourceRealism||g.OmegaResourceRealism;
     // Registry-backed deposit occurrences are the production authority. A profile-derived
