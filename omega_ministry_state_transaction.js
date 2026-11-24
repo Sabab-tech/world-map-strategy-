@@ -255,15 +255,24 @@
         const leaf=ref.parts[ref.parts.length-1];
         if(operation.op==='SET')cur[leaf]=clone(operation.after);
         else if(operation.op==='DELETE')delete cur[leaf];
+        // The authoritative before/after values already live in Game.state and
+        // the transaction-wide content revisions below. Persisting a second full
+        // copy of each written domain in every Interoperability command row caused
+        // multi-megabyte ledger entries for large resource-domain writes.
+        // Keep the operation identity and the transaction digests as the durable
+        // audit record; callers still receive one operation row per committed path.
         applied.push({
           op:operation.op,
-          path:operation.path,
-          before:clone(operation.before),
-          after:clone(operation.after)
+          path:operation.path
         });
       }
       const afterDigest=this._writeSetFingerprint(true);
       this.closed=true;
+      // Release the transaction's temporary full-value copies immediately. Keep
+      // the compact path list on the transaction object because the command router
+      // reads operations.length to count authoritative writes after commit().
+      this.operations=applied;
+      this.writeBaseline.clear();
       return Object.freeze({
         transactionId:this.transactionId,
         commandId:this.commandId,
