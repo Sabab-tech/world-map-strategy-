@@ -1493,13 +1493,38 @@ function batchFromExtraction(x,record){
     }
     const cached=siteExecutionRowsCache.get(cid);
     const requestedOccurrenceKeys=new Set(Array.isArray(existing?.requestedOccurrenceKeys)?existing.requestedOccurrenceKeys.map(String):[]);
-    if(cached&&requestedOccurrenceKeys.size===0){
+    if(cached){
       const saved=existing?.mineStates&&typeof existing.mineStates==='object'?existing.mineStates:{};
-      for(const row of cached){
-        const persisted=saved[row.occurrenceKey];
-        if(persisted)row.reserveState=new (g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine).ReserveState(clone(persisted));
+      let reusableRows=cached;
+      if(requestedOccurrenceKeys.size){
+        // Selected extraction slices reuse the already-built country site models.
+        // Reconstructing the whole profile for every small transaction multiplied
+        // siteModel work across all 85 slices of one selected-country turn.
+        const requestedSiteReferenceKeys=new Set();
+        for(const key of requestedOccurrenceKeys){
+          const mine=saved[key]||{};
+          const siteId=String(mine.siteReferenceKey||mine.siteId||mine.sourceSiteId||'').trim();
+          if(siteId)requestedSiteReferenceKeys.add(siteId);
+        }
+        const controllers=state()?.resource?.[cid]?.mineSiteControllers||{};
+        for(const [controllerKey,controller] of Object.entries(controllers)){
+          const linked=Array.isArray(controller?.linkedOccurrenceKeys)?controller.linkedOccurrenceKeys:[];
+          if(linked.some(key=>requestedOccurrenceKeys.has(String(key)))){
+            const siteId=String(controller?.siteReferenceKey||controllerKey||'').trim();
+            if(siteId)requestedSiteReferenceKeys.add(siteId);
+          }
+        }
+        reusableRows=cached.filter(row=>
+          row?.assetType!=='MINE_SITE'||
+          requestedSiteReferenceKeys.has(String(row?.siteReferenceKey||'').trim())
+        );
       }
-      return cached;
+      const ReserveState=(g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine)?.ReserveState;
+      for(const row of reusableRows){
+        const persisted=saved[row.occurrenceKey];
+        if(persisted&&ReserveState)row.reserveState=new ReserveState(clone(persisted));
+      }
+      return reusableRows;
     }
     const p=profile(cid)||{},rows=[],seen=new Set(),realism=g.Omega?.ResourceRealism||g.OmegaResourceRealism;
     // Registry-backed deposit occurrences are the production authority. A profile-derived
@@ -1786,10 +1811,9 @@ function batchFromExtraction(x,record){
       warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
       locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],lastReceiptTurn:null
     });
-    const fullResourceReadStartedAt=perfEnabled?perfNow():0;
-    const existingResourceState=ctx.stateTransaction.get('resource')||{};
-    if(perfEnabled)perfAdd('unused-full-country-resource-root-read-ms',perfNow()-fullResourceReadStartedAt);
-    const persistedMineStates=ctx.stateTransaction.get('resource.mineStates')||{};
+    // Reuse the transaction's isolated mine-state snapshot instead of deep-cloning
+    // the same country table again for each extraction slice.
+    const persistedMineStates=current;
     const canonicalRowsStartedAt=perfEnabled?perfNow():0;
     const canonicalRows=occurrenceRows(c);
     if(perfEnabled)perfAdd('occurrence-rows-build-ms',perfNow()-canonicalRowsStartedAt);
