@@ -2236,7 +2236,16 @@ function batchFromExtraction(x,record){
     ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
     perfMark('transaction-write-staging');
-    if(perfEnabled)try{console.info('[SAB34_PROGRESS] RESOURCE_EXTRACTION_HANDLER_PROFILE '+JSON.stringify({countryId:c,turn:turn(),requestedOccurrenceCount:Array.isArray(cmd?.payload?.occurrenceKeys)?cmd.payload.occurrenceKeys.length:0,fullOccurrenceCount:rows.length,selectedOccurrenceCount:selected.length,phases:perfPhases,totalMs:Number((perfNow()-perfStartedAt).toFixed(2))}));}catch(_){}
+    if(perfEnabled)try{
+      const totalMs=Number((perfNow()-perfStartedAt).toFixed(2));
+      const aggregate=g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__||(g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__={handlerCount:0,totalHandlerMs:0,fullOccurrenceCount:rows.length,phaseStats:{},dispatchAndCommitMs:0,eventPublishMs:0,publishedRecordCount:0});
+      aggregate.handlerCount+=1;aggregate.totalHandlerMs+=totalMs;
+      aggregate.fullOccurrenceCount=Math.max(Number(aggregate.fullOccurrenceCount)||0,rows.length);
+      for(const phase of perfPhases){
+        const stat=aggregate.phaseStats[phase.label]||(aggregate.phaseStats[phase.label]={totalMs:0,count:0,maxMs:0});
+        stat.totalMs+=phase.durationMs;stat.count+=1;stat.maxMs=Math.max(stat.maxMs,phase.durationMs);
+      }
+    }catch(_){}
     return{accepted:true,countryId:c,extracted:extracted.length,replayed:replayedRecords.length,
       blocked:blocked.length,records:[...extracted,...replayedRecords]};
   }
@@ -2264,10 +2273,20 @@ function batchFromExtraction(x,record){
   }
   async function extractCountry(c,occurrenceKeys=null){
     install();
+    const perfEnabled=g.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
+    const perfNow=()=>typeof performance!=='undefined'&&typeof performance.now==='function'?performance.now():Date.now();
+    const dispatchStartedAt=perfEnabled?perfNow():0;
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     if(strategicPolicy?.loadRules){const ready=await strategicPolicy.loadRules();if(ready?.status!=='READY')return{status:'BLOCKED',reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY',detail:ready};}
     const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',canonical(c),{occurrenceKeys:Array.isArray(occurrenceKeys)?occurrenceKeys:undefined,correlationId:'RESOURCE-EXTRACT-MANUAL-'+turn()+'-'+canonical(c)});
+    const publishStartedAt=perfEnabled?perfNow():0;
     publishCommittedExtractionEvents(c,result);
+    if(perfEnabled)try{
+      const aggregate=g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__||(g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__={handlerCount:0,totalHandlerMs:0,fullOccurrenceCount:0,phaseStats:{},dispatchAndCommitMs:0,eventPublishMs:0,publishedRecordCount:0});
+      aggregate.dispatchAndCommitMs+=Number((publishStartedAt-dispatchStartedAt).toFixed(2));
+      aggregate.eventPublishMs+=Number((perfNow()-publishStartedAt).toFixed(2));
+      aggregate.publishedRecordCount+=Array.isArray(result?.result?.records)?result.result.records.length:(Array.isArray(result?.records)?result.records.length:0);
+    }catch(_){}
     return result;
   }
 
@@ -2277,6 +2296,7 @@ function batchFromExtraction(x,record){
     const perfStartedAt=perfEnabled?perfNow():0;
     const perfSliceDurations=[];
     const c=canonical(countryId);
+    if(perfEnabled)g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__={handlerCount:0,totalHandlerMs:0,fullOccurrenceCount:0,phaseStats:{},dispatchAndCommitMs:0,eventPublishMs:0,publishedRecordCount:0};
     if(!/^[A-Z]{3}$/.test(c))return{status:'BLOCKED',reason:'COUNTRY_ID_INVALID',countryId:c||null};
     const selectedCountryId=playerSimulationCountryId();
     if(!selectedCountryId)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:c};
@@ -2375,7 +2395,7 @@ function batchFromExtraction(x,record){
     const blocked=sliceResults.reduce((sum,row)=>sum+row.blocked,0);
     const failed=sliceResults.find(row=>row.result?.status!=='APPLIED'||row.payload?.status==='FAILED');
     const status=produced.length?(blocked?'PARTIALLY_STARTED':'STARTED'):'BLOCKED';
-    if(perfEnabled)try{console.info('[SAB34_PROGRESS] RESOURCE_COUNTRY_PRODUCTION_PROFILE '+JSON.stringify({countryId:c,turn:t,candidateOccurrenceCount:candidates.length,sliceSize,sliceCount:perfSliceDurations.length,hardwareConcurrency:Number(nav.hardwareConcurrency)||null,deviceMemory:Number(nav.deviceMemory)||null,constrained,sliceDurationsMs:perfSliceDurations,totalMs:Number((perfNow()-perfStartedAt).toFixed(2))}));}catch(_){}
+    if(perfEnabled)try{const profile=g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__||{};console.info('[SAB34_PROGRESS] RESOURCE_ECONOMY_EXTRACTION_PROFILE '+JSON.stringify({countryId:c,turn:t,candidateOccurrenceCount:candidates.length,sliceSize,sliceCount:perfSliceDurations.length,hardwareConcurrency:Number(nav.hardwareConcurrency)||null,deviceMemory:Number(nav.deviceMemory)||null,constrained,sliceDurationsMs:perfSliceDurations,totalMs:Number((perfNow()-perfStartedAt).toFixed(2)),extractionProfile:profile}));}catch(_){}
     return{status,countryId:c,turn:t,requestedSiteCount:requestedSites?.size||null,
       attemptedOccurrenceCount:candidates.length,processedOccurrenceCount:records.length,
       extractionSliceCount:sliceResults.length,startedSiteCount:producingSites.size,
