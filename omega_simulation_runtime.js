@@ -223,7 +223,7 @@
       worldState:timed('worldState',()=>referenceWorldState?runtime.world.state:runtime.world.snapshot()),
       commands:timed('commands',()=>runtime.commandQueue.snapshot()),
       events:timed('events',()=>runtime.events.snapshot()),
-      ministryRuntime:timed('ministryRuntime',()=>runtime.ministryRuntime?.saveState?.()||null),
+      ministryRuntime:timed('ministryRuntime',()=>runtime.ministryRuntime?.saveState?.({includeInteroperability:false})||null),
       interoperability:timed('interoperability',()=>runtime.interoperability?.saveState?.()||null),
       worldEngine:timed('worldEngine',()=>runtime.worldEngine?.exportSaveState?.({authoritativeState:true})||null)
     };
