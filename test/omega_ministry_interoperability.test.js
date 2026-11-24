@@ -477,6 +477,38 @@ test('Q2: Interior runtime reads and publishes Home Ministry police state for th
   assert.equal(peer.publishedFacts['interior.police.policeCount'].countryId,s.countryA);
 });
 
+test('committed command audit records write paths and revisions without copying full before/after domain state',()=>{
+  const s=createSandbox();
+  const before={rows:Array.from({length:1200},(_,index)=>({index,payload:'B'.repeat(250)}))};
+  const after={rows:Array.from({length:1200},(_,index)=>({index,payload:'A'.repeat(250)}))};
+  s.state.economy[s.countryA].largeAuditDomain=before;
+
+  s.mesh.registerCommandHandler('TEST_COMPACT_TRANSACTION_AUDIT','economy',(command,{stateTransaction})=>{
+    stateTransaction.set('economy.largeAuditDomain',after);
+    return{accepted:true};
+  });
+
+  const result=s.mesh.dispatchCommand('finance','TEST_COMPACT_TRANSACTION_AUDIT',s.countryA,{},{
+    turn:2,commandType:'TEST_COMPACT_TRANSACTION_AUDIT',commandId:'COMPACT-AUDIT-1'
+  });
+  assert.equal(result.status,'APPLIED');
+  assert.equal(result.transaction.operations.length,1);
+  assert.deepEqual(result.transaction.operations[0],{
+    op:'SET',path:'economy.largeAuditDomain'
+  });
+  assert.match(result.transaction.beforeRevision,/^CONTENT:[0-9a-f]{8}$/);
+  assert.match(result.transaction.afterRevision,/^CONTENT:[0-9a-f]{8}$/);
+  assert.equal(result.transaction.changed,true);
+  assert.equal(s.state.economy[s.countryA].largeAuditDomain.rows[0].payload,'A'.repeat(250));
+
+  const savedCommand=s.mesh.getCommand('COMPACT-AUDIT-1');
+  assert.ok(JSON.stringify(savedCommand).length<5000,
+    'the persistent command ledger must not embed the full old and new domain payloads');
+  assert.equal(savedCommand.transaction.operations.length,1);
+  assert.equal(Object.hasOwn(savedCommand.transaction.operations[0],'before'),false);
+  assert.equal(Object.hasOwn(savedCommand.transaction.operations[0],'after'),false);
+});
+
 test('R: save/load restores logically equivalent interoperability state',()=>{
   const s=createSandbox();
   s.tickAll(1);
