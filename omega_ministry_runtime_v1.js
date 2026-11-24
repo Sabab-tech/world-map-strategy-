@@ -487,7 +487,7 @@
 
     function getEngine(id){ return getEngineRegistry()?.get?.(String(id))||null; }
 
-    function saveState(){
+    function saveState(options={}){
       const engineStates={};
       for(const id of IDS){
         const engine=getEngineRegistry()?.get?.(id);
@@ -498,7 +498,10 @@
         version:VERSION,
         ministries:Object.fromEntries([...states.entries()].map(([id,state])=>[id,clone(state)])),
         engines:engineStates,
-        interoperability:interoperability?.saveState?.()||null
+        // Simulation snapshots persist the same interoperability ledger once
+        // at the top level. Keep the nested copy for standalone/legacy callers,
+        // but let the canonical save root avoid serializing it twice.
+        interoperability:options.includeInteroperability===false?null:(interoperability?.saveState?.()||null)
       };
     }
 
