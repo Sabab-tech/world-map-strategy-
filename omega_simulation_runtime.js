@@ -138,16 +138,17 @@
       yield* emit(':');
       let partChars=0;
       const profile=global.__OMEGA_SIMULATION_SAVE_PROFILE__||null;
-      if(profile&&key==='worldState'){
-        // Profile the authoritative state hierarchy while preserving the exact
-        // JSON order and bytes used by the save checksum and stored snapshot.
-        profile.worldStatePathChars=profile.worldStatePathChars||{};
+      if(profile&&(key==='worldState'||key==='interoperability')){
+        // Profile large persistent branches while preserving the exact JSON
+        // order and bytes used by the save checksum and stored snapshot.
+        const pathMetric=key==='worldState'?'worldStatePathChars':'interoperabilityPathChars';
+        const pathMetrics=profile[pathMetric]||(profile[pathMetric]={});
         const pathStack=[];
         const emitWorldChunk=function*(chunk){
           partChars+=chunk.length;
           for(const entry of pathStack){
             entry.chars+=chunk.length;
-            profile.worldStatePathChars[entry.path]=entry.chars;
+            pathMetrics[entry.path]=entry.chars;
           }
           yield* emit(chunk);
         };
@@ -172,7 +173,7 @@
           yield* emitWorldChunk('}');
           pathStack.pop();
         };
-        yield* profiledWorldChunks(snapshot[key],'worldState',3);
+        yield* profiledWorldChunks(snapshot[key],key,3);
       }else{
         for(const chunk of stableJsonChunks(snapshot[key],false,false)){
           partChars+=chunk.length;
