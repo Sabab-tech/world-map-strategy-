@@ -668,20 +668,35 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(priorityInbox.find(row => row.proposalId === 'BTP-PRIORITY-NPC-SECOND').inboxStatus, 'PENDING',
     'the existing two-review-per-country-turn bound must remain intact');
 
-  // NPC national Treasury reserve is excluded from commercial spendable cash.
+  // NPC national Treasury reserve is excluded from internal spendable cash,
+  // while counterparty-facing review data continues to redact private Treasury.
   globalThis.Game.state.finance.SAU.available = 350000;
   globalThis.Game.state.finance.SAU.omegaFinance = {
     nationalReserve: { balanceUsd: 349999 }
   };
-  const reserveAwareReview = bilateral.evaluateProposal('SAU', {
+  const reserveAwareProposal = {
     proposalId: 'BTP-NPC-RESERVE-AFFORDABILITY', requestorCountryId: 'BGD',
     targetCountryId: 'SAU', buyerCountryId: 'SAU', sellerCountryId: 'BGD',
     resourceId: 'crude_oil', quantityPerDelivery: 1, unitPrice: 1,
-    intervalDays: 30, intervalTurns: 30, priceModel: 'FIXED'
-  });
-  assert.equal(reserveAwareReview.decisionFactors.buyerGrossAvailableForeignCurrency, 350000);
-  assert.equal(reserveAwareReview.decisionFactors.buyerAvailableForeignCurrency, 1,
+    intervalDays: 30, intervalTurns: 30, priceModel: 'FIXED',
+    status: 'SENT', inboxStatus: 'PENDING', createdTurn: priorityTurn
+  };
+  globalThis.Game.state.trade.SAU.bilateralProposalInbox.push(reserveAwareProposal);
+  globalThis.Game.state.trade.BGD.bilateralProposalOutbox.push(structuredClone(reserveAwareProposal));
+  globalThis.Game.state.simulation.turn += 1;
+  const reserveTurn = bilateral.processCountry('SAU');
+  assert.equal(reserveTurn.proposals.length, 1);
+  const internalReserveReview = globalThis.Game.state.trade.SAU.bilateralProposalInbox
+    .find(row => row.proposalId === 'BTP-NPC-RESERVE-AFFORDABILITY').review;
+  assert.notEqual(internalReserveReview.decision, 'WAITING_DATA');
+  assert.equal(internalReserveReview.decisionFactors.buyerGrossAvailableForeignCurrency, 350000);
+  assert.equal(internalReserveReview.decisionFactors.buyerAvailableForeignCurrency, 1,
     'NPC buyer liquidity is reduced by its protected national Treasury reserve');
-  assert.equal(reserveAwareReview.decisionFactors.buyerNationalReserveUsd, 349999);
+  assert.equal(internalReserveReview.decisionFactors.buyerNationalReserveUsd, 349999);
+  const publicReserveReview = globalThis.Game.state.trade.BGD.bilateralProposalOutbox
+    .find(row => row.proposalId === 'BTP-NPC-RESERVE-AFFORDABILITY').review;
+  assert.equal(publicReserveReview.decisionFactors.buyerGrossAvailableForeignCurrency, null,
+    'private NPC treasury liquidity must not be disclosed to a requesting counterparty');
+  assert.equal(publicReserveReview.decisionFactors.buyerNationalReserveUsd, null);
 
 });
