@@ -976,6 +976,85 @@
       return { status: 'UNKNOWN', value: null, source: null };
     return { status: 'KNOWN', value: Number(value), source: source || null };
   }
+  function countryInvestmentEvidence(country) {
+    var finance = bucket(country, 'finance') || {};
+    var root = finance.omegaFinance && finance.omegaFinance.governmentInvestmentV1;
+    if (!root || !Array.isArray(root.proposals) || !Array.isArray(root.fundingRequests) ||
+        !Array.isArray(root.investments) || !Array.isArray(root.loans)) {
+      return { status: 'UNKNOWN', value: null, source: null };
+    }
+    var terminal = ['REJECTED', 'DECLINED', 'CANCELLED', 'COMPLETED', 'SETTLED', 'REFUNDED'];
+    var openProposals = root.proposals.filter(function (row) {
+      return row && !terminal.includes(id(row.status));
+    });
+    var openFundingRequests = root.fundingRequests.filter(function (row) {
+      return row && !terminal.includes(id(row.status));
+    });
+    var activeLoans = root.loans.filter(function (row) {
+      return row && !['REPAID', 'CANCELLED', 'CLOSED'].includes(id(row.status)) &&
+        (num(row.principalOutstandingUsd ?? row.outstandingPrincipalUsd) || 0) > 0.01;
+    });
+    var projects = bucket(country, 'resource');
+    projects = projects && projects.industrialNetwork && projects.industrialNetwork.projects;
+    var activeProjects = Array.isArray(projects) ? projects.filter(function (row) {
+      return row && !['COMPLETED', 'CANCELLED', 'ABANDONED', 'REJECTED'].includes(id(row.status));
+    }) : null;
+    return {
+      status: 'KNOWN',
+      value: {
+        openProposalCount: openProposals.length,
+        openProposalAmountUsd: Number(openProposals.reduce(function (sum, row) {
+          return sum + Math.max(0, num(row.amountUsd) || 0);
+        }, 0).toFixed(2)),
+        openFundingRequestCount: openFundingRequests.length,
+        openFundingRequestAmountUsd: Number(openFundingRequests.reduce(function (sum, row) {
+          return sum + Math.max(0, num(row.amountUsd) || 0);
+        }, 0).toFixed(2)),
+        activeInvestmentPositionCount: root.investments.length,
+        activeProjectCount: activeProjects === null ? null : activeProjects.length,
+        activeGovernmentLoanCount: activeLoans.length,
+        outstandingGovernmentLoanPrincipalUsd: Number(activeLoans.reduce(function (sum, row) {
+          return sum + Math.max(0, num(row.principalOutstandingUsd ?? row.outstandingPrincipalUsd) || 0);
+        }, 0).toFixed(2))
+      },
+      source: 'finance.omegaFinance.governmentInvestmentV1 plus resource.industrialNetwork.projects'
+    };
+  }
+  function worldBankDebtEvidence(country) {
+    var banking = state().governmentBanking || {};
+    var bank = banking.worldBankLending;
+    if (!bank || !isObject(bank.loansByCountry) || !isObject(bank.insolvencyByCountry) ||
+        !Array.isArray(bank.restructuringProposals)) return { status: 'UNKNOWN', value: null, source: null };
+    var loanEntry = mapEntry(bank.loansByCountry, country);
+    var loans = loanEntry.found && Array.isArray(loanEntry.value) ? loanEntry.value : [];
+    if (loanEntry.found && !Array.isArray(loanEntry.value)) return { status: 'UNKNOWN', value: null, source: null };
+    var active = loans.filter(function (row) {
+      return row && !['REPAID', 'CANCELLED', 'CLOSED'].includes(id(row.status)) &&
+        ((num(row.outstandingPrincipalUsd) || 0) > 0.01 ||
+          (num(row.accruedInterestUsd) || 0) > 0.01 || (num(row.arrearsUsd) || 0) > 0.01);
+    });
+    var insolvency = mapEntry(bank.insolvencyByCountry, country);
+    var workouts = bank.restructuringProposals.filter(function (row) {
+      return row && canonical(row.countryCode || row.countryId) === canonical(country);
+    });
+    return {
+      status: 'KNOWN',
+      value: {
+        activeLoanCount: active.length,
+        outstandingPrincipalUsd: Number(active.reduce(function (sum, row) {
+          return sum + Math.max(0, num(row.outstandingPrincipalUsd) || 0);
+        }, 0).toFixed(2)),
+        accruedInterestAndArrearsUsd: Number(active.reduce(function (sum, row) {
+          return sum + Math.max(0, num(row.accruedInterestUsd) || 0) +
+            Math.max(0, num(row.arrearsUsd) || 0);
+        }, 0).toFixed(2)),
+        insolvencyStatus: insolvency.found && insolvency.value ? id(insolvency.value.status) : 'NONE_RECORDED',
+        restructuringProposalCount: workouts.length,
+        latestRestructuringStatus: workouts.length ? id(workouts[workouts.length - 1].status) : 'NONE_RECORDED'
+      },
+      source: 'governmentBanking.worldBankLending.loansByCountry, insolvencyByCountry and restructuringProposals'
+    };
+  }
   function finalizeProposalReview(country, proposal, review) {
     var result = clone(review || {});
     var factors = result.decisionFactors && typeof result.decisionFactors === 'object' ? result.decisionFactors : {};
@@ -993,8 +1072,9 @@
     var criticalKnown = typeof criticality === 'boolean' || typeof criticality === 'string' ||
       (criticality !== null && criticality !== undefined && Number.isFinite(Number(criticality)));
     var alternative = factors.alternativeMarketEvidence;
-    var financeEvidence = buyer ? readFinance(buyer) : null;
-    var reserveStatus = financeEvidence ? financeEvidence.nationalReserveStatus : 'UNKNOWN';
+    var financeCountry = buyer ? bucket(buyer, 'finance') || {} : {};
+    var reserveState = financeCountry.omegaFinance && financeCountry.omegaFinance.nationalReserve;
+    var reserveStatus = buyer ? (readFinance(buyer).nationalReserveStatus || 'UNKNOWN') : 'UNKNOWN';
     var reserveValue = num(factors.buyerNationalReserveUsd);
     var commitmentsKnown = num(factors.sellerActiveContractCommitments) !== null ||
       num(factors.sellerActiveContractCount) !== null;
@@ -1002,6 +1082,39 @@
     var competitorQuantity = num(factors.acceptedCompetingRequestQuantity);
     var relationshipScore = num(factors.relationshipScore);
     var reliabilityScore = num(factors.partnerDeliveryReliability);
+    var parties = Array.from(new Set([buyer, seller].filter(Boolean)));
+    var investmentSnapshots = parties.map(function (countryId) {
+      return { countryId: countryId, evidence: countryInvestmentEvidence(countryId) };
+    });
+    var investmentKnownCount = investmentSnapshots.filter(function (row) {
+      return row.evidence.status === 'KNOWN';
+    }).length;
+    var investmentStatus = investmentKnownCount === parties.length && parties.length
+      ? 'KNOWN' : investmentKnownCount ? 'PARTIAL' : 'UNKNOWN';
+    var worldBankSnapshots = parties.map(function (countryId) {
+      return { countryId: countryId, evidence: worldBankDebtEvidence(countryId) };
+    });
+    var worldBankKnownCount = worldBankSnapshots.filter(function (row) {
+      return row.evidence.status === 'KNOWN';
+    }).length;
+    var worldBankStatus = worldBankKnownCount === parties.length && parties.length
+      ? 'KNOWN' : worldBankKnownCount ? 'PARTIAL' : 'UNKNOWN';
+    var supplierRows = alternative && Array.isArray(alternative.suppliers) ? alternative.suppliers : [];
+    var distinctSupplierIds = Array.from(new Set(supplierRows.map(function (row) {
+      return canonical(row && row.countryId);
+    }).filter(Boolean)));
+    var diversificationStatus = id(alternative && alternative.status) === 'OBSERVED' &&
+      distinctSupplierIds.length ? 'KNOWN' : 'UNKNOWN';
+    var diversificationValue = diversificationStatus === 'KNOWN' ? {
+      observedAlternativeSupplierCount: distinctSupplierIds.length,
+      observedAlternativeSuppliers: distinctSupplierIds,
+      currentImportSupplierShareHhi: null,
+      currentImportSupplierShareStatus: 'UNKNOWN'
+    } : null;
+    var alternativePriceStatus = id(alternative && alternative.status) === 'OBSERVED' &&
+      (num(alternative.bestAlternativePrice) !== null ||
+        num(alternative.bestAlternativeBuyerPrice) !== null ||
+        num(alternative.bestAlternativeBuyerCost) !== null) ? 'KNOWN' : 'UNKNOWN';
     var reasoningFactors = {
       domesticBalance: evidenceValue(domesticBalance, 'resource.demandRuntime.byResource.domesticBalance'),
       factoryIndustrialDemand: evidenceValue(industrialDemand, 'resource.demandRuntime.byResource explicit factory/industrial demand'),
@@ -1011,15 +1124,35 @@
             activeContractCount: num(factors.sellerActiveContractCount), partnerAgreementCount: num(factors.existingPartnerAgreementCount) },
             source: 'trade.bilateralContracts' }
         : { status: 'UNKNOWN', value: null, source: null },
-      lendingInvestmentMegaprojectCommitments: { status: 'UNKNOWN', value: null, source: null },
-      reserveRebuilding: reserveStatus === 'KNOWN'
-        ? { status: 'KNOWN', value: { balanceUsd: reserveValue, rebuilding: reserveValue > 0 },
-            source: 'finance.omegaFinance.nationalReserve' }
+      lendingInvestmentMegaprojectCommitments: {
+        status: investmentStatus,
+        value: investmentKnownCount ? investmentSnapshots : null,
+        source: investmentKnownCount ? 'Finance-owned Government Investment and project state for buyer/seller countries' : null
+      },
+      reserveRebuilding: reserveStatus === 'KNOWN' && reserveState
+        ? { status: 'KNOWN', value: {
+            balanceUsd: reserveValue,
+            coverageDays: num(reserveState.coverageDays),
+            targetCoverageDays: num(reserveState.targetCoverageDays),
+            reserveGapUsd: num(reserveState.reserveGapUsd),
+            currentPeriodContributionUsd: num(reserveState.currentPeriodContributionUsd),
+            lastContributionUsd: num(reserveState.lastContributionUsd),
+            contributionTier: reserveState.selectedTier || null,
+            reserveStatus: reserveState.status || null,
+            rebuilding: (num(reserveState.reserveGapUsd) || 0) > 0
+          }, source: 'finance.omegaFinance.nationalReserve' }
         : reserveStatus === 'NOT_APPLICABLE'
           ? { status: 'NOT_APPLICABLE', value: null, source: 'PLAYER_COUNTRY_HAS_NO_AUTOMATIC_NPC_RESERVE' }
           : { status: 'UNKNOWN', value: null, source: null },
-      debtRestructuring: { status: 'UNKNOWN', value: null, source: null },
-      diversification: { status: 'UNKNOWN', value: null, source: null },
+      debtRestructuring: {
+        status: worldBankStatus,
+        value: worldBankKnownCount ? worldBankSnapshots : null,
+        source: worldBankKnownCount ? 'governmentBanking.worldBankLending country loan and restructuring records' : null
+      },
+      diversification: {
+        status: diversificationStatus, value: diversificationValue,
+        source: diversificationStatus === 'KNOWN' ? 'OMEGA_GLOBAL_MARKET observed alternative suppliers' : null
+      },
       criticalImports: criticalKnown
         ? { status: 'KNOWN', value: criticality, source: 'resource.demandRuntime.byResource criticality field' }
         : { status: 'UNKNOWN', value: null, source: null },
@@ -1027,7 +1160,7 @@
         ? { status: 'KNOWN', value: { acceptedRequestCount: competitorCount, acceptedQuantity: competitorQuantity },
             source: 'bilateral commitments and pending trade requests' }
         : { status: 'UNKNOWN', value: null, source: null },
-      priceAlternatives: alternative && id(alternative.status) === 'OBSERVED'
+      priceAlternatives: alternativePriceStatus === 'KNOWN'
         ? { status: 'KNOWN', value: clone(alternative), source: 'Global Market observed supplier/competing-buyer prices' }
         : { status: 'UNKNOWN', value: null, source: null },
       fxLiquidity: num(factors.buyerAvailableForeignCurrency) !== null &&
@@ -1043,7 +1176,7 @@
         : { status: 'UNKNOWN', value: null, source: null }
     };
     var missingData = Object.keys(reasoningFactors).filter(function (key) {
-      return reasoningFactors[key].status === 'UNKNOWN';
+      return !['KNOWN', 'NOT_APPLICABLE'].includes(reasoningFactors[key].status);
     });
     var decision = id(result.decision || 'WAITING_DATA');
     var outcomeMap = { ACCEPT: 'ACCEPT', REJECT: 'REJECT', COUNTER: 'COUNTEROFFER',
@@ -1101,7 +1234,7 @@
         factors.buyerCurrencyCommitments = { status: 'PRIVATE', amount: null };
       safe.decisionFactors = factors;
       if (safe.reasoningFactors) {
-        ['reserveRebuilding', 'fxLiquidity'].forEach(function (key) {
+        ['reserveRebuilding', 'fxLiquidity', 'lendingInvestmentMegaprojectCommitments', 'debtRestructuring'].forEach(function (key) {
           if (safe.reasoningFactors[key]) safe.reasoningFactors[key] = { status: 'PRIVATE', value: null, source: null };
         });
       }
@@ -1133,7 +1266,8 @@
       }
     }
     if (evaluator && viewer && evaluator !== viewer && safe.reasoningFactors) {
-      ['competingRequests', 'priceAlternatives'].forEach(function (key) {
+      ['competingRequests', 'priceAlternatives', 'diversification',
+        'lendingInvestmentMegaprojectCommitments', 'debtRestructuring', 'reserveRebuilding', 'fxLiquidity'].forEach(function (key) {
         if (safe.reasoningFactors[key]) safe.reasoningFactors[key] = { status: 'PRIVATE', value: null, source: null };
       });
     }

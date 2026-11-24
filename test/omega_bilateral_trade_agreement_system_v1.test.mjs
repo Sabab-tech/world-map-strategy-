@@ -700,10 +700,34 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.ok(incompleteReview.reasoningFactors.lendingInvestmentMegaprojectCommitments.status==='UNKNOWN');
 
   // NPC national Treasury reserve is excluded from internal spendable cash,
-  // while counterparty-facing review data continues to redact private Treasury.
+  // while sovereign project, debt and counterparty evidence remains sourced from
+  // the existing Finance-owned ledgers and is redacted from the other country.
   globalThis.Game.state.finance.SAU.available = 350000;
   globalThis.Game.state.finance.SAU.omegaFinance = {
-    nationalReserve: { balanceUsd: 349999 }
+    nationalReserve: { balanceUsd: 349999, coverageDays: 45, targetCoverageDays: 90,
+      reserveGapUsd: 45000, currentPeriodContributionUsd: 12000, lastContributionUsd: 12000,
+      selectedTier: 'DAYS_30_TO_59', status: 'FUNDED' },
+    governmentInvestmentV1: {
+      proposals: [{ proposalId: 'INV-SAU-OPEN', status: 'PENDING_HOST_REVIEW', amountUsd: 100000 }],
+      fundingRequests: [{ fundingRequestId: 'FUND-SAU-OPEN', status: 'OFFER_ISSUED', amountUsd: 50000 }],
+      investments: [{ projectId: 'PROJECT-SAU-OPEN', investedCapitalUsd: 75000 }],
+      loans: [{ loanId: 'LOAN-SAU-ACTIVE', status: 'ACTIVE', principalOutstandingUsd: 40000 }]
+    }
+  };
+  globalThis.Game.state.finance.BGD.omegaFinance = {
+    governmentInvestmentV1: { proposals: [], fundingRequests: [], investments: [], loans: [] }
+  };
+  globalThis.Game.state.resource.SAU.industrialNetwork = {
+    projects: [{ projectId: 'PROJECT-SAU-OPEN', status: 'UNDER_CONSTRUCTION' }]
+  };
+  globalThis.Game.state.governmentBanking = {
+    worldBankLending: {
+      loansByCountry: { SAU: [{ contractId: 'WB-SAU-OPEN', status: 'ACTIVE',
+        outstandingPrincipalUsd: 25000, accruedInterestUsd: 500, arrearsUsd: 100 }] },
+      insolvencyByCountry: { SAU: { status: 'RESTRUCTURED', loanId: 'WB-SAU-OPEN' } },
+      restructuringProposals: [{ proposalId: 'WBR-SAU-OPEN', countryCode: 'SAU',
+        loanId: 'WB-SAU-OPEN', status: 'APPROVED_SIMULATED_WORKOUT' }]
+    }
   };
   const reserveAwareProposal = {
     proposalId: 'BTP-NPC-RESERVE-AFFORDABILITY', requestorCountryId: 'BGD',
@@ -724,10 +748,26 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(internalReserveReview.decisionFactors.buyerAvailableForeignCurrency, 1,
     'NPC buyer liquidity is reduced by its protected national Treasury reserve');
   assert.equal(internalReserveReview.decisionFactors.buyerNationalReserveUsd, 349999);
+  assert.equal(internalReserveReview.reasoningFactors.reserveRebuilding.status,'KNOWN');
+  assert.equal(internalReserveReview.reasoningFactors.reserveRebuilding.value.coverageDays,45);
+  assert.equal(internalReserveReview.reasoningFactors.lendingInvestmentMegaprojectCommitments.status,'KNOWN');
+  assert.equal(internalReserveReview.reasoningFactors.lendingInvestmentMegaprojectCommitments.value[0].evidence.value.openProposalCount,1);
+  assert.equal(internalReserveReview.reasoningFactors.lendingInvestmentMegaprojectCommitments.value[0].evidence.value.activeProjectCount,1);
+  assert.equal(internalReserveReview.reasoningFactors.debtRestructuring.status,'KNOWN');
+  assert.equal(internalReserveReview.reasoningFactors.debtRestructuring.value[0].evidence.value.activeLoanCount,1);
+  assert.equal(internalReserveReview.reasoningFactors.debtRestructuring.value[0].evidence.value.latestRestructuringStatus,'APPROVED_SIMULATED_WORKOUT');
+  assert.equal(internalReserveReview.reasoningFactors.diversification.status,'KNOWN');
+  assert.ok(internalReserveReview.reasoningFactors.diversification.value.observedAlternativeSupplierCount > 0);
+  assert.ok(internalReserveReview.missingData.includes('criticalImports'),
+    'critical import status remains explicitly missing when the resource authority does not provide it');
   const publicReserveReview = globalThis.Game.state.trade.BGD.bilateralProposalOutbox
     .find(row => row.proposalId === 'BTP-NPC-RESERVE-AFFORDABILITY').decision;
   assert.equal(publicReserveReview.decisionFactors.buyerGrossAvailableForeignCurrency, null,
     'private NPC treasury liquidity must not be disclosed to a requesting counterparty');
   assert.equal(publicReserveReview.decisionFactors.buyerNationalReserveUsd, null);
+  assert.equal(publicReserveReview.reasoningFactors.reserveRebuilding.status,'PRIVATE');
+  assert.equal(publicReserveReview.reasoningFactors.lendingInvestmentMegaprojectCommitments.status,'PRIVATE');
+  assert.equal(publicReserveReview.reasoningFactors.debtRestructuring.status,'PRIVATE');
+  assert.equal(publicReserveReview.reasoningFactors.diversification.status,'PRIVATE');
 
 });
