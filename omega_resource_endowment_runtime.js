@@ -1762,6 +1762,7 @@ function batchFromExtraction(x,record){
     let perfMarkAt=perfStartedAt;
     const perfPhases=[];
     const perfMark=label=>{if(!perfEnabled)return;const now=perfNow();perfPhases.push({label,durationMs:Number((now-perfMarkAt).toFixed(2))});perfMarkAt=now;};
+    const perfAdd=(label,elapsed)=>{if(!perfEnabled)return;const p=g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__||(g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__={phaseBreakdownMs:{}});p.phaseBreakdownMs=p.phaseBreakdownMs||{};p.phaseBreakdownMs[label]=(Number(p.phaseBreakdownMs[label])||0)+Number(elapsed||0);};
     const c=canonical(ctx.countryId),r=g.__OmegaResourceReserveRegistry,p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     if(strategicPolicy&&strategicPolicy.diagnostics?.().rulesLoaded!==true)return{accepted:false,reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY'};
@@ -1785,10 +1786,17 @@ function batchFromExtraction(x,record){
       warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',
       locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],lastReceiptTurn:null
     });
+    const fullResourceReadStartedAt=perfEnabled?perfNow():0;
     const existingResourceState=ctx.stateTransaction.get('resource')||{};
+    if(perfEnabled)perfAdd('unused-full-country-resource-root-read-ms',perfNow()-fullResourceReadStartedAt);
     const persistedMineStates=ctx.stateTransaction.get('resource.mineStates')||{};
+    const canonicalRowsStartedAt=perfEnabled?perfNow():0;
     const canonicalRows=occurrenceRows(c);
+    if(perfEnabled)perfAdd('occurrence-rows-build-ms',perfNow()-canonicalRowsStartedAt);
+    const siteRowsStartedAt=perfEnabled?perfNow():0;
     const siteRows=siteExecutionRows(c,{mineStates:persistedMineStates,requestedOccurrenceKeys:Array.isArray(cmd?.payload?.occurrenceKeys)?cmd.payload.occurrenceKeys.map(String):[]});
+    if(perfEnabled)perfAdd('site-execution-rows-build-ms',perfNow()-siteRowsStartedAt);
+    const selectionStartedAt=perfEnabled?perfNow():0;
     // Canonical site metadata is shared reference data; avoid scanning every
     // country's complete site catalog during each selected-country extraction pass.
     const signature=row=>[
@@ -1837,6 +1845,7 @@ function batchFromExtraction(x,record){
     }
     const selected=Array.isArray(cmd?.payload?.occurrenceKeys)&&cmd.payload.occurrenceKeys.length
       ?rows.filter(x=>cmd.payload.occurrenceKeys.includes(x.occurrenceKey)):rows;
+    if(perfEnabled)perfAdd('occurrence-dedup-and-selection-ms',perfNow()-selectionStartedAt);
     perfMark('state-clones-and-occurrence-site-resolution');
     const extracted=[];
     const replayedRecords=[];
@@ -2296,7 +2305,7 @@ function batchFromExtraction(x,record){
     const perfStartedAt=perfEnabled?perfNow():0;
     const perfSliceDurations=[];
     const c=canonical(countryId);
-    if(perfEnabled)g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__={handlerCount:0,totalHandlerMs:0,fullOccurrenceCount:0,phaseStats:{},dispatchAndCommitMs:0,eventPublishMs:0,publishedRecordCount:0};
+    if(perfEnabled)g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__={handlerCount:0,totalHandlerMs:0,fullOccurrenceCount:0,phaseStats:{},phaseBreakdownMs:{},dispatchAndCommitMs:0,eventPublishMs:0,publishedRecordCount:0};
     if(!/^[A-Z]{3}$/.test(c))return{status:'BLOCKED',reason:'COUNTRY_ID_INVALID',countryId:c||null};
     const selectedCountryId=playerSimulationCountryId();
     if(!selectedCountryId)return{status:'BLOCKED',reason:'PLAYER_COUNTRY_NOT_SELECTED',countryId:c};
@@ -2395,7 +2404,7 @@ function batchFromExtraction(x,record){
     const blocked=sliceResults.reduce((sum,row)=>sum+row.blocked,0);
     const failed=sliceResults.find(row=>row.result?.status!=='APPLIED'||row.payload?.status==='FAILED');
     const status=produced.length?(blocked?'PARTIALLY_STARTED':'STARTED'):'BLOCKED';
-    if(perfEnabled)try{const profile=g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__||{};console.info('[SAB34_PROGRESS] RESOURCE_ECONOMY_EXTRACTION_PROFILE '+JSON.stringify({countryId:c,turn:t,candidateOccurrenceCount:candidates.length,sliceSize,sliceCount:perfSliceDurations.length,hardwareConcurrency:Number(nav.hardwareConcurrency)||null,deviceMemory:Number(nav.deviceMemory)||null,constrained,sliceDurationsMs:perfSliceDurations,totalMs:Number((perfNow()-perfStartedAt).toFixed(2)),extractionProfile:profile}));}catch(_){}
+    if(perfEnabled)try{const profile=g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__||{},phaseStats=Object.fromEntries(Object.entries(profile.phaseStats||{}).map(([key,value])=>[key,{totalMs:Number(value.totalMs.toFixed(1)),count:value.count,maxMs:Number(value.maxMs.toFixed(1))}]));const sliceTotal=perfSliceDurations.reduce((sum,value)=>sum+value,0);console.info('[SAB34_PROGRESS] RESOURCE_ECONOMY_EXTRACTION_PROFILE '+JSON.stringify({countryId:c,turn:t,candidateOccurrenceCount:candidates.length,sliceSize,sliceCount:perfSliceDurations.length,sliceAverageMs:Number((sliceTotal/Math.max(1,perfSliceDurations.length)).toFixed(1)),sliceMaxMs:Number(Math.max(0,...perfSliceDurations).toFixed(1)),totalMs:Number((perfNow()-perfStartedAt).toFixed(1)),handlerCount:profile.handlerCount,totalHandlerMs:Number((profile.totalHandlerMs||0).toFixed(1)),dispatchAndCommitMs:Number((profile.dispatchAndCommitMs||0).toFixed(1)),eventPublishMs:Number((profile.eventPublishMs||0).toFixed(1)),phaseBreakdownMs:Object.fromEntries(Object.entries(profile.phaseBreakdownMs||{}).map(([key,value])=>[key,Number(value.toFixed(1))])),phaseStats}));}catch(_){}
     return{status,countryId:c,turn:t,requestedSiteCount:requestedSites?.size||null,
       attemptedOccurrenceCount:candidates.length,processedOccurrenceCount:records.length,
       extractionSliceCount:sliceResults.length,startedSiteCount:producingSites.size,
