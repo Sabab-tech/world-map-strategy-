@@ -631,4 +631,56 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(mutualEnd.accepted, true, JSON.stringify(mutualEnd));
   assert.equal(mutualEnd.penalty.status, 'WAIVED');
   assert.equal(mutualEnd.penalty.reason, 'MUTUAL_TERMINATION');
+  // Player-country trade requests receive the first bounded review slot, while
+  // the same commercial feasibility and deterministic decision rules still apply.
+  globalThis.Game.state.simulation.session = { playerCountryId: 'BGD' };
+  globalThis.Game.state.simulation.turn += 1;
+  const priorityTurn = globalThis.Game.state.simulation.turn;
+  const makePriorityProposal = (proposalId, requestorCountryId) => ({
+    proposalId, schemaVersion: '1.0.0', requestorCountryId, targetCountryId: 'SAU',
+    buyerCountryId: 'SAU', sellerCountryId: 'BGD', direction: 'EXPORT',
+    resourceId: 'crude_oil', quantityPerDelivery: 0, unitPrice: 100,
+    durationMonths: 12, intervalDays: 30, intervalTurns: 30, priceModel: 'FIXED',
+    status: 'SENT', inboxStatus: 'PENDING', createdTurn: priorityTurn - 1
+  });
+  const npcFirst = makePriorityProposal('BTP-PRIORITY-NPC-FIRST', 'IND');
+  const playerLast = makePriorityProposal('BTP-PRIORITY-PLAYER-LAST', 'BGD');
+  const npcSecond = makePriorityProposal('BTP-PRIORITY-NPC-SECOND', 'IND');
+  globalThis.Game.state.trade.SAU.bilateralProposalInbox = [npcFirst, playerLast, npcSecond];
+  globalThis.Game.state.trade.IND.bilateralProposalOutbox = [structuredClone(npcFirst), structuredClone(npcSecond)];
+  globalThis.Game.state.trade.BGD.bilateralProposalOutbox = [structuredClone(playerLast)];
+  const priorityReview = bilateral.processCountry('SAU');
+  assert.equal(priorityReview.proposals.length, 2);
+  assert.equal(priorityReview.proposals[0].proposalId, 'BTP-PRIORITY-PLAYER-LAST',
+    'the active player-country request must be reviewed before earlier NPC requests');
+  assert.equal(priorityReview.proposals[0].status, 'REJECT',
+    'priority grants the first review slot, not automatic commercial acceptance');
+  assert.equal(priorityReview.proposals[1].proposalId, 'BTP-PRIORITY-NPC-FIRST',
+    'NPC requests retain FIFO order within the same priority tier');
+  const priorityInbox = globalThis.Game.state.trade.SAU.bilateralProposalInbox;
+  const playerPriorityRecord = priorityInbox.find(row => row.proposalId === 'BTP-PRIORITY-PLAYER-LAST');
+  const npcPriorityRecord = priorityInbox.find(row => row.proposalId === 'BTP-PRIORITY-NPC-FIRST');
+  assert.equal(playerPriorityRecord.review.reviewPriority, 'PLAYER_COUNTRY_FIRST');
+  assert.equal(playerPriorityRecord.review.playerCountryPriorityApplied, true);
+  assert.equal(playerPriorityRecord.review.decision, 'REJECT');
+  assert.equal(playerPriorityRecord.review.reason, 'NON_POSITIVE_TRADE_TERMS');
+  assert.equal(npcPriorityRecord.review.reviewPriority, 'STANDARD');
+  assert.equal(priorityInbox.find(row => row.proposalId === 'BTP-PRIORITY-NPC-SECOND').inboxStatus, 'PENDING',
+    'the existing two-review-per-country-turn bound must remain intact');
+
+  // NPC national Treasury reserve is excluded from commercial spendable cash.
+  globalThis.Game.state.finance.SAU.omegaFinance = {
+    nationalReserve: { balanceUsd: 349999 }
+  };
+  const reserveAwareReview = bilateral.evaluateProposal('SAU', {
+    proposalId: 'BTP-NPC-RESERVE-AFFORDABILITY', requestorCountryId: 'BGD',
+    targetCountryId: 'SAU', buyerCountryId: 'SAU', sellerCountryId: 'BGD',
+    resourceId: 'crude_oil', quantityPerDelivery: 1, unitPrice: 1,
+    intervalDays: 30, intervalTurns: 30, priceModel: 'FIXED'
+  });
+  assert.equal(reserveAwareReview.decisionFactors.buyerGrossAvailableForeignCurrency, 350000);
+  assert.equal(reserveAwareReview.decisionFactors.buyerAvailableForeignCurrency, 1,
+    'NPC buyer liquidity is reduced by its protected national Treasury reserve');
+  assert.equal(reserveAwareReview.decisionFactors.buyerNationalReserveUsd, 349999);
+
 });
