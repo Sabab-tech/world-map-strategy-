@@ -683,13 +683,15 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
             extractCountry: async function (countryId, occurrenceKeys) {
               const result = await endowmentOriginal.extractCountry(countryId, occurrenceKeys);
               const row = result?.result || result || {};
-              const produced = (Array.isArray(row.records) ? row.records : [])
-                .find(record => record?.producedBatch?.batchId) || null;
-              const batchId = String(produced?.producedBatch?.batchId || '');
+              const producedRecords = (Array.isArray(row.records) ? row.records : [])
+                .filter(record => record?.producedBatch?.batchId);
               const command = result?.commandId ? interop?.getCommand?.(result.commandId) : null;
-              extractionLedgerAudit.push(inspectExtractionLedger(
-                'AFTER_EXTRACTION_COMMAND_RETURN', String(countryId || seller), batchId, command
-              ));
+              for (const record of producedRecords) {
+                const batchId = String(record.producedBatch.batchId);
+                extractionLedgerAudit.push(inspectExtractionLedger(
+                  'AFTER_EXTRACTION_COMMAND_RETURN', String(countryId || seller), batchId, command
+                ));
+              }
               return result;
             }
           })
@@ -827,6 +829,17 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       );
       const rawBatch = resourceState.batches.find(row => String(row?.batchId || '') === originBatchId);
       const originLot = resourceState.inventoryLots?.[originBatchId] || null;
+      const originCommandAudit = extractionLedgerAudit.find(audit =>
+        audit.stage === 'AFTER_EXTRACTION_COMMAND_RETURN' && audit.batchId === originBatchId) || null;
+      if (!originCommandAudit ||
+          originCommandAudit.commandStatus !== 'APPLIED' ||
+          !originCommandAudit.transactionPaths?.includes('resource.inventoryLots') ||
+          !originCommandAudit.inventoryLotOperationIncludesBatch ||
+          !originCommandAudit.inventoryLotOperationAuditIsCompacted) {
+        fail('COMPACT_TRANSACTION_AUDIT_DID_NOT_PROVE_AUTHORITATIVE_INVENTORY_LOT_COMMIT', {
+          seller, originBatchId, originCommandAudit, extractionLedgerAudit
+        });
+      }
       const rawBatchQuantity = Number(rawBatch?.remainingQuantity ?? rawBatch?.quantity);
       const originLotQuantity = Number(originLot?.remainingQuantity ?? originLot?.quantity);
       if (['BLOCKED', 'FAILED', 'WAITING_DEPENDENCIES'].includes(String(pipelineStart?.status || '').toUpperCase()))
