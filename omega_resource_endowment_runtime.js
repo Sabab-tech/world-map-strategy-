@@ -2337,6 +2337,17 @@ function batchFromExtraction(x,record){
     return result;
   }
 
+  function extractionSliceSizeForDevice(nav={}){
+    const userAgent=String(nav?.userAgent||'');
+    const reportedMemory=nav?.deviceMemory;
+    const deviceMemory=Number(reportedMemory);
+    const lowMemory=reportedMemory!==undefined&&reportedMemory!==null&&
+      Number.isFinite(deviceMemory)&&deviceMemory>0&&deviceMemory<=4;
+    const handheld=/Android|Mobile|iPhone|iPad/i.test(userAgent);
+    // Logical CPU count alone is not a reliable memory-pressure signal: headless
+    // desktop CI runners commonly expose two cores but have ample memory.
+    return handheld||lowMemory?3:8;
+  }
   async function startCountryProduction(countryId,siteIds=null,options={}){
     const perfEnabled=g.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
     const perfNow=()=>typeof performance!=='undefined'&&typeof performance.now==='function'?performance.now():Date.now();
@@ -2423,9 +2434,8 @@ function batchFromExtraction(x,record){
             (String(row?.status||'').toUpperCase().startsWith('BLOCK')||!!row?.blockReason)).length,
         requestedSiteIds:requestedSites?[...requestedSites]:null,records:[]};
     }
-    const nav=g.navigator||{},ua=String(nav.userAgent||'');
-    const constrained=/Android|Mobile|iPhone|iPad/i.test(ua)||Number(nav.deviceMemory||8)<=4||Number(nav.hardwareConcurrency||8)<=4;
-    const sliceSize=constrained?3:8,sliceResults=[];
+    const nav=g.navigator||{};
+    const sliceSize=extractionSliceSizeForDevice(nav),sliceResults=[];
     for(let offset=0;offset<candidates.length;offset+=sliceSize){
       const slice=candidates.slice(offset,offset+sliceSize);
       const sliceStartedAt=perfEnabled?perfNow():0;
@@ -3506,7 +3516,7 @@ function batchFromExtraction(x,record){
     countryMineSiteReferences:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteReferences||mineSiteReferenceRows(c));},
     countryMineSiteControllers:function(c){return clone(state()?.resource?.[canonical(c)]?.mineSiteControllers||{});},
     registerCanonicalSiteSimulationRecord,startCountryProduction,normalizeBoundSiteForRuntime,
-    compile
+    extractionSliceSizeForDevice,compile
   });
   g.Omega=g.Omega||{};g.Omega.ResourceEndowmentRuntime=API;g.OmegaResourceEndowmentRuntime=API;
   try{init();}catch(e){g.OmegaResourceEndowmentRuntimeError=String(e?.message||e);}
