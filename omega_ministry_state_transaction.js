@@ -162,8 +162,27 @@
       return hash({present:value!==undefined,value});
     }
 
+    _captureWriteBaseline(path){
+      if(this.writeBaseline.has(path))return;
+      // Compact command transactions need only an optimistic-concurrency
+      // fingerprint. Retaining a deep copy of every large country ledger here
+      // duplicates the same state that get() already snapshots for the handler.
+      const value=this._readLivePath(path,this.includeOperationValues);
+      this.writeBaseline.set(path,this.includeOperationValues?value:this._valueFingerprint(value));
+    }
+
     _writeSetFingerprint(readCurrent=false,cloneCurrent=true){
-      const rows=[...this.writeBaseline.keys()].sort().map(path=>{
+      const paths=[...this.writeBaseline.keys()].sort();
+      if(!this.includeOperationValues){
+        const rows=paths.map(path=>({
+          path,
+          fingerprint:readCurrent
+            ?this._valueFingerprint(this._readLivePath(path,cloneCurrent))
+            :this.writeBaseline.get(path)
+        }));
+        return hash(rows);
+      }
+      const rows=paths.map(path=>{
         const value=readCurrent?this._readLivePath(path,cloneCurrent):this.writeBaseline.get(path);
         return{path,present:value!==undefined,value};
       });
@@ -194,7 +213,7 @@
     set(path,value){
       this._assertOpen();
       const p=this._assertOwnedPath(path);
-      if(!this.writeBaseline.has(p))this.writeBaseline.set(p,this._readLivePath(p));
+      this._captureWriteBaseline(p);
       // Compact command-ledger transactions do not persist before/after values.
       // Avoid cloning the same live path a second time just to discard its snapshot.
       const before=this.includeOperationValues?this.get(p):undefined;
@@ -207,7 +226,7 @@
     delete(path){
       this._assertOpen();
       const p=this._assertOwnedPath(path);
-      if(!this.writeBaseline.has(p))this.writeBaseline.set(p,this._readLivePath(p));
+      this._captureWriteBaseline(p);
       const existing=this.get(p);
       this.operations.push({op:'DELETE',path:p,before:clone(existing),after:undefined});
       return existing;
@@ -240,14 +259,16 @@
       for(const [path,expected] of this.writeBaseline.entries()){
         // Fingerprinting is read-only; do not deep-clone the live value before hashing.
         const actual=this._readLivePath(path,false);
-        if(this._valueFingerprint(actual)!==this._valueFingerprint(expected)){
+        const expectedFingerprint=this.includeOperationValues?this._valueFingerprint(expected):expected;
+        const actualFingerprint=this._valueFingerprint(actual);
+        if(actualFingerprint!==expectedFingerprint){
           this.closed=true;
           const conflict=new Error('STATE_TRANSACTION_CONFLICT');
           conflict.code='STATE_TRANSACTION_CONFLICT';
           conflict.transactionId=this.transactionId;
           conflict.path=path;
-          conflict.expectedRevision='CONTENT:'+this._valueFingerprint(expected);
-          conflict.actualRevision='CONTENT:'+this._valueFingerprint(actual);
+          conflict.expectedRevision='CONTENT:'+expectedFingerprint;
+          conflict.actualRevision='CONTENT:'+actualFingerprint;
           throw conflict;
         }
       }
