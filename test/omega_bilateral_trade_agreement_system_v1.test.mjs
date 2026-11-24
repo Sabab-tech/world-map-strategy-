@@ -633,7 +633,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(mutualEnd.penalty.reason, 'MUTUAL_TERMINATION');
   // Player-country trade requests receive the first bounded review slot, while
   // the same commercial feasibility and deterministic decision rules still apply.
-  globalThis.Game.state.simulation.session = { playerCountryId: 'BGD' };
+  globalThis.Game.state.simulation.session = { playerCountryCode: 'BGD' };
   globalThis.Game.state.simulation.turn += 1;
   const priorityTurn = globalThis.Game.state.simulation.turn;
   const makePriorityProposal = (proposalId, requestorCountryId) => ({
@@ -645,10 +645,11 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   });
   const npcFirst = makePriorityProposal('BTP-PRIORITY-NPC-FIRST', 'IND');
   const playerLast = makePriorityProposal('BTP-PRIORITY-PLAYER-LAST', 'BGD');
+  const playerSecond = makePriorityProposal('BTP-PRIORITY-PLAYER-SECOND', 'BGD');
   const npcSecond = makePriorityProposal('BTP-PRIORITY-NPC-SECOND', 'IND');
-  globalThis.Game.state.trade.SAU.bilateralProposalInbox = [npcFirst, playerLast, npcSecond];
+  globalThis.Game.state.trade.SAU.bilateralProposalInbox = [npcFirst, playerLast, npcSecond, playerSecond];
   globalThis.Game.state.trade.IND.bilateralProposalOutbox = [structuredClone(npcFirst), structuredClone(npcSecond)];
-  globalThis.Game.state.trade.BGD.bilateralProposalOutbox = [structuredClone(playerLast)];
+  globalThis.Game.state.trade.BGD.bilateralProposalOutbox = [structuredClone(playerLast), structuredClone(playerSecond)];
   const priorityReview = bilateral.processCountry('SAU');
   assert.equal(priorityReview.proposals.length, 2);
   assert.equal(priorityReview.proposals[0].proposalId, 'BTP-PRIORITY-PLAYER-LAST',
@@ -665,10 +666,38 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(playerPriorityRecord.review.decision, 'REJECT');
   assert.equal(playerPriorityRecord.review.reason, 'NON_POSITIVE_TRADE_TERMS');
   assert.equal(npcPriorityRecord.review.reviewPriority, 'STANDARD');
+  assert.equal(playerPriorityRecord.review.outcome,'REJECT');
+  assert.equal(playerPriorityRecord.review.reasonCode,'NON_POSITIVE_TRADE_TERMS');
+  assert.ok(playerPriorityRecord.review.explanation);
+  assert.ok(playerPriorityRecord.review.evidenceSnapshot.decisionFactors);
+  assert.ok(playerPriorityRecord.review.evidenceProvenance);
+  assert.ok(playerPriorityRecord.review.reviewWaitTurns>=1);
+  const persistedReview=JSON.parse(JSON.stringify(playerPriorityRecord.review));
+  assert.equal(persistedReview.evidenceSnapshot.outcome,'REJECT',
+    'the normalized decision and evidence snapshot must survive JSON save/load serialization');
   const deferredNpcProposal = priorityInbox.find(row => row.proposalId === 'BTP-PRIORITY-NPC-SECOND');
   assert.equal(deferredNpcProposal.inboxStatus, 'PENDING',
     'the existing two-review-per-country-turn bound must remain intact');
-  deferredNpcProposal.createdTurn = priorityTurn + 100;
+  assert.equal(priorityInbox.find(row => row.proposalId === 'BTP-PRIORITY-PLAYER-SECOND').inboxStatus,'PENDING');
+
+  globalThis.Game.state.simulation.turn += 1;
+  const fairnessNextTurn=bilateral.processCountry('SAU');
+  assert.equal(fairnessNextTurn.proposals.length,2);
+  assert.equal(fairnessNextTurn.proposals[0].proposalId,'BTP-PRIORITY-PLAYER-SECOND');
+  assert.equal(fairnessNextTurn.proposals[1].proposalId,'BTP-PRIORITY-NPC-SECOND',
+    'an NPC request is still reviewed while another player request is waiting');
+  const npcSecondRecord=globalThis.Game.state.trade.SAU.bilateralProposalInbox.find(row=>row.proposalId==='BTP-PRIORITY-NPC-SECOND');
+  assert.equal(npcSecondRecord.review.reviewPriority,'STANDARD');
+
+  const incompleteReview=bilateral.evaluateProposal('SAU',{
+    proposalId:'BTP-INCOMPLETE-EVIDENCE',requestorCountryId:'BGD',targetCountryId:'SAU',
+    buyerCountryId:'SAU',sellerCountryId:'BGD'
+  });
+  assert.equal(incompleteReview.decision,'WAITING_DATA');
+  assert.equal(incompleteReview.outcome,'MORE_INFORMATION');
+  assert.equal(incompleteReview.reasonCode,'PROPOSAL_TERMS_INCOMPLETE');
+  assert.ok(incompleteReview.missingData.includes('exportCapacity'));
+  assert.ok(incompleteReview.reasoningFactors.lendingInvestmentMegaprojectCommitments.status==='UNKNOWN');
 
   // NPC national Treasury reserve is excluded from internal spendable cash,
   // while counterparty-facing review data continues to redact private Treasury.

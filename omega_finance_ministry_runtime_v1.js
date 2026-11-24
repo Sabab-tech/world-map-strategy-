@@ -9,7 +9,14 @@
     maximumBorrowTransactionPercentOfGDP:5,maximumDebtToGDPForNewBorrowingPct:300,maximumLedgerEntries:500,
     maximumFiscalPeriodHistory:12,maximumFiscalTransactionIds:2048,
     influenceWeights:{gdp:.55,population:.20,foreignExchangeReserves:.15,tradeBalanceToGDP:.10},
-    fiscalRiskBounds:{debtToGDPPercent:300,inflationPercent:25,unemploymentPercent:35,deficitToGDPPercent:20}};
+    fiscalRiskBounds:{debtToGDPPercent:300,inflationPercent:25,unemploymentPercent:35,deficitToGDPPercent:20},
+    automaticNationalReserve:{enabledForNpcCountries:true,policyVersion:2,requiresReconciledFiscalPeriod:true,
+      targetCoverageDays:{normal:90,highRisk:120,unknown:120},highRiskIndexThreshold:60,
+      coverageTiers:[{id:'BELOW_30_DAYS',maxCoverageDaysExclusive:30,contributionPctOfOperatingSurplus:50},
+        {id:'DAYS_30_TO_59',maxCoverageDaysExclusive:60,contributionPctOfOperatingSurplus:40},
+        {id:'DAYS_60_TO_89',maxCoverageDaysExclusive:90,contributionPctOfOperatingSurplus:25},
+        {id:'DAYS_90_TO_119',maxCoverageDaysExclusive:120,contributionPctOfOperatingSurplus:10},
+        {id:'AT_OR_ABOVE_120_DAYS',maxCoverageDaysExclusive:null,contributionPctOfOperatingSurplus:0}]}};
   let DEPARTMENTS=[
     ['cabinet','Executive Cabinet'],['defense','Defense'],['military','Military'],['interior','Home / Interior'],
     ['health','Health'],['education','Education'],['resource','Resources'],['transport','Transport'],['technology','Technology'],
@@ -405,101 +412,186 @@
     account.status=account.reconciliationStatus;
     return account;
   }
+  function automaticNationalReserveRisk(profile) {
+    const metrics = modelProfileIndicators(profile, getEconomyRecord(profile) || {});
+    const bounds = rules.fiscalRiskBounds || {};
+    const checks = [
+      { id: 'DEBT_TO_GDP', key: 'publicDebtToGdpPct', limit: Number(bounds.debtToGDPPercent || 300), weight: 0.40, transform: function (value) { return value; } },
+      { id: 'INFLATION', key: 'inflationRatePct', limit: Number(bounds.inflationPercent || 25), weight: 0.25, transform: function (value) { return Math.max(0, value); } },
+      { id: 'UNEMPLOYMENT', key: 'unemploymentRatePct', limit: Number(bounds.unemploymentPercent || 35), weight: 0.20, transform: function (value) { return Math.max(0, value); } },
+      { id: 'DEFICIT_TO_GDP', key: 'budgetBalanceToGdpPct', limit: Number(bounds.deficitToGDPPercent || 20), weight: 0.15, transform: function (value) { return Math.max(0, -value); } }
+    ];
+    const evidence = checks.map(function (item) {
+      const raw = finite(metrics[item.key]);
+      const value = raw === null ? null : item.transform(raw);
+      return { id: item.id, status: value === null ? 'UNKNOWN' : 'KNOWN',
+        value: value, limit: item.limit, weight: item.weight,
+        source: value === null ? null : 'FINANCE_COUNTRY_INDICATORS.' + item.key };
+    });
+    const known = evidence.filter(function (item) { return item.status === 'KNOWN'; });
+    const totalWeight = known.reduce(function (sum, item) { return sum + item.weight; }, 0);
+    const index = totalWeight > 0 ? Number((known.reduce(function (sum, item) {
+      return sum + Math.max(0, Math.min(100, item.value / item.limit * 100)) * item.weight;
+    }, 0) / totalWeight).toFixed(2)) : null;
+    const complete = known.length === checks.length;
+    const threshold = Math.max(0, Math.min(100, finite(rules.automaticNationalReserve?.highRiskIndexThreshold) ?? 60));
+    const status = index !== null && index >= threshold ? 'HIGH' : complete ? 'NORMAL' : 'UNKNOWN';
+    return { status: status, index: index, complete: complete, threshold: threshold, evidence: evidence };
+  }
+  function reserveCoverageTier(coverageDays) {
+    const tiers = rules.automaticNationalReserve?.coverageTiers;
+    if (!Array.isArray(tiers) || !tiers.length || coverageDays === null) return null;
+    for (const tier of tiers) {
+      const upper = finite(tier.maxCoverageDaysExclusive);
+      if (upper === null || coverageDays < upper)
+        return { id: String(tier.id || 'UNSPECIFIED'),
+          ratePct: Math.max(0, Math.min(100, finite(tier.contributionPctOfOperatingSurplus) ?? 0)) };
+    }
+    return null;
+  }
   function ensureAutomaticNationalReserve(profile, model) {
-    var policy = rules.automaticNationalReserve || {};
+    const policy = rules.automaticNationalReserve || {};
     if (!profile || !model || policy.enabledForNpcCountries !== true ||
         String(profile.countryCode || '').toUpperCase() === String(getPlayerCode() || '').toUpperCase()) return null;
     if (!isObject(model.nationalReserve)) {
       model.nationalReserve = {
-        schemaVersion: 1, currency: 'USD', balanceUsd: 0, periodOpeningBalanceUsd: 0,
+        schemaVersion: 2, policyVersion: 2, currency: 'USD', balanceUsd: 0, periodOpeningBalanceUsd: 0,
         currentPeriodContributionUsd: 0, lifetimeContributionsUsd: 0, lifetimeReleasesUsd: 0,
-        contributionPctOfOperatingSurplus: Number(policy.contributionPctOfOperatingSurplus ?? 20),
+        lifetimeShortfallsUsd: 0, operatingSurplusWatermarkUsd: 0,
         sourceAuthority: 'OMEGA_FINANCE_MINISTRY', status: 'AWAITING_RECONCILED_FISCAL_PERIOD'
       };
     }
-    var reserve = model.nationalReserve;
-    for (var key of ['balanceUsd', 'periodOpeningBalanceUsd', 'currentPeriodContributionUsd',
-      'lifetimeContributionsUsd', 'lifetimeReleasesUsd']) {
+    const reserve = model.nationalReserve;
+    for (const key of ['balanceUsd', 'periodOpeningBalanceUsd', 'currentPeriodContributionUsd',
+      'lifetimeContributionsUsd', 'lifetimeReleasesUsd', 'lifetimeShortfallsUsd']) {
       reserve[key] = Math.max(0, finite(reserve[key]) || 0);
     }
-    reserve.schemaVersion = 1;
+    reserve.schemaVersion = 2;
+    reserve.policyVersion = 2;
     reserve.currency = 'USD';
     reserve.sourceAuthority = 'OMEGA_FINANCE_MINISTRY';
-    if (finite(reserve.contributionPctOfOperatingSurplus) === null)
-      reserve.contributionPctOfOperatingSurplus = Number(policy.contributionPctOfOperatingSurplus ?? 20);
-    if (finite(reserve.periodIndex) === null) reserve.periodIndex = Math.max(0, Math.floor(finite(model.fiscalYearIndex) || 0));
+    if (finite(reserve.periodIndex) === null)
+      reserve.periodIndex = Math.max(0, Math.floor(finite(model.fiscalYearIndex) || 0));
+    // Preserve prior fixed-rate progress; migration must not reset balances or rebook old surplus.
+    if (finite(reserve.operatingSurplusWatermarkUsd) === null)
+      reserve.operatingSurplusWatermarkUsd = Math.max(0, finite(reserve.operatingSurplusUsd) || 0);
+    if (finite(reserve.lastContributionUsd) === null) reserve.lastContributionUsd = 0;
+    if (finite(reserve.lastReleaseUsd) === null) reserve.lastReleaseUsd = 0;
+    if (finite(reserve.lastShortfallUsd) === null) reserve.lastShortfallUsd = 0;
     return reserve;
   }
   function updateAutomaticNationalReserve(profile, model, turnNumber = currentTurn()) {
-    var policy = rules.automaticNationalReserve || {};
-    var reserve = ensureAutomaticNationalReserve(profile, model);
+    const policy = rules.automaticNationalReserve || {};
+    const reserve = ensureAutomaticNationalReserve(profile, model);
     if (!reserve) return null;
-    var cash = Math.max(0, finite(model.treasuryBalanceUsd) || 0);
-    var balance = Math.max(0, finite(reserve.balanceUsd) || 0);
+    const cash = Math.max(0, finite(model.treasuryBalanceUsd) || 0);
+    let balance = Math.max(0, finite(reserve.balanceUsd) || 0);
+    reserve.lastContributionUsd = 0;
     if (balance > cash) {
-      var cashRelease = balance - cash;
-      reserve.balanceUsd = cash;
-      reserve.lifetimeReleasesUsd = Number((reserve.lifetimeReleasesUsd + cashRelease).toFixed(2));
+      const shortfall = balance - cash;
+      balance = cash;
+      reserve.lifetimeShortfallsUsd = Number((reserve.lifetimeShortfallsUsd + shortfall).toFixed(2));
+      reserve.lastShortfallUsd = Number(shortfall.toFixed(2));
+      reserve.lastShortfallTurn = turnNumber;
+      reserve.lastShortfallReason = 'EXTERNAL_TREASURY_CASH_FELL_BELOW_PROTECTED_RESERVE';
       if (reserve.periodOpeningBalanceUsd > cash) reserve.periodOpeningBalanceUsd = cash;
-      reserve.lastReleaseUsd = Number(cashRelease.toFixed(2));
-      reserve.lastReleaseReason = 'TREASURY_CASH_FELL_BELOW_EARMARKED_RESERVE';
     }
-    var account = model.fiscalPeriodAccount;
-    var allowedStatuses = ['GAME_STATE_RECONCILED', 'MODELLED_RECONCILED'];
+    reserve.balanceUsd = Number(balance.toFixed(2));
+    reserve.currentPeriodContributionUsd = Number(Math.max(0, reserve.balanceUsd -
+      Math.min(Math.max(0, finite(reserve.periodOpeningBalanceUsd) || 0), reserve.balanceUsd)).toFixed(2));
+    const account = model.fiscalPeriodAccount;
+    const allowedStatuses = ['GAME_STATE_RECONCILED', 'MODELLED_RECONCILED'];
     if (policy.requiresReconciledFiscalPeriod !== false &&
         (!account || account.flowCoverage !== 'COMPLETE_FROM_PERIOD_START' ||
           !allowedStatuses.includes(String(account.reconciliationStatus || account.status || '').toUpperCase()))) {
       reserve.status = 'WAITING_FOR_RECONCILED_FISCAL_PERIOD';
       reserve.lastCalculatedTurn = turnNumber;
       reserve.availableForGeneralSpendingUsd = Number(Math.max(0, cash - reserve.balanceUsd).toFixed(2));
+      reserve.coverageDays = null;
+      reserve.coverageStatus = 'UNKNOWN';
+      reserve.selectedTier = 'UNKNOWN_UNRECONCILED_FISCAL_PERIOD';
+      reserve.selectedTierRatePct = null;
+      reserve.targetCoverageDays = null;
+      reserve.targetReserveUsd = null;
+      reserve.reserveGapUsd = null;
+      reserve.fiscalRiskStatus = 'UNKNOWN';
+      reserve.fiscalRiskIndex = null;
+      reserve.fiscalRiskEvidence = [];
+      reserve.lastContributionReason = 'FISCAL_PERIOD_NOT_RECONCILED';
       return reserve;
     }
     if (account && finite(account.periodIndex) !== null && finite(reserve.periodIndex) !== finite(account.periodIndex)) {
       reserve.periodOpeningBalanceUsd = Math.max(0, finite(reserve.balanceUsd) || 0);
       reserve.currentPeriodContributionUsd = 0;
+      reserve.operatingSurplusWatermarkUsd = 0;
       reserve.periodIndex = finite(account.periodIndex);
     }
-    var flows = account && isObject(account.flowComponents) ? account.flowComponents : fiscalFlowComponents(model);
-    var operatingSurplus = Math.max(0, finite(flows.taxRevenueUsd) || 0) +
-      Math.max(0, finite(flows.externalCreditsUsd) || 0) -
-      Math.max(0, finite(flows.governmentSpendingUsd) || 0) -
-      Math.max(0, finite(flows.externalDebitsUsd) || 0) -
-      Math.max(0, finite(flows.interestPaidUsd) || 0) -
-      Math.max(0, finite(flows.principalRepaymentUsd) || 0);
-    var rate = clamp(policy.contributionPctOfOperatingSurplus ?? 20, 0, 100);
-    if (rate === null) rate = 20;
-    var opening = Math.max(0, finite(reserve.periodOpeningBalanceUsd) || 0);
-    var targetContribution = Math.max(0, operatingSurplus) * rate / 100;
-    var desiredBalance = opening + targetContribution;
-    var priorBalance = Math.max(0, finite(reserve.balanceUsd) || 0);
-    var adjustment = desiredBalance - priorBalance;
-    var nextBalance = desiredBalance;
-    if (adjustment > 0) reserve.lifetimeContributionsUsd =
-      Number((reserve.lifetimeContributionsUsd + adjustment).toFixed(2));
-    else if (adjustment < 0) reserve.lifetimeReleasesUsd =
-      Number((reserve.lifetimeReleasesUsd + Math.abs(adjustment)).toFixed(2));
-    var release = 0;
-    if (nextBalance > cash) {
-      release = nextBalance - cash;
-      nextBalance = cash;
-      reserve.lifetimeReleasesUsd = Number((reserve.lifetimeReleasesUsd + release).toFixed(2));
-      reserve.lastReleaseReason = 'TREASURY_CASH_LIMIT';
-    }
-    if (nextBalance < opening) {
-      opening = nextBalance;
-      reserve.periodOpeningBalanceUsd = opening;
-    }
-    reserve.balanceUsd = Number(Math.max(0, nextBalance).toFixed(2));
-    reserve.currentPeriodContributionUsd = Number(Math.max(0, reserve.balanceUsd - opening).toFixed(2));
+    const annualSpending = finite(model.fiscalModel?.annualSpendingUsd);
+    const dailySpending = annualSpending !== null && annualSpending > 0 ? annualSpending / 365 : null;
+    const risk = automaticNationalReserveRisk(profile);
+    const targets = policy.targetCoverageDays || {};
+    const riskTargetStatus = risk.status === 'NORMAL' ? 'normal' : risk.status === 'HIGH' ? 'highRisk' : 'unknown';
+    const targetDays = Math.max(0, finite(targets[riskTargetStatus]) ?? (riskTargetStatus === 'normal' ? 90 : 120));
+    reserve.fiscalRiskStatus = risk.status;
+    reserve.fiscalRiskIndex = risk.index;
+    reserve.fiscalRiskEvidence = clone(risk.evidence);
+    reserve.targetCoverageDays = targetDays;
+    reserve.riskTargetReason = risk.status === 'NORMAL' ? 'NORMAL_FISCAL_RISK_TARGET' :
+      risk.status === 'HIGH' ? 'HIGH_FISCAL_RISK_TARGET' : 'UNKNOWN_RISK_USES_CONSERVATIVE_TARGET';
+    const accountFlows = account && isObject(account.flowComponents) ? account.flowComponents : fiscalFlowComponents(model);
+    const operatingSurplus = Math.max(0, finite(accountFlows.taxRevenueUsd) || 0) +
+      Math.max(0, finite(accountFlows.externalCreditsUsd) || 0) -
+      Math.max(0, finite(accountFlows.governmentSpendingUsd) || 0) -
+      Math.max(0, finite(accountFlows.externalDebitsUsd) || 0) -
+      Math.max(0, finite(accountFlows.interestPaidUsd) || 0) -
+      Math.max(0, finite(accountFlows.principalRepaymentUsd) || 0);
     reserve.operatingSurplusUsd = Number(operatingSurplus.toFixed(2));
-    reserve.targetCurrentPeriodContributionUsd = Number(targetContribution.toFixed(2));
-    reserve.contributionPctOfOperatingSurplus = rate;
     reserve.surplusBasis = 'TAX_AND_EXTERNAL_CASH_INFLOWS_MINUS_GOVERNMENT_SPENDING_EXTERNAL_DEBITS_INTEREST_AND_PRINCIPAL_REPAYMENT';
     reserve.borrowingProceedsExcluded = true;
+    if (dailySpending === null) {
+      reserve.status = 'WAITING_FOR_ANNUAL_SPENDING_BASELINE';
+      reserve.coverageDays = null;
+      reserve.coverageStatus = 'UNKNOWN';
+      reserve.selectedTier = 'UNKNOWN_SPENDING_BASELINE';
+      reserve.selectedTierRatePct = null;
+      reserve.targetReserveUsd = null;
+      reserve.reserveGapUsd = null;
+      reserve.lastContributionReason = 'ANNUAL_SPENDING_BASELINE_UNKNOWN_OR_ZERO';
+      reserve.availableForGeneralSpendingUsd = Number(Math.max(0, cash - reserve.balanceUsd).toFixed(2));
+      reserve.lastCalculatedTurn = turnNumber;
+      return reserve;
+    }
+    const coverageBeforeContribution = reserve.balanceUsd / dailySpending;
+    const tier = reserveCoverageTier(coverageBeforeContribution);
+    const targetReserve = dailySpending * targetDays;
+    const gap = Math.max(0, targetReserve - reserve.balanceUsd);
+    const priorWatermark = Math.max(0, finite(reserve.operatingSurplusWatermarkUsd) || 0);
+    const newSurplus = Math.max(0, operatingSurplus - priorWatermark);
+    if (tier && newSurplus > 0 && gap > 0) {
+      const proposedContribution = newSurplus * tier.ratePct / 100;
+      const contribution = Math.min(proposedContribution, gap, Math.max(0, cash - reserve.balanceUsd));
+      reserve.balanceUsd = Number((reserve.balanceUsd + contribution).toFixed(2));
+      reserve.lastContributionUsd = Number(contribution.toFixed(2));
+      reserve.currentPeriodContributionUsd = Number(Math.max(0, reserve.balanceUsd -
+        Math.min(Math.max(0, finite(reserve.periodOpeningBalanceUsd) || 0), reserve.balanceUsd)).toFixed(2));
+      reserve.lifetimeContributionsUsd = Number((reserve.lifetimeContributionsUsd + contribution).toFixed(2));
+    }
+    reserve.operatingSurplusWatermarkUsd = Math.max(priorWatermark, operatingSurplus);
+    reserve.coverageDays = Number((reserve.balanceUsd / dailySpending).toFixed(2));
+    reserve.coverageStatus = 'KNOWN';
+    reserve.selectedTier = tier ? tier.id : 'UNKNOWN_COVERAGE_TIER';
+    reserve.selectedTierRatePct = tier ? tier.ratePct : null;
+    reserve.contributionPctOfOperatingSurplus = tier ? tier.ratePct : null;
+    reserve.targetReserveUsd = Number(targetReserve.toFixed(2));
+    reserve.reserveGapUsd = Number(Math.max(0, targetReserve - reserve.balanceUsd).toFixed(2));
+    reserve.targetCurrentPeriodContributionUsd = Number((newSurplus * (tier ? tier.ratePct : 0) / 100).toFixed(2));
+    reserve.lastContributionReason = reserve.lastContributionUsd > 0 ? 'COVERAGE_TIER_SURPLUS_CONTRIBUTION' :
+      reserve.reserveGapUsd <= 0 ? 'TARGET_COVERAGE_REACHED' :
+      newSurplus <= 0 ? 'NO_NEW_RECONCILED_OPERATING_SURPLUS' : 'CONTRIBUTION_NOT_APPLIED';
     reserve.lastCalculatedTurn = turnNumber;
-    reserve.lastAdjustmentUsd = Number(adjustment.toFixed(2));
-    reserve.lastReleaseUsd = Number(release.toFixed(2));
-    reserve.status = reserve.balanceUsd > 0 ? 'FUNDED' : operatingSurplus > 0 ? 'CONTRIBUTION_ROUNDED_TO_ZERO' : 'NO_POSITIVE_OPERATING_SURPLUS';
+    reserve.lastAdjustmentUsd = reserve.lastContributionUsd;
+    reserve.status = reserve.balanceUsd > 0 ? 'FUNDED' :
+      operatingSurplus > 0 ? 'CONTRIBUTION_ROUNDED_TO_ZERO' : 'NO_POSITIVE_OPERATING_SURPLUS';
     reserve.availableForGeneralSpendingUsd = Number(Math.max(0, cash - reserve.balanceUsd).toFixed(2));
     return reserve;
   }
@@ -557,6 +649,7 @@
     if (nationalReserve) {
       nationalReserve.periodOpeningBalanceUsd = Math.max(0, finite(nationalReserve.balanceUsd) || 0);
       nationalReserve.currentPeriodContributionUsd = 0;
+      nationalReserve.operatingSurplusWatermarkUsd = 0;
       nationalReserve.periodIndex = nextYearIndex;
     }
     model.currentYearSectorReceiptsUsd={};
@@ -1087,6 +1180,7 @@
         fm.nationalReserve.currentPeriodContributionUsd=Number(Math.max(0,
           fm.nationalReserve.balanceUsd-(finite(fm.nationalReserve.periodOpeningBalanceUsd)||0)).toFixed(2));
         fm.nationalReserve.lastReleaseUsd=Number(reserveRelease.toFixed(2));
+        fm.nationalReserve.lastReleaseTurn=currentTurn();
         fm.nationalReserve.lastReleaseReason='AUTHORIZED_EMERGENCY_OR_DEBT_SERVICE';
         fm.nationalReserve.availableForGeneralSpendingUsd=0;
       }
