@@ -697,7 +697,9 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(incompleteReview.outcome,'MORE_INFORMATION');
   assert.equal(incompleteReview.reasonCode,'PROPOSAL_TERMS_INCOMPLETE');
   assert.ok(incompleteReview.missingData.includes('exportCapacity'));
-  assert.ok(incompleteReview.reasoningFactors.lendingInvestmentMegaprojectCommitments.status==='UNKNOWN');
+  assert.notEqual(incompleteReview.reasoningFactors.lendingInvestmentMegaprojectCommitments.status,'KNOWN',
+    'incomplete Finance investment ledgers must remain explicitly UNKNOWN/PARTIAL rather than being treated as complete');
+  assert.ok(incompleteReview.missingData.includes('lendingInvestmentMegaprojectCommitments'));
 
   // NPC national Treasury reserve is excluded from internal spendable cash,
   // while sovereign project, debt and counterparty evidence remains sourced from
