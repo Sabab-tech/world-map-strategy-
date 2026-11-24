@@ -174,6 +174,41 @@
           pathStack.pop();
         };
         yield* profiledWorldChunks(snapshot[key],key,3);
+      }else if(profile&&key==='interoperability'){
+        // Profile persisted interoperability branches in the same streaming pass.
+        // Counters add no clone or second serialization of the ledger.
+        profile.interoperabilityPathChars=profile.interoperabilityPathChars||{};
+        const pathStack=[];
+        const emitInteropChunk=function*(chunk){
+          partChars+=chunk.length;
+          for(const entry of pathStack){
+            entry.chars+=chunk.length;
+            profile.interoperabilityPathChars[entry.path]=entry.chars;
+          }
+          yield* emit(chunk);
+        };
+        const profiledInteropChunks=function*(value,path,depth){
+          if(depth<=0||value===null||typeof value!=='object'||Array.isArray(value)||value instanceof Date){
+            for(const chunk of stableJsonChunks(value,false,false))yield* emitInteropChunk(chunk);
+            return;
+          }
+          const childKeys=Object.keys(value).filter(childKey=>childKey!=='__proto__'&&
+            childKey!=='constructor'&&typeof value[childKey]!=='function'&&
+            value[childKey]!==undefined).sort();
+          const entry={path,chars:0};
+          pathStack.push(entry);
+          yield* emitInteropChunk('{');
+          for(let childIndex=0;childIndex<childKeys.length;childIndex++){
+            if(childIndex)yield* emitInteropChunk(',');
+            const childKey=childKeys[childIndex];
+            yield* emitInteropChunk(JSON.stringify(childKey));
+            yield* emitInteropChunk(':');
+            yield* profiledInteropChunks(value[childKey],path+'.'+childKey,depth-1);
+          }
+          yield* emitInteropChunk('}');
+          pathStack.pop();
+        };
+        yield* profiledInteropChunks(snapshot[key],'interoperability',5);
       }else{
         for(const chunk of stableJsonChunks(snapshot[key],false,false)){
           partChars+=chunk.length;
