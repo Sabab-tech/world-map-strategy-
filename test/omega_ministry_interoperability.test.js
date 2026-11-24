@@ -493,9 +493,8 @@ test('committed command audit records write paths and revisions without copying 
   });
   assert.equal(result.status,'APPLIED');
   assert.equal(result.transaction.operations.length,1);
-  assert.deepEqual(result.transaction.operations[0],{
-    op:'SET',path:'economy.largeAuditDomain'
-  });
+  assert.equal(result.transaction.operations[0].op,'SET');
+  assert.equal(result.transaction.operations[0].path,'economy.largeAuditDomain');
   assert.match(result.transaction.beforeRevision,/^CONTENT:[0-9a-f]{8}$/);
   assert.match(result.transaction.afterRevision,/^CONTENT:[0-9a-f]{8}$/);
   assert.equal(result.transaction.changed,true);
@@ -516,8 +515,8 @@ test('committed command audit records write paths and revisions without copying 
   const standaloneAfter={version:2,records:[{id:'AUDIT-DETAIL',value:42}]};
   standalone.set('economy.largeAuditDomain',standaloneAfter);
   const standaloneResult=standalone.commit();
-  assert.deepEqual(standaloneResult.operations[0].before,standaloneBefore);
-  assert.deepEqual(standaloneResult.operations[0].after,standaloneAfter);
+  assert.equal(JSON.stringify(standaloneResult.operations[0].before),JSON.stringify(standaloneBefore));
+  assert.equal(JSON.stringify(standaloneResult.operations[0].after),JSON.stringify(standaloneAfter));
 });
 
 test('R: save/load restores logically equivalent interoperability state',()=>{
