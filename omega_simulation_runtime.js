@@ -1423,7 +1423,7 @@
 
         // The save finalizer executes after all state mutations and the completion
         // event, so the durable snapshot represents the completed turn, not a preview.
-        phaseResults.FINALIZE=clone(await runProfiledPhase('FINALIZE',()=>this.runTurnFinalizers({
+        phaseResults.FINALIZE=clone(await runProfiledPhase('FINALIZE',async()=>await this.runTurnFinalizers({
           turn,
           day:turn+1,
           stepDurationMs:this.clock.stepDurationMs,
