@@ -1023,7 +1023,8 @@
   function worldBankDebtEvidence(country) {
     var banking = state().governmentBanking || {};
     var bank = banking.worldBankLending;
-    if (!bank || !isObject(bank.loansByCountry) || !isObject(bank.insolvencyByCountry) ||
+    if (!bank || !bank.loansByCountry || typeof bank.loansByCountry !== 'object' || Array.isArray(bank.loansByCountry) ||
+        !bank.insolvencyByCountry || typeof bank.insolvencyByCountry !== 'object' || Array.isArray(bank.insolvencyByCountry) ||
         !Array.isArray(bank.restructuringProposals)) return { status: 'UNKNOWN', value: null, source: null };
     var loanEntry = mapEntry(bank.loansByCountry, country);
     var loans = loanEntry.found && Array.isArray(loanEntry.value) ? loanEntry.value : [];
