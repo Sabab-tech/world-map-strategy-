@@ -650,9 +650,16 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           commandStatus: command?.status || null,
           commandStateWriteCount: command?.stateWriteCount ?? null,
           transactionPaths: (command?.transaction?.operations || []).map(row => row.path),
-          inventoryLotOperationIncludesBatch: !!operation &&
-            !!operation.after && Object.prototype.hasOwnProperty.call(operation.after, batchId),
-          inventoryLotOperationBatchCount: operation?.after ? Object.keys(operation.after).length : null
+          // Committed transaction audit rows intentionally retain only the
+          // write path and operation type. Verify the actual authoritative lot
+          // after commit instead of relying on a duplicate before/after copy.
+          inventoryLotOperationIncludesBatch: !!operation && !!batchId &&
+            Object.prototype.hasOwnProperty.call(bucket?.inventoryLots||{}, batchId),
+          inventoryLotOperationBatchCount: operation
+            ? Object.keys(bucket?.inventoryLots||{}).length : null,
+          inventoryLotOperationAuditIsCompacted: !!operation &&
+            !Object.prototype.hasOwnProperty.call(operation,'before') &&
+            !Object.prototype.hasOwnProperty.call(operation,'after')
         };
       };
       const extractionAuditListener = event => {
