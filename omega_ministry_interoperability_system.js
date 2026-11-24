@@ -1672,7 +1672,7 @@
           ?this.provider.root()
           :(global.Game?.state||global.gameState||global.Omega?.World?.state||null);
         const stateTransaction=transactionFactory?.create
-          ? transactionFactory.create(handler.ownerMinistry,country,turn,commandId,authoritativeState,{commandType})
+          ? transactionFactory.create(handler.ownerMinistry,country,turn,commandId,authoritativeState,{commandType,includeOperationValues:false})
           : null;
         if(!stateTransaction){
           throw new Error('AUTHORITATIVE_STATE_TRANSACTION_UNAVAILABLE');
