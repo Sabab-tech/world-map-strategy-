@@ -405,6 +405,104 @@
     account.status=account.reconciliationStatus;
     return account;
   }
+  function ensureAutomaticNationalReserve(profile, model) {
+    var policy = rules.automaticNationalReserve || {};
+    if (!profile || !model || policy.enabledForNpcCountries !== true ||
+        String(profile.countryCode || '').toUpperCase() === String(getPlayerCode() || '').toUpperCase()) return null;
+    if (!isObject(model.nationalReserve)) {
+      model.nationalReserve = {
+        schemaVersion: 1, currency: 'USD', balanceUsd: 0, periodOpeningBalanceUsd: 0,
+        currentPeriodContributionUsd: 0, lifetimeContributionsUsd: 0, lifetimeReleasesUsd: 0,
+        contributionPctOfOperatingSurplus: Number(policy.contributionPctOfOperatingSurplus ?? 20),
+        sourceAuthority: 'OMEGA_FINANCE_MINISTRY', status: 'AWAITING_RECONCILED_FISCAL_PERIOD'
+      };
+    }
+    var reserve = model.nationalReserve;
+    for (var key of ['balanceUsd', 'periodOpeningBalanceUsd', 'currentPeriodContributionUsd',
+      'lifetimeContributionsUsd', 'lifetimeReleasesUsd']) {
+      reserve[key] = Math.max(0, finite(reserve[key]) || 0);
+    }
+    reserve.schemaVersion = 1;
+    reserve.currency = 'USD';
+    reserve.sourceAuthority = 'OMEGA_FINANCE_MINISTRY';
+    if (finite(reserve.contributionPctOfOperatingSurplus) === null)
+      reserve.contributionPctOfOperatingSurplus = Number(policy.contributionPctOfOperatingSurplus ?? 20);
+    if (finite(reserve.periodIndex) === null) reserve.periodIndex = Math.max(0, Math.floor(finite(model.fiscalYearIndex) || 0));
+    return reserve;
+  }
+  function updateAutomaticNationalReserve(profile, model, turnNumber = currentTurn()) {
+    var policy = rules.automaticNationalReserve || {};
+    var reserve = ensureAutomaticNationalReserve(profile, model);
+    if (!reserve) return null;
+    var cash = Math.max(0, finite(model.treasuryBalanceUsd) || 0);
+    var balance = Math.max(0, finite(reserve.balanceUsd) || 0);
+    if (balance > cash) {
+      var cashRelease = balance - cash;
+      reserve.balanceUsd = cash;
+      reserve.lifetimeReleasesUsd = Number((reserve.lifetimeReleasesUsd + cashRelease).toFixed(2));
+      if (reserve.periodOpeningBalanceUsd > cash) reserve.periodOpeningBalanceUsd = cash;
+      reserve.lastReleaseUsd = Number(cashRelease.toFixed(2));
+      reserve.lastReleaseReason = 'TREASURY_CASH_FELL_BELOW_EARMARKED_RESERVE';
+    }
+    var account = model.fiscalPeriodAccount;
+    var allowedStatuses = ['GAME_STATE_RECONCILED', 'MODELLED_RECONCILED'];
+    if (policy.requiresReconciledFiscalPeriod !== false &&
+        (!account || account.flowCoverage !== 'COMPLETE_FROM_PERIOD_START' ||
+          !allowedStatuses.includes(String(account.reconciliationStatus || account.status || '').toUpperCase()))) {
+      reserve.status = 'WAITING_FOR_RECONCILED_FISCAL_PERIOD';
+      reserve.lastCalculatedTurn = turnNumber;
+      reserve.availableForGeneralSpendingUsd = Number(Math.max(0, cash - reserve.balanceUsd).toFixed(2));
+      return reserve;
+    }
+    if (account && finite(account.periodIndex) !== null && finite(reserve.periodIndex) !== finite(account.periodIndex)) {
+      reserve.periodOpeningBalanceUsd = Math.max(0, finite(reserve.balanceUsd) || 0);
+      reserve.currentPeriodContributionUsd = 0;
+      reserve.periodIndex = finite(account.periodIndex);
+    }
+    var flows = account && isObject(account.flowComponents) ? account.flowComponents : fiscalFlowComponents(model);
+    var operatingSurplus = Math.max(0, finite(flows.taxRevenueUsd) || 0) +
+      Math.max(0, finite(flows.externalCreditsUsd) || 0) -
+      Math.max(0, finite(flows.governmentSpendingUsd) || 0) -
+      Math.max(0, finite(flows.externalDebitsUsd) || 0) -
+      Math.max(0, finite(flows.interestPaidUsd) || 0) -
+      Math.max(0, finite(flows.principalRepaymentUsd) || 0);
+    var rate = clamp(policy.contributionPctOfOperatingSurplus ?? 20, 0, 100);
+    if (rate === null) rate = 20;
+    var opening = Math.max(0, finite(reserve.periodOpeningBalanceUsd) || 0);
+    var targetContribution = Math.max(0, operatingSurplus) * rate / 100;
+    var desiredBalance = opening + targetContribution;
+    var priorBalance = Math.max(0, finite(reserve.balanceUsd) || 0);
+    var adjustment = desiredBalance - priorBalance;
+    var nextBalance = desiredBalance;
+    if (adjustment > 0) reserve.lifetimeContributionsUsd =
+      Number((reserve.lifetimeContributionsUsd + adjustment).toFixed(2));
+    else if (adjustment < 0) reserve.lifetimeReleasesUsd =
+      Number((reserve.lifetimeReleasesUsd + Math.abs(adjustment)).toFixed(2));
+    var release = 0;
+    if (nextBalance > cash) {
+      release = nextBalance - cash;
+      nextBalance = cash;
+      reserve.lifetimeReleasesUsd = Number((reserve.lifetimeReleasesUsd + release).toFixed(2));
+      reserve.lastReleaseReason = 'TREASURY_CASH_LIMIT';
+    }
+    if (nextBalance < opening) {
+      opening = nextBalance;
+      reserve.periodOpeningBalanceUsd = opening;
+    }
+    reserve.balanceUsd = Number(Math.max(0, nextBalance).toFixed(2));
+    reserve.currentPeriodContributionUsd = Number(Math.max(0, reserve.balanceUsd - opening).toFixed(2));
+    reserve.operatingSurplusUsd = Number(operatingSurplus.toFixed(2));
+    reserve.targetCurrentPeriodContributionUsd = Number(targetContribution.toFixed(2));
+    reserve.contributionPctOfOperatingSurplus = rate;
+    reserve.surplusBasis = 'TAX_AND_EXTERNAL_CASH_INFLOWS_MINUS_GOVERNMENT_SPENDING_EXTERNAL_DEBITS_INTEREST_AND_PRINCIPAL_REPAYMENT';
+    reserve.borrowingProceedsExcluded = true;
+    reserve.lastCalculatedTurn = turnNumber;
+    reserve.lastAdjustmentUsd = Number(adjustment.toFixed(2));
+    reserve.lastReleaseUsd = Number(release.toFixed(2));
+    reserve.status = reserve.balanceUsd > 0 ? 'FUNDED' : operatingSurplus > 0 ? 'CONTRIBUTION_ROUNDED_TO_ZERO' : 'NO_POSITIVE_OPERATING_SURPLUS';
+    reserve.availableForGeneralSpendingUsd = Number(Math.max(0, cash - reserve.balanceUsd).toFixed(2));
+    return reserve;
+  }
   function beginFiscalPeriodAccount(model,periodIndex,turn,openingCash,openingSource,openingQuality,flowCoverage){
     model.fiscalPeriodAccount={
       schemaVersion:1,periodIndex,periodLabel:String(Number(rules.baselineYear||2015)+periodIndex),currency:'USD',
@@ -455,6 +553,12 @@
     model.currentYearTaxRevenueUsd=0;model.currentYearSpendingUsd=0;model.currentYearBorrowingUsd=0;
     model.currentYearInterestUsd=0;model.currentYearDebtPrincipalRepaymentUsd=0;
     model.currentYearExternalInflowUsd=0;model.currentYearExternalOutflowUsd=0;
+    var nationalReserve = ensureAutomaticNationalReserve(profile, model);
+    if (nationalReserve) {
+      nationalReserve.periodOpeningBalanceUsd = Math.max(0, finite(nationalReserve.balanceUsd) || 0);
+      nationalReserve.currentPeriodContributionUsd = 0;
+      nationalReserve.periodIndex = nextYearIndex;
+    }
     model.currentYearSectorReceiptsUsd={};
     for(const sector of sectorRegistry.economicSectors||[])model.currentYearSectorReceiptsUsd[sector.id]=0;
     for(const sector of sectorRegistry.budgetSectors||[]){
@@ -534,6 +638,7 @@
     if(!isObject(model.currentYearSectorReceiptsUsd))model.currentYearSectorReceiptsUsd={};
     for(const s of sectorRegistry.economicSectors||[])if(finite(model.currentYearSectorReceiptsUsd[s.id])===null)model.currentYearSectorReceiptsUsd[s.id]=0;
     initializeSectorAllocations(model);
+    ensureAutomaticNationalReserve(p, model);
     return model;
   }
   function ensureStateInitialized(){
@@ -810,7 +915,9 @@
     const actionDepartment=String(action.department||'').toLowerCase().replace(/[\s-]+/g,'_');
     const actionDescription=String(action.description||'');
     const approvedSimulationExpense=(actionDepartment==='interior'&&actionDescription.startsWith('OMEGA_HOME_BUDGET:'))||
-      (actionDepartment==='defense'&&actionDescription.startsWith('OMEGA_MILITARY_BUDGET:'));
+      (actionDepartment==='defense'&&actionDescription.startsWith('OMEGA_MILITARY_BUDGET:'))||
+      (actionDepartment==='emergency_reserve'&&String(action.spendType||action.category||'').toLowerCase()==='emergency'&&
+        actionDescription.startsWith('OMEGA_EMERGENCY_RESERVE:'));
     const simulationAuthorized=action.__omegaSimulationPipelineAuthority===true&&
       global.__OMEGA_SIMULATION_PIPELINE_ACTIVE__===true&&
       !!(global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.stepInProgress)&&
@@ -820,6 +927,8 @@
     if(!isPlayable(p))return {ok:false,code:'ECONOMIC_BASELINE_UNAVAILABLE',message:'No GDP baseline exists. Fiscal actions are disabled rather than fabricated.'};
     const root=rootState(),fm=ensureFinanceState(p,root);
     reconcileExternalTreasury(p,fm,root);
+    updateFiscalPeriodAccount(fm,currentTurn());
+    updateAutomaticNationalReserve(p,fm,currentTurn());
     const e=root.economy?.[p.economyKey]||getEconomyRecord(p);
     if(!e)return {ok:false,code:'ECONOMY_STATE_UNAVAILABLE',message:'Authoritative economy state is unavailable.'};
     const canonicalType=canonicalFinanceActionType(type);
@@ -958,12 +1067,29 @@
       const cash=Math.max(0,finite(fm.treasuryBalanceUsd)||0);
       if(amount>cash)return {ok:false,code:'INSUFFICIENT_TREASURY',message:'Insufficient treasury balance; expense rejected.'};
       const reservePct=Math.max(0,finite(fm.policy.minimumReservePctOfAnnualSpending)||0);
-      const reserveFloor=Math.max(0,finite(fm.fiscalModel.annualSpendingUsd)||0)*reservePct/100;
+      const manualReserveFloor=Math.max(0,finite(fm.fiscalModel.annualSpendingUsd)||0)*reservePct/100;
+      const nationalReserveFloor=p.countryCode!==getPlayerCode()
+        ? Math.max(0,finite(fm.nationalReserve?.balanceUsd)||0) : 0;
+      const reserveFloor=Math.max(manualReserveFloor,nationalReserveFloor);
       if(category!=='emergency'&&category!=='debt_service'&&cash-amount+0.01<reserveFloor)
         return {ok:false,code:'MINIMUM_RESERVE_FLOOR',message:'This expense would breach the configured minimum treasury reserve. Use the emergency category only for an authorized emergency.'};
       allocation.spentUsd=(finite(allocation.spentUsd)||0)+amount;
       allocation.remainingUsd=Math.max(0,(finite(allocation.budgetUsd)||0)-allocation.spentUsd);
       fm.treasuryBalanceUsd=cash-amount;
+      if ((category==='emergency'||category==='debt_service') && p.countryCode!==getPlayerCode() &&
+          isObject(fm.nationalReserve) && finite(fm.nationalReserve.balanceUsd)!==null &&
+          fm.nationalReserve.balanceUsd>fm.treasuryBalanceUsd) {
+        const reserveRelease=fm.nationalReserve.balanceUsd-fm.treasuryBalanceUsd;
+        fm.nationalReserve.balanceUsd=Math.max(0,fm.treasuryBalanceUsd);
+        fm.nationalReserve.lifetimeReleasesUsd=Number(((finite(fm.nationalReserve.lifetimeReleasesUsd)||0)+reserveRelease).toFixed(2));
+        if ((finite(fm.nationalReserve.periodOpeningBalanceUsd)||0)>fm.nationalReserve.balanceUsd)
+          fm.nationalReserve.periodOpeningBalanceUsd=fm.nationalReserve.balanceUsd;
+        fm.nationalReserve.currentPeriodContributionUsd=Number(Math.max(0,
+          fm.nationalReserve.balanceUsd-(finite(fm.nationalReserve.periodOpeningBalanceUsd)||0)).toFixed(2));
+        fm.nationalReserve.lastReleaseUsd=Number(reserveRelease.toFixed(2));
+        fm.nationalReserve.lastReleaseReason='AUTHORIZED_EMERGENCY_OR_DEBT_SERVICE';
+        fm.nationalReserve.availableForGeneralSpendingUsd=0;
+      }
       fm.cumulativeSpendingUsd=(finite(fm.cumulativeSpendingUsd)||0)+amount;
       fm.currentYearSpendingUsd=(finite(fm.currentYearSpendingUsd)||0)+amount;
       const fb=financeBucketFor(root,p,true);
@@ -1089,6 +1215,7 @@
       const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root,turnNumber,dt);
       if(externalTreasuryChanged){
         updateFiscalPeriodAccount(fm,turnNumber);
+        updateAutomaticNationalReserve(p,fm,turnNumber);
         syncEconomyRecord(p,fm,root);
       }
       return{processed:0,unavailable:false,duplicate:true,externalTreasuryChanged};
@@ -1098,6 +1225,7 @@
       const externalTreasuryChanged=reconcileExternalTreasury(p,fm,root,turnNumber,dt);
       if(externalTreasuryChanged){
         updateFiscalPeriodAccount(fm,turnNumber);
+        updateAutomaticNationalReserve(p,fm,turnNumber);
         syncEconomyRecord(p,fm,root);
       }
       return{processed:0,unavailable:true,duplicate:false,externalTreasuryChanged};
@@ -1142,6 +1270,7 @@
     fm.priceIndex=(finite(fm.priceIndex)||100)*Math.pow(Math.max(.0001,1+inflation/100),years);
     fm.lastProcessedTurn=turnNumber;fm.revision=(finite(fm.revision)||0)+1;
     updateFiscalPeriodAccount(fm,turnNumber);
+    updateAutomaticNationalReserve(p,fm,turnNumber);
     e.debt=debtAfter;e.budget_balance=fm.fiscalModel.annualBudgetBalanceUsd;
     e.revenue=finite(fb.revenue)??fm.fiscalModel.annualRevenueUsd;
     e.expenditure=finite(fb.spending)??fm.fiscalModel.annualSpendingUsd;
@@ -1566,7 +1695,8 @@
     economicProfiles:profiles.filter(p=>!!p.sourceValues).length,profilesWithGDP:profiles.filter(p=>finite(p.indicators?.gdpCurrentUsd)!==null).length,
     dataUnavailable:profiles.filter(p=>p.profileStatus==='UNAVAILABLE').length,playerCountryCode:getPlayerCode(),simulationTurn:currentTurn(),
     activeCountryCode:selectedCountryCode,schedulerHandlerRegistered:typeof unregisterSchedulerHandler==='function',hasAuthoritativeEconomy:isObject(root.economy),hasFinanceState:isObject(root.finance),
-    transactionTypes:['set-tax-rate','set-interest-rate','set-allocation','transfer-budget','spend-budget','borrow']};}
+    transactionTypes:['set-tax-rate','set-interest-rate','set-allocation','transfer-budget','spend-budget','borrow'],
+    automaticNationalReserve:clone(rules.automaticNationalReserve||{})};}
   function applySimulationAction(action){
     const type=String(action&&action.type||'').toLowerCase().replace(/_/g,'-');
     const department=String(action&&action.department||'').toLowerCase().replace(/[\s-]+/g,'_');
@@ -1575,9 +1705,13 @@
       !!(global.Omega&&global.Omega.Simulation&&global.Omega.Simulation.stepInProgress);
     if(!inTurn)return{ok:false,code:'SIMULATION_TURN_AUTHORITY_REQUIRED'};
     if(type!=='spend-budget')return{ok:false,code:'SIMULATION_ACTION_NOT_ALLOWED'};
+    const category=String(action&&(action.spendType||action.category)||'').toLowerCase();
     const homeExpense=department==='interior'&&description.startsWith('OMEGA_HOME_BUDGET:');
     const militaryExpense=department==='defense'&&description.startsWith('OMEGA_MILITARY_BUDGET:');
-    if(!homeExpense&&!militaryExpense)return{ok:false,code:'SIMULATION_EXPENSE_AUTHORITY_NOT_ALLOWED'};
+    const emergencyReserveExpense=department==='emergency_reserve'&&category==='emergency'&&
+      description.startsWith('OMEGA_EMERGENCY_RESERVE:');
+    if(!homeExpense&&!militaryExpense&&!emergencyReserveExpense)
+      return{ok:false,code:'SIMULATION_EXPENSE_AUTHORITY_NOT_ALLOWED'};
     return applyAction(Object.assign({},action,{__omegaSimulationPipelineAuthority:true}));
   }
   function getSectorJournal(countryValue){
@@ -1603,7 +1737,11 @@
   const api={VERSION,init,diagnostics,resolveCountry:resolveProfile,getProfiles:()=>profiles.slice(),getProfileMetadata:()=>clone(profileDatasetMetadata),getPlayerCountry:playerCountryProfile,
      applySimulationAction,
     getIndicators:function(v){const p=resolveProfile(v)||playerCountryProfile();return p?worldSnapshot().byCode.get(p.countryCode)||null:null;},
-    getFinanceState:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const root=rootState(),fm=ensureFinanceState(p,root);if(reconcileExternalTreasury(p,fm,root))syncEconomyRecord(p,fm,root);return clone(fm);},
+    getFinanceState:function(v){const p=resolveProfile(v)||playerCountryProfile();if(!p)return null;const root=rootState(),fm=ensureFinanceState(p,root);if(reconcileExternalTreasury(p,fm,root)){
+      updateFiscalPeriodAccount(fm,currentTurn());
+      updateAutomaticNationalReserve(p,fm,currentTurn());
+      syncEconomyRecord(p,fm,root);
+    }return clone(fm);},
     getSectorJournal,
     selectCountry:function(v){
       const p=resolveProfile(v);if(!p)return {ok:false,code:'COUNTRY_NOT_FOUND'};
