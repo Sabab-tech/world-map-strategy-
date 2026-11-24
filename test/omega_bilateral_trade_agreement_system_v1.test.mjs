@@ -696,7 +696,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
     'NPC buyer liquidity is reduced by its protected national Treasury reserve');
   assert.equal(internalReserveReview.decisionFactors.buyerNationalReserveUsd, 349999);
   const publicReserveReview = globalThis.Game.state.trade.BGD.bilateralProposalOutbox
-    .find(row => row.proposalId === 'BTP-NPC-RESERVE-AFFORDABILITY').review;
+    .find(row => row.proposalId === 'BTP-NPC-RESERVE-AFFORDABILITY').decision;
   assert.equal(publicReserveReview.decisionFactors.buyerGrossAvailableForeignCurrency, null,
     'private NPC treasury liquidity must not be disclosed to a requesting counterparty');
   assert.equal(publicReserveReview.decisionFactors.buyerNationalReserveUsd, null);
