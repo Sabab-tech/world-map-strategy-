@@ -932,6 +932,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const originBatchId = setup.originBatchId;
       const resource = g.Game.state.resource[seller];
       const simulation = g.Omega.Simulation;
+      const worldSchedulerId = 'omega.world-simulation.scheduler.v1';
+      const worldSchedulerEntry = simulation.turnParticipants?.get?.(worldSchedulerId) || null;
+      const requiredResourceParticipantId = 'omega.resource-economy.player-country';
+      if (!worldSchedulerEntry)
+        fail('WORLD_SIMULATION_SCHEDULER_NOT_REGISTERED_DURING_PIPELINE', {
+          participants: simulation.participantDiagnostics?.() || [],
+          scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null
+        });
       // Phase timers expose the slow player-country subsystem without changing
       // production logic or removing the Resource Economy turn runner.
       g.__OMEGA_RESOURCE_ECONOMY_PERF__ = true;
