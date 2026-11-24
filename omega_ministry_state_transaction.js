@@ -147,7 +147,7 @@
       return out;
     }
 
-    _readLivePath(path){
+    _readLivePath(path,cloneValue=true){
       const ref=this._countryContainer(path,false);
       if(!ref)return undefined;
       let cur=ref.container;
@@ -155,16 +155,16 @@
         if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
         cur=cur[part];
       }
-      return clone(cur);
+      return cloneValue?clone(cur):cur;
     }
 
     _valueFingerprint(value){
       return hash({present:value!==undefined,value});
     }
 
-    _writeSetFingerprint(readCurrent=false){
+    _writeSetFingerprint(readCurrent=false,cloneCurrent=true){
       const rows=[...this.writeBaseline.keys()].sort().map(path=>{
-        const value=readCurrent?this._readLivePath(path):this.writeBaseline.get(path);
+        const value=readCurrent?this._readLivePath(path,cloneCurrent):this.writeBaseline.get(path);
         return{path,present:value!==undefined,value};
       });
       return hash(rows);
@@ -195,8 +195,10 @@
       this._assertOpen();
       const p=this._assertOwnedPath(path);
       if(!this.writeBaseline.has(p))this.writeBaseline.set(p,this._readLivePath(p));
-      const existing=this.get(p);
-      this.operations.push({op:'SET',path:p,before:clone(existing),after:clone(value)});
+      // Compact command-ledger transactions do not persist before/after values.
+      // Avoid cloning the same live path a second time just to discard its snapshot.
+      const before=this.includeOperationValues?this.get(p):undefined;
+      this.operations.push({op:'SET',path:p,before,after:clone(value)});
       return clone(value);
     }
 
@@ -234,7 +236,8 @@
       // other countries can still change without forcing a transaction retry.
       const beforeDigest=this._writeSetFingerprint(false);
       for(const [path,expected] of this.writeBaseline.entries()){
-        const actual=this._readLivePath(path);
+        // Fingerprinting is read-only; do not deep-clone the live value before hashing.
+        const actual=this._readLivePath(path,false);
         if(this._valueFingerprint(actual)!==this._valueFingerprint(expected)){
           this.closed=true;
           const conflict=new Error('STATE_TRANSACTION_CONFLICT');
@@ -256,7 +259,9 @@
           cur=cur[part];
         }
         const leaf=ref.parts[ref.parts.length-1];
-        if(operation.op==='SET')cur[leaf]=clone(operation.after);
+        // set() already isolated the staged value. Compact command transactions
+        // can transfer that owned snapshot directly into state and release it below.
+        if(operation.op==='SET')cur[leaf]=this.includeOperationValues?clone(operation.after):operation.after;
         else if(operation.op==='DELETE')delete cur[leaf];
         if(this.includeOperationValues){
           applied.push({
@@ -275,7 +280,7 @@
           });
         }
       }
-      const afterDigest=this._writeSetFingerprint(true);
+      const afterDigest=this._writeSetFingerprint(true,false);
       this.closed=true;
       // Release the transaction's temporary full-value copies immediately. Keep
       // the compact path list on the transaction object because the command router
