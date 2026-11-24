@@ -1874,6 +1874,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       participantTrace,
       resourceEconomyPhaseProfile,
       simulationStepProfile: await page.evaluate(() => window.__OMEGA_SIMULATION_STEP_PROFILE__ || null).catch(() => null),
+      simulationSaveProfile: await page.evaluate(() => window.__OMEGA_SIMULATION_SAVE_PROFILE__ || null).catch(() => null),
       worldSchedulerDiagnostics: await page.evaluate(() =>
         window.OmegaWorldSimulationScheduler?.diagnostics?.() || null
       ).catch(() => null),
