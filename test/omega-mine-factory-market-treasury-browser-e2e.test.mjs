@@ -494,7 +494,9 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
                   lastError: simulation.lastError || session.lastError || null,
                   participants: simulation.lastTurnParticipantResults || []
                 }).slice(0, 10000)));
-              } else if (nowTurn >= before + 1) {
+              } else if (nowTurn >= before + 1 &&
+                  simulation.stepInProgress !== true &&
+                  simulation.manualAdvanceInProgress !== true) {
                 g.clearInterval(timer);
                 resolve();
               } else if (Date.now() - startedAt > 150000) {
