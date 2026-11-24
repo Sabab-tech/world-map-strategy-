@@ -669,6 +669,7 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
     'the existing two-review-per-country-turn bound must remain intact');
 
   // NPC national Treasury reserve is excluded from commercial spendable cash.
+  globalThis.Game.state.finance.SAU.available = 350000;
   globalThis.Game.state.finance.SAU.omegaFinance = {
     nationalReserve: { balanceUsd: 349999 }
   };
