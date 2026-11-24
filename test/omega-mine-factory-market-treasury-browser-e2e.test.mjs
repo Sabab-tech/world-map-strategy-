@@ -941,7 +941,6 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const deferredMarketRebuildCount = 0;
       if (!market || typeof market.rebuildCountry !== 'function')
         throw new Error('AUTHORITATIVE_GLOBAL_MARKET_RUNTIME_UNAVAILABLE');
-      g.__omegaMineMarketTreasuryDeferredMarketRebuilds = () => 0;
       // The market participant is not replaced or deferred; normal turns publish it.
       const batchMap = () => new Map((resource.batches || []).map(row => [String(row?.batchId || ''), row]));
       const hasOrigin = (batch, target, map, seen = new Set()) => {
@@ -966,7 +965,6 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const scopedResourceId = String(setup.selected.resourceId).toLowerCase();
       const network = resource.industrialNetwork || (resource.industrialNetwork = {});
       const economy = g.Game.state.economy?.[seller] || (g.Game.state.economy[seller] = {});
-      const scopedCollections = [];
       const scopeCounts = {
         dataScope: 'FULL_PLAYER_COUNTRY_RUNTIME',
         selectedSiteId: scopedSiteId,
@@ -984,11 +982,6 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       if (!scopeCounts.retainedOriginLotPresent)
         fail('PLAYER_PIPELINE_ORIGIN_INVENTORY_LOT_MISSING', scopeCounts);
       g.__omegaMineMarketTreasuryScopeDetails = scopeCounts;
-      g.__omegaMineMarketTreasuryRestoreScope = () => ({
-        status: 'NO_SCOPE_MUTATION',
-        dataScope: 'FULL_PLAYER_COUNTRY_RUNTIME',
-        collectionCount: 0
-      });
       mark('FULL_PLAYER_COUNTRY_RUNTIME_RETAINED', scopeCounts);
       const snapshots = [];
       let finished = null;
@@ -1547,10 +1540,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         return result;
       };
       
-      const quote = market.quote(productId);
-      if (String(quote?.status || '').toUpperCase() !== 'CLEARED' ||
-          !(Number(quote?.matchedQuantity) > 0 || Number(quote?.clearingPriceUsd) > 0))
-        throw new Error('REAL_MARKET_BID_DID_NOT_CLEAR_AGAINST_FACTORY_OFFER:' + JSON.stringify(quote).slice(0, 3500));
+      let quote = null;
 
       const outputBatch = (g.Game.state.resource?.[seller]?.batches || [])
         .find(row => String(row.batchId) === production.outputBatchId);
@@ -1562,6 +1552,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       let buyerSchedulerEvidence = null;
       for (let attempt = 0; attempt < 8; attempt++) {
         await g.__omegaMineMarketTreasuryAdvanceTurns(1);
+        quote = market.quote(productId);
         const requests = g.Game.state.trade?.[buyer]?.importRequests || [];
         request = requests.find(row => String(row.requestId) === requestId) || null;
         const schedulerParticipant = (simulation.lastTurnParticipantResults || [])
@@ -1586,7 +1577,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           request, buyerSchedulerEvidence,
           scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null,
           tradeProcessTrace: g.__OMEGA_LAST_TRADE_PROCESS_TRACE || null,
-          request, settlementId, settlementTrace: g.__OMEGA_SETTLEMENT_TRACE,
+          settlementId, settlementTrace: g.__OMEGA_SETTLEMENT_TRACE,
           settlementDiagnostics,
           bankTransaction: bank.getTransaction(settlementId),
           bankSettlementState: {
@@ -1597,6 +1588,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           buyerTreasury: bank.accountSummary(buyer), sellerTreasury: bank.accountSummary(seller)
         }).slice(0, 10000));
 
+      if (String(quote?.status || '').toUpperCase() !== 'CLEARED' ||
+          !(Number(quote?.matchedQuantity) > 0 || Number(quote?.clearingPriceUsd) > 0))
+        throw new Error('NORMAL_TURN_MARKET_BOOK_DID_NOT_CLEAR:' + JSON.stringify({
+          quote, buyerSchedulerEvidence
+        }).slice(0, 3500));
+      if (!buyerSchedulerEvidence?.buyerActive ||
+          String(buyerSchedulerEvidence.buyerTradeHandlerStatus || '').toUpperCase() !== 'COMPLETED')
+        throw new Error('BUYER_ORDER_DID_NOT_RUN_INSIDE_WORLD_SCHEDULER:' + JSON.stringify(buyerSchedulerEvidence));
       const storedTransaction = bank.getTransaction(settlementId);
       const transaction = storedTransaction?.result || storedTransaction;
       if (!storedTransaction || String(storedTransaction.status || transaction?.status || '').toUpperCase() !== 'SETTLED')
