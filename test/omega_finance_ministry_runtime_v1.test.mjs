@@ -1135,8 +1135,9 @@ test('NPC national reserve saves 20% of reconciled operating surplus, excludes b
   current=finance.getFinanceState(npc.iso3);
   const treasury=current.treasuryBalanceUsd;
   const reserve=current.nationalReserve.balanceUsd;
-  model.allocations.interior.budgetUsd=treasury;
-  model.allocations.interior.remainingUsd=treasury;
+  let liveModel=financeBucket.omegaFinance;
+  liveModel.allocations.interior.budgetUsd=treasury;
+  liveModel.allocations.interior.remainingUsd=treasury;
   const blockedAmount=Math.min(treasury,Math.max(1,treasury-reserve+1));
   const blocked=finance.applySimulationAction({type:'spend-budget',countryId:npc.iso3,department:'interior',
     amountUsd:blockedAmount,spendType:'general',description:'OMEGA_HOME_BUDGET: reserve protection test'});
@@ -1144,9 +1145,10 @@ test('NPC national reserve saves 20% of reconciled operating surplus, excludes b
   assert.equal(blocked.code,'MINIMUM_RESERVE_FLOOR',
     'ordinary NPC government expenditure may not consume the earmarked national reserve');
 
-  model.allocations.emergency_reserve=model.allocations.emergency_reserve||{department:'emergency_reserve',spentUsd:0};
-  model.allocations.emergency_reserve.budgetUsd=treasury;
-  model.allocations.emergency_reserve.remainingUsd=treasury;
+  liveModel=financeBucket.omegaFinance;
+  liveModel.allocations.emergency_reserve=liveModel.allocations.emergency_reserve||{department:'emergency_reserve',spentUsd:0};
+  liveModel.allocations.emergency_reserve.budgetUsd=treasury;
+  liveModel.allocations.emergency_reserve.remainingUsd=treasury;
   const emergencyAmount=Math.min(treasury,Math.max(1,treasury-reserve+100));
   const emergency=finance.applySimulationAction({type:'spend-budget',countryId:npc.iso3,department:'emergency_reserve',
     amountUsd:emergencyAmount,spendType:'emergency',description:'OMEGA_EMERGENCY_RESERVE: authorized emergency test'});
