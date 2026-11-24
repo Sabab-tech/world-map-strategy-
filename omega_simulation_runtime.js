@@ -1352,14 +1352,15 @@
       this.lastError=null;
       const finalizersAtTurnStart=[...this.turnFinalizers.values()];
       const commandResults=[];
+      let turnProfile=null;
+      const profileNow=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
       try{
         this.world.hydrateCompatibility();
         const time=this.clock.advanceTurn();
         const turn=time.turn;
         this.status='RUNNING';
         const profiling=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
-        const profileNow=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
-        const turnProfile=profiling?{
+        turnProfile=profiling?{
           turn,status:'RUNNING',startedAt:profileNow(),phases:[],participants:[],finalizers:[],
           simulateComponents:[],activePhase:null,activeParticipant:null,activeFinalizer:null,activeSimulateComponent:null
         }:null;
