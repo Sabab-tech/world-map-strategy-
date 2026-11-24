@@ -199,7 +199,9 @@
       // Avoid cloning the same live path a second time just to discard its snapshot.
       const before=this.includeOperationValues?this.get(p):undefined;
       this.operations.push({op:'SET',path:p,before,after:clone(value)});
-      return clone(value);
+      // The staged value is already isolated from the caller. Compact command
+      // handlers may receive their own input reference without another deep copy.
+      return this.includeOperationValues?clone(value):value;
     }
 
     delete(path){
