@@ -477,37 +477,75 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       g.__omegaMineMarketTreasuryAdvanceTurns = async turns => {
         const requestedTurns = Math.max(0, Math.floor(Number(turns) || 0));
         const startingTurn = Number(simulation.clock?.turn ?? g.Game.state.simulation?.turn ?? 0);
-        for (let index = 0; index < requestedTurns; index++) {
-          const before = Number(simulation.clock?.turn ?? g.Game.state.simulation?.turn ?? 0);
-          const stepControl = g.document.querySelector('[data-omega-action="step-day"]');
-          if (!stepControl) throw new Error('VISIBLE_GAME_CLOCK_STEP_DAY_CONTROL_MISSING');
-          stepControl.click();
+        const readLifecycle = () => g.Omega?.GameLifecycle?.getDiagnostics?.() || null;
+        const readStepControl = () => g.document.querySelector('[data-omega-action="step-day"]');
+        const advanceDiagnostics = (before, nowTurn, stepControl) => {
+          const lifecycle = readLifecycle();
+          return {
+            before, nowTurn, status: simulation.status,
+            stepInProgress: simulation.stepInProgress === true,
+            manualAdvanceInProgress: simulation.manualAdvanceInProgress === true,
+            stepControlDisabled: stepControl?.disabled ?? null,
+            manualProgress: simulation.manualAdvanceProgress || null,
+            lifecycle: lifecycle ? {
+              manualCommandInFlight: lifecycle.manualCommandInFlight === true,
+              savePending: lifecycle.savePending === true,
+              savedTurn: lifecycle.savedTurn ?? null,
+              status: lifecycle.status || null
+            } : null
+          };
+        };
+        const waitForVisibleClockReady = async (before, requireCommittedTurn) => {
           await new Promise((resolve, reject) => {
             const startedAt = Date.now();
             const timer = g.setInterval(() => {
               const nowTurn = Number(simulation.clock?.turn ?? g.Game.state.simulation?.turn ?? 0);
               const session = g.Game.state?.simulation?.session || {};
+              const stepControl = readStepControl();
+              const lifecycle = readLifecycle();
+              const turnCommitted = !requireCommittedTurn || nowTurn >= before + 1;
+              const simulationIdle = simulation.stepInProgress !== true &&
+                simulation.frameInProgress !== true &&
+                simulation.manualAdvanceInProgress !== true;
+              // advance() resolves before the UI lifecycle's post-turn durable save
+              // and finally() release the manual-command mutex. The visible button
+              // remains disabled throughout that boundary; do not click it early.
+              const lifecycleIdle = lifecycle?.manualCommandInFlight !== true &&
+                lifecycle?.savePending !== true;
+              const visibleControlReady = !!stepControl && stepControl.disabled === false;
               if (simulation.status === 'ERROR' || String(session.status || '').toUpperCase() === 'ERROR') {
                 g.clearInterval(timer);
                 reject(new Error('VISIBLE_CLOCK_TURN_FAILED:' + JSON.stringify({
-                  before, nowTurn, status: simulation.status,
+                  ...advanceDiagnostics(before, nowTurn, stepControl),
                   lastError: simulation.lastError || session.lastError || null,
-                  participants: simulation.lastTurnParticipantResults || []
-                }).slice(0, 10000)));
-              } else if (nowTurn >= before + 1 &&
-                  simulation.stepInProgress !== true &&
-                  simulation.manualAdvanceInProgress !== true) {
+                  participants: simulation.lastTurnParticipantResults || [],
+                  finalizers: simulation.lastTurnFinalizerResults || []
+                }).slice(0, 12000)));
+              } else if (turnCommitted && simulationIdle && lifecycleIdle && visibleControlReady) {
                 g.clearInterval(timer);
                 resolve();
-              } else if (Date.now() - startedAt > 150000) {
+              } else if (Date.now() - startedAt > 180000) {
                 g.clearInterval(timer);
-                reject(new Error('VISIBLE_CLOCK_STEP_DAY_TIMEOUT:' + JSON.stringify({
-                  before, nowTurn, status: simulation.status,
-                  progress: simulation.manualAdvanceProgress || null
-                }).slice(0, 5000)));
+                reject(new Error('VISIBLE_CLOCK_STEP_DAY_TIMEOUT:' + JSON.stringify(
+                  advanceDiagnostics(before, nowTurn, stepControl)
+                ).slice(0, 7000)));
               }
             }, 50);
           });
+        };
+        for (let index = 0; index < requestedTurns; index++) {
+          const before = Number(simulation.clock?.turn ?? g.Game.state.simulation?.turn ?? 0);
+          const stepControl = readStepControl();
+          if (!stepControl) throw new Error('VISIBLE_GAME_CLOCK_STEP_DAY_CONTROL_MISSING');
+          // The first/next click is only legal after the prior visible Step Day
+          // command, including its canonical post-turn save, releases the UI lock.
+          await waitForVisibleClockReady(before, false);
+          const readyControl = readStepControl();
+          if (!readyControl || readyControl.disabled)
+            throw new Error('VISIBLE_GAME_CLOCK_STEP_DAY_NOT_READY:' +
+              JSON.stringify(advanceDiagnostics(before, before, readyControl)));
+          readyControl.click();
+          await waitForVisibleClockReady(before, true);
         }
         const result = {
           turn: Number(simulation.clock?.turn ?? g.Game.state.simulation?.turn ?? 0),
