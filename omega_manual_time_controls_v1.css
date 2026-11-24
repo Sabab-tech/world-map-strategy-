@@ -197,3 +197,50 @@
 @media (min-width: 760px) {
   #top-status-bar { max-height: 148px !important; }
 }
+
+
+/* Live progress of the authoritative 15-second game-day clock. */
+#omega-global-time-hud .ogth-clock-progress-row {
+  display: flex !important;
+  flex: 1 1 100% !important;
+  align-items: center !important;
+  gap: 7px !important;
+  min-width: 0 !important;
+  padding: 1px 0 !important;
+  color: #a9c7dc !important;
+  font: 800 8px/1 Inter, Arial, sans-serif !important;
+}
+#omega-global-time-hud .ogth-clock-progress-title {
+  flex: 0 0 104px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  letter-spacing: .035em !important;
+}
+#omega-global-time-hud .ogth-clock-progress {
+  display: block !important;
+  position: relative !important;
+  flex: 1 1 auto !important;
+  min-width: 32px !important;
+  height: 5px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(80, 153, 187, .38) !important;
+  border-radius: 99px !important;
+  background: rgba(5, 23, 38, .95) !important;
+}
+#omega-global-time-hud .ogth-clock-progress [data-omega-clock-progress-fill] {
+  display: block !important;
+  width: 0%;
+  height: 100% !important;
+  border-radius: inherit !important;
+  background: linear-gradient(90deg, #087eaa, #36d7f2) !important;
+  box-shadow: 0 0 7px rgba(54, 215, 242, .4) !important;
+  transition: width 180ms linear !important;
+}
+@media (max-width: 420px) {
+  #omega-global-time-hud .ogth-clock-progress-title {
+    flex-basis: 90px !important;
+    font-size: 7px !important;
+  }
+}

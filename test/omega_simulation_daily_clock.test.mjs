@@ -336,8 +336,13 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   const ministryEngine = fs.readFileSync(path.join(root, 'ministry_engine.js'), 'utf8');
   const ministerIntegration = fs.readFileSync(path.join(root, 'omega_minister_integration.js'), 'utf8');
   const liveOps = fs.readFileSync(path.join(root, 'omega_live_operations_observability_v1.js'), 'utf8');
+  const coordinator = fs.readFileSync(path.join(root, 'omega_enterprise_composition_root_v10.js'), 'utf8');
 
   assert.match(index, /id="omega-global-time-hud"/);
+  assert.match(index, /data-omega-clock-progress/);
+  assert.match(lifecycle, /function updateClockProgress\(\)/);
+  assert.match(lifecycle, /OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress/);
+  assert.match(coordinator, /OMEGA_SIMULATION_CLOCK_TICK/);
   const topHeaderStart = index.indexOf('id="top-status-bar"');
   const unifiedHudStart = index.indexOf('id="omega-global-time-hud"');
   const metricDropdownStart = index.indexOf('id="map-metric-dropdown"');
@@ -392,7 +397,7 @@ test('index, finance, bank and offline shell use the daily lifecycle assets', ()
   const cacheVersionMatch = serviceWorker.match(/CACHE_NAME = "omega-offline-atlas-shell-v([0-9]+)"/);
   const offlineShellVersion = Number(cacheVersionMatch?.[1] || 0);
   assert.ok(offlineShellVersion >= 23, 'the offline shell cache must invalidate stale UI assets after the country overview changes');
-  assert.ok(offlineShellVersion >= 146, 'the offline shell must refresh the latest global time-control touch styles');
+  assert.ok(offlineShellVersion >= 148, 'the offline shell must refresh the live game-clock progress controls');
   assert.ok(serviceWorker.includes('"./omega_manual_time_controls_v1.css"'),
     'the fixed global time-control stylesheet must remain in the offline core asset cache');
   assert.match(serviceWorker, /omega_game_lifecycle_runtime_v1\.js/);
@@ -840,10 +845,31 @@ test('manual time HUD buttons step days, run selected days, pause/resume and exp
   assert.equal(report.simulation.clock.turn, 3);
   assert.equal(report.lifecycle.restoreFinished, true);
 
+  const progressAttributes = {};
+  const progressBar = { setAttribute(name, value) { progressAttributes[name] = String(value); } };
+  const progressFill = { style: {} };
+  const progressLabel = { textContent: '' };
+  const nativeQuerySelector = win.document.querySelector;
+  win.document.querySelector = (selector) => {
+    if (selector === '[data-omega-clock-progress]') return progressBar;
+    if (selector === '[data-omega-clock-progress-fill]') return progressFill;
+    if (selector === '[data-omega-clock-progress-label]') return progressLabel;
+    return nativeQuerySelector(selector);
+  };
+
   dispatchAction('toggle');
   assert.equal(sim.status, 'RUNNING', 'Play must resume the canonical clock');
+  sim.clock.accumulatorMs = STEP_MS / 2;
+  win.dispatchEvent(new win.CustomEvent('OMEGA_SIMULATION_CLOCK_TICK'));
+  assert.equal(progressFill.style.width, '50%', 'the HUD must show partial progress before a full day commits');
+  assert.equal(progressAttributes['aria-valuenow'], '50');
+  assert.equal(progressLabel.textContent, 'NEXT DAY · 50%',
+    'the HUD must make active time progression visible between calendar-day commits');
+
   dispatchAction('toggle');
   assert.equal(sim.status, 'PAUSED', 'Pause must stop further automatic turns');
+  assert.equal(progressLabel.textContent, 'DAY PROGRESS · 50%',
+    'pausing must preserve and accurately display the partial day already elapsed');
 });
 
 test('backgrounding during a manual day batch cancels after the in-flight day and keeps time paused', async () => {
@@ -883,6 +909,8 @@ test('global time controls are moved outside the clipped header and expose an ex
   assert.match(lifecycle, /toggleLabel = running \? 'PAUSE TIME' : status === 'PAUSED' \? 'RESUME TIME'.*'START TIME'/);
   assert.match(hudCss, /#omega-global-time-hud \.ogth-controls button/);
   assert.match(hudCss, /data-omega-action="toggle"/);
+  assert.match(hudCss, /ogth-clock-progress/);
+  assert.match(lifecycle, /aria-pressed/);
   assert.match(hudCss, /z-index: 2147483646 !important;/,
     'the body-level time dock must stay above the UI v2 cabinet stacking layer (2147483000)');
   assert.match(hudCss, /pointer-events: auto !important;/,
