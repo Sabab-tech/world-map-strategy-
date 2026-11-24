@@ -483,8 +483,10 @@ test('committed command audit records write paths and revisions without copying 
   const after={rows:Array.from({length:1200},(_,index)=>({index,payload:'A'.repeat(250)}))};
   s.state.economy[s.countryA].largeAuditDomain=before;
 
+  let compactBaselineFingerprint=null;
   s.mesh.registerCommandHandler('TEST_COMPACT_TRANSACTION_AUDIT','economy',(command,{stateTransaction})=>{
     stateTransaction.set('economy.largeAuditDomain',after);
+    compactBaselineFingerprint=stateTransaction.writeBaseline.get('economy.largeAuditDomain');
     // Compact commit may transfer the transaction-owned clone directly into
     // authoritative state, but the caller must not retain a mutable alias.
     after.rows[0].payload='MUTATED_AFTER_STAGE';
@@ -501,6 +503,8 @@ test('committed command audit records write paths and revisions without copying 
   assert.match(result.transaction.beforeRevision,/^CONTENT:[0-9a-f]{8}$/);
   assert.match(result.transaction.afterRevision,/^CONTENT:[0-9a-f]{8}$/);
   assert.equal(result.transaction.changed,true);
+  assert.match(compactBaselineFingerprint,/^[0-9a-f]{8}$/,
+    'compact commands retain only a content fingerprint, not a deep copy of the previous domain state');
   assert.equal(s.state.economy[s.countryA].largeAuditDomain.rows[0].payload,'A'.repeat(250));
 
   const savedCommand=s.mesh.getCommand('COMPACT-AUDIT-1');
@@ -520,6 +524,14 @@ test('committed command audit records write paths and revisions without copying 
   const standaloneResult=standalone.commit();
   assert.equal(JSON.stringify(standaloneResult.operations[0].before),JSON.stringify(standaloneBefore));
   assert.equal(JSON.stringify(standaloneResult.operations[0].after),JSON.stringify(standaloneAfter));
+
+  // Compact transactions must still detect concurrent writes to their exact write set.
+  const compactConflict=s.sandbox.OmegaMinistryStateTransaction.create(
+    'economy',s.countryA,4,'COMPACT-TRANSACTION-CONFLICT',s.state,{includeOperationValues:false}
+  );
+  compactConflict.set('economy.largeAuditDomain',{transaction:'staged'});
+  s.state.economy[s.countryA].largeAuditDomain={concurrent:'external-write'};
+  assert.throws(()=>compactConflict.commit(),error=>error?.code==='STATE_TRANSACTION_CONFLICT');
 });
 
 test('R: save/load restores logically equivalent interoperability state',()=>{
