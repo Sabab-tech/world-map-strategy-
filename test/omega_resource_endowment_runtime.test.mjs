@@ -976,10 +976,26 @@ globalThis.Game.state.simulation.session.playerCountryId='BGD';
 const foreignCountryStart=await runtime.startCountryProduction('AUS');
 assert.equal(foreignCountryStart.status,'BLOCKED',JSON.stringify(foreignCountryStart));
 assert.equal(foreignCountryStart.reason,'PLAYER_COUNTRY_SCOPE_VIOLATION',JSON.stringify(foreignCountryStart));
-const oneTapStart=await runtime.startCountryProduction('BGD',[oneTapSite.siteId]);
-assert.ok(['STARTED','PARTIALLY_STARTED'].includes(oneTapStart.status),
-  'one tap must start simulated extraction on an unattempted commercial site: '+JSON.stringify(oneTapStart));
-assert.ok(oneTapStart.startedSiteCount>0,JSON.stringify(oneTapStart));
+const oneTapHydration=await runtime.hydrateCountry('BGD');
+assert.equal(oneTapHydration.status,'APPLIED',JSON.stringify(oneTapHydration));
+const realism=globalThis.Omega.ResourceRealism;
+const originalSiteModel=realism.siteModel;
+let siteModelCallsDuringCachedExtraction=0;
+realism.siteModel=function(...args){
+  siteModelCallsDuringCachedExtraction+=1;
+  return originalSiteModel.apply(this,args);
+};
+let oneTapStart;
+try{
+  oneTapStart=await runtime.startCountryProduction('BGD',[oneTapSite.siteId]);
+  assert.ok(['STARTED','PARTIALLY_STARTED'].includes(oneTapStart.status),
+    'one tap must start simulated extraction on an unattempted commercial site: '+JSON.stringify(oneTapStart));
+  assert.ok(oneTapStart.startedSiteCount>0,JSON.stringify(oneTapStart));
+  assert.equal(siteModelCallsDuringCachedExtraction,0,
+    'selected extraction slices must reuse hydrated site models rather than rebuild the country catalog');
+}finally{
+  realism.siteModel=originalSiteModel;
+}
 const oneTapLedger=()=>((runtime.countryResourceState('BGD')||{}).mineProductionLedger||[]).filter(row=>
   row.siteReferenceKey===oneTapSite.siteId&&Number(row.turn)===Number(globalThis.Game.state.simulation.turn)&&Number(row.quantity)>0);
 const oneTapLedgerBefore=oneTapLedger();
