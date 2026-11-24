@@ -969,6 +969,9 @@ const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowmen
 assert.doesNotMatch(endowmentRuntimeSource,/const gameplaySiteIds=new Set\(Object\.values\(canonicalSiteCatalogMap/);
 assert.match(endowmentRuntimeSource,/const canonicalDepositKeys=new Set/);
 assert.match(endowmentRuntimeSource,/const controllerKeyBySiteId=new Map/);
+assert.ok(endowmentRuntimeSource.includes(
+  'const fullRows=siteExecutionRows(c,{...existing,requestedOccurrenceKeys:[]},authoritativeOccurrences);'
+), 'a cold selected-slice request must hydrate and cache the full country site catalog once');
 assert.match(endowmentRuntimeSource,/PLAYER_COUNTRY_SCOPE_VIOLATION/);
 globalThis.Game.state.simulation.playerCountryId='BGD';
 globalThis.Game.state.simulation.session=globalThis.Game.state.simulation.session||{};
