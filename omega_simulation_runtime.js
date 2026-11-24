@@ -30,6 +30,7 @@
   const MAX_PARTICIPANTS_PER_SLICE=4;
   const MAX_EVENT_HISTORY=2000;
   const MAX_COMMAND_HISTORY=2000;
+  const saveProfileNow=()=>typeof global.performance?.now==='function'?global.performance.now():Date.now();
 
   const PHASES=Object.freeze([
     'INPUT',
@@ -151,6 +152,8 @@
     let originalBytes=0;
     const stream=new global.ReadableStream({
       pull(controller){
+        const profile=global.__OMEGA_SIMULATION_SAVE_PROFILE__||null;
+        const startedAt=profile?saveProfileNow():0;
         try{
           let text='';
           while(text.length<65536){
@@ -165,6 +168,15 @@
           }
           const bytes=encoder.encode(text);originalBytes+=bytes.byteLength;controller.enqueue(bytes);
         }catch(error){controller.error(error);}
+        finally{
+          if(profile){
+            const elapsed=saveProfileNow()-startedAt;
+            profile.jsonStreamPullCount=(Number(profile.jsonStreamPullCount)||0)+1;
+            profile.jsonStreamPullMs=(Number(profile.jsonStreamPullMs)||0)+elapsed;
+            profile.jsonStreamMaxPullMs=Math.max(Number(profile.jsonStreamMaxPullMs)||0,elapsed);
+            profile.jsonStreamBytes=originalBytes;
+          }
+        }
       },
       cancel(){try{iterator.return?.();}catch(_){}}
     });
@@ -179,6 +191,18 @@
   }
 
   function createSaveSnapshot(runtime,options={},referenceWorldState=false){
+    const profile=global.__OMEGA_SIMULATION_SAVE_PROFILE__||null;
+    const totalStartedAt=profile?saveProfileNow():0;
+    const timed=(name,task)=>{
+      if(!profile)return task();
+      const startedAt=saveProfileNow();
+      try{return task();}
+      finally{
+        const elapsed=saveProfileNow()-startedAt;
+        profile.snapshotParts=profile.snapshotParts||{};
+        profile.snapshotParts[name]=Number((Number(profile.snapshotParts[name]||0)+elapsed).toFixed(2));
+      }
+    };
     const snapshot={
       schemaVersion:SESSION_VERSION,
       runtimeVersion:VERSION,
@@ -187,22 +211,23 @@
       // saveSlot holds the simulation save barrier while a bounded JSON
       // stream reads the authoritative root. Public saveState() keeps the
       // detached deep-clone contract by default.
-      worldState:referenceWorldState?runtime.world.state:runtime.world.snapshot(),
-      commands:runtime.commandQueue.snapshot(),
-      events:runtime.events.snapshot(),
-      ministryRuntime:runtime.ministryRuntime?.saveState?.()||null,
-      interoperability:runtime.interoperability?.saveState?.()||null,
-      worldEngine:runtime.worldEngine?.exportSaveState?.({authoritativeState:true})||null
+      worldState:timed('worldState',()=>referenceWorldState?runtime.world.state:runtime.world.snapshot()),
+      commands:timed('commands',()=>runtime.commandQueue.snapshot()),
+      events:timed('events',()=>runtime.events.snapshot()),
+      ministryRuntime:timed('ministryRuntime',()=>runtime.ministryRuntime?.saveState?.()||null),
+      interoperability:timed('interoperability',()=>runtime.interoperability?.saveState?.()||null),
+      worldEngine:timed('worldEngine',()=>runtime.worldEngine?.exportSaveState?.({authoritativeState:true})||null)
     };
     // Phase 6 contributes only a compact calculation-provenance snapshot.
     // It is an optional extension outside the authoritative world tree, so older
     // saves remain compatible and no country/economy state is mutated.
     const phase6Api=global.OmegaPhase6NationalCapacity||global.Omega?.Phase6NationalCapacity;
-    const phase6Snapshot=phase6Api?.saveState?.();
+    const phase6Snapshot=timed('phase6NationalCapacity',()=>phase6Api?.saveState?.());
     if(phase6Snapshot)snapshot.phase6NationalCapacity=clone(phase6Snapshot);
     // Volatile diagnostics duplicate large participant results already held in
     // runtime memory. Callers can omit them from routine durable autosaves.
     if(options.includeDiagnostics!==false)snapshot.diagnostics=runtime.diagnostics();
+    if(profile)profile.snapshotCreationMs=Number((saveProfileNow()-totalStartedAt).toFixed(2));
     return snapshot;
   }
 
@@ -343,7 +368,14 @@
         // a Blob before compression; a 197-country world could exhaust the
         // Chromium renderer before IndexedDB was even reached.
         const compressedStream=source.stream.pipeThrough(new global.CompressionStream('gzip'));
+        const compressionStartedAt=global.__OMEGA_SIMULATION_SAVE_PROFILE__?saveProfileNow():0;
         const compressedBlob=await new global.Response(compressedStream).blob();
+        const saveProfile=global.__OMEGA_SIMULATION_SAVE_PROFILE__||null;
+        if(saveProfile){
+          saveProfile.compressionWallMs=Number((saveProfileNow()-compressionStartedAt).toFixed(2));
+          saveProfile.jsonSerializationMs=Number((Number(saveProfile.jsonStreamPullMs)||0).toFixed(2));
+          saveProfile.jsonStreamBytes=source.originalBytes;
+        }
         const value=new global.Blob([SAVE_COMPRESSION_PREFIX,compressedBlob],{
           type:'application/x-omega-simulation-save'
         });
@@ -1552,6 +1584,13 @@
       const sequences=this.saveSlotSequences || (this.saveSlotSequences=new Map());
       const sequence=(sequences.get(key)||0)+1;
       sequences.set(key,sequence);
+      const profiling=global.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
+      const saveProfile=profiling?{
+        slot:key,turn:this.clock.turn,status:'RUNNING',startedAt:saveProfileNow(),
+        snapshotParts:{},jsonStreamPullCount:0,jsonStreamPullMs:0,jsonStreamMaxPullMs:0,
+        jsonStreamBytes:0,compressionWallMs:0,indexedDbPutMs:0
+      }:null;
+      if(saveProfile)global.__OMEGA_SIMULATION_SAVE_PROFILE__=saveProfile;
       let releaseSave;
       const currentSave=new Promise(resolve=>{releaseSave=resolve;});
       this.saveBarrier=currentSave;
@@ -1565,9 +1604,12 @@
       try{
         // Exit flushes must not be queued behind an earlier compression promise.
         if(previousSave&&options.synchronousLocalStorage!==true)await previousSave;
+        if(saveProfile)saveProfile.previousSaveWaitMs=Number((saveProfileNow()-saveProfile.startedAt).toFixed(2));
         // Volatile diagnostics are omitted. Canonical JSON and its checksum
         // are emitted together as a stream, avoiding a full-size JSON duplicate.
+        const snapshotStartedAt=saveProfile?saveProfileNow():0;
         const snapshot=createSaveSnapshot(this,{includeDiagnostics:false},true);
+        if(saveProfile)saveProfile.snapshotTotalMs=Number((saveProfileNow()-snapshotStartedAt).toFixed(2));
       // Keep the checksum over the canonical plain JSON snapshot, but store a
       // gzip envelope when the browser supports both compression directions.
       // Large 197-country saves can exceed localStorage/IndexedDB quotas.
@@ -1584,9 +1626,17 @@
           storedBytes:stored.storedBytes
         };
         if(global.indexedDB&&typeof global.indexedDB.open==='function'){
-          return indexedDbSaveRequest(global.indexedDB,'put',key,stored.value).then(() => ({
-            ...result,storage:'INDEXEDDB'
-          })).catch(async indexedDbError => {
+          const indexedDbStartedAt=saveProfile?saveProfileNow():0;
+          return indexedDbSaveRequest(global.indexedDB,'put',key,stored.value).then(() => {
+            if(saveProfile){
+              saveProfile.indexedDbPutMs=Number((saveProfileNow()-indexedDbStartedAt).toFixed(2));
+              saveProfile.storage='INDEXEDDB';
+              saveProfile.originalBytes=stored.originalBytes;
+              saveProfile.storedBytes=stored.storedBytes;
+              saveProfile.compression=stored.compression;
+            }
+            return {...result,storage:'INDEXEDDB'};
+          }).catch(async indexedDbError => {
             try{
               if(typeof global.localStorage==='undefined')throw new Error('SAVE_STORAGE_UNAVAILABLE');
               let fallbackValue=stored.value,fallbackCompression=stored.compression,fallbackBytes=stored.storedBytes;
@@ -1617,16 +1667,39 @@
         global.localStorage.setItem(key,stored.value);
         return {...result,storage:'LOCAL_STORAGE_FALLBACK'};
       };
+      const encodingStartedAt=saveProfile?saveProfileNow():0;
       const stored=encodeStoredSnapshot(snapshot,options);
+      const finishSaveProfile=result=>{
+        if(saveProfile){
+          saveProfile.encodeAndPersistMs=Number((saveProfileNow()-encodingStartedAt).toFixed(2));
+          saveProfile.status='COMPLETED';
+          saveProfile.totalMs=Number((saveProfileNow()-saveProfile.startedAt).toFixed(2));
+          saveProfile.result={ok:result?.ok===true,storage:result?.storage||null,turn:result?.turn??null,
+            originalBytes:result?.originalBytes??saveProfile.originalBytes??null,
+            storedBytes:result?.storedBytes??saveProfile.storedBytes??null,
+            compression:result?.compression??saveProfile.compression??null,
+            skipped:result?.skipped===true};
+        }
+        return result;
+      };
+      const failSaveProfile=error=>{
+        if(saveProfile){
+          saveProfile.status='FAILED';
+          saveProfile.totalMs=Number((saveProfileNow()-saveProfile.startedAt).toFixed(2));
+          saveProfile.error=String(error?.message||error);
+        }
+        throw error;
+      };
       if(stored&&typeof stored.then==='function')
-        return Promise.resolve(stored).then(persistStoredSave).finally(releaseCurrentSave);
+        return Promise.resolve(stored).then(persistStoredSave).then(finishSaveProfile,failSaveProfile).finally(releaseCurrentSave);
       // Keep a plain-JSON/no-IndexedDB fallback synchronous. pagehide and
       // beforeunload cannot rely on another promise microtask before teardown.
       const persisted=persistStoredSave(stored);
       if(persisted&&typeof persisted.then==='function')
-        return persisted.finally(releaseCurrentSave);
+        return persisted.then(finishSaveProfile,failSaveProfile).finally(releaseCurrentSave);
+      const profiledPersisted=finishSaveProfile(persisted);
       releaseCurrentSave();
-      return persisted;
+      return profiledPersisted;
       }catch(error){
         releaseCurrentSave();
         throw error;
