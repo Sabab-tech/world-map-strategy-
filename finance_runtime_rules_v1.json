@@ -33,6 +33,14 @@
     "transparency": "Modeled fiscal flows are gameplay assumptions, not observed national budget data."
   },
   "defaultMinimumReservePctOfAnnualSpending": 0,
+  "automaticNationalReserve": {
+    "enabledForNpcCountries": true,
+    "contributionPctOfOperatingSurplus": 20,
+    "requiresReconciledFiscalPeriod": true,
+    "surplusBasis": "TAX_AND_EXTERNAL_CASH_INFLOWS_MINUS_GOVERNMENT_SPENDING_EXTERNAL_DEBITS_INTEREST_AND_PRINCIPAL_REPAYMENT",
+    "excludeBorrowingProceeds": true,
+    "spendingPolicy": "NPC trade and ordinary government spending must preserve the earmarked balance; authorized emergency reserve and debt-service expenditure may draw it down."
+  },
   "budgetAllocationPolicy": "ANNUAL_PLAN_SHARES_MUST_NOT_EXCEED_100_PERCENT",
   "cashFlowPolicy": {
     "modeledTaxRevenue": "Accrues to the live Treasury by simulated duration and is mirrored into finance.taxRevenue and finance.revenue.",

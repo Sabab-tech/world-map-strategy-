@@ -1078,3 +1078,81 @@ test('Phase 5 Government journal API is read-only, bounded and explicitly partia
   assert.equal(impreciseSource.sectorJournalV1.reason,'SOURCE_AMOUNT_MISSING_OR_NOT_CENT_EXACT');
 });
 
+test('NPC national reserve saves 20% of reconciled operating surplus, excludes borrowing, protects spending and permits authorized emergency drawdown',async()=>{
+  const {context,state}=createRuntime();
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const player=finance.getFinanceState('BGD');
+  assert.equal(player.nationalReserve,undefined,'the automatic NPC reserve policy must not take control of the player country');
+
+  const npc=finance.getProfiles().find(profile=>profile.iso3!=='BGD'&&profile.countryCode!=='BGD'&&
+    profile.profileStatus!=='UNAVAILABLE'&&Number.isFinite(profile.indicators?.gdpCurrentUsd)&&profile.indicators.gdpCurrentUsd>0);
+  assert.ok(npc,'the fixture must include at least one playable NPC country');
+  finance.getFinanceState(npc.iso3);
+  const financeBucket=Object.values(state.finance).find(row=>row?.omegaFinance?.countryCode===npc.iso3);
+  assert.ok(financeBucket?.omegaFinance,'the NPC Finance-owned state must be available for the reserve policy');
+  const model=financeBucket.omegaFinance;
+  const opening=Math.max(1000000,Number(model.treasuryBalanceUsd)||0);
+  model.currentYearTaxRevenueUsd=120000;
+  model.currentYearExternalInflowUsd=10000;
+  model.currentYearBorrowingUsd=500000;
+  model.currentYearSpendingUsd=30000;
+  model.currentYearExternalOutflowUsd=5000;
+  model.currentYearInterestUsd=2000;
+  model.currentYearDebtPrincipalRepaymentUsd=3000;
+  const cash=opening+120000+10000+500000-30000-5000-2000-3000;
+  model.treasuryBalanceUsd=cash;
+  model.lastSyncedTreasuryBalanceUsd=cash;
+  financeBucket.available=cash;
+  model.lastProcessedTurn=1;
+  model.fiscalPeriodAccount={
+    schemaVersion:1,periodIndex:Number(model.fiscalYearIndex)||0,periodLabel:'2015',currency:'USD',
+    openingTurn:1,openingBalanceUsd:opening,openingBalanceSource:'TEST_RECONCILED_OPENING',
+    openingBalanceQuality:'MODELLED',flowCoverage:'COMPLETE_FROM_PERIOD_START',
+    sourceAuthority:'OMEGA_FINANCE_MINISTRY'
+  };
+  const advanced=finance.advanceCountry(npc.iso3,{turn:2,stepDurationMs:0.001,tier:'MACRO',playerCountryId:'BGD'});
+  assert.equal(advanced.processed,1,JSON.stringify(advanced));
+  let current=finance.getFinanceState(npc.iso3);
+  const expectedSurplus=120000+10000-30000-5000-2000-3000;
+  assert.ok(Math.abs(current.nationalReserve.operatingSurplusUsd-expectedSurplus)<1,
+    'the surplus basis must include operating credits and subtract spending, external debits, interest and principal');
+  assert.ok(Math.abs(current.nationalReserve.balanceUsd-expectedSurplus*0.2)<1,
+    'the NPC must earmark exactly 20% of positive reconciled operating surplus');
+  assert.equal(current.nationalReserve.contributionPctOfOperatingSurplus,20);
+  assert.equal(current.nationalReserve.borrowingProceedsExcluded,true);
+  assert.ok(Math.abs(financeBucket.available-current.treasuryBalanceUsd)<0.01,
+    'earmarking reserve must not create cash or debit Treasury a second time');
+
+  const beforeDuplicate=current.nationalReserve.balanceUsd;
+  const duplicate=finance.advanceCountry(npc.iso3,{turn:2,stepDurationMs:0.001,tier:'MACRO',playerCountryId:'BGD'});
+  assert.equal(duplicate.duplicate,true);
+  assert.equal(finance.getFinanceState(npc.iso3).nationalReserve.balanceUsd,beforeDuplicate,
+    'reprocessing a committed country turn must not add reserve twice');
+
+  context.__OMEGA_SIMULATION_PIPELINE_ACTIVE__=true;
+  context.Omega.Simulation.stepInProgress=true;
+  current=finance.getFinanceState(npc.iso3);
+  const treasury=current.treasuryBalanceUsd;
+  const reserve=current.nationalReserve.balanceUsd;
+  let liveModel=financeBucket.omegaFinance;
+  liveModel.fiscalModel.annualSpendingUsd=Math.max(treasury*2,1);
+  liveModel.allocations.interior.sharePct=100;
+  const blockedAmount=Math.min(treasury,Math.max(1,treasury-reserve+1));
+  const blocked=finance.applySimulationAction({type:'spend-budget',countryId:npc.iso3,department:'interior',
+    amountUsd:blockedAmount,spendType:'general',description:'OMEGA_HOME_BUDGET: reserve protection test'});
+  assert.equal(blocked.ok,false);
+  assert.equal(blocked.code,'MINIMUM_RESERVE_FLOOR',
+    'ordinary NPC government expenditure may not consume the earmarked national reserve');
+
+  liveModel=financeBucket.omegaFinance;
+  liveModel.allocations.emergency_reserve=liveModel.allocations.emergency_reserve||{department:'emergency_reserve',spentUsd:0};
+  liveModel.allocations.emergency_reserve.sharePct=100;
+  const emergencyAmount=Math.min(treasury,Math.max(1,treasury-reserve+100));
+  const emergency=finance.applySimulationAction({type:'spend-budget',countryId:npc.iso3,department:'emergency_reserve',
+    amountUsd:emergencyAmount,spendType:'emergency',description:'OMEGA_EMERGENCY_RESERVE: authorized emergency test'});
+  assert.equal(emergency.ok,true,JSON.stringify(emergency));
+  current=finance.getFinanceState(npc.iso3);
+  assert.ok(current.nationalReserve.balanceUsd<=current.treasuryBalanceUsd+0.01,
+    'an authorized emergency may draw down reserve but may not leave an unfunded reserve balance');
+});

@@ -78,6 +78,31 @@
     if (value === null) value = num(g.Omega && g.Omega.Simulation && g.Omega.Simulation.clock && g.Omega.Simulation.clock.turn);
     return value === null ? 0 : value;
   }
+  function playerCountryId() {
+    var s = state(), simulation = g.Omega && g.Omega.Simulation;
+    var candidates = [
+      s.simulation && s.simulation.session && s.simulation.session.playerCountryId,
+      s.simulation && s.simulation.session && s.simulation.session.playerCountryCode,
+      s.simulation && s.simulation.playerCountryId,
+      s.session && s.session.playerCountryId,
+      s.playerCountryId
+    ];
+    try {
+      if (simulation && typeof simulation.getPlayerCountryId === 'function')
+        candidates.push(simulation.getPlayerCountryId());
+    } catch (_) {}
+    candidates.push(simulation && simulation.playerCountryId);
+    for (var i = 0; i < candidates.length; i++) {
+      var candidate = canonical(candidates[i]);
+      if (/^[A-Z]{3}$/.test(candidate)) return candidate;
+    }
+    return null;
+  }
+  function isPlayerPriorityProposal(target, proposal) {
+    var player = playerCountryId();
+    return !!player && canonical(target) !== player &&
+      canonical(proposal && proposal.requestorCountryId) === player;
+  }
   function simulationDate() {
     var s = state(), clock = g.Omega && g.Omega.Simulation && g.Omega.Simulation.clock;
     var raw = clock && (clock.simulationDate || clock.date) || s.simulation && (s.simulation.date || s.simulation.simulationDate);
@@ -283,10 +308,21 @@
   }
   function readFinance(country) {
     var finance = bucket(country, 'finance') || {};
-    var available = num(finance.available);
+    var grossAvailable = num(finance.available);
     var reserves = num(finance.reserves);
+    var player = playerCountryId();
+    var nationalReserve = player && canonical(country) !== player
+      ? Math.max(0, num(finance.omegaFinance && finance.omegaFinance.nationalReserve &&
+        finance.omegaFinance.nationalReserve.balanceUsd) || 0) : 0;
+    var protectedReserve = grossAvailable === null ? null : Math.min(grossAvailable, nationalReserve);
+    var spendable = grossAvailable === null ? null : Math.max(0, grossAvailable - (protectedReserve || 0));
     return {
-      available: evidence(available, available === null ? 'UNKNOWN' : 'KNOWN', available === null ? null : 'finance.available'),
+      available: evidence(spendable, spendable === null ? 'UNKNOWN' : 'KNOWN',
+        spendable === null ? null : nationalReserve > 0 ? 'finance.available less NPC national Treasury reserve' : 'finance.available'),
+      grossAvailable: evidence(grossAvailable, grossAvailable === null ? 'UNKNOWN' : 'KNOWN',
+        grossAvailable === null ? null : 'finance.available'),
+      nationalReserve: evidence(protectedReserve, protectedReserve === null ? 'UNKNOWN' : 'KNOWN',
+        protectedReserve === null ? null : 'finance.omegaFinance.nationalReserve.balanceUsd'),
       reserves: evidence(reserves, reserves === null ? 'UNKNOWN' : 'KNOWN', reserves === null ? null : 'finance.reserves'),
       currency: evidence(tradeCurrency(country), tradeCurrency(country) ? 'KNOWN' : 'UNKNOWN', tradeCurrency(country) ? 'finance.currencyCode / GlobalTrade.currencyOf' : null)
     };
@@ -634,9 +670,10 @@
     var values = settlementValues(buyer, seller, quantity, priceForAgreement);
     var buyerAmount = num(values && values.buyerValue);
     var currencyCommitments = reservedBuyerCurrency(buyer, intervalTurns);
-    var grossAvailableMoney = finance.available.value;
-    var availableMoney = grossAvailableMoney === null || currencyCommitments.status !== 'KNOWN' ? null :
-      Math.max(0, grossAvailableMoney - currencyCommitments.amount);
+    var grossAvailableMoney = finance.grossAvailable.value;
+    var spendableAvailableMoney = finance.available.value;
+    var availableMoney = spendableAvailableMoney === null || currencyCommitments.status !== 'KNOWN' ? null :
+      Math.max(0, spendableAvailableMoney - currencyCommitments.amount);
     var issues = [];
     if (stock === null) issues.push('SELLER_STOCK_UNKNOWN');
     if (reserve === null) issues.push('SELLER_RESERVE_UNKNOWN');
@@ -718,8 +755,11 @@
     var resourceId = String(proposal.resourceId || ''), quantity = num(proposal.quantityPerDelivery), price = num(proposal.unitPrice);
     var relation = relationFor(target, canonical(proposal.requestorCountryId));
     var rel = relationScore(relation);
+    var playerPriorityApplied = isPlayerPriorityProposal(target, proposal);
     var result = { proposalId: proposal.proposalId, decision: 'WAITING_DATA', reason: null, confidence: 0.45,
-      decisionFactors: {}, terms: null, evaluatedTurn: turn() };
+      decisionFactors: {}, terms: null, evaluatedTurn: turn(),
+      reviewPriority: playerPriorityApplied ? 'PLAYER_COUNTRY_FIRST' : 'STANDARD',
+      playerCountryPriorityApplied: playerPriorityApplied };
     if (!target || !buyer || !seller || !resourceId || quantity === null || price === null) {
       result.reason = 'PROPOSAL_TERMS_INCOMPLETE'; return result;
     }
@@ -739,8 +779,10 @@
     var settlement = settlementValues(buyer, seller, quantity, price);
     var buyerCost = num(settlement && settlement.buyerValue);
     var currencyCommitments = reservedBuyerCurrency(buyer, num(proposal.intervalTurns) || 1);
-    var grossFunds = buyerFinance.available.value;
-    var funds = grossFunds === null || currencyCommitments.status !== 'KNOWN' ? null : Math.max(0, grossFunds - currencyCommitments.amount);
+    var grossFunds = buyerFinance.grossAvailable.value;
+    var spendableFunds = buyerFinance.available.value;
+    var funds = grossFunds === null || spendableFunds === null || currencyCommitments.status !== 'KNOWN'
+      ? null : Math.max(0, spendableFunds - currencyCommitments.amount);
     if (available === null || funds === null || buyerCost === null) {
       result.reason = available === null ? 'SELLER_EXPORTABLE_STOCK_OR_DOMESTIC_BUFFER_UNKNOWN' :
         funds === null ? currencyCommitments.status !== 'KNOWN' ? 'BUYER_FOREIGN_CURRENCY_COMMITMENTS_UNKNOWN' : 'BUYER_AVAILABLE_FOREIGN_CURRENCY_UNKNOWN' : 'CROSS_CURRENCY_SETTLEMENT_UNKNOWN';
@@ -864,7 +906,8 @@
     }
     result.decisionFactors = {
       exportableSupply: available, buyerAvailableForeignCurrency: funds, buyerGrossAvailableForeignCurrency: grossFunds,
-      buyerReservedForeignCurrency: currencyCommitments.amount, buyerCurrencyCommitments: currencyCommitments, buyerSettlementCost: buyerCost,
+      buyerReservedForeignCurrency: currencyCommitments.amount, buyerNationalReserveUsd: buyerFinance.nationalReserve.value,
+      buyerCurrencyCommitments: currencyCommitments, buyerSettlementCost: buyerCost,
       observedSellerMarketPrice: marketPrice, buyerDemandPerInterval: demandNeed,
       alternativeMarketEvidence: alternativeEvidence, relationshipScore: rel,
       existingPartnerAgreementCount: partnerContracts.length, partnerDeliveryReliability: reliabilityScore,
@@ -901,7 +944,7 @@
     if (buyer && viewer && buyer !== viewer) {
       var factors = safe.decisionFactors && typeof safe.decisionFactors === 'object' ? safe.decisionFactors : {};
       ['buyerAvailableForeignCurrency', 'buyerGrossAvailableForeignCurrency',
-        'buyerReservedForeignCurrency'].forEach(function (key) {
+        'buyerReservedForeignCurrency', 'buyerNationalReserveUsd'].forEach(function (key) {
         if (Object.prototype.hasOwnProperty.call(factors, key)) factors[key] = null;
       });
       if (Object.prototype.hasOwnProperty.call(factors, 'buyerCurrencyCommitments'))
@@ -1341,8 +1384,21 @@
   }
   function processInbox(country) {
     var c = canonical(country), rows = recordArray(bucket(c, 'trade'), 'bilateralProposalInbox');
-    var pending = rows.filter(function (row) { return ['PENDING', 'WAITING_DATA', 'ACCEPT_PENDING_RATIFICATION'].includes(id(row.inboxStatus)) && num(row.createdTurn) !== null && num(row.createdTurn) < turn(); })
-      .slice(0, MAX_REVIEWS_PER_COUNTRY_TURN);
+    var player = playerCountryId();
+    var pending = rows.map(function (row, index) { return { proposal: row, index: index }; })
+      .filter(function (entry) {
+        var row = entry.proposal;
+        return ['PENDING', 'WAITING_DATA', 'ACCEPT_PENDING_RATIFICATION'].includes(id(row.inboxStatus)) &&
+          num(row.createdTurn) !== null && num(row.createdTurn) < turn();
+      })
+      .sort(function (a, b) {
+        var aPlayer = !!player && c !== player && canonical(a.proposal.requestorCountryId) === player;
+        var bPlayer = !!player && c !== player && canonical(b.proposal.requestorCountryId) === player;
+        if (aPlayer !== bPlayer) return aPlayer ? -1 : 1;
+        return a.index - b.index;
+      })
+      .slice(0, MAX_REVIEWS_PER_COUNTRY_TURN)
+      .map(function (entry) { return entry.proposal; });
     var results = [];
     pending.forEach(function (proposal) {
       var recovering = id(proposal.inboxStatus) === 'ACCEPT_PENDING_RATIFICATION' && proposal.review && proposal.review.decision === 'ACCEPT';
