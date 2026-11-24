@@ -137,11 +137,48 @@
       yield* emit(JSON.stringify(key));
       yield* emit(':');
       let partChars=0;
-      for(const chunk of stableJsonChunks(snapshot[key],false,false)){
-        partChars+=chunk.length;
-        yield* emit(chunk);
-      }
       const profile=global.__OMEGA_SIMULATION_SAVE_PROFILE__||null;
+      if(profile&&key==='worldState'){
+        // Profile the authoritative state hierarchy while preserving the exact
+        // JSON order and bytes used by the save checksum and stored snapshot.
+        profile.worldStatePathChars=profile.worldStatePathChars||{};
+        const pathStack=[];
+        const emitWorldChunk=function*(chunk){
+          partChars+=chunk.length;
+          for(const entry of pathStack){
+            entry.chars+=chunk.length;
+            profile.worldStatePathChars[entry.path]=entry.chars;
+          }
+          yield* emit(chunk);
+        };
+        const profiledWorldChunks=function*(value,path,depth){
+          if(depth<=0||value===null||typeof value!=='object'||Array.isArray(value)||value instanceof Date){
+            for(const chunk of stableJsonChunks(value,false,false))yield* emitWorldChunk(chunk);
+            return;
+          }
+          const childKeys=Object.keys(value).filter(childKey=>childKey!=='__proto__'&&
+            childKey!=='constructor'&&typeof value[childKey]!=='function'&&
+            value[childKey]!==undefined).sort();
+          const entry={path,chars:0};
+          pathStack.push(entry);
+          yield* emitWorldChunk('{');
+          for(let childIndex=0;childIndex<childKeys.length;childIndex++){
+            if(childIndex)yield* emitWorldChunk(',');
+            const childKey=childKeys[childIndex];
+            yield* emitWorldChunk(JSON.stringify(childKey));
+            yield* emitWorldChunk(':');
+            yield* profiledWorldChunks(value[childKey],path+'.'+childKey,depth-1);
+          }
+          yield* emitWorldChunk('}');
+          pathStack.pop();
+        };
+        yield* profiledWorldChunks(snapshot[key],'worldState',3);
+      }else{
+        for(const chunk of stableJsonChunks(snapshot[key],false,false)){
+          partChars+=chunk.length;
+          yield* emit(chunk);
+        }
+      }
       if(profile){
         profile.rootPartChars=profile.rootPartChars||{};
         profile.rootPartChars[key]=partChars;
