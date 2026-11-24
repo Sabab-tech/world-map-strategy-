@@ -507,6 +507,17 @@ test('committed command audit records write paths and revisions without copying 
   assert.equal(savedCommand.transaction.operations.length,1);
   assert.equal(Object.hasOwn(savedCommand.transaction.operations[0],'before'),false);
   assert.equal(Object.hasOwn(savedCommand.transaction.operations[0],'after'),false);
+
+  // Direct/standalone transactions keep the historical detailed operation result.
+  const standalone=s.sandbox.OmegaMinistryStateTransaction.create(
+    'economy',s.countryA,3,'STANDALONE-TRANSACTION-DETAILS',s.state
+  );
+  const standaloneBefore=s.state.economy[s.countryA].largeAuditDomain;
+  const standaloneAfter={version:2,records:[{id:'AUDIT-DETAIL',value:42}]};
+  standalone.set('economy.largeAuditDomain',standaloneAfter);
+  const standaloneResult=standalone.commit();
+  assert.deepEqual(standaloneResult.operations[0].before,standaloneBefore);
+  assert.deepEqual(standaloneResult.operations[0].after,standaloneAfter);
 });
 
 test('R: save/load restores logically equivalent interoperability state',()=>{
