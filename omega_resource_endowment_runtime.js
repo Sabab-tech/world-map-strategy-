@@ -1756,6 +1756,12 @@ function batchFromExtraction(x,record){
     return{accepted:true,countryId:c,mineCount:rows.length,mineSiteReferenceCount,resourceCount:Object.keys(projection.endowment).length};
   }
   function extractHandler(cmd,ctx){
+    const perfEnabled=g.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
+    const perfNow=()=>typeof performance!=='undefined'&&typeof performance.now==='function'?performance.now():Date.now();
+    const perfStartedAt=perfEnabled?perfNow():0;
+    let perfMarkAt=perfStartedAt;
+    const perfPhases=[];
+    const perfMark=label=>{if(!perfEnabled)return;const now=perfNow();perfPhases.push({label,durationMs:Number((now-perfMarkAt).toFixed(2))});perfMarkAt=now;};
     const c=canonical(ctx.countryId),r=g.__OmegaResourceReserveRegistry,p5=g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine;
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     if(strategicPolicy&&strategicPolicy.diagnostics?.().rulesLoaded!==true)return{accepted:false,reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY'};
@@ -1831,6 +1837,7 @@ function batchFromExtraction(x,record){
     }
     const selected=Array.isArray(cmd?.payload?.occurrenceKeys)&&cmd.payload.occurrenceKeys.length
       ?rows.filter(x=>cmd.payload.occurrenceKeys.includes(x.occurrenceKey)):rows;
+    perfMark('state-clones-and-occurrence-site-resolution');
     const extracted=[];
     const replayedRecords=[];
     const blocked=[];
@@ -1854,6 +1861,7 @@ function batchFromExtraction(x,record){
       const domestic=valueForResource(consumption,rr),foreign=valueForResource(exportDemand,rr);
       if(domestic!==null||foreign!==null)demandTargetByResource[rr]=Math.max(0,((domestic||0)+(foreign||0))*turnDays);
     }
+    perfMark('full-country-capacity-and-demand-scan');
     let remainingDemandByResource={...demandTargetByResource};
     const controllerKeyBySiteId=new Map(Object.entries(mineSiteControllers).map(([key,controller])=>
       [String(controller?.siteReferenceKey||key),key]));
@@ -1894,6 +1902,7 @@ function batchFromExtraction(x,record){
         };
       }
     }
+    perfMark('site-controller-path-preparation');
     for(const x of selected){
       const pathId='MINE_PATH:'+c+':'+String(x.occurrenceKey);
       const existingPath=minePaths[x.occurrenceKey]&&typeof minePaths[x.occurrenceKey]==='object'?clone(minePaths[x.occurrenceKey]):{
@@ -2202,6 +2211,7 @@ function batchFromExtraction(x,record){
       extracted.push({...record,producedBatch:batch});
 
     }
+    perfMark('selected-occurrence-extraction-and-ledgers');
     const warehouseCheck=boundary()?.validateWarehouse?.(warehouse,c);
     if(warehouseCheck&&!warehouseCheck.ok)return{accepted:false,countryId:c,extracted:0,blocked:[warehouseCheck],records:[]};
     ctx.stateTransaction.set('resource.mineStates',current);
@@ -2225,6 +2235,8 @@ function batchFromExtraction(x,record){
     ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
     ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
+    perfMark('transaction-write-staging');
+    if(perfEnabled)try{console.info('[SAB34_PROGRESS] RESOURCE_EXTRACTION_HANDLER_PROFILE '+JSON.stringify({countryId:c,turn:turn(),requestedOccurrenceCount:Array.isArray(cmd?.payload?.occurrenceKeys)?cmd.payload.occurrenceKeys.length:0,fullOccurrenceCount:rows.length,selectedOccurrenceCount:selected.length,phases:perfPhases,totalMs:Number((perfNow()-perfStartedAt).toFixed(2))}));}catch(_){}
     return{accepted:true,countryId:c,extracted:extracted.length,replayed:replayedRecords.length,
       blocked:blocked.length,records:[...extracted,...replayedRecords]};
   }
@@ -2260,6 +2272,10 @@ function batchFromExtraction(x,record){
   }
 
   async function startCountryProduction(countryId,siteIds=null,options={}){
+    const perfEnabled=g.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
+    const perfNow=()=>typeof performance!=='undefined'&&typeof performance.now==='function'?performance.now():Date.now();
+    const perfStartedAt=perfEnabled?perfNow():0;
+    const perfSliceDurations=[];
     const c=canonical(countryId);
     if(!/^[A-Z]{3}$/.test(c))return{status:'BLOCKED',reason:'COUNTRY_ID_INVALID',countryId:c||null};
     const selectedCountryId=playerSimulationCountryId();
@@ -2345,7 +2361,9 @@ function batchFromExtraction(x,record){
     const sliceSize=constrained?3:8,sliceResults=[];
     for(let offset=0;offset<candidates.length;offset+=sliceSize){
       const slice=candidates.slice(offset,offset+sliceSize);
+      const sliceStartedAt=perfEnabled?perfNow():0;
       const result=await extractCountry(c,slice);
+      if(perfEnabled)perfSliceDurations.push(Number((perfNow()-sliceStartedAt).toFixed(2)));
       const payload=result?.result||result||{};
       sliceResults.push({result,payload,records:Array.isArray(payload.records)?payload.records:[],
         blocked:Array.isArray(payload.blocked)?payload.blocked.length:Math.max(0,n(payload.blocked)||0)});
@@ -2357,6 +2375,7 @@ function batchFromExtraction(x,record){
     const blocked=sliceResults.reduce((sum,row)=>sum+row.blocked,0);
     const failed=sliceResults.find(row=>row.result?.status!=='APPLIED'||row.payload?.status==='FAILED');
     const status=produced.length?(blocked?'PARTIALLY_STARTED':'STARTED'):'BLOCKED';
+    if(perfEnabled)try{console.info('[SAB34_PROGRESS] RESOURCE_COUNTRY_PRODUCTION_PROFILE '+JSON.stringify({countryId:c,turn:t,candidateOccurrenceCount:candidates.length,sliceSize,sliceCount:perfSliceDurations.length,hardwareConcurrency:Number(nav.hardwareConcurrency)||null,deviceMemory:Number(nav.deviceMemory)||null,constrained,sliceDurationsMs:perfSliceDurations,totalMs:Number((perfNow()-perfStartedAt).toFixed(2))}));}catch(_){}
     return{status,countryId:c,turn:t,requestedSiteCount:requestedSites?.size||null,
       attemptedOccurrenceCount:candidates.length,processedOccurrenceCount:records.length,
       extractionSliceCount:sliceResults.length,startedSiteCount:producingSites.size,
