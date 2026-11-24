@@ -35,11 +35,44 @@
   "defaultMinimumReservePctOfAnnualSpending": 0,
   "automaticNationalReserve": {
     "enabledForNpcCountries": true,
-    "contributionPctOfOperatingSurplus": 20,
+    "policyVersion": 2,
     "requiresReconciledFiscalPeriod": true,
+    "targetCoverageDays": {
+      "normal": 90,
+      "highRisk": 120,
+      "unknown": 120
+    },
+    "highRiskIndexThreshold": 60,
+    "coverageTiers": [
+      {
+        "id": "BELOW_30_DAYS",
+        "maxCoverageDaysExclusive": 30,
+        "contributionPctOfOperatingSurplus": 50
+      },
+      {
+        "id": "DAYS_30_TO_59",
+        "maxCoverageDaysExclusive": 60,
+        "contributionPctOfOperatingSurplus": 40
+      },
+      {
+        "id": "DAYS_60_TO_89",
+        "maxCoverageDaysExclusive": 90,
+        "contributionPctOfOperatingSurplus": 25
+      },
+      {
+        "id": "DAYS_90_TO_119",
+        "maxCoverageDaysExclusive": 120,
+        "contributionPctOfOperatingSurplus": 10
+      },
+      {
+        "id": "AT_OR_ABOVE_120_DAYS",
+        "maxCoverageDaysExclusive": null,
+        "contributionPctOfOperatingSurplus": 0
+      }
+    ],
     "surplusBasis": "TAX_AND_EXTERNAL_CASH_INFLOWS_MINUS_GOVERNMENT_SPENDING_EXTERNAL_DEBITS_INTEREST_AND_PRINCIPAL_REPAYMENT",
     "excludeBorrowingProceeds": true,
-    "spendingPolicy": "NPC trade and ordinary government spending must preserve the earmarked balance; authorized emergency reserve and debt-service expenditure may draw it down."
+    "spendingPolicy": "NPC trade and ordinary government spending preserve the earmarked reserve; only authorized emergency and debt-service expenditure may release it. External Treasury shortfalls are separately recorded and are not classified as authorized releases."
   },
   "budgetAllocationPolicy": "ANNUAL_PLAN_SHARES_MUST_NOT_EXCEED_100_PERCENT",
   "cashFlowPolicy": {

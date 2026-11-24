@@ -1078,7 +1078,7 @@ test('Phase 5 Government journal API is read-only, bounded and explicitly partia
   assert.equal(impreciseSource.sectorJournalV1.reason,'SOURCE_AMOUNT_MISSING_OR_NOT_CENT_EXACT');
 });
 
-test('NPC national reserve saves 20% of reconciled operating surplus, excludes borrowing, protects spending and permits authorized emergency drawdown',async()=>{
+test('NPC national reserve uses coverage tiers on reconciled operating surplus, excludes borrowing, protects spending and permits authorized emergency drawdown',async()=>{
   const {context,state}=createRuntime();
   await context.OmegaFinanceMinistry.init();
   const finance=context.OmegaFinanceMinistry;
@@ -1117,9 +1117,13 @@ test('NPC national reserve saves 20% of reconciled operating surplus, excludes b
   const expectedSurplus=120000+10000-30000-5000-2000-3000;
   assert.ok(Math.abs(current.nationalReserve.operatingSurplusUsd-expectedSurplus)<1,
     'the surplus basis must include operating credits and subtract spending, external debits, interest and principal');
-  assert.ok(Math.abs(current.nationalReserve.balanceUsd-expectedSurplus*0.2)<1,
-    'the NPC must earmark exactly 20% of positive reconciled operating surplus');
-  assert.equal(current.nationalReserve.contributionPctOfOperatingSurplus,20);
+  assert.ok(Math.abs(current.nationalReserve.balanceUsd-expectedSurplus*0.5)<1,
+    'an NPC reserve below 30 days must earmark 50% of new positive reconciled operating surplus');
+  assert.equal(current.nationalReserve.contributionPctOfOperatingSurplus,50);
+  assert.equal(current.nationalReserve.selectedTier,'BELOW_30_DAYS');
+  assert.equal(current.nationalReserve.selectedTierRatePct,50);
+  assert.ok(Math.abs(current.nationalReserve.operatingSurplusWatermarkUsd-expectedSurplus)<1,
+    'the period surplus watermark includes the same small modeled turn accrual as the reconciled flow account');
   assert.equal(current.nationalReserve.borrowingProceedsExcluded,true);
   assert.ok(Math.abs(financeBucket.available-current.treasuryBalanceUsd)<0.01,
     'earmarking reserve must not create cash or debit Treasury a second time');
@@ -1155,4 +1159,98 @@ test('NPC national reserve saves 20% of reconciled operating surplus, excludes b
   current=finance.getFinanceState(npc.iso3);
   assert.ok(current.nationalReserve.balanceUsd<=current.treasuryBalanceUsd+0.01,
     'an authorized emergency may draw down reserve but may not leave an unfunded reserve balance');
+  assert.equal(current.nationalReserve.lastReleaseReason,'AUTHORIZED_EMERGENCY_OR_DEBT_SERVICE');
+  assert.ok(current.nationalReserve.lifetimeReleasesUsd>=current.nationalReserve.lastReleaseUsd);
+});
+
+test('NPC reserve coverage tiers use exact boundaries and UNKNOWN fiscal risk never falls back to the normal target',async()=>{
+  const {context,state}=createRuntime();
+  await context.OmegaFinanceMinistry.init();
+  const finance=context.OmegaFinanceMinistry;
+  const npc=finance.getProfiles().find(profile=>profile.iso3!=='BGD'&&profile.countryCode!=='BGD'&&
+    profile.profileStatus!=='UNAVAILABLE'&&Number.isFinite(profile.indicators?.gdpCurrentUsd)&&profile.indicators.gdpCurrentUsd>0);
+  assert.ok(npc);
+  finance.getFinanceState(npc.iso3);
+  const financeBucket=Object.values(state.finance).find(row=>row?.omegaFinance?.countryCode===npc.iso3);
+  const model=financeBucket.omegaFinance;
+  const reserve=model.nationalReserve;
+  const economy=state.economy[npc.economyKey]||(state.economy[npc.economyKey]={});
+  economy.gdp=Number(economy.gdp)||Number(npc.indicators.gdpCurrentUsd)||1000000000;
+  economy.debt=0;
+  economy.inflation=0;
+  economy.unemployment_rate=0;
+  economy.budget_balance=0;
+  model.fiscalModel.annualSpendingUsd=3650000;
+  model.currentYearTaxRevenueUsd=0;
+  model.currentYearSpendingUsd=0;
+  model.currentYearBorrowingUsd=0;
+  model.currentYearInterestUsd=0;
+  model.currentYearDebtPrincipalRepaymentUsd=0;
+  model.currentYearExternalInflowUsd=0;
+  model.currentYearExternalOutflowUsd=0;
+  const openingCash=model.treasuryBalanceUsd;
+  model.lastSyncedTreasuryBalanceUsd=openingCash;
+  financeBucket.available=openingCash;
+  model.fiscalPeriodAccount={
+    schemaVersion:1,periodIndex:Number(model.fiscalYearIndex)||0,currency:'USD',
+    openingTurn:1,openingBalanceUsd:openingCash,openingBalanceQuality:'MODELLED',
+    openingBalanceSource:'TEST_RECONCILED_OPENING',flowCoverage:'COMPLETE_FROM_PERIOD_START',
+    reconciliationStatus:'MODELLED_RECONCILED',sourceAuthority:'OMEGA_FINANCE_MINISTRY_RUNTIME'
+  };
+  const cases=[
+    [29,'BELOW_30_DAYS',50],[30,'DAYS_30_TO_59',40],
+    [59,'DAYS_30_TO_59',40],[60,'DAYS_60_TO_89',25],
+    [89,'DAYS_60_TO_89',25],[90,'DAYS_90_TO_119',10],
+    [119,'DAYS_90_TO_119',10],[120,'AT_OR_ABOVE_120_DAYS',0]
+  ];
+  for(const [days,tier,rate] of cases){
+    reserve.balanceUsd=days*10000;
+    reserve.periodOpeningBalanceUsd=reserve.balanceUsd;
+    reserve.currentPeriodContributionUsd=0;
+    reserve.operatingSurplusWatermarkUsd=Number(reserve.operatingSurplusUsd)||0;
+    financeBucket.available=model.treasuryBalanceUsd+1;
+    const current=finance.getFinanceState(npc.iso3).nationalReserve;
+    assert.equal(current.fiscalRiskStatus,'NORMAL');
+    assert.equal(current.targetCoverageDays,90);
+    assert.equal(current.selectedTier,tier,'coverage '+days+' days');
+    assert.equal(current.selectedTierRatePct,rate,'coverage '+days+' days');
+    assert.ok(Math.abs(current.coverageDays-days)<0.01,'coverage '+days+' days remains within the expected tier');
+  }
+  economy.debt=economy.gdp*3;
+  economy.inflation=25;
+  economy.unemployment_rate=35;
+  economy.budget_balance=-economy.gdp*0.20;
+  reserve.balanceUsd=0;
+  reserve.periodOpeningBalanceUsd=0;
+  reserve.operatingSurplusWatermarkUsd=Number(reserve.operatingSurplusUsd)||0;
+  financeBucket.available=model.treasuryBalanceUsd+1;
+  let current=finance.getFinanceState(npc.iso3).nationalReserve;
+  assert.equal(current.fiscalRiskStatus,'HIGH');
+  assert.equal(current.targetCoverageDays,120);
+  economy.debt=null;
+  economy.inflation=null;
+  economy.unemployment_rate=null;
+  economy.budget_balance=null;
+  npc.indicators.publicDebtUsd=null;
+  npc.indicators.inflationRatePct=null;
+  npc.indicators.unemploymentRatePct=null;
+  npc.indicators.governmentBudgetBalanceUsd=null;
+  reserve.balanceUsd=0;
+  reserve.periodOpeningBalanceUsd=0;
+  reserve.operatingSurplusWatermarkUsd=Number(reserve.operatingSurplusUsd)||0;
+  financeBucket.available=model.treasuryBalanceUsd+1;
+  current=finance.getFinanceState(npc.iso3).nationalReserve;
+  assert.equal(current.fiscalRiskStatus,'UNKNOWN');
+  assert.equal(current.targetCoverageDays,120,
+    'missing fiscal evidence must use the conservative 120-day target, not the normal 90-day target');
+  const releaseBefore=current.lifetimeReleasesUsd;
+  const shortfallBalance=Math.min(100000,Math.max(10,model.treasuryBalanceUsd/4));
+  reserve.balanceUsd=shortfallBalance;
+  reserve.periodOpeningBalanceUsd=shortfallBalance;
+  financeBucket.available=shortfallBalance-5;
+  current=finance.getFinanceState(npc.iso3).nationalReserve;
+  assert.equal(current.lastShortfallUsd,5);
+  assert.equal(current.lastShortfallReason,'EXTERNAL_TREASURY_CASH_FELL_BELOW_PROTECTED_RESERVE');
+  assert.equal(current.lifetimeReleasesUsd,releaseBefore,
+    'external Treasury reconciliation is a separately recorded shortfall, not an authorized release');
 });
