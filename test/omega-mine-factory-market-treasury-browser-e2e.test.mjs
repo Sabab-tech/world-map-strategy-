@@ -1037,7 +1037,17 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           g.__omegaMineMarketTreasuryAdvanceTurns(1),
           new Promise((resolve, reject) => g.setTimeout(() => reject(new Error(
             'SIMULATION_TURN_TIMEOUT:' + String(Number(g.Game.state.simulation?.turn || 0) + 1) +
-            ':PARTICIPANTS=' + JSON.stringify(participantIds)
+            ':DIAGNOSTICS=' + JSON.stringify({
+              participantIds,
+              lastTurnParticipantResults: simulation.lastTurnParticipantResults || [],
+              lastTurnStatus: simulation.status,
+              lastError: simulation.lastError || null,
+              manualAdvanceProgress: simulation.manualAdvanceProgress || null,
+              stepInProgress: simulation.stepInProgress === true,
+              manualAdvanceInProgress: simulation.manualAdvanceInProgress === true,
+              scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null,
+              session: g.Game.state.simulation?.session || null
+            }).slice(0, 20000)
           )), 150000))
         ]);
         mark('SIMULATION_TURN_COMPLETE', { offset, turn: Number(g.Game.state.simulation?.turn || simulation.turn || offset), status: turnResult?.status || null });
