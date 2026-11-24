@@ -1812,10 +1812,13 @@ function batchFromExtraction(x,record){
     }
     const inventory=ctx.stateTransaction.get('resource.inventory')||{};
     const reserves=ctx.stateTransaction.get('resource.reserves')||{};
-    const ledger=ctx.stateTransaction.get('resource.extractionLedger');
-    const mineProductionLedger=ctx.stateTransaction.get('resource.mineProductionLedger');
+    const ledgerSnapshot=ctx.stateTransaction.get('resource.extractionLedger');
+    const ledger=Array.isArray(ledgerSnapshot)?ledgerSnapshot:[];
+    const mineProductionSnapshot=ctx.stateTransaction.get('resource.mineProductionLedger');
+    const mineProductionLedger=Array.isArray(mineProductionSnapshot)?mineProductionSnapshot:[];
     const mineOutputTotals=ctx.stateTransaction.get('resource.mineOutputTotals')||{};
-    const existingBatches=ctx.stateTransaction.get('resource.batches');
+    const existingBatchSnapshot=ctx.stateTransaction.get('resource.batches');
+    const existingBatches=Array.isArray(existingBatchSnapshot)?existingBatchSnapshot:[];
     const inventoryLots=ctx.stateTransaction.get('resource.inventoryLots')||{};
     const minePaths=ctx.stateTransaction.get('resource.minePaths')||{};
     const warehouse=ctx.stateTransaction.get('resource.warehouse')||{
