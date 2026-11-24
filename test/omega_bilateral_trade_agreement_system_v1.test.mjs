@@ -665,8 +665,10 @@ test('bilateral trade market intelligence, negotiation, contract execution and b
   assert.equal(playerPriorityRecord.review.decision, 'REJECT');
   assert.equal(playerPriorityRecord.review.reason, 'NON_POSITIVE_TRADE_TERMS');
   assert.equal(npcPriorityRecord.review.reviewPriority, 'STANDARD');
-  assert.equal(priorityInbox.find(row => row.proposalId === 'BTP-PRIORITY-NPC-SECOND').inboxStatus, 'PENDING',
+  const deferredNpcProposal = priorityInbox.find(row => row.proposalId === 'BTP-PRIORITY-NPC-SECOND');
+  assert.equal(deferredNpcProposal.inboxStatus, 'PENDING',
     'the existing two-review-per-country-turn bound must remain intact');
+  deferredNpcProposal.createdTurn = priorityTurn + 100;
 
   // NPC national Treasury reserve is excluded from internal spendable cash,
   // while counterparty-facing review data continues to redact private Treasury.
