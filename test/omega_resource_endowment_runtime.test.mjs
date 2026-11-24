@@ -971,6 +971,18 @@ const oneTapSite={
 };
 const oneTapRegistration=runtime.registerCanonicalSiteSimulationRecord(oneTapSite);
 assert.equal(oneTapRegistration.status,'REGISTERED',JSON.stringify(oneTapRegistration));
+assert.equal(runtime.extractionSliceSizeForDevice({
+  userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36',
+  deviceMemory:8,hardwareConcurrency:2
+}),8,'a two-core desktop runner with adequate memory must not be forced into mobile-sized extraction batches');
+assert.equal(runtime.extractionSliceSizeForDevice({
+  userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36',
+  deviceMemory:4,hardwareConcurrency:8
+}),3,'a genuinely low-memory browser must retain bounded extraction batches');
+assert.equal(runtime.extractionSliceSizeForDevice({
+  userAgent:'Mozilla/5.0 (X11; Linux x86_64) Mobile Safari/537.36',
+  deviceMemory:8,hardwareConcurrency:8
+}),3,'handheld browsers must retain bounded extraction batches');
 // Production slices stay inside one country and avoid repeated world-catalog scans.
 const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowment_runtime.js',import.meta.url),'utf8');
 assert.doesNotMatch(endowmentRuntimeSource,/const gameplaySiteIds=new Set\(Object\.values\(canonicalSiteCatalogMap/);
