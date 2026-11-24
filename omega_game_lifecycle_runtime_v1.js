@@ -182,6 +182,7 @@
       toggle.textContent = toggleLabel;
       toggle.setAttribute('aria-label', running ? 'Pause simulation time' : status === 'PAUSED' ? 'Resume simulation time' : 'Start simulation time');
       toggle.title = toggleLabel;
+      toggle.setAttribute('aria-pressed', running ? 'true' : 'false');
     }
     var effectiveSpeed = number(sim && sim.clock && sim.clock.speed);
     if (effectiveSpeed !== null && effectiveSpeed > 0) lastKnownSpeed = effectiveSpeed;
@@ -197,16 +198,40 @@
     }
     setText('[data-omega-game-status]', status);
     var manualBusy = manualCommandInFlight || !!(sim && sim.manualAdvanceInProgress);
-    var clockButtons = g.document.querySelectorAll('[data-omega-action="toggle"], [data-omega-speed], .speed-btn');
-    for (var c = 0; c < clockButtons.length; c++) clockButtons[c].disabled = manualBusy || status === 'ERROR';
-    var turnBusy = !!(sim && (sim.stepInProgress || sim.frameInProgress));
     var countryReady = !!(sim && playerCountry(sim));
+    var clockButtons = g.document.querySelectorAll('[data-omega-action="toggle"], [data-omega-speed], .speed-btn');
+    for (var c = 0; c < clockButtons.length; c++) {
+      clockButtons[c].disabled = manualBusy || status === 'ERROR' || !countryReady;
+    }
+    var turnBusy = !!(sim && (sim.stepInProgress || sim.frameInProgress));
     var manualButtons = g.document.querySelectorAll('[data-omega-action="step-day"], [data-omega-action="advance-days"]');
     for (var m = 0; m < manualButtons.length; m++) {
       manualButtons[m].disabled = !countryReady || manualBusy || turnBusy || status === 'ERROR';
     }
     var cancelButton = g.document.querySelector('[data-omega-action="cancel-advance"]');
     if (cancelButton) cancelButton.disabled = !manualBusy;
+  }
+
+  function updateClockProgress() {
+    if (!g.document) return;
+    var sim = runtime();
+    var clock = sim && sim.clock;
+    var elapsed = Math.max(0, Math.min(15000, number(clock && clock.accumulatorMs) || 0));
+    var percent = Math.floor((elapsed / 15000) * 100);
+    var status = String(sim && sim.status || 'READY').toUpperCase();
+    var running = status === 'RUNNING' && !(clock && clock.paused);
+    var bar = g.document.querySelector('[data-omega-clock-progress]');
+    var fill = g.document.querySelector('[data-omega-clock-progress-fill]');
+    var label = g.document.querySelector('[data-omega-clock-progress-label]');
+    if (fill && fill.style) fill.style.width = percent + '%';
+    if (bar && typeof bar.setAttribute === 'function') {
+      bar.setAttribute('aria-valuenow', String(percent));
+      bar.setAttribute('aria-label', 'Progress toward next game day: ' + percent + '%');
+    }
+    if (label) {
+      var phase = status === 'ERROR' ? 'CLOCK ERROR' : running ? 'NEXT DAY' : 'DAY PROGRESS';
+      label.textContent = phase + ' · ' + percent + '%';
+    }
   }
 
   function updateHud() {
@@ -221,6 +246,7 @@
     setText('[data-omega-game-day]', 'DAY ' + (turn + 1).toLocaleString('en-US') + ' · TURN ' + turn.toLocaleString('en-US'));
     setText('#status-clock', (date || 'DATE NOT RECORDED') + ' · DAY ' + (turn + 1).toLocaleString('en-US'));
     updateControls(sim);
+    updateClockProgress();
 
     var country = playerCountry(sim);
     if (country && typeof g.updateGlobalResourceHUD === 'function') {
@@ -974,6 +1000,7 @@
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_TURN_COMMITTED', queueTurnSave);
     g.addEventListener && g.addEventListener('OMEGA_COUNTRY_CONTEXT_CHANGED', onCountryContextChanged);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_STEP_COMPLETED', updateHud);
+    g.addEventListener && g.addEventListener('OMEGA_SIMULATION_CLOCK_TICK', updateClockProgress);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_STARTED', updateHud);
     g.addEventListener && g.addEventListener('OMEGA_SIMULATION_BATCH_PROGRESS', function (event) {
       var detail = event && event.detail || {};
