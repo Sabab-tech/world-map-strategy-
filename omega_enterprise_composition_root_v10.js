@@ -190,6 +190,17 @@
                         const simulation = window.Omega?.Simulation;
                         if (simulation && typeof simulation.frame === "function") {
                             await simulation.frame(dt);
+                            if (simulation.clock) {
+                                window.dispatchEvent(new CustomEvent("OMEGA_SIMULATION_CLOCK_TICK", {
+                                    detail: {
+                                        frameTick,
+                                        turn: simulation.clock.turn,
+                                        accumulatorMs: simulation.clock.accumulatorMs,
+                                        speed: simulation.clock.speed,
+                                        status: simulation.status
+                                    }
+                                }));
+                            }
                         }
 
                         if (frameTick === 1) {
