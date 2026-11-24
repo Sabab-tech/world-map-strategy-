@@ -136,7 +136,16 @@
       const key=keys[index];
       yield* emit(JSON.stringify(key));
       yield* emit(':');
-      for(const chunk of stableJsonChunks(snapshot[key],false,false))yield* emit(chunk);
+      let partChars=0;
+      for(const chunk of stableJsonChunks(snapshot[key],false,false)){
+        partChars+=chunk.length;
+        yield* emit(chunk);
+      }
+      const profile=global.__OMEGA_SIMULATION_SAVE_PROFILE__||null;
+      if(profile){
+        profile.rootPartChars=profile.rootPartChars||{};
+        profile.rootPartChars[key]=partChars;
+      }
     }
     hash=updateChecksumHash(hash,'}');
     const checksum=(hash>>>0).toString(16).padStart(8,'0');
