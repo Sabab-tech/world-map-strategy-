@@ -134,7 +134,8 @@
     })().finally(()=>{legacyGameplayExpansionPromise=null;});
     return legacyGameplayExpansionPromise;
   }
-  // Runtime indexes: these datasets are immutable during a simulation turn. Reusing the indexes avoids rebuilding and deep-enriching the same country/site rows for every gate and extraction pass.
+  // Reference/site datasets are stable within a simulation year. Reuse their indexes
+  // across turns and refresh only mutable reserve/lifecycle fields on selected rows.
   let countryListCache=null;
   const profileCache=new Map();
   const mineSiteReferenceCache=new Map();
@@ -1145,9 +1146,13 @@
     return resolved;
   }
 
-  function occurrenceRows(c){
+  function occurrenceRows(c,requestedOccurrenceKeys=null){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
     const wanted=canonical(c),siteReferences=mineSiteReferenceRows(wanted),currentYear=simulationYear();
+    const requestedKeys=Array.isArray(requestedOccurrenceKeys)&&requestedOccurrenceKeys.length
+      ?new Set(requestedOccurrenceKeys.map(String)):null;
+    const selectRequestedRows=rows=>requestedKeys
+      ?rows.filter(row=>requestedKeys.has(String(row?.occurrenceKey||''))):rows;
     if(occurrenceRowsCacheYear!==currentYear){
       occurrenceRowsCache.clear();occurrenceRowsCacheYear=currentYear;
     }
@@ -1158,7 +1163,7 @@
     if(cached&&cached.registry===reg&&cached.engine===e&&cached.reserveStates===reserveStates&&
        cached.reserveSize===(reserveStates?.size??null)&&cached.siteReferences===siteReferences&&
        cached.depositSource===depositSource&&cached.depositCount===depositCount){
-      return cached.rows.map(row=>{
+      return selectRequestedRows(cached.rows).map(row=>{
         const key=String(row?.occurrenceKey||'');
         return{
           ...row,
@@ -1358,7 +1363,7 @@
       registry:reg,engine:e,reserveStates,reserveSize:reserveStates?.size??null,
       siteReferences,depositSource,depositCount,rows:out
     });
-    return out;
+    return selectRequestedRows(out);
   }
 
   function rid0(v){return String(v??'').replace(/^RES_TYPE:/i,'').trim().toLowerCase();}
@@ -1868,7 +1873,9 @@ function batchFromExtraction(x,record){
     // the same country table again for each extraction slice.
     const persistedMineStates=current;
     const canonicalRowsStartedAt=perfEnabled?perfNow():0;
-    const canonicalRows=occurrenceRows(c);
+    const requestedOccurrenceKeys=Array.isArray(cmd?.payload?.occurrenceKeys)
+      ?cmd.payload.occurrenceKeys.map(String):null;
+    const canonicalRows=occurrenceRows(c,requestedOccurrenceKeys);
     if(perfEnabled)perfAdd('occurrence-rows-build-ms',perfNow()-canonicalRowsStartedAt);
     const siteRowsStartedAt=perfEnabled?perfNow():0;
     const siteRows=siteExecutionRows(c,{mineStates:persistedMineStates,requestedOccurrenceKeys:Array.isArray(cmd?.payload?.occurrenceKeys)?cmd.payload.occurrenceKeys.map(String):[]});
