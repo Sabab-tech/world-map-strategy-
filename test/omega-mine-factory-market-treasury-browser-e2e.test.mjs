@@ -166,10 +166,17 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         const code = String(identity?.iso3 || '').trim().toUpperCase();
         if (profileCodes.has(code) && !locationByCountry.has(code)) locationByCountry.set(code, key);
       }
+      const resolvedCountryCode = value => {
+        const raw = String(value ?? '').trim().toUpperCase();
+        if (/^[A-Z]{3}$/.test(raw) && profileCodes.has(raw)) return raw;
+        const identity = runtime?.resolveCountry?.(value);
+        const code = String(identity?.iso3 || identity?.countryIso3 || identity?.iso3Code || '').trim().toUpperCase();
+        return /^[A-Z]{3}$/.test(code) && profileCodes.has(code) ? code : raw;
+      };
       const countryEntry = (map, code) => {
         if (!map || typeof map !== 'object') return null;
         if (Object.prototype.hasOwnProperty.call(map, code)) return map[code];
-        const key = Object.keys(map).find(value => String(value).trim().toUpperCase() === code);
+        const key = Object.keys(map).find(value => resolvedCountryCode(value) === code);
         return key === undefined ? null : map[key];
       };
       const readPath = (root, path) => path.split('.').reduce((value, key) =>
@@ -205,20 +212,26 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       };
       // Index the actual relationship/treaty edges once. Avoid the former nested
       // country-by-country review loop (up to 197 x 197 expensive trade API calls).
+      const indexedRelationOwners = new Map();
+      for (const [ownerRaw, relationshipMap] of Object.entries(canonicalRelationDataset || {})) {
+        const owner = resolvedCountryCode(ownerRaw);
+        if (profileCodes.has(owner) && relationshipMap && typeof relationshipMap === 'object')
+          indexedRelationOwners.set(owner, relationshipMap);
+      }
       for (const owner of profileCodes) {
-        const datasetRelations = countryEntry(canonicalRelationDataset, owner);
+        const datasetRelations = indexedRelationOwners.get(owner) || countryEntry(canonicalRelationDataset, owner);
         const maps = [...relationshipMaps(owner),
           ...(datasetRelations && typeof datasetRelations === 'object' ? [datasetRelations] : [])];
         for (const map of maps) {
           for (const [otherRaw, relationship] of Object.entries(map)) {
-            const other = String(otherRaw || '').trim().toUpperCase();
+            const other = resolvedCountryCode(otherRaw);
             if (!profileCodes.has(other) || relationship?.trade_agreement !== true) continue;
             addPossiblePair(owner, other);
             addPossiblePair(other, owner);
           }
         }
         for (const [otherRaw, treaty] of Object.entries(treatyMap(owner) || {})) {
-          const other = String(otherRaw || '').trim().toUpperCase();
+          const other = resolvedCountryCode(otherRaw);
           if (activeTreaty(treaty)) addPossiblePair(owner, other);
         }
       }
@@ -258,7 +271,11 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       if (!chosen) return {
         ok:false,reason:'NO_MAP_SELECTABLE_COUNTRY_WITH_MINE_FACTORY_AND_FUNDED_APPROVED_FX_TRADE_BUYER',
         profileCount:profileByCountry.size,siteCount:sites.length,
-        locationCount:locations.length
+        locationCount:locations.length,
+        relationDatasetOwnerCount:indexedRelationOwners.size,
+        relationDatasetOwners:[...indexedRelationOwners.keys()].slice(0,12),
+        bangladeshRelationTargets:Object.keys(indexedRelationOwners.get('BGD')||{}).slice(0,12),
+        indexedTradePartnerCount:[...possibleBuyersBySeller.values()].reduce((sum,rows)=>sum+rows.size,0)
       };
       g.__omegaMineMarketTreasuryPlayerBootstrap = chosen;
       return { ok:true, seller:chosen.seller, countryName:chosen.countryName,
