@@ -185,9 +185,10 @@ test('resource snapshot publication computes its ministry revision once for all 
   const provider=s.mesh.instance.provider;
   assert.ok(provider&&typeof provider.getRevision==='function');
   const original=provider.getRevision.bind(provider);
-  let resourceRevisionReads=0;
-  provider.getRevision=(countryId,domain,options)=>{
-    if(String(domain)==='resource')resourceRevisionReads++;
+  let resourceRevisionComputations=0;
+  provider.getRevision=(countryId,domain,options={})=>{
+    const cacheKey=String(countryId).toUpperCase()+'|'+String(domain);
+    if(String(domain)==='resource'&&!options.revisionCache?.has(cacheKey))resourceRevisionComputations++;
     return original(countryId,domain,options);
   };
   const result=s.mesh.publishState('resource',{
@@ -196,7 +197,7 @@ test('resource snapshot publication computes its ministry revision once for all 
     runtimeState:{status:'RUNNING',active:true}
   },{returnPeerState:false});
   assert.equal(result.status,'PUBLISHED');
-  assert.equal(resourceRevisionReads,1,
+  assert.equal(resourceRevisionComputations,1,
     'the whole resource domain revision must be calculated once per publication, not once per field');
 });
 

@@ -1038,7 +1038,7 @@
       // content fingerprint across the facts in this publication.
       const revisionCache=new Map();
       const describeOptions={currentTurn:this.lastTurn,revisionCache};
-      const publishedSourceRevision=this.provider?.getRevision?.(countryId,ministryId)??null;
+      const publishedSourceRevision=this.provider?.getRevision?.(countryId,ministryId,{revisionCache})??null;
       const stateRevision=publishedSourceRevision!==null?String(publishedSourceRevision):
         (execution.stateRevision!==undefined&&execution.stateRevision!==null?String(execution.stateRevision):null);
       const configuredPaths=[...(Array.isArray(engine?.inputs)?engine.inputs:[]),...(STANDARD_PUBLIC_PATHS[ministryId]||[])];
