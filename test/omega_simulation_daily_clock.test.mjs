@@ -867,7 +867,7 @@ test('manual time HUD buttons step days, run selected days, pause/resume and exp
   assert.equal(progressLabel.textContent, 'NEXT DAY · 50%',
     'the HUD must make active time progression visible between calendar-day commits');
 
-  dispatchAction('toggle');
+  dispatchAction('pause');
   assert.equal(sim.status, 'PAUSED', 'Pause must stop further automatic turns');
   assert.equal(progressLabel.textContent, 'DAY PROGRESS · 50%',
     'pausing must preserve and accurately display the partial day already elapsed');
