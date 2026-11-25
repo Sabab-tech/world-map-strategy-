@@ -1036,7 +1036,7 @@
       const observed=execution.observedInputs||{};
       // Reuse one authoritative ministry revision and memoize each top-domain
       // content fingerprint across the facts in this publication.
-      const revisionCache=new Map();
+      const revisionCache=context.revisionCache instanceof Map?context.revisionCache:new Map();
       const describeOptions={currentTurn:this.lastTurn,revisionCache};
       const publishedSourceRevision=this.provider?.getRevision?.(countryId,ministryId,{revisionCache})??null;
       const stateRevision=publishedSourceRevision!==null?String(publishedSourceRevision):
