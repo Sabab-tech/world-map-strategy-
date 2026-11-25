@@ -900,7 +900,7 @@ test('overview HTML presents the national summary without claiming simulated fac
   assert.match(html, /Settled imports this turn/);
   assert.match(html, /durable importer-side shipment ledger/);
   assert.match(html, /Current-turn financial journal evidence/);
-  assert.match(html, /In-transit international import/);
+  assert.match(html, /Legal in-transit import/);
   assert.doesNotMatch(html, /real-world facility count: 100/i);
 });
 
