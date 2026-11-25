@@ -854,6 +854,32 @@ test('command IDs are idempotent and cannot overwrite a different command',()=>{
   assert.equal(replay.idempotentReplay,true);
   assert.equal(invocations,1,'the same command must never run twice');
   assert.equal(s.state.economy[s.countryA].gdp,101);
+
+  const savedReceipt=s.mesh.getCommand('PIPE-CMD-COLLISION-1');
+  assert.equal(savedReceipt.payloadOmitted,true,
+    'the durable idempotency receipt must not retain a second copy of the original command payload');
+  assert.equal(Object.hasOwn(savedReceipt,'payload'),false);
+  assert.ok(JSON.stringify(savedReceipt).length<5000,
+    'large command inputs must not inflate the persisted command history');
+
+  // A compact receipt must still reject a changed replay after save/load without
+  // needing the original payload to remain in the durable ledger.
+  const restored=createSandbox({state:JSON.parse(JSON.stringify(s.state))});
+  restored.mesh.instance.loadState(s.mesh.instance.exportState());
+  let restoredInvocations=0;
+  restored.mesh.registerCommandHandler('PIPELINE_IDEMPOTENCY_TEST','economy',(command,{stateTransaction})=>{
+    restoredInvocations+=1;
+    stateTransaction.set('economy.gdp',999);
+    return{accepted:true};
+  });
+  const restoredReplay=restored.mesh.dispatchCommand('finance','PIPELINE_IDEMPOTENCY_TEST',restored.countryA,{delta:1},options);
+  assert.equal(restoredReplay.idempotentReplay,true);
+  assert.equal(restoredInvocations,0,'restored idempotency receipts must not execute the command again');
+  assert.throws(
+    ()=>restored.mesh.dispatchCommand('finance','PIPELINE_IDEMPOTENCY_TEST',restored.countryA,{delta:2},options),
+    /COMMAND_ID_COLLISION/
+  );
+
   assert.throws(
     ()=>s.mesh.dispatchCommand('finance','PIPELINE_IDEMPOTENCY_TEST',s.countryA,{delta:2},options),
     /COMMAND_ID_COLLISION/
