@@ -627,6 +627,14 @@ test('committed command audit records write paths and revisions without copying 
   compactConflict.set('economy.largeAuditDomain',{transaction:'staged'});
   s.state.economy[s.countryA].largeAuditDomain={concurrent:'external-write'};
   assert.throws(()=>compactConflict.commit(),error=>error?.code==='STATE_TRANSACTION_CONFLICT');
+
+  const nestedCompactConflict=s.sandbox.OmegaMinistryStateTransaction.create(
+    'economy',s.countryA,5,'COMPACT-NESTED-TRANSACTION-CONFLICT',s.state,{includeOperationValues:false}
+  );
+  nestedCompactConflict.set('economy.largeAuditDomain',{transaction:'staged'});
+  s.state.economy[s.countryA].largeAuditDomain.records[0].value=43;
+  assert.throws(()=>nestedCompactConflict.commit(),error=>error?.code==='STATE_TRANSACTION_CONFLICT',
+    'compact conflict signatures must still detect nested in-place writes without recursively serializing the full ledger');
 });
 
 test('R: save/load restores logically equivalent interoperability state',()=>{
