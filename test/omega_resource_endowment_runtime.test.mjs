@@ -966,8 +966,22 @@ const oneTapRegistration=runtime.registerCanonicalSiteSimulationRecord(oneTapSit
 assert.equal(oneTapRegistration.status,'REGISTERED',JSON.stringify(oneTapRegistration));
 // Production slices stay inside one country and avoid repeated world-catalog scans.
 const endowmentRuntimeSource=fs.readFileSync(new URL('../omega_resource_endowment_runtime.js',import.meta.url),'utf8');
+const identityRuntimeSource=fs.readFileSync(new URL('../omega_resource_part04_identity_runtime.js',import.meta.url),'utf8');
+assert.match(identityRuntimeSource,/listMineSiteReferenceCountryIds:function\(\)\{return Array\.from\(siteRefsByCountry\.keys\(\)\);\}/,'identity registry must expose country keys from its pre-grouped index');
+assert.match(endowmentRuntimeSource,/listMineSiteReferenceCountryIds\?\.\(\)/,'work-country discovery must use country keys rather than full site rows');
+assert.doesNotMatch(endowmentRuntimeSource,/listMineSiteReferences\?\.\(\)/,'work-country discovery must never clone and enumerate every site-reference row');
+assert.match(endowmentRuntimeSource,/function resourceExtractionSourceCountryIndex\(\)/,'profile and deposit work-country keys must be indexed once per source snapshot');
 assert.doesNotMatch(endowmentRuntimeSource,/const gameplaySiteIds=new Set\(Object\.values\(canonicalSiteCatalogMap/);
 assert.match(endowmentRuntimeSource,/const canonicalDepositKeys=new Set/);
+assert.doesNotMatch(endowmentRuntimeSource,/Object\.values\(canonicalSiteCatalogMap\|\|\{\}\)/,
+  'country hydration, per-turn scheduling and diagnostics must not enumerate the full canonical catalog repeatedly');
+assert.match(endowmentRuntimeSource,/const catalogSites=canonicalSiteCandidates\(wanted\);/,
+  'country hydration must reuse the prebuilt canonical country index');
+const siteReferenceSourceIndexDiagnostics=runtime.diagnostics().siteReferenceSourceIndex;
+assert.ok(Number(siteReferenceSourceIndexDiagnostics?.canonicalCatalogBuildCount)>0,
+  'the canonical catalog must publish a reusable country-index build count');
+assert.ok(Number(siteReferenceSourceIndexDiagnostics?.canonicalIndexedCountryCount)>0,
+  'the canonical catalog country index must contain indexed country rows');
 assert.match(endowmentRuntimeSource,/const controllerKeyBySiteId=new Map/);
 assert.match(endowmentRuntimeSource,/PLAYER_COUNTRY_SCOPE_VIOLATION/);
 globalThis.Game.state.simulation.playerCountryId='BGD';
@@ -991,6 +1005,78 @@ assert.equal(oneTapLedgerAfter.length,oneTapLedgerBefore.length,
   'a repeat one-tap action must not create a second successful row for already-produced occurrences');
 assert.equal(oneTapLedgerAfter.reduce((sum,row)=>sum+Number(row.quantity||0),0),successfulQuantityBefore,
   'a repeat one-tap action must not duplicate successful production quantities');
+
+// Selected-occurrence fallback must index the country reference array once, then
+// resolve only the requested site ID on every subsequent slice. This prevents a
+// one-occurrence command from enumerating hundreds of unrelated country references.
+const selectedIndexBucket=globalThis.Game.state.resource.BGD;
+selectedIndexBucket.mineStates=selectedIndexBucket.mineStates&&typeof selectedIndexBucket.mineStates==='object'
+  ?selectedIndexBucket.mineStates:{};
+const selectedIndexProbeKey='TEST_ONLY_NONCANONICAL_SELECTED_OCCURRENCE';
+const previousSelectedIndexProbe=selectedIndexBucket.mineStates[selectedIndexProbeKey];
+selectedIndexBucket.mineStates[selectedIndexProbeKey]={
+  occurrenceKey:selectedIndexProbeKey,siteReferenceKey:oneTapSite.siteId,siteId:oneTapSite.siteId,
+  resourceId:'limestone',countryId:'BGD',simulationOnly:true
+};
+const selectedIndexBefore=runtime.diagnostics().siteReferenceRowIndex;
+await runtime.extractCountry('BGD',[selectedIndexProbeKey]);
+const selectedIndexAfterFirst=runtime.diagnostics().siteReferenceRowIndex;
+await runtime.extractCountry('BGD',[selectedIndexProbeKey]);
+const selectedIndexAfterSecond=runtime.diagnostics().siteReferenceRowIndex;
+assert.equal(selectedIndexAfterSecond.buildCount,selectedIndexAfterFirst.buildCount,
+  'repeated selected-site extraction must reuse the same site-reference index, not rebuild or rescan the country array');
+assert.equal(selectedIndexAfterSecond.cacheHitCount,selectedIndexAfterFirst.cacheHitCount+1,
+  'the second selected-site slice must use the cached reference index');
+assert.ok(selectedIndexAfterSecond.lookupCount>selectedIndexAfterFirst.lookupCount,
+  'selected-site slices must perform keyed lookups instead of whole-array filtering');
+assert.ok(selectedIndexAfterSecond.selectedReferenceCount>=selectedIndexAfterFirst.selectedReferenceCount,
+  'selected-site index results must remain bounded to matching reference rows');
+if(previousSelectedIndexProbe===undefined)delete selectedIndexBucket.mineStates[selectedIndexProbeKey];
+else selectedIndexBucket.mineStates[selectedIndexProbeKey]=previousSelectedIndexProbe;
+
+// Country row caches must survive a full multi-country turn. The former four-entry
+// LRU evicted the first country as soon as the fifth was hydrated, forcing the next
+// simulation turn to rebuild its occurrence and execution rows again.
+const cacheProbeReferences=globalThis.__OmegaResourceIdentityRegistry?.listMineSiteReferences?.()||[];
+const cacheProbeCounts=new Map();
+for(const reference of cacheProbeReferences){
+  const country=String(reference?.countryId||reference?.countryCode||reference?.countryIso3||'').trim().toUpperCase();
+  if(!/^[A-Z]{3}$/.test(country))continue;
+  cacheProbeCounts.set(country,(cacheProbeCounts.get(country)||0)+1);
+}
+const cacheProbeCountries=[...cacheProbeCounts.entries()]
+  .sort((a,b)=>a[1]-b[1]||a[0].localeCompare(b[0]))
+  .slice(0,5).map(([country])=>country);
+assert.equal(cacheProbeCountries.length,5,
+  'the runtime fixture must provide at least five resource countries for the cache-retention regression');
+for(const country of cacheProbeCountries){
+  const hydrated=await runtime.hydrateCountry(country);
+  assert.equal(hydrated?.status,'APPLIED',JSON.stringify({country,hydrated}));
+}
+// A second sweep lets the global reserve registry finish adding any country-specific
+// reserve rows before asserting stable cache reuse.
+for(const country of cacheProbeCountries){
+  const hydrated=await runtime.hydrateCountry(country);
+  assert.equal(hydrated?.status,'APPLIED',JSON.stringify({country,hydrated}));
+}
+const countryCacheBeforeRevisit=runtime.diagnostics().countryRowCaches;
+const countryCacheRevisit=await runtime.hydrateCountry(cacheProbeCountries[0]);
+assert.equal(countryCacheRevisit?.status,'APPLIED',JSON.stringify(countryCacheRevisit));
+const countryCacheAfterRevisit=runtime.diagnostics().countryRowCaches;
+assert.equal(countryCacheAfterRevisit.occurrenceRows.buildCount,countryCacheBeforeRevisit.occurrenceRows.buildCount,
+  'revisiting the first country must not rebuild its occurrence rows after five-country hydration');
+assert.equal(countryCacheAfterRevisit.siteExecutionRows.buildCount,countryCacheBeforeRevisit.siteExecutionRows.buildCount,
+  'revisiting the first country must not rebuild its site execution rows after five-country hydration');
+assert.ok(countryCacheAfterRevisit.occurrenceRows.cacheHitCount>countryCacheBeforeRevisit.occurrenceRows.cacheHitCount,
+  'occurrence rows must report a warm cache hit on the revisited country');
+assert.ok(countryCacheAfterRevisit.siteExecutionRows.cacheHitCount>countryCacheBeforeRevisit.siteExecutionRows.cacheHitCount,
+  'site execution rows must report a warm cache hit on the revisited country');
+assert.ok(countryCacheAfterRevisit.occurrenceRows.entryCount>=5&&countryCacheAfterRevisit.siteExecutionRows.entryCount>=5,
+  'both bounded country caches must retain all five active country entries');
+assert.equal(countryCacheAfterRevisit.occurrenceRows.evictionCount,countryCacheBeforeRevisit.occurrenceRows.evictionCount,
+  'a normal five-country simulation must not evict a warm occurrence cache entry');
+assert.equal(countryCacheAfterRevisit.siteExecutionRows.evictionCount,countryCacheBeforeRevisit.siteExecutionRows.evictionCount,
+  'a normal five-country simulation must not evict a warm site execution cache entry');
 
 // Part 6 integration proof: the mine haul must be receipted at the sovereign
 // warehouse before the existing warehouse-to-factory shipment can be dispatched.
