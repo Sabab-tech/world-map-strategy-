@@ -163,7 +163,7 @@
     return {ok:true,count:engines.length,uniqueInstances,version:registry.version||null};
   }
 
-  function buildDomainContext(id,dt,currentTurn,store,sharedRevisionCache=null){
+  function buildDomainContext(id,dt,currentTurn,store,sharedRevisionCache=null,sharedDescriptorCache=null){
     const provider=getStateProvider();
     const state=provider?.root?.() || global.Game?.state || global.gameState || {};
     const interop=getInteroperability();
@@ -202,9 +202,16 @@
     for(const path of paths){
       let value;
       let described=null;
+      const descriptorKey=String(countryId||'')+'|'+String(path);
       try{
-        if(provider?.describe){
+        if(sharedDescriptorCache instanceof Map&&sharedDescriptorCache.has(descriptorKey)){
+          described=sharedDescriptorCache.get(descriptorKey);
+        }else if(provider?.describe){
           described=provider.describe(countryId,path,describeOptions);
+          if(sharedDescriptorCache instanceof Map&&described)
+            sharedDescriptorCache.set(descriptorKey,described);
+        }
+        if(described){
           if(described.availability!=='UNOBSERVED'&&described.availability!=='UNAVAILABLE'&&described.availability!=='NOT_APPLICABLE'){
             value=described.value;
           }else if(described.value!==null&&described.value!==undefined){
@@ -222,9 +229,19 @@
     // Backward-compatible derived resource state comes through the provider,
     // never as a second authoritative resource database.
     try{
-      if(domainContext.resourceEngineState===undefined && provider?.get){
-        const resourceState=provider.get(countryId,'resourceEngineState');
-        if(resourceState!==undefined)domainContext.resourceEngineState=resourceState;
+      if(domainContext.resourceEngineState===undefined){
+        // ResourceEngine only reads inventory/deposit counts. Reuse the already
+        // observed read-only projections instead of cloning the complete integrated
+        // resource ledger (batches, lots, shipments and history) a second time.
+        if(domainContext.resourceInventory!==undefined||domainContext.resourceDeposits!==undefined){
+          domainContext.resourceEngineState={
+            inventory:domainContext.resourceInventory,
+            deposits:domainContext.resourceDeposits
+          };
+        }else if(provider?.get){
+          const resourceState=provider.get(countryId,'resourceEngineState');
+          if(resourceState!==undefined)domainContext.resourceEngineState=resourceState;
+        }
       }
     }catch(_){}
 
@@ -281,6 +298,8 @@
     // once per country/turn rather than once for every ministry input context.
     let sharedRevisionCacheTurn=null;
     let sharedRevisionCache=new Map();
+    let sharedDescriptorCacheTurn=null;
+    let sharedDescriptorCache=new Map();
 
     function revisionCacheForTurn(turn){
       const key=String(turn??'');
@@ -289,6 +308,15 @@
         sharedRevisionCache=new Map();
       }
       return sharedRevisionCache;
+    }
+
+    function descriptorCacheForTurn(turn){
+      const key=String(turn??'');
+      if(sharedDescriptorCacheTurn!==key){
+        sharedDescriptorCacheTurn=key;
+        sharedDescriptorCache=new Map();
+      }
+      return sharedDescriptorCache;
     }
 
     function syncManifest(){
@@ -395,7 +423,8 @@
       const inputSources=discoverInputSources();
       if(profile){profile.inputSourcesMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
       const sharedTurnRevisions=revisionCacheForTurn(currentTurn);
-      const domainContext=buildDomainContext(id,dt,currentTurn,store,sharedTurnRevisions);
+      const sharedTurnDescriptors=descriptorCacheForTurn(currentTurn);
+      const domainContext=buildDomainContext(id,dt,currentTurn,store,sharedTurnRevisions,sharedTurnDescriptors);
       Object.defineProperty(domainContext,'revisionCache',{value:sharedTurnRevisions,enumerable:false});
       const countryId=domainContext.countryId;
       if(profile){profile.contextMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
