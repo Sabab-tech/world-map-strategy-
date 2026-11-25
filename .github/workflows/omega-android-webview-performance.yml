@@ -51,8 +51,6 @@ permissions:
 
 jobs:
   android-nine-webview-performance:
-    # Permanently skipped per owner instruction; do not launch Android emulator tests.
-    if: ${{ false }}
     runs-on: macos-15-intel
     timeout-minutes: 40
     steps:
