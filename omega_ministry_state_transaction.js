@@ -196,7 +196,7 @@
       this.transactionId='OMI-TX-'+this.turn+'-'+this.ownerMinistry+'-'+this.commandId;
       this.operations=[];
       this.writeBaseline=new Map();
-      this.pathRevisionRoot=countryRevisionRoot(this.state,this.countryId);
+      this.pathRevisionRoot=this.state&&typeof this.state==='object'?countryRevisionRoot(this.state,this.countryId):null;
       this.pathRevisionBaselines=new Map();
       this.closed=false;
     }
@@ -261,7 +261,7 @@
       // duplicates the same state that get() already snapshots for the handler.
       const value=this._readLivePath(path,this.includeOperationValues);
       this.writeBaseline.set(path,this.includeOperationValues?value:this._valueFingerprint(value,path));
-      this.pathRevisionBaselines.set(path,capturePathRevision(this.pathRevisionRoot,path));
+      this.pathRevisionBaselines.set(path,capturePathRevision(this.pathRevisionRoot||countryRevisionRoot(this.state,this.countryId),path));
     }
 
     _writeSetFingerprint(readCurrent=false,cloneCurrent=true){
