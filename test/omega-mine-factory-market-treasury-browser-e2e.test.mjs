@@ -186,6 +186,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const treatyMap = code => countryEntry(gameState.foreign, code)?.treaties;
       const activeTreaty = treaty => !!treaty &&
         /SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(treaty.status || treaty.stage || '').toUpperCase());
+      // OpponentCountryRuntime owns the canonical relations.json dataset; not every
+      // save eagerly copies all 197 country relation maps into Game.state.
+      const opponentRuntime = g.Omega?.OpponentCountryRuntime?.instance ||
+        g.OmegaOpponentCountryRuntime?.instance || null;
+      let canonicalRelationDataset = {};
+      try {
+        canonicalRelationDataset = opponentRuntime?.gw?.get?.('relations') || {};
+      } catch (_) {}
       const fundedBalanceByCountry = new Map();
       for (const code of profileCodes) fundedBalanceByCountry.set(code, bankBalance(code));
       const possibleBuyersBySeller = new Map();
@@ -198,7 +206,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       // Index the actual relationship/treaty edges once. Avoid the former nested
       // country-by-country review loop (up to 197 x 197 expensive trade API calls).
       for (const owner of profileCodes) {
-        for (const map of relationshipMaps(owner)) {
+        const datasetRelations = countryEntry(canonicalRelationDataset, owner);
+        const maps = [...relationshipMaps(owner),
+          ...(datasetRelations && typeof datasetRelations === 'object' ? [datasetRelations] : [])];
+        for (const map of maps) {
           for (const [otherRaw, relationship] of Object.entries(map)) {
             const other = String(otherRaw || '').trim().toUpperCase();
             if (!profileCodes.has(other) || relationship?.trade_agreement !== true) continue;
