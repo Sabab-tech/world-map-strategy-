@@ -918,3 +918,21 @@ test('global time controls are moved outside the clipped header and expose an ex
   assert.match(hudCss, /min-height: 44px !important;/,
     'the primary time controls must have touch-friendly targets');
 });
+
+
+test('compact gameplay clock dock exposes only play and pause actions', () => {
+  const lifecycle = fs.readFileSync(path.join(root, 'omega_game_lifecycle_runtime_v1.js'), 'utf8');
+  const hudCss = fs.readFileSync(path.join(root, 'omega_manual_time_controls_v1.css'), 'utf8');
+  const serviceWorker = fs.readFileSync(path.join(root, 'omega-offline-map-sw.js'), 'utf8');
+
+  assert.match(lifecycle, /function ensurePauseButton\(\)/);
+  assert.match(lifecycle, /button\.setAttribute\('data-omega-action', 'pause'\)/);
+  assert.match(lifecycle, /if \(action === 'toggle'\) \{\s*setSpeed\(1, true\);\s*\} else if \(action === 'pause'\) \{\s*setSpeed\(0\);/);
+  assert.match(lifecycle, /toggle\.textContent = '▶'/);
+  assert.match(lifecycle, /pause\.textContent = 'Ⅱ'/);
+  assert.match(hudCss, /bottom: 16px !important;/);
+  assert.match(hudCss, /button\[data-omega-speed\] \{\s*display: none !important;/);
+  assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
+  assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v149/);
+});
