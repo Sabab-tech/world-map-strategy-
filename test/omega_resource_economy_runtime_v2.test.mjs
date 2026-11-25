@@ -259,6 +259,39 @@ test('export settlement replay is idempotent across company flows, Treasury clea
   assert.equal(worldState.finance.BGD.resourceSettlementClearing.length,clearingAfterFirst);
   assert.ok(commandCollisions.some(x=>x.reason==='COMMAND_ID_COLLISION'),'same stable command ID with a changed payload must raise a persisted-command integrity collision');
 });
+test('national inventory consumption reads large ledgers by reference and writes copy-on-write snapshots',async()=>{
+  const {context,worldState,handlers,stateTx}=createContext();
+  vm.runInNewContext(readFileSync('omega_resource_economy_runtime_v2.js','utf8'),context,{filename:'omega_resource_economy_runtime_v2.js'});
+  const registered=handlers.get('OMEGA_RESOURCE_ECON_CONSUME_INVENTORY');
+  assert.ok(registered&&typeof registered.handler==='function');
+
+  const getCalls=[],referenceCalls=[];
+  const base=stateTx('BGD');
+  const trackedTransaction={
+    get(path){getCalls.push(String(path));return base.get(path);},
+    getReference(path){referenceCalls.push(String(path));return base.get(path);},
+    set(path,value){return base.set(path,value);}
+  };
+  const result=registered.handler({
+    commandId:'NATIONAL-DEMAND-REFERENCE-READ',
+    commandType:'OMEGA_RESOURCE_ECON_CONSUME_INVENTORY',
+    payload:{resourceId:'iron_ore',quantity:10,reason:'NATIONAL_DEMAND'}
+  },{countryId:'BGD',stateTransaction:trackedTransaction});
+
+  assert.equal(result.accepted,true,JSON.stringify(result));
+  for(const path of [
+    'resource.inventory','resource.batches','resource.inventoryLots',
+    'resource.warehouse','resource.processedWarehouse',
+    'resource.industrialNetwork','resource.inventoryLedger'
+  ]){
+    assert.ok(referenceCalls.includes(path),'large read-only state must use getReference: '+path);
+    assert.equal(getCalls.includes(path),false,'large state must not be deep-cloned through get(): '+path);
+  }
+  assert.equal(worldState.resource.BGD.inventory.iron_ore,90);
+  assert.equal(worldState.resource.BGD.batches[0].remainingQuantity,90);
+  assert.equal(worldState.resource.BGD.warehouse.availableByResource.iron_ore,90);
+});
+
 test('non-USD export fiscalization clears the bank-settled USD amount and keeps company/tax ledgers in USD',async()=>{
   const {context,worldState}=createContext();
   const settlementId='AUD-EXPORT-USD-SETTLEMENT-1';
