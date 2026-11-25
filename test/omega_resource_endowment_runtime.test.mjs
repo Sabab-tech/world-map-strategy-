@@ -977,6 +977,10 @@ assert.equal(runtime.extractionSliceSizeForDevice({
 }),8,'a two-core desktop runner with adequate memory must not be forced into mobile-sized extraction batches');
 assert.equal(runtime.extractionSliceSizeForDevice({
   userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36',
+  deviceMemory:8,hardwareConcurrency:8
+}),128,'a capable desktop uses one identified, larger schedule row per bounded extraction batch');
+assert.equal(runtime.extractionSliceSizeForDevice({
+  userAgent:'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36',
   deviceMemory:4,hardwareConcurrency:8
 }),3,'a genuinely low-memory browser must retain bounded extraction batches');
 assert.equal(runtime.extractionSliceSizeForDevice({
