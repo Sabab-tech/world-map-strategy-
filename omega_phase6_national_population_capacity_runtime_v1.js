@@ -860,9 +860,15 @@
         invalidRecordCount++; return;
       }
       var key = token(resourceId);
+      var targetBucket = bucket(resourceId);
+      if (!targetBucket) { invalidRecordCount++; return; }
       var signature = [buyer, seller, dealId, requestId, key, quantity, unit.toUpperCase(), status].join('|');
       if (entries[transitId]) {
-        if (entries[transitId].signature !== signature) conflicts[transitId] = true;
+        if (entries[transitId].signature !== signature) {
+          if (!conflicts[transitId]) conflicts[transitId] = Object.create(null);
+          conflicts[transitId][entries[transitId].resourceKey] = true;
+          conflicts[transitId][key] = true;
+        }
         return;
       }
       entries[transitId] = {
@@ -871,12 +877,15 @@
         unit: unit || null
       };
     });
+    Object.keys(conflicts).forEach(function (transitId) {
+      Object.keys(conflicts[transitId]).forEach(function (resourceKey) {
+        var row = byResource[resourceKey];
+        if (row) row.conflictingTransitCount++;
+      });
+    });
     Object.keys(entries).forEach(function (transitId) {
       var entry = entries[transitId], target = byResource[entry.resourceKey];
-      if (conflicts[transitId]) {
-        target.conflictingTransitCount++;
-        return;
-      }
+      if (conflicts[transitId]) return;
       target.knownQuantity += entry.quantity;
       target.shipmentCount++;
       target.transitIds.push(transitId);
