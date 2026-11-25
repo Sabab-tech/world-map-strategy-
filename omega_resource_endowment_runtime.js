@@ -2269,28 +2269,28 @@ function batchFromExtraction(x,record){
     // Site controllers and the strategic reserve are read-only in this handler;
     // writing their unchanged full-country snapshots multiplied the transaction cost
     // by the number of extraction slices.
-    ctx.stateTransaction.set('resource.mineOutputs',mineOutputs);
-    ctx.stateTransaction.set('resource.minePaths',minePaths);
+    ctx.stateTransaction.setOwned('resource.mineOutputs',mineOutputs);
+    ctx.stateTransaction.setOwned('resource.minePaths',minePaths);
     const productionReset=previousExtractionTurn!==turn();
     if(extracted.length){
-      ctx.stateTransaction.set('resource.mineStates',current);
-      ctx.stateTransaction.set('resource.mineOutputTotals',mineOutputTotals);
-      ctx.stateTransaction.set('resource.mineProductionLedger',mineProductionLedger.slice(-MAX_MINE_HISTORY));
-      ctx.stateTransaction.set('resource.batches',existingBatches.slice(-MAX_LEDGER));
-      ctx.stateTransaction.set('resource.inventoryLots',inventoryLots);
-      ctx.stateTransaction.set('resource.warehouse',warehouse);
-      ctx.stateTransaction.set('resource.mines',mines);
-      ctx.stateTransaction.set('resource.inventory',inventory);
-      ctx.stateTransaction.set('resource.reserves',reserves);
+      ctx.stateTransaction.setOwned('resource.mineStates',current);
+      ctx.stateTransaction.setOwned('resource.mineOutputTotals',mineOutputTotals);
+      ctx.stateTransaction.setOwned('resource.mineProductionLedger',mineProductionLedger.slice(-MAX_MINE_HISTORY));
+      ctx.stateTransaction.setOwned('resource.batches',existingBatches.slice(-MAX_LEDGER));
+      ctx.stateTransaction.setOwned('resource.inventoryLots',inventoryLots);
+      ctx.stateTransaction.setOwned('resource.warehouse',warehouse);
+      ctx.stateTransaction.setOwned('resource.mines',mines);
+      ctx.stateTransaction.setOwned('resource.inventory',inventory);
+      ctx.stateTransaction.setOwned('resource.reserves',reserves);
       const strategicReserve=ctx.stateTransaction.get('resource.strategicReserve')||{
         warehouseId:'WH-'+c+'-SPR',countryId:c,type:'STRATEGIC_RESERVE_STOCKPILE',locationNodeKey:'WAREHOUSE:'+c+':SPR',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],transfers:[],lastTransferTurn:null
       };
       const tradeAvailability=computeTradeAvailability(inventory,strategicReserve.availableByResource);
-      ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
-      ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
+      ctx.stateTransaction.setOwned('resource.tradeAvailability',tradeAvailability);
+      ctx.stateTransaction.setOwned('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
     }
     // Extraction turn rollover must still commit even when every candidate is blocked.
-    if(extracted.length||productionReset)ctx.stateTransaction.set('resource.production',production);
+    if(extracted.length||productionReset)ctx.stateTransaction.setOwned('resource.production',production);
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
     perfMark('transaction-write-staging');
     if(perfEnabled)try{
