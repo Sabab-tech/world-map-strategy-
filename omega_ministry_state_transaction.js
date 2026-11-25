@@ -101,8 +101,8 @@
   // Never enumerate a complete inventory/ledger array or object: the former
   // "bounded-depth" implementation still visited every array element and every
   // object key, so staging and commit remained O(size of the full country ledger).
-  // Transactional writers are serialized by the exact write-set check; this
-  // lightweight sample also detects direct and common nested external mutations.
+  // Transactional writers are serialized by per-path revision metadata; this
+  // lightweight sample also detects common direct legacy mutations.
   function compactShape(value,depth=3,seen=new WeakSet()){
     if(value===null)return 'null';
     const type=typeof value;
