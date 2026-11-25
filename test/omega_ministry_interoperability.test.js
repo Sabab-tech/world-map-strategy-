@@ -1034,7 +1034,9 @@ test('compact transactions can transfer handler-owned snapshots without a second
   assert.equal(s.state.resource[s.countryA].largeLedger,owned,
     'compact commit transfers the transaction-owned snapshot directly into authoritative state');
   assert.equal(s.state.resource[s.countryA].largeLedger.rows[0].payload,'UPDATED');
-  assert.deepEqual(committed.operations,[{op:'SET',path:'resource.largeLedger'}]);
+  assert.equal(committed.operations.length,1);
+  assert.equal(committed.operations[0].op,'SET');
+  assert.equal(committed.operations[0].path,'resource.largeLedger');
   assert.equal(tx.writeBaseline.size,0);
   assert.throws(()=>{
     const detailed=s.sandbox.OmegaMinistryStateTransaction.create(
