@@ -223,6 +223,18 @@
       return this.includeOperationValues?clone(value):value;
     }
 
+    setOwned(path,value){
+      this._assertOpen();
+      if(this.includeOperationValues)throw new Error('STATE_TRANSACTION_SET_OWNED_REQUIRES_COMPACT_MODE');
+      const p=this._assertOwnedPath(path);
+      this._captureWriteBaseline(p);
+      // Ownership-transfer path for handlers that built the value from get()'s
+      // detached snapshot. Do not mutate or retain the value after this call.
+      // This avoids a second full deep clone while preserving transaction isolation.
+      this.operations.push({op:'SET',path:p,before:undefined,after:value});
+      return value;
+    }
+
     delete(path){
       this._assertOpen();
       const p=this._assertOwnedPath(path);
