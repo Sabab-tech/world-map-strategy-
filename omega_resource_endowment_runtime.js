@@ -141,6 +141,21 @@
   let siteExecutionRowsCacheTurn=null;
   const occurrenceRowsCache=new Map();
   let occurrenceRowsCacheTurn=null;
+  const MAX_COUNTRY_INDEX_CACHE_ENTRIES=4;
+  function countryIndexCacheGet(cache,countryId){
+    const key=canonical(countryId);
+    if(!cache.has(key))return null;
+    const value=cache.get(key);
+    cache.delete(key);cache.set(key,value);
+    return value;
+  }
+  function countryIndexCacheSet(cache,countryId,value){
+    const key=canonical(countryId);
+    if(cache.has(key))cache.delete(key);
+    cache.set(key,value);
+    while(cache.size>MAX_COUNTRY_INDEX_CACHE_ENTRIES)cache.delete(cache.keys().next().value);
+    return value;
+  }
   let mineSiteReferenceCacheYear=null;
   let engineDepositKeySource=null,engineDepositKeySourceLength=-1,engineDepositKeySet=new Set(),engineDepositKeyBuildCount=0;
   // ResourceMinistryEngine publishes its deposit array as a stable data snapshot. Build
@@ -1142,7 +1157,7 @@
   function occurrenceRows(c){
     const reg=g.__OmegaResourceIdentityRegistry;const e=engine();const rr=g.__OmegaResourceReserveRegistry;if(!reg||!e||!rr)return[];
     const wanted=canonical(c),siteReferences=mineSiteReferenceRows(wanted);
-    const reserveStates=rr.reserveStates||null,cached=occurrenceRowsCache.get(wanted);
+    const reserveStates=rr.reserveStates||null,cached=countryIndexCacheGet(occurrenceRowsCache,wanted);
     if(cached&&cached.registry===reg&&cached.engine===e&&cached.reserveRegistry===rr&&
        cached.reserveStates===reserveStates&&cached.siteReferences===siteReferences){
       for(const row of cached.rows){
@@ -1339,7 +1354,7 @@
     }catch(error){
       g.__OmegaCanonicalSiteExecutionBridgeError=String(error?.message||error);
     }
-    occurrenceRowsCache.set(wanted,{
+    countryIndexCacheSet(occurrenceRowsCache,wanted,{
       registry:reg,engine:e,reserveRegistry:rr,reserveStates,siteReferences,rows:out
     });
     return out;
@@ -1481,7 +1496,7 @@ function batchFromExtraction(x,record){
     const p=profile(cid)||{},siteReferences=mineSiteReferenceRows(cid);
     const identityRegistry=g.__OmegaResourceIdentityRegistry||null,resourceEngine=engine();
     const reserveRegistry=g.__OmegaResourceReserveRegistry||null,reserveStates=reserveRegistry?.reserveStates||null;
-    const cached=siteExecutionRowsCache.get(cid);
+    const cached=countryIndexCacheGet(siteExecutionRowsCache,cid);
     const cacheValid=cached&&cached.profile===p&&cached.siteReferences===siteReferences&&
       cached.registry===identityRegistry&&cached.engine===resourceEngine&&
       cached.reserveRegistry===reserveRegistry&&cached.reserveStates===reserveStates&&Array.isArray(cached.rows);
@@ -1623,7 +1638,7 @@ function batchFromExtraction(x,record){
       list.forEach(name=>add({name,sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+canonical(c)+'.hydrocarbon_resource_base.'+key},
         null,key==='oil'?'crude_oil':'natural_gas',key==='oil'?'OIL_FIELD':'GAS_FIELD'));
     }
-    if(requestedOccurrenceKeys.size===0)siteExecutionRowsCache.set(cid,{
+    if(requestedOccurrenceKeys.size===0)countryIndexCacheSet(siteExecutionRowsCache,cid,{
       profile:p,siteReferences,registry:identityRegistry,engine:resourceEngine,
       reserveRegistry,reserveStates,rows
     });
@@ -1836,6 +1851,27 @@ function batchFromExtraction(x,record){
     }
     const selected=Array.isArray(cmd?.payload?.occurrenceKeys)&&cmd.payload.occurrenceKeys.length
       ?rows.filter(x=>cmd.payload.occurrenceKeys.includes(x.occurrenceKey)):rows;
+    // Build lookup indexes once. Repeated per-occurrence scans over growing ledgers
+    // make a selected-site extraction O(history × selected sites).
+    const firstPositiveProductionByOccurrence=new Map(),committedProductionByOccurrence=new Map();
+    const extractionTurn=turn();
+    for(const row of mineProductionLedger){
+      const key=String(row?.occurrenceKey||row?.mineId||'').trim();
+      if(!key||n(row?.turn??row?.simulationTurn)!==extractionTurn||(n(row?.quantity)||0)<=0)continue;
+      if(!firstPositiveProductionByOccurrence.has(key))firstPositiveProductionByOccurrence.set(key,row);
+      if(String(row?.batchId||'').trim()&&!committedProductionByOccurrence.has(key))
+        committedProductionByOccurrence.set(key,row);
+    }
+    const existingBatchById=new Map();
+    for(const batch of existingBatches){
+      const batchId=String(batch?.batchId||'');
+      if(!existingBatchById.has(batchId))existingBatchById.set(batchId,batch);
+    }
+    const extractionRecordByIdAndOccurrence=new Map();
+    for(const row of ledger){
+      const key=String(row?.extractionId||'')+'\\u0000'+String(row?.occurrenceKey||'');
+      if(!extractionRecordByIdAndOccurrence.has(key))extractionRecordByIdAndOccurrence.set(key,row);
+    }
     const extracted=[];
     const replayedRecords=[];
     const blocked=[];
@@ -1908,27 +1944,21 @@ function batchFromExtraction(x,record){
       if(!Array.isArray(existingPath.stages))existingPath.stages=[];
       if(!Array.isArray(existingPath.batchIds))existingPath.batchIds=[];
       if(!Array.isArray(existingPath.inventoryAllocations))existingPath.inventoryAllocations=[];
-      existingPath.stages.push({stage:'EXTRACTION_SCAN',turn:turn()});
-      existingPath.lastTurn=turn();
+      const currentTurn=turn();
+      if(!existingPath.stages.some(stage=>stage.stage==='EXTRACTION_SCAN'&&n(stage.turn)===currentTurn))
+        existingPath.stages.push({stage:'EXTRACTION_SCAN',turn:currentTurn});
+      existingPath.lastTurn=currentTurn;
       minePaths[x.occurrenceKey]=existingPath;
-      const alreadyExtractedThisTurn=mineProductionLedger.some(row=>
-        n(row?.turn??row?.simulationTurn)===turn()&&
-        String(row?.occurrenceKey||row?.mineId||'')===String(x.occurrenceKey)&&
-        (n(row?.quantity)||0)>0&&String(row?.batchId||'').trim()
-      );
+      const occurrenceKey=String(x.occurrenceKey);
+      const alreadyExtractedThisTurn=committedProductionByOccurrence.has(occurrenceKey);
       // Replay the already committed extraction event for downstream logistics retries; never re-add its stock.
       if(alreadyExtractedThisTurn){
-        const priorRecord=mineProductionLedger.find(row=>
-          n(row?.turn??row?.simulationTurn)===turn()&&
-          String(row?.occurrenceKey||row?.mineId||'')===String(x.occurrenceKey)&&
-          (n(row?.quantity)||0)>0
-        );
+        const priorRecord=firstPositiveProductionByOccurrence.get(occurrenceKey);
         const priorBatchId=String(priorRecord?.batchId||'');
-        const priorBatch=existingBatches.find(row=>String(row?.batchId||'')===priorBatchId);
+        const priorBatch=existingBatchById.get(priorBatchId);
         if(priorRecord&&priorBatch){
-          const committedRecord=ledger.find(row=>
-            String(row?.extractionId||'')===String(priorRecord.productionId||'')&&
-            String(row?.occurrenceKey||'')===String(x.occurrenceKey)
+          const committedRecord=extractionRecordByIdAndOccurrence.get(
+            String(priorRecord.productionId||'')+'\\u0000'+occurrenceKey
           );
           replayedRecords.push(committedRecord?{...clone(committedRecord),producedBatch:clone(priorBatch)}:{
             extractionId:String(priorRecord.productionId||('EXT-'+turn()+'-'+c+'-'+String(x.occurrenceKey))),
@@ -1949,15 +1979,23 @@ function batchFromExtraction(x,record){
         }
       }
       const markPathBlocked=(reason,details={})=>{
+        const blockedTurn=turn();
         existingPath.status='BLOCKED';existingPath.blockReason=String(reason||'EXTRACTION_NOT_APPROVED');
-        existingPath.stages.push({stage:'EXTRACTION_BLOCKED',turn:turn(),status:'BLOCKED',reason:existingPath.blockReason,...clone(details)});
-        existingPath.lastTurn=turn();minePaths[x.occurrenceKey]=existingPath;
+        if(!existingPath.stages.some(stage=>stage.stage==='EXTRACTION_BLOCKED'&&
+          n(stage.turn)===blockedTurn&&String(stage.reason||'')===existingPath.blockReason)){
+          existingPath.stages.push({stage:'EXTRACTION_BLOCKED',turn:blockedTurn,status:'BLOCKED',reason:existingPath.blockReason,...clone(details)});
+        }
+        existingPath.lastTurn=blockedTurn;minePaths[x.occurrenceKey]=existingPath;
         const siteKey=String(x.siteReferenceKey||''),sitePath=siteKey&&siteKey!==String(x.occurrenceKey)?minePaths[siteKey]:null;
         if(sitePath&&!(sitePath.batchIds||[]).length){
           sitePath.status='BLOCKED';sitePath.blockReason=existingPath.blockReason;
           sitePath.stages=Array.isArray(sitePath.stages)?sitePath.stages:[];
-          sitePath.stages.push({stage:'LINKED_OCCURRENCE_BLOCKED',turn:turn(),status:'BLOCKED',occurrenceKey:x.occurrenceKey,reason:existingPath.blockReason});
-          sitePath.lastTurn=turn();minePaths[siteKey]=sitePath;
+          if(!sitePath.stages.some(stage=>stage.stage==='LINKED_OCCURRENCE_BLOCKED'&&
+            n(stage.turn)===blockedTurn&&String(stage.occurrenceKey||'')===String(x.occurrenceKey)&&
+            String(stage.reason||'')===existingPath.blockReason)){
+            sitePath.stages.push({stage:'LINKED_OCCURRENCE_BLOCKED',turn:blockedTurn,status:'BLOCKED',occurrenceKey:x.occurrenceKey,reason:existingPath.blockReason});
+          }
+          sitePath.lastTurn=blockedTurn;minePaths[siteKey]=sitePath;
         }
       };
       const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
