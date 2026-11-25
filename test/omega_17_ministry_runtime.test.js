@@ -229,9 +229,6 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
     'resource summary must be reused across defense, resource and statistics ministries');
   assert.equal(fullResourceStateReads,0,
     'resource ministry must reuse observed inventory/deposit projections instead of cloning the full ledger');
-  runtime.tick('defense',16.7,43,{policies:new Map(),knowledgeGraph:new Map(),goalStack:[]},null);
-  assert.equal(describeCalls.get('economy.gdp'),2,
-    'shared descriptors must be refreshed on the next committed turn');
 
   const health=runtime.health();
   assert.equal(health.version,RUNTIME_VERSION);
@@ -250,6 +247,9 @@ test('OMEGA canonical 17-ministry runtime is independently engine-backed and bin
     17,
     'both runtime event sinks must report all 17 ministries'
   );
+  runtime.tick('defense',16.7,43,{policies:new Map(),knowledgeGraph:new Map(),goalStack:[]},null);
+  assert.equal(describeCalls.get('economy.gdp'),2,
+    'shared descriptors must be refreshed on the next committed turn');
 
   const ministrySource=fs.readFileSync(new URL('../ministry_engine.js',import.meta.url),'utf8');
   const databaseOffset=ministrySource.indexOf('ministriesDatabase:');
