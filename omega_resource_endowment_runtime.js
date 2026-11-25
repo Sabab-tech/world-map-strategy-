@@ -1198,10 +1198,6 @@
       }
     };
     scoreCandidates(canonicalSiteCandidates(wanted));
-    // Some legacy catalog rows are hydrated through alias/identity overlays after the
-    // country-resource index is first built. Preserve the original full-catalog match
-    // as a correctness fallback when the narrow candidate set cannot resolve a site.
-    if(bestScore<0.25)scoreCandidates(Object.values(canonicalSiteCatalogMap||{}));
     const resolved=bestScore>=0.25?String(best?.siteId||''):null;
     if(canonicalSiteMatchCache.size>8192)canonicalSiteMatchCache.clear();
     canonicalSiteMatchCache.set(matchKey,resolved);
