@@ -408,6 +408,39 @@ function provisionSimulationInfrastructure(countryId){
     e.unemployment_rate=10;
   }
 }
+async function provisionSiteTransportFixture(site){
+  const request={countryId:site.countryId,siteId:site.siteId,quantity:1};
+  let preview=await industry.previewSiteTransport(request);
+  if(preview?.status==='READY')return{status:'READY',provisioned:[]};
+  if(preview?.reason!=='TRANSPORT_FLEET_UNAVAILABLE')
+    return{status:preview?.status||'BLOCKED',reason:preview?.reason||'SITE_ROUTE_NOT_READY',preview};
+  const zeroFleetLegs=(Array.isArray(preview.transportTypes)?preview.transportTypes:[])
+    .filter(row=>Number(row.count)===0);
+  if(!zeroFleetLegs.length)
+    return{status:'BLOCKED',reason:'ZERO_FLEET_ROUTE_HAS_NO_DERIVED_TRANSPORT_REQUIREMENT',preview};
+  const provisioned=[];
+  for(const leg of zeroFleetLegs){
+    const mode=String(leg.transportType||'').trim().toLowerCase();
+    const unit=mode==='pipeline'?'PIPELINE_LINES':'TRANSPORT_VEHICLES';
+    const required=Number(mode==='pipeline'?leg.requiredLineCount:leg.requiredVehicleCount);
+    if(!mode||!Number.isFinite(required)||required<=0)
+      return{status:'BLOCKED',reason:'SITE_ROUTE_DID_NOT_DERIVE_REQUIRED_FLEET_COUNT',
+        transportType:mode,unit,leg,preview};
+    const count=Math.ceil(required);
+    const result=industry.setTransportFleet({
+      countryId:site.countryId,siteId:site.siteId,transportType:mode,count
+    });
+    if(result?.status!=='APPLIED')
+      return{status:'BLOCKED',reason:'TEST_SITE_TRANSPORT_FLEET_PROVISION_FAILED',
+        transportType:mode,count,result,preview};
+    provisioned.push({transportType:mode,count,unit,authority:'TEST_ONLY_DERIVED_FROM_CANONICAL_ROUTE_REQUIREMENT'});
+  }
+  preview=await industry.previewSiteTransport(request);
+  if(preview?.status!=='READY')
+    return{status:'BLOCKED',reason:'TEST_SITE_TRANSPORT_ROUTE_NOT_READY_AFTER_FLEET_PROVISION',
+      provisioned,preview};
+  return{status:'READY',provisioned,route:preview};
+}
 function liveCountryState(countryId){return game.state.resource?.[countryId]||{};}
 function flowFor(countryId,batchId){
   return (runtime.countryResourceState(countryId)?.industrialNetwork?.siteFlowLedger||[])
@@ -435,6 +468,13 @@ for(let siteIndex=0;siteIndex<sites.length;siteIndex++){
   game.state.simulation.playerCountryId=site.countryId;
   game.state.simulation.session=game.state.simulation.session||{};
   game.state.simulation.session.playerCountryId=site.countryId;
+  const transportFixture=await provisionSiteTransportFixture(site);
+  if(transportFixture.status!=='READY'){
+    failures.push({siteId:site.siteId,countryId:site.countryId,resourceId:site.resourceId,
+      stage:'TRANSPORT_FIXTURE',status:transportFixture.status,reason:transportFixture.reason,
+      detail:transportFixture});
+    continue;
+  }
   const result=await industry.executeSitePipeline({
     countryId:site.countryId,siteId:site.siteId,resourceId:site.resourceId,
     quantity:1,autoCommissionFactory:true
