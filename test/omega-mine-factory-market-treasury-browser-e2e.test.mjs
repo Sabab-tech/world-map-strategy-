@@ -718,8 +718,10 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       g.addEventListener('OMEGA_RESOURCE_EXTRACTION_COMPLETED', extractionAuditListener, true);
       const observedEndowment = endowmentOriginal && typeof endowmentOriginal.extractCountry === 'function'
         ? Object.assign({}, endowmentOriginal, {
-            extractCountry: async function (countryId, occurrenceKeys) {
-              const result = await endowmentOriginal.extractCountry(countryId, occurrenceKeys);
+            extractCountry: async function (countryId, occurrenceKeys, options) {
+              if (!options?.quantityByOccurrence)
+                throw new Error('SITE_PIPELINE_EXTRACTION_QUANTITY_CAP_NOT_FORWARDED');
+              const result = await endowmentOriginal.extractCountry(countryId, occurrenceKeys, options);
               const row = result?.result || result || {};
               const producedRecords = (Array.isArray(row.records) ? row.records : [])
                 .filter(record => record?.producedBatch?.batchId);
