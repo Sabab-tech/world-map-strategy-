@@ -859,6 +859,7 @@ test('manual time HUD buttons step days, run selected days, pause/resume and exp
 
   dispatchAction('toggle');
   assert.equal(sim.status, 'RUNNING', 'Play must resume the canonical clock');
+  assert.equal(sim.clock.speed, 1, 'Play must always use the visible normal game speed');
   sim.clock.accumulatorMs = STEP_MS / 2;
   win.dispatchEvent(new win.CustomEvent('OMEGA_SIMULATION_CLOCK_TICK'));
   assert.equal(progressFill.style.width, '50%', 'the HUD must show partial progress before a full day commits');
