@@ -938,6 +938,9 @@ test('extraction command receipts omit large durable results but preserve the li
 
   const restored=createSandbox({state:JSON.parse(JSON.stringify(s.state))});
   restored.mesh.instance.loadState(s.mesh.instance.exportState());
+  restored.mesh.registerCommandHandler('OMEGA_RESOURCE_EXTRACT_TICK','resource',()=>{
+    throw new Error('PERSISTED_REPLAY_MUST_NOT_EXECUTE_HANDLER');
+  });
   const persistedReplay=restored.mesh.dispatchCommand('trade','OMEGA_RESOURCE_EXTRACT_TICK',s.countryA,{},options);
   assert.equal(persistedReplay.idempotentReplay,true);
   assert.equal(restored.mesh.getCommand(options.commandId).result.resultPayloadOmitted,true);
