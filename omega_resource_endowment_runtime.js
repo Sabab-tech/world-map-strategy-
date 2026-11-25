@@ -173,7 +173,11 @@
   let siteExecutionRowsCacheTurn=null;
   const occurrenceRowsCache=new Map();
   let occurrenceRowsCacheTurn=null;
-  const MAX_COUNTRY_INDEX_CACHE_ENTRIES=4;
+  // ISO-3166 alpha-3 has fewer than 256 assigned codes. Keep enough country entries
+  // for a complete sovereign roster so sequential world turns do not LRU-thrash.
+  const MAX_COUNTRY_INDEX_CACHE_ENTRIES=256;
+  let occurrenceRowsCacheBuildCount=0,occurrenceRowsCacheHitCount=0,occurrenceRowsCacheEvictionCount=0;
+  let siteExecutionRowsCacheBuildCount=0,siteExecutionRowsCacheHitCount=0,siteExecutionRowsCacheEvictionCount=0;
   function countryIndexCacheGet(cache,countryId){
     const key=canonical(countryId);
     if(!cache.has(key))return null;
@@ -185,7 +189,12 @@
     const key=canonical(countryId);
     if(cache.has(key))cache.delete(key);
     cache.set(key,value);
-    while(cache.size>MAX_COUNTRY_INDEX_CACHE_ENTRIES)cache.delete(cache.keys().next().value);
+    while(cache.size>MAX_COUNTRY_INDEX_CACHE_ENTRIES){
+      const oldestKey=cache.keys().next().value;
+      cache.delete(oldestKey);
+      if(cache===occurrenceRowsCache)occurrenceRowsCacheEvictionCount++;
+      else if(cache===siteExecutionRowsCache)siteExecutionRowsCacheEvictionCount++;
+    }
     return value;
   }
   let mineSiteReferenceCacheYear=null;
@@ -1209,7 +1218,9 @@
     const wanted=canonical(c),siteReferences=mineSiteReferenceRows(wanted);
     const reserveStates=rr.reserveStates||null,cached=countryIndexCacheGet(occurrenceRowsCache,wanted);
     if(cached&&cached.registry===reg&&cached.engine===e&&cached.reserveRegistry===rr&&
-       cached.reserveStates===reserveStates&&cached.siteReferences===siteReferences){
+       cached.reserveStates===reserveStates&&cached.reserveSize===(reserveStates?.size??null)&&
+       cached.siteReferences===siteReferences){
+      occurrenceRowsCacheHitCount++;
       for(const row of cached.rows){
         const key=String(row?.occurrenceKey||'');
         row.reserveState=rr.getReserveState?.(key)||row.reserveState;
@@ -1404,8 +1415,10 @@
     }catch(error){
       g.__OmegaCanonicalSiteExecutionBridgeError=String(error?.message||error);
     }
+    occurrenceRowsCacheBuildCount++;
     countryIndexCacheSet(occurrenceRowsCache,wanted,{
-      registry:reg,engine:e,reserveRegistry:rr,reserveStates,siteReferences,rows:out
+      registry:reg,engine:e,reserveRegistry:rr,reserveStates,
+      reserveSize:reserveStates?.size??null,siteReferences,rows:out
     });
     return out;
   }
@@ -1546,11 +1559,14 @@ function batchFromExtraction(x,record){
     const p=profile(cid)||{},siteReferences=mineSiteReferenceRows(cid);
     const identityRegistry=g.__OmegaResourceIdentityRegistry||null,resourceEngine=engine();
     const reserveRegistry=g.__OmegaResourceReserveRegistry||null,reserveStates=reserveRegistry?.reserveStates||null;
+    const reserveSize=reserveStates?.size??null;
     const cached=countryIndexCacheGet(siteExecutionRowsCache,cid);
     const cacheValid=cached&&cached.profile===p&&cached.siteReferences===siteReferences&&
       cached.registry===identityRegistry&&cached.engine===resourceEngine&&
-      cached.reserveRegistry===reserveRegistry&&cached.reserveStates===reserveStates&&Array.isArray(cached.rows);
+      cached.reserveRegistry===reserveRegistry&&cached.reserveStates===reserveStates&&
+      cached.reserveSize===reserveSize&&Array.isArray(cached.rows);
     if(cacheValid&&requestedOccurrenceKeys.size===0){
+      siteExecutionRowsCacheHitCount++;
       const saved=existing?.mineStates&&typeof existing.mineStates==='object'?existing.mineStates:{};
       const reserveCtor=(g.GSRSK_Part05||g.GSRSK_ResourceReserveExtractionEngine).ReserveState;
       for(const row of cached.rows){
@@ -1689,10 +1705,13 @@ function batchFromExtraction(x,record){
       list.forEach(name=>add({name,sourcePath:'GSRSK_Master_CountryProfiles_v14.countryProfiles.'+canonical(c)+'.hydrocarbon_resource_base.'+key},
         null,key==='oil'?'crude_oil':'natural_gas',key==='oil'?'OIL_FIELD':'GAS_FIELD'));
     }
-    if(requestedOccurrenceKeys.size===0)countryIndexCacheSet(siteExecutionRowsCache,cid,{
-      profile:p,siteReferences,registry:identityRegistry,engine:resourceEngine,
-      reserveRegistry,reserveStates,rows
-    });
+    if(requestedOccurrenceKeys.size===0){
+      siteExecutionRowsCacheBuildCount++;
+      countryIndexCacheSet(siteExecutionRowsCache,cid,{
+        profile:p,siteReferences,registry:identityRegistry,engine:resourceEngine,
+        reserveRegistry,reserveStates,reserveSize,rows
+      });
+    }
     return rows;
   }
 
@@ -3468,7 +3487,7 @@ function batchFromExtraction(x,record){
     canonicalSiteCandidates('');
     const canonicalSiteReferenceCount=[...canonicalSitesByCountry.values()].reduce((sum,rows)=>sum+rows.length,0);
     const globalCanonicalSiteCount=canonicalSiteReferenceCount||mineSiteReferenceCount||modeledSiteReferenceCount;
-    let profileDerivedExecutableAssetCount=0,profileDerivedActiveAssetCount=0,profileDerivedBlockedAssetCount=0;for(const c of countries()){const rs=state()?.resource?.[c]||{};const outs=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.values(rs.mineOutputs):[];const simOuts=outs.filter(x=>x?.simulationGenerated===true);profileDerivedExecutableAssetCount+=simOuts.length;profileDerivedActiveAssetCount+=simOuts.filter(x=>x?.status==='APPROVED'||x?.status==='PARTIALLY_APPROVED').length;profileDerivedBlockedAssetCount+=simOuts.filter(x=>String(x?.status||'').startsWith('BLOCKED')).length;} return{version:VERSION,unifiedAssetSchemaVersion:g.GSRSK_Part04?.UNIFIED_ASSET_SCHEMA_VERSION||'UNKNOWN',engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON + PER_SITE_SIMULATION_RESERVE_DATA',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,structuredMineCount,executableAssetCount,fieldAssetCount,mineSiteReferenceCount:globalCanonicalSiteCount,mineSiteControllerCount:globalCanonicalSiteCount,lastBootstrap:clone(g.__omegaResourceEndowmentLastBootstrap||null),materializedMineSiteReferenceCount:mineSiteReferenceCount,materializedMineSiteControllerCount:mineSiteControllerCount,modeledMineSiteReferenceCount:modeledSiteReferenceCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount,profileDerivedExecutableAssetCount,profileDerivedActiveAssetCount,profileDerivedBlockedAssetCount,siteReferenceRowIndex:{buildCount:siteReferenceRowIndexBuildCount,cacheHitCount:siteReferenceRowIndexHitCount,indexedReferenceCount:siteReferenceRowIndexIndexedCount,lookupCount:siteReferenceRowIndexLookupCount,selectedReferenceCount:siteReferenceRowIndexSelectedCount},siteReferenceSourceIndex:{canonicalCatalogBuildCount:canonicalSiteIndexBuildCount,canonicalIndexedCountryCount:canonicalSitesByCountry.size,knowledgeReferenceBuildCount:knowledgeReferenceCountryIndexBuildCount,knowledgeReferenceIndexedRowCount:knowledgeReferenceCountryIndexRowCount},fullEffortPolicy:'MODEL_DRIVEN'};
+    let profileDerivedExecutableAssetCount=0,profileDerivedActiveAssetCount=0,profileDerivedBlockedAssetCount=0;for(const c of countries()){const rs=state()?.resource?.[c]||{};const outs=rs.mineOutputs&&typeof rs.mineOutputs==='object'?Object.values(rs.mineOutputs):[];const simOuts=outs.filter(x=>x?.simulationGenerated===true);profileDerivedExecutableAssetCount+=simOuts.length;profileDerivedActiveAssetCount+=simOuts.filter(x=>x?.status==='APPROVED'||x?.status==='PARTIALLY_APPROVED').length;profileDerivedBlockedAssetCount+=simOuts.filter(x=>String(x?.status||'').startsWith('BLOCKED')).length;} return{version:VERSION,unifiedAssetSchemaVersion:g.GSRSK_Part04?.UNIFIED_ASSET_SCHEMA_VERSION||'UNKNOWN',engineReady:!!e?.isReady,dataAuthority:'RESOURCE_JSON + PER_SITE_SIMULATION_RESERVE_DATA',dataLoad:clone(e?.getDataLoadReport?.()||e?.dataLoadReport||null),identityRegistryReady:!!g.__OmegaResourceIdentityRegistry,reserveRegistryReady:!!r,countryCount:countries().length,mineCount:mines.length,structuredMineCount,executableAssetCount,fieldAssetCount,mineSiteReferenceCount:globalCanonicalSiteCount,mineSiteControllerCount:globalCanonicalSiteCount,lastBootstrap:clone(g.__omegaResourceEndowmentLastBootstrap||null),materializedMineSiteReferenceCount:mineSiteReferenceCount,materializedMineSiteControllerCount:mineSiteControllerCount,modeledMineSiteReferenceCount:modeledSiteReferenceCount,compiledReserveStates:r?.reserveStates?.size||0,batchCount,warehouseCount,latestMineOutputs,inventoryLotCount,minePathCount,profileDerivedExecutableAssetCount,profileDerivedActiveAssetCount,profileDerivedBlockedAssetCount,siteReferenceRowIndex:{buildCount:siteReferenceRowIndexBuildCount,cacheHitCount:siteReferenceRowIndexHitCount,indexedReferenceCount:siteReferenceRowIndexIndexedCount,lookupCount:siteReferenceRowIndexLookupCount,selectedReferenceCount:siteReferenceRowIndexSelectedCount},countryRowCaches:{maxEntries:MAX_COUNTRY_INDEX_CACHE_ENTRIES,occurrenceRows:{buildCount:occurrenceRowsCacheBuildCount,cacheHitCount:occurrenceRowsCacheHitCount,evictionCount:occurrenceRowsCacheEvictionCount,entryCount:occurrenceRowsCache.size},siteExecutionRows:{buildCount:siteExecutionRowsCacheBuildCount,cacheHitCount:siteExecutionRowsCacheHitCount,evictionCount:siteExecutionRowsCacheEvictionCount,entryCount:siteExecutionRowsCache.size}},siteReferenceSourceIndex:{canonicalCatalogBuildCount:canonicalSiteIndexBuildCount,canonicalIndexedCountryCount:canonicalSitesByCountry.size,knowledgeReferenceBuildCount:knowledgeReferenceCountryIndexBuildCount,knowledgeReferenceIndexedRowCount:knowledgeReferenceCountryIndexRowCount},fullEffortPolicy:'MODEL_DRIVEN'};
   }
   function init(){
     install();

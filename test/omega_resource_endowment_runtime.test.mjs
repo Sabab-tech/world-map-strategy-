@@ -1029,6 +1029,50 @@ assert.ok(selectedIndexAfterSecond.selectedReferenceCount>=selectedIndexAfterFir
 if(previousSelectedIndexProbe===undefined)delete selectedIndexBucket.mineStates[selectedIndexProbeKey];
 else selectedIndexBucket.mineStates[selectedIndexProbeKey]=previousSelectedIndexProbe;
 
+// Country row caches must survive a full multi-country turn. The former four-entry
+// LRU evicted the first country as soon as the fifth was hydrated, forcing the next
+// simulation turn to rebuild its occurrence and execution rows again.
+const cacheProbeReferences=globalThis.__OmegaResourceIdentityRegistry?.listMineSiteReferences?.()||[];
+const cacheProbeCounts=new Map();
+for(const reference of cacheProbeReferences){
+  const country=String(reference?.countryId||reference?.countryCode||reference?.countryIso3||'').trim().toUpperCase();
+  if(!/^[A-Z]{3}$/.test(country))continue;
+  cacheProbeCounts.set(country,(cacheProbeCounts.get(country)||0)+1);
+}
+const cacheProbeCountries=[...cacheProbeCounts.entries()]
+  .sort((a,b)=>a[1]-b[1]||a[0].localeCompare(b[0]))
+  .slice(0,5).map(([country])=>country);
+assert.equal(cacheProbeCountries.length,5,
+  'the runtime fixture must provide at least five resource countries for the cache-retention regression');
+for(const country of cacheProbeCountries){
+  const hydrated=await runtime.hydrateCountry(country);
+  assert.equal(hydrated?.status,'APPLIED',JSON.stringify({country,hydrated}));
+}
+// A second sweep lets the global reserve registry finish adding any country-specific
+// reserve rows before asserting stable cache reuse.
+for(const country of cacheProbeCountries){
+  const hydrated=await runtime.hydrateCountry(country);
+  assert.equal(hydrated?.status,'APPLIED',JSON.stringify({country,hydrated}));
+}
+const countryCacheBeforeRevisit=runtime.diagnostics().countryRowCaches;
+const countryCacheRevisit=await runtime.hydrateCountry(cacheProbeCountries[0]);
+assert.equal(countryCacheRevisit?.status,'APPLIED',JSON.stringify(countryCacheRevisit));
+const countryCacheAfterRevisit=runtime.diagnostics().countryRowCaches;
+assert.equal(countryCacheAfterRevisit.occurrenceRows.buildCount,countryCacheBeforeRevisit.occurrenceRows.buildCount,
+  'revisiting the first country must not rebuild its occurrence rows after five-country hydration');
+assert.equal(countryCacheAfterRevisit.siteExecutionRows.buildCount,countryCacheBeforeRevisit.siteExecutionRows.buildCount,
+  'revisiting the first country must not rebuild its site execution rows after five-country hydration');
+assert.ok(countryCacheAfterRevisit.occurrenceRows.cacheHitCount>countryCacheBeforeRevisit.occurrenceRows.cacheHitCount,
+  'occurrence rows must report a warm cache hit on the revisited country');
+assert.ok(countryCacheAfterRevisit.siteExecutionRows.cacheHitCount>countryCacheBeforeRevisit.siteExecutionRows.cacheHitCount,
+  'site execution rows must report a warm cache hit on the revisited country');
+assert.ok(countryCacheAfterRevisit.occurrenceRows.entryCount>=5&&countryCacheAfterRevisit.siteExecutionRows.entryCount>=5,
+  'both bounded country caches must retain all five active country entries');
+assert.equal(countryCacheAfterRevisit.occurrenceRows.evictionCount,countryCacheBeforeRevisit.occurrenceRows.evictionCount,
+  'a normal five-country simulation must not evict a warm occurrence cache entry');
+assert.equal(countryCacheAfterRevisit.siteExecutionRows.evictionCount,countryCacheBeforeRevisit.siteExecutionRows.evictionCount,
+  'a normal five-country simulation must not evict a warm site execution cache entry');
+
 // Part 6 integration proof: the mine haul must be receipted at the sovereign
 // warehouse before the existing warehouse-to-factory shipment can be dispatched.
 const part6CopperSite=part6Data.records.find(site=>site.siteId==='SITE_CHL_collahuasi_copper_mine');
