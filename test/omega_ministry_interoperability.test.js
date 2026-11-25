@@ -899,6 +899,52 @@ test('command IDs are idempotent and cannot overwrite a different command',()=>{
   assert.ok(s.mesh.getIntegrityConflicts(s.countryA).some(row=>row.kind==='COMMAND_ID_COLLISION'));
 });
 
+test('extraction command receipts omit large durable results but preserve the live dispatch contract',()=>{
+  const s=createSandbox();
+  let invocations=0;
+  const records=Array.from({length:120},(_,index)=>({
+    occurrenceKey:'OCCURRENCE-'+index,
+    siteReferenceKey:'SITE_TST_'+index,
+    resourceId:'iron_ore',
+    approvedQuantity:10,
+    producedBatch:{batchId:'BATCH-'+index,provenance:{source:'TEST',notes:'X'.repeat(2048)}}
+  }));
+  s.mesh.registerCommandHandler('OMEGA_RESOURCE_EXTRACT_TICK','resource',(command,{stateTransaction})=>{
+    invocations++;
+    const inventory=stateTransaction.get('resource.inventory')||{};
+    inventory.iron_ore=(Number(inventory.iron_ore)||0)+records.length;
+    stateTransaction.set('resource.inventory',inventory);
+    return{accepted:true,countryId:s.countryA,extracted:records.length,replayed:0,blocked:0,records};
+  });
+  const options={turn:7,commandType:'OMEGA_RESOURCE_EXTRACT_TICK',commandId:'EXTRACTION-COMPACT-RECEIPT'};
+  const first=s.mesh.dispatchCommand('trade','OMEGA_RESOURCE_EXTRACT_TICK',s.countryA,{},options);
+  assert.equal(first.status,'APPLIED');
+  assert.equal(first.result.records.length,120,
+    'the active extraction caller must receive the complete handler records');
+  assert.equal(first.result.records[0].producedBatch.provenance.notes.length,2048);
+  const saved=s.mesh.getCommand(options.commandId);
+  assert.equal(saved.result.resultPayloadOmitted,true);
+  assert.equal(saved.result.recordCount,120);
+  assert.equal(saved.result.successfulRecordCount,120);
+  assert.equal(Object.hasOwn(saved.result,'records'),false,
+    'the durable receipt must not retain extraction record or batch payloads');
+  assert.ok(JSON.stringify(saved).length<5000,
+    'large extraction outputs must not increase durable command history');
+  const replay=s.mesh.dispatchCommand('trade','OMEGA_RESOURCE_EXTRACT_TICK',s.countryA,{},options);
+  assert.equal(replay.idempotentReplay,true);
+  assert.equal(replay.result.records.length,120,
+    'same-process retry must retain the full result without re-executing extraction');
+  assert.equal(invocations,1);
+
+  const restored=createSandbox({state:JSON.parse(JSON.stringify(s.state))});
+  restored.mesh.instance.loadState(s.mesh.instance.exportState());
+  const persistedReplay=restored.mesh.dispatchCommand('trade','OMEGA_RESOURCE_EXTRACT_TICK',s.countryA,{},options);
+  assert.equal(persistedReplay.idempotentReplay,true);
+  assert.equal(restored.mesh.getCommand(options.commandId).result.resultPayloadOmitted,true);
+  assert.equal(Object.hasOwn(persistedReplay.result||{},'records'),false,
+    'a restored receipt must remain compact and must not resurrect discarded batch arrays');
+});
+
 test('event IDs reject conflicting payloads while identical retries remain stable',()=>{
   const s=createSandbox();
   const options={turn:3,eventId:'PIPE-EVT-COLLISION-1'};
