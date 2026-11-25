@@ -359,7 +359,8 @@
         status:'COMPLETED',inputSourcesMs:0,contextMs:0,dependenciesMs:0,advanceTurnMs:0,
         inboxMs:0,engineMs:0,publishStateMs:0,telemetryMs:0,blackboardMs:0,eventMs:0}:null;
       let phaseStartedAt=profileEnabled?profileClock():0;
-      const interop=getInteroperability();
+      const interoperability=getInteroperability();
+      const interop=interoperability;
       const engine=getEngineRegistry()?.get?.(id);
       if(!engine || engine.id!==id || engine.independent!==true || typeof engine.execute!=='function'){
         const s=states.get(id);
