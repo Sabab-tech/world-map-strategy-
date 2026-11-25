@@ -1653,8 +1653,23 @@
         return {...clone(previousCommand),duplicate:true,idempotentReplay:true};
       }
 
+      // Keep the full payload only in the in-flight `command` passed to the
+      // authoritative handler. The durable command ledger is an idempotency
+      // receipt; retaining another deep copy of large inventory/resource payloads
+      // makes every save grow with historical command input size.
       const row={
-        ...clone(command),
+        schemaVersion:command.schemaVersion,
+        commandId:command.commandId,
+        commandType:command.commandType,
+        actionId:command.actionId,
+        sourceMinistryId:command.sourceMinistryId,
+        countryId:command.countryId,
+        simulationTurn:command.simulationTurn,
+        stateOwnerMinistryId:command.stateOwnerMinistryId,
+        correlationId:command.correlationId,
+        causationId:command.causationId,
+        provenance:clone(command.provenance||null),
+        payloadOmitted:true,
         contentFingerprint:commandContentFingerprint,
         status:'CREATED',
         statusHistory:[{status:'CREATED',simulationTurn:turn}],
