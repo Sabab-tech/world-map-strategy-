@@ -148,22 +148,81 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const sites = g.Omega?.IndividualResourceSiteBinding?.sites || [];
       const locations = Object.keys(g.Game?.locationsRegistry || {});
       const runtime = g.OmegaCountryRuntimeData;
+      const gameState = g.Game?.state || {};
+      const profileCodes = new Set(profileByCountry.keys());
+      const sitesByCountry = new Map();
+      for (const site of sites) {
+        const country = String(site?.countryId || site?.identity?.countryIso3 || '').trim().toUpperCase();
+        const resource = token(site?.real?.resourceId || site?.sourceSiteRecord?.resourceId ||
+          site?.identity?.resourceTypeId || site?.sourceSiteRecord?.resourceTypeId);
+        if (!profileCodes.has(country) || !resource) continue;
+        let rows = sitesByCountry.get(country);
+        if (!rows) sitesByCountry.set(country, rows = []);
+        rows.push(site);
+      }
+      const locationByCountry = new Map();
+      for (const key of locations) {
+        const identity = runtime?.resolveCountry?.(key);
+        const code = String(identity?.iso3 || '').trim().toUpperCase();
+        if (profileCodes.has(code) && !locationByCountry.has(code)) locationByCountry.set(code, key);
+      }
+      const countryEntry = (map, code) => {
+        if (!map || typeof map !== 'object') return null;
+        if (Object.prototype.hasOwnProperty.call(map, code)) return map[code];
+        const key = Object.keys(map).find(value => String(value).trim().toUpperCase() === code);
+        return key === undefined ? null : map[key];
+      };
+      const readPath = (root, path) => path.split('.').reduce((value, key) =>
+        value && typeof value === 'object' ? value[key] : null, root);
+      const relationshipMaps = code => {
+        const foreign = countryEntry(gameState.foreign, code);
+        const tradeState = countryEntry(gameState.trade, code);
+        return [
+          readPath(foreign, 'foreign.relations'),
+          readPath(tradeState, 'trade.relations'),
+          countryEntry(gameState.relations, code)
+        ].filter(value => value && typeof value === 'object');
+      };
+      const treatyMap = code => readPath(countryEntry(gameState.foreign, code), 'foreign.treaties');
+      const activeTreaty = treaty => !!treaty &&
+        /SIGNED|RATIFIED|ACTIVE|IMPLEMENTED/.test(String(treaty.status || treaty.stage || '').toUpperCase());
+      const fundedBalanceByCountry = new Map();
+      for (const code of profileCodes) fundedBalanceByCountry.set(code, bankBalance(code));
+      const possibleBuyersBySeller = new Map();
+      const addPossiblePair = (buyer, seller) => {
+        if (!profileCodes.has(buyer) || !profileCodes.has(seller) || buyer === seller) return;
+        let buyers = possibleBuyersBySeller.get(seller);
+        if (!buyers) possibleBuyersBySeller.set(seller, buyers = new Set());
+        buyers.add(buyer);
+      };
+      // Index the actual relationship/treaty edges once. Avoid the former nested
+      // country-by-country review loop (up to 197 x 197 expensive trade API calls).
+      for (const owner of profileCodes) {
+        for (const map of relationshipMaps(owner)) {
+          for (const [otherRaw, relationship] of Object.entries(map)) {
+            const other = String(otherRaw || '').trim().toUpperCase();
+            if (!profileCodes.has(other) || relationship?.trade_agreement !== true) continue;
+            addPossiblePair(owner, other);
+            addPossiblePair(other, owner);
+          }
+        }
+        for (const [otherRaw, treaty] of Object.entries(treatyMap(owner) || {})) {
+          const other = String(otherRaw || '').trim().toUpperCase();
+          if (activeTreaty(treaty)) addPossiblePair(owner, other);
+        }
+      }
       const candidates = [];
       for (const [seller, profile] of profileByCountry) {
         const factoryCounts = baseline.getCountryBaseline(seller)?.factoryCounts || {};
         if (!(Number(factoryCounts.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT || 0) > 0)) continue;
-        const mineSites = sites.filter(site => {
-          if (String(site?.countryId || site?.identity?.countryIso3 || '').toUpperCase() !== seller) return false;
-          return !!token(site?.real?.resourceId || site?.sourceSiteRecord?.resourceId ||
-            site?.identity?.resourceTypeId || site?.sourceSiteRecord?.resourceTypeId);
-        });
+        const mineSites = sitesByCountry.get(seller) || [];
         if (!mineSites.length) continue;
         const currency = trade.currencyOf(seller);
         const sourceResourceId = token(mineSites[0]?.real?.resourceId ||
           mineSites[0]?.sourceSiteRecord?.resourceId || mineSites[0]?.identity?.resourceTypeId ||
           mineSites[0]?.sourceSiteRecord?.resourceTypeId);
-        const buyers = [...profileByCountry.keys()].filter(code => code !== seller).map(code => {
-          const treasury = bankBalance(code);
+        const buyers = [...(possibleBuyersBySeller.get(seller) || [])].map(code => {
+          const treasury = fundedBalanceByCountry.get(code);
           const fxRate = trade.fxRate(code, seller);
           if (!(treasury > 100) || fxRate === null) return null;
           const review = trade.reviewRequest({
@@ -176,14 +235,12 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           return {code,treasury,relationScore,fxRate,agreement:true};
         }).filter(Boolean).sort((a,b) => b.treasury-a.treasury);
         if (!buyers.length) continue;
-        const matchingLocation = locations.find(key => {
-          const identity = runtime?.resolveCountry?.(key);
-          return String(identity?.iso3 || '').toUpperCase() === seller;
-        });
+        const matchingLocation = locationByCountry.get(seller) || null;
         const countryName = String(profile.name || profile.officialName || matchingLocation || seller);
         const searchName = matchingLocation || countryName;
         candidates.push({ seller, profile, countryName, searchName, currency,
-          mineSiteCount:mineSites.length, buyer:buyers[0].code });
+          mineSiteCount:mineSites.length, buyer:buyers[0].code,
+          buyers:buyers.map(row => row.code) });
       }
       candidates.sort((a,b) => b.mineSiteCount-a.mineSiteCount);
       const chosen = candidates.find(row => row.searchName) || null;
@@ -348,19 +405,23 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const sourceResourceId = token(mineSites[0]?.real?.resourceId ||
         mineSites[0]?.sourceSiteRecord?.resourceId || mineSites[0]?.identity?.resourceTypeId ||
         mineSites[0]?.sourceSiteRecord?.resourceTypeId);
-      const approvedBuyers = [...profileByCountry.keys()].filter(code => code !== seller).map(code => {
-        const treasury = bankBalance(code);
-        const fxRate = trade.fxRate(code, seller);
-        if (!(treasury > 100) || fxRate === null) return null;
-        const review = trade.reviewRequest({
-          countryId:code,targetCountryId:seller,resourceId:sourceResourceId,
-          quantity:1,unitPrice:1,needPressure:0.5
-        });
-        const relationScore = Number(review?.relationScore);
-        if (review?.agreement !== true || !Number.isFinite(relationScore) || relationScore < 0.25)
-          return null;
-        return {code,treasury,relationScore,fxRate,agreement:true};
-      }).filter(Boolean).sort((a,b) => b.treasury-a.treasury);
+      const bootstrap = g.__omegaMineMarketTreasuryPlayerBootstrap || {};
+      const bootstrapBuyerCodes = Array.isArray(bootstrap.buyers) ? bootstrap.buyers :
+        (bootstrap.buyer ? [bootstrap.buyer] : []);
+      const approvedBuyers = [...new Set(bootstrapBuyerCodes)].filter(code =>
+        code !== seller && profileByCountry.has(code)).map(code => {
+          const treasury = bankBalance(code);
+          const fxRate = trade.fxRate(code, seller);
+          if (!(treasury > 100) || fxRate === null) return null;
+          const review = trade.reviewRequest({
+            countryId:code,targetCountryId:seller,resourceId:sourceResourceId,
+            quantity:1,unitPrice:1,needPressure:0.5
+          });
+          const relationScore = Number(review?.relationScore);
+          if (review?.agreement !== true || !Number.isFinite(relationScore) || relationScore < 0.25)
+            return null;
+          return {code,treasury,relationScore,fxRate,agreement:true};
+        }).filter(Boolean).sort((a,b) => b.treasury-a.treasury);
       const candidateCountries = approvedBuyers.length ? [{
         seller, profile, currency, mineSites, stateFactoryCount, buyers:approvedBuyers
       }] : [];
