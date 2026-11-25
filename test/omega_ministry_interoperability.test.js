@@ -166,6 +166,34 @@ function createSandbox(options={}){
   return {sandbox,rows,countryA,countryB,state,ids,runtime,mesh,kernel,store,blackboard,tick,tickAll,registerTradeAction};
 }
 
+test('all 17 ministry ticks perform interoperability expiry once per simulation turn',()=>{
+  const s=createSandbox();
+  const calls=[];
+  const instance=s.mesh.instance;
+  const original=instance.advanceTurn.bind(instance);
+  instance.advanceTurn=function(turn){calls.push(turn);return original(turn);};
+  s.tickAll(4);
+  assert.deepEqual(calls,[4]);
+  s.tickAll(4);
+  assert.deepEqual(calls,[4],'repeated ticks for the same turn must not rescan expiry ledgers');
+  s.tickAll(5);
+  assert.deepEqual(calls,[4,5],'a new turn must run one fresh expiry sweep');
+});
+
+test('publishState can return a publication receipt without cloning the peer read model',()=>{
+  const s=createSandbox();
+  const result=s.mesh.publishState('finance',{
+    context:{countryId:s.countryA,turn:1},
+    domainExecution:{},
+    runtimeState:{status:'RUNNING',active:true}
+  },{returnPeerState:false});
+  assert.equal(result.status,'PUBLISHED');
+  assert.equal(result.ministryId,'finance');
+  const snapshot=s.mesh.getPeerState('finance','finance',s.countryA,{currentTurn:1});
+  assert.ok(snapshot);
+  assert.equal(snapshot.countryId,s.countryA);
+});
+
 test('ISO3 country keys bypass semantic resolution in interop and state transactions',()=>{
   const s=createSandbox();
   const registry=s.sandbox.OmegaCanonicalIdentityRegistry;

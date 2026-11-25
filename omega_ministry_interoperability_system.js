@@ -1299,7 +1299,7 @@
       return clone(list.slice(-10));
     }
 
-    publishState(ministryId,packet={}){
+    publishState(ministryId,packet={},options={}){
       const id=String(ministryId||'');
       if(!this.ids.includes(id))throw new Error('UNKNOWN_MINISTRY:'+id);
       const snapshot=this._compilePublicSnapshot(id,packet);
@@ -1314,6 +1314,10 @@
         stateRevision:snapshot.stateRevision,
         dataAvailability:snapshot.dataAvailability
       },snapshot.simulationTurn);
+      if(options.returnPeerState===false){
+        return{status:'PUBLISHED',ministryId:id,countryId:snapshot.countryId,
+          simulationTurn:snapshot.simulationTurn,stateRevision:snapshot.stateRevision};
+      }
       return this.getPeerState(id,id,snapshot.countryId,{currentTurn:snapshot.simulationTurn});
     }
 
