@@ -869,7 +869,12 @@
   }
   function dispatch(type,c,payload){
     const m=interop();if(!m?.dispatchCommand)return{status:'UNAVAILABLE',reason:'MINISTRY_INTEROPERABILITY_UNAVAILABLE'};
-    try{return m.dispatchCommand('resource',type,canonical(c),payload,{turn:turn(),commandType:type,correlationId:payload?.correlationId||payload?.extractionId||null});}
+    const scheduleRowId=String(payload?.scheduleRowId||'').trim();
+    const options={turn:turn(),commandType:type,correlationId:payload?.correlationId||payload?.extractionId||null};
+    // A deterministic, per-turn schedule-row identity makes retries idempotent without
+    // collapsing sibling slices into the same command or re-applying their state writes.
+    if(scheduleRowId)options.commandId='OMEGA-RESOURCE-EXTRACTION:'+scheduleRowId;
+    try{return m.dispatchCommand('resource',type,canonical(c),payload,options);}
     catch(e){return{status:'FAILED',reason:String(e?.message||e)};}
   }
   function emit(type,c,payload={},commandId=null){
@@ -2323,14 +2328,19 @@ function batchFromExtraction(x,record){
     install();
     return dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',canonical(c),{correlationId:'RESOURCE-HYDRATE-MANUAL-'+turn()+'-'+canonical(c)});
   }
-  async function extractCountry(c,occurrenceKeys=null){
+  async function extractCountry(c,occurrenceKeys=null,options={}){
     install();
     const perfEnabled=g.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
     const perfNow=()=>typeof performance!=='undefined'&&typeof performance.now==='function'?performance.now():Date.now();
     const dispatchStartedAt=perfEnabled?perfNow():0;
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     if(strategicPolicy?.loadRules){const ready=await strategicPolicy.loadRules();if(ready?.status!=='READY')return{status:'BLOCKED',reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY',detail:ready};}
-    const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',canonical(c),{occurrenceKeys:Array.isArray(occurrenceKeys)?occurrenceKeys:undefined,correlationId:'RESOURCE-EXTRACT-MANUAL-'+turn()+'-'+canonical(c)});
+    const scheduleRowId=String(options?.scheduleRowId||'').trim()||null;
+    const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',canonical(c),{
+      occurrenceKeys:Array.isArray(occurrenceKeys)?occurrenceKeys:undefined,
+      scheduleRowId:scheduleRowId||undefined,
+      correlationId:scheduleRowId||('RESOURCE-EXTRACT-MANUAL-'+turn()+'-'+canonical(c))
+    });
     const publishStartedAt=perfEnabled?perfNow():0;
     publishCommittedExtractionEvents(c,result);
     if(perfEnabled)try{
@@ -2352,9 +2362,10 @@ function batchFromExtraction(x,record){
     const lowCoreDesktop=Number.isFinite(threads)&&threads>0&&threads<=2;
     const handheld=/Android|Mobile|iPhone|iPad/i.test(userAgent);
     // Mobile and low-memory devices stay on the smallest bounded slice. A
-    // two-core desktop uses an intermediate slice; wider desktops can process
-    // larger bounded batches without treating two logical cores as mobile.
-    return handheld||lowMemory?3:lowCoreDesktop?8:32;
+    // two-core desktop uses an intermediate slice; capable desktops use larger
+    // bounded schedule rows so each turn does not re-commit the same country ledger
+    // once per 32 occurrences.
+    return handheld||lowMemory?3:lowCoreDesktop?8:128;
   }
   async function startCountryProduction(countryId,siteIds=null,options={}){
     const perfEnabled=g.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
@@ -2446,11 +2457,12 @@ function batchFromExtraction(x,record){
     const sliceSize=extractionSliceSizeForDevice(nav),sliceResults=[];
     for(let offset=0;offset<candidates.length;offset+=sliceSize){
       const slice=candidates.slice(offset,offset+sliceSize);
+      const scheduleRowId=['RESOURCE_EXTRACTION',c,'TURN',t,'SLICE',Math.floor(offset/sliceSize)+1].join(':');
       const sliceStartedAt=perfEnabled?perfNow():0;
-      const result=await extractCountry(c,slice);
+      const result=await extractCountry(c,slice,{scheduleRowId});
       if(perfEnabled)perfSliceDurations.push(Number((perfNow()-sliceStartedAt).toFixed(2)));
       const payload=result?.result||result||{};
-      sliceResults.push({result,payload,records:Array.isArray(payload.records)?payload.records:[],
+      sliceResults.push({scheduleRowId,occurrenceKeys:slice.slice(),result,payload,records:Array.isArray(payload.records)?payload.records:[],
         blocked:Array.isArray(payload.blocked)?payload.blocked.length:Math.max(0,n(payload.blocked)||0)});
       if(offset+sliceSize<candidates.length)await yieldResourceExtractionToUi();
     }
@@ -2463,7 +2475,12 @@ function batchFromExtraction(x,record){
     if(perfEnabled)try{const profile=g.__OMEGA_RESOURCE_EXTRACTION_PROFILE__||{},phaseStats=Object.fromEntries(Object.entries(profile.phaseStats||{}).map(([key,value])=>[key,{totalMs:Number(value.totalMs.toFixed(1)),count:value.count,maxMs:Number(value.maxMs.toFixed(1))}]));const sliceTotal=perfSliceDurations.reduce((sum,value)=>sum+value,0);console.info('[SAB34_PROGRESS] RESOURCE_ECONOMY_EXTRACTION_PROFILE '+JSON.stringify({countryId:c,turn:t,candidateOccurrenceCount:candidates.length,sliceSize,sliceCount:perfSliceDurations.length,sliceAverageMs:Number((sliceTotal/Math.max(1,perfSliceDurations.length)).toFixed(1)),sliceMaxMs:Number(Math.max(0,...perfSliceDurations).toFixed(1)),totalMs:Number((perfNow()-perfStartedAt).toFixed(1)),handlerCount:profile.handlerCount,totalHandlerMs:Number((profile.totalHandlerMs||0).toFixed(1)),siteRowsCacheHits:profile.siteRowsCacheHits,siteRowsCacheMisses:profile.siteRowsCacheMisses,siteRowsRequestedOccurrenceCalls:profile.siteRowsRequestedOccurrenceCalls,siteModelCallCount:profile.siteModelCallCount,siteModelBuildMs:Number((profile.siteModelBuildMs||0).toFixed(1)),dispatchAndCommitMs:Number((profile.dispatchAndCommitMs||0).toFixed(1)),eventPublishMs:Number((profile.eventPublishMs||0).toFixed(1)),phaseBreakdownMs:Object.fromEntries(Object.entries(profile.phaseBreakdownMs||{}).map(([key,value])=>[key,Number(value.toFixed(1))])),phaseStats}));}catch(_){}
     return{status,countryId:c,turn:t,requestedSiteCount:requestedSites?.size||null,
       attemptedOccurrenceCount:candidates.length,processedOccurrenceCount:records.length,
-      extractionSliceCount:sliceResults.length,startedSiteCount:producingSites.size,
+      extractionSliceCount:sliceResults.length,
+      scheduleRows:sliceResults.map(row=>({rowId:row.scheduleRowId,turn:t,countryId:c,
+        occurrenceCount:row.occurrenceKeys.length,occurrenceKeys:row.occurrenceKeys.slice(),
+        completedCount:row.records.length,blockedCount:row.blocked,
+        status:row.result?.status==='APPLIED'?'COMPLETED':'FAILED'})),
+      startedSiteCount:producingSites.size,
       extractedRecordCount:produced.length,blockedOccurrenceCount:blocked,
       reason:produced.length?null:(failed?.payload?.reason||failed?.result?.reason||'NO_SITE_PRODUCTION_APPROVED'),
       records:clone(records),dispatchStatus:failed?'PARTIALLY_APPLIED':'APPLIED'};
