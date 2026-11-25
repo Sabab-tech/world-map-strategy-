@@ -440,6 +440,10 @@
       this.requestLedger=new Map();
       this.events=new Map();
       this.commands=new Map();
+      // Only recent in-process extraction results are retained for idempotent retries.
+      // Durable command receipts keep a compact summary instead of duplicating full
+      // inventory/batch records that already live in authoritative country state.
+      this.transientCommandResults=new Map();
       this.integrityConflicts=[];
       this.commandHandlers=new Map();
       this._receivedMessageIds=new Set();
@@ -1650,7 +1654,12 @@
           throw new Error('COMMAND_ID_COLLISION');
         }
         this.metrics.duplicate+=1;
-        return {...clone(previousCommand),duplicate:true,idempotentReplay:true};
+        const replay=clone(previousCommand);
+        const transientResult=this.transientCommandResults.get(commandId);
+        if(transientResult!==undefined)replay.result=clone(transientResult);
+        replay.duplicate=true;
+        replay.idempotentReplay=true;
+        return replay;
       }
 
       // Keep the full payload only in the in-flight `command` passed to the
@@ -1760,7 +1769,21 @@
         }
         const stagedWrites=Array.isArray(stateTransaction?.operations)?stateTransaction.operations.length:0;
         const intentionalNoWrite=result?.noStateChangeAccepted===true||result?.duplicate===true||result?.idempotent===true||options.allowNoStateChange===true;
-        row.result=clone(result);
+        const compactDurableResult=commandType==='OMEGA_RESOURCE_EXTRACT_TICK'&&result&&typeof result==='object'
+          ?{
+            accepted:result.accepted!==false,
+            countryId:result.countryId||country,
+            simulationTurn:result.simulationTurn??turn,
+            extracted:Number(result.extracted)||0,
+            replayed:Number(result.replayed)||0,
+            blocked:Number(Array.isArray(result.blocked)?result.blocked.length:result.blocked)||0,
+            recordCount:Array.isArray(result.records)?result.records.length:0,
+            successfulRecordCount:Array.isArray(result.records)
+              ?result.records.filter(record=>Number(record?.approvedQuantity??record?.quantity)>0).length:0,
+            resultPayloadOmitted:true
+          }
+          :null;
+        row.result=compactDurableResult||clone(result);
         row.stateChanged=Boolean(row.transaction?.changed);
         row.stateWriteCount=stagedWrites;
         row.eventsStaged=stagedEvents.length+(result?.eventType?1:0);
@@ -1770,7 +1793,8 @@
         if(row.status==='ACCEPTED_NO_STATE_WRITE'){
           row.reason='NO_AUTHORITATIVE_STATE_WRITE';
           row.result={accepted:false,code:'NO_AUTHORITATIVE_STATE_WRITE',reason:'NO_AUTHORITATIVE_STATE_WRITE',
-            handlerResult:clone(result),warning:'The handler acknowledged the command but staged no authoritative state write.'};
+            handlerResult:compactDurableResult||clone(result),
+            warning:'The handler acknowledged the command but staged no authoritative state write.'};
           this.metrics.noStateWrites+=1;
         }
         if(row.transaction?.afterRevision)row.stateRevisionAfter=row.transaction.afterRevision;
@@ -1798,7 +1822,20 @@
         }else{
           row.eventsDiscarded=eventsToPublish.length;
         }
-        return clone(row);
+        if(commandType==='OMEGA_RESOURCE_EXTRACT_TICK'){
+          this.transientCommandResults.set(commandId,result);
+          const transientLimit=Math.min(8,Math.max(1,this.maxHistory));
+          while(this.transientCommandResults.size>transientLimit){
+            const oldest=this.transientCommandResults.keys().next().value;
+            if(oldest===undefined)break;
+            this.transientCommandResults.delete(oldest);
+          }
+        }
+        const response=clone(row);
+        // Preserve the original synchronous dispatch contract for the active caller.
+        // The copy returned by getCommand()/save contains only the compact receipt.
+        if(commandType==='OMEGA_RESOURCE_EXTRACT_TICK')response.result=clone(result);
+        return response;
       }catch(error){
         const code=String(error?.code||error?.message||error);
         row.status='FAILED';
