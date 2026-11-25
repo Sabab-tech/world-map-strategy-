@@ -2261,26 +2261,31 @@ function batchFromExtraction(x,record){
     perfMark('selected-occurrence-extraction-and-ledgers');
     const warehouseCheck=boundary()?.validateWarehouse?.(warehouse,c);
     if(warehouseCheck&&!warehouseCheck.ok)return{accepted:false,countryId:c,extracted:0,blocked:[warehouseCheck],records:[]};
-    ctx.stateTransaction.set('resource.mineStates',current);
-    ctx.stateTransaction.set('resource.mineSiteControllers',mineSiteControllers);
+    // Site controllers and the strategic reserve are read-only in this handler;
+    // writing their unchanged full-country snapshots multiplied the transaction cost
+    // by the number of extraction slices.
     ctx.stateTransaction.set('resource.mineOutputs',mineOutputs);
-    ctx.stateTransaction.set('resource.mineOutputTotals',mineOutputTotals);
-    ctx.stateTransaction.set('resource.mineProductionLedger',mineProductionLedger.slice(-MAX_MINE_HISTORY));
-    ctx.stateTransaction.set('resource.batches',existingBatches.slice(-MAX_LEDGER));
-    ctx.stateTransaction.set('resource.inventoryLots',inventoryLots);
     ctx.stateTransaction.set('resource.minePaths',minePaths);
-    ctx.stateTransaction.set('resource.warehouse',warehouse);
-    ctx.stateTransaction.set('resource.mines',mines);
-    ctx.stateTransaction.set('resource.production',production);
-    ctx.stateTransaction.set('resource.inventory',inventory);
-    ctx.stateTransaction.set('resource.reserves',reserves);
-    const strategicReserve=ctx.stateTransaction.get('resource.strategicReserve')||{
-      warehouseId:'WH-'+c+'-SPR',countryId:c,type:'STRATEGIC_RESERVE_STOCKPILE',locationNodeKey:'WAREHOUSE:'+c+':SPR',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],transfers:[],lastTransferTurn:null
-    };
-    ctx.stateTransaction.set('resource.strategicReserve',strategicReserve);
-    const tradeAvailability=computeTradeAvailability(inventory,strategicReserve.availableByResource);
-    ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
-    ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
+    const productionReset=previousExtractionTurn!==turn();
+    if(extracted.length){
+      ctx.stateTransaction.set('resource.mineStates',current);
+      ctx.stateTransaction.set('resource.mineOutputTotals',mineOutputTotals);
+      ctx.stateTransaction.set('resource.mineProductionLedger',mineProductionLedger.slice(-MAX_MINE_HISTORY));
+      ctx.stateTransaction.set('resource.batches',existingBatches.slice(-MAX_LEDGER));
+      ctx.stateTransaction.set('resource.inventoryLots',inventoryLots);
+      ctx.stateTransaction.set('resource.warehouse',warehouse);
+      ctx.stateTransaction.set('resource.mines',mines);
+      ctx.stateTransaction.set('resource.inventory',inventory);
+      ctx.stateTransaction.set('resource.reserves',reserves);
+      const strategicReserve=ctx.stateTransaction.get('resource.strategicReserve')||{
+        warehouseId:'WH-'+c+'-SPR',countryId:c,type:'STRATEGIC_RESERVE_STOCKPILE',locationNodeKey:'WAREHOUSE:'+c+':SPR',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[],transfers:[],lastTransferTurn:null
+      };
+      const tradeAvailability=computeTradeAvailability(inventory,strategicReserve.availableByResource);
+      ctx.stateTransaction.set('resource.tradeAvailability',tradeAvailability);
+      ctx.stateTransaction.set('resource.extractionLedger',ledger.slice(-MAX_LEDGER));
+    }
+    // Extraction turn rollover must still commit even when every candidate is blocked.
+    if(extracted.length||productionReset)ctx.stateTransaction.set('resource.production',production);
     for(const x of blocked)emit('OMEGA_RESOURCE_EXTRACTION_BLOCKED',c,{...x,simulationTurn:turn()},cmd.commandId);
     perfMark('transaction-write-staging');
     if(perfEnabled)try{
@@ -2346,7 +2351,7 @@ function batchFromExtraction(x,record){
     const handheld=/Android|Mobile|iPhone|iPad/i.test(userAgent);
     // Logical CPU count alone is not a reliable memory-pressure signal: headless
     // desktop CI runners commonly expose two cores but have ample memory.
-    return handheld||lowMemory?3:8;
+    return handheld||lowMemory?3:32;
   }
   async function startCountryProduction(countryId,siteIds=null,options={}){
     const perfEnabled=g.__OMEGA_RESOURCE_ECONOMY_PERF__===true;

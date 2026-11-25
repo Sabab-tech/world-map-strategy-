@@ -247,6 +247,25 @@
       return clone(cur);
     }
 
+    getReference(path){
+      this._assertOpen();
+      const p=String(path||'');
+      for(let i=this.operations.length-1;i>=0;i--){
+        const operation=this.operations[i];
+        if(operation.path===p)return operation.after;
+      }
+      const ref=this._countryContainer(p,false);
+      if(!ref)return undefined;
+      let cur=ref.container;
+      for(const part of ref.parts){
+        if(cur==null||!Object.prototype.hasOwnProperty.call(Object(cur),part))return undefined;
+        cur=cur[part];
+      }
+      // READ-ONLY: callers must not mutate the returned live state. Use copy-on-write
+      // for any container that needs to be changed before staging it with set().
+      return cur;
+    }
+
     commit(){
       this._assertOpen();
       // Transactions are sovereign/country scoped. Hash only the owned country
