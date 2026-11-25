@@ -1876,6 +1876,9 @@
         event.browserEventError=String(error?.message||error);
       }
       this._invalidateKnowledgeCache();
+      // High-volume internal publishers that discard the returned event should not
+      // deep-clone the complete payload a second time after it was stored and sent.
+      if(options.returnSummary===true)return{eventId,eventType:type,countryId:country,simulationTurn:turn};
       return clone(event);
     }
 
