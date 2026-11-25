@@ -353,6 +353,15 @@
     return true;
   }
 
+  function transactionReadReference(transaction,path){
+    // The authoritative transaction API exposes a read-only live reference for
+    // copy-on-write hot paths. Legacy adapters and isolated runtime harnesses only
+    // expose get(); fall back to that cloned read instead of failing reconciliation.
+    if(typeof transaction?.getReference==='function')return transaction.getReference(path);
+    if(typeof transaction?.get==='function')return transaction.get(path);
+    return undefined;
+  }
+
   function reconcileHandler(cmd,ctx){
     var perfEnabled=g.__OMEGA_RESOURCE_ECONOMY_PERF__===true,
       perfNow=function(){return typeof performance!=='undefined'&&typeof performance.now==='function'?performance.now():Date.now();},
@@ -362,30 +371,30 @@
       var now=perfNow();perfPhases.push({label:label,durationMs:Number((now-perfMarkAt).toFixed(2))});perfMarkAt=now;
     }
     var c=canonical(ctx.countryId),
-      invBefore=ctx.stateTransaction.getReference('resource.inventory')||{},inv=Object.assign({},invBefore),
-      batchesBefore=ctx.stateTransaction.getReference('resource.batches'),bs=Array.isArray(batchesBefore)?batchesBefore.slice():[],
-      ledgerBefore=ctx.stateTransaction.getReference('resource.inventoryLedger'),ledger=Array.isArray(ledgerBefore)?ledgerBefore.slice():[],
+      invBefore=transactionReadReference(ctx.stateTransaction,'resource.inventory')||{},inv=Object.assign({},invBefore),
+      batchesBefore=transactionReadReference(ctx.stateTransaction,'resource.batches'),bs=Array.isArray(batchesBefore)?batchesBefore.slice():[],
+      ledgerBefore=transactionReadReference(ctx.stateTransaction,'resource.inventoryLedger'),ledger=Array.isArray(ledgerBefore)?ledgerBefore.slice():[],
       warehouseDefault={warehouseId:'WH-'+c+'-RAW',countryId:c,type:'SOVEREIGN_RAW_MATERIAL_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+c+':RAW',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]},
-      warehouseBefore=ctx.stateTransaction.getReference('resource.warehouse')||warehouseDefault,
+      warehouseBefore=transactionReadReference(ctx.stateTransaction,'resource.warehouse')||warehouseDefault,
       warehouse=Object.assign({},warehouseBefore,{
         availableByResource:Object.assign({},warehouseBefore.availableByResource||{}),
         storedBatchIds:Array.isArray(warehouseBefore.storedBatchIds)?warehouseBefore.storedBatchIds.slice():[],
         receipts:Array.isArray(warehouseBefore.receipts)?warehouseBefore.receipts.slice():[]
       }),
       processedDefault={warehouseId:'WH-'+c+'-PROCESSED',countryId:c,type:'SOVEREIGN_FINISHED_GOODS_WAREHOUSE',locationNodeKey:'WAREHOUSE:'+c+':PROCESSED',status:'OPERATIONAL',availableByResource:{},storedBatchIds:[],receipts:[]},
-      processedWarehouseBefore=ctx.stateTransaction.getReference('resource.processedWarehouse')||processedDefault,
+      processedWarehouseBefore=transactionReadReference(ctx.stateTransaction,'resource.processedWarehouse')||processedDefault,
       processedWarehouse=Object.assign({},processedWarehouseBefore,{
         availableByResource:Object.assign({},processedWarehouseBefore.availableByResource||{}),
         storedBatchIds:Array.isArray(processedWarehouseBefore.storedBatchIds)?processedWarehouseBefore.storedBatchIds.slice():[],
         receipts:Array.isArray(processedWarehouseBefore.receipts)?processedWarehouseBefore.receipts.slice():[]
       }),
-      inventoryLotsBefore=ctx.stateTransaction.getReference('resource.inventoryLots')||{},
+      inventoryLotsBefore=transactionReadReference(ctx.stateTransaction,'resource.inventoryLots')||{},
       inventoryLots=Object.assign({},inventoryLotsBefore),
-      integrityBefore=ctx.stateTransaction.getReference('resource.inventoryIntegrity')||null;
+      integrityBefore=transactionReadReference(ctx.stateTransaction,'resource.inventoryIntegrity')||null;
     var previousProcessedReceipts=new Map((Array.isArray(processedWarehouseBefore.receipts)?processedWarehouseBefore.receipts:[])
       .filter(function(row){return row&&row.batchId;})
       .map(function(row){return[String(row.batchId),row];}));
-    var network=ctx.stateTransaction.getReference('resource.industrialNetwork')||{},
+    var network=transactionReadReference(ctx.stateTransaction,'resource.industrialNetwork')||{},
       reconciliationMaps=consumptionLedgerMaps(network),flowByBatch=reconciliationMaps.flowByBatch,
       factoryInTransitByBatch=reconciliationMaps.factoryInTransitByBatch;
     markReconcilePhase('snapshot-and-flow-index');

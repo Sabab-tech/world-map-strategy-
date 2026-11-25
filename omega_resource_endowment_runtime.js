@@ -2348,10 +2348,13 @@ function batchFromExtraction(x,record){
     const deviceMemory=Number(reportedMemory);
     const lowMemory=reportedMemory!==undefined&&reportedMemory!==null&&
       Number.isFinite(deviceMemory)&&deviceMemory>0&&deviceMemory<=4;
+    const threads=Number(nav?.hardwareConcurrency);
+    const lowCoreDesktop=Number.isFinite(threads)&&threads>0&&threads<=2;
     const handheld=/Android|Mobile|iPhone|iPad/i.test(userAgent);
-    // Logical CPU count alone is not a reliable memory-pressure signal: headless
-    // desktop CI runners commonly expose two cores but have ample memory.
-    return handheld||lowMemory?3:32;
+    // Mobile and low-memory devices stay on the smallest bounded slice. A
+    // two-core desktop uses an intermediate slice; wider desktops can process
+    // larger bounded batches without treating two logical cores as mobile.
+    return handheld||lowMemory?3:lowCoreDesktop?8:32;
   }
   async function startCountryProduction(countryId,siteIds=null,options={}){
     const perfEnabled=g.__OMEGA_RESOURCE_ECONOMY_PERF__===true;
