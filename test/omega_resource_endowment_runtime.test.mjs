@@ -1031,6 +1031,21 @@ try{
 }finally{
   realism.siteModel=originalSiteModel;
 }
+let siteModelCallsAcrossTurn=0;
+realism.siteModel=function(...args){
+  siteModelCallsAcrossTurn+=1;
+  return originalSiteModel.apply(this,args);
+};
+try{
+  advanceOneGameTurn(globalThis.Game.state);
+  const nextTurnStart=await runtime.startCountryProduction('BGD',[oneTapSite.siteId],{skipHydrationIfReady:true});
+  assert.ok(['STARTED','PARTIALLY_STARTED'].includes(nextTurnStart.status),
+    'a warmed country site model must remain executable on the following simulation turn: '+JSON.stringify(nextTurnStart));
+  assert.equal(siteModelCallsAcrossTurn,0,
+    'immutable country site models must be reused across turns rather than rebuilt for each extraction scan');
+}finally{
+  realism.siteModel=originalSiteModel;
+}
 const oneTapLedger=()=>((runtime.countryResourceState('BGD')||{}).mineProductionLedger||[]).filter(row=>
   row.siteReferenceKey===oneTapSite.siteId&&Number(row.turn)===Number(globalThis.Game.state.simulation.turn)&&Number(row.quantity)>0);
 const oneTapLedgerBefore=oneTapLedger();
