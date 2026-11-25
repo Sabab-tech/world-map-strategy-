@@ -437,7 +437,7 @@ for(let siteIndex=0;siteIndex<sites.length;siteIndex++){
   game.state.simulation.session.playerCountryId=site.countryId;
   const result=await industry.executeSitePipeline({
     countryId:site.countryId,siteId:site.siteId,resourceId:site.resourceId,
-    quantity:1,autoCommissionFactory:true,transportMode:'rail'
+    quantity:1,autoCommissionFactory:true
   });
   if(result?.status!=='IN_TRANSIT'){
     failures.push({siteId:site.siteId,countryId:site.countryId,resourceId:site.resourceId,
