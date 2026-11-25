@@ -599,23 +599,25 @@
   function consumeHandler(cmd,ctx){
     var c=canonical(ctx.countryId),p=cmd&&cmd.payload||{},rid=String(p.resourceId||'').trim(),q=num(p.quantity);
     if(!rid||q===null||q<=0)return{accepted:false,reason:'CONSUME_INPUT_INVALID'};
+    const readReference=path=>typeof ctx.stateTransaction.getReference==='function'
+      ?readReference(path):ctx.stateTransaction.get(path);
     // Read large ledgers by reference and copy only the containers/rows that this
     // transaction actually changes. The previous deep clones copied every site-flow
     // record, route, shipment and lot for every individual resource debit.
-    var invBefore=ctx.stateTransaction.getReference('resource.inventory')||{},
+    var invBefore=readReference('resource.inventory')||{},
       key=Object.prototype.hasOwnProperty.call(invBefore,rid)?rid:Object.keys(invBefore).find(function(k){return tok(k)===tok(rid);}),
       cur=key==null?null:num(invBefore[key]);
-    var batchesBefore=ctx.stateTransaction.getReference('resource.batches'),
+    var batchesBefore=readReference('resource.batches'),
       sourceBatches=Array.isArray(batchesBefore)?batchesBefore:[],
-      lotsBefore=ctx.stateTransaction.getReference('resource.inventoryLots')||{};
+      lotsBefore=readReference('resource.inventoryLots')||{};
     var boundaryCheck=boundary()?.validateResourceCollection?.(sourceBatches,c);
     if(boundaryCheck&&!boundaryCheck.ok)return{accepted:false,reason:'CROSS_COUNTRY_RESOURCE_BREACH',countryId:c,violations:clone(boundaryCheck.violations||[])};
-    var whBefore=ctx.stateTransaction.getReference('resource.warehouse')||null,
-      pwhBefore=ctx.stateTransaction.getReference('resource.processedWarehouse')||null;
+    var whBefore=readReference('resource.warehouse')||null,
+      pwhBefore=readReference('resource.processedWarehouse')||null;
     var wb=boundary()?.validateWarehouse?.(whBefore,c);if(wb&&!wb.ok)return{accepted:false,reason:'CROSS_COUNTRY_WAREHOUSE_BREACH',countryId:c,detail:clone(wb)};
     var pwb=boundary()?.validateWarehouse?.(pwhBefore,c);if(pwb&&!pwb.ok)return{accepted:false,reason:'CROSS_COUNTRY_PROCESSED_WAREHOUSE_BREACH',countryId:c,detail:clone(pwb)};
     if(cur===null||cur<q)return{accepted:false,reason:'RESOURCE_INVENTORY_INSUFFICIENT',resourceId:rid,requested:q,available:cur===null?0:cur};
-    var networkBefore=ctx.stateTransaction.getReference('resource.industrialNetwork')||{},
+    var networkBefore=readReference('resource.industrialNetwork')||{},
       maps=consumptionLedgerMaps(networkBefore),flowByBatch=maps.flowByBatch,reservedByBatch=maps.reservedByBatch,
       rawBudget=warehouseFreeQuantity(whBefore,rid),processedBudget=warehouseFreeQuantity(pwhBefore,rid);
     var rem=q,used=[],rawDebit=0,processedDebit=0,consumedBySiteBatch={},
@@ -666,7 +668,7 @@
     if(rem>1e-9)return{accepted:false,reason:'RESOURCE_INVENTORY_NOT_WAREHOUSE_AVAILABLE',
       resourceId:rid,requested:q,available:q-rem,unavailableOrReserved:rem};
     var inv=Object.assign({},invBefore);inv[key]=cur-q;
-    var ledgerBefore=ctx.stateTransaction.getReference('resource.inventoryLedger'),
+    var ledgerBefore=readReference('resource.inventoryLedger'),
       ledger=Array.isArray(ledgerBefore)?ledgerBefore.slice():[];
     ledger.push({type:'INVENTORY_CONSUMED',resourceId:rid,quantity:q,reason:p.reason||'PROCESSING_OR_FACTORY_INPUT',turn:turn(),consumed:used});
     while(ledger.length>(num(rules().runtime.maxLedgerEntries)||2048))ledger.shift();
