@@ -244,3 +244,88 @@
     font-size: 7px !important;
   }
 }
+
+
+/* Compact gameplay dock: only the two explicit clock actions stay visible. */
+#omega-global-time-hud {
+  top: auto !important;
+  right: auto !important;
+  bottom: 16px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  grid-template-columns: none !important;
+  gap: 0 !important;
+  width: auto !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 4px !important;
+  overflow: visible !important;
+  border-color: rgba(192, 157, 101, .72) !important;
+  border-radius: 9px !important;
+  background: rgba(14, 18, 23, .94) !important;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .06) !important;
+}
+#omega-global-time-hud .ogth-topline {
+  display: contents !important;
+}
+#omega-global-time-hud .ogth-time,
+#omega-global-time-hud .ogth-save,
+#omega-global-time-hud .ogth-clock-progress-row,
+#omega-global-time-hud .ogth-manual-controls,
+#omega-global-time-hud .ogth-diagnostics,
+#omega-global-time-hud .ogth-economy,
+#omega-global-time-hud .ogth-assets {
+  display: none !important;
+}
+#omega-global-time-hud .ogth-controls {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+}
+#omega-global-time-hud .ogth-controls button[data-omega-speed] {
+  display: none !important;
+}
+#omega-global-time-hud .ogth-controls button[data-omega-action="toggle"],
+#omega-global-time-hud .ogth-controls button[data-omega-action="pause"] {
+  display: flex !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 58px !important;
+  min-width: 58px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  padding: 0 !important;
+  border: 1px solid rgba(224, 190, 132, .78) !important;
+  border-radius: 7px !important;
+  background: linear-gradient(180deg, #d8bd8a, #927044) !important;
+  color: #18202a !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), 0 2px 5px rgba(0, 0, 0, .28) !important;
+  font: 900 23px/1 Arial, sans-serif !important;
+  letter-spacing: 0 !important;
+  text-shadow: 0 1px rgba(255, 255, 255, .16) !important;
+  touch-action: manipulation !important;
+}
+#omega-global-time-hud .ogth-controls button[data-omega-action="toggle"]:disabled,
+#omega-global-time-hud .ogth-controls button[data-omega-action="pause"]:disabled {
+  opacity: .42 !important;
+  filter: saturate(.55) !important;
+}
+#omega-global-time-hud .ogth-controls button[data-omega-action="toggle"]:focus-visible,
+#omega-global-time-hud .ogth-controls button[data-omega-action="pause"]:focus-visible {
+  outline: 2px solid #ffe2a8 !important;
+  outline-offset: 3px !important;
+}
+@supports (bottom: env(safe-area-inset-bottom)) {
+  #omega-global-time-hud {
+    bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+  }
+}
