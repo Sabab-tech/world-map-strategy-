@@ -232,8 +232,9 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           for (const [otherRaw, relationship] of Object.entries(map)) {
             const other = resolvedCountryCode(otherRaw);
             if (!profileCodes.has(other) || relationship?.trade_agreement !== true) continue;
+            // The row belongs to the importing/buyer country and points to its
+            // approved seller. Do not manufacture the reverse edge.
             addPossiblePair(owner, other);
-            addPossiblePair(other, owner);
           }
         }
         for (const [otherRaw, treaty] of Object.entries(treatyMap(owner) || {})) {
