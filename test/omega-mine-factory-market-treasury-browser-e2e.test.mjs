@@ -23,6 +23,43 @@ function contentType(file) {
 }
 
 async function startStaticOrigin() {
+  // Share in-flight reads and retain a bounded LRU of immutable checkout files.
+  // This prevents duplicate browser requests from repeatedly reading large JSON/JS
+  // assets from disk without allowing the test server cache to grow without limit.
+  const MAX_STATIC_CACHE_BYTES = 64 * 1024 * 1024;
+  const staticFileCache = new Map();
+  let staticFileCacheBytes = 0;
+  const readStaticFile = async absolute => {
+    let entry = staticFileCache.get(absolute);
+    if (entry) {
+      staticFileCache.delete(absolute);
+      staticFileCache.set(absolute, entry);
+      return entry.promise;
+    }
+    entry = { promise: readFile(absolute), size: 0 };
+    staticFileCache.set(absolute, entry);
+    try {
+      const bytes = await entry.promise;
+      if (staticFileCache.get(absolute) !== entry) return bytes;
+      if (bytes.length > MAX_STATIC_CACHE_BYTES) {
+        staticFileCache.delete(absolute);
+        return bytes;
+      }
+      entry.size = bytes.length;
+      entry.promise = Promise.resolve(bytes);
+      staticFileCacheBytes += entry.size;
+      while (staticFileCacheBytes > MAX_STATIC_CACHE_BYTES && staticFileCache.size > 1) {
+        const oldestKey = staticFileCache.keys().next().value;
+        const oldest = staticFileCache.get(oldestKey);
+        staticFileCache.delete(oldestKey);
+        staticFileCacheBytes -= oldest?.size || 0;
+      }
+      return bytes;
+    } catch (error) {
+      if (staticFileCache.get(absolute) === entry) staticFileCache.delete(absolute);
+      throw error;
+    }
+  };
   const server = createServer(async (request, response) => {
     try {
       const pathname = decodeURIComponent(new URL(request.url || '/', 'http://127.0.0.1').pathname);
@@ -32,10 +69,10 @@ async function startStaticOrigin() {
         response.writeHead(403).end('Forbidden');
         return;
       }
-      const bytes = await readFile(absolute);
+      const bytes = await readStaticFile(absolute);
       response.writeHead(200, {
         'content-type': contentType(absolute),
-        'cache-control': 'no-store, max-age=0',
+        'cache-control': 'private, max-age=3600, immutable',
         'x-content-type-options': 'nosniff'
       });
       response.end(bytes);
