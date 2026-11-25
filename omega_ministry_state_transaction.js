@@ -9,6 +9,61 @@
   'use strict';
 
   const VERSION='1.1.0';
+
+  // O(1)-per-path optimistic concurrency metadata. Each country owns a small
+  // revision trie: ancestor self-revisions detect parent replacement, while a
+  // target subtree revision detects writes to that path or any descendant.
+  // Sibling paths remain independent and do not conflict.
+  const committedPathRevisionRoots=new WeakMap();
+  let committedPathRevisionSequence=0;
+  function revisionNode(){return{selfRevision:0,subtreeRevision:0,children:new Map()};}
+  function countryRevisionRoot(state,countryId){
+    let countries=committedPathRevisionRoots.get(state);
+    if(!countries){countries=new Map();committedPathRevisionRoots.set(state,countries);}
+    let root=countries.get(countryId);
+    if(!root){root=revisionNode();countries.set(countryId,root);}
+    return root;
+  }
+  function revisionPathNode(root,path,create=true){
+    let node=root;
+    for(const part of String(path||'').split('.').filter(Boolean)){
+      let child=node.children.get(part);
+      if(!child&&create){child=revisionNode();node.children.set(part,child);}
+      if(!child)return null;
+      node=child;
+    }
+    return node;
+  }
+  function capturePathRevision(root,path){
+    const parts=String(path||'').split('.').filter(Boolean),ancestors=[];
+    let node=root;
+    for(let i=0;i<parts.length-1;i++){
+      ancestors.push({node,revision:node.selfRevision});
+      let child=node.children.get(parts[i]);
+      if(!child){child=revisionNode();node.children.set(parts[i],child);}
+      node=child;
+    }
+    let target=node.children.get(parts[parts.length-1]);
+    if(!target){target=revisionNode();node.children.set(parts[parts.length-1],target);}
+    return{ancestors,target,targetSubtreeRevision:target.subtreeRevision};
+  }
+  function pathRevisionChanged(baseline){
+    if(!baseline)return false;
+    if(baseline.target.subtreeRevision!==baseline.targetSubtreeRevision)return true;
+    return baseline.ancestors.some(row=>row.node.selfRevision!==row.revision);
+  }
+  function markPathCommitted(root,path){
+    const parts=String(path||'').split('.').filter(Boolean),nodes=[root];
+    let node=root;
+    for(const part of parts){
+      let child=node.children.get(part);
+      if(!child){child=revisionNode();node.children.set(part,child);}
+      node=child;nodes.push(node);
+    }
+    const revision=++committedPathRevisionSequence;
+    node.selfRevision=revision;
+    for(const row of nodes)row.subtreeRevision=revision;
+  }
   // Cross-ministry writes are granted only to a registered command type and exact paths.
   // Command payloads cannot add capabilities to this allowlist.
   const COMMAND_CROSS_DOMAIN_WRITE_PATHS=Object.freeze({
@@ -141,6 +196,8 @@
       this.transactionId='OMI-TX-'+this.turn+'-'+this.ownerMinistry+'-'+this.commandId;
       this.operations=[];
       this.writeBaseline=new Map();
+      this.pathRevisionRoot=countryRevisionRoot(this.state,this.countryId);
+      this.pathRevisionBaselines=new Map();
       this.closed=false;
     }
 
@@ -204,6 +261,7 @@
       // duplicates the same state that get() already snapshots for the handler.
       const value=this._readLivePath(path,this.includeOperationValues);
       this.writeBaseline.set(path,this.includeOperationValues?value:this._valueFingerprint(value,path));
+      this.pathRevisionBaselines.set(path,capturePathRevision(this.pathRevisionRoot,path));
     }
 
     _writeSetFingerprint(readCurrent=false,cloneCurrent=true){
@@ -323,6 +381,19 @@
       // other countries can still change without forcing a transaction retry.
       const beforeDigest=this._writeSetFingerprint(false);
       for(const [path,expected] of this.writeBaseline.entries()){
+        // Transaction commits detect every overlapping transactional write through
+        // the revision trie; the bounded shape remains a fallback for direct legacy
+        // mutations that bypass the transaction boundary.
+        if(pathRevisionChanged(this.pathRevisionBaselines.get(path))){
+          this.closed=true;
+          const conflict=new Error('STATE_TRANSACTION_CONFLICT');
+          conflict.code='STATE_TRANSACTION_CONFLICT';
+          conflict.transactionId=this.transactionId;
+          conflict.path=path;
+          conflict.expectedRevision='PATH_REVISION:'+String(this.pathRevisionBaselines.get(path)?.targetSubtreeRevision??0);
+          conflict.actualRevision='PATH_REVISION_CHANGED';
+          throw conflict;
+        }
         // Fingerprinting is read-only; do not deep-clone the live value before hashing.
         const actual=this._readLivePath(path,false);
         const expectedFingerprint=this.includeOperationValues?this._valueFingerprint(expected):expected;
@@ -368,6 +439,9 @@
             path:operation.path
           });
         }
+      }
+      for(const operation of this.operations){
+        if(operation.op==='SET'||operation.op==='DELETE')markPathCommitted(this.pathRevisionRoot,operation.path);
       }
       const afterDigest=this._writeSetFingerprint(true,false);
       this.closed=true;
