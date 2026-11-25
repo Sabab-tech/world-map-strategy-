@@ -42,11 +42,12 @@
     return ('00000000'+(h>>>0).toString(16)).slice(-8);
   }
 
-  // Compact command transactions use a bounded-depth conflict signature.
-  // The previous content hash recursively serialized every nested value at both
-  // staging and commit, even though handlers already own detached snapshots.
-  // Three levels retain detection of ordinary direct/nested writes while avoiding
-  // repeated full-ledger serialization. Transaction commits remain versioned below.
+  // Compact command transactions use a strictly bounded conflict signature.
+  // Never enumerate a complete inventory/ledger array or object: the former
+  // "bounded-depth" implementation still visited every array element and every
+  // object key, so staging and commit remained O(size of the full country ledger).
+  // Transactional writers are serialized by the exact write-set check; this
+  // lightweight sample also detects direct and common nested external mutations.
   function compactShape(value,depth=3,seen=new WeakSet()){
     if(value===null)return 'null';
     const type=typeof value;
@@ -54,9 +55,21 @@
     if(seen.has(value))return 'cycle';
     if(depth<=0)return Array.isArray(value)?'array:'+value.length:'object';
     seen.add(value);
-    if(Array.isArray(value))return 'A'+value.length+'['+value.map(item=>compactShape(item,depth-1,seen)).join(',')+']';
-    const keys=Object.keys(value).filter(k=>k!=='__proto__'&&k!=='constructor').sort();
-    return 'O'+keys.length+'{'+keys.map(key=>JSON.stringify(key)+':'+compactShape(value[key],depth-1,seen)).join(',')+'}';
+    if(Array.isArray(value)){
+      const length=value.length,indices=new Set();
+      for(let i=0;i<Math.min(4,length);i++)indices.add(i);
+      for(let i=Math.max(4,length-4);i<length;i++)indices.add(i);
+      const sample=[];
+      for(const i of indices)sample.push(i+':'+compactShape(value[i],depth-1,seen));
+      return 'A'+length+'['+sample.join(',')+']';
+    }
+    const sampleKeys=[];
+    for(const key in value){
+      if(!Object.prototype.hasOwnProperty.call(value,key)||key==='__proto__'||key==='constructor')continue;
+      sampleKeys.push(key);
+      if(sampleKeys.length===8)break;
+    }
+    return 'O{'+sampleKeys.map(key=>JSON.stringify(key)+':'+compactShape(value[key],depth-1,seen)).join(',')+'}';
   }
 
   function validId(value){return String(value??'').trim().length>0;}
