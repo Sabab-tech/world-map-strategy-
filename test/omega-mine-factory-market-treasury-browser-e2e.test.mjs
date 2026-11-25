@@ -79,6 +79,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
   const stageTrace = [];
   const milestoneTrace = [];
   let setupSummaryForFailure = null;
+  let deadlineWatchdog = null;
   page.on('pageerror', error => pageErrors.push(String(error?.stack || error)));
   page.on('crash', () => pageErrors.push('CHROMIUM_PAGE_CRASHED'));
   page.on('console', message => {
@@ -91,6 +92,14 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
   });
 
   try {
+    // Node's test timeout only marks the test failed; it does not cancel a pending
+    // page.evaluate. Close Chromium before that timeout so a stalled browser promise
+    // cannot keep the Node process alive until the workflow's outer 18-minute kill.
+    deadlineWatchdog = setTimeout(() => {
+      pageErrors.push('E2E_DEADLINE_WATCHDOG_CLOSED_BROWSER');
+      void context.close().catch(() => {});
+      void browser.close().catch(() => {});
+    }, 9 * 60 * 1000);
     await page.goto(host.origin + '/', { waitUntil: 'domcontentloaded', timeout: 120000 });
     await page.waitForFunction(() => {
       const g = window;
@@ -648,10 +657,20 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           });
         }
       }
-      mineCandidates.sort((a, b) => b.expectedOutput - a.expectedOutput);
+      const routeTravelDays = row => {
+        const value = Number(row?.routePreview?.travelTimeDays);
+        return Number.isFinite(value) && value >= 0 ? value : Number.MAX_SAFE_INTEGER;
+      };
+      // Prefer a real, short-haul site so the browser acceptance run tests the full
+      // logistics and production chain without spending most of its budget waiting
+      // for a deliberately remote route. Expected output remains the tie-breaker.
+      mineCandidates.sort((a, b) =>
+        routeTravelDays(a) - routeTravelDays(b) || b.expectedOutput - a.expectedOutput
+      );
       mark('MINE_CANDIDATES_READY', {
         seller, candidateCount: mineCandidates.length, rejectedSiteCount: rejectedSites.length,
-        previewAttemptCount, selectedSiteId: mineCandidates[0]?.siteId || null
+        previewAttemptCount, selectedSiteId: mineCandidates[0]?.siteId || null,
+        selectedRouteTravelTimeDays: routeTravelDays(mineCandidates[0])
       });
       if (!mineCandidates.length)
         fail('NO_REAL_MINE_SITE_HAS_A_LIVE_BASELINE_FACTORY_AND_EXECUTABLE_ROUTE', {
@@ -1105,25 +1124,43 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         initialTurn: Number(g.Game.state.simulation?.turn || 0)
       });
       try {
+      const productionDeadlineAt = Date.now() + 7 * 60 * 1000;
       for (let offset = 1; offset <= 64; offset++) {
-        mark('SIMULATION_TURN_START', { offset, turn: Number(g.Game.state.simulation?.turn || 0) + 1 });
-        const turnResult = await Promise.race([
-          g.__omegaMineMarketTreasuryAdvanceTurns(1),
-          new Promise((resolve, reject) => g.setTimeout(() => reject(new Error(
-            'SIMULATION_TURN_TIMEOUT:' + String(Number(g.Game.state.simulation?.turn || 0) + 1) +
-            ':DIAGNOSTICS=' + JSON.stringify({
-              participantIds,
-              lastTurnParticipantResults: simulation.lastTurnParticipantResults || [],
-              lastTurnStatus: simulation.status,
-              lastError: simulation.lastError || null,
-              manualAdvanceProgress: simulation.manualAdvanceProgress || null,
-              stepInProgress: simulation.stepInProgress === true,
-              manualAdvanceInProgress: simulation.manualAdvanceInProgress === true,
-              scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null,
-              session: g.Game.state.simulation?.session || null
-            }).slice(0, 20000)
-          )), 150000))
-        ]);
+        const remainingDeadlineMs = productionDeadlineAt - Date.now();
+        if (remainingDeadlineMs <= 0)
+          throw new Error('E2E_PRODUCTION_DEADLINE_EXCEEDED:' + JSON.stringify({
+            turn: Number(g.Game.state.simulation?.turn || 0),
+            snapshots: snapshots.slice(-12),
+            scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null
+          }).slice(0, 12000));
+        mark('SIMULATION_TURN_START', { offset, turn: Number(g.Game.state.simulation?.turn || 0) + 1,
+          remainingDeadlineMs });
+        const turnTimeoutMs = Math.max(1, Math.min(150000, remainingDeadlineMs));
+        let turnTimeoutId = null;
+        let turnResult;
+        try {
+          turnResult = await Promise.race([
+            g.__omegaMineMarketTreasuryAdvanceTurns(1),
+            new Promise((resolve, reject) => {
+              turnTimeoutId = g.setTimeout(() => reject(new Error(
+                'SIMULATION_TURN_TIMEOUT:' + String(Number(g.Game.state.simulation?.turn || 0) + 1) +
+                ':DIAGNOSTICS=' + JSON.stringify({
+                  participantIds,
+                  lastTurnParticipantResults: simulation.lastTurnParticipantResults || [],
+                  lastTurnStatus: simulation.status,
+                  lastError: simulation.lastError || null,
+                  manualAdvanceProgress: simulation.manualAdvanceProgress || null,
+                  stepInProgress: simulation.stepInProgress === true,
+                  manualAdvanceInProgress: simulation.manualAdvanceInProgress === true,
+                  scheduler: g.OmegaWorldSimulationScheduler?.diagnostics?.() || null,
+                  session: g.Game.state.simulation?.session || null
+                }).slice(0, 20000)
+              )), turnTimeoutMs);
+            })
+          ]);
+        } finally {
+          if (turnTimeoutId !== null) g.clearTimeout(turnTimeoutId);
+        }
         mark('SIMULATION_TURN_COMPLETE', { offset, turn: Number(g.Game.state.simulation?.turn || simulation.turn || offset), status: turnResult?.status || null });
         const participantResults = simulation.lastTurnParticipantResults || [];
         const incompleteParticipants = requiredRuntimeParticipants.map(id =>
@@ -1984,6 +2021,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
     await saveArtifact('omega-mine-factory-market-treasury-failure.json', diagnostic).catch(() => {});
     throw error;
   } finally {
+    if (deadlineWatchdog !== null) clearTimeout(deadlineWatchdog);
     await context.close().catch(() => {});
     await browser.close().catch(() => {});
     await new Promise(resolve => host.server.close(resolve)).catch(() => {});
