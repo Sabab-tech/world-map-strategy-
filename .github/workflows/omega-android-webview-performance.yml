@@ -51,6 +51,8 @@ permissions:
 
 jobs:
   android-nine-webview-performance:
+    # Keep Android 9 emulator instrumentation disabled for PR validation, matching main.
+    if: ${{ false }}
     runs-on: macos-15-intel
     timeout-minutes: 40
     steps:
