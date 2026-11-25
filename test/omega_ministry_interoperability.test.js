@@ -510,19 +510,28 @@ test('ministry provider describe reads a path once and caches top-domain revisio
   const provider=s.sandbox.Omega.MinistryStateProvider.create({
     stateSource:s.state,countryRows:readRepositoryCountries()
   });
-  let availabilityReads=0,revisionReads=0;
+  let availabilityReads=0,revisionComputations=0,revisionCacheHits=0;
   const originalAvailability=provider.getAvailability.bind(provider);
   const originalRevision=provider.getRevision.bind(provider);
   provider.getAvailability=(...args)=>{availabilityReads++;return originalAvailability(...args);};
-  provider.getRevision=(...args)=>{revisionReads++;return originalRevision(...args);};
+  provider.getRevision=(countryId,domain,options={})=>{
+    const key=String(countryId).toUpperCase()+'|'+String(domain);
+    if(options.revisionCache?.has(key))revisionCacheHits++;
+    else revisionComputations++;
+    return originalRevision(countryId,domain,options);
+  };
   const first=provider.describe(s.countryA,'resource');
   assert.equal(first.availability,'AVAILABLE');
   assert.equal(availabilityReads,1,'describe must reuse its first availability result for provenance');
-  assert.equal(revisionReads,1,'describe must obtain one source revision');
+  assert.equal(revisionComputations,1,'describe must obtain one source revision');
   const revisionCache=new Map();
-  provider.describe(s.countryA,'resource',{revisionCache});
+  const second=provider.describe(s.countryA,'resource',{revisionCache});
+  second.value.inventory.oil=999;
+  assert.equal(s.state.resource[s.countryA].inventory.oil,10,
+    'published provider values must remain detached from authoritative state');
   provider.describe(s.countryA,'resource.inventory',{revisionCache});
-  assert.equal(revisionReads,2,'the same top-level domain is fingerprinted only once per publication');
+  assert.equal(revisionComputations,2,'a new publication computes the resource revision once');
+  assert.equal(revisionCacheHits,1,'subsequent facts with the same top-level domain reuse the revision');
   assert.equal(availabilityReads,3,'each requested path is described once');
 });
 
