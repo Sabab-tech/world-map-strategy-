@@ -229,10 +229,10 @@
     // Backward-compatible derived resource state comes through the provider,
     // never as a second authoritative resource database.
     try{
-      if(domainContext.resourceEngineState===undefined){
-        // ResourceEngine only reads inventory/deposit counts. Reuse the already
+      if(id==='resource'&&domainContext.resourceEngineState===undefined){
+        // Only ResourceEngine reads inventory/deposit counts. Reuse its already
         // observed read-only projections instead of cloning the complete integrated
-        // resource ledger (batches, lots, shipments and history) a second time.
+        // resource ledger in every one of the 17 ministry contexts.
         if(domainContext.resourceInventory!==undefined||domainContext.resourceDeposits!==undefined){
           domainContext.resourceEngineState={
             inventory:domainContext.resourceInventory,
