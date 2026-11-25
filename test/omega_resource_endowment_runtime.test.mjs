@@ -1017,6 +1017,15 @@ try{
   assert.ok(['STARTED','PARTIALLY_STARTED'].includes(oneTapStart.status),
     'one tap must start simulated extraction on an unattempted commercial site: '+JSON.stringify(oneTapStart));
   assert.ok(oneTapStart.startedSiteCount>0,JSON.stringify(oneTapStart));
+  assert.ok(Array.isArray(oneTapStart.scheduleRows)&&oneTapStart.scheduleRows.length===oneTapStart.extractionSliceCount,
+    'each bounded extraction chunk must have one identified schedule row');
+  const scheduleRowIds=oneTapStart.scheduleRows.map(row=>row.rowId);
+  assert.ok(scheduleRowIds.every(Boolean)&&new Set(scheduleRowIds).size===scheduleRowIds.length,
+    'schedule row IDs must be unique within the country/turn');
+  assert.equal(oneTapStart.scheduleRows.reduce((sum,row)=>sum+row.occurrenceCount,0),oneTapStart.attemptedOccurrenceCount,
+    'every selected occurrence must be assigned to exactly one schedule row');
+  assert.match(endowmentRuntimeSource,/options\.commandId='OMEGA-RESOURCE-EXTRACTION:'/,
+    'the schedule row ID must become the idempotent Ministry command ID');
   assert.equal(siteModelCallsDuringCachedExtraction,0,
     'selected extraction slices must reuse hydrated site models rather than rebuild the country catalog');
 }finally{
