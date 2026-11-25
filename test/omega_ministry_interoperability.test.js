@@ -1027,6 +1027,29 @@ test('generic finance commands cannot use procurement cross-domain capabilities'
 });
 
 
+test('compact transaction path revisions detect overlapping writes outside the sampled ledger entries',()=>{
+  const s=createSandbox();
+  s.state.resource[s.countryA].largeLedger={
+    rows:Array.from({length:1200},(_,index)=>({index,payload:'X'.repeat(64)}))
+  };
+  const first=s.sandbox.OmegaMinistryStateTransaction.create(
+    'resource',s.countryA,11,'COMPACT-OVERLAP-FIRST',s.state,{includeOperationValues:false}
+  );
+  const second=s.sandbox.OmegaMinistryStateTransaction.create(
+    'resource',s.countryA,11,'COMPACT-OVERLAP-SECOND',s.state,{includeOperationValues:false}
+  );
+  const firstSnapshot=first.get('resource.largeLedger');
+  const secondSnapshot=second.get('resource.largeLedger');
+  firstSnapshot.rows[700].payload='FIRST';
+  secondSnapshot.rows[700].payload='SECOND';
+  first.setOwned('resource.largeLedger',firstSnapshot);
+  second.setOwned('resource.largeLedger',secondSnapshot);
+  first.commit();
+  assert.throws(()=>second.commit(),error=>error?.code==='STATE_TRANSACTION_CONFLICT',
+    'a second transaction must not overwrite a concurrent write beyond the bounded fingerprint sample');
+  assert.equal(s.state.resource[s.countryA].largeLedger.rows[700].payload,'FIRST');
+});
+
 test('compact transactions can transfer handler-owned snapshots without a second deep clone',()=>{
   const s=createSandbox();
   s.state.resource[s.countryA].largeLedger={
