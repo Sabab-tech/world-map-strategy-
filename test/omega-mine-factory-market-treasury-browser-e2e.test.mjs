@@ -145,13 +145,6 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         const code = countryCode(profile);
         if (/^[A-Z]{3}$/.test(code)) profileByCountry.set(code, profile);
       });
-      const currencyGroups = new Map();
-      for (const [code] of profileByCountry) {
-        const currency = trade.currencyOf(code);
-        if (!currency) continue;
-        if (!currencyGroups.has(currency)) currencyGroups.set(currency, []);
-        currencyGroups.get(currency).push(code);
-      }
       const sites = g.Omega?.IndividualResourceSiteBinding?.sites || [];
       const locations = Object.keys(g.Game?.locationsRegistry || {});
       const runtime = g.OmegaCountryRuntimeData;
@@ -159,18 +152,30 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       for (const [seller, profile] of profileByCountry) {
         const factoryCounts = baseline.getCountryBaseline(seller)?.factoryCounts || {};
         if (!(Number(factoryCounts.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT || 0) > 0)) continue;
-        const currency = trade.currencyOf(seller);
-        const buyers = (currencyGroups.get(currency) || []).filter(code => code !== seller)
-          .map(code => ({ code, treasury:bankBalance(code) }))
-          .filter(row => row.treasury !== null && row.treasury > 100)
-          .sort((a,b) => b.treasury-a.treasury);
-        if (!buyers.length) continue;
         const mineSites = sites.filter(site => {
           if (String(site?.countryId || site?.identity?.countryIso3 || '').toUpperCase() !== seller) return false;
           return !!token(site?.real?.resourceId || site?.sourceSiteRecord?.resourceId ||
             site?.identity?.resourceTypeId || site?.sourceSiteRecord?.resourceTypeId);
         });
         if (!mineSites.length) continue;
+        const currency = trade.currencyOf(seller);
+        const sourceResourceId = token(mineSites[0]?.real?.resourceId ||
+          mineSites[0]?.sourceSiteRecord?.resourceId || mineSites[0]?.identity?.resourceTypeId ||
+          mineSites[0]?.sourceSiteRecord?.resourceTypeId);
+        const buyers = [...profileByCountry.keys()].filter(code => code !== seller).map(code => {
+          const treasury = bankBalance(code);
+          const fxRate = trade.fxRate(code, seller);
+          if (!(treasury > 100) || fxRate === null) return null;
+          const review = trade.reviewRequest({
+            countryId:code,targetCountryId:seller,resourceId:sourceResourceId,
+            quantity:1,unitPrice:1,needPressure:0.5
+          });
+          const relationScore = Number(review?.relationScore);
+          if (review?.agreement !== true || !Number.isFinite(relationScore) || relationScore < 0.25)
+            return null;
+          return {code,treasury,relationScore,fxRate,agreement:true};
+        }).filter(Boolean).sort((a,b) => b.treasury-a.treasury);
+        if (!buyers.length) continue;
         const matchingLocation = locations.find(key => {
           const identity = runtime?.resolveCountry?.(key);
           return String(identity?.iso3 || '').toUpperCase() === seller;
@@ -183,7 +188,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       candidates.sort((a,b) => b.mineSiteCount-a.mineSiteCount);
       const chosen = candidates.find(row => row.searchName) || null;
       if (!chosen) return {
-        ok:false,reason:'NO_MAP_SELECTABLE_COUNTRY_WITH_MINE_FACTORY_AND_FUNDED_SAME_CURRENCY_BUYER',
+        ok:false,reason:'NO_MAP_SELECTABLE_COUNTRY_WITH_MINE_FACTORY_AND_FUNDED_APPROVED_FX_TRADE_BUYER',
         profileCount:profileByCountry.size,siteCount:sites.length,
         locationCount:locations.length
       };
@@ -307,47 +312,6 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         if (/^[A-Z]{3}$/.test(code)) profileByCountry.set(code, profile);
       }
 
-      const currencyGroups = new Map();
-      for (const [code, profile] of profileByCountry) {
-        const currency = trade.currencyOf(code);
-        if (!currency) continue;
-        if (!currencyGroups.has(currency)) currencyGroups.set(currency, []);
-        currencyGroups.get(currency).push(code);
-      }
-
-      const candidateCountries = [];
-      for (const [seller, profile] of profileByCountry) {
-        const row = baseline.getCountryBaseline(seller);
-        const factoryCounts = row?.factoryCounts || {};
-        const stateFactoryCount = Number(factoryCounts.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT || 0);
-        if (!(stateFactoryCount > 0)) continue;
-        const currency = trade.currencyOf(seller);
-        const sameCurrencyBuyers = (currencyGroups.get(currency) || []).filter(code => code !== seller)
-          .map(code => ({ code, treasury: bankBalance(code) }))
-          .filter(item => item.treasury !== null && item.treasury > 100);
-        if (!sameCurrencyBuyers.length) continue;
-        const mineSites = sites.filter(site => {
-          if (String(site?.countryId || site?.identity?.countryIso3 || '').toUpperCase() !== seller) return false;
-          const rid = token(site?.real?.resourceId || site?.sourceSiteRecord?.resourceId ||
-            site?.identity?.resourceTypeId || site?.sourceSiteRecord?.resourceTypeId);
-          return !!rid;
-        });
-        if (mineSites.length) candidateCountries.push({
-          seller, profile, currency, mineSites, stateFactoryCount,
-          buyers: sameCurrencyBuyers.sort((a, b) => b.treasury - a.treasury)
-        });
-      }
-      candidateCountries.sort((a, b) => b.mineSites.length - a.mineSites.length);
-      mark('COUNTRY_CANDIDATES_READY', {
-        profileCount: profileByCountry.size, siteCount: sites.length,
-        candidateCount: candidateCountries.length,
-        topCandidates: candidateCountries.slice(0, 8).map(row => ({ seller: row.seller, mineSiteCount: row.mineSites.length }))
-      });
-      if (!candidateCountries.length) fail('NO_COUNTRY_WITH_MINE_BASELINE_FACTORY_AND_FUNDED_SAME_CURRENCY_BUYER', {
-        profileCount: profileByCountry.size, siteCount: sites.length, factoryCatalog: catalogDiag,
-        currencyGroups: [...currencyGroups.entries()].map(([currency, rows]) => ({ currency, countries: rows.length }))
-      });
-
       const existingSession = g.Game.state?.simulation?.session || null;
       const existingSessionUsable = !!(
         existingSession?.sessionId &&
@@ -366,15 +330,57 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
           sessionCountry: seller, simulationCountry: canonicalPlayerCountry,
           sessionId: existingSession.sessionId
         });
-      const chosenCountry = candidateCountries.find(row => row.seller === seller);
-      if (!chosenCountry) fail('SAVED_PLAYER_COUNTRY_HAS_NO_MINE_FACTORY_AND_FUNDED_SAME_CURRENCY_BUYER', {
-        seller, sessionId: existingSession.sessionId,
-        eligibleCountryCodes: candidateCountries.map(row => row.seller),
-        profileCount: profileByCountry.size, mineSiteCount: sites.length
+      const profile = profileByCountry.get(seller);
+      const row = baseline.getCountryBaseline(seller);
+      const factoryCounts = row?.factoryCounts || {};
+      const stateFactoryCount = Number(factoryCounts.UNIVERSAL_MATERIALS_ELEMENTS_PROCESSING_PLANT || 0);
+      const mineSites = sites.filter(site =>
+        String(site?.countryId || site?.identity?.countryIso3 || '').toUpperCase() === seller &&
+        !!token(site?.real?.resourceId || site?.sourceSiteRecord?.resourceId ||
+          site?.identity?.resourceTypeId || site?.sourceSiteRecord?.resourceTypeId));
+      if (!profile || !(stateFactoryCount > 0) || !mineSites.length)
+        fail('SAVED_PLAYER_COUNTRY_HAS_NO_MINE_BASELINE_FACTORY', {
+          seller, sessionId:existingSession.sessionId, hasFinanceProfile:!!profile,
+          stateFactoryCount, mineSiteCount:mineSites.length, profileCount:profileByCountry.size,
+          siteCount:sites.length
+        });
+      const currency = trade.currencyOf(seller);
+      const sourceResourceId = token(mineSites[0]?.real?.resourceId ||
+        mineSites[0]?.sourceSiteRecord?.resourceId || mineSites[0]?.identity?.resourceTypeId ||
+        mineSites[0]?.sourceSiteRecord?.resourceTypeId);
+      const approvedBuyers = [...profileByCountry.keys()].filter(code => code !== seller).map(code => {
+        const treasury = bankBalance(code);
+        const fxRate = trade.fxRate(code, seller);
+        if (!(treasury > 100) || fxRate === null) return null;
+        const review = trade.reviewRequest({
+          countryId:code,targetCountryId:seller,resourceId:sourceResourceId,
+          quantity:1,unitPrice:1,needPressure:0.5
+        });
+        const relationScore = Number(review?.relationScore);
+        if (review?.agreement !== true || !Number.isFinite(relationScore) || relationScore < 0.25)
+          return null;
+        return {code,treasury,relationScore,fxRate,agreement:true};
+      }).filter(Boolean).sort((a,b) => b.treasury-a.treasury);
+      const candidateCountries = approvedBuyers.length ? [{
+        seller, profile, currency, mineSites, stateFactoryCount, buyers:approvedBuyers
+      }] : [];
+      mark('COUNTRY_CANDIDATES_READY', {
+        profileCount:profileByCountry.size, siteCount:sites.length,
+        candidateCount:candidateCountries.length, sellerMineSiteCount:mineSites.length,
+        approvedBuyerCount:approvedBuyers.length,
+        approvedBuyers:approvedBuyers.slice(0,5).map(row=>({
+          code:row.code,treasury:row.treasury,relationScore:row.relationScore,fxRate:row.fxRate
+        }))
       });
+      if (!candidateCountries.length) fail('SAVED_PLAYER_COUNTRY_HAS_NO_FUNDED_APPROVED_FX_TRADE_PARTNER', {
+        seller, profileCount:profileByCountry.size, siteCount:sites.length,
+        mineSiteCount:mineSites.length, currency,
+        fundedCountryCount:[...profileByCountry.keys()].filter(code=>code!==seller&&bankBalance(code)>100).length
+      });
+      const chosenCountry = candidateCountries[0];
       const buyer = chosenCountry.buyers[0]?.code || null;
-      if (!buyer) fail('SAVED_PLAYER_COUNTRY_HAS_NO_FUNDED_SAME_CURRENCY_BUYER', {
-        seller, currency: chosenCountry.currency
+      if (!buyer) fail('SAVED_PLAYER_COUNTRY_HAS_NO_APPROVED_TRADE_BUYER', {
+        seller, currency
       });
       const sessionId = String(existingSession.sessionId);
       let liveSession = existingSession;
@@ -1397,7 +1403,7 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const profiles = finance?.getProfiles?.() || [];
       const candidates = profiles.map(profile => {
         const code = String(profile?.iso3 || profile?.countryCode || profile?.code || '').trim().toUpperCase();
-        if (!/^[A-Z]{3}$/.test(code) || code === seller || trade.currencyOf(code) !== trade.currencyOf(seller))
+        if (!/^[A-Z]{3}$/.test(code) || code === seller)
           return null;
         const review = trade.reviewRequest({
           countryId: code, targetCountryId: seller, resourceId: productId,
@@ -1406,11 +1412,11 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
         const account = bank.accountSummary(code);
         const funds = Number(account?.treasuryBalanceUsd ?? account?.availableTreasuryUsd);
         const relationScore = Number(review?.relationScore);
+        const fxRate = trade.fxRate(code, seller);
         if (review?.agreement !== true || !Number.isFinite(relationScore) || relationScore < 0.25 ||
-            !(funds > 100) || readStock(code, productId) > 1e-9 ||
-            trade.fxRate(code, seller) === null)
+            !(funds > 100) || readStock(code, productId) > 1e-9 || fxRate === null)
           return null;
-        return { code, funds, relationScore, agreement: review.agreement };
+        return { code, funds, relationScore, agreement: review.agreement, fxRate };
       }).filter(Boolean).sort((a,b) => b.funds-a.funds);
       const eligibleBuyer = candidates[0] || null;
       if (!eligibleBuyer)
