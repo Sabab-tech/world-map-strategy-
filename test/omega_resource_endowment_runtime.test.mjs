@@ -1037,10 +1037,20 @@ realism.siteModel=function(...args){
   return originalSiteModel.apply(this,args);
 };
 try{
+  const oneTapCountryState=globalThis.Game.state.resource.BGD;
+  oneTapCountryState.mineAssets=[{
+    mineId:'TEST-AUTO-MINE:'+oneTapSite.siteId,siteId:oneTapSite.siteId,
+    countryId:'BGD',resourceId:'limestone',status:'OPERATIONAL'
+  }];
+  oneTapCountryState.commissionedSites=[];
   advanceOneGameTurn(globalThis.Game.state);
-  const nextTurnStart=await runtime.startCountryProduction('BGD',[oneTapSite.siteId],{skipHydrationIfReady:true});
+  const nextTurnStart=await runtime.startCountryProduction('BGD',null,{skipHydrationIfReady:true});
   assert.ok(['STARTED','PARTIALLY_STARTED'].includes(nextTurnStart.status),
-    'a warmed country site model must remain executable on the following simulation turn: '+JSON.stringify(nextTurnStart));
+    'the normal turn scheduler must extract an operational commissioned site on the following turn: '+JSON.stringify(nextTurnStart));
+  assert.equal(nextTurnStart.attemptedOccurrenceCount,1,
+    'the normal turn scheduler must not schedule unrelated country mines or commodity child streams');
+  assert.equal(nextTurnStart.blockedOccurrenceCount,0,
+    'uncommissioned and unrelated occurrences must not be re-run as blocked extraction candidates');
   assert.equal(siteModelCallsAcrossTurn,0,
     'immutable country site models must be reused across turns rather than rebuilt for each extraction scan');
 }finally{
