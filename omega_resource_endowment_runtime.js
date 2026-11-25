@@ -2485,28 +2485,19 @@ function batchFromExtraction(x,record){
       if(!productionResourceIdsBySite.has(id))productionResourceIdsBySite.set(id,new Set());
       productionResourceIdsBySite.get(id).add(resource);
     };
-    const explicitlyInactiveStatus=status=>/(^|_)(INACTIVE|NOT_ACTIVE|HISTORICAL|HISTORICALLY|CARE_AND_MAINTENANCE|SUSPEND|SUSPENDED|BLOCKED|CLOSED|ABANDON|ABANDONED|DEPLETED|DEVELOPMENT|RESTARTING|CESSATION_OF_PRODUCTION|DISRUPTED|NOT_APPLICABLE|NO_CURRENT_CONCESSION|PERMIT_PROCESSING|RESOURCE_IDENTITY_UNVERIFIED|DISPUTED_OPERATION|RESTRICTED)(_|$)/.test(String(status||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_'));
-    const operationalStatus=status=>/(^|_)(ACTIVE_EXTRACTION|ACTIVE_PRODUCING|ACTIVE|DEPLETING|RESERVE_DEPLETING|OPERATING|RUNNING|PRODUCING)(_|$)/.test(String(status||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_'));
-    for(const site of Array.isArray(bucket.mineSiteReferences)?bucket.mineSiteReferences:[]){
-      const siteId=String(site?.siteReferenceKey||site?.siteId||'').trim();
-      const raw=site?.rawSiteReference&&typeof site.rawSiteReference==='object'?site.rawSiteReference:{};
-      const operation=site?.operation&&typeof site.operation==='object'?site.operation:(raw.operation||{});
-      const lifecycle=String(operation.status||operation.operationalStatus||
-        raw.sourceSiteRecord?.status||raw.status||'');
-      const commercial=site?.commercialExtraction!==false&&operation.commercialExtraction!==false&&
-        raw.commercialExtraction!==false&&raw.operation?.commercialExtraction!==false;
-      const alias=!!(site?.runtime?.aliasOfSiteId||raw.runtime?.aliasOfSiteId);
-      const mapEligible=site?.map?.markerEligible!==false&&raw.map?.markerEligible!==false;
-      if(siteId&&commercial&&!alias&&mapEligible&&!explicitlyInactiveStatus(lifecycle)&&operationalStatus(lifecycle))
-        addProductionSite(siteId,site?.resourceId||site?.resourceTypeId||raw.identity?.resourceTypeId);
-    }
+    // Catalog operation status describes the real-world site, not whether the
+    // player has commissioned a mine in this save. Automatic turn production must
+    // only run game-owned mine assets; a catalog-only ACTIVE_PRODUCING reference
+    // must never create inventory or an extraction event by itself.
     for(const site of Array.isArray(bucket.commissionedSites)?bucket.commissionedSites:[]){
       if(['COMMISSIONED','OPERATIONAL'].includes(String(site?.status||'').toUpperCase()))
-        addProductionSite(site?.siteId,site?.resourceId);
+        addProductionSite(site?.siteId||site?.siteReferenceKey,
+          site?.resourceId||site?.resourceTypeId);
     }
     for(const asset of mineAssets){
       if(String(asset?.status||'').toUpperCase()==='OPERATIONAL')
-        addProductionSite(asset?.siteId,asset?.resourceId);
+        addProductionSite(asset?.siteId||asset?.siteReferenceKey,
+          asset?.resourceId||asset?.resourceTypeId);
     }
     // A site is paused only when none of its commissioned mine units remain operational.
     // One paused/destroyed unit must not stop another operational unit at the same deposit.
