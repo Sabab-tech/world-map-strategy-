@@ -194,12 +194,17 @@
     };
 
     const paths=Array.isArray(engine?.inputs)?engine.inputs:[];
+    // A ministry context is a read-only publication window. Reuse each domain's
+    // content revision across its input paths instead of hashing a large domain
+    // once for every field (especially the selected country's resource state).
+    const revisionCache=new Map();
+    const describeOptions={currentTurn,revisionCache};
     for(const path of paths){
       let value;
       let described=null;
       try{
         if(provider?.describe){
-          described=provider.describe(countryId,path,{currentTurn});
+          described=provider.describe(countryId,path,describeOptions);
           if(described.availability!=='UNOBSERVED'&&described.availability!=='UNAVAILABLE'&&described.availability!=='NOT_APPLICABLE'){
             value=described.value;
           }else if(described.value!==null&&described.value!==undefined){
