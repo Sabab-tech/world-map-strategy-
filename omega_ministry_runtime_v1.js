@@ -394,8 +394,9 @@
       const s=states.get(id);
       const inputSources=discoverInputSources();
       if(profile){profile.inputSourcesMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
-      const domainContext=buildDomainContext(id,dt,currentTurn,store,revisionCacheForTurn(currentTurn));
-      domainContext.revisionCache=revisionCacheForTurn(currentTurn);
+      const sharedTurnRevisions=revisionCacheForTurn(currentTurn);
+      const domainContext=buildDomainContext(id,dt,currentTurn,store,sharedTurnRevisions);
+      Object.defineProperty(domainContext,'revisionCache',{value:sharedTurnRevisions,enumerable:false});
       const countryId=domainContext.countryId;
       if(profile){profile.contextMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
       const dependencySnapshot=safeDependencyStates(states,kernel,spec.dependencies);
