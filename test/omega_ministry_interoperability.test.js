@@ -541,6 +541,12 @@ test('ministry provider describe reads a path once and caches top-domain revisio
   assert.equal(provider.getRevision(s.countryA,'resource'),baselineRevision,
     'content revisions must ignore function fields just as the defensive clone did');
   delete s.state.resource[s.countryA].nonPersisted;
+  s.state.resource[s.countryA].orderedSet=new Set(['A','B']);
+  const orderedSetRevision=provider.getRevision(s.countryA,'resource');
+  s.state.resource[s.countryA].orderedSet=new Set(['B','A']);
+  assert.notEqual(provider.getRevision(s.countryA,'resource'),orderedSetRevision,
+    'revision hashing must preserve the insertion order used by the previous defensive-clone path');
+  delete s.state.resource[s.countryA].orderedSet;
 });
 
 test('committed command audit records write paths and revisions without copying full before/after domain state',()=>{
