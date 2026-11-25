@@ -1048,7 +1048,13 @@ try{
   assert.ok(['STARTED','PARTIALLY_STARTED'].includes(nextTurnStart.status),
     'the normal turn scheduler must extract an operational commissioned site on the following turn: '+JSON.stringify(nextTurnStart));
   assert.equal(nextTurnStart.attemptedOccurrenceCount,1,
-    'the normal turn scheduler must not schedule unrelated country mines or commodity child streams');
+    'the normal turn scheduler must not schedule unrelated country mines or commodity child streams: '+JSON.stringify({
+      scheduleRows:nextTurnStart.scheduleRows,
+      candidateStates:(nextTurnStart.scheduleRows||[]).flatMap(row=>row.occurrenceKeys||[]).map(key=>({
+        key,state:oneTapCountryState.mineStates?.[key]||null,
+        controller:Object.entries(oneTapCountryState.mineSiteControllers||{}).find(([,value])=>(value.linkedOccurrenceKeys||[]).includes(key))?.[0]||null
+      }))
+    }));
   assert.equal(nextTurnStart.blockedOccurrenceCount,0,
     'uncommissioned and unrelated occurrences must not be re-run as blocked extraction candidates');
   assert.equal(siteModelCallsAcrossTurn,0,
