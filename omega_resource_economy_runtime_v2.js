@@ -600,7 +600,7 @@
     var c=canonical(ctx.countryId),p=cmd&&cmd.payload||{},rid=String(p.resourceId||'').trim(),q=num(p.quantity);
     if(!rid||q===null||q<=0)return{accepted:false,reason:'CONSUME_INPUT_INVALID'};
     const readReference=path=>typeof ctx.stateTransaction.getReference==='function'
-      ?readReference(path):ctx.stateTransaction.get(path);
+      ?ctx.stateTransaction.getReference(path):ctx.stateTransaction.get(path);
     // Read large ledgers by reference and copy only the containers/rows that this
     // transaction actually changes. The previous deep clones copied every site-flow
     // record, route, shipment and lot for every individual resource debit.
