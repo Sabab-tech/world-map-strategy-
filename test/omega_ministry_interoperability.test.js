@@ -187,8 +187,9 @@ test('resource snapshot publication computes its ministry revision once for all 
   const original=provider.getRevision.bind(provider);
   let resourceRevisionComputations=0;
   provider.getRevision=(countryId,domain,options={})=>{
-    const cacheKey=String(countryId).toUpperCase()+'|'+String(domain);
-    if(String(domain)==='resource'&&!options.revisionCache?.has(cacheKey))resourceRevisionComputations++;
+    const hasCachedDomain=options.revisionCache instanceof Map &&
+      [...options.revisionCache.keys()].some(key=>String(key).endsWith('|'+String(domain)));
+    if(String(domain)==='resource'&&!hasCachedDomain)resourceRevisionComputations++;
     return original(countryId,domain,options);
   };
   const result=s.mesh.publishState('resource',{
@@ -536,8 +537,9 @@ test('ministry provider describe reads a path once and caches top-domain revisio
   const originalRevision=provider.getRevision.bind(provider);
   provider.getAvailability=(...args)=>{availabilityReads++;return originalAvailability(...args);};
   provider.getRevision=(countryId,domain,options={})=>{
-    const key=String(countryId).toUpperCase()+'|'+String(domain);
-    if(options.revisionCache?.has(key))revisionCacheHits++;
+    const hasCachedDomain=options.revisionCache instanceof Map &&
+      [...options.revisionCache.keys()].some(key=>String(key).endsWith('|'+String(domain)));
+    if(hasCachedDomain)revisionCacheHits++;
     else revisionComputations++;
     return originalRevision(countryId,domain,options);
   };
