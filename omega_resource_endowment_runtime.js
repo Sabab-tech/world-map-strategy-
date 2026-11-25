@@ -2084,6 +2084,9 @@ function batchFromExtraction(x,record){
         windowQuantity=Math.max(0,allocation);
         remainingDemandByResource[resourceKey]=Math.max(0,turnDemand-windowQuantity);
       }
+      const requestedQuantity=n(cmd?.payload?.quantityByOccurrence?.[x.occurrenceKey]);
+      if(requestedQuantity!==null)
+        windowQuantity=Math.min(windowQuantity,Math.max(0,requestedQuantity));
       if(windowQuantity<=0){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'EXTRACTION_OUTPUT_RATE_UNAVAILABLE'};
         blocked.push(reason);
@@ -2336,8 +2339,11 @@ function batchFromExtraction(x,record){
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     if(strategicPolicy?.loadRules){const ready=await strategicPolicy.loadRules();if(ready?.status!=='READY')return{status:'BLOCKED',reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY',detail:ready};}
     const scheduleRowId=String(options?.scheduleRowId||'').trim()||null;
+    const quantityByOccurrence=options?.quantityByOccurrence&&typeof options.quantityByOccurrence==='object'&&!Array.isArray(options.quantityByOccurrence)
+      ?clone(options.quantityByOccurrence):undefined;
     const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',canonical(c),{
       occurrenceKeys:Array.isArray(occurrenceKeys)?occurrenceKeys:undefined,
+      quantityByOccurrence,
       scheduleRowId:scheduleRowId||undefined,
       correlationId:scheduleRowId||('RESOURCE-EXTRACT-MANUAL-'+turn()+'-'+canonical(c))
     });
