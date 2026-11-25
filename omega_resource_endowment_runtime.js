@@ -2023,9 +2023,6 @@ function batchFromExtraction(x,record){
         windowQuantity=Math.max(0,allocation);
         remainingDemandByResource[resourceKey]=Math.max(0,turnDemand-windowQuantity);
       }
-      const requestedQuantity=n(cmd?.payload?.quantityByOccurrence?.[x.occurrenceKey]);
-      if(requestedQuantity!==null)
-        windowQuantity=Math.min(windowQuantity,Math.max(0,requestedQuantity));
       if(windowQuantity<=0){
         const reason={occurrenceKey:x.occurrenceKey,resourceId:x.resourceId,reason:'EXTRACTION_OUTPUT_RATE_UNAVAILABLE'};
         blocked.push(reason);
@@ -2253,17 +2250,11 @@ function batchFromExtraction(x,record){
     install();
     return dispatch('OMEGA_RESOURCE_ENDOWMENT_HYDRATE',canonical(c),{correlationId:'RESOURCE-HYDRATE-MANUAL-'+turn()+'-'+canonical(c)});
   }
-  async function extractCountry(c,occurrenceKeys=null,options={}){
+  async function extractCountry(c,occurrenceKeys=null){
     install();
     const strategicPolicy=g.Omega?.ResourceStrategicPolicyRuntime||g.OmegaResourceStrategicPolicyRuntime;
     if(strategicPolicy?.loadRules){const ready=await strategicPolicy.loadRules();if(ready?.status!=='READY')return{status:'BLOCKED',reason:'STRATEGIC_RESOURCE_POLICY_RULES_NOT_READY',detail:ready};}
-    const quantityByOccurrence=options?.quantityByOccurrence&&typeof options.quantityByOccurrence==='object'&&!Array.isArray(options.quantityByOccurrence)
-      ?clone(options.quantityByOccurrence):undefined;
-    const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',canonical(c),{
-      occurrenceKeys:Array.isArray(occurrenceKeys)?occurrenceKeys:undefined,
-      quantityByOccurrence,
-      correlationId:'RESOURCE-EXTRACT-MANUAL-'+turn()+'-'+canonical(c)
-    });
+    const result=dispatch('OMEGA_RESOURCE_EXTRACT_TICK',canonical(c),{occurrenceKeys:Array.isArray(occurrenceKeys)?occurrenceKeys:undefined,correlationId:'RESOURCE-EXTRACT-MANUAL-'+turn()+'-'+canonical(c)});
     publishCommittedExtractionEvents(c,result);
     return result;
   }
