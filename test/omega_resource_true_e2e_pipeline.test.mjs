@@ -94,7 +94,11 @@ function buildContext(){
         let cur=state[domain][countryId];
         for(let i=0;i<parts.length-1;i++){if(!cur[parts[i]]||typeof cur[parts[i]]!=='object')cur[parts[i]]={};cur=cur[parts[i]];}
         cur[parts[parts.length-1]]=value;
-      }
+      },
+      // The real compact state transaction exposes setOwned for handler-owned
+      // copy-on-write snapshots. This direct-state fixture must implement the same
+      // contract rather than failing before the gameplay assertions are reached.
+      setOwned(path,value){return this.set(path,value);}
     };
   }
   const interop={
