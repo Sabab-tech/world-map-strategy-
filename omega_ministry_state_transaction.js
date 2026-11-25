@@ -42,6 +42,23 @@
     return ('00000000'+(h>>>0).toString(16)).slice(-8);
   }
 
+  // Compact command transactions use a bounded-depth conflict signature.
+  // The previous content hash recursively serialized every nested value at both
+  // staging and commit, even though handlers already own detached snapshots.
+  // Three levels retain detection of ordinary direct/nested writes while avoiding
+  // repeated full-ledger serialization. Transaction commits remain versioned below.
+  function compactShape(value,depth=3,seen=new WeakSet()){
+    if(value===null)return 'null';
+    const type=typeof value;
+    if(type!=='object')return type+':'+String(JSON.stringify(value));
+    if(seen.has(value))return 'cycle';
+    if(depth<=0)return Array.isArray(value)?'array:'+value.length:'object';
+    seen.add(value);
+    if(Array.isArray(value))return 'A'+value.length+'['+value.map(item=>compactShape(item,depth-1,seen)).join(',')+']';
+    const keys=Object.keys(value).filter(k=>k!=='__proto__'&&k!=='constructor').sort();
+    return 'O'+keys.length+'{'+keys.map(key=>JSON.stringify(key)+':'+compactShape(value[key],depth-1,seen)).join(',')+'}';
+  }
+
   function validId(value){return String(value??'').trim().length>0;}
 
   function canonicalCountryId(value){
@@ -158,8 +175,13 @@
       return cloneValue?clone(cur):cur;
     }
 
-    _valueFingerprint(value){
-      return hash({present:value!==undefined,value});
+    _valueFingerprint(value,path){
+      // Detailed standalone transactions preserve their full content fingerprint.
+      // Compact command transactions need conflict evidence, not a second complete
+      // serialization of multi-megabyte country ledgers.
+      return this.includeOperationValues
+        ?hash({present:value!==undefined,value})
+        :hash({path:String(path||''),present:value!==undefined,shape:compactShape(value)});
     }
 
     _captureWriteBaseline(path){
@@ -168,7 +190,7 @@
       // fingerprint. Retaining a deep copy of every large country ledger here
       // duplicates the same state that get() already snapshots for the handler.
       const value=this._readLivePath(path,this.includeOperationValues);
-      this.writeBaseline.set(path,this.includeOperationValues?value:this._valueFingerprint(value));
+      this.writeBaseline.set(path,this.includeOperationValues?value:this._valueFingerprint(value,path));
     }
 
     _writeSetFingerprint(readCurrent=false,cloneCurrent=true){
@@ -177,7 +199,7 @@
         const rows=paths.map(path=>({
           path,
           fingerprint:readCurrent
-            ?this._valueFingerprint(this._readLivePath(path,cloneCurrent))
+            ?this._valueFingerprint(this._readLivePath(path,cloneCurrent),path)
             :this.writeBaseline.get(path)
         }));
         return hash(rows);
@@ -291,7 +313,7 @@
         // Fingerprinting is read-only; do not deep-clone the live value before hashing.
         const actual=this._readLivePath(path,false);
         const expectedFingerprint=this.includeOperationValues?this._valueFingerprint(expected):expected;
-        const actualFingerprint=this._valueFingerprint(actual);
+        const actualFingerprint=this._valueFingerprint(actual,path);
         if(actualFingerprint!==expectedFingerprint){
           this.closed=true;
           const conflict=new Error('STATE_TRANSACTION_CONFLICT');
