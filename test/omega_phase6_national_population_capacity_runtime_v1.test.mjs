@@ -900,6 +900,115 @@ test('overview HTML presents the national summary without claiming simulated fac
   assert.match(html, /Settled imports this turn/);
   assert.match(html, /durable importer-side shipment ledger/);
   assert.match(html, /Current-turn financial journal evidence/);
-  assert.match(html, /In-transit international import/);
+  assert.match(html, /Legal in-transit import/);
   assert.doesNotMatch(html, /real-world facility count: 100/i);
+});
+
+
+test('unit-backed Black Market transit remains a separate subset of legal in-transit imports', async () => {
+  const state = {
+    simulation: { turn: 9, session: { playerCountryId: 'BGD' } },
+    population: {},
+    economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: [], demandRuntime: { byResource: {
+      crude_oil: { pendingImportQuantity: 0, demandPerDay: 40 }
+    } } } },
+    trade: { BGD: { blackMarketTransits: [
+      { transitId: 'BM-TRANSIT-OPEN', dealId: 'BM-DEAL-OPEN', requestId: 'REQ-BM-OPEN',
+        buyerCountryId: 'BGD', sellerCountryId: 'USA', resourceId: 'crude_oil',
+        quantity: 20, unit: 'tonne', route: [{ countryId: 'USA' }, { countryId: 'BGD' }],
+        status: 'IN_TRANSIT', nextTurn: 10 },
+      { transitId: 'BM-TRANSIT-ARRIVAL', dealId: 'BM-DEAL-ARRIVAL', requestId: 'REQ-BM-ARRIVAL',
+        buyerCountryId: 'BGD', sellerCountryId: 'CAN', resourceId: 'crude_oil',
+        quantity: 5, unit: 'tonne', route: [{ countryId: 'CAN' }, { countryId: 'BGD' }],
+        status: 'ARRIVAL_PENDING', nextTurn: 9 },
+      { transitId: 'BM-TRANSIT-SETTLED', dealId: 'BM-DEAL-SETTLED', requestId: 'REQ-BM-SETTLED',
+        buyerCountryId: 'BGD', sellerCountryId: 'AUS', resourceId: 'crude_oil',
+        quantity: 100, unit: 'tonne', route: [{ countryId: 'AUS' }, { countryId: 'BGD' }],
+        status: 'SETTLED' }
+    ] } },
+    finance: { BGD: { omegaFinance: { ledger: [] } } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const legal = summary.inTransitInternationalImports;
+  const subset = summary.blackMarketTransit;
+  assert.equal(legal.status, 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE');
+  assert.equal(legal.quantity, null);
+  assert.equal(subset.status, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
+  assert.equal(subset.ledgerAvailable, true);
+  assert.equal(subset.shipmentCount, 2);
+  assert.equal(subset.byResource.crude_oil.quantity, 25);
+  assert.equal(subset.byResource.crude_oil.unit, 'tonne');
+  assert.deepEqual(JSON.parse(JSON.stringify(subset.byResource.crude_oil.transitIds)),
+    ['BM-TRANSIT-ARRIVAL', 'BM-TRANSIT-OPEN']);
+  const row = summary.nationalRequirement.byResource.crude_oil;
+  assert.equal(row.inTransitInternationalImportQuantity, null,
+    'Black Market subset must not be promoted to the complete legal bilateral total');
+  assert.equal(row.inTransitInternationalImportStatus, 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE');
+  assert.equal(row.blackMarketInboundShipmentQuantity, 25);
+  assert.equal(row.blackMarketInboundShipmentEvidenceStatus, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
+  assert.equal(summary.dataCoverage.blackMarketTransitStatus, 'OBSERVED_BLACK_MARKET_IN_TRANSIT');
+  assert.equal(summary.dataCoverage.blackMarketTransitLedgerAvailable, true);
+  const html = api.renderSummary(summary);
+  assert.match(html, /Legal in-transit import/);
+  assert.match(html, /Black Market transit subset/);
+  assert.match(html, /never establishes or changes the complete legal bilateral import total/);
+});
+
+test('legacy Black Market transit without a saved unit remains partial and exposes no guessed unit', async () => {
+  const state = {
+    simulation: { turn: 9, session: { playerCountryId: 'BGD' } },
+    population: {},
+    economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: [], demandRuntime: { byResource: {
+      crude_oil: { pendingImportQuantity: 0, demandPerDay: 40 }
+    } } } },
+    trade: { BGD: { blackMarketTransits: [{
+      transitId: 'BM-TRANSIT-LEGACY', dealId: 'BM-DEAL-LEGACY', requestId: 'REQ-BM-LEGACY',
+      buyerCountryId: 'BGD', sellerCountryId: 'USA', resourceId: 'crude_oil',
+      quantity: 9, route: [{ countryId: 'USA' }, { countryId: 'BGD' }],
+      status: 'IN_TRANSIT', nextTurn: 10
+    }] } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const subset = summary.blackMarketTransit;
+  assert.equal(summary.inTransitInternationalImports.status, 'UNKNOWN_SHIPMENT_LEDGER_NOT_AVAILABLE');
+  assert.equal(subset.status, 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE');
+  assert.equal(subset.byResource.crude_oil.quantity, 9);
+  assert.equal(subset.byResource.crude_oil.unit, null);
+  assert.equal(summary.nationalRequirement.byResource.crude_oil.blackMarketInboundShipmentQuantity, 9);
+  assert.equal(summary.nationalRequirement.byResource.crude_oil.blackMarketInboundShipmentEvidenceStatus,
+    'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE');
+});
+
+
+test('conflicting reuse of a Black Market transit ID marks every affected resource partial', async () => {
+  const state = {
+    simulation: { turn: 9, session: { playerCountryId: 'BGD' } },
+    population: {},
+    economy: { BGD: { productionAssets: [] } },
+    resource: { BGD: { inventoryLedger: [] } },
+    trade: { BGD: { blackMarketTransits: [
+      { transitId: 'BM-TRANSIT-CONFLICT', dealId: 'BM-DEAL-CONFLICT', requestId: 'REQ-BM-CONFLICT',
+        buyerCountryId: 'BGD', sellerCountryId: 'USA', resourceId: 'crude_oil',
+        quantity: 20, unit: 'barrel', route: [{ countryId: 'USA' }, { countryId: 'BGD' }],
+        status: 'IN_TRANSIT' },
+      { transitId: 'BM-TRANSIT-CONFLICT', dealId: 'BM-DEAL-CONFLICT', requestId: 'REQ-BM-CONFLICT',
+        buyerCountryId: 'BGD', sellerCountryId: 'USA', resourceId: 'copper',
+        quantity: 20, unit: 'tonne', route: [{ countryId: 'USA' }, { countryId: 'BGD' }],
+        status: 'IN_TRANSIT' }
+    ] } }
+  };
+  const { api } = makeHarness({ state });
+  const summary = await api.getNationalSummary('BGD');
+  const transit = summary.blackMarketTransit;
+  assert.equal(transit.status, 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE');
+  assert.equal(transit.conflictingTransitCount, 1);
+  for (const resourceId of ['crude_oil', 'copper']) {
+    assert.equal(transit.byResource[resourceId].quantity, null);
+    assert.equal(transit.byResource[resourceId].conflictingTransitCount, 1);
+    assert.equal(transit.byResource[resourceId].status, 'PARTIAL_BLACK_MARKET_TRANSIT_EVIDENCE');
+  }
 });

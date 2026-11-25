@@ -118,6 +118,7 @@ test('covert settlement waits for origin and destination transit inspections',()
   unitPrice:deal.unitPrice,requestId:deal.requestId,blackMarketDealId:deal.dealId,blackMarketPermitId:deal.permitId});
  assert.equal(started.accepted,true,JSON.stringify(started));
  assert.equal(started.transit.route.length,2);
+ assert.equal(started.transit.unit,'tonne','transit cargo must persist its canonical product unit');
  assert.equal(h.state.trade.BGD.blackMarketTransits[0].status,'IN_TRANSIT');
  assert.equal(h.state.trade.SAU.blackMarketTransitReservations[0].status,'ACTIVE');
  h.state.simulation.turn=8;

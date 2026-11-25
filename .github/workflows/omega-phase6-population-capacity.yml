@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "omega_phase6_national_population_capacity_runtime_v1.js"
+      - "omega_black_market_system_v1.js"
+      - "test/omega_black_market_system_v1.test.mjs"
       - "omega_simulation_runtime.js"
       - "test/omega_phase6_national_population_capacity_runtime_v1.test.mjs"
       - "test/omega_simulation_phase6_save_provenance.test.mjs"
@@ -27,6 +29,8 @@ on:
     branches: [main]
     paths:
       - "omega_phase6_national_population_capacity_runtime_v1.js"
+      - "omega_black_market_system_v1.js"
+      - "test/omega_black_market_system_v1.test.mjs"
       - "omega_simulation_runtime.js"
       - "test/omega_phase6_national_population_capacity_runtime_v1.test.mjs"
       - "test/omega_simulation_phase6_save_provenance.test.mjs"
@@ -65,5 +69,7 @@ jobs:
         run: node --check omega_phase6_national_population_capacity_runtime_v1.js
       - name: Verify national population, consumption and capacity contracts
         run: node --test test/omega_phase6_national_population_capacity_runtime_v1.test.mjs test/omega_simulation_phase6_save_provenance.test.mjs
+      - name: Verify Black Market transit unit provenance and lifecycle
+        run: npm run test:black-market
       - name: Verify existing population-demand and factory authorities
         run: npm run test:resource-demand && npm run test:country-factory-starting-baseline
