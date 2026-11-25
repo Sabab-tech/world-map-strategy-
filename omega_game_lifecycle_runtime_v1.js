@@ -172,17 +172,41 @@
     return hud.parentNode === doc.body;
   }
 
+  function ensurePauseButton() {
+    var doc = g.document;
+    if (!doc || typeof doc.createElement !== 'function' || typeof doc.querySelector !== 'function') return false;
+    var existing = doc.querySelector('[data-omega-action="pause"]');
+    if (existing) return true;
+    var controls = doc.querySelector('#omega-global-time-hud .ogth-controls');
+    if (!controls || typeof controls.appendChild !== 'function') return false;
+    var button = doc.createElement('button');
+    button.type = 'button';
+    button.setAttribute('data-omega-action', 'pause');
+    button.setAttribute('aria-label', 'Pause game');
+    button.setAttribute('title', 'Pause');
+    button.textContent = 'Ⅱ';
+    controls.appendChild(button);
+    return true;
+  }
+
   function updateControls(sim) {
     if (!g.document) return;
     var status = String(sim && sim.status || 'READY').toUpperCase();
     var running = status === 'RUNNING' && !(sim.clock && sim.clock.paused);
     var toggle = g.document.querySelector('[data-omega-action="toggle"]');
+    var pause = g.document.querySelector('[data-omega-action="pause"]');
     if (toggle) {
       var toggleLabel = running ? 'PAUSE TIME' : status === 'PAUSED' ? 'RESUME TIME' : status === 'ERROR' ? 'TIME ERROR' : 'START TIME';
-      toggle.textContent = toggleLabel;
-      toggle.setAttribute('aria-label', running ? 'Pause simulation time' : status === 'PAUSED' ? 'Resume simulation time' : 'Start simulation time');
+      toggle.textContent = '▶';
+      toggle.setAttribute('aria-label', status === 'PAUSED' ? 'Resume game' : status === 'ERROR' ? 'Game unavailable' : 'Play game');
       toggle.title = toggleLabel;
       toggle.setAttribute('aria-pressed', running ? 'true' : 'false');
+    }
+    if (pause) {
+      pause.textContent = 'Ⅱ';
+      pause.setAttribute('aria-label', 'Pause game');
+      pause.title = 'Pause';
+      pause.setAttribute('aria-pressed', running ? 'true' : 'false');
     }
     var effectiveSpeed = number(sim && sim.clock && sim.clock.speed);
     if (effectiveSpeed !== null && effectiveSpeed > 0) lastKnownSpeed = effectiveSpeed;
@@ -199,10 +223,13 @@
     setText('[data-omega-game-status]', status);
     var manualBusy = manualCommandInFlight || !!(sim && sim.manualAdvanceInProgress);
     var countryReady = !!(sim && playerCountry(sim));
-    var clockButtons = g.document.querySelectorAll('[data-omega-action="toggle"], [data-omega-speed], .speed-btn');
+    var clockButtons = g.document.querySelectorAll('[data-omega-action="toggle"], [data-omega-action="pause"], [data-omega-speed], .speed-btn');
+    var clockUnavailable = manualBusy || status === 'ERROR' || !countryReady;
     for (var c = 0; c < clockButtons.length; c++) {
-      clockButtons[c].disabled = manualBusy || status === 'ERROR' || !countryReady;
+      clockButtons[c].disabled = clockUnavailable;
     }
+    if (toggle) toggle.disabled = clockUnavailable || running;
+    if (pause) pause.disabled = clockUnavailable || !running;
     var turnBusy = !!(sim && (sim.stepInProgress || sim.frameInProgress));
     var manualButtons = g.document.querySelectorAll('[data-omega-action="step-day"], [data-omega-action="advance-days"]');
     for (var m = 0; m < manualButtons.length; m++) {
@@ -868,7 +895,7 @@
   }
 
   function clickHandler(event) {
-    var target = event.target && event.target.closest ? event.target.closest('[data-omega-action="toggle"], [data-omega-action="step-day"], [data-omega-action="advance-days"], [data-omega-action="cancel-advance"], [data-omega-action="diagnostics"], [data-omega-speed], .speed-btn') : null;
+    var target = event.target && event.target.closest ? event.target.closest('[data-omega-action="toggle"], [data-omega-action="pause"], [data-omega-action="step-day"], [data-omega-action="advance-days"], [data-omega-action="cancel-advance"], [data-omega-action="diagnostics"], [data-omega-speed], .speed-btn') : null;
     if (!target) return;
     // This is the authoritative game-clock route. Legacy listeners must not
     // overwrite a speed selection after this handler updates the simulation.
@@ -879,11 +906,9 @@
     if (target.hasAttribute('data-omega-action')) {
       var action = target.getAttribute('data-omega-action');
       if (action === 'toggle') {
-        var sim = runtime();
-        var running = sim && String(sim.status || '').toUpperCase() === 'RUNNING' &&
-          !(sim.clock && sim.clock.paused);
-        if (running) setSpeed(0);
-        else setSpeed(lastKnownSpeed || 1);
+        setSpeed(1, true);
+      } else if (action === 'pause') {
+        setSpeed(0);
       } else if (action === 'step-day') {
         beginManualAdvance(1);
       } else if (action === 'advance-days') {
@@ -985,6 +1010,7 @@
   function init() {
     if (!g.document) return;
     ensureTimeHudPlacement();
+    ensurePauseButton();
     registerLifecycleFinalizer();
     requestPersistentStorage();
     installMutationEventSaveBridge();

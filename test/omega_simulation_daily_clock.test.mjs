@@ -859,6 +859,7 @@ test('manual time HUD buttons step days, run selected days, pause/resume and exp
 
   dispatchAction('toggle');
   assert.equal(sim.status, 'RUNNING', 'Play must resume the canonical clock');
+  assert.equal(sim.clock.speed, 1, 'Play must always use the visible normal game speed');
   sim.clock.accumulatorMs = STEP_MS / 2;
   win.dispatchEvent(new win.CustomEvent('OMEGA_SIMULATION_CLOCK_TICK'));
   assert.equal(progressFill.style.width, '50%', 'the HUD must show partial progress before a full day commits');
@@ -866,7 +867,7 @@ test('manual time HUD buttons step days, run selected days, pause/resume and exp
   assert.equal(progressLabel.textContent, 'NEXT DAY · 50%',
     'the HUD must make active time progression visible between calendar-day commits');
 
-  dispatchAction('toggle');
+  dispatchAction('pause');
   assert.equal(sim.status, 'PAUSED', 'Pause must stop further automatic turns');
   assert.equal(progressLabel.textContent, 'DAY PROGRESS · 50%',
     'pausing must preserve and accurately display the partial day already elapsed');
@@ -917,4 +918,22 @@ test('global time controls are moved outside the clipped header and expose an ex
     'the persistent time dock must accept pointer and touch input');
   assert.match(hudCss, /min-height: 44px !important;/,
     'the primary time controls must have touch-friendly targets');
+});
+
+
+test('compact gameplay clock dock exposes only play and pause actions', () => {
+  const lifecycle = fs.readFileSync(path.join(root, 'omega_game_lifecycle_runtime_v1.js'), 'utf8');
+  const hudCss = fs.readFileSync(path.join(root, 'omega_manual_time_controls_v1.css'), 'utf8');
+  const serviceWorker = fs.readFileSync(path.join(root, 'omega-offline-map-sw.js'), 'utf8');
+
+  assert.match(lifecycle, /function ensurePauseButton\(\)/);
+  assert.match(lifecycle, /button\.setAttribute\('data-omega-action', 'pause'\)/);
+  assert.match(lifecycle, /if \(action === 'toggle'\) \{\s*setSpeed\(1, true\);\s*\} else if \(action === 'pause'\) \{\s*setSpeed\(0\);/);
+  assert.match(lifecycle, /toggle\.textContent = '▶'/);
+  assert.match(lifecycle, /pause\.textContent = 'Ⅱ'/);
+  assert.match(hudCss, /bottom: 16px !important;/);
+  assert.match(hudCss, /button\[data-omega-speed\] \{\s*display: none !important;/);
+  assert.match(hudCss, /\.ogth-manual-controls,[\s\S]*display: none !important;/);
+  assert.match(hudCss, /button\[data-omega-action="toggle"\],[\s\S]*button\[data-omega-action="pause"\]/);
+  assert.match(serviceWorker, /omega-offline-atlas-shell-v149/);
 });
