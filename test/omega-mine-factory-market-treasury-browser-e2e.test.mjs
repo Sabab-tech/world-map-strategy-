@@ -61,7 +61,7 @@ async function saveArtifact(name, value) {
 }
 
 test('one fresh Chromium gameplay session completes mine extraction through factory production, market clearing and Treasury settlement', {
-  timeout: 16 * 60 * 1000
+  timeout: 10 * 60 * 1000
 }, async (t) => {
   const host = await startStaticOrigin();
   const browser = await chromium.launch({
