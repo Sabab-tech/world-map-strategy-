@@ -163,7 +163,7 @@
     return {ok:true,count:engines.length,uniqueInstances,version:registry.version||null};
   }
 
-  function buildDomainContext(id,dt,currentTurn,store){
+  function buildDomainContext(id,dt,currentTurn,store,sharedRevisionCache=null){
     const provider=getStateProvider();
     const state=provider?.root?.() || global.Game?.state || global.gameState || {};
     const interop=getInteroperability();
@@ -197,7 +197,7 @@
     // A ministry context is a read-only publication window. Reuse each domain's
     // content revision across its input paths instead of hashing a large domain
     // once for every field (especially the selected country's resource state).
-    const revisionCache=new Map();
+    const revisionCache=sharedRevisionCache instanceof Map?sharedRevisionCache:new Map();
     const describeOptions={currentTurn,revisionCache};
     for(const path of paths){
       let value;
@@ -276,6 +276,20 @@
     let initialized=false;
     let registryHealth={ok:false,reason:'NOT_INITIALIZED'};
     let interoperability=getInteroperability();
+    // The 17 ministry contexts are read-only within one committed turn. Share
+    // source-domain revisions across them so a large resource ledger is fingerprinted
+    // once per country/turn rather than once for every ministry input context.
+    let sharedRevisionCacheTurn=null;
+    let sharedRevisionCache=new Map();
+
+    function revisionCacheForTurn(turn){
+      const key=String(turn??'');
+      if(sharedRevisionCacheTurn!==key){
+        sharedRevisionCacheTurn=key;
+        sharedRevisionCache=new Map();
+      }
+      return sharedRevisionCache;
+    }
 
     function syncManifest(){
       const manifest=global.GLOBAL_MINISTRY_MANIFEST;
@@ -380,7 +394,8 @@
       const s=states.get(id);
       const inputSources=discoverInputSources();
       if(profile){profile.inputSourcesMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
-      const domainContext=buildDomainContext(id,dt,currentTurn,store);
+      const domainContext=buildDomainContext(id,dt,currentTurn,store,revisionCacheForTurn(currentTurn));
+      domainContext.revisionCache=revisionCacheForTurn(currentTurn);
       const countryId=domainContext.countryId;
       if(profile){profile.contextMs=Number((profileClock()-phaseStartedAt).toFixed(2));phaseStartedAt=profileClock();}
       const dependencySnapshot=safeDependencyStates(states,kernel,spec.dependencies);
