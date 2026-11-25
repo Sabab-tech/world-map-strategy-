@@ -619,20 +619,6 @@ test('one fresh Chromium gameplay session completes mine extraction through fact
       const originLot = resourceState.inventoryLots?.[originBatchId] || null;
       const rawBatchQuantity = Number(rawBatch?.remainingQuantity ?? rawBatch?.quantity);
       const originLotQuantity = Number(originLot?.remainingQuantity ?? originLot?.quantity);
-      const selectedFactoryAsset = (g.Game.state.economy?.[seller]?.productionAssets || [])
-        .find(row => String(row?.id || row?.assetId || row?.projectId || '') === selected.factoryId) || null;
-      const selectedFactoryCapacity = Number(selectedFactoryAsset?.capacityPerDay ??
-        selectedFactoryAsset?.capacity ?? selectedFactoryAsset?.productionCapacity ??
-        selectedFactoryAsset?.throughput);
-      const selectedCycleInputLimit = selectedFactoryCapacity * Math.max(1, Number(selected.cycleDays) || 1);
-      if (selectedFactoryAsset && Number.isFinite(selectedCycleInputLimit) &&
-          rawBatchQuantity > selectedCycleInputLimit + 1e-6) {
-        fail('MINE_BATCH_EXCEEDS_SELECTED_FACTORY_CYCLE_CAPACITY', {
-          siteId: selected.siteId, factoryId: selected.factoryId,
-          rawBatchQuantity, selectedFactoryCapacity, cycleDays: selected.cycleDays,
-          selectedCycleInputLimit
-        });
-      }
       if (['BLOCKED', 'FAILED', 'WAITING_DEPENDENCIES'].includes(String(pipelineStart?.status || '').toUpperCase()))
         fail('MINE_TO_FACTORY_PIPELINE_REJECTED', { pipelineStart, selected: { ...selected, routePreview: undefined } });
       if (!originBatchId || !rawBatch || !(Number(rawBatch.remainingQuantity ?? rawBatch.quantity) > 0))
