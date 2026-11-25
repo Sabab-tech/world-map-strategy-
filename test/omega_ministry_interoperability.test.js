@@ -180,6 +180,26 @@ test('all 17 ministry ticks perform interoperability expiry once per simulation 
   assert.deepEqual(calls,[4,5],'a new turn must run one fresh expiry sweep');
 });
 
+test('resource snapshot publication computes its ministry revision once for all public facts',()=>{
+  const s=createSandbox();
+  const provider=s.mesh.instance.provider;
+  assert.ok(provider&&typeof provider.getRevision==='function');
+  const original=provider.getRevision.bind(provider);
+  let resourceRevisionReads=0;
+  provider.getRevision=(countryId,domain,options)=>{
+    if(String(domain)==='resource')resourceRevisionReads++;
+    return original(countryId,domain,options);
+  };
+  const result=s.mesh.publishState('resource',{
+    context:{countryId:s.countryA,turn:6},
+    domainExecution:{observedInputs:{}},
+    runtimeState:{status:'RUNNING',active:true}
+  },{returnPeerState:false});
+  assert.equal(result.status,'PUBLISHED');
+  assert.equal(resourceRevisionReads,1,
+    'the whole resource domain revision must be calculated once per publication, not once per field');
+});
+
 test('publishState can return a publication receipt without cloning the peer read model',()=>{
   const s=createSandbox();
   const result=s.mesh.publishState('finance',{

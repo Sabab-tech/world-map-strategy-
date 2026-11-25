@@ -570,10 +570,10 @@
       return clone(this.integrityConflicts.filter(row=>!country||row.countryId===country));
     }
 
-    _providerValue(countryId,path,context,observed){
+    _providerValue(countryId,path,context,observed,providerOptions={}){
       if(this.provider&&typeof this.provider.describe==='function'){
         this.metrics.providerReads+=1;
-        const d=this.provider.describe(countryId,path,{currentTurn:this.lastTurn});
+        const d=this.provider.describe(countryId,path,providerOptions);
         if(d.availability===AVAILABILITY.AVAILABLE||d.availability===AVAILABILITY.ESTIMATED||d.availability===AVAILABILITY.STALE||d.availability===AVAILABILITY.INVALID){
           return d;
         }
@@ -1034,6 +1034,13 @@
       const execution=packet.domainExecution||{};
       const context=packet.context||{};
       const observed=execution.observedInputs||{};
+      // Reuse one authoritative ministry revision and memoize each top-domain
+      // content fingerprint across the facts in this publication.
+      const revisionCache=new Map();
+      const describeOptions={currentTurn:this.lastTurn,revisionCache};
+      const publishedSourceRevision=this.provider?.getRevision?.(countryId,ministryId)??null;
+      const stateRevision=publishedSourceRevision!==null?String(publishedSourceRevision):
+        (execution.stateRevision!==undefined&&execution.stateRevision!==null?String(execution.stateRevision):null);
       const configuredPaths=[...(Array.isArray(engine?.inputs)?engine.inputs:[]),...(STANDARD_PUBLIC_PATHS[ministryId]||[])];
       const isOwnedPath=path=>{
         const p=String(path||'');
@@ -1047,11 +1054,10 @@
       const publishedFacts={};
       const dataGaps=[];
       for(const path of paths){
-        const described=this._providerValue(countryId,path,context,observed);
+        const described=this._providerValue(countryId,path,context,observed,describeOptions);
         const visibility=this._factVisibility(ministryId,path);
-        const sourceRevision=this.provider?.getRevision?.(countryId,ministryId)??null;
         const fact={
-          value:described.value===undefined?null:clone(described.value),
+          value:described.value===undefined?null:described.value,
           availability:described.availability||AVAILABILITY.UNAVAILABLE,
           availabilityReason:described.availabilityReason||null,
           visibility,
@@ -1060,7 +1066,7 @@
           path,
           simulationTurn:turn,
           sourceTurn:described.provenance?.simulationTurn??turn,
-          stateRevision:sourceRevision,
+          stateRevision:publishedSourceRevision,
           publishedAt:Date.now(),
           timestampIsTelemetry:true,
           provenance:clone(described.provenance||null),
@@ -1072,9 +1078,6 @@
         });
       }
 
-      const publishedSourceRevision=this.provider?.getRevision?.(countryId,ministryId)??null;
-      const stateRevision=publishedSourceRevision!==null?String(publishedSourceRevision):
-        (execution.stateRevision!==undefined&&execution.stateRevision!==null?String(execution.stateRevision):null);
       const runtimeStatus=packet.runtimeState||{};
       const policyCount=Object.keys(publishedFacts).filter(k=>k.startsWith('store.')).length;
       const projectFact=publishedFacts['projects.registry'];
